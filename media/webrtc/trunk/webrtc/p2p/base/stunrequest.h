@@ -41,6 +41,10 @@ class StunRequestManager {
 
   
   
+  bool HasRequest(int msg_type);
+
+  
+  
   void Remove(StunRequest* request);
 
   
@@ -97,7 +101,7 @@ class StunRequest : public rtc::MessageHandler {
   const StunMessage* msg() const;
 
   
-  uint32_t Elapsed() const;
+  int Elapsed() const;
 
  protected:
   int count_;
@@ -125,7 +129,7 @@ class StunRequest : public rtc::MessageHandler {
 
   StunRequestManager* manager_;
   StunMessage* msg_;
-  uint32_t tstamp_;
+  int64_t tstamp_;
 
   friend class StunRequestManager;
 };

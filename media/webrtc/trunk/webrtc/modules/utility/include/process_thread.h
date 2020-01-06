@@ -11,25 +11,32 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
 
+#include <memory>
+
 #include "webrtc/typedefs.h"
-#include "webrtc/base/scoped_ptr.h"
+
+#if defined(WEBRTC_WIN)
+
+
+#include "webrtc/base/task_queue.h"
+#else
+namespace rtc {
+class QueuedTask;
+}
+#endif
 
 namespace webrtc {
 class Module;
 
-class ProcessTask {
- public:
-  ProcessTask() {}
-  virtual ~ProcessTask() {}
 
-  virtual void Run() = 0;
-};
+
+
 
 class ProcessThread {
  public:
   virtual ~ProcessThread();
 
-  static rtc::scoped_ptr<ProcessThread> Create(const char* thread_name);
+  static std::unique_ptr<ProcessThread> Create(const char* thread_name);
 
   
   virtual void Start() = 0;
@@ -50,7 +57,7 @@ class ProcessThread {
   
   
   
-  virtual void PostTask(rtc::scoped_ptr<ProcessTask> task) = 0;
+  virtual void PostTask(std::unique_ptr<rtc::QueuedTask> task) = 0;
 
   
   

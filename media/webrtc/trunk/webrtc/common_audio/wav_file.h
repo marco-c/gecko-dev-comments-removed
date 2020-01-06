@@ -42,7 +42,7 @@ class WavWriter final : public WavFile {
   WavWriter(const std::string& filename, int sample_rate, size_t num_channels);
 
   
-  ~WavWriter();
+  ~WavWriter() override;
 
   
   
@@ -50,9 +50,9 @@ class WavWriter final : public WavFile {
   void WriteSamples(const float* samples, size_t num_samples);
   void WriteSamples(const int16_t* samples, size_t num_samples);
 
-  int sample_rate() const override { return sample_rate_; }
-  size_t num_channels() const override { return num_channels_; }
-  size_t num_samples() const override { return num_samples_; }
+  int sample_rate() const override;
+  size_t num_channels() const override;
+  size_t num_samples() const override;
 
  private:
   void Close();
@@ -71,16 +71,16 @@ class WavReader final : public WavFile {
   explicit WavReader(const std::string& filename);
 
   
-  ~WavReader();
+  ~WavReader() override;
 
   
   
   size_t ReadSamples(size_t num_samples, float* samples);
   size_t ReadSamples(size_t num_samples, int16_t* samples);
 
-  int sample_rate() const override { return sample_rate_; }
-  size_t num_channels() const override { return num_channels_; }
-  size_t num_samples() const override { return num_samples_; }
+  int sample_rate() const override;
+  size_t num_channels() const override;
+  size_t num_samples() const override;
 
  private:
   void Close();

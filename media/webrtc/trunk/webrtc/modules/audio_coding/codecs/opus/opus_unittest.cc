@@ -7,13 +7,15 @@
 
 
 
+
+#include <memory>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_inst.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -198,15 +200,20 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   const int max_dtx_frames = 400 / block_length_ms + 1;
 
   
-  const int kRunTimeMs = 2000;
+  const int kRunTimeMs = 4500;
 
   
   
   
-  const int kCheckTimeMs = 1500;
+  const int kCheckTimeMs = 4000;
 
 #if defined(OPUS_FIXED_POINT)
-  const uint16_t kOutputValueBound = 20;
+  
+  
+  
+  
+  const uint16_t kOutputValueBound = 30;
+
 #else
   const uint16_t kOutputValueBound = 2;
 #endif
@@ -399,6 +406,27 @@ TEST_P(OpusTest, OpusSetComplexity) {
   EXPECT_EQ(-1, WebRtcOpus_SetComplexity(opus_encoder_, 11));
 
   
+  EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
+}
+
+TEST_P(OpusTest, OpusForceChannels) {
+  
+  EXPECT_EQ(-1, WebRtcOpus_SetForceChannels(opus_encoder_, 1));
+
+  ASSERT_EQ(0,
+            WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_));
+
+  if (channels_ == 2) {
+    EXPECT_EQ(-1, WebRtcOpus_SetForceChannels(opus_encoder_, 3));
+    EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 2));
+    EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 1));
+    EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 0));
+  } else {
+    EXPECT_EQ(-1, WebRtcOpus_SetForceChannels(opus_encoder_, 2));
+    EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 1));
+    EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 0));
+  }
+
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
 }
 
@@ -636,7 +664,7 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
 
   
   int16_t audio_type;
-  rtc::scoped_ptr<int16_t[]> output_data_decode(
+  std::unique_ptr<int16_t[]> output_data_decode(
       new int16_t[kPackets * kOpus20msFrameSamples * channels_]);
   OpusRepacketizer* rp = opus_repacketizer_create();
 

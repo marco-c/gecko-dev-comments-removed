@@ -11,13 +11,19 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_COMMON_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_OPENSLES_COMMON_H_
 
+#include <stddef.h>
 #include <SLES/OpenSLES.h>
-
-#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
-SLDataFormat_PCM CreatePcmConfiguration(int sample_rate);
+
+
+const char* GetSLErrorString(size_t code);
+
+
+SLDataFormat_PCM CreatePCMConfiguration(size_t channels,
+                                        int sample_rate,
+                                        size_t bits_per_sample);
 
 
 template <typename SLType, typename SLDerefType>

@@ -40,7 +40,7 @@ public:
 
     
     int64_t TimeUntilNextProcess() override = 0;
-    int32_t Process() override = 0;
+    void Process() override = 0;
 
     
     virtual int32_t RegisterMixedStreamCallback(

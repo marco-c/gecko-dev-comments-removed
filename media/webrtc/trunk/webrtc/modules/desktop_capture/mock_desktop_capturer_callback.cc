@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+#include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
+
+namespace webrtc {
+
+MockDesktopCapturerCallback::MockDesktopCapturerCallback() = default;
+MockDesktopCapturerCallback::~MockDesktopCapturerCallback() = default;
+
+void MockDesktopCapturerCallback::OnCaptureResult(
+    DesktopCapturer::Result result,
+    std::unique_ptr<DesktopFrame> frame) {
+  OnCaptureResultPtr(result, &frame);
+}
+
+}  

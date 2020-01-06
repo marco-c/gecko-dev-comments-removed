@@ -185,11 +185,18 @@ int WebRtcIsac_DecLogisticMulti2(
   int16_t     candQ7;
   int             k;
 
+  
+  
+  
+  const uint8_t* const stream_end = streamdata->stream + STREAM_SIZE_MAX_60;
+
   stream_ptr = streamdata->stream + streamdata->stream_index;
   W_upper = streamdata->W_upper;
   if (streamdata->stream_index == 0)   
   {
     
+    if (stream_ptr + 3 >= stream_end)
+      return -1;  
     streamval = *stream_ptr << 24;
     streamval |= *++stream_ptr << 16;
     streamval |= *++stream_ptr << 8;
@@ -277,6 +284,8 @@ int WebRtcIsac_DecLogisticMulti2(
     while ( !(W_upper & 0xFF000000) )    
     {
       
+      if (stream_ptr + 1 >= stream_end)
+        return -1;  
       streamval = (streamval << 8) | *++stream_ptr;
       W_upper <<= 8;
     }

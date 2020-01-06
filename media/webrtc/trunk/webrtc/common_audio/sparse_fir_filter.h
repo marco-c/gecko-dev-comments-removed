@@ -33,6 +33,7 @@ class SparseFIRFilter final {
                   size_t num_nonzero_coeffs,
                   size_t sparsity,
                   size_t offset);
+  ~SparseFIRFilter();
 
   
   

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 
+#include <memory>
+
 #include <jni.h>
 
 #include "webrtc/base/thread_checker.h"
@@ -46,30 +48,26 @@ class AudioRecordJni {
   class JavaAudioRecord {
    public:
     JavaAudioRecord(NativeRegistration* native_registration,
-                   rtc::scoped_ptr<GlobalRef> audio_track);
+                   std::unique_ptr<GlobalRef> audio_track);
     ~JavaAudioRecord();
 
     int InitRecording(int sample_rate, size_t channels);
     bool StartRecording();
     bool StopRecording();
     bool EnableBuiltInAEC(bool enable);
-    bool EnableBuiltInAGC(bool enable);
     bool EnableBuiltInNS(bool enable);
 
    private:
-    rtc::scoped_ptr<GlobalRef> audio_record_;
+    std::unique_ptr<GlobalRef> audio_record_;
     jmethodID init_recording_;
     jmethodID start_recording_;
     jmethodID stop_recording_;
     jmethodID enable_built_in_aec_;
-    jmethodID enable_built_in_agc_;
     jmethodID enable_built_in_ns_;
   };
 
   explicit AudioRecordJni(AudioManager* audio_manager);
   ~AudioRecordJni();
-
-  void EnsureRecordObject();
 
   int32_t Init();
   int32_t Terminate();
@@ -86,9 +84,6 @@ class AudioRecordJni {
   int32_t EnableBuiltInAEC(bool enable);
   int32_t EnableBuiltInAGC(bool enable);
   int32_t EnableBuiltInNS(bool enable);
-  int32_t RecordingDeviceName(uint16_t index,
-                              char name[kAdmMaxDeviceNameSize],
-                              char guid[kAdmMaxGuidSize]);
 
  private:
   
@@ -122,13 +117,13 @@ class AudioRecordJni {
   AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
   
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   
-  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+  std::unique_ptr<NativeRegistration> j_native_registration_;
 
   
-  rtc::scoped_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
+  std::unique_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
 
   
   const AudioManager* audio_manager_;

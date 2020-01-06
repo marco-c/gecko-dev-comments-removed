@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 #include "webrtc/typedefs.h"
@@ -39,11 +40,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   
   
   
-  
-  
-  bool NextPacket(uint8_t* buffer,
-                  size_t* bytes_to_send,
-                  bool* last_packet) override;
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
 
   ProtectionType GetProtectionType() override;
 

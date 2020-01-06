@@ -17,6 +17,7 @@
 
 #include "codec.h"
 #include "settings.h"
+#include "webrtc/base/sanitizer.h"
 
 #define LATTICE_MUL_32_32_RSFT16(a32a, a32b, b32)                  \
   ((int32_t)(WEBRTC_SPL_MUL(a32a, b32) + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32))))
@@ -208,6 +209,10 @@ void WebRtcIsacfix_NormLatticeFilterMa(size_t orderCoef,
 
 
 
+static inline int32_t OverflowingLShiftS32(int32_t x, int shift)
+    RTC_NO_SANITIZE("shift") {
+  return x << shift;
+}
 
 
 
@@ -253,12 +258,13 @@ void WebRtcIsacfix_NormLatticeFilterAr(size_t orderCoef,
     WebRtcSpl_SqrtOfOneMinusXSquared(sthQ15, orderCoef, cthQ15);
 
     
-
-
-
-
-
-    tmp32 = gain_lo_hiQ17[temp3] << 10;  
+    
+    
+    
+    
+    
+    
+    tmp32 = OverflowingLShiftS32(gain_lo_hiQ17[temp3], 10);  
 
     for (k=0;k<orderCoef;k++) {
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT15(cthQ15[k], tmp32); 
@@ -274,7 +280,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(size_t orderCoef,
     for (i=0;i<HALF_SUBFRAMELEN;i++)
     {
 
-      tmp32 = lat_inQ25[i + temp1] << 1;  
+      tmp32 = lat_inQ25[i + temp1] * (1 << 1);  
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT16(inv_gain16, tmp32); 
       tmp32 = WEBRTC_SPL_SHIFT_W32(tmp32, -(28-sh)); 
 

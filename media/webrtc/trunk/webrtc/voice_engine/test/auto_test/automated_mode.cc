@@ -8,7 +8,7 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 void InitializeGoogleTest(int* argc, char** argv) {

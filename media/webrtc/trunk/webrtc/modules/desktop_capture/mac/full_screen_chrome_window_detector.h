@@ -13,9 +13,9 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 
 namespace webrtc {
 
@@ -57,9 +57,9 @@ class FullScreenChromeWindowDetector {
   
   
   
-  WindowCapturer::WindowList current_window_list_;
-  WindowCapturer::WindowList previous_window_list_;
-  TickTime last_udpate_time_;
+  DesktopCapturer::SourceList current_window_list_;
+  DesktopCapturer::SourceList previous_window_list_;
+  int64_t last_update_time_ns_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FullScreenChromeWindowDetector);
 };

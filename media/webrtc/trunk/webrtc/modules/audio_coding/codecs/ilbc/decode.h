@@ -25,13 +25,14 @@
 
 
 
-void WebRtcIlbcfix_DecodeImpl(
-    int16_t *decblock,    
-    const uint16_t *bytes, 
-    IlbcDecoder *iLBCdec_inst, 
 
-    int16_t mode      
+int WebRtcIlbcfix_DecodeImpl(
+    int16_t* decblock,         
+    const uint16_t* bytes,     
+    IlbcDecoder* iLBCdec_inst, 
 
-                           );
+    int16_t mode               
+
+    ) WARN_UNUSED_RESULT;
 
 #endif

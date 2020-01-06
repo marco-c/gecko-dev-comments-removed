@@ -8,11 +8,10 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

@@ -12,13 +12,13 @@
 
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/common.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace testing {
@@ -44,15 +44,15 @@ PacketReceiver::PacketReceiver(PacketProcessorListener* listener,
 
     
     
-    prefixes.push_back("Throughput_kbps#1");
+    prefixes.push_back("MetricRecorderThroughput_kbps#1");
     prefixes.push_back("Sending_Estimate_kbps#1");
     prefixes.push_back("Delay_ms_#1");
     prefixes.push_back("Packet_Loss_#1");
     prefixes.push_back("Objective_function_#1");
 
     
-    prefixes.push_back("Throughput_kbps#1");  
-    prefixes.push_back("Throughput_kbps#1");  
+    prefixes.push_back("Capacity_kbps#1");         
+    prefixes.push_back("PerFlowCapacity_kbps#1");  
 
     bool plot_loss = plot_delay;  
     metric_recorder_->SetPlotInformation(prefixes, plot_delay, plot_loss);

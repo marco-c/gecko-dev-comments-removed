@@ -12,16 +12,16 @@
 #define WEBRTC_VIDEO_CALL_STATS_H_
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
 class CallStatsObserver;
-class CriticalSectionWrapper;
 class RtcpRttStats;
 
 
@@ -34,7 +34,7 @@ class CallStats : public Module {
 
   
   int64_t TimeUntilNextProcess() override;
-  int32_t Process() override;
+  void Process() override;
 
   
   
@@ -58,16 +58,21 @@ class CallStats : public Module {
   int64_t avg_rtt_ms() const;
 
  private:
+  void UpdateHistograms();
+
   Clock* const clock_;
   
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::CriticalSection crit_;
   
-  rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
+  std::unique_ptr<RtcpRttStats> rtcp_rtt_stats_;
   
   int64_t last_process_time_;
   
   int64_t max_rtt_ms_;
   int64_t avg_rtt_ms_;
+  int64_t sum_avg_rtt_ms_ GUARDED_BY(crit_);
+  int64_t num_avg_rtt_ GUARDED_BY(crit_);
+  int64_t time_of_first_rtt_ms_ GUARDED_BY(crit_);
 
   
   std::list<RttTime> reports_;

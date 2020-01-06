@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_MAC_DESKTOP_CONFIGURATION_H_
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <Carbon/Carbon.h>
 #include <vector>
 
 #include "webrtc/typedefs.h"
@@ -23,9 +22,15 @@ namespace webrtc {
 
 struct MacDisplayConfiguration {
   MacDisplayConfiguration();
+  MacDisplayConfiguration(const MacDisplayConfiguration& other);
+  MacDisplayConfiguration(MacDisplayConfiguration&& other);
+  ~MacDisplayConfiguration();
+
+  MacDisplayConfiguration& operator=(const MacDisplayConfiguration& other);
+  MacDisplayConfiguration& operator=(MacDisplayConfiguration&& other);
 
   
-  CGDirectDisplayID id;
+  CGDirectDisplayID id = 0;
 
   
   DesktopRect bounds;
@@ -34,7 +39,7 @@ struct MacDisplayConfiguration {
   DesktopRect pixel_bounds;
 
   
-  float dip_to_pixel_scale;
+  float dip_to_pixel_scale = 1.0f;
 };
 
 typedef std::vector<MacDisplayConfiguration> MacDisplayConfigurations;
@@ -45,7 +50,12 @@ struct MacDesktopConfiguration {
   enum Origin { BottomLeftOrigin, TopLeftOrigin };
 
   MacDesktopConfiguration();
+  MacDesktopConfiguration(const MacDesktopConfiguration& other);
+  MacDesktopConfiguration(MacDesktopConfiguration&& other);
   ~MacDesktopConfiguration();
+
+  MacDesktopConfiguration& operator=(const MacDesktopConfiguration& other);
+  MacDesktopConfiguration& operator=(MacDesktopConfiguration&& other);
 
   
   
@@ -67,7 +77,7 @@ struct MacDesktopConfiguration {
   DesktopRect pixel_bounds;
 
   
-  float dip_to_pixel_scale;
+  float dip_to_pixel_scale = 1.0f;
 
   
   MacDisplayConfigurations displays;

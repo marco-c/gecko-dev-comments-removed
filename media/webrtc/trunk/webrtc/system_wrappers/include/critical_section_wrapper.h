@@ -11,26 +11,33 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_CRITICAL_SECTION_WRAPPER_H_
 
-
-
-
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
 
 namespace webrtc {
+
 class LOCKABLE CriticalSectionWrapper {
  public:
   
-  static CriticalSectionWrapper* CreateCriticalSection();
+  
+  
+  static CriticalSectionWrapper* CreateCriticalSection() {
+    return new CriticalSectionWrapper();
+  }
 
-  virtual ~CriticalSectionWrapper() {}
+  CriticalSectionWrapper() {}
+  ~CriticalSectionWrapper() {}
 
   
   
-  virtual void Enter() EXCLUSIVE_LOCK_FUNCTION() = 0;
+  void Enter() EXCLUSIVE_LOCK_FUNCTION() { lock_.Enter(); }
 
   
-  virtual void Leave() UNLOCK_FUNCTION() = 0;
+  void Leave() UNLOCK_FUNCTION() { lock_.Leave(); }
+
+ private:
+  rtc::CriticalSection lock_;
 };
 
 

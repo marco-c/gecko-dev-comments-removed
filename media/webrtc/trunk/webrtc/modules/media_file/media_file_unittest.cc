@@ -8,9 +8,9 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 class MediaFileTest : public testing::Test {
@@ -37,8 +37,8 @@ class MediaFileTest : public testing::Test {
 TEST_F(MediaFileTest, MAYBE_StartPlayingAudioFileWithoutError) {
   
   
-  const std::string audio_file = webrtc::test::ProjectRootPath() +
-      "data/voice_engine/audio_tiny48.wav";
+  const std::string audio_file =
+      webrtc::test::ResourcePath("voice_engine/audio_tiny48", "wav");
   ASSERT_EQ(0, media_file_->StartPlayingAudioFile(
       audio_file.c_str(),
       0,

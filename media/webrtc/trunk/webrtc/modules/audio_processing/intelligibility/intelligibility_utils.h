@@ -8,16 +8,11 @@
 
 
 
-
-
-
-
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_UTILS_H_
 
 #include <complex>
-
-#include "webrtc/base/scoped_ptr.h"
+#include <vector>
 
 namespace webrtc {
 
@@ -25,110 +20,25 @@ namespace intelligibility {
 
 
 
-float UpdateFactor(float target, float current, float limit);
 
-
-
-
-std::complex<float> zerofudge(std::complex<float> c);
-
-
-
-std::complex<float> NewMean(std::complex<float> mean,
-                            std::complex<float> data,
-                            size_t count);
-
-
-void AddToMean(std::complex<float> data,
-               size_t count,
-               std::complex<float>* mean);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class VarianceArray {
+template <typename T>
+class PowerEstimator {
  public:
-  enum StepType {
-    kStepInfinite = 0,
-    kStepDecaying,
-    kStepWindowed,
-    kStepBlocked,
-    kStepBlockBasedMovingAverage
-  };
+  
+  
+  PowerEstimator(size_t freqs, float decay);
 
   
-  
-  
-  
-  
-  VarianceArray(size_t freqs, StepType type, size_t window_size, float decay);
+  void Step(const T* data);
 
   
-  
-  
-  
-  void Step(const std::complex<float>* data, bool skip_fudge = false) {
-    (this->*step_func_)(data, skip_fudge);
-  }
-  
-  void Clear();
-  
-  
-  void ApplyScale(float scale);
-
-  
-  const float* variance() const { return variance_.get(); }
-
-  
-  float array_mean() const { return array_mean_; }
+  const std::vector<float>& power() { return power_; };
 
  private:
-  void InfiniteStep(const std::complex<float>* data, bool dummy);
-  void DecayStep(const std::complex<float>* data, bool dummy);
-  void WindowedStep(const std::complex<float>* data, bool dummy);
-  void BlockedStep(const std::complex<float>* data, bool dummy);
-  void BlockBasedMovingAverage(const std::complex<float>* data, bool dummy);
+  
+  std::vector<float> power_;
 
-  
-  
-
-  
-  rtc::scoped_ptr<std::complex<float>[]> running_mean_;
-  rtc::scoped_ptr<std::complex<float>[]> running_mean_sq_;
-
-  
-  rtc::scoped_ptr<std::complex<float>[]> sub_running_mean_;
-  rtc::scoped_ptr<std::complex<float>[]> sub_running_mean_sq_;
-
-  
-  
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> history_;
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> subhistory_;
-  rtc::scoped_ptr<rtc::scoped_ptr<std::complex<float>[]>[]> subhistory_sq_;
-
-  
-  rtc::scoped_ptr<float[]> variance_;
-  rtc::scoped_ptr<float[]> conj_sum_;
-
-  const size_t num_freqs_;
-  const size_t window_size_;
   const float decay_;
-  size_t history_cursor_;
-  size_t count_;
-  float array_mean_;
-  bool buffer_full_;
-  void (VarianceArray::*step_func_)(const std::complex<float>*, bool);
 };
 
 
@@ -136,7 +46,9 @@ class VarianceArray {
 
 class GainApplier {
  public:
-  GainApplier(size_t freqs, float change_limit);
+  GainApplier(size_t freqs, float relative_change_limit);
+
+  ~GainApplier();
 
   
   
@@ -144,13 +56,27 @@ class GainApplier {
              std::complex<float>* out_block);
 
   
-  float* target() const { return target_.get(); }
+  float* target() { return target_.data(); }
 
  private:
   const size_t num_freqs_;
-  const float change_limit_;
-  rtc::scoped_ptr<float[]> target_;
-  rtc::scoped_ptr<float[]> current_;
+  const float relative_change_limit_;
+  std::vector<float> target_;
+  std::vector<float> current_;
+};
+
+
+class DelayBuffer {
+ public:
+  DelayBuffer(size_t delay, size_t num_channels);
+
+  ~DelayBuffer();
+
+  void Delay(float* const* data, size_t length);
+
+ private:
+  std::vector<std::vector<float>> buffer_;
+  size_t read_index_;
 };
 
 }  

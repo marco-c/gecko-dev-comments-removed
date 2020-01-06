@@ -15,10 +15,11 @@
 
 #include <string>
 #include <vector>
-#include <string.h>
-#include <algorithm>
 
-#include "webrtc/common.h"
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -27,6 +28,7 @@ namespace webrtc {
 
 struct NackConfig {
   NackConfig() : rtp_history_ms(0) {}
+  std::string ToString() const;
   
   
   
@@ -36,12 +38,14 @@ struct NackConfig {
 
 
 
-struct FecConfig {
-  FecConfig()
+struct UlpfecConfig {
+  UlpfecConfig()
       : ulpfec_payload_type(-1),
         red_payload_type(-1),
         red_rtx_payload_type(-1) {}
   std::string ToString() const;
+  bool operator==(const UlpfecConfig& other) const;
+
   
   int ulpfec_payload_type;
 
@@ -54,21 +58,45 @@ struct FecConfig {
 
 
 struct RtpExtension {
-  RtpExtension(const std::string& name, int id) : name(name), id(id) {}
+  RtpExtension() : id(0) {}
+  RtpExtension(const std::string& uri, int id) : uri(uri), id(id) {}
   std::string ToString() const;
   bool operator==(const RtpExtension& rhs) const {
-    return name == rhs.name && id == rhs.id;
+    return uri == rhs.uri && id == rhs.id;
   }
-  static bool IsSupportedForAudio(const std::string& name);
-  static bool IsSupportedForVideo(const std::string& name);
+  static bool IsSupportedForAudio(const std::string& uri);
+  static bool IsSupportedForVideo(const std::string& uri);
 
-  static const char* kTOffset;
-  static const char* kAbsSendTime;
-  static const char* kVideoRotation;
-  static const char* kAudioLevel;
-  static const char* kTransportSequenceNumber;
-  static const char* kRtpStreamId;
-  std::string name;
+  
+  
+  static const char* kAudioLevelUri;
+  static const int kAudioLevelDefaultId;
+
+  
+  
+  static const char* kTimestampOffsetUri;
+  static const int kTimestampOffsetDefaultId;
+
+  
+  
+  static const char* kAbsSendTimeUri;
+  static const int kAbsSendTimeDefaultId;
+
+  
+  
+  
+  static const char* kVideoRotationUri;
+  static const int kVideoRotationDefaultId;
+
+  
+  
+  static const char* kTransportSequenceNumberUri;
+  static const int kTransportSequenceNumberDefaultId;
+
+  static const char* kPlayoutDelayUri;
+  static const int kPlayoutDelayDefaultId;
+
+  std::string uri;
   int id;
 };
 
@@ -100,56 +128,104 @@ struct VideoStream {
   std::vector<int> temporal_layer_thresholds_bps;
 };
 
-struct VideoEncoderConfig {
+class VideoEncoderConfig {
+ public:
+  
+  
+  
+  
+  class EncoderSpecificSettings : public rtc::RefCountInterface {
+   public:
+    
+    
+    
+    void FillEncoderSpecificSettings(VideoCodec* codec_struct) const;
+
+    virtual void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const;
+    virtual void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const;
+    virtual void FillVideoCodecH264(VideoCodecH264* h264_settings) const;
+   private:
+    ~EncoderSpecificSettings() override {}
+    friend class VideoEncoderConfig;
+  };
+
+  class H264EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit H264EncoderSpecificSettings(const VideoCodecH264& specifics);
+    void FillVideoCodecH264(VideoCodecH264* h264_settings) const override;
+
+   private:
+    VideoCodecH264 specifics_;
+  };
+
+  class Vp8EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit Vp8EncoderSpecificSettings(const VideoCodecVP8& specifics);
+    void FillVideoCodecVp8(VideoCodecVP8* vp8_settings) const override;
+
+   private:
+    VideoCodecVP8 specifics_;
+  };
+
+  class Vp9EncoderSpecificSettings : public EncoderSpecificSettings {
+   public:
+    explicit Vp9EncoderSpecificSettings(const VideoCodecVP9& specifics);
+    void FillVideoCodecVp9(VideoCodecVP9* vp9_settings) const override;
+
+   private:
+    VideoCodecVP9 specifics_;
+  };
+
   enum class ContentType {
     kRealtimeVideo,
     kScreen,
   };
 
+  class VideoStreamFactoryInterface : public rtc::RefCountInterface {
+   public:
+    
+    
+    
+    
+    virtual std::vector<VideoStream> CreateEncoderStreams(
+        int width,
+        int height,
+        const VideoEncoderConfig& encoder_config) = 0;
+
+   protected:
+    ~VideoStreamFactoryInterface() override {}
+  };
+
+  VideoEncoderConfig& operator=(VideoEncoderConfig&&) = default;
+  VideoEncoderConfig& operator=(const VideoEncoderConfig&) = delete;
+
+  
+  VideoEncoderConfig Copy() const { return VideoEncoderConfig(*this); }
+
   VideoEncoderConfig();
+  VideoEncoderConfig(VideoEncoderConfig&&);
   ~VideoEncoderConfig();
   std::string ToString() const;
 
-  std::vector<VideoStream> streams;
+  rtc::scoped_refptr<VideoStreamFactoryInterface> video_stream_factory;
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
-  void* encoder_specific_settings;
-  unsigned char resolution_divisor;
+  rtc::scoped_refptr<const EncoderSpecificSettings> encoder_specific_settings;
 
   
   
   
   
   int min_transmit_bitrate_bps;
-};
+  int max_bitrate_bps;
 
+  
+  size_t number_of_streams;
 
-
-
-
-
-
-
-struct NetEqCapacityConfig {
-  NetEqCapacityConfig() : enabled(false), capacity(0) {}
-  explicit NetEqCapacityConfig(int value) : enabled(true), capacity(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kNetEqCapacityConfig;
-  bool enabled;
-  int capacity;
-};
-
-struct NetEqFastAccelerate {
-  NetEqFastAccelerate() : enabled(false) {}
-  explicit NetEqFastAccelerate(bool value) : enabled(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kNetEqFastAccelerate;
-  bool enabled;
-};
-
-struct VoicePacing {
-  VoicePacing() : enabled(false) {}
-  explicit VoicePacing(bool value) : enabled(value) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kVoicePacing;
-  bool enabled;
+ private:
+  
+  
+  VideoEncoderConfig(const VideoEncoderConfig&);
 };
 
 }  

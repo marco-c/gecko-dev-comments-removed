@@ -14,21 +14,24 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <ostream>
 #include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/typedefs.h"
 
 #if defined(_MSC_VER)
 
 
-#pragma warning(disable:4351)
+#pragma warning(disable : 4351)
 #endif
 
-#ifdef WEBRTC_EXPORT
+#if defined(WEBRTC_EXPORT)
 #define WEBRTC_DLLEXPORT _declspec(dllexport)
-#elif WEBRTC_DLL
+#elif defined(WEBRTC_DLL)
 #define WEBRTC_DLLEXPORT _declspec(dllimport)
 #else
 #define WEBRTC_DLLEXPORT
@@ -38,7 +41,7 @@
 #define NULL 0
 #endif
 
-#define RTP_PAYLOAD_NAME_SIZE 32
+#define RTP_PAYLOAD_NAME_SIZE 32u
 
 #if defined(WEBRTC_WIN) || defined(WIN32)
 
@@ -52,80 +55,72 @@
 
 namespace webrtc {
 
-class Config;
-
-class InStream
-{
-public:
- 
- 
-    virtual int Read(void *buf, size_t len) = 0;
-    virtual int Rewind();
-    virtual ~InStream() {}
-protected:
-    InStream() {}
+class RewindableStream {
+ public:
+  virtual ~RewindableStream() {}
+  virtual int Rewind() = 0;
 };
 
-class OutStream
-{
-public:
- 
- 
-    virtual bool Write(const void *buf, size_t len) = 0;
-    virtual int Rewind();
-    virtual ~OutStream() {}
-protected:
-    OutStream() {}
+class InStream : public RewindableStream {
+ public:
+  
+  
+  virtual int Read(void* buf, size_t len) = 0;
 };
 
-enum TraceModule
-{
-    kTraceUndefined              = 0,
-    
-    kTraceVoice                  = 0x0001,
-    
-    kTraceVideo                  = 0x0002,
-    
-    kTraceUtility                = 0x0003,
-    kTraceRtpRtcp                = 0x0004,
-    kTraceTransport              = 0x0005,
-    kTraceSrtp                   = 0x0006,
-    kTraceAudioCoding            = 0x0007,
-    kTraceAudioMixerServer       = 0x0008,
-    kTraceAudioMixerClient       = 0x0009,
-    kTraceFile                   = 0x000a,
-    kTraceAudioProcessing        = 0x000b,
-    kTraceVideoCoding            = 0x0010,
-    kTraceVideoMixer             = 0x0011,
-    kTraceAudioDevice            = 0x0012,
-    kTraceVideoRenderer          = 0x0014,
-    kTraceVideoCapture           = 0x0015,
-    kTraceRemoteBitrateEstimator = 0x0017,
+class OutStream : public RewindableStream {
+ public:
+  
+  
+  virtual bool Write(const void* buf, size_t len) = 0;
 };
 
-enum TraceLevel
-{
-    kTraceNone               = 0x0000,    
-    kTraceStateInfo          = 0x0001,
-    kTraceWarning            = 0x0002,
-    kTraceError              = 0x0004,
-    kTraceCritical           = 0x0008,
-    kTraceApiCall            = 0x0010,
-    kTraceDefault            = 0x00ff,
+enum TraceModule {
+  kTraceUndefined = 0,
+  
+  kTraceVoice = 0x0001,
+  
+  kTraceVideo = 0x0002,
+  
+  kTraceUtility = 0x0003,
+  kTraceRtpRtcp = 0x0004,
+  kTraceTransport = 0x0005,
+  kTraceSrtp = 0x0006,
+  kTraceAudioCoding = 0x0007,
+  kTraceAudioMixerServer = 0x0008,
+  kTraceAudioMixerClient = 0x0009,
+  kTraceFile = 0x000a,
+  kTraceAudioProcessing = 0x000b,
+  kTraceVideoCoding = 0x0010,
+  kTraceVideoMixer = 0x0011,
+  kTraceAudioDevice = 0x0012,
+  kTraceVideoRenderer = 0x0014,
+  kTraceVideoCapture = 0x0015,
+  kTraceRemoteBitrateEstimator = 0x0017,
+};
 
-    kTraceModuleCall         = 0x0020,
-    kTraceMemory             = 0x0100,   
-    kTraceTimer              = 0x0200,   
-    kTraceStream             = 0x0400,   
+enum TraceLevel {
+  kTraceNone = 0x0000,  
+  kTraceStateInfo = 0x0001,
+  kTraceWarning = 0x0002,
+  kTraceError = 0x0004,
+  kTraceCritical = 0x0008,
+  kTraceApiCall = 0x0010,
+  kTraceDefault = 0x00ff,
 
-    
-    kTraceDebug              = 0x0800,  
-    kTraceInfo               = 0x1000,  
+  kTraceModuleCall = 0x0020,
+  kTraceMemory = 0x0100,  
+  kTraceTimer = 0x0200,   
+  kTraceStream = 0x0400,  
 
-    
-    kTraceTerseInfo          = 0x2000,
+  
+  kTraceDebug = 0x0800,  
+  kTraceInfo = 0x1000,   
 
-    kTraceAll                = 0xffff
+  
+  kTraceTerseInfo = 0x2000,
+
+  kTraceAll = 0xffff
 };
 
 
@@ -138,23 +133,21 @@ class TraceCallback {
   TraceCallback() {}
 };
 
-enum FileFormats
-{
-    kFileFormatWavFile        = 1,
-    kFileFormatCompressedFile = 2,
-    kFileFormatPreencodedFile = 4,
-    kFileFormatPcm16kHzFile   = 7,
-    kFileFormatPcm8kHzFile    = 8,
-    kFileFormatPcm32kHzFile   = 9
+enum FileFormats {
+  kFileFormatWavFile = 1,
+  kFileFormatCompressedFile = 2,
+  kFileFormatPreencodedFile = 4,
+  kFileFormatPcm16kHzFile = 7,
+  kFileFormatPcm8kHzFile = 8,
+  kFileFormatPcm32kHzFile = 9
 };
 
-enum ProcessingTypes
-{
-    kPlaybackPerChannel = 0,
-    kPlaybackAllChannelsMixed,
-    kRecordingPerChannel,
-    kRecordingAllChannelsMixed,
-    kRecordingPreprocessing
+enum ProcessingTypes {
+  kPlaybackPerChannel = 0,
+  kPlaybackAllChannelsMixed,
+  kRecordingPerChannel,
+  kRecordingAllChannelsMixed,
+  kRecordingPreprocessing
 };
 
 enum FrameType {
@@ -168,10 +161,10 @@ enum FrameType {
 
 struct RtcpStatistics {
   RtcpStatistics()
-    : fraction_lost(0),
-      cumulative_lost(0),
-      extended_max_sequence_number(0),
-      jitter(0) {}
+      : fraction_lost(0),
+        cumulative_lost(0),
+        extended_max_sequence_number(0),
+        jitter(0) {}
 
   uint8_t fraction_lost;
   uint32_t cumulative_lost;
@@ -191,12 +184,12 @@ class RtcpStatisticsCallback {
 
 struct RtcpPacketTypeCounter {
   RtcpPacketTypeCounter()
-    : first_packet_time_ms(-1),
-      nack_packets(0),
-      fir_packets(0),
-      pli_packets(0),
-      nack_requests(0),
-      unique_nack_requests(0) {}
+      : first_packet_time_ms(-1),
+        nack_packets(0),
+        fir_packets(0),
+        pli_packets(0),
+        nack_requests(0),
+        unique_nack_requests(0) {}
 
   void Add(const RtcpPacketTypeCounter& other) {
     nack_packets += other.nack_packets;
@@ -205,8 +198,22 @@ struct RtcpPacketTypeCounter {
     nack_requests += other.nack_requests;
     unique_nack_requests += other.unique_nack_requests;
     if (other.first_packet_time_ms != -1 &&
-       (other.first_packet_time_ms < first_packet_time_ms ||
-        first_packet_time_ms == -1)) {
+        (other.first_packet_time_ms < first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
+      
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  void Subtract(const RtcpPacketTypeCounter& other) {
+    nack_packets -= other.nack_packets;
+    fir_packets -= other.fir_packets;
+    pli_packets -= other.pli_packets;
+    nack_requests -= other.nack_requests;
+    unique_nack_requests -= other.unique_nack_requests;
+    if (other.first_packet_time_ms != -1 &&
+        (other.first_packet_time_ms > first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
       
       first_packet_time_ms = other.first_packet_time_ms;
     }
@@ -220,15 +227,15 @@ struct RtcpPacketTypeCounter {
     if (nack_requests == 0) {
       return 0;
     }
-    return static_cast<int>(
-        (unique_nack_requests * 100.0f / nack_requests) + 0.5f);
+    return static_cast<int>((unique_nack_requests * 100.0f / nack_requests) +
+                            0.5f);
   }
 
-  int64_t first_packet_time_ms;  
-  uint32_t nack_packets;   
-  uint32_t fir_packets;    
-  uint32_t pli_packets;    
-  uint32_t nack_requests;  
+  int64_t first_packet_time_ms;   
+  uint32_t nack_packets;          
+  uint32_t fir_packets;           
+  uint32_t pli_packets;           
+  uint32_t nack_requests;         
   uint32_t unique_nack_requests;  
 };
 
@@ -242,11 +249,10 @@ class RtcpPacketTypeCounterObserver {
 
 
 struct BitrateStatistics {
-  BitrateStatistics() : bitrate_bps(0), packet_rate(0), timestamp_ms(0) {}
+  BitrateStatistics() : bitrate_bps(0), packet_rate(0) {}
 
-  uint32_t bitrate_bps;   
-  uint32_t packet_rate;   
-  uint64_t timestamp_ms;  
+  uint32_t bitrate_bps;  
+  uint32_t packet_rate;  
 };
 
 
@@ -254,8 +260,8 @@ class BitrateStatisticsObserver {
  public:
   virtual ~BitrateStatisticsObserver() {}
 
-  virtual void Notify(const BitrateStatistics& total_stats,
-                      const BitrateStatistics& retransmit_stats,
+  virtual void Notify(uint32_t total_bitrate_bps,
+                      uint32_t retransmit_bitrate_bps,
                       uint32_t ssrc) = 0;
 };
 
@@ -286,6 +292,26 @@ class SendSideDelayObserver {
 
 
 
+class SendPacketObserver {
+ public:
+  virtual ~SendPacketObserver() {}
+  virtual void OnSendPacket(uint16_t packet_id,
+                            int64_t capture_time_ms,
+                            uint32_t ssrc) = 0;
+};
+
+
+
+class OverheadObserver {
+ public:
+  virtual ~OverheadObserver() = default;
+  virtual void OnOverheadChanged(size_t overhead_bytes_per_packet) = 0;
+};
+
+
+
+
+
 
 struct CodecInst {
   int pltype;
@@ -298,72 +324,77 @@ struct CodecInst {
   bool operator==(const CodecInst& other) const {
     return pltype == other.pltype &&
            (STR_CASE_CMP(plname, other.plname) == 0) &&
-           plfreq == other.plfreq &&
-           pacsize == other.pacsize &&
-           channels == other.channels &&
-           rate == other.rate;
+           plfreq == other.plfreq && pacsize == other.pacsize &&
+           channels == other.channels && rate == other.rate;
   }
 
-  bool operator!=(const CodecInst& other) const {
-    return !(*this == other);
+  bool operator!=(const CodecInst& other) const { return !(*this == other); }
+
+  friend std::ostream& operator<<(std::ostream& os, const CodecInst& ci) {
+    os << "{pltype: " << ci.pltype;
+    os << ", plname: " << ci.plname;
+    os << ", plfreq: " << ci.plfreq;
+    os << ", pacsize: " << ci.pacsize;
+    os << ", channels: " << ci.channels;
+    os << ", rate: " << ci.rate << "}";
+    return os;
   }
 };
 
 
-enum {kRtpCsrcSize = 15}; 
+enum { kRtpCsrcSize = 15 };  
 
-enum PayloadFrequencies
-{
-    kFreq8000Hz = 8000,
-    kFreq16000Hz = 16000,
-    kFreq32000Hz = 32000
+enum PayloadFrequencies {
+  kFreq8000Hz = 8000,
+  kFreq16000Hz = 16000,
+  kFreq32000Hz = 32000
 };
 
-enum VadModes                 
-{
-    kVadConventional = 0,      
-    kVadAggressiveLow,
-    kVadAggressiveMid,
-    kVadAggressiveHigh         
+
+enum VadModes {
+  kVadConventional = 0,  
+  kVadAggressiveLow,
+  kVadAggressiveMid,
+  kVadAggressiveHigh  
 };
 
-struct NetworkStatistics           
-{
-    
-    uint16_t currentBufferSize;
-    
-    uint16_t preferredBufferSize;
-    
-    bool jitterPeaksFound;
-    
-    uint16_t currentPacketLossRate;
-    
-    uint16_t currentDiscardRate;
-    
-    
-    uint16_t currentExpandRate;
-    
-    
-    uint16_t currentSpeechExpandRate;
-    
-    
-    uint16_t currentPreemptiveRate;
-    
-    uint16_t currentAccelerateRate;
-    
-    uint16_t currentSecondaryDecodedRate;
-    
-    int32_t clockDriftPPM;
-    
-    int meanWaitingTimeMs;
-    
-    int medianWaitingTimeMs;
-    
-    int minWaitingTimeMs;
-    
-    int maxWaitingTimeMs;
-    
-    size_t addedSamples;
+
+struct NetworkStatistics {
+  
+  uint16_t currentBufferSize;
+  
+  uint16_t preferredBufferSize;
+  
+  bool jitterPeaksFound;
+  
+  uint16_t currentPacketLossRate;
+  
+  uint16_t currentDiscardRate;
+  
+  
+  uint16_t currentExpandRate;
+  
+  
+  uint16_t currentSpeechExpandRate;
+  
+  
+  uint16_t currentPreemptiveRate;
+  
+  uint16_t currentAccelerateRate;
+  
+  uint16_t currentSecondaryDecodedRate;
+  
+  int32_t clockDriftPPM;
+  
+  int meanWaitingTimeMs;
+  
+  int medianWaitingTimeMs;
+  
+  int minWaitingTimeMs;
+  
+  int maxWaitingTimeMs;
+  
+  size_t addedSamples;
 };
 
 
@@ -374,145 +405,80 @@ struct AudioDecodingCallStats {
         decoded_normal(0),
         decoded_plc(0),
         decoded_cng(0),
-        decoded_plc_cng(0) {}
+        decoded_plc_cng(0),
+        decoded_muted_output(0) {}
 
   int calls_to_silence_generator;  
                                    
-  int calls_to_neteq;  
+  int calls_to_neteq;              
   int decoded_normal;  
-  int decoded_plc;  
+  int decoded_plc;     
   int decoded_cng;  
   int decoded_plc_cng;  
-};
-
-typedef struct
-{
-    int min;              
-    int max;              
-    int average;          
-} StatVal;
-
-typedef struct           
-{
-    StatVal speech_rx;   
-    StatVal speech_tx;   
-    StatVal noise_rx;    
-    StatVal noise_tx;    
-} LevelStatistics;
-
-typedef struct        
-{
-    StatVal erl;      
-    StatVal erle;     
-    StatVal rerl;     
-    
-    StatVal a_nlp;
-} EchoStatistics;
-
-enum NsModes    
-{
-    kNsUnchanged = 0,   
-    kNsDefault,         
-    kNsConference,      
-    kNsLowSuppression,  
-    kNsModerateSuppression,
-    kNsHighSuppression,
-    kNsVeryHighSuppression     
-};
-
-enum AgcModes                  
-{
-    kAgcUnchanged = 0,        
-    kAgcDefault,              
-    
-    
-    kAgcAdaptiveAnalog,
-    
-    
-    kAgcAdaptiveDigital,
-    
-    
-    kAgcFixedDigital
+  int decoded_muted_output;  
 };
 
 
-enum EcModes                   
-{
-    kEcUnchanged = 0,          
-    kEcDefault,                
-    kEcConference,             
-    kEcAec,                    
-    kEcAecm                    
+enum NsModes {
+  kNsUnchanged = 0,   
+  kNsDefault,         
+  kNsConference,      
+  kNsLowSuppression,  
+  kNsModerateSuppression,
+  kNsHighSuppression,
+  kNsVeryHighSuppression,  
 };
 
 
-enum AecmModes                 
-{
-    kAecmQuietEarpieceOrHeadset = 0,
-                               
-    kAecmEarpiece,             
-    kAecmLoudEarpiece,         
-    kAecmSpeakerphone,         
-    kAecmLoudSpeakerphone      
+enum AgcModes {
+  kAgcUnchanged = 0,  
+  kAgcDefault,        
+  
+  
+  kAgcAdaptiveAnalog,
+  
+  
+  kAgcAdaptiveDigital,
+  
+  
+  kAgcFixedDigital
 };
 
 
-typedef struct
-{
-    unsigned short targetLeveldBOv;
-    unsigned short digitalCompressionGaindB;
-    bool           limiterEnable;
-} AgcConfig;                  
-
-enum StereoChannel
-{
-    kStereoLeft = 0,
-    kStereoRight,
-    kStereoBoth
+enum EcModes {
+  kEcUnchanged = 0,  
+  kEcDefault,        
+  kEcConference,     
+  kEcAec,            
+  kEcAecm,           
 };
 
 
-enum AudioLayers
-{
-    kAudioPlatformDefault = 0,
-    kAudioWindowsWave = 1,
-    kAudioWindowsCore = 2,
-    kAudioLinuxAlsa = 3,
-    kAudioLinuxPulse = 4,
-    kAudioSndio = 5
+enum AecmModes {
+  kAecmQuietEarpieceOrHeadset = 0,
+  
+  kAecmEarpiece,         
+  kAecmLoudEarpiece,     
+  kAecmSpeakerphone,     
+  kAecmLoudSpeakerphone  
 };
 
 
-enum NetEqModes             
-{
-    
-    
-    kNetEqDefault = 0,
-    
-    
-    kNetEqStreaming = 1,
-    
-    
-    kNetEqFax = 2,
-    
-    
-    kNetEqOff = 3
+struct AgcConfig {
+  unsigned short targetLeveldBOv;
+  unsigned short digitalCompressionGaindB;
+  bool limiterEnable;
 };
 
-
-enum OnHoldModes            
-{
-    kHoldSendAndPlay = 0,    
-    kHoldSendOnly,           
-    kHoldPlayOnly            
-};
+enum StereoChannel { kStereoLeft = 0, kStereoRight, kStereoBoth };
 
 
-enum AmrMode
-{
-    kRfc3267BwEfficient = 0,
-    kRfc3267OctetAligned = 1,
-    kRfc3267FileStorage = 2
+enum AudioLayers {
+  kAudioPlatformDefault = 0,
+  kAudioWindowsWave = 1,
+  kAudioWindowsCore = 2,
+  kAudioLinuxAlsa = 3,
+  kAudioLinuxPulse = 4
 };
 
 
@@ -520,55 +486,36 @@ enum AmrMode
 
 
 
-enum RawVideoType
-{
-    kVideoI420     = 0,
-    kVideoYV12     = 1,
-    kVideoYUY2     = 2,
-    kVideoUYVY     = 3,
-    kVideoIYUV     = 4,
-    kVideoARGB     = 5,
-    kVideoRGB24    = 6,
-    kVideoRGB565   = 7,
-    kVideoARGB4444 = 8,
-    kVideoARGB1555 = 9,
-    kVideoMJPEG    = 10,
-    kVideoNV12     = 11,
-    kVideoNV21     = 12,
-    kVideoBGRA     = 13,
-    kVideoUnknown  = 99
-};
-
-enum VideoReceiveState
-{
-  kReceiveStateInitial,            
-  kReceiveStateNormal,
-  kReceiveStatePreemptiveNACK,     
-  kReceiveStateWaitingKey,         
-  kReceiveStateDecodingWithErrors, 
-  kReceiveStateNoIncoming,         
+enum RawVideoType {
+  kVideoI420 = 0,
+  kVideoYV12 = 1,
+  kVideoYUY2 = 2,
+  kVideoUYVY = 3,
+  kVideoIYUV = 4,
+  kVideoARGB = 5,
+  kVideoRGB24 = 6,
+  kVideoRGB565 = 7,
+  kVideoARGB4444 = 8,
+  kVideoARGB1555 = 9,
+  kVideoMJPEG = 10,
+  kVideoNV12 = 11,
+  kVideoNV21 = 12,
+  kVideoBGRA = 13,
+  kVideoUnknown = 99
 };
 
 
-enum { kConfigParameterSize = 128};
-enum { kPayloadNameSize = 32};
-enum { kMaxSimulcastStreams = 4};
+enum { kConfigParameterSize = 128 };
+enum { kPayloadNameSize = 32 };
+enum { kMaxSimulcastStreams = 4 };
 enum { kMaxSpatialLayers = 5 };
-enum { kMaxTemporalStreams = 4};
-enum { kRIDSize = 32};
+enum { kMaxTemporalStreams = 4 };
 
-enum VideoCodecComplexity
-{
-    kComplexityNormal = 0,
-    kComplexityHigh    = 1,
-    kComplexityHigher  = 2,
-    kComplexityMax     = 3
-};
-
-enum VideoCodecProfile
-{
-    kProfileBase = 0x00,
-    kProfileMain = 0x01
+enum VideoCodecComplexity {
+  kComplexityNormal = 0,
+  kComplexityHigh = 1,
+  kComplexityHigher = 2,
+  kComplexityMax = 3
 };
 
 enum VP8ResilienceMode {
@@ -582,66 +529,59 @@ enum VP8ResilienceMode {
                      
 };
 
+class TemporalLayersFactory;
 
 struct VideoCodecVP8 {
-  bool                 pictureLossIndicationOn;
-  bool                 feedbackModeOn;
+  bool pictureLossIndicationOn;
+  bool feedbackModeOn;
   VideoCodecComplexity complexity;
-  VP8ResilienceMode    resilience;
-  unsigned char        numberOfTemporalLayers;
-  bool                 denoisingOn;
-  bool                 errorConcealmentOn;
-  bool                 automaticResizeOn;
-  bool                 frameDroppingOn;
-  int                  keyFrameInterval;
-
-  bool operator==(const VideoCodecVP8& other) const {
-    return pictureLossIndicationOn == other.pictureLossIndicationOn &&
-           feedbackModeOn == other.feedbackModeOn &&
-           complexity == other.complexity &&
-           resilience == other.resilience &&
-           numberOfTemporalLayers == other.numberOfTemporalLayers &&
-           denoisingOn == other.denoisingOn &&
-           errorConcealmentOn == other.errorConcealmentOn &&
-           automaticResizeOn == other.automaticResizeOn &&
-           frameDroppingOn == other.frameDroppingOn &&
-           keyFrameInterval == other.keyFrameInterval;
-  }
-
-  bool operator!=(const VideoCodecVP8& other) const {
-    return !(*this == other);
-  }
+  VP8ResilienceMode resilience;
+  unsigned char numberOfTemporalLayers;
+  bool denoisingOn;
+  bool errorConcealmentOn;
+  bool automaticResizeOn;
+  bool frameDroppingOn;
+  int keyFrameInterval;
+  TemporalLayersFactory* tl_factory;
 };
 
 
 struct VideoCodecVP9 {
   VideoCodecComplexity complexity;
-  int                  resilience;
-  unsigned char        numberOfTemporalLayers;
-  bool                 denoisingOn;
-  bool                 frameDroppingOn;
-  int                  keyFrameInterval;
-  bool                 adaptiveQpMode;
-  bool                 automaticResizeOn;
-  unsigned char        numberOfSpatialLayers;
-  bool                 flexibleMode;
+  int resilience;
+  unsigned char numberOfTemporalLayers;
+  bool denoisingOn;
+  bool frameDroppingOn;
+  int keyFrameInterval;
+  bool adaptiveQpMode;
+  bool automaticResizeOn;
+  unsigned char numberOfSpatialLayers;
+  bool flexibleMode;
 };
 
 
+namespace H264 {
+
+enum Profile {
+  kProfileConstrainedBaseline,
+  kProfileBaseline,
+  kProfileMain,
+  kProfileConstrainedHigh,
+  kProfileHigh,
+};
+
+}  
+
+
 struct VideoCodecH264 {
-  VideoCodecProfile profile;
-  uint8_t        profile_byte;
-  uint8_t        constraints;
-  uint8_t        level;
-  uint8_t        packetizationMode; 
-  bool           frameDroppingOn;
-  int            keyFrameInterval;
-  double         scaleDownBy;
+  bool frameDroppingOn;
+  int keyFrameInterval;
   
   const uint8_t* spsData;
-  size_t         spsLen;
+  size_t spsLen;
   const uint8_t* ppsData;
-  size_t         ppsLen;
+  size_t ppsLen;
+  H264::Profile profile;
 };
 
 
@@ -652,47 +592,31 @@ enum VideoCodecType {
   kVideoCodecI420,
   kVideoCodecRED,
   kVideoCodecULPFEC,
+  kVideoCodecFlexfec,
   kVideoCodecGeneric,
   kVideoCodecUnknown
 };
 
+
+rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type);
+rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name);
+
 union VideoCodecUnion {
-  VideoCodecVP8       VP8;
-  VideoCodecVP9       VP9;
-  VideoCodecH264      H264;
+  VideoCodecVP8 VP8;
+  VideoCodecVP9 VP9;
+  VideoCodecH264 H264;
 };
 
 
 
-
 struct SimulcastStream {
-  unsigned short      width;
-  unsigned short      height;
-  unsigned char       numberOfTemporalLayers;
-  unsigned int        maxBitrate;  
-  unsigned int        targetBitrate;  
-  unsigned int        minBitrate;  
-  unsigned int        qpMax; 
-  char                rid[kRIDSize];
-  unsigned int        jsMaxBitrate; 
-  double              jsScaleDownBy; 
-
-  bool operator==(const SimulcastStream& other) const {
-    return width == other.width &&
-           height == other.height &&
-           numberOfTemporalLayers == other.numberOfTemporalLayers &&
-           maxBitrate == other.maxBitrate &&
-           targetBitrate == other.targetBitrate &&
-           minBitrate == other.minBitrate &&
-           qpMax == other.qpMax &&
-           strcmp(rid, other.rid) == 0 &&
-           jsMaxBitrate == other.jsMaxBitrate &&
-           jsScaleDownBy == other.jsScaleDownBy;
-  }
-
-  bool operator!=(const SimulcastStream& other) const {
-    return !(*this == other);
-  }
+  unsigned short width;
+  unsigned short height;
+  unsigned char numberOfTemporalLayers;
+  unsigned int maxBitrate;     
+  unsigned int targetBitrate;  
+  unsigned int minBitrate;     
+  unsigned int qpMax;          
 };
 
 struct SpatialLayer {
@@ -702,78 +626,94 @@ struct SpatialLayer {
   
 };
 
-enum VideoCodecMode {
-  kRealtimeVideo,
-  kScreensharing
-};
+enum VideoCodecMode { kRealtimeVideo, kScreensharing };
 
 
-struct VideoCodec {
-  VideoCodecType      codecType;
-  char                plName[kPayloadNameSize];
-  unsigned char       plType;
+class VideoCodec {
+ public:
+  VideoCodec();
 
-  unsigned short      width;
-  unsigned short      height;
   
-  unsigned char       resolution_divisor;
+  VideoCodecType codecType;
+  char plName[kPayloadNameSize];
+  unsigned char plType;
 
-  unsigned int        startBitrate;  
-  unsigned int        maxBitrate;  
-  unsigned int        minBitrate;  
-  unsigned int        targetBitrate;  
+  unsigned short width;
+  unsigned short height;
 
-  unsigned char       maxFramerate;
+  unsigned int startBitrate;   
+  unsigned int maxBitrate;     
+  unsigned int minBitrate;     
+  unsigned int targetBitrate;  
 
-  VideoCodecUnion     codecSpecific;
+  unsigned char maxFramerate;
 
-  unsigned int        qpMax;
-  unsigned char       numberOfSimulcastStreams;
-  unsigned char       ridId;
-  SimulcastStream     simulcastStream[kMaxSimulcastStreams];
+  unsigned int qpMax;
+  unsigned char numberOfSimulcastStreams;
+  SimulcastStream simulcastStream[kMaxSimulcastStreams];
   SpatialLayer spatialLayers[kMaxSpatialLayers];
 
-  VideoCodecMode      mode;
+  VideoCodecMode mode;
+  bool expect_encode_from_texture;
+
+  bool operator==(const VideoCodec& other) const = delete;
+  bool operator!=(const VideoCodec& other) const = delete;
 
   
   
-  Config*  extra_options;
+  
+  
+  VideoCodecVP8* VP8();
+  const VideoCodecVP8& VP8() const;
+  VideoCodecVP9* VP9();
+  const VideoCodecVP9& VP9() const;
+  VideoCodecH264* H264();
+  const VideoCodecH264& H264() const;
 
-  bool operator==(const VideoCodec& other) const {
-    bool ret = codecType == other.codecType &&
-               (STR_CASE_CMP(plName, other.plName) == 0) &&
-               plType == other.plType &&
-               width == other.width &&
-               height == other.height &&
-               startBitrate == other.startBitrate &&
-               maxBitrate == other.maxBitrate &&
-               minBitrate == other.minBitrate &&
-               targetBitrate == other.targetBitrate &&
-               maxFramerate == other.maxFramerate &&
-               qpMax == other.qpMax &&
-               numberOfSimulcastStreams == other.numberOfSimulcastStreams &&
-               mode == other.mode;
-    if (ret && codecType == kVideoCodecVP8) {
-      ret &= (codecSpecific.VP8 == other.codecSpecific.VP8);
-    }
+ private:
+  
+  
+  VideoCodecUnion codec_specific_;
+};
 
-    for (unsigned char i = 0; i < other.numberOfSimulcastStreams && ret; ++i) {
-      ret &= (simulcastStream[i] == other.simulcastStream[i]);
-    }
-    return ret;
+class BitrateAllocation {
+ public:
+  static const uint32_t kMaxBitrateBps;
+  BitrateAllocation();
+
+  bool SetBitrate(size_t spatial_index,
+                  size_t temporal_index,
+                  uint32_t bitrate_bps);
+
+  uint32_t GetBitrate(size_t spatial_index, size_t temporal_index) const;
+
+  
+  uint32_t GetSpatialLayerSum(size_t spatial_index) const;
+
+  uint32_t get_sum_bps() const { return sum_; }  
+  uint32_t get_sum_kbps() const { return (sum_ + 500) / 1000; }
+
+  inline bool operator==(const BitrateAllocation& other) const {
+    return memcmp(bitrates_, other.bitrates_, sizeof(bitrates_)) == 0;
   }
-
-  bool operator!=(const VideoCodec& other) const {
+  inline bool operator!=(const BitrateAllocation& other) const {
     return !(*this == other);
   }
+
+ private:
+  uint32_t sum_;
+  uint32_t bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
 };
+
+
+
 
 
 
 
 struct OverUseDetectorOptions {
   OverUseDetectorOptions()
-      : initial_slope(8.0/512.0),
+      : initial_slope(8.0 / 512.0),
         initial_offset(0),
         initial_e(),
         initial_process_noise(),
@@ -783,7 +723,7 @@ struct OverUseDetectorOptions {
     initial_e[1][1] = 1e-1;
     initial_e[0][1] = initial_e[1][0] = 0;
     initial_process_noise[0] = 1e-13;
-    initial_process_noise[1] = 1e-2;
+    initial_process_noise[1] = 1e-3;
   }
   double initial_slope;
   double initial_offset;
@@ -793,33 +733,12 @@ struct OverUseDetectorOptions {
   double initial_var_noise;
 };
 
-enum CPULoadState {
-  kLoadRelaxed = 0,
-  kLoadNormal,
-  kLoadStressed,
-  kLoadLast,
-};
-
-class CPULoadStateObserver {
-public:
-  virtual void onLoadStateChanged(CPULoadState aNewState) = 0;
-  virtual ~CPULoadStateObserver() {};
-};
-
-class CPULoadStateCallbackInvoker {
-public:
-    virtual void AddObserver(CPULoadStateObserver* aObserver) = 0;
-    virtual void RemoveObserver(CPULoadStateObserver* aObserver) = 0;
-    virtual ~CPULoadStateCallbackInvoker() {};
-};
-
 
 
 struct PacketTime {
   PacketTime() : timestamp(-1), not_before(-1) {}
   PacketTime(int64_t timestamp, int64_t not_before)
-      : timestamp(timestamp), not_before(not_before) {
-  }
+      : timestamp(timestamp), not_before(not_before) {}
 
   int64_t timestamp;   
   int64_t not_before;  
@@ -829,10 +748,26 @@ struct PacketTime {
                        
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct PlayoutDelay {
+  int min_ms;
+  int max_ms;
+};
+
 struct RTPHeaderExtension {
   RTPHeaderExtension();
-  RTPHeaderExtension(const RTPHeaderExtension& rhs);
-  RTPHeaderExtension& operator=(const RTPHeaderExtension& rhs);
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
@@ -851,11 +786,9 @@ struct RTPHeaderExtension {
   
   
   bool hasVideoRotation;
-  uint8_t videoRotation;
+  VideoRotation videoRotation;
 
-  
-  bool hasRID;
-  rtc::scoped_ptr<char[]> rid; 
+  PlayoutDelay playout_delay = {-1, -1};
 };
 
 struct RTPHeader {
@@ -876,16 +809,24 @@ struct RTPHeader {
 
 struct RtpPacketCounter {
   RtpPacketCounter()
-    : header_bytes(0),
-      payload_bytes(0),
-      padding_bytes(0),
-      packets(0) {}
+      : header_bytes(0), payload_bytes(0), padding_bytes(0), packets(0) {}
 
   void Add(const RtpPacketCounter& other) {
     header_bytes += other.header_bytes;
     payload_bytes += other.payload_bytes;
     padding_bytes += other.padding_bytes;
     packets += other.packets;
+  }
+
+  void Subtract(const RtpPacketCounter& other) {
+    RTC_DCHECK_GE(header_bytes, other.header_bytes);
+    header_bytes -= other.header_bytes;
+    RTC_DCHECK_GE(payload_bytes, other.payload_bytes);
+    payload_bytes -= other.payload_bytes;
+    RTC_DCHECK_GE(padding_bytes, other.padding_bytes);
+    padding_bytes -= other.padding_bytes;
+    RTC_DCHECK_GE(packets, other.packets);
+    packets -= other.packets;
   }
 
   void AddPacket(size_t packet_length, const RTPHeader& header) {
@@ -915,8 +856,20 @@ struct StreamDataCounters {
     retransmitted.Add(other.retransmitted);
     fec.Add(other.fec);
     if (other.first_packet_time_ms != -1 &&
-       (other.first_packet_time_ms < first_packet_time_ms ||
-        first_packet_time_ms == -1)) {
+        (other.first_packet_time_ms < first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
+      
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  void Subtract(const StreamDataCounters& other) {
+    transmitted.Subtract(other.transmitted);
+    retransmitted.Subtract(other.retransmitted);
+    fec.Subtract(other.fec);
+    if (other.first_packet_time_ms != -1 &&
+        (other.first_packet_time_ms > first_packet_time_ms ||
+         first_packet_time_ms == -1)) {
       
       first_packet_time_ms = other.first_packet_time_ms;
     }
@@ -934,10 +887,10 @@ struct StreamDataCounters {
            fec.payload_bytes;
   }
 
-  int64_t first_packet_time_ms;  
-  RtpPacketCounter transmitted;  
+  int64_t first_packet_time_ms;    
+  RtpPacketCounter transmitted;    
   RtpPacketCounter retransmitted;  
-  RtpPacketCounter fec;  
+  RtpPacketCounter fec;            
 };
 
 
@@ -952,6 +905,11 @@ class StreamDataCountersCallback {
 
 
 enum class RtcpMode { kOff, kCompound, kReducedSize };
+
+enum NetworkState {
+  kNetworkUp,
+  kNetworkDown,
+};
 
 }  
 

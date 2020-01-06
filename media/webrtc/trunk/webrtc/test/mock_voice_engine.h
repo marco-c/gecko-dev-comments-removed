@@ -11,7 +11,12 @@
 #ifndef WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
 #define WEBRTC_AUDIO_MOCK_VOICE_ENGINE_H_
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include <memory>
+
+#include "webrtc/modules/audio_device/include/mock_audio_device.h"
+#include "webrtc/modules/audio_device/include/mock_audio_transport.h"
+#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
@@ -22,19 +27,38 @@ namespace test {
 
 class MockVoiceEngine : public VoiceEngineImpl {
  public:
-  MockVoiceEngine() : VoiceEngineImpl(new Config(), true) {
+  
+  
+  
+  
+  MockVoiceEngine(
+      rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr)
+      : decoder_factory_(decoder_factory) {
     
     
     ++_ref_count;
     
     
+    
+    
+    
     ON_CALL(*this, ChannelProxyFactory(testing::_))
-        .WillByDefault(
-            testing::Invoke([](int channel_id) {
-              return new testing::NiceMock<MockVoEChannelProxy>();
-            }));
+        .WillByDefault(testing::Invoke([this](int channel_id) {
+          auto* proxy =
+              new testing::NiceMock<webrtc::test::MockVoEChannelProxy>();
+          EXPECT_CALL(*proxy, GetAudioDecoderFactory())
+              .WillRepeatedly(testing::ReturnRef(decoder_factory_));
+          return proxy;
+        }));
+
+    ON_CALL(*this, audio_device_module())
+        .WillByDefault(testing::Return(&mock_audio_device_));
+    ON_CALL(*this, audio_processing())
+        .WillByDefault(testing::Return(&mock_audio_processing_));
+    ON_CALL(*this, audio_transport())
+        .WillByDefault(testing::Return(&mock_audio_transport_));
   }
-  ~MockVoiceEngine() override {
+  virtual ~MockVoiceEngine()  {
     
     
     --_ref_count;
@@ -43,8 +67,9 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(ChannelProxyFactory, voe::ChannelProxy*(int channel_id));
 
   
-  rtc::scoped_ptr<voe::ChannelProxy> GetChannelProxy(int channel_id) override {
-    return rtc::scoped_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
+  virtual std::unique_ptr<voe::ChannelProxy> GetChannelProxy(
+      int channel_id)  {
+    return std::unique_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
   }
 
   
@@ -64,15 +89,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(GetAecmMode, int(AecmModes& mode, bool& enabledCNG));
   MOCK_METHOD1(EnableHighPassFilter, int(bool enable));
   MOCK_METHOD0(IsHighPassFilterEnabled, bool());
-  MOCK_METHOD3(SetRxNsStatus, int(int channel, bool enable, NsModes mode));
-  MOCK_METHOD3(GetRxNsStatus, int(int channel, bool& enabled, NsModes& mode));
-  MOCK_METHOD3(SetRxAgcStatus, int(int channel, bool enable, AgcModes mode));
-  MOCK_METHOD3(GetRxAgcStatus, int(int channel, bool& enabled, AgcModes& mode));
-  MOCK_METHOD2(SetRxAgcConfig, int(int channel, AgcConfig config));
-  MOCK_METHOD2(GetRxAgcConfig, int(int channel, AgcConfig& config));
-  MOCK_METHOD2(RegisterRxVadObserver,
-               int(int channel, VoERxVadCallback& observer));
-  MOCK_METHOD1(DeRegisterRxVadObserver, int(int channel));
   MOCK_METHOD1(VoiceActivityIndicator, int(int channel));
   MOCK_METHOD1(SetEcMetricsStatus, int(bool enable));
   MOCK_METHOD1(GetEcMetricsStatus, int(bool& enabled));
@@ -99,13 +115,16 @@ class MockVoiceEngine : public VoiceEngineImpl {
   
   MOCK_METHOD1(RegisterVoiceEngineObserver, int(VoiceEngineObserver& observer));
   MOCK_METHOD0(DeRegisterVoiceEngineObserver, int());
-  MOCK_METHOD2(Init,
-               int(AudioDeviceModule* external_adm,
-                   AudioProcessing* audioproc));
+  MOCK_METHOD3(
+      Init,
+      int(AudioDeviceModule* external_adm,
+          AudioProcessing* audioproc,
+          const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
   MOCK_METHOD0(audio_processing, AudioProcessing*());
+  MOCK_METHOD0(audio_device_module, AudioDeviceModule*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());
-  MOCK_METHOD1(CreateChannel, int(const Config& config));
+  MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
   MOCK_METHOD1(DeleteChannel, int(int channel));
   MOCK_METHOD1(StartReceive, int(int channel));
   MOCK_METHOD1(StopReceive, int(int channel));
@@ -139,23 +158,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
       int(int channel, bool& enabled, VadModes& mode, bool& disabledDTX));
   MOCK_METHOD2(SetOpusMaxPlaybackRate, int(int channel, int frequency_hz));
   MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
-  MOCK_METHOD0(GetEventLog, RtcEventLog*());
-
-  
-  MOCK_METHOD5(SendTelephoneEvent,
-               int(int channel,
-                   int eventCode,
-                   bool outOfBand,
-                   int lengthMs,
-                   int attenuationDb));
-  MOCK_METHOD2(SetSendTelephoneEventPayloadType,
-               int(int channel, unsigned char type));
-  MOCK_METHOD2(GetSendTelephoneEventPayloadType,
-               int(int channel, unsigned char& type));
-  MOCK_METHOD2(SetDtmfFeedbackStatus, int(bool enable, bool directFeedback));
-  MOCK_METHOD2(GetDtmfFeedbackStatus, int(bool& enabled, bool& directFeedback));
-  MOCK_METHOD3(PlayDtmfTone,
-               int(int eventCode, int lengthMs, int attenuationDb));
 
   
   MOCK_METHOD3(RegisterExternalMediaProcessing,
@@ -330,6 +332,19 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(GetChannelOutputVolumeScaling, int(int channel, float& scaling));
   MOCK_METHOD3(SetOutputVolumePan, int(int channel, float left, float right));
   MOCK_METHOD3(GetOutputVolumePan, int(int channel, float& left, float& right));
+
+ private:
+  
+  
+  
+  
+  
+  
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+
+  MockAudioDeviceModule mock_audio_device_;
+  MockAudioProcessing mock_audio_processing_;
+  MockAudioTransport mock_audio_transport_;
 };
 }  
 }  

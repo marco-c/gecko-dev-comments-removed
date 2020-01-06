@@ -27,8 +27,11 @@ class OveruseEstimator {
   
   
   
-  void Update(int64_t t_delta, double ts_delta, int size_delta,
-              BandwidthUsage current_hypothesis);
+  void Update(int64_t t_delta,
+              double ts_delta,
+              int size_delta,
+              BandwidthUsage current_hypothesis,
+              int64_t now_ms);
 
   
   double var_noise() const {

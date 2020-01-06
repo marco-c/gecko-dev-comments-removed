@@ -12,8 +12,10 @@
 #define WEBRTC_BASE_ARRAY_VIEW_H_
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/type_traits.h"
 
 namespace rtc {
+
 
 
 
@@ -71,8 +73,12 @@ namespace rtc {
 template <typename T>
 class ArrayView final {
  public:
+  using value_type = T;
+  using const_iterator = const T*;
+
   
   ArrayView() : ArrayView(static_cast<T*>(nullptr), 0) {}
+  ArrayView(std::nullptr_t) : ArrayView() {}
 
   
   template <typename U>
@@ -93,7 +99,9 @@ class ArrayView final {
   
   
   
-  template <typename U>
+  template <
+      typename U,
+      typename std::enable_if<HasDataAndSize<U, T>::value>::type* = nullptr>
   ArrayView(U& u) : ArrayView(u.data(), u.size()) {}
 
   
@@ -112,6 +120,13 @@ class ArrayView final {
   const T* cbegin() const { return data_; }
   const T* cend() const { return data_ + size_; }
 
+  ArrayView subview(size_t offset, size_t size) const {
+    if (offset >= size_)
+      return ArrayView();
+    return ArrayView(data_ + offset, std::min(size, size_ - offset));
+  }
+  ArrayView subview(size_t offset) const { return subview(offset, size_); }
+
   
   
   friend bool operator==(const ArrayView& a, const ArrayView& b) {
@@ -127,6 +142,11 @@ class ArrayView final {
   T* data_;
   size_t size_;
 };
+
+template <typename T>
+inline ArrayView<T> MakeArrayView(T* data, size_t size) {
+  return ArrayView<T>(data, size);
+}
 
 }  
 

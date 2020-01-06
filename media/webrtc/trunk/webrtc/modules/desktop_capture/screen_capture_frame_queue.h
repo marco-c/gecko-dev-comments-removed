@@ -11,15 +11,16 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURE_FRAME_QUEUE_H_
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/typedefs.h"
+#include <memory>
+
+#include "webrtc/base/constructormagic.h"
+
+
+#include "webrtc/modules/desktop_capture/desktop_frame.h"  
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"  
+
 
 namespace webrtc {
-class DesktopFrame;
-}  
-
-namespace webrtc {
 
 
 
@@ -34,28 +35,38 @@ namespace webrtc {
 
 
 
+template <typename FrameType>
 class ScreenCaptureFrameQueue {
  public:
-  ScreenCaptureFrameQueue();
-  ~ScreenCaptureFrameQueue();
+  ScreenCaptureFrameQueue() : current_(0) {}
+  ~ScreenCaptureFrameQueue() = default;
 
   
   
-  void MoveToNextFrame();
+  void MoveToNextFrame() {
+    current_ = (current_ + 1) % kQueueLength;
+  }
 
   
   
-  void ReplaceCurrentFrame(DesktopFrame* frame);
+  void ReplaceCurrentFrame(std::unique_ptr<FrameType> frame) {
+    frames_[current_] = std::move(frame);
+  }
 
   
   
-  void Reset();
+  void Reset() {
+    for (int i = 0; i < kQueueLength; i++) {
+      frames_[i].reset();
+    }
+    current_ = 0;
+  }
 
-  SharedDesktopFrame* current_frame() const {
+  FrameType* current_frame() const {
     return frames_[current_].get();
   }
 
-  SharedDesktopFrame* previous_frame() const {
+  FrameType* previous_frame() const {
     return frames_[(current_ + kQueueLength - 1) % kQueueLength].get();
   }
 
@@ -64,7 +75,7 @@ class ScreenCaptureFrameQueue {
   int current_;
 
   static const int kQueueLength = 2;
-  rtc::scoped_ptr<SharedDesktopFrame> frames_[kQueueLength];
+  std::unique_ptr<FrameType> frames_[kQueueLength];
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCaptureFrameQueue);
 };

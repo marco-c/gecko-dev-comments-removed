@@ -13,13 +13,14 @@
 
 #include <stdio.h>
 
-#include "webrtc/base/basictypes.h"
+#include <memory>
+
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/messagequeue.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 
 namespace rtc {
@@ -334,7 +335,7 @@ class StreamTap : public StreamAdapterInterface {
                      int* error) override;
 
  private:
-  scoped_ptr<StreamInterface> tap_;
+  std::unique_ptr<StreamInterface> tap_;
   StreamResult tap_result_;
   int tap_error_;
   RTC_DISALLOW_COPY_AND_ASSIGN(StreamTap);
@@ -542,20 +543,29 @@ class FifoBuffer : public StreamInterface {
   
   
   StreamResult ReadOffsetLocked(void* buffer, size_t bytes, size_t offset,
-                                size_t* bytes_read);
+                                size_t* bytes_read)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   
   
   StreamResult WriteOffsetLocked(const void* buffer, size_t bytes,
-                                 size_t offset, size_t* bytes_written);
+                                 size_t offset, size_t* bytes_written)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  StreamState state_;  
-  scoped_ptr<char[]> buffer_;  
-  size_t buffer_length_;  
-  size_t data_length_;  
-  size_t read_position_;  
-  Thread* owner_;  
-  mutable CriticalSection crit_;  
+  
+  StreamState state_ GUARDED_BY(crit_);
+  
+  std::unique_ptr<char[]> buffer_ GUARDED_BY(crit_);
+  
+  size_t buffer_length_ GUARDED_BY(crit_);
+  
+  size_t data_length_ GUARDED_BY(crit_);
+  
+  size_t read_position_ GUARDED_BY(crit_);
+  
+  Thread* owner_;
+  
+  CriticalSection crit_;
   RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 

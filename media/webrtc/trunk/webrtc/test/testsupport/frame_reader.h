@@ -15,9 +15,11 @@
 
 #include <string>
 
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class I420Buffer;
 namespace test {
 
 
@@ -32,9 +34,7 @@ class FrameReader {
 
   
   
-  
-  
-  virtual bool ReadFrame(uint8_t* source_buffer) = 0;
+  virtual rtc::scoped_refptr<I420Buffer> ReadFrame() = 0;
 
   
   
@@ -52,11 +52,10 @@ class FrameReaderImpl : public FrameReader {
   
   
   
-  
-  FrameReaderImpl(std::string input_filename, size_t frame_length_in_bytes);
+  FrameReaderImpl(std::string input_filename, int width, int height);
   ~FrameReaderImpl() override;
   bool Init() override;
-  bool ReadFrame(uint8_t* source_buffer) override;
+  rtc::scoped_refptr<I420Buffer> ReadFrame() override;
   void Close() override;
   size_t FrameLength() override;
   int NumberOfFrames() override;
@@ -64,6 +63,8 @@ class FrameReaderImpl : public FrameReader {
  private:
   std::string input_filename_;
   size_t frame_length_in_bytes_;
+  int width_;
+  int height_;
   int number_of_frames_;
   FILE* input_file_;
 };

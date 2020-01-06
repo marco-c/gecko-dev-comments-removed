@@ -10,14 +10,16 @@
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 
+#include <string>
+
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
@@ -48,9 +50,8 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
     uint16_t min_port,
     uint16_t max_port) {
   
-  rtc::AsyncSocket* socket =
-      socket_factory()->CreateAsyncSocket(
-          address.family(), SOCK_DGRAM);
+  AsyncSocket* socket =
+      socket_factory()->CreateAsyncSocket(address.family(), SOCK_DGRAM);
   if (!socket) {
     return NULL;
   }
@@ -60,7 +61,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
     delete socket;
     return NULL;
   }
-  return new rtc::AsyncUDPSocket(socket);
+  return new AsyncUDPSocket(socket);
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
@@ -74,9 +75,8 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
     return NULL;
   }
 
-  rtc::AsyncSocket* socket =
-      socket_factory()->CreateAsyncSocket(local_address.family(),
-                                          SOCK_STREAM);
+  AsyncSocket* socket =
+      socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
     return NULL;
   }
@@ -89,26 +89,25 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
   }
 
   
-  if (opts & PacketSocketFactory::OPT_SSLTCP) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
-    socket = new rtc::AsyncSSLSocket(socket);
+  if (opts & PacketSocketFactory::OPT_TLS_FAKE) {
+    RTC_DCHECK(!(opts & PacketSocketFactory::OPT_TLS));
+    socket = new AsyncSSLSocket(socket);
   }
 
   
   
-  socket->SetOption(rtc::Socket::OPT_NODELAY, 1);
+  socket->SetOption(Socket::OPT_NODELAY, 1);
 
   if (opts & PacketSocketFactory::OPT_STUN)
     return new cricket::AsyncStunTCPSocket(socket, true);
 
-  return new rtc::AsyncTCPSocket(socket, true);
+  return new AsyncTCPSocket(socket, true);
 }
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     const SocketAddress& local_address, const SocketAddress& remote_address,
     const ProxyInfo& proxy_info, const std::string& user_agent, int opts) {
-
-  rtc::AsyncSocket* socket =
+  AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
     return NULL;
@@ -122,22 +121,31 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   }
 
   
-  if (proxy_info.type == rtc::PROXY_SOCKS5) {
-    socket = new rtc::AsyncSocksProxySocket(
+  if (proxy_info.type == PROXY_SOCKS5) {
+    socket = new AsyncSocksProxySocket(
         socket, proxy_info.address, proxy_info.username, proxy_info.password);
-  } else if (proxy_info.type == rtc::PROXY_HTTPS) {
-    socket = new rtc::AsyncHttpsProxySocket(
-        socket, user_agent, proxy_info.address,
-        proxy_info.username, proxy_info.password);
+  } else if (proxy_info.type == PROXY_HTTPS) {
+    socket =
+        new AsyncHttpsProxySocket(socket, user_agent, proxy_info.address,
+                                  proxy_info.username, proxy_info.password);
   }
 
   
-  if (opts & PacketSocketFactory::OPT_TLS) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_SSLTCP));
+  int tlsOpts =
+      opts & (PacketSocketFactory::OPT_TLS | PacketSocketFactory::OPT_TLS_FAKE |
+              PacketSocketFactory::OPT_TLS_INSECURE);
+  RTC_DCHECK((tlsOpts & (tlsOpts - 1)) == 0);
 
-    rtc::SSLAdapter* ssl_adapter = rtc::SSLAdapter::Create(socket);
+  if ((tlsOpts & PacketSocketFactory::OPT_TLS) ||
+      (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE)) {
+    
+    SSLAdapter* ssl_adapter = SSLAdapter::Create(socket);
     if (!ssl_adapter) {
       return NULL;
+    }
+
+    if (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE) {
+      ssl_adapter->set_ignore_bad_cert(true);
     }
 
     socket = ssl_adapter;
@@ -147,10 +155,9 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
       return NULL;
     }
 
-  
-  } else if (opts & PacketSocketFactory::OPT_SSLTCP) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
-    socket = new rtc::AsyncSSLSocket(socket);
+  } else if (tlsOpts & PacketSocketFactory::OPT_TLS_FAKE) {
+    
+    socket = new AsyncSSLSocket(socket);
   }
 
   if (socket->Connect(remote_address) < 0) {
@@ -165,18 +172,18 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   if (opts & PacketSocketFactory::OPT_STUN) {
     tcp_socket = new cricket::AsyncStunTCPSocket(socket, false);
   } else {
-    tcp_socket = new rtc::AsyncTCPSocket(socket, false);
+    tcp_socket = new AsyncTCPSocket(socket, false);
   }
 
   
   
-  tcp_socket->SetOption(rtc::Socket::OPT_NODELAY, 1);
+  tcp_socket->SetOption(Socket::OPT_NODELAY, 1);
 
   return tcp_socket;
 }
 
 AsyncResolverInterface* BasicPacketSocketFactory::CreateAsyncResolver() {
-  return new rtc::AsyncResolver();
+  return new AsyncResolver();
 }
 
 int BasicPacketSocketFactory::BindSocket(AsyncSocket* socket,
@@ -190,8 +197,7 @@ int BasicPacketSocketFactory::BindSocket(AsyncSocket* socket,
   } else {
     
     for (int port = min_port; ret < 0 && port <= max_port; ++port) {
-      ret = socket->Bind(rtc::SocketAddress(local_address.ipaddr(),
-                                                  port));
+      ret = socket->Bind(SocketAddress(local_address.ipaddr(), port));
     }
   }
   return ret;
@@ -199,7 +205,7 @@ int BasicPacketSocketFactory::BindSocket(AsyncSocket* socket,
 
 SocketFactory* BasicPacketSocketFactory::socket_factory() {
   if (thread_) {
-    ASSERT(thread_ == Thread::Current());
+    RTC_DCHECK(thread_ == Thread::Current());
     return thread_->socketserver();
   } else {
     return socket_factory_;

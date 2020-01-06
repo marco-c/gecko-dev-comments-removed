@@ -16,6 +16,8 @@
 
 
 
+#include "cb_construct.h"
+
 #include "defines.h"
 #include "gain_dequant.h"
 #include "get_cd_vec.h"
@@ -24,14 +26,13 @@
 
 
 
-void WebRtcIlbcfix_CbConstruct(
-    int16_t *decvector,  
-    int16_t *index,   
-    int16_t *gain_index,  
-    int16_t *mem,   
-    size_t lMem,   
-    size_t veclen   
-                               ){
+bool WebRtcIlbcfix_CbConstruct(
+    int16_t* decvector,        
+    const int16_t* index,      
+    const int16_t* gain_index, 
+    int16_t* mem,              
+    size_t lMem,               
+    size_t veclen) {           
   size_t j;
   int16_t gain[CB_NSTAGES];
   
@@ -50,9 +51,12 @@ void WebRtcIlbcfix_CbConstruct(
   
 
   
-  WebRtcIlbcfix_GetCbVec(cbvec0, mem, (size_t)index[0], lMem, veclen);
-  WebRtcIlbcfix_GetCbVec(cbvec1, mem, (size_t)index[1], lMem, veclen);
-  WebRtcIlbcfix_GetCbVec(cbvec2, mem, (size_t)index[2], lMem, veclen);
+  if (!WebRtcIlbcfix_GetCbVec(cbvec0, mem, (size_t)index[0], lMem, veclen))
+    return false;  
+  if (!WebRtcIlbcfix_GetCbVec(cbvec1, mem, (size_t)index[1], lMem, veclen))
+    return false;  
+  if (!WebRtcIlbcfix_GetCbVec(cbvec2, mem, (size_t)index[2], lMem, veclen))
+    return false;  
 
   gainPtr = &gain[0];
   for (j=0;j<veclen;j++) {
@@ -63,5 +67,5 @@ void WebRtcIlbcfix_CbConstruct(
     decvector[j] = (int16_t)((a32 + 8192) >> 14);
   }
 
-  return;
+  return true;  
 }

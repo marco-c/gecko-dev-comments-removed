@@ -32,7 +32,7 @@ class Module {
 
   
   
-  virtual int32_t Process() = 0;
+  virtual void Process() = 0;
 
   
   

@@ -21,9 +21,11 @@ class SSLIdentity;
 namespace cricket {
 
 struct TransportOptions {
-  TransportOptions() : ice_restart(false), prefer_passive_role(false) {}
-  bool ice_restart;
-  bool prefer_passive_role;
+  bool ice_restart = false;
+  bool prefer_passive_role = false;
+  
+  
+  bool enable_ice_renomination = false;
 };
 
 

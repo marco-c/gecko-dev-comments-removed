@@ -11,11 +11,15 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_INCLUDE_AUDIO_CODING_MODULE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "webrtc/base/deprecation.h"
+#include "webrtc/base/function_view.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module.h"
@@ -61,15 +65,14 @@ class AudioCodingModule {
 
  public:
   struct Config {
-    Config() : id(0), neteq_config(), clock(Clock::GetRealTimeClock()) {
-      
-      
-      neteq_config.enable_post_decode_vad = true;
-    }
+    Config();
+    Config(const Config&);
+    ~Config();
 
     int id;
     NetEq::Config neteq_config;
     Clock* clock;
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
 
   
@@ -212,6 +215,26 @@ class AudioCodingModule {
   
   
   
+  virtual void ModifyEncoder(
+      rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
+
+  
+  
+  virtual void QueryEncoder(
+      rtc::FunctionView<void(AudioEncoder const*)> query) = 0;
+
+  
+  void SetEncoder(std::unique_ptr<AudioEncoder> new_encoder) {
+    ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+      *encoder = std::move(new_encoder);
+    });
+  }
+
+  
+  
+  
+  
+  
   
   
   virtual rtc::Optional<CodecInst> SendCodec() const = 0;
@@ -226,6 +249,9 @@ class AudioCodingModule {
   
   virtual int32_t SendFrequency() const = 0;
 
+  
+  
+  
   
   
   
@@ -335,6 +361,8 @@ class AudioCodingModule {
   
   virtual bool CodecFEC() const = 0;
 
+  
+  
   
   
   
@@ -458,6 +486,11 @@ class AudioCodingModule {
 
   
   
+  virtual bool RegisterReceiveCodec(int rtp_payload_type,
+                                    const SdpAudioFormat& audio_format) = 0;
+
+  
+  
   
   
   
@@ -471,6 +504,13 @@ class AudioCodingModule {
   
   
   virtual int RegisterReceiveCodec(const CodecInst& receive_codec) = 0;
+
+  
+  
+  
+  virtual int RegisterReceiveCodec(
+      const CodecInst& receive_codec,
+      rtc::FunctionView<std::unique_ptr<AudioDecoder>()> isac_factory) = 0;
 
   
   
@@ -511,6 +551,17 @@ class AudioCodingModule {
   
   
   virtual int32_t ReceiveCodec(CodecInst* curr_receive_codec) const = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual rtc::Optional<SdpAudioFormat> ReceiveFormat() const = 0;
 
   
   
@@ -606,9 +657,25 @@ class AudioCodingModule {
   
   
   
+  RTC_DEPRECATED virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
+
   
   
-  virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
+  
+  
+  
+  
+  
+  virtual rtc::Optional<uint32_t> PlayoutTimestamp() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual int FilteredCurrentDelayMs() const = 0;
 
   
   
@@ -630,8 +697,19 @@ class AudioCodingModule {
   
   
   
+  
+  
   virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
-                                        AudioFrame* audio_frame) = 0;
+                                  AudioFrame* audio_frame,
+                                  bool* muted) = 0;
+
+  
+  
+  
+  
+  
+  virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
+                                  AudioFrame* audio_frame) = 0;
 
   
   

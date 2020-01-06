@@ -11,11 +11,10 @@
 #ifndef WEBRTC_BASE_PHYSICALSOCKETSERVER_H__
 #define WEBRTC_BASE_PHYSICALSOCKETSERVER_H__
 
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/asyncfile.h"
 #include "webrtc/base/nethelpers.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/criticalsection.h"
 
@@ -69,7 +68,7 @@ class PhysicalSocketServer : public SocketServer {
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   
-  AsyncSocket* WrapSocket(SOCKET s);
+  virtual AsyncSocket* WrapSocket(SOCKET s);
 
   
   bool Wait(int cms, bool process_io) override;
@@ -79,8 +78,6 @@ class PhysicalSocketServer : public SocketServer {
   void Remove(Dispatcher* dispatcher);
 
 #if defined(WEBRTC_POSIX)
-  AsyncFile* CreateFile(int fd);
-
   
   
   
@@ -104,7 +101,7 @@ class PhysicalSocketServer : public SocketServer {
 #if defined(WEBRTC_POSIX)
   static bool InstallSignal(int signum, void (*handler)(int));
 
-  scoped_ptr<PosixSignalDispatcher> signal_dispatcher_;
+  std::unique_ptr<PosixSignalDispatcher> signal_dispatcher_;
 #endif
   DispatcherList dispatchers_;
   IteratorList iterators_;
@@ -143,8 +140,11 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
              size_t length,
              const SocketAddress& addr) override;
 
-  int Recv(void* buffer, size_t length) override;
-  int RecvFrom(void* buffer, size_t length, SocketAddress* out_addr) override;
+  int Recv(void* buffer, size_t length, int64_t* timestamp) override;
+  int RecvFrom(void* buffer,
+               size_t length,
+               SocketAddress* out_addr,
+               int64_t* timestamp) override;
 
   int Listen(int backlog) override;
   AsyncSocket* Accept(SocketAddress* out_addr) override;
@@ -161,6 +161,13 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   
   virtual SOCKET DoAccept(SOCKET socket, sockaddr* addr, socklen_t* addrlen);
 
+  
+  virtual int DoSend(SOCKET socket, const char* buf, int len, int flags);
+
+  
+  virtual int DoSendTo(SOCKET socket, const char* buf, int len, int flags,
+                       const struct sockaddr* dest_addr, socklen_t addrlen);
+
   void OnResolveResult(AsyncResolverInterface* resolver);
 
   void UpdateLastError();
@@ -172,7 +179,7 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   SOCKET s_;
   uint8_t enabled_events_;
   bool udp_;
-  mutable CriticalSection crit_;
+  CriticalSection crit_;
   int error_ GUARDED_BY(crit_);
   ConnState state_;
   AsyncResolver* resolver_;

@@ -18,6 +18,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
+class RtpPacketToSend;
 
 class RtpPacketizer {
  public:
@@ -37,11 +38,7 @@ class RtpPacketizer {
   
   
   
-  
-  
-  virtual bool NextPacket(uint8_t* buffer,
-                          size_t* bytes_to_send,
-                          bool* last_packet) = 0;
+  virtual bool NextPacket(RtpPacketToSend* packet, bool* last_packet) = 0;
 
   virtual ProtectionType GetProtectionType() = 0;
 
@@ -49,6 +46,10 @@ class RtpPacketizer {
 
   virtual std::string ToString() = 0;
 };
+
+
+
+
 
 class RtpDepacketizer {
  public:

@@ -12,18 +12,21 @@
 #define WEBRTC_MODULES_PACING_PACED_SENDER_H_
 
 #include <list>
+#include <memory>
 #include <set>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class AlrDetector;
 class BitrateProber;
 class Clock;
 class CriticalSectionWrapper;
+class ProbeClusterCreatedObserver;
 
 namespace paced_sender {
 class IntervalBudget;
@@ -33,7 +36,7 @@ class PacketQueue;
 
 class PacedSender : public Module, public RtpPacketSender {
  public:
-  class Callback {
+  class PacketSender {
    public:
     
     
@@ -42,13 +45,14 @@ class PacedSender : public Module, public RtpPacketSender {
     virtual bool TimeToSendPacket(uint32_t ssrc,
                                   uint16_t sequence_number,
                                   int64_t capture_time_ms,
-                                  bool retransmission) = 0;
+                                  bool retransmission,
+                                  int probe_cluster_id) = 0;
     
     
-    virtual size_t TimeToSendPadding(size_t bytes) = 0;
+    virtual size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) = 0;
 
    protected:
-    virtual ~Callback() {}
+    virtual ~PacketSender() {}
   };
 
   
@@ -56,8 +60,6 @@ class PacedSender : public Module, public RtpPacketSender {
   
   
   static const int64_t kMaxQueueLengthMs;
-  
-  static const int kDefaultInitialPaceKbps = 2000;
   
   
   
@@ -67,13 +69,11 @@ class PacedSender : public Module, public RtpPacketSender {
 
   static const size_t kMinProbePacketSize = 200;
 
-  PacedSender(Clock* clock,
-              Callback* callback,
-              int bitrate_kbps,
-              int max_bitrate_kbps,
-              int min_bitrate_kbps);
+  PacedSender(Clock* clock, PacketSender* packet_sender);
 
   virtual ~PacedSender();
+
+  virtual void CreateProbeCluster(int bitrate_bps);
 
   
   void Pause();
@@ -91,9 +91,17 @@ class PacedSender : public Module, public RtpPacketSender {
   
   
   
-  void UpdateBitrate(int bitrate_kbps,
-                     int max_bitrate_kbps,
-                     int min_bitrate_kbps);
+  virtual void SetEstimatedBitrate(uint32_t bitrate_bps);
+
+  
+  
+  
+  
+  
+  
+  
+  void SetSendBitrateLimits(int min_send_bitrate_bps,
+                            int max_padding_bitrate_bps);
 
   
   
@@ -115,6 +123,14 @@ class PacedSender : public Module, public RtpPacketSender {
 
   
   
+  
+  
+  
+  
+  virtual rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
+
+  
+  
   virtual int64_t AverageQueueTimeMs();
 
   
@@ -122,42 +138,47 @@ class PacedSender : public Module, public RtpPacketSender {
   int64_t TimeUntilNextProcess() override;
 
   
-  int32_t Process() override;
+  void Process() override;
 
  private:
   
-  void UpdateBytesPerInterval(int64_t delta_time_in_ms)
+  void UpdateBudgetWithElapsedTime(int64_t delta_time_in_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void UpdateBudgetWithBytesSent(size_t bytes)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  bool SendPacket(const paced_sender::Packet& packet)
+  bool SendPacket(const paced_sender::Packet& packet, int probe_cluster_id)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void SendPadding(size_t padding_needed) EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  size_t SendPadding(size_t padding_needed, int probe_cluster_id)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
-  Callback* const callback_;
+  PacketSender* const packet_sender_;
+  std::unique_ptr<AlrDetector> alr_detector_ GUARDED_BY(critsect_);
 
-  rtc::scoped_ptr<CriticalSectionWrapper> critsect_;
+  std::unique_ptr<CriticalSectionWrapper> critsect_;
   bool paused_ GUARDED_BY(critsect_);
-  bool probing_enabled_;
   
   
-  rtc::scoped_ptr<paced_sender::IntervalBudget> media_budget_
+  std::unique_ptr<paced_sender::IntervalBudget> media_budget_
       GUARDED_BY(critsect_);
   
   
   
-  rtc::scoped_ptr<paced_sender::IntervalBudget> padding_budget_
+  std::unique_ptr<paced_sender::IntervalBudget> padding_budget_
       GUARDED_BY(critsect_);
 
-  rtc::scoped_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
+  std::unique_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
   
   
-  int bitrate_bps_ GUARDED_BY(critsect_);
-  int max_bitrate_kbps_ GUARDED_BY(critsect_);
+  uint32_t estimated_bitrate_bps_ GUARDED_BY(critsect_);
+  uint32_t min_send_bitrate_kbps_ GUARDED_BY(critsect_);
+  uint32_t max_padding_bitrate_kbps_ GUARDED_BY(critsect_);
+  uint32_t pacing_bitrate_kbps_ GUARDED_BY(critsect_);
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
 
-  rtc::scoped_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
+  std::unique_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
   uint64_t packet_counter_;
 };
 }  

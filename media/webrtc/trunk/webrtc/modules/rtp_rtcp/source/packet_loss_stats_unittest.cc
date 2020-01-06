@@ -8,8 +8,8 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/packet_loss_stats.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

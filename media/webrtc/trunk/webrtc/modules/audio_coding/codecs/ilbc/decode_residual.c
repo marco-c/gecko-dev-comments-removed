@@ -16,6 +16,8 @@
 
 
 
+#include "decode_residual.h"
+
 #include <string.h>
 
 #include "defines.h"
@@ -32,7 +34,7 @@
 
 
 
-void WebRtcIlbcfix_DecodeResidual(
+bool WebRtcIlbcfix_DecodeResidual(
     IlbcDecoder *iLBCdec_inst,
     
     iLBC_bits *iLBC_encbits, 
@@ -72,11 +74,11 @@ void WebRtcIlbcfix_DecodeResidual(
 
     
 
-    WebRtcIlbcfix_CbConstruct(
-        &decresidual[start_pos+iLBCdec_inst->state_short_len],
-        iLBC_encbits->cb_index, iLBC_encbits->gain_index,
-        mem+CB_MEML-ST_MEM_L_TBL,
-        ST_MEM_L_TBL, diff);
+    if (!WebRtcIlbcfix_CbConstruct(
+            &decresidual[start_pos + iLBCdec_inst->state_short_len],
+            iLBC_encbits->cb_index, iLBC_encbits->gain_index,
+            mem + CB_MEML - ST_MEM_L_TBL, ST_MEM_L_TBL, diff))
+      return false;  
 
   }
   else {
@@ -90,12 +92,11 @@ void WebRtcIlbcfix_DecodeResidual(
 
     
 
-    WebRtcIlbcfix_CbConstruct(
-        reverseDecresidual,
-        iLBC_encbits->cb_index, iLBC_encbits->gain_index,
-        mem+CB_MEML-ST_MEM_L_TBL,
-        ST_MEM_L_TBL, diff
-                              );
+    if (!WebRtcIlbcfix_CbConstruct(reverseDecresidual, iLBC_encbits->cb_index,
+                                   iLBC_encbits->gain_index,
+                                   mem + CB_MEML - ST_MEM_L_TBL, ST_MEM_L_TBL,
+                                   diff))
+      return false;  
 
     
 
@@ -122,12 +123,12 @@ void WebRtcIlbcfix_DecodeResidual(
     for (subframe=0; subframe<Nfor; subframe++) {
 
       
-      WebRtcIlbcfix_CbConstruct(
-          &decresidual[(iLBC_encbits->startIdx+1+subframe)*SUBL],
-          iLBC_encbits->cb_index+subcount*CB_NSTAGES,
-          iLBC_encbits->gain_index+subcount*CB_NSTAGES,
-          mem, MEM_LF_TBL, SUBL
-                                );
+      if (!WebRtcIlbcfix_CbConstruct(
+              &decresidual[(iLBC_encbits->startIdx + 1 + subframe) * SUBL],
+              iLBC_encbits->cb_index + subcount * CB_NSTAGES,
+              iLBC_encbits->gain_index + subcount * CB_NSTAGES, mem, MEM_LF_TBL,
+              SUBL))
+        return false;  
 
       
       memmove(mem, mem + SUBL, (CB_MEML - SUBL) * sizeof(*mem));
@@ -160,12 +161,12 @@ void WebRtcIlbcfix_DecodeResidual(
     for (subframe=0; subframe<Nback; subframe++) {
 
       
-      WebRtcIlbcfix_CbConstruct(
-          &reverseDecresidual[subframe*SUBL],
-          iLBC_encbits->cb_index+subcount*CB_NSTAGES,
-          iLBC_encbits->gain_index+subcount*CB_NSTAGES,
-          mem, MEM_LF_TBL, SUBL
-                                );
+      if (!WebRtcIlbcfix_CbConstruct(
+              &reverseDecresidual[subframe * SUBL],
+              iLBC_encbits->cb_index + subcount * CB_NSTAGES,
+              iLBC_encbits->gain_index + subcount * CB_NSTAGES, mem, MEM_LF_TBL,
+              SUBL))
+        return false;  
 
       
       memmove(mem, mem + SUBL, (CB_MEML - SUBL) * sizeof(*mem));
@@ -179,4 +180,6 @@ void WebRtcIlbcfix_DecodeResidual(
     WebRtcSpl_MemCpyReversedOrder(decresidual+SUBL*Nback-1,
                                   reverseDecresidual, SUBL*Nback);
   }
+
+  return true;  
 }

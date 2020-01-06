@@ -67,6 +67,13 @@ class DspHelper {
 
   
   
+  static int RampSignal(AudioVector* signal,
+                        size_t start_index,
+                        size_t length,
+                        int factor,
+                        int increment);
+
+  
   static int RampSignal(AudioMultiVector* signal,
                         size_t start_index,
                         size_t length,

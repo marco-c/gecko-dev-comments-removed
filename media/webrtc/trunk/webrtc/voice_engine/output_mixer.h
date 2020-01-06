@@ -11,19 +11,20 @@
 #ifndef WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
 #define WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
 
+#include <memory>
+
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/modules/utility/include/file_recorder.h"
-#include "webrtc/voice_engine/dtmf_inband.h"
+#include "webrtc/voice_engine/file_recorder.h"
 #include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 
 class AudioProcessing;
-class CriticalSectionWrapper;
 class FileWrapper;
 class VoEMediaProcess;
 
@@ -49,9 +50,6 @@ public:
         VoEMediaProcess& proccess_object);
 
     int DeRegisterExternalMediaProcessing();
-
-    
-    int PlayDtmfTone(uint8_t eventCode, int lengthMs, int attenuationDb);
 
     int32_t MixActiveChannels();
 
@@ -100,23 +98,16 @@ public:
     void PlayFileEnded(int32_t id);
     void RecordFileEnded(int32_t id);
 
-    
-    void APMAnalyzeReverseStream(AudioFrame &audioFrame);
-
-    int GetOutputChannelCount();
-
 private:
     OutputMixer(uint32_t instanceId);
-    int InsertInbandDtmfTone();
 
     
     Statistics* _engineStatisticsPtr;
     AudioProcessing* _audioProcessingModulePtr;
 
+    rtc::CriticalSection _callbackCritSect;
     
-    CriticalSectionWrapper& _callbackCritSect;
-    
-    CriticalSectionWrapper& _fileCritSect;
+    rtc::CriticalSection _fileCritSect;
     AudioConferenceMixer& _mixerModule;
     AudioFrame _audioFrame;
     
@@ -124,14 +115,13 @@ private:
     
     PushResampler<int16_t> audioproc_resampler_;
     AudioLevel _audioLevel;    
-    DtmfInband _dtmfGenerator;
     int _instanceId;
     VoEMediaProcess* _externalMediaCallbackPtr;
     bool _externalMedia;
     float _panLeft;
     float _panRight;
     int _mixingFrequencyHz;
-    FileRecorder* _outputFileRecorderPtr;
+    std::unique_ptr<FileRecorder> output_file_recorder_;
     bool _outputFileRecording;
 };
 

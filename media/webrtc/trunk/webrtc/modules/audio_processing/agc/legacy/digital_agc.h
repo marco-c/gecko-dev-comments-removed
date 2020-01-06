@@ -18,37 +18,36 @@
 #include "webrtc/typedefs.h"
 
 
-#define AGC_MUL32(A, B)             (((B)>>13)*(A) + ( ((0x00001FFF & (B))*(A)) >> 13 ))
+#define AGC_MUL32(A, B) (((B) >> 13) * (A) + (((0x00001FFF & (B)) * (A)) >> 13))
 
-#define AGC_SCALEDIFF32(A, B, C)    ((C) + ((B)>>16)*(A) + ( ((0x0000FFFF & (B))*(A)) >> 16 ))
+#define AGC_SCALEDIFF32(A, B, C) \
+  ((C) + ((B) >> 16) * (A) + (((0x0000FFFF & (B)) * (A)) >> 16))
 
-typedef struct
-{
-    int32_t downState[8];
-    int16_t HPstate;
-    int16_t counter;
-    int16_t logRatio; 
-    int16_t meanLongTerm; 
-    int32_t varianceLongTerm; 
-    int16_t stdLongTerm; 
-    int16_t meanShortTerm; 
-    int32_t varianceShortTerm; 
-    int16_t stdShortTerm; 
-} AgcVad;  
+typedef struct {
+  int32_t downState[8];
+  int16_t HPstate;
+  int16_t counter;
+  int16_t logRatio;           
+  int16_t meanLongTerm;       
+  int32_t varianceLongTerm;   
+  int16_t stdLongTerm;        
+  int16_t meanShortTerm;      
+  int32_t varianceShortTerm;  
+  int16_t stdShortTerm;       
+} AgcVad;                     
 
-typedef struct
-{
-    int32_t capacitorSlow;
-    int32_t capacitorFast;
-    int32_t gain;
-    int32_t gainTable[32];
-    int16_t gatePrevious;
-    int16_t agcMode;
-    AgcVad vadNearend;
-    AgcVad vadFarend;
+typedef struct {
+  int32_t capacitorSlow;
+  int32_t capacitorFast;
+  int32_t gain;
+  int32_t gainTable[32];
+  int16_t gatePrevious;
+  int16_t agcMode;
+  AgcVad vadNearend;
+  AgcVad vadFarend;
 #ifdef WEBRTC_AGC_DEBUG_DUMP
-    FILE* logFile;
-    int frameCounter;
+  FILE* logFile;
+  int frameCounter;
 #endif
 } DigitalAgc;
 
@@ -67,14 +66,14 @@ int32_t WebRtcAgc_AddFarendToDigital(DigitalAgc* digitalAgcInst,
 
 void WebRtcAgc_InitVad(AgcVad* vadInst);
 
-int16_t WebRtcAgc_ProcessVad(AgcVad* vadInst,     
-                             const int16_t* in,   
+int16_t WebRtcAgc_ProcessVad(AgcVad* vadInst,    
+                             const int16_t* in,  
                              size_t nrSamples);  
 
-int32_t WebRtcAgc_CalculateGainTable(int32_t *gainTable, 
-                                     int16_t compressionGaindB, 
-                                     int16_t targetLevelDbfs,
+int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,         
+                                     int16_t compressionGaindB,  
+                                     int16_t targetLevelDbfs,    
                                      uint8_t limiterEnable,
                                      int16_t analogTarget);
 
-#endif 
+#endif  

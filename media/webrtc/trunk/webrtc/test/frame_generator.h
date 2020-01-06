@@ -7,18 +7,42 @@
 
 
 
-#ifndef WEBRTC_COMMON_VIDEO_TEST_FRAME_GENERATOR_H_
-#define WEBRTC_COMMON_VIDEO_TEST_FRAME_GENERATOR_H_
+#ifndef WEBRTC_TEST_FRAME_GENERATOR_H_
+#define WEBRTC_TEST_FRAME_GENERATOR_H_
 
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 class Clock;
 namespace test {
+
+
+
+
+
+class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
+ public:
+  FrameForwarder();
+  
+  void IncomingCapturedFrame(const VideoFrame& video_frame);
+  rtc::VideoSinkWants sink_wants() const;
+  bool has_sinks() const;
+
+ private:
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override;
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
+
+  rtc::CriticalSection crit_;
+  rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(crit_);
+  rtc::VideoSinkWants sink_wants_ GUARDED_BY(crit_);
+};
 
 class FrameGenerator {
  public:
@@ -27,6 +51,11 @@ class FrameGenerator {
 
   
   virtual VideoFrame* NextFrame() = 0;
+
+  
+  virtual void ChangeResolution(size_t width, size_t height) {
+    RTC_NOTREACHED();
+  }
 
   
   

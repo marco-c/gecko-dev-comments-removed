@@ -8,11 +8,14 @@
 
 
 
+#include <memory>
+
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/thread.h"
 
@@ -69,7 +72,8 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
     uint32_t prev = reinterpret_cast<const uint32_t*>(buf)[0];
     uint32_t result = Next(prev);
 
-    post_thread_->PostDelayed(200, post_handler_, 0, new TestMessage(result));
+    post_thread_->PostDelayed(RTC_FROM_HERE, 200, post_handler_, 0,
+                              new TestMessage(result));
   }
 
  private:
@@ -164,7 +168,7 @@ class AtomicBool {
   }
 
  private:
-  mutable CriticalSection cs_;
+  CriticalSection cs_;
   bool flag_;
 };
 
@@ -208,7 +212,7 @@ TEST(ThreadTest, DISABLED_Main) {
   th2.Start();
 
   
-  th1.PostDelayed(100, &msg_client, 0, new TestMessage(1));
+  th1.PostDelayed(RTC_FROM_HERE, 100, &msg_client, 0, new TestMessage(1));
 
   
   
@@ -269,18 +273,18 @@ TEST(ThreadTest, Invoke) {
   Thread thread;
   thread.Start();
   
-  EXPECT_EQ(42, thread.Invoke<int>(FunctorA()));
+  EXPECT_EQ(42, thread.Invoke<int>(RTC_FROM_HERE, FunctorA()));
   AtomicBool called;
   FunctorB f2(&called);
-  thread.Invoke<void>(f2);
+  thread.Invoke<void>(RTC_FROM_HERE, f2);
   EXPECT_TRUE(called.get());
   
   struct LocalFuncs {
     static int Func1() { return 999; }
     static void Func2() {}
   };
-  EXPECT_EQ(999, thread.Invoke<int>(&LocalFuncs::Func1));
-  thread.Invoke<void>(&LocalFuncs::Func2);
+  EXPECT_EQ(999, thread.Invoke<int>(RTC_FROM_HERE, &LocalFuncs::Func1));
+  thread.Invoke<void>(RTC_FROM_HERE, &LocalFuncs::Func2);
 }
 
 
@@ -296,13 +300,13 @@ TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
   struct LocalFuncs {
     static void Set(bool* out) { *out = true; }
     static void InvokeSet(Thread* thread, bool* out) {
-      thread->Invoke<void>(Bind(&Set, out));
+      thread->Invoke<void>(RTC_FROM_HERE, Bind(&Set, out));
     }
   };
 
   bool called = false;
   other_thread.Invoke<void>(
-      Bind(&LocalFuncs::InvokeSet, current_thread, &called));
+      RTC_FROM_HERE, Bind(&LocalFuncs::InvokeSet, current_thread, &called));
 
   EXPECT_TRUE(called);
 }
@@ -339,7 +343,7 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   struct LocalFuncs {
     static void Set(LockedBool* out) { out->Set(true); }
     static void InvokeSet(Thread* thread, LockedBool* out) {
-      thread->Invoke<void>(Bind(&Set, out));
+      thread->Invoke<void>(RTC_FROM_HERE, Bind(&Set, out));
     }
 
     
@@ -359,7 +363,8 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
 
       AsyncInvoker invoker;
       invoker.AsyncInvoke<void>(
-          thread1, Bind(&SetAndInvokeSet, &async_invoked, thread2, out));
+          RTC_FROM_HERE, thread1,
+          Bind(&SetAndInvokeSet, &async_invoked, thread2, out));
 
       EXPECT_TRUE_WAIT(async_invoked.Get(), 2000);
     }
@@ -370,11 +375,48 @@ TEST(ThreadTest, ThreeThreadsInvoke) {
   
   
   
-  thread_b.Invoke<void>(Bind(&LocalFuncs::AsyncInvokeSetAndWait,
-                             &thread_c, thread_a, &thread_a_called));
+  thread_b.Invoke<void>(RTC_FROM_HERE,
+                        Bind(&LocalFuncs::AsyncInvokeSetAndWait, &thread_c,
+                             thread_a, &thread_a_called));
   EXPECT_FALSE(thread_a_called.Get());
 
   EXPECT_TRUE_WAIT(thread_a_called.Get(), 2000);
+}
+
+
+
+
+class SetNameOnSignalQueueDestroyedTester : public sigslot::has_slots<> {
+ public:
+  SetNameOnSignalQueueDestroyedTester(Thread* thread) : thread_(thread) {
+    thread->SignalQueueDestroyed.connect(
+        this, &SetNameOnSignalQueueDestroyedTester::OnQueueDestroyed);
+  }
+
+  void OnQueueDestroyed() {
+    
+    
+    thread_->SetName("foo", nullptr);
+  }
+
+ private:
+  Thread* thread_;
+};
+
+TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
+  Thread* thread1 = new Thread();
+  SetNameOnSignalQueueDestroyedTester tester1(thread1);
+  delete thread1;
+
+  Thread* thread2 = new AutoThread();
+  SetNameOnSignalQueueDestroyedTester tester2(thread2);
+  delete thread2;
+
+#if defined(WEBRTC_WIN)
+  Thread* thread3 = new ComThread();
+  SetNameOnSignalQueueDestroyedTester tester3(thread3);
+  delete thread3;
+#endif
 }
 
 class AsyncInvokeTest : public testing::Test {
@@ -385,7 +427,7 @@ class AsyncInvokeTest : public testing::Test {
   }
   void AsyncInvokeIntCallback(AsyncInvoker* invoker, Thread* thread) {
     expected_thread_ = thread;
-    invoker->AsyncInvoke(thread, FunctorC(),
+    invoker->AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, thread, FunctorC(),
                          &AsyncInvokeTest::IntCallback,
                          static_cast<AsyncInvokeTest*>(this));
     invoke_started_.Set();
@@ -413,7 +455,7 @@ TEST_F(AsyncInvokeTest, FireAndForget) {
   thread.Start();
   
   AtomicBool called;
-  invoker.AsyncInvoke<void>(&thread, FunctorB(&called));
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, &thread, FunctorB(&called));
   EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
 }
 
@@ -424,7 +466,7 @@ TEST_F(AsyncInvokeTest, WithCallback) {
   thread.Start();
   
   SetExpectedThreadForIntCallback(Thread::Current());
-  invoker.AsyncInvoke(&thread, FunctorA(),
+  invoker.AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, &thread, FunctorA(),
                       &AsyncInvokeTest::IntCallback,
                       static_cast<AsyncInvokeTest*>(this));
   EXPECT_EQ_WAIT(42, int_value_, kWaitTimeout);
@@ -437,7 +479,7 @@ TEST_F(AsyncInvokeTest, CancelInvoker) {
   
   {
     AsyncInvoker invoker;
-    invoker.AsyncInvoke(&thread, FunctorC(),
+    invoker.AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, &thread, FunctorC(),
                         &AsyncInvokeTest::IntCallback,
                         static_cast<AsyncInvokeTest*>(this));
   }
@@ -452,9 +494,10 @@ TEST_F(AsyncInvokeTest, CancelCallingThread) {
     Thread thread;
     thread.Start();
     
-    thread.Invoke<void>(Bind(&AsyncInvokeTest::AsyncInvokeIntCallback,
-                             static_cast<AsyncInvokeTest*>(this),
-                             &invoker, Thread::Current()));
+    thread.Invoke<void>(
+        RTC_FROM_HERE,
+        Bind(&AsyncInvokeTest::AsyncInvokeIntCallback,
+             static_cast<AsyncInvokeTest*>(this), &invoker, Thread::Current()));
     
     ASSERT_TRUE(invoke_started_.Wait(kWaitTimeout));
   }
@@ -469,9 +512,10 @@ TEST_F(AsyncInvokeTest, KillInvokerBeforeExecute) {
   {
     AsyncInvoker invoker;
     
-    thread.Invoke<void>(Bind(&AsyncInvokeTest::AsyncInvokeIntCallback,
-                             static_cast<AsyncInvokeTest*>(this),
-                             &invoker, Thread::Current()));
+    thread.Invoke<void>(
+        RTC_FROM_HERE,
+        Bind(&AsyncInvokeTest::AsyncInvokeIntCallback,
+             static_cast<AsyncInvokeTest*>(this), &invoker, Thread::Current()));
     
     ASSERT_TRUE(invoke_started_.Wait(kWaitTimeout));
   }
@@ -485,10 +529,8 @@ TEST_F(AsyncInvokeTest, Flush) {
   AtomicBool flag1;
   AtomicBool flag2;
   
-  invoker.AsyncInvoke<void>(Thread::Current(),
-                            FunctorB(&flag1));
-  invoker.AsyncInvoke<void>(Thread::Current(),
-                            FunctorB(&flag2));
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag1));
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag2));
   
   EXPECT_FALSE(flag1.get());
   EXPECT_FALSE(flag2.get());
@@ -503,11 +545,9 @@ TEST_F(AsyncInvokeTest, FlushWithIds) {
   AtomicBool flag1;
   AtomicBool flag2;
   
-  invoker.AsyncInvoke<void>(Thread::Current(),
-                            FunctorB(&flag1),
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag1),
                             5);
-  invoker.AsyncInvoke<void>(Thread::Current(),
-                            FunctorB(&flag2));
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag2));
   
   EXPECT_FALSE(flag1.get());
   EXPECT_FALSE(flag2.get());
@@ -530,7 +570,8 @@ class GuardedAsyncInvokeTest : public testing::Test {
   }
   void AsyncInvokeIntCallback(GuardedAsyncInvoker* invoker, Thread* thread) {
     expected_thread_ = thread;
-    invoker->AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+    invoker->AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, FunctorC(),
+                         &GuardedAsyncInvokeTest::IntCallback,
                          static_cast<GuardedAsyncInvokeTest*>(this));
     invoke_started_.Set();
   }
@@ -552,24 +593,25 @@ class GuardedAsyncInvokeTest : public testing::Test {
 
 
 struct CreateInvoker {
-  CreateInvoker(scoped_ptr<GuardedAsyncInvoker>* invoker) : invoker_(invoker) {}
+  CreateInvoker(std::unique_ptr<GuardedAsyncInvoker>* invoker)
+      : invoker_(invoker) {}
   void operator()() { invoker_->reset(new GuardedAsyncInvoker()); }
-  scoped_ptr<GuardedAsyncInvoker>* invoker_;
+  std::unique_ptr<GuardedAsyncInvoker>* invoker_;
 };
 
 
 TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
   
-  scoped_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
-  scoped_ptr<GuardedAsyncInvoker> invoker;
+  std::unique_ptr<GuardedAsyncInvoker> invoker;
   
-  thread->Invoke<void>(CreateInvoker(&invoker));
+  thread->Invoke<void>(RTC_FROM_HERE, CreateInvoker(&invoker));
   
   thread = nullptr;
   
   AtomicBool called;
-  EXPECT_FALSE(invoker->AsyncInvoke<void>(FunctorB(&called)));
+  EXPECT_FALSE(invoker->AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&called)));
   
   WAIT(called.get(), kWaitTimeout);
   EXPECT_FALSE(called.get());
@@ -578,16 +620,17 @@ TEST_F(GuardedAsyncInvokeTest, KillThreadFireAndForget) {
 
 TEST_F(GuardedAsyncInvokeTest, KillThreadWithCallback) {
   
-  scoped_ptr<Thread> thread(new Thread());
+  std::unique_ptr<Thread> thread(new Thread());
   thread->Start();
-  scoped_ptr<GuardedAsyncInvoker> invoker;
+  std::unique_ptr<GuardedAsyncInvoker> invoker;
   
-  thread->Invoke<void>(CreateInvoker(&invoker));
+  thread->Invoke<void>(RTC_FROM_HERE, CreateInvoker(&invoker));
   
   thread = nullptr;
   
   EXPECT_FALSE(
-      invoker->AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+      invoker->AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, FunctorC(),
+                           &GuardedAsyncInvokeTest::IntCallback,
                            static_cast<GuardedAsyncInvokeTest*>(this)));
   
   Thread::Current()->ProcessMessages(kWaitTimeout);
@@ -600,7 +643,7 @@ TEST_F(GuardedAsyncInvokeTest, FireAndForget) {
   GuardedAsyncInvoker invoker;
   
   AtomicBool called;
-  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&called)));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&called)));
   EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
 }
 
@@ -608,7 +651,7 @@ TEST_F(GuardedAsyncInvokeTest, WithCallback) {
   GuardedAsyncInvoker invoker;
   
   SetExpectedThreadForIntCallback(Thread::Current());
-  EXPECT_TRUE(invoker.AsyncInvoke(FunctorA(),
+  EXPECT_TRUE(invoker.AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, FunctorA(),
                                   &GuardedAsyncInvokeTest::IntCallback,
                                   static_cast<GuardedAsyncInvokeTest*>(this)));
   EXPECT_EQ_WAIT(42, int_value_, kWaitTimeout);
@@ -619,7 +662,8 @@ TEST_F(GuardedAsyncInvokeTest, CancelInvoker) {
   {
     GuardedAsyncInvoker invoker;
     EXPECT_TRUE(
-        invoker.AsyncInvoke(FunctorC(), &GuardedAsyncInvokeTest::IntCallback,
+        invoker.AsyncInvoke(RTC_FROM_HERE, RTC_FROM_HERE, FunctorC(),
+                            &GuardedAsyncInvokeTest::IntCallback,
                             static_cast<GuardedAsyncInvokeTest*>(this)));
   }
   
@@ -634,7 +678,8 @@ TEST_F(GuardedAsyncInvokeTest, CancelCallingThread) {
     Thread thread;
     thread.Start();
     
-    thread.Invoke<void>(Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
+    thread.Invoke<void>(RTC_FROM_HERE,
+                        Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
                              static_cast<GuardedAsyncInvokeTest*>(this),
                              &invoker, Thread::Current()));
     
@@ -651,7 +696,8 @@ TEST_F(GuardedAsyncInvokeTest, KillInvokerBeforeExecute) {
   {
     GuardedAsyncInvoker invoker;
     
-    thread.Invoke<void>(Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
+    thread.Invoke<void>(RTC_FROM_HERE,
+                        Bind(&GuardedAsyncInvokeTest::AsyncInvokeIntCallback,
                              static_cast<GuardedAsyncInvokeTest*>(this),
                              &invoker, Thread::Current()));
     
@@ -667,8 +713,8 @@ TEST_F(GuardedAsyncInvokeTest, Flush) {
   AtomicBool flag1;
   AtomicBool flag2;
   
-  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag1)));
-  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag2)));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&flag1)));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&flag2)));
   
   EXPECT_FALSE(flag1.get());
   EXPECT_FALSE(flag2.get());
@@ -683,8 +729,8 @@ TEST_F(GuardedAsyncInvokeTest, FlushWithIds) {
   AtomicBool flag1;
   AtomicBool flag2;
   
-  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag1), 5));
-  EXPECT_TRUE(invoker.AsyncInvoke<void>(FunctorB(&flag2)));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&flag1), 5));
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&flag2)));
   
   EXPECT_FALSE(flag1.get());
   EXPECT_FALSE(flag2.get());
@@ -719,7 +765,7 @@ class ComThreadTest : public testing::Test, public MessageHandler {
 TEST_F(ComThreadTest, ComInited) {
   Thread* thread = new ComThread();
   EXPECT_TRUE(thread->Start());
-  thread->Post(this, 0);
+  thread->Post(RTC_FROM_HERE, this, 0);
   EXPECT_TRUE_WAIT(done_, 1000);
   delete thread;
 }

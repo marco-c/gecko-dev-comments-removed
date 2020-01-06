@@ -16,6 +16,8 @@
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/typedefs.h"
@@ -23,7 +25,9 @@
 namespace webrtc {
 
 
+class AudioFrame;
 struct WebRtcRTPHeader;
+class AudioDecoderFactory;
 
 struct NetEqNetworkStatistics {
   uint16_t current_buffer_size_ms;  
@@ -53,14 +57,6 @@ struct NetEqNetworkStatistics {
   int max_waiting_time_ms;
 };
 
-enum NetEqOutputType {
-  kOutputNormal,
-  kOutputPLC,
-  kOutputCNG,
-  kOutputPLCtoCNG,
-  kOutputVADPassive
-};
-
 enum NetEqPlayoutMode {
   kPlayoutOn,
   kPlayoutOff,
@@ -80,7 +76,6 @@ class NetEq {
   struct Config {
     Config()
         : sample_rate_hz(16000),
-          enable_audio_classifier(false),
           enable_post_decode_vad(false),
           max_packets_in_buffer(50),
           
@@ -92,13 +87,13 @@ class NetEq {
     std::string ToString() const;
 
     int sample_rate_hz;  
-    bool enable_audio_classifier;
     bool enable_post_decode_vad;
     size_t max_packets_in_buffer;
     int max_delay_ms;
     BackgroundNoiseMode background_noise_mode;
     NetEqPlayoutMode playout_mode;
     bool enable_fast_accelerate;
+    bool enable_muted_state = false;
   };
 
   enum ReturnCodes {
@@ -129,16 +124,16 @@ class NetEq {
     kStereoNotSupported,
     kSampleUnderrun,
     kDecodedTooMuch,
-    kFrameSplitError,
     kRedundancySplitError,
-    kPacketBufferCorruption,
-    kSyncPacketNotAccepted
+    kPacketBufferCorruption
   };
 
   
   
   
-  static NetEq* Create(const NetEq::Config& config);
+  static NetEq* Create(
+      const NetEq::Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
 
   virtual ~NetEq() {}
 
@@ -159,20 +154,8 @@ class NetEq {
   
   
   
-  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                               uint32_t receive_timestamp) = 0;
-
   
-  
-  
-  
-  
-  
-  
-  
-  virtual int GetAudio(size_t max_length, int16_t* output_audio,
-                       size_t* samples_per_channel, size_t* num_channels,
-                       NetEqOutputType* type) = 0;
+  virtual int GetAudio(AudioFrame* audio_frame, bool* muted) = 0;
 
   
   
@@ -188,16 +171,22 @@ class NetEq {
   
   
   
-  
   virtual int RegisterExternalDecoder(AudioDecoder* decoder,
                                       NetEqDecoder codec,
                                       const std::string& codec_name,
-                                      uint8_t rtp_payload_type,
-                                      int sample_rate_hz) = 0;
+                                      uint8_t rtp_payload_type) = 0;
+
+  
+  
+  virtual bool RegisterPayloadType(int rtp_payload_type,
+                                   const SdpAudioFormat& audio_format) = 0;
 
   
   
   virtual int RemovePayloadType(uint8_t rtp_payload_type) = 0;
+
+  
+  virtual void RemoveAllPayloadTypes() = 0;
 
   
   
@@ -229,6 +218,11 @@ class NetEq {
   
   
   
+  virtual int FilteredCurrentDelayMs() const = 0;
+
+  
+  
+  
   virtual void SetPlayoutMode(NetEqPlayoutMode mode) = 0;
 
   
@@ -256,12 +250,21 @@ class NetEq {
 
   
   
-  virtual bool GetPlayoutTimestamp(uint32_t* timestamp) = 0;
+  virtual rtc::Optional<uint32_t> GetPlayoutTimestamp() const = 0;
 
   
   
   
   virtual int last_output_sample_rate_hz() const = 0;
+
+  
+  
+  virtual rtc::Optional<CodecInst> GetDecoder(int payload_type) const = 0;
+
+  
+  
+  virtual rtc::Optional<SdpAudioFormat> GetDecoderFormat(
+      int payload_type) const = 0;
 
   
   virtual int SetTargetNumberOfChannels() = 0;

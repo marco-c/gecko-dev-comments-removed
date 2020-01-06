@@ -17,20 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum Wrap {
-  SAME_WRAP,
-  DIFF_WRAP
-};
-
-struct RingBuffer {
-  size_t read_pos;
-  size_t write_pos;
-  size_t element_count;
-  size_t element_size;
-  enum Wrap rw_wrap;
-  char* data;
-};
-
 
 
 

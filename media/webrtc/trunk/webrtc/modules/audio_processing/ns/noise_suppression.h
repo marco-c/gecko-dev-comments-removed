@@ -109,6 +109,25 @@ void WebRtcNs_Process(NsHandle* NS_inst,
 
 float WebRtcNs_prior_speech_probability(NsHandle* handle);
 
+
+
+
+
+
+
+
+
+
+
+const float* WebRtcNs_noise_estimate(const NsHandle* handle);
+
+
+
+
+
+
+size_t WebRtcNs_num_freq();
+
 #ifdef __cplusplus
 }
 #endif

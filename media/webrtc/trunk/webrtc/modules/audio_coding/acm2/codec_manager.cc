@@ -12,9 +12,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace acm2 {
@@ -113,7 +113,7 @@ bool CodecManager::RegisterEncoder(const CodecInst& send_codec) {
   }
 
   send_codec_inst_ = rtc::Optional<CodecInst>(send_codec);
-  codec_stack_params_.speech_encoder = nullptr;  
+  recreate_encoder_ = true;  
   return true;
 }
 
@@ -187,6 +187,68 @@ bool CodecManager::SetCodecFEC(bool enable_codec_fec) {
   }
 
   codec_stack_params_.use_codec_fec = enable_codec_fec;
+  return true;
+}
+
+bool CodecManager::MakeEncoder(RentACodec* rac, AudioCodingModule* acm) {
+  RTC_DCHECK(rac);
+  RTC_DCHECK(acm);
+
+  if (!recreate_encoder_) {
+    bool error = false;
+    
+    acm->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+      if (!*encoder) {
+        
+        recreate_encoder_ = true;
+        return;
+      }
+
+      
+      std::unique_ptr<AudioEncoder> enc = std::move(*encoder);
+      while (true) {
+        auto sub_enc = enc->ReclaimContainedEncoders();
+        if (sub_enc.empty()) {
+          break;
+        }
+        RTC_CHECK_EQ(1, sub_enc.size());
+
+        
+        
+        
+        
+        auto tmp_enc = std::move(sub_enc[0]);
+        enc = std::move(tmp_enc);
+      }
+
+      
+      codec_stack_params_.speech_encoder = std::move(enc);
+      *encoder = rac->RentEncoderStack(&codec_stack_params_);
+      if (!*encoder) {
+        error = true;
+      }
+    });
+    if (error) {
+      return false;
+    }
+    if (!recreate_encoder_) {
+      return true;
+    }
+  }
+
+  if (!send_codec_inst_) {
+    
+    
+    return true;
+  }
+
+  codec_stack_params_.speech_encoder = rac->RentEncoder(*send_codec_inst_);
+  auto stack = rac->RentEncoderStack(&codec_stack_params_);
+  if (!stack) {
+    return false;
+  }
+  acm->SetEncoder(std::move(stack));
+  recreate_encoder_ = false;
   return true;
 }
 

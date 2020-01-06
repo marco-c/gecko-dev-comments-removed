@@ -7,8 +7,8 @@
 
 
 
-#include <assert.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
@@ -25,8 +25,8 @@ void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
   int min16 = 0xFFFF8000;
 #endif  
 
-  assert(data_length > 0);
-  assert(coefficients_length > 1);
+  RTC_DCHECK_GT(data_length, 0);
+  RTC_DCHECK_GT(coefficients_length, 1);
 
   __asm __volatile (
     ".set       push                                             \n\t"

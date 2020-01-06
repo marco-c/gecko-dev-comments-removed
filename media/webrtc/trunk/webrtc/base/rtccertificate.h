@@ -11,9 +11,11 @@
 #ifndef WEBRTC_BASE_RTCCERTIFICATE_H_
 #define WEBRTC_BASE_RTCCERTIFICATE_H_
 
-#include "webrtc/base/basictypes.h"
+#include <stdint.h>
+
+#include <memory>
+
 #include "webrtc/base/refcount.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sslidentity.h"
 
@@ -22,10 +24,33 @@ namespace rtc {
 
 
 
+
+
+
+class RTCCertificatePEM {
+ public:
+  RTCCertificatePEM(
+      const std::string& private_key,
+      const std::string& certificate)
+      : private_key_(private_key),
+        certificate_(certificate) {}
+
+  const std::string& private_key() const { return private_key_; }
+  const std::string& certificate() const { return certificate_; }
+
+ private:
+  std::string private_key_;
+  std::string certificate_;
+};
+
+
+
+
 class RTCCertificate : public RefCountInterface {
  public:
   
-  static scoped_refptr<RTCCertificate> Create(scoped_ptr<SSLIdentity> identity);
+  static scoped_refptr<RTCCertificate> Create(
+      std::unique_ptr<SSLIdentity> identity);
 
   
   uint64_t Expires() const;
@@ -40,6 +65,13 @@ class RTCCertificate : public RefCountInterface {
   
   SSLIdentity* identity() const { return identity_.get(); }
 
+  
+  RTCCertificatePEM ToPEM() const;
+  
+  static scoped_refptr<RTCCertificate> FromPEM(const RTCCertificatePEM& pem);
+  bool operator==(const RTCCertificate& certificate) const;
+  bool operator!=(const RTCCertificate& certificate) const;
+
  protected:
   explicit RTCCertificate(SSLIdentity* identity);
   ~RTCCertificate() override;
@@ -47,7 +79,7 @@ class RTCCertificate : public RefCountInterface {
  private:
   
   
-  scoped_ptr<SSLIdentity> identity_;
+  std::unique_ptr<SSLIdentity> identity_;
 };
 
 }  

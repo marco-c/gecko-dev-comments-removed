@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#include "webrtc/modules/audio_processing/include/config.h"
+
+namespace webrtc {
+
+Config::Config() {}
+
+Config::~Config() {
+  for (OptionMap::iterator it = options_.begin(); it != options_.end(); ++it) {
+    delete it->second;
+  }
+}
+
+}  

@@ -50,7 +50,7 @@ class VCMJitterEstimator {
   
   
   
-  int GetJitterEstimate(double rttMultiplier);
+  virtual int GetJitterEstimate(double rttMultiplier);
 
   
   void FrameNacked();

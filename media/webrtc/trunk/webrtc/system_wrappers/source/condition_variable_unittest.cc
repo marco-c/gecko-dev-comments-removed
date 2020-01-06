@@ -8,14 +8,17 @@
 
 
 
-#include "webrtc/system_wrappers/include/condition_variable_wrapper.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+
+
+#if defined(WEBRTC_WIN)
+
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/system_wrappers/source/condition_variable_event_win.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -35,37 +38,36 @@ const int kVeryShortWaitMs = 20;
 class Baton {
  public:
   Baton()
-    : giver_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      cond_var_(ConditionVariableWrapper::CreateConditionVariable()),
-      being_passed_(false),
+    : being_passed_(false),
       pass_count_(0) {
+    InitializeCriticalSection(&crit_sect_);
   }
 
   ~Baton() {
-    delete giver_sect_;
-    delete crit_sect_;
-    delete cond_var_;
+    DeleteCriticalSection(&crit_sect_);
   }
 
   
   
   
   bool Pass(uint32_t max_msecs) {
-    CriticalSectionScoped cs_giver(giver_sect_);
-    CriticalSectionScoped cs(crit_sect_);
+    CriticalSectionScoped cs_giver(&giver_sect_);
+    EnterCriticalSection(&crit_sect_);
     SignalBatonAvailable();
     const bool result = TakeBatonIfStillFree(max_msecs);
     if (result) {
       ++pass_count_;
     }
+    LeaveCriticalSection(&crit_sect_);
     return result;
   }
 
   
   bool Grab(uint32_t max_msecs) {
-    CriticalSectionScoped cs(crit_sect_);
-    return WaitUntilBatonOffered(max_msecs);
+    EnterCriticalSection(&crit_sect_);
+    bool ret = WaitUntilBatonOffered(max_msecs);
+    LeaveCriticalSection(&crit_sect_);
+    return ret;
   }
 
   int PassCount() {
@@ -74,7 +76,7 @@ class Baton {
     
     
     
-    CriticalSectionScoped cs(giver_sect_);
+    CriticalSectionScoped cs(&giver_sect_);
     return pass_count_;
   }
 
@@ -83,19 +85,19 @@ class Baton {
   
   bool WaitUntilBatonOffered(int timeout_ms) {
     while (!being_passed_) {
-      if (!cond_var_->SleepCS(*crit_sect_, timeout_ms)) {
+      if (!cond_var_.SleepCS(&crit_sect_, timeout_ms)) {
         return false;
       }
     }
     being_passed_ = false;
-    cond_var_->Wake();
+    cond_var_.Wake();
     return true;
   }
 
   void SignalBatonAvailable() {
     assert(!being_passed_);
     being_passed_ = true;
-    cond_var_->Wake();
+    cond_var_.Wake();
   }
 
   
@@ -107,27 +109,25 @@ class Baton {
   bool TakeBatonIfStillFree(int timeout_ms) {
     bool not_timeout = true;
     while (being_passed_ && not_timeout) {
-      not_timeout = cond_var_->SleepCS(*crit_sect_, timeout_ms);
+      not_timeout = cond_var_.SleepCS(&crit_sect_, timeout_ms);
       
       
       
     }
-    if (!being_passed_) {
+    if (!being_passed_)
       return true;
-    } else {
-      assert(!not_timeout);
-      being_passed_ = false;
-      return false;
-    }
+    assert(!not_timeout);
+    being_passed_ = false;
+    return false;
   }
 
   
   
   
-  CriticalSectionWrapper* giver_sect_;
+  CriticalSectionWrapper giver_sect_;
   
-  CriticalSectionWrapper* crit_sect_;
-  ConditionVariableWrapper* cond_var_;
+  CRITICAL_SECTION crit_sect_;
+  ConditionVariableEventWin cond_var_;
   bool being_passed_;
   
   int pass_count_;
@@ -186,18 +186,21 @@ TEST_F(CondVarTest, DISABLED_PassBatonMultipleTimes) {
 }
 
 TEST(CondVarWaitTest, WaitingWaits) {
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect(
-      CriticalSectionWrapper::CreateCriticalSection());
-  rtc::scoped_ptr<ConditionVariableWrapper> cond_var(
-      ConditionVariableWrapper::CreateConditionVariable());
-  CriticalSectionScoped cs(crit_sect.get());
-  int64_t start_ms = TickTime::MillisecondTimestamp();
-  EXPECT_FALSE(cond_var->SleepCS(*(crit_sect), kVeryShortWaitMs));
-  int64_t end_ms = TickTime::MillisecondTimestamp();
+  CRITICAL_SECTION crit_sect;
+  InitializeCriticalSection(&crit_sect);
+  ConditionVariableEventWin cond_var;
+  EnterCriticalSection(&crit_sect);
+  int64_t start_ms = rtc::TimeMillis();
+  EXPECT_FALSE(cond_var.SleepCS(&crit_sect, kVeryShortWaitMs));
+  int64_t end_ms = rtc::TimeMillis();
   EXPECT_LE(start_ms + kVeryShortWaitMs, end_ms)
       << "actual elapsed:" << end_ms - start_ms;
+  LeaveCriticalSection(&crit_sect);
+  DeleteCriticalSection(&crit_sect);
 }
 
 }  
 
 }  
+
+#endif  

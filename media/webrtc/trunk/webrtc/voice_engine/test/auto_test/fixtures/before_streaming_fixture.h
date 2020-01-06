@@ -13,7 +13,6 @@
 
 #include <string>
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_initialization_fixture.h"
-#include "webrtc/voice_engine/test/auto_test/resource_manager.h"
 
 
 
@@ -26,7 +25,6 @@ class BeforeStreamingFixture : public AfterInitializationFixture {
 
  protected:
   int             channel_;
-  ResourceManager resource_manager_;
   std::string     fake_microphone_input_file_;
 
   

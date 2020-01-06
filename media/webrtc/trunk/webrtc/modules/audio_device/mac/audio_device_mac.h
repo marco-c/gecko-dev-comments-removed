@@ -11,7 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
@@ -67,7 +68,7 @@ class AudioDeviceMac : public AudioDeviceGeneric {
       AudioDeviceModule::AudioLayer& audioLayer) const;
 
   
-  virtual int32_t Init();
+  virtual InitStatus Init();
   virtual int32_t Terminate();
   virtual bool Initialized() const;
 
@@ -290,10 +291,10 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   
   
   
-  rtc::scoped_ptr<rtc::PlatformThread> capture_worker_thread_;
+  std::unique_ptr<rtc::PlatformThread> capture_worker_thread_;
 
   
-  rtc::scoped_ptr<rtc::PlatformThread> render_worker_thread_;
+  std::unique_ptr<rtc::PlatformThread> render_worker_thread_;
 
   int32_t _id;
 

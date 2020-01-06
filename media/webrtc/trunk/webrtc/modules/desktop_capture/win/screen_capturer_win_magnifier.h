@@ -11,15 +11,17 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_MAGNIFIER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_MAGNIFIER_H_
 
+#include <memory>
+
 #include <windows.h>
 #include <magnification.h>
 #include <wincodec.h>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 
@@ -27,27 +29,31 @@ namespace webrtc {
 
 class DesktopFrame;
 class DesktopRect;
-class Differ;
 
 
 
 
 
-class ScreenCapturerWinMagnifier : public ScreenCapturer {
+
+
+
+
+class ScreenCapturerWinMagnifier : public DesktopCapturer {
  public:
   
   
   
   explicit ScreenCapturerWinMagnifier(
-      rtc::scoped_ptr<ScreenCapturer> fallback_capturer);
-  virtual ~ScreenCapturerWinMagnifier();
+      std::unique_ptr<DesktopCapturer> fallback_capturer);
+  ~ScreenCapturerWinMagnifier() override;
 
   
   void Start(Callback* callback) override;
-  void Stop() override;
-  void Capture(const DesktopRegion& region) override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  void SetSharedMemoryFactory(
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
+  void CaptureFrame() override;
+  bool GetSourceList(SourceList* screens) override;
+  bool SelectSource(SourceId id) override;
   void SetExcludedWindow(WindowId window) override;
 
  private:
@@ -102,49 +108,40 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
 
   static Atomic32 tls_index_;
 
-  rtc::scoped_ptr<ScreenCapturer> fallback_capturer_;
-  bool fallback_capturer_started_;
-  Callback* callback_;
-  ScreenId current_screen_id_;
+  std::unique_ptr<DesktopCapturer> fallback_capturer_;
+  bool fallback_capturer_started_ = false;
+  Callback* callback_ = nullptr;
+  std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
+  ScreenId current_screen_id_ = kFullDesktopScreenId;
   std::wstring current_device_key_;
-  HWND excluded_window_;
+  HWND excluded_window_ = NULL;
 
   
-  
-  ScreenCapturerHelper helper_;
-
-  
-  ScreenCaptureFrameQueue queue_;
-
-  
-  rtc::scoped_ptr<Differ> differ_;
-
-  
-  bool set_thread_execution_state_failed_;
+  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
   ScopedThreadDesktop desktop_;
 
   
-  HDC desktop_dc_;
+  HDC desktop_dc_ = NULL;
 
-  HMODULE mag_lib_handle_;
-  MagInitializeFunc mag_initialize_func_;
-  MagUninitializeFunc mag_uninitialize_func_;
-  MagSetWindowSourceFunc set_window_source_func_;
-  MagSetWindowFilterListFunc set_window_filter_list_func_;
-  MagSetImageScalingCallbackFunc set_image_scaling_callback_func_;
-
-  
-  HWND host_window_;
-  
-  HWND magnifier_window_;
+  HMODULE mag_lib_handle_ = NULL;
+  MagInitializeFunc mag_initialize_func_ = nullptr;
+  MagUninitializeFunc mag_uninitialize_func_ = nullptr;
+  MagSetWindowSourceFunc set_window_source_func_ = nullptr;
+  MagSetWindowFilterListFunc set_window_filter_list_func_ = nullptr;
+  MagSetImageScalingCallbackFunc set_image_scaling_callback_func_ = nullptr;
 
   
-  bool magnifier_initialized_;
+  HWND host_window_ = NULL;
+  
+  HWND magnifier_window_ = NULL;
+
+  
+  bool magnifier_initialized_ = false;
 
   
   
-  bool magnifier_capture_succeeded_;
+  bool magnifier_capture_succeeded_ = true;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinMagnifier);
 };

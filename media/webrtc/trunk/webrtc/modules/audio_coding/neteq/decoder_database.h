@@ -12,11 +12,14 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_DECODER_DATABASE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"  
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/typedefs.h"
@@ -36,36 +39,101 @@ class DecoderDatabase {
   };
 
   
-  struct DecoderInfo {
-    DecoderInfo() = default;
-    DecoderInfo(NetEqDecoder ct, int fs, AudioDecoder* dec, bool ext)
-        : DecoderInfo(ct, "", fs, dec, ext) {}
-    DecoderInfo(NetEqDecoder ct,
-                const std::string& nm,
-                int fs,
-                AudioDecoder* dec,
-                bool ext)
-        : codec_type(ct),
-          name(nm),
-          fs_hz(fs),
-          rtp_sample_rate_hz(fs),
-          decoder(dec),
-          external(ext) {}
+  class DecoderInfo {
+   public:
+    DecoderInfo(const SdpAudioFormat& audio_format,
+                AudioDecoderFactory* factory,
+                const std::string& codec_name);
+    explicit DecoderInfo(const SdpAudioFormat& audio_format,
+                         AudioDecoderFactory* factory = nullptr);
+    explicit DecoderInfo(NetEqDecoder ct,
+                         AudioDecoderFactory* factory = nullptr);
+    DecoderInfo(const SdpAudioFormat& audio_format,
+                AudioDecoder* ext_dec,
+                const std::string& codec_name);
+    DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
-    NetEqDecoder codec_type = NetEqDecoder::kDecoderArbitrary;
-    std::string name;
-    int fs_hz = 8000;
-    int rtp_sample_rate_hz = 8000;
-    AudioDecoder* decoder = nullptr;
-    bool external = false;
+    
+    AudioDecoder* GetDecoder() const;
+
+    
+    
+    void DropDecoder() const { decoder_.reset(); }
+
+    int SampleRateHz() const {
+      if (IsDtmf()) {
+        
+        return audio_format_.clockrate_hz;
+      }
+      const AudioDecoder* decoder = GetDecoder();
+      RTC_DCHECK_EQ(1, !!decoder + !!cng_decoder_);
+      return decoder ? decoder->SampleRateHz() : cng_decoder_->sample_rate_hz;
+    }
+
+    const SdpAudioFormat& GetFormat() const { return audio_format_; }
+
+    
+    bool IsComfortNoise() const {
+      RTC_DCHECK_EQ(!!cng_decoder_, subtype_ == Subtype::kComfortNoise);
+      return subtype_ == Subtype::kComfortNoise;
+    }
+
+    
+    bool IsDtmf() const {
+      return subtype_ == Subtype::kDtmf;
+    }
+
+    
+    bool IsRed() const {
+      return subtype_ == Subtype::kRed;
+    }
+
+    
+    bool IsType(const char* name) const;
+    
+    bool IsType(const std::string& name) const;
+
+    const std::string& get_name() const { return name_; }
+
+   private:
+    
+    
+    
+    const std::string name_;
+
+    const SdpAudioFormat audio_format_;
+    AudioDecoderFactory* const factory_;
+    mutable std::unique_ptr<AudioDecoder> decoder_;
+
+    
+    AudioDecoder* const external_decoder_;
+
+    
+    struct CngDecoder {
+      static rtc::Optional<CngDecoder> Create(const SdpAudioFormat& format);
+      int sample_rate_hz;
+    };
+    const rtc::Optional<CngDecoder> cng_decoder_;
+
+    enum class Subtype : int8_t {
+      kNormal,
+      kComfortNoise,
+      kDtmf,
+      kRed
+    };
+
+    static Subtype SubtypeFromFormat(const SdpAudioFormat& format);
+
+    const Subtype subtype_;
   };
 
   
   
   static const uint8_t kRtpPayloadTypeError = 0xFF;
 
-  DecoderDatabase();
+  DecoderDatabase(
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
 
   virtual ~DecoderDatabase();
 
@@ -90,15 +158,22 @@ class DecoderDatabase {
 
   
   
+  virtual int RegisterPayload(int rtp_payload_type,
+                              const SdpAudioFormat& audio_format);
+
+  
+  
   virtual int InsertExternal(uint8_t rtp_payload_type,
                              NetEqDecoder codec_type,
                              const std::string& codec_name,
-                             int fs_hz,
                              AudioDecoder* decoder);
 
   
   
   virtual int Remove(uint8_t rtp_payload_type);
+
+  
+  virtual void RemoveAll();
 
   
   
@@ -107,34 +182,10 @@ class DecoderDatabase {
   
   
   
-  
-  virtual uint8_t GetRtpPayloadType(NetEqDecoder codec_type) const;
-
-  
-  
-  
-  virtual AudioDecoder* GetDecoder(uint8_t rtp_payload_type);
-
-  
-  virtual bool IsType(uint8_t rtp_payload_type,
-                      NetEqDecoder codec_type) const;
-
-  
-  virtual bool IsComfortNoise(uint8_t rtp_payload_type) const;
-
-  
-  virtual bool IsDtmf(uint8_t rtp_payload_type) const;
-
-  
-  virtual bool IsRed(uint8_t rtp_payload_type) const;
-
-  
-  
-  
   virtual int SetActiveDecoder(uint8_t rtp_payload_type, bool* new_decoder);
 
   
-  virtual AudioDecoder* GetActiveDecoder();
+  virtual AudioDecoder* GetActiveDecoder() const;
 
   
   
@@ -143,18 +194,44 @@ class DecoderDatabase {
 
   
   
-  virtual AudioDecoder* GetActiveCngDecoder();
+  virtual ComfortNoiseDecoder* GetActiveCngDecoder() const;
 
   
   
-  virtual int CheckPayloadTypes(const PacketList& packet_list) const;
+  
+
+  
+  
+  
+  AudioDecoder* GetDecoder(uint8_t rtp_payload_type) const;
+
+  
+  bool IsType(uint8_t rtp_payload_type, const char* name) const;
+
+  
+  bool IsType(uint8_t rtp_payload_type, const std::string& name) const;
+
+  
+  bool IsComfortNoise(uint8_t rtp_payload_type) const;
+
+  
+  bool IsDtmf(uint8_t rtp_payload_type) const;
+
+  
+  bool IsRed(uint8_t rtp_payload_type) const;
+
+  
+  
+  int CheckPayloadTypes(const PacketList& packet_list) const;
 
  private:
   typedef std::map<uint8_t, DecoderInfo> DecoderMap;
 
   DecoderMap decoders_;
-  int active_decoder_;
-  int active_cng_decoder_;
+  int active_decoder_type_;
+  int active_cng_decoder_type_;
+  mutable std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };

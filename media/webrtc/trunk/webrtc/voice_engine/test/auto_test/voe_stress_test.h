@@ -11,8 +11,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_STRESS_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_STRESS_TEST_H
 
+#include <memory>
+
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace voetest {
 
@@ -38,7 +39,7 @@ class VoEStressTest {
   VoETestManager& _mgr;
 
   
-  rtc::scoped_ptr<rtc::PlatformThread> _ptrExtraApiThread;
+  std::unique_ptr<rtc::PlatformThread> _ptrExtraApiThread;
 };
 
 }  

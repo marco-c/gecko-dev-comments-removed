@@ -12,15 +12,18 @@
 #include "webrtc/base/ratetracker.h"
 
 namespace rtc {
+namespace {
+  const uint32_t kBucketIntervalMs = 100;
+}  
 
 class RateTrackerForTest : public RateTracker {
  public:
-  RateTrackerForTest() : RateTracker(100u, 10u), time_(0) {}
-  virtual uint32_t Time() const { return time_; }
-  void AdvanceTime(uint32_t delta) { time_ += delta; }
+  RateTrackerForTest() : RateTracker(kBucketIntervalMs, 10u), time_(0) {}
+  int64_t Time() const override { return time_; }
+  void AdvanceTime(int delta) { time_ += delta; }
 
  private:
-  uint32_t time_;
+  int64_t time_;
 };
 
 TEST(RateTrackerTest, Test30FPS) {
@@ -33,7 +36,7 @@ TEST(RateTrackerTest, Test30FPS) {
       tracker.AdvanceTime(1);
     }
   }
-  EXPECT_DOUBLE_EQ(30.0, tracker.ComputeRateForInterval(50000u));
+  EXPECT_DOUBLE_EQ(30.0, tracker.ComputeRateForInterval(50000));
 }
 
 TEST(RateTrackerTest, Test60FPS) {
@@ -46,18 +49,21 @@ TEST(RateTrackerTest, Test60FPS) {
       tracker.AdvanceTime(1);
     }
   }
-  EXPECT_DOUBLE_EQ(60.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(60.0, tracker.ComputeRateForInterval(1000));
 }
 
 TEST(RateTrackerTest, TestRateTrackerBasics) {
   RateTrackerForTest tracker;
-  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(1000));
 
   
   tracker.AddSamples(1234);
   
-  tracker.AdvanceTime(100);
-  EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRateForInterval(1000u));
+  tracker.AdvanceTime(kBucketIntervalMs - 1);
+  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRate());
+  
+  tracker.AdvanceTime(1);
+  EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRate());
   EXPECT_EQ(1234U, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeTotalRate());
@@ -65,7 +71,7 @@ TEST(RateTrackerTest, TestRateTrackerBasics) {
   
   tracker.AddSamples(1234);
   tracker.AdvanceTime(100);
-  EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ(12340.0, tracker.ComputeTotalRate());
@@ -73,20 +79,20 @@ TEST(RateTrackerTest, TestRateTrackerBasics) {
   
   
   tracker.AdvanceTime(800);
-  EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeTotalRate());
 
   
-  EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ(1234.0 * 2.0, tracker.ComputeTotalRate());
 
   
   tracker.AdvanceTime(1000);
-  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ(1234.0, tracker.ComputeTotalRate());
@@ -97,7 +103,7 @@ TEST(RateTrackerTest, TestRateTrackerBasics) {
     tracker.AddSamples(9876U);
     tracker.AdvanceTime(100);
   }
-  EXPECT_DOUBLE_EQ(9876.0 * 10.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(9876.0 * 10.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(9876.0 * 10.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2 + 9876U * 55, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ((1234.0 * 2.0 + 9876.0 * 55.0) / 7.5,
@@ -106,14 +112,14 @@ TEST(RateTrackerTest, TestRateTrackerBasics) {
   
   
   tracker.AdvanceTime(500);
-  EXPECT_DOUBLE_EQ(9876.0 * 5.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(9876.0 * 5.0, tracker.ComputeRateForInterval(1000));
   EXPECT_DOUBLE_EQ(9876.0 * 5.0, tracker.ComputeRate());
   EXPECT_EQ(1234U * 2 + 9876U * 55, tracker.TotalSampleCount());
   EXPECT_DOUBLE_EQ((1234.0 * 2.0 + 9876.0 * 55.0) / 8.0,
       tracker.ComputeTotalRate());
 
   
-  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(500u));
+  EXPECT_DOUBLE_EQ(0.0, tracker.ComputeRateForInterval(500));
 }
 
 TEST(RateTrackerTest, TestLongPeriodBetweenSamples) {
@@ -143,7 +149,7 @@ TEST(RateTrackerTest, TestRolloff) {
     tracker.AdvanceTime(50);
   }
   EXPECT_DOUBLE_EQ(15.0, tracker.ComputeRate());
-  EXPECT_DOUBLE_EQ(20.0, tracker.ComputeRateForInterval(500u));
+  EXPECT_DOUBLE_EQ(20.0, tracker.ComputeRateForInterval(500));
 
   for (int i = 0; i < 10; ++i) {
     tracker.AddSamples(1U);
@@ -156,7 +162,7 @@ TEST(RateTrackerTest, TestGetUnitSecondsAfterInitialValue) {
   RateTrackerForTest tracker;
   tracker.AddSamples(1234);
   tracker.AdvanceTime(1000);
-  EXPECT_DOUBLE_EQ(1234.0, tracker.ComputeRateForInterval(1000u));
+  EXPECT_DOUBLE_EQ(1234.0, tracker.ComputeRateForInterval(1000));
 }
 
 }  

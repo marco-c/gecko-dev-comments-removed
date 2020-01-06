@@ -15,29 +15,25 @@
 
 #include <list>
 
-#include "webrtc/video_frame.h"
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 
 
 class VideoRenderFrames {
  public:
-  VideoRenderFrames();
+  explicit VideoRenderFrames(uint32_t render_delay_ms);
+  VideoRenderFrames(const VideoRenderFrames&) = delete;
 
   
   int32_t AddFrame(const VideoFrame& new_frame);
 
   
-  VideoFrame FrameToRender();
-
-  
-  int32_t ReleaseAllFrames();
+  rtc::Optional<VideoFrame> FrameToRender();
 
   
   uint32_t TimeToNextFrameRelease();
-
-  
-  int32_t SetRenderDelay(const uint32_t render_delay);
 
  private:
   
@@ -51,7 +47,7 @@ class VideoRenderFrames {
   std::list<VideoFrame> incoming_frames_;
 
   
-  uint32_t render_delay_ms_;
+  const uint32_t render_delay_ms_;
 };
 
 }  

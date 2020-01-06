@@ -12,8 +12,8 @@
 #define WEBRTC_COMMON_AUDIO_LAPPED_TRANSFORM_H_
 
 #include <complex>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_audio/blocker.h"
 #include "webrtc/common_audio/real_fourier.h"
 #include "webrtc/system_wrappers/include/aligned_array.h"
@@ -53,7 +53,7 @@ class LappedTransform {
                   size_t block_length,
                   size_t shift_amount,
                   Callback* callback);
-  ~LappedTransform() {}
+  ~LappedTransform();
 
   
   
@@ -86,6 +86,12 @@ class LappedTransform {
   
   size_t num_out_channels() const { return num_out_channels_; }
 
+  
+  
+  
+  
+  size_t initial_delay() const { return blocker_.initial_delay(); }
+
  private:
   
   
@@ -93,11 +99,11 @@ class LappedTransform {
    public:
     explicit BlockThunk(LappedTransform* parent) : parent_(parent) {}
 
-    virtual void ProcessBlock(const float* const* input,
+ void ProcessBlock(const float* const* input,
                               size_t num_frames,
                               size_t num_input_channels,
                               size_t num_output_channels,
-                              float* const* output);
+                              float* const* output) override;
 
    private:
     LappedTransform* const parent_;
@@ -112,7 +118,7 @@ class LappedTransform {
   Callback* const block_processor_;
   Blocker blocker_;
 
-  rtc::scoped_ptr<RealFourier> fft_;
+  std::unique_ptr<RealFourier> fft_;
   const size_t cplx_length_;
   AlignedArray<float> real_buf_;
   AlignedArray<std::complex<float> > cplx_pre_;

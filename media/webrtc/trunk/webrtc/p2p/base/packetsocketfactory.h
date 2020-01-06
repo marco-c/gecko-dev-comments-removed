@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_PACKETSOCKETFACTORY_H_
 #define WEBRTC_P2P_BASE_PACKETSOCKETFACTORY_H_
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/proxyinfo.h"
 
 namespace rtc {
@@ -21,9 +22,15 @@ class AsyncResolverInterface;
 class PacketSocketFactory {
  public:
   enum Options {
-    OPT_SSLTCP = 0x01,  
-    OPT_TLS = 0x02,
     OPT_STUN = 0x04,
+
+    
+    OPT_TLS = 0x02,           
+    OPT_TLS_FAKE = 0x01,      
+    OPT_TLS_INSECURE = 0x08,  
+
+    
+    OPT_SSLTCP = OPT_TLS_FAKE,
   };
 
   PacketSocketFactory() { }

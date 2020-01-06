@@ -8,20 +8,20 @@
 
 
 
-
-
-
-
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INTELLIGIBILITY_INTELLIGIBILITY_ENHANCER_H_
 
 #include <complex>
+#include <memory>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/common_audio/lapped_transform.h"
+#include "webrtc/base/swap_queue.h"
 #include "webrtc/common_audio/channel_buffer.h"
+#include "webrtc/common_audio/lapped_transform.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/intelligibility/intelligibility_utils.h"
+#include "webrtc/modules/audio_processing/render_queue_item_verifier.h"
+#include "webrtc/modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
 
@@ -29,152 +29,107 @@ namespace webrtc {
 
 
 
-class IntelligibilityEnhancer {
+
+class IntelligibilityEnhancer : public LappedTransform::Callback {
  public:
-  struct Config {
-    
-    
-    
-    
-    Config()
-        : sample_rate_hz(16000),
-          num_capture_channels(1),
-          num_render_channels(1),
-          var_type(intelligibility::VarianceArray::kStepDecaying),
-          var_decay_rate(0.9f),
-          var_window_size(10),
-          analysis_rate(800),
-          gain_change_limit(0.1f),
-          rho(0.02f) {}
-    int sample_rate_hz;
-    size_t num_capture_channels;
-    size_t num_render_channels;
-    intelligibility::VarianceArray::StepType var_type;
-    float var_decay_rate;
-    size_t var_window_size;
-    int analysis_rate;
-    float gain_change_limit;
-    float rho;
-  };
+  IntelligibilityEnhancer(int sample_rate_hz,
+                          size_t num_render_channels,
+                          size_t num_bands,
+                          size_t num_noise_bins);
 
-  explicit IntelligibilityEnhancer(const Config& config);
-  IntelligibilityEnhancer();  
+  ~IntelligibilityEnhancer() override;
 
   
-  void AnalyzeCaptureAudio(float* const* audio,
-                           int sample_rate_hz,
-                           size_t num_channels);
+  void SetCaptureNoiseEstimate(std::vector<float> noise, float gain);
 
   
-  void ProcessRenderAudio(float* const* audio,
-                          int sample_rate_hz,
-                          size_t num_channels);
+  void ProcessRenderAudio(AudioBuffer* audio);
   bool active() const;
 
- private:
-  enum AudioSource {
-    kRenderStream = 0,  
-    kCaptureStream,  
-  };
-
+ protected:
   
-  class TransformCallback : public LappedTransform::Callback {
-   public:
-    TransformCallback(IntelligibilityEnhancer* parent, AudioSource source);
+  
+  void ProcessAudioBlock(const std::complex<float>* const* in_block,
+                         size_t in_channels,
+                         size_t frames,
+                         size_t out_channels,
+                         std::complex<float>* const* out_block) override;
 
-    
-    
-    void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                           size_t in_channels,
-                           size_t frames,
-                           size_t out_channels,
-                           std::complex<float>* const* out_block) override;
-
-   private:
-    IntelligibilityEnhancer* parent_;
-    AudioSource source_;
-  };
-  friend class TransformCallback;
+ private:
+  FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestRenderUpdate);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestErbCreation);
   FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest, TestSolveForGains);
+  FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest,
+                           TestNoiseGainHasExpectedResult);
+  FRIEND_TEST_ALL_PREFIXES(IntelligibilityEnhancerTest,
+                           TestAllBandsHaveSameDelay);
 
   
-  void DispatchAudio(AudioSource source,
-                     const std::complex<float>* in_block,
-                     std::complex<float>* out_block);
+  
+  void SnrBasedEffectActivation();
 
   
-  
-  void ProcessClearBlock(const std::complex<float>* in_block,
-                         std::complex<float>* out_block);
-
-  
-  void AnalyzeClearBlock(float power_target);
-
-  
-  void SolveForLambda(float power_target, float power_bot, float power_top);
+  void SolveForLambda(float power_target);
 
   
   void UpdateErbGains();
 
   
-  void ProcessNoiseBlock(const std::complex<float>* in_block,
-                         std::complex<float>* out_block);
-
-  
   static size_t GetBankSize(int sample_rate, size_t erb_resolution);
 
   
-  void CreateErbBank();
+  std::vector<std::vector<float>> CreateErbBank(size_t num_freqs);
 
   
   
   void SolveForGainsGivenLambda(float lambda, size_t start_freq, float* sols);
 
   
-  
-  void FilterVariance(const float* var, float* result);
+  bool IsSpeech(const float* audio);
 
   
-  static float DotProduct(const float* a, const float* b, size_t length);
+  
+  void DelayHighBands(AudioBuffer* audio);
+
+  static const size_t kMaxNumNoiseEstimatesToBuffer = 5;
 
   const size_t freqs_;         
-  const size_t window_size_;   
+  const size_t num_noise_bins_;
   const size_t chunk_length_;  
   const size_t bank_size_;     
   const int sample_rate_hz_;
-  const int erb_resolution_;
-  const size_t num_capture_channels_;
   const size_t num_render_channels_;
-  const int analysis_rate_;    
 
-  const bool active_;          
-                               
-
-  intelligibility::VarianceArray clear_variance_;
-  intelligibility::VarianceArray noise_variance_;
-  rtc::scoped_ptr<float[]> filtered_clear_var_;
-  rtc::scoped_ptr<float[]> filtered_noise_var_;
-  std::vector<std::vector<float>> filter_bank_;
-  rtc::scoped_ptr<float[]> center_freqs_;
+  intelligibility::PowerEstimator<std::complex<float>> clear_power_estimator_;
+  intelligibility::PowerEstimator<float> noise_power_estimator_;
+  std::vector<float> filtered_clear_pow_;
+  std::vector<float> filtered_noise_pow_;
+  std::vector<float> center_freqs_;
+  std::vector<std::vector<float>> capture_filter_bank_;
+  std::vector<std::vector<float>> render_filter_bank_;
   size_t start_freq_;
-  rtc::scoped_ptr<float[]> rho_;  
-                                  
-  rtc::scoped_ptr<float[]> gains_eq_;  
+
+  std::vector<float> gains_eq_;  
   intelligibility::GainApplier gain_applier_;
 
-  
-  
-  ChannelBuffer<float> temp_render_out_buffer_;
-  ChannelBuffer<float> temp_capture_out_buffer_;
+  std::unique_ptr<LappedTransform> render_mangler_;
 
-  rtc::scoped_ptr<float[]> kbd_window_;
-  TransformCallback render_callback_;
-  TransformCallback capture_callback_;
-  rtc::scoped_ptr<LappedTransform> render_mangler_;
-  rtc::scoped_ptr<LappedTransform> capture_mangler_;
-  int block_count_;
-  int analysis_step_;
+  VoiceActivityDetector vad_;
+  std::vector<int16_t> audio_s16_;
+  size_t chunks_since_voice_;
+  bool is_speech_;
+  float snr_;
+  bool is_active_;
+
+  unsigned long int num_chunks_;
+  unsigned long int num_active_chunks_;
+
+  std::vector<float> noise_estimation_buffer_;
+  SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>
+      noise_estimation_queue_;
+
+  std::vector<std::unique_ptr<intelligibility::DelayBuffer>>
+      high_bands_buffers_;
 };
 
 }  

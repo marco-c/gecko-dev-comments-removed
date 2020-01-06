@@ -20,11 +20,10 @@
 
 #include "filterbank_internal.h"
 
-#include <assert.h>
-
 #include "codec.h"
 #include "filterbank_tables.h"
 #include "settings.h"
+#include "webrtc/base/checks.h"
 
 
 AllpassFilter2FixDec16 WebRtcIsacfix_AllpassFilter2FixDec16;
@@ -44,39 +43,43 @@ void WebRtcIsacfix_AllpassFilter2FixDec16C(
   int32_t a = 0, b = 0;
 
   
-  assert(length % 2 == 0);
+  RTC_DCHECK_EQ(0, length % 2);
 
   for (n = 0; n < length; n++) {
     
     in_out = data_ch1[n];
     a = factor_ch1[0] * in_out;  
-    a <<= 1;  
+    a *= 1 << 1;  
     b = WebRtcSpl_AddSatW32(a, state0_ch1);
     a = -factor_ch1[0] * (int16_t)(b >> 16);  
-    state0_ch1 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  
+    state0_ch1 =
+        WebRtcSpl_AddSatW32(a * (1 << 1), (int32_t)in_out * (1 << 16));  
     in_out = (int16_t) (b >> 16);  
 
     a = factor_ch1[1] * in_out;  
-    a <<= 1; 
+    a *= 1 << 1; 
     b = WebRtcSpl_AddSatW32(a, state1_ch1);  
     a = -factor_ch1[1] * (int16_t)(b >> 16);  
-    state1_ch1 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  
+    state1_ch1 =
+        WebRtcSpl_AddSatW32(a * (1 << 1), (int32_t)in_out * (1 << 16));  
     data_ch1[n] = (int16_t) (b >> 16);  
 
     
     in_out = data_ch2[n];
     a = factor_ch2[0] * in_out;  
-    a <<= 1;  
+    a *= 1 << 1;  
     b = WebRtcSpl_AddSatW32(a, state0_ch2);  
     a = -factor_ch2[0] * (int16_t)(b >> 16);  
-    state0_ch2 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  
+    state0_ch2 =
+        WebRtcSpl_AddSatW32(a * (1 << 1), (int32_t)in_out * (1 << 16));  
     in_out = (int16_t) (b >> 16);  
 
     a = factor_ch2[1] * in_out;  
-    a <<= 1;  
+    a *= (1 << 1);  
     b = WebRtcSpl_AddSatW32(a, state1_ch2);  
     a = -factor_ch2[1] * (int16_t)(b >> 16);  
-    state1_ch2 = WebRtcSpl_AddSatW32(a << 1, (uint32_t)in_out << 16);  
+    state1_ch2 =
+        WebRtcSpl_AddSatW32(a * (1 << 1), (int32_t)in_out * (1 << 16));  
     data_ch2[n] = (int16_t) (b >> 16);  
   }
 
@@ -144,11 +147,11 @@ void WebRtcIsacfix_HighpassFilterFixDec32C(int16_t *io,
     c = in + ((a1 + b1) >> 7);  
     io[k] = (int16_t)WebRtcSpl_SatW32ToW16(c);  
 
-    c = (in << 2) - a2 - b2;  
+    c = in * (1 << 2) - a2 - b2;  
     c = (int32_t)WEBRTC_SPL_SAT(536870911, c, -536870912);
 
     state1 = state0;
-    state0 = c << 2;  
+    state0 = c * (1 << 2);  
   }
   state[0] = state0;
   state[1] = state1;

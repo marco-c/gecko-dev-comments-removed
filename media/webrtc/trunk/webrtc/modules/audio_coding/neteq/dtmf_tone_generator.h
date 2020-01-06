@@ -38,7 +38,7 @@ class DtmfToneGenerator {
   static const int kCoeff2[4][16];  
   static const int kInitValue1[4][16];  
   static const int kInitValue2[4][16];  
-  static const int kAmplitude[37];  
+  static const int kAmplitude[64];  
   static const int16_t kAmpMultiplier = 23171;  
 
   bool initialized_;            

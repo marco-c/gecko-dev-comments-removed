@@ -22,7 +22,7 @@ class UnixFilesystem : public FilesystemInterface {
   UnixFilesystem();
   ~UnixFilesystem() override;
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
   
   
   
@@ -38,10 +38,6 @@ class UnixFilesystem : public FilesystemInterface {
   
   FileStream* OpenFile(const Pathname& filename,
                        const std::string& mode) override;
-
-  
-  
-  bool CreatePrivateFile(const Pathname& filename) override;
 
   
   
@@ -65,7 +61,6 @@ class UnixFilesystem : public FilesystemInterface {
   
   
   bool MoveFile(const Pathname& old_path, const Pathname& new_path) override;
-  bool MoveFolder(const Pathname& old_path, const Pathname& new_path) override;
 
   
   
@@ -99,9 +94,6 @@ class UnixFilesystem : public FilesystemInterface {
                    FileTimeType which,
                    time_t* time) override;
 
-  
-  bool GetAppPathname(Pathname* path) override;
-
   bool GetAppDataFolder(Pathname* path, bool per_user) override;
 
   
@@ -109,11 +101,8 @@ class UnixFilesystem : public FilesystemInterface {
 
   bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) override;
 
-  
-  Pathname GetCurrentDirectory() override;
-
  private:
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
   static char* provided_app_data_folder_;
   static char* provided_app_temp_folder_;
 #else

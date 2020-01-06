@@ -31,9 +31,7 @@ class ConstantPcmPacketSource : public PacketSource {
                           int sample_rate_hz,
                           int payload_type);
 
-  
-  
-  Packet* NextPacket() override;
+  std::unique_ptr<Packet> NextPacket() override;
 
  private:
   void WriteHeader(uint8_t* packet_memory);

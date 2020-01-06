@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/test/testsupport/gtest_prod_util.h"
+#include "webrtc/base/gtest_prod_util.h"
 
 
 

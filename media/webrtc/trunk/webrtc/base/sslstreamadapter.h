@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_SSLSTREAMADAPTER_H_
 #define WEBRTC_BASE_SSLSTREAMADAPTER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,8 +25,18 @@ const int TLS_NULL_WITH_NULL_NULL = 0;
 
 
 const int SRTP_INVALID_CRYPTO_SUITE = 0;
+#ifndef SRTP_AES128_CM_SHA1_80
 const int SRTP_AES128_CM_SHA1_80 = 0x0001;
+#endif
+#ifndef SRTP_AES128_CM_SHA1_32
 const int SRTP_AES128_CM_SHA1_32 = 0x0002;
+#endif
+#ifndef SRTP_AEAD_AES_128_GCM
+const int SRTP_AEAD_AES_128_GCM = 0x0007;
+#endif
+#ifndef SRTP_AEAD_AES_256_GCM
+const int SRTP_AEAD_AES_256_GCM = 0x0008;
+#endif
 
 
 
@@ -35,6 +46,10 @@ extern const char CS_AES_CM_128_HMAC_SHA1_80[];
 
 extern const char CS_AES_CM_128_HMAC_SHA1_32[];
 
+extern const char CS_AEAD_AES_128_GCM[];
+
+extern const char CS_AEAD_AES_256_GCM[];
+
 
 
 
@@ -42,6 +57,30 @@ std::string SrtpCryptoSuiteToName(int crypto_suite);
 
 
 int SrtpCryptoSuiteFromName(const std::string& crypto_suite);
+
+
+
+bool GetSrtpKeyAndSaltLengths(int crypto_suite, int *key_length,
+    int *salt_length);
+
+
+bool IsGcmCryptoSuite(int crypto_suite);
+
+
+bool IsGcmCryptoSuiteName(const std::string& crypto_suite);
+
+struct CryptoOptions {
+  CryptoOptions() {}
+
+  
+  
+  
+  static CryptoOptions NoGcm();
+
+  
+  
+  bool enable_gcm_crypto_suites = false;
+};
 
 
 
@@ -67,9 +106,18 @@ enum SSLProtocolVersion {
   SSL_PROTOCOL_DTLS_10 = SSL_PROTOCOL_TLS_11,
   SSL_PROTOCOL_DTLS_12 = SSL_PROTOCOL_TLS_12,
 };
+enum class SSLPeerCertificateDigestError {
+  NONE,
+  UNKNOWN_ALGORITHM,
+  INVALID_LENGTH,
+  VERIFICATION_FAILED,
+};
 
 
 enum { SSE_MSG_TRUNC = 0xff0001 };
+
+
+enum class SSLHandshakeError { UNKNOWN, INCOMPATIBLE_CIPHERSUITE, MAX_VALUE };
 
 class SSLStreamAdapter : public StreamAdapterInterface {
  public:
@@ -78,9 +126,8 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   
   static SSLStreamAdapter* Create(StreamInterface* stream);
 
-  explicit SSLStreamAdapter(StreamInterface* stream)
-      : StreamAdapterInterface(stream), ignore_bad_cert_(false),
-        client_auth_enabled_(true) { }
+  explicit SSLStreamAdapter(StreamInterface* stream);
+  ~SSLStreamAdapter() override;
 
   void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
   bool ignore_bad_cert() const { return ignore_bad_cert_; }
@@ -88,9 +135,6 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   void set_client_auth_enabled(bool enabled) { client_auth_enabled_ = enabled; }
   bool client_auth_enabled() const { return client_auth_enabled_; }
 
-  
-  
-  
   
   
   
@@ -126,20 +170,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   
   
   
-
   
   
-  
-  virtual int StartSSLWithServer(const char* server_name) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual int StartSSLWithPeer() = 0;
+  virtual int StartSSL() = 0;
 
   
   
@@ -148,18 +181,23 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   
   
   
-  virtual bool SetPeerCertificateDigest(const std::string& digest_alg,
-                                        const unsigned char* digest_val,
-                                        size_t digest_len) = 0;
+  
+  virtual bool SetPeerCertificateDigest(
+      const std::string& digest_alg,
+      const unsigned char* digest_val,
+      size_t digest_len,
+      SSLPeerCertificateDigestError* error = nullptr) = 0;
 
   
   
   
-  virtual bool GetPeerCertificate(SSLCertificate** cert) const = 0;
+  virtual std::unique_ptr<SSLCertificate> GetPeerCertificate() const = 0;
 
   
   
   virtual bool GetSslCipherSuite(int* cipher_suite);
+
+  virtual int GetSslVersion() const = 0;
 
   
   
@@ -185,20 +223,32 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   virtual bool GetDtlsSrtpCryptoSuite(int* crypto_suite);
 
   
+  
+  
+  
+  virtual bool IsTlsConnected() = 0;
+
+  
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static bool IsBoringSsl();
 
   
   
-  
-  static int GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                        KeyType key_type);
+  static bool IsAcceptableCipher(int cipher, KeyType key_type);
+  static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);
 
   
   
   
   static std::string SslCipherSuiteToName(int cipher_suite);
+
+  
+  
+  static void enable_time_callback_for_testing();
+
+  sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
   

@@ -19,14 +19,16 @@
 
 namespace rtc {
 
-RateTracker::RateTracker(uint32_t bucket_milliseconds, size_t bucket_count)
+static const int64_t kTimeUnset = -1;
+
+RateTracker::RateTracker(int64_t bucket_milliseconds, size_t bucket_count)
     : bucket_milliseconds_(bucket_milliseconds),
       bucket_count_(bucket_count),
       sample_buckets_(new size_t[bucket_count + 1]),
       total_sample_count_(0u),
-      bucket_start_time_milliseconds_(~0u) {
-  RTC_CHECK(bucket_milliseconds > 0u);
-  RTC_CHECK(bucket_count > 0u);
+      bucket_start_time_milliseconds_(kTimeUnset) {
+  RTC_CHECK(bucket_milliseconds > 0);
+  RTC_CHECK(bucket_count > 0);
 }
 
 RateTracker::~RateTracker() {
@@ -34,40 +36,43 @@ RateTracker::~RateTracker() {
 }
 
 double RateTracker::ComputeRateForInterval(
-    uint32_t interval_milliseconds) const {
-  if (bucket_start_time_milliseconds_ == ~0u) {
+    int64_t interval_milliseconds) const {
+  if (bucket_start_time_milliseconds_ == kTimeUnset) {
     return 0.0;
   }
-  uint32_t current_time = Time();
+  int64_t current_time = Time();
   
   
-  uint32_t available_interval_milliseconds = std::min<uint32_t>(
-      interval_milliseconds,
-      bucket_milliseconds_ * static_cast<uint32_t>(bucket_count_));
+  int64_t available_interval_milliseconds =
+      std::min(interval_milliseconds,
+               bucket_milliseconds_ * static_cast<int64_t>(bucket_count_));
   
   
   size_t buckets_to_skip;
   
   
-  uint32_t milliseconds_to_skip;
+  int64_t milliseconds_to_skip;
   if (current_time >
       initialization_time_milliseconds_ + available_interval_milliseconds) {
-    uint32_t time_to_skip =
+    int64_t time_to_skip =
         current_time - bucket_start_time_milliseconds_ +
-        static_cast<uint32_t>(bucket_count_) * bucket_milliseconds_ -
+        static_cast<int64_t>(bucket_count_) * bucket_milliseconds_ -
         available_interval_milliseconds;
     buckets_to_skip = time_to_skip / bucket_milliseconds_;
     milliseconds_to_skip = time_to_skip % bucket_milliseconds_;
   } else {
     buckets_to_skip = bucket_count_ - current_bucket_;
-    milliseconds_to_skip = 0u;
+    milliseconds_to_skip = 0;
     available_interval_milliseconds =
         TimeDiff(current_time, initialization_time_milliseconds_);
+    
+    if (available_interval_milliseconds < bucket_milliseconds_) {
+      return 0.0;
+    }
   }
   
   
-  if (buckets_to_skip > bucket_count_ ||
-      available_interval_milliseconds == 0u) {
+  if (buckets_to_skip > bucket_count_ || available_interval_milliseconds == 0) {
     return 0.0;
   }
   size_t start_bucket = NextBucketIndex(current_bucket_ + buckets_to_skip);
@@ -84,21 +89,21 @@ double RateTracker::ComputeRateForInterval(
     total_samples += sample_buckets_[i];
   }
   
-  return static_cast<double>(total_samples * 1000u) /
-      static_cast<double>(available_interval_milliseconds);
+  return static_cast<double>(total_samples * 1000) /
+         static_cast<double>(available_interval_milliseconds);
 }
 
 double RateTracker::ComputeTotalRate() const {
-  if (bucket_start_time_milliseconds_ == ~0u) {
+  if (bucket_start_time_milliseconds_ == kTimeUnset) {
     return 0.0;
   }
-  uint32_t current_time = Time();
-  if (TimeIsLaterOrEqual(current_time, initialization_time_milliseconds_)) {
+  int64_t current_time = Time();
+  if (current_time <= initialization_time_milliseconds_) {
     return 0.0;
   }
-  return static_cast<double>(total_sample_count_ * 1000u) /
-      static_cast<double>(
-          TimeDiff(current_time, initialization_time_milliseconds_));
+  return static_cast<double>(total_sample_count_ * 1000) /
+         static_cast<double>(
+             TimeDiff(current_time, initialization_time_milliseconds_));
 }
 
 size_t RateTracker::TotalSampleCount() const {
@@ -107,15 +112,16 @@ size_t RateTracker::TotalSampleCount() const {
 
 void RateTracker::AddSamples(size_t sample_count) {
   EnsureInitialized();
-  uint32_t current_time = Time();
+  int64_t current_time = Time();
   
   
-  for (size_t i = 0u; i <= bucket_count_ &&
-      current_time >= bucket_start_time_milliseconds_ + bucket_milliseconds_;
-      ++i) {
+  for (size_t i = 0;
+       i <= bucket_count_ &&
+       current_time >= bucket_start_time_milliseconds_ + bucket_milliseconds_;
+       ++i) {
     bucket_start_time_milliseconds_ += bucket_milliseconds_;
     current_bucket_ = NextBucketIndex(current_bucket_);
-    sample_buckets_[current_bucket_] = 0u;
+    sample_buckets_[current_bucket_] = 0;
   }
   
   
@@ -126,18 +132,18 @@ void RateTracker::AddSamples(size_t sample_count) {
   total_sample_count_ += sample_count;
 }
 
-uint32_t RateTracker::Time() const {
-  return rtc::Time();
+int64_t RateTracker::Time() const {
+  return rtc::TimeMillis();
 }
 
 void RateTracker::EnsureInitialized() {
-  if (bucket_start_time_milliseconds_ == ~0u) {
+  if (bucket_start_time_milliseconds_ == kTimeUnset) {
     initialization_time_milliseconds_ = Time();
     bucket_start_time_milliseconds_ = initialization_time_milliseconds_;
-    current_bucket_ = 0u;
+    current_bucket_ = 0;
     
     
-    sample_buckets_[current_bucket_] = 0u;
+    sample_buckets_[current_bucket_] = 0;
   }
 }
 

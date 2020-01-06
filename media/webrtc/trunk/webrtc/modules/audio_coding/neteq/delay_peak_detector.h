@@ -14,14 +14,16 @@
 #include <string.h>  
 
 #include <list>
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 
 namespace webrtc {
 
 class DelayPeakDetector {
  public:
-  DelayPeakDetector();
+  DelayPeakDetector(const TickTimer* tick_timer);
   virtual ~DelayPeakDetector();
   virtual void Reset();
 
@@ -39,17 +41,12 @@ class DelayPeakDetector {
 
   
   
-  virtual int MaxPeakPeriod() const;
+  virtual uint64_t MaxPeakPeriod() const;
 
   
   
   
   virtual bool Update(int inter_arrival_time, int target_level);
-
-  
-  
-  
-  virtual void IncrementCounter(int inc_ms);
 
  private:
   static const size_t kMaxNumPeaks = 8;
@@ -58,7 +55,7 @@ class DelayPeakDetector {
   static const int kMaxPeakPeriodMs = 10000;
 
   typedef struct {
-    int period_ms;
+    uint64_t period_ms;
     int peak_height_packets;
   } Peak;
 
@@ -67,7 +64,8 @@ class DelayPeakDetector {
   std::list<Peak> peak_history_;
   bool peak_found_;
   int peak_detection_threshold_;
-  int peak_period_counter_ms_;
+  const TickTimer* tick_timer_;
+  std::unique_ptr<TickTimer::Stopwatch> peak_period_stopwatch_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayPeakDetector);
 };

@@ -41,17 +41,24 @@
 
 int main(int argc, char** argv) {
   std::string program_name = argv[0];
-  std::string usage = "Compares the output video with the initially sent video."
-      "\nExample usage:\n" + program_name + " --stats_file=stats.txt "
-      "--reference_file=ref.yuv --test_file=test.yuv --width=320 --height=240\n"
+  std::string usage =
+      "Compares the output video with the initially sent video."
+      "\nExample usage:\n" +
+      program_name +
+      " --reference_file=ref.yuv --test_file=test.yuv --width=320 "
+      "--height=240\n"
       "Command line flags:\n"
       "  - width(int): The width of the reference and test files. Default: -1\n"
       "  - height(int): The height of the reference and test files. "
       " Default: -1\n"
       "  - label(string): The label to use for the perf output."
       " Default: MY_TEST\n"
-      "  - stats_file(string): The full name of the file containing the stats"
-      " after decoding of the received YUV video. Default: stats.txt\n"
+      "  - stats_file_ref(string): The path to the stats file that will be"
+      " produced for the reference video file."
+      " Default: stats_ref.txt\n"
+      "  - stats_file_test(string): The path to the stats file that will be"
+      " produced for the test video file."
+      " Default: stats_test.txt\n"
       "  - reference_file(string): The reference YUV file to compare against."
       " Default: ref.yuv\n"
       "  - test_file(string): The test YUV file to run the analysis for."
@@ -66,7 +73,8 @@ int main(int argc, char** argv) {
   parser.SetFlag("width", "-1");
   parser.SetFlag("height", "-1");
   parser.SetFlag("label", "MY_TEST");
-  parser.SetFlag("stats_file", "stats.txt");
+  parser.SetFlag("stats_file_ref", "stats_ref.txt");
+  parser.SetFlag("stats_file_test", "stats_test.txt");
   parser.SetFlag("reference_file", "ref.yuv");
   parser.SetFlag("test_file", "test.yuv");
   parser.SetFlag("help", "false");
@@ -90,11 +98,13 @@ int main(int argc, char** argv) {
 
   webrtc::test::RunAnalysis(parser.GetFlag("reference_file").c_str(),
                             parser.GetFlag("test_file").c_str(),
-                            parser.GetFlag("stats_file").c_str(), width, height,
-                            &results);
+                            parser.GetFlag("stats_file_ref").c_str(),
+                            parser.GetFlag("stats_file_test").c_str(), width,
+                            height, &results);
 
   std::string label = parser.GetFlag("label");
   webrtc::test::PrintAnalysisResults(label, &results);
-  webrtc::test::PrintMaxRepeatedAndSkippedFrames(label,
-                                                 parser.GetFlag("stats_file"));
+  webrtc::test::PrintMaxRepeatedAndSkippedFrames(
+      label, parser.GetFlag("stats_file_ref"),
+      parser.GetFlag("stats_file_test"));
 }

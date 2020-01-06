@@ -47,6 +47,8 @@ class DesktopRegion {
   
   
   struct Row {
+    Row(const Row&);
+    Row(Row&&);
     Row(int32_t top, int32_t bottom);
     ~Row();
 

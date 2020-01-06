@@ -70,54 +70,12 @@ class AudioTransport {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int OnDataAvailable(const int voe_channels[],
-                              size_t number_of_voe_channels,
-                              const int16_t* audio_data,
-                              int sample_rate,
-                              size_t number_of_channels,
-                              size_t number_of_frames,
-                              int audio_delay_milliseconds,
-                              int current_volume,
-                              bool key_pressed,
-                              bool need_audio_processing) {
-    return 0;
-  }
-
-  
-  
-  
-  
-  
-  virtual void OnData(int voe_channel,
-                      const void* audio_data,
-                      int bits_per_sample,
-                      int sample_rate,
-                      size_t number_of_channels,
-                      size_t number_of_frames) {}
-
-  
-  
-  
-  
-  
-  
   virtual void PushCaptureData(int voe_channel,
                                const void* audio_data,
                                int bits_per_sample,
                                int sample_rate,
                                size_t number_of_channels,
-                               size_t number_of_frames) {}
+                               size_t number_of_frames) = 0;
 
   
   
@@ -129,7 +87,7 @@ class AudioTransport {
                               size_t number_of_frames,
                               void* audio_data,
                               int64_t* elapsed_time_ms,
-                              int64_t* ntp_time_ms) {}
+                              int64_t* ntp_time_ms) = 0;
 
  protected:
   virtual ~AudioTransport() {}

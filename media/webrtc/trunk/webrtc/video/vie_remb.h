@@ -15,14 +15,13 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class ProcessThread;
 class RtpRtcp;
 
@@ -51,18 +50,18 @@ class VieRemb : public RemoteBitrateObserver {
   
   
   
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate);
+  virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                       uint32_t bitrate);
 
  private:
   typedef std::list<RtpRtcp*> RtpModules;
 
   Clock* const clock_;
-  rtc::scoped_ptr<CriticalSectionWrapper> list_crit_;
+  rtc::CriticalSection list_crit_;
 
   
   int64_t last_remb_time_;
-  unsigned int last_send_bitrate_;
+  uint32_t last_send_bitrate_;
 
   
   RtpModules receive_modules_;
@@ -71,7 +70,7 @@ class VieRemb : public RemoteBitrateObserver {
   RtpModules rtcp_sender_;
 
   
-  unsigned int bitrate_;
+  uint32_t bitrate_;
 };
 
 }  

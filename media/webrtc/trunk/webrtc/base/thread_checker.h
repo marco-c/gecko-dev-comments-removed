@@ -17,17 +17,11 @@
 
 
 
+#define ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
 
-
-
-
-
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define ENABLE_THREAD_CHECKER 1
-#else
-#define ENABLE_THREAD_CHECKER 0
-#endif
-
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker_impl.h"
 
 namespace rtc {
@@ -77,15 +71,108 @@ class ThreadCheckerDoNothing {
 
 
 #if ENABLE_THREAD_CHECKER
-class ThreadChecker : public ThreadCheckerImpl {
+class LOCKABLE ThreadChecker : public ThreadCheckerImpl {
 };
 #else
-class ThreadChecker : public ThreadCheckerDoNothing {
+class LOCKABLE ThreadChecker : public ThreadCheckerDoNothing {
 };
 #endif  
 
 #undef ENABLE_THREAD_CHECKER
 
+namespace internal {
+class SCOPED_LOCKABLE AnnounceOnThread {
+ public:
+  template<typename ThreadLikeObject>
+  explicit AnnounceOnThread(const ThreadLikeObject* thread_like_object)
+      EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
+  ~AnnounceOnThread() UNLOCK_FUNCTION() {}
+
+  template<typename ThreadLikeObject>
+  static bool IsCurrent(const ThreadLikeObject* thread_like_object) {
+    return thread_like_object->IsCurrent();
+  }
+  static bool IsCurrent(const rtc::ThreadChecker* checker) {
+    return checker->CalledOnValidThread();
+  }
+
+ private:
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AnnounceOnThread);
+};
+
 }  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ACCESS_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
+
+
+#define RUN_ON(x) THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+
+#define RTC_DCHECK_RUN_ON(thread_like_object) \
+  rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \
+  RTC_DCHECK(rtc::internal::AnnounceOnThread::IsCurrent(thread_like_object))
 
 #endif  

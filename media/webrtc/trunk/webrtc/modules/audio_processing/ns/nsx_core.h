@@ -215,7 +215,7 @@ void WebRtcNsx_SpeechNoiseProb(NoiseSuppressionFixedC* inst,
                                uint32_t* priorLocSnr,
                                uint32_t* postLocSnr);
 
-#if (defined WEBRTC_DETECT_NEON || defined WEBRTC_HAS_NEON)
+#if defined(WEBRTC_HAS_NEON)
 
 
 

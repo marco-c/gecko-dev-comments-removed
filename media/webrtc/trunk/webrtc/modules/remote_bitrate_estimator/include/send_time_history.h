@@ -13,35 +13,42 @@
 
 #include <map>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
+class Clock;
+struct PacketInfo;
 
 class SendTimeHistory {
  public:
-  SendTimeHistory(Clock* clock, int64_t packet_age_limit);
-  virtual ~SendTimeHistory();
+  SendTimeHistory(Clock* clock, int64_t packet_age_limit_ms);
+  ~SendTimeHistory();
 
-  void AddAndRemoveOld(uint16_t sequence_number, size_t length, bool was_paced);
-  bool OnSentPacket(uint16_t sequence_number, int64_t timestamp);
-  
-  
-  
-  bool GetInfo(PacketInfo* packet, bool remove);
   void Clear();
 
+  
+  void AddAndRemoveOld(uint16_t sequence_number,
+                       size_t payload_size,
+                       int probe_cluster_id);
+
+  
+  
+  bool OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
+
+  
+  
+  
+  bool GetInfo(PacketInfo* packet_info, bool remove);
+
  private:
-  void EraseOld();
-  void UpdateOldestSequenceNumber();
-
   Clock* const clock_;
-  const int64_t packet_age_limit_;
-  uint16_t oldest_sequence_number_;  
-  std::map<uint16_t, PacketInfo> history_;
+  const int64_t packet_age_limit_ms_;
+  SequenceNumberUnwrapper seq_num_unwrapper_;
+  std::map<int64_t, PacketInfo> history_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(SendTimeHistory);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);
 };
 
 }  

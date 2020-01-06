@@ -26,9 +26,6 @@
 #endif
 
 
-#include "webrtc/engine_configurations.h"
-
-
 #define CODEC_TEST_TIME 400
 
 #endif  

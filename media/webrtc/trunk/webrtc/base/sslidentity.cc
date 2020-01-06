@@ -9,10 +9,6 @@
 
 
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif  
-
 #include "webrtc/base/sslidentity.h"
 
 #include <ctime>
@@ -22,6 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/sslconfig.h"
+#include "webrtc/base/sslfingerprint.h"
 
 #if SSL_USE_OPENSSL
 
@@ -34,6 +31,70 @@ namespace rtc {
 const char kPemTypeCertificate[] = "CERTIFICATE";
 const char kPemTypeRsaPrivateKey[] = "RSA PRIVATE KEY";
 const char kPemTypeEcPrivateKey[] = "EC PRIVATE KEY";
+
+SSLCertificateStats::SSLCertificateStats(
+    std::string&& fingerprint,
+    std::string&& fingerprint_algorithm,
+    std::string&& base64_certificate,
+    std::unique_ptr<SSLCertificateStats>&& issuer)
+    : fingerprint(std::move(fingerprint)),
+      fingerprint_algorithm(std::move(fingerprint_algorithm)),
+      base64_certificate(std::move(base64_certificate)),
+      issuer(std::move(issuer)) {
+}
+
+SSLCertificateStats::~SSLCertificateStats() {
+}
+
+std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats() const {
+  
+  
+  
+  
+  
+  std::unique_ptr<SSLCertChain> chain = GetChain();
+  std::unique_ptr<SSLCertificateStats> issuer;
+  if (chain) {
+    
+    
+    for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
+      const SSLCertificate* cert = &chain->Get(i);
+      issuer = cert->GetStats(std::move(issuer));
+    }
+  }
+  return GetStats(std::move(issuer));
+}
+
+std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats(
+    std::unique_ptr<SSLCertificateStats> issuer) const {
+  
+  
+  
+  std::string digest_algorithm;
+  if (!GetSignatureDigestAlgorithm(&digest_algorithm))
+    return nullptr;
+
+  
+  
+  
+  
+  std::unique_ptr<SSLFingerprint> ssl_fingerprint(
+      SSLFingerprint::Create(digest_algorithm, this));
+  if (!ssl_fingerprint)
+    return nullptr;
+  std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();
+
+  Buffer der_buffer;
+  ToDER(&der_buffer);
+  std::string der_base64;
+  Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(), &der_base64);
+
+  return std::unique_ptr<SSLCertificateStats>(new SSLCertificateStats(
+      std::move(fingerprint),
+      std::move(digest_algorithm),
+      std::move(der_base64),
+      std::move(issuer)));
+}
 
 KeyParams::KeyParams(KeyType key_type) {
   if (key_type == KT_ECDSA) {
@@ -139,7 +200,7 @@ std::string SSLIdentity::DerToPem(const std::string& pem_type,
 }
 
 SSLCertChain::SSLCertChain(const std::vector<SSLCertificate*>& certs) {
-  ASSERT(!certs.empty());
+  RTC_DCHECK(!certs.empty());
   certs_.resize(certs.size());
   std::transform(certs.begin(), certs.end(), certs_.begin(), DupCert);
 }
@@ -154,22 +215,49 @@ SSLCertChain::~SSLCertChain() {
 
 #if SSL_USE_OPENSSL
 
+
 SSLCertificate* SSLCertificate::FromPEMString(const std::string& pem_string) {
   return OpenSSLCertificate::FromPEMString(pem_string);
 }
 
+
+SSLIdentity* SSLIdentity::GenerateWithExpiration(const std::string& common_name,
+                                                 const KeyParams& key_params,
+                                                 time_t certificate_lifetime) {
+  return OpenSSLIdentity::GenerateWithExpiration(common_name, key_params,
+                                                 certificate_lifetime);
+}
+
+
 SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
                                    const KeyParams& key_params) {
-  return OpenSSLIdentity::Generate(common_name, key_params);
+  return OpenSSLIdentity::GenerateWithExpiration(
+      common_name, key_params, kDefaultCertificateLifetimeInSeconds);
+}
+
+
+SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
+                                   KeyType key_type) {
+  return OpenSSLIdentity::GenerateWithExpiration(
+      common_name, KeyParams(key_type), kDefaultCertificateLifetimeInSeconds);
 }
 
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
   return OpenSSLIdentity::GenerateForTest(params);
 }
 
+
 SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
                                          const std::string& certificate) {
   return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
+}
+
+bool operator==(const SSLIdentity& a, const SSLIdentity& b) {
+  return static_cast<const OpenSSLIdentity&>(a) ==
+         static_cast<const OpenSSLIdentity&>(b);
+}
+bool operator!=(const SSLIdentity& a, const SSLIdentity& b) {
+  return !(a == b);
 }
 
 #else  

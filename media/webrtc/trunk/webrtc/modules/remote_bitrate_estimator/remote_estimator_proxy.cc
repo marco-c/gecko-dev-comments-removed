@@ -10,6 +10,9 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 
+#include <limits>
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -20,8 +23,15 @@
 namespace webrtc {
 
 
-const int RemoteEstimatorProxy::kDefaultProcessIntervalMs = 50;
 const int RemoteEstimatorProxy::kBackWindowMs = 500;
+const int RemoteEstimatorProxy::kMinSendIntervalMs = 50;
+const int RemoteEstimatorProxy::kMaxSendIntervalMs = 250;
+const int RemoteEstimatorProxy::kDefaultSendIntervalMs = 100;
+
+
+
+static constexpr int64_t kMaxTimeMs =
+    std::numeric_limits<int64_t>::max() / 1000;
 
 RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
                                            PacketRouter* packet_router)
@@ -30,7 +40,8 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
       last_process_time_ms_(-1),
       media_ssrc_(0),
       feedback_sequence_(0),
-      window_start_seq_(-1) {}
+      window_start_seq_(-1),
+      send_interval_ms_(kDefaultSendIntervalMs) {}
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
@@ -43,8 +54,7 @@ void RemoteEstimatorProxy::IncomingPacketFeedbackVector(
 
 void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
                                           size_t payload_size,
-                                          const RTPHeader& header,
-                                          bool was_paced) {
+                                          const RTPHeader& header) {
   if (!header.extension.hasTransportSequenceNumber) {
     LOG(LS_WARNING) << "RemoteEstimatorProxy: Incoming packet "
                        "is missing the transport sequence number extension!";
@@ -52,37 +62,27 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
   }
   rtc::CritScope cs(&lock_);
   media_ssrc_ = header.ssrc;
+
   OnPacketArrival(header.extension.transportSequenceNumber, arrival_time_ms);
 }
-
-void RemoteEstimatorProxy::RemoveStream(unsigned int ssrc) {}
 
 bool RemoteEstimatorProxy::LatestEstimate(std::vector<unsigned int>* ssrcs,
                                           unsigned int* bitrate_bps) const {
   return false;
 }
 
-bool RemoteEstimatorProxy::GetStats(
-    ReceiveBandwidthEstimatorStats* output) const {
-  return false;
-}
-
-
 int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
-  int64_t now = clock_->TimeInMilliseconds();
   int64_t time_until_next = 0;
-  if (last_process_time_ms_ != -1 &&
-      now - last_process_time_ms_ < kDefaultProcessIntervalMs) {
-    time_until_next = (last_process_time_ms_ + kDefaultProcessIntervalMs - now);
+  if (last_process_time_ms_ != -1) {
+    rtc::CritScope cs(&lock_);
+    int64_t now = clock_->TimeInMilliseconds();
+    if (now - last_process_time_ms_ < send_interval_ms_)
+      time_until_next = (last_process_time_ms_ + send_interval_ms_ - now);
   }
   return time_until_next;
 }
 
-int32_t RemoteEstimatorProxy::Process() {
-  
-
-  if (TimeUntilNextProcess() > 0)
-    return 0;
+void RemoteEstimatorProxy::Process() {
   last_process_time_ms_ = clock_->TimeInMilliseconds();
 
   bool more_to_build = true;
@@ -95,16 +95,48 @@ int32_t RemoteEstimatorProxy::Process() {
       more_to_build = false;
     }
   }
+}
 
-  return 0;
+void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
+  
+  
+  
+  
+  
+  constexpr int kTwccReportSize = 20 + 8 + 10 + 30;
+  constexpr double kMinTwccRate =
+      kTwccReportSize * 8.0 * 1000.0 / kMaxSendIntervalMs;
+  constexpr double kMaxTwccRate =
+      kTwccReportSize * 8.0 * 1000.0 / kMinSendIntervalMs;
+
+  
+  rtc::CritScope cs(&lock_);
+  send_interval_ms_ = static_cast<int>(0.5 + kTwccReportSize * 8.0 * 1000.0 /
+      (std::max(std::min(0.05 * bitrate_bps, kMaxTwccRate), kMinTwccRate)));
 }
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
                                            int64_t arrival_time) {
-  int64_t seq = unwrapper_.Unwrap(sequence_number);
+  if (arrival_time < 0 || arrival_time > kMaxTimeMs) {
+    LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time;
+    return;
+  }
 
-  if (window_start_seq_ == -1) {
-    window_start_seq_ = seq;
+  
+  
+  
+  
+  int64_t seq = unwrapper_.Unwrap(sequence_number);
+  if (seq > window_start_seq_ + 0xFFFF / 2) {
+    LOG(LS_WARNING) << "Skipping this sequence number (" << sequence_number
+                    << ") since it likely is reordered, but the unwrapper"
+                       "failed to handle it. Feedback window starts at "
+                    << window_start_seq_ << ".";
+    return;
+  }
+
+  if (packet_arrival_times_.lower_bound(window_start_seq_) ==
+      packet_arrival_times_.end()) {
     
     for (auto it = packet_arrival_times_.begin();
          it != packet_arrival_times_.end() && it->first < seq &&
@@ -113,50 +145,60 @@ void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,
       ++it;
       packet_arrival_times_.erase(delete_it);
     }
+  }
+
+  if (window_start_seq_ == -1) {
+    window_start_seq_ = sequence_number;
   } else if (seq < window_start_seq_) {
     window_start_seq_ = seq;
   }
 
-  RTC_DCHECK(packet_arrival_times_.end() == packet_arrival_times_.find(seq));
+  
+  if (packet_arrival_times_.find(seq) != packet_arrival_times_.end())
+    return;
+
   packet_arrival_times_[seq] = arrival_time;
 }
 
 bool RemoteEstimatorProxy::BuildFeedbackPacket(
     rtcp::TransportFeedback* feedback_packet) {
+  
+  
+  
   rtc::CritScope cs(&lock_);
-  if (window_start_seq_ == -1)
+  auto it = packet_arrival_times_.lower_bound(window_start_seq_);
+  if (it == packet_arrival_times_.end()) {
+    
     return false;
+  }
 
   
   
-  
-  auto it = packet_arrival_times_.find(window_start_seq_);
-  RTC_DCHECK(it != packet_arrival_times_.end());
-
+  const int64_t first_sequence = it->first;
+  feedback_packet->SetMediaSsrc(media_ssrc_);
   
   
-  feedback_packet->WithMediaSourceSsrc(media_ssrc_);
-  feedback_packet->WithBase(static_cast<uint16_t>(it->first & 0xFFFF),
-                            it->second * 1000);
-  feedback_packet->WithFeedbackSequenceNumber(feedback_sequence_++);
+  
+  feedback_packet->SetBase(static_cast<uint16_t>(window_start_seq_ & 0xFFFF),
+                           it->second * 1000);
+  feedback_packet->SetFeedbackSequenceNumber(feedback_sequence_++);
   for (; it != packet_arrival_times_.end(); ++it) {
-    if (!feedback_packet->WithReceivedPacket(
+    if (!feedback_packet->AddReceivedPacket(
             static_cast<uint16_t>(it->first & 0xFFFF), it->second * 1000)) {
       
       
-      RTC_CHECK_NE(window_start_seq_, it->first);
+      RTC_CHECK_NE(first_sequence, it->first);
 
       
       
-      window_start_seq_ = it->first;
       break;
     }
+
     
     
     
+    window_start_seq_ = it->first + 1;
   }
-  if (it == packet_arrival_times_.end())
-    window_start_seq_ = -1;
 
   return true;
 }

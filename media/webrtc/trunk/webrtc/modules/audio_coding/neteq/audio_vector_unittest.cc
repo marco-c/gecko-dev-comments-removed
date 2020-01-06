@@ -15,7 +15,7 @@
 
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -80,14 +80,6 @@ TEST_F(AudioVectorTest, PushBackAndCopy) {
   
   vec.CopyTo(&vec_copy);
   EXPECT_TRUE(vec_copy.Empty());
-}
-
-
-TEST_F(AudioVectorTest, CopyToNull) {
-  AudioVector vec;
-  AudioVector* vec_copy = NULL;
-  vec.PushBack(array_, array_length());
-  vec.CopyTo(vec_copy);
 }
 
 

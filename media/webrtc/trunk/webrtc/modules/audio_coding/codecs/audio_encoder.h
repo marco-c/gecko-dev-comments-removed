@@ -15,20 +15,46 @@
 #include <vector>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/deprecation.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+class Clock;
+class RtcEventLog;
 
 
 
 class AudioEncoder {
  public:
+  
+  
+  
+  
+  enum class CodecType {
+    kOther = 0,  
+    kOpus = 1,
+    kIsac = 2,
+    kPcmA = 3,
+    kPcmU = 4,
+    kG722 = 5,
+    kIlbc = 6,
+
+    
+    
+    
+    kMaxLoggedAudioCodecTypes
+  };
+
   struct EncodedInfoLeaf {
     size_t encoded_bytes = 0;
     uint32_t encoded_timestamp = 0;
     int payload_type = 0;
     bool send_even_if_empty = false;
     bool speech = true;
+    CodecType encoder_type = CodecType::kOther;
   };
 
   
@@ -43,20 +69,16 @@ class AudioEncoder {
   
   struct EncodedInfo : public EncodedInfoLeaf {
     EncodedInfo();
+    EncodedInfo(const EncodedInfo&);
+    EncodedInfo(EncodedInfo&&);
     ~EncodedInfo();
+    EncodedInfo& operator=(const EncodedInfo&);
+    EncodedInfo& operator=(EncodedInfo&&);
 
     std::vector<EncodedInfoLeaf> redundant;
   };
 
   virtual ~AudioEncoder() = default;
-
-  
-  
-  
-  
-  
-  
-  virtual size_t MaxEncodedBytes() const = 0;
 
   
   
@@ -89,17 +111,9 @@ class AudioEncoder {
   
   
   
-  
-  
   EncodedInfo Encode(uint32_t rtp_timestamp,
                      rtc::ArrayView<const int16_t> audio,
-                     size_t max_encoded_bytes,
-                     uint8_t* encoded);
-
-  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
-                                     rtc::ArrayView<const int16_t> audio,
-                                     size_t max_encoded_bytes,
-                                     uint8_t* encoded) = 0;
+                     rtc::Buffer* encoded);
 
   
   
@@ -119,6 +133,10 @@ class AudioEncoder {
 
   
   
+  virtual bool GetDtx() const;
+
+  
+  
   enum class Application { kSpeech, kAudio };
   virtual bool SetApplication(Application application);
 
@@ -132,12 +150,58 @@ class AudioEncoder {
   
   
   
-  virtual void SetProjectedPacketLossRate(double fraction);
+  
+  RTC_DEPRECATED virtual void SetTargetBitrate(int target_bps);
 
   
   
   
-  virtual void SetTargetBitrate(int target_bps);
+  
+  
+  
+  virtual rtc::ArrayView<std::unique_ptr<AudioEncoder>>
+  ReclaimContainedEncoders();
+
+  
+  virtual bool EnableAudioNetworkAdaptor(const std::string& config_string,
+                                         RtcEventLog* event_log,
+                                         const Clock* clock);
+
+  
+  virtual void DisableAudioNetworkAdaptor();
+
+  
+  
+  virtual void OnReceivedUplinkPacketLossFraction(
+      float uplink_packet_loss_fraction);
+
+  
+  virtual void OnReceivedTargetAudioBitrate(int target_bps);
+
+  
+  
+  virtual void OnReceivedUplinkBandwidth(
+      int target_audio_bitrate_bps,
+      rtc::Optional<int64_t> probing_interval_ms);
+
+  
+  virtual void OnReceivedRtt(int rtt_ms);
+
+  
+  
+  virtual void OnReceivedOverhead(size_t overhead_bytes_per_packet);
+
+  
+  
+  virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
+                                           int max_frame_length_ms);
+
+ protected:
+  
+  
+  virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
+                                 rtc::ArrayView<const int16_t> audio,
+                                 rtc::Buffer* encoded) = 0;
 };
 }  
 #endif  

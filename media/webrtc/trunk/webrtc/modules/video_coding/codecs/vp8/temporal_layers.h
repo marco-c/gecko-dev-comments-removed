@@ -12,11 +12,13 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
 
-#include "vpx/vpx_encoder.h"
+#include <vector>
 
-#include "webrtc/common.h"
 #include "webrtc/common_video/include/video_image.h"
 #include "webrtc/typedefs.h"
+
+struct vpx_codec_enc_cfg;
+typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 
 namespace webrtc {
 
@@ -26,25 +28,21 @@ class TemporalLayers {
  public:
   
   
-  struct Factory {
-    Factory() {}
-    virtual ~Factory() {}
-    virtual TemporalLayers* Create(int temporal_layers,
-                                   uint8_t initial_tl0_pic_idx) const;
-    static const ConfigOptionID identifier =
-        ConfigOptionID::kTemporalLayersFactory;
-  };
-
   virtual ~TemporalLayers() {}
 
   
   
   virtual int EncodeFlags(uint32_t timestamp) = 0;
 
-  virtual bool ConfigureBitrates(int bitrate_kbit,
-                                 int max_bitrate_kbit,
-                                 int framerate,
-                                 vpx_codec_enc_cfg_t* cfg) = 0;
+  
+  
+  virtual std::vector<uint32_t> OnRatesUpdated(int bitrate_kbps,
+                                               int max_bitrate_kbps,
+                                               int framerate) = 0;
+
+  
+  
+  virtual bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) = 0;
 
   virtual void PopulateCodecSpecific(bool base_layer_sync,
                                      CodecSpecificInfoVP8* vp8_info,
@@ -53,17 +51,51 @@ class TemporalLayers {
   virtual void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) = 0;
 
   virtual int CurrentLayerId() const = 0;
+};
 
-  virtual bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) = 0;
+class TemporalLayersListener;
+class TemporalLayersFactory {
+ public:
+  TemporalLayersFactory() : listener_(nullptr) {}
+  virtual ~TemporalLayersFactory() {}
+  virtual TemporalLayers* Create(int simulcast_id,
+                                 int temporal_layers,
+                                 uint8_t initial_tl0_pic_idx) const;
+  void SetListener(TemporalLayersListener* listener);
+
+ protected:
+  TemporalLayersListener* listener_;
+};
+
+class ScreenshareTemporalLayersFactory : public webrtc::TemporalLayersFactory {
+ public:
+  ScreenshareTemporalLayersFactory() {}
+  virtual ~ScreenshareTemporalLayersFactory() {}
+
+  webrtc::TemporalLayers* Create(int simulcast_id,
+                                 int num_temporal_layers,
+                                 uint8_t initial_tl0_pic_idx) const override;
 };
 
 
 
 
-struct RealTimeTemporalLayersFactory : TemporalLayers::Factory {
-  virtual ~RealTimeTemporalLayersFactory() {}
-  virtual TemporalLayers* Create(int num_temporal_layers,
-                                 uint8_t initial_tl0_pic_idx) const;
+class RealTimeTemporalLayersFactory : public TemporalLayersFactory {
+ public:
+  RealTimeTemporalLayersFactory() {}
+  ~RealTimeTemporalLayersFactory() override {}
+  TemporalLayers* Create(int simulcast_id,
+                         int num_temporal_layers,
+                         uint8_t initial_tl0_pic_idx) const override;
+};
+
+class TemporalLayersListener {
+ public:
+  TemporalLayersListener() {}
+  virtual ~TemporalLayersListener() {}
+
+  virtual void OnTemporalLayersCreated(int simulcast_id,
+                                       TemporalLayers* layers) = 0;
 };
 
 }  

@@ -44,15 +44,6 @@ namespace webrtc {
 class VoiceEngine;
 
 
-class WEBRTC_DLLEXPORT VoERxVadCallback {
- public:
-  virtual void OnRxVad(int channel, int vadDecision) = 0;
-
- protected:
-  virtual ~VoERxVadCallback() {}
-};
-
-
 class WEBRTC_DLLEXPORT VoEAudioProcessing {
  public:
   
@@ -125,42 +116,6 @@ class WEBRTC_DLLEXPORT VoEAudioProcessing {
   
   virtual int EnableHighPassFilter(bool enable) = 0;
   virtual bool IsHighPassFilterEnabled() = 0;
-
-  
-  
-  
-  virtual int SetRxNsStatus(int channel,
-                            bool enable,
-                            NsModes mode = kNsUnchanged) = 0;
-
-  
-  virtual int GetRxNsStatus(int channel, bool& enabled, NsModes& mode) = 0;
-
-  
-  
-  
-  virtual int SetRxAgcStatus(int channel,
-                             bool enable,
-                             AgcModes mode = kAgcUnchanged) = 0;
-
-  
-  virtual int GetRxAgcStatus(int channel, bool& enabled, AgcModes& mode) = 0;
-
-  
-  
-  virtual int SetRxAgcConfig(int channel, AgcConfig config) = 0;
-
-  
-  virtual int GetRxAgcConfig(int channel, AgcConfig& config) = 0;
-
-  
-  
-  virtual int RegisterRxVadObserver(int channel,
-                                    VoERxVadCallback& observer) = 0;
-
-  
-  
-  virtual int DeRegisterRxVadObserver(int channel) = 0;
 
   
   

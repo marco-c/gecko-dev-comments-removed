@@ -22,6 +22,7 @@
 #include "encode.h"
 #include "init_decode.h"
 #include "decode.h"
+#include "webrtc/base/checks.h"
 #include <stdlib.h>
 
 int16_t WebRtcIlbcfix_EncoderAssign(IlbcEncoderInstance** iLBC_encinst,
@@ -180,11 +181,12 @@ int WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
   }
 
   while ((i*((IlbcDecoder*)iLBCdec_inst)->no_of_bytes)<len) {
-    WebRtcIlbcfix_DecodeImpl(
-        &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
-        (const uint16_t*)&encoded
-            [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
-        (IlbcDecoder*)iLBCdec_inst, 1);
+    if (WebRtcIlbcfix_DecodeImpl(
+            &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
+            (const uint16_t*)&encoded
+                [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
+            (IlbcDecoder*)iLBCdec_inst, 1) == -1)
+      return -1;
     i++;
   }
   
@@ -208,11 +210,12 @@ int WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
   }
 
   while ((i*((IlbcDecoder*)iLBCdec_inst)->no_of_bytes)<len) {
-    WebRtcIlbcfix_DecodeImpl(
+    if (!WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
         (const uint16_t*)&encoded
             [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
-        (IlbcDecoder*)iLBCdec_inst, 1);
+        (IlbcDecoder*)iLBCdec_inst, 1))
+      return -1;
     i++;
   }
   
@@ -236,11 +239,12 @@ int WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
   }
 
   while ((i*((IlbcDecoder*)iLBCdec_inst)->no_of_bytes)<len) {
-    WebRtcIlbcfix_DecodeImpl(
+    if (!WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl],
         (const uint16_t*)&encoded
             [2 * i * ((IlbcDecoder*)iLBCdec_inst)->no_of_words],
-        (IlbcDecoder*)iLBCdec_inst, 1);
+        (IlbcDecoder*)iLBCdec_inst, 1))
+      return -1;
     i++;
   }
   
@@ -256,9 +260,10 @@ size_t WebRtcIlbcfix_DecodePlc(IlbcDecoderInstance* iLBCdec_inst,
 
   for (i=0;i<noOfLostFrames;i++) {
     
-    WebRtcIlbcfix_DecodeImpl(
+    
+    RTC_CHECK(WebRtcIlbcfix_DecodeImpl(
         &decoded[i * ((IlbcDecoder*)iLBCdec_inst)->blockl], &dummy,
-        (IlbcDecoder*)iLBCdec_inst, 0);
+        (IlbcDecoder*)iLBCdec_inst, 0));
   }
   return (noOfLostFrames*((IlbcDecoder*)iLBCdec_inst)->blockl);
 }

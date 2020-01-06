@@ -12,13 +12,15 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-
 class DecoderDatabase;
+class TickTimer;
 
 
 class PacketBuffer {
@@ -34,7 +36,7 @@ class PacketBuffer {
 
   
   
-  PacketBuffer(size_t max_number_of_packets);
+  PacketBuffer(size_t max_number_of_packets, const TickTimer* tick_timer);
 
   
   virtual ~PacketBuffer();
@@ -49,7 +51,7 @@ class PacketBuffer {
   
   
   
-  virtual int InsertPacket(Packet* packet);
+  virtual int InsertPacket(Packet&& packet);
 
   
   
@@ -59,10 +61,11 @@ class PacketBuffer {
   
   
   
-  virtual int InsertPacketList(PacketList* packet_list,
-                               const DecoderDatabase& decoder_database,
-                               uint8_t* current_rtp_payload_type,
-                               uint8_t* current_cng_rtp_payload_type);
+  virtual int InsertPacketList(
+      PacketList* packet_list,
+      const DecoderDatabase& decoder_database,
+      rtc::Optional<uint8_t>* current_rtp_payload_type,
+      rtc::Optional<uint8_t>* current_cng_rtp_payload_type);
 
   
   
@@ -80,15 +83,11 @@ class PacketBuffer {
 
   
   
-  virtual const RTPHeader* NextRtpHeader() const;
+  virtual const Packet* PeekNextPacket() const;
 
   
   
-  
-  
-  
-  
-  virtual Packet* GetNextPacket(size_t* discard_count);
+  virtual rtc::Optional<Packet> GetNextPacket();
 
   
   
@@ -108,28 +107,17 @@ class PacketBuffer {
   virtual int DiscardAllOldPackets(uint32_t timestamp_limit);
 
   
+  virtual void DiscardPacketsWithPayloadType(uint8_t payload_type);
+
+  
   
   virtual size_t NumPacketsInBuffer() const;
 
   
   
-  virtual size_t NumSamplesInBuffer(DecoderDatabase* decoder_database,
-                                    size_t last_decoded_length) const;
-
-  
-  
-  virtual void IncrementWaitingTimes(int inc = 1);
+  virtual size_t NumSamplesInBuffer(size_t last_decoded_length) const;
 
   virtual void BufferStat(int* num_packets, int* max_num_packets) const;
-
-  
-  
-  
-  static bool DeleteFirstPacket(PacketList* packet_list);
-
-  
-  
-  static void DeleteAllPackets(PacketList* packet_list);
 
   
   
@@ -148,6 +136,7 @@ class PacketBuffer {
  private:
   size_t max_number_of_packets_;
   PacketList buffer_;
+  const TickTimer* tick_timer_;
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketBuffer);
 };
 

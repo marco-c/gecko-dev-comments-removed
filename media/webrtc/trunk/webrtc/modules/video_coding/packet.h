@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
 #define WEBRTC_MODULES_VIDEO_CODING_PACKET_H_
 
+#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/jitter_buffer_common.h"
 #include "webrtc/typedefs.h"
@@ -23,11 +24,6 @@ class VCMPacket {
   VCMPacket(const uint8_t* ptr,
             const size_t size,
             const WebRtcRTPHeader& rtpHeader);
-  VCMPacket(const uint8_t* ptr,
-            size_t size,
-            uint16_t seqNum,
-            uint32_t timestamp,
-            bool markerBit);
 
   void Reset();
 
@@ -39,17 +35,21 @@ class VCMPacket {
   const uint8_t* dataPtr;
   size_t sizeBytes;
   bool markerBit;
+  int timesNacked;
 
   FrameType frameType;
   VideoCodecType codec;
 
-  bool isFirstPacket;                
+  union {
+    RTC_DEPRECATED bool isFirstPacket;  
+    bool is_first_packet_in_frame;
+  };
   VCMNaluCompleteness completeNALU;  
   bool insertStartCode;  
                          
   int width;
   int height;
-  RTPVideoHeader codecSpecificHeader;
+  RTPVideoHeader video_header;
 
  protected:
   void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);

@@ -8,13 +8,16 @@
 
 
 
+#include <memory>
 #include <set>
 #include <vector>
 
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/platform_thread.h"
 #include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
 
@@ -201,7 +204,7 @@ void StartThreads(ScopedPtrCollection<Thread>* threads,
   for (int i = 0; i < kNumThreads; ++i) {
     Thread* thread = new Thread();
     thread->Start();
-    thread->Post(handler);
+    thread->Post(RTC_FROM_HERE, handler);
     threads->PushBack(thread);
   }
 }
@@ -223,8 +226,8 @@ TEST(AtomicOpsTest, Simple) {
 TEST(AtomicOpsTest, SimplePtr) {
   class Foo {};
   Foo* volatile foo = nullptr;
-  scoped_ptr<Foo> a(new Foo());
-  scoped_ptr<Foo> b(new Foo());
+  std::unique_ptr<Foo> a(new Foo());
+  std::unique_ptr<Foo> b(new Foo());
   
   EXPECT_TRUE(rtc::AtomicOps::AcquireLoadPtr(&foo) == nullptr);
   
@@ -303,21 +306,109 @@ TEST(CriticalSectionTest, Basic) {
   EXPECT_EQ(0, runner.shared_value());
 }
 
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
-TEST(CriticalSectionTest, IsLocked) {
-  
-  CriticalSection cs;
-  EXPECT_FALSE(cs.IsLocked());
-  cs.Enter();
-  EXPECT_TRUE(cs.IsLocked());
-  cs.Leave();
-  EXPECT_FALSE(cs.IsLocked());
-  if (!cs.TryEnter())
-    FAIL();
-  EXPECT_TRUE(cs.IsLocked());
-  cs.Leave();
-  EXPECT_FALSE(cs.IsLocked());
+class PerfTestData {
+ public:
+  PerfTestData(int expected_count, Event* event)
+      : cache_line_barrier_1_(), cache_line_barrier_2_(),
+        expected_count_(expected_count), event_(event) {
+    cache_line_barrier_1_[0]++;  
+    cache_line_barrier_2_[0]++;  
+  }
+  ~PerfTestData() {}
+
+  void AddToCounter(int add) {
+    rtc::CritScope cs(&lock_);
+    my_counter_ += add;
+    if (my_counter_ == expected_count_)
+      event_->Set();
+  }
+
+  int64_t total() const {
+    
+    return my_counter_;
+  }
+
+ private:
+  uint8_t cache_line_barrier_1_[64];
+  CriticalSection lock_;
+  uint8_t cache_line_barrier_2_[64];
+  int64_t my_counter_ = 0;
+  const int expected_count_;
+  Event* const event_;
+};
+
+class PerfTestThread {
+ public:
+  PerfTestThread() : thread_(&ThreadFunc, this, "CsPerf") {}
+
+  void Start(PerfTestData* data, int repeats, int id) {
+    RTC_DCHECK(!thread_.IsRunning());
+    RTC_DCHECK(!data_);
+    data_ = data;
+    repeats_ = repeats;
+    my_id_ = id;
+    thread_.Start();
+  }
+
+  void Stop() {
+    RTC_DCHECK(thread_.IsRunning());
+    RTC_DCHECK(data_);
+    thread_.Stop();
+    repeats_ = 0;
+    data_ = nullptr;
+    my_id_ = 0;
+  }
+
+ private:
+  static bool ThreadFunc(void* param) {
+    PerfTestThread* me = static_cast<PerfTestThread*>(param);
+    for (int i = 0; i < me->repeats_; ++i)
+      me->data_->AddToCounter(me->my_id_);
+    return false;
+  }
+
+  PlatformThread thread_;
+  PerfTestData* data_ = nullptr;
+  int repeats_ = 0;
+  int my_id_ = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TEST(CriticalSectionTest, DISABLED_Performance) {
+  PerfTestThread threads[8];
+  Event event(false, false);
+
+  static const int kThreadRepeats = 10000000;
+  static const int kExpectedCount = kThreadRepeats * arraysize(threads);
+  PerfTestData test_data(kExpectedCount, &event);
+
+  for (auto& t : threads)
+    t.Start(&test_data, kThreadRepeats, 1);
+
+  event.Wait(Event::kForever);
+
+  for (auto& t : threads)
+    t.Stop();
 }
-#endif
 
 }  

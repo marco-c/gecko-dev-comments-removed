@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_OPENSSLSTREAMADAPTER_H__
 
 #include <string>
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/buffer.h"
@@ -24,9 +25,6 @@ typedef struct ssl_cipher_st SSL_CIPHER;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
 
 namespace rtc {
-
-
-
 
 
 
@@ -65,14 +63,17 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   
   void SetServerRole(SSLRole role = SSL_SERVER) override;
-  bool SetPeerCertificateDigest(const std::string& digest_alg,
-                                const unsigned char* digest_val,
-                                size_t digest_len) override;
+  bool SetPeerCertificateDigest(
+      const std::string& digest_alg,
+      const unsigned char* digest_val,
+      size_t digest_len,
+      SSLPeerCertificateDigestError* error = nullptr) override;
 
-  bool GetPeerCertificate(SSLCertificate** cert) const override;
+  std::unique_ptr<SSLCertificate> GetPeerCertificate() const override;
 
-  int StartSSLWithServer(const char* server_name) override;
-  int StartSSLWithPeer() override;
+  
+  
+  int StartSSL() override;
   void SetMode(SSLMode mode) override;
   void SetMaxProtocolVersion(SSLProtocolVersion version) override;
 
@@ -92,6 +93,8 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   bool GetSslCipherSuite(int* cipher) override;
 
+  int GetSslVersion() const override;
+
   
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,
@@ -104,14 +107,20 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   bool SetDtlsSrtpCryptoSuites(const std::vector<int>& crypto_suites) override;
   bool GetDtlsSrtpCryptoSuite(int* crypto_suite) override;
 
+  bool IsTlsConnected() override;
+
   
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static bool IsBoringSsl();
+
+  static bool IsAcceptableCipher(int cipher, KeyType key_type);
+  static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);
 
   
-  static int GetDefaultSslCipherForTest(SSLProtocolVersion version,
-                                        KeyType key_type);
+  
+  static void enable_time_callback_for_testing();
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;
@@ -136,10 +145,6 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   
 
   
-  
-  
-  int StartSSL();
-  
   int BeginSSL();
   
   int ContinueSSL();
@@ -150,8 +155,11 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   
   
   
-  void Error(const char* context, int err, bool signal);
-  void Cleanup();
+  
+  
+  
+  void Error(const char* context, int err, uint8_t alert, bool signal);
+  void Cleanup(uint8_t alert);
 
   
   void OnMessage(Message* msg) override;
@@ -162,14 +170,21 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   
   SSL_CTX* SetupSSLContext();
   
-  bool SSLPostConnectionCheck(SSL* ssl, const char* server_name,
-                              const X509* peer_cert,
-                              const std::string& peer_digest);
+  bool VerifyPeerCertificate();
   
   
   
   
   static int SSLVerifyCallback(int ok, X509_STORE_CTX* store);
+
+  bool waiting_to_verify_peer_certificate() const {
+    return client_auth_enabled() && !peer_certificate_verified_;
+  }
+
+  bool has_peer_certificate_digest() const {
+    return !peer_certificate_digest_algorithm_.empty() &&
+           !peer_certificate_digest_value_.empty();
+  }
 
   SSLState state_;
   SSLRole role_;
@@ -183,20 +198,14 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   SSL_CTX* ssl_ctx_;
 
   
-  scoped_ptr<OpenSSLIdentity> identity_;
+  std::unique_ptr<OpenSSLIdentity> identity_;
   
   
-  std::string ssl_server_name_;
-  
-  
-  scoped_ptr<OpenSSLCertificate> peer_certificate_;
-  
+  std::unique_ptr<OpenSSLCertificate> peer_certificate_;
+  bool peer_certificate_verified_ = false;
   
   Buffer peer_certificate_digest_value_;
   std::string peer_certificate_digest_algorithm_;
-
-  
-  bool custom_verification_succeeded_;
 
   
   std::string srtp_ciphers_;

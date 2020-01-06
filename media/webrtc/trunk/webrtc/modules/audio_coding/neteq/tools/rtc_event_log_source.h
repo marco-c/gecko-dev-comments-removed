@@ -11,20 +11,17 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTC_EVENT_LOG_SOURCE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_RTC_EVENT_LOG_SOURCE_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet_source.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
 class RtpHeaderParser;
-
-namespace rtclog {
-class EventStream;
-}  
 
 namespace test {
 
@@ -41,9 +38,7 @@ class RtcEventLogSource : public PacketSource {
   
   virtual bool RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
 
-  
-  
-  Packet* NextPacket() override;
+  std::unique_ptr<Packet> NextPacket() override;
 
   
   
@@ -55,11 +50,11 @@ class RtcEventLogSource : public PacketSource {
 
   bool OpenFile(const std::string& file_name);
 
-  int rtp_packet_index_ = 0;
-  int audio_output_index_ = 0;
+  size_t rtp_packet_index_ = 0;
+  size_t audio_output_index_ = 0;
 
-  rtc::scoped_ptr<rtclog::EventStream> event_log_;
-  rtc::scoped_ptr<RtpHeaderParser> parser_;
+  ParsedRtcEventLog parsed_stream_;
+  std::unique_ptr<RtpHeaderParser> parser_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogSource);
 };

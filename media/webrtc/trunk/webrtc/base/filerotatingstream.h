@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_FILEROTATINGSTREAM_H_
 #define WEBRTC_BASE_FILEROTATINGSTREAM_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -110,7 +111,7 @@ class FileRotatingStream : public StreamInterface {
   const Mode mode_;
 
   
-  scoped_ptr<FileStream> file_stream_;
+  std::unique_ptr<FileStream> file_stream_;
   
   std::vector<std::string> file_names_;
   size_t max_file_size_;

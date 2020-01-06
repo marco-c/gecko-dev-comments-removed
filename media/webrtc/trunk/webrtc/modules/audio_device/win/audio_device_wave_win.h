@@ -11,6 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WAVE_WIN_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WAVE_WIN_H
 
+#include <memory>
+
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/modules/audio_device/win/audio_mixer_manager_win.h"
@@ -48,7 +50,7 @@ public:
     virtual int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
 
     
-    virtual int32_t Init();
+    virtual InitStatus Init();
     virtual int32_t Terminate();
     virtual bool Initialized() const;
 
@@ -223,7 +225,7 @@ private:
     HANDLE                                  _hSetCaptureVolumeEvent;
 
     
-    rtc::scoped_ptr<rtc::PlatformThread>    _ptrThread;
+    std::unique_ptr<rtc::PlatformThread>    _ptrThread;
 
     CriticalSectionWrapper&                 _critSectCb;
 

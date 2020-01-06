@@ -11,20 +11,22 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
+#include <memory>
 #include <string>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
+
+class VideoBitrateAllocator;
+
 namespace test {
 
 
@@ -107,9 +109,6 @@ struct TestConfig {
 };
 
 
-const char* VideoCodecTypeToStr(webrtc::VideoCodecType e);
-
-
 
 
 
@@ -172,13 +171,14 @@ class VideoProcessorImpl : public VideoProcessor {
 
  private:
   
-  void FrameEncoded(const webrtc::EncodedImage& encodedImage);
+  void FrameEncoded(webrtc::VideoCodecType codec,
+                    const webrtc::EncodedImage& encodedImage,
+                    const webrtc::RTPFragmentationHeader* fragmentation);
   
   void FrameDecoded(const webrtc::VideoFrame& image);
   
   
-  int GetElapsedTimeMicroseconds(const webrtc::TickTime& start,
-                                 const webrtc::TickTime& stop);
+  int GetElapsedTimeMicroseconds(int64_t start, int64_t stop);
   
   void SetRates(int bit_rate, int frame_rate) override;
   
@@ -192,6 +192,7 @@ class VideoProcessorImpl : public VideoProcessor {
 
   webrtc::VideoEncoder* encoder_;
   webrtc::VideoDecoder* decoder_;
+  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
   FrameReader* frame_reader_;
   FrameWriter* frame_writer_;
   PacketManipulator* packet_manipulator_;
@@ -201,11 +202,8 @@ class VideoProcessorImpl : public VideoProcessor {
   EncodedImageCallback* encode_callback_;
   DecodedImageCallback* decode_callback_;
   
-  uint8_t* source_buffer_;
-  
   
   uint8_t* last_successful_frame_buffer_;
-  webrtc::VideoFrame source_frame_;
   
   bool first_key_frame_has_been_excluded_;
   
@@ -219,12 +217,11 @@ class VideoProcessorImpl : public VideoProcessor {
   int num_spatial_resizes_;
   int last_encoder_frame_width_;
   int last_encoder_frame_height_;
-  Scaler scaler_;
 
   
   double bit_rate_factor_;  
-  webrtc::TickTime encode_start_;
-  webrtc::TickTime decode_start_;
+  int64_t encode_start_ns_;
+  int64_t decode_start_ns_;
 
   
   class VideoProcessorEncodeCompleteCallback
@@ -232,7 +229,7 @@ class VideoProcessorImpl : public VideoProcessor {
    public:
     explicit VideoProcessorEncodeCompleteCallback(VideoProcessorImpl* vp)
         : video_processor_(vp) {}
-    int32_t Encoded(
+    Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
         const webrtc::CodecSpecificInfo* codec_specific_info,
         const webrtc::RTPFragmentationHeader* fragmentation) override;

@@ -23,6 +23,7 @@
 #if defined(WEBRTC_MAC)
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 
 
 #ifdef __OBJC__

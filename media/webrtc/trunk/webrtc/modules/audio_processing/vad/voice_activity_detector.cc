@@ -31,13 +31,15 @@ VoiceActivityDetector::VoiceActivityDetector()
       standalone_vad_(StandaloneVad::Create()) {
 }
 
+VoiceActivityDetector::~VoiceActivityDetector() = default;
+
 
 
 
 void VoiceActivityDetector::ProcessChunk(const int16_t* audio,
                                          size_t length,
                                          int sample_rate_hz) {
-  RTC_DCHECK_EQ(static_cast<int>(length), sample_rate_hz / 100);
+  RTC_DCHECK_EQ(length, sample_rate_hz / 100);
   RTC_DCHECK_LE(length, kMaxLength);
   
   const int16_t* resampled_ptr = audio;

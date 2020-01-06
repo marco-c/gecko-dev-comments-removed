@@ -11,37 +11,39 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_GDI_H_
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
+#include <memory>
 
 #include <windows.h>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
 
 namespace webrtc {
 
-class Differ;
 
 
 
 
-class ScreenCapturerWinGdi : public ScreenCapturer {
+
+
+class ScreenCapturerWinGdi : public DesktopCapturer {
  public:
   explicit ScreenCapturerWinGdi(const DesktopCaptureOptions& options);
-  virtual ~ScreenCapturerWinGdi();
+  ~ScreenCapturerWinGdi() override;
 
   
   void Start(Callback* callback) override;
-  void Stop() override;
-  void Capture(const DesktopRegion& region) override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  void SetSharedMemoryFactory(
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
+  void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
-  typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunc)(BOOL*);
 
   
   void PrepareCaptureResources();
@@ -53,38 +55,26 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   
   void CaptureCursor();
 
-  Callback* callback_;
-  ScreenId current_screen_id_;
+  Callback* callback_ = nullptr;
+  std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
+  SourceId current_screen_id_ = kFullDesktopScreenId;
   std::wstring current_device_key_;
-
-  
-  
-  ScreenCapturerHelper helper_;
 
   ScopedThreadDesktop desktop_;
 
   
-  HDC desktop_dc_;
-  HDC memory_dc_;
+  HDC desktop_dc_ = NULL;
+  HDC memory_dc_ = NULL;
 
   
-  ScreenCaptureFrameQueue queue_;
+  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
 
   
   
   DesktopRect desktop_dc_rect_;
 
-  
-  rtc::scoped_ptr<Differ> differ_;
-
-  HMODULE dwmapi_library_;
-  DwmEnableCompositionFunc composition_func_;
-  DwmIsCompositionEnabledFunc composition_enabled_func_;
-
-  bool disable_composition_;
-
-  
-  bool set_thread_execution_state_failed_;
+  HMODULE dwmapi_library_ = NULL;
+  DwmEnableCompositionFunc composition_func_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinGdi);
 };

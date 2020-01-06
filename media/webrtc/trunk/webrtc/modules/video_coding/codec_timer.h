@@ -11,45 +11,39 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_
 
+#include <queue>
+
+#include "webrtc/base/numerics/percentile_filter.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-
-#define MAX_HISTORY_SIZE 10
-#define SHORT_FILTER_MS 1000
-
-class VCMShortMaxSample {
- public:
-  VCMShortMaxSample() : shortMax(0), timeMs(-1) {}
-
-  int32_t shortMax;
-  int64_t timeMs;
-};
 
 class VCMCodecTimer {
  public:
   VCMCodecTimer();
 
   
-  void MaxFilter(int32_t newDecodeTimeMs, int64_t nowMs);
+  void AddTiming(int64_t new_decode_time_ms, int64_t now_ms);
 
   
-  void Reset();
-
   
-  int32_t RequiredDecodeTimeMs(FrameType frameType) const;
+  int64_t RequiredDecodeTimeMs() const;
 
  private:
-  void UpdateMaxHistory(int32_t decodeTime, int64_t now);
-  void ProcessHistory(int64_t nowMs);
+  struct Sample {
+    Sample(int64_t decode_time_ms, int64_t sample_time_ms);
+    int64_t decode_time_ms;
+    int64_t sample_time_ms;
+  };
 
-  int32_t _filteredMax;
   
-  int32_t _ignoredSampleCount;
-  int32_t _shortMax;
-  VCMShortMaxSample _history[MAX_HISTORY_SIZE];
+  int ignored_sample_count_;
+  
+  std::queue<Sample> history_;
+  
+  
+  PercentileFilter<int64_t> filter_;
 };
 
 }  

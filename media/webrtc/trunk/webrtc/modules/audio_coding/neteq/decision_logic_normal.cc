@@ -28,14 +28,15 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
     const SyncBuffer& sync_buffer,
     const Expand& expand,
     size_t decoder_frame_length,
-    const RTPHeader* packet_header,
+    const Packet* next_packet,
     Modes prev_mode,
     bool play_dtmf,
-    bool* reset_decoder) {
+    bool* reset_decoder,
+    size_t generated_noise_samples) {
   assert(playout_mode_ == kPlayoutOn || playout_mode_ == kPlayoutStreaming);
   
   if (prev_mode == kModeError) {
-    if (!packet_header) {
+    if (!next_packet) {
       return kExpand;
     } else {
       return kUndefined;  
@@ -45,18 +46,19 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
   uint32_t target_timestamp = sync_buffer.end_timestamp();
   uint32_t available_timestamp = 0;
   bool is_cng_packet = false;
-  if (packet_header) {
-    available_timestamp = packet_header->timestamp;
+  if (next_packet) {
+    available_timestamp = next_packet->timestamp;
     is_cng_packet =
-        decoder_database_->IsComfortNoise(packet_header->payloadType);
+        decoder_database_->IsComfortNoise(next_packet->payload_type);
   }
 
   if (is_cng_packet) {
-    return CngOperation(prev_mode, target_timestamp, available_timestamp);
+    return CngOperation(prev_mode, target_timestamp, available_timestamp,
+                        generated_noise_samples);
   }
 
   
-  if (!packet_header) {
+  if (!next_packet) {
     return NoPacket(play_dtmf);
   }
 
@@ -76,7 +78,8 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
                  available_timestamp, target_timestamp, five_seconds_samples)) {
     return FuturePacketAvailable(sync_buffer, expand, decoder_frame_length,
                                  prev_mode, target_timestamp,
-                                 available_timestamp, play_dtmf);
+                                 available_timestamp, play_dtmf,
+                                 generated_noise_samples);
   } else {
     
     
@@ -86,10 +89,11 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
 
 Operations DecisionLogicNormal::CngOperation(Modes prev_mode,
                                              uint32_t target_timestamp,
-                                             uint32_t available_timestamp) {
+                                             uint32_t available_timestamp,
+                                             size_t generated_noise_samples) {
   
   int32_t timestamp_diff = static_cast<int32_t>(
-      static_cast<uint32_t>(generated_noise_samples_ + target_timestamp) -
+      static_cast<uint32_t>(generated_noise_samples + target_timestamp) -
       available_timestamp);
   int32_t optimal_level_samp = static_cast<int32_t>(
       (delay_manager_->TargetLevel() * packet_length_samples_) >> 8);
@@ -99,7 +103,7 @@ Operations DecisionLogicNormal::CngOperation(Modes prev_mode,
     
     
     
-    generated_noise_samples_ += excess_waiting_time_samp;
+    noise_fast_forward_ += excess_waiting_time_samp;
     timestamp_diff += excess_waiting_time_samp;
   }
 
@@ -109,6 +113,7 @@ Operations DecisionLogicNormal::CngOperation(Modes prev_mode,
     return kRfc3389CngNoPacket;
   } else {
     
+    noise_fast_forward_ = 0;
     return kRfc3389Cng;
   }
 }
@@ -153,7 +158,8 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
     Modes prev_mode,
     uint32_t target_timestamp,
     uint32_t available_timestamp,
-    bool play_dtmf) {
+    bool play_dtmf,
+    size_t generated_noise_samples) {
   
   
   
@@ -184,7 +190,7 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
     
     
     
-    if (static_cast<uint32_t>(generated_noise_samples_ + target_timestamp) >=
+    if (static_cast<uint32_t>(generated_noise_samples + target_timestamp) >=
             available_timestamp ||
         cur_size_samples >
             ((delay_manager_->TargetLevel() * packet_length_samples_) >> 8) *
@@ -201,12 +207,7 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
     }
   }
   
-  
-  
-  if (prev_mode == kModeExpand ||
-      (decoder_frame_length < output_size_samples_ &&
-       cur_size_samples >
-           static_cast<size_t>(kAllowMergeWithoutExpandMs * fs_mult_ * 8))) {
+  if (prev_mode == kModeExpand) {
     return kMerge;
   } else if (play_dtmf) {
     

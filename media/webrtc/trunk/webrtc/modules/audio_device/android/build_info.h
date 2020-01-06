@@ -12,11 +12,28 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
 
 #include <jni.h>
+#include <memory>
 #include <string>
 
 #include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
+
+
+
+
+
+enum SdkCode {
+  SDK_CODE_JELLY_BEAN = 16,      
+  SDK_CODE_JELLY_BEAN_MR1 = 17,  
+  SDK_CODE_JELLY_BEAN_MR2 = 18,  
+  SDK_CODE_KITKAT = 19,          
+  SDK_CODE_WATCH = 20,           
+  SDK_CODE_LOLLIPOP = 21,        
+  SDK_CODE_LOLLIPOP_MR1 = 22,    
+  SDK_CODE_MARSHMALLOW = 23,     
+  SDK_CODE_N = 24,
+};
 
 
 
@@ -42,7 +59,8 @@ class BuildInfo {
   
   std::string GetBuildRelease();
   
-  std::string GetSdkVersion();
+  
+  SdkCode GetSdkVersion();
 
  private:
   
@@ -55,7 +73,7 @@ class BuildInfo {
 
   
   
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   
   

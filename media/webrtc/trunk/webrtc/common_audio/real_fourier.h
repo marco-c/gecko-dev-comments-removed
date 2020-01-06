@@ -12,8 +12,8 @@
 #define WEBRTC_COMMON_AUDIO_REAL_FOURIER_H_
 
 #include <complex>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 
@@ -25,8 +25,8 @@ namespace webrtc {
 class RealFourier {
  public:
   
-  typedef rtc::scoped_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
-  typedef rtc::scoped_ptr<std::complex<float>[], AlignedFreeDeleter>
+  typedef std::unique_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
+  typedef std::unique_ptr<std::complex<float>[], AlignedFreeDeleter>
       fft_cplx_scoper;
 
   
@@ -34,7 +34,7 @@ class RealFourier {
 
   
   
-  static rtc::scoped_ptr<RealFourier> Create(int fft_order);
+  static std::unique_ptr<RealFourier> Create(int fft_order);
   virtual ~RealFourier() {};
 
   

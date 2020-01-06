@@ -37,7 +37,7 @@ class ThreadCheckerImpl {
   void DetachFromThread();
 
  private:
-  mutable CriticalSection lock_;
+  CriticalSection lock_;
   
   
   mutable PlatformThreadRef valid_thread_;

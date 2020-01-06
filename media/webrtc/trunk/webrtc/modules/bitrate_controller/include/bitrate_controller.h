@@ -17,7 +17,9 @@
 
 #include <map>
 
+#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/include/module.h"
+#include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -25,6 +27,8 @@ namespace webrtc {
 class CriticalSectionWrapper;
 class RtcEventLog;
 struct PacketInfo;
+
+
 
 class BitrateObserver {
   
@@ -46,24 +50,45 @@ class BitrateController : public Module {
   
   
  public:
-  static const int kDefaultStartBitrateKbps = 300;
+  static const int kDefaultStartBitratebps = 300000;
+
+  
+  
+  
+  static BitrateController* CreateBitrateController(Clock* clock,
+                                                    BitrateObserver* observer,
+                                                    RtcEventLog* event_log);
 
   static BitrateController* CreateBitrateController(Clock* clock,
-                                                    BitrateObserver* observer);
+                                                    RtcEventLog* event_log);
+
   virtual ~BitrateController() {}
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
 
+  
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;
+  
   virtual void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) = 0;
+  virtual void SetBitrates(int start_bitrate_bps,
+                           int min_bitrate_bps,
+                           int max_bitrate_bps) = 0;
 
-  virtual void SetEventLog(RtcEventLog* event_log) = 0;
+  virtual void ResetBitrates(int bitrate_bps,
+                             int min_bitrate_bps,
+                             int max_bitrate_bps) = 0;
+
+  virtual void OnDelayBasedBweResult(const DelayBasedBwe::Result& result) = 0;
 
   
   
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
 
   virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) = 0;
+
+  virtual bool GetNetworkParameters(uint32_t* bitrate,
+                                    uint8_t* fraction_loss,
+                                    int64_t* rtt) = 0;
 };
 }  
 #endif  

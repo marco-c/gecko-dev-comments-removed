@@ -37,7 +37,7 @@ class Merge {
         size_t num_channels,
         Expand* expand,
         SyncBuffer* sync_buffer);
-  virtual ~Merge() {}
+  virtual ~Merge();
 
   
   
@@ -72,8 +72,7 @@ class Merge {
   
   
   int16_t SignalScaling(const int16_t* input, size_t input_length,
-                        const int16_t* expanded_signal,
-                        int16_t* expanded_max, int16_t* input_max) const;
+                        const int16_t* expanded_signal) const;
 
   
   
@@ -84,8 +83,7 @@ class Merge {
   
   
   
-  size_t CorrelateAndPeakSearch(int16_t expanded_max, int16_t input_max,
-                                size_t start_position, size_t input_length,
+  size_t CorrelateAndPeakSearch(size_t start_position, size_t input_length,
                                 size_t expand_period) const;
 
   const int fs_mult_;  
@@ -95,6 +93,7 @@ class Merge {
   int16_t expanded_downsampled_[kExpandDownsampLength];
   int16_t input_downsampled_[kInputDownsampLength];
   AudioMultiVector expanded_;
+  std::vector<int16_t> temp_data_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Merge);
 };

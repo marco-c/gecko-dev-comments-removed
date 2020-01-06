@@ -11,11 +11,12 @@
 #ifndef WEBRTC_AUDIO_AUDIO_STATE_H_
 #define WEBRTC_AUDIO_AUDIO_STATE_H_
 
-#include "webrtc/audio_state.h"
+#include "webrtc/audio/audio_transport_proxy.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/call/audio_state.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
@@ -28,6 +29,8 @@ class AudioState final : public webrtc::AudioState,
   ~AudioState() override;
 
   VoiceEngine* voice_engine();
+
+  rtc::scoped_refptr<AudioMixer> mixer();
   bool typing_noise_detected() const;
 
  private:
@@ -47,11 +50,15 @@ class AudioState final : public webrtc::AudioState,
 
   
   
-  mutable rtc::CriticalSection crit_sect_;
+  rtc::CriticalSection crit_sect_;
   bool typing_noise_detected_ GUARDED_BY(crit_sect_) = false;
 
   
   mutable volatile int ref_count_ = 0;
+
+  
+  
+  AudioTransportProxy audio_transport_proxy_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioState);
 };

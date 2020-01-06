@@ -16,7 +16,9 @@
 
 namespace webrtc {
 
+struct CodecInst;
 class RTPPayloadRegistry;
+class VideoCodec;
 
 class TelephoneEventHandler {
  public:
@@ -45,7 +47,6 @@ class RtpReceiver {
   
   static RtpReceiver* CreateAudioReceiver(
       Clock* clock,
-      RtpAudioFeedback* incoming_audio_feedback,
       RtpData* incoming_payload_callback,
       RtpFeedback* incoming_messages_callback,
       RTPPayloadRegistry* rtp_payload_registry);
@@ -57,12 +58,9 @@ class RtpReceiver {
 
   
   
-  virtual int32_t RegisterReceivePayload(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payload_type,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) = 0;
+  virtual int32_t RegisterReceivePayload(const CodecInst& audio_codec) = 0;
+  
+  virtual int32_t RegisterReceivePayload(const VideoCodec& video_codec) = 0;
 
   
   virtual int32_t DeRegisterReceivePayload(const int8_t payload_type) = 0;
@@ -77,12 +75,6 @@ class RtpReceiver {
                                  bool in_order) = 0;
 
   
-  virtual NACKMethod NACK() const = 0;
-
-  
-  virtual void SetNACKStatus(const NACKMethod method) = 0;
-
-  
   
   virtual bool Timestamp(uint32_t* timestamp) const = 0;
   
@@ -94,8 +86,6 @@ class RtpReceiver {
 
   
   virtual int32_t CSRCs(uint32_t array_of_csrc[kRtpCsrcSize]) const = 0;
- 
-  virtual void GetRID(char rid[256]) const = 0;
 
   
   virtual int32_t Energy(uint8_t array_of_energy[kRtpCsrcSize]) const = 0;

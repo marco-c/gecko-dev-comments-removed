@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_TRACK_JNI_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_TRACK_JNI_H_
 
+#include <memory>
+
 #include <jni.h>
 
 #include "webrtc/base/thread_checker.h"
@@ -42,10 +44,10 @@ class AudioTrackJni {
   class JavaAudioTrack {
    public:
     JavaAudioTrack(NativeRegistration* native_registration,
-                   rtc::scoped_ptr<GlobalRef> audio_track);
+                   std::unique_ptr<GlobalRef> audio_track);
     ~JavaAudioTrack();
 
-    void InitPlayout(int sample_rate, int channels);
+    bool InitPlayout(int sample_rate, int channels);
     bool StartPlayout();
     bool StopPlayout();
     bool SetStreamVolume(int volume);
@@ -53,7 +55,7 @@ class AudioTrackJni {
     int GetStreamVolume();
 
    private:
-    rtc::scoped_ptr<GlobalRef> audio_track_;
+    std::unique_ptr<GlobalRef> audio_track_;
     jmethodID init_playout_;
     jmethodID start_playout_;
     jmethodID stop_playout_;
@@ -82,10 +84,6 @@ class AudioTrackJni {
   int MinSpeakerVolume(uint32_t& min_volume) const;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
-
-  int32_t PlayoutDeviceName(uint16_t index,
-                            char name[kAdmMaxDeviceNameSize],
-                            char guid[kAdmMaxGuidSize]);
 
  private:
   
@@ -117,13 +115,13 @@ class AudioTrackJni {
   AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
   
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   
-  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+  std::unique_ptr<NativeRegistration> j_native_registration_;
 
   
-  rtc::scoped_ptr<AudioTrackJni::JavaAudioTrack> j_audio_track_;
+  std::unique_ptr<AudioTrackJni::JavaAudioTrack> j_audio_track_;
 
   
   

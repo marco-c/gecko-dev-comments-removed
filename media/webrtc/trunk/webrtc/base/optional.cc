@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#include "webrtc/base/optional.h"
+
+namespace rtc {
+namespace optional_internal {
+
+#if RTC_HAS_ASAN
+
+void* FunctionThatDoesNothingImpl(void* x) { return x; }
+
+#endif
+
+}  
+}  

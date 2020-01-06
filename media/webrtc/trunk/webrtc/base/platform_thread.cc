@@ -17,22 +17,7 @@
 #include <sys/syscall.h>
 #endif
 
-#if defined(__NetBSD__)
-#include <lwp.h>
-#elif defined(__FreeBSD__)
-#include <pthread_np.h>
-#endif
-
 namespace rtc {
-
-#if defined(WEBRTC_WIN)
-
-static UINT static_reg_windows_msg = RegisterWindowMessageW(L"WebrtcWindowsUIThreadEvent");
-
-static const UINT_PTR kTimerId = 1;
-static const wchar_t kThisProperty[] = L"ThreadWindowsUIPtr";
-static const wchar_t kThreadWindow[] = L"WebrtcWindowsUIThread";
-#endif
 
 PlatformThreadId CurrentThreadId() {
   PlatformThreadId ret;
@@ -45,14 +30,6 @@ PlatformThreadId CurrentThreadId() {
   ret =  syscall(__NR_gettid);
 #elif defined(WEBRTC_ANDROID)
   ret = gettid();
-#elif defined(__NetBSD__)
-  ret = _lwp_self();
-#elif defined(__DragonFly__)
-  ret = lwp_gettid();
-#elif defined(__OpenBSD__)
-  ret = reinterpret_cast<uintptr_t> (pthread_self());
-#elif defined(__FreeBSD__)
-  ret = pthread_getthreadid_np();
 #else
   
   ret = reinterpret_cast<pid_t>(pthread_self());
@@ -122,7 +99,8 @@ PlatformThread::PlatformThread(ThreadRunFunction func,
       name_(thread_name ? thread_name : "webrtc"),
 #if defined(WEBRTC_WIN)
       stop_(false),
-      thread_(NULL) {
+      thread_(NULL),
+      thread_id_(0) {
 #else
       stop_event_(false, false),
       thread_(0) {
@@ -135,58 +113,17 @@ PlatformThread::~PlatformThread() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 #if defined(WEBRTC_WIN)
   RTC_DCHECK(!thread_);
+  RTC_DCHECK(!thread_id_);
 #endif  
 }
 
 #if defined(WEBRTC_WIN)
-bool PlatformUIThread::InternalInit() {
-  
-  
-  if (hwnd_ == NULL) {
-    WNDCLASSW wc;
-    HMODULE hModule = GetModuleHandle(NULL);
-    if (!GetClassInfoW(hModule, kThreadWindow, &wc)) {
-      ZeroMemory(&wc, sizeof(WNDCLASSW));
-      wc.hInstance = hModule;
-      wc.lpfnWndProc = EventWindowProc;
-      wc.lpszClassName = kThreadWindow;
-      RegisterClassW(&wc);
-    }
-    hwnd_ = CreateWindowW(kThreadWindow, L"",
-                          0, 0, 0, 0, 0,
-                          NULL, NULL, hModule, NULL);
-    assert(hwnd_);
-    SetPropW(hwnd_, kThisProperty, this);
-
-    if (timeout_) {
-      
-      RequestCallbackTimer(timeout_);
-    }
-  }
-  return !!hwnd_;
-}
-
-void PlatformUIThread::RequestCallback() {
-  assert(hwnd_);
-  assert(static_reg_windows_msg);
-  PostMessage(hwnd_, static_reg_windows_msg, 0, 0);
-}
-
-bool PlatformUIThread::RequestCallbackTimer(unsigned int milliseconds) {
-  if (!hwnd_) {
-    assert(!thread_);
-    
-  } else {
-    if (timerid_) {
-      KillTimer(hwnd_, timerid_);
-    }
-    timerid_ = SetTimer(hwnd_, kTimerId, milliseconds, NULL);
-  }
-  timeout_ = milliseconds;
-  return !!timerid_;
-}
-
 DWORD WINAPI PlatformThread::StartThread(void* param) {
+  
+  
+  
+  
+  ::SetLastError(ERROR_SUCCESS);
   static_cast<PlatformThread*>(param)->Run();
   return 0;
 }
@@ -206,10 +143,10 @@ void PlatformThread::Start() {
   
   
   
-  DWORD thread_id;
   thread_ = ::CreateThread(NULL, 1024 * 1024, &StartThread, this,
-                           STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id);
+                           STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id_);
   RTC_CHECK(thread_) << "CreateThread failed";
+  RTC_DCHECK(thread_id_);
 #else
   ThreadAttributes attr;
   
@@ -227,6 +164,14 @@ bool PlatformThread::IsRunning() const {
 #endif  
 }
 
+PlatformThreadRef PlatformThread::GetThreadRef() const {
+#if defined(WEBRTC_WIN)
+  return thread_id_;
+#else
+  return thread_;
+#endif  
+}
+
 void PlatformThread::Stop() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!IsRunning())
@@ -234,31 +179,19 @@ void PlatformThread::Stop() {
 
 #if defined(WEBRTC_WIN)
   
-  QueueUserAPC(&RaiseFlag, thread_, reinterpret_cast<ULONG_PTR>(&stop_));
+  bool queued = QueueAPC(&RaiseFlag, reinterpret_cast<ULONG_PTR>(&stop_));
+  
+  RTC_CHECK(queued || GetLastError() == ERROR_GEN_FAILURE);
   WaitForSingleObject(thread_, INFINITE);
   CloseHandle(thread_);
   thread_ = nullptr;
+  thread_id_ = 0;
 #else
   stop_event_.Set();
   RTC_CHECK_EQ(0, pthread_join(thread_, nullptr));
   thread_ = 0;
 #endif  
 }
-
-#ifdef WEBRTC_WIN
-void PlatformUIThread::Stop() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  
-  if (timerid_) {
-    KillTimer(hwnd_, timerid_);
-    timerid_ = 0;
-  }
-
-  PostMessage(hwnd_, WM_CLOSE, 0, 0);
-
-  PlatformThread::Stop();
-}
-#endif
 
 void PlatformThread::Run() {
   if (!name_.empty())
@@ -277,47 +210,6 @@ void PlatformThread::Run() {
   } while (!stop_event_.Wait(0));
 #endif
 }
-
-#if defined(WEBRTC_WIN)
-void PlatformUIThread::Run() {
-  if (!InternalInit()) {
-    assert(false);
-  }
-  PlatformThread::Run();
-  
-}
-
-void PlatformUIThread::NativeEventCallback() {
-  if (!run_function_) {
-    stop_ = true;
-    return;
-  }
-  stop_ = !run_function_(obj_);
-}
-
-
-LRESULT CALLBACK
-PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  if (uMsg == WM_DESTROY) {
-    RemovePropW(hwnd, kThisProperty);
-    PostQuitMessage(0);
-    return 0;
-  }
-
-  PlatformUIThread *twui = static_cast<PlatformUIThread*>(GetPropW(hwnd, kThisProperty));
-  if (!twui) {
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
-  }
-
-  if ((uMsg == static_reg_windows_msg && uMsg != WM_NULL) ||
-      (uMsg == WM_TIMER && wParam == kTimerId)) {
-    twui->NativeEventCallback();
-    return 0;
-  }
-
-  return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-#endif
 
 bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -372,5 +264,14 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   return pthread_setschedparam(thread_, policy, &param) == 0;
 #endif  
 }
+
+#if defined(WEBRTC_WIN)
+bool PlatformThread::QueueAPC(PAPCFUNC function, ULONG_PTR data) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(IsRunning());
+
+  return QueueUserAPC(function, thread_, data) != FALSE;
+}
+#endif
 
 }  

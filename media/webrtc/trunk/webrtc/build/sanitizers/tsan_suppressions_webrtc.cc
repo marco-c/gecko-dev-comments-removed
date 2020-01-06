@@ -24,10 +24,8 @@ char kTSanDefaultSuppressions[] =
 
 
 
-"race:rtc::MessageQueue::Quit\n"
-"race:FileVideoCapturerTest::VideoCapturerListener::OnFrameCaptured\n"
 "race:vp8cx_remove_encoder_threads\n"
-"race:third_party/libvpx_new/source/libvpx/vp9/common/vp9_scan.h\n"
+"race:third_party/libvpx/source/libvpx/vp9/common/vp9_scan.h\n"
 
 
 
@@ -36,11 +34,6 @@ char kTSanDefaultSuppressions[] =
 "race:webrtc::VoiceEngine::SetTraceFilter\n"
 "race:webrtc::Trace::set_level_filter\n"
 "race:webrtc::GetStaticInstance<webrtc::TraceImpl>\n"
-
-
-
-"race:webrtc/modules/audio_processing/aec/aec_core.c\n"
-"race:webrtc/modules/audio_processing/aec/aec_rdft.c\n"
 
 
 
@@ -77,10 +70,7 @@ char kTSanDefaultSuppressions[] =
 
 
 
-"deadlock:webrtc::RTCPReceiver::SetSsrcs\n"
 "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
-"deadlock:webrtc::vcm::VideoReceiver::RegisterPacketRequestCallback\n"
-"deadlock:webrtc::ViEEncoder::OnLocalSsrcChanged\n"
 
 
 

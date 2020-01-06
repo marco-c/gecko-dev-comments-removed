@@ -10,35 +10,50 @@
 
 #include "webrtc/base/platform_thread.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
-namespace webrtc {
-
+namespace rtc {
+namespace {
 
 bool NullRunFunction(void* obj) {
-  SleepMs(0);  
+  webrtc::SleepMs(0);  
   return true;
-}
-
-TEST(PlatformThreadTest, StartStop) {
-  rtc::PlatformThread thread(&NullRunFunction, nullptr, "PlatformThreadTest");
-  thread.Start();
-  thread.Stop();
 }
 
 
 bool SetFlagRunFunction(void* obj) {
   bool* obj_as_bool = static_cast<bool*>(obj);
   *obj_as_bool = true;
-  SleepMs(0);  
+  webrtc::SleepMs(0);  
   return true;
+}
+}  
+
+TEST(PlatformThreadTest, StartStop) {
+  PlatformThread thread(&NullRunFunction, nullptr, "PlatformThreadTest");
+  EXPECT_TRUE(thread.name() == "PlatformThreadTest");
+  EXPECT_TRUE(thread.GetThreadRef() == 0);
+  thread.Start();
+  EXPECT_TRUE(thread.GetThreadRef() != 0);
+  thread.Stop();
+  EXPECT_TRUE(thread.GetThreadRef() == 0);
+}
+
+TEST(PlatformThreadTest, StartStop2) {
+  PlatformThread thread1(&NullRunFunction, nullptr, "PlatformThreadTest1");
+  PlatformThread thread2(&NullRunFunction, nullptr, "PlatformThreadTest2");
+  EXPECT_TRUE(thread1.GetThreadRef() == thread2.GetThreadRef());
+  thread1.Start();
+  thread2.Start();
+  EXPECT_TRUE(thread1.GetThreadRef() != thread2.GetThreadRef());
+  thread2.Stop();
+  thread1.Stop();
 }
 
 TEST(PlatformThreadTest, RunFunctionIsCalled) {
   bool flag = false;
-  rtc::PlatformThread thread(&SetFlagRunFunction, &flag, "RunFunctionIsCalled");
+  PlatformThread thread(&SetFlagRunFunction, &flag, "RunFunctionIsCalled");
   thread.Start();
 
   
@@ -47,5 +62,4 @@ TEST(PlatformThreadTest, RunFunctionIsCalled) {
   
   EXPECT_TRUE(flag);
 }
-
 }  

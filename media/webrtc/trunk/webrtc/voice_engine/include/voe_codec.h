@@ -35,7 +35,6 @@
 
 namespace webrtc {
 
-class RtcEventLog;
 class VoiceEngine;
 
 class WEBRTC_DLLEXPORT VoECodec {
@@ -134,7 +133,9 @@ class WEBRTC_DLLEXPORT VoECodec {
 
   
   
-  virtual RtcEventLog* GetEventLog() = 0;
+  
+  
+  virtual int GetOpusDtxStatus(int channel, bool* enabled) { return -1; }
 
  protected:
   VoECodec() {}

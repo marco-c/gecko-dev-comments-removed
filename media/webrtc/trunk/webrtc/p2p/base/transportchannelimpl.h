@@ -12,20 +12,18 @@
 #define WEBRTC_P2P_BASE_TRANSPORTCHANNELIMPL_H_
 
 #include <string>
-#include "webrtc/p2p/base/transport.h"
+
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/transportchannel.h"
 
-namespace buzz { class XmlElement; }
+namespace webrtc {
+class MetricsObserverInterface;
+}
 
 namespace cricket {
 
 class Candidate;
-
-
-
-enum IceProtocolType {
-  ICEPROTO_RFC5245  
-};
 
 
 
@@ -37,9 +35,6 @@ class TransportChannelImpl : public TransportChannel {
       : TransportChannel(transport_name, component) {}
 
   
-  virtual Transport* GetTransport() = 0;
-
-  
   virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
   virtual void SetIceTiebreaker(uint64_t tiebreaker) = 0;
@@ -47,14 +42,25 @@ class TransportChannelImpl : public TransportChannel {
   
   virtual void SetIceProtocolType(IceProtocolType type) {}
   
-  
-  
   virtual void SetIceCredentials(const std::string& ice_ufrag,
-                                 const std::string& ice_pwd)  = 0;
-  
+                                 const std::string& ice_pwd) {
+    SetIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
+  }
   
   virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
-                                       const std::string& ice_pwd) = 0;
+                                       const std::string& ice_pwd) {
+    SetRemoteIceParameters(IceParameters(ice_ufrag, ice_pwd, false));
+  }
+
+  
+  
+  
+  
+  virtual void SetIceParameters(const IceParameters& ice_params) = 0;
+  
+  
+  
+  virtual void SetRemoteIceParameters(const IceParameters& ice_params) = 0;
 
   
   virtual void SetRemoteIceMode(IceMode mode) = 0;
@@ -62,11 +68,11 @@ class TransportChannelImpl : public TransportChannel {
   virtual void SetIceConfig(const IceConfig& config) = 0;
 
   
-  virtual void Connect() = 0;
-
-  
   
   virtual void MaybeStartGathering() = 0;
+
+  virtual void SetMetricsObserver(
+      webrtc::MetricsObserverInterface* observer) = 0;
 
   sigslot::signal1<TransportChannelImpl*> SignalGatheringState;
 
@@ -80,7 +86,10 @@ class TransportChannelImpl : public TransportChannel {
   
   sigslot::signal2<TransportChannelImpl*, const Candidate&>
       SignalCandidateGathered;
+  sigslot::signal2<TransportChannelImpl*, const Candidates&>
+      SignalCandidatesRemoved;
   virtual void AddRemoteCandidate(const Candidate& candidate) = 0;
+  virtual void RemoveRemoteCandidate(const Candidate& candidate) = 0;
 
   virtual IceGatheringState gathering_state() const = 0;
 
@@ -100,8 +109,10 @@ class TransportChannelImpl : public TransportChannel {
   sigslot::signal1<TransportChannelImpl*> SignalRoleConflict;
 
   
+  sigslot::signal1<TransportChannelImpl*> SignalStateChanged;
+
   
-  sigslot::signal1<TransportChannelImpl*> SignalConnectionRemoved;
+  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportChannelImpl);

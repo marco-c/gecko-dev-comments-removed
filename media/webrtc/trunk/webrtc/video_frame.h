@@ -11,180 +11,37 @@
 #ifndef WEBRTC_VIDEO_FRAME_H_
 #define WEBRTC_VIDEO_FRAME_H_
 
-#include "webrtc/base/scoped_ref_ptr.h"
+
+
+
+
+
+
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-class VideoFrame {
- public:
-  VideoFrame();
-  VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
-             uint32_t timestamp,
-             int64_t render_time_ms,
-             VideoRotation rotation);
-
-  
-  
-
-  
-  
-  
-  
-  
-  int CreateEmptyFrame(int width,
-                       int height,
-                       int stride_y,
-                       int stride_u,
-                       int stride_v);
-
-  
-  
-  
-  int CreateFrame(const uint8_t* buffer_y,
-                  const uint8_t* buffer_u,
-                  const uint8_t* buffer_v,
-                  int width,
-                  int height,
-                  int stride_y,
-                  int stride_u,
-                  int stride_v);
-
-  
-  int CreateFrame(const uint8_t* buffer_y,
-                  const uint8_t* buffer_u,
-                  const uint8_t* buffer_v,
-                  int width,
-                  int height,
-                  int stride_y,
-                  int stride_u,
-                  int stride_v,
-                  VideoRotation rotation);
-
-  
-  
-  
-  
-  int CreateFrame(const uint8_t* buffer,
-                  int width,
-                  int height,
-                  VideoRotation rotation);
-
-  
-  
-  
-  int CopyFrame(const VideoFrame& videoFrame);
-
-  
-  
-  void ShallowCopy(const VideoFrame& videoFrame);
-
-  
-  void Reset();
-
-  
-  uint8_t* buffer(PlaneType type);
-  
-  const uint8_t* buffer(PlaneType type) const;
-
-  
-  int allocated_size(PlaneType type) const;
-
-  
-  int stride(PlaneType type) const;
-
-  
-  int width() const;
-
-  
-  int height() const;
-
-  
-  void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
-
-  
-  uint32_t timestamp() const { return timestamp_; }
-
-  
-  void set_ntp_time_ms(int64_t ntp_time_ms) {
-    ntp_time_ms_ = ntp_time_ms;
-  }
-
-  
-  int64_t ntp_time_ms() const { return ntp_time_ms_; }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  VideoRotation rotation() const { return rotation_; }
-  void set_rotation(VideoRotation rotation) {
-    rotation_ = rotation;
-  }
-
-  
-  void set_render_time_ms(int64_t render_time_ms) {
-    render_time_ms_ = render_time_ms;
-  }
-
-  
-  int64_t render_time_ms() const { return render_time_ms_; }
-
-  
-  bool IsZeroSize() const;
-
-  
-  
-  
-  void* native_handle() const;
-
-  
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
-
-  
-  void set_video_frame_buffer(
-      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
-
-  
-  
-  VideoFrame ConvertNativeToI420Frame() const;
-
-  bool EqualsFrame(const VideoFrame& frame) const;
-
- private:
-  
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
-  uint32_t timestamp_;
-  int64_t ntp_time_ms_;
-  int64_t render_time_ms_;
-  VideoRotation rotation_;
-};
-
-
 
 class EncodedImage {
  public:
+  static const size_t kBufferPaddingBytesH264;
+
+  
+  
+  static size_t GetBufferPaddingBytes(VideoCodecType codec_type);
+
   EncodedImage() : EncodedImage(nullptr, 0, 0) {}
+
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
+  
+  
   struct AdaptReason {
-    AdaptReason()
-        : quality_resolution_downscales(-1),
-          bw_resolutions_disabled(-1) {}
-
-    int quality_resolution_downscales;  
-                                        
-                                        
+    AdaptReason() : bw_resolutions_disabled(-1) {}
     int bw_resolutions_disabled;  
                                   
                                   
@@ -199,9 +56,15 @@ class EncodedImage {
   uint8_t* _buffer;
   size_t _length;
   size_t _size;
+  VideoRotation rotation_ = kVideoRotation_0;
   bool _completeFrame = false;
   AdaptReason adapt_reason_;
   int qp_ = -1;  
+
+  
+  
+  
+  PlayoutDelay playout_delay_ = {-1, -1};
 };
 
 }  

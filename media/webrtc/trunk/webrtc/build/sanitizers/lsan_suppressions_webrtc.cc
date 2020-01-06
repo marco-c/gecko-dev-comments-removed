@@ -58,8 +58,6 @@ char kLSanDefaultSuppressions[] =
 
 "leak:StartDNSLookup\n"
 
-"leak:buzz::FakeXmppClient::SendStanza\n"
-"leak:buzz::XmppTask::XmppTask\n"
 "leak:HangoutPubSubClientTest::HangoutPubSubClientTest\n"
 "leak:MucRoomConfigTaskTest::SetUp\n"
 "leak:MucRoomDiscoveryTaskTest::SetUp\n"

@@ -11,13 +11,15 @@
 #ifndef WEBRTC_BASE_BUFFER_H_
 #define WEBRTC_BASE_BUFFER_H_
 
-#include <algorithm>  
-#include <cassert>
+#include <algorithm>
 #include <cstring>
-#include <utility>  
+#include <memory>
+#include <type_traits>
+#include <utility>
 
-#include "webrtc/base/deprecation.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/type_traits.h"
 
 namespace rtc {
 
@@ -29,81 +31,118 @@ namespace internal {
 
 
 
-
-
-template <typename T>
-struct ByteType {
- private:
-  static int F(uint8_t*);
-  static int F(int8_t*);
-  static int F(char*);
-
- public:
-  using t = decltype(F(static_cast<T*>(nullptr)));
+template <typename T, typename U>
+struct BufferCompat {
+  static constexpr bool value =
+      !std::is_volatile<U>::value &&
+      ((std::is_integral<T>::value && sizeof(T) == 1)
+           ? (std::is_integral<U>::value && sizeof(U) == 1)
+           : (std::is_same<T, typename std::remove_const<U>::type>::value));
 };
 
 }  
 
 
 
-class Buffer {
+template <typename T>
+class BufferT {
+  
+  
+  
+  
+  
+  static_assert(std::is_trivial<T>::value, "T must be a trivial type.");
+
+  
+  static_assert(!std::is_const<T>::value, "T may not be const");
+
  public:
-  Buffer();                   
-  Buffer(const Buffer& buf);  
-  Buffer(Buffer&& buf);       
-
   
-  explicit Buffer(size_t size);
-  Buffer(size_t size, size_t capacity);
-
-  
-  
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  Buffer(const T* data, size_t size)
-      : Buffer(data, size, size) {}
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  Buffer(const T* data, size_t size, size_t capacity)
-      : Buffer(size, capacity) {
-    std::memcpy(data_.get(), data, size);
+  BufferT() : size_(0), capacity_(0), data_(nullptr) {
+    RTC_DCHECK(IsConsistent());
   }
 
   
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  Buffer(const T(&array)[N])
-      : Buffer(array, N) {}
-
-  ~Buffer();
-
   
-  
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
-  const T* data() const {
-    assert(IsConsistent());
-    return reinterpret_cast<T*>(data_.get());
+  BufferT(const BufferT&) = delete;
+  BufferT& operator=(const BufferT&) = delete;
+
+  BufferT(BufferT&& buf)
+      : size_(buf.size()),
+        capacity_(buf.capacity()),
+        data_(std::move(buf.data_)) {
+    RTC_DCHECK(IsConsistent());
+    buf.OnMovedFrom();
   }
-  template <typename T = uint8_t, typename internal::ByteType<T>::t = 0>
-  T* data() {
-    assert(IsConsistent());
-    return reinterpret_cast<T*>(data_.get());
+
+  
+  explicit BufferT(size_t size) : BufferT(size, size) {}
+
+  BufferT(size_t size, size_t capacity)
+      : size_(size),
+        capacity_(std::max(size, capacity)),
+        data_(new T[capacity_]) {
+    RTC_DCHECK(IsConsistent());
+  }
+
+  
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(const U* data, size_t size) : BufferT(data, size, size) {}
+
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(U* data, size_t size, size_t capacity) : BufferT(size, capacity) {
+    static_assert(sizeof(T) == sizeof(U), "");
+    std::memcpy(data_.get(), data, size * sizeof(U));
+  }
+
+  
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  BufferT(U (&array)[N]) : BufferT(array, N) {}
+
+  
+  
+  
+  template <typename U = T,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  const U* data() const {
+    RTC_DCHECK(IsConsistent());
+    return reinterpret_cast<U*>(data_.get());
+  }
+
+  template <typename U = T,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  U* data() {
+    RTC_DCHECK(IsConsistent());
+    return reinterpret_cast<U*>(data_.get());
+  }
+
+  bool empty() const {
+    RTC_DCHECK(IsConsistent());
+    return size_ == 0;
   }
 
   size_t size() const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return size_;
   }
+
   size_t capacity() const {
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
     return capacity_;
   }
 
-  Buffer& operator=(const Buffer& buf) {
-    if (&buf != this)
-      SetData(buf.data(), buf.size());
-    return *this;
-  }
-  Buffer& operator=(Buffer&& buf) {
-    assert(IsConsistent());
-    assert(buf.IsConsistent());
+  BufferT& operator=(BufferT&& buf) {
+    RTC_DCHECK(IsConsistent());
+    RTC_DCHECK(buf.IsConsistent());
     size_ = buf.size_;
     capacity_ = buf.capacity_;
     data_ = std::move(buf.data_);
@@ -111,49 +150,145 @@ class Buffer {
     return *this;
   }
 
-  bool operator==(const Buffer& buf) const {
-    assert(IsConsistent());
-    return size_ == buf.size() && memcmp(data_.get(), buf.data(), size_) == 0;
+  bool operator==(const BufferT& buf) const {
+    RTC_DCHECK(IsConsistent());
+    if (size_ != buf.size_) {
+      return false;
+    }
+    if (std::is_integral<T>::value) {
+      
+      return std::memcmp(data_.get(), buf.data_.get(), size_ * sizeof(T)) == 0;
+    }
+    for (size_t i = 0; i < size_; ++i) {
+      if (data_[i] != buf.data_[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  bool operator!=(const Buffer& buf) const { return !(*this == buf); }
+  bool operator!=(const BufferT& buf) const { return !(*this == buf); }
+
+  T& operator[](size_t index) {
+    RTC_DCHECK_LT(index, size_);
+    return data()[index];
+  }
+
+  T operator[](size_t index) const {
+    RTC_DCHECK_LT(index, size_);
+    return data()[index];
+  }
 
   
   
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  void SetData(const T* data, size_t size) {
-    assert(IsConsistent());
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void SetData(const U* data, size_t size) {
+    RTC_DCHECK(IsConsistent());
     size_ = 0;
     AppendData(data, size);
   }
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void SetData(const T(&array)[N]) {
+
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void SetData(const U (&array)[N]) {
     SetData(array, N);
   }
-  void SetData(const Buffer& buf) { SetData(buf.data(), buf.size()); }
+
+  template <typename W,
+            typename std::enable_if<
+                HasDataAndSize<const W, const T>::value>::type* = nullptr>
+  void SetData(const W& w) {
+    SetData(w.data(), w.size());
+  }
 
   
-  template <typename T, typename internal::ByteType<T>::t = 0>
-  void AppendData(const T* data, size_t size) {
-    assert(IsConsistent());
-    const size_t new_size = size_ + size;
-    EnsureCapacity(new_size);
-    std::memcpy(data_.get() + size_, data, size);
-    size_ = new_size;
-    assert(IsConsistent());
+  
+  
+  
+  
+  
+  
+  template <typename U = T,
+            typename F,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  size_t SetData(size_t max_elements, F&& setter) {
+    RTC_DCHECK(IsConsistent());
+    size_ = 0;
+    return AppendData<U>(max_elements, std::forward<F>(setter));
   }
-  template <typename T, size_t N, typename internal::ByteType<T>::t = 0>
-  void AppendData(const T(&array)[N]) {
+
+  
+  
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U* data, size_t size) {
+    RTC_DCHECK(IsConsistent());
+    const size_t new_size = size_ + size;
+    EnsureCapacityWithHeadroom(new_size, true);
+    static_assert(sizeof(T) == sizeof(U), "");
+    std::memcpy(data_.get() + size_, data, size * sizeof(U));
+    size_ = new_size;
+    RTC_DCHECK(IsConsistent());
+  }
+
+  template <typename U,
+            size_t N,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U (&array)[N]) {
     AppendData(array, N);
   }
-  void AppendData(const Buffer& buf) { AppendData(buf.data(), buf.size()); }
+
+  template <typename W,
+            typename std::enable_if<
+                HasDataAndSize<const W, const T>::value>::type* = nullptr>
+  void AppendData(const W& w) {
+    AppendData(w.data(), w.size());
+  }
+
+  template <typename U,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  void AppendData(const U& item) {
+    AppendData(&item, 1);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  template <typename U = T,
+            typename F,
+            typename std::enable_if<
+                internal::BufferCompat<T, U>::value>::type* = nullptr>
+  size_t AppendData(size_t max_elements, F&& setter) {
+    RTC_DCHECK(IsConsistent());
+    const size_t old_size = size_;
+    SetSize(old_size + max_elements);
+    U* base_ptr = data<U>() + old_size;
+    size_t written_elements = setter(rtc::ArrayView<U>(base_ptr, max_elements));
+
+    RTC_CHECK_LE(written_elements, max_elements);
+    size_ = old_size + written_elements;
+    RTC_DCHECK(IsConsistent());
+    return written_elements;
+  }
 
   
   
   
   
   void SetSize(size_t size) {
-    EnsureCapacity(size);
+    EnsureCapacityWithHeadroom(size, true);
     size_ = size;
   }
 
@@ -161,35 +296,20 @@ class Buffer {
   
   
   void EnsureCapacity(size_t capacity) {
-    assert(IsConsistent());
-    if (capacity <= capacity_)
-      return;
-    scoped_ptr<uint8_t[]> new_data(new uint8_t[capacity]);
-    std::memcpy(new_data.get(), data_.get(), size_);
-    data_ = std::move(new_data);
-    capacity_ = capacity;
-    assert(IsConsistent());
-  }
-
-  
-  
-  RTC_DEPRECATED Buffer&& Pass() { return DEPRECATED_Pass(); }
-  Buffer&& DEPRECATED_Pass() {
-    assert(IsConsistent());
-    return std::move(*this);
+    
+    
+    EnsureCapacityWithHeadroom(capacity, false);
   }
 
   
   
   void Clear() {
-    data_.reset();
     size_ = 0;
-    capacity_ = 0;
-    assert(IsConsistent());
+    RTC_DCHECK(IsConsistent());
   }
 
   
-  friend void swap(Buffer& a, Buffer& b) {
+  friend void swap(BufferT& a, BufferT& b) {
     using std::swap;
     swap(a.size_, b.size_);
     swap(a.capacity_, b.capacity_);
@@ -197,6 +317,27 @@ class Buffer {
   }
 
  private:
+  void EnsureCapacityWithHeadroom(size_t capacity, bool extra_headroom) {
+    RTC_DCHECK(IsConsistent());
+    if (capacity <= capacity_)
+      return;
+
+    
+    
+    
+    
+    
+    const size_t new_capacity =
+        extra_headroom ? std::max(capacity, capacity_ + capacity_ / 2)
+                       : capacity;
+
+    std::unique_ptr<T[]> new_data(new T[new_capacity]);
+    std::memcpy(new_data.get(), data_.get(), size_ * sizeof(T));
+    data_ = std::move(new_data);
+    capacity_ = new_capacity;
+    RTC_DCHECK(IsConsistent());
+  }
+
   
   
   
@@ -208,7 +349,7 @@ class Buffer {
   
   
   void OnMovedFrom() {
-#ifdef NDEBUG
+#if RTC_DCHECK_IS_ON
     
     
     size_ = 0;
@@ -222,8 +363,11 @@ class Buffer {
 
   size_t size_;
   size_t capacity_;
-  scoped_ptr<uint8_t[]> data_;
+  std::unique_ptr<T[]> data_;
 };
+
+
+using Buffer = BufferT<uint8_t>;
 
 }  
 

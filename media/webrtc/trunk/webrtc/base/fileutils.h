@@ -21,10 +21,9 @@
 #include <unistd.h>
 #endif
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/platform_file.h"
-#include "webrtc/base/scoped_ptr.h"
 
 namespace rtc {
 
@@ -63,18 +62,6 @@ class DirectoryIterator {
   
   virtual std::string Name() const;
 
-  
-  virtual size_t FileSize() const;
-
-  
-  virtual bool OlderThan(int seconds) const;
-
-  
-  bool IsDots() const {
-    std::string filename(Name());
-    return (filename.compare(".") == 0) || (filename.compare("..") == 0);
-  }
-
  private:
   std::string directory_;
 #if defined(WEBRTC_WIN)
@@ -107,15 +94,6 @@ class FilesystemInterface {
   
   
   
-  
-  
-  
-  
-  virtual bool CreatePrivateFile(const Pathname &filename) = 0;
-
-  
-  
-  
   virtual bool DeleteFile(const Pathname &filename) = 0;
 
   
@@ -135,25 +113,7 @@ class FilesystemInterface {
 
   
   
-  
-  bool DeleteFileOrFolder(const Pathname &path) {
-    if (IsFolder(path))
-      return DeleteFolderAndContents(path);
-    else
-      return DeleteFile(path);
-  }
-
-  
-  
   virtual bool CreateFolder(const Pathname &pathname) = 0;
-
-  
-  
-  
-  
-  
-  virtual bool MoveFolder(const Pathname &old_path,
-                          const Pathname &new_path) = 0;
 
   
   
@@ -164,28 +124,8 @@ class FilesystemInterface {
 
   
   
-  bool MoveFileOrFolder(const Pathname &old_path, const Pathname &new_path) {
-    if (IsFile(old_path)) {
-      return MoveFile(old_path, new_path);
-    } else {
-      return MoveFolder(old_path, new_path);
-    }
-  }
-
-  
-  
   
   virtual bool CopyFile(const Pathname &old_path, const Pathname &new_path) = 0;
-
-  
-  bool CopyFolder(const Pathname &old_path, const Pathname &new_path);
-
-  bool CopyFileOrFolder(const Pathname &old_path, const Pathname &new_path) {
-    if (IsFile(old_path))
-      return CopyFile(old_path, new_path);
-    else
-      return CopyFolder(old_path, new_path);
-  }
 
   
   virtual bool IsFolder(const Pathname& pathname) = 0;
@@ -218,11 +158,6 @@ class FilesystemInterface {
   
   
   
-  virtual bool GetAppPathname(Pathname* path) = 0;
-
-  
-  
-  
   virtual bool GetAppDataFolder(Pathname* path, bool per_user) = 0;
 
   
@@ -231,13 +166,7 @@ class FilesystemInterface {
   
   virtual bool GetAppTempFolder(Pathname* path) = 0;
 
-  
-  bool CleanAppTempFolder();
-
   virtual bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) = 0;
-
-  
-  virtual Pathname GetCurrentDirectory() = 0;
 
   
   
@@ -245,14 +174,14 @@ class FilesystemInterface {
     organization_name_ = organization;
   }
   void GetOrganizationName(std::string* organization) {
-    ASSERT(NULL != organization);
+    RTC_DCHECK(organization);
     *organization = organization_name_;
   }
   void SetApplicationName(const std::string& application) {
     application_name_ = application;
   }
   void GetApplicationName(std::string* application) {
-    ASSERT(NULL != application);
+    RTC_DCHECK(application);
     *application = application_name_;
   }
 
@@ -264,7 +193,7 @@ class FilesystemInterface {
 class Filesystem {
  public:
   static FilesystemInterface *default_filesystem() {
-    ASSERT(default_filesystem_ != NULL);
+    RTC_DCHECK(default_filesystem_);
     return default_filesystem_;
   }
 
@@ -292,16 +221,8 @@ class Filesystem {
     return EnsureDefaultFilesystem()->OpenFile(filename, mode);
   }
 
-  static bool CreatePrivateFile(const Pathname &filename) {
-    return EnsureDefaultFilesystem()->CreatePrivateFile(filename);
-  }
-
   static bool DeleteFile(const Pathname &filename) {
     return EnsureDefaultFilesystem()->DeleteFile(filename);
-  }
-
-  static bool DeleteEmptyFolder(const Pathname &folder) {
-    return EnsureDefaultFilesystem()->DeleteEmptyFolder(folder);
   }
 
   static bool DeleteFolderContents(const Pathname &folder) {
@@ -312,16 +233,8 @@ class Filesystem {
     return EnsureDefaultFilesystem()->DeleteFolderAndContents(folder);
   }
 
-  static bool MoveFolder(const Pathname &old_path, const Pathname &new_path) {
-    return EnsureDefaultFilesystem()->MoveFolder(old_path, new_path);
-  }
-
   static bool MoveFile(const Pathname &old_path, const Pathname &new_path) {
     return EnsureDefaultFilesystem()->MoveFile(old_path, new_path);
-  }
-
-  static bool CopyFolder(const Pathname &old_path, const Pathname &new_path) {
-    return EnsureDefaultFilesystem()->CopyFolder(old_path, new_path);
   }
 
   static bool CopyFile(const Pathname &old_path, const Pathname &new_path) {
@@ -363,10 +276,6 @@ class Filesystem {
     return EnsureDefaultFilesystem()->GetFileTime(path, which, time);
   }
 
-  static bool GetAppPathname(Pathname* path) {
-    return EnsureDefaultFilesystem()->GetAppPathname(path);
-  }
-
   static bool GetAppDataFolder(Pathname* path, bool per_user) {
     return EnsureDefaultFilesystem()->GetAppDataFolder(path, per_user);
   }
@@ -375,17 +284,9 @@ class Filesystem {
     return EnsureDefaultFilesystem()->GetAppTempFolder(path);
   }
 
-  static bool CleanAppTempFolder() {
-    return EnsureDefaultFilesystem()->CleanAppTempFolder();
-  }
-
   static bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) {
     return EnsureDefaultFilesystem()->GetDiskFreeSpace(path, freebytes);
   }
-
-  
-  
-  static Pathname GetCurrentDirectory();
 
   static void SetOrganizationName(const std::string& organization) {
     EnsureDefaultFilesystem()->SetOrganizationName(organization);
@@ -422,14 +323,6 @@ class FilesystemScope{
   FilesystemInterface* old_fs_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FilesystemScope);
 };
-
-
-
-
-
-
-
-bool CreateUniqueFile(Pathname& path, bool create_empty);
 
 }  
 

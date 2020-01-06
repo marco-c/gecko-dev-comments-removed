@@ -125,6 +125,8 @@ Blocker::Blocker(size_t chunk_size,
   input_buffer_.MoveReadPositionBackward(initial_delay_);
 }
 
+Blocker::~Blocker() = default;
+
 
 
 

@@ -8,32 +8,35 @@
 
 
 
-
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TMMBN_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TMMBN_H_
 
 #include <vector>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 
 
-class Tmmbn : public RtcpPacket {
+
+class Tmmbn : public Rtpfb {
  public:
-  Tmmbn() : RtcpPacket() {
-    memset(&tmmbn_, 0, sizeof(tmmbn_));
-  }
+  static constexpr uint8_t kFeedbackMessageType = 4;
 
-  virtual ~Tmmbn() {}
+  Tmmbn() {}
+  ~Tmmbn() override {}
 
-  void From(uint32_t ssrc) {
-    tmmbn_.SenderSSRC = ssrc;
-  }
   
-  bool WithTmmbr(uint32_t ssrc, uint32_t bitrate_kbps, uint16_t overhead);
+  bool Parse(const CommonHeader& packet);
+
+  void AddTmmbr(const TmmbItem& item);
+
+  const std::vector<TmmbItem>& items() const { return items_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -42,19 +45,19 @@ class Tmmbn : public RtcpPacket {
               RtcpPacket::PacketReadyCallback* callback) const override;
 
  private:
-  static const int kMaxNumberOfTmmbrs = 50;
-
-  size_t BlockLength() const {
-    const size_t kFciLen = 8;
-    return kCommonFbFmtLength + kFciLen * tmmbn_items_.size();
+  size_t BlockLength() const override {
+    return kHeaderLength + kCommonFeedbackLength +
+           TmmbItem::kLength * items_.size();
   }
 
-  RTCPUtility::RTCPPacketRTPFBTMMBN tmmbn_;
-  std::vector<RTCPUtility::RTCPPacketRTPFBTMMBRItem> tmmbn_items_;
+  
+  void SetMediaSsrc(uint32_t ssrc);
+  uint32_t media_ssrc() const;
+
+  std::vector<TmmbItem> items_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbn);
 };
-
 }  
 }  
 #endif  

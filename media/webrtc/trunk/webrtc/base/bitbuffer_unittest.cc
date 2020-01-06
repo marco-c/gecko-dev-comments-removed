@@ -168,7 +168,7 @@ TEST(BitBufferTest, SetOffsetValues) {
 
   
   
-#if defined(GTEST_HAS_DEATH_TEST)
+#if GTEST_HAS_DEATH_TEST
 #if !defined(WEBRTC_ANDROID)
   
   EXPECT_DEATH(buffer.GetCurrentOffset(&byte_offset, NULL), "");
@@ -188,7 +188,7 @@ uint64_t GolombEncoded(uint32_t val) {
 }
 
 TEST(BitBufferTest, GolombUint32Values) {
-  ByteBuffer byteBuffer;
+  ByteBufferWriter byteBuffer;
   byteBuffer.Resize(16);
   BitBuffer buffer(reinterpret_cast<const uint8_t*>(byteBuffer.Data()),
                    byteBuffer.Capacity());

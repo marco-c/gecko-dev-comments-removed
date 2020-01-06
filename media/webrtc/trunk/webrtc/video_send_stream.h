@@ -13,42 +13,30 @@
 
 #include <map>
 #include <string>
+#include <utility>
+#include <vector>
+#include <utility>
 
+#include "webrtc/api/call/transport.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
-#include "webrtc/frame_callback.h"
-#include "webrtc/stream.h"
-#include "webrtc/transport.h"
-#include "webrtc/video_renderer.h"
+#include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 
 namespace webrtc {
 
-class LoadObserver;
 class VideoEncoder;
 
-class EncodingTimeObserver {
- public:
-  virtual ~EncodingTimeObserver() {}
-
-  virtual void OnReportEncodedTime(int64_t ntp_time_ms, int encode_time_ms) = 0;
-};
-
-
-class VideoCaptureInput {
- public:
-  
-  
-  
-  virtual void IncomingCapturedFrame(const VideoFrame& video_frame) = 0;
-
- protected:
-  virtual ~VideoCaptureInput() {}
-};
-
-class VideoSendStream : public SendStream {
+class VideoSendStream {
  public:
   struct StreamStats {
+    std::string ToString() const;
+
     FrameCounts frame_counts;
+    bool is_rtx = false;
+    bool is_flexfec = false;
     int width = 0;
     int height = 0;
     
@@ -62,26 +50,54 @@ class VideoSendStream : public SendStream {
   };
 
   struct Stats {
+    std::string ToString(int64_t time_ms) const;
     std::string encoder_implementation_name = "unknown";
     int input_frame_rate = 0;
     int encode_frame_rate = 0;
     int avg_encode_time_ms = 0;
     int encode_usage_percent = 0;
+    uint32_t frames_encoded = 0;
+    rtc::Optional<uint64_t> qp_sum;
+    
+    
     int target_media_bitrate_bps = 0;
+    
     int media_bitrate_bps = 0;
+    
+    
+    int preferred_media_bitrate_bps = 0;
     bool suspended = false;
     bool bw_limited_resolution = false;
+    bool cpu_limited_resolution = false;
+    
+    
+    int number_of_cpu_adapt_changes = 0;
     std::map<uint32_t, StreamStats> substreams;
   };
 
   struct Config {
+   public:
     Config() = delete;
+    Config(Config&&) = default;
     explicit Config(Transport* send_transport)
         : send_transport(send_transport) {}
+
+    Config& operator=(Config&&) = default;
+    Config& operator=(const Config&) = delete;
+
+    
+    Config Copy() const { return Config(*this); }
 
     std::string ToString() const;
 
     struct EncoderSettings {
+      EncoderSettings() = default;
+      EncoderSettings(std::string payload_name,
+                      int payload_type,
+                      VideoEncoder* encoder)
+          : payload_name(std::move(payload_name)),
+            payload_type(payload_type),
+            encoder(encoder) {}
       std::string ToString() const;
 
       std::string payload_name;
@@ -90,6 +106,11 @@ class VideoSendStream : public SendStream {
       
       
       bool internal_source = false;
+
+      
+      
+      
+      bool full_overuse_time = false;
 
       
       
@@ -115,7 +136,23 @@ class VideoSendStream : public SendStream {
       NackConfig nack;
 
       
-      FecConfig fec;
+      UlpfecConfig ulpfec;
+
+      struct Flexfec {
+        
+        int payload_type = -1;
+
+        
+        uint32_t ssrc = 0;
+
+        
+        
+        
+        
+        
+        
+        std::vector<uint32_t> protected_media_ssrcs;
+      } flexfec;
 
       
       
@@ -130,8 +167,6 @@ class VideoSendStream : public SendStream {
 
       
       std::string c_name;
-
-      std::vector<std::string> rids;
     } rtp;
 
     
@@ -139,19 +174,13 @@ class VideoSendStream : public SendStream {
 
     
     
-    LoadObserver* overuse_callback = nullptr;
+    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback = nullptr;
 
     
     
-    I420FrameCallback* pre_encode_callback = nullptr;
-
     
     
     EncodedFrameObserver* post_encode_callback = nullptr;
-
-    
-    
-    VideoRenderer* local_renderer = nullptr;
 
     
     
@@ -168,27 +197,58 @@ class VideoSendStream : public SendStream {
     bool suspend_below_min_bitrate = false;
 
     
+    bool periodic_alr_bandwidth_probing = false;
+
+   private:
     
     
-    EncodingTimeObserver* encoding_time_observer = nullptr;
+    Config(const Config&) = default;
   };
 
   
   
-  virtual VideoCaptureInput* Input() = 0;
+  virtual void Start() = 0;
+  
+  
+  virtual void Stop() = 0;
 
   
   
-  virtual CPULoadStateObserver* LoadStateObserver() = 0;
+  enum class DegradationPreference {
+    kMaintainResolution,
+    
+    
+    kBalanced,
+  };
+  virtual void SetSource(
+      rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+      const DegradationPreference& degradation_preference) = 0;
 
   
   
   
-  virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
+  virtual void ReconfigureVideoEncoder(VideoEncoderConfig config) = 0;
 
   virtual Stats GetStats() = 0;
 
-  virtual int64_t GetRtt() const = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void EnableEncodedFrameRecording(
+      const std::vector<rtc::PlatformFile>& files,
+      size_t byte_limit) = 0;
+  inline void DisableEncodedFrameRecording() {
+    EnableEncodedFrameRecording(std::vector<rtc::PlatformFile>(), 0);
+  }
+
+ protected:
+  virtual ~VideoSendStream() {}
 };
 
 }  

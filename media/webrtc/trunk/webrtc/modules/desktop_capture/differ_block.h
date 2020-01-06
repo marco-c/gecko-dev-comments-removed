@@ -24,6 +24,17 @@ const int kBytesPerPixel = 4;
 
 
 
+bool VectorDifference(const uint8_t* image1, const uint8_t* image2);
+
+
+
+bool BlockDifference(const uint8_t* image1,
+                     const uint8_t* image2,
+                     int height,
+                     int stride);
+
+
+
 bool BlockDifference(const uint8_t* image1,
                      const uint8_t* image2,
                      int stride);

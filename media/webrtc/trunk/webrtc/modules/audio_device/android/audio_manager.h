@@ -11,19 +11,18 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 
-#if !defined(MOZ_WIDGET_GONK)
-#include <jni.h>
-#endif
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
+#include <jni.h>
+#include <SLES/OpenSLES.h>
+
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
+#include "webrtc/modules/audio_device/android/opensles_common.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
-#if !defined(MOZ_WIDGET_GONK)
 #include "webrtc/modules/utility/include/helpers_android.h"
-#endif
 #include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
@@ -43,7 +42,7 @@ class AudioManager {
   class JavaAudioManager {
    public:
     JavaAudioManager(NativeRegistration* native_registration,
-                     rtc::scoped_ptr<GlobalRef> audio_manager);
+                     std::unique_ptr<GlobalRef> audio_manager);
     ~JavaAudioManager();
 
     bool Init();
@@ -52,7 +51,7 @@ class AudioManager {
     bool IsDeviceBlacklistedForOpenSLESUsage();
 
    private:
-    rtc::scoped_ptr<GlobalRef> audio_manager_;
+    std::unique_ptr<GlobalRef> audio_manager_;
     jmethodID init_;
     jmethodID dispose_;
     jmethodID is_communication_mode_enabled_;
@@ -65,6 +64,18 @@ class AudioManager {
   
   
   void SetActiveAudioLayer(AudioDeviceModule::AudioLayer audio_layer);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SLObjectItf GetOpenSLEngine();
 
   
   bool Init();
@@ -90,6 +101,11 @@ class AudioManager {
   
   
   bool IsLowLatencyPlayoutSupported() const;
+  bool IsLowLatencyRecordSupported() const;
+
+  
+  
+  bool IsProAudioSupported() const;
 
   
   
@@ -101,28 +117,32 @@ class AudioManager {
   
   
   
-#if !defined(MOZ_WIDGET_GONK)
   static void JNICALL CacheAudioParameters(JNIEnv* env,
                                            jobject obj,
                                            jint sample_rate,
-                                           jint channels,
+                                           jint output_channels,
+                                           jint input_channels,
                                            jboolean hardware_aec,
                                            jboolean hardware_agc,
                                            jboolean hardware_ns,
                                            jboolean low_latency_output,
+                                           jboolean low_latency_input,
+                                           jboolean pro_audio,
                                            jint output_buffer_size,
                                            jint input_buffer_size,
                                            jlong native_audio_manager);
   void OnCacheAudioParameters(JNIEnv* env,
                               jint sample_rate,
-                              jint channels,
+                              jint output_channels,
+                              jint input_channels,
                               jboolean hardware_aec,
                               jboolean hardware_agc,
                               jboolean hardware_ns,
                               jboolean low_latency_output,
+                              jboolean low_latency_input,
+                              jboolean pro_audio,
                               jint output_buffer_size,
                               jint input_buffer_size);
-#endif
 
   
   
@@ -134,17 +154,24 @@ class AudioManager {
   AttachCurrentThreadIfNeeded attach_thread_if_needed_;
 
   
-  rtc::scoped_ptr<JNIEnvironment> j_environment_;
+  std::unique_ptr<JNIEnvironment> j_environment_;
 
   
-  rtc::scoped_ptr<NativeRegistration> j_native_registration_;
+  std::unique_ptr<NativeRegistration> j_native_registration_;
 
-#if !defined(MOZ_WIDGET_GONK)
   
-  rtc::scoped_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
-#endif
+  std::unique_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
 
+  
+  
   AudioDeviceModule::AudioLayer audio_layer_;
+
+  
+  
+  
+  
+  
+  webrtc::ScopedSLObjectItf engine_object_;
 
   
   bool initialized_;
@@ -158,6 +185,12 @@ class AudioManager {
 
   
   bool low_latency_playout_;
+
+  
+  bool low_latency_record_;
+
+  
+  bool pro_audio_;
 
   
   

@@ -13,13 +13,20 @@
 
 #include <set>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/system_wrappers/include/static_instance.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
+
+
+
+
+
+
+
 
 class SSRCDatabase {
  public:
@@ -30,21 +37,25 @@ class SSRCDatabase {
   void RegisterSSRC(uint32_t ssrc);
   void ReturnSSRC(uint32_t ssrc);
 
-  SSRCDatabase();
-  virtual ~SSRCDatabase();
-
  protected:
+  SSRCDatabase();
+  ~SSRCDatabase();
+
   static SSRCDatabase* CreateInstance() { return new SSRCDatabase(); }
 
- private:
   
   
   friend SSRCDatabase* GetStaticInstance<SSRCDatabase>(
       CountOperation count_operation);
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
+ private:
+  rtc::CriticalSection crit_;
   Random random_ GUARDED_BY(crit_);
   std::set<uint32_t> ssrcs_ GUARDED_BY(crit_);
+  
+  
+  
+  
 };
 }  
 

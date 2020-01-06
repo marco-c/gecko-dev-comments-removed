@@ -12,17 +12,20 @@
 #define WEBRTC_P2P_BASE_PORT_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
+#include "webrtc/p2p/base/jseptransport.h"
 #include "webrtc/p2p/base/packetsocketfactory.h"
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/p2p/base/stunrequest.h"
-#include "webrtc/p2p/base/transport.h"
 #include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/ratetracker.h"
@@ -43,6 +46,7 @@ extern const char RELAY_PORT_TYPE[];
 extern const char UDP_PROTOCOL_NAME[];
 extern const char TCP_PROTOCOL_NAME[];
 extern const char SSLTCP_PROTOCOL_NAME[];
+extern const char TLS_PROTOCOL_NAME[];
 
 
 extern const int DISCARD_PORT;
@@ -52,26 +56,26 @@ extern const char TCPTYPE_SIMOPEN_STR[];
 
 
 
-const uint32_t MIN_CONNECTION_LIFETIME = 10 * 1000;  
+static const int MIN_CONNECTION_LIFETIME = 10 * 1000;  
 
 
 
-const uint32_t DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  
+static const int DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  
 
 
-const uint32_t WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  
+static const int WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;  
 
 
-const uint32_t CONNECTION_WRITE_TIMEOUT = 15 * 1000;  
+static const int CONNECTION_WRITE_TIMEOUT = 15 * 1000;  
 
 
-const uint32_t CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  
+static const int CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  
 
 
-const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;
+static const int CONNECTION_RESPONSE_TIMEOUT = 5 * 1000;  
 
 
-const int CONNECTION_RESPONSE_TIMEOUT = 5 * 1000;   
+static const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;
 
 enum RelayType {
   RELAY_GTURN,   
@@ -79,18 +83,24 @@ enum RelayType {
 };
 
 enum IcePriorityValue {
-  
-  
-  
-  
-  
-  
-  
-  ICE_TYPE_PREFERENCE_RELAY = 2,
+  ICE_TYPE_PREFERENCE_RELAY_TLS = 0,
+  ICE_TYPE_PREFERENCE_RELAY_TCP = 1,
+  ICE_TYPE_PREFERENCE_RELAY_UDP = 2,
+  ICE_TYPE_PREFERENCE_PRFLX_TCP = 80,
   ICE_TYPE_PREFERENCE_HOST_TCP = 90,
   ICE_TYPE_PREFERENCE_SRFLX = 100,
   ICE_TYPE_PREFERENCE_PRFLX = 110,
   ICE_TYPE_PREFERENCE_HOST = 126
+};
+
+
+enum class IceCandidatePairState {
+  WAITING = 0,  
+  IN_PROGRESS,  
+  SUCCEEDED,    
+  FAILED,       
+  
+  
 };
 
 const char* ProtoToString(ProtocolType proto);
@@ -99,12 +109,14 @@ bool StringToProto(const char* value, ProtocolType* proto);
 struct ProtocolAddress {
   rtc::SocketAddress address;
   ProtocolType proto;
-  bool secure;
 
   ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p)
-      : address(a), proto(p), secure(false) { }
-  ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p, bool sec)
-      : address(a), proto(p), secure(sec) { }
+      : address(a), proto(p) {}
+
+  bool operator==(const ProtocolAddress& o) const {
+    return address == o.address && proto == o.proto;
+  }
+  bool operator!=(const ProtocolAddress& o) const { return !(*this == o); }
 };
 
 typedef std::set<rtc::SocketAddress> ServerAddresses;
@@ -115,7 +127,14 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 class Port : public PortInterface, public rtc::MessageHandler,
              public sigslot::has_slots<> {
  public:
+  
+  
+  
+  
+  
+  enum class State { INIT, KEEP_ALIVE_UNTIL_PRUNED, PRUNED };
   Port(rtc::Thread* thread,
+       const std::string& type,
        rtc::PacketSocketFactory* factory,
        rtc::Network* network,
        const rtc::IPAddress& ip,
@@ -146,6 +165,12 @@ class Port : public PortInterface, public rtc::MessageHandler,
   void ResetSharedSocket() { shared_socket_ = false; }
 
   
+  
+  void KeepAliveUntilPruned();
+  
+  void Prune();
+
+  
   rtc::Thread* thread() { return thread_; }
 
   
@@ -171,25 +196,18 @@ class Port : public PortInterface, public rtc::MessageHandler,
   }
 
   
-  uint32_t generation() { return generation_; }
+  uint32_t generation() const { return generation_; }
   void set_generation(uint32_t generation) { generation_ = generation; }
+
+  const std::string username_fragment() const;
+  const std::string& password() const { return password_; }
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const std::string username_fragment() const;
-  const std::string& password() const { return password_; }
+  void SetIceParameters(int component,
+                        const std::string& username_fragment,
+                        const std::string& password);
 
   
   
@@ -230,7 +248,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
       rtc::AsyncPacketSocket* socket, const char* data, size_t size,
       const rtc::SocketAddress& remote_addr,
       const rtc::PacketTime& packet_time) {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return false;
   }
 
@@ -293,15 +311,12 @@ class Port : public PortInterface, public rtc::MessageHandler,
   
   size_t AddPrflxCandidate(const Candidate& local);
 
-  void set_candidate_filter(uint32_t candidate_filter) {
-    candidate_filter_ = candidate_filter;
-  }
+  int16_t network_cost() const { return network_cost_; }
 
  protected:
-  enum {
-    MSG_DEAD = 0,
-    MSG_FIRST_AVAILABLE
-  };
+  enum { MSG_DESTROY_IF_DEAD = 0, MSG_FIRST_AVAILABLE };
+
+  virtual void UpdateNetworkCost();
 
   void set_type(const std::string& type) { type_ = type; }
 
@@ -317,7 +332,9 @@ class Port : public PortInterface, public rtc::MessageHandler,
                   bool final);
 
   
-  void AddConnection(Connection* conn);
+  
+  
+  void AddOrReplaceConnection(Connection* conn);
 
   
   
@@ -331,9 +348,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
   
   
   
-  bool GetStunMessage(const char* data, size_t size,
+  bool GetStunMessage(const char* data,
+                      size_t size,
                       const rtc::SocketAddress& addr,
-                      IceMessage** out_msg, std::string* out_username);
+                      std::unique_ptr<IceMessage>* out_msg,
+                      std::string* out_username);
 
   
   bool IsCompatibleAddress(const rtc::SocketAddress& addr);
@@ -344,18 +363,15 @@ class Port : public PortInterface, public rtc::MessageHandler,
     return rtc::DSCP_NO_CHANGE;
   }
 
-  uint32_t candidate_filter() { return candidate_filter_; }
+  
+  virtual void HandleConnectionDestroyed(Connection* conn) {}
 
  private:
   void Construct();
   
   void OnConnectionDestroyed(Connection* conn);
 
-  
-  
-  bool dead() const {
-    return ice_role_ == ICEROLE_CONTROLLED && connections_.empty();
-  }
+  void OnNetworkTypeChanged(const rtc::Network* network);
 
   rtc::Thread* thread_;
   rtc::PacketSocketFactory* factory_;
@@ -392,31 +408,26 @@ class Port : public PortInterface, public rtc::MessageHandler,
   
   
   
-  
-  uint32_t candidate_filter_;
+  uint16_t network_cost_;
+  State state_ = State::INIT;
+  int64_t last_time_all_connections_removed_ = 0;
 
   friend class Connection;
 };
 
 
 
-class Connection : public rtc::MessageHandler,
-    public sigslot::has_slots<> {
+class Connection : public CandidatePairInterface,
+                   public rtc::MessageHandler,
+                   public sigslot::has_slots<> {
  public:
   struct SentPing {
-    SentPing(const std::string id, uint32_t sent_time)
-        : id(id), sent_time(sent_time) {}
+    SentPing(const std::string id, int64_t sent_time, uint32_t nomination)
+        : id(id), sent_time(sent_time), nomination(nomination) {}
 
     std::string id;
-    uint32_t sent_time;
-  };
-
-  
-  enum State {
-    STATE_WAITING = 0,  
-    STATE_INPROGRESS,   
-    STATE_SUCCEEDED,    
-    STATE_FAILED        
+    int64_t sent_time;
+    uint32_t nomination;
   };
 
   virtual ~Connection();
@@ -426,10 +437,10 @@ class Connection : public rtc::MessageHandler,
   const Port* port() const { return port_; }
 
   
-  virtual const Candidate& local_candidate() const;
-
   
-  const Candidate& remote_candidate() const { return remote_candidate_; }
+  virtual const Candidate& local_candidate() const;
+  
+  virtual const Candidate& remote_candidate() const;
 
   
   uint64_t priority() const;
@@ -452,20 +463,17 @@ class Connection : public rtc::MessageHandler,
   bool active() const {
     return write_state_ != STATE_WRITE_TIMEOUT;
   }
-  
-  bool dead(uint32_t now) const;
 
   
-  uint32_t rtt() const { return rtt_; }
+  bool dead(int64_t now) const;
 
-  size_t sent_total_bytes();
-  size_t sent_bytes_second();
+  
+  int rtt() const { return rtt_; }
+
   
   
-  size_t sent_discarded_packets();
-  size_t sent_total_packets();
-  size_t recv_total_bytes();
-  size_t recv_bytes_second();
+  ConnectionInfo stats();
+
   sigslot::signal1<Connection*> SignalStateChange;
 
   
@@ -503,14 +511,22 @@ class Connection : public rtc::MessageHandler,
   bool use_candidate_attr() const { return use_candidate_attr_; }
   void set_use_candidate_attr(bool enable);
 
-  bool nominated() const { return nominated_; }
-  void set_nominated(bool nominated) { nominated_ = nominated; }
+  void set_nomination(uint32_t value) { nomination_ = value; }
+
+  uint32_t remote_nomination() const { return remote_nomination_; }
+  bool nominated() const { return remote_nomination_ > 0; }
+  
+  void set_remote_nomination(uint32_t remote_nomination) {
+    remote_nomination_ = remote_nomination;
+  }
+  
+  uint32_t acked_nomination() const { return acked_nomination_; }
 
   void set_remote_ice_mode(IceMode mode) {
     remote_ice_mode_ = mode;
   }
 
-  void set_receiving_timeout(uint32_t receiving_timeout_ms) {
+  void set_receiving_timeout(int receiving_timeout_ms) {
     receiving_timeout_ = receiving_timeout_ms;
   }
 
@@ -522,22 +538,30 @@ class Connection : public rtc::MessageHandler,
 
   
   
-  void UpdateState(uint32_t now);
+  void FailAndPrune();
 
   
-  uint32_t last_ping_sent() const { return last_ping_sent_; }
-  void Ping(uint32_t now);
-  void ReceivedPingResponse();
-  uint32_t last_ping_response_received() const {
+  
+  void UpdateState(int64_t now);
+
+  
+  int64_t last_ping_sent() const { return last_ping_sent_; }
+  void Ping(int64_t now);
+  void ReceivedPingResponse(int rtt, const std::string& request_id);
+  int64_t last_ping_response_received() const {
     return last_ping_response_received_;
   }
+  
+  int rtt_samples() const { return rtt_samples_; }
 
   
   
-  uint32_t last_ping_received() const { return last_ping_received_; }
+  int64_t last_ping_received() const { return last_ping_received_; }
   void ReceivedPing();
   
   void HandleBindingRequest(IceMessage* msg);
+
+  int64_t last_data_received() const { return last_data_received_; }
 
   
   std::string ToDebugId() const;
@@ -556,14 +580,19 @@ class Connection : public rtc::MessageHandler,
   
   void HandleRoleConflictFromPeer();
 
-  State state() const { return state_; }
+  IceCandidatePairState state() const { return state_; }
+
+  int num_pings_sent() const { return num_pings_sent_; }
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
+  uint32_t ComputeNetworkCost() const;
+
   
   
-  void MaybeSetRemoteIceCredentials(const std::string& ice_ufrag,
-                                    const std::string& ice_pwd);
+  
+  void MaybeSetRemoteIceParametersAndGeneration(const IceParameters& params,
+                                                int generation);
 
   
   
@@ -572,7 +601,13 @@ class Connection : public rtc::MessageHandler,
 
   
   
-  uint32_t last_received() const;
+  int64_t last_received() const;
+  
+  int64_t receiving_unchanged_since() const {
+    return receiving_unchanged_since_;
+  }
+
+  bool stable(int64_t now) const;
 
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
@@ -591,17 +626,36 @@ class Connection : public rtc::MessageHandler,
   void OnConnectionRequestTimeout(ConnectionRequest* req);
   void OnConnectionRequestSent(ConnectionRequest* req);
 
+  bool rtt_converged() const;
+
+  
+  
+  bool missing_responses(int64_t now) const;
+
   
   void set_write_state(WriteState value);
-  void set_receiving(bool value);
-  void set_state(State state);
+  void UpdateReceiving(int64_t now);
+  void set_state(IceCandidatePairState state);
   void set_connected(bool value);
+
+  uint32_t nomination() const { return nomination_; }
 
   void OnMessage(rtc::Message *pmsg);
 
   Port* port_;
   size_t local_candidate_index_;
   Candidate remote_candidate_;
+
+  ConnectionInfo stats_;
+  rtc::RateTracker recv_rate_tracker_;
+  rtc::RateTracker send_rate_tracker_;
+
+ private:
+  
+  
+  void MaybeUpdateLocalCandidate(ConnectionRequest* request,
+                                 StunMessage* response);
+
   WriteState write_state_;
   bool receiving_;
   bool connected_;
@@ -613,31 +667,35 @@ class Connection : public rtc::MessageHandler,
   bool use_candidate_attr_;
   
   
-  bool nominated_;
+  
+  
+  
+  uint32_t nomination_ = 0;
+  
+  uint32_t acked_nomination_ = 0;
+  
+  
+  
+  uint32_t remote_nomination_ = 0;
+
   IceMode remote_ice_mode_;
   StunRequestManager requests_;
-  uint32_t rtt_;
-  uint32_t last_ping_sent_;      
-  uint32_t last_ping_received_;  
-                                 
-  uint32_t last_data_received_;
-  uint32_t last_ping_response_received_;
+  int rtt_;
+  int rtt_samples_ = 0;
+  int64_t last_ping_sent_;      
+  int64_t last_ping_received_;  
+                                
+  int64_t last_data_received_;
+  int64_t last_ping_response_received_;
+  int64_t receiving_unchanged_since_ = 0;
   std::vector<SentPing> pings_since_last_response_;
 
-  rtc::RateTracker recv_rate_tracker_;
-  rtc::RateTracker send_rate_tracker_;
-  uint32_t sent_packets_discarded_;
-  uint32_t sent_packets_total_;
-
- private:
-  void MaybeAddPrflxCandidate(ConnectionRequest* request,
-                              StunMessage* response);
-
   bool reported_;
-  State state_;
+  IceCandidatePairState state_;
   
-  uint32_t receiving_timeout_;
-  uint32_t time_created_ms_;
+  int receiving_timeout_;
+  int64_t time_created_ms_;
+  int num_pings_sent_ = 0;
 
   friend class Port;
   friend class ConnectionRequest;

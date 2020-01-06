@@ -19,14 +19,14 @@ namespace {
 
 
 uint8_t LowestBits(uint8_t byte, size_t bit_count) {
-  RTC_DCHECK_LE(bit_count, 8u);
+  RTC_DCHECK_LE(bit_count, 8);
   return byte & ((1 << bit_count) - 1);
 }
 
 
 
 uint8_t HighestBits(uint8_t byte, size_t bit_count) {
-  RTC_DCHECK_LE(bit_count, 8u);
+  RTC_DCHECK_LE(bit_count, 8);
   uint8_t shift = 8 - static_cast<uint8_t>(bit_count);
   uint8_t mask = 0xFF << shift;
   return (byte & mask) >> shift;
@@ -291,6 +291,20 @@ bool BitBufferWriter::WriteExponentialGolomb(uint32_t val) {
   
   
   return WriteBits(val_to_encode, CountBits(val_to_encode) * 2 - 1);
+}
+
+bool BitBufferWriter::WriteSignedExponentialGolomb(int32_t val) {
+  if (val == 0) {
+    return WriteExponentialGolomb(0);
+  } else if (val > 0) {
+    uint32_t signed_val = val;
+    return WriteExponentialGolomb((signed_val * 2) - 1);
+  } else {
+    if (val == std::numeric_limits<int32_t>::min())
+      return false;  
+    uint32_t signed_val = -val;
+    return WriteExponentialGolomb(signed_val * 2);
+  }
 }
 
 }  

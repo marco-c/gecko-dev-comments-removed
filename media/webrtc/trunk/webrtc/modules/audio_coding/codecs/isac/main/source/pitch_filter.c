@@ -16,6 +16,8 @@
 
 #include "os_specific_inline.h"
 
+#include "webrtc/system_wrappers/include/compile_assert_c.h"
+
 
 
 
@@ -275,6 +277,11 @@ static void FilterFrame(const double* in_data, PitchFiltstr* filter_state,
   
   memcpy(filter_parameters.buffer, filter_state->ubuf,
          sizeof(filter_state->ubuf));
+  COMPILE_ASSERT(sizeof(filter_parameters.buffer) >=
+                 sizeof(filter_state->ubuf));
+  memset(filter_parameters.buffer +
+             sizeof(filter_state->ubuf) / sizeof(filter_state->ubuf[0]),
+         0, sizeof(filter_parameters.buffer) - sizeof(filter_state->ubuf));
   memcpy(filter_parameters.damper_state, filter_state->ystate,
          sizeof(filter_state->ystate));
 

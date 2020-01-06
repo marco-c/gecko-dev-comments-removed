@@ -38,7 +38,8 @@ class CallStatistics {
 
   
   
-  void DecodedByNetEq(AudioFrame::SpeechType speech_type);
+  
+  void DecodedByNetEq(AudioFrame::SpeechType speech_type, bool muted);
 
   
   

@@ -15,10 +15,12 @@
 #include <shlobj.h>
 #include <tchar.h>
 
+#include <memory>
+
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 
@@ -71,118 +73,10 @@ FileStream *Win32Filesystem::OpenFile(const Pathname &filename,
   return fs;
 }
 
-bool Win32Filesystem::CreatePrivateFile(const Pathname &filename) {
-  
-  
-  
-
-  
-  HANDLE process_token = INVALID_HANDLE_VALUE;
-  if (!::OpenProcessToken(::GetCurrentProcess(),
-                          TOKEN_QUERY,
-                          &process_token)) {
-    LOG_ERR(LS_ERROR) << "OpenProcessToken() failed";
-    return false;
-  }
-
-  
-  
-  DWORD token_user_size = 0;
-  (void)::GetTokenInformation(process_token,
-                              TokenUser,
-                              NULL,
-                              0,
-                              &token_user_size);
-
-  
-  scoped_ptr<char[]> token_user_bytes(new char[token_user_size]);
-  PTOKEN_USER token_user = reinterpret_cast<PTOKEN_USER>(
-      token_user_bytes.get());
-  memset(token_user, 0, token_user_size);
-  BOOL success = ::GetTokenInformation(process_token,
-                                       TokenUser,
-                                       token_user,
-                                       token_user_size,
-                                       &token_user_size);
-  
-  ::CloseHandle(process_token);
-  if (!success) {
-    LOG_ERR(LS_ERROR) << "GetTokenInformation() failed";
-    return false;
-  }
-
-  if (!IsValidSid(token_user->User.Sid)) {
-    LOG_ERR(LS_ERROR) << "Current process has invalid user SID";
-    return false;
-  }
-
-  
-  int acl_size = sizeof(ACL) + sizeof(ACCESS_ALLOWED_ACE) - sizeof(DWORD) +
-      GetLengthSid(token_user->User.Sid);
-
-  
-  scoped_ptr<char[]> acl_bytes(new char[acl_size]);
-  PACL acl = reinterpret_cast<PACL>(acl_bytes.get());
-  memset(acl, 0, acl_size);
-  if (!::InitializeAcl(acl, acl_size, ACL_REVISION)) {
-    LOG_ERR(LS_ERROR) << "InitializeAcl() failed";
-    return false;
-  }
-
-  
-  if (!::AddAccessAllowedAce(acl,
-                             ACL_REVISION,
-                             GENERIC_READ | GENERIC_WRITE | STANDARD_RIGHTS_ALL,
-                             token_user->User.Sid)) {
-    LOG_ERR(LS_ERROR) << "AddAccessAllowedAce() failed";
-    return false;
-  }
-
-  
-  SECURITY_DESCRIPTOR security_descriptor;
-  if (!::InitializeSecurityDescriptor(&security_descriptor,
-                                      SECURITY_DESCRIPTOR_REVISION)) {
-    LOG_ERR(LS_ERROR) << "InitializeSecurityDescriptor() failed";
-    return false;
-  }
-
-  
-  if (!::SetSecurityDescriptorDacl(&security_descriptor,
-                                   TRUE,
-                                   acl,
-                                   FALSE)) {
-    LOG_ERR(LS_ERROR) << "SetSecurityDescriptorDacl() failed";
-    return false;
-  }
-
-  
-  SECURITY_ATTRIBUTES security_attributes;
-  security_attributes.nLength = sizeof(security_attributes);
-  security_attributes.lpSecurityDescriptor = &security_descriptor;
-  security_attributes.bInheritHandle = FALSE;
-  HANDLE handle = ::CreateFile(
-      ToUtf16(filename.pathname()).c_str(),
-      GENERIC_READ | GENERIC_WRITE,
-      FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-      &security_attributes,
-      CREATE_NEW,
-      0,
-      NULL);
-  if (INVALID_HANDLE_VALUE == handle) {
-    LOG_ERR(LS_ERROR) << "CreateFile() failed";
-    return false;
-  }
-  if (!::CloseHandle(handle)) {
-    LOG_ERR(LS_ERROR) << "CloseFile() failed";
-    
-  }
-  return true;
-}
-
 bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file " << filename.pathname();
   if (!IsFile(filename)) {
-    ASSERT(IsFile(filename));
+    RTC_DCHECK(IsFile(filename));
     return false;
   }
   return ::DeleteFile(ToUtf16(filename.pathname()).c_str()) != 0;
@@ -212,7 +106,7 @@ bool Win32Filesystem::GetTemporaryFolder(Pathname &pathname, bool create,
   pathname.clear();
   pathname.SetFolder(ToUtf8(buffer));
   if (append != NULL) {
-    ASSERT(!append->empty());
+    RTC_DCHECK(!append->empty());
     pathname.AppendFolder(*append);
   }
   return !create || CreateFolder(pathname);
@@ -224,42 +118,20 @@ std::string Win32Filesystem::TempFilename(const Pathname &dir,
   if (::GetTempFileName(ToUtf16(dir.pathname()).c_str(),
                         ToUtf16(prefix).c_str(), 0, filename) != 0)
     return ToUtf8(filename);
-  ASSERT(false);
+  RTC_NOTREACHED();
   return "";
 }
 
 bool Win32Filesystem::MoveFile(const Pathname &old_path,
                                const Pathname &new_path) {
   if (!IsFile(old_path)) {
-    ASSERT(IsFile(old_path));
+    RTC_DCHECK(IsFile(old_path));
     return false;
   }
   LOG(LS_INFO) << "Moving " << old_path.pathname()
                << " to " << new_path.pathname();
   return ::MoveFile(ToUtf16(old_path.pathname()).c_str(),
                     ToUtf16(new_path.pathname()).c_str()) != 0;
-}
-
-bool Win32Filesystem::MoveFolder(const Pathname &old_path,
-                                 const Pathname &new_path) {
-  if (!IsFolder(old_path)) {
-    ASSERT(IsFolder(old_path));
-    return false;
-  }
-  LOG(LS_INFO) << "Moving " << old_path.pathname()
-               << " to " << new_path.pathname();
-  if (::MoveFile(ToUtf16(old_path.pathname()).c_str(),
-               ToUtf16(new_path.pathname()).c_str()) == 0) {
-    if (::GetLastError() != ERROR_NOT_SAME_DEVICE) {
-      LOG_GLE(LS_ERROR) << "Failed to move file";
-      return false;
-    }
-    if (!CopyFolder(old_path, new_path))
-      return false;
-    if (!DeleteFolderAndContents(old_path))
-      return false;
-  }
-  return true;
 }
 
 bool Win32Filesystem::IsFolder(const Pathname &path) {
@@ -345,8 +217,8 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
 }
 
 bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
-  ASSERT(!organization_name_.empty());
-  ASSERT(!application_name_.empty());
+  RTC_DCHECK(!organization_name_.empty());
+  RTC_DCHECK(!application_name_.empty());
   TCHAR buffer[MAX_PATH + 1];
   int csidl = per_user ? CSIDL_LOCAL_APPDATA : CSIDL_COMMON_APPDATA;
   if (!::SHGetSpecialFolderPath(NULL, buffer, csidl, TRUE))
@@ -410,7 +282,7 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
   int64_t total_number_of_free_bytes;  
   
   
-  ASSERT(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  
+  RTC_DCHECK(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  
   if (::GetDiskFreeSpaceEx(target_drive,
                            (PULARGE_INTEGER)free_bytes,
                            (PULARGE_INTEGER)&total_number_of_bytes,
@@ -421,42 +293,5 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
     return false;
   }
 }
-
-Pathname Win32Filesystem::GetCurrentDirectory() {
-  Pathname cwd;
-  int path_len = 0;
-  scoped_ptr<wchar_t[]> path;
-  do {
-    int needed = ::GetCurrentDirectory(path_len, path.get());
-    if (needed == 0) {
-      
-      LOG_GLE(LS_ERROR) << "::GetCurrentDirectory() failed";
-      return cwd;  
-    }
-    if (needed <= path_len) {
-      
-      break;
-    }
-    
-    path.reset(new wchar_t[needed]);
-    path_len = needed;
-  } while (true);
-  cwd.SetFolder(ToUtf8(path.get()));
-  return cwd;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }  

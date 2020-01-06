@@ -34,6 +34,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_H
 #define WEBRTC_VOICE_ENGINE_VOE_BASE_H
 
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/common_types.h"
 
 namespace webrtc {
@@ -41,9 +44,6 @@ namespace webrtc {
 class AudioDeviceModule;
 class AudioProcessing;
 class AudioTransport;
-class Config;
-
-const int kVoEDefault = -1;
 
 
 class WEBRTC_DLLEXPORT VoiceEngineObserver {
@@ -63,7 +63,6 @@ class WEBRTC_DLLEXPORT VoiceEngine {
   
   
   static VoiceEngine* Create();
-  static VoiceEngine* Create(const Config& config);
 
   
   
@@ -97,6 +96,11 @@ class WEBRTC_DLLEXPORT VoiceEngine {
 
 class WEBRTC_DLLEXPORT VoEBase {
  public:
+  struct ChannelConfig {
+    AudioCodingModule::Config acm_config;
+    bool enable_voice_pacing = false;
+  };
+
   
   
   
@@ -126,11 +130,18 @@ class WEBRTC_DLLEXPORT VoEBase {
   
   
   
+  
   virtual int Init(AudioDeviceModule* external_adm = NULL,
-                   AudioProcessing* audioproc = NULL) = 0;
+                   AudioProcessing* audioproc = NULL,
+                   const rtc::scoped_refptr<AudioDecoderFactory>&
+                       decoder_factory = nullptr) = 0;
 
   
   virtual AudioProcessing* audio_processing() = 0;
+
+  
+  
+  virtual AudioDeviceModule* audio_device_module() = 0;
 
   
   
@@ -140,8 +151,10 @@ class WEBRTC_DLLEXPORT VoEBase {
   
   
   
+  
+  
   virtual int CreateChannel() = 0;
-  virtual int CreateChannel(const Config& config) = 0;
+  virtual int CreateChannel(const ChannelConfig& config) = 0;
 
   
   
@@ -152,7 +165,7 @@ class WEBRTC_DLLEXPORT VoEBase {
   virtual int StartReceive(int channel) = 0;
 
   
-  virtual int StopReceive(int channel) = 0;
+  virtual int StopReceive(int channel)  { return 0; }
 
   
   

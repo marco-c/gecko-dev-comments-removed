@@ -10,286 +10,271 @@
 
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
 
+#include <algorithm>
+
+#include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 
-const float kDefaultKeyFrameSizeAvgKBits = 0.9f;
-const float kDefaultKeyFrameRatio = 0.99f;
+namespace {
+
+const float kDefaultFrameSizeAlpha = 0.9f;
+const float kDefaultKeyFrameRatioAlpha = 0.99f;
+
+const float kDefaultKeyFrameRatioValue = 1 / 300.0f;
+
 const float kDefaultDropRatioAlpha = 0.9f;
-const float kDefaultDropRatioMax = 0.96f;
-const float kDefaultMaxTimeToDropFrames = 4.0f;  
+const float kDefaultDropRatioValue = 0.96f;
+
+const float kDefaultMaxDropDurationSecs = 4.0f;
+
+
+
+
+const float kDefaultTargetBitrateKbps = 300.0f;
+const float kDefaultIncomingFrameRate = 30;
+const float kLeakyBucketSizeSeconds = 0.5f;
+
+
+
+const int kLargeDeltaFactor = 3;
+
+
+const float kAccumulatorCapBufferSizeSecs = 3.0f;
+}  
 
 FrameDropper::FrameDropper()
-    : _keyFrameSizeAvgKbits(kDefaultKeyFrameSizeAvgKBits),
-      _keyFrameRatio(kDefaultKeyFrameRatio),
-      _dropRatio(kDefaultDropRatioAlpha, kDefaultDropRatioMax),
-      _enabled(true),
-      _max_time_drops(kDefaultMaxTimeToDropFrames) {
+    : key_frame_ratio_(kDefaultKeyFrameRatioAlpha),
+      delta_frame_size_avg_kbits_(kDefaultFrameSizeAlpha),
+      drop_ratio_(kDefaultDropRatioAlpha, kDefaultDropRatioValue),
+      enabled_(true),
+      max_drop_duration_secs_(kDefaultMaxDropDurationSecs) {
   Reset();
 }
 
-FrameDropper::FrameDropper(float max_time_drops)
-    : _keyFrameSizeAvgKbits(kDefaultKeyFrameSizeAvgKBits),
-      _keyFrameRatio(kDefaultKeyFrameRatio),
-      _dropRatio(kDefaultDropRatioAlpha, kDefaultDropRatioMax),
-      _enabled(true),
-      _max_time_drops(max_time_drops) {
+FrameDropper::FrameDropper(float max_drop_duration_secs)
+    : key_frame_ratio_(kDefaultKeyFrameRatioAlpha),
+      delta_frame_size_avg_kbits_(kDefaultFrameSizeAlpha),
+      drop_ratio_(kDefaultDropRatioAlpha, kDefaultDropRatioValue),
+      enabled_(true),
+      max_drop_duration_secs_(max_drop_duration_secs) {
   Reset();
 }
 
 void FrameDropper::Reset() {
-  _keyFrameRatio.Reset(0.99f);
-  _keyFrameRatio.Apply(
-      1.0f, 1.0f / 300.0f);  
-  _keyFrameSizeAvgKbits.Reset(0.9f);
-  _keyFrameCount = 0;
-  _accumulator = 0.0f;
-  _accumulatorMax = 150.0f;  
-  _targetBitRate = 300.0f;
-  _incoming_frame_rate = 30;
-  _keyFrameSpreadFrames = 0.5f * _incoming_frame_rate;
-  _dropNext = false;
-  _dropRatio.Reset(0.9f);
-  _dropRatio.Apply(0.0f, 0.0f);  
-  _dropCount = 0;
-  _windowSize = 0.5f;
-  _wasBelowMax = true;
-  _fastMode = false;  
-  
-  _cap_buffer_size = 3.0f;
-  
-  _max_time_drops = 4.0f;
+  key_frame_ratio_.Reset(kDefaultKeyFrameRatioAlpha);
+  key_frame_ratio_.Apply(1.0f, kDefaultKeyFrameRatioValue);
+  delta_frame_size_avg_kbits_.Reset(kDefaultFrameSizeAlpha);
+
+  accumulator_ = 0.0f;
+  accumulator_max_ = kDefaultTargetBitrateKbps / 2;
+  target_bitrate_ = kDefaultTargetBitrateKbps;
+  incoming_frame_rate_ = kDefaultIncomingFrameRate;
+
+  large_frame_accumulation_count_ = 0;
+  large_frame_accumulation_chunk_size_ = 0;
+  large_frame_accumulation_spread_ = 0.5 * kDefaultIncomingFrameRate;
+
+  drop_next_ = false;
+  drop_ratio_.Reset(0.9f);
+  drop_ratio_.Apply(0.0f, 0.0f);
+  drop_count_ = 0;
+  was_below_max_ = true;
 }
 
 void FrameDropper::Enable(bool enable) {
-  _enabled = enable;
+  enabled_ = enable;
 }
 
-void FrameDropper::Fill(size_t frameSizeBytes, bool deltaFrame) {
-  if (!_enabled) {
+void FrameDropper::Fill(size_t framesize_bytes, bool delta_frame) {
+  if (!enabled_) {
     return;
   }
-  float frameSizeKbits = 8.0f * static_cast<float>(frameSizeBytes) / 1000.0f;
-  if (!deltaFrame &&
-      !_fastMode) {  
-    _keyFrameSizeAvgKbits.Apply(1, frameSizeKbits);
-    _keyFrameRatio.Apply(1.0, 1.0);
-    if (frameSizeKbits > _keyFrameSizeAvgKbits.filtered()) {
-      
-      
-      
-      frameSizeKbits -= _keyFrameSizeAvgKbits.filtered();
-    } else {
-      
-      frameSizeKbits = 0;
-    }
-    if (_keyFrameRatio.filtered() > 1e-5 &&
-        1 / _keyFrameRatio.filtered() < _keyFrameSpreadFrames) {
-      
-      
-      
-      
-      _keyFrameCount =
-          static_cast<int32_t>(1 / _keyFrameRatio.filtered() + 0.5);
-    } else {
-      
-      _keyFrameCount = static_cast<int32_t>(_keyFrameSpreadFrames + 0.5);
+  float framesize_kbits = 8.0f * static_cast<float>(framesize_bytes) / 1000.0f;
+  if (!delta_frame) {
+    key_frame_ratio_.Apply(1.0, 1.0);
+    
+    
+    
+    if (large_frame_accumulation_count_ == 0) {
+      if (key_frame_ratio_.filtered() > 1e-5 &&
+          1 / key_frame_ratio_.filtered() < large_frame_accumulation_spread_) {
+        large_frame_accumulation_count_ =
+            static_cast<int32_t>(1 / key_frame_ratio_.filtered() + 0.5);
+      } else {
+        large_frame_accumulation_count_ =
+            static_cast<int32_t>(large_frame_accumulation_spread_ + 0.5);
+      }
+      large_frame_accumulation_chunk_size_ =
+          framesize_kbits / large_frame_accumulation_count_;
+      framesize_kbits = 0;
     }
   } else {
     
-    _keyFrameRatio.Apply(1.0, 0.0);
+    
+    if (delta_frame_size_avg_kbits_.filtered() != -1 &&
+        (framesize_kbits >
+         kLargeDeltaFactor * delta_frame_size_avg_kbits_.filtered()) &&
+        large_frame_accumulation_count_ == 0) {
+      large_frame_accumulation_count_ =
+          static_cast<int32_t>(large_frame_accumulation_spread_ + 0.5);
+      large_frame_accumulation_chunk_size_ =
+          framesize_kbits / large_frame_accumulation_count_;
+      framesize_kbits = 0;
+    } else {
+      delta_frame_size_avg_kbits_.Apply(1, framesize_kbits);
+    }
+    key_frame_ratio_.Apply(1.0, 0.0);
   }
   
-  _accumulator += frameSizeKbits;
+  accumulator_ += framesize_kbits;
   CapAccumulator();
 }
 
-void FrameDropper::Leak(uint32_t inputFrameRate) {
-  if (!_enabled) {
+void FrameDropper::Leak(uint32_t input_framerate) {
+  if (!enabled_) {
     return;
   }
-  if (inputFrameRate < 1) {
+  if (input_framerate < 1) {
     return;
   }
-  if (_targetBitRate < 0.0f) {
+  if (target_bitrate_ < 0.0f) {
     return;
   }
-  _keyFrameSpreadFrames = 0.5f * inputFrameRate;
   
+  large_frame_accumulation_spread_ = std::max(0.5 * input_framerate, 5.0);
   
-  
-  
-  float T = _targetBitRate / inputFrameRate;
-  if (_keyFrameCount > 0) {
-    
-    if (_keyFrameRatio.filtered() > 0 &&
-        1 / _keyFrameRatio.filtered() < _keyFrameSpreadFrames) {
-      T -= _keyFrameSizeAvgKbits.filtered() * _keyFrameRatio.filtered();
-    } else {
-      T -= _keyFrameSizeAvgKbits.filtered() / _keyFrameSpreadFrames;
-    }
-    _keyFrameCount--;
+  float expected_bits_per_frame = target_bitrate_ / input_framerate;
+  if (large_frame_accumulation_count_ > 0) {
+    expected_bits_per_frame -= large_frame_accumulation_chunk_size_;
+    --large_frame_accumulation_count_;
   }
-  _accumulator -= T;
-  if (_accumulator < 0.0f) {
-    _accumulator = 0.0f;
+  accumulator_ -= expected_bits_per_frame;
+  if (accumulator_ < 0.0f) {
+    accumulator_ = 0.0f;
   }
   UpdateRatio();
 }
 
-void FrameDropper::UpdateNack(uint32_t nackBytes) {
-  if (!_enabled) {
-    return;
-  }
-  _accumulator += static_cast<float>(nackBytes) * 8.0f / 1000.0f;
-}
-
-void FrameDropper::FillBucket(float inKbits, float outKbits) {
-  _accumulator += (inKbits - outKbits);
-}
-
 void FrameDropper::UpdateRatio() {
-  if (_accumulator > 1.3f * _accumulatorMax) {
+  if (accumulator_ > 1.3f * accumulator_max_) {
     
-    _dropRatio.UpdateBase(0.8f);
+    drop_ratio_.UpdateBase(0.8f);
   } else {
     
-    _dropRatio.UpdateBase(0.9f);
+    drop_ratio_.UpdateBase(0.9f);
   }
-  if (_accumulator > _accumulatorMax) {
+  if (accumulator_ > accumulator_max_) {
     
     
     
-    if (_wasBelowMax) {
-      _dropNext = true;
+    if (was_below_max_) {
+      drop_next_ = true;
     }
-    if (_fastMode) {
-      
-      _dropNext = true;
-    }
-
-    _dropRatio.Apply(1.0f, 1.0f);
-    _dropRatio.UpdateBase(0.9f);
+    drop_ratio_.Apply(1.0f, 1.0f);
+    drop_ratio_.UpdateBase(0.9f);
   } else {
-    _dropRatio.Apply(1.0f, 0.0f);
+    drop_ratio_.Apply(1.0f, 0.0f);
   }
-  _wasBelowMax = _accumulator < _accumulatorMax;
+  was_below_max_ = accumulator_ < accumulator_max_;
 }
 
 
 
 
 bool FrameDropper::DropFrame() {
-  if (!_enabled) {
+  if (!enabled_) {
     return false;
   }
-  if (_dropNext) {
-    _dropNext = false;
-    _dropCount = 0;
+  if (drop_next_) {
+    drop_next_ = false;
+    drop_count_ = 0;
   }
 
-  if (_dropRatio.filtered() >= 0.5f) {  
+  if (drop_ratio_.filtered() >= 0.5f) {  
     
     
-    float denom = 1.0f - _dropRatio.filtered();
+    float denom = 1.0f - drop_ratio_.filtered();
     if (denom < 1e-5) {
       denom = 1e-5f;
     }
     int32_t limit = static_cast<int32_t>(1.0f / denom - 1.0f + 0.5f);
     
     
-    int max_limit = static_cast<int>(_incoming_frame_rate * _max_time_drops);
+    int max_limit =
+        static_cast<int>(incoming_frame_rate_ * max_drop_duration_secs_);
     if (limit > max_limit) {
       limit = max_limit;
     }
-    if (_dropCount < 0) {
+    if (drop_count_ < 0) {
       
-      if (_dropRatio.filtered() > 0.4f) {
-        _dropCount = -_dropCount;
-      } else {
-        _dropCount = 0;
-      }
+      drop_count_ = -drop_count_;
     }
-    if (_dropCount < limit) {
+    if (drop_count_ < limit) {
       
-      _dropCount++;
+      drop_count_++;
       return true;
     } else {
       
-      _dropCount = 0;
+      drop_count_ = 0;
       return false;
     }
-  } else if (_dropRatio.filtered() > 0.0f &&
-             _dropRatio.filtered() < 0.5f) {  
+  } else if (drop_ratio_.filtered() > 0.0f &&
+             drop_ratio_.filtered() < 0.5f) {  
     
     
     
-    float denom = _dropRatio.filtered();
+    float denom = drop_ratio_.filtered();
     if (denom < 1e-5) {
       denom = 1e-5f;
     }
     int32_t limit = -static_cast<int32_t>(1.0f / denom - 1.0f + 0.5f);
-    if (_dropCount > 0) {
+    if (drop_count_ > 0) {
       
       
-      if (_dropRatio.filtered() < 0.6f) {
-        _dropCount = -_dropCount;
-      } else {
-        _dropCount = 0;
-      }
+      drop_count_ = -drop_count_;
     }
-    if (_dropCount > limit) {
-      if (_dropCount == 0) {
+    if (drop_count_ > limit) {
+      if (drop_count_ == 0) {
         
-        _dropCount--;
+        drop_count_--;
         return true;
       } else {
         
-        _dropCount--;
+        drop_count_--;
         return false;
       }
     } else {
-      _dropCount = 0;
+      drop_count_ = 0;
       return false;
     }
   }
-  _dropCount = 0;
+  drop_count_ = 0;
   return false;
-
-  
-  
-  
-  
 }
 
-void FrameDropper::SetRates(float bitRate, float incoming_frame_rate) {
+void FrameDropper::SetRates(float bitrate, float incoming_frame_rate) {
   
-  _accumulatorMax = bitRate * _windowSize;  
-  if (_targetBitRate > 0.0f && bitRate < _targetBitRate &&
-      _accumulator > _accumulatorMax) {
+  accumulator_max_ = bitrate * kLeakyBucketSizeSeconds;
+  if (target_bitrate_ > 0.0f && bitrate < target_bitrate_ &&
+      accumulator_ > accumulator_max_) {
     
-    _accumulator = bitRate / _targetBitRate * _accumulator;
+    accumulator_ = bitrate / target_bitrate_ * accumulator_;
   }
-  _targetBitRate = bitRate;
+  target_bitrate_ = bitrate;
   CapAccumulator();
-  _incoming_frame_rate = incoming_frame_rate;
+  incoming_frame_rate_ = incoming_frame_rate;
 }
 
-float FrameDropper::ActualFrameRate(uint32_t inputFrameRate) const {
-  if (!_enabled) {
-    return static_cast<float>(inputFrameRate);
-  }
-  return inputFrameRate * (1.0f - _dropRatio.filtered());
-}
 
 
 
 
 void FrameDropper::CapAccumulator() {
-  float max_accumulator = _targetBitRate * _cap_buffer_size;
-  if (_accumulator > max_accumulator) {
-    _accumulator = max_accumulator;
+  float max_accumulator = target_bitrate_ * kAccumulatorCapBufferSizeSecs;
+  if (accumulator_ > max_accumulator) {
+    accumulator_ = max_accumulator;
   }
 }
 }  

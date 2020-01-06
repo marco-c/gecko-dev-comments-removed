@@ -11,49 +11,124 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FEC_TEST_HELPER_H_
 
+#include <memory>
+
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/random.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
 namespace webrtc {
+namespace test {
+namespace fec {
 
-const uint8_t kFecPayloadType = 96;
-const uint8_t kRedPayloadType = 97;
-const uint8_t kVp8PayloadType = 120;
-
-typedef ForwardErrorCorrection::Packet Packet;
-
-struct RtpPacket : public Packet {
+struct AugmentedPacket : public ForwardErrorCorrection::Packet {
   WebRtcRTPHeader header;
 };
 
-class FrameGenerator {
+
+
+
+
+
+class MediaPacketGenerator {
  public:
-  FrameGenerator();
-
-  void NewFrame(int num_packets);
-
-  uint16_t NextSeqNum();
-
-  RtpPacket* NextPacket(int offset, size_t length);
-
-  
-  RtpPacket* BuildMediaRedPacket(const RtpPacket* packet);
+  MediaPacketGenerator(uint32_t min_packet_size,
+                       uint32_t max_packet_size,
+                       uint32_t ssrc,
+                       Random* random)
+      : min_packet_size_(min_packet_size),
+        max_packet_size_(max_packet_size),
+        ssrc_(ssrc),
+        random_(random) {}
 
   
-  
-  
-  RtpPacket* BuildFecRedPacket(const Packet* packet);
+  ForwardErrorCorrection::PacketList ConstructMediaPackets(
+      int num_media_packets,
+      uint16_t start_seq_num);
+  ForwardErrorCorrection::PacketList ConstructMediaPackets(
+      int num_media_packets);
 
-  void SetRedHeader(Packet* red_packet, uint8_t payload_type,
-                    size_t header_length) const;
+  uint16_t GetFecSeqNum();
 
  private:
-  static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);
+  uint32_t min_packet_size_;
+  uint32_t max_packet_size_;
+  uint32_t ssrc_;
+  Random* random_;
 
-  int num_packets_;
+  ForwardErrorCorrection::PacketList media_packets_;
+  uint16_t fec_seq_num_;
+};
+
+
+class AugmentedPacketGenerator {
+ public:
+  explicit AugmentedPacketGenerator(uint32_t ssrc);
+
+  
+  void NewFrame(size_t num_packets);
+
+  
+  uint16_t NextPacketSeqNum();
+
+  
+  std::unique_ptr<AugmentedPacket> NextPacket(size_t offset, size_t length);
+
+ protected:
+  
+  static void WriteRtpHeader(const RTPHeader& header, uint8_t* data);
+
+  
+  size_t num_packets_;
+
+ private:
+  uint32_t ssrc_;
   uint16_t seq_num_;
   uint32_t timestamp_;
 };
+
+
+class FlexfecPacketGenerator : public AugmentedPacketGenerator {
+ public:
+  FlexfecPacketGenerator(uint32_t media_ssrc, uint32_t flexfec_ssrc);
+
+  
+  
+  std::unique_ptr<AugmentedPacket> BuildFlexfecPacket(
+      const ForwardErrorCorrection::Packet& packet);
+
+ private:
+  uint32_t flexfec_ssrc_;
+  uint16_t flexfec_seq_num_;
+  uint32_t flexfec_timestamp_;
+};
+
+
+
+class UlpfecPacketGenerator : public AugmentedPacketGenerator {
+ public:
+  explicit UlpfecPacketGenerator(uint32_t ssrc);
+
+  
+  static std::unique_ptr<AugmentedPacket> BuildMediaRedPacket(
+      const AugmentedPacket& packet);
+
+  
+  
+  
+  
+  std::unique_ptr<AugmentedPacket> BuildUlpfecRedPacket(
+      const ForwardErrorCorrection::Packet& packet);
+
+ private:
+  static void SetRedHeader(uint8_t payload_type,
+                           size_t header_length,
+                           AugmentedPacket* red_packet);
+};
+
+}  
+}  
 }  
 
 #endif  

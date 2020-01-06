@@ -13,18 +13,16 @@
 
 #include <stddef.h>
 
+#include "webrtc/base/ignore_wundef.h"
+
+RTC_PUSH_IGNORING_WUNDEF()
 #include "opus.h"
+RTC_POP_IGNORING_WUNDEF()
 
 struct WebRtcOpusEncInst {
   OpusEncoder* encoder;
   size_t channels;
   int in_dtx_mode;
-  
-  
-  
-  
-  
-  size_t* zero_counts;
 };
 
 struct WebRtcOpusDecInst {

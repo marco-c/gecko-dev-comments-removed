@@ -11,10 +11,32 @@
 #ifndef WEBRTC_BASE_CHECKS_H_
 #define WEBRTC_BASE_CHECKS_H_
 
+#include "webrtc/typedefs.h"
+
+
+
+
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+#define RTC_DCHECK_IS_ON 1
+#else
+#define RTC_DCHECK_IS_ON 0
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
+#ifdef __cplusplus
+}  
+#endif
+
+#ifdef __cplusplus
+
+
 #include <sstream>
 #include <string>
 
-#include "webrtc/typedefs.h"
+#include "webrtc/base/safe_compare.h"
 
 
 
@@ -68,10 +90,16 @@ namespace rtc {
 
 
 
-#define RTC_EAT_STREAM_PARAMETERS(condition) \
-  (true ? true : !(condition))               \
-      ? static_cast<void>(0)                 \
+#define RTC_EAT_STREAM_PARAMETERS(ignored) \
+  (true ? true : ((void)(ignored), true))  \
+      ? static_cast<void>(0)               \
       : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
+
+
+
+
+#define RTC_EAT_STREAM_PARAMETERS_OP(op, a, b) \
+  RTC_EAT_STREAM_PARAMETERS(((void)rtc::safe_cmp::op(a, b)))
 
 
 
@@ -130,41 +158,40 @@ std::string* MakeCheckOpString<std::string, std::string>(
 
 
 
-#define DEFINE_RTC_CHECK_OP_IMPL(name, op)                                   \
+#define DEFINE_RTC_CHECK_OP_IMPL(name)                                       \
   template <class t1, class t2>                                              \
   inline std::string* Check##name##Impl(const t1& v1, const t2& v2,          \
                                         const char* names) {                 \
-    if (v1 op v2)                                                            \
+    if (rtc::safe_cmp::name(v1, v2))                                         \
       return NULL;                                                           \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \
   }                                                                          \
   inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
-    if (v1 op v2)                                                            \
+    if (rtc::safe_cmp::name(v1, v2))                                         \
       return NULL;                                                           \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \
   }
-DEFINE_RTC_CHECK_OP_IMPL(EQ, ==)
-DEFINE_RTC_CHECK_OP_IMPL(NE, !=)
-DEFINE_RTC_CHECK_OP_IMPL(LE, <=)
-DEFINE_RTC_CHECK_OP_IMPL(LT, < )
-DEFINE_RTC_CHECK_OP_IMPL(GE, >=)
-DEFINE_RTC_CHECK_OP_IMPL(GT, > )
+DEFINE_RTC_CHECK_OP_IMPL(Eq)
+DEFINE_RTC_CHECK_OP_IMPL(Ne)
+DEFINE_RTC_CHECK_OP_IMPL(Le)
+DEFINE_RTC_CHECK_OP_IMPL(Lt)
+DEFINE_RTC_CHECK_OP_IMPL(Ge)
+DEFINE_RTC_CHECK_OP_IMPL(Gt)
 #undef DEFINE_RTC_CHECK_OP_IMPL
 
-#define RTC_CHECK_EQ(val1, val2) RTC_CHECK_OP(EQ, ==, val1, val2)
-#define RTC_CHECK_NE(val1, val2) RTC_CHECK_OP(NE, !=, val1, val2)
-#define RTC_CHECK_LE(val1, val2) RTC_CHECK_OP(LE, <=, val1, val2)
-#define RTC_CHECK_LT(val1, val2) RTC_CHECK_OP(LT, < , val1, val2)
-#define RTC_CHECK_GE(val1, val2) RTC_CHECK_OP(GE, >=, val1, val2)
-#define RTC_CHECK_GT(val1, val2) RTC_CHECK_OP(GT, > , val1, val2)
+#define RTC_CHECK_EQ(val1, val2) RTC_CHECK_OP(Eq, ==, val1, val2)
+#define RTC_CHECK_NE(val1, val2) RTC_CHECK_OP(Ne, !=, val1, val2)
+#define RTC_CHECK_LE(val1, val2) RTC_CHECK_OP(Le, <=, val1, val2)
+#define RTC_CHECK_LT(val1, val2) RTC_CHECK_OP(Lt, <, val1, val2)
+#define RTC_CHECK_GE(val1, val2) RTC_CHECK_OP(Ge, >=, val1, val2)
+#define RTC_CHECK_GT(val1, val2) RTC_CHECK_OP(Gt, >, val1, val2)
 
 
 
 
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define RTC_DCHECK_IS_ON 1
+#if RTC_DCHECK_IS_ON
 #define RTC_DCHECK(condition) RTC_CHECK(condition)
 #define RTC_DCHECK_EQ(v1, v2) RTC_CHECK_EQ(v1, v2)
 #define RTC_DCHECK_NE(v1, v2) RTC_CHECK_NE(v1, v2)
@@ -173,14 +200,13 @@ DEFINE_RTC_CHECK_OP_IMPL(GT, > )
 #define RTC_DCHECK_GE(v1, v2) RTC_CHECK_GE(v1, v2)
 #define RTC_DCHECK_GT(v1, v2) RTC_CHECK_GT(v1, v2)
 #else
-#define RTC_DCHECK_IS_ON 0
 #define RTC_DCHECK(condition) RTC_EAT_STREAM_PARAMETERS(condition)
-#define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) == (v2))
-#define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) != (v2))
-#define RTC_DCHECK_LE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) <= (v2))
-#define RTC_DCHECK_LT(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) < (v2))
-#define RTC_DCHECK_GE(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) >= (v2))
-#define RTC_DCHECK_GT(v1, v2) RTC_EAT_STREAM_PARAMETERS((v1) > (v2))
+#define RTC_DCHECK_EQ(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Eq, v1, v2)
+#define RTC_DCHECK_NE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Ne, v1, v2)
+#define RTC_DCHECK_LE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Le, v1, v2)
+#define RTC_DCHECK_LT(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Lt, v1, v2)
+#define RTC_DCHECK_GE(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Ge, v1, v2)
+#define RTC_DCHECK_GT(v1, v2) RTC_EAT_STREAM_PARAMETERS_OP(Gt, v1, v2)
 #endif
 
 
@@ -220,10 +246,44 @@ class FatalMessage {
 
 template <typename T>
 inline T CheckedDivExact(T a, T b) {
-  RTC_CHECK_EQ(a % b, static_cast<T>(0));
+  RTC_CHECK_EQ(a % b, 0) << a << " is not evenly divisible by " << b;
   return a / b;
 }
 
 }  
 
+#else  
+
+
+
+#define RTC_CHECK(condition)                                             \
+  do {                                                                   \
+    if (!(condition)) {                                                  \
+      rtc_FatalMessage(__FILE__, __LINE__, "CHECK failed: " #condition); \
+    }                                                                    \
+  } while (0)
+
+#define RTC_CHECK_EQ(a, b) RTC_CHECK((a) == (b))
+#define RTC_CHECK_NE(a, b) RTC_CHECK((a) != (b))
+#define RTC_CHECK_LE(a, b) RTC_CHECK((a) <= (b))
+#define RTC_CHECK_LT(a, b) RTC_CHECK((a) < (b))
+#define RTC_CHECK_GE(a, b) RTC_CHECK((a) >= (b))
+#define RTC_CHECK_GT(a, b) RTC_CHECK((a) > (b))
+
+#define RTC_DCHECK(condition)                                             \
+  do {                                                                    \
+    if (RTC_DCHECK_IS_ON && !(condition)) {                               \
+      rtc_FatalMessage(__FILE__, __LINE__, "DCHECK failed: " #condition); \
+    }                                                                     \
+  } while (0)
+
+#define RTC_DCHECK_EQ(a, b) RTC_DCHECK((a) == (b))
+#define RTC_DCHECK_NE(a, b) RTC_DCHECK((a) != (b))
+#define RTC_DCHECK_LE(a, b) RTC_DCHECK((a) <= (b))
+#define RTC_DCHECK_LT(a, b) RTC_DCHECK((a) < (b))
+#define RTC_DCHECK_GE(a, b) RTC_DCHECK((a) >= (b))
+#define RTC_DCHECK_GT(a, b) RTC_DCHECK((a) > (b))
+
 #endif  
+
+#endif

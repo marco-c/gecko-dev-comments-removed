@@ -53,11 +53,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   
   
   
-  
-  
-  bool NextPacket(uint8_t* buffer,
-                  size_t* bytes_to_send,
-                  bool* last_packet) override;
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
 
   typedef struct {
     size_t payload_start_pos;
@@ -76,8 +72,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   
   
   bool WriteHeaderAndPayload(const PacketInfo& packet_info,
-                             uint8_t* buffer,
-                             size_t* bytes_to_send) const;
+                             RtpPacketToSend* packet) const;
 
   
   

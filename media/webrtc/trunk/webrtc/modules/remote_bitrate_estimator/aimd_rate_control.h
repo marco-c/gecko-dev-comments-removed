@@ -43,6 +43,12 @@ class AimdRateControl {
   void Update(const RateControlInput* input, int64_t now_ms);
   void SetEstimate(int bitrate_bps, int64_t now_ms);
 
+  
+  
+  virtual int GetNearMaxIncreaseRateBps() const;
+
+  virtual rtc::Optional<int> GetLastBitrateDecreaseBps() const;
+
  private:
   
   
@@ -56,8 +62,7 @@ class AimdRateControl {
                          int64_t now_ms);
   uint32_t MultiplicativeRateIncrease(int64_t now_ms, int64_t last_ms,
                                       uint32_t current_bitrate_bps) const;
-  uint32_t AdditiveRateIncrease(int64_t now_ms, int64_t last_ms,
-                                int64_t response_time_ms) const;
+  uint32_t AdditiveRateIncrease(int64_t now_ms, int64_t last_ms) const;
   void UpdateChangePeriod(int64_t now_ms);
   void UpdateMaxBitRateEstimate(float incoming_bit_rate_kbps);
   void ChangeState(const RateControlInput& input, int64_t now_ms);
@@ -67,7 +72,6 @@ class AimdRateControl {
   uint32_t min_configured_bitrate_bps_;
   uint32_t max_configured_bitrate_bps_;
   uint32_t current_bitrate_bps_;
-  uint32_t max_hold_rate_bps_;
   float avg_max_bitrate_kbps_;
   float var_max_bitrate_kbps_;
   RateControlState rate_control_state_;
@@ -79,8 +83,8 @@ class AimdRateControl {
   bool bitrate_is_initialized_;
   float beta_;
   int64_t rtt_;
-  int64_t time_of_last_log_;
   bool in_experiment_;
+  rtc::Optional<int> last_decrease_;
 };
 }  
 

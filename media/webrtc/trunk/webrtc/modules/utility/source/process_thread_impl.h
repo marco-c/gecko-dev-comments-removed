@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 
 #include <list>
+#include <memory>
 #include <queue>
 
 #include "webrtc/base/criticalsection.h"
@@ -32,7 +33,7 @@ class ProcessThreadImpl : public ProcessThread {
   void Stop() override;
 
   void WakeUp(Module* module) override;
-  void PostTask(rtc::scoped_ptr<ProcessTask> task) override;
+  void PostTask(std::unique_ptr<rtc::QueuedTask> task) override;
 
   void RegisterModule(Module* module) override;
   void DeRegisterModule(Module* module) override;
@@ -69,13 +70,12 @@ class ProcessThreadImpl : public ProcessThread {
   rtc::CriticalSection lock_;  
 
   rtc::ThreadChecker thread_checker_;
-  const rtc::scoped_ptr<EventWrapper> wake_up_;
+  const std::unique_ptr<EventWrapper> wake_up_;
   
-  rtc::scoped_ptr<rtc::PlatformThread> thread_;
+  std::unique_ptr<rtc::PlatformThread> thread_;
 
   ModuleList modules_;
-  
-  std::queue<ProcessTask*> queue_;
+  std::queue<rtc::QueuedTask*> queue_;
   bool stop_;
   const char* thread_name_;
 };

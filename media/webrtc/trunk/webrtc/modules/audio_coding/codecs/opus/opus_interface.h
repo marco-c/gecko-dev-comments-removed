@@ -195,6 +195,28 @@ int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
 
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, size_t num_channels);
+
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);
 

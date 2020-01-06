@@ -12,11 +12,38 @@
 #define WEBRTC_BASE_OPTIONAL_H_
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/sanitizer.h"
 
 namespace rtc {
+
+namespace optional_internal {
+
+#if RTC_HAS_ASAN
+
+
+void* FunctionThatDoesNothingImpl(void*);
+
+template <typename T>
+inline T* FunctionThatDoesNothing(T* x) {
+  return reinterpret_cast<T*>(
+      FunctionThatDoesNothingImpl(reinterpret_cast<void*>(x)));
+}
+
+#else
+
+template <typename T>
+inline T* FunctionThatDoesNothing(T* x) { return x; }
+
+#endif
+
+}  
+
+
 
 
 
@@ -62,31 +89,124 @@ template <typename T>
 class Optional final {
  public:
   
-  Optional() : has_value_(false) {}
+  Optional() : has_value_(false), empty_('\0') {
+    PoisonValue();
+  }
 
   
-  explicit Optional(const T& val) : value_(val), has_value_(true) {}
-  explicit Optional(T&& val) : value_(std::move(val)), has_value_(true) {}
+  explicit Optional(const T& value) : has_value_(true) {
+    new (&value_) T(value);
+  }
+  explicit Optional(T&& value) : has_value_(true) {
+    new (&value_) T(std::move(value));
+  }
+
+  
+  Optional(const Optional& m) : has_value_(m.has_value_) {
+    if (has_value_)
+      new (&value_) T(m.value_);
+    else
+      PoisonValue();
+  }
 
   
   
-  Optional(const Optional&) = default;
-  Optional(Optional&& m)
-      : value_(std::move(m.value_)), has_value_(m.has_value_) {}
+  
+  
+  Optional(Optional&& m) : has_value_(m.has_value_) {
+    if (has_value_)
+      new (&value_) T(std::move(m.value_));
+    else
+      PoisonValue();
+  }
+
+  ~Optional() {
+    if (has_value_)
+      value_.~T();
+    else
+      UnpoisonValue();
+  }
 
   
   
-  Optional& operator=(const Optional&) = default;
-  Optional& operator=(Optional&& m) {
-    value_ = std::move(m.value_);
-    has_value_ = m.has_value_;
+  Optional& operator=(const Optional& m) {
+    if (m.has_value_) {
+      if (has_value_) {
+        value_ = m.value_;  
+      } else {
+        UnpoisonValue();
+        new (&value_) T(m.value_);  
+        has_value_ = true;
+      }
+    } else {
+      reset();
+    }
     return *this;
   }
 
+  
+  
+  
+  Optional& operator=(Optional&& m) {
+    if (m.has_value_) {
+      if (has_value_) {
+        value_ = std::move(m.value_);  
+      } else {
+        UnpoisonValue();
+        new (&value_) T(std::move(m.value_));  
+        has_value_ = true;
+      }
+    } else {
+      reset();
+    }
+    return *this;
+  }
+
+  
+  
   friend void swap(Optional& m1, Optional& m2) {
-    using std::swap;
-    swap(m1.value_, m2.value_);
-    swap(m1.has_value_, m2.has_value_);
+    if (m1.has_value_) {
+      if (m2.has_value_) {
+        
+        using std::swap;
+        swap(m1.value_, m2.value_);
+      } else {
+        
+        m2.UnpoisonValue();
+        new (&m2.value_) T(std::move(m1.value_));
+        m1.value_.~T();  
+        m1.has_value_ = false;
+        m2.has_value_ = true;
+        m1.PoisonValue();
+      }
+    } else if (m2.has_value_) {
+      
+      m1.UnpoisonValue();
+      new (&m1.value_) T(std::move(m2.value_));
+      m2.value_.~T();  
+      m1.has_value_ = true;
+      m2.has_value_ = false;
+      m2.PoisonValue();
+    }
+  }
+
+  
+  void reset() {
+    if (!has_value_)
+      return;
+    value_.~T();
+    has_value_ = false;
+    PoisonValue();
+  }
+
+  template <class... Args>
+  void emplace(Args&&... args) {
+    if (has_value_)
+      value_.~T();
+    else
+      UnpoisonValue();
+    new (&value_) T(std::forward<Args>(args)...);
+    has_value_ = true;
   }
 
   
@@ -112,26 +232,62 @@ class Optional final {
 
   
   const T& value_or(const T& default_val) const {
-    return has_value_ ? value_ : default_val;
+    
+    
+    
+    return has_value_ ? *optional_internal::FunctionThatDoesNothing(&value_)
+                      : default_val;
   }
 
-  
   
   
   friend bool operator==(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ == m2.value_
                                           : m1.has_value_ == m2.has_value_;
   }
+  friend bool operator==(const Optional& opt, const T& value) {
+    return opt.has_value_ && opt.value_ == value;
+  }
+  friend bool operator==(const T& value, const Optional& opt) {
+    return opt.has_value_ && value == opt.value_;
+  }
+
   friend bool operator!=(const Optional& m1, const Optional& m2) {
     return m1.has_value_ && m2.has_value_ ? m1.value_ != m2.value_
                                           : m1.has_value_ != m2.has_value_;
   }
+  friend bool operator!=(const Optional& opt, const T& value) {
+    return !opt.has_value_ || opt.value_ != value;
+  }
+  friend bool operator!=(const T& value, const Optional& opt) {
+    return !opt.has_value_ || value != opt.value_;
+  }
 
  private:
   
+  void PoisonValue() {
+    rtc::AsanPoison(rtc::MakeArrayView(&value_, 1));
+    rtc::MsanMarkUninitialized(rtc::MakeArrayView(&value_, 1));
+  }
+
   
-  T value_;
-  bool has_value_;
+  void UnpoisonValue() {
+    rtc::AsanUnpoison(rtc::MakeArrayView(&value_, 1));
+  }
+
+  bool has_value_;  
+  union {
+    
+    
+    
+    char empty_;
+    
+    
+    
+    
+    
+    T value_;
+  };
 };
 
 }  

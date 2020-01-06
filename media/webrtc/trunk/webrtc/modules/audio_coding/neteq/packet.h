@@ -12,77 +12,113 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_PACKET_H_
 
 #include <list>
+#include <memory>
 
-#include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 
 struct Packet {
-  RTPHeader header;
-  uint8_t* payload;  
-  size_t payload_length;
-  bool primary;  
-  int waiting_time;
-  bool sync_packet;
+  struct Priority {
+    Priority() : codec_level(0), red_level(0) {}
+    Priority(int codec_level, int red_level)
+        : codec_level(codec_level), red_level(red_level) {
+      CheckInvariant();
+    }
+
+    int codec_level;
+    int red_level;
+
+    
+    
+    
+    
+    
+    
+    
+    bool operator<(const Priority& b) const {
+      CheckInvariant();
+      b.CheckInvariant();
+      if (codec_level == b.codec_level)
+        return red_level < b.red_level;
+
+      return codec_level < b.codec_level;
+    }
+    bool operator==(const Priority& b) const {
+      CheckInvariant();
+      b.CheckInvariant();
+      return codec_level == b.codec_level && red_level == b.red_level;
+    }
+    bool operator!=(const Priority& b) const { return !(*this == b); }
+    bool operator>(const Priority& b) const { return b < *this; }
+    bool operator<=(const Priority& b) const { return !(b > *this); }
+    bool operator>=(const Priority& b) const { return !(b < *this); }
+
+   private:
+    void CheckInvariant() const {
+      RTC_DCHECK_GE(codec_level, 0);
+      RTC_DCHECK_GE(red_level, 0);
+    }
+  };
+
+  uint32_t timestamp;
+  uint16_t sequence_number;
+  uint8_t payload_type;
+  
+  rtc::Buffer payload;
+  Priority priority;
+  std::unique_ptr<TickTimer::Stopwatch> waiting_time;
+  std::unique_ptr<AudioDecoder::EncodedAudioFrame> frame;
+
+  Packet();
+  Packet(Packet&& b);
+  ~Packet();
 
   
-  Packet()
-      : payload(NULL),
-        payload_length(0),
-        primary(true),
-        waiting_time(0),
-        sync_packet(false) {
-  }
+  
+  
+  
+  Packet Clone() const;
 
-  
-  
+  Packet& operator=(Packet&& b);
+
   
   
   
   
   
   bool operator==(const Packet& rhs) const {
-    return (this->header.timestamp == rhs.header.timestamp &&
-        this->header.sequenceNumber == rhs.header.sequenceNumber &&
-        this->primary == rhs.primary &&
-        this->sync_packet == rhs.sync_packet);
+    return (this->timestamp == rhs.timestamp &&
+            this->sequence_number == rhs.sequence_number &&
+            this->priority == rhs.priority);
   }
   bool operator!=(const Packet& rhs) const { return !operator==(rhs); }
   bool operator<(const Packet& rhs) const {
-    if (this->header.timestamp == rhs.header.timestamp) {
-      if (this->header.sequenceNumber == rhs.header.sequenceNumber) {
+    if (this->timestamp == rhs.timestamp) {
+      if (this->sequence_number == rhs.sequence_number) {
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (rhs.sync_packet)
-          return true;
-        if (this->sync_packet)
-          return false;
-        return (this->primary && !rhs.primary);
+        return this->priority < rhs.priority;
       }
-      return (static_cast<uint16_t>(rhs.header.sequenceNumber
-          - this->header.sequenceNumber) < 0xFFFF / 2);
+      return (static_cast<uint16_t>(rhs.sequence_number -
+                                    this->sequence_number) < 0xFFFF / 2);
     }
-    return (static_cast<uint32_t>(rhs.header.timestamp
-        - this->header.timestamp) < 0xFFFFFFFF / 2);
+    return (static_cast<uint32_t>(rhs.timestamp - this->timestamp) <
+            0xFFFFFFFF / 2);
   }
   bool operator>(const Packet& rhs) const { return rhs.operator<(*this); }
   bool operator<=(const Packet& rhs) const { return !operator>(rhs); }
   bool operator>=(const Packet& rhs) const { return !operator<(rhs); }
+
+  bool empty() const { return !frame && payload.empty(); }
 };
 
 
-typedef std::list<Packet*> PacketList;
+typedef std::list<Packet> PacketList;
 
 }  
 #endif  

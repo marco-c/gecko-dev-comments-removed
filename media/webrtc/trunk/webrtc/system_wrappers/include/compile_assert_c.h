@@ -11,9 +11,6 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
 
-#ifdef __cplusplus
-#error "Only use this for C files. For C++, use static_assert."
-#endif
 
 
 

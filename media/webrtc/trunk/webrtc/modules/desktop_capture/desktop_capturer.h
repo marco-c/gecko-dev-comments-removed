@@ -12,54 +12,130 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <vector>
+
+#include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
+#include "webrtc/modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
 
+class DesktopCaptureOptions;
 class DesktopFrame;
-class DesktopRegion;
-class SharedMemory;
 
 
 class DesktopCapturer {
  public:
+  enum class Result {
+    
+    SUCCESS,
+
+    
+    
+    ERROR_TEMPORARY,
+
+    
+    
+    ERROR_PERMANENT,
+
+    MAX_VALUE = ERROR_PERMANENT
+  };
+
   
   class Callback {
    public:
     
     
-    
-    virtual SharedMemory* CreateSharedMemory(size_t size) = 0;
-
-    
-    
-    
-    virtual void OnCaptureCompleted(DesktopFrame* frame) = 0;
+    virtual void OnCaptureResult(Result result,
+                                 std::unique_ptr<DesktopFrame> frame) = 0;
 
    protected:
     virtual ~Callback() {}
   };
 
-  virtual ~DesktopCapturer() {}
+  typedef intptr_t SourceId;
+
+  static_assert(std::is_same<SourceId, ScreenId>::value,
+                "SourceId should be a same type as ScreenId.");
+
+  struct Source {
+    
+    SourceId id;
+
+    
+    
+    std::string title;
+  };
+
+  typedef std::vector<Source> SourceList;
+
+  virtual ~DesktopCapturer();
 
   
   
   virtual void Start(Callback* callback) = 0;
-  virtual void Stop() = 0;
 
   
   
   
   
   
+  virtual void SetSharedMemoryFactory(
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory);
+
   
-  virtual void Capture(const DesktopRegion& region) = 0;
+  
+  virtual void CaptureFrame() = 0;
 
   
   
   
-  virtual void SetExcludedWindow(WindowId window) {}
+  virtual void SetExcludedWindow(WindowId window);
+
+  
+  
+  
+  
+
+  
+  
+  virtual bool GetSourceList(SourceList* sources);
+
+  
+  
+  virtual bool SelectSource(SourceId id);
+
+  
+  
+  
+  virtual bool FocusOnSelectedSource();
+
+  
+  static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(
+      const DesktopCaptureOptions& options);
+
+  
+  static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
+      const DesktopCaptureOptions& options);
+
+ protected:
+  
+  
+
+  
+  
+  static std::unique_ptr<DesktopCapturer> CreateRawWindowCapturer(
+      const DesktopCaptureOptions& options);
+
+  
+  
+  static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
+      const DesktopCaptureOptions& options);
 };
 
 }  

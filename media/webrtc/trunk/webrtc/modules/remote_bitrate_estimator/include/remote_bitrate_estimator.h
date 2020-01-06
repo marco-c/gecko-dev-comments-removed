@@ -32,36 +32,18 @@ class RemoteBitrateObserver {
  public:
   
   
-  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) = 0;
+  virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                                       uint32_t bitrate) = 0;
+  virtual void OnProbeBitrate(uint32_t bitrate) {}
 
   virtual ~RemoteBitrateObserver() {}
 };
 
-struct ReceiveBandwidthEstimatorStats {
-  ReceiveBandwidthEstimatorStats() : total_propagation_time_delta_ms(0) {}
 
-  
-  
-  
-  
-
-  
-  
-  
-  int total_propagation_time_delta_ms;
-  
-  
-  
-  std::vector<int> recent_propagation_time_delta_ms;
-  
-  
-  std::vector<int64_t> recent_arrival_time_ms;
-};
+struct ReceiveBandwidthEstimatorStats {};
 
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
-  static const int kDefaultMinBitrateBps = 30000;
   virtual ~RemoteBitrateEstimator() {}
 
   virtual void IncomingPacketFeedbackVector(
@@ -76,20 +58,21 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               size_t payload_size,
-                              const RTPHeader& header,
-                              bool was_paced) = 0;
+                              const RTPHeader& header) = 0;
 
   
-  virtual void RemoveStream(unsigned int ssrc) = 0;
+  virtual void RemoveStream(uint32_t ssrc) = 0;
 
   
   
   
-  virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const = 0;
+  virtual bool LatestEstimate(std::vector<uint32_t>* ssrcs,
+                              uint32_t* bitrate_bps) const = 0;
 
   
-  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const = 0;
+  virtual bool GetStats(ReceiveBandwidthEstimatorStats* output) const {
+    return false;
+  }
 
   virtual void SetMinBitrate(int min_bitrate_bps) = 0;
 

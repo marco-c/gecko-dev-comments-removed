@@ -13,6 +13,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -66,7 +67,8 @@ class SyncBuffer : public AudioMultiVector {
   
   
   
-  size_t GetNextAudioInterleaved(size_t requested_len, int16_t* output);
+  
+  void GetNextAudioInterleaved(size_t requested_len, AudioFrame* output);
 
   
   void IncreaseEndTimestamp(uint32_t increment);

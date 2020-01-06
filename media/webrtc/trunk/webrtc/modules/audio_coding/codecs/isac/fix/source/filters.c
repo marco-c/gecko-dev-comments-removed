@@ -8,8 +8,7 @@
 
 
 
-#include <assert.h>
-
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
 
 
@@ -27,8 +26,8 @@ int WebRtcIsacfix_AutocorrC(int32_t* __restrict r,
   int64_t prod = 0;
 
   
-  assert(N % 4 == 0);
-  assert(N >= 8);
+  RTC_DCHECK_EQ(0, N % 4);
+  RTC_DCHECK_GE(N, 8);
 
   
   for (i = 0; i < N; i++) {

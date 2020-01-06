@@ -12,27 +12,30 @@
 
 #include "webrtc/modules/audio_coding/neteq/delay_peak_detector.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
 TEST(DelayPeakDetector, CreateAndDestroy) {
-  DelayPeakDetector* detector = new DelayPeakDetector();
+  TickTimer tick_timer;
+  DelayPeakDetector* detector = new DelayPeakDetector(&tick_timer);
   EXPECT_FALSE(detector->peak_found());
   delete detector;
 }
 
 TEST(DelayPeakDetector, EmptyHistory) {
-  DelayPeakDetector detector;
+  TickTimer tick_timer;
+  DelayPeakDetector detector(&tick_timer);
   EXPECT_EQ(-1, detector.MaxPeakHeight());
-  EXPECT_EQ(-1, detector.MaxPeakPeriod());
+  EXPECT_EQ(0u, detector.MaxPeakPeriod());
 }
 
 
 
 
 TEST(DelayPeakDetector, TriggerPeakMode) {
-  DelayPeakDetector detector;
+  TickTimer tick_timer;
+  DelayPeakDetector detector(&tick_timer);
   const int kPacketSizeMs = 30;
   detector.SetPacketAudioLength(kPacketSizeMs);
 
@@ -52,7 +55,7 @@ TEST(DelayPeakDetector, TriggerPeakMode) {
   
   arrival_times_ms[400] += kPeakDelayMs;
   
-  const int kWorstPeakPeriod = 200 * kPacketSizeMs;
+  const uint64_t kWorstPeakPeriod = 200 * kPacketSizeMs;
   int peak_mode_start_ms = arrival_times_ms[400];
   
   int peak_mode_end_ms = peak_mode_start_ms + 2 * kWorstPeakPeriod;
@@ -74,7 +77,7 @@ TEST(DelayPeakDetector, TriggerPeakMode) {
       }
       ++next;
     }
-    detector.IncrementCounter(10);
+    tick_timer.Increment();
     time += 10;  
   }
 }
@@ -83,7 +86,8 @@ TEST(DelayPeakDetector, TriggerPeakMode) {
 
 
 TEST(DelayPeakDetector, DoNotTriggerPeakMode) {
-  DelayPeakDetector detector;
+  TickTimer tick_timer;
+  DelayPeakDetector detector(&tick_timer);
   const int kPacketSizeMs = 30;
   detector.SetPacketAudioLength(kPacketSizeMs);
 
@@ -114,8 +118,26 @@ TEST(DelayPeakDetector, DoNotTriggerPeakMode) {
       EXPECT_FALSE(detector.Update(iat_packets, kTargetBufferLevel));
       ++next;
     }
-    detector.IncrementCounter(10);
+    tick_timer.Increment();
     time += 10;  
   }
 }
+
+
+
+
+
+TEST(DelayPeakDetector, ZeroDistancePeaks) {
+  TickTimer tick_timer;
+  DelayPeakDetector detector(&tick_timer);
+  const int kPacketSizeMs = 30;
+  detector.SetPacketAudioLength(kPacketSizeMs);
+
+  const int kTargetBufferLevel = 2;  
+  const int kInterArrivalTime = 3 * kTargetBufferLevel;  
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+  EXPECT_FALSE(detector.Update(kInterArrivalTime, kTargetBufferLevel));
+}
+
 }  

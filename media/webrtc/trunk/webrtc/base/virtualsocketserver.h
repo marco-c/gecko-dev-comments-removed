@@ -11,11 +11,11 @@
 #ifndef WEBRTC_BASE_VIRTUALSOCKETSERVER_H_
 #define WEBRTC_BASE_VIRTUALSOCKETSERVER_H_
 
-#include <assert.h>
-
 #include <deque>
 #include <map>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/socketserver.h"
 
@@ -85,9 +85,20 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   
   double drop_probability() { return drop_prob_; }
   void set_drop_probability(double drop_prob) {
-    assert((0 <= drop_prob) && (drop_prob <= 1));
+    RTC_DCHECK_GE(drop_prob, 0.0);
+    RTC_DCHECK_LE(drop_prob, 1.0);
     drop_prob_ = drop_prob;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetSendingBlocked(bool blocked);
 
   
   Socket* CreateSocket(int type) override;
@@ -100,6 +111,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   void SetMessageQueue(MessageQueue* queue) override;
   bool Wait(int cms, bool process_io) override;
   void WakeUp() override;
+
+  void SetDelayOnAddress(const rtc::SocketAddress& address, int delay_ms) {
+    delay_by_ip_[address.ipaddr()] = delay_ms;
+  }
 
   typedef std::pair<double, double> Point;
   typedef std::vector<Point> Function;
@@ -120,6 +135,9 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   
   bool CloseTcpConnections(const SocketAddress& addr_local,
                            const SocketAddress& addr_remote);
+
+  
+  sigslot::signal1<VirtualSocket*> SignalSocketCreated;
 
  protected:
   
@@ -168,20 +186,22 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   
   void AddPacketToNetwork(VirtualSocket* socket,
                           VirtualSocket* recipient,
-                          uint32_t cur_time,
+                          int64_t cur_time,
                           const char* data,
                           size_t data_size,
                           size_t header_size,
                           bool ordered);
 
   
-  void PurgeNetworkPackets(VirtualSocket* socket, uint32_t cur_time);
+  void PurgeNetworkPackets(VirtualSocket* socket, int64_t cur_time);
 
   
   uint32_t SendDelay(uint32_t size);
 
   
-  uint32_t GetRandomTransitDelay();
+  
+  
+  uint32_t GetTransitDelay(Socket* socket);
 
   
   
@@ -219,6 +239,9 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
  private:
   friend class VirtualSocket;
 
+  
+  sigslot::signal0<> SignalReadyToSend;
+
   typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
   typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
 
@@ -226,7 +249,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   bool server_owned_;
   MessageQueue* msg_queue_;
   bool stop_on_idle_;
-  uint32_t network_delay_;
   in_addr next_ipv4_;
   in6_addr next_ipv6_;
   uint16_t next_port_;
@@ -243,16 +265,22 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   uint32_t delay_mean_;
   uint32_t delay_stddev_;
   uint32_t delay_samples_;
-  Function* delay_dist_;
+
+  std::map<rtc::IPAddress, int> delay_by_ip_;
+  std::unique_ptr<Function> delay_dist_;
+
   CriticalSection delay_crit_;
 
   double drop_prob_;
+  bool sending_blocked_ = false;
   RTC_DISALLOW_COPY_AND_ASSIGN(VirtualSocketServer);
 };
 
 
 
-class VirtualSocket : public AsyncSocket, public MessageHandler {
+class VirtualSocket : public AsyncSocket,
+                      public MessageHandler,
+                      public sigslot::has_slots<> {
  public:
   VirtualSocket(VirtualSocketServer* server, int family, int type, bool async);
   ~VirtualSocket() override;
@@ -270,8 +298,11 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   int Close() override;
   int Send(const void* pv, size_t cb) override;
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
-  int Recv(void* pv, size_t cb) override;
-  int RecvFrom(void* pv, size_t cb, SocketAddress* paddr) override;
+  int Recv(void* pv, size_t cb, int64_t* timestamp) override;
+  int RecvFrom(void* pv,
+               size_t cb,
+               SocketAddress* paddr,
+               int64_t* timestamp) override;
   int Listen(int backlog) override;
   VirtualSocket* Accept(SocketAddress* paddr) override;
 
@@ -292,7 +323,7 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
  private:
   struct NetworkEntry {
     size_t size;
-    uint32_t done_time;
+    int64_t done_time;
   };
 
   typedef std::deque<SocketAddress> ListenQueue;
@@ -309,6 +340,8 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   
   void SetLocalAddress(const SocketAddress& addr);
 
+  void OnSocketServerReadyToSend();
+
   VirtualSocketServer* server_;
   int type_;
   bool async_;
@@ -323,7 +356,9 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
 
   
   SendBuffer send_buffer_;
-  bool write_enabled_;
+  
+  
+  bool ready_to_send_ = true;
 
   
   CriticalSection crit_;
@@ -331,6 +366,9 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
   
   NetworkQueue network_;
   size_t network_size_;
+  
+  
+  int64_t last_delivery_time_ = 0;
 
   
   RecvBuffer recv_buffer_;

@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
 
-#include "webrtc/base/basictypes.h"
+#include <stdint.h>
+
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -40,9 +41,8 @@ inline uint32_t CompactNtp(NtpTime ntp) {
 }
 
 
-inline uint32_t CompactNtpIntervalToMs(uint32_t compact_ntp_interval) {
-  return static_cast<uint64_t>(compact_ntp_interval) * 1000 / (1 << 16);
-}
+
+int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval);
 
 }  
 #endif  

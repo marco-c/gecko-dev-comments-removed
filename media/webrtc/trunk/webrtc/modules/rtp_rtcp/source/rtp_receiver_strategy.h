@@ -11,14 +11,15 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_STRATEGY_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_STRATEGY_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+struct CodecInst;
 
 class TelephoneEventHandler;
 
@@ -27,9 +28,7 @@ class TelephoneEventHandler;
 class RTPReceiverStrategy {
  public:
   static RTPReceiverStrategy* CreateVideoStrategy(RtpData* data_callback);
-  static RTPReceiverStrategy* CreateAudioStrategy(
-      RtpData* data_callback,
-      RtpAudioFeedback* incoming_messages_callback);
+  static RTPReceiverStrategy* CreateAudioStrategy(RtpData* data_callback);
 
   virtual ~RTPReceiverStrategy() {}
 
@@ -50,9 +49,6 @@ class RTPReceiverStrategy {
   virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
 
   
-  virtual int GetPayloadTypeFrequency() const = 0;
-
-  
   virtual RTPAliveType ProcessDeadOrAlive(
       uint16_t last_payload_length) const = 0;
 
@@ -62,10 +58,7 @@ class RTPReceiverStrategy {
 
   
   
-  virtual int32_t OnNewPayloadTypeCreated(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      int8_t payloadType,
-      uint32_t frequency) = 0;
+  virtual int32_t OnNewPayloadTypeCreated(const CodecInst& audio_codec) = 0;
 
   
   virtual int32_t InvokeOnInitializeDecoder(
@@ -97,7 +90,7 @@ class RTPReceiverStrategy {
   
   explicit RTPReceiverStrategy(RtpData* data_callback);
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::CriticalSection crit_sect_;
   PayloadUnion last_payload_;
   RtpData* data_callback_;
 };

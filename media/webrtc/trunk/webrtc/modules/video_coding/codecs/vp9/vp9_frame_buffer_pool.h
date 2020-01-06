@@ -9,8 +9,8 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_FRAME_BUFFER_POOL_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_FRAME_BUFFER_POOL_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_VP9_FRAME_BUFFER_POOL_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP9_VP9_FRAME_BUFFER_POOL_H_
 
 #include <vector>
 
@@ -103,13 +103,20 @@ class Vp9FrameBufferPool {
 
  private:
   
-  mutable rtc::CriticalSection buffers_lock_;
+  rtc::CriticalSection buffers_lock_;
   
   std::vector<rtc::scoped_refptr<Vp9FrameBuffer>> allocated_buffers_
       GUARDED_BY(buffers_lock_);
   
   
-  static const size_t max_num_buffers_ = 10;
+  
+  
+  
+  
+  
+  
+  
+  static const size_t max_num_buffers_ = 68;
 };
 
 }  

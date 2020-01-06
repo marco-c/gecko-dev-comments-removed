@@ -132,10 +132,10 @@ void WebRtcIsacfix_Spec2TimeC(int16_t *inreQ7, int16_t *inimQ7, int32_t *outre1Q
     tmp1rQ14 = -WebRtcIsacfix_kSinTab2[FRAMESAMPLES/4 - 1 - k];
     tmp1iQ14 = WebRtcIsacfix_kSinTab2[k];
 
-    tmpInRe = inreQ7[k] << 9;  
-    tmpInIm = inimQ7[k] << 9;  
-    tmpInRe2 = inreQ7[FRAMESAMPLES / 2 - 1 - k] << 9;  
-    tmpInIm2 = inimQ7[FRAMESAMPLES / 2 - 1 - k] << 9;  
+    tmpInRe = inreQ7[k] * (1 << 9);  
+    tmpInIm = inimQ7[k] * (1 << 9);  
+    tmpInRe2 = inreQ7[FRAMESAMPLES / 2 - 1 - k] * (1 << 9);  
+    tmpInIm2 = inimQ7[FRAMESAMPLES / 2 - 1 - k] * (1 << 9);  
 
     xrQ16 = WEBRTC_SPL_MUL_16_32_RSFT14(tmp1rQ14, tmpInRe) + WEBRTC_SPL_MUL_16_32_RSFT14(tmp1iQ14, tmpInIm);
     xiQ16 = WEBRTC_SPL_MUL_16_32_RSFT14(tmp1rQ14, tmpInIm) - WEBRTC_SPL_MUL_16_32_RSFT14(tmp1iQ14, tmpInRe);
@@ -184,8 +184,8 @@ void WebRtcIsacfix_Spec2TimeC(int16_t *inreQ7, int16_t *inimQ7, int32_t *outre1Q
     }
   } else {
     for (k=0; k<240; k++) {
-      outre1Q16[k] = inreQ7[k] << -sh;  
-      outre2Q16[k] = inimQ7[k] << -sh;  
+      outre1Q16[k] = inreQ7[k] * (1 << -sh);  
+      outre2Q16[k] = inimQ7[k] * (1 << -sh);  
     }
   }
 

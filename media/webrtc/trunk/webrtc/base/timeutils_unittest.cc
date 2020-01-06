@@ -9,6 +9,8 @@
 
 
 #include "webrtc/base/common.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/thread.h"
@@ -17,69 +19,18 @@
 namespace rtc {
 
 TEST(TimeTest, TimeInMs) {
-  uint32_t ts_earlier = Time();
+  int64_t ts_earlier = TimeMillis();
   Thread::SleepMs(100);
-  uint32_t ts_now = Time();
+  int64_t ts_now = TimeMillis();
   
   EXPECT_GE(ts_now, ts_earlier + 80);
   
   EXPECT_LT(ts_now, ts_earlier + 1000);
 }
 
-TEST(TimeTest, Comparison) {
-  
-  TimeStamp ts_earlier = Time();
-  Thread::SleepMs(100);
-  TimeStamp ts_now = Time();
-  EXPECT_NE(ts_earlier, ts_now);
-
-  
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_now));
-  EXPECT_TRUE( TimeIsLater(       ts_earlier, ts_now));
-  EXPECT_FALSE(TimeIsLaterOrEqual(ts_now,     ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_now,     ts_earlier));
-
-  
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_earlier, ts_earlier));
-
-  
-  TimeStamp ts_later = TimeAfter(100);
-  EXPECT_NE(ts_now, ts_later);
-  EXPECT_TRUE( TimeIsLater(ts_now,     ts_later));
-  EXPECT_TRUE( TimeIsLater(ts_earlier, ts_later));
-
-  
-  EXPECT_TRUE( TimeIsBetween(ts_earlier, ts_now,     ts_later));
-  EXPECT_FALSE(TimeIsBetween(ts_earlier, ts_later,   ts_now));
-  EXPECT_FALSE(TimeIsBetween(ts_now,     ts_earlier, ts_later));
-  EXPECT_TRUE( TimeIsBetween(ts_now,     ts_later,   ts_earlier));
-  EXPECT_TRUE( TimeIsBetween(ts_later,   ts_earlier, ts_now));
-  EXPECT_FALSE(TimeIsBetween(ts_later,   ts_now,     ts_earlier));
-
-  
-  EXPECT_TRUE( TimeIsBetween(ts_earlier, ts_earlier, ts_earlier));
-  EXPECT_TRUE( TimeIsBetween(ts_earlier, ts_earlier, ts_later));
-  EXPECT_TRUE( TimeIsBetween(ts_earlier, ts_later,   ts_later));
-
-  
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_now));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_later));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_now,     ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_later,   ts_earlier));
-
-  
-  EXPECT_EQ(ts_earlier, TimeMax(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_now,     TimeMax(ts_earlier, ts_now));
-  EXPECT_EQ(ts_later,   TimeMax(ts_earlier, ts_later));
-  EXPECT_EQ(ts_now,     TimeMax(ts_now,     ts_earlier));
-  EXPECT_EQ(ts_later,   TimeMax(ts_later,   ts_earlier));
-}
-
 TEST(TimeTest, Intervals) {
-  TimeStamp ts_earlier = Time();
-  TimeStamp ts_later = TimeAfter(500);
+  int64_t ts_earlier = TimeMillis();
+  int64_t ts_later = TimeAfter(500);
 
   
   
@@ -100,48 +51,12 @@ TEST(TimeTest, Intervals) {
   EXPECT_LE(TimeUntil(ts_later), 500);
 }
 
-TEST(TimeTest, BoundaryComparison) {
-  
-  TimeStamp ts_earlier = static_cast<TimeStamp>(-50);
-  TimeStamp ts_later = ts_earlier + 100;
-  EXPECT_NE(ts_earlier, ts_later);
-
-  
-  EXPECT_TRUE( TimeIsLaterOrEqual(ts_earlier, ts_later));
-  EXPECT_TRUE( TimeIsLater(       ts_earlier, ts_later));
-  EXPECT_FALSE(TimeIsLaterOrEqual(ts_later,   ts_earlier));
-  EXPECT_FALSE(TimeIsLater(       ts_later,   ts_earlier));
-
-  
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_earlier, ts_later));
-  EXPECT_EQ(ts_earlier, TimeMin(ts_later,   ts_earlier));
-
-  
-  EXPECT_EQ(ts_earlier, TimeMax(ts_earlier, ts_earlier));
-  EXPECT_EQ(ts_later,   TimeMax(ts_earlier, ts_later));
-  EXPECT_EQ(ts_later,   TimeMax(ts_later,   ts_earlier));
-
-  
-  EXPECT_EQ(100,  TimeDiff(ts_later, ts_earlier));
-  EXPECT_EQ(-100, TimeDiff(ts_earlier, ts_later));
-}
-
-TEST(TimeTest, DISABLED_CurrentTmTime) {
-  struct tm tm;
-  int microseconds;
-
-  time_t before = ::time(NULL);
-  CurrentTmTime(&tm, &microseconds);
-  time_t after = ::time(NULL);
-
-  
-  
-  time_t local_delta = before - ::mktime(::gmtime(&before));  
-  time_t t = ::mktime(&tm) + local_delta;
-
-  EXPECT_TRUE(before <= t && t <= after);
-  EXPECT_TRUE(0 <= microseconds && microseconds < 1000000);
+TEST(TimeTest, TestTimeDiff64) {
+  int64_t ts_diff = 100;
+  int64_t ts_earlier = rtc::TimeMillis();
+  int64_t ts_later = ts_earlier + ts_diff;
+  EXPECT_EQ(ts_diff, rtc::TimeDiff(ts_later, ts_earlier));
+  EXPECT_EQ(-ts_diff, rtc::TimeDiff(ts_earlier, ts_later));
 }
 
 class TimestampWrapAroundHandlerTest : public testing::Test {
@@ -153,18 +68,48 @@ class TimestampWrapAroundHandlerTest : public testing::Test {
 };
 
 TEST_F(TimestampWrapAroundHandlerTest, Unwrap) {
-  uint32_t ts = 0xfffffff2;
-  int64_t unwrapped_ts = ts;
-  EXPECT_EQ(ts, wraparound_handler_.Unwrap(ts));
+  
+  int64_t ts = 2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  
+  ts = -2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  
   ts = 2;
-  unwrapped_ts += 0x10;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
-  ts = 0xfffffff2;
-  unwrapped_ts += 0xfffffff0;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
-  ts = 0;
-  unwrapped_ts += 0xe;
-  EXPECT_EQ(unwrapped_ts, wraparound_handler_.Unwrap(ts));
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  
+  for (uint32_t i = 0; i <= 0xf; ++i) {
+    ts = (i << 28) + 0x0fffffff;
+    EXPECT_EQ(
+        ts, wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+  }
+
+  
+  ts += 2;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  
+  ts -= 0x0fffffff;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+
+  
+  ts += 0x0fffffff;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
+}
+
+TEST_F(TimestampWrapAroundHandlerTest, NoNegativeStart) {
+  int64_t ts = 0xfffffff0;
+  EXPECT_EQ(ts,
+            wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
 }
 
 class TmToSeconds : public testing::Test {
@@ -173,7 +118,7 @@ class TmToSeconds : public testing::Test {
     
     rtc::SetRandomTestMode(true);
   }
-  ~TmToSeconds() {
+  ~TmToSeconds() override {
     
     rtc::SetRandomTestMode(false);
   }
@@ -260,6 +205,179 @@ class TmToSeconds : public testing::Test {
 
 TEST_F(TmToSeconds, TestTmToSeconds) {
   TestTmToSeconds(100000);
+}
+
+TEST(TimeDelta, FromAndTo) {
+  EXPECT_TRUE(TimeDelta::FromSeconds(2) == TimeDelta::FromMilliseconds(2000));
+  EXPECT_TRUE(TimeDelta::FromMilliseconds(3) ==
+              TimeDelta::FromMicroseconds(3000));
+  EXPECT_TRUE(TimeDelta::FromMicroseconds(4) ==
+              TimeDelta::FromNanoseconds(4000));
+  EXPECT_EQ(13, TimeDelta::FromSeconds(13).ToSeconds());
+  EXPECT_EQ(13, TimeDelta::FromMilliseconds(13).ToMilliseconds());
+  EXPECT_EQ(13, TimeDelta::FromMicroseconds(13).ToMicroseconds());
+  EXPECT_EQ(13, TimeDelta::FromNanoseconds(13).ToNanoseconds());
+}
+
+TEST(TimeDelta, ComparisonOperators) {
+  EXPECT_LT(TimeDelta::FromSeconds(1), TimeDelta::FromSeconds(2));
+  EXPECT_EQ(TimeDelta::FromSeconds(3), TimeDelta::FromSeconds(3));
+  EXPECT_GT(TimeDelta::FromSeconds(5), TimeDelta::FromSeconds(4));
+}
+
+TEST(TimeDelta, NumericOperators) {
+  double d = 0.5;
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) * d);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) / d);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) *= d);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) /= d);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            d * TimeDelta::FromMilliseconds(1000));
+
+  float f = 0.5;
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) * f);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) / f);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) *= f);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) /= f);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            f * TimeDelta::FromMilliseconds(1000));
+
+  int i = 2;
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) * i);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) / i);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) *= i);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) /= i);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            i * TimeDelta::FromMilliseconds(1000));
+
+  int64_t i64 = 2;
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) * i64);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) / i64);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) *= i64);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) /= i64);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            i64 * TimeDelta::FromMilliseconds(1000));
+
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) * 0.5);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) / 0.5);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) *= 0.5);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) /= 0.5);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            0.5 * TimeDelta::FromMilliseconds(1000));
+
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) * 2);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) / 2);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            TimeDelta::FromMilliseconds(1000) *= 2);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(500),
+            TimeDelta::FromMilliseconds(1000) /= 2);
+  EXPECT_EQ(TimeDelta::FromMilliseconds(2000),
+            2 * TimeDelta::FromMilliseconds(1000));
+}
+
+
+
+TEST(FakeClock, TimeFunctionsUseFakeClock) {
+  FakeClock clock;
+  SetClockForTesting(&clock);
+
+  clock.SetTimeNanos(987654321);
+  EXPECT_EQ(987u, Time32());
+  EXPECT_EQ(987, TimeMillis());
+  EXPECT_EQ(987654, TimeMicros());
+  EXPECT_EQ(987654321, TimeNanos());
+  EXPECT_EQ(1000u, TimeAfter(13));
+
+  SetClockForTesting(nullptr);
+  
+  EXPECT_NE(987, TimeMillis());
+}
+
+TEST(FakeClock, InitialTime) {
+  FakeClock clock;
+  EXPECT_EQ(0, clock.TimeNanos());
+}
+
+TEST(FakeClock, SetTimeNanos) {
+  FakeClock clock;
+  clock.SetTimeNanos(123);
+  EXPECT_EQ(123, clock.TimeNanos());
+  clock.SetTimeNanos(456);
+  EXPECT_EQ(456, clock.TimeNanos());
+}
+
+TEST(FakeClock, AdvanceTime) {
+  FakeClock clock;
+  clock.AdvanceTime(TimeDelta::FromNanoseconds(1111u));
+  EXPECT_EQ(1111, clock.TimeNanos());
+  clock.AdvanceTime(TimeDelta::FromMicroseconds(2222u));
+  EXPECT_EQ(2223111, clock.TimeNanos());
+  clock.AdvanceTime(TimeDelta::FromMilliseconds(3333u));
+  EXPECT_EQ(3335223111, clock.TimeNanos());
+  clock.AdvanceTime(TimeDelta::FromSeconds(4444u));
+  EXPECT_EQ(4447335223111, clock.TimeNanos());
+}
+
+
+
+
+
+TEST(FakeClock, SettingTimeWakesThreads) {
+  int64_t real_start_time_ms = TimeMillis();
+
+  FakeClock clock;
+  SetClockForTesting(&clock);
+
+  Thread worker;
+  worker.Start();
+
+  
+  Event message_handler_dispatched(false, false);
+  auto functor = [&message_handler_dispatched] {
+    message_handler_dispatched.Set();
+  };
+  FunctorMessageHandler<void, decltype(functor)> handler(functor);
+  worker.PostDelayed(RTC_FROM_HERE, 60000, &handler);
+
+  
+  
+  
+  Thread::Current()->SleepMs(1000);
+
+  
+  
+  clock.AdvanceTime(TimeDelta::FromSeconds(60u));
+  EXPECT_TRUE(message_handler_dispatched.Wait(0));
+  worker.Stop();
+
+  SetClockForTesting(nullptr);
+
+  
+  
+  int64_t real_end_time_ms = TimeMillis();
+  EXPECT_LT(real_end_time_ms - real_start_time_ms, 10000);
 }
 
 }  

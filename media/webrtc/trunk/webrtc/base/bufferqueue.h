@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 
 namespace rtc {
@@ -27,6 +28,9 @@ class BufferQueue {
 
   
   size_t size() const;
+
+  
+  void Clear();
 
   
   
@@ -45,7 +49,7 @@ class BufferQueue {
  private:
   size_t capacity_;
   size_t default_size_;
-  mutable CriticalSection crit_;
+  CriticalSection crit_;
   std::deque<Buffer*> queue_ GUARDED_BY(crit_);
   std::vector<Buffer*> free_list_ GUARDED_BY(crit_);
 

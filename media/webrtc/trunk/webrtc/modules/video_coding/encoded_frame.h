@@ -75,7 +75,7 @@ class VCMEncodedFrame : protected EncodedImage {
   
 
 
-  VideoRotation rotation() const { return _rotation; }
+  VideoRotation rotation() const { return rotation_; }
   
 
 
@@ -95,8 +95,6 @@ class VCMEncodedFrame : protected EncodedImage {
 
 
   const CodecSpecificInfo* CodecSpecific() const { return &_codecSpecificInfo; }
-
-  const RTPFragmentationHeader* FragmentationHeader() const;
 
  protected:
   
@@ -118,8 +116,6 @@ class VCMEncodedFrame : protected EncodedImage {
   bool _missingFrame;
   CodecSpecificInfo _codecSpecificInfo;
   webrtc::VideoCodecType _codec;
-  RTPFragmentationHeader _fragmentation;
-  VideoRotation _rotation;
 
   
   

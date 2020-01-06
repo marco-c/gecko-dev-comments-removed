@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef WEBRTC_BASE_OBJC_RTC_UI_APPLICATION_H_
+#define WEBRTC_BASE_OBJC_RTC_UI_APPLICATION_H_
+
+#include "WebRTC/RTCMacros.h"
+
+#if defined(WEBRTC_IOS)
+
+RTC_EXTERN bool RTCIsUIApplicationActive();
+#endif  
+
+#endif  

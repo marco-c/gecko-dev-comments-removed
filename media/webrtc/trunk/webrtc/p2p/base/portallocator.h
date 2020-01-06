@@ -11,6 +11,8 @@
 #ifndef WEBRTC_P2P_BASE_PORTALLOCATOR_H_
 #define WEBRTC_P2P_BASE_PORTALLOCATOR_H_
 
+#include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,11 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/base/thread.h"
+
+namespace webrtc {
+class MetricsObserverInterface;
+}
 
 namespace cricket {
 
@@ -37,7 +44,6 @@ enum {
   
   
   PORTALLOCATOR_DISABLE_TCP = 0x08,
-  PORTALLOCATOR_ENABLE_SHAKER = 0x10,
   PORTALLOCATOR_ENABLE_IPV6 = 0x40,
   
   
@@ -58,7 +64,20 @@ enum {
   
   
   PORTALLOCATOR_DISABLE_UDP_RELAY = 0x1000,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  PORTALLOCATOR_DISABLE_COSTLY_NETWORKS = 0x2000,
 };
+
+
+enum class IceRegatheringReason { NETWORK_CHANGE, NETWORK_FAILURE, MAX_VALUE };
 
 const uint32_t kDefaultPortAllocatorFlags = 0;
 
@@ -77,10 +96,26 @@ enum {
 };
 
 
+enum class TlsCertPolicy {
+  
+  
+  TLS_CERT_POLICY_SECURE,
+  
+  
+  
+  TLS_CERT_POLICY_INSECURE_NO_CHECK,
+};
+
+
 struct RelayCredentials {
   RelayCredentials() {}
   RelayCredentials(const std::string& username, const std::string& password)
       : username(username), password(password) {}
+
+  bool operator==(const RelayCredentials& o) const {
+    return username == o.username && password == o.password;
+  }
+  bool operator!=(const RelayCredentials& o) const { return !(*this == o); }
 
   std::string username;
   std::string password;
@@ -89,23 +124,41 @@ struct RelayCredentials {
 typedef std::vector<ProtocolAddress> PortList;
 
 struct RelayServerConfig {
-  RelayServerConfig(RelayType type) : type(type), priority(0) {}
+  RelayServerConfig(RelayType type) : type(type) {}
 
+  RelayServerConfig(const std::string& address,
+                    int port,
+                    const std::string& username,
+                    const std::string& password,
+                    ProtocolType proto)
+      : type(RELAY_TURN), credentials(username, password) {
+    ports.push_back(ProtocolAddress(rtc::SocketAddress(address, port), proto));
+  }
+
+  
   RelayServerConfig(const std::string& address,
                     int port,
                     const std::string& username,
                     const std::string& password,
                     ProtocolType proto,
                     bool secure)
-      : type(RELAY_TURN), credentials(username, password) {
-    ports.push_back(
-        ProtocolAddress(rtc::SocketAddress(address, port), proto, secure));
+      : RelayServerConfig(address,
+                          port,
+                          username,
+                          password,
+                          (proto == PROTO_TCP && secure ? PROTO_TLS : proto)) {}
+
+  bool operator==(const RelayServerConfig& o) const {
+    return type == o.type && ports == o.ports && credentials == o.credentials &&
+           priority == o.priority;
   }
+  bool operator!=(const RelayServerConfig& o) const { return !(*this == o); }
 
   RelayType type;
   PortList ports;
   RelayCredentials credentials;
-  int priority;
+  int priority = 0;
+  TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
 };
 
 class PortAllocatorSession : public sigslot::has_slots<> {
@@ -124,42 +177,125 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   void set_flags(uint32_t flags) { flags_ = flags; }
   std::string content_name() const { return content_name_; }
   int component() const { return component_; }
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+  bool pooled() const { return ice_ufrag_.empty(); }
+
+  
+  
+  
+  
+  
+  virtual void SetCandidateFilter(uint32_t filter) = 0;
 
   
   virtual void StartGettingPorts() = 0;
-  virtual void StopGettingPorts() = 0;
   
-  virtual void ClearGettingPorts() = 0;
+  
+  virtual void StopGettingPorts() = 0;
   
   virtual bool IsGettingPorts() = 0;
 
+  
+  
+  
+
+  
+  
+  
+  
+  virtual void ClearGettingPorts() = 0;
+  
+  
+  virtual bool IsCleared() const { return false; }
+  
+  virtual bool IsStopped() const { return false; }
+  
+  
+  
+  
+  
+  virtual void RegatherOnFailedNetworks() {}
+  
+  
+  virtual void RegatherOnAllNetworks() {}
+
+  
+  
+  
+  
+  virtual std::vector<PortInterface*> ReadyPorts() const = 0;
+  virtual std::vector<Candidate> ReadyCandidates() const = 0;
+  virtual bool CandidatesAllocationDone() const = 0;
+  
+  
+  virtual void PruneAllPorts() {}
+
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
+  
+  
+  
+  
+  sigslot::signal2<PortAllocatorSession*, const std::vector<PortInterface*>&>
+      SignalPortsPruned;
   sigslot::signal2<PortAllocatorSession*,
                    const std::vector<Candidate>&> SignalCandidatesReady;
+  
+  
+  sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>
+      SignalCandidatesRemoved;
   sigslot::signal1<PortAllocatorSession*> SignalCandidatesAllocationDone;
+
+  sigslot::signal2<PortAllocatorSession*, IceRegatheringReason>
+      SignalIceRegathering;
 
   virtual uint32_t generation() { return generation_; }
   virtual void set_generation(uint32_t generation) { generation_ = generation; }
   sigslot::signal1<PortAllocatorSession*> SignalDestroyed;
 
-  const std::string& ice_ufrag() const { return ice_ufrag_; }
-  const std::string& ice_pwd() const { return ice_pwd_; }
-
  protected:
+  
+  
+  
+  
+  
+  
+  virtual void UpdateIceParametersInternal() {}
+
   
   
   const std::string& username() const { return ice_ufrag_; }
   const std::string& password() const { return ice_pwd_; }
 
-  std::string content_name_;
-  int component_;
-
  private:
+  void SetIceParameters(const std::string& content_name,
+                        int component,
+                        const std::string& ice_ufrag,
+                        const std::string& ice_pwd) {
+    content_name_ = content_name;
+    component_ = component;
+    ice_ufrag_ = ice_ufrag;
+    ice_pwd_ = ice_pwd;
+    UpdateIceParametersInternal();
+  }
+
   uint32_t flags_;
   uint32_t generation_;
+  std::string content_name_;
+  int component_;
   std::string ice_ufrag_;
   std::string ice_pwd_;
+
+  
+  
+  friend class PortAllocator;
 };
+
+
+
+
+
+
 
 class PortAllocator : public sigslot::has_slots<> {
  public:
@@ -170,14 +306,35 @@ class PortAllocator : public sigslot::has_slots<> {
       step_delay_(kDefaultStepDelay),
       allow_tcp_listen_(true),
       candidate_filter_(CF_ALL) {
-    
   }
   virtual ~PortAllocator() {}
 
   
-  virtual void SetIceServers(
-      const ServerAddresses& stun_servers,
-      const std::vector<RelayServerConfig>& turn_servers) = 0;
+  
+  virtual void Initialize() {}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool SetConfiguration(const ServerAddresses& stun_servers,
+                        const std::vector<RelayServerConfig>& turn_servers,
+                        int candidate_pool_size,
+                        bool prune_turn_ports);
+
+  const ServerAddresses& stun_servers() const { return stun_servers_; }
+
+  const std::vector<RelayServerConfig>& turn_servers() const {
+    return turn_servers_;
+  }
+
+  int candidate_pool_size() const { return candidate_pool_size_; }
 
   
   
@@ -186,12 +343,25 @@ class PortAllocator : public sigslot::has_slots<> {
   
   virtual void SetNetworkIgnoreMask(int network_ignore_mask) = 0;
 
-  PortAllocatorSession* CreateSession(
-      const std::string& sid,
+  std::unique_ptr<PortAllocatorSession> CreateSession(
       const std::string& content_name,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
+
+  
+  
+  
+  
+  
+  std::unique_ptr<PortAllocatorSession> TakePooledSession(
+      const std::string& content_name,
+      int component,
+      const std::string& ice_ufrag,
+      const std::string& ice_pwd);
+
+  
+  const PortAllocatorSession* GetPooledSession() const;
 
   uint32_t flags() const { return flags_; }
   void set_flags(uint32_t flags) { flags_ = flags; }
@@ -225,15 +395,19 @@ class PortAllocator : public sigslot::has_slots<> {
   }
 
   uint32_t candidate_filter() { return candidate_filter_; }
-  bool set_candidate_filter(uint32_t filter) {
-    
+  void set_candidate_filter(uint32_t filter) {
     candidate_filter_ = filter;
-    return true;
   }
+
+  bool prune_turn_ports() const { return prune_turn_ports_; }
 
   
   const std::string& origin() const { return origin_; }
   void set_origin(const std::string& origin) { origin_ = origin; }
+
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) {
+    metrics_observer_ = observer;
+  }
 
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(
@@ -241,6 +415,14 @@ class PortAllocator : public sigslot::has_slots<> {
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) = 0;
+
+  webrtc::MetricsObserverInterface* metrics_observer() {
+    return metrics_observer_;
+  }
+
+  const std::deque<std::unique_ptr<PortAllocatorSession>>& pooled_sessions() {
+    return pooled_sessions_;
+  }
 
   uint32_t flags_;
   std::string agent_;
@@ -251,6 +433,15 @@ class PortAllocator : public sigslot::has_slots<> {
   bool allow_tcp_listen_;
   uint32_t candidate_filter_;
   std::string origin_;
+
+ private:
+  ServerAddresses stun_servers_;
+  std::vector<RelayServerConfig> turn_servers_;
+  int candidate_pool_size_ = 0;  
+  std::deque<std::unique_ptr<PortAllocatorSession>> pooled_sessions_;
+  bool prune_turn_ports_ = false;
+
+  webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 };
 
 }  

@@ -15,16 +15,14 @@
 
 
 
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc
 {
-
 class CriticalSectionWrapper;
 
 namespace videocapturemodule {
@@ -39,8 +37,8 @@ public:
 
 
 
-    static VideoCaptureModule* Create(const int32_t id,
-                                      const char* deviceUniqueIdUTF8);
+   static rtc::scoped_refptr<VideoCaptureModule> Create(
+       const char* deviceUniqueIdUTF8);
 
     
 
@@ -48,10 +46,10 @@ public:
 
 
 
-    static VideoCaptureModule* Create(const int32_t id,
-                                      VideoCaptureExternal*& externalCapture);
+   static rtc::scoped_refptr<VideoCaptureModule> Create(
+       VideoCaptureExternal*& externalCapture);
 
-    static DeviceInfo* CreateDeviceInfo(const int32_t id);
+    static DeviceInfo* CreateDeviceInfo();
 
     
     
@@ -59,81 +57,61 @@ public:
     static int32_t RotationInDegrees(VideoRotation rotation, int* degrees);
 
     
-    virtual void RegisterCaptureDataCallback(
-        VideoCaptureDataCallback& dataCallback);
-    virtual void DeRegisterCaptureDataCallback();
-    virtual void RegisterCaptureCallback(VideoCaptureFeedBack& callBack);
-    virtual void DeRegisterCaptureCallback();
+    void RegisterCaptureDataCallback(
+        rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+    void DeRegisterCaptureDataCallback() override;
 
-    virtual void SetCaptureDelay(int32_t delayMS);
-    virtual int32_t CaptureDelay();
-    virtual int32_t SetCaptureRotation(VideoRotation rotation);
-    virtual bool SetApplyRotation(bool enable);
-    virtual bool GetApplyRotation() {
+    int32_t SetCaptureRotation(VideoRotation rotation) override;
+    bool SetApplyRotation(bool enable) override;
+    bool GetApplyRotation() override {
       return apply_rotation_;
     }
 
-    virtual void EnableFrameRateCallback(const bool enable);
-    virtual void EnableNoPictureAlarm(const bool enable);
-
-    virtual const char* CurrentDeviceName() const;
-
-    
-    virtual int64_t TimeUntilNextProcess();
-    virtual int32_t Process();
+    const char* CurrentDeviceName() const override;
 
     
     
-    virtual int32_t IncomingFrame(uint8_t* videoFrame,
-                                  size_t videoFrameLength,
-                                  const VideoCaptureCapability& frameInfo,
-                                  int64_t captureTime = 0);
+    int32_t IncomingFrame(uint8_t* videoFrame,
+                          size_t videoFrameLength,
+                          const VideoCaptureCapability& frameInfo,
+                          int64_t captureTime = 0) override;
 
     
-    virtual int32_t StartCapture(const VideoCaptureCapability& capability)
+    int32_t StartCapture(const VideoCaptureCapability& capability) override
     {
         _requestedCapability = capability;
         return -1;
     }
-    virtual int32_t StopCapture()   { return -1; }
-    virtual bool CaptureStarted() {return false; }
-    virtual int32_t CaptureSettings(VideoCaptureCapability& )
+    int32_t StopCapture() override { return -1; }
+    bool CaptureStarted() override {return false; }
+    int32_t CaptureSettings(VideoCaptureCapability& ) override
     { return -1; }
-    VideoCaptureEncodeInterface* GetEncodeInterface(const VideoCodec& )
-    { return NULL; }
 
 protected:
-    VideoCaptureImpl(const int32_t id);
+    VideoCaptureImpl();
     virtual ~VideoCaptureImpl();
     int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
-    int32_t _id; 
     char* _deviceUniqueId; 
     CriticalSectionWrapper& _apiCs;
     int32_t _captureDelay; 
     VideoCaptureCapability _requestedCapability; 
 private:
     void UpdateFrameCount();
-    uint32_t CalculateFrameRate(const TickTime& now);
+    uint32_t CalculateFrameRate(int64_t now_ns);
 
-    CriticalSectionWrapper& _callBackCs;
+    
+    int64_t _lastProcessTimeNanos;
+    
+    int64_t _lastFrameRateCallbackTimeNanos;
 
-    TickTime _lastProcessTime; 
-    TickTime _lastFrameRateCallbackTime; 
-    bool _frameRateCallBack; 
-    bool _noPictureAlarmCallBack; 
-    VideoCaptureAlarm _captureAlarm; 
+    rtc::VideoSinkInterface<VideoFrame>* _dataCallBack;
 
-    int32_t _setCaptureDelay; 
-    VideoCaptureDataCallback* _dataCallBack;
-    VideoCaptureFeedBack* _captureCallBack;
-
-    TickTime _lastProcessFrameCount;
-    TickTime _incomingFrameTimes[kFrameRateCountHistorySize];
+    int64_t _lastProcessFrameTimeNanos;
+    
+    int64_t _incomingFrameTimesNanos[kFrameRateCountHistorySize];
     VideoRotation _rotateFrame;  
                                  
-
-    VideoFrame _captureFrame;
 
     
     bool apply_rotation_;

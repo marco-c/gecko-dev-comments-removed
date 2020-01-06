@@ -30,11 +30,11 @@
 
 
 
-size_t WebRtcIlbcfix_EnhancerInterface( 
-    int16_t *out,     
-    int16_t *in,      
-    IlbcDecoder *iLBCdec_inst 
-                                        ){
+size_t  
+    WebRtcIlbcfix_EnhancerInterface(
+        int16_t* out,                 
+        const int16_t* in,            
+        IlbcDecoder* iLBCdec_inst) {  
   size_t iblock;
   size_t lag=20, tlag=20;
   size_t inLen=iLBCdec_inst->blockl+120;
@@ -54,7 +54,7 @@ size_t WebRtcIlbcfix_EnhancerInterface(
   int16_t *tmpW16ptr;
   size_t startPos;
   int16_t *plc_pred;
-  int16_t *target, *regressor;
+  const int16_t *target, *regressor;
   int16_t max16;
   int shifts;
   int32_t ener;
@@ -152,7 +152,7 @@ size_t WebRtcIlbcfix_EnhancerInterface(
       corr16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
       corr16[i] = (int16_t)((corr16[i] * corr16[i]) >> 16);
       en16[i] = (int16_t)WEBRTC_SPL_SHIFT_W32(ener, enerSh);
-      totsh[i] = enerSh - (corrSh << 1);
+      totsh[i] = enerSh - 2 * corrSh;
     }
 
     

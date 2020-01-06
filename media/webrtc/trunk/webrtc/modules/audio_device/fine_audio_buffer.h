@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_FINE_AUDIO_BUFFER_H_
 
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -86,14 +87,14 @@ class FineAudioBuffer {
   
   const size_t bytes_per_10_ms_;
   
-  rtc::scoped_ptr<int8_t[]> playout_cache_buffer_;
+  std::unique_ptr<int8_t[]> playout_cache_buffer_;
   
   size_t playout_cached_buffer_start_;
   
   size_t playout_cached_bytes_;
   
   
-  rtc::scoped_ptr<int8_t[]> record_cache_buffer_;
+  std::unique_ptr<int8_t[]> record_cache_buffer_;
   
   const size_t required_record_buffer_size_bytes_;
   

@@ -30,8 +30,8 @@ TEST(Win32SocketServerTest, TestPump) {
   server.Pump();
   MSG msg;
   EXPECT_EQ(TRUE, PeekMessage(&msg, NULL, WM_USER, 0, PM_REMOVE));
-  EXPECT_EQ(WM_USER, msg.message);
-  EXPECT_EQ(999, msg.wParam);
+  EXPECT_EQ(static_cast<UINT>(WM_USER), msg.message);
+  EXPECT_EQ(999u, msg.wParam);
 }
 
 
@@ -146,11 +146,15 @@ TEST_F(Win32SocketTest, TestUdpIPv6) {
   SocketTest::TestUdpIPv6();
 }
 
-TEST_F(Win32SocketTest, TestGetSetOptionsIPv4) {
+
+
+TEST_F(Win32SocketTest, DISABLED_TestGetSetOptionsIPv4) {
   SocketTest::TestGetSetOptionsIPv4();
 }
 
-TEST_F(Win32SocketTest, TestGetSetOptionsIPv6) {
+
+
+TEST_F(Win32SocketTest, DISABLED_TestGetSetOptionsIPv6) {
   SocketTest::TestGetSetOptionsIPv6();
 }
 

@@ -8,14 +8,15 @@
 
 
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "webrtc/base/scoped_ptr.h"
+#include <memory>
+
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/win/cursor.h"
 #include "webrtc/modules/desktop_capture/win/cursor_unittest_resources.h"
 #include "webrtc/modules/desktop_capture/win/scoped_gdi_object.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 
@@ -34,7 +35,7 @@ bool ConvertToMouseShapeAndCompare(unsigned left, unsigned right) {
 
   
   HDC dc = GetDC(NULL);
-  rtc::scoped_ptr<MouseCursor> mouse_shape(
+  std::unique_ptr<MouseCursor> mouse_shape(
       CreateMouseCursorFromHCursor(dc, cursor));
   ReleaseDC(NULL, dc);
 
@@ -62,7 +63,7 @@ bool ConvertToMouseShapeAndCompare(unsigned left, unsigned right) {
 
   
   int size = width * height;
-  rtc::scoped_ptr<uint32_t[]> data(new uint32_t[size]);
+  std::unique_ptr<uint32_t[]> data(new uint32_t[size]);
   EXPECT_TRUE(GetBitmapBits(scoped_color, size * sizeof(uint32_t), data.get()));
 
   

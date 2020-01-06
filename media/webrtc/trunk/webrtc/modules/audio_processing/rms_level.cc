@@ -10,52 +10,98 @@
 
 #include "webrtc/modules/audio_processing/rms_level.h"
 
-#include <assert.h>
 #include <math.h>
+#include <algorithm>
+#include <numeric>
+
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
+namespace {
+static constexpr float kMaxSquaredLevel = 32768 * 32768;
 
-static const float kMaxSquaredLevel = 32768 * 32768;
+static constexpr float kMinLevel = 1.995262314968883e-13f;
 
-RMSLevel::RMSLevel()
-    : sum_square_(0),
-      sample_count_(0) {}
 
-RMSLevel::~RMSLevel() {}
 
-void RMSLevel::Reset() {
-  sum_square_ = 0;
-  sample_count_ = 0;
-}
 
-void RMSLevel::Process(const int16_t* data, size_t length) {
-  for (size_t i = 0; i < length; ++i) {
-    sum_square_ += data[i] * data[i];
+
+
+int ComputeRms(float mean_square) {
+  if (mean_square <= kMinLevel * kMaxSquaredLevel) {
+    
+    return RmsLevel::kMinLevelDb;
   }
-  sample_count_ += length;
-}
-
-void RMSLevel::ProcessMuted(size_t length) {
-  sample_count_ += length;
-}
-
-int RMSLevel::RMS() {
-  if (sample_count_ == 0 || sum_square_ == 0) {
-    Reset();
-    return kMinLevel;
-  }
-
   
-  float rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
+  const float mean_square_norm = mean_square / kMaxSquaredLevel;
+  RTC_DCHECK_GT(mean_square_norm, kMinLevel);
   
-  rms = 10 * log10(rms);
-  assert(rms <= 0);
-  if (rms < -kMinLevel)
-    rms = -kMinLevel;
+  const float rms = 10.f * log10(mean_square_norm);
+  RTC_DCHECK_LE(rms, 0.f);
+  RTC_DCHECK_GT(rms, -RmsLevel::kMinLevelDb);
+  
+  return static_cast<int>(-rms + 0.5f);
+}
+}  
 
-  rms = -rms;
+RmsLevel::RmsLevel() {
   Reset();
-  return static_cast<int>(rms + 0.5);
 }
 
+RmsLevel::~RmsLevel() = default;
+
+void RmsLevel::Reset() {
+  sum_square_ = 0.f;
+  sample_count_ = 0;
+  max_sum_square_ = 0.f;
+  block_size_ = rtc::Optional<size_t>();
+}
+
+void RmsLevel::Analyze(rtc::ArrayView<const int16_t> data) {
+  if (data.empty()) {
+    return;
+  }
+
+  CheckBlockSize(data.size());
+
+  const float sum_square =
+      std::accumulate(data.begin(), data.end(), 0.f,
+                      [](float a, int16_t b) { return a + b * b; });
+  RTC_DCHECK_GE(sum_square, 0.f);
+  sum_square_ += sum_square;
+  sample_count_ += data.size();
+
+  max_sum_square_ = std::max(max_sum_square_, sum_square);
+}
+
+void RmsLevel::AnalyzeMuted(size_t length) {
+  CheckBlockSize(length);
+  sample_count_ += length;
+}
+
+int RmsLevel::Average() {
+  int rms = (sample_count_ == 0) ? RmsLevel::kMinLevelDb
+                                 : ComputeRms(sum_square_ / sample_count_);
+  Reset();
+  return rms;
+}
+
+RmsLevel::Levels RmsLevel::AverageAndPeak() {
+  
+  
+  
+  Levels levels = (sample_count_ == 0)
+                      ? Levels{RmsLevel::kMinLevelDb, RmsLevel::kMinLevelDb}
+                      : Levels{ComputeRms(sum_square_ / sample_count_),
+                               ComputeRms(max_sum_square_ / *block_size_)};
+  Reset();
+  return levels;
+}
+
+void RmsLevel::CheckBlockSize(size_t block_size) {
+  if (block_size_ != rtc::Optional<size_t>(block_size)) {
+    Reset();
+    block_size_ = rtc::Optional<size_t>(block_size);
+  }
+}
 }  

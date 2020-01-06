@@ -14,6 +14,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/defines.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -25,7 +26,7 @@ class DelayManager;
 class Expand;
 class PacketBuffer;
 class SyncBuffer;
-struct RTPHeader;
+struct Packet;
 
 
 
@@ -39,7 +40,8 @@ class DecisionLogic {
                                DecoderDatabase* decoder_database,
                                const PacketBuffer& packet_buffer,
                                DelayManager* delay_manager,
-                               BufferLevelFilter* buffer_level_filter);
+                               BufferLevelFilter* buffer_level_filter,
+                               const TickTimer* tick_timer);
 
   
   DecisionLogic(int fs_hz,
@@ -48,10 +50,10 @@ class DecisionLogic {
                 DecoderDatabase* decoder_database,
                 const PacketBuffer& packet_buffer,
                 DelayManager* delay_manager,
-                BufferLevelFilter* buffer_level_filter);
+                BufferLevelFilter* buffer_level_filter,
+                const TickTimer* tick_timer);
 
-  
-  virtual ~DecisionLogic() {}
+  virtual ~DecisionLogic();
 
   
   void Reset();
@@ -72,13 +74,13 @@ class DecisionLogic {
   
   
   
-  
   Operations GetDecision(const SyncBuffer& sync_buffer,
                          const Expand& expand,
                          size_t decoder_frame_length,
-                         const RTPHeader* packet_header,
+                         const Packet* next_packet,
                          Modes prev_mode,
                          bool play_dtmf,
+                         size_t generated_noise_samples,
                          bool* reset_decoder);
 
   
@@ -101,10 +103,7 @@ class DecisionLogic {
 
   
   void set_sample_memory(int32_t value) { sample_memory_ = value; }
-  size_t generated_noise_samples() const { return generated_noise_samples_; }
-  void set_generated_noise_samples(size_t value) {
-    generated_noise_samples_ = value;
-  }
+  size_t noise_fast_forward() const { return noise_fast_forward_; }
   size_t packet_length_samples() const { return packet_length_samples_; }
   void set_packet_length_samples(size_t value) {
     packet_length_samples_ = value;
@@ -114,7 +113,7 @@ class DecisionLogic {
 
  protected:
   
-  static const int kMinTimescaleInterval = 6;
+  static const int kMinTimescaleInterval = 5;
 
   enum CngState {
     kCngOff,
@@ -131,14 +130,14 @@ class DecisionLogic {
   
   
   
-  
   virtual Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
                                             const Expand& expand,
                                             size_t decoder_frame_length,
-                                            const RTPHeader* packet_header,
+                                            const Packet* next_packet,
                                             Modes prev_mode,
                                             bool play_dtmf,
-                                            bool* reset_decoder) = 0;
+                                            bool* reset_decoder,
+                                            size_t generated_noise_samples) = 0;
 
   
   
@@ -148,15 +147,16 @@ class DecisionLogic {
   const PacketBuffer& packet_buffer_;
   DelayManager* delay_manager_;
   BufferLevelFilter* buffer_level_filter_;
+  const TickTimer* tick_timer_;
   int fs_mult_;
   size_t output_size_samples_;
   CngState cng_state_;  
                         
-  size_t generated_noise_samples_;
+  size_t noise_fast_forward_ = 0;
   size_t packet_length_samples_;
   int sample_memory_;
   bool prev_time_scale_;
-  int timescale_hold_off_;
+  std::unique_ptr<TickTimer::Countdown> timescale_countdown_;
   int num_consecutive_expands_;
   const NetEqPlayoutMode playout_mode_;
 

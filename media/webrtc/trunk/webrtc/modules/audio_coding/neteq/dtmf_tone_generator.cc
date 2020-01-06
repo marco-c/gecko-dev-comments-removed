@@ -30,7 +30,8 @@
 
 #include "webrtc/modules/audio_coding/neteq/dtmf_tone_generator.h"
 
-#include <assert.h>
+#include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -88,10 +89,14 @@ const int DtmfToneGenerator::kInitValue2[4][16] = {
 
 
 
-const int DtmfToneGenerator::kAmplitude[37] = {
+
+
+const int DtmfToneGenerator::kAmplitude[64] = {
     16141, 14386, 12821, 11427, 10184, 9077, 8090, 7210, 6426, 5727, 5104, 4549,
     4054, 3614, 3221, 2870, 2558, 2280, 2032, 1811, 1614, 1439, 1282, 1143,
-    1018, 908, 809, 721, 643, 573, 510, 455, 405, 361, 322, 287, 256 };
+    1018, 908, 809, 721, 643, 573, 510, 455, 405, 361, 322, 287, 256, 228, 203,
+    181, 161, 144, 128, 114, 102, 91, 81, 72, 64, 57, 51, 45, 41, 36, 32, 29,
+    26, 23, 20, 18, 16, 14, 13, 11 };
 
 
 DtmfToneGenerator::DtmfToneGenerator()
@@ -106,7 +111,7 @@ DtmfToneGenerator::DtmfToneGenerator()
 
 int DtmfToneGenerator::Init(int fs, int event, int attenuation) {
   initialized_ = false;
-  int fs_index;
+  size_t fs_index;
   if (fs == 8000) {
     fs_index = 0;
   } else if (fs == 16000) {
@@ -116,7 +121,7 @@ int DtmfToneGenerator::Init(int fs, int event, int attenuation) {
   } else if (fs == 48000) {
     fs_index = 3;
   } else {
-    assert(false);
+    RTC_NOTREACHED();
     fs_index = 1;  
   }
 
@@ -124,16 +129,32 @@ int DtmfToneGenerator::Init(int fs, int event, int attenuation) {
     return kParameterError;  
   }
 
-  if (attenuation < 0 || attenuation > 36) {
+  if (attenuation < 0 || attenuation > 63) {
     return kParameterError;  
   }
 
   
+  RTC_DCHECK_LE(0, fs_index);
+  RTC_DCHECK_GT(arraysize(kCoeff1), fs_index);
+  RTC_DCHECK_GT(arraysize(kCoeff2), fs_index);
+  RTC_DCHECK_LE(0, event);
+  RTC_DCHECK_GT(arraysize(kCoeff1[fs_index]), event);
+  RTC_DCHECK_GT(arraysize(kCoeff2[fs_index]), event);
   coeff1_ = kCoeff1[fs_index][event];
   coeff2_ = kCoeff2[fs_index][event];
+
   
+  RTC_DCHECK_LE(0, attenuation);
+  RTC_DCHECK_GT(arraysize(kAmplitude), attenuation);
   amplitude_ = kAmplitude[attenuation];
+
   
+  RTC_DCHECK_LE(0, fs_index);
+  RTC_DCHECK_GT(arraysize(kInitValue1), fs_index);
+  RTC_DCHECK_GT(arraysize(kInitValue2), fs_index);
+  RTC_DCHECK_LE(0, event);
+  RTC_DCHECK_GT(arraysize(kInitValue1[fs_index]), event);
+  RTC_DCHECK_GT(arraysize(kInitValue2[fs_index]), event);
   sample_history1_[0] = kInitValue1[fs_index][event];
   sample_history1_[1] = 0;
   sample_history2_[0] = kInitValue2[fs_index][event];
@@ -174,7 +195,8 @@ int DtmfToneGenerator::Generate(size_t num_samples,
     sample_history2_[1] = temp_val_high;
 
     
-    int32_t temp_val = kAmpMultiplier * temp_val_low + (temp_val_high << 15);
+    int32_t temp_val =
+        kAmpMultiplier * temp_val_low + temp_val_high * (1 << 15);
     
     temp_val = (temp_val + 16384) >> 15;
     

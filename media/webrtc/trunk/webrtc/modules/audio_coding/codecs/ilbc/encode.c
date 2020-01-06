@@ -29,6 +29,7 @@
 #include "index_conv_enc.h"
 #include "pack_bits.h"
 #include "hp_input.h"
+#include "webrtc/base/checks.h"
 
 #ifdef SPLIT_10MS
 #include "unpack_bits.h"
@@ -206,11 +207,10 @@ void WebRtcIlbcfix_EncodeImpl(
 
       
 
-      WebRtcIlbcfix_CbConstruct(&decresidual[start_pos+iLBCenc_inst->state_short_len],
-                                iLBCbits_inst->cb_index, iLBCbits_inst->gain_index,
-                                mem+CB_MEML-ST_MEM_L_TBL, ST_MEM_L_TBL,
-                                diff
-                                );
+      RTC_CHECK(WebRtcIlbcfix_CbConstruct(
+          &decresidual[start_pos + iLBCenc_inst->state_short_len],
+          iLBCbits_inst->cb_index, iLBCbits_inst->gain_index,
+          mem + CB_MEML - ST_MEM_L_TBL, ST_MEM_L_TBL, diff));
 
     }
     else { 
@@ -233,12 +233,10 @@ void WebRtcIlbcfix_EncodeImpl(
                              0);
 
       
-
-      WebRtcIlbcfix_CbConstruct(reverseDecresidual,
-                                iLBCbits_inst->cb_index, iLBCbits_inst->gain_index,
-                                mem+CB_MEML-ST_MEM_L_TBL, ST_MEM_L_TBL,
-                                diff
-                                );
+      RTC_CHECK(WebRtcIlbcfix_CbConstruct(
+            reverseDecresidual, iLBCbits_inst->cb_index,
+            iLBCbits_inst->gain_index, mem + CB_MEML - ST_MEM_L_TBL,
+            ST_MEM_L_TBL, diff));
 
       
 
@@ -344,13 +342,11 @@ void WebRtcIlbcfix_EncodeImpl(
                              subcount);
 
       
-
-      WebRtcIlbcfix_CbConstruct(&decresidual[(iLBCbits_inst->startIdx+1+subframe)*SUBL],
-                                iLBCbits_inst->cb_index+subcount*CB_NSTAGES,
-                                iLBCbits_inst->gain_index+subcount*CB_NSTAGES,
-                                mem, MEM_LF_TBL,
-                                SUBL
-                                );
+      RTC_CHECK(WebRtcIlbcfix_CbConstruct(
+            &decresidual[(iLBCbits_inst->startIdx + 1 + subframe) * SUBL],
+            iLBCbits_inst->cb_index + subcount * CB_NSTAGES,
+            iLBCbits_inst->gain_index + subcount * CB_NSTAGES, mem, MEM_LF_TBL,
+            SUBL));
 
       
 
@@ -450,12 +446,11 @@ void WebRtcIlbcfix_EncodeImpl(
                              subcount);
 
       
-
-      WebRtcIlbcfix_CbConstruct(&reverseDecresidual[subframe*SUBL],
-                                iLBCbits_inst->cb_index+subcount*CB_NSTAGES,
-                                iLBCbits_inst->gain_index+subcount*CB_NSTAGES,
-                                mem, MEM_LF_TBL, SUBL
-                                );
+      RTC_CHECK(WebRtcIlbcfix_CbConstruct(
+            &reverseDecresidual[subframe * SUBL],
+            iLBCbits_inst->cb_index + subcount * CB_NSTAGES,
+            iLBCbits_inst->gain_index + subcount * CB_NSTAGES, mem, MEM_LF_TBL,
+            SUBL));
 
       
       memmove(mem, mem + SUBL, (CB_MEML - SUBL) * sizeof(*mem));

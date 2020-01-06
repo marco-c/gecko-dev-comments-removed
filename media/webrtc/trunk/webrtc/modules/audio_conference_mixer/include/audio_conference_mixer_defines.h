@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INCLUDE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
 #define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INCLUDE_AUDIO_CONFERENCE_MIXER_DEFINES_H_
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -25,8 +26,34 @@ public:
     
     
     
+    
+    
+    
+    
     virtual int32_t GetAudioFrame(int32_t id,
-                                  AudioFrame* audioFrame) = 0;
+                                  AudioFrame* audioFrame) {
+      RTC_CHECK(false);
+      return -1;
+    }
+
+
+    
+    
+    
+    enum class AudioFrameInfo {
+      kNormal,  
+      kMuted,   
+                
+                
+      kError    
+    };
+
+    virtual AudioFrameInfo GetAudioFrameWithMuted(int32_t id,
+                                                  AudioFrame* audio_frame) {
+      return GetAudioFrame(id, audio_frame) == -1 ?
+          AudioFrameInfo::kError :
+          AudioFrameInfo::kNormal;
+    }
 
     
     bool IsMixed() const;

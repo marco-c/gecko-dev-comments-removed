@@ -14,10 +14,6 @@
 namespace webrtc {
 
 const int kDefaultSampleRate = 44100;
-const int kNumChannels = 1;
-
-
-const size_t kBytesPerFrame = kNumChannels * (16 / 8);
 
 
 

@@ -109,6 +109,10 @@ class BitBufferWriter : public BitBuffer {
   
   
   bool WriteExponentialGolomb(uint32_t val);
+  
+  
+  
+  bool WriteSignedExponentialGolomb(int32_t val);
 
  private:
   

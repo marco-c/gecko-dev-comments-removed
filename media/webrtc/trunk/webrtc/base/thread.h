@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -92,15 +93,21 @@ class Runnable {
 
 
 
-class Thread : public MessageQueue {
+class LOCKABLE Thread : public MessageQueue {
  public:
-  explicit Thread(SocketServer* ss = NULL);
+  
+  Thread();
+  explicit Thread(SocketServer* ss);
+  explicit Thread(std::unique_ptr<SocketServer> ss);
+
   
   
   
   
   ~Thread() override;
 
+  static std::unique_ptr<Thread> CreateWithSocketServer();
+  static std::unique_ptr<Thread> Create();
   static Thread* Current();
 
   
@@ -144,7 +151,8 @@ class Thread : public MessageQueue {
   
   virtual void Run();
 
-  virtual void Send(MessageHandler* phandler,
+  virtual void Send(const Location& posted_from,
+                    MessageHandler* phandler,
                     uint32_t id = 0,
                     MessageData* pdata = NULL);
 
@@ -155,12 +163,11 @@ class Thread : public MessageQueue {
   
   
   
+  
   template <class ReturnT, class FunctorT>
-  ReturnT Invoke(const FunctorT& functor) {
-    InvokeBegin();
+  ReturnT Invoke(const Location& posted_from, const FunctorT& functor) {
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
-    Send(&handler);
-    InvokeEnd();
+    InvokeInternal(posted_from, &handler);
     return handler.result();
   }
 
@@ -254,9 +261,7 @@ class Thread : public MessageQueue {
   
   bool PopSendMessageFromThread(const Thread* source, _SendMessage* msg);
 
-  
-  void InvokeBegin();
-  void InvokeEnd();
+  void InvokeInternal(const Location& posted_from, MessageHandler* handler);
 
   std::list<_SendMessage> sendlist_;
   std::string name_;
@@ -285,7 +290,7 @@ class Thread : public MessageQueue {
 
 class AutoThread : public Thread {
  public:
-  explicit AutoThread(SocketServer* ss = 0);
+  AutoThread();
   ~AutoThread() override;
 
  private:
@@ -297,10 +302,10 @@ class AutoThread : public Thread {
 class ComThread : public Thread {
  public:
   ComThread() {}
-  virtual ~ComThread() { Stop(); }
+  ~ComThread() override { Stop(); }
 
  protected:
-  virtual void Run();
+  void Run() override;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(ComThread);

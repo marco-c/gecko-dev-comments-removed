@@ -88,12 +88,12 @@ TEST(LogTest, MultipleStreams) {
 
 class LogThread : public Thread {
  public:
-  virtual ~LogThread() {
+  ~LogThread() override {
     Stop();
   }
 
  private:
-  void Run() {
+  void Run() override {
     
     LOG(LS_SENSITIVE) << "LOG";
   }
@@ -128,7 +128,14 @@ TEST(LogTest, WallClockStartTime) {
 }
 
 
-TEST(LogTest, Perf) {
+#if defined (WEBRTC_ANDROID)
+
+#define MAYBE_Perf DISABLED_Perf
+#else
+#define MAYBE_Perf Perf
+#endif
+
+TEST(LogTest, MAYBE_Perf) {
   Pathname path;
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetPathname(Filesystem::TempFilename(path, "ut"));
@@ -138,18 +145,18 @@ TEST(LogTest, Perf) {
   stream.DisableBuffering();
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);
 
-  uint32_t start = Time(), finish;
+  int64_t start = TimeMillis(), finish;
   std::string message('X', 80);
   for (int i = 0; i < 1000; ++i) {
     LOG(LS_SENSITIVE) << message;
   }
-  finish = Time();
+  finish = TimeMillis();
 
   LogMessage::RemoveLogToStream(&stream);
   stream.Close();
   Filesystem::DeleteFile(path);
 
-  LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " us";
+  LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
 }
 
 }  

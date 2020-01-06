@@ -53,7 +53,7 @@ bool Vp9FrameBufferPool::InitializeVpxUsePool(
 
 rtc::scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer>
 Vp9FrameBufferPool::GetFrameBuffer(size_t min_size) {
-  RTC_DCHECK_GT(min_size, 0u);
+  RTC_DCHECK_GT(min_size, 0);
   rtc::scoped_refptr<Vp9FrameBuffer> available_buffer = nullptr;
   {
     rtc::CritScope cs(&buffers_lock_);
@@ -73,7 +73,10 @@ Vp9FrameBufferPool::GetFrameBuffer(size_t min_size) {
             << allocated_buffers_.size() << " Vp9FrameBuffers have been "
             << "allocated by a Vp9FrameBufferPool (exceeding what is "
             << "considered reasonable, " << max_num_buffers_ << ").";
-        RTC_NOTREACHED();
+
+        
+        
+        
       }
     }
   }

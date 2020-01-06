@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
 
-#include <cstddef>
-
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -25,32 +25,48 @@ namespace webrtc {
 
 
 
-class RMSLevel {
+class RmsLevel {
  public:
-  static const int kMinLevel = 127;
+  struct Levels {
+    int average;
+    int peak;
+  };
 
-  RMSLevel();
-  ~RMSLevel();
+  static constexpr int kMinLevelDb = 127;
+
+  RmsLevel();
+  ~RmsLevel();
 
   
   
   void Reset();
 
   
-  void Process(const int16_t* data, size_t length);
+  void Analyze(rtc::ArrayView<const int16_t> data);
 
   
   
-  void ProcessMuted(size_t length);
+  void AnalyzeMuted(size_t length);
 
   
   
   
-  int RMS();
+  
+  int Average();
+
+  
+  
+  Levels AverageAndPeak();
 
  private:
+  
+  
+  void CheckBlockSize(size_t block_size);
+
   float sum_square_;
   size_t sample_count_;
+  float max_sum_square_;
+  rtc::Optional<size_t> block_size_;
 };
 
 }  

@@ -15,7 +15,7 @@
 #include <list>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 #ifdef WIN32
 #define chdir _chdir
@@ -37,15 +37,15 @@ class FileUtilsTest : public testing::Test {
  protected:
   FileUtilsTest() {
   }
-  virtual ~FileUtilsTest() {}
+  ~FileUtilsTest() override {}
   
   static void SetUpTestCase() {
     original_working_dir_ = webrtc::test::WorkingDir();
   }
-  void SetUp() {
+  void SetUp() override {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
-  void TearDown() {
+  void TearDown() override {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
  private:
@@ -58,14 +58,7 @@ std::string FileUtilsTest::original_working_dir_ = "";
 
 
 
-TEST_F(FileUtilsTest, ProjectRootPath) {
-  std::string project_root = webrtc::test::ProjectRootPath();
-  
-  ASSERT_GT(project_root.length(), 0u);
-}
-
-
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_OutputPathFromUnchangedWorkingDir \
   DISABLED_OutputPathFromUnchangedWorkingDir
 #else
@@ -81,7 +74,7 @@ TEST_F(FileUtilsTest, MAYBE_OutputPathFromUnchangedWorkingDir) {
 
 
 
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) || defined(WIN32) || defined(WEBRTC_IOS)
 #define MAYBE_OutputPathFromRootWorkingDir DISABLED_OutputPathFromRootWorkingDir
 #else
 #define MAYBE_OutputPathFromRootWorkingDir OutputPathFromRootWorkingDir
@@ -100,7 +93,12 @@ TEST_F(FileUtilsTest, TempFilename) {
 }
 
 
-TEST_F(FileUtilsTest, CreateDir) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_CreateDir DISABLED_CreateDir
+#else
+#define MAYBE_CreateDir CreateDir
+#endif
+TEST_F(FileUtilsTest, MAYBE_CreateDir) {
   std::string directory = "fileutils-unittest-empty-dir";
   
   remove(directory.c_str());
@@ -128,7 +126,9 @@ TEST_F(FileUtilsTest, ResourcePathReturnsValue) {
 TEST_F(FileUtilsTest, ResourcePathFromRootWorkingDir) {
   ASSERT_EQ(0, chdir(kPathDelimiter));
   std::string resource = webrtc::test::ResourcePath(kTestName, kExtension);
+#if !defined(WEBRTC_IOS)
   ASSERT_NE(resource.find("resources"), std::string::npos);
+#endif
   ASSERT_GT(resource.find(kTestName), 0u);
   ASSERT_GT(resource.find(kExtension), 0u);
 }

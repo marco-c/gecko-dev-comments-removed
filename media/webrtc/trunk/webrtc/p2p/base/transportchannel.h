@@ -11,19 +11,24 @@
 #ifndef WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
 #define WEBRTC_P2P_BASE_TRANSPORTCHANNEL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/transport.h"
-#include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
+#include "webrtc/p2p/base/jseptransport.h"
+#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/transportdescription.h"
 
 namespace cricket {
 
@@ -37,18 +42,10 @@ enum PacketFlags {
 };
 
 
-enum TransportChannelState {
-  STATE_INIT,
-  STATE_CONNECTING,  
-  STATE_COMPLETED,
-  STATE_FAILED
-};
 
 
 
-
-
-class TransportChannel : public sigslot::has_slots<> {
+class TransportChannel : public rtc::PacketTransportInterface {
  public:
   TransportChannel(const std::string& transport_name, int component)
       : transport_name_(transport_name),
@@ -59,45 +56,24 @@ class TransportChannel : public sigslot::has_slots<> {
 
   
   
-  virtual TransportChannelState GetState() const {
-    return TransportChannelState::STATE_CONNECTING;
+  virtual IceTransportState GetState() const {
+    return IceTransportState::STATE_CONNECTING;
+  }
+
+  const std::string& transport_name() const { return transport_name_; }
+  int component() const { return component_; }
+  const std::string debug_name() const override {
+    return transport_name() + " " + std::to_string(component());
   }
 
   
   
-  virtual const std::string SessionId() const { return std::string(); }
-
-  const std::string& transport_name() const { return transport_name_; }
-  int component() const { return component_; }
-
-  
-  
-  bool writable() const { return writable_; }
-  bool receiving() const { return receiving_; }
+  bool writable() const override { return writable_; }
+  bool receiving() const override { return receiving_; }
   DtlsTransportState dtls_state() const { return dtls_state_; }
-  sigslot::signal1<TransportChannel*> SignalWritableState;
-  
-  sigslot::signal1<TransportChannel*> SignalReadyToSend;
-  sigslot::signal1<TransportChannel*> SignalReceivingState;
   
   
   sigslot::signal2<TransportChannel*, DtlsTransportState> SignalDtlsState;
-
-  
-  
-  virtual int SendPacket(const char* data, size_t len,
-                         const rtc::PacketOptions& options,
-                         int flags = 0) = 0;
-
-  
-  
-  virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
-  
-  
-  virtual bool GetOption(rtc::Socket::Option opt, int* value) { return false; }
-
-  
-  virtual int GetError() = 0;
 
   
   virtual bool GetStats(ConnectionInfos* infos) = 0;
@@ -129,7 +105,8 @@ class TransportChannel : public sigslot::has_slots<> {
   GetLocalCertificate() const = 0;
 
   
-  virtual bool GetRemoteSSLCertificate(rtc::SSLCertificate** cert) const = 0;
+  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
+      const = 0;
 
   
   virtual bool ExportKeyingMaterial(const std::string& label,
@@ -140,16 +117,19 @@ class TransportChannel : public sigslot::has_slots<> {
                                     size_t result_len) = 0;
 
   
-  sigslot::signal5<TransportChannel*, const char*,
-                   size_t, const rtc::PacketTime&, int> SignalReadPacket;
-
-  
-  sigslot::signal2<TransportChannel*, const rtc::SentPacket&> SignalSentPacket;
-
   
   
   
   sigslot::signal2<TransportChannel*, const Candidate&> SignalRouteChange;
+
+  
+  
+  
+  
+  
+  
+  sigslot::signal4<TransportChannel*, CandidatePairInterface*, int, bool>
+      SignalSelectedCandidatePairChanged;
 
   
   sigslot::signal1<TransportChannel*> SignalDestroyed;

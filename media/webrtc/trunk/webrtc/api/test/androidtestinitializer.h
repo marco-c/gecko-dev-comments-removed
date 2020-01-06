@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef WEBRTC_API_TEST_ANDROIDTESTINITIALIZER_H_
+#define WEBRTC_API_TEST_ANDROIDTESTINITIALIZER_H_
+
+namespace webrtc {
+
+void InitializeAndroidObjects();
+
+}  
+
+#endif  

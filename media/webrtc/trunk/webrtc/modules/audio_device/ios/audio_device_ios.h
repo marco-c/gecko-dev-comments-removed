@@ -11,11 +11,16 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_IOS_AUDIO_DEVICE_IOS_H_
 
-#include <AudioUnit/AudioUnit.h>
+#include <memory>
 
-#include "webrtc/base/scoped_ptr.h"
+#include "WebRTC/RTCMacros.h"
+#include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/audio_device/ios/audio_session_observer.h"
+#include "webrtc/modules/audio_device/ios/voice_processing_audio_unit.h"
+
+RTC_FWD_DECL_OBJC_CLASS(RTCAudioSessionDelegateAdapter);
 
 namespace webrtc {
 
@@ -34,22 +39,25 @@ class FineAudioBuffer;
 
 
 
-class AudioDeviceIOS : public AudioDeviceGeneric {
+class AudioDeviceIOS : public AudioDeviceGeneric,
+                       public AudioSessionObserver,
+                       public VoiceProcessingAudioUnitObserver,
+                       public rtc::MessageHandler {
  public:
   AudioDeviceIOS();
   ~AudioDeviceIOS();
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
-  int32_t Init() override;
+  InitStatus Init() override;
   int32_t Terminate() override;
   bool Initialized() const override { return initialized_; }
 
   int32_t InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return play_is_initialized_; }
+  bool PlayoutIsInitialized() const override { return audio_is_initialized_; }
 
   int32_t InitRecording() override;
-  bool RecordingIsInitialized() const override { return rec_is_initialized_; }
+  bool RecordingIsInitialized() const override { return audio_is_initialized_; }
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
@@ -84,7 +92,8 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   
   int32_t PlayoutBuffer(AudioDeviceModule::BufferType& type,
                         uint16_t& sizeMS) const override;
-  int32_t ActiveAudioLayer(AudioDeviceModule::AudioLayer& audioLayer) const;
+  int32_t ActiveAudioLayer(
+      AudioDeviceModule::AudioLayer& audioLayer) const override;
   int32_t ResetAudioDevice() override;
   int32_t PlayoutIsAvailable(bool& available) override;
   int32_t RecordingIsAvailable(bool& available) override;
@@ -150,15 +159,38 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   void ClearRecordingWarning() override {}
   void ClearRecordingError() override {}
 
+  
+  void OnInterruptionBegin() override;
+  void OnInterruptionEnd() override;
+  void OnValidRouteChange() override;
+  void OnCanPlayOrRecordChange(bool can_play_or_record) override;
+
+  
+  OSStatus OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
+                                 const AudioTimeStamp* time_stamp,
+                                 UInt32 bus_number,
+                                 UInt32 num_frames,
+                                 AudioBufferList* io_data) override;
+  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
+                            const AudioTimeStamp* time_stamp,
+                            UInt32 bus_number,
+                            UInt32 num_frames,
+                            AudioBufferList* io_data) override;
+
+  
+  void OnMessage(rtc::Message *msg) override;
+
  private:
   
-  
-  void UpdateAudioDeviceBuffer();
+  void HandleInterruptionBegin();
+  void HandleInterruptionEnd();
+  void HandleValidRouteChange();
+  void HandleCanPlayOrRecordChange(bool can_play_or_record);
+  void HandleSampleRateChange(float sample_rate);
 
   
   
-  void RegisterNotificationObservers();
-  void UnregisterNotificationObservers();
+  void UpdateAudioDeviceBuffer();
 
   
   
@@ -168,14 +200,15 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   void SetupAudioBuffersForActiveAudioSession();
 
   
-  
-  
-  
-  bool SetupAndInitializeVoiceProcessingAudioUnit();
+  bool CreateAudioUnit();
 
   
+  void UpdateAudioUnit(bool can_play_or_record);
+
   
-  bool RestartAudioUnitWithNewFormat(float sample_rate);
+  void ConfigureAudioSession();
+  
+  void UnconfigureAudioSession();
 
   
   
@@ -185,38 +218,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   void ShutdownPlayOrRecord();
 
   
-  void DisposeAudioUnit();
-
-  
-  
-  static OSStatus RecordedDataIsAvailable(
-      void* in_ref_con,
-      AudioUnitRenderActionFlags* io_action_flags,
-      const AudioTimeStamp* time_stamp,
-      UInt32 in_bus_number,
-      UInt32 in_number_frames,
-      AudioBufferList* io_data);
-  OSStatus OnRecordedDataIsAvailable(
-      AudioUnitRenderActionFlags* io_action_flags,
-      const AudioTimeStamp* time_stamp,
-      UInt32 in_bus_number,
-      UInt32 in_number_frames);
-
-  
-  
-  static OSStatus GetPlayoutData(void* in_ref_con,
-                                 AudioUnitRenderActionFlags* io_action_flags,
-                                 const AudioTimeStamp* time_stamp,
-                                 UInt32 in_bus_number,
-                                 UInt32 in_number_frames,
-                                 AudioBufferList* io_data);
-  OSStatus OnGetPlayoutData(AudioUnitRenderActionFlags* io_action_flags,
-                            UInt32 in_number_frames,
-                            AudioBufferList* io_data);
-
-  
   
   rtc::ThreadChecker thread_checker_;
+  
+  rtc::Thread* thread_;
 
   
   
@@ -236,11 +241,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   AudioParameters record_parameters_;
 
   
-  
-  
-  
-  
-  AudioUnit vpio_unit_;
+  std::unique_ptr<VoiceProcessingAudioUnit> audio_unit_;
 
   
   
@@ -256,11 +257,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   
   
   
-  rtc::scoped_ptr<FineAudioBuffer> fine_audio_buffer_;
+  std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
   
   
-  rtc::scoped_ptr<SInt8[]> playout_audio_buffer_;
+  std::unique_ptr<int8_t[]> playout_audio_buffer_;
 
   
   
@@ -268,7 +269,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
 
   
   
-  rtc::scoped_ptr<SInt8[]> record_audio_buffer_;
+  std::unique_ptr<int8_t[]> record_audio_buffer_;
 
   
   volatile int recording_;
@@ -280,17 +281,17 @@ class AudioDeviceIOS : public AudioDeviceGeneric {
   bool initialized_;
 
   
-  bool rec_is_initialized_;
+  
+  bool audio_is_initialized_;
 
   
-  bool play_is_initialized_;
+  bool is_interrupted_;
 
   
-  void* audio_interruption_observer_;
-  void* route_change_observer_;
+  RTCAudioSessionDelegateAdapter* audio_session_observer_;
 
   
-  AudioStreamBasicDescription application_format_;
+  bool has_configured_session_;
 };
 
 }  

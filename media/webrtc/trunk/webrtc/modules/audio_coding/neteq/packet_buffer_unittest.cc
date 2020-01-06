@@ -12,10 +12,12 @@
 
 #include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -28,7 +30,7 @@ class PacketGenerator {
   PacketGenerator(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
   virtual ~PacketGenerator() {}
   void Reset(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
-  Packet* NextPacket(int payload_size_bytes);
+  Packet NextPacket(int payload_size_bytes);
 
   uint16_t seq_no_;
   uint32_t ts_;
@@ -49,18 +51,12 @@ void PacketGenerator::Reset(uint16_t seq_no, uint32_t ts, uint8_t pt,
   frame_size_ = frame_size;
 }
 
-Packet* PacketGenerator::NextPacket(int payload_size_bytes) {
-  Packet* packet = new Packet;
-  packet->header.sequenceNumber = seq_no_;
-  packet->header.timestamp = ts_;
-  packet->header.payloadType = pt_;
-  packet->header.markerBit = false;
-  packet->header.ssrc = 0x12345678;
-  packet->header.numCSRCs = 0;
-  packet->header.paddingLength = 0;
-  packet->payload_length = payload_size_bytes;
-  packet->primary = true;
-  packet->payload = new uint8_t[payload_size_bytes];
+Packet PacketGenerator::NextPacket(int payload_size_bytes) {
+  Packet packet;
+  packet.sequence_number = seq_no_;
+  packet.timestamp = ts_;
+  packet.payload_type = pt_;
+  packet.payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
   return packet;
@@ -80,26 +76,27 @@ struct PacketsToInsert {
 
 
 TEST(PacketBuffer, CreateAndDestroy) {
-  PacketBuffer* buffer = new PacketBuffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer* buffer = new PacketBuffer(10, &tick_timer);  
   EXPECT_TRUE(buffer->Empty());
   delete buffer;
 }
 
 TEST(PacketBuffer, InsertPacket) {
-  PacketBuffer buffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(17u, 4711u, 0, 10);
 
   const int payload_len = 100;
-  Packet* packet = gen.NextPacket(payload_len);
-
-  EXPECT_EQ(0, buffer.InsertPacket(packet));
+  const Packet packet = gen.NextPacket(payload_len);
+  EXPECT_EQ(0, buffer.InsertPacket(packet.Clone()));
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(4711u, next_ts);
   EXPECT_FALSE(buffer.Empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
-  const RTPHeader* hdr = buffer.NextRtpHeader();
-  EXPECT_EQ(&(packet->header), hdr);  
+  const Packet* next_packet = buffer.PeekNextPacket();
+  EXPECT_EQ(packet, *next_packet);  
 
   
   
@@ -107,14 +104,15 @@ TEST(PacketBuffer, InsertPacket) {
 
 
 TEST(PacketBuffer, FlushBuffer) {
-  PacketBuffer buffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(0, 0, 0, 10);
   const int payload_len = 10;
 
   
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    EXPECT_EQ(PacketBuffer::kOK,
+              buffer.InsertPacket(gen.NextPacket(payload_len)));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   EXPECT_FALSE(buffer.Empty());
@@ -127,28 +125,29 @@ TEST(PacketBuffer, FlushBuffer) {
 
 
 TEST(PacketBuffer, OverfillBuffer) {
-  PacketBuffer buffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(0, 0, 0, 10);
 
   
   const int payload_len = 10;
   int i;
   for (i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    EXPECT_EQ(PacketBuffer::kOK,
+              buffer.InsertPacket(gen.NextPacket(payload_len)));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(0u, next_ts);  
 
+  const Packet packet = gen.NextPacket(payload_len);
   
-  Packet* packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet));
+  EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacket(packet.Clone()));
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   
-  EXPECT_EQ(packet->header.timestamp, next_ts);
+  EXPECT_EQ(packet.timestamp, next_ts);
 
   
   buffer.Flush();
@@ -156,32 +155,33 @@ TEST(PacketBuffer, OverfillBuffer) {
 
 
 TEST(PacketBuffer, InsertPacketList) {
-  PacketBuffer buffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
 
   
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
+    list.push_back(gen.NextPacket(payload_len));
   }
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
                                                        decoder_database,
                                                        &current_pt,
                                                        &current_cng_pt));
   EXPECT_TRUE(list.empty());  
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
-  EXPECT_EQ(0, current_pt);  
-  EXPECT_EQ(0xFF, current_cng_pt);  
+  EXPECT_EQ(rtc::Optional<uint8_t>(0),
+            current_pt);         
+  EXPECT_FALSE(current_cng_pt);  
 
   buffer.Flush();  
 
@@ -192,37 +192,42 @@ TEST(PacketBuffer, InsertPacketList) {
 
 
 TEST(PacketBuffer, InsertPacketListChangePayloadType) {
-  PacketBuffer buffer(10);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
   PacketGenerator gen(0, 0, 0, 10);
   PacketList list;
   const int payload_len = 10;
 
   
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
+    list.push_back(gen.NextPacket(payload_len));
   }
   
-  Packet* packet = gen.NextPacket(payload_len);
-  packet->header.payloadType = 1;
-  list.push_back(packet);
-
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload_type = 1;
+    list.push_back(std::move(packet));
+  }
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(_))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(_))
-      .WillRepeatedly(Return(false));
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info0(NetEqDecoder::kDecoderPCMu, factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info0));
+  const DecoderDatabase::DecoderInfo info1(NetEqDecoder::kDecoderPCMa, factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(1))
+      .WillRepeatedly(Return(&info1));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kFlushed, buffer.InsertPacketList(&list,
                                                             decoder_database,
                                                             &current_pt,
                                                             &current_cng_pt));
   EXPECT_TRUE(list.empty());  
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());  
-  EXPECT_EQ(1, current_pt);  
-  EXPECT_EQ(0xFF, current_cng_pt);  
+  EXPECT_EQ(rtc::Optional<uint8_t>(1),
+            current_pt);         
+  EXPECT_FALSE(current_cng_pt);  
 
   buffer.Flush();  
 
@@ -230,7 +235,8 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 }
 
 TEST(PacketBuffer, ExtractOrderRedundancy) {
-  PacketBuffer buffer(100);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  
   const int kPackets = 18;
   const int kFrameSize = 10;
   const int kPayloadLength = 10;
@@ -258,7 +264,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
 
   const size_t kExpectPacketsInBuffer = 9;
 
-  std::vector<Packet*> expect_order(kExpectPacketsInBuffer);
+  std::vector<Packet> expect_order(kExpectPacketsInBuffer);
 
   PacketGenerator gen(0, 0, 0, kFrameSize);
 
@@ -267,29 +273,26 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
               packet_facts[i].timestamp,
               packet_facts[i].payload_type,
               kFrameSize);
-    Packet* packet = gen.NextPacket(kPayloadLength);
-    packet->primary = packet_facts[i].primary;
-    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet));
+    Packet packet = gen.NextPacket(kPayloadLength);
+    packet.priority.red_level = packet_facts[i].primary ? 0 : 1;
+    EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacket(packet.Clone()));
     if (packet_facts[i].extract_order >= 0) {
-      expect_order[packet_facts[i].extract_order] = packet;
+      expect_order[packet_facts[i].extract_order] = std::move(packet);
     }
   }
 
   EXPECT_EQ(kExpectPacketsInBuffer, buffer.NumPacketsInBuffer());
 
-  size_t drop_count;
   for (size_t i = 0; i < kExpectPacketsInBuffer; ++i) {
-    Packet* packet = buffer.GetNextPacket(&drop_count);
-    EXPECT_EQ(0u, drop_count);
+    const rtc::Optional<Packet> packet = buffer.GetNextPacket();
     EXPECT_EQ(packet, expect_order[i]);  
-    delete[] packet->payload;
-    delete packet;
   }
   EXPECT_TRUE(buffer.Empty());
 }
 
 TEST(PacketBuffer, DiscardPackets) {
-  PacketBuffer buffer(100);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -299,8 +302,7 @@ TEST(PacketBuffer, DiscardPackets) {
 
   
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    buffer.InsertPacket(packet);
+    buffer.InsertPacket(gen.NextPacket(payload_len));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
@@ -318,7 +320,8 @@ TEST(PacketBuffer, DiscardPackets) {
 }
 
 TEST(PacketBuffer, Reordering) {
-  PacketBuffer buffer(100);  
+  TickTimer tick_timer;
+  PacketBuffer buffer(100, &tick_timer);  
   const uint16_t start_seq_no = 17;
   const uint32_t start_ts = 4711;
   const uint32_t ts_increment = 10;
@@ -330,21 +333,21 @@ TEST(PacketBuffer, Reordering) {
   
   PacketList list;
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len);
     if (i % 2) {
-      list.push_front(packet);
+      list.push_front(std::move(packet));
     } else {
-      list.push_back(packet);
+      list.push_back(std::move(packet));
     }
   }
 
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
 
   EXPECT_EQ(PacketBuffer::kOK, buffer.InsertPacketList(&list,
                                                        decoder_database,
@@ -355,15 +358,76 @@ TEST(PacketBuffer, Reordering) {
   
   uint32_t current_ts = start_ts;
   for (int i = 0; i < 10; ++i) {
-    Packet* packet = buffer.GetNextPacket(NULL);
-    ASSERT_FALSE(packet == NULL);
-    EXPECT_EQ(current_ts, packet->header.timestamp);
+    const rtc::Optional<Packet> packet = buffer.GetNextPacket();
+    ASSERT_TRUE(packet);
+    EXPECT_EQ(current_ts, packet->timestamp);
     current_ts += ts_increment;
-    delete [] packet->payload;
-    delete packet;
   }
   EXPECT_TRUE(buffer.Empty());
 
+  EXPECT_CALL(decoder_database, Die());  
+}
+
+
+
+
+
+TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
+  TickTimer tick_timer;
+  PacketBuffer buffer(10, &tick_timer);  
+  const uint8_t kCngPt = 13;
+  const int kPayloadLen = 10;
+  const uint8_t kSpeechPt = 100;
+
+  MockDecoderDatabase decoder_database;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info_cng(NetEqDecoder::kDecoderCNGnb,
+                                              factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(kCngPt))
+      .WillRepeatedly(Return(&info_cng));
+  const DecoderDatabase::DecoderInfo info_speech(NetEqDecoder::kDecoderPCM16Bwb,
+                                                 factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(kSpeechPt))
+      .WillRepeatedly(Return(&info_speech));
+
+  
+  PacketGenerator gen(0, 0, kCngPt, 10);
+  PacketList list;
+  list.push_back(gen.NextPacket(kPayloadLen));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer.InsertPacketList(&list, decoder_database, &current_pt,
+                                    &current_cng_pt));
+  EXPECT_TRUE(list.empty());
+  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
+  ASSERT_TRUE(buffer.PeekNextPacket());
+  EXPECT_EQ(kCngPt, buffer.PeekNextPacket()->payload_type);
+  EXPECT_FALSE(current_pt);  
+  EXPECT_EQ(rtc::Optional<uint8_t>(kCngPt),
+            current_cng_pt);  
+
+  
+  {
+    Packet packet = gen.NextPacket(kPayloadLen);
+    packet.payload_type = kSpeechPt;
+    list.push_back(std::move(packet));
+  }
+  
+  
+  EXPECT_EQ(PacketBuffer::kFlushed,
+            buffer.InsertPacketList(&list, decoder_database, &current_pt,
+                                    &current_cng_pt));
+  EXPECT_TRUE(list.empty());
+  EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
+  ASSERT_TRUE(buffer.PeekNextPacket());
+  EXPECT_EQ(kSpeechPt, buffer.PeekNextPacket()->payload_type);
+
+  EXPECT_EQ(rtc::Optional<uint8_t>(kSpeechPt),
+            current_pt);         
+  EXPECT_FALSE(current_cng_pt);  
+
+  buffer.Flush();                        
   EXPECT_CALL(decoder_database, Die());  
 }
 
@@ -373,29 +437,28 @@ TEST(PacketBuffer, Failures) {
   const uint32_t ts_increment = 10;
   int payload_len = 100;
   PacketGenerator gen(start_seq_no, start_ts, 0, ts_increment);
+  TickTimer tick_timer;
 
-  PacketBuffer* buffer = new PacketBuffer(100);  
-  Packet* packet = NULL;
-  EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
-  packet = gen.NextPacket(payload_len);
-  delete [] packet->payload;
-  packet->payload = NULL;
-  EXPECT_EQ(PacketBuffer::kInvalidPacket, buffer->InsertPacket(packet));
-  
-
+  PacketBuffer* buffer = new PacketBuffer(100, &tick_timer);  
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload.Clear();
+    EXPECT_EQ(PacketBuffer::kInvalidPacket,
+              buffer->InsertPacket(std::move(packet)));
+  }
   
   uint32_t temp_ts;
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->NextTimestamp(&temp_ts));
   EXPECT_EQ(PacketBuffer::kBufferEmpty,
             buffer->NextHigherTimestamp(0, &temp_ts));
-  EXPECT_EQ(NULL, buffer->NextRtpHeader());
-  EXPECT_EQ(NULL, buffer->GetNextPacket(NULL));
+  EXPECT_EQ(NULL, buffer->PeekNextPacket());
+  EXPECT_FALSE(buffer->GetNextPacket());
   EXPECT_EQ(PacketBuffer::kBufferEmpty, buffer->DiscardNextPacket());
   EXPECT_EQ(0, buffer->DiscardAllOldPackets(0));  
 
   
-  packet = gen.NextPacket(payload_len);
-  EXPECT_EQ(PacketBuffer::kOK, buffer->InsertPacket(packet));
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer->InsertPacket(gen.NextPacket(payload_len)));
   EXPECT_EQ(PacketBuffer::kInvalidPointer, buffer->NextTimestamp(NULL));
   EXPECT_EQ(PacketBuffer::kInvalidPointer,
             buffer->NextHigherTimestamp(0, NULL));
@@ -404,21 +467,22 @@ TEST(PacketBuffer, Failures) {
   
   
   
-  buffer = new PacketBuffer(100);  
+  buffer = new PacketBuffer(100, &tick_timer);  
   PacketList list;
   list.push_back(gen.NextPacket(payload_len));  
-  packet = gen.NextPacket(payload_len);
-  delete [] packet->payload;
-  packet->payload = NULL;  
-  list.push_back(packet);
+  {
+    Packet packet = gen.NextPacket(payload_len);
+    packet.payload.Clear();  
+    list.push_back(std::move(packet));
+  }
   list.push_back(gen.NextPacket(payload_len));  
   MockDecoderDatabase decoder_database;
-  EXPECT_CALL(decoder_database, IsComfortNoise(0))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(decoder_database, IsDtmf(0))
-      .WillRepeatedly(Return(false));
-  uint8_t current_pt = 0xFF;
-  uint8_t current_cng_pt = 0xFF;
+  auto factory = CreateBuiltinAudioDecoderFactory();
+  const DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, factory);
+  EXPECT_CALL(decoder_database, GetDecoderInfo(0))
+      .WillRepeatedly(Return(&info));
+  rtc::Optional<uint8_t> current_pt;
+  rtc::Optional<uint8_t> current_cng_pt;
   EXPECT_EQ(PacketBuffer::kInvalidPacket,
             buffer->InsertPacketList(&list,
                                      decoder_database,
@@ -434,83 +498,109 @@ TEST(PacketBuffer, Failures) {
 
 TEST(PacketBuffer, ComparePackets) {
   PacketGenerator gen(0, 0, 0, 10);
-  Packet* a = gen.NextPacket(10);  
-  Packet* b = gen.NextPacket(10);  
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  Packet a(gen.NextPacket(10));  
+  Packet b(gen.NextPacket(10));  
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   
-  a->header.timestamp = 0xFFFFFFFF - 10;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.timestamp = 0xFFFFFFFF - 10;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   
-  EXPECT_TRUE(*a == *a);
-  EXPECT_FALSE(*a != *a);
-  EXPECT_FALSE(*a < *a);
-  EXPECT_FALSE(*a > *a);
-  EXPECT_TRUE(*a <= *a);
-  EXPECT_TRUE(*a >= *a);
+  EXPECT_TRUE(a == a);
+  EXPECT_FALSE(a != a);
+  EXPECT_FALSE(a < a);
+  EXPECT_FALSE(a > a);
+  EXPECT_TRUE(a <= a);
+  EXPECT_TRUE(a >= a);
 
   
-  a->header.timestamp = b->header.timestamp;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.timestamp = b.timestamp;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   
-  a->header.sequenceNumber = 0xFFFF;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_TRUE(*a < *b);
-  EXPECT_FALSE(*a > *b);
-  EXPECT_TRUE(*a <= *b);
-  EXPECT_FALSE(*a >= *b);
+  a.sequence_number = 0xFFFF;
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_TRUE(a < b);
+  EXPECT_FALSE(a > b);
+  EXPECT_TRUE(a <= b);
+  EXPECT_FALSE(a >= b);
 
   
-  a->header.sequenceNumber = b->header.sequenceNumber;
-  a->primary = false;
-  b->primary = true;
-  EXPECT_FALSE(*a == *b);
-  EXPECT_TRUE(*a != *b);
-  EXPECT_FALSE(*a < *b);
-  EXPECT_TRUE(*a > *b);
-  EXPECT_FALSE(*a <= *b);
-  EXPECT_TRUE(*a >= *b);
+  a.sequence_number = b.sequence_number;
+  a.priority = {1, 0};
+  b.priority = {0, 0};
+  
+  EXPECT_FALSE(a == b);
+  EXPECT_TRUE(a != b);
+  EXPECT_FALSE(a < b);
+  EXPECT_TRUE(a > b);
+  EXPECT_FALSE(a <= b);
+  EXPECT_TRUE(a >= b);
 
-  delete [] a->payload;
-  delete a;
-  delete [] b->payload;
-  delete b;
-}
-
-
-TEST(PacketBuffer, DeleteAllPackets) {
-  PacketGenerator gen(0, 0, 0, 10);
-  PacketList list;
-  const int payload_len = 10;
+  Packet c(gen.NextPacket(0));  
+  Packet d(gen.NextPacket(0));  
+  c.timestamp = b.timestamp;
+  d.timestamp = b.timestamp;
+  c.sequence_number = b.sequence_number;
+  d.sequence_number = b.sequence_number;
+  c.priority = {1, 1};
+  d.priority = {0, 1};
+  
+  EXPECT_FALSE(c == d);
+  EXPECT_TRUE(c != d);
+  EXPECT_FALSE(c < d);
+  EXPECT_TRUE(c > d);
+  EXPECT_FALSE(c <= d);
+  EXPECT_TRUE(c >= d);
 
   
-  for (int i = 0; i < 10; ++i) {
-    Packet* packet = gen.NextPacket(payload_len);
-    list.push_back(packet);
-  }
-  EXPECT_TRUE(PacketBuffer::DeleteFirstPacket(&list));
-  EXPECT_EQ(9u, list.size());
-  PacketBuffer::DeleteAllPackets(&list);
-  EXPECT_TRUE(list.empty());
-  EXPECT_FALSE(PacketBuffer::DeleteFirstPacket(&list));
+  EXPECT_FALSE(c == a);
+  EXPECT_TRUE(c != a);
+  EXPECT_FALSE(c < a);
+  EXPECT_TRUE(c > a);
+  EXPECT_FALSE(c <= a);
+  EXPECT_TRUE(c >= a);
+
+  
+  EXPECT_FALSE(c == b);
+  EXPECT_TRUE(c != b);
+  EXPECT_FALSE(c < b);
+  EXPECT_TRUE(c > b);
+  EXPECT_FALSE(c <= b);
+  EXPECT_TRUE(c >= b);
+
+  
+  EXPECT_FALSE(a == d);
+  EXPECT_TRUE(a != d);
+  EXPECT_FALSE(a < d);
+  EXPECT_TRUE(a > d);
+  EXPECT_FALSE(a <= d);
+  EXPECT_TRUE(a >= d);
+
+  
+  EXPECT_FALSE(d == b);
+  EXPECT_TRUE(d != b);
+  EXPECT_FALSE(d < b);
+  EXPECT_TRUE(d > b);
+  EXPECT_FALSE(d <= b);
+  EXPECT_TRUE(d >= b);
 }
 
 namespace {

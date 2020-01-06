@@ -43,16 +43,15 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
     for (i = 0; i <= order; ++i)
     {
-        temp1W32 = WEBRTC_SPL_LSHIFT_W32(R[i], norm);
+        temp1W32 = R[i] * (1 << norm);
         
         R_hi[i] = (int16_t)(temp1W32 >> 16);
-        R_low[i] = (int16_t)((temp1W32 - ((int32_t)R_hi[i] << 16)) >> 1);
+        R_low[i] = (int16_t)((temp1W32 - ((int32_t)R_hi[i] * 65536)) >> 1);
     }
 
     
 
-    temp2W32 = WEBRTC_SPL_LSHIFT_W32((int32_t)R_hi[1],16)
-            + WEBRTC_SPL_LSHIFT_W32((int32_t)R_low[1],1); 
+    temp2W32 = R[1] * (1 << norm); 
     temp3W32 = WEBRTC_SPL_ABS_W32(temp2W32); 
     temp1W32 = WebRtcSpl_DivW32HiLow(temp3W32, R_hi[0], R_low[0]); 
     
@@ -63,7 +62,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
     
     K_hi = (int16_t)(temp1W32 >> 16);
-    K_low = (int16_t)((temp1W32 - ((int32_t)K_hi << 16)) >> 1);
+    K_low = (int16_t)((temp1W32 - ((int32_t)K_hi * 65536)) >> 1);
 
     
     K[0] = K_hi;
@@ -72,7 +71,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
     
     A_hi[1] = (int16_t)(temp1W32 >> 16);
-    A_low[1] = (int16_t)((temp1W32 - ((int32_t)A_hi[1] << 16)) >> 1);
+    A_low[1] = (int16_t)((temp1W32 - ((int32_t)A_hi[1] * 65536)) >> 1);
 
     
 
@@ -112,14 +111,14 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
         for (j = 1; j < i; j++)
         {
           
-          temp1W32 += (R_hi[j] * A_hi[i - j] << 1) +
+          temp1W32 += (R_hi[j] * A_hi[i - j] * 2) +
               (((R_hi[j] * A_low[i - j] >> 15) +
-              (R_low[j] * A_hi[i - j] >> 15)) << 1);
+              (R_low[j] * A_hi[i - j] >> 15)) * 2);
         }
 
-        temp1W32 = WEBRTC_SPL_LSHIFT_W32(temp1W32, 4);
-        temp1W32 += (WEBRTC_SPL_LSHIFT_W32((int32_t)R_hi[i], 16)
-                + WEBRTC_SPL_LSHIFT_W32((int32_t)R_low[i], 1));
+        temp1W32 = temp1W32 * 16;
+        temp1W32 += ((int32_t)R_hi[i] * 65536)
+                + WEBRTC_SPL_LSHIFT_W32((int32_t)R_low[i], 1);
 
         
         temp2W32 = WEBRTC_SPL_ABS_W32(temp1W32); 
@@ -135,7 +134,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
         norm = WebRtcSpl_NormW32(temp3W32);
         if ((Alpha_exp <= norm) || (temp3W32 == 0))
         {
-            temp3W32 = WEBRTC_SPL_LSHIFT_W32(temp3W32, Alpha_exp);
+            temp3W32 = temp3W32 * (1 << Alpha_exp);
         } else
         {
             if (temp3W32 > 0)
@@ -149,7 +148,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
         
         K_hi = (int16_t)(temp3W32 >> 16);
-        K_low = (int16_t)((temp3W32 - ((int32_t)K_hi << 16)) >> 1);
+        K_low = (int16_t)((temp3W32 - ((int32_t)K_hi * 65536)) >> 1);
 
         
         K[i - 1] = K_hi;
@@ -171,17 +170,17 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
         for (j = 1; j < i; j++)
         {
             
-            temp1W32 = WEBRTC_SPL_LSHIFT_W32((int32_t)A_hi[j],16)
+            temp1W32 = (int32_t)A_hi[j] * 65536
                     + WEBRTC_SPL_LSHIFT_W32((int32_t)A_low[j],1);
 
             
             temp1W32 += (K_hi * A_hi[i - j] + (K_hi * A_low[i - j] >> 15) +
-                (K_low * A_hi[i - j] >> 15)) << 1;
+                (K_low * A_hi[i - j] >> 15)) * 2;
 
             
             A_upd_hi[j] = (int16_t)(temp1W32 >> 16);
             A_upd_low[j] = (int16_t)(
-                (temp1W32 - ((int32_t)A_upd_hi[j] << 16)) >> 1);
+                (temp1W32 - ((int32_t)A_upd_hi[j] * 65536)) >> 1);
         }
 
         
@@ -190,11 +189,11 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
         
         A_upd_hi[i] = (int16_t)(temp3W32 >> 16);
         A_upd_low[i] = (int16_t)(
-            (temp3W32 - ((int32_t)A_upd_hi[i] << 16)) >> 1);
+            (temp3W32 - ((int32_t)A_upd_hi[i] * 65536)) >> 1);
 
         
 
-        temp1W32 = ((K_hi * K_low >> 14) + K_hi * K_hi) << 1;  
+        temp1W32 = ((K_hi * K_low >> 14) + K_hi * K_hi) * 2;  
 
         temp1W32 = WEBRTC_SPL_ABS_W32(temp1W32); 
         temp1W32 = (int32_t)0x7fffffffL - temp1W32; 
@@ -237,10 +236,10 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
     for (i = 1; i <= order; i++)
     {
         
-        temp1W32 = WEBRTC_SPL_LSHIFT_W32((int32_t)A_hi[i], 16)
+        temp1W32 = (int32_t)A_hi[i] * 65536
                 + WEBRTC_SPL_LSHIFT_W32((int32_t)A_low[i], 1);
         
-        A[i] = (int16_t)(((temp1W32 << 1) + 32768) >> 16);
+        A[i] = (int16_t)(((temp1W32 * 2) + 32768) >> 16);
     }
     return 1; 
 }

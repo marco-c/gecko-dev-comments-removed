@@ -8,39 +8,35 @@
 
 
 
-
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TMMBR_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TMMBR_H_
 
+#include <vector>
+
 #include "webrtc/base/basictypes.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 
 namespace webrtc {
 namespace rtcp {
+class CommonHeader;
 
-class Tmmbr : public RtcpPacket {
+
+
+class Tmmbr : public Rtpfb {
  public:
-  Tmmbr() : RtcpPacket() {
-    memset(&tmmbr_, 0, sizeof(tmmbr_));
-    memset(&tmmbr_item_, 0, sizeof(tmmbr_item_));
-  }
+  static constexpr uint8_t kFeedbackMessageType = 3;
 
-  virtual ~Tmmbr() {}
+  Tmmbr() {}
+  ~Tmmbr() override {}
 
-  void From(uint32_t ssrc) {
-    tmmbr_.SenderSSRC = ssrc;
-  }
-  void To(uint32_t ssrc) {
-    tmmbr_item_.SSRC = ssrc;
-  }
-  void WithBitrateKbps(uint32_t bitrate_kbps) {
-    tmmbr_item_.MaxTotalMediaBitRate = bitrate_kbps;
-  }
-  void WithOverhead(uint16_t overhead) {
-    assert(overhead <= 0x1ff);
-    tmmbr_item_.MeasuredOverhead = overhead;
-  }
+  
+  bool Parse(const CommonHeader& packet);
+
+  void AddTmmbr(const TmmbItem& item);
+
+  const std::vector<TmmbItem>& requests() const { return items_; }
 
  protected:
   bool Create(uint8_t* packet,
@@ -50,12 +46,14 @@ class Tmmbr : public RtcpPacket {
 
  private:
   size_t BlockLength() const override {
-    const size_t kFciLen = 8;
-    return kCommonFbFmtLength + kFciLen;
+    return kHeaderLength + kCommonFeedbackLength +
+           TmmbItem::kLength * items_.size();
   }
 
-  RTCPUtility::RTCPPacketRTPFBTMMBR tmmbr_;
-  RTCPUtility::RTCPPacketRTPFBTMMBRItem tmmbr_item_;
+  
+  void SetMediaSsrc(uint32_t ssrc);
+
+  std::vector<TmmbItem> items_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Tmmbr);
 };

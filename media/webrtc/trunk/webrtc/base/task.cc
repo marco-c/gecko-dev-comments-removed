@@ -9,6 +9,7 @@
 
 
 #include "webrtc/base/task.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/taskrunner.h"
 
@@ -31,14 +32,16 @@ Task::Task(TaskParent *parent)
   unique_id_ = unique_id_seed_++;
 
   
-  ASSERT(unique_id_ < unique_id_seed_);
+  RTC_DCHECK(unique_id_ < unique_id_seed_);
 }
 
 Task::~Task() {
   
-  ASSERT(!done_ || GetRunner()->is_ok_to_delete(this));
-  ASSERT(state_ == STATE_INIT || done_);
-  ASSERT(state_ == STATE_INIT || blocked_);
+#if RTC_DCHECK_IS_ON
+  RTC_DCHECK(!done_ || GetRunner()->is_ok_to_delete(this));
+#endif
+  RTC_DCHECK(state_ == STATE_INIT || done_);
+  RTC_DCHECK(state_ == STATE_INIT || blocked_);
 
   
   
@@ -68,11 +71,11 @@ void Task::Start() {
 
 void Task::Step() {
   if (done_) {
-#if !defined(NDEBUG)
+#if RTC_DCHECK_IS_ON
     
     
     
-    ASSERT(blocked_);
+    RTC_DCHECK(blocked_);
 #else
     blocked_ = true;
 #endif
@@ -88,9 +91,9 @@ void Task::Step() {
 
 
     Stop();
-#if !defined(NDEBUG)
+#if RTC_DCHECK_IS_ON
     
-    ASSERT(!parent()->IsChildTask(this));
+    RTC_DCHECK(!parent()->IsChildTask(this));
 #endif
     return;
   }
@@ -125,9 +128,9 @@ void Task::Step() {
 
 
     Stop();
-#if !defined(NDEBUG)
+#if RTC_DCHECK_IS_ON
     
-    ASSERT(!parent()->IsChildTask(this));
+    RTC_DCHECK(!parent()->IsChildTask(this));
 #endif
     blocked_ = true;
   }
@@ -150,9 +153,9 @@ void Task::Abort(bool nowake) {
     
     
     Stop();
-#if !defined(NDEBUG)
+#if RTC_DCHECK_IS_ON
     
-    ASSERT(!parent()->IsChildTask(this));
+    RTC_DCHECK(!parent()->IsChildTask(this));
 #endif
     if (!nowake) {
       

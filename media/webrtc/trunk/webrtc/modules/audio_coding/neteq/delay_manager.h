@@ -13,10 +13,12 @@
 
 #include <string.h>  
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
+#include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -32,7 +34,9 @@ class DelayManager {
   
   
   
-  DelayManager(size_t max_packets_in_buffer, DelayPeakDetector* peak_detector);
+  DelayManager(size_t max_packets_in_buffer,
+               DelayPeakDetector* peak_detector,
+               const TickTimer* tick_timer);
 
   virtual ~DelayManager();
 
@@ -68,16 +72,12 @@ class DelayManager {
   
   
   
-  virtual int AverageIAT() const;
+  virtual double EstimatedClockDriftPpm() const;
 
   
   
   
   virtual bool PeakFound() const;
-
-  
-  
-  virtual void UpdateCounters(int elapsed_time_ms);
 
   
   virtual void ResetPacketIatCount();
@@ -91,7 +91,9 @@ class DelayManager {
   
   virtual int TargetLevel() const;
 
-  virtual void LastDecoderType(NetEqDecoder decoder_type);
+  
+  
+  virtual void LastDecodedWasCngOrDtmf(bool it_was);
 
   
   
@@ -135,7 +137,9 @@ class DelayManager {
   const size_t max_packets_in_buffer_;  
   IATVector iat_vector_;  
   int iat_factor_;  
-  int packet_iat_count_ms_;  
+  const TickTimer* tick_timer_;
+  
+  std::unique_ptr<TickTimer::Stopwatch> packet_iat_stopwatch_;
   int base_target_level_;   
                             
   
@@ -153,7 +157,8 @@ class DelayManager {
   int maximum_delay_ms_;  
   int iat_cumulative_sum_;  
   int max_iat_cumulative_sum_;  
-  int max_timer_ms_;  
+  
+  std::unique_ptr<TickTimer::Stopwatch> max_iat_stopwatch_;
   DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
 

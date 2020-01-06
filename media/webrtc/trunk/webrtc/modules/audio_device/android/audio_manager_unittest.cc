@@ -8,12 +8,14 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include <SLES/OpenSLES_Android.h>
+
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/format_macros.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/modules/audio_device/android/build_info.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
+#include "webrtc/modules/audio_device/android/build_info.h"
 #include "webrtc/modules/audio_device/android/ensure_initialized.h"
+#include "webrtc/test/gtest.h"
 
 #define PRINT(...) fprintf(stderr, __VA_ARGS__);
 
@@ -43,12 +45,61 @@ class AudioManagerTest : public ::testing::Test {
     EXPECT_NE(0, audio_manager()->GetDelayEstimateInMilliseconds());
   }
 
-  rtc::scoped_ptr<AudioManager> audio_manager_;
+  
+  
+  
+  
+  
+  
+  void ValidateSLEngine(SLObjectItf engine_object) {
+    EXPECT_NE(nullptr, engine_object);
+    
+    SLEngineItf engine;
+    SLresult result =
+        (*engine_object)->GetInterface(engine_object, SL_IID_ENGINE, &engine);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS) << "GetInterface() on engine failed";
+    
+    SLuint32 object_id = SL_OBJECTID_ENGINE;
+    SLuint32 num_supported_interfaces = 0;
+    result = (*engine)->QueryNumSupportedInterfaces(engine, object_id,
+                                                    &num_supported_interfaces);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS)
+        << "QueryNumSupportedInterfaces() failed";
+    EXPECT_GE(num_supported_interfaces, 1u);
+  }
+
+  std::unique_ptr<AudioManager> audio_manager_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 };
 
 TEST_F(AudioManagerTest, ConstructDestruct) {
+}
+
+
+
+TEST_F(AudioManagerTest, GetOpenSLEngineShouldFailForJavaAudioLayer) {
+  audio_manager()->SetActiveAudioLayer(AudioDeviceModule::kAndroidJavaAudio);
+  SLObjectItf engine_object = audio_manager()->GetOpenSLEngine();
+  EXPECT_EQ(nullptr, engine_object);
+}
+
+
+
+TEST_F(AudioManagerTest, GetOpenSLEngineShouldSucceedForOpenSLESAudioLayer) {
+  
+  const AudioDeviceModule::AudioLayer opensles_audio[] = {
+      AudioDeviceModule::kAndroidOpenSLESAudio,
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio};
+  
+  
+  for (const AudioDeviceModule::AudioLayer audio_layer : opensles_audio) {
+    audio_manager()->SetActiveAudioLayer(audio_layer);
+    SLObjectItf engine_object = audio_manager()->GetOpenSLEngine();
+    EXPECT_NE(nullptr, engine_object);
+    
+    ValidateSLEngine(engine_object);
+  }
 }
 
 TEST_F(AudioManagerTest, InitClose) {
@@ -62,8 +113,7 @@ TEST_F(AudioManagerTest, IsAcousticEchoCancelerSupported) {
 }
 
 TEST_F(AudioManagerTest, IsAutomaticGainControlSupported) {
-  PRINT("%sAutomatic Gain Control support: %s\n", kTag,
-        audio_manager()->IsAutomaticGainControlSupported() ? "Yes" : "No");
+  EXPECT_FALSE(audio_manager()->IsAutomaticGainControlSupported());
 }
 
 TEST_F(AudioManagerTest, IsNoiseSuppressorSupported) {
@@ -76,8 +126,19 @@ TEST_F(AudioManagerTest, IsLowLatencyPlayoutSupported) {
         audio_manager()->IsLowLatencyPlayoutSupported() ? "Yes" : "No");
 }
 
+TEST_F(AudioManagerTest, IsLowLatencyRecordSupported) {
+  PRINT("%sLow latency input support: %s\n", kTag,
+        audio_manager()->IsLowLatencyRecordSupported() ? "Yes" : "No");
+}
+
+TEST_F(AudioManagerTest, IsProAudioSupported) {
+  PRINT("%sPro audio support: %s\n", kTag,
+        audio_manager()->IsProAudioSupported() ? "Yes" : "No");
+}
+
 TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
   const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
+  const bool low_latency_in = audio_manager()->IsLowLatencyRecordSupported();
   PRINT("PLAYOUT:\n");
   PRINT("%saudio layer: %s\n", kTag,
         low_latency_out ? "Low latency OpenSL" : "Java/JNI based AudioTrack");
@@ -87,12 +148,28 @@ TEST_F(AudioManagerTest, ShowAudioParameterInfo) {
         playout_parameters_.frames_per_buffer(),
         playout_parameters_.GetBufferSizeInMilliseconds());
   PRINT("RECORD: \n");
-  PRINT("%saudio layer: %s\n", kTag, "Java/JNI based AudioRecord");
+  PRINT("%saudio layer: %s\n", kTag,
+        low_latency_in ? "Low latency OpenSL" : "Java/JNI based AudioRecord");
   PRINT("%ssample rate: %d Hz\n", kTag, record_parameters_.sample_rate());
   PRINT("%schannels: %" PRIuS "\n", kTag, record_parameters_.channels());
   PRINT("%sframes per buffer: %" PRIuS " <=> %.2f ms\n", kTag,
         record_parameters_.frames_per_buffer(),
         record_parameters_.GetBufferSizeInMilliseconds());
+}
+
+
+
+
+
+TEST_F(AudioManagerTest, VerifyAudioParameters) {
+  const bool low_latency_out = audio_manager()->IsLowLatencyPlayoutSupported();
+  const bool low_latency_in = audio_manager()->IsLowLatencyRecordSupported();
+  EXPECT_EQ(playout_parameters_.sample_rate(),
+            record_parameters_.sample_rate());
+  if (low_latency_out && low_latency_in) {
+    EXPECT_EQ(playout_parameters_.frames_per_buffer(),
+              record_parameters_.frames_per_buffer());
+  }
 }
 
 
@@ -110,7 +187,7 @@ TEST_F(AudioManagerTest, ShowBuildInfo) {
   PRINT("%sbuild release: %s\n", kTag, build_info.GetBuildRelease().c_str());
   PRINT("%sbuild id: %s\n", kTag, build_info.GetAndroidBuildId().c_str());
   PRINT("%sbuild type: %s\n", kTag, build_info.GetBuildType().c_str());
-  PRINT("%sSDK version: %s\n", kTag, build_info.GetSdkVersion().c_str());
+  PRINT("%sSDK version: %d\n", kTag, build_info.GetSdkVersion());
 }
 
 

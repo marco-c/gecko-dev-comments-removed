@@ -10,6 +10,8 @@
 
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 
+#include <memory>
+
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -25,7 +27,7 @@ TransportDescriptionFactory::TransportDescriptionFactory()
 TransportDescription* TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description) const {
-  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  std::unique_ptr<TransportDescription> desc(new TransportDescription());
 
   
   if (!current_description || options.ice_restart) {
@@ -34,6 +36,9 @@ TransportDescription* TransportDescriptionFactory::CreateOffer(
   } else {
     desc->ice_ufrag = current_description->ice_ufrag;
     desc->ice_pwd = current_description->ice_pwd;
+  }
+  if (options.enable_ice_renomination) {
+    desc->AddOption(ICE_RENOMINATION_STR);
   }
 
   
@@ -59,7 +64,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  rtc::scoped_ptr<TransportDescription> desc(new TransportDescription());
+  std::unique_ptr<TransportDescription> desc(new TransportDescription());
   
   
   if (!current_description || options.ice_restart) {
@@ -68,6 +73,9 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
   } else {
     desc->ice_ufrag = current_description->ice_ufrag;
     desc->ice_pwd = current_description->ice_pwd;
+  }
+  if (options.enable_ice_renomination) {
+    desc->AddOption(ICE_RENOMINATION_STR);
   }
 
   
@@ -103,6 +111,11 @@ bool TransportDescriptionFactory::SetSecurityInfo(
   
   
   
+  desc->identity_fingerprint.reset(
+      rtc::SSLFingerprint::CreateFromCertificate(certificate_));
+  if (!desc->identity_fingerprint) {
+    return false;
+  }
   std::string digest_alg;
   if (!certificate_->ssl_certificate().GetSignatureDigestAlgorithm(
           &digest_alg)) {

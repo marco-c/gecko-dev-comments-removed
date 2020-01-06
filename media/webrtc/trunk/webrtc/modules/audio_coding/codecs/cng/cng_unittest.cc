@@ -7,11 +7,12 @@
 
 
 
+#include <memory>
 #include <string>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc_cng.h"
 
 namespace webrtc {
 
@@ -21,7 +22,7 @@ enum {
   kSidLongIntervalUpdate = 10000
 };
 
-enum {
+enum : size_t {
   kCNGNumParamsLow = 0,
   kCNGNumParamsNormal = 8,
   kCNGNumParamsHigh = WEBRTC_CNG_MAX_LPC_ORDER,
@@ -35,18 +36,12 @@ enum {
 
 class CngTest : public ::testing::Test {
  protected:
-  CngTest();
   virtual void SetUp();
 
-  CNG_enc_inst* cng_enc_inst_;
-  CNG_dec_inst* cng_dec_inst_;
+  void TestCngEncode(int sample_rate_hz, int quality);
+
   int16_t speech_data_[640];  
 };
-
-CngTest::CngTest()
-    : cng_enc_inst_(NULL),
-      cng_dec_inst_(NULL) {
-}
 
 void CngTest::SetUp() {
   FILE* input_file;
@@ -60,289 +55,187 @@ void CngTest::SetUp() {
   input_file = NULL;
 }
 
+void CngTest::TestCngEncode(int sample_rate_hz, int quality) {
+  const size_t num_samples_10ms = rtc::CheckedDivExact(sample_rate_hz, 100);
+  rtc::Buffer sid_data;
 
-TEST_F(CngTest, CngCreateFail) {
-  
-  EXPECT_EQ(-1, WebRtcCng_CreateEnc(NULL));
-  EXPECT_EQ(-1, WebRtcCng_CreateDec(NULL));
+  ComfortNoiseEncoder cng_encoder(sample_rate_hz, kSidNormalIntervalUpdate,
+                                  quality);
+  EXPECT_EQ(0U, cng_encoder.Encode(rtc::ArrayView<const int16_t>(
+                                       speech_data_, num_samples_10ms),
+                                   kNoSid, &sid_data));
+  EXPECT_EQ(static_cast<size_t>(quality + 1),
+            cng_encoder.Encode(
+                rtc::ArrayView<const int16_t>(speech_data_, num_samples_10ms),
+                kForceSid, &sid_data));
 }
 
-
-TEST_F(CngTest, CngCreate) {
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-  EXPECT_TRUE(cng_enc_inst_ != NULL);
-  EXPECT_TRUE(cng_dec_inst_ != NULL);
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
-}
-
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 TEST_F(CngTest, CngInitFail) {
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-
+  EXPECT_DEATH({ ComfortNoiseEncoder(8000, kSidNormalIntervalUpdate,
+                                     kCNGNumParamsLow); }, "");
   
-  EXPECT_EQ(-1, WebRtcCng_InitEnc(cng_enc_inst_, 8000, kSidNormalIntervalUpdate,
-                                  kCNGNumParamsLow));
-  EXPECT_EQ(6130, WebRtcCng_GetErrorCodeEnc(cng_enc_inst_));
-
-  
-  EXPECT_EQ(-1, WebRtcCng_InitEnc(cng_enc_inst_, 8000, kSidNormalIntervalUpdate,
-                                  kCNGNumParamsTooHigh));
-  EXPECT_EQ(6130, WebRtcCng_GetErrorCodeEnc(cng_enc_inst_));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-}
-
-TEST_F(CngTest, CngEncode) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
-
-  
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 8000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 80, sid_data,
-                                &number_bytes, kNoSid));
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 80, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
-                                &number_bytes, kNoSid));
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 32000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsHigh));
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 320, sid_data,
-                                &number_bytes, kNoSid));
-  EXPECT_EQ(kCNGNumParamsHigh + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 320, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 48000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 480, sid_data,
-                                &number_bytes, kNoSid));
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 480, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 64000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 640, sid_data,
-                                &number_bytes, kNoSid));
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 640, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
+  EXPECT_DEATH({ ComfortNoiseEncoder(8000, kSidNormalIntervalUpdate,
+                                     kCNGNumParamsTooHigh); }, "");
 }
 
 
 TEST_F(CngTest, CngEncodeTooLong) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+  rtc::Buffer sid_data;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 8000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-
+  ComfortNoiseEncoder cng_encoder(8000, kSidNormalIntervalUpdate,
+                                  kCNGNumParamsNormal);
   
-  EXPECT_EQ(-1, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 641, sid_data,
-                                 &number_bytes, kNoSid));
-  EXPECT_EQ(6140, WebRtcCng_GetErrorCodeEnc(cng_enc_inst_));
+  EXPECT_DEATH(
+      cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 641),
+                         kNoSid, &sid_data),
+      "");
+}
+#endif  
 
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
+TEST_F(CngTest, CngEncode8000) {
+  TestCngEncode(8000, kCNGNumParamsNormal);
 }
 
+TEST_F(CngTest, CngEncode16000) {
+  TestCngEncode(16000, kCNGNumParamsNormal);
+}
 
-TEST_F(CngTest, CngEncodeNoInit) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+TEST_F(CngTest, CngEncode32000) {
+  TestCngEncode(32000, kCNGNumParamsHigh);
+}
 
-  
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
+TEST_F(CngTest, CngEncode48000) {
+  TestCngEncode(48000, kCNGNumParamsNormal);
+}
 
-  
-  EXPECT_EQ(-1, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 640, sid_data,
-                                 &number_bytes, kNoSid));
-  EXPECT_EQ(6120, WebRtcCng_GetErrorCodeEnc(cng_enc_inst_));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
+TEST_F(CngTest, CngEncode64000) {
+  TestCngEncode(64000, kCNGNumParamsNormal);
 }
 
 
 TEST_F(CngTest, CngUpdateSid) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+  rtc::Buffer sid_data;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  WebRtcCng_InitDec(cng_dec_inst_);
+  ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
+                                  kCNGNumParamsNormal);
+  ComfortNoiseDecoder cng_decoder;
 
   
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kForceSid));
-  EXPECT_EQ(0, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                   kCNGNumParamsNormal + 1));
+  EXPECT_EQ(kCNGNumParamsNormal + 1,
+            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+                               kForceSid, &sid_data));
+  cng_decoder.UpdateSid(sid_data);
 
   
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsHigh));
-  WebRtcCng_InitDec(cng_dec_inst_);
+  cng_encoder.Reset(16000, kSidNormalIntervalUpdate, kCNGNumParamsHigh);
+  cng_decoder.Reset();
 
   
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
-                                &number_bytes, kForceSid));
-  EXPECT_EQ(kCNGNumParamsHigh + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_ + 160, 160, sid_data, &number_bytes,
-      kForceSid));
-  EXPECT_EQ(0, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                   kCNGNumParamsNormal + 1));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
+  EXPECT_EQ(0U,
+            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+                               kForceSid, &sid_data));
+  EXPECT_EQ(
+      kCNGNumParamsHigh + 1,
+      cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_ + 160, 160),
+                         kForceSid, &sid_data));
+  cng_decoder.UpdateSid(
+      rtc::ArrayView<const uint8_t>(sid_data.data(), kCNGNumParamsNormal + 1));
 }
 
 
 TEST_F(CngTest, CngUpdateSidErroneous) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+  rtc::Buffer sid_data;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-
-  
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kForceSid));
-
-  
-  EXPECT_EQ(-1, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                    kCNGNumParamsNormal + 1));
-  EXPECT_EQ(6220, WebRtcCng_GetErrorCodeDec(cng_dec_inst_));
-
-  
-  WebRtcCng_InitDec(cng_dec_inst_);
+  ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
+                                  kCNGNumParamsNormal);
+  ComfortNoiseDecoder cng_decoder;
+  EXPECT_EQ(kCNGNumParamsNormal + 1,
+            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+                               kForceSid, &sid_data));
 
   
   
   
-  EXPECT_EQ(0, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                   kCNGNumParamsNormal + 1));
-  EXPECT_EQ(0, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                   kCNGNumParamsTooHigh + 1));
+  EXPECT_EQ(kCNGNumParamsNormal + 1, sid_data.size());
+  cng_decoder.UpdateSid(sid_data);
 
   
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
+  
+  
+  sid_data.SetSize(kCNGNumParamsTooHigh + 1);
+  cng_decoder.UpdateSid(sid_data);
 }
 
 
 TEST_F(CngTest, CngGenerate) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  rtc::Buffer sid_data;
   int16_t out_data[640];
-  size_t number_bytes;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  WebRtcCng_InitDec(cng_dec_inst_);
+  ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
+                                  kCNGNumParamsNormal);
+  ComfortNoiseDecoder cng_decoder;
 
   
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kForceSid));
+  EXPECT_EQ(kCNGNumParamsNormal + 1,
+            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+                               kForceSid, &sid_data));
 
   
-  EXPECT_EQ(0, WebRtcCng_UpdateSid(cng_dec_inst_, sid_data,
-                                   kCNGNumParamsNormal + 1));
+  cng_decoder.UpdateSid(sid_data);
 
   
-  EXPECT_EQ(0, WebRtcCng_Generate(cng_dec_inst_, out_data, 640, 1));
-  EXPECT_EQ(0, WebRtcCng_Generate(cng_dec_inst_, out_data, 640, 0));
+  EXPECT_TRUE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 640), 1));
+  EXPECT_TRUE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 640), 0));
 
   
-  EXPECT_EQ(-1, WebRtcCng_Generate(cng_dec_inst_, out_data, 641, 0));
-  EXPECT_EQ(6140, WebRtcCng_GetErrorCodeDec(cng_dec_inst_));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
+  EXPECT_FALSE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 641), 0));
 }
 
 
 TEST_F(CngTest, CngAutoSid) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+  rtc::Buffer sid_data;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidNormalIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  WebRtcCng_InitDec(cng_dec_inst_);
+  ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
+                                  kCNGNumParamsNormal);
+  ComfortNoiseDecoder cng_decoder;
 
   
   for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
-                                  &number_bytes, kNoSid));
+    EXPECT_EQ(0U, cng_encoder.Encode(
+        rtc::ArrayView<const int16_t>(speech_data_, 160), kNoSid, &sid_data));
   }
 
   
-  EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-      cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kNoSid));
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
+  EXPECT_EQ(kCNGNumParamsNormal + 1, cng_encoder.Encode(
+      rtc::ArrayView<const int16_t>(speech_data_, 160), kNoSid, &sid_data));
 }
 
 
 TEST_F(CngTest, CngAutoSidShort) {
-  uint8_t sid_data[WEBRTC_CNG_MAX_LPC_ORDER + 1];
-  size_t number_bytes;
+  rtc::Buffer sid_data;
 
   
-  EXPECT_EQ(0, WebRtcCng_CreateEnc(&cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_CreateDec(&cng_dec_inst_));
-  EXPECT_EQ(0, WebRtcCng_InitEnc(cng_enc_inst_, 16000, kSidShortIntervalUpdate,
-                                 kCNGNumParamsNormal));
-  WebRtcCng_InitDec(cng_dec_inst_);
+  ComfortNoiseEncoder cng_encoder(16000, kSidShortIntervalUpdate,
+                                  kCNGNumParamsNormal);
+  ComfortNoiseDecoder cng_decoder;
 
   
-  EXPECT_EQ(0, WebRtcCng_Encode(cng_enc_inst_, speech_data_, 160, sid_data,
-                                &number_bytes, kNoSid));
+  EXPECT_EQ(0U, cng_encoder.Encode(
+      rtc::ArrayView<const int16_t>(speech_data_, 160), kNoSid, &sid_data));
 
   
   for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(kCNGNumParamsNormal + 1, WebRtcCng_Encode(
-        cng_enc_inst_, speech_data_, 160, sid_data, &number_bytes, kNoSid));
+    EXPECT_EQ(kCNGNumParamsNormal + 1, cng_encoder.Encode(
+        rtc::ArrayView<const int16_t>(speech_data_, 160), kNoSid, &sid_data));
   }
-
-  
-  EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
-  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
 }
 
 }  

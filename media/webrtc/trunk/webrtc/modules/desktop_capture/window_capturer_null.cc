@@ -8,55 +8,42 @@
 
 
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
-
 #include <assert.h>
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 
 namespace webrtc {
 
 namespace {
 
-class WindowCapturerNull : public WindowCapturer {
+class WindowCapturerNull : public DesktopCapturer {
  public:
   WindowCapturerNull();
-  virtual ~WindowCapturerNull();
-
-  
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
+  ~WindowCapturerNull() override;
 
   
   void Start(Callback* callback) override;
-  void Stop() override;
-  void Capture(const DesktopRegion& region) override;
+  void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
-  Callback* callback_;
+  Callback* callback_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerNull);
 };
 
-WindowCapturerNull::WindowCapturerNull()
-    : callback_(NULL) {
-}
+WindowCapturerNull::WindowCapturerNull() {}
+WindowCapturerNull::~WindowCapturerNull() {}
 
-WindowCapturerNull::~WindowCapturerNull() {
-}
-
-bool WindowCapturerNull::GetWindowList(WindowList* windows) {
+bool WindowCapturerNull::GetSourceList(SourceList* sources) {
   
   return false;
 }
 
-bool WindowCapturerNull::SelectWindow(WindowId id) {
-  
-  return false;
-}
-
-bool WindowCapturerNull::BringSelectedWindowToFront() {
+bool WindowCapturerNull::SelectSource(SourceId id) {
   
   return false;
 }
@@ -68,20 +55,17 @@ void WindowCapturerNull::Start(Callback* callback) {
   callback_ = callback;
 }
 
-void WindowCapturerNull::Stop() {
-  callback_ = NULL;
-}
-
-void WindowCapturerNull::Capture(const DesktopRegion& region) {
+void WindowCapturerNull::CaptureFrame() {
   
-  callback_->OnCaptureCompleted(NULL);
+  callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
 }
 
 }  
 
 
-WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
-  return new WindowCapturerNull();
+std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
+    const DesktopCaptureOptions& options) {
+  return std::unique_ptr<DesktopCapturer>(new WindowCapturerNull());
 }
 
 }  

@@ -11,24 +11,23 @@
 #ifndef WEBRTC_VIDEO_RECEIVE_STREAM_H_
 #define WEBRTC_VIDEO_RECEIVE_STREAM_H_
 
+#include <limits>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "webrtc/api/call/transport.h"
+#include "webrtc/base/platform_file.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/config.h"
-#include "webrtc/frame_callback.h"
-#include "webrtc/stream.h"
-#include "webrtc/transport.h"
-#include "webrtc/video_renderer.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/media/base/videosinkinterface.h"
 
 namespace webrtc {
 
 class VideoDecoder;
 
-class VideoReceiveStream : public ReceiveStream {
+class VideoReceiveStream {
  public:
   
   
@@ -45,9 +44,16 @@ class VideoReceiveStream : public ReceiveStream {
     
     
     std::string payload_name;
+
+    
+    
+    
+    std::map<std::string, std::string> codec_params;
   };
 
   struct Stats {
+    std::string ToString(int64_t time_ms) const;
+
     int network_frame_rate = 0;
     int decode_frame_rate = 0;
     int render_frame_rate = 0;
@@ -62,11 +68,17 @@ class VideoReceiveStream : public ReceiveStream {
     int jitter_buffer_ms = 0;
     int min_playout_delay_ms = 0;
     int render_delay_ms = 10;
+    uint32_t frames_decoded = 0;
 
     int current_payload_type = -1;
 
     int total_bitrate_bps = 0;
     int discarded_packets = 0;
+
+    int width = 0;
+    int height = 0;
+
+    int sync_offset_ms = std::numeric_limits<int>::max();
 
     uint32_t ssrc = 0;
     std::string c_name;
@@ -76,9 +88,22 @@ class VideoReceiveStream : public ReceiveStream {
   };
 
   struct Config {
+   private:
+    
+    
+    Config(const Config&) = default;
+
+   public:
     Config() = delete;
+    Config(Config&&) = default;
     explicit Config(Transport* rtcp_send_transport)
         : rtcp_send_transport(rtcp_send_transport) {}
+
+    Config& operator=(Config&&) = default;
+    Config& operator=(const Config&) = delete;
+
+    
+    Config Copy() const { return Config(*this); }
 
     std::string ToString() const;
 
@@ -107,19 +132,14 @@ class VideoReceiveStream : public ReceiveStream {
       
       bool remb = false;
 
-      bool tmmbr = false;
-
       
       bool transport_cc = false;
-
-      
-      KeyFrameRequestMethod keyframe_method = kKeyFrameReqPliRtcp;
 
       
       NackConfig nack;
 
       
-      FecConfig fec;
+      UlpfecConfig ulpfec;
 
       
       
@@ -136,11 +156,6 @@ class VideoReceiveStream : public ReceiveStream {
       RtxMap rtx;
 
       
-      
-      
-      bool use_rtx_payload_mapping_on_restore = false;
-
-      
       std::vector<RtpExtension> extensions;
     } rtp;
 
@@ -148,13 +163,16 @@ class VideoReceiveStream : public ReceiveStream {
     Transport* rtcp_send_transport = nullptr;
 
     
-    
-    VideoRenderer* renderer = nullptr;
+    rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
 
     
     
     
     int render_delay_ms = 10;
+
+    
+    
+    bool disable_prerenderer_smoothing = false;
 
     
     
@@ -169,6 +187,9 @@ class VideoReceiveStream : public ReceiveStream {
     
     
     
+    
+    
+    
     I420FrameCallback* pre_render_callback = nullptr;
 
     
@@ -177,13 +198,28 @@ class VideoReceiveStream : public ReceiveStream {
   };
 
   
+  
+  virtual void Start() = 0;
+  
+  
+  virtual void Stop() = 0;
+
+  
   virtual Stats GetStats() const = 0;
-  virtual int64_t GetRtt() const = 0;
 
-  virtual bool
-  GetRemoteRTCPSenderInfo(RTCPSenderInfo* sender_info) const = 0;
+  
+  
+  
+  
+  
+  virtual void EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                           size_t byte_limit) = 0;
+  inline void DisableEncodedFrameRecording() {
+    EnableEncodedFrameRecording(rtc::kInvalidPlatformFileValue, 0);
+  }
 
-  virtual void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id) = 0;
+ protected:
+  virtual ~VideoReceiveStream() {}
 };
 
 }  

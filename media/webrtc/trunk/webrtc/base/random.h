@@ -21,6 +21,17 @@ namespace webrtc {
 
 class Random {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   explicit Random(uint64_t seed);
 
   

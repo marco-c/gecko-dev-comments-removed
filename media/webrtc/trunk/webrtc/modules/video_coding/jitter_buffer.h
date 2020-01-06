@@ -13,18 +13,21 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module_common_types.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/decoding_state.h"
 #include "webrtc/modules/video_coding/inter_frame_delay.h"
 #include "webrtc/modules/video_coding/jitter_buffer_common.h"
 #include "webrtc/modules/video_coding/jitter_estimator.h"
+#include "webrtc/modules/video_coding/nack_module.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/typedefs.h"
 
@@ -60,7 +63,6 @@ class FrameList
     : public std::map<uint32_t, VCMFrameBuffer*, TimestampLessThan> {
  public:
   void InsertFrame(VCMFrameBuffer* frame);
-  VCMFrameBuffer* FindFrame(uint16_t seq_num, uint32_t timestamp);
   VCMFrameBuffer* PopFrame(uint32_t timestamp);
   VCMFrameBuffer* Front() const;
   VCMFrameBuffer* Back() const;
@@ -104,7 +106,10 @@ class Vp9SsMap {
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(Clock* clock, rtc::scoped_ptr<EventWrapper> event);
+  VCMJitterBuffer(Clock* clock,
+                  std::unique_ptr<EventWrapper> event,
+                  NackSender* nack_sender = nullptr,
+                  KeyFrameRequestSender* keyframe_request_sender = nullptr);
 
   ~VCMJitterBuffer();
 
@@ -125,10 +130,6 @@ class VCMJitterBuffer {
   FrameCounts FrameStatistics() const;
 
   
-  
-  int num_not_decodable_packets() const;
-
-  
   int num_packets() const;
 
   
@@ -142,14 +143,7 @@ class VCMJitterBuffer {
 
   
   
-  
-  
-  bool CompleteSequenceWithNextFrame();
-
-  
-  
-  
-  bool NextCompleteTimestamp(uint32_t max_wait_time_ms, uint32_t* timestamp);
+  VCMEncodedFrame* NextCompleteFrame(uint32_t max_wait_time_ms);
 
   
   
@@ -204,12 +198,7 @@ class VCMJitterBuffer {
   
   
   void SetDecodeErrorMode(VCMDecodeErrorMode error_mode);
-  int64_t LastDecodedTimestamp() const;
   VCMDecodeErrorMode decode_error_mode() const { return decode_error_mode_; }
-
-  
-  
-  void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
 
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
@@ -272,8 +261,6 @@ class VCMJitterBuffer {
   
   void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
 
-  void ReleaseFrameIfNotDecoding(VCMFrameBuffer* frame);
-
   
   
   VCMFrameBuffer* GetEmptyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -321,12 +308,16 @@ class VCMJitterBuffer {
 
   void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  
+  void RecycleFrameBuffer(VCMFrameBuffer* frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   Clock* clock_;
   
   bool running_;
   CriticalSectionWrapper* crit_sect_;
   
-  rtc::scoped_ptr<EventWrapper> frame_event_;
+  std::unique_ptr<EventWrapper> frame_event_;
   
   int max_number_of_frames_;
   UnorderedFrameList free_frames_ GUARDED_BY(crit_sect_);
@@ -345,8 +336,6 @@ class VCMJitterBuffer {
   int64_t time_last_incoming_frame_count_;
   unsigned int incoming_bit_count_;
   unsigned int incoming_bit_rate_;
-  
-  int num_consecutive_old_frames_;
   
   int num_consecutive_old_packets_;
   
@@ -383,6 +372,7 @@ class VCMJitterBuffer {
   
   
   int frame_counter_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
 };
 }  

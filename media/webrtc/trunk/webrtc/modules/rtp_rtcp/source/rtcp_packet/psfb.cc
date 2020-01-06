@@ -14,7 +14,8 @@
 
 namespace webrtc {
 namespace rtcp {
-
+constexpr uint8_t Psfb::kPacketType;
+constexpr size_t Psfb::kCommonFeedbackLength;
 
 
 

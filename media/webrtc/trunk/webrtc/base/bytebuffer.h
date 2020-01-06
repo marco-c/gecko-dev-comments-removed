@@ -21,42 +21,34 @@ namespace rtc {
 
 class ByteBuffer {
  public:
-
   enum ByteOrder {
     ORDER_NETWORK = 0,  
     ORDER_HOST,         
   };
 
-  
-  ByteBuffer();
-  explicit ByteBuffer(ByteOrder byte_order);
-  ByteBuffer(const char* bytes, size_t len);
-  ByteBuffer(const char* bytes, size_t len, ByteOrder byte_order);
+  explicit ByteBuffer(ByteOrder byte_order) : byte_order_(byte_order) {}
 
-  
-  explicit ByteBuffer(const char* bytes);
-
-  explicit ByteBuffer(const Buffer& buf);
-
-  ~ByteBuffer();
-
-  const char* Data() const { return bytes_ + start_; }
-  size_t Length() const { return end_ - start_; }
-  size_t Capacity() const { return size_ - start_; }
   ByteOrder Order() const { return byte_order_; }
 
-  
-  
-  bool ReadUInt8(uint8_t* val);
-  bool ReadUInt16(uint16_t* val);
-  bool ReadUInt24(uint32_t* val);
-  bool ReadUInt32(uint32_t* val);
-  bool ReadUInt64(uint64_t* val);
-  bool ReadBytes(char* val, size_t len);
+ private:
+  ByteOrder byte_order_;
 
+  RTC_DISALLOW_COPY_AND_ASSIGN(ByteBuffer);
+};
+
+class ByteBufferWriter : public ByteBuffer {
+ public:
   
-  
-  bool ReadString(std::string* val, size_t len);
+  ByteBufferWriter();
+  explicit ByteBufferWriter(ByteOrder byte_order);
+  ByteBufferWriter(const char* bytes, size_t len);
+  ByteBufferWriter(const char* bytes, size_t len, ByteOrder byte_order);
+
+  ~ByteBufferWriter();
+
+  const char* Data() const { return bytes_; }
+  size_t Length() const { return end_; }
+  size_t Capacity() const { return size_; }
 
   
   
@@ -65,6 +57,7 @@ class ByteBuffer {
   void WriteUInt24(uint32_t val);
   void WriteUInt32(uint32_t val);
   void WriteUInt64(uint64_t val);
+  void WriteUVarint(uint64_t val);
   void WriteString(const std::string& val);
   void WriteBytes(const char* val, size_t len);
 
@@ -74,8 +67,55 @@ class ByteBuffer {
   char* ReserveWriteBuffer(size_t len);
 
   
-  
   void Resize(size_t size);
+
+  
+  void Clear();
+
+ private:
+  void Construct(const char* bytes, size_t size);
+
+  char* bytes_;
+  size_t size_;
+  size_t end_;
+
+  
+  
+  RTC_DISALLOW_COPY_AND_ASSIGN(ByteBufferWriter);
+};
+
+
+
+class ByteBufferReader : public ByteBuffer {
+ public:
+  ByteBufferReader(const char* bytes, size_t len);
+  ByteBufferReader(const char* bytes, size_t len, ByteOrder byte_order);
+
+  
+  explicit ByteBufferReader(const char* bytes);
+
+  explicit ByteBufferReader(const Buffer& buf);
+
+  explicit ByteBufferReader(const ByteBufferWriter& buf);
+
+  
+  const char* Data() const { return bytes_ + start_; }
+  
+  size_t Length() const { return end_ - start_; }
+
+  
+  
+  bool ReadUInt8(uint8_t* val);
+  bool ReadUInt16(uint16_t* val);
+  bool ReadUInt24(uint32_t* val);
+  bool ReadUInt32(uint32_t* val);
+  bool ReadUInt64(uint64_t* val);
+  bool ReadUVarint(uint64_t* val);
+  bool ReadBytes(char* val, size_t len);
+
+  
+  
+  bool ReadString(std::string* val, size_t len);
 
   
   
@@ -83,38 +123,15 @@ class ByteBuffer {
   
   bool Consume(size_t size);
 
-  
-  void Clear();
-
-  
-  class ReadPosition {
-    friend class ByteBuffer;
-    ReadPosition(size_t start, int version)
-        : start_(start), version_(version) { }
-    size_t start_;
-    int version_;
-  };
-
-  
-  
-  ReadPosition GetReadPosition() const;
-
-  
-  bool SetReadPosition(const ReadPosition &position);
-
  private:
-  void Construct(const char* bytes, size_t size, ByteOrder byte_order);
+  void Construct(const char* bytes, size_t size);
 
-  char* bytes_;
+  const char* bytes_;
   size_t size_;
   size_t start_;
   size_t end_;
-  int version_;
-  ByteOrder byte_order_;
 
-  
-  
-  RTC_DISALLOW_COPY_AND_ASSIGN(ByteBuffer);
+  RTC_DISALLOW_COPY_AND_ASSIGN(ByteBufferReader);
 };
 
 }  

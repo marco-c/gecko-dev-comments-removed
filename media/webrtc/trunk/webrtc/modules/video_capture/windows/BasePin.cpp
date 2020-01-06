@@ -5,7 +5,7 @@
 
 
 #include <assert.h>
-#include <algorithm>
+#include "nsAutoPtr.h"
 #include "BasePin.h"
 
 namespace mozilla {
@@ -214,7 +214,7 @@ BasePin::QueryPinInfo(PIN_INFO * aInfo)
   if (!mName.empty()) {
     
     
-    size_t len = std::min<size_t>(MAX_PIN_NAME - 1, mName.length()) * sizeof(WCHAR);
+    unsigned int len = PR_MIN((MAX_PIN_NAME-1)*sizeof(WCHAR), (sizeof(WCHAR)*mName.length()));
     memcpy(aInfo->achName, mName.data(), len);
   }
 
@@ -276,7 +276,7 @@ BasePin::EnumMediaTypes(IEnumMediaTypes **aEnum)
     return E_OUTOFMEMORY;
 
   
-  (*aEnum)->AddRef();
+  NS_ADDREF(*aEnum);
 
   return S_OK;
 }

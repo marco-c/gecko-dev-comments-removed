@@ -11,25 +11,31 @@
 #ifndef WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
 #define WEBRTC_MODULES_UTILITY_INCLUDE_MOCK_MOCK_PROCESS_THREAD_H_
 
+#include <memory>
+
 #include "webrtc/modules/utility/include/process_thread.h"
 
-#include "testing/gmock/include/gmock/gmock.h"
+#include "webrtc/test/gmock.h"
 
 namespace webrtc {
 
 class MockProcessThread : public ProcessThread {
  public:
+  
+  
+  
+  
   MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Stop, void());
   MOCK_METHOD1(WakeUp, void(Module* module));
-  MOCK_METHOD1(PostTask, void(ProcessTask* task));
+  MOCK_METHOD1(PostTask, void(rtc::QueuedTask* task));
   MOCK_METHOD1(RegisterModule, void(Module* module));
   MOCK_METHOD1(DeRegisterModule, void(Module* module));
 
   
   
   
-  void PostTask(rtc::scoped_ptr<ProcessTask> task) override {
+  void PostTask(std::unique_ptr<rtc::QueuedTask> task)  {
     PostTask(task.get());
   }
 };

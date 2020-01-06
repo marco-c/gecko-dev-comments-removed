@@ -8,6 +8,8 @@
 
 
 
+#include <memory>
+
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/relayport.h"
 #include "webrtc/p2p/base/relayserver.h"
@@ -15,7 +17,6 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
@@ -152,7 +153,10 @@ class RelayPortTest : public testing::Test,
     EXPECT_FALSE(relay_port_->IsReady());
 
     
-    EXPECT_TRUE_WAIT(HasFailed(&fake_protocol_address), 3600);
+    
+    
+    
+    EXPECT_TRUE_WAIT(HasFailed(&fake_protocol_address), 5000);
 
     
     EXPECT_TRUE_WAIT(relay_port_->IsReady(), kMaxTimeoutMs);
@@ -179,7 +183,7 @@ class RelayPortTest : public testing::Test,
 
     
     
-    rtc::scoped_ptr<rtc::AsyncSocket> tcp_server_socket(
+    std::unique_ptr<rtc::AsyncSocket> tcp_server_socket(
         CreateServerSocket(kRelayTcpAddr));
 
     
@@ -244,16 +248,15 @@ class RelayPortTest : public testing::Test,
   typedef std::map<rtc::AsyncPacketSocket*, int> PacketMap;
 
   rtc::Thread* main_;
-  rtc::scoped_ptr<rtc::PhysicalSocketServer>
-      physical_socket_server_;
-  rtc::scoped_ptr<rtc::VirtualSocketServer> virtual_socket_server_;
+  std::unique_ptr<rtc::PhysicalSocketServer> physical_socket_server_;
+  std::unique_ptr<rtc::VirtualSocketServer> virtual_socket_server_;
   rtc::SocketServerScope ss_scope_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
   std::string username_;
   std::string password_;
-  rtc::scoped_ptr<cricket::RelayPort> relay_port_;
-  rtc::scoped_ptr<cricket::RelayServer> relay_server_;
+  std::unique_ptr<cricket::RelayPort> relay_port_;
+  std::unique_ptr<cricket::RelayServer> relay_server_;
   std::vector<cricket::ProtocolAddress> failed_connections_;
   std::vector<cricket::ProtocolAddress> soft_timedout_connections_;
   PacketMap received_packet_count_;

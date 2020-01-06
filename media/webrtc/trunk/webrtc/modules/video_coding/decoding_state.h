@@ -11,11 +11,16 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_DECODING_STATE_H_
 #define WEBRTC_MODULES_VIDEO_CODING_DECODING_STATE_H_
 
+#include <map>
+#include <set>
+#include <vector>
+
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 
+struct NaluInfo;
 class VCMFrameBuffer;
 class VCMPacket;
 
@@ -61,6 +66,7 @@ class VCMDecodingState {
   bool UsingPictureId(const VCMFrameBuffer* frame) const;
   bool UsingFlexibleMode(const VCMFrameBuffer* frame) const;
   bool AheadOfFramesDecodedClearedTo(uint16_t index) const;
+  bool HaveSpsAndPps(const std::vector<NaluInfo>& nalus) const;
 
   
   
@@ -75,6 +81,8 @@ class VCMDecodingState {
   
   bool frame_decoded_[kFrameDecodedLength];
   uint16_t frame_decoded_cleared_to_;
+  std::set<int> received_sps_;
+  std::map<int, int> received_pps_;
 };
 
 }  

@@ -8,30 +8,30 @@
 
 
 
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/windows/video_capture_ds.h"
 #include "webrtc/modules/video_capture/windows/video_capture_mf.h"
-#include "webrtc/system_wrappers/include/ref_count.h"
 
 namespace webrtc {
 namespace videocapturemodule {
 
 
-VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
-    const int32_t id) {
+VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
   
-  return DeviceInfoDS::Create(id);
+  return DeviceInfoDS::Create();
 }
 
-VideoCaptureModule* VideoCaptureImpl::Create(const int32_t id,
-                                             const char* device_id) {
-  if (device_id == NULL)
-    return NULL;
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+    const char* device_id) {
+  if (device_id == nullptr)
+    return nullptr;
 
   
-  RefCountImpl<VideoCaptureDS>* capture = new RefCountImpl<VideoCaptureDS>(id);
-  if (capture->Init(id, device_id) != 0) {
-    delete capture;
-    capture = NULL;
+  rtc::scoped_refptr<VideoCaptureDS> capture(
+      new rtc::RefCountedObject<VideoCaptureDS>());
+  if (capture->Init(device_id) != 0) {
+    return nullptr;
   }
 
   return capture;

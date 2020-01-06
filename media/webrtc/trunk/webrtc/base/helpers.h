@@ -25,7 +25,6 @@ bool InitRandom(const char* seed, size_t len);
 
 
 
-
 std::string CreateRandomString(size_t length);
 
 
@@ -36,8 +35,14 @@ bool CreateRandomString(size_t length, std::string* str);
 
 
 
+
+
 bool CreateRandomString(size_t length, const std::string& table,
                         std::string* str);
+
+
+
+bool CreateRandomData(size_t length, std::string* data);
 
 
 std::string CreateRandomUuid();

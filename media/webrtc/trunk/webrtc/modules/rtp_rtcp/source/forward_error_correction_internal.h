@@ -11,15 +11,22 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_INTERNAL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_INTERNAL_H_
 
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 
-static const int kMaskSizeLBitSet = 6;
 
-static const int kMaskSizeLBitClear = 2;
+constexpr size_t kUlpfecMaxMediaPackets = 48;
+
+
+constexpr size_t kUlpfecPacketMaskSizeLBitClear = 2;
+constexpr size_t kUlpfecPacketMaskSizeLBitSet = 6;
+
+
+constexpr size_t kUlpfecMinPacketMaskSize = kUlpfecPacketMaskSizeLBitClear;
+constexpr size_t kUlpfecMaxPacketMaskSize = kUlpfecPacketMaskSizeLBitSet;
 
 namespace internal {
 
@@ -65,6 +72,37 @@ void GeneratePacketMasks(int num_media_packets, int num_fec_packets,
                          const PacketMaskTable& mask_table,
                          uint8_t* packet_mask);
 
+
+
+size_t PacketMaskSize(size_t num_sequence_numbers);
+
+
+
+
+
+void InsertZeroColumns(int num_zeros,
+                       uint8_t* new_mask,
+                       int new_mask_bytes,
+                       int num_fec_packets,
+                       int new_bit_index);
+
+
+
+
+
+
+
+
+
+void CopyColumn(uint8_t* new_mask,
+                int new_mask_bytes,
+                uint8_t* old_mask,
+                int old_mask_bytes,
+                int num_fec_packets,
+                int new_bit_index,
+                int old_bit_index);
+
 }  
 }  
+
 #endif  

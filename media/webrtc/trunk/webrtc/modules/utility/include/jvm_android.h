@@ -12,9 +12,10 @@
 #define WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
 
 #include <jni.h>
+
+#include <memory>
 #include <string>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/include/helpers_android.h"
 
@@ -63,6 +64,7 @@ class JavaClass {
   jmethodID GetMethodId(const char* name, const char* signature);
   jmethodID GetStaticMethodId(const char* name, const char* signature);
   jobject CallStaticObjectMethod(jmethodID methodID, ...);
+  jint CallStaticIntMethod(jmethodID methodID, ...);
 
  protected:
   JNIEnv* const jni_;
@@ -76,7 +78,7 @@ class NativeRegistration : public JavaClass {
   NativeRegistration(JNIEnv* jni, jclass clazz);
   ~NativeRegistration();
 
-  rtc::scoped_ptr<GlobalRef> NewObject(
+  std::unique_ptr<GlobalRef> NewObject(
       const char* name, const char* signature, ...);
 
  private:
@@ -96,7 +98,7 @@ class JNIEnvironment {
   
   
   
-  rtc::scoped_ptr<NativeRegistration> RegisterNatives(
+  std::unique_ptr<NativeRegistration> RegisterNatives(
       const char* name, const JNINativeMethod *methods, int num_methods);
 
   
@@ -156,7 +158,7 @@ class JVM {
   
   
   
-  rtc::scoped_ptr<JNIEnvironment> environment();
+  std::unique_ptr<JNIEnvironment> environment();
 
   
   

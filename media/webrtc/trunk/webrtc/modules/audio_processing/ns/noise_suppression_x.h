@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_X_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_X_H_
 
+#include <stddef.h>
+
 #include "webrtc/typedefs.h"
 
 typedef struct NsxHandleT NsxHandle;
@@ -80,6 +82,29 @@ void WebRtcNsx_Process(NsxHandle* nsxInst,
                        const short* const* speechFrame,
                        int num_bands,
                        short* const* outFrame);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const uint32_t* WebRtcNsx_noise_estimate(const NsxHandle* nsxInst,
+                                         int* q_noise);
+
+
+
+
+
+
+size_t WebRtcNsx_num_freq();
 
 #ifdef __cplusplus
 }

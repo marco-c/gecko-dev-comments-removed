@@ -11,6 +11,7 @@
 #ifndef WEBRTC_P2P_BASE_STUNPORT_H_
 #define WEBRTC_P2P_BASE_STUNPORT_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/p2p/base/port.h"
@@ -24,6 +25,11 @@ class SignalThread;
 }
 
 namespace cricket {
+
+
+static const int INFINITE_LIFETIME = -1;
+
+static const int HIGH_COST_PORT_KEEPALIVE_LIFETIME = 2 * 60 * 1000;
 
 
 class UDPPort : public Port {
@@ -74,8 +80,7 @@ class UDPPort : public Port {
   const ServerAddresses& server_addresses() const {
     return server_addresses_;
   }
-  void
-  set_server_addresses(const ServerAddresses& addresses) {
+  void set_server_addresses(const ServerAddresses& addresses) {
     server_addresses_ = addresses;
   }
 
@@ -99,11 +104,23 @@ class UDPPort : public Port {
     return protocol == UDP_PROTOCOL_NAME;
   }
 
+  virtual ProtocolType GetProtocol() const { return PROTO_UDP; }
+
   void set_stun_keepalive_delay(int delay) {
     stun_keepalive_delay_ = delay;
   }
   int stun_keepalive_delay() const {
     return stun_keepalive_delay_;
+  }
+
+  
+  int stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
+  void set_stun_keepalive_lifetime(int lifetime) {
+    stun_keepalive_lifetime_ = lifetime;
+  }
+  
+  bool HasPendingRequest(int msg_type) {
+    return requests_.HasRequest(msg_type);
   }
 
  protected:
@@ -133,6 +150,8 @@ class UDPPort : public Port {
                      const rtc::SocketAddress& addr,
                      const rtc::PacketOptions& options,
                      bool payload);
+
+  virtual void UpdateNetworkCost();
 
   void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                            const rtc::SocketAddress& address);
@@ -208,15 +227,25 @@ class UDPPort : public Port {
 
   bool HasCandidateWithAddress(const rtc::SocketAddress& addr) const;
 
+  
+  
+  
+  int GetStunKeepaliveLifetime() {
+    return (network_cost() >= rtc::kNetworkCostHigh)
+               ? HIGH_COST_PORT_KEEPALIVE_LIFETIME
+               : INFINITE_LIFETIME;
+  }
+
   ServerAddresses server_addresses_;
   ServerAddresses bind_request_succeeded_servers_;
   ServerAddresses bind_request_failed_servers_;
   StunRequestManager requests_;
   rtc::AsyncPacketSocket* socket_;
   int error_;
-  rtc::scoped_ptr<AddressResolver> resolver_;
+  std::unique_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
+  int stun_keepalive_lifetime_ = INFINITE_LIFETIME;
 
   
   

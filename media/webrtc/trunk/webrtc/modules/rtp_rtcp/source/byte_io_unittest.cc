@@ -10,8 +10,8 @@
 
 #include <limits>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {
@@ -26,12 +26,36 @@ class ByteIoTest : public ::testing::Test {
   
   template <typename T>
   T CreateTestValue(bool negative, uint8_t num_bytes) {
+    
+    
+    
+    
+    
+
     T val = 0;
     for (uint8_t i = 0; i != num_bytes; ++i) {
       val = (val << 8) + (negative ? (0xFF - i) : (i + 1));
     }
-    if (negative && std::numeric_limits<T>::is_signed) {
-      val |= static_cast<T>(-1) << (8 * num_bytes);
+
+    
+    
+    
+    
+    if (std::numeric_limits<T>::is_signed && negative &&
+        num_bytes < sizeof(T)) {
+      
+      T mask = static_cast<T>(-1);
+      
+      const T neg_byte = static_cast<T>(0xFF);
+      for (int i = 0; i < num_bytes; ++i) {
+        
+        
+        
+        
+        mask &= ~(neg_byte << (i * 8));
+      }
+      
+      val |= mask;
     }
     return val;
   }
@@ -206,5 +230,43 @@ TEST_F(ByteIoTest, Test64SBitLittleEndian) {
       sizeof(int64_t)>(false);
 }
 
+
+
+TEST(ByteIo, SanityCheckFixedByteArrayUnsignedReadBigEndian) {
+  uint8_t data[8] = {0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88};
+  uint64_t value = ByteReader<uint64_t, 2>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEE), value);
+  value = ByteReader<uint64_t, 3>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDD), value);
+  value = ByteReader<uint64_t, 4>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDDCC), value);
+  value = ByteReader<uint64_t, 5>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDDCCBB), value);
+  value = ByteReader<uint64_t, 6>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDDCCBBAA), value);
+  value = ByteReader<uint64_t, 7>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDDCCBBAA99), value);
+  value = ByteReader<uint64_t, 8>::ReadBigEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xFFEEDDCCBBAA9988), value);
+}
+
+
+TEST(ByteIo, SanityCheckFixedByteArrayUnsignedReadLittleEndian) {
+  uint8_t data[8] = {0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88};
+  uint64_t value = ByteReader<uint64_t, 2>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xEEFF), value);
+  value = ByteReader<uint64_t, 3>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xDDEEFF), value);
+  value = ByteReader<uint64_t, 4>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xCCDDEEFF), value);
+  value = ByteReader<uint64_t, 5>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xBBCCDDEEFF), value);
+  value = ByteReader<uint64_t, 6>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0xAABBCCDDEEFF), value);
+  value = ByteReader<uint64_t, 7>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0x99AABBCCDDEEFF), value);
+  value = ByteReader<uint64_t, 8>::ReadLittleEndian(data);
+  EXPECT_EQ(static_cast<uint64_t>(0x8899AABBCCDDEEFF), value);
+}
 }  
 }  

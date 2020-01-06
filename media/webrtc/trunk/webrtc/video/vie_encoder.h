@@ -11,188 +11,237 @@
 #ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
-#include <map>
+#include <memory>
+#include <string>
 #include <vector>
 
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/event.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/call/call.h"
 #include "webrtc/common_types.h"
-#include "webrtc/frame_callback.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_processing/include/video_processing.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
+#include "webrtc/modules/video_coding/video_coding_impl.h"
+#include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video/video_capture_input.h"
+#include "webrtc/video/overuse_frame_detector.h"
+#include "webrtc/video_encoder.h"
+#include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 
-class BitrateAllocator;
-class BitrateObserver;
-class Config;
-class CriticalSectionWrapper;
-class EncodedImageCallback;
-class PacedSender;
-class PayloadRouter;
 class ProcessThread;
-class QMVideoSettingsCallback;
 class SendStatisticsProxy;
-class ViEBitrateObserver;
-class ViEEffectFilter;
-class VideoCodingModule;
+class VideoBitrateAllocationObserver;
 
-class ViEEncoder : public RtcpIntraFrameObserver,
-                   public VideoEncoderRateObserver,
-                   public VCMPacketizationCallback,
+
+
+
+
+
+
+
+
+class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
+                   public EncodedImageCallback,
                    public VCMSendStatisticsCallback,
-                   public CPULoadStateObserver,
-                   public VideoCaptureCallback {
+                   public ScalingObserverInterface {
  public:
-  friend class ViEBitrateObserver;
+  
+  
+  class EncoderSink : public EncodedImageCallback {
+   public:
+    virtual void OnEncoderConfigurationChanged(
+        std::vector<VideoStream> streams,
+        int min_transmit_bitrate_bps) = 0;
+  };
+
+  
+  static const int kMaxCpuDowngrades = 2;
 
   ViEEncoder(uint32_t number_of_cores,
-             ProcessThread* module_process_thread,
              SendStatisticsProxy* stats_proxy,
-             I420FrameCallback* pre_encode_callback,
-             PacedSender* pacer,
-             BitrateAllocator* bitrate_allocator);
+             const VideoSendStream::Config::EncoderSettings& settings,
+             rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
+             EncodedFrameObserver* encoder_timing);
   ~ViEEncoder();
-
-  bool Init();
-
   
   
   
   
-  void StartThreadsAndSetSharedMembers(
-      rtc::scoped_refptr<PayloadRouter> send_payload_router,
-      VCMProtectionCallback* vcm_protection_callback);
-
-  
-  
-  void StopThreadsAndRemoveSharedMembers();
-
-  void SetNetworkTransmissionState(bool is_transmitting);
-
-  
-  int Owner() const;
-
-  
-  void onLoadStateChanged(CPULoadState state) override;
-
-  
-  void Pause();
-  void Restart();
-
-  
-  int32_t RegisterExternalEncoder(VideoEncoder* encoder,
-                                  uint8_t pl_type,
-                                  bool internal_source);
-  int32_t DeRegisterExternalEncoder(uint8_t pl_type);
-  int32_t SetEncoder(const VideoCodec& video_codec);
-
-  
-  void DeliverFrame(VideoFrame video_frame) override;
-
-  int32_t SendKeyFrame();
-
-  uint32_t LastObservedBitrateBps() const;
-  int CodecTargetBitrate(uint32_t* bitrate) const;
-  
-  
-  
-  
-  void SetProtectionMethod(bool nack, bool fec);
-
-  
-  void SetSenderBufferingMode(int target_delay_ms);
-
-  
-  void OnSetRates(uint32_t bitrate_bps, int framerate) override;
-
-  
-  int32_t SendData(uint8_t payload_type,
-                   const EncodedImage& encoded_image,
-                   const RTPFragmentationHeader& fragmentation_header,
-                   const RTPVideoHeader* rtp_video_hdr) override;
-  void OnEncoderImplementationName(const char* implementation_name) override;
-
-  
-  int32_t SendStatistics(const uint32_t bit_rate,
-                         const uint32_t frame_rate) override;
-
-  
-  void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
-  void OnReceivedSLI(uint32_t ssrc, uint8_t picture_id) override;
-  void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id) override;
-  void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) override;
-
-  
-  void SetSsrcs(const std::vector<uint32_t>& ssrcs);
-
-  void SetMinTransmitBitrate(int min_transmit_bitrate_kbps);
+  void RegisterProcessThread(ProcessThread* module_process_thread);
+  void DeRegisterProcessThread();
 
   
   
   
-  void SuspendBelowMinBitrate();
+  void SetSource(
+      rtc::VideoSourceInterface<VideoFrame>* source,
+      const VideoSendStream::DegradationPreference& degradation_preference);
 
   
-  void RegisterPostEncodeImageCallback(
-        EncodedImageCallback* post_encode_callback);
-
-  int GetPaddingNeededBps() const;
-
- protected:
   
-  void OnNetworkChanged(uint32_t bitrate_bps,
+  
+  void SetSink(EncoderSink* sink, bool rotation_applied);
+
+  
+  void SetStartBitrate(int start_bitrate_bps);
+
+  void SetBitrateObserver(VideoBitrateAllocationObserver* bitrate_observer);
+
+  void ConfigureEncoder(VideoEncoderConfig config,
+                        size_t max_data_payload_length,
+                        bool nack_enabled);
+
+  
+  
+  void Stop();
+
+  void SendKeyFrame();
+
+  
+  virtual void OnReceivedIntraFrameRequest(size_t stream_index);
+  virtual void OnReceivedSLI(uint8_t picture_id);
+  virtual void OnReceivedRPSI(uint64_t picture_id);
+
+  void OnBitrateUpdated(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms);
 
+ protected:
+  
+  
+  rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
+
+  
+  
+  void ScaleUp(ScaleReason reason) override;
+  void ScaleDown(ScaleReason reason) override;
+
  private:
-  bool EncoderPaused() const EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
-  void TraceFrameDropStart() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
-  void TraceFrameDropEnd() EXCLUSIVE_LOCKS_REQUIRED(data_cs_);
+  class ConfigureEncoderTask;
+  class EncodeTask;
+  class VideoSourceProxy;
+
+  class VideoFrameInfo {
+   public:
+    VideoFrameInfo(int width,
+                   int height,
+                   VideoRotation rotation,
+                   bool is_texture)
+        : width(width),
+          height(height),
+          rotation(rotation),
+          is_texture(is_texture) {}
+    int width;
+    int height;
+    VideoRotation rotation;
+    bool is_texture;
+    int pixel_count() const { return width * height; }
+  };
+
+  void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
+                                   size_t max_data_payload_length,
+                                   bool nack_enabled);
+  void ReconfigureEncoder();
+
+  
+  void OnFrame(const VideoFrame& video_frame) override;
+
+  
+  void SendStatistics(uint32_t bit_rate,
+                      uint32_t frame_rate) override;
+
+  void EncodeVideoFrame(const VideoFrame& frame,
+                        int64_t time_when_posted_in_ms);
+
+  
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
+
+  void OnDroppedFrame() override;
+
+  bool EncoderPaused() const;
+  void TraceFrameDropStart();
+  void TraceFrameDropEnd();
+
+  rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
 
-  const rtc::scoped_ptr<VideoProcessing> vp_;
-  const rtc::scoped_ptr<QMVideoSettingsCallback> qm_callback_;
-  const rtc::scoped_ptr<VideoCodingModule> vcm_;
-  rtc::scoped_refptr<PayloadRouter> send_payload_router_;
+  const std::unique_ptr<VideoSourceProxy> source_proxy_;
+  EncoderSink* sink_;
+  const VideoSendStream::Config::EncoderSettings settings_;
+  const VideoCodecType codec_type_;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> data_cs_;
-  rtc::scoped_ptr<BitrateObserver> bitrate_observer_;
+  vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
+  OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
+  std::unique_ptr<QualityScaler> quality_scaler_ ACCESS_ON(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
-  I420FrameCallback* const pre_encode_callback_;
-  PacedSender* const pacer_;
-  BitrateAllocator* const bitrate_allocator_;
-
-  
-  
-  
-  int64_t time_of_last_frame_activity_ms_ GUARDED_BY(data_cs_);
-  VideoCodec encoder_config_ GUARDED_BY(data_cs_);
-  int min_transmit_bitrate_kbps_ GUARDED_BY(data_cs_);
-  uint32_t last_observed_bitrate_bps_ GUARDED_BY(data_cs_);
-  int target_delay_ms_ GUARDED_BY(data_cs_);
-  bool network_is_transmitting_ GUARDED_BY(data_cs_);
-  bool encoder_paused_ GUARDED_BY(data_cs_);
-  bool encoder_paused_and_dropped_frame_ GUARDED_BY(data_cs_);
-  std::map<unsigned int, int64_t> time_last_intra_request_ms_
-      GUARDED_BY(data_cs_);
-
+  rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   ProcessThread* module_process_thread_;
+  rtc::ThreadChecker module_process_thread_checker_;
+  
+  
+  rtc::ThreadChecker thread_checker_;
 
-  bool has_received_sli_ GUARDED_BY(data_cs_);
-  uint8_t picture_id_sli_ GUARDED_BY(data_cs_);
-  bool has_received_rpsi_ GUARDED_BY(data_cs_);
-  uint64_t picture_id_rpsi_ GUARDED_BY(data_cs_);
-  std::map<uint32_t, int> ssrc_streams_ GUARDED_BY(data_cs_);
+  VideoEncoderConfig encoder_config_ ACCESS_ON(&encoder_queue_);
+  std::unique_ptr<VideoBitrateAllocator> rate_allocator_
+      ACCESS_ON(&encoder_queue_);
 
-  bool video_suspended_ GUARDED_BY(data_cs_);
+  
+  
+  bool pending_encoder_reconfiguration_ ACCESS_ON(&encoder_queue_);
+  rtc::Optional<VideoFrameInfo> last_frame_info_ ACCESS_ON(&encoder_queue_);
+  uint32_t encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
+  size_t max_data_payload_length_ ACCESS_ON(&encoder_queue_);
+  bool nack_enabled_ ACCESS_ON(&encoder_queue_);
+  uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);
+  bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
+  bool has_received_sli_ ACCESS_ON(&encoder_queue_);
+  uint8_t picture_id_sli_ ACCESS_ON(&encoder_queue_);
+  bool has_received_rpsi_ ACCESS_ON(&encoder_queue_);
+  uint64_t picture_id_rpsi_ ACCESS_ON(&encoder_queue_);
+  Clock* const clock_;
+  
+  
+  std::vector<int> scale_counter_ ACCESS_ON(&encoder_queue_);
+  
+  bool scaling_enabled_ ACCESS_ON(&encoder_queue_) = false;
+
+  
+  rtc::Optional<int> max_pixel_count_ ACCESS_ON(&encoder_queue_);
+  
+  rtc::Optional<int> max_pixel_count_step_up_ ACCESS_ON(&encoder_queue_);
+
+  rtc::RaceChecker incoming_frame_race_checker_
+      GUARDED_BY(incoming_frame_race_checker_);
+  Atomic32 posted_frames_waiting_for_encode_;
+  
+  int64_t last_captured_timestamp_ GUARDED_BY(incoming_frame_race_checker_);
+  
+  const int64_t delta_ntp_internal_ms_ GUARDED_BY(incoming_frame_race_checker_);
+
+  int64_t last_frame_log_ms_ GUARDED_BY(incoming_frame_race_checker_);
+  int captured_frame_count_ ACCESS_ON(&encoder_queue_);
+  int dropped_frame_count_ ACCESS_ON(&encoder_queue_);
+
+  VideoBitrateAllocationObserver* bitrate_observer_ ACCESS_ON(&encoder_queue_);
+  rtc::Optional<int64_t> last_parameters_update_ms_ ACCESS_ON(&encoder_queue_);
+
+  
+  
+  rtc::TaskQueue encoder_queue_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ViEEncoder);
 };
 
 }  

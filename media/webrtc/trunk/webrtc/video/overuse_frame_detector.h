@@ -11,39 +11,25 @@
 #ifndef WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 #define WEBRTC_VIDEO_OVERUSE_FRAME_DETECTOR_H_
 
+#include <list>
+#include <memory>
+
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/scoped_ptr.h"
-#include "webrtc/base/exp_filter.h"
+#include "webrtc/base/numerics/exp_filter.h"
+#include "webrtc/base/optional.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/include/module.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 namespace webrtc {
 
 class Clock;
-
-
-
-class CpuOveruseObserver {
- public:
-  
-  virtual void OveruseDetected() = 0;
-  
-  virtual void NormalUsage() = 0;
-
- protected:
-  virtual ~CpuOveruseObserver() {}
-};
+class EncodedFrameObserver;
+class VideoFrame;
 
 struct CpuOveruseOptions {
-  CpuOveruseOptions()
-      : low_encode_usage_threshold_percent(55),
-        high_encode_usage_threshold_percent(85),
-        frame_timeout_interval_ms(1500),
-        min_frame_samples(120),
-        min_process_count(3),
-        high_threshold_consecutive_count(2) {}
+  CpuOveruseOptions();
 
   int low_encode_usage_threshold_percent;  
   int high_encode_usage_threshold_percent;  
@@ -68,93 +54,97 @@ struct CpuOveruseMetrics {
 class CpuOveruseMetricsObserver {
  public:
   virtual ~CpuOveruseMetricsObserver() {}
-  virtual void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) = 0;
+  virtual void OnEncodedFrameTimeMeasured(int encode_duration_ms,
+                                          const CpuOveruseMetrics& metrics) = 0;
 };
 
 
 
 
-class OveruseFrameDetector : public Module {
+
+
+class OveruseFrameDetector {
  public:
   OveruseFrameDetector(Clock* clock,
                        const CpuOveruseOptions& options,
-                       CpuOveruseObserver* overuse_observer,
+                       ScalingObserverInterface* overuse_observer,
+                       EncodedFrameObserver* encoder_timing_,
                        CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
 
   
-  void FrameCaptured(int width, int height, int64_t capture_time_ms);
+  void StartCheckForOveruse();
 
   
-  void FrameSent(int64_t capture_time_ms);
+  
+  void StopCheckForOveruse();
 
   
-  int LastProcessingTimeMs() const;
-  int FramesInQueue() const;
+  void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_ms);
 
   
-  int64_t TimeUntilNextProcess() override;
-  int32_t Process() override;
+  void FrameSent(uint32_t timestamp, int64_t time_sent_in_ms);
+
+ protected:
+  void CheckForOveruse();  
 
  private:
   class SendProcessingUsage;
-  class FrameQueue;
+  class CheckOveruseTask;
+  struct FrameTiming {
+    FrameTiming(int64_t capture_ntp_ms, uint32_t timestamp, int64_t now)
+        : capture_ntp_ms(capture_ntp_ms),
+          timestamp(timestamp),
+          capture_ms(now),
+          last_send_ms(-1) {}
+    int64_t capture_ntp_ms;
+    uint32_t timestamp;
+    int64_t capture_ms;
+    int64_t last_send_ms;
+  };
 
-  void UpdateCpuOveruseMetrics() EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  
-  
-  void AddProcessingTime(int elapsed_ms) EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  
+  void EncodedFrameTimeMeasured(int encode_duration_ms);
   bool IsOverusing(const CpuOveruseMetrics& metrics);
   bool IsUnderusing(const CpuOveruseMetrics& metrics, int64_t time_now);
 
-  bool FrameTimeoutDetected(int64_t now) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  bool FrameSizeChanged(int num_pixels) const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool FrameTimeoutDetected(int64_t now) const;
+  bool FrameSizeChanged(int num_pixels) const;
 
-  void ResetAll(int num_pixels) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void ResetAll(int num_pixels);
 
+  rtc::SequencedTaskChecker task_checker_;
   
-  
-  
-  
-  mutable rtc::CriticalSection crit_;
+  CheckOveruseTask* check_overuse_task_;
 
   const CpuOveruseOptions options_;
 
   
-  CpuOveruseObserver* const observer_;
+  ScalingObserverInterface* const observer_;
+  EncodedFrameObserver* const encoder_timing_;
 
   
   CpuOveruseMetricsObserver* const metrics_observer_;
-  CpuOveruseMetrics metrics_ GUARDED_BY(crit_);
-
+  rtc::Optional<CpuOveruseMetrics> metrics_ GUARDED_BY(task_checker_);
   Clock* const clock_;
-  int64_t num_process_times_ GUARDED_BY(crit_);
 
-  int64_t last_capture_time_ GUARDED_BY(crit_);
+  int64_t num_process_times_ GUARDED_BY(task_checker_);
+
+  int64_t last_capture_time_ms_ GUARDED_BY(task_checker_);
+  int64_t last_processed_capture_time_ms_ GUARDED_BY(task_checker_);
 
   
-  int num_pixels_ GUARDED_BY(crit_);
-
-  
-  int64_t next_process_time_;
-  int64_t last_overuse_time_;
-  int checks_above_threshold_;
-  int num_overuse_detections_;
-  int64_t last_rampup_time_;
-  bool in_quick_rampup_;
-  int current_rampup_delay_ms_;
-
-  int64_t last_sample_time_ms_;    
+  int num_pixels_ GUARDED_BY(task_checker_);
+  int64_t last_overuse_time_ms_ GUARDED_BY(task_checker_);
+  int checks_above_threshold_ GUARDED_BY(task_checker_);
+  int num_overuse_detections_ GUARDED_BY(task_checker_);
+  int64_t last_rampup_time_ms_ GUARDED_BY(task_checker_);
+  bool in_quick_rampup_ GUARDED_BY(task_checker_);
+  int current_rampup_delay_ms_ GUARDED_BY(task_checker_);
 
   
   
-  const rtc::scoped_ptr<SendProcessingUsage> usage_ GUARDED_BY(crit_);
-  const rtc::scoped_ptr<FrameQueue> frame_queue_ GUARDED_BY(crit_);
-
-  rtc::ThreadChecker processing_thread_;
+  const std::unique_ptr<SendProcessingUsage> usage_ GUARDED_BY(task_checker_);
+  std::list<FrameTiming> frame_timing_ GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };

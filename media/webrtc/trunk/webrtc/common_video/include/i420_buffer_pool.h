@@ -12,9 +12,10 @@
 #define WEBRTC_COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
 
 #include <list>
+#include <limits>
 
-#include "webrtc/base/thread_checker.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/race_checker.h"
 
 namespace webrtc {
 
@@ -23,19 +24,39 @@ namespace webrtc {
 
 
 
+
+
 class I420BufferPool {
  public:
-  I420BufferPool();
+  I420BufferPool()
+      : I420BufferPool(false) {}
+  explicit I420BufferPool(bool zero_initialize)
+      : I420BufferPool(zero_initialize, std::numeric_limits<size_t>::max()) {}
+  I420BufferPool(bool zero_initialze, size_t max_number_of_buffers);
+
   
   
-  rtc::scoped_refptr<VideoFrameBuffer> CreateBuffer(int width, int height);
+  
+  rtc::scoped_refptr<I420Buffer> CreateBuffer(int width, int height);
   
   
   void Release();
 
  private:
-  rtc::ThreadChecker thread_checker_;
-  std::list<rtc::scoped_refptr<I420Buffer>> buffers_;
+  
+  
+  using PooledI420Buffer = rtc::RefCountedObject<I420Buffer>;
+
+  rtc::RaceChecker race_checker_;
+  std::list<rtc::scoped_refptr<PooledI420Buffer>> buffers_;
+  
+  
+  
+  
+  
+  const bool zero_initialize_;
+  
+  const size_t max_number_of_buffers_;
 };
 
 }  

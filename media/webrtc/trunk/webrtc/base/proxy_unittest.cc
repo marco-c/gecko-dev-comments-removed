@@ -8,6 +8,7 @@
 
 
 
+#include <memory>
 #include <string>
 #include "webrtc/base/autodetectproxy.h"
 #include "webrtc/base/gunit.h"
@@ -67,10 +68,10 @@ class ProxyTest : public testing::Test {
   }
 
  private:
-  rtc::scoped_ptr<rtc::SocketServer> ss_;
-  rtc::scoped_ptr<rtc::SocksProxyServer> socks_;
+  std::unique_ptr<rtc::SocketServer> ss_;
+  std::unique_ptr<rtc::SocksProxyServer> socks_;
   
-  rtc::scoped_ptr<rtc::HttpListenServer> https_;
+  std::unique_ptr<rtc::HttpListenServer> https_;
 };
 
 

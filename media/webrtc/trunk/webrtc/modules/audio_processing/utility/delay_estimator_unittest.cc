@@ -8,13 +8,10 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
-
-extern "C" {
 #include "webrtc/modules/audio_processing/utility/delay_estimator.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_internal.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
-}
+#include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
 namespace {

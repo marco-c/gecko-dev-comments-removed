@@ -8,13 +8,16 @@
 
 
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_INCLUDE_AUDIO_DECODER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_DECODER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_DECODER_H_
 
-#include <stdlib.h>  
+#include <memory>
+#include <vector>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -32,7 +35,58 @@ class AudioDecoder {
   enum { kNotImplemented = -2 };
 
   AudioDecoder() = default;
-  virtual ~AudioDecoder() {} 
+  virtual ~AudioDecoder() = default;
+
+  class EncodedAudioFrame {
+   public:
+    struct DecodeResult {
+      size_t num_decoded_samples;
+      SpeechType speech_type;
+    };
+
+    virtual ~EncodedAudioFrame() = default;
+
+    
+    
+    virtual size_t Duration() const = 0;
+
+    
+    
+    
+    
+    
+    
+    virtual rtc::Optional<DecodeResult> Decode(
+        rtc::ArrayView<int16_t> decoded) const = 0;
+  };
+
+  struct ParseResult {
+    ParseResult();
+    ParseResult(uint32_t timestamp,
+                int priority,
+                std::unique_ptr<EncodedAudioFrame> frame);
+    ParseResult(ParseResult&& b);
+    ~ParseResult();
+
+    ParseResult& operator=(ParseResult&& b);
+
+    
+    uint32_t timestamp;
+    
+    
+    
+    int priority;
+    std::unique_ptr<EncodedAudioFrame> frame;
+  };
+
+  
+  
+  
+  
+  
+  
+  virtual std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                                uint32_t timestamp);
 
   
   
@@ -96,8 +150,10 @@ class AudioDecoder {
 
   
   
-  virtual CNG_dec_inst* CngDecoderInstance();
+  virtual int SampleRateHz() const = 0;
 
+  
+  
   virtual size_t Channels() const = 0;
 
  protected:

@@ -14,16 +14,12 @@
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
 
-#include "webrtc/engine_configurations.h"
-
-
 
 
 #define _TEST_BASE_
 #define _TEST_RTP_RTCP_
 #define _TEST_HARDWARE_
 #define _TEST_CODEC_
-#define _TEST_DTMF_
 #define _TEST_VOLUME_
 #define _TEST_AUDIO_PROCESSING_
 #define _TEST_FILE_
@@ -43,39 +39,6 @@
 
 
 
-
-
-
-#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
-#undef _TEST_CODEC_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-#undef _TEST_VOLUME_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_DTMF_API
-#undef _TEST_DTMF_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-#undef _TEST_RTP_RTCP_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-#undef _TEST_AUDIO_PROCESSING_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_FILE_API
-#undef _TEST_FILE_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-#undef _TEST_VIDEO_SYNC_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_HARDWARE_API
-#undef _TEST_HARDWARE_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-#undef _TEST_XMEDIA_
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#undef _TEST_NETEQ_STATS_
-#endif
 
 
 #ifdef __INSURE__

@@ -18,6 +18,8 @@
 
 #include "defines.h"
 #include "constants.h"
+#include "webrtc/base/sanitizer.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 
 
@@ -25,33 +27,55 @@
 
 
 void WebRtcIlbcfix_CreateAugmentedVec(
-    size_t index,  
-    int16_t *buffer,  
+    size_t index,          
 
-    int16_t *cbVec  
-                                      ) {
+    const int16_t* buffer, 
+
+
+    int16_t* cbVec) {      
   size_t ilow;
-  int16_t *ppo, *ppi;
+  const int16_t *ppo, *ppi;
   int16_t cbVecTmp[4];
+  
 
-  ilow = index-4;
+
+  size_t interp_len = WEBRTC_SPL_MIN(index, 4);
+
+  rtc_MsanCheckInitialized(buffer - index - interp_len, sizeof(buffer[0]),
+                           index + interp_len);
+
+  ilow = index - interp_len;
 
   
   ppo = buffer-index;
   WEBRTC_SPL_MEMCPY_W16(cbVec, ppo, index);
 
   
-  ppo = buffer - 4;
-  ppi = buffer - index - 4;
+  ppo = buffer - interp_len;
+  ppi = buffer - index - interp_len;
 
   
 
 
-  WebRtcSpl_ElementwiseVectorMult(&cbVec[ilow], ppi, WebRtcIlbcfix_kAlpha, 4, 15);
-  WebRtcSpl_ReverseOrderMultArrayElements(cbVecTmp, ppo, &WebRtcIlbcfix_kAlpha[3], 4, 15);
-  WebRtcSpl_AddVectorsAndShift(&cbVec[ilow], &cbVec[ilow], cbVecTmp, 4, 0);
+
+  WebRtcSpl_ElementwiseVectorMult(&cbVec[ilow], ppi, WebRtcIlbcfix_kAlpha,
+                                  interp_len, 15);
+  WebRtcSpl_ReverseOrderMultArrayElements(
+      cbVecTmp, ppo, &WebRtcIlbcfix_kAlpha[interp_len - 1], interp_len, 15);
+  WebRtcSpl_AddVectorsAndShift(&cbVec[ilow], &cbVec[ilow], cbVecTmp, interp_len,
+                               0);
 
   
   ppo = buffer - index;
-  WEBRTC_SPL_MEMCPY_W16(cbVec+index,ppo,(SUBL-index));
+  
+
+
+
+
+
+
+
+
+
+  WEBRTC_SPL_MEMCPY_W16(cbVec+index, ppo, WEBRTC_SPL_MIN(SUBL-index, index));
 }

@@ -18,7 +18,7 @@
 
 #include <iostream>
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 
 
@@ -282,7 +282,7 @@ TEST(DtmfBuffer, InvalidEvents) {
   
   event.volume = -1;
   EXPECT_EQ(DtmfBuffer::kInvalidEventParameters, buffer.InsertEvent(event));
-  event.volume = 37;
+  event.volume = 64;
   EXPECT_EQ(DtmfBuffer::kInvalidEventParameters, buffer.InsertEvent(event));
   event.volume = 0;  
 

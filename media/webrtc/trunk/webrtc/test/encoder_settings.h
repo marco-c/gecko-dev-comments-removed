@@ -10,12 +10,43 @@
 #ifndef WEBRTC_TEST_ENCODER_SETTINGS_H_
 #define WEBRTC_TEST_ENCODER_SETTINGS_H_
 
+#include <vector>
+
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 namespace test {
-std::vector<VideoStream> CreateVideoStreams(size_t num_streams);
+
+class DefaultVideoStreamFactory
+    : public VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  DefaultVideoStreamFactory();
+
+  static const size_t kMaxNumberOfStreams = 3;
+  
+  static const int kMaxBitratePerStream[];
+  
+  static const int kDefaultMinBitratePerStream[];
+
+ private:
+  std::vector<VideoStream> CreateEncoderStreams(
+      int width,
+      int height,
+      const VideoEncoderConfig& encoder_config) override;
+};
+
+
+
+
+
+std::vector<VideoStream> CreateVideoStreams(
+    int width,
+    int height,
+    const webrtc::VideoEncoderConfig& encoder_config);
+
+void FillEncoderConfiguration(size_t num_streams,
+                              VideoEncoderConfig* configuration);
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
     const VideoSendStream::Config::EncoderSettings& encoder_settings);

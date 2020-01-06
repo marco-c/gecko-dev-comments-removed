@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -22,55 +23,64 @@
 
 namespace webrtc {
 
+
 class FileWrapper : public InStream, public OutStream {
  public:
   static const size_t kMaxFileNameSize = 1024;
 
   
+  
   static FileWrapper* Create();
+  static FileWrapper Open(const char* file_name_utf8, bool read_only);
+
+  FileWrapper(FILE* file, size_t max_size);
+  ~FileWrapper() override;
 
   
-  virtual bool Open() const = 0;
+  FileWrapper(FileWrapper&& other);
+  FileWrapper& operator=(FileWrapper&& other);
 
   
-  virtual int OpenFile(const char* file_name_utf8,
-                       bool read_only,
-                       bool loop = false,
-                       bool text = false) = 0;
+  bool is_open() const { return file_ != nullptr; }
 
   
-  
-  
-  virtual int OpenFromFileHandle(FILE* handle,
-                                 bool manage_file,
-                                 bool read_only,
-                                 bool loop = false) = 0;
-
-  virtual int CloseFile() = 0;
+  bool OpenFile(const char* file_name_utf8, bool read_only);
 
   
   
-  virtual int SetMaxFileSize(size_t bytes)  = 0;
+  bool OpenFromFileHandle(FILE* handle);
 
-  
-  virtual int Flush() = 0;
+  void CloseFile();
 
   
   
   
-  virtual int FileName(char* file_name_utf8,
-                       size_t size) const = 0;
+  void SetMaxFileSize(size_t bytes);
 
   
-  
-  
-  virtual int WriteText(const char* format, ...) = 0;
+  int Flush();
 
-  
-  
-  
   
   int Rewind() override;
+  int Read(void* buf, size_t length) override;
+  bool Write(const void* buf, size_t length) override;
+
+ private:
+  FileWrapper();
+
+  void CloseFileImpl();
+  int FlushImpl();
+
+  
+  rtc::CriticalSection lock_;
+
+  FILE* file_ = nullptr;
+  size_t position_ = 0;
+  size_t max_size_in_bytes_ = 0;
+
+  
+  FileWrapper(const FileWrapper&) = delete;
+  FileWrapper& operator=(const FileWrapper&) = delete;
 };
 
 }  

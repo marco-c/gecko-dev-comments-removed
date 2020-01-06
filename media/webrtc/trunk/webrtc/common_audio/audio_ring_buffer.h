@@ -11,6 +11,8 @@
 #define WEBRTC_COMMON_AUDIO_AUDIO_RING_BUFFER_H_
 
 #include <stddef.h>
+
+#include <memory>
 #include <vector>
 
 struct RingBuffer;
@@ -46,7 +48,6 @@ class AudioRingBuffer final {
   void MoveReadPositionBackward(size_t frames);
 
  private:
-  
   
   std::vector<RingBuffer*> buffers_;
 };

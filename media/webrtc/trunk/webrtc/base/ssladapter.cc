@@ -8,10 +8,6 @@
 
 
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif  
-
 #include "webrtc/base/ssladapter.h"
 
 #include "webrtc/base/sslconfig.h"

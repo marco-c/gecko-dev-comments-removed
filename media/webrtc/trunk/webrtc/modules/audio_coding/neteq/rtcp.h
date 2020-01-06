@@ -48,7 +48,7 @@ class Rtcp {
                                      
   uint32_t expected_prior_;  
                              
-  uint32_t jitter_;  
+  int64_t jitter_;  
   int32_t transit_;  
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Rtcp);

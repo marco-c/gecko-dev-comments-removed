@@ -14,10 +14,11 @@
 #ifndef WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 #define WEBRTC_COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 
+#include <memory>
+
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/system_wrappers/include/aligned_malloc.h"
-#include "webrtc/test/testsupport/gtest_prod_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -106,7 +107,7 @@ class SincResampler {
   static float Convolve_SSE(const float* input_ptr, const float* k1,
                             const float* k2,
                             double kernel_interpolation_factor);
-#elif defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
+#elif defined(WEBRTC_HAS_NEON)
   static float Convolve_NEON(const float* input_ptr, const float* k1,
                              const float* k2,
                              double kernel_interpolation_factor);
@@ -137,12 +138,12 @@ class SincResampler {
   
   
   
-  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_storage_;
-  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_pre_sinc_storage_;
-  rtc::scoped_ptr<float[], AlignedFreeDeleter> kernel_window_storage_;
+  std::unique_ptr<float[], AlignedFreeDeleter> kernel_storage_;
+  std::unique_ptr<float[], AlignedFreeDeleter> kernel_pre_sinc_storage_;
+  std::unique_ptr<float[], AlignedFreeDeleter> kernel_window_storage_;
 
   
-  rtc::scoped_ptr<float[], AlignedFreeDeleter> input_buffer_;
+  std::unique_ptr<float[], AlignedFreeDeleter> input_buffer_;
 
   
   

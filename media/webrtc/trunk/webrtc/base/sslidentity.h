@@ -14,10 +14,12 @@
 #define WEBRTC_BASE_SSLIDENTITY_H_
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/timeutils.h"
 
@@ -25,6 +27,18 @@ namespace rtc {
 
 
 class SSLCertChain;
+
+struct SSLCertificateStats {
+  SSLCertificateStats(std::string&& fingerprint,
+                      std::string&& fingerprint_algorithm,
+                      std::string&& base64_certificate,
+                      std::unique_ptr<SSLCertificateStats>&& issuer);
+  ~SSLCertificateStats();
+  std::string fingerprint;
+  std::string fingerprint_algorithm;
+  std::string base64_certificate;
+  std::unique_ptr<SSLCertificateStats> issuer;
+};
 
 
 
@@ -52,7 +66,7 @@ class SSLCertificate {
 
   
   
-  virtual bool GetChain(SSLCertChain** chain) const = 0;
+  virtual std::unique_ptr<SSLCertChain> GetChain() const = 0;
 
   
   virtual std::string ToPEMString() const = 0;
@@ -73,6 +87,15 @@ class SSLCertificate {
   
   
   virtual int64_t CertificateExpirationTime() const = 0;
+
+  
+  
+  
+  std::unique_ptr<SSLCertificateStats> GetStats() const;
+
+ private:
+  std::unique_ptr<SSLCertificateStats> GetStats(
+    std::unique_ptr<SSLCertificateStats> issuer) const;
 };
 
 
@@ -115,15 +138,19 @@ class SSLCertChain {
 
 
 
-
-
-
-enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_RSA };
+enum KeyType { KT_RSA, KT_ECDSA, KT_LAST, KT_DEFAULT = KT_ECDSA };
 
 static const int kRsaDefaultModSize = 1024;
 static const int kRsaDefaultExponent = 0x10001;  
 static const int kRsaMinModSize = 1024;
 static const int kRsaMaxModSize = 8192;
+
+
+static const int kDefaultCertificateLifetimeInSeconds =
+    60 * 60 * 24 * 30;  
+
+
+static const int kCertificateWindowInSeconds = -60 * 60 * 24;
 
 struct RSAParams {
   unsigned int mod_size;
@@ -188,13 +215,19 @@ class SSLIdentity {
   
   
   
+  
+  
+  
+  static SSLIdentity* GenerateWithExpiration(const std::string& common_name,
+                                             const KeyParams& key_param,
+                                             time_t certificate_lifetime);
   static SSLIdentity* Generate(const std::string& common_name,
                                const KeyParams& key_param);
   static SSLIdentity* Generate(const std::string& common_name,
-                               KeyType key_type) {
-    return Generate(common_name, KeyParams(key_type));
-  }
+                               KeyType key_type);
 
+  
+  
   
   static SSLIdentity* GenerateForTest(const SSLIdentityParams& params);
 
@@ -212,6 +245,8 @@ class SSLIdentity {
 
   
   virtual const SSLCertificate& certificate() const = 0;
+  virtual std::string PrivateKeyToPEMString() const = 0;
+  virtual std::string PublicKeyToPEMString() const = 0;
 
   
   static bool PemToDer(const std::string& pem_type,
@@ -221,6 +256,9 @@ class SSLIdentity {
                               const unsigned char* data,
                               size_t length);
 };
+
+bool operator==(const SSLIdentity& a, const SSLIdentity& b);
+bool operator!=(const SSLIdentity& a, const SSLIdentity& b);
 
 
 

@@ -11,34 +11,45 @@
 
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 
-#if defined(WEBRTC_IOS)
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_decoder.h"
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_encoder.h"
+#if defined(WEBRTC_USE_H264)
+#include "webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.h"
+#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #endif
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 
 namespace webrtc {
 
+namespace {
 
-
-
-#if defined(WEBRTC_IOS)
-extern bool IsH264CodecSupportedObjC();
+#if defined(WEBRTC_USE_H264)
+bool g_rtc_use_h264 = true;
 #endif
 
+}  
+
+void DisableRtcUseH264() {
+#if defined(WEBRTC_USE_H264)
+  g_rtc_use_h264 = false;
+#endif
+}
+
+
 bool IsH264CodecSupported() {
-#if defined(WEBRTC_IOS)
-  return IsH264CodecSupportedObjC();
+#if defined(WEBRTC_USE_H264)
+  return g_rtc_use_h264;
 #else
   return false;
 #endif
 }
 
-H264Encoder* H264Encoder::Create() {
+H264Encoder* H264Encoder::Create(const cricket::VideoCodec& codec) {
   RTC_DCHECK(H264Encoder::IsSupported());
-#if defined(WEBRTC_IOS) && defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
-  return new H264VideoToolboxEncoder();
+#if defined(WEBRTC_USE_H264)
+  RTC_CHECK(g_rtc_use_h264);
+  LOG(LS_INFO) << "Creating H264EncoderImpl.";
+  return new H264EncoderImpl(codec);
 #else
   RTC_NOTREACHED();
   return nullptr;
@@ -51,8 +62,10 @@ bool H264Encoder::IsSupported() {
 
 H264Decoder* H264Decoder::Create() {
   RTC_DCHECK(H264Decoder::IsSupported());
-#if defined(WEBRTC_IOS) && defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
-  return new H264VideoToolboxDecoder();
+#if defined(WEBRTC_USE_H264)
+  RTC_CHECK(g_rtc_use_h264);
+  LOG(LS_INFO) << "Creating H264DecoderImpl.";
+  return new H264DecoderImpl();
 #else
   RTC_NOTREACHED();
   return nullptr;

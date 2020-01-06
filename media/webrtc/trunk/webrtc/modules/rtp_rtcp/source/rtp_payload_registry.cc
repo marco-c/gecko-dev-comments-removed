@@ -10,42 +10,83 @@
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 
+#include <algorithm>
+
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/stringutils.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
 
-RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
-      rtp_payload_strategy_(rtp_payload_strategy),
-      red_payload_type_(-1),
-      ulpfec_payload_type_(-1),
-      incoming_payload_type_(-1),
-      last_received_payload_type_(-1),
-      last_received_media_payload_type_(-1),
-      rtx_(false),
-      rtx_payload_type_(-1),
-      use_rtx_payload_mapping_on_restore_(false),
-      ssrc_rtx_(0) {}
+namespace {
 
-RTPPayloadRegistry::~RTPPayloadRegistry() {
-  while (!payload_type_map_.empty()) {
-    RtpUtility::PayloadTypeMap::iterator it = payload_type_map_.begin();
-    delete it->second;
-    payload_type_map_.erase(it);
+bool PayloadIsCompatible(const RtpUtility::Payload& payload,
+                         const CodecInst& audio_codec) {
+  if (!payload.audio)
+    return false;
+  if (_stricmp(payload.name, audio_codec.plname) != 0)
+    return false;
+  const AudioPayload& audio_payload = payload.typeSpecific.Audio;
+  return audio_payload.frequency == static_cast<uint32_t>(audio_codec.plfreq) &&
+         audio_payload.channels == audio_codec.channels;
+}
+
+bool PayloadIsCompatible(const RtpUtility::Payload& payload,
+                         const VideoCodec& video_codec) {
+  if (payload.audio || _stricmp(payload.name, video_codec.plName) != 0)
+    return false;
+  
+  if (video_codec.codecType == kVideoCodecH264) {
+    return video_codec.H264().profile ==
+           payload.typeSpecific.Video.h264_profile;
+  }
+  return true;
+}
+
+RtpUtility::Payload CreatePayloadType(const CodecInst& audio_codec) {
+  RtpUtility::Payload payload;
+  payload.name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+  strncpy(payload.name, audio_codec.plname, RTP_PAYLOAD_NAME_SIZE - 1);
+  RTC_DCHECK_GE(audio_codec.plfreq, 1000);
+  payload.typeSpecific.Audio.frequency = audio_codec.plfreq;
+  payload.typeSpecific.Audio.channels = audio_codec.channels;
+  payload.typeSpecific.Audio.rate = 0;
+  payload.audio = true;
+  return payload;
+}
+
+RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
+  switch (type) {
+    case kVideoCodecVP8:
+      return kRtpVideoVp8;
+    case kVideoCodecVP9:
+      return kRtpVideoVp9;
+    case kVideoCodecH264:
+      return kRtpVideoH264;
+    case kVideoCodecRED:
+    case kVideoCodecULPFEC:
+      return kRtpVideoNone;
+    default:
+      return kRtpVideoGeneric;
   }
 }
 
-int32_t RTPPayloadRegistry::RegisterReceivePayload(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const int8_t payload_type,
-    const uint32_t frequency,
-    const size_t channels,
-    const uint32_t rate,
-    bool* created_new_payload) {
+RtpUtility::Payload CreatePayloadType(const VideoCodec& video_codec) {
+  RtpUtility::Payload payload;
+  payload.name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+  strncpy(payload.name, video_codec.plName, RTP_PAYLOAD_NAME_SIZE - 1);
+  payload.typeSpecific.Video.videoCodecType =
+      ConvertToRtpVideoCodecType(video_codec.codecType);
+  if (video_codec.codecType == kVideoCodecH264)
+    payload.typeSpecific.Video.h264_profile = video_codec.H264().profile;
+  payload.audio = false;
+  return payload;
+}
+
+bool IsPayloadTypeValid(int8_t payload_type) {
   assert(payload_type >= 0);
-  assert(payload_name);
-  *created_new_payload = false;
 
   
   switch (payload_type) {
@@ -61,58 +102,75 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
     case 79:        
       LOG(LS_ERROR) << "Can't register invalid receiver payload type: "
                     << payload_type;
-      return -1;
+      return false;
     default:
-      break;
+      return true;
   }
+}
 
-  size_t payload_name_length = strlen(payload_name);
+}  
 
-  CriticalSectionScoped cs(crit_sect_.get());
+RTPPayloadRegistry::RTPPayloadRegistry()
+    : incoming_payload_type_(-1),
+      last_received_payload_type_(-1),
+      last_received_media_payload_type_(-1),
+      rtx_(false),
+      ssrc_rtx_(0) {}
 
-  RtpUtility::PayloadTypeMap::iterator it =
-      payload_type_map_.find(payload_type);
+RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
+int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
+                                                   bool* created_new_payload) {
+  *created_new_payload = false;
+  if (!IsPayloadTypeValid(audio_codec.pltype))
+    return -1;
+
+  rtc::CritScope cs(&crit_sect_);
+
+  auto it = payload_type_map_.find(audio_codec.pltype);
   if (it != payload_type_map_.end()) {
     
-    RtpUtility::Payload* payload = it->second;
-
-    assert(payload);
-
-    size_t name_length = strlen(payload->name);
-
     
-    
-    if (payload_name_length == name_length &&
-        RtpUtility::StringCompare(
-            payload->name, payload_name, payload_name_length)) {
-      if (rtp_payload_strategy_->PayloadIsCompatible(*payload, frequency,
-                                                     channels, rate)) {
-        rtp_payload_strategy_->UpdatePayloadRate(payload, rate);
-        return 0;
-      }
+    if (PayloadIsCompatible(it->second, audio_codec)) {
+      it->second.typeSpecific.Audio.rate = 0;
+      return 0;
     }
-    LOG(LS_ERROR) << "Payload type already registered: "
-                  << static_cast<int>(payload_type);
+    LOG(LS_ERROR) << "Payload type already registered: " << audio_codec.pltype;
     return -1;
   }
 
-  if (rtp_payload_strategy_->CodecsMustBeUnique()) {
-    DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-        payload_name, payload_name_length, frequency, channels, rate);
-  }
+  
+  DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(audio_codec);
 
-  RtpUtility::Payload* payload = rtp_payload_strategy_->CreatePayloadType(
-      payload_name, payload_type, frequency, channels, rate);
-
-  payload_type_map_[payload_type] = payload;
+  payload_type_map_[audio_codec.pltype] = CreatePayloadType(audio_codec);
   *created_new_payload = true;
 
-  if (RtpUtility::StringCompare(payload_name, "red", 3)) {
-    red_payload_type_ = payload_type;
-  } else if (RtpUtility::StringCompare(payload_name, "ulpfec", 6)) {
-    ulpfec_payload_type_ = payload_type;
+  
+  
+  last_received_payload_type_ = -1;
+  last_received_media_payload_type_ = -1;
+  return 0;
+}
+
+int32_t RTPPayloadRegistry::RegisterReceivePayload(
+    const VideoCodec& video_codec) {
+  if (!IsPayloadTypeValid(video_codec.plType))
+    return -1;
+
+  rtc::CritScope cs(&crit_sect_);
+
+  auto it = payload_type_map_.find(video_codec.plType);
+  if (it != payload_type_map_.end()) {
+    
+    
+    if (PayloadIsCompatible(it->second, video_codec))
+      return 0;
+    LOG(LS_ERROR) << "Payload type already registered: "
+                  << static_cast<int>(video_codec.plType);
+    return -1;
   }
+
+  payload_type_map_[video_codec.plType] = CreatePayloadType(video_codec);
 
   
   
@@ -123,12 +181,8 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
 
 int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
     const int8_t payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
-  RtpUtility::PayloadTypeMap::iterator it =
-      payload_type_map_.find(payload_type);
-  assert(it != payload_type_map_.end());
-  delete it->second;
-  payload_type_map_.erase(it);
+  rtc::CritScope cs(&crit_sect_);
+  payload_type_map_.erase(payload_type);
   return 0;
 }
 
@@ -136,95 +190,52 @@ int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
 
 
 void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const size_t payload_name_length,
-    const uint32_t frequency,
-    const size_t channels,
-    const uint32_t rate) {
-  RtpUtility::PayloadTypeMap::iterator iterator = payload_type_map_.begin();
-  for (; iterator != payload_type_map_.end(); ++iterator) {
-    RtpUtility::Payload* payload = iterator->second;
-    size_t name_length = strlen(payload->name);
-
-    if (payload_name_length == name_length &&
-        RtpUtility::StringCompare(
-            payload->name, payload_name, payload_name_length)) {
+    const CodecInst& audio_codec) {
+  for (auto iterator = payload_type_map_.begin();
+       iterator != payload_type_map_.end(); ++iterator) {
+    if (PayloadIsCompatible(iterator->second, audio_codec)) {
       
-      
-      if (payload->audio) {
-        if (rtp_payload_strategy_->PayloadIsCompatible(*payload, frequency,
-                                                       channels, rate)) {
-          
-          delete payload;
-          payload_type_map_.erase(iterator);
-          break;
-        }
-      } else if (RtpUtility::StringCompare(payload_name, "red", 3)) {
-        delete payload;
-        payload_type_map_.erase(iterator);
-        break;
-      }
+      payload_type_map_.erase(iterator);
+      break;
     }
   }
 }
 
-int32_t RTPPayloadRegistry::ReceivePayloadType(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const uint32_t frequency,
-    const size_t channels,
-    const uint32_t rate,
-    int8_t* payload_type) const {
+int32_t RTPPayloadRegistry::ReceivePayloadType(const CodecInst& audio_codec,
+                                               int8_t* payload_type) const {
   assert(payload_type);
-  size_t payload_name_length = strlen(payload_name);
+  rtc::CritScope cs(&crit_sect_);
 
-  CriticalSectionScoped cs(crit_sect_.get());
+  for (const auto& it : payload_type_map_) {
+    if (PayloadIsCompatible(it.second, audio_codec)) {
+      *payload_type = it.first;
+      return 0;
+    }
+  }
+  return -1;
+}
 
-  RtpUtility::PayloadTypeMap::const_iterator it = payload_type_map_.begin();
+int32_t RTPPayloadRegistry::ReceivePayloadType(const VideoCodec& video_codec,
+                                               int8_t* payload_type) const {
+  assert(payload_type);
+  rtc::CritScope cs(&crit_sect_);
 
-  for (; it != payload_type_map_.end(); ++it) {
-    RtpUtility::Payload* payload = it->second;
-    assert(payload);
-
-    size_t name_length = strlen(payload->name);
-    if (payload_name_length == name_length &&
-        RtpUtility::StringCompare(
-            payload->name, payload_name, payload_name_length)) {
-      
-      if (payload->audio) {
-        if (rate == 0) {
-          
-          if (payload->typeSpecific.Audio.frequency == frequency &&
-              payload->typeSpecific.Audio.channels == channels) {
-            *payload_type = it->first;
-            return 0;
-          }
-        } else {
-          
-          if (payload->typeSpecific.Audio.frequency == frequency &&
-              payload->typeSpecific.Audio.channels == channels &&
-              payload->typeSpecific.Audio.rate == rate) {
-            
-            *payload_type = it->first;
-            return 0;
-          }
-        }
-      } else {
-        
-        *payload_type = it->first;
-        return 0;
-      }
+  for (const auto& it : payload_type_map_) {
+    if (PayloadIsCompatible(it.second, video_codec)) {
+      *payload_type = it.first;
+      return 0;
     }
   }
   return -1;
 }
 
 bool RTPPayloadRegistry::RtxEnabled() const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return rtx_;
 }
 
 bool RTPPayloadRegistry::IsRtx(const RTPHeader& header) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   return IsRtxInternal(header);
 }
 
@@ -232,20 +243,11 @@ bool RTPPayloadRegistry::IsRtxInternal(const RTPHeader& header) const {
   return rtx_ && ssrc_rtx_ == header.ssrc;
 }
 
-bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t** restored_packet,
-                                               const uint8_t* packet,
-                                               size_t* packet_length,
-                                               uint32_t original_ssrc,
-                                               const RTPHeader& header) const {
-  return RestoreOriginalPacket(*restored_packet, packet, packet_length,
-                               original_ssrc, header);
-}
-
 bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                                const uint8_t* packet,
                                                size_t* packet_length,
                                                uint32_t original_ssrc,
-                                               const RTPHeader& header) const {
+                                               const RTPHeader& header) {
   if (kRtxHeaderSize + header.headerLength + header.paddingLength >
       *packet_length) {
     return false;
@@ -265,28 +267,26 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                        original_sequence_number);
   ByteWriter<uint32_t>::WriteBigEndian(restored_packet + 8, original_ssrc);
 
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (!rtx_)
     return true;
 
-  int associated_payload_type;
   auto apt_mapping = rtx_payload_type_map_.find(header.payloadType);
-  if (use_rtx_payload_mapping_on_restore_ &&
-      apt_mapping != rtx_payload_type_map_.end()) {
-    associated_payload_type = apt_mapping->second;
-  } else {
+  if (apt_mapping == rtx_payload_type_map_.end()) {
     
-    
-    
-    
-    if (rtx_payload_type_ == -1 || incoming_payload_type_ == -1) {
-      LOG(LS_WARNING) << "Incorrect RTX configuration, dropping packet.";
-      return false;
+    if (payload_types_with_suppressed_warnings_.find(header.payloadType) ==
+        payload_types_with_suppressed_warnings_.end()) {
+      LOG(LS_WARNING)
+          << "No RTX associated payload type mapping was available; "
+             "not able to restore original packet from RTX packet "
+             "with payload type: "
+          << static_cast<int>(header.payloadType) << ". "
+          << "Suppressing further warnings for this payload type.";
+      payload_types_with_suppressed_warnings_.insert(header.payloadType);
     }
-    associated_payload_type = incoming_payload_type_;
+    return false;
   }
-
-  restored_packet[1] = static_cast<uint8_t>(associated_payload_type);
+  restored_packet[1] = static_cast<uint8_t>(apt_mapping->second);
   if (header.markerBit) {
     restored_packet[1] |= kRtpMarkerBitMask;  
   }
@@ -294,20 +294,20 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
 }
 
 void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   ssrc_rtx_ = ssrc;
   rtx_ = true;
 }
 
 bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   *ssrc = ssrc_rtx_;
   return rtx_;
 }
 
 void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
                                            int associated_payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (payload_type < 0) {
     LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
     return;
@@ -315,12 +315,12 @@ void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
 
   rtx_payload_type_map_[payload_type] = associated_payload_type;
   rtx_ = true;
-  rtx_payload_type_ = payload_type;
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
-  CriticalSectionScoped cs(crit_sect_.get());
-  return red_payload_type_ == header.payloadType;
+  rtc::CritScope cs(&crit_sect_);
+  auto it = payload_type_map_.find(header.payloadType);
+  return it != payload_type_map_.end() && _stricmp(it->second.name, "red") == 0;
 }
 
 bool RTPPayloadRegistry::IsEncapsulated(const RTPHeader& header) const {
@@ -329,15 +329,14 @@ bool RTPPayloadRegistry::IsEncapsulated(const RTPHeader& header) const {
 
 bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
                                              PayloadUnion* payload) const {
-  CriticalSectionScoped cs(crit_sect_.get());
-  RtpUtility::PayloadTypeMap::const_iterator it =
-      payload_type_map_.find(payload_type);
+  rtc::CritScope cs(&crit_sect_);
+  auto it = payload_type_map_.find(payload_type);
 
   
   if (it == payload_type_map_.end()) {
     return false;
   }
-  *payload = it->second->typeSpecific;
+  *payload = it->second.typeSpecific;
   return true;
 }
 
@@ -347,33 +346,33 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
   if (!payload) {
     return -1;
   }
-  CriticalSectionScoped cs(crit_sect_.get());
-  return rtp_payload_strategy_->GetPayloadTypeFrequency(*payload);
+  rtc::CritScope cs(&crit_sect_);
+  return payload->audio ? payload->typeSpecific.Audio.frequency
+                        : kVideoPayloadTypeFrequency;
 }
 
 const RtpUtility::Payload* RTPPayloadRegistry::PayloadTypeToPayload(
     uint8_t payload_type) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
 
-  RtpUtility::PayloadTypeMap::const_iterator it =
-      payload_type_map_.find(payload_type);
+  auto it = payload_type_map_.find(payload_type);
 
   
   if (it == payload_type_map_.end()) {
     return nullptr;
   }
 
-  return it->second;
+  return &it->second;
 }
 
 void RTPPayloadRegistry::SetIncomingPayloadType(const RTPHeader& header) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (!IsRtxInternal(header))
     incoming_payload_type_ = header.payloadType;
 }
 
 bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   if (last_received_media_payload_type_ == media_payload_type) {
     
     return true;
@@ -382,109 +381,15 @@ bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {
   return false;
 }
 
-class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
- public:
-  bool CodecsMustBeUnique() const override { return true; }
 
-  bool PayloadIsCompatible(const RtpUtility::Payload& payload,
-                           const uint32_t frequency,
-                           const size_t channels,
-                           const uint32_t rate) const override {
-    return
-        payload.audio &&
-        payload.typeSpecific.Audio.frequency == frequency &&
-        payload.typeSpecific.Audio.channels == channels &&
-        (payload.typeSpecific.Audio.rate == rate ||
-            payload.typeSpecific.Audio.rate == 0 || rate == 0);
+int8_t RTPPayloadRegistry::GetPayloadTypeWithName(
+    const char* payload_name) const {
+  rtc::CritScope cs(&crit_sect_);
+  for (const auto& it : payload_type_map_) {
+    if (_stricmp(it.second.name, payload_name) == 0)
+      return it.first;
   }
-
-  void UpdatePayloadRate(RtpUtility::Payload* payload,
-                         const uint32_t rate) const override {
-    payload->typeSpecific.Audio.rate = rate;
-  }
-
-  RtpUtility::Payload* CreatePayloadType(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) const override {
-    RtpUtility::Payload* payload = new RtpUtility::Payload;
-    payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-    assert(frequency >= 1000);
-    payload->typeSpecific.Audio.frequency = frequency;
-    payload->typeSpecific.Audio.channels = channels;
-    payload->typeSpecific.Audio.rate = rate;
-    payload->audio = true;
-    return payload;
-  }
-
-  int GetPayloadTypeFrequency(const RtpUtility::Payload& payload) const {
-    return payload.typeSpecific.Audio.frequency;
-  }
-};
-
-class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
- public:
-  bool CodecsMustBeUnique() const override { return false; }
-
-  bool PayloadIsCompatible(const RtpUtility::Payload& payload,
-                           const uint32_t frequency,
-                           const size_t channels,
-                           const uint32_t rate) const override {
-    return !payload.audio;
-  }
-
-  void UpdatePayloadRate(RtpUtility::Payload* payload,
-                         const uint32_t rate) const override {
-    payload->typeSpecific.Video.maxRate = rate;
-  }
-
-  RtpUtility::Payload* CreatePayloadType(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) const override {
-    RtpVideoCodecTypes videoType = kRtpVideoGeneric;
-
-    if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {
-      videoType = kRtpVideoVp8;
-    } else if (RtpUtility::StringCompare(payloadName, "VP9", 3)) {
-      videoType = kRtpVideoVp9;
-    } else if (RtpUtility::StringCompare(payloadName, "H264", 4)) {
-      videoType = kRtpVideoH264;
-    } else if (RtpUtility::StringCompare(payloadName, "I420", 4)) {
-      videoType = kRtpVideoGeneric;
-    } else if (RtpUtility::StringCompare(payloadName, "ULPFEC", 6) ||
-        RtpUtility::StringCompare(payloadName, "RED", 3)) {
-      videoType = kRtpVideoNone;
-    } else {
-      videoType = kRtpVideoGeneric;
-    }
-    RtpUtility::Payload* payload = new RtpUtility::Payload;
-
-    payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-    payload->typeSpecific.Video.videoCodecType = videoType;
-    payload->typeSpecific.Video.maxRate = rate;
-    payload->audio = false;
-    return payload;
-  }
-
-  int GetPayloadTypeFrequency(const RtpUtility::Payload& payload) const {
-    return kVideoPayloadTypeFrequency;
-  }
-};
-
-RTPPayloadStrategy* RTPPayloadStrategy::CreateStrategy(
-    const bool handling_audio) {
-  if (handling_audio) {
-    return new RTPPayloadAudioStrategy();
-  } else {
-    return new RTPPayloadVideoStrategy();
-  }
+  return -1;
 }
 
 }  

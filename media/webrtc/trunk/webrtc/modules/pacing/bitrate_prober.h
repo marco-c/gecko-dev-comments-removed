@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
 #define WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
 
-#include <cstddef>
-#include <list>
+#include <queue>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -32,30 +32,69 @@ class BitrateProber {
   bool IsProbing() const;
 
   
-  void MaybeInitializeProbe(int bitrate_bps);
+  
+  
+  void OnIncomingPacket(size_t packet_size);
+
+  
+  
+  void CreateProbeCluster(int bitrate_bps);
 
   
   
   int TimeUntilNextProbe(int64_t now_ms);
 
   
-  
-  size_t RecommendedPacketSize() const;
+  int CurrentClusterId() const;
 
   
   
-  void PacketSent(int64_t now_ms, size_t packet_size);
+  size_t RecommendedMinProbeSize() const;
+
+  
+  
+  
+  
+  void ProbeSent(int64_t now_ms, size_t probe_size);
 
  private:
-  enum ProbingState { kDisabled, kAllowedToProbe, kProbing, kWait };
+  enum class ProbingState {
+    
+    kDisabled,
+    
+    kInactive,
+    
+    
+    kActive,
+    
+    
+    kSuspended,
+  };
+
+  
+  
+  struct ProbeCluster {
+    int min_probes = 0;
+    int sent_probes = 0;
+    int min_bytes = 0;
+    int sent_bytes = 0;
+    int bitrate_bps = 0;
+    int id = -1;
+  };
+
+  
+  void ResetState();
 
   ProbingState probing_state_;
   
   
   
-  std::list<int> probe_bitrates_;
-  size_t packet_size_last_send_;
-  int64_t time_last_send_ms_;
+  std::queue<ProbeCluster> clusters_;
+  
+  size_t probe_size_last_sent_;
+  
+  int64_t time_last_probe_sent_ms_;
+  int next_cluster_id_;
 };
 }  
 #endif  

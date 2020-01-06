@@ -8,114 +8,238 @@
 
 
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
 
-const uint32_t kPulsePeriodMs = 1000;
-const size_t kMaxBufferSizeBytes = 3840; 
+
+const size_t kMaxDeltaTimeInMs = 500;
+
+const size_t kMaxBufferSizeBytes = 3840;  
 
 class AudioDeviceObserver;
 
-class AudioDeviceBuffer
-{
-public:
-    AudioDeviceBuffer();
-    virtual ~AudioDeviceBuffer();
+class AudioDeviceBuffer {
+ public:
+  enum LogState {
+    LOG_START = 0,
+    LOG_STOP,
+    LOG_ACTIVE,
+  };
 
-    void SetId(uint32_t id);
-    int32_t RegisterAudioCallback(AudioTransport* audioCallback);
+  AudioDeviceBuffer();
+  virtual ~AudioDeviceBuffer();
 
-    int32_t InitPlayout();
-    int32_t InitRecording();
+  void SetId(uint32_t id) {};
+  int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
-    virtual int32_t SetRecordingSampleRate(uint32_t fsHz);
-    virtual int32_t SetPlayoutSampleRate(uint32_t fsHz);
-    int32_t RecordingSampleRate() const;
-    int32_t PlayoutSampleRate() const;
+  void StartPlayout();
+  void StartRecording();
+  void StopPlayout();
+  void StopRecording();
 
-    virtual int32_t SetRecordingChannels(size_t channels);
-    virtual int32_t SetPlayoutChannels(size_t channels);
-    size_t RecordingChannels() const;
-    size_t PlayoutChannels() const;
-    int32_t SetRecordingChannel(
-        const AudioDeviceModule::ChannelType channel);
-    int32_t RecordingChannel(
-        AudioDeviceModule::ChannelType& channel) const;
+  int32_t SetRecordingSampleRate(uint32_t fsHz);
+  int32_t SetPlayoutSampleRate(uint32_t fsHz);
+  int32_t RecordingSampleRate() const;
+  int32_t PlayoutSampleRate() const;
 
-    virtual int32_t SetRecordedBuffer(const void* audioBuffer,
-                                      size_t nSamples);
-    int32_t SetCurrentMicLevel(uint32_t level);
-    virtual void SetVQEData(int playDelayMS,
-                            int recDelayMS,
-                            int clockDrift);
-    virtual int32_t DeliverRecordedData();
-    uint32_t NewMicLevel() const;
+  int32_t SetRecordingChannels(size_t channels);
+  int32_t SetPlayoutChannels(size_t channels);
+  size_t RecordingChannels() const;
+  size_t PlayoutChannels() const;
+  int32_t SetRecordingChannel(const AudioDeviceModule::ChannelType channel);
+  int32_t RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
 
-    virtual int32_t RequestPlayoutData(size_t nSamples);
-    virtual int32_t GetPlayoutData(void* audioBuffer);
+  virtual int32_t SetRecordedBuffer(const void* audio_buffer,
+                                    size_t samples_per_channel);
+  int32_t SetCurrentMicLevel(uint32_t level);
+  virtual void SetVQEData(int play_delay_ms, int rec_delay_ms, int clock_drift);
+  virtual int32_t DeliverRecordedData();
+  uint32_t NewMicLevel() const;
 
-    int32_t StartInputFileRecording(
-        const char fileName[kAdmMaxFileNameSize]);
-    int32_t StopInputFileRecording();
-    int32_t StartOutputFileRecording(
-        const char fileName[kAdmMaxFileNameSize]);
-    int32_t StopOutputFileRecording();
+  virtual int32_t RequestPlayoutData(size_t samples_per_channel);
+  virtual int32_t GetPlayoutData(void* audio_buffer);
 
-    int32_t SetTypingStatus(bool typingStatus);
+  
+  
+  
+  int32_t StartInputFileRecording(const char fileName[kAdmMaxFileNameSize]);
+  int32_t StopInputFileRecording();
+  int32_t StartOutputFileRecording(const char fileName[kAdmMaxFileNameSize]);
+  int32_t StopOutputFileRecording();
 
-private:
-    int32_t                   _id;
-    CriticalSectionWrapper&         _critSect;
-    CriticalSectionWrapper&         _critSectCb;
+  int32_t SetTypingStatus(bool typing_status);
 
-    AudioTransport*                 _ptrCbAudioTransport;
+ private:
+  
+  void StartPeriodicLogging();
+  void StopPeriodicLogging();
 
-    uint32_t                  _recSampleRate;
-    uint32_t                  _playSampleRate;
+  
+  
+  
+  
+  
+  
+  void LogStats(LogState state);
 
-    size_t                   _recChannels;
-    size_t                   _playChannels;
+  
+  
+  
+  void UpdateRecStats(int16_t max_abs, size_t samples_per_channel);
+  void UpdatePlayStats(int16_t max_abs, size_t samples_per_channel);
 
-    
-    AudioDeviceModule::ChannelType _recChannel;
+  
+  
+  void ResetRecStats();
+  void ResetPlayStats();
 
-    
-    size_t                   _recBytesPerSample;
-    size_t                   _playBytesPerSample;
+  
+  
+  
+  
+  
+  
+  
 
-    
-    int8_t                          _recBuffer[kMaxBufferSizeBytes];
+  
+  rtc::ThreadChecker main_thread_checker_;
 
-    
-    size_t                    _recSamples;
-    size_t                    _recSize;           
+  
+  rtc::ThreadChecker playout_thread_checker_;
 
-    
-    int8_t                          _playBuffer[kMaxBufferSizeBytes];
+  
+  rtc::ThreadChecker recording_thread_checker_;
 
-    
-    size_t                    _playSamples;
-    size_t                    _playSize;          
+  
+  
+  
+  rtc::TaskQueue task_queue_;
 
-    FileWrapper&                    _recFile;
-    FileWrapper&                    _playFile;
+  
+  
+  
+  
+  
+  
+  AudioTransport* audio_transport_cb_;
 
-    uint32_t                  _currentMicLevel;
-    uint32_t                  _newMicLevel;
+  
+  
+  
+  
+  
 
-    bool                      _typingStatus;
+  
+  uint32_t rec_sample_rate_;
+  uint32_t play_sample_rate_;
 
-    int _playDelayMS;
-    int _recDelayMS;
-    int _clockDrift;
-    int high_delay_counter_;
+  
+  size_t rec_channels_;
+  size_t play_channels_;
+
+  
+  
+  
+  bool playing_ ACCESS_ON(main_thread_checker_);
+  bool recording_ ACCESS_ON(main_thread_checker_);
+
+  
+  
+  
+  rtc::BufferT<int16_t> play_buffer_ ACCESS_ON(playout_thread_checker_);
+
+  
+  
+  rtc::BufferT<int16_t> rec_buffer_ ACCESS_ON(recording_thread_checker_);
+
+  
+#if !defined(WEBRTC_WIN)
+  uint32_t current_mic_level_ ACCESS_ON(recording_thread_checker_);
+#else
+  
+  uint32_t current_mic_level_;
+#endif
+  uint32_t new_mic_level_ ACCESS_ON(recording_thread_checker_);
+
+  
+  bool typing_status_ ACCESS_ON(recording_thread_checker_);
+
+  
+  int play_delay_ms_ ACCESS_ON(recording_thread_checker_);
+  int rec_delay_ms_ ACCESS_ON(recording_thread_checker_);
+
+  
+  int clock_drift_ ACCESS_ON(recording_thread_checker_);
+
+  
+  size_t num_stat_reports_ ACCESS_ON(task_queue_);
+
+  
+  
+  uint64_t rec_callbacks_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t last_rec_callbacks_ ACCESS_ON(task_queue_);
+
+  
+  
+  uint64_t play_callbacks_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t last_play_callbacks_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t rec_samples_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t last_rec_samples_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t play_samples_ ACCESS_ON(task_queue_);
+
+  
+  uint64_t last_play_samples_ ACCESS_ON(task_queue_);
+
+  
+  
+  
+  int16_t max_rec_level_ ACCESS_ON(task_queue_);
+
+  
+  
+  int16_t max_play_level_ ACCESS_ON(task_queue_);
+
+  
+  int64_t last_timer_task_time_ ACCESS_ON(task_queue_);
+
+  
+  
+  int16_t rec_stat_count_ ACCESS_ON(recording_thread_checker_);
+  int16_t play_stat_count_ ACCESS_ON(playout_thread_checker_);
+
+  
+  int64_t play_start_time_ ACCESS_ON(main_thread_checker_);
+  int64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
+
+  
+  
+  bool only_silence_recorded_;
+
+  
+  
+  
+  
+  bool log_stats_ ACCESS_ON(task_queue_);
 };
 
 }  

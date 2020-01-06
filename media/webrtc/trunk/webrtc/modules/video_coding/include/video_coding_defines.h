@@ -11,8 +11,13 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 #define WEBRTC_MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 
+#include <string>
+#include <vector>
+
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
+
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
@@ -55,20 +60,6 @@ struct VCMFrameCount {
 };
 
 
-class VCMPacketizationCallback {
- public:
-  virtual int32_t SendData(uint8_t payloadType,
-                           const EncodedImage& encoded_image,
-                           const RTPFragmentationHeader& fragmentationHeader,
-                           const RTPVideoHeader* rtpVideoHdr) = 0;
-
-  virtual void OnEncoderImplementationName(const char* implementation_name) {}
-
- protected:
-  virtual ~VCMPacketizationCallback() {}
-};
-
-
 
 class VCMReceiveCallback {
  public:
@@ -86,11 +77,9 @@ class VCMReceiveCallback {
 
 
 
-
 class VCMSendStatisticsCallback {
  public:
-  virtual int32_t SendStatistics(const uint32_t bitRate,
-                                 const uint32_t frameRate) = 0;
+  virtual void SendStatistics(uint32_t bitRate, uint32_t frameRate) = 0;
 
  protected:
   virtual ~VCMSendStatisticsCallback() {}
@@ -137,12 +126,6 @@ class VCMProtectionCallback {
   virtual ~VCMProtectionCallback() {}
 };
 
-class VideoEncoderRateObserver {
- public:
-  virtual ~VideoEncoderRateObserver() {}
-  virtual void OnSetRates(uint32_t bitrate_bps, int framerate) = 0;
-};
-
 
 
 
@@ -160,6 +143,8 @@ class VCMFrameTypeCallback {
 
 
 
+
+
 class VCMPacketRequestCallback {
  public:
   virtual int32_t ResendPackets(const uint16_t* sequenceNumbers,
@@ -168,40 +153,21 @@ class VCMPacketRequestCallback {
  protected:
   virtual ~VCMPacketRequestCallback() {}
 };
- 
 
-
-class VCMReceiveStateCallback {
+class NackSender {
  public:
-  virtual void ReceiveStateChange(VideoReceiveState state) = 0;
+  virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;
 
  protected:
-  virtual ~VCMReceiveStateCallback() {
-  }
+  virtual ~NackSender() {}
 };
 
-
-
-class VCMQMSettingsCallback {
+class KeyFrameRequestSender {
  public:
-  virtual int32_t SetVideoQMSettings(const uint32_t frameRate,
-                                     const uint32_t width,
-                                     const uint32_t height) = 0;
-
-  virtual void SetTargetFramerate(int frame_rate) = 0;
+  virtual void RequestKeyFrame() = 0;
 
  protected:
-  virtual ~VCMQMSettingsCallback() {}
-};
-
-
-
-class VCMRenderBufferSizeCallback {
- public:
-  virtual void RenderBufferSizeMs(int buffer_size_ms) = 0;
-
- protected:
-  virtual ~VCMRenderBufferSizeCallback() {}
+  virtual ~KeyFrameRequestSender() {}
 };
 
 }  

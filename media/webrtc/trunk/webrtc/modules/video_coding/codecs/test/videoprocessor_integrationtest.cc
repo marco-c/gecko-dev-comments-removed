@@ -10,15 +10,16 @@
 
 #include <math.h>
 
-#include "testing/gtest/include/gtest/gtest.h"
-
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
@@ -83,7 +84,9 @@ struct RateControlMetrics {
 
 const int kCIFWidth = 352;
 const int kCIFHeight = 288;
+#if !defined(WEBRTC_IOS)
 const int kNbrFramesShort = 100;  
+#endif
 const int kNbrFramesLong = 299;
 
 
@@ -111,6 +114,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   webrtc::test::TestConfig config_;
   VideoCodec codec_settings_;
   webrtc::test::VideoProcessor* processor_;
+  TemporalLayersFactory tl_factory_;
 
   
   
@@ -150,7 +154,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
   virtual ~VideoProcessorIntegrationTest() {}
 
   void SetUpCodecConfig() {
-    if (codec_type_ == kVideoCodecVP8) {
+    if (codec_type_ == kVideoCodecH264) {
+      encoder_ = H264Encoder::Create(cricket::VideoCodec("H264"));
+      decoder_ = H264Decoder::Create();
+      VideoCodingModule::Codec(kVideoCodecH264, &codec_settings_);
+    } else if (codec_type_ == kVideoCodecVP8) {
       encoder_ = VP8Encoder::Create();
       decoder_ = VP8Decoder::Create();
       VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
@@ -184,36 +192,36 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
     
     switch (config_.codec_settings->codecType) {
-      case kVideoCodecVP8:
-        config_.codec_settings->codecSpecific.VP8.errorConcealmentOn =
-            error_concealment_on_;
-        config_.codec_settings->codecSpecific.VP8.denoisingOn = denoising_on_;
-        config_.codec_settings->codecSpecific.VP8.numberOfTemporalLayers =
-            num_temporal_layers_;
-        config_.codec_settings->codecSpecific.VP8.frameDroppingOn =
-            frame_dropper_on_;
-        config_.codec_settings->codecSpecific.VP8.automaticResizeOn =
-            spatial_resize_on_;
-        config_.codec_settings->codecSpecific.VP8.keyFrameInterval =
+      case kVideoCodecH264:
+        config_.codec_settings->H264()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->H264()->keyFrameInterval =
             kBaseKeyFrameInterval;
         break;
-      case kVideoCodecVP9:
-        config_.codec_settings->codecSpecific.VP9.denoisingOn = denoising_on_;
-        config_.codec_settings->codecSpecific.VP9.numberOfTemporalLayers =
+      case kVideoCodecVP8:
+        config_.codec_settings->VP8()->errorConcealmentOn =
+            error_concealment_on_;
+        config_.codec_settings->VP8()->denoisingOn = denoising_on_;
+        config_.codec_settings->VP8()->numberOfTemporalLayers =
             num_temporal_layers_;
-        config_.codec_settings->codecSpecific.VP9.frameDroppingOn =
-            frame_dropper_on_;
-        config_.codec_settings->codecSpecific.VP9.automaticResizeOn =
-            spatial_resize_on_;
-        config_.codec_settings->codecSpecific.VP9.keyFrameInterval =
-            kBaseKeyFrameInterval;
+        config_.codec_settings->VP8()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->VP8()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP8()->keyFrameInterval = kBaseKeyFrameInterval;
+        break;
+      case kVideoCodecVP9:
+        config_.codec_settings->VP9()->denoisingOn = denoising_on_;
+        config_.codec_settings->VP9()->numberOfTemporalLayers =
+            num_temporal_layers_;
+        config_.codec_settings->VP9()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->VP9()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP9()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       default:
         assert(false);
         break;
     }
     frame_reader_ = new webrtc::test::FrameReaderImpl(
-        config_.input_filename, config_.frame_length_in_bytes);
+        config_.input_filename, config_.codec_settings->width,
+        config_.codec_settings->height);
     frame_writer_ = new webrtc::test::FrameWriterImpl(
         config_.output_filename, config_.frame_length_in_bytes);
     ASSERT_TRUE(frame_reader_->Init());
@@ -512,8 +520,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(psnr_result.min, quality_metrics.minimum_min_psnr);
     EXPECT_GT(ssim_result.average, quality_metrics.minimum_avg_ssim);
     EXPECT_GT(ssim_result.min, quality_metrics.minimum_min_ssim);
-    if (!remove(config_.output_filename.c_str())) {
-      fprintf(stderr, "Failed to remove temporary file!");
+    if (remove(config_.output_filename.c_str()) < 0) {
+      fprintf(stderr, "Failed to remove temporary file!\n");
     }
   }
 };
@@ -579,6 +587,41 @@ void SetRateControlMetrics(RateControlMetrics* rc_metrics,
   rc_metrics[update_index].num_key_frames = num_key_frames;
 }
 
+#if defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
+
+
+
+
+
+
+TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
+  
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
+  rate_profile.num_frames = kNbrFramesShort;
+  
+  CodecConfigPars process_settings;
+  SetCodecParameters(&process_settings, kVideoCodecH264, 0.0f, -1, 1, false,
+                     false, true, false);
+  
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 35.0, 25.0, 0.93, 0.70);
+  
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 2, 60, 20, 10, 20, 0, 1);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
+}
+
+#endif  
+
+
+#if !defined(WEBRTC_IOS)
+
+#if !defined(RTC_DISABLE_VP9)
 
 
 
@@ -642,7 +685,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
                      false, true, false);
   
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 35.7, 30.0, 0.90, 0.85);
+  SetQualityMetrics(&quality_metrics, 35.5, 30.0, 0.90, 0.85);
   
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 0, 30, 20, 20, 30, 0, 1);
@@ -675,7 +718,7 @@ TEST_F(VideoProcessorIntegrationTest,
                      false, true, false);
   
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.44);
+  SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.43);
   
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 38, 50, 75, 15, 45, 0, 1);
@@ -709,7 +752,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 
 
 
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest,
+       DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   
   RateProfile rate_profile;
@@ -732,6 +776,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
 
 
 
+
+#endif  
 
 
 
@@ -800,6 +846,7 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
                          rc_metrics);
 }
 
+#endif  
 
 
 
@@ -813,7 +860,9 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
 
 
 
-#if defined(WEBRTC_ANDROID)
+
+
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossChangeBitRateVP8 \
   DISABLED_ProcessNoLossChangeBitRateVP8
 #else
@@ -850,7 +899,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
 
 
 
-#if defined(WEBRTC_ANDROID)
+
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
   DISABLED_ProcessNoLossChangeFrameRateFrameDropVP8
 #else
@@ -885,41 +935,11 @@ TEST_F(VideoProcessorIntegrationTest,
 
 
 
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
-  DISABLED_ProcessNoLossSpatialResizeFrameDropVP8
-#else
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
-  ProcessNoLossSpatialResizeFrameDropVP8
-#endif
-TEST_F(VideoProcessorIntegrationTest,
-       MAYBE_ProcessNoLossSpatialResizeFrameDropVP8) {
-  config_.networking_config.packet_loss_probability = 0;
-  
-  RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 50, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
-  
-  CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 1, false,
-                     true, true, true);
-  
-  QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 25.0, 15.0, 0.70, 0.40);
-  
-  RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 160, 60, 120, 20, 70, 1, 2);
-  ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
-}
 
 
 
 
-
-
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossTemporalLayersVP8 \
   DISABLED_ProcessNoLossTemporalLayersVP8
 #else

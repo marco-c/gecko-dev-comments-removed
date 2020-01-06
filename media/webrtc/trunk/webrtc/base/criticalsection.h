@@ -12,8 +12,10 @@
 #define WEBRTC_BASE_CRITICALSECTION_H_
 
 #include "webrtc/base/atomicops.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/base/platform_thread_types.h"
 
 #if defined(WEBRTC_WIN)
 
@@ -29,9 +31,14 @@
 #include <pthread.h>
 #endif
 
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-#define CS_DEBUG_CHECKS 1
+
+#define USE_NATIVE_MUTEX_ON_MAC 0
+
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+#include <dispatch/dispatch.h>
 #endif
+
+#define CS_DEBUG_CHECKS RTC_DCHECK_IS_ON
 
 #if CS_DEBUG_CHECKS
 #define CS_DEBUG_CODE(x) x
@@ -41,37 +48,52 @@
 
 namespace rtc {
 
+
+
+
 class LOCKABLE CriticalSection {
  public:
   CriticalSection();
   ~CriticalSection();
 
-  void Enter() EXCLUSIVE_LOCK_FUNCTION();
-  bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true);
-  void Leave() UNLOCK_FUNCTION();
-
-  
-  bool CurrentThreadIsOwner() const;
-  
-  bool IsLocked() const;
+  void Enter() const EXCLUSIVE_LOCK_FUNCTION();
+  bool TryEnter() const EXCLUSIVE_TRYLOCK_FUNCTION(true);
+  void Leave() const UNLOCK_FUNCTION();
 
  private:
+  
+  bool CurrentThreadIsOwner() const;
+
 #if defined(WEBRTC_WIN)
-  CRITICAL_SECTION crit_;
+  mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)
-  pthread_mutex_t mutex_;
-  CS_DEBUG_CODE(pthread_t thread_);
-  CS_DEBUG_CODE(int recursion_count_);
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+  
+  
+  
+  mutable volatile int lock_queue_;
+  
+  
+  mutable int recursion_;
+  
+  mutable dispatch_semaphore_t semaphore_;
+  
+  mutable PlatformThreadRef owning_thread_;
+#else
+  mutable pthread_mutex_t mutex_;
+#endif
+  CS_DEBUG_CODE(mutable PlatformThreadRef thread_);
+  CS_DEBUG_CODE(mutable int recursion_count_);
 #endif
 };
 
 
 class SCOPED_LOCKABLE CritScope {
  public:
-  explicit CritScope(CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
+  explicit CritScope(const CriticalSection* cs) EXCLUSIVE_LOCK_FUNCTION(cs);
   ~CritScope() UNLOCK_FUNCTION();
  private:
-  CriticalSection* const cs_;
+  const CriticalSection* const cs_;
   RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
@@ -84,7 +106,7 @@ class SCOPED_LOCKABLE CritScope {
 
 class TryCritScope {
  public:
-  explicit TryCritScope(CriticalSection* cs);
+  explicit TryCritScope(const CriticalSection* cs);
   ~TryCritScope();
 #if defined(WEBRTC_WIN)
   _Check_return_ bool locked() const;
@@ -92,7 +114,7 @@ class TryCritScope {
   bool locked() const __attribute__ ((__warn_unused_result__));
 #endif
  private:
-  CriticalSection* const cs_;
+  const CriticalSection* const cs_;
   const bool locked_;
   CS_DEBUG_CODE(mutable bool lock_was_called_);
   RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);

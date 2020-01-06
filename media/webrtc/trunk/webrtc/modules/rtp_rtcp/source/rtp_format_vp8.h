@@ -69,15 +69,7 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   
   
   
-  
-  
-  
-  
-  
-  
-  bool NextPacket(uint8_t* buffer,
-                  size_t* bytes_to_send,
-                  bool* last_packet) override;
+  bool NextPacket(RtpPacketToSend* packet, bool* last_packet) override;
 
   ProtectionType GetProtectionType() override;
 

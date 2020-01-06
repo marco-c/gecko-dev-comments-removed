@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+#import <WebRTC/RTCMacros.h>
+
+@class AVCaptureSession;
+@class RTCAVFoundationVideoSource;
+
+
+
+
+RTC_EXPORT
+@interface RTCCameraPreviewView : UIView
+
+
+
+
+
+@property(nonatomic, strong) AVCaptureSession *captureSession;
+
+@end

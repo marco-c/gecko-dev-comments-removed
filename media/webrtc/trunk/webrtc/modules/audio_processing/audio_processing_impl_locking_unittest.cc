@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
@@ -23,6 +23,7 @@
 #include "webrtc/modules/audio_processing/test/test_utils.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -34,8 +35,7 @@ class AudioProcessingImplLockTest;
 enum class RenderApiImpl {
   ProcessReverseStreamImpl1,
   ProcessReverseStreamImpl2,
-  AnalyzeReverseStreamImpl1,
-  AnalyzeReverseStreamImpl2
+  AnalyzeReverseStreamImpl
 };
 
 
@@ -149,7 +149,7 @@ struct TestConfig {
       
       test_configs.push_back(test_config);
       test_config.render_api_function =
-          RenderApiImpl::AnalyzeReverseStreamImpl2;
+          RenderApiImpl::AnalyzeReverseStreamImpl;
       test_config.capture_api_function = CaptureApiImpl::ProcessStreamImpl3;
       test_configs.push_back(test_config);
     }
@@ -171,15 +171,13 @@ struct TestConfig {
       const AllowedApiCallCombinations api_calls[] = {
           {RenderApiImpl::ProcessReverseStreamImpl1,
            CaptureApiImpl::ProcessStreamImpl1},
-          {RenderApiImpl::AnalyzeReverseStreamImpl1,
-           CaptureApiImpl::ProcessStreamImpl1},
           {RenderApiImpl::ProcessReverseStreamImpl2,
            CaptureApiImpl::ProcessStreamImpl2},
           {RenderApiImpl::ProcessReverseStreamImpl2,
            CaptureApiImpl::ProcessStreamImpl3},
-          {RenderApiImpl::AnalyzeReverseStreamImpl2,
+          {RenderApiImpl::AnalyzeReverseStreamImpl,
            CaptureApiImpl::ProcessStreamImpl2},
-          {RenderApiImpl::AnalyzeReverseStreamImpl2,
+          {RenderApiImpl::AnalyzeReverseStreamImpl,
            CaptureApiImpl::ProcessStreamImpl3}};
       std::vector<TestConfig> out;
       for (auto api_call : api_calls) {
@@ -198,8 +196,12 @@ struct TestConfig {
           AecType::BasicWebRtcAecSettingsWithDelayAgnosticAec,
           AecType::BasicWebRtcAecSettingsWithAecMobile};
       for (auto test_config : in) {
-        for (auto aec_type : aec_types) {
-          test_config.aec_type = aec_type;
+        
+        
+        
+        
+        for (auto type : aec_types) {
+          test_config.aec_type = type;
           out.push_back(test_config);
         }
       }
@@ -298,7 +300,7 @@ class FrameCounters {
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_;
   int render_count GUARDED_BY(crit_) = 0;
   int capture_count GUARDED_BY(crit_) = 0;
 };
@@ -443,7 +445,7 @@ class AudioProcessingImplLockTest
   rtc::PlatformThread stats_thread_;
   mutable RandomGenerator rand_gen_;
 
-  rtc::scoped_ptr<AudioProcessing> apm_;
+  std::unique_ptr<AudioProcessing> apm_;
   TestConfig test_config_;
   FrameCounters frame_counters_;
   RenderProcessor render_thread_state_;
@@ -596,7 +598,6 @@ bool StatsProcessor::Process() {
                 (test_config_->aec_type ==
                  AecType::BasicWebRtcAecSettingsWithAecMobile));
   EXPECT_TRUE(apm_->gain_control()->is_enabled());
-  apm_->gain_control()->stream_analog_level();
   EXPECT_TRUE(apm_->noise_suppression()->is_enabled());
 
   
@@ -713,6 +714,9 @@ void CaptureProcessor::CallApmCaptureSide() {
   apm_->set_stream_delay_ms(30);
 
   
+  apm_->gain_control()->set_stream_analog_level(80);
+
+  
   int result = AudioProcessing::kNoError;
   switch (test_config_->capture_api_function) {
     case CaptureApiImpl::ProcessStreamImpl1:
@@ -733,6 +737,9 @@ void CaptureProcessor::CallApmCaptureSide() {
     default:
       FAIL();
   }
+
+  
+  apm_->gain_control()->stream_analog_level();
 
   
   ASSERT_EQ(AudioProcessing::kNoError, result);
@@ -931,8 +938,6 @@ void RenderProcessor::PrepareFrame() {
   
   
   if ((test_config_->render_api_function ==
-       RenderApiImpl::AnalyzeReverseStreamImpl1) ||
-      (test_config_->render_api_function ==
        RenderApiImpl::ProcessReverseStreamImpl1) ||
       (test_config_->aec_type !=
        AecType::BasicWebRtcAecSettingsWithAecMobile)) {
@@ -993,10 +998,7 @@ void RenderProcessor::CallApmRenderSide() {
           &frame_data_.input_frame[0], frame_data_.input_stream_config,
           frame_data_.output_stream_config, &frame_data_.output_frame[0]);
       break;
-    case RenderApiImpl::AnalyzeReverseStreamImpl1:
-      result = apm_->AnalyzeReverseStream(&frame_data_.frame);
-      break;
-    case RenderApiImpl::AnalyzeReverseStreamImpl2:
+    case RenderApiImpl::AnalyzeReverseStreamImpl:
       result = apm_->AnalyzeReverseStream(
           &frame_data_.input_frame[0], frame_data_.input_samples_per_channel,
           frame_data_.input_sample_rate_hz, frame_data_.input_channel_layout);

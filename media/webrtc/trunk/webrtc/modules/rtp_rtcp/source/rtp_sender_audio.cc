@@ -12,89 +12,58 @@
 
 #include <string.h>
 
+#include <memory>
+#include <utility>
+
+#include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/system_wrappers/include/tick_util.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
 namespace webrtc {
 
-static const int kDtmfFrequencyHz = 8000;
-
-RTPSenderAudio::RTPSenderAudio(Clock* clock,
-                               RTPSender* rtpSender,
-                               RtpAudioFeedback* audio_feedback)
-    : _clock(clock),
-      _rtpSender(rtpSender),
-      _audioFeedback(audio_feedback),
-      _sendAudioCritsect(CriticalSectionWrapper::CreateCriticalSection()),
-      _packetSizeSamples(160),
-      _dtmfEventIsOn(false),
-      _dtmfEventFirstPacketSent(false),
-      _dtmfPayloadType(-1),
-      _dtmfTimestamp(0),
-      _dtmfKey(0),
-      _dtmfLengthSamples(0),
-      _dtmfLevel(0),
-      _dtmfTimeLastSent(0),
-      _dtmfTimestampLastSent(0),
-      _REDPayloadType(-1),
-      _inbandVADactive(false),
-      _cngNBPayloadType(-1),
-      _cngWBPayloadType(-1),
-      _cngSWBPayloadType(-1),
-      _cngFBPayloadType(-1),
-      _lastPayloadType(-1),
-      _audioLevel_dBov(0) {}
+RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
+    : clock_(clock),
+      rtp_sender_(rtp_sender) {}
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
-int RTPSenderAudio::AudioFrequency() const {
-  return kDtmfFrequencyHz;
-}
-
-
-
-int32_t RTPSenderAudio::SetAudioPacketSize(uint16_t packetSizeSamples) {
-  CriticalSectionScoped cs(_sendAudioCritsect.get());
-
-  _packetSizeSamples = packetSizeSamples;
-  return 0;
-}
-
 int32_t RTPSenderAudio::RegisterAudioPayload(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const int8_t payloadType,
+    const int8_t payload_type,
     const uint32_t frequency,
     const size_t channels,
     const uint32_t rate,
     RtpUtility::Payload** payload) {
   if (RtpUtility::StringCompare(payloadName, "cn", 2)) {
-    CriticalSectionScoped cs(_sendAudioCritsect.get());
+    rtc::CritScope cs(&send_audio_critsect_);
     
     switch (frequency) {
       case 8000:
-        _cngNBPayloadType = payloadType;
+        cngnb_payload_type_ = payload_type;
         break;
       case 16000:
-        _cngWBPayloadType = payloadType;
+        cngwb_payload_type_ = payload_type;
         break;
       case 32000:
-        _cngSWBPayloadType = payloadType;
+        cngswb_payload_type_ = payload_type;
         break;
       case 48000:
-        _cngFBPayloadType = payloadType;
+        cngfb_payload_type_ = payload_type;
         break;
       default:
         return -1;
     }
   } else if (RtpUtility::StringCompare(payloadName, "telephone-event", 15)) {
-    CriticalSectionScoped cs(_sendAudioCritsect.get());
+    rtc::CritScope cs(&send_audio_critsect_);
     
     
-    _dtmfPayloadType = payloadType;
+    dtmf_payload_type_ = payload_type;
+    dtmf_payload_freq_ = frequency;
     return 0;
-    
   }
   *payload = new RtpUtility::Payload;
   (*payload)->typeSpecific.Audio.frequency = frequency;
@@ -106,27 +75,27 @@ int32_t RTPSenderAudio::RegisterAudioPayload(
   return 0;
 }
 
-bool RTPSenderAudio::MarkerBit(FrameType frameType, int8_t payload_type) {
-  CriticalSectionScoped cs(_sendAudioCritsect.get());
+bool RTPSenderAudio::MarkerBit(FrameType frame_type, int8_t payload_type) {
+  rtc::CritScope cs(&send_audio_critsect_);
   
-  bool markerBit = false;
-  if (_lastPayloadType != payload_type) {
-    if (payload_type != -1 && (_cngNBPayloadType == payload_type ||
-                               _cngWBPayloadType == payload_type ||
-                               _cngSWBPayloadType == payload_type ||
-                               _cngFBPayloadType == payload_type)) {
+  bool marker_bit = false;
+  if (last_payload_type_ != payload_type) {
+    if (payload_type != -1 && (cngnb_payload_type_ == payload_type ||
+                               cngwb_payload_type_ == payload_type ||
+                               cngswb_payload_type_ == payload_type ||
+                               cngfb_payload_type_ == payload_type)) {
       
       return false;
     }
 
     
-    if (_lastPayloadType == -1) {
-      if (frameType != kAudioFrameCN) {
+    if (last_payload_type_ == -1) {
+      if (frame_type != kAudioFrameCN) {
         
         return true;
       } else {
         
-        _inbandVADactive = true;
+        inband_vad_active_ = true;
         return false;
       }
     }
@@ -136,261 +105,168 @@ bool RTPSenderAudio::MarkerBit(FrameType frameType, int8_t payload_type) {
     
 
     
-    markerBit = true;
+    marker_bit = true;
   }
 
   
-  if (frameType == kAudioFrameCN) {
-    _inbandVADactive = true;
-  } else if (_inbandVADactive) {
-    _inbandVADactive = false;
-    markerBit = true;
+  if (frame_type == kAudioFrameCN) {
+    inband_vad_active_ = true;
+  } else if (inband_vad_active_) {
+    inband_vad_active_ = false;
+    marker_bit = true;
   }
-  return markerBit;
+  return marker_bit;
 }
 
-int32_t RTPSenderAudio::SendAudio(FrameType frameType,
-                                  int8_t payloadType,
-                                  uint32_t captureTimeStamp,
-                                  const uint8_t* payloadData,
-                                  size_t dataSize,
-                                  const RTPFragmentationHeader* fragmentation) {
+bool RTPSenderAudio::SendAudio(FrameType frame_type,
+                               int8_t payload_type,
+                               uint32_t rtp_timestamp,
+                               const uint8_t* payload_data,
+                               size_t payload_size,
+                               const RTPFragmentationHeader* fragmentation) {
   
-  size_t payloadSize = dataSize;
-  size_t maxPayloadLength = _rtpSender->MaxPayloadLength();
-  bool dtmfToneStarted = false;
-  uint16_t dtmfLengthMS = 0;
-  uint8_t key = 0;
-  int red_payload_type;
-  uint8_t audio_level_dbov;
-  int8_t dtmf_payload_type;
-  uint16_t packet_size_samples;
+  
+  
+  
+  
+  constexpr int kDtmfIntervalTimeMs = 50;
+  uint8_t audio_level_dbov = 0;
+  uint32_t dtmf_payload_freq = 0;
   {
-    CriticalSectionScoped cs(_sendAudioCritsect.get());
-    red_payload_type = _REDPayloadType;
-    audio_level_dbov = _audioLevel_dBov;
-    dtmf_payload_type = _dtmfPayloadType;
-    packet_size_samples = _packetSizeSamples;
+    rtc::CritScope cs(&send_audio_critsect_);
+    audio_level_dbov = audio_level_dbov_;
+    dtmf_payload_freq = dtmf_payload_freq_;
   }
 
   
-  if (!_dtmfEventIsOn && PendingDTMF()) {
-    int64_t delaySinceLastDTMF =
-        _clock->TimeInMilliseconds() - _dtmfTimeLastSent;
-
-    if (delaySinceLastDTMF > 100) {
+  if (!dtmf_event_is_on_ && dtmf_queue_.PendingDtmf()) {
+    if ((clock_->TimeInMilliseconds() - dtmf_time_last_sent_) >
+        kDtmfIntervalTimeMs) {
       
-      _dtmfTimestamp = captureTimeStamp;
-      if (NextDTMF(&key, &dtmfLengthMS, &_dtmfLevel) >= 0) {
-        _dtmfEventFirstPacketSent = false;
-        _dtmfKey = key;
-        _dtmfLengthSamples = (kDtmfFrequencyHz / 1000) * dtmfLengthMS;
-        dtmfToneStarted = true;
-        _dtmfEventIsOn = true;
+      dtmf_timestamp_ = rtp_timestamp;
+      if (dtmf_queue_.NextDtmf(&dtmf_current_event_)) {
+        dtmf_event_first_packet_sent_ = false;
+        dtmf_length_samples_ =
+            dtmf_current_event_.duration_ms * (dtmf_payload_freq / 1000);
+        dtmf_event_is_on_ = true;
       }
     }
   }
-  if (dtmfToneStarted) {
-    if (_audioFeedback)
-      _audioFeedback->OnPlayTelephoneEvent(key, dtmfLengthMS, _dtmfLevel);
-  }
 
   
   
-  if (_dtmfEventIsOn) {
-    if (frameType == kEmptyFrame) {
+  if (dtmf_event_is_on_) {
+    if (frame_type == kEmptyFrame) {
       
       
       
-      if (packet_size_samples > (captureTimeStamp - _dtmfTimestampLastSent)) {
+      const unsigned int dtmf_interval_time_rtp =
+          dtmf_payload_freq * kDtmfIntervalTimeMs / 1000;
+      if ((rtp_timestamp - dtmf_timestamp_last_sent_) <
+          dtmf_interval_time_rtp) {
         
-        return 0;
+        return true;
       }
     }
-    _dtmfTimestampLastSent = captureTimeStamp;
-    uint32_t dtmfDurationSamples = captureTimeStamp - _dtmfTimestamp;
+    dtmf_timestamp_last_sent_ = rtp_timestamp;
+    uint32_t dtmf_duration_samples = rtp_timestamp - dtmf_timestamp_;
     bool ended = false;
     bool send = true;
 
-    if (_dtmfLengthSamples > dtmfDurationSamples) {
-      if (dtmfDurationSamples <= 0) {
+    if (dtmf_length_samples_ > dtmf_duration_samples) {
+      if (dtmf_duration_samples <= 0) {
         
         send = false;
       }
     } else {
       ended = true;
-      _dtmfEventIsOn = false;
-      _dtmfTimeLastSent = _clock->TimeInMilliseconds();
+      dtmf_event_is_on_ = false;
+      dtmf_time_last_sent_ = clock_->TimeInMilliseconds();
     }
     if (send) {
-      if (dtmfDurationSamples > 0xffff) {
+      if (dtmf_duration_samples > 0xffff) {
         
-        SendTelephoneEventPacket(ended, dtmf_payload_type, _dtmfTimestamp,
+        SendTelephoneEventPacket(ended, dtmf_timestamp_,
                                  static_cast<uint16_t>(0xffff), false);
 
         
-        _dtmfTimestamp = captureTimeStamp;
-        dtmfDurationSamples -= 0xffff;
-        _dtmfLengthSamples -= 0xffff;
+        dtmf_timestamp_ = rtp_timestamp;
+        dtmf_duration_samples -= 0xffff;
+        dtmf_length_samples_ -= 0xffff;
 
-        return SendTelephoneEventPacket(
-            ended, dtmf_payload_type, _dtmfTimestamp,
-            static_cast<uint16_t>(dtmfDurationSamples), false);
+        return SendTelephoneEventPacket(ended, dtmf_timestamp_,
+            static_cast<uint16_t>(dtmf_duration_samples), false);
       } else {
-        if (SendTelephoneEventPacket(ended, dtmf_payload_type, _dtmfTimestamp,
-                                     static_cast<uint16_t>(dtmfDurationSamples),
-                                     !_dtmfEventFirstPacketSent) != 0) {
-          return -1;
+        if (!SendTelephoneEventPacket(ended, dtmf_timestamp_,
+                                      dtmf_duration_samples,
+                                      !dtmf_event_first_packet_sent_)) {
+          return false;
         }
-        _dtmfEventFirstPacketSent = true;
-        return 0;
+        dtmf_event_first_packet_sent_ = true;
+        return true;
       }
     }
-    return 0;
+    return true;
   }
-  if (payloadSize == 0 || payloadData == NULL) {
-    if (frameType == kEmptyFrame) {
+  if (payload_size == 0 || payload_data == NULL) {
+    if (frame_type == kEmptyFrame) {
       
       
-      return 0;
+      return true;
     }
-    return -1;
+    return false;
   }
-  uint8_t dataBuffer[IP_PACKET_SIZE];
-  bool markerBit = MarkerBit(frameType, payloadType);
 
-  int32_t rtpHeaderLength = 0;
-  uint16_t timestampOffset = 0;
-
-  if (red_payload_type >= 0 && fragmentation && !markerBit &&
-      fragmentation->fragmentationVectorSize > 1) {
-    
-    
-    uint32_t oldTimeStamp = _rtpSender->Timestamp();
-    rtpHeaderLength = _rtpSender->BuildRTPheader(dataBuffer, red_payload_type,
-                                                 markerBit, captureTimeStamp,
-                                                 _clock->TimeInMilliseconds());
-
-    timestampOffset = uint16_t(_rtpSender->Timestamp() - oldTimeStamp);
-  } else {
-    rtpHeaderLength = _rtpSender->BuildRTPheader(dataBuffer, payloadType,
-                                                 markerBit, captureTimeStamp,
-                                                 _clock->TimeInMilliseconds());
-  }
-  if (rtpHeaderLength <= 0) {
-    return -1;
-  }
-  if (maxPayloadLength < (rtpHeaderLength + payloadSize)) {
-    
-    return -1;
-  }
-  if (red_payload_type >= 0 &&  
-      fragmentation && fragmentation->fragmentationVectorSize > 1 &&
-      !markerBit) {
-    if (timestampOffset <= 0x3fff) {
-      if (fragmentation->fragmentationVectorSize != 2) {
-        
-        return -1;
-      }
-      
-      dataBuffer[rtpHeaderLength++] =
-          0x80 + fragmentation->fragmentationPlType[1];
-      size_t blockLength = fragmentation->fragmentationLength[1];
-
-      
-      if (blockLength > 0x3ff) {  
-        return -1;
-      }
-      uint32_t REDheader = (timestampOffset << 10) + blockLength;
-      ByteWriter<uint32_t>::WriteBigEndian(dataBuffer + rtpHeaderLength,
-                                           REDheader);
-      rtpHeaderLength += 3;
-
-      dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      
-      memcpy(dataBuffer + rtpHeaderLength,
-             payloadData + fragmentation->fragmentationOffset[1],
-             fragmentation->fragmentationLength[1]);
-
-      
-      memcpy(
-          dataBuffer + rtpHeaderLength + fragmentation->fragmentationLength[1],
-          payloadData + fragmentation->fragmentationOffset[0],
-          fragmentation->fragmentationLength[0]);
-
-      payloadSize = fragmentation->fragmentationLength[0] +
-                    fragmentation->fragmentationLength[1];
-    } else {
-      
-      dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      memcpy(dataBuffer + rtpHeaderLength,
-             payloadData + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-
-      payloadSize = fragmentation->fragmentationLength[0];
-    }
-  } else {
-    if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
-      
-      dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
-      memcpy(dataBuffer + rtpHeaderLength,
-             payloadData + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-
-      payloadSize = fragmentation->fragmentationLength[0];
-    } else {
-      memcpy(dataBuffer + rtpHeaderLength, payloadData, payloadSize);
-    }
-  }
-  {
-    CriticalSectionScoped cs(_sendAudioCritsect.get());
-    _lastPayloadType = payloadType;
-  }
+  std::unique_ptr<RtpPacketToSend> packet = rtp_sender_->AllocatePacket();
+  packet->SetMarker(MarkerBit(frame_type, payload_type));
+  packet->SetPayloadType(payload_type);
+  packet->SetTimestamp(rtp_timestamp);
+  packet->set_capture_time_ms(clock_->TimeInMilliseconds());
   
-  size_t packetSize = payloadSize + rtpHeaderLength;
-  RtpUtility::RtpHeaderParser rtp_parser(dataBuffer, packetSize);
-  RTPHeader rtp_header;
-  rtp_parser.Parse(&rtp_header);
-  _rtpSender->UpdateAudioLevel(dataBuffer, packetSize, rtp_header,
-                               (frameType == kAudioFrameSpeech),
-                               audio_level_dbov);
-  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", captureTimeStamp, "timestamp",
-                         _rtpSender->Timestamp(), "seqnum",
-                         _rtpSender->SequenceNumber());
-  return _rtpSender->SendToNetwork(dataBuffer, payloadSize, rtpHeaderLength,
-                                   TickTime::MillisecondTimestamp(),
-                                   kAllowRetransmission,
-                                   RtpPacketSender::kHighPriority);
-}
+  packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
+                                   audio_level_dbov);
 
-
-int32_t RTPSenderAudio::SetAudioLevel(uint8_t level_dBov) {
-  if (level_dBov > 127) {
-    return -1;
-  }
-  CriticalSectionScoped cs(_sendAudioCritsect.get());
-  _audioLevel_dBov = level_dBov;
-  return 0;
-}
-
-
-int32_t RTPSenderAudio::SetRED(int8_t payloadType) {
-  if (payloadType < -1) {
-    return -1;
-  }
-  CriticalSectionScoped cs(_sendAudioCritsect.get());
-  _REDPayloadType = payloadType;
-  return 0;
-}
-
-
-int32_t RTPSenderAudio::RED(int8_t* payloadType) const {
-  CriticalSectionScoped cs(_sendAudioCritsect.get());
-  if (_REDPayloadType == -1) {
+  if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
     
+    uint8_t* payload =
+        packet->AllocatePayload(1 + fragmentation->fragmentationLength[0]);
+    if (!payload)  
+      return false;
+    payload[0] = fragmentation->fragmentationPlType[0];
+    memcpy(payload + 1, payload_data + fragmentation->fragmentationOffset[0],
+           fragmentation->fragmentationLength[0]);
+  } else {
+    uint8_t* payload = packet->AllocatePayload(payload_size);
+    if (!payload)  
+      return false;
+    memcpy(payload, payload_data, payload_size);
+  }
+
+  if (!rtp_sender_->AssignSequenceNumber(packet.get()))
+    return false;
+
+  {
+    rtc::CritScope cs(&send_audio_critsect_);
+    last_payload_type_ = payload_type;
+  }
+  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", rtp_timestamp, "timestamp",
+                         packet->Timestamp(), "seqnum",
+                         packet->SequenceNumber());
+  bool send_result = rtp_sender_->SendToNetwork(
+      std::move(packet), kAllowRetransmission, RtpPacketSender::kHighPriority);
+  if (first_packet_sent_()) {
+    LOG(LS_INFO) << "First audio RTP packet sent to pacer";
+  }
+  return send_result;
+}
+
+
+int32_t RTPSenderAudio::SetAudioLevel(uint8_t level_dbov) {
+  if (level_dbov > 127) {
     return -1;
   }
-  *payloadType = _REDPayloadType;
+  rtc::CritScope cs(&send_audio_critsect_);
+  audio_level_dbov_ = level_dbov;
   return 0;
 }
 
@@ -398,40 +274,50 @@ int32_t RTPSenderAudio::RED(int8_t* payloadType) const {
 int32_t RTPSenderAudio::SendTelephoneEvent(uint8_t key,
                                            uint16_t time_ms,
                                            uint8_t level) {
+  DtmfQueue::Event event;
   {
-    CriticalSectionScoped lock(_sendAudioCritsect.get());
-    if (_dtmfPayloadType < 0) {
+    rtc::CritScope lock(&send_audio_critsect_);
+    if (dtmf_payload_type_ < 0) {
       
       return -1;
     }
+    event.payload_type = dtmf_payload_type_;
   }
-  return AddDTMF(key, time_ms, level);
+  event.key = key;
+  event.duration_ms = time_ms;
+  event.level = level;
+  return dtmf_queue_.AddDtmf(event) ? 0 : -1;
 }
 
-int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
-                                                 int8_t dtmf_payload_type,
-                                                 uint32_t dtmfTimeStamp,
-                                                 uint16_t duration,
-                                                 bool markerBit) {
-  uint8_t dtmfbuffer[IP_PACKET_SIZE];
-  uint8_t sendCount = 1;
-  int32_t retVal = 0;
+bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
+                                              uint32_t dtmf_timestamp,
+                                              uint16_t duration,
+                                              bool marker_bit) {
+  uint8_t send_count = 1;
+  bool result = true;
 
   if (ended) {
     
-    sendCount = 3;
+    send_count = 3;
   }
   do {
     
-    _rtpSender->BuildRTPheader(dtmfbuffer, dtmf_payload_type, markerBit,
-                               dtmfTimeStamp, _clock->TimeInMilliseconds());
+    constexpr RtpPacketToSend::ExtensionManager* kNoExtensions = nullptr;
+    constexpr size_t kDtmfSize = 4;
+    std::unique_ptr<RtpPacketToSend> packet(
+        new RtpPacketToSend(kNoExtensions, kRtpHeaderSize + kDtmfSize));
+    packet->SetPayloadType(dtmf_current_event_.payload_type);
+    packet->SetMarker(marker_bit);
+    packet->SetSsrc(rtp_sender_->SSRC());
+    packet->SetTimestamp(dtmf_timestamp);
+    packet->set_capture_time_ms(clock_->TimeInMilliseconds());
+    if (!rtp_sender_->AssignSequenceNumber(packet.get()))
+      return false;
 
     
-    dtmfbuffer[0] &= 0xe0;
-
+    uint8_t* dtmfbuffer = packet->AllocatePayload(kDtmfSize);
+    RTC_DCHECK(dtmfbuffer);
     
-    
-
 
 
 
@@ -440,25 +326,24 @@ int32_t RTPSenderAudio::SendTelephoneEventPacket(bool ended,
 
     
     uint8_t R = 0x00;
-    uint8_t volume = _dtmfLevel;
+    uint8_t volume = dtmf_current_event_.level;
 
     
     uint8_t E = ended ? 0x80 : 0x00;
 
     
-    dtmfbuffer[12] = _dtmfKey;
-    dtmfbuffer[13] = E | R | volume;
-    ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 14, duration);
+    dtmfbuffer[0] = dtmf_current_event_.key;
+    dtmfbuffer[1] = E | R | volume;
+    ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 2, duration);
 
-    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                         "Audio::SendTelephoneEvent", "timestamp",
-                         dtmfTimeStamp, "seqnum", _rtpSender->SequenceNumber());
-    retVal = _rtpSender->SendToNetwork(
-        dtmfbuffer, 4, 12, TickTime::MillisecondTimestamp(),
-        kAllowRetransmission, RtpPacketSender::kHighPriority);
-    sendCount--;
-  } while (sendCount > 0 && retVal == 0);
+    TRACE_EVENT_INSTANT2(
+        TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Audio::SendTelephoneEvent",
+        "timestamp", packet->Timestamp(), "seqnum", packet->SequenceNumber());
+    result = rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission,
+                                        RtpPacketSender::kHighPriority);
+    send_count--;
+  } while (send_count > 0 && result);
 
-  return retVal;
+  return result;
 }
 }  

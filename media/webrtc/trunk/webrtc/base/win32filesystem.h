@@ -24,10 +24,6 @@ class Win32Filesystem : public FilesystemInterface {
 
   
   
-  virtual bool CreatePrivateFile(const Pathname &filename);
-
-  
-  
   virtual bool DeleteFile(const Pathname &filename);
 
   
@@ -44,11 +40,6 @@ class Win32Filesystem : public FilesystemInterface {
   
   
   virtual bool MoveFile(const Pathname &old_path, const Pathname &new_path);
-  
-  
-  
-  
-  virtual bool MoveFolder(const Pathname &old_path, const Pathname &new_path);
   
   
   
@@ -77,14 +68,11 @@ class Win32Filesystem : public FilesystemInterface {
   virtual bool GetFileSize(const Pathname& path, size_t* size);
   virtual bool GetFileTime(const Pathname& path, FileTimeType which,
                            time_t* time);
- 
+
   
   
   virtual bool GetTemporaryFolder(Pathname &path, bool create,
                                  const std::string *append);
-
-  
-  virtual bool GetAppPathname(Pathname* path);
 
   virtual bool GetAppDataFolder(Pathname* path, bool per_user);
 
@@ -93,7 +81,9 @@ class Win32Filesystem : public FilesystemInterface {
 
   virtual bool GetDiskFreeSpace(const Pathname& path, int64_t* free_bytes);
 
-  virtual Pathname GetCurrentDirectory();
+ private:
+  
+  bool GetAppPathname(Pathname* path);
 };
 
 }  

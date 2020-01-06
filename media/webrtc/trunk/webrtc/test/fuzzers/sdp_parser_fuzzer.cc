@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "webrtc/api/jsepsessiondescription.h"
+
+namespace webrtc {
+void FuzzOneInput(const uint8_t* data, size_t size) {
+  std::string message(reinterpret_cast<const char*>(data), size);
+  webrtc::SdpParseError error;
+
+  std::unique_ptr<webrtc::SessionDescriptionInterface> sdp(
+      CreateSessionDescription("offer", message, &error));
+}
+
+}  

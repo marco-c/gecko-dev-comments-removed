@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface StatsObserver {
+  
+  public void onComplete(StatsReport[] reports);
+}

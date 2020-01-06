@@ -28,33 +28,29 @@ class DecisionLogicNormal : public DecisionLogic {
                       DecoderDatabase* decoder_database,
                       const PacketBuffer& packet_buffer,
                       DelayManager* delay_manager,
-                      BufferLevelFilter* buffer_level_filter)
-      : DecisionLogic(fs_hz, output_size_samples, playout_mode,
-                      decoder_database, packet_buffer, delay_manager,
-                      buffer_level_filter) {
-  }
+                      BufferLevelFilter* buffer_level_filter,
+                      const TickTimer* tick_timer)
+      : DecisionLogic(fs_hz,
+                      output_size_samples,
+                      playout_mode,
+                      decoder_database,
+                      packet_buffer,
+                      delay_manager,
+                      buffer_level_filter,
+                      tick_timer) {}
 
  protected:
-  static const int kAllowMergeWithoutExpandMs = 20;  
   static const int kReinitAfterExpands = 100;
   static const int kMaxWaitForPacket = 10;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
   Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
                                     const Expand& expand,
                                     size_t decoder_frame_length,
-                                    const RTPHeader* packet_header,
+                                    const Packet* next_packet,
                                     Modes prev_mode,
                                     bool play_dtmf,
-                                    bool* reset_decoder) override;
+                                    bool* reset_decoder,
+                                    size_t generated_noise_samples) override;
 
   
   
@@ -65,7 +61,8 @@ class DecisionLogicNormal : public DecisionLogic {
       Modes prev_mode,
       uint32_t target_timestamp,
       uint32_t available_timestamp,
-      bool play_dtmf);
+      bool play_dtmf,
+      size_t generated_noise_samples);
 
   
   virtual Operations ExpectedPacketAvailable(Modes prev_mode, bool play_dtmf);
@@ -77,12 +74,16 @@ class DecisionLogicNormal : public DecisionLogic {
  private:
   
   
-  Operations CngOperation(Modes prev_mode, uint32_t target_timestamp,
-                          uint32_t available_timestamp);
+  Operations CngOperation(Modes prev_mode,
+                          uint32_t target_timestamp,
+                          uint32_t available_timestamp,
+                          size_t generated_noise_samples);
 
   
   
-  bool TimescaleAllowed() const { return timescale_hold_off_ == 0; }
+  bool TimescaleAllowed() const {
+    return !timescale_countdown_ || timescale_countdown_->Finished();
+  }
 
   
   bool UnderTargetLevel() const;

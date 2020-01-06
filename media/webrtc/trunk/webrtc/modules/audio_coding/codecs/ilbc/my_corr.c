@@ -29,25 +29,26 @@ void WebRtcIlbcfix_MyCorr(
     const int16_t* seq2, 
     size_t dim2   
                           ){
-  int16_t max;
+  uint32_t max1, max2;
   size_t loops;
-  int scale;
+  int right_shift;
 
   
-
-
-  max=WebRtcSpl_MaxAbsValueW16(seq1, dim1);
-  scale=WebRtcSpl_GetSizeInBits(max);
-
-  scale = 2 * scale - 26;
-  if (scale<0) {
-    scale=0;
+  
+  
+  
+  max1 = WebRtcSpl_MaxAbsValueW16(seq1, dim1) + 1;
+  max2 = WebRtcSpl_MaxAbsValueW16(seq2, dim2) + 1;
+  right_shift =
+      (64 - 31) - WebRtcSpl_CountLeadingZeros64((max1 * max2) * (uint64_t)dim2);
+  if (right_shift < 0) {
+    right_shift = 0;
   }
 
   loops=dim1-dim2+1;
 
   
-  WebRtcSpl_CrossCorrelation(corr, seq2, seq1, dim2, loops, scale, 1);
+  WebRtcSpl_CrossCorrelation(corr, seq2, seq1, dim2, loops, right_shift, 1);
 
   return;
 }

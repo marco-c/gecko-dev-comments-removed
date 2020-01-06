@@ -13,8 +13,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 
+extern "C" {
 #include "webrtc/common_audio/ring_buffer.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+}
 #include "webrtc/modules/audio_processing/aecm/aecm_defines.h"
 #include "webrtc/typedefs.h"
 
@@ -400,7 +402,7 @@ extern ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
 
 
-#if defined(WEBRTC_DETECT_NEON) || defined(WEBRTC_HAS_NEON)
+#if defined(WEBRTC_HAS_NEON)
 void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore* aecm,
                                        const uint16_t* far_spectrum,
                                        int32_t* echo_est,

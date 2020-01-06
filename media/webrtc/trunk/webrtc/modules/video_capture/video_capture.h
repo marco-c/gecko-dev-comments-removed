@@ -11,86 +11,19 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
 
-#include "webrtc/common.h"
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_rotation.h"
+#include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/video_capture/video_capture_defines.h"
 
-#if defined(ANDROID) && !defined(WEBRTC_GONK)
-#include <jni.h>
-#endif
-
 namespace webrtc {
 
-
-enum class CaptureDeviceType {
-  Camera = 0,
-  Screen = 1,
-  Application = 2,
-  Window = 3,
-  Browser = 4
-};
-
- 
-struct CaptureDeviceInfo {
-  CaptureDeviceType type;
-
-  CaptureDeviceInfo() : type(CaptureDeviceType::Camera) {}
-  CaptureDeviceInfo(CaptureDeviceType t) : type(t) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kCaptureDeviceInfo;
-  const char * TypeName() const
-  {
-    switch(type) {
-    case CaptureDeviceType::Camera: {
-      return "Camera";
-    }
-    case CaptureDeviceType::Screen: {
-      return "Screen";
-    }
-    case CaptureDeviceType::Application: {
-      return "Application";
-    }
-    case CaptureDeviceType::Window: {
-      return "Window";
-    }
-    case CaptureDeviceType::Browser: {
-      return "Browser";
-    }
-    }
-    assert(false);
-    return "UNKOWN-CaptureDeviceType!";
-  }
-};
-
-class VideoInputFeedBack
-{
-public:
-    virtual void OnDeviceChange() = 0;
-protected:
-    virtual ~VideoInputFeedBack(){}
-};
-
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-  int32_t SetCaptureAndroidVM(JavaVM* javaVM);
-#endif
-
-class VideoCaptureModule: public RefCountedModule {
+class VideoCaptureModule: public rtc::RefCountInterface {
  public:
   
   class DeviceInfo {
    public:
     virtual uint32_t NumberOfDevices() = 0;
-    virtual int32_t Refresh() = 0;
-    virtual void DeviceChange() {
-     if (_inputCallBack)
-      _inputCallBack->OnDeviceChange();
-    }
-    virtual void RegisterVideoInputFeedBack(VideoInputFeedBack& callBack) {
-     _inputCallBack = &callBack;
-    }
-    virtual void DeRegisterVideoInputFeedBack() {
-     _inputCallBack = NULL;
-    }
 
     
     
@@ -106,8 +39,7 @@ class VideoCaptureModule: public RefCountedModule {
         char* deviceUniqueIdUTF8,
         uint32_t deviceUniqueIdUTF8Length,
         char* productUniqueIdUTF8 = 0,
-        uint32_t productUniqueIdUTF8Length = 0,
-        pid_t* pid = 0) = 0;
+        uint32_t productUniqueIdUTF8Length = 0) = 0;
 
 
     
@@ -142,43 +74,14 @@ class VideoCaptureModule: public RefCountedModule {
         uint32_t positionY) = 0;
 
     virtual ~DeviceInfo() {}
-   private:
-    VideoInputFeedBack* _inputCallBack = NULL;
-  };
-
-  class VideoCaptureEncodeInterface {
-   public:
-    virtual int32_t ConfigureEncoder(const VideoCodec& codec,
-                                     uint32_t maxPayloadSize) = 0;
-    
-    
-    
-    virtual int32_t SetRates(int32_t newBitRate, int32_t frameRate) = 0;
-    
-    
-    
-    
-    virtual int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) = 0;
-
-    
-    virtual int32_t EncodeFrameType(const FrameType type) = 0;
-  protected:
-    virtual ~VideoCaptureEncodeInterface() {
-    }
   };
 
   
   virtual void RegisterCaptureDataCallback(
-      VideoCaptureDataCallback& dataCallback) = 0;
+      rtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
 
   
   virtual void DeRegisterCaptureDataCallback() = 0;
-
-  
-  virtual void RegisterCaptureCallback(VideoCaptureFeedBack& callBack) = 0;
-
-  
-  virtual void DeRegisterCaptureCallback() = 0;
 
   
   virtual int32_t StartCapture(
@@ -195,11 +98,6 @@ class VideoCaptureModule: public RefCountedModule {
   
   virtual int32_t CaptureSettings(VideoCaptureCapability& settings) = 0;
 
-  virtual void SetCaptureDelay(int32_t delayMS) = 0;
-
-  
-  virtual int32_t CaptureDelay() = 0;
-
   
   
   
@@ -214,14 +112,6 @@ class VideoCaptureModule: public RefCountedModule {
 
   
   virtual bool GetApplyRotation() = 0;
-
-  
-  
-  virtual VideoCaptureEncodeInterface* GetEncodeInterface(
-      const VideoCodec& codec) = 0;
-
-  virtual void EnableFrameRateCallback(const bool enable) = 0;
-  virtual void EnableNoPictureAlarm(const bool enable) = 0;
 
 protected:
   virtual ~VideoCaptureModule() {};

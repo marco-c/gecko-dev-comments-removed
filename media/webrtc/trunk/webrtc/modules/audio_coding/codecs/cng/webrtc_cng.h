@@ -12,152 +12,88 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
 
-#include <stddef.h>
+#include <cstddef>
+
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/typedefs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define WEBRTC_CNG_MAX_LPC_ORDER 12
-#define WEBRTC_CNG_MAX_OUTSIZE_ORDER 640
 
-
-
-
-#define CNG_ENCODER_NOT_INITIATED               6120
-#define CNG_DISALLOWED_LPC_ORDER                6130
-#define CNG_DISALLOWED_FRAME_SIZE               6140
-#define CNG_DISALLOWED_SAMPLING_FREQUENCY       6150
-
-#define CNG_DECODER_NOT_INITIATED               6220
-
-typedef struct WebRtcCngEncInst CNG_enc_inst;
-typedef struct WebRtcCngDecInst CNG_dec_inst;
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcCng_CreateEnc(CNG_enc_inst** cng_inst);
-int16_t WebRtcCng_CreateDec(CNG_dec_inst** cng_inst);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, int fs, int16_t interval,
-                      int16_t quality);
-void WebRtcCng_InitDec(CNG_dec_inst* cng_inst);
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcCng_FreeEnc(CNG_enc_inst* cng_inst);
-int16_t WebRtcCng_FreeDec(CNG_dec_inst* cng_inst);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
-                     size_t nrOfSamples, uint8_t* SIDdata,
-                     size_t* bytesOut, int16_t forceSID);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcCng_UpdateSid(CNG_dec_inst* cng_inst, uint8_t* SID,
-                            size_t length);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcCng_Generate(CNG_dec_inst* cng_inst, int16_t* outData,
-                           size_t nrOfSamples, int16_t new_period);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int16_t WebRtcCng_GetErrorCodeEnc(CNG_enc_inst* cng_inst);
-int16_t WebRtcCng_GetErrorCodeDec(CNG_dec_inst* cng_inst);
-
-#ifdef __cplusplus
-}
-#endif
+namespace webrtc {
+
+class ComfortNoiseDecoder {
+ public:
+  ComfortNoiseDecoder();
+  ~ComfortNoiseDecoder() = default;
+
+  ComfortNoiseDecoder(const ComfortNoiseDecoder&) = delete;
+  ComfortNoiseDecoder& operator=(const ComfortNoiseDecoder&) = delete;
+
+  void Reset();
+
+  
+  
+  void UpdateSid(rtc::ArrayView<const uint8_t> sid);
+
+  
+  
+  
+  
+  
+  
+  
+  bool Generate(rtc::ArrayView<int16_t> out_data, bool new_period);
+
+ private:
+  uint32_t dec_seed_;
+  int32_t dec_target_energy_;
+  int32_t dec_used_energy_;
+  int16_t dec_target_reflCoefs_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  int16_t dec_used_reflCoefs_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  int16_t dec_filtstate_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  int16_t dec_filtstateLow_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  uint16_t dec_order_;
+  int16_t dec_target_scale_factor_;  
+  int16_t dec_used_scale_factor_;  
+};
+
+class ComfortNoiseEncoder {
+ public:
+  
+  
+  
+  
+  ComfortNoiseEncoder(int fs, int interval, int quality);
+  ~ComfortNoiseEncoder() = default;
+
+  ComfortNoiseEncoder(const ComfortNoiseEncoder&) = delete;
+  ComfortNoiseEncoder& operator=(const ComfortNoiseEncoder&) = delete;
+
+  
+  
+  void Reset(int fs, int interval, int quality);
+
+  
+  
+  
+  
+  
+  size_t Encode(rtc::ArrayView<const int16_t> speech,
+                bool force_sid,
+                rtc::Buffer* output);
+
+ private:
+  size_t enc_nrOfCoefs_;
+  int enc_sampfreq_;
+  int16_t enc_interval_;
+  int16_t enc_msSinceSid_;
+  int32_t enc_Energy_;
+  int16_t enc_reflCoefs_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  int32_t enc_corrVector_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
+  uint32_t enc_seed_;
+};
+
+}  
 
 #endif  

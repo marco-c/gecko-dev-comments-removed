@@ -11,9 +11,17 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_H_
 
+#include <memory>
+
 #include <stddef.h>
 
+extern "C" {
+#include "webrtc/common_audio/ring_buffer.h"
+}
+#include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/typedefs.h"
+
+namespace webrtc {
 
 
 #define AEC_UNSPECIFIED_ERROR 12000
@@ -25,16 +33,9 @@
 
 #define AEC_BAD_PARAMETER_WARNING 12050
 
-enum {
-  kAecNlpConservative = 0,
-  kAecNlpModerate,
-  kAecNlpAggressive
-};
+enum { kAecNlpConservative = 0, kAecNlpModerate, kAecNlpAggressive };
 
-enum {
-  kAecFalse = 0,
-  kAecTrue
-};
+enum { kAecFalse = 0, kAecTrue };
 
 typedef struct {
   int16_t nlpMode;      
@@ -56,13 +57,61 @@ typedef struct {
   AecLevel erl;
   AecLevel erle;
   AecLevel aNlp;
+  float divergent_filter_fraction;
 } AecMetrics;
 
 struct AecCore;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class ApmDataDumper;
+
+typedef struct Aec {
+  Aec();
+  ~Aec();
+
+  std::unique_ptr<ApmDataDumper> data_dumper;
+
+  int delayCtr;
+  int sampFreq;
+  int splitSampFreq;
+  int scSampFreq;
+  float sampFactor;  
+  short skewMode;
+  int bufSizeStart;
+  int knownDelay;
+  int rate_factor;
+
+  short initFlag;  
+
+  
+  short counter;
+  int sum;
+  short firstVal;
+  short checkBufSizeCtr;
+
+  
+  short msInSndCardBuf;
+  short filtDelay;  
+  int timeForDelayChange;
+  int startup_phase;
+  int checkBuffSize;
+  short lastDelayDiff;
+
+  
+  void* resampler;
+
+  int skewFrCtr;
+  int resample;  
+  int highSkewCtr;
+  float skew;
+
+  RingBuffer* far_pre_buf;  
+
+  int farend_started;
+
+  
+  static int instance_count;
+  AecCore* aec;
+} Aec;
 
 
 
@@ -245,7 +294,6 @@ int WebRtcAec_GetDelayMetrics(void* handle,
 
 struct AecCore* WebRtcAec_aec_core(void* handle);
 
-#ifdef __cplusplus
-}
-#endif
+}  
+
 #endif  

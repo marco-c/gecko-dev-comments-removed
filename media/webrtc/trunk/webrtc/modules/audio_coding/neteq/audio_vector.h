@@ -12,9 +12,9 @@
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ_AUDIO_VECTOR_H_
 
 #include <string.h>  
+#include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -38,6 +38,9 @@ class AudioVector {
   virtual void CopyTo(AudioVector* copy_to) const;
 
   
+  virtual void CopyTo(size_t length, size_t position, int16_t* copy_to) const;
+
+  
   
   virtual void PushFront(const AudioVector& prepend_this);
 
@@ -47,6 +50,12 @@ class AudioVector {
 
   
   virtual void PushBack(const AudioVector& append_this);
+
+  
+  
+  virtual void PushBack(const AudioVector& append_this,
+                        size_t length,
+                        size_t position);
 
   
   virtual void PushBack(const int16_t* append_this, size_t length);
@@ -70,6 +79,15 @@ class AudioVector {
 
   
   virtual void InsertZerosAt(size_t length, size_t position);
+
+  
+  
+  
+  
+  
+  virtual void OverwriteAt(const AudioVector& insert_this,
+                           size_t length,
+                           size_t position);
 
   
   
@@ -100,10 +118,26 @@ class AudioVector {
 
   void Reserve(size_t n);
 
-  rtc::scoped_ptr<int16_t[]> array_;
-  size_t first_free_ix_;  
-                          
+  void InsertByPushBack(const int16_t* insert_this, size_t length,
+                        size_t position);
+
+  void InsertByPushFront(const int16_t* insert_this, size_t length,
+                         size_t position);
+
+  void InsertZerosByPushBack(size_t length, size_t position);
+
+  void InsertZerosByPushFront(size_t length, size_t position);
+
+  std::unique_ptr<int16_t[]> array_;
+
   size_t capacity_;  
+
+  
+  
+  size_t begin_index_;
+
+  
+  size_t end_index_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioVector);
 };

@@ -16,8 +16,8 @@
 
 
 
-#ifndef BASE_THREAD_ANNOTATIONS_H_
-#define BASE_THREAD_ANNOTATIONS_H_
+#ifndef WEBRTC_BASE_THREAD_ANNOTATIONS_H_
+#define WEBRTC_BASE_THREAD_ANNOTATIONS_H_
 
 #if defined(__clang__) && (!defined(SWIG))
 #define THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
@@ -31,7 +31,7 @@
 
 
 #define GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(guarded_by(x))
-#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded)
+#define GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(guarded_var)
 
 
 
@@ -41,8 +41,8 @@
 
 
 
-#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(point_to_guarded_by(x))
-#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(point_to_guarded)
+#define PT_GUARDED_BY(x) THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_by(x))
+#define PT_GUARDED_VAR THREAD_ANNOTATION_ATTRIBUTE__(pt_guarded_var)
 
 
 
@@ -65,7 +65,8 @@
 
 
 
-#define LOCKS_EXCLUDED(x) THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(x))
+#define LOCKS_EXCLUDED(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(locks_excluded(__VA_ARGS__))
 
 
 #define LOCK_RETURNED(x) THREAD_ANNOTATION_ATTRIBUTE__(lock_returned(x))

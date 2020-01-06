@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 
 using std::vector;
 
@@ -30,57 +30,54 @@ static const unsigned char sp = 0xFE;
 static const unsigned char il = 0xFF;  
 
 const char Base64::Base64Table[] =
-
-
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    
+    
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 
 
 
 
 const unsigned char Base64::DecodeTable[] = {
-
-  il,il,il,il,il,il,il,il,il,sp,  
-  sp,sp,sp,sp,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,sp,il,il,il,il,il,il,il,  
-  il,il,il,62,il,il,il,63,52,53,  
-  54,55,56,57,58,59,60,61,il,il,  
-  il,pd,il,il,il, 0, 1, 2, 3, 4,  
-   5, 6, 7, 8, 9,10,11,12,13,14,  
-  15,16,17,18,19,20,21,22,23,24,  
-  25,il,il,il,il,il,il,26,27,28,  
-  29,30,31,32,33,34,35,36,37,38,  
-  39,40,41,42,43,44,45,46,47,48,  
-  49,50,51,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il,il,il,il,il,  
-  il,il,il,il,il,il               
+    
+    il, il, il, il, il, il, il, il, il, sp,  
+    sp, sp, sp, sp, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, sp, il, il, il, il, il, il, il,  
+    il, il, il, 62, il, il, il, 63, 52, 53,  
+    54, 55, 56, 57, 58, 59, 60, 61, il, il,  
+    il, pd, il, il, il, 0,  1,  2,  3,  4,   
+    5,  6,  7,  8,  9,  10, 11, 12, 13, 14,  
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24,  
+    25, il, il, il, il, il, il, 26, 27, 28,  
+    29, 30, 31, 32, 33, 34, 35, 36, 37, 38,  
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48,  
+    49, 50, 51, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il, il, il, il, il,  
+    il, il, il, il, il, il                   
 };
 
 bool Base64::IsBase64Char(char ch) {
-  return (('A' <= ch) && (ch <= 'Z')) ||
-         (('a' <= ch) && (ch <= 'z')) ||
-         (('0' <= ch) && (ch <= '9')) ||
-         (ch == '+') || (ch == '/');
+  return (('A' <= ch) && (ch <= 'Z')) || (('a' <= ch) && (ch <= 'z')) ||
+         (('0' <= ch) && (ch <= '9')) || (ch == '+') || (ch == '/');
 }
 
 bool Base64::GetNextBase64Char(char ch, char* next_ch) {
   if (next_ch == NULL) {
     return false;
   }
-  
-  const char* p = strchr(Base64Table, &ch);
+  const char* p = strchr(Base64Table, ch);
   if (!p)
     return false;
   ++p;
@@ -96,9 +93,10 @@ bool Base64::IsBase64Encoded(const std::string& str) {
   return true;
 }
 
-void Base64::EncodeFromArray(const void* data, size_t len,
+void Base64::EncodeFromArray(const void* data,
+                             size_t len,
                              std::string* result) {
-  ASSERT(NULL != result);
+  RTC_DCHECK(NULL != result);
   result->clear();
   result->resize(((len + 2) / 3) * 4);
   const unsigned char* byte_data = static_cast<const unsigned char*>(data);
@@ -136,10 +134,13 @@ void Base64::EncodeFromArray(const void* data, size_t len,
   }
 }
 
-size_t Base64::GetNextQuantum(DecodeFlags parse_flags, bool illegal_pads,
-                              const char* data, size_t len, size_t* dpos,
-                              unsigned char qbuf[4], bool* padded)
-{
+size_t Base64::GetNextQuantum(DecodeFlags parse_flags,
+                              bool illegal_pads,
+                              const char* data,
+                              size_t len,
+                              size_t* dpos,
+                              unsigned char qbuf[4],
+                              bool* padded) {
   size_t byte_len = 0, pad_len = 0, pad_start = 0;
   for (; (byte_len < 4) && (*dpos < len); ++*dpos) {
     qbuf[byte_len] = DecodeTable[static_cast<unsigned char>(data[*dpos])];
@@ -190,32 +191,48 @@ size_t Base64::GetNextQuantum(DecodeFlags parse_flags, bool illegal_pads,
   return byte_len;
 }
 
-bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
-                             std::string* result, size_t* data_used) {
-  return DecodeFromArrayTemplate<std::string>(
-      data, len, flags, result, data_used);
+bool Base64::DecodeFromArray(const char* data,
+                             size_t len,
+                             DecodeFlags flags,
+                             std::string* result,
+                             size_t* data_used) {
+  return DecodeFromArrayTemplate<std::string>(data, len, flags, result,
+                                              data_used);
 }
 
-bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
-                             vector<char>* result, size_t* data_used) {
-  return DecodeFromArrayTemplate<vector<char> >(data, len, flags, result,
-                                                data_used);
+bool Base64::DecodeFromArray(const char* data,
+                             size_t len,
+                             DecodeFlags flags,
+                             vector<char>* result,
+                             size_t* data_used) {
+  return DecodeFromArrayTemplate<vector<char>>(data, len, flags, result,
+                                               data_used);
 }
 
-template<typename T>
-bool Base64::DecodeFromArrayTemplate(const char* data, size_t len,
-                                     DecodeFlags flags, T* result,
-                                     size_t* data_used)
-{
-  ASSERT(NULL != result);
-  ASSERT(flags <= (DO_PARSE_MASK | DO_PAD_MASK | DO_TERM_MASK));
+bool Base64::DecodeFromArray(const char* data,
+                             size_t len,
+                             DecodeFlags flags,
+                             vector<uint8_t>* result,
+                             size_t* data_used) {
+  return DecodeFromArrayTemplate<vector<uint8_t>>(data, len, flags, result,
+                                                  data_used);
+}
+
+template <typename T>
+bool Base64::DecodeFromArrayTemplate(const char* data,
+                                     size_t len,
+                                     DecodeFlags flags,
+                                     T* result,
+                                     size_t* data_used) {
+  RTC_DCHECK(NULL != result);
+  RTC_DCHECK(flags <= (DO_PARSE_MASK | DO_PAD_MASK | DO_TERM_MASK));
 
   const DecodeFlags parse_flags = flags & DO_PARSE_MASK;
-  const DecodeFlags pad_flags   = flags & DO_PAD_MASK;
-  const DecodeFlags term_flags  = flags & DO_TERM_MASK;
-  ASSERT(0 != parse_flags);
-  ASSERT(0 != pad_flags);
-  ASSERT(0 != term_flags);
+  const DecodeFlags pad_flags = flags & DO_PAD_MASK;
+  const DecodeFlags term_flags = flags & DO_TERM_MASK;
+  RTC_DCHECK(0 != parse_flags);
+  RTC_DCHECK(0 != pad_flags);
+  RTC_DCHECK(0 != term_flags);
 
   result->clear();
   result->reserve(len);
@@ -224,8 +241,8 @@ bool Base64::DecodeFromArrayTemplate(const char* data, size_t len,
   bool success = true, padded;
   unsigned char c, qbuf[4];
   while (dpos < len) {
-    size_t qlen = GetNextQuantum(parse_flags, (DO_PAD_NO == pad_flags),
-                                 data, len, &dpos, qbuf, &padded);
+    size_t qlen = GetNextQuantum(parse_flags, (DO_PAD_NO == pad_flags), data,
+                                 len, &dpos, qbuf, &padded);
     c = (qbuf[0] << 2) | ((qbuf[1] >> 4) & 0x3);
     if (qlen >= 2) {
       result->push_back(c);
@@ -258,4 +275,4 @@ bool Base64::DecodeFromArrayTemplate(const char* data, size_t len,
   return success;
 }
 
-} 
+}  

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/typedefs.h"
 
@@ -65,15 +66,9 @@ class I420Encoder : public VideoEncoder {
   
   int Release() override;
 
-  int SetRates(uint32_t , uint32_t ) override {
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
   int SetChannelParameters(uint32_t , int64_t ) override {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-
-  void OnDroppedFrame() override {}
 
  private:
   static uint8_t* InsertHeader(uint8_t* buffer,
@@ -131,18 +126,11 @@ class I420Decoder : public VideoDecoder {
   
   int Release() override;
 
-  
-  
-  
-  
-  int Reset() override;
-
  private:
   static const uint8_t* ExtractHeader(const uint8_t* buffer,
                                       uint16_t* width,
                                       uint16_t* height);
 
-  VideoFrame _decodedImage;
   int _width;
   int _height;
   bool _inited;

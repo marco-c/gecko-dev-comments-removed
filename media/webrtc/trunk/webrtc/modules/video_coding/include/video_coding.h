@@ -21,16 +21,21 @@
 #include <windows.h>
 #endif
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
 class Clock;
 class EncodedImageCallback;
+
+
+
+class VCMQMSettingsCallback;
+class VideoBitrateAllocator;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -68,14 +73,20 @@ class VideoCodingModule : public Module {
 
   enum ReceiverRobustness { kNone, kHardNack, kSoftNack, kReferenceSelection };
 
-  static VideoCodingModule* Create(
-      Clock* clock,
-      VideoEncoderRateObserver* encoder_rate_observer,
-      VCMQMSettingsCallback* qm_settings_callback);
-
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
-  static void Destroy(VideoCodingModule* module);
+  static VideoCodingModule* Create(
+      Clock* clock,
+      VCMQMSettingsCallback* qm_settings_callback,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender,
+      EncodedImageCallback* pre_decode_image_callback);
+
+  static VideoCodingModule* Create(
+      Clock* clock,
+      EventFactory* event_factory,
+      NackSender* nack_sender,
+      KeyFrameRequestSender* keyframe_request_sender);
 
   
   
@@ -176,36 +187,6 @@ class VideoCodingModule : public Module {
   
   
   
-  
-  
-  
-  
-  
-  virtual int32_t RegisterTransportCallback(
-      VCMPacketizationCallback* transport) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t RegisterSendStatisticsCallback(
-      VCMSendStatisticsCallback* sendStats) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
   virtual int32_t RegisterProtectionCallback(
       VCMProtectionCallback* protection) = 0;
 
@@ -237,14 +218,13 @@ class VideoCodingModule : public Module {
   
   virtual int32_t AddVideoFrame(
       const VideoFrame& videoFrame,
-      const VideoContentMetrics* contentMetrics = NULL,
       const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 
   
   
   
   
-  virtual int32_t IntraFrameRequest(int stream_index) = 0;
+  virtual int32_t IntraFrameRequest(size_t stream_index) = 0;
 
   
   
@@ -370,19 +350,6 @@ class VideoCodingModule : public Module {
   
   virtual int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) = 0;
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int32_t RegisterReceiveStateCallback(
-      VCMReceiveStateCallback* callback) = 0;
 
   
   
@@ -392,16 +359,6 @@ class VideoCodingModule : public Module {
   
   
   virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
-
-  
-  virtual int RegisterRenderBufferSizeCallback(
-      VCMRenderBufferSizeCallback* callback) = 0;
-
-  
-  
-  
-  
-  virtual int32_t ResetDecoder() = 0;
 
   
   
@@ -509,21 +466,7 @@ class VideoCodingModule : public Module {
   
   
   virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
- 
-  
-  virtual void SetCPULoadState(CPULoadState state) = 0;
 
-  
-  
-  
-  virtual void SuspendBelowMinBitrate() = 0;
-
-  
-  
-  virtual bool VideoSuspended() const = 0;
-
-  virtual void RegisterPreDecodeImageCallback(
-      EncodedImageCallback* observer) = 0;
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;
   

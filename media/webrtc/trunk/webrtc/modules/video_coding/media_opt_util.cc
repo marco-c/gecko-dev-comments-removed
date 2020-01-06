@@ -15,11 +15,12 @@
 #include <math.h>
 
 #include <algorithm>
+#include <limits>
 
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/fec_tables_xor.h"
+#include "webrtc/modules/video_coding/fec_rate_table.h"
 #include "webrtc/modules/video_coding/nack_fec_tables.h"
 
 namespace webrtc {
@@ -34,19 +35,10 @@ VCMProtectionMethod::VCMProtectionMethod()
       _protectionFactorD(0),
       _scaleProtKey(2.0f),
       _maxPayloadSize(1460),
-      _qmRobustness(new VCMQmRobustness()),
-      _useUepProtectionK(false),
-      _useUepProtectionD(true),
       _corrFecCost(1.0),
       _type(kNone) {}
 
-VCMProtectionMethod::~VCMProtectionMethod() {
-  delete _qmRobustness;
-}
-void VCMProtectionMethod::UpdateContentMetrics(
-    const VideoContentMetrics* contentMetrics) {
-  _qmRobustness->UpdateContent(contentMetrics);
-}
+VCMProtectionMethod::~VCMProtectionMethod() {}
 
 VCMNackFecMethod::VCMNackFecMethod(int64_t lowRttNackThresholdMs,
                                    int64_t highRttNackThresholdMs)
@@ -253,7 +245,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
 
   
-  uint8_t packetLoss = (uint8_t)(255 * parameters->lossPr);
+  uint8_t packetLoss = static_cast<uint8_t>(255 * parameters->lossPr);
   if (packetLoss == 0) {
     _protectionFactorK = 0;
     _protectionFactorD = 0;
@@ -264,7 +256,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
 
   
-  uint8_t firstPartitionProt = (uint8_t)(255 * 0.20);
+  uint8_t firstPartitionProt = static_cast<uint8_t>(255 * 0.20);
 
   
   
@@ -291,10 +283,11 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   const int bitRatePerFrame = BitsPerFrame(parameters);
 
   
-  const uint8_t avgTotPackets =
-      1 + (uint8_t)(static_cast<float>(bitRatePerFrame) * 1000.0 /
-                        static_cast<float>(8.0 * _maxPayloadSize) +
-                    0.5);
+  const uint8_t avgTotPackets = static_cast<uint8_t>(
+      std::min(static_cast<float>(std::numeric_limits<uint8_t>::max()),
+               1.5f +
+                   static_cast<float>(bitRatePerFrame) * 1000.0f /
+                       static_cast<float>(8.0 * _maxPayloadSize)));
 
   
   uint8_t codeRateDelta = 0;
@@ -305,8 +298,8 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   
   const uint16_t effRateFecTable =
       static_cast<uint16_t>(resolnFac * bitRatePerFrame);
-  uint8_t rateIndexTable = (uint8_t)VCM_MAX(
-      VCM_MIN((effRateFecTable - ratePar1) / ratePar1, ratePar2), 0);
+  uint8_t rateIndexTable = static_cast<uint8_t>(
+      VCM_MAX(VCM_MIN((effRateFecTable - ratePar1) / ratePar1, ratePar2), 0));
 
   
   
@@ -316,10 +309,10 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   uint16_t indexTable = rateIndexTable * kPacketLossMax + packetLoss;
 
   
-  assert(indexTable < kSizeCodeRateXORTable);
+  RTC_DCHECK_LT(indexTable, kFecRateTableSize);
 
   
-  codeRateDelta = kCodeRateXORTable[indexTable];
+  codeRateDelta = kFecRateTable[indexTable];
 
   if (packetLoss > lossThr && avgTotPackets > packetNumThr) {
     
@@ -333,38 +326,28 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
     codeRateDelta = kPacketLossMax - 1;
   }
 
-  float adjustFec = 1.0f;
-  
-  
-  if (parameters->numLayers == 1) {
-    adjustFec = _qmRobustness->AdjustFecFactor(
-        codeRateDelta, parameters->bitRate, parameters->frameRate,
-        parameters->rtt, packetLoss);
-  }
-
-  codeRateDelta = static_cast<uint8_t>(codeRateDelta * adjustFec);
-
   
   
   
   
-  const uint8_t packetFrameDelta = (uint8_t)(0.5 + parameters->packetsPerFrame);
+  const uint8_t packetFrameDelta =
+      static_cast<uint8_t>(0.5 + parameters->packetsPerFrame);
   const uint8_t packetFrameKey =
-      (uint8_t)(0.5 + parameters->packetsPerFrameKey);
+      static_cast<uint8_t>(0.5 + parameters->packetsPerFrameKey);
   const uint8_t boostKey = BoostCodeRateKey(packetFrameDelta, packetFrameKey);
 
-  rateIndexTable = (uint8_t)VCM_MAX(
+  rateIndexTable = static_cast<uint8_t>(VCM_MAX(
       VCM_MIN(1 + (boostKey * effRateFecTable - ratePar1) / ratePar1, ratePar2),
-      0);
+      0));
   uint16_t indexTableKey = rateIndexTable * kPacketLossMax + packetLoss;
 
-  indexTableKey = VCM_MIN(indexTableKey, kSizeCodeRateXORTable);
+  indexTableKey = VCM_MIN(indexTableKey, kFecRateTableSize);
 
   
-  assert(indexTableKey < kSizeCodeRateXORTable);
+  assert(indexTableKey < kFecRateTableSize);
 
   
-  codeRateKey = kCodeRateXORTable[indexTableKey];
+  codeRateKey = kFecRateTable[indexTableKey];
 
   
   int boostKeyProt = _scaleProtKey * codeRateDelta;
@@ -412,13 +395,6 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   }
 
   
-  _useUepProtectionK = _qmRobustness->SetUepProtection(
-      codeRateKey, parameters->bitRate, packetLoss, 0);
-
-  _useUepProtectionD = _qmRobustness->SetUepProtection(
-      codeRateDelta, parameters->bitRate, packetLoss, 1);
-
-  
   return true;
 }
 
@@ -434,6 +410,8 @@ int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   
   float adjustmentFactor = 1;
 
+  if (frameRate < 1.0f)
+    frameRate = 1.0f;
   
   return static_cast<int>(adjustmentFactor * bitRate / frameRate);
 }
@@ -624,7 +602,7 @@ void VCMLossProtectionLogic::UpdateKeyFrameSize(float keyFrameSize) {
   _keyFrameSize = keyFrameSize;
 }
 
-void VCMLossProtectionLogic::UpdateFrameSize(uint16_t width, uint16_t height) {
+void VCMLossProtectionLogic::UpdateFrameSize(size_t width, size_t height) {
   _codecWidth = width;
   _codecHeight = height;
 }

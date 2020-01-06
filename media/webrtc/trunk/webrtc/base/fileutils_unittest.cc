@@ -8,6 +8,8 @@
 
 
 
+#include <memory>
+
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/pathutils.h"
@@ -15,14 +17,21 @@
 
 namespace rtc {
 
+#if defined (WEBRTC_ANDROID)
 
-TEST(FilesystemTest, GetTemporaryFolder) {
+#define MAYBE_FilesystemTest DISABLED_FilesystemTest
+#else
+#define MAYBE_FilesystemTest FilesystemTest
+#endif
+
+
+TEST(MAYBE_FilesystemTest, GetTemporaryFolder) {
   Pathname path;
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
 }
 
 
-TEST(FilesystemTest, TestOpenFile) {
+TEST(MAYBE_FilesystemTest, TestOpenFile) {
   Pathname path;
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetPathname(Filesystem::TempFilename(path, "ut"));
@@ -50,7 +59,7 @@ TEST(FilesystemTest, TestOpenFile) {
 }
 
 
-TEST(FilesystemTest, TestOpenBadFile) {
+TEST(MAYBE_FilesystemTest, TestOpenBadFile) {
   Pathname path;
   EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
   path.SetFilename("not an actual file");
@@ -62,29 +71,7 @@ TEST(FilesystemTest, TestOpenBadFile) {
 }
 
 
-
-TEST(FilesystemTest, TestCreatePrivateFile) {
-  Pathname path;
-  EXPECT_TRUE(Filesystem::GetTemporaryFolder(path, true, NULL));
-  path.SetFilename("private_file_test");
-
-  
-  EXPECT_TRUE(Filesystem::CreatePrivateFile(path));
-  
-  EXPECT_FALSE(Filesystem::CreatePrivateFile(path));
-
-  
-  scoped_ptr<FileStream> fs(Filesystem::OpenFile(path, "wb"));
-  EXPECT_TRUE(fs.get() != NULL);
-  
-  fs.reset();
-
-  
-  EXPECT_TRUE(Filesystem::DeleteFile(path));
-}
-
-
-TEST(FilesystemTest, TestGetDiskFreeSpace) {
+TEST(MAYBE_FilesystemTest, TestGetDiskFreeSpace) {
   
   
   Pathname path;
@@ -114,18 +101,6 @@ TEST(FilesystemTest, TestGetDiskFreeSpace) {
   
   
   EXPECT_GT(free3, 0);
-}
-
-
-TEST(FilesystemTest, TestGetCurrentDirectory) {
-  EXPECT_FALSE(Filesystem::GetCurrentDirectory().empty());
-}
-
-
-TEST(FilesystemTest, TestGetAppPathname) {
-  Pathname path;
-  EXPECT_TRUE(Filesystem::GetAppPathname(&path));
-  EXPECT_FALSE(path.empty());
 }
 
 }  

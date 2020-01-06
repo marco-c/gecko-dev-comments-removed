@@ -16,7 +16,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread_types.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace rtc {
@@ -59,6 +58,8 @@ class PlatformThread {
   PlatformThread(ThreadRunFunction func, void* obj, const char* thread_name);
   virtual ~PlatformThread();
 
+  const std::string& name() const { return name_; }
+
   
   
   void Start();
@@ -66,13 +67,23 @@ class PlatformThread {
   bool IsRunning() const;
 
   
-  virtual void Stop();
+  
+  PlatformThreadRef GetThreadRef() const;
+
+  
+  void Stop();
 
   
   bool SetPriority(ThreadPriority priority);
 
  protected:
-  virtual void Run();
+#if defined(WEBRTC_WIN)
+  
+  bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data);
+#endif
+
+ private:
+  void Run();
 
   ThreadRunFunction const run_function_;
   void* const obj_;
@@ -85,6 +96,7 @@ class PlatformThread {
 
   bool stop_;
   HANDLE thread_;
+  DWORD thread_id_;
 #else
   static void* StartThread(void* param);
 
@@ -94,44 +106,6 @@ class PlatformThread {
 #endif  
   RTC_DISALLOW_COPY_AND_ASSIGN(PlatformThread);
 };
-
-#if defined(WEBRTC_WIN)
-class PlatformUIThread : public PlatformThread {
- public:
-  PlatformUIThread(ThreadRunFunction func, void* obj,
-		  const char* thread_name) :
-  PlatformThread(func, obj, thread_name),
-  hwnd_(nullptr),
-  timerid_(0),
-  timeout_(0) {
- }
- virtual ~PlatformUIThread() {}
-
- virtual void Stop() override;
-
- 
-
-
- void RequestCallback();
-
- 
-
-
- bool RequestCallbackTimer(unsigned int milliseconds);
-
- protected:
-  virtual void Run() override;
-
- private:
-  static LRESULT CALLBACK EventWindowProc(HWND, UINT, WPARAM, LPARAM);
-  void NativeEventCallback();
-  bool InternalInit();
-
-  HWND hwnd_;
-  UINT_PTR timerid_;
-  unsigned int timeout_;
-};
-#endif
 
 }  
 

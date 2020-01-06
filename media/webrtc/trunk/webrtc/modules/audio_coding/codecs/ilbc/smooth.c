@@ -31,7 +31,7 @@ void WebRtcIlbcfix_Smooth(
     int16_t *surround  
 
                           ) {
-  int16_t maxtot, scale, scale1, scale2;
+  int16_t scale, scale1, scale2;
   int16_t A, B, C, denomW16;
   int32_t B_W32, denom, num;
   int32_t errs;
@@ -40,18 +40,21 @@ void WebRtcIlbcfix_Smooth(
   int16_t w11prim;
   int16_t bitsw00, bitsw10, bitsw11;
   int32_t w11w00, w10w10, w00w00;
-  int16_t max1, max2;
+  uint32_t max1, max2, max12;
 
   
 
   w00 = w10 = w11 = 0;
 
-  max1=WebRtcSpl_MaxAbsValueW16(current, ENH_BLOCKL);
-  max2=WebRtcSpl_MaxAbsValueW16(surround, ENH_BLOCKL);
-  maxtot=WEBRTC_SPL_MAX(max1, max2);
-
-  scale=WebRtcSpl_GetSizeInBits(maxtot);
-  scale = (int16_t)(2 * scale) - 26;
+  
+  
+  
+  
+  max1 = WebRtcSpl_MaxAbsValueW16(current, ENH_BLOCKL) + 1;
+  max2 = WebRtcSpl_MaxAbsValueW16(surround, ENH_BLOCKL) + 1;
+  max12 = WEBRTC_SPL_MAX(max1, max2);
+  scale = (64 - 31) -
+          WebRtcSpl_CountLeadingZeros64((max12 * max12) * (uint64_t)ENH_BLOCKL);
   scale=WEBRTC_SPL_MAX(0, scale);
 
   w00=WebRtcSpl_DotProductWithScale(current,current,ENH_BLOCKL,scale);
@@ -165,7 +168,7 @@ void WebRtcIlbcfix_Smooth(
       
       scale1 = 31-bitsw10;
       scale2 = 21-scale1;
-      w10prim = w10 << scale1;
+      w10prim = w10 == 0 ? 0 : w10 * (1 << scale1);
       w00prim = WEBRTC_SPL_SHIFT_W32(w00, -scale2);
       scale = bitsw00-scale2-15;
 

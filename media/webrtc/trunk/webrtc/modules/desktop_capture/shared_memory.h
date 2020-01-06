@@ -17,6 +17,8 @@
 #include <windows.h>
 #endif
 
+#include <memory>
+
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/typedefs.h"
 
@@ -60,6 +62,18 @@ class SharedMemory {
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemory);
+};
+
+
+class SharedMemoryFactory {
+ public:
+  SharedMemoryFactory() {}
+  virtual ~SharedMemoryFactory() {}
+
+  virtual std::unique_ptr<SharedMemory> CreateSharedMemory(size_t size) = 0;
+
+ private:
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedMemoryFactory);
 };
 
 }  

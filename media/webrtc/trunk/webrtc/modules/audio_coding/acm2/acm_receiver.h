@@ -12,19 +12,18 @@
 #define WEBRTC_MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
-#include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/call_statistics.h"
-#include "webrtc/modules/audio_coding/acm2/initial_delay_manager.h"
+#include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -32,22 +31,12 @@
 namespace webrtc {
 
 struct CodecInst;
-class CriticalSectionWrapper;
 class NetEq;
 
 namespace acm2 {
 
 class AcmReceiver {
  public:
-  struct Decoder {
-    int acm_codec_id;
-    uint8_t payload_type;
-    
-    
-    size_t channels;
-    int sample_rate_hz;
-  };
-
   
   explicit AcmReceiver(const AudioCodingModule::Config& config);
 
@@ -86,7 +75,9 @@ class AcmReceiver {
   
   
   
-  int GetAudio(int desired_freq_hz, AudioFrame* audio_frame);
+  
+  
+  int GetAudio(int desired_freq_hz, AudioFrame* audio_frame, bool* muted);
 
   
   
@@ -120,6 +111,10 @@ class AcmReceiver {
                int sample_rate_hz,
                AudioDecoder* audio_decoder,
                const std::string& name);
+
+  
+  
+  bool AddCodec(int rtp_payload_type, const SdpAudioFormat& audio_format);
 
   
   
@@ -177,21 +172,6 @@ class AcmReceiver {
   
   
   
-  void EnableVad();
-
-  
-  
-  
-  void DisableVad();
-
-  
-  
-  
-  bool vad_enabled() const { return vad_enabled_; }
-
-  
-  
-  
   void FlushBuffers();
 
   
@@ -208,18 +188,18 @@ class AcmReceiver {
   
   
   
-  int RemoveAllCodecs();
+  void RemoveAllCodecs();
+
+  
+  
+  rtc::Optional<uint32_t> GetPlayoutTimestamp();
 
   
   
   
-  void set_id(int id);  
-
   
   
-  
-  
-  bool GetPlayoutTimestamp(uint32_t* timestamp);
+  int FilteredCurrentDelayMs() const;
 
   
   
@@ -227,6 +207,8 @@ class AcmReceiver {
   
   
   int LastAudioCodec(CodecInst* codec) const;
+
+  rtc::Optional<SdpAudioFormat> LastAudioFormat() const;
 
   
   
@@ -275,26 +257,28 @@ class AcmReceiver {
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
  private:
-  const Decoder* RtpHeaderToDecoder(const RTPHeader& rtp_header,
-                                    uint8_t payload_type) const
-      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  struct Decoder {
+    int acm_codec_id;
+    uint8_t payload_type;
+    
+    
+    size_t channels;
+    int sample_rate_hz;
+  };
+
+  const rtc::Optional<CodecInst> RtpHeaderToDecoder(
+      const RTPHeader& rtp_header,
+      uint8_t first_payload_byte) const EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
-  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
-  int id_;  
-  const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
-  AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
+  rtc::CriticalSection crit_sect_;
+  rtc::Optional<CodecInst> last_audio_decoder_ GUARDED_BY(crit_sect_);
+  rtc::Optional<SdpAudioFormat> last_audio_format_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
-  
-  
-  rtc::scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
-  rtc::scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
+  std::unique_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
-  
-  std::map<uint8_t, Decoder> decoders_ GUARDED_BY(crit_sect_);
-  bool vad_enabled_;
   Clock* clock_;  
   bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
   rtc::Optional<int> last_packet_sample_rate_hz_ GUARDED_BY(crit_sect_);

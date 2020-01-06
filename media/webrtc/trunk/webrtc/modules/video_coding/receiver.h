@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/modules/video_coding/jitter_buffer.h"
@@ -27,26 +28,43 @@ class VCMEncodedFrame;
 
 class VCMReceiver {
  public:
+  
+  
   VCMReceiver(VCMTiming* timing, Clock* clock, EventFactory* event_factory);
 
+  
+  VCMReceiver(VCMTiming* timing,
+              Clock* clock,
+              EventFactory* event_factory,
+              NackSender* nack_sender,
+              KeyFrameRequestSender* keyframe_request_sender);
+
+  
+  
+  
   
   
   
   
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
-              rtc::scoped_ptr<EventWrapper> receiver_event,
-              rtc::scoped_ptr<EventWrapper> jitter_buffer_event);
+              std::unique_ptr<EventWrapper> receiver_event,
+              std::unique_ptr<EventWrapper> jitter_buffer_event);
+
+  
+  VCMReceiver(VCMTiming* timing,
+              Clock* clock,
+              std::unique_ptr<EventWrapper> receiver_event,
+              std::unique_ptr<EventWrapper> jitter_buffer_event,
+              NackSender* nack_sender,
+              KeyFrameRequestSender* keyframe_request_sender);
 
   ~VCMReceiver();
 
   void Reset();
   void UpdateRtt(int64_t rtt);
-  int32_t InsertPacket(const VCMPacket& packet,
-                       uint16_t frame_width,
-                       uint16_t frame_height);
+  int32_t InsertPacket(const VCMPacket& packet);
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
-                                    int64_t* next_render_time_ms,
                                     bool prefer_late_decoding);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
@@ -62,8 +80,6 @@ class VCMReceiver {
   VCMNackMode NackMode() const;
   std::vector<uint16_t> NackList(bool* request_key_frame);
 
-  VideoReceiveState ReceiveState() const;
-
   
   int SetMinReceiverDelay(int desired_delay_ms);
 
@@ -71,24 +87,16 @@ class VCMReceiver {
   void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
   VCMDecodeErrorMode DecodeErrorMode() const;
 
-  
-  
-  
-  int RenderBufferSizeMs();
-
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
   void TriggerDecoderShutdown();
 
  private:
-  void UpdateReceiveState(const VCMEncodedFrame& frame);
-
   CriticalSectionWrapper* crit_sect_;
   Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
-  rtc::scoped_ptr<EventWrapper> render_wait_event_;
-  VideoReceiveState receiveState_;
+  std::unique_ptr<EventWrapper> render_wait_event_;
   int max_video_delay_ms_;
 };
 

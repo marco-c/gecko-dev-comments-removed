@@ -12,9 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
 
-#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-#endif
 
 #include <math.h>
 #include <stddef.h>  
@@ -23,18 +21,17 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/platform_file.h"
-#include "webrtc/common.h"
 #include "webrtc/modules/audio_processing/beamformer/array_util.h"
+#include "webrtc/modules/audio_processing/include/config.h"
 #include "webrtc/typedefs.h"
-
-struct AecCore;
 
 namespace webrtc {
 
+struct AecCore;
+
 class AudioFrame;
 
-template<typename T>
-class Beamformer;
+class NonlinearBeamformer;
 
 class StreamConfig;
 class ProcessingConfig;
@@ -75,6 +72,18 @@ struct ExtendedFilter {
 
 
 
+struct RefinedAdaptiveFilter {
+  RefinedAdaptiveFilter() : enabled(false) {}
+  explicit RefinedAdaptiveFilter(bool enabled) : enabled(enabled) {}
+  static const ConfigOptionID identifier =
+      ConfigOptionID::kAecRefinedAdaptiveFilter;
+  bool enabled;
+};
+
+
+
+
+
 
 struct DelayAgnostic {
   DelayAgnostic() : enabled(false) {}
@@ -94,15 +103,21 @@ static const int kAgcStartupMinVolume = 85;
 #else
 static const int kAgcStartupMinVolume = 0;
 #endif  
+static constexpr int kClippedLevelMin = 170;
 struct ExperimentalAgc {
-  ExperimentalAgc() : enabled(true), startup_min_volume(kAgcStartupMinVolume) {}
-  explicit ExperimentalAgc(bool enabled)
-      : enabled(enabled), startup_min_volume(kAgcStartupMinVolume) {}
+  ExperimentalAgc() = default;
+  explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
   ExperimentalAgc(bool enabled, int startup_min_volume)
       : enabled(enabled), startup_min_volume(startup_min_volume) {}
+  ExperimentalAgc(bool enabled, int startup_min_volume, int clipped_level_min)
+      : enabled(enabled),
+        startup_min_volume(startup_min_volume),
+        clipped_level_min(clipped_level_min) {}
   static const ConfigOptionID identifier = ConfigOptionID::kExperimentalAgc;
-  bool enabled;
-  int startup_min_volume;
+  bool enabled = true;
+  int startup_min_volume = kAgcStartupMinVolume;
+  
+  int clipped_level_min = kClippedLevelMin;
 };
 
 
@@ -117,29 +132,18 @@ struct ExperimentalNs {
 
 
 struct Beamforming {
-  Beamforming()
-      : enabled(false),
-        array_geometry(),
-        target_direction(
-            SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
-  Beamforming(bool enabled, const std::vector<Point>& array_geometry)
-      : Beamforming(enabled,
-                    array_geometry,
-                    SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {
-  }
+  Beamforming();
+  Beamforming(bool enabled, const std::vector<Point>& array_geometry);
   Beamforming(bool enabled,
               const std::vector<Point>& array_geometry,
-              SphericalPointf target_direction)
-      : enabled(enabled),
-        array_geometry(array_geometry),
-        target_direction(target_direction) {}
+              SphericalPointf target_direction);
+  ~Beamforming();
+
   static const ConfigOptionID identifier = ConfigOptionID::kBeamforming;
   const bool enabled;
   const std::vector<Point> array_geometry;
   const SphericalPointf target_direction;
 };
-
-
 
 
 
@@ -225,8 +229,46 @@ struct Intelligibility {
 
 
 
+
+
+
 class AudioProcessing {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Config {
+    struct LevelController {
+      bool enabled = false;
+
+      
+      
+      
+      float initial_peak_level_dbfs = -6.0206f;
+    } level_controller;
+    struct ResidualEchoDetector {
+      bool enabled = true;
+    } residual_echo_detector;
+
+    struct HighPassFilter {
+      bool enabled = false;
+    } high_pass_filter;
+
+    
+    
+    
+    
+    struct EchoCanceller3 {
+      bool enabled = false;
+    } echo_canceller3;
+  };
+
   
   enum ChannelLayout {
     kMono,
@@ -245,10 +287,10 @@ class AudioProcessing {
   
   static AudioProcessing* Create();
   
-  static AudioProcessing* Create(const Config& config);
+  static AudioProcessing* Create(const webrtc::Config& config);
   
-  static AudioProcessing* Create(const Config& config,
-                                 Beamformer<float>* beamformer);
+  static AudioProcessing* Create(const webrtc::Config& config,
+                                 NonlinearBeamformer* beamformer);
   virtual ~AudioProcessing() {}
 
   
@@ -276,20 +318,20 @@ class AudioProcessing {
   
   
   
-  virtual int Initialize(int input_sample_rate_hz,
-                         int output_sample_rate_hz,
-                         int reverse_sample_rate_hz,
-                         ChannelLayout input_layout,
-                         ChannelLayout output_layout,
-                         ChannelLayout reverse_layout) = 0;
+  virtual int Initialize(int capture_input_sample_rate_hz,
+                         int capture_output_sample_rate_hz,
+                         int render_sample_rate_hz,
+                         ChannelLayout capture_input_layout,
+                         ChannelLayout capture_output_layout,
+                         ChannelLayout render_input_layout) = 0;
 
   
   
-  virtual void SetExtraOptions(const Config& config) = 0;
+  virtual void ApplyConfig(const Config& config) = 0;
 
   
   
-  virtual int input_sample_rate_hz() const = 0;
+  virtual void SetExtraOptions(const webrtc::Config& config) = 0;
 
   
   
@@ -359,15 +401,6 @@ class AudioProcessing {
   
   
   
-  
-  
-  
-  
-  
-  virtual int AnalyzeReverseStream(AudioFrame* frame) = 0;
-
-  
-  
   virtual int ProcessReverseStream(AudioFrame* frame) = 0;
 
   
@@ -375,14 +408,14 @@ class AudioProcessing {
   
   virtual int AnalyzeReverseStream(const float* const* data,
                                    size_t samples_per_channel,
-                                   int rev_sample_rate_hz,
+                                   int sample_rate_hz,
                                    ChannelLayout layout) = 0;
 
   
   
   virtual int ProcessReverseStream(const float* const* src,
-                                   const StreamConfig& reverse_input_config,
-                                   const StreamConfig& reverse_output_config,
+                                   const StreamConfig& input_config,
+                                   const StreamConfig& output_config,
                                    float* const* dest) = 0;
 
   
@@ -418,19 +451,24 @@ class AudioProcessing {
   
   
   
+  
+  
+  
   static const size_t kMaxFilenameSize = 1024;
-  virtual int StartDebugRecording(const char filename[kMaxFilenameSize]) = 0;
+  virtual int StartDebugRecording(const char filename[kMaxFilenameSize],
+                                  int64_t max_log_size_bytes) = 0;
 
   
+  
+  virtual int StartDebugRecording(FILE* handle, int64_t max_log_size_bytes) = 0;
+
   
   virtual int StartDebugRecording(FILE* handle) = 0;
 
   
   
   
-  virtual int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) {
-      return -1;
-  }
+  virtual int StartDebugRecordingForPlatformFile(rtc::PlatformFile handle) = 0;
 
   
   
@@ -442,21 +480,84 @@ class AudioProcessing {
 
   
   
+  struct Statistic {
+    int instant = 0;  
+    int average = 0;  
+    int maximum = 0;  
+    int minimum = 0;  
+  };
+
+  struct Stat {
+    void Set(const Statistic& other) {
+      Set(other.instant, other.average, other.maximum, other.minimum);
+    }
+    void Set(float instant, float average, float maximum, float minimum) {
+      instant_ = instant;
+      average_ = average;
+      maximum_ = maximum;
+      minimum_ = minimum;
+    }
+    float instant() const { return instant_; }
+    float average() const { return average_; }
+    float maximum() const { return maximum_; }
+    float minimum() const { return minimum_; }
+
+   private:
+    float instant_ = 0.0f;  
+    float average_ = 0.0f;  
+    float maximum_ = 0.0f;  
+    float minimum_ = 0.0f;  
+  };
+
+  struct AudioProcessingStatistics {
+    AudioProcessingStatistics();
+    AudioProcessingStatistics(const AudioProcessingStatistics& other);
+    ~AudioProcessingStatistics();
+
+    
+    
+    Stat residual_echo_return_loss;
+    
+    Stat echo_return_loss;
+    
+    Stat echo_return_loss_enhancement;
+    
+    Stat a_nlp;
+    
+    
+    float divergent_filter_fraction = -1.0f;
+
+    
+    
+    
+    
+    
+    
+    
+    int delay_median = -1;
+    int delay_standard_deviation = -1;
+    float fraction_poor_delays = -1.0f;
+
+    
+    float residual_echo_likelihood = -1.0f;
+    
+    float residual_echo_likelihood_recent_max = -1.0f;
+  };
+
+  
+  virtual AudioProcessingStatistics GetStatistics() const;
+
+  
+  
   
   virtual EchoCancellation* echo_cancellation() const = 0;
   virtual EchoControlMobile* echo_control_mobile() const = 0;
   virtual GainControl* gain_control() const = 0;
+  
   virtual HighPassFilter* high_pass_filter() const = 0;
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
   virtual VoiceDetection* voice_detection() const = 0;
-
-  struct Statistic {
-    int instant;  
-    int average;  
-    int maximum;  
-    int minimum;  
-  };
 
   enum Error {
     
@@ -487,10 +588,15 @@ class AudioProcessing {
     kSampleRate48kHz = 48000
   };
 
-  static const int kNativeSampleRatesHz[];
-  static const size_t kNumNativeSampleRates;
-  static const int kMaxNativeSampleRateHz;
-  static const int kMaxAECMSampleRateHz;
+  
+  
+  
+  static constexpr int kNativeSampleRatesHz[4] = {
+      kSampleRate8kHz, kSampleRate16kHz, kSampleRate32kHz, kSampleRate48kHz};
+  static constexpr size_t kNumNativeSampleRates =
+      arraysize(kNativeSampleRatesHz);
+  static constexpr int kMaxNativeSampleRateHz =
+      kNativeSampleRatesHz[kNumNativeSampleRates - 1];
 
   static const int kChunkSizeMs = 10;
 };
@@ -668,8 +774,13 @@ class EchoCancellation {
 
     
     AudioProcessing::Statistic a_nlp;
+
+    
+    
+    float divergent_filter_fraction;
   };
 
+  
   
   virtual int GetMetrics(Metrics* metrics) = 0;
 
@@ -688,6 +799,7 @@ class EchoCancellation {
   
   
   virtual int GetDelayMetrics(int* median, int* std) = 0;
+  
   virtual int GetDelayMetrics(int* median, int* std,
                               float* fraction_poor_delays) = 0;
 
@@ -856,7 +968,6 @@ class HighPassFilter {
   virtual int Enable(bool enable) = 0;
   virtual bool is_enabled() const = 0;
 
- protected:
   virtual ~HighPassFilter() {}
 };
 
@@ -907,6 +1018,9 @@ class NoiseSuppression {
   
   
   virtual float speech_probability() const = 0;
+
+  
+  virtual std::vector<float> NoiseEstimate() = 0;
 
  protected:
   virtual ~NoiseSuppression() {}

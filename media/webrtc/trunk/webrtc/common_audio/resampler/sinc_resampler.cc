@@ -83,20 +83,20 @@
 
 
 
-#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-#endif
 
-#include <assert.h>
+#include "webrtc/common_audio/resampler/sinc_resampler.h"
+
 #include <math.h>
 #include <string.h>
 
 #include <limits>
 
-#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
+namespace webrtc {
 
 namespace {
 
@@ -118,8 +118,8 @@ double SincScaleFactor(double io_ratio) {
 
 }  
 
-namespace webrtc {
-  
+const size_t SincResampler::kKernelSize;
+
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #if defined(__SSE2__)
@@ -134,21 +134,15 @@ void SincResampler::InitializeCPUSpecificFeatures() {}
 void SincResampler::InitializeCPUSpecificFeatures() {
   convolve_proc_ = WebRtc_GetCPUInfo(kSSE2) ? Convolve_SSE : Convolve_C;
 }
-#endif 
+#endif
 #elif defined(WEBRTC_HAS_NEON)
 #define CONVOLVE_FUNC Convolve_NEON
 void SincResampler::InitializeCPUSpecificFeatures() {}
-#elif defined(WEBRTC_DETECT_NEON)
-#define CONVOLVE_FUNC convolve_proc_
-void SincResampler::InitializeCPUSpecificFeatures() {
-  convolve_proc_ = WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON ?
-      Convolve_NEON : Convolve_C;
-}
 #else
 
 #define CONVOLVE_FUNC Convolve_C
 void SincResampler::InitializeCPUSpecificFeatures() {}
-#endif 
+#endif
 
 SincResampler::SincResampler(double io_sample_rate_ratio,
                              size_t request_frames,
@@ -173,11 +167,11 @@ SincResampler::SincResampler(double io_sample_rate_ratio,
       r2_(input_buffer_.get() + kKernelSize / 2) {
 #if defined(WEBRTC_CPU_DETECTION)
   InitializeCPUSpecificFeatures();
-  assert(convolve_proc_);
+  RTC_DCHECK(convolve_proc_);
 #endif
-  assert(request_frames_ > 0);
+  RTC_DCHECK_GT(request_frames_, 0);
   Flush();
-  assert(block_size_ > kKernelSize);
+  RTC_DCHECK_GT(block_size_, kKernelSize);
 
   memset(kernel_storage_.get(), 0,
          sizeof(*kernel_storage_.get()) * kKernelStorageSize);
@@ -200,11 +194,11 @@ void SincResampler::UpdateRegions(bool second_load) {
   block_size_ = r4_ - r2_;
 
   
-  assert(r1_ == input_buffer_.get());
+  RTC_DCHECK_EQ(r1_, input_buffer_.get());
   
-  assert(r2_ - r1_ == r4_ - r3_);
+  RTC_DCHECK_EQ(r2_ - r1_, r4_ - r3_);
   
-  assert(r2_ < r3_);
+  RTC_DCHECK_LT(r2_, r3_);
 }
 
 void SincResampler::InitializeKernel() {
@@ -291,7 +285,7 @@ void SincResampler::Resample(size_t frames, float* destination) {
     for (int i = static_cast<int>(
              ceil((block_size_ - virtual_source_idx_) / current_io_ratio));
          i > 0; --i) {
-      assert(virtual_source_idx_ < block_size_);
+      RTC_DCHECK_LT(virtual_source_idx_, block_size_);
 
       
       
@@ -309,8 +303,8 @@ void SincResampler::Resample(size_t frames, float* destination) {
 
       
       
-      assert(0u == (reinterpret_cast<uintptr_t>(k1) & 0x0F));
-      assert(0u == (reinterpret_cast<uintptr_t>(k2) & 0x0F));
+      RTC_DCHECK_EQ(0, reinterpret_cast<uintptr_t>(k1) % 16);
+      RTC_DCHECK_EQ(0, reinterpret_cast<uintptr_t>(k2) % 16);
 
       
       const float* const input_ptr = r1_ + source_idx;

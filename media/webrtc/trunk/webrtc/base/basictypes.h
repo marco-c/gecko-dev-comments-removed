@@ -11,13 +11,8 @@
 #ifndef WEBRTC_BASE_BASICTYPES_H_
 #define WEBRTC_BASE_BASICTYPES_H_
 
-#include <sys/types.h> 
 #include <stddef.h>  
 #include <stdint.h>  
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"  
-#endif
 
 
 #if defined(__x86_64__) || defined(_M_X64) || \
@@ -36,7 +31,7 @@
 
 #if !defined(RTC_ARCH_CPU_BIG_ENDIAN) && !defined(RTC_ARCH_CPU_LITTLE_ENDIAN)
 
-#if CPU_X86 || CPU_ARM ||  \
+#if defined(CPU_X86) || defined(CPU_ARM) ||                             \
   (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define RTC_ARCH_CPU_LITTLE_ENDIAN
 #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__

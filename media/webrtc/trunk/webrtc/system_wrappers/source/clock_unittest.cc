@@ -10,7 +10,7 @@
 
 #include "webrtc/system_wrappers/include/clock.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
@@ -18,11 +18,19 @@ TEST(ClockTest, NtpTime) {
   Clock* clock = Clock::GetRealTimeClock();
   uint32_t seconds;
   uint32_t fractions;
+
+  
+  
+  
+  
+  
+  
+  int64_t milliseconds_lower_bound = clock->CurrentNtpInMilliseconds();
   clock->CurrentNtp(seconds, fractions);
-  int64_t milliseconds = clock->CurrentNtpInMilliseconds();
-  EXPECT_GT(milliseconds / 1000, kNtpJan1970);
-  EXPECT_GE(milliseconds, Clock::NtpToMs(seconds, fractions));
-  EXPECT_NEAR(milliseconds, Clock::NtpToMs(seconds, fractions), 100);
+  int64_t milliseconds_upper_bound = clock->CurrentNtpInMilliseconds();
+  EXPECT_GT(milliseconds_lower_bound / 1000, kNtpJan1970);
+  EXPECT_LE(milliseconds_lower_bound - 1, Clock::NtpToMs(seconds, fractions));
+  EXPECT_GE(milliseconds_upper_bound + 1, Clock::NtpToMs(seconds, fractions));
 }
 
 }  

@@ -16,9 +16,10 @@
 namespace webrtc {
 
 
+std::unique_ptr<DesktopFrame> CreateCroppedDesktopFrame(
+    std::unique_ptr<DesktopFrame> frame,
+    const DesktopRect& rect);
 
-DesktopFrame* CreateCroppedDesktopFrame(DesktopFrame* frame,
-                                        const DesktopRect& rect);
 }  
 
 #endif  

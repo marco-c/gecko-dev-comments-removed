@@ -11,7 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DENOISER_H_
 #define WEBRTC_MODULES_VIDEO_PROCESSING_VIDEO_DENOISER_H_
 
+#include <memory>
+
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_processing/util/denoiser_filter.h"
+#include "webrtc/modules/video_processing/util/noise_estimation.h"
 #include "webrtc/modules/video_processing/util/skin_detection.h"
 
 namespace webrtc {
@@ -19,18 +23,60 @@ namespace webrtc {
 class VideoDenoiser {
  public:
   explicit VideoDenoiser(bool runtime_cpu_detection);
-  void DenoiseFrame(const VideoFrame& frame, VideoFrame* denoised_frame);
+
+  rtc::scoped_refptr<VideoFrameBuffer> DenoiseFrame(
+      rtc::scoped_refptr<VideoFrameBuffer> frame,
+      bool noise_estimation_enabled);
 
  private:
-  void TrailingReduction(int mb_rows,
-                         int mb_cols,
-                         const uint8_t* y_src,
-                         int stride_y,
-                         uint8_t* y_dst);
+  void DenoiserReset(rtc::scoped_refptr<VideoFrameBuffer> frame);
+
+  
+  
+  
+  int PositionCheck(int mb_row, int mb_col, int noise_level);
+
+  
+  void ReduceFalseDetection(const std::unique_ptr<uint8_t[]>& d_status,
+                            std::unique_ptr<uint8_t[]>* d_status_red,
+                            int noise_level);
+
+  
+  
+  bool IsTrailingBlock(const std::unique_ptr<uint8_t[]>& d_status,
+                       int mb_row,
+                       int mb_col);
+
+  
+  void CopySrcOnMOB(const uint8_t* y_src,
+                    int stride_src,
+                    uint8_t* y_dst,
+                    int stride_dst);
+
+  
+  void CopyLumaOnMargin(const uint8_t* y_src,
+                        int stride_src,
+                        uint8_t* y_dst,
+                        int stride_dst);
+
   int width_;
   int height_;
-  rtc::scoped_ptr<DenoiseMetrics[]> metrics_;
-  rtc::scoped_ptr<DenoiserFilter> filter_;
+  int mb_rows_;
+  int mb_cols_;
+  CpuType cpu_type_;
+  std::unique_ptr<DenoiserFilter> filter_;
+  std::unique_ptr<NoiseEstimation> ne_;
+  
+  std::unique_ptr<uint8_t[]> moving_edge_;
+  
+  std::unique_ptr<uint8_t[]> moving_object_;
+  
+  std::unique_ptr<uint8_t[]> x_density_;
+  std::unique_ptr<uint8_t[]> y_density_;
+  
+  std::unique_ptr<DenoiserDecision[]> mb_filter_decision_;
+  I420BufferPool buffer_pool_;
+  rtc::scoped_refptr<VideoFrameBuffer> prev_buffer_;
 };
 
 }  

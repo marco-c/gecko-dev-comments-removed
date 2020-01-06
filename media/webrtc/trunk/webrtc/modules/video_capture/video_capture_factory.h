@@ -24,17 +24,16 @@ class VideoCaptureFactory {
   
   
   
-  static VideoCaptureModule* Create(const int32_t id,
-                                    const char* deviceUniqueIdUTF8);
+  static rtc::scoped_refptr<VideoCaptureModule> Create(
+      const char* deviceUniqueIdUTF8);
 
   
   
   
-  static VideoCaptureModule* Create(const int32_t id,
-                                    VideoCaptureExternal*& externalCapture);
+  static rtc::scoped_refptr<VideoCaptureModule> Create(
+      VideoCaptureExternal*& externalCapture);
 
-  static VideoCaptureModule::DeviceInfo* CreateDeviceInfo(
-      const int32_t id);
+  static VideoCaptureModule::DeviceInfo* CreateDeviceInfo();
 
  private:
   ~VideoCaptureFactory();

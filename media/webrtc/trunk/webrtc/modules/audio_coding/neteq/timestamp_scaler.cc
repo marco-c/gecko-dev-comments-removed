@@ -11,7 +11,6 @@
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"
 
 #include "webrtc/modules/audio_coding/neteq/decoder_database.h"
-#include "webrtc/modules/audio_coding/neteq/defines.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
@@ -24,14 +23,13 @@ void TimestampScaler::ToInternal(Packet* packet) {
   if (!packet) {
     return;
   }
-  packet->header.timestamp = ToInternal(packet->header.timestamp,
-                                        packet->header.payloadType);
+  packet->timestamp = ToInternal(packet->timestamp, packet->payload_type);
 }
 
 void TimestampScaler::ToInternal(PacketList* packet_list) {
   PacketList::iterator it;
   for (it = packet_list->begin(); it != packet_list->end(); ++it) {
-    ToInternal(*it);
+    ToInternal(&(*it));
   }
 }
 
@@ -43,39 +41,25 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
     
     return external_timestamp;
   }
-  switch (info->codec_type) {
-    case NetEqDecoder::kDecoderG722:
-    case NetEqDecoder::kDecoderG722_2ch: {
+  if (!(info->IsComfortNoise() || info->IsDtmf())) {
+    
+    numerator_ = info->SampleRateHz();
+    if (info->GetFormat().clockrate_hz == 0) {
       
       
-      numerator_ = 2;
-      denominator_ = 1;
-      break;
-    }
-    case NetEqDecoder::kDecoderAVT:
-    case NetEqDecoder::kDecoderCNGnb:
-    case NetEqDecoder::kDecoderCNGwb:
-    case NetEqDecoder::kDecoderCNGswb32kHz:
-    case NetEqDecoder::kDecoderCNGswb48kHz: {
-      
-      break;
-    }
-    default: {
-      
-      numerator_ = 1;
-      denominator_ = 1;
-      break;
+      denominator_ = numerator_;
+    } else {
+      denominator_ = info->GetFormat().clockrate_hz;
     }
   }
-
-  if (!(numerator_ == 1 && denominator_ == 1)) {
+  if (numerator_ != denominator_) {
     
     if (!first_packet_received_) {
       external_ref_ = external_timestamp;
       internal_ref_ = external_timestamp;
       first_packet_received_ = true;
     }
-    int32_t external_diff = external_timestamp - external_ref_;
+    const int64_t external_diff = int64_t{external_timestamp} - external_ref_;
     assert(denominator_ > 0);  
     external_ref_ = external_timestamp;
     internal_ref_ += (external_diff * numerator_) / denominator_;
@@ -88,11 +72,11 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
 
 
 uint32_t TimestampScaler::ToExternal(uint32_t internal_timestamp) const {
-  if (!first_packet_received_ || (numerator_ == 1 && denominator_ == 1)) {
+  if (!first_packet_received_ || (numerator_ == denominator_)) {
     
     return internal_timestamp;
   } else {
-    int32_t internal_diff = internal_timestamp - internal_ref_;
+    const int64_t internal_diff = int64_t{internal_timestamp} - internal_ref_;
     assert(numerator_ > 0);  
     
     

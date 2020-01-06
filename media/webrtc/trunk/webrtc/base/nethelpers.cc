@@ -10,13 +10,23 @@
 
 #include "webrtc/base/nethelpers.h"
 
+#include <memory>
+
 #if defined(WEBRTC_WIN)
 #include <ws2spi.h>
 #include <ws2tcpip.h>
 #include "webrtc/base/win32.h"
 #endif
+#if defined(WEBRTC_POSIX) && !defined(__native_client__)
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/base/ifaddrs-android.h"
+#else
+#include <ifaddrs.h>
+#endif
+#endif  
 
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/signalthread.h"
 
@@ -25,7 +35,7 @@ namespace rtc {
 int ResolveHostname(const std::string& hostname, int family,
                     std::vector<IPAddress>* addresses) {
 #ifdef __native_client__
-  ASSERT(false);
+  RTC_NOTREACHED();
   LOG(LS_WARNING) << "ResolveHostname() is not implemented for NaCl";
   return -1;
 #else  
@@ -35,8 +45,24 @@ int ResolveHostname(const std::string& hostname, int family,
   addresses->clear();
   struct addrinfo* result = NULL;
   struct addrinfo hints = {0};
+  hints.ai_family = family;
   
-  hints.ai_family = AF_INET;
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   hints.ai_flags = AI_ADDRCONFIG;
   int ret = getaddrinfo(hostname.c_str(), NULL, &hints, &result);
   if (ret != 0) {
@@ -57,8 +83,8 @@ int ResolveHostname(const std::string& hostname, int family,
 }
 
 
-AsyncResolver::AsyncResolver() : error_(-1) {
-}
+AsyncResolver::AsyncResolver()
+    : SignalThread(false ), error_(-1) {}
 
 AsyncResolver::~AsyncResolver() = default;
 
@@ -116,10 +142,7 @@ int inet_pton(int af, const char* src, void *dst) {
 }
 
 bool HasIPv6Enabled() {
-#if !defined(WEBRTC_WIN)
-  
-  return true;
-#else
+#if defined(WEBRTC_WIN)
   if (IsWindowsVistaOrLater()) {
     return true;
   }
@@ -127,7 +150,7 @@ bool HasIPv6Enabled() {
     return false;
   }
   DWORD protbuff_size = 4096;
-  scoped_ptr<char[]> protocols;
+  std::unique_ptr<char[]> protocols;
   LPWSAPROTOCOL_INFOW protocol_infos = NULL;
   int requested_protocols[2] = {AF_INET6, 0};
 
@@ -155,6 +178,22 @@ bool HasIPv6Enabled() {
     }
   }
   return false;
+#elif defined(WEBRTC_POSIX) && !defined(__native_client__)
+  bool has_ipv6 = false;
+  struct ifaddrs* ifa;
+  if (getifaddrs(&ifa) < 0) {
+    return false;
+  }
+  for (struct ifaddrs* cur = ifa; cur != nullptr; cur = cur->ifa_next) {
+    if (cur->ifa_addr->sa_family == AF_INET6) {
+      has_ipv6 = true;
+      break;
+    }
+  }
+  freeifaddrs(ifa);
+  return has_ipv6;
+#else
+  return true;
 #endif
 }
 }  

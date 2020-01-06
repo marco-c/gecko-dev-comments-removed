@@ -12,9 +12,10 @@
 #define WEBRTC_BASE_PLATFORM_FILE_H_
 
 #include <stdio.h>
+#include <string>
 
 #if defined(WEBRTC_WIN)
-#include <windows.h>
+#include "webrtc/base/win32.h"
 #endif
 
 namespace rtc {
@@ -38,6 +39,17 @@ FILE* FdopenPlatformFileForWriting(PlatformFile file);
 
 
 bool ClosePlatformFile(PlatformFile file);
+
+
+bool RemoveFile(const std::string& path);
+
+
+
+PlatformFile OpenPlatformFile(const std::string& path);
+
+
+
+PlatformFile CreatePlatformFile(const std::string& path);
 
 }  
 

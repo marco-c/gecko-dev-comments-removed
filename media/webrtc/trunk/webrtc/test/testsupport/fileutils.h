@@ -10,57 +10,6 @@
 
 #include <stdio.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
 #define WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
 
@@ -73,23 +22,6 @@ namespace test {
 
 extern const char* kCannotFindProjectRootDir;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-std::string ProjectRootPath();
 
 
 

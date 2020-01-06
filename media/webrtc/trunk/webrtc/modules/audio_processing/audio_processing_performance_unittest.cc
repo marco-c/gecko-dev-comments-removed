@@ -12,11 +12,11 @@
 #include <math.h>
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/base/array_view.h"
-#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/safe_conversions.h"
@@ -26,7 +26,16 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/perf_test.h"
+
+
+
+#if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
+    (WEBRTC_INTELLIGIBILITY_ENHANCER != 0 &&     \
+     WEBRTC_INTELLIGIBILITY_ENHANCER != 1)
+#error "Set WEBRTC_INTELLIGIBILITY_ENHANCER to either 0 or 1"
+#endif
 
 namespace webrtc {
 
@@ -46,8 +55,8 @@ enum class SettingsType {
   kDefaultApmDesktopAndBeamformer,
   kDefaultApmDesktopAndIntelligibilityEnhancer,
   kAllSubmodulesTurnedOff,
-  kDefaultDesktopApmWithoutDelayAgnostic,
-  kDefaultDesktopApmWithoutExtendedFilter
+  kDefaultApmDesktopWithoutDelayAgnostic,
+  kDefaultApmDesktopWithoutExtendedFilter
 };
 
 
@@ -84,8 +93,8 @@ struct SimulationConfig {
 #ifndef WEBRTC_ANDROID
     const SettingsType desktop_settings[] = {
         SettingsType::kDefaultApmDesktop, SettingsType::kAllSubmodulesTurnedOff,
-        SettingsType::kDefaultDesktopApmWithoutDelayAgnostic,
-        SettingsType::kDefaultDesktopApmWithoutExtendedFilter};
+        SettingsType::kDefaultApmDesktopWithoutDelayAgnostic,
+        SettingsType::kDefaultApmDesktopWithoutExtendedFilter};
 
     const int desktop_sample_rates[] = {8000, 16000, 32000, 48000};
 
@@ -95,6 +104,7 @@ struct SimulationConfig {
       }
     }
 
+#if WEBRTC_INTELLIGIBILITY_ENHANCER == 1
     const SettingsType intelligibility_enhancer_settings[] = {
         SettingsType::kDefaultApmDesktopAndIntelligibilityEnhancer};
 
@@ -106,6 +116,7 @@ struct SimulationConfig {
         simulation_configs.push_back(SimulationConfig(sample_rate, settings));
       }
     }
+#endif
 
     const SettingsType beamformer_settings[] = {
         SettingsType::kDefaultApmDesktopAndBeamformer};
@@ -150,11 +161,11 @@ struct SimulationConfig {
       case SettingsType::kAllSubmodulesTurnedOff:
         description = "AllSubmodulesOff";
         break;
-      case SettingsType::kDefaultDesktopApmWithoutDelayAgnostic:
-        description = "DefaultDesktopApmWithoutDelayAgnostic";
+      case SettingsType::kDefaultApmDesktopWithoutDelayAgnostic:
+        description = "DefaultApmDesktopWithoutDelayAgnostic";
         break;
-      case SettingsType::kDefaultDesktopApmWithoutExtendedFilter:
-        description = "DefaultDesktopApmWithoutExtendedFilter";
+      case SettingsType::kDefaultApmDesktopWithoutExtendedFilter:
+        description = "DefaultApmDesktopWithoutExtendedFilter";
         break;
     }
     return description;
@@ -168,28 +179,19 @@ struct SimulationConfig {
 class FrameCounters {
  public:
   void IncreaseRenderCounter() {
-    rtc::CritScope cs(&crit_);
-    render_count_++;
+    rtc::AtomicOps::Increment(&render_count_);
   }
 
   void IncreaseCaptureCounter() {
-    rtc::CritScope cs(&crit_);
-    capture_count_++;
-  }
-
-  int GetCaptureCounter() const {
-    rtc::CritScope cs(&crit_);
-    return capture_count_;
-  }
-
-  int GetRenderCounter() const {
-    rtc::CritScope cs(&crit_);
-    return render_count_;
+    rtc::AtomicOps::Increment(&capture_count_);
   }
 
   int CaptureMinusRenderCounters() const {
-    rtc::CritScope cs(&crit_);
-    return capture_count_ - render_count_;
+    
+    
+    
+    return rtc::AtomicOps::AcquireLoad(&capture_count_) -
+           rtc::AtomicOps::AcquireLoad(&render_count_);
   }
 
   int RenderMinusCaptureCounters() const {
@@ -197,32 +199,32 @@ class FrameCounters {
   }
 
   bool BothCountersExceedeThreshold(int threshold) const {
-    rtc::CritScope cs(&crit_);
-    return (render_count_ > threshold && capture_count_ > threshold);
+    
+    
+    const int capture_count = rtc::AtomicOps::AcquireLoad(&capture_count_);
+    const int render_count = rtc::AtomicOps::AcquireLoad(&render_count_);
+    return (render_count > threshold && capture_count > threshold);
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
-  int render_count_ GUARDED_BY(crit_) = 0;
-  int capture_count_ GUARDED_BY(crit_) = 0;
+  int render_count_ = 0;
+  int capture_count_ = 0;
 };
 
 
 class LockedFlag {
  public:
   bool get_flag() const {
-    rtc::CritScope cs(&crit_);
-    return flag_;
+    return rtc::AtomicOps::AcquireLoad(&flag_);
   }
 
   void set_flag() {
-    rtc::CritScope cs(&crit_);
-    flag_ = true;
+    if (!get_flag())  
+      rtc::AtomicOps::CompareAndSwap(&flag_, 0, 1);
   }
 
  private:
-  mutable rtc::CriticalSection crit_;
-  bool flag_ GUARDED_BY(crit_) = false;
+  int flag_ = 0;
 };
 
 
@@ -422,10 +424,9 @@ class TimedThreadApiProcessor {
     switch (processor_type_) {
       case ProcessorType::kRender:
         return ReadyToProcessRender();
-        break;
+
       case ProcessorType::kCapture:
         return ReadyToProcessCapture();
-        break;
     }
 
     
@@ -614,7 +615,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         turn_off_default_apm_runtime_settings(apm_.get());
         break;
       }
-      case SettingsType::kDefaultDesktopApmWithoutDelayAgnostic: {
+      case SettingsType::kDefaultApmDesktopWithoutDelayAgnostic: {
         Config config;
         config.Set<ExtendedFilter>(new ExtendedFilter(true));
         config.Set<DelayAgnostic>(new DelayAgnostic(false));
@@ -624,7 +625,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         apm_->SetExtraOptions(config);
         break;
       }
-      case SettingsType::kDefaultDesktopApmWithoutExtendedFilter: {
+      case SettingsType::kDefaultApmDesktopWithoutExtendedFilter: {
         Config config;
         config.Set<ExtendedFilter>(new ExtendedFilter(false));
         config.Set<DelayAgnostic>(new DelayAgnostic(true));
@@ -667,25 +668,27 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   }
 
   
-  const rtc::scoped_ptr<EventWrapper> test_complete_;
+  const std::unique_ptr<EventWrapper> test_complete_;
 
   
-  rtc::scoped_ptr<rtc::PlatformThread> render_thread_;
-  rtc::scoped_ptr<rtc::PlatformThread> capture_thread_;
+  std::unique_ptr<rtc::PlatformThread> render_thread_;
+  std::unique_ptr<rtc::PlatformThread> capture_thread_;
   Random rand_gen_;
 
-  rtc::scoped_ptr<AudioProcessing> apm_;
+  std::unique_ptr<AudioProcessing> apm_;
   const SimulationConfig simulation_config_;
   FrameCounters frame_counters_;
   LockedFlag capture_call_checker_;
-  rtc::scoped_ptr<TimedThreadApiProcessor> render_thread_state_;
-  rtc::scoped_ptr<TimedThreadApiProcessor> capture_thread_state_;
+  std::unique_ptr<TimedThreadApiProcessor> render_thread_state_;
+  std::unique_ptr<TimedThreadApiProcessor> capture_thread_state_;
 };
 
 
 bool TimedThreadApiProcessor::Process() {
   PrepareFrame();
 
+  
+  
   
   
   

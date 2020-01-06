@@ -12,58 +12,82 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_BEAMFORMER_NONLINEAR_BEAMFORMER_H_
 
 
-#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
-#endif
 
 #include <math.h>
+
+#include <memory>
 #include <vector>
 
 #include "webrtc/common_audio/lapped_transform.h"
 #include "webrtc/common_audio/channel_buffer.h"
-#include "webrtc/modules/audio_processing/beamformer/beamformer.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/modules/audio_processing/beamformer/complex_matrix.h"
-#include "webrtc/system_wrappers/include/scoped_vector.h"
 
 namespace webrtc {
 
+class PostFilterTransform : public LappedTransform::Callback {
+ public:
+  PostFilterTransform(size_t num_channels,
+                      size_t chunk_length,
+                      float* window,
+                      size_t fft_size);
+
+  void ProcessChunk(float* const* data, float* final_mask);
+
+ protected:
+  void ProcessAudioBlock(const complex<float>* const* input,
+                         size_t num_input_channels,
+                         size_t num_freq_bins,
+                         size_t num_output_channels,
+                         complex<float>* const* output) override;
+
+ private:
+  LappedTransform transform_;
+  const size_t num_freq_bins_;
+  float* final_mask_;
+};
 
 
 
 
 
 
-class NonlinearBeamformer
-  : public Beamformer<float>,
-    public LappedTransform::Callback {
+
+class NonlinearBeamformer : public LappedTransform::Callback {
  public:
   static const float kHalfBeamWidthRadians;
 
   explicit NonlinearBeamformer(
       const std::vector<Point>& array_geometry,
+      size_t num_postfilter_channels = 1u,
       SphericalPointf target_direction =
           SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f));
+  ~NonlinearBeamformer() override;
 
   
   
-  void Initialize(int chunk_size_ms, int sample_rate_hz) override;
-
-  
-  
-  
-  
-  void ProcessChunk(const ChannelBuffer<float>& input,
-                    ChannelBuffer<float>* output) override;
-
-  void AimAt(const SphericalPointf& target_direction) override;
-
-  bool IsInBeam(const SphericalPointf& spherical_point) override;
+  virtual void Initialize(int chunk_size_ms, int sample_rate_hz);
 
   
   
   
+  virtual void AnalyzeChunk(const ChannelBuffer<float>& data);
+
   
-  bool is_target_present() override { return is_target_present_; }
+  
+  
+  virtual void PostFilter(ChannelBuffer<float>* data);
+
+  virtual void AimAt(const SphericalPointf& target_direction);
+
+  virtual bool IsInBeam(const SphericalPointf& spherical_point);
+
+  
+  
+  
+  
+  virtual bool is_target_present();
 
  protected:
   
@@ -118,7 +142,7 @@ class NonlinearBeamformer
   float MaskRangeMean(size_t start_bin, size_t end_bin);
 
   
-  void ApplyMasks(const complex_f* const* input, complex_f* const* output);
+  void ApplyPostFilter(const complex_f* input, complex_f* output);
 
   void EstimateTargetPresence();
 
@@ -127,11 +151,13 @@ class NonlinearBeamformer
 
   
   size_t chunk_length_;
-  rtc::scoped_ptr<LappedTransform> lapped_transform_;
+  std::unique_ptr<LappedTransform> process_transform_;
+  std::unique_ptr<PostFilterTransform> postfilter_transform_;
   float window_[kFftSize];
 
   
   const size_t num_input_channels_;
+  const size_t num_postfilter_channels_;
   int sample_rate_hz_;
 
   const std::vector<Point> array_geometry_;
@@ -162,7 +188,6 @@ class NonlinearBeamformer
 
   
   ComplexMatrixF delay_sum_masks_[kNumFreqBins];
-  ComplexMatrixF normalized_delay_sum_masks_[kNumFreqBins];
 
   
   
@@ -171,7 +196,7 @@ class NonlinearBeamformer
   
   
   
-  ScopedVector<ComplexMatrixF> interf_cov_mats_[kNumFreqBins];
+  std::vector<std::unique_ptr<ComplexMatrixF>> interf_cov_mats_[kNumFreqBins];
 
   
   float wave_numbers_[kNumFreqBins];
@@ -187,6 +212,7 @@ class NonlinearBeamformer
 
   
   float high_pass_postfilter_mask_;
+  float old_high_pass_mask_;
 
   
   bool is_target_present_;

@@ -128,6 +128,16 @@ class DesktopRect {
   void Translate(int32_t dx, int32_t dy);
   void Translate(DesktopVector d) { Translate(d.x(), d.y()); };
 
+  
+  
+  
+  
+  
+  void Extend(int32_t left_offset,
+              int32_t top_offset,
+              int32_t right_offset,
+              int32_t bottom_offset);
+
  private:
   DesktopRect(int32_t left, int32_t top, int32_t right, int32_t bottom)
       : left_(left), top_(top), right_(right), bottom_(bottom) {

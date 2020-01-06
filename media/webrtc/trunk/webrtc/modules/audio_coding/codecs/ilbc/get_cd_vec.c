@@ -16,6 +16,8 @@
 
 
 
+#include "get_cd_vec.h"
+
 #include "defines.h"
 #include "constants.h"
 #include "create_augmented_vec.h"
@@ -24,7 +26,7 @@
 
 
 
-void WebRtcIlbcfix_GetCbVec(
+bool WebRtcIlbcfix_GetCbVec(
     int16_t *cbvec,   
     int16_t *mem,   
     size_t index,   
@@ -93,6 +95,17 @@ void WebRtcIlbcfix_GetCbVec(
     
 
     else {
+      if (cbveclen < SUBL) {
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+
       
       memIndTest = lMem-cbveclen-CB_FILTERLEN;
       WebRtcSpl_MemSetW16(mem+lMem, 0, CB_HALFFILTERLEN);
@@ -108,4 +121,6 @@ void WebRtcIlbcfix_GetCbVec(
       WebRtcIlbcfix_CreateAugmentedVec(lag, tempbuff2+SUBL+5, cbvec);
     }
   }
+
+  return true;  
 }

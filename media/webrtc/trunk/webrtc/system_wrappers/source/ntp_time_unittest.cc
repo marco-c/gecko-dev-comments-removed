@@ -8,9 +8,8 @@
 
 
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 #include "webrtc/system_wrappers/include/ntp_time.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {

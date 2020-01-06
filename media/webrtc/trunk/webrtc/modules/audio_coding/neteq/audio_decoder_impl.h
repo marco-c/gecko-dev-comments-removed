@@ -13,10 +13,8 @@
 
 #include <assert.h>
 
-#include "webrtc/engine_configurations.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/cng/webrtc_cng.h"
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 #endif
@@ -25,50 +23,10 @@
 
 namespace webrtc {
 
-
-
-
-
-
-
-class AudioDecoderCng : public AudioDecoder {
- public:
-  explicit AudioDecoderCng();
-  ~AudioDecoderCng() override;
-  void Reset() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
-
-  CNG_dec_inst* CngDecoderInstance() override;
-  size_t Channels() const override;
-
- protected:
-  int DecodeInternal(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int sample_rate_hz,
-                     int16_t* decoded,
-                     SpeechType* speech_type) override;
-
- private:
-  CNG_dec_inst* dec_state_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderCng);
-};
-
 using NetEqDecoder = acm2::RentACodec::NetEqDecoder;
 
 
 bool CodecSupported(NetEqDecoder codec_type);
-
-
-int CodecSampleRateHz(NetEqDecoder codec_type);
-
-
-
-
-AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type);
 
 }  
 #endif  

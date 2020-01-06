@@ -15,7 +15,6 @@
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 
-#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/android/audio_common.h"
 #include "webrtc/modules/audio_device/android/audio_manager.h"
@@ -52,13 +51,9 @@ class OpenSLESPlayer {
   
   
   
-  static const int kNumOfOpenSLESBuffers = 4;
-
   
-  static int32_t SetAndroidAudioDeviceObjects(void* javaVM, void* context) {
-    return 0;
-  }
-  static void ClearAndroidAudioDeviceObjects() {}
+  
+  static const int kNumOfOpenSLESBuffers = 2;
 
   explicit OpenSLESPlayer(AudioManager* audio_manager);
   ~OpenSLESPlayer();
@@ -91,20 +86,19 @@ class OpenSLESPlayer {
   
   
   
-  void EnqueuePlayoutData();
-
   
-  SLDataFormat_PCM CreatePCMConfiguration(size_t channels,
-                                          int sample_rate,
-                                          size_t bits_per_sample);
+  
+  
+  void EnqueuePlayoutData(bool silence);
 
   
   
   void AllocateDataBuffers();
 
   
-  bool CreateEngine();
-  void DestroyEngine();
+  
+  
+  bool ObtainEngineInterface();
 
   
   bool CreateMix();
@@ -128,6 +122,12 @@ class OpenSLESPlayer {
 
   
   
+  
+  
+  AudioManager* audio_manager_;
+
+  
+  
   const AudioParameters audio_parameters_;
 
   
@@ -145,12 +145,7 @@ class OpenSLESPlayer {
   
   
   
-  size_t bytes_per_buffer_;
-
-  
-  
-  
-  rtc::scoped_ptr<SLint8[]> audio_buffers_[kNumOfOpenSLESBuffers];
+  std::unique_ptr<SLint8[]> audio_buffers_[kNumOfOpenSLESBuffers];
 
   
   
@@ -162,15 +157,11 @@ class OpenSLESPlayer {
   
   
   
-  rtc::scoped_ptr<FineAudioBuffer> fine_buffer_;
+  std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
   
   
   int buffer_index_;
-
-  
-  
-  SLObjectItf engine_object_;
 
   
   
@@ -198,20 +189,6 @@ class OpenSLESPlayer {
 
   
   uint32_t last_play_time_;
-
-  void *opensles_lib_;
-  typedef SLresult (*slCreateEngine_t)(SLObjectItf *,
-                                       SLuint32,
-                                       const SLEngineOption *,
-                                       SLuint32,
-                                       const SLInterfaceID *,
-                                       const SLboolean *);
-  slCreateEngine_t slCreateEngine_;
-  SLInterfaceID SL_IID_ENGINE_;
-  SLInterfaceID SL_IID_ANDROIDCONFIGURATION_;
-  SLInterfaceID SL_IID_BUFFERQUEUE_;
-  SLInterfaceID SL_IID_VOLUME_;
-  SLInterfaceID SL_IID_PLAY_;
 };
 
 }  

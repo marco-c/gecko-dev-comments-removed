@@ -53,8 +53,14 @@ enum VideoAnalysisMetricsType {kPSNR, kSSIM};
 
 
 
-void RunAnalysis(const char* reference_file_name, const char* test_file_name,
-                 const char* stats_file_name, int width, int height,
+
+
+void RunAnalysis(const char* reference_file_name,
+                 const char* test_file_name,
+                 const char* stats_file_reference_name,
+                 const char* stats_file_test_name,
+                 int width,
+                 int height,
                  ResultsContainer* results);
 
 
@@ -79,11 +85,14 @@ void PrintAnalysisResults(FILE* output, const std::string& label,
 
 
 void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
-                                      const std::string& stats_file_name);
+                                      const std::string& stats_file_ref_name,
+                                      const std::string& stats_file_test_name);
 
 
-void PrintMaxRepeatedAndSkippedFrames(FILE* output, const std::string& label,
-                                      const std::string& stats_file_name);
+void PrintMaxRepeatedAndSkippedFrames(FILE* output,
+                                      const std::string& label,
+                                      const std::string& stats_file_ref_name,
+                                      const std::string& stats_file_test_name);
 
 
 bool GetNextStatsLine(FILE* stats_file, char* line);
