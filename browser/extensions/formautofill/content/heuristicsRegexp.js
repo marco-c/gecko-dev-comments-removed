@@ -261,6 +261,7 @@ var HeuristicsRegExp = {
       "|有効期限" +           
       "|validade" +           
       "|Срок действия карты", 
+      "iu"
     ),
   },
 };
