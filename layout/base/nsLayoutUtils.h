@@ -575,6 +575,12 @@ public:
   
 
 
+
+  static FrameMetrics::ViewID ScrollIdForRootScrollFrame(nsPresContext* aPresContext);
+
+  
+
+
   static bool ViewportHasDisplayPort(nsPresContext* aPresContext);
 
   
