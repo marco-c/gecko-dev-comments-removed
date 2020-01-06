@@ -110,7 +110,7 @@ class GCData {
 
 
 
-const MAX_GC_KEYS = 30;
+const MAX_GC_KEYS = 24;
 const MAX_SLICES = 4;
 const MAX_SLICE_KEYS = 12;
 const MAX_PHASES = 65;
