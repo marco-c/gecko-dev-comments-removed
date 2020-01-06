@@ -12367,7 +12367,7 @@ nsDocShell::SetCurrentScrollRestorationIsManual(bool aIsManual)
 }
 
 bool
-nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI)
+nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel)
 {
   
   
@@ -12387,8 +12387,18 @@ nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI)
       return false;
     }
 
-    if (buf.EqualsLiteral("blank") || buf.EqualsLiteral("newtab")) {
+    if (buf.EqualsLiteral("blank")) {
       return false;
+    }
+    
+    if (buf.EqualsLiteral("newtab")) {
+      NS_ENSURE_TRUE(aChannel, false);
+      nsCOMPtr<nsIPrincipal> resultPrincipal;
+      rv = nsContentUtils::GetSecurityManager()->
+             GetChannelResultPrincipal(aChannel,
+                                       getter_AddRefs(resultPrincipal));
+      NS_ENSURE_SUCCESS(rv, false);
+      return !nsContentUtils::IsSystemPrincipal(resultPrincipal);
     }
   }
 
@@ -12422,9 +12432,6 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
 
   nsresult rv = NS_OK;
   nsCOMPtr<nsISHEntry> entry;
-  bool shouldPersist;
-
-  shouldPersist = ShouldAddToSessionHistory(aURI);
 
   
   nsCOMPtr<nsIDocShellTreeItem> root;
@@ -12626,6 +12633,8 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
         do_QueryInterface(mSessionHistory);
       NS_ENSURE_TRUE(shPrivate, NS_ERROR_FAILURE);
       mSessionHistory->GetIndex(&mPreviousTransIndex);
+
+      bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
       rv = shPrivate->AddEntry(entry, shouldPersist);
       mSessionHistory->GetIndex(&mLoadedTransIndex);
 #ifdef DEBUG_PAGE_CACHE

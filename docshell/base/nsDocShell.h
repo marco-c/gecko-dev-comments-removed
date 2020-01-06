@@ -447,7 +447,7 @@ protected:
   void SetReferrerPolicy(uint32_t aReferrerPolicy);
 
   
-  bool ShouldAddToSessionHistory(nsIURI* aURI);
+  bool ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel);
   
   
   
