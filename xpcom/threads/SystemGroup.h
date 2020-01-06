@@ -34,9 +34,6 @@ class SystemGroup
 
   static void InitStatic();
   static void Shutdown();
-
-  
-  static bool Initialized();
 };
 
 } 
