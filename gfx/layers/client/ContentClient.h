@@ -22,6 +22,7 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/PaintThread.h"  
 #include "mozilla/Maybe.h"              
 #include "mozilla/mozalloc.h"           
 #include "ReadbackProcessor.h"          
@@ -40,6 +41,9 @@ namespace layers {
 
 class PaintedLayer;
 class CapturedPaintState;
+class CapturedBufferState;
+
+typedef bool (*PrepDrawTargetForPaintingCallback)(CapturedPaintState*);
 
 
 
@@ -216,7 +220,8 @@ protected:
 
 
 
-  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) {}
+  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw,
+                             CapturedBufferState* aState) {}
 
   
 
@@ -361,7 +366,8 @@ public:
 
   virtual RefPtr<RotatedBuffer> GetFrontBuffer() const override;
 
-  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) override;
+  virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw,
+                             CapturedBufferState* aState) override;
 
   virtual TextureInfo GetTextureInfo() const override
   {

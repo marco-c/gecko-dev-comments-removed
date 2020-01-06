@@ -23,6 +23,7 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/PaintThread.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsIWidget.h"                  
@@ -146,9 +147,6 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   if (result.mRegionToDraw.IsEmpty())
     return result;
 
-  OpenMode lockMode = aFlags & PAINT_ASYNC ? OpenMode::OPEN_READ_ASYNC_WRITE
-                                           : OpenMode::OPEN_READ_WRITE;
-
   
   
   
@@ -156,24 +154,46 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
                          !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
                          !(aLayer->Manager()->AsWebRenderLayerManager());
   bool canDrawRotated = aFlags & PAINT_CAN_DRAW_ROTATED;
+  bool asyncPaint = (aFlags & PAINT_ASYNC);
+
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
+  OpenMode lockMode = asyncPaint ? OpenMode::OPEN_READ_ASYNC_WRITE
+                                 : OpenMode::OPEN_READ_WRITE;
 
   if (dest.mCanReuseBuffer) {
     MOZ_ASSERT(mBuffer);
 
-    if (mBuffer->Lock(lockMode)) {
-      
-      FinalizeFrame(result.mRegionToDraw);
+    bool canReuseBuffer = false;
 
-      if (!mBuffer->AdjustTo(dest.mBufferRect,
-                             drawBounds,
-                             canHaveRotation,
-                             canDrawRotated)) {
-        dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
-        dest.mCanReuseBuffer = false;
+    if (mBuffer->Lock(lockMode)) {
+      RefPtr<CapturedBufferState> bufferState = new CapturedBufferState();
+
+      
+      FinalizeFrame(result.mRegionToDraw, bufferState);
+
+      auto newParameters = mBuffer->AdjustedParameters(dest.mBufferRect);
+
+      if ((!canHaveRotation && newParameters.IsRotated()) ||
+          (!canDrawRotated && newParameters.RectWrapsBuffer(drawBounds))) {
+        bufferState->mBufferUnrotate = Some(CapturedBufferState::Unrotate {
+          newParameters,
+          mBuffer->ShallowCopy(),
+        });
+      }
+
+      if (bufferState->PrepareBuffer()) {
+        if (bufferState->mBufferUnrotate) {
+          newParameters.SetUnrotated();
+        }
+        mBuffer->SetParameters(newParameters);
+        canReuseBuffer = true;
+      }
+    }
+
+    if (!canReuseBuffer) {
+      if (mBuffer->IsLocked()) {
         mBuffer->Unlock();
       }
-    } else {
       dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
       dest.mCanReuseBuffer = false;
     }
@@ -213,10 +233,15 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
 
     
     if (RefPtr<RotatedBuffer> frontBuffer = GetFrontBuffer()) {
-      if (frontBuffer->Lock(OpenMode::OPEN_READ_ONLY)) {
-        newBuffer->UpdateDestinationFrom(*frontBuffer, newBuffer->BufferRect());
-        frontBuffer->Unlock();
-      } else {
+      RefPtr<CapturedBufferState> bufferState = new CapturedBufferState();
+
+      bufferState->mBufferCopy = Some(CapturedBufferState::Copy {
+        frontBuffer->ShallowCopy(),
+        newBuffer->ShallowCopy(),
+        newBuffer->BufferRect(),
+      });
+
+      if (!bufferState->PrepareBuffer()) {
         gfxCriticalNote << "Failed to copy front buffer to back buffer.";
         return result;
       }
@@ -851,7 +876,8 @@ ContentClientDoubleBuffered::GetFrontBuffer() const
 
 
 void
-ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
+ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw,
+                                           CapturedBufferState* aPrepareState)
 {
   if (!mFrontAndBackBufferDiffer) {
     MOZ_ASSERT(!mFrontBuffer || !mFrontBuffer->DidSelfCopy(),
@@ -898,10 +924,12 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
     return;
   }
 
-  if (mFrontBuffer->Lock(OpenMode::OPEN_READ_ONLY)) {
-    mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion.GetBounds());
-    mFrontBuffer->Unlock();
-  }
+  MOZ_ASSERT(!aPrepareState->mBufferCopy);
+  aPrepareState->mBufferCopy = Some(CapturedBufferState::Copy {
+    mFrontBuffer->ShallowCopy(),
+    mBuffer->ShallowCopy(),
+    updateRegion.GetBounds(),
+  });
 }
 
 } 
