@@ -690,13 +690,13 @@ protected:
 
   
   
-  dom::AudioChannel mAudioChannel;
+  const dom::AudioChannel mAudioChannel;
 
   
   
   
   
-  bool mMinimizePreroll;
+  const bool mMinimizePreroll;
 
   
   bool mFiredMetadataLoaded;
