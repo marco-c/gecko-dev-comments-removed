@@ -377,6 +377,9 @@ function isOverridableField(initialCSU, csu, field)
 {
     if (csu != 'nsISupports')
         return false;
+
+    
+    
     if (field == 'GetCurrentJSContext')
         return false;
     if (field == 'IsOnCurrentThread')
@@ -391,6 +394,12 @@ function isOverridableField(initialCSU, csu, field)
         return false;
     if (initialCSU == 'nsIXPConnect' && field == 'GetSafeJSContext')
         return false;
+
+    
+    
+    if (initialCSU == 'nsIScriptSecurityManager' && field == 'IsSystemPrincipal')
+        return false;
+
     if (initialCSU == 'nsIScriptContext') {
         if (field == 'GetWindowProxy' || field == 'GetWindowProxyPreserveColor')
             return false;
