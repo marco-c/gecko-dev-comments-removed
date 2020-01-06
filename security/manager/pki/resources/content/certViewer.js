@@ -92,7 +92,6 @@ const certificateUsageSSLServer              = 0x0002;
 const certificateUsageSSLCA                  = 0x0008;
 const certificateUsageEmailSigner            = 0x0010;
 const certificateUsageEmailRecipient         = 0x0020;
-const certificateUsageObjectSigner           = 0x0040;
 
 
 
@@ -103,7 +102,6 @@ const certificateUsages = {
   certificateUsageSSLCA,
   certificateUsageEmailSigner,
   certificateUsageEmailRecipient,
-  certificateUsageObjectSigner,
 };
 
 
@@ -113,7 +111,6 @@ const certificateUsageToStringBundleName = {
   certificateUsageSSLCA: "VerifySSLCA",
   certificateUsageEmailSigner: "VerifyEmailSigner",
   certificateUsageEmailRecipient: "VerifyEmailRecip",
-  certificateUsageObjectSigner: "VerifyObjSign",
 };
 
 const PRErrorCodeSuccess = 0;
