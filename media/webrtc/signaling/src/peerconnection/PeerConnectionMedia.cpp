@@ -294,10 +294,15 @@ PeerConnectionMedia::InitLocalAddrs()
   if (XRE_IsContentProcess()) {
     CSFLogDebug(logTag, "%s: Get stun addresses via IPC",
                 mParentHandle.c_str());
+
+    nsCOMPtr<nsIEventTarget> target = mParent->GetWindow()
+      ? mParent->GetWindow()->EventTargetFor(TaskCategory::Other)
+      : nullptr;
+
     
     
     mStunAddrsRequest =
-        new StunAddrsRequestChild(new StunAddrsHandler(this));
+      new StunAddrsRequestChild(new StunAddrsHandler(this), target);
     mStunAddrsRequest->SendGetStunAddrs();
   } else {
     
