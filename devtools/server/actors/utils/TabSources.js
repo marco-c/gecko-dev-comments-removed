@@ -301,6 +301,10 @@ TabSources.prototype = {
     } else if (source.introductionType === "wasm") {
       
       spec.contentType = "text/wasm";
+    } else if (source.introductionType === "debugger eval") {
+      
+      
+      spec.contentType = "text/javascript";
     } else if (url) {
       
       
