@@ -34,6 +34,11 @@
 #include "ssl.h"
 #include "sslproto.h"
 
+#include "TrustOverrideUtils.h"
+#include "TrustOverride-SymantecData.inc"
+#include "TrustOverride-AppleGoogleData.inc"
+
+
 using namespace mozilla;
 using namespace mozilla::pkix;
 using namespace mozilla::psm;
@@ -1260,6 +1265,72 @@ DetermineEVAndCTStatusAndSetNewCert(RefPtr<nsSSLStatus> sslStatus,
   }
 }
 
+static nsresult
+IsCertificateDistrustImminent(nsIX509CertList* aCertList,
+                               bool& aResult) {
+  if (!aCertList) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  nsCOMPtr<nsIX509Cert> rootCert;
+  nsCOMPtr<nsIX509CertList> intCerts;
+  nsCOMPtr<nsIX509Cert> eeCert;
+
+  RefPtr<nsNSSCertList> certList = aCertList->GetCertList();
+  nsresult rv = certList->SegmentCertificateChain(rootCert, intCerts, eeCert);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIX509CertValidity> validity;
+  rv = eeCert->GetValidity(getter_AddRefs(validity));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  PRTime notBefore;
+  rv = validity->GetNotBefore(&notBefore);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  static const PRTime JUNE_1_2016 = 1464739200000000;
+
+  
+  
+  if (notBefore >= JUNE_1_2016) {
+    aResult = false;
+    return NS_OK;
+  }
+
+  
+  if (!CertDNIsInList(rootCert->GetCert(), RootSymantecDNs)) {
+    aResult = false;
+    return NS_OK;
+  }
+
+  
+  bool foundInWhitelist = false;
+  RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
+
+  intCertList->ForEachCertificateInChain(
+    [&foundInWhitelist] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
+                          bool& aContinue) {
+      if (CertDNIsInList(aCert->GetCert(), RootAppleAndGoogleDNs)) {
+        foundInWhitelist = true;
+        aContinue = false;
+      }
+      return NS_OK;
+  });
+
+  
+  aResult = !foundInWhitelist;
+  return NS_OK;
+}
+
 void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   nsNSSShutDownPreventionLock locker;
   SECStatus rv;
@@ -1409,6 +1480,18 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
            ("HandshakeCallback KEEPING existing cert\n"));
   } else {
     DetermineEVAndCTStatusAndSetNewCert(status, fd, infoObject);
+  }
+
+  nsCOMPtr<nsIX509CertList> succeededCertChain;
+  
+  
+  
+  Unused << status->GetSucceededCertChain(getter_AddRefs(succeededCertChain));
+  bool distrustImminent;
+  nsresult srv = IsCertificateDistrustImminent(succeededCertChain,
+                                               distrustImminent);
+  if (NS_SUCCEEDED(srv) && distrustImminent) {
+    state |= nsIWebProgressListener::STATE_CERT_DISTRUST_IMMINENT;
   }
 
   bool domainMismatch;
