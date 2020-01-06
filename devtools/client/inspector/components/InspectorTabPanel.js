@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { DOM, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
+const { DOM, Component, PropTypes } = require("devtools/client/shared/vendor/react");
 
 
 const { div } = DOM;
@@ -16,25 +16,25 @@ const { div } = DOM;
 
 
 
-var InspectorTabPanel = createClass({
-  displayName: "InspectorTabPanel",
+class InspectorTabPanel extends Component {
+  static get propTypes() {
+    return {
+      
+      id: PropTypes.string.isRequired,
+      
+      idPrefix: PropTypes.string,
+      
+      onMount: PropTypes.func,
+    };
+  }
 
-  propTypes: {
-    
-    id: PropTypes.string.isRequired,
-    
-    idPrefix: PropTypes.string,
-    
-    onMount: PropTypes.func,
-  },
-
-  getDefaultProps: function () {
+  static get defaultProps() {
     return {
       idPrefix: "",
     };
-  },
+  }
 
-  componentDidMount: function () {
+  componentDidMount() {
     let doc = this.refs.content.ownerDocument;
     let panel = doc.getElementById(this.props.idPrefix + this.props.id);
 
@@ -44,17 +44,17 @@ var InspectorTabPanel = createClass({
     if (this.props.onMount) {
       this.props.onMount(this.refs.content, this.props);
     }
-  },
+  }
 
-  componentWillUnmount: function () {
+  componentWillUnmount() {
     let doc = this.refs.content.ownerDocument;
     let panels = doc.getElementById("tabpanels");
 
     
     panels.appendChild(this.refs.content.firstChild);
-  },
+  }
 
-  render: function () {
+  render() {
     return (
       div({
         ref: "content",
@@ -62,6 +62,6 @@ var InspectorTabPanel = createClass({
       })
     );
   }
-});
+}
 
 module.exports = InspectorTabPanel;

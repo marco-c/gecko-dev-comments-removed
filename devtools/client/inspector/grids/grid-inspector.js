@@ -55,8 +55,8 @@ function GridInspector(inspector, window) {
   this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
   this.updateGridPanel = this.updateGridPanel.bind(this);
 
-  this.onNavigate = this.onNavigate.bind(this);
   this.onHighlighterChange = this.onHighlighterChange.bind(this);
+  this.onNavigate = this.onNavigate.bind(this);
   this.onReflow = throttle(this.onReflow, 500, this);
   this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
   this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
@@ -218,6 +218,32 @@ GridInspector.prototype = {
   
 
 
+
+
+
+
+
+  haveCurrentFragmentsChanged(newGridFronts) {
+    const currentNode = this.highlighters.gridHighlighterShown;
+    if (!currentNode) {
+      return false;
+    }
+
+    const newGridFront = newGridFronts.find(g => g.containerNodeFront === currentNode);
+    if (!newGridFront) {
+      return false;
+    }
+
+    const { grids } = this.store.getState();
+    const oldFragments = grids.find(g => g.nodeFront === currentNode).gridFragments;
+    const newFragments = newGridFront.gridFragments;
+
+    return !compareFragmentsGeometry(oldFragments, newFragments);
+  },
+
+  
+
+
   isPanelVisible() {
     return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
@@ -321,16 +347,6 @@ GridInspector.prototype = {
 
 
 
-  onNavigate() {
-    if (this.isPanelVisible()) {
-      this.updateGridPanel();
-    }
-  },
-
-  
-
-
-
 
 
 
@@ -364,26 +380,10 @@ GridInspector.prototype = {
 
 
 
-
-
-
-
-  haveCurrentFragmentsChanged(newGridFronts) {
-    const currentNode = this.highlighters.gridHighlighterShown;
-    if (!currentNode) {
-      return false;
+  onNavigate() {
+    if (this.isPanelVisible()) {
+      this.updateGridPanel();
     }
-
-    const newGridFront = newGridFronts.find(g => g.containerNodeFront === currentNode);
-    if (!newGridFront) {
-      return false;
-    }
-
-    const { grids } = this.store.getState();
-    const oldFragments = grids.find(g => g.nodeFront === currentNode).gridFragments;
-    const newFragments = newGridFront.gridFragments;
-
-    return !compareFragmentsGeometry(oldFragments, newFragments);
   },
 
   

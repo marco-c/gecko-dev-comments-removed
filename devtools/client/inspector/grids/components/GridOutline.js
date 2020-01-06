@@ -4,10 +4,13 @@
 
 "use strict";
 
-const { addons, createClass, DOM: dom, PropTypes } =
-  require("devtools/client/shared/vendor/react");
-
 const Services = require("Services");
+const {
+  DOM: dom,
+  PropTypes,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
+
 const Types = require("../types");
 const { getStr } = require("../utils/l10n");
 
@@ -31,26 +34,37 @@ const GRID_CELL_SCALE_FACTOR = 50;
 const VIEWPORT_MIN_HEIGHT = 100;
 const VIEWPORT_MAX_HEIGHT = 150;
 
-module.exports = createClass({
-
-  displayName: "GridOutline",
-
-  propTypes: {
-    grids: PropTypes.arrayOf(PropTypes.shape(Types.grid)).isRequired,
-    onShowGridAreaHighlight: PropTypes.func.isRequired,
-    onShowGridCellHighlight: PropTypes.func.isRequired,
-  },
-
-  mixins: [ addons.PureRenderMixin ],
-
-  getInitialState() {
+class GridOutline extends PureComponent {
+  static get propTypes() {
     return {
+      grids: PropTypes.arrayOf(PropTypes.shape(Types.grid)).isRequired,
+      onShowGridAreaHighlight: PropTypes.func.isRequired,
+      onShowGridCellHighlight: PropTypes.func.isRequired,
+    };
+  }
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
       height: 0,
       selectedGrid: null,
       showOutline: true,
       width: 0,
     };
-  },
+
+    this.doHighlightCell = this.doHighlightCell.bind(this);
+    this.getGridAreaName = this.getGridAreaName.bind(this);
+    this.getHeight = this.getHeight.bind(this);
+    this.getTotalWidthAndHeight = this.getTotalWidthAndHeight.bind(this);
+    this.renderCannotShowOutlineText = this.renderCannotShowOutlineText.bind(this);
+    this.renderGrid = this.renderGrid.bind(this);
+    this.renderGridCell = this.renderGridCell.bind(this);
+    this.renderGridOutline = this.renderGridOutline.bind(this);
+    this.renderGridOutlineBorder = this.renderGridOutlineBorder.bind(this);
+    this.renderOutline = this.renderOutline.bind(this);
+    this.onHighlightCell = this.onHighlightCell.bind(this);
+  }
 
   componentWillReceiveProps({ grids }) {
     let selectedGrid = grids.find(grid => grid.highlighted);
@@ -73,90 +87,7 @@ module.exports = createClass({
     }
 
     this.setState({ height, width, selectedGrid, showOutline });
-  },
-
-  
-
-
-
-
-
-
-  getTotalWidthAndHeight(grid) {
-    
-    
-    const { gridFragments } = grid;
-    const { rows, cols } = gridFragments[0];
-
-    let height = 0;
-    for (let i = 0; i < rows.lines.length - 1; i++) {
-      height += GRID_CELL_SCALE_FACTOR * (rows.tracks[i].breadth / 100);
-    }
-
-    let width = 0;
-    for (let i = 0; i < cols.lines.length - 1; i++) {
-      width += GRID_CELL_SCALE_FACTOR * (cols.tracks[i].breadth / 100);
-    }
-
-    return { width, height };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  getGridAreaName(columnNumber, rowNumber, areas) {
-    const gridArea = areas.find(area =>
-      (area.rowStart <= rowNumber && area.rowEnd > rowNumber) &&
-      (area.columnStart <= columnNumber && area.columnEnd > columnNumber)
-    );
-
-    if (!gridArea) {
-      return null;
-    }
-
-    return gridArea.name;
-  },
-
-  
-
-
-
-
-  getHeight() {
-    const { height } = this.state;
-
-    if (height >= VIEWPORT_MAX_HEIGHT) {
-      return VIEWPORT_MAX_HEIGHT;
-    } else if (height <= VIEWPORT_MIN_HEIGHT) {
-      return VIEWPORT_MIN_HEIGHT;
-    }
-
-    return height;
-  },
-
-  onHighlightCell({ target, type }) {
-    
-    
-    
-    
-    if (this.highlightTimeout) {
-      clearTimeout(this.highlightTimeout);
-    }
-
-    this.highlightTimeout = setTimeout(() => {
-      this.doHighlightCell(target, type === "mouseleave");
-      this.highlightTimeout = null;
-    }, GRID_HIGHLIGHTING_DEBOUNCE);
-  },
+  }
 
   doHighlightCell(target, hide) {
     const {
@@ -186,7 +117,75 @@ module.exports = createClass({
       onShowGridCellHighlight(grids[id].nodeFront, color, fragmentIndex,
         rowNumber, columnNumber);
     }
-  },
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getGridAreaName(columnNumber, rowNumber, areas) {
+    const gridArea = areas.find(area =>
+      (area.rowStart <= rowNumber && area.rowEnd > rowNumber) &&
+      (area.columnStart <= columnNumber && area.columnEnd > columnNumber)
+    );
+
+    if (!gridArea) {
+      return null;
+    }
+
+    return gridArea.name;
+  }
+
+  
+
+
+
+
+  getHeight() {
+    const { height } = this.state;
+
+    if (height >= VIEWPORT_MAX_HEIGHT) {
+      return VIEWPORT_MAX_HEIGHT;
+    } else if (height <= VIEWPORT_MIN_HEIGHT) {
+      return VIEWPORT_MIN_HEIGHT;
+    }
+
+    return height;
+  }
+
+  
+
+
+
+
+
+
+  getTotalWidthAndHeight(grid) {
+    
+    
+    const { gridFragments } = grid;
+    const { rows, cols } = gridFragments[0];
+
+    let height = 0;
+    for (let i = 0; i < rows.lines.length - 1; i++) {
+      height += GRID_CELL_SCALE_FACTOR * (rows.tracks[i].breadth / 100);
+    }
+
+    let width = 0;
+    for (let i = 0; i < cols.lines.length - 1; i++) {
+      width += GRID_CELL_SCALE_FACTOR * (cols.tracks[i].breadth / 100);
+    }
+
+    return { width, height };
+  }
 
   
 
@@ -204,7 +203,7 @@ module.exports = createClass({
       ),
       getStr("layout.cannotShowGridOutline")
     );
-  },
+  }
 
   
 
@@ -253,7 +252,7 @@ module.exports = createClass({
     rectangles.unshift(border);
 
     return rectangles;
-  },
+  }
 
   
 
@@ -297,7 +296,7 @@ module.exports = createClass({
         onMouseLeave: this.onHighlightCell,
       }
     );
-  },
+  }
 
   renderGridOutline(grid) {
     let { color } = grid;
@@ -311,7 +310,7 @@ module.exports = createClass({
       },
       this.renderGrid(grid)
     );
-  },
+  }
 
   renderGridOutlineBorder(borderWidth, borderHeight, color) {
     return dom.rect(
@@ -324,7 +323,7 @@ module.exports = createClass({
         height: borderHeight
       }
     );
-  },
+  }
 
   renderOutline() {
     const {
@@ -346,7 +345,22 @@ module.exports = createClass({
       )
       :
       this.renderCannotShowOutlineText();
-  },
+  }
+
+  onHighlightCell({ target, type }) {
+    
+    
+    
+    
+    if (this.highlightTimeout) {
+      clearTimeout(this.highlightTimeout);
+    }
+
+    this.highlightTimeout = setTimeout(() => {
+      this.doHighlightCell(target, type === "mouseleave");
+      this.highlightTimeout = null;
+    }, GRID_HIGHLIGHTING_DEBOUNCE);
+  }
 
   render() {
     const { selectedGrid } = this.state;
@@ -361,6 +375,7 @@ module.exports = createClass({
       )
       :
       null;
-  },
+  }
+}
 
-});
+module.exports = GridOutline;
