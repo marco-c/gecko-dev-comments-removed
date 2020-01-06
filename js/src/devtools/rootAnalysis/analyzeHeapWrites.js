@@ -147,6 +147,7 @@ function treatAsSafeArgument(entry, varName, csuName)
         
         ["Gecko_CopyFontFamilyFrom", "dst", null],
         ["Gecko_SetCounterStyleToName", "aPtr", null],
+        ["Gecko_SetCounterStyleToSymbols", "aPtr", null],
         ["Gecko_CopyCounterStyle", "aDst", null],
         ["Gecko_SetMozBinding", "aDisplay", null],
         [/ClassOrClassList/, /aClass/, null],
