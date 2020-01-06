@@ -549,6 +549,9 @@ public:
     return mTabId;
   }
 
+  
+  
+  
   LayoutDeviceIntPoint GetChildProcessOffset();
 
   
