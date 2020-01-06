@@ -50,7 +50,8 @@ static mut PANIC_REASON: Option<(*const str, usize)> = None;
 
 #[no_mangle]
 pub extern "C" fn install_rust_panic_hook() {
-    panic::set_hook(Box::new(|info| {
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
         
         let payload = info.payload();
         
@@ -65,6 +66,9 @@ pub extern "C" fn install_rust_panic_hook() {
             
             println!("Unhandled panic payload!");
         }
+        
+        
+        default_hook(info);
     }));
 }
 
