@@ -1037,11 +1037,15 @@ GlobalHelperThreadState::maxGCParallelThreads() const
 }
 
 bool
-GlobalHelperThreadState::canStartWasmCompile(const AutoLockHelperThreadState& lock)
+GlobalHelperThreadState::canStartWasmCompile(const AutoLockHelperThreadState& lock,
+                                             bool assumeThreadAvailable)
 {
     
     if (wasmWorklist(lock).empty() || numWasmFailedJobs)
         return false;
+
+    if (assumeThreadAvailable)
+        return true;
 
     
     
@@ -1636,9 +1640,9 @@ HelperThread::ThreadMain(void* arg)
 }
 
 void
-HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked)
+HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked, bool assumeThreadAvailable)
 {
-    MOZ_ASSERT(HelperThreadState().canStartWasmCompile(locked));
+    MOZ_ASSERT(HelperThreadState().canStartWasmCompile(locked, assumeThreadAvailable));
     MOZ_ASSERT(idle());
 
     currentTask.emplace(HelperThreadState().wasmWorklist(locked).popCopy());
@@ -1664,6 +1668,33 @@ HelperThread::handleWasmWorkload(AutoLockHelperThreadState& locked)
     
     HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
     currentTask.reset();
+}
+
+bool
+HelperThread::handleWasmIdleWorkload(AutoLockHelperThreadState& locked)
+{
+    
+    
+    
+    
+
+    
+    
+
+    if (HelperThreadState().canStartWasmCompile(locked,  true)) {
+        HelperTaskUnion oldTask = currentTask.value();
+        currentTask.reset();
+        js::oom::ThreadType oldType = (js::oom::ThreadType)js::oom::GetThreadType();
+
+        js::oom::SetThreadType(js::oom::THREAD_TYPE_WASM);
+        handleWasmWorkload(locked,  true);
+
+        js::oom::SetThreadType(oldType);
+        currentTask.emplace(oldTask);
+        return true;
+    }
+
+    return false;
 }
 
 void

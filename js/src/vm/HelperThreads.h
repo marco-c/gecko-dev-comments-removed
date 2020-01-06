@@ -221,7 +221,8 @@ class GlobalHelperThreadState
         return gcParallelWorklist_;
     }
 
-    bool canStartWasmCompile(const AutoLockHelperThreadState& lock);
+    bool canStartWasmCompile(const AutoLockHelperThreadState& lock,
+                             bool assumeThreadAvailable = false);
     bool canStartPromiseTask(const AutoLockHelperThreadState& lock);
     bool canStartIonCompile(const AutoLockHelperThreadState& lock);
     bool canStartParseTask(const AutoLockHelperThreadState& lock);
@@ -340,6 +341,14 @@ HelperThreadState()
     return *gHelperThreadState;
 }
 
+typedef mozilla::Variant<jit::IonBuilder*,
+                         wasm::CompileTask*,
+                         PromiseTask*,
+                         ParseTask*,
+                         SourceCompressionTask*,
+                         GCHelperState*,
+                         GCParallelTask*> HelperTaskUnion;
+
 
 struct HelperThread
 {
@@ -359,13 +368,7 @@ struct HelperThread
     mozilla::Atomic<bool, mozilla::Relaxed> pause;
 
     
-    mozilla::Maybe<mozilla::Variant<jit::IonBuilder*,
-                                    wasm::CompileTask*,
-                                    PromiseTask*,
-                                    ParseTask*,
-                                    SourceCompressionTask*,
-                                    GCHelperState*,
-                                    GCParallelTask*>> currentTask;
+    mozilla::Maybe<HelperTaskUnion> currentTask;
 
     bool idle() const {
         return currentTask.isNothing();
@@ -380,6 +383,13 @@ struct HelperThread
     wasm::CompileTask* wasmTask() {
         return maybeCurrentTaskAs<wasm::CompileTask*>();
     }
+
+    
+
+
+
+
+    bool handleWasmIdleWorkload(AutoLockHelperThreadState& locked);
 
     
     ParseTask* parseTask() {
@@ -415,7 +425,7 @@ struct HelperThread
         return nullptr;
     }
 
-    void handleWasmWorkload(AutoLockHelperThreadState& locked);
+    void handleWasmWorkload(AutoLockHelperThreadState& locked, bool assumeThreadAvailable = false);
     void handlePromiseTaskWorkload(AutoLockHelperThreadState& locked);
     void handleIonWorkload(AutoLockHelperThreadState& locked);
     void handleParseWorkload(AutoLockHelperThreadState& locked);

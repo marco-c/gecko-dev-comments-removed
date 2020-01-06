@@ -61,6 +61,7 @@ ModuleGenerator::ModuleGenerator(UniqueChars* error)
     outstanding_(0),
     currentTask_(nullptr),
     batchedBytecode_(0),
+    maybeHelperThread_(CurrentHelperThread()),
     activeFuncDef_(nullptr),
     startedFuncDefs_(false),
     finishedFuncDefs_(false),
@@ -297,7 +298,17 @@ ModuleGenerator::finishOutstandingTask()
                 break;
             }
 
-            HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
+            
+            
+            
+
+            if (!maybeHelperThread_ || !maybeHelperThread_->handleWasmIdleWorkload(lock)) {
+                
+                
+                MOZ_ASSERT(outstanding_ > 0);
+                MOZ_ASSERT_IF(maybeHelperThread_, HelperThreadState().wasmWorklist(lock).empty());
+                HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
+            }
         }
     }
 
@@ -883,7 +894,6 @@ ModuleGenerator::startFuncDefs()
     
 
     GlobalHelperThreadState& threads = HelperThreadState();
-    MOZ_ASSERT(threads.threadCount > 1);
 
     uint32_t numTasks;
     if (CanUseExtraThreads() &&
