@@ -10,6 +10,7 @@ const {parseDeclarations} = require("devtools/shared/css/parsing-utils");
 const promise = require("promise");
 const {getCSSLexer} = require("devtools/shared/css/lexer");
 const {KeyCodes} = require("devtools/client/shared/keycodes");
+const {throttle} = require("devtools/shared/throttle");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -103,55 +104,6 @@ exports.advanceValidate = advanceValidate;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function throttle(func, wait, scope) {
-  let args, result;
-  let timeout = null;
-  let previous = 0;
-
-  let later = function () {
-    previous = Date.now();
-    timeout = null;
-    result = func.apply(scope, args);
-    args = null;
-  };
-
-  return function () {
-    let now = Date.now();
-    let remaining = wait - (now - previous);
-    args = arguments;
-    if (remaining <= 0) {
-      clearTimeout(timeout);
-      timeout = null;
-      previous = now;
-      result = func.apply(scope, args);
-      args = null;
-    } else if (!timeout) {
-      timeout = setTimeout(later, remaining);
-    }
-    return result;
-  };
-}
-
-exports.throttle = throttle;
-
-
-
-
-
 function blurOnMultipleProperties(cssProperties) {
   return (e) => {
     setTimeout(() => {
@@ -179,3 +131,4 @@ function promiseWarn(error) {
 }
 
 exports.promiseWarn = promiseWarn;
+exports.throttle = throttle;
