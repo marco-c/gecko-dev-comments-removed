@@ -84,16 +84,35 @@ FormAutofillHandler.prototype = {
       
       
       
+      
 
       let element = fieldDetail.elementWeakRef.get();
-      if (!element || element === focusedInput || element.value) {
+      if (!element || element === focusedInput) {
         continue;
       }
 
       let value = profile[fieldDetail.fieldName];
-      
       if (element instanceof Ci.nsIDOMHTMLInputElement && value) {
+        if (element.value) {
+          continue;
+        }
         element.setUserInput(value);
+      } else if (element instanceof Ci.nsIDOMHTMLSelectElement) {
+        for (let option of element.options) {
+          if (value === option.textContent || value === option.value) {
+            
+            
+            if (option.selected) {
+              break;
+            }
+            
+            
+            option.selected = true;
+            element.dispatchEvent(new Event("input", {"bubbles": true}));
+            element.dispatchEvent(new Event("change", {"bubbles": true}));
+            break;
+          }
+        }
       }
     }
   },
