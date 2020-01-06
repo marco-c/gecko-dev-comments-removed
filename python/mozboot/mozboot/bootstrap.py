@@ -294,9 +294,12 @@ class Bootstrapper(object):
                 self.instance.state_dir = state_dir
                 self.instance.ensure_stylo_packages(state_dir)
 
+        checkout_type = current_firefox_checkout(check_output=self.instance.check_output,
+                                                 hg=self.instance.which('hg'))
+
         
         
-        if hg_installed and state_dir_available:
+        if hg_installed and state_dir_available and checkout_type != 'git':
             configure_hg = False
             if not self.instance.no_interactive:
                 choice = self.instance.prompt_int(prompt=CONFIGURE_MERCURIAL,
@@ -310,8 +313,6 @@ class Bootstrapper(object):
                 configure_mercurial(self.instance.which('hg'), state_dir)
 
         
-        checkout_type = current_firefox_checkout(check_output=self.instance.check_output,
-                                                 hg=self.instance.which('hg'))
         have_clone = False
 
         if checkout_type:
