@@ -16,6 +16,7 @@
 #include "nsRefPtrHashtable.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/MediaKeysBinding.h"
+#include "mozilla/dom/MediaKeyStatusMapBinding.h" 
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "mozIGeckoMediaPluginService.h"
 #include "mozilla/DetailedPromise.h"
@@ -134,6 +135,8 @@ public:
   
   already_AddRefed<Promise> GetStatusForPolicy(const MediaKeysPolicy& aPolicy,
                                                ErrorResult& aR);
+  
+  void ResolvePromiseWithKeyStatus(PromiseId aId, dom::MediaKeyStatus aMediaKeyStatus);
 
 private:
 

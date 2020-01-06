@@ -118,6 +118,9 @@ public:
   
   already_AddRefed<gmp::ChromiumCDMParent> GetCDMParent();
 
+  void OnResolvePromiseWithKeyStatus(uint32_t aPromiseId,
+                                     dom::MediaKeyStatus aKeyStatus);
+
 private:
   void OnCDMCreated(uint32_t aPromiseId);
 
