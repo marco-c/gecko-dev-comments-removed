@@ -827,16 +827,8 @@ CreateErrorText(const char16_t* aDescription,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  char16_t *message = nsTextFormatter::smprintf(msg.get(), aDescription,
-                                                 aSourceURL, aLineNumber,
-                                                 aColNumber);
-  if (!message) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  aErrorString.Assign(message);
-  free(message);
-
+  nsTextFormatter::ssprintf(aErrorString, msg.get(), aDescription,
+                            aSourceURL, aLineNumber, aColNumber);
   return NS_OK;
 }
 
@@ -919,14 +911,9 @@ nsExpatDriver::HandleError()
                                                "Expected", msg);
 
     
-    char16_t *message = nsTextFormatter::smprintf(msg.get(), tagName.get());
-    if (!message) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
+    nsAutoString message;
+    nsTextFormatter::ssprintf(message, msg.get(), tagName.get());
     description.Append(message);
-
-    free(message);
   }
 
   
