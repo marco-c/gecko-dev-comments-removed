@@ -44,29 +44,10 @@ class MOZ_STACK_CLASS WrapperOptions : public ProxyOptions {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-class JS_FRIEND_API(Wrapper) : public BaseProxyHandler
+class JS_FRIEND_API(ForwardingProxyHandler) : public BaseProxyHandler
 {
-    unsigned mFlags;
-
   public:
-    explicit constexpr Wrapper(unsigned aFlags, bool aHasPrototype = false,
-                                   bool aHasSecurityPolicy = false)
-      : BaseProxyHandler(&family, aHasPrototype, aHasSecurityPolicy),
-        mFlags(aFlags)
-    { }
-
-    virtual bool finalizeInBackground(const Value& priv) const override;
+    using BaseProxyHandler::BaseProxyHandler;
 
     
     virtual bool getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy, HandleId id,
@@ -121,9 +102,35 @@ class JS_FRIEND_API(Wrapper) : public BaseProxyHandler
                                   MutableHandleValue vp) const override;
     virtual bool isCallable(JSObject* obj) const override;
     virtual bool isConstructor(JSObject* obj) const override;
-    virtual JSObject* weakmapKeyDelegate(JSObject* proxy) const override;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class JS_FRIEND_API(Wrapper) : public ForwardingProxyHandler
+{
+    unsigned mFlags;
 
   public:
+    explicit constexpr Wrapper(unsigned aFlags, bool aHasPrototype = false,
+                               bool aHasSecurityPolicy = false)
+      : ForwardingProxyHandler(&family, aHasPrototype, aHasSecurityPolicy),
+        mFlags(aFlags)
+    { }
+
+    virtual bool finalizeInBackground(const Value& priv) const override;
+    virtual JSObject* weakmapKeyDelegate(JSObject* proxy) const override;
+
     using BaseProxyHandler::Action;
 
     enum Flags {
