@@ -164,9 +164,6 @@ pref("dom.enable_performance", true);
 pref("dom.enable_resource_timing", true);
 
 
-pref("dom.enable_performance_navigation_timing", true);
-
-
 pref("dom.performance.enable_user_timing_logging", false);
 
 
@@ -5888,7 +5885,7 @@ pref("layers.mlgpu.enable-on-windows7", true);
 
 
 
-pref("layers.advanced.background-color", 2);
+pref("layers.advanced.background-color", false);
 pref("layers.advanced.background-image", 2);
 pref("layers.advanced.border-layers", 2);
 pref("layers.advanced.boxshadow-inset-layers", 2);
