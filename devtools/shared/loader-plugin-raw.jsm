@@ -14,7 +14,9 @@ const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
 
 this.requireRawId = function (id, require) {
-  let uri = require.resolve(id.slice(4));
+  let index = id.indexOf("!");
+  let rawId = id.slice(index + 1);
+  let uri = require.resolve(rawId);
   
   
   
