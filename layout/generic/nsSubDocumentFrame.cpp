@@ -221,7 +221,7 @@ nsSubDocumentFrame::GetSubdocumentPresShellForPainting(uint32_t aFlags)
 
   nsIFrame* subdocRootFrame = subdocView->GetFrame();
   if (subdocRootFrame) {
-    presShell = subdocRootFrame->PresShell();
+    presShell = subdocRootFrame->PresContext()->PresShell();
   }
 
   
@@ -237,7 +237,7 @@ nsSubDocumentFrame::GetSubdocumentPresShellForPainting(uint32_t aFlags)
       frame = nextView->GetFrame();
     }
     if (frame) {
-      nsIPresShell* ps = frame->PresShell();
+      nsIPresShell* ps = frame->PresContext()->PresShell();
       if (!presShell || (ps && !ps->IsPaintingSuppressed() && sShowPreviousPage)) {
         subdocView = nextView;
         subdocRootFrame = frame;
@@ -447,12 +447,6 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     needsOwnLayer = true;
   }
 
-  if (!needsOwnLayer && aBuilder->IsBuildingLayerEventRegions() &&
-      nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell))
-  {
-    needsOwnLayer = true;
-  }
-
   if (aBuilder->IsRetainingDisplayList()) {
     
     
@@ -505,7 +499,11 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
               ? nsLayoutUtils::FindOrCreateIDFor(rootScrollFrame->GetContent())
               : aBuilder->GetCurrentScrollParentId());
 
-      aBuilder->SetAncestorHasApzAwareEventHandler(false);
+      bool hasDocumentLevelListenersForApzAwareEvents =
+          aBuilder->IsBuildingLayerEventRegions() &&
+          nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell);
+
+      aBuilder->SetAncestorHasApzAwareEventHandler(hasDocumentLevelListenersForApzAwareEvents);
       subdocRootFrame->
         BuildDisplayListForStackingContext(aBuilder, &childItems);
     }
@@ -847,7 +845,7 @@ nsSubDocumentFrame::Reflow(nsPresContext*           aPresContext,
   FinishAndStoreOverflow(&aDesiredSize);
 
   if (!aPresContext->IsPaginated() && !mPostedReflowCallback) {
-    PresShell()->PostReflowCallback(this);
+    PresContext()->PresShell()->PostReflowCallback(this);
     mPostedReflowCallback = true;
   }
 
@@ -911,7 +909,7 @@ nsSubDocumentFrame::AttributeChanged(int32_t aNameSpaceID,
   else if (aAttribute == nsGkAtoms::showresizer) {
     nsIFrame* rootFrame = GetSubdocumentRootFrame();
     if (rootFrame) {
-      rootFrame->PresShell()->
+      rootFrame->PresContext()->PresShell()->
         FrameNeedsReflow(rootFrame, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
     }
   }
@@ -1000,7 +998,7 @@ void
 nsSubDocumentFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
 {
   if (mPostedReflowCallback) {
-    PresShell()->CancelReflowCallback(this);
+    PresContext()->PresShell()->CancelReflowCallback(this);
     mPostedReflowCallback = false;
   }
 
@@ -1021,7 +1019,7 @@ nsSubDocumentFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostD
       nsContentUtils::AddScriptRunner(
         new nsHideViewer(mContent,
                          frameloader,
-                         PresShell(),
+                         PresContext()->PresShell(),
                          (mDidCreateDoc || mCallingShow)));
     } else {
       frameloader->SetDetachedSubdocFrame(nullptr, nullptr);
@@ -1254,12 +1252,12 @@ nsSubDocumentFrame::EndSwapDocShells(nsIFrame* aOther)
   
   
   if (weakThis.IsAlive()) {
-    PresShell()->
+    PresContext()->PresShell()->
       FrameNeedsReflow(this, nsIPresShell::eTreeChange, NS_FRAME_IS_DIRTY);
     InvalidateFrameSubtree();
   }
   if (weakOther.IsAlive()) {
-    other->PresShell()->
+    other->PresContext()->PresShell()->
       FrameNeedsReflow(other, nsIPresShell::eTreeChange, NS_FRAME_IS_DIRTY);
     other->InvalidateFrameSubtree();
   }

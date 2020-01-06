@@ -1125,7 +1125,7 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
     
     
     
-    nsIPresShell* ps = aFrame->PresShell();
+    nsIPresShell* ps = aFrame->PresContext()->PresShell();
     if (ps->IsScrollPositionClampingScrollPortSizeSet()) {
       dirtyRectRelativeToDirtyFrame =
         nsRect(nsPoint(0, 0), ps->GetScrollPositionClampingScrollPortSize());
@@ -1266,7 +1266,7 @@ nsDisplayListBuilder::EnterPresShell(nsIFrame* aReferenceFrame,
                                      bool aPointerEventsNoneDoc)
 {
   PresShellState* state = mPresShellStates.AppendElement();
-  state->mPresShell = aReferenceFrame->PresShell();
+  state->mPresShell = aReferenceFrame->PresContext()->PresShell();
   state->mCaretFrame = nullptr;
   state->mFirstFrameMarkedForDisplay = mFramesMarkedForDisplay.Length();
 
@@ -1349,7 +1349,7 @@ void
 nsDisplayListBuilder::LeavePresShell(nsIFrame* aReferenceFrame, nsDisplayList* aPaintedContents)
 {
   NS_ASSERTION(CurrentPresShellState()->mPresShell ==
-      aReferenceFrame->PresShell(),
+      aReferenceFrame->PresContext()->PresShell(),
       "Presshell mismatch");
 
   if (mIsPaintingToWindow) {
@@ -1444,7 +1444,7 @@ nsDisplayListBuilder::MarkFramesForDisplayList(nsIFrame* aDirtyFrame,
     
     
     NS_ASSERTION(CurrentPresShellState()->mPresShell ==
-        aDirtyFrame->PresShell(),
+        aDirtyFrame->PresContext()->PresShell(),
         "Presshell mismatch");
     MOZ_ASSERT(!CurrentPresShellState()->mFixedBackgroundDisplayData,
                "already traversed this presshell's root frame?");
@@ -3274,7 +3274,7 @@ static Maybe<nsRect>
 GetViewportRectRelativeToReferenceFrame(nsDisplayListBuilder* aBuilder,
                                         nsIFrame* aFrame)
 {
-  nsIFrame* rootFrame = aFrame->PresShell()->GetRootFrame();
+  nsIFrame* rootFrame = aFrame->PresContext()->PresShell()->GetRootFrame();
   nsRect rootRect = rootFrame->GetRectRelativeToSelf();
   if (nsLayoutUtils::TransformRect(rootFrame, aFrame, rootRect) == nsLayoutUtils::TRANSFORM_SUCCEEDED) {
     return Some(rootRect + aBuilder->ToReferenceFrame(aFrame));
@@ -6861,9 +6861,6 @@ nsDisplaySubDocument::nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
     , mSubDocFrame(aSubDocFrame)
 {
   MOZ_COUNT_CTOR(nsDisplaySubDocument);
-  mForceDispatchToContentRegion =
-    aBuilder->IsBuildingLayerEventRegions() &&
-    nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(aFrame->PresShell());
 
   
   
@@ -6878,17 +6875,6 @@ nsDisplaySubDocument::~nsDisplaySubDocument() {
   MOZ_COUNT_DTOR(nsDisplaySubDocument);
 }
 #endif
-
-already_AddRefed<Layer>
-nsDisplaySubDocument::BuildLayer(nsDisplayListBuilder* aBuilder,
-                                 LayerManager* aManager,
-                                 const ContainerLayerParameters& aContainerParameters) {
-  RefPtr<Layer> layer = nsDisplayOwnLayer::BuildLayer(aBuilder, aManager, aContainerParameters);
-  layer->AsContainerLayer()->SetEventRegionsOverride(mForceDispatchToContentRegion
-    ? EventRegionsOverride::ForceDispatchToContent
-    : EventRegionsOverride::NoOverride);
-  return layer.forget();
-}
 
 UniquePtr<ScrollMetadata>
 nsDisplaySubDocument::ComputeScrollMetadata(LayerManager* aLayerManager,
@@ -6950,7 +6936,7 @@ nsDisplaySubDocument::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   }
 
   nsRect displayport;
-  nsIFrame* rootScrollFrame = mFrame->PresShell()->GetRootScrollFrame();
+  nsIFrame* rootScrollFrame = mFrame->PresContext()->PresShell()->GetRootScrollFrame();
   MOZ_ASSERT(rootScrollFrame);
   Unused << nsLayoutUtils::GetDisplayPort(rootScrollFrame->GetContent(), &displayport,
     RelativeTo::ScrollFrame);
@@ -7027,7 +7013,7 @@ nsDisplayResolution::HitTest(nsDisplayListBuilder* aBuilder,
                              HitTestState* aState,
                              nsTArray<nsIFrame*> *aOutFrames)
 {
-  nsIPresShell* presShell = mFrame->PresShell();
+  nsIPresShell* presShell = mFrame->PresContext()->PresShell();
   nsRect rect = aRect.RemoveResolution(presShell->ScaleToResolution() ? presShell->GetResolution () : 1.0f);
   mList.HitTest(aBuilder, rect, aState, aOutFrames);
 }
@@ -7036,7 +7022,7 @@ already_AddRefed<Layer>
 nsDisplayResolution::BuildLayer(nsDisplayListBuilder* aBuilder,
                                 LayerManager* aManager,
                                 const ContainerLayerParameters& aContainerParameters) {
-  nsIPresShell* presShell = mFrame->PresShell();
+  nsIPresShell* presShell = mFrame->PresContext()->PresShell();
   ContainerLayerParameters containerParameters(
     presShell->GetResolution(), presShell->GetResolution(), nsIntPoint(),
     aContainerParameters);
