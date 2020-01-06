@@ -2858,6 +2858,8 @@ gfxFontGroup::GetUnderlineOffset()
     return mUnderlineOffset;
 }
 
+#define NARROW_NO_BREAK_SPACE 0x202fu
+
 gfxFont*
 gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
                               Script aRunScript, gfxFont *aPrevMatchedFont,
@@ -2872,7 +2874,6 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
     }
 
     
-    const uint32_t NARROW_NO_BREAK_SPACE = 0x202f;
     if (aCh == NARROW_NO_BREAK_SPACE) {
         
         
@@ -3150,10 +3151,26 @@ void gfxFontGroup::ComputeRanges(nsTArray<gfxTextRange>& aRanges,
             ch = ' ';
         }
 
+        gfxFont* font;
+
         
-        gfxFont* font =
-            FindFontForChar(ch, prevCh, nextCh, aRunScript, prevFont,
-                            &matchType);
+        
+        
+        
+        
+        if ((font = GetFontAt(0, ch)) != nullptr
+            && font->HasCharacter(ch)
+            && (sizeof(T) == sizeof(uint8_t)
+                || (!IsClusterExtender(ch)
+                    && ch != NARROW_NO_BREAK_SPACE
+                    && !gfxFontUtils::IsJoinControl(ch)
+                    && !gfxFontUtils::IsJoinCauser(prevCh)
+                    && !gfxFontUtils::IsVarSelector(ch)))) {
+            matchType = gfxTextRange::kFontGroup;
+        } else {
+            font = FindFontForChar(ch, prevCh, nextCh, aRunScript, prevFont,
+                                   &matchType);
+        }
 
 #ifndef RELEASE_OR_BETA
         if (MOZ_UNLIKELY(mTextPerf)) {
