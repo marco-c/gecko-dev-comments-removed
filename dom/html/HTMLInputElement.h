@@ -735,6 +735,8 @@ public:
 
   
 
+  already_AddRefed<nsINodeList> GetLabels();
+
   
 
   Nullable<uint32_t> GetSelectionStart(ErrorResult& aRv);

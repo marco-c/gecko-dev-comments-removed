@@ -378,7 +378,7 @@ protected:
 
 
 
-  void PopulateSelf(uint32_t aNeededLength);
+  virtual void PopulateSelf(uint32_t aNeededLength);
 
   
 
@@ -589,4 +589,40 @@ public:
 #endif
 };
 
+class nsLabelsNodeList final : public nsContentList
+{
+public:
+  nsLabelsNodeList(nsINode* aRootNode,
+                   nsContentListMatchFunc aFunc,
+                   nsContentListDestroyFunc aDestroyFunc,
+                   void* aData)
+    : nsContentList(aRootNode, aFunc, aDestroyFunc, aData)
+  {
+  }
+
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+
+  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+
+ 
+
+
+
+
+
+  void MaybeResetRoot(nsINode* aRootNode);
+
+private:
+ 
+
+
+
+
+
+
+  void PopulateSelf(uint32_t aNeededLength) override;
+};
 #endif 

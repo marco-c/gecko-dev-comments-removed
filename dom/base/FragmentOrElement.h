@@ -25,6 +25,7 @@
 
 class ContentUnbinder;
 class nsContentList;
+class nsLabelsNodeList;
 class nsDOMAttributeMap;
 class nsDOMTokenList;
 class nsIControllers;
@@ -312,6 +313,11 @@ public:
 
 
     RefPtr<nsDOMTokenList> mClassList;
+
+    
+
+
+    RefPtr<nsLabelsNodeList> mLabelsList;
 
     
 
