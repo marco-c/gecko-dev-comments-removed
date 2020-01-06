@@ -3,10 +3,7 @@
 
 
 
-#include "mozilla/HangAnnotations.h"
 #include "ThreadHangStats.h"
-#include "nsITelemetry.h"
-#include "HangReports.h"
 #include "jsapi.h"
 
 namespace mozilla {
