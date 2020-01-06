@@ -11,8 +11,6 @@
 
 
 
-var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
-          getService(Ci.nsINavHistoryService);
 var ac = Cc["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"].
          getService(Ci.nsIAutoCompleteSearch);
 

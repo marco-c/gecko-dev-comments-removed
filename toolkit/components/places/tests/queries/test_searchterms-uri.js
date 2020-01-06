@@ -41,10 +41,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_searchterms_uri() {
   await task_populateDB(testData);
    var query = PlacesUtils.history.getNewQuery();

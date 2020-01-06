@@ -7,14 +7,6 @@
 var tests = [];
 
 
-try {
-  var mDBConn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
-                                   .DBConnection;
-} catch (ex) {
-  do_throw("Could not get database connection\n");
-}
-
-
 
 
 
@@ -95,10 +87,6 @@ var invalidTagChildTest = {
   }
 }
 tests.push(invalidTagChildTest);
-
-function run_test() {
-  run_next_test()
-}
 
 add_task(async function() {
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");

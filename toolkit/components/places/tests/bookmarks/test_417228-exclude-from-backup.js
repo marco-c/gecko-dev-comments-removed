@@ -6,7 +6,6 @@
 
 
 const PLACES_ROOTS_COUNT  = 5;
-var tests = [];
 
 
 

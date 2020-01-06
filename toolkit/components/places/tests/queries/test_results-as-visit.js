@@ -37,10 +37,6 @@ function createTestData() {
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_results_as_visit() {
    createTestData();
    await task_populateDB(testData);

@@ -13,8 +13,6 @@
 
 Components.utils.import("resource://gre/modules/PlacesDBUtils.jsm");
 
-const FINISHED_MAINTENANCE_NOTIFICATION_TOPIC = "places-maintenance-finished";
-
 
 var hs = PlacesUtils.history;
 var bs = PlacesUtils.bookmarks;

@@ -4,7 +4,6 @@
 
 
 
-var beginTime = Date.now();
 var testData = [
   {
     isVisit: true,
@@ -82,15 +81,6 @@ var testData = [
 var testDataTyped = [0, 5, 7, 9];
 var testDataDownload = [1, 2, 4, 6, 10];
 var testDataBookmark = [3, 8, 11];
-
-
-
-
-
-
-function run_test() {
-  run_next_test();
-}
 
 add_task(async function test_transitions() {
   let timeNow = Date.now();

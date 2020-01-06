@@ -8,7 +8,6 @@
 
 
 
-var hs = PlacesUtils.history;
 var bs = PlacesUtils.bookmarks;
 var as = PlacesUtils.annotations;
 

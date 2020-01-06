@@ -7,10 +7,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function() {
   let bm = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
                                                 NetUtil.newURI("http://mozilla.org/"),

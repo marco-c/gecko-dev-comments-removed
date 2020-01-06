@@ -65,7 +65,6 @@ var testData = [
     isInQuery: true
   }
 ];
-var domainsInRange = [2, 3];
 var leveledTestData = [
                        [[0],    
                         [1, 2]], 
@@ -111,10 +110,6 @@ var testDataAddedLater = [
     levels: [0, 0]
   }
 ];
-
-function run_test() {
-  run_next_test();
-}
 
 add_task(async function test_sort_date_site_grouping() {
   await task_populateDB(testData);

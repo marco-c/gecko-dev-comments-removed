@@ -14,11 +14,6 @@
 
 
 
-var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].
-              getService(Ci.nsINavHistoryService);
-var bmsvc = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
-            getService(Ci.nsINavBookmarksService);
-
 
 var searchTerm = "ユニコード";
 var decoded = "http://www.foobar.com/" + searchTerm + "/";
