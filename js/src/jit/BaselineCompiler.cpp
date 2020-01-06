@@ -4692,7 +4692,7 @@ BaselineCompiler::emit_JSOP_RESUME()
     
     
     Register scratch1 = regs.takeAny();
-    masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrScript()), scratch1);
+    masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), scratch1);
 
     
     Label interpret;

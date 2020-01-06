@@ -760,7 +760,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     masm.branch32(Assembler::Above, scratch, Imm32(fi.sig().args().length()), &rectify);
 
     
-    masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrScript()), callee);
+    masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), callee);
     masm.loadBaselineOrIonNoArgCheck(callee, callee, nullptr);
 
     Label rejoinBeforeCall;
