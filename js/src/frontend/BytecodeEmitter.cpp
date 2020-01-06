@@ -7054,11 +7054,9 @@ BytecodeEmitter::emitAsyncIterator()
         return false;
 
     IfThenElseEmitter ifAsyncIterIsUndefined(this);
-    if (!emit1(JSOP_DUP))                                         
+    if (!emitPushNotUndefinedOrNull())                            
         return false;
-    if (!emit1(JSOP_UNDEFINED))                                   
-        return false;
-    if (!emit1(JSOP_EQ))                                          
+    if (!emit1(JSOP_NOT))                                         
         return false;
     if (!ifAsyncIterIsUndefined.emitIfElse())                     
         return false;
