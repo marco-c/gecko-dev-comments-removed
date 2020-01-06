@@ -276,6 +276,7 @@ public class SyncClientsEngineStage extends AbstractSessionManagingSyncStage {
           
           wipeAndStore(r);
           addCommands(r);
+          telemetryStageCollector.getSyncCollector().addDevice(r);
         }
         RepoUtils.logClient(r);
       } catch (Exception e) {

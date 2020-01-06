@@ -5,6 +5,7 @@
 package org.mozilla.gecko.sync;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.support.annotation.VisibleForTesting;
 
 import org.json.simple.JSONArray;
@@ -43,6 +44,8 @@ import org.mozilla.gecko.sync.stage.NoSuchStageException;
 import org.mozilla.gecko.sync.stage.PasswordsServerSyncStage;
 import org.mozilla.gecko.sync.stage.SyncClientsEngineStage;
 import org.mozilla.gecko.sync.stage.UploadMetaGlobalStage;
+import org.mozilla.gecko.sync.telemetry.TelemetryCollector;
+import org.mozilla.gecko.sync.telemetry.TelemetryStageCollector;
 
 import java.io.IOException;
 import java.net.URI;
@@ -84,6 +87,12 @@ public class GlobalSession implements HttpResponseObserver {
 
   public final Map<String, EngineSettings> enginesToUpdate = new HashMap<String, EngineSettings>();
 
+  private final TelemetryCollector telemetryCollector;
+
+  public TelemetryCollector getTelemetryCollector() {
+    return telemetryCollector;
+  }
+
    
 
 
@@ -105,7 +114,8 @@ public class GlobalSession implements HttpResponseObserver {
   public GlobalSession(SyncConfiguration config,
                        GlobalSessionCallback callback,
                        Context context,
-                       ClientsDataDelegate clientsDelegate)
+                       ClientsDataDelegate clientsDelegate,
+                       TelemetryCollector telemetryCollector)
     throws SyncConfigurationException, IllegalArgumentException, IOException, NonObjectJSONException {
 
     if (callback == null) {
@@ -115,6 +125,7 @@ public class GlobalSession implements HttpResponseObserver {
     this.callback        = callback;
     this.context         = context;
     this.clientsDelegate = clientsDelegate;
+    this.telemetryCollector = telemetryCollector;
 
     this.config = config;
     registerCommands();
@@ -281,12 +292,23 @@ public class GlobalSession implements HttpResponseObserver {
     }
     this.currentState = next;
     Logger.info(LOG_TAG, "Running next stage " + next + " (" + nextStage + ")...");
+
+    
+    String collectorName = currentState.getRepositoryName();
+    final TelemetryStageCollector stageCollector = telemetryCollector.collectorFor(collectorName);
+    
+    stageCollector.started = SystemClock.elapsedRealtime();
+
     try {
-      nextStage.execute(this);
+      nextStage.execute(this, stageCollector);
     } catch (Exception ex) {
       Logger.warn(LOG_TAG, "Caught exception " + ex + " running stage " + next);
+      
+      
+      
+      
+      stageCollector.finished = SystemClock.elapsedRealtime();
       this.abort(ex, "Uncaught exception in stage.");
-      return;
     }
   }
 
@@ -499,7 +521,7 @@ public class GlobalSession implements HttpResponseObserver {
         this.uploadUpdatedMetaGlobal(); 
       }
     }
-    this.callback.handleError(this, e);
+    this.callback.handleError(this, e, reason);
   }
 
   public void handleIncompleteStage() {

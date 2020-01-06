@@ -4,53 +4,24 @@
 
 package org.mozilla.gecko.sync.telemetry;
 
+
+
+
+
 public class TelemetryContract {
-  
+  public final static String KEY_TELEMETRY = "telemetry";
+  public final static String KEY_STAGES = "stages";
+  public final static String KEY_ERROR = "error";
+  public final static String KEY_LOCAL_UID = "uid";
+  public final static String KEY_LOCAL_DEVICE_ID = "deviceID";
+  public final static String KEY_DEVICES = "devices";
+  public final static String KEY_TOOK = "took";
 
+  public static final String KEY_TYPE = "type";
+  public static final String KEY_TYPE_SYNC = "sync";
+  public static final String KEY_TYPE_EVENT = "event";
 
-  public static final String SYNC11_MIGRATION_SENTINELS_SEEN = "FENNEC_SYNC11_MIGRATION_SENTINELS_SEEN";
-
-  
-
-
-
-
-
-
-  public static final String SYNC11_MIGRATIONS_FAILED = "FENNEC_SYNC11_MIGRATIONS_FAILED";
-
-  
-
-
-
-
-
-
-
-  public static final String SYNC11_MIGRATIONS_SUCCEEDED = "FENNEC_SYNC11_MIGRATIONS_SUCCEEDED";
-
-  
-
-
-
-
-
-
-  public static final String SYNC11_MIGRATION_NOTIFICATIONS_OFFERED = "FENNEC_SYNC11_MIGRATION_NOTIFICATIONS_OFFERED";
-
-  
-
-
-
-
-
-  public static final String SYNC11_MIGRATIONS_COMPLETED = "FENNEC_SYNC11_MIGRATIONS_COMPLETED";
-
-  public static final String SYNC_STARTED = "FENNEC_SYNC_NUMBER_OF_SYNCS_STARTED";
-
-  public static final String SYNC_COMPLETED = "FENNEC_SYNC_NUMBER_OF_SYNCS_COMPLETED";
-
-  public static final String SYNC_FAILED = "FENNEC_SYNC_NUMBER_OF_SYNCS_FAILED";
-
-  public static final String SYNC_FAILED_BACKOFF = "FENNEC_SYNC_NUMBER_OF_SYNCS_FAILED_BACKOFF";
+  public static final String KEY_DEVICE_OS = "os";
+  public static final String KEY_DEVICE_VERSION = "version";
+  public static final String KEY_DEVICE_ID = "id";
 }
