@@ -389,8 +389,12 @@ public:
 
   enum BBoxFlags {
     eBBoxIncludeFill           = 1 << 0,
+    
+    
     eBBoxIncludeFillGeometry   = 1 << 1,
     eBBoxIncludeStroke         = 1 << 2,
+    
+    
     eBBoxIncludeStrokeGeometry = 1 << 3,
     eBBoxIncludeMarkers        = 1 << 4,
     eBBoxIncludeClipped        = 1 << 5,
