@@ -8,6 +8,8 @@
 
 
 function CountingSort(array, len, signed, comparefn) {
+    assert(IsPossiblyWrappedTypedArray(array), "CountingSort works only with typed arrays.");
+
     
     if (len < 128) {
         QuickSort(array, len, comparefn);
@@ -109,6 +111,8 @@ function SortByColumn(array, len, aux, col, counts) {
 
 
 function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
+    assert(IsPossiblyWrappedTypedArray(array), "RadixSort works only with typed arrays.");
+
     
     if (len < 512) {
         QuickSort(array, len, comparefn);
@@ -131,7 +135,13 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
             assert(buffer !== null, "Attached data buffer should be reified");
         }
 
-        view = new Int32Array(buffer);
+        
+        let offset = IsTypedArray(array)
+                     ? TypedArrayByteOffset(array)
+                     : callFunction(CallTypedArrayMethodIfWrapped, array, array,
+                                    "TypedArrayByteOffset");
+
+        view = new Int32Array(buffer, offset, len);
 
         
         
