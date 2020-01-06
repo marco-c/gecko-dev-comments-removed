@@ -45,7 +45,7 @@ function test() {
           if (mutation.attributeName == "searchEngineName") {
             
             gBrowser.addProgressListener(listener);
-            gMutationObserver.disconnect()
+            gMutationObserver.disconnect();
             gMutationObserver = null;
             executeSoon(function() {
               doc.getElementById("searchText").value = "foo";
@@ -126,7 +126,7 @@ function test() {
 
       executeSoon(nextTest);
     }
-  }
+  };
 
   registerCleanupFunction(function() {
     Services.search.currentEngine = previouslySelectedEngine;

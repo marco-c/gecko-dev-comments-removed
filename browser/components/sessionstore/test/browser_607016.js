@@ -87,7 +87,7 @@ add_task(async function() {
   
   await Promise.all(Array.map(gBrowser.tabs, tab => {
     return (tab == gBrowser.selectedTab) ?
-      promiseTabRestored(tab) : promiseTabRestoring(tab)
+      promiseTabRestored(tab) : promiseTabRestoring(tab);
   }));
 
   

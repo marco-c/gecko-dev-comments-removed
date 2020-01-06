@@ -69,7 +69,7 @@ add_task(async function() {
 
   newButton.onfocus = () => {
     ok(false, "chromebutton shouldn't get focus during testing with tab3");
-  }
+  };
 
   
   focusedId = await performAccessKey("z");
@@ -98,7 +98,7 @@ add_task(async function() {
     
     
     todo(false, "chromebutton shouldn't get focus during testing with tab4");
-  }
+  };
 
   
   focusedId = await performAccessKey("z");
@@ -117,7 +117,7 @@ function childHandleFocus() {
     sent = true;
     let focusedElement = content.document.activeElement;
     focusedElement.blur();
-    sendAsyncMessage("Test:FocusFromAccessKey", { focus: focusedElement.id })
+    sendAsyncMessage("Test:FocusFromAccessKey", { focus: focusedElement.id });
   }, true);
   content.document.body.addEventListener("keydown", function keydown(event) {
     sent = false;

@@ -186,7 +186,7 @@ HelperAppLauncherDialog.prototype = {
         
         aLauncher.cancel(Cr.NS_BINDING_ABORTED);
       }
-    }
+    };
 
     
     

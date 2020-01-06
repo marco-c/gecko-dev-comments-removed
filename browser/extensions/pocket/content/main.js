@@ -270,12 +270,12 @@ var pktUI = (function() {
                         
                         
                         var errorMessage = error.message || "There was an error when trying to save to Pocket.";
-                        var panelError = { message: errorMessage}
+                        var panelError = { message: errorMessage};
 
                         
                         pktUIMessaging.sendErrorMessageToPanel(panelId, saveLinkMessageId, panelError);
                     }
-                }
+                };
 
                 
                 if (typeof title !== "undefined") {
@@ -451,13 +451,13 @@ var pktUI = (function() {
                         value: {
                             suggestedTags
                         }
-                    }
+                    };
                     pktUIMessaging.sendResponseMessageToPanel(panelId, _getSuggestedTagsMessageId, successResponse);
                 },
                 error(error, response) {
                     pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _getSuggestedTagsMessageId, error);
                 }
-            })
+            });
         });
 
         
@@ -487,7 +487,7 @@ var pktUI = (function() {
                 error(error, response) {
                     pktUIMessaging.sendErrorResponseMessageToPanel(panelId, _deleteItemMessageId, error);
                 }
-            })
+            });
         });
 
         var _initL10NMessageId = "initL10N";
@@ -696,11 +696,11 @@ var pktUIMessaging = (function() {
         
         
         if (panelId === 0) {
-            console.warn("Tried to send message to panel with id 0.")
+            console.warn("Tried to send message to panel with id 0.");
             return false;
         }
 
-        return true
+        return true;
     }
 
     function isPocketPanelFrameValid(panelFrame) {
@@ -741,5 +741,5 @@ var pktUIMessaging = (function() {
         sendResponseMessageToPanel,
         sendErrorMessageToPanel,
         sendErrorResponseMessageToPanel
-    }
+    };
 }());

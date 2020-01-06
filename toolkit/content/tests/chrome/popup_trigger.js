@@ -12,7 +12,7 @@ function cacheEvent(modifiers) {
 
   var mouseFn = function(event) {
     cachedEvent = event;
-  }
+  };
 
   window.addEventListener("mousedown", mouseFn);
   synthesizeMouse(document.documentElement, 0, 0, modifiers);
@@ -90,7 +90,7 @@ var popupTests = [
   testname: "cursor up wrap",
   events() {
     
-    return platformIsMac() ? [] : [ "DOMMenuItemInactive item1", "DOMMenuItemActive last" ]
+    return platformIsMac() ? [] : [ "DOMMenuItemInactive item1", "DOMMenuItemActive last" ];
   },
   test() { synthesizeKey("VK_UP", { }); },
   result(testname) {
@@ -100,7 +100,7 @@ var popupTests = [
 {
   
   testname: "cursor down wrap",
-  condition() { return !platformIsMac() },
+  condition() { return !platformIsMac(); },
   events: ["DOMMenuItemInactive last", "DOMMenuItemActive item1" ],
   test() { synthesizeKey("VK_DOWN", { }); },
   result(testname) { checkActive(gMenuPopup, "item1", testname); }

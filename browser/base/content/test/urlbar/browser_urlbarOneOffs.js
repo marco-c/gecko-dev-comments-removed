@@ -34,14 +34,14 @@ add_task(async function init() {
 
 add_task(async function history() {
   gURLBar.focus();
-  EventUtils.synthesizeKey("VK_DOWN", {})
+  EventUtils.synthesizeKey("VK_DOWN", {});
   await promisePopupShown(gURLBar.popup);
 
   assertState(-1, -1, "");
 
   
   for (let i = 0; i < gMaxResults; i++) {
-    EventUtils.synthesizeKey("VK_DOWN", {})
+    EventUtils.synthesizeKey("VK_DOWN", {});
     assertState(i, -1,
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
   }
@@ -50,50 +50,50 @@ add_task(async function history() {
   let numButtons =
     gURLBar.popup.oneOffSearchButtons.getSelectableButtons(true).length;
   for (let i = 0; i < numButtons; i++) {
-    EventUtils.synthesizeKey("VK_DOWN", {})
+    EventUtils.synthesizeKey("VK_DOWN", {});
     assertState(-1, i, "");
   }
 
   
-  EventUtils.synthesizeKey("VK_DOWN", {})
+  EventUtils.synthesizeKey("VK_DOWN", {});
   assertState(-1, -1, "");
 
   
-  EventUtils.synthesizeKey("VK_DOWN", {})
+  EventUtils.synthesizeKey("VK_DOWN", {});
   assertState(0, -1,
     "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - 1));
 
   
-  EventUtils.synthesizeKey("VK_UP", {})
+  EventUtils.synthesizeKey("VK_UP", {});
   assertState(-1, -1, "");
 
   
   for (let i = numButtons - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("VK_UP", {})
+    EventUtils.synthesizeKey("VK_UP", {});
     assertState(-1, i, "");
   }
 
   
   for (let i = 1; i < numButtons; i++) {
-    EventUtils.synthesizeKey("VK_RIGHT", {})
+    EventUtils.synthesizeKey("VK_RIGHT", {});
     assertState(-1, i, "");
   }
 
   
   for (let i = numButtons - 2; i >= 0; i--) {
-    EventUtils.synthesizeKey("VK_LEFT", {})
+    EventUtils.synthesizeKey("VK_LEFT", {});
     assertState(-1, i, "");
   }
 
   
   for (let i = gMaxResults - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("VK_UP", {})
+    EventUtils.synthesizeKey("VK_UP", {});
     assertState(i, -1,
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
   }
 
   
-  EventUtils.synthesizeKey("VK_UP", {})
+  EventUtils.synthesizeKey("VK_UP", {});
   assertState(-1, -1, "");
 
   await hidePopup();
@@ -112,7 +112,7 @@ add_task(async function() {
   
   
   for (let i = 0; i < gMaxResults - 1; i++) {
-    EventUtils.synthesizeKey("VK_DOWN", {})
+    EventUtils.synthesizeKey("VK_DOWN", {});
     
     
     
@@ -124,30 +124,30 @@ add_task(async function() {
   let numButtons =
     gURLBar.popup.oneOffSearchButtons.getSelectableButtons(true).length;
   for (let i = 0; i < numButtons; i++) {
-    EventUtils.synthesizeKey("VK_DOWN", {})
+    EventUtils.synthesizeKey("VK_DOWN", {});
     assertState(-1, i, typedValue);
   }
 
   
-  EventUtils.synthesizeKey("VK_DOWN", {})
+  EventUtils.synthesizeKey("VK_DOWN", {});
   assertState(0, -1, typedValue);
 
   
   
   for (let i = numButtons - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("VK_UP", {})
+    EventUtils.synthesizeKey("VK_UP", {});
     assertState(-1, i, typedValue);
   }
 
   
   for (let i = gMaxResults - 2; i >= 0; i--) {
-    EventUtils.synthesizeKey("VK_UP", {})
+    EventUtils.synthesizeKey("VK_UP", {});
     assertState(i + 1, -1,
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
   }
 
   
-  EventUtils.synthesizeKey("VK_UP", {})
+  EventUtils.synthesizeKey("VK_UP", {});
   assertState(0, -1, typedValue);
 
   await hidePopup();
@@ -168,7 +168,7 @@ add_task(async function searchWith() {
 
   
   
-  EventUtils.synthesizeKey("VK_DOWN", { altKey: true })
+  EventUtils.synthesizeKey("VK_DOWN", { altKey: true });
   assertState(0, 0, typedValue);
 
   let engineName = gURLBar.popup.oneOffSearchButtons.selectedButton.engine.name;
@@ -215,13 +215,13 @@ add_task(async function oneOffReturn() {
   assertState(0, -1, typedValue);
 
   
-  EventUtils.synthesizeKey("VK_DOWN", { altKey: true })
+  EventUtils.synthesizeKey("VK_DOWN", { altKey: true });
   assertState(0, 0, typedValue);
 
   let resultsPromise =
     BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, false,
                                    "http://mochi.test:8888/?terms=foo.bar");
-  EventUtils.synthesizeKey("VK_RETURN", {})
+  EventUtils.synthesizeKey("VK_RETURN", {});
   await resultsPromise;
 
   gBrowser.removeTab(gBrowser.selectedTab);

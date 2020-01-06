@@ -285,7 +285,7 @@ for (let test of testParams) {
 
       run_next_test();
     });
-  }
+  };
 
   
   add_test(function run_test_4() {
@@ -367,7 +367,7 @@ for (let test of testParams) {
       a3.uninstall();
       run_next_test();
     });
-  }
+  };
 
   
   let continue_test_6;
@@ -409,7 +409,7 @@ for (let test of testParams) {
       "onInstallStarted",
       "onInstallEnded",
     ], callback_soon(check_test_6));
-  }
+  };
 
   check_test_6 = (install) => {
     do_check_eq(install.existingAddon.pendingUpgrade.install, install);
@@ -422,7 +422,7 @@ for (let test of testParams) {
       a1.uninstall();
       run_next_test();
     });
-  }
+  };
 
   
   add_test(function run_test_8() {
@@ -748,7 +748,7 @@ for (let test of testParams) {
       a7.uninstall();
       run_next_test();
     });
-  }
+  };
 
   
   
@@ -848,7 +848,7 @@ for (let test of testParams) {
 
       run_next_test();
     });
-  }
+  };
 
   
   
@@ -945,7 +945,7 @@ for (let test of testParams) {
 
       run_next_test();
     });
-  }
+  };
 
   
   

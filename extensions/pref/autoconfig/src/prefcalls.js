@@ -148,7 +148,7 @@ function getLDAPAttributes(host, base, filter, attribs, isSecure) {
                                   .createInstance(nsILDAPSyncQuery);
         
         if (!gVersion)
-          gVersion = Components.interfaces.nsILDAPConnection.VERSION3
+          gVersion = Components.interfaces.nsILDAPConnection.VERSION3;
         
         processLDAPValues(ldapquery.getQueryResults(url, gVersion));
     } catch (e) {

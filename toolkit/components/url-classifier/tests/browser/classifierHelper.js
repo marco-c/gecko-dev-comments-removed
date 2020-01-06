@@ -68,7 +68,7 @@ classifierHelper.waitForInit = function() {
     };
     dbService.lookup(principal, table, listener);
   });
-}
+};
 
 
 
@@ -89,7 +89,7 @@ classifierHelper.allowCompletion = function(lists, url) {
 
   
   Services.prefs.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
-}
+};
 
 
 
@@ -114,7 +114,7 @@ classifierHelper.addUrlToDB = function(updateData) {
   }
 
   return classifierHelper._update(testUpdate);
-}
+};
 
 
 
@@ -133,7 +133,7 @@ classifierHelper.resetDatabase = function() {
 
 classifierHelper.reloadDatabase = function() {
   dbService.reloadDatabase();
-}
+};
 
 classifierHelper._update = function(update) {
   return (async function() {

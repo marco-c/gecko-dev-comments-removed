@@ -7,7 +7,7 @@ this.EXPORTED_SYMBOLS = ["PageMenuParent", "PageMenuChild"];
 var {interfaces: Ci} = Components;
 
 this.PageMenu = function PageMenu() {
-}
+};
 
 PageMenu.prototype = {
   PAGEMENU_ATTR: "pagemenu",
@@ -239,11 +239,11 @@ PageMenu.prototype = {
       }
     }
   }
-}
+};
 
 
 this.PageMenuParent = function PageMenuParent() {
-}
+};
 
 PageMenuParent.prototype = {
   __proto__: PageMenu.prototype,
@@ -275,11 +275,11 @@ PageMenuParent.prototype = {
   addToPopup(aMenu, aBrowser, aPopup) {
     return this.buildAndAttachMenuWithObject(aMenu, aBrowser, aPopup);
   }
-}
+};
 
 
 this.PageMenuChild = function PageMenuChild() {
-}
+};
 
 PageMenuChild.prototype = {
   __proto__: PageMenu.prototype,
@@ -314,4 +314,4 @@ PageMenuChild.prototype = {
       this._builder = null;
     }
   }
-}
+};

@@ -126,7 +126,7 @@ add_task(async function test_MPLocked() {
   Assert.ok(!("kB" in data.accountData), "kB not stored in clear text");
 
   Assert.strictEqual(getLoginMgrData(), null, "login mgr data doesn't exist");
-  await fxa.signOut( true)
+  await fxa.signOut( true);
 });
 
 
@@ -179,7 +179,7 @@ add_task(async function test_consistentWithMPEdgeCases() {
   Assert.strictEqual(accountData.email, creds2.email);
   
   Assert.strictEqual(accountData.kA, undefined, "stale kA wasn't used");
-  await fxa.signOut( true)
+  await fxa.signOut( true);
 });
 
 

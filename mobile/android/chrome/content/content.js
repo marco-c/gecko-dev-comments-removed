@@ -63,7 +63,7 @@ var AboutBlockedSiteListener = {
     anchorEl.setAttribute("href", advisoryUrl);
     anchorEl.textContent = advisoryLinkText;
   },
-}
+};
 AboutBlockedSiteListener.init();
 
 

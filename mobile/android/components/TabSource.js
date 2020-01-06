@@ -2,7 +2,7 @@
 
 
 
-"use strict"
+"use strict";
 
 const { classes: Cc, interfaces: Ci, manager: Cm, utils: Cu, results: Cr } = Components;
 
@@ -34,7 +34,7 @@ TabSource.prototype = {
     }
 
     let bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
-    let title = bundle.GetStringFromName("tabshare.title")
+    let title = bundle.GetStringFromName("tabshare.title");
 
     let prompt = new Prompt({
       window: win,
@@ -48,7 +48,7 @@ TabSource.prototype = {
       else
         label = tab.originalURI.displaySpec;
       return { label: label,
-               icon: "thumbnail:" + tab.id }
+               icon: "thumbnail:" + tab.id };
     }));
 
     let result = null;

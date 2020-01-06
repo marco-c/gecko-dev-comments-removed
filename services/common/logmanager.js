@@ -1,7 +1,7 @@
 
 
 
-"use strict;"
+"use strict;";
 
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -127,7 +127,7 @@ FlushableStorageAppender.prototype = {
     }
     log.trace("finished copy to", fullOutputFileName);
   },
-}
+};
 
 
 function LogManager(prefRoot, logNames, logFilePrefix) {
@@ -174,13 +174,13 @@ LogManager.prototype = {
           }
         }
         appender.level = level;
-      }
+      };
       this._prefs.observe(prefName, observer, this);
       this._prefObservers.push([prefName, observer]);
       
       observer(this._prefs.get(prefName));
       return observer;
-    }
+    };
 
     this._observeConsolePref = setupAppender(consoleAppender, "log.appender.console", Log.Level.Fatal, true);
     this._observeDumpPref = setupAppender(dumpAppender, "log.appender.dump", Log.Level.Error, true);
@@ -332,4 +332,4 @@ LogManager.prototype = {
     
     Services.obs.notifyObservers(null, "services-tests:common:log-manager:cleanup-logs");
   },
-}
+};

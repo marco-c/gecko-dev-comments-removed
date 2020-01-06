@@ -71,7 +71,7 @@ var containers = [
 
 
 var visibleContainers = containers.filter(
-  function(aContainer) { return aContainer.visible });
+  function(aContainer) { return aContainer.visible; });
 
 
 

@@ -133,7 +133,7 @@ Observer.prototype = {
     } else 
       this.callback.observe(subject, topic, data);
   }
-}
+};
 
 
 function Subject(object) {

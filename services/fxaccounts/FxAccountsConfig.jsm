@@ -137,7 +137,7 @@ this.FxAccountsConfig = {
     log.debug("Got successful configuration response", jsonStr);
     try {
       
-      let config = JSON.parse(jsonStr)
+      let config = JSON.parse(jsonStr);
       let authServerBase = config.auth_server_base_url;
       if (!authServerBase.endsWith("/v1")) {
         authServerBase += "/v1";

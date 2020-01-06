@@ -2,7 +2,7 @@
 
 
 
-"use strict"
+"use strict";
 
 this.EXPORTED_SYMBOLS = ["PromiseUtils"];
 
@@ -45,7 +45,7 @@ this.PromiseUtils = {
         timeout);
     });
   },
-}
+};
 
 
 

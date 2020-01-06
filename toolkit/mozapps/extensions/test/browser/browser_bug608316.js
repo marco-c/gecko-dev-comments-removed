@@ -36,7 +36,7 @@ add_test(function() {
       sawUninstall = true;
       aAddon.cancelUninstall();
     }
-  }
+  };
 
   
   AddonManager.addAddonListener(listener);

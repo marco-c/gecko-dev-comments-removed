@@ -25,7 +25,7 @@ add_task(async function test_not_available() {
     async function test_not_available(browser) {
       let available = await check_availability(browser);
       ok(!available, "API should not be available.");
-    })
+    });
 });
 
 
@@ -36,7 +36,7 @@ add_task(async function test_available() {
     async function test_not_available(browser) {
       let available = await check_availability(browser);
       ok(available, "API should be available.");
-    })
+    });
 });
 
 
@@ -45,7 +45,7 @@ add_task(async function test_bad_domain() {
     async function test_not_available(browser) {
       let available = await check_availability(browser);
       ok(!available, "API should not be available.");
-    })
+    });
 });
 
 
@@ -54,7 +54,7 @@ add_task(async function test_not_available_http() {
     async function test_not_available(browser) {
       let available = await check_availability(browser);
       ok(!available, "API should not be available.");
-    })
+    });
 });
 
 
@@ -63,7 +63,7 @@ add_task(async function test_available_framed() {
     async function test_available(browser) {
       let available = await check_frame_availability(browser);
       ok(available, "API should be available.");
-    })
+    });
 });
 
 
@@ -73,7 +73,7 @@ add_task(async function test_not_available_http_framed() {
     async function test_not_available(browser) {
       let available = await check_frame_availability(browser);
       ok(!available, "API should not be available.");
-    })
+    });
 });
 
 
@@ -83,7 +83,7 @@ add_task(async function test_not_available_framed() {
     async function test_not_available(browser) {
       let available = await check_frame_availability(browser);
       ok(!available, "API should not be available.");
-    })
+    });
 });
 
 
@@ -113,7 +113,7 @@ add_task(async function test_navigated_window() {
       ok(!available, "API should not be available.");
 
       gBrowser.removeTab(tab);
-    })
+    });
 });
 
 
@@ -123,5 +123,5 @@ add_task(async function test_chrome_frame() {
     async function test_available(browser) {
       let available = await check_frame_availability(browser);
       ok(available, "API should be available.");
-    })
+    });
 });

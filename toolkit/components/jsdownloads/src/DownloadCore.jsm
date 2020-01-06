@@ -30,7 +30,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
-                                  "resource://gre/modules/osfile.jsm")
+                                  "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
@@ -110,7 +110,7 @@ const kProgressUpdateIntervalMs = 400;
 
 this.Download = function() {
   this._deferSucceeded = PromiseUtils.defer();
-}
+};
 
 this.Download.prototype = {
   
@@ -1194,7 +1194,7 @@ Download.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadSource = function() {}
+this.DownloadSource = function() {};
 
 this.DownloadSource.prototype = {
   
@@ -1318,7 +1318,7 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadTarget = function() {}
+this.DownloadTarget = function() {};
 
 this.DownloadTarget.prototype = {
   
@@ -1509,7 +1509,7 @@ this.DownloadError = function(aProperties) {
   }
 
   this.stack = new Error().stack;
-}
+};
 
 
 
@@ -1632,7 +1632,7 @@ this.DownloadError.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadSaver = function() {}
+this.DownloadSaver = function() {};
 
 this.DownloadSaver.prototype = {
   
@@ -1779,7 +1779,7 @@ this.DownloadSaver.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadCopySaver = function() {}
+this.DownloadCopySaver = function() {};
 
 this.DownloadCopySaver.prototype = {
   __proto__: DownloadSaver.prototype,
@@ -2248,7 +2248,7 @@ this.DownloadCopySaver.fromSerializable = function(aSerializable) {
 this.DownloadLegacySaver = function() {
   this.deferExecuted = PromiseUtils.defer();
   this.deferCanceled = PromiseUtils.defer();
-}
+};
 
 this.DownloadLegacySaver.prototype = {
   __proto__: DownloadSaver.prototype,
@@ -2602,7 +2602,7 @@ this.DownloadLegacySaver.fromSerializable = function() {
 
 
 this.DownloadPDFSaver = function() {
-}
+};
 
 this.DownloadPDFSaver.prototype = {
   __proto__: DownloadSaver.prototype,

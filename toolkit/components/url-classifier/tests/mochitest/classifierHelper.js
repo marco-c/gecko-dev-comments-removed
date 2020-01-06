@@ -30,7 +30,7 @@ classifierHelper.waitForInit = function() {
     classifierHelper._initsCB.push(resolve);
     gScript.sendAsyncMessage("waitForInit");
   });
-}
+};
 
 
 
@@ -51,7 +51,7 @@ classifierHelper.allowCompletion = function(lists, url) {
 
   
   SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
-}
+};
 
 
 
@@ -78,7 +78,7 @@ classifierHelper.addUrlToDB = function(updateData) {
 
     classifierHelper._update(testUpdate, resolve, reject);
   });
-}
+};
 
 
 
@@ -113,7 +113,7 @@ classifierHelper.reloadDatabase = function() {
 
     gScript.sendAsyncMessage("doReload");
   });
-}
+};
 
 classifierHelper._update = function(testUpdate, onsuccess, onerror) {
   

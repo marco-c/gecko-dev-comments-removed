@@ -61,7 +61,7 @@ function getInstalledVersion() {
 function setOldModificationTime() {
   
   
-  shutdownManager()
+  shutdownManager();
   let extension = gProfD.clone();
   extension.append("extensions");
   if (Services.prefs.getBoolPref("extensions.alwaysUnpack"))

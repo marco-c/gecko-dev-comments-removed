@@ -53,7 +53,7 @@ function logMsg(msg, file, line, flag, winID) {
 let setupPrototype = (_class, dict) => {
   _class.prototype.classDescription = _class.name;
   Object.assign(_class.prototype, dict);
-}
+};
 
 
 

@@ -391,7 +391,7 @@ this.Promise = function Promise(aExecutor) {
   } catch (ex) {
     reject(ex);
   }
-}
+};
 
 
 
@@ -740,7 +740,7 @@ this.PromiseWalker = {
       if (stack) {
         DOMPromise.resolve().then(() => {
           Cu.callFunctionWithAsyncStack(this.walkerLoop.bind(this), stack,
-                                        "Promise")
+                                        "Promise");
         });
       } else {
         DOMPromise.resolve().then(() => this.walkerLoop());

@@ -424,7 +424,7 @@ var CastingApps = {
           aCallback(null);
         }
       });
-    }
+    };
 
     
     if (asyncURIs.length > 0) {

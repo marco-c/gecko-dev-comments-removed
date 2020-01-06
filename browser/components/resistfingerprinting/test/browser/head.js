@@ -11,7 +11,7 @@ async function calcMaximumAvailSize(aChromeWidth, aChromeHeight) {
   let chromeUIWidth;
   let chromeUIHeight;
   let testPath = "http://example.net/browser/browser/" +
-                 "components/resistfingerprinting/test/browser/"
+                 "components/resistfingerprinting/test/browser/";
 
   
   if (!aChromeWidth || !aChromeHeight) {
@@ -68,7 +68,7 @@ async function calcMaximumAvailSize(aChromeWidth, aChromeHeight) {
 
 async function calcPopUpWindowChromeUISize() {
   let testPath = "http://example.net/browser/browser/" +
-                 "components/resistFingerprinting/test/browser/"
+                 "components/resistFingerprinting/test/browser/";
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser, testPath + "file_dummy.html");
@@ -142,7 +142,7 @@ async function testWindowOpen(aBrowser, aSettingWidth, aSettingHeight,
           is(win.innerHeight, input.targetHeight,
             "The window.innerHeight has a correct rounded value");
 
-          win.close()
+          win.close();
           resolve();
         };
       });

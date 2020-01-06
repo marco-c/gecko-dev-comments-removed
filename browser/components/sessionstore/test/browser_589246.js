@@ -117,7 +117,7 @@ function test() {
 
 function runNextTestOrFinish() {
   if (tests.length) {
-    setupForTest(tests.shift())
+    setupForTest(tests.shift());
   } else {
     
     ["browser.tabs.warnOnClose", "browser.startup.page"].forEach(function(p) {

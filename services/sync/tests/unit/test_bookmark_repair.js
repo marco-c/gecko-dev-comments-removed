@@ -14,8 +14,8 @@ Cu.import("resource://services-sync/engines/bookmarks.js");
 Cu.import("resource://testing-common/services/sync/utils.js");
 
 initTestLogging("Trace");
-Log.repository.getLogger("Sync.Engine.Bookmarks").level = Log.Level.Trace
-Log.repository.getLogger("Sync.Engine.Clients").level = Log.Level.Trace
+Log.repository.getLogger("Sync.Engine.Bookmarks").level = Log.Level.Trace;
+Log.repository.getLogger("Sync.Engine.Clients").level = Log.Level.Trace;
 Log.repository.getLogger("Sqlite").level = Log.Level.Info; 
 
 const LAST_BOOKMARK_SYNC_PREFS = [
@@ -348,7 +348,7 @@ add_task(async function test_repair_client_missing() {
     _("Syncing.");
     await Service.sync();
     
-    equal(clientsEngine.stats.numClients, 2)
+    equal(clientsEngine.stats.numClients, 2);
     await validationPromise;
 
     
@@ -419,7 +419,7 @@ add_task(async function test_repair_server_missing() {
     _("Syncing.");
     await Service.sync();
     
-    equal(clientsEngine.stats.numClients, 2)
+    equal(clientsEngine.stats.numClients, 2);
     await validationPromise;
 
     
@@ -481,7 +481,7 @@ add_task(async function test_repair_server_deleted() {
     _("Syncing.");
     await Service.sync();
     
-    equal(clientsEngine.stats.numClients, 2)
+    equal(clientsEngine.stats.numClients, 2);
     await validationPromise;
 
     

@@ -96,7 +96,7 @@ this.HawkClient = function(host) {
   
   
   this._localtimeOffsetMsec = 0;
-}
+};
 
 this.HawkClient.prototype = {
 
@@ -346,4 +346,4 @@ this.HawkClient.prototype = {
     return new HAWKAuthenticatedRESTRequest(uri, credentials, extra);
   },
 
-}
+};

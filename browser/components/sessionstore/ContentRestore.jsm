@@ -433,7 +433,7 @@ HistoryListener.prototype = {
   OnIndexChanged(aIndex) {
     
   },
-}
+};
 
 
 

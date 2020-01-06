@@ -308,7 +308,7 @@ async function addNewTabPageTab() {
   let browser = tab.linkedBrowser;
 
   
-  await waitForCondition(() => !browser.contentDocument.hidden)
+  await waitForCondition(() => !browser.contentDocument.hidden);
 
   await new Promise(resolve => {
     if (NewTabUtils.allPages.enabled) {
@@ -491,7 +491,7 @@ function whenSearchInitDone() {
             if (content.gSearch._contentSearchController.defaultEngine) {
               resolve();
             }
-          }
+          };
           content.setTimeout(resolver, 0);
         }
       });

@@ -83,7 +83,7 @@ async function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   ok(syncPanel.getAttribute("current"), "Sync Panel is in view");
 
   
-  let subpanel = document.getElementById(expectedPanelId)
+  let subpanel = document.getElementById(expectedPanelId);
   ok(!subpanel.hidden, "sync setup element is visible");
 
   
@@ -99,7 +99,7 @@ async function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
       }
       gBrowser.selectedBrowser.removeEventListener("load", handler, true);
       resolve();
-    }
+    };
     gBrowser.selectedBrowser.addEventListener("load", handler, true);
 
   });
@@ -142,7 +142,7 @@ add_task(asyncCleanup);
 
 add_task(async function() {
   gSync.updateAllUI({ status: UIState.STATUS_LOGIN_FAILED, email: "foo@bar.com" });
-  await openPrefsFromMenuPanel("PanelUI-remotetabs-reauthsync", "synced-tabs")
+  await openPrefsFromMenuPanel("PanelUI-remotetabs-reauthsync", "synced-tabs");
 });
 
 
@@ -213,7 +213,7 @@ add_task(async function() {
   await Promise.all([tabsUpdatedPromise, viewShownPromise]);
   ok(syncPanel.getAttribute("current"), "Sync Panel is in view");
 
-  let subpanel = document.getElementById("PanelUI-remotetabs-main")
+  let subpanel = document.getElementById("PanelUI-remotetabs-main");
   ok(!subpanel.hidden, "main pane is visible");
   let deck = document.getElementById("PanelUI-remotetabs-deck");
 
@@ -224,7 +224,7 @@ add_task(async function() {
   
   mockedInternal.getTabClients = () => {
     return Promise.resolve([]);
-  }
+  };
   mockedInternal.hasSyncedThisSession = true;
   await updateTabsPanel();
   
@@ -332,7 +332,7 @@ add_task(async function() {
   gSync.doSync = function() {
     didSync = true;
     gSync.doSync = oldDoSync;
-  }
+  };
 
   let syncNowButton = document.getElementById("PanelUI-remotetabs-syncnow");
   is(syncNowButton.disabled, false);
@@ -377,7 +377,7 @@ add_task(async function() {
 
   
   ok(syncPanel.getAttribute("current"), "Sync Panel is in view");
-  let subpanel = document.getElementById("PanelUI-remotetabs-main")
+  let subpanel = document.getElementById("PanelUI-remotetabs-main");
   ok(!subpanel.hidden, "main pane is visible");
   let deck = document.getElementById("PanelUI-remotetabs-deck");
   is(deck.selectedIndex, DECKINDEX_TABS, "we should be showing tabs");

@@ -261,7 +261,7 @@ add_task(async function test_signIn() {
   });
 
   
-  let unicodeUsername = "m\xe9@example.com" 
+  let unicodeUsername = "m\xe9@example.com"; 
   let server = httpd_setup({
     "/account/login": function(request, response) {
       let body = CommonUtils.readBytesFromInputStream(request.bodyInputStream);

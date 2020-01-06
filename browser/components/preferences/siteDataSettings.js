@@ -81,7 +81,7 @@ let gSiteDataSettings = {
 
 
   _sortSites(sites, col) {
-    let isCurrentSortCol = col.getAttribute("data-isCurrentSortCol")
+    let isCurrentSortCol = col.getAttribute("data-isCurrentSortCol");
     let sortDirection = col.getAttribute("data-last-sortDirection") || "ascending";
     if (isCurrentSortCol) {
       
@@ -95,7 +95,7 @@ let gSiteDataSettings = {
           let aHost = a.host.toLowerCase();
           let bHost = b.host.toLowerCase();
           return aHost.localeCompare(bHost);
-        }
+        };
         break;
 
       case "statusCol":

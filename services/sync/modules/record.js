@@ -32,7 +32,7 @@ this.WBORecord = function WBORecord(collection, id) {
   this.payload = {};
   this.collection = collection;      
   this.id = id;                      
-}
+};
 WBORecord.prototype = {
   _logName: "Sync.Record.WBO",
 
@@ -113,7 +113,7 @@ this.CryptoWrapper = function CryptoWrapper(collection, id) {
   WBORecord.call(this, collection, id);
   this.ciphertext = null;
   this.id = id;
-}
+};
 CryptoWrapper.prototype = {
   __proto__: WBORecord.prototype,
   _logName: "Sync.Record.CryptoWrapper",
@@ -226,7 +226,7 @@ this.RecordManager = function RecordManager(service) {
 
   this._log = Log.repository.getLogger(this._logName);
   this._records = {};
-}
+};
 RecordManager.prototype = {
   _recordType: CryptoWrapper,
   _logName: "Sync.RecordManager",
@@ -295,7 +295,7 @@ this.CollectionKeyManager = function CollectionKeyManager(lastModified, default_
   this._collections = collections || {};
 
   this._log = Log.repository.getLogger("Sync.CollectionKeyManager");
-}
+};
 
 
 
@@ -580,7 +580,7 @@ CollectionKeyManager.prototype = {
     log.info("Collection keys updated.");
     return r;
   }
-}
+};
 
 this.Collection = function Collection(uri, recordObj, service) {
   if (!service) {
@@ -608,7 +608,7 @@ this.Collection = function Collection(uri, recordObj, service) {
   
   
   this._offset = null;
-}
+};
 Collection.prototype = {
   __proto__: Resource.prototype,
   _logName: "Sync.Collection",
@@ -756,7 +756,7 @@ Collection.prototype = {
         } else if (lastModified != lastModifiedTime) {
           
           throw new Error("X-Last-Modified changed in the middle of a download batch! " +
-                          `${lastModified} => ${lastModifiedTime}`)
+                          `${lastModified} => ${lastModifiedTime}`);
         }
 
         
@@ -789,7 +789,7 @@ Collection.prototype = {
         this.setHeader(header, value);
       }
       return Resource.prototype.post.call(this, data);
-    }
+    };
     return new PostQueue(poster, timestamp,
       this._service.serverConfiguration || {}, log, postCallback);
   },
@@ -1089,4 +1089,4 @@ PostQueue.prototype = {
 
     await this.postCallback(response, true);
   },
-}
+};

@@ -650,7 +650,7 @@ var PlacesProvider = {
     options.maxResults = this.maxNumLinks;
 
     
-    options.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING
+    options.sortingMode = Ci.nsINavHistoryQueryOptions.SORT_BY_FRECENCY_DESCENDING;
 
     let links = [];
 
@@ -763,7 +763,7 @@ var PlacesProvider = {
   },
 
   onClearHistory() {
-    this._callObservers("onClearHistory")
+    this._callObservers("onClearHistory");
   },
 
   
@@ -1805,7 +1805,7 @@ var Links = {
     
     
     if (AllPages.length && AllPages.enabled)
-      this.populateCache(function() { AllPages.update() }, true);
+      this.populateCache(function() { AllPages.update(); }, true);
     else
       this.resetCache();
   },

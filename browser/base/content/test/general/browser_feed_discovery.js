@@ -1,4 +1,4 @@
-const URL = "http://mochi.test:8888/browser/browser/base/content/test/general/feed_discovery.html"
+const URL = "http://mochi.test:8888/browser/browser/base/content/test/general/feed_discovery.html";
 
 
 
@@ -30,4 +30,4 @@ add_task(async function() {
       }
     }
   });
-})
+});

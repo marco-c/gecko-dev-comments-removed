@@ -4,7 +4,7 @@
 
 
 
-"use strict"
+"use strict";
 
 const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 
@@ -34,7 +34,7 @@ PresentationRequestUIGlue.prototype = {
       
 
 
-      log("Not an 1-UA device.")
+      log("Not an 1-UA device.");
       return new Promise.reject();
     }
 
@@ -75,7 +75,7 @@ PresentationRequestUIGlue.prototype = {
       Services.obs.notifyObservers(null,
                                    TOPIC_PRESENTATION_RECEIVER_LAUNCH,
                                    JSON.stringify(data));
-    })
+    });
   },
 
   classID: Components.ID("9c550ef7-3ff6-4bd1-9ad1-5a3735b90d21"),

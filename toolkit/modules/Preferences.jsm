@@ -195,7 +195,7 @@ Preferences.isSet = function(prefName) {
 
 
 
-Preferences.modified = function(prefName) { return this.isSet(prefName) },
+Preferences.modified = function(prefName) { return this.isSet(prefName); },
 
 Preferences.reset = function(prefName) {
   if (Array.isArray(prefName)) {

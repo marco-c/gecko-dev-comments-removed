@@ -77,7 +77,7 @@ function* simpleCaptureTest() {
       
     });
   });
-  yield undefined 
+  yield undefined; 
 }
 
 

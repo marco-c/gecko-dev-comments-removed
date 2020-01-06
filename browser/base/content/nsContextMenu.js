@@ -877,7 +877,7 @@ nsContextMenu.prototype = {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
       return tabBrowser.getBrowserForTab(tab);
-    }
+    };
 
     let target = aContext == "mathml" ? this.target : null;
     top.gViewSourceUtils.viewPartialSourceInBrowser(gBrowser.selectedBrowser, target, openSelectionFn);
@@ -1123,7 +1123,7 @@ nsContextMenu.prototype = {
         this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
                                          aOffset, aCount);
       }
-    }
+    };
 
     function callbacks() {}
     callbacks.prototype = {
@@ -1139,7 +1139,7 @@ nsContextMenu.prototype = {
         }
         throw Cr.NS_ERROR_NO_INTERFACE;
       }
-    }
+    };
 
     
     
@@ -1149,7 +1149,7 @@ nsContextMenu.prototype = {
       notify: function sLA_timer_notify(aTimer) {
         channel.cancel(NS_ERROR_SAVE_LINK_AS_TIMEOUT);
       }
-    }
+    };
 
     
     

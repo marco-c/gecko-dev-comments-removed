@@ -389,7 +389,7 @@ var ActionBarHandler = {
         if (element) {
           
           
-          let editor = ActionBarHandler._getEditor(element, win)
+          let editor = ActionBarHandler._getEditor(element, win);
           if (editor.composing) {
             element.blur();
             element.focus();

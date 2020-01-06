@@ -145,7 +145,7 @@ class DateTimeTestHelper {
     await BrowserTestUtils.synthesizeMouseAtCenter("input", {}, gBrowser.selectedBrowser);
     
     if (!this.panel.dateTimePopupFrame) {
-      await BrowserTestUtils.waitForEvent(this.panel, "DateTimePickerBindingReady")
+      await BrowserTestUtils.waitForEvent(this.panel, "DateTimePickerBindingReady");
     }
     this.frame = this.panel.dateTimePopupFrame;
     await this.waitForPickerReady();

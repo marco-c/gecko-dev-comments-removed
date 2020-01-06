@@ -476,7 +476,7 @@ function testAboutModuleRegistration() {
       });
       mm.loadFrameScript("data:,(" + testConnection.toString() + ")();", false);
     });
-  }
+  };
 
   
   return new Promise((resolve, reject) => {

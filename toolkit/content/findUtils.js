@@ -45,7 +45,7 @@ nsFindInstData.prototype =
   window,
   _root: null,
   _current: null
-}
+};
 
 
 

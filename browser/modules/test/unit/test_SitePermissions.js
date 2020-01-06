@@ -24,10 +24,10 @@ add_task(async function testPermissionsListing() {
 add_task(async function testGetAllByURI() {
   
   
-  let wrongURI = Services.io.newURI("file:///example.js")
+  let wrongURI = Services.io.newURI("file:///example.js");
   Assert.deepEqual(SitePermissions.getAllByURI(wrongURI), []);
 
-  let uri = Services.io.newURI("https://example.com")
+  let uri = Services.io.newURI("https://example.com");
   Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
 
   SitePermissions.set(uri, "camera", SitePermissions.ALLOW);

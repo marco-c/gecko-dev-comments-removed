@@ -131,7 +131,7 @@ this.telemetryHelper = {
   nowInMinutes() {
     return Math.floor(Date.now() / 1000 / 60);
   },
-}
+};
 
 
 function deriveKeyBundle(kB) {
@@ -159,7 +159,7 @@ AuthenticationError.prototype = {
   toString() {
     return "AuthenticationError(" + this.details + ")";
   }
-}
+};
 
 this.BrowserIDManager = function BrowserIDManager() {
   
@@ -328,7 +328,7 @@ this.BrowserIDManager.prototype = {
     
     
     if (this._signedInUser && this._signedInUser.email != userData.email) {
-      throw new Error("Attempting to update to a different user.")
+      throw new Error("Attempting to update to a different user.");
     }
     this._signedInUser = userData;
   },
@@ -420,7 +420,7 @@ this.BrowserIDManager.prototype = {
 
 
   _now() {
-    return this._fxaService.now()
+    return this._fxaService.now();
   },
 
   get _localtimeOffsetMsec() {
@@ -651,7 +651,7 @@ this.BrowserIDManager.prototype = {
           this._updateSignedInUser(userData); 
         }
       );
-    }
+    };
 
     let getToken = assertion => {
       log.debug("Getting a token");
@@ -668,7 +668,7 @@ this.BrowserIDManager.prototype = {
       let headers = {"X-Client-State": this._computeXClientState(kBbytes)};
       client.getTokenFromBrowserIDAssertion(tokenServerURI, assertion, cb, headers);
       return deferred.promise;
-    }
+    };
 
     let getAssertion = () => {
       log.info("Getting an assertion from", tokenServerURI);
@@ -691,7 +691,7 @@ this.BrowserIDManager.prototype = {
         log.warn("Token server returned 401, refreshing certificate and retrying token fetch");
         return fxa.invalidateCertificate()
           .then(() => getAssertion())
-          .then(assertion => getToken(assertion))
+          .then(assertion => getToken(assertion));
       })
       .then(token => {
         
@@ -769,7 +769,7 @@ this.BrowserIDManager.prototype = {
       },
       error => {
         notifyStateChanged();
-        throw error
+        throw error;
       }
     );
   },
@@ -966,4 +966,4 @@ BrowserIDClusterManager.prototype = {
     
     return this.service.clusterURL;
   }
-}
+};

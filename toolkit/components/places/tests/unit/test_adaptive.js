@@ -63,7 +63,7 @@ AutoCompleteInput.prototype = {
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteInput])
-}
+};
 
 
 

@@ -105,7 +105,7 @@ function run_test() {
   
   let thrown = false;
   try {
-    OS.Path.fromFileURI("http://test.com")
+    OS.Path.fromFileURI("http://test.com");
   } catch (e) {
     do_check_eq(e.message, "fromFileURI expects a file URI");
     thrown = true;

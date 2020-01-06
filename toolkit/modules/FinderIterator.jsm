@@ -36,7 +36,7 @@ this.FinderIterator = {
   running: false,
 
   
-  get kIterationSizeMax() { return kIterationSizeMax },
+  get kIterationSizeMax() { return kIterationSizeMax; },
 
   get params() {
     if (!this._currentParams && !this._previousParams)

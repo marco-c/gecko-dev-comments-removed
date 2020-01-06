@@ -134,7 +134,7 @@ RokuApp.prototype = {
       callback();
     }
   }
-}
+};
 
 
 
@@ -227,4 +227,4 @@ RemoteMedia.prototype = {
   get status() {
     return this._status;
   }
-}
+};

@@ -102,7 +102,7 @@ function test() {
     promiseBrowserLoaded(tab_A.linkedBrowser).then(() => {
       
       Services.prefs.setIntPref(
-        "browser.sessionstore.max_tabs_undo", max_tabs_undo + 1)
+        "browser.sessionstore.max_tabs_undo", max_tabs_undo + 1);
 
       
       for (let i in fieldList)

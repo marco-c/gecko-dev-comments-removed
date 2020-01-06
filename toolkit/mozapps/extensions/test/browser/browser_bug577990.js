@@ -100,7 +100,7 @@ add_test(function() {
 
 add_test(function() {
   gInstall.cancel();
-  run_open_test(null, false, true)
+  run_open_test(null, false, true);
 });
 
 

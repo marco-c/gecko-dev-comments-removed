@@ -31,7 +31,7 @@ var _lastTopLevelWindowID = 0;
 
 this.trackBrowserWindow = function trackBrowserWindow(aWindow) {
   WindowHelper.addWindow(aWindow);
-}
+};
 
 
 function debug(s) {

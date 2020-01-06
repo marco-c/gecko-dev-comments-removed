@@ -347,7 +347,7 @@ add_task(async function log_message_with_params() {
 
   
   do_check_eq(formatMessage("Number is ${number}", {number: 47}),
-              "Number is 47")
+              "Number is 47");
 
   
   do_check_eq(formatMessage("Object is ${}", {foo: "bar"}),
@@ -368,23 +368,23 @@ add_task(async function log_message_with_params() {
 
   
   let ob = function() {};
-  ob.toJSON = function() {return {sneaky: "value"}};
+  ob.toJSON = function() {return {sneaky: "value"};};
   do_check_eq(formatMessage("JSON is ${sub}", {sub: ob}),
               'JSON is {"sneaky":"value"}');
 
   
   ob = function() {};
-  ob.toJSON = function() {throw "oh noes JSON"};
+  ob.toJSON = function() {throw "oh noes JSON";};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               "Fail is (function() {})");
 
   
-  ob.toSource = function() {throw "oh noes SOURCE"};
+  ob.toSource = function() {throw "oh noes SOURCE";};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               "Fail is function() {}");
 
   
-  ob.toString = function() {throw "oh noes STRING"};
+  ob.toString = function() {throw "oh noes STRING";};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               "Fail is [object]");
 
@@ -444,9 +444,9 @@ add_task(async function log_message_with_params() {
   
   
   
-  let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf"}};
+  let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf";}};
   do_check_eq(formatMessage("Broken valueOf ${}", vOf),
-              'Broken valueOf ({a:1, valueOf:(function() {throw "oh noes valueOf"})})');
+              'Broken valueOf ({a:1, valueOf:(function() {throw "oh noes valueOf";})})');
   
 
   

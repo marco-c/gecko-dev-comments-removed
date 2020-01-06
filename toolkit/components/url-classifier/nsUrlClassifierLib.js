@@ -45,14 +45,14 @@ this.BindToObject = function BindToObject(fn, self, opt_args) {
     
     var args = boundargs.concat(Array.slice(arguments));
     return fn.apply(self, args);
-  }
+  };
 
   newfn.boundArgs_ = boundargs;
   newfn.boundSelf_ = self;
   newfn.boundFn_ = fn;
 
   return newfn;
-}
+};
 
 
 
@@ -98,7 +98,7 @@ function RequestBackoff(maxErrors, retryIncrement,
   this.numErrors_ = 0;
   this.errorTimeout_ = 0;
   this.nextRequestTime_ = 0;
-}
+};
 
 
 
@@ -107,7 +107,7 @@ RequestBackoff.prototype.reset = function() {
   this.numErrors_ = 0;
   this.errorTimeout_ = 0;
   this.nextRequestTime_ = 0;
-}
+};
 
 
 
@@ -122,7 +122,7 @@ RequestBackoff.prototype.canMakeRequest = function() {
 
   return (this.requestTimes_.length < this.MAX_REQUESTS_ ||
           (now - this.requestTimes_[0]) > this.REQUEST_PERIOD_);
-}
+};
 
 RequestBackoff.prototype.noteRequest = function() {
   var now = Date.now();
@@ -131,11 +131,11 @@ RequestBackoff.prototype.noteRequest = function() {
   
   if (this.requestTimes_.length > this.MAX_REQUESTS_)
     this.requestTimes_.shift();
-}
+};
 
 RequestBackoff.prototype.nextRequestDelay = function() {
   return Math.max(0, this.nextRequestTime_ - Date.now());
-}
+};
 
 
 
@@ -157,7 +157,7 @@ RequestBackoff.prototype.noteServerResponse = function(status) {
     
     this.reset();
   }
-}
+};
 
 
 
@@ -169,7 +169,7 @@ RequestBackoff.prototype.isErrorStatus = function(status) {
           HTTP_FOUND == status ||
           HTTP_SEE_OTHER == status ||
           HTTP_TEMPORARY_REDIRECT == status);
-}
+};
 
 
 

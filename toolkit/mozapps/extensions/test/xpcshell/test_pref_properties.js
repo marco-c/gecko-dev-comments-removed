@@ -13,7 +13,7 @@ var gManagerEventsListener = {
       this[aEvent] = function() {
         do_print("Saw event " + aEvent);
         this.seenEvents.push(aEvent);
-      }
+      };
     }, this);
     AddonManager.addManagerListener(this);
     
@@ -37,7 +37,7 @@ var gManagerEventsListener = {
     }
     this.seenEvents = [];
   }
-}
+};
 
 function run_test() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");

@@ -76,7 +76,7 @@ const SQL = {
 
   addColumnBackgroundUrl:
     "ALTER TABLE items ADD COLUMN background_url TEXT",
-}
+};
 
 
 

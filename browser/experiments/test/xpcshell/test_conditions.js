@@ -79,7 +79,7 @@ const sanityFilter = function filter(c) {
     throw Error("No .telemetryEnvironment.build");
   }
   return true;
-}
+};
 
 
 function addDate(buildId, diff) {

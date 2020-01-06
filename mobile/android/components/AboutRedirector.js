@@ -23,7 +23,7 @@ var modules = {
     hide: true
   },
   get firefox() {
-    return this.fennec
+    return this.fennec;
   },
 
   

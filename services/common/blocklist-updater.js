@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyGetter(this, "gBlocklistClients", function() {
 });
 
 
-this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; }
+this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; };
 
 
 async function pollChanges(url, lastEtag) {

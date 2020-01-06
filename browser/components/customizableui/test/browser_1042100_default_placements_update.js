@@ -61,7 +61,7 @@ function test() {
   
   CustomizableUIBSPass.kVersion++;
 
-  let hadSavedState = !!CustomizableUIBSPass.gSavedState
+  let hadSavedState = !!CustomizableUIBSPass.gSavedState;
   if (!hadSavedState) {
     CustomizableUIBSPass.gSavedState = {currentVersion: CustomizableUIBSPass.kVersion - 1};
   }

@@ -131,7 +131,7 @@ var PluginHost = {
 
     throw Components.results.NS_ERROR_NO_INTERFACE;
   }
-}
+};
 
 
 
@@ -159,7 +159,7 @@ var WindowWatcher = {
 
     throw Cr.NS_ERROR_NO_INTERFACE;
   }
-}
+};
 
 MockRegistrar.register("@mozilla.org/plugin/host;1", PluginHost);
 MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1", WindowWatcher);

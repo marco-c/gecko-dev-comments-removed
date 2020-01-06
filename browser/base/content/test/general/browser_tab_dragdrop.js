@@ -6,7 +6,7 @@ var getClicks = function(tab) {
   return ContentTask.spawn(tab.linkedBrowser, {}, function() {
     return content.wrappedJSObject.clicks;
   });
-}
+};
 
 var clickTest = async function(tab) {
   let clicks = await getClicks(tab);
@@ -66,7 +66,7 @@ async function cacheObjectValue(browser) {
 
 
 async function cleanupObjectValue(browser) {
-  info("entered cleanupObjectValue")
+  info("entered cleanupObjectValue");
   await ContentTask.spawn(browser, null, async function() {
     info("in cleanup function");
     let win = content.document.defaultView;
@@ -77,7 +77,7 @@ async function cleanupObjectValue(browser) {
     delete win.checkObjectValueListener;
     info(`deleted objectValue (${win.objectValue}) and checkObjectValueListener (${win.checkObjectValueListener})`);
   });
-  info("exiting cleanupObjectValue")
+  info("exiting cleanupObjectValue");
 }
 
 
@@ -125,9 +125,9 @@ add_task(async function() {
   is(gBrowser.tabs[3], tabs[4], "tab4");
   delete tabs[2];
 
-  info("about to cacheObjectValue")
+  info("about to cacheObjectValue");
   await cacheObjectValue(tabs[4].linkedBrowser);
-  info("just finished cacheObjectValue")
+  info("just finished cacheObjectValue");
 
   swapTabsAndCloseOther(3, 2); 
   is(Array.prototype.indexOf.call(gBrowser.tabs, gBrowser.selectedTab), 2,

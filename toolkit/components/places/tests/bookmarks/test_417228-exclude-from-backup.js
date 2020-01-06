@@ -101,7 +101,7 @@ var test = {
 
     rootNode.containerOpen = false;
   }
-}
+};
 
 
 var jsonFile;

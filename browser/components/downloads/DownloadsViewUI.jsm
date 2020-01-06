@@ -72,7 +72,7 @@ this.DownloadsViewUI.BaseView = class {
 
 
 
-this.DownloadsViewUI.DownloadElementShell = function() {}
+this.DownloadsViewUI.DownloadElementShell = function() {};
 
 this.DownloadsViewUI.DownloadElementShell.prototype = {
   

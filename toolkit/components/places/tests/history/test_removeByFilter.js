@@ -157,19 +157,19 @@ add_task(async function test_removeByFilter() {
       
       await removeByFilterTester(randomHostVisits, { host: "*.mozilla.org" },
                                  async () => { for (let uri of remoteUriList) await assertInDB(uri); },
-                                 async () => { for (let uri of checkableArray(remoteUriList)) await checkClosure(uri) },
+                                 async () => { for (let uri of checkableArray(remoteUriList)) await checkClosure(uri); },
                                  callbackUse, bookmarkedUri(remoteUriList));
     }
 
     
     await removeByFilterTester(localhostVisits, { host: "localhost" },
-                               async () => { for (let uri of localhostUriList) await assertInDB(uri) },
-                               async () => { for (let uri of localhostUriList) await assertNotInDB(uri) },
+                               async () => { for (let uri of localhostUriList) await assertInDB(uri); },
+                               async () => { for (let uri of localhostUriList) await assertNotInDB(uri); },
                                callbackUse);
     
     await removeByFilterTester(fileVisits, { host: "" },
-                               async () => { for (let uri of fileUriList) await assertInDB(uri) },
-                               async () => { for (let uri of fileUriList) await assertNotInDB(uri) },
+                               async () => { for (let uri of fileUriList) await assertInDB(uri); },
+                               async () => { for (let uri of fileUriList) await assertNotInDB(uri); },
                                callbackUse);
 
     
@@ -186,8 +186,8 @@ add_task(async function test_removeByFilter() {
                                callbackUse);
     
     await removeByFilterTester(randomHostVisits, { host: "*.notthere.org" },
-                               async () => { for (let uri of remoteUriList) await assertInDB(uri) },
-                               async () => { for (let uri of remoteUriList) await assertInDB(uri) },
+                               async () => { for (let uri of remoteUriList) await assertInDB(uri); },
+                               async () => { for (let uri of remoteUriList) await assertInDB(uri); },
                                callbackUse);
 
     
@@ -204,8 +204,8 @@ add_task(async function test_removeByFilter() {
                                { host: "*.mozilla.org",
                                  beginDate: new Date(2005, 1, 1),
                                  endDate: new Date(2017, 1, 1) },
-                               async () => { for (let uri of remoteUriList) await assertInDB(uri) },
-                               async () => { for (let uri of remoteUriList) await assertNotInDB(uri) },
+                               async () => { for (let uri of remoteUriList) await assertInDB(uri); },
+                               async () => { for (let uri of remoteUriList) await assertNotInDB(uri); },
                                callbackUse);
   }
 });

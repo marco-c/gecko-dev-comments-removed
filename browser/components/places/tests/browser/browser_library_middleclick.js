@@ -66,7 +66,7 @@ var gTabsListener = {
       });
     }
   }
-}
+};
 
 
 

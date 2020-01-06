@@ -1138,7 +1138,7 @@ ContentPrefService2.prototype = {
     
     
     
-    try { aDBConnection.close() } catch (ex) {}
+    try { aDBConnection.close(); } catch (ex) {}
 
     aDBFile.remove(false);
 

@@ -20,7 +20,7 @@ var ZoomUI = {
       aWindow.removeEventListener("TextZoomChange", onZoomChange);
     }, {once: true});
   },
-}
+};
 
 function fullZoomLocationChangeObserver(aSubject, aTopic) {
   

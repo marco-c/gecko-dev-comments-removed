@@ -466,7 +466,7 @@ function doEnabling() {
   if (filePickerMode != nsIFilePicker.modeGetFolder)
   
   
-    okButton.disabled = (textInput.value == "")
+    okButton.disabled = (textInput.value == "");
 }
 
 function onTreeFocus(event) {

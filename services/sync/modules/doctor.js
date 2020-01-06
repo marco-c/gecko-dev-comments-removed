@@ -186,7 +186,7 @@ this.Doctor = {
           throw ex;
         }
         log.error(`Failed to run validation on ${engine.name}!`, ex);
-        Observers.notify("weave:engine:validate:error", ex, engine.name)
+        Observers.notify("weave:engine:validate:error", ex, engine.name);
         
         
       }
@@ -257,4 +257,4 @@ this.Doctor = {
   _getAllRepairRequestors() {
     return getAllRepairRequestors();
   }
-}
+};

@@ -13,7 +13,7 @@ function check_audio_playing_state(isPlaying) {
   
   
   let PLAYING_TIME_SEC = 0.5;
-  ok(PLAYING_TIME_SEC < autoPlay.duration, "The playing time is valid.")
+  ok(PLAYING_TIME_SEC < autoPlay.duration, "The playing time is valid.");
 
   return new Promise(resolve => {
     autoPlay.ontimeupdate = function() {

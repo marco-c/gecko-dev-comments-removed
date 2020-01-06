@@ -190,7 +190,7 @@ const PROBE_TESTS = [
       await BrowserTestUtils.browserLoaded(browser);
     },
   },
-]
+];
 
 
 

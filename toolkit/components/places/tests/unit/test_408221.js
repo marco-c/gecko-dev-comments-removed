@@ -54,7 +54,7 @@ AutoCompleteInput.prototype = {
 
     throw Components.results.NS_ERROR_NO_INTERFACE;
   }
-}
+};
 
 
 try {
@@ -93,7 +93,7 @@ function ensure_tag_results(uris, searchTerm) {
         do_check_eq(controller.getStyleAt(i), "bookmark-tag");
       }
       
-      vals.sort().forEach((val, i) => do_check_eq(val, uris[i]))
+      vals.sort().forEach((val, i) => do_check_eq(val, uris[i]));
 
       resolve();
     };

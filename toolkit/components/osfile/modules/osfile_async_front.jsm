@@ -1488,6 +1488,6 @@ function setupShutdown(phaseName) {
 
 
 if (!isContent) {
-  setupShutdown("profileBeforeChange")
+  setupShutdown("profileBeforeChange");
 }
 File.shutdown = Barriers.shutdown.client;

@@ -23,7 +23,7 @@
       let treeOwner = win.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShellTreeItem)
-                         .treeOwner
+                         .treeOwner;
       let chromeFlags = treeOwner.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsIXULWindow)
                                  .chromeFlags;

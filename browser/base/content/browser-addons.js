@@ -78,7 +78,7 @@ var gXPInstallObserver = {
       let pending = this.pendingInstalls.get(browser);
       if (pending && pending.length)
         this.showInstallConfirmation(browser, pending.shift());
-    }
+    };
 
     
     
@@ -309,7 +309,7 @@ var gXPInstallObserver = {
     case "addon-install-started": {
       let needsDownload = function needsDownload(aInstall) {
         return aInstall.state != AddonManager.STATE_DOWNLOADED;
-      }
+      };
       
       
       if (!installInfo.installs.some(needsDownload))

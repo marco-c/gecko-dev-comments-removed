@@ -1,7 +1,7 @@
 
 
 
-"use strict"
+"use strict";
 
 var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 

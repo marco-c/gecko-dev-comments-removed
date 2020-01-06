@@ -131,7 +131,7 @@ var tests = [
       
       
       let browser = gBrowser.selectedBrowser;
-      await BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser)
+      await BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser);
 
       
       this.complete = true;

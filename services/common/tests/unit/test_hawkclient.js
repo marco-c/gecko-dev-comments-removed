@@ -30,7 +30,7 @@ add_task(function test_updateClockOffset() {
   let serverDate = now.toUTCString();
 
   
-  client.now = () => { return now.valueOf() + HOUR_MS; }
+  client.now = () => { return now.valueOf() + HOUR_MS; };
 
   client._updateClockOffset(serverDate);
 

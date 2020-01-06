@@ -2,7 +2,7 @@
 
 
 
-"use strict"
+"use strict";
 
 add_task(async function() {
   const BASE_URL = "http://example.org/browser/browser/components/places/tests/browser/";

@@ -81,7 +81,7 @@ const SearchAutocompleteProviderInternal = {
       this.defaultMatch = {
         engineName: currentEngine.name,
         iconUrl: currentEngine.iconURI ? currentEngine.iconURI.spec : null,
-      }
+      };
     }
 
     
@@ -125,7 +125,7 @@ const SearchAutocompleteProviderInternal = {
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
                                          Ci.nsISupportsWeakReference]),
-}
+};
 
 function SearchSuggestionControllerWrapper(engine, searchToken,
                                            inPrivateContext,

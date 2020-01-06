@@ -530,7 +530,7 @@ function track_collections_helper() {
       
       
       if (request.method != "GET") {
-        update_collection(coll, response.newModified)
+        update_collection(coll, response.newModified);
       }
     };
   }
@@ -799,7 +799,7 @@ SyncServer.prototype = {
     let createContents   = this.createContents.bind(this, username);
     let modified         = function(collectionName) {
       return collection(collectionName).timestamp;
-    }
+    };
     let deleteCollections = this.deleteCollections.bind(this, username);
     return {
       collection,
@@ -969,7 +969,7 @@ SyncServer.prototype = {
           }
         }
         return false;
-      }
+      };
 
       switch (req.method) {
         case "GET": {

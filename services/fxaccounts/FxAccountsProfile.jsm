@@ -41,7 +41,7 @@ this.FxAccountsProfile = function(options = {}) {
   if (options.channel) {
     this.channel = options.channel;
   }
-}
+};
 
 this.FxAccountsProfile.prototype = {
   
@@ -75,7 +75,7 @@ this.FxAccountsProfile.prototype = {
     const profile = response.body;
     const userData = await this.fxa.getSignedInUser();
     if (profile.uid != userData.uid) {
-      throw new Error("The fetched profile does not correspond with the current account.")
+      throw new Error("The fetched profile does not correspond with the current account.");
     }
     let profileCache = {
       profile,

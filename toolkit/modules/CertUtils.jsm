@@ -51,7 +51,7 @@ this.readCertPrefs =
   }
 
   return certs;
-}
+};
 
 
 
@@ -112,7 +112,7 @@ this.validateCert =
     Cu.reportError(certCheckErr);
     throw new Ce(certCheckErr, Cr.NS_ERROR_ILLEGAL_VALUE);
   }
-}
+};
 
 
 
@@ -167,7 +167,7 @@ this.checkCert =
 
   if (!issuerCert.isBuiltInRoot)
     throw new Ce(certNotBuiltInErr, Cr.NS_ERROR_ABORT);
-}
+};
 
 
 
@@ -181,7 +181,7 @@ this.checkCert =
 this.BadCertHandler =
   function BadCertHandler(aAllowNonBuiltInCerts) {
   this.allowNonBuiltInCerts = aAllowNonBuiltInCerts;
-}
+};
 BadCertHandler.prototype = {
 
   

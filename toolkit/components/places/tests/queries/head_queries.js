@@ -239,7 +239,7 @@ function queryData(obj) {
 }
 
 
-queryData.prototype = { }
+queryData.prototype = { };
 
 
 

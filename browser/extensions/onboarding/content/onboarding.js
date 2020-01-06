@@ -1013,7 +1013,7 @@ class Onboarding {
     let footer = this._window.document.createElement("footer");
     footer.id = "onboarding-notification-bar";
     footer.setAttribute("aria-live", "polite");
-    footer.setAttribute("aria-labelledby", "onboarding-notification-tour-title")
+    footer.setAttribute("aria-labelledby", "onboarding-notification-tour-title");
     
     
     footer.innerHTML = `

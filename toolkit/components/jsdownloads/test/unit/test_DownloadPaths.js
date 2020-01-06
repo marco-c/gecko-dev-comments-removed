@@ -158,7 +158,7 @@ add_task(async function test_createNiceUniqueFile() {
     tempFile.append("file-under-long-directory.txt");
     try {
       DownloadPaths.createNiceUniqueFile(tempFile);
-      do_throw("Exception expected with a long parent directory name.")
+      do_throw("Exception expected with a long parent directory name.");
     } catch (e) {
       
     }

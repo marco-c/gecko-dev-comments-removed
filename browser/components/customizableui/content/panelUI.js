@@ -557,7 +557,7 @@ const PanelUI = {
 
 
   clearLibraryRecentHighlights() {
-    let container = document.getElementById("appMenu-library-recentHighlights")
+    let container = document.getElementById("appMenu-library-recentHighlights");
     while (container.firstChild) {
       container.firstChild.remove();
     }
@@ -712,7 +712,7 @@ const PanelUI = {
     if (this.panel.state == "showing" || this.panel.state == "open") {
       
       
-      doorhangers.forEach(n => { n.dismissed = true; })
+      doorhangers.forEach(n => { n.dismissed = true; });
       this._hidePopup();
       this._clearBadge();
       if (!notifications[0].options.badgeOnly) {

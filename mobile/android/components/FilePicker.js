@@ -210,7 +210,7 @@ FilePicker.prototype = {
     
     
     let win = Services.wm.getMostRecentWindow("navigator:browser");
-    let tab = win && win.BrowserApp.getTabForWindow(this._domWin.top)
+    let tab = win && win.BrowserApp.getTabForWindow(this._domWin.top);
     if (tab) {
       msg.tabId = tab.id;
     }

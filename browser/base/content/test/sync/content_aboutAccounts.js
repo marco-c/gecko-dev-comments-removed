@@ -20,7 +20,7 @@ addEventListener("load", function load(event) {
   
   content.openPrefs = function() {
     sendAsyncMessage("test:openPrefsCalled");
-  }
+  };
 }, true);
 
 addEventListener("DOMContentLoaded", function domContentLoaded(event) {

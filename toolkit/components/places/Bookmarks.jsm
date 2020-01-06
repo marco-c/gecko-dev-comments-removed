@@ -1527,7 +1527,7 @@ async function handleBookmarkItemSpecialData(itemId, item) {
   if (item.annos && item.annos.length) {
     
     
-    PlacesUtils.setAnnotationsForItem(itemId, item.annos, item.source, true)
+    PlacesUtils.setAnnotationsForItem(itemId, item.annos, item.source, true);
   }
   if ("keyword" in item && item.keyword) {
     

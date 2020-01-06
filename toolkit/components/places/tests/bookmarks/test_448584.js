@@ -62,7 +62,7 @@ var invalidURITest = {
     
     toolbar.containerOpen = false;
   }
-}
+};
 tests.push(invalidURITest);
 
 add_task(async function() {

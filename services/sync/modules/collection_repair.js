@@ -19,11 +19,11 @@ this.EXPORTED_SYMBOLS = ["getRepairRequestor", "getAllRepairRequestors",
 
 const REQUESTORS = {
   bookmarks: ["bookmark_repair.js", "BookmarkRepairRequestor"],
-}
+};
 
 const RESPONDERS = {
   bookmarks: ["bookmark_repair.js", "BookmarkRepairResponder"],
-}
+};
 
 
 function _getRepairConstructor(which, collection) {

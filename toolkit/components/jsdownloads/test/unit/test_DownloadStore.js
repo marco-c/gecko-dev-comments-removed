@@ -14,7 +14,7 @@
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadStore",
                                   "resource://gre/modules/DownloadStore.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
-                                  "resource://gre/modules/osfile.jsm")
+                                  "resource://gre/modules/osfile.jsm");
 
 
 

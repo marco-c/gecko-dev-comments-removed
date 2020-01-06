@@ -345,7 +345,7 @@ function parseCodeFile(fileUri) {
                 if (!/\.(properties|js|jsm|json|css)$/.test(path))
                   path += ".js";
                 gReferencesFromCode.add(path);
-                break
+                break;
               }
             }
           }
@@ -579,12 +579,12 @@ add_task(async function checkAllTheFiles() {
     
 
     if (/resource:\/\/app\/features\/[^/]+\/bootstrap\.js/.test(file)) {
-      info("not reporting feature boostrap file: " + file)
+      info("not reporting feature boostrap file: " + file);
       return false;
     }
     
     if (/resource:\/\/app\/features\/[^/]+\/chrome\/skin\//.test(file)) {
-      info("not reporting feature skin file that may be for another platform: " + file)
+      info("not reporting feature skin file that may be for another platform: " + file);
       return false;
     }
     return true;

@@ -58,7 +58,7 @@ add_task(async function() {
   let permissionsList = document.getElementById("identity-popup-permission-list");
   let label = permissionsList.querySelector(".identity-popup-permission-label");
   is(label.textContent, labelText);
-  gIdentityHandler._identityPopup.hidePopup()
+  gIdentityHandler._identityPopup.hidePopup();
 
   
   ok(gIdentityHandler._identityBox.classList.contains("grantedPermissions"),

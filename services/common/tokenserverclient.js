@@ -34,20 +34,20 @@ this.TokenServerClientError = function TokenServerClientError(message) {
   
   
   this.stack = Error().stack;
-}
+};
 TokenServerClientError.prototype = new Error();
 TokenServerClientError.prototype.constructor = TokenServerClientError;
 TokenServerClientError.prototype._toStringFields = function() {
   return {message: this.message};
-}
+};
 TokenServerClientError.prototype.toString = function() {
   return this.name + "(" + JSON.stringify(this._toStringFields()) + ")";
-}
+};
 TokenServerClientError.prototype.toJSON = function() {
   let result = this._toStringFields();
   result.name = this.name;
   return result;
-}
+};
 
 
 
@@ -60,13 +60,13 @@ this.TokenServerClientNetworkError =
   this.name = "TokenServerClientNetworkError";
   this.error = error;
   this.stack = Error().stack;
-}
+};
 TokenServerClientNetworkError.prototype = new TokenServerClientError();
 TokenServerClientNetworkError.prototype.constructor =
   TokenServerClientNetworkError;
 TokenServerClientNetworkError.prototype._toStringFields = function() {
   return {error: this.error};
-}
+};
 
 
 
@@ -105,7 +105,7 @@ this.TokenServerClientServerError =
   this.message = message || "Server error.";
   this.cause = cause;
   this.stack = Error().stack;
-}
+};
 TokenServerClientServerError.prototype = new TokenServerClientError();
 TokenServerClientServerError.prototype.constructor =
   TokenServerClientServerError;
@@ -151,7 +151,7 @@ this.TokenServerClient = function TokenServerClient() {
   this._log = Log.repository.getLogger("Common.TokenServerClient");
   let level = Services.prefs.getCharPref(PREF_LOG_LEVEL, "Debug");
   this._log.level = Log.Level[level];
-}
+};
 TokenServerClient.prototype = {
   
 

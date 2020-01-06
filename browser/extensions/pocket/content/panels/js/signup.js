@@ -155,7 +155,7 @@ PKT_SIGNUP.prototype = {
         
         thePKT_SIGNUP.sendMessage("show");
     }
-}
+};
 
 $(function() {
     if (!window.thePKT_SIGNUP) {

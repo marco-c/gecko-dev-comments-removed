@@ -2,14 +2,14 @@
 
 
 
-"use strict"
+"use strict";
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-Cu.import("resource://gre/modules/osfile.jsm")
+Cu.import("resource://gre/modules/osfile.jsm");
 
 var XULStore = null;
 var browserURI = "chrome://browser/content/browser.xul";
@@ -111,8 +111,8 @@ add_task(async function testTruncation() {
   
   XULStore.setValue(browserURI, "dos", "dos", dos);
   dos = XULStore.getValue(browserURI, "dos", "dos");
-  do_check_true(dos.length == 4096)
-  XULStore.removeValue(browserURI, "dos", "dos")
+  do_check_true(dos.length == 4096);
+  XULStore.removeValue(browserURI, "dos", "dos");
 });
 
 add_task(async function testGetValue() {

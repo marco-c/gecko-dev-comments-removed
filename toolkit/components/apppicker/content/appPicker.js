@@ -206,7 +206,7 @@ AppPicker.prototype =
       });
       return true;
     }
-}
+};
 
 
 var g_dialog = new AppPicker();

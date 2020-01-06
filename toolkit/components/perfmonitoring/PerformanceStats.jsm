@@ -228,7 +228,7 @@ var Probes = {
         totalCPUTime: xpcom.totalUserTime + xpcom.totalSystemTime,
         durations,
         longestDuration: lastNonZero(durations)
-      }
+      };
     },
     isEqual(a, b) {
       
@@ -402,7 +402,7 @@ function PerformanceMonitor(probes) {
   
   
   this._id = PerformanceMonitor.makeId();
-  this._finalizer = finalizer.make(FINALIZATION_TOPIC, this._id)
+  this._finalizer = finalizer.make(FINALIZATION_TOPIC, this._id);
   PerformanceMonitor._monitors.set(this._id, probes);
 }
 PerformanceMonitor.prototype = {
@@ -552,14 +552,14 @@ PerformanceMonitor.dispose = function(id) {
   for (let probe of probes) {
     probe.release();
   }
-}
+};
 
 
 
 PerformanceMonitor._counter = 0;
 PerformanceMonitor.makeId = function() {
   return "PerformanceMonitor-" + (this._counter++);
-}
+};
 
 
 
@@ -950,7 +950,7 @@ var Process = {
         return;
       }
       if (data.data) {
-        collected.push(data.data)
+        collected.push(data.data);
       }
       if (--expecting > 0) {
         

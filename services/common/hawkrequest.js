@@ -141,7 +141,7 @@ this.deriveHawkCredentials = function deriveHawkCredentials(tokenHex,
   }
 
   return result;
-}
+};
 
 
 

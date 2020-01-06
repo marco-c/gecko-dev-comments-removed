@@ -319,7 +319,7 @@ var toFileURI = function toFileURI(path) {
 
   
   if (uri.charAt(uri.length - 1) === ":") {
-    uri += "/"
+    uri += "/";
   }
 
   return uri;

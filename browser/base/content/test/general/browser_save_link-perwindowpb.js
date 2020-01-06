@@ -53,7 +53,7 @@ function triggerSave(aWindow, aCallback) {
       ok(!destFile.exists(), "Destination file should be removed");
       mockTransferCallback = null;
       info("done mockTransferCallback");
-    }
+    };
 
     
     var saveLinkCommand = aWindow.document.getElementById("context-savelink");

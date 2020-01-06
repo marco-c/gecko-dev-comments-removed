@@ -25,7 +25,7 @@ add_task(async function checkBackFromInvalidURI() {
     let promiseOtherPageLoaded = BrowserTestUtils.waitForEvent(tab.linkedBrowser, "pageshow", false,
       
       
-      function(e) { return gBrowser.currentURI.spec == "about:robots" }
+      function(e) { return gBrowser.currentURI.spec == "about:robots"; }
     );
     gBrowser.goBack();
     await promiseOtherPageLoaded;

@@ -149,8 +149,8 @@ add_task(async function cleanup() {
 
     Services.prefs.clearUserPref("browser.search.geoip.url");
 
-    Services.prefs.setCharPref(BROWSER_SEARCH_PREF + "countryCode", originalCountryCode)
-    Services.prefs.setCharPref(BROWSER_SEARCH_PREF + "region", originalRegion)
+    Services.prefs.setCharPref(BROWSER_SEARCH_PREF + "countryCode", originalCountryCode);
+    Services.prefs.setCharPref(BROWSER_SEARCH_PREF + "region", originalRegion);
 
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);

@@ -307,7 +307,7 @@ this.Store = function Store(name, engine) {
   XPCOMUtils.defineLazyGetter(this, "_timer", function() {
     return Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   });
-}
+};
 Store.prototype = {
 
   
@@ -490,7 +490,7 @@ this.EngineManager = function EngineManager(service) {
   this._declined = new Set();
   this._log = Log.repository.getLogger("Sync.EngineManager");
   this._log.level = Log.Level[Svc.Prefs.get("log.logger.service.engines", "Debug")];
-}
+};
 EngineManager.prototype = {
   get(name) {
     
@@ -662,7 +662,7 @@ this.Engine = function Engine(name, service) {
   this._modified = this.emptyChangeset();
   this._tracker; 
   this._log.debug("Engine constructed");
-}
+};
 Engine.prototype = {
   
   _storeObj: Store,
@@ -793,7 +793,7 @@ this.SyncEngine = function SyncEngine(name, service) {
   
   
   this._needWeakUpload = new Map();
-}
+};
 
 
 
@@ -1776,7 +1776,7 @@ SyncEngine.prototype = {
         
         
         
-        this._log.warn("412 error during sync - will retry.")
+        this._log.warn("412 error during sync - will retry.");
       }
     } finally {
       await this._syncCleanup();

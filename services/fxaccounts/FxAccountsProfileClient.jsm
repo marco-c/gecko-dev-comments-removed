@@ -5,7 +5,7 @@
 
 
 
- "use strict;"
+ "use strict;";
 
 this.EXPORTED_SYMBOLS = ["FxAccountsProfileClient", "FxAccountsProfileClientError"];
 

@@ -663,7 +663,7 @@ nsBrowserContentHandler.prototype = {
         
         throw NS_ERROR_ABORT;
       }
-      cmdLine.handleFlag("osint", false)
+      cmdLine.handleFlag("osint", false);
     }
   },
 };

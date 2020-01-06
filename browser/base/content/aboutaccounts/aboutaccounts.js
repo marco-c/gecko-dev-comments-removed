@@ -256,7 +256,7 @@ function migrateToDevEdition(urlParams) {
     show("stage", "intro");
     
     fxAccounts.promiseAccountsSignUpURI().then(uri => {
-      wrapper.init(uri, urlParams)
+      wrapper.init(uri, urlParams);
     }).catch(e => {
       console.log("Failed to load signup page", e);
       setErrorPage("configError");

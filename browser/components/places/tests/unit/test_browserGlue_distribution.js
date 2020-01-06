@@ -51,7 +51,7 @@ add_task(async function() {
   
   Services.prefs.setIntPref(PREF_SMART_BOOKMARKS_VERSION, -1);
 
-  let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver)
+  let glue = Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsIObserver);
   
   
   Assert.equal(PlacesUtils.history.databaseStatus,
