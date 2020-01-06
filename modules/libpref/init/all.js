@@ -2857,12 +2857,6 @@ pref("layout.css.prefixes.webkit", true);
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
-
-
-
-pref("layout.css.scoped-style.enabled", false);
-
-
 pref("layout.css.scope-pseudo.enabled", true);
 
 
