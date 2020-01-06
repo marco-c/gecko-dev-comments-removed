@@ -168,13 +168,16 @@ public:
   virtual bool
   SupportsMimeType(const nsACString& aMimeType,
                    DecoderDoctorDiagnostics* aDiagnostics) const = 0;
+
   virtual bool
   Supports(const TrackInfo& aTrackInfo,
            DecoderDoctorDiagnostics* aDiagnostics) const
   {
-    
-    
-    return SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics);
+    if (!SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics)) {
+      return false;
+    }
+    const auto videoInfo = aTrackInfo.GetAsVideoInfo();
+    return !videoInfo || SupportsBitDepth(videoInfo->mBitDepth, aDiagnostics);
   }
 
 protected:
@@ -185,6 +188,14 @@ protected:
   friend class PDMFactory;
   friend class dom::RemoteDecoderModule;
   friend class EMEDecoderModule;
+
+  
+  
+  virtual bool SupportsBitDepth(const uint8_t aBitDepth,
+                                DecoderDoctorDiagnostics* aDiagnostics) const
+  {
+    return aBitDepth == 8;
+  }
 
   
   

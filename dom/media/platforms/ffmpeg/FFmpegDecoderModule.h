@@ -77,6 +77,21 @@ public:
     return !!FFmpegDataDecoder<V>::FindAVCodec(mLib, codec);
   }
 
+protected:
+  bool SupportsBitDepth(const uint8_t aBitDepth,
+                        DecoderDoctorDiagnostics* aDiagnostics) const override
+  {
+    
+    
+    
+    
+    
+#if defined(XP_LINUX) || defined(XP_MACOSX)
+    return true;
+#endif
+    return aBitDepth == 8;
+  }
+
 private:
   FFmpegLibWrapper* mLib;
 };
