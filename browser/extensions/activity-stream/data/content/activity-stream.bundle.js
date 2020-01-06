@@ -60,7 +60,7 @@
  	__webpack_require__.p = "";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 7);
+ 	return __webpack_require__(__webpack_require__.s = 10);
  })
 
  ([
@@ -100,7 +100,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 
 const actionTypes = {};
-for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_REGISTER", "SECTION_UPDATE", "SET_PREF", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_EDIT_CLOSE", "TOP_SITES_EDIT_OPEN", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
+for (const type of ["BLOCK_URL", "BOOKMARK_URL", "DELETE_BOOKMARK_BY_ID", "DELETE_HISTORY_URL", "DELETE_HISTORY_URL_CONFIRM", "DIALOG_CANCEL", "DIALOG_OPEN", "FEED_INIT", "INIT", "LOCALE_UPDATED", "MIGRATION_CANCEL", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_UNLOAD", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "PINNED_SITES_UPDATED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_CHANGED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_REGISTER", "SECTION_UPDATE", "SET_PREF", "SHOW_FIREFOX_ACCOUNTS", "SNIPPETS_DATA", "SNIPPETS_RESET", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_ADD", "TOP_SITES_PIN", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "UNINIT"]) {
   actionTypes[type] = type;
 }
 
@@ -315,75 +315,331 @@ module.exports = ReactRedux;
 "use strict";
 
 
-const React = __webpack_require__(0);
+module.exports = {
+  TOP_SITES_SOURCE: "TOP_SITES",
+  TOP_SITES_CONTEXT_MENU_OPTIONS: ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"]
+};
 
-var _require = __webpack_require__(2);
+ }),
 
-const injectIntl = _require.injectIntl;
+ (function(module, exports, __webpack_require__) {
 
-const ContextMenu = __webpack_require__(11);
+"use strict";
 
-var _require2 = __webpack_require__(1);
 
-const ac = _require2.actionCreators;
 
-const linkMenuOptions = __webpack_require__(12);
-const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
 
-class LinkMenu extends React.Component {
-  getOptions() {
-    const props = this.props;
-    const site = props.site,
-          index = props.index,
-          source = props.source;
 
+var _require = __webpack_require__(1);
+
+const at = _require.actionTypes;
+
+
+const TOP_SITES_DEFAULT_LENGTH = 6;
+const TOP_SITES_SHOWMORE_LENGTH = 12;
+
+const INITIAL_STATE = {
+  App: {
     
+    initialized: false,
+    
+    locale: "",
+    
+    strings: null,
+    
+    version: null
+  },
+  Snippets: { initialized: false },
+  TopSites: {
+    
+    initialized: false,
+    
+    rows: []
+  },
+  Prefs: {
+    initialized: false,
+    values: {}
+  },
+  Dialog: {
+    visible: false,
+    data: {}
+  },
+  Sections: []
+};
 
-    const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
+function App() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.App;
+  let action = arguments[1];
 
-    const options = propOptions.map(o => linkMenuOptions[o](site, index, source)).map(option => {
-      const action = option.action,
-            impression = option.impression,
-            id = option.id,
-            type = option.type,
-            userEvent = option.userEvent;
+  switch (action.type) {
+    case at.INIT:
+      return Object.assign({}, prevState, action.data || {}, { initialized: true });
+    case at.LOCALE_UPDATED:
+      {
+        if (!action.data) {
+          return prevState;
+        }
+        var _action$data = action.data;
+        let locale = _action$data.locale,
+            strings = _action$data.strings;
 
-      if (!type && id) {
-        option.label = props.intl.formatMessage(option);
-        option.onClick = () => {
-          props.dispatch(action);
-          if (userEvent) {
-            props.dispatch(ac.UserEvent({
-              event: userEvent,
-              source,
-              action_position: index
-            }));
-          }
-          if (impression) {
-            props.dispatch(impression);
-          }
-        };
+        return Object.assign({}, prevState, {
+          locale,
+          strings
+        });
       }
-      return option;
-    });
-
-    
-    
-    
-    options[0].first = true;
-    options[options.length - 1].last = true;
-    return options;
-  }
-  render() {
-    return React.createElement(ContextMenu, {
-      visible: this.props.visible,
-      onUpdate: this.props.onUpdate,
-      options: this.getOptions() });
+    default:
+      return prevState;
   }
 }
 
-module.exports = injectIntl(LinkMenu);
-module.exports._unconnected = LinkMenu;
+
+
+
+
+
+
+
+function insertPinned(links, pinned) {
+  
+  const pinnedUrls = pinned.map(link => link && link.url);
+  let newLinks = links.filter(link => link ? !pinnedUrls.includes(link.url) : false);
+  newLinks = newLinks.map(link => {
+    if (link && link.isPinned) {
+      delete link.isPinned;
+      delete link.pinIndex;
+    }
+    return link;
+  });
+
+  
+  pinned.forEach((val, index) => {
+    if (!val) {
+      return;
+    }
+    let link = Object.assign({}, val, { isPinned: true, pinIndex: index });
+    if (index > newLinks.length) {
+      newLinks[index] = link;
+    } else {
+      newLinks.splice(index, 0, link);
+    }
+  });
+
+  return newLinks;
+}
+
+function TopSites() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.TopSites;
+  let action = arguments[1];
+
+  let hasMatch;
+  let newRows;
+  let pinned;
+  switch (action.type) {
+    case at.TOP_SITES_UPDATED:
+      if (!action.data) {
+        return prevState;
+      }
+      return Object.assign({}, prevState, { initialized: true, rows: action.data });
+    case at.SCREENSHOT_UPDATED:
+      newRows = prevState.rows.map(row => {
+        if (row && row.url === action.data.url) {
+          hasMatch = true;
+          return Object.assign({}, row, { screenshot: action.data.screenshot });
+        }
+        return row;
+      });
+      return hasMatch ? Object.assign({}, prevState, { rows: newRows }) : prevState;
+    case at.PLACES_BOOKMARK_ADDED:
+      if (!action.data) {
+        return prevState;
+      }
+      newRows = prevState.rows.map(site => {
+        if (site && site.url === action.data.url) {
+          var _action$data2 = action.data;
+          const bookmarkGuid = _action$data2.bookmarkGuid,
+                bookmarkTitle = _action$data2.bookmarkTitle,
+                lastModified = _action$data2.lastModified;
+
+          return Object.assign({}, site, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
+        }
+        return site;
+      });
+      return Object.assign({}, prevState, { rows: newRows });
+    case at.PLACES_BOOKMARK_REMOVED:
+      if (!action.data) {
+        return prevState;
+      }
+      newRows = prevState.rows.map(site => {
+        if (site && site.url === action.data.url) {
+          const newSite = Object.assign({}, site);
+          delete newSite.bookmarkGuid;
+          delete newSite.bookmarkTitle;
+          delete newSite.bookmarkDateCreated;
+          return newSite;
+        }
+        return site;
+      });
+      return Object.assign({}, prevState, { rows: newRows });
+    case at.BLOCK_URL:
+    case at.DELETE_HISTORY_URL:
+      
+      
+      
+      newRows = prevState.rows.filter(val => val && val.url !== action.data.url);
+      return Object.assign({}, prevState, { rows: newRows });
+    case at.PINNED_SITES_UPDATED:
+      pinned = action.data;
+      newRows = insertPinned(prevState.rows, pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
+      return Object.assign({}, prevState, { rows: newRows });
+    default:
+      return prevState;
+  }
+}
+
+function Dialog() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Dialog;
+  let action = arguments[1];
+
+  switch (action.type) {
+    case at.DIALOG_OPEN:
+      return Object.assign({}, prevState, { visible: true, data: action.data });
+    case at.DIALOG_CANCEL:
+      return Object.assign({}, prevState, { visible: false });
+    case at.DELETE_HISTORY_URL:
+      return Object.assign({}, INITIAL_STATE.Dialog);
+    default:
+      return prevState;
+  }
+}
+
+function Prefs() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Prefs;
+  let action = arguments[1];
+
+  let newValues;
+  switch (action.type) {
+    case at.PREFS_INITIAL_VALUES:
+      return Object.assign({}, prevState, { initialized: true, values: action.data });
+    case at.PREF_CHANGED:
+      newValues = Object.assign({}, prevState.values);
+      newValues[action.data.name] = action.data.value;
+      return Object.assign({}, prevState, { values: newValues });
+    default:
+      return prevState;
+  }
+}
+
+function Sections() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Sections;
+  let action = arguments[1];
+
+  let hasMatch;
+  let newState;
+  switch (action.type) {
+    case at.SECTION_DEREGISTER:
+      return prevState.filter(section => section.id !== action.data);
+    case at.SECTION_REGISTER:
+      
+      newState = prevState.map(section => {
+        if (section && section.id === action.data.id) {
+          hasMatch = true;
+          return Object.assign({}, section, action.data);
+        }
+        return section;
+      });
+
+      
+      
+      
+      
+      if (!hasMatch) {
+        const initialized = action.data.rows && action.data.rows.length > 0;
+        let order;
+        let index;
+        if (prevState.length > 0) {
+          order = action.data.order || prevState[0].order - 1;
+          index = newState.findIndex(section => section.order >= order);
+        } else {
+          order = action.data.order || 1;
+          index = 0;
+        }
+        const section = Object.assign({ title: "", initialized, rows: [], order, enabled: false }, action.data);
+        newState.splice(index, 0, section);
+      }
+      return newState;
+    case at.SECTION_UPDATE:
+      return prevState.map(section => {
+        if (section && section.id === action.data.id) {
+          return Object.assign({}, section, action.data);
+        }
+        return section;
+      });
+    case at.PLACES_BOOKMARK_ADDED:
+      if (!action.data) {
+        return prevState;
+      }
+      return prevState.map(section => Object.assign({}, section, {
+        rows: section.rows.map(item => {
+          
+          if (item.url === action.data.url) {
+            var _action$data3 = action.data;
+            const bookmarkGuid = _action$data3.bookmarkGuid,
+                  bookmarkTitle = _action$data3.bookmarkTitle,
+                  lastModified = _action$data3.lastModified;
+
+            Object.assign(item, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
+          }
+          return item;
+        })
+      }));
+    case at.PLACES_BOOKMARK_REMOVED:
+      if (!action.data) {
+        return prevState;
+      }
+      return prevState.map(section => Object.assign({}, section, {
+        rows: section.rows.map(item => {
+          
+          if (item.url === action.data.url) {
+            const newSite = Object.assign({}, item);
+            delete newSite.bookmarkGuid;
+            delete newSite.bookmarkTitle;
+            delete newSite.bookmarkDateCreated;
+            return newSite;
+          }
+          return item;
+        })
+      }));
+    case at.PLACES_LINK_DELETED:
+    case at.PLACES_LINK_BLOCKED:
+      return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.url !== action.data.url) }));
+    default:
+      return prevState;
+  }
+}
+
+function Snippets() {
+  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Snippets;
+  let action = arguments[1];
+
+  switch (action.type) {
+    case at.SNIPPETS_DATA:
+      return Object.assign({}, prevState, { initialized: true }, action.data);
+    case at.SNIPPETS_RESET:
+      return INITIAL_STATE.Snippets;
+    default:
+      return prevState;
+  }
+}
+
+var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections };
+module.exports = {
+  reducers,
+  INITIAL_STATE,
+  insertPinned,
+  TOP_SITES_DEFAULT_LENGTH,
+  TOP_SITES_SHOWMORE_LENGTH
+};
 
  }),
 
@@ -510,6 +766,281 @@ module.exports = {
 
  }),
 
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(1);
+
+const ac = _require.actionCreators,
+      at = _require.actionTypes;
+
+
+const LinkMenu = __webpack_require__(8);
+
+var _require2 = __webpack_require__(4);
+
+const TOP_SITES_SOURCE = _require2.TOP_SITES_SOURCE,
+      TOP_SITES_CONTEXT_MENU_OPTIONS = _require2.TOP_SITES_CONTEXT_MENU_OPTIONS;
+
+
+class TopSite extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { showContextMenu: false, activeTile: null };
+    this.onLinkClick = this.onLinkClick.bind(this);
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onDismissButtonClick = this.onDismissButtonClick.bind(this);
+    this.onPinButtonClick = this.onPinButtonClick.bind(this);
+    this.onEditButtonClick = this.onEditButtonClick.bind(this);
+  }
+  toggleContextMenu(event, index) {
+    this.setState({
+      activeTile: index,
+      showContextMenu: true
+    });
+  }
+  userEvent(event) {
+    this.props.dispatch(ac.UserEvent({
+      event,
+      source: TOP_SITES_SOURCE,
+      action_position: this.props.index
+    }));
+  }
+  onLinkClick(ev) {
+    if (this.props.editMode) {
+      
+      ev.preventDefault();
+      return;
+    }
+    this.userEvent("CLICK");
+  }
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    this.toggleContextMenu(event, this.props.index);
+  }
+  onMenuUpdate(showContextMenu) {
+    this.setState({ showContextMenu });
+  }
+  onDismissButtonClick() {
+    const link = this.props.link;
+
+    if (link.isPinned) {
+      this.props.dispatch(ac.SendToMain({
+        type: at.TOP_SITES_UNPIN,
+        data: { site: { url: link.url } }
+      }));
+    }
+    this.props.dispatch(ac.SendToMain({
+      type: at.BLOCK_URL,
+      data: link.url
+    }));
+    this.userEvent("BLOCK");
+  }
+  onPinButtonClick() {
+    var _props = this.props;
+    const link = _props.link,
+          index = _props.index;
+
+    if (link.isPinned) {
+      this.props.dispatch(ac.SendToMain({
+        type: at.TOP_SITES_UNPIN,
+        data: { site: { url: link.url } }
+      }));
+      this.userEvent("UNPIN");
+    } else {
+      this.props.dispatch(ac.SendToMain({
+        type: at.TOP_SITES_PIN,
+        data: { site: { url: link.url }, index }
+      }));
+      this.userEvent("PIN");
+    }
+  }
+  onEditButtonClick() {
+    this.props.onEdit(this.props.index);
+  }
+  render() {
+    var _props2 = this.props;
+    const link = _props2.link,
+          index = _props2.index,
+          dispatch = _props2.dispatch,
+          editMode = _props2.editMode;
+
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
+    const title = link.label || link.hostname;
+    const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
+    const tippyTopIcon = link.tippyTopIcon;
+
+    let imageClassName;
+    let imageStyle;
+    if (tippyTopIcon) {
+      imageClassName = "tippy-top-icon";
+      imageStyle = {
+        backgroundColor: link.backgroundColor,
+        backgroundImage: `url(${tippyTopIcon})`
+      };
+    } else {
+      imageClassName = `screenshot${link.screenshot ? " active" : ""}`;
+      imageStyle = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
+    }
+    return React.createElement(
+      "li",
+      { className: topSiteOuterClassName, key: link.guid || link.url },
+      React.createElement(
+        "a",
+        { href: link.url, onClick: this.onLinkClick },
+        React.createElement(
+          "div",
+          { className: "tile", "aria-hidden": true },
+          React.createElement(
+            "span",
+            { className: "letter-fallback" },
+            title[0]
+          ),
+          React.createElement("div", { className: imageClassName, style: imageStyle })
+        ),
+        React.createElement(
+          "div",
+          { className: `title ${link.isPinned ? "pinned" : ""}` },
+          link.isPinned && React.createElement("div", { className: "icon icon-pin-small" }),
+          React.createElement(
+            "span",
+            { dir: "auto" },
+            title
+          )
+        )
+      ),
+      !editMode && React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "button",
+          { className: "context-menu-button icon", onClick: this.onMenuButtonClick },
+          React.createElement(
+            "span",
+            { className: "sr-only" },
+            `Open context menu for ${title}`
+          )
+        ),
+        React.createElement(LinkMenu, {
+          dispatch: dispatch,
+          index: index,
+          onUpdate: this.onMenuUpdate,
+          options: TOP_SITES_CONTEXT_MENU_OPTIONS,
+          site: link,
+          source: TOP_SITES_SOURCE,
+          visible: isContextMenuOpen })
+      ),
+      editMode && React.createElement(
+        "div",
+        { className: "edit-menu" },
+        React.createElement("button", {
+          className: `icon icon-${link.isPinned ? "unpin" : "pin"}`,
+          title: this.props.intl.formatMessage({ id: `edit_topsites_${link.isPinned ? "unpin" : "pin"}_button` }),
+          onClick: this.onPinButtonClick }),
+        React.createElement("button", {
+          className: "icon icon-edit",
+          title: this.props.intl.formatMessage({ id: "edit_topsites_edit_button" }),
+          onClick: this.onEditButtonClick }),
+        React.createElement("button", {
+          className: "icon icon-dismiss",
+          title: this.props.intl.formatMessage({ id: "edit_topsites_dismiss_button" }),
+          onClick: this.onDismissButtonClick })
+      )
+    );
+  }
+}
+
+TopSite.defaultProps = {
+  editMode: false,
+  onEdit() {}
+};
+
+module.exports = TopSite;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(2);
+
+const injectIntl = _require.injectIntl;
+
+const ContextMenu = __webpack_require__(17);
+
+var _require2 = __webpack_require__(1);
+
+const ac = _require2.actionCreators;
+
+const linkMenuOptions = __webpack_require__(18);
+const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
+
+class LinkMenu extends React.Component {
+  getOptions() {
+    const props = this.props;
+    const site = props.site,
+          index = props.index,
+          source = props.source;
+
+    
+
+    const propOptions = !site.isDefault ? props.options : DEFAULT_SITE_MENU_OPTIONS;
+
+    const options = propOptions.map(o => linkMenuOptions[o](site, index, source)).map(option => {
+      const action = option.action,
+            impression = option.impression,
+            id = option.id,
+            type = option.type,
+            userEvent = option.userEvent;
+
+      if (!type && id) {
+        option.label = props.intl.formatMessage(option);
+        option.onClick = () => {
+          props.dispatch(action);
+          if (userEvent) {
+            props.dispatch(ac.UserEvent({
+              event: userEvent,
+              source,
+              action_position: index
+            }));
+          }
+          if (impression) {
+            props.dispatch(impression);
+          }
+        };
+      }
+      return option;
+    });
+
+    
+    
+    
+    options[0].first = true;
+    options[options.length - 1].last = true;
+    return options;
+  }
+  render() {
+    return React.createElement(ContextMenu, {
+      visible: this.props.visible,
+      onUpdate: this.props.onUpdate,
+      options: this.getOptions() });
+  }
+}
+
+module.exports = injectIntl(LinkMenu);
+module.exports._unconnected = LinkMenu;
+
+ }),
+
  (function(module, exports) {
 
 var g;
@@ -543,22 +1074,22 @@ module.exports = g;
 
 
 const React = __webpack_require__(0);
-const ReactDOM = __webpack_require__(8);
-const Base = __webpack_require__(9);
+const ReactDOM = __webpack_require__(11);
+const Base = __webpack_require__(12);
 
 var _require = __webpack_require__(3);
 
 const Provider = _require.Provider;
 
-const initStore = __webpack_require__(21);
+const initStore = __webpack_require__(27);
 
-var _require2 = __webpack_require__(23);
+var _require2 = __webpack_require__(5);
 
 const reducers = _require2.reducers;
 
-const DetectUserSessionStart = __webpack_require__(24);
+const DetectUserSessionStart = __webpack_require__(29);
 
-var _require3 = __webpack_require__(25);
+var _require3 = __webpack_require__(30);
 
 const addSnippetsSubscriber = _require3.addSnippetsSubscriber;
 
@@ -599,12 +1130,12 @@ var _require2 = __webpack_require__(2);
 const addLocaleData = _require2.addLocaleData,
       IntlProvider = _require2.IntlProvider;
 
-const TopSites = __webpack_require__(10);
-const Search = __webpack_require__(13);
-const ConfirmDialog = __webpack_require__(14);
-const ManualMigration = __webpack_require__(15);
-const PreferencesPane = __webpack_require__(16);
-const Sections = __webpack_require__(17);
+const TopSites = __webpack_require__(13);
+const Search = __webpack_require__(19);
+const ConfirmDialog = __webpack_require__(20);
+const ManualMigration = __webpack_require__(21);
+const PreferencesPane = __webpack_require__(22);
+const Sections = __webpack_require__(23);
 
 
 const RTL_LIST = ["ar", "he", "fa", "ur"];
@@ -696,184 +1227,64 @@ const connect = _require.connect;
 
 var _require2 = __webpack_require__(2);
 
-const FormattedMessage = _require2.FormattedMessage,
-      injectIntl = _require2.injectIntl;
+const FormattedMessage = _require2.FormattedMessage;
 
-const LinkMenu = __webpack_require__(4);
 
-var _require3 = __webpack_require__(1);
+const TopSitesPerfTimer = __webpack_require__(14);
+const TopSitesEdit = __webpack_require__(15);
+const TopSite = __webpack_require__(7);
 
-const ac = _require3.actionCreators,
-      at = _require3.actionTypes;
+const TopSites = props => React.createElement(
+  TopSitesPerfTimer,
+  null,
+  React.createElement(
+    "section",
+    { className: "top-sites" },
+    React.createElement(
+      "h3",
+      { className: "section-title" },
+      React.createElement("span", { className: `icon icon-small-spacer icon-topsites` }),
+      React.createElement(FormattedMessage, { id: "header_top_sites" })
+    ),
+    React.createElement(
+      "ul",
+      { className: "top-sites-list" },
+      props.TopSites.rows.slice(0, props.TopSitesCount).map((link, index) => link && React.createElement(TopSite, {
+        key: link.guid || link.url,
+        dispatch: props.dispatch,
+        link: link,
+        index: index,
+        intl: props.intl }))
+    ),
+    React.createElement(TopSitesEdit, props)
+  )
+);
 
-var _require4 = __webpack_require__(5);
+module.exports = connect(state => ({ TopSites: state.TopSites, TopSitesCount: state.Prefs.values.topSitesCount }))(TopSites);
+module.exports._unconnected = TopSites;
 
-const perfSvc = _require4.perfService;
+ }),
 
-const TOP_SITES_SOURCE = "TOP_SITES";
-const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
+ (function(module, exports, __webpack_require__) {
 
-class TopSite extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { showContextMenu: false, activeTile: null };
-    this.onLinkClick = this.onLinkClick.bind(this);
-    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
-    this.onDismissButtonClick = this.onDismissButtonClick.bind(this);
-    this.onPinButtonClick = this.onPinButtonClick.bind(this);
-  }
-  toggleContextMenu(event, index) {
-    this.setState({
-      activeTile: index,
-      showContextMenu: true
-    });
-  }
-  userEvent(event) {
-    this.props.dispatch(ac.UserEvent({
-      event,
-      source: TOP_SITES_SOURCE,
-      action_position: this.props.index
-    }));
-  }
-  onLinkClick(ev) {
-    if (this.props.editMode) {
-      
-      ev.preventDefault();
-      return;
-    }
-    this.userEvent("CLICK");
-  }
-  onMenuButtonClick(event) {
-    event.preventDefault();
-    this.toggleContextMenu(event, this.props.index);
-  }
-  onMenuUpdate(showContextMenu) {
-    this.setState({ showContextMenu });
-  }
-  onDismissButtonClick() {
-    const link = this.props.link;
+"use strict";
 
-    if (link.isPinned) {
-      this.props.dispatch(ac.SendToMain({
-        type: at.TOP_SITES_UNPIN,
-        data: { site: { url: link.url } }
-      }));
-    }
-    this.props.dispatch(ac.SendToMain({
-      type: at.BLOCK_URL,
-      data: link.url
-    }));
-    this.userEvent("BLOCK");
-  }
-  onPinButtonClick() {
-    var _props = this.props;
-    const link = _props.link,
-          index = _props.index;
 
-    if (link.isPinned) {
-      this.props.dispatch(ac.SendToMain({
-        type: at.TOP_SITES_UNPIN,
-        data: { site: { url: link.url } }
-      }));
-      this.userEvent("UNPIN");
-    } else {
-      this.props.dispatch(ac.SendToMain({
-        type: at.TOP_SITES_PIN,
-        data: { site: { url: link.url }, index }
-      }));
-      this.userEvent("PIN");
-    }
-  }
-  render() {
-    var _props2 = this.props;
-    const link = _props2.link,
-          index = _props2.index,
-          dispatch = _props2.dispatch,
-          editMode = _props2.editMode;
+const React = __webpack_require__(0);
 
-    const isContextMenuOpen = this.state.showContextMenu && this.state.activeTile === index;
-    const title = link.hostname;
-    const topSiteOuterClassName = `top-site-outer${isContextMenuOpen ? " active" : ""}`;
-    const tippyTopIcon = link.tippyTopIcon;
+var _require = __webpack_require__(3);
 
-    let imageClassName;
-    let imageStyle;
-    if (tippyTopIcon) {
-      imageClassName = "tippy-top-icon";
-      imageStyle = {
-        backgroundColor: link.backgroundColor,
-        backgroundImage: `url(${tippyTopIcon})`
-      };
-    } else {
-      imageClassName = `screenshot${link.screenshot ? " active" : ""}`;
-      imageStyle = { backgroundImage: link.screenshot ? `url(${link.screenshot})` : "none" };
-    }
-    return React.createElement(
-      "li",
-      { className: topSiteOuterClassName, key: link.guid || link.url },
-      React.createElement(
-        "a",
-        { href: link.url, onClick: this.onLinkClick },
-        React.createElement(
-          "div",
-          { className: "tile", "aria-hidden": true },
-          React.createElement(
-            "span",
-            { className: "letter-fallback" },
-            title[0]
-          ),
-          React.createElement("div", { className: imageClassName, style: imageStyle })
-        ),
-        React.createElement(
-          "div",
-          { className: `title ${link.isPinned ? "pinned" : ""}` },
-          link.isPinned && React.createElement("div", { className: "icon icon-pin-small" }),
-          React.createElement(
-            "span",
-            { dir: "auto" },
-            title
-          )
-        )
-      ),
-      !editMode && React.createElement(
-        "div",
-        null,
-        React.createElement(
-          "button",
-          { className: "context-menu-button icon", onClick: this.onMenuButtonClick },
-          React.createElement(
-            "span",
-            { className: "sr-only" },
-            `Open context menu for ${title}`
-          )
-        ),
-        React.createElement(LinkMenu, {
-          dispatch: dispatch,
-          index: index,
-          onUpdate: this.onMenuUpdate,
-          options: TOP_SITES_CONTEXT_MENU_OPTIONS,
-          site: link,
-          source: TOP_SITES_SOURCE,
-          visible: isContextMenuOpen })
-      ),
-      editMode && React.createElement(
-        "div",
-        { className: "edit-menu" },
-        React.createElement("button", {
-          className: `icon icon-${link.isPinned ? "unpin" : "pin"}`,
-          title: this.props.intl.formatMessage({ id: `edit_topsites_${link.isPinned ? "unpin" : "pin"}_button` }),
-          onClick: this.onPinButtonClick }),
-        React.createElement("button", {
-          className: "icon icon-dismiss",
-          title: this.props.intl.formatMessage({ id: "edit_topsites_dismiss_button" }),
-          onClick: this.onDismissButtonClick })
-      )
-    );
-  }
-}
+const connect = _require.connect;
 
-TopSite.defaultProps = { editMode: false };
+var _require2 = __webpack_require__(1);
+
+const ac = _require2.actionCreators,
+      at = _require2.actionTypes;
+
+var _require3 = __webpack_require__(6);
+
+const perfSvc = _require3.perfService;
+
 
 
 
@@ -978,37 +1389,61 @@ class TopSitesPerfTimer extends React.Component {
   }
 
   render() {
-    return React.createElement(TopSites, this.props);
+    return this.props.children;
   }
 }
 
-const TopSites = props => React.createElement(
-  "section",
-  { className: "top-sites" },
-  React.createElement(
-    "h3",
-    { className: "section-title" },
-    React.createElement("span", { className: `icon icon-small-spacer icon-topsites` }),
-    React.createElement(FormattedMessage, { id: "header_top_sites" })
-  ),
-  React.createElement(
-    "ul",
-    { className: "top-sites-list" },
-    props.TopSites.rows.map((link, index) => link && React.createElement(TopSite, {
-      key: link.guid || link.url,
-      dispatch: props.dispatch,
-      link: link,
-      index: index,
-      intl: props.intl }))
-  ),
-  React.createElement(TopSitesEditIntl, props)
-);
+module.exports = connect(state => ({ TopSites: state.TopSites }))(TopSitesPerfTimer);
+module.exports._unconnected = TopSitesPerfTimer;
+
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(2);
+
+const FormattedMessage = _require.FormattedMessage,
+      injectIntl = _require.injectIntl;
+
+var _require2 = __webpack_require__(1);
+
+const ac = _require2.actionCreators,
+      at = _require2.actionTypes;
+
+
+const TopSiteForm = __webpack_require__(16);
+const TopSite = __webpack_require__(7);
+
+var _require3 = __webpack_require__(5);
+
+const TOP_SITES_DEFAULT_LENGTH = _require3.TOP_SITES_DEFAULT_LENGTH,
+      TOP_SITES_SHOWMORE_LENGTH = _require3.TOP_SITES_SHOWMORE_LENGTH;
+
+var _require4 = __webpack_require__(4);
+
+const TOP_SITES_SOURCE = _require4.TOP_SITES_SOURCE;
+
 
 class TopSitesEdit extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { showEditModal: false };
+    this.state = {
+      showEditModal: false,
+      showAddForm: false,
+      showEditForm: false,
+      editIndex: -1 
+    };
     this.onEditButtonClick = this.onEditButtonClick.bind(this);
+    this.onShowMoreLessClick = this.onShowMoreLessClick.bind(this);
+    this.onModalOverlayClick = this.onModalOverlayClick.bind(this);
+    this.onAddButtonClick = this.onAddButtonClick.bind(this);
+    this.onFormClose = this.onFormClose.bind(this);
+    this.onEdit = this.onEdit.bind(this);
   }
   onEditButtonClick() {
     this.setState({ showEditModal: !this.state.showEditModal });
@@ -1016,6 +1451,41 @@ class TopSitesEdit extends React.Component {
     this.props.dispatch(ac.UserEvent({
       source: TOP_SITES_SOURCE,
       event
+    }));
+  }
+  onModalOverlayClick() {
+    this.setState({ showEditModal: false, showAddForm: false, showEditForm: false });
+    this.props.dispatch(ac.UserEvent({
+      source: TOP_SITES_SOURCE,
+      event: "TOP_SITES_EDIT_CLOSE"
+    }));
+  }
+  onShowMoreLessClick() {
+    const prefIsSetToDefault = this.props.TopSitesCount === TOP_SITES_DEFAULT_LENGTH;
+    this.props.dispatch(ac.SendToMain({
+      type: at.SET_PREF,
+      data: { name: "topSitesCount", value: prefIsSetToDefault ? TOP_SITES_SHOWMORE_LENGTH : TOP_SITES_DEFAULT_LENGTH }
+    }));
+    this.props.dispatch(ac.UserEvent({
+      source: TOP_SITES_SOURCE,
+      event: prefIsSetToDefault ? "TOP_SITES_EDIT_SHOW_MORE" : "TOP_SITES_EDIT_SHOW_LESS"
+    }));
+  }
+  onAddButtonClick() {
+    this.setState({ showAddForm: true });
+    this.props.dispatch(ac.UserEvent({
+      source: TOP_SITES_SOURCE,
+      event: "TOP_SITES_ADD_FORM_OPEN"
+    }));
+  }
+  onFormClose() {
+    this.setState({ showAddForm: false, showEditForm: false });
+  }
+  onEdit(index) {
+    this.setState({ showEditForm: true, editIndex: index });
+    this.props.dispatch(ac.UserEvent({
+      source: TOP_SITES_SOURCE,
+      event: "TOP_SITES_EDIT_FORM_OPEN"
     }));
   }
   render() {
@@ -1034,10 +1504,10 @@ class TopSitesEdit extends React.Component {
           React.createElement(FormattedMessage, { id: "edit_topsites_button_text" })
         )
       ),
-      this.state.showEditModal && React.createElement(
+      this.state.showEditModal && !this.state.showAddForm && !this.state.showEditForm && React.createElement(
         "div",
         { className: "edit-topsites" },
-        React.createElement("div", { className: "modal-overlay" }),
+        React.createElement("div", { className: "modal-overlay", onClick: this.onModalOverlayClick }),
         React.createElement(
           "div",
           { className: "modal" },
@@ -1053,12 +1523,13 @@ class TopSitesEdit extends React.Component {
             React.createElement(
               "ul",
               { className: "top-sites-list" },
-              this.props.TopSites.rows.map((link, index) => link && React.createElement(TopSite, {
+              this.props.TopSites.rows.slice(0, this.props.TopSitesCount).map((link, index) => link && React.createElement(TopSite, {
                 key: link.guid || link.url,
                 dispatch: this.props.dispatch,
                 link: link,
                 index: index,
                 intl: this.props.intl,
+                onEdit: this.onEdit,
                 editMode: true }))
             )
           ),
@@ -1067,23 +1538,248 @@ class TopSitesEdit extends React.Component {
             { className: "actions" },
             React.createElement(
               "button",
+              { className: "add", onClick: this.onAddButtonClick },
+              React.createElement(FormattedMessage, { id: "edit_topsites_add_button" })
+            ),
+            React.createElement(
+              "button",
+              { className: `icon icon-topsites show-${this.props.TopSitesCount === TOP_SITES_DEFAULT_LENGTH ? "more" : "less"}`, onClick: this.onShowMoreLessClick },
+              React.createElement(FormattedMessage, { id: `edit_topsites_show${this.props.TopSitesCount === TOP_SITES_DEFAULT_LENGTH ? "more" : "less"}_button` })
+            ),
+            React.createElement(
+              "button",
               { className: "done", onClick: this.onEditButtonClick },
               React.createElement(FormattedMessage, { id: "edit_topsites_done_button" })
             )
           )
+        )
+      ),
+      this.state.showEditModal && this.state.showAddForm && React.createElement(
+        "div",
+        { className: "edit-topsites" },
+        React.createElement("div", { className: "modal-overlay", onClick: this.onModalOverlayClick }),
+        React.createElement(
+          "div",
+          { className: "modal" },
+          React.createElement(TopSiteForm, { onClose: this.onFormClose, dispatch: this.props.dispatch, intl: this.props.intl })
+        )
+      ),
+      this.state.showEditModal && this.state.showEditForm && React.createElement(
+        "div",
+        { className: "edit-topsites" },
+        React.createElement("div", { className: "modal-overlay", onClick: this.onModalOverlayClick }),
+        React.createElement(
+          "div",
+          { className: "modal" },
+          React.createElement(TopSiteForm, {
+            label: this.props.TopSites.rows[this.state.editIndex].label || this.props.TopSites.rows[this.state.editIndex].hostname,
+            url: this.props.TopSites.rows[this.state.editIndex].url,
+            index: this.state.editIndex,
+            editMode: true,
+            onClose: this.onFormClose,
+            dispatch: this.props.dispatch,
+            intl: this.props.intl })
         )
       )
     );
   }
 }
 
-const TopSitesEditIntl = injectIntl(TopSitesEdit);
+module.exports = injectIntl(TopSitesEdit);
+module.exports._unconnected = TopSitesEdit;
 
-module.exports = connect(state => ({ TopSites: state.TopSites }))(TopSitesPerfTimer);
-module.exports._unconnected = TopSitesPerfTimer;
-module.exports.TopSite = TopSite;
-module.exports.TopSites = TopSites;
-module.exports.TopSitesEdit = TopSitesEdit;
+ }),
+
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const React = __webpack_require__(0);
+
+var _require = __webpack_require__(1);
+
+const ac = _require.actionCreators,
+      at = _require.actionTypes;
+
+var _require2 = __webpack_require__(2);
+
+const FormattedMessage = _require2.FormattedMessage;
+
+var _require3 = __webpack_require__(4);
+
+const TOP_SITES_SOURCE = _require3.TOP_SITES_SOURCE;
+
+
+class TopSiteForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      label: props.label || "",
+      url: props.url || "",
+      validationError: false
+    };
+    this.onLabelChange = this.onLabelChange.bind(this);
+    this.onUrlChange = this.onUrlChange.bind(this);
+    this.onCancelButtonClick = this.onCancelButtonClick.bind(this);
+    this.onAddButtonClick = this.onAddButtonClick.bind(this);
+    this.onSaveButtonClick = this.onSaveButtonClick.bind(this);
+    this.onUrlInputMount = this.onUrlInputMount.bind(this);
+  }
+  onLabelChange(event) {
+    this.resetValidation();
+    this.setState({ "label": event.target.value });
+  }
+  onUrlChange(event) {
+    this.resetValidation();
+    this.setState({ "url": event.target.value });
+  }
+  onCancelButtonClick(ev) {
+    ev.preventDefault();
+    this.props.onClose();
+  }
+  onAddButtonClick(ev) {
+    ev.preventDefault();
+    if (this.validateForm()) {
+      let site = { url: this.cleanUrl() };
+      if (this.state.label !== "") {
+        site.label = this.state.label;
+      }
+      this.props.dispatch(ac.SendToMain({
+        type: at.TOP_SITES_ADD,
+        data: { site }
+      }));
+      this.props.dispatch(ac.UserEvent({
+        source: TOP_SITES_SOURCE,
+        event: "TOP_SITES_ADD"
+      }));
+      this.props.onClose();
+    }
+  }
+  onSaveButtonClick(ev) {
+    ev.preventDefault();
+    if (this.validateForm()) {
+      let site = { url: this.cleanUrl() };
+      if (this.state.label !== "") {
+        site.label = this.state.label;
+      }
+      this.props.dispatch(ac.SendToMain({
+        type: at.TOP_SITES_PIN,
+        data: { site, index: this.props.index }
+      }));
+      this.props.dispatch(ac.UserEvent({
+        source: TOP_SITES_SOURCE,
+        event: "TOP_SITES_EDIT",
+        action_position: this.props.index
+      }));
+      this.props.onClose();
+    }
+  }
+  cleanUrl() {
+    let url = this.state.url;
+    
+    if (!url.startsWith("http:") && !url.startsWith("https:")) {
+      url = `http://${url}`;
+    }
+    return url;
+  }
+  resetValidation() {
+    if (this.state.validationError) {
+      this.setState({ validationError: false });
+    }
+  }
+  validateUrl() {
+    try {
+      return !!new URL(this.cleanUrl());
+    } catch (e) {
+      return false;
+    }
+  }
+  validateForm() {
+    this.resetValidation();
+    
+    if (!this.state.url || !this.validateUrl()) {
+      this.setState({ validationError: true });
+      this.inputUrl.focus();
+      return false;
+    }
+    return true;
+  }
+  onUrlInputMount(input) {
+    this.inputUrl = input;
+  }
+  render() {
+    return React.createElement(
+      "form",
+      { className: "topsite-form" },
+      React.createElement(
+        "section",
+        { className: "edit-topsites-inner-wrapper" },
+        React.createElement(
+          "div",
+          { className: "form-wrapper" },
+          React.createElement(
+            "h3",
+            { className: "section-title" },
+            React.createElement(FormattedMessage, { id: this.props.editMode ? "topsites_form_edit_header" : "topsites_form_add_header" })
+          ),
+          React.createElement(
+            "div",
+            { className: "field title" },
+            React.createElement("input", {
+              type: "text",
+              value: this.state.label,
+              onChange: this.onLabelChange,
+              placeholder: this.props.intl.formatMessage({ id: "topsites_form_title_placeholder" }) })
+          ),
+          React.createElement(
+            "div",
+            { className: `field url${this.state.validationError ? " invalid" : ""}` },
+            React.createElement("input", {
+              type: "text",
+              ref: this.onUrlInputMount,
+              value: this.state.url,
+              onChange: this.onUrlChange,
+              placeholder: this.props.intl.formatMessage({ id: "topsites_form_url_placeholder" }) }),
+            this.state.validationError && React.createElement(
+              "aside",
+              { className: "error-tooltip" },
+              React.createElement(FormattedMessage, { id: "topsites_form_url_validation" })
+            )
+          )
+        )
+      ),
+      React.createElement(
+        "section",
+        { className: "actions" },
+        React.createElement(
+          "button",
+          { className: "cancel", type: "button", onClick: this.onCancelButtonClick },
+          React.createElement(FormattedMessage, { id: "topsites_form_cancel_button" })
+        ),
+        this.props.editMode && React.createElement(
+          "button",
+          { className: "done save", type: "submit", onClick: this.onSaveButtonClick },
+          React.createElement(FormattedMessage, { id: "topsites_form_save_button" })
+        ),
+        !this.props.editMode && React.createElement(
+          "button",
+          { className: "done add", type: "submit", onClick: this.onAddButtonClick },
+          React.createElement(FormattedMessage, { id: "topsites_form_add_button" })
+        )
+      )
+    );
+  }
+}
+
+TopSiteForm.defaultProps = {
+  label: "",
+  url: "",
+  index: 0,
+  editMode: false 
+};
+
+module.exports = TopSiteForm;
 
  }),
 
@@ -1363,7 +2059,7 @@ class Search extends React.Component {
 
   render() {
     return React.createElement(
-      "form",
+      "div",
       { className: "search-wrapper" },
       React.createElement(
         "label",
@@ -1490,7 +2186,7 @@ const ConfirmDialog = React.createClass({
       React.createElement("div", { className: "modal-overlay", onClick: this._handleCancelBtn }),
       React.createElement(
         "div",
-        { className: "modal", ref: "modal" },
+        { className: "modal" },
         React.createElement(
           "section",
           { className: "modal-message" },
@@ -1501,12 +2197,12 @@ const ConfirmDialog = React.createClass({
           { className: "actions" },
           React.createElement(
             "button",
-            { ref: "cancelButton", onClick: this._handleCancelBtn },
+            { onClick: this._handleCancelBtn },
             React.createElement(FormattedMessage, { id: "topsites_form_cancel_button" })
           ),
           React.createElement(
             "button",
-            { ref: "confirmButton", className: "done", onClick: this._handleConfirmBtn },
+            { className: "done", onClick: this._handleConfirmBtn },
             React.createElement(FormattedMessage, { id: this.props.data.confirm_button_string_id })
           )
         )
@@ -1573,7 +2269,7 @@ class ManualMigration extends React.Component {
       React.createElement(
         "p",
         null,
-        React.createElement("span", { className: "icon icon-info" }),
+        React.createElement("span", { className: "icon icon-import" }),
         React.createElement(FormattedMessage, { id: "manual_migration_explanation" })
       ),
       React.createElement(
@@ -1581,12 +2277,12 @@ class ManualMigration extends React.Component {
         { className: "manual-migration-actions actions" },
         React.createElement(
           "button",
-          { onClick: this.onCancelTour },
+          { className: "dismiss", onClick: this.onCancelTour },
           React.createElement(FormattedMessage, { id: "manual_migration_cancel_button" })
         ),
         React.createElement(
           "button",
-          { className: "done", onClick: this.onLaunchTour },
+          { onClick: this.onLaunchTour },
           React.createElement(FormattedMessage, { id: "manual_migration_import_button" })
         )
       )
@@ -1620,6 +2316,11 @@ var _require3 = __webpack_require__(1);
 const ac = _require3.actionCreators,
       at = _require3.actionTypes;
 
+var _require4 = __webpack_require__(5);
+
+const TOP_SITES_DEFAULT_LENGTH = _require4.TOP_SITES_DEFAULT_LENGTH,
+      TOP_SITES_SHOWMORE_LENGTH = _require4.TOP_SITES_SHOWMORE_LENGTH;
+
 
 const getFormattedMessage = message => typeof message === "string" ? React.createElement(
   "span",
@@ -1633,7 +2334,7 @@ const PreferencesInput = props => React.createElement(
   React.createElement("input", { type: "checkbox", id: props.prefName, name: props.prefName, checked: props.value, onChange: props.onChange, className: props.className }),
   React.createElement(
     "label",
-    { htmlFor: props.prefName },
+    { htmlFor: props.prefName, className: props.labelClassName },
     getFormattedMessage(props.titleString)
   ),
   props.descString && React.createElement(
@@ -1651,6 +2352,7 @@ class PreferencesPane extends React.Component {
     this.handlePrefChange = this.handlePrefChange.bind(this);
     this.handleSectionChange = this.handleSectionChange.bind(this);
     this.togglePane = this.togglePane.bind(this);
+    this.onWrapperMount = this.onWrapperMount.bind(this);
   }
   componentDidMount() {
     document.addEventListener("click", this.handleClickOutside);
@@ -1660,13 +2362,20 @@ class PreferencesPane extends React.Component {
   }
   handleClickOutside(event) {
     
-    if (this.state.visible && !this.refs.wrapper.contains(event.target)) {
+    if (this.state.visible && !this.wrapper.contains(event.target)) {
       this.togglePane();
     }
   }
   handlePrefChange(event) {
     const target = event.target;
-    this.props.dispatch(ac.SetPref(target.name, target.checked));
+    const name = target.name,
+          checked = target.checked;
+
+    let value = checked;
+    if (name === "topSitesCount") {
+      value = checked ? TOP_SITES_SHOWMORE_LENGTH : TOP_SITES_DEFAULT_LENGTH;
+    }
+    this.props.dispatch(ac.SetPref(name, value));
   }
   handleSectionChange(event) {
     const target = event.target;
@@ -1679,6 +2388,9 @@ class PreferencesPane extends React.Component {
     const event = this.state.visible ? "CLOSE_NEWTAB_PREFS" : "OPEN_NEWTAB_PREFS";
     this.props.dispatch(ac.UserEvent({ event }));
   }
+  onWrapperMount(wrapper) {
+    this.wrapper = wrapper;
+  }
   render() {
     const props = this.props;
     const prefs = props.Prefs.values;
@@ -1686,7 +2398,7 @@ class PreferencesPane extends React.Component {
     const isVisible = this.state.visible;
     return React.createElement(
       "div",
-      { className: "prefs-pane-wrapper", ref: "wrapper" },
+      { className: "prefs-pane-wrapper", ref: this.onWrapperMount },
       React.createElement(
         "div",
         { className: "prefs-pane-button" },
@@ -1718,6 +2430,12 @@ class PreferencesPane extends React.Component {
               titleString: { id: "settings_pane_search_header" }, descString: { id: "settings_pane_search_body" } }),
             React.createElement(PreferencesInput, { className: "showTopSites", prefName: "showTopSites", value: prefs.showTopSites, onChange: this.handlePrefChange,
               titleString: { id: "settings_pane_topsites_header" }, descString: { id: "settings_pane_topsites_body" } }),
+            React.createElement(
+              "div",
+              { className: "options" },
+              React.createElement(PreferencesInput, { className: "showMoreTopSites", prefName: "topSitesCount", value: prefs.topSitesCount !== TOP_SITES_DEFAULT_LENGTH, onChange: this.handlePrefChange,
+                titleString: { id: "settings_pane_topsites_options_showmore" }, labelClassName: "icon icon-topsites" })
+            ),
             sections.filter(section => !section.shouldHidePref).map((_ref) => {
               let id = _ref.id,
                   title = _ref.title,
@@ -1767,8 +2485,8 @@ var _require2 = __webpack_require__(2);
 const injectIntl = _require2.injectIntl,
       FormattedMessage = _require2.FormattedMessage;
 
-const Card = __webpack_require__(18);
-const Topics = __webpack_require__(20);
+const Card = __webpack_require__(24);
+const Topics = __webpack_require__(26);
 
 var _require3 = __webpack_require__(1);
 
@@ -1822,7 +2540,8 @@ class Section extends React.Component {
     const maxCards = 3 * props.maxRows;
     props.dispatch(ac.ImpressionStats({
       source: props.eventSource,
-      tiles: props.rows.slice(0, maxCards).map(link => ({ id: link.guid }))
+      tiles: props.rows.slice(0, maxCards).map(link => ({ id: link.guid })),
+      incognito: props.options && props.options.personalized
     }));
   }
 
@@ -1958,7 +2677,7 @@ class Section extends React.Component {
         React.createElement(
           "div",
           { className: "empty-state" },
-          React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
+          emptyState.icon && emptyState.icon.startsWith("moz-extension://") ? React.createElement("img", { className: "empty-state-icon icon", style: { "background-image": `url('${emptyState.icon}')` } }) : React.createElement("img", { className: `empty-state-icon icon icon-${emptyState.icon}` }),
           React.createElement(
             "p",
             { className: "empty-state-message" },
@@ -1990,7 +2709,7 @@ module.exports = connect(state => ({ Sections: state.Sections }))(Sections);
 module.exports._unconnected = Sections;
 module.exports.SectionIntl = SectionIntl;
 module.exports._unconnectedSection = Section;
-}.call(exports, __webpack_require__(6)))
+}.call(exports, __webpack_require__(9)))
 
  }),
 
@@ -2000,13 +2719,13 @@ module.exports._unconnectedSection = Section;
 
 
 const React = __webpack_require__(0);
-const LinkMenu = __webpack_require__(4);
+const LinkMenu = __webpack_require__(8);
 
 var _require = __webpack_require__(2);
 
 const FormattedMessage = _require.FormattedMessage;
 
-const cardContextTypes = __webpack_require__(19);
+const cardContextTypes = __webpack_require__(25);
 
 var _require2 = __webpack_require__(1);
 
@@ -2141,7 +2860,7 @@ class Card extends React.Component {
         index: index,
         source: eventSource,
         onUpdate: this.onMenuUpdate,
-        options: link.context_menu_options || contextMenuOptions,
+        options: link.contextMenuOptions || contextMenuOptions,
         site: link,
         visible: isContextMenuOpen })
     );
@@ -2229,8 +2948,7 @@ class Topics extends React.Component {
       React.createElement(
         "a",
         { className: "topic-read-more", href: read_more_endpoint },
-        React.createElement(FormattedMessage, { id: "pocket_read_even_more" }),
-        React.createElement("span", { className: "topic-read-more-logo" })
+        React.createElement(FormattedMessage, { id: "pocket_read_even_more" })
       )
     );
   }
@@ -2249,7 +2967,7 @@ module.exports.Topic = Topic;
 
 
 
-var _require = __webpack_require__(22);
+var _require = __webpack_require__(28);
 
 const createStore = _require.createStore,
       combineReducers = _require.combineReducers,
@@ -2338,327 +3056,11 @@ module.exports = Redux;
 "use strict";
 
 
-
-
-
 var _require = __webpack_require__(1);
 
 const at = _require.actionTypes;
 
-
-const TOP_SITES_SHOWMORE_LENGTH = 12;
-
-const INITIAL_STATE = {
-  App: {
-    
-    initialized: false,
-    
-    locale: "",
-    
-    strings: null,
-    
-    version: null
-  },
-  Snippets: { initialized: false },
-  TopSites: {
-    
-    initialized: false,
-    
-    rows: []
-  },
-  Prefs: {
-    initialized: false,
-    values: {}
-  },
-  Dialog: {
-    visible: false,
-    data: {}
-  },
-  Sections: []
-};
-
-function App() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.App;
-  let action = arguments[1];
-
-  switch (action.type) {
-    case at.INIT:
-      return Object.assign({}, prevState, action.data || {}, { initialized: true });
-    case at.LOCALE_UPDATED:
-      {
-        if (!action.data) {
-          return prevState;
-        }
-        var _action$data = action.data;
-        let locale = _action$data.locale,
-            strings = _action$data.strings;
-
-        return Object.assign({}, prevState, {
-          locale,
-          strings
-        });
-      }
-    default:
-      return prevState;
-  }
-}
-
-
-
-
-
-
-
-
-function insertPinned(links, pinned) {
-  
-  const pinnedUrls = pinned.map(link => link && link.url);
-  let newLinks = links.filter(link => link ? !pinnedUrls.includes(link.url) : false);
-  newLinks = newLinks.map(link => {
-    if (link && link.isPinned) {
-      delete link.isPinned;
-      delete link.pinIndex;
-    }
-    return link;
-  });
-
-  
-  pinned.forEach((val, index) => {
-    if (!val) {
-      return;
-    }
-    let link = Object.assign({}, val, { isPinned: true, pinIndex: index });
-    if (index > newLinks.length) {
-      newLinks[index] = link;
-    } else {
-      newLinks.splice(index, 0, link);
-    }
-  });
-
-  return newLinks;
-}
-
-function TopSites() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.TopSites;
-  let action = arguments[1];
-
-  let hasMatch;
-  let newRows;
-  let pinned;
-  switch (action.type) {
-    case at.TOP_SITES_UPDATED:
-      if (!action.data) {
-        return prevState;
-      }
-      return Object.assign({}, prevState, { initialized: true, rows: action.data });
-    case at.SCREENSHOT_UPDATED:
-      newRows = prevState.rows.map(row => {
-        if (row && row.url === action.data.url) {
-          hasMatch = true;
-          return Object.assign({}, row, { screenshot: action.data.screenshot });
-        }
-        return row;
-      });
-      return hasMatch ? Object.assign({}, prevState, { rows: newRows }) : prevState;
-    case at.PLACES_BOOKMARK_ADDED:
-      if (!action.data) {
-        return prevState;
-      }
-      newRows = prevState.rows.map(site => {
-        if (site && site.url === action.data.url) {
-          var _action$data2 = action.data;
-          const bookmarkGuid = _action$data2.bookmarkGuid,
-                bookmarkTitle = _action$data2.bookmarkTitle,
-                lastModified = _action$data2.lastModified;
-
-          return Object.assign({}, site, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
-        }
-        return site;
-      });
-      return Object.assign({}, prevState, { rows: newRows });
-    case at.PLACES_BOOKMARK_REMOVED:
-      if (!action.data) {
-        return prevState;
-      }
-      newRows = prevState.rows.map(site => {
-        if (site && site.url === action.data.url) {
-          const newSite = Object.assign({}, site);
-          delete newSite.bookmarkGuid;
-          delete newSite.bookmarkTitle;
-          delete newSite.bookmarkDateCreated;
-          return newSite;
-        }
-        return site;
-      });
-      return Object.assign({}, prevState, { rows: newRows });
-    case at.PLACES_LINK_DELETED:
-    case at.PLACES_LINK_BLOCKED:
-      newRows = prevState.rows.filter(val => val && val.url !== action.data.url);
-      return Object.assign({}, prevState, { rows: newRows });
-    case at.PINNED_SITES_UPDATED:
-      pinned = action.data;
-      newRows = insertPinned(prevState.rows, pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
-      return Object.assign({}, prevState, { rows: newRows });
-    default:
-      return prevState;
-  }
-}
-
-function Dialog() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Dialog;
-  let action = arguments[1];
-
-  switch (action.type) {
-    case at.DIALOG_OPEN:
-      return Object.assign({}, prevState, { visible: true, data: action.data });
-    case at.DIALOG_CANCEL:
-      return Object.assign({}, prevState, { visible: false });
-    case at.DELETE_HISTORY_URL:
-      return Object.assign({}, INITIAL_STATE.Dialog);
-    default:
-      return prevState;
-  }
-}
-
-function Prefs() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Prefs;
-  let action = arguments[1];
-
-  let newValues;
-  switch (action.type) {
-    case at.PREFS_INITIAL_VALUES:
-      return Object.assign({}, prevState, { initialized: true, values: action.data });
-    case at.PREF_CHANGED:
-      newValues = Object.assign({}, prevState.values);
-      newValues[action.data.name] = action.data.value;
-      return Object.assign({}, prevState, { values: newValues });
-    default:
-      return prevState;
-  }
-}
-
-function Sections() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Sections;
-  let action = arguments[1];
-
-  let hasMatch;
-  let newState;
-  switch (action.type) {
-    case at.SECTION_DEREGISTER:
-      return prevState.filter(section => section.id !== action.data);
-    case at.SECTION_REGISTER:
-      
-      newState = prevState.map(section => {
-        if (section && section.id === action.data.id) {
-          hasMatch = true;
-          return Object.assign({}, section, action.data);
-        }
-        return section;
-      });
-
-      
-      
-      
-      
-      if (!hasMatch) {
-        const initialized = action.data.rows && action.data.rows.length > 0;
-        let order;
-        let index;
-        if (prevState.length > 0) {
-          order = action.data.order || prevState[0].order - 1;
-          index = newState.findIndex(section => section.order >= order);
-        } else {
-          order = action.data.order || 1;
-          index = 0;
-        }
-        const section = Object.assign({ title: "", initialized, rows: [], order, enabled: false }, action.data);
-        newState.splice(index, 0, section);
-      }
-      return newState;
-    case at.SECTION_UPDATE:
-      return prevState.map(section => {
-        if (section && section.id === action.data.id) {
-          return Object.assign({}, section, action.data);
-        }
-        return section;
-      });
-    case at.PLACES_BOOKMARK_ADDED:
-      if (!action.data) {
-        return prevState;
-      }
-      return prevState.map(section => Object.assign({}, section, {
-        rows: section.rows.map(item => {
-          
-          if (item.url === action.data.url) {
-            var _action$data3 = action.data;
-            const bookmarkGuid = _action$data3.bookmarkGuid,
-                  bookmarkTitle = _action$data3.bookmarkTitle,
-                  lastModified = _action$data3.lastModified;
-
-            Object.assign(item, { bookmarkGuid, bookmarkTitle, bookmarkDateCreated: lastModified });
-          }
-          return item;
-        })
-      }));
-    case at.PLACES_BOOKMARK_REMOVED:
-      if (!action.data) {
-        return prevState;
-      }
-      return prevState.map(section => Object.assign({}, section, {
-        rows: section.rows.map(item => {
-          
-          if (item.url === action.data.url) {
-            const newSite = Object.assign({}, item);
-            delete newSite.bookmarkGuid;
-            delete newSite.bookmarkTitle;
-            delete newSite.bookmarkDateCreated;
-            return newSite;
-          }
-          return item;
-        })
-      }));
-    case at.PLACES_LINK_DELETED:
-    case at.PLACES_LINK_BLOCKED:
-      return prevState.map(section => Object.assign({}, section, { rows: section.rows.filter(site => site.url !== action.data.url) }));
-    default:
-      return prevState;
-  }
-}
-
-function Snippets() {
-  let prevState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : INITIAL_STATE.Snippets;
-  let action = arguments[1];
-
-  switch (action.type) {
-    case at.SNIPPETS_DATA:
-      return Object.assign({}, prevState, { initialized: true }, action.data);
-    case at.SNIPPETS_RESET:
-      return INITIAL_STATE.Snippets;
-    default:
-      return prevState;
-  }
-}
-
-var reducers = { TopSites, App, Snippets, Prefs, Dialog, Sections };
-module.exports = {
-  reducers,
-  INITIAL_STATE,
-  insertPinned,
-  TOP_SITES_SHOWMORE_LENGTH
-};
-
- }),
-
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _require = __webpack_require__(1);
-
-const at = _require.actionTypes;
-
-var _require2 = __webpack_require__(5);
+var _require2 = __webpack_require__(6);
 
 const perfSvc = _require2.perfService;
 
@@ -2739,6 +3141,12 @@ const DATABASE_VERSION = 1;
 const SNIPPETS_OBJECTSTORE_NAME = "snippets";
 const SNIPPETS_UPDATE_INTERVAL_MS = 14400000; 
 
+var _require = __webpack_require__(1);
+
+const at = _require.actionTypes,
+      ac = _require.actionCreators;
+
+
 
 
 
@@ -2748,9 +3156,10 @@ const SNIPPETS_UPDATE_INTERVAL_MS = 14400000;
 
 
 class SnippetsMap extends Map {
-  constructor() {
-    super(...arguments);
+  constructor(dispatch) {
+    super();
     this._db = null;
+    this._dispatch = dispatch;
   }
 
   set(key, value) {
@@ -2788,6 +3197,10 @@ class SnippetsMap extends Map {
       blockList.push(id);
     }
     await this.set("blockList", blockList);
+  }
+
+  showFirefoxAccounts() {
+    this._dispatch(ac.SendToMain({ type: at.SHOW_FIREFOX_ACCOUNTS }));
   }
 
   
@@ -2898,10 +3311,10 @@ class SnippetsMap extends Map {
 
 
 class SnippetsProvider {
-  constructor() {
+  constructor(dispatch) {
     
     
-    global.gSnippetsMap = new SnippetsMap();
+    global.gSnippetsMap = new SnippetsMap(dispatch);
   }
 
   get snippetsMap() {
@@ -3019,7 +3432,7 @@ class SnippetsProvider {
 
 
 function addSnippetsSubscriber(store) {
-  const snippets = new SnippetsProvider();
+  const snippets = new SnippetsProvider(store.dispatch);
   const unsubscribe = store.subscribe(() => {
     const state = store.getState();
     if (state.Snippets.initialized) {
@@ -3039,7 +3452,7 @@ module.exports = {
   SnippetsProvider,
   SNIPPETS_UPDATE_INTERVAL_MS
 };
-}.call(exports, __webpack_require__(6)))
+}.call(exports, __webpack_require__(9)))
 
  })
  ]);

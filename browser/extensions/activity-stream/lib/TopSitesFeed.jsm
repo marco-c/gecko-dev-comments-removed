@@ -121,23 +121,46 @@ this.TopSitesFeed = class TopSitesFeed {
     
     const links = this.store.getState().TopSites.rows;
     const pinned = NewTabUtils.pinnedLinks.links;
-    return pinned.map(pinnedLink => (pinnedLink ? Object.assign(links.find(link => link && link.url === pinnedLink.url) || {}, pinnedLink) : pinnedLink));
+    return pinned.map(pinnedLink => {
+      if (pinnedLink) {
+        const hostname = shortURL(pinnedLink);
+        return Object.assign(links.find(link => link && link.url === pinnedLink.url) || {hostname}, pinnedLink);
+      }
+      return pinnedLink;
+    });
+  }
+  _broadcastPinnedSitesUpdated() {
+    this.store.dispatch(ac.BroadcastToContent({
+      type: at.PINNED_SITES_UPDATED,
+      data: this._getPinnedWithData()
+    }));
   }
   pin(action) {
     const {site, index} = action.data;
     NewTabUtils.pinnedLinks.pin(site, index);
-    this.store.dispatch(ac.BroadcastToContent({
-      type: at.PINNED_SITES_UPDATED,
-      data: this._getPinnedWithData()
-    }));
+    this._broadcastPinnedSitesUpdated();
   }
   unpin(action) {
     const {site} = action.data;
     NewTabUtils.pinnedLinks.unpin(site);
-    this.store.dispatch(ac.BroadcastToContent({
-      type: at.PINNED_SITES_UPDATED,
-      data: this._getPinnedWithData()
-    }));
+    this._broadcastPinnedSitesUpdated();
+  }
+  _insertPin(site, index) {
+    
+    
+    
+    let pinned = NewTabUtils.pinnedLinks.links;
+    if (pinned.length > index && pinned[index]) {
+      this._insertPin(pinned[index], index + 1);
+    }
+    NewTabUtils.pinnedLinks.pin(site, index);
+  }
+  add(action) {
+    
+    
+    this._insertPin(action.data.site, 0);
+
+    this._broadcastPinnedSitesUpdated();
   }
   async onAction(action) {
     switch (action.type) {
@@ -154,10 +177,9 @@ this.TopSitesFeed = class TopSitesFeed {
           this.refresh(action.meta.fromTarget);
         }
         break;
-      case at.PLACES_HISTORY_CLEARED:
-        this.refresh();
-        break;
-      case at.BLOCK_URL: 
+      case at.PLACES_HISTORY_CLEARED: 
+      case at.PLACES_LINK_DELETED:
+      case at.PLACES_LINK_BLOCKED:
         this.refresh();
         break;
       case at.PREF_CHANGED:
@@ -173,6 +195,9 @@ this.TopSitesFeed = class TopSitesFeed {
         break;
       case at.TOP_SITES_UNPIN:
         this.unpin(action);
+        break;
+      case at.TOP_SITES_ADD:
+        this.add(action);
         break;
     }
   }

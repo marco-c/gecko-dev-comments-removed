@@ -1,5 +1,6 @@
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "IDNService", "@mozilla.org/network/idn-service;1", "nsIIDNService");
 
@@ -24,6 +25,20 @@ function handleIDNHost(hostname) {
 
 
 
+function getETLD(url) {
+  try {
+    return Services.eTLD.getPublicSuffix(Services.io.newURI(url));
+  } catch (err) {
+    return "";
+  }
+}
+
+this.getETLD = getETLD;
+
+  
+
+
+
 
 
 
@@ -39,15 +54,14 @@ this.shortURL = function shortURL(link) {
   if (!link.url && !link.hostname) {
     return "";
   }
-  const {eTLD} = link;
-  const asciiHost = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
-  const hostname = handleIDNHost(asciiHost);
+  const eTLD = link.eTLD || getETLD(link.url);
+  const hostname = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
 
   
-  const eTLDLength = (eTLD || "").length || (hostname.match(/\.com$/) && 3);
+  const eTLDLength = (eTLD || "").length;
   const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
   
-  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title || link.url;
+  return handleIDNHost(hostname.slice(0, eTLDExtra).toLowerCase() || hostname) || link.title || link.url;
 };
 
-this.EXPORTED_SYMBOLS = ["shortURL"];
+this.EXPORTED_SYMBOLS = ["shortURL", "getETLD"];
