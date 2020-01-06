@@ -683,13 +683,6 @@ public:
 
   static already_AddRefed<nsIURI>
   GetBaseURLForLocalRef(nsIContent* aContent, nsIURI* aDocURI);
-
-  
-
-
-
-  static bool
-  HasUserSpaceOnUseUnitsMaskOrClipPath(nsIFrame* aFrame);
 };
 
 #endif 

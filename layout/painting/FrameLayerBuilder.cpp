@@ -1632,30 +1632,9 @@ struct CSSMaskLayerUserData : public LayerUserData
   }
 
   bool
-  IsEqual(const CSSMaskLayerUserData& aOther, nsIFrame* aMaskedFrame) const
+  operator==(const CSSMaskLayerUserData& aOther) const
   {
-    
-    
-    
-    
-    
-    if (mMaskBounds.Size() != aOther.mMaskBounds.Size()) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mMaskBounds.TopLeft() != aOther.mMaskBounds.TopLeft() &&
-        nsSVGEffects::HasUserSpaceOnUseUnitsMaskOrClipPath(aMaskedFrame)) {
+    if (!mMaskBounds.IsEqualInterior(aOther.mMaskBounds)) {
       return false;
     }
 
@@ -3905,8 +3884,7 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
 
   CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect);
   nsRect dirtyRect;
-  if (!aMaskItem->IsInvalid(dirtyRect) &&
-      oldUserData->IsEqual(newUserData, aMaskItem->Frame())) {
+  if (!aMaskItem->IsInvalid(dirtyRect) && *oldUserData == newUserData) {
     aLayer->SetMaskLayer(maskLayer);
     return;
   }
