@@ -11,6 +11,7 @@
 #include "AudioMixer.h"
 #include "GraphDriver.h"
 #include "Latency.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Services.h"
 #include "mozilla/TimeStamp.h"
@@ -733,7 +734,7 @@ public:
 
 
 
-  GraphTime mEndTime;
+  Atomic<GraphTime> mEndTime;
 
   
 
@@ -770,7 +771,7 @@ public:
 
 
 
-  bool mDetectedNotRunning;
+  Atomic<bool> mDetectedNotRunning;
   
 
 
