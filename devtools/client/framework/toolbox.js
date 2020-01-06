@@ -501,7 +501,10 @@ Toolbox.prototype = {
 
       
       
-      this.component.setCanRender();
+      
+      buttonsPromise.then(() => {
+        this.component.setCanRender();
+      });
 
       yield this.selectTool(this._defaultToolId);
 
