@@ -1428,6 +1428,12 @@ CompositorBridgeParent::InitializeAdvancedLayers(const nsTArray<LayersBackend>& 
     return false;
   }
 
+  
+  
+  if (!aBackendHints.Contains(LayersBackend::LAYERS_D3D11)) {
+    return false;
+  }
+
   RefPtr<LayerManagerMLGPU> manager = new LayerManagerMLGPU(mWidget);
   if (!manager->Initialize()) {
     return false;
