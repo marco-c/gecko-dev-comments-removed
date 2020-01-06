@@ -1,0 +1,20 @@
+
+
+
+
+
+package org.mozilla.gecko;
+
+import android.view.HapticFeedbackConstants;
+
+
+
+
+public interface HapticFeedbackDelegate {
+    
+
+
+
+
+    void performHapticFeedback(int effect);
+}
