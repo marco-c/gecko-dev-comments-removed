@@ -59,6 +59,16 @@ GetRealmForCompartment(JSCompartment* compartment) {
     return reinterpret_cast<Realm*>(compartment);
 }
 
+
+
+
+extern JS_PUBLIC_API(void*)
+GetRealmPrivate(Realm* realm);
+
+
+extern JS_PUBLIC_API(void)
+SetRealmPrivate(Realm* realm, void* data);
+
 extern JS_PUBLIC_API(JSObject*)
 GetRealmObjectPrototype(JSContext* cx);
 
