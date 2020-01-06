@@ -1308,10 +1308,10 @@ CompositorBridgeParent::RecvGetFrameUniformity(FrameUniformityData* aOutData)
 }
 
 void
-CompositorBridgeParent::FlushApzRepaints(const LayerTransactionParent* aLayerTree)
+CompositorBridgeParent::FlushApzRepaints(const uint64_t& aLayersId)
 {
   MOZ_ASSERT(mApzcTreeManager);
-  uint64_t layersId = aLayerTree->GetId();
+  uint64_t layersId = aLayersId;
   if (layersId == 0) {
     
     
