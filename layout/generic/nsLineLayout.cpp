@@ -81,9 +81,9 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
   MOZ_ASSERT(aOuterReflowInput, "aOuterReflowInput must not be null");
   NS_ASSERTION(aFloatManager || aOuterReflowInput->mFrame->IsLetterFrame(),
                "float manager should be present");
-  MOZ_ASSERT(aOuterReflowInput->mFrame->IsRubyTextContainerFrame() ||
-             !mBaseLineLayout,
-             "Only ruby text container frames may have "
+  MOZ_ASSERT((!!mBaseLineLayout) ==
+              aOuterReflowInput->mFrame->IsRubyTextContainerFrame(),
+             "Only ruby text container frames have "
              "a different base line layout");
   MOZ_COUNT_CTOR(nsLineLayout);
 
@@ -1214,6 +1214,10 @@ nsLineLayout::SyncAnnotationBounds(PerFrameData* aRubyFrame)
   for (PerFrameData* pfd = span->mFirstFrame; pfd; pfd = pfd->mNext) {
     for (PerFrameData* rtc = pfd->mNextAnnotation;
          rtc; rtc = rtc->mNextAnnotation) {
+      if (lineWM.IsOrthogonalTo(rtc->mFrame->GetWritingMode())) {
+        
+        continue;
+      }
       
       
       
@@ -3017,6 +3021,10 @@ nsLineLayout::ExpandRubyBoxWithAnnotations(PerFrameData* aFrame,
   bool isLevelContainer = aFrame->mFrame->IsRubyBaseContainerFrame();
   for (PerFrameData* annotation = aFrame->mNextAnnotation;
        annotation; annotation = annotation->mNextAnnotation) {
+    if (lineWM.IsOrthogonalTo(annotation->mFrame->GetWritingMode())) {
+      
+      continue;
+    }
     if (isLevelContainer) {
       nsIFrame* rtcFrame = annotation->mFrame;
       MOZ_ASSERT(rtcFrame->IsRubyTextContainerFrame());
