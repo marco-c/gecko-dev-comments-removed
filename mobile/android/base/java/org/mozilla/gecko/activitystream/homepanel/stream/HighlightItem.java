@@ -81,6 +81,7 @@ public class HighlightItem extends StreamItem {
                         extras,
                         ActivityStreamContextMenu.MenuMode.HIGHLIGHT,
                         highlight,
+                         true, 
                         onUrlOpenListener, onUrlOpenInBackgroundListener,
                         pageIconLayout.getWidth(), pageIconLayout.getHeight());
 
