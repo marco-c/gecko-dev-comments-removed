@@ -3773,7 +3773,11 @@ public:
 
   NS_IMETHOD Observe(nsISupports*, const char* aTopic, const char16_t*) override
   {
-    MOZ_DIAGNOSTIC_ASSERT(mPhase == Phase::Subscribed);
+    if (mPhase != Phase::Subscribed) {
+      
+      
+      return NS_OK;
+    }
     MOZ_DIAGNOSTIC_ASSERT(mWeak);
     if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
       mWeak->NotifyShutdownEvent();
