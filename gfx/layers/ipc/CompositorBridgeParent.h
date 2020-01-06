@@ -598,7 +598,6 @@ protected:
 
   RefPtr<APZCTreeManager> mApzcTreeManager;
 
-  RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   RefPtr<CompositorVsyncScheduler> mCompositorScheduler;
   
   
