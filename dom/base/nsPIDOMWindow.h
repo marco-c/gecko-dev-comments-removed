@@ -658,6 +658,8 @@ protected:
   
   uint32_t               mMutationBits;
 
+  uint32_t               mActivePeerConnections;
+
   bool                   mIsDocumentLoaded;
   bool                   mIsHandlingResizeEvent;
   bool                   mIsInnerWindow;
@@ -887,6 +889,21 @@ public:
   
   
   void SyncStateFromParentWindow();
+
+  
+
+
+  void AddPeerConnection();
+
+  
+
+
+  void RemovePeerConnection();
+
+  
+
+
+  bool HasActivePeerConnections();
 
   bool IsPlayingAudio();
 

@@ -790,6 +790,9 @@ private:
   bool mPrivateWindow;
 
   
+  bool mActiveOnWindow;
+
+  
   uint16_t mMaxReceiving[SdpMediaSection::kMediaTypes];
   uint16_t mMaxSending[SdpMediaSection::kMediaTypes];
 

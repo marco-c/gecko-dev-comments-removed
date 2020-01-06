@@ -2,6 +2,7 @@
 
 
 
+
 #include <cstdlib>
 #include <cerrno>
 #include <deque>
@@ -315,6 +316,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
   , mTrickle(true) 
   , mNegotiationNeeded(false)
   , mPrivateWindow(false)
+  , mActiveOnWindow(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   auto log = RLogConnector::CreateInstance();
@@ -324,6 +326,8 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mPrivateWindow = true;
       log->EnterPrivateMode();
     }
+    mWindow->AddPeerConnection();
+    mActiveOnWindow = true;
   }
   CSFLogInfo(logTag, "%s: PeerConnectionImpl constructor for %s",
              __FUNCTION__, mHandle.c_str());
@@ -348,6 +352,14 @@ PeerConnectionImpl::~PeerConnectionImpl()
   }
   
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
+  if (mWindow && mActiveOnWindow) {
+    mWindow->RemovePeerConnection();
+    
+    
+    
+    mActiveOnWindow = false;
+  }
+
   if (mPrivateWindow) {
     auto * log = RLogConnector::GetInstance();
     if (log) {
@@ -3143,6 +3155,11 @@ PeerConnectionImpl::SetSignalingState_m(PCImplSignalingState aSignalingState,
 
   if (mSignalingState == PCImplSignalingState::SignalingClosed) {
     CloseInt();
+    
+    if (mWindow && mActiveOnWindow) {
+      mWindow->RemovePeerConnection();
+      mActiveOnWindow = false;
+    }
   }
 
   RefPtr<PeerConnectionObserver> pco = do_QueryObjectReferent(mPCObserver);
@@ -3393,6 +3410,12 @@ void PeerConnectionImpl::IceConnectionStateChange(
     if (mMedia->IsIceRestarting()) {
       FinalizeIceRestart();
     }
+  }
+
+  
+  if (mWindow && mActiveOnWindow && mIceConnectionState == PCImplIceConnectionState::Closed) {
+    mWindow->RemovePeerConnection();
+    mActiveOnWindow = false;
   }
 
   

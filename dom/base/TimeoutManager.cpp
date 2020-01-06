@@ -20,10 +20,6 @@
 #include "mozilla/net/WebSocketEventService.h"
 #include "mozilla/MediaManager.h"
 
-#ifdef MOZ_WEBRTC
-#include "IPeerConnection.h"
-#endif 
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -1243,26 +1239,12 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
     return false;
   }
 
-  bool active = false;
-#if 0
   
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<IPeerConnectionManager> pcManager =
-    do_GetService(IPEERCONNECTION_MANAGER_CONTRACTID);
-
-  if (pcManager && NS_SUCCEEDED(pcManager->HasActivePeerConnection(
-                     mWindow.WindowID(), &active)) &&
-      active) {
+  if (mWindow.AsInner()->HasActivePeerConnections()) {
     return false;
   }
-#endif 
 
+  bool active;
   
   RefPtr<WebSocketEventService> eventService = WebSocketEventService::Get();
   if (eventService &&
