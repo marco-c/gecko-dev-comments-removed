@@ -2125,7 +2125,7 @@ this.PlacesPanelview = class extends PlacesViewBase {
     switch (event.type) {
       case "click":
         
-        if (event.button >= 2) {
+        if (event.button != 1) {
           break;
         }
       case "command":
@@ -2154,8 +2154,22 @@ this.PlacesPanelview = class extends PlacesViewBase {
     if (!button._placesNode)
       return;
 
+    let modifKey = AppConstants.platform === "macosx" ? event.metaKey
+                                                      : event.ctrlKey;
+    if (!PlacesUIUtils.openInTabClosesMenu && modifKey) {
+      
+      if (button.parentNode.id == "panelMenu_bookmarksMenu") {
+        button.setAttribute("closemenu", "none");
+      }
+    } else {
+      button.removeAttribute("closemenu");
+    }
     PlacesUIUtils.openNodeWithEvent(button._placesNode, event);
-    this.panelMultiView.closest("panel").hidePopup();
+    
+    if (button.parentNode.id != "panelMenu_bookmarksMenu" ||
+        (event.type == "click" && event.button == 1 && PlacesUIUtils.openInTabClosesMenu)) {
+      this.panelMultiView.closest("panel").hidePopup();
+    }
   }
 
   _onDragEnd() {
