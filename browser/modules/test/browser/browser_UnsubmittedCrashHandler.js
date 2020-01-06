@@ -173,6 +173,11 @@ let gNotificationBox;
 
 add_task(async function setup() {
   
+  await SpecialPowers.pushPrefEnv({
+    "set": [["toolkit.cosmeticAnimations.enabled", true]]
+  });
+
+  
   
   
   
