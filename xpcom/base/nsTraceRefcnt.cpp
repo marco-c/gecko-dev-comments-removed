@@ -921,7 +921,6 @@ NS_LogInit()
   NS_SetMainThread();
 
   
-  StackWalkInitCriticalAddress();
   if (++gInitCount) {
     nsTraceRefcnt::SetActivityIsLegal(true);
   }

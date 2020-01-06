@@ -17,15 +17,6 @@ using namespace mozilla;
 
 
 
-struct CriticalAddress
-{
-  void* mAddr;
-  bool mInit;
-};
-static CriticalAddress gCriticalAddress;
-
-
-
 #if defined(HAVE__UNWIND_BACKTRACE) && !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
 #endif
@@ -63,127 +54,6 @@ extern MOZ_EXPORT void* __libc_stack_end;
 #include <algorithm>
 #include <unistd.h>
 #include <pthread.h>
-#endif
-
-#if MOZ_STACKWALK_SUPPORTS_MACOSX
-#include <pthread.h>
-#include <sys/errno.h>
-#ifdef MOZ_WIDGET_COCOA
-#include <CoreServices/CoreServices.h>
-#endif
-
-typedef void
-malloc_logger_t(uint32_t aType,
-                uintptr_t aArg1, uintptr_t aArg2, uintptr_t aArg3,
-                uintptr_t aResult, uint32_t aNumHotFramesToSkip);
-extern malloc_logger_t* malloc_logger;
-
-static void
-stack_callback(uint32_t aFrameNumber, void* aPc, void* aSp, void* aClosure)
-{
-  const char* name = static_cast<char*>(aClosure);
-  Dl_info info;
-
-  
-  
-  
-  
-  if (gCriticalAddress.mAddr || dladdr(aPc, &info) == 0  ||
-      !info.dli_sname || strcmp(info.dli_sname, name) != 0) {
-    return;
-  }
-  gCriticalAddress.mAddr = aPc;
-}
-
-static void
-my_malloc_logger(uint32_t aType,
-                 uintptr_t aArg1, uintptr_t aArg2, uintptr_t aArg3,
-                 uintptr_t aResult, uint32_t aNumHotFramesToSkip)
-{
-  static bool once = false;
-  if (once) {
-    return;
-  }
-  once = true;
-
-  
-  
-  const char* name = "new_sem_from_pool";
-  MozStackWalk(stack_callback,  0,  0,
-               const_cast<char*>(name));
-}
-
-
-
-
-
-
-
-
-MFBT_API void
-StackWalkInitCriticalAddress()
-{
-  if (gCriticalAddress.mInit) {
-    return;
-  }
-  gCriticalAddress.mInit = true;
-  
-  
-  
-  
-  
-
-  
-  malloc_logger_t* old_malloc_logger = malloc_logger;
-  malloc_logger = my_malloc_logger;
-
-  pthread_cond_t cond;
-  int r = pthread_cond_init(&cond, 0);
-  MOZ_ASSERT(r == 0);
-  pthread_mutex_t mutex;
-  r = pthread_mutex_init(&mutex, 0);
-  MOZ_ASSERT(r == 0);
-  r = pthread_mutex_lock(&mutex);
-  MOZ_ASSERT(r == 0);
-  struct timespec abstime = { 0, 1 };
-  r = pthread_cond_timedwait_relative_np(&cond, &mutex, &abstime);
-
-  
-  malloc_logger = old_malloc_logger;
-
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!gCriticalAddress.mAddr);
-
-  MOZ_ASSERT(r == ETIMEDOUT);
-  r = pthread_mutex_unlock(&mutex);
-  MOZ_ASSERT(r == 0);
-  r = pthread_mutex_destroy(&mutex);
-  MOZ_ASSERT(r == 0);
-  r = pthread_cond_destroy(&cond);
-  MOZ_ASSERT(r == 0);
-}
-
-static bool
-IsCriticalAddress(void* aPC)
-{
-  return gCriticalAddress.mAddr == aPC;
-}
-#else
-static bool
-IsCriticalAddress(void* aPC)
-{
-  return false;
-}
-
-
-
-MFBT_API void
-StackWalkInitCriticalAddress()
-{
-  gCriticalAddress.mInit = true;
-}
 #endif
 
 #if MOZ_STACKWALK_SUPPORTS_WINDOWS
@@ -624,7 +494,6 @@ MozStackWalkThread(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
                    uint32_t aMaxFrames, void* aClosure,
                    HANDLE aThread, CONTEXT* aContext)
 {
-  StackWalkInitCriticalAddress();
   static HANDLE myProcess = nullptr;
   HANDLE myThread;
   DWORD walkerReturn;
@@ -997,8 +866,6 @@ MFBT_API void
 MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
              uint32_t aMaxFrames, void* aClosure)
 {
-  StackWalkInitCriticalAddress();
-
   
   void** bp = (void**)__builtin_frame_address(0);
 
@@ -1059,12 +926,6 @@ unwind_callback(struct _Unwind_Context* context, void* closure)
   unwind_info* info = static_cast<unwind_info*>(closure);
   void* pc = reinterpret_cast<void*>(_Unwind_GetIP(context));
   
-  if (IsCriticalAddress(pc)) {
-    
-    
-    
-    return _URC_FOREIGN_EXCEPTION_CAUGHT;
-  }
   if (--info->skip < 0) {
     info->numFrames++;
     (*info->callback)(info->numFrames, pc, nullptr, info->closure);
@@ -1080,7 +941,6 @@ MFBT_API void
 MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
              uint32_t aMaxFrames, void* aClosure)
 {
-  StackWalkInitCriticalAddress();
   unwind_info info;
   info.callback = aCallback;
   info.skip = aSkipFrames + 1;
@@ -1193,9 +1053,6 @@ FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
     void* pc = *(aBp + 1);
     aBp += 2;
 #endif
-    if (IsCriticalAddress(pc)) {
-      return;
-    }
     if (--skip < 0) {
       
       

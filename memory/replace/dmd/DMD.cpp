@@ -1561,14 +1561,6 @@ Options::ModeString() const
 
 
 
-#ifdef XP_MACOSX
-static void
-NopStackWalkCallback(uint32_t aFrameNumber, void* aPc, void* aSp,
-                     void* aClosure)
-{
-}
-#endif
-
 static void
 prefork()
 {
@@ -1616,17 +1608,6 @@ Init(const malloc_table_t* aMallocTable)
 
   
   gOptions = InfallibleAllocPolicy::new_<Options>(e);
-
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  
-  (void)MozStackWalk(NopStackWalkCallback,  0,
-                      1, nullptr);
-#endif
 
   gStateLock = InfallibleAllocPolicy::new_<Mutex>();
 

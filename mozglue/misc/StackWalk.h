@@ -174,11 +174,4 @@ FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
 
 } 
 
-
-
-
-
-MFBT_API void
-StackWalkInitCriticalAddress(void);
-
 #endif
