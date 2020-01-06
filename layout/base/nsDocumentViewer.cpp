@@ -714,15 +714,6 @@ nsDocumentViewer::Init(nsIWidget* aParentWidget,
 nsresult
 nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
 {
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
-             "InitPresentationStuff must only be called when scripts are "
-             "blocked");
-
   if (GetIsPrintPreview())
     return NS_OK;
 
@@ -1782,10 +1773,6 @@ nsDocumentViewer::Destroy()
 
   
 
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-
   if (mPresShell) {
     DestroyPresShell();
   }
@@ -1952,10 +1939,6 @@ nsDocumentViewer::SetDocumentInternal(nsIDocument* aDocument,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
 
   if (mPresShell) {
     DestroyPresShell();
@@ -2162,17 +2145,7 @@ nsDocumentViewer::Show(void)
     }
   }
 
-  
-  
-  
-  nsCOMPtr<nsIDocument> document = mDocument;
-
   if (mDocument && !mPresShell) {
-    
-    
-    
-    nsAutoScriptBlocker scriptBlocker;
-
     NS_ASSERTION(!mWindow, "Window already created but no presshell?");
 
     nsCOMPtr<nsIBaseWindow> base_win(mContainer);
@@ -2235,8 +2208,8 @@ nsDocumentViewer::Show(void)
   
   
   RefPtr<nsDocumentShownDispatcher> event =
-    new nsDocumentShownDispatcher(document);
-  document->Dispatch("nsDocumentShownDispatcher",
+    new nsDocumentShownDispatcher(mDocument);
+  mDocument->Dispatch("nsDocumentShownDispatcher",
                       TaskCategory::Other,
                       event.forget());
 
@@ -2280,23 +2253,24 @@ nsDocumentViewer::Hide(void)
     mPresShell->CaptureHistoryState(getter_AddRefs(layoutState));
   }
 
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
+    DestroyPresShell();
 
-  DestroyPresShell();
+    DestroyPresContext();
 
-  DestroyPresContext();
+    mViewManager   = nullptr;
+    mWindow        = nullptr;
+    mDeviceContext = nullptr;
+    mParentWidget  = nullptr;
 
-  mViewManager   = nullptr;
-  mWindow        = nullptr;
-  mDeviceContext = nullptr;
-  mParentWidget  = nullptr;
+    nsCOMPtr<nsIBaseWindow> base_win(mContainer);
 
-  nsCOMPtr<nsIBaseWindow> base_win(mContainer);
-
-  if (base_win && !mAttachedToParent) {
-    base_win->SetParentWidget(nullptr);
+    if (base_win && !mAttachedToParent) {
+      base_win->SetParentWidget(nullptr);
+    }
   }
 
   return NS_OK;
@@ -4536,10 +4510,6 @@ nsDocumentViewer::SetIsPrintPreview(bool aIsPrintPreview)
     mAutoBeforeAndAfterPrint = nullptr;
   }
 #endif
-
-  
-  nsAutoScriptBlocker scriptBlocker;
-
   if (!aIsPrintPreview) {
     if (mPresShell) {
       DestroyPresShell();
@@ -4676,11 +4646,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode, nsIPrintSettings* aP
   
   mIsPageMode = aPageMode;
 
-  
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-
   if (mPresShell) {
     DestroyPresShell();
   }
@@ -4741,13 +4706,6 @@ nsDocumentViewer::SetIsHidden(bool aHidden)
 void
 nsDocumentViewer::DestroyPresShell()
 {
-  
-  
-  
-  
-  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
-             "DestroyPresShell must only be called when scripts are blocked");
-
   nsIFrame* vmRootFrame =
     mViewManager && mViewManager->GetRootView()
       ? mViewManager->GetRootView()->GetFrame()
@@ -4762,6 +4720,7 @@ nsDocumentViewer::DestroyPresShell()
   if (selection && mSelectionListener)
     selection->RemoveSelectionListener(mSelectionListener);
 
+  nsAutoScriptBlocker scriptBlocker;
   bool hadRootFrame = !!mPresShell->GetRootFrame();
   mPresShell->Destroy();
   mPresShellDestroyed = true;
@@ -4802,10 +4761,6 @@ nsDocumentViewer::SetPrintPreviewPresentation(nsViewManager* aViewManager,
                                               nsPresContext* aPresContext,
                                               nsIPresShell* aPresShell)
 {
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-
   if (mPresShell) {
     DestroyPresShell();
   }
