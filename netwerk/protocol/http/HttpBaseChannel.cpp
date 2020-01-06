@@ -4132,6 +4132,14 @@ HttpBaseChannel::GetPerformance()
     return nullptr;
   }
 
+  
+  
+  
+  
+  if (!mLoadInfo->TriggeringPrincipal()->Equals(loadingDocument->NodePrincipal())) {
+    return nullptr;
+  }
+
   nsCOMPtr<nsPIDOMWindowInner> innerWindow = loadingDocument->GetInnerWindow();
   if (!innerWindow) {
     return nullptr;
