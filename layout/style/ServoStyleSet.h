@@ -172,13 +172,17 @@ public:
   already_AddRefed<nsStyleContext>
   ResolveTransientStyle(dom::Element* aElement,
                         nsIAtom* aPseudoTag,
-                        CSSPseudoElementType aPseudoType);
+                        CSSPseudoElementType aPseudoType,
+                        StyleRuleInclusion aRules =
+                          StyleRuleInclusion::All);
 
   
   
   already_AddRefed<ServoComputedValues>
   ResolveTransientServoStyle(dom::Element* aElement,
-                             CSSPseudoElementType aPseudoTag);
+                             CSSPseudoElementType aPseudoTag,
+                             StyleRuleInclusion aRules =
+                               StyleRuleInclusion::All);
 
   
   
@@ -491,7 +495,10 @@ private:
   void UpdateStylist();
 
   already_AddRefed<ServoComputedValues>
-    ResolveStyleLazily(dom::Element* aElement, CSSPseudoElementType aPseudoType);
+    ResolveStyleLazily(dom::Element* aElement,
+                       CSSPseudoElementType aPseudoType,
+                       StyleRuleInclusion aRules =
+                         StyleRuleInclusion::All);
 
   void RunPostTraversalTasks();
 

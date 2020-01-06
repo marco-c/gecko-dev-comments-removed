@@ -74,6 +74,15 @@ enum class TraversalRestyleBehavior {
 };
 
 
+
+
+
+enum class StyleRuleInclusion {
+  All,
+  DefaultOnly,
+};
+
+
 enum class UpdateAnimationsTasks : uint8_t {
   CSSAnimations    = 1 << 0,
   CSSTransitions   = 1 << 1,
