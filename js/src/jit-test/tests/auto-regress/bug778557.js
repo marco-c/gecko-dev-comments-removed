@@ -1,0 +1,7 @@
+
+
+
+x = Set;
+eval("function y() { return Iterator; }", this);
+x.__iterator__ = y;
+new Iterator(x)
