@@ -304,9 +304,9 @@ Sanitizer.prototype = {
 
           promises.push(new Promise(resolve => {
             let unregisterCallback = {
-              unregisterSucceeded: function () { resolve(true); },
+              unregisterSucceeded: () => { resolve(true); },
               
-              unregisterFailed: function () { resolve(true); },
+              unregisterFailed: () => { resolve(true); },
               QueryInterface: XPCOMUtils.generateQI(
                 [Ci.nsIServiceWorkerUnregisterCallback])
             };
