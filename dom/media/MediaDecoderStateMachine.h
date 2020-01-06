@@ -427,8 +427,7 @@ protected:
   void RequestAudioData();
 
   
-  void RequestVideoData(bool aSkipToNextKeyframe,
-                        const media::TimeUnit& aCurrentTime);
+  void RequestVideoData(const media::TimeUnit& aCurrentTime);
 
   void WaitForData(MediaData::Type aType);
 

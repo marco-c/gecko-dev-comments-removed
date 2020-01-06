@@ -141,12 +141,8 @@ public:
   virtual RefPtr<AudioDataPromise> RequestAudioData();
 
   
-  
-  
-  
   virtual RefPtr<VideoDataPromise>
-  RequestVideoData(bool aSkipToNextKeyframe,
-                   const media::TimeUnit& aTimeThreshold);
+  RequestVideoData(const media::TimeUnit& aTimeThreshold);
 
   
   
