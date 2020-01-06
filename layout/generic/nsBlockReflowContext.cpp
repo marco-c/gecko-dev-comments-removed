@@ -330,23 +330,20 @@ nsBlockReflowContext::ReflowBlock(const LogicalRect&  aSpace,
     mMetrics.SetOverflowAreasToDesiredBounds();
   }
 
-  if (!aFrameReflowStatus.IsInlineBreakBefore() ||
-      (mFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+  if (!aFrameReflowStatus.IsInlineBreakBefore() &&
+      aFrameReflowStatus.IsFullyComplete()) {
     
     
     
     
-    if (aFrameReflowStatus.IsFullyComplete()) {
-      nsIFrame* kidNextInFlow = mFrame->GetNextInFlow();
-      if (nullptr != kidNextInFlow) {
-        
-        
-        
-        
-        
-        nsOverflowContinuationTracker::AutoFinish fini(aState.mOverflowTracker, mFrame);
-        kidNextInFlow->GetParent()->DeleteNextInFlowChild(kidNextInFlow, true);
-      }
+    if (nsIFrame* kidNextInFlow = mFrame->GetNextInFlow()) {
+      
+      
+      
+      
+      
+      nsOverflowContinuationTracker::AutoFinish fini(aState.mOverflowTracker, mFrame);
+      kidNextInFlow->GetParent()->DeleteNextInFlowChild(kidNextInFlow, true);
     }
   }
 }
