@@ -31,7 +31,6 @@
 #include "nsLocalFile.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
-#include "nsXPIDLString.h"
 #include "prcmon.h"
 #include "xptinfo.h" 
 #include "nsThreadUtils.h"

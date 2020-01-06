@@ -97,7 +97,7 @@ using namespace mozilla::widget;
 
 
 #include "nsAppDirectoryServiceDefs.h"
-#include "nsXPIDLString.h"
+#include "nsString.h"
 #include "nsIFile.h"
 
 

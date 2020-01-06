@@ -45,6 +45,5 @@ class nsDependentCSubstring;
 class nsPromiseFlatCString;
 class nsCStringComparator;
 class nsDefaultCStringComparator;
-class nsXPIDLCString; 
 
 #endif 

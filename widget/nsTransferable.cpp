@@ -27,7 +27,6 @@
 #include "nsISupportsPrimitives.h"
 #include "nsMemory.h"
 #include "nsPrimitiveHelpers.h"
-#include "nsXPIDLString.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryService.h"
 #include "nsCRT.h"

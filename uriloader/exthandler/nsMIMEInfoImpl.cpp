@@ -5,7 +5,7 @@
 
 
 #include "nsMIMEInfoImpl.h"
-#include "nsXPIDLString.h"
+#include "nsString.h"
 #include "nsReadableUtils.h"
 #include "nsStringEnumerator.h"
 #include "nsIFile.h"
