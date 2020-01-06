@@ -110,7 +110,7 @@ Performance::CreateForMainThread(nsPIDOMWindowInner* aWindow,
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<Performance> performance =
-    new PerformanceMainThread(aWindow, aDOMTiming, aChannel);
+    PerformanceMainThread::Create(aWindow, aDOMTiming, aChannel);
   return performance.forget();
 }
 
@@ -281,11 +281,6 @@ Performance::Mark(const nsAString& aName, ErrorResult& aRv)
     return;
   }
 
-  
-  if (mUserEntries.Length() >= mResourceTimingBufferSize) {
-    return;
-  }
-
   if (IsPerformanceTimingAttribute(aName)) {
     aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
     return;
@@ -345,12 +340,6 @@ Performance::Measure(const nsAString& aName,
 {
   
   if (nsContentUtils::ShouldResistFingerprinting()) {
-    return;
-  }
-
-  
-  
-  if (mUserEntries.Length() >= mResourceTimingBufferSize) {
     return;
   }
 
@@ -580,6 +569,12 @@ Performance::IsObserverEnabled(JSContext* aCx, JSObject* aGlobal)
                             NS_LITERAL_CSTRING("dom.enable_performance_observer"));
 
   return runnable->Dispatch() && runnable->IsEnabled();
+}
+
+void
+Performance::MemoryPressure()
+{
+  mUserEntries.Clear();
 }
 
 } 
