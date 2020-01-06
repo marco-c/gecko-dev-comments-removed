@@ -672,16 +672,6 @@ struct JSContext : public JS::RootingContext,
     void resetJitStackLimit();
 
   public:
-    
-
-
-
-
-
-
-
-    JSVersion findVersion();
-
     JS::ContextOptions& options() {
         return options_.ref();
     }
