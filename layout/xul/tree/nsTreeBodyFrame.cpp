@@ -4475,16 +4475,9 @@ nsTreeBodyFrame::ThumbMoved(nsScrollbarFrame* aScrollbar,
 nsStyleContext*
 nsTreeBodyFrame::GetPseudoStyleContext(nsICSSAnonBoxPseudo* aPseudoElement)
 {
-  return mStyleCache.GetStyleContext(this, PresContext(), mContent,
+  return mStyleCache.GetStyleContext(PresContext(), mContent,
                                      mStyleContext, aPseudoElement,
                                      mScratchArray);
-}
-
-
-bool
-nsTreeBodyFrame::PseudoMatches(nsCSSSelector* aSelector)
-{
-  return true;
 }
 
 nsIContent*
