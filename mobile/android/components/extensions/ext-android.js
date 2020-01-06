@@ -6,7 +6,7 @@ XPCOMUtils.defineLazyModuleGetter(global, "EventEmitter",
 
 
 const getSender = (extension, target, sender) => {
-  let tabId;
+  let tabId = -1;
   if ("tabId" in sender) {
     
     
@@ -17,7 +17,7 @@ const getSender = (extension, target, sender) => {
     tabId = tabTracker.getBrowserData(target).tabId;
   }
 
-  if (tabId) {
+  if (tabId != null && tabId >= 0) {
     let tab = extension.tabManager.get(tabId, null);
     if (tab) {
       sender.tab = tab.convert();
