@@ -344,8 +344,9 @@ Gecko_GetStyleContext(RawGeckoElementBorrowed aElement,
   }
 
   
-  nsCSSFrameConstructor* fc =
-    aElement->OwnerDoc()->GetShell()->GetPresContext()->FrameConstructor();
+  nsIPresShell* shell = aElement->OwnerDoc()->GetShell();
+  NS_ENSURE_TRUE(shell, nullptr);
+  nsCSSFrameConstructor* fc = shell->GetPresContext()->FrameConstructor();
 
   
   
