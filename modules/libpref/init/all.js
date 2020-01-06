@@ -5210,25 +5210,6 @@ pref("dom.netinfo.enabled", true);
 pref("dom.netinfo.enabled", false);
 #endif
 
-#ifdef XP_WIN
-
-
-pref("memory.low_virtual_memory_threshold_mb", 128);
-
-
-
-pref("memory.low_commit_space_threshold_mb", 128);
-
-
-
-pref("memory.low_physical_memory_threshold_mb", 0);
-
-
-
-
-pref("memory.low_memory_notification_interval_ms", 10000);
-#endif
-
 
 
 

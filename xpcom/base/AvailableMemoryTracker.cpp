@@ -38,10 +38,20 @@ namespace {
 #if defined(_M_IX86) && defined(XP_WIN)
 
 
-uint32_t sLowVirtualMemoryThreshold = 0;
-uint32_t sLowCommitSpaceThreshold = 0;
-uint32_t sLowPhysicalMemoryThreshold = 0;
-uint32_t sLowMemoryNotificationIntervalMS = 0;
+
+static const uint32_t kLowVirtualMemoryThresholdMiB = 256;
+
+
+
+static const uint32_t kLowCommitSpaceThresholdMiB = 256;
+
+
+
+static const uint32_t kLowPhysicalMemoryThresholdMiB = 0;
+
+
+
+static const uint32_t kLowMemoryNotificationIntervalMS = 10000;
 
 Atomic<uint32_t> sNumLowVirtualMemEvents;
 Atomic<uint32_t> sNumLowCommitSpaceEvents;
@@ -85,7 +95,7 @@ MaybeScheduleMemoryPressureEvent()
   
   PRIntervalTime interval = PR_IntervalNow() - sLastLowMemoryNotificationTime;
   if (sHasScheduledOneLowMemoryNotification &&
-      PR_IntervalToMilliseconds(interval) < sLowMemoryNotificationIntervalMS) {
+      PR_IntervalToMilliseconds(interval) < kLowMemoryNotificationIntervalMS) {
 
     return false;
   }
@@ -116,17 +126,17 @@ CheckMemAvailable()
 
   if (success) {
     
-    if (stat.ullAvailVirtual < sLowVirtualMemoryThreshold * 1024 * 1024) {
+    if (stat.ullAvailVirtual < kLowVirtualMemoryThresholdMiB * 1024 * 1024) {
       
       
       
       ++sNumLowVirtualMemEvents;
       NS_DispatchEventualMemoryPressure(MemPressure_New);
-    } else if (stat.ullAvailPageFile < sLowCommitSpaceThreshold * 1024 * 1024) {
+    } else if (stat.ullAvailPageFile < kLowCommitSpaceThresholdMiB * 1024 * 1024) {
       if (MaybeScheduleMemoryPressureEvent()) {
         ++sNumLowCommitSpaceEvents;
       }
-    } else if (stat.ullAvailPhys < sLowPhysicalMemoryThreshold * 1024 * 1024) {
+    } else if (stat.ullAvailPhys < kLowPhysicalMemoryThresholdMiB * 1024 * 1024) {
       if (MaybeScheduleMemoryPressureEvent()) {
         ++sNumLowPhysicalMemEvents;
       }
@@ -156,8 +166,8 @@ VirtualAllocHook(LPVOID aAddress, SIZE_T aSize,
   
   
   
-  if ((sLowVirtualMemoryThreshold != 0 && aAllocationType & MEM_RESERVE) ||
-      (sLowPhysicalMemoryThreshold != 0 && aAllocationType & MEM_COMMIT)) {
+  if ((kLowVirtualMemoryThresholdMiB != 0 && aAllocationType & MEM_RESERVE) ||
+      (kLowPhysicalMemoryThresholdMiB != 0 && aAllocationType & MEM_COMMIT)) {
     CheckMemAvailable();
   }
 
@@ -373,16 +383,6 @@ Activate()
 #if defined(_M_IX86) && defined(XP_WIN)
   MOZ_ASSERT(sInitialized);
   MOZ_ASSERT(!sHooksActive);
-
-  Preferences::AddUintVarCache(&sLowVirtualMemoryThreshold,
-                               "memory.low_virtual_mem_threshold_mb", 256);
-  Preferences::AddUintVarCache(&sLowPhysicalMemoryThreshold,
-                               "memory.low_physical_memory_threshold_mb", 0);
-  Preferences::AddUintVarCache(&sLowCommitSpaceThreshold,
-                               "memory.low_commit_space_threshold_mb", 256);
-  Preferences::AddUintVarCache(&sLowMemoryNotificationIntervalMS,
-                               "memory.low_memory_notification_interval_ms",
-                               10000);
 
   RegisterStrongMemoryReporter(new LowEventsReporter());
   RegisterLowMemoryEventsVirtualDistinguishedAmount(
