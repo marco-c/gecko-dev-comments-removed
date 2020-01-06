@@ -299,7 +299,7 @@ var ProcessHangMonitor = {
         return true;
       }
       return false;
-    }
+    };
 
     
     

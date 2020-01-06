@@ -15,6 +15,6 @@ function run_test() {
   });
 
   
-  print("Testing property: umask")
+  print("Testing property: umask");
   do_check_eq(typeof sysInfo.getProperty("umask"), "number");
 }

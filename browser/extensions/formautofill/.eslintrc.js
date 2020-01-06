@@ -50,9 +50,6 @@ module.exports = {
     "no-use-before-define": "error",
 
     
-    "semi": ["error", "always"],
-
-    
     
     "block-scoped-var": "error",
 

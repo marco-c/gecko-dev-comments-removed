@@ -432,7 +432,7 @@ add_task(async function testExtensionControlledHomepageUninstalledAddon() {
   await checkHomepageEnabled();
 
   
-  await OS.File.remove(storePath)
+  await OS.File.remove(storePath);
 
   
   

@@ -1236,7 +1236,7 @@ function TypedArraySort(comparefn) {
         
         
         return v;
-    }
+    };
 
     return QuickSort(obj, len, wrappedCompareFn);
 }
@@ -1539,7 +1539,7 @@ function TypedArrayStaticOf() {
 
     
     for (var k = 0; k < len; k++)
-        newObj[k] = items[k]
+        newObj[k] = items[k];
 
     
     return newObj;

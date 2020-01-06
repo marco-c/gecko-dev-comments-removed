@@ -239,12 +239,12 @@ user_pref("dom.presentation.testing.simulate-receiver", false);
 
 
 
-user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%%s")
-user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%%s")
-user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%%s")
-user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%%s")
-user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%%s")
-user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%%s")
+user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%%s");
+user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%%s");
 
 
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");

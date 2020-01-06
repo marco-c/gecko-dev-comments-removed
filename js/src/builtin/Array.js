@@ -221,7 +221,7 @@ function ArraySort(comparefn) {
 
         
         return v !== v ? 0 : v;
-    }
+    };
 
     return MergeSort(O, len, comparefn);
 }

@@ -360,7 +360,7 @@ module.exports = {
     "rest-spread-spacing": "error",
 
     
-    
+    "semi": ["error", "always"],
 
     
     "space-before-blocks": "error",

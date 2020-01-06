@@ -86,9 +86,6 @@ module.exports = {
     "no-use-before-define": "error",
 
     
-    "semi": ["error", "always"],
-
-    
     "space-before-function-paren": ["error", {"anonymous": "never", "named": "never"}],
 
     

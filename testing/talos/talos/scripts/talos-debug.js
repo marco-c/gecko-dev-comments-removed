@@ -166,7 +166,7 @@ window.talosDebug = {
 
     alert(res);
   }
-}
+};
 
 
 if (typeof (tpRecordTime) === "undefined") {

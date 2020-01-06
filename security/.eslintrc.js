@@ -72,9 +72,6 @@ module.exports = {
     "padded-blocks": ["error", "never"],
 
     
-    "semi": ["error", "always"],
-
-    
     "semi-spacing": ["error", { "before": false, "after": true }],
 
     

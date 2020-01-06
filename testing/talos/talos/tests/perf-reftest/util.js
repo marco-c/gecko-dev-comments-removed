@@ -1,7 +1,7 @@
 var perf_data = {
   start: null,
   end: null,
-}
+};
 
 function build_dom(n, elemName, options) {
   

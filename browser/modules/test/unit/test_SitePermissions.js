@@ -138,7 +138,7 @@ add_task(async function testExactHostMatch() {
 });
 
 add_task(function* testDefaultPrefs() {
-  let uri = Services.io.newURI("https://example.com")
+  let uri = Services.io.newURI("https://example.com");
 
   
   Assert.deepEqual(SitePermissions.get(uri, "camera"), {
