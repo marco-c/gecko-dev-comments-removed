@@ -151,7 +151,12 @@ function formatReps(options = {}) {
       }))
       
       .reduce((arr, v, i) => {
-        return i + 1 < parameters.length
+        
+        
+        const needSpace = i + 1 < parameters.length &&
+          (!userProvidedStyles || !userProvidedStyles[i] || !userProvidedStyles[i + 1]);
+
+        return needSpace
           ? arr.concat(v, dom.span({}, " "))
           : arr.concat(v);
       }, [])
