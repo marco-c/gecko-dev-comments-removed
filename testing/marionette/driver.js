@@ -660,6 +660,113 @@ GeckoDriver.prototype.listeningPromise = function() {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.newSession = function* (cmd, resp) {
   if (this.sessionID) {
     throw new SessionNotCreatedError("Maximum number of active sessions");
@@ -670,9 +777,7 @@ GeckoDriver.prototype.newSession = function* (cmd, resp) {
 
   try {
     this.capabilities = session.Capabilities.fromJSON(
-        cmd.parameters.capabilities, {merge: true});
-    logger.config("Matched capabilities: " +
-        JSON.stringify(this.capabilities));
+        cmd.parameters.capabilities);
   } catch (e) {
     throw new SessionNotCreatedError(e);
   }

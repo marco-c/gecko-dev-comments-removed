@@ -308,95 +308,21 @@ session.Capabilities = class extends Map {
 
 
 
-
-
-
-
-
-
-  static fromJSON(json, {merge = false} = {}) {
+  static fromJSON(json) {
     if (typeof json == "undefined" || json === null) {
       json = {};
     }
     assert.object(json);
 
-    if (merge) {
-      json = session.Capabilities.merge_(json);
-    }
     return session.Capabilities.match_(json);
   }
 
   
-  static merge_(json) {
-    for (let entry of [json.desiredCapabilities, json.requiredCapabilities]) {
-      if (typeof entry == "undefined" || entry === null) {
-        continue;
-      }
-      assert.object(entry,
-          error.pprint`Expected ${entry} to be a capabilities object`);
-    }
-
-    let desired = json.desiredCapabilities || {};
-    let required = json.requiredCapabilities || {};
-
-    
-    
-    return Object.assign({}, desired, required);
-  }
-
-  
-  static match_(caps = {}) {
+  static match_(json = {}) {
     let matched = new session.Capabilities();
 
-    const defined = v => typeof v != "undefined" && v !== null;
-    const wildcard = v => v === "*";
-
-    
-    
-    
-    function stringMatch(actual, expected) {
-      return !defined(actual) || (wildcard(actual) || actual === expected);
-    }
-
-    for (let [k, v] of Object.entries(caps)) {
+    for (let [k, v] of Object.entries(json)) {
       switch (k) {
-        case "browserName":
-          let bname = matched.get("browserName");
-          if (!stringMatch(v, bname)) {
-            throw new TypeError(
-                pprint`Given browserName ${v}, but my name is ${bname}`);
-          }
-          break;
-
-        
-        case "browserVersion":
-          let bversion = matched.get("browserVersion");
-          if (!stringMatch(v, bversion)) {
-            throw new TypeError(
-                pprint`Given browserVersion ${v}, ` +
-                pprint`but current version is ${bversion}`);
-          }
-          break;
-
-        case "platformName":
-          let pname = matched.get("platformName");
-          if (!stringMatch(v, pname)) {
-            throw new TypeError(
-                pprint`Given platformName ${v}, ` +
-                pprint`but current platform is ${pname}`);
-          }
-          break;
-
-        
-        case "platformVersion":
-          let pversion = matched.get("platformVersion");
-          if (!stringMatch(v, pversion)) {
-            throw new TypeError(
-                pprint`Given platformVersion ${v}, ` +
-                pprint`but current platform version is ${pversion}`);
-          }
-          break;
-
         case "acceptInsecureCerts":
           assert.boolean(v);
           matched.set("acceptInsecureCerts", v);
