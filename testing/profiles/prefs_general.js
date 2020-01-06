@@ -393,3 +393,7 @@ user_pref("extensions.screenshots.system-disabled", true);
 
 
 user_pref("places.database.lastMaintenance", 7258114800);
+
+
+
+user_pref("extensions.pocket.disablePageAction", true);
