@@ -2328,6 +2328,20 @@ enum SelectorMatchesTreeFlags {
   eMatchOnConditionalRestyleAncestor = 0x2,
 };
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#define ASSERT_XBL_CHILDREN_HACK() do {                                     \
+  if (MOZ_UNLIKELY(xblChildrenMatched)) {                                   \
+    nsAutoString selectorString;                                            \
+    aSelector->ToString(selectorString, nullptr, false);                    \
+    MOZ_CRASH_UNSAFE_PRINTF("XBL compat hack matched, please file a bug "   \
+                            "blocking bug 1374247. Selector: %s",           \
+                            NS_ConvertUTF16toUTF8(selectorString).get());   \
+  }                                                                         \
+} while (0)
+#else
+#define ASSERT_XBL_CHILDREN_HACK() do { /* nothing */ } while (0)
+#endif
+
 static bool
 SelectorMatchesTree(Element* aPrevElement,
                     nsCSSSelector* aSelector,
@@ -2337,6 +2351,11 @@ SelectorMatchesTree(Element* aPrevElement,
   MOZ_ASSERT(!aSelector || !aSelector->IsPseudoElement());
   nsCSSSelector* selector = aSelector;
   Element* prevElement = aPrevElement;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  bool xblChildrenMatched = false;
+#endif
+
   while (selector) { 
     NS_ASSERTION(!selector->mNext ||
                  selector->mNext->mOperator != char16_t(0),
@@ -2346,6 +2365,7 @@ SelectorMatchesTree(Element* aPrevElement,
     
     if (aTreeMatchContext.mForScopedStyle &&
         !aTreeMatchContext.IsWithinStyleScopeForSelectorMatching()) {
+      ASSERT_XBL_CHILDREN_HACK();
       return false;
     }
 
@@ -2386,27 +2406,27 @@ SelectorMatchesTree(Element* aPrevElement,
           aTreeMatchContext.PopStyleScopeForSelectorMatching(element);
         }
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
         
         
         
         
         if (selector->mOperator == '>' && element->IsActiveChildrenElement()) {
           Element* styleScope = aTreeMatchContext.mCurrentStyleScope;
-          if (SelectorMatchesTree(element, selector, aTreeMatchContext,
-                                  aFlags)) {
-            
-            
-            return true;
-          }
+          xblChildrenMatched |=
+            SelectorMatchesTree(element, selector, aTreeMatchContext, aFlags);
+
           
           
           
           
           aTreeMatchContext.mCurrentStyleScope = styleScope;
         }
+#endif
       }
     }
     if (!element) {
+      ASSERT_XBL_CHILDREN_HACK();
       return false;
     }
     if ((aFlags & eMatchOnConditionalRestyleAncestor) &&
@@ -2473,6 +2493,7 @@ SelectorMatchesTree(Element* aPrevElement,
       
       
       if (!NS_IS_GREEDY_OPERATOR(selector->mOperator)) {
+        ASSERT_XBL_CHILDREN_HACK();
         return false;  
       }
     }
@@ -2480,6 +2501,8 @@ SelectorMatchesTree(Element* aPrevElement,
   }
   return true; 
 }
+
+#undef ASSERT_XBL_CHILDREN_HACK
 
 static inline
 void ContentEnumFunc(const RuleValue& value, nsCSSSelector* aSelector,
