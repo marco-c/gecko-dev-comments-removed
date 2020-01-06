@@ -50,6 +50,7 @@ this.cookie = {
 
 
 
+
 cookie.fromJSON = function(json) {
   let newCookie = {};
 
@@ -58,6 +59,14 @@ cookie.fromJSON = function(json) {
   newCookie.name = assert.string(json.name, "Cookie name must be string");
   newCookie.value = assert.string(json.value, "Cookie value must be string");
 
+  if (typeof json.domain != "undefined") {
+    let domain = assert.string(json.domain, "Cookie domain must be string");
+    if (domain.substring(0, 1) !== ".") {
+      
+      domain = "." + domain;
+    }
+    newCookie.domain = domain;
+  }
   if (typeof json.path != "undefined") {
     newCookie.path = assert.string(json.path, "Cookie path must be string");
   }
@@ -110,10 +119,11 @@ cookie.add = function(newCookie, {restrictToHost = null} = {}) {
   }
 
   if (restrictToHost) {
-    if (newCookie.domain !== restrictToHost) {
+    if (!restrictToHost.endsWith(newCookie.domain) &&
+        ("." + restrictToHost) !== newCookie.domain) {
       throw new InvalidCookieDomainError(
           `Cookies may only be set ` +
-          ` for the current domain (${restrictToHost})`);
+          `for the current domain (${restrictToHost})`);
     }
   }
 
