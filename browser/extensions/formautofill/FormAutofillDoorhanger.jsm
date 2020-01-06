@@ -15,6 +15,7 @@ this.EXPORTED_SYMBOLS = ["FormAutofillDoorhanger"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
@@ -24,15 +25,26 @@ FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 const BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";
 const GetStringFromName = Services.strings.createBundle(BUNDLE_URI).GetStringFromName;
+let changeAutofillOptsKey = "changeAutofillOptions";
+let viewAutofillOptsKey = "viewAutofillOptionsLink";
+if (AppConstants.platform != "macosx") {
+  changeAutofillOptsKey += "OSX";
+  viewAutofillOptsKey += "OSX";
+}
 
 const CONTENT = {
   firstTimeUse: {
     notificationId: "autofill-address",
-    message: GetStringFromName("saveAddressMessage"),
+    message: GetStringFromName("saveAddressesMessage"),
     anchor: {
       id: "autofill-address-notification-icon",
-      URL: "chrome://formautofill/content/icon-address-save.svg",
+      URL: "chrome://formautofill/content/formfill-anchor.svg",
       tooltiptext: GetStringFromName("openAutofillMessagePanel"),
+    },
+    mainAction: {
+      label: GetStringFromName(changeAutofillOptsKey),
+      accessKey: "C",
+      callbackState: "open-pref",
     },
     options: {
       persistWhileVisible: true,
@@ -98,7 +110,7 @@ let FormAutofillDoorhanger = {
       privacyLinkElement.className = "text-link";
       privacyLinkElement.setAttribute("useoriginprincipal", true);
       privacyLinkElement.setAttribute("href", "about:preferences#privacy");
-      privacyLinkElement.setAttribute("value", GetStringFromName("viewAutofillOptions"));
+      privacyLinkElement.setAttribute("value", GetStringFromName(viewAutofillOptsKey));
       notificationcontent.appendChild(privacyLinkElement);
       notification.append(notificationcontent);
     }
@@ -152,12 +164,17 @@ let FormAutofillDoorhanger = {
       content.options.eventCallback = (topic) => {
         log.debug("eventCallback:", topic);
 
-        switch (topic) {
-          
-          case "shown":
-            this._appendPrivacyPanelLink(browser, content.notificationId);
-            break;
+        
+        if (topic != "shown") {
+          return;
         }
+
+        
+        if (type == "firstTimeUse") {
+          return;
+        }
+
+        this._appendPrivacyPanelLink(browser, content.notificationId);
       };
       this._setAnchor(browser, content.anchor);
       chromeWin.PopupNotifications.show(
