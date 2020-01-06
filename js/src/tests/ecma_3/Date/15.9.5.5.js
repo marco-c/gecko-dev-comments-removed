@@ -34,7 +34,6 @@ var actual = '';
 var expect = '';
 
 
-startTest();
 writeHeaderToLog( SECTION + " "+ TITLE);
 
 

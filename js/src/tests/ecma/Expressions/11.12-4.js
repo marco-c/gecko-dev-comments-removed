@@ -23,7 +23,6 @@
 
 var SECTION = "11.12-4";
 var VERSION = "ECMA_1";
-startTest();
 writeHeaderToLog( SECTION + " Conditional operator ( ? : )");
 
 
