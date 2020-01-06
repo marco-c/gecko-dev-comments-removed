@@ -112,8 +112,9 @@ var Prefs = {
   get expireDays() { this.ensureInitialized(); return this._expireDays; },
 
   ensureInitialized() {
-    if (this.initialized)
+    if (this.initialized) {
       return;
+    }
 
     this.initialized = true;
 
@@ -234,15 +235,21 @@ function validateSearchData(aData, aDataType) {
 
 function makeQueryPredicates(aQueryData, delimiter = " AND ") {
   return Object.keys(aQueryData).map(function(field) {
-    if (field == "firstUsedStart") {
-      return "firstUsed >= :" + field;
-    } else if (field == "firstUsedEnd") {
-      return "firstUsed <= :" + field;
-    } else if (field == "lastUsedStart") {
-      return "lastUsed >= :" + field;
-    } else if (field == "lastUsedEnd") {
-      return "lastUsed <= :" + field;
+    switch (field) {
+      case "firstUsedStart": {
+        return "firstUsed >= :" + field;
+      }
+      case "firstUsedEnd": {
+        return "firstUsed <= :" + field;
+      }
+      case "lastUsedStart": {
+        return "lastUsed >= :" + field;
+      }
+      case "lastUsedEnd": {
+        return "lastUsed <= :" + field;
+      }
     }
+
     return field + " = :" + field;
   }).join(delimiter);
 }
@@ -352,8 +359,9 @@ function generateGUID() {
   let bytes = 0;
   for (let i = 1; bytes < 12 ; i += 2) {
     
-    if (uuid[i] == "-")
+    if (uuid[i] == "-") {
       i++;
+    }
     let hexVal = parseInt(uuid[i] + uuid[i + 1], 16);
     raw += String.fromCharCode(hexVal);
     bytes++;
@@ -396,8 +404,9 @@ var dbStmts = new Map();
 
 
 function dbCreateAsyncStatement(aQuery, aParams, aBindingArrays) {
-  if (!aQuery)
+  if (!aQuery) {
     return null;
+  }
 
   let stmt = dbStmts.get(aQuery);
   if (!stmt) {
@@ -633,10 +642,12 @@ function updateFormHistoryWrite(aChanges, aCallbacks) {
       case "remove":
         log("Remove from form history  " + change);
         let delStmt = makeMoveToDeletedStatement(change.guid, now, change, bindingArrays);
-        if (delStmt && stmts.indexOf(delStmt) == -1)
+        if (delStmt && stmts.indexOf(delStmt) == -1) {
           stmts.push(delStmt);
-        if ("timeDeleted" in change)
+        }
+        if ("timeDeleted" in change) {
           delete change.timeDeleted;
+        }
         stmt = makeRemoveStatement(change, bindingArrays);
         notifications.push([ "formhistory-remove", change.guid ]);
         break;
@@ -773,7 +784,9 @@ this.FormHistory = {
 
   search: function formHistorySearch(aSelectTerms, aSearchData, aCallbacks) {
     
-    aSelectTerms = (aSelectTerms) ? aSelectTerms : validFields;
+    if (!aSelectTerms) {
+      aSelectTerms = validFields;
+    }
     validateSearchData(aSearchData, "Search");
 
     let stmt = makeSearchStatement(aSearchData, aSelectTerms);
@@ -848,8 +861,9 @@ this.FormHistory = {
       return Boolean(change.guid) != Boolean(change.fieldname && change.value);
     }
 
-    if (!("length" in aChanges))
+    if (!("length" in aChanges)) {
       aChanges = [aChanges];
+    }
 
     let isRemoveOperation = aChanges.every(change => change && change.op && change.op == "remove");
     if (!Prefs.enabled && !isRemoveOperation) {
@@ -1026,8 +1040,9 @@ this.FormHistory = {
 
     
     
-    if (searchString.length >= 1)
+    if (searchString.length >= 1) {
       stmt.params.valuePrefix = stmt.escapeStringForLIKE(searchString, "/") + "%";
+    }
     if (searchString.length > 1) {
       let searchTokenCount = Math.min(searchTokens.length, MAX_SEARCH_TOKENS);
       for (let i = 0; i < searchTokenCount; i++) {
