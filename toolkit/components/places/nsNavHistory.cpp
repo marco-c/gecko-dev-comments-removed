@@ -3789,13 +3789,8 @@ nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
 
   
   nsAutoCString title;
-  bool isNull;
-  rv = aRow->GetIsNull(kGetInfoIndex_Title, &isNull);
+  rv = aRow->GetUTF8String(kGetInfoIndex_Title, title);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (!isNull) {
-    rv = aRow->GetUTF8String(kGetInfoIndex_Title, title);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
   uint32_t accessCount = aRow->AsInt32(kGetInfoIndex_VisitCount);
   PRTime time = aRow->AsInt64(kGetInfoIndex_VisitDate);
@@ -3972,7 +3967,7 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
 
         
         
-        if (!aTitle.IsEmpty()) {
+        if (!aTitle.IsVoid()) {
           resultNode->mTitle = aTitle;
         }
       }
