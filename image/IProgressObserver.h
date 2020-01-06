@@ -41,10 +41,6 @@ public:
   virtual void OnLoadComplete(bool aLastPart) = 0;
 
   
-  virtual void BlockOnload() = 0;
-  virtual void UnblockOnload() = 0;
-
-  
   virtual void SetHasImage() = 0;
   virtual bool NotificationsDeferred() const = 0;
   virtual void SetNotificationsDeferred(bool aDeferNotifications) = 0;

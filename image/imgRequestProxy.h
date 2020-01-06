@@ -108,10 +108,6 @@ public:
   virtual void OnLoadComplete(bool aLastPart) override;
 
   
-  virtual void BlockOnload() override;
-  virtual void UnblockOnload() override;
-
-  
   virtual void SetHasImage() override;
 
   

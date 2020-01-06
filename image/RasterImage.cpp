@@ -1008,7 +1008,6 @@ RasterImage::OnImageDataComplete(nsIRequest*, nsISupports*, nsresult aStatus,
     
     MOZ_ASSERT(!canSyncDecodeMetadata,
                "Firing load async after metadata sync decode?");
-    NotifyProgress(FLAG_ONLOAD_BLOCKED);
     mLoadProgress = Some(loadProgress);
     return finalStatus;
   }
@@ -1843,7 +1842,6 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
     if (mLoadProgress) {
       NotifyForLoadEvent(*mLoadProgress);
       mLoadProgress = Nothing();
-      NotifyProgress(FLAG_ONLOAD_UNBLOCKED);
     }
 
     

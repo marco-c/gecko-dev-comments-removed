@@ -61,11 +61,6 @@ public:
   virtual bool NotificationsDeferred() const override;
   virtual void SetNotificationsDeferred(bool aDeferNotifications) override;
 
-  
-  
-  virtual void BlockOnload() override { }
-  virtual void UnblockOnload() override { }
-
 protected:
   virtual ~MultipartImage();
 

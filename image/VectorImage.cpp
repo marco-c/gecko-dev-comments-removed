@@ -1199,16 +1199,6 @@ VectorImage::OnStartRequest(nsIRequest* aRequest, nsISupports* aCtxt)
 
   
   
-  RefPtr<VectorImage> kungFuDeathGrip(this);
-
-  
-  
-  if (mProgressTracker) {
-    mProgressTracker->SyncNotifyProgress(FLAG_ONLOAD_BLOCKED);
-  }
-
-  
-  
   
   
   
@@ -1290,8 +1280,7 @@ VectorImage::OnSVGDocumentLoaded()
     Progress progress = FLAG_SIZE_AVAILABLE |
                         FLAG_HAS_TRANSPARENCY |
                         FLAG_FRAME_COMPLETE |
-                        FLAG_DECODE_COMPLETE |
-                        FLAG_ONLOAD_UNBLOCKED;
+                        FLAG_DECODE_COMPLETE;
 
     if (mHaveAnimations) {
       progress |= FLAG_IS_ANIMATED;
@@ -1318,7 +1307,7 @@ VectorImage::OnSVGDocumentError()
 
   if (mProgressTracker) {
     
-    Progress progress = FLAG_ONLOAD_UNBLOCKED | FLAG_HAS_ERROR;
+    Progress progress = FLAG_HAS_ERROR;
 
     
     if (mLoadProgress) {

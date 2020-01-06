@@ -46,13 +46,6 @@ CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress, bool aIsM
   if (aNewProgress & FLAG_LOAD_COMPLETE) {
     MOZ_ASSERT(aIsMultipart || aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
   }
-  if (aNewProgress & FLAG_ONLOAD_BLOCKED) {
-    
-  }
-  if (aNewProgress & FLAG_ONLOAD_UNBLOCKED) {
-    MOZ_ASSERT(aNewProgress & FLAG_ONLOAD_BLOCKED);
-    MOZ_ASSERT(aIsMultipart || aNewProgress & (FLAG_SIZE_AVAILABLE | FLAG_HAS_ERROR));
-  }
   if (aNewProgress & FLAG_IS_ANIMATED) {
     
     
@@ -376,22 +369,8 @@ ProgressTracker::SyncNotifyProgress(Progress aProgress,
 {
   MOZ_ASSERT(NS_IsMainThread(), "Use mObservers on main thread only");
 
-  
   Progress progress = Difference(aProgress);
-  if (!((mProgress | progress) & FLAG_ONLOAD_BLOCKED)) {
-    progress &= ~FLAG_ONLOAD_UNBLOCKED;
-  }
-
   CheckProgressConsistency(mProgress, mProgress | progress, mIsMultipart);
-
-  
-  
-  
-  if ((aProgress & FLAG_DECODE_COMPLETE) &&
-      (mProgress & FLAG_ONLOAD_BLOCKED) &&
-      (mProgress & FLAG_ONLOAD_UNBLOCKED)) {
-    progress |= FLAG_ONLOAD_BLOCKED | FLAG_ONLOAD_UNBLOCKED;
-  }
 
   
   mProgress |= progress;

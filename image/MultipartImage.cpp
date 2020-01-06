@@ -93,8 +93,6 @@ public:
   }
 
   
-  virtual void BlockOnload() override { }
-  virtual void UnblockOnload() override { }
   virtual void SetHasImage() override { }
   virtual bool NotificationsDeferred() const override { return false; }
   virtual void SetNotificationsDeferred(bool) override { }
@@ -177,7 +175,7 @@ FilterProgress(Progress aProgress)
   
   
   
-  return aProgress & ~(FLAG_ONLOAD_BLOCKED | FLAG_ONLOAD_UNBLOCKED | FLAG_HAS_ERROR);
+  return aProgress & ~FLAG_HAS_ERROR;
 }
 
 void
