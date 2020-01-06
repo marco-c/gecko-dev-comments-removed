@@ -37,6 +37,8 @@ use servo::compositing::windowing::WindowEvent;
 use servo::config;
 use servo::config::opts::{self, ArgumentParsingResult};
 use servo::config::servo_version;
+use servo::servo_config::prefs::PREFS;
+use servo::servo_url::ServoUrl;
 use std::env;
 use std::panic;
 use std::process;
@@ -145,8 +147,14 @@ fn main() {
 
     
     
+    let target_url = opts::get().url.clone()
+                .unwrap_or(ServoUrl::parse(PREFS.get("shell.homepage").as_string()
+                    .unwrap_or("about:blank")).unwrap());
+
+    
+    
     let mut browser = BrowserWrapper {
-        browser: Browser::new(window.clone()),
+        browser: Browser::new(window.clone(), target_url)
     };
 
     browser.browser.setup_logging();
