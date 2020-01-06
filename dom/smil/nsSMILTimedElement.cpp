@@ -702,12 +702,10 @@ nsSMILTimedElement::DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly)
           }
           FilterHistory();
           stateChanged = true;
-        } else {
+        } else if (mCurrentInterval->Begin()->Time() <= sampleTime) {
           MOZ_ASSERT(!didApplyEarlyEnd,
                      "We got an early end, but didn't end");
           nsSMILTime beginTime = mCurrentInterval->Begin()->Time().GetMillis();
-          NS_ASSERTION(aContainerTime >= beginTime,
-                       "Sample time should not precede current interval");
           nsSMILTime activeTime = aContainerTime - beginTime;
 
           
@@ -737,6 +735,11 @@ nsSMILTimedElement::DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly)
             }
           }
         }
+        
+        
+        
+        
+        
       }
       break;
 
