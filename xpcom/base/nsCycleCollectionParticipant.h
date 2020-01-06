@@ -958,6 +958,22 @@ static NS_CYCLE_COLLECTION_INNERCLASS NS_CYCLE_COLLECTION_INNERNAME;
 
 
 
+
+#define NS_IMPL_QUERY_INTERFACE_CYCLE_COLLECTION_INHERITED(aClass, aSuper, ...) \
+  NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(aClass)                    \
+  NS_INTERFACE_TABLE_INHERITED(aClass, __VA_ARGS__)                             \
+  NS_INTERFACE_TABLE_TAIL_INHERITING(aSuper)
+
+#define NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(aClass, aSuper, ...)         \
+  NS_IMPL_QUERY_INTERFACE_CYCLE_COLLECTION_INHERITED(aClass, aSuper, __VA_ARGS__) \
+  NS_IMPL_ADDREF_INHERITED(aClass, aSuper)                                        \
+  NS_IMPL_RELEASE_INHERITED(aClass, aSuper)
+
+
+
+
+
+
 inline bool TopThreeWordsEquals(const nsID& aID,
                                 const nsID& aOther1,
                                 const nsID& aOther2)
