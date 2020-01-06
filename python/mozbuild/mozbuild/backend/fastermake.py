@@ -159,6 +159,22 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
                                  'install_%s' % base.replace('/', '_'))) as fh:
                 install_manifest.write(fileobj=fh)
 
+        
+        if self.environment.is_artifact_build:
+            unified_manifest = InstallManifest()
+            for base, install_manifest in self._install_manifests.iteritems():
+                
+                assert base.startswith('dist/bin')
+                base = base[len('dist/bin'):]
+                if base and base[0] == '/':
+                    base = base[1:]
+                unified_manifest.add_entries_from(install_manifest, base=base)
+
+            with self._write_file(
+                    mozpath.join(self.environment.topobjdir, 'faster',
+                                 'unified_install_dist_bin')) as fh:
+                unified_manifest.write(fileobj=fh)
+
         with self._write_file(
                 mozpath.join(self.environment.topobjdir, 'faster',
                              'Makefile')) as fh:
