@@ -430,7 +430,7 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
         
         widget->Resize(aContentOffset.x + bounds.x,
                        aContentOffset.y + bounds.y,
-                       bounds.width, bounds.height, true);
+                       bounds.Width(), bounds.Height(), true);
       }
 
       widget->Enable(isVisible);

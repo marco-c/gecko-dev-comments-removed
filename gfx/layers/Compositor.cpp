@@ -186,16 +186,16 @@ UpdateTextureCoordinates(gfx::TexturedTriangle& aTriangle,
                          const gfx::Rect& aTextureCoords)
 {
   
-  float dx = (aIntersection.x - aRect.x) / aRect.width;
-  float dy = (aIntersection.y - aRect.y) / aRect.height;
+  float dx = (aIntersection.x - aRect.x) / aRect.Width();
+  float dy = (aIntersection.y - aRect.y) / aRect.Height();
 
   
-  float x = aTextureCoords.x + dx * aTextureCoords.width;
-  float y = aTextureCoords.y + dy * aTextureCoords.height;
+  float x = aTextureCoords.x + dx * aTextureCoords.Width();
+  float y = aTextureCoords.y + dy * aTextureCoords.Height();
 
   
-  float w = aTextureCoords.width * aIntersection.width / aRect.width;
-  float h = aTextureCoords.height * aIntersection.height / aRect.height;
+  float w = aTextureCoords.Width() * aIntersection.Width() / aRect.Width();
+  float h = aTextureCoords.Height() * aIntersection.Height() / aRect.Height();
 
   static const auto Clamp = [](float& f)
   {
@@ -205,8 +205,8 @@ UpdateTextureCoordinates(gfx::TexturedTriangle& aTriangle,
 
   auto UpdatePoint = [&](const gfx::Point& p, gfx::Point& t)
   {
-    t.x = x + (p.x - aIntersection.x) / aIntersection.width * w;
-    t.y = y + (p.y - aIntersection.y) / aIntersection.height * h;
+    t.x = x + (p.x - aIntersection.x) / aIntersection.Width() * w;
+    t.y = y + (p.y - aIntersection.y) / aIntersection.Height() * h;
 
     Clamp(t.x);
     Clamp(t.y);
@@ -295,8 +295,8 @@ GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
         continue;
       }
 
-      MOZ_ASSERT(rect.width > 0.0f && rect.height > 0.0f);
-      MOZ_ASSERT(intersection.width > 0.0f && intersection.height > 0.0f);
+      MOZ_ASSERT(rect.Width() > 0.0f && rect.Height() > 0.0f);
+      MOZ_ASSERT(intersection.Width() > 0.0f && intersection.Height() > 0.0f);
 
       
       
@@ -372,22 +372,22 @@ Compositor::SlowDrawRect(const gfx::Rect& aRect, const gfx::Color& aColor,
   effects.mPrimaryEffect = new EffectSolidColor(aColor);
   
   this->DrawQuad(gfx::Rect(aRect.x, aRect.y,
-                           aStrokeWidth, aRect.height),
+                           aStrokeWidth, aRect.Height()),
                  aClipRect, effects, opacity,
                  aTransform);
   
   this->DrawQuad(gfx::Rect(aRect.x + aStrokeWidth, aRect.y,
-                           aRect.width - 2 * aStrokeWidth, aStrokeWidth),
+                           aRect.Width() - 2 * aStrokeWidth, aStrokeWidth),
                  aClipRect, effects, opacity,
                  aTransform);
   
-  this->DrawQuad(gfx::Rect(aRect.x + aRect.width - aStrokeWidth, aRect.y,
-                           aStrokeWidth, aRect.height),
+  this->DrawQuad(gfx::Rect(aRect.x + aRect.Width() - aStrokeWidth, aRect.y,
+                           aStrokeWidth, aRect.Height()),
                  aClipRect, effects, opacity,
                  aTransform);
   
-  this->DrawQuad(gfx::Rect(aRect.x + aStrokeWidth, aRect.y + aRect.height - aStrokeWidth,
-                           aRect.width - 2 * aStrokeWidth, aStrokeWidth),
+  this->DrawQuad(gfx::Rect(aRect.x + aStrokeWidth, aRect.y + aRect.Height() - aStrokeWidth,
+                           aRect.Width() - 2 * aStrokeWidth, aStrokeWidth),
                  aClipRect, effects, opacity,
                  aTransform);
 }
@@ -453,23 +453,23 @@ DecomposeIntoNoRepeatRects(const gfx::Rect& aRect,
   
   
   bool flipped = false;
-  if (texCoordRect.height < 0) {
+  if (texCoordRect.Height() < 0) {
     flipped = true;
-    texCoordRect.y += texCoordRect.height;
-    texCoordRect.height = -texCoordRect.height;
+    texCoordRect.y += texCoordRect.Height();
+    texCoordRect.SetHeight(-texCoordRect.Height());
   }
 
   
   
   texCoordRect = gfx::Rect(gfx::Point(WrapTexCoord(texCoordRect.x),
                                       WrapTexCoord(texCoordRect.y)),
-                           gfx::Size(std::min(texCoordRect.width, 1.0f),
-                                     std::min(texCoordRect.height, 1.0f)));
+                           gfx::Size(std::min(texCoordRect.Width(), 1.0f),
+                                     std::min(texCoordRect.Height(), 1.0f)));
 
   NS_ASSERTION(texCoordRect.x >= 0.0f && texCoordRect.x <= 1.0f &&
                texCoordRect.y >= 0.0f && texCoordRect.y <= 1.0f &&
-               texCoordRect.width >= 0.0f && texCoordRect.width <= 1.0f &&
-               texCoordRect.height >= 0.0f && texCoordRect.height <= 1.0f &&
+               texCoordRect.Width() >= 0.0f && texCoordRect.Width() <= 1.0f &&
+               texCoordRect.Height() >= 0.0f && texCoordRect.Height() <= 1.0f &&
                texCoordRect.XMost() >= 0.0f && texCoordRect.XMost() <= 2.0f &&
                texCoordRect.YMost() >= 0.0f && texCoordRect.YMost() <= 2.0f,
                "We just wrapped the texture coordinates, didn't we?");
@@ -513,8 +513,8 @@ DecomposeIntoNoRepeatRects(const gfx::Rect& aRect,
   
   
   
-  GLfloat xmid = aRect.x + (1.0f - tl.x) / texCoordRect.width * aRect.width;
-  GLfloat ymid = aRect.y + (1.0f - tl.y) / texCoordRect.height * aRect.height;
+  GLfloat xmid = aRect.x + (1.0f - tl.x) / texCoordRect.Width() * aRect.Width();
+  GLfloat ymid = aRect.y + (1.0f - tl.y) / texCoordRect.Height() * aRect.Height();
 
   
   
