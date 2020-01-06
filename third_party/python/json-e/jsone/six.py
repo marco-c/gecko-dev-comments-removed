@@ -2,6 +2,8 @@ import sys
 import operator
 
 
+
+
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     
@@ -12,6 +14,7 @@ def with_metaclass(meta, *bases):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
     return type.__new__(metaclass, 'temporary_class', (), {})
+
 
 
 if sys.version_info[0] == 3:
