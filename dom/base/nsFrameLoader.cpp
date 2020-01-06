@@ -3023,6 +3023,16 @@ nsFrameLoader::TryRemoteBrowser()
     mRemoteBrowser->SetBrowserDOMWindow(browserDOMWin);
   }
 
+  
+  
+  if (mOwnerContent->IsXULElement()) {
+    nsAutoString frameName;
+    mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, frameName);
+    if (nsContentUtils::IsOverridingWindowName(frameName)) {
+      Unused << mRemoteBrowser->SendSetWindowName(frameName);
+    }
+  }
+
   ReallyLoadFrameScripts();
   InitializeBrowserAPI();
 

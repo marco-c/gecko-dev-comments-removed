@@ -3439,7 +3439,10 @@ nsBrowserAccess.prototype = {
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                  aNextTabParentId) {
+                                                  aNextTabParentId, aName) {
+    
+    
+    
     
     
     

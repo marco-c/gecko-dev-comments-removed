@@ -2993,6 +2993,13 @@ public:
   
   static int32_t BytecodeCacheStrategy() { return sBytecodeCacheStrategy; }
 
+  
+
+
+
+
+  static bool IsOverridingWindowName(const nsAString& aName);
+
 private:
   static bool InitializeEventTable();
 
