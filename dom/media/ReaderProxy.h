@@ -84,6 +84,8 @@ public:
   void SetCanonicalDuration(
     AbstractCanonical<media::NullableTimeUnit>* aCanonical);
 
+  void SetSeamlessLoopingEnabled(bool aEnabled);
+
 private:
   ~ReaderProxy();
   RefPtr<MetadataPromise> OnMetadataRead(MetadataHolder&& aMetadata);
@@ -101,6 +103,9 @@ private:
 
   
   Mirror<media::NullableTimeUnit> mDuration;
+
+  
+  bool mSeamlessLoopingEnabled;
 };
 
 } 
