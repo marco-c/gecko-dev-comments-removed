@@ -191,6 +191,12 @@ protected:
 
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
+
+  
+  
+  void StartSelectionAutoScrollTimer(const nsPoint& aPoint) const;
+  void StopSelectionAutoScrollTimer() const;
+
   void ClearMaintainedSelection() const;
 
   
