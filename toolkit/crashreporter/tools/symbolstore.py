@@ -252,6 +252,54 @@ class GitFileInfo(VCSFileInfo):
 
 vcsFileInfoCache = {}
 
+if platform.system() == 'Windows':
+    def normpath(path):
+        '''
+        Normalize a path using `GetFinalPathNameByHandleW` to get the
+        path with all components in the case they exist in on-disk, so
+        that making links to a case-sensitive server (hg.mozilla.org) works.
+
+        This function also resolves any symlinks in the path.
+        '''
+        
+        
+        result = path
+
+        ctypes.windll.kernel32.SetErrorMode(ctypes.c_uint(1))
+        if not isinstance(path, unicode):
+            path = unicode(path, sys.getfilesystemencoding())
+        handle = ctypes.windll.kernel32.CreateFileW(path,
+                                                    
+                                                    0x80000000,
+                                                    
+                                                    1,
+                                                    None,
+                                                    
+                                                    3,
+                                                    
+                                                    
+                                                    
+                                                    0x02000000,
+                                                    None)
+        if handle != -1:
+            size = ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
+                                                                    None,
+                                                                    0,
+                                                                    0)
+            buf = ctypes.create_unicode_buffer(size)
+            if ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
+                                                                buf,
+                                                                size,
+                                                                0) > 0:
+                
+                
+                result = buf.value.encode(sys.getfilesystemencoding())[4:]
+            ctypes.windll.kernel32.CloseHandle(handle)
+        return result
+else:
+    
+    normpath = os.path.normpath
+
 def IsInDir(file, dir):
     
     
@@ -333,8 +381,9 @@ def make_file_mapping(install_manifests):
         manifest.populate_registry(reg)
         for dst, src in reg:
             if hasattr(src, 'path'):
-                abs_dest = os.path.normpath(os.path.join(destination, dst))
-                file_mapping[abs_dest] = src.path
+                
+                abs_dest = normpath(os.path.join(destination, dst))
+                file_mapping[abs_dest] = normpath(src.path)
     return file_mapping
 
 @memoize
@@ -402,7 +451,8 @@ class Dumper:
             self.archs = ['']
         else:
             self.archs = ['-a %s' % a for a in archs.split()]
-        self.srcdirs = [os.path.normpath(self.FixFilenameCase(a)) for a in srcdirs]
+        
+        self.srcdirs = [normpath(s) for s in srcdirs]
         self.copy_debug = copy_debug
         self.vcsinfo = vcsinfo
         self.srcsrv = srcsrv
@@ -436,10 +486,6 @@ class Dumper:
             return os.popen("file -Lb " + file).read()
         except:
             return ""
-
-    
-    def FixFilenameCase(self, file):
-        return file
 
     
     def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
@@ -509,7 +555,7 @@ class Dumper:
                     if line.startswith("FILE"):
                         
                         (x, index, filename) = line.rstrip().split(None, 2)
-                        filename = os.path.normpath(self.FixFilenameCase(filename))
+                        filename = normpath(filename)
                         
                         sourcepath = filename
                         if filename in self.file_mapping:
@@ -581,51 +627,6 @@ class Dumper_Win32(Dumper):
                 return True
         return False
 
-    def FixFilenameCase(self, file):
-        """Recent versions of Visual C++ put filenames into
-        PDB files as all lowercase.  If the file exists
-        on the local filesystem, fix it."""
-
-        
-        if file in self.fixedFilenameCaseCache:
-            return self.fixedFilenameCaseCache[file]
-
-        result = file
-
-        ctypes.windll.kernel32.SetErrorMode(ctypes.c_uint(1))
-        if not isinstance(file, unicode):
-            file = unicode(file, sys.getfilesystemencoding())
-        handle = ctypes.windll.kernel32.CreateFileW(file,
-                                                    
-                                                    0x80000000,
-                                                    
-                                                    1,
-                                                    None,
-                                                    
-                                                    3,
-                                                    
-                                                    
-                                                    
-                                                    0x02000000,
-                                                    None)
-        if handle != -1:
-            size = ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
-                                                                    None,
-                                                                    0,
-                                                                    0)
-            buf = ctypes.create_unicode_buffer(size)
-            if ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle,
-                                                                buf,
-                                                                size,
-                                                                0) > 0:
-                
-                
-                result = buf.value.encode(sys.getfilesystemencoding())[4:]
-            ctypes.windll.kernel32.CloseHandle(handle)
-
-        
-        self.fixedFilenameCaseCache[file] = result
-        return result
 
     def CopyDebug(self, file, debug_file, guid, code_file, code_id):
         file = "%s.pdb" % os.path.splitext(file)[0]
@@ -865,8 +866,9 @@ to canonical locations in the source repository. Specify
         parser.error(str(e))
         exit(1)
     file_mapping = make_file_mapping(manifests)
-    generated_files = {os.path.join(buildconfig.topobjdir, f): f
-                          for (f, _) in get_generated_sources()}
+    
+    generated_files = {normpath(os.path.join(buildconfig.topobjdir, f)): f
+                       for (f, _) in get_generated_sources()}
     _, bucket = get_s3_region_and_bucket()
     dumper = GetPlatformSpecificDumper(dump_syms=args[0],
                                        symbol_path=args[1],
