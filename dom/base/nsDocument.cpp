@@ -6313,7 +6313,8 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
   }
 
   nsCOMPtr<nsIAtom> typeAtom(NS_Atomize(elemName));
-  CustomElementDefinition* definition = registry->mCustomDefinitions.Get(typeAtom);
+  CustomElementDefinition* definition =
+    registry->mCustomDefinitions.GetWeak(typeAtom);
   if (!definition) {
     return true;
   }
@@ -6382,6 +6383,8 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
     element->SetCustomElementData(
       new CustomElementData(definition->mType,
                             CustomElementData::State::eCustom));
+
+    element->SetCustomElementDefinition(definition);
 
     
     nsContentUtils::SyncInvokeReactions(nsIDocument::eCreated, element,
@@ -8344,7 +8347,7 @@ nsIDocument::CreateEvent(const nsAString& aEventType, CallerType aCallerType,
 }
 
 void
-nsDocument::FlushPendingNotifications(FlushType aType, FlushTarget aTarget)
+nsDocument::FlushPendingNotifications(FlushType aType)
 {
   nsDocumentOnStack dos(this);
 
@@ -8394,13 +8397,11 @@ nsDocument::FlushPendingNotifications(FlushType aType, FlushTarget aTarget)
     FlushType parentType = aType;
     if (aType >= FlushType::Style)
       parentType = std::max(FlushType::Layout, aType);
-    mParentDocument->FlushPendingNotifications(parentType, FlushTarget::Normal);
+    mParentDocument->FlushPendingNotifications(parentType);
   }
 
-  if (aTarget == FlushTarget::Normal) {
-    if (nsIPresShell* shell = GetShell()) {
-      shell->FlushPendingNotifications(aType);
-    }
+  if (nsIPresShell* shell = GetShell()) {
+    shell->FlushPendingNotifications(aType);
   }
 }
 

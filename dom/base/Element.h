@@ -140,11 +140,6 @@ enum {
   ELEMENT_IS_CONDITIONAL_RESTYLE_ANCESTOR = ELEMENT_FLAG_BIT(4),
 
   
-  
-  
-  ELEMENT_HAS_CHILD_WITH_LATER_SIBLINGS_HINT = ELEMENT_FLAG_BIT(5),
-
-  
   ELEMENT_PENDING_RESTYLE_FLAGS =
     ELEMENT_HAS_PENDING_RESTYLE |
     ELEMENT_HAS_PENDING_ANIMATION_ONLY_RESTYLE,
@@ -158,6 +153,8 @@ enum {
   ELEMENT_ALL_RESTYLE_FLAGS = ELEMENT_PENDING_RESTYLE_FLAGS |
                               ELEMENT_POTENTIAL_RESTYLE_ROOT_FLAGS |
                               ELEMENT_IS_CONDITIONAL_RESTYLE_ANCESTOR,
+
+  
 
   
   ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 6
@@ -555,6 +552,22 @@ public:
 
 
   void SetCustomElementData(CustomElementData* aData);
+
+  
+
+
+
+
+
+  CustomElementDefinition* GetCustomElementDefinition() const;
+
+  
+
+
+
+
+
+  void SetCustomElementDefinition(CustomElementDefinition* aDefinition);
 
 protected:
   
@@ -1818,8 +1831,7 @@ inline const mozilla::dom::Element* nsINode::AsElement() const
 inline void nsINode::UnsetRestyleFlagsIfGecko()
 {
   if (IsElement() && !AsElement()->IsStyledByServo()) {
-    UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS |
-               ELEMENT_HAS_CHILD_WITH_LATER_SIBLINGS_HINT);
+    UnsetFlags(ELEMENT_ALL_RESTYLE_FLAGS);
   }
 }
 

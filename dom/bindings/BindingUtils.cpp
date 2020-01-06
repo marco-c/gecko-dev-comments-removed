@@ -1047,7 +1047,7 @@ NativeInterface2JSObjectAndThrowIfFailed(JSContext* aCx,
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!XPCConvert::NativeInterface2JSObject(aRetval, aHelper, aIID,
+  if (!XPCConvert::NativeInterface2JSObject(aRetval, nullptr, aHelper, aIID,
                                             aAllowNativeWrapper, &rv)) {
     
     
@@ -3681,6 +3681,8 @@ CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
 
     newElement->SetCustomElementData(
       new CustomElementData(definition->mType, CustomElementData::State::eCustom));
+
+    newElement->SetCustomElementDefinition(definition);
 
     return newElement.forget();
   }
