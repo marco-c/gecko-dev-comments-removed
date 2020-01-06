@@ -3,6 +3,7 @@
 
 
 #include "MozURL.h"
+#include "rust-url-capi/src/rust-url-capi.h"
 
 namespace mozilla {
 namespace net {
@@ -107,6 +108,13 @@ MozURL::GetOrigin(nsACString& aOrigin)
 
 
 
+MozURL::Mutator::Mutator(MozURL* url)
+  : mURL(rusturl_clone(url->mURL.get()))
+  , mFinalized(false)
+  , mStatus(NS_OK)
+{
+}
+
 
 
 #define ENSURE_VALID()                          \
@@ -204,6 +212,12 @@ MozURL::Mutator::SetPort(int32_t aPort)
   ENSURE_VALID();
   mStatus = rusturl_set_port_no(mURL.get(), aPort);
   return *this;
+}
+
+void
+MozURL::FreeRustURL::operator()(rusturl* aPtr)
+{
+  rusturl_free(aPtr);
 }
 
 } 
