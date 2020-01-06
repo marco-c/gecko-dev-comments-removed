@@ -21,6 +21,7 @@ const UPDATE_TIME = 15 * 60 * 1000;
 const DEFAULT_SITES_PREF = "default.sites";
 const DEFAULT_TOP_SITES = [];
 const FRECENCY_THRESHOLD = 100; 
+const MIN_FAVICON_SIZE = 96;
 
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
@@ -101,7 +102,7 @@ this.TopSitesFeed = class TopSitesFeed {
 
       
       link = this._tippyTopProvider.processSite(link);
-      if (link.tippyTopIcon) { continue; }
+      if (link.tippyTopIcon || link.faviconSize >= MIN_FAVICON_SIZE) { continue; }
 
       
       if (currentScreenshots[link.url]) {

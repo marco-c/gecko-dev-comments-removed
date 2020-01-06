@@ -10,6 +10,7 @@ const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.j
 
 const {shortURL} = Cu.import("resource://activity-stream/lib/ShortURL.jsm", {});
 const {SectionsManager} = Cu.import("resource://activity-stream/lib/SectionsManager.jsm", {});
+const {TOP_SITES_SHOWMORE_LENGTH} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
@@ -17,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
 
 const HIGHLIGHTS_MAX_LENGTH = 9;
 const HIGHLIGHTS_UPDATE_TIME = 15 * 60 * 1000; 
+const MANY_EXTRA_LENGTH = HIGHLIGHTS_MAX_LENGTH * 5 + TOP_SITES_SHOWMORE_LENGTH;
 const SECTION_ID = "highlights";
 
 this.HighlightsFeed = class HighlightsFeed {
@@ -43,18 +45,39 @@ this.HighlightsFeed = class HighlightsFeed {
   }
 
   async fetchHighlights(broadcast = false) {
-    this.highlights = await NewTabUtils.activityStreamLinks.getHighlights();
-    for (let highlight of this.highlights) {
-      highlight.hostname = shortURL(Object.assign({}, highlight, {url: highlight.url}));
-      highlight.image = highlight.preview_image_url;
-      if (highlight.bookmarkGuid) {
-        highlight.type = "bookmark";
-      }
-    }
+    
+    
+    const manyPages = await NewTabUtils.activityStreamLinks.getHighlights({numItems: MANY_EXTRA_LENGTH});
 
     
-    const deduped = this.dedupe.group(this.store.getState().TopSites.rows, this.highlights);
-    this.highlights = deduped[1];
+    const deduped = this.dedupe.group(this.store.getState().TopSites.rows, manyPages)[1];
+
+    
+    this.highlights = [];
+    const hosts = new Set();
+    for (const page of deduped) {
+      const hostname = shortURL(page);
+      
+      if (page.type === "history" && hosts.has(hostname)) {
+        continue;
+      }
+
+      
+      Object.assign(page, {
+        hostname,
+        image: page.preview_image_url,
+        type: page.bookmarkGuid ? "bookmark" : page.type
+      });
+
+      
+      this.highlights.push(page);
+      hosts.add(hostname);
+
+      
+      if (this.highlights.length === HIGHLIGHTS_MAX_LENGTH) {
+        break;
+      }
+    }
 
     SectionsManager.updateSection(SECTION_ID, {rows: this.highlights}, this.highlightsLastUpdated === 0 || broadcast);
     this.highlightsLastUpdated = Date.now();

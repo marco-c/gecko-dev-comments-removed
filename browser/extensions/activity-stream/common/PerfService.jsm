@@ -1,26 +1,28 @@
 
 "use strict";
 
-let usablePerfObj;
 
-let Cu;
-const isRunningInChrome = typeof Window === "undefined";
-
-
-if (isRunningInChrome) {
-  Cu = Components.utils;
-} else {
-  Cu = {import() {}};
+if (typeof Components !== "undefined" && Components.utils) {
+  Components.utils.import("resource://gre/modules/Services.jsm");
 }
 
-Cu.import("resource://gre/modules/Services.jsm");
+let usablePerfObj;
 
 
-if (isRunningInChrome) {
+
+if (typeof Services !== "undefined") {
   
   usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
-} else { 
+} else if (typeof performance !== "undefined") {
+  
   usablePerfObj = performance;
+} else {
+  
+  
+  usablePerfObj = {
+    now() {},
+    mark() {}
+  };
 }
 
 this._PerfService = function _PerfService(options) {
