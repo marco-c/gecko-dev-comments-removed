@@ -43,6 +43,21 @@
 namespace mozilla {
 namespace dom {
 
+namespace {
+
+bool
+ShouldCheckSRI(const InternalRequest* const aRequest,
+               const InternalResponse* const aResponse)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aRequest);
+  MOZ_DIAGNOSTIC_ASSERT(aResponse);
+
+  return !aRequest->GetIntegrity().IsEmpty() &&
+         aResponse->Type() != ResponseType::Error;
+}
+
+} 
+
 NS_IMPL_ISUPPORTS(FetchDriver,
                   nsIStreamListener, nsIChannelEventSink, nsIInterfaceRequestor,
                   nsIThreadRetargetableStreamListener)
@@ -378,12 +393,10 @@ FetchDriver::HttpFetch()
     }
   }
 
-  if (mIsTrackingFetch && nsContentUtils::IsTailingEnabled()) {
+  if (mIsTrackingFetch && nsContentUtils::IsLowerNetworkPriority()) {
     cos->AddClassFlags(nsIClassOfService::Throttleable |
                        nsIClassOfService::Tail);
-  }
 
-  if (mIsTrackingFetch && nsContentUtils::IsLowerNetworkPriority()) {
     nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(chan);
     if (p) {
       p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
@@ -428,8 +441,7 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
 
   MOZ_ASSERT(filteredResponse);
   MOZ_ASSERT(mObserver);
-  if (filteredResponse->Type() == ResponseType::Error ||
-      mRequest->GetIntegrity().IsEmpty()) {
+  if (!ShouldCheckSRI(mRequest, filteredResponse)) {
     mObserver->OnResponseAvailable(filteredResponse);
   #ifdef DEBUG
     mResponseAvailableCalled = true;
@@ -602,9 +614,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   mResponse = BeginAndGetFilteredResponse(response, foundOpaqueRedirect);
 
   
-  if (mResponse->Type() != ResponseType::Error &&
-      !mRequest->GetIntegrity().IsEmpty() &&
-      mSRIMetadata.IsEmpty()) {
+  if (ShouldCheckSRI(mRequest, mResponse) && mSRIMetadata.IsEmpty()) {
     nsIConsoleReportCollector* aReporter = nullptr;
     if (mObserver) {
       aReporter = mObserver->GetReporter();
@@ -741,8 +751,9 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
   MOZ_ASSERT(mPipeOutputStream);
 
   
-  if (mResponse->Type() != ResponseType::Error &&
-      !mRequest->GetIntegrity().IsEmpty()) {
+  
+  if (mResponse->Type() != ResponseType::Opaque &&
+      ShouldCheckSRI(mRequest, mResponse)) {
     MOZ_ASSERT(mSRIDataVerifier);
 
     SRIVerifierAndOutputHolder holder(mSRIDataVerifier, mPipeOutputStream);
@@ -780,8 +791,7 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
     MOZ_ASSERT(!mResponse->IsError());
 
     
-    if (mResponse->Type() != ResponseType::Error &&
-        !mRequest->GetIntegrity().IsEmpty()) {
+    if (ShouldCheckSRI(mRequest, mResponse)) {
       MOZ_ASSERT(mSRIDataVerifier);
 
       nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
@@ -812,9 +822,8 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
   }
 
   if (mObserver) {
-    if (mResponse->Type() != ResponseType::Error &&
-        !mRequest->GetIntegrity().IsEmpty()) {
-      
+    
+    if (ShouldCheckSRI(mRequest, mResponse)) {
       MOZ_ASSERT(mResponse);
       mObserver->OnResponseAvailable(mResponse);
       #ifdef DEBUG
