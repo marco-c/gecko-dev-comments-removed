@@ -157,8 +157,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
     
     command = [
         '/home/worker/bin/run-task',
-        
-        '--chown', '/home/worker/workspace',
     ]
 
     
