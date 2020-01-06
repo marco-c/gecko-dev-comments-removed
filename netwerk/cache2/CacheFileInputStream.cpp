@@ -131,7 +131,7 @@ CacheFileInputStream::ReadSegments(nsWriteSegmentFun aWriter, void *aClosure,
   LOG(("CacheFileInputStream::ReadSegments() [this=%p, count=%d]",
        this, aCount));
 
-  nsresult rv;
+  nsresult rv = NS_OK;
 
   *_retval = 0;
 
@@ -166,6 +166,10 @@ CacheFileInputStream::ReadSegments(nsWriteSegmentFun aWriter, void *aClosure,
       }
     }
 
+    if (aCount == 0) {
+      break;
+    }
+
     CacheFileChunkReadHandle hnd = mChunk->GetReadHandle();
     int64_t canRead = CanRead(&hnd);
     if (NS_FAILED(mStatus)) {
@@ -198,11 +202,6 @@ CacheFileInputStream::ReadSegments(nsWriteSegmentFun aWriter, void *aClosure,
         aCount -= read;
 
         if (!mClosed) {
-          if (hnd.DataSize() != mChunk->DataSize()) {
-            
-            continue;
-          }
-
           
           EnsureCorrectChunk(false);
 
@@ -220,7 +219,7 @@ CacheFileInputStream::ReadSegments(nsWriteSegmentFun aWriter, void *aClosure,
 
       rv = NS_OK;
     } else {
-      if (mFile->OutputStreamExists(mAlternativeData)) {
+      if (*_retval == 0 && mFile->OutputStreamExists(mAlternativeData)) {
         rv = NS_BASE_STREAM_WOULD_BLOCK;
       } else {
         rv = NS_OK;
