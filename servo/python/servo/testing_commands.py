@@ -458,6 +458,14 @@ class MachCommands(CommandBase):
     def wptrunner(self, run_file, **kwargs):
         self.set_software_rendering_env(kwargs['release'])
 
+        
+        
+        
+        
+        
+        
+        os.environ['RAYON_RS_NUM_CPUS'] = "2"
+
         os.environ["RUST_BACKTRACE"] = "1"
         kwargs["debug"] = not kwargs["release"]
         if kwargs.pop("chaos"):
