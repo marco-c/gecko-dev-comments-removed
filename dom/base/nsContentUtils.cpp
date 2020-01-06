@@ -107,7 +107,6 @@
 #include "nsHostObjectProtocolHandler.h"
 #include "nsHtml5Module.h"
 #include "nsHtml5StringParser.h"
-#include "nsHTMLDocument.h"
 #include "nsIAddonPolicyService.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
@@ -295,6 +294,7 @@ bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
 bool nsContentUtils::sIsFormAutofillAutocompleteEnabled = false;
 bool nsContentUtils::sIsWebComponentsEnabled = false;
 bool nsContentUtils::sIsCustomElementsEnabled = false;
+bool nsContentUtils::sDevToolsEnabled = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
 bool nsContentUtils::sUseActivityCursor = false;
 bool nsContentUtils::sAnimationsAPICoreEnabled = false;
@@ -703,6 +703,9 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sIsCustomElementsEnabled,
                                "dom.webcomponents.customelements.enabled", false);
+
+  Preferences::AddBoolVarCache(&sDevToolsEnabled,
+                               "devtools.enabled");
 
   Preferences::AddIntVarCache(&sPrivacyMaxInnerWidth,
                               "privacy.window.maxInnerWidth",
@@ -3005,7 +3008,7 @@ static inline bool IsAutocompleteOff(const nsIContent* aElement)
 
  nsresult
 nsContentUtils::GenerateStateKey(nsIContent* aContent,
-                                 nsIDocument* aDocument,
+                                 const nsIDocument* aDocument,
                                  nsACString& aKey)
 {
   aKey.Truncate();
@@ -3031,39 +3034,14 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
   bool generatedUniqueKey = false;
 
   if (htmlDocument) {
-    nsHTMLDocument* htmlDoc = static_cast<nsHTMLDocument*> (htmlDocument.get());
     
     
     
     
     aContent->GetUncomposedDoc()->FlushPendingNotifications(FlushType::Content);
 
-    RefPtr<nsContentList> htmlForms = htmlDoc->GetExistingForms();
-    if (!htmlForms) {
-      
-      
-      
-
-      
-      htmlForms = new nsContentList(aDocument, kNameSpaceID_XHTML,
-                                    nsGkAtoms::form, nsGkAtoms::form,
-                                     true,
-                                     false);
-    }
-    RefPtr<nsContentList> htmlFormControls = htmlDoc->GetExistingFormControls();
-    if (!htmlFormControls) {
-      
-      
-      
-      htmlFormControls = new nsContentList(aDocument,
-                                           nsHTMLDocument::MatchFormControls,
-                                           nullptr, nullptr,
-                                            true,
-                                            nullptr,
-                                            kNameSpaceID_None,
-                                            true,
-                                            false);
-    }
+    nsContentList *htmlForms = htmlDocument->GetForms();
+    nsContentList *htmlFormControls = htmlDocument->GetFormControls();
 
     NS_ENSURE_TRUE(htmlForms && htmlFormControls, NS_ERROR_OUT_OF_MEMORY);
 
@@ -10122,28 +10100,6 @@ nsContentUtils::SetupCustomElement(Element* aElement,
   return registry->SetupCustomElement(aElement, aTypeExtension);
 }
 
- CustomElementDefinition*
-nsContentUtils::GetElementDefinitionIfObservingAttr(Element* aCustomElement,
-                                                    nsIAtom* aExtensionType,
-                                                    nsIAtom* aAttrName)
-{
-  nsString extType = nsDependentAtomString(aExtensionType);
-  NodeInfo *ni = aCustomElement->NodeInfo();
-
-  CustomElementDefinition* definition =
-    LookupCustomElementDefinition(aCustomElement->OwnerDoc(), ni->LocalName(),
-                                  ni->NamespaceID(),
-                                  extType.IsEmpty() ? nullptr : &extType);
-
-  
-  
-  if (!definition || !definition->IsInObservedAttributeList(aAttrName)) {
-    return nullptr;
-  }
-
-  return definition;
-}
-
  void
 nsContentUtils::EnqueueLifecycleCallback(nsIDocument* aDoc,
                                          nsIDocument::ElementCallbackType aType,
@@ -10850,3 +10806,17 @@ nsContentUtils::ExtractErrorValues(JSContext* aCx,
   }
 }
 
+ bool
+nsContentUtils::DevToolsEnabled(JSContext* aCx)
+{
+  if (NS_IsMainThread()) {
+    return sDevToolsEnabled;
+  }
+
+  workers::WorkerPrivate* workerPrivate = workers::GetWorkerPrivateFromContext(aCx);
+  if (!workerPrivate) {
+    return false;
+  }
+
+  return workerPrivate->DevToolsEnabled();
+}
