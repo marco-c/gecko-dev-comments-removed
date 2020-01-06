@@ -108,6 +108,8 @@ struct PK11SlotInfoStr {
     
     NSSToken *nssToken;
     
+    CK_TOKEN_INFO tokenInfo;
+    
     char mechanismBits[256];
 };
 

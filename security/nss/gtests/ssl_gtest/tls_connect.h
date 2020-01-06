@@ -25,9 +25,12 @@ extern std::string VersionString(uint16_t version);
 
 class TlsConnectTestBase : public ::testing::Test {
  public:
-  static ::testing::internal::ParamGenerator<std::string> kTlsModesStream;
-  static ::testing::internal::ParamGenerator<std::string> kTlsModesDatagram;
-  static ::testing::internal::ParamGenerator<std::string> kTlsModesAll;
+  static ::testing::internal::ParamGenerator<SSLProtocolVariant>
+      kTlsVariantsStream;
+  static ::testing::internal::ParamGenerator<SSLProtocolVariant>
+      kTlsVariantsDatagram;
+  static ::testing::internal::ParamGenerator<SSLProtocolVariant>
+      kTlsVariantsAll;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV10;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV11;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV12;
@@ -39,8 +42,7 @@ class TlsConnectTestBase : public ::testing::Test {
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV12Plus;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsVAll;
 
-  TlsConnectTestBase(Mode mode, uint16_t version);
-  TlsConnectTestBase(const std::string& mode, uint16_t version);
+  TlsConnectTestBase(SSLProtocolVariant variant, uint16_t version);
   virtual ~TlsConnectTestBase();
 
   void SetUp();
@@ -114,7 +116,7 @@ class TlsConnectTestBase : public ::testing::Test {
   void SkipVersionChecks();
 
  protected:
-  Mode mode_;
+  SSLProtocolVariant variant_;
   std::shared_ptr<TlsAgent> client_;
   std::shared_ptr<TlsAgent> server_;
   std::unique_ptr<TlsAgent> client_model_;
@@ -130,10 +132,6 @@ class TlsConnectTestBase : public ::testing::Test {
   const uint8_t alpn_dummy_val_[4] = {0x01, 0x62, 0x01, 0x61};
 
  private:
-  static inline Mode ToMode(const std::string& str) {
-    return str == "TLS" ? STREAM : DGRAM;
-  }
-
   void CheckResumption(SessionResumptionMode expected);
   void CheckExtendedMasterSecret();
   void CheckEarlyDataAccepted();
@@ -159,20 +157,20 @@ class TlsConnectTestBase : public ::testing::Test {
 
 class TlsConnectTest : public TlsConnectTestBase {
  public:
-  TlsConnectTest() : TlsConnectTestBase(STREAM, 0) {}
+  TlsConnectTest() : TlsConnectTestBase(ssl_variant_stream, 0) {}
 };
 
 
 class DtlsConnectTest : public TlsConnectTestBase {
  public:
-  DtlsConnectTest() : TlsConnectTestBase(DGRAM, 0) {}
+  DtlsConnectTest() : TlsConnectTestBase(ssl_variant_datagram, 0) {}
 };
 
 
 class TlsConnectStream : public TlsConnectTestBase,
                          public ::testing::WithParamInterface<uint16_t> {
  public:
-  TlsConnectStream() : TlsConnectTestBase(STREAM, GetParam()) {}
+  TlsConnectStream() : TlsConnectTestBase(ssl_variant_stream, GetParam()) {}
 };
 
 
@@ -182,30 +180,30 @@ class TlsConnectStreamPre13 : public TlsConnectStream {};
 class TlsConnectDatagram : public TlsConnectTestBase,
                            public ::testing::WithParamInterface<uint16_t> {
  public:
-  TlsConnectDatagram() : TlsConnectTestBase(DGRAM, GetParam()) {}
+  TlsConnectDatagram() : TlsConnectTestBase(ssl_variant_datagram, GetParam()) {}
 };
 
 
 
-
-class TlsConnectGeneric
-    : public TlsConnectTestBase,
-      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+class TlsConnectGeneric : public TlsConnectTestBase,
+                          public ::testing::WithParamInterface<
+                              std::tuple<SSLProtocolVariant, uint16_t>> {
  public:
   TlsConnectGeneric();
 };
 
 
-class TlsConnectPre12
-    : public TlsConnectTestBase,
-      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+class TlsConnectPre12 : public TlsConnectTestBase,
+                        public ::testing::WithParamInterface<
+                            std::tuple<SSLProtocolVariant, uint16_t>> {
  public:
   TlsConnectPre12();
 };
 
 
-class TlsConnectTls12 : public TlsConnectTestBase,
-                        public ::testing::WithParamInterface<std::string> {
+class TlsConnectTls12
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<SSLProtocolVariant> {
  public:
   TlsConnectTls12();
 };
@@ -214,20 +212,21 @@ class TlsConnectTls12 : public TlsConnectTestBase,
 class TlsConnectStreamTls12 : public TlsConnectTestBase {
  public:
   TlsConnectStreamTls12()
-      : TlsConnectTestBase(STREAM, SSL_LIBRARY_VERSION_TLS_1_2) {}
+      : TlsConnectTestBase(ssl_variant_stream, SSL_LIBRARY_VERSION_TLS_1_2) {}
 };
 
 
-class TlsConnectTls12Plus
-    : public TlsConnectTestBase,
-      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+class TlsConnectTls12Plus : public TlsConnectTestBase,
+                            public ::testing::WithParamInterface<
+                                std::tuple<SSLProtocolVariant, uint16_t>> {
  public:
   TlsConnectTls12Plus();
 };
 
 
-class TlsConnectTls13 : public TlsConnectTestBase,
-                        public ::testing::WithParamInterface<std::string> {
+class TlsConnectTls13
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<SSLProtocolVariant> {
  public:
   TlsConnectTls13();
 };
@@ -236,13 +235,13 @@ class TlsConnectTls13 : public TlsConnectTestBase,
 class TlsConnectStreamTls13 : public TlsConnectTestBase {
  public:
   TlsConnectStreamTls13()
-      : TlsConnectTestBase(STREAM, SSL_LIBRARY_VERSION_TLS_1_3) {}
+      : TlsConnectTestBase(ssl_variant_stream, SSL_LIBRARY_VERSION_TLS_1_3) {}
 };
 
 class TlsConnectDatagram13 : public TlsConnectTestBase {
  public:
   TlsConnectDatagram13()
-      : TlsConnectTestBase(DGRAM, SSL_LIBRARY_VERSION_TLS_1_3) {}
+      : TlsConnectTestBase(ssl_variant_datagram, SSL_LIBRARY_VERSION_TLS_1_3) {}
 };
 
 

@@ -9,6 +9,7 @@
 #define _BLAPII_H_
 
 #include "blapit.h"
+#include "mpi.h"
 
 
 #define MAX_BLOCK_SIZE 16
@@ -59,6 +60,7 @@ SEC_END_PROTOS
 #undef HAVE_NO_SANITIZE_ATTR
 
 SECStatus RSA_Init();
+SECStatus generate_prime(mp_int *prime, int primeLen);
 
 
 PRBool aesni_support();

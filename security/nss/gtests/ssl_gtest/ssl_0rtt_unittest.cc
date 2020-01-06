@@ -227,7 +227,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngrade) {
   client_->Set0RttEnabled(true);
 
   client_->ExpectSendAlert(kTlsAlertIllegalParameter);
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
   }
   client_->Handshake();
@@ -237,7 +237,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngrade) {
 
   
   
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     
     ASSERT_TRUE_WAIT(
         (server_->error_code() == SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA),
@@ -269,7 +269,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngradeEarlyData) {
   client_->Set0RttEnabled(true);
   ZeroRttSendReceive(true, false, [this]() {
     client_->ExpectSendAlert(kTlsAlertIllegalParameter);
-    if (mode_ == STREAM) {
+    if (variant_ == ssl_variant_stream) {
       server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
     }
     return true;
@@ -282,7 +282,7 @@ TEST_P(TlsConnectTls13, TestTls13ZeroRttDowngradeEarlyData) {
 
   
   
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     
     ASSERT_TRUE_WAIT(
         (server_->error_code() == SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA),
@@ -316,7 +316,7 @@ TEST_P(TlsConnectTls13, SendTooMuchEarlyData) {
 
   PRInt32 sent;
   
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     sent = PR_Write(client_->ssl_fd(), big_message,
                     static_cast<PRInt32>(strlen(big_message)));
   } else {
@@ -377,7 +377,7 @@ TEST_P(TlsConnectTls13, ReceiveTooMuchEarlyData) {
   const PRInt32 message_len = static_cast<PRInt32>(strlen(message));
   EXPECT_EQ(message_len, PR_Write(client_->ssl_fd(), message, message_len));
 
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     
     ExpectAlert(server_, kTlsAlertUnexpectedMessage);
   }
@@ -388,13 +388,13 @@ TEST_P(TlsConnectTls13, ReceiveTooMuchEarlyData) {
   
   std::vector<uint8_t> buf(strlen(message) + 1);
   EXPECT_GT(0, PR_Read(server_->ssl_fd(), buf.data(), buf.capacity()));
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     server_->CheckErrorCode(SSL_ERROR_TOO_MUCH_EARLY_DATA);
   }
 
   client_->Handshake();  
   client_->Handshake();  
-  if (mode_ == STREAM) {
+  if (variant_ == ssl_variant_stream) {
     client_->CheckErrorCode(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT);
   }
 }
