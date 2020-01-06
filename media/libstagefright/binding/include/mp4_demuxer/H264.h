@@ -404,6 +404,41 @@ struct SPSData
   SPSData();
 };
 
+struct SEIRecoveryData
+{
+  
+
+
+
+
+
+
+
+
+  uint32_t recovery_frame_cnt = 0;
+  
+
+
+
+
+
+
+
+
+  bool exact_match_flag = false;
+  
+
+
+  bool broken_link_flag = false;
+  
+
+
+
+
+
+  uint8_t changing_slice_group_idc = 0;
+};
+
 class H264
 {
 public:
@@ -454,6 +489,10 @@ private:
   
   static void hrd_parameters(BitReader& aBr);
   static uint8_t NumSPS(const mozilla::MediaByteBuffer* aExtraData);
+  
+  
+  static bool DecodeRecoverySEI(const mozilla::MediaByteBuffer* aSEI,
+                                SEIRecoveryData& aDest);
 };
 
 } 
