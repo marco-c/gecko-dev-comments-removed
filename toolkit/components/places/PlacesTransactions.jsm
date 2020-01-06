@@ -1481,25 +1481,6 @@ PT.Remove.prototype = {
 
 
 
-PT.RemoveBookmarksForUrls = DefineTransaction(["urls"]);
-PT.RemoveBookmarksForUrls.prototype = {
-  async execute({ urls }) {
-    let guids = [];
-    for (let url of urls) {
-      await PlacesUtils.bookmarks.fetch({ url }, b => guids.push(b.guid));
-    }
-    let removeTxn = TransactionsHistory.getRawTransaction(PT.Remove(guids));
-    await removeTxn.execute();
-    this.undo = removeTxn.undo.bind(removeTxn);
-    this.redo = removeTxn.redo.bind(removeTxn);
-  }
-};
-
-
-
-
-
-
 PT.Tag = DefineTransaction(["urls", "tags"]);
 PT.Tag.prototype = {
   async execute({ urls, tags }) {
