@@ -59,7 +59,7 @@ function* testSteps()
     db2.close();
     db.onversionchange = unexpectedSuccessHandler;
     db2.onversionchange = unexpectedSuccessHandler;
-  };
+  }
 
   
   
