@@ -451,6 +451,11 @@ impl MarionetteHandler {
         
         runner.args().push("-marionette".to_owned());
 
+        
+        runner.envs().insert("MOZ_CRASHREPORTER".to_string(), "1".to_string());
+        runner.envs().insert("MOZ_CRASHREPORTER_NO_REPORT".to_string(), "1".to_string());
+        runner.envs().insert("MOZ_CRASHREPORTER_SHUTDOWN".to_string(), "1".to_string());
+
         if let Some(args) = options.args.take() {
             runner.args().extend(args);
         };
