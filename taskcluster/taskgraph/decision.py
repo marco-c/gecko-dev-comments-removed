@@ -17,6 +17,7 @@ from .generator import TaskGraphGenerator
 from .create import create_tasks
 from .parameters import Parameters
 from .taskgraph import TaskGraph
+from .try_option_syntax import parse_message
 from .actions import render_actions_json
 from taskgraph.util.partials import populate_release_history
 from . import GECKO
@@ -36,10 +37,6 @@ ARTIFACTS_DIR = 'artifacts'
 PER_PROJECT_PARAMETERS = {
     'try': {
         'target_tasks_method': 'try_tasks',
-        
-        
-        
-        'optimize_target_tasks': True,
         
         
         
@@ -168,8 +165,6 @@ def get_decision_parameters(options):
         'check_servo',
         'target_tasks_method',
     ]
-    parameters['target_task_labels'] = []
-    parameters['morph_templates'] = {}
 
     
     
@@ -192,15 +187,6 @@ def get_decision_parameters(options):
         parameters.update(PER_PROJECT_PARAMETERS['default'])
 
     
-    
-    task_config_file = os.path.join(GECKO, 'try_task_config.json')
-    if project == 'try' and os.path.isfile(task_config_file):
-        with open(task_config_file, 'r') as fh:
-            task_config = json.load(fh)
-        parameters['morph_templates'] = task_config.get('templates', {})
-        parameters['target_task_labels'] = task_config.get('tasks')
-
-    
     if options.get('target_tasks_method'):
         parameters['target_tasks_method'] = options['target_tasks_method']
 
@@ -210,6 +196,42 @@ def get_decision_parameters(options):
     parameters.setdefault('release_history', dict())
     if 'nightly' in parameters.get('target_tasks_method', ''):
         parameters['release_history'] = populate_release_history('Firefox', project)
+
+    
+    task_config_file = os.path.join(os.getcwd(), 'try_task_config.json')
+
+    
+    parameters['try_mode'] = None
+    if os.path.isfile(task_config_file):
+        parameters['try_mode'] = 'try_task_config'
+        with open(task_config_file, 'r') as fh:
+            parameters['try_task_config'] = json.load(fh)
+    else:
+        parameters['try_task_config'] = None
+
+    if 'try:' in parameters['message']:
+        parameters['try_mode'] = 'try_option_syntax'
+        args = parse_message(parameters['message'])
+        parameters['try_options'] = args
+    else:
+        parameters['try_options'] = None
+
+    parameters['optimize_target_tasks'] = {
+        
+        
+        
+        'try_task_config': False,
+
+        
+        
+        
+        
+        'try_option_syntax': True,
+
+        
+        
+        None: True,
+    }[parameters['try_mode']]
 
     return Parameters(parameters)
 
