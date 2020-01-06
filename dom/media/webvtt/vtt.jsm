@@ -1049,29 +1049,66 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
     };
 
     (function() {
-      var styleBox, cue;
+      var styleBox, cue, controlBarBox;
 
       if (controlBarShown) {
+        controlBarBox = BoxPosition.getSimpleBoxPosition(controlBar);
         
-        boxPositions.push(BoxPosition.getSimpleBoxPosition(controlBar));
+        boxPositions.push(controlBarBox);
       }
+
+      
+      
+      var regionNodeBoxes = {};
+      var regionNodeBox;
 
       for (var i = 0; i < cues.length; i++) {
         cue = cues[i];
+        if (cue.region != null) {
+         
+          styleBox = new RegionCueStyleBox(window, cue);
 
-        
-        styleBox = new CueStyleBox(window, cue, styleOptions);
-        styleBox.cueDiv.style.setProperty("--cue-font-size", fontSize + "px");
-        rootOfCues.appendChild(styleBox.div);
+          if (!regionNodeBoxes[cue.region.id]) {
+            
+            
+            var adjustContainerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
+            if (controlBarShown) {
+              adjustContainerBox.height -= controlBarBox.height;
+              adjustContainerBox.bottom += controlBarBox.height;
+            }
+            regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
+            regionNodeBoxes[cue.region.id] = regionNodeBox;
+          }
+          
+          var currentRegionBox = regionNodeBoxes[cue.region.id];
+          var currentRegionNodeDiv = currentRegionBox.div;
+          
+          
+          
+          if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
+            styleBox.div.style.transitionProperty = "top";
+            styleBox.div.style.transitionDuration = "0.433s";
+          }
 
-        
-        moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
+          currentRegionNodeDiv.appendChild(styleBox.div);
+          rootOfCues.appendChild(currentRegionNodeDiv);
+          cue.displayState = styleBox.div;
+          boxPositions.push(BoxPosition.getSimpleBoxPosition(currentRegionBox));
+        } else {
+          
+          styleBox = new CueStyleBox(window, cue, styleOptions);
+          styleBox.cueDiv.style.setProperty("--cue-font-size", fontSize + "px");
+          rootOfCues.appendChild(styleBox.div);
 
-        
-        
-        cue.displayState = styleBox.div;
+          
+          moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
 
-        boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
+          
+          
+          cue.displayState = styleBox.div;
+
+          boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
+        }
       }
     })();
   };
