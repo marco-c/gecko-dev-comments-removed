@@ -48,9 +48,8 @@ namespace frontend { class TokenStream; }
 extern RegExpObject*
 RegExpAlloc(JSContext* cx, NewObjectKind newKind, HandleObject proto = nullptr);
 
-
 extern JSObject*
-CloneRegExpObject(JSContext* cx, JSObject* regexp);
+CloneRegExpObject(JSContext* cx, Handle<RegExpObject*> regex);
 
 class RegExpObject : public NativeObject
 {
@@ -163,12 +162,12 @@ class RegExpObject : public NativeObject
     static void trace(JSTracer* trc, JSObject* obj);
     void trace(JSTracer* trc);
 
-    void initIgnoringLastIndex(HandleAtom source, RegExpFlag flags);
+    void initIgnoringLastIndex(JSAtom* source, RegExpFlag flags);
 
     
     
     
-    void initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, JSContext* cx);
+    void initAndZeroLastIndex(JSAtom* source, RegExpFlag flags, JSContext* cx);
 
 #ifdef DEBUG
     static MOZ_MUST_USE bool dumpBytecode(JSContext* cx, Handle<RegExpObject*> regexp,

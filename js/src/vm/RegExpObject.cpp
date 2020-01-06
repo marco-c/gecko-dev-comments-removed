@@ -296,18 +296,18 @@ RegExpObject::assignInitialShape(JSContext* cx, Handle<RegExpObject*> self)
 }
 
 void
-RegExpObject::initIgnoringLastIndex(HandleAtom source, RegExpFlag flags)
+RegExpObject::initIgnoringLastIndex(JSAtom* source, RegExpFlag flags)
 {
     
     
-    NativeObject::setPrivate(nullptr);
+    sharedRef() = nullptr;
 
     setSource(source);
     setFlags(flags);
 }
 
 void
-RegExpObject::initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, JSContext* cx)
+RegExpObject::initAndZeroLastIndex(JSAtom* source, RegExpFlag flags, JSContext* cx)
 {
     initIgnoringLastIndex(source, flags);
     zeroLastIndex(cx);
