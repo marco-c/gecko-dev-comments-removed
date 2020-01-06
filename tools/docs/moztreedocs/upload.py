@@ -7,8 +7,11 @@ from __future__ import absolute_import, unicode_literals
 import io
 import mimetypes
 import os
+import sys
 
+import botocore
 import boto3
+import concurrent.futures as futures
 import requests
 
 
@@ -47,24 +50,36 @@ def s3_upload(files, key_prefix=None):
     else:
         print("Trying to use your AWS credentials..")
         session = boto3.session.Session(region_name=region)
-    s3 = session.client('s3')
 
-    for path, f in files:
-        content_type, content_encoding = mimetypes.guess_type(path)
-        extra_args = {}
-        if content_type:
-            extra_args['ContentType'] = content_type
-        if content_encoding:
-            extra_args['ContentEncoding'] = content_encoding
+    s3 = session.client('s3',
+                        config=botocore.client.Config(max_pool_connections=20))
 
-        if key_prefix:
-            key = '%s/%s' % (key_prefix, path)
-        else:
-            key = path
-
-        print('uploading %s to %s' % (path, key))
-
+    def upload(f, bucket, key, extra_args):
         
-        
-        s3.upload_fileobj(io.BytesIO(f.read()), bucket, key,
-                          ExtraArgs=extra_args)
+        sys.stdout.write('uploading %s to %s\n' % (path, key))
+        sys.stdout.flush()
+        s3.upload_fileobj(f, bucket, key, ExtraArgs=extra_args)
+
+    fs = []
+    with futures.ThreadPoolExecutor(20) as e:
+        for path, f in files:
+            content_type, content_encoding = mimetypes.guess_type(path)
+            extra_args = {}
+            if content_type:
+                extra_args['ContentType'] = content_type
+            if content_encoding:
+                extra_args['ContentEncoding'] = content_encoding
+
+            if key_prefix:
+                key = '%s/%s' % (key_prefix, path)
+            else:
+                key = path
+
+            
+            
+            fs.append(e.submit(upload, io.BytesIO(f.read()), bucket, key,
+                               extra_args))
+
+    
+    for f in fs:
+        f.result()
