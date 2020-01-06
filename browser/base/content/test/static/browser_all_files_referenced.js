@@ -164,8 +164,6 @@ var whitelist = [
   
   {file: "resource://gre/modules/Battery.jsm"},
   
-  {file: "resource://gre/modules/ISO8601DateUtils.jsm"},
-  
   {file: "resource://gre/modules/Manifest.jsm"},
   
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
