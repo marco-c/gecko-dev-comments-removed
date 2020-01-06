@@ -62,6 +62,8 @@ enum {
 class nsIEventTarget;
 
 namespace mozilla {
+class SchedulerGroup;
+
 namespace dom {
 class ContentParent;
 } 
@@ -379,6 +381,16 @@ public:
     }
 
     virtual void ProcessRemoteNativeEventsInInterruptCall() {
+    }
+
+    
+    
+    
+    
+    virtual bool
+    GetMessageSchedulerGroups(const Message& aMsg, nsTArray<RefPtr<SchedulerGroup>>& aGroups)
+    {
+        return false;
     }
 
     virtual already_AddRefed<nsIEventTarget>
