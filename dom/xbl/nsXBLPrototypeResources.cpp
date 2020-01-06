@@ -112,9 +112,14 @@ nsXBLPrototypeResources::FlushSkinSheets()
   }
 
   if (doc->IsStyledByServo()) {
-    MOZ_ASSERT(doc->GetShell());
-    MOZ_ASSERT(doc->GetShell()->GetPresContext());
-    ComputeServoStyleSet(doc->GetShell()->GetPresContext());
+    
+    
+    
+    
+    if (auto* shell = doc->GetShell()) {
+      MOZ_ASSERT(shell->GetPresContext());
+      ComputeServoStyleSet(shell->GetPresContext());
+    }
   } else {
     GatherRuleProcessor();
   }
