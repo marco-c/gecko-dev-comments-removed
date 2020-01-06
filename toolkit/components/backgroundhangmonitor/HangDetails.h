@@ -32,6 +32,7 @@ public:
   HangDetails()
     : mDuration(0)
     , mProcess(GeckoProcessType_Invalid)
+    , mRemoteType(NullString())
   {}
 
   HangDetails(const HangDetails& aOther) = default;
@@ -44,6 +45,7 @@ public:
               HangMonitor::HangAnnotations&& aAnnotations)
     : mDuration(aDuration)
     , mProcess(aProcess)
+    , mRemoteType(NullString())
     , mThreadName(aThreadName)
     , mRunnableName(aRunnableName)
     , mStack(Move(aStack))
@@ -52,6 +54,9 @@ public:
 
   uint32_t mDuration;
   GeckoProcessType mProcess;
+  
+  
+  nsString mRemoteType;
   nsCString mThreadName;
   nsCString mRunnableName;
   HangStack mStack;
