@@ -831,6 +831,22 @@ ServoStyleSet::InsertStyleSheetBefore(SheetType aType,
   return NS_OK;
 }
 
+void
+ServoStyleSet::UpdateStyleSheet(ServoStyleSheet* aSheet)
+{
+  MOZ_ASSERT(aSheet);
+
+  if (mRawSet) {
+    
+    Servo_StyleSet_UpdateStyleSheet(mRawSet.get(),
+                                    aSheet->RawSheet(),
+                                    UniqueIDForSheet(aSheet));
+    
+    
+    
+  }
+}
+
 int32_t
 ServoStyleSet::SheetCount(SheetType aType) const
 {

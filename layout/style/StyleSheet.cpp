@@ -471,6 +471,10 @@ StyleSheet::EnsureUniqueInner()
   
   
   for (StyleSetHandle& setHandle : mStyleSets) {
+    if (ServoStyleSet* servoSet = setHandle->GetAsServo()) {
+      MOZ_ASSERT(IsServo(), "Only servo sheets should be in servo stylesets.");
+      servoSet->UpdateStyleSheet(GetAsServo());
+    }
     setHandle->SetNeedsRestyleAfterEnsureUniqueInner();
   }
 }
