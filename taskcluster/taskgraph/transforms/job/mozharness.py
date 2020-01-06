@@ -85,7 +85,12 @@ mozharness_run_schema = Schema({
     Required('requires-signed-builds', default=False): bool,
 
     
+    
     Required('use-simple-package', default=True): bool,
+
+    
+    
+    Required('use-magic-mh-args', default=True): bool,
 })
 
 
@@ -99,6 +104,9 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     if not run['use-simple-package']:
         raise NotImplementedError("Simple packaging cannot be disabled via"
                                   "'use-simple-package' on docker-workers")
+    if not run['use-magic-mh-args']:
+        raise NotImplementedError("Cannot disabled mh magic arg passing via"
+                                  "'use-magic-mh-args' on docker-workers")
 
     
     taskdesc['worker']['docker-image'] = {"in-tree": "desktop-build"}
@@ -229,8 +237,10 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     mh_command.append('\\'.join([r'.\build\src\testing', run['script'].replace('/', '\\')]))
     for cfg in run['config']:
         mh_command.append('--config ' + cfg.replace('/', '\\'))
-    mh_command.append('--branch ' + config.params['project'])
-    mh_command.append(r'--skip-buildbot-actions --work-dir %cd:Z:=z:%\build')
+    if run['use-magic-mh-args']:
+        mh_command.append('--branch ' + config.params['project'])
+        mh_command.append(r'--skip-buildbot-actions')
+    mh_command.append(r'--work-dir %cd:Z:=z:%\build')
     for action in run.get('actions', []):
         mh_command.append('--' + action)
 
