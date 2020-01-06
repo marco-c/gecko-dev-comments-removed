@@ -1325,7 +1325,6 @@ GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
   if (win.windowState == win.STATE_FULLSCREEN) {
     yield new Promise(resolve => {
       win.addEventListener("sizemodechange", resolve, {once: true});
-
       win.fullScreen = false;
     });
   }
@@ -1334,20 +1333,10 @@ GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
     assert.positiveInteger(height);
     assert.positiveInteger(width);
 
-    if (win.outerWidth != width && win.outerHeight != height) {
+    if (win.outerWidth != width || win.outerHeight != height) {
       yield new Promise(resolve => {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        const fps15 = 66;
-        const synchronousResize = () => win.setTimeout(resolve, fps15);
-        win.addEventListener("resize", synchronousResize, {once: true});
+        const optimisedResize = () => win.requestAnimationFrame(resolve);
+        win.addEventListener("resize", optimisedResize, {once: true});
         win.resizeTo(width, height);
       });
     }
