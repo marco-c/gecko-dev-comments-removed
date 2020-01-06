@@ -2227,6 +2227,8 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   }
 
   mBoundFrame = nullptr;
+  
+  nsCOMPtr<Element> rootNode = mRootNode.forget();
 
   
   
@@ -2236,15 +2238,15 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
     NS_ENSURE_TRUE_VOID(success);
   }
 
-  if (mRootNode && mMutationObserver) {
-    mRootNode->RemoveMutationObserver(mMutationObserver);
+  if (rootNode && mMutationObserver) {
+    rootNode->RemoveMutationObserver(mMutationObserver);
     mMutationObserver = nullptr;
   }
 
   
   
   
-  nsContentUtils::DestroyAnonymousContent(&mRootNode);
+  nsContentUtils::DestroyAnonymousContent(&rootNode);
   nsContentUtils::DestroyAnonymousContent(&mPlaceholderDiv);
   nsContentUtils::DestroyAnonymousContent(&mPreviewDiv);
 }
