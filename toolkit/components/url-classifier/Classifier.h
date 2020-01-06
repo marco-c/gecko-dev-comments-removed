@@ -140,6 +140,8 @@ private:
 
   void MergeNewLookupCaches(); 
 
+  void CopyAndInvalidateFullHashCache();
+
   
   
   void RemoveUpdateIntermediaries();
