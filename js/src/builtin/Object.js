@@ -205,7 +205,7 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
 
     
     if (!IsObject(attributes))
-        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, DecompileArg(2, obj));
+        ThrowArgTypeNotObject(NOT_OBJECT_KIND_DESCRIPTOR, attributes);
 
     
     var attrs = 0, hasValue = false;
