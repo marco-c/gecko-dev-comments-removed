@@ -280,6 +280,17 @@ public:
 
   void NoteStyleSheetsChanged();
 
+  
+
+
+
+  void UpdateStylistIfNeeded()
+  {
+    if (StylistNeedsUpdate()) {
+      UpdateStylist();
+    }
+  }
+
 #ifdef DEBUG
   void AssertTreeIsClean();
 #else
@@ -468,17 +479,6 @@ private:
 
 
   void UpdateStylist();
-
-  
-
-
-
-  void UpdateStylistIfNeeded()
-  {
-    if (StylistNeedsUpdate()) {
-      UpdateStylist();
-    }
-  }
 
   already_AddRefed<ServoComputedValues>
     ResolveStyleLazily(dom::Element* aElement, CSSPseudoElementType aPseudoType);

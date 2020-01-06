@@ -574,9 +574,6 @@ CSSStyleSheet::EnsureUniqueInner()
   StyleSheet::EnsureUniqueInner();
 
   
-  ClearRuleCascades();
-
-  
   
   
   for (StyleSetHandle setHandle : mStyleSets) {
@@ -628,7 +625,7 @@ CSSStyleSheet::List(FILE* out, int32_t aIndent) const
 #endif
 
 void 
-CSSStyleSheet::ClearRuleCascades()
+CSSStyleSheet::ClearRuleCascadesInternal()
 {
   
   
@@ -653,10 +650,6 @@ CSSStyleSheet::ClearRuleCascades()
       }
       (*iter)->ClearRuleCascades();
     }
-  }
-  if (mParent) {
-    CSSStyleSheet* parent = (CSSStyleSheet*)mParent;
-    parent->ClearRuleCascades();
   }
 }
 
