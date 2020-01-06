@@ -469,6 +469,14 @@ private:
     }
   }
 
+  bool ValueMatches(PrefValueKind aKind, PrefType aType, PrefValue aValue)
+  {
+    return IsType(aType) &&
+           (aKind == PrefValueKind::Default
+              ? mHasDefaultValue && mDefaultValue.Equals(aType, aValue)
+              : mHasUserValue && mUserValue.Equals(aType, aValue));
+  }
+
 public:
   void ClearUserValue()
   {
@@ -492,16 +500,15 @@ public:
         return NS_ERROR_UNEXPECTED;
       }
 
-      if (!IsLocked()) {
-        
-        if (!mHasDefaultValue || !mDefaultValue.Equals(aType, aValue)) {
-          ReplaceValue(PrefValueKind::Default, aType, aValue);
-          if (aFlags & kPrefSticky) {
-            mIsSticky = true;
-          }
-          if (!mHasUserValue) {
-            *aValueChanged = true;
-          }
+      
+      
+      if (!IsLocked() && !ValueMatches(PrefValueKind::Default, aType, aValue)) {
+        ReplaceValue(PrefValueKind::Default, aType, aValue);
+        if (aFlags & kPrefSticky) {
+          mIsSticky = true;
+        }
+        if (!mHasUserValue) {
+          *aValueChanged = true;
         }
         
         
@@ -516,8 +523,8 @@ public:
       
       
       
-      if (mHasDefaultValue && !mIsSticky &&
-          mDefaultValue.Equals(aType, aValue) && !(aFlags & kPrefForceSet)) {
+      if (ValueMatches(PrefValueKind::Default, aType, aValue) && !mIsSticky &&
+          !(aFlags & kPrefForceSet)) {
         if (mHasUserValue) {
           ClearUserValue();
           if (!IsLocked()) {
@@ -525,8 +532,10 @@ public:
             *aValueChanged = true;
           }
         }
-      } else if (!mHasUserValue || !IsType(aType) ||
-                 !mUserValue.Equals(aType, aValue)) {
+
+        
+        
+      } else if (!ValueMatches(PrefValueKind::User, aType, aValue)) {
         ReplaceValue(PrefValueKind::User, aType, aValue);
         if (!IsLocked()) {
           *aDirty = true;
@@ -540,8 +549,11 @@ public:
   
   bool UserValueToStringForSaving(nsCString& aStr)
   {
-    if (mHasUserValue && (!mHasDefaultValue || mIsSticky ||
-                          !mDefaultValue.Equals(Type(), mUserValue))) {
+    
+    
+    if (mHasUserValue &&
+        (!ValueMatches(PrefValueKind::Default, Type(), mUserValue) ||
+         mIsSticky)) {
       if (IsTypeString()) {
         StrEscape(mUserValue.mStringVal, aStr);
 
