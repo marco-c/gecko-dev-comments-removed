@@ -2242,8 +2242,8 @@ nsHttpChannel::ProcessAltService()
 
     nsAutoCString scheme;
     mURI->GetScheme(scheme);
-    bool isHttp = scheme.Equals(NS_LITERAL_CSTRING("http"));
-    if (!isHttp && !scheme.Equals(NS_LITERAL_CSTRING("https"))) {
+    bool isHttp = scheme.EqualsLiteral("http");
+    if (!isHttp && !scheme.EqualsLiteral("https")) {
         return;
     }
 
@@ -3985,9 +3985,13 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
             MOZ_ASSERT(NS_IsMainThread(), "Should be called on the main thread");
             mCacheAsyncOpenCalled = true;
             if (mNetworkTriggered) {
-                mRaceCacheWithNetwork = true;
+                mRaceCacheWithNetwork = sRCWNEnabled;
             }
             rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, this);
+            if (NS_FAILED(rv)) {
+                
+                mCacheAsyncOpenCalled = false;
+            }
         } else {
             
             
@@ -3997,7 +4001,10 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
                 if (self->mNetworkTriggered) {
                     self->mRaceCacheWithNetwork = true;
                 }
-                cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
+                nsresult rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
+                if (NS_FAILED(rv)) {
+                    self->mCacheAsyncOpenCalled = false;
+                }
             };
 
             mCacheOpenTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
@@ -5872,7 +5879,9 @@ NS_IMETHODIMP nsHttpChannel::OnAuthAvailable()
     mAuthRetryPending = true;
     mProxyAuthPending = false;
     LOG(("Resuming the transaction, we got credentials from user"));
-    mTransactionPump->Resume();
+    if (mTransactionPump) {
+        mTransactionPump->Resume();
+    }
 
     return NS_OK;
 }
@@ -6392,8 +6401,8 @@ nsHttpChannel::BeginConnect()
     RefPtr<AltSvcMapping> mapping;
     if (!mConnectionInfo && mAllowAltSvc && 
         !(mLoadFlags & LOAD_FRESH_CONNECTION) &&
-        (scheme.Equals(NS_LITERAL_CSTRING("http")) ||
-         scheme.Equals(NS_LITERAL_CSTRING("https"))) &&
+        (scheme.EqualsLiteral("http") ||
+         scheme.EqualsLiteral("https")) &&
         (!proxyInfo || proxyInfo->IsDirect()) &&
         (mapping = gHttpHandler->GetAltServiceMapping(scheme,
                                                       host, port,
@@ -9396,7 +9405,7 @@ nsHttpChannel::TriggerNetwork()
     }
 
     if (mCacheAsyncOpenCalled && !mOnCacheAvailableCalled) {
-        mRaceCacheWithNetwork = true;
+        mRaceCacheWithNetwork = sRCWNEnabled;
     }
 
     LOG(("  triggering network\n"));

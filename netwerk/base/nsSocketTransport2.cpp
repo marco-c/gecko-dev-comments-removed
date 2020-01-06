@@ -1102,8 +1102,7 @@ nsSocketTransport::ResolveHost()
             
             
             
-            if (!net_IsValidHostName(mHost) &&
-                !mHost.Equals(NS_LITERAL_CSTRING("*"))) {
+            if (!net_IsValidHostName(mHost) && !mHost.EqualsLiteral("*")) {
                 SOCKET_LOG(("  invalid hostname %s\n", mHost.get()));
                 return NS_ERROR_UNKNOWN_HOST;
             }

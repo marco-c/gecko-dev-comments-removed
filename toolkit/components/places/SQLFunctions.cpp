@@ -1033,11 +1033,11 @@ namespace places {
         uint32_t hash = HashString(str);
         result->SetAsInt64(hash);
       }
-    } else if (mode.Equals(NS_LITERAL_CSTRING("prefix_lo"))) {
+    } else if (mode.EqualsLiteral("prefix_lo")) {
       
       uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
       result->SetAsInt64(hash);
-    } else if (mode.Equals(NS_LITERAL_CSTRING("prefix_hi"))) {
+    } else if (mode.EqualsLiteral("prefix_hi")) {
       
       uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
       
