@@ -442,10 +442,9 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
-    
-    
-    pub fn combinator_at(&self, index: usize) -> Combinator {
-        match self.0.slice[index - 1] {
+    #[inline]
+    pub fn combinator_at_match_order(&self, index: usize) -> Combinator {
+        match self.0.slice[index] {
             Component::Combinator(c) => c,
             ref other => {
                 panic!("Not a combinator: {:?}, {:?}, index: {}",
@@ -462,14 +461,22 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
+    #[inline]
+    pub fn combinator_at_parse_order(&self, index: usize) -> Combinator {
+        match self.0.slice[self.len() - index - 1] {
+            Component::Combinator(c) => c,
+            ref other => {
+                panic!("Not a combinator: {:?}, {:?}, index: {}",
+                       other, self, index)
+            }
+        }
+    }
+
     
     
     
-    
-    
-    
-    pub fn iter_raw_parse_order_from(&self, offset_from_right: usize) -> Rev<slice::Iter<Component<Impl>>> {
-        self.0.slice[..offset_from_right].iter().rev()
+    pub fn iter_raw_parse_order_from(&self, offset: usize) -> Rev<slice::Iter<Component<Impl>>> {
+        self.0.slice[..self.len() - offset].iter().rev()
     }
 
     

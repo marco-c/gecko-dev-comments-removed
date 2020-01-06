@@ -300,8 +300,7 @@ where
 
 pub enum CompoundSelectorMatchingResult {
     
-    
-    
+    FullyMatched,
     
     
     Matched { next_combinator_offset: usize, },
@@ -325,8 +324,9 @@ pub fn matches_compound_selector<E>(
 where
     E: Element
 {
+    debug_assert_ne!(from_offset, 0);
     if cfg!(debug_assertions) {
-        selector.combinator_at(from_offset); 
+        selector.combinator_at_parse_order(from_offset - 1); 
     }
 
     let mut local_context = LocalMatchingContext {
@@ -334,10 +334,11 @@ where
         matches_hover_and_active_quirk: false,
     };
 
-    for component in selector.iter_raw_parse_order_from(from_offset - 1) {
+    for component in selector.iter_raw_parse_order_from(from_offset) {
         if matches!(*component, Component::Combinator(..)) {
+            debug_assert_ne!(from_offset, 0, "Selector started with a combinator?");
             return CompoundSelectorMatchingResult::Matched {
-                next_combinator_offset: from_offset - 1,
+                next_combinator_offset: from_offset,
             }
         }
 
@@ -350,12 +351,10 @@ where
             return CompoundSelectorMatchingResult::NotMatched;
         }
 
-        from_offset -= 1;
+        from_offset += 1;
     }
 
-    return CompoundSelectorMatchingResult::Matched {
-        next_combinator_offset: 0,
-    }
+    CompoundSelectorMatchingResult::FullyMatched
 }
 
 
