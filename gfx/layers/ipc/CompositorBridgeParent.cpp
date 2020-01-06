@@ -1607,7 +1607,7 @@ CompositorBridgeParent::RecvNotifyChildRecreated(const uint64_t& aChild,
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
 
   if (sIndirectLayerTrees.find(aChild) != sIndirectLayerTrees.end()) {
-    
+    NS_WARNING("Invalid to register the same layer tree twice");
     return IPC_FAIL_NO_REASON(this);
   }
 
