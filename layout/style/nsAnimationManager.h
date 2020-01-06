@@ -111,6 +111,14 @@ public:
   virtual void Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) override;
   virtual void Pause(ErrorResult& aRv) override;
 
+  
+  
+  
+  
+  
+  
+  
+  
   virtual AnimationPlayState PlayStateFromJS() const override;
   virtual void PlayFromJS(ErrorResult& aRv) override;
 
