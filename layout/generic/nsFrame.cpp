@@ -740,6 +740,12 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
+  
+  
+  
+  
+  
+  
   bool isPrimaryFrame = (mContent && mContent->GetPrimaryFrame() == this);
   if (isPrimaryFrame) {
     
@@ -1337,7 +1343,7 @@ nsIFrame::HasAnimationOfTransform(EffectSet* aEffectSet) const
   return mContent &&
     nsLayoutUtils::HasAnimationOfProperty(effects, eCSSProperty_transform) &&
     IsFrameOfType(eSupportsCSSTransforms) &&
-    mContent->GetPrimaryFrame() == this;
+    IsPrimaryFrame();
 }
 
 bool
@@ -1352,7 +1358,7 @@ nsIFrame::HasOpacityInternal(float aThreshold,
 
   EffectSet* effects =
     aEffectSet ? aEffectSet : EffectSet::GetEffectSet(this);
-  return (mContent && mContent->GetPrimaryFrame() == this &&
+  return (IsPrimaryFrame() &&
           nsLayoutUtils::HasAnimationOfProperty(effects, eCSSProperty_opacity));
 }
 
@@ -9417,7 +9423,7 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
            
            
            
-           mContent->GetPrimaryFrame() == this) ||
+           IsPrimaryFrame()) ||
           
 
           pseudo == nsCSSAnonBoxes::tableWrapper) {

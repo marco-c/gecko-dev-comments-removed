@@ -623,6 +623,7 @@ public:
     , mParentIsWrapperAnonBox(false)
     , mIsWrapperBoxNeedingRestyle(false)
     , mReflowRequestedForCharDataChange(false)
+    , mIsPrimaryFrame(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -2011,6 +2012,13 @@ public:
   {
     return mState & aBits;
   }
+
+  
+
+
+  bool IsPrimaryFrame() const { return mIsPrimaryFrame; }
+
+  void SetIsPrimaryFrame(bool aIsPrimary) { mIsPrimaryFrame = aIsPrimary; }
 
   
 
@@ -4189,6 +4197,14 @@ protected:
 
 
   bool mReflowRequestedForCharDataChange : 1;
+
+private:
+  
+
+
+  bool mIsPrimaryFrame : 1;
+
+protected:
 
   
 
