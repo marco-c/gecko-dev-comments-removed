@@ -88,7 +88,12 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
       return promise.resolve(content);
     }
     let options = {
-      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
+      
+      
+      
+      
+      
+      policy: Ci.nsIContentPolicy.TYPE_OTHER,
       window: this.window
     };
     return fetch(this.url, options).then(({content: text}) => {
