@@ -88,6 +88,16 @@ private:
   nsresult GetFinalStateFromContainedDecoder();
 
   
+
+
+
+
+
+
+
+  bool CheckAndFixBitmapSize(int8_t* aBIH);
+
+  
   uint16_t GetNumColors();
 
   LexerTransition<ICOState> ReadHeader(const char* aData);
