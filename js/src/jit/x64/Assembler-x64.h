@@ -191,14 +191,20 @@ class ABIArgGenerator
 };
 
 
+
 static constexpr Register ABINonArgReg0 = rax;
 static constexpr Register ABINonArgReg1 = rbx;
 static constexpr Register ABINonArgReg2 = r10;
 
 
+
 static constexpr Register ABINonArgReturnReg0 = r10;
 static constexpr Register ABINonArgReturnReg1 = r12;
 static constexpr Register ABINonVolatileReg = r13;
+
+
+
+static constexpr Register NativeABIPrologueClobberable = rax;
 
 
 

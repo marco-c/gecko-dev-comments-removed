@@ -385,20 +385,10 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
 
     
     
-    if (!reason.isNone() && !(reason.isFixed() && reason.fixed() == ExitReason::Fixed::ImportJit)) {
-        Register act = ABINonArgReg0;
-
-        
-        
-        
-        if (reason.isNative() && !act.volatile_())
-            masm.Push(act);
-
-        SetExitFP(masm, act);
-
-        if (reason.isNative() && !act.volatile_())
-            masm.Pop(act);
-    }
+    
+    
+    if (!reason.isNone() && !(reason.isFixed() && reason.fixed() == ExitReason::Fixed::ImportJit))
+        SetExitFP(masm, NativeABIPrologueClobberable);
 
     if (framePushed)
         masm.subFromStackPtr(Imm32(framePushed));
@@ -534,12 +524,34 @@ wasm::GenerateExitEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReaso
     masm.setFramePushed(0);
 }
 
+static void
+AssertNoWasmExitFPInJitExit(MacroAssembler& masm)
+{
+    
+    
+    
+    
+#ifdef DEBUG
+    Register scratch = ABINonArgReturnReg0;
+    LoadActivation(masm, scratch);
+
+    Label ok;
+    masm.branchTestPtr(Assembler::Zero,
+                       Address(scratch, JitActivation::offsetOfPackedExitFP()),
+                       Imm32(uintptr_t(JitActivation::ExitFpWasmBit)),
+                       &ok);
+    masm.breakpoint();
+    masm.bind(&ok);
+#endif
+}
+
 void
 wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets)
 {
     masm.haltingAlign(CodeAlignment);
     GenerateCallablePrologue(masm, framePushed, ExitReason(ExitReason::Fixed::ImportJit),
                              &offsets->begin, nullptr, CompileMode::Once, 0);
+    AssertNoWasmExitFPInJitExit(masm);
     masm.setFramePushed(framePushed);
 }
 
@@ -548,13 +560,7 @@ wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed, Callab
 {
     
     MOZ_ASSERT(masm.framePushed() == framePushed);
-
-#ifdef DEBUG
-    Register scratch = ABINonArgReturnReg0;
-    LoadActivation(masm, scratch);
-    masm.wasmAssertNonExitInvariants(scratch);
-#endif
-
+    AssertNoWasmExitFPInJitExit(masm);
     GenerateCallableEpilogue(masm, framePushed, ExitReason::None(), &offsets->ret);
     masm.setFramePushed(0);
 }

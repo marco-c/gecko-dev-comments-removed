@@ -443,11 +443,19 @@ class ABIArgGenerator
     ABIArg current_;
 };
 
+
 static constexpr Register ABINonArgReg0 = r8;
 static constexpr Register ABINonArgReg1 = r9;
 static constexpr Register ABINonArgReg2 = r10;
+
+
+
 static constexpr Register ABINonArgReturnReg0 = r8;
 static constexpr Register ABINonArgReturnReg1 = r9;
+
+
+
+static constexpr Register NativeABIPrologueClobberable = lr;
 
 
 
