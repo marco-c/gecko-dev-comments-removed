@@ -84,8 +84,14 @@ class TestPosition(MarionetteTestCase):
 
         
         
+        if self.marionette.session_capabilities["moz:headless"]:
+            self.assertEqual(-8, position["x"])
+            self.assertEqual(-8, position["y"])
+
         
-        if os == "linux":
+        
+        
+        elif os == "linux":
             
             self.assertLessEqual(position["x"], 0)
             self.assertLessEqual(position["y"], 0)
