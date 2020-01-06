@@ -9,6 +9,7 @@
 #include <stdint.h>                     
 #include "Layers.h"
 #include "gfxContext.h"                 
+#include "gfxPrefs.h"
 #include "mozilla/Attributes.h"         
 #include "mozilla/LinkedList.h"         
 #include "mozilla/WidgetUtils.h"        
@@ -207,6 +208,7 @@ public:
                                   const std::string& aKey,
                                   const std::string& aValue)
   {
+    MOZ_ASSERT(gfxPrefs::APZTestLoggingEnabled(), "don't call me");
     mApzTestData.LogTestDataForPaint(mPaintSequenceNumber, aScrollId, aKey, aValue);
   }
 
@@ -223,6 +225,7 @@ public:
                                     const std::string& aKey,
                                     const std::string& aValue)
   {
+    MOZ_ASSERT(gfxPrefs::APZTestLoggingEnabled(), "don't call me");
     mApzTestData.LogTestDataForRepaintRequest(aSequenceNumber, aScrollId, aKey, aValue);
   }
 
