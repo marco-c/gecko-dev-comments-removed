@@ -50,7 +50,6 @@ var tests = [
 
 
 
-
 function setSignedInUser(data) {
   if (!data) {
     data = {
