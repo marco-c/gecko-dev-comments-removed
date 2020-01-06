@@ -11,7 +11,6 @@ use parser::{ParserContext, ParserErrorContext};
 use properties::{Importance, PropertyDeclaration, PropertyDeclarationBlock, PropertyId, PropertyParserContext};
 use properties::{PropertyDeclarationId, LonghandId, SourcePropertyDeclaration};
 use properties::LonghandIdSet;
-use properties::animated_properties::AnimatableLonghand;
 use properties::longhands::transition_timing_function::single_value::SpecifiedValue as SpecifiedTimingFunction;
 use selectors::parser::SelectorParseError;
 use servo_arc::Arc;
@@ -360,16 +359,17 @@ pub struct KeyframesAnimation {
     
     pub steps: Vec<KeyframesStep>,
     
-    pub properties_changed: Vec<AnimatableLonghand>,
+    pub properties_changed: LonghandIdSet,
     
     pub vendor_prefix: Option<VendorPrefix>,
 }
 
 
-fn get_animated_properties(keyframes: &[Arc<Locked<Keyframe>>], guard: &SharedRwLockReadGuard)
-                           -> Vec<AnimatableLonghand> {
-    let mut ret = vec![];
-    let mut seen = LonghandIdSet::new();
+fn get_animated_properties(
+    keyframes: &[Arc<Locked<Keyframe>>],
+    guard: &SharedRwLockReadGuard
+) -> LonghandIdSet {
+    let mut ret = LonghandIdSet::new();
     
     
     for keyframe in keyframes {
@@ -382,15 +382,20 @@ fn get_animated_properties(keyframes: &[Arc<Locked<Keyframe>>], guard: &SharedRw
         
         
         for declaration in block.normal_declaration_iter() {
-            if let Some(property) = AnimatableLonghand::from_declaration(declaration) {
-                
-                
-                if property != AnimatableLonghand::Display &&
-                   !seen.has_animatable_longhand_bit(&property) {
-                    seen.set_animatable_longhand_bit(&property);
-                    ret.push(property);
-                }
+            let longhand_id = match declaration.id() {
+                PropertyDeclarationId::Longhand(id) => id,
+                _ => continue,
+            };
+
+            if longhand_id == LonghandId::Display {
+                continue;
             }
+
+            if !longhand_id.is_animatable() {
+                continue;
+            }
+
+            ret.insert(longhand_id);
         }
     }
 
@@ -406,14 +411,15 @@ impl KeyframesAnimation {
     
     
     
-    pub fn from_keyframes(keyframes: &[Arc<Locked<Keyframe>>],
-                          vendor_prefix: Option<VendorPrefix>,
-                          guard: &SharedRwLockReadGuard)
-                          -> Self {
+    pub fn from_keyframes(
+        keyframes: &[Arc<Locked<Keyframe>>],
+        vendor_prefix: Option<VendorPrefix>,
+        guard: &SharedRwLockReadGuard,
+    ) -> Self {
         let mut result = KeyframesAnimation {
             steps: vec![],
-            properties_changed: vec![],
-            vendor_prefix: vendor_prefix,
+            properties_changed: LonghandIdSet::new(),
+            vendor_prefix,
         };
 
         if keyframes.is_empty() {
