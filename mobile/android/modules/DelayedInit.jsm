@@ -52,12 +52,6 @@ var DelayedInit = {
   schedule: function(fn, object, name, maxWait) {
     return Impl.scheduleInit(fn, object, name, maxWait);
   },
-
-  scheduleList: function(fns, maxWait) {
-    for (let fn of fns) {
-      Impl.scheduleInit(fn, null, null, maxWait);
-    }
-  },
 };
 
 

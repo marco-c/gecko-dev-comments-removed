@@ -68,6 +68,22 @@ var LoginManagerParent = {
 
   
   
+  
+  
+  init() {
+    let mm = Cc["@mozilla.org/globalmessagemanager;1"]
+               .getService(Ci.nsIMessageListenerManager);
+    
+    mm.addMessageListener("RemoteLogins:findLogins", this);
+    mm.addMessageListener("RemoteLogins:findRecipes", this);
+    mm.addMessageListener("RemoteLogins:onFormSubmit", this);
+    mm.addMessageListener("RemoteLogins:autoCompleteLogins", this);
+    mm.addMessageListener("RemoteLogins:removeLogin", this);
+    mm.addMessageListener("RemoteLogins:insecureLoginFormPresent", this);
+    
+  },
+
+  
   receiveMessage(msg) {
     let data = msg.data;
     switch (msg.name) {
