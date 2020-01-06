@@ -213,6 +213,12 @@ WebExtensionPolicy::GetURL(const nsAString& aPath) const
 }
 
  bool
+WebExtensionPolicy::UseRemoteWebExtensions(GlobalObject& aGlobal)
+{
+  return EPS().UseRemoteExtensions();
+}
+
+ bool
 WebExtensionPolicy::IsExtensionProcess(GlobalObject& aGlobal)
 {
   return EPS().IsExtensionProcess();
