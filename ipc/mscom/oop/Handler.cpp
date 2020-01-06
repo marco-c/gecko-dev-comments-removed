@@ -9,6 +9,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/mscom/Objref.h"
 #include "nsWindowsHelpers.h"
 
 #include <objbase.h>
@@ -169,14 +170,28 @@ Handler::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
   RefPtr<IUnknown> unkToMarshal;
   HRESULT hr;
 
+#if defined(MOZ_MSCOM_REMARSHAL_NO_HANDLER)
+  LARGE_INTEGER seekTo;
+  seekTo.QuadPart = 0;
+
+  ULARGE_INTEGER objrefPos;
+
+  
+  
+  hr = pStm->Seek(seekTo, STREAM_SEEK_CUR, &objrefPos);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  
+  REFIID marshalAs = riid;
+#else
   REFIID marshalAs = MarshalAs(riid);
-  if (marshalAs == riid) {
-    unkToMarshal = static_cast<IUnknown*>(pv);
-  } else {
-    hr = mInnerUnk->QueryInterface(marshalAs, getter_AddRefs(unkToMarshal));
-    if (FAILED(hr)) {
-      return hr;
-    }
+#endif 
+
+  hr = mInnerUnk->QueryInterface(marshalAs, getter_AddRefs(unkToMarshal));
+  if (FAILED(hr)) {
+    return hr;
   }
 
   hr = mUnmarshal->MarshalInterface(pStm, marshalAs, unkToMarshal.get(),
@@ -185,6 +200,22 @@ Handler::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
     return hr;
   }
 
+#if defined(MOZ_MSCOM_REMARSHAL_NO_HANDLER)
+  
+  
+  seekTo.QuadPart = objrefPos.QuadPart;
+  hr = pStm->Seek(seekTo, STREAM_SEEK_SET, nullptr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  
+  if (!StripHandlerFromOBJREF(WrapNotNull(pStm))) {
+    return E_FAIL;
+  }
+
+  return S_OK;
+#else
   if (!HasPayload()) {
     return S_OK;
   }
@@ -192,6 +223,7 @@ Handler::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
   
   
   return WriteHandlerPayload(pStm, marshalAs);
+#endif 
 }
 
 HRESULT

@@ -11,9 +11,7 @@
 #include "nsString.h"
 #endif 
 
-#if defined(ACCESSIBILITY)
 #include <guiddef.h>
-#endif 
 
 struct IUnknown;
 
@@ -31,8 +29,10 @@ void GUIDToString(REFGUID aGuid, nsAString& aOutString);
 #if defined(ACCESSIBILITY)
 bool IsVtableIndexFromParentInterface(REFIID aInterface,
                                       unsigned long aVtableIndex);
+#if defined(MOZILLA_INTERNAL_API)
 bool IsInterfaceEqualToOrInheritedFrom(REFIID aInterface, REFIID aFrom,
                                        unsigned long aVtableIndexHint);
+#endif 
 #endif 
 
 } 

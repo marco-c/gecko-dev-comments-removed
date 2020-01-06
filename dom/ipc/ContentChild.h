@@ -388,7 +388,8 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvFlushMemory(const nsString& reason) override;
 
-  virtual mozilla::ipc::IPCResult RecvActivateA11y(const uint32_t& aMsaaID) override;
+  virtual mozilla::ipc::IPCResult RecvActivateA11y(const uint32_t& aMainChromeTid,
+                                                   const uint32_t& aMsaaID) override;
   virtual mozilla::ipc::IPCResult RecvShutdownA11y() override;
 
   virtual mozilla::ipc::IPCResult RecvGarbageCollect() override;
@@ -499,6 +500,8 @@ public:
   ContentParentId GetID() const { return mID; }
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
+  uint32_t GetChromeMainThreadId() const { return mMainChromeTid; }
+
   uint32_t GetMsaaID() const { return mMsaaID; }
 #endif
 
@@ -699,6 +702,11 @@ private:
   ContentParentId mID;
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
+  
+
+
+  uint32_t mMainChromeTid;
+
   
 
 
