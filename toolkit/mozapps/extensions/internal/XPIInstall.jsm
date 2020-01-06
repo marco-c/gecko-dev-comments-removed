@@ -1029,37 +1029,6 @@ function getTemporaryFile() {
 
 
 
-
-
-
-
-
-
-
-function verifyZipSigning(aZip, aCertificate) {
-  var count = 0;
-  var entries = aZip.findEntries(null);
-  while (entries.hasMore()) {
-    var entry = entries.getNext();
-    
-    if (entry.substr(0, 9) == "META-INF/")
-      continue;
-    
-    if (entry.substr(-1) == "/")
-      continue;
-    count++;
-    var entryCertificate = aZip.getSigningCert(entry);
-    if (!entryCertificate || !aCertificate.equals(entryCertificate)) {
-      return false;
-    }
-  }
-  return aZip.manifestEntriesCount == count;
-}
-
-
-
-
-
 function getSignedStatus(aRv, aCert, aAddonID) {
   let expectedCommonName = aAddonID;
   if (aAddonID && aAddonID.length > 64) {
@@ -1454,8 +1423,6 @@ class AddonInstall {
 
     this.file = null;
     this.ownsTempFile = null;
-    this.certificate = null;
-    this.certName = null;
 
     this.addon = null;
     this.state = null;
@@ -1669,25 +1636,6 @@ class AddonInstall {
 
         return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
                                "signature verification failed"])
-      }
-    } else if (this.addon.signedState == AddonManager.SIGNEDSTATE_UNKNOWN ||
-             this.addon.signedState == AddonManager.SIGNEDSTATE_NOT_REQUIRED) {
-      
-      let x509 = zipreader.getSigningCert(null);
-      if (x509) {
-        logger.debug("Verifying XPI signature");
-        if (verifyZipSigning(zipreader, x509)) {
-          this.certificate = x509;
-          if (this.certificate.commonName.length > 0) {
-            this.certName = this.certificate.commonName;
-          } else {
-            this.certName = this.certificate.organization;
-          }
-        } else {
-          zipreader.close();
-          return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
-                                 "XPI is incorrectly signed"]);
-        }
       }
     }
 
@@ -2711,7 +2659,7 @@ AddonInstallWrapper.prototype = {
 };
 
 ["name", "version", "icons", "releaseNotesURI", "file", "state", "error",
- "progress", "maxProgress", "certificate", "certName"].forEach(function(aProp) {
+ "progress", "maxProgress"].forEach(function(aProp) {
   Object.defineProperty(AddonInstallWrapper.prototype, aProp, {
     get() {
       return installFor(this)[aProp];
