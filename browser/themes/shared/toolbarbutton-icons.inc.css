@@ -44,6 +44,15 @@ toolbar[brighttext] .toolbarbutton-1 {
   list-style-image: none;
 }
 
+
+
+:-moz-any(#reload-button, #stop-button) > .toolbarbutton-animatable-box {
+  display: none;
+}
+#nav-bar-customization-target > #stop-reload-button > :-moz-any(#reload-button, #stop-button) > .toolbarbutton-animatable-box {
+  display: -moz-box;
+}
+
 #stop-reload-button[animate] > #reload-button > .toolbarbutton-icon,
 #stop-reload-button[animate] > #reload-button[displaystop] + #stop-button > .toolbarbutton-icon {
   fill: transparent;
