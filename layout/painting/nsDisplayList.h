@@ -1955,16 +1955,6 @@ public:
 
 
 
-   virtual void CreateWebRenderCommand(mozilla::wr::DisplayListBuilder& aBuilder,
-                                       const StackingContextHelper& aSc,
-                                       nsTArray<WebRenderParentCommand>& aParentCommands,
-                                       WebRenderDisplayItemLayer* aLayer) {}
-
-  
-
-
-
-
 
 
 
@@ -3129,10 +3119,6 @@ public:
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
 
-  virtual void CreateWebRenderCommand(mozilla::wr::DisplayListBuilder& aBuilder,
-                                      const StackingContextHelper& aSc,
-                                      nsTArray<WebRenderParentCommand>& aParentCommands,
-                                      WebRenderDisplayItemLayer* aLayer) override;
   virtual bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        const StackingContextHelper& aSc,
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
