@@ -1,7 +1,7 @@
 
 
 
-Components.utils.import("resource:///modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 function TestInterfaceA() {}
 TestInterfaceA.prototype = {
