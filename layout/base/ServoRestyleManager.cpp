@@ -819,12 +819,16 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   if (aAttribute == nsGkAtoms::style) {
     PostRestyleEvent(aElement, eRestyle_StyleAttribute, nsChangeHint(0));
   }
+
   
   
-  if (aAttribute == nsGkAtoms::cellpadding && aElement->IsHTMLElement(nsGkAtoms::table)) {
+  
+  
+  if ((aAttribute == nsGkAtoms::cellpadding &&
+       aElement->IsHTMLElement(nsGkAtoms::table)) ||
+      aAttribute == nsGkAtoms::lang) {
     PostRestyleEvent(aElement, eRestyle_Subtree, nsChangeHint(0));
-  }
-  if (aElement->IsAttributeMapped(aAttribute)) {
+  } else if (aElement->IsAttributeMapped(aAttribute)) {
     Servo_NoteExplicitHints(aElement, eRestyle_Self, nsChangeHint(0));
   }
 }
