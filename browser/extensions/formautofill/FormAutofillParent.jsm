@@ -270,9 +270,11 @@ FormAutofillParent.prototype = {
     let {address} = data;
 
     if (address.guid) {
-      
-      
-      
+      if (!this.profileStorage.addresses.mergeIfPossible(address.guid, address.record)) {
+        
+        return;
+      }
+      this.profileStorage.addresses.notifyUsed(address.guid);
     } else {
       
       
