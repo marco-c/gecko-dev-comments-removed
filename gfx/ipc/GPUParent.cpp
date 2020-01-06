@@ -121,8 +121,6 @@ GPUParent::Init(base::ProcessId aParentPid,
   }
 
   CompositorThreadHolder::Start();
-  
-  VRListenerThreadHolder::Start();
   APZThreadUtils::SetControllerThread(CompositorThreadHolder::Loop());
   APZCTreeManager::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
