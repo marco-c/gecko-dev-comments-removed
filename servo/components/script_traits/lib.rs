@@ -432,7 +432,13 @@ pub enum CompositorEvent {
     
     ResizeEvent(WindowSizeData, WindowSizeType),
     
-    MouseButtonEvent(MouseEventType, MouseButton, Point2D<f32>, Option<UntrustedNodeAddress>),
+    MouseButtonEvent(
+        MouseEventType,
+        MouseButton,
+        Point2D<f32>,
+        Option<UntrustedNodeAddress>,
+        Option<Point2D<f32>>
+    ),
     
     MouseMoveEvent(Option<Point2D<f32>>, Option<UntrustedNodeAddress>),
     
