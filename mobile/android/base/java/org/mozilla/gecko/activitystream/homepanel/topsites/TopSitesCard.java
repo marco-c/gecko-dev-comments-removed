@@ -71,6 +71,7 @@ import java.util.concurrent.Future;
                         extras,
                         ActivityStreamContextMenu.MenuMode.TOPSITE,
                         topSite,
+                         false, 
                         onUrlOpenListener, onUrlOpenInBackgroundListener,
                         faviconView.getWidth(), faviconView.getHeight());
 
