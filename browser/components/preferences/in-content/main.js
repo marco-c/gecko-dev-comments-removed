@@ -618,15 +618,24 @@ var gMainPane = {
     
     this._updateUseCurrentButton();
 
-    
-    handleControllingExtension("prefs", "homepage_override")
-      .then((isControlled) => {
-        
-        document.querySelectorAll("#browserHomePage, .homepage-button")
-          .forEach((button) => {
-            button.disabled = isControlled;
-          });
-      });
+    function setInputDisabledStates(isControlled) {
+      
+      document.querySelectorAll("#browserHomePage, .homepage-button")
+        .forEach((element) => {
+          let isLocked = document.getElementById(element.getAttribute("preference")).locked;
+          element.disabled = isLocked || isControlled;
+        });
+    }
+
+    if (homePref.locked) {
+      
+      hideControllingExtension("homepage_override");
+      setInputDisabledStates(false);
+    } else {
+      
+      handleControllingExtension("prefs", "homepage_override")
+        .then(setInputDisabledStates);
+    }
 
     
     
