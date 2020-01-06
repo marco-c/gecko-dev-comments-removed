@@ -828,7 +828,6 @@ nsDocShell::nsDocShell()
   , mEODForCurrentDocument(false)
   , mURIResultedInDocument(false)
   , mIsBeingDestroyed(false)
-  , mScriptGlobalDead(false)
   , mIsExecutingOnLoadHandler(false)
   , mIsPrintingOrPP(false)
   , mSavingOldViewer(false)
@@ -5979,9 +5978,8 @@ nsDocShell::Destroy()
   mParentWidget = nullptr;
   mCurrentURI = nullptr;
 
-  if (mScriptGlobal && !mScriptGlobalDead) {
+  if (mScriptGlobal) {
     mScriptGlobal->DetachFromDocShell();
-    mScriptGlobalDead = true;
   }
 
   if (mSessionHistory) {
@@ -13625,12 +13623,6 @@ NS_IMETHODIMP
 nsDocShell::EnsureScriptEnvironment()
 {
   if (mScriptGlobal) {
-    
-    
-    
-    if (mScriptGlobalDead) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
     return NS_OK;
   }
 

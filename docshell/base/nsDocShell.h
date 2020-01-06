@@ -1051,10 +1051,7 @@ protected:
   bool mEODForCurrentDocument : 1;
   bool mURIResultedInDocument : 1;
 
-  
-  
   bool mIsBeingDestroyed : 1;
-  bool mScriptGlobalDead : 1;
 
   bool mIsExecutingOnLoadHandler : 1;
 
