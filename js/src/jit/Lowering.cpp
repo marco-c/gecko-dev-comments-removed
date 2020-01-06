@@ -500,9 +500,6 @@ LIRGenerator::lowerCallArguments(MCall* call)
 void
 LIRGenerator::visitCall(MCall* call)
 {
-    MOZ_ASSERT(CallTempReg0 != CallTempReg1);
-    MOZ_ASSERT(CallTempReg0 != ArgumentsRectifierReg);
-    MOZ_ASSERT(CallTempReg1 != ArgumentsRectifierReg);
     MOZ_ASSERT(call->getFunction()->type() == MIRType::Object);
 
     
@@ -548,7 +545,7 @@ LIRGenerator::visitCall(MCall* call)
     } else {
         
         lir = new(alloc()) LCallGeneric(useFixedAtStart(call->getFunction(), CallTempReg0),
-                                        tempFixed(ArgumentsRectifierReg),
+                                        tempFixed(CallTempReg1),
                                         tempFixed(CallTempReg2));
     }
     defineReturn(lir, call);
@@ -559,10 +556,6 @@ void
 LIRGenerator::visitApplyArgs(MApplyArgs* apply)
 {
     MOZ_ASSERT(apply->getFunction()->type() == MIRType::Object);
-
-    
-    MOZ_ASSERT(CallTempReg0 != ArgumentsRectifierReg);
-    MOZ_ASSERT(CallTempReg1 != ArgumentsRectifierReg);
 
     
     MOZ_ASSERT(CallTempReg2 != JSReturnReg_Type);
@@ -588,10 +581,6 @@ void
 LIRGenerator::visitApplyArray(MApplyArray* apply)
 {
     MOZ_ASSERT(apply->getFunction()->type() == MIRType::Object);
-
-    
-    MOZ_ASSERT(CallTempReg0 != ArgumentsRectifierReg);
-    MOZ_ASSERT(CallTempReg1 != ArgumentsRectifierReg);
 
     
     MOZ_ASSERT(CallTempReg2 != JSReturnReg_Type);

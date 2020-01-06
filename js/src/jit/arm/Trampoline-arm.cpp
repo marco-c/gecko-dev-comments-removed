@@ -477,11 +477,8 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     masm.pushReturnAddress();
 
     
-    
-    MOZ_ASSERT(ArgumentsRectifierReg == r8);
-
-    
     masm.ma_ldr(DTRAddr(sp, DtrOffImm(RectifierFrameLayout::offsetOfNumActualArgs())), r0);
+    masm.mov(r0, r8);
 
     
     masm.ma_ldr(DTRAddr(sp, DtrOffImm(RectifierFrameLayout::offsetOfCalleeToken())), r1);

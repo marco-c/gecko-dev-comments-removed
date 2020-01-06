@@ -4241,10 +4241,8 @@ CodeGenerator::visitCallGeneric(LCallGeneric* call)
     
     masm.bind(&thunk);
     {
-        MOZ_ASSERT(ArgumentsRectifierReg != objreg);
         masm.movePtr(ImmGCPtr(argumentsRectifier), objreg); 
         masm.loadPtr(Address(objreg, JitCode::offsetOfCode()), objreg);
-        masm.move32(Imm32(call->numActualArgs()), ArgumentsRectifierReg);
     }
 
     
@@ -4674,10 +4672,8 @@ CodeGenerator::emitApplyGeneric(T* apply)
             
             JitCode* argumentsRectifier = gen->jitRuntime()->getArgumentsRectifier();
 
-            MOZ_ASSERT(ArgumentsRectifierReg != objreg);
             masm.movePtr(ImmGCPtr(argumentsRectifier), objreg); 
             masm.loadPtr(Address(objreg, JitCode::offsetOfCode()), objreg);
-            masm.movePtr(argcreg, ArgumentsRectifierReg);
         }
 
         masm.bind(&rejoin);

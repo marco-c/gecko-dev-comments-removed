@@ -411,13 +411,9 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     MacroAssembler masm(cx);
     
     
-    
 
     
-    
-    MOZ_ASSERT(ArgumentsRectifierReg == r8);
-
-    
+    masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfNumActualArgs()), r8);
     masm.addl(Imm32(1), r8);
 
     
@@ -462,7 +458,8 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
     
 
     
-    masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfNumActualArgs()), rdx);
+    
+    masm.lea(Operand(r8, -1), rdx);
 
     masm.moveValue(UndefinedValue(), ValueOperand(r10));
 

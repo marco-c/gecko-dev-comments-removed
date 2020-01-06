@@ -92,7 +92,6 @@ static constexpr FloatRegister ScratchDoubleReg = FloatRegister(X86Encoding::xmm
 static constexpr FloatRegister ScratchSimd128Reg = xmm15;
 
 
-static constexpr Register ArgumentsRectifierReg = r8;
 static constexpr Register CallTempReg0 = rax;
 static constexpr Register CallTempReg1 = rdi;
 static constexpr Register CallTempReg2 = rbx;
