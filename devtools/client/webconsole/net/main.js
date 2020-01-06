@@ -38,7 +38,7 @@ var styleSheets = [
 
 
 styleSheets.forEach(url => {
-  loadSheet(window, url, "author");
+  loadSheet(this, url, "author");
 });
 
 
