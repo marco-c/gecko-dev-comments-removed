@@ -1294,10 +1294,11 @@ HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
       }
       *firstSubmitSlot = aChild;
     }
-    NS_POSTCONDITION(mDefaultSubmitElement == mFirstSubmitInElements ||
-                     mDefaultSubmitElement == mFirstSubmitNotInElements ||
-                     !mDefaultSubmitElement,
-                     "What happened here?");
+
+    MOZ_ASSERT(mDefaultSubmitElement == mFirstSubmitInElements ||
+               mDefaultSubmitElement == mFirstSubmitNotInElements ||
+               !mDefaultSubmitElement,
+               "What happened here?");
 
     
     
@@ -1430,9 +1431,9 @@ HTMLFormElement::HandleDefaultSubmitRemoval()
       mFirstSubmitInElements : mFirstSubmitNotInElements;
   }
 
-  NS_POSTCONDITION(mDefaultSubmitElement == mFirstSubmitInElements ||
-                   mDefaultSubmitElement == mFirstSubmitNotInElements,
-                   "What happened here?");
+  MOZ_ASSERT(mDefaultSubmitElement == mFirstSubmitInElements ||
+             mDefaultSubmitElement == mFirstSubmitNotInElements,
+             "What happened here?");
 
   
   if (mDefaultSubmitElement) {

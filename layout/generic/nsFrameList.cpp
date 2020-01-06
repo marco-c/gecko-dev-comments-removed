@@ -257,7 +257,7 @@ nsFrameList::ExtractTail(FrameLinkEnumerator& aLink)
   
   aLink.mFrame = nullptr;
 
-  NS_POSTCONDITION(aLink.AtEnd(), "What's going on here?");
+  MOZ_ASSERT(aLink.AtEnd(), "What's going on here?");
 
   return nsFrameList(newFirstFrame, newLastFrame);
 }

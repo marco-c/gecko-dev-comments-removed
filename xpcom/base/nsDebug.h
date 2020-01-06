@@ -109,7 +109,6 @@ inline void MOZ_PretendNoReturn()
 
 
 #define NS_PRECONDITION(expr, str) NS_ASSERTION(expr, str)
-#define NS_POSTCONDITION(expr, str) NS_ASSERTION(expr, str)
 
 
 
