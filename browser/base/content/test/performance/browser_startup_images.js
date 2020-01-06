@@ -33,6 +33,13 @@ const whitelist = [
 
   
   {
+    file: "chrome://browser/skin/toolbarbutton-dropdown-arrow.png",
+    platforms: ["linux", "win", "macosx"],
+    photon: false,
+  },
+
+  
+  {
     file: "chrome://browser/skin/arrow-left.svg",
     platforms: ["linux", "win", "macosx"],
   },
