@@ -1225,6 +1225,9 @@ public:
 
   
   
+  void EnsureAnimationsId();
+  
+  
   
   Animation* AddAnimation();
   

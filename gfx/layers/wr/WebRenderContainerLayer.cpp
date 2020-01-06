@@ -90,6 +90,23 @@ WebRenderContainerLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
     WrBridge()->AddWebRenderParentCommand(anim);
   }
 
+  
+  
+  
+  
+  if (WrManager()->AsyncPanZoomEnabled() &&
+      GetScrollThumbData().mDirection != ScrollDirection::NONE) {
+    
+    
+    MOZ_ASSERT(transformForSC);
+
+    EnsureAnimationsId();
+    animationsId = GetCompositorAnimationsId();
+    
+    
+    transformForSC = nullptr;
+  }
+
   ScrollingLayersHelper scroller(this, aBuilder, aSc);
   StackingContextHelper sc(aSc, aBuilder, this, animationsId, opacityForSC, transformForSC);
 
