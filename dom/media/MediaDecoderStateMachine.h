@@ -252,6 +252,9 @@ public:
   MediaEventSource<DecoderDoctorEvent>&
   OnDecoderDoctorEvent() { return mOnDecoderDoctorEvent; }
 
+  MediaEventSource<NextFrameStatus>&
+  OnNextFrameStatus() { return mOnNextFrameStatus; }
+
   size_t SizeOfVideoQueue() const;
 
   size_t SizeOfAudioQueue() const;
@@ -275,7 +278,6 @@ private:
   class ShutdownState;
 
   static const char* ToStateStr(State aState);
-  static const char* ToStr(NextFrameStatus aStatus);
   const char* ToStateStr();
 
   nsCString GetDebugInfo();
@@ -382,8 +384,6 @@ protected:
 
   
   bool HasLowBufferedData(const media::TimeUnit& aThreshold);
-
-  void UpdateNextFrameStatus(NextFrameStatus aStatus);
 
   
   
@@ -661,6 +661,8 @@ private:
 
   MediaEventProducer<DecoderDoctorEvent> mOnDecoderDoctorEvent;
 
+  MediaEventProducer<NextFrameStatus> mOnNextFrameStatus;
+
   const bool mIsMSE;
 
 private:
@@ -694,10 +696,6 @@ private:
 
   
   
-  Canonical<NextFrameStatus> mNextFrameStatus;
-
-  
-  
   
   Canonical<media::TimeUnit> mCurrentPosition;
 
@@ -713,10 +711,6 @@ public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDuration()
   {
     return &mDuration;
-  }
-  AbstractCanonical<NextFrameStatus>* CanonicalNextFrameStatus()
-  {
-    return &mNextFrameStatus;
   }
   AbstractCanonical<media::TimeUnit>* CanonicalCurrentPosition()
   {

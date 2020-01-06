@@ -494,6 +494,8 @@ private:
     mMediaSeekable = false;
   }
 
+  void OnNextFrameStatus(MediaDecoderOwner::NextFrameStatus);
+
   void FinishShutdown();
 
   void ConnectMirrors(MediaDecoderStateMachine* aObject);
@@ -579,6 +581,9 @@ protected:
   
   bool mHasSuspendTaint;
 
+  MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
+    MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
+
   
   MediaEventListener mTimedMetadataListener;
 
@@ -592,6 +597,7 @@ protected:
   MediaEventListener mOnEncrypted;
   MediaEventListener mOnWaitingForKey;
   MediaEventListener mOnDecodeWarning;
+  MediaEventListener mOnNextFrameStatus;
 
 protected:
   
@@ -599,9 +605,6 @@ protected:
 
   
   Mirror<media::TimeIntervals> mBuffered;
-
-  
-  Mirror<MediaDecoderOwner::NextFrameStatus> mNextFrameStatus;
 
   
   Mirror<media::TimeUnit> mCurrentPosition;
