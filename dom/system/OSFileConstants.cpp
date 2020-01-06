@@ -346,6 +346,7 @@ void CleanupOSFileConstants()
 
   gInitialized = false;
   delete gPaths;
+  gPaths = nullptr;
 }
 
 
@@ -874,9 +875,7 @@ bool SetStringProperty(JSContext *cx, JS::Handle<JSObject*> aObject, const char 
 
 bool DefineOSFileConstants(JSContext *cx, JS::Handle<JSObject*> global)
 {
-  MOZ_ASSERT(gInitialized);
-
-  if (gPaths == nullptr) {
+  if (!gInitialized || gPaths == nullptr) {
     
     
     
