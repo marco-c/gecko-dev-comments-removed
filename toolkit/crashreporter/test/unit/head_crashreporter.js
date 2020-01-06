@@ -39,13 +39,15 @@ function getEventDir() {
 
 function do_crash(setup, callback, canReturnZero) {
   
-  let bin = Services.dirsvc.get("XREExeF", Components.interfaces.nsIFile);
+  let ds = Components.classes["@mozilla.org/file/directory_service;1"]
+    .getService(Components.interfaces.nsIProperties);
+  let bin = ds.get("XREExeF", Components.interfaces.nsIFile);
   if (!bin.exists()) {
     
     do_throw("Can't find xpcshell binary!");
   }
   
-  let greD = Services.dirsvc.get("GreD", Components.interfaces.nsIFile);
+  let greD = ds.get("GreD", Components.interfaces.nsIFile);
   let headfile = do_get_file("crasher_subprocess_head.js");
   let tailfile = do_get_file("crasher_subprocess_tail.js");
   
@@ -107,7 +109,9 @@ function runMinidumpAnalyzer(dumpFile, additionalArgs) {
   }
 
   
-  let bin = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+  let ds = Cc["@mozilla.org/file/directory_service;1"]
+             .getService(Ci.nsIProperties);
+  let bin = ds.get("XREExeF", Ci.nsIFile);
   ok(bin && bin.exists());
   bin = bin.parent;
   ok(bin && bin.exists());

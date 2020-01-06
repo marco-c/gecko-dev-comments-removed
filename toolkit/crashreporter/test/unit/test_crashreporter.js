@@ -14,18 +14,20 @@ function run_test() {
   }
 
   
+  var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                      .getService(Components.interfaces.nsIIOService);
 
   
   var testspecs = ["http://example.com/submit",
                    "https://example.org/anothersubmit"];
   for (var i = 0; i < testspecs.length; ++i) {
-    cr.serverURL = Services.io.newURI(testspecs[i]);
+    cr.serverURL = ios.newURI(testspecs[i]);
     do_check_eq(cr.serverURL.spec, testspecs[i]);
   }
 
   
   try {
-    cr.serverURL = Services.io.newURI("ftp://example.com/submit");
+    cr.serverURL = ios.newURI("ftp://example.com/submit");
     do_throw("Setting serverURL to a non-http(s) URL should have thrown!");
   } catch (ex) {
     do_check_eq(ex.result, Components.results.NS_ERROR_INVALID_ARG);

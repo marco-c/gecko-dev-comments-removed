@@ -61,10 +61,12 @@ function run_test() {
   do_crash(function() {
     
     
-    Services.prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
-    Services.prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
-    Services.prefs.setCharPref("toolkit.telemetry.server", "http://a.telemetry.server");
-    Services.prefs.setCharPref("toolkit.telemetry.cachedClientID",
+    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                          .getService(Components.interfaces.nsIPrefBranch);
+    prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+    prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
+    prefs.setCharPref("toolkit.telemetry.server", "http://a.telemetry.server");
+    prefs.setCharPref("toolkit.telemetry.cachedClientID",
                       "f3582dee-22b9-4d73-96d1-79ef5bf2fc24");
 
     
@@ -87,8 +89,10 @@ function run_test() {
 
   do_crash(function() {
     
-    Services.prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
-    Services.prefs.setBoolPref("datareporting.healthreport.uploadEnabled", false);
+    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                          .getService(Components.interfaces.nsIPrefBranch);
+    prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+    prefs.setBoolPref("datareporting.healthreport.uploadEnabled", false);
 
     
     let scope = {};
@@ -106,8 +110,10 @@ function run_test() {
   do_crash(function() {
     
     
-    Services.prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
-    Services.prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
+    let prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                          .getService(Components.interfaces.nsIPrefBranch);
+    prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
+    prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
 
     
     let scope = {};
