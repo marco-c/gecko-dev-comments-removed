@@ -31,7 +31,6 @@ Cu.import("chrome://marionette/content/l10n.js");
 Cu.import("chrome://marionette/content/legacyaction.js");
 Cu.import("chrome://marionette/content/modal.js");
 Cu.import("chrome://marionette/content/proxy.js");
-Cu.import("chrome://marionette/content/reftest.js");
 Cu.import("chrome://marionette/content/session.js");
 Cu.import("chrome://marionette/content/wait.js");
 
@@ -81,18 +80,6 @@ this.Context.fromString = function (s) {
   }
   return null;
 };
-
-
-
-
-
-
-
-function* enumeratorIterator (enumerator) {
-  while (enumerator.hasMoreElements()) {
-    yield enumerator.getNext();
-  }
-}
 
 
 
@@ -198,21 +185,17 @@ Object.defineProperty(GeckoDriver.prototype, "timeouts", {
   },
 });
 
-Object.defineProperty(GeckoDriver.prototype, "windows", {
-  get: function () {
-    return enumeratorIterator(Services.wm.getEnumerator(null));
-  }
-});
-
 Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
   get: function () {
     let hs = [];
+    let winEn = Services.wm.getEnumerator(null);
 
-    for (let win of this.windows) {
+    while (winEn.hasMoreElements()) {
+      let win = winEn.getNext();
       let tabBrowser = browser.getTabBrowser(win);
 
       
-      if (tabBrowser && tabBrowser.tabs) {
+      if (tabBrowser) {
         tabBrowser.tabs.forEach(tab => {
           let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
           if (winId !== null) {
@@ -229,9 +212,10 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
 Object.defineProperty(GeckoDriver.prototype, "chromeWindowHandles", {
   get: function () {
     let hs = [];
+    let winEn = Services.wm.getEnumerator(null);
 
-    for (let win of this.windows) {
-      hs.push(getOuterWindowId(win));
+    while (winEn.hasMoreElements()) {
+      hs.push(getOuterWindowId(winEn.getNext()));
     }
 
     return hs;
@@ -368,22 +352,16 @@ GeckoDriver.prototype.getCurrentWindow = function (forcedContext = undefined) {
     case Context.CONTENT:
       if (this.curFrame !== null) {
         win = this.curFrame;
+
       } else if (this.curBrowser !== null && this.curBrowser.contentBrowser) {
-        win = this.curBrowser.window;
+          win = this.curBrowser.window;
       }
+
       break;
   }
 
   return win;
 };
-
-GeckoDriver.prototype.isReftestBrowser = function (element) {
-  return this._reftest &&
-    element &&
-    element.tagName === "xul:browser" &&
-    element.parentElement &&
-    element.parentElement.id === "reftest";
-}
 
 GeckoDriver.prototype.addFrameCloseListener = function (action) {
   let win = this.getCurrentWindow();
@@ -1403,100 +1381,71 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
     switchTo = cmd.parameters.name;
   }
 
-  let byNameOrId = function (win, windowId) {
-    return switchTo === win.name || switchTo === windowId;
+  let byNameOrId = function (name, windowId) {
+    return switchTo === name || switchTo === windowId;
   };
 
-  let found = this.findWindow(this.windows, byNameOrId);
-
-  if (found) {
-      yield this.setWindowHandle(found, focus);
-  } else {
-    throw new NoSuchWindowError(`Unable to locate window: ${switchTo}`);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.findWindow = function (winIterable, filter) {
-  for (let win of winIterable) {
+  let found;
+  let winEn = Services.wm.getEnumerator(null);
+  while (winEn.hasMoreElements()) {
+    let win = winEn.getNext();
     let outerId = getOuterWindowId(win);
     let tabBrowser = browser.getTabBrowser(win);
-    if (filter(win, outerId)) {
+
+    if (byNameOrId(win.name, outerId)) {
       
-      return {win: win, outerId: outerId, hasTabBrowser: !!tabBrowser};
-    } else if (tabBrowser && tabBrowser.tabs) {
+      found = {win: win, outerId: outerId, hasTabBrowser: !!tabBrowser};
+      break;
+
+    } else if (tabBrowser) {
       
       
       for (let i = 0; i < tabBrowser.tabs.length; ++i) {
         let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
         let contentWindowId = this.getIdForBrowser(contentBrowser);
 
-        if (filter(win, contentWindowId)) {
-          return {
+        if (byNameOrId(win.name, contentWindowId)) {
+          found = {
             win: win,
             outerId: outerId,
             hasTabBrowser: true,
             tabIndex: i,
           };
+          break;
         }
       }
     }
   }
-  return null;
-};
 
+  if (found) {
+    if (!(found.outerId in this.browsers)) {
+      
+      
+      let registerBrowsers, browserListening;
 
+      if (found.hasTabBrowser) {
+        registerBrowsers = this.registerPromise();
+        browserListening = this.listeningPromise();
+      }
 
+      this.startBrowser(found.win, false );
 
+      if (registerBrowsers && browserListening) {
+        yield registerBrowsers;
+        yield browserListening;
+      }
 
+    } else {
+      
+      
+      this.curBrowser = this.browsers[found.outerId];
 
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.setWindowHandle = function* (winProperties, focus = true) {
-  if (!(winProperties.outerId in this.browsers)) {
-    
-    
-    let registerBrowsers, browserListening;
-
-    if (winProperties.hasTabBrowser) {
-      registerBrowsers = this.registerPromise();
-      browserListening = this.listeningPromise();
+      if ("tabIndex" in found) {
+        this.curBrowser.switchToTab(found.tabIndex, found.win, focus);
+      }
     }
-
-    this.startBrowser(winProperties.win, false );
-
-    if (registerBrowsers && browserListening) {
-      yield registerBrowsers;
-      yield browserListening;
-    }
-
   } else {
-    
-    
-    this.curBrowser = this.browsers[winProperties.outerId];
-
-    if ("tabIndex" in winProperties) {
-      this.curBrowser.switchToTab(winProperties.tabIndex, winProperties.win, focus);
-    }
+    throw new NoSuchWindowError(`Unable to locate window: ${switchTo}`);
   }
 };
 
@@ -2539,13 +2488,13 @@ GeckoDriver.prototype.close = function (cmd, resp) {
 
   let nwins = 0;
 
-  for (let win of this.windows) {
-    
+  let winEn = Services.wm.getEnumerator(null);
+  while (winEn.hasMoreElements()) {
+    let win = winEn.getNext();
     let tabbrowser = browser.getTabBrowser(win);
-    if (tabbrowser && tabbrowser.tabs) {
+
+    if (tabbrowser) {
       nwins += tabbrowser.tabs.length;
-    } else {
-      nwins += 1;
     }
   }
 
@@ -2579,8 +2528,10 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
 
   let nwins = 0;
 
-  for (let _ of this.windows) {
+  let winEn = Services.wm.getEnumerator(null);
+  while (winEn.hasMoreElements()) {
     nwins++;
+    winEn.getNext();
   }
 
   
@@ -2615,7 +2566,9 @@ GeckoDriver.prototype.deleteSession = function (cmd, resp) {
       }
     }
 
-    for (let win of this.windows) {
+    let winEn = Services.wm.getEnumerator(null);
+    while (winEn.hasMoreElements()) {
+      let win = winEn.getNext();
       if (win.messageManager) {
         win.messageManager.removeDelayedFrameScript(FRAME_SCRIPT);
       } else {
@@ -3195,65 +3148,6 @@ GeckoDriver.prototype.localizeProperty = function (cmd, resp) {
   resp.body.value = l10n.localizeProperty(urls, id);
 }
 
-
-
-
-GeckoDriver.prototype.setupReftest = function* (cmd, resp) {
-  if (this._reftest) {
-    throw new UnsupportedOperationError("Called reftest:setup with a reftest session already active");
-  }
-
-  if (this.context !== Context.CHROME) {
-    throw new UnsupportedOperationError("Must set chrome context before running reftests");
-  }
-
-  let {urlCount = {}, screenshot = "unexpected"} = cmd.parameters;
-  if (!["always", "fail", "unexpected"].includes(screenshot)) {
-    throw new InvalidArgumentError("Value of `screenshot` should be 'always', 'fail' or 'unexpected'");
-  }
-
-  this._reftest = new reftest.Runner(this);
-
-  yield this._reftest.setup(urlCount, screenshot);
-};
-
-
-
-
-
-GeckoDriver.prototype.runReftest = function* (cmd, resp) {
-  let {test, references, expected, timeout} = cmd.parameters;
-
-  if (!this._reftest) {
-    throw new UnsupportedOperationError("Called reftest:run before reftest:start");
-  }
-
-  assert.string(test);
-  assert.string(expected);
-  assert.array(references);
-
-  let result = yield this._reftest.run(test, references, expected, timeout);
-
-  resp.body.value = result;
-};
-
-
-
-
-
-
-
-GeckoDriver.prototype.teardownReftest = function* (cmd, resp) {
-  if (!this._reftest) {
-    throw new UnsupportedOperationError("Called reftest:teardown before reftest:start");
-  }
-
-  this._reftest.abort();
-
-  this._reftest = null;
-};
-
-
 GeckoDriver.prototype.commands = {
   
   "Marionette:SetContext": GeckoDriver.prototype.setContext,
@@ -3276,11 +3170,6 @@ GeckoDriver.prototype.commands = {
   "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,  
   "L10n:LocalizeProperty": GeckoDriver.prototype.localizeProperty,
   "localization:l10n:localizeProperty": GeckoDriver.prototype.localizeProperty,  
-
-  
-  "reftest:setup": GeckoDriver.prototype.setupReftest,
-  "reftest:run": GeckoDriver.prototype.runReftest,
-  "reftest:teardown": GeckoDriver.prototype.teardownReftest,
 
   
   "WebDriver:AcceptDialog": GeckoDriver.prototype.acceptDialog,
