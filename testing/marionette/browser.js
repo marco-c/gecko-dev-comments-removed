@@ -16,50 +16,12 @@ const {
 Cu.import("chrome://marionette/content/frame.js");
 const {WindowState} = Cu.import("chrome://marionette/content/wm.js", {});
 
-this.EXPORTED_SYMBOLS = ["browser", "Context", "WindowState"];
+this.EXPORTED_SYMBOLS = ["browser", "WindowState"];
 
 
 this.browser = {};
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-
-
-
-
-
-
-
-
-
-
-const Context = {
-  Chrome: "chrome",
-  Content: "content",
-};
-this.Context = Context;
-
-
-
-
-
-
-
-
-
-
-
-
-
-Context.fromString = function(s) {
-  switch (s) {
-    case "chrome":
-      return Context.Chrome;
-    case "content":
-      return Context.Content;
-    default:
-      throw new TypeError(`Unknown context: ${s}`);
-  }
-};
 
 
 
