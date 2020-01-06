@@ -506,7 +506,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     
-    unsafe fn clear_descendants_bits(&self) { self.unset_dirty_descendants(); }
+    unsafe fn clear_descendant_bits(&self) { self.unset_dirty_descendants(); }
 
     
     

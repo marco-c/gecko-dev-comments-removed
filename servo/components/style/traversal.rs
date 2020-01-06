@@ -878,11 +878,8 @@ where
                 }
             }
         }
-        if p == root {
-            
-            p.clear_descendants_bits();
-        } else {
-            p.clear_dirty_bits();
-        }
     }
+
+    
+    root.clear_descendant_bits();
 }
