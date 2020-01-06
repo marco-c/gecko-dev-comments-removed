@@ -1166,9 +1166,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let canvasY = Math.round(this._canvasPosition.y * devicePixelRatio);
     this.ctx.translate(offset - canvasX, offset - canvasY);
 
-    this.ctx.font = (fontSize * currentZoom) + "px " + GRID_FONT_FAMILY;
+    this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
     this.ctx.strokeStyle = this.color;
-    this.ctx.fillStyle = this.color;
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
 
@@ -1181,15 +1180,38 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
         
         if (fontSize > column.breadth || fontSize > row.breadth) {
           fontSize = (column.breadth + row.breadth) / 2;
-          this.ctx.font = (fontSize * currentZoom) + "px " + GRID_FONT_FAMILY;
+          this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
         }
+
+        let textWidth = this.ctx.measureText(area.name).width;
+
+        
+        let textHeight = this.ctx.measureText("m").width;
+
+        
+        let padding = 3 * displayPixelRatio;
+
+        let boxWidth = textWidth + 2 * padding;
+        let boxHeight = textHeight + 2 * padding;
 
         let x = column.start + column.breadth / 2;
         let y = row.start + row.breadth / 2;
 
         [x, y] = apply(this.currentMatrix, [x, y]);
 
-        this.ctx.fillText(area.name, x, y);
+        let rectXPos = x - boxWidth / 2;
+        let rectYPos = y - boxHeight / 2;
+
+        
+        
+        this.ctx.lineWidth = 1 * displayPixelRatio;
+        this.ctx.strokeStyle = this.color;
+        this.ctx.fillStyle = "white";
+        let radius = 2 * displayPixelRatio;
+        drawRoundedRect(this.ctx, rectXPos, rectYPos, boxWidth, boxHeight, radius);
+
+        this.ctx.fillStyle = this.color;
+        this.ctx.fillText(area.name, x, y + padding);
       }
     }
 

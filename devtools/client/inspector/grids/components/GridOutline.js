@@ -170,7 +170,6 @@ module.exports = createClass({
   
 
 
-
   renderCannotShowOutlineText() {
     return dom.div(
       {
