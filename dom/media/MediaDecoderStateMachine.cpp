@@ -1041,15 +1041,6 @@ public:
 
   void Exit() override
   {
-    if (mSeekJob.Exists() &&
-        mSeekJob.mTarget.isSome() &&
-        mSeekJob.mTarget->IsVideoOnly()) {
-      
-      
-      
-      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
-    }
-
     
     mSeekJob.RejectIfExists(__func__);
 
@@ -1784,6 +1775,18 @@ public:
     return p.forget();
   }
 
+  void Exit() override
+  {
+    if (mSeekJob.Exists() &&
+        mSeekJob.mTarget.isSome()) {
+      
+      
+      
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::VideoOnlySeekCompleted);
+    }
+
+    AccurateSeekingState::Exit();
+  }
 };
 
 RefPtr<MediaDecoder::SeekPromise>
