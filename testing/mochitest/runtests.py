@@ -1622,6 +1622,7 @@ toolbar#nav-bar {
             xrePath=options.xrePath,
             env=env,
             debugger=debugger,
+            dmdPath=options.dmdPath,
             lsanPath=lsanPath,
             ubsanPath=ubsanPath)
 
@@ -1632,9 +1633,6 @@ toolbar#nav-bar {
 
         if options.headless:
             browserEnv["MOZ_HEADLESS"] = '1'
-
-        if options.dmd:
-            browserEnv["DMD"] = os.environ.get('DMD', '1')
 
         
         
@@ -2005,20 +2003,21 @@ toolbar#nav-bar {
         """
         rv = []
         if parent_pid and HAVE_PSUTIL:
-            self.log.info("Determining child pids from psutil")
+            self.log.info("Determining child pids from psutil...")
             try:
                 rv = [p.pid for p in psutil.Process(parent_pid).children()]
+                self.log.info(str(rv))
             except psutil.NoSuchProcess:
                 self.log.warning("Failed to lookup children of pid %d" % parent_pid)
-            return rv
 
+        rv = set(rv)
         pid_re = re.compile(r'==> process \d+ launched child process (\d+)')
         with open(process_log) as fd:
             for line in fd:
                 self.log.info(line.rstrip())
                 m = pid_re.search(line)
                 if m:
-                    rv.append(int(m.group(1)))
+                    rv.add(int(m.group(1)))
         return rv
 
     def checkForZombies(self, processLog, utilityPath, debuggerInfo):
@@ -2256,6 +2255,7 @@ toolbar#nav-bar {
             
             
             
+            self.log.info("runtests.py | Waiting for browser...")
             status = proc.wait()
             if status is None:
                 self.log.warning("runtests.py | Failed to get app exit code - running/crashed?")
