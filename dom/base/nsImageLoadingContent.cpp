@@ -1372,8 +1372,6 @@ nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
   
   
   
-  
-  
   return HaveSize(mCurrentRequest) ?
            PreparePendingRequest(aImageLoadType) :
            PrepareCurrentRequest(aImageLoadType);

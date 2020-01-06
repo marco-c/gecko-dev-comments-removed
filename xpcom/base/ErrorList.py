@@ -863,9 +863,6 @@ with modules["URILOADER"]:
 
 with modules["CONTENT"]:
     
-    errors["NS_ERROR_IMAGE_SRC_CHANGED"] = FAILURE(4)
-    errors["NS_ERROR_IMAGE_BLOCKED"] = FAILURE(5)
-    
     errors["NS_ERROR_CONTENT_BLOCKED"] = FAILURE(6)
     errors["NS_ERROR_CONTENT_BLOCKED_SHOW_ALT"] = FAILURE(7)
     
