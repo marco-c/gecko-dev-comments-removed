@@ -111,6 +111,8 @@ AutofillProfileAutoCompleteSearch.prototype = {
       if (this.forceStop) {
         return;
       }
+      
+      addresses.sort((a, b) => b.timeLastUsed - a.timeLastUsed);
 
       let allFieldNames = FormAutofillContent.getAllFieldNames(focusedInput);
       let result = new ProfileAutoCompleteResult(searchString,

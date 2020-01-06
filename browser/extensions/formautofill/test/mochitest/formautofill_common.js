@@ -5,6 +5,7 @@
 "use strict";
 
 let formFillChromeScript;
+let expectingPopup = null;
 
 function setInput(selector, value) {
   let input = document.querySelector("input" + selector);
@@ -98,6 +99,28 @@ async function checkAddresses(expectedAddresses) {
   });
 }
 
+
+
+
+function expectPopup() {
+  info("expecting a popup");
+  return new Promise(resolve => {
+    expectingPopup = resolve;
+  });
+}
+
+function popupShownListener() {
+  info("popup shown for test ");
+  if (expectingPopup) {
+    expectingPopup();
+    expectingPopup = null;
+  }
+}
+
+function initPopupListener() {
+  registerPopupShownListener(popupShownListener);
+}
+
 function formAutoFillCommonSetup() {
   let chromeURL = SimpleTest.getTestFileURL("formautofill_parent_utils.js");
   formFillChromeScript = SpecialPowers.loadChromeScript(chromeURL);
@@ -111,6 +134,7 @@ function formAutoFillCommonSetup() {
   SimpleTest.registerCleanupFunction(() => {
     formFillChromeScript.sendAsyncMessage("cleanup");
     formFillChromeScript.destroy();
+    expectingPopup = null;
   });
 }
 
