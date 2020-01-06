@@ -670,6 +670,9 @@ static const char16_t* const kBinaryFileExtensions[] = {
     u".wsh", 
     u".xar", 
     u".xbap", 
+    u".xhtml",
+    u".xhtm",
+    u".xht",
     u".xip", 
     
     
