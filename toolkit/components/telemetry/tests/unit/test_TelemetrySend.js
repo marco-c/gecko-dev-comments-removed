@@ -523,6 +523,12 @@ add_task(async function test_measurePingsSize() {
 });
 
 add_task(async function test_pref_observer() {
+  
+  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+  if (!registrar.isContractIDRegistered("@mozilla.org/toolkit/crash-reporter;1")) {
+    return;
+  }
+
   await TelemetrySend.setup(true);
 
   let origTelemetryEnabled = Services.prefs.getBoolPref(TelemetryUtils.Preferences.TelemetryEnabled);
