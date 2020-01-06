@@ -2348,6 +2348,47 @@ BaselineCompiler::emit_JSOP_STRICTSETELEM()
     return emit_JSOP_SETELEM();
 }
 
+typedef bool (*SetObjectElementFn)(JSContext*, HandleObject, HandleValue,
+                                  HandleValue, HandleValue, bool);
+static const VMFunction SetObjectElementInfo =
+    FunctionInfo<SetObjectElementFn>(js::SetObjectElement, "SetObjectElement");
+
+bool
+BaselineCompiler::emit_JSOP_SETELEM_SUPER()
+{
+    bool strict = IsCheckStrictOp(JSOp(*pc));
+
+    
+    
+
+    
+    frame.popRegsAndSync(1);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-3)), R1);
+    masm.storeValue(R0, frame.addressOfStackValue(frame.peek(-3)));
+
+    prepareVMCall();
+
+    pushArg(Imm32(strict));
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-2)), R2);
+    pushArg(R2); 
+    pushArg(R0); 
+    pushArg(R1); 
+    masm.unboxObject(frame.addressOfStackValue(frame.peek(-1)), R0.scratchReg());
+    pushArg(R0.scratchReg()); 
+
+    if (!callVM(SetObjectElementInfo))
+        return false;
+
+    frame.popn(2);
+    return true;
+}
+
+bool
+BaselineCompiler::emit_JSOP_STRICTSETELEM_SUPER()
+{
+    return emit_JSOP_SETELEM_SUPER();
+}
+
 typedef bool (*DeleteElementFn)(JSContext*, HandleValue, HandleValue, bool*);
 static const VMFunction DeleteElementStrictInfo
     = FunctionInfo<DeleteElementFn>(DeleteElementJit<true>, "DeleteElementStrict");
