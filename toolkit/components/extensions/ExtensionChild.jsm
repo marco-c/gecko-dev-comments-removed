@@ -24,6 +24,9 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "finalizationService",
+  "@mozilla.org/toolkit/finalizationwitness;1", "nsIFinalizationWitnessService");
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionContent: "resource://gre/modules/ExtensionContent.jsm",
   MessageChannel: "resource://gre/modules/MessageChannel.jsm",
@@ -73,6 +76,33 @@ function injectAPI(source, dest) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+const StrongPromise = {
+  wrap(promise, id) {
+    return new Promise((resolve, reject) => {
+      const witness = finalizationService.make("extensions-sendMessage-witness", id);
+      promise.then(value => {
+        witness.forget();
+        resolve(value);
+      }, error => {
+        witness.forget();
+        reject(error);
+      });
+    });
+  },
+  observe(subject, topic, id) {
+    MessageChannel.abortChannel(id, {message: "Response handle went out of scope"});
+  },
+};
+Services.obs.addObserver(StrongPromise, "extensions-sendMessage-witness");
 
 
 
@@ -360,7 +390,7 @@ class Messenger {
                   filter(sender, recipient));
         },
 
-        receiveMessage: ({target, data: holder, sender, recipient}) => {
+        receiveMessage: ({target, data: holder, sender, recipient, channelId}) => {
           if (!this.context.active) {
             return;
           }
@@ -386,9 +416,9 @@ class Messenger {
           message = null;
 
           if (result instanceof this.context.cloneScope.Promise) {
-            return result;
+            return StrongPromise.wrap(result, channelId);
           } else if (result === true) {
-            return promise;
+            return StrongPromise.wrap(promise, channelId);
           }
           return response;
         },
