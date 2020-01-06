@@ -543,9 +543,12 @@ this.PlacesUtils = {
 
 
 
-  validateItemProperties(validators, props, behavior = {}) {
+
+
+
+  validateItemProperties(name, validators, props, behavior = {}) {
     if (!props)
-      throw new Error("Input should be a valid object");
+      throw new Error(`${name}: Input should be a valid object`);
     
     
     let input = Object.assign({}, props);
@@ -560,7 +563,7 @@ this.PlacesUtils = {
       }
       if (behavior[prop].hasOwnProperty("validIf") && input[prop] !== undefined &&
           !behavior[prop].validIf(input)) {
-        throw new Error(`Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
+        throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
       }
       if (behavior[prop].hasOwnProperty("defaultValue") && input[prop] === undefined) {
         input[prop] = behavior[prop].defaultValue;
@@ -581,12 +584,12 @@ this.PlacesUtils = {
         try {
           normalizedInput[prop] = validators[prop](input[prop], input);
         } catch (ex) {
-          throw new Error(`Invalid value for property '${prop}': ${input[prop]}`);
+          throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
         }
       }
     }
     if (required.size > 0)
-      throw new Error(`The following properties were expected: ${[...required].join(", ")}`);
+      throw new Error(`${name}: The following properties were expected: ${[...required].join(", ")}`);
     return normalizedInput;
   },
 
