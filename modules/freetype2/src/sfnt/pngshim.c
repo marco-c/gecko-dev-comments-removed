@@ -81,43 +81,45 @@
 
     typedef unsigned short  v82 __attribute__(( vector_size( 16 ) ));
 
-
-    
-    limit = row_info->rowbytes - 16 + 1;
-    for ( ; i < limit; i += 16 )
+    if ( row_info->rowbytes > 15 )
     {
-      unsigned char*  base = &data[i];
-
-      v82  s, s0, s1, a;
-
       
-      
-      v82  n0x80 = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
-      v82  n0xFF = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-      v82  n8    = { 8, 8, 8, 8, 8, 8, 8, 8 };
+      limit = row_info->rowbytes - 16 + 1;
+      for ( ; i < limit; i += 16 )
+      {
+        unsigned char*  base = &data[i];
 
-      v82  ma = { 1, 1, 3, 3, 5, 5, 7, 7 };
-      v82  o1 = { 0, 0xFF, 0, 0xFF, 0, 0xFF, 0, 0xFF };
-      v82  m0 = { 1, 0, 3, 2, 5, 4, 7, 6 };
+        v82  s, s0, s1, a;
+
+        
+        
+        v82  n0x80 = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+        v82  n0xFF = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        v82  n8    = { 8, 8, 8, 8, 8, 8, 8, 8 };
+
+        v82  ma = { 1, 1, 3, 3, 5, 5, 7, 7 };
+        v82  o1 = { 0, 0xFF, 0, 0xFF, 0, 0xFF, 0, 0xFF };
+        v82  m0 = { 1, 0, 3, 2, 5, 4, 7, 6 };
 
 
-      memcpy( &s, base, 16 );               
-      s0 = s & n0xFF;                       
-      s1 = s >> n8;                         
+        memcpy( &s, base, 16 );               
+        s0 = s & n0xFF;                       
+        s1 = s >> n8;                         
 
-      a   = vector_shuffle( s1, ma );       
-      s1 |= o1;                             
-      s0  = vector_shuffle( s0, m0 );       
+        a   = vector_shuffle( s1, ma );       
+        s1 |= o1;                             
+        s0  = vector_shuffle( s0, m0 );       
 
-      s0 *= a;
-      s1 *= a;
-      s0 += n0x80;
-      s1 += n0x80;
-      s0  = ( s0 + ( s0 >> n8 ) ) >> n8;
-      s1  = ( s1 + ( s1 >> n8 ) ) >> n8;
+        s0 *= a;
+        s1 *= a;
+        s0 += n0x80;
+        s1 += n0x80;
+        s0  = ( s0 + ( s0 >> n8 ) ) >> n8;
+        s1  = ( s1 + ( s1 >> n8 ) ) >> n8;
 
-      s = s0 | ( s1 << n8 );
-      memcpy( base, &s, 16 );
+        s = s0 | ( s1 << n8 );
+        memcpy( base, &s, 16 );
+      }
     }
 #endif 
 
