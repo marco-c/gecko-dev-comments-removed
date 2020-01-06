@@ -8,7 +8,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["FormAutofillHandler"]; 
+this.EXPORTED_SYMBOLS = ["FormAutofillHandler"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -25,81 +25,202 @@ XPCOMUtils.defineLazyModuleGetter(this, "FormLikeFactory",
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
-class FormAutofillSection {
-  constructor(fieldDetails, winUtils) {
-    this.address = {
-      
 
 
-      fieldDetails: [],
-      
 
 
-      filledRecordGUID: null,
-    };
-    this.creditCard = {
-      
+function FormAutofillHandler(form) {
+  this._updateForm(form);
+  this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIDOMWindowUtils);
 
-
-      fieldDetails: [],
-      
-
-
-      filledRecordGUID: null,
-    };
-
+  this.address = {
     
 
 
-    this._FIELD_STATE_ENUM = {
-      
-      NORMAL: null,
-      
-      AUTO_FILLED: "-moz-autofill",
-      
-      PREVIEW: "-moz-autofill-preview",
+    fieldDetails: [],
+    
+
+
+    filledRecordGUID: null,
+  };
+
+  this.creditCard = {
+    
+
+
+    fieldDetails: [],
+    
+
+
+    filledRecordGUID: null,
+  };
+
+  this._cacheValue = {
+    allFieldNames: null,
+    oneLineStreetAddress: null,
+    matchingSelectOption: null,
+  };
+}
+
+FormAutofillHandler.prototype = {
+  
+
+
+  form: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  fieldDetails: null,
+
+  
+
+
+  address: null,
+
+  
+
+
+  creditCard: null,
+
+  
+
+
+  winUtils: null,
+
+  
+
+
+  fieldStateEnum: {
+    
+    NORMAL: null,
+    
+    AUTO_FILLED: "-moz-autofill",
+    
+    PREVIEW: "-moz-autofill-preview",
+  },
+
+  
+
+
+  timeStartedFillingMS: null,
+
+  
+
+
+
+
+
+  updateFormIfNeeded(element) {
+    
+    
+    
+    
+    
+    
+    
+
+    let _formLike;
+    let getFormLike = () => {
+      if (!_formLike) {
+        _formLike = FormLikeFactory.createFromField(element);
+      }
+      return _formLike;
     };
 
-    this.winUtils = winUtils;
+    let currentForm = element.form;
+    if (!currentForm) {
+      currentForm = getFormLike();
+    }
 
-    this.address.fieldDetails = fieldDetails.filter(
+    if (currentForm.elements.length != this.form.elements.length) {
+      log.debug("The count of form elements is changed.");
+      this._updateForm(getFormLike());
+      return true;
+    }
+
+    if (this.form.elements.indexOf(element) === -1) {
+      log.debug("The element can not be found in the current form.");
+      this._updateForm(getFormLike());
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+  _updateForm(form) {
+    this.form = form;
+    this.fieldDetails = [];
+
+    if (this.address) {
+      this.address.fieldDetails = [];
+    }
+    if (this.creditCard) {
+      this.creditCard.fieldDetails = [];
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  collectFormFields(allowDuplicates = false) {
+    this._cacheValue.allFieldNames = null;
+    let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
+    this.fieldDetails = fieldDetails ? fieldDetails : [];
+    log.debug("Collected details on", this.fieldDetails.length, "fields");
+
+    this.address.fieldDetails = this.fieldDetails.filter(
       detail => FormAutofillUtils.isAddressField(detail.fieldName)
     );
+    this.creditCard.fieldDetails = this.fieldDetails.filter(
+      detail => FormAutofillUtils.isCreditCardField(detail.fieldName)
+    );
+
     if (this.address.fieldDetails.length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
-      log.debug("Ignoring address related fields since the section has only",
+      log.debug("Ignoring address related fields since it has only",
                 this.address.fieldDetails.length,
                 "field(s)");
       this.address.fieldDetails = [];
     }
 
-    this.creditCard.fieldDetails = fieldDetails.filter(
-      detail => FormAutofillUtils.isCreditCardField(detail.fieldName)
-    );
     if (!this._isValidCreditCardForm(this.creditCard.fieldDetails)) {
-      log.debug("Invalid credit card section.");
+      log.debug("Invalid credit card form");
       this.creditCard.fieldDetails = [];
     }
 
-    this._cacheValue = {
-      allFieldNames: null,
-      oneLineStreetAddress: null,
-      matchingSelectOption: null,
-    };
+    let validDetails = Array.of(...(this.address.fieldDetails),
+                                ...(this.creditCard.fieldDetails));
+    for (let detail of validDetails) {
+      let input = detail.elementWeakRef.get();
+      if (!input) {
+        continue;
+      }
+      input.addEventListener("input", this);
+    }
 
-    this._validDetails = Array.of(...(this.address.fieldDetails),
-                                  ...(this.creditCard.fieldDetails));
-    log.debug(this._validDetails.length, "valid fields in the section is collected.");
-  }
-
-  get validDetails() {
-    return this._validDetails;
-  }
-
-  getFieldDetailByElement(element) {
-    return this._validDetails.find(
-      detail => detail.elementWeakRef.get() == element
-    );
-  }
+    return validDetails;
+  },
 
   _isValidCreditCardForm(fieldDetails) {
     let ccNumberReason = "";
@@ -121,42 +242,38 @@ class FormAutofillSection {
     }
 
     return hasCCNumber && (ccNumberReason == "autocomplete" || hasExpiryDate);
-  }
+  },
+
+  getFieldDetailByName(fieldName) {
+    return this.fieldDetails.find(detail => detail.fieldName == fieldName);
+  },
+
+  getFieldDetailByElement(element) {
+    return this.fieldDetails.find(
+      detail => detail.elementWeakRef.get() == element
+    );
+  },
+
+  getFieldDetailsByElement(element) {
+    let fieldDetail = this.getFieldDetailByElement(element);
+    if (!fieldDetail) {
+      return [];
+    }
+    if (FormAutofillUtils.isAddressField(fieldDetail.fieldName)) {
+      return this.address.fieldDetails;
+    }
+    if (FormAutofillUtils.isCreditCardField(fieldDetail.fieldName)) {
+      return this.creditCard.fieldDetails;
+    }
+    return [];
+  },
 
   get allFieldNames() {
     if (!this._cacheValue.allFieldNames) {
-      this._cacheValue.allFieldNames = this._validDetails.map(record => record.fieldName);
+      this._cacheValue.allFieldNames = this.fieldDetails.map(record => record.fieldName);
     }
     return this._cacheValue.allFieldNames;
-  }
-
-  getFieldDetailByName(fieldName) {
-    return this._validDetails.find(detail => detail.fieldName == fieldName);
-  }
-
-  _getTargetSet(element) {
-    let fieldDetail = this.getFieldDetailByElement(element);
-    if (!fieldDetail) {
-      return null;
-    }
-    if (FormAutofillUtils.isAddressField(fieldDetail.fieldName)) {
-      return this.address;
-    }
-    if (FormAutofillUtils.isCreditCardField(fieldDetail.fieldName)) {
-      return this.creditCard;
-    }
-    return null;
-  }
-
-  getFieldDetailsByElement(element) {
-    let targetSet = this._getTargetSet(element);
-    return targetSet ? targetSet.fieldDetails : [];
-  }
-
-  getFilledRecordGUID(element) {
-    let targetSet = this._getTargetSet(element);
-    return targetSet ? targetSet.filledRecordGUID : null;
-  }
+  },
 
   _getOneLineStreetAddress(address) {
     if (!this._cacheValue.oneLineStreetAddress) {
@@ -166,7 +283,7 @@ class FormAutofillSection {
       this._cacheValue.oneLineStreetAddress[address] = FormAutofillUtils.toOneLineAddress(address);
     }
     return this._cacheValue.oneLineStreetAddress[address];
-  }
+  },
 
   _addressTransformer(profile) {
     if (profile["street-address"]) {
@@ -190,7 +307,7 @@ class FormAutofillSection {
         }
       }
     }
-  }
+  },
 
   
 
@@ -244,7 +361,7 @@ class FormAutofillSection {
         profile.tel = profile["tel-national"];
       }
     }
-  }
+  },
 
   _matchSelectOptions(profile) {
     if (!this._cacheValue.matchingSelectOption) {
@@ -282,7 +399,7 @@ class FormAutofillSection {
         delete profile[fieldName];
       }
     }
-  }
+  },
 
   _creditCardExpDateTransformer(profile) {
     if (!profile["cc-exp"]) {
@@ -318,7 +435,7 @@ class FormAutofillSection {
                           result[2] +
                           String(ccExpMonth).padStart(result[3].length, "0");
     }
-  }
+  },
 
   getAdaptedProfiles(originalProfiles) {
     for (let profile of originalProfiles) {
@@ -328,7 +445,7 @@ class FormAutofillSection {
       this._creditCardExpDateTransformer(profile);
     }
     return originalProfiles;
-  }
+  },
 
   
 
@@ -340,12 +457,12 @@ class FormAutofillSection {
 
 
 
-  async autofillFields(profile, focusedInput) {
+  async autofillFormFields(profile, focusedInput) {
     let focusedDetail = this.getFieldDetailByElement(focusedInput);
     if (!focusedDetail) {
       throw new Error("No fieldDetail for the focused input.");
     }
-    let targetSet = this._getTargetSet(focusedInput);
+    let targetSet;
     if (FormAutofillUtils.isCreditCardField(focusedDetail.fieldName)) {
       
       
@@ -361,9 +478,14 @@ class FormAutofillSection {
 
         profile["cc-number"] = decrypted;
       }
+      targetSet = this.creditCard;
+    } else if (FormAutofillUtils.isAddressField(focusedDetail.fieldName)) {
+      targetSet = this.address;
+    } else {
+      throw new Error("Unknown form fields");
     }
 
-    log.debug("profile in autofillFields:", profile);
+    log.debug("profile in autofillFormFields:", profile);
 
     targetSet.filledRecordGUID = profile.guid;
     for (let fieldDetail of targetSet.fieldDetails) {
@@ -410,7 +532,41 @@ class FormAutofillSection {
         this.changeFieldState(fieldDetail, "AUTO_FILLED");
       }
     }
-  }
+
+    
+    log.debug("register change handler for filled form:", this.form);
+    const onChangeHandler = e => {
+      let hasFilledFields;
+
+      if (!e.isTrusted) {
+        return;
+      }
+
+      for (let fieldDetail of targetSet.fieldDetails) {
+        let element = fieldDetail.elementWeakRef.get();
+
+        if (!element) {
+          return;
+        }
+
+        if (e.target == element || (e.target == element.form && e.type == "reset")) {
+          this.changeFieldState(fieldDetail, "NORMAL");
+        }
+
+        hasFilledFields |= (fieldDetail.state == "AUTO_FILLED");
+      }
+
+      
+      if (!hasFilledFields) {
+        this.form.rootElement.removeEventListener("input", onChangeHandler);
+        this.form.rootElement.removeEventListener("reset", onChangeHandler);
+        targetSet.filledRecordGUID = null;
+      }
+    };
+
+    this.form.rootElement.addEventListener("input", onChangeHandler);
+    this.form.rootElement.addEventListener("reset", onChangeHandler);
+  },
 
   
 
@@ -421,7 +577,7 @@ class FormAutofillSection {
 
 
   previewFormFields(profile, focusedInput) {
-    log.debug("preview profile: ", profile);
+    log.debug("preview profile in autofillFormFields:", profile);
 
     
     
@@ -458,7 +614,7 @@ class FormAutofillSection {
       element.previewValue = value;
       this.changeFieldState(fieldDetail, value ? "PREVIEW" : "NORMAL");
     }
-  }
+  },
 
   
 
@@ -487,7 +643,7 @@ class FormAutofillSection {
 
       this.changeFieldState(fieldDetail, "NORMAL");
     }
-  }
+  },
 
   
 
@@ -504,12 +660,12 @@ class FormAutofillSection {
       log.warn(fieldDetail.fieldName, "is unreachable while changing state");
       return;
     }
-    if (!(nextState in this._FIELD_STATE_ENUM)) {
+    if (!(nextState in this.fieldStateEnum)) {
       log.warn(fieldDetail.fieldName, "is trying to change to an invalid state");
       return;
     }
 
-    for (let [state, mmStateValue] of Object.entries(this._FIELD_STATE_ENUM)) {
+    for (let [state, mmStateValue] of Object.entries(this.fieldStateEnum)) {
       
       
       if (!mmStateValue) {
@@ -524,29 +680,7 @@ class FormAutofillSection {
     }
 
     fieldDetail.state = nextState;
-  }
-
-  clearFieldState(focusedInput) {
-    let fieldDetail = this.getFieldDetailByElement(focusedInput);
-    this.changeFieldState(fieldDetail, "NORMAL");
-    let targetSet = this._getTargetSet(focusedInput);
-
-    if (!targetSet.fieldDetails.some(detail => detail.state == "AUTO_FILLED")) {
-      targetSet.filledRecordGUID = null;
-    }
-  }
-
-  resetFieldStates() {
-    for (let fieldDetail of this._validDetails) {
-      this.changeFieldState(fieldDetail, "NORMAL");
-    }
-    this.address.filledRecordGUID = null;
-    this.creditCard.filledRecordGUID = null;
-  }
-
-  isFilled() {
-    return !!(this.address.filledRecordGUID || this.creditCard.filledRecordGUID);
-  }
+  },
 
   _isAddressRecordCreatable(record) {
     let hasName = 0;
@@ -562,11 +696,11 @@ class FormAutofillSection {
       length++;
     }
     return (length + hasName) >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
-  }
+  },
 
   _isCreditCardRecordCreatable(record) {
     return record["cc-number"] && FormAutofillUtils.isCCNumber(record["cc-number"]);
-  }
+  },
 
   
 
@@ -660,7 +794,7 @@ class FormAutofillSection {
     }
 
     return data;
-  }
+  },
 
   _normalizeAddress(address) {
     if (!address) {
@@ -703,7 +837,7 @@ class FormAutofillSection {
         }
       }
     }
-  }
+  },
 
   async _decrypt(cipherText, reauth) {
     return new Promise((resolve) => {
@@ -714,223 +848,7 @@ class FormAutofillSection {
 
       Services.cpmm.sendAsyncMessage("FormAutofill:GetDecryptedString", {cipherText, reauth});
     });
-  }
-}
-
-
-
-
-class FormAutofillHandler {
-  
-
-
-
-
-  constructor(form) {
-    
-
-
-    this.form = null;
-
-    this._updateForm(form);
-
-    
-
-
-    this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils);
-
-    this.sections = [];
-
-    this._sectionCache = new WeakMap();
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    this.fieldDetails = null;
-
-    
-
-
-    this.timeStartedFillingMS = null;
-  }
-
-  
-
-
-
-
-
-  updateFormIfNeeded(element) {
-    
-    
-    
-    
-    
-    
-    
-
-    let _formLike;
-    let getFormLike = () => {
-      if (!_formLike) {
-        _formLike = FormLikeFactory.createFromField(element);
-      }
-      return _formLike;
-    };
-
-    let currentForm = element.form;
-    if (!currentForm) {
-      currentForm = getFormLike();
-    }
-
-    if (currentForm.elements.length != this.form.elements.length) {
-      log.debug("The count of form elements is changed.");
-      this._updateForm(getFormLike());
-      return true;
-    }
-
-    if (this.form.elements.indexOf(element) === -1) {
-      log.debug("The element can not be found in the current form.");
-      this._updateForm(getFormLike());
-      return true;
-    }
-
-    return false;
-  }
-
-  
-
-
-
-
-  _updateForm(form) {
-    this.form = form;
-    this.fieldDetails = [];
-    this.sections = [];
-  }
-
-  
-
-
-
-
-
-
-
-  collectFormFields(allowDuplicates = false) {
-    let sections = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
-    let allValidDetails = [];
-    for (let fieldDetails of sections) {
-      let section = new FormAutofillSection(fieldDetails, this.winUtils);
-      this.sections.push(section);
-      allValidDetails.push(...section.validDetails);
-    }
-
-    for (let detail of allValidDetails) {
-      let input = detail.elementWeakRef.get();
-      if (!input) {
-        continue;
-      }
-      input.addEventListener("input", this);
-    }
-
-    this.fieldDetails = allValidDetails;
-    return allValidDetails;
-  }
-
-  getSectionByElement(element) {
-    let section = this._sectionCache.get(element);
-    if (!section) {
-      section = this.sections.find(
-        s => s.getFieldDetailByElement(element)
-      );
-      this._sectionCache.set(element, section);
-    }
-    return section;
-  }
-
-  getAllFieldNames(focusedInput) {
-    let section = this.getSectionByElement(focusedInput);
-    return section.allFieldNames;
-  }
-
-  previewFormFields(profile, focusedInput) {
-    let section = this.getSectionByElement(focusedInput);
-    section.previewFormFields(profile, focusedInput);
-  }
-
-  clearPreviewedFormFields(focusedInput) {
-    let section = this.getSectionByElement(focusedInput);
-    section.clearPreviewedFormFields(focusedInput);
-  }
-
-  getFilledRecordGUID(focusedInput) {
-    let section = this.getSectionByElement(focusedInput);
-    return section.getFilledRecordGUID(focusedInput);
-  }
-
-  getAdaptedProfiles(originalProfiles, focusedInput) {
-    let section = this.getSectionByElement(focusedInput);
-    section.getAdaptedProfiles(originalProfiles);
-    return originalProfiles;
-  }
-
-  hasFilledSection() {
-    return this.sections.some(section => section.isFilled());
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  async autofillFormFields(profile, focusedInput) {
-    let noFilledSections = !this.hasFilledSection();
-    await this.getSectionByElement(focusedInput).autofillFields(profile, focusedInput);
-
-    
-    log.debug("register change handler for filled form:", this.form);
-    const onChangeHandler = e => {
-      if (!e.isTrusted) {
-        return;
-      }
-
-      if (e.type == "input") {
-        let section = this.getSectionByElement(e.target);
-        section.clearFieldState(e.target);
-      } else if (e.type == "reset") {
-        for (let section of this.sections) {
-          section.resetFieldStates();
-        }
-      }
-
-      
-      if (!this.hasFilledSection()) {
-        this.form.rootElement.removeEventListener("input", onChangeHandler);
-        this.form.rootElement.removeEventListener("reset", onChangeHandler);
-      }
-    };
-
-    if (noFilledSections) {
-      this.form.rootElement.addEventListener("input", onChangeHandler);
-      this.form.rootElement.addEventListener("reset", onChangeHandler);
-    }
-  }
+  },
 
   handleEvent(event) {
     switch (event.type) {
@@ -949,15 +867,5 @@ class FormAutofillHandler {
         this.timeStartedFillingMS = Date.now();
         break;
     }
-  }
-
-  createRecords() {
-    
-    
-    if (this.sections.length > 0) {
-      return this.sections[0].createRecords();
-    }
-    return null;
-  }
-}
-
+  },
+};

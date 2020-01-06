@@ -20,7 +20,6 @@ this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
 const PREF_HEURISTICS_ENABLED = "extensions.formautofill.heuristics.enabled";
-const PREF_SECTION_ENABLED = "extensions.formautofill.section.enabled";
 
 
 
@@ -560,7 +559,6 @@ this.FormAutofillHeuristics = {
 
 
 
-
   getFormInfo(form, allowDuplicates = false) {
     const eligibleFields = Array.from(form.elements)
       .filter(elem => FormAutofillUtils.isFieldEligibleForAutofill(elem));
@@ -584,19 +582,11 @@ this.FormAutofillHeuristics = {
 
     LabelUtils.clearLabelMap();
 
-    if (!this._sectionEnabled) {
-      
-      
-      return [allowDuplicates ? fieldScanner.fieldDetails : fieldScanner.trimmedFieldDetail];
+    if (allowDuplicates) {
+      return fieldScanner.fieldDetails;
     }
 
-    return this._groupingFields(fieldScanner, allowDuplicates);
-  },
-
-  _groupingFields(fieldScanner, allowDuplicates) {
-    
-    
-    return [allowDuplicates ? fieldScanner.fieldDetails : fieldScanner.trimmedFieldDetail];
+    return fieldScanner.trimmedFieldDetail;
   },
 
   _regExpTableHashValue(...signBits) {
@@ -903,13 +893,5 @@ XPCOMUtils.defineLazyGetter(this.FormAutofillHeuristics, "_prefEnabled", () => {
 
 Services.prefs.addObserver(PREF_HEURISTICS_ENABLED, () => {
   this.FormAutofillHeuristics._prefEnabled = Services.prefs.getBoolPref(PREF_HEURISTICS_ENABLED);
-});
-
-XPCOMUtils.defineLazyGetter(this.FormAutofillHeuristics, "_sectionEnabled", () => {
-  return Services.prefs.getBoolPref(PREF_SECTION_ENABLED);
-});
-
-Services.prefs.addObserver(PREF_SECTION_ENABLED, () => {
-  this.FormAutofillHeuristics._sectionEnabled = Services.prefs.getBoolPref(PREF_SECTION_ENABLED);
 });
 
