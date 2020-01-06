@@ -43,7 +43,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
 #include "SurfaceCacheUtils.h"
-#include "nsCSSRuleProcessor.h"
+#include "nsMediaFeatures.h"
 #include "nsRuleNode.h"
 #include "gfxPlatform.h"
 #include "nsCSSRules.h"
@@ -1894,7 +1894,7 @@ nsPresContext::RefreshSystemMetrics()
 {
   
   
-  nsCSSRuleProcessor::FreeSystemMetrics();
+  nsMediaFeatures::FreeSystemMetrics();
 
   
   

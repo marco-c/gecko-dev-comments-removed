@@ -85,6 +85,10 @@ struct nsMediaFeature
 class nsMediaFeatures
 {
 public:
+  static void InitSystemMetrics();
+  static void FreeSystemMetrics();
+  static void Shutdown();
+
   
   static const nsMediaFeature features[];
 };
