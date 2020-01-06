@@ -40,11 +40,13 @@ TimeoutExecutor::ScheduleImmediate(const TimeStamp& aDeadline,
 
 nsresult
 TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
-                                 const TimeStamp& aNow)
+                                 const TimeStamp& aNow,
+                                 const TimeDuration& aMinDelay)
 {
   MOZ_DIAGNOSTIC_ASSERT(mDeadline.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(mMode == Mode::None);
-  MOZ_DIAGNOSTIC_ASSERT(aDeadline > (aNow + mAllowedEarlyFiringTime));
+  MOZ_DIAGNOSTIC_ASSERT(!aMinDelay.IsZero() ||
+                        aDeadline > (aNow + mAllowedEarlyFiringTime));
 
   nsresult rv = NS_OK;
 
@@ -72,6 +74,8 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
   
   
   
+  TimeDuration delay = TimeDuration::Max(aMinDelay, aDeadline - aNow);
+
   
   
   
@@ -83,7 +87,14 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
   
   
   
-  rv = mTimer->InitHighResolutionWithCallback(this, aDeadline - aNow,
+  
+  
+  
+  
+  
+  
+  
+  rv = mTimer->InitHighResolutionWithCallback(this, delay,
                                               nsITimer::TYPE_ONE_SHOT);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -94,22 +105,24 @@ TimeoutExecutor::ScheduleDelayed(const TimeStamp& aDeadline,
 }
 
 nsresult
-TimeoutExecutor::Schedule(const TimeStamp& aDeadline)
+TimeoutExecutor::Schedule(const TimeStamp& aDeadline,
+                          const TimeDuration& aMinDelay)
 {
   TimeStamp now(TimeStamp::Now());
 
   
   
   
-  if (aDeadline <= (now + mAllowedEarlyFiringTime)) {
+  if (aMinDelay.IsZero() && aDeadline <= (now + mAllowedEarlyFiringTime)) {
     return ScheduleImmediate(aDeadline, now);
   }
 
-  return ScheduleDelayed(aDeadline, now);
+  return ScheduleDelayed(aDeadline, now, aMinDelay);
 }
 
 nsresult
-TimeoutExecutor::MaybeReschedule(const TimeStamp& aDeadline)
+TimeoutExecutor::MaybeReschedule(const TimeStamp& aDeadline,
+                                 const TimeDuration& aMinDelay)
 {
   MOZ_DIAGNOSTIC_ASSERT(!mDeadline.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(mMode == Mode::Immediate ||
@@ -127,7 +140,7 @@ TimeoutExecutor::MaybeReschedule(const TimeStamp& aDeadline)
   }
 
   Cancel();
-  return Schedule(aDeadline);
+  return Schedule(aDeadline, aMinDelay);
 }
 
 void
@@ -176,7 +189,8 @@ TimeoutExecutor::Shutdown()
 }
 
 nsresult
-TimeoutExecutor::MaybeSchedule(const TimeStamp& aDeadline)
+TimeoutExecutor::MaybeSchedule(const TimeStamp& aDeadline,
+                               const TimeDuration& aMinDelay)
 {
   MOZ_DIAGNOSTIC_ASSERT(!aDeadline.IsNull());
 
@@ -185,10 +199,10 @@ TimeoutExecutor::MaybeSchedule(const TimeStamp& aDeadline)
   }
 
   if (mMode == Mode::Immediate || mMode == Mode::Delayed) {
-    return MaybeReschedule(aDeadline);
+    return MaybeReschedule(aDeadline, aMinDelay);
   }
 
-  return Schedule(aDeadline);
+  return Schedule(aDeadline, aMinDelay);
 }
 
 void
