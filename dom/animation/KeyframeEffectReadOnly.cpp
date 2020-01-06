@@ -427,7 +427,7 @@ KeyframeEffectReadOnly::GetUnderlyingStyle(
     
     
     
-    result = BaseStyle(aProperty);
+    result = BaseStyle(aProperty).mGecko;
   }
 
   return result;
@@ -1297,7 +1297,8 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
           
           DebugOnly<bool> uncomputeResult =
             StyleAnimationValue::UncomputeValue(
-              propertyValue.mProperty, Move(BaseStyle(propertyValue.mProperty)),
+              propertyValue.mProperty,
+              Move(BaseStyle(propertyValue.mProperty).mGecko),
               cssValue);
 
           MOZ_ASSERT(uncomputeResult,
@@ -1848,7 +1849,7 @@ KeyframeEffectReadOnly::ContainsAnimatedScale(const nsIFrame* aFrame) const
       continue;
     }
 
-    StyleAnimationValue baseStyle = BaseStyle(prop.mProperty);
+    AnimationValue baseStyle = BaseStyle(prop.mProperty);
     if (baseStyle.IsNull()) {
       
       

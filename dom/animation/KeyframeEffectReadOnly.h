@@ -279,10 +279,18 @@ public:
   
   bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
-  StyleAnimationValue BaseStyle(nsCSSPropertyID aProperty) const
+  AnimationValue BaseStyle(nsCSSPropertyID aProperty) const
   {
-    StyleAnimationValue result;
-    DebugOnly<bool> hasProperty = mBaseStyleValues.Get(aProperty, &result);
+    AnimationValue result;
+    bool hasProperty = false;
+    if (mDocument->IsStyledByServo()) {
+      
+      
+      
+      result.mServo = mBaseStyleValuesForServo.GetWeak(aProperty, &hasProperty);
+    } else {
+      hasProperty = mBaseStyleValues.Get(aProperty, &result.mGecko);
+    }
     MOZ_ASSERT(hasProperty || result.IsNull());
     return result;
   }

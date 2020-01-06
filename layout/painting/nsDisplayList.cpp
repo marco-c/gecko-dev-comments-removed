@@ -566,13 +566,11 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
   
   
 
-  StyleAnimationValue baseStyle =
+  AnimationValue baseStyle =
     aAnimation->GetEffect()->AsKeyframeEffect()->BaseStyle(aProperty.mProperty);
   if (!baseStyle.IsNull()) {
-    
-    
     SetAnimatable(aProperty.mProperty,
-                  AnimationValue(baseStyle),
+                  baseStyle,
                   aFrame, refBox,
                   animation->baseStyle());
   } else {
