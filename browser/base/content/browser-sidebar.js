@@ -329,6 +329,8 @@ var SidebarUI = {
       if (triggerNode) {
         updateToggleControlLabel(triggerNode);
       }
+
+      this._fireFocusedEvent();
       BrowserUITelemetry.countSidebarEvent(commandID, "show");
     });
   },
@@ -384,20 +386,16 @@ var SidebarUI = {
 
       if (this.browser.contentDocument.location.href != url) {
         this.browser.addEventListener("load", event => {
+          
+          
+          setTimeout(() => {
+            resolve();
 
-          
-          
-          
-          setTimeout(() => this._fireFocusedEvent(), 0);
-
-          resolve();
-
-          
-          this._fireShowEvent();
+            
+            this._fireShowEvent();
+          }, 0);
         }, {capture: true, once: true});
       } else {
-        
-        this._fireFocusedEvent();
         resolve();
 
         
