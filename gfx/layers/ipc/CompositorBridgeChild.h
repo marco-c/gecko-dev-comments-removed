@@ -235,6 +235,8 @@ public:
 
   wr::MaybeExternalImageId GetNextExternalImageId() override;
 
+  wr::PipelineId GetNextPipelineId();
+
 private:
   
   virtual ~CompositorBridgeChild();
@@ -268,6 +270,8 @@ private:
   already_AddRefed<nsIEventTarget>
   GetSpecificMessageEventTarget(const Message& aMsg) override;
 
+  uint64_t GetNextResourceId();
+
   
   class SharedFrameMetricsData {
   public:
@@ -296,7 +300,8 @@ private:
 
   RefPtr<LayerManager> mLayerManager;
 
-  uint32_t mNamespace;
+  uint32_t mIdNamespace;
+  uint32_t mResourceId;
 
   
   
