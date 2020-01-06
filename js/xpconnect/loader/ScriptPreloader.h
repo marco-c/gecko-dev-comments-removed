@@ -367,6 +367,8 @@ private:
     
     void PrepareCacheWrite();
 
+    void PrepareCacheWriteInternal();
+
     
     
     Result<nsCOMPtr<nsIFile>, nsresult>
@@ -410,6 +412,7 @@ private:
     bool mSaveComplete = false;
     bool mDataPrepared = false;
     bool mCacheInvalidated = false;
+    bool mBlockedOnSyncDispatch = false;
 
     
     
