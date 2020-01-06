@@ -68,10 +68,10 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
 
   
-  virtual DrawResult PaintSVG(gfxContext& aContext,
-                              const gfxMatrix& aTransform,
-                              const nsIntRect* aDirtyRect = nullptr,
-                              uint32_t aFlags = 0) override;
+  virtual void PaintSVG(gfxContext& aContext,
+                        const gfxMatrix& aTransform,
+                        imgDrawingParams& aImgParams,
+                        const nsIntRect* aDirtyRect = nullptr) override;
   virtual nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   virtual void ReflowSVG() override;
 
@@ -331,14 +331,15 @@ nsSVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
 
 
 
-DrawResult
+void
 nsSVGImageFrame::PaintSVG(gfxContext& aContext,
                           const gfxMatrix& aTransform,
-                          const nsIntRect *aDirtyRect,
-                          uint32_t aFlags)
+                          imgDrawingParams& aImgParams,
+                          const nsIntRect *aDirtyRect)
 {
-  if (!StyleVisibility()->IsVisible())
-    return DrawResult::SUCCESS;
+  if (!StyleVisibility()->IsVisible()) {
+    return;
+  }
 
   float x, y, width, height;
   SVGImageElement *imgElem = static_cast<SVGImageElement*>(mContent);
@@ -357,7 +358,6 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       currentRequest->GetImage(getter_AddRefs(mImageContainer));
   }
 
-  DrawResult result = DrawResult::SUCCESS;
   if (mImageContainer) {
     gfxContextAutoSaveRestore autoRestorer(&aContext);
 
@@ -368,7 +368,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
     }
 
     if (!TransformContextForPainting(&aContext, aTransform)) {
-      return DrawResult::SUCCESS;
+      return ;
     }
 
     
@@ -418,7 +418,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       
-      result = nsLayoutUtils::DrawSingleImage(
+      aImgParams.result &= nsLayoutUtils::DrawSingleImage(
         aContext,
         PresContext(),
         mImageContainer,
@@ -426,16 +426,16 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
         destRect,
         aDirtyRect ? dirtyRect : destRect,
         context,
-        aFlags);
+        aImgParams.imageFlags);
     } else { 
-      result = nsLayoutUtils::DrawSingleUnscaledImage(
+      aImgParams.result &= nsLayoutUtils::DrawSingleUnscaledImage(
         aContext,
         PresContext(),
         mImageContainer,
         nsLayoutUtils::GetSamplingFilterForFrame(this),
         nsPoint(0, 0),
         aDirtyRect ? &dirtyRect : nullptr,
-        aFlags);
+        aImgParams.imageFlags);
     }
 
     if (opacity != 1.0f || StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -443,8 +443,6 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
     }
     
   }
-
-  return result;
 }
 
 nsIFrame*
