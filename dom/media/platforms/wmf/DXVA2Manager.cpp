@@ -1265,7 +1265,7 @@ DXVA2Manager::IsNV12Supported(uint32_t aVendorID,
     
     
     uint64_t driverVersion;
-    if (widget::ParseDriverVersion(aDriverVersionString, &driverVersion) &&
+    if (!widget::ParseDriverVersion(aDriverVersionString, &driverVersion) ||
         driverVersion < widget::V(21, 19, 411, 0)) {
       return false;
     }
