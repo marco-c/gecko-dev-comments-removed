@@ -12,7 +12,7 @@
 namespace mozilla {
 namespace layers {
 
-class WebRenderCompositableHolder;
+class WebRenderBridgeParent;
 
 
 
@@ -69,16 +69,17 @@ public:
 
   TextureHost* GetAsTextureHostForComposite();
 
-  void SetWrCompositableHolder(WebRenderCompositableHolder* aWrCompositableHolder)
-  {
-    mWrCompositableHolder = aWrCompositableHolder;
-  }
+  void SetWrBridge(WebRenderBridgeParent* aWrBridge);
 
 protected:
   
   virtual TimeStamp GetCompositionTime() const override;
 
-  WebRenderCompositableHolder* MOZ_NON_OWNING_REF mWrCompositableHolder;
+  void SetCurrentTextureHost(TextureHost* aTexture);
+
+  WebRenderBridgeParent* MOZ_NON_OWNING_REF mWrBridge;
+
+  CompositableTextureHostRef mCurrentTextureHost;
 };
 
 } 
