@@ -9,6 +9,7 @@
 
 #include "base/platform_thread.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -21,12 +22,15 @@ namespace layers {
 
 class PaintThread final
 {
+  friend void DestroyPaintThread(UniquePtr<PaintThread>&& aPaintThread);
+
 public:
   static void Start();
   static void Shutdown();
   static PaintThread* Get();
   void PaintContents(gfx::DrawTargetCapture* aCapture,
                      gfx::DrawTarget* aTarget);
+
   
   
   
@@ -34,15 +38,19 @@ public:
   void Release();
   void AddRef();
 
+  
+  static bool IsOnPaintThread();
+
 private:
-  bool IsOnPaintThread();
   bool Init();
-  void ShutdownImpl();
+  void ShutdownOnPaintThread();
   void InitOnPaintThread();
+  void PaintContentsAsync(gfx::DrawTargetCapture* aCapture,
+                          gfx::DrawTarget* aTarget);
 
   static StaticAutoPtr<PaintThread> sSingleton;
-  RefPtr<nsIThread> mThread;
-  PlatformThreadId mThreadId;
+  static StaticRefPtr<nsIThread> sThread;
+  static PlatformThreadId sThreadId;
 };
 
 } 
