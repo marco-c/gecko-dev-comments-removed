@@ -213,6 +213,15 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
   } else {
     gtk_init(nullptr, nullptr);
   }
+
+  
+  
+  
+  if (gfxVars::UseWebRender()) {
+    FT_Library library = Factory::NewFTLibrary();
+    MOZ_ASSERT(library);
+    Factory::SetFTLibrary(library);
+  }
 #endif
 
   
