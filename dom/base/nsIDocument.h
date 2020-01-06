@@ -3195,6 +3195,22 @@ public:
 
   inline void SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits);
 
+  bool ShouldThrowOnDynamicMarkupInsertion()
+  {
+    return mThrowOnDynamicMarkupInsertionCounter;
+  }
+
+  void IncrementThrowOnDynamicMarkupInsertionCounter()
+  {
+    ++mThrowOnDynamicMarkupInsertionCounter;
+  }
+
+  void DecrementThrowOnDynamicMarkupInsertionCounter()
+  {
+    MOZ_ASSERT(mThrowOnDynamicMarkupInsertionCounter);
+    --mThrowOnDynamicMarkupInsertionCounter;
+  }
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3736,6 +3752,11 @@ protected:
   
   nsCOMPtr<nsINode> mServoRestyleRoot;
   uint32_t mServoRestyleRootDirtyBits;
+
+  
+  
+  
+  uint32_t mThrowOnDynamicMarkupInsertionCounter;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
@@ -3790,6 +3811,23 @@ public:
 private:
   nsCOMArray<nsIDocument> mDocuments;
   uint32_t                mMicroTaskLevel;
+};
+
+class MOZ_RAII AutoSetThrowOnDynamicMarkupInsertionCounter final {
+  public:
+    explicit AutoSetThrowOnDynamicMarkupInsertionCounter(
+      nsIDocument* aDocument)
+      : mDocument(aDocument)
+    {
+      mDocument->IncrementThrowOnDynamicMarkupInsertionCounter();
+    }
+
+    ~AutoSetThrowOnDynamicMarkupInsertionCounter() {
+      mDocument->DecrementThrowOnDynamicMarkupInsertionCounter();
+    }
+
+  private:
+    nsIDocument* mDocument;
 };
 
 
