@@ -172,10 +172,13 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mPreserveLayers(false)
   , mHasPresented(false)
   , mHasBeforeUnload(false)
-  , mIsReadyToHandleInputEvents(false)
   , mIsMouseEnterIntoWidgetEventSuppressed(false)
 {
   MOZ_ASSERT(aManager);
+  
+  
+  mIsReadyToHandleInputEvents =
+    !Preferences::GetBool("prioritized_input_events.enabled", false);
 }
 
 TabParent::~TabParent()
