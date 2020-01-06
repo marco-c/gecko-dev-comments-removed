@@ -1137,6 +1137,7 @@ PeerConnectionMedia::ShutdownMediaTransport_s()
 
   mIceCtxHdlr = nullptr;
 
+  
   mMainThread->Dispatch(WrapRunnable(this, &PeerConnectionMedia::SelfDestruct_m),
                         NS_DISPATCH_NORMAL);
 }

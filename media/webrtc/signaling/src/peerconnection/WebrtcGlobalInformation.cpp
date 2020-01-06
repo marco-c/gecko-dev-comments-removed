@@ -873,6 +873,8 @@ WebrtcGlobalChild::RecvGetLogRequest(const int& aRequestId,
     do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
 
   if (NS_SUCCEEDED(rv) && stsThread) {
+    
+    
     rv = RUN_ON_THREAD(stsThread,
                        WrapRunnableNM(&GetLogging_s, this, aRequestId, aPattern.get()),
                        NS_DISPATCH_NORMAL);

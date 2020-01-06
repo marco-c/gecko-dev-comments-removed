@@ -309,6 +309,7 @@ WebrtcGmpVideoEncoder::Encode(const webrtc::VideoFrame& aInputImage,
   MOZ_ASSERT(aInputImage.width() >= 0 && aInputImage.height() >= 0);
   
   
+  
   mGMPThread->Dispatch(
       WrapRunnable(this,
                    &WebrtcGmpVideoEncoder::Encode_g,
@@ -774,6 +775,7 @@ WebrtcGmpVideoDecoder::Decode(const webrtc::EncodedImage& aInputImage,
   int32_t ret;
   MOZ_ASSERT(mGMPThread);
   MOZ_ASSERT(!NS_IsMainThread());
+  
   
   
   mozilla::SyncRunnable::DispatchToThread(mGMPThread,
