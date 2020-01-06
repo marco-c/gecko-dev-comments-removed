@@ -10,6 +10,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimeStamp.h"
+#include "nsIDocShell.h"
 #include "nsITimeoutHandler.h"
 #include "mozilla/dom/TabGroup.h"
 #include "OrderedTimeoutIterator.h"
@@ -110,10 +111,6 @@ TimeoutManager::IsActive() const
   
   
   
-  
-  
-  
-  
 
   if (mWindow.IsChromeWindow()) {
     return true;
@@ -121,45 +118,6 @@ TimeoutManager::IsActive() const
 
   
   if (mWindow.AsInner()->IsPlayingAudio()) {
-    return true;
-  }
-
-  
-  if (mWindow.AsInner()->HasActiveIndexedDBDatabases()) {
-    return true;
-  }
-
-  
-  if (MediaManager::Exists() &&
-      MediaManager::Get()->IsWindowStillActive(mWindow.WindowID())) {
-    return true;
-  }
-
-  bool active = false;
-#if 0
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<IPeerConnectionManager> pcManager =
-    do_GetService(IPEERCONNECTION_MANAGER_CONTRACTID);
-
-  if (pcManager && NS_SUCCEEDED(pcManager->HasActivePeerConnection(
-                     mWindow.WindowID(), &active)) &&
-      active) {
-    return true;
-  }
-#endif 
-
-  
-  RefPtr<WebSocketEventService> eventService = WebSocketEventService::Get();
-  if (eventService &&
-      NS_SUCCEEDED(eventService->HasListenerFor(mWindow.WindowID(), &active)) &&
-      active) {
     return true;
   }
 
@@ -246,7 +204,7 @@ TimeoutManager::MinSchedulingDelay() const
   TimeDuration unthrottled =
     isBackground ? TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)
                  : TimeDuration();
-  if (mBudgetThrottleTimeouts && mExecutionBudget < TimeDuration()) {
+  if (BudgetThrottlingEnabled() && mExecutionBudget < TimeDuration()) {
     
     double factor = 1.0 / GetRegenerationFactor(mWindow.IsBackgroundInternal());
     return TimeDuration::Min(
@@ -373,7 +331,7 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
   
   
   
-  if (mBudgetThrottleTimeouts) {
+  if (BudgetThrottlingEnabled()) {
     bool isBackground = mWindow.IsBackgroundInternal();
     double factor = GetRegenerationFactor(isBackground);
     TimeDuration regenerated = (aNow - mLastBudgetUpdate).MultDouble(factor);
@@ -1239,6 +1197,66 @@ ThrottleTimeoutsCallback::Notify(nsITimer* aTimer)
   return NS_OK;
 }
 
+}
+
+bool
+TimeoutManager::BudgetThrottlingEnabled() const
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!mBudgetThrottleTimeouts || IsActive()) {
+    return false;
+  }
+
+  
+  if (mWindow.AsInner()->HasActiveIndexedDBDatabases()) {
+    return false;
+  }
+
+  
+  if (MediaManager::Exists() &&
+      MediaManager::Get()->IsWindowStillActive(mWindow.WindowID())) {
+    return false;
+  }
+
+  bool active = false;
+#if 0
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<IPeerConnectionManager> pcManager =
+    do_GetService(IPEERCONNECTION_MANAGER_CONTRACTID);
+
+  if (pcManager && NS_SUCCEEDED(pcManager->HasActivePeerConnection(
+                     mWindow.WindowID(), &active)) &&
+      active) {
+    return false;
+  }
+#endif 
+
+  
+  RefPtr<WebSocketEventService> eventService = WebSocketEventService::Get();
+  if (eventService &&
+      NS_SUCCEEDED(eventService->HasListenerFor(mWindow.WindowID(), &active)) &&
+      active) {
+    return false;
+  }
+
+  return true;
 }
 
 void
