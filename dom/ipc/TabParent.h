@@ -753,6 +753,12 @@ private:
 
   bool mHasContentOpener;
 
+  
+  
+  
+  bool QueryDropLinksForVerification();
+  nsTArray<nsString> mVerifyDropLinks;
+
 #ifdef DEBUG
   int32_t mActiveSupressDisplayportCount;
 #endif
