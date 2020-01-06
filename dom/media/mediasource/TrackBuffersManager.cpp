@@ -1490,10 +1490,13 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
   
   
   
+  
   TimeInterval targetWindow =
-    mAppendWindow.mStart != TimeUnit::FromSeconds(0)
+    (mAppendWindow.mStart != TimeUnit::FromSeconds(0) ||
+     mAppendWindow.mEnd != TimeUnit::FromInfinity())
     ? mAppendWindow
-    : TimeInterval(mAppendWindow.mStart, mAppendWindow.mEnd,
+    : TimeInterval(mAppendWindow.mStart,
+                   mAppendWindow.mEnd,
                    trackBuffer.mLastFrameDuration.isSome()
                    ? trackBuffer.mLongestFrameDuration
                    : aSamples[0]->mDuration);
