@@ -1242,7 +1242,7 @@ ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint64_
             return DenseElementResult::Failure;
 
         
-        const Value& elem = GetBoxedOrUnboxedDenseElement<Type>(obj, *numProcessed);
+        Value elem = GetBoxedOrUnboxedDenseElement<Type>(obj, *numProcessed);
 
         
         if (elem.isString()) {
