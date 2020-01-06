@@ -296,8 +296,18 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             
             
             
-            mShadowText.delete(start, shadowEnd);
-            mShadowText.insert(start, mCurrentText, start, currentEnd);
+            Object[] spans = mCurrentText.getSpans(start, currentEnd, Object.class);
+            for (final Object span : spans) {
+                mShadowText.removeSpan(span);
+            }
+
+            
+            spans = mShadowText.getSpans(start, shadowEnd, Object.class);
+            for (final Object span : spans) {
+                mShadowText.removeSpan(span);
+            }
+
+            mShadowText.replace(start, shadowEnd, mCurrentText, start, currentEnd);
 
             
             
