@@ -7,6 +7,7 @@ package org.mozilla.gecko.activitystream.homepanel.stream;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.support.annotation.UiThread;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.FaviconView;
 
 import java.lang.ref.WeakReference;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 public class HighlightItem extends StreamItem implements IconCallback {
@@ -158,24 +160,41 @@ public class HighlightItem extends StreamItem implements IconCallback {
 
     
     private static class UpdatePageDomainAsyncTask extends URIUtils.GetHostSecondLevelDomainAsyncTask {
+        private static final int VIEW_TAG_ID = R.id.page; 
+
         private final WeakReference<TextView> pageDomainViewWeakReference;
+        private final UUID viewTagAtStart;
 
         UpdatePageDomainAsyncTask(final Context contextReference, final String uriString, final TextView pageDomainView) {
             super(contextReference, uriString);
             this.pageDomainViewWeakReference = new WeakReference<>(pageDomainView);
+
+            
+            viewTagAtStart = UUID.randomUUID();
+            pageDomainView.setTag(VIEW_TAG_ID, viewTagAtStart);
         }
 
         @Override
         protected void onPostExecute(final String hostSLD) {
             super.onPostExecute(hostSLD);
             final TextView viewToUpdate = pageDomainViewWeakReference.get();
-            if (viewToUpdate == null) {
+
+            if (viewToUpdate == null || !isTagSameAsStartTag(viewToUpdate)) {
                 return;
             }
 
             
             
             viewToUpdate.setText(hostSLD);
+        }
+
+        
+
+
+
+        @UiThread
+        private boolean isTagSameAsStartTag(final View viewToCheck) {
+            return viewTagAtStart.equals(viewToCheck.getTag(VIEW_TAG_ID));
         }
     }
 }

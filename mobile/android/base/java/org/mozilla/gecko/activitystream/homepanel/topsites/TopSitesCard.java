@@ -7,6 +7,7 @@ package org.mozilla.gecko.activitystream.homepanel.topsites;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.UiThread;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -30,6 +31,7 @@ import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.FaviconView;
 
 import java.lang.ref.WeakReference;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
  class TopSitesCard extends RecyclerView.ViewHolder
@@ -128,18 +130,25 @@ import java.util.concurrent.Future;
 
     
     private static class UpdateCardTitleAsyncTask extends URIUtils.GetHostSecondLevelDomainAsyncTask {
+        private static final int VIEW_TAG_ID = R.id.title; 
+
         private final WeakReference<TextView> titleViewWeakReference;
+        private final UUID viewTagAtStart;
 
         UpdateCardTitleAsyncTask(final Context contextReference, final String uriString, final TextView titleView) {
             super(contextReference, uriString);
             this.titleViewWeakReference = new WeakReference<>(titleView);
+
+            
+            viewTagAtStart = UUID.randomUUID();
+            titleView.setTag(VIEW_TAG_ID, viewTagAtStart);
         }
 
         @Override
         protected void onPostExecute(final String hostSLD) {
             super.onPostExecute(hostSLD);
             final TextView titleView = titleViewWeakReference.get();
-            if (titleView == null) {
+            if (titleView == null || !isTagSameAsStartTag(titleView)) {
                 return;
             }
 
@@ -148,6 +157,15 @@ import java.util.concurrent.Future;
             
             
             ViewUtil.setCenteredText(titleView, updateText, titleView.getPaddingTop());
+        }
+
+        
+
+
+
+        @UiThread
+        private boolean isTagSameAsStartTag(final View viewToCheck) {
+            return viewTagAtStart.equals(viewToCheck.getTag(VIEW_TAG_ID));
         }
     }
 }
