@@ -576,6 +576,9 @@ this.UITour = {
           return false;
         }
 
+        if (data.email) {
+          p.append("email", data.email);
+        }
         
         browser.loadURI("about:accounts?" + p.toString());
         break;
