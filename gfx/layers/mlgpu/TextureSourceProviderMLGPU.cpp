@@ -92,10 +92,22 @@ TextureSourceProviderMLGPU::CreateDataTextureSourceAround(gfx::DataSourceSurface
   return nullptr;
 }
 
+void
+TextureSourceProviderMLGPU::UnlockAfterComposition(TextureHost* aTexture)
+{
+  TextureSourceProvider::UnlockAfterComposition(aTexture);
+
+  
+  
+  if (!IsValid()) {
+    ReadUnlockTextures();
+  }
+}
+
 bool
 TextureSourceProviderMLGPU::NotifyNotUsedAfterComposition(TextureHost* aTextureHost)
 {
-  if (!mDevice) {
+  if (!IsValid()) {
     return false;
   }
   return TextureSourceProvider::NotifyNotUsedAfterComposition(aTextureHost);

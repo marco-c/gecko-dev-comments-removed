@@ -61,7 +61,7 @@ public:
   
   
   
-  void UnlockAfterComposition(TextureHost* aTexture);
+  virtual void UnlockAfterComposition(TextureHost* aTexture);
 
   
   
