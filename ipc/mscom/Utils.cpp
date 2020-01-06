@@ -242,31 +242,6 @@ GUIDToString(REFGUID aGuid, nsAString& aOutString)
   }
 }
 
-bool
-IsCallerExternalProcess()
-{
-  MOZ_ASSERT(XRE_IsContentProcess());
-
-  
-
-
-
-
-
-
-
-
-  DWORD callerTid;
-  if (::CoGetCallerTID(&callerTid) != S_FALSE) {
-    return false;
-  }
-
-  
-  const DWORD parentMainTid =
-    dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
-  return callerTid != parentMainTid;
-}
-
 #endif 
 
 #if defined(ACCESSIBILITY)
@@ -316,6 +291,31 @@ IsVtableIndexFromParentInterface(REFIID aInterface, unsigned long aVtableIndex)
 }
 
 #if defined(MOZILLA_INTERNAL_API)
+
+bool
+IsCallerExternalProcess()
+{
+  MOZ_ASSERT(XRE_IsContentProcess());
+
+  
+
+
+
+
+
+
+
+
+  DWORD callerTid;
+  if (::CoGetCallerTID(&callerTid) != S_FALSE) {
+    return false;
+  }
+
+  
+  const DWORD parentMainTid =
+    dom::ContentChild::GetSingleton()->GetChromeMainThreadId();
+  return callerTid != parentMainTid;
+}
 
 bool
 IsInterfaceEqualToOrInheritedFrom(REFIID aInterface, REFIID aFrom,

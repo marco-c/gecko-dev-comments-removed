@@ -90,7 +90,11 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
   
   
 
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
   auto marshalFn = [this, &strActCtx, &unmarshalResult, &aIID]() -> void
+#else
+  auto marshalFn = [this, &unmarshalResult, &aIID]() -> void
+#endif 
   {
 #if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
     auto curActCtx = ActivationContext::GetCurrent();
