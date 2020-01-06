@@ -3202,34 +3202,20 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       SetActiveManager(this, activeContent);
     }
     break;
-  case ePointerCancel: {
-    if(WidgetMouseEvent* pointerEvent = aEvent->AsPointerEvent()) {
-      
-      
-      PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
-      GenerateMouseEnterExit(pointerEvent);
-      
-      
-      
-      if (pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
-        mPointersEnterLeaveHelper.Remove(pointerEvent->pointerId);
-        GenerateMouseEnterExit(pointerEvent);
-      }
-    }
-    break;
-  }
+  case ePointerCancel:
   case ePointerUp: {
     WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
-
+    MOZ_ASSERT(pointerEvent);
     
     
     PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
 
-    
-    
     if (pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
-      mPointersEnterLeaveHelper.Remove(pointerEvent->pointerId);
+      
+      
+      
       GenerateMouseEnterExit(pointerEvent);
+      mPointersEnterLeaveHelper.Remove(pointerEvent->pointerId);
     }
     break;
   }
