@@ -865,6 +865,11 @@ var MessageQueue = {
 
 
   sendWhenIdle(deadline) {
+    if (!content) {
+      
+      return;
+    }
+
     if (deadline) {
       if (deadline.didTimeout || deadline.timeRemaining() > MessageQueue.NEEDED_IDLE_PERIOD_MS) {
         MessageQueue.send();
