@@ -45,7 +45,7 @@ const OBSERVING = [
   "quit-application-granted", "browser-lastwindow-close-granted",
   "quit-application", "browser:purge-session-history",
   "browser:purge-domain-data",
-  "idle-daily",
+  "idle-daily", "clear-origin-attributes-data"
 ];
 
 
@@ -799,6 +799,13 @@ var SessionStoreInternal = {
         this.onIdleDaily();
         this._notifyOfClosedObjectsChange();
         break;
+      case "clear-origin-attributes-data":
+        let userContextId = 0;
+        try {
+          userContextId = JSON.parse(aData).userContextId;
+        } catch(e) {}
+        if (userContextId)
+          this._forgetTabsWithUserContextId(userContextId);
     }
   },
 
@@ -2715,6 +2722,33 @@ var SessionStoreInternal = {
       win.gBrowser.setIcon(tab, tabData.image, loadingPrincipal);
       TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
     }
+  },
+
+  
+  _forgetTabsWithUserContextId(userContextId) {
+    let windowsEnum = Services.wm.getEnumerator("navigator:browser");
+    while (windowsEnum.hasMoreElements()) {
+      let window = windowsEnum.getNext();
+      let windowState = this._windows[window.__SSi];
+      if (windowState) {
+        
+        
+        
+        let indexes = [];
+        windowState._closedTabs.forEach((closedTab, index) => {
+          if (closedTab.state.userContextId == userContextId) {
+            indexes.push(index);
+          }
+        });
+
+        for (let index of indexes.reverse()) {
+          this.removeClosedTabData(windowState._closedTabs, index);
+        }
+      }
+    }
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   
