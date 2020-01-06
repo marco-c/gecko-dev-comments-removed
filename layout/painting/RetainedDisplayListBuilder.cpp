@@ -760,6 +760,20 @@ ShouldBuildPartial(nsTArray<nsIFrame*>& aModifiedFrames)
   return true;
 }
 
+static void
+ClearFrameProps(nsTArray<nsIFrame*>& aFrames)
+{
+  for (nsIFrame* f : aFrames) {
+    if (f->HasOverrideDirtyRegion()) {
+      f->SetHasOverrideDirtyRegion(false);
+      f->DeleteProperty(nsDisplayListBuilder::DisplayListBuildingRect());
+      f->DeleteProperty(nsDisplayListBuilder::DisplayListBuildingDisplayPortRect());
+    }
+
+    f->SetFrameIsModified(false);
+  }
+}
+
 bool
 RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 {
@@ -773,7 +787,10 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
   nsTArray<nsIFrame*> modifiedFrames =
     GetModifiedFrames(mBuilder.RootReferenceFrame());
 
-  const bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames);
+  
+  
+  const bool shouldBuildPartial =
+    !mList.IsEmpty() && ShouldBuildPartial(modifiedFrames);
 
   if (mPreviousCaret != mBuilder.GetCaretFrame()) {
     if (mPreviousCaret) {
@@ -795,8 +812,9 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
   AnimatedGeometryRoot* modifiedAGR = nullptr;
   nsTArray<nsIFrame*> framesWithProps;
   bool merged = false;
-  if (shouldBuildPartial && !mList.IsEmpty() &&
-      ComputeRebuildRegion(modifiedFrames, &modifiedDirty, &modifiedAGR, &framesWithProps)) {
+  if (shouldBuildPartial &&
+      ComputeRebuildRegion(modifiedFrames, &modifiedDirty,
+                           &modifiedAGR, &framesWithProps)) {
     modifiedDirty.IntersectRect(modifiedDirty, mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
     PreProcessDisplayList(&mList, modifiedAGR);
@@ -840,19 +858,9 @@ RetainedDisplayListBuilder::AttemptPartialUpdate(nscolor aBackstop)
 
   
   
-  for (nsIFrame* f : modifiedFrames) {
-    if (f) {
-      f->SetFrameIsModified(false);
-    }
-  }
-
   
-  
-  for (nsIFrame* f: framesWithProps) {
-    f->SetHasOverrideDirtyRegion(false);
-    f->DeleteProperty(nsDisplayListBuilder::DisplayListBuildingRect());
-    f->DeleteProperty(nsDisplayListBuilder::DisplayListBuildingDisplayPortRect());
-  }
+  ClearFrameProps(modifiedFrames);
+  ClearFrameProps(framesWithProps);
 
   return merged;
 }
