@@ -262,6 +262,11 @@ public:
   }
   bool RebuildFragmentedIndex(
     const mozilla::MediaByteRangeSet& aByteRanges);
+  
+  
+  
+  bool RebuildFragmentedIndex(
+    const mozilla::MediaByteRangeSet& aByteRanges, bool* aCanEvict);
   bool RebuildFragmentedIndex(BoxContext& aContext);
   Interval<Microseconds> GetCompositionRange(
     const mozilla::MediaByteRangeSet& aByteRanges);
