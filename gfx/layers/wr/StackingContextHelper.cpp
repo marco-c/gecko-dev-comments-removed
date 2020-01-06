@@ -102,6 +102,7 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
     mTransform.PostScale(aParentSC.mXScale, aParentSC.mYScale, 1.0);
     mTransform.NudgeToIntegersFixedEpsilon();
 
+    
     gfx::Size scale = mTransform.As2D().ScaleFactors(true);
 
     

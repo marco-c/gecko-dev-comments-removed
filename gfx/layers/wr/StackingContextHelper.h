@@ -83,6 +83,18 @@ public:
   
   wr::LayoutRect ToRelativeLayoutRectRounded(const LayoutDeviceRect& aRect) const;
 
+  
+  gfx::Size GetInheritedScale() const {
+    return gfx::Size(mXScale, mYScale);
+  }
+
+  
+  
+  void SetInheritedScale(const gfx::Size& aScale) {
+    mXScale = aScale.width;
+    mYScale = aScale.height;
+  }
+
   bool IsBackfaceVisible() const { return mTransform.IsBackfaceVisible(); }
 
 private:
