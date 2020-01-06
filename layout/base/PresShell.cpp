@@ -2047,8 +2047,7 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
   
   
   
-  FrameLayerBuilder::RemoveFrameFromLayerManager(aFrame, aFrame->DisplayItemData());
-  aFrame->DisplayItemData().Clear();
+  aFrame->RemoveDisplayItemDataForDeletion();
 
   if (!mIgnoreFrameDestruction) {
     if (aFrame->HasImageRequest()) {
@@ -4777,7 +4776,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
           const DisplayItemClipChain* newClipChain =
             aBuilder->AllocateDisplayItemClipChain(newClip, asr, nullptr);
 
-          i->IntersectClip(aBuilder, newClipChain);
+          i->IntersectClip(aBuilder, newClipChain, true);
           itemToInsert = i;
         }
       }
@@ -4888,6 +4887,7 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
     
     for (; frame; frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
+      info->mBuilder.SetVisibleRect(frame->GetVisualOverflowRect());
       info->mBuilder.SetDirtyRect(frame->GetVisualOverflowRect());
       frame->BuildDisplayListForStackingContext(&info->mBuilder, &info->mList);
     }
@@ -6792,7 +6792,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
 
     
-    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
+    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY, false);
   }
 
   if (PointerEventHandler::IsPointerEventEnabled()) {
@@ -8840,12 +8840,11 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
     timeStart = TimeStamp::Now();
   }
 
-  target->SchedulePaint();
-  nsIFrame *parent = nsLayoutUtils::GetCrossDocParentFrame(target);
-  while (parent) {
-    SVGObserverUtils::InvalidateDirectRenderingObservers(parent);
-    parent = nsLayoutUtils::GetCrossDocParentFrame(parent);
-  }
+  
+  
+  
+  
+  target->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
 
 #ifdef MOZ_GECKO_PROFILER
   nsIURI* uri = mDocument->GetDocumentURI();
