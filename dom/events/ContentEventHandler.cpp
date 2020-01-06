@@ -2855,14 +2855,14 @@ ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(nsRange* aRange)
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsINode> parentNode = aRange->GetStartContainer();
+  nsCOMPtr<nsINode> container = aRange->GetStartContainer();
   int32_t offsetInParentNode = aRange->StartOffset();
-  if (NS_WARN_IF(!parentNode) || NS_WARN_IF(offsetInParentNode < 0)) {
+  if (NS_WARN_IF(!container) || NS_WARN_IF(offsetInParentNode < 0)) {
     return NS_ERROR_INVALID_ARG;
   }
 
   
-  if (parentNode->IsNodeOfType(nsINode::eTEXT)) {
+  if (container->IsNodeOfType(nsINode::eTEXT)) {
     return NS_OK;
   }
 
@@ -2871,16 +2871,16 @@ ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(nsRange* aRange)
   
   nsINode* childNode = nullptr;
   int32_t offsetInChildNode = -1;
-  if (!offsetInParentNode && parentNode->HasChildren()) {
+  if (!offsetInParentNode && container->HasChildren()) {
     
     
-    childNode = parentNode->GetFirstChild();
+    childNode = container->GetFirstChild();
     offsetInChildNode = 0;
   } else if (static_cast<uint32_t>(offsetInParentNode) <
-               parentNode->GetChildCount()) {
+               container->GetChildCount()) {
     
     
-    childNode = parentNode->GetChildAt(offsetInParentNode - 1);
+    childNode = container->GetChildAt(offsetInParentNode - 1);
     offsetInChildNode = childNode->Length();
   }
 
