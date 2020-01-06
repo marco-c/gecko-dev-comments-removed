@@ -4,7 +4,6 @@
 
 
 
-use arrayvec::ArrayVec;
 use context::SharedStyleContext;
 use dom::TElement;
 use invalidation::element::restyle_hints::RestyleHint;
@@ -158,77 +157,12 @@ impl EagerPseudoStyles {
     }
 
     
-    pub fn get_mut(&mut self, pseudo: &PseudoElement) -> Option<&mut Arc<ComputedValues>> {
-        debug_assert!(pseudo.is_eager());
-        match self.0 {
-            None => return None,
-            Some(ref mut arc) => Arc::make_mut(arc)[pseudo.eager_index()].as_mut(),
-        }
-    }
-
-    
-    pub fn has(&self, pseudo: &PseudoElement) -> bool {
-        self.get(pseudo).is_some()
-    }
-
-    
     pub fn set(&mut self, pseudo: &PseudoElement, value: Arc<ComputedValues>) {
         if self.0.is_none() {
             self.0 = Some(Arc::new(Default::default()));
         }
         let arr = Arc::make_mut(self.0.as_mut().unwrap());
         arr[pseudo.eager_index()] = Some(value);
-    }
-
-    
-    pub fn insert(&mut self, pseudo: &PseudoElement, value: Arc<ComputedValues>) {
-        debug_assert!(!self.has(pseudo));
-        self.set(pseudo, value);
-    }
-
-    
-    pub fn take(&mut self, pseudo: &PseudoElement) -> Option<Arc<ComputedValues>> {
-        let result = match self.0 {
-            None => return None,
-            Some(ref mut arc) => Arc::make_mut(arc)[pseudo.eager_index()].take(),
-        };
-        let empty = self.0.as_ref().unwrap().iter().all(|x| x.is_none());
-        if empty {
-            self.0 = None;
-        }
-        result
-    }
-
-    
-    pub fn keys(&self) -> ArrayVec<[PseudoElement; EAGER_PSEUDO_COUNT]> {
-        let mut v = ArrayVec::new();
-        if let Some(ref arr) = self.0 {
-            for i in 0..EAGER_PSEUDO_COUNT {
-                if arr[i].is_some() {
-                    v.push(PseudoElement::from_eager_index(i));
-                }
-            }
-        }
-        v
-    }
-
-    
-    pub fn has_same_pseudos_as(&self, other: &Self) -> bool {
-        
-        
-        
-        match (&self.0, &other.0) {
-            (&Some(ref our_arr), &Some(ref other_arr)) => {
-                for i in 0..EAGER_PSEUDO_COUNT {
-                    if our_arr[i].is_some() != other_arr[i].is_some() {
-                        return false
-                    }
-                }
-                true
-            },
-            (&None, &None) => true,
-            _ => false,
-        }
     }
 }
 
@@ -246,11 +180,6 @@ impl ElementStyles {
     
     pub fn get_primary(&self) -> Option<&Arc<ComputedValues>> {
         self.primary.as_ref()
-    }
-
-    
-    pub fn get_primary_mut(&mut self) -> Option<&mut Arc<ComputedValues>> {
-        self.primary.as_mut()
     }
 
     

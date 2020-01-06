@@ -772,49 +772,37 @@ where
             context.thread_local.bloom_filter.assert_complete(element);
 
             
-            
-            let target = StyleSharingTarget::new(element);
-            let sharing_result = target.share_style_if_possible(context, data);
-
-            if let StyleWasShared(index, had_damage) = sharing_result {
-                context.thread_local.statistics.styles_shared += 1;
-                context.thread_local.style_sharing_candidate_cache.touch(index);
-                return had_damage;
-            }
-
-            context.thread_local.statistics.elements_matched += 1;
-
             important_rules_changed = true;
 
-            
-            let new_styles =
-                StyleResolverForElement::new(element, context, RuleInclusion::All)
-                    .resolve_style_with_default_parents();
+            let mut target = StyleSharingTarget::new(element);
 
             
             
-            
-            
-            
-            
-            let validation_data =
-                context.thread_local
-                    .current_element_info
-                    .as_mut().unwrap()
-                    .validation_data
-                    .take();
+            match target.share_style_if_possible(context) {
+                StyleWasShared(index, styles) => {
+                    context.thread_local.statistics.styles_shared += 1;
+                    context.thread_local.style_sharing_candidate_cache.touch(index);
+                    styles
+                }
+                CannotShare => {
+                    context.thread_local.statistics.elements_matched += 1;
+                    
+                    let new_styles =
+                        StyleResolverForElement::new(element, context, RuleInclusion::All)
+                            .resolve_style_with_default_parents();
 
-            let dom_depth = context.thread_local.bloom_filter.matching_depth();
-            context.thread_local
-                   .style_sharing_candidate_cache
-                   .insert_if_possible(
-                       &element,
-                       new_styles.primary(),
-                       validation_data,
-                       dom_depth
-                    );
+                    context.thread_local
+                        .style_sharing_candidate_cache
+                        .insert_if_possible(
+                            &element,
+                            new_styles.primary(),
+                            target.take_validation_data(),
+                            context.thread_local.bloom_filter.matching_depth(),
+                        );
 
-            new_styles
+                    new_styles
+                }
+            }
         }
         CascadeWithReplacements(flags) => {
             
