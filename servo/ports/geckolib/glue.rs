@@ -2831,7 +2831,8 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
                                            pseudo_type: CSSPseudoElementType,
                                            rule_inclusion: StyleRuleInclusion,
                                            snapshots: *const ServoElementSnapshotTable,
-                                           raw_data: RawServoStyleSetBorrowed)
+                                           raw_data: RawServoStyleSetBorrowed,
+                                           ignore_existing_styles: bool)
      -> ServoStyleContextStrong
 {
     debug_assert!(!snapshots.is_null());
@@ -2863,7 +2864,8 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
     
     
     
-    if rule_inclusion == RuleInclusion::All {
+    
+    if rule_inclusion == RuleInclusion::All && !ignore_existing_styles {
         let styles = element.mutate_data().and_then(|d| {
             if d.has_styles() {
                 Some(finish(&d.styles))
@@ -2888,7 +2890,7 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
         thread_local: &mut tlc,
     };
 
-    let styles = resolve_style(&mut context, element, rule_inclusion);
+    let styles = resolve_style(&mut context, element, rule_inclusion, ignore_existing_styles);
     finish(&styles).into()
 }
 
