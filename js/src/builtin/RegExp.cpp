@@ -176,7 +176,7 @@ js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, Handle<RegExpObject*>
 }
 
 static bool
-CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
+CheckPatternSyntaxSlow(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
 {
     CompileOptions options(cx);
     frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
@@ -184,10 +184,30 @@ CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
                                         flags & UnicodeFlag);
 }
 
-enum RegExpSharedUse {
-    UseRegExpShared,
-    DontUseRegExpShared
-};
+static RegExpShared*
+CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
+{
+    
+    
+
+    if (RegExpShared* shared = cx->zone()->regExps.maybeGet(pattern, flags)) {
+#ifdef DEBUG
+        
+        if (!CheckPatternSyntaxSlow(cx, pattern, flags)) {
+            MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
+            return nullptr;
+        }
+#endif
+        return shared;
+    }
+
+    if (!CheckPatternSyntaxSlow(cx, pattern, flags))
+        return nullptr;
+
+    
+    
+    return cx->zone()->regExps.get(cx, pattern, flags);
+}
 
 
 
@@ -206,8 +226,7 @@ enum RegExpSharedUse {
 
 static bool
 RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
-                                  HandleValue patternValue, HandleValue flagsValue,
-                                  RegExpSharedUse sharedUse = DontUseRegExpShared)
+                                  HandleValue patternValue, HandleValue flagsValue)
 {
     RootedAtom pattern(cx);
     if (patternValue.isUndefined()) {
@@ -233,24 +252,15 @@ RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
             return false;
     }
 
-    if (sharedUse == UseRegExpShared) {
-        
-        RegExpShared* re = cx->zone()->regExps.get(cx, pattern, flags);
-        if (!re)
-            return false;
+    
+    RegExpShared* shared = CheckPatternSyntax(cx, pattern, flags);
+    if (!shared)
+        return false;
 
-        
-        obj->initIgnoringLastIndex(pattern, flags);
+    
+    obj->initIgnoringLastIndex(pattern, flags);
 
-        obj->setShared(*re);
-    } else {
-        
-        if (!CheckPatternSyntax(cx, pattern, flags))
-            return false;
-
-        
-        obj->initIgnoringLastIndex(pattern, flags);
-    }
+    obj->setShared(*shared);
 
     return true;
 }
@@ -266,7 +276,7 @@ js::RegExpCreate(JSContext* cx, HandleValue patternValue, HandleValue flagsValue
          return false;
 
     
-    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, patternValue, flagsValue, UseRegExpShared))
+    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, patternValue, flagsValue))
         return false;
     regexp->zeroLastIndex(cx);
 
@@ -429,14 +439,14 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
     if (cls == ESClass::RegExp) {
         
         
-        
         RootedObject patternObj(cx, &patternValue.toObject());
 
         RootedAtom sourceAtom(cx);
         RegExpFlag flags;
+        RootedRegExpShared shared(cx);
         {
             
-            RegExpShared* shared = RegExpToShared(cx, patternObj);
+            shared = RegExpToShared(cx, patternObj);
             if (!shared)
                 return false;
             sourceAtom = shared->getSource();
@@ -444,6 +454,10 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
             
             
             flags = shared->getFlags();
+
+            
+            if (cx->zone() != shared->zone())
+                shared = nullptr;
         }
 
         
@@ -465,18 +479,26 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
             if (!ParseRegExpFlags(cx, flagStr, &flagsArg))
                 return false;
 
+            
+            if (flags != flagsArg)
+                shared = nullptr;
+
             if (!(flags & UnicodeFlag) && flagsArg & UnicodeFlag) {
                 
 
                 
                 
-                if (!CheckPatternSyntax(cx, sourceAtom, flagsArg))
+                shared = CheckPatternSyntax(cx, sourceAtom, flagsArg);
+                if (!shared)
                     return false;
             }
             flags = flagsArg;
         }
 
         regexp->initAndZeroLastIndex(sourceAtom, flags, cx);
+
+        if (shared)
+            regexp->setShared(*shared);
 
         args.rval().setObject(*regexp);
         return true;
