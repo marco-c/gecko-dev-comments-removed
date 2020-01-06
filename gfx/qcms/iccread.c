@@ -296,17 +296,6 @@ qcms_bool qcms_profile_is_bogus(qcms_profile *profile)
        bZ = s15Fixed16Number_to_float(profile->blueColorant.Z);
 
        
-       
-       negative =
-	       (rX < 0) || (rY < 0) || (rZ < 0) ||
-	       (gX < 0) || (gY < 0) || (gZ < 0) ||
-	       (bX < 0) || (bY < 0) || (bZ < 0);
-
-       if (negative)
-	       return true;
-
-
-       
        sum[0] = rX + gX + bX;
        sum[1] = rY + gY + bY;
        sum[2] = rZ + gZ + bZ;
@@ -330,6 +319,28 @@ qcms_bool qcms_profile_is_bogus(qcms_profile *profile)
                  ((sum[i] + tolerance[i]) >= target[i])))
                return true;
        }
+
+#ifndef __APPLE__
+       
+       
+
+       negative =
+	       (rX < 0) || (rY < 0) || (rZ < 0) ||
+	       (gX < 0) || (gY < 0) || (gZ < 0) ||
+	       (bX < 0) || (bY < 0) || (bZ < 0);
+
+#else
+       
+       
+       
+       
+       
+
+       
+       negative = false;
+#endif
+       if (negative)
+	       return true; 
 
        
        return false;
