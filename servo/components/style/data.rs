@@ -12,341 +12,8 @@ use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
 use properties::longhands::display::computed_value as display;
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
-use selectors::matching::VisitedHandlingMode;
 use shared_lock::{Locked, StylesheetGuards};
-use std::fmt;
 use stylearc::Arc;
-
-
-
-
-#[derive(Clone)]
-pub struct ComputedStyle {
-    
-    
-    pub rules: StrongRuleNode,
-
-    
-    
-    
-    pub values: Option<Arc<ComputedValues>>,
-
-    
-    
-    
-    
-    visited_rules: Option<StrongRuleNode>,
-
-    
-    
-    
-    
-    
-    
-    
-    visited_values: Option<Arc<ComputedValues>>,
-}
-
-impl ComputedStyle {
-    
-    pub fn new(rules: StrongRuleNode, values: Arc<ComputedValues>) -> Self {
-        ComputedStyle {
-            rules: rules,
-            values: Some(values),
-            visited_rules: None,
-            visited_values: None,
-        }
-    }
-
-    
-    
-    pub fn new_partial(rules: StrongRuleNode) -> Self {
-        ComputedStyle {
-            rules: rules,
-            values: None,
-            visited_rules: None,
-            visited_values: None,
-        }
-    }
-
-    
-    
-    pub fn values(&self) -> &Arc<ComputedValues> {
-        self.values.as_ref().unwrap()
-    }
-
-    
-    pub fn has_visited_rules(&self) -> bool {
-        self.visited_rules.is_some()
-    }
-
-    
-    pub fn get_visited_rules(&self) -> Option<&StrongRuleNode> {
-        self.visited_rules.as_ref()
-    }
-
-    
-    pub fn get_visited_rules_mut(&mut self) -> Option<&mut StrongRuleNode> {
-        self.visited_rules.as_mut()
-    }
-
-    
-    
-    pub fn visited_rules(&self) -> &StrongRuleNode {
-        self.get_visited_rules().unwrap()
-    }
-
-    
-    pub fn set_visited_rules(&mut self, rules: StrongRuleNode) -> bool {
-        if let Some(ref old_rules) = self.visited_rules {
-            if *old_rules == rules {
-                return false
-            }
-        }
-        self.visited_rules = Some(rules);
-        true
-    }
-
-    
-    pub fn take_visited_rules(&mut self) -> Option<StrongRuleNode> {
-        self.visited_rules.take()
-    }
-
-    
-    
-    pub fn visited_values(&self) -> &Arc<ComputedValues> {
-        self.visited_values.as_ref().unwrap()
-    }
-
-    
-    pub fn set_visited_values(&mut self, values: Arc<ComputedValues>) {
-        self.visited_values = Some(values);
-    }
-
-    
-    pub fn take_visited_values(&mut self) -> Option<Arc<ComputedValues>> {
-        self.visited_values.take()
-    }
-
-    
-    
-    pub fn clone_visited_values(&self) -> Option<Arc<ComputedValues>> {
-        self.visited_values.clone()
-    }
-}
-
-
-
-impl fmt::Debug for ComputedStyle {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ComputedStyle {{ rules: {:?}, values: {{..}} }}", self.rules)
-    }
-}
-
-
-#[derive(Clone, Debug)]
-pub struct EagerPseudoStyles(Option<Box<[Option<ComputedStyle>]>>);
-
-impl EagerPseudoStyles {
-    
-    pub fn is_empty(&self) -> bool {
-        self.0.is_none()
-    }
-
-    
-    pub fn get(&self, pseudo: &PseudoElement) -> Option<&ComputedStyle> {
-        debug_assert!(pseudo.is_eager());
-        self.0.as_ref().and_then(|p| p[pseudo.eager_index()].as_ref())
-    }
-
-    
-    pub fn get_mut(&mut self, pseudo: &PseudoElement) -> Option<&mut ComputedStyle> {
-        debug_assert!(pseudo.is_eager());
-        self.0.as_mut().and_then(|p| p[pseudo.eager_index()].as_mut())
-    }
-
-    
-    pub fn has(&self, pseudo: &PseudoElement) -> bool {
-        self.get(pseudo).is_some()
-    }
-
-    
-    pub fn insert(&mut self, pseudo: &PseudoElement, style: ComputedStyle) {
-        debug_assert!(!self.has(pseudo));
-        if self.0.is_none() {
-            self.0 = Some(vec![None; EAGER_PSEUDO_COUNT].into_boxed_slice());
-        }
-        self.0.as_mut().unwrap()[pseudo.eager_index()] = Some(style);
-    }
-
-    
-    fn take(&mut self, pseudo: &PseudoElement) -> Option<ComputedStyle> {
-        let result = match self.0.as_mut() {
-            None => return None,
-            Some(arr) => arr[pseudo.eager_index()].take(),
-        };
-        let empty = self.0.as_ref().unwrap().iter().all(|x| x.is_none());
-        if empty {
-            self.0 = None;
-        }
-        result
-    }
-
-    
-    pub fn keys(&self) -> ArrayVec<[PseudoElement; EAGER_PSEUDO_COUNT]> {
-        let mut v = ArrayVec::new();
-        if let Some(ref arr) = self.0 {
-            for i in 0..EAGER_PSEUDO_COUNT {
-                if arr[i].is_some() {
-                    v.push(PseudoElement::from_eager_index(i));
-                }
-            }
-        }
-        v
-    }
-
-    
-    
-    
-    
-    fn add_unvisited_rules(&mut self,
-                           pseudo: &PseudoElement,
-                           rules: StrongRuleNode)
-                           -> bool {
-        if let Some(mut style) = self.get_mut(pseudo) {
-            style.rules = rules;
-            return false
-        }
-        self.insert(pseudo, ComputedStyle::new_partial(rules));
-        true
-    }
-
-    
-    
-    
-    
-    
-    fn remove_unvisited_rules(&mut self, pseudo: &PseudoElement) -> bool {
-        self.take(pseudo).is_some()
-    }
-
-    
-    
-    
-    
-    
-    fn add_visited_rules(&mut self,
-                         pseudo: &PseudoElement,
-                         rules: StrongRuleNode)
-                         -> bool {
-        debug_assert!(self.has(pseudo));
-        let mut style = self.get_mut(pseudo).unwrap();
-        style.set_visited_rules(rules);
-        false
-    }
-
-    
-    
-    
-    
-    
-    fn remove_visited_rules(&mut self, pseudo: &PseudoElement) -> bool {
-        if let Some(mut style) = self.get_mut(pseudo) {
-            style.take_visited_rules();
-        }
-        false
-    }
-
-    
-    
-    
-    
-    pub fn add_rules(&mut self,
-                     pseudo: &PseudoElement,
-                     visited_handling: VisitedHandlingMode,
-                     rules: StrongRuleNode)
-                     -> bool {
-        match visited_handling {
-            VisitedHandlingMode::AllLinksVisitedAndUnvisited => {
-                unreachable!("We should never try to selector match with \
-                             AllLinksVisitedAndUnvisited");
-            },
-            VisitedHandlingMode::AllLinksUnvisited => {
-                self.add_unvisited_rules(&pseudo, rules)
-            },
-            VisitedHandlingMode::RelevantLinkVisited => {
-                self.add_visited_rules(&pseudo, rules)
-            },
-        }
-    }
-
-    
-    
-    
-    
-    pub fn remove_rules(&mut self,
-                        pseudo: &PseudoElement,
-                        visited_handling: VisitedHandlingMode)
-                        -> bool {
-        match visited_handling {
-            VisitedHandlingMode::AllLinksVisitedAndUnvisited => {
-                unreachable!("We should never try to selector match with \
-                             AllLinksVisitedAndUnvisited");
-            },
-            VisitedHandlingMode::AllLinksUnvisited => {
-                self.remove_unvisited_rules(&pseudo)
-            },
-            VisitedHandlingMode::RelevantLinkVisited => {
-                self.remove_visited_rules(&pseudo)
-            },
-        }
-    }
-
-    
-    
-    pub fn has_same_pseudos_as(&self, other: &EagerPseudoStyles) -> bool {
-        
-        
-        
-        match (&self.0, &other.0) {
-            (&Some(ref our_arr), &Some(ref other_arr)) => {
-                for i in 0..EAGER_PSEUDO_COUNT {
-                    if our_arr[i].is_some() != other_arr[i].is_some() {
-                        return false
-                    }
-                }
-                true
-            },
-            (&None, &None) => true,
-            _ => false,
-        }
-    }
-}
-
-
-
-#[derive(Clone, Debug)]
-pub struct ElementStyles {
-    
-    pub primary: ComputedStyle,
-    
-    pub pseudos: EagerPseudoStyles,
-}
-
-impl ElementStyles {
-    
-    pub fn new(primary: ComputedStyle) -> Self {
-        ElementStyles {
-            primary: primary,
-            pseudos: EagerPseudoStyles(None),
-        }
-    }
-
-    
-    pub fn is_display_none(&self) -> bool {
-        self.primary.values().get_box().clone_display() == display::T::none
-    }
-}
 
 bitflags! {
     flags RestyleFlags: u8 {
@@ -372,6 +39,12 @@ pub struct RestyleData {
     
     
     pub damage: RestyleDamage,
+}
+
+impl Default for RestyleData {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RestyleData {
@@ -427,13 +100,159 @@ impl RestyleData {
 
 
 
-
-
-
 #[derive(Debug)]
+pub struct EagerPseudoStyles(pub Option<Box<[Option<Arc<ComputedValues>>; EAGER_PSEUDO_COUNT]>>);
+
+
+
+impl Clone for EagerPseudoStyles {
+    fn clone(&self) -> Self {
+        if self.0.is_none() {
+            return EagerPseudoStyles(None)
+        }
+        let self_values = self.0.as_ref().unwrap();
+        let mut values: [Option<Arc<ComputedValues>>; EAGER_PSEUDO_COUNT] = Default::default();
+        for i in 0..EAGER_PSEUDO_COUNT {
+            values[i] = self_values[i].clone();
+        }
+        EagerPseudoStyles(Some(Box::new(values)))
+    }
+}
+
+impl EagerPseudoStyles {
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
+    }
+
+    
+    pub fn get(&self, pseudo: &PseudoElement) -> Option<&Arc<ComputedValues>> {
+        debug_assert!(pseudo.is_eager());
+        self.0.as_ref().and_then(|p| p[pseudo.eager_index()].as_ref())
+    }
+
+    
+    pub fn get_mut(&mut self, pseudo: &PseudoElement) -> Option<&mut Arc<ComputedValues>> {
+        debug_assert!(pseudo.is_eager());
+        self.0.as_mut().and_then(|p| p[pseudo.eager_index()].as_mut())
+    }
+
+    
+    pub fn has(&self, pseudo: &PseudoElement) -> bool {
+        self.get(pseudo).is_some()
+    }
+
+    
+    pub fn set(&mut self, pseudo: &PseudoElement, value: Arc<ComputedValues>) {
+        if self.0.is_none() {
+            self.0 = Some(Box::new(Default::default()));
+        }
+        self.0.as_mut().unwrap()[pseudo.eager_index()] = Some(value);
+    }
+
+    
+    pub fn insert(&mut self, pseudo: &PseudoElement, value: Arc<ComputedValues>) {
+        debug_assert!(!self.has(pseudo));
+        self.set(pseudo, value);
+    }
+
+    
+    pub fn take(&mut self, pseudo: &PseudoElement) -> Option<Arc<ComputedValues>> {
+        let result = match self.0.as_mut() {
+            None => return None,
+            Some(arr) => arr[pseudo.eager_index()].take(),
+        };
+        let empty = self.0.as_ref().unwrap().iter().all(|x| x.is_none());
+        if empty {
+            self.0 = None;
+        }
+        result
+    }
+
+    
+    pub fn keys(&self) -> ArrayVec<[PseudoElement; EAGER_PSEUDO_COUNT]> {
+        let mut v = ArrayVec::new();
+        if let Some(ref arr) = self.0 {
+            for i in 0..EAGER_PSEUDO_COUNT {
+                if arr[i].is_some() {
+                    v.push(PseudoElement::from_eager_index(i));
+                }
+            }
+        }
+        v
+    }
+
+    
+    pub fn has_same_pseudos_as(&self, other: &Self) -> bool {
+        
+        
+        
+        match (&self.0, &other.0) {
+            (&Some(ref our_arr), &Some(ref other_arr)) => {
+                for i in 0..EAGER_PSEUDO_COUNT {
+                    if our_arr[i].is_some() != other_arr[i].is_some() {
+                        return false
+                    }
+                }
+                true
+            },
+            (&None, &None) => true,
+            _ => false,
+        }
+    }
+}
+
+
+
+#[derive(Clone, Debug)]
+pub struct ElementStyles {
+    
+    pub primary: Option<Arc<ComputedValues>>,
+    
+    pub pseudos: EagerPseudoStyles,
+}
+
+impl Default for ElementStyles {
+    
+    fn default() -> Self {
+        ElementStyles {
+            primary: None,
+            pseudos: EagerPseudoStyles(None),
+        }
+    }
+}
+
+impl ElementStyles {
+    
+    pub fn get_primary(&self) -> Option<&Arc<ComputedValues>> {
+        self.primary.as_ref()
+    }
+
+    
+    pub fn get_primary_mut(&mut self) -> Option<&mut Arc<ComputedValues>> {
+        self.primary.as_mut()
+    }
+
+    
+    pub fn primary(&self) -> &Arc<ComputedValues> {
+        self.primary.as_ref().unwrap()
+    }
+
+    
+    pub fn is_display_none(&self) -> bool {
+        self.primary().get_box().clone_display() == display::T::none
+    }
+}
+
+
+
+
+
+
+#[derive(Debug, Default)]
 pub struct ElementData {
     
-    styles: Option<ElementStyles>,
+    pub styles: ElementStyles,
 
     
     pub restyle: RestyleData,
@@ -458,7 +277,7 @@ impl ElementData {
     pub fn styles_and_restyle_mut(
         &mut self
     ) -> (&mut ElementStyles, &mut RestyleData) {
-        (self.styles.as_mut().unwrap(),
+        (&mut self.styles,
          &mut self.restyle)
     }
 
@@ -492,18 +311,9 @@ impl ElementData {
         }
     }
 
-
-    
-    pub fn new(existing: Option<ElementStyles>) -> Self {
-        ElementData {
-            styles: existing,
-            restyle: RestyleData::new(),
-        }
-    }
-
     
     pub fn has_styles(&self) -> bool {
-        self.styles.is_some()
+        self.styles.primary.is_some()
     }
 
     
@@ -551,47 +361,6 @@ impl ElementData {
     }
 
     
-    pub fn get_styles(&self) -> Option<&ElementStyles> {
-        self.styles.as_ref()
-    }
-
-    
-    pub fn styles(&self) -> &ElementStyles {
-        self.styles.as_ref().expect("Calling styles() on unstyled ElementData")
-    }
-
-    
-    pub fn get_styles_mut(&mut self) -> Option<&mut ElementStyles> {
-        self.styles.as_mut()
-    }
-
-    
-    
-    pub fn styles_mut(&mut self) -> &mut ElementStyles {
-        self.styles.as_mut().expect("Calling styles_mut() on unstyled ElementData")
-    }
-
-    
-    pub fn set_styles(&mut self, styles: ElementStyles) {
-        self.styles = Some(styles);
-    }
-
-    
-    pub fn set_primary_rules(&mut self, rules: StrongRuleNode) -> bool {
-        if !self.has_styles() {
-            self.set_styles(ElementStyles::new(ComputedStyle::new_partial(rules)));
-            return true;
-        }
-
-        if self.styles().primary.rules == rules {
-            return false;
-        }
-
-        self.styles_mut().primary.rules = rules;
-        true
-    }
-
-    
     
     
     
@@ -604,7 +373,7 @@ impl ElementData {
                                          guards: &StylesheetGuards) -> bool {
         debug_assert!(self.has_styles());
         let (important_rules, _custom) =
-            self.styles().primary.rules.get_properties_overriding_animations(&guards);
+            self.styles.primary().rules().get_properties_overriding_animations(&guards);
         let (other_important_rules, _custom) = rules.get_properties_overriding_animations(&guards);
         important_rules != other_important_rules
     }
@@ -621,8 +390,8 @@ impl ElementData {
             return None;
         }
 
-        match self.get_styles() {
-            Some(s) => s.primary.rules.get_smil_animation_rule(),
+        match self.styles.get_primary() {
+            Some(v) => v.rules().get_smil_animation_rule(),
             None => None,
         }
     }
@@ -633,8 +402,8 @@ impl ElementData {
             return AnimationRules(None, None)
         }
 
-        match self.get_styles() {
-            Some(s) => s.primary.rules.get_animation_rules(),
+        match self.styles.get_primary() {
+            Some(v) => v.rules().get_animation_rules(),
             None => AnimationRules(None, None),
         }
     }

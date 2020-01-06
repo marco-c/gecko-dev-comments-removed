@@ -7,9 +7,10 @@
 #[cfg(feature = "servo")] use animation::Animation;
 use animation::PropertyAnimation;
 use app_units::Au;
+use arrayvec::ArrayVec;
 use bloom::StyleBloom;
 use cache::LRUCache;
-use data::ElementData;
+use data::{EagerPseudoStyles, ElementData};
 use dom::{OpaqueNode, TNode, TElement, SendElement};
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
@@ -17,9 +18,10 @@ use fnv::FnvHashMap;
 use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
 #[cfg(feature = "servo")] use parking_lot::RwLock;
-#[cfg(feature = "gecko")] use properties::ComputedValues;
-use selector_parser::SnapshotMap;
-use selectors::matching::ElementSelectorFlags;
+use properties::ComputedValues;
+use rule_tree::StrongRuleNode;
+use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, SnapshotMap};
+use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use shared_lock::StylesheetGuards;
 use sharing::{ValidationData, StyleSharingCandidateCache};
 use std::fmt;
@@ -145,6 +147,423 @@ impl<'a> SharedStyleContext<'a> {
 
 
 
+
+
+
+#[derive(Clone)]
+pub struct CascadeInputs {
+    
+    
+    rules: Option<StrongRuleNode>,
+
+    
+    
+    
+    
+    visited_rules: Option<StrongRuleNode>,
+
+    
+    
+    
+    
+    
+    
+    
+    visited_values: Option<Arc<ComputedValues>>,
+}
+
+impl Default for CascadeInputs {
+    fn default() -> Self {
+        CascadeInputs {
+            rules: None,
+            visited_rules: None,
+            visited_values: None,
+        }
+    }
+}
+
+impl CascadeInputs {
+    
+    fn new_from_style(style: &Arc<ComputedValues>) -> Self {
+        CascadeInputs {
+            rules: style.rules.clone(),
+            visited_rules: style.get_visited_style().and_then(|v| v.rules.clone()),
+            
+            visited_values: None,
+        }
+    }
+
+    
+    
+    pub fn has_rules(&self) -> bool {
+        self.rules.is_some()
+    }
+
+    
+    pub fn get_rules_mut(&mut self) -> Option<&mut StrongRuleNode> {
+        self.rules.as_mut()
+    }
+
+    
+    
+    pub fn rules(&self) -> &StrongRuleNode {
+        self.rules.as_ref().unwrap()
+    }
+
+    
+    
+    pub fn set_rules(&mut self,
+                     visited_handling: VisitedHandlingMode,
+                     rules: StrongRuleNode)
+                     -> bool {
+        match visited_handling {
+            VisitedHandlingMode::AllLinksVisitedAndUnvisited => {
+                unreachable!("We should never try to selector match with \
+                             AllLinksVisitedAndUnvisited");
+            },
+            VisitedHandlingMode::AllLinksUnvisited => self.set_unvisited_rules(rules),
+            VisitedHandlingMode::RelevantLinkVisited => self.set_visited_rules(rules),
+        }
+    }
+
+    
+    fn set_unvisited_rules(&mut self, rules: StrongRuleNode) -> bool {
+        if let Some(ref old_rules) = self.rules {
+            if *old_rules == rules {
+                return false
+            }
+        }
+        self.rules = Some(rules);
+        true
+    }
+
+    
+    
+    
+    pub fn has_visited_rules(&self) -> bool {
+        self.visited_rules.is_some()
+    }
+
+    
+    pub fn get_visited_rules(&self) -> Option<&StrongRuleNode> {
+        self.visited_rules.as_ref()
+    }
+
+    
+    pub fn get_visited_rules_mut(&mut self) -> Option<&mut StrongRuleNode> {
+        self.visited_rules.as_mut()
+    }
+
+    
+    
+    pub fn visited_rules(&self) -> &StrongRuleNode {
+        self.visited_rules.as_ref().unwrap()
+    }
+
+    
+    fn set_visited_rules(&mut self, rules: StrongRuleNode) -> bool {
+        if let Some(ref old_rules) = self.visited_rules {
+            if *old_rules == rules {
+                return false
+            }
+        }
+        self.visited_rules = Some(rules);
+        true
+    }
+
+    
+    pub fn take_visited_rules(&mut self) -> Option<StrongRuleNode> {
+        self.visited_rules.take()
+    }
+
+    
+    
+    pub fn visited_values(&self) -> &Arc<ComputedValues> {
+        self.visited_values.as_ref().unwrap()
+    }
+
+    
+    pub fn set_visited_values(&mut self, values: Arc<ComputedValues>) {
+        self.visited_values = Some(values);
+    }
+
+    
+    pub fn take_visited_values(&mut self) -> Option<Arc<ComputedValues>> {
+        self.visited_values.take()
+    }
+
+    
+    
+    pub fn clone_visited_values(&self) -> Option<Arc<ComputedValues>> {
+        self.visited_values.clone()
+    }
+}
+
+
+
+impl fmt::Debug for CascadeInputs {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CascadeInputs {{ rules: {:?}, visited_rules: {:?}, .. }}",
+               self.rules, self.visited_rules)
+    }
+}
+
+
+
+#[derive(Debug)]
+pub struct EagerPseudoCascadeInputs(Option<[Option<CascadeInputs>; EAGER_PSEUDO_COUNT]>);
+
+
+
+impl Clone for EagerPseudoCascadeInputs {
+    fn clone(&self) -> Self {
+        if self.0.is_none() {
+            return EagerPseudoCascadeInputs(None)
+        }
+        let self_inputs = self.0.as_ref().unwrap();
+        let mut inputs: [Option<CascadeInputs>; EAGER_PSEUDO_COUNT] = Default::default();
+        for i in 0..EAGER_PSEUDO_COUNT {
+            inputs[i] = self_inputs[i].clone();
+        }
+        EagerPseudoCascadeInputs(Some(inputs))
+    }
+}
+
+impl EagerPseudoCascadeInputs {
+    
+    fn new_from_style(styles: &EagerPseudoStyles) -> Self {
+        EagerPseudoCascadeInputs(styles.0.as_ref().map(|styles| {
+            let mut inputs: [Option<CascadeInputs>; EAGER_PSEUDO_COUNT] = Default::default();
+            for i in 0..EAGER_PSEUDO_COUNT {
+                inputs[i] = styles[i].as_ref().map(|s| CascadeInputs::new_from_style(s));
+            }
+            inputs
+        }))
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
+    }
+
+    
+    pub fn get(&self, pseudo: &PseudoElement) -> Option<&CascadeInputs> {
+        debug_assert!(pseudo.is_eager());
+        self.0.as_ref().and_then(|p| p[pseudo.eager_index()].as_ref())
+    }
+
+    
+    pub fn get_mut(&mut self, pseudo: &PseudoElement) -> Option<&mut CascadeInputs> {
+        debug_assert!(pseudo.is_eager());
+        self.0.as_mut().and_then(|p| p[pseudo.eager_index()].as_mut())
+    }
+
+    
+    pub fn has(&self, pseudo: &PseudoElement) -> bool {
+        self.get(pseudo).is_some()
+    }
+
+    
+    pub fn insert(&mut self, pseudo: &PseudoElement, inputs: CascadeInputs) {
+        debug_assert!(!self.has(pseudo));
+        if self.0.is_none() {
+            self.0 = Some(Default::default());
+        }
+        self.0.as_mut().unwrap()[pseudo.eager_index()] = Some(inputs);
+    }
+
+    
+    pub fn take(&mut self, pseudo: &PseudoElement) -> Option<CascadeInputs> {
+        let result = match self.0.as_mut() {
+            None => return None,
+            Some(arr) => arr[pseudo.eager_index()].take(),
+        };
+        let empty = self.0.as_ref().unwrap().iter().all(|x| x.is_none());
+        if empty {
+            self.0 = None;
+        }
+        result
+    }
+
+    
+    pub fn keys(&self) -> ArrayVec<[PseudoElement; EAGER_PSEUDO_COUNT]> {
+        let mut v = ArrayVec::new();
+        if let Some(ref arr) = self.0 {
+            for i in 0..EAGER_PSEUDO_COUNT {
+                if arr[i].is_some() {
+                    v.push(PseudoElement::from_eager_index(i));
+                }
+            }
+        }
+        v
+    }
+
+    
+    
+    
+    
+    fn add_unvisited_rules(&mut self,
+                           pseudo: &PseudoElement,
+                           rules: StrongRuleNode)
+                           -> bool {
+        if let Some(mut inputs) = self.get_mut(pseudo) {
+            inputs.set_unvisited_rules(rules);
+            return false
+        }
+        let mut inputs = CascadeInputs::default();
+        inputs.set_unvisited_rules(rules);
+        self.insert(pseudo, inputs);
+        true
+    }
+
+    
+    
+    
+    
+    
+    fn remove_unvisited_rules(&mut self, pseudo: &PseudoElement) -> bool {
+        self.take(pseudo).is_some()
+    }
+
+    
+    
+    
+    
+    
+    fn add_visited_rules(&mut self,
+                         pseudo: &PseudoElement,
+                         rules: StrongRuleNode)
+                         -> bool {
+        debug_assert!(self.has(pseudo));
+        let mut inputs = self.get_mut(pseudo).unwrap();
+        inputs.set_visited_rules(rules);
+        false
+    }
+
+    
+    
+    
+    
+    
+    fn remove_visited_rules(&mut self, pseudo: &PseudoElement) -> bool {
+        if let Some(mut inputs) = self.get_mut(pseudo) {
+            inputs.take_visited_rules();
+        }
+        false
+    }
+
+    
+    
+    
+    
+    pub fn add_rules(&mut self,
+                     pseudo: &PseudoElement,
+                     visited_handling: VisitedHandlingMode,
+                     rules: StrongRuleNode)
+                     -> bool {
+        match visited_handling {
+            VisitedHandlingMode::AllLinksVisitedAndUnvisited => {
+                unreachable!("We should never try to selector match with \
+                             AllLinksVisitedAndUnvisited");
+            },
+            VisitedHandlingMode::AllLinksUnvisited => {
+                self.add_unvisited_rules(&pseudo, rules)
+            },
+            VisitedHandlingMode::RelevantLinkVisited => {
+                self.add_visited_rules(&pseudo, rules)
+            },
+        }
+    }
+
+    
+    
+    
+    
+    pub fn remove_rules(&mut self,
+                        pseudo: &PseudoElement,
+                        visited_handling: VisitedHandlingMode)
+                        -> bool {
+        match visited_handling {
+            VisitedHandlingMode::AllLinksVisitedAndUnvisited => {
+                unreachable!("We should never try to selector match with \
+                             AllLinksVisitedAndUnvisited");
+            },
+            VisitedHandlingMode::AllLinksUnvisited => {
+                self.remove_unvisited_rules(&pseudo)
+            },
+            VisitedHandlingMode::RelevantLinkVisited => {
+                self.remove_visited_rules(&pseudo)
+            },
+        }
+    }
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct ElementCascadeInputs {
+    
+    pub primary: Option<CascadeInputs>,
+    
+    pub pseudos: EagerPseudoCascadeInputs,
+}
+
+impl Default for ElementCascadeInputs {
+    
+    fn default() -> Self {
+        ElementCascadeInputs {
+            primary: None,
+            pseudos: EagerPseudoCascadeInputs(None),
+        }
+    }
+}
+
+impl ElementCascadeInputs {
+    
+    pub fn new_from_element_data(data: &ElementData) -> Self {
+        if !data.has_styles() {
+            return ElementCascadeInputs::default()
+        }
+        ElementCascadeInputs {
+            primary: Some(CascadeInputs::new_from_style(data.styles.primary())),
+            pseudos: EagerPseudoCascadeInputs::new_from_style(&data.styles.pseudos),
+        }
+    }
+
+    
+    pub fn has_primary(&self) -> bool {
+        self.primary.is_some()
+    }
+
+    
+    pub fn primary(&self) -> &CascadeInputs {
+        self.primary.as_ref().unwrap()
+    }
+
+    
+    pub fn primary_mut(&mut self) -> &mut CascadeInputs {
+        self.primary.as_mut().unwrap()
+    }
+
+    
+    
+    pub fn ensure_primary(&mut self) -> &mut CascadeInputs {
+        if self.primary.is_none() {
+            self.primary = Some(CascadeInputs::default());
+        }
+        self.primary.as_mut().unwrap()
+    }
+}
+
+
+
+
+
 pub struct CurrentElementInfo {
     
     
@@ -157,6 +576,11 @@ pub struct CurrentElementInfo {
     
     #[allow(dead_code)]
     pub possibly_expired_animations: Vec<PropertyAnimation>,
+    
+    
+    
+    
+    pub cascade_inputs: ElementCascadeInputs,
 }
 
 
@@ -454,6 +878,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             is_initial_style: !data.has_styles(),
             validation_data: ValidationData::default(),
             possibly_expired_animations: Vec::new(),
+            cascade_inputs: ElementCascadeInputs::default(),
         });
     }
 
@@ -496,6 +921,24 @@ pub struct StyleContext<'a, E: TElement + 'a> {
     pub shared: &'a SharedStyleContext<'a>,
     
     pub thread_local: &'a mut ThreadLocalStyleContext<E>,
+}
+
+impl<'a, E: TElement + 'a> StyleContext<'a, E> {
+    
+    
+    pub fn cascade_inputs(&self) -> &ElementCascadeInputs {
+        &self.thread_local.current_element_info
+             .as_ref().unwrap()
+             .cascade_inputs
+    }
+
+    
+    
+    pub fn cascade_inputs_mut(&mut self) -> &mut ElementCascadeInputs {
+        &mut self.thread_local.current_element_info
+                 .as_mut().unwrap()
+                 .cascade_inputs
+    }
 }
 
 
