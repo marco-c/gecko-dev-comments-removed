@@ -187,6 +187,7 @@ OrientedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
 OrientedImage::GetImageContainerAtSize(LayerManager* aManager,
                                        const IntSize& aSize,
+                                       const Maybe<SVGImageContext>& aSVGContext,
                                        uint32_t aFlags)
 {
   
@@ -196,7 +197,8 @@ OrientedImage::GetImageContainerAtSize(LayerManager* aManager,
   
 
   if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aFlags);
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize,
+                                                 aSVGContext, aFlags);
   }
 
   return nullptr;

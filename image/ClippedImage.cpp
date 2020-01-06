@@ -370,6 +370,7 @@ ClippedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
 ClippedImage::GetImageContainerAtSize(LayerManager* aManager,
                                       const IntSize& aSize,
+                                      const Maybe<SVGImageContext>& aSVGContext,
                                       uint32_t aFlags)
 {
   
@@ -379,7 +380,8 @@ ClippedImage::GetImageContainerAtSize(LayerManager* aManager,
   
 
   if (!ShouldClip()) {
-    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aFlags);
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize,
+                                                 aSVGContext, aFlags);
   }
 
   return nullptr;
