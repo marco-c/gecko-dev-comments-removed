@@ -64,6 +64,10 @@ nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
   MOZ_ASSERT(aRoot);
   MOZ_ASSERT(aDirtyBits);
   MOZ_ASSERT((aDirtyBits & ~Element::kAllServoDescendantBits) == 0);
+  
+  
+  
+  
 
   MOZ_ASSERT(!mServoRestyleRoot ||
              mServoRestyleRoot == aRoot ||
