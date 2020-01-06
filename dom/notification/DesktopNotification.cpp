@@ -159,7 +159,8 @@ DesktopNotification::DispatchNotificationEvent(const nsString& aName)
   
   event->InitEvent(aName, false, false);
   event->SetTrusted(true);
-  DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+  bool dummy;
+  DispatchEvent(event, &dummy);
 }
 
 nsresult
