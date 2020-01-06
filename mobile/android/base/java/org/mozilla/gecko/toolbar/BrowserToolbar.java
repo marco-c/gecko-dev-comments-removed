@@ -840,9 +840,7 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
         super.setPrivateMode(isPrivate);
 
         tabsButton.setPrivateMode(isPrivate);
-        tabsCounter.setPrivateMode(isPrivate);
         urlEditLayout.setPrivateMode(isPrivate);
-        urlDisplayLayout.setPrivateMode(isPrivate);
 
         
         if (SkinConfig.isPhoton()) {
