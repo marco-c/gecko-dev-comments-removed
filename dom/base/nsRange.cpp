@@ -1020,6 +1020,14 @@ nsRange::DoSetRange(const RawRangeBoundary& aStart,
   
   mStart = aStart;
   mEnd = aEnd;
+
+  
+  
+  
+  
+  mStart.EnsureRef();
+  mEnd.EnsureRef();
+
   mIsPositioned = !!mStart.Container();
   if (checkCommonAncestor) {
     nsINode* oldCommonAncestor = mRegisteredCommonAncestor;
