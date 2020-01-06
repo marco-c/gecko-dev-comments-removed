@@ -87,7 +87,7 @@ const L10nRegistry = {
 
 
 
-  async * generateContexts(requestedLangs, resourceIds) {
+  * generateContexts(requestedLangs, resourceIds) {
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
     for (const locale of requestedLangs) {
       yield * generateContextsForLocale(locale, sourcesOrder, resourceIds);
@@ -181,7 +181,7 @@ function generateContextID(locale, sourcesOrder, resourceIds) {
 
 
 
-async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
+function* generateContextsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
   const resolvedLength = resolvedOrder.length;
   const resourcesLength = resourceIds.length;
 
@@ -202,10 +202,7 @@ async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, res
     
     
     if (resolvedLength + 1 === resourcesLength) {
-      const ctx = await generateContext(locale, order, resourceIds);
-      if (ctx !== null) {
-        yield ctx;
-      }
+      yield generateContext(locale, order, resourceIds);
     } else {
       
       
@@ -223,36 +220,20 @@ async function* generateContextsForLocale(locale, sourcesOrder, resourceIds, res
 
 
 
-
-
-
-
-
-function generateContext(locale, sourcesOrder, resourceIds) {
+async function generateContext(locale, sourcesOrder, resourceIds) {
   const ctxId = generateContextID(locale, sourcesOrder, resourceIds);
-  if (L10nRegistry.ctxCache.has(ctxId)) {
-    return L10nRegistry.ctxCache.get(ctxId);
-  }
-
-  const fetchPromises = resourceIds.map((resourceId, i) => {
-    return L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceId);
-  });
-
-  const ctxPromise = Promise.all(fetchPromises).then(
-    dataSets => {
-      const ctx = new MessageContext(locale);
-      for (const data of dataSets) {
-        if (data === null) {
-          return null;
-        }
-        ctx.addMessages(data);
+  if (!L10nRegistry.ctxCache.has(ctxId)) {
+    const ctx = new MessageContext(locale);
+    for (let i = 0; i < resourceIds.length; i++) {
+      const data = await L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceIds[i]);
+      if (data === null) {
+        return false;
       }
-      return ctx;
-    },
-    () => null
-  );
-  L10nRegistry.ctxCache.set(ctxId, ctxPromise);
-  return ctxPromise;
+      ctx.addMessages(data);
+    }
+    L10nRegistry.ctxCache.set(ctxId, ctx);
+  }
+  return L10nRegistry.ctxCache.get(ctxId);
 }
 
 
@@ -264,33 +245,10 @@ function generateContext(locale, sourcesOrder, resourceIds) {
 
 
 class FileSource {
-  
-
-
-
-
-
-
   constructor(name, locales, prePath) {
     this.name = name;
     this.locales = locales;
     this.prePath = prePath;
-    this.indexed = false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     this.cache = {};
   }
 
@@ -305,45 +263,31 @@ class FileSource {
 
     const fullPath = this.getPath(locale, path);
     if (!this.cache.hasOwnProperty(fullPath)) {
-      return this.indexed ? false : undefined;
-    }
-    if (this.cache[fullPath] === false) {
-      return false;
-    }
-    if (this.cache[fullPath].then) {
       return undefined;
+    }
+
+    if (this.cache[fullPath] === null) {
+      return false;
     }
     return true;
   }
 
-  fetchFile(locale, path) {
+  async fetchFile(locale, path) {
     if (!this.locales.includes(locale)) {
-      return Promise.reject(`The source has no resources for locale "${locale}"`);
+      return null;
     }
 
     const fullPath = this.getPath(locale, path);
+    if (this.hasFile(locale, path) === undefined) {
+      let file = await L10nRegistry.load(fullPath);
 
-    if (this.cache.hasOwnProperty(fullPath)) {
-      if (this.cache[fullPath] === false) {
-        return Promise.reject(`The source has no resources for path "${fullPath}"`);
-      }
-      if (this.cache[fullPath].then) {
-        return this.cache[fullPath];
-      }
-    } else {
-      if (this.indexed) {
-        return Promise.reject(`The source has no resources for path "${fullPath}"`);
+      if (file === undefined) {
+        this.cache[fullPath] = null;
+      } else {
+        this.cache[fullPath] = file;
       }
     }
-    return this.cache[fullPath] = L10nRegistry.load(fullPath).then(
-      data => {
-        return this.cache[fullPath] = data;
-      },
-      err => {
-        this.cache[fullPath] = false;
-        return Promise.reject(err);
-      }
-    );
+    return this.cache[fullPath];
   }
 }
 
@@ -355,19 +299,35 @@ class FileSource {
 
 
 class IndexedFileSource extends FileSource {
-  
-
-
-
-
-
-
-
   constructor(name, locales, prePath, paths) {
     super(name, locales, prePath);
-    this.indexed = true;
-    for (const path of paths) {
-      this.cache[path] = true;
+    this.paths = paths;
+  }
+
+  hasFile(locale, path) {
+    if (!this.locales.includes(locale)) {
+      return false;
+    }
+    const fullPath = this.getPath(locale, path);
+    return this.paths.includes(fullPath);
+  }
+
+  async fetchFile(locale, path) {
+    if (!this.locales.includes(locale)) {
+      return null;
+    }
+
+    const fullPath = this.getPath(locale, path);
+    if (this.paths.includes(fullPath)) {
+      let file = await L10nRegistry.load(fullPath);
+
+      if (file === undefined) {
+        return null;
+      } else {
+        return file;
+      }
+    } else {
+      return null;
     }
   }
 }
@@ -375,20 +335,8 @@ class IndexedFileSource extends FileSource {
 
 
 
-
-
-
-
-
-
-
 L10nRegistry.load = function(url) {
-  return fetch(url).then(response => {
-    if (!response.ok) {
-      return Promise.reject(response.statusText);
-    }
-    return response.text()
-  });
+  return fetch(url).then(data => data.text()).catch(() => undefined);
 };
 
 this.L10nRegistry = L10nRegistry;
