@@ -35,8 +35,7 @@ protected:
   explicit SVGPathElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
 public:
-  
-  NS_DECL_SIZEOF_EXCLUDING_THIS
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   
   NS_IMETHOD_(bool) IsAttributeMapped(const nsIAtom* name) const override;

@@ -36,8 +36,7 @@ public:
   
   NS_DECL_NSIDOMHTMLLINKELEMENT
 
-  
-  NS_DECL_SIZEOF_EXCLUDING_THIS
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   void LinkAdded();
   void LinkRemoved();

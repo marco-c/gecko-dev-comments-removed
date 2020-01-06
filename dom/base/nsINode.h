@@ -17,9 +17,9 @@
 #include "nsNodeInfoManager.h"      
 #include "nsPropertyTable.h"        
 #include "nsTObserverArray.h"       
+#include "nsWindowSizes.h"          
 #include "mozilla/ErrorResult.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/SizeOfState.h"    
 #include "mozilla/dom/EventTarget.h" 
 #include "js/TypeDecls.h"     
 #include "mozilla/dom/DOMString.h"
@@ -267,10 +267,10 @@ private:
 
 
 
-
-#define NS_DECL_SIZEOF_EXCLUDING_THIS \
-  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState) \
-    const override;
+#define NS_DECL_ADDSIZEOFEXCLUDINGTHIS \
+  virtual void AddSizeOfExcludingThis(mozilla::SizeOfState& aState, \
+                                      nsStyleSizes& aSizes, \
+                                      size_t* aNodeSize) const override;
 
 
 
@@ -328,15 +328,24 @@ public:
   
   
   
-  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState) const;
+  
+  
+  
+  
+  virtual void AddSizeOfExcludingThis(mozilla::SizeOfState& aState,
+                                      nsStyleSizes& aSizes,
+                                      size_t* aNodeSize) const;
 
   
   
   
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::SizeOfState& aState) const {
-    return aState.mMallocSizeOf(this) + SizeOfExcludingThis(aState);
+  virtual void AddSizeOfIncludingThis(mozilla::SizeOfState& aState,
+                                      nsStyleSizes& aSizes,
+                                      size_t* aNodeSize) const {
+    *aNodeSize += aState.mMallocSizeOf(this);
+    AddSizeOfExcludingThis(aState, aSizes, aNodeSize);
   }
 
   friend class nsNodeUtils;

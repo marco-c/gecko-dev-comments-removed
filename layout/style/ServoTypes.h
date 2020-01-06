@@ -18,8 +18,11 @@
 
 
 
+struct nsStyleSizes;
 struct ServoNodeData;
 namespace mozilla {
+
+class SizeOfState;
 
 
 
@@ -229,6 +232,9 @@ public:
 #undef STYLE_STRUCT
 #undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
   const nsStyleVariables* GetStyleVariables() const;
+
+  void AddSizeOfExcludingThis(mozilla::SizeOfState& aState,
+                              nsStyleSizes& aSizes) const;
 
 private:
   mozilla::ServoCustomPropertiesMap custom_properties;

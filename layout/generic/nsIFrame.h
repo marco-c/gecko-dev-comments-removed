@@ -88,6 +88,7 @@ class nsIContent;
 class nsContainerFrame;
 class nsPlaceholderFrame;
 class nsStyleChangeList;
+class nsWindowSizes;
 
 struct nsPeekOffsetStruct;
 struct nsPoint;
@@ -3542,7 +3543,9 @@ public:
   }
 
   
-  size_t SizeOfFramePropertiesForTree(mozilla::MallocSizeOf aMallocSizeOf) const;
+  
+  
+  void AddSizeOfExcludingThisForTree(nsWindowSizes& aWindowSizes) const;
 
   
 

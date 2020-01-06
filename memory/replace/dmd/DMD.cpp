@@ -1678,6 +1678,8 @@ ReportHelper(const void* aPtr, bool aReportedOnAlloc)
     
     
     
+    
+    StatusMsg("Unknown pointer %p\n", aPtr);
   }
 }
 

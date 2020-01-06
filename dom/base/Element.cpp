@@ -4143,19 +4143,40 @@ Element::SetCustomElementData(CustomElementData* aData)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(ServoElementMallocSizeOf)
 
-size_t
-Element::SizeOfExcludingThis(SizeOfState& aState) const
+void
+Element::AddSizeOfExcludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
+                                size_t* aNodeSize) const
 {
-  size_t n = FragmentOrElement::SizeOfExcludingThis(aState);
+  FragmentOrElement::AddSizeOfExcludingThis(aState, aSizes, aNodeSize);
 
-  
-  
-  
-  if (mServoData.Get()) {
-    n += Servo_Element_SizeOfExcludingThis(ServoElementMallocSizeOf,
-                                           &aState.mSeenPtrs, this);
+  if (HasServoData()) {
+    
+    
+    
+    
+    *aNodeSize +=
+      Servo_Element_SizeOfExcludingThisAndCVs(ServoElementMallocSizeOf,
+                                              &aState.mSeenPtrs, this);
+
+    
+    
+    RefPtr<ServoStyleContext> sc;
+    if (Servo_Element_HasPrimaryComputedValues(this)) {
+      sc = Servo_Element_GetPrimaryComputedValues(this).Consume();
+      if (!aState.HaveSeenPtr(sc.get())) {
+        sc->AddSizeOfIncludingThis(aState, aSizes,  true);
+      }
+
+      for (size_t i = 0; i < nsCSSPseudoElements::kEagerPseudoCount; i++) {
+        if (Servo_Element_HasPseudoComputedValues(this, i)) {
+          sc = Servo_Element_GetPseudoComputedValues(this, i).Consume();
+          if (!aState.HaveSeenPtr(sc.get())) {
+            sc->AddSizeOfIncludingThis(aState, aSizes,  true);
+          }
+        }
+      }
+    }
   }
-  return n;
 }
 
 struct DirtyDescendantsBit {

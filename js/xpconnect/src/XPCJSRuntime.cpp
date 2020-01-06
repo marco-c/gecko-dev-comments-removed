@@ -2121,16 +2121,6 @@ MOZ_DEFINE_MALLOC_SIZE_OF(OrphanMallocSizeOf)
 
 namespace xpc {
 
-static size_t
-SizeOfTreeIncludingThis(nsINode* tree, SizeOfState& aState)
-{
-    size_t n = tree->SizeOfIncludingThis(aState);
-    for (nsIContent* child = tree->GetFirstChild(); child; child = child->GetNextNode(tree))
-        n += child->SizeOfIncludingThis(aState);
-
-    return n;
-}
-
 class OrphanReporter : public JS::ObjectPrivateVisitor
 {
   public:
@@ -2154,10 +2144,26 @@ class OrphanReporter : public JS::ObjectPrivateVisitor
             
             nsCOMPtr<nsINode> orphanTree = node->SubtreeRoot();
             if (orphanTree && !mState.HaveSeenPtr(orphanTree.get())) {
-                n += SizeOfTreeIncludingThis(orphanTree, mState);
+                n += SizeOfTreeIncludingThis(orphanTree);
             }
         }
         return n;
+    }
+
+    size_t SizeOfTreeIncludingThis(nsINode* tree)
+    {
+        size_t nodeSize = 0;
+        nsStyleSizes sizes;
+        tree->AddSizeOfIncludingThis(mState, sizes, &nodeSize);
+        for (nsIContent* child = tree->GetFirstChild(); child; child = child->GetNextNode(tree))
+            child->AddSizeOfIncludingThis(mState, sizes, &nodeSize);
+
+        
+        
+        
+        
+        
+        return nodeSize + sizes.getTotalSize();
     }
 
   private:

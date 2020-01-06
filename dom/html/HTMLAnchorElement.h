@@ -48,8 +48,7 @@ public:
   
   NS_DECL_NSIDOMHTMLANCHORELEMENT
 
-  
-  NS_DECL_SIZEOF_EXCLUDING_THIS
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
