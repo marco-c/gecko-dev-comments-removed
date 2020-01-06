@@ -560,6 +560,9 @@ StreamAndPromiseForOperation::StreamAndPromiseForOperation(MediaStream* aStream,
 
 AudioCallbackDriver::AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl)
   : GraphDriver(aGraphImpl)
+  , mOuputChannels(mGraphImpl->AudioChannelCount())
+  , mScratchBuffer(mOuputChannels)
+  , mBuffer(mOuputChannels)
   , mSampleRate(0)
   , mInputChannels(1)
   , mIterationDurationMS(MEDIA_GRAPH_TARGET_PERIOD_MS)
@@ -626,15 +629,14 @@ AudioCallbackDriver::Init()
 
   mSampleRate = output.rate = CubebUtils::PreferredSampleRate();
 
-  output.channels = mGraphImpl->AudioChannelCount();
   if (AUDIO_OUTPUT_FORMAT == AUDIO_FORMAT_S16) {
     output.format = CUBEB_SAMPLE_S16NE;
   } else {
     output.format = CUBEB_SAMPLE_FLOAT32NE;
   }
 
-  
-  output.layout = CUBEB_LAYOUT_STEREO;
+  output.channels = mOuputChannels;
+  output.layout = CUBEB_LAYOUT_UNDEFINED;
 
   Maybe<uint32_t> latencyPref = CubebUtils::GetCubebMSGLatencyInFrames();
   if (latencyPref) {
@@ -923,7 +925,7 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     
     
     if (!mGraphImpl->MessagesQueued()) {
-      PodZero(aOutputBuffer, aFrames * mGraphImpl->AudioChannelCount());
+      PodZero(aOutputBuffer, aFrames * mOuputChannels);
       return aFrames;
     }
     mGraphImpl->SwapMessageQueues();
@@ -1010,7 +1012,7 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   
   
   mGraphImpl->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
-                               mSampleRate, ChannelCount);
+                               mSampleRate, mOuputChannels);
 
   bool switching = false;
   {

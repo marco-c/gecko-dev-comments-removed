@@ -8,6 +8,7 @@
 #include "mozilla/StaticPtr.h"
 #include "nsAutoPtr.h"
 #include "AudioMixer.h"
+#include "MediaData.h"
 
 namespace webrtc {
 class SingleRwFifo;
@@ -50,6 +51,7 @@ private:
   
   FarEndAudioChunk *mSaved; 
   uint32_t mSamplesSaved;
+  AlignedAudioBuffer mDownmixBuffer;
 };
 
 extern StaticRefPtr<AudioOutputObserver> gFarendObserver;

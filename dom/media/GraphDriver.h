@@ -471,17 +471,17 @@ private:
   friend class AsyncCubebTask;
   bool Init();
   
-  static const uint32_t ChannelCount = 2;
+  uint32_t mOuputChannels;
   
 
 
 
 
-  SpillBuffer<AudioDataValue, WEBAUDIO_BLOCK_SIZE * 2, ChannelCount> mScratchBuffer;
+  SpillBuffer<AudioDataValue, WEBAUDIO_BLOCK_SIZE * 2> mScratchBuffer;
   
 
 
-  AudioCallbackBufferWrapper<AudioDataValue, ChannelCount> mBuffer;
+  AudioCallbackBufferWrapper<AudioDataValue> mBuffer;
   
 
   nsAutoRef<cubeb_stream> mAudioStream;
