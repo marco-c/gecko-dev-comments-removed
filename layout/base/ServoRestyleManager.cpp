@@ -343,7 +343,6 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
   
   
   
-  
   RefPtr<nsStyleContext> oldStyleContext =
     styleFrame ? styleFrame->StyleContext() : nullptr;
 
@@ -395,8 +394,11 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
-    for (nsIFrame* f = styleFrame; f;
-         f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
+    
+    
+    
+    
+    for (nsIFrame* f = styleFrame; f; f = f->GetNextContinuation()) {
       f->SetStyleContext(newContext);
     }
 
@@ -493,8 +495,18 @@ ServoRestyleManager::ProcessPostTraversalForText(
   nsStyleContext& newContext = aPostTraversalState.ComputeStyle(aTextNode);
   aPostTraversalState.ComputeHintIfNeeded(aTextNode, primaryFrame, newContext);
 
-  for (nsIFrame* f = primaryFrame; f;
-       f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (nsIFrame* f = primaryFrame; f; f = f->GetNextContinuation()) {
     f->SetStyleContext(&newContext);
   }
 
