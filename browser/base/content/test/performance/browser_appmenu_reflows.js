@@ -105,6 +105,34 @@ const EXPECTED_APPMENU_SUBVIEW_REFLOWS = [
 
 ];
 
+const WIN_DEBUG_E10S = Services.appinfo.OS == "WINNT" &&
+                       AppConstants.DEBUG &&
+                       gMultiProcessBrowser;
+
+if (WIN_DEBUG_E10S) {
+  
+  
+  EXPECTED_APPMENU_SUBVIEW_REFLOWS.push(
+    [
+      "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
+      "adjustArrowPosition@chrome://global/content/bindings/popup.xml",
+      "onxblpopuppositioned@chrome://global/content/bindings/popup.xml",
+    ],
+
+    [
+      "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
+      "adjustArrowPosition@chrome://global/content/bindings/popup.xml",
+      "onxblpopuppositioned@chrome://global/content/bindings/popup.xml",
+    ],
+
+    [
+      "get_alignmentPosition@chrome://global/content/bindings/popup.xml",
+      "adjustArrowPosition@chrome://global/content/bindings/popup.xml",
+      "onxblpopuppositioned@chrome://global/content/bindings/popup.xml",
+    ],
+  );
+}
+
 add_task(async function() {
   await ensureNoPreloadedBrowser();
 
