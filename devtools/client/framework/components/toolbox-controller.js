@@ -147,6 +147,10 @@ class ToolboxController extends Component {
     this.updateButtonIds();
   }
 
+  get panelDefinitions() {
+    retun this.state.panelDefinitions;
+  }
+
   setToolboxButtons(toolboxButtons) {
     
     this.state.toolboxButtons.forEach(button => {
