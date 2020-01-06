@@ -24,7 +24,6 @@
 #include "mozilla/dom/workers/ServiceWorkerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LoadInfo.h"
-#include "mozilla/HTMLEditor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StartupTimeline.h"
@@ -5742,6 +5741,7 @@ nsDocShell::LoadPage(nsISupports* aPageDescriptor, uint32_t aDisplayType)
     }
     shEntry->SetURI(newUri);
     shEntry->SetOriginalURI(nullptr);
+    shEntry->SetResultPrincipalURI(nullptr);
     
     
     
@@ -13152,41 +13152,24 @@ NS_IMETHODIMP
 nsDocShell::GetEditor(nsIEditor** aEditor)
 {
   NS_ENSURE_ARG_POINTER(aEditor);
-  RefPtr<HTMLEditor> htmlEditor = GetHTMLEditorInternal();
-  htmlEditor.forget(aEditor);
-  return NS_OK;
+
+  if (!mEditorData) {
+    *aEditor = nullptr;
+    return NS_OK;
+  }
+
+  return mEditorData->GetEditor(aEditor);
 }
 
 NS_IMETHODIMP
 nsDocShell::SetEditor(nsIEditor* aEditor)
 {
-  HTMLEditor* htmlEditor = aEditor ? aEditor->AsHTMLEditor() : nullptr;
-  
-  if (aEditor && !htmlEditor) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  return SetHTMLEditorInternal(htmlEditor);
-}
-
-HTMLEditor*
-nsDocShell::GetHTMLEditorInternal()
-{
-  return mEditorData ? mEditorData->GetHTMLEditor() : nullptr;
-}
-
-nsresult
-nsDocShell::SetHTMLEditorInternal(HTMLEditor* aHTMLEditor)
-{
-  if (!aHTMLEditor && !mEditorData) {
-    return NS_OK;
-  }
-
   nsresult rv = EnsureEditorData();
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  return mEditorData->SetHTMLEditor(aHTMLEditor);
+  return mEditorData->SetEditor(aEditor);
 }
 
 NS_IMETHODIMP
@@ -15072,18 +15055,4 @@ NS_IMETHODIMP_(void)
 nsDocShell::GetOriginAttributes(mozilla::OriginAttributes& aAttrs)
 {
   aAttrs = mOriginAttributes;
-}
-
-HTMLEditor*
-nsIDocShell::GetHTMLEditor()
-{
-  nsDocShell* docShell = static_cast<nsDocShell*>(this);
-  return docShell->GetHTMLEditorInternal();
-}
-
-nsresult
-nsIDocShell::SetHTMLEditor(HTMLEditor* aHTMLEditor)
-{
-  nsDocShell* docShell = static_cast<nsDocShell*>(this);
-  return docShell->SetHTMLEditorInternal(aHTMLEditor);
 }
