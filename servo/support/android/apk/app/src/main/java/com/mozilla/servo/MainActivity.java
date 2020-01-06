@@ -11,9 +11,11 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.URLUtil;
+import android.widget.FrameLayout;
 
 import com.mozilla.servo.BuildConfig;
 
@@ -66,19 +68,43 @@ public class MainActivity extends android.app.NativeActivity {
         }
 
         JSONObject preferences = loadPreferences();
-        boolean keepScreenOn = preferences.optBoolean("shell.keep_screen_on.enabled", false);
-        mFullScreen = !preferences.optBoolean("shell.native-titlebar.enabled", false);
-        String orientation = preferences.optString("shell.native-orientation", "both");
 
-        
-        if (orientation.equalsIgnoreCase("portrait")) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        boolean keepScreenOn = false;
+
+        if (BuildConfig.FLAVOR.contains("vr")) {
+            
+            keepScreenOn = true;
+            mFullScreen = true;
         }
-        else if (orientation.equalsIgnoreCase("landscape")) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        else {
+            keepScreenOn = preferences.optBoolean("shell.keep_screen_on.enabled", false);
+            mFullScreen = !preferences.optBoolean("shell.native-titlebar.enabled", false);
+
+            String orientation = preferences.optString("shell.native-orientation", "both");
+
+            
+            if (orientation.equalsIgnoreCase("portrait")) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            }
+            else if (orientation.equalsIgnoreCase("landscape")) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            }
         }
 
         super.onCreate(savedInstanceState);
+
+        
+        
+        
+        
+        getWindow().takeSurface(null);
+        FrameLayout layout = new FrameLayout(this);
+        layout.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        SurfaceView nativeSurface = new SurfaceView(this);
+        nativeSurface.getHolder().addCallback(this);
+        layout.addView(nativeSurface, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(layout);
 
         
         if (keepScreenOn) {
