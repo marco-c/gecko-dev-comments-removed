@@ -33,16 +33,34 @@ this.EXPORTED_SYMBOLS = ["Sanitizer"];
 
 function Sanitizer() {}
 Sanitizer.prototype = {
-  clearItem: function(aItemName) {
+  clearItem: function(aItemName, startTime) {
+    
+    
+    if (typeof startTime != "undefined") {
+      switch (aItemName) {
+        
+        
+        case "downloadHistory":
+          this._clear("downloadFiles", { startTime, deleteFiles: false });
+          break;
+        default:
+          return Promise.reject({message: `Invalid argument: ${aItemName} does not support startTime argument.`});
+      }
+    } else {
+      this._clear(aItemName);
+    }
+  },
+
+ _clear: function(aItemName, options) {
     let item = this.items[aItemName];
     let canClear = item.canClear;
     if (typeof canClear == "function") {
       canClear(function clearCallback(aCanClear) {
         if (aCanClear)
-          return item.clear();
+          return item.clear(options);
       });
     } else if (canClear) {
-      return item.clear();
+      return item.clear(options);
     }
   },
 
@@ -233,7 +251,7 @@ Sanitizer.prototype = {
     },
 
     downloadFiles: {
-      clear: Task.async(function* () {
+      clear: Task.async(function* ({ startTime = 0, deleteFiles = true} = {}) {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_DOWNLOADS", refObj);
 
@@ -248,7 +266,9 @@ Sanitizer.prototype = {
           
           
           
-          if (download.stopped && (!download.hasPartialData || download.error)) {
+          
+          if (download.stopped && (!download.hasPartialData || download.error) &&
+              download.startTime.getTime() >= startTime) {
             
             
             yield list.remove(download);
@@ -258,12 +278,14 @@ Sanitizer.prototype = {
             
             finalizePromises.push(download.finalize(true).then(() => null, Cu.reportError));
 
-            
-            OS.File.remove(download.target.path).then(() => null, ex => {
-              if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
-                Cu.reportError(ex);
-              }
-            });
+            if (deleteFiles) {
+              
+              OS.File.remove(download.target.path).then(() => null, ex => {
+                if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+                  Cu.reportError(ex);
+                }
+              });
+            }
           }
         }
 
