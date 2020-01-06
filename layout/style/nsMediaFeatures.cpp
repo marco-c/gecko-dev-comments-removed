@@ -795,42 +795,6 @@ nsMediaFeatures::features[] = {
     GetSystemMetric
   },
 
-  {
-    &nsGkAtoms::_moz_gtk_csd_available,
-    nsMediaFeature::eMinMaxNotAllowed,
-    nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eUserAgentAndChromeOnly,
-    { &nsGkAtoms::gtk_csd_available },
-    GetSystemMetric
-  },
-
-  {
-    &nsGkAtoms::_moz_gtk_csd_minimize_button,
-    nsMediaFeature::eMinMaxNotAllowed,
-    nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eUserAgentAndChromeOnly,
-    { &nsGkAtoms::gtk_csd_minimize_button },
-    GetSystemMetric
-  },
-
-  {
-    &nsGkAtoms::_moz_gtk_csd_maximize_button,
-    nsMediaFeature::eMinMaxNotAllowed,
-    nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eUserAgentAndChromeOnly,
-    { &nsGkAtoms::gtk_csd_maximize_button },
-    GetSystemMetric
-  },
-
-  {
-    &nsGkAtoms::_moz_gtk_csd_close_button,
-    nsMediaFeature::eMinMaxNotAllowed,
-    nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eUserAgentAndChromeOnly,
-    { &nsGkAtoms::gtk_csd_close_button },
-    GetSystemMetric
-  },
-
   
   
   
