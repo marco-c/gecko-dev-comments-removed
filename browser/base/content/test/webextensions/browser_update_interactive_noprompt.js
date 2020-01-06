@@ -7,6 +7,9 @@ add_task(async function setup() {
     ["extensions.update.requireBuiltInCerts", false],
 
     
+    ["xpinstall.signatures.required", false],
+
+    
     ["extensions.update.url", `${BASE}/browser_webext_update.json`],
   ]});
 });
@@ -57,3 +60,8 @@ add_task(() => testUpdateNoPrompt("browser_legacy.xpi",
 
 add_task(() => testUpdateNoPrompt("browser_webext_update_perms1.xpi",
                                   "update_perms@tests.mozilla.org"));
+
+
+
+add_task(() => testUpdateNoPrompt("browser_webext_update_origins1.xpi",
+                                  "update_origins@tests.mozilla.org"));

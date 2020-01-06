@@ -2,6 +2,7 @@ const {AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm
 
 const ID_PERMS = "update_perms@tests.mozilla.org";
 const ID_LEGACY = "legacy_update@tests.mozilla.org";
+const ID_ORIGINS = "update_origins@tests.mozilla.org";
 
 function getBadgeStatus() {
   let menuButton = document.getElementById("PanelUI-menu-button");
@@ -14,6 +15,8 @@ add_task(async function setup() {
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
+    
+    ["xpinstall.signatures.required", false],
   ]});
 
   
@@ -81,3 +84,8 @@ add_task(() => testNoPrompt(`${BASE}/browser_webext_update_perms1.xpi`,
 
 
 add_task(() => testNoPrompt(`${BASE}/browser_legacy.xpi`, ID_LEGACY));
+
+
+
+add_task(() => testNoPrompt(`${BASE}/browser_webext_update_origins1.xpi`,
+                            ID_ORIGINS));
