@@ -24,6 +24,19 @@ namespace webrtc {
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+enum DistanceCalculation {
+  kFitness,
+  kFeasibility
+};
+
 class MediaEngineCameraVideoSource : public MediaEngineVideoSource
 {
 public:
@@ -86,7 +99,14 @@ protected:
                              TrackID aID,
                              StreamTime delta,
                              const PrincipalHandle& aPrincipalHandle);
+  uint32_t GetDistance(const webrtc::CaptureCapability& aCandidate,
+                       const NormalizedConstraintSet &aConstraints,
+                       const nsString& aDeviceId,
+                       const DistanceCalculation aCalculate) const;
   uint32_t GetFitnessDistance(const webrtc::CaptureCapability& aCandidate,
+                              const NormalizedConstraintSet &aConstraints,
+                              const nsString& aDeviceId) const;
+  uint32_t GetFeasibilityDistance(const webrtc::CaptureCapability& aCandidate,
                               const NormalizedConstraintSet &aConstraints,
                               const nsString& aDeviceId) const;
   static void TrimLessFitCandidates(CapabilitySet& set);
@@ -96,9 +116,13 @@ protected:
                             uint32_t aDistance);
   virtual size_t NumCapabilities() const;
   virtual void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) const;
-  virtual bool ChooseCapability(const NormalizedConstraints &aConstraints,
-                                const MediaEnginePrefs &aPrefs,
-                                const nsString& aDeviceId);
+  virtual bool ChooseCapability(
+    const NormalizedConstraints &aConstraints,
+    const MediaEnginePrefs &aPrefs,
+    const nsString& aDeviceId,
+    webrtc::CaptureCapability& aCapability,
+    const DistanceCalculation aCalculate
+  );
   void SetName(nsString aName);
   void SetUUID(const char* aUUID);
   const nsCString& GetUUID() const; 
@@ -116,6 +140,8 @@ protected:
   nsTArray<RefPtr<SourceMediaStream>> mSources; 
   nsTArray<PrincipalHandle> mPrincipalHandles; 
   RefPtr<layers::Image> mImage;
+  nsTArray<webrtc::CaptureCapability> mTargetCapabilities;
+  nsTArray<uint64_t> mHandleIds;
   RefPtr<layers::ImageContainer> mImageContainer;
   
 
@@ -125,6 +151,8 @@ protected:
   TrackID mTrackID;
 
   webrtc::CaptureCapability mCapability;
+  webrtc::CaptureCapability mTargetCapability;
+  uint64_t mHandleId;
 
   mutable nsTArray<webrtc::CaptureCapability> mHardcodedCapabilities;
 private:
