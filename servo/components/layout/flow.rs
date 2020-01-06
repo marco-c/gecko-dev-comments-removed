@@ -1116,6 +1116,28 @@ impl BaseFlow {
     }
 
     
+    
+    
+    
+    pub fn update_flags_if_needed(&mut self, style: &ServoComputedValues) {
+        
+        
+        if self.restyle_damage.contains(REFLOW_OUT_OF_FLOW) {
+            
+            
+            if self.flags.contains(IS_ABSOLUTELY_POSITIONED) {
+                let logical_position = style.logical_position();
+                self.flags.set(INLINE_POSITION_IS_STATIC,
+                    logical_position.inline_start == LengthOrPercentageOrAuto::Auto &&
+                    logical_position.inline_end == LengthOrPercentageOrAuto::Auto);
+                self.flags.set(BLOCK_POSITION_IS_STATIC,
+                    logical_position.block_start == LengthOrPercentageOrAuto::Auto &&
+                    logical_position.block_end == LengthOrPercentageOrAuto::Auto);
+            }
+        }
+    }
+
+    
     pub fn clone_with_children(&self, children: FlowList) -> BaseFlow {
         BaseFlow {
             children: children,
@@ -1361,6 +1383,7 @@ impl<'a> MutableFlowUtils for &'a mut Flow {
     
     fn repair_style_and_bubble_inline_sizes(self, style: &::StyleArc<ServoComputedValues>) {
         self.repair_style(style);
+        mut_base(self).update_flags_if_needed(style);
         self.bubble_inline_sizes();
     }
 
