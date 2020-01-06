@@ -957,6 +957,7 @@ public:
                                           EventVisibility aVisibility)
   {
     mSeekJob = Move(aSeekJob);
+    mVisibility = aVisibility;
 
     
     
@@ -974,16 +975,16 @@ public:
     }
 
     
-    if (!mSeekJob.mTarget->IsVideoOnly()) {
+    
+    
+    
+    if (mVisibility == EventVisibility::Observable) {
+      
+      
+      
       mMaster->StopPlayback();
-    }
-
-    mMaster->UpdatePlaybackPositionInternal(mSeekJob.mTarget->GetTime());
-
-    if (aVisibility == EventVisibility::Observable) {
+      mMaster->UpdatePlaybackPositionInternal(mSeekJob.mTarget->GetTime());
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::SeekStarted);
-      
-      
       mMaster->UpdateNextFrameStatus(
         MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_SEEKING);
     }
@@ -1021,6 +1022,7 @@ public:
 
 protected:
   SeekJob mSeekJob;
+  EventVisibility mVisibility;
 
   virtual void DoSeek() = 0;
   
@@ -2474,7 +2476,11 @@ SeekingState::SeekCompleted()
   }
 
   
-  if (!target.IsVideoOnly()) {
+  
+  
+  
+  
+  if (mVisibility == EventVisibility::Observable) {
     
     
     
