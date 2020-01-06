@@ -11,14 +11,14 @@
 
 
 TEST(ThreadProfile, Initialization) {
-  Thread::tid_t tid = 1000;
+  int tid = 1000;
   ThreadInfo info("testThread", tid, true, nullptr);
   info.StartProfiling();
 }
 
 
 TEST(ThreadProfile, InsertOneEntry) {
-  Thread::tid_t tid = 1000;
+  int tid = 1000;
   ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(10);
   pb->AddEntry(ProfileBufferEntry::Time(123.1));
@@ -29,7 +29,7 @@ TEST(ThreadProfile, InsertOneEntry) {
 
 
 TEST(ThreadProfile, InsertEntriesNoWrap) {
-  Thread::tid_t tid = 1000;
+  int tid = 1000;
   ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(100);
   int test_size = 50;
@@ -47,7 +47,7 @@ TEST(ThreadProfile, InsertEntriesNoWrap) {
 
 
 TEST(ThreadProfile, InsertEntriesWrap) {
-  Thread::tid_t tid = 1000;
+  int tid = 1000;
   
   int entries = 24;
   int buffer_size = entries + 1;

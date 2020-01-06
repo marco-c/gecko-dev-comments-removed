@@ -40,10 +40,12 @@
 #include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsVersion.h"
 
- Thread::tid_t
+ int
 Thread::GetCurrentId()
 {
-  return GetCurrentThreadId();
+  DWORD threadId = GetCurrentThreadId();
+  MOZ_ASSERT(threadId <= INT32_MAX, "native thread ID is > INT32_MAX");
+  return int(threadId);
 }
 
 static void
