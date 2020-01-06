@@ -115,7 +115,6 @@ function test_instantiate() {
   h.add(1);
   let snapshot = h.snapshot();
   let subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(ID in subsession);
   Assert.equal(snapshot.sum, subsession[ID].sum,
                "Histogram and subsession histogram sum must match.");
   
@@ -335,7 +334,7 @@ add_task(async function test_API_return_values() {
 
   for (let returnValue of RETURN_VALUES) {
     Assert.strictEqual(returnValue, undefined,
-                       "The function must return undefined");
+                       "The function must return undefined.");
   }
 });
 
@@ -812,57 +811,56 @@ add_task({
   skip_if: () => gIsAndroid
 },
 function test_subsession() {
-  const COUNT = "TELEMETRY_TEST_COUNT";
+  const ID = "TELEMETRY_TEST_COUNT";
   const FLAG = "TELEMETRY_TEST_FLAG";
-  let h = Telemetry.getHistogramById(COUNT);
+  let h = Telemetry.getHistogramById(ID);
   let flag = Telemetry.getHistogramById(FLAG);
 
   
   h.clear();
   let snapshot = Telemetry.histogramSnapshots;
   let subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(!(COUNT in snapshot));
-  Assert.ok(!(COUNT in subsession));
+  Assert.ok(!(ID in snapshot));
+  Assert.ok(!(ID in subsession));
 
   
   h.add(1);
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(COUNT in snapshot);
-  Assert.ok(COUNT in subsession);
-  Assert.equal(snapshot[COUNT].sum, 1);
-  Assert.equal(subsession[COUNT].sum, 1);
+  Assert.ok(ID in snapshot);
+  Assert.ok(ID in subsession);
+  Assert.equal(snapshot[ID].sum, 1);
+  Assert.equal(subsession[ID].sum, 1);
 
   
   h.clear();
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(!(COUNT in snapshot));
-  Assert.ok(!(COUNT in subsession));
+  Assert.ok(!(ID in snapshot));
+  Assert.ok(!(ID in subsession));
 
   
   h.add(1);
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(COUNT in snapshot);
-  Assert.ok(COUNT in subsession);
-  Assert.equal(snapshot[COUNT].sum, 1);
-  Assert.equal(subsession[COUNT].sum, 1);
+  Assert.equal(snapshot[ID].sum, 1);
+  Assert.equal(subsession[ID].sum, 1);
 
   
   h.clear(true);
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(COUNT in snapshot);
-  Assert.ok(!(COUNT in subsession));
-  Assert.equal(snapshot[COUNT].sum, 1);
+  Assert.ok(ID in snapshot);
+  Assert.ok(ID in subsession);
+  Assert.equal(snapshot[ID].sum, 1);
+  Assert.equal(subsession[ID].sum, 0);
 
   
   h.add(1);
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.equal(snapshot[COUNT].sum, 2);
-  Assert.equal(subsession[COUNT].sum, 1);
+  Assert.equal(snapshot[ID].sum, 2);
+  Assert.equal(subsession[ID].sum, 1);
 
   
   
@@ -872,12 +870,12 @@ function test_subsession() {
   flag.add(1);
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms(true);
-  Assert.ok(COUNT in snapshot);
-  Assert.ok(COUNT in subsession);
+  Assert.ok(ID in snapshot);
+  Assert.ok(ID in subsession);
   Assert.ok(FLAG in snapshot);
   Assert.ok(FLAG in subsession);
-  Assert.equal(snapshot[COUNT].sum, 1);
-  Assert.equal(subsession[COUNT].sum, 1);
+  Assert.equal(snapshot[ID].sum, 1);
+  Assert.equal(subsession[ID].sum, 1);
   Assert.equal(snapshot[FLAG].sum, 1);
   Assert.equal(subsession[FLAG].sum, 1);
 
@@ -885,11 +883,12 @@ function test_subsession() {
   
   snapshot = Telemetry.histogramSnapshots;
   subsession = Telemetry.snapshotSubsessionHistograms();
-  Assert.ok(COUNT in snapshot);
-  Assert.ok(!(COUNT in subsession));
+  Assert.ok(ID in snapshot);
+  Assert.ok(ID in subsession);
   Assert.ok(FLAG in snapshot);
   Assert.ok(FLAG in subsession);
-  Assert.equal(snapshot[COUNT].sum, 1);
+  Assert.equal(snapshot[ID].sum, 1);
+  Assert.equal(subsession[ID].sum, 0);
   Assert.equal(snapshot[FLAG].sum, 1);
   Assert.equal(subsession[FLAG].sum, 0);
 });
