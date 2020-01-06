@@ -1,0 +1,41 @@
+
+
+
+
+
+
+#ifndef nsIIdleRunnable_h__
+#define nsIIdleRunnable_h__
+
+#include "nsISupports.h"
+#include "mozilla/TimeStamp.h"
+
+#define NS_IIDLERUNNABLE_IID \
+{ 0x688be92e, 0x7ade, 0x4fdc, \
+{ 0x9d, 0x83, 0x74, 0xcb, 0xef, 0xf4, 0xa5, 0x2c } }
+
+
+
+
+
+
+class nsIIdleRunnable : public nsISupports
+{
+public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IIDLERUNNABLE_IID)
+
+  
+
+
+
+  virtual void SetDeadline(mozilla::TimeStamp aDeadline) = 0;
+
+protected:
+  nsIIdleRunnable() { }
+  virtual ~nsIIdleRunnable() {}
+};
+
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIIdleRunnable,
+                              NS_IIDLERUNNABLE_IID)
+
+#endif 

@@ -12,7 +12,7 @@
 #include "MainThreadUtils.h"
 #include "nsICancelableRunnable.h"
 #include "nsIIdlePeriod.h"
-#include "nsIIncrementalRunnable.h"
+#include "nsIIdleRunnable.h"
 #include "nsINamed.h"
 #include "nsIRunnable.h"
 #include "nsIThreadManager.h"
@@ -379,22 +379,22 @@ private:
 };
 
 
-class IncrementalRunnable : public CancelableRunnable,
-                            public nsIIncrementalRunnable
+class IdleRunnable : public CancelableRunnable,
+                            public nsIIdleRunnable
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
   
   virtual void SetDeadline(TimeStamp aDeadline) override;
 
-  IncrementalRunnable() {}
+  IdleRunnable() {}
 
 protected:
-  virtual ~IncrementalRunnable() {}
+  virtual ~IdleRunnable() {}
 private:
-  IncrementalRunnable(const IncrementalRunnable&) = delete;
-  IncrementalRunnable& operator=(const IncrementalRunnable&) = delete;
-  IncrementalRunnable& operator=(const IncrementalRunnable&&) = delete;
+  IdleRunnable(const IdleRunnable&) = delete;
+  IdleRunnable& operator=(const IdleRunnable&) = delete;
+  IdleRunnable& operator=(const IdleRunnable&&) = delete;
 };
 
 namespace detail {
