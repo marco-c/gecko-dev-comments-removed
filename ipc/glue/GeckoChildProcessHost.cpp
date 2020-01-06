@@ -574,12 +574,10 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
 {
   AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
 
-  
   const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
   const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
-  if (!origNSPRLogName && !origMozLogName) {
-    return PerformAsyncLaunchInternal(aExtraOpts, arch);
-  }
+  const char* origRustLog = PR_GetEnv("RUST_LOG");
+  const char* childRustLog = PR_GetEnv("RUST_LOG_CHILD");
 
   
   
@@ -589,6 +587,7 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
   
   nsAutoCString nsprLogName;
   nsAutoCString mozLogName;
+  nsAutoCString rustLog;
 
   if (origNSPRLogName) {
     if (mRestoreOrigNSPRLogName.IsEmpty()) {
@@ -605,6 +604,17 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
     SetChildLogName("MOZ_LOG_FILE=", origMozLogName, mozLogName);
   }
 
+  
+  if (childRustLog) {
+    if (mRestoreOrigRustLog.IsEmpty()) {
+      mRestoreOrigRustLog.AssignLiteral("RUST_LOG=");
+      mRestoreOrigRustLog.Append(origRustLog);
+    }
+    rustLog.AssignLiteral("RUST_LOG=");
+    rustLog.Append(childRustLog);
+    PR_SetEnv(rustLog.get());
+  }
+
   bool retval = PerformAsyncLaunchInternal(aExtraOpts, arch);
 
   
@@ -613,6 +623,9 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
   }
   if (origMozLogName) {
     PR_SetEnv(mRestoreOrigMozLogName.get());
+  }
+  if (origRustLog) {
+    PR_SetEnv(mRestoreOrigRustLog.get());
   }
 
   return retval;
