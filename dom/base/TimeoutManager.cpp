@@ -981,28 +981,10 @@ TimeoutManager::Resume()
     MaybeStartThrottleTrackingTimout();
   }
 
-  TimeStamp now = TimeStamp::Now();
-  TimeStamp nextWakeUp;
-
-  ForEachUnorderedTimeout([&](Timeout* aTimeout) {
-    
-    
-    
-    
-    int32_t remaining = 0;
-    if (aTimeout->When() > now) {
-      remaining = static_cast<int32_t>((aTimeout->When() - now).ToMilliseconds());
-    }
-    uint32_t delay = std::max(remaining, DOMMinTimeoutValue(aTimeout->mIsTracking));
-    aTimeout->SetWhenOrTimeRemaining(now, TimeDuration::FromMilliseconds(delay));
-
-    if (nextWakeUp.IsNull() || aTimeout->When() < nextWakeUp) {
-      nextWakeUp = aTimeout->When();
-    }
-  });
-
-  if (!nextWakeUp.IsNull()) {
-    MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextWakeUp,
+  OrderedTimeoutIterator iter(mNormalTimeouts, mTrackingTimeouts);
+  Timeout* nextTimeout = iter.Next();
+  if (nextTimeout) {
+    MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextTimeout->When(),
                                                  MinSchedulingDelay()));
   }
 }
