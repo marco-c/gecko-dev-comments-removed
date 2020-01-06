@@ -2290,7 +2290,7 @@ function renderPayloadList(ping) {
 function togglePingSections(isMainPing) {
   
   let commonSections = new Set(["heading",
-                                "home",
+                                "home-section",
                                 "general-data-section",
                                 "environment-data-section",
                                 "raw-json-viewer"]);
