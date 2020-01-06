@@ -6,6 +6,7 @@
 package org.mozilla.gecko.db;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,6 +21,7 @@ import org.json.simple.JSONObject;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.background.common.PrefsBranch;
 import org.mozilla.gecko.db.BrowserContract.ActivityStreamBlocklist;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import org.mozilla.gecko.db.BrowserContract.Combined;
@@ -34,15 +36,20 @@ import org.mozilla.gecko.db.BrowserContract.SearchHistory;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
 import org.mozilla.gecko.db.BrowserContract.UrlAnnotations;
 import org.mozilla.gecko.fxa.FirefoxAccounts;
+import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
 import org.mozilla.gecko.reader.SavedReaderViewHelper;
+import org.mozilla.gecko.sync.NonObjectJSONException;
+import org.mozilla.gecko.sync.SynchronizerConfiguration;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.repositories.android.RepoUtils;
 import org.mozilla.gecko.util.FileUtils;
 
 import static org.mozilla.gecko.db.DBUtils.qualifyColumn;
 
+import android.accounts.Account;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.SQLException;
@@ -52,16 +59,17 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
 
 
-public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
+public class BrowserDatabaseHelper extends SQLiteOpenHelper {
     private static final String LOGTAG = "GeckoBrowserDBHelper";
 
     
     
-    public static final int DATABASE_VERSION = 38; 
+    public static final int DATABASE_VERSION = 39; 
     public static final String DATABASE_NAME = "browser.db";
 
     final protected Context mContext;
@@ -131,6 +139,11 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
                 Bookmarks.DATE_MODIFIED + " INTEGER," +
                 Bookmarks.GUID + " TEXT NOT NULL," +
                 Bookmarks.IS_DELETED + " INTEGER NOT NULL DEFAULT 0, " +
+
+                
+                Bookmarks.LOCAL_VERSION + " INTEGER NOT NULL DEFAULT 1, " +
+                Bookmarks.SYNC_VERSION + " INTEGER NOT NULL DEFAULT 0, " +
+
                 "FOREIGN KEY (" + Bookmarks.PARENT + ") REFERENCES " +
                 TABLE_BOOKMARKS + "(" + Bookmarks._ID + ")" +
                 ");");
@@ -2119,6 +2132,122 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         createV38CombinedView(db);
     }
 
+    private void upgradeDatabaseFrom38to39(final SQLiteDatabase db) {
+        updateBookmarksTableAddSyncTrackerFields(db);
+    }
+
+    private void updateBookmarksTableAddSyncTrackerFields(final SQLiteDatabase db) {
+        
+        db.execSQL("ALTER TABLE " + TABLE_BOOKMARKS +
+                " ADD COLUMN " + Bookmarks.LOCAL_VERSION + " INTEGER NOT NULL DEFAULT 1");
+        db.execSQL("ALTER TABLE " + TABLE_BOOKMARKS +
+                " ADD COLUMN " + Bookmarks.SYNC_VERSION + " INTEGER NOT NULL DEFAULT 0");
+
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+
+        
+
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+
+        
+        
+
+        
+        final Account account = FirefoxAccounts.getFirefoxAccount(mContext);
+        if (account == null) {
+            Log.d(LOGTAG, "No Firefox account. Skipping bookmark version migration.");
+            return;
+        }
+
+        
+        final AndroidFxAccount fxAccount = new AndroidFxAccount(mContext, account);
+        final SharedPreferences syncPrefs;
+        try {
+            syncPrefs = fxAccount.getSyncPrefs();
+        } catch (Exception e) {
+            Log.e(LOGTAG, "Could not read sync SharedPreferences. Skipping bookmark version migration.", e);
+            return;
+        }
+
+        final SynchronizerConfiguration synchronizerConfiguration;
+        try {
+            synchronizerConfiguration = new SynchronizerConfiguration(new PrefsBranch(syncPrefs, "bookmarks."));
+        } catch (IOException | NonObjectJSONException e) {
+            Log.e(LOGTAG, "Could not process sync SharedPreferences. Skipping bookmark version migration.", e);
+            return;
+        }
+
+        final long lastSyncTimestamp = synchronizerConfiguration.localBundle.getTimestamp();
+        Log.d(LOGTAG, "Bookmarks last synced: " + lastSyncTimestamp);
+
+        performBookmarkTimestampToVersionMigration(db, lastSyncTimestamp);
+    }
+
+    @VisibleForTesting
+    static void performBookmarkTimestampToVersionMigration(final SQLiteDatabase db, final long lastSyncTimestamp) {
+        if (lastSyncTimestamp == -1) {
+            Log.d(LOGTAG, "Bookmarks were never synced. Skipping bookmark version migration.");
+            return;
+        }
+
+        final ContentValues syncedVersionValues = new ContentValues();
+        
+        syncedVersionValues.put(Bookmarks.SYNC_VERSION, 1);
+        final int modified = db.update(
+                TABLE_BOOKMARKS,
+                syncedVersionValues,
+                Bookmarks.DATE_MODIFIED + " IS NOT NULL AND " + Bookmarks.DATE_MODIFIED + " <= ?",
+                new String[] {String.valueOf(lastSyncTimestamp)}
+        );
+
+        Log.d(LOGTAG, "Marked bookmarks as 'not changed since last sync': " + modified);
+    }
+
     private void createV33CombinedView(final SQLiteDatabase db) {
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED);
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED_WITH_FAVICONS);
@@ -2268,6 +2397,10 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
                 case 38:
                     upgradeDatabaseFrom37to38(db);
+                    break;
+
+                case 39:
+                    upgradeDatabaseFrom38to39(db);
                     break;
             }
         }
