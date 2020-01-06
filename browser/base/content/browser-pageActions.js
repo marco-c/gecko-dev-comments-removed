@@ -262,11 +262,20 @@ var BrowserPageActions = {
     return panelNode;
   },
 
+  
+
+
+
+
+
+
+
+
   panelAnchorNodeForAction(action) {
     
     let potentialAnchorNodeIDs = [
-      action.anchorIDOverride || null,
-      this._urlbarButtonNodeIDForActionID(action.id),
+      action && action.anchorIDOverride,
+      action && this._urlbarButtonNodeIDForActionID(action.id),
       this.mainButtonNode.id,
       "identity-icon",
     ];
@@ -283,7 +292,8 @@ var BrowserPageActions = {
         }
       }
     }
-    throw new Error(`PageActions: No anchor node for '${action.id}'`);
+    let id = action ? action.id : "<no action>";
+    throw new Error(`PageActions: No anchor node for ${id}`);
   },
 
   get activatedActionPanelNode() {

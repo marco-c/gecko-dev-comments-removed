@@ -302,21 +302,13 @@ var StarUI = {
 
     this.beginBatch();
 
-    if (aAnchorElement) {
-      
-      
-      let parent = aAnchorElement.parentNode;
-      while (parent) {
-        if (parent.localName == "toolbarbutton") {
-          break;
-        }
-        parent = parent.parentNode;
-      }
-      if (parent) {
-        this._anchorToolbarButton = parent;
-        parent.setAttribute("open", "true");
-      }
+    if (aAnchorElement && aAnchorElement.closest("#urlbar")) {
+      this._anchorToolbarButton = aAnchorElement;
+      aAnchorElement.setAttribute("open", "true");
+    } else {
+      this._anchorToolbarButton = null;
     }
+
     let onPanelReady = fn => {
       let target = this.panel;
       if (target.parentNode) {
@@ -334,13 +326,6 @@ var StarUI = {
                                  hiddenRows: ["description", "location",
                                               "loadInSidebar", "keyword"],
                                  focusedElement: "preferred"});
-
-    if (aAnchorElement && aAnchorElement.id == BookmarkingUI.STAR_BOX_ID) {
-      aAnchorElement.setAttribute("open", "true");
-      this.panel.addEventListener("popuphiding", () => {
-        aAnchorElement.removeAttribute("open");
-      });
-    }
     this.panel.openPopup(aAnchorElement, aPosition);
   },
 
@@ -1371,18 +1356,8 @@ var BookmarkingUI = {
   },
 
   get anchor() {
-    
-    
-    
-    
-    if (this.starBox && isVisible(this.starBox)) {
-      return this.starBox;
-    }
-    let identityIcon = document.getElementById("identity-icon");
-    if (identityIcon && isVisible(identityIcon)) {
-      return identityIcon;
-    }
-    return null;
+    let action = PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK);
+    return BrowserPageActions.panelAnchorNodeForAction(action);
   },
 
   get notifier() {
