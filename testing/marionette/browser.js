@@ -164,6 +164,21 @@ browser.Context = class {
 
 
 
+
+
+  get rect() {
+    return {
+      x: this.window.screenX,
+      y: this.window.screenY,
+      width: this.window.outerWidth,
+      height: this.window.outerHeight,
+    };
+  }
+
+  
+
+
+
   getTabModalUI() {
     let br = this.contentBrowser;
     if (!br.hasAttribute("tabmodalPromptShowing")) {
