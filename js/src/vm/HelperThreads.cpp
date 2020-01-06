@@ -1233,9 +1233,7 @@ GlobalHelperThreadState::scheduleCompressionTasks(const AutoLockHelperThreadStat
 
     for (size_t i = 0; i < pending.length(); i++) {
         if (pending[i]->shouldStart()) {
-            
-            
-            Unused << worklist.append(Move(pending[i]));
+            worklist.infallibleAppend(Move(pending[i]));
             remove(pending, &i);
         }
     }
@@ -1955,12 +1953,7 @@ HelperThread::handleCompressionWorkload(AutoLockHelperThreadState& locked)
         task->work();
     }
 
-    {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!HelperThreadState().compressionFinishedList(locked).append(Move(task)))
-            oomUnsafe.crash("handleCompressionWorkload");
-    }
-
+    HelperThreadState().compressionFinishedList(locked).infallibleAppend(Move(task));
     currentTask.reset();
 
     
@@ -1973,6 +1966,25 @@ js::EnqueueOffThreadCompression(JSContext* cx, UniquePtr<SourceCompressionTask> 
     AutoLockHelperThreadState lock;
 
     auto& pending = HelperThreadState().compressionPendingList(lock);
+
+    
+    
+    size_t transitionSpace = pending.length() + 1;
+    auto& worklist = HelperThreadState().compressionWorklist(lock);
+    if (!worklist.reserve(worklist.length() + transitionSpace)) {
+        if (!cx->helperThread())
+            ReportOutOfMemory(cx);
+        return false;
+    }
+
+    transitionSpace += worklist.length();
+    auto& finished = HelperThreadState().compressionFinishedList(lock);
+    if (!finished.reserve(finished.length() + transitionSpace)) {
+        if (!cx->helperThread())
+            ReportOutOfMemory(cx);
+        return false;
+    }
+
     if (!pending.append(Move(task))) {
         if (!cx->helperThread())
             ReportOutOfMemory(cx);
