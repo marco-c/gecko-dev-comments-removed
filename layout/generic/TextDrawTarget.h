@@ -138,18 +138,6 @@ public:
   }
 
   void
-  PushClipRect(const Rect &aRect) override {
-    auto rect = mSc.ToRelativeLayoutRect(LayoutDeviceRect::FromUnknownRect(aRect));
-    auto clipId = mBuilder.DefineClip(rect);
-    mBuilder.PushClip(clipId);
-  }
-
-  void
-  PopClip() override {
-    mBuilder.PopClip();
-  }
-
-  void
   AppendShadow(const wr::Shadow& aShadow)
   {
     mBuilder.PushShadow(mBoundsRect, mClipRect, mBackfaceVisible, aShadow);
@@ -173,20 +161,6 @@ public:
     mBuilder.PushRect(rect, mClipRect, mBackfaceVisible, color);
   }
 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void
   AppendDecoration(const Point& aStart,
                    const Point& aEnd,
@@ -195,20 +169,22 @@ public:
                    const Color& aColor,
                    const uint8_t aStyle)
   {
-    auto pos = LayoutDevicePoint::FromUnknownPoint(aStart);
-    LayoutDeviceSize size;
-
-    if (aVertical) {
-      pos.x -= aThickness / 2; 
-      size = LayoutDeviceSize(aThickness, aEnd.y - aStart.y);
-    } else {
-      pos.y -= aThickness / 2; 
-      size = LayoutDeviceSize(aEnd.x - aStart.x, aThickness);
-    }
-
     wr::Line decoration;
-    decoration.bounds = mSc.ToRelativeLayoutRect(LayoutDeviceRect(pos, size));
-    decoration.wavyLineThickness = 0; 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    decoration.baseline = (aVertical ? aStart.x : aStart.y) - aThickness / 2;
+    decoration.start = aVertical ? aStart.y : aStart.x;
+    decoration.end = aVertical ? aEnd.y : aEnd.x;
+    decoration.width = aThickness;
     decoration.color = wr::ToColorF(aColor);
     decoration.orientation = aVertical
       ? wr::LineOrientation::Vertical
@@ -224,36 +200,14 @@ public:
       case NS_STYLE_TEXT_DECORATION_STYLE_DASHED:
         decoration.style = wr::LineStyle::Dashed;
         break;
-      
       case NS_STYLE_TEXT_DECORATION_STYLE_WAVY:
+        decoration.style = wr::LineStyle::Wavy;
+        break;
       
       case NS_STYLE_TEXT_DECORATION_STYLE_DOUBLE:
       default:
         MOZ_CRASH("TextDrawTarget received unsupported line style");
     }
-
-    mBuilder.PushLine(mClipRect, mBackfaceVisible, decoration);
-  }
-
-  
-  
-  
-  void
-  AppendWavyDecoration(const Rect& aBounds,
-                       const float aThickness,
-                       const bool aVertical,
-                       const Color& aColor)
-  {
-    wr::Line decoration;
-
-    decoration.bounds = mSc.ToRelativeLayoutRect(
-      LayoutDeviceRect::FromUnknownRect(aBounds));
-    decoration.wavyLineThickness = aThickness;
-    decoration.color = wr::ToColorF(aColor);
-    decoration.orientation = aVertical
-      ? wr::LineOrientation::Vertical
-      : wr::LineOrientation::Horizontal;
-    decoration.style = wr::LineStyle::Wavy;
 
     mBuilder.PushLine(mClipRect, mBackfaceVisible, decoration);
   }
@@ -418,14 +372,20 @@ public:
   }
 
   void PushClip(const Path *aPath) override {
-    MOZ_CRASH("TextDrawTarget: Method shouldn't be called");
+    
+  }
+
+  void PushClipRect(const Rect &aRect) override {
+    
   }
 
   void PushDeviceSpaceClipRects(const IntRect* aRects, uint32_t aCount) override {
     MOZ_CRASH("TextDrawTarget: Method shouldn't be called");
   }
 
-
+  void PopClip() override {
+    
+  }
 
   void PushLayer(bool aOpaque, Float aOpacity,
                          SourceSurface* aMask,

@@ -319,6 +319,17 @@ struct WrOpacityProperty {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
 struct TypedTransform3D_f32__LayoutPixel__LayoutPixel {
   float m11;
   float m12;
@@ -400,6 +411,7 @@ struct ColorF {
            a == aOther.a;
   }
 };
+
 
 struct TypedPoint2D_f32__LayerPixel {
   float x;
@@ -570,6 +582,7 @@ struct NinePatchDescriptor {
   }
 };
 
+
 struct TypedVector2D_f32__LayerPixel {
   float x;
   float y;
@@ -649,6 +662,7 @@ struct ByteSlice {
            len == aOther.len;
   }
 };
+
 
 struct TypedPoint2D_u16__Tiles {
   uint16_t x;
@@ -1112,12 +1126,14 @@ WR_FUNC;
 
 WR_INLINE
 void wr_dp_push_line(WrState *aState,
-                     const LayoutRect *aClip,
+                     LayoutRect aClip,
                      bool aIsBackfaceVisible,
-                     const LayoutRect *aBounds,
-                     float aWavyLineThickness,
+                     float aBaseline,
+                     float aStart,
+                     float aEnd,
                      LineOrientation aOrientation,
-                     const ColorF *aColor,
+                     float aWidth,
+                     ColorF aColor,
                      LineStyle aStyle)
 WR_FUNC;
 
