@@ -650,9 +650,6 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
 
   
   PostSize(mH.mWidth, AbsoluteHeight());
-  if (HasError()) {
-    return Transition::TerminateFailure();
-  }
 
   
   

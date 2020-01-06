@@ -130,12 +130,10 @@ public:
 
 
 
-
   static already_AddRefed<Decoder>
   CreateDecoderForICOResource(DecoderType aType,
                               NotNull<SourceBuffer*> aSourceBuffer,
                               NotNull<nsICODecoder*> aICODecoder,
-                              const Maybe<gfx::IntSize>& aExpectedSize,
                               const Maybe<uint32_t>& aDataOffset = Nothing());
 
   
