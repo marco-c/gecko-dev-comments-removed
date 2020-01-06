@@ -138,7 +138,7 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
     """
 
     
-    def findParentIncludes(relPath, includesMap):
+    def findParentIncludes():
         parentIncludes = set()
         current = relPath
         while current:
@@ -149,10 +149,9 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
         return parentIncludes
 
     
-    def findIncludes(includesMap, relPath):
-        includeSet = includesMap[relPath]
-        parentIncludes = findParentIncludes(relPath, includesMap)
-        for include in includeSet:
+    def findIncludes():
+        parentIncludes = findParentIncludes()
+        for include in includesMap[relPath]:
             if include not in parentIncludes:
                 yield include
 
@@ -165,10 +164,10 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
     
     includeSource = "\n".join(imap(readIncludeFile, chain(
         
-        imap(partial(os.path.join, harnessDir), findIncludes(includesMap, relPath)),
+        imap(partial(os.path.join, harnessDir), sorted(findIncludes())),
 
         
-        imap(partial(os.path.join, os.getcwd()), localIncludes)
+        imap(partial(os.path.join, os.getcwd()), sorted(localIncludes))
     )))
 
     
@@ -319,6 +318,8 @@ def process_test262(test262Dir, test262OutDir, strictTests):
     
     explicitIncludes = {}
     explicitIncludes["intl402"] = ["testBuiltInObject.js"]
+    explicitIncludes[os.path.join("built-ins", "Atomics")] = ["testAtomics.js",
+        "testTypedArray.js"]
     explicitIncludes[os.path.join("built-ins", "DataView")] = ["byteConversionValues.js"]
     explicitIncludes[os.path.join("built-ins", "Promise")] = ["promiseHelper.js"]
     explicitIncludes[os.path.join("built-ins", "TypedArray")] = ["byteConversionValues.js",
