@@ -370,26 +370,19 @@ function createDebuggerContext(toolbox) {
 
 
 
-function clearDebuggerPreferences() {
-  Services.prefs.clearUserPref("devtools.debugger.pause-on-exceptions");
-  Services.prefs.clearUserPref("devtools.debugger.ignore-caught-exceptions");
-  Services.prefs.clearUserPref("devtools.debugger.tabs");
-  Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
-  Services.prefs.clearUserPref("devtools.debugger.pending-breakpoints");
-  Services.prefs.clearUserPref("devtools.debugger.expressions");
-}
 
 
 
 
 
-
-
-
-
-function initDebugger(url) {
+function initDebugger(url, ...sources) {
   return Task.spawn(function*() {
-    clearDebuggerPreferences();
+    Services.prefs.clearUserPref("devtools.debugger.pause-on-exceptions");
+    Services.prefs.clearUserPref("devtools.debugger.ignore-caught-exceptions");
+    Services.prefs.clearUserPref("devtools.debugger.tabs");
+    Services.prefs.clearUserPref("devtools.debugger.pending-selected-location");
+    Services.prefs.clearUserPref("devtools.debugger.pending-breakpoints");
+    Services.prefs.clearUserPref("devtools.debugger.expressions");
     const toolbox = yield openNewTabAndToolbox(EXAMPLE_URL + url, "jsdebugger");
     return createDebuggerContext(toolbox);
   });
