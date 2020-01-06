@@ -152,7 +152,6 @@ protected:
 #endif 
     , mKeyNameIndex(KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
-    , mInputMethodAppState(eNotHandled)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -183,7 +182,6 @@ public:
 #endif 
     , mKeyNameIndex(KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
-    , mInputMethodAppState(eNotHandled)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -290,15 +288,6 @@ public:
   KeyNameIndex mKeyNameIndex;
   
   CodeNameIndex mCodeNameIndex;
-  
-  typedef uint8_t InputMethodAppStateType;
-  enum InputMethodAppState : InputMethodAppStateType
-  {
-    eNotHandled, 
-    eHandling,   
-    eHandled     
-  };
-  InputMethodAppState mInputMethodAppState;
 
   
   
@@ -513,7 +502,6 @@ public:
       Assign(aEvent.mNativeCharactersIgnoringModifiers);
     mPluginTextEventString.Assign(aEvent.mPluginTextEventString);
 #endif
-    mInputMethodAppState = aEvent.mInputMethodAppState;
     mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
 
     
