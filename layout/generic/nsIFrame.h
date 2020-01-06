@@ -1952,6 +1952,9 @@ public:
 
   void AddStateBits(nsFrameState aBits) { mState |= aBits; }
   void RemoveStateBits(nsFrameState aBits) { mState &= ~aBits; }
+  void AddOrRemoveStateBits(nsFrameState aBits, bool aVal) {
+    aVal ? AddStateBits(aBits) : RemoveStateBits(aBits);
+  }
 
   
 
