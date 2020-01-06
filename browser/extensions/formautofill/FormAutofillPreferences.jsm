@@ -27,6 +27,8 @@ const {
   ENABLED_AUTOFILL_CREDITCARDS_PREF,
   MANAGE_ADDRESSES_KEYWORDS,
   EDIT_ADDRESS_KEYWORDS,
+  MANAGE_CREDITCARDS_KEYWORDS,
+  EDIT_CREDITCARD_KEYWORDS,
 } = FormAutofillUtils;
 
 
@@ -75,6 +77,7 @@ FormAutofillPreferences.prototype = {
     let savedAddressesBtn = document.createElementNS(XUL_NS, "button");
     
     let savedAddressesBtnWrapper = document.createElementNS(XUL_NS, "hbox");
+    let savedCreditCardsBtnWrapper = document.createElementNS(XUL_NS, "hbox");
 
     savedAddressesBtn.className = "accessory-button";
     addressAutofillLearnMore.className = "learnMore text-link";
@@ -132,6 +135,10 @@ FormAutofillPreferences.prototype = {
       creditCardAutofillLearnMore.setAttribute("href", learnMoreURL);
 
       
+      savedCreditCardsBtn.setAttribute("searchkeywords", MANAGE_CREDITCARDS_KEYWORDS.concat(EDIT_CREDITCARD_KEYWORDS)
+                                                           .map(key => this.bundle.GetStringFromName(key)).join("\n"));
+
+      
       if (FormAutofillUtils.isAutofillCreditCardsEnabled) {
         creditCardAutofillCheckbox.setAttribute("checked", true);
       }
@@ -142,7 +149,8 @@ FormAutofillPreferences.prototype = {
       creditCardAutofill.appendChild(creditCardAutofillCheckboxGroup);
       creditCardAutofillCheckboxGroup.appendChild(creditCardAutofillCheckbox);
       creditCardAutofillCheckboxGroup.appendChild(creditCardAutofillLearnMore);
-      creditCardAutofill.appendChild(savedCreditCardsBtn);
+      creditCardAutofill.appendChild(savedCreditCardsBtnWrapper);
+      savedCreditCardsBtnWrapper.appendChild(savedCreditCardsBtn);
 
       this.refs.creditCardAutofillCheckbox = creditCardAutofillCheckbox;
       this.refs.savedCreditCardsBtn = savedCreditCardsBtn;
