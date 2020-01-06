@@ -32,6 +32,9 @@ public:
 
   
   static void Shutdown();
+private:
+  
+  static void MaybeFillTextures();
 };
 
 } 
