@@ -24,9 +24,10 @@
 namespace js {
 namespace wasm {
 
-class Code;
 class CodeSegment;
 typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
+
+typedef Vector<const CodeSegment*, 0, SystemAllocPolicy> CodeSegmentVector;
 
 
 
@@ -36,7 +37,8 @@ typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 class Compartment
 {
     InstanceVector instances_;
-    volatile bool  mutatingInstances_;
+    CodeSegmentVector codeSegments_;
+    volatile bool mutatingInstances_;
 
     struct AutoMutateInstances {
         Compartment &c;
@@ -72,9 +74,9 @@ class Compartment
 
     
     
-    
 
-    const Code* lookupCode(const void* pc, const CodeSegment** segment = nullptr) const;
+    const CodeSegment* lookupCodeSegment(const void* pc) const;
+    const Code* lookupCode(const void* pc) const;
 
     
 

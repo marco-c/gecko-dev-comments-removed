@@ -424,7 +424,6 @@ class Simulator
 
     
     bool wasm_interrupt_;
-    wasm::SharedCode wasm_code_;
 
     
     char* lastDebuggerInput_;

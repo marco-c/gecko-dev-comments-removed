@@ -36,6 +36,7 @@ namespace wasm {
 class CallSite;
 class Code;
 class CodeRange;
+class CodeSegment;
 class DebugFrame;
 class DebugState;
 class Instance;
@@ -209,7 +210,7 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 
 
 Instance*
-LookupFaultingInstance(const Code& code, void* pc, void* fp);
+LookupFaultingInstance(const CodeSegment& codeSegment, void* pc, void* fp);
 
 
 

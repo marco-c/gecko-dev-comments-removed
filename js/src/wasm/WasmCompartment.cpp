@@ -62,6 +62,20 @@ struct InstanceComparator
     }
 };
 
+struct CodeSegmentPC
+{
+    const void* pc;
+
+    explicit CodeSegmentPC(const void* pc) : pc(pc) {}
+    int operator()(const CodeSegment* cs) const {
+        if (cs->containsCodePC(pc))
+            return 0;
+        if (pc < cs->base())
+            return -1;
+        return 1;
+    }
+};
+
 bool
 Compartment::registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj)
 {
@@ -86,6 +100,17 @@ Compartment::registerInstance(JSContext* cx, HandleWasmInstanceObject instanceOb
             ReportOutOfMemory(cx);
             return false;
         }
+
+        const Code& code = instance.code();
+        for (auto t : code.tiers()) {
+            const CodeSegment& cs = code.segment(t);
+            BinarySearchIf(codeSegments_, 0, codeSegments_.length(), CodeSegmentPC(cs.base()),
+                           &index);
+            if (!codeSegments_.insert(codeSegments_.begin() + index, &cs)) {
+                ReportOutOfMemory(cx);
+                return false;
+            }
+        }
     }
 
     Debugger::onNewWasmInstance(cx, instanceObj);
@@ -101,10 +126,16 @@ Compartment::unregisterInstance(Instance& instance)
 
     AutoMutateInstances guard(*this);
     instances_.erase(instances_.begin() + index);
+    const Code& code = instance.code();
+    for (auto t : code.tiers()) {
+        MOZ_ALWAYS_TRUE(BinarySearchIf(codeSegments_, 0, codeSegments_.length(),
+                        CodeSegmentPC(code.segment(t).base()), &index));
+        codeSegments_.erase(codeSegments_.begin() + index);
+    }
 }
 
-const Code*
-Compartment::lookupCode(const void* pc, const CodeSegment** segmentp) const
+const CodeSegment*
+Compartment::lookupCodeSegment(const void* pc) const
 {
     
     
@@ -113,22 +144,18 @@ Compartment::lookupCode(const void* pc, const CodeSegment** segmentp) const
     if (mutatingInstances_)
         return nullptr;
 
-    
-    
-    
-    for (auto i : instances_) {
-        const Code& code = i->code();
-        for (auto t : code.tiers()) {
-            const CodeSegment& segment = code.segment(t);
-            if (segment.containsCodePC(pc)) {
-                if (segmentp)
-                    *segmentp = &segment;
-                return &code;
-            }
-        }
-    }
+    size_t index;
+    if (!BinarySearchIf(codeSegments_, 0, codeSegments_.length(), CodeSegmentPC(pc), &index))
+        return nullptr;
 
-    return nullptr;
+    return codeSegments_[index];
+}
+
+const Code*
+Compartment::lookupCode(const void* pc) const
+{
+    const CodeSegment* found = lookupCodeSegment(pc);
+    return found ? found->code() : nullptr;
 }
 
 void
