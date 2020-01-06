@@ -59,6 +59,10 @@ def add_optimizations(config, run, taskdesc):
     files.append('taskcluster/taskgraph/transforms/job/toolchain.py')
     
     files.append('taskcluster/scripts/misc/{}'.format(run['script']))
+    
+    tooltool_manifest = taskdesc['worker']['env'].get('TOOLTOOL_MANIFEST')
+    if tooltool_manifest:
+        files.append(tooltool_manifest)
 
     digest = hash_paths(GECKO, files)
 
