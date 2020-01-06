@@ -1258,7 +1258,7 @@ TextEditRules::WillOutputText(Selection* aSelection,
     return NS_OK;
   }
 
-  RefPtr<Element> root = mTextEditor->GetRoot();
+  Element* root = mTextEditor->GetRoot();
   if (!root) { 
     aOutString->Truncate();
     *aHandled = true;
