@@ -178,6 +178,8 @@ class RtpRtcp : public Module {
 
   
   virtual int32_t SetRID(const char *rid) = 0;
+  
+  virtual int32_t SetMID(const char *mid) = 0;
 
   
   virtual void SetSSRC(uint32_t ssrc) = 0;

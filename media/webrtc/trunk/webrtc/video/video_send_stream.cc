@@ -826,6 +826,11 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   ConfigureSsrcs();
 
   
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetMID(config_->rtp.mid.c_str());
+  }
+
+  
   rtp_rtcp_modules_.front()->SetCNAME(config_->rtp.c_name.c_str());
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {

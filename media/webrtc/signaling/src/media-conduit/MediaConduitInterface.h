@@ -229,6 +229,8 @@ public:
   virtual bool SetRemoteSSRC(unsigned int ssrc) = 0;
   virtual bool SetLocalCNAME(const char* cname) = 0;
 
+  virtual bool SetLocalMID(const std::string& mid) = 0;
+
   
 
 

@@ -333,6 +333,10 @@ int32_t ModuleRtpRtcpImpl::SetRID(const char *rid) {
   return rtp_sender_.SetRID(rid);
 }
 
+int32_t ModuleRtpRtcpImpl::SetMID(const char *mid) {
+  return rtp_sender_.SetMId(mid);
+}
+
 
 
 RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
