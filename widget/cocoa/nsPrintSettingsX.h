@@ -40,6 +40,7 @@ public:
   virtual nsresult WritePageFormatToPrefs();
   virtual nsresult GetEffectivePageSize(double *aWidth,
       double *aHeight) override;
+  void GetFilePageSize(double *aWidth, double *aHeight);
 
   
   
