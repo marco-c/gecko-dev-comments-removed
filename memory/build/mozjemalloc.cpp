@@ -693,6 +693,7 @@ public:
     Tiny,
     Quantum,
     SubPage,
+    Large,
   };
 
   explicit inline SizeClass(size_t aSize)
@@ -706,6 +707,9 @@ public:
     } else if (aSize <= gMaxSubPageClass) {
       mType = SubPage;
       mSize = RoundUpPow2(aSize);
+    } else if (aSize <= gMaxLargeClass) {
+      mType = Large;
+      mSize = PAGE_CEILING(aSize);
     } else {
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Invalid size");
     }
@@ -3661,57 +3665,34 @@ arena_t::RallocGrowLarge(arena_chunk_t* aChunk,
   return false;
 }
 
-
-
-
-static bool
-arena_ralloc_large(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
-{
-  size_t psize;
-
-  psize = PAGE_CEILING(aSize);
-  if (psize == aOldSize) {
-    
-    if (aSize < aOldSize) {
-      memset((void*)((uintptr_t)aPtr + aSize), kAllocPoison, aOldSize - aSize);
-    }
-    return true;
-  }
-
-  arena_chunk_t* chunk = GetChunkForPtr(aPtr);
-
-  if (psize < aOldSize) {
-    
-    memset((void*)((uintptr_t)aPtr + aSize), kAllocPoison, aOldSize - aSize);
-    aArena->RallocShrinkLarge(chunk, aPtr, psize, aOldSize);
-    return true;
-  }
-
-  bool ret = aArena->RallocGrowLarge(chunk, aPtr, psize, aOldSize);
-  if (ret && opt_zero) {
-    memset((void*)((uintptr_t)aPtr + aOldSize), 0, aSize - aOldSize);
-  }
-  return ret;
-}
-
 static void*
 arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
 {
   void* ret;
   size_t copysize;
+  SizeClass sizeClass(aSize);
 
   
-  if (aSize <= gMaxBinClass) {
-    if (aOldSize <= gMaxBinClass && SizeClass(aSize).Size() == aOldSize) {
-      if (aSize < aOldSize) {
-        memset(
-          (void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
-      }
+  if (aOldSize <= gMaxLargeClass && sizeClass.Size() == aOldSize) {
+    if (aSize < aOldSize) {
+      memset(
+        (void*)(uintptr_t(aPtr) + aSize), kAllocPoison, aOldSize - aSize);
+    }
+    return aPtr;
+  }
+  if (sizeClass.Type() == SizeClass::Large && aOldSize > gMaxBinClass &&
+      aOldSize <= gMaxLargeClass) {
+    arena_chunk_t* chunk = GetChunkForPtr(aPtr);
+    if (sizeClass.Size() < aOldSize) {
+      
+      memset((void*)((uintptr_t)aPtr + aSize), kAllocPoison, aOldSize - aSize);
+      aArena->RallocShrinkLarge(chunk, aPtr, sizeClass.Size(), aOldSize);
       return aPtr;
     }
-  } else if (aOldSize > gMaxBinClass && aOldSize <= gMaxLargeClass) {
-    MOZ_ASSERT(aSize > gMaxBinClass);
-    if (arena_ralloc_large(aPtr, aSize, aOldSize, aArena)) {
+    if (aArena->RallocGrowLarge(chunk, aPtr, sizeClass.Size(), aOldSize)) {
+      if (opt_zero) {
+        memset((void*)((uintptr_t)aPtr + aOldSize), 0, aSize - aOldSize);
+      }
       return aPtr;
     }
   }
@@ -4430,12 +4411,9 @@ template<>
 inline size_t
 MozJemalloc::malloc_good_size(size_t aSize)
 {
-  if (aSize <= gMaxSubPageClass) {
+  if (aSize <= gMaxLargeClass) {
     
     aSize = SizeClass(aSize).Size();
-  } else if (aSize <= gMaxLargeClass) {
-    
-    aSize = PAGE_CEILING(aSize);
   } else {
     
     
