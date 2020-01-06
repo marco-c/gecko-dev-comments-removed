@@ -3,8 +3,8 @@
 
 
 use net_traits::{Action, FetchResponseListener, FetchResponseMsg};
-use script_thread::{Runnable, RunnableWrapper};
 use std::sync::{Arc, Mutex};
+use task::{Task, TaskCanceller};
 use task_source::TaskSource;
 use task_source::networking::NetworkingTaskSource;
 
@@ -13,19 +13,19 @@ use task_source::networking::NetworkingTaskSource;
 pub struct NetworkListener<Listener: PreInvoke + Send + 'static> {
     pub context: Arc<Mutex<Listener>>,
     pub task_source: NetworkingTaskSource,
-    pub wrapper: Option<RunnableWrapper>,
+    pub canceller: Option<TaskCanceller>,
 }
 
 impl<Listener: PreInvoke + Send + 'static> NetworkListener<Listener> {
     pub fn notify<A: Action<Listener> + Send + 'static>(&self, action: A) {
-        let runnable = box ListenerRunnable {
+        let task = box ListenerTask {
             context: self.context.clone(),
             action: action,
         };
-        let result = if let Some(ref wrapper) = self.wrapper {
-            self.task_source.queue_with_wrapper(runnable, wrapper)
+        let result = if let Some(ref canceller) = self.canceller {
+            self.task_source.queue_with_canceller(task, canceller)
         } else {
-            self.task_source.queue_wrapperless(runnable)
+            self.task_source.queue_unconditionally(task)
         };
         if let Err(err) = result {
             warn!("failed to deliver network data: {:?}", err);
@@ -50,13 +50,17 @@ pub trait PreInvoke {
 }
 
 
-struct ListenerRunnable<A: Action<Listener> + Send + 'static, Listener: PreInvoke + Send> {
+struct ListenerTask<A: Action<Listener> + Send + 'static, Listener: PreInvoke + Send> {
     context: Arc<Mutex<Listener>>,
     action: A,
 }
 
-impl<A: Action<Listener> + Send + 'static, Listener: PreInvoke + Send> Runnable for ListenerRunnable<A, Listener> {
-    fn handler(self: Box<ListenerRunnable<A, Listener>>) {
+impl<A, Listener> Task for ListenerTask<A, Listener>
+where
+    A: Action<Listener> + Send + 'static,
+    Listener: PreInvoke + Send,
+{
+    fn run(self: Box<Self>) {
         let this = *self;
         let mut context = this.context.lock().unwrap();
         if context.should_invoke() {

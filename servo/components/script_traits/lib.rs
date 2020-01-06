@@ -860,6 +860,12 @@ pub trait Painter: SpeculativePainter {
                           -> DrawAPaintImageResult;
 }
 
+impl fmt::Debug for Painter {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_tuple("Painter").field(&format_args!("..")).finish()
+    }
+}
+
 
 
 #[derive(Clone, Debug, Deserialize, HeapSizeOf, Serialize)]

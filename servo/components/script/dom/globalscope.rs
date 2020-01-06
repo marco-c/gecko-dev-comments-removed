@@ -38,7 +38,7 @@ use msg::constellation_msg::PipelineId;
 use net_traits::{CoreResourceThread, ResourceThreads, IpcSend};
 use profile_traits::{mem, time};
 use script_runtime::{CommonScriptMsg, ScriptChan, ScriptPort};
-use script_thread::{MainThreadScriptChan, RunnableWrapper, ScriptThread};
+use script_thread::{MainThreadScriptChan, ScriptThread};
 use script_traits::{MsDuration, ScriptToConstellationChan, TimerEvent};
 use script_traits::{TimerEventId, TimerSchedulerMsg, TimerSource};
 use servo_url::{MutableOrigin, ServoUrl};
@@ -47,6 +47,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::ffi::CString;
 use std::rc::Rc;
+use task::TaskCanceller;
 use task_source::file_reading::FileReadingTaskSource;
 use task_source::networking::NetworkingTaskSource;
 use task_source::performance_timeline::PerformanceTimelineTaskSource;
@@ -314,28 +315,32 @@ impl GlobalScope {
 
         
         
-        let event = ErrorEvent::new(self,
-                                    atom!("error"),
-                                    EventBubbles::DoesNotBubble,
-                                    EventCancelable::Cancelable,
-                                    error_info.message.as_str().into(),
-                                    error_info.filename.as_str().into(),
-                                    error_info.lineno,
-                                    error_info.column,
-                                    value);
+        let event = ErrorEvent::new(
+            self,
+            atom!("error"),
+            EventBubbles::DoesNotBubble,
+            EventCancelable::Cancelable,
+            error_info.message.as_str().into(),
+            error_info.filename.as_str().into(),
+            error_info.lineno,
+            error_info.column,
+            value,
+        );
 
         
         let event_status = event.upcast::<Event>().fire(self.upcast::<EventTarget>());
 
         
+        self.in_error_reporting_mode.set(false);
+
+        
         if event_status == EventStatus::NotCanceled {
+            
             if let Some(dedicated) = self.downcast::<DedicatedWorkerGlobalScope>() {
                 dedicated.forward_error_to_worker_object(error_info);
             }
         }
 
-        
-        self.in_error_reporting_mode.set(false);
     }
 
     
@@ -479,12 +484,12 @@ impl GlobalScope {
 
     
     
-    pub fn get_runnable_wrapper(&self) -> RunnableWrapper {
+    pub fn task_canceller(&self) -> TaskCanceller {
         if let Some(window) = self.downcast::<Window>() {
-            return window.get_runnable_wrapper();
+            return window.task_canceller();
         }
         if let Some(worker) = self.downcast::<WorkerGlobalScope>() {
-            return worker.get_runnable_wrapper();
+            return worker.task_canceller();
         }
         unreachable!();
     }
