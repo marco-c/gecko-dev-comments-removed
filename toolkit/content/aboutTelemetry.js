@@ -236,13 +236,7 @@ var Settings = {
         } else {
           
           let mainWindow = getMainWindowWithPreferencesPane();
-          
-          
-          if (Preferences.get("browser.preferences.useOldOrganization")) {
-            mainWindow.openAdvancedPreferences("dataChoicesTab", {origin: "aboutTelemetry"});
-          } else {
-            mainWindow.openPreferences("paneAdvanced", {origin: "aboutTelemetry"});
-          }
+          mainWindow.openPreferences("privacy-reports", {origin: "aboutTelemetry"});
         }
       });
     }
