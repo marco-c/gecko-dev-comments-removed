@@ -41,7 +41,6 @@ function isAutocompleteDisabled(aField) {
 
 
 
-
 function FormHistoryClient({ formField, inputName }) {
   if (formField && inputName != this.SEARCHBAR_ID) {
     let window = formField.ownerGlobal;

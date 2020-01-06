@@ -160,6 +160,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
   removeValueAt(index, removeFromDatabase) {
     this._checkIndexBounds(index);
     
