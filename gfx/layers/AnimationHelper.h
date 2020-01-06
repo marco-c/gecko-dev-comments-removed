@@ -75,6 +75,18 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class CompositorAnimationStorage final
 {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
@@ -162,8 +174,8 @@ public:
 
 
   void Clear();
-
   void ClearById(const uint64_t& aId);
+
 private:
   ~CompositorAnimationStorage() { };
 
@@ -172,16 +184,16 @@ private:
   AnimationsTable mAnimations;
 };
 
+
+
+
+
+
 class AnimationHelper
 {
 public:
 
-
   
-
-
-
-
 
 
 
@@ -194,9 +206,6 @@ public:
                              StyleAnimationValue& aAnimationValue,
                              bool& aHasInEffectAnimations);
   
-
-
-
 
 
 
