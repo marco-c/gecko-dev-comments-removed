@@ -202,6 +202,13 @@ enum class TransformStyle : uint32_t {
   Sentinel 
 };
 
+enum class WrAnimationType : uint32_t {
+  Transform = 0,
+  Opacity = 1,
+
+  Sentinel 
+};
+
 enum class WrExternalImageType : uint32_t {
   NativeTexture = 0,
   RawData = 1,
@@ -650,6 +657,16 @@ struct Shadow {
     return offset == aOther.offset &&
            color == aOther.color &&
            blur_radius == aOther.blur_radius;
+  }
+};
+
+struct WrAnimationProperty {
+  WrAnimationType effect_type;
+  uint64_t id;
+
+  bool operator==(const WrAnimationProperty& aOther) const {
+    return effect_type == aOther.effect_type &&
+           id == aOther.id;
   }
 };
 
@@ -1276,7 +1293,7 @@ WR_FUNC;
 WR_INLINE
 void wr_dp_push_stacking_context(WrState *aState,
                                  LayoutRect aBounds,
-                                 uint64_t aAnimationId,
+                                 const WrAnimationProperty *aAnimation,
                                  const float *aOpacity,
                                  const LayoutTransform *aTransform,
                                  TransformStyle aTransformStyle,
