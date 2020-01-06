@@ -197,12 +197,14 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   do {
     mAvoidActiveTabCount--;
 
-    RunnableEpochQueue* queue = mLabeled.Get(group);
-    if (!queue) {
+    auto queueEntry = mLabeled.Lookup(group);
+    if (!queueEntry) {
       
       group = NextSchedulerGroup(group);
       continue;
     }
+
+    RunnableEpochQueue* queue = queueEntry.Data();
     MOZ_ASSERT(!queue->IsEmpty());
 
     QueueEntry& first = queue->FirstElement();
@@ -226,7 +228,7 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
       }
       QueueEntry entry = queue->Pop();
       if (queue->IsEmpty()) {
-        mLabeled.Remove(group);
+        queueEntry.Remove();
       }
       return entry.mRunnable.forget();
     }
