@@ -94,25 +94,6 @@ iframe {
 
 
 
-statusbar {
-  min-width: 1px; 
-
-  min-height: 15px !important;
-  margin: 0px !important;
-  
-  padding: 0px 16px 1px 1px;
-  -moz-appearance: statusbar;
-  text-shadow: rgba(255, 255, 255, 0.4) 0 1px;
-}
-
-statusbarpanel {
-  -moz-box-align: center;
-  -moz-box-pack: center;
-  padding: 0 4px;
-}
-
-
-
 sidebarheader {
   background-color: -moz-Dialog;
   color: -moz-dialogText;
@@ -129,13 +110,6 @@ sidebarheader {
 
 :root:-moz-lwtheme-brighttext {
   text-shadow: 1px 1px 1.5px black;
-}
-
-statusbar:-moz-lwtheme {
-  -moz-appearance: none;
-  background: none;
-  border-style: none;
-  text-shadow: inherit;
 }
 
 .inset {
