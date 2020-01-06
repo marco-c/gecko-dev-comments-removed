@@ -129,5 +129,10 @@ this.updateAppInfo = function(options) {
   };
 
   registrar.registerFactory(id, "XULAppInfo", cid, factory);
+
+  
+  
+  
+  Cc.initialize(Cc[cid], cid);
 };
 
