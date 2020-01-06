@@ -470,6 +470,8 @@ SERVO_BINDING_FUNC(Servo_ComputedValues_Inherit, ServoComputedValuesStrong,
 SERVO_BINDING_FUNC(Servo_ComputedValues_GetVisitedStyle,
                    ServoComputedValuesStrong,
                    ServoComputedValuesBorrowed values)
+SERVO_BINDING_FUNC(Servo_ComputedValues_GetStyleBits, uint64_t,
+                   ServoComputedValuesBorrowed values)
 
 
 
