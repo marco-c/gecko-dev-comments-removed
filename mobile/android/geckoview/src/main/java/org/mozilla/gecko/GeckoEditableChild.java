@@ -134,13 +134,7 @@ final class GeckoEditableChild extends JNIObject implements IGeckoEditableChild 
             Log.d(LOGTAG, "notifyIME(" + GeckoEditable.getConstantName(
                           GeckoEditableListener.class, "NOTIFY_IME_", type) + ")");
         }
-        if (type == GeckoEditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION) {
-            
-            
-            
-            
-            return;
-        } else if (type == GeckoEditableListener.NOTIFY_IME_TO_CANCEL_COMPOSITION) {
+        if (type == GeckoEditableListener.NOTIFY_IME_TO_CANCEL_COMPOSITION) {
             
             
             
