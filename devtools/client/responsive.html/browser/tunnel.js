@@ -419,8 +419,6 @@ MessageManagerTunnel.prototype = {
     "PageInfo:",
     
     "Printing:",
-    
-    "Social:",
     "PageMetadata:",
     
     "ViewSource:",
@@ -439,8 +437,6 @@ MessageManagerTunnel.prototype = {
     "PageInfo:",
     
     "Printing:",
-    
-    "Social:",
     "PageMetadata:",
     
     "ViewSource:",

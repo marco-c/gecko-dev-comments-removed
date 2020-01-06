@@ -5229,18 +5229,6 @@ pref("memory.blob_report.stack_frames", 0);
 
 
 
-pref("social.whitelist", "https://mozsocial.cliqz.com");
-
-
-pref("social.directories", "https://activations.cdn.mozilla.net");
-
-
-
-pref("social.remote-install.enabled", true);
-pref("social.toast-notifications.enabled", true);
-
-
-
 pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
