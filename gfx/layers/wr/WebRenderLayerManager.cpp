@@ -191,7 +191,7 @@ PopulateScrollData(WebRenderScrollData& aTarget, Layer* aLayer)
 void
 WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
                                                               nsDisplayListBuilder* aDisplayListBuilder,
-                                                              StackingContextHelper& aSc,
+                                                              const StackingContextHelper& aSc,
                                                               wr::DisplayListBuilder& aBuilder)
 {
   nsDisplayList savedItems;
@@ -721,12 +721,6 @@ WebRenderLayerManager::DidComposite(uint64_t aTransactionId,
                                     const mozilla::TimeStamp& aCompositeEnd)
 {
   MOZ_ASSERT(mWidget);
-
-  
-  
-  
-  
-  RefPtr<WebRenderLayerManager> selfRef = this;
 
   
   

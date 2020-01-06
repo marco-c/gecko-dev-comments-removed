@@ -2032,13 +2032,6 @@ public:
 
 
 
-  virtual bool MustPaintOnContentSide() const { return false; }
-
-  
-
-
-
-
   virtual nsDisplayList* GetSameCoordinateSystemChildren() { return nullptr; }
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) {}
   
@@ -3288,7 +3281,6 @@ public:
                                    bool* aSnap) override;
   virtual mozilla::Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) override;
   virtual bool ProvidesFontSmoothingBackgroundColor(nscolor* aColor) override;
-  virtual bool MustPaintOnContentSide() const override { return true; }
 
   
 
@@ -3877,6 +3869,12 @@ public:
     NS_NOTREACHED("We never returned nullptr for GetUnderlyingFrame!");
     return nullptr;
   }
+
+  virtual bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                       const StackingContextHelper& aSc,
+                                       nsTArray<WebRenderParentCommand>& aParentCommands,
+                                       mozilla::layers::WebRenderLayerManager* aManager,
+                                       nsDisplayListBuilder* aDisplayListBuilder) override;
 
 protected:
   nsDisplayWrapList() {}
