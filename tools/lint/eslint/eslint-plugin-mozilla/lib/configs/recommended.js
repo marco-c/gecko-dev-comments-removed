@@ -104,6 +104,9 @@ module.exports = {
     
 
     
+    "dot-notation": "error",
+
+    
     "eol-last": "error",
 
     

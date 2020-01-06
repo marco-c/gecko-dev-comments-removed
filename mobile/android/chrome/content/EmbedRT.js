@@ -38,7 +38,7 @@ var EmbedRT = {
       }
     );
 
-    sandbox["console"] = new ConsoleAPI({ consoleID: "script/" + scriptURL });
+    sandbox.console = new ConsoleAPI({ consoleID: "script/" + scriptURL });
 
     
     
@@ -55,7 +55,7 @@ var EmbedRT = {
       };
 
       try {
-        sandbox["load"](params);
+        sandbox.load(params);
       } catch(e) {
         dump("Exception calling 'load' method in script: " + scriptURL + "\n" + e);
       }

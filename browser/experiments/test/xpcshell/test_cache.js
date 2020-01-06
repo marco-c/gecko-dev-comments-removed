@@ -388,7 +388,7 @@ add_task(async function test_expiration() {
 
   
   
-  gManifestObject["experiments"] = gManifestObject["experiments"].slice(1, 1);
+  gManifestObject.experiments = gManifestObject.experiments.slice(1, 1);
   await experiments.updateManifest();
   validateCache([...experiments._experiments.keys()], [EXPERIMENT2_ID]);
 

@@ -732,13 +732,13 @@ function openPreferences(paneID, extraArgs) {
     histogram.add("other");
   }
   function switchToAdvancedSubPane(doc) {
-    if (extraArgs && extraArgs["advancedTab"]) {
+    if (extraArgs && extraArgs.advancedTab) {
       
       
       
       let advancedPaneTabs = doc.getElementById("advancedPrefs");
       if (advancedPaneTabs) {
-        advancedPaneTabs.selectedTab = doc.getElementById(extraArgs["advancedTab"]);
+        advancedPaneTabs.selectedTab = doc.getElementById(extraArgs.advancedTab);
       }
     }
   }
@@ -751,9 +751,9 @@ function openPreferences(paneID, extraArgs) {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
   let friendlyCategoryName = internalPrefCategoryNameToFriendlyName(paneID);
   let params;
-  if (extraArgs && extraArgs["urlParams"]) {
+  if (extraArgs && extraArgs.urlParams) {
     params = new URLSearchParams();
-    let urlParams = extraArgs["urlParams"];
+    let urlParams = extraArgs.urlParams;
     for (let name in urlParams) {
       if (urlParams[name] !== undefined) {
         params.set(name, urlParams[name]);
