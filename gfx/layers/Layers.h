@@ -2315,20 +2315,6 @@ public:
     mChildrenChanged = aVal;
   }
 
-  void SetEventRegionsOverride(EventRegionsOverride aVal) {
-    if (mEventRegionsOverride == aVal) {
-      return;
-    }
-
-    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) EventRegionsOverride", this));
-    mEventRegionsOverride = aVal;
-    Mutated();
-  }
-
-  EventRegionsOverride GetEventRegionsOverride() const {
-    return mEventRegionsOverride;
-  }
-
   
   
   virtual void SetInvalidCompositeRect(const gfx::IntRect* aRect) {}
@@ -2418,7 +2404,6 @@ protected:
   
   
   bool mChildrenChanged;
-  EventRegionsOverride mEventRegionsOverride;
 };
 
 
@@ -2841,6 +2826,25 @@ public:
 
 
 
+
+  void SetEventRegionsOverride(EventRegionsOverride aVal) {
+    if (mEventRegionsOverride == aVal) {
+      return;
+    }
+
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) EventRegionsOverride", this));
+    mEventRegionsOverride = aVal;
+    Mutated();
+  }
+
+  EventRegionsOverride GetEventRegionsOverride() const {
+    return mEventRegionsOverride;
+  }
+
+  
+
+
+
   void DetachReferentLayer(Layer* aLayer)
   {
     mFirstChild = mLastChild = nullptr;
@@ -2861,7 +2865,9 @@ public:
 
 protected:
   RefLayer(LayerManager* aManager, void* aImplData)
-    : ContainerLayer(aManager, aImplData) , mId(0)
+    : ContainerLayer(aManager, aImplData)
+    , mId(0)
+    , mEventRegionsOverride(EventRegionsOverride::NoOverride)
   {}
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
@@ -2870,6 +2876,7 @@ protected:
 
   
   uint64_t mId;
+  EventRegionsOverride mEventRegionsOverride;
 };
 
 void SetAntialiasingFlags(Layer* aLayer, gfx::DrawTarget* aTarget);

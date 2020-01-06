@@ -651,6 +651,10 @@ GetEventRegionsOverride(HitTestingTreeNode* aParent,
   
   
   EventRegionsOverride result = aLayer.GetEventRegionsOverride();
+  if (result != EventRegionsOverride::NoOverride) {
+    
+    MOZ_ASSERT(aLayer.GetReferentId());
+  }
   if (aParent) {
     result |= aParent->GetEventRegionsOverride();
   }
