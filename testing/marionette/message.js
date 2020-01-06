@@ -119,6 +119,16 @@ Message.Origin = {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class Command extends Message {
   constructor(messageID, name, params = {}) {
     super(messageID);
@@ -226,7 +236,9 @@ const validator = {
 
 
 
+
 const ResponseBody = () => new Proxy({}, validator);
+
 
 
 
@@ -280,6 +292,7 @@ class Response extends Message {
   }
 
   
+
 
 
 
