@@ -1747,19 +1747,44 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
 
   
   CSSPoint destination = GetKeyboardDestination(aEvent.mAction);
-  nsIScrollableFrame::ScrollUnit scrollUnit = KeyboardScrollAction::GetScrollUnit(aEvent.mAction.mType);
+  bool scrollSnapped = MaybeAdjustDestinationForScrollSnapping(aEvent, destination);
+
+  
+  if (!gfxPrefs::SmoothScrollEnabled()) {
+    CancelAnimation();
+
+    
+    
+    ParentLayerPoint startPoint = destination * mFrameMetrics.GetZoom();
+    ParentLayerPoint endPoint = mFrameMetrics.GetScrollOffset() * mFrameMetrics.GetZoom();
+    ParentLayerPoint delta = endPoint - startPoint;
+
+    ScreenPoint distance = ToScreenCoordinates(
+        ParentLayerPoint(fabs(delta.x), fabs(delta.y)), startPoint);
+
+    OverscrollHandoffState handoffState(
+        *mInputQueue->GetCurrentKeyboardBlock()->GetOverscrollHandoffChain(),
+        distance,
+        ScrollSource::Keyboard);
+
+    CallDispatchScroll(startPoint, endPoint, handoffState);
+
+    SetState(NOTHING);
+
+    return nsEventStatus_eConsumeDoDefault;
+  }
 
   
   
   
   ReentrantMonitorAutoEnter lock(mMonitor);
 
-  if (Maybe<CSSPoint> snapPoint = FindSnapPointNear(destination, scrollUnit)) {
+  if (scrollSnapped) {
     
     
     
-    APZC_LOG("%p keyboard scrolling to snap point %s\n", this, Stringify(*snapPoint).c_str());
-    SmoothScrollTo(*snapPoint);
+    APZC_LOG("%p keyboard scrolling to snap point %s\n", this, Stringify(destination).c_str());
+    SmoothScrollTo(destination);
     return nsEventStatus_eConsumeDoDefault;
   }
 
@@ -4359,6 +4384,21 @@ bool AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
   if (Maybe<CSSPoint> snapPoint = FindSnapPointNear(destination, unit)) {
     aDelta = (*snapPoint - aStartPosition) * zoom;
     aStartPosition = *snapPoint;
+    return true;
+  }
+  return false;
+}
+
+bool AsyncPanZoomController::MaybeAdjustDestinationForScrollSnapping(
+    const KeyboardInput& aEvent,
+    CSSPoint& aDestination)
+{
+  ReentrantMonitorAutoEnter lock(mMonitor);
+  nsIScrollableFrame::ScrollUnit unit =
+      KeyboardScrollAction::GetScrollUnit(aEvent.mAction.mType);
+
+  if (Maybe<CSSPoint> snapPoint = FindSnapPointNear(aDestination, unit)) {
+    aDestination = *snapPoint;
     return true;
   }
   return false;

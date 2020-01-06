@@ -505,6 +505,13 @@ public:
   bool MustStayActive() override {
     return false;
   }
+
+  
+
+
+  bool AllowScrollHandoff() const {
+    return false;
+  }
 };
 
 } 

@@ -50,7 +50,10 @@ enum class ScrollSource {
   Touch,
 
   
-  Wheel
+  Wheel,
+
+  
+  Keyboard,
 };
 
 typedef uint32_t TouchBehaviorFlags;
