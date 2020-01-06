@@ -131,11 +131,11 @@ nsTextBoxFrame::Init(nsIContent*       aContent,
 }
 
 void
-nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
     
     RegUnregAccessKey(false);
-    nsLeafBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+    nsLeafBoxFrame::DestroyFrom(aDestructRoot);
 }
 
 bool

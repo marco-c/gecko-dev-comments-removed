@@ -135,7 +135,7 @@ nsTextControlFrame::~nsTextControlFrame()
 }
 
 void
-nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   mScrollEvent.Revoke();
 
@@ -155,11 +155,11 @@ nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostD
   }
 
   
-  aPostDestroyData.AddAnonymousContent(mRootNode.forget());
-  aPostDestroyData.AddAnonymousContent(mPlaceholderDiv.forget());
-  aPostDestroyData.AddAnonymousContent(mPreviewDiv.forget());
+  DestroyAnonymousContent(mRootNode.forget());
+  DestroyAnonymousContent(mPlaceholderDiv.forget());
+  DestroyAnonymousContent(mPreviewDiv.forget());
 
-  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsContainerFrame::DestroyFrom(aDestructRoot);
 }
 
 LogicalSize

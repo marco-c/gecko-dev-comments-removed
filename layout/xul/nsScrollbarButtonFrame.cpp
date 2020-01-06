@@ -290,10 +290,10 @@ nsScrollbarButtonFrame::GetParentWithTag(nsAtom* toFind, nsIFrame* start,
 }
 
 void
-nsScrollbarButtonFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsScrollbarButtonFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   
   
   StopRepeat();
-  nsButtonBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsButtonBoxFrame::DestroyFrom(aDestructRoot);
 }

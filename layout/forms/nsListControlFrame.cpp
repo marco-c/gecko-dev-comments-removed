@@ -128,7 +128,7 @@ static bool ShouldFireDropDownEvent() {
 
 
 void
-nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   
   ENSURE_TRUE(mContent);
@@ -157,7 +157,7 @@ nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostD
   }
 
   nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
-  nsHTMLScrollFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsHTMLScrollFrame::DestroyFrom(aDestructRoot);
 }
 
 void

@@ -46,7 +46,7 @@ public:
   void SetInitialChildList(ChildListID aListID,
                            nsFrameList& aChildList) override;
 
-  void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  void DestroyFrom(nsIFrame* aDestructRoot) override;
 
   
   nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;

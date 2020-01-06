@@ -956,7 +956,7 @@ nsBoxFrame::DoXULLayout(nsBoxLayoutState& aState)
 }
 
 void
-nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   
   RegUnregAccessKey(false);
@@ -964,7 +964,7 @@ nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyDa
   
   SetXULLayoutManager(nullptr);
 
-  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsContainerFrame::DestroyFrom(aDestructRoot);
 }
 
 #ifdef DEBUG_LAYOUT

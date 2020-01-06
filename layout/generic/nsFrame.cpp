@@ -243,12 +243,11 @@ nsReflowStatus::UpdateTruncated(const ReflowInput& aReflowInput,
   }
 }
 
- void
-nsIFrame::DestroyAnonymousContent(nsPresContext* aPresContext,
-                                  already_AddRefed<nsIContent>&& aContent)
+void
+nsIFrame::DestroyAnonymousContent(already_AddRefed<nsIContent> aContent)
 {
-  aPresContext->PresShell()->FrameConstructor()
-              ->DestroyAnonymousContent(Move(aContent));
+  PresContext()->PresShell()->FrameConstructor()
+               ->DestroyAnonymousContent(mozilla::Move(aContent));
 }
 
 
@@ -727,7 +726,7 @@ nsFrame::Init(nsIContent*       aContent,
 }
 
 void
-nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
     "destroy called on frame while scripts not blocked");
@@ -763,7 +762,14 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
     }
   }
 
-  if (IsPrimaryFrame()) {
+  
+  
+  
+  
+  
+  
+  bool isPrimaryFrame = (mContent && mContent->GetPrimaryFrame() == this);
+  if (isPrimaryFrame) {
     
     ActiveLayerTracker::TransferActivityToContent(this, mContent);
 
@@ -818,15 +824,8 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
   }
 
   
-  if (IsPrimaryFrame()) {
+  if (isPrimaryFrame) {
     mContent->SetPrimaryFrame(nullptr);
-
-    
-    
-    if (HasAnyStateBits(NS_FRAME_GENERATED_CONTENT) &&
-        mContent->IsRootOfNativeAnonymousSubtree()) {
-      aPostDestroyData.AddGeneratedContent(mContent.forget());
-    }
   }
 
   
@@ -10844,6 +10843,16 @@ nsIFrame::IsSelected() const
 {
   return (GetContent() && GetContent()->IsSelectionDescendant()) ?
     IsFrameSelected() : false;
+}
+
+ void
+nsIFrame::DestroyContentArray(ContentArray* aArray)
+{
+  for (nsIContent* content : *aArray) {
+    content->UnbindFromTree();
+    NS_RELEASE(content);
+  }
+  delete aArray;
 }
 
  void

@@ -6193,7 +6193,6 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
   item->mIsAnonymousContentCreatorContent =
     aFlags & ITEM_IS_ANONYMOUSCONTENTCREATOR_CONTENT;
   if (isGeneratedContent) {
-    
     NS_ADDREF(item->mContent);
   }
   item->mIsRootPopupgroup =
@@ -6281,6 +6280,22 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     item->mIsLineParticipant = true;
     aItems.LineParticipantItemAdded();
   }
+}
+
+static void
+AddGenConPseudoToFrame(nsIFrame* aOwnerFrame, nsIContent* aContent)
+{
+  
+  
+
+  aOwnerFrame = nsLayoutUtils::FirstContinuationOrIBSplitSibling(aOwnerFrame);
+  nsIFrame::ContentArray* value =
+    aOwnerFrame->GetProperty(nsIFrame::GenConProperty());
+  if (!value) {
+    value = new nsIFrame::ContentArray;
+    aOwnerFrame->AddProperty(nsIFrame::GenConProperty(), value);
+  }
+  value->AppendElement(aContent);
 }
 
 
@@ -6378,20 +6393,21 @@ nsCSSFrameConstructor::ConstructFramesFromItem(nsFrameConstructorState& aState,
     
     
     aState.mAdditionalStateBits |= NS_FRAME_GENERATED_CONTENT;
-  }
 
-  
-  ConstructFrameFromItemInternal(item, aState, adjParentFrame, aFrameItems);
-
-  if (item.mIsGeneratedContent) {
     
     
-    item.mContent->Release();
+    
+    
+    
+    ::AddGenConPseudoToFrame(aParentFrame, item.mContent);
 
     
     
     item.mIsGeneratedContent = false;
   }
+
+  
+  ConstructFrameFromItemInternal(item, aState, adjParentFrame, aFrameItems);
 
   aState.mAdditionalStateBits = savedStateBits;
 }
@@ -6532,12 +6548,13 @@ AdjustAppendParentForAfterContent(nsFrameManager* aFrameManager,
   
   
   
-  
-  if (nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
+  nsIFrame* afterBeforeOwnerFrame =
+    nsLayoutUtils::FirstContinuationOrIBSplitSibling(aParentFrame);
+  if (afterBeforeOwnerFrame->GetProperty(nsIFrame::GenConProperty()) ||
+      nsLayoutUtils::HasPseudoStyle(aContainer, aParentFrame->StyleContext(),
                                     CSSPseudoElementType::after,
                                     aParentFrame->PresContext()) ||
-      aFrameManager->GetDisplayContentsStyleFor(aContainer) ||
-      aFrameManager->GetAllRegisteredDisplayContentsStylesIn(aContainer)) {
+      aFrameManager->GetDisplayContentsStyleFor(aContainer)) {
     nsIFrame* afterFrame = nullptr;
     nsContainerFrame* parent =
       static_cast<nsContainerFrame*>(aParentFrame->LastContinuation());

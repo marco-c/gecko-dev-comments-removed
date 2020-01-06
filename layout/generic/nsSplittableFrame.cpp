@@ -30,7 +30,7 @@ nsSplittableFrame::Init(nsIContent*       aContent,
 }
 
 void
-nsSplittableFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
+nsSplittableFrame::DestroyFrom(nsIFrame* aDestructRoot)
 {
   
   if (mPrevContinuation || mNextContinuation) {
@@ -38,7 +38,7 @@ nsSplittableFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDe
   }
 
   
-  nsFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsFrame::DestroyFrom(aDestructRoot);
 }
 
 nsSplittableType

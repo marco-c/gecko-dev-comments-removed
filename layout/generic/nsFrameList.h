@@ -9,8 +9,7 @@
 
 #include <stdio.h> 
 #include "nsDebug.h"
-#include "nsTArray.h"
-#include "mozilla/RefPtr.h"
+#include "nsTArrayForwardDeclare.h"
 #include "mozilla/ReverseIterator.h"
 
 #if defined(DEBUG) || defined(MOZ_DUMP_PAINTING)
@@ -20,7 +19,6 @@
 #endif
 
 class nsContainerFrame;
-class nsIContent;
 class nsIFrame;
 class nsIPresShell;
 class nsPresContext;
@@ -48,19 +46,6 @@ namespace layout {
       
       
       kNoReflowPrincipalList        = 0x8000
-  };
-
-  
-  
-  struct PostFrameDestroyData {
-    AutoTArray<RefPtr<nsIContent>, 50> mAnonymousContent;
-    AutoTArray<RefPtr<nsIContent>, 50> mGeneratedContent;
-    void AddAnonymousContent(already_AddRefed<nsIContent>&& aContent) {
-      mAnonymousContent.AppendElement(aContent);
-    }
-    void AddGeneratedContent(already_AddRefed<nsIContent>&& aContent) {
-      mGeneratedContent.AppendElement(aContent);
-    }
   };
 } 
 } 
@@ -110,8 +95,7 @@ public:
 
 
 
-  void DestroyFramesFrom(nsIFrame* aDestructRoot,
-                         mozilla::layout::PostFrameDestroyData& aPostDestroyData);
+  void DestroyFramesFrom(nsIFrame* aDestructRoot);
 
   void Clear() { mFirstChild = mLastChild = nullptr; }
 
