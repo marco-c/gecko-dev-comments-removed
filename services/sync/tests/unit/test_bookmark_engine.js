@@ -563,6 +563,10 @@ add_task(async function test_sync_dateAdded() {
 
   let collection = server.user("foo").collection("bookmarks");
 
+  
+  
+  engine.lastSync = 1;
+
   Svc.Obs.notify("weave:engine:start-tracking");   
 
   

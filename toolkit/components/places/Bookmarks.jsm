@@ -150,6 +150,12 @@ var Bookmarks = Object.freeze({
    
    tagsGuid:    "tags________",
 
+   
+
+
+
+   userContentRoots: ["toolbar_____", "menu________", "unfiled_____", "mobile______"],
+
   
 
 
@@ -281,7 +287,7 @@ var Bookmarks = Object.freeze({
     }
 
     if (!PlacesUtils.isValidGuid(tree.guid)) {
-      throw new Error("The parent guid is not valid.");
+      throw new Error(`The parent guid is not valid (${tree.guid} ${tree.title}).`);
     }
 
     if (tree.guid == this.rootGuid) {
@@ -299,6 +305,7 @@ var Bookmarks = Object.freeze({
 
     
     let insertInfos = [];
+    let insertLivemarkInfos = [];
     let urlsThatMightNeedPlaces = [];
 
     
@@ -356,8 +363,14 @@ var Bookmarks = Object.freeze({
                                         (b.dateAdded && b.lastModified >= b.dateAdded) },
           index: { replaceWith: indexToUse++ },
           source: { replaceWith: source },
+          annos: {},
+          keyword: { validIf: b => b.type == TYPE_BOOKMARK },
+          charset: { validIf: b => b.type == TYPE_BOOKMARK },
+          postData: { validIf: b => b.type == TYPE_BOOKMARK },
+          tags: { validIf: b => b.type == TYPE_BOOKMARK },
           children: { validIf: b => b.type == TYPE_FOLDER && Array.isArray(b.children) }
         });
+
         if (shouldUseNullIndices) {
           insertInfo.index = null;
         }
@@ -366,6 +379,21 @@ var Bookmarks = Object.freeze({
         if (insertInfo.type == Bookmarks.TYPE_BOOKMARK) {
           urlsThatMightNeedPlaces.push(insertInfo.url);
         }
+
+        
+        
+        
+        if (isLivemark(insertInfo)) {
+          
+          let livemarkInfo = Object.assign({}, insertInfo);
+
+          
+          delete insertInfo.annos;
+
+          
+          insertLivemarkInfos.push(livemarkInfo);
+        }
+
         insertInfos.push(insertInfo);
         
         
@@ -389,6 +417,7 @@ var Bookmarks = Object.freeze({
       }
       return lastAddedForParent;
     }
+
     
     
     
@@ -406,6 +435,9 @@ var Bookmarks = Object.freeze({
 
       await insertBookmarkTree(insertInfos, source, parent,
                                urlsThatMightNeedPlaces, lastAddedForParent);
+
+      await insertLivemarkData(insertLivemarkInfos);
+
       
       
       
@@ -426,13 +458,32 @@ var Bookmarks = Object.freeze({
         let item = insertInfos[i];
         let itemId = itemIdMap.get(item.guid);
         let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
-        notify(observers, "onItemAdded", [ itemId, parent._id, item.index,
+        
+        let parentId;
+        if (item.guid === parent.guid ||
+            Bookmarks.userContentRoots.includes(item.parentGuid)) {
+          
+          
+          parentId = parent._id;
+        } else {
+          
+          
+          parentId = itemIdMap.get(item.parentGuid);
+        }
+
+        notify(observers, "onItemAdded", [ itemId, parentId, item.index,
                                            item.type, uri, item.title || null,
                                            PlacesUtils.toPRTime(item.dateAdded), item.guid,
                                            item.parentGuid, item.source ],
                                          { isTagging: false });
         
         delete item.source;
+
+        
+        
+        
+        await handleBookmarkItemSpecialData(itemId, item);
+
         insertInfos[i] = Object.assign({}, item);
       }
       return insertInfos;
@@ -698,18 +749,16 @@ var Bookmarks = Object.freeze({
       options.source = Bookmarks.SOURCES.DEFAULT;
     }
 
-    const folderGuids = [this.toolbarGuid, this.menuGuid, this.unfiledGuid,
-                          this.mobileGuid];
     return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: eraseEverything",
       async function(db) {
         let urls;
 
         await db.executeTransaction(async function() {
-          urls = await removeFoldersContents(db, folderGuids, options);
+          urls = await removeFoldersContents(db, Bookmarks.userContentRoots, options);
           const time = PlacesUtils.toPRTime(new Date());
           const syncChangeDelta =
             PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
-          for (let folderGuid of folderGuids) {
+          for (let folderGuid of Bookmarks.userContentRoots) {
             await db.executeCached(
               `UPDATE moz_bookmarks SET lastModified = :time,
                                         syncChangeCounter = syncChangeCounter + :syncChangeDelta
@@ -720,7 +769,7 @@ var Bookmarks = Object.freeze({
 
         
         if (urls && urls.length) {
-          updateFrecency(db, urls, true).catch(Cu.reportError);
+          updateFrecency(db, urls, true).then(null, Cu.reportError);
         }
       }
     );
@@ -1317,6 +1366,16 @@ function insertBookmark(item, parent) {
   });
 }
 
+
+
+
+
+
+
+function isLivemark(node) {
+  return node.annos && node.annos.some(anno => anno.name == PlacesUtils.LMANNO_FEEDURI);
+}
+
 function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: insertBookmarkTree", async function(db) {
     await db.executeTransaction(async function transaction() {
@@ -1355,6 +1414,102 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
 
     return items;
   });
+}
+
+
+
+
+
+
+async function insertLivemarkData(items) {
+  for (let item of items) {
+    let feedURI = null;
+    let siteURI = null;
+    item.annos = item.annos.filter(function(aAnno) {
+      switch (aAnno.name) {
+        case PlacesUtils.LMANNO_FEEDURI:
+          feedURI = NetUtil.newURI(aAnno.value);
+          return false;
+        case PlacesUtils.LMANNO_SITEURI:
+          siteURI = NetUtil.newURI(aAnno.value);
+          return false;
+        default:
+          return true;
+      }
+    });
+
+    let index = null;
+
+    
+    
+    let placeholder = await Bookmarks.fetch(item.guid);
+    index = placeholder.index;
+
+    await Bookmarks.remove(item.guid, {source: item.source});
+
+    if (feedURI) {
+      item.feedURI = feedURI;
+      item.siteURI = siteURI;
+      item.index = index;
+
+      if (item.dateAdded) {
+        item.dateAdded = PlacesUtils.toPRTime(item.dateAdded);
+      }
+      if (item.lastModified) {
+        item.lastModified = PlacesUtils.toPRTime(item.lastModified);
+      }
+
+      let livemark = await PlacesUtils.livemarks.addLivemark(item);
+
+      let id = livemark.id;
+      if (item.annos && item.annos.length) {
+        PlacesUtils.setAnnotationsForItem(id, item.annos,
+                                          item.source);
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+async function handleBookmarkItemSpecialData(itemId, item) {
+  if (item.annos && item.annos.length) {
+    PlacesUtils.setAnnotationsForItem(itemId, item.annos, item.source)
+  }
+  if ("keyword" in item && item.keyword) {
+    
+    
+    
+    let postDataAnno = item.annos &&
+                       item.annos.find(anno => anno.name == PlacesUtils.POST_DATA_ANNO);
+    let postData = item.postData || (postDataAnno && postDataAnno.value);
+    try {
+      await PlacesUtils.keywords.insert({
+        keyword: item.keyword,
+        url: item.url,
+        postData,
+        source: item.source
+      });
+    } catch (ex) {
+      Cu.reportError(`Failed to insert keywords: ${ex}`);
+    }
+  }
+  if ("tags" in item) {
+    try {
+      PlacesUtils.tagging.tagURI(NetUtil.newURI(item.url), item.tags, item._source);
+    } catch (ex) {
+      
+      Cu.reportError(`Unable to set tags "${item.tags.join(", ")}" for ${item.url}: ${ex}`);
+    }
+  }
+  if ("charset" in item && item.charset) {
+    await PlacesUtils.setCharsetForURI(NetUtil.newURI(item.url), item.charset);
+  }
 }
 
 

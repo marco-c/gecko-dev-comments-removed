@@ -11,11 +11,11 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
-Cu.import("resource://gre/modules/PromiseUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
+  "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesBackups",
   "resource://gre/modules/PlacesBackups.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
@@ -246,322 +246,82 @@ BookmarkImporter.prototype = {
 
 
 
+
+
   async importFromJSON(aString) {
-    this._importPromises = [];
-    let deferred = PromiseUtils.defer();
     let nodes =
       PlacesUtils.unwrapNodes(aString, PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER);
 
     if (nodes.length == 0 || !nodes[0].children ||
         nodes[0].children.length == 0) {
-      deferred.resolve(); 
-    } else {
-      
-      nodes[0].children.sort(function sortRoots(aNode, bNode) {
-        if (aNode.root && aNode.root == "tagsFolder")
-          return 1;
-        if (bNode.root && bNode.root == "tagsFolder")
-          return -1;
-        return 0;
-      });
-
-      let batch = {
-        nodes: nodes[0].children,
-        runBatched: () => {
-          if (this._replace) {
-            
-            
-            let excludeItems = PlacesUtils.annotations.getItemsWithAnnotation(
-                                 PlacesUtils.EXCLUDE_FROM_BACKUP_ANNO);
-            
-            
-            
-            let root = PlacesUtils.getFolderContents(PlacesUtils.placesRootId,
-                                                   false, false).root;
-            let childIds = [];
-            for (let i = 0; i < root.childCount; i++) {
-              let childId = root.getChild(i).itemId;
-              if (!excludeItems.includes(childId) &&
-                  childId != PlacesUtils.tagsFolderId) {
-                childIds.push(childId);
-              }
-            }
-            root.containerOpen = false;
-
-            for (let i = 0; i < childIds.length; i++) {
-              let rootItemId = childIds[i];
-              if (PlacesUtils.isRootItem(rootItemId)) {
-                PlacesUtils.bookmarks.removeFolderChildren(rootItemId,
-                                                           this._source);
-              } else {
-                PlacesUtils.bookmarks.removeItem(rootItemId, this._source);
-              }
-            }
-          }
-
-          let searchIds = [];
-          let folderIdMap = [];
-
-          for (let node of batch.nodes) {
-            if (!node.children || node.children.length == 0)
-              continue; 
-
-            if (node.root) {
-              let container = PlacesUtils.placesRootId; 
-              switch (node.root) {
-                case "bookmarksMenuFolder":
-                  container = PlacesUtils.bookmarksMenuFolderId;
-                  break;
-                case "tagsFolder":
-                  container = PlacesUtils.tagsFolderId;
-                  break;
-                case "unfiledBookmarksFolder":
-                  container = PlacesUtils.unfiledBookmarksFolderId;
-                  break;
-                case "toolbarFolder":
-                  container = PlacesUtils.toolbarFolderId;
-                  break;
-                case "mobileFolder":
-                  container = PlacesUtils.mobileFolderId;
-                  break;
-              }
-
-              
-              for (let child of node.children) {
-                let index = child.index;
-                let [folders, searches] =
-                  this.importJSONNode(child, container, index, 0);
-                for (let i = 0; i < folders.length; i++) {
-                  if (folders[i])
-                    folderIdMap[i] = folders[i];
-                }
-                searchIds = searchIds.concat(searches);
-              }
-            } else {
-              let [folders, searches] = this.importJSONNode(
-                node, PlacesUtils.placesRootId, node.index, 0);
-              for (let i = 0; i < folders.length; i++) {
-                if (folders[i])
-                  folderIdMap[i] = folders[i];
-              }
-              searchIds = searchIds.concat(searches);
-            }
-          }
-
-          
-          for (let id of searchIds) {
-            let oldURI = PlacesUtils.bookmarks.getBookmarkURI(id);
-            let uri = fixupQuery(oldURI, folderIdMap);
-            if (!uri.equals(oldURI)) {
-              PlacesUtils.bookmarks.changeBookmarkURI(id, uri, this._source);
-            }
-          }
-
-          deferred.resolve();
-        }
-      };
-
-      PlacesUtils.bookmarks.runInBatchMode(batch, null);
+      return;
     }
-    await deferred.promise;
+
     
     
-    try {
-      await Promise.all(this._importPromises);
-    } finally {
-      delete this._importPromises;
+    nodes = nodes[0].children.filter(node => !node.root || node.root != "tagsFolder");
+
+    
+    if (this._replace) {
+      await PlacesBackups.eraseEverythingIncludingUserRoots({ source: this._source });
+    }
+
+    let folderIdToGuidMap = {};
+    let searchGuids = [];
+
+    
+    
+    
+    for (let node of nodes) {
+      if (!node.children || node.children.length == 0)
+        continue;  
+
+      
+      node.source = this._source;
+
+      
+      let [folders, searches] = translateTreeTypes(node);
+
+      folderIdToGuidMap = Object.assign(folderIdToGuidMap, folders);
+      searchGuids = searchGuids.concat(searches);
+    }
+
+    
+    for (let node of nodes) {
+      
+      if (!node.children || node.children.length == 0) {
+        continue;
+      }
+
+      
+      
+      
+      if (!PlacesUtils.bookmarks.userContentRoots.includes(node.guid)) {
+        node.parentGuid = PlacesUtils.bookmarks.rootGuid;
+        await PlacesUtils.bookmarks.insert(node);
+      }
+
+      await PlacesUtils.bookmarks.insertTree(node);
+
+      
+      try {
+        insertFaviconsForTree(node);
+      } catch (ex) {
+        Cu.reportError(`Failed to insert favicons: ${ex}`);
+      }
+    }
+
+    
+    
+    for (let guid of searchGuids) {
+      let searchBookmark = await PlacesUtils.bookmarks.fetch(guid);
+      let url = await fixupQuery(searchBookmark.url, folderIdToGuidMap);
+      if (url != searchBookmark.url) {
+        await PlacesUtils.bookmarks.update({ guid, url, source: this._source });
+      }
     }
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  importJSONNode: function BI_importJSONNode(aData, aContainer, aIndex,
-                                             aGrandParentId) {
-    let folderIdMap = [];
-    let searchIds = [];
-    let id = -1;
-    switch (aData.type) {
-      case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER:
-        if (aContainer == PlacesUtils.tagsFolderId) {
-          
-          if (aData.children) {
-            for (let child of aData.children) {
-              try {
-                PlacesUtils.tagging.tagURI(
-                  NetUtil.newURI(child.uri), [aData.title], this._source);
-              } catch (ex) {
-                
-              }
-            }
-            return [folderIdMap, searchIds];
-          }
-        } else if (aData.annos &&
-                   aData.annos.some(anno => anno.name == PlacesUtils.LMANNO_FEEDURI)) {
-          
-          let feedURI = null;
-          let siteURI = null;
-          aData.annos = aData.annos.filter(function(aAnno) {
-            switch (aAnno.name) {
-              case PlacesUtils.LMANNO_FEEDURI:
-                feedURI = NetUtil.newURI(aAnno.value);
-                return false;
-              case PlacesUtils.LMANNO_SITEURI:
-                siteURI = NetUtil.newURI(aAnno.value);
-                return false;
-              default:
-                return true;
-            }
-          });
-
-          if (feedURI) {
-            let lmPromise = PlacesUtils.livemarks.addLivemark({
-              title: aData.title,
-              feedURI,
-              parentId: aContainer,
-              index: aIndex,
-              lastModified: aData.lastModified,
-              siteURI,
-              guid: aData.guid,
-              source: this._source
-            }).then(aLivemark => {
-              let id = aLivemark.id;
-              if (aData.dateAdded)
-                PlacesUtils.bookmarks.setItemDateAdded(id, aData.dateAdded,
-                                                       this._source);
-              if (aData.annos && aData.annos.length)
-                PlacesUtils.setAnnotationsForItem(id, aData.annos,
-                                                  this._source);
-            });
-            this._importPromises.push(lmPromise);
-          }
-        } else {
-          let isMobileFolder = aData.annos &&
-                               aData.annos.some(anno => anno.name == PlacesUtils.MOBILE_ROOT_ANNO);
-          if (isMobileFolder) {
-            
-            
-            
-            
-            id = PlacesUtils.mobileFolderId;
-          } else {
-            
-            
-            id = PlacesUtils.bookmarks.createFolder(
-                   aContainer, aData.title, aIndex, aData.guid, this._source);
-          }
-          folderIdMap[aData.id] = id;
-          
-          if (aData.children) {
-            for (let i = 0; i < aData.children.length; i++) {
-              let child = aData.children[i];
-              let [folders, searches] =
-                this.importJSONNode(child, id, i, aContainer);
-              for (let j = 0; j < folders.length; j++) {
-                if (folders[j])
-                  folderIdMap[j] = folders[j];
-              }
-              searchIds = searchIds.concat(searches);
-            }
-          }
-        }
-        break;
-      case PlacesUtils.TYPE_X_MOZ_PLACE:
-        id = PlacesUtils.bookmarks.insertBookmark(
-               aContainer, NetUtil.newURI(aData.uri), aIndex, aData.title, aData.guid, this._source);
-        if (aData.keyword) {
-          
-          
-          
-          let postDataAnno = aData.annos &&
-                             aData.annos.find(anno => anno.name == PlacesUtils.POST_DATA_ANNO);
-          let postData = aData.postData || (postDataAnno && postDataAnno.value);
-          let kwPromise = PlacesUtils.keywords.insert({ keyword: aData.keyword,
-                                                        url: aData.uri,
-                                                        postData,
-                                                        source: this._source });
-          this._importPromises.push(kwPromise);
-        }
-        if (aData.tags) {
-          let tags = aData.tags.split(",").filter(aTag =>
-            aTag.length <= Ci.nsITaggingService.MAX_TAG_LENGTH);
-          if (tags.length) {
-            try {
-              PlacesUtils.tagging.tagURI(NetUtil.newURI(aData.uri), tags, this._source);
-            } catch (ex) {
-              
-              Cu.reportError(`Unable to set tags "${tags.join(", ")}" for ${aData.uri}: ${ex}`);
-            }
-          }
-        }
-        if (aData.charset) {
-          PlacesUtils.annotations.setPageAnnotation(
-            NetUtil.newURI(aData.uri), PlacesUtils.CHARSET_ANNO, aData.charset,
-            0, Ci.nsIAnnotationService.EXPIRE_NEVER);
-        }
-        if (aData.uri.substr(0, 6) == "place:")
-          searchIds.push(id);
-        if (aData.icon) {
-          try {
-            
-            let faviconURI = NetUtil.newURI("fake-favicon-uri:" + aData.uri);
-            PlacesUtils.favicons.replaceFaviconDataFromDataURL(
-              faviconURI, aData.icon, 0,
-              Services.scriptSecurityManager.getSystemPrincipal());
-            PlacesUtils.favicons.setAndFetchFaviconForPage(
-              NetUtil.newURI(aData.uri), faviconURI, false,
-              PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
-              Services.scriptSecurityManager.getSystemPrincipal());
-          } catch (ex) {
-            Components.utils.reportError("Failed to import favicon data:" + ex);
-          }
-        }
-        if (aData.iconUri) {
-          try {
-            PlacesUtils.favicons.setAndFetchFaviconForPage(
-              NetUtil.newURI(aData.uri), NetUtil.newURI(aData.iconUri), false,
-              PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
-              Services.scriptSecurityManager.getSystemPrincipal());
-          } catch (ex) {
-            Components.utils.reportError("Failed to import favicon URI:" + ex);
-          }
-        }
-        break;
-      case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
-        id = PlacesUtils.bookmarks.insertSeparator(aContainer, aIndex, aData.guid, this._source);
-        break;
-      default:
-        
-    }
-
-    
-    
-    if (id != -1 && id != PlacesUtils.mobileFolderId &&
-        aContainer != PlacesUtils.tagsFolderId &&
-        aGrandParentId != PlacesUtils.tagsFolderId) {
-      if (aData.dateAdded)
-        PlacesUtils.bookmarks.setItemDateAdded(id, aData.dateAdded,
-                                               this._source);
-      if (aData.lastModified)
-        PlacesUtils.bookmarks.setItemLastModified(id, aData.lastModified,
-                                                  this._source);
-      if (aData.annos && aData.annos.length)
-        PlacesUtils.setAnnotationsForItem(id, aData.annos, this._source);
-    }
-
-    return [folderIdMap, searchIds];
-  }
-}
+};
 
 function notifyObservers(topic) {
   Services.obs.notifyObservers(null, topic, "json");
@@ -578,11 +338,219 @@ function notifyObservers(topic) {
 
 
 
-function fixupQuery(aQueryURI, aFolderIdMap) {
-  let convert = function(str, p1, offset, s) {
-    return "folder=" + aFolderIdMap[p1];
-  }
-  let stringURI = aQueryURI.spec.replace(/folder=([0-9]+)/g, convert);
+async function fixupQuery(aQueryURI, aFolderIdMap) {
+  const reGlobal = /folder=([0-9]+)/g;
+  const re = /([0-9]+)/;
 
-  return NetUtil.newURI(stringURI);
+  
+  
+  
+  let uri = aQueryURI.href;
+  let found = uri.match(reGlobal);
+  if (!found) {
+    return uri;
+  }
+
+  let queryFolderGuids = [];
+  for (let folderString of found) {
+    let existingFolderId = folderString.match(re)[0];
+    queryFolderGuids.push(aFolderIdMap[existingFolderId])
+  }
+
+  let newFolderIds = await PlacesUtils.promiseManyItemIds(queryFolderGuids);
+  let convert = function(str, p1) {
+    return "folder=" + newFolderIds.get(aFolderIdMap[p1]);
+  }
+  return uri.replace(reGlobal, convert);
+}
+
+
+
+
+const rootToFolderGuidMap = {
+  "placesRoot": PlacesUtils.bookmarks.rootGuid,
+  "bookmarksMenuFolder": PlacesUtils.bookmarks.menuGuid,
+  "unfiledBookmarksFolder": PlacesUtils.bookmarks.unfiledGuid,
+  "toolbarFolder": PlacesUtils.bookmarks.toolbarGuid,
+  "mobileFolder": PlacesUtils.bookmarks.mobileGuid
+};
+
+
+
+
+
+
+
+
+function fixupRootFolderGuid(node) {
+  if (!node.guid && node.root && node.root in rootToFolderGuidMap) {
+    node.guid = rootToFolderGuidMap[node.root];
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function translateTreeTypes(node) {
+  let folderIdToGuidMap = {};
+  let searchGuids = [];
+
+  
+  if (node.uri) {
+    node.url = node.uri;
+    delete node.uri;
+  }
+
+  switch (node.type) {
+    case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER:
+      node.type = PlacesUtils.bookmarks.TYPE_FOLDER;
+
+      
+      
+      let isMobileFolder = node.annos &&
+                           node.annos.some(anno => anno.name == PlacesUtils.MOBILE_ROOT_ANNO);
+      if (isMobileFolder) {
+        node.guid = PlacesUtils.bookmarks.mobileGuid;
+      } else {
+        
+        fixupRootFolderGuid(node);
+      }
+
+      
+      
+      folderIdToGuidMap[node.id] = node.guid;
+      break;
+    case PlacesUtils.TYPE_X_MOZ_PLACE:
+      node.type = PlacesUtils.bookmarks.TYPE_BOOKMARK;
+
+      if (node.url && node.url.substr(0, 6) == "place:") {
+        searchGuids.push(node.guid);
+      }
+
+      break;
+    case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
+      node.type = PlacesUtils.bookmarks.TYPE_SEPARATOR;
+      if ("title" in node) {
+        delete node.title;
+      }
+      break;
+    default:
+      
+      Cu.reportError(`Unexpected bookmark type ${node.type}`);
+      break;
+  }
+
+  if (node.dateAdded) {
+    node.dateAdded = PlacesUtils.toDate(node.dateAdded);
+  }
+
+  if (node.lastModified) {
+    let lastModified = PlacesUtils.toDate(node.lastModified);
+    
+    
+    if (lastModified >= node.dataAdded) {
+      node.lastModified = lastModified;
+    } else {
+      delete node.lastModified;
+    }
+  }
+
+  if (node.tags) {
+     
+    node.tags = node.tags.split(",").filter(aTag =>
+      aTag.length > 0 && aTag.length <= Ci.nsITaggingService.MAX_TAG_LENGTH);
+
+    
+    if (!node.tags.length) {
+      delete node.tags;
+    }
+  }
+
+  
+  if (node.postData == null) {
+    delete node.postData;
+  }
+
+  
+  if (!node.children) {
+    return [folderIdToGuidMap, searchGuids];
+  }
+
+  
+  node.children = node.children.sort((a, b) => {
+    return a.index - b.index;
+  });
+
+  
+  for (let child of node.children) {
+    let [folders, searches] = translateTreeTypes(child);
+    folderIdToGuidMap = Object.assign(folderIdToGuidMap, folders);
+    searchGuids = searchGuids.concat(searches);
+  }
+
+  return [folderIdToGuidMap, searchGuids];
+}
+
+
+
+
+
+
+
+
+function insertFaviconForNode(node) {
+  if (node.icon) {
+    try {
+      
+      let faviconURI = Services.io.newURI("fake-favicon-uri:" + node.url);
+      PlacesUtils.favicons.replaceFaviconDataFromDataURL(
+        faviconURI, node.icon, 0,
+        Services.scriptSecurityManager.getSystemPrincipal());
+      PlacesUtils.favicons.setAndFetchFaviconForPage(
+        Services.io.newURI(node.url), faviconURI, false,
+        PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+        Services.scriptSecurityManager.getSystemPrincipal());
+    } catch (ex) {
+      Components.utils.reportError("Failed to import favicon data:" + ex);
+    }
+  }
+
+  if (!node.iconUri) {
+    return;
+  }
+
+  try {
+    PlacesUtils.favicons.setAndFetchFaviconForPage(
+      Services.io.newURI(node.url), Services.io.newURI(node.iconUri), false,
+      PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+      Services.scriptSecurityManager.getSystemPrincipal());
+  } catch (ex) {
+    Components.utils.reportError("Failed to import favicon URI:" + ex);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function insertFaviconsForTree(nodeTree) {
+  insertFaviconForNode(nodeTree);
+
+  if (nodeTree.children) {
+    for (let child of nodeTree.children) {
+      insertFaviconsForTree(child);
+    }
+  }
 }

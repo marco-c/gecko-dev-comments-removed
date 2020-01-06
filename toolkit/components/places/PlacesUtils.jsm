@@ -249,6 +249,11 @@ const BOOKMARK_VALIDATORS = Object.freeze({
   },
   source: simpleValidateFunc(v => Number.isInteger(v) &&
                                   Object.values(PlacesUtils.bookmarks.SOURCES).includes(v)),
+  annos: simpleValidateFunc(v => Array.isArray(v) && v.length),
+  keyword: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
+  charset: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
+  postData: simpleValidateFunc(v => (typeof(v) == "string") && v.length),
+  tags: simpleValidateFunc(v => Array.isArray(v) && v.length),
 });
 
 
@@ -1730,6 +1735,15 @@ this.PlacesUtils = {
     return GuidHelper.getItemId(aGuid)
   },
 
+  
+
+
+
+
+
+
+
+
   promiseManyItemIds(aGuids) {
     return GuidHelper.getManyItemIds(aGuids);
   },
@@ -3069,7 +3083,7 @@ PlacesCreateLivemarkTransaction.prototype = {
     
     
     this._promise = PlacesUtils.livemarks.getLivemark({ id: this.item.id })
-      .catch(() => {}).then(() => {
+      .then(null, null).then( () => {
         PlacesUtils.bookmarks.removeItem(this.item.id);
       });
   }
@@ -3121,7 +3135,7 @@ PlacesRemoveLivemarkTransaction.prototype = {
     
     
     PlacesUtils.livemarks.getLivemark({ id: this.item.id })
-      .catch(() => {
+      .then(null, () => {
         PlacesUtils.livemarks.addLivemark({ parentId: this.item.parentId,
                                             title: this.item.title,
                                             siteURI: this.item.siteURI,

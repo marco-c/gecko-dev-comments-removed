@@ -11,10 +11,6 @@ var bookmarkData = [
   { uri: uri("http://en.wikipedia.org/wiki/Diplodocus"), title: "dinosaur, dj, rad word" }
 ];
 
-function run_test() {
-  run_next_test();
-}
-
 
 
 
@@ -52,7 +48,7 @@ add_task(async function() {
                                          title });
   }
 
-  await validate();
+  await validate("initial database");
 
   
   
@@ -65,14 +61,18 @@ add_task(async function() {
   do_print("imported json");
 
   
-  await validate();
+  await validate("re-imported json");
   do_print("validated import");
 });
 
-async function validate() {
+async function validate(infoMsg) {
+  do_print(`Validating ${infoMsg}: testMenuBookmarks`);
   await testMenuBookmarks();
+  do_print(`Validating ${infoMsg}: testToolbarBookmarks`);
   await testToolbarBookmarks();
+  do_print(`Validating ${infoMsg}: testUnfiledBookmarks`);
   testUnfiledBookmarks();
+  do_print(`Validating ${infoMsg}: testTags`);
   testTags();
   await PlacesTestUtils.promiseAsyncUpdates();
 }
