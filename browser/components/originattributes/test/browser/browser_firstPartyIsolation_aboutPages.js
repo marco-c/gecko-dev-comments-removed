@@ -156,7 +156,9 @@ add_task(async function test_aboutURL() {
       
       if ((flags & Ci.nsIAboutModule.URI_SAFE_FOR_UNTRUSTED_CONTENT) &&
           !(flags & Ci.nsIAboutModule.HIDE_FROM_ABOUTABOUT) &&
-          networkURLs.indexOf(aboutType) == -1) {
+          networkURLs.indexOf(aboutType) == -1 &&
+          
+          aboutType !== "newtab") {
         aboutURLs.push(aboutType);
       }
     } catch (e) {
