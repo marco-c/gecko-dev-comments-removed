@@ -21,12 +21,7 @@ known_heap_size!(0, ColorF);
 impl ColorF {
     
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> ColorF {
-        ColorF {
-            r,
-            g,
-            b,
-            a,
-        }
+        ColorF { r, g, b, a }
     }
 
     
@@ -53,7 +48,7 @@ impl ColorF {
 }
 
 
-impl Eq for ColorF { }
+impl Eq for ColorF {}
 impl Hash for ColorF {
     fn hash<H: Hasher>(&self, state: &mut H) {
         
@@ -69,7 +64,9 @@ trait ToBits {
     fn _to_bits(self) -> u32;
 }
 impl ToBits for f32 {
-    fn _to_bits(self) -> u32 { unsafe { ::std::mem::transmute(self) } }
+    fn _to_bits(self) -> u32 {
+        unsafe { ::std::mem::transmute(self) }
+    }
 }
 
 
@@ -87,12 +84,7 @@ pub struct ColorU {
 impl ColorU {
     
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> ColorU {
-        ColorU {
-            r,
-            g,
-            b,
-            a,
-        }
+        ColorU { r, g, b, a }
     }
 }
 

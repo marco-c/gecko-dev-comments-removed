@@ -12,7 +12,7 @@
 
 
 
-use euclid::{Length, TypedTransform3D, TypedRect, TypedSize2D};
+use euclid::{Length, TypedRect, TypedSize2D, TypedTransform3D};
 use euclid::{TypedPoint2D, TypedPoint3D, TypedVector2D, TypedVector3D};
 
 

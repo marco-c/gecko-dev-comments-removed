@@ -2,11 +2,11 @@
 
 
 
-use std::sync::Arc;
-use {DeviceUintRect, DevicePoint};
-use {IdNamespace};
+use {DevicePoint, DeviceUintRect};
 use {TileOffset, TileSize};
-use font::{FontKey, FontInstanceKey, FontTemplate};
+use IdNamespace;
+use font::{FontInstanceKey, FontKey, FontTemplate};
+use std::sync::Arc;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -32,10 +32,10 @@ pub struct ExternalImageId(pub u64);
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum ExternalImageType {
-    Texture2DHandle,        
-    Texture2DArrayHandle,   
-    TextureRectHandle,      
-    TextureExternalHandle,  
+    Texture2DHandle,       
+    Texture2DArrayHandle,  
+    TextureRectHandle,     
+    TextureExternalHandle, 
     ExternalBuffer,
 }
 
@@ -50,12 +50,12 @@ pub struct ExternalImageData {
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum ImageFormat {
-    Invalid  = 0,
-    A8       = 1,
-    RGB8     = 2,
-    BGRA8    = 3,
-    RGBAF32  = 4,
-    RG8      = 5,
+    Invalid = 0,
+    A8 = 1,
+    RGB8 = 2,
+    BGRA8 = 3,
+    RGBAF32 = 4,
+    RG8 = 5,
 }
 
 impl ImageFormat {
@@ -94,7 +94,8 @@ impl ImageDescriptor {
     }
 
     pub fn compute_stride(&self) -> u32 {
-        self.stride.unwrap_or(self.width * self.format.bytes_per_pixel())
+        self.stride
+            .unwrap_or(self.width * self.format.bytes_per_pixel())
     }
 }
 
@@ -129,15 +130,13 @@ impl ImageData {
     #[inline]
     pub fn uses_texture_cache(&self) -> bool {
         match self {
-            &ImageData::External(ext_data) => {
-                match ext_data.image_type {
-                    ExternalImageType::Texture2DHandle => false,
-                    ExternalImageType::Texture2DArrayHandle => false,
-                    ExternalImageType::TextureRectHandle => false,
-                    ExternalImageType::TextureExternalHandle => false,
-                    ExternalImageType::ExternalBuffer => true,
-                }
-            }
+            &ImageData::External(ext_data) => match ext_data.image_type {
+                ExternalImageType::Texture2DHandle => false,
+                ExternalImageType::Texture2DArrayHandle => false,
+                ExternalImageType::TextureRectHandle => false,
+                ExternalImageType::TextureExternalHandle => false,
+                ExternalImageType::ExternalBuffer => true,
+            },
             &ImageData::Blob(_) => true,
             &ImageData::Raw(_) => true,
         }
@@ -156,11 +155,13 @@ pub trait BlobImageRenderer: Send {
 
     fn delete(&mut self, key: ImageKey);
 
-    fn request(&mut self,
-               services: &BlobImageResources,
-               key: BlobImageRequest,
-               descriptor: &BlobImageDescriptor,
-               dirty_rect: Option<DeviceUintRect>);
+    fn request(
+        &mut self,
+        services: &BlobImageResources,
+        key: BlobImageRequest,
+        descriptor: &BlobImageDescriptor,
+        dirty_rect: Option<DeviceUintRect>,
+    );
 
     fn resolve(&mut self, key: BlobImageRequest) -> BlobImageResult;
 

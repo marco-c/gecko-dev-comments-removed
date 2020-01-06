@@ -2,19 +2,19 @@
 
 
 
+use api::{DeviceUintPoint, DeviceUintRect, DeviceUintSize};
+use api::{ExternalImageType, ImageData, ImageFormat};
+use api::ImageDescriptor;
 use device::TextureFilter;
 use frame::FrameId;
 use freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
 use gpu_cache::{GpuCache, GpuCacheHandle};
-use internal_types::{SourceTexture, TextureUpdate, TextureUpdateOp};
 use internal_types::{CacheTextureId, RenderTargetMode, TextureUpdateList, TextureUpdateSource};
+use internal_types::{SourceTexture, TextureUpdate, TextureUpdateOp};
 use profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
 use resource_cache::CacheItem;
 use std::cmp;
 use std::mem;
-use api::{ExternalImageType, ImageData, ImageFormat};
-use api::{DeviceUintRect, DeviceUintSize, DeviceUintPoint};
-use api::{ImageDescriptor};
 
 
 
@@ -45,9 +45,7 @@ impl CacheTextureIdList {
         
         
         match self.free_list.pop() {
-            Some(id) => {
-                id
-            }
+            Some(id) => id,
             None => {
                 let id = CacheTextureId(self.next_id);
                 self.next_id += 1;
@@ -73,7 +71,7 @@ enum EntryKind {
         layer_index: u16,
         
         region_index: u16,
-    }
+    },
 }
 
 
@@ -99,11 +97,13 @@ struct CacheEntry {
 
 impl CacheEntry {
     
-    fn new_standalone(texture_id: CacheTextureId,
-                      size: DeviceUintSize,
-                      format: ImageFormat,
-                      user_data: [f32; 2],
-                      last_access: FrameId) -> CacheEntry {
+    fn new_standalone(
+        texture_id: CacheTextureId,
+        size: DeviceUintSize,
+        format: ImageFormat,
+        user_data: [f32; 2],
+        last_access: FrameId,
+    ) -> CacheEntry {
         CacheEntry {
             size,
             user_data,
@@ -122,21 +122,20 @@ impl CacheEntry {
     fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
         if let Some(mut request) = gpu_cache.request(&mut self.uv_rect_handle) {
             let (origin, layer_index) = match self.kind {
-                EntryKind::Standalone { .. } => {
-                    (DeviceUintPoint::zero(), 0.0)
-                }
-                EntryKind::Cache { origin, layer_index, .. } => {
-                    (origin, layer_index as f32)
-                }
+                EntryKind::Standalone { .. } => (DeviceUintPoint::zero(), 0.0),
+                EntryKind::Cache {
+                    origin,
+                    layer_index,
+                    ..
+                } => (origin, layer_index as f32),
             };
-            request.push([origin.x as f32,
-                          origin.y as f32,
-                          (origin.x + self.size.width) as f32,
-                          (origin.y + self.size.height) as f32]);
-            request.push([layer_index,
-                          self.user_data[0],
-                          self.user_data[1],
-                          0.0]);
+            request.push([
+                origin.x as f32,
+                origin.y as f32,
+                (origin.x + self.size.width) as f32,
+                (origin.y + self.size.height) as f32,
+            ]);
+            request.push([layer_index, self.user_data[0], self.user_data[1], 0.0]);
         }
     }
 }
@@ -156,9 +155,7 @@ pub struct TextureCacheHandle {
 
 impl TextureCacheHandle {
     pub fn new() -> TextureCacheHandle {
-        TextureCacheHandle {
-            entry: None,
-        }
+        TextureCacheHandle { entry: None }
     }
 }
 
@@ -227,10 +224,14 @@ impl TextureCache {
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
         self.expire_old_standalone_entries();
 
-        self.array_a8.update_profile(&mut texture_cache_profile.pages_a8);
-        self.array_rg8.update_profile(&mut texture_cache_profile.pages_rg8);
-        self.array_rgb8.update_profile(&mut texture_cache_profile.pages_rgb8);
-        self.array_rgba8.update_profile(&mut texture_cache_profile.pages_rgba8);
+        self.array_a8
+            .update_profile(&mut texture_cache_profile.pages_a8);
+        self.array_rg8
+            .update_profile(&mut texture_cache_profile.pages_rg8);
+        self.array_rgb8
+            .update_profile(&mut texture_cache_profile.pages_rgb8);
+        self.array_rgba8
+            .update_profile(&mut texture_cache_profile.pages_rgba8);
     }
 
     
@@ -241,9 +242,7 @@ impl TextureCache {
     
     
     
-    pub fn request(&mut self,
-                   handle: &mut TextureCacheHandle,
-                   gpu_cache: &mut GpuCache) -> bool {
+    pub fn request(&mut self, handle: &mut TextureCacheHandle, gpu_cache: &mut GpuCache) -> bool {
         match handle.entry {
             Some(ref handle) => {
                 match self.entries.get_opt_mut(handle) {
@@ -254,14 +253,10 @@ impl TextureCache {
                         entry.update_gpu_cache(gpu_cache);
                         false
                     }
-                    None => {
-                        true
-                    }
+                    None => true,
                 }
             }
-            None => {
-                true
-            }
+            None => true,
         }
     }
 
@@ -282,8 +277,8 @@ impl TextureCache {
         data: ImageData,
         user_data: [f32; 2],
         mut dirty_rect: Option<DeviceUintRect>,
-        gpu_cache: &mut GpuCache) {
-
+        gpu_cache: &mut GpuCache,
+    ) {
         
         
         
@@ -295,8 +290,8 @@ impl TextureCache {
                 match self.entries.get_opt(handle) {
                     Some(entry) => {
                         entry.size.width != descriptor.width ||
-                        entry.size.height != descriptor.height ||
-                        entry.format != descriptor.format
+                            entry.size.height != descriptor.height ||
+                            entry.format != descriptor.format
                     }
                     None => {
                         
@@ -311,18 +306,15 @@ impl TextureCache {
         };
 
         if realloc {
-            self.allocate(handle,
-                          descriptor,
-                          filter,
-                          user_data);
+            self.allocate(handle, descriptor, filter, user_data);
 
             
             dirty_rect = None;
         }
 
         let entry = self.entries
-                        .get_opt_mut(handle.entry.as_ref().unwrap())
-                        .expect("BUG: handle must be valid now");
+            .get_opt_mut(handle.entry.as_ref().unwrap())
+            .expect("BUG: handle must be valid now");
 
         
         
@@ -336,21 +328,23 @@ impl TextureCache {
         
         
         let (layer_index, origin) = match entry.kind {
-            EntryKind::Standalone { .. } => {
-                (0, DeviceUintPoint::zero())
-            }
-            EntryKind::Cache { layer_index, origin, .. } => {
-                (layer_index, origin)
-            }
+            EntryKind::Standalone { .. } => (0, DeviceUintPoint::zero()),
+            EntryKind::Cache {
+                layer_index,
+                origin,
+                ..
+            } => (layer_index, origin),
         };
 
-        let op = TextureUpdate::new_update(data,
-                                           &descriptor,
-                                           origin,
-                                           entry.size,
-                                           entry.texture_id,
-                                           layer_index as i32,
-                                           dirty_rect);
+        let op = TextureUpdate::new_update(
+            data,
+            &descriptor,
+            origin,
+            entry.size,
+            entry.texture_id,
+            layer_index as i32,
+            dirty_rect,
+        );
         self.pending_updates.push(op);
     }
 
@@ -376,17 +370,15 @@ impl TextureCache {
         match handle.entry {
             Some(ref handle) => {
                 let entry = self.entries
-                                .get_opt(handle)
-                                .expect("BUG: was dropped from cache or not updated!");
+                    .get_opt(handle)
+                    .expect("BUG: was dropped from cache or not updated!");
                 debug_assert_eq!(entry.last_access, self.frame_id);
                 CacheItem {
                     uv_rect_handle: entry.uv_rect_handle,
                     texture_id: SourceTexture::TextureCache(entry.texture_id),
                 }
             }
-            None => {
-                panic!("BUG: handle not requested earlier in frame")
-            }
+            None => panic!("BUG: handle not requested earlier in frame"),
         }
     }
 
@@ -467,15 +459,14 @@ impl TextureCache {
         
         
         
-        let needed_slab_size = SlabSize::new(required_alloc.width,
-                                             required_alloc.height).get_size();
+        let needed_slab_size =
+            SlabSize::new(required_alloc.width, required_alloc.height).get_size();
         let mut found_matching_slab = false;
         let mut freed_complete_page = false;
         let mut evicted_items = 0;
 
         for handle in eviction_candidates {
-            if evicted_items > 512 &&
-               (found_matching_slab || freed_complete_page) {
+            if evicted_items > 512 && (found_matching_slab || freed_complete_page) {
                 retained_entries.push(handle);
             } else {
                 let entry = self.entries.free(handle);
@@ -494,7 +485,7 @@ impl TextureCache {
     
     fn free(&mut self, entry: CacheEntry) -> Option<&TextureRegion> {
         match entry.kind {
-            EntryKind::Standalone { .. }  => {
+            EntryKind::Standalone { .. } => {
                 
                 
                 self.pending_updates.push(TextureUpdate {
@@ -504,7 +495,11 @@ impl TextureCache {
                 self.cache_textures.free(entry.texture_id);
                 None
             }
-            EntryKind::Cache { origin, region_index, .. } => {
+            EntryKind::Cache {
+                origin,
+                region_index,
+                ..
+            } => {
                 
                 let region = self.get_region_mut(entry.format, region_index);
                 region.free(origin);
@@ -514,9 +509,11 @@ impl TextureCache {
     }
 
     
-    fn allocate_from_shared_cache(&mut self,
-                                  descriptor: &ImageDescriptor,
-                                  user_data: [f32; 2]) -> Option<CacheEntry> {
+    fn allocate_from_shared_cache(
+        &mut self,
+        descriptor: &ImageDescriptor,
+        user_data: [f32; 2],
+    ) -> Option<CacheEntry> {
         
         let texture_array = match descriptor.format {
             ImageFormat::A8 => &mut self.array_a8,
@@ -538,8 +535,8 @@ impl TextureCache {
                     format: descriptor.format,
                     filter: TextureFilter::Linear,
                     layer_count: TEXTURE_ARRAY_LAYERS,
-                    mode: RenderTargetMode::RenderTarget,           
-                }
+                    mode: RenderTargetMode::RenderTarget, 
+                },
             };
             self.pending_updates.push(update_op);
 
@@ -548,20 +545,24 @@ impl TextureCache {
 
         
         
-        texture_array.alloc(descriptor.width,
-                            descriptor.height,
-                            user_data,
-                            self.frame_id)
+        texture_array.alloc(
+            descriptor.width,
+            descriptor.height,
+            user_data,
+            self.frame_id,
+        )
     }
 
     
     
     
-    fn allocate(&mut self,
-                handle: &mut TextureCacheHandle,
-                descriptor: ImageDescriptor,
-                filter: TextureFilter,
-                user_data: [f32; 2]) {
+    fn allocate(
+        &mut self,
+        handle: &mut TextureCacheHandle,
+        descriptor: ImageDescriptor,
+        filter: TextureFilter,
+        user_data: [f32; 2],
+    ) {
         assert!(descriptor.width > 0 && descriptor.height > 0);
 
         
@@ -618,15 +619,17 @@ impl TextureCache {
                     filter,
                     mode: RenderTargetMode::RenderTarget,
                     layer_count: 1,
-                }
+                },
             };
             self.pending_updates.push(update_op);
 
-            new_cache_entry = Some(CacheEntry::new_standalone(texture_id,
-                                                              size,
-                                                              descriptor.format,
-                                                              user_data,
-                                                              frame_id));
+            new_cache_entry = Some(CacheEntry::new_standalone(
+                texture_id,
+                size,
+                descriptor.format,
+                user_data,
+                frame_id,
+            ));
 
             allocated_in_shared_cache = false;
         }
@@ -655,9 +658,7 @@ impl TextureCache {
                         self.free(old_entry);
                         None
                     }
-                    UpsertResult::Inserted(new_handle) => {
-                        Some(new_handle)
-                    }
+                    UpsertResult::Inserted(new_handle) => Some(new_handle),
                 }
             }
             None => {
@@ -700,12 +701,12 @@ impl SlabSize {
 
         match max_dim {
             0 => unreachable!(),
-            1 ... 16 => SlabSize::Size16x16,
-            17 ... 32 => SlabSize::Size32x32,
-            33 ... 64 => SlabSize::Size64x64,
-            65 ... 128 => SlabSize::Size128x128,
-            129 ... 256 => SlabSize::Size256x256,
-            257 ... 512 => SlabSize::Size512x512,
+            1...16 => SlabSize::Size16x16,
+            17...32 => SlabSize::Size32x32,
+            33...64 => SlabSize::Size64x64,
+            65...128 => SlabSize::Size128x128,
+            129...256 => SlabSize::Size256x256,
+            257...512 => SlabSize::Size512x512,
             _ => panic!("Invalid dimensions for cache!"),
         }
     }
@@ -751,9 +752,7 @@ struct TextureRegion {
 }
 
 impl TextureRegion {
-    fn new(region_size: u32,
-           layer_index: i32,
-           origin: DeviceUintPoint) -> TextureRegion {
+    fn new(region_size: u32, layer_index: i32, origin: DeviceUintPoint) -> TextureRegion {
         TextureRegion {
             layer_index,
             region_size,
@@ -774,8 +773,8 @@ impl TextureRegion {
         self.slots_per_axis = self.region_size / self.slab_size;
 
         
-        for y in 0..self.slots_per_axis {
-            for x in 0..self.slots_per_axis {
+        for y in 0 .. self.slots_per_axis {
+            for x in 0 .. self.slots_per_axis {
                 self.free_slots.push(TextureLocation::new(x, y));
             }
         }
@@ -798,12 +797,12 @@ impl TextureRegion {
 
     
     fn alloc(&mut self) -> Option<DeviceUintPoint> {
-        self.free_slots
-            .pop()
-            .map(|location| {
-                DeviceUintPoint::new(self.origin.x + self.slab_size * location.x as u32,
-                                     self.origin.y + self.slab_size * location.y as u32)
-            })
+        self.free_slots.pop().map(|location| {
+            DeviceUintPoint::new(
+                self.origin.x + self.slab_size * location.x as u32,
+                self.origin.y + self.slab_size * location.y as u32,
+            )
+        })
     }
 
     
@@ -843,10 +842,8 @@ impl TextureArray {
 
     fn update_profile(&self, counter: &mut ResourceProfileCounter) {
         if self.is_allocated {
-            let size = TEXTURE_ARRAY_LAYERS as u32 *
-                       TEXTURE_LAYER_DIMENSIONS *
-                       TEXTURE_LAYER_DIMENSIONS *
-                       self.format.bytes_per_pixel();
+            let size = TEXTURE_ARRAY_LAYERS as u32 * TEXTURE_LAYER_DIMENSIONS *
+                TEXTURE_LAYER_DIMENSIONS * self.format.bytes_per_pixel();
             counter.set(TEXTURE_ARRAY_LAYERS as usize, size as usize);
         } else {
             counter.set(0, 0);
@@ -854,25 +851,28 @@ impl TextureArray {
     }
 
     
-    fn alloc(&mut self,
-             width: u32,
-             height: u32,
-             user_data: [f32; 2],
-             frame_id: FrameId) -> Option<CacheEntry> {
+    fn alloc(
+        &mut self,
+        width: u32,
+        height: u32,
+        user_data: [f32; 2],
+        frame_id: FrameId,
+    ) -> Option<CacheEntry> {
         
         
         
         if !self.is_allocated {
             debug_assert!(TEXTURE_LAYER_DIMENSIONS % TEXTURE_REGION_DIMENSIONS == 0);
             let regions_per_axis = TEXTURE_LAYER_DIMENSIONS / TEXTURE_REGION_DIMENSIONS;
-            for layer_index in 0..TEXTURE_ARRAY_LAYERS {
-                for y in 0..regions_per_axis {
-                    for x in 0..regions_per_axis {
-                        let origin = DeviceUintPoint::new(x * TEXTURE_REGION_DIMENSIONS,
-                                                          y * TEXTURE_REGION_DIMENSIONS);
-                        let region = TextureRegion::new(TEXTURE_REGION_DIMENSIONS,
-                                                        layer_index,
-                                                        origin);
+            for layer_index in 0 .. TEXTURE_ARRAY_LAYERS {
+                for y in 0 .. regions_per_axis {
+                    for x in 0 .. regions_per_axis {
+                        let origin = DeviceUintPoint::new(
+                            x * TEXTURE_REGION_DIMENSIONS,
+                            y * TEXTURE_REGION_DIMENSIONS,
+                        );
+                        let region =
+                            TextureRegion::new(TEXTURE_REGION_DIMENSIONS, layer_index, origin);
                         self.regions.push(region);
                     }
                 }
@@ -946,42 +946,38 @@ impl TextureUpdate {
     
     
     
-    fn new_update(data: ImageData,
-                  descriptor: &ImageDescriptor,
-                  origin: DeviceUintPoint,
-                  size: DeviceUintSize,
-                  texture_id: CacheTextureId,
-                  layer_index: i32,
-                  dirty_rect: Option<DeviceUintRect>) -> TextureUpdate {
+    fn new_update(
+        data: ImageData,
+        descriptor: &ImageDescriptor,
+        origin: DeviceUintPoint,
+        size: DeviceUintSize,
+        texture_id: CacheTextureId,
+        layer_index: i32,
+        dirty_rect: Option<DeviceUintRect>,
+    ) -> TextureUpdate {
         let data_src = match data {
             ImageData::Blob(..) => {
                 panic!("The vector image should have been rasterized.");
             }
-            ImageData::External(ext_image) => {
-                match ext_image.image_type {
-                    ExternalImageType::Texture2DHandle |
-                    ExternalImageType::Texture2DArrayHandle |
-                    ExternalImageType::TextureRectHandle |
-                    ExternalImageType::TextureExternalHandle => {
-                        panic!("External texture handle should not go through texture_cache.");
-                    }
-                    ExternalImageType::ExternalBuffer => {
-                        TextureUpdateSource::External {
-                            id: ext_image.id,
-                            channel_index: ext_image.channel_index,
-                        }
-                    }
+            ImageData::External(ext_image) => match ext_image.image_type {
+                ExternalImageType::Texture2DHandle |
+                ExternalImageType::Texture2DArrayHandle |
+                ExternalImageType::TextureRectHandle |
+                ExternalImageType::TextureExternalHandle => {
+                    panic!("External texture handle should not go through texture_cache.");
                 }
-            }
+                ExternalImageType::ExternalBuffer => TextureUpdateSource::External {
+                    id: ext_image.id,
+                    channel_index: ext_image.channel_index,
+                },
+            },
             ImageData::Raw(bytes) => {
                 let finish = descriptor.offset +
-                             descriptor.width * descriptor.format.bytes_per_pixel() +
-                             (descriptor.height-1) * descriptor.compute_stride();
+                    descriptor.width * descriptor.format.bytes_per_pixel() +
+                    (descriptor.height - 1) * descriptor.compute_stride();
                 assert!(bytes.len() >= finish as usize);
 
-                TextureUpdateSource::Bytes {
-                    data: bytes
-                }
+                TextureUpdateSource::Bytes { data: bytes }
             }
         };
 
@@ -989,8 +985,8 @@ impl TextureUpdate {
             Some(dirty) => {
                 let stride = descriptor.compute_stride();
                 let offset = descriptor.offset + dirty.origin.y * stride + dirty.origin.x;
-                let origin = DeviceUintPoint::new(origin.x + dirty.origin.x,
-                                                  origin.y + dirty.origin.y);
+                let origin =
+                    DeviceUintPoint::new(origin.x + dirty.origin.x, origin.y + dirty.origin.y);
                 TextureUpdateOp::Update {
                     rect: DeviceUintRect::new(origin, dirty.size),
                     source: data_src,
@@ -999,15 +995,13 @@ impl TextureUpdate {
                     layer_index,
                 }
             }
-            None => {
-                TextureUpdateOp::Update {
-                    rect: DeviceUintRect::new(origin, size),
-                    source: data_src,
-                    stride: descriptor.stride,
-                    offset: descriptor.offset,
-                    layer_index,
-                }
-            }
+            None => TextureUpdateOp::Update {
+                rect: DeviceUintRect::new(origin, size),
+                source: data_src,
+                stride: descriptor.stride,
+                offset: descriptor.offset,
+                layer_index,
+            },
         };
 
         TextureUpdate {
