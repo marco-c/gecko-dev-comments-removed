@@ -12,6 +12,7 @@
 #include "nsAutoPtr.h"
 #include "nsCollationCID.h"
 #include "nsEmbedCID.h"
+#include "nsExceptionHandler.h"
 #include "nsThreadUtils.h"
 #include "mozStoragePrivateHelpers.h"
 #include "nsIXPConnect.h"
@@ -25,10 +26,6 @@
 
 #include "sqlite3.h"
 #include "mozilla/AutoSQLiteLifetime.h"
-
-#ifdef MOZ_CRASHREPORTER
-#include "nsExceptionHandler.h"
-#endif
 
 #ifdef XP_WIN
 
@@ -801,13 +798,11 @@ Service::Observe(nsISupports *, const char *aTopic, const char16_t *)
       getConnections(connections);
       for (uint32_t i = 0, n = connections.Length(); i < n; i++) {
         if (!connections[i]->isClosed()) {
-#ifdef MOZ_CRASHREPORTER
           
           
           CrashReporter::AnnotateCrashReport(
             NS_LITERAL_CSTRING("StorageConnectionNotClosed"),
             connections[i]->getFilename());
-#endif
 #ifdef DEBUG
           printf_stderr("Storage connection not closed: %s",
                         connections[i]->getFilename().get());
