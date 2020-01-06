@@ -25,16 +25,18 @@ const MULTI_EXPERIMENT = {
   "beta": { buckets: { 1: .5, 4: 1, }, 
 
             
-            get addonsDisableExperiment() { return getAddonsDisqualifyForMulti(); } },
+            
+            
+            
+            
+            addonsDisableExperiment(prefix) { return getAddonsDisqualifyForMulti(); } },
 
-  "release": { buckets: { 1: .2, 4: 1 }, 
+  "release": { buckets: { 1: .99, 4: 1 }, 
 
                
                
                
-               
-               
-               get addonsDisableExperiment() { return getAddonsDisqualifyForMulti(); } }
+               addonsDisableExperiment(prefix) { return !!prefix; } }
 };
 
 const ADDON_ROLLOUT_POLICY = {
@@ -183,7 +185,7 @@ function defineCohort() {
   
   
   if (!(updateChannel in MULTI_EXPERIMENT) ||
-      MULTI_EXPERIMENT[updateChannel].addonsDisableExperiment ||
+      MULTI_EXPERIMENT[updateChannel].addonsDisableExperiment(cohortPrefix) ||
       !eligibleForMulti ||
       userOptedIn.multi ||
       disqualified) {
