@@ -1,9 +1,10 @@
 
 
+
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
-                                  "resource://gre/modules/EventEmitter.jsm");
+
+
 
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
