@@ -415,6 +415,13 @@ public:
 
 
 
+  static Element* GetCommonFlattenedTreeAncestorForStyle(
+      Element* aElement1, Element* aElement2);
+
+  
+
+
+
   static bool PositionIsBefore(nsINode* aNode1, nsINode* aNode2);
 
   
