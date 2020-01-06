@@ -31,11 +31,11 @@ PR_BEGIN_EXTERN_C
 
 
 
-#define PR_VERSION  "4.18 Beta"
+#define PR_VERSION  "4.17"
 #define PR_VMAJOR   4
-#define PR_VMINOR   18
+#define PR_VMINOR   17
 #define PR_VPATCH   0
-#define PR_BETA     PR_TRUE
+#define PR_BETA     PR_FALSE
 
 
 
