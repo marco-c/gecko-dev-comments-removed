@@ -3061,10 +3061,6 @@ nsTreeBodyFrame::PaintRow(int32_t               aRowIndex,
     theme = aPresContext->GetTheme();
   }
 
-  
-  Color originalColor(aRenderingContext.GetFontSmoothingBackgroundColor());
-  aRenderingContext.SetFontSmoothingBackgroundColor(
-    ToDeviceColor(rowContext->StyleUserInterface()->mFontSmoothingBackgroundColor));
   if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, appearance)) {
     nsRect dirty;
     dirty.IntersectRect(rowRect, aDirtyRect);
@@ -3173,11 +3169,6 @@ nsTreeBodyFrame::PaintRow(int32_t               aRowIndex,
                               aBuilder);
       }
     }
-  }
-  
-  
-  if (originalColor != aRenderingContext.GetFontSmoothingBackgroundColor()) {
-    aRenderingContext.SetFontSmoothingBackgroundColor(originalColor);
   }
 
   return result;
