@@ -1011,11 +1011,9 @@ this.PlacesUIUtils = {
 
 
 
-
-
   openNodeWithEvent:
-  function PUIU_openNodeWithEvent(aNode, aEvent, aView) {
-    let window = aView.ownerWindow;
+  function PUIU_openNodeWithEvent(aNode, aEvent) {
+    let window = aEvent.target.ownerGlobal;
     this._openNodeIn(aNode, window.whereToOpenLink(aEvent, false, true), window);
   },
 

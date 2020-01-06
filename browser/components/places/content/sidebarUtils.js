@@ -52,17 +52,15 @@ var SidebarUtils = {
       
       
       tbo.view.selection.select(cell.row);
-      PlacesUIUtils.openNodeWithEvent(aTree.selectedNode, aEvent, aTree);
+      PlacesUIUtils.openNodeWithEvent(aTree.selectedNode, aEvent);
     }
   },
 
   handleTreeKeyPress: function SU_handleTreeKeyPress(aEvent) {
-    
-    let tree = aEvent.target;
-    let node = tree.selectedNode;
+    let node = aEvent.target.selectedNode;
     if (node) {
       if (aEvent.keyCode == KeyEvent.DOM_VK_RETURN)
-        PlacesUIUtils.openNodeWithEvent(node, aEvent, tree);
+        PlacesUIUtils.openNodeWithEvent(node, aEvent);
     }
   },
 

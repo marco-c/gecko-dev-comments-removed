@@ -883,7 +883,7 @@ var BookmarksEventHandler = {
         PlacesUIUtils.openContainerNodeInTabs(target._placesNode, aEvent, aView);
     } else if (aEvent.button == 1) {
       
-      this.onCommand(aEvent, aView);
+      this.onCommand(aEvent);
     }
   },
 
@@ -894,12 +894,10 @@ var BookmarksEventHandler = {
 
 
 
-
-
-  onCommand: function BEH_onCommand(aEvent, aView) {
+  onCommand: function BEH_onCommand(aEvent) {
     var target = aEvent.originalTarget;
     if (target._placesNode)
-      PlacesUIUtils.openNodeWithEvent(target._placesNode, aEvent, aView);
+      PlacesUIUtils.openNodeWithEvent(target._placesNode, aEvent);
   },
 
   fillInBHTooltip: function BEH_fillInBHTooltip(aDocument, aEvent) {
@@ -1926,14 +1924,14 @@ var BookmarkingUI = {
     aEvent.target.removeEventListener("ViewHiding", this);
   },
 
-  onPanelMenuViewCommand: function BUI_onPanelMenuViewCommand(aEvent, aView) {
+  onPanelMenuViewCommand: function BUI_onPanelMenuViewCommand(aEvent) {
     let target = aEvent.originalTarget;
     if (!target._placesNode)
       return;
     if (PlacesUtils.nodeIsContainer(target._placesNode))
       PlacesCommandHook.showPlacesOrganizer([ "BookmarksMenu", target._placesNode.itemId ]);
     else
-      PlacesUIUtils.openNodeWithEvent(target._placesNode, aEvent, aView);
+      PlacesUIUtils.openNodeWithEvent(target._placesNode, aEvent);
     PanelUI.hide();
   },
 
