@@ -63,9 +63,7 @@ impl Monitor {
                 }
 
                 Ok(())
-            },
-            0, 
-        )?;
+            })?;
 
         Ok(Self {
             rx: rx,

@@ -100,9 +100,7 @@ impl Monitor {
                 }
 
                 Ok(())
-            },
-            0, 
-        )?;
+            })?;
 
         Ok(Self { rx, thread })
     }

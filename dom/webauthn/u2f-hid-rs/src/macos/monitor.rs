@@ -31,53 +31,50 @@ impl Monitor {
     pub fn new() -> io::Result<Self> {
         let (tx, rx) = channel();
 
-        let thread = RunLoop::new(
-            move |alive| -> io::Result<()> {
-                let tx_box = Box::new(tx);
-                let tx_ptr = Box::into_raw(tx_box) as *mut libc::c_void;
+        let thread = RunLoop::new(move |alive| -> io::Result<()> {
+            let tx_box = Box::new(tx);
+            let tx_ptr = Box::into_raw(tx_box) as *mut libc::c_void;
 
-                
-                let _tx = unsafe { Box::from_raw(tx_ptr as *mut Sender<Event>) };
+            
+            let _tx = unsafe { Box::from_raw(tx_ptr as *mut Sender<Event>) };
 
-                
-                let manager = IOHIDManager::new()?;
+            
+            let manager = IOHIDManager::new()?;
 
-                
-                let dict = IOHIDDeviceMatcher::new();
-                unsafe { IOHIDManagerSetDeviceMatching(manager.get(), dict.get()) };
+            
+            let dict = IOHIDDeviceMatcher::new();
+            unsafe { IOHIDManagerSetDeviceMatching(manager.get(), dict.get()) };
 
-                
-                unsafe {
-                    IOHIDManagerRegisterDeviceMatchingCallback(
-                        manager.get(),
-                        Monitor::device_add_cb,
-                        tx_ptr,
-                    );
-                    IOHIDManagerRegisterDeviceRemovalCallback(
-                        manager.get(),
-                        Monitor::device_remove_cb,
-                        tx_ptr,
-                    );
+            
+            unsafe {
+                IOHIDManagerRegisterDeviceMatchingCallback(
+                    manager.get(),
+                    Monitor::device_add_cb,
+                    tx_ptr,
+                );
+                IOHIDManagerRegisterDeviceRemovalCallback(
+                    manager.get(),
+                    Monitor::device_remove_cb,
+                    tx_ptr,
+                );
+            }
+
+            
+            
+            while alive() {
+                trace!("OSX Runloop running, handle={:?}", thread::current());
+
+                if unsafe { CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, 0) } ==
+                    kCFRunLoopRunStopped
+                {
+                    debug!("OSX Runloop device stopped.");
+                    break;
                 }
+            }
+            debug!("OSX Runloop completed, handle={:?}", thread::current());
 
-                
-                
-                while alive() {
-                    trace!("OSX Runloop running, handle={:?}", thread::current());
-
-                    if unsafe { CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, 0) } ==
-                        kCFRunLoopRunStopped
-                    {
-                        debug!("OSX Runloop device stopped.");
-                        break;
-                    }
-                }
-                debug!("OSX Runloop completed, handle={:?}", thread::current());
-
-                Ok(())
-            },
-            0, 
-        )?;
+            Ok(())
+        })?;
 
         Ok(Self { rx, thread })
     }
