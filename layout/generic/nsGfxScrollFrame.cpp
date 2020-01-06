@@ -3419,7 +3419,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   mScrollParentID = aBuilder->GetCurrentScrollParentId();
 
   Maybe<nsRect> contentBoxClip;
-  Maybe<DisplayItemClipChain> extraContentBoxClipForNonCaretContent;
+  Maybe<const DisplayItemClipChain*> extraContentBoxClipForNonCaretContent;
   if (MOZ_UNLIKELY(mOuter->StyleDisplay()->mOverflowClipBox ==
                      NS_STYLE_OVERFLOW_CLIP_BOX_CONTENT_BOX)) {
     
@@ -3434,8 +3434,14 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       const ActiveScrolledRoot* asr = aBuilder->CurrentActiveScrolledRoot();
-      extraContentBoxClipForNonCaretContent = Some(DisplayItemClipChain{ DisplayItemClip(), asr, nullptr });
-      extraContentBoxClipForNonCaretContent->mClip.SetTo(clipRect);
+
+      DisplayItemClip newClip;
+      newClip.SetTo(clipRect);
+
+      const DisplayItemClipChain* extraClip =
+        aBuilder->AllocateDisplayItemClipChain(newClip, asr, nullptr);
+
+      extraContentBoxClipForNonCaretContent = Some(extraClip);
 
       nsIFrame* caretFrame = aBuilder->GetCaretFrame();
       
@@ -3545,7 +3551,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       ClipListsExceptCaret(&scrolledContent, aBuilder, mScrolledFrame,
-                           extraContentBoxClipForNonCaretContent.ptr());
+                           *extraContentBoxClipForNonCaretContent);
     }
 
     if (aBuilder->IsPaintingToWindow()) {
