@@ -90,9 +90,6 @@ add_task(async function setup() {
   Services.prefs.setBoolPref(ONEOFF_URLBAR_PREF, true);
 
   
-  await SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
-
-  
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 

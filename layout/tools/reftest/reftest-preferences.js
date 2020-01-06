@@ -87,6 +87,8 @@ user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 
 user_pref("toolkit.telemetry.enabled", false);
 user_pref("toolkit.telemetry.unified", false);
+user_pref("datareporting.healthreport.uploadEnabled", false);
+user_pref("experiments.enabled", false);
 
 user_pref("browser.safebrowsing.phishing.enabled", false);
 user_pref("browser.safebrowsing.malware.enabled", false);
