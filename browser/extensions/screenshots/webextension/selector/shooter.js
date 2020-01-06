@@ -122,8 +122,9 @@ this.shooter = (function() {
       shotId: shotObject.id,
       shot: shotObject.asJson()
     }).then((url) => {
-      const copied = clipboard.copy(url);
-      return callBackground("openShot", { url, copied });
+      return clipboard.copy(url).then((copied) => {
+        return callBackground("openShot", { url, copied });
+      });
     }, (error) => {
       if ('popupMessage' in error && (error.popupMessage == "REQUEST_ERROR" || error.popupMessage == 'CONNECTION_ERROR')) {
         
