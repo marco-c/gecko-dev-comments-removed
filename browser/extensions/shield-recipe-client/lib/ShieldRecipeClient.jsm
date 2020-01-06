@@ -42,6 +42,7 @@ const DEFAULT_PREFS = {
   first_run: true,
 };
 const PREF_DEV_MODE = "extensions.shield-recipe-client.dev_mode";
+const PREF_SELF_SUPPORT_ENABLED = "browser.selfsupport.enabled";
 const PREF_LOGGING_LEVEL = PREF_BRANCH + "logging.level";
 
 let log = null;
@@ -65,6 +66,16 @@ this.ShieldRecipeClient = {
 
     
     
+    
+    if (Preferences.get(PREF_SELF_SUPPORT_ENABLED, true)) {
+      Preferences.set(PREF_SELF_SUPPORT_ENABLED, false);
+      if (!Preferences.get(PREF_DEV_MODE, false)) {
+        return;
+      }
+    }
+
+    
+    
     try {
       await PreferenceExperiments.init();
     } catch (err) {
@@ -76,6 +87,11 @@ this.ShieldRecipeClient = {
 
   shutdown(reason) {
     CleanupManager.cleanup();
+
+    
+    if (reason === REASONS.ADDON_DISABLE || reason === REASONS.ADDON_UNINSTALL) {
+      Services.prefs.setBoolPref(PREF_SELF_SUPPORT_ENABLED, true);
+    }
   },
 
   setDefaultPrefs() {
