@@ -58,6 +58,9 @@ const BackgroundPageThumbs = {
 
 
 
+
+
+
   capture(url, options = {}) {
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone)
@@ -404,7 +407,7 @@ Capture.prototype = {
     
     this._msgMan = messageManager;
     this._msgMan.sendAsyncMessage("BackgroundPageThumbs:capture",
-                                  { id: this.id, url: this.url });
+                                  { id: this.id, url: this.url, isImage: this.options.isImage });
     this._msgMan.addMessageListener("BackgroundPageThumbs:didCapture", this);
   },
 
