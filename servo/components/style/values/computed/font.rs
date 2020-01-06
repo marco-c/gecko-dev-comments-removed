@@ -281,6 +281,9 @@ impl FontVariantAlternates {
 pub type FontVariantEastAsian = specified::VariantEastAsian;
 
 
+pub type FontVariantLigatures = specified::VariantLigatures;
+
+
 
 
 
