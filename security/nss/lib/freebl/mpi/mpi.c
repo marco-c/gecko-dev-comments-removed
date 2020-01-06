@@ -2859,6 +2859,9 @@ void
 s_mp_exch(mp_int *a, mp_int *b)
 {
     mp_int tmp;
+    if (!a || !b) {
+        return;
+    }
 
     tmp = *a;
     *a = *b;
@@ -4164,11 +4167,7 @@ mp_err s_mp_div(mp_int *rem,
                 mp_int *quot) 
 {
     mp_int part, t;
-#if !defined(MP_NO_MP_WORD) && !defined(MP_NO_DIV_WORD)
-    mp_word q_msd;
-#else
     mp_digit q_msd;
-#endif
     mp_err res;
     mp_digit d;
     mp_digit div_msd;
@@ -4236,12 +4235,6 @@ mp_err s_mp_div(mp_int *rem,
 
             q_msd = 1;
         } else {
-#if !defined(MP_NO_MP_WORD) && !defined(MP_NO_DIV_WORD)
-            q_msd = (q_msd << MP_DIGIT_BIT) | MP_DIGIT(&part, MP_USED(&part) - 2);
-            q_msd /= div_msd;
-            if (q_msd == RADIX)
-                --q_msd;
-#else
             if (q_msd == div_msd) {
                 q_msd = MP_DIGIT_MAX;
             } else {
@@ -4249,7 +4242,6 @@ mp_err s_mp_div(mp_int *rem,
                 MP_CHECKOK(s_mpv_div_2dx1d(q_msd, MP_DIGIT(&part, MP_USED(&part) - 2),
                                            div_msd, &q_msd, &r));
             }
-#endif
         }
 #if MP_ARGCHK == 2
         assert(q_msd > 0); 
@@ -4259,7 +4251,7 @@ mp_err s_mp_div(mp_int *rem,
 
         
         mp_copy(div, &t);
-        MP_CHECKOK(s_mp_mul_d(&t, (mp_digit)q_msd));
+        MP_CHECKOK(s_mp_mul_d(&t, q_msd));
 
         
 
@@ -4286,7 +4278,7 @@ mp_err s_mp_div(mp_int *rem,
 
 
 
-        MP_DIGIT(quot, unusedRem) = (mp_digit)q_msd;
+        MP_DIGIT(quot, unusedRem) = q_msd;
     }
 
     
