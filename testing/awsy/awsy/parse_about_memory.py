@@ -13,45 +13,85 @@ import gzip
 import json
 
 
+KIND_HEAP = 1
+
 def path_total(data, path):
     """
     Calculates the sum for the given data point path and its children. If
     path does not end with a '/' then only the value for the exact path is
     returned.
     """
-    totals = defaultdict(int)
-    totals_heap = defaultdict(int)
-    totals_heap_allocated = defaultdict(int)
+    path_totals = defaultdict(int)
+
+    
+    explicit_heap = defaultdict(int)
+    heap_allocated = defaultdict(int)
 
     discrete = not path.endswith('/')
 
     def match(value):
-      if discrete:
-        return value == path
-      else:
-        return value.startswith(path)
+        """
+        Helper that performs either an explicit match or a prefix match
+        depending on the format of the path passed in.
+        """
+        if discrete:
+            return value == path
+        else:
+            return value.startswith(path)
 
+    def update_bookkeeping(report):
+        """
+        Adds the value to the heap total if this an explicit entry that is a
+        heap measurement and updates the heap allocated value if necessary.
+        """
+        if report["kind"] == KIND_HEAP and report["path"].startswith("explicit/"):
+            explicit_heap[report["process"]] += report["amount"]
+        elif report["path"] == "heap-allocated":
+            heap_allocated[report["process"]] = report["amount"]
+
+    def heap_unclassified(process):
+        """
+        Calculates the heap-unclassified value for the given process. This is
+        simply the difference between all values reported as heap allocated
+        under the explicit/ tree and the value reported for heap-allocated by
+        the allocator.
+        """
+        
+        
+        assert process in heap_allocated
+
+        unclassified = heap_allocated[process] - explicit_heap[process]
+
+        
+        
+        assert unclassified >= 0
+
+        return unclassified
+
+
+    needs_bookkeeping = path in ("explicit/", "explicit/heap-unclassified")
+
+    
     for report in data["reports"]:
-        if report["kind"] == 1 and report["path"].startswith("explicit/"):
-            totals_heap[report["process"]] += report["amount"]
+        if needs_bookkeeping:
+          update_bookkeeping(report)
 
         if match(report["path"]):
-            totals[report["process"]] += report["amount"]
-        elif report["path"] == "heap-allocated":
-            totals_heap_allocated[report["process"]] = report["amount"]
+            path_totals[report["process"]] += report["amount"]
 
+    
     if path == "explicit/":
-        for k, v in totals_heap.items():
-            if k in totals_heap_allocated:
-                heap_unclassified = totals_heap_allocated[k] - totals_heap[k]
-                assert heap_unclassified > 0
-                totals[k] += heap_unclassified
+        
+        
+        for k, v in explicit_heap.items():
+            path_totals[k] += heap_unclassified(k)
     elif path == "explicit/heap-unclassified":
-        for k, v in totals_heap.items():
-            if k in totals_heap_allocated:
-                totals[k] = totals_heap_allocated[k] - totals_heap[k]
+        
+        
+        for k, v in explicit_heap.items():
+            path_totals[k] = heap_unclassified(k)
 
-    return totals
+    return path_totals
 
 
 def calculate_memory_report_values(memory_report_path, data_point_path,
