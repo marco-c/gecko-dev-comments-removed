@@ -312,6 +312,11 @@ private:
   
 
 
+  void GetConsumers(nsAString& aString);
+
+  
+
+
   void SetConsumers(uint32_t aConsumers);
 
   
