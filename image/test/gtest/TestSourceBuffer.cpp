@@ -373,7 +373,7 @@ TEST_F(ImageSourceBuffer, MinChunkCapacity)
   CheckIteratorIsComplete(iterator, 2, SourceBuffer::MIN_CHUNK_CAPACITY + 1);
 }
 
-TEST_F(ImageSourceBuffer, ExpectLengthDoesNotShrinkBelowMinCapacity)
+TEST_F(ImageSourceBuffer, ExpectLengthAllocatesRequestedCapacity)
 {
   SourceBufferIterator iterator = mSourceBuffer->Iterator();
 
@@ -387,8 +387,11 @@ TEST_F(ImageSourceBuffer, ExpectLengthDoesNotShrinkBelowMinCapacity)
   CheckedCompleteBuffer(iterator, SourceBuffer::MIN_CHUNK_CAPACITY);
 
   
-  CheckedAdvanceIterator(iterator, SourceBuffer::MIN_CHUNK_CAPACITY);
-  CheckIteratorIsComplete(iterator, 1, SourceBuffer::MIN_CHUNK_CAPACITY);
+  
+  CheckedAdvanceIterator(iterator, 1, 1, 1);
+  CheckedAdvanceIterator(iterator, SourceBuffer::MIN_CHUNK_CAPACITY - 1, 2,
+		                   SourceBuffer::MIN_CHUNK_CAPACITY);
+  CheckIteratorIsComplete(iterator, 2, SourceBuffer::MIN_CHUNK_CAPACITY);
 }
 
 TEST_F(ImageSourceBuffer, ExpectLengthGrowsAboveMinCapacity)
