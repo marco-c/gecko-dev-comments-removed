@@ -1272,6 +1272,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.PARENT) + " AS " + Highlights.PARENT + ", " +
                 DBUtils.qualifyColumn(History.TABLE_NAME, History._ID) + " AS " + Highlights.HISTORY_ID + ", " +
 
+                
+
+
+
                 "CASE WHEN " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks._ID) + " IS NOT NULL "
                 + "AND " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks.PARENT) + " IS NOT " + Bookmarks.FIXED_PINNED_LIST_ID + " "
                 + "THEN " + DBUtils.qualifyColumn(Bookmarks.TABLE_NAME, Bookmarks._ID) + " "
