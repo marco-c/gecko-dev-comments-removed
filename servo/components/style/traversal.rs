@@ -40,23 +40,6 @@ impl PreTraverseToken {
     pub fn should_traverse(&self) -> bool { self.0 }
 }
 
-
-#[derive(Clone, Copy, Debug)]
-pub enum TraversalDriver {
-    
-    Parallel,
-    
-    Sequential,
-}
-
-impl TraversalDriver {
-    
-    #[inline]
-    pub fn is_parallel(&self) -> bool {
-        matches!(*self, TraversalDriver::Parallel)
-    }
-}
-
 #[cfg(feature = "servo")]
 #[inline]
 fn is_servo_nonincremental_layout() -> bool {
@@ -369,14 +352,6 @@ pub trait DomTraversal<E: TElement> : Sync {
 
     
     fn shared_context(&self) -> &SharedStyleContext;
-
-    
-    
-    
-    
-    
-    
-    fn is_parallel(&self) -> bool;
 }
 
 
