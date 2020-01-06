@@ -835,7 +835,6 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
                                const uint32_t aLineNumber)
 {
   bool isJavaScript = true;
-  uint32_t version = JSVERSION_DEFAULT;
   nsresult rv;
 
   
@@ -861,7 +860,6 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
 
           if (nsContentUtils::IsJavascriptMIMEType(mimeType)) {
               isJavaScript = true;
-              version = JSVERSION_DEFAULT;
 
               
               nsAutoString versionName;
@@ -888,7 +886,6 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
           nsAutoString lang(aAttributes[1]);
           if (nsContentUtils::IsJavaScriptLanguage(lang)) {
               isJavaScript = true;
-              version = JSVERSION_DEFAULT;
           }
       }
       aAttributes += 2;
@@ -904,7 +901,7 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
   if (doc)
       globalObject = do_QueryInterface(doc->GetWindow());
   RefPtr<nsXULPrototypeScript> script =
-      new nsXULPrototypeScript(aLineNumber, version);
+      new nsXULPrototypeScript(aLineNumber);
 
   
   if (! src.IsEmpty()) {
