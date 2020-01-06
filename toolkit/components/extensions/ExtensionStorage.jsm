@@ -13,122 +13,65 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
-                                  "resource://gre/modules/ExtensionUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
-                                  "resource://gre/modules/JSONFile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+                                  "resource://gre/modules/AsyncShutdown.jsm");
 
-const global = this;
 
-function isStructuredCloneHolder(value) {
-  return (value && typeof value === "object" &&
-          Cu.getClassName(value, true) === "StructuredCloneHolder");
-}
 
-class SerializeableMap extends Map {
-  toJSON() {
-    let result = {};
-    for (let [key, value] of this) {
-      if (isStructuredCloneHolder(value)) {
-        value = value.deserialize(global);
-        this.set(key, value);
+
+
+
+
+
+
+
+
+
+
+
+function jsonReplacer(context, key, value) {
+  switch (typeof(value)) {
+    
+    case "string":
+    case "number":
+    case "boolean":
+      return value;
+
+    case "object":
+      if (value === null) {
+        return value;
       }
 
-      result[key] = value;
-    }
-    return result;
+      switch (Cu.getClassName(value, true)) {
+        
+        case "Array":
+        case "Object":
+          return value;
+
+        
+        
+        case "Date":
+        case "RegExp":
+          return String(value);
+      }
+      break;
+  }
+
+  if (!key) {
+    
+    
+    return new context.cloneScope.Object();
   }
 
   
-
-
-
-
-
-
-  toJSONSafe() {
-    let result = {};
-    for (let [key, value] of this) {
-      try {
-        void JSON.serialize(value);
-
-        result[key] = value;
-      } catch (e) {
-        Cu.reportError(new Error(`Failed to serialize browser.storage key "${key}": ${e}`));
-      }
-    }
-    return result;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function serialize(value) {
-  if (value && typeof value === "object" && !isStructuredCloneHolder(value)) {
-    return new StructuredCloneHolder(value);
-  }
-  return value;
+  return undefined;
 }
 
 this.ExtensionStorage = {
-  
-  jsonFilePromises: new Map(),
-
+  cache: new Map(),
   listeners: new Map(),
-
-  
-
-
-
-
-
-
-
-  async _readFile(extensionId) {
-    OS.File.makeDir(this.getExtensionDir(extensionId), {
-      ignoreExisting: true,
-      from: OS.Constants.Path.profileDir,
-    });
-
-    let jsonFile = new JSONFile({path: this.getStorageFile(extensionId)});
-    await jsonFile.load();
-
-    jsonFile.data = new SerializeableMap(Object.entries(jsonFile.data));
-
-    return jsonFile;
-  },
-
-  
-
-
-
-
-
-
-
-  getFile(extensionId) {
-    let promise = this.jsonFilePromises.get(extensionId);
-    if (!promise) {
-      promise = this._readFile(extensionId);
-      this.jsonFilePromises.set(extensionId, promise);
-    }
-    return promise;
-  },
 
   
 
@@ -142,167 +85,129 @@ this.ExtensionStorage = {
 
 
   sanitize(value, context) {
-    let json = context.jsonStringify(value === undefined ? null : value);
-    if (json == undefined) {
-      throw new ExtensionUtils.ExtensionError("DataCloneError: The object could not be cloned.");
-    }
+    let json = context.jsonStringify(value, jsonReplacer.bind(null, context));
     return JSON.parse(json);
   },
-
-
-  
-
-
-
-
-
-
 
   getExtensionDir(extensionId) {
     return OS.Path.join(this.extensionDir, extensionId);
   },
 
-  
-
-
-
-
-
-
-
   getStorageFile(extensionId) {
     return OS.Path.join(this.extensionDir, extensionId, "storage.js");
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async set(extensionId, items) {
-    let jsonFile = await this.getFile(extensionId);
-
-    let changes = {};
-    for (let prop in items) {
-      let item = items[prop];
-      changes[prop] = {oldValue: serialize(jsonFile.data.get(prop)), newValue: serialize(item)};
-      jsonFile.data.set(prop, item);
+  read(extensionId) {
+    if (this.cache.has(extensionId)) {
+      return this.cache.get(extensionId);
     }
 
-    this.notifyListeners(extensionId, changes);
-
-    jsonFile.saveSoon();
-    return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  async remove(extensionId, items) {
-    let jsonFile = await this.getFile(extensionId);
-
-    let changed = false;
-    let changes = {};
-
-    for (let prop of [].concat(items)) {
-      if (jsonFile.data.has(prop)) {
-        changes[prop] = {oldValue: serialize(jsonFile.data.get(prop))};
-        jsonFile.data.delete(prop);
-        changed = true;
+    let path = this.getStorageFile(extensionId);
+    let decoder = new TextDecoder();
+    let promise = OS.File.read(path);
+    promise = promise.then(array => {
+      return JSON.parse(decoder.decode(array));
+    }).catch((error) => {
+      if (!error.becauseNoSuchFile) {
+        Cu.reportError("Unable to parse JSON data for extension storage.");
       }
-    }
-
-    if (changed) {
-      this.notifyListeners(extensionId, changes);
-      jsonFile.saveSoon();
-    }
-    return null;
+      return {};
+    });
+    this.cache.set(extensionId, promise);
+    return promise;
   },
 
-  
+  write(extensionId) {
+    let promise = this.read(extensionId).then(extData => {
+      let encoder = new TextEncoder();
+      let array = encoder.encode(JSON.stringify(extData));
+      let path = this.getStorageFile(extensionId);
+      OS.File.makeDir(this.getExtensionDir(extensionId), {
+        ignoreExisting: true,
+        from: OS.Constants.Path.profileDir,
+      });
+      let promise = OS.File.writeAtomic(path, array);
+      return promise;
+    }).catch(() => {
+      
+      Cu.reportError("Unable to write JSON data for extension storage.");
+    });
 
+    AsyncShutdown.profileBeforeChange.addBlocker(
+      "ExtensionStorage: Finish writing extension data",
+      promise);
 
-
-
-
-
-
-  async clear(extensionId) {
-    let jsonFile = await this.getFile(extensionId);
-
-    let changed = false;
-    let changes = {};
-
-    for (let [prop, oldValue] of jsonFile.data.entries()) {
-      changes[prop] = {oldValue: serialize(oldValue)};
-      jsonFile.data.delete(prop);
-      changed = true;
-    }
-
-    if (changed) {
-      this.notifyListeners(extensionId, changes);
-      jsonFile.saveSoon();
-    }
-    return null;
+    return promise.then(() => {
+      AsyncShutdown.profileBeforeChange.removeBlocker(promise);
+    });
   },
 
-  
+  set(extensionId, items) {
+    return this.read(extensionId).then(extData => {
+      let changes = {};
+      for (let prop in items) {
+        let item = items[prop];
+        changes[prop] = {oldValue: extData[prop], newValue: item};
+        extData[prop] = item;
+      }
 
+      this.notifyListeners(extensionId, changes);
 
+      return this.write(extensionId);
+    });
+  },
 
+  remove(extensionId, items) {
+    return this.read(extensionId).then(extData => {
+      let changes = {};
+      for (let prop of [].concat(items)) {
+        changes[prop] = {oldValue: extData[prop]};
+        delete extData[prop];
+      }
 
+      this.notifyListeners(extensionId, changes);
 
+      return this.write(extensionId);
+    });
+  },
 
+  clear(extensionId) {
+    return this.read(extensionId).then(extData => {
+      let changes = {};
+      for (let prop of Object.keys(extData)) {
+        changes[prop] = {oldValue: extData[prop]};
+        delete extData[prop];
+      }
 
+      this.notifyListeners(extensionId, changes);
 
+      return this.write(extensionId);
+    });
+  },
 
-
-
-
-
-
-
-
-
-  async get(extensionId, keys) {
-    let jsonFile = await this.getFile(extensionId);
-    let {data} = jsonFile;
-
-    let result = {};
-    if (keys === null) {
-      Object.assign(result, data.toJSON());
-    } else if (typeof(keys) == "object" && !Array.isArray(keys)) {
-      for (let prop in keys) {
-        if (data.has(prop)) {
-          result[prop] = serialize(data.get(prop));
-        } else {
-          result[prop] = keys[prop];
+  get(extensionId, keys) {
+    return this.read(extensionId).then(extData => {
+      let result = {};
+      if (keys === null) {
+        Object.assign(result, extData);
+      } else if (typeof(keys) == "object" && !Array.isArray(keys)) {
+        for (let prop in keys) {
+          if (prop in extData) {
+            result[prop] = extData[prop];
+          } else {
+            result[prop] = keys[prop];
+          }
+        }
+      } else {
+        for (let prop of [].concat(keys)) {
+          if (prop in extData) {
+            result[prop] = extData[prop];
+          }
         }
       }
-    } else {
-      for (let prop of [].concat(keys)) {
-        if (data.has(prop)) {
-          result[prop] = serialize(data.get(prop));
-        }
-      }
-    }
 
-    return result;
+      return result;
+    });
   },
 
   addOnChangedListener(extensionId, listener) {
@@ -338,10 +243,7 @@ this.ExtensionStorage = {
       Services.obs.removeObserver(this, "extension-invalidate-storage-cache");
       Services.obs.removeObserver(this, "xpcom-shutdown");
     } else if (topic == "extension-invalidate-storage-cache") {
-      for (let promise of this.jsonFilePromises.values()) {
-        promise.then(jsonFile => { jsonFile.finalize(); });
-      }
-      this.jsonFilePromises.clear();
+      this.cache.clear();
     }
   },
 };

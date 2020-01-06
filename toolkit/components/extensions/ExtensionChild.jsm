@@ -809,11 +809,7 @@ class ChildAPIManager {
 
 
 
-
-
-
-
-  callParentAsyncFunction(path, args, callback, options = {}) {
+  callParentAsyncFunction(path, args, callback) {
     let callId = getUniqueId();
     let deferred = PromiseUtils.defer();
     this.callPromises.set(callId, deferred);
@@ -823,7 +819,6 @@ class ChildAPIManager {
       callId,
       path,
       args,
-      noClone: options.noClone || false,
     });
 
     return this.context.wrapPromise(deferred.promise, callback);

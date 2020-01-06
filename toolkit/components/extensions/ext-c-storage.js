@@ -1,71 +1,16 @@
 "use strict";
 
-
-
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch",
                                   "resource://gre/modules/TelemetryStopwatch.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-var {
-  ExtensionError,
-} = ExtensionUtils;
-
 const storageGetHistogram = "WEBEXT_STORAGE_LOCAL_GET_MS";
 const storageSetHistogram = "WEBEXT_STORAGE_LOCAL_SET_MS";
 
 this.storage = class extends ExtensionAPI {
   getAPI(context) {
-    
-
-
-
-
-
-
-
-
-
-    function serialize(items) {
-      if (items && typeof items === "object" && !Array.isArray(items)) {
-        let result = {};
-        for (let [key, value] of Object.entries(items)) {
-          try {
-            result[key] = new StructuredCloneHolder(value, context.cloneScope);
-          } catch (e) {
-            throw new ExtensionError(String(e));
-          }
-        }
-        return result;
-      }
-      return items;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    function deserialize(items) {
-      let result = new context.cloneScope.Object();
-      for (let [key, value] of Object.entries(items)) {
-        if (value && typeof value === "object" && Cu.getClassName(value, true) === "StructuredCloneHolder") {
-          value = value.deserialize(context.cloneScope);
-        } else {
-          value = Cu.cloneInto(value, context.cloneScope);
-        }
-        result[key] = value;
-      }
-      return result;
-    }
-
     function sanitize(items) {
       
       
@@ -85,7 +30,6 @@ this.storage = class extends ExtensionAPI {
       }
       return sanitized;
     }
-
     return {
       storage: {
         local: {
@@ -93,9 +37,10 @@ this.storage = class extends ExtensionAPI {
             const stopwatchKey = {};
             TelemetryStopwatch.start(storageGetHistogram, stopwatchKey);
             try {
+              keys = sanitize(keys);
               let result = await context.childManager.callParentAsyncFunction("storage.local.get", [
-                serialize(keys),
-              ], null, {noClone: true}).then(deserialize);
+                keys,
+              ]);
               TelemetryStopwatch.finish(storageGetHistogram, stopwatchKey);
               return result;
             } catch (e) {
@@ -107,9 +52,10 @@ this.storage = class extends ExtensionAPI {
             const stopwatchKey = {};
             TelemetryStopwatch.start(storageSetHistogram, stopwatchKey);
             try {
+              items = sanitize(items);
               let result = await context.childManager.callParentAsyncFunction("storage.local.set", [
-                serialize(items),
-              ], null, {noClone: true});
+                items,
+              ]);
               TelemetryStopwatch.finish(storageSetHistogram, stopwatchKey);
               return result;
             } catch (e) {
@@ -133,22 +79,6 @@ this.storage = class extends ExtensionAPI {
             ]);
           },
         },
-
-        onChanged: new EventManager(context, "storage.onChanged", fire => {
-          let onChanged = (data, area) => {
-            let changes = new context.cloneScope.Object();
-            for (let [key, value] of Object.entries(data)) {
-              changes[key] = deserialize(value);
-            }
-            fire.raw(changes, area);
-          };
-
-          let parent = context.childManager.getParentEvent("storage.onChanged");
-          parent.addListener(onChanged);
-          return () => {
-            parent.removeListener(onChanged);
-          };
-        }).api(),
       },
     };
   }

@@ -286,20 +286,8 @@ JSONFile.prototype = {
 
 
   async _save() {
-    let json;
-    try {
-      json = JSON.stringify(this._data);
-    } catch (e) {
-      
-      if (typeof this._data.toJSONSafe == "function") {
-        json = JSON.stringify(this._data.toJSONSafe());
-      } else {
-        throw e;
-      }
-    }
-
     
-    let bytes = gTextEncoder.encode(json);
+    let bytes = gTextEncoder.encode(JSON.stringify(this._data));
     if (this._beforeSave) {
       await Promise.resolve(this._beforeSave());
     }
