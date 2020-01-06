@@ -517,8 +517,11 @@ SERVO_BINDING_FUNC(Servo_Shutdown, void)
 
 SERVO_BINDING_FUNC(Servo_NoteExplicitHints, void, RawGeckoElementBorrowed element,
                    nsRestyleHint restyle_hint, nsChangeHint change_hint)
+
+
+
 SERVO_BINDING_FUNC(Servo_TakeChangeHint,
-                   nsChangeHint,
+                   uint32_t,
                    RawGeckoElementBorrowed element,
                    bool* was_restyled)
 SERVO_BINDING_FUNC(Servo_ResolveStyle, ServoStyleContextStrong,

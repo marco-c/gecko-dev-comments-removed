@@ -703,7 +703,8 @@ ServoRestyleManager::ProcessPostTraversal(
 
   
   bool wasRestyled;
-  nsChangeHint changeHint = Servo_TakeChangeHint(aElement, &wasRestyled);
+  nsChangeHint changeHint =
+    static_cast<nsChangeHint>(Servo_TakeChangeHint(aElement, &wasRestyled));
 
   
   
