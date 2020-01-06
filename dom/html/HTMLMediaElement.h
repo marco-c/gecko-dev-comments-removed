@@ -65,6 +65,7 @@ class nsIChannel;
 class nsIHttpChannel;
 class nsILoadGroup;
 class nsIRunnable;
+class nsISerialEventTarget;
 class nsITimer;
 class nsRange;
 
@@ -775,6 +776,11 @@ public:
   void AsyncResolveSeekDOMPromiseIfExists() override;
   void AsyncRejectSeekDOMPromiseIfExists() override;
 
+  nsISerialEventTarget* MainThreadEventTarget()
+  {
+    return mMainThreadEventTarget;
+  }
+
 protected:
   virtual ~HTMLMediaElement();
 
@@ -1316,6 +1322,10 @@ protected:
   
   
   RefPtr<MediaDecoder> mDecoder;
+
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
 
   
   RefPtr<AbstractThread> mAbstractMainThread;
