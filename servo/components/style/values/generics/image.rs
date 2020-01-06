@@ -8,6 +8,7 @@
 
 use Atom;
 use cssparser::serialize_identifier;
+use custom_properties::SpecifiedValue;
 use std::fmt;
 use style_traits::{HasViewportPercentage, ToCss};
 use values::computed::ComputedValueAsSpecified;
@@ -136,17 +137,26 @@ pub struct ColorStop<Color, LengthOrPercentage> {
 
 
 
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct PaintWorklet {
     
     pub name: Atom,
+    
+    
+    pub arguments: Vec<SpecifiedValue>,
 }
+
+impl ComputedValueAsSpecified for PaintWorklet {}
 
 impl ToCss for PaintWorklet {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         dest.write_str("paint(")?;
         serialize_identifier(&*self.name.to_string(), dest)?;
+        for argument in &self.arguments {
+            dest.write_str(", ")?;
+            argument.to_css(dest)?;
+        }
         dest.write_str(")")
     }
 }

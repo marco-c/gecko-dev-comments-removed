@@ -548,9 +548,14 @@ impl<'a> CanvasPaintThread<'a> {
     }
 
     fn recreate(&mut self, size: Size2D<i32>) {
+        
         self.drawtarget = CanvasPaintThread::create(size);
         self.state = CanvasPaintState::new(self.state.draw_options.antialias);
         self.saved_states.clear();
+        
+        
+        
+        
         
         if let Some(image_key) = self.image_key.take() {
             
@@ -582,6 +587,7 @@ impl<'a> CanvasPaintThread<'a> {
 
             match self.image_key {
                 Some(image_key) => {
+                    debug!("Updating image {:?}.", image_key);
                     self.webrender_api.update_image(image_key,
                                                     descriptor,
                                                     data,
@@ -589,6 +595,7 @@ impl<'a> CanvasPaintThread<'a> {
                 }
                 None => {
                     self.image_key = Some(self.webrender_api.generate_image_key());
+                    debug!("New image {:?}.", self.image_key);
                     self.webrender_api.add_image(self.image_key.unwrap(),
                                                  descriptor,
                                                  data,
