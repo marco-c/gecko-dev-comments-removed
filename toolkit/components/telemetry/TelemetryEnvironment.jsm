@@ -148,6 +148,7 @@ this.TelemetryEnvironment = {
   RECORD_PREF_STATE: 1, 
   RECORD_PREF_VALUE: 2, 
   RECORD_DEFAULTPREF_VALUE: 3, 
+  RECORD_DEFAULTPREF_STATE: 4, 
 
   
   testWatchPreferences(prefMap) {
@@ -180,6 +181,7 @@ this.TelemetryEnvironment = {
 const RECORD_PREF_STATE = TelemetryEnvironment.RECORD_PREF_STATE;
 const RECORD_PREF_VALUE = TelemetryEnvironment.RECORD_PREF_VALUE;
 const RECORD_DEFAULTPREF_VALUE = TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE;
+const RECORD_DEFAULTPREF_STATE = TelemetryEnvironment.RECORD_DEFAULTPREF_STATE;
 const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["app.feedback.baseURL", {what: RECORD_PREF_VALUE}],
   ["app.support.baseURL", {what: RECORD_PREF_VALUE}],
@@ -228,6 +230,7 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["extensions.update.url", {what: RECORD_PREF_VALUE}],
   ["extensions.update.background.url", {what: RECORD_PREF_VALUE}],
   ["extensions.screenshots.disabled", {what: RECORD_PREF_VALUE}],
+  ["general.config.filename", {what: RECORD_DEFAULTPREF_STATE}],
   ["general.smoothScroll", {what: RECORD_PREF_VALUE}],
   ["gfx.direct2d.disabled", {what: RECORD_PREF_VALUE}],
   ["gfx.direct2d.force-enabled", {what: RECORD_PREF_VALUE}],
@@ -1033,7 +1036,9 @@ EnvironmentCache.prototype = {
     for (let [pref, policy] of this._watchedPrefs.entries()) {
       let prefType = Services.prefs.getPrefType(pref);
 
-      if (policy.what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE) {
+      let what = policy.what;
+      if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_VALUE ||
+          what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
         
         if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
           continue;
@@ -1046,7 +1051,9 @@ EnvironmentCache.prototype = {
       
       
       let prefValue;
-      if (policy.what == TelemetryEnvironment.RECORD_PREF_STATE) {
+      if (what == TelemetryEnvironment.RECORD_DEFAULTPREF_STATE) {
+        prefValue = "<set>";
+      } else if (what == TelemetryEnvironment.RECORD_PREF_STATE) {
         prefValue = "<user-set>";
       } else if (prefType == Ci.nsIPrefBranch.PREF_STRING) {
         prefValue = Services.prefs.getStringPref(pref);
