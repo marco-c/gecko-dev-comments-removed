@@ -581,6 +581,10 @@ private:
 
     
     
+    bool           mSpeculativeConnectEnabled;
+
+    
+    
     bool           mRequestTokenBucketEnabled;
     uint16_t       mRequestTokenBucketMinParallelism;
     uint32_t       mRequestTokenBucketHz;  
