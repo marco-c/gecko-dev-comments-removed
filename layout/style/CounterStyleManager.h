@@ -345,6 +345,8 @@ public:
     return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
   }
 
+  static nsIAtom* GetStyleNameFromType(int32_t aStyle);
+
   
   
   
