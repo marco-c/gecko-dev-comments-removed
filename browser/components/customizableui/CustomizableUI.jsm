@@ -1453,15 +1453,7 @@ var CustomizableUIInternal = {
           
           
           viewNode.classList.add("PanelUI-subView");
-
-          for (let eventName of kSubviewEvents) {
-            let handler = "on" + eventName;
-            if (typeof aWidget[handler] == "function") {
-              viewNode.addEventListener(eventName, aWidget[handler]);
-            }
-          }
-
-          log.debug("Widget " + aWidget.id + " showing and hiding event handlers set.");
+          this.ensureSubviewListeners(viewNode);
         } else {
           log.error("Could not find the view node with id: " + aWidget.viewId +
                     ", for widget: " + aWidget.id + ".");
@@ -1475,6 +1467,25 @@ var CustomizableUIInternal = {
 
     aWidget.instances.set(aDocument, node);
     return node;
+  },
+
+  ensureSubviewListeners(viewNode) {
+    if (viewNode._addedEventListeners) {
+      return;
+    }
+    let viewId = viewNode.id;
+    let widget = [...gPalette.values()].find(w => w.viewId == viewId);
+    if (!widget) {
+      return;
+    }
+    for (let eventName of kSubviewEvents) {
+      let handler = "on" + eventName;
+      if (typeof widget[handler] == "function") {
+        viewNode.addEventListener(eventName, widget[handler]);
+      }
+    }
+    viewNode._addedEventListeners = true;
+    log.debug("Widget " + widget.id + " showing and hiding event handlers set.");
   },
 
   getLocalizedProperty(aWidget, aProp, aFormatArgs, aDef) {
@@ -3513,6 +3524,17 @@ this.CustomizableUI = {
       CustomizableUIInternal.wrapWidget,
       CustomizableUIInternal
     );
+  },
+
+  
+
+
+
+
+
+
+  ensureSubviewListeners(aViewNode) {
+    return CustomizableUIInternal.ensureSubviewListeners(aViewNode);
   },
   
 
