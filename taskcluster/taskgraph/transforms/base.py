@@ -10,7 +10,7 @@ class TransformConfig(object):
     argument to transforms is an instance of this class, possibly with
     additional kind-specific attributes beyond those set here."""
     def __init__(self, kind, path, config, params,
-                 kind_dependencies_tasks=None):
+                 kind_dependencies_tasks=None, graph_config=None):
         
         self.kind = kind
 
@@ -26,6 +26,9 @@ class TransformConfig(object):
         
         
         self.kind_dependencies_tasks = kind_dependencies_tasks
+
+        
+        self.graph_config = graph_config or {}
 
 
 class TransformSequence(object):
