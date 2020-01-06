@@ -6,7 +6,7 @@
 
 this.EXPORTED_SYMBOLS = ["RemotePages", "RemotePageManager", "PageListener"];
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -127,7 +127,14 @@ RemotePages.prototype = {
   
   sendAsyncMessage(name, data = null) {
     for (let port of this.messagePorts.values()) {
-      port.sendAsyncMessage(name, data);
+      try {
+        port.sendAsyncMessage(name, data);
+      } catch (e) {
+        
+        
+        if (e.result !== Cr.NS_ERROR_NOT_INITIALIZED)
+          Cu.reportError(e);
+      }
     }
   },
 

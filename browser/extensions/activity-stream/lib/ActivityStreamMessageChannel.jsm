@@ -127,10 +127,8 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
   createChannel() {
     
-    if (this.pageURL === ABOUT_NEW_TAB_URL) {
-      AboutNewTab.override();
-    }
-    this.channel = new RemotePages(this.pageURL);
+    const channel = this.pageURL === ABOUT_NEW_TAB_URL && AboutNewTab.override(true);
+    this.channel = channel || new RemotePages(this.pageURL);
     this.channel.addMessageListener("RemotePage:Init", this.onNewTabInit);
     this.channel.addMessageListener("RemotePage:Load", this.onNewTabLoad);
     this.channel.addMessageListener("RemotePage:Unload", this.onNewTabUnload);
@@ -141,11 +139,16 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   destroyChannel() {
-    this.channel.destroy();
-    this.channel = null;
+    this.channel.removeMessageListener("RemotePage:Init", this.onNewTabInit);
+    this.channel.removeMessageListener("RemotePage:Load", this.onNewTabLoad);
+    this.channel.removeMessageListener("RemotePage:Unload", this.onNewTabUnload);
+    this.channel.removeMessageListener(this.incomingMessageName, this.onMessage);
     if (this.pageURL === ABOUT_NEW_TAB_URL) {
-      AboutNewTab.reset();
+      AboutNewTab.reset(this.channel);
+    } else {
+      this.channel.destroy();
     }
+    this.channel = null;
   }
 
 
