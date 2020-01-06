@@ -22,7 +22,7 @@ add_task(async function() {
   });
 
   
-  let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, openedUriString, true);
+  let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, openedUriString);
   await ContentTask.spawn(tab.linkedBrowser, openedUriString, uri => {
     content.open(uri, "_blank");
   });
@@ -33,6 +33,7 @@ add_task(async function() {
   });
 
   let openedBrowser = openedTab.linkedBrowser;
+  await BrowserTestUtils.browserLoaded(openedBrowser);
 
   
   openedBrowser.loadURI("http://example.org/");
