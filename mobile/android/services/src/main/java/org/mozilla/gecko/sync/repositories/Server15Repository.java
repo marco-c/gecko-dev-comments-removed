@@ -111,6 +111,10 @@ public class Server15Repository extends Repository {
     return false;
   }
 
+  public boolean getFullFetchForced() {
+    return false;
+  }
+
   
 
 

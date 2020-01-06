@@ -96,6 +96,7 @@ public class SyncConfiguration {
   public static final String CLIENTS_COLLECTION_TIMESTAMP = "serverClientsTimestamp";  
   public static final String CLIENT_RECORD_TIMESTAMP = "serverClientRecordTimestamp";  
   public static final String MIGRATION_SENTINEL_CHECK_TIMESTAMP = "migrationSentinelCheckTimestamp";  
+  public static final String BOOKMARK_VALIDATION_CHECK_TIMESTAMP = "bookmarkValidationCheckTimestamp"; 
 
   public static final String PREF_CLUSTER_URL = "clusterURL";
   public static final String PREF_SYNC_ID = "syncID";
@@ -456,6 +457,14 @@ public class SyncConfiguration {
 
   public long getLastMigrationSentinelCheckTimestamp() {
     return getPrefs().getLong(SyncConfiguration.MIGRATION_SENTINEL_CHECK_TIMESTAMP, 0L);
+  }
+
+  public void persistLastValidationCheckTimestamp(long timestamp) {
+    getEditor().putLong(SyncConfiguration.BOOKMARK_VALIDATION_CHECK_TIMESTAMP, timestamp).commit();
+  }
+
+  public long getLastValidationCheckTimestamp() {
+    return getPrefs().getLong(SyncConfiguration.BOOKMARK_VALIDATION_CHECK_TIMESTAMP, 0L);
   }
 
   public void purgeCryptoKeys() {

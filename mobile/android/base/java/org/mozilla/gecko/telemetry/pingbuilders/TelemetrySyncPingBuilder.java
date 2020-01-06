@@ -35,7 +35,7 @@ public class TelemetrySyncPingBuilder extends TelemetryLocalPingBuilder {
             final TelemetryStageCollector stage = stages.get(stageName);
 
             
-            if (stage.inbound == 0 && stage.outbound == 0) {
+            if (stage.inbound == 0 && stage.outbound == 0 && stage.error == null && stage.validation == null) {
                 continue;
             }
 
@@ -82,6 +82,10 @@ public class TelemetrySyncPingBuilder extends TelemetryLocalPingBuilder {
             
             if (stage.error != null) {
                 stageJSON.put("failureReason", stage.error);
+            }
+            
+            if (stage.validation != null) {
+                stageJSON.put("validation", stage.validation);
             }
 
             addUnchecked(engines, stageJSON);
