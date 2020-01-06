@@ -19,8 +19,8 @@ use style_traits::values::specified::AllowedNumericType;
 use super::{Auto, CSSFloat, CSSInteger, Either, None_};
 use super::computed::{Context, ToComputedValue};
 use super::generics::{GreaterThanOrEqualToOne, NonNegative};
-use super::generics::grid::{TrackBreadth as GenericTrackBreadth, TrackSize as GenericTrackSize};
-use super::generics::grid::TrackList as GenericTrackList;
+use super::generics::grid::{GridLine as GenericGridLine, TrackBreadth as GenericTrackBreadth};
+use super::generics::grid::{TrackSize as GenericTrackSize, TrackList as GenericTrackList};
 use values::computed::ComputedValueAsSpecified;
 use values::specified::calc::CalcNode;
 
@@ -52,7 +52,6 @@ pub use self::svg::{SVGLength, SVGOpacity, SVGPaint, SVGPaintKind, SVGStrokeDash
 pub use self::text::{InitialLetter, LetterSpacing, LineHeight, WordSpacing};
 pub use self::time::Time;
 pub use self::transform::{TimingFunction, TransformOrigin};
-pub use super::generics::grid::GridLine;
 pub use super::generics::grid::GridTemplateComponent as GenericGridTemplateComponent;
 
 #[cfg(feature = "gecko")]
@@ -356,9 +355,11 @@ impl ToComputedValue for Opacity {
     }
 }
 
+
+
+
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[allow(missing_docs)]
 pub struct Integer {
     value: CSSInteger,
     was_calc: bool,
@@ -387,7 +388,6 @@ impl Integer {
     }
 }
 
-
 impl Parse for Integer {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         parse_integer(context, input)
@@ -395,25 +395,37 @@ impl Parse for Integer {
 }
 
 impl Integer {
-    #[allow(missing_docs)]
-    pub fn parse_with_minimum<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>, min: i32)
-                                      -> Result<Integer, ParseError<'i>> {
+    
+    pub fn parse_with_minimum<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        min: i32
+    ) -> Result<Integer, ParseError<'i>> {
         match parse_integer(context, input) {
+            
+            
+            
+            
+            
             Ok(value) if value.value() >= min => Ok(value),
             Ok(_value) => Err(StyleParseError::UnspecifiedError.into()),
             Err(e) => Err(e),
         }
     }
 
-    #[allow(missing_docs)]
-    pub fn parse_non_negative<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                                      -> Result<Integer, ParseError<'i>> {
+    
+    pub fn parse_non_negative<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Integer, ParseError<'i>> {
         Integer::parse_with_minimum(context, input, 0)
     }
 
-    #[allow(missing_docs)]
-    pub fn parse_positive<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
-                                  -> Result<Integer, ParseError<'i>> {
+    
+    pub fn parse_positive<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>
+    ) -> Result<Integer, ParseError<'i>> {
         Integer::parse_with_minimum(context, input, 1)
     }
 }
@@ -484,10 +496,13 @@ pub type TrackSize = GenericTrackSize<LengthOrPercentage>;
 
 
 
-pub type TrackList = GenericTrackList<LengthOrPercentage>;
+pub type TrackList = GenericTrackList<LengthOrPercentage, Integer>;
 
 
-pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage>;
+pub type GridLine = GenericGridLine<Integer>;
+
+
+pub type GridTemplateComponent = GenericGridTemplateComponent<LengthOrPercentage, Integer>;
 
 
 pub type LengthOrPercentageOrNumber = Either<Number, LengthOrPercentage>;

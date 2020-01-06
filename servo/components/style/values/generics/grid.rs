@@ -10,16 +10,16 @@ use parser::{Parse, ParserContext};
 use std::{fmt, mem, usize};
 use style_traits::{ToCss, ParseError, StyleParseError};
 use values::{CSSFloat, CustomIdent, serialize_dimension};
-use values::computed::{ComputedValueAsSpecified, Context, ToComputedValue};
-use values::specified::Integer;
+use values::computed::{Context, ToComputedValue};
+use values::specified;
 use values::specified::grid::parse_line_names;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 
 
-pub struct GridLine {
+pub struct GridLine<Integer> {
     
     pub is_span: bool,
     
@@ -30,24 +30,26 @@ pub struct GridLine {
     pub line_num: Option<Integer>,
 }
 
-impl GridLine {
+impl<Integer> GridLine<Integer> {
+    
+    pub fn auto() -> Self {
+        Self {
+            is_span: false,
+            line_num: None,
+            ident: None,
+        }
+    }
+
     
     pub fn is_auto(&self) -> bool {
         self.ident.is_none() && self.line_num.is_none() && !self.is_span
     }
 }
 
-impl Default for GridLine {
-    fn default() -> Self {
-        GridLine {
-            is_span: false,
-            ident: None,
-            line_num: None,
-        }
-    }
-}
-
-impl ToCss for GridLine {
+impl<Integer> ToCss for GridLine<Integer>
+where
+    Integer: ToCss,
+{
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         if self.is_auto() {
             return dest.write_str("auto")
@@ -57,9 +59,9 @@ impl ToCss for GridLine {
             dest.write_str("span")?;
         }
 
-        if let Some(i) = self.line_num {
+        if let Some(ref i) = self.line_num {
             dest.write_str(" ")?;
-            i.value().to_css(dest)?;
+            i.to_css(dest)?;
         }
 
         if let Some(ref s) = self.ident {
@@ -71,9 +73,9 @@ impl ToCss for GridLine {
     }
 }
 
-impl Parse for GridLine {
+impl Parse for GridLine<specified::Integer> {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
-        let mut grid_line = Default::default();
+        let mut grid_line = Self::auto();
         if input.try(|i| i.expect_ident_matching("auto")).is_ok() {
             return Ok(grid_line)
         }
@@ -95,7 +97,8 @@ impl Parse for GridLine {
                 }
 
                 grid_line.is_span = true;
-            } else if let Ok(i) = input.try(|i| Integer::parse(context, i)) {
+            } else if let Ok(i) = input.try(|i| specified::Integer::parse(context, i)) {
+                
                 if i.value() == 0 || val_before_span || grid_line.line_num.is_some() {
                     return Err(StyleParseError::UnspecifiedError.into())
                 }
@@ -129,14 +132,12 @@ impl Parse for GridLine {
     }
 }
 
-impl ComputedValueAsSpecified for GridLine {}
-
 define_css_keyword_enum!{ TrackKeyword:
     "auto" => Auto,
     "max-content" => MaxContent,
     "min-content" => MinContent
 }
-impl ComputedValueAsSpecified for TrackKeyword {}
+add_impls_for_keyword_enum!(TrackKeyword);
 
 
 
@@ -316,9 +317,15 @@ impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
 
 
 
-pub fn concat_serialize_idents<W>(prefix: &str, suffix: &str,
-                                  slice: &[CustomIdent], sep: &str, dest: &mut W) -> fmt::Result
-    where W: fmt::Write
+pub fn concat_serialize_idents<W>(
+    prefix: &str,
+    suffix: &str,
+    slice: &[CustomIdent],
+    sep: &str,
+    dest: &mut W,
+) -> fmt::Result
+where
+    W: fmt::Write
 {
     if let Some((ref first, rest)) = slice.split_first() {
         dest.write_str(prefix)?;
@@ -338,8 +345,8 @@ pub fn concat_serialize_idents<W>(prefix: &str, suffix: &str,
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
-pub enum RepeatCount {
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+pub enum RepeatCount<Integer> {
     
     Number(Integer),
     
@@ -348,19 +355,15 @@ pub enum RepeatCount {
     AutoFit,
 }
 
-impl Parse for RepeatCount {
+impl Parse for RepeatCount<specified::Integer> {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         
         const MAX_LINE: i32 = 10000;
-        if let Ok(mut i) = input.try(|i| Integer::parse(context, i)) {
-            if i.value() > 0 {
-                if i.value() > MAX_LINE {
-                    i = Integer::new(MAX_LINE);
-                }
-                Ok(RepeatCount::Number(i))
-            } else {
-                Err(StyleParseError::UnspecifiedError.into())
+        if let Ok(mut i) = input.try(|i| specified::Integer::parse_positive(context, i)) {
+            if i.value() > MAX_LINE {
+                i = specified::Integer::new(MAX_LINE);
             }
+            Ok(RepeatCount::Number(i))
         } else {
             try_match_ident_ignore_ascii_case! { input.expect_ident()?,
                 "auto-fill" => Ok(RepeatCount::AutoFill),
@@ -370,17 +373,15 @@ impl Parse for RepeatCount {
     }
 }
 
-impl ComputedValueAsSpecified for RepeatCount {}
-
 
 
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToComputedValue)]
-pub struct TrackRepeat<L> {
+pub struct TrackRepeat<L, I> {
     
-    pub count: RepeatCount,
+    pub count: RepeatCount<I>,
     
     
     
@@ -392,7 +393,7 @@ pub struct TrackRepeat<L> {
     pub track_sizes: Vec<TrackSize<L>>,
 }
 
-impl<L: ToCss> ToCss for TrackRepeat<L> {
+impl<L: ToCss, I: ToCss> ToCss for TrackRepeat<L, I> {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         dest.write_str("repeat(")?;
         self.count.to_css(dest)?;
@@ -418,7 +419,7 @@ impl<L: ToCss> ToCss for TrackRepeat<L> {
         Ok(())
     }
 }
-impl<L: Clone> TrackRepeat<L> {
+impl<L: Clone> TrackRepeat<L, specified::Integer> {
     
     pub fn expand(&self) -> Self {
         if let RepeatCount::Number(num) = self.count {
@@ -460,17 +461,17 @@ impl<L: Clone> TrackRepeat<L> {
 
 #[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub enum TrackListValue<T> {
+pub enum TrackListValue<LengthOrPercentage, Integer> {
     
-    TrackSize(TrackSize<T>),
+    TrackSize(TrackSize<LengthOrPercentage>),
     
-    TrackRepeat(TrackRepeat<T>),
+    TrackRepeat(TrackRepeat<LengthOrPercentage, Integer>),
 }
 
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum TrackListType {
     
@@ -490,21 +491,19 @@ pub enum TrackListType {
     Explicit,
 }
 
-impl ComputedValueAsSpecified for TrackListType {}
-
 
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct TrackList<T> {
+pub struct TrackList<LengthOrPercentage, Integer> {
     
     
     
     
     pub list_type: TrackListType,
     
-    pub values: Vec<TrackListValue<T>>,
+    pub values: Vec<TrackListValue<LengthOrPercentage, Integer>>,
     
     
     
@@ -512,10 +511,10 @@ pub struct TrackList<T> {
     
     pub line_names: Box<[Box<[CustomIdent]>]>,
     
-    pub auto_repeat: Option<TrackRepeat<T>>,
+    pub auto_repeat: Option<TrackRepeat<LengthOrPercentage, Integer>>,
 }
 
-impl<T: ToCss> ToCss for TrackList<T> {
+impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         let auto_idx = match self.list_type {
             TrackListType::Auto(i) => i as usize,
@@ -571,6 +570,8 @@ pub struct LineNameList {
     
     pub fill_idx: Option<u32>,
 }
+
+trivial_to_computed_value!(LineNameList);
 
 impl Parse for LineNameList {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
@@ -654,23 +655,21 @@ impl ToCss for LineNameList {
     }
 }
 
-impl ComputedValueAsSpecified for LineNameList {}
-
 
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]
-pub enum GridTemplateComponent<L> {
+pub enum GridTemplateComponent<L, I> {
     
     None,
     
-    TrackList(TrackList<L>),
+    TrackList(TrackList<L, I>),
     
     Subgrid(LineNameList),
 }
 
-impl<L> GridTemplateComponent<L> {
+impl<L, I> GridTemplateComponent<L, I> {
     
     pub fn track_list_len(&self) -> usize {
         match *self {

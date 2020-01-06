@@ -8,10 +8,10 @@
 
 use Atom;
 use cssparser::serialize_identifier;
-use custom_properties::SpecifiedValue;
+use custom_properties;
 use std::fmt;
 use style_traits::ToCss;
-use values::computed::{ComputedValueAsSpecified, Context, ToComputedValue};
+use values::computed::{Context, ToComputedValue};
 
 
 
@@ -153,7 +153,7 @@ define_css_keyword_enum!(ShapeExtent:
     "contain" => Contain,
     "cover" => Cover
 );
-impl ComputedValueAsSpecified for ShapeExtent {}
+add_impls_for_keyword_enum!(ShapeExtent);
 
 
 
@@ -186,10 +186,10 @@ pub struct PaintWorklet {
     pub name: Atom,
     
     
-    pub arguments: Vec<SpecifiedValue>,
+    pub arguments: Vec<custom_properties::SpecifiedValue>,
 }
 
-impl ComputedValueAsSpecified for PaintWorklet {}
+trivial_to_computed_value!(PaintWorklet);
 
 impl ToCss for PaintWorklet {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {

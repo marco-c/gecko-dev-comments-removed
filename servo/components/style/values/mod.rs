@@ -98,7 +98,7 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct CustomIdent(pub Atom);
 
@@ -127,7 +127,7 @@ impl ToCss for CustomIdent {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToComputedValue)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesName {
     
