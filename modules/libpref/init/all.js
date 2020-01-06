@@ -1279,7 +1279,11 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.min_tracking_timeout_value", 10000);
+#else
 pref("dom.min_tracking_timeout_value", 4);
+#endif
 
 
 pref("dom.min_tracking_background_timeout_value", 10000);

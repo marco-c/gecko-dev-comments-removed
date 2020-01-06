@@ -78,6 +78,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetryModules",
                                   "resource://gre/modules/TelemetryModules.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UpdatePing",
                                   "resource://gre/modules/UpdatePing.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryHealthPing",
+		"resource://gre/modules/TelemetryHealthPing.jsm");
 
 
 
@@ -86,94 +88,94 @@ XPCOMUtils.defineLazyModuleGetter(this, "UpdatePing",
 var gLogger = null;
 var gLogAppenderDump = null;
 function configureLogging() {
-  if (!gLogger) {
-    gLogger = Log.repository.getLogger(LOGGER_NAME);
+	if (!gLogger) {
+		gLogger = Log.repository.getLogger(LOGGER_NAME);
 
-    
-    let consoleAppender = new Log.ConsoleAppender(new Log.BasicFormatter());
-    gLogger.addAppender(consoleAppender);
+		
+		let consoleAppender = new Log.ConsoleAppender(new Log.BasicFormatter());
+		gLogger.addAppender(consoleAppender);
 
-    Preferences.observe(PREF_BRANCH_LOG, configureLogging);
-  }
+		Preferences.observe(PREF_BRANCH_LOG, configureLogging);
+	}
 
-  
-  gLogger.level = Log.Level[Preferences.get(TelemetryUtils.Preferences.LogLevel, "Warn")];
+	
+	gLogger.level = Log.Level[Preferences.get(TelemetryUtils.Preferences.LogLevel, "Warn")];
 
-  
-  let logDumping = Preferences.get(TelemetryUtils.Preferences.LogDump, false);
-  if (logDumping != !!gLogAppenderDump) {
-    if (logDumping) {
-      gLogAppenderDump = new Log.DumpAppender(new Log.BasicFormatter());
-      gLogger.addAppender(gLogAppenderDump);
-    } else {
-      gLogger.removeAppender(gLogAppenderDump);
-      gLogAppenderDump = null;
-    }
-  }
+	
+	let logDumping = Preferences.get(TelemetryUtils.Preferences.LogDump, false);
+	if (logDumping != !!gLogAppenderDump) {
+		if (logDumping) {
+			gLogAppenderDump = new Log.DumpAppender(new Log.BasicFormatter());
+			gLogger.addAppender(gLogAppenderDump);
+		} else {
+			gLogger.removeAppender(gLogAppenderDump);
+			gLogAppenderDump = null;
+		}
+	}
 }
 
 
 
 
 var Policy = {
-  now: () => new Date(),
-  generatePingId: () => Utils.generateUUID(),
-  getCachedClientID: () => ClientID.getCachedClientID(),
+now: () => new Date(),
+     generatePingId: () => Utils.generateUUID(),
+     getCachedClientID: () => ClientID.getCachedClientID(),
 }
 
 this.EXPORTED_SYMBOLS = ["TelemetryController"];
 
 this.TelemetryController = Object.freeze({
-  
+		
 
 
-  testAssemblePing(aType, aPayload, aOptions) {
-    return Impl.assemblePing(aType, aPayload, aOptions);
-  },
+		testAssemblePing(aType, aPayload, aOptions) {
+		return Impl.assemblePing(aType, aPayload, aOptions);
+		},
 
-  
+		
 
 
-  testInitLogging() {
-    configureLogging();
-  },
+		testInitLogging() {
+		configureLogging();
+		},
 
-  
+		
 
 
-  testReset() {
-    return Impl.reset();
-  },
+		testReset() {
+		return Impl.reset();
+		},
 
-  
+		
 
 
-  testSetup() {
-    return Impl.setupTelemetry(true);
-  },
+		testSetup() {
+			return Impl.setupTelemetry(true);
+		},
 
-  
+		
 
 
-  testShutdown() {
-    return Impl.shutdown();
-  },
+		testShutdown() {
+			return Impl.shutdown();
+		},
 
-  
+		
 
 
-  testSetupContent() {
-    return Impl.setupContentTelemetry(true);
-  },
+		testSetupContent() {
+			return Impl.setupContentTelemetry(true);
+		},
 
-  
+		
 
 
-  observe(aSubject, aTopic, aData) {
-    return Impl.observe(aSubject, aTopic, aData);
-  },
+		observe(aSubject, aTopic, aData) {
+			return Impl.observe(aSubject, aTopic, aData);
+		},
 
-  
+		
 
 
 
@@ -195,25 +197,25 @@ this.TelemetryController = Object.freeze({
 
 
 
-  submitExternalPing(aType, aPayload, aOptions = {}) {
-    aOptions.addClientId = aOptions.addClientId || false;
-    aOptions.addEnvironment = aOptions.addEnvironment || false;
-    aOptions.usePingSender = aOptions.usePingSender || false;
+		submitExternalPing(aType, aPayload, aOptions = {}) {
+			aOptions.addClientId = aOptions.addClientId || false;
+			aOptions.addEnvironment = aOptions.addEnvironment || false;
+			aOptions.usePingSender = aOptions.usePingSender || false;
 
-    return Impl.submitExternalPing(aType, aPayload, aOptions);
-  },
+			return Impl.submitExternalPing(aType, aPayload, aOptions);
+		},
 
-  
+		
 
 
 
 
 
-  getCurrentPingData(aSubsession = false) {
-    return Impl.getCurrentPingData(aSubsession);
-  },
+		getCurrentPingData(aSubsession = false) {
+			return Impl.getCurrentPingData(aSubsession);
+		},
 
-  
+		
 
 
 
@@ -230,45 +232,45 @@ this.TelemetryController = Object.freeze({
 
 
 
-  addPendingPing(aType, aPayload, aOptions = {}) {
-    let options = aOptions;
-    options.addClientId = aOptions.addClientId || false;
-    options.addEnvironment = aOptions.addEnvironment || false;
-    options.overwrite = aOptions.overwrite || false;
+		addPendingPing(aType, aPayload, aOptions = {}) {
+			let options = aOptions;
+			options.addClientId = aOptions.addClientId || false;
+			options.addEnvironment = aOptions.addEnvironment || false;
+			options.overwrite = aOptions.overwrite || false;
 
-    return Impl.addPendingPing(aType, aPayload, options);
-  },
+			return Impl.addPendingPing(aType, aPayload, options);
+		},
 
-  
+		
 
 
 
 
 
-  checkAbortedSessionPing() {
-    return Impl.checkAbortedSessionPing();
-  },
+		checkAbortedSessionPing() {
+			return Impl.checkAbortedSessionPing();
+		},
 
-  
+		
 
 
 
 
 
-  saveAbortedSessionPing(aPayload) {
-    return Impl.saveAbortedSessionPing(aPayload);
-  },
+		saveAbortedSessionPing(aPayload) {
+			return Impl.saveAbortedSessionPing(aPayload);
+		},
 
-  
+		
 
 
 
 
-  removeAbortedSessionPing() {
-    return Impl.removeAbortedSessionPing();
-  },
+		removeAbortedSessionPing() {
+			return Impl.removeAbortedSessionPing();
+		},
 
-  
+		
 
 
 
@@ -287,96 +289,94 @@ this.TelemetryController = Object.freeze({
 
 
 
-  savePing(aType, aPayload, aFilePath, aOptions = {}) {
-    let options = aOptions;
-    options.addClientId = aOptions.addClientId || false;
-    options.addEnvironment = aOptions.addEnvironment || false;
-    options.overwrite = aOptions.overwrite || false;
+		savePing(aType, aPayload, aFilePath, aOptions = {}) {
+			let options = aOptions;
+			options.addClientId = aOptions.addClientId || false;
+			options.addEnvironment = aOptions.addEnvironment || false;
+			options.overwrite = aOptions.overwrite || false;
 
-    return Impl.savePing(aType, aPayload, aFilePath, options);
-  },
+			return Impl.savePing(aType, aPayload, aFilePath, options);
+		},
 
-  
+		
 
 
 
 
-  promiseInitialized() {
-    return Impl.promiseInitialized();
-  },
+		promiseInitialized() {
+			return Impl.promiseInitialized();
+		},
 });
 
 var Impl = {
-  _initialized: false,
-  _initStarted: false, 
-  _shuttingDown: false, 
-  _shutDown: false, 
-  _logger: null,
-  _prevValues: {},
-  
-  
-  _previousBuildID: undefined,
-  _clientID: null,
-  
-  _delayedInitTask: null,
-  
-  _delayedInitTaskDeferred: null,
+_initialized: false,
+	      _initStarted: false, 
+	      _shuttingDown: false, 
+	      _shutDown: false, 
+	      _logger: null,
+	      _prevValues: {},
+	      
+	      
+	      _previousBuildID: undefined,
+	      _clientID: null,
+	      
+	      _delayedInitTask: null,
+	      
+	      _delayedInitTaskDeferred: null,
 
-  
-  
-  
-  _shutdownBarrier: new AsyncShutdown.Barrier("TelemetryController: Waiting for clients."),
-  
-  _connectionsBarrier: new AsyncShutdown.Barrier("TelemetryController: Waiting for pending ping activity"),
-  
-  _testMode: false,
-  
-  _delayedNewPingTask: null,
+	      
+	      
+	      
+	      _shutdownBarrier: new AsyncShutdown.Barrier("TelemetryController: Waiting for clients."),
+	      
+	      _connectionsBarrier: new AsyncShutdown.Barrier("TelemetryController: Waiting for pending ping activity"),
+	      
+	      _testMode: false,
+	      
+	      _delayedNewPingTask: null,
 
-  get _log() {
-    if (!this._logger) {
-      this._logger = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX);
-    }
+	      get _log() {
+		      if (!this._logger) {
+			      this._logger = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, LOGGER_PREFIX);
+		      }
 
-    return this._logger;
-  },
+		      return this._logger;
+	      },
 
-  
-
-
-  _getApplicationSection() {
-    
-    
-    let arch = null;
-    try {
-      arch = Services.sysinfo.get("arch");
-    } catch (e) {
-      this._log.trace("_getApplicationSection - Unable to get system architecture.", e);
-    }
-
-    let updateChannel = null;
-    try {
-      updateChannel = UpdateUtils.getUpdateChannel(false);
-    } catch (e) {
-      this._log.trace("_getApplicationSection - Unable to get update channel.", e);
-    }
-
-    return {
-      architecture: arch,
-      buildId: Services.appinfo.appBuildID,
-      name: Services.appinfo.name,
-      version: Services.appinfo.version,
-      displayVersion: AppConstants.MOZ_APP_VERSION_DISPLAY,
-      vendor: Services.appinfo.vendor,
-      platformVersion: Services.appinfo.platformVersion,
-      xpcomAbi: Services.appinfo.XPCOMABI,
-      channel: updateChannel,
-    };
-  },
-
-  
+	      
 
 
+	      _getApplicationSection() {
+		      
+		      
+		      let arch = null;
+		      try {
+			      arch = Services.sysinfo.get("arch");
+		      } catch (e) {
+			      this._log.trace("_getApplicationSection - Unable to get system architecture.", e);
+		      }
+
+		      let updateChannel = null;
+		      try {
+			      updateChannel = UpdateUtils.getUpdateChannel(false);
+		      } catch (e) {
+			      this._log.trace("_getApplicationSection - Unable to get update channel.", e);
+		      }
+
+		      return {
+architecture: arch,
+		      buildId: Services.appinfo.appBuildID,
+		      name: Services.appinfo.name,
+		      version: Services.appinfo.version,
+		      displayVersion: AppConstants.MOZ_APP_VERSION_DISPLAY,
+		      vendor: Services.appinfo.vendor,
+		      platformVersion: Services.appinfo.platformVersion,
+		      xpcomAbi: Services.appinfo.XPCOMABI,
+		      channel: updateChannel,
+		      };
+	      },
+
+	      
 
 
 
@@ -388,44 +388,46 @@ var Impl = {
 
 
 
-  assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
-    this._log.trace("assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
 
-    
-    
-    
-    let payload = Cu.cloneInto(aPayload, myScope);
 
-    
-    let pingData = {
-      type: aType,
+assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
+		      this._log.trace("assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
+
+		      
+		      
+		      
+		      let payload = Cu.cloneInto(aPayload, myScope);
+
+		      
+		      let pingData = {
+type: aType,
       id: Policy.generatePingId(),
       creationDate: (Policy.now()).toISOString(),
       version: PING_FORMAT_VERSION,
       application: this._getApplicationSection(),
       payload,
-    };
+		      };
 
-    if (aOptions.addClientId) {
-      pingData.clientId = this._clientID;
-    }
+		      if (aOptions.addClientId) {
+			      pingData.clientId = this._clientID;
+		      }
 
-    if (aOptions.addEnvironment) {
-      pingData.environment = aOptions.overrideEnvironment || TelemetryEnvironment.currentEnvironment;
-    }
+		      if (aOptions.addEnvironment) {
+			      pingData.environment = aOptions.overrideEnvironment || TelemetryEnvironment.currentEnvironment;
+		      }
 
-    return pingData;
-  },
+		      return pingData;
+	      },
 
-  
+	      
 
 
 
-  _trackPendingPingTask(aPromise) {
-    this._connectionsBarrier.client.addBlocker("Waiting for ping task", aPromise);
-  },
+	      _trackPendingPingTask(aPromise) {
+		      this._connectionsBarrier.client.addBlocker("Waiting for ping task", aPromise);
+	      },
 
-  
+	      
 
 
 
@@ -444,32 +446,32 @@ var Impl = {
 
 
 
-  async _submitPingLogic(aType, aPayload, aOptions) {
-    
-    
-    
-    if (!this._clientID && aOptions.addClientId) {
-      Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID").add();
-      
-      
-      this._clientID = await ClientID.getClientID();
-    }
+	      async _submitPingLogic(aType, aPayload, aOptions) {
+		      
+		      
+		      
+		      if (!this._clientID && aOptions.addClientId) {
+			      Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID").add();
+			      
+			      
+			      this._clientID = await ClientID.getClientID();
+		      }
 
-    const pingData = this.assemblePing(aType, aPayload, aOptions);
-    this._log.trace("submitExternalPing - ping assembled, id: " + pingData.id);
+		      const pingData = this.assemblePing(aType, aPayload, aOptions);
+		      this._log.trace("submitExternalPing - ping assembled, id: " + pingData.id);
 
-    
-    
-    let archivePromise = TelemetryArchive.promiseArchivePing(pingData)
-      .catch(e => this._log.error("submitExternalPing - Failed to archive ping " + pingData.id, e));
-    let p = [ archivePromise ];
+		      
+		      
+		      let archivePromise = TelemetryArchive.promiseArchivePing(pingData)
+			      .catch(e => this._log.error("submitExternalPing - Failed to archive ping " + pingData.id, e));
+		      let p = [ archivePromise ];
 
-    p.push(TelemetrySend.submitPing(pingData, {usePingSender: aOptions.usePingSender}));
+		      p.push(TelemetrySend.submitPing(pingData, {usePingSender: aOptions.usePingSender}));
 
-    return Promise.all(p).then(() => pingData.id);
-  },
+		      return Promise.all(p).then(() => pingData.id);
+	      },
 
-  
+	      
 
 
 
@@ -483,38 +485,38 @@ var Impl = {
 
 
 
-  submitExternalPing: function send(aType, aPayload, aOptions) {
-    this._log.trace("submitExternalPing - type: " + aType + ", aOptions: " + JSON.stringify(aOptions));
+submitExternalPing: function send(aType, aPayload, aOptions) {
+			    this._log.trace("submitExternalPing - type: " + aType + ", aOptions: " + JSON.stringify(aOptions));
 
-    
-    if (this._shutDown) {
-      const errorMessage = "submitExternalPing - Submission is not allowed after shutdown, discarding ping of type: " + aType;
-      this._log.error(errorMessage);
-      return Promise.reject(new Error(errorMessage));
-    }
+			    
+			    if (this._shutDown) {
+				    const errorMessage = "submitExternalPing - Submission is not allowed after shutdown, discarding ping of type: " + aType;
+				    this._log.error(errorMessage);
+				    return Promise.reject(new Error(errorMessage));
+			    }
 
-    
-    const typeUuid = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/i;
-    if (!typeUuid.test(aType)) {
-      this._log.error("submitExternalPing - invalid ping type: " + aType);
-      let histogram = Telemetry.getKeyedHistogramById("TELEMETRY_INVALID_PING_TYPE_SUBMITTED");
-      histogram.add(aType, 1);
-      return Promise.reject(new Error("Invalid type string submitted."));
-    }
-    
-    if (aPayload === null || typeof aPayload !== "object" || Array.isArray(aPayload)) {
-      this._log.error("submitExternalPing - invalid payload type: " + typeof aPayload);
-      let histogram = Telemetry.getHistogramById("TELEMETRY_INVALID_PAYLOAD_SUBMITTED");
-      histogram.add(1);
-      return Promise.reject(new Error("Invalid payload type submitted."));
-    }
+			    
+			    const typeUuid = /^[a-z0-9][a-z0-9-]+[a-z0-9]$/i;
+			    if (!typeUuid.test(aType)) {
+				    this._log.error("submitExternalPing - invalid ping type: " + aType);
+				    let histogram = Telemetry.getKeyedHistogramById("TELEMETRY_INVALID_PING_TYPE_SUBMITTED");
+				    histogram.add(aType, 1);
+				    return Promise.reject(new Error("Invalid type string submitted."));
+			    }
+			    
+			    if (aPayload === null || typeof aPayload !== "object" || Array.isArray(aPayload)) {
+				    this._log.error("submitExternalPing - invalid payload type: " + typeof aPayload);
+				    let histogram = Telemetry.getHistogramById("TELEMETRY_INVALID_PAYLOAD_SUBMITTED");
+				    histogram.add(1);
+				    return Promise.reject(new Error("Invalid payload type submitted."));
+			    }
 
-    let promise = this._submitPingLogic(aType, aPayload, aOptions);
-    this._trackPendingPingTask(promise);
-    return promise;
-  },
+			    let promise = this._submitPingLogic(aType, aPayload, aOptions);
+			    this._trackPendingPingTask(promise);
+			    return promise;
+		    },
 
-  
+		    
 
 
 
@@ -530,25 +532,25 @@ var Impl = {
 
 
 
-  addPendingPing: function addPendingPing(aType, aPayload, aOptions) {
-    this._log.trace("addPendingPing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
+addPendingPing: function addPendingPing(aType, aPayload, aOptions) {
+			this._log.trace("addPendingPing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
 
-    let pingData = this.assemblePing(aType, aPayload, aOptions);
+			let pingData = this.assemblePing(aType, aPayload, aOptions);
 
-    let savePromise = TelemetryStorage.savePendingPing(pingData);
-    let archivePromise = TelemetryArchive.promiseArchivePing(pingData).catch(e => {
-      this._log.error("addPendingPing - Failed to archive ping " + pingData.id, e);
-    });
+			let savePromise = TelemetryStorage.savePendingPing(pingData);
+			let archivePromise = TelemetryArchive.promiseArchivePing(pingData).catch(e => {
+					this._log.error("addPendingPing - Failed to archive ping " + pingData.id, e);
+					});
 
-    
-    let promises = [
-      savePromise,
-      archivePromise,
-    ];
-    return Promise.all(promises).then(() => pingData.id);
-  },
+			
+			let promises = [
+				savePromise,
+				archivePromise,
+			];
+			return Promise.all(promises).then(() => pingData.id);
+		},
 
-  
+		
 
 
 
@@ -566,83 +568,83 @@ var Impl = {
 
 
 
-  savePing: function savePing(aType, aPayload, aFilePath, aOptions) {
-    this._log.trace("savePing - Type " + aType + ", File Path " + aFilePath +
-                    ", aOptions " + JSON.stringify(aOptions));
-    let pingData = this.assemblePing(aType, aPayload, aOptions);
-    return TelemetryStorage.savePingToFile(pingData, aFilePath, aOptions.overwrite)
-                        .then(() => pingData.id);
-  },
+savePing: function savePing(aType, aPayload, aFilePath, aOptions) {
+		  this._log.trace("savePing - Type " + aType + ", File Path " + aFilePath +
+				  ", aOptions " + JSON.stringify(aOptions));
+		  let pingData = this.assemblePing(aType, aPayload, aOptions);
+		  return TelemetryStorage.savePingToFile(pingData, aFilePath, aOptions.overwrite)
+			  .then(() => pingData.id);
+	  },
 
-  
+	  
 
 
 
 
-  async checkAbortedSessionPing() {
-    let ping = await TelemetryStorage.loadAbortedSessionPing();
-    this._log.trace("checkAbortedSessionPing - found aborted-session ping: " + !!ping);
-    if (!ping) {
-      return;
-    }
+	  async checkAbortedSessionPing() {
+		  let ping = await TelemetryStorage.loadAbortedSessionPing();
+		  this._log.trace("checkAbortedSessionPing - found aborted-session ping: " + !!ping);
+		  if (!ping) {
+			  return;
+		  }
 
-    try {
-      await TelemetryStorage.addPendingPing(ping);
-      await TelemetryArchive.promiseArchivePing(ping);
-    } catch (e) {
-      this._log.error("checkAbortedSessionPing - Unable to add the pending ping", e);
-    } finally {
-      await TelemetryStorage.removeAbortedSessionPing();
-    }
-  },
+		  try {
+			  await TelemetryStorage.addPendingPing(ping);
+			  await TelemetryArchive.promiseArchivePing(ping);
+		  } catch (e) {
+			  this._log.error("checkAbortedSessionPing - Unable to add the pending ping", e);
+		  } finally {
+			  await TelemetryStorage.removeAbortedSessionPing();
+		  }
+	  },
 
-  
+	  
 
 
 
 
 
-  saveAbortedSessionPing(aPayload) {
-    this._log.trace("saveAbortedSessionPing");
-    const options = {addClientId: true, addEnvironment: true};
-    const pingData = this.assemblePing(PING_TYPE_MAIN, aPayload, options);
-    return TelemetryStorage.saveAbortedSessionPing(pingData);
-  },
+	  saveAbortedSessionPing(aPayload) {
+		  this._log.trace("saveAbortedSessionPing");
+		  const options = {addClientId: true, addEnvironment: true};
+		  const pingData = this.assemblePing(PING_TYPE_MAIN, aPayload, options);
+		  return TelemetryStorage.saveAbortedSessionPing(pingData);
+	  },
 
-  removeAbortedSessionPing() {
-    return TelemetryStorage.removeAbortedSessionPing();
-  },
+	  removeAbortedSessionPing() {
+		  return TelemetryStorage.removeAbortedSessionPing();
+	  },
 
-  
+	  
 
 
 
 
-  enableTelemetryRecording: function enableTelemetryRecording() {
-    
-    
-    
-    if (Utils.isContentProcess && !this._testMode && !Services.appinfo.browserTabsRemoteAutostart) {
-      this._log.config("enableTelemetryRecording - not enabling Telemetry for non-e10s child process");
-      Telemetry.canRecordBase = false;
-      Telemetry.canRecordExtended = false;
-      return false;
-    }
+enableTelemetryRecording: function enableTelemetryRecording() {
+				  
+				  
+				  
+				  if (Utils.isContentProcess && !this._testMode && !Services.appinfo.browserTabsRemoteAutostart) {
+					  this._log.config("enableTelemetryRecording - not enabling Telemetry for non-e10s child process");
+					  Telemetry.canRecordBase = false;
+					  Telemetry.canRecordExtended = false;
+					  return false;
+				  }
 
-    
-    
-    
-    const enabled = Utils.isTelemetryEnabled;
-    Telemetry.canRecordBase = enabled || IS_UNIFIED_TELEMETRY;
-    Telemetry.canRecordExtended = enabled;
+				  
+				  
+				  
+				  const enabled = Utils.isTelemetryEnabled;
+				  Telemetry.canRecordBase = enabled || IS_UNIFIED_TELEMETRY;
+				  Telemetry.canRecordExtended = enabled;
 
-    this._log.config("enableTelemetryRecording - canRecordBase:" + Telemetry.canRecordBase +
-                     ", canRecordExtended: " + Telemetry.canRecordExtended);
+				  this._log.config("enableTelemetryRecording - canRecordBase:" + Telemetry.canRecordBase +
+						  ", canRecordExtended: " + Telemetry.canRecordExtended);
 
-    return Telemetry.canRecordBase;
-  },
+				  return Telemetry.canRecordBase;
+			  },
 
-  
+			  
 
 
 
@@ -656,356 +658,359 @@ var Impl = {
 
 
 
-  setupTelemetry: function setupTelemetry(testing) {
-    this._initStarted = true;
-    this._shuttingDown = false;
-    this._shutDown = false;
-    this._testMode = testing;
+setupTelemetry: function setupTelemetry(testing) {
+			this._initStarted = true;
+			this._shuttingDown = false;
+			this._shutDown = false;
+			this._testMode = testing;
 
-    this._log.trace("setupTelemetry");
+			this._log.trace("setupTelemetry");
 
-    if (this._delayedInitTask) {
-      this._log.error("setupTelemetry - init task already running");
-      return this._delayedInitTaskDeferred.promise;
-    }
+			if (this._delayedInitTask) {
+				this._log.error("setupTelemetry - init task already running");
+				return this._delayedInitTaskDeferred.promise;
+			}
 
-    if (this._initialized && !this._testMode) {
-      this._log.error("setupTelemetry - already initialized");
-      return Promise.resolve();
-    }
+			if (this._initialized && !this._testMode) {
+				this._log.error("setupTelemetry - already initialized");
+				return Promise.resolve();
+			}
 
-    
-    TelemetryReportingPolicy.setup();
+			
+			TelemetryReportingPolicy.setup();
 
-    if (!this.enableTelemetryRecording()) {
-      this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
-      return Promise.resolve();
-    }
+			if (!this.enableTelemetryRecording()) {
+				this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
+				return Promise.resolve();
+			}
 
-    this._attachObservers();
+			this._attachObservers();
 
-    
-    
-    TelemetrySession.earlyInit(this._testMode);
+			
+			
+			TelemetrySession.earlyInit(this._testMode);
 
-    
-    TelemetrySend.earlyInit();
+			
+			TelemetrySend.earlyInit();
 
-    
-    
-    
-    
-    this._clientID = ClientID.getCachedClientID();
+			
+			
+			
+			
+			this._clientID = ClientID.getCachedClientID();
 
-    
-    
-    UpdatePing.earlyInit();
+			
+			
+			UpdatePing.earlyInit();
 
-    
-    
-    
-    this._delayedInitTaskDeferred = PromiseUtils.defer();
-    this._delayedInitTask = new DeferredTask(async () => {
-      try {
-        
-        this._initialized = true;
-        TelemetryEnvironment.delayedInit();
+			
+			
+			
+			this._delayedInitTaskDeferred = PromiseUtils.defer();
+			this._delayedInitTask = new DeferredTask(async () => {
+					try {
+					
+					this._initialized = true;
+					TelemetryEnvironment.delayedInit();
 
-        
-        this._clientID = await ClientID.getClientID();
+					
+					this._clientID = await ClientID.getClientID();
 
-        await TelemetrySend.setup(this._testMode);
+					await TelemetrySend.setup(this._testMode);
 
-        
-        await TelemetrySession.delayedInit();
+					
+					await TelemetrySession.delayedInit();
 
-        if (Preferences.get(TelemetryUtils.Preferences.NewProfilePingEnabled, false) &&
-            !TelemetrySession.newProfilePingSent) {
-          
-          this.scheduleNewProfilePing();
-        }
+					if (Preferences.get(TelemetryUtils.Preferences.NewProfilePingEnabled, false) &&
+							!TelemetrySession.newProfilePingSent) {
+					
+					this.scheduleNewProfilePing();
+					}
 
-        
-        
-        
-        TelemetryStorage.runCleanPingArchiveTask();
+					
+					
+					
+					TelemetryStorage.runCleanPingArchiveTask();
 
-        
-        
-        
-        TelemetryStorage.removeFHRDatabase();
+					
+					
+					
+					TelemetryStorage.removeFHRDatabase();
 
-        
-        TelemetryModules.start();
+					
+					TelemetryModules.start();
 
-        this._delayedInitTaskDeferred.resolve();
-      } catch (e) {
-        this._delayedInitTaskDeferred.reject(e);
-      } finally {
-        this._delayedInitTask = null;
-      }
-    }, this._testMode ? TELEMETRY_TEST_DELAY : TELEMETRY_DELAY);
+					this._delayedInitTaskDeferred.resolve();
+					} catch (e) {
+						this._delayedInitTaskDeferred.reject(e);
+					} finally {
+						this._delayedInitTask = null;
+					}
+			}, this._testMode ? TELEMETRY_TEST_DELAY : TELEMETRY_DELAY);
 
-    AsyncShutdown.sendTelemetry.addBlocker("TelemetryController: shutting down",
-                                           () => this.shutdown(),
-                                           () => this._getState());
+			AsyncShutdown.sendTelemetry.addBlocker("TelemetryController: shutting down",
+					() => this.shutdown(),
+					() => this._getState());
 
-    this._delayedInitTask.arm();
-    return this._delayedInitTaskDeferred.promise;
-  },
+			this._delayedInitTask.arm();
+			return this._delayedInitTaskDeferred.promise;
+		},
 
-  
+		
 
 
 
-  setupContentTelemetry(testing = false) {
-    this._testMode = testing;
+		setupContentTelemetry(testing = false) {
+			this._testMode = testing;
 
-    
-    
-    if (!this.enableTelemetryRecording()) {
-      this._log.trace("setupContentTelemetry - Content process recording disabled.");
-      return;
-    }
-    TelemetrySession.setupContent(testing);
-  },
+			
+			
+			if (!this.enableTelemetryRecording()) {
+				this._log.trace("setupContentTelemetry - Content process recording disabled.");
+				return;
+			}
+			TelemetrySession.setupContent(testing);
+		},
 
-  
-  async _cleanupOnShutdown() {
-    if (!this._initialized) {
-      return;
-    }
+		
+		async _cleanupOnShutdown() {
+			if (!this._initialized) {
+				return;
+			}
 
-    this._shuttingDown = true;
+			this._shuttingDown = true;
 
-    Preferences.ignore(PREF_BRANCH_LOG, configureLogging);
-    this._detachObservers();
+			Preferences.ignore(PREF_BRANCH_LOG, configureLogging);
+			this._detachObservers();
 
-    
-    try {
-      if (this._delayedNewPingTask) {
-        await this._delayedNewPingTask.finalize();
-      }
+			
+			try {
+				if (this._delayedNewPingTask) {
+					await this._delayedNewPingTask.finalize();
+				}
 
-      UpdatePing.shutdown();
+				UpdatePing.shutdown();
 
-      
-      TelemetryReportingPolicy.shutdown();
-      TelemetryEnvironment.shutdown();
+				
+				TelemetryReportingPolicy.shutdown();
+				TelemetryEnvironment.shutdown();
 
-      
-      await TelemetrySend.shutdown();
+				
+				await TelemetrySend.shutdown();
 
-      await TelemetrySession.shutdown();
+				
+				await TelemetryHealthPing.shutdown();
 
-      
-      await this._shutdownBarrier.wait();
+				await TelemetrySession.shutdown();
 
-      
-      await this._connectionsBarrier.wait();
+				
+				await this._shutdownBarrier.wait();
 
-      
-      await TelemetryStorage.shutdown();
-    } finally {
-      
-      this._initialized = false;
-      this._initStarted = false;
-      this._shutDown = true;
-    }
-  },
+				
+				await this._connectionsBarrier.wait();
 
-  shutdown() {
-    this._log.trace("shutdown");
+				
+				await TelemetryStorage.shutdown();
+			} finally {
+				
+				this._initialized = false;
+				this._initStarted = false;
+				this._shutDown = true;
+			}
+		},
 
-    
-    
-    
-    
-    
-    
+		shutdown() {
+			this._log.trace("shutdown");
 
-    
-    if (!this._initStarted) {
-      this._shuttingDown = true;
-      this._shutDown = true;
-      return Promise.resolve();
-    }
+			
+			
+			
+			
+			
+			
 
-    
-    if (!this._delayedInitTask) {
-      
-      return this._cleanupOnShutdown();
-    }
+			
+			if (!this._initStarted) {
+				this._shuttingDown = true;
+				this._shutDown = true;
+				return Promise.resolve();
+			}
 
-    
-    return this._delayedInitTask.finalize().then(() => this._cleanupOnShutdown());
-  },
+			
+			if (!this._delayedInitTask) {
+				
+				return this._cleanupOnShutdown();
+			}
 
-  
+			
+			return this._delayedInitTask.finalize().then(() => this._cleanupOnShutdown());
+		},
 
+		
 
-  observe(aSubject, aTopic, aData) {
-    
-    if (aTopic == "profile-after-change" || aTopic == "app-startup") {
-      
-      
-      configureLogging();
-    }
 
-    this._log.trace("observe - " + aTopic + " notified.");
+		observe(aSubject, aTopic, aData) {
+			
+			if (aTopic == "profile-after-change" || aTopic == "app-startup") {
+				
+				
+				configureLogging();
+			}
 
-    switch (aTopic) {
-    case "profile-after-change":
-      
-      return this.setupTelemetry();
-    case "app-startup":
-      
-      return this.setupContentTelemetry();
-    }
-    return undefined;
-  },
+			this._log.trace("observe - " + aTopic + " notified.");
 
-  
+			switch (aTopic) {
+				case "profile-after-change":
+					
+					return this.setupTelemetry();
+				case "app-startup":
+					
+					return this.setupContentTelemetry();
+			}
+			return undefined;
+		},
 
+		
 
-  _getState() {
-    return {
-      initialized: this._initialized,
-      initStarted: this._initStarted,
-      haveDelayedInitTask: !!this._delayedInitTask,
-      shutdownBarrier: this._shutdownBarrier.state,
-      connectionsBarrier: this._connectionsBarrier.state,
-      sendModule: TelemetrySend.getShutdownState(),
-      haveDelayedNewProfileTask: !!this._delayedNewPingTask,
-    };
-  },
 
-  
+		_getState() {
+			return {
+initialized: this._initialized,
+	     initStarted: this._initStarted,
+	     haveDelayedInitTask: !!this._delayedInitTask,
+	     shutdownBarrier: this._shutdownBarrier.state,
+	     connectionsBarrier: this._connectionsBarrier.state,
+	     sendModule: TelemetrySend.getShutdownState(),
+	     haveDelayedNewProfileTask: !!this._delayedNewPingTask,
+			};
+		},
 
+		
 
 
-  _onUploadPrefChange() {
-    const uploadEnabled = Preferences.get(TelemetryUtils.Preferences.FhrUploadEnabled, false);
-    if (uploadEnabled) {
-      
-      return;
-    }
 
-    let p = (async () => {
-      try {
-        
-        await TelemetrySend.clearCurrentPings();
+		_onUploadPrefChange() {
+			const uploadEnabled = Preferences.get(TelemetryUtils.Preferences.FhrUploadEnabled, false);
+			if (uploadEnabled) {
+				
+				return;
+			}
 
-        
-        await TelemetryStorage.runRemovePendingPingsTask();
-      } catch (e) {
-        this._log.error("_onUploadPrefChange - error clearing pending pings", e);
-      } finally {
-        
-        this._log.trace("_onUploadPrefChange - Sending deletion ping.");
-        this.submitExternalPing(PING_TYPE_DELETION, {}, { addClientId: true });
-      }
-    })();
+			let p = (async () => {
+					try {
+					
+					await TelemetrySend.clearCurrentPings();
 
-    this._shutdownBarrier.client.addBlocker(
-      "TelemetryController: removing pending pings after data upload was disabled", p);
-  },
+					
+					await TelemetryStorage.runRemovePendingPingsTask();
+					} catch (e) {
+					this._log.error("_onUploadPrefChange - error clearing pending pings", e);
+					} finally {
+					
+					this._log.trace("_onUploadPrefChange - Sending deletion ping.");
+					this.submitExternalPing(PING_TYPE_DELETION, {}, { addClientId: true });
+					}
+					})();
 
-  _attachObservers() {
-    if (IS_UNIFIED_TELEMETRY) {
-      
-      Preferences.observe(TelemetryUtils.Preferences.FhrUploadEnabled, this._onUploadPrefChange, this);
-    }
-  },
+			this._shutdownBarrier.client.addBlocker(
+					"TelemetryController: removing pending pings after data upload was disabled", p);
+		},
 
-  
+		_attachObservers() {
+			if (IS_UNIFIED_TELEMETRY) {
+				
+				Preferences.observe(TelemetryUtils.Preferences.FhrUploadEnabled, this._onUploadPrefChange, this);
+			}
+		},
 
+		
 
-  _detachObservers() {
-    if (IS_UNIFIED_TELEMETRY) {
-      Preferences.ignore(TelemetryUtils.Preferences.FhrUploadEnabled, this._onUploadPrefChange, this);
-    }
-  },
 
-  
+		_detachObservers() {
+			if (IS_UNIFIED_TELEMETRY) {
+				Preferences.ignore(TelemetryUtils.Preferences.FhrUploadEnabled, this._onUploadPrefChange, this);
+			}
+		},
 
+		
 
 
 
-  promiseInitialized() {
-    return this._delayedInitTaskDeferred.promise;
-  },
 
-  getCurrentPingData(aSubsession) {
-    this._log.trace("getCurrentPingData - subsession: " + aSubsession)
+		promiseInitialized() {
+			return this._delayedInitTaskDeferred.promise;
+		},
 
-    
-    if (!Telemetry.canRecordBase) {
-      return null;
-    }
+		getCurrentPingData(aSubsession) {
+			this._log.trace("getCurrentPingData - subsession: " + aSubsession)
 
-    const reason = aSubsession ? REASON_GATHER_SUBSESSION_PAYLOAD : REASON_GATHER_PAYLOAD;
-    const type = PING_TYPE_MAIN;
-    const payload = TelemetrySession.getPayload(reason);
-    const options = { addClientId: true, addEnvironment: true };
-    const ping = this.assemblePing(type, payload, options);
+				
+				if (!Telemetry.canRecordBase) {
+					return null;
+				}
 
-    return ping;
-  },
+			const reason = aSubsession ? REASON_GATHER_SUBSESSION_PAYLOAD : REASON_GATHER_PAYLOAD;
+			const type = PING_TYPE_MAIN;
+			const payload = TelemetrySession.getPayload(reason);
+			const options = { addClientId: true, addEnvironment: true };
+			const ping = this.assemblePing(type, payload, options);
 
-  async reset() {
-    this._clientID = null;
-    this._detachObservers();
+			return ping;
+		},
 
-    let sessionReset = TelemetrySession.testReset();
+		async reset() {
+			this._clientID = null;
+			this._detachObservers();
 
-    this._connectionsBarrier = new AsyncShutdown.Barrier(
-      "TelemetryController: Waiting for pending ping activity"
-    );
-    this._shutdownBarrier = new AsyncShutdown.Barrier(
-      "TelemetryController: Waiting for clients."
-    );
+			let sessionReset = TelemetrySession.testReset();
 
-    
-    
-    let controllerSetup = this.setupTelemetry(true);
+			this._connectionsBarrier = new AsyncShutdown.Barrier(
+					"TelemetryController: Waiting for pending ping activity"
+					);
+			this._shutdownBarrier = new AsyncShutdown.Barrier(
+					"TelemetryController: Waiting for clients."
+					);
 
-    await sessionReset;
-    await TelemetrySend.reset();
-    await TelemetryStorage.reset();
-    await TelemetryEnvironment.testReset();
+			
+			
+			let controllerSetup = this.setupTelemetry(true);
 
-    await controllerSetup;
-  },
+			await sessionReset;
+			await TelemetrySend.reset();
+			await TelemetryStorage.reset();
+			await TelemetryEnvironment.testReset();
 
-  
+			await controllerSetup;
+		},
 
+		
 
-  scheduleNewProfilePing() {
-    this._log.trace("scheduleNewProfilePing");
 
-    const sendDelay =
-      Preferences.get(TelemetryUtils.Preferences.NewProfilePingDelay, NEWPROFILE_PING_DEFAULT_DELAY);
+		scheduleNewProfilePing() {
+			this._log.trace("scheduleNewProfilePing");
 
-    this._delayedNewPingTask = new DeferredTask(async () => {
-      try {
-        await this.sendNewProfilePing();
-      } finally {
-        this._delayedNewPingTask = null;
-      }
-    }, sendDelay);
+			const sendDelay =
+				Preferences.get(TelemetryUtils.Preferences.NewProfilePingDelay, NEWPROFILE_PING_DEFAULT_DELAY);
 
-    this._delayedNewPingTask.arm();
-  },
+			this._delayedNewPingTask = new DeferredTask(async () => {
+					try {
+					await this.sendNewProfilePing();
+					} finally {
+					this._delayedNewPingTask = null;
+					}
+					}, sendDelay);
 
-  
+			this._delayedNewPingTask.arm();
+		},
 
+		
 
-  async sendNewProfilePing() {
-    this._log.trace("sendNewProfilePing - shutting down: " + this._shuttingDown);
 
-    
-    const payload = {
+		async sendNewProfilePing() {
+			this._log.trace("sendNewProfilePing - shutting down: " + this._shuttingDown);
+
+			
+			const payload = {
       "reason": this._shuttingDown ? "shutdown" : "startup",
     };
 
