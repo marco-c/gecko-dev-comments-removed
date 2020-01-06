@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/dom/MediaSourceBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionNoteChild.h"
@@ -119,6 +120,9 @@ public:
     return mAbstractMainThread;
   }
 
+  
+  void CompletePendingTransactions();
+
 private:
   
   friend class mozilla::dom::SourceBuffer;
@@ -136,8 +140,14 @@ private:
   
   void SetDuration(double aDuration);
 
+  typedef MozPromise<bool, MediaResult,  true>
+    ActiveCompletionPromise;
   
-  void SourceBufferIsActive(SourceBuffer* aSourceBuffer);
+  
+  
+  
+  RefPtr<ActiveCompletionPromise> SourceBufferIsActive(
+    SourceBuffer* aSourceBuffer);
 
   RefPtr<SourceBufferList> mSourceBuffers;
   RefPtr<SourceBufferList> mActiveSourceBuffers;
@@ -154,6 +164,7 @@ private:
   MediaSourceReadyState mReadyState;
 
   Maybe<media::TimeInterval> mLiveSeekableRange;
+  nsTArray<MozPromiseHolder<ActiveCompletionPromise>> mCompletionPromises;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(MediaSource, MOZILLA_DOM_MEDIASOURCE_IMPLEMENTATION_IID)
