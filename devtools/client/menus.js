@@ -28,6 +28,14 @@
 
 
 
+
+
+
+
+
+const Services = require("Services");
+const isMac = Services.appinfo.OS === "Darwin";
+
 loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
 loader.lazyRequireGetter(this, "CommandUtils", "devtools/client/shared/developer-toolbar", true);
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
@@ -43,7 +51,17 @@ exports.menuitems = [
       let window = event.target.ownerDocument.defaultView;
       gDevToolsBrowser.toggleToolboxCommand(window.gBrowser);
     },
-    keyId: "toggleToolbox",
+    key: {
+      id: "devToolboxMenuItem",
+      modifiers: isMac ? "accel,alt" : "accel,shift",
+      
+      
+      keytext: true,
+    },
+    additionalKeys: [{
+      id: "devToolboxMenuItemF12",
+      l10nKey: "devToolsCmd",
+    }],
     checkbox: true
   },
   { id: "menu_devtools_separator",
@@ -62,7 +80,10 @@ exports.menuitems = [
         gDevToolsBrowser.getDeveloperToolbar(window).focusToggle();
       }
     },
-    keyId: "toggleToolbar",
+    key: {
+      id: "devToolbar",
+      modifiers: "shift"
+    },
     checkbox: true
   },
   { id: "menu_webide",
@@ -71,7 +92,10 @@ exports.menuitems = [
     oncommand() {
       gDevToolsBrowser.openWebIDE();
     },
-    keyId: "webide",
+    key: {
+      id: "webide",
+      modifiers: "shift"
+    }
   },
   { id: "menu_browserToolbox",
     l10nKey: "browserToolboxMenu",
@@ -79,7 +103,11 @@ exports.menuitems = [
     oncommand() {
       BrowserToolboxProcess.init();
     },
-    keyId: "browserToolbox",
+    key: {
+      id: "browserToolbox",
+      modifiers: "accel,alt,shift",
+      keytext: true
+    }
   },
   { id: "menu_browserContentToolbox",
     l10nKey: "browserContentToolboxMenu",
@@ -95,7 +123,11 @@ exports.menuitems = [
       let HUDService = require("devtools/client/webconsole/hudservice");
       HUDService.openBrowserConsoleOrFocus();
     },
-    keyId: "browserConsole",
+    key: {
+      id: "browserConsole",
+      modifiers: "accel,shift",
+      keytext: true
+    }
   },
   { id: "menu_responsiveUI",
     l10nKey: "responsiveDesignMode",
@@ -103,7 +135,11 @@ exports.menuitems = [
       let window = event.target.ownerDocument.defaultView;
       ResponsiveUIManager.toggle(window, window.gBrowser.selectedTab);
     },
-    keyId: "responsiveDesignMode",
+    key: {
+      id: "responsiveUI",
+      modifiers: isMac ? "accel,alt" : "accel,shift",
+      keytext: true
+    },
     checkbox: true
   },
   { id: "menu_eyedropper",
@@ -121,7 +157,10 @@ exports.menuitems = [
     oncommand() {
       ScratchpadManager.openScratchpad();
     },
-    keyId: "scratchpad",
+    key: {
+      id: "scratchpad",
+      modifiers: "shift"
+    }
   },
   { id: "menu_devtools_serviceworkers",
     l10nKey: "devtoolsServiceWorkers",
