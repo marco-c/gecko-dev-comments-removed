@@ -353,7 +353,7 @@ window:not([chromehidden~="toolbar"]) #urlbar-wrapper > #urlbar:-moz-locale-dir(
 
 .tab-icon-sound[soundplaying],
 .tab-icon-sound[muted] {
-  filter: url(chrome://global/skin/filters.svg#fill) !important; 
+  filter: none !important; 
 }
 
 
