@@ -1080,7 +1080,7 @@ public:
     }
 
     uint32_t oldLength = mEntries.Length();
-    uint32_t newLength = 0;
+    uint32_t keptLength = 0;
     auto revIter = mEntries.IterFromLast();
     auto iter = mEntries.Iter();
      
@@ -1121,7 +1121,7 @@ public:
       
       if (e.mObject) {
         firstEmptyIter.Next();
-        ++newLength;
+        ++keptLength;
       }
 
       if (&e == &revIter.Get()) {
@@ -1130,7 +1130,7 @@ public:
     }
 
     
-    if (oldLength != newLength) {
+    if (oldLength != keptLength) {
 
       
       
@@ -1144,11 +1144,10 @@ public:
           firstEmptyIter.Get().Swap(iterForNewEntries.Get());
           firstEmptyIter.Next();
           iterForNewEntries.Next();
-          ++newLength; 
         }
       }
 
-      mEntries.PopLastN(oldLength - newLength);
+      mEntries.PopLastN(oldLength - keptLength);
     }
   }
 
