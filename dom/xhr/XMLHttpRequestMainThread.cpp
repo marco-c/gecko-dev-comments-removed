@@ -2237,6 +2237,14 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
     return NS_OK;
   }
 
+  if (status == NS_BINDING_ABORTED &&
+      ((mState == State::opened && mFlagSend) ||
+        mState == State::headers_received ||
+        mState == State::loading)) {
+    
+    Abort();
+  }
+
   mWaitingForOnStopRequest = false;
 
   if (mRequestObserver) {
