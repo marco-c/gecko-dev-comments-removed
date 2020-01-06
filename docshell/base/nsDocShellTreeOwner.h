@@ -28,7 +28,6 @@
 #include "nsITooltipTextProvider.h"
 #include "nsCTooltipTextProvider.h"
 #include "nsIDroppedLinkHandler.h"
-#include "nsCommandHandler.h"
 
 namespace mozilla {
 namespace dom {
@@ -65,7 +64,6 @@ class nsDocShellTreeOwner final : public nsIDocShellTreeOwner,
                                   public nsSupportsWeakReference
 {
   friend class nsWebBrowser;
-  friend class nsCommandHandler;
 
 public:
   NS_DECL_ISUPPORTS
