@@ -31,6 +31,8 @@ const kDebuggerPrefs = [
 
 const TOOLBAR_VISIBLE_PREF = "devtools.toolbar.visible";
 
+const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
+
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
@@ -188,6 +190,9 @@ DevToolsStartup.prototype = {
     let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
     let devtoolsFlag = cmdLine.handleFlag("devtools", false);
 
+    let hasDevToolsFlag = consoleFlag || devtoolsFlag || debuggerFlag;
+    this.setupEnabledPref(hasDevToolsFlag);
+
     if (consoleFlag) {
       this.handleConsoleFlag(cmdLine);
     }
@@ -341,6 +346,25 @@ DevToolsStartup.prototype = {
     }, { once: true });
   },
 
+  
+
+
+
+
+
+
+  setupEnabledPref(hasDevToolsFlag) {
+    if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      
+      return;
+    }
+
+    let hasToolbarPref = Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false);
+    if (hasDevToolsFlag || hasToolbarPref) {
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+    }
+  },
+
   hookKeyShortcuts(window) {
     let doc = window.document;
     let keyset = doc.createElement("keyset");
@@ -360,8 +384,11 @@ DevToolsStartup.prototype = {
 
   onKey(window, key) {
     let require = this.initDevTools("KeyShortcut");
-    let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
-    gDevToolsBrowser.onKeyShortcut(window, key);
+    if (require) {
+      
+      let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
+      gDevToolsBrowser.onKeyShortcut(window, key);
+    }
   },
 
   
@@ -387,6 +414,12 @@ DevToolsStartup.prototype = {
   },
 
   initDevTools: function (reason) {
+    
+    if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      this.openInstallPage(reason);
+      return null;
+    }
+
     if (reason && !this.recorded) {
       
       
@@ -399,9 +432,7 @@ DevToolsStartup.prototype = {
       }
       this.recorded = true;
     }
-    if (!this.initialized) {
-      Services.prefs.setBoolPref("devtools.enabled", true);
-    }
+
     this.initialized = true;
     let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     
@@ -410,12 +441,19 @@ DevToolsStartup.prototype = {
     return require;
   },
 
+  openInstallPage: function (reason) {
+    let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
+    let url = "about:devtools";
+    if (reason) {
+      url += "?reason=" + encodeURIComponent(reason);
+    }
+    gBrowser.selectedTab = gBrowser.addTab(url);
+  },
+
   handleConsoleFlag: function (cmdLine) {
     let window = Services.wm.getMostRecentWindow("devtools:webconsole");
     if (!window) {
-      this.initDevTools("CommandLine");
-
-      let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+      let require = this.initDevTools("CommandLine");
       let { HUDService } = require("devtools/client/webconsole/hudservice");
       let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
       HUDService.toggleBrowserConsole().catch(console.error);

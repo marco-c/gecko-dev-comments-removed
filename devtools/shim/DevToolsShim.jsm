@@ -48,24 +48,6 @@ this.DevToolsShim = {
 
 
 
-
-  get gDevTools() {
-    if (!this.isInstalled()) {
-      throw new Error(`Trying to interact with DevTools, but they are not installed`);
-    }
-
-    if (!this.isInitialized()) {
-      this._initDevTools();
-    }
-
-    return this._gDevTools;
-  },
-
-  
-
-
-
-
   isInstalled: function () {
     return Services.io.getProtocolHandler("resource")
              .QueryInterface(Ci.nsIResProtocolHandler)
@@ -147,6 +129,7 @@ this.DevToolsShim = {
     if (!this.isInitialized()) {
       return;
     }
+
     this._gDevTools.saveDevToolsSession(state);
   },
 
@@ -155,11 +138,12 @@ this.DevToolsShim = {
 
 
   restoreDevToolsSession: function (session) {
-    if (!this.isInstalled()) {
+    let devtoolsReady = this._maybeInitializeDevTools();
+    if (!devtoolsReady) {
       return;
     }
 
-    this.gDevTools.restoreDevToolsSession(session);
+    this._gDevTools.restoreDevToolsSession(session);
   },
 
   
@@ -176,28 +160,12 @@ this.DevToolsShim = {
 
 
   inspectNode: function (tab, selectors) {
-    if (!this.isInstalled()) {
+    let devtoolsReady = this._maybeInitializeDevTools("ContextMenu");
+    if (!devtoolsReady) {
       return Promise.resolve();
     }
 
-    
-    if (!this.isInitialized()) {
-      this._initDevTools("ContextMenu");
-    }
-
-    return this.gDevTools.inspectNode(tab, selectors);
-  },
-
-  
-
-
-
-
-
-
-
-  _initDevTools: function (reason) {
-    DevtoolsStartup.initDevTools(reason);
+    return this._gDevTools.inspectNode(tab, selectors);
   },
 
   _onDevToolsRegistered: function () {
@@ -208,6 +176,30 @@ this.DevToolsShim = {
 
     this.listeners = [];
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _maybeInitializeDevTools: function (reason) {
+    
+    if (!this.isInitialized()) {
+      DevtoolsStartup.initDevTools(reason);
+    }
+
+    
+    
+    return this.isInitialized();
+  }
 };
 
 
@@ -226,6 +218,11 @@ let webExtensionsMethods = [
 
 for (let method of webExtensionsMethods) {
   this.DevToolsShim[method] = function () {
-    return this.gDevTools[method].apply(this.gDevTools, arguments);
+    let devtoolsReady = this._maybeInitializeDevTools();
+    if (!devtoolsReady) {
+      throw new Error("Could not call a DevToolsShim webextension method ('" + method +
+        "'): DevTools are not initialized.");
+    }
+    return this._gDevTools[method].apply(this._gDevTools, arguments);
   };
 }
