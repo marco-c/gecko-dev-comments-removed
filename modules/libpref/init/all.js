@@ -3098,7 +3098,7 @@ pref("dom.animations-api.element-animate.enabled", true);
 
 
 
-pref("dom.animations-api.pending-member.enabled", false);
+pref("dom.animations-api.pending-member.enabled", true);
 
 
 pref("dom.animations.offscreen-throttling", true);
