@@ -95,7 +95,7 @@ AnimationEffectReadOnly::GetComputedTimingAt(
     const TimingParams& aTiming,
     double aPlaybackRate)
 {
-  const StickyTimeDuration zeroDuration;
+  static const StickyTimeDuration zeroDuration;
 
   
   ComputedTiming result;
