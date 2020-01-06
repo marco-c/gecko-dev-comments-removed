@@ -284,16 +284,30 @@ public class GeckoView extends LayerView
         init(context, newSettings);
     }
 
-    public static final void preload(Context context) {
-        final GeckoProfile profile = GeckoProfile.get(
-            context.getApplicationContext());
+    
 
+
+
+
+    public static void preload(final Context context) {
+        preload(context,  null);
+    }
+
+    
+
+
+
+
+
+
+    public static void preload(final Context context, final String geckoArgs) {
+        final Context appContext = context.getApplicationContext();
         if (GeckoAppShell.getApplicationContext() == null) {
-            GeckoAppShell.setApplicationContext(context.getApplicationContext());
+            GeckoAppShell.setApplicationContext(appContext);
         }
 
-        if (GeckoThread.initMainProcess(profile,
-                                         null,
+        if (GeckoThread.initMainProcess(GeckoProfile.get(appContext),
+                                        geckoArgs,
                                          false)) {
             GeckoThread.launch();
         }
