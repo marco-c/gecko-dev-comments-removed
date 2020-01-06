@@ -40,7 +40,6 @@ ServoStyleSet::ServoStyleSet()
   , mAuthorStyleDisabled(false)
   , mStylistState(StylistState::NotDirty)
   , mUserFontSetUpdateGeneration(0)
-  , mUserFontCacheUpdateGeneration(0)
   , mNeedsRestyleAfterEnsureUniqueInner(false)
 {
 }
@@ -299,20 +298,12 @@ ServoStyleSet::PreTraverseSync()
   
   mPresContext->Document()->GetDocumentState();
 
+  
   if (gfxUserFontSet* userFontSet = mPresContext->Document()->GetUserFontSet()) {
-    
     uint64_t generation = userFontSet->GetGeneration();
     if (generation != mUserFontSetUpdateGeneration) {
       mPresContext->DeviceContext()->UpdateFontCacheUserFonts(userFontSet);
       mUserFontSetUpdateGeneration = generation;
-    }
-
-    
-    
-    uint32_t cacheGeneration = gfxUserFontSet::UserFontCache::Generation();
-    if (cacheGeneration != mUserFontCacheUpdateGeneration) {
-      gfxUserFontSet::UserFontCache::UpdateAllowedFontSets(userFontSet);
-      mUserFontCacheUpdateGeneration = cacheGeneration;
     }
   }
 
