@@ -301,8 +301,29 @@ void PlatformThread::Run() {
 #if defined(WEBRTC_WIN)
 void PlatformUIThread::Run() {
   RTC_CHECK(InternalInit()); 
-  PlatformThread::Run();
-  
+  do {
+    
+    
+    
+    if (!run_function_(obj_))
+      break;
+
+    
+    if (MsgWaitForMultipleObjectsEx(0, nullptr, INFINITE, QS_ALLINPUT,
+                                    MWMO_ALERTABLE | MWMO_INPUTAVAILABLE) ==
+        WAIT_OBJECT_0) {
+      MSG msg;
+      if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+          stop_ = true;
+          break;
+        }
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+      }
+    }
+
+  } while (!stop_);
 }
 
 void PlatformUIThread::NativeEventCallback() {
