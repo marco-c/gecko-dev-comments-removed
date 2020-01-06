@@ -819,7 +819,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         
-        if (apzDragEnabled && startsDrag && hitScrollbarNode &&
+        if (apzDragEnabled && gfxPrefs::APZDragInitiationEnabled() &&
+            startsDrag && hitScrollbarNode &&
             hitScrollbarNode->IsScrollThumbNode() &&
             hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable &&
             
