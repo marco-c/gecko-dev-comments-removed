@@ -62,7 +62,7 @@ add_task(function*() {
   webnavB.close();
 
   
-  yield TestUtils.topicObserved("inner-window-destroyed");
+  yield TestUtils.topicObserved("inner-window-nuked");
 
   
   let result = getThing();
