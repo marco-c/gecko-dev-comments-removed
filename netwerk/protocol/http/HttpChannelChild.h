@@ -11,6 +11,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/HttpBaseChannel.h"
+#include "mozilla/net/NeckoTargetHolder.h"
 #include "mozilla/net/PHttpChannelChild.h"
 #include "mozilla/net/ChannelEventQueue.h"
 
@@ -55,6 +56,7 @@ class HttpChannelChild final : public PHttpChannelChild
                              , public nsIHttpChannelChild
                              , public nsIDivertableChannel
                              , public nsIThreadRetargetableRequest
+                             , public NeckoTargetHolder
 {
   virtual ~HttpChannelChild();
 public:
@@ -170,6 +172,9 @@ protected:
   AsyncCall(void (HttpChannelChild::*funcPtr)(),
             nsRunnableMethod<HttpChannelChild> **retval = nullptr) override;
 
+  
+  already_AddRefed<nsIEventTarget> GetNeckoTarget() override;
+
 private:
   
   
@@ -203,9 +208,6 @@ private:
   
   
   void SetEventTarget();
-
-  
-  already_AddRefed<nsIEventTarget> GetNeckoTarget();
 
   
   already_AddRefed<nsIEventTarget> GetODATarget();
@@ -345,8 +347,6 @@ private:
   RefPtr<OverrideRunnable> mOverrideRunnable;
 
   
-  nsCOMPtr<nsIEventTarget> mNeckoTarget;
-  
   nsCOMPtr<nsIEventTarget> mODATarget;
   
   Mutex mEventTargetMutex;
@@ -430,6 +430,7 @@ private:
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
   friend class HttpBackgroundChannelChild;
+  friend class NeckoTargetChannelEvent<HttpChannelChild>;
 };
 
 
