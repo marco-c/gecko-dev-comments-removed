@@ -20,7 +20,7 @@
 namespace mozilla {
 namespace dom {
 
-class Storage;
+class LocalStorage;
 class StorageUsage;
 class StorageManagerBase;
 class StorageDBBridge;
@@ -110,7 +110,7 @@ public:
   void CloneFrom(const StorageCache* aThat);
 
   
-  int64_t GetOriginQuotaUsage(const Storage* aStorage) const;
+  int64_t GetOriginQuotaUsage(const LocalStorage* aStorage) const;
 
   
   void Preload();
@@ -119,20 +119,20 @@ public:
   
   
   
-  nsresult GetLength(const Storage* aStorage, uint32_t* aRetval);
-  nsresult GetKey(const Storage* aStorage, uint32_t index, nsAString& aRetval);
-  nsresult GetItem(const Storage* aStorage, const nsAString& aKey,
+  nsresult GetLength(const LocalStorage* aStorage, uint32_t* aRetval);
+  nsresult GetKey(const LocalStorage* aStorage, uint32_t index, nsAString& aRetval);
+  nsresult GetItem(const LocalStorage* aStorage, const nsAString& aKey,
                    nsAString& aRetval);
-  nsresult SetItem(const Storage* aStorage, const nsAString& aKey,
+  nsresult SetItem(const LocalStorage* aStorage, const nsAString& aKey,
                    const nsString& aValue, nsString& aOld,
                    const MutationSource aSource=ContentMutation);
-  nsresult RemoveItem(const Storage* aStorage, const nsAString& aKey,
+  nsresult RemoveItem(const LocalStorage* aStorage, const nsAString& aKey,
                       nsString& aOld,
                       const MutationSource aSource=ContentMutation);
-  nsresult Clear(const Storage* aStorage,
+  nsresult Clear(const LocalStorage* aStorage,
                  const MutationSource aSource=ContentMutation);
 
-  void GetKeys(const Storage* aStorage, nsTArray<nsString>& aKeys);
+  void GetKeys(const LocalStorage* aStorage, nsTArray<nsString>& aKeys);
 
   
   bool CheckPrincipal(nsIPrincipal* aPrincipal) const;
@@ -193,10 +193,10 @@ private:
   void WaitForPreload(mozilla::Telemetry::HistogramID aTelemetryID);
 
   
-  Data& DataSet(const Storage* aStorage);
+  Data& DataSet(const LocalStorage* aStorage);
 
   
-  bool Persist(const Storage* aStorage) const;
+  bool Persist(const LocalStorage* aStorage) const;
 
   
   
@@ -210,7 +210,7 @@ private:
   
   bool ProcessUsageDelta(uint32_t aGetDataSetIndex, const int64_t aDelta,
                          const MutationSource aSource=ContentMutation);
-  bool ProcessUsageDelta(const Storage* aStorage, const int64_t aDelta,
+  bool ProcessUsageDelta(const LocalStorage* aStorage, const int64_t aDelta,
                          const MutationSource aSource=ContentMutation);
 
 private:
