@@ -280,6 +280,30 @@ this.XPCOMUtils = {
 
 
 
+  defineLazyServiceGetters: function XPCU_defineLazyServiceGetters(
+                                   aObject, aServices)
+  {
+    for (let [name, service] of Object.entries(aServices)) {
+      
+      
+      
+      this.defineLazyServiceGetter(aObject, name, service[0], service[1]);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -317,6 +341,25 @@ this.XPCOMUtils = {
       }
       return temp[aSymbol || aName];
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  defineLazyModuleGetters: function XPCU_defineLazyModuleGetters(
+                                   aObject, aModules)
+  {
+    for (let [name, module] of Object.entries(aModules)) {
+      this.defineLazyModuleGetter(aObject, name, module);
+    }
   },
 
   
