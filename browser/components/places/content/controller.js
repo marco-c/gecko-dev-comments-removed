@@ -1335,7 +1335,8 @@ PlacesController.prototype = {
             doCopy = true;
           }
 
-          transactionData.push([item, type, parent, insertionIndex, doCopy]);
+          transactionData.push(PlacesUIUtils.getTransactionForData(
+            item, type, parent, insertionIndex, doCopy));
 
           
           
@@ -1345,9 +1346,8 @@ PlacesController.prototype = {
 
         await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactionData.length, async () => {
           await PlacesTransactions.batch(async () => {
-            for (let item of transactionData) {
-              let guid = await PlacesUIUtils.getTransactionForData(
-                ...item).transact();
+            for (let transaction of transactionData) {
+              let guid = await transaction.transact();
               itemsToSelect.push(await PlacesUtils.promiseItemId(guid));
             }
           });
@@ -1676,34 +1676,69 @@ var PlacesControllerDragHelper = {
       } else
         throw new Error("bogus data was passed as a tab");
 
-      for (let unwrapped of nodes) {
-        let index = await insertionPoint.getIndex();
+      if (PlacesUIUtils.useAsyncTransactions) {
+        
+        if (insertionPoint.isTag) {
+          let urls = nodes.filter(item => "uri" in item).map(item => item.uri);
+          transactions.push(PlacesTransactions.Tag({ urls, tag: tagName }));
+        } else {
+          for (let unwrapped of nodes) {
+            let index = await insertionPoint.getIndex();
 
-        if (index != -1 && unwrapped.itemGuid) {
-          
-          
-          
-          let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
+            if (index != -1 && unwrapped.itemGuid) {
+              
+              
+              
+              let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
 
-          
-          
-          if (existingBookmark && parentGuid == existingBookmark.parentGuid) {
-            if (PlacesUIUtils.useAsyncTransactions) {
-              if (index < existingBookmark.index) {
-                
-                
-                
-                index += movedCount++;
-              } else if (index > existingBookmark.index) {
-                
-                
-                
-                index--;
-              } else {
-                
-                continue;
+              
+              
+              if (existingBookmark && parentGuid == existingBookmark.parentGuid) {
+                if (index < existingBookmark.index) {
+                  
+                  
+                  
+                  index += movedCount++;
+                } else if (index > existingBookmark.index) {
+                  
+                  
+                  
+                  index--;
+                } else {
+                  
+                  continue;
+                }
               }
-            } else {
+            }
+
+            
+            
+            if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
+              Components.utils.reportError("Tried to move an unmovable Places " +
+                                           "node, reverting to a copy operation.");
+              doCopy = true;
+            }
+            transactions.push(
+              PlacesUIUtils.getTransactionForData(unwrapped,
+                                                  flavor,
+                                                  parentGuid,
+                                                  index,
+                                                  doCopy));
+          }
+        }
+      } else {
+        for (let unwrapped of nodes) {
+          let index = await insertionPoint.getIndex();
+
+          if (index != -1 && unwrapped.itemGuid) {
+            
+            
+            
+            let existingBookmark = await PlacesUtils.bookmarks.fetch(unwrapped.itemGuid);
+
+            
+            
+            if (existingBookmark && parentGuid == existingBookmark.parentGuid) {
               
               
               
@@ -1713,32 +1748,21 @@ var PlacesControllerDragHelper = {
               }
             }
           }
-        }
 
-        
-        if (insertionPoint.isTag) {
-          let uri = NetUtil.newURI(unwrapped.uri);
-          let tagItemId = insertionPoint.itemId;
-          if (PlacesUIUtils.useAsyncTransactions)
-            transactions.push(PlacesTransactions.Tag({ uri, tag: tagName }));
-          else
+          
+          
+          if (insertionPoint.isTag) {
+            let uri = NetUtil.newURI(unwrapped.uri);
+            let tagItemId = insertionPoint.itemId;
             transactions.push(new PlacesTagURITransaction(uri, [tagItemId]));
-        } else {
-          
-          
-          if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
-            Components.utils.reportError("Tried to move an unmovable Places " +
-                                         "node, reverting to a copy operation.");
-            doCopy = true;
-          }
-          if (PlacesUIUtils.useAsyncTransactions) {
-            transactions.push(
-              PlacesUIUtils.getTransactionForData(unwrapped,
-                                                  flavor,
-                                                  parentGuid,
-                                                  index,
-                                                  doCopy));
           } else {
+            
+            
+            if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
+              Components.utils.reportError("Tried to move an unmovable Places " +
+                                           "node, reverting to a copy operation.");
+              doCopy = true;
+            }
             transactions.push(PlacesUIUtils.makeTransaction(unwrapped,
                                 flavor, insertionPoint.itemId,
                                 index, doCopy));
