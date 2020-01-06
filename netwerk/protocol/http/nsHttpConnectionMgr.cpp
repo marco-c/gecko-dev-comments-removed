@@ -119,6 +119,7 @@ nsHttpConnectionMgr::nsHttpConnectionMgr()
     , mThrottleSuspendFor(0)
     , mThrottleResumeFor(0)
     , mThrottleResumeIn(0)
+    , mThrottleTimeWindow(0)
     , mIsShuttingDown(false)
     , mNumActiveConns(0)
     , mNumIdleConns(0)
@@ -175,7 +176,8 @@ nsHttpConnectionMgr::Init(uint16_t maxUrgentExcessiveConns,
                           bool throttleEnabled,
                           uint32_t throttleSuspendFor,
                           uint32_t throttleResumeFor,
-                          uint32_t throttleResumeIn)
+                          uint32_t throttleResumeIn,
+                          uint32_t throttleTimeWindow)
 {
     LOG(("nsHttpConnectionMgr::Init\n"));
 
@@ -192,6 +194,7 @@ nsHttpConnectionMgr::Init(uint16_t maxUrgentExcessiveConns,
         mThrottleSuspendFor = throttleSuspendFor;
         mThrottleResumeFor = throttleResumeFor;
         mThrottleResumeIn = throttleResumeIn;
+        mThrottleTimeWindow = TimeDuration::FromMilliseconds(throttleTimeWindow);
 
         mIsShuttingDown = false;
     }
@@ -2831,6 +2834,9 @@ nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase *)
     case THROTTLING_RESUME_IN:
         mThrottleResumeIn = value;
         break;
+    case THROTTLING_TIME_WINDOW:
+        mThrottleTimeWindow = TimeDuration::FromMilliseconds(value);
+        break;
     default:
         NS_NOTREACHED("unexpected parameter name");
     }
@@ -2929,6 +2935,30 @@ void nsHttpConnectionMgr::SetThrottlingEnabled(bool aEnable)
     }
 }
 
+bool nsHttpConnectionMgr::InThrottlingTimeWindow()
+{
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+    if (mThrottlingWindowEndsAt.IsNull()) {
+        return true;
+    }
+    return TimeStamp::NowLoRes() <= mThrottlingWindowEndsAt;
+}
+
+void nsHttpConnectionMgr::TouchThrottlingTimeWindow(bool aEnsureTicker)
+{
+    LOG(("nsHttpConnectionMgr::TouchThrottlingTimeWindow"));
+
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+    mThrottlingWindowEndsAt = TimeStamp::NowLoRes() + mThrottleTimeWindow;
+
+    if (!mThrottleTicker && 
+        MOZ_LIKELY(aEnsureTicker) && MOZ_LIKELY(mThrottleEnabled)) {
+        EnsureThrottleTickerIfNeeded();
+    }
+}
+
 void nsHttpConnectionMgr::LogActiveTransactions(char operation)
 {
     if (!LOG_ENABLED()) {
@@ -2985,6 +3015,14 @@ nsHttpConnectionMgr::AddActiveTransaction(nsHttpTransaction * aTrans)
             mActiveTabUnthrottledTransactionsExist = true;
         }
     }
+
+    
+    
+    
+    
+    
+    
+    TouchThrottlingTimeWindow(false);
 
     if (!mThrottleEnabled) {
         return;
@@ -3123,42 +3161,60 @@ nsHttpConnectionMgr::ShouldStopReading(nsHttpTransaction * aTrans)
     bool forActiveTab = tabId == mCurrentTopLevelOuterContentWindowId;
     bool throttled = aTrans->EligibleForThrottling();
 
-    if (mActiveTabTransactionsExist) {
-        if (!tabId) {
-            
-            
-            return throttled;
+    bool stop = [=]() {
+        if (mActiveTabTransactionsExist) {
+            if (!tabId) {
+                
+                
+                
+                return throttled;
+            }
+            if (!forActiveTab) {
+                
+                
+                return true;
+            }
+
+            if (mActiveTabUnthrottledTransactionsExist) {
+                
+                return throttled;
+            }
+
+            return false;
         }
-        if (!forActiveTab) {
+
+        MOZ_ASSERT(!forActiveTab);
+
+        if (mDelayedResumeReadTimer) {
+            
             
             return true;
         }
-        if (mActiveTabUnthrottledTransactionsExist) {
+
+        if (!mActiveTransactions[false].IsEmpty()) {
+            
+            
+            
             
             return throttled;
         }
+
+        
+        return false;
+    }();
+
+    if (forActiveTab && !stop) {
         
         
+        
+        
+        TouchThrottlingTimeWindow();
         return false;
     }
 
-    MOZ_ASSERT(!forActiveTab);
-
-    if (mDelayedResumeReadTimer) {
-        
-        
-        return true;
-    }
-
-    if (!mActiveTransactions[false].IsEmpty()) {
-        
-        
-        
-        return throttled;
-    }
-
     
-    return false;
+    
+    return stop && InThrottlingTimeWindow();
 }
 
 bool nsHttpConnectionMgr::IsConnEntryUnderPressure(nsHttpConnectionInfo *connInfo)
@@ -3266,7 +3322,7 @@ nsHttpConnectionMgr::ThrottlerTick()
     
     if (!mThrottlingInhibitsReading &&
         !mDelayedResumeReadTimer &&
-        !IsThrottleTickerNeeded()) {
+        (!IsThrottleTickerNeeded() || !InThrottlingTimeWindow())) {
         LOG(("  last tick"));
         mThrottleTicker = nullptr;
     }

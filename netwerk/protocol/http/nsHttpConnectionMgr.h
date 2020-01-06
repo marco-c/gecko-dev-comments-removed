@@ -60,7 +60,8 @@ public:
         THROTTLING_ENABLED,
         THROTTLING_SUSPEND_FOR,
         THROTTLING_RESUME_FOR,
-        THROTTLING_RESUME_IN
+        THROTTLING_RESUME_IN,
+        THROTTLING_TIME_WINDOW
     };
 
     
@@ -77,7 +78,8 @@ public:
                                bool throttleEnabled,
                                uint32_t throttleSuspendFor,
                                uint32_t throttleResumeFor,
-                               uint32_t throttleResumeIn);
+                               uint32_t throttleResumeIn,
+                               uint32_t throttleTimeWindow);
     MOZ_MUST_USE nsresult Shutdown();
 
     
@@ -227,6 +229,12 @@ public:
     
     
     bool ShouldStopReading(nsHttpTransaction* aTrans);
+
+    
+    
+    
+    
+    void TouchThrottlingTimeWindow(bool aEnsureTicker = true);
 
     
     
@@ -520,6 +528,7 @@ private:
     uint32_t mThrottleSuspendFor;
     uint32_t mThrottleResumeFor;
     uint32_t mThrottleResumeIn;
+    TimeDuration mThrottleTimeWindow;
     Atomic<bool, mozilla::Relaxed> mIsShuttingDown;
 
     
@@ -694,10 +703,18 @@ private:
     
     
     
+    bool InThrottlingTimeWindow();
+
+    
+    
+    
+    
     nsClassHashtable<nsUint64HashKey, nsTArray<RefPtr<nsHttpTransaction>>> mActiveTransactions[2];
 
     
     bool mThrottlingInhibitsReading;
+
+    TimeStamp mThrottlingWindowEndsAt;
 
     
     nsCOMPtr<nsITimer> mThrottleTicker;

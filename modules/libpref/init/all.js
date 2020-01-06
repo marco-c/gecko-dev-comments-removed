@@ -2182,6 +2182,10 @@ pref("network.http.throttle.resume-background-in", 1000);
 
 
 
+pref("network.http.throttle.time-window", 3000);
+
+
+
 pref("network.http.on_click_priority", true);
 
 pref("permissions.default.image",           1); 
@@ -5315,7 +5319,7 @@ pref("dom.flyweb.enabled", false);
 pref("dom.mapped_arraybuffer.enabled", true);
 
 
-pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple,test-harmful-simple");
+pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
 
 #ifdef MOZILLA_OFFICIAL
 
@@ -5329,7 +5333,7 @@ pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
 pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
 pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 
-pref("urlclassifier.disallow_completions", "test-malware-simple,test-harmful-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,block-flash-digest256,except-flash-digest256,allow-flashallow-digest256,except-flashallow-digest256,block-flashsubdoc-digest256,except-flashsubdoc-digest256,except-flashinfobar-digest256");
+pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simple,test-unwanted-simple,test-track-simple,test-trackwhite-simple,test-block-simple,goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,block-flash-digest256,except-flash-digest256,allow-flashallow-digest256,except-flashallow-digest256,block-flashsubdoc-digest256,except-flashsubdoc-digest256,except-flashinfobar-digest256");
 
 
 
@@ -5379,7 +5383,7 @@ pref("browser.safebrowsing.provider.google.advisoryName", "Google Safe Browsing.
 
 
 pref("browser.safebrowsing.provider.google4.pver", "4");
-pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto,goog-harmful-proto");
+pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto");
 pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
 pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%&$httpMethod=POST");
 pref("browser.safebrowsing.provider.google4.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");

@@ -841,10 +841,20 @@ bool nsHttpTransaction::ShouldStopReading()
         
         
         
+        
+        
+        
+        Unused << gHttpHandler->ConnMgr()->ShouldStopReading(this);
         return false;
     }
 
     if (mClassOfService & nsIClassOfService::DontThrottle) {
+        
+        
+        
+        
+        
+        
         return false;
     }
 
