@@ -945,8 +945,8 @@ struct arena_bin_t
   unsigned long mNumRuns;
 
   
-  static constexpr long double kRunOverhead = 1.6_percent;
-  static constexpr long double kRunRelaxedOverhead = 2.4_percent;
+  static constexpr double kRunOverhead = 1.6_percent;
+  static constexpr double kRunRelaxedOverhead = 2.4_percent;
 
   
   
