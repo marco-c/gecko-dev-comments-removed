@@ -232,7 +232,7 @@ this.pageAction = class extends ExtensionAPI {
   
   
   
-  handleClick(window) {
+  async handleClick(window) {
     TelemetryStopwatch.start(popupOpenTimingHistogram, this);
     let tab = window.gBrowser.selectedTab;
     let popupURL = this.tabContext.get(tab).popup;
@@ -244,8 +244,9 @@ this.pageAction = class extends ExtensionAPI {
     
     
     if (popupURL) {
-      new PanelPopup(this.extension, this.getButton(window), popupURL,
-                     this.browserStyle);
+      let popup = new PanelPopup(this.extension, this.getButton(window),
+                                 popupURL, this.browserStyle);
+      await popup.contentReady;
       TelemetryStopwatch.finish(popupOpenTimingHistogram, this);
     } else {
       TelemetryStopwatch.cancel(popupOpenTimingHistogram, this);
