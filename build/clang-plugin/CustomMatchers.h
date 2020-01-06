@@ -7,7 +7,6 @@
 
 #include "MemMoveAnnotation.h"
 #include "Utils.h"
-#include "VariableUsageHelpers.h"
 
 namespace clang {
 namespace ast_matchers {
@@ -29,78 +28,6 @@ AST_MATCHER(Decl, noArithmeticExprInArgs) {
 AST_MATCHER(CXXRecordDecl, hasTrivialCtorDtor) {
   return hasCustomAnnotation(&Node, "moz_trivial_ctor_dtor");
 }
-
-
-AST_MATCHER(CXXMethodDecl, isLValueRefQualified) {
-  return Node.getRefQualifier() == RQ_LValue;
-}
-
-
-AST_MATCHER(CXXMethodDecl, isRValueRefQualified) {
-  return Node.getRefQualifier() == RQ_RValue;
-}
-
-
-
-AST_MATCHER(CXXMethodDecl, noDanglingOnTemporaries) {
-  return hasCustomAnnotation(&Node, "moz_no_dangling_on_temporaries");
-}
-
-
-
-
-
-
-AST_MATCHER_P2(Expr, escapesParentFunctionCall, \
-               internal::Matcher<Stmt>, EscapeStmtMatcher, \
-               internal::Matcher<Decl>, EscapeDeclMatcher) {
-  auto Call =
-      IgnoreParentTrivials(Node, &Finder->getASTContext()).get<CallExpr>();
-  if (!Call) {
-    return false;
-  }
-
-  auto FunctionEscapeData = escapesFunction(&Node, Call);
-  assert(FunctionEscapeData && "escapesFunction() returned NoneType: there is a"
-                               " logic bug in the matcher");
-
-  const Stmt* EscapeStmt;
-  const Decl* EscapeDecl;
-  std::tie(EscapeStmt, EscapeDecl) = *FunctionEscapeData;
-
-  return EscapeStmt && EscapeDecl
-      && EscapeStmtMatcher.matches(*EscapeStmt, Finder, Builder)
-      && EscapeDeclMatcher.matches(*EscapeDecl, Finder, Builder);
-}
-
-
-template <typename T, typename ParentT>
-class HasNonTrivialParentMatcher : public internal::WrapperMatcherInterface<T> {
-  static_assert(internal::IsBaseType<ParentT>::value,
-                "has parent only accepts base type matcher");
-
-public:
-  explicit HasNonTrivialParentMatcher(
-      const internal::Matcher<ParentT> &NonTrivialParentMatcher)
-      : HasNonTrivialParentMatcher::WrapperMatcherInterface(
-            NonTrivialParentMatcher) {}
-
-  bool matches(const T &Node, internal::ASTMatchFinder *Finder,
-               internal::BoundNodesTreeBuilder *Builder) const override {
-    auto NewNode = IgnoreParentTrivials(Node, &Finder->getASTContext());
-
-    
-    return this->InnerMatcher.matches(NewNode, Finder, Builder);
-  }
-};
-
-
-
-const internal::ArgumentAdaptingMatcherFunc<
-    HasNonTrivialParentMatcher,
-    internal::TypeList<Decl, NestedNameSpecifierLoc, Stmt, TypeLoc>,
-    internal::TypeList<Decl, NestedNameSpecifierLoc, Stmt, TypeLoc>>
-    LLVM_ATTRIBUTE_UNUSED hasNonTrivialParent = {};
 
 
 
