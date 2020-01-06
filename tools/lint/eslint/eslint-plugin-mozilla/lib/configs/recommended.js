@@ -63,7 +63,8 @@ module.exports = {
 
   
   "plugins": [
-    "mozilla"
+    "mozilla",
+    "no-unsanitized"
   ],
 
   
@@ -298,6 +299,11 @@ module.exports = {
 
     
     "no-unsafe-negation": "error",
+
+    
+    
+    "no-unsanitized/method": "error",
+    "no-unsanitized/property": "error",
 
     
     "no-unused-vars": ["error", {
