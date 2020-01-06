@@ -2298,8 +2298,8 @@ BytecodeEmitter::updateDepth(ptrdiff_t target)
 {
     jsbytecode* pc = code(target);
 
-    int nuses = StackUses(nullptr, pc);
-    int ndefs = StackDefs(nullptr, pc);
+    int nuses = StackUses(pc);
+    int ndefs = StackDefs(pc);
 
     stackDepth -= nuses;
     MOZ_ASSERT(stackDepth >= 0);
@@ -4987,9 +4987,6 @@ BytecodeEmitter::emitScript(ParseNode* body)
         if (!emitTree(body))
             return false;
     }
-
-    if (!updateSourceCoordNotes(body->pn_pos.end))
-        return false;
 
     if (!emit1(JSOP_RETRVAL))
         return false;
