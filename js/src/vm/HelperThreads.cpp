@@ -963,41 +963,20 @@ GlobalHelperThreadState::waitForAllThreads()
         wait(lock, CONSUMER);
 }
 
-
-
-
-
-
-
-
-
 template <typename T>
 bool
-GlobalHelperThreadState::checkTaskThreadLimit(size_t maxThreads, bool isMaster) const
+GlobalHelperThreadState::checkTaskThreadLimit(size_t maxThreads) const
 {
-    MOZ_ASSERT(maxThreads > 0);
-
-    if (!isMaster && maxThreads >= threadCount)
+    if (maxThreads >= threadCount)
         return true;
 
     size_t count = 0;
-    size_t idle = 0;
     for (auto& thread : *threads) {
-        if (thread.currentTask.isSome()) {
-            if (thread.currentTask->is<T>())
-                count++;
-        } else {
-            idle++;
-        }
+        if (thread.currentTask.isSome() && thread.currentTask->is<T>())
+            count++;
         if (count >= maxThreads)
             return false;
     }
-
-    
-    MOZ_ASSERT(idle > 0);
-
-    if (isMaster && idle <= 1)
-        return false;
 
     return true;
 }
@@ -1234,12 +1213,7 @@ GlobalHelperThreadState::pendingIonCompileHasSufficientPriority(
 bool
 GlobalHelperThreadState::canStartParseTask(const AutoLockHelperThreadState& lock)
 {
-    
-    
-    
-    
-    return !parseWorklist(lock).empty() &&
-           checkTaskThreadLimit<ParseTask*>(maxParseThreads(), true);
+    return !parseWorklist(lock).empty() && checkTaskThreadLimit<ParseTask*>(maxParseThreads());
 }
 
 bool
@@ -2168,74 +2142,53 @@ HelperThread::threadLoop()
     while (true) {
         MOZ_ASSERT(idle());
 
-        js::oom::ThreadType task;
+        
+        
+        
+        bool ionCompile = false;
         while (true) {
             if (terminate)
                 return;
-
-            
-            
-            
-            
-            
-            
-            
-            
-
-            if (HelperThreadState().canStartGCParallelTask(lock))
-                task = js::oom::THREAD_TYPE_GCPARALLEL;
-            else if (HelperThreadState().canStartGCHelperTask(lock))
-                task = js::oom::THREAD_TYPE_GCHELPER;
-            else if (HelperThreadState().pendingIonCompileHasSufficientPriority(lock))
-                task = js::oom::THREAD_TYPE_ION;
-            else if (HelperThreadState().canStartWasmCompile(lock))
-                task = js::oom::THREAD_TYPE_WASM;
-            else if (HelperThreadState().canStartPromiseTask(lock))
-                task = js::oom::THREAD_TYPE_PROMISE_TASK;
-            else if (HelperThreadState().canStartParseTask(lock))
-                task = js::oom::THREAD_TYPE_PARSE;
-            else if (HelperThreadState().canStartCompressionTask(lock))
-                task = js::oom::THREAD_TYPE_COMPRESS;
-            else if (HelperThreadState().canStartIonFreeTask(lock))
-                task = js::oom::THREAD_TYPE_ION_FREE;
-            else
-                task = js::oom::THREAD_TYPE_NONE;
-
-            if (task != js::oom::THREAD_TYPE_NONE)
+            if ((ionCompile = HelperThreadState().pendingIonCompileHasSufficientPriority(lock)) ||
+                HelperThreadState().canStartWasmCompile(lock) ||
+                HelperThreadState().canStartPromiseTask(lock) ||
+                HelperThreadState().canStartParseTask(lock) ||
+                HelperThreadState().canStartCompressionTask(lock) ||
+                HelperThreadState().canStartGCHelperTask(lock) ||
+                HelperThreadState().canStartGCParallelTask(lock) ||
+                HelperThreadState().canStartIonFreeTask(lock))
+            {
                 break;
-
+            }
             HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
         }
 
-        js::oom::SetThreadType(task);
-        switch (task) {
-          case js::oom::THREAD_TYPE_GCPARALLEL:
+        if (HelperThreadState().canStartGCParallelTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_GCPARALLEL);
             handleGCParallelWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_GCHELPER:
+        } else if (HelperThreadState().canStartGCHelperTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_GCHELPER);
             handleGCHelperWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_ION:
+        } else if (ionCompile) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_ION);
             handleIonWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_WASM:
+        } else if (HelperThreadState().canStartWasmCompile(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_WASM);
             handleWasmWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_PROMISE_TASK:
+        } else if (HelperThreadState().canStartPromiseTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_PROMISE_TASK);
             handlePromiseTaskWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_PARSE:
+        } else if (HelperThreadState().canStartParseTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_PARSE);
             handleParseWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_COMPRESS:
+        } else if (HelperThreadState().canStartCompressionTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_COMPRESS);
             handleCompressionWorkload(lock);
-            break;
-          case js::oom::THREAD_TYPE_ION_FREE:
+        } else if (HelperThreadState().canStartIonFreeTask(lock)) {
+            js::oom::SetThreadType(js::oom::THREAD_TYPE_ION_FREE);
             handleIonFreeWorkload(lock);
-            break;
-          default:
+        } else {
             MOZ_CRASH("No task to perform");
         }
-        js::oom::SetThreadType(js::oom::THREAD_TYPE_NONE);
     }
 }
