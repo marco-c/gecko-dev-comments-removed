@@ -27,18 +27,13 @@ const promise = require("promise");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/old-event-emitter");
 const {Task} = require("devtools/shared/task");
+const {Tools} = require("devtools/client/definitions");
+const {gDevTools} = require("devtools/client/framework/devtools");
+const CssLogic = require("devtools/shared/inspector/css-logic");
 
 const STYLE_INSPECTOR_PROPERTIES = "devtools/shared/locales/styleinspector.properties";
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
-
-const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
-
-
-
-
-
-
 
 
 
@@ -57,6 +52,9 @@ function RuleEditor(ruleView, rule) {
   this.ruleView = ruleView;
   this.doc = this.ruleView.styleDocument;
   this.toolbox = this.ruleView.inspector.toolbox;
+  
+  
+  this.sourceMapURLService = this.toolbox.sourceMapURLService;
   this.rule = rule;
 
   this.isEditable = !rule.isSystem;
@@ -69,10 +67,13 @@ function RuleEditor(ruleView, rule) {
   this._onSelectorDone = this._onSelectorDone.bind(this);
   this._locationChanged = this._locationChanged.bind(this);
   this.updateSourceLink = this.updateSourceLink.bind(this);
+  this._onToolChanged = this._onToolChanged.bind(this);
+  this._updateLocation = this._updateLocation.bind(this);
+  this._onSourceClick = this._onSourceClick.bind(this);
 
   this.rule.domRule.on("location-changed", this._locationChanged);
-  this.toolbox.on("tool-registered", this.updateSourceLink);
-  this.toolbox.on("tool-unregistered", this.updateSourceLink);
+  this.toolbox.on("tool-registered", this._onToolChanged);
+  this.toolbox.on("tool-unregistered", this._onToolChanged);
 
   this._create();
 }
@@ -80,8 +81,21 @@ function RuleEditor(ruleView, rule) {
 RuleEditor.prototype = {
   destroy: function () {
     this.rule.domRule.off("location-changed");
-    this.toolbox.off("tool-registered", this.updateSourceLink);
-    this.toolbox.off("tool-unregistered", this.updateSourceLink);
+    this.toolbox.off("tool-registered", this._onToolChanged);
+    this.toolbox.off("tool-unregistered", this._onToolChanged);
+
+    let url = null;
+    if (this.rule.sheet) {
+      url = this.rule.sheet.href || this.rule.sheet.nodeHref;
+    }
+    if (url && !this.rule.isSystem && this.rule.domRule.type !== ELEMENT_STYLE) {
+      
+      
+      let sourceLine = this.rule.ruleLine;
+      let sourceColumn = this.rule.ruleColumn;
+      this.sourceMapURLService.unsubscribe(url, sourceLine, sourceColumn,
+                                           this._updateLocation);
+    }
   },
 
   get isSelectorEditable() {
@@ -110,13 +124,8 @@ RuleEditor.prototype = {
     this.source = createChild(this.element, "div", {
       class: "ruleview-rule-source theme-link"
     });
-    this.source.addEventListener("click", () => {
-      if (this.source.hasAttribute("unselectable")) {
-        return;
-      }
-      let rule = this.rule.domRule;
-      this.ruleView.emit("ruleview-linked-clicked", rule);
-    });
+    this.source.addEventListener("click", this._onSourceClick);
+
     let sourceLabel = this.doc.createElement("span");
     sourceLabel.classList.add("ruleview-rule-source-label");
     this.source.appendChild(sourceLabel);
@@ -228,27 +237,98 @@ RuleEditor.prototype = {
   
 
 
+  _onToolChanged: function () {
+    
+    
+    
+    
+    if (this.source.getAttribute("unselectable") === "permanent") {
+      
+    } else if (this.toolbox.isToolRegistered("styleeditor")) {
+      this.source.removeAttribute("unselectable");
+    } else {
+      this.source.setAttribute("unselectable", "true");
+    }
+  },
+
+  
+
+
 
   _locationChanged: function () {
     this.updateSourceLink();
   },
 
-  updateSourceLink: function () {
-    let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
-    let title = this.rule.title;
-    let sourceHref = (this.rule.sheet && this.rule.sheet.href) ?
-      this.rule.sheet.href : title;
-    let sourceLine = this.rule.ruleLine > 0 ? ":" + this.rule.ruleLine : "";
-
-    sourceLabel.setAttribute("title", sourceHref + sourceLine);
-
-    if (this.toolbox.isToolRegistered("styleeditor")) {
-      this.source.removeAttribute("unselectable");
-    } else {
-      this.source.setAttribute("unselectable", true);
+  _onSourceClick: function () {
+    if (this.source.hasAttribute("unselectable") || !this._currentLocation) {
+      return;
     }
 
+    let target = this.ruleView.inspector.target;
+    if (Tools.styleEditor.isTargetSupported(target)) {
+      gDevTools.showToolbox(target, "styleeditor").then(toolbox => {
+        let {url, line, column} = this._currentLocation;
+        toolbox.getCurrentPanel().selectStyleSheet(url, line, column);
+      });
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _updateLocation: function (enabled, url, line, column) {
+    let displayURL = url;
+    if (!enabled) {
+      url = null;
+      displayURL = null;
+      if (this.rule.sheet) {
+        url = this.rule.sheet.href || this.rule.sheet.nodeHref;
+        displayURL = this.rule.sheet.href;
+      }
+      line = this.rule.ruleLine;
+      column = this.rule.ruleColumn;
+    }
+
+    this._currentLocation = {
+      url,
+      line,
+      column
+    };
+
+    let title = CssLogic.shortSource({href: displayURL});
+    if (line > 0) {
+      title += ":" + line;
+    }
+    if (this.rule.mediaText) {
+      title += " @" + this.rule.mediaText;
+    }
+
+    let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
+    sourceLabel.setAttribute("title", title);
+    sourceLabel.textContent = title;
+  },
+
+  updateSourceLink: function () {
     if (this.rule.isSystem) {
+      let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
+      let title = this.rule.title;
+      let sourceHref = (this.rule.sheet && this.rule.sheet.href) ?
+          this.rule.sheet.href : title;
+
       let uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
       sourceLabel.textContent = uaLabel + " " + title;
 
@@ -256,36 +336,37 @@ RuleEditor.prototype = {
       
       
       if (sourceHref === "about:PreferenceStyleSheet") {
-        this.source.setAttribute("unselectable", "true");
+        this.source.setAttribute("unselectable", "permanent");
         sourceLabel.textContent = uaLabel;
         sourceLabel.removeAttribute("title");
       }
     } else {
-      sourceLabel.textContent = title;
-      if (this.rule.ruleLine === -1 && this.rule.domRule.parentStyleSheet) {
-        this.source.setAttribute("unselectable", "true");
-      }
+      this._updateLocation(false);
     }
 
-    let showOrig = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
-    if (showOrig && !this.rule.isSystem &&
-        this.rule.domRule.type !== ELEMENT_STYLE) {
+    let url = null;
+    if (this.rule.sheet) {
+      url = this.rule.sheet.href || this.rule.sheet.nodeHref;
+    }
+    if (url && !this.rule.isSystem && this.rule.domRule.type !== ELEMENT_STYLE) {
       
       
-      this.rule.getOriginalSourceStrings().then((strings) => {
-        sourceLabel.textContent = strings.short;
-        sourceLabel.setAttribute("title", strings.full);
-      }, console.error).then(() => {
-        this.emit("source-link-updated");
-      });
+      let sourceLine = this.rule.ruleLine;
+      let sourceColumn = this.rule.ruleColumn;
+      this.sourceMapURLService.subscribe(url, sourceLine, sourceColumn,
+                                         this._updateLocation);
+      
+      this._onToolChanged();
+    } else if (this.rule.domRule.type === ELEMENT_STYLE) {
+      this.source.setAttribute("unselectable", "permanent");
     } else {
       
-      
-      
-      promise.resolve().then(() => {
-        this.emit("source-link-updated");
-      });
+      this._onToolChanged();
     }
+
+    promise.resolve().then(() => {
+      this.emit("source-link-updated");
+    });
   },
 
   

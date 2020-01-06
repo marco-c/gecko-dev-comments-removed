@@ -117,7 +117,7 @@ Rule.prototype = {
 
 
   get ruleLine() {
-    return this.domRule ? this.domRule.line : "";
+    return this.domRule ? this.domRule.line : -1;
   },
 
   
@@ -125,36 +125,6 @@ Rule.prototype = {
 
   get ruleColumn() {
     return this.domRule ? this.domRule.column : null;
-  },
-
-  
-
-
-
-
-
-
-
-  getOriginalSourceStrings: function () {
-    return this.domRule.getOriginalLocation().then(({href, line, mediaText}) => {
-      let mediaString = mediaText ? " @" + mediaText : "";
-      let linePart = line > 0 ? (":" + line) : "";
-      let decodedHref = href;
-
-      if (decodedHref) {
-        try {
-          decodedHref = decodeURIComponent(href);
-        } catch (e) {}
-      }
-
-      let sourceStrings = {
-        full: (decodedHref || CssLogic.l10n("rule.sourceInline")) + linePart +
-          mediaString,
-        short: CssLogic.shortSource({href: decodedHref}) + linePart + mediaString
-      };
-
-      return sourceStrings;
-    });
   },
 
   
