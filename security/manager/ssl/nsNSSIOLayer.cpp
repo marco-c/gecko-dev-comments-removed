@@ -94,7 +94,7 @@ static uint32_t getTLSProviderFlagFallbackLimit(uint32_t flags)
   return (flags & 0x38) >> 3;
 }
 
-static bool getTLSProviderFlagAltServerHello(uint32_t flags)
+static bool getTLSProviderFlagAltHandshake(uint32_t flags)
 {
   return (flags & 0x40);
 }
@@ -2602,12 +2602,12 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   
-  if (getTLSProviderFlagAltServerHello(infoObject->GetProviderTlsFlags())) {
+  if (getTLSProviderFlagAltHandshake(infoObject->GetProviderTlsFlags())) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] nsSSLIOLayerSetOptions: Use AltServerHello\n", fd));
-    if (SECSuccess != SSL_UseAltServerHelloType(fd, PR_TRUE)) {
+            ("[%p] nsSSLIOLayerSetOptions: Use AltHandshake\n", fd));
+    if (SECSuccess != SSL_UseAltHandshakeType(fd, PR_TRUE)) {
           MOZ_LOG(gPIPNSSLog, LogLevel::Error,
-                  ("[%p] nsSSLIOLayerSetOptions: Use AltServerHello failed\n", fd));
+                  ("[%p] nsSSLIOLayerSetOptions: Use AltHandshake failed\n", fd));
           
     }
   }

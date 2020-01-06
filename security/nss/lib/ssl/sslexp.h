@@ -26,9 +26,8 @@ SEC_BEGIN_PROTOS
 
 
 
-
-#define SSL_UseAltServerHelloType(fd, enable)                \
-    SSL_EXPERIMENTAL_API("SSL_UseAltServerHelloType",        \
+#define SSL_UseAltHandshakeType(fd, enable)                  \
+    SSL_EXPERIMENTAL_API("SSL_UseAltHandshakeType",          \
                          (PRFileDesc * _fd, PRBool _enable), \
                          (fd, enable))
 
