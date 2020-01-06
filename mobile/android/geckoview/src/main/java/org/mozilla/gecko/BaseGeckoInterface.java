@@ -34,11 +34,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     @Override
     public void removeAppStateListener(GeckoAppShell.AppStateListener listener) {}
 
-    @Override
-    public boolean areTabsShown() {
-        return false;
-    }
-
     
     @Override
     public void invalidateOptionsMenu() {}
