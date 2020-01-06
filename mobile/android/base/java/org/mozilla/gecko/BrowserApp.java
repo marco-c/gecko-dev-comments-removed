@@ -181,7 +181,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import static org.mozilla.gecko.mma.MmaDelegate.NEW_TAB;
 public class BrowserApp extends GeckoApp
                         implements ActionModePresenter,
                                    AnchoredPopup.OnVisibilityChangeListener,
@@ -1115,10 +1114,6 @@ public class BrowserApp extends GeckoApp
 
         
         checkFirstrun(this, intent);
-
-        if (Versions.preJB) {
-           conditionallyNotifyEOL();
-        }
 
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
             DawnHelper.conditionallyNotifyDawn(this);
@@ -3457,10 +3452,6 @@ public class BrowserApp extends GeckoApp
     }
 
     @Override
-    public void onContextMenu(GeckoView view, int screenX, int screenY,
-                              String uri, String elementSrc) {}
-
-    @Override
     public boolean onPrepareOptionsMenu(Menu aMenu) {
         if (aMenu == null)
             return false;
@@ -3727,10 +3718,8 @@ public class BrowserApp extends GeckoApp
         if (TextUtils.equals(extras, "new_private_tab")) {
             
             extras = "new_tab";
-        } else {
-            
-            MmaDelegate.track(NEW_TAB);
         }
+
         Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.MENU, extras);
 
         mBrowserToolbar.cancelEdit();
