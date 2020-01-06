@@ -3130,8 +3130,17 @@ Parser<ParseHandler, CharT>::functionArguments(YieldHandling yieldHandling,
                 return false;
             }
 
+            
+            
+            
+            
+            
+            
+            if (parenFreeArrow)
+                break;
+
             bool matched;
-            if (!tokenStream.matchToken(&matched, TOK_ASSIGN))
+            if (!tokenStream.matchToken(&matched, TOK_ASSIGN, TokenStream::Operand))
                 return false;
             if (matched) {
                 
@@ -3166,10 +3175,11 @@ Parser<ParseHandler, CharT>::functionArguments(YieldHandling yieldHandling,
                     return false;
             }
 
-            if (parenFreeArrow || IsSetterKind(kind))
+            
+            if (IsSetterKind(kind))
                 break;
 
-            if (!tokenStream.matchToken(&matched, TOK_COMMA))
+            if (!tokenStream.matchToken(&matched, TOK_COMMA, TokenStream::Operand))
                 return false;
             if (!matched)
                 break;
@@ -3177,16 +3187,14 @@ Parser<ParseHandler, CharT>::functionArguments(YieldHandling yieldHandling,
             if (!hasRest) {
                 if (!tokenStream.peekToken(&tt, TokenStream::Operand))
                     return null();
-                if (tt == TOK_RP) {
-                    tokenStream.addModifierException(TokenStream::NoneIsOperand);
+                if (tt == TOK_RP)
                     break;
-                }
             }
         }
 
         if (!parenFreeArrow) {
             TokenKind tt;
-            if (!tokenStream.getToken(&tt))
+            if (!tokenStream.getToken(&tt, TokenStream::Operand))
                 return false;
             if (tt != TOK_RP) {
                 if (IsSetterKind(kind)) {
