@@ -6764,7 +6764,7 @@ HTMLInputElement::AddedToRadioGroup()
   if (container) {
     nsAutoString name;
     GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
-    container->AddToRadioGroup(name, static_cast<nsIFormControl*>(this));
+    container->AddToRadioGroup(name, this);
 
     
     
@@ -6797,7 +6797,7 @@ HTMLInputElement::WillRemoveFromRadioGroup()
   
   
   UpdateValueMissingValidityStateForRadio(true);
-  container->RemoveFromRadioGroup(name, static_cast<nsIFormControl*>(this));
+  container->RemoveFromRadioGroup(name, this);
 }
 
 bool

@@ -77,7 +77,8 @@ public:
 
 
 
-  virtual void AddToRadioGroup(const nsAString& aName, nsIFormControl* aRadio) = 0;
+  virtual void AddToRadioGroup(const nsAString& aName,
+                               mozilla::dom::HTMLInputElement* aRadio) = 0;
 
   
 
@@ -88,7 +89,8 @@ public:
 
 
 
-  virtual void RemoveFromRadioGroup(const nsAString& aName, nsIFormControl* aRadio) = 0;
+  virtual void RemoveFromRadioGroup(const nsAString& aName,
+                                    mozilla::dom::HTMLInputElement* aRadio) = 0;
 
   virtual uint32_t GetRequiredRadioCount(const nsAString& aName) const = 0;
   virtual void RadioRequiredWillChange(const nsAString& aName,
