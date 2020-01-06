@@ -500,8 +500,6 @@ ShadowRoot::AttributeChanged(nsIDocument* aDocument,
   }
 
   
-  
-  
   if (!RedistributeElement(aElement)) {
     return;
   }
