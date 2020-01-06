@@ -301,14 +301,38 @@ function hasFocus(node) {
 
 
 
-function jstermSetValueAndComplete(jsterm, value, caretIndexOffset = 0) {
+
+
+
+
+
+
+
+function jstermSetValueAndComplete(jsterm, value, caretIndexOffset = 0, completionType) {
   const {inputNode} = jsterm;
   inputNode.value = value;
   let index = value.length + caretIndexOffset;
   inputNode.setSelectionRange(index, index);
 
+  return jstermComplete(jsterm, completionType);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function jstermComplete(jsterm, completionType = jsterm.COMPLETE_HINT_ONLY) {
   const updated = jsterm.once("autocomplete-updated");
-  jsterm.complete(jsterm.COMPLETE_HINT_ONLY);
+  jsterm.complete(completionType);
   return updated;
 }
 
