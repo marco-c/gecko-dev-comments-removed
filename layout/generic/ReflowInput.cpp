@@ -494,7 +494,7 @@ void ReflowInput::InitCBReflowInput()
     return;
   }
 
-  if (mParentReflowInput->mFrame == mFrame->GetContainingBlock()) {
+  if (mParentReflowInput->mFrame == mFrame->GetContainingBlock(0, mStyleDisplay)) {
     
     
     if (mFrame->IsTableFrame()) {
@@ -526,7 +526,7 @@ IsQuirkContainingBlockHeight(const ReflowInput* rs, LayoutFrameType aFrameType)
     
     
     if (NS_AUTOHEIGHT == rs->ComputedHeight()) {
-      if (!rs->mFrame->IsAbsolutelyPositioned()) {
+      if (!rs->mFrame->IsAbsolutelyPositioned(rs->mStyleDisplay)) {
         return false;
       }
     }
@@ -1980,7 +1980,7 @@ CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowInput)
       
       
       if (NS_AUTOHEIGHT == rs->ComputedHeight()) {
-        if (rs->mFrame->IsAbsolutelyPositioned()) {
+        if (rs->mFrame->IsAbsolutelyPositioned(rs->mStyleDisplay)) {
           break;
         } else {
           continue;
@@ -2061,7 +2061,7 @@ ReflowInput::ComputeContainingBlockRectangle(
   
   
   if (NS_FRAME_GET_TYPE(mFrameType) == NS_CSS_FRAME_TYPE_ABSOLUTE ||
-      (mFrame->IsTableFrame() && mFrame->IsAbsolutelyPositioned() &&
+      (mFrame->IsTableFrame() && mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
        (mFrame->GetParent()->GetStateBits() & NS_FRAME_OUT_OF_FLOW))) {
     
     if (NS_FRAME_GET_TYPE(aContainingBlockRI->mFrameType) == NS_CSS_FRAME_TYPE_INLINE) {

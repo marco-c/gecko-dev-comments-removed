@@ -2758,7 +2758,8 @@ public:
     
     SKIP_SCROLLED_FRAME = 0x01
   };
-  nsIFrame* GetContainingBlock(uint32_t aFlags = 0) const;
+  nsIFrame* GetContainingBlock(uint32_t aFlags = 0,
+                               const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
 
@@ -3610,7 +3611,7 @@ public:
   inline bool IsAbsPosContainingBlock() const;
   inline bool IsFixedPosContainingBlock() const;
   inline bool IsRelativelyPositioned() const;
-  inline bool IsAbsolutelyPositioned() const;
+  inline bool IsAbsolutelyPositioned(const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
 
