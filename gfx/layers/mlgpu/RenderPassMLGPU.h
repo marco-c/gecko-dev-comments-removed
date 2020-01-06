@@ -301,6 +301,7 @@ protected:
     gfx::IntSize textureSize;
     gfx::Point destOrigin;
     Maybe<gfx::Size> scale;
+    bool decomposeIntoNoRepeatRects;
   };
 
   
@@ -400,7 +401,7 @@ private:
 
 private:
   RefPtr<TextureSource> mTexture;
-  gfx::SamplingFilter mFilter;
+  SamplerMode mSamplerMode;
   float mOpacity;
 };
 
@@ -446,7 +447,7 @@ private:
 private:
   RefPtr<TextureHost> mHost;
   RefPtr<TextureSource> mTexture;
-  gfx::SamplingFilter mFilter;
+  SamplerMode mSamplerMode;
   float mOpacity;
 };
 

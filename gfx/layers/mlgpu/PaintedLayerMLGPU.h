@@ -8,6 +8,7 @@
 
 #include "LayerManagerMLGPU.h"
 #include "mozilla/layers/ContentHost.h"
+#include "MLGDeviceTypes.h"
 #include "nsRegionFwd.h"
 #include <functional>
 
@@ -48,6 +49,14 @@ public:
   }
   ContentHostTexture* GetContentHost() const {
     return mHost;
+  }
+  SamplerMode GetSamplerMode() {
+    
+    
+    
+    return MayResample()
+           ? SamplerMode::LinearClamp
+           : SamplerMode::LinearRepeat;
   }
 
   

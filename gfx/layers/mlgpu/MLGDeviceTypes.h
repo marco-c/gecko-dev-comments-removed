@@ -7,6 +7,7 @@
 #define mozilla_gfx_layers_mlgpu_MLGDeviceTypes_h
 
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/gfx/Types.h"
 
 namespace mozilla {
 namespace layers {
@@ -47,6 +48,8 @@ enum class SamplerMode
   LinearClamp = 0,
   
   LinearClampToZero,
+  
+  LinearRepeat,
   
   Point,
   MaxModes
@@ -103,6 +106,21 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(MLGRenderTargetFlags);
 
 
 static const size_t kMaxClearViewRects = 12;
+
+static inline SamplerMode
+FilterToSamplerMode(gfx::SamplingFilter aFilter)
+{
+  switch (aFilter) {
+  case gfx::SamplingFilter::POINT:
+    return SamplerMode::Point;
+  case gfx::SamplingFilter::LINEAR:
+  case gfx::SamplingFilter::GOOD:
+    return SamplerMode::LinearClamp;
+  default:
+    MOZ_ASSERT_UNREACHABLE("Unknown sampler mode");
+    return SamplerMode::LinearClamp;
+  }
+}
 
 } 
 } 
