@@ -193,7 +193,7 @@ struct FunctionDeclaration
 using FunctionDeclarationVector = GCVector<FunctionDeclaration, 0, ZoneAllocPolicy>;
 
 
-using ModuleState = int32_t;
+using ModuleStatus = int32_t;
 
 class ModuleObject : public NativeObject
 {
@@ -204,7 +204,8 @@ class ModuleObject : public NativeObject
         InitialEnvironmentSlot,
         EnvironmentSlot,
         NamespaceSlot,
-        StateSlot,
+        StatusSlot,
+        ErrorSlot,
         HostDefinedSlot,
         RequestedModulesSlot,
         ImportEntriesSlot,
@@ -215,11 +216,21 @@ class ModuleObject : public NativeObject
         NamespaceExportsSlot,
         NamespaceBindingsSlot,
         FunctionDeclarationsSlot,
+        DFSIndexSlot,
+        DFSAncestorIndexSlot,
         SlotCount
     };
 
     static_assert(EnvironmentSlot == MODULE_OBJECT_ENVIRONMENT_SLOT,
                   "EnvironmentSlot must match self-hosting define");
+    static_assert(StatusSlot == MODULE_OBJECT_STATUS_SLOT,
+                  "StatusSlot must match self-hosting define");
+    static_assert(ErrorSlot == MODULE_OBJECT_ERROR_SLOT,
+                  "ErrorSlot must match self-hosting define");
+    static_assert(DFSIndexSlot == MODULE_OBJECT_DFS_INDEX_SLOT,
+                  "DFSIndexSlot must match self-hosting define");
+    static_assert(DFSAncestorIndexSlot == MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT,
+                  "DFSAncestorIndexSlot must match self-hosting define");
 
     static const Class class_;
 
@@ -244,7 +255,8 @@ class ModuleObject : public NativeObject
     ModuleEnvironmentObject& initialEnvironment() const;
     ModuleEnvironmentObject* environment() const;
     ModuleNamespaceObject* namespace_();
-    ModuleState state() const;
+    ModuleStatus status() const;
+    Value error() const;
     Value hostDefinedField() const;
     ArrayObject& requestedModules() const;
     ArrayObject& importEntries() const;
@@ -255,8 +267,8 @@ class ModuleObject : public NativeObject
     JSObject* namespaceExports();
     IndirectBindingMap* namespaceBindings();
 
-    static bool DeclarationInstantiation(JSContext* cx, HandleModuleObject self);
-    static bool Evaluation(JSContext* cx, HandleModuleObject self);
+    static bool Instantiate(JSContext* cx, HandleModuleObject self);
+    static bool Evaluate(JSContext* cx, HandleModuleObject self);
 
     void setHostDefinedField(const JS::Value& value);
 
@@ -269,10 +281,8 @@ class ModuleObject : public NativeObject
     
     static bool instantiateFunctionDeclarations(JSContext* cx, HandleModuleObject self);
 
-    void setState(ModuleState newState);
-
     
-    static bool evaluate(JSContext* cx, HandleModuleObject self, MutableHandleValue rval);
+    static bool execute(JSContext* cx, HandleModuleObject self, MutableHandleValue rval);
 
     
     static ModuleNamespaceObject* createNamespace(JSContext* cx, HandleModuleObject self,

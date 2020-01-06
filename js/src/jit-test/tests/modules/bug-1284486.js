@@ -8,19 +8,32 @@
 
 
 
+load(libdir + "dummyModuleResolveHook.js");
 
+let b = moduleRepo['b'] = parseModule("export var b = 3; export var c = 4;");
+let c = moduleRepo['c'] = parseModule("export * from 'a'; export * from 'b';");
 
-
-
-let moduleRepo = {};
-setModuleResolveHook(function(module, specifier) {
-    return moduleRepo[specifier];
-});
+let e1;
+let threw = false;
 try {
-    let b = moduleRepo['b'] = parseModule("export var b = 3; export var c = 4;");
-    let c = moduleRepo['c'] = parseModule("export * from 'a'; export * from 'b';");
     c.declarationInstantiation();
-} catch (exc) {}
+} catch (exc) {
+    threw = true;
+    e1 = exc;
+}
+assertEq(threw, true);
+assertEq(typeof e1 === "undefined", false);
+
 let a = moduleRepo['a'] = parseModule("export var a = 1; export var b = 2;");
 let d = moduleRepo['d'] = parseModule("import { a } from 'c'; a;");
-d.declarationInstantiation();
+
+threw = false;
+let e2;
+try {
+    d.declarationInstantiation();
+} catch (exc) {
+    threw = true;
+    e2 = exc;
+}
+assertEq(threw, true);
+assertEq(e1, e2);
