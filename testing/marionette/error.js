@@ -536,3 +536,11 @@ const STATUSES = new Map([
   ["unsupported operation", UnsupportedOperationError],
   ["webdriver error", WebDriverError],
 ]);
+
+
+
+
+
+for (let cls of STATUSES.values()) {
+  this[cls.name] = cls;
+}
