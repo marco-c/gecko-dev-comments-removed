@@ -55,8 +55,16 @@ public:
 
   static bool MayResolve(jsid aId);
 
+  
+  enum NameType {
+    
+    AllNames,
+    
+    
+    UnresolvedNamesOnly
+  };
   static void GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                       nsTArray<nsString>& aNames);
+                       NameType aNameType, nsTArray<nsString>& aNames);
 
 private:
   friend struct WebIDLNameTableEntry;
