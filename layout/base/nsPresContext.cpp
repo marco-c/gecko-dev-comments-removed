@@ -1896,6 +1896,9 @@ nsPresContext::SysColorChangedInternal()
   }
 
   
+  nsCSSRuleProcessor::FreeSystemMetrics();
+
+  
   
   GetDocumentColorPreferences();
 
