@@ -406,15 +406,6 @@ const ExpectComparisonTo = {
   Fail: 2
 };
 
-
-
-
-
-
-
-const isStylo = SpecialPowers.DOMWindowUtils.isStyledByServo;
-const toleranceForServoBackend = isStylo ? 0.5 / 60.0 : 0.0;
-
 (function() {
   window.omta_todo_is = function(elem, property, expected, runningOn, desc,
                                  pseudo) {
@@ -517,7 +508,7 @@ const toleranceForServoBackend = isStylo ? 0.5 / 60.0 : 0.0;
                   " - got " + computedStr);
         return;
       }
-      okOrTodo(compare(computedValue, actualValue, toleranceForServoBackend),
+      okOrTodo(compare(computedValue, actualValue, 0.0),
                desc + ": OMTA style and computed style should be equal" +
                " - OMTA " + actualStr + ", computed " + computedStr);
     }
