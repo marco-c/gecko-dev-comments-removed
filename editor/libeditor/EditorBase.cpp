@@ -1001,24 +1001,13 @@ EditorBase::EndPlaceholderTransaction()
       selection->SetCanCacheFrameOffset(true);
     }
 
-    {
-      
-      
-      RefPtr<nsCaret> caret;
-      nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+    
+    EndUpdateViewBatch();
+    
 
-      if (presShell) {
-        caret = presShell->GetCaret();
-      }
-
-      
-      EndUpdateViewBatch();
-      
-
-      
-      
-      ScrollSelectionIntoView(false);
-    }
+    
+    
+    ScrollSelectionIntoView(false);
 
     
     if (selection) {
