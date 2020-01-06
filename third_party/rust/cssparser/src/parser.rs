@@ -478,7 +478,11 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn parse_comma_separated<F, T, E>(&mut self, mut parse_one: F) -> Result<Vec<T>, ParseError<'i, E>>
     where F: for<'tt> FnMut(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>> {
-        let mut values = vec![];
+        
+        
+        
+        
+        let mut values = Vec::with_capacity(1);
         loop {
             self.skip_whitespace();  
             values.push(self.parse_until_before(Delimiter::Comma, &mut parse_one)?);
