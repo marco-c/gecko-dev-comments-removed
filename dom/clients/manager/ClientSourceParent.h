@@ -26,10 +26,10 @@ class ClientSourceParent final : public PClientSourceParent
   KillInvalidChild();
 
   
-  IPCResult
+  mozilla::ipc::IPCResult
   RecvTeardown() override;
 
-  IPCResult
+  mozilla::ipc::IPCResult
   RecvExecutionReady(const ClientSourceExecutionReadyArgs& aArgs) override;
 
   void
