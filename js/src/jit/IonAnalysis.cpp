@@ -97,29 +97,100 @@ FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block, MBasicBl
     
     
 
+    
+    
+    const size_t conservativeUsesLimit = 128;
+
+    MOZ_ASSERT(worklist.empty());
     size_t predIndex = succ->getPredecessorIndex(block);
     MPhiIterator end = succ->phisEnd();
     MPhiIterator it = succ->phisBegin();
     for (; it != end; it++) {
+        MPhi* phi = *it;
+
         if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses outer loop"))
             return false;
 
         
         
-        MPhi* phi = *it;
-        if (phi->isUnused())
+        MDefinition* def = phi->getOperand(predIndex);
+        if (def->isUseRemoved())
             continue;
+
+        phi->setInWorklist();
+        if (!worklist.append(phi))
+            return false;
 
         
         
-        MDefinition* def = phi->getOperand(predIndex);
-        def->setUseRemovedUnchecked();
+        
+        
+        bool isUsed = false;
+        for (size_t idx = 0; !isUsed && idx < worklist.length(); idx++) {
+            phi = worklist[idx];
+
+            if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses inner loop 1"))
+                return false;
+
+            if (phi->isUseRemoved() || phi->isImplicitlyUsed()) {
+                
+                isUsed = true;
+                break;
+            }
+
+            MUseIterator usesEnd(phi->usesEnd());
+            for (MUseIterator use(phi->usesBegin()); use != usesEnd; use++) {
+                MNode* consumer = (*use)->consumer();
+
+                if (mir->shouldCancel("FlagPhiInputsAsHavingRemovedUses inner loop 2"))
+                    return false;
+
+                if (consumer->isResumePoint()) {
+                    MResumePoint* rp = consumer->toResumePoint();
+                    if (rp->isObservableOperand(*use)) {
+                        
+                        isUsed = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                MDefinition* cdef = consumer->toDefinition();
+                if (!cdef->isPhi()) {
+                    
+                    isUsed = true;
+                    break;
+                }
+
+                phi = cdef->toPhi();
+                if (phi->isInWorklist())
+                    continue;
+
+                phi->setInWorklist();
+                if (!worklist.append(phi))
+                    return false;
+            }
+
+            
+            
+            if (idx >= conservativeUsesLimit) {
+                isUsed = true;
+                break;
+            }
+        }
+
+        if (isUsed)
+            def->setUseRemoved();
+
+        
+        while (!worklist.empty()) {
+            phi = worklist.popCopy();
+            phi->setNotInWorklist();
+        }
     }
 
     return true;
 }
-
-
 
 static bool
 FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir, MBasicBlock* block)
@@ -463,15 +534,6 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
 
     JitSpew(JitSpew_Prune, "Convert basic block to bailing blocks, and remove unreachable blocks:");
     JitSpewIndent indent(JitSpew_Prune);
-
-    
-    
-    
-    Observability observability = graph.hasTryBlock()
-                                  ? ConservativeObservability
-                                  : AggressiveObservability;
-    if (!FlagUnusedPhis(mir, graph, observability))
-        return true;
 
     
     
@@ -1195,13 +1257,9 @@ IsPhiRedundant(MPhi* phi)
 }
 
 bool
-jit::FlagUnusedPhis(MIRGenerator* mir, MIRGraph& graph,
-                    Observability observe)
+jit::EliminatePhis(MIRGenerator* mir, MIRGraph& graph,
+                   Observability observe)
 {
-    
-    
-    
-    
     
     
     
@@ -1234,7 +1292,7 @@ jit::FlagUnusedPhis(MIRGenerator* mir, MIRGraph& graph,
         while (iter != block->phisEnd()) {
             MPhi* phi = *iter++;
 
-            if (mir->shouldCancel("Flag Unused Phis (populate loop)"))
+            if (mir->shouldCancel("Eliminate Phis (populate loop)"))
                 return false;
 
             
@@ -1296,16 +1354,6 @@ jit::FlagUnusedPhis(MIRGenerator* mir, MIRGraph& graph,
                 return false;
         }
     }
-
-    return true;
-}
-
-bool
-jit::EliminatePhis(MIRGenerator* mir, MIRGraph& graph,
-                   Observability observe)
-{
-    if (!FlagUnusedPhis(mir, graph, observe))
-        return false;
 
     
     for (PostorderIterator block = graph.poBegin(); block != graph.poEnd(); block++) {
@@ -2334,15 +2382,6 @@ jit::RemoveUnmarkedBlocks(MIRGenerator* mir, MIRGraph& graph, uint32_t numMarked
         
         graph.unmarkBlocks();
     } else {
-        
-        
-        
-        Observability observability = graph.hasTryBlock()
-                                      ? ConservativeObservability
-                                      : AggressiveObservability;
-        if (!FlagUnusedPhis(mir, graph, observability))
-            return true;
-
         
         
         
