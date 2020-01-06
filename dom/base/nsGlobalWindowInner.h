@@ -182,6 +182,15 @@ struct IdleObserverHolder
   }
 };
 
+inline void
+ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
+                            IdleObserverHolder& aField,
+                            const char* aName,
+                            unsigned aFlags)
+{
+  CycleCollectionNoteChild(aCallback, aField.mIdleObserver.get(), aName, aFlags);
+}
+
 
 
 
