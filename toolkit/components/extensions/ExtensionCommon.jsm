@@ -1500,9 +1500,7 @@ LocaleData.prototype = {
 
 
   get uiLocale() {
-    
-    
-    return Services.locale.getAppLocaleAsBCP47().replace(/-/g, "_");
+    return Services.locale.getAppLocaleAsBCP47();
   },
 };
 
