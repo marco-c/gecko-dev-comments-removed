@@ -13,7 +13,16 @@ namespace mozilla {
 
 class GeckoStyleContext final : public nsStyleContext {
 public:
-  GeckoStyleContext(nsStyleContext* aParent,
+  static already_AddRefed<GeckoStyleContext>
+  TakeRef(already_AddRefed<nsStyleContext> aStyleContext)
+  {
+    auto* context = aStyleContext.take();
+    MOZ_ASSERT(context);
+
+    return already_AddRefed<GeckoStyleContext>(context->AsGecko());
+  }
+
+  GeckoStyleContext(GeckoStyleContext* aParent,
                     nsIAtom* aPseudoTag,
                     CSSPseudoElementType aPseudoType,
                     already_AddRefed<nsRuleNode> aRuleNode,
@@ -28,12 +37,21 @@ public:
   void AddChild(GeckoStyleContext* aChild);
   void RemoveChild(GeckoStyleContext* aChild);
 
+  
+
+
+
+
+
+
+  void MoveTo(GeckoStyleContext* aNewParent);
+
   void* GetUniqueStyleData(const nsStyleStructID& aSID);
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
   
-  void SetStyleIfVisited(already_AddRefed<nsStyleContext> aStyleIfVisited);
-  nsStyleContext* GetStyleIfVisited() const { return mStyleIfVisited; };
+  void SetStyleIfVisited(already_AddRefed<GeckoStyleContext> aStyleIfVisited);
+  GeckoStyleContext* GetStyleIfVisited() const { return mStyleIfVisited; };
 #ifdef DEBUG
   
 
@@ -226,7 +244,7 @@ private:
   
   
   
-  RefPtr<nsStyleContext> mStyleIfVisited;
+  RefPtr<GeckoStyleContext> mStyleIfVisited;
 
 #ifdef DEBUG
 public:

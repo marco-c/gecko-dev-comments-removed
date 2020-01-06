@@ -285,31 +285,6 @@ protected:
 
   OverflowChangedTracker mOverflowChangedTracker;
 
-  
-
-
-
-  static nsIFrame*
-  GetNearestAncestorFrame(nsIContent* aContent);
-
-  static nsIFrame*
-  GetNextBlockInInlineSibling(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-
-
-
-  static nsIFrame*
-  GetNextContinuationWithSameStyle(nsIFrame* aFrame,
-                                   nsStyleContext* aOldStyleContext,
-                                   bool* aHaveMoreContinuations = nullptr);
-
   AnimationsWithDestroyedFrame* mAnimationsWithDestroyedFrame = nullptr;
 
   friend class mozilla::GeckoRestyleManager;

@@ -380,7 +380,7 @@ protected:
   
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
                        GeckoStyleContext* aStyleContext,
-                       RefPtr<nsStyleContext>& aCachedBaseStyleContext);
+                       RefPtr<GeckoStyleContext>& aCachedBaseStyleContext);
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,

@@ -113,26 +113,26 @@ class nsStyleSet final
   nsRuleNode* GetRuleTree() { return mRuleTree; }
 
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleFor(mozilla::dom::Element* aElement,
-                  nsStyleContext* aParentContext);
+                  mozilla::GeckoStyleContext* aParentContext);
 
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleFor(mozilla::dom::Element* aElement,
-                  nsStyleContext* aParentContext,
+                  mozilla::GeckoStyleContext* aParentContext,
                   mozilla::LazyComputeBehavior)
   {
     return ResolveStyleFor(aElement, aParentContext);
   }
 
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleFor(mozilla::dom::Element* aElement,
-                  nsStyleContext* aParentContext,
+                  mozilla::GeckoStyleContext* aParentContext,
                   TreeMatchContext& aTreeMatchContext);
 
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleFor(mozilla::dom::Element* aElement,
-                  nsStyleContext* aParentContext,
+                  mozilla::GeckoStyleContext* aParentContext,
                   mozilla::LazyComputeBehavior aMayCompute,
                   TreeMatchContext& aTreeMatchContext)
   {
@@ -141,8 +141,8 @@ class nsStyleSet final
 
   
   
-  already_AddRefed<nsStyleContext>
-  ResolveStyleForRules(nsStyleContext* aParentContext,
+  already_AddRefed<mozilla::GeckoStyleContext>
+  ResolveStyleForRules(mozilla::GeckoStyleContext* aParentContext,
                        const nsTArray< nsCOMPtr<nsIStyleRule> > &aRules);
 
   
@@ -159,8 +159,8 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
-  ResolveStyleByAddingRules(nsStyleContext* aBaseContext,
+  already_AddRefed<mozilla::GeckoStyleContext>
+  ResolveStyleByAddingRules(mozilla::GeckoStyleContext* aBaseContext,
                             const nsCOMArray<nsIStyleRule> &aRules);
 
   
@@ -172,11 +172,11 @@ class nsStyleSet final
     
     eSkipStartingAnimations = (1<<0),
   };
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleWithReplacement(mozilla::dom::Element* aElement,
                               mozilla::dom::Element* aPseudoElement,
-                              nsStyleContext* aNewParentContext,
-                              nsStyleContext* aOldStyleContext,
+                              mozilla::GeckoStyleContext* aNewParentContext,
+                              mozilla::GeckoStyleContext* aOldStyleContext,
                               nsRestyleHint aReplacements,
                               uint32_t aFlags = 0);
 
@@ -184,23 +184,23 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
     ResolveStyleByRemovingAnimation(mozilla::dom::Element* aElement,
-                                    nsStyleContext* aStyleContext,
+                                    mozilla::GeckoStyleContext* aStyleContext,
                                     nsRestyleHint aWhichToRemove);
 
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
     ResolveStyleWithoutAnimation(mozilla::dom::Element* aTarget,
-                                 nsStyleContext* aParentContext);
+                                 mozilla::GeckoStyleContext* aParentContext);
 
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolvePseudoElementStyleWithoutAnimation(
     mozilla::dom::Element* aParentElement,
     mozilla::CSSPseudoElementType aType,
-    nsStyleContext* aParentContext,
+    mozilla::GeckoStyleContext* aParentContext,
     mozilla::dom::Element* aPseudoElement);
 
   
@@ -210,8 +210,8 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
-  ResolveStyleForText(nsIContent* aTextNode, nsStyleContext* aParentContext);
+  already_AddRefed<mozilla::GeckoStyleContext>
+  ResolveStyleForText(nsIContent* aTextNode, mozilla::GeckoStyleContext* aParentContext);
 
   
   
@@ -223,8 +223,8 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
-  ResolveStyleForFirstLetterContinuation(nsStyleContext* aParentContext);
+  already_AddRefed<mozilla::GeckoStyleContext>
+  ResolveStyleForFirstLetterContinuation(mozilla::GeckoStyleContext* aParentContext);
 
   
   
@@ -234,7 +234,7 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleForPlaceholder();
 
   
@@ -242,23 +242,23 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolvePseudoElementStyle(mozilla::dom::Element* aParentElement,
                             mozilla::CSSPseudoElementType aType,
-                            nsStyleContext* aParentContext,
+                            mozilla::GeckoStyleContext* aParentContext,
                             mozilla::dom::Element* aPseudoElement);
 
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ProbePseudoElementStyle(mozilla::dom::Element* aParentElement,
                           mozilla::CSSPseudoElementType aType,
-                          nsStyleContext* aParentContext);
-  already_AddRefed<nsStyleContext>
+                          mozilla::GeckoStyleContext* aParentContext);
+  already_AddRefed<mozilla::GeckoStyleContext>
   ProbePseudoElementStyle(mozilla::dom::Element* aParentElement,
                           mozilla::CSSPseudoElementType aType,
-                          nsStyleContext* aParentContext,
+                          mozilla::GeckoStyleContext* aParentContext,
                           TreeMatchContext& aTreeMatchContext);
 
   
@@ -281,24 +281,24 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
-                                     nsStyleContext* aParentContext);
+                                     mozilla::GeckoStyleContext* aParentContext);
 
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
 
 #ifdef MOZ_XUL
   
   
   
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveXULTreePseudoStyle(mozilla::dom::Element* aParentElement,
                             nsICSSAnonBoxPseudo* aPseudoTag,
-                            nsStyleContext* aParentContext,
+                            mozilla::GeckoStyleContext* aParentContext,
                             nsICSSPseudoComparator* aComparator);
 #endif
 
@@ -351,9 +351,9 @@ class nsStyleSet final
   
   
   
-  already_AddRefed<nsStyleContext>
-  ReparentStyleContext(nsStyleContext* aStyleContext,
-                       nsStyleContext* aNewParentContext,
+  already_AddRefed<mozilla::GeckoStyleContext>
+  ReparentStyleContext(mozilla::GeckoStyleContext* aStyleContext,
+                       mozilla::GeckoStyleContext* aNewParentContext,
                        mozilla::dom::Element* aElement);
 
   
@@ -557,8 +557,8 @@ private:
                                       mozilla::CSSPseudoElementType aPseudoType,
                                       nsRestyleHint aReplacements);
 
-  already_AddRefed<nsStyleContext>
-  GetContext(nsStyleContext* aParentContext,
+  already_AddRefed<mozilla::GeckoStyleContext>
+  GetContext(mozilla::GeckoStyleContext* aParentContext,
              nsRuleNode* aRuleNode,
              nsRuleNode* aVisitedRuleNode,
              nsIAtom* aPseudoTag,
@@ -570,16 +570,16 @@ private:
     eWithAnimation,
     eWithoutAnimation,
   };
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolveStyleForInternal(mozilla::dom::Element* aElement,
-                          nsStyleContext* aParentContext,
+                          mozilla::GeckoStyleContext* aParentContext,
                           TreeMatchContext& aTreeMatchContext,
                           AnimationFlag aAnimationFlag);
 
-  already_AddRefed<nsStyleContext>
+  already_AddRefed<mozilla::GeckoStyleContext>
   ResolvePseudoElementStyleInternal(mozilla::dom::Element* aParentElement,
                                     mozilla::CSSPseudoElementType aType,
-                                    nsStyleContext* aParentContext,
+                                    mozilla::GeckoStyleContext* aParentContext,
                                     mozilla::dom::Element* aPseudoElement,
                                     AnimationFlag aAnimationFlag);
 
@@ -671,7 +671,7 @@ private:
   
   mozilla::EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
                            nsCSSAnonBoxes::NonInheriting::_Count,
-                           RefPtr<nsStyleContext>> mNonInheritingStyleContexts;
+                           RefPtr<mozilla::GeckoStyleContext>> mNonInheritingStyleContexts;
 };
 
 #ifdef MOZILLA_INTERNAL_API

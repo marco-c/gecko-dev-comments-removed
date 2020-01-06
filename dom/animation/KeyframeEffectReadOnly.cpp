@@ -457,7 +457,7 @@ KeyframeEffectReadOnly::EnsureBaseStyles(
 
   mBaseStyleValues.Clear();
 
-  RefPtr<nsStyleContext> cachedBaseStyleContext;
+  RefPtr<GeckoStyleContext> cachedBaseStyleContext;
 
   for (const AnimationProperty& property : aProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
@@ -477,7 +477,7 @@ void
 KeyframeEffectReadOnly::EnsureBaseStyle(
   nsCSSPropertyID aProperty,
   GeckoStyleContext* aStyleContext,
-  RefPtr<nsStyleContext>& aCachedBaseStyleContext)
+  RefPtr<GeckoStyleContext>& aCachedBaseStyleContext)
 {
   if (mBaseStyleValues.Contains(aProperty)) {
     return;
@@ -1642,10 +1642,10 @@ KeyframeEffectReadOnly::RecordFrameSizeTelemetry(uint32_t aPixelArea) {
   }
 }
 
-static already_AddRefed<nsStyleContext>
+static already_AddRefed<GeckoStyleContext>
 CreateStyleContextForAnimationValue(nsCSSPropertyID aProperty,
                                     const StyleAnimationValue& aValue,
-                                    nsStyleContext* aBaseStyleContext)
+                                    GeckoStyleContext* aBaseStyleContext)
 {
   MOZ_ASSERT(aBaseStyleContext,
              "CreateStyleContextForAnimationValue needs to be called "
@@ -1662,19 +1662,19 @@ CreateStyleContextForAnimationValue(nsCSSPropertyID aProperty,
   nsStyleSet* styleSet =
     aBaseStyleContext->PresContext()->StyleSet()->AsGecko();
 
-  RefPtr<nsStyleContext> styleContext =
+  RefPtr<GeckoStyleContext> styleContext =
     styleSet->ResolveStyleByAddingRules(aBaseStyleContext, rules);
 
   
   
-  styleContext->AsGecko()->StyleData(nsCSSProps::kSIDTable[aProperty]);
+  styleContext->StyleData(nsCSSProps::kSIDTable[aProperty]);
 
   return styleContext.forget();
 }
 
 void
 KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
-  nsStyleContext *aStyleContext)
+  nsStyleContext* aStyleContext)
 {
   if (mDocument->IsStyledByServo()) {
     
@@ -1682,6 +1682,7 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
   }
   mCumulativeChangeHint = nsChangeHint(0);
 
+  auto* geckoContext = aStyleContext ? aStyleContext->AsGecko() : nullptr;
   for (const AnimationProperty& property : mProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
       
@@ -1692,15 +1693,15 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
         mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
         return;
       }
-      RefPtr<nsStyleContext> fromContext =
+      RefPtr<GeckoStyleContext> fromContext =
         CreateStyleContextForAnimationValue(property.mProperty,
                                             segment.mFromValue.mGecko,
-                                            aStyleContext);
+                                            geckoContext);
 
-      RefPtr<nsStyleContext> toContext =
+      RefPtr<GeckoStyleContext> toContext =
         CreateStyleContextForAnimationValue(property.mProperty,
                                             segment.mToValue.mGecko,
-                                            aStyleContext);
+                                            geckoContext);
 
       uint32_t equalStructs = 0;
       uint32_t samePointerStructs = 0;
