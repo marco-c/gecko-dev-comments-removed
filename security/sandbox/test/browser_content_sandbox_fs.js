@@ -215,7 +215,15 @@ async function createTempFile() {
   ok(fileCreated == true, "creating a file in content temp is permitted");
   
   let fileDeleted = await ContentTask.spawn(browser, path, deleteFile);
-  ok(fileDeleted == true, "deleting a file in content temp is permitted");
+  if (isMac()) {
+    
+    
+    
+    ok(fileDeleted == false,
+       "deleting a file in the content temp is not permitted");
+  } else {
+    ok(fileDeleted == true, "deleting a file in content temp is permitted");
+  }
 }
 
 
