@@ -11,25 +11,21 @@
 #include "mozilla/layers/LayersMessages.h" 
 #include "nsICanvasRenderingContextInternal.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/layers/SyncObject.h" 
 
 namespace mozilla {
 namespace gfx {
 
 VRLayerChild::VRLayerChild()
   : mCanvasElement(nullptr)
-  , mShSurfClient(nullptr)
-  , mFront(nullptr)
   , mIPCOpen(false)
+  , mLastSubmittedFrameId(0)
 {
   MOZ_COUNT_CTOR(VRLayerChild);
 }
 
 VRLayerChild::~VRLayerChild()
 {
-  if (mCanvasElement) {
-    mCanvasElement->StopVRPresentation();
-  }
-
   ClearSurfaces();
 
   MOZ_COUNT_DTOR(VRLayerChild);
@@ -40,7 +36,6 @@ VRLayerChild::Initialize(dom::HTMLCanvasElement* aCanvasElement,
                          const gfx::Rect& aLeftEyeRect, const gfx::Rect& aRightEyeRect)
 {
   MOZ_ASSERT(aCanvasElement);
-  aCanvasElement->StartVRPresentation();
   mLeftEyeRect = aLeftEyeRect;
   mRightEyeRect = aRightEyeRect;
   if (mCanvasElement == nullptr) {
@@ -55,31 +50,45 @@ VRLayerChild::Initialize(dom::HTMLCanvasElement* aCanvasElement,
 void
 VRLayerChild::SubmitFrame(uint64_t aFrameId)
 {
-  if (!mCanvasElement) {
+  
+  
+  
+  
+  if (!mCanvasElement || aFrameId == mLastSubmittedFrameId) {
     return;
   }
+  mLastSubmittedFrameId = aFrameId;
 
-  mShSurfClient = mCanvasElement->GetVRFrame();
-  if (!mShSurfClient) {
+  
+  
+  mLastFrameTexture = mThisFrameTexture;
+
+  mThisFrameTexture = mCanvasElement->GetVRFrame();
+  if (!mThisFrameTexture) {
     return;
   }
+  VRManagerChild* vrmc = VRManagerChild::Get();
+  layers::SyncObjectClient* syncObject = vrmc->GetSyncObject();
+  mThisFrameTexture->SyncWithObject(syncObject);
+  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
+    if (syncObject && syncObject->IsSyncObjectValid()) {
+      syncObject->Synchronize();
+    }
+  }
 
-  gl::SharedSurface* surf = mShSurfClient->Surf();
+  gl::SharedSurface* surf = mThisFrameTexture->Surf();
   if (surf->mType == gl::SharedSurfaceType::Basic) {
     gfxCriticalError() << "SharedSurfaceType::Basic not supported for WebVR";
     return;
   }
 
-  mFront = mShSurfClient;
-  mShSurfClient = nullptr;
+  layers::SurfaceDescriptor desc;
+  if (!surf->ToSurfaceDescriptor(&desc)) {
+    gfxCriticalError() << "SharedSurface::ToSurfaceDescriptor failed in VRLayerChild::SubmitFrame";
+    return;
+  }
 
-  mFront->SetAddedToCompositableClient();
-  VRManagerChild* vrmc = VRManagerChild::Get();
-  mFront->SyncWithObject(vrmc->GetSyncObject());
-  MOZ_ALWAYS_TRUE(mFront->InitIPDLActor(vrmc));
-
-  SendSubmitFrame(mFront->GetIPDLActor(), aFrameId,
-                  mLeftEyeRect, mRightEyeRect);
+  SendSubmitFrame(desc, aFrameId, mLeftEyeRect, mRightEyeRect);
 }
 
 bool
@@ -91,8 +100,8 @@ VRLayerChild::IsIPCOpen()
 void
 VRLayerChild::ClearSurfaces()
 {
-  mFront = nullptr;
-  mShSurfClient = nullptr;
+  mThisFrameTexture = nullptr;
+  mLastFrameTexture = nullptr;
 }
 
 void
