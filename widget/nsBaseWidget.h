@@ -417,6 +417,12 @@ public:
   void RecvScreenPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize) override {};
 #endif
 
+  
+
+
+
+  static bool ShowContextMenuAfterMouseUp();
+
 protected:
   
   
