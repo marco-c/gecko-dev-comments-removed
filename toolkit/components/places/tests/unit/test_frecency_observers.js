@@ -1,10 +1,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 
 
 
@@ -13,33 +9,38 @@ add_task(async function test_InsertVisitedURIs_UpdateFrecency_and_History_Insert
   
   
   
-  let uri = NetUtil.newURI("http://example.com/a");
+  let url = Services.io.newURI("http://example.com/a");
   Cc["@mozilla.org/browser/download-history;1"].
     getService(Ci.nsIDownloadHistory).
-    addDownload(uri);
-  await Promise.all([onFrecencyChanged(uri), onFrecencyChanged(uri)]);
+    addDownload(url);
+  await Promise.all([onFrecencyChanged(url), onFrecencyChanged(url)]);
 });
 
 
 add_task(async function test_nsNavHistory_UpdateFrecency() {
-  let bm = PlacesUtils.bookmarks;
-  let uri = NetUtil.newURI("http://example.com/b");
-  bm.insertBookmark(bm.unfiledBookmarksFolder, uri,
-                    Ci.nsINavBookmarksService.DEFAULT_INDEX, "test");
-  await onFrecencyChanged(uri);
+  let url = Services.io.newURI("http://example.com/b");
+  let promise = onFrecencyChanged(url);
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url,
+    title: "test"
+  });
+  await promise;
 });
 
 
 add_task(async function test_nsNavHistory_invalidateFrecencies_somePages() {
-  let uri = NetUtil.newURI("http://test-nsNavHistory-invalidateFrecencies-somePages.com/");
+  let url = Services.io.newURI("http://test-nsNavHistory-invalidateFrecencies-somePages.com/");
   
   
   
-  let bm = PlacesUtils.bookmarks;
-  bm.insertBookmark(bm.unfiledBookmarksFolder, uri,
-                    Ci.nsINavBookmarksService.DEFAULT_INDEX, "test");
-  PlacesUtils.history.removePagesFromHost(uri.host, false);
-  await onFrecencyChanged(uri);
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url,
+    title: "test"
+  });
+  PlacesUtils.history.removePagesFromHost(url.host, false);
+  await onFrecencyChanged(url);
 });
 
 

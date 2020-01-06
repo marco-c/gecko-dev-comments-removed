@@ -73,10 +73,6 @@ var gBookmarksFileOld;
 
 var gBookmarksFileNew;
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function setup() {
   
   Services.prefs.setIntPref("browser.places.smartBookmarksVersion", -1);

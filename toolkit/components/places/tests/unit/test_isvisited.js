@@ -4,10 +4,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function test_execute() {
   var referrer = uri("about:blank");
 
@@ -69,4 +65,3 @@ add_task(async function test_execute() {
     }
   }
 });
-

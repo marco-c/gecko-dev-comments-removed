@@ -3,22 +3,19 @@
 
 
 
-function run_test() {
-  run_next_test()
-}
-
 add_task(async function() {
   const TEST_URI = NetUtil.newURI("http://example.com/");
-  let id = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                                TEST_URI,
-                                                PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                "A title");
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: TEST_URI,
+    title: "A title"
+  });
   await PlacesTestUtils.promiseAsyncUpdates();
   do_check_true(frecencyForUrl(TEST_URI) > 0);
 
   
   
-  PlacesUtils.bookmarks.removeItem(id);
+  await PlacesUtils.bookmarks.remove(bookmark.guid);
   await PlacesTestUtils.promiseAsyncUpdates();
   do_check_eq(frecencyForUrl(TEST_URI), 0);
 

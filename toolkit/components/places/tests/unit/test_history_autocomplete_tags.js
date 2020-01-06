@@ -39,23 +39,11 @@ AutoCompleteInput.prototype = {
     invalidate() {},
 
     
-    QueryInterface(iid) {
-      if (iid.equals(Ci.nsISupports) ||
-          iid.equals(Ci.nsIAutoCompletePopup))
-        return this;
-
-      throw Components.results.NS_ERROR_NO_INTERFACE;
-    }
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompletePopup])
   },
 
   
-  QueryInterface(iid) {
-    if (iid.equals(Ci.nsISupports) ||
-        iid.equals(Ci.nsIAutoCompleteInput))
-      return this;
-
-    throw Components.results.NS_ERROR_NO_INTERFACE;
-  }
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteInput])
 }
 
 
@@ -100,7 +88,7 @@ function ensure_tag_results(uris, searchTerm) {
       do_check_eq(controller.getStyleAt(i), "bookmark-tag");
     }
     
-    vals.sort().forEach((val, i) => do_check_eq(val, uris[i].spec))
+    vals.sort().forEach((val, i) => do_check_eq(val, uris[i]))
 
     if (current_test < (tests.length - 1)) {
       current_test++;
@@ -113,12 +101,12 @@ function ensure_tag_results(uris, searchTerm) {
   controller.startSearch(searchTerm);
 }
 
-var uri1 = uri("http://site.tld/1/aaa");
-var uri2 = uri("http://site.tld/2/bbb");
-var uri3 = uri("http://site.tld/3/aaa");
-var uri4 = uri("http://site.tld/4/bbb");
-var uri5 = uri("http://site.tld/5/aaa");
-var uri6 = uri("http://site.tld/6/bbb");
+var uri1 = "http://site.tld/1/aaa";
+var uri2 = "http://site.tld/2/bbb";
+var uri3 = "http://site.tld/3/aaa";
+var uri4 = "http://site.tld/4/bbb";
+var uri5 = "http://site.tld/5/aaa";
+var uri6 = "http://site.tld/6/bbb";
 
 var tests = [
   () => ensure_tag_results([uri1, uri4, uri6], "foo"),
@@ -155,30 +143,31 @@ var tests = [
 
 
 
-function tagURI(aURI, aTags) {
-  PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                       aURI,
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       "A title");
-  tagssvc.tagURI(aURI, aTags);
+async function tagURI(url, tags) {
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url,
+    title: "A title",
+  });
+  tagssvc.tagURI(uri(url), tags);
 }
 
 
 
 
-function run_test() {
+add_task(async function test_history_autocomplete_tags() {
   
   var prefs = Cc["@mozilla.org/preferences-service;1"].
               getService(Ci.nsIPrefBranch);
   prefs.setIntPref("browser.urlbar.search.sources", 3);
   prefs.setIntPref("browser.urlbar.default.behavior", 0);
 
-  tagURI(uri1, ["foo"]);
-  tagURI(uri2, ["bar"]);
-  tagURI(uri3, ["cheese"]);
-  tagURI(uri4, ["foo bar"]);
-  tagURI(uri5, ["bar cheese"]);
-  tagURI(uri6, ["foo bar cheese"]);
+  await tagURI(uri1, ["foo"]);
+  await tagURI(uri2, ["bar"]);
+  await tagURI(uri3, ["cheese"]);
+  await tagURI(uri4, ["foo bar"]);
+  await tagURI(uri5, ["bar cheese"]);
+  await tagURI(uri6, ["foo bar cheese"]);
 
   tests[0]();
-}
+});

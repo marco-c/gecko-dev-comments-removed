@@ -1,11 +1,6 @@
 
 
 
-
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function() {
   do_load_manifest("nsDummyObserver.manifest");
 

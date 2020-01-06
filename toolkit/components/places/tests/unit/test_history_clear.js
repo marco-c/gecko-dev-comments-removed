@@ -65,10 +65,11 @@ add_task(async function test_history_clear() {
   ]);
 
   
-  PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                       uri("place:folder=4"),
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       "shortcut");
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "place:folder=4",
+    title: "shortcut"
+  });
 
   
   
@@ -79,10 +80,11 @@ add_task(async function test_history_clear() {
 
   
   
-  PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                       uri("http://typed.mozilla.org/"),
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       "bookmark");
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://typed.mozilla.org/",
+    title: "bookmark"
+  });
 
   await PlacesTestUtils.addVisits([
     { uri: uri("http://typed.mozilla.org/"),
