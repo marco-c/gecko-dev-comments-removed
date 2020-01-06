@@ -326,6 +326,16 @@ public:
 
   void LoadEventFired();
 
+  
+
+
+
+
+  void Destroy()
+  {
+    GiveUpBytecodeEncoding();
+  }
+
 private:
   virtual ~ScriptLoader();
 
@@ -536,6 +546,7 @@ private:
   bool mDocumentParsingDone;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;
+  bool mGiveUpEncoding;
 
   
   nsRefPtrHashtable<nsURIHashKey, mozilla::GenericPromise::Private> mFetchingModules;
