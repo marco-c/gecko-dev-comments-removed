@@ -264,10 +264,6 @@ public:
 template<class T> jfieldID Field<T>::sID;
 
 
-
-
-template<class C, typename T> jclass Context<C, T>::sClassRef;
-
 } 
 } 
 
