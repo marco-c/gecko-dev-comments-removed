@@ -2307,12 +2307,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         self.update_activity(pipeline_id);
         self.notify_history_changed(top_level_id);
 
-        
-        if let Some(id) = self.active_browser_id {
-            if id == top_level_id {
-                self.send_frame_tree(top_level_id);
-            }
-        }
+        self.update_frame_tree_if_active(top_level_id);
 
         
         
@@ -2470,12 +2465,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             self.trigger_mozbrowserlocationchange(change.top_level_browsing_context_id);
         }
 
-        
-        if let Some(id) = self.active_browser_id {
-            if id == change.top_level_browsing_context_id {
-                self.send_frame_tree(change.top_level_browsing_context_id );
-            }
-        }
+        self.update_frame_tree_if_active(change.top_level_browsing_context_id);
     }
 
     fn handle_activate_document_msg(&mut self, pipeline_id: PipelineId) {
@@ -2909,11 +2899,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
     }
 
     
-    fn send_frame_tree(&mut self, top_level_browsing_context_id: TopLevelBrowsingContextId) {
+    fn update_frame_tree_if_active(&mut self, mut top_level_browsing_context_id: TopLevelBrowsingContextId) {
         
         
-        self.active_browser_id = Some(top_level_browsing_context_id);
-        let mut browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
+        
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
         let mut pipeline_id = match self.browsing_contexts.get(&browsing_context_id) {
             Some(browsing_context) => browsing_context.pipeline_id,
             None => return warn!("Sending frame tree for discarded browsing context {}.", browsing_context_id),
@@ -2923,11 +2913,24 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             match pipeline.parent_info {
                 Some((parent_id, _)) => pipeline_id = parent_id,
                 None => {
-                    browsing_context_id = pipeline.browsing_context_id;
+                    top_level_browsing_context_id = pipeline.top_level_browsing_context_id;
                     break;
                 },
             }
         }
+
+        
+        
+        if self.active_browser_id.is_none() || Some(top_level_browsing_context_id) == self.active_browser_id {
+            self.send_frame_tree(top_level_browsing_context_id);
+        }
+
+    }
+
+    
+    fn send_frame_tree(&mut self, top_level_browsing_context_id: TopLevelBrowsingContextId) {
+        self.active_browser_id = Some(top_level_browsing_context_id);
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
 
         
         
