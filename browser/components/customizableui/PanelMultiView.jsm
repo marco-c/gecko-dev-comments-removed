@@ -682,6 +682,10 @@ this.PanelMultiView = class {
       this._offscreenViewStack.appendChild(viewNode);
       viewNode.setAttribute("in-transition", true);
 
+      
+      
+      this.descriptionHeightWorkaround(viewNode);
+
       viewRect = await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
       });

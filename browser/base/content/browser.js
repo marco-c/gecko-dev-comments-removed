@@ -7326,28 +7326,13 @@ var gIdentityHandler = {
     this._identityPopup.hidePopup();
   },
 
-  toggleSubView(name, anchor) {
-    let view = this._identityPopupMultiView;
-    let id = `identity-popup-${name}View`;
-    let subView = document.getElementById(id);
+  showSecuritySubView() {
+    this._identityPopupMultiView.showSubView("identity-popup-securityView",
+                                             this._popupExpander);
 
     
     
-    subView.addEventListener("ViewShowing", this);
-    subView.addEventListener("ViewHiding", this);
-
-    if (view.showingSubView) {
-      view.showMainView();
-    } else {
-      view.showSubView(id, anchor);
-    }
-
-    
-    
-    
-    if (Services.focus.focusedElement != anchor) {
-      Services.focus.clearFocus(window);
-    }
+    Services.focus.clearFocus(window);
   },
 
   disableMixedContentProtection() {
@@ -7910,16 +7895,6 @@ var gIdentityHandler = {
   },
 
   handleEvent(event) {
-    
-    if (event.type == "ViewShowing") {
-      this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.hideDetails.tooltip");
-      return;
-    }
-    if (event.type == "ViewHiding") {
-      this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.showDetails.tooltip");
-      return;
-    }
-
     let elem = document.activeElement;
     let position = elem.compareDocumentPosition(this._identityPopup);
 
