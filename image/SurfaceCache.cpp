@@ -283,14 +283,41 @@ public:
     return surface.forget();
   }
 
-  Pair<already_AddRefed<CachedSurface>, MatchType>
+  
+
+
+
+
+
+  Tuple<already_AddRefed<CachedSurface>, MatchType, IntSize>
   LookupBestMatch(const SurfaceKey& aIdealKey)
   {
     
     RefPtr<CachedSurface> exactMatch;
     mSurfaces.Get(aIdealKey, getter_AddRefs(exactMatch));
-    if (exactMatch && exactMatch->IsDecoded()) {
-      return MakePair(exactMatch.forget(), MatchType::EXACT);
+    if (exactMatch) {
+      if (exactMatch->IsDecoded()) {
+        return MakeTuple(exactMatch.forget(), MatchType::EXACT, IntSize());
+      }
+    } else if (!mFactor2Mode) {
+      
+      
+      
+      MaybeSetFactor2Mode();
+    }
+
+    
+    IntSize suggestedSize = SuggestedSize(aIdealKey.Size());
+    if (mFactor2Mode) {
+      if (!exactMatch) {
+        SurfaceKey compactKey = aIdealKey.CloneWithSize(suggestedSize);
+        mSurfaces.Get(compactKey, getter_AddRefs(exactMatch));
+        if (exactMatch && exactMatch->IsDecoded()) {
+          return MakeTuple(exactMatch.forget(),
+                           MatchType::SUBSTITUTE_BECAUSE_BEST,
+                           suggestedSize);
+        }
+      }
     }
 
     
@@ -341,14 +368,26 @@ public:
     MatchType matchType;
     if (bestMatch) {
       if (!exactMatch) {
-        
-        matchType = MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND;
+        const IntSize& bestMatchSize = bestMatch->GetSurfaceKey().Size();
+        if (mFactor2Mode && suggestedSize == bestMatchSize) {
+          
+          matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
+        } else {
+          
+          matchType = MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND;
+        }
       } else if (exactMatch != bestMatch) {
         
         matchType = MatchType::SUBSTITUTE_BECAUSE_PENDING;
       } else {
-        
-        matchType = MatchType::EXACT;
+        const IntSize& bestMatchSize = bestMatch->GetSurfaceKey().Size();
+        if (mFactor2Mode && aIdealKey.Size() != bestMatchSize) {
+          
+          matchType = MatchType::SUBSTITUTE_BECAUSE_BEST;
+        } else {
+          
+          matchType = MatchType::EXACT;
+        }
       }
     } else {
       if (exactMatch) {
@@ -361,7 +400,7 @@ public:
       }
     }
 
-    return MakePair(bestMatch.forget(), matchType);
+    return MakeTuple(bestMatch.forget(), matchType, suggestedSize);
   }
 
   void MaybeSetFactor2Mode()
@@ -629,7 +668,7 @@ public:
     return InsertOutcome::SUCCESS;
   }
 
-  void Remove(NotNull<CachedSurface*> aSurface,
+  bool Remove(NotNull<CachedSurface*> aSurface,
               const StaticMutexAutoLock& aAutoLock)
   {
     ImageKey imageKey = aSurface->GetImageKey();
@@ -653,7 +692,10 @@ public:
     
     if (cache->IsEmpty() && !cache->IsLocked()) {
       mImageCaches.Remove(imageKey);
+      return true;
     }
+
+    return false;
   }
 
   void StartTracking(NotNull<CachedSurface*> aSurface,
@@ -763,8 +805,10 @@ public:
     RefPtr<CachedSurface> surface;
     DrawableSurface drawableSurface;
     MatchType matchType = MatchType::NOT_FOUND;
+    IntSize suggestedSize;
     while (true) {
-      Tie(surface, matchType) = cache->LookupBestMatch(aSurfaceKey);
+      Tie(surface, matchType, suggestedSize)
+        = cache->LookupBestMatch(aSurfaceKey);
 
       if (!surface) {
         return LookupResult(matchType);  
@@ -777,7 +821,9 @@ public:
 
       
       
-      Remove(WrapNotNull(surface), aAutoLock);
+      if (Remove(WrapNotNull(surface), aAutoLock)) {
+        break;
+      }
     }
 
     MOZ_ASSERT_IF(matchType == MatchType::EXACT,
@@ -788,8 +834,17 @@ public:
       surface->GetSurfaceKey().Playback() == aSurfaceKey.Playback() &&
       surface->GetSurfaceKey().Flags() == aSurfaceKey.Flags());
 
-    if (matchType == MatchType::EXACT) {
+    if (matchType == MatchType::EXACT ||
+        matchType == MatchType::SUBSTITUTE_BECAUSE_BEST) {
       MarkUsed(WrapNotNull(surface), WrapNotNull(cache), aAutoLock);
+    }
+
+    
+    
+    
+    if (matchType == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND ||
+        matchType == MatchType::NOT_FOUND) {
+      return LookupResult(Move(drawableSurface), matchType, suggestedSize);
     }
 
     return LookupResult(Move(drawableSurface), matchType);
