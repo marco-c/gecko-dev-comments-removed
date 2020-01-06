@@ -1445,8 +1445,6 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   if (XRE_IsParentProcess() && !IsProxy() && !sIDGen.IsChromeID(varChild.lVal)) {
     return GetRemoteIAccessibleFor(varChild);
   }
-  MOZ_ASSERT(XRE_IsParentProcess() ||
-             sIDGen.IsIDForThisContentProcess(varChild.lVal));
 
   if (varChild.lVal > 0) {
     
