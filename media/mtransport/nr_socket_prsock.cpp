@@ -2233,7 +2233,7 @@ static int nr_socket_local_destroy(void **objp) {
     return 0;
 
   NrSocketBase *sock = static_cast<NrSocketBase *>(*objp);
-  *objp = 0;
+  *objp = nullptr;
 
   sock->close();  
   sock->Release();  
