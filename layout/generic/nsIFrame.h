@@ -3934,7 +3934,10 @@ public:
 
   bool IsScrolledOutOfView();
 
-  virtual void UpdateWidgetProperties() {}
+  
+
+
+  virtual void UpdateWidgetProperties();
 
   
 
