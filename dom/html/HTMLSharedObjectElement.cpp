@@ -161,27 +161,54 @@ HTMLSharedObjectElement::UnbindFromTree(bool aDeep,
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
 }
 
+nsresult
+HTMLSharedObjectElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
+                                      const nsAttrValue* aValue,
+                                      const nsAttrValue* aOldValue,
+                                      bool aNotify)
+{
+  if (aValue) {
+    nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return nsGenericHTMLElement::AfterSetAttr(aNamespaceID, aName, aValue,
+                                            aOldValue, aNotify);
+}
 
 nsresult
-HTMLSharedObjectElement::SetAttr(int32_t aNameSpaceID, nsIAtom *aName,
-                                 nsIAtom *aPrefix, const nsAString &aValue,
-                                 bool aNotify)
+HTMLSharedObjectElement::OnAttrSetButNotChanged(int32_t aNamespaceID,
+                                                nsIAtom* aName,
+                                                const nsAttrValueOrString& aValue,
+                                                bool aNotify)
 {
-  nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
-                                              aValue, aNotify);
+  nsresult rv = AfterMaybeChangeAttr(aNamespaceID, aName, aNotify);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  
-  
-  if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
-      aNameSpaceID == kNameSpaceID_None && aName == URIAttrName()
-      && !BlockEmbedOrObjectContentLoading()) {
-    return LoadObject(aNotify, true);
+  return nsGenericHTMLElement::OnAttrSetButNotChanged(aNamespaceID, aName,
+                                                      aValue, aNotify);
+}
+
+nsresult
+HTMLSharedObjectElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
+                                              nsIAtom* aName,
+                                              bool aNotify)
+{
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aName == URIAttrName()) {
+      
+      
+      
+      
+      
+      
+      
+      if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
+          !BlockEmbedOrObjectContentLoading()) {
+        nsresult rv = LoadObject(aNotify, true);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+    }
   }
 
   return NS_OK;

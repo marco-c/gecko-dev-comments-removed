@@ -190,27 +190,31 @@ HTMLFormElement::GetElements(nsIDOMHTMLCollection** aElements)
 }
 
 nsresult
-HTMLFormElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                         nsIAtom* aPrefix, const nsAString& aValue,
-                         bool aNotify)
+HTMLFormElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
+                               const nsAttrValueOrString* aValue, bool aNotify)
 {
-  if ((aName == nsGkAtoms::action || aName == nsGkAtoms::target) &&
-      aNameSpaceID == kNameSpaceID_None) {
-    if (mPendingSubmission) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aName == nsGkAtoms::action || aName == nsGkAtoms::target) {
       
-      
-      
-      
-      FlushPendingSubmission();
+      if (aValue) {
+        if (mPendingSubmission) {
+          
+          
+          
+          
+          FlushPendingSubmission();
+        }
+        
+        
+        bool notifiedObservers = mNotifiedObservers;
+        ForgetCurrentSubmission();
+        mNotifiedObservers = notifiedObservers;
+      }
     }
-    
-    
-    bool notifiedObservers = mNotifiedObservers;
-    ForgetCurrentSubmission();
-    mNotifiedObservers = notifiedObservers;
   }
-  return nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix, aValue,
-                                       aNotify);
+
+  return nsGenericHTMLElement::BeforeSetAttr(aNamespaceID, aName, aValue,
+                                             aNotify);
 }
 
 nsresult

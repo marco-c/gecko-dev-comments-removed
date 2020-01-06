@@ -210,75 +210,63 @@ IsValidContentSelectors(nsCSSSelector* aSelector)
 }
 
 nsresult
-HTMLContentElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                            nsIAtom* aPrefix, const nsAString& aValue,
-                            bool aNotify)
+HTMLContentElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
+                                 const nsAttrValue* aValue,
+                                 const nsAttrValue* aOldValue, bool aNotify)
 {
-  nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
-                                              aValue, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::select) {
-    
-    
-    nsIDocument* doc = OwnerDoc();
-    nsCSSParser parser(doc->CSSLoader());
-
-    mValidSelector = true;
-    mSelectorList = nullptr;
-
-    nsresult rv = parser.ParseSelectorString(aValue,
-                                             doc->GetDocumentURI(),
-                                             
-                                             0, 
-                                             getter_Transfers(mSelectorList));
-
-    
-    
-    if (NS_SUCCEEDED(rv)) {
+  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::select) {
+    if (aValue) {
       
-      nsCSSSelectorList* selectors = mSelectorList;
-      while (selectors) {
-        if (!IsValidContentSelectors(selectors->mSelectors)) {
-          
-          mValidSelector = false;
-          mSelectorList = nullptr;
-          break;
+      
+      nsIDocument* doc = OwnerDoc();
+      nsCSSParser parser(doc->CSSLoader());
+
+      mValidSelector = true;
+      mSelectorList = nullptr;
+
+      nsAutoString valueStr;
+      aValue->ToString(valueStr);
+      nsresult rv = parser.ParseSelectorString(valueStr,
+                                               doc->GetDocumentURI(),
+                                               
+                                               0, 
+                                               getter_Transfers(mSelectorList));
+
+      
+      
+      if (NS_SUCCEEDED(rv)) {
+        
+        nsCSSSelectorList* selectors = mSelectorList;
+        while (selectors) {
+          if (!IsValidContentSelectors(selectors->mSelectors)) {
+            
+            mValidSelector = false;
+            mSelectorList = nullptr;
+            break;
+          }
+          selectors = selectors->mNext;
         }
-        selectors = selectors->mNext;
+      }
+
+      ShadowRoot* containingShadow = GetContainingShadow();
+      if (containingShadow) {
+        containingShadow->DistributeAllNodes();
+      }
+    } else {
+      
+      
+      mValidSelector = true;
+      mSelectorList = nullptr;
+
+      ShadowRoot* containingShadow = GetContainingShadow();
+      if (containingShadow) {
+        containingShadow->DistributeAllNodes();
       }
     }
-
-    ShadowRoot* containingShadow = GetContainingShadow();
-    if (containingShadow) {
-      containingShadow->DistributeAllNodes();
-    }
   }
 
-  return NS_OK;
-}
-
-nsresult
-HTMLContentElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
-                              bool aNotify)
-{
-  nsresult rv = nsGenericHTMLElement::UnsetAttr(aNameSpaceID,
-                                                aAttribute, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::select) {
-    
-    
-    mValidSelector = true;
-    mSelectorList = nullptr;
-
-    ShadowRoot* containingShadow = GetContainingShadow();
-    if (containingShadow) {
-      containingShadow->DistributeAllNodes();
-    }
-  }
-
-  return NS_OK;
+  return nsGenericHTMLElement::AfterSetAttr(aNamespaceID, aName, aValue,
+                                            aOldValue, aNotify);
 }
 
 bool

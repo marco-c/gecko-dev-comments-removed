@@ -1068,14 +1068,10 @@ nsMathMLElement::GetHrefURI() const
 }
 
 nsresult
-nsMathMLElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                         nsIAtom* aPrefix, const nsAString& aValue,
-                         bool aNotify)
+nsMathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
+                              const nsAttrValue* aValue,
+                              const nsAttrValue* aOldValue, bool aNotify)
 {
-  nsresult rv = nsMathMLElementBase::SetAttr(aNameSpaceID, aName, aPrefix,
-                                           aValue, aNotify);
-
-  
   
   
   
@@ -1083,35 +1079,16 @@ nsMathMLElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   if (aName == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_None ||
        aNameSpaceID == kNameSpaceID_XLink)) {
-    if (aNameSpaceID == kNameSpaceID_XLink) {
+    if (aValue && aNameSpaceID == kNameSpaceID_XLink) {
       WarnDeprecated(u"xlink:href", u"href", OwnerDoc());
     }
-    Link::ResetLinkState(!!aNotify, true);
-  }
-
-  return rv;
-}
-
-nsresult
-nsMathMLElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttr,
-                           bool aNotify)
-{
-  nsresult rv = nsMathMLElementBase::UnsetAttr(aNameSpaceID, aAttr, aNotify);
-
-  
-  
-  
-  
-  
-  if (aAttr == nsGkAtoms::href &&
-      (aNameSpaceID == kNameSpaceID_None ||
-       aNameSpaceID == kNameSpaceID_XLink)) {
     
     
-    Link::ResetLinkState(!!aNotify, Link::ElementHasHref());
+    Link::ResetLinkState(aNotify, aValue || Link::ElementHasHref());
   }
 
-  return rv;
+  return nsMathMLElementBase::AfterSetAttr(aNameSpaceID, aName, aValue,
+                                           aOldValue, aNotify);
 }
 
 JSObject*

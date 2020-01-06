@@ -1301,9 +1301,22 @@ HTMLSelectElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                  const nsAttrValueOrString* aValue,
                                  bool aNotify)
 {
-  if (aNotify && aName == nsGkAtoms::disabled &&
-      aNameSpaceID == kNameSpaceID_None) {
-    mDisabledChanged = true;
+  if (aNameSpaceID == kNameSpaceID_None) {
+    if (aName == nsGkAtoms::disabled) {
+      if (aNotify) {
+        mDisabledChanged = true;
+      }
+    } else if (aName == nsGkAtoms::multiple) {
+      if (!aValue && aNotify && mSelectedIndex >= 0) {
+        
+        
+        
+        
+        
+        
+        SetSelectedIndexInternal(mSelectedIndex, aNotify);
+      }
+    }
   }
 
   return nsGenericHTMLFormElementWithState::BeforeSetAttr(aNameSpaceID, aName,
@@ -1324,43 +1337,18 @@ HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       
       mAutocompleteAttrState = nsContentUtils::eAutocompleteAttrState_Unknown;
       mAutocompleteInfoState = nsContentUtils::eAutocompleteAttrState_Unknown;
+    } else if (aName == nsGkAtoms::multiple) {
+      if (!aValue && aNotify) {
+        
+        
+        CheckSelectSomething(aNotify);
+      }
     }
   }
 
   return nsGenericHTMLFormElementWithState::AfterSetAttr(aNameSpaceID, aName,
                                                          aValue, aOldValue,
                                                          aNotify);
-}
-
-nsresult
-HTMLSelectElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
-                             bool aNotify)
-{
-  if (aNotify && aNameSpaceID == kNameSpaceID_None &&
-      aAttribute == nsGkAtoms::multiple) {
-    
-    
-    
-    
-    
-    
-    if (mSelectedIndex >= 0) {
-      SetSelectedIndexInternal(mSelectedIndex, aNotify);
-    }
-  }
-
-  nsresult rv = nsGenericHTMLFormElementWithState::UnsetAttr(aNameSpaceID, aAttribute,
-                                                             aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aNotify && aNameSpaceID == kNameSpaceID_None &&
-      aAttribute == nsGkAtoms::multiple) {
-    
-    
-    CheckSelectSomething(aNotify);
-  }
-
-  return rv;
 }
 
 void

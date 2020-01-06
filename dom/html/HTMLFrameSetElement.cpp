@@ -9,6 +9,7 @@
 #include "mozilla/dom/EventHandlerBinding.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "nsAttrValueOrString.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(FrameSet)
 
@@ -65,13 +66,10 @@ HTMLFrameSetElement::GetRows(nsAString& aRows)
 }
 
 nsresult
-HTMLFrameSetElement::SetAttr(int32_t aNameSpaceID,
-                             nsIAtom* aAttribute,
-                             nsIAtom* aPrefix,
-                             const nsAString& aValue,
-                             bool aNotify)
+HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
+                                   const nsAttrValueOrString* aValue,
+                                   bool aNotify)
 {
-  nsresult rv;
   
 
 
@@ -80,28 +78,33 @@ HTMLFrameSetElement::SetAttr(int32_t aNameSpaceID,
 
 
 
-  if (aAttribute == nsGkAtoms::rows && aNameSpaceID == kNameSpaceID_None) {
-    int32_t oldRows = mNumRows;
-    ParseRowCol(aValue, mNumRows, &mRowSpecs);
 
-    if (mNumRows != oldRows) {
-      mCurrentRowColHint = nsChangeHint_ReconstructFrame;
-    }
-  } else if (aAttribute == nsGkAtoms::cols &&
-             aNameSpaceID == kNameSpaceID_None) {
-    int32_t oldCols = mNumCols;
-    ParseRowCol(aValue, mNumCols, &mColSpecs);
 
-    if (mNumCols != oldCols) {
-      mCurrentRowColHint = nsChangeHint_ReconstructFrame;
+
+  mCurrentRowColHint = NS_STYLE_HINT_REFLOW;
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aName == nsGkAtoms::rows) {
+      if (aValue) {
+        int32_t oldRows = mNumRows;
+        ParseRowCol(aValue->String(), mNumRows, &mRowSpecs);
+
+        if (mNumRows != oldRows) {
+          mCurrentRowColHint = nsChangeHint_ReconstructFrame;
+        }
+      }
+    } else if (aName == nsGkAtoms::cols) {
+      if (aValue) {
+        int32_t oldCols = mNumCols;
+        ParseRowCol(aValue->String(), mNumCols, &mColSpecs);
+
+        if (mNumCols != oldCols) {
+          mCurrentRowColHint = nsChangeHint_ReconstructFrame;
+        }
+      }
     }
   }
 
-  rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aAttribute, aPrefix,
-                                     aValue, aNotify);
-  mCurrentRowColHint = NS_STYLE_HINT_REFLOW;
-
-  return rv;
+  return nsGenericHTMLElement::BeforeSetAttr(aNamespaceID, aName, aValue, aNotify);
 }
 
 nsresult

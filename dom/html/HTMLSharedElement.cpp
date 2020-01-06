@@ -230,52 +230,33 @@ SetBaseTargetUsingFirstBaseWithTarget(nsIDocument* aDocument,
 }
 
 nsresult
-HTMLSharedElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                           nsIAtom* aPrefix, const nsAString& aValue,
-                           bool aNotify)
+HTMLSharedElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
+                                const nsAttrValue* aValue,
+                                const nsAttrValue* aOldValue, bool aNotify)
 {
-  nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
-                                              aValue, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  if (mNodeInfo->Equals(nsGkAtoms::base) &&
-      aNameSpaceID == kNameSpaceID_None &&
-      IsInUncomposedDoc()) {
+  if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::href) {
-      SetBaseURIUsingFirstBaseWithHref(GetUncomposedDoc(), this);
+      
+      
+      
+      
+      
+      if (mNodeInfo->Equals(nsGkAtoms::base) && IsInUncomposedDoc()) {
+        SetBaseURIUsingFirstBaseWithHref(GetUncomposedDoc(),
+                                         aValue ? this : nullptr);
+      }
     } else if (aName == nsGkAtoms::target) {
-      SetBaseTargetUsingFirstBaseWithTarget(GetUncomposedDoc(), this);
+      
+      
+      if (mNodeInfo->Equals(nsGkAtoms::base) && IsInUncomposedDoc()) {
+        SetBaseTargetUsingFirstBaseWithTarget(GetUncomposedDoc(),
+                                              aValue ? this : nullptr);
+      }
     }
   }
 
-  return NS_OK;
-}
-
-nsresult
-HTMLSharedElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                             bool aNotify)
-{
-  nsresult rv = nsGenericHTMLElement::UnsetAttr(aNameSpaceID, aName, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  if (mNodeInfo->Equals(nsGkAtoms::base) &&
-      aNameSpaceID == kNameSpaceID_None &&
-      IsInUncomposedDoc()) {
-    if (aName == nsGkAtoms::href) {
-      SetBaseURIUsingFirstBaseWithHref(GetUncomposedDoc(), nullptr);
-    } else if (aName == nsGkAtoms::target) {
-      SetBaseTargetUsingFirstBaseWithTarget(GetUncomposedDoc(), nullptr);
-    }
-  }
-
-  return NS_OK;
+  return nsGenericHTMLElement::AfterSetAttr(aNamespaceID, aName, aValue,
+                                            aOldValue, aNotify);
 }
 
 nsresult
