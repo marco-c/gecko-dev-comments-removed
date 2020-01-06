@@ -1396,22 +1396,40 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
     switchTo = cmd.parameters.name;
   }
 
-  let byNameOrId = function (name, windowId) {
-    return switchTo === name || switchTo === windowId;
+  let byNameOrId = function (win, windowId) {
+    return switchTo === win.name || switchTo === windowId;
   };
 
-  let found;
-  let winEn = Services.wm.getEnumerator(null);
-  while (winEn.hasMoreElements()) {
-    let win = winEn.getNext();
+  let found = this.findWindow(this.windows, byNameOrId);
+
+  if (found) {
+      yield this.setWindowHandle(found, focus);
+  } else {
+    throw new NoSuchWindowError(`Unable to locate window: ${switchTo}`);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.findWindow = function (winIterable, filter) {
+  for (let win of winIterable) {
     let outerId = getOuterWindowId(win);
     let tabBrowser = browser.getTabBrowser(win);
-
-    if (byNameOrId(win.name, outerId)) {
+    if (filter(win, outerId)) {
       
-      found = {win: win, outerId: outerId, hasTabBrowser: !!tabBrowser};
-      break;
-
+      return {win: win, outerId: outerId, hasTabBrowser: !!tabBrowser};
     } else if (tabBrowser) {
       
       
@@ -1419,48 +1437,59 @@ GeckoDriver.prototype.switchToWindow = function* (cmd, resp) {
         let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
         let contentWindowId = this.getIdForBrowser(contentBrowser);
 
-        if (byNameOrId(win.name, contentWindowId)) {
-          found = {
+        if (filter(win, contentWindowId)) {
+          return {
             win: win,
             outerId: outerId,
             hasTabBrowser: true,
             tabIndex: i,
           };
-          break;
         }
       }
     }
   }
+  return null;
+};
 
-  if (found) {
-    if (!(found.outerId in this.browsers)) {
-      
-      
-      let registerBrowsers, browserListening;
 
-      if (found.hasTabBrowser) {
-        registerBrowsers = this.registerPromise();
-        browserListening = this.listeningPromise();
-      }
 
-      this.startBrowser(found.win, false );
 
-      if (registerBrowsers && browserListening) {
-        yield registerBrowsers;
-        yield browserListening;
-      }
 
-    } else {
-      
-      
-      this.curBrowser = this.browsers[found.outerId];
 
-      if ("tabIndex" in found) {
-        this.curBrowser.switchToTab(found.tabIndex, found.win, focus);
-      }
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.setWindowHandle = function* (winProperties, focus = true) {
+  if (!(winProperties.outerId in this.browsers)) {
+    
+    
+    let registerBrowsers, browserListening;
+
+    if (winProperties.hasTabBrowser) {
+      registerBrowsers = this.registerPromise();
+      browserListening = this.listeningPromise();
     }
+
+    this.startBrowser(winProperties.win, false );
+
+    if (registerBrowsers && browserListening) {
+      yield registerBrowsers;
+      yield browserListening;
+    }
+
   } else {
-    throw new NoSuchWindowError(`Unable to locate window: ${switchTo}`);
+    
+    
+    this.curBrowser = this.browsers[winProperties.outerId];
+
+    if ("tabIndex" in winProperties) {
+      this.curBrowser.switchToTab(winProperties.tabIndex, winProperties.win, focus);
+    }
   }
 };
 
