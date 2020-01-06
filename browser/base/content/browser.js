@@ -4933,9 +4933,6 @@ var CombinedStopReload = {
     this.stop = stop;
     this.stopReloadContainer = this.reload.parentNode;
     this.timeWhenSwitchedToStop = 0;
-
-    
-    this.animate = false;
   },
 
   uninit() {
