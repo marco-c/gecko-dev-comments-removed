@@ -22,7 +22,7 @@ public:
   void* operator new(size_t sz, nsPresContext* aPresContext);
 
   nsPresContext* PresContext() const {
-    return mSource.AsGeckoRuleNode()->PresContext();
+    return RuleNode()->PresContext();
   }
 
   void AddChild(GeckoStyleContext* aChild);
@@ -38,7 +38,6 @@ public:
 
 
   void SetIneligibleForSharing();
-  void LogChildStyleContextTree(uint32_t aStructs) const;
   
 
 
@@ -53,20 +52,38 @@ public:
   
   already_AddRefed<GeckoStyleContext>
   FindChildWithRules(const nsIAtom* aPseudoTag,
-                     mozilla::NonOwningStyleContextSource aSource,
-                     mozilla::NonOwningStyleContextSource aSourceIfVisited,
+                     nsRuleNode* aSource,
+                     nsRuleNode* aSourceIfVisited,
                      bool aRelevantLinkVisited);
 
 #ifdef DEBUG
   void AssertChildStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
                                           int32_t aLevels) const;
   void ListDescendants(FILE* out, int32_t aIndent);
+
+#endif
+
+#ifdef RESTYLE_LOGGING
+  void LogChildStyleContextTree(uint32_t aStructs) const;
 #endif
 
   
   void ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup);
 
   bool HasNoChildren() const;
+
+  NonOwningStyleContextSource StyleSource() const {
+    return NonOwningStyleContextSource(mRuleNode);
+  }
+
+  nsRuleNode* RuleNode() const {
+    MOZ_ASSERT(mRuleNode);
+    return mRuleNode;
+  }
+
+  ~GeckoStyleContext() {
+    Destructor();
+  }
 
 private:
   
@@ -82,6 +99,7 @@ private:
   GeckoStyleContext* mEmptyChild;
   GeckoStyleContext* mPrevSibling;
   GeckoStyleContext* mNextSibling;
+  RefPtr<nsRuleNode> mRuleNode;
 };
 
 }
