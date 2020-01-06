@@ -7372,7 +7372,6 @@ bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
   return mAllowAsyncAnimation;
-
 }
 
 static void
@@ -7408,6 +7407,32 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
         AnimationPerformanceWarning::Type::TransformFrameInactive));
 
     return NoPrerender;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (nsIFrame* container = nsLayoutUtils::GetCrossDocParentFrame(aFrame);
+       container; container = nsLayoutUtils::GetCrossDocParentFrame(container)) {
+    const nsStyleSVGReset *svgReset = container->StyleSVGReset();
+    if (svgReset->HasMask() || svgReset->HasClipPath()) {
+      return NoPrerender;
+    }
   }
 
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
