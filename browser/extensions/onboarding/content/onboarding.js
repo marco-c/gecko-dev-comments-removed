@@ -193,12 +193,6 @@ class Onboarding {
     this._window = contentWindow;
     this._tourItems = [];
     this._tourPages = [];
-
-    
-    if (Services.prefs.getStringPref("browser.onboarding.tour-type", "update") !== "new") {
-      return;
-    }
-
     
     
     await this._loadCSS();

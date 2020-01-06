@@ -4,14 +4,9 @@
 
 "use strict";
 
-const {utils: Cu} = Components;
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "OnboardingTourType",
-  "resource://onboarding/modules/OnboardingTourType.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
-  "resource://gre/modules/Preferences.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Services",
-  "resource://gre/modules/Services.jsm");
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Preferences.jsm");
 
 const PREF_WHITELIST = [
   "browser.onboarding.enabled",
@@ -53,7 +48,6 @@ function install(aData, aReason) {}
 function uninstall(aData, aReason) {}
 
 function startup(aData, reason) {
-  OnboardingTourType.check();
   Services.mm.loadFrameScript("resource://onboarding/onboarding.js", true);
   initContentMessageListener();
 }

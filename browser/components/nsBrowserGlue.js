@@ -1716,7 +1716,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 49;
+    const UI_VERSION = 48;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2052,11 +2052,6 @@ BrowserGlue.prototype = {
       
       
       xulStore.removeValue(BROWSER_DOCURL, "sidebar-box", "checked");
-    }
-
-    if (currentUIVersion < 49) {
-      
-      Services.prefs.setIntPref("browser.onboarding.seen-tourset-version", 0);
     }
 
     

@@ -1706,8 +1706,6 @@ pref("browser.suppress_first_window_animation", true);
 
 
 pref("browser.onboarding.enabled", true);
-
-pref("browser.onboarding.tourset-version", 1);
 pref("browser.onboarding.hidden", false);
 
 
