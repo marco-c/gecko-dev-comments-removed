@@ -586,13 +586,13 @@ WalkStackThread(void* aData)
       
       
       ret = ::SuspendThread(data->thread);
-      if (ret == -1) {
+      if (ret == (DWORD)-1) {
         PrintError("ThreadSuspend");
       } else {
         WalkStackMain64(data);
 
         ret = ::ResumeThread(data->thread);
-        if (ret == -1) {
+        if (ret == (DWORD)-1) {
           PrintError("ThreadResume");
         }
       }

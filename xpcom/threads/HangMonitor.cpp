@@ -151,7 +151,7 @@ GetChromeHangReport(Telemetry::ProcessedStack& aStack,
 
   DWORD ret = ::SuspendThread(winMainThreadHandle);
   bool suspended = false;
-  if (ret != -1) {
+  if (ret != (DWORD)-1) {
     
     
     

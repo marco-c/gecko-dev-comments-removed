@@ -1679,7 +1679,7 @@ js::InterruptRunningJitCode(JSContext* cx)
     
     
     HANDLE thread = (HANDLE)cx->threadNative();
-    if (SuspendThread(thread) != -1) {
+    if (SuspendThread(thread) != (DWORD)-1) {
         CONTEXT context;
         context.ContextFlags = CONTEXT_FULL;
         if (GetThreadContext(thread, &context)) {
