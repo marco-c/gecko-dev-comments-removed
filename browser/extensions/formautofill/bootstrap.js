@@ -68,6 +68,7 @@ function startup(data) {
     
     
     Services.prefs.clearUserPref("services.sync.engine.addresses.available");
+    Services.telemetry.scalarSet("formautofill.availability", false);
     return;
   }
 
@@ -89,6 +90,7 @@ function startup(data) {
   
   
   Services.prefs.setBoolPref("dom.forms.autocomplete.formautofill", true);
+  Services.telemetry.scalarSet("formautofill.availability", true);
 
   
   
