@@ -115,6 +115,18 @@ inline bool net_IsValidScheme(const nsCString& scheme)
 
 void net_FilterURIString(const nsACString& input, nsACString& result);
 
+
+
+
+
+
+
+
+
+
+
+nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags, nsACString& aResult);
+
 #if defined(XP_WIN)
 
 

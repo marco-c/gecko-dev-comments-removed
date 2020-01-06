@@ -169,6 +169,19 @@ nsresult
 NS_EscapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult,
              const mozilla::fallible_t&);
 
+
+typedef std::array<bool, 128> ASCIIMaskArray;
+
+
+
+
+
+nsresult
+NS_EscapeAndFilterURL(const nsACString& aStr, uint32_t aFlags,
+                      const ASCIIMaskArray* aFilterMask,
+                      nsACString& aResult, const mozilla::fallible_t&);
+
+
 inline const nsACString&
 NS_UnescapeURL(const nsACString& aStr, uint32_t aFlags, nsACString& aResult)
 {

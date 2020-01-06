@@ -297,15 +297,10 @@ nsSimpleURI::SetSpec(const nsACString &aSpec)
     }
     ToLowerCase(mScheme);
 
-    
-    nsAutoCString filteredSpec;
-    net_FilterURIString(aSpec, filteredSpec);
-
-    
     nsAutoCString spec;
-    rv = NS_EscapeURL(filteredSpec, esc_OnlyNonASCII, spec, fallible);
+    rv = net_FilterAndEscapeURI(aSpec, esc_OnlyNonASCII, spec);
     if (NS_FAILED(rv)) {
-      return rv;
+        return rv;
     }
 
     int32_t colonPos = spec.FindChar(':');
