@@ -133,6 +133,13 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
     this.channel.addMessageListener("RemotePage:Load", this.onNewTabLoad);
     this.channel.addMessageListener("RemotePage:Unload", this.onNewTabUnload);
     this.channel.addMessageListener(this.incomingMessageName, this.onMessage);
+
+    
+    for (const {loaded, portID} of this.channel.messagePorts) {
+      if (loaded) {
+        this.onNewTabLoad({target: {portID}});
+      }
+    }
   }
 
   

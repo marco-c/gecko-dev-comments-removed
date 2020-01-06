@@ -54,7 +54,6 @@ let initializedModules = {};
 
 [
   ["AboutHome", "resource:///modules/AboutHome.jsm", "init"],
-  ["AboutNewTab", "resource:///modules/AboutNewTab.jsm"],
   ["AddonManager", "resource://gre/modules/AddonManager.jsm"],
   ["AppMenuNotifications", "resource://gre/modules/AppMenuNotifications.jsm"],
   ["AsyncPrefs", "resource://gre/modules/AsyncPrefs.jsm"],
@@ -969,7 +968,6 @@ BrowserGlue.prototype = {
     DirectoryLinksProvider.init();
     NewTabUtils.init();
     NewTabUtils.links.addProvider(DirectoryLinksProvider);
-    AboutNewTab.init();
 
     PageActions.init();
 
@@ -1030,7 +1028,6 @@ BrowserGlue.prototype = {
     BrowserUsageTelemetry.uninit();
 
     PageThumbs.uninit();
-    AboutNewTab.uninit();
     NewTabUtils.uninit();
     AutoCompletePopup.uninit();
     DateTimePickerHelper.uninit();

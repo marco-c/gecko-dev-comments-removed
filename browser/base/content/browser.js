@@ -1452,6 +1452,11 @@ var gBrowserInit = {
       gIdentityHandler.refreshIdentityBlock();
     });
 
+    
+    
+    
+    gAboutNewTabService.QueryInterface(Ci.nsISupports);
+
     let uriToLoad = this._getUriToLoad();
     if (uriToLoad && uriToLoad != "about:blank") {
       if (uriToLoad instanceof Ci.nsIArray) {
