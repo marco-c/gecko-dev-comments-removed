@@ -1832,9 +1832,7 @@ toolbar#nav-bar {
            '5.1' in platform.version() and options.e10s:
             prefs['layers.acceleration.disabled'] = True
 
-        
-        tests_dir = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-        sandbox_whitelist_paths = [tests_dir] + options.sandboxReadWhitelist
+        sandbox_whitelist_paths = [SCRIPT_DIR] + options.sandboxReadWhitelist
         if (platform.system() == "Linux" or
             platform.system() in ("Windows", "Microsoft")):
             
@@ -2029,6 +2027,24 @@ toolbar#nav-bar {
 
         return foundZombie
 
+    def checkForRunningBrowsers(self):
+        firefoxes = ""
+        if HAVE_PSUTIL:
+            attrs = ['pid', 'ppid', 'name', 'cmdline', 'username']
+            for proc in psutil.process_iter():
+                try:
+                    if 'firefox' in proc.name():
+                        firefoxes = "%s%s\n" % (firefoxes, proc.as_dict(attrs=attrs))
+                except:
+                    
+                    continue
+        if len(firefoxes) > 0:
+            
+            
+            
+            self.log.warning("Found 'firefox' running before starting test browser!")
+            self.log.warning(firefoxes)
+
     def runApp(self,
                testUrl,
                env,
@@ -2150,6 +2166,8 @@ toolbar#nav-bar {
                          'cwd': SCRIPT_DIR,
                          'onTimeout': [timeoutHandler]}
             kp_kwargs['processOutputLine'] = [outputHandler]
+
+            self.checkForRunningBrowsers()
 
             
             self.lastTestSeen = self.test_name
