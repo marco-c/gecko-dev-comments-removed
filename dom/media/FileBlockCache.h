@@ -52,8 +52,11 @@ namespace mozilla {
 
 
 
-class FileBlockCache : public Runnable {
+class FileBlockCache
+{
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileBlockCache)
+
   enum {
     BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE
   };
@@ -72,9 +75,6 @@ public:
   
   nsresult WriteBlock(uint32_t aBlockIndex,
     Span<const uint8_t> aData1, Span<const uint8_t> aData2);
-
-  
-  NS_IMETHOD Run() override;
 
   
   
@@ -142,6 +142,9 @@ private:
   }
 
   void SetCacheFile(PRFileDesc* aFD);
+
+  
+  void PerformBlockIOs();
 
   
   
