@@ -2779,22 +2779,6 @@ pref("general.smoothScroll.msdPhysics.slowdownMinDeltaRatio", "1.3");
 pref("general.smoothScroll.msdPhysics.slowdownSpringConstant", 2000);
 pref("general.smoothScroll.msdPhysics.regularSpringConstant", 1000);
 
-pref("profile.confirm_automigration",true);
-
-
-
-
-pref("profile.migration_behavior",0);
-pref("profile.migration_directory", "");
-
-
-
-
-
-
-
-
-pref("profile.seconds_until_defunct", -1);
 
 pref("profile.manage_only_at_launch", false);
 
