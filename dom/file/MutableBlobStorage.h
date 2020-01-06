@@ -51,10 +51,9 @@ public:
 
   
   
-  
-  uint64_t GetBlobWhenReady(nsISupports* aParent,
-                            const nsACString& aContentType,
-                            MutableBlobStorageCallback* aCallback);
+  void GetBlobWhenReady(nsISupports* aParent,
+                        const nsACString& aContentType,
+                        MutableBlobStorageCallback* aCallback);
 
   void TemporaryFileCreated(PRFileDesc* aFD);
 
