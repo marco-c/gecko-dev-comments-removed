@@ -1150,6 +1150,13 @@ public:
   }
 
   
+  template<class Item, class Comparator>
+  bool ContainsSorted(const Item& aItem, const Comparator& aComp) const
+  {
+    return BinaryIndexOf(aItem, aComp) != NoIndex;
+  }
+
+  
   
   
   
@@ -1158,6 +1165,13 @@ public:
   bool Contains(const Item& aItem) const
   {
     return IndexOf(aItem) != NoIndex;
+  }
+
+  
+  template<class Item>
+  bool ContainsSorted(const Item& aItem) const
+  {
+    return BinaryIndexOf(aItem) != NoIndex;
   }
 
   
