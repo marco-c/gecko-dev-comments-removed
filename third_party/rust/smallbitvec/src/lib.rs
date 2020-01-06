@@ -45,10 +45,24 @@ fn inline_capacity() -> u32 {
 }
 
 
-fn inline_index(n: u32) -> usize {
+fn inline_shift(n: u32) -> u32 {
     debug_assert!(n <= inline_capacity());
     
-    1 << (inline_bits() - 1 - n)
+    inline_bits() - 1 - n
+}
+
+
+fn inline_index(n: u32) -> usize {
+    1 << inline_shift(n)
+}
+
+
+fn inline_ones(n: u32) -> usize {
+    if n == 0 {
+        0
+    } else {
+        !0 << (inline_bits() - n)
+    }
 }
 
 
@@ -118,12 +132,22 @@ impl SmallBitVec {
 
     
     pub fn from_elem(len: u32, val: bool) -> SmallBitVec {
+        if len <= inline_capacity() {
+            return SmallBitVec {
+                data: if val {
+                    inline_ones(len + 1)
+                } else {
+                    inline_index(len)
+                }
+            }
+        }
         let header_ptr = Header::new(len, len, val);
         SmallBitVec {
             data: (header_ptr as usize) | HEAP_FLAG
         }
     }
 
+    
     
     pub fn with_capacity(cap: u32) -> SmallBitVec {
         
@@ -260,15 +284,41 @@ impl SmallBitVec {
     
     
     pub fn remove(&mut self, idx: u32) {
-        assert!(idx < self.len(), "Index {} out of bounds", idx);
+        let len = self.len();
+        assert!(idx < len, "Index {} out of bounds", idx);
 
-        for i in (idx+1)..self.len() {
+        if self.is_inline() {
+            
+            let mask = !inline_ones(idx);
+            let new_vals = (self.data & mask) << 1;
+            self.data = (self.data & !mask) | (new_vals & mask);
+        } else {
+            let first = (idx / bits_per_storage()) as usize;
+            let offset = idx % bits_per_storage();
+            let count = buffer_len(len);
+            {
+                
+                let buf = self.buffer_mut();
+                let mask = !0 << offset;
+                let new_vals = (buf[first] & mask) >> 1;
+                buf[first] = (buf[first] & !mask) | (new_vals & mask);
+            }
+            
+            for i in (first + 1)..count {
+                
+                let bit_idx = i as u32 * bits_per_storage();
+                unsafe {
+                    let first_bit = self.get_unchecked(bit_idx);
+                    self.set_unchecked(bit_idx - 1, first_bit);
+                }
+                
+                self.buffer_mut()[i] >>= 1;
+            }
+            
             unsafe {
-                let next_val = self.get_unchecked(i);
-                self.set_unchecked(i - 1, next_val);
+                self.set_len(len - 1);
             }
         }
-        self.pop();
     }
 
     
@@ -325,7 +375,7 @@ impl SmallBitVec {
         }
 
         if self.is_inline() {
-            let mask = !(inline_index(len - 1) - 1);
+            let mask = inline_ones(len);
             self.data & mask == 0
         } else {
             for &storage in self.buffer() {
@@ -354,7 +404,7 @@ impl SmallBitVec {
         }
 
         if self.is_inline() {
-            let mask = !(inline_index(len - 1) - 1);
+            let mask = inline_ones(len);
             self.data & mask == mask
         } else {
             for &storage in self.buffer() {
@@ -414,6 +464,16 @@ impl SmallBitVec {
     }
 
     
+    
+    
+    pub fn heap_ptr(&self) -> Option<*const u32> {
+        match self.is_heap() {
+            true => Some((self.data & !HEAP_FLAG) as *const Storage),
+            false => None
+        }
+    }
+
+    
     fn is_inline(&self) -> bool {
         self.data & HEAP_FLAG == 0
     }
@@ -448,7 +508,7 @@ impl SmallBitVec {
         }
     }
 
-    fn buffer_mut(&self) -> &mut [Storage] {
+    fn buffer_mut(&mut self) -> &mut [Storage] {
         unsafe { &mut *self.buffer_raw() }
     }
 
@@ -865,7 +925,39 @@ mod tests {
         v.push(true);
 
         v.remove(1);
-        assert_eq!(format!("{:?}", v), "[0, 0, 0, 1]")
+        assert_eq!(format!("{:?}", v), "[0, 0, 0, 1]");
+        v.remove(0);
+        assert_eq!(format!("{:?}", v), "[0, 0, 1]");
+        v.remove(2);
+        assert_eq!(format!("{:?}", v), "[0, 0]");
+        v.remove(1);
+        assert_eq!(format!("{:?}", v), "[0]");
+        v.remove(0);
+        assert_eq!(format!("{:?}", v), "[]");
+    }
+
+    #[test]
+    fn remove_big() {
+        let mut v = SmallBitVec::from_elem(256, false);
+        v.set(100, true);
+        v.set(255, true);
+        v.remove(0);
+        assert_eq!(v.len(), 255);
+        assert_eq!(v.get(0), false);
+        assert_eq!(v.get(99), true);
+        assert_eq!(v.get(100), false);
+        assert_eq!(v.get(253), false);
+        assert_eq!(v.get(254), true);
+
+        v.remove(254);
+        assert_eq!(v.len(), 254);
+        assert_eq!(v.get(0), false);
+        assert_eq!(v.get(99), true);
+        assert_eq!(v.get(100), false);
+        assert_eq!(v.get(253), false);
+
+        v.remove(99);
+        assert_eq!(v, SmallBitVec::from_elem(253, false));
     }
 
     #[test]
