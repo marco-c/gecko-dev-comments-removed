@@ -140,7 +140,7 @@ class PayloadDispatcher {
         batchWhiteboard = batchWhiteboard.nextBatchMeta();
     }
 
-     void doStoreFailed(Exception reason) {
+    private void doStoreFailed(Exception reason) {
         if (storeFailed.getAndSet(true)) {
             return;
         }
