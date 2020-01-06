@@ -595,16 +595,6 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
                 }
                 Err(miss) => {
                     debug!("Cache miss: {:?}", miss);
-
-                    
-                    
-                    match miss {
-                        
-                        
-                        CacheMiss::PresHints |
-                        CacheMiss::Revalidation => break,
-                        _ => {}
-                    }
                 }
             }
         }
