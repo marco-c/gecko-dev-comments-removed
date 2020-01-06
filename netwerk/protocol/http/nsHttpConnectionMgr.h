@@ -244,12 +244,11 @@ private:
     
     
     
-    class nsConnectionEntry : public SupportsWeakPtr<nsConnectionEntry>
+    class nsConnectionEntry
     {
     public:
-        MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsConnectionEntry)
+        NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsConnectionEntry)
         explicit nsConnectionEntry(nsHttpConnectionInfo *ci);
-        ~nsConnectionEntry();
 
         RefPtr<nsHttpConnectionInfo> mConnInfo;
         nsTArray<RefPtr<PendingTransactionInfo> > mUrgentStartQ;
@@ -337,6 +336,13 @@ private:
 
         
         void RemoveEmptyPendingQ();
+        enum {
+          CONN_ENTRY_NOT_REMOVED,
+          CONN_ENTRY_CLEAR_CONNECTION_HISTORY,
+          CONN_ENTRY_REMOVED_SHUTDOWN,
+        }  mHowItWasRemoved;
+    private:
+        ~nsConnectionEntry();
     };
 
 public:
@@ -406,6 +412,7 @@ private:
         void FastOpenNotSupported() override;
         void SetFastOpenStatus(uint8_t tfoStatus) override;
         void CancelFastOpenConnection();
+
     private:
         nsresult SetupConn(nsIAsyncOutputStream *out,
                            bool aFastOpen);
@@ -416,7 +423,6 @@ private:
         already_AddRefed<PendingTransactionInfo>
         FindTransactionHelper(bool removeWhenFound);
 
-        WeakPtr<nsConnectionEntry>     mEnt;
         RefPtr<nsAHttpTransaction>     mTransaction;
         bool                           mDispatchedMTransaction;
         nsCOMPtr<nsISocketTransport>   mSocketTransport;
@@ -444,12 +450,6 @@ private:
         TimeStamp             mBackupSynStarted;
 
         
-        nsCOMPtr<nsITimer>             mSynTimer;
-        nsCOMPtr<nsISocketTransport>   mBackupTransport;
-        nsCOMPtr<nsIAsyncOutputStream> mBackupStreamOut;
-        nsCOMPtr<nsIAsyncInputStream>  mBackupStreamIn;
-
-        
         
         bool                           mHasConnected;
 
@@ -465,6 +465,18 @@ private:
 
         bool                           mFastOpenInProgress;
         RefPtr<nsHttpConnection>       mConnectionNegotiatingFastOpen;
+
+    private:
+        
+        
+        
+        friend class nsHttpConnectionMgr;
+
+        RefPtr<nsConnectionEntry>      mEnt;
+        nsCOMPtr<nsITimer>             mSynTimer;
+        nsCOMPtr<nsISocketTransport>   mBackupTransport;
+        nsCOMPtr<nsIAsyncOutputStream> mBackupStreamOut;
+        nsCOMPtr<nsIAsyncInputStream>  mBackupStreamIn;
     };
     friend class nsHalfOpenSocket;
 
@@ -658,7 +670,7 @@ private:
     
     
     
-    nsClassHashtable<nsCStringHashKey, nsConnectionEntry> mCT;
+    nsRefPtrHashtable<nsCStringHashKey, nsConnectionEntry> mCT;
 
     
     void TimeoutTick();
