@@ -4617,12 +4617,21 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
       return;
     }
   }
+
+  if (aFrame != mFrame &&
+      aBuilder->IsRetainingDisplayList()) {
+    aFrame->AddDisplayItem(this);
+  }
+
+
   
 
   
   
   nsRect borderBox;
-  if (nsLayoutUtils::GetScrollableFrameFor(aFrame)) {
+
+  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(aFrame);
+  if (scrollFrame) {
     
     
     
@@ -4655,13 +4664,9 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
 
   if (borderBoxHasRoundedCorners ||
       (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
-    mMaybeHitRegion.Or(mMaybeHitRegion, borderBox);
-
-    
-    
-    mMaybeHitRegion.SimplifyOutward(8);
+    mMaybeHitRegion.Add(aFrame, borderBox);
   } else {
-    mHitRegion.Or(mHitRegion, borderBox);
+    mHitRegion.Add(aFrame, borderBox);
   }
 
   if (aBuilder->IsBuildingNonLayerizedScrollbar() ||
@@ -4672,62 +4677,73 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     
     
     
-    mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
-    mDispatchToContentHitRegion.SimplifyOutward(8);
+    mDispatchToContentHitRegion.Add(aFrame, borderBox);
   } else if (aFrame->IsObjectFrame()) {
     
     
     nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
     if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
-      mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
-      mDispatchToContentHitRegion.SimplifyOutward(8);
+      mDispatchToContentHitRegion.Add(aFrame, borderBox);
     }
   }
 
   
 
   nsIFrame* touchActionFrame = aFrame;
-  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(aFrame);
   if (scrollFrame) {
     touchActionFrame = do_QueryFrame(scrollFrame);
   }
   uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
   if (touchAction != NS_STYLE_TOUCH_ACTION_AUTO) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool alreadyHadRegions = !mNoActionRegion.IsEmpty() ||
-        !mHorizontalPanRegion.IsEmpty() ||
-        !mVerticalPanRegion.IsEmpty();
     if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
-      mNoActionRegion.OrWith(borderBox);
+      mNoActionRegion.Add(aFrame, borderBox);
     } else {
       if ((touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
-        mHorizontalPanRegion.OrWith(borderBox);
+        mHorizontalPanRegion.Add(aFrame, borderBox);
       }
       if ((touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
-        mVerticalPanRegion.OrWith(borderBox);
+        mVerticalPanRegion.Add(aFrame, borderBox);
       }
-    }
-    if (alreadyHadRegions) {
-      mDispatchToContentHitRegion.OrWith(CombinedTouchActionRegion());
-      mDispatchToContentHitRegion.SimplifyOutward(8);
     }
   }
 }
 
-void
-nsDisplayLayerEventRegions::AddInactiveScrollPort(const nsRect& aRect)
+static void
+RemoveFrameFromFrameRects(nsDisplayLayerEventRegions::FrameRects& aFrameRects, nsIFrame* aFrame)
 {
-  mHitRegion.Or(mHitRegion, aRect);
-  mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, aRect);
-  mDispatchToContentHitRegion.SimplifyOutward(8);
+  uint32_t i = 0;
+  uint32_t length = aFrameRects.mFrames.Length();
+  while (i < length) {
+    if (aFrameRects.mFrames[i] == aFrame) {
+      aFrameRects.mFrames[i] = aFrameRects.mFrames[length - 1];
+      aFrameRects.mBoxes[i] = aFrameRects.mBoxes[length - 1];
+      length--;
+    } else {
+      i++;
+    }
+  }
+  aFrameRects.mFrames.SetLength(length);
+  aFrameRects.mBoxes.SetLength(length);
+}
+
+void
+nsDisplayLayerEventRegions::RemoveFrame(nsIFrame* aFrame)
+{
+  RemoveFrameFromFrameRects(mHitRegion, aFrame);
+  RemoveFrameFromFrameRects(mMaybeHitRegion, aFrame);
+  RemoveFrameFromFrameRects(mDispatchToContentHitRegion, aFrame);
+  RemoveFrameFromFrameRects(mNoActionRegion, aFrame);
+  RemoveFrameFromFrameRects(mHorizontalPanRegion, aFrame);
+  RemoveFrameFromFrameRects(mVerticalPanRegion, aFrame);
+
+  nsDisplayItem::RemoveFrame(aFrame);
+}
+
+void
+nsDisplayLayerEventRegions::AddInactiveScrollPort(nsIFrame* aFrame, const nsRect& aRect)
+{
+  mHitRegion.Add(aFrame, aRect);
+  mDispatchToContentHitRegion.Add(aFrame, aRect);
 }
 
 bool
@@ -4749,8 +4765,8 @@ nsRegion
 nsDisplayLayerEventRegions::CombinedTouchActionRegion()
 {
   nsRegion result;
-  result.Or(mHorizontalPanRegion, mVerticalPanRegion);
-  result.OrWith(mNoActionRegion);
+  result.Or(HorizontalPanRegion(), VerticalPanRegion());
+  result.OrWith(NoActionRegion());
   return result;
 }
 
@@ -4770,22 +4786,22 @@ void
 nsDisplayLayerEventRegions::WriteDebugInfo(std::stringstream& aStream)
 {
   if (!mHitRegion.IsEmpty()) {
-    AppendToString(aStream, mHitRegion, " (hitRegion ", ")");
+    AppendToString(aStream, HitRegion(), " (hitRegion ", ")");
   }
   if (!mMaybeHitRegion.IsEmpty()) {
-    AppendToString(aStream, mMaybeHitRegion, " (maybeHitRegion ", ")");
+    AppendToString(aStream, MaybeHitRegion(), " (maybeHitRegion ", ")");
   }
   if (!mDispatchToContentHitRegion.IsEmpty()) {
-    AppendToString(aStream, mDispatchToContentHitRegion, " (dispatchToContentRegion ", ")");
+    AppendToString(aStream, DispatchToContentHitRegion(), " (dispatchToContentRegion ", ")");
   }
   if (!mNoActionRegion.IsEmpty()) {
-    AppendToString(aStream, mNoActionRegion, " (noActionRegion ", ")");
+    AppendToString(aStream, NoActionRegion(), " (noActionRegion ", ")");
   }
   if (!mHorizontalPanRegion.IsEmpty()) {
-    AppendToString(aStream, mHorizontalPanRegion, " (horizPanRegion ", ")");
+    AppendToString(aStream, HorizontalPanRegion(), " (horizPanRegion ", ")");
   }
   if (!mVerticalPanRegion.IsEmpty()) {
-    AppendToString(aStream, mVerticalPanRegion, " (vertPanRegion ", ")");
+    AppendToString(aStream, VerticalPanRegion(), " (vertPanRegion ", ")");
   }
 }
 

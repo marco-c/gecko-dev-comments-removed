@@ -4079,16 +4079,29 @@ public:
 
 class nsDisplayLayerEventRegions final : public nsDisplayItem {
 public:
-  nsDisplayLayerEventRegions(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
+  nsDisplayLayerEventRegions(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, uint32_t aIndex = 0)
     : nsDisplayItem(aBuilder, aFrame)
+    , mIndex(aIndex)
   {
     MOZ_COUNT_CTOR(nsDisplayLayerEventRegions);
   }
-#ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplayLayerEventRegions() {
-    MOZ_COUNT_DTOR(nsDisplayLayerEventRegions);
+
+  virtual void Destroy(nsDisplayListBuilder* aBuilder) override
+  {
+    if (!aBuilder->IsRetainingDisplayList()) {
+      nsDisplayItem::Destroy(aBuilder);
+      return;
+    }
+
+    RemoveItemFromFrames(mHitRegion);
+    RemoveItemFromFrames(mMaybeHitRegion);
+    RemoveItemFromFrames(mDispatchToContentHitRegion);
+    RemoveItemFromFrames(mNoActionRegion);
+    RemoveItemFromFrames(mHorizontalPanRegion);
+    RemoveItemFromFrames(mVerticalPanRegion);
+    nsDisplayItem::Destroy(aBuilder);
   }
-#endif
+
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override
   {
@@ -4098,7 +4111,9 @@ public:
   nsRect GetHitRegionBounds(nsDisplayListBuilder* aBuilder, bool* aSnap)
   {
     *aSnap = false;
-    return mHitRegion.GetBounds().Union(mMaybeHitRegion.GetBounds());
+    
+    
+    return HitRegion().GetBounds().Union(MaybeHitRegion().GetBounds());
   }
 
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
@@ -4121,47 +4136,144 @@ public:
   
   
   
-  void AddInactiveScrollPort(const nsRect& aRect);
+  void AddInactiveScrollPort(nsIFrame* aFrame, const nsRect& aRect);
 
   bool IsEmpty() const;
 
   int32_t ZIndex() const override;
   void SetOverrideZIndex(int32_t aZIndex);
 
-  const nsRegion& HitRegion() { return mHitRegion; }
-  const nsRegion& MaybeHitRegion() { return mMaybeHitRegion; }
-  const nsRegion& DispatchToContentHitRegion() { return mDispatchToContentHitRegion; }
-  const nsRegion& NoActionRegion() { return mNoActionRegion; }
-  const nsRegion& HorizontalPanRegion() { return mHorizontalPanRegion; }
-  const nsRegion& VerticalPanRegion() { return mVerticalPanRegion; }
+  virtual uint32_t GetPerFrameKey() const override
+  {
+    return (mIndex << TYPE_BITS) | nsDisplayItem::GetPerFrameKey();
+  }
+
+  const nsRegion HitRegion()
+  {
+    return nsRegion(mozilla::gfx::ArrayView<pixman_box32_t>(mHitRegion.mBoxes));
+  }
+  const nsRegion MaybeHitRegion()
+  {
+    nsRegion result(mozilla::gfx::ArrayView<pixman_box32_t>(mMaybeHitRegion.mBoxes));
+
+    
+    
+    
+    
+    result.SimplifyOutward(8);
+    return result;
+  }
+  const nsRegion DispatchToContentHitRegion()
+  {
+    nsRegion result(mozilla::gfx::ArrayView<pixman_box32_t>(mDispatchToContentHitRegion.mBoxes));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t touchActionCount =
+      mNoActionRegion.mBoxes.Length() +
+      mHorizontalPanRegion.mBoxes.Length() +
+      mVerticalPanRegion.mBoxes.Length();
+    if (touchActionCount > 1) {
+      result.OrWith(NoActionRegion());
+      result.OrWith(HorizontalPanRegion());
+      result.OrWith(VerticalPanRegion());
+    }
+
+    result.SimplifyOutward(8);
+    return result;
+  }
+  const nsRegion NoActionRegion()
+  {
+    return nsRegion(mozilla::gfx::ArrayView<pixman_box32_t>(mNoActionRegion.mBoxes));
+  }
+  const nsRegion HorizontalPanRegion()
+  {
+    return nsRegion(mozilla::gfx::ArrayView<pixman_box32_t>(mHorizontalPanRegion.mBoxes));
+  }
+  const nsRegion VerticalPanRegion()
+  {
+    return nsRegion(mozilla::gfx::ArrayView<pixman_box32_t>(mVerticalPanRegion.mBoxes));
+  }
   nsRegion CombinedTouchActionRegion();
 
   virtual void WriteDebugInfo(std::stringstream& aStream) override;
 
+  
+  
+  
+  
+  struct FrameRects {
+    void Add(nsIFrame* aFrame, const nsRect& aRect) {
+      mBoxes.AppendElement(nsRegion::RectToBox(aRect));
+      mFrames.AppendElement(aFrame);
+    }
+    void Add(nsIFrame* aFrame, const pixman_box32& aBox) {
+      mBoxes.AppendElement(aBox);
+      mFrames.AppendElement(aFrame);
+    }
+    void Add(const FrameRects& aOther) {
+      mBoxes.AppendElements(aOther.mBoxes);
+      mFrames.AppendElements(aOther.mFrames);
+    }
+
+    bool IsEmpty() const {
+      return mBoxes.IsEmpty();
+    }
+
+    nsTArray<pixman_box32_t> mBoxes;
+    nsTArray<nsIFrame*> mFrames;
+  };
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override;
+
 private:
+  virtual ~nsDisplayLayerEventRegions()
+  {
+    MOZ_COUNT_DTOR(nsDisplayLayerEventRegions);
+  }
+
+  void RemoveItemFromFrames(FrameRects& aFrameRects)
+  {
+    for (nsIFrame* f : aFrameRects.mFrames) {
+      if (f != mFrame) {
+        f->RemoveDisplayItem(this);
+      }
+    }
+  }
+
+  friend void MergeLayerEventRegions(nsDisplayItem*, nsDisplayItem*, bool);
+
   
   
-  nsRegion mHitRegion;
+  FrameRects mHitRegion;
   
   
-  nsRegion mMaybeHitRegion;
+  FrameRects mMaybeHitRegion;
   
   
-  nsRegion mDispatchToContentHitRegion;
+  FrameRects mDispatchToContentHitRegion;
   
   
-  nsRegion mNoActionRegion;
+  FrameRects mNoActionRegion;
   
   
-  nsRegion mHorizontalPanRegion;
+  FrameRects mHorizontalPanRegion;
   
   
-  nsRegion mVerticalPanRegion;
+  FrameRects mVerticalPanRegion;
   
   
   
   
   mozilla::Maybe<int32_t> mOverrideZIndex;
+  uint32_t mIndex;
 };
 
 
