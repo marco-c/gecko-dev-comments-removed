@@ -974,21 +974,28 @@ add_task(async function migrate1() {
   PageActions.actionForID("copyURL")._shownInUrlbar = false;
 });
 
-
 function promisePageActionPanelOpen() {
-  let button = document.getElementById("pageActionButton");
-  
-  
   let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
                   .getInterface(Ci.nsIDOMWindowUtils);
   return BrowserTestUtils.waitForCondition(() => {
+    
+    
+    
     info("Waiting for main page action button to have non-0 size");
-    let bounds = dwu.getBoundsWithoutFlushing(button);
+    let bounds = dwu.getBoundsWithoutFlushing(BrowserPageActions.mainButtonNode);
     return bounds.width > 0 && bounds.height > 0;
   }).then(() => {
+    
+    info("Waiting for main page action panel to be open");
+    if (BrowserPageActions.panelNode.state == "open") {
+      return Promise.resolve();
+    }
     let shownPromise = promisePageActionPanelShown();
-    EventUtils.synthesizeMouseAtCenter(button, {});
+    EventUtils.synthesizeMouseAtCenter(BrowserPageActions.mainButtonNode, {});
     return shownPromise;
+  }).then(() => {
+    
+    return promisePageActionViewChildrenVisible(BrowserPageActions.mainViewNode);
   });
 }
 
@@ -1025,24 +1032,26 @@ function promisePanelEvent(panelIDOrNode, eventType) {
 }
 
 function promisePageActionViewShown() {
-  let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils);
   info("promisePageActionViewShown waiting for ViewShown");
   return BrowserTestUtils.waitForEvent(BrowserPageActions.panelNode, "ViewShown").then(async event => {
     let panelViewNode = event.originalTarget;
-    
-    
-    info("promisePageActionViewShown waiting for a child node to be visible");
-    await BrowserTestUtils.waitForCondition(() => {
-      let bodyNode = panelViewNode.firstChild;
-      for (let childNode of bodyNode.childNodes) {
-        let bounds = dwu.getBoundsWithoutFlushing(childNode);
-        if (bounds.width > 0 && bounds.height > 0) {
-          return true;
-        }
-      }
-      return false;
-    });
+    await promisePageActionViewChildrenVisible(panelViewNode);
     return panelViewNode;
+  });
+}
+
+function promisePageActionViewChildrenVisible(panelViewNode) {
+  info("promisePageActionViewChildrenVisible waiting for a child node to be visible");
+  let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIDOMWindowUtils);
+  return BrowserTestUtils.waitForCondition(() => {
+    let bodyNode = panelViewNode.firstChild;
+    for (let childNode of bodyNode.childNodes) {
+      let bounds = dwu.getBoundsWithoutFlushing(childNode);
+      if (bounds.width > 0 && bounds.height > 0) {
+        return true;
+      }
+    }
+    return false;
   });
 }
