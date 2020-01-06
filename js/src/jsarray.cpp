@@ -3725,8 +3725,6 @@ static const ClassOps ArrayObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
 };
 
 static const ClassSpec ArrayObjectClassSpec = {

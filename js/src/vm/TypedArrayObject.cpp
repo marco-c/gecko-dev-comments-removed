@@ -2027,8 +2027,6 @@ static const ClassOps TypedArrayClassOps = {
     nullptr,                 
     nullptr,                 
     nullptr,                 
-    nullptr,                 
-    nullptr,                 
     TypedArrayObject::finalize, 
     nullptr,                 
     nullptr,                 

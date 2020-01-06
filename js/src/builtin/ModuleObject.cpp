@@ -698,8 +698,6 @@ ModuleObject::classOps_ = {
     nullptr,        
     nullptr,        
     nullptr,        
-    nullptr,        
-    nullptr,        
     ModuleObject::finalize,
     nullptr,        
     nullptr,        

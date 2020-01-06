@@ -91,8 +91,6 @@ const ClassOps DebuggerFrame::classOps_ = {
     nullptr,    
     nullptr,    
     nullptr,    
-    nullptr,    
-    nullptr,    
     DebuggerFrame_finalize,
     nullptr,    
     nullptr,    
@@ -129,8 +127,6 @@ const ClassOps DebuggerEnvironment::classOps_ = {
     nullptr,    
     nullptr,    
     nullptr,    
-    nullptr,    
-    nullptr,    
     DebuggerEnv_trace
 };
 
@@ -147,8 +143,6 @@ enum {
 };
 
 const ClassOps DebuggerObject::classOps_ = {
-    nullptr,    
-    nullptr,    
     nullptr,    
     nullptr,    
     nullptr,    
@@ -185,8 +179,6 @@ static const ClassOps DebuggerScript_classOps = {
     nullptr,    
     nullptr,    
     nullptr,    
-    nullptr,    
-    nullptr,    
     DebuggerScript_trace
 };
 
@@ -204,8 +196,6 @@ enum {
 };
 
 static const ClassOps DebuggerSource_classOps = {
-    nullptr,    
-    nullptr,    
     nullptr,    
     nullptr,    
     nullptr,    
@@ -3309,8 +3299,6 @@ Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
 }
 
 const ClassOps Debugger::classOps_ = {
-    nullptr,    
-    nullptr,    
     nullptr,    
     nullptr,    
     nullptr,    

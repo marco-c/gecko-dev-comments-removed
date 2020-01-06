@@ -217,8 +217,6 @@ static const ClassOps ScalarTypeDescrClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     TypeDescr::finalize,
     ScalarTypeDescr::call
 };
@@ -319,8 +317,6 @@ ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
 
 
 static const ClassOps ReferenceTypeDescrClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -508,8 +504,6 @@ CreatePrototypeObjectForComplexTypeInstance(JSContext* cx, HandleObject ctorProt
 }
 
 static const ClassOps ArrayTypeDescrClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -746,8 +740,6 @@ js::IsTypedObjectArray(JSObject& obj)
 
 
 static const ClassOps StructTypeDescrClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -2231,8 +2223,6 @@ const ObjectOps TypedObject::objectOps_ = {
     static const ClassOps Name##ClassOps = {             \
         nullptr,        /* addProperty */                \
         nullptr,        /* delProperty */                \
-        nullptr,        /* getProperty */                \
-        nullptr,        /* setProperty */                \
         nullptr,        /* enumerate   */                \
         TypedObject::obj_newEnumerate,                   \
         nullptr,        /* resolve     */                \

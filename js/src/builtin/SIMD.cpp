@@ -270,8 +270,6 @@ static const ClassOps SimdTypeDescrClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     TypeDescr::finalize,
     SimdTypeDescr::call
 };
@@ -529,8 +527,6 @@ SimdTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
 
 
 static const ClassOps SimdObjectClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

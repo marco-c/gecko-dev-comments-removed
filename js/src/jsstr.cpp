@@ -572,8 +572,6 @@ str_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
 static const ClassOps StringObjectClassOps = {
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     str_enumerate,
     nullptr, 
     str_resolve,

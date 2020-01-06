@@ -414,8 +414,6 @@ const ClassOps ModuleEnvironmentObject::classOps_ = {
     nullptr,    
     nullptr,    
     nullptr,    
-    nullptr,    
-    nullptr,    
     ModuleEnvironmentObject::newEnumerate
 };
 

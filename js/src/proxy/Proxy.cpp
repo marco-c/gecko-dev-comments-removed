@@ -757,8 +757,6 @@ const ClassOps js::ProxyClassOps = {
     nullptr,                 
     nullptr,                 
     nullptr,                 
-    nullptr,                 
-    nullptr,                 
     proxy_Finalize,          
     nullptr,                 
     Proxy::hasInstance,      

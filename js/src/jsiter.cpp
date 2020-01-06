@@ -1202,8 +1202,6 @@ const ClassOps PropertyIteratorObject::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     finalize,
     nullptr, 
     nullptr, 
@@ -1609,8 +1607,6 @@ stopiter_hasInstance(JSContext* cx, HandleObject obj, MutableHandleValue v, bool
 }
 
 static const ClassOps StopIterationObjectClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

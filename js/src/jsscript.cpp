@@ -1413,8 +1413,6 @@ static const ClassOps ScriptSourceObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     ScriptSourceObject::finalize,
     nullptr, 
     nullptr, 

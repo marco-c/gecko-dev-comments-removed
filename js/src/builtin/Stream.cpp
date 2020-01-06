@@ -3414,8 +3414,6 @@ static const ClassOps ReadableByteStreamControllerClassOps = {
     nullptr,        
     nullptr,        
     nullptr,        
-    nullptr,        
-    nullptr,        
     ReadableByteStreamControllerFinalize,
     nullptr,        
     nullptr,        

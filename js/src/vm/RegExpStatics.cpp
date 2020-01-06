@@ -42,8 +42,6 @@ static const ClassOps RegExpStaticsObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     resc_finalize,
     nullptr, 
     nullptr, 

@@ -1789,8 +1789,6 @@ static const JSClassOps FinalizeCounterClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
-    nullptr, 
     finalize_counter_finalize
 };
 
@@ -2516,8 +2514,6 @@ class CloneBufferObject : public NativeObject {
 };
 
 static const ClassOps CloneBufferObjectClassOps = {
-    nullptr, 
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

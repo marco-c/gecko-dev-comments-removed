@@ -949,8 +949,6 @@ static const ClassOps UnboxedPlainObjectClassOps = {
     nullptr,        
     nullptr,        
     nullptr,        
-    nullptr,        
-    nullptr,        
     UnboxedPlainObject::newEnumerate,
     nullptr,        
     nullptr,        
@@ -1642,8 +1640,6 @@ UnboxedArrayObject::newEnumerate(JSContext* cx, HandleObject obj, AutoIdVector& 
 }
 
 static const ClassOps UnboxedArrayObjectClassOps = {
-    nullptr,        
-    nullptr,        
     nullptr,        
     nullptr,        
     nullptr,        

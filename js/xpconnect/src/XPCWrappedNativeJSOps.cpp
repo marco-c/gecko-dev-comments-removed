@@ -616,8 +616,6 @@ XPC_WN_NoHelper_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* reso
 static const js::ClassOps XPC_WN_NoHelper_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub, 
     XPC_WN_CannotDeletePropertyStub,   
-    nullptr,                           
-    nullptr,                           
     XPC_WN_Shared_Enumerate,           
     nullptr,                           
     XPC_WN_NoHelper_Resolve,           
@@ -1057,8 +1055,6 @@ XPC_WN_ModsAllowed_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id, b
 static const js::ClassOps XPC_WN_ModsAllowed_Proto_JSClassOps = {
     nullptr,                            
     nullptr,                            
-    nullptr,                            
-    nullptr,                            
     XPC_WN_Shared_Proto_Enumerate,      
     nullptr,                            
     XPC_WN_ModsAllowed_Proto_Resolve,   
@@ -1138,8 +1134,6 @@ XPC_WN_NoMods_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* 
 static const js::ClassOps XPC_WN_NoMods_Proto_JSClassOps = {
     XPC_WN_OnlyIWrite_Proto_AddPropertyStub,   
     XPC_WN_CannotDeletePropertyStub,           
-    nullptr,                                   
-    nullptr,                                   
     XPC_WN_Shared_Proto_Enumerate,             
     nullptr,                                   
     XPC_WN_NoMods_Proto_Resolve,               
@@ -1235,8 +1229,6 @@ static_assert(((XPC_WRAPPER_FLAGS >> JSCLASS_RESERVED_SLOTS_SHIFT) &
 static const js::ClassOps XPC_WN_Tearoff_JSClassOps = {
     XPC_WN_OnlyIWrite_AddPropertyStub,  
     XPC_WN_CannotDeletePropertyStub,    
-    nullptr,                            
-    nullptr,                            
     XPC_WN_TearOff_Enumerate,           
     nullptr,                            
     XPC_WN_TearOff_Resolve,             

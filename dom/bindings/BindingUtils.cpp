@@ -2053,8 +2053,6 @@ const js::ClassOps sBoringInterfaceObjectClassClassOps = {
     nullptr,               
     nullptr,               
     nullptr,               
-    nullptr,               
-    nullptr,               
     ThrowingConstructor,   
     nullptr,               
     ThrowingConstructor,   

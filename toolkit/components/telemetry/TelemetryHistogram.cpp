@@ -1063,8 +1063,6 @@ static const JSClassOps sJSHistogramClassOps = {
   nullptr, 
   nullptr, 
   nullptr, 
-  nullptr, 
-  nullptr, 
   internal_JSHistogram_finalize
 };
 
@@ -1296,8 +1294,6 @@ namespace {
 void internal_JSKeyedHistogram_finalize(JSFreeOp*, JSObject*);
 
 static const JSClassOps sJSKeyedHistogramClassOps = {
-  nullptr, 
-  nullptr, 
   nullptr, 
   nullptr, 
   nullptr, 
