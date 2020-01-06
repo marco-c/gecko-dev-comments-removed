@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 #define MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 
@@ -39,6 +38,10 @@ public:
                                           const CompositorOptions& aOptions,
                                           bool aUseExternalSurfaceSize,
                                           const gfx::IntSize& aSurfaceSize);
+
+  mozilla::ipc::IPCResult RecvAddSharedSurface(const wr::ExternalImageId& aId,
+                                               const SurfaceDescriptorShared& aDesc) override;
+  mozilla::ipc::IPCResult RecvRemoveSharedSurface(const wr::ExternalImageId& aId) override;
 
   void BindComplete();
   void ActorDestroy(ActorDestroyReason aReason) override;
