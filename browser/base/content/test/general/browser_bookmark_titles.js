@@ -5,83 +5,83 @@
 
 
 var tests = [
-    
-    ["http://example.com/browser/browser/base/content/test/general/dummy_page.html",
-     "Dummy test page"],
-    
-    ["data:text/html;charset=utf-8,<title>test%20data:%20url</title>",
-     "test data: url"],
-    
-    ["data:application/vnd.mozilla.xul+xml,",
-     "data:application/vnd.mozilla.xul+xml,"],
-    
-    ["https://untrusted.example.com/somepage.html",
-     "https://untrusted.example.com/somepage.html"]
+  
+  ["http://example.com/browser/browser/base/content/test/general/dummy_page.html",
+   "Dummy test page"],
+  
+  ["data:text/html;charset=utf-8,<title>test%20data:%20url</title>",
+   "test data: url"],
+  
+  ["data:application/vnd.mozilla.xul+xml,",
+   "data:application/vnd.mozilla.xul+xml,"],
+  
+  ["https://untrusted.example.com/somepage.html",
+   "https://untrusted.example.com/somepage.html"]
 ];
 
 add_task(async function() {
-    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-    let browser = gBrowser.selectedBrowser;
-    browser.stop(); 
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  let browser = gBrowser.selectedBrowser;
+  browser.stop(); 
 
-    
-    for (let i = 0; i < tests.length; ++i) {
-        let [uri, title] = tests[i];
-
-        let promiseLoaded = promisePageLoaded(browser);
-        BrowserTestUtils.loadURI(browser, uri);
-        await promiseLoaded;
-        await checkBookmark(uri, title);
-    }
-
-    
-    
-
-    
-    
-    BrowserOffline.toggleOfflineStatus();
-    let proxy = Services.prefs.getIntPref("network.proxy.type");
-    Services.prefs.setIntPref("network.proxy.type", 0);
-    registerCleanupFunction(function() {
-        BrowserOffline.toggleOfflineStatus();
-        Services.prefs.setIntPref("network.proxy.type", proxy);
-    });
-
-    
-    Services.cache2.clear();
-
-    let [uri, title] = tests[0];
+  
+  for (let i = 0; i < tests.length; ++i) {
+    let [uri, title] = tests[i];
 
     let promiseLoaded = promisePageLoaded(browser);
     BrowserTestUtils.loadURI(browser, uri);
     await promiseLoaded;
-
-    
-    await ContentTask.spawn(browser, null, function() {
-      is(content.document.documentURI.substring(0, 14), "about:neterror",
-          "Offline mode successfully simulated network outage.");
-    });
     await checkBookmark(uri, title);
+  }
 
-    gBrowser.removeCurrentTab();
+  
+  
+
+  
+  
+  BrowserOffline.toggleOfflineStatus();
+  let proxy = Services.prefs.getIntPref("network.proxy.type");
+  Services.prefs.setIntPref("network.proxy.type", 0);
+  registerCleanupFunction(function() {
+    BrowserOffline.toggleOfflineStatus();
+    Services.prefs.setIntPref("network.proxy.type", proxy);
+  });
+
+  
+  Services.cache2.clear();
+
+  let [uri, title] = tests[0];
+
+  let promiseLoaded = promisePageLoaded(browser);
+  BrowserTestUtils.loadURI(browser, uri);
+  await promiseLoaded;
+
+  
+  await ContentTask.spawn(browser, null, function() {
+    is(content.document.documentURI.substring(0, 14), "about:neterror",
+       "Offline mode successfully simulated network outage.");
+  });
+  await checkBookmark(uri, title);
+
+  gBrowser.removeCurrentTab();
 });
 
 
 
 async function checkBookmark(uri, expected_title) {
-    is(gBrowser.selectedBrowser.currentURI.spec, uri,
-       "Trying to bookmark the expected uri");
+  is(gBrowser.selectedBrowser.currentURI.spec, uri,
+     "Trying to bookmark the expected uri");
 
-    let promiseBookmark = promiseOnBookmarkItemAdded(gBrowser.selectedBrowser.currentURI);
-    PlacesCommandHook.bookmarkCurrentPage(false);
-    await promiseBookmark;
+  let promiseBookmark = promiseOnBookmarkItemAdded(gBrowser.selectedBrowser.currentURI);
+  PlacesCommandHook.bookmarkCurrentPage(false);
+  await promiseBookmark;
 
-    let id = PlacesUtils.getMostRecentBookmarkForURI(PlacesUtils._uri(uri));
-    ok(id > 0, "Found the expected bookmark");
-    let title = PlacesUtils.bookmarks.getItemTitle(id);
-    is(title, expected_title, "Bookmark got a good default title.");
+  let id = PlacesUtils.getMostRecentBookmarkForURI(PlacesUtils._uri(uri));
+  ok(id > 0, "Found the expected bookmark");
+  let title = PlacesUtils.bookmarks.getItemTitle(id);
+  is(title, expected_title, "Bookmark got a good default title.");
 
-    PlacesUtils.bookmarks.removeItem(id);
+  PlacesUtils.bookmarks.removeItem(id);
 }
 
 
@@ -89,9 +89,9 @@ async function checkBookmark(uri, expected_title) {
 function promisePageLoaded(browser) {
   return ContentTask.spawn(browser, null, async function() {
     await ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", true,
-        (event) => {
-          return event.originalTarget === content.document &&
-                 event.target.location.href !== "about:blank"
-        });
+      (event) => {
+        return event.originalTarget === content.document &&
+               event.target.location.href !== "about:blank"
+      });
   });
 }
