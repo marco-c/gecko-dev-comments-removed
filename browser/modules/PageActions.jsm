@@ -11,6 +11,7 @@ this.EXPORTED_SYMBOLS = [
   
   
   
+  
 ];
 
 const { utils: Cu } = Components;
@@ -24,6 +25,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
 
+const ACTION_ID_BOOKMARK = "bookmark";
 const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
 
@@ -228,7 +230,17 @@ this.PageActions = {
       
       this._persistedActions.ids[action.id] = true;
       if (action.shownInUrlbar) {
-        this._persistedActions.idsInUrlbar.push(action.id);
+        
+        let index =
+          !action.__urlbarInsertBeforeActionID ? -1 :
+          this._persistedActions.idsInUrlbar.indexOf(
+            action.__urlbarInsertBeforeActionID
+          );
+        if (index < 0) {
+          
+          index = this._persistedActions.idsInUrlbar.length;
+        }
+        this._persistedActions.idsInUrlbar.splice(index, 0, action.id);
       }
       this._storePersistedActions();
     }
@@ -489,6 +501,11 @@ function Action(options) {
     
     
     _insertBeforeActionID: false,
+
+    
+    
+    
+    _urlbarInsertBeforeActionID: false,
 
     
     
@@ -878,7 +895,7 @@ this.PageActions.Button = Button;
 
 
 
-
+this.PageActions.ACTION_ID_BOOKMARK = ACTION_ID_BOOKMARK;
 this.PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
 
 
@@ -892,7 +909,7 @@ var gBuiltInActions = [
 
   
   {
-    id: "bookmark",
+    id: ACTION_ID_BOOKMARK,
     urlbarIDOverride: "star-button-box",
     _urlbarNodeInMarkup: true,
     title: "",
