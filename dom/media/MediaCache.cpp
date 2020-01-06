@@ -706,8 +706,9 @@ MediaCache::Flush()
   
   Truncate();
   NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
-  mBlockCache = nullptr;
-  Init();
+  
+  nsresult rv = mBlockCache->Init();
+  NS_ENSURE_SUCCESS_VOID(rv);
 }
 
 void
