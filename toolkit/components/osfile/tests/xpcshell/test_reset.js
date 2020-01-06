@@ -35,8 +35,12 @@ add_task(async function file_open_cannot_reset() {
   let thrown = false;
   try {
     await OS.File.resetWorker();
-  } catch (ex if ex.message.indexOf(OS.Path.basename(TEST_FILE)) != -1 ) {
-    thrown = true;
+  } catch (ex) {
+    if (ex.message.indexOf(OS.Path.basename(TEST_FILE)) != -1 ) {
+      thrown = true;
+    } else {
+      throw ex;
+    }
   }
   do_check_true(thrown);
 
@@ -52,8 +56,12 @@ add_task(async function dir_open_cannot_reset() {
   let thrown = false;
   try {
     await OS.File.resetWorker();
-  } catch (ex if ex.message.indexOf(OS.Path.basename(TEST_DIR)) != -1 ) {
-    thrown = true;
+  } catch (ex) {
+    if (ex.message.indexOf(OS.Path.basename(TEST_DIR)) != -1 ) {
+      thrown = true;
+    } else {
+      throw ex;
+    }
   }
   do_check_true(thrown);
 
