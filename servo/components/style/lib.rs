@@ -139,10 +139,6 @@ pub mod traversal;
 #[allow(non_camel_case_types)]
 pub mod values;
 
-
-
-pub use servo_arc as stylearc;
-
 use std::fmt;
 use style_traits::ToCss;
 
