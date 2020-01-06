@@ -23,15 +23,17 @@ this.LinksCache = class LinksCache {
 
 
 
-
-  constructor(linkObject, linkProperty, migrator = () => {}, shouldRefresh = () => {}) {
+  constructor(linkObject, linkProperty, properties = [], shouldRefresh = () => {}) {
     this.clear();
+
     
     this.linkGetter = options => {
       const ret = linkObject[linkProperty];
       return typeof ret === "function" ? ret.call(linkObject, options) : ret;
     };
-    this.migrator = migrator;
+
+    
+    this.migrateProperties = ["__sharedCache", ...properties];
     this.shouldRefresh = shouldRefresh;
   }
 
@@ -79,36 +81,37 @@ this.LinksCache = class LinksCache {
         }
 
         
-        const copied = (await this.linkGetter(options)).map(link => link &&
-          Object.assign({}, link));
+        resolve((await this.linkGetter(options)).map(link => {
+          
+          if (!link) {
+            return link;
+          }
 
-        
-        for (const newLink of copied) {
-          if (newLink) {
-            const oldLink = toMigrate.get(newLink.url);
-            if (oldLink) {
-              this.migrator(oldLink, newLink);
+          
+          const newLink = Object.assign({}, link);
+          const oldLink = toMigrate.get(newLink.url);
+          if (oldLink) {
+            for (const property of this.migrateProperties) {
+              const oldValue = oldLink[property];
+              if (oldValue) {
+                newLink[property] = oldValue;
+              }
             }
-
+          } else {
             
-            
-            newLink.__updateCache = function(prop) {
-              const val = this[prop];
-              if (val === undefined) {
-                delete newLink[prop];
-              } else {
-                newLink[prop] = val;
+            newLink.__sharedCache = {
+              
+              updateLink(property, value) {
+                newLink[property] = value;
               }
             };
           }
-        }
-
-        
-        resolve(copied);
+          return newLink;
+        }));
       });
     }
 
     
-    return this.cache;
+    return (await this.cache).map(link => link && Object.assign({}, link));
   }
 };

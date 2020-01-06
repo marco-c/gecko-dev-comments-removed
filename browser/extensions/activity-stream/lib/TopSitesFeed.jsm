@@ -33,11 +33,11 @@ this.TopSitesFeed = class TopSitesFeed {
     this._tippyTopProvider = new TippyTopProvider();
     this.dedupe = new Dedupe(this._dedupeKey);
     this.frecentCache = new LinksCache(NewTabUtils.activityStreamLinks,
-      "getTopSites", this.getLinkMigrator(), (oldOptions, newOptions) =>
+      "getTopSites", ["screenshot"], (oldOptions, newOptions) =>
         
         !(oldOptions.numItems >= newOptions.numItems));
-    this.pinnedCache = new LinksCache(NewTabUtils.pinnedLinks,
-      "links", this.getLinkMigrator(["favicon", "faviconSize"]));
+    this.pinnedCache = new LinksCache(NewTabUtils.pinnedLinks, "links",
+      ["favicon", "faviconSize", "screenshot"]);
   }
   _dedupeKey(site) {
     return site && site.hostname;
@@ -59,22 +59,6 @@ this.TopSitesFeed = class TopSitesFeed {
     }
   }
 
-  
-
-
-
-
-  getLinkMigrator(others = []) {
-    const properties = ["__fetchingScreenshot", "screenshot", ...others];
-    return (oldLink, newLink) => {
-      for (const property of properties) {
-        const oldValue = oldLink[property];
-        if (oldValue) {
-          newLink[property] = oldValue;
-        }
-      }
-    };
-  }
   async getLinksWithDefaults(action) {
     
     const numItems = Math.max(this.store.getState().Prefs.values.topSitesCount,
@@ -107,8 +91,8 @@ this.TopSitesFeed = class TopSitesFeed {
         try {
           NewTabUtils.activityStreamProvider._faviconBytesToDataURI(await
             NewTabUtils.activityStreamProvider._addFavicons([copy]));
-          copy.__updateCache("favicon");
-          copy.__updateCache("faviconSize");
+          copy.__sharedCache.updateLink("favicon", copy.favicon);
+          copy.__sharedCache.updateLink("faviconSize", copy.faviconSize);
         } catch (e) {
           
         }
@@ -135,8 +119,7 @@ this.TopSitesFeed = class TopSitesFeed {
         this._fetchIcon(link);
 
         
-        delete link.__fetchingScreenshot;
-        delete link.__updateCache;
+        delete link.__sharedCache;
       }
     }
 
@@ -176,12 +159,11 @@ this.TopSitesFeed = class TopSitesFeed {
         (!link.favicon || link.faviconSize < MIN_FAVICON_SIZE) &&
         !link.screenshot) {
       const {url} = link;
-      Screenshots.maybeGetAndSetScreenshot(link, url, "screenshot", screenshot => {
-        this.store.dispatch(ac.BroadcastToContent({
+      await Screenshots.maybeCacheScreenshot(link, url, "screenshot",
+        screenshot => this.store.dispatch(ac.BroadcastToContent({
           data: {screenshot, url},
           type: at.SCREENSHOT_UPDATED
-        }));
-      });
+        })));
     }
   }
 

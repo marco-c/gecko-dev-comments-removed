@@ -21,11 +21,16 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
   "resource://activity-stream/lib/Screenshots.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ProfileAge",
+  "resource://gre/modules/ProfileAge.jsm");
 
 const HIGHLIGHTS_MAX_LENGTH = 9;
 const HIGHLIGHTS_UPDATE_TIME = 15 * 60 * 1000; 
 const MANY_EXTRA_LENGTH = HIGHLIGHTS_MAX_LENGTH * 5 + TOP_SITES_SHOWMORE_LENGTH;
 const SECTION_ID = "highlights";
+const BOOKMARKS_THRESHOLD = 4000; 
+
+const ACTIVITY_STREAM_DEFAULT_RECENT = 5 * 24 * 60 * 60;
 
 this.HighlightsFeed = class HighlightsFeed {
   constructor() {
@@ -33,15 +38,8 @@ this.HighlightsFeed = class HighlightsFeed {
     this.highlightsLength = 0;
     this.dedupe = new Dedupe(this._dedupeKey);
     this.linksCache = new LinksCache(NewTabUtils.activityStreamLinks,
-      "getHighlights", (oldLink, newLink) => {
-        
-        for (const property of ["__fetchingScreenshot", "image"]) {
-          const oldValue = oldLink[property];
-          if (oldValue) {
-            newLink[property] = oldValue;
-          }
-        }
-      });
+      "getHighlights", ["image"]);
+    this._profileAge = 0;
   }
 
   _dedupeKey(site) {
@@ -59,6 +57,20 @@ this.HighlightsFeed = class HighlightsFeed {
 
   uninit() {
     SectionsManager.disableSection(SECTION_ID);
+  }
+
+  
+
+
+
+
+  async _getBookmarksThreshold() {
+    if (this._profileAge === 0) {
+      
+      this._profileAge = await (new ProfileAge()).created;
+    }
+    const defaultsThreshold = Date.now() - this._profileAge - BOOKMARKS_THRESHOLD;
+    return Math.min(ACTIVITY_STREAM_DEFAULT_RECENT, defaultsThreshold / 1000);
   }
 
   async fetchHighlights(broadcast = false) {
@@ -81,7 +93,10 @@ this.HighlightsFeed = class HighlightsFeed {
 
     
     
-    const manyPages = await this.linksCache.request({numItems: MANY_EXTRA_LENGTH});
+    const manyPages = await this.linksCache.request({
+      numItems: MANY_EXTRA_LENGTH,
+      bookmarkSecondsAgo: await this._getBookmarksThreshold()
+    });
 
     
     const checkedAdult = this.store.getState().Prefs.values.filterAdult ?
@@ -118,8 +133,7 @@ this.HighlightsFeed = class HighlightsFeed {
       hosts.add(hostname);
 
       
-      delete page.__fetchingScreenshot;
-      delete page.__updateCache;
+      delete page.__sharedCache;
 
       
       if (highlights.length === HIGHLIGHTS_MAX_LENGTH) {
@@ -139,7 +153,7 @@ this.HighlightsFeed = class HighlightsFeed {
   async fetchImage(page) {
     
     const {preview_image_url: imageUrl, url} = page;
-    Screenshots.maybeGetAndSetScreenshot(page, imageUrl || url, "image", image => {
+    Screenshots.maybeCacheScreenshot(page, imageUrl || url, "image", image => {
       SectionsManager.updateSectionCard(SECTION_ID, url, {image}, true);
     });
   }
@@ -166,6 +180,9 @@ this.HighlightsFeed = class HighlightsFeed {
         break;
       case at.PLACES_BOOKMARK_ADDED:
       case at.PLACES_BOOKMARK_REMOVED:
+        this.linksCache.expire();
+        this.fetchHighlights(false);
+        break;
       case at.TOP_SITES_UPDATED:
         this.fetchHighlights(false);
         break;
