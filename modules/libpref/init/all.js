@@ -1032,7 +1032,13 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
-pref("toolkit.asyncshutdown.crash_timeout", 60000);
+#ifndef MOZ_ASAN
+pref("toolkit.asyncshutdown.crash_timeout", 60000); 
+#else
+
+
+pref("toolkit.asyncshutdown.crash_timeout", 180000); 
+#endif // MOZ_ASAN
 
 pref("toolkit.asyncshutdown.log", false);
 
