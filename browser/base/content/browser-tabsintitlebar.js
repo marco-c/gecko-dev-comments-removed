@@ -150,17 +150,11 @@ var TabsInTitlebar = {
 
       
       
-      if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0") &&
-          (menubar.getAttribute("inactive") != "true" ||
-          menubar.getAttribute("autohide") != "true")) {
-        $("titlebar-buttonbox").style.removeProperty("height");
-      }
 
       
-      
-
-      
-      let tabsHeight = rect($("TabsToolbar")).height;
+      let tabsToolbar = $("TabsToolbar");
+      let tabsStyles = window.getComputedStyle(tabsToolbar);
+      let fullTabsHeight = rect(tabsToolbar).height + verticalMargins(tabsStyles);
       
       let captionButtonsBoxWidth = rect($("titlebar-buttonbox-container")).width;
 
@@ -182,12 +176,12 @@ var TabsInTitlebar = {
 
       
 
-      
-      
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10.0")) {
-        if (!menuHeight) {
-          titlebarContentHeight = tabsHeight;
+        if (!menuHeight && window.windowState == window.STATE_MAXIMIZED) {
+          titlebarContentHeight = Math.max(titlebarContentHeight, fullTabsHeight);
           $("titlebar-buttonbox").style.height = titlebarContentHeight + "px";
+        } else {
+          $("titlebar-buttonbox").style.removeProperty("height");
         }
       }
 
@@ -220,7 +214,7 @@ var TabsInTitlebar = {
 
       
       
-      let tabAndMenuHeight = tabsHeight + fullMenuHeight;
+      let tabAndMenuHeight = fullTabsHeight + fullMenuHeight;
 
       if (tabAndMenuHeight > titlebarContentHeight) {
         
