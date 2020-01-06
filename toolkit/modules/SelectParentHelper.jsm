@@ -26,12 +26,40 @@ var selectRect = null;
 var currentZoom = 1;
 var closedWithEnter = false;
 var customStylingEnabled = Services.prefs.getBoolPref("dom.forms.select.customstyling");
-var usedSelectBackgroundColor;
 
 this.SelectParentHelper = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   populate(menulist, items, selectedIndex, zoom, uaBackgroundColor, uaColor,
-           uaSelectBackgroundColor, uaSelectColor, selectBackgroundColor, selectColor,
-           selectTextShadow) {
+           uaSelectBackgroundColor, uaSelectColor, selectBackgroundColor,
+           selectColor, selectTextShadow) {
     
     menulist.menupopup.textContent = "";
     let stylesheet = menulist.querySelector("#ContentSelectDropdownStylesheet");
@@ -50,6 +78,9 @@ this.SelectParentHelper = {
     }
 
     let ruleBody = "";
+    let usedSelectBackgroundColor;
+    let usedSelectColor;
+    let selectBackgroundSet = false;
 
     
     
@@ -58,27 +89,41 @@ this.SelectParentHelper = {
         selectBackgroundColor != "rgba(0, 0, 0, 0)") {
       ruleBody = `background-image: linear-gradient(${selectBackgroundColor}, ${selectBackgroundColor});`;
       usedSelectBackgroundColor = selectBackgroundColor;
+      selectBackgroundSet = true;
     } else {
       usedSelectBackgroundColor = uaSelectBackgroundColor;
     }
 
     if (customStylingEnabled &&
         selectColor != uaSelectColor &&
-        selectColor != selectBackgroundColor &&
-        (selectBackgroundColor != "rgba(0, 0, 0, 0)" ||
-         selectColor != uaSelectBackgroundColor)) {
+        selectColor != usedSelectBackgroundColor) {
       ruleBody += `color: ${selectColor};`;
+      usedSelectColor = selectColor;
+    } else {
+      usedSelectColor = uaColor;
     }
 
     if (customStylingEnabled &&
         selectTextShadow != "none") {
       ruleBody += `text-shadow: ${selectTextShadow};`;
+      sheet.insertRule(`#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
+        text-shadow: none;
+      }`, 0);
     }
 
     if (ruleBody) {
       sheet.insertRule(`#ContentSelectDropdown > menupopup {
         ${ruleBody}
       }`, 0);
+      sheet.insertRule(`#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
+         color: inherit;
+      }`, 0);
+    }
+
+    
+    
+    
+    if (selectBackgroundSet) {
       menulist.menupopup.setAttribute("customoptionstyling", "true");
     } else {
       menulist.menupopup.removeAttribute("customoptionstyling");
@@ -87,7 +132,7 @@ this.SelectParentHelper = {
     currentZoom = zoom;
     currentMenulist = menulist;
     populateChildren(menulist, items, selectedIndex, zoom,
-                     uaBackgroundColor, uaColor, sheet);
+                     usedSelectBackgroundColor, usedSelectColor, selectTextShadow, selectBackgroundSet, sheet);
   },
 
   open(browser, menulist, rect, isOpenedViaTouch) {
@@ -253,10 +298,36 @@ this.SelectParentHelper = {
 
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function populateChildren(menulist, options, selectedIndex, zoom,
-                          uaBackgroundColor, uaColor, sheet,
+                          usedSelectBackgroundColor, usedSelectColor,
+                          selectTextShadow, selectBackgroundSet, sheet,
                           parentElement = null, isGroupDisabled = false,
-                          adjustedTextSize = -1, addSearch = true, nthChildIndex = 1) {
+                          adjustedTextSize = -1, addSearch = true,
+                          nthChildIndex = 1) {
   let element = menulist.menupopup;
   let win = element.ownerGlobal;
 
@@ -284,21 +355,30 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     item.setAttribute("tooltiptext", option.tooltip);
 
     let ruleBody = "";
+    let usedBackgroundColor;
+    let optionBackgroundSet = false;
+
     if (customStylingEnabled &&
         option.backgroundColor &&
         option.backgroundColor != "rgba(0, 0, 0, 0)" &&
         option.backgroundColor != usedSelectBackgroundColor) {
       ruleBody = `background-color: ${option.backgroundColor};`;
+      usedBackgroundColor = option.backgroundColor;
+      optionBackgroundSet = true;
+    } else {
+      usedBackgroundColor = usedSelectBackgroundColor;
     }
 
     if (customStylingEnabled &&
         option.color &&
-        option.color != uaColor) {
+        option.color != usedBackgroundColor &&
+        option.color != usedSelectColor) {
       ruleBody += `color: ${option.color};`;
     }
 
     if (customStylingEnabled &&
-        option.textShadow) {
+        option.textShadow &&
+        option.textShadow != selectTextShadow) {
       ruleBody += `text-shadow: ${option.textShadow};`;
     }
 
@@ -307,7 +387,7 @@ function populateChildren(menulist, options, selectedIndex, zoom,
         ${ruleBody}
       }`, 0);
 
-      if (option.textShadow) {
+      if (option.textShadow && option.textShadow != selectTextShadow) {
         
         
         
@@ -315,7 +395,10 @@ function populateChildren(menulist, options, selectedIndex, zoom,
           text-shadow: none;
         }`, 0);
       }
+    }
 
+    if (customStylingEnabled &&
+        (optionBackgroundSet || selectBackgroundSet)) {
       item.setAttribute("customoptionstyling", "true");
     } else {
       item.removeAttribute("customoptionstyling");
@@ -333,7 +416,8 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     if (isOptGroup) {
       nthChildIndex =
         populateChildren(menulist, option.children, selectedIndex, zoom,
-                         uaBackgroundColor, uaColor, sheet,
+                         usedSelectBackgroundColor, usedSelectColor,
+                         selectTextShadow, selectBackgroundSet, sheet,
                          item, isDisabled, adjustedTextSize, false, nthChildIndex);
     } else {
       if (option.index == selectedIndex) {
