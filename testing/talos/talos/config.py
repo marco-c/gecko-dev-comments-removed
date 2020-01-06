@@ -293,7 +293,6 @@ def update_prefs(config):
     
     if config['e10s']:
         config['preferences']['browser.tabs.remote.autostart'] = True
-        config['preferences']['extensions.e10sBlocksEnabling'] = False
     else:
         config['preferences']['browser.tabs.remote.autostart'] = False
 

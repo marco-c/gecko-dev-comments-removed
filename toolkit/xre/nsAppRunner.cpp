@@ -5091,7 +5091,7 @@ enum {
   
   
   
-  kE10sDisabledForAddons = 7,
+  
   kE10sForceDisabled = 8,
   
   

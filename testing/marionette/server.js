@@ -211,9 +211,6 @@ const RECOMMENDED_PREFS = new Map([
   ["extensions.enabledScopes", 5],
 
   
-  ["extensions.e10sBlocksEnabling", false],
-
-  
   ["extensions.getAddons.cache.enabled", false],
 
   

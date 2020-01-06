@@ -348,9 +348,6 @@ user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 
 
-user_pref("extensions.e10sBlocksEnabling", false);
-
-
 
 user_pref("lightweightThemes.selectedThemeID", "");
 

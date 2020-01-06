@@ -1588,12 +1588,6 @@ pref("extensions.allow-non-mpc-extensions", false);
 pref("extensions.legacy.enabled", false);
 
 
-#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
-pref("extensions.e10sBlocksEnabling", true);
-pref("extensions.e10sMultiBlocksEnabling", true);
-#endif
-
-
 
 pref("dom.ipc.cpow.timeout", 500);
 

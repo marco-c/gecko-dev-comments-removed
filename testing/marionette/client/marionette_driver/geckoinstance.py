@@ -43,8 +43,6 @@ class GeckoInstance(object):
         "extensions.autoDisableScopes": 0,
         "extensions.enabledScopes": 5,
         
-        "extensions.e10sBlocksEnabling": False,
-        
         "extensions.getAddons.cache.enabled": False,
         
         "extensions.installDistroAddons": False,
