@@ -2,10 +2,12 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "ScrollbarSampler",
-                                  "resource:///modules/ScrollbarSampler.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AppMenuNotifications",
                                   "resource://gre/modules/AppMenuNotifications.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
+                                  "resource://gre/modules/NewTabUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ScrollbarSampler",
+                                  "resource:///modules/ScrollbarSampler.jsm");
 
 
 
@@ -25,6 +27,7 @@ const PanelUI = {
       mainView: "appMenu-mainView",
       multiView: "appMenu-multiView",
       helpView: "PanelUI-helpView",
+      libraryView: "appMenu-libraryView",
       menuButton: "PanelUI-menu-button",
       panel: "appMenu-popup",
       notificationPanel: "appMenu-notification-popup",
@@ -74,6 +77,12 @@ const PanelUI = {
       window.addEventListener("MozDOMFullscreen:Entered", this);
       window.addEventListener("MozDOMFullscreen:Exited", this);
     }
+
+    XPCOMUtils.defineLazyPreferenceGetter(this, "libraryRecentHighlightsEnabled",
+      "browser.library.activity-stream.enabled", false, (pref, previousValue, newValue) => {
+        if (!newValue)
+          this.clearLibraryRecentHighlights();
+      });
 
     window.addEventListener("activate", this);
     window.matchMedia("(-moz-overlay-scrollbars)").addListener(this._overlayScrollListenerBoundFn);
@@ -150,6 +159,7 @@ const PanelUI = {
     window.matchMedia("(-moz-overlay-scrollbars)").removeListener(this._overlayScrollListenerBoundFn);
     CustomizableUI.removeListener(this);
     this._overlayScrollListenerBoundFn = null;
+    this.libraryView.removeEventListener("ViewShowing", this);
   },
 
   
@@ -293,6 +303,11 @@ const PanelUI = {
       case "activate":
         this._updateNotifications();
         break;
+      case "ViewShowing":
+        if (aEvent.target == this.libraryView) {
+          this.onLibraryViewShowing(aEvent.target);
+        }
+        break;
     }
   },
 
@@ -383,6 +398,8 @@ const PanelUI = {
       Cu.reportError("Expected an anchor when opening subview with id: " + aViewId);
       return;
     }
+
+    this.ensureLibraryInitialized(viewNode);
 
     let container = aAnchor.closest("panelmultiview,photonpanelmultiview");
     if (container) {
@@ -479,6 +496,95 @@ const PanelUI = {
         triggerEvent: domEvent,
       });
     }
+  },
+
+  
+
+
+
+
+  ensureLibraryInitialized(viewNode) {
+    if (viewNode != this.libraryView || viewNode._initialized)
+      return;
+
+    viewNode._initialized = true;
+    viewNode.addEventListener("ViewShowing", this);
+  },
+
+  
+
+
+
+
+
+
+  async onLibraryViewShowing(viewNode) {
+    if (this._loadingRecentHighlights) {
+      return;
+    }
+    this._loadingRecentHighlights = true;
+
+    
+    
+    let container = this.clearLibraryRecentHighlights();
+    if (!this.libraryRecentHighlightsEnabled) {
+      this._loadingRecentHighlights = false;
+      return;
+    }
+
+    let highlights = await NewTabUtils.activityStreamLinks.getHighlights({ withFavicons: true });
+    
+    if (!highlights.length || viewNode.panelMultiView.getAttribute("panelopen") != "true") {
+      this._loadingRecentHighlights = false;
+      return;
+    }
+
+    container.hidden = container.previousSibling.hidden =
+      container.previousSibling.previousSibling.hidden = false;
+    let fragment = document.createDocumentFragment();
+    for (let highlight of highlights) {
+      let button = document.createElement("toolbarbutton");
+      button.classList.add("subviewbutton", "highlight", "subviewbutton-iconic", "bookmark-item");
+      let title = highlight.title || highlight.url;
+      button.setAttribute("label", title);
+      button.setAttribute("tooltiptext", title);
+      button.setAttribute("type", "highlight-" + highlight.type);
+      button.setAttribute("onclick", "PanelUI.onLibraryHighlightClick(event)");
+      if (highlight.favicon) {
+        button.setAttribute("image", highlight.favicon);
+      }
+      button._highlight = highlight;
+      fragment.appendChild(button);
+    }
+    container.appendChild(fragment);
+
+    this._loadingRecentHighlights = false;
+  },
+
+  
+
+
+  clearLibraryRecentHighlights() {
+    let container = document.getElementById("appMenu-library-recentHighlights")
+    while (container.firstChild) {
+      container.firstChild.remove();
+    }
+    container.hidden = container.previousSibling.hidden =
+      container.previousSibling.previousSibling.hidden = true;
+    return container;
+  },
+
+  
+
+
+
+
+  onLibraryHighlightClick(event) {
+    let button = event.target;
+    if (event.button > 1 || !button._highlight) {
+      return;
+    }
+    window.openUILink(button._highlight.url, event);
   },
 
   
