@@ -399,8 +399,9 @@ ScaledFontFontconfig::CreateFromInstanceData(const InstanceData& aInstanceData,
     gfxWarning() << "Failing initializing Fontconfig pattern for scaled font";
     return nullptr;
   }
-  if (aUnscaledFont->GetFace()) {
-    FcPatternAddFTFace(pattern, FC_FT_FACE, aUnscaledFont->GetFace());
+  FT_Face face = aUnscaledFont->GetFace();
+  if (face) {
+    FcPatternAddFTFace(pattern, FC_FT_FACE, face);
   } else {
     FcPatternAddString(pattern, FC_FILE, reinterpret_cast<const FcChar8*>(aUnscaledFont->GetFile()));
     FcPatternAddInteger(pattern, FC_INDEX, aUnscaledFont->GetIndex());
@@ -420,10 +421,17 @@ ScaledFontFontconfig::CreateFromInstanceData(const InstanceData& aInstanceData,
     
     
     aNativeFontResource->AddRef();
-    if (cairo_font_face_set_user_data(font,
-                                      &sNativeFontResourceKey,
-                                      aNativeFontResource,
-                                      ReleaseNativeFontResource) != CAIRO_STATUS_SUCCESS) {
+    
+    
+    
+    FT_Library library = face ? face->glyph->library : Factory::GetFTLibrary();
+    Factory::LockFTLibrary(library);
+    cairo_status_t err = cairo_font_face_set_user_data(font,
+                                                       &sNativeFontResourceKey,
+                                                       aNativeFontResource,
+                                                       ReleaseNativeFontResource);
+    Factory::UnlockFTLibrary(library);
+    if (err != CAIRO_STATUS_SUCCESS) {
       gfxWarning() << "Failed binding NativeFontResource to Cairo font face";
       aNativeFontResource->Release();
       cairo_font_face_destroy(font);
