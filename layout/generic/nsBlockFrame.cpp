@@ -4716,6 +4716,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
     
     aLine->MarkDirty();
+    *aKeepReflowGoing = false;
     return true;
   }
 
@@ -4727,6 +4728,7 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     if (ShouldAvoidBreakInside(aState.mReflowInput)) {
       
       aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+      *aKeepReflowGoing = false;
     } else {
       
       
@@ -4735,6 +4737,10 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
     return true;
   }
 
+  
+  
+  
+  
   aState.mBCoord = newBCoord;
 
   
