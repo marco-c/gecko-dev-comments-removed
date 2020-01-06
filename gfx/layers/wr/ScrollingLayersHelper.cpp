@@ -59,8 +59,19 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   
   
   
-  if (const Maybe<LayerClip>& scrolledClip = layer->GetScrolledClip()) {
-    PushLayerClip(scrolledClip.ref(), aStackingContext);
+  if (Maybe<LayerClip> scrolledClip = layer->GetScrolledClip()) {
+    LayerRect clipRect = IntRectToRect(ViewAs<LayerPixel>(
+        scrolledClip->GetClipRect(),
+        PixelCastJustification::MovingDownToChildren));
+    Maybe<WrImageMask> mask;
+    if (Maybe<size_t> maskLayerIndex = scrolledClip->GetMaskLayerIndex()) {
+      Layer* maskLayer = layer->GetAncestorMaskLayerAt(maskLayerIndex.value());
+      WebRenderLayer* maskWrLayer = WebRenderLayer::ToWebRenderLayer(maskLayer);
+      
+      mask = maskWrLayer->RenderMaskLayer(aStackingContext, maskLayer->GetTransform());
+    }
+    mBuilder->PushClip(aStackingContext.ToRelativeWrRect(clipRect),
+        mask.ptrOr(nullptr));
   }
 
   
@@ -101,22 +112,6 @@ ScrollingLayersHelper::PushLayerLocalClip(const StackingContextHelper& aStacking
     mBuilder->PushClip(aStackingContext.ToRelativeWrRect(clipRect), mask.ptrOr(nullptr));
     mPushedLayerLocalClip = true;
   }
-}
-
-void
-ScrollingLayersHelper::PushLayerClip(const LayerClip& aClip,
-                                     const StackingContextHelper& aSc)
-{
-  LayerRect clipRect = IntRectToRect(ViewAs<LayerPixel>(aClip.GetClipRect(),
-        PixelCastJustification::MovingDownToChildren));
-  Maybe<WrImageMask> mask;
-  if (Maybe<size_t> maskLayerIndex = aClip.GetMaskLayerIndex()) {
-    Layer* maskLayer = mLayer->GetLayer()->GetAncestorMaskLayerAt(maskLayerIndex.value());
-    WebRenderLayer* maskWrLayer = WebRenderLayer::ToWebRenderLayer(maskLayer);
-    
-    mask = maskWrLayer->RenderMaskLayer(aSc, maskLayer->GetTransform());
-  }
-  mBuilder->PushClip(aSc.ToRelativeWrRect(clipRect), mask.ptrOr(nullptr));
 }
 
 ScrollingLayersHelper::~ScrollingLayersHelper()
