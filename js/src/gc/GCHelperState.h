@@ -15,6 +15,10 @@ struct JSRuntime;
 namespace js {
 class AutoLockHelperThreadState;
 
+namespace gc {
+class ArenaLists;
+} 
+
 
 
 
