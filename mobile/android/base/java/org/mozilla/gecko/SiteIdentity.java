@@ -26,8 +26,6 @@ public class SiteIdentity {
     private String mVerifier;
     private String mOrigin;
 
-    
-    
     public enum SecurityMode {
         UNKNOWN,
         IDENTIFIED,
@@ -35,16 +33,12 @@ public class SiteIdentity {
         CHROMEUI
     }
 
-    
-    
     public enum MixedMode {
         UNKNOWN,
         BLOCKED,
         LOADED
     }
 
-    
-    
     public enum TrackingMode {
         UNKNOWN,
         TRACKING_CONTENT_BLOCKED,
