@@ -135,39 +135,10 @@ using namespace mozilla;
 
 struct PrefHashEntry;
 
-extern PLDHashTable* gHashTable;
-
 typedef nsTArray<mozilla::UniqueFreePtr<char>> PrefSaveData;
 
-PrefSaveData
-pref_savePrefs(PLDHashTable* aTable);
-
-nsresult
-pref_SetPref(const mozilla::dom::PrefSetting& aPref);
-
-#ifdef DEBUG
-void
-pref_SetInitPhase(pref_initPhase aPhase);
-
-pref_initPhase
-pref_GetInitPhase();
-
-void
-pref_SetWatchingPref(bool aWatching);
-#endif
-
-PrefHashEntry*
+static PrefHashEntry*
 pref_HashTableLookup(const char* aKey);
-
-bool
-pref_EntryHasAdvisablySizedValues(PrefHashEntry* aHashEntry);
-
-void
-pref_GetPrefFromEntry(PrefHashEntry* aHashEntry,
-                      mozilla::dom::PrefSetting* aPref);
-
-size_t
-pref_SizeOfPrivateData(mozilla::MallocSizeOf aMallocSizeOf);
 
 
 static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
@@ -179,18 +150,6 @@ union PrefValue {
   int32_t mIntVal;
   bool mBoolVal;
 };
-
-
-
-void
-PREF_Init();
-
-
-
-void
-PREF_Cleanup();
-void
-PREF_CleanupPrefs();
 
 
 
@@ -301,99 +260,8 @@ struct PrefHashEntry : PLDHashEntryHdr
   PrefValue mUserPref;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult
-PREF_SetCharPref(const char* aPref, const char* aVal, bool aSetDefault = false);
-nsresult
-PREF_SetIntPref(const char* aPref, int32_t aVal, bool aSetDefault = false);
-nsresult
-PREF_SetBoolPref(const char* aPref, bool aVal, bool aSetDefault = false);
-
-bool
-PREF_HasUserPref(const char* aPrefName);
-
-
-
-
-
-
-
-
-
-
-nsresult
-PREF_GetIntPref(const char* aPref, int32_t* aValueOut, bool aGetDefault);
-nsresult
-PREF_GetBoolPref(const char* aPref, bool* aValueOut, bool aGetDefault);
-
-
-
-
-nsresult
-PREF_CopyCharPref(const char* aPref, char** aValueOut, bool aGetDefault);
-
-
-
-bool
-PREF_PrefIsLocked(const char* aPrefName);
-
-
-
-nsresult
-PREF_LockPref(const char* aKey, bool aLockIt);
-
-PrefType
-PREF_GetPrefType(const char* aPrefName);
-
-
-nsresult
-PREF_DeleteBranch(const char* aBranchName);
-
-
-nsresult
+static nsresult
 PREF_ClearUserPref(const char* aPrefName);
-
-
-nsresult
-PREF_ClearAllUserPrefs();
-
-
-
-
-
-void
-PREF_RegisterCallback(const char* aPrefNode,
-                      PrefChangedFunc aCallback,
-                      void* aData,
-                      bool aIsPriority);
-nsresult
-PREF_UnregisterCallback(const char* aPrefNode,
-                        PrefChangedFunc aCallback,
-                        void* aData);
-
-
-void
-PREF_ReaderCallback(void* aClosure,
-                    const char* aPref,
-                    PrefValue aValue,
-                    PrefType aType,
-                    bool aIsDefault,
-                    bool aIsStickyDefault);
-
-
-typedef void (*PrefsDirtyFunc)();
-void PREF_SetDirtyCallback(PrefsDirtyFunc);
 
 static void
 ClearPrefEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
@@ -443,7 +311,7 @@ struct CallbackNode
   CallbackNode* mNext;
 };
 
-PLDHashTable* gHashTable;
+static PLDHashTable* gHashTable;
 
 static ArenaAllocator<8192, 4> gPrefNameArena;
 
@@ -466,9 +334,10 @@ static PLDHashTableOps pref_HashTableOps = {
   nullptr,
 };
 
+typedef void (*PrefsDirtyFunc)();
 static PrefsDirtyFunc gDirtyCallback = nullptr;
 
-inline void
+static inline void
 MakeDirtyCallback()
 {
   
@@ -481,7 +350,8 @@ MakeDirtyCallback()
   }
 }
 
-void
+
+static void
 PREF_SetDirtyCallback(PrefsDirtyFunc aFunc)
 {
   gDirtyCallback = aFunc;
@@ -510,7 +380,9 @@ pref_HashPref(const char* aKey,
 
 #define PREF_HASHTABLE_INITIAL_LENGTH 1024
 
-void
+
+
+static void
 PREF_Init()
 {
   if (!gHashTable) {
@@ -520,7 +392,18 @@ PREF_Init()
 }
 
 
-void
+static void
+PREF_CleanupPrefs()
+{
+  if (gHashTable) {
+    delete gHashTable;
+    gHashTable = nullptr;
+    gPrefNameArena.Clear();
+  }
+}
+
+
+static void
 PREF_Cleanup()
 {
   NS_ASSERTION(!gCallbacksInProgress,
@@ -538,17 +421,6 @@ PREF_Cleanup()
   gLastPriorityNode = gFirstCallback = nullptr;
 
   PREF_CleanupPrefs();
-}
-
-
-void
-PREF_CleanupPrefs()
-{
-  if (gHashTable) {
-    delete gHashTable;
-    gHashTable = nullptr;
-    gPrefNameArena.Clear();
-  }
 }
 
 
@@ -601,7 +473,19 @@ StrEscape(const char* aOriginal, nsCString& aResult)
 
 
 
-nsresult
+
+
+
+
+
+
+
+
+
+
+
+
+static nsresult
 PREF_SetCharPref(const char* aPrefName, const char* aValue, bool aSetDefault)
 {
   if (strlen(aValue) > MAX_PREF_LENGTH) {
@@ -615,7 +499,8 @@ PREF_SetCharPref(const char* aPrefName, const char* aValue, bool aSetDefault)
     aPrefName, pref, PrefType::String, aSetDefault ? kPrefSetDefault : 0);
 }
 
-nsresult
+
+static nsresult
 PREF_SetIntPref(const char* aPrefName, int32_t aValue, bool aSetDefault)
 {
   PrefValue pref;
@@ -625,7 +510,8 @@ PREF_SetIntPref(const char* aPrefName, int32_t aValue, bool aSetDefault)
     aPrefName, pref, PrefType::Int, aSetDefault ? kPrefSetDefault : 0);
 }
 
-nsresult
+
+static nsresult
 PREF_SetBoolPref(const char* aPrefName, bool aValue, bool aSetDefault)
 {
   PrefValue pref;
@@ -664,7 +550,7 @@ SetPrefValue(const char* aPrefName,
   }
 }
 
-nsresult
+static nsresult
 pref_SetPref(const dom::PrefSetting& aPref)
 {
   const char* prefName = aPref.name().get();
@@ -691,7 +577,7 @@ pref_SetPref(const dom::PrefSetting& aPref)
   return rv;
 }
 
-PrefSaveData
+static PrefSaveData
 pref_savePrefs(PLDHashTable* aTable)
 {
   PrefSaveData savedPrefs(aTable->EntryCount());
@@ -742,7 +628,7 @@ pref_savePrefs(PLDHashTable* aTable)
   return savedPrefs;
 }
 
-bool
+static bool
 pref_EntryHasAdvisablySizedValues(PrefHashEntry* aHashEntry)
 {
   if (aHashEntry->mPrefFlags.GetPrefType() != PrefType::String) {
@@ -799,7 +685,7 @@ GetPrefValueFromEntry(PrefHashEntry* aHashEntry,
   }
 }
 
-void
+static void
 pref_GetPrefFromEntry(PrefHashEntry* aHashEntry, dom::PrefSetting* aPref)
 {
   aPref->name() = aHashEntry->mKey;
@@ -822,7 +708,7 @@ pref_GetPrefFromEntry(PrefHashEntry* aHashEntry, dom::PrefSetting* aPref)
               aPref->userValue().get_PrefValue().type()));
 }
 
-bool
+static bool
 PREF_HasUserPref(const char* aPrefName)
 {
   if (!gHashTable) {
@@ -833,7 +719,8 @@ PREF_HasUserPref(const char* aPrefName)
   return pref && pref->mPrefFlags.HasUserValue();
 }
 
-nsresult
+
+static nsresult
 PREF_CopyCharPref(const char* aPrefName, char** aValueOut, bool aGetDefault)
 {
   if (!gHashTable) {
@@ -861,7 +748,16 @@ PREF_CopyCharPref(const char* aPrefName, char** aValueOut, bool aGetDefault)
   return rv;
 }
 
-nsresult
+
+
+
+
+
+
+
+
+
+static nsresult
 PREF_GetIntPref(const char* aPrefName, int32_t* aValueOut, bool aGetDefault)
 {
   if (!gHashTable) {
@@ -889,7 +785,8 @@ PREF_GetIntPref(const char* aPrefName, int32_t* aValueOut, bool aGetDefault)
   return rv;
 }
 
-nsresult
+
+static nsresult
 PREF_GetBoolPref(const char* aPrefName, bool* aValueOut, bool aGetDefault)
 {
   if (!gHashTable) {
@@ -918,7 +815,8 @@ PREF_GetBoolPref(const char* aPrefName, bool* aValueOut, bool aGetDefault)
   return rv;
 }
 
-nsresult
+
+static nsresult
 PREF_DeleteBranch(const char* aBranchName)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -959,7 +857,8 @@ PREF_DeleteBranch(const char* aBranchName)
   return NS_OK;
 }
 
-nsresult
+
+static nsresult
 PREF_ClearUserPref(const char* aPrefName)
 {
   if (!gHashTable) {
@@ -980,7 +879,8 @@ PREF_ClearUserPref(const char* aPrefName)
   return NS_OK;
 }
 
-nsresult
+
+static nsresult
 PREF_ClearAllUserPrefs()
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1011,7 +911,9 @@ PREF_ClearAllUserPrefs()
   return NS_OK;
 }
 
-nsresult
+
+
+static nsresult
 PREF_LockPref(const char* aKey, bool aLockIt)
 {
   if (!gHashTable) {
@@ -1100,19 +1002,19 @@ static pref_initPhase gPhase = START;
 
 static bool gWatchingPref = false;
 
-void
+static void
 pref_SetInitPhase(pref_initPhase aPhase)
 {
   gPhase = aPhase;
 }
 
-pref_initPhase
+static pref_initPhase
 pref_GetInitPhase()
 {
   return gPhase;
 }
 
-void
+static void
 pref_SetWatchingPref(bool aWatching)
 {
   gWatchingPref = aWatching;
@@ -1128,7 +1030,7 @@ struct StringComparator
   int operator()(const char* aString) const { return strcmp(mKey, aString); }
 };
 
-bool
+static bool
 InInitArray(const char* aKey)
 {
   size_t prefsLen;
@@ -1152,7 +1054,7 @@ public:
 
 #endif 
 
-PrefHashEntry*
+static PrefHashEntry*
 pref_HashTableLookup(const char* aKey)
 {
   MOZ_ASSERT(NS_IsMainThread() || mozilla::ServoStyleSet::IsInServoTraversal());
@@ -1173,7 +1075,7 @@ pref_HashTableLookup(const char* aKey)
   return static_cast<PrefHashEntry*>(gHashTable->Search(aKey));
 }
 
-nsresult
+static nsresult
 pref_HashPref(const char* aKey,
               PrefValue aValue,
               PrefType aType,
@@ -1264,7 +1166,7 @@ pref_HashPref(const char* aKey,
   return NS_OK;
 }
 
-size_t
+static size_t
 pref_SizeOfPrivateData(MallocSizeOf aMallocSizeOf)
 {
   size_t n = gPrefNameArena.SizeOfExcludingThis(aMallocSizeOf);
@@ -1275,7 +1177,7 @@ pref_SizeOfPrivateData(MallocSizeOf aMallocSizeOf)
   return n;
 }
 
-PrefType
+static PrefType
 PREF_GetPrefType(const char* aPrefName)
 {
   if (gHashTable) {
@@ -1287,7 +1189,9 @@ PREF_GetPrefType(const char* aPrefName)
   return PrefType::Invalid;
 }
 
-bool
+
+
+static bool
 PREF_PrefIsLocked(const char* aPrefName)
 {
   bool result = false;
@@ -1302,7 +1206,8 @@ PREF_PrefIsLocked(const char* aPrefName)
 }
 
 
-void
+
+static void
 PREF_RegisterCallback(const char* aPrefNode,
                       PrefChangedFunc aCallback,
                       void* aData,
@@ -1336,7 +1241,7 @@ PREF_RegisterCallback(const char* aPrefNode,
 }
 
 
-CallbackNode*
+static CallbackNode*
 pref_RemoveCallbackNode(CallbackNode* aNode, CallbackNode* aPrevNode)
 {
   NS_PRECONDITION(!aPrevNode || aPrevNode->mNext == aNode, "invalid params");
@@ -1361,7 +1266,8 @@ pref_RemoveCallbackNode(CallbackNode* aNode, CallbackNode* aPrevNode)
 }
 
 
-nsresult
+
+static nsresult
 PREF_UnregisterCallback(const char* aPrefNode,
                         PrefChangedFunc aCallback,
                         void* aData)
@@ -1433,7 +1339,8 @@ pref_DoCallback(const char* aChangedPref)
   return rv;
 }
 
-void
+
+static void
 PREF_ReaderCallback(void* aClosure,
                     const char* aPref,
                     PrefValue aValue,
@@ -1501,33 +1408,6 @@ struct PrefParseState
   bool mIsDefault;       
   bool mIsStickyDefault; 
 };
-
-
-
-
-
-
-
-
-
-
-void
-PREF_InitParseState(PrefParseState* aPS,
-                    PrefReader aReader,
-                    PrefParseErrorReporter aReporter,
-                    void* aClosure);
-
-
-void
-PREF_FinalizeParseState(PrefParseState* aPS);
-
-
-
-
-
-
-bool
-PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen);
 
 
 enum
@@ -1663,7 +1543,16 @@ pref_DoCallback(PrefParseState* aPS)
   return true;
 }
 
-void
+
+
+
+
+
+
+
+
+
+static void
 PREF_InitParseState(PrefParseState* aPS,
                     PrefReader aReader,
                     PrefParseErrorReporter aReporter,
@@ -1675,7 +1564,8 @@ PREF_InitParseState(PrefParseState* aPS,
   aPS->mReporter = aReporter;
 }
 
-void
+
+static void
 PREF_FinalizeParseState(PrefParseState* aPS)
 {
   if (aPS->mLb) {
@@ -1703,7 +1593,13 @@ PREF_FinalizeParseState(PrefParseState* aPS)
 
 
 
-bool
+
+
+
+
+
+
+static bool
 PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 {
   const char* end;
@@ -3428,8 +3324,6 @@ nsRelativeFilePref::SetRelativeToKey(const nsACString& aRelativeToKey)
 
 
 
-class PrefCallback;
-
 namespace mozilla {
 
 #define INITIAL_PREF_FILES 10
@@ -3479,9 +3373,6 @@ pref_InitInitialObjects();
 
 static nsresult
 pref_LoadPrefsInDirList(const char* aListId);
-
-static nsresult
-ReadExtensionPrefs(nsIFile* aFile);
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
 static const char kOldTelemetryPref[] = "toolkit.telemetry.enabledPreRelease";
@@ -4126,7 +4017,7 @@ NS_INTERFACE_MAP_END
 
 
 
-InfallibleTArray<Preferences::PrefSetting>* gInitPrefs;
+static InfallibleTArray<Preferences::PrefSetting>* gInitPrefs;
 
  void
 Preferences::SetInitPreferences(nsTArray<PrefSetting>* aPrefs)
