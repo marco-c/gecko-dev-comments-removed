@@ -330,7 +330,7 @@ public:
   
   Maybe<wr::WrClipId> TopmostClipId();
   
-  Maybe<layers::FrameMetrics::ViewID> TopmostScrollId();
+  layers::FrameMetrics::ViewID TopmostScrollId();
   
   
   
