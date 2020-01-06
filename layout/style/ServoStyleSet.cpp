@@ -272,6 +272,7 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   RawGeckoElementBorrowed aRoot,
   ServoTraversalFlags aFlags)
 {
+  MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(aRoot)));
   bool forThrottledAnimationFlush = !!(aFlags & ServoTraversalFlags::AnimationOnly);
 
   AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), forThrottledAnimationFlush);
@@ -288,13 +289,9 @@ ServoStyleSet::PrepareAndTraverseSubtree(
 
   bool isInitial = !aRoot->HasServoData();
   bool forReconstruct = !!(aFlags & ServoTraversalFlags::ForReconstruct);
-#ifdef DEBUG
-  bool forNewlyBoundElement = !!(aFlags & ServoTraversalFlags::ForNewlyBoundElement);
-#endif
   bool postTraversalRequired =
     Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
-  MOZ_ASSERT(!(isInitial || forReconstruct || forNewlyBoundElement) ||
-             !postTraversalRequired);
+  MOZ_ASSERT(!(isInitial || forReconstruct) || !postTraversalRequired);
 
   
   
@@ -829,15 +826,8 @@ ServoStyleSet::StyleNewlyBoundElement(Element* aElement)
   
   
   
-  
-  
-  
-  
-  
-  
 
-  ServoTraversalFlags flags = ServoTraversalFlags::ForNewlyBoundElement |
-    (MOZ_UNLIKELY(!aElement->HasServoData())
+  ServoTraversalFlags flags = (MOZ_UNLIKELY(!aElement->HasServoData())
       ? ServoTraversalFlags::Empty
       : ServoTraversalFlags::UnstyledChildrenOnly);
 
@@ -1190,6 +1180,23 @@ ServoStyleSet::MaybeGCRuleTree()
 {
   MOZ_ASSERT(NS_IsMainThread());
   Servo_MaybeGCRuleTree(mRawSet.get());
+}
+
+bool
+ServoStyleSet::MayTraverseFrom(Element* aElement)
+{
+  MOZ_ASSERT(aElement->IsInComposedDoc());
+  Element* parent = aElement->GetFlattenedTreeParentElementForStyle();
+  if (!parent) {
+    return true;
+  }
+
+  if (!parent->HasServoData()) {
+    return false;
+  }
+
+  RefPtr<ServoStyleContext> sc = Servo_ResolveStyleAllowStale(parent).Consume();
+  return sc->StyleDisplay()->mDisplay != StyleDisplay::None;
 }
 
 void

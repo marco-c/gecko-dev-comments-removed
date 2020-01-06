@@ -421,8 +421,13 @@ public:
     if (!presShell || !presShell->DidInitialize()) {
       return;
     }
+
     if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
-      servoSet->StyleNewlyBoundElement(mElement);
+      
+      
+      if (servoSet->MayTraverseFrom(mElement)) {
+        servoSet->StyleNewlyBoundElement(mElement);
+      }
     }
   }
 

@@ -329,6 +329,15 @@ public:
 
   void MaybeGCRuleTree();
 
+  
+
+
+
+
+
+
+  bool MayTraverseFrom(dom::Element* aElement);
+
 #ifdef DEBUG
   void AssertTreeIsClean();
 #else

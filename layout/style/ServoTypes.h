@@ -62,10 +62,6 @@ enum class ServoTraversalFlags : uint32_t {
   
   
   ForReconstruct = 1 << 3,
-  
-  
-  
-  ForNewlyBoundElement = 1 << 4,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoTraversalFlags)
