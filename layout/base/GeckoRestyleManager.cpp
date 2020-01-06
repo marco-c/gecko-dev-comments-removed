@@ -293,8 +293,36 @@ GeckoRestyleManager::ContentStateChanged(nsIContent* aContent,
   Element* aElement = aContent->AsElement();
 
   nsChangeHint changeHint;
+  ContentStateChangedInternal(aElement, aStateMask, &changeHint);
+
+  
+  nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
+  CSSPseudoElementType pseudoType = CSSPseudoElementType::NotPseudo;
+  if (primaryFrame) {
+    pseudoType = primaryFrame->StyleContext()->GetPseudoType();
+  }
+
+  StyleSetHandle styleSet = PresContext()->StyleSet();
+  MOZ_ASSERT(styleSet);
+
   nsRestyleHint restyleHint;
-  ContentStateChangedInternal(aElement, aStateMask, &changeHint, &restyleHint);
+  if (pseudoType >= CSSPseudoElementType::Count) {
+    restyleHint = styleSet->HasStateDependentStyle(aElement, aStateMask);
+  } else if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(
+               pseudoType)) {
+    
+    
+    Element* ancestor =
+      ElementForStyleContext(nullptr, primaryFrame, pseudoType);
+    restyleHint = styleSet->HasStateDependentStyle(ancestor, pseudoType,
+                                                   aElement, aStateMask);
+  } else {
+    restyleHint = nsRestyleHint(0);
+  }
+
+  if (aStateMask.HasState(NS_EVENT_STATE_HOVER) && restyleHint != 0) {
+    IncrementHoverGeneration();
+  }
 
   PostRestyleEvent(aElement, restyleHint, changeHint);
 }

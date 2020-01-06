@@ -1221,34 +1221,12 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
   }
 
   Element* aElement = aContent->AsElement();
-  nsChangeHint changeHint;
-  nsRestyleHint restyleHint;
-
   if (!aElement->HasServoData()) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ContentStateChangedInternal(aElement, aChangedBits, &changeHint,
-                              &restyleHint);
+  nsChangeHint changeHint;
+  ContentStateChangedInternal(aElement, aChangedBits, &changeHint);
 
   
   
@@ -1264,8 +1242,8 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
   EventStates previousState = aElement->StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
 
-  if (restyleHint || changeHint) {
-    Servo_NoteExplicitHints(aElement, restyleHint, changeHint);
+  if (changeHint) {
+    Servo_NoteExplicitHints(aElement, nsRestyleHint(0), changeHint);
   }
 
   
