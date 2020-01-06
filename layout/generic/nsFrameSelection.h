@@ -747,7 +747,7 @@ private:
 
   
   RefPtr<nsRange> mMaintainRange;
-  nsSelectionAmount mMaintainedAmount;
+  nsSelectionAmount mMaintainedAmount = eSelectNoAmount;
 
   
   int32_t mBatching = 0;
@@ -757,7 +757,7 @@ private:
   
   nsCOMPtr<nsIContent> mAncestorLimiter;
 
-  nsIPresShell *mShell;
+  nsIPresShell* mShell = nullptr;
   
   int16_t mSelectionChangeReason = nsISelectionListener::NO_REASON;
   
@@ -779,12 +779,12 @@ private:
   bool mChangesDuringBatching = false;
   bool mNotifyFrames = true;
   bool mDragSelectingCells = false;
-  bool mDragState;   
+  bool mDragState = false;   
   bool mMouseDoubleDownState = false; 
   bool mDesiredPosSet = false;
   bool mAccessibleCaretEnabled = false;
 
-  int8_t mCaretMovementStyle;
+  int8_t mCaretMovementStyle = 0;
 
   static bool sSelectionEventsEnabled;
   static bool sSelectionEventsOnTextControlsEnabled;
