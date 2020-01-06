@@ -128,7 +128,6 @@ using namespace widget;
 
 EditorBase::EditorBase()
   : mPlaceholderName(nullptr)
-  , mSelState(nullptr)
   , mModCount(0)
   , mFlags(0)
   , mUpdateCount(0)
@@ -974,7 +973,7 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
     mPlaceholderName = aName;
     RefPtr<Selection> selection = GetSelection();
     if (selection) {
-      mSelState = MakeUnique<SelectionState>();
+      mSelState.emplace();
       mSelState->SaveSelection(selection);
       
       
@@ -1039,7 +1038,7 @@ EditorBase::EndPlaceHolderTransaction()
       if (mPlaceholderName == nsGkAtoms::IMETxnName) {
         mRangeUpdater.DropSelectionState(*mSelState);
       }
-      mSelState = nullptr;
+      mSelState.reset();
     }
     
     if (mPlaceholderTransaction) {

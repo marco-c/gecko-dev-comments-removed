@@ -7,10 +7,10 @@
 #define mozilla_EditorBase_h
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/Maybe.h"              
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"         
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"            
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"                   
@@ -1133,7 +1133,7 @@ protected:
   
   nsIAtom* mPlaceholderName;
   
-  mozilla::UniquePtr<SelectionState> mSelState;
+  mozilla::Maybe<SelectionState> mSelState;
   
   
   RefPtr<TextComposition> mComposition;
