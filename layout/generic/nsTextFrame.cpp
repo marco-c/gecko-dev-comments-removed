@@ -4861,7 +4861,11 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
   }
 
   int32_t endOfChangedText = aInfo->mChangeStart + aInfo->mReplaceLength;
-  nsTextFrame* lastDirtiedFrame = nullptr;
+
+  
+  
+  
+  nsIFrame* lastDirtiedFrameParent = nullptr;
 
   nsIPresShell* shell = PresContext()->GetPresShell();
   do {
@@ -4869,13 +4873,25 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
     
     textFrame->mState &= ~TEXT_WHITESPACE_FLAGS;
     textFrame->ClearTextRuns();
-    if (!lastDirtiedFrame ||
-        lastDirtiedFrame->GetParent() != textFrame->GetParent()) {
+
+    nsIFrame* parentOfTextFrame = textFrame->GetParent();
+    bool areAncestorsAwareOfReflowRequest = false;
+    if (lastDirtiedFrameParent == parentOfTextFrame) {
+      
+      
+      areAncestorsAwareOfReflowRequest = true;
+    } else {
+      lastDirtiedFrameParent = parentOfTextFrame;
+    }
+
+    if (!areAncestorsAwareOfReflowRequest) {
       
       shell->FrameNeedsReflow(textFrame, nsIPresShell::eStyleChange,
                               NS_FRAME_IS_DIRTY);
-      lastDirtiedFrame = textFrame;
     } else {
+      
+      
+      
       
       
       
