@@ -1034,6 +1034,7 @@ ServoStyleSet::RecordStyleSheetChange(
     case StyleSheet::ChangeType::RuleAdded:
     case StyleSheet::ChangeType::RuleRemoved:
     case StyleSheet::ChangeType::RuleChanged:
+    case StyleSheet::ChangeType::ReparsedFromInspector:
       
       return MarkOriginsDirty(aSheet->GetOrigin());
     case StyleSheet::ChangeType::ApplicableStateChanged:

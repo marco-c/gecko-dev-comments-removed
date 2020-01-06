@@ -9,9 +9,10 @@
 #include "mozilla/css/Rule.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/ServoCSSRuleList.h"
 #include "mozilla/ServoImportRule.h"
 #include "mozilla/ServoMediaList.h"
-#include "mozilla/ServoCSSRuleList.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSRuleList.h"
 #include "mozilla/dom/MediaList.h"
@@ -340,6 +341,19 @@ ServoStyleSheet::ReparseSheet(const nsAString& aInput)
         break;
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  for (StyleSetHandle handle : mStyleSets) {
+    handle->AsServo()->RecordStyleSheetChange(
+      this, StyleSheet::ChangeType::ReparsedFromInspector);
   }
 
   return NS_OK;
