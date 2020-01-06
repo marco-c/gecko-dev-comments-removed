@@ -4,25 +4,26 @@
 
 #include "VideoUtils.h"
 
-#include "ImageContainer.h"
+#include "mozilla/Base64.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/Telemetry.h"
+
 #include "MediaContainerType.h"
 #include "MediaPrefs.h"
 #include "MediaResource.h"
 #include "TimeUnits.h"
+#include "nsMathUtils.h"
+#include "nsSize.h"
 #include "VorbisUtils.h"
-#include "mozilla/Base64.h"
+#include "ImageContainer.h"
 #include "mozilla/SharedThreadPool.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/Telemetry.h"
-#include "nsCharSeparatedTokenizer.h"
-#include "nsContentTypeParser.h"
-#include "nsIConsoleService.h"
 #include "nsIRandomGenerator.h"
 #include "nsIServiceManager.h"
-#include "nsMathUtils.h"
 #include "nsServiceManagerUtils.h"
-#include "nsSize.h"
+#include "nsIConsoleService.h"
 #include "nsThreadUtils.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsContentTypeParser.h"
 
 #include <functional>
 #include <stdint.h>
@@ -395,8 +396,8 @@ LogToBrowserConsole(const nsAString& aMsg)
 {
   if (!NS_IsMainThread()) {
     nsString msg(aMsg);
-    nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableFunction([msg]() { LogToBrowserConsole(msg); });
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
+      "LogToBrowserConsole", [msg]() { LogToBrowserConsole(msg); });
     SystemGroup::Dispatch("LogToBrowserConsole", TaskCategory::Other, task.forget());
     return;
   }

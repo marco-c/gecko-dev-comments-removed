@@ -72,7 +72,8 @@ private:
 
 MessageLoopIdleTask::MessageLoopIdleTask(nsIRunnable* aTask,
                                          uint32_t aEnsureRunsAfterMS)
-  : mTask(aTask)
+  : mozilla::Runnable("MessageLoopIdleTask")
+  , mTask(aTask)
 {
   
   

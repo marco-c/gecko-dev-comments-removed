@@ -6,14 +6,13 @@
 #include "MediaStreamTrack.h"
 
 #include "DOMMediaStream.h"
-#include "MediaStreamError.h"
 #include "MediaStreamGraph.h"
-#include "MediaStreamListener.h"
-#include "mozilla/dom/Promise.h"
-#include "nsContentUtils.h"
 #include "nsIUUIDGenerator.h"
 #include "nsServiceManagerUtils.h"
+#include "MediaStreamListener.h"
 #include "systemservices/MediaUtils.h"
+
+#include "mozilla/dom/Promise.h"
 
 #ifdef LOG
 #undef LOG
@@ -21,8 +20,6 @@
 
 static mozilla::LazyLogModule gMediaStreamTrackLog("MediaStreamTrack");
 #define LOG(type, msg) MOZ_LOG(gMediaStreamTrackLog, type, msg)
-
-using namespace mozilla::media;
 
 namespace mozilla {
 namespace dom {
@@ -114,7 +111,11 @@ public:
     aGraph->DispatchToMainThreadAfterStreamStateUpdate(
       mAbstractMainThread,
       NewRunnableMethod<StoreCopyPassByConstLRef<PrincipalHandle>>(
-        this, &PrincipalHandleListener::DoNotifyPrincipalHandleChanged, aNewPrincipalHandle));
+        "dom::MediaStreamTrack::PrincipalHandleListener::"
+        "DoNotifyPrincipalHandleChanged",
+        this,
+        &PrincipalHandleListener::DoNotifyPrincipalHandleChanged,
+        aNewPrincipalHandle));
   }
 
 protected:

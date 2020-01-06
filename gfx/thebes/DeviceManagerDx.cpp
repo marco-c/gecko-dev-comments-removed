@@ -598,9 +598,9 @@ DeviceManagerDx::CreateDecoderDevice()
 
   RefPtr<ID3D10Multithread> multi;
   device->QueryInterface(__uuidof(ID3D10Multithread), getter_AddRefs(multi));
-  if (multi) {
-    multi->SetMultithreadProtected(TRUE);
-  }
+
+  multi->SetMultithreadProtected(TRUE);
+
   if (reuseDevice) {
     mDecoderDevice = device;
   }
@@ -976,7 +976,8 @@ DeviceManagerDx::PreloadAttachmentsOnCompositorThread()
     return;
   }
 
-  RefPtr<Runnable> task = NS_NewRunnableFunction([]() -> void {
+  RefPtr<Runnable> task = NS_NewRunnableFunction("DeviceManagerDx::PreloadAttachmentsOnCompositorThread",
+                                                 []() -> void {
     if (DeviceManagerDx* dm = DeviceManagerDx::Get()) {
       RefPtr<ID3D11Device> device;
       RefPtr<layers::DeviceAttachmentsD3D11> attachments;

@@ -948,12 +948,16 @@ nsSocketTransportService::Run()
             mRawThread->HasPendingEvents(&pendingEvents);
             if (pendingEvents) {
                 if (!mServingPendingQueue) {
-                    nsresult rv = Dispatch(NewRunnableMethod(this,
-                        &nsSocketTransportService::MarkTheLastElementOfPendingQueue),
-                        nsIEventTarget::DISPATCH_NORMAL);
-                    if (NS_FAILED(rv)) {
-                        NS_WARNING("Could not dispatch a new event on the "
-                                   "socket thread.");
+                  nsresult rv = Dispatch(
+                    NewRunnableMethod("net::nsSocketTransportService::"
+                                      "MarkTheLastElementOfPendingQueue",
+                                      this,
+                                      &nsSocketTransportService::
+                                        MarkTheLastElementOfPendingQueue),
+                    nsIEventTarget::DISPATCH_NORMAL);
+                  if (NS_FAILED(rv)) {
+                    NS_WARNING("Could not dispatch a new event on the "
+                               "socket thread.");
                     } else {
                         mServingPendingQueue = true;
                     }
@@ -1316,11 +1320,13 @@ nsSocketTransportService::OnKeepaliveEnabledPrefChange()
 {
     
     if (!OnSocketThread()) {
-        gSocketTransportService->Dispatch(
-            NewRunnableMethod(
-                this, &nsSocketTransportService::OnKeepaliveEnabledPrefChange),
-            NS_DISPATCH_NORMAL);
-        return;
+      gSocketTransportService->Dispatch(
+        NewRunnableMethod(
+          "net::nsSocketTransportService::OnKeepaliveEnabledPrefChange",
+          this,
+          &nsSocketTransportService::OnKeepaliveEnabledPrefChange),
+        NS_DISPATCH_NORMAL);
+      return;
     }
 
     SOCKET_LOG(("nsSocketTransportService::OnKeepaliveEnabledPrefChange %s",
@@ -1371,11 +1377,12 @@ nsSocketTransportService::Observe(nsISupports *subject,
     }
 
     if (!strcmp(topic, "last-pb-context-exited")) {
-        nsCOMPtr<nsIRunnable> ev =
-          NewRunnableMethod(this,
-			    &nsSocketTransportService::ClosePrivateConnections);
-        nsresult rv = Dispatch(ev, nsIEventTarget::DISPATCH_NORMAL);
-        NS_ENSURE_SUCCESS(rv, rv);
+      nsCOMPtr<nsIRunnable> ev = NewRunnableMethod(
+        "net::nsSocketTransportService::ClosePrivateConnections",
+        this,
+        &nsSocketTransportService::ClosePrivateConnections);
+      nsresult rv = Dispatch(ev, nsIEventTarget::DISPATCH_NORMAL);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     if (!strcmp(topic, NS_TIMER_CALLBACK_TOPIC)) {
@@ -1622,7 +1629,8 @@ nsSocketTransportService::StartPollWatchdog()
     
     
     RefPtr<nsSocketTransportService> self(this);
-    NS_DispatchToMainThread(NS_NewRunnableFunction([self] {
+    NS_DispatchToMainThread(NS_NewRunnableFunction("nsSocketTransportService::StartPollWatchdog",
+                                                   [self] {
          MutexAutoLock lock(self->mLock);
 
          

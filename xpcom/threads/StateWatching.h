@@ -256,7 +256,10 @@ private:
       mStrongRef = mOwner; 
 
       
-      mOwnerThread->TailDispatcher().AddDirectTask(NewRunnableMethod(this, &PerCallbackWatcher::DoNotify));
+      mOwnerThread->TailDispatcher().AddDirectTask(
+        NewRunnableMethod("WatchManager::PerCallbackWatcher::DoNotify",
+                          this,
+                          &PerCallbackWatcher::DoNotify));
     }
 
     bool CallbackMethodIs(CallbackMethod aMethod) const

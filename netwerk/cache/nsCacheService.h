@@ -40,17 +40,18 @@ class mozIStorageService;
 
 class nsNotifyDoomListener : public mozilla::Runnable {
 public:
-    nsNotifyDoomListener(nsICacheListener *listener,
-                         nsresult status)
-        : mListener(listener)      
-        , mStatus(status)
-    {}
+  nsNotifyDoomListener(nsICacheListener* listener, nsresult status)
+    : mozilla::Runnable("nsNotifyDoomListener")
+    , mListener(listener) 
+    , mStatus(status)
+  {
+  }
 
-    NS_IMETHOD Run() override
-    {
-        mListener->OnCacheEntryDoomed(mStatus);
-        NS_RELEASE(mListener);
-        return NS_OK;
+  NS_IMETHOD Run() override
+  {
+    mListener->OnCacheEntryDoomed(mStatus);
+    NS_RELEASE(mListener);
+    return NS_OK;
     }
 
 private:

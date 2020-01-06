@@ -87,6 +87,7 @@
 
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "GeckoProfiler.h"
+#include "mozilla/IdleTaskRunner.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -149,16 +150,14 @@ static const uint32_t kMaxICCDuration = 2000;
 
 #define NS_UNLIMITED_SCRIPT_RUNTIME (0x40000000LL << 32)
 
-class CollectorRunner;
-
 
 
 static nsITimer *sGCTimer;
 static nsITimer *sShrinkingGCTimer;
-static StaticRefPtr<CollectorRunner> sCCRunner;
-static StaticRefPtr<CollectorRunner> sICCRunner;
+static StaticRefPtr<IdleTaskRunner> sCCRunner;
+static StaticRefPtr<IdleTaskRunner> sICCRunner;
 static nsITimer *sFullGCTimer;
-static StaticRefPtr<CollectorRunner> sInterSliceGCRunner;
+static StaticRefPtr<IdleTaskRunner> sInterSliceGCRunner;
 
 static TimeStamp sLastCCEndTime;
 
@@ -228,183 +227,6 @@ static int32_t sExpensiveCollectorPokes = 0;
 static const int32_t kPokesBetweenExpensiveCollectorTriggers = 5;
 
 static TimeDuration sGCUnnotifiedTotalTime;
-
-
-typedef bool (*CollectorRunnerCallback) (TimeStamp aDeadline, void* aData);
-
-
-class CollectorRunner final : public IdleRunnable
-{
-public:
-  static already_AddRefed<CollectorRunner>
-  Create(CollectorRunnerCallback aCallback, uint32_t aDelay,
-         int64_t aBudget, bool aRepeating, void* aData = nullptr)
-  {
-    if (sShuttingDown) {
-      return nullptr;
-    }
-
-    RefPtr<CollectorRunner> runner =
-      new CollectorRunner(aCallback, aDelay, aBudget, aRepeating, aData);
-    runner->Schedule(false); 
-    return runner.forget();
-  }
-
-  NS_IMETHOD Run() override
-  {
-    if (!mCallback) {
-      return NS_OK;
-    }
-
-    
-    bool deadLineWasNull = mDeadline.IsNull();
-    bool didRun = false;
-    if (deadLineWasNull || ((TimeStamp::Now() + mBudget) < mDeadline)) {
-      CancelTimer();
-      didRun = mCallback(mDeadline, mData);
-    }
-
-    if (mCallback && (mRepeating || !didRun)) {
-      
-      
-      
-      Schedule(didRun);
-    }
-
-    return NS_OK;
-  }
-
-  static void
-  TimedOut(nsITimer* aTimer, void* aClosure)
-  {
-    RefPtr<CollectorRunner> runnable = static_cast<CollectorRunner*>(aClosure);
-    runnable->Run();
-  }
-
-  void SetDeadline(mozilla::TimeStamp aDeadline) override
-  {
-    mDeadline = aDeadline;
-  };
-
-  void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) override
-  {
-    if (mTimerActive) {
-      return;
-    }
-
-    mTarget = aTarget;
-    if (!mTimer) {
-      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    } else {
-      mTimer->Cancel();
-    }
-
-    if (mTimer) {
-      mTimer->SetTarget(mTarget);
-      mTimer->InitWithFuncCallback(TimedOut, this, aDelay,
-                                   nsITimer::TYPE_ONE_SHOT);
-      mTimerActive = true;
-    }
-  }
-
-  nsresult Cancel() override
-  {
-    CancelTimer();
-    mTimer = nullptr;
-    mScheduleTimer = nullptr;
-    mCallback = nullptr;
-    return NS_OK;
-  }
-
-  static void
-  ScheduleTimedOut(nsITimer* aTimer, void* aClosure)
-  {
-    RefPtr<CollectorRunner> runnable = static_cast<CollectorRunner*>(aClosure);
-    runnable->Schedule(true);
-  }
-
-  void Schedule(bool aAllowIdleDispatch)
-  {
-    if (!mCallback) {
-      return;
-    }
-
-    if (sShuttingDown) {
-      Cancel();
-      return;
-    }
-
-    mDeadline = TimeStamp();
-    TimeStamp now = TimeStamp::Now();
-    TimeStamp hint = nsRefreshDriver::GetIdleDeadlineHint(now);
-    if (hint != now) {
-      
-      nsRefreshDriver::DispatchIdleRunnableAfterTick(this, mDelay);
-      
-      SetTimer(mDelay, mTarget);
-    } else {
-      
-      if (aAllowIdleDispatch) {
-        nsCOMPtr<nsIRunnable> runnable = this;
-        NS_IdleDispatchToCurrentThread(runnable.forget(), mDelay);
-        SetTimer(mDelay, mTarget);
-      } else {
-        if (!mScheduleTimer) {
-          mScheduleTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-          if (!mScheduleTimer) {
-            return;
-          }
-        } else {
-          mScheduleTimer->Cancel();
-        }
-
-        
-        
-        mScheduleTimer->InitWithFuncCallback(ScheduleTimedOut, this, 16,
-                                             nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY);
-      }
-    }
-  }
-
-private:
-  explicit CollectorRunner(CollectorRunnerCallback aCallback,
-                           uint32_t aDelay, int64_t aBudget,
-                           bool aRepeating, void* aData)
-    : mCallback(aCallback), mDelay(aDelay)
-    , mBudget(TimeDuration::FromMilliseconds(aBudget))
-    , mRepeating(aRepeating), mTimerActive(false), mData(aData)
-  {
-  }
-
-  ~CollectorRunner()
-  {
-    CancelTimer();
-  }
-
-  void CancelTimer()
-  {
-    nsRefreshDriver::CancelIdleRunnable(this);
-    if (mTimer) {
-      mTimer->Cancel();
-    }
-    if (mScheduleTimer) {
-      mScheduleTimer->Cancel();
-    }
-    mTimerActive = false;
-  }
-
-  nsCOMPtr<nsITimer> mTimer;
-  nsCOMPtr<nsITimer> mScheduleTimer;
-  nsCOMPtr<nsIEventTarget> mTarget;
-  CollectorRunnerCallback mCallback;
-  uint32_t mDelay;
-  TimeStamp mDeadline;
-  TimeDuration mBudget;
-  bool mRepeating;
-  bool mTimerActive;
-  void* mData;
-};
-
 static const char*
 ProcessNameForCollectorLog()
 {
@@ -614,7 +436,8 @@ public:
                    JS::RootingContext* aRootingCx,
                    xpc::ErrorReport* aReport,
                    JS::Handle<JS::Value> aError)
-    : mWindow(aWindow)
+    : mozilla::Runnable("ScriptErrorEvent")
+    , mWindow(aWindow)
     , mReport(aReport)
     , mError(aRootingCx, aError)
   {}
@@ -1780,7 +1603,7 @@ nsJSContext::GetMaxCCSliceTimeSinceClear()
 }
 
 static bool
-ICCRunnerFired(TimeStamp aDeadline, void* aData)
+ICCRunnerFired(TimeStamp aDeadline)
 {
   if (sDidShutdown) {
     return false;
@@ -1821,8 +1644,8 @@ nsJSContext::BeginCycleCollectionCallback()
 
   
   
-  sICCRunner = CollectorRunner::Create(ICCRunnerFired, kICCIntersliceDelay,
-                                       kIdleICCSliceBudget, true);
+  sICCRunner = IdleTaskRunner::Create(ICCRunnerFired, kICCIntersliceDelay,
+                                      kIdleICCSliceBudget, true, []{ return sShuttingDown; });
 }
 
 static_assert(NS_GC_DELAY > kMaxICCDuration, "A max duration ICC shouldn't reduce GC delay to 0");
@@ -2034,11 +1857,9 @@ GCTimerFired(nsITimer *aTimer, void *aClosure)
 {
   nsJSContext::KillGCTimer();
   
-  sInterSliceGCRunner = CollectorRunner::Create(InterSliceGCRunnerFired,
-                                                NS_INTERSLICE_GC_DELAY,
-                                                sActiveIntersliceGCBudget,
-                                                false,
-                                                aClosure);
+  sInterSliceGCRunner = IdleTaskRunner::Create([aClosure](TimeStamp aDeadline) {
+    return InterSliceGCRunnerFired(aDeadline, aClosure);
+  }, NS_INTERSLICE_GC_DELAY, sActiveIntersliceGCBudget, false, []{ return sShuttingDown; });
 }
 
 
@@ -2062,7 +1883,7 @@ ShouldTriggerCC(uint32_t aSuspected)
 }
 
 static bool
-CCRunnerFired(TimeStamp aDeadline, void* aData)
+CCRunnerFired(TimeStamp aDeadline)
 {
   if (sDidShutdown) {
     return false;
@@ -2214,13 +2035,13 @@ nsJSContext::RunNextCollectorTimer()
 
   if (sCCRunner) {
     if (ReadyToTriggerExpensiveCollectorTimer()) {
-      CCRunnerFired(TimeStamp(), nullptr);
+      CCRunnerFired(TimeStamp());
     }
     return;
   }
 
   if (sICCRunner) {
-    ICCRunnerFired(TimeStamp(), nullptr);
+    ICCRunnerFired(TimeStamp());
     return;
   }
 }
@@ -2327,8 +2148,9 @@ nsJSContext::MaybePokeCC()
     nsCycleCollector_dispatchDeferredDeletion();
 
     sCCRunner =
-      CollectorRunner::Create(CCRunnerFired, NS_CC_SKIPPABLE_DELAY,
-                              kForgetSkippableSliceDuration, true);
+      IdleTaskRunner::Create(CCRunnerFired, NS_CC_SKIPPABLE_DELAY,
+                             kForgetSkippableSliceDuration, true,
+                             []{ return sShuttingDown; });
   }
 }
 
@@ -2398,7 +2220,11 @@ class NotifyGCEndRunnable : public Runnable
   nsString mMessage;
 
 public:
-  explicit NotifyGCEndRunnable(const nsString& aMessage) : mMessage(aMessage) {}
+  explicit NotifyGCEndRunnable(const nsString& aMessage)
+    : mozilla::Runnable("NotifyGCEndRunnable")
+    , mMessage(aMessage)
+  {
+  }
 
   NS_DECL_NSIRUNNABLE
 };
@@ -2508,8 +2334,9 @@ DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress, const JS::GCDescrip
       nsJSContext::KillInterSliceGCRunner();
       if (!sShuttingDown && !aDesc.isComplete_) {
         sInterSliceGCRunner =
-          CollectorRunner::Create(InterSliceGCRunnerFired, NS_INTERSLICE_GC_DELAY,
-                                  sActiveIntersliceGCBudget, false);
+          IdleTaskRunner::Create([](TimeStamp aDeadline) {
+            return InterSliceGCRunnerFired(aDeadline, nullptr);
+          }, NS_INTERSLICE_GC_DELAY, sActiveIntersliceGCBudget, false, []{ return sShuttingDown; });
       }
 
       if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
@@ -2723,7 +2550,8 @@ class AsyncTaskRunnable final : public Runnable
 
 public:
   explicit AsyncTaskRunnable(JS::AsyncTask* aTask)
-    : mTask(aTask)
+    : mozilla::Runnable("AsyncTaskRunnable")
+    , mTask(aTask)
   {
     MOZ_ASSERT(mTask);
   }

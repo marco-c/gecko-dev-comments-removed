@@ -580,7 +580,10 @@ OscillatorNode::NotifyMainThreadStreamFinished()
   {
   public:
     explicit EndedEventDispatcher(OscillatorNode* aNode)
-      : mNode(aNode) {}
+      : mozilla::Runnable("EndedEventDispatcher")
+      , mNode(aNode)
+    {
+    }
     NS_IMETHOD Run() override
     {
       

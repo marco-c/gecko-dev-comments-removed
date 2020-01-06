@@ -58,7 +58,12 @@ public:
 
   class SurfaceReleaser : public mozilla::Runnable {
   public:
-    explicit SurfaceReleaser(RawRef aRef) : mRef(aRef) {}
+    explicit SurfaceReleaser(RawRef aRef)
+      : mozilla::Runnable(
+          "nsAutoRefTraits<nsMainThreadSourceSurfaceRef>::SurfaceReleaser")
+      , mRef(aRef)
+    {
+    }
     NS_IMETHOD Run() override {
       mRef->Release();
       return NS_OK;
@@ -96,7 +101,12 @@ public:
 
   class SurfaceReleaser : public mozilla::Runnable {
   public:
-    explicit SurfaceReleaser(RawRef aRef) : mRef(aRef) {}
+    explicit SurfaceReleaser(RawRef aRef)
+      : mozilla::Runnable(
+          "nsAutoRefTraits<nsOwningThreadSourceSurfaceRef>::SurfaceReleaser")
+      , mRef(aRef)
+    {
+    }
     NS_IMETHOD Run() override {
       mRef->Release();
       return NS_OK;
@@ -150,9 +160,6 @@ class PlanarYCbCrImage;
 class TextureClient;
 class KnowsCompositor;
 class NVImage;
-#ifdef XP_WIN
-class D3D11YCbCrRecycleAllocator;
-#endif
 
 struct ImageBackendData
 {
@@ -544,11 +551,6 @@ public:
     return mImageFactory;
   }
 
-#ifdef XP_WIN
-  D3D11YCbCrRecycleAllocator* GetD3D11YCbCrRecycleAllocator(
-    KnowsCompositor* aAllocator);
-#endif
-
   
 
 
@@ -617,10 +619,6 @@ private:
   
   
   ReentrantMonitor mReentrantMonitor;
-
-#ifdef XP_WIN
-  RefPtr<D3D11YCbCrRecycleAllocator> mD3D11YCbCrRecycleAllocator;
-#endif
 
   nsTArray<OwningImage> mCurrentImages;
 

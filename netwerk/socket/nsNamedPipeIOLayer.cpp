@@ -211,7 +211,7 @@ NamedPipeInfo::OnDataAvailable(uint32_t aBytesTransferred,
   mErrorCode = ERROR_SUCCESS;
 
   
-  gSocketTransportService->Dispatch(NS_NewRunnableFunction([]{}),
+  gSocketTransportService->Dispatch(NS_NewRunnableFunction("NamedPipeInfo::OnDataAvailable", []{}),
                                     NS_DISPATCH_NORMAL);
 
   return NS_OK;
@@ -229,7 +229,7 @@ NamedPipeInfo::OnError(uint32_t aError,
   mErrorCode = aError;
 
   
-  gSocketTransportService->Dispatch(NS_NewRunnableFunction([]{}),
+  gSocketTransportService->Dispatch(NS_NewRunnableFunction("NamedPipeInfo::OnError", []{}),
                                     NS_DISPATCH_NORMAL);
 
   return NS_OK;

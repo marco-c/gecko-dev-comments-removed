@@ -509,6 +509,8 @@ ServiceWorkerUpdateJob::Install(ServiceWorkerManager* aSWM)
   
   nsCOMPtr<nsIRunnable> upr =
     NewRunnableMethod<RefPtr<ServiceWorkerRegistrationInfo>>(
+      "dom::workers::ServiceWorkerManager::"
+      "FireUpdateFoundOnServiceWorkerRegistrations",
       aSWM,
       &ServiceWorkerManager::FireUpdateFoundOnServiceWorkerRegistrations,
       mRegistration);
@@ -516,8 +518,11 @@ ServiceWorkerUpdateJob::Install(ServiceWorkerManager* aSWM)
 
   
   
-  nsCOMPtr<nsIRunnable> failRunnable = NewRunnableMethod<bool>
-    (this, &ServiceWorkerUpdateJob::ContinueAfterInstallEvent, false);
+  nsCOMPtr<nsIRunnable> failRunnable = NewRunnableMethod<bool>(
+    "dom::workers::ServiceWorkerUpdateJob::ContinueAfterInstallEvent",
+    this,
+    &ServiceWorkerUpdateJob::ContinueAfterInstallEvent,
+    false);
 
   nsMainThreadPtrHandle<ServiceWorkerUpdateJob> handle(
     new nsMainThreadPtrHolder<ServiceWorkerUpdateJob>(

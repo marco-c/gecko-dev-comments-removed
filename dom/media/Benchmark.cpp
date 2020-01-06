@@ -5,18 +5,14 @@
 
 
 #include "Benchmark.h"
-
 #include "BufferMediaResource.h"
 #include "MediaData.h"
 #include "MediaPrefs.h"
 #include "PDMFactory.h"
-#include "VideoUtils.h"
 #include "WebMDemuxer.h"
 #include "gfxPrefs.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/TaskQueue.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -24,8 +20,6 @@
 #ifndef MOZ_WIDGET_ANDROID
 #include "WebMSample.h"
 #endif
-
-using namespace mozilla::gfx;
 
 namespace mozilla {
 
@@ -117,8 +111,8 @@ Benchmark::Run()
 
   RefPtr<BenchmarkPromise> p = mPromise.Ensure(__func__);
   RefPtr<Benchmark> self = this;
-  mPlaybackState.Dispatch(
-    NS_NewRunnableFunction([self]() { self->mPlaybackState.DemuxSamples(); }));
+  mPlaybackState.Dispatch(NS_NewRunnableFunction(
+    "Benchmark::Run", [self]() { self->mPlaybackState.DemuxSamples(); }));
   return p;
 }
 
@@ -202,7 +196,8 @@ BenchmarkPlayback::DemuxNextSample()
           && mSamples.Length() == (size_t)ref->mParameters.mStopAtFrame.ref()) {
         InitDecoder(Move(*mTrackDemuxer->GetInfo()));
       } else {
-        Dispatch(NS_NewRunnableFunction([this, ref]() { DemuxNextSample(); }));
+        Dispatch(NS_NewRunnableFunction("BenchmarkPlayback::DemuxNextSample",
+                                        [this, ref]() { DemuxNextSample(); }));
       }
     },
     [this, ref](const MediaResult& aError) {
@@ -297,9 +292,10 @@ BenchmarkPlayback::Output(const MediaDataDecoder::DecodedData& aResults)
           || mDrained)) {
     uint32_t decodeFps = frames / elapsedTime.ToSeconds();
     MainThreadShutdown();
-    ref->Dispatch(NS_NewRunnableFunction([ref, decodeFps]() {
-      ref->ReturnResult(decodeFps);
-    }));
+    ref->Dispatch(
+      NS_NewRunnableFunction("BenchmarkPlayback::Output", [ref, decodeFps]() {
+        ref->ReturnResult(decodeFps);
+      }));
   }
 }
 

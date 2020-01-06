@@ -224,7 +224,10 @@ nsAboutCache::Channel::VisitNextStorage()
     
     
     
-    return NS_DispatchToMainThread(mozilla::NewRunnableMethod(this, &nsAboutCache::Channel::FireVisitStorage));
+    return NS_DispatchToMainThread(
+      mozilla::NewRunnableMethod("nsAboutCache::Channel::FireVisitStorage",
+                                 this,
+                                 &nsAboutCache::Channel::FireVisitStorage));
 }
 
 void

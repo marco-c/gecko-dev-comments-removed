@@ -33,6 +33,7 @@
 #include "nsIHTMLDocument.h"
 #include "nsIViewSourceChannel.h"
 #include "xpcpublic.h"
+#include "mozilla/IdleTaskRunner.h"
 
 using namespace mozilla;
 
@@ -51,7 +52,8 @@ class nsHtml5ExecutorReflusher : public Runnable
     RefPtr<nsHtml5TreeOpExecutor> mExecutor;
   public:
     explicit nsHtml5ExecutorReflusher(nsHtml5TreeOpExecutor* aExecutor)
-      : mExecutor(aExecutor)
+      : mozilla::Runnable("nsHtml5ExecutorReflusher")
+      , mExecutor(aExecutor)
     {}
     NS_IMETHOD Run() override
     {
@@ -61,7 +63,7 @@ class nsHtml5ExecutorReflusher : public Runnable
 };
 
 static mozilla::LinkedList<nsHtml5TreeOpExecutor>* gBackgroundFlushList = nullptr;
-static nsITimer* gFlushTimer = nullptr;
+StaticRefPtr<IdleTaskRunner> gBackgroundFlushRunner;
 
 nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
   : nsHtml5DocumentBuilder(false)
@@ -85,9 +87,9 @@ nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor()
     if (gBackgroundFlushList->isEmpty()) {
       delete gBackgroundFlushList;
       gBackgroundFlushList = nullptr;
-      if (gFlushTimer) {
-        gFlushTimer->Cancel();
-        NS_RELEASE(gFlushTimer);
+      if (gBackgroundFlushRunner) {
+        gBackgroundFlushRunner->Cancel();
+        gBackgroundFlushRunner = nullptr;
       }
     }
   }
@@ -240,14 +242,16 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
   
   if (mParser) { 
     MOZ_ALWAYS_SUCCEEDS(
-      NS_DispatchToMainThread(NewRunnableMethod(GetParser(), &nsHtml5Parser::Terminate)));
+      NS_DispatchToMainThread(NewRunnableMethod("nsHtml5Parser::Terminate",
+                                                GetParser(), &nsHtml5Parser::Terminate)));
   }
   return aReason;
 }
 
-void
-FlushTimerCallback(nsITimer* aTimer, void* aClosure)
+static bool
+BackgroundFlushCallback(TimeStamp )
 {
+  NS_WARNING("Executing BackgroundFlushCallback()....");
   RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
     ex->RunFlushLoop();
@@ -255,9 +259,11 @@ FlushTimerCallback(nsITimer* aTimer, void* aClosure)
   if (gBackgroundFlushList && gBackgroundFlushList->isEmpty()) {
     delete gBackgroundFlushList;
     gBackgroundFlushList = nullptr;
-    gFlushTimer->Cancel();
-    NS_RELEASE(gFlushTimer);
+    gBackgroundFlushRunner->Cancel();
+    gBackgroundFlushRunner = nullptr;
+    return true;
   }
+  return true;
 }
 
 void
@@ -277,16 +283,17 @@ nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync()
     if (!isInList()) {
       gBackgroundFlushList->insertBack(this);
     }
-    if (!gFlushTimer) {
-      nsCOMPtr<nsITimer> t = do_CreateInstance("@mozilla.org/timer;1");
-      t.swap(gFlushTimer);
-      
-      
-      
-      gFlushTimer->InitWithNamedFuncCallback(FlushTimerCallback, nullptr,
-                                             50, nsITimer::TYPE_REPEATING_SLACK,
-                                             "FlushTimerCallback");
+    if (gBackgroundFlushRunner) {
+      NS_WARNING("We've already scheduled a task for background list flush.");
+      return;
     }
+    
+    gBackgroundFlushRunner =
+      IdleTaskRunner::Create(&BackgroundFlushCallback,
+                             250, 
+                             nsContentSink::sInteractiveTime / 1000, 
+                             true, 
+                             []{ return false; }); 
   }
 }
 

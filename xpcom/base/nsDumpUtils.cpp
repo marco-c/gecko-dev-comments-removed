@@ -74,7 +74,8 @@ FdWatcher::Init()
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   os->AddObserver(this, "xpcom-shutdown",  false);
 
-  XRE_GetIOMessageLoop()->PostTask(NewRunnableMethod(this, &FdWatcher::StartWatching));
+  XRE_GetIOMessageLoop()->PostTask(NewRunnableMethod(
+    "FdWatcher::StartWatching", this, &FdWatcher::StartWatching));
 }
 
 

@@ -4,23 +4,20 @@
 
 
 
-#include "CubebUtils.h"
-
-#include "MediaInfo.h"
-#include "mozilla/Logging.h"
+#include <stdint.h>
+#include <algorithm>
+#include "nsIStringBundle.h"
+#include "nsDebug.h"
+#include "nsString.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
-#include "nsAutoRef.h"
-#include "nsDebug.h"
-#include "nsIStringBundle.h"
-#include "nsString.h"
+#include "mozilla/Logging.h"
 #include "nsThreadUtils.h"
+#include "CubebUtils.h"
+#include "nsAutoRef.h"
 #include "prdtoa.h"
-#include <algorithm>
-#include <stdint.h>
 
 #define PREF_VOLUME_SCALE "media.volume_scale"
 #define PREF_CUBEB_BACKEND "media.cubeb.backend"
@@ -424,7 +421,8 @@ void InitLibrary()
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_BACKEND);
   Preferences::RegisterCallbackAndCall(PrefChanged, PREF_CUBEB_LOG_LEVEL);
 #ifndef MOZ_WIDGET_ANDROID
-  NS_DispatchToMainThread(NS_NewRunnableFunction(&InitBrandName));
+  NS_DispatchToMainThread(
+    NS_NewRunnableFunction("CubebUtils::InitLibrary", &InitBrandName));
 #endif
 }
 

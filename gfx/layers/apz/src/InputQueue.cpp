@@ -349,7 +349,7 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
 }
 
 void
-InputQueue::CancelAnimationsForNewBlock(InputBlockState* aBlock,
+InputQueue::CancelAnimationsForNewBlock(CancelableBlockState* aBlock,
                                         CancelAnimationFlags aExtraFlags)
 {
   
@@ -426,7 +426,7 @@ InputQueue::StartNewTouchBlock(const RefPtr<AsyncPanZoomController>& aTarget,
   return newBlock;
 }
 
-InputBlockState*
+CancelableBlockState*
 InputQueue::GetCurrentBlock() const
 {
   APZThreadUtils::AssertOnControllerThread();
@@ -436,28 +436,28 @@ InputQueue::GetCurrentBlock() const
 TouchBlockState*
 InputQueue::GetCurrentTouchBlock() const
 {
-  InputBlockState* block = GetCurrentBlock();
+  CancelableBlockState* block = GetCurrentBlock();
   return block ? block->AsTouchBlock() : mActiveTouchBlock.get();
 }
 
 WheelBlockState*
 InputQueue::GetCurrentWheelBlock() const
 {
-  InputBlockState* block = GetCurrentBlock();
+  CancelableBlockState* block = GetCurrentBlock();
   return block ? block->AsWheelBlock() : mActiveWheelBlock.get();
 }
 
 DragBlockState*
 InputQueue::GetCurrentDragBlock() const
 {
-  InputBlockState* block = GetCurrentBlock();
+  CancelableBlockState* block = GetCurrentBlock();
   return block ? block->AsDragBlock() : mActiveDragBlock.get();
 }
 
 PanGestureBlockState*
 InputQueue::GetCurrentPanGestureBlock() const
 {
-  InputBlockState* block = GetCurrentBlock();
+  CancelableBlockState* block = GetCurrentBlock();
   return block ? block->AsPanGestureBlock() : mActivePanGestureBlock.get();
 }
 
@@ -476,7 +476,7 @@ InputQueue::HasReadyTouchBlock() const
 {
   return !mQueuedInputs.IsEmpty() &&
       mQueuedInputs[0]->Block()->AsTouchBlock() &&
-      mQueuedInputs[0]->Block()->AsTouchBlock()->IsReadyForHandling();
+      mQueuedInputs[0]->Block()->IsReadyForHandling();
 }
 
 bool
@@ -509,13 +509,15 @@ InputQueue::ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTar
                                       CancelableBlockState* aBlock) {
   INPQ_LOG("scheduling main thread timeout for target %p\n", aTarget.get());
   aBlock->StartContentResponseTimer();
-  aTarget->PostDelayedTask(NewRunnableMethod<uint64_t>(this,
-                                                       &InputQueue::MainThreadTimeout,
-                                                       aBlock->GetBlockId()),
-                           gfxPrefs::APZContentResponseTimeout());
+  aTarget->PostDelayedTask(
+    NewRunnableMethod<uint64_t>("layers::InputQueue::MainThreadTimeout",
+                                this,
+                                &InputQueue::MainThreadTimeout,
+                                aBlock->GetBlockId()),
+    gfxPrefs::APZContentResponseTimeout());
 }
 
-InputBlockState*
+CancelableBlockState*
 InputQueue::FindBlockForId(uint64_t aInputBlockId,
                            InputData** aOutFirstInput)
 {
@@ -553,9 +555,8 @@ InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
   INPQ_LOG("got a main thread timeout; block=%" PRIu64 "\n", aInputBlockId);
   bool success = false;
   InputData* firstInput = nullptr;
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, &firstInput);
-  if (inputBlock && inputBlock->AsCancelableBlock()) {
-    CancelableBlockState* block = inputBlock->AsCancelableBlock();
+  CancelableBlockState* block = FindBlockForId(aInputBlockId, &firstInput);
+  if (block) {
     
     
     
@@ -564,8 +565,6 @@ InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
         block->GetTargetApzc(),
         InputBlockState::TargetConfirmationState::eTimedOut,
         firstInput);
-  } else if (inputBlock) {
-    NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
     ProcessQueue();
@@ -578,13 +577,10 @@ InputQueue::ContentReceivedInputBlock(uint64_t aInputBlockId, bool aPreventDefau
 
   INPQ_LOG("got a content response; block=%" PRIu64 "\n", aInputBlockId);
   bool success = false;
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
-  if (inputBlock && inputBlock->AsCancelableBlock()) {
-    CancelableBlockState* block = inputBlock->AsCancelableBlock();
+  CancelableBlockState* block = FindBlockForId(aInputBlockId, nullptr);
+  if (block) {
     success = block->SetContentResponse(aPreventDefault);
     block->RecordContentResponseTime();
-  } else if (inputBlock) {
-    NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
     ProcessQueue();
@@ -599,15 +595,12 @@ InputQueue::SetConfirmedTargetApzc(uint64_t aInputBlockId, const RefPtr<AsyncPan
     aInputBlockId, aTargetApzc ? Stringify(aTargetApzc->GetGuid()).c_str() : "");
   bool success = false;
   InputData* firstInput = nullptr;
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, &firstInput);
-  if (inputBlock && inputBlock->AsCancelableBlock()) {
-    CancelableBlockState* block = inputBlock->AsCancelableBlock();
+  CancelableBlockState* block = FindBlockForId(aInputBlockId, &firstInput);
+  if (block) {
     success = block->SetConfirmedTargetApzc(aTargetApzc,
         InputBlockState::TargetConfirmationState::eConfirmed,
         firstInput);
     block->RecordContentResponseTime();
-  } else if (inputBlock) {
-    NS_WARNING("input block is not a cancelable block");
   }
   if (success) {
     ProcessQueue();
@@ -624,10 +617,9 @@ InputQueue::ConfirmDragBlock(uint64_t aInputBlockId, const RefPtr<AsyncPanZoomCo
     aInputBlockId, aTargetApzc ? Stringify(aTargetApzc->GetGuid()).c_str() : "");
   bool success = false;
   InputData* firstInput = nullptr;
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, &firstInput);
-  if (inputBlock && inputBlock->AsDragBlock()) {
-    DragBlockState* block = inputBlock->AsDragBlock();
-    block->SetDragMetrics(aDragMetrics);
+  CancelableBlockState* block = FindBlockForId(aInputBlockId, &firstInput);
+  if (block && block->AsDragBlock()) {
+    block->AsDragBlock()->SetDragMetrics(aDragMetrics);
     success = block->SetConfirmedTargetApzc(aTargetApzc,
         InputBlockState::TargetConfirmationState::eConfirmed,
         firstInput);
@@ -644,12 +636,11 @@ InputQueue::SetAllowedTouchBehavior(uint64_t aInputBlockId, const nsTArray<Touch
 
   INPQ_LOG("got allowed touch behaviours; block=%" PRIu64 "\n", aInputBlockId);
   bool success = false;
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
-  if (inputBlock && inputBlock->AsTouchBlock()) {
-    TouchBlockState* block = inputBlock->AsTouchBlock();
-    success = block->SetAllowedTouchBehaviors(aBehaviors);
+  CancelableBlockState* block = FindBlockForId(aInputBlockId, nullptr);
+  if (block && block->AsTouchBlock()) {
+    success = block->AsTouchBlock()->SetAllowedTouchBehaviors(aBehaviors);
     block->RecordContentResponseTime();
-  } else if (inputBlock) {
+  } else if (block) {
     NS_WARNING("input block is not a touch block");
   }
   if (success) {
@@ -662,20 +653,19 @@ InputQueue::ProcessQueue() {
   APZThreadUtils::AssertOnControllerThread();
 
   while (!mQueuedInputs.IsEmpty()) {
-    InputBlockState* curBlock = mQueuedInputs[0]->Block();
-    CancelableBlockState* cancelable = curBlock->AsCancelableBlock();
-    if (cancelable && !cancelable->IsReadyForHandling()) {
+    CancelableBlockState* curBlock = mQueuedInputs[0]->Block();
+    if (!curBlock->IsReadyForHandling()) {
       break;
     }
 
     INPQ_LOG("processing input from block %p; preventDefault %d target %p\n",
-        curBlock, cancelable && cancelable->IsDefaultPrevented(),
+        curBlock, curBlock->IsDefaultPrevented(),
         curBlock->GetTargetApzc().get());
     RefPtr<AsyncPanZoomController> target = curBlock->GetTargetApzc();
     
     
     if (target) {
-      if (cancelable && cancelable->IsDefaultPrevented()) {
+      if (curBlock->IsDefaultPrevented()) {
         if (curBlock->AsTouchBlock()) {
           target->ResetTouchInputState();
         }
@@ -702,10 +692,10 @@ InputQueue::ProcessQueue() {
 }
 
 bool
-InputQueue::CanDiscardBlock(InputBlockState* aBlock)
+InputQueue::CanDiscardBlock(CancelableBlockState* aBlock)
 {
   if (!aBlock ||
-      (aBlock->AsCancelableBlock() && !aBlock->AsCancelableBlock()->IsReadyForHandling()) ||
+      !aBlock->IsReadyForHandling() ||
       aBlock->MustStayActive()) {
     return false;
   }

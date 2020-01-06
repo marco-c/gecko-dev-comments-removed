@@ -5,19 +5,17 @@
 
 
 #include "MediaDecoderReader.h"
-
 #include "AbstractMediaDecoder.h"
-#include "ImageContainer.h"
-#include "MediaPrefs.h"
 #include "MediaResource.h"
 #include "VideoUtils.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/mozalloc.h"
+#include "ImageContainer.h"
+#include "MediaPrefs.h"
+
 #include "nsPrintfCString.h"
-#include <algorithm>
+#include "mozilla/mozalloc.h"
+#include "mozilla/Mutex.h"
 #include <stdint.h>
+#include <algorithm>
 
 using namespace mozilla::media;
 
@@ -94,7 +92,10 @@ MediaDecoderReader::Init()
       mTaskQueue, this, &MediaDecoderReader::NotifyDataArrived);
   }
   
-  mTaskQueue->Dispatch(NewRunnableMethod(this, &MediaDecoderReader::InitializationTask));
+  mTaskQueue->Dispatch(
+    NewRunnableMethod("MediaDecoderReader::InitializationTask",
+                      this,
+                      &MediaDecoderReader::InitializationTask));
   return InitInternal();
 }
 
@@ -246,7 +247,8 @@ class ReRequestVideoWithSkipTask : public Runnable
 public:
   ReRequestVideoWithSkipTask(MediaDecoderReader* aReader,
                              const media::TimeUnit& aTimeThreshold)
-    : mReader(aReader)
+    : Runnable("ReRequestVideoWithSkipTask")
+    , mReader(aReader)
     , mTimeThreshold(aTimeThreshold)
   {
   }
@@ -272,7 +274,8 @@ class ReRequestAudioTask : public Runnable
 {
 public:
   explicit ReRequestAudioTask(MediaDecoderReader* aReader)
-    : mReader(aReader)
+    : Runnable("ReRequestAudioTask")
+    , mReader(aReader)
   {
   }
 

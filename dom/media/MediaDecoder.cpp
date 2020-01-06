@@ -5,35 +5,34 @@
 
 
 #include "MediaDecoder.h"
-
-#include "AudioChannelService.h"
-#include "ImageContainer.h"
-#include "Layers.h"
-#include "MediaDecoderStateMachine.h"
-#include "MediaResource.h"
-#include "MediaShutdownManager.h"
-#include "VideoFrameContainer.h"
-#include "VideoUtils.h"
-#include "mozilla/AbstractThread.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
+#include <limits>
+#include "nsIObserver.h"
+#include "nsTArray.h"
+#include "VideoUtils.h"
+#include "MediaDecoderStateMachine.h"
+#include "ImageContainer.h"
+#include "MediaResource.h"
+#include "VideoFrameContainer.h"
+#include "nsError.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Telemetry.h"
+#include "nsIMemoryReporter.h"
+#include "nsComponentManagerUtils.h"
+#include <algorithm>
+#include "MediaShutdownManager.h"
+#include "AudioChannelService.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackList.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/VideoTrack.h"
 #include "mozilla/dom/VideoTrackList.h"
-#include "mozilla/layers/ShadowLayers.h"
-#include "nsComponentManagerUtils.h"
-#include "nsError.h"
-#include "nsIMemoryReporter.h"
-#include "nsIObserver.h"
 #include "nsPrintfCString.h"
-#include "nsTArray.h"
-#include <algorithm>
-#include <limits>
+#include "mozilla/Telemetry.h"
+#include "Layers.h"
+#include "mozilla/layers/ShadowLayers.h"
 
 #ifdef MOZ_ANDROID_OMX
 #include "AndroidBridge.h"
@@ -44,12 +43,6 @@ using namespace mozilla::layers;
 using namespace mozilla::media;
 
 namespace mozilla {
-
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
 
 
 #undef LOG
@@ -221,30 +214,36 @@ MediaDecoder::ResourceCallback::NotifyDataArrived()
   
   
   mTimerArmed = true;
-  mTimer->InitWithFuncCallback(
-    TimerCallback, this, sDelay, nsITimer::TYPE_ONE_SHOT);
+  mTimer->InitWithNamedFuncCallback(
+    TimerCallback,
+    this,
+    sDelay,
+    nsITimer::TYPE_ONE_SHOT,
+    "MediaDecoder::ResourceCallback::NotifyDataArrived");
 }
 
 void
 MediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (!self->mDecoder) {
-      return;
-    }
-    self->mDecoder->NotifyDownloadEnded(aStatus);
-    if (NS_SUCCEEDED(aStatus)) {
-      MediaDecoderOwner* owner = self->GetMediaOwner();
-      MOZ_ASSERT(owner);
-      owner->DownloadSuspended();
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaDecoder::ResourceCallback::NotifyDataEnded", [=]() {
+      if (!self->mDecoder) {
+        return;
+      }
+      self->mDecoder->NotifyDownloadEnded(aStatus);
+      if (NS_SUCCEEDED(aStatus)) {
+        MediaDecoderOwner* owner = self->GetMediaOwner();
+        MOZ_ASSERT(owner);
+        owner->DownloadSuspended();
 
-      
-      
-      
-      self->mDecoder->NotifySuspendedStatusChanged();
-    }
-  });
+        
+        
+        
+        
+        self->mDecoder->NotifySuspendedStatusChanged();
+      }
+    });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -271,11 +270,12 @@ MediaDecoder::ResourceCallback::NotifyBytesConsumed(int64_t aBytes,
                                                     int64_t aOffset)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mDecoder) {
-      self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
-    }
-  });
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaDecoder::ResourceCallback::NotifyBytesConsumed", [=]() {
+      if (self->mDecoder) {
+        self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
+      }
+    });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -478,10 +478,11 @@ MediaDecoder::Shutdown()
     
     
     RefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
-      self->mVideoFrameContainer = nullptr;
-      MediaShutdownManager::Instance().Unregister(self);
-    });
+    nsCOMPtr<nsIRunnable> r =
+      NS_NewRunnableFunction("MediaDecoder::Shutdown", [self]() {
+        self->mVideoFrameContainer = nullptr;
+        MediaShutdownManager::Instance().Unregister(self);
+      });
     mAbstractMainThread->Dispatch(r.forget());
   }
 

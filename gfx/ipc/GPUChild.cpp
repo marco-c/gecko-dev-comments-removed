@@ -199,13 +199,6 @@ GPUChild::RecvRecordChildEvents(nsTArray<mozilla::Telemetry::ChildEventData>&& a
 }
 
 mozilla::ipc::IPCResult
-GPUChild::RecvRecordDiscardedData(const mozilla::Telemetry::DiscardedData& aDiscardedData)
-{
-  TelemetryIPC::RecordDiscardedData(Telemetry::ProcessID::Gpu, aDiscardedData);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
 GPUChild::RecvNotifyDeviceReset(const GPUDeviceData& aData)
 {
   gfxPlatform::GetPlatform()->ImportGPUDeviceData(aData);
@@ -276,7 +269,8 @@ class DeferredDeleteGPUChild : public Runnable
 {
 public:
   explicit DeferredDeleteGPUChild(UniquePtr<GPUChild>&& aChild)
-    : mChild(Move(aChild))
+    : Runnable("gfx::DeferredDeleteGPUChild")
+    , mChild(Move(aChild))
   {
   }
 

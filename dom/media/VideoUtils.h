@@ -7,10 +7,7 @@
 #ifndef VideoUtils_h
 #define VideoUtils_h
 
-#include "AudioSampleFormat.h"
 #include "MediaInfo.h"
-#include "TimeUnits.h"
-#include "VideoLimits.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
@@ -18,14 +15,19 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+
 #include "nsAutoPtr.h"
-#include "nsCOMPtr.h"
 #include "nsIThread.h"
-#include "nsITimer.h"
-#include "nsRect.h"
 #include "nsSize.h"
+#include "nsRect.h"
+
 #include "nsThreadUtils.h"
 #include "prtime.h"
+#include "AudioSampleFormat.h"
+#include "TimeUnits.h"
+#include "nsITimer.h"
+#include "nsCOMPtr.h"
+#include "VideoLimits.h"
 
 using mozilla::CheckedInt64;
 using mozilla::CheckedUint64;
@@ -90,7 +92,11 @@ private:
 class ShutdownThreadEvent : public Runnable
 {
 public:
-  explicit ShutdownThreadEvent(nsIThread* aThread) : mThread(aThread) {}
+  explicit ShutdownThreadEvent(nsIThread* aThread)
+    : Runnable("ShutdownThreadEvent")
+    , mThread(aThread)
+  {
+  }
   ~ShutdownThreadEvent() {}
   NS_IMETHOD Run() override {
     mThread->Shutdown();
@@ -265,8 +271,11 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
       } else if (aLocalCondition()) {
         aPromise->Resolve(true, __func__);
       } else {
-        nsCOMPtr<nsIRunnable> r =
-          NS_NewRunnableFunction([aPromise, aLocalWork, aLocalCondition] () { Iteration(aPromise, aLocalWork, aLocalCondition); });
+        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+          "InvokeUntil::Helper::Iteration",
+          [aPromise, aLocalWork, aLocalCondition]() {
+            Iteration(aPromise, aLocalWork, aLocalCondition);
+          });
         AbstractThread::GetCurrent()->Dispatch(r.forget());
       }
     }

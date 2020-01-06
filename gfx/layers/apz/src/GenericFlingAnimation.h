@@ -111,10 +111,11 @@ public:
       
       
       
-      mDeferredTasks.AppendElement(
-            NewRunnableMethod<AsyncPanZoomController*>(mOverscrollHandoffChain.get(),
-                                                       &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-                                                       &mApzc));
+      mDeferredTasks.AppendElement(NewRunnableMethod<AsyncPanZoomController*>(
+        "layers::OverscrollHandoffChain::SnapBackOverscrolledApzc",
+        mOverscrollHandoffChain.get(),
+        &OverscrollHandoffChain::SnapBackOverscrolledApzc,
+        &mApzc));
       return false;
     }
 
@@ -164,13 +165,15 @@ public:
       
       FLING_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
       mDeferredTasks.AppendElement(
-          NewRunnableMethod<ParentLayerPoint,
-                            RefPtr<const OverscrollHandoffChain>,
-                            RefPtr<const AsyncPanZoomController>>(&mApzc,
-                                                                  &AsyncPanZoomController::HandleFlingOverscroll,
-                                                                  velocity,
-                                                                  mOverscrollHandoffChain,
-                                                                  mScrolledApzc));
+        NewRunnableMethod<ParentLayerPoint,
+                          RefPtr<const OverscrollHandoffChain>,
+                          RefPtr<const AsyncPanZoomController>>(
+          "layers::AsyncPanZoomController::HandleFlingOverscroll",
+          &mApzc,
+          &AsyncPanZoomController::HandleFlingOverscroll,
+          velocity,
+          mOverscrollHandoffChain,
+          mScrolledApzc));
 
       
       

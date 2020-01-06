@@ -454,8 +454,9 @@ CustomElementRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType
       
       
       
-      nsCOMPtr<nsIRunnable> runnable =
-        NS_NewRunnableFunction(&CustomElementRegistry::ProcessTopElementQueue);
+      nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+        "dom::CustomElementRegistry::EnqueueLifecycleCallback",
+        &CustomElementRegistry::ProcessTopElementQueue);
       nsContentUtils::AddScriptRunner(runnable);
     }
   }

@@ -863,11 +863,15 @@ nsHTTPIndex::GetTargets(nsIRDFResource *aSource, nsIRDFResource *aProperty, bool
             		NS_ASSERTION(NS_SUCCEEDED(rv), "unable to create a timer");
             		if (NS_SUCCEEDED(rv))
             		{
-                		mTimer->InitWithFuncCallback(nsHTTPIndex::FireTimer, this, 1,
-                		    nsITimer::TYPE_ONE_SHOT);
-                		
-                		
-            		}
+                          mTimer->InitWithNamedFuncCallback(
+                            nsHTTPIndex::FireTimer,
+                            this,
+                            1,
+                            nsITimer::TYPE_ONE_SHOT,
+                            "nsHTTPIndex::GetTargets");
+                          
+                          
+                        }
             	}
 	    	}
 		}
@@ -898,11 +902,14 @@ nsHTTPIndex::AddElement(nsIRDFResource *parent, nsIRDFResource *prop, nsIRDFNode
 		NS_ASSERTION(NS_SUCCEEDED(rv), "unable to create a timer");
 		if (NS_FAILED(rv))  return(rv);
 
-		mTimer->InitWithFuncCallback(nsHTTPIndex::FireTimer, this, 1,
-		    nsITimer::TYPE_ONE_SHOT);
-		
-		
-	}
+                mTimer->InitWithNamedFuncCallback(nsHTTPIndex::FireTimer,
+                                                  this,
+                                                  1,
+                                                  nsITimer::TYPE_ONE_SHOT,
+                                                  "nsHTTPIndex::AddElement");
+                
+                
+        }
 
     return(NS_OK);
 }
@@ -1031,8 +1038,11 @@ nsHTTPIndex::FireTimer(nsITimer* aTimer, void* aClosure)
     httpIndex->mTimer = do_CreateInstance("@mozilla.org/timer;1");
     if (httpIndex->mTimer)
     {
-      httpIndex->mTimer->InitWithFuncCallback(nsHTTPIndex::FireTimer, aClosure, 10,
-          nsITimer::TYPE_ONE_SHOT);
+      httpIndex->mTimer->InitWithNamedFuncCallback(nsHTTPIndex::FireTimer,
+                                                   aClosure,
+                                                   10,
+                                                   nsITimer::TYPE_ONE_SHOT,
+                                                   "nsHTTPIndex::FireTimer");
       
       
     }
