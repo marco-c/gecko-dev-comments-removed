@@ -132,7 +132,8 @@ var PdfjsChromeUtils = {
       
       
       
-      this._ppmm.broadcastAsyncMessage("PDFJS:Child:updateSettings", {enabled});
+      this._ppmm.broadcastAsyncMessage("PDFJS:Child:updateSettings",
+                                       { enabled, });
     }
   },
 
