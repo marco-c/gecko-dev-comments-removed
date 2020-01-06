@@ -155,8 +155,6 @@ public:
   bool mHasSourceMapURL;  
   bool mIsDefer;          
   bool mIsAsync;          
-  bool mPreloadAsAsync;   
-  bool mPreloadAsDefer;   
   bool mIsNonAsyncScriptInserted; 
   bool mIsXSLT;           
   bool mIsCanceled;       
