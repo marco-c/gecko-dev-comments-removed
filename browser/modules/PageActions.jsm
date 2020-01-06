@@ -43,8 +43,17 @@ this.PageActions = {
     
     for (let options of gBuiltInActions) {
       if (!this.actionForID(options.id)) {
-        this.addAction(new Action(options));
+        this._registerAction(new Action(options));
       }
+    }
+
+    
+    
+    
+    
+    
+    for (let bpa of allBrowserPageActions()) {
+      bpa.placeAllActions();
     }
 
     
@@ -98,6 +107,27 @@ this.PageActions = {
 
 
 
+  get actionsInUrlbar() {
+    if (!this._persistedActions) {
+      
+      
+      return [];
+    }
+    
+    
+    return this._persistedActions.idsInUrlbar.reduce((actions, id) => {
+      let action = this.actionForID(id);
+      if (action) {
+        actions.push(action);
+      }
+      return actions;
+    }, []);
+  },
+
+  
+
+
+
 
 
 
@@ -128,18 +158,32 @@ this.PageActions = {
       return action;
     }
 
+    let hadSep = this.actions.some(a => a.id == ACTION_ID_BUILT_IN_SEPARATOR);
+
+    this._registerAction(action);
+
+    let sep = null;
+    if (!hadSep) {
+      sep = this.actions.find(a => a.id == ACTION_ID_BUILT_IN_SEPARATOR);
+    }
+
+    for (let bpa of allBrowserPageActions()) {
+      if (sep) {
+        
+        
+        bpa.placeAction(sep);
+      }
+      bpa.placeAction(action);
+    }
+
+    return action;
+  },
+
+  _registerAction(action) {
     if (this.actionForID(action.id)) {
       throw new Error(`Action with ID '${action.id}' already added`);
     }
     this._actionsByID.set(action.id, action);
-
-    
-    
-    let panelInsertBeforeID = null;
-    let urlbarInsertBeforeID = null;
-
-    let oldBuiltInCount = this._builtInActions.length;
-    let oldNonBuiltInCount = this._nonBuiltInActions.length;
 
     
     
@@ -158,29 +202,18 @@ this.PageActions = {
       if (index < 0) {
         
         index = this._builtInActions.length;
-        if (this._nonBuiltInActions.length) {
-          panelInsertBeforeID = ACTION_ID_BUILT_IN_SEPARATOR;
-        }
-      } else {
-        panelInsertBeforeID = this._builtInActions[index].id;
       }
       this._builtInActions.splice(index, 0, action);
     } else if (gBuiltInActions.find(a => a.id == action.id)) {
       
       
       this._builtInActions.push(action);
-      if (this._nonBuiltInActions.length) {
-        panelInsertBeforeID = ACTION_ID_BUILT_IN_SEPARATOR;
-      }
     } else {
       
       
       let index = BinarySearch.insertionIndexOf((a1, a2) => {
         return a1.title.localeCompare(a2.title);
       }, this._nonBuiltInActions, action);
-      if (index < this._nonBuiltInActions.length) {
-        panelInsertBeforeID = this._nonBuiltInActions[index].id;
-      }
       this._nonBuiltInActions.splice(index, 0, action);
     }
 
@@ -199,36 +232,6 @@ this.PageActions = {
       }
       this._storePersistedActions();
     }
-
-    if (action.shownInUrlbar) {
-      urlbarInsertBeforeID = this.insertBeforeActionIDInUrlbar(action);
-    }
-
-    
-    
-    let placeBuiltInSeparator =
-      (oldNonBuiltInCount == 0 &&
-       this._nonBuiltInActions.length &&
-       this._builtInActions.length) ||
-      (oldBuiltInCount == 0 &&
-       this._builtInActions.length &&
-       this._nonBuiltInActions.length);
-
-    for (let win of browserWindows()) {
-      if (placeBuiltInSeparator) {
-        let sep = new Action({
-          id: ACTION_ID_BUILT_IN_SEPARATOR,
-          _isSeparator: true,
-        });
-        let sepPanelInsertBeforeID =
-          this._nonBuiltInActions.length ? this._nonBuiltInActions[0].id : null;
-        browserPageActions(win).placeAction(sep, sepPanelInsertBeforeID, null);
-      }
-      browserPageActions(win).placeAction(action, panelInsertBeforeID,
-                                          urlbarInsertBeforeID);
-    }
-
-    return action;
   },
 
   _builtInActions: [],
@@ -243,27 +246,6 @@ this.PageActions = {
 
 
 
-  insertBeforeActionIDInPanel(action) {
-    let index = this._builtInActions.findIndex(a => {
-      return a.id == action.id;
-    });
-    if (index >= 0) {
-      return this._builtInActions[index + 1] ||
-             this._nonBuiltInActions.length ? ACTION_ID_BUILT_IN_SEPARATOR
-                                            : null;
-    }
-
-    index = this._nonBuiltInActions.findIndex(a => {
-      return a.id == action.id;
-    });
-    if (index >= 0) {
-      return this._nonBuiltInActions[index + 1] || null;
-    }
-
-    return null;
-  },
-
-  
 
 
 
@@ -272,23 +254,19 @@ this.PageActions = {
 
 
 
-  insertBeforeActionIDInUrlbar(action) {
-    
-    let idsInUrlbar = this._persistedActions.idsInUrlbar;
-    let index = idsInUrlbar.indexOf(action.id);
+
+
+
+  nextActionID(action, actionArray) {
+    let index = actionArray.findIndex(a => a.id == action.id);
     if (index < 0) {
       return null;
     }
-    
-    
-    
-    for (let i = index + 1; i < idsInUrlbar.length; i++) {
-      let id = idsInUrlbar[i];
-      if (this.actionForID(id)) {
-        return id;
-      }
+    let nextAction = actionArray[index + 1];
+    if (!nextAction) {
+      return null;
     }
-    return null;
+    return nextAction.id;
   },
 
   
@@ -320,8 +298,8 @@ this.PageActions = {
     }
     this._storePersistedActions();
 
-    for (let win of browserWindows()) {
-      browserPageActions(win).removeAction(action);
+    for (let bpa of allBrowserPageActions()) {
+      bpa.removeAction(action);
     }
   },
 
@@ -336,8 +314,8 @@ this.PageActions = {
       
       return;
     }
-    for (let win of browserWindows()) {
-      browserPageActions(win).updateActionIconURL(action);
+    for (let bpa of allBrowserPageActions()) {
+      bpa.updateActionIconURL(action);
     }
   },
 
@@ -352,8 +330,8 @@ this.PageActions = {
       
       return;
     }
-    for (let win of browserWindows()) {
-      browserPageActions(win).updateActionTitle(action);
+    for (let bpa of allBrowserPageActions()) {
+      bpa.updateActionTitle(action);
     }
   },
 
@@ -380,9 +358,8 @@ this.PageActions = {
     }
     this._storePersistedActions();
 
-    let insertBeforeID = this.insertBeforeActionIDInUrlbar(action);
-    for (let win of browserWindows()) {
-      browserPageActions(win).placeActionInUrlbar(action, insertBeforeID);
+    for (let bpa of allBrowserPageActions()) {
+      bpa.placeActionInUrlbar(action);
     }
   },
 
@@ -1010,10 +987,16 @@ function browserPageActions(obj) {
 
 
 
-function* browserWindows() {
+function* allBrowserWindows() {
   let windows = Services.wm.getEnumerator("navigator:browser");
   while (windows.hasMoreElements()) {
     yield windows.getNext();
+  }
+}
+
+function* allBrowserPageActions() {
+  for (let win of allBrowserWindows()) {
+    yield browserPageActions(win);
   }
 }
 

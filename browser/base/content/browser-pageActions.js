@@ -47,10 +47,31 @@ var BrowserPageActions = {
 
 
   init() {
+    this.placeAllActions();
+  },
+
+  
+
+
+  placeAllActions() {
+    
     for (let action of PageActions.actions) {
-      this.placeAction(action,
-                       PageActions.insertBeforeActionIDInPanel(action),
-                       PageActions.insertBeforeActionIDInUrlbar(action));
+      action.onBeforePlacedInWindow(window);
+      this.placeActionInPanel(action);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let actionsInUrlbar = PageActions.actionsInUrlbar;
+    for (let i = actionsInUrlbar.length - 1; i >= 0; i--) {
+      let action = actionsInUrlbar[i];
+      this.placeActionInUrlbar(action);
     }
   },
 
@@ -60,16 +81,10 @@ var BrowserPageActions = {
 
 
 
-
-
-
-
-
-
-  placeAction(action, panelInsertBeforeID, urlbarInsertBeforeID) {
+  placeAction(action) {
     action.onBeforePlacedInWindow(window);
-    this.placeActionInPanel(action, panelInsertBeforeID);
-    this.placeActionInUrlbar(action, urlbarInsertBeforeID);
+    this.placeActionInPanel(action);
+    this.placeActionInUrlbar(action);
   },
 
   
@@ -78,10 +93,8 @@ var BrowserPageActions = {
 
 
 
-
-
-
-  placeActionInPanel(action, insertBeforeID) {
+  placeActionInPanel(action) {
+    let insertBeforeID = PageActions.nextActionID(action, PageActions.actions);
     let id = this._panelButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
     if (!node) {
@@ -286,10 +299,9 @@ var BrowserPageActions = {
 
 
 
-
-
-
-  placeActionInUrlbar(action, insertBeforeID) {
+  placeActionInUrlbar(action) {
+    let insertBeforeID =
+      PageActions.nextActionID(action, PageActions.actionsInUrlbar);
     let id = this._urlbarButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
 
