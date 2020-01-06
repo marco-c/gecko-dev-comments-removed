@@ -240,6 +240,10 @@ public:
   Create(CollectorRunnerCallback aCallback, uint32_t aDelay,
          int64_t aBudget, bool aRepeating, void* aData = nullptr)
   {
+    if (sShuttingDown) {
+      return nullptr;
+    }
+
     RefPtr<CollectorRunner> runner =
       new CollectorRunner(aCallback, aDelay, aBudget, aRepeating, aData);
     runner->Schedule(false); 
@@ -1921,7 +1925,10 @@ InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData)
 {
   nsJSContext::KillInterSliceGCRunner();
   MOZ_ASSERT(sActiveIntersliceGCBudget > 0);
-  int64_t budget = sActiveIntersliceGCBudget;
+  
+  
+  
+  int64_t budget = sActiveIntersliceGCBudget * 2;
   if (!aDeadline.IsNull()) {
     budget = int64_t((aDeadline - TimeStamp::Now()).ToMilliseconds());
   }
