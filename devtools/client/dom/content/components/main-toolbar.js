@@ -11,7 +11,7 @@ const { l10n } = require("../utils");
 
 
 const { createFactories } = require("devtools/client/shared/react-utils");
-const { Toolbar, ToolbarButton } = createFactories(require("devtools/client/jsonview/components/reps/toolbar"));
+const { Toolbar, ToolbarButton } = createFactories(require("devtools/client/jsonview/components/reps/Toolbar"));
 
 
 const SearchBox = React.createFactory(require("devtools/client/shared/components/SearchBox"));
