@@ -222,7 +222,7 @@ constexpr const char* RtpStreamId::kUri;
 
 bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid) {
   if (data.empty() || data[0] == 0 ||  
-      data.size() <= StreamId::kMaxSize) 
+      data.size() > StreamId::kMaxSize) 
     return false;
   
   
@@ -240,7 +240,7 @@ bool RtpStreamId::Write(uint8_t* data, const StreamId& rsid) {
 
 bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid) {
   if (data.empty() || data[0] == 0 ||  
-      data.size() <= StreamId::kMaxSize) 
+      data.size() > StreamId::kMaxSize) 
     return false;
   const char* str = reinterpret_cast<const char*>(data.data());
   
