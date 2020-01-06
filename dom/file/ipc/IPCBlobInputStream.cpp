@@ -162,20 +162,12 @@ IPCBlobInputStream::Available(uint64_t* aLength)
 {
   
   if (mState == eInit || mState == ePending) {
-    *aLength = mLength;
+    *aLength = 0;
     return NS_OK;
   }
 
   if (mState == eRunning) {
     MOZ_ASSERT(mRemoteStream || mAsyncRemoteStream);
-
-    
-    
-    
-    if (!mAsyncRemoteStream) {
-      *aLength = mLength;
-      return NS_OK;
-    }
 
     nsresult rv = EnsureAsyncRemoteStream();
     if (NS_WARN_IF(NS_FAILED(rv))) {
