@@ -89,7 +89,7 @@ nsTreeStyleCache::GetStyleContext(nsICSSPseudoComparator* aComparator,
     } else {
       newResult = aPresContext->StyleSet()->AsGecko()->
         ResolveXULTreePseudoStyle(aContent->AsElement(), aPseudoElement,
-                                  aContext->AsGecko(), aComparator);
+                                  aContext->AsGecko(), aInputWord);
     }
 
     

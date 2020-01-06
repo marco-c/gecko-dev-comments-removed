@@ -12,6 +12,7 @@
 #ifndef nsStyleSet_h_
 #define nsStyleSet_h_
 
+#include "mozilla/AtomArray.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/EnumeratedArray.h"
@@ -307,7 +308,7 @@ class nsStyleSet final
   ResolveXULTreePseudoStyle(mozilla::dom::Element* aParentElement,
                             nsICSSAnonBoxPseudo* aPseudoTag,
                             mozilla::GeckoStyleContext* aParentContext,
-                            nsICSSPseudoComparator* aComparator);
+                            const mozilla::AtomArray& aInputWord);
 #endif
 
   

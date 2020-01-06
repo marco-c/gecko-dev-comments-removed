@@ -4484,16 +4484,6 @@ nsTreeBodyFrame::GetPseudoStyleContext(nsICSSAnonBoxPseudo* aPseudoElement)
 bool
 nsTreeBodyFrame::PseudoMatches(nsCSSSelector* aSelector)
 {
-  
-  
-  
-  
-  nsAtomList* curr = aSelector->mClassList;
-  while (curr) {
-    if (!mScratchArray.Contains(curr->mAtom))
-      return false;
-    curr = curr->mNext;
-  }
   return true;
 }
 

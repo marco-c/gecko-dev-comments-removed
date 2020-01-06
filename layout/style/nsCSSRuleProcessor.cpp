@@ -2589,6 +2589,22 @@ nsCSSRuleProcessor::RulesMatching(AnonBoxRuleProcessorData* aData)
 }
 
 #ifdef MOZ_XUL
+static bool
+XULTreePseudoMatches(nsCSSSelector* aSelector, const AtomArray& aInputWord)
+{
+  
+  
+  
+  
+  nsAtomList* curr = aSelector->mClassList;
+  while (curr) {
+    if (!aInputWord.Contains(curr->mAtom))
+      return false;
+    curr = curr->mNext;
+  }
+  return true;
+}
+
  void
 nsCSSRuleProcessor::RulesMatching(XULTreeRuleProcessorData* aData)
 {
@@ -2603,7 +2619,7 @@ nsCSSRuleProcessor::RulesMatching(XULTreeRuleProcessorData* aData)
       nsTArray<RuleValue>& rules = entry->mRules;
       for (RuleValue *value = rules.Elements(), *end = value + rules.Length();
            value != end; ++value) {
-        if (aData->mComparator->PseudoMatches(value->mSelector)) {
+        if (XULTreePseudoMatches(value->mSelector, aData->mInputWord)) {
           ContentEnumFunc(*value, value->mSelector->mNext, aData, nodeContext,
                           nullptr);
         }
