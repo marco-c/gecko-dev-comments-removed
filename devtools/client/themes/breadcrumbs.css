@@ -3,6 +3,14 @@
 
 
 
+ :root {
+  --breadcrumb-id-class-color: #909090;
+ }
+
+ .theme-dark:root {
+  --breadcrumb-id-class-color: var(--theme-content-color1);
+ }
+
 
 
 .breadcrumbs-widget-container {
@@ -155,12 +163,9 @@
   color: var(--theme-body-color);
 }
 
-.breadcrumbs-widget-item-id {
-  color: var(--theme-body-color-alt);
-}
-
+.breadcrumbs-widget-item-id,
 .breadcrumbs-widget-item-classes {
-  color: var(--theme-content-color1);
+  color: var(--breadcrumb-id-class-color);
 }
 
 .breadcrumbs-widget-item-pseudo-classes {
