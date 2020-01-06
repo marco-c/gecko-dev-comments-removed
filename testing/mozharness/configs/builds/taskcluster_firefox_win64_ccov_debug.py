@@ -33,7 +33,6 @@ config = {
     
     'enable_signing': True,
     'vcs_share_base': os.path.join('y:', os.sep, 'hg-shared'),
-    'objdir': 'obj-firefox',
     'tooltool_script': [
       sys.executable,
       os.path.join(os.environ['MOZILLABUILD'], 'tooltool.py')

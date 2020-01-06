@@ -10,7 +10,6 @@ config = {
     'stage_platform': 'source',  
     'buildbot_json_path': 'buildprops.json',
     'app_ini_path': 'FAKE',  
-    'objdir': 'obj-firefox',
     'env': {
         'MOZ_OBJDIR': '%(abs_obj_dir)s',
         'TINDERBOX_OUTPUT': '1',

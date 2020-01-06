@@ -1,8 +1,6 @@
 import os
 import sys
 
-MOZ_OBJDIR = 'obj-firefox'
-
 config = {
     
     
@@ -20,7 +18,6 @@ config = {
     
     'enable_signing': False,
     'vcs_share_base': '/builds/hg-shared',
-    'objdir': MOZ_OBJDIR,
     
     'debug_build': True,
     'enable_talos_sendchange': False,
