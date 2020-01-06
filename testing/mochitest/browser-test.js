@@ -212,7 +212,7 @@ Tester.prototype = {
     return this.tests[this.currentTestIndex];
   },
   get done() {
-    return this.currentTestIndex == this.tests.length - 1;
+    return (this.currentTestIndex == this.tests.length - 1) && (this.repeat <= 0);
   },
 
   start: function Tester_start() {
@@ -336,40 +336,34 @@ Tester.prototype = {
     
     failCount += this.failuresFromInitialWindowState;
 
-    if (this.repeat > 0) {
-      --this.repeat;
-      this.currentTestIndex = -1;
-      this.nextTest();
+    TabDestroyObserver.destroy();
+    Services.console.unregisterListener(this);
+
+    
+    this.PromiseTestUtils.uninit();
+
+    
+    let pid = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processID;
+    dump("Completed ShutdownLeaks collections in process " + pid + "\n");
+
+    this.structuredLogger.info("TEST-START | Shutdown");
+
+    if (this.tests.length) {
+      let e10sMode = gMultiProcessBrowser ? "e10s" : "non-e10s";
+      this.structuredLogger.info("Browser Chrome Test Summary");
+      this.structuredLogger.info("Passed:  " + passCount);
+      this.structuredLogger.info("Failed:  " + failCount);
+      this.structuredLogger.info("Todo:    " + todoCount);
+      this.structuredLogger.info("Mode:    " + e10sMode);
     } else {
-      TabDestroyObserver.destroy();
-      Services.console.unregisterListener(this);
-
-      
-      this.PromiseTestUtils.uninit();
-
-      
-      let pid = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processID;
-      dump("Completed ShutdownLeaks collections in process " + pid + "\n");
-
-      this.structuredLogger.info("TEST-START | Shutdown");
-
-      if (this.tests.length) {
-        let e10sMode = gMultiProcessBrowser ? "e10s" : "non-e10s";
-        this.structuredLogger.info("Browser Chrome Test Summary");
-        this.structuredLogger.info("Passed:  " + passCount);
-        this.structuredLogger.info("Failed:  " + failCount);
-        this.structuredLogger.info("Todo:    " + todoCount);
-        this.structuredLogger.info("Mode:    " + e10sMode);
-      } else {
-        this.structuredLogger.error("browser-test.js | No tests to run. Did you pass invalid test_paths?");
-      }
-      this.structuredLogger.info("*** End BrowserChrome Test Results ***");
-
-      
-      this.callback(this.tests);
-      this.callback = null;
-      this.tests = null;
+      this.structuredLogger.error("browser-test.js | No tests to run. Did you pass invalid test_paths?");
     }
+    this.structuredLogger.info("*** End BrowserChrome Test Results ***");
+
+    
+    this.callback(this.tests);
+    this.callback = null;
+    this.tests = null;
   },
 
   haltTests: function Tester_haltTests() {
@@ -690,8 +684,18 @@ Tester.prototype = {
         return;
       }
 
-      this.currentTestIndex++;
-      this.execTest();
+      if (this.repeat > 0) {
+        --this.repeat;
+        if (this.currentTestIndex < 0) {
+          this.currentTestIndex = 0;
+        }
+        this.execTest();
+      } else {
+        this.currentTestIndex++;
+        if (gConfig.repeat)
+          this.repeat = gConfig.repeat;
+        this.execTest();
+      }
     });
   }),
 
