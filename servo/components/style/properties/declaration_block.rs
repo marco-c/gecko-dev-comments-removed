@@ -953,7 +953,8 @@ struct PropertyDeclarationParser<'a, 'b: 'a> {
 
 
 impl<'a, 'b, 'i> AtRuleParser<'i> for PropertyDeclarationParser<'a, 'b> {
-    type Prelude = ();
+    type PreludeNoBlock = ();
+    type PreludeBlock = ();
     type AtRule = Importance;
     type Error = SelectorParseError<'i, StyleParseError<'i>>;
 }
