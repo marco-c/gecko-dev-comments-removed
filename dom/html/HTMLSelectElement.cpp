@@ -1072,7 +1072,7 @@ HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
   }
 
   
-  if (optionsDeselected && aStartIndex != -1) {
+  if (optionsDeselected && aStartIndex != -1 && !(aOptionsMask & NO_RESELECT)) {
     optionsSelected =
       CheckSelectSomething(aOptionsMask & NOTIFY) || optionsSelected;
   }
@@ -1312,8 +1312,7 @@ HTMLSelectElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 
 nsresult
 HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                                const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue, bool aNotify)
+                                const nsAttrValue* aValue, bool aNotify)
 {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::disabled) {
@@ -1328,8 +1327,7 @@ HTMLSelectElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   }
 
   return nsGenericHTMLFormElementWithState::AfterSetAttr(aNameSpaceID, aName,
-                                                         aValue, aOldValue,
-                                                         aNotify);
+                                                         aValue, aNotify);
 }
 
 nsresult
@@ -1648,13 +1646,14 @@ HTMLSelectElement::Reset()
       
       
 
-      uint32_t mask = SET_DISABLED | NOTIFY;
+      uint32_t mask = SET_DISABLED | NOTIFY | NO_RESELECT;
       if (option->DefaultSelected()) {
         mask |= IS_SELECTED;
         numSelected++;
       }
 
       SetOptionsSelectedByIndex(i, i, mask);
+      option->SetSelectedChanged(false);
     }
   }
 

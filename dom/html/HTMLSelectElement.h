@@ -135,11 +135,15 @@ public:
 
 
 
+
+
+
   enum OptionType {
     IS_SELECTED   = 1 << 0,
     CLEAR_ALL     = 1 << 1,
     SET_DISABLED  = 1 << 2,
-    NOTIFY        = 1 << 3
+    NOTIFY        = 1 << 3,
+    NO_RESELECT   = 1 << 4
   };
 
   using nsIConstraintValidation::GetValidationMessage;
@@ -384,9 +388,7 @@ public:
                                  const nsAttrValueOrString* aValue,
                                  bool aNotify) override;
   virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
-                                const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue,
-                                bool aNotify) override;
+                                const nsAttrValue* aValue, bool aNotify) override;
   virtual nsresult UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
                              bool aNotify) override;
 
