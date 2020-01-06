@@ -2762,7 +2762,8 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   nscoord appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
   
   
-  gfxSize scale = FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
+  float presShellResolution = mScrolledFrame->PresContext()->PresShell()->GetResolution();
+  gfxSize scale(presShellResolution, presShellResolution);
   nsPoint curPos = GetScrollPosition();
   nsPoint alignWithPos = mScrollPosForLayerPixelAlignment == nsPoint(-1,-1)
                          ? curPos : mScrollPosForLayerPixelAlignment;
@@ -5880,8 +5881,11 @@ ScrollFrameHelper::GetScrolledRect() const
 
   
   
+  
+  
   nscoord appUnitsPerDevPixel = mScrolledFrame->PresContext()->AppUnitsPerDevPixel();
-  gfxSize scale = FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
+  float presShellResolution = mScrolledFrame->PresContext()->PresShell()->GetResolution();
+  gfxSize scale(presShellResolution, presShellResolution);
   if (scale.IsEmpty()) {
     scale = gfxSize(1.0f, 1.0f);
   }
