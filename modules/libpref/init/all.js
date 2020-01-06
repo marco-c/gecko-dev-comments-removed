@@ -3133,6 +3133,13 @@ pref("layout.display-list.dump-content", false);
 pref("layout.display-list.dump-parent", false);
 
 
+#ifdef ANDROID
+pref("layout.display-list.retain", false);
+#else
+pref("layout.display-list.retain", false);
+#endif
+
+
 pref("layout.spammy_warnings.enabled", false);
 
 
