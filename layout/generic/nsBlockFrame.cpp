@@ -7581,12 +7581,6 @@ nsBlockFrame::ResolveBidi()
 void
 nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState)
 {
-  
-  
-  if (HasFirstLetterChild()) {
-    UpdateFirstLetterStyle(aRestyleState);
-  }
-
   if (nsBulletFrame* bullet = GetBullet()) {
     CSSPseudoElementType type = bullet->StyleContext()->GetPseudoType();
     RefPtr<nsStyleContext> newBulletStyle =
