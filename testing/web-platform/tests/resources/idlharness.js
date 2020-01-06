@@ -617,7 +617,7 @@ IdlArray.prototype.assert_type_is = function(value, type)
             return;
 
         case "object":
-            assert_true(typeof value == "object" || typeof value == "function", "wrong type: not object or function");
+            assert_in_array(typeof value, ["object", "function"], "wrong type: not object or function");
             return;
     }
 
@@ -633,7 +633,7 @@ IdlArray.prototype.assert_type_is = function(value, type)
         
         
         
-        assert_true(typeof value == "object" || typeof value == "function", "wrong type: not object or function");
+        assert_in_array(typeof value, ["object", "function"], "wrong type: not object or function");
         if (value instanceof Object
         && !this.members[type].has_extended_attribute("NoInterfaceObject")
         && type in self)
@@ -1635,6 +1635,13 @@ IdlInterface.prototype.test_primary_interface_of = function(desc, obj, exception
 {
     
     
+    if (!this.untested)
+    {
+        return;
+    }
+
+    
+    
     
     
     if (!this.has_extended_attribute("NoInterfaceObject")
@@ -1684,6 +1691,9 @@ IdlInterface.prototype.test_interface_of = function(desc, obj, exception, expect
     for (var i = 0; i < this.members.length; i++)
     {
         var member = this.members[i];
+        if (member.untested) {
+            continue;
+        }
         if (!exposed_in(exposure_set(member, this.exposureSet))) {
             test(function() {
                 assert_false(member.name in obj);
@@ -1891,6 +1901,7 @@ IdlInterface.prototype.do_interface_attribute_asserts = function(obj, member, a_
     
     
     if (member.readonly
+    && !member.has_extended_attribute("LenientSetter")
     && !member.has_extended_attribute("PutForwards")
     && !member.has_extended_attribute("Replaceable"))
     {

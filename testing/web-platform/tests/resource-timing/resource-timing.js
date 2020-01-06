@@ -277,7 +277,7 @@ window.onload =
             
             
             
-            assert_true(actual.startTime == actual.redirectStart || actual.startTime == actual.fetchStart,
+            assert_in_array(actual.startTime, [actual.redirectStart, actual.fetchStart],
                 "startTime must be equal to redirectStart or fetchStart.");
 
             
