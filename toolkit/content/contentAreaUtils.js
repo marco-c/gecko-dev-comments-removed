@@ -1224,7 +1224,7 @@ function openURL(aURL) {
 
   if (!protocolSvc.isExposedProtocol(uri.scheme)) {
     
-    protocolSvc.loadUrl(uri);
+    protocolSvc.loadURI(uri);
   } else {
     var recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
     if (recentWindow) {

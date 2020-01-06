@@ -458,7 +458,7 @@ this.DownloadsCommon = {
         
         Cc["@mozilla.org/uriloader/external-protocol-service;1"]
           .getService(Ci.nsIExternalProtocolService)
-          .loadUrl(NetUtil.newURI(aFile));
+          .loadURI(NetUtil.newURI(aFile));
       }
     }).catch(Cu.reportError);
   },
@@ -503,7 +503,7 @@ this.DownloadsCommon = {
       
       Cc["@mozilla.org/uriloader/external-protocol-service;1"]
         .getService(Ci.nsIExternalProtocolService)
-        .loadUrl(NetUtil.newURI(aDirectory));
+        .loadURI(NetUtil.newURI(aDirectory));
     }
   },
 

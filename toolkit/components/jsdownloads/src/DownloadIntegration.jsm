@@ -665,7 +665,7 @@ this.DownloadIntegration = {
 
     
     
-    gExternalProtocolService.loadUrl(NetUtil.newURI(file));
+    gExternalProtocolService.loadURI(NetUtil.newURI(file));
   },
 
   
@@ -730,7 +730,7 @@ this.DownloadIntegration = {
 
     
     
-    gExternalProtocolService.loadUrl(NetUtil.newURI(parent));
+    gExternalProtocolService.loadURI(NetUtil.newURI(parent));
   },
 
   
