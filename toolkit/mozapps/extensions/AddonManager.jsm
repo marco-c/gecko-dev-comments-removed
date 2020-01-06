@@ -576,8 +576,6 @@ AddonCompatibilityOverride.prototype = {
 
 
 
-
-
 function AddonType(aID, aLocaleURI, aLocaleKey, aViewType, aUIPriority, aFlags) {
   if (!aID)
     throw Components.Exception("An AddonType must have an ID", Cr.NS_ERROR_INVALID_ARG);
@@ -598,7 +596,7 @@ function AddonType(aID, aLocaleURI, aLocaleKey, aViewType, aUIPriority, aFlags) 
   if (aLocaleURI) {
     XPCOMUtils.defineLazyGetter(this, "name", () => {
       let bundle = Services.strings.createBundle(aLocaleURI);
-      return bundle.GetStringFromName(aLocaleKey.replace("%ID%", aID));
+      return bundle.GetStringFromName(aLocaleKey);
     });
   } else {
     this.name = aLocaleKey;
