@@ -192,11 +192,6 @@ StackWalkInitCriticalAddress()
 #include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsVersion.h"
 
-#ifdef MOZ_STATIC_JS 
-#include "nsWindowsDllInterceptor.h"
-#define STACKWALK_HAS_DLL_INTERCEPTOR
-#endif
-
 #include <imagehlp.h>
 
 
@@ -285,39 +280,6 @@ UnregisterJitCodeRegion(uint8_t* aStart, size_t aSize)
   sJitCodeRegionSize = 0;
 }
 
-#ifdef STACKWALK_HAS_DLL_INTERCEPTOR
-static WindowsDllInterceptor NtDllInterceptor;
-
-typedef NTSTATUS (NTAPI *LdrUnloadDll_func)(HMODULE module);
-static LdrUnloadDll_func stub_LdrUnloadDll;
-
-static NTSTATUS NTAPI
-patched_LdrUnloadDll(HMODULE module)
-{
-  
-  
-  AutoSuppressStackWalking suppress;
-  return stub_LdrUnloadDll(module);
-}
-
-
-typedef PVOID (WINAPI *LdrResolveDelayLoadedAPI_func)(PVOID ParentModuleBase,
-  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
-  PVOID ThunkAddress, ULONG Flags);
-static LdrResolveDelayLoadedAPI_func stub_LdrResolveDelayLoadedAPI;
-
-static PVOID WINAPI patched_LdrResolveDelayLoadedAPI(PVOID ParentModuleBase,
-  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
-  PVOID ThunkAddress, ULONG Flags)
-{
-  
-  
-  AutoSuppressStackWalking suppress;
-  return stub_LdrResolveDelayLoadedAPI(ParentModuleBase, DelayloadDescriptor,
-                                       FailureDllHook, FailureSystemHook,
-                                       ThunkAddress, Flags);
-}
-#endif 
 #endif 
 
 
@@ -403,20 +365,6 @@ EnsureWalkThreadReady()
   ::CloseHandle(readyEvent);
   stackWalkThread = nullptr;
   readyEvent = nullptr;
-
-#if defined(_M_AMD64) && defined(STACKWALK_HAS_DLL_INTERCEPTOR)
-  NtDllInterceptor.Init("ntdll.dll");
-  NtDllInterceptor.AddHook("LdrUnloadDll",
-                           reinterpret_cast<intptr_t>(patched_LdrUnloadDll),
-                           (void**)&stub_LdrUnloadDll);
-  if (IsWin8OrLater()) { 
-    NtDllInterceptor.AddHook("LdrResolveDelayLoadedAPI",
-                             reinterpret_cast<intptr_t>(patched_LdrResolveDelayLoadedAPI),
-                             (void**)&stub_LdrResolveDelayLoadedAPI);
-  }
-#endif
-
-  InitializeDbgHelpCriticalSection();
 
   return walkThreadReady = true;
 }
@@ -675,7 +623,11 @@ MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
   DWORD walkerReturn;
   struct WalkStackData data;
 
-  if (!EnsureWalkThreadReady()) {
+  InitializeDbgHelpCriticalSection();
+
+  
+  
+  if (!aThread && !EnsureWalkThreadReady()) {
     return false;
   }
 
