@@ -562,8 +562,11 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
       }
 #endif
       if (*_retval) {
+        nsAutoString oldSearchString;
         
-        if (!mResults.IsEmpty()) {
+        if (!mResults.IsEmpty() &&
+            NS_SUCCEEDED(mResults[0]->GetSearchString(oldSearchString)) &&
+            oldSearchString.Equals(mSearchString, nsCaseInsensitiveStringComparator())) {
           if (mRowCount) {
             OpenPopup();
           }
