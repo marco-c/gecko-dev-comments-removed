@@ -245,7 +245,6 @@ class WidgetRenderingContext;
 
 
 
-
 - (void)swipeWithEvent:(NSEvent *)anEvent;
 - (void)beginGestureWithEvent:(NSEvent *)anEvent;
 - (void)smartMagnifyWithEvent:(NSEvent *)anEvent;
