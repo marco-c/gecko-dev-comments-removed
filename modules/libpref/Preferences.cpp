@@ -175,20 +175,17 @@ pref_GetPrefFromEntry(PrefHashEntry* aHashEntry,
 
 size_t
 pref_SizeOfPrivateData(mozilla::MallocSizeOf aMallocSizeOf);
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
 
 static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
-typedef union {
+union PrefValue {
   char* mStringVal;
   int32_t mIntVal;
   bool mBoolVal;
-} PrefValue;
+};
 
 
 
@@ -421,10 +418,6 @@ PREF_ReaderCallback(void* aClosure,
 
 typedef void (*PrefsDirtyFunc)();
 void PREF_SetDirtyCallback(PrefsDirtyFunc);
-
-#ifdef __cplusplus
-}
-#endif
 
 static void
 ClearPrefEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
@@ -1511,10 +1504,6 @@ PREF_ReaderCallback(void* aClosure,
 
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 
 
@@ -1537,7 +1526,7 @@ typedef void (*PrefParseErrorReporter)(const char* aMessage,
                                        int aLine,
                                        bool aError);
 
-typedef struct PrefParseState
+struct PrefParseState
 {
   PrefReader mReader;
   PrefParseErrorReporter mReporter;
@@ -1558,7 +1547,7 @@ typedef struct PrefParseState
   PrefType mVtype;       
   bool mIsDefault;       
   bool mIsStickyDefault; 
-} PrefParseState;
+};
 
 
 
@@ -1586,10 +1575,6 @@ PREF_FinalizeParseState(PrefParseState* aPS);
 
 bool
 PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen);
-
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef TEST_PREFREAD
 #include <stdio.h>
