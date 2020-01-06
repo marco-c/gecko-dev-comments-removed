@@ -861,7 +861,12 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
     for (let i = 0, line; (line = lines[i++]);) {
       let linePos = line.start;
-      let negativeLineNumber = i - lines.length - 1;
+      let negativeLineNumber = line.negativeNumber;
+
+      
+      if (negativeLineNumber == 0) {
+        break;
+      }
 
       
       
