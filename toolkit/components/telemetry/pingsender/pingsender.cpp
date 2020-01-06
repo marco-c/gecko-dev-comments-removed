@@ -103,11 +103,7 @@ GzipCompress(const std::string& rawData)
     
     
     while (deflater.avail_out == 0) {
-      size_t bytesToWrite = kBufferSize - deflater.avail_out;
-      if (bytesToWrite == 0) {
-        break;
-      }
-      gzipData.append(reinterpret_cast<const char*>(outputBuffer), bytesToWrite);
+      gzipData.append(reinterpret_cast<const char*>(outputBuffer), kBufferSize);
 
       
       deflater.next_out = outputBuffer;
