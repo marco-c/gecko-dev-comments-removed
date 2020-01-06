@@ -67,8 +67,44 @@ function readJSON(url) {
   });
 }
 
+function stripDescriptions(json, stripThis = true) {
+  if (Array.isArray(json)) {
+    for (let i = 0; i < json.length; i++) {
+      if (typeof json[i] === "object" && json[i] !== null) {
+        json[i] = stripDescriptions(json[i]);
+      }
+    }
+    return json;
+  }
+
+  let result = {};
+
+  
+  
+  
+  
+  for (let key of Object.keys(json).sort()) {
+    if (stripThis && key === "description" && typeof json[key] === "string") {
+      continue;
+    }
+
+    if (typeof json[key] === "object" && json[key] !== null) {
+      result[key] = stripDescriptions(json[key], key !== "properties");
+    } else {
+      result[key] = json[key];
+    }
+  }
+
+  return result;
+}
+
 async function readJSONAndBlobbify(url) {
   let json = await readJSON(url);
+
+  
+  
+  
+  json = stripDescriptions(json);
 
   return new StructuredCloneHolder(json);
 }
