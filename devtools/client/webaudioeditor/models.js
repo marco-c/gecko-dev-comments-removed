@@ -11,20 +11,20 @@
 
 
 
-const AudioNodeModel = Class({
-  extends: EventEmitter,
+class AudioNodeModel extends EventEmitter {
+  constructor(actor) {
+    super();
 
-  
-  collection: null,
+    
+    this.collection = null;
 
-  initialize: function (actor) {
     this.actor = actor;
     this.id = actor.actorID;
     this.type = actor.type;
     this.bypassable = actor.bypassable;
     this._bypassed = false;
     this.connections = [];
-  },
+  }
 
   
 
@@ -36,31 +36,31 @@ const AudioNodeModel = Class({
 
 
 
-  connect: function (destination, param) {
+  connect(destination, param) {
     let edge = findWhere(this.connections, { destination: destination.id, param: param });
 
     if (!edge) {
       this.connections.push({ source: this.id, destination: destination.id, param: param });
       EventEmitter.emit(this, "connect", this, destination, param);
     }
-  },
+  }
 
   
 
 
-  disconnect: function () {
+  disconnect() {
     this.connections.length = 0;
     EventEmitter.emit(this, "disconnect", this);
-  },
+  }
 
   
 
 
 
 
-  isBypassed: function () {
+  isBypassed() {
     return this._bypassed;
-  },
+  }
 
   
 
@@ -68,10 +68,10 @@ const AudioNodeModel = Class({
 
 
 
-  bypass: function (enable) {
+  bypass(enable) {
     this._bypassed = enable;
     return this.actor.bypass(enable).then(() => EventEmitter.emit(this, "bypass", this, enable));
-  },
+  }
 
   
 
@@ -79,9 +79,9 @@ const AudioNodeModel = Class({
 
 
 
-  getParams: function () {
+  getParams() {
     return this.actor.getParams();
-  },
+  }
 
   
 
@@ -90,9 +90,9 @@ const AudioNodeModel = Class({
 
 
 
-  getAutomationData: function (paramName) {
+  getAutomationData(paramName) {
     return this.actor.getAutomationData(paramName);
-  },
+  }
 
   
 
@@ -100,14 +100,14 @@ const AudioNodeModel = Class({
 
 
 
-  addToGraph: function (graph) {
+  addToGraph(graph) {
     graph.addNode(this.id, {
       type: this.type,
       label: this.type.replace(/Node$/, ""),
       id: this.id,
       bypassed: this._bypassed
     });
-  },
+  }
 
   
 
@@ -117,7 +117,7 @@ const AudioNodeModel = Class({
 
 
 
-  addEdgesToGraph: function (graph) {
+  addEdgesToGraph(graph) {
     for (let edge of this.connections) {
       let options = {
         source: this.id,
@@ -134,14 +134,12 @@ const AudioNodeModel = Class({
 
       graph.addEdge(null, this.id, edge.destination, options);
     }
-  },
+  }
 
-  toString: () => "[object AudioNodeModel]",
-});
-
-
-
-
+  toString() {
+    return "[object AudioNodeModel]";
+  }
+}
 
 
 
@@ -149,15 +147,18 @@ const AudioNodeModel = Class({
 
 
 
-const AudioNodesCollection = Class({
-  extends: EventEmitter,
 
-  model: AudioNodeModel,
 
-  initialize: function () {
+
+
+class AudioNodesCollection extends EventEmitter {
+  constructor() {
+    super();
+
+    this.model = AudioNodeModel;
     this.models = new Set();
     this._onModelEvent = this._onModelEvent.bind(this);
-  },
+  }
 
   
 
@@ -165,9 +166,9 @@ const AudioNodesCollection = Class({
 
 
 
-  forEach: function (fn) {
+  forEach(fn) {
     this.models.forEach(fn);
-  },
+  }
 
   
 
@@ -179,7 +180,7 @@ const AudioNodesCollection = Class({
 
 
 
-  add: function (obj) {
+  add(obj) {
     let node = new this.model(obj);
     node.collection = this;
 
@@ -188,7 +189,7 @@ const AudioNodesCollection = Class({
     node.on("*", this._onModelEvent);
     EventEmitter.emit(this, "add", node);
     return node;
-  },
+  }
 
   
 
@@ -196,17 +197,17 @@ const AudioNodesCollection = Class({
 
 
 
-  remove: function (node) {
+  remove(node) {
     this.models.delete(node);
     EventEmitter.emit(this, "remove", node);
-  },
+  }
 
   
 
 
-  reset: function () {
+  reset() {
     this.models.clear();
-  },
+  }
 
   
 
@@ -216,9 +217,9 @@ const AudioNodesCollection = Class({
 
 
 
-  get: function (id) {
+  get(id) {
     return findWhere(this.models, { id: id });
-  },
+  }
 
   
 
@@ -227,7 +228,7 @@ const AudioNodesCollection = Class({
 
   get length() {
     return this.models.size;
-  },
+  }
 
   
 
@@ -237,7 +238,7 @@ const AudioNodesCollection = Class({
 
 
 
-  getInfo: function () {
+  getInfo() {
     let info = {
       nodes: this.length,
       edges: 0,
@@ -250,7 +251,7 @@ const AudioNodesCollection = Class({
       info.paramEdges += paramEdgeCount;
     });
     return info;
-  },
+  }
 
   
 
@@ -258,17 +259,17 @@ const AudioNodesCollection = Class({
 
 
 
-  populateGraph: function (graph) {
+  populateGraph(graph) {
     this.models.forEach(node => node.addToGraph(graph));
     this.models.forEach(node => node.addEdgesToGraph(graph));
-  },
+  }
 
   
 
 
 
 
-  _onModelEvent: function (eventName, node, ...args) {
+  _onModelEvent(eventName, node, ...args) {
     if (eventName === "remove") {
       
       
@@ -278,7 +279,9 @@ const AudioNodesCollection = Class({
       
       EventEmitter.emit(this, eventName, node, ...args);
     }
-  },
+  }
 
-  toString: () => "[object AudioNodeCollection]",
-});
+  toString() {
+    return "[object AudioNodeCollection]";
+  }
+}
