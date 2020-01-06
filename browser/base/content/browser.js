@@ -4876,9 +4876,6 @@ var XULBrowserWindow = {
   onUpdateCurrentBrowser: function XWB_onUpdateCurrentBrowser(aStateFlags, aStatus, aMessage, aTotalProgress) {
     if (FullZoom.updateBackgroundTabs)
       FullZoom.onLocationChange(gBrowser.currentURI, true);
-
-    CombinedStopReload.onTabSwitch();
-
     var nsIWebProgressListener = Components.interfaces.nsIWebProgressListener;
     var loadingDone = aStateFlags & nsIWebProgressListener.STATE_STOP;
     
@@ -4983,7 +4980,6 @@ var CombinedStopReload = {
     this.reload = reload;
     this.stop = stop;
     this.stopReloadContainer = this.reload.parentNode;
-    this.timeWhenSwitchedToStop = 0;
 
     
     this.animate = false;
@@ -5051,25 +5047,12 @@ var CombinedStopReload = {
     });
   },
 
-  onTabSwitch() {
-    
-    
-    this.timeWhenSwitchedToStop = 0;
-  },
-
   switchToStop(aRequest, aWebProgress) {
     if (!this._initialized || !this._shouldSwitch(aRequest))
       return;
 
-    
-    
-    
-    if (aRequest) {
-      this.timeWhenSwitchedToStop = window.performance.now();
-    }
-
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
-                        aRequest &&
+                        aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
@@ -5091,11 +5074,10 @@ var CombinedStopReload = {
       return;
 
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
-                        aRequest &&
+                        aRequest instanceof Ci.nsIRequest &&
                         aWebProgress.isTopLevel &&
                         !aWebProgress.isLoadingDocument &&
                         !gBrowser.tabAnimationsInProgress &&
-                        this._loadTimeExceedsMinimumForAnimation() &&
                         this.animate;
 
     if (shouldAnimate) {
@@ -5126,16 +5108,6 @@ var CombinedStopReload = {
       self.reload.disabled = XULBrowserWindow.reloadCommand
                                              .getAttribute("disabled") == "true";
     }, 650, this);
-  },
-
-  _loadTimeExceedsMinimumForAnimation() {
-    
-    
-    
-    
-    
-    return !this.timeWhenSwitchedToStop ||
-           window.performance.now() - this.timeWhenSwitchedToStop > 150;
   },
 
   _shouldSwitch(aRequest) {
