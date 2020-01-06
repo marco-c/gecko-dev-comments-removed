@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { generateUUID } = require("devtools/shared/generate-uuid");
+const uuidgen = require("sdk/util/uuid").uuid;
 const defer = require("devtools/shared/defer");
 const {
   entries, toObject, executeSoon
@@ -17,7 +17,7 @@ function promiseMiddleware({ dispatch, getState }) {
     }
 
     const promiseInst = action[PROMISE];
-    const seqId = generateUUID().toString();
+    const seqId = uuidgen().toString();
 
     
     
