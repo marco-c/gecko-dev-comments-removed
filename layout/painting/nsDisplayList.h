@@ -502,6 +502,11 @@ public:
     return mMode == nsDisplayListBuilderMode::PAINTING_SELECTION_BACKGROUND;
   }
 
+  bool BuildCompositorHitTestInfo()
+  {
+    return mBuildCompositorHitTestInfo;
+  }
+
   bool WillComputePluginGeometry() { return mWillComputePluginGeometry; }
   
 
@@ -1817,6 +1822,7 @@ private:
   bool                           mHitTestIsForVisibility;
   bool                           mIsBuilding;
   bool                           mInInvalidSubtree;
+  bool                           mBuildCompositorHitTestInfo;
 };
 
 class nsDisplayItem;
@@ -4299,9 +4305,58 @@ public:
   }
 #endif
 
-  virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
-                       HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
+  void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+               HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
+  bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                               mozilla::wr::IpcResourceUpdateQueue& aResources,
+                               const StackingContextHelper& aSc,
+                               mozilla::layers::WebRenderLayerManager* aManager,
+                               nsDisplayListBuilder* aDisplayListBuilder) override;
+
   NS_DISPLAY_DECL_NAME("EventReceiver", TYPE_EVENT_RECEIVER)
+};
+
+
+
+
+
+
+
+class nsDisplayCompositorHitTestInfo : public nsDisplayEventReceiver {
+public:
+  nsDisplayCompositorHitTestInfo(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                                 mozilla::gfx::CompositorHitTestInfo aHitTestInfo)
+    : nsDisplayEventReceiver(aBuilder, aFrame)
+    , mHitTestInfo(aHitTestInfo)
+  {
+    MOZ_COUNT_CTOR(nsDisplayCompositorHitTestInfo);
+    
+    
+    
+    MOZ_ASSERT(aBuilder->BuildCompositorHitTestInfo());
+    MOZ_ASSERT(mHitTestInfo != mozilla::gfx::CompositorHitTestInfo::eInvisibleToHitTest);
+  }
+
+#ifdef NS_BUILD_REFCNT_LOGGING
+  virtual ~nsDisplayCompositorHitTestInfo()
+  {
+    MOZ_COUNT_DTOR(nsDisplayCompositorHitTestInfo);
+  }
+#endif
+
+  mozilla::gfx::CompositorHitTestInfo HitTestInfo() const { return mHitTestInfo; }
+
+  bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                               mozilla::wr::IpcResourceUpdateQueue& aResources,
+                               const StackingContextHelper& aSc,
+                               mozilla::layers::WebRenderLayerManager* aManager,
+                               nsDisplayListBuilder* aDisplayListBuilder) override;
+  void WriteDebugInfo(std::stringstream& aStream) override;
+
+  NS_DISPLAY_DECL_NAME("CompositorHitTestInfo", TYPE_COMPOSITOR_HITTEST_INFO)
+
+private:
+  mozilla::gfx::CompositorHitTestInfo mHitTestInfo;
 };
 
 

@@ -22,6 +22,7 @@
 #include "nsCOMPtr.h"
 #include "nsFrameList.h"
 #include "nsPlaceholderFrame.h"
+#include "nsPluginFrame.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsContentUtils.h"
@@ -3021,6 +3022,13 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
         eventRegions = nullptr;
       }
     }
+    if (aBuilder->BuildCompositorHitTestInfo()) {
+      CompositorHitTestInfo info = GetCompositorHitTestInfo(aBuilder);
+      if (info != CompositorHitTestInfo::eInvisibleToHitTest) {
+        set.BorderBackground()->AppendNewToBottom(
+            new (aBuilder) nsDisplayCompositorHitTestInfo(aBuilder, this, info));
+      }
+    }
   }
 
   if (aBuilder->IsBackgroundOnly()) {
@@ -3451,6 +3459,13 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
     CheckForApzAwareEventHandlers(aBuilder, child);
 
+    if (aBuilder->BuildCompositorHitTestInfo()) {
+      CompositorHitTestInfo info = child->GetCompositorHitTestInfo(aBuilder);
+      if (info != CompositorHitTestInfo::eInvisibleToHitTest) {
+        aLists.BorderBackground()->AppendNewToTop(
+            new (aBuilder) nsDisplayCompositorHitTestInfo(aBuilder, child, info));
+      }
+    }
     nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
     if (eventRegions) {
       eventRegions->AddFrame(aBuilder, child);
@@ -3668,6 +3683,18 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder);
 
+    if (aBuilder->BuildCompositorHitTestInfo()) {
+      CompositorHitTestInfo info = child->GetCompositorHitTestInfo(aBuilder);
+      if (info != CompositorHitTestInfo::eInvisibleToHitTest) {
+        nsDisplayItem* item =
+            new (aBuilder) nsDisplayCompositorHitTestInfo(aBuilder, child, info);
+        if (isPositioned) {
+          list.AppendNewToTop(item);
+        } else {
+          aLists.BorderBackground()->AppendNewToTop(item);
+        }
+      }
+    }
     if (aBuilder->IsBuildingLayerEventRegions()) {
       
       
@@ -11180,6 +11207,80 @@ nsIFrame::AddSizeOfExcludingThisForTree(nsWindowSizes& aSizes) const
     }
     iter.Next();
   }
+}
+
+CompositorHitTestInfo
+nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
+{
+  CompositorHitTestInfo result = CompositorHitTestInfo::eInvisibleToHitTest;
+
+  if (aBuilder->IsInsidePointerEventsNoneDoc()) {
+    
+    
+    return result;
+  }
+  if (!GetParent()) {
+    MOZ_ASSERT(IsViewportFrame());
+    
+    
+    return result;
+  }
+  uint8_t pointerEvents = StyleUserInterface()->GetEffectivePointerEvents(this);
+  if (pointerEvents == NS_STYLE_POINTER_EVENTS_NONE) {
+    return result;
+  }
+  if (!StyleVisibility()->IsVisible()) {
+    return result;
+  }
+
+  
+  result |= CompositorHitTestInfo::eVisibleToHitTest;
+
+  if (aBuilder->IsBuildingNonLayerizedScrollbar() ||
+      aBuilder->GetAncestorHasApzAwareEventHandler()) {
+    
+    
+    
+    
+    
+    result |= CompositorHitTestInfo::eDispatchToContent;
+  } else if (IsObjectFrame()) {
+    
+    
+    nsPluginFrame* pluginFrame = do_QueryFrame(this);
+    if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
+      result |= CompositorHitTestInfo::eDispatchToContent;
+    }
+  }
+
+  nsIFrame* touchActionFrame = this;
+  if (nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(this)) {
+    touchActionFrame = do_QueryFrame(scrollFrame);
+  }
+  uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
+  
+  
+  if (touchAction == NS_STYLE_TOUCH_ACTION_AUTO) {
+    
+  } else if (touchAction & NS_STYLE_TOUCH_ACTION_MANIPULATION) {
+    result |= CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+  } else {
+    if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
+      result |= CompositorHitTestInfo::eTouchActionPanXDisabled;
+    }
+    if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
+      result |= CompositorHitTestInfo::eTouchActionPanYDisabled;
+    }
+    if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
+      result |= CompositorHitTestInfo::eTouchActionPinchZoomDisabled
+              | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+      
+      MOZ_ASSERT(result & CompositorHitTestInfo::eTouchActionPanXDisabled);
+      MOZ_ASSERT(result & CompositorHitTestInfo::eTouchActionPanYDisabled);
+    }
+  }
+
+  return result;
 }
 
 

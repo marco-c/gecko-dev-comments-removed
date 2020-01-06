@@ -82,7 +82,6 @@
 #include "nsDOMTokenList.h"
 #include "mozilla/RuleNodeCacheConditions.h"
 #include "nsCSSProps.h"
-#include "nsPluginFrame.h"
 #include "nsSVGMaskFrame.h"
 #include "nsTableCellFrame.h"
 #include "nsTableColFrame.h"
@@ -963,6 +962,11 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mInInvalidSubtree(false)
 {
   MOZ_COUNT_CTOR(nsDisplayListBuilder);
+
+  mBuildCompositorHitTestInfo = gfxVars::UseWebRender()
+      && gfxPrefs::WebRenderHitTest()
+      && mAsyncPanZoomEnabled
+      && mMode == nsDisplayListBuilderMode::PAINTING;
 
   nsPresContext* pc = aReferenceFrame->PresContext();
   nsIPresShell *shell = pc->PresShell();
@@ -4829,36 +4833,83 @@ nsDisplayEventReceiver::HitTest(nsDisplayListBuilder* aBuilder,
   aOutFrames->AppendElement(mFrame);
 }
 
+bool
+nsDisplayEventReceiver::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                                const StackingContextHelper& aSc,
+                                                mozilla::layers::WebRenderLayerManager* aManager,
+                                                nsDisplayListBuilder* aDisplayListBuilder)
+{
+  
+  
+  MOZ_ASSERT(false);
+  return true;
+}
+
+bool
+nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
+                                                        mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                                        const StackingContextHelper& aSc,
+                                                        mozilla::layers::WebRenderLayerManager* aManager,
+                                                        nsDisplayListBuilder* aDisplayListBuilder)
+{
+  nsRect borderBox;
+  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
+  if (scrollFrame) {
+    
+    
+    
+    
+    
+    borderBox = mFrame->GetScrollableOverflowRect();
+  } else {
+    borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
+  }
+
+  if (borderBox.IsEmpty()) {
+    return true;
+  }
+
+  wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
+      LayoutDeviceRect::FromAppUnits(
+          borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame),
+          mFrame->PresContext()->AppUnitsPerDevPixel()));
+
+  
+  
+  
+  
+  
+  FrameMetrics::ViewID scrollId = FrameMetrics::NULL_SCROLL_ID;
+  if (const ActiveScrolledRoot* asr = GetActiveScrolledRoot()) {
+    scrollId = nsLayoutUtils::ViewIDForASR(asr);
+  }
+
+  
+  aBuilder.SetHitTestInfo(scrollId, mHitTestInfo);
+  aBuilder.PushRect(rect, rect, true, wr::ToColorF(gfx::Color()));
+  aBuilder.ClearHitTestInfo();
+
+  return true;
+}
+
+void
+nsDisplayCompositorHitTestInfo::WriteDebugInfo(std::stringstream& aStream)
+{
+  aStream << nsPrintfCString(" (hitTestInfo 0x%x)", (int)mHitTestInfo).get();
+}
+
 void
 nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame)
 {
   NS_ASSERTION(aBuilder->FindReferenceFrameFor(aFrame) == aBuilder->FindReferenceFrameFor(mFrame),
                "Reference frame mismatch");
-  if (aBuilder->IsInsidePointerEventsNoneDoc()) {
-    
-    
+  CompositorHitTestInfo hitInfo =
+      aFrame->GetCompositorHitTestInfo(aBuilder);
+  if (hitInfo == CompositorHitTestInfo::eInvisibleToHitTest) {
     return;
   }
-  if (!aFrame->GetParent()) {
-    MOZ_ASSERT(aFrame->IsViewportFrame());
-    
-    
-    return;
-  }
-
-  uint8_t pointerEvents =
-    aFrame->StyleUserInterface()->GetEffectivePointerEvents(aFrame);
-  if (pointerEvents == NS_STYLE_POINTER_EVENTS_NONE) {
-    return;
-  }
-  bool simpleRegions = aFrame->HasAnyStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS);
-  if (!simpleRegions) {
-    if (!aFrame->StyleVisibility()->IsVisible()) {
-      return;
-    }
-  }
-
 
   
 
@@ -4889,6 +4940,11 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
   borderBox += aBuilder->ToReferenceFrame(aFrame);
 
   bool borderBoxHasRoundedCorners = false;
+
+  
+  
+  
+  bool simpleRegions = aFrame->HasAnyStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS);
   if (!simpleRegions) {
     if (nsLayoutUtils::HasNonZeroCorner(aFrame->StyleBorder()->mBorderRadius)) {
       borderBoxHasRoundedCorners = true;
@@ -4914,39 +4970,25 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     mHitRegion.Add(aFrame, borderBox);
   }
 
-  if (aBuilder->IsBuildingNonLayerizedScrollbar() ||
-      aBuilder->GetAncestorHasApzAwareEventHandler())
-  {
-    
-    
-    
-    
-    
+  if (hitInfo & CompositorHitTestInfo::eDispatchToContent) {
     mDispatchToContentHitRegion.Add(aFrame, borderBox);
-  } else if (aFrame->IsObjectFrame()) {
-    
-    
-    nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
-    if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
-      mDispatchToContentHitRegion.Add(aFrame, borderBox);
-    }
   }
 
   
 
-  nsIFrame* touchActionFrame = aFrame;
-  if (scrollFrame) {
-    touchActionFrame = do_QueryFrame(scrollFrame);
-  }
-  uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
-  if (touchAction != NS_STYLE_TOUCH_ACTION_AUTO) {
-    if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
+  auto touchFlags = hitInfo & CompositorHitTestInfo::eTouchActionMask;
+  if (touchFlags) {
+    
+    if (touchFlags == CompositorHitTestInfo::eTouchActionMask) {
+      
       mNoActionRegion.Add(aFrame, borderBox);
     } else {
-      if ((touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
+      if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanXDisabled)) {
+        
         mHorizontalPanRegion.Add(aFrame, borderBox);
       }
-      if ((touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
+      if (!(hitInfo & CompositorHitTestInfo::eTouchActionPanYDisabled)) {
+        
         mVerticalPanRegion.Add(aFrame, borderBox);
       }
     }
@@ -6510,10 +6552,14 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   
   
   uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
+  wr::WrAnimationProperty prop;
 
   if (!animationInfo.GetAnimations().IsEmpty()) {
     opacityForSC = nullptr;
     OptionalOpacity opacityForCompositor = mOpacity;
+    prop.id = animationsId;
+    prop.effect_type = wr::WrAnimationType::Opacity;
+
 
     OpAddCompositorAnimations
       anim(CompositorAnimations(animationInfo.GetAnimations(), animationsId),
@@ -6526,7 +6572,8 @@ nsDisplayOpacity::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
   }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
-  StackingContextHelper sc(aSc, aBuilder, filters, nullptr, animationsId,
+  StackingContextHelper sc(aSc, aBuilder, filters, nullptr,
+                           animationsId ? &prop : nullptr,
                            opacityForSC);
 
   aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(&mList,
@@ -6815,8 +6862,13 @@ nsDisplayOwnLayer::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBui
   animationInfo.EnsureAnimationsId();
   mWrAnimationId = animationInfo.GetCompositorAnimationsId();
 
-  StackingContextHelper sc(aSc, aBuilder, nsTArray<wr::WrFilterOp>(), nullptr,
-                           mWrAnimationId);
+
+  wr::WrAnimationProperty prop;
+  prop.id = mWrAnimationId;
+  prop.effect_type = wr::WrAnimationType::Transform;
+
+  StackingContextHelper sc(aSc, aBuilder, nsTArray<wr::WrFilterOp>(),
+                           nullptr, &prop);
 
   nsDisplayWrapList::CreateWebRenderCommands(aBuilder, aResources, sc,
                                              aManager, aDisplayListBuilder);
@@ -8324,12 +8376,15 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
   
   
   uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
-
+  wr::WrAnimationProperty prop;
   if (!animationInfo.GetAnimations().IsEmpty()) {
     
     
     
     transformForSC = nullptr;
+
+    prop.id = animationsId;
+    prop.effect_type = wr::WrAnimationType::Transform;
 
     
     
@@ -8350,7 +8405,7 @@ nsDisplayTransform::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBu
                            aBuilder,
                            filters,
                            &newTransformMatrix,
-                           animationsId,
+                           animationsId ? &prop : nullptr,
                            nullptr,
                            transformForSC,
                            nullptr,
