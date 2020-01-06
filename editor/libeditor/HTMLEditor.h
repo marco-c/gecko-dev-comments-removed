@@ -477,7 +477,7 @@ protected:
                nsCOMPtr<nsIDOMNode>* outBRNode,
                nsIEditor::EDirection aSelect = nsIEditor::eNone) override;
 
-  nsresult InsertBR(nsCOMPtr<nsIDOMNode>* outBRNode);
+  nsresult InsertBR();
 
   
 
