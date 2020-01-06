@@ -61,9 +61,9 @@ def fill_template(config, tasks):
         
         
         
-        optimization = {'index-search': ['{}.level-{}.{}.hash.{}'.format(
-            INDEX_PREFIX, level, image_name, context_hash)
-            for level in reversed(range(int(config.params['level']), 4))]}
+        optimizations = [['index-search', '{}.level-{}.{}.hash.{}'.format(
+            INDEX_PREFIX, level, image_name, context_hash)]
+            for level in reversed(range(int(config.params['level']), 4))]
 
         
         
@@ -80,7 +80,7 @@ def fill_template(config, tasks):
             'attributes': {'image_name': image_name},
             'expires-after': '1 year',
             'routes': routes,
-            'optimization': optimization,
+            'optimizations': optimizations,
             'scopes': ['secrets:get:project/taskcluster/gecko/hgfingerprint'],
             'treeherder': {
                 'symbol': job_symbol,
