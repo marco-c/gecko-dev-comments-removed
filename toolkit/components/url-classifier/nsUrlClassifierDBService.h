@@ -104,7 +104,6 @@ public:
   bool GetCompleter(const nsACString& tableName,
                     nsIUrlClassifierHashCompleter** completer);
   nsresult CacheCompletions(mozilla::safebrowsing::CacheResultArray *results);
-  nsresult CacheMisses(mozilla::safebrowsing::PrefixArray *results);
 
   static nsIThread* BackgroundThread();
 
@@ -218,7 +217,6 @@ public:
   nsresult GCC_MANGLING_WORKAROUND CloseDb();
 
   nsresult CacheCompletions(CacheResultArray * aEntries);
-  nsresult CacheMisses(PrefixArray * aEntries);
 
   
   
@@ -278,10 +276,6 @@ private:
   nsTArray<mozilla::safebrowsing::TableUpdate*> mTableUpdates;
 
   uint32_t mUpdateWaitSec;
-
-  
-  
-  PrefixArray mMissCache;
 
   
   nsAutoPtr<CacheResultArray> mLastResults;

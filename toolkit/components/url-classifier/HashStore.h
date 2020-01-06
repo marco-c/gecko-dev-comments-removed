@@ -65,7 +65,8 @@ public:
       mAddPrefixes.Length() == 0 &&
       mSubPrefixes.Length() == 0 &&
       mAddCompletes.Length() == 0 &&
-      mSubCompletes.Length() == 0;
+      mSubCompletes.Length() == 0 &&
+      mMissPrefixes.Length() == 0;
   }
 
   
@@ -91,6 +92,7 @@ public:
   MOZ_MUST_USE nsresult NewSubComplete(uint32_t aAddChunk,
                                        const Completion& aCompletion,
                                        uint32_t aSubChunk);
+  MOZ_MUST_USE nsresult NewMissPrefix(const Prefix& aPrefix);
 
   ChunkSet& AddChunks() { return mAddChunks; }
   ChunkSet& SubChunks() { return mSubChunks; }
@@ -106,6 +108,9 @@ public:
   SubCompleteArray& SubCompletes() { return mSubCompletes; }
 
   
+  MissPrefixArray& MissPrefixes() { return mMissPrefixes; }
+
+  
   static const int TAG = 2;
 
 private:
@@ -117,8 +122,11 @@ private:
   ChunkSet mSubExpirations;
 
   
-  AddPrefixArray mAddPrefixes;
-  SubPrefixArray mSubPrefixes;
+  AddPrefixArray  mAddPrefixes;
+  SubPrefixArray  mSubPrefixes;
+
+  
+  MissPrefixArray mMissPrefixes;
 
   
   AddCompleteArray mAddCompletes;

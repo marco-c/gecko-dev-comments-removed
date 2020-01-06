@@ -1,0 +1,285 @@
+
+
+
+
+#include "Common.h"
+
+#define EXPIRED_TIME_SEC     (PR_Now() / PR_USEC_PER_SEC - 3600)
+#define NOTEXPIRED_TIME_SEC  (PR_Now() / PR_USEC_PER_SEC + 3600)
+
+static void
+SetupCacheEntry(LookupCacheV2* aLookupCache,
+                const nsCString& aCompletion,
+                bool aNegExpired = false,
+                bool aPosExpired = false)
+{
+  AddCompleteArray completes;
+  AddCompleteArray emptyCompletes;
+  MissPrefixArray misses;
+  MissPrefixArray emptyMisses;
+
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+
+  AddComplete* add = completes.AppendElement(fallible);
+  add->complete.FromPlaintext(aCompletion, cryptoHash);
+
+  Prefix* prefix = misses.AppendElement(fallible);
+  prefix->FromPlaintext(aCompletion, cryptoHash);
+
+  int64_t negExpirySec = aNegExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC;
+  aLookupCache->AddGethashResultToCache(emptyCompletes, misses, negExpirySec);
+
+  int64_t posExpirySec = aPosExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC;
+  aLookupCache->AddGethashResultToCache(completes, emptyMisses, posExpirySec);
+}
+
+static void
+SetupCacheEntry(LookupCacheV4* aLookupCache,
+                const nsCString& aCompletion,
+                bool aNegExpired = false,
+                bool aPosExpired = false)
+{
+  FullHashResponseMap map;
+
+  Prefix prefix;
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+  prefix.FromPlaintext(aCompletion, cryptoHash);
+
+  CachedFullHashResponse* response = map.LookupOrAdd(prefix.ToUint32());
+
+  response->negativeCacheExpirySec = aNegExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC;
+  response->fullHashes.Put(GeneratePrefix(aCompletion, COMPLETE_SIZE),
+                           aPosExpired ? EXPIRED_TIME_SEC : NOTEXPIRED_TIME_SEC);
+
+  aLookupCache->AddFullHashResponseToCache(map);
+}
+
+template<typename T>
+void
+TestCache(const Completion aCompletion,
+          bool aExpectedHas,
+          bool aExpectedConfirmed,
+          bool aExpectedInCache,
+          T* aCache = nullptr)
+{
+  bool has, inCache, confirmed;
+  uint32_t matchLength;
+
+  if (aCache) {
+    aCache->Has(aCompletion, &has, &matchLength, &confirmed);
+    inCache = aCache->IsInCache(aCompletion.ToUint32());
+  } else {
+    _PrefixArray array = { GeneratePrefix(_Fragment("cache.notexpired.com/"), 10),
+                           GeneratePrefix(_Fragment("cache.expired.com/"), 8),
+                           GeneratePrefix(_Fragment("gound.com/"), 5),
+                           GeneratePrefix(_Fragment("small.com/"), 4)
+                         };
+
+    UniquePtr<T> cache = SetupLookupCache<T>(array);
+
+    
+    SetupCacheEntry(cache.get(), _Fragment("cache.notexpired.com/"));
+    SetupCacheEntry(cache.get(), _Fragment("cache.expired.com/"), true, true);
+
+    cache->Has(aCompletion, &has, &matchLength, &confirmed);
+    inCache = cache->IsInCache(aCompletion.ToUint32());
+  }
+
+  EXPECT_EQ(has, aExpectedHas);
+  EXPECT_EQ(confirmed, aExpectedConfirmed);
+  EXPECT_EQ(inCache, aExpectedInCache);
+}
+
+template<typename T>
+void
+TestCache(const _Fragment& aFragment,
+          bool aExpectedHas,
+          bool aExpectedConfirmed,
+          bool aExpectedInCache,
+          T* aCache = nullptr)
+{
+  Completion lookupHash;
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+  lookupHash.FromPlaintext(aFragment, cryptoHash);
+
+  TestCache<T>(lookupHash, aExpectedHas, aExpectedConfirmed, aExpectedInCache, aCache);
+}
+
+
+
+TEST(UrlClassifierCaching, NotFound)
+{
+  TestCache<LookupCacheV2>(_Fragment("nomatch.com/"), false, false, false);
+  TestCache<LookupCacheV4>(_Fragment("nomatch.com/"), false, false, false);
+}
+
+
+
+TEST(UrlClassifierCaching, NotInCache)
+{
+  TestCache<LookupCacheV2>(_Fragment("gound.com/"), true, false, false);
+  TestCache<LookupCacheV4>(_Fragment("gound.com/"), true, false, false);
+}
+
+
+
+TEST(UrlClassifierCaching, InPositiveCacheNotExpired)
+{
+  TestCache<LookupCacheV2>(_Fragment("cache.notexpired.com/"), true, true, true);
+  TestCache<LookupCacheV4>(_Fragment("cache.notexpired.com/"), true, true, true);
+}
+
+
+
+TEST(UrlClassifierCaching, InPositiveCacheExpired)
+{
+  TestCache<LookupCacheV2>(_Fragment("cache.expired.com/"), true, false, true);
+  TestCache<LookupCacheV4>(_Fragment("cache.expired.com/"), true, false, true);
+}
+
+
+
+TEST(UrlClassifierCaching, InNegativeCacheNotExpired)
+{
+  
+  
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+
+  Completion prefix;
+  prefix.FromPlaintext(_Fragment("cache.notexpired.com/"), cryptoHash);
+
+  Completion fullhash;
+  fullhash.FromPlaintext(_Fragment("firefox.com/"), cryptoHash);
+
+  
+  
+  
+  
+  memcpy(fullhash.buf, prefix.buf, 10);
+
+  TestCache<LookupCacheV2>(fullhash, false, false, true);
+  TestCache<LookupCacheV4>(fullhash, false, false, true);
+}
+
+
+
+TEST(UrlClassifierCaching, InNegativeCacheExpired)
+{
+  
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+
+  Completion prefix;
+  prefix.FromPlaintext(_Fragment("cache.expired.com/"), cryptoHash);
+
+  Completion fullhash;
+  fullhash.FromPlaintext(_Fragment("firefox.com/"), cryptoHash);
+
+  memcpy(fullhash.buf, prefix.buf, 10);
+
+  TestCache<LookupCacheV2>(fullhash, true, false, true);
+  TestCache<LookupCacheV4>(fullhash, true, false, true);
+}
+
+#define CACHED_URL              _Fragment("cache.com/")
+#define NEG_CACHE_EXPIRED_URL   _Fragment("cache.negExpired.com/")
+#define POS_CACHE_EXPIRED_URL   _Fragment("cache.posExpired.com/")
+#define BOTH_CACHE_EXPIRED_URL  _Fragment("cache.negAndposExpired.com/")
+
+
+
+
+
+
+
+
+
+template<typename T>
+void TestInvalidateExpiredCacheEntry()
+{
+  _PrefixArray array = { GeneratePrefix(CACHED_URL, 10),
+                         GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8),
+                         GeneratePrefix(POS_CACHE_EXPIRED_URL, 5),
+                         GeneratePrefix(BOTH_CACHE_EXPIRED_URL, 4)
+                       };
+  UniquePtr<T> cache = SetupLookupCache<T>(array);
+
+  SetupCacheEntry(cache.get(), CACHED_URL, false, false);
+  SetupCacheEntry(cache.get(), NEG_CACHE_EXPIRED_URL, true, false);
+  SetupCacheEntry(cache.get(), POS_CACHE_EXPIRED_URL, false, true);
+  SetupCacheEntry(cache.get(), BOTH_CACHE_EXPIRED_URL, true, true);
+
+  
+  TestCache<T>(CACHED_URL, true, true, true, cache.get());
+  TestCache<T>(NEG_CACHE_EXPIRED_URL, true, true, true, cache.get());
+  TestCache<T>(POS_CACHE_EXPIRED_URL, true, false, true, cache.get());
+  TestCache<T>(BOTH_CACHE_EXPIRED_URL, true, false, true, cache.get());
+
+  
+  
+  cache->InvalidateExpiredCacheEntries();
+
+  
+  
+  TestCache<T>(NEG_CACHE_EXPIRED_URL, true, false, false, cache.get());
+  TestCache<T>(BOTH_CACHE_EXPIRED_URL, true, false, false, cache.get());
+
+  
+  TestCache<T>(CACHED_URL, true, true, true, cache.get());
+  TestCache<T>(POS_CACHE_EXPIRED_URL, true, false, true, cache.get());
+}
+
+TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV2)
+{
+  TestInvalidateExpiredCacheEntry<LookupCacheV2>();
+}
+
+TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV4)
+{
+  TestInvalidateExpiredCacheEntry<LookupCacheV4>();
+}
+
+
+
+
+TEST(UrlClassifierCaching, NegativeCacheExpireV2)
+{
+  _PrefixArray array = { GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8) };
+  UniquePtr<LookupCacheV2> cache = SetupLookupCache<LookupCacheV2>(array);
+
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+
+  MissPrefixArray misses;
+  Prefix* prefix = misses.AppendElement(fallible);
+  prefix->FromPlaintext(NEG_CACHE_EXPIRED_URL, cryptoHash);
+
+  AddCompleteArray dummy;
+  cache->AddGethashResultToCache(dummy, misses, EXPIRED_TIME_SEC);
+
+  
+  EXPECT_EQ(cache->IsInCache(prefix->ToUint32()), true);
+
+  
+  TestCache<LookupCacheV2>(NEG_CACHE_EXPIRED_URL, true, false, false, cache.get());
+}
+
+TEST(UrlClassifierCaching, NegativeCacheExpireV4)
+{
+  _PrefixArray array = { GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8) };
+  UniquePtr<LookupCacheV4> cache = SetupLookupCache<LookupCacheV4>(array);
+
+  FullHashResponseMap map;
+  Prefix prefix;
+  nsCOMPtr<nsICryptoHash> cryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+  prefix.FromPlaintext(NEG_CACHE_EXPIRED_URL, cryptoHash);
+  CachedFullHashResponse* response = map.LookupOrAdd(prefix.ToUint32());
+
+  response->negativeCacheExpirySec = EXPIRED_TIME_SEC;
+
+  cache->AddFullHashResponseToCache(map);
+
+  
+  EXPECT_EQ(cache->IsInCache(prefix.ToUint32()), true);
+
+  
+  TestCache<LookupCacheV4>(NEG_CACHE_EXPIRED_URL, true, false, false, cache.get());
+}

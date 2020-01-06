@@ -80,12 +80,11 @@ LookupCacheV4::Init()
 
 nsresult
 LookupCacheV4::Has(const Completion& aCompletion,
-                   const TableFreshnessMap& aTableFreshness,
-                   uint32_t aFreshnessGuarantee,
-                   bool* aHas, uint32_t* aMatchLength,
-                   bool* aConfirmed, bool* aFromCache)
+                   bool* aHas,
+                   uint32_t* aMatchLength,
+                   bool* aConfirmed)
 {
-  *aHas = *aConfirmed = *aFromCache = false;
+  *aHas = *aConfirmed = false;
   *aMatchLength = 0;
 
   uint32_t length = 0;
@@ -113,61 +112,7 @@ LookupCacheV4::Has(const Completion& aCompletion,
 
   
   
-  uint32_t prefix = aCompletion.ToUint32();
-
-  
-  CachedFullHashResponse* fullHashResponse = mCache.Get(prefix);
-  if (!fullHashResponse) {
-    return NS_OK;
-  }
-
-  *aFromCache = true;
-
-  int64_t nowSec = PR_Now() / PR_USEC_PER_SEC;
-  int64_t expiryTime;
-
-  FullHashExpiryCache& fullHashes = fullHashResponse->fullHashes;
-  nsDependentCSubstring completion(
-    reinterpret_cast<const char*>(aCompletion.buf), COMPLETE_SIZE);
-
-  
-  if (fullHashes.Get(completion, &expiryTime)) {
-    if (nowSec <= expiryTime) {
-      
-      *aConfirmed = true;
-      LOG(("Found a valid fullhash in the positive cache"));
-    } else {
-      
-      LOG(("Found an expired fullhash in the positive cache"));
-
-      
-      
-      
-      
-      if (fullHashResponse->negativeCacheExpirySec < expiryTime) {
-        fullHashes.Remove(completion);
-        if (fullHashes.Count() == 0 &&
-            fullHashResponse->negativeCacheExpirySec < nowSec) {
-          mCache.Remove(prefix);
-        }
-      }
-    }
-    return NS_OK;
-  }
-
-  
-  if (fullHashResponse->negativeCacheExpirySec >= nowSec) {
-    
-    LOG(("Found a valid prefix in the negative cache"));
-    *aHas = false;
-  } else {
-    LOG(("Found an expired prefix in the negative cache"));
-    if (fullHashes.Count() == 0) {
-      mCache.Remove(prefix);
-    }
-  }
-
-  return NS_OK;
+  return CheckCache(aCompletion, aHas, aConfirmed);
 }
 
 bool
@@ -602,81 +547,6 @@ LookupCacheV4::LoadMetadata(nsACString& aState, nsACString& aChecksum)
 
   return rv;
 }
-
-void
-LookupCacheV4::ClearCache()
-{
-  mCache.Clear();
-}
-
-
-
-
-
-void
-LookupCacheV4::InvalidateExpiredCacheEntry()
-{
-  int64_t nowSec = PR_Now() / PR_USEC_PER_SEC;
-
-  for (auto iter = mCache.Iter(); !iter.Done(); iter.Next()) {
-    CachedFullHashResponse* response = iter.Data();
-    if (response->negativeCacheExpirySec < nowSec) {
-      iter.Remove();
-    }
-  }
-}
-
-#if defined(DEBUG)
-static
-void CStringToHexString(const nsACString& aIn, nsACString& aOut)
-{
-  static const char* const lut = "0123456789ABCDEF";
-  
-  size_t len = COMPLETE_SIZE;
-
-  aOut.SetCapacity(2 * len);
-  for (size_t i = 0; i < aIn.Length(); ++i) {
-    const char c = static_cast<const char>(aIn[i]);
-    aOut.Append(lut[(c >> 4) & 0x0F]);
-    aOut.Append(lut[c & 15]);
-  }
-}
-
-static
-nsCString GetFormattedTimeString(int64_t aCurTimeSec)
-{
-  PRExplodedTime pret;
-  PR_ExplodeTime(aCurTimeSec * PR_USEC_PER_SEC, PR_GMTParameters, &pret);
-
-  return nsPrintfCString(
-         "%04d-%02d-%02d %02d:%02d:%02d UTC",
-         pret.tm_year, pret.tm_month + 1, pret.tm_mday,
-         pret.tm_hour, pret.tm_min, pret.tm_sec);
-}
-
-void
-LookupCacheV4::DumpCache()
-{
-  if (!LOG_ENABLED()) {
-    return;
-  }
-
-  for (auto iter = mCache.ConstIter(); !iter.Done(); iter.Next()) {
-    CachedFullHashResponse* response = iter.Data();
-    LOG(("Caches prefix: %X, Expire time: %s",
-         iter.Key(),
-         GetFormattedTimeString(response->negativeCacheExpirySec).get()));
-
-    FullHashExpiryCache& fullHashes = response->fullHashes;
-    for (auto iter2 = fullHashes.ConstIter(); !iter2.Done(); iter2.Next()) {
-      nsAutoCString strFullhash;
-      CStringToHexString(iter2.Key(), strFullhash);
-      LOG(("  - %s, Expire time: %s", strFullhash.get(),
-           GetFormattedTimeString(iter2.Data()).get()));
-    }
-  }
-}
-#endif
 
 VLPrefixSet::VLPrefixSet(const PrefixStringMap& aMap)
   : mCount(0)

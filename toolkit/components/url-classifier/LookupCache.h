@@ -109,14 +109,25 @@ class CacheResultV2 final : public CacheResult
 public:
   static const int VER;
 
+  
+  
+  bool miss = false;
+
+  
   Completion completion;
   uint32_t addChunk;
 
   bool operator==(const CacheResultV2& aOther) const {
-    return table == aOther.table &&
-           prefix == aOther.prefix &&
-           completion == aOther.completion &&
-           addChunk == aOther.addChunk;
+    if (table != aOther.table ||
+        prefix != aOther.prefix ||
+        miss != aOther.miss) {
+      return false;
+    }
+
+    if (miss) {
+      return true;
+    }
+    return completion == aOther.completion && addChunk == aOther.addChunk;
   }
 
   bool findCompletion(const Completion& aCompletion) const override {
@@ -184,25 +195,31 @@ public:
 
   bool IsPrimed() const { return mPrimed; };
 
+  
+  void InvalidateExpiredCacheEntries();
+
+  
+  void ClearCache();
+
+  
+  
+  bool IsInCache(uint32_t key) { return mCache.Get(key); };
+
+#if DEBUG
+  void DumpCache();
+#endif
+
   virtual nsresult Open();
   virtual nsresult Init() = 0;
   virtual nsresult ClearPrefixes() = 0;
   virtual nsresult Has(const Completion& aCompletion,
-                       const TableFreshnessMap& aTableFreshness,
-                       uint32_t aFreshnessGuarantee,
-                       bool* aHas, uint32_t* aMatchLength,
-                       bool* aConfirmed, bool* aFromCache) = 0;
-
-  
-  virtual void ClearCache() = 0;
+                       bool* aHas,
+                       uint32_t* aMatchLength,
+                       bool* aConfirmed) = 0;
 
   virtual bool IsEmpty() = 0;
 
   virtual void ClearAll();
-
-#if DEBUG
-  virtual void DumpCache() = 0;
-#endif
 
   template<typename T>
   static T* Cast(LookupCache* aThat) {
@@ -219,6 +236,12 @@ private:
   virtual int Ver() const = 0;
 
 protected:
+  
+  
+  nsresult CheckCache(const Completion& aCompletion,
+                      bool* aHas,
+                      bool* aConfirmed);
+
   bool mPrimed;
   nsCString mTableName;
   nsCString mProvider;
@@ -227,6 +250,9 @@ protected:
 
   
   friend class PerProviderDirectoryTestUtils;
+
+  
+  FullHashResponseMap mCache;
 };
 
 class LookupCacheV2 final : public LookupCache
@@ -240,13 +266,11 @@ public:
 
   virtual nsresult Init() override;
   virtual nsresult Open() override;
-  virtual void ClearCache() override;
   virtual void ClearAll() override;
   virtual nsresult Has(const Completion& aCompletion,
-                       const TableFreshnessMap& aTableFreshness,
-                       uint32_t aFreshnessGuarantee,
-                       bool* aHas, uint32_t* aMatchLength,
-                       bool* aConfirmed, bool* aFromCache) override;
+                       bool* aHas,
+                       uint32_t* aMatchLength,
+                       bool* aConfirmed) override;
 
   virtual bool IsEmpty() override;
 
@@ -256,11 +280,12 @@ public:
   nsresult GetPrefixes(FallibleTArray<uint32_t>& aAddPrefixes);
 
   
-  nsresult AddCompletionsToCache(AddCompleteArray& aAddCompletes);
+  
+  void AddGethashResultToCache(AddCompleteArray& aAddCompletes,
+                               MissPrefixArray& aMissPrefixes,
+                               int64_t aExpirySec = 0);
 
 #if DEBUG
-  virtual void DumpCache() override;
-
   void DumpCompletions();
 #endif
 
@@ -286,9 +311,6 @@ private:
 
   
   RefPtr<nsUrlClassifierPrefixSet> mPrefixSet;
-
-  
-  CompletionArray mGetHashCache;
 };
 
 } 

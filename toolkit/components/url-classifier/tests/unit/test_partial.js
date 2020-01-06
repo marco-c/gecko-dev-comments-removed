@@ -672,84 +672,6 @@ function testErrorList()
 }
 
 
-function testStaleList()
-{
-  var addUrls = [ "foo.com/a", "foo.com/b", "bar.com/c" ];
-  var update = buildPhishingUpdate(
-        [
-          { "chunkNum" : 1,
-            "urls" : addUrls
-          }],
-    32);
-
-  var completer = installCompleter('test-phish-simple', [[1, addUrls]], []);
-
-  var assertions = {
-    "tableData" : "test-phish-simple;a:1",
-    "urlsExist" : addUrls,
-    
-    
-    "completerQueried" : [completer, addUrls]
-  };
-
-  
-  prefBranch.setIntPref("urlclassifier.max-complete-age", 1);
-
-  
-  doStreamUpdate(update, function() {
-      
-      
-      new Timer(3000, function() {
-          
-          checkAssertions(assertions, function() {
-              prefBranch.setIntPref("urlclassifier.max-complete-age", 2700);
-              runNextTest();
-            });
-        }, updateError);
-    }, updateError);
-}
-
-
-
-function testStaleListEmpty()
-{
-  var addUrls = [ "foo.com/a", "foo.com/b", "bar.com/c" ];
-  var update = buildPhishingUpdate(
-        [
-          { "chunkNum" : 1,
-            "urls" : addUrls
-          }],
-        32);
-
-  var completer = installCompleter('test-phish-simple', [], []);
-
-  var assertions = {
-    "tableData" : "test-phish-simple;a:1",
-    
-    "urlsDontExist" : addUrls,
-    
-    
-    "completerQueried" : [completer, addUrls]
-  };
-
-  
-  prefBranch.setIntPref("urlclassifier.max-complete-age", 1);
-
-  
-  doStreamUpdate(update, function() {
-      
-      
-      new Timer(3000, function() {
-          
-          checkAssertions(assertions, function() {
-              prefBranch.setIntPref("urlclassifier.max-complete-age", 2700);
-              runNextTest();
-            });
-        }, updateError);
-    }, updateError);
-}
-
-
 
 
 function testErrorListIndependent()
@@ -815,8 +737,6 @@ function run_test()
       testCachedResultsWithExpire,
       testCachedResultsUpdate,
       testCachedResultsFailure,
-      testStaleList,
-      testStaleListEmpty,
       testErrorList,
       testErrorListIndependent
   ]);
