@@ -663,20 +663,23 @@ MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
                    const Instance& instance, WasmActivation* activation, uint8_t** ppc)
 {
-    MOZ_RELEASE_ASSERT(instance.codeSegmentTier().containsFunctionPC(pc));
+    MOZ_RELEASE_ASSERT(instance.code().containsFunctionPC(pc));
 
-    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
+    const CodeSegment* segment;
+    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc, &segment);
     if (!memoryAccess) {
         
         
         
         
         activation->startInterrupt(pc, ContextToFP(context));
-        *ppc = instance.codeSegmentTier().outOfBoundsCode();
+        if (!instance.code().containsCodePC(pc, &segment))
+            MOZ_CRASH("Cannot map PC to trap handler");
+        *ppc = segment->outOfBoundsCode();
         return;
     }
 
-    MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - instance.codeBaseTier()));
+    MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - segment->base()));
 
     
     
@@ -684,7 +687,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
     
 
     if (memoryAccess->hasTrapOutOfLineCode()) {
-        *ppc = memoryAccess->trapOutOfLineCode(instance.codeBaseTier());
+        *ppc = memoryAccess->trapOutOfLineCode(segment->base());
         return;
     }
 
@@ -696,7 +699,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
     uint8_t* end = Disassembler::DisassembleHeapAccess(pc, &access);
     const Disassembler::ComplexAddress& address = access.address();
     MOZ_RELEASE_ASSERT(end > pc);
-    MOZ_RELEASE_ASSERT(instance.codeSegmentTier().containsFunctionPC(end));
+    MOZ_RELEASE_ASSERT(segment->containsFunctionPC(end));
 
     
     MOZ_RELEASE_ASSERT(address.disp() >= 0);
@@ -809,18 +812,21 @@ MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
                    const Instance& instance, WasmActivation* activation, uint8_t** ppc)
 {
-    MOZ_RELEASE_ASSERT(instance.codeSegmentTier().containsFunctionPC(pc));
+    MOZ_RELEASE_ASSERT(instance.code().containsFunctionPC(pc));
 
-    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
+    const CodeSegment* segment;
+    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc, &segment);
     if (!memoryAccess) {
         
         activation->startInterrupt(pc, ContextToFP(context));
-        *ppc = instance.codeSegmentTier().outOfBoundsCode();
+        if (!instance.code().containsCodePC(pc, &segment))
+            MOZ_CRASH("Cannot map PC to trap handler");
+        *ppc = segment->outOfBoundsCode();
         return;
     }
 
     MOZ_RELEASE_ASSERT(memoryAccess->hasTrapOutOfLineCode());
-    *ppc = memoryAccess->trapOutOfLineCode(instance.codeBaseTier());
+    *ppc = memoryAccess->trapOutOfLineCode(segment->base());
 }
 
 #endif 
@@ -862,11 +868,12 @@ HandleFault(PEXCEPTION_POINTERS exception)
     if (!activation)
         return false;
 
-    const Code* code = activation->compartment()->wasm.lookupCode(pc);
+    const CodeSegment* codeSegment;
+    const Code* code = activation->compartment()->wasm.lookupCode(pc, &codeSegment);
     if (!code)
         return false;
 
-    if (!code->segmentTier().containsFunctionPC(pc)) {
+    if (!codeSegment->containsFunctionPC(pc)) {
         
         
         
@@ -876,9 +883,16 @@ HandleFault(PEXCEPTION_POINTERS exception)
         
         
         
-        return pc == code->segmentTier().interruptCode() &&
-               activation->interrupted() &&
-               code->segmentTier().containsFunctionPC(activation->resumePC());
+
+        for (auto t : code->tiers()) {
+            if (pc == code->segment(t).interruptCode() &&
+                activation->interrupted() &&
+                code->segment(t).containsFunctionPC(activation->resumePC()))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     const Instance* instance = LookupFaultingInstance(activation, pc, ContextToFP(context));
@@ -1021,7 +1035,7 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
         return false;
 
     const Instance* instance = LookupFaultingInstance(activation, pc, ContextToFP(&context));
-    if (!instance || !instance->codeSegmentTier().containsFunctionPC(pc))
+    if (!instance || !instance->code().containsFunctionPC(pc))
         return false;
 
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
@@ -1227,8 +1241,9 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     if (!activation)
         return false;
 
+    const CodeSegment* segment;
     const Instance* instance = LookupFaultingInstance(activation, pc, ContextToFP(context));
-    if (!instance || !instance->codeSegmentTier().containsFunctionPC(pc))
+    if (!instance || !instance->code().containsFunctionPC(pc, &segment))
         return false;
 
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(info->si_addr);
@@ -1259,7 +1274,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         
         
         activation->startInterrupt(pc, ContextToFP(context));
-        *ppc = instance->codeSegmentTier().unalignedAccessCode();
+        *ppc = segment->unalignedAccessCode();
         return true;
     }
 #endif
@@ -1348,8 +1363,9 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     
     if (!cx->compartment())
         return false;
-    const Code* code = cx->compartment()->wasm.lookupCode(pc);
-    if (!code || !code->segmentTier().containsFunctionPC(pc))
+    const CodeSegment* codeSegment;
+    const Code* code = cx->compartment()->wasm.lookupCode(pc, &codeSegment);
+    if (!code || !codeSegment->containsFunctionPC(pc))
         return false;
 
     
@@ -1375,7 +1391,7 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
         return false;
 
     activation->startInterrupt(pc, fp);
-    *ContextToPC(context) = code->segmentTier().interruptCode();
+    *ContextToPC(context) = codeSegment->interruptCode();
 #endif
 
     return true;

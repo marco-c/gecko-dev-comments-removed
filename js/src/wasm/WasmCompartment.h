@@ -28,6 +28,7 @@ class WasmActivation;
 namespace wasm {
 
 class Code;
+class CodeSegment;
 typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
 
 
@@ -76,8 +77,9 @@ class Compartment
 
     
     
+    
 
-    const Code* lookupCode(const void* pc) const;
+    const Code* lookupCode(const void* pc, const CodeSegment** segment = nullptr) const;
 
     
 

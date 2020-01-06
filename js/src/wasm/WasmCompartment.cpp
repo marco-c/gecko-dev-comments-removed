@@ -27,6 +27,9 @@
 using namespace js;
 using namespace wasm;
 
+
+
+
 Compartment::Compartment(Zone* zone)
   : mutatingInstances_(false)
 {}
@@ -49,10 +52,10 @@ struct InstanceComparator
         
         
         
-        if (instance->codeBaseTier() == target.codeBaseTier())
+        if (instance->codeBase(Tier::TBD) == target.codeBase(Tier::TBD))
             return instance < &target ? -1 : 1;
 
-        return target.codeBaseTier() < instance->codeBaseTier() ? -1 : 1;
+        return target.codeBase(Tier::TBD) < instance->codeBase(Tier::TBD) ? -1 : 1;
     }
 };
 
@@ -103,14 +106,14 @@ struct PCComparator
     explicit PCComparator(const void* pc) : pc(pc) {}
 
     int operator()(const Instance* instance) const {
-        if (instance->codeSegmentTier().containsCodePC(pc))
+        if (instance->codeSegment(Tier::TBD).containsCodePC(pc))
             return 0;
-        return pc < instance->codeBaseTier() ? -1 : 1;
+        return pc < instance->codeBase(Tier::TBD) ? -1 : 1;
     }
 };
 
 const Code*
-Compartment::lookupCode(const void* pc) const
+Compartment::lookupCode(const void* pc, const CodeSegment** segmentp) const
 {
     
     
@@ -123,7 +126,10 @@ Compartment::lookupCode(const void* pc) const
     if (!BinarySearchIf(instances_, 0, instances_.length(), PCComparator(pc), &index))
         return nullptr;
 
-    return &instances_[index]->code();
+    const Code& code = instances_[index]->code();
+    if (segmentp)
+        *segmentp = &code.segment(Tier::TBD);
+    return &code;
 }
 
 void

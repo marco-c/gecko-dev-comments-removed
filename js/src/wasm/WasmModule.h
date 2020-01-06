@@ -45,10 +45,12 @@ struct LinkDataTierCacheablePod
 
 struct LinkDataTier : LinkDataTierCacheablePod
 {
-    CompileMode mode;
+    const Tier tier;
 
-    explicit LinkDataTier(CompileMode mode) : mode(mode) {
-        MOZ_ASSERT(mode == CompileMode::Ion || mode == CompileMode::Baseline);
+    explicit LinkDataTier(Tier tier)
+      : tier(tier)
+    {
+        MOZ_ASSERT(tier == Tier::Baseline || tier == Tier::Ion);
     }
 
     LinkDataTierCacheablePod& pod() { return *this; }
@@ -84,16 +86,16 @@ typedef UniquePtr<LinkDataTier> UniqueLinkDataTier;
 struct LinkData
 {
     
-    
     UniqueLinkDataTier tier_;
 
     LinkData() : tier_(nullptr) {}
 
     
-    bool initTier(CompileMode mode);
+    bool initTier(Tier tier);
 
-    const LinkDataTier& tier() const { MOZ_ASSERT(tier_); return *tier_; }
-    LinkDataTier& tier() { MOZ_ASSERT(tier_); return *tier_; }
+    Tiers tiers() const;
+    const LinkDataTier& linkData(Tier tier) const;
+    LinkDataTier& linkData(Tier tier);
 
     WASM_DECLARE_SERIALIZABLE(LinkData)
 };
@@ -166,12 +168,13 @@ class Module : public JS::WasmModule
     }
     ~Module() override {  }
 
-    const MetadataTier& metadataTier() const { return code_->metadataTier(); }
+    const Code& code() const { return *code_; }
     const Metadata& metadata() const { return code_->metadata(); }
+    const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
     const ImportVector& imports() const { return imports_; }
     const ExportVector& exports() const { return exports_; }
     const Bytes& bytecode() const { return bytecode_->bytes; }
-    uint32_t codeLengthTier() const { return code_->segmentTier().length(); }
+    uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
 
     
 

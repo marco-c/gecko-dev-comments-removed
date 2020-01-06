@@ -71,7 +71,7 @@ class CodeSegment
     static UniqueCodeBytes AllocateCodeBytes(uint32_t codeLength);
 
     
-    CompileMode mode_;
+    Tier tier_;
 
     
     
@@ -86,14 +86,14 @@ class CodeSegment
     uint8_t* outOfBoundsCode_;
     uint8_t* unalignedAccessCode_;
 
-    bool initialize(CompileMode mode,
+    bool initialize(Tier tier,
                     UniqueCodeBytes bytes,
                     uint32_t codeLength,
                     const ShareableBytes& bytecode,
                     const LinkDataTier& linkData,
                     const Metadata& metadata);
 
-    static UniqueConstCodeSegment create(CompileMode mode,
+    static UniqueConstCodeSegment create(Tier tier,
                                          UniqueCodeBytes bytes,
                                          uint32_t codeLength,
                                          const ShareableBytes& bytecode,
@@ -104,7 +104,7 @@ class CodeSegment
     void operator=(const CodeSegment&) = delete;
 
     CodeSegment()
-      : mode_(CompileMode(-1)),
+      : tier_(Tier(-1)),
         functionLength_(0),
         length_(0),
         interruptCode_(nullptr),
@@ -112,19 +112,19 @@ class CodeSegment
         unalignedAccessCode_(nullptr)
     {}
 
-    static UniqueConstCodeSegment create(CompileMode mode,
+    static UniqueConstCodeSegment create(Tier tier,
                                          jit::MacroAssembler& masm,
                                          const ShareableBytes& bytecode,
                                          const LinkDataTier& linkData,
                                          const Metadata& metadata);
 
-    static UniqueConstCodeSegment create(CompileMode mode,
+    static UniqueConstCodeSegment create(Tier tier,
                                          const Bytes& unlinkedBytes,
                                          const ShareableBytes& bytecode,
                                          const LinkDataTier& linkData,
                                          const Metadata& metadata);
 
-    CompileMode mode() const { return mode_; }
+    Tier tier() const { return tier_; }
 
     uint8_t* base() const { return bytes_.get(); }
     uint32_t length() const { return length_; }
@@ -349,9 +349,13 @@ typedef uint8_t ModuleHash[8];
 
 struct MetadataTier
 {
-    explicit MetadataTier(CompileMode mode) : mode(mode) {}
+    explicit MetadataTier(Tier tier)
+      : tier(tier)
+    {
+        MOZ_ASSERT(tier == Tier::Baseline || tier == Tier::Ion);
+    }
 
-    CompileMode           mode;
+    const Tier            tier;
 
     MemoryAccessVector    memoryAccesses;
     CodeRangeVector       codeRanges;
@@ -363,6 +367,8 @@ struct MetadataTier
     Uint32Vector          debugTrapFarJumpOffsets;
     Uint32Vector          debugFuncToCodeRange;
 
+    const FuncExport& lookupFuncExport(uint32_t funcIndex) const;
+
     WASM_DECLARE_SERIALIZABLE(MetadataTier);
 };
 
@@ -371,11 +377,11 @@ typedef UniquePtr<MetadataTier> UniqueMetadataTier;
 struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
 {
     
-    
     UniqueMetadataTier tier_;
 
-    const MetadataTier& tier() const { return *tier_; }
-    MetadataTier& tier() { return *tier_; }
+    Tiers tiers() const;
+    const MetadataTier& metadata(Tier t) const;
+    MetadataTier& metadata(Tier t);
 
     explicit Metadata(UniqueMetadataTier tier, ModuleKind kind = ModuleKind::Wasm)
       : MetadataCacheablePod(kind),
@@ -401,8 +407,6 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
 
     bool usesMemory() const { return UsesMemory(memoryUsage); }
     bool hasSharedMemory() const { return memoryUsage == MemoryUsage::Shared; }
-
-    const FuncExport& lookupFuncExport(uint32_t funcIndex) const;
 
     
     
@@ -441,8 +445,6 @@ typedef RefPtr<const Metadata> SharedMetadata;
 class Code : public ShareableBase<Code>
 {
     
-    
-
     UniqueConstCodeSegment              tier_;
     SharedMetadata                      metadata_;
     ExclusiveData<CacheableCharsVector> profilingLabels_;
@@ -452,15 +454,23 @@ class Code : public ShareableBase<Code>
 
     Code(UniqueConstCodeSegment tier, const Metadata& metadata);
 
-    const CodeSegment& segmentTier() const { return *tier_; }
-    const MetadataTier& metadataTier() const { return metadata_->tier(); }
+    Tier anyTier() const;
+    Tiers tiers() const;
+
+    const CodeSegment& segment(Tier tier) const;
+    const MetadataTier& metadata(Tier tier) const { return metadata_->metadata(tier); }
     const Metadata& metadata() const { return *metadata_; }
 
     
 
-    const CallSite* lookupCallSite(void* returnAddress) const;
-    const CodeRange* lookupRange(void* pc) const;
-    const MemoryAccess* lookupMemoryAccess(void* pc) const;
+    const CallSite* lookupCallSite(void* returnAddress, const CodeSegment** segment = nullptr) const;
+    const CodeRange* lookupRange(void* pc, const CodeSegment** segment = nullptr) const;
+    const MemoryAccess* lookupMemoryAccess(void* pc, const CodeSegment** segment = nullptr) const;
+
+    
+
+    bool containsFunctionPC(const void* pc, const CodeSegment** segmentp = nullptr) const;
+    bool containsCodePC(const void* pc, const CodeSegment** segmentp = nullptr) const;
 
     
     
