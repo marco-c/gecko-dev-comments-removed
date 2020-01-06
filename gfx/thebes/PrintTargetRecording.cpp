@@ -80,7 +80,7 @@ PrintTargetRecording::MakeDrawTarget(const IntSize& aSize,
 
   RefPtr<DrawTarget> dt = PrintTarget::MakeDrawTarget(aSize, nullptr);
   if (dt) {
-    dt = CreateRecordingDrawTarget(aRecorder, dt);
+    dt = CreateWrapAndRecordDrawTarget(aRecorder, dt);
     if (!dt || !dt->IsValid()) {
       return nullptr;
     }
@@ -90,8 +90,8 @@ PrintTargetRecording::MakeDrawTarget(const IntSize& aSize,
 }
 
 already_AddRefed<DrawTarget>
-PrintTargetRecording::CreateRecordingDrawTarget(DrawEventRecorder* aRecorder,
-                                                DrawTarget* aDrawTarget)
+PrintTargetRecording::CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder,
+                                                    DrawTarget* aDrawTarget)
 {
   MOZ_ASSERT(aRecorder);
   MOZ_ASSERT(aDrawTarget);
@@ -100,7 +100,7 @@ PrintTargetRecording::CreateRecordingDrawTarget(DrawEventRecorder* aRecorder,
 
   if (aRecorder) {
     
-    dt = gfx::Factory::CreateRecordingDrawTarget(aRecorder, aDrawTarget);
+    dt = gfx::Factory::CreateWrapAndRecordDrawTarget(aRecorder, aDrawTarget);
   }
 
   if (!dt || !dt->IsValid()) {
