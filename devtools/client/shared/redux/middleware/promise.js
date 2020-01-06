@@ -4,7 +4,6 @@
 "use strict";
 
 const { generateUUID } = require("devtools/shared/generate-uuid");
-const defer = require("devtools/shared/defer");
 const {
   entries, toObject, executeSoon
 } = require("devtools/shared/DevToolsUtils");
@@ -15,39 +14,38 @@ function promiseMiddleware({ dispatch, getState }) {
     if (!(PROMISE in action)) {
       return next(action);
     }
-
-    const promiseInst = action[PROMISE];
-    const seqId = generateUUID().toString();
-
     
     
-    action = Object.assign(
-      toObject(entries(action).filter(pair => pair[0] !== PROMISE)), { seqId }
-    );
+    return new Promise((resolve, reject) => {
+      const promiseInst = action[PROMISE];
+      const seqId = generateUUID().toString();
 
-    dispatch(Object.assign({}, action, { status: "start" }));
+      
+      
+      action = Object.assign(
+        toObject(entries(action).filter(pair => pair[0] !== PROMISE)), { seqId }
+      );
 
-    
-    
-    const deferred = defer();
-    promiseInst.then(value => {
-      executeSoon(() => {
-        dispatch(Object.assign({}, action, {
-          status: "done",
-          value: value
-        }));
-        deferred.resolve(value);
-      });
-    }, error => {
-      executeSoon(() => {
-        dispatch(Object.assign({}, action, {
-          status: "error",
-          error: error.message || error
-        }));
-        deferred.reject(error);
+      dispatch(Object.assign({}, action, { status: "start" }));
+
+      promiseInst.then(value => {
+        executeSoon(() => {
+          dispatch(Object.assign({}, action, {
+            status: "done",
+            value: value
+          }));
+          resolve(value);
+        });
+      }, error => {
+        executeSoon(() => {
+          dispatch(Object.assign({}, action, {
+            status: "error",
+            error: error.message || error
+          }));
+          reject(error);
+        });
       });
     });
-    return deferred.promise;
   };
 }
 

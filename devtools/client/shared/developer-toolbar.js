@@ -6,7 +6,6 @@
 
 const { Ci } = require("chrome");
 const promise = require("promise");
-const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const { TargetFactory } = require("devtools/client/framework/target");
 const Telemetry = require("devtools/client/shared/telemetry");
@@ -309,25 +308,23 @@ DeveloperToolbar.prototype.focus = function () {
   if (this.visible) {
     
     
-    let waitForBinding = defer();
-
-    let checkBinding = () => {
-      
-      if (!this._input) {
-        waitForBinding.reject();
-        return;
-      }
-      
-      if (typeof this._input.mInputField != "undefined") {
-        this._input.focus();
-        waitForBinding.resolve();
-      } else {
-        this._input.ownerDocument.defaultView.setTimeout(checkBinding, 50);
-      }
-    };
-    checkBinding();
-
-    return waitForBinding.promise;
+    return new Promise((resolve, reject) => {
+      let checkBinding = () => {
+        
+        if (!this._input) {
+          reject();
+          return;
+        }
+        
+        if (typeof this._input.mInputField != "undefined") {
+          this._input.focus();
+          resolve();
+        } else {
+          this._input.ownerDocument.defaultView.setTimeout(checkBinding, 50);
+        }
+      };
+      checkBinding();
+    });
   }
 
   return this.show(true);
@@ -817,14 +814,12 @@ OutputPanel.create = function (devtoolbar) {
 
 
 OutputPanel.prototype._init = function (devtoolbar) {
-  this._devtoolbar = devtoolbar;
-  this._input = this._devtoolbar._input;
-  this._toolbar = this._devtoolbar._doc.getElementById("developer-toolbar");
+  return new Promise((resolve, reject) => {
+    this._devtoolbar = devtoolbar;
+    this._input = this._devtoolbar._input;
+    this._toolbar = this._devtoolbar._doc.getElementById("developer-toolbar");
 
-  
-
-
-
+    
 
 
 
@@ -833,61 +828,62 @@ OutputPanel.prototype._init = function (devtoolbar) {
 
 
 
-  
-  
-  this._panel = this._devtoolbar._doc.createElement(isLinux ? "tooltip" : "panel");
 
-  this._panel.id = "gcli-output";
-  this._panel.classList.add("gcli-panel");
 
-  if (isLinux) {
-    this.canHide = false;
-    this._onpopuphiding = this._onpopuphiding.bind(this);
-    this._panel.addEventListener("popuphiding", this._onpopuphiding, true);
-  } else {
-    this._panel.setAttribute("noautofocus", "true");
-    this._panel.setAttribute("noautohide", "true");
 
     
     
+    this._panel = this._devtoolbar._doc.createElement(isLinux ? "tooltip" : "panel");
+
+    this._panel.id = "gcli-output";
+    this._panel.classList.add("gcli-panel");
+
+    if (isLinux) {
+      this.canHide = false;
+      this._onpopuphiding = this._onpopuphiding.bind(this);
+      this._panel.addEventListener("popuphiding", this._onpopuphiding, true);
+    } else {
+      this._panel.setAttribute("noautofocus", "true");
+      this._panel.setAttribute("noautohide", "true");
+
+      
+      
+      
+      
+      this._panel.setAttribute("height", "1px");
+    }
+
+    this._toolbar.parentElement.insertBefore(this._panel, this._toolbar);
+
+    this._frame = this._devtoolbar._doc.createElementNS(NS_XHTML, "iframe");
+    this._frame.id = "gcli-output-frame";
+    this._frame.setAttribute("src", "chrome://devtools/content/commandline/commandlineoutput.xhtml");
+    this._frame.setAttribute("sandbox", "allow-same-origin");
+    this._panel.appendChild(this._frame);
+
+    this.displayedOutput = undefined;
+
+    this._update = this._update.bind(this);
+
     
-    
-    this._panel.setAttribute("height", "1px");
-  }
+    let onload = () => {
+      this._frame.removeEventListener("load", onload, true);
 
-  this._toolbar.parentElement.insertBefore(this._panel, this._toolbar);
+      this.document = this._frame.contentDocument;
+      this._copyTheme();
 
-  this._frame = this._devtoolbar._doc.createElementNS(NS_XHTML, "iframe");
-  this._frame.id = "gcli-output-frame";
-  this._frame.setAttribute("src", "chrome://devtools/content/commandline/commandlineoutput.xhtml");
-  this._frame.setAttribute("sandbox", "allow-same-origin");
-  this._panel.appendChild(this._frame);
+      this._div = this.document.getElementById("gcli-output-root");
+      this._div.classList.add("gcli-row-out");
+      this._div.setAttribute("aria-live", "assertive");
 
-  this.displayedOutput = undefined;
+      let styles = this._toolbar.ownerDocument.defaultView
+                      .getComputedStyle(this._toolbar);
+      this._div.setAttribute("dir", styles.direction);
 
-  this._update = this._update.bind(this);
-
-  
-  let deferred = defer();
-  let onload = () => {
-    this._frame.removeEventListener("load", onload, true);
-
-    this.document = this._frame.contentDocument;
-    this._copyTheme();
-
-    this._div = this.document.getElementById("gcli-output-root");
-    this._div.classList.add("gcli-row-out");
-    this._div.setAttribute("aria-live", "assertive");
-
-    let styles = this._toolbar.ownerDocument.defaultView
-                    .getComputedStyle(this._toolbar);
-    this._div.setAttribute("dir", styles.direction);
-
-    deferred.resolve(this);
-  };
-  this._frame.addEventListener("load", onload, true);
-
-  return deferred.promise;
+      resolve(this);
+    };
+    this._frame.addEventListener("load", onload, true);
+  });
 };
 
 
@@ -1136,15 +1132,13 @@ TooltipPanel.create = function (devtoolbar) {
 
 
 TooltipPanel.prototype._init = function (devtoolbar) {
-  let deferred = defer();
+  return new Promise((resolve, reject) => {
+    this._devtoolbar = devtoolbar;
+    this._input = devtoolbar._doc.querySelector(".gclitoolbar-input-node");
+    this._toolbar = devtoolbar._doc.querySelector("#developer-toolbar");
+    this._dimensions = { start: 0, end: 0 };
 
-  this._devtoolbar = devtoolbar;
-  this._input = devtoolbar._doc.querySelector(".gclitoolbar-input-node");
-  this._toolbar = devtoolbar._doc.querySelector("#developer-toolbar");
-  this._dimensions = { start: 0, end: 0 };
-
-  
-
+    
 
 
 
@@ -1157,57 +1151,57 @@ TooltipPanel.prototype._init = function (devtoolbar) {
 
 
 
-  
-  
-  this._panel = devtoolbar._doc.createElement(isLinux ? "tooltip" : "panel");
-
-  this._panel.id = "gcli-tooltip";
-  this._panel.classList.add("gcli-panel");
-
-  if (isLinux) {
-    this.canHide = false;
-    this._onpopuphiding = this._onpopuphiding.bind(this);
-    this._panel.addEventListener("popuphiding", this._onpopuphiding, true);
-  } else {
-    this._panel.setAttribute("noautofocus", "true");
-    this._panel.setAttribute("noautohide", "true");
 
     
     
+    this._panel = devtoolbar._doc.createElement(isLinux ? "tooltip" : "panel");
+
+    this._panel.id = "gcli-tooltip";
+    this._panel.classList.add("gcli-panel");
+
+    if (isLinux) {
+      this.canHide = false;
+      this._onpopuphiding = this._onpopuphiding.bind(this);
+      this._panel.addEventListener("popuphiding", this._onpopuphiding, true);
+    } else {
+      this._panel.setAttribute("noautofocus", "true");
+      this._panel.setAttribute("noautohide", "true");
+
+      
+      
+      
+      
+      this._panel.setAttribute("height", "1px");
+    }
+
+    this._toolbar.parentElement.insertBefore(this._panel, this._toolbar);
+
+    this._frame = devtoolbar._doc.createElementNS(NS_XHTML, "iframe");
+    this._frame.id = "gcli-tooltip-frame";
+    this._frame.setAttribute("src", "chrome://devtools/content/commandline/commandlinetooltip.xhtml");
+    this._frame.setAttribute("flex", "1");
+    this._frame.setAttribute("sandbox", "allow-same-origin");
+    this._panel.appendChild(this._frame);
+
     
-    
-    this._panel.setAttribute("height", "1px");
-  }
-
-  this._toolbar.parentElement.insertBefore(this._panel, this._toolbar);
-
-  this._frame = devtoolbar._doc.createElementNS(NS_XHTML, "iframe");
-  this._frame.id = "gcli-tooltip-frame";
-  this._frame.setAttribute("src", "chrome://devtools/content/commandline/commandlinetooltip.xhtml");
-  this._frame.setAttribute("flex", "1");
-  this._frame.setAttribute("sandbox", "allow-same-origin");
-  this._panel.appendChild(this._frame);
-
-  
 
 
-  let onload = () => {
-    this._frame.removeEventListener("load", onload, true);
+    let onload = () => {
+      this._frame.removeEventListener("load", onload, true);
 
-    this.document = this._frame.contentDocument;
-    this._copyTheme();
-    this.hintElement = this.document.getElementById("gcli-tooltip-root");
-    this._connector = this.document.getElementById("gcli-tooltip-connector");
+      this.document = this._frame.contentDocument;
+      this._copyTheme();
+      this.hintElement = this.document.getElementById("gcli-tooltip-root");
+      this._connector = this.document.getElementById("gcli-tooltip-connector");
 
-    let styles = this._toolbar.ownerDocument.defaultView
-                    .getComputedStyle(this._toolbar);
-    this.hintElement.setAttribute("dir", styles.direction);
+      let styles = this._toolbar.ownerDocument.defaultView
+                      .getComputedStyle(this._toolbar);
+      this.hintElement.setAttribute("dir", styles.direction);
 
-    deferred.resolve(this);
-  };
-  this._frame.addEventListener("load", onload, true);
-
-  return deferred.promise;
+      resolve(this);
+    };
+    this._frame.addEventListener("load", onload, true);
+  });
 };
 
 

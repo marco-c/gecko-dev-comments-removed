@@ -3,8 +3,6 @@
 
 
 "use strict";
-loader.lazyRequireGetter(this, "defer",
-  "promise", true);
 
 
 
@@ -63,20 +61,20 @@ Poller.prototype.on = function pollerOn() {
 
 
 Poller.prototype.off = function pollerOff() {
-  let { resolve, promise } = defer();
-  if (this._timer) {
-    clearTimeout(this._timer);
-    this._timer = null;
-  }
+  return new Promise((resolve, reject) => {
+    if (this._timer) {
+      clearTimeout(this._timer);
+      this._timer = null;
+    }
 
-  
-  
-  if (this._inflight) {
-    this._inflight.then(resolve);
-  } else {
-    resolve();
-  }
-  return promise;
+    
+    
+    if (this._inflight) {
+      this._inflight.then(resolve);
+    } else {
+      resolve();
+    }
+  });
 };
 
 
