@@ -3338,7 +3338,7 @@ pref("dom.ipc.processCount.file", 1);
 pref("dom.ipc.processCount.extension", 1);
 
 
-pref("dom.ipc.useNativeEventProcessing.content", true);
+pref("dom.ipc.useNativeEventProcessing.content", false);
 
 
 pref("dom.ipc.scheduler", false);
