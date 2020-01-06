@@ -2319,7 +2319,7 @@ public class BrowserApp extends GeckoApp
         }
 
         
-        WindowUtil.invalidateStatusBarColor(this, true);
+        WindowUtil.setTabsTrayStatusBarColor(this);
     }
 
     @Override
@@ -2336,9 +2336,8 @@ public class BrowserApp extends GeckoApp
             delegate.onTabsTrayHidden(this, mTabsPanel);
         }
 
-        final Tab tab = Tabs.getInstance().getSelectedTab();
-        final boolean darkTheme = (tab != null && tab.isPrivate());
-        WindowUtil.invalidateStatusBarColor(this, darkTheme);
+        final boolean isPrivate = mBrowserToolbar.isPrivateMode();
+        WindowUtil.setStatusBarColor(this, isPrivate);
     }
 
     @Override
