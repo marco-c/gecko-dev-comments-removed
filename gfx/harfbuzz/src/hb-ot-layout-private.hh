@@ -198,7 +198,6 @@ _hb_ot_layout_destroy (hb_ot_layout_t *layout);
 
 
 
-
 #define foreach_syllable(buffer, start, end) \
   for (unsigned int \
        _count = buffer->len, \

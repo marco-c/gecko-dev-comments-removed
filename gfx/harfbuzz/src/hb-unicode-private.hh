@@ -106,6 +106,10 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
   modified_combining_class (hb_codepoint_t unicode)
   {
     
+
+    if (unlikely (unicode == 0x0654u)) unicode = 0x0651u;
+
+    
     if (unlikely (unicode == 0x1037u)) unicode = 0x103Au;
 
     
