@@ -703,7 +703,19 @@ Element::GetScrollFrame(nsIFrame **aStyledFrame, FlushType aFlushType)
   nsIDocument* doc = OwnerDoc();
   
   
-  if (OwnerDoc()->IsScrollingElement(this)) {
+  bool isScrollingElement = OwnerDoc()->IsScrollingElement(this);
+  
+  
+  if (aStyledFrame) {
+    nsIFrame* frame = GetPrimaryFrame(FlushType::None);
+    if (frame) {
+      *aStyledFrame = nsLayoutUtils::GetStyleFrame(frame);
+    } else {
+      *aStyledFrame = nullptr;
+    }
+  }
+
+  if (isScrollingElement) {
     
     if (nsIPresShell* shell = doc->GetShell()) {
       return shell->GetRootScrollFrameAsScrollable();
