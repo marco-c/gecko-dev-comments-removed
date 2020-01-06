@@ -8,6 +8,7 @@
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
 
 #include <vector>
+#include <unordered_map>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Range.h"
@@ -296,7 +297,6 @@ public:
   
   
   
-  
   Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
 
   
@@ -310,6 +310,9 @@ protected:
   
   std::vector<WrClipId> mClipIdStack;
   std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
+
+  
+  std::unordered_map<layers::FrameMetrics::ViewID, layers::FrameMetrics::ViewID> mScrollParents;
 
   friend class WebRenderAPI;
 };
