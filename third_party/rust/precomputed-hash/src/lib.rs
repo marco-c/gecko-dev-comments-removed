@@ -7,3 +7,16 @@ pub trait PrecomputedHash {
     
     fn precomputed_hash(&self) -> u32;
 }
+
+
+impl<'a, T: PrecomputedHash> PrecomputedHash for &'a T {
+    fn precomputed_hash(&self) -> u32 {
+        (**self).precomputed_hash()
+    }
+}
+
+impl<'a, T: PrecomputedHash> PrecomputedHash for &'a mut T {
+    fn precomputed_hash(&self) -> u32 {
+        (**self).precomputed_hash()
+    }
+}
