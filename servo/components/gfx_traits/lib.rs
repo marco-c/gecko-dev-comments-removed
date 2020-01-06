@@ -42,10 +42,9 @@ impl StackingContextId {
         StackingContextId(0)
     }
 
-    
-    #[inline]
-    pub fn new(id: u64) -> StackingContextId {
-        StackingContextId(id)
+    pub fn next(&self) -> StackingContextId {
+        let StackingContextId(id) = *self;
+        StackingContextId(id + 1)
     }
 }
 

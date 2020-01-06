@@ -763,13 +763,21 @@ impl Stylist {
 
         
         let inherit_all = match *pseudo {
+            
+            
+            PseudoElement::ServoAnonymousTableCell |
+            PseudoElement::ServoAnonymousTableRow |
             PseudoElement::ServoText |
             PseudoElement::ServoInputText => false,
             PseudoElement::ServoAnonymousBlock |
+
+            
+            
+            
+            
             PseudoElement::ServoAnonymousTable |
-            PseudoElement::ServoAnonymousTableCell |
-            PseudoElement::ServoAnonymousTableRow |
             PseudoElement::ServoAnonymousTableWrapper |
+
             PseudoElement::ServoTableWrapper |
             PseudoElement::ServoInlineBlockWrapper |
             PseudoElement::ServoInlineAbsolute => true,
