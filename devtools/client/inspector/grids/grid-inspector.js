@@ -50,6 +50,7 @@ function GridInspector(inspector, window) {
 
   this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
   this.onHighlighterChange = this.onHighlighterChange.bind(this);
+  this.onMarkupMutation = this.onMarkupMutation.bind(this);
   this.onReflow = this.onReflow.bind(this);
   this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
   this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
@@ -90,6 +91,7 @@ GridInspector.prototype = {
 
     this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
+    this.inspector.on("markupmutation", this.onMarkupMutation);
     this.inspector.sidebar.on("select", this.onSidebarSelect);
 
     this.onSidebarSelect();
@@ -102,6 +104,7 @@ GridInspector.prototype = {
   destroy() {
     this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
+    this.inspector.off("markupmutation", this.onMarkupMutation);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
 
@@ -344,10 +347,16 @@ GridInspector.prototype = {
 
 
 
+  onMarkupMutation() {
+    this.updateGridPanel();
+  },
+
+  
+
+
+
   onReflow() {
-    if (this.isPanelVisible()) {
-      this.updateGridPanel();
-    }
+    this.updateGridPanel();
   },
 
   
