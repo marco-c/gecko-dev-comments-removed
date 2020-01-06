@@ -1003,6 +1003,11 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     return NS_ERROR_ABORT;
   }
 
+  
+  if (NS_WARN_IF(!newChild->IPCOpen())) {
+    return NS_ERROR_ABORT;
+  }
+
   if (layersId == 0) { 
     PRenderFrameChild::Send__delete__(renderFrame);
     renderFrame = nullptr;
