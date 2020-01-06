@@ -5642,7 +5642,7 @@ pref("layout.css.servo.enabled", false);
 
 
 
-#ifdef RELEASE_OR_BETA
+#ifdef RELEASE
 
 
 pref("security.mixed_content.send_hsts_priming", false);
