@@ -270,6 +270,8 @@ LayerManagerMLGPU::EndTransaction(const TimeStamp& aTimeStamp, EndTransactionFla
     PostRender();
   }
 
+  mTextureSourceProvider->FlushPendingNotifyNotUsed();
+
   
   mLastCompositionEndTime = TimeStamp::Now();
 }
