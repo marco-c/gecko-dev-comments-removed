@@ -413,7 +413,7 @@ pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
 pref("media.eme.chromium-api.enabled", true);
-pref("media.eme.chromium-api.video-shmems", 6);
+pref("media.eme.chromium-api.video-shmems", 4);
 
 #ifdef MOZ_APPLEMEDIA
 #ifdef MOZ_WIDGET_UIKIT
@@ -4672,7 +4672,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", true);
+pref("network.tcp.tcp_fastopen_enable", false);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
