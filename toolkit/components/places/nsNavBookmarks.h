@@ -401,11 +401,8 @@ private:
 
 
 
-
-
   nsresult GetBookmarkIdsForURITArray(nsIURI* aURI,
-                                      nsTArray<int64_t>& aResult,
-                                      bool aSkipTags);
+                                      nsTArray<int64_t>& aResult);
 
   nsresult GetBookmarksForURI(nsIURI* aURI,
                               nsTArray<BookmarkData>& _bookmarks);
