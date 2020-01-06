@@ -197,7 +197,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   
   for (size_t i = 0; i < info.GetSize(); i++) {
     SharedLibrary& lib = info.GetMutableEntry(i);
-    if (lib.GetStart() == exeExeAddr && lib.GetNativeDebugPath() == "") {
+    if (lib.GetStart() == exeExeAddr && lib.GetNativeDebugPath().empty()) {
       lib = SharedLibraryAtPath(exeName, lib.GetStart(), lib.GetEnd(),
                                 lib.GetOffset());
 
