@@ -16,6 +16,7 @@
 #include "jsapi.h"
 #include "js/Initialization.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "ProfileBuffer.h"
 #include "ProfileJSONWriter.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
@@ -408,6 +409,24 @@ TEST(GeckoProfiler, Markers)
 
   
   
+  static const size_t kMax = ProfileBuffer::kMaxFrameKeyLength;
+  UniquePtr<char[]> okstr1 = MakeUnique<char[]>(kMax);
+  UniquePtr<char[]> okstr2 = MakeUnique<char[]>(kMax);
+  UniquePtr<char[]> longstr = MakeUnique<char[]>(kMax + 1);
+  for (size_t i = 0; i < kMax; i++) {
+    okstr1[i] = 'a';
+    okstr2[i] = 'b';
+    longstr[i] = 'c';
+  }
+  okstr1[kMax - 1] = '\0';
+  okstr2[kMax - 1] = '\0';
+  longstr[kMax] = '\0';
+  AUTO_PROFILER_LABEL_DYNAMIC("", CSS, okstr1.get());
+  AUTO_PROFILER_LABEL_DYNAMIC("okstr2", CSS, okstr2.get());
+  AUTO_PROFILER_LABEL_DYNAMIC("", CSS, longstr.get());
+
+  
+  
   PR_Sleep(PR_MillisecondsToInterval(500));
 
   SpliceableChunkedJSONWriter w;
@@ -425,6 +444,17 @@ TEST(GeckoProfiler, Markers)
     SprintfLiteral(buf, "\"gtest-%d\"", i);
     ASSERT_TRUE(strstr(profile.get(), buf));
   }
+
+  
+  ASSERT_TRUE(strstr(profile.get(), okstr1.get()));
+
+  
+  
+  ASSERT_TRUE(strstr(profile.get(), "okstr2 bbbbbbbbb"));
+
+  
+  ASSERT_TRUE(!strstr(profile.get(), longstr.get()));
+  ASSERT_TRUE(strstr(profile.get(), "(too long)"));
 
   profiler_stop();
 

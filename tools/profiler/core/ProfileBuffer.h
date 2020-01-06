@@ -44,7 +44,10 @@ public:
 
   
   
-  static const size_t kMaxDynamicStringLength = 8192;
+  void addDynamicStringEntry(const char* aStr);
+
+  
+  static const size_t kMaxFrameKeyLength = 512;
 
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,

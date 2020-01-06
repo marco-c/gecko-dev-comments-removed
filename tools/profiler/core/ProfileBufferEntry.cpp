@@ -683,12 +683,22 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
 void
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime, JSContext* aContext,
                                    UniqueStacks& aUniqueStacks)
 {
-  UniquePtr<char[]> strbuf = MakeUnique<char[]>(kMaxDynamicStringLength);
+  UniquePtr<char[]> strbuf = MakeUnique<char[]>(kMaxFrameKeyLength);
 
   
   
@@ -765,38 +775,44 @@ skip_to_next_sample:
         stack.AppendFrame(UniqueStacks::OnStackFrameKey(buf));
         e.Next();
 
-      } else if (e.Get().isCodeLocation()) {
+      } else if (e.Get().isLabel()) {
         numFrames++;
-        const char* string = e.Get().u.mString;
+
+        
+        const char* label = e.Get().u.mString;
+        strncpy(strbuf.get(), label, kMaxFrameKeyLength);
+        size_t i = strlen(label);
         e.Next();
 
-        strbuf[0] = '\0';
-        char* p = &strbuf[0];
+        bool seenFirstDynamicStringFragment = false;
         while (e.Has()) {
-          if (e.Get().isEmbeddedString()) {
-            if (p < &strbuf[kMaxDynamicStringLength]) {
-              
-              
-              static_assert(kMaxDynamicStringLength % 8 == 0, "bad strbuf sz");
-              memcpy(p, e.Get().u.mChars, ProfileBufferEntry::kNumChars);
-              p += ProfileBufferEntry::kNumChars;
+          if (e.Get().isDynamicStringFragment()) {
+            
+            
+            
+            if (!seenFirstDynamicStringFragment) {
+              if (i > 0 && i < kMaxFrameKeyLength) {
+                strbuf[i] = ' ';
+                i++;
+              }
+              seenFirstDynamicStringFragment = true;
             }
 
+            for (size_t j = 0; j < ProfileBufferEntry::kNumChars; j++) {
+              const char* chars = e.Get().u.mChars;
+              if (i < kMaxFrameKeyLength) {
+                strbuf[i] = chars[j];
+                i++;
+              }
+            }
             e.Next();
           } else {
             break;
           }
         }
-        strbuf[kMaxDynamicStringLength - 1] = '\0';
+        strbuf[kMaxFrameKeyLength - 1] = '\0';
 
-        if (strbuf[0] != '\0') {
-          
-          
-          MOZ_ASSERT(string[0] == '\0');
-          string = strbuf.get();
-        }
-
-        UniqueStacks::OnStackFrameKey frameKey(string);
+        UniqueStacks::OnStackFrameKey frameKey(strbuf.get());
 
         if (e.Has() && e.Get().isLineNumber()) {
           frameKey.mLine = Some(unsigned(e.Get().u.mInt));

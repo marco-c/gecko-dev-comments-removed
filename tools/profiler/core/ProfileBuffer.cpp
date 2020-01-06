@@ -52,6 +52,24 @@ void ProfileBuffer::addThreadIdEntry(int aThreadId, LastSample* aLS)
   addEntry(ProfileBufferEntry::ThreadId(aThreadId));
 }
 
+void
+ProfileBuffer::addDynamicStringEntry(const char* aStr)
+{
+  size_t strLen = strlen(aStr) + 1;   
+  for (size_t j = 0; j < strLen; ) {
+    
+    char chars[ProfileBufferEntry::kNumChars];
+    size_t len = ProfileBufferEntry::kNumChars;
+    if (j + len >= strLen) {
+      len = strLen - j;
+    }
+    memcpy(chars, &aStr[j], len);
+    j += ProfileBufferEntry::kNumChars;
+
+    addEntry(ProfileBufferEntry::DynamicStringFragment(chars));
+  }
+}
+
 void ProfileBuffer::addStoredMarker(ProfilerMarker *aStoredMarker) {
   aStoredMarker->SetGeneration(mGeneration);
   mStoredMarkers.insert(aStoredMarker);
