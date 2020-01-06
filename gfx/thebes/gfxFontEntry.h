@@ -646,8 +646,18 @@ public:
         }
         aFontEntry->mSkipDefaultFeatureSpaceCheck = mSkipDefaultFeatureSpaceCheck;
         mAvailableFonts.AppendElement(aFontEntry);
-        mIsSimpleFamily = false; 
-                                 
+
+        
+        
+        
+        if (mIsSimpleFamily) {
+            for (size_t i = mAvailableFonts.Length() - 1; i-- > 0; ) {
+                if (!mAvailableFonts[i]) {
+                    mAvailableFonts.RemoveElementAt(i);
+                }
+            }
+            mIsSimpleFamily = false;
+        }
     }
 
     
