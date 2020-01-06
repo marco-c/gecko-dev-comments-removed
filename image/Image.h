@@ -11,6 +11,7 @@
 #include "gfx2DGlue.h"
 #include "imgIContainer.h"
 #include "ImageURL.h"
+#include "ImageContainer.h"
 #include "nsStringFwd.h"
 #include "ProgressTracker.h"
 #include "SurfaceCache.h"
@@ -333,6 +334,17 @@ protected:
   bool                          mInitialized:1; 
   bool                          mAnimating:1;   
   bool                          mError:1;       
+
+  
+  
+  WeakPtr<layers::ImageContainer> mImageContainer;
+
+  layers::ImageContainer::ProducerID mImageProducerID;
+  layers::ImageContainer::FrameID mLastFrameID;
+
+  
+  
+  DrawResult mLastImageContainerDrawResult;
 };
 
 } 

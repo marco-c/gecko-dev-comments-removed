@@ -400,17 +400,6 @@ private:
   
   int32_t                        mDecodeCount;
 
-  
-  
-  WeakPtr<layers::ImageContainer> mImageContainer;
-
-  layers::ImageContainer::ProducerID mImageProducerID;
-  layers::ImageContainer::FrameID mLastFrameID;
-
-  
-  
-  DrawResult mLastImageContainerDrawResult;
-
 #ifdef DEBUG
   uint32_t                       mFramesNotified;
 #endif
