@@ -833,12 +833,13 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
       nsCSSBorderImageRenderer::CreateBorderImageRenderer(aPresContext, aForFrame, aBorderArea,
                                                           aStyleBorder, aDirtyRect, aSkipSides,
                                                           irFlags, &result);
-    
-    
-    if (renderer) {
-      MOZ_ASSERT(result == DrawResult::SUCCESS);
-      return renderer->DrawBorderImage(aPresContext, aRenderingContext,
-                                       aForFrame, aDirtyRect);
+    if (aStyleBorder.IsBorderImageLoaded()) {
+      if (renderer) {
+        result &= renderer->DrawBorderImage(aPresContext, aRenderingContext,
+                                            aForFrame, aDirtyRect);
+      }
+
+      return result;
     }
   }
 
@@ -2637,11 +2638,6 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   
   if (drawBackgroundColor && !isCanvasFrame) {
     DrawBackgroundColor(clipState, &aRenderingCtx, appUnitsPerPixel);
-  }
-
-  if (!drawBackgroundImage) {
-    return DrawResult::SUCCESS; 
-                                
   }
 
   
