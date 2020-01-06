@@ -22,13 +22,20 @@ const { div } = DOM;
 
 
 function App({
+  connector,
   openLink,
   sourceMapService,
   statisticsOpen,
 }) {
   return (
     div({ className: "network-monitor" },
-      !statisticsOpen ? MonitorPanel({ openLink, sourceMapService }) : StatisticsPanel()
+      !statisticsOpen ? MonitorPanel({
+        connector,
+        sourceMapService,
+        openLink,
+      }) : StatisticsPanel({
+        connector
+      })
     )
   );
 }
@@ -36,9 +43,13 @@ function App({
 App.displayName = "App";
 
 App.propTypes = {
+  
+  connector: PropTypes.object.isRequired,
+  
   openLink: PropTypes.func,
   
   sourceMapService: PropTypes.object,
+  
   statisticsOpen: PropTypes.bool.isRequired,
 };
 

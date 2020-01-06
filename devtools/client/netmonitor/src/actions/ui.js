@@ -15,7 +15,6 @@ const {
   TOGGLE_COLUMN,
   WATERFALL_RESIZE,
 } = require("../constants");
-const { triggerActivity } = require("../connector/index");
 
 
 
@@ -58,9 +57,10 @@ function disableBrowserCache(disabled) {
 
 
 
-function openStatistics(open) {
+
+function openStatistics(connector, open) {
   if (open) {
-    triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_ENABLED);
+    connector.triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_ENABLED);
   }
   return {
     type: OPEN_STATISTICS,
@@ -139,9 +139,9 @@ function toggleBrowserCache() {
 
 
 
-function toggleStatistics() {
+function toggleStatistics(connector) {
   return (dispatch, getState) =>
-    dispatch(openStatistics(!getState().ui.statisticsOpen));
+    dispatch(openStatistics(connector, !getState().ui.statisticsOpen));
 }
 
 module.exports = {

@@ -6,9 +6,14 @@
 
 const Services = require("Services");
 const { applyMiddleware, createStore } = require("devtools/client/shared/vendor/redux");
+
+
 const batching = require("../middleware/batching");
 const prefs = require("../middleware/prefs");
 const thunk = require("../middleware/thunk");
+const recording = require("../middleware/recording");
+
+
 const rootReducer = require("../reducers/index");
 const { FilterTypes, Filters } = require("../reducers/filters");
 const { Requests } = require("../reducers/requests");
@@ -16,21 +21,40 @@ const { Sort } = require("../reducers/sort");
 const { TimingMarkers } = require("../reducers/timing-markers");
 const { UI, Columns } = require("../reducers/ui");
 
-function configureStore() {
-  const getPref = (pref) => {
-    try {
-      return JSON.parse(Services.prefs.getCharPref(pref));
-    } catch (_) {
-      return [];
-    }
+
+
+
+function configureStore(connector) {
+  
+  const initialState = {
+    filters: new Filters({
+      requestFilterTypes: getFilterState()
+    }),
+    requests: new Requests(),
+    sort: new Sort(),
+    timingMarkers: new TimingMarkers(),
+    ui: new UI({
+      columns: getColumnState()
+    }),
   };
 
-  let activeFilters = {};
-  let filters = getPref("devtools.netmonitor.filters");
-  filters.forEach((filter) => {
-    activeFilters[filter] = true;
-  });
+  
+  let middleware = applyMiddleware(
+    thunk,
+    prefs,
+    batching,
+    recording(connector)
+  );
 
+  return createStore(rootReducer, initialState, middleware);
+}
+
+
+
+
+
+
+function getColumnState() {
   let columns = new Columns();
   let visibleColumns = getPref("devtools.netmonitor.visibleColumns");
 
@@ -40,19 +64,27 @@ function configureStore() {
     });
   }
 
-  const initialState = {
-    filters: new Filters({
-      requestFilterTypes: new FilterTypes(activeFilters)
-    }),
-    requests: new Requests(),
-    sort: new Sort(),
-    timingMarkers: new TimingMarkers(),
-    ui: new UI({
-      columns,
-    }),
-  };
+  return columns;
+}
 
-  return createStore(rootReducer, initialState, applyMiddleware(thunk, prefs, batching));
+
+
+
+function getFilterState() {
+  let activeFilters = {};
+  let filters = getPref("devtools.netmonitor.filters");
+  filters.forEach((filter) => {
+    activeFilters[filter] = true;
+  });
+  return new FilterTypes(activeFilters);
+}
+
+function getPref(pref) {
+  try {
+    return JSON.parse(Services.prefs.getCharPref(pref));
+  } catch (_) {
+    return [];
+  }
 }
 
 exports.configureStore = configureStore;
