@@ -1272,35 +1272,41 @@ MediaDecoder::UpdateVideoDecodeMode()
 {
   
   if (!mDecoderStateMachine) {
+    LOG("UpdateVideoDecodeMode(), early return because we don't have MDSM.");
     return;
   }
 
   
   
   if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
+    LOG("UpdateVideoDecodeMode(), early return because we have incomplete visibility states.");
     return;
   }
 
   
   if (mHasSuspendTaint) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the element has been tainted.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
     return;
   }
 
   
   if (!mIsElementInTree) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the element is not in tree.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
     return;
   }
 
   
   if (mForcedHidden) {
+    LOG("UpdateVideoDecodeMode(), set Suspend because the element is forced to be suspended.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Suspend);
     return;
   }
 
   
   if (mIsBackgroundVideoDecodingAllowed) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the tab is in background and hovered.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
     return;
   }
@@ -1310,8 +1316,10 @@ MediaDecoder::UpdateVideoDecodeMode()
   
   if (mIsDocumentVisible &&
       mElementVisibility == Visibility::APPROXIMATELY_VISIBLE) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the element visible.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
   } else {
+    LOG("UpdateVideoDecodeMode(), set Suspend because the element is not visible.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Suspend);
   }
 }
