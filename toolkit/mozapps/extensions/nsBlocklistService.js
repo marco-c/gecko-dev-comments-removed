@@ -80,16 +80,12 @@ XPCOMUtils.defineLazyServiceGetter(this, "gVersionChecker",
                                    "@mozilla.org/xpcom/version-comparator;1",
                                    "nsIVersionComparator");
 
-XPCOMUtils.defineLazyGetter(this, "gPref", function() {
-  return Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService).
-         QueryInterface(Ci.nsIPrefBranch);
-});
-
 
 
 
 
 XPCOMUtils.defineLazyGetter(this, "gApp", function() {
+  
   let appinfo = Cc["@mozilla.org/xre/app-info;1"]
                   .getService(Ci.nsIXULRuntime);
   try {
@@ -125,17 +121,15 @@ XPCOMUtils.defineLazyGetter(this, "gABI", function() {
 
 XPCOMUtils.defineLazyGetter(this, "gOSVersion", function() {
   let osVersion;
-  let sysInfo = Cc["@mozilla.org/system-info;1"].
-                getService(Ci.nsIPropertyBag2);
   try {
-    osVersion = sysInfo.getProperty("name") + " " + sysInfo.getProperty("version");
+    osVersion = Services.sysinfo.getProperty("name") + " " + Services.sysinfo.getProperty("version");
   } catch (e) {
     LOG("BlockList Global gOSVersion: OS Version unknown.");
   }
 
   if (osVersion) {
     try {
-      osVersion += " (" + sysInfo.getProperty("secondaryLibrary") + ")";
+      osVersion += " (" + Services.sysinfo.getProperty("secondaryLibrary") + ")";
     } catch (e) {
       
     }
@@ -177,40 +171,24 @@ function LOG(string) {
 
 function getPref(func, preference, defaultValue) {
   try {
-    return gPref[func](preference);
+    return Services.prefs[func](preference);
   } catch (e) {
   }
   return defaultValue;
 }
 
 
-
-
-
-
-
-function newURI(spec) {
-  var ioServ = Cc["@mozilla.org/network/io-service;1"].
-               getService(Ci.nsIIOService);
-  return ioServ.newURI(spec);
-}
-
-
 function restartApp() {
   
-  var os = Cc["@mozilla.org/observer-service;1"].
-           getService(Ci.nsIObserverService);
   var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
                    createInstance(Ci.nsISupportsPRBool);
-  os.notifyObservers(cancelQuit, "quit-application-requested");
+  Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
 
   
   if (cancelQuit.data)
     return;
 
-  var as = Cc["@mozilla.org/toolkit/app-startup;1"].
-           getService(Ci.nsIAppStartup);
-  as.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
+  Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
 }
 
 
@@ -246,7 +224,7 @@ function getLocale() {
 
 
 function getDistributionPrefValue(aPrefName) {
-  return gPref.getDefaultBranch(null).getCharPref(aPrefName, "default");
+  return Services.prefs.getDefaultBranch(null).getCharPref(aPrefName, "default");
 }
 
 
@@ -279,8 +257,8 @@ function Blocklist() {
   gBlocklistEnabled = getPref("getBoolPref", PREF_BLOCKLIST_ENABLED, true);
   gBlocklistLevel = Math.min(getPref("getIntPref", PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
                                      MAX_BLOCK_LEVEL);
-  gPref.addObserver("extensions.blocklist.", this);
-  gPref.addObserver(PREF_EM_LOGGING_ENABLED, this);
+  Services.prefs.addObserver("extensions.blocklist.", this);
+  Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
   this.wrappedJSObject = this;
   
   Services.ppmm.addMessageListener("Blocklist:getPluginBlocklistState", this);
@@ -311,8 +289,8 @@ Blocklist.prototype = {
     Services.obs.removeObserver(this, "xpcom-shutdown");
     Services.ppmm.removeMessageListener("Blocklist:getPluginBlocklistState", this);
     Services.ppmm.removeMessageListener("Blocklist:content-blocklist-updated", this);
-    gPref.removeObserver("extensions.blocklist.", this);
-    gPref.removeObserver(PREF_EM_LOGGING_ENABLED, this);
+    Services.prefs.removeObserver("extensions.blocklist.", this);
+    Services.prefs.removeObserver(PREF_EM_LOGGING_ENABLED, this);
   },
 
   observe(aSubject, aTopic, aData) {
@@ -527,7 +505,7 @@ Blocklist.prototype = {
       return;
 
     try {
-      var dsURI = gPref.getCharPref(PREF_BLOCKLIST_URL);
+      var dsURI = Services.prefs.getCharPref(PREF_BLOCKLIST_URL);
     } catch (e) {
       LOG("Blocklist::notify: The " + PREF_BLOCKLIST_URL + " preference" +
           " is missing!");
@@ -594,7 +572,7 @@ Blocklist.prototype = {
         
         pingCountVersion = -1;
       }
-      gPref.setIntPref(PREF_BLOCKLIST_PINGCOUNTVERSION, pingCountVersion);
+      Services.prefs.setIntPref(PREF_BLOCKLIST_PINGCOUNTVERSION, pingCountVersion);
     }
 
     if (pingCountTotal != "invalid") {
@@ -604,12 +582,12 @@ Blocklist.prototype = {
         
         pingCountTotal = -1;
       }
-      gPref.setIntPref(PREF_BLOCKLIST_PINGCOUNTTOTAL, pingCountTotal);
+      Services.prefs.setIntPref(PREF_BLOCKLIST_PINGCOUNTTOTAL, pingCountTotal);
     }
 
     
     try {
-      var uri = newURI(dsURI);
+      var uri = Services.io.newURI(dsURI);
     } catch (e) {
       LOG("Blocklist::notify: There was an error creating the blocklist URI\r\n" +
           "for: " + dsURI + ", error: " + e);
@@ -634,7 +612,7 @@ Blocklist.prototype = {
 
     
     
-    if (gPref.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
+    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_UPDATE_ENABLED)) {
       BlocklistUpdater.checkVersions().catch(() => {
         
       });
@@ -1281,7 +1259,7 @@ Blocklist.prototype = {
     
     function resetPrefs(prefs) {
       for (let pref of prefs)
-        gPref.clearUserPref(pref);
+        Services.prefs.clearUserPref(pref);
     }
     const types = ["extension", "theme", "locale", "dictionary", "service"];
     AddonManager.getAddonsByTypes(types, addons => {

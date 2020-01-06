@@ -380,10 +380,8 @@ function run_test() {
   do_check_eq(ltm.currentTheme, null);
 
   
-  let prefs = Cc["@mozilla.org/preferences-service;1"].
-              getService(Ci.nsIPrefBranch);
   let themes = [data];
-  prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
+  Services.prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
   do_check_eq(ltm.usedThemes.length, 1);
 
   
@@ -395,7 +393,7 @@ function run_test() {
 
   
   themes = [data, dummy("x1"), dummy("x2")];
-  prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
+  Services.prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
   do_check_eq(ltm.usedThemes.length, 3);
 
   
@@ -406,7 +404,7 @@ function run_test() {
   do_check_eq(ltm.usedThemes.length, 0);
   do_check_eq(ltm.currentTheme, null);
 
-  prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
+  Services.prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(themes));
   do_check_eq(ltm.usedThemes.length, 3);
 
   
@@ -419,7 +417,7 @@ function run_test() {
   
   ltm.currentTheme = dummy("x0");
   ltm.currentTheme = dummy("x1");
-  prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(ltm.usedThemes));
+  Services.prefs.setCharPref("lightweightThemes.usedThemes", JSON.stringify(ltm.usedThemes));
   do_check_eq(ltm.usedThemes.length, 2);
   do_check_eq(ltm.currentTheme.id, "x1");
   do_check_eq(ltm.usedThemes[1].id, "x0");

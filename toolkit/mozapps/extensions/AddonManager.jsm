@@ -14,6 +14,7 @@ const Cu = Components.utils;
 
 
 if ("@mozilla.org/xre/app-info;1" in Cc) {
+  
   let runtime = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
   if (runtime.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
     
@@ -2860,10 +2861,8 @@ var AddonManagerInternal = {
         args.wrappedJSObject = args;
 
         try {
-          Cc["@mozilla.org/base/telemetry;1"].
-                       getService(Ci.nsITelemetry).
-                       getHistogramById("SECURITY_UI").
-                       add(Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL);
+          Services.telemetry.getHistogramById("SECURITY_UI")
+                  .add(Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL);
           let parentWindow = null;
           if (browser) {
             
