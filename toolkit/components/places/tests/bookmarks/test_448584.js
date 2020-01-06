@@ -4,8 +4,6 @@
 
 
 
-var tests = [];
-
 
 try {
   var mDBConn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
@@ -19,79 +17,64 @@ try {
 
 
 
-var invalidURITest = {
-  _itemTitle: "invalid uri",
-  _itemUrl: "http://test.mozilla.org/",
-  _itemId: null,
+const ITEM_TITLE = "invalid uri";
+const ITEM_URL = "http://test.mozilla.org";
 
-  populate() {
-    
-    PlacesUtils.bookmarks.insertBookmark(PlacesUtils.toolbarFolderId,
-                                         PlacesUtils._uri(this._itemUrl),
-                                         PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                         this._itemTitle);
-    
-    this._itemId =
-      PlacesUtils.bookmarks.insertBookmark(PlacesUtils.toolbarFolderId,
-                                           PlacesUtils._uri(this._itemUrl),
-                                           PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                           this._itemTitle);
-  },
+function validateResults(expectedValidItemsCount) {
+  var query = PlacesUtils.history.getNewQuery();
+  query.setFolders([PlacesUtils.bookmarks.toolbarFolder], 1);
+  var options = PlacesUtils.history.getNewQueryOptions();
+  var result = PlacesUtils.history.executeQuery(query, options);
 
-  clean() {
-    PlacesUtils.bookmarks.removeItem(this._itemId);
-  },
+  var toolbar = result.root;
+  toolbar.containerOpen = true;
 
-  validate(aExpectValidItemsCount) {
-    var query = PlacesUtils.history.getNewQuery();
-    query.setFolders([PlacesUtils.bookmarks.toolbarFolder], 1);
-    var options = PlacesUtils.history.getNewQueryOptions();
-    var result = PlacesUtils.history.executeQuery(query, options);
-
-    var toolbar = result.root;
-    toolbar.containerOpen = true;
-
-    
-    do_check_eq(toolbar.childCount, aExpectValidItemsCount);
-    for (var i = 0; i < toolbar.childCount; i++) {
-      var folderNode = toolbar.getChild(0);
-      do_check_eq(folderNode.type, folderNode.RESULT_TYPE_URI);
-      do_check_eq(folderNode.title, this._itemTitle);
-    }
-
-    
-    toolbar.containerOpen = false;
+  
+  do_check_eq(toolbar.childCount, expectedValidItemsCount);
+  for (var i = 0; i < toolbar.childCount; i++) {
+    var folderNode = toolbar.getChild(0);
+    do_check_eq(folderNode.type, folderNode.RESULT_TYPE_URI);
+    do_check_eq(folderNode.title, ITEM_TITLE);
   }
-};
-tests.push(invalidURITest);
+
+  
+  toolbar.containerOpen = false;
+}
 
 add_task(async function() {
   
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
   
-  tests.forEach(function(aTest) {
-    aTest.populate();
-    
-    aTest.validate(2);
-    
-    
-    var sql = "UPDATE moz_bookmarks SET fk = 1337 WHERE id = ?1";
-    var stmt = mDBConn.createStatement(sql);
-    stmt.bindByIndex(0, aTest._itemId);
-    try {
-      stmt.execute();
-    } finally {
-      stmt.finalize();
-    }
+  
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: ITEM_TITLE,
+    url: ITEM_URL,
   });
+
+  let badBookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: ITEM_TITLE,
+    url: ITEM_URL,
+  });
+  
+  validateResults(2);
+  
+  
+  var sql = "UPDATE moz_bookmarks SET fk = 1337 WHERE guid = ?1";
+  var stmt = mDBConn.createStatement(sql);
+  stmt.bindByIndex(0, badBookmark.guid);
+  try {
+    stmt.execute();
+  } finally {
+    stmt.finalize();
+  }
 
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
   
-  tests.forEach(function(aTest) {
-    aTest.clean();
-  });
+  await PlacesUtils.bookmarks.remove(badBookmark);
 
   
   try {
@@ -99,9 +82,7 @@ add_task(async function() {
   } catch (ex) { do_throw("couldn't import the exported file: " + ex); }
 
   
-  tests.forEach(function(aTest) {
-    aTest.validate(1);
-  });
+  validateResults(1);
 
   
   await OS.File.remove(jsonFile);

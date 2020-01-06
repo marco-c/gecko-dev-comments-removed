@@ -5,34 +5,37 @@
 
 
 
-var root = PlacesUtils.bookmarksMenuFolderId;
-
-
 const searchTerm = "about";
 
 var testRoot;
+var testRootId;
 
-
-function run_test() {
+add_task(async function setup() {
   
   
   
-  testRoot = PlacesUtils.bookmarks.createFolder(
-    root, searchTerm, PlacesUtils.bookmarks.DEFAULT_INDEX);
+  testRoot = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    title: searchTerm,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+  });
+  testRootId = await PlacesUtils.promiseItemId(testRoot.guid);
+});
 
-  run_next_test();
-}
-
-add_test(function test_savedsearches_bookmarks() {
+add_task(async function test_savedsearches_bookmarks() {
   
-  var bookmarkId = PlacesUtils.bookmarks.insertBookmark(
-    root, uri("http://foo.com"), PlacesUtils.bookmarks.DEFAULT_INDEX,
-    searchTerm);
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    title: searchTerm,
+    url: "http://foo.com",
+  });
 
   
-  var searchId = PlacesUtils.bookmarks.insertBookmark(
-    testRoot, uri("place:terms=" + searchTerm + "&excludeQueries=1&expandQueries=1&queryType=1"),
-    PlacesUtils.bookmarks.DEFAULT_INDEX, searchTerm);
+  let search = await PlacesUtils.bookmarks.insert({
+    parentGuid: testRoot.guid,
+    title: searchTerm,
+    url: "place:terms=" + searchTerm + "&excludeQueries=1&expandQueries=1&queryType=1",
+  });
 
   
   
@@ -40,7 +43,7 @@ add_test(function test_savedsearches_bookmarks() {
     let options = PlacesUtils.history.getNewQueryOptions();
     options.expandQueries = 0;
     let query = PlacesUtils.history.getNewQuery();
-    query.setFolders([testRoot], 1);
+    query.setFolders([testRootId], 1);
     let result = PlacesUtils.history.executeQuery(query, options);
     let rootNode = result.root;
     rootNode.containerOpen = true;
@@ -66,7 +69,7 @@ add_test(function test_savedsearches_bookmarks() {
     let options = PlacesUtils.history.getNewQueryOptions();
     options.expandQueries = 1;
     let query = PlacesUtils.history.getNewQuery();
-    query.setFolders([testRoot], 1);
+    query.setFolders([testRootId], 1);
     let result = PlacesUtils.history.executeQuery(query, options);
     let rootNode = result.root;
     rootNode.containerOpen = true;
@@ -88,7 +91,7 @@ add_test(function test_savedsearches_bookmarks() {
 
       
       var item = node.getChild(0);
-      do_check_eq(item.itemId, bookmarkId);
+      do_check_eq(item.bookmarkGuid, bookmark.guid);
 
       
       
@@ -101,13 +104,18 @@ add_test(function test_savedsearches_bookmarks() {
       
 
       
-      PlacesUtils.bookmarks.createFolder(
-        root, searchTerm + "zaa", PlacesUtils.bookmarks.DEFAULT_INDEX);
+      await PlacesUtils.bookmarks.insert({
+        parentGuid: PlacesUtils.bookmarks.menuGuid,
+        title: searchTerm + "zaa",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      });
       do_check_eq(node.childCount, 1);
       
-      PlacesUtils.bookmarks.insertBookmark(
-        root, uri("place:terms=foo&excludeQueries=1&expandQueries=1&queryType=1"),
-        PlacesUtils.bookmarks.DEFAULT_INDEX, searchTerm + "blah");
+      await PlacesUtils.bookmarks.insert({
+        parentGuid: PlacesUtils.bookmarks.menuGuid,
+        title: searchTerm + "blah",
+        url: "place:terms=foo&excludeQueries=1&expandQueries=1&queryType=1",
+      });
       do_check_eq(node.childCount, 1);
     }
     rootNode.containerOpen = false;
@@ -116,9 +124,7 @@ add_test(function test_savedsearches_bookmarks() {
   }
 
   
-  PlacesUtils.bookmarks.removeItem(searchId);
-
-  run_next_test();
+  await PlacesUtils.bookmarks.remove(search);
 });
 
 add_task(async function test_savedsearches_history() {
@@ -127,9 +133,11 @@ add_task(async function test_savedsearches_history() {
   await PlacesTestUtils.addVisits({ uri: testURI, title: searchTerm });
 
   
-  var searchId = PlacesUtils.bookmarks.insertBookmark(testRoot,
-    uri("place:terms=" + searchTerm + "&excludeQueries=1&expandQueries=1&queryType=0"),
-    PlacesUtils.bookmarks.DEFAULT_INDEX, searchTerm);
+  var searchItem = await PlacesUtils.bookmarks.insert({
+    parentGuid: testRoot.guid,
+    title: searchTerm,
+    url: "place:terms=" + searchTerm + "&excludeQueries=1&expandQueries=1&queryType=0",
+  });
 
   
   
@@ -137,7 +145,7 @@ add_task(async function test_savedsearches_history() {
     var options = PlacesUtils.history.getNewQueryOptions();
     options.expandQueries = 1;
     var query = PlacesUtils.history.getNewQuery();
-    query.setFolders([testRoot], 1);
+    query.setFolders([testRootId], 1);
     var result = PlacesUtils.history.executeQuery(query, options);
     var rootNode = result.root;
     rootNode.containerOpen = true;
@@ -148,7 +156,7 @@ add_task(async function test_savedsearches_history() {
       
       do_check_eq(node.type, node.RESULT_TYPE_QUERY);
       
-      do_check_eq(node.itemId, searchId);
+      do_check_eq(node.bookmarkGuid, searchItem.guid);
       node.QueryInterface(Ci.nsINavHistoryContainerResultNode);
       node.containerOpen = true;
 
@@ -177,26 +185,29 @@ add_task(async function test_savedsearches_history() {
     }
 
     
-    var tmpFolderId = PlacesUtils.bookmarks.createFolder(
-      testRoot, "foo", PlacesUtils.bookmarks.DEFAULT_INDEX);
-    PlacesUtils.bookmarks.moveItem(
-      searchId, tmpFolderId, PlacesUtils.bookmarks.DEFAULT_INDEX);
+    let tmpFolder = await PlacesUtils.bookmarks.insert({
+      parentGuid: testRoot.guid,
+      title: "foo",
+      type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    });
+
+    searchItem.parentGuid = tmpFolder.guid;
+    await PlacesUtils.bookmarks.update(searchItem);
     var tmpFolderNode = rootNode.getChild(0);
-    do_check_eq(tmpFolderNode.itemId, tmpFolderId);
+    do_check_eq(tmpFolderNode.bookmarkGuid, tmpFolder.guid);
     tmpFolderNode.QueryInterface(Ci.nsINavHistoryContainerResultNode);
     tmpFolderNode.containerOpen = true;
     do_check_eq(tmpFolderNode.childCount, 1);
 
     
-    PlacesUtils.bookmarks.setItemTitle(searchId, "foo");
+    searchItem.title = "foo";
+    await PlacesUtils.bookmarks.update(searchItem);
     do_check_eq(tmpFolderNode.title, "foo");
 
     
-    PlacesUtils.bookmarks.removeItem(searchId);
-    try {
-      tmpFolderNode = root.getChild(1);
-      do_throw("query was not removed");
-    } catch (ex) {}
+    await PlacesUtils.bookmarks.remove(searchItem);
+    Assert.throws(() => tmpFolderNode = rootNode.getChild(1), /NS_ERROR_ILLEGAL_VALUE/,
+      "getting a deleted child should throw");
 
     tmpFolderNode.containerOpen = false;
     rootNode.containerOpen = false;

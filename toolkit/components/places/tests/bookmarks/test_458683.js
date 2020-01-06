@@ -4,114 +4,94 @@
 
 
 
-var tests = [];
 
 
 
 
 
 
+const ITEM_TITLE = "invalid uri";
+const ITEM_URL = "http://test.mozilla.org/";
+const TAG_NAME = "testTag";
 
-var invalidTagChildTest = {
-  _itemTitle: "invalid uri",
-  _itemUrl: "http://test.mozilla.org/",
-  _itemId: -1,
-  _tag: "testTag",
-  _tagItemId: -1,
+function validateResults() {
+  var query = PlacesUtils.history.getNewQuery();
+  query.setFolders([PlacesUtils.bookmarks.toolbarFolder], 1);
+  var options = PlacesUtils.history.getNewQueryOptions();
+  var result = PlacesUtils.history.executeQuery(query, options);
 
-  populate() {
-    
-    this._itemId = PlacesUtils.bookmarks
-                              .insertBookmark(PlacesUtils.toolbarFolderId,
-                                              PlacesUtils._uri(this._itemUrl),
-                                              PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                              this._itemTitle);
+  var toolbar = result.root;
+  toolbar.containerOpen = true;
 
-    
-    PlacesUtils.tagging.tagURI(PlacesUtils._uri(this._itemUrl), [this._tag]);
-    
-    var options = PlacesUtils.history.getNewQueryOptions();
-    var query = PlacesUtils.history.getNewQuery();
-    query.setFolders([PlacesUtils.bookmarks.tagsFolder], 1);
-    var result = PlacesUtils.history.executeQuery(query, options);
-    var tagRoot = result.root;
-    tagRoot.containerOpen = true;
-    do_check_eq(tagRoot.childCount, 1);
-    var tagNode = tagRoot.getChild(0)
-                          .QueryInterface(Ci.nsINavHistoryContainerResultNode);
-    this._tagItemId = tagNode.itemId;
-    tagRoot.containerOpen = false;
-
-    
-    PlacesUtils.bookmarks.insertSeparator(this._tagItemId,
-                                         PlacesUtils.bookmarks.DEFAULT_INDEX);
-    PlacesUtils.bookmarks.createFolder(this._tagItemId,
-                                       "test folder",
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX);
-
-    
-    PlacesUtils.bookmarks.insertSeparator(PlacesUtils.bookmarks.tagsFolder,
-                                          PlacesUtils.bookmarks.DEFAULT_INDEX);
-    PlacesUtils.bookmarks.createFolder(PlacesUtils.bookmarks.tagsFolder,
-                                       "test tags root folder",
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX);
-  },
-
-  clean() {
-    PlacesUtils.tagging.untagURI(PlacesUtils._uri(this._itemUrl), [this._tag]);
-    PlacesUtils.bookmarks.removeItem(this._itemId);
-  },
-
-  validate() {
-    var query = PlacesUtils.history.getNewQuery();
-    query.setFolders([PlacesUtils.bookmarks.toolbarFolder], 1);
-    var options = PlacesUtils.history.getNewQueryOptions();
-    var result = PlacesUtils.history.executeQuery(query, options);
-
-    var toolbar = result.root;
-    toolbar.containerOpen = true;
-
-    
-    do_check_eq(toolbar.childCount, 1);
-    for (var i = 0; i < toolbar.childCount; i++) {
-      var folderNode = toolbar.getChild(0);
-      do_check_eq(folderNode.type, folderNode.RESULT_TYPE_URI);
-      do_check_eq(folderNode.title, this._itemTitle);
-    }
-    toolbar.containerOpen = false;
-
-    
-    var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(this._itemUrl));
-    do_check_eq(tags.length, 1);
-    do_check_eq(tags[0], this._tag);
+  
+  do_check_eq(toolbar.childCount, 1);
+  for (var i = 0; i < toolbar.childCount; i++) {
+    var folderNode = toolbar.getChild(0);
+    do_check_eq(folderNode.type, folderNode.RESULT_TYPE_URI);
+    do_check_eq(folderNode.title, ITEM_TITLE);
   }
-};
-tests.push(invalidTagChildTest);
+  toolbar.containerOpen = false;
+
+  
+  var tags = PlacesUtils.tagging.getTagsForURI(PlacesUtils._uri(ITEM_URL));
+  do_check_eq(tags.length, 1);
+  do_check_eq(tags[0], TAG_NAME);
+}
 
 add_task(async function() {
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
   
-  tests.forEach(function(aTest) {
-    aTest.populate();
-    
-    aTest.validate();
+  let item = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: ITEM_TITLE,
+    url: ITEM_URL,
   });
+
+  
+  PlacesUtils.tagging.tagURI(PlacesUtils._uri(ITEM_URL), [TAG_NAME]);
+  
+  var options = PlacesUtils.history.getNewQueryOptions();
+  var query = PlacesUtils.history.getNewQuery();
+  query.setFolders([PlacesUtils.bookmarks.tagsFolder], 1);
+  var result = PlacesUtils.history.executeQuery(query, options);
+  var tagRoot = result.root;
+  tagRoot.containerOpen = true;
+  do_check_eq(tagRoot.childCount, 1);
+  var tagNode = tagRoot.getChild(0)
+                        .QueryInterface(Ci.nsINavHistoryContainerResultNode);
+  let tagItemId = tagNode.itemId;
+  tagRoot.containerOpen = false;
+
+  
+  
+
+  
+  PlacesUtils.bookmarks.insertSeparator(tagItemId,
+                                       PlacesUtils.bookmarks.DEFAULT_INDEX);
+  PlacesUtils.bookmarks.createFolder(tagItemId,
+                                     "test folder",
+                                     PlacesUtils.bookmarks.DEFAULT_INDEX);
+
+  
+  PlacesUtils.bookmarks.insertSeparator(PlacesUtils.bookmarks.tagsFolder,
+                                        PlacesUtils.bookmarks.DEFAULT_INDEX);
+  PlacesUtils.bookmarks.createFolder(PlacesUtils.bookmarks.tagsFolder,
+                                     "test tags root folder",
+                                     PlacesUtils.bookmarks.DEFAULT_INDEX);
+  
+  validateResults();
 
   await BookmarkJSONUtils.exportToFile(jsonFile);
 
   
-  tests.forEach(function(aTest) {
-    aTest.clean();
-  });
+  PlacesUtils.tagging.untagURI(PlacesUtils._uri(ITEM_URL), [TAG_NAME]);
+  await PlacesUtils.bookmarks.remove(item);
 
   
   await BookmarkJSONUtils.importFromFile(jsonFile, true);
 
-  
-  tests.forEach(function(aTest) {
-    aTest.validate();
-  });
+  validateResults();
 
   
   await OS.File.remove(jsonFile);

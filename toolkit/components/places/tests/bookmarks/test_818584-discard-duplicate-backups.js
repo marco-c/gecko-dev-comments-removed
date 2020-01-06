@@ -34,10 +34,12 @@ add_task(async function() {
   do_check_eq(matches[3], hash);
 
   
-  let bookmarkId = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.bookmarks.bookmarksMenuFolder,
-                                                        uri("http://foo.com"),
-                                                        PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                        "foo");
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.menuGuid,
+    title: "foo",
+    url: "http://foo.com",
+  });
+
   
   
   await PlacesBackups.create(undefined, true);
@@ -50,6 +52,6 @@ add_task(async function() {
   do_check_neq(matches[3], hash);
 
   
-  PlacesUtils.bookmarks.removeItem(bookmarkId);
+  await PlacesUtils.bookmarks.remove(bookmark);
   await PlacesBackups.create(0);
 });
