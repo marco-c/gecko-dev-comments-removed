@@ -1755,6 +1755,9 @@ private:
 public:
   bool operator==(const nsCSSValueTokenStream& aOther) const
   {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+
     bool eq;
     return mPropertyID == aOther.mPropertyID &&
            mShorthandPropertyID == aOther.mShorthandPropertyID &&
