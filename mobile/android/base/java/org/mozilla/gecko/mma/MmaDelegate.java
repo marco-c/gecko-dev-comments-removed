@@ -19,6 +19,7 @@ import android.text.TextUtils;
 
 import org.mozilla.gecko.Experiments;
 import org.mozilla.gecko.MmaConstants;
+import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
@@ -74,7 +75,9 @@ public class MmaDelegate {
         
         final Map<String, Object> attributes = gatherUserAttributes(activity);
         mmaHelper.setGcmSenderId(PushManager.getSenderIds());
-        mmaHelper.setDeviceId(getDeviceId(activity));
+        final String deviceId = getDeviceId(activity);
+        mmaHelper.setDeviceId(deviceId);
+        PrefsHelper.setPref(GeckoPreferences.PREFS_MMA_DEVICE_ID, deviceId);
         
         mmaHelper.init(activity, attributes);
 
