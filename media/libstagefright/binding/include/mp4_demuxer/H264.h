@@ -414,6 +414,7 @@ public:
     const mozilla::MediaByteBuffer* aNAL);
 
   
+  static bool HasSPS(const mozilla::MediaRawData* aSample);
   static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
   
   
