@@ -707,8 +707,7 @@ Collection.prototype = {
   async getBatched(batchSize = DEFAULT_DOWNLOAD_BATCH_SIZE) {
     let totalLimit = Number(this.limit) || Infinity;
     if (batchSize <= 0 || batchSize >= totalLimit) {
-      
-      return this.get();
+      throw new Error("Invalid batch size");
     }
 
     if (!this.full) {
@@ -716,13 +715,10 @@ Collection.prototype = {
     }
 
     
-    
-    
-    let { _onComplete, _onProgress, _onRecord } = this;
+    let { _onComplete, _onProgress } = this;
     let recordBuffer = [];
     let resp;
     try {
-      this._onRecord = r => recordBuffer.push(r);
       let lastModifiedTime;
       this.limit = batchSize;
 
@@ -736,7 +732,13 @@ Collection.prototype = {
         
         resp = await this.get();
         if (!resp.success) {
+          recordBuffer = [];
           break;
+        }
+        for (let json of resp.obj) {
+          let record = new this._recordObj();
+          record.deserialize(json);
+          recordBuffer.push(record);
         }
 
         
@@ -759,54 +761,12 @@ Collection.prototype = {
       
       
       
-      this._onRecord = _onRecord;
       this._limit = totalLimit;
       this._offset = null;
       delete this._headers["x-if-unmodified-since"];
       this._rebuildURL();
     }
-    if (resp.success && Async.checkAppReady()) {
-      
-      
-      for (let record of recordBuffer) {
-        this._onRecord(record);
-      }
-    }
-    return resp;
-  },
-
-  set recordHandler(onRecord) {
-    
-    let coll = this;
-
-    
-    coll.setHeader("Accept", "application/newlines");
-
-    this._onRecord = onRecord;
-
-    this._onProgress = function(httpChannel) {
-      let newline, length = 0, contentLength = "unknown";
-
-      try {
-          
-          contentLength = httpChannel.getResponseHeader("Content-Length");
-      } catch (ex) { }
-
-      while ((newline = this._data.indexOf("\n")) > 0) {
-        
-        let json = this._data.slice(0, newline);
-        this._data = this._data.slice(newline + 1);
-
-        length += json.length;
-        coll._log.trace("Record: Content-Length = " + contentLength +
-                        ", ByteCount = " + length);
-
-        
-        let record = new coll._recordObj();
-        record.deserialize(json);
-        coll._onRecord(record);
-      }
-    };
+    return { response: resp, records: recordBuffer };
   },
 
   
