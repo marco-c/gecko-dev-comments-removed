@@ -6151,12 +6151,12 @@ nsDisplayOwnLayer::nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayList* aList,
                                      const ActiveScrolledRoot* aActiveScrolledRoot,
                                      uint32_t aFlags, ViewID aScrollTarget,
-                                     const ScrollThumbData& aThumbData,
+                                     float aScrollbarThumbRatio,
                                      bool aForceActive)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot)
     , mFlags(aFlags)
     , mScrollTarget(aScrollTarget)
-    , mThumbData(aThumbData)
+    , mScrollbarThumbRatio(aScrollbarThumbRatio)
     , mForceActive(aForceActive)
 {
   MOZ_COUNT_CTOR(nsDisplayOwnLayer);
@@ -6190,8 +6190,11 @@ nsDisplayOwnLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
     BuildContainerLayerFor(aBuilder, aManager, mFrame, this, &mList,
                            aContainerParameters, nullptr,
                            FrameLayerBuilder::CONTAINER_ALLOW_PULL_BACKGROUND_COLOR);
-  if (mThumbData.mDirection != ScrollDirection::NONE) {
-    layer->SetScrollThumbData(mScrollTarget, mThumbData);
+  if (mFlags & VERTICAL_SCROLLBAR) {
+    layer->SetScrollbarData(mScrollTarget, ScrollDirection::VERTICAL, mScrollbarThumbRatio);
+  }
+  if (mFlags & HORIZONTAL_SCROLLBAR) {
+    layer->SetScrollbarData(mScrollTarget, ScrollDirection::HORIZONTAL, mScrollbarThumbRatio);
   }
   if (mFlags & SCROLLBAR_CONTAINER) {
     layer->SetIsScrollbarContainer(mScrollTarget);
@@ -7317,20 +7320,7 @@ bool
 nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
 {
   return mAllowAsyncAnimation;
-}
 
-static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
-                                          const nsRect& aOverflow,
-                                          const nsSize& aPrerenderSize)
-{
-  
-  
-  
-  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
-  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
-  nsRect result = aDirtyRect;
-  result.Inflate(xExcess / 2, yExcess / 2);
-  return result.MoveInsideAndClamp(aOverflow);
 }
 
 static void
@@ -7403,7 +7393,7 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
     *aDirtyRect = overflow;
     return FullPrerender;
   } else if (gfxPrefs::PartiallyPrerenderAnimatedContent()) {
-    *aDirtyRect = ComputePartialPrerenderArea(*aDirtyRect, overflow, maxSize);
+    *aDirtyRect = nsLayoutUtils::ComputePartialPrerenderArea(*aDirtyRect, overflow, maxSize);
     return PartialPrerender;
   }
 

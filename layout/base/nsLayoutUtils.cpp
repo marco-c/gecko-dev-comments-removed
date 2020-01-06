@@ -9323,6 +9323,22 @@ nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame)
   return delta;
 }
 
+ nsRect
+nsLayoutUtils::ComputePartialPrerenderArea(const nsRect& aDirtyRect,
+                                           const nsRect& aOverflow,
+                                           const nsSize& aPrerenderSize)
+{
+  
+  
+  
+  nscoord xExcess = aPrerenderSize.width - aDirtyRect.width;
+  nscoord yExcess = aPrerenderSize.height - aDirtyRect.height;
+  nsRect result = aDirtyRect;
+  result.Inflate(xExcess / 2, yExcess / 2);
+  return result.MoveInsideAndClamp(aOverflow);
+}
+
+
  bool
 nsLayoutUtils::SupportsServoStyleBackend(nsIDocument* aDocument)
 {
