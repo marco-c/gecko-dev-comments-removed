@@ -318,14 +318,6 @@ gTests.push({
         self._bookmarkGuid = bookmark.guid;
 
         
-        
-        
-        
-        let promiseItemChanged = PlacesTestUtils.waitForNotification("onItemChanged",
-          (itemId, property, isAnnotationProperty, newValue, lastModified, itemType) =>
-            itemType === PlacesUtils.bookmarks.TYPE_FOLDER && isAnnotationProperty);
-
-        
         var newFolderButton = self.window.document.getElementById("editBMPanel_newFolderButton");
         newFolderButton.doCommand();
 
@@ -337,7 +329,7 @@ gTests.push({
         EventUtils.synthesizeKey("VK_ESCAPE", {}, self.window);
         Assert.ok(!folderTree.hasAttribute("editing"),
            "We have finished editing folder name in folder tree");
-        await promiseItemChanged;
+
         self._cleanShutdown = true;
         self._removeObserver = PlacesTestUtils.waitForNotification("onItemRemoved",
           (itemId, parentId, index, type, uri, guid) => guid == self._bookmarkGuid);

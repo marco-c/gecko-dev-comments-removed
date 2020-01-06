@@ -563,11 +563,14 @@ var TransactionsManager = {
       this._createdBatchEntry = false;
       let rv;
       try {
-        
         rv = await task();
       } finally {
-        this._batching = false;
-        this._createdBatchEntry = false;
+        
+        
+        this._mainEnqueuer.enqueue(async () => {
+          this._batching = false;
+          this._createdBatchEntry = false;
+        });
       }
       return rv;
     });
