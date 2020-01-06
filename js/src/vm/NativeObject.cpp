@@ -2338,7 +2338,7 @@ NativeGetPropertyInline(JSContext* cx,
         
         
         
-        RootedObject proto(cx, done ? nullptr : pobj->staticPrototype());
+        JSObject* proto = done ? nullptr : pobj->staticPrototype();
 
         
         
@@ -2350,8 +2350,10 @@ NativeGetPropertyInline(JSContext* cx,
         
         
         
-        if (proto->getOpsGetProperty())
-            return GeneralizedGetProperty(cx, proto, id, receiver, nameLookup, vp);
+        if (proto->getOpsGetProperty()) {
+            RootedObject protoRoot(cx, proto);
+            return GeneralizedGetProperty(cx, protoRoot, id, receiver, nameLookup, vp);
+        }
 
         pobj = &proto->as<NativeObject>();
     }
@@ -2543,11 +2545,12 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
 
 
 
+template <QualifiedBool IsQualified>
 static bool
 SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v,
-                       HandleValue receiver, QualifiedBool qualified, ObjectOpResult& result)
+                       HandleValue receiver, ObjectOpResult& result)
 {
-    if (!qualified && receiver.isObject() && receiver.toObject().isUnqualifiedVarObj()) {
+    if (!IsQualified && receiver.isObject() && receiver.toObject().isUnqualifiedVarObj()) {
         RootedString idStr(cx, JSID_TO_STRING(id));
         if (!MaybeReportUndeclaredVarAssignment(cx, idStr))
             return false;
@@ -2555,7 +2558,7 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
 
     
     
-    if (qualified && receiver.isObject() && obj == &receiver.toObject()) {
+    if (IsQualified && receiver.isObject() && obj == &receiver.toObject()) {
         
         
         
@@ -2700,9 +2703,10 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
     return result.succeed();
 }
 
+template <QualifiedBool IsQualified>
 bool
 js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue value,
-                      HandleValue receiver, QualifiedBool qualified, ObjectOpResult& result)
+                      HandleValue receiver, ObjectOpResult& result)
 {
     
     RootedValue v(cx, value);
@@ -2740,10 +2744,10 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
         
         
         
-        RootedObject proto(cx, done ? nullptr : pobj->staticPrototype());
+        JSObject* proto = done ? nullptr : pobj->staticPrototype();
         if (!proto) {
             
-            return SetNonexistentProperty(cx, obj, id, v, receiver, qualified, result);
+            return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver, result);
         }
 
         
@@ -2755,19 +2759,30 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
             
             
             
-            if (!qualified) {
+            RootedObject protoRoot(cx, proto);
+            if (!IsQualified) {
                 bool found;
-                if (!HasProperty(cx, proto, id, &found))
+                if (!HasProperty(cx, protoRoot, id, &found))
                     return false;
                 if (!found)
-                    return SetNonexistentProperty(cx, obj, id, v, receiver, qualified, result);
+                    return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver, result);
             }
 
-            return SetProperty(cx, proto, id, v, receiver, result);
+            return SetProperty(cx, protoRoot, id, v, receiver, result);
         }
         pobj = &proto->as<NativeObject>();
     }
 }
+
+template bool
+js::NativeSetProperty<Qualified>(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                 HandleValue value, HandleValue receiver,
+                                 ObjectOpResult& result);
+
+template bool
+js::NativeSetProperty<Unqualified>(JSContext* cx, HandleNativeObject obj, HandleId id,
+                                   HandleValue value, HandleValue receiver,
+                                   ObjectOpResult& result);
 
 bool
 js::NativeSetElement(JSContext* cx, HandleNativeObject obj, uint32_t index, HandleValue v,
@@ -2776,7 +2791,7 @@ js::NativeSetElement(JSContext* cx, HandleNativeObject obj, uint32_t index, Hand
     RootedId id(cx);
     if (!IndexToId(cx, index, &id))
         return false;
-    return NativeSetProperty(cx, obj, id, v, receiver, Qualified, result);
+    return NativeSetProperty<Qualified>(cx, obj, id, v, receiver, result);
 }
 
 
