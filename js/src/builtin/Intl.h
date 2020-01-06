@@ -442,16 +442,6 @@ intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_defaultCalendar(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
 
 
 

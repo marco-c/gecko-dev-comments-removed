@@ -898,6 +898,7 @@ function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
     return BestAvailableLocaleHelper(availableLocales, locale, false);
 }
 
+var noRelevantExtensionKeys = [];
 
 
 
@@ -1058,16 +1059,25 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
     var supportedExtension = "-u";
 
     
-    var localeDataProvider = localeData();
-
-    
-    for (var i = 0; i < relevantExtensionKeys.length; i++) {
+    var i = 0;
+    var len = relevantExtensionKeys.length;
+    var foundLocaleData;
+    if (len > 0) {
+        
+        
+        foundLocaleData = localeData(foundLocale);
+    }
+    while (i < len) {
         
         var key = relevantExtensionKeys[i];
 
         
-        var keyLocaleData = undefined;
-        var value = undefined;
+        var keyLocaleData = foundLocaleData[key];
+
+        
+        
+        var value = keyLocaleData[0];
+        assert(typeof value === "string" || value === null, "unexpected locale data value");
 
         
 
@@ -1086,9 +1096,6 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
             
             if (requestedValue !== undefined) {
-                
-                keyLocaleData = callFunction(localeDataProvider[key], null, foundLocale);
-
                 
                 if (requestedValue !== "") {
                     
@@ -1113,29 +1120,18 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         var optionsValue = options[key];
 
         
-        if (optionsValue !== undefined && optionsValue !== value) {
-            
-            if (keyLocaleData === undefined)
-                keyLocaleData = callFunction(localeDataProvider[key], null, foundLocale);
-
-            if (callFunction(ArrayIndexOf, keyLocaleData, optionsValue) !== -1) {
-                value = optionsValue;
-                supportedExtensionAddition = "";
-            }
+        if (optionsValue !== undefined &&
+            optionsValue !== value &&
+            callFunction(ArrayIndexOf, keyLocaleData, optionsValue) !== -1)
+        {
+            value = optionsValue;
+            supportedExtensionAddition = "";
         }
 
         
-        if (value === undefined) {
-            
-            value = keyLocaleData === undefined
-                    ? callFunction(localeDataProvider.default[key], null, foundLocale)
-                    : keyLocaleData[0];
-        }
-
-        
-        assert(typeof value === "string" || value === null, "unexpected locale data value");
         result[key] = value;
         supportedExtension += supportedExtensionAddition;
+        i++;
     }
 
     
@@ -1558,11 +1554,15 @@ function resolveCollatorInternals(lazyCollatorData) {
     
     var s = lazyCollatorData.rawSensitivity;
     if (s === undefined) {
-        
-        
-        
-        
-        s = "variant";
+        if (collatorIsSorting) {
+            
+            s = "variant";
+        } else {
+            
+            var dataLocale = r.dataLocale;
+            var dataLocaleData = localeData(dataLocale);
+            s = dataLocaleData.sensitivity;
+        }
     }
     internalProps.sensitivity = s;
 
@@ -1737,95 +1737,47 @@ var collatorInternalProperties = {
 
 
 
-function collatorActualLocale(locale) {
+
+
+function collatorCaseFirst(locale, usage) {
     assert(typeof locale === "string", "locale should be string");
+    assert(usage === "sort" || usage === "search", "invalid usage option");
 
-    
-    
-    
-    var availableLocales = callFunction(collatorInternalProperties.availableLocales,
-                                        collatorInternalProperties);
-    return BestAvailableLocaleIgnoringDefault(availableLocales, locale);
-}
+    if (usage === "sort") {
+        
+        
+        
+        var availableLocales = callFunction(collatorInternalProperties.availableLocales,
+                                            collatorInternalProperties);
+        var actualLocale = BestAvailableLocaleIgnoringDefault(availableLocales, locale);
 
-
-
-
-
-
-
-function collatorSortCaseFirst(locale) {
-    var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale))
-        return ["upper", "false", "lower"];
+        if (intl_isUpperCaseFirst(actualLocale))
+            return ["upper", "false", "lower"];
+    }
 
     
     return ["false", "lower", "upper"];
 }
 
 
-
-
-
-function collatorSortCaseFirstDefault(locale) {
-    var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale))
-        return "upper";
-
-    
-    return "false";
+function collatorSortLocaleData(locale) {
+    return {
+        co: intl_availableCollations(locale),
+        kn: ["false", "true"],
+        kf: collatorCaseFirst(locale, "sort"),
+    };
 }
 
 
-function collatorSortLocaleData() {
-    
+function collatorSearchLocaleData(locale) {
     return {
-        co: intl_availableCollations,
-        kn: function() {
-            return ["false", "true"];
-        },
-        kf: collatorSortCaseFirst,
-        default: {
-            co: function() {
-                
-                
-                return null;
-            },
-            kn: function() {
-                return "false";
-            },
-            kf: collatorSortCaseFirstDefault,
-        }
+        co: [null],
+        kn: ["false", "true"],
+        kf: collatorCaseFirst(locale, "search"),
+        
+        
+        sensitivity: "variant"
     };
-    
-}
-
-
-function collatorSearchLocaleData() {
-    
-    return {
-        co: function() {
-            return [null];
-        },
-        kn: function() {
-            return ["false", "true"];
-        },
-        kf: function() {
-            return ["false", "lower", "upper"];
-        },
-        default: {
-            co: function() {
-                return null;
-            },
-            kn: function() {
-                return "false";
-            },
-            kf: function() {
-                return "false";
-            },
-        }
-    };
-    
 }
 
 
@@ -2280,12 +2232,9 @@ function getNumberingSystems(locale) {
 }
 
 
-function numberFormatLocaleData() {
+function numberFormatLocaleData(locale) {
     return {
-        nu: getNumberingSystems,
-        default: {
-            nu: intl_numberingSystem,
-        }
+        nu: getNumberingSystems(locale)
     };
 }
 
@@ -2977,14 +2926,10 @@ var dateTimeFormatInternalProperties = {
 };
 
 
-function dateTimeFormatLocaleData() {
+function dateTimeFormatLocaleData(locale) {
     return {
-        ca: intl_availableCalendars,
-        nu: getNumberingSystems,
-        default: {
-            ca: intl_defaultCalendar,
-            nu: intl_numberingSystem,
-        }
+        ca: intl_availableCalendars(locale),
+        nu: getNumberingSystems(locale)
     };
 }
 
@@ -3198,7 +3143,6 @@ function resolveICUPattern(pattern, result) {
 
 
 var pluralRulesInternalProperties = {
-    localeData: pluralRulesLocaleData,
     _availableLocales: null,
     availableLocales: function() 
     {
@@ -3209,16 +3153,8 @@ var pluralRulesInternalProperties = {
         locales = intl_PluralRules_availableLocales();
         addSpecialMissingLanguageTags(locales);
         return (this._availableLocales = locales);
-    },
-    relevantExtensionKeys: [],
+    }
 };
-
-
-function pluralRulesLocaleData() {
-    
-    return {};
-}
-
 
 
 
@@ -3234,7 +3170,7 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
     const r = ResolveLocale(callFunction(PluralRules.availableLocales, PluralRules),
                           lazyPluralRulesData.requestedLocales,
                           lazyPluralRulesData.opt,
-                          PluralRules.relevantExtensionKeys, PluralRules.localeData);
+                          noRelevantExtensionKeys, undefined);
 
     
     internalProps.locale = r.locale;
