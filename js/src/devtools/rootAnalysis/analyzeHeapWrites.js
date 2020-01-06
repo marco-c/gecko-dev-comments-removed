@@ -448,8 +448,18 @@ function ignoreContents(entry)
         /imgRequestProxy::GetProgressTracker/, 
         /Smprintf/,
         "malloc",
+        "calloc",
         "free",
         "realloc",
+        "memalign",
+        "strdup",
+        "strndup",
+        "moz_xmalloc",
+        "moz_xcalloc",
+        "moz_xrealloc",
+        "moz_xmemalign",
+        "moz_xstrdup",
+        "moz_xstrndup",
         "jemalloc_thread_local_arena",
 
         
