@@ -1017,6 +1017,14 @@ const DebugUtils = {
     }
   },
 
+  getExtensionManifestWarnings(id) {
+    const addon = GlobalManager.extensionMap.get(id);
+    if (addon) {
+      return addon.warnings;
+    }
+    return [];
+  },
+
 
   
 
