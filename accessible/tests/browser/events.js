@@ -160,13 +160,15 @@ class UnexpectedEvents {
 
 
 
-function waitForEvents(events, unexpected = [], ordered = false) {
+function waitForEvents(events, ordered = false) {
+  let expected = events.expected || events;
+  let unexpected = events.unexpected || [];
   
   let currentIdx = 0;
 
   let unexpectedListener = new UnexpectedEvents(unexpected);
 
-  return Promise.all(events.map((evt, idx) => {
+  return Promise.all(expected.map((evt, idx) => {
     let promise = evt instanceof Array ? waitForEvent(...evt) : evt;
     return promise.then(result => {
       if (ordered) {
@@ -181,6 +183,6 @@ function waitForEvents(events, unexpected = [], ordered = false) {
   });
 }
 
-function waitForOrderedEvents(events, unexpected = []) {
-  return waitForEvents(events, unexpected, true);
+function waitForOrderedEvents(events) {
+  return waitForEvents(events, true);
 }

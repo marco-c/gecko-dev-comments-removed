@@ -2107,11 +2107,31 @@ DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner)
 #endif
 
     
-    if (child->Parent() == aOwner &&
-        child->IndexInParent() == static_cast<int32_t>(insertIdx)) {
-      MOZ_ASSERT(owned->ElementAt(idx) == child, "Not in sync!");
-      idx++;
-      continue;
+    if (child->Parent() == aOwner) {
+      int32_t indexInParent = child->IndexInParent();
+
+      
+      
+      if (indexInParent == static_cast<int32_t>(insertIdx)) {
+        MOZ_ASSERT(child->IsRelocated(),
+                   "A child, having an index in parent from aria ownded indices range, has to be aria owned");
+        MOZ_ASSERT(owned->ElementAt(idx) == child,
+                   "Unexpected child in ARIA owned array");
+        idx++;
+        continue;
+      }
+
+      
+      
+      
+      
+      if (indexInParent == static_cast<int32_t>(insertIdx) - 1) {
+        MOZ_ASSERT(!child->IsRelocated(), "Child should be in its ordinal position");
+        child->SetRelocated(true);
+        owned->InsertElementAt(idx, child);
+        idx++;
+        continue;
+      }
     }
 
     MOZ_ASSERT(owned->SafeElementAt(idx) != child, "Already in place!");
@@ -2190,7 +2210,23 @@ DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible> >* aChildren,
         }
       }
     }
-    MoveChild(child, origContainer, idxInParent);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (origContainer != owner || child->IndexInParent() != idxInParent) {
+      MoveChild(child, origContainer, idxInParent);
+    } else {
+      MOZ_ASSERT(!child->PrevSibling() || !child->PrevSibling()->IsRelocated(),
+                 "No relocated child should appear before this one");
+      MOZ_ASSERT(!child->NextSibling() || child->NextSibling()->IsRelocated(),
+                 "No ordinal child should appear after this one");
+    }
   }
 
   aChildren->RemoveElementsAt(aStartIdx, aChildren->Length() - aStartIdx);
