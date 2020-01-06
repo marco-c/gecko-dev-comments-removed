@@ -16,6 +16,7 @@ DEFAULT_PREFS = {
     
     'app.update.doorhanger': False,
     'app.update.log': True,
+    'app.update.staging.enabled': True,
     'startup.homepage_override_url': 'about:blank',
 }
 
