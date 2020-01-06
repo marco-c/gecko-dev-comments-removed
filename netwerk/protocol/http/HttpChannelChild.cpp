@@ -3563,12 +3563,13 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
   
   
   
-  uint64_t available;
-  nsresult rv = aSynthesizedInput->Available(&available);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  
+  
+  
+  
+  nsresult rv = GetContentLength(&mSynthesizedStreamLength);
+  if (NS_FAILED(rv)) {
     mSynthesizedStreamLength = -1;
-  } else {
-    mSynthesizedStreamLength = int64_t(available);
   }
 
   nsCOMPtr<nsIEventTarget> neckoTarget = GetNeckoTarget();
