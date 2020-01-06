@@ -49,6 +49,14 @@ PaintedLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion)
 {
   mRenderRegion = Move(aRegion);
 
+  LayerIntRect bounds(mRenderRegion.GetBounds().TopLeft(),
+                      ViewAs<LayerPixel>(mTexture->GetSize()));
+  mRenderRegion.AndWith(bounds);
+}
+
+const LayerIntRegion&
+PaintedLayerMLGPU::GetDrawRects()
+{
 #ifndef MOZ_IGNORE_PAINT_WILL_RESAMPLE
   
   
@@ -58,13 +66,11 @@ PaintedLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion)
   
   
   if (MayResample()) {
-    mRenderRegion = mRenderRegion.GetBounds();
+    mDrawRects = mRenderRegion.GetBounds();
+    return mDrawRects;
   }
 #endif
-
-  LayerIntRect bounds(mRenderRegion.GetBounds().TopLeft(),
-                      ViewAs<LayerPixel>(mTexture->GetSize()));
-  mRenderRegion.AndWith(bounds);
+  return mRenderRegion;
 }
 
 bool

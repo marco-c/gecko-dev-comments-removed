@@ -77,7 +77,6 @@ public:
 
   
   
-  
   const LayerIntRegion& GetRenderRegion() const {
     return mRenderRegion;
   }
