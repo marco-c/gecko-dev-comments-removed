@@ -263,15 +263,10 @@ this.SelectContentHelper.prototype = {
         this.closedWithEnter = message.data.closedWithEnter;
         break;
 
-      case "Forms:DismissedDropDown":
-        let selectedOption = this.element.item(this.element.selectedIndex);
-        if (this.initialSelection === selectedOption) {
-          
-          DOMUtils.removeContentState(this.element,
-                                      kStateActive,
-                                       true);
-        } else {
+      case "Forms:DismissedDropDown": {
           let win = this.element.ownerGlobal;
+          let selectedOption = this.element.item(this.element.selectedIndex);
+
           
           
           
@@ -282,29 +277,33 @@ this.SelectContentHelper.prototype = {
             this.dispatchMouseEvent(win, selectedOption, "mousedown");
             this.dispatchMouseEvent(win, selectedOption, "mouseup");
           }
-          
+
           
           DOMUtils.removeContentState(this.element,
                                       kStateActive,
                                        true);
 
-          let inputEvent = new win.UIEvent("input", {
-            bubbles: true,
-          });
-          this.element.dispatchEvent(inputEvent);
+          
+          if (this.initialSelection !== selectedOption) {
+            let inputEvent = new win.UIEvent("input", {
+              bubbles: true,
+            });
+            this.element.dispatchEvent(inputEvent);
 
-          let changeEvent = new win.Event("change", {
-            bubbles: true,
-          });
-          this.element.dispatchEvent(changeEvent);
+            let changeEvent = new win.Event("change", {
+              bubbles: true,
+            });
+            this.element.dispatchEvent(changeEvent);
+          }
 
+          
           if (!this.closedWithEnter) {
             this.dispatchMouseEvent(win, selectedOption, "click");
           }
-        }
 
-        this.uninit();
-        break;
+          this.uninit();
+          break;
+        }
 
       case "Forms:MouseOver":
         DOMUtils.setContentState(this.element, kStateHover);
