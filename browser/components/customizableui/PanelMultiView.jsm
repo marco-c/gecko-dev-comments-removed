@@ -534,7 +534,13 @@ this.PanelMultiView = class {
 
       
       if (this.panelViews && playTransition) {
-        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
+        if (aAnchor)
+          aAnchor.setAttribute("open", true);
+
+        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect);
+
+        if (aAnchor)
+          aAnchor.removeAttribute("open");
 
         this._dispatchViewEvent(viewNode, "ViewShown");
         this._updateKeyboardFocus(viewNode);
@@ -574,7 +580,8 @@ this.PanelMultiView = class {
 
 
 
-  async _transitionViews(previousViewNode, viewNode, reverse, previousRect, anchor) {
+
+  async _transitionViews(previousViewNode, viewNode, reverse, previousRect) {
     
     
     if (this._panel.state != "open") {
@@ -588,11 +595,8 @@ this.PanelMultiView = class {
 
     this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
-      previousViewNode, viewNode, reverse, anchor
+      previousViewNode, viewNode, reverse
     };
-
-    if (anchor)
-      anchor.setAttribute("open", "true");
 
     
     
@@ -700,7 +704,7 @@ this.PanelMultiView = class {
     if (!this._transitionDetails)
       return;
 
-    let {phase, previousViewNode, viewNode, reverse, resolve, listener, anchor} = this._transitionDetails;
+    let {phase, previousViewNode, viewNode, reverse, resolve, listener} = this._transitionDetails;
     this._transitionDetails = null;
 
     
@@ -710,9 +714,6 @@ this.PanelMultiView = class {
     if (reverse)
       this._resetKeyNavigation(previousViewNode);
     this.descriptionHeightWorkaround(viewNode);
-
-    if (anchor)
-      anchor.removeAttribute("open");
 
     if (phase >= TRANSITION_PHASES.START) {
       this._panel.removeAttribute("width");
@@ -994,6 +995,7 @@ this.PanelMultiView = class {
         this._viewShowing = null;
         this._transitioning = false;
         this.node.removeAttribute("panelopen");
+        this.showMainView();
         if (this.panelViews) {
           this._cleanupTransitionPhase();
           for (let panelView of this._viewStack.children) {
@@ -1016,7 +1018,6 @@ this.PanelMultiView = class {
           this._viewContainer.style.removeProperty("min-width");
           this._viewContainer.style.removeProperty("max-width");
         }
-        this.showMainView();
 
         
         
