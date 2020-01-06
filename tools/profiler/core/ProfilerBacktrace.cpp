@@ -10,10 +10,10 @@
 #include "ThreadInfo.h"
 
 ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
-                                     ProfileBuffer* aBuffer)
+                                     UniquePtr<ProfileBuffer> aBuffer)
   : mName(strdup(aName))
   , mThreadId(aThreadId)
-  , mBuffer(aBuffer)
+  , mBuffer(Move(aBuffer))
 {
   MOZ_COUNT_CTOR(ProfilerBacktrace);
 }
@@ -21,7 +21,6 @@ ProfilerBacktrace::ProfilerBacktrace(const char* aName, int aThreadId,
 ProfilerBacktrace::~ProfilerBacktrace()
 {
   MOZ_COUNT_DTOR(ProfilerBacktrace);
-  delete mBuffer;
 }
 
 void
@@ -34,7 +33,7 @@ ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   
   StreamSamplesAndMarkers(mName.get(), mThreadId,
-                          mBuffer, aWriter, aProcessStartTime,
+                          mBuffer.get(), aWriter, aProcessStartTime,
                            0,  nullptr,
                            nullptr,
                            nullptr,
