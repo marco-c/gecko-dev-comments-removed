@@ -266,19 +266,18 @@ LogManager.prototype = {
       
       let filename = reasonPrefix + "-" + this.logFilePrefix + "-" + Date.now() + ".txt";
       await this._fileAppender.flushToFile(this._logFileSubDirectoryEntries, filename, this._log);
-
       
       
       
       
       
       if (reason == this.ERROR_LOG_WRITTEN && !this._cleaningUpFileLogs) {
-        this._log.trace("Scheduling cleanup.");
-        
-        
-        this.cleanupLogs().catch(err => {
+        this._log.trace("Running cleanup.");
+        try {
+          await this.cleanupLogs();
+        } catch (err) {
           this._log.error("Failed to cleanup logs", err);
-        });
+        }
       }
       return reason;
     } catch (ex) {
@@ -321,7 +320,13 @@ LogManager.prototype = {
                         + entry.name, ex);
       }
     });
-    iterator.close();
+    
+    
+    try {
+      await iterator.close();
+    } catch (e) {
+      this._log.warn("Failed to close directory iterator", e);
+    }
     this._cleaningUpFileLogs = false;
     this._log.debug("Done deleting files.");
     
