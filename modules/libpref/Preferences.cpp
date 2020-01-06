@@ -748,6 +748,7 @@ Preferences::Init()
   if (!observerService)
     return NS_ERROR_FAILURE;
 
+  observerService->AddObserver(this, "profile-before-change-telemetry", true);
   rv = observerService->AddObserver(this, "profile-before-change", true);
 
   observerService->AddObserver(this, "load-extension-defaults", true);
@@ -776,6 +777,10 @@ Preferences::Observe(nsISupports *aSubject, const char *aTopic,
 
   if (!nsCRT::strcmp(aTopic, "profile-before-change")) {
     rv = SavePrefFile(nullptr);
+  } else if (!nsCRT::strcmp(aTopic, "profile-before-change-telemetry")) {
+    if (AllowOffMainThreadSave()) {
+      PreferencesWriter::Flush();
+    }
   } else if (!strcmp(aTopic, "load-extension-defaults")) {
     pref_LoadPrefsInDirList(NS_EXT_PREFS_DEFAULTS_DIR_LIST);
   } else if (!nsCRT::strcmp(aTopic, "reload-default-prefs")) {
@@ -785,7 +790,7 @@ Preferences::Observe(nsISupports *aSubject, const char *aTopic,
     
     
     
-    rv = SavePrefFile(nullptr);
+    rv = SavePrefFileBlocking();
   }
   return rv;
 }
@@ -802,6 +807,12 @@ Preferences::ReadUserPrefs(nsIFile *aFile)
   nsresult rv;
 
   if (nullptr == aFile) {
+    
+    
+    if (AllowOffMainThreadSave()) {
+      PreferencesWriter::Flush();
+    }
+
     rv = UseDefaultPrefFile();
     
     
@@ -1123,6 +1134,13 @@ Preferences::ReadAndOwnUserPrefFile(nsIFile *aFile)
   
   if (mCurrentFile == aFile)
     return NS_OK;
+
+  
+  
+  if (AllowOffMainThreadSave()) {
+    PreferencesWriter::Flush();
+  }
+
   mCurrentFile = aFile;
 
   nsresult rv = NS_OK;
