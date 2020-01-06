@@ -2866,6 +2866,7 @@ NodeAllowsClickThrough(nsINode* aNode)
 
 void
 EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
+                                           nsIFrame* aTargetFrame,
                                            nsEventStatus& aStatus)
 {
   if (aStatus == nsEventStatus_eConsumeNoDefault) {
@@ -2873,6 +2874,24 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
   }
 
   if (!aKeyboardEvent->HasBeenPostedToRemoteProcess()) {
+    if (aKeyboardEvent->IsWaitingReplyFromRemoteProcess()) {
+      RefPtr<TabParent> remote = aTargetFrame ?
+        TabParent::GetFrom(aTargetFrame->GetContent()) : nullptr;
+      if (remote && !remote->IsReadyToHandleInputEvents()) {
+        
+        
+        
+        WidgetKeyboardEvent keyEvent(*aKeyboardEvent);
+        aKeyboardEvent->MarkAsHandledInRemoteProcess();
+        EventDispatcher::Dispatch(remote->GetOwnerElement(), mPresContext,
+                                  &keyEvent);
+        if (keyEvent.DefaultPrevented()) {
+          aKeyboardEvent->PreventDefault(!keyEvent.DefaultPreventedByContent());
+          aStatus = nsEventStatus_eConsumeNoDefault;
+          return;
+        }
+      }
+    }
     
     
     
@@ -3524,7 +3543,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   case eKeyPress:
     {
       WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-      PostHandleKeyboardEvent(keyEvent, *aStatus);
+      PostHandleKeyboardEvent(keyEvent, mCurrentTarget, *aStatus);
     }
     break;
 
