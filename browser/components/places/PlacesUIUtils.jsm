@@ -23,6 +23,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
                                   "resource:///modules/RecentWindow.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
 
 
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
@@ -635,8 +637,7 @@ this.PlacesUIUtils = {
 
 
 
-  showBookmarkDialog:
-  function PUIU_showBookmarkDialog(aInfo, aParentWindow) {
+  showBookmarkDialog(aInfo, aParentWindow) {
     
     
     
@@ -648,8 +649,33 @@ this.PlacesUIUtils = {
                     "chrome://browser/content/places/bookmarkProperties.xul";
 
     let features = "centerscreen,chrome,modal,resizable=yes";
+
+    let topUndoEntry;
+    let batchBlockingDeferred;
+
+    if (this.useAsyncTransactions) {
+      
+      topUndoEntry = PlacesTransactions.topUndoEntry;
+      batchBlockingDeferred = PromiseUtils.defer();
+      PlacesTransactions.batch(async () => {
+        await batchBlockingDeferred.promise;
+      });
+    }
+
     aParentWindow.openDialog(dialogURL, "", features, aInfo);
-    return ("performed" in aInfo && aInfo.performed);
+
+    let performed = ("performed" in aInfo && aInfo.performed);
+
+    if (this.useAsyncTransactions) {
+      batchBlockingDeferred.resolve();
+
+      if (!performed &&
+          topUndoEntry != PlacesTransactions.topUndoEntry) {
+        PlacesTransactions.undo().catch(Components.utils.reportError);
+      }
+    }
+
+    return performed;
   },
 
   _getTopBrowserWin: function PUIU__getTopBrowserWin() {
