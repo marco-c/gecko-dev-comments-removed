@@ -224,8 +224,7 @@ class GlobalHelperThreadState
         return gcParallelWorklist_;
     }
 
-    bool canStartWasmCompile(const AutoLockHelperThreadState& lock,
-                             bool assumeThreadAvailable = false);
+    bool canStartWasmCompile(const AutoLockHelperThreadState& lock);
     bool canStartPromiseTask(const AutoLockHelperThreadState& lock);
     bool canStartIonCompile(const AutoLockHelperThreadState& lock);
     bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
@@ -389,13 +388,6 @@ struct HelperThread
     }
 
     
-
-
-
-
-    bool handleWasmIdleWorkload(AutoLockHelperThreadState& locked);
-
-    
     ParseTask* parseTask() {
         return maybeCurrentTaskAs<ParseTask*>();
     }
@@ -429,7 +421,7 @@ struct HelperThread
         return nullptr;
     }
 
-    void handleWasmWorkload(AutoLockHelperThreadState& locked, bool assumeThreadAvailable = false);
+    void handleWasmWorkload(AutoLockHelperThreadState& locked);
     void handlePromiseTaskWorkload(AutoLockHelperThreadState& locked);
     void handleIonWorkload(AutoLockHelperThreadState& locked);
     void handleIonFreeWorkload(AutoLockHelperThreadState& locked);
