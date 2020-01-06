@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
 <% data.new_style_struct("List", inherited=True) %>
 
-${helpers.single_keyword("list-style-position", "outside inside", animation_value_type="none",
+${helpers.single_keyword("list-style-position", "outside inside", animation_value_type="discrete",
                          spec="https://drafts.csswg.org/css-lists/#propdef-list-style-position")}
 
 // TODO(pcwalton): Implement the full set of counter styles per CSS-COUNTER-STYLES [1] 6.1:

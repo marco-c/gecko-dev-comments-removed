@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import Keyword, Method, PHYSICAL_SIDES, ALL_SIDES, maybe_moz_logical_alias %>
@@ -181,7 +181,7 @@ ${helpers.single_keyword("box-decoration-break", "slice clone",
                          gecko_enum_prefix="StyleBoxDecorationBreak",
                          gecko_inexhaustive=True,
                          spec="https://drafts.csswg.org/css-break/#propdef-box-decoration-break",
-                         products="gecko", animation_value_type="none")}
+                         products="gecko", animation_value_type="discrete")}
 
 ${helpers.single_keyword("-moz-float-edge", "content-box margin-box",
                          gecko_ffi_name="mFloatEdge",
@@ -189,7 +189,7 @@ ${helpers.single_keyword("-moz-float-edge", "content-box margin-box",
                          gecko_inexhaustive=True,
                          products="gecko",
                          spec="Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/-moz-float-edge)",
-                         animation_value_type="none")}
+                         animation_value_type="discrete")}
 
 ${helpers.predefined_type("border-image-source", "ImageLayer",
     initial_value="Either::First(None_)",
