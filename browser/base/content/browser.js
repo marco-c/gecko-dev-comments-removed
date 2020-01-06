@@ -1631,21 +1631,6 @@ var gBrowserInit = {
     
     
     
-    
-    
-    setTimeout(function() {
-      try {
-        DownloadsCommon.initializeAllDataLinks();
-        Cu.import("resource:///modules/DownloadsTaskbar.jsm", {})
-          .DownloadsTaskbar.registerIndicator(window);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    }, 10000);
-
-    
-    
-    
     DownloadsButton.initializeIndicator();
 
     if (AppConstants.platform != "macosx") {
@@ -1774,6 +1759,21 @@ var gBrowserInit = {
     scheduleIdleTask(() => {
       gBrowserThumbnails.init();
     });
+
+    scheduleIdleTask(() => {
+      
+      
+      
+      
+      
+      try {
+        DownloadsCommon.initializeAllDataLinks();
+        Cu.import("resource:///modules/DownloadsTaskbar.jsm", {})
+          .DownloadsTaskbar.registerIndicator(window);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }, {timeout: 10000});
   },
 
   
