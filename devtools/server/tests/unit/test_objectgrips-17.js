@@ -45,19 +45,13 @@ async function run_tests_in_principal(principal, title) {
   gThreadClient = threadClient;
 
   
-  if (principal === null) {
-    
-    await testPrincipal(undefined, false);
-  }
+  await testPrincipal(undefined, false);
 
   
-  if (false) {
-    
-    await testPrincipal(systemPrincipal, true);
+  await testPrincipal(systemPrincipal, true);
 
-    
-    await testPrincipal(systemPrincipal, false);
-  }
+  
+  await testPrincipal(systemPrincipal, false);
 
   
   await testPrincipal(null, true);

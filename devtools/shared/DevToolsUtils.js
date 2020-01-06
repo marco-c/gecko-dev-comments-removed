@@ -248,13 +248,31 @@ exports.isSafeJSObject = function (obj) {
     return true;
   }
 
-  let principal = Cu.getObjectPrincipal(obj);
-  if (Services.scriptSecurityManager.isSystemPrincipal(principal)) {
-    
+  
+  if (Cu.isXrayWrapper(obj)) {
     return true;
   }
 
-  return Cu.isXrayWrapper(obj);
+  
+  let principal = Cu.getObjectPrincipal(obj);
+  if (!Services.scriptSecurityManager.isSystemPrincipal(principal)) {
+    return false;
+  }
+
+  
+  if (Cu.isProxy(obj)) {
+    return false;
+  }
+
+  
+  
+  let proto = Object.getPrototypeOf(obj);
+  if (proto && !exports.isSafeJSObject(proto)) {
+    return false;
+  }
+
+  
+  return true;
 };
 
 exports.dumpn = function (str) {
