@@ -600,15 +600,7 @@ nsTextServicesDocument::LastSelectedBlock(TSDBlockSelectionStatus *aSelStatus,
         return rv;
       }
 
-      bool isCollapsed;
-      rv = range->GetCollapsed(&isCollapsed);
-
-      if (NS_FAILED(rv)) {
-        UNLOCK_DOC(this);
-        return rv;
-      }
-
-      if (isCollapsed) {
+      if (range->Collapsed()) {
         
         
 
@@ -804,15 +796,7 @@ nsTextServicesDocument::LastSelectedBlock(TSDBlockSelectionStatus *aSelStatus,
     return rv;
   }
 
-  bool isCollapsed;
-  rv = range->GetCollapsed(&isCollapsed);
-
-  if (NS_FAILED(rv)) {
-    UNLOCK_DOC(this);
-    return rv;
-  }
-
-  if (isCollapsed) {
+  if (range->Collapsed()) {
     
     
 
