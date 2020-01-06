@@ -9,7 +9,7 @@ const L10N = new LocalizationHelper(STRINGS_URI);
 
 const {PluralForm} = require("devtools/shared/plural-form");
 const { DOM: dom, PropTypes, createClass, createFactory } = require("devtools/client/shared/vendor/react");
-const Frame = createFactory(require("devtools/client/shared/components/frame"));
+const Frame = createFactory(require("devtools/client/shared/components/Frame"));
 const PROPNAME_MAX_LENGTH = 4;
 
 

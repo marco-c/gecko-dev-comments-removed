@@ -14,7 +14,7 @@ const { viewSourceInDebugger } = require("../connector/index");
 const { div } = DOM;
 
 
-const StackTrace = createFactory(require("devtools/client/shared/components/stack-trace"));
+const StackTrace = createFactory(require("devtools/client/shared/components/StackTrace"));
 
 function StackTracePanel({
   openLink,
