@@ -233,12 +233,12 @@ function test_load_replace() {
     var chan = new_file_channel(file);
 
     
-    do_check_neq(chan.URI.path, chan.originalURI.path);
+    do_check_neq(chan.URI.pathQueryRef, chan.originalURI.pathQueryRef);
 
     
     var ios = Cc["@mozilla.org/network/io-service;1"].
               getService(Ci.nsIIOService);
-    do_check_eq(chan.originalURI.path, ios.newFileURI(file).path);
+    do_check_eq(chan.originalURI.pathQueryRef, ios.newFileURI(file).pathQueryRef);
   }
   run_next_test();
 }

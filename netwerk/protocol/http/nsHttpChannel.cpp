@@ -1067,7 +1067,7 @@ nsHttpChannel::SetupTransaction()
     nsCString* requestURI;
 
     
-    rv = mURI->GetPath(path);
+    rv = mURI->GetPathQueryRef(path);
     if (NS_FAILED(rv)) {
         return rv;
     }

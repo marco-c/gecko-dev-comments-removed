@@ -1698,7 +1698,7 @@ Search.prototype = {
     
     
     if (hostExpected &&
-        (this._trimmedOriginalSearchString.endsWith("/") || uri.path.length > 1)) {
+        (this._trimmedOriginalSearchString.endsWith("/") || uri.pathQueryRef.length > 1)) {
       match.icon = `page-icon:${uri.prePath}/`;
     }
 

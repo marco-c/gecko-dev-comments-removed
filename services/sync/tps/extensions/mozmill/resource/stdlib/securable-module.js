@@ -95,7 +95,7 @@
                                     null,
                                     baseURI);
        if (filenameURI.scheme == 'chrome' &&
-           filenameURI.path.indexOf('/content/') == 0)
+           filenameURI.pathQueryRef.indexOf('/content/') == 0)
          
          
          

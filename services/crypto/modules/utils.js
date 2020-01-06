@@ -319,7 +319,7 @@ this.CryptoUtils = {
     let requestString = ts.toString(10) + "\n" +
                         nonce + "\n" +
                         usedMethod + "\n" +
-                        uri.path + "\n" +
+                        uri.pathQueryRef + "\n" +
                         host + "\n" +
                         port + "\n" +
                         ext + "\n";
@@ -473,7 +473,7 @@ this.CryptoUtils = {
       ts,
       nonce: options.nonce || btoa(CryptoUtils.generateRandomBytes(8)),
       method: method.toUpperCase(),
-      resource: uri.path, 
+      resource: uri.pathQueryRef, 
       host: uri.asciiHost.toLowerCase(), 
       port: port.toString(10),
       hash: options.hash,

@@ -1049,7 +1049,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
     return validateFileName(aDefaultFileName);
 
   
-  var path = aURI.path.match(/\/([^\/]+)\/$/);
+  var path = aURI.pathQueryRef.match(/\/([^\/]+)\/$/);
   if (path && path.length > 1)
     return validateFileName(path[1]);
 

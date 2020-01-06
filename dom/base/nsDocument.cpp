@@ -9639,9 +9639,9 @@ nsDocument::MaybePreconnect(nsIURI* aOrigURI, mozilla::CORSMode aCORSMode)
   
 
   if (aCORSMode == CORS_ANONYMOUS) {
-    uri->SetPath(NS_LITERAL_CSTRING("/anonymous"));
+    uri->SetPathQueryRef(NS_LITERAL_CSTRING("/anonymous"));
   } else {
-    uri->SetPath(NS_LITERAL_CSTRING("/"));
+    uri->SetPathQueryRef(NS_LITERAL_CSTRING("/"));
   }
 
   auto entry = mPreloadedPreconnects.LookupForAdd(uri);

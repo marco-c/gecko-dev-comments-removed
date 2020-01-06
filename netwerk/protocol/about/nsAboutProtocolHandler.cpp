@@ -139,7 +139,7 @@ nsAboutProtocolHandler::NewURI(const nsACString &aSpec,
         
         
         nsAutoCString spec;
-        rv = url->GetPath(spec);
+        rv = url->GetPathQueryRef(spec);
         NS_ENSURE_SUCCESS(rv, rv);
 
         spec.Insert("moz-safe-about:", 0);

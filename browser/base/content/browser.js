@@ -6578,7 +6578,7 @@ var IndexedDBPromptHelper = {
     }
 
     
-    var host = browser.currentURI.asciiHost || browser.currentURI.path;
+    var host = browser.currentURI.asciiHost || browser.currentURI.pathQueryRef;
 
     var message;
     var responseTopic;
@@ -7699,7 +7699,7 @@ var gIdentityHandler = {
     }
 
     let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
-    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.path);
+    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.pathQueryRef);
 
     this._isExtensionPage = uri.schemeIs("moz-extension");
 
@@ -7713,7 +7713,7 @@ var gIdentityHandler = {
       if (resolvedURI.schemeIs("jar")) {
         
         
-        resolvedURI = NetUtil.newURI(resolvedURI.path);
+        resolvedURI = NetUtil.newURI(resolvedURI.pathQueryRef);
       }
       
       this._isURILoadedFromFile = resolvedURI.schemeIs("file");

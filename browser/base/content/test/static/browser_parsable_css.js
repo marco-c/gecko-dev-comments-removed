@@ -279,7 +279,7 @@ add_task(async function checkAllTheCSS() {
   
   let manifestPromises = [];
   uris = uris.filter(uri => {
-    if (uri.path.endsWith(".manifest")) {
+    if (uri.pathQueryRef.endsWith(".manifest")) {
       manifestPromises.push(parseManifest(uri));
       return false;
     }

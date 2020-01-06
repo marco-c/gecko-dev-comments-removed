@@ -115,7 +115,7 @@ nsWyciwygProtocolHandler::NewChannel2(nsIURI* url,
     
     
     nsAutoCString path;
-    rv = url->GetPath(path);
+    rv = url->GetPathQueryRef(path);
     NS_ENSURE_SUCCESS(rv, rv);
     int32_t slashIndex = path.FindChar('/', 2);
     if (slashIndex == kNotFound)

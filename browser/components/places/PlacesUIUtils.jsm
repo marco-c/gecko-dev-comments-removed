@@ -1089,11 +1089,11 @@ this.PlacesUIUtils = {
         var fileName = uri.QueryInterface(Ci.nsIURL).fileName;
         
         if (aDoNotCutTitle) {
-          title = host + uri.path;
+          title = host + uri.pathQueryRef;
         } else {
           title = host + (fileName ?
                            (host ? "/" + this.ellipsis + "/" : "") + fileName :
-                           uri.path);
+                           uri.pathQueryRef);
         }
       } catch (e) {
         

@@ -96,7 +96,7 @@ nsresult nsJSThunk::Init(nsIURI* uri)
     NS_ENSURE_ARG_POINTER(uri);
 
     
-    nsresult rv = uri->GetPath(mScript);
+    nsresult rv = uri->GetPathQueryRef(mScript);
     if (NS_FAILED(rv)) return rv;
 
     

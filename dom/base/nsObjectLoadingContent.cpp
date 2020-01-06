@@ -1388,7 +1388,7 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
   
   
   nsAutoCString path;
-  aURI->GetPath(path);
+  aURI->GetPathQueryRef(path);
   if (!StringBeginsWith(path, NS_LITERAL_CSTRING("/v/"))) {
     return;
   }
