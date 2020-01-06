@@ -7,6 +7,7 @@
 #ifndef TabGroup_h
 #define TabGroup_h
 
+#include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
 #include "nsIPrincipal.h"
 #include "nsTHashtable.h"
@@ -43,6 +44,7 @@ class TabChild;
 
 
 class DocGroup;
+class TabChild;
 
 class TabGroup final : public SchedulerGroup
 {
