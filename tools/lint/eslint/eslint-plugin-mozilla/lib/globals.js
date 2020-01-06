@@ -122,11 +122,15 @@ GlobalsForNode.prototype = {
 
   ExpressionStatement(node, parents, globalScope) {
     let isGlobal = helpers.getIsGlobalScope(parents);
-    let globals = helpers.convertExpressionToGlobals(node, isGlobal);
+    let globals = [];
+
     
-    globals = globals.map(name => {
-      return { name, writable: true };
-    });
+    
+    if (node.expression.type === "AssignmentExpression") {
+      globals = helpers.convertThisAssignmentExpressionToGlobals(node, isGlobal);
+    } else if (node.expression.type === "CallExpression") {
+      globals = helpers.convertCallExpressionToGlobals(node, isGlobal);
+    }
 
     
     
