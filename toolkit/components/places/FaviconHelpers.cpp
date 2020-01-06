@@ -435,14 +435,21 @@ FetchIconPerSpec(const RefPtr<Database>& aDB,
   
   
   bool hasResult;
+  int32_t lastWidth = 0;
   while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
     int32_t width;
     rv = stmt->GetInt32(0, &width);
+    if (lastWidth == width) {
+      
+      
+      continue;
+    }
     if (!aIconData.spec.IsEmpty() && width < aPreferredWidth) {
       
       
       break;
     }
+    lastWidth = width;
     rv = stmt->GetUTF8String(1, aIconData.spec);
     NS_ENSURE_SUCCESS(rv, rv);
   }
