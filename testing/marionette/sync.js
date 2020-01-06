@@ -12,14 +12,7 @@ const {
 } = Cu.import("chrome://marionette/content/error.js", {});
 
 
-this.EXPORTED_SYMBOLS = ["wait", "TimedPromise"];
-
-
-
-
-
-
-this.wait = {};
+this.EXPORTED_SYMBOLS = ["PollPromise", "TimedPromise"];
 
 const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
@@ -89,7 +82,7 @@ const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
 
 
-wait.until = function(func, timeout = 2000, interval = 10) {
+function PollPromise(func, timeout = 2000, interval = 10) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
   return new Promise((resolve, reject) => {
@@ -123,7 +116,7 @@ wait.until = function(func, timeout = 2000, interval = 10) {
     timer.cancel();
     throw err;
   });
-};
+}
 
 
 
