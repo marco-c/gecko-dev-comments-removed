@@ -472,6 +472,10 @@ CompositorBridgeParent::StopAndClearResources()
 
   
   mWidget = nullptr;
+
+  
+  
+  mAnimationStorage = nullptr;
 }
 
 mozilla::ipc::IPCResult
@@ -625,7 +629,6 @@ CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
   RemoveCompositor(mCompositorID);
 
   mCompositionManager = nullptr;
-  mAnimationStorage = nullptr;
 
   if (mApzcTreeManager) {
     mApzcTreeManager->ClearTree();
