@@ -330,8 +330,8 @@ public:
 
   
   
-  static void GetPreferences(InfallibleTArray<PrefSetting>* aPrefs);
-  static void SetInitPreferences(nsTArray<PrefSetting>* aPrefs);
+  static void GetPreferences(InfallibleTArray<PrefSetting>* aSettings);
+  static void SetInitPreferences(nsTArray<PrefSetting>* aSettings);
 
   
   
