@@ -90,8 +90,7 @@ JsonViewSniffer.prototype = {
       
       
       
-      const JSON_TYPES = ["application/json", "application/manifest+json"];
-      if (JSON_TYPES.includes(request.contentType)) {
+      if (/^application\/(?:.+\+)?json$/.test(request.contentType)) {
         return JSON_VIEW_MIME_TYPE;
       }
     }

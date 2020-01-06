@@ -48,6 +48,12 @@ function addJsonViewTab(url, timeout = -1) {
     browser.messageManager.loadFrameScript(frameScriptUrl, false);
 
     
+    if (!content.window.wrappedJSObject.JSONView) {
+      deferred.reject("JSON Viewer did not load.");
+      return;
+    }
+
+    
     
     if (content.window.wrappedJSObject.JSONView.initialized) {
       deferred.resolve(tab);
@@ -170,4 +176,9 @@ function waitForFilter() {
 
 function normalizeNewLines(value) {
   return value.replace("(\r\n|\n)", "\n");
+}
+
+function evalInContent(code) {
+  return executeInContent("Test:JsonView:Eval", {code})
+  .then(result => result.result);
 }
