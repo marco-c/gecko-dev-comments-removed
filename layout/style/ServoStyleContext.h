@@ -39,22 +39,7 @@ public:
 
 
 
-  void ResolveSameStructsAs(nsPresContext* aPresContext, const ServoStyleContext* aOther) {
-    
-    uint64_t ourBits = mBits & NS_STYLE_INHERIT_MASK;
-    uint64_t otherBits = aOther->mBits & NS_STYLE_INHERIT_MASK;
-    uint64_t newBits = otherBits & ~ourBits & NS_STYLE_INHERIT_MASK;
-
-  #define STYLE_STRUCT(name_, checkdata_cb)                                           \
-    if (nsStyle##name_::kHasFinishStyle && newBits & NS_STYLE_INHERIT_BIT(name_)) {   \
-      const nsStyle##name_* data = Servo_GetStyle##name_(ComputedValues());           \
-      const_cast<nsStyle##name_*>(data)->FinishStyle(aPresContext);                   \
-    }
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT
-
-    mBits |= newBits;
-  }
+  inline void ResolveSameStructsAs(nsPresContext* aPresContext, const ServoStyleContext* aOther);
 
 private:
   nsPresContext* mPresContext;
