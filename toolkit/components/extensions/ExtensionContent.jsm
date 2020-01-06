@@ -137,8 +137,16 @@ class CacheMap extends DefaultMap {
 
 class ScriptCache extends CacheMap {
   constructor(options) {
-    super(SCRIPT_EXPIRY_TIMEOUT_MS,
-          url => ChromeUtils.compileScript(url, options));
+    super(SCRIPT_EXPIRY_TIMEOUT_MS);
+    this.options = options;
+  }
+
+  defaultConstructor(url) {
+    let promise = ChromeUtils.compileScript(url, this.options);
+    promise.then(script => {
+      promise.script = script;
+    });
+    return promise;
   }
 }
 
@@ -317,17 +325,25 @@ class Script {
       }
     }
 
-    let scriptsPromise = Promise.all(this.compileScripts());
+    let scriptPromises = this.compileScripts();
 
+    let scripts = scriptPromises.map(promise => promise.script);
     
     
-    
-    let {document} = context.contentWindow;
-    if (this.runAt === "document_start" && document.readyState !== "complete") {
-      document.blockParsing(scriptsPromise, {blockScriptCreated: false});
+    if (!scripts.every(script => script)) {
+      let promise = Promise.all(scriptPromises);
+
+      
+      
+      
+      let {document} = context.contentWindow;
+      if (this.runAt === "document_start" && document.readyState !== "complete") {
+        document.blockParsing(promise, {blockScriptCreated: false});
+      }
+
+      scripts = await promise;
     }
 
-    let scripts = await scriptsPromise;
     let result;
 
     
