@@ -119,6 +119,13 @@ ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged) const
   if (Servo_StyleSet_MediumFeaturesChanged(mRawSet.get())) {
     return eRestyle_Subtree;
   }
+  if (aViewportChanged) {
+    
+    
+    
+    
+    return eRestyle_ForceDescendants;
+  }
   return nsRestyleHint(0);
 }
 
