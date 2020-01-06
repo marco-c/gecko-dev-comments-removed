@@ -122,7 +122,7 @@ public:
   }
 
   static nsIPresShell*
-  GetPresShellForContent(nsIContent* aContent);
+  GetPresShellForContent(const nsIContent* aContent);
 
   
   void SetExposeVisitedStyle(bool aExpose) {
