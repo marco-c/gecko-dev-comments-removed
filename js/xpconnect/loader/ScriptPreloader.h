@@ -350,7 +350,7 @@ private:
     void ForceWriteCacheFile();
     void Cleanup();
 
-    void FlushCache();
+    void InvalidateCache();
 
     
     Result<Ok, nsresult> OpenCache();
@@ -404,6 +404,7 @@ private:
     bool mCacheInitialized = false;
     bool mSaveComplete = false;
     bool mDataPrepared = false;
+    bool mCacheInvalidated = false;
 
     
     static ProcessType sProcessType;
