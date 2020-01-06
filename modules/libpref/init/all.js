@@ -1364,13 +1364,6 @@ pref("dom.webapps.useCurrentProfile", false);
 pref("dom.cycle_collector.incremental", true);
 
 
-
-
-
-
-pref("dom.allow_named_properties_object_for_xrays", 1);
-
-
 #ifndef XP_WIN
 pref("content.sink.pending_event_mode", 0);
 #endif
@@ -5336,10 +5329,6 @@ pref("dom.vr.puppet.enabled", false);
 
 
 pref("dom.vr.puppet.submitframe", 0);
-
-
-
-pref("dom.vr.display.rafMaxDuration", 50);
 
 pref("dom.vr.test.enabled", false);
 
