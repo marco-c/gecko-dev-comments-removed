@@ -587,7 +587,7 @@ impl<'a, 'b, 'i, R: ParseErrorReporter> QualifiedRuleParser<'i> for NestedRulePa
 }
 
 
-fn get_location_with_offset(location: SourceLocation) -> SourceLocation {
+pub fn get_location_with_offset(location: SourceLocation) -> SourceLocation {
     SourceLocation {
         line: location.line,
         
