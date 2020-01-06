@@ -136,9 +136,6 @@ enum ThemeWidgetType : uint8_t {
   NS_THEME_TOOLTIP,
 
   
-  NS_THEME_INNER_SPIN_BUTTON,
-
-  
   NS_THEME_SPINNER,
 
   
