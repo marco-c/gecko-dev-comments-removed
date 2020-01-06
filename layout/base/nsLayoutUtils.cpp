@@ -6534,8 +6534,8 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
   
   
   gfxSize snappedDestSize = dest.Size();
+  gfxSize scaleFactors = currentMatrix.ScaleFactors(true);
   if (!didSnap) {
-    gfxSize scaleFactors = currentMatrix.ScaleFactors(true);
     snappedDestSize.Scale(scaleFactors.width, scaleFactors.height);
     snappedDestSize.width = NS_round(snappedDestSize.width);
     snappedDestSize.height = NS_round(snappedDestSize.height);
@@ -6555,12 +6555,24 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
     aImage->OptimalImageSizeForDest(snappedDestSize,
                                     imgIContainer::FRAME_CURRENT,
                                     aSamplingFilter, aImageFlags);
-  gfxSize imageSize(intImageSize.width, intImageSize.height);
 
-  
-  CSSIntSize svgViewportSize = currentMatrix.IsIdentity()
-    ? CSSIntSize(intImageSize.width, intImageSize.height)
-    : CSSIntSize::Truncate(devPixelDest.width, devPixelDest.height);
+  nsIntSize svgViewportSize;
+  if (scaleFactors.width == 1.0 && scaleFactors.height == 1.0) {
+    
+    
+    
+    svgViewportSize = intImageSize;
+  } else {
+    
+    
+    
+    svgViewportSize = aImage->OptimalImageSizeForDest(devPixelDest.Size(),
+                                                      imgIContainer::FRAME_CURRENT,
+                                                      aSamplingFilter,
+                                                      aImageFlags);
+  }
+
+  gfxSize imageSize(intImageSize.width, intImageSize.height);
 
   
   gfxPoint subimageTopLeft =
@@ -6677,7 +6689,9 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
     ImageRegion::CreateWithSamplingRestriction(imageSpaceFill, subimage, extendMode);
 
   return SnappedImageDrawingParameters(transform, intImageSize,
-                                       region, svgViewportSize);
+                                       region,
+                                       CSSIntSize(svgViewportSize.width,
+                                                  svgViewportSize.height));
 }
 
 static DrawResult
