@@ -134,10 +134,6 @@ enum BailoutKind
 
     
     
-    Bailout_IterNextNonString,
-
-    
-    
     
     
     Bailout_DoubleOutput,
@@ -229,8 +225,6 @@ BailoutKindString(BailoutKind kind)
       
       case Bailout_OverflowInvalidate:
         return "Bailout_OverflowInvalidate";
-      case Bailout_IterNextNonString:
-        return "Bailout_IterNextNonString";
       case Bailout_DoubleOutput:
         return "Bailout_DoubleOutput";
 

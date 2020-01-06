@@ -12630,10 +12630,7 @@ IonBuilder::jsop_iternext()
     MOZ_ASSERT(def->type() == MIRType::Value);
 
     
-    
-    
-    MInstruction* unbox = MUnbox::New(alloc(), def, MIRType::String, MUnbox::Fallible,
-                                      Bailout_IterNextNonString);
+    MInstruction* unbox = MUnbox::New(alloc(), def, MIRType::String, MUnbox::Infallible);
     current->add(unbox);
     current->push(unbox);
 
