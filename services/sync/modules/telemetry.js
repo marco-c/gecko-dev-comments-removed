@@ -417,7 +417,8 @@ function cleanErrorMessage(error) {
   
   
   
-  error = error.replace(/\S+:\S+/g, "<URL>");
+  
+  error = error.replace(/[^\s"]+:[^\s"]+/g, "<URL>");
   return error;
 }
 
@@ -713,10 +714,22 @@ class SyncTelemetryImpl {
     if (error.result) {
       return { name: "nserror", code: error.result };
     }
-
+    
+    
+    
+    let msg = String(error);
+    if (msg.startsWith("[object")) {
+      
+      if (typeof error.message == "string") {
+        msg = String(error.message);
+      } else {
+        
+        msg = JSON.stringify(error);
+      }
+    }
     return {
       name: "unexpectederror",
-      error: cleanErrorMessage(String(error))
+      error: cleanErrorMessage(msg)
     };
   }
 
