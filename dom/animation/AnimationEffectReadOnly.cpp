@@ -80,6 +80,9 @@ AnimationEffectReadOnly::SetSpecifiedTiming(const TimingParams& aTiming)
   mTiming->SetTimingParams(aTiming);
   if (mAnimation) {
     mAnimation->NotifyEffectTimingUpdated();
+    if (AsKeyframeEffect()) {
+      AsKeyframeEffect()->RequestRestyle(EffectCompositor::RestyleType::Layer);
+    }
   }
   
   
