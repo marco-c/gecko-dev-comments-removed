@@ -429,6 +429,7 @@ pref("permissions.default.camera", 0);
 pref("permissions.default.microphone", 0);
 pref("permissions.default.geo", 0);
 pref("permissions.default.desktop-notification", 0);
+pref("permissions.default.shortcuts", 0);
 
 
 

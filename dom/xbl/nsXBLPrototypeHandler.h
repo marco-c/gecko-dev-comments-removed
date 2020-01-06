@@ -55,6 +55,15 @@ class KeyboardShortcut;
 #define NS_PHASE_TARGET             2
 #define NS_PHASE_BUBBLING           3
 
+
+
+enum XBLReservedKey : uint8_t
+{
+  XBLReservedKey_False = 0,
+  XBLReservedKey_True = 1,
+  XBLReservedKey_Unset = 2,
+};
+
 class nsXBLPrototypeHandler
 {
   typedef mozilla::IgnoreModifierState IgnoreModifierState;
@@ -74,7 +83,7 @@ public:
                         uint32_t aLineNumber);
 
   
-  explicit nsXBLPrototypeHandler(nsIContent* aKeyElement, bool aReserved);
+  explicit nsXBLPrototypeHandler(nsIContent* aKeyElement, XBLReservedKey aReserved);
 
   
   explicit nsXBLPrototypeHandler(nsXBLPrototypeBinding* aBinding);
@@ -118,7 +127,7 @@ public:
 
   uint8_t GetPhase() { return mPhase; }
   uint8_t GetType() { return mType; }
-  bool GetIsReserved() { return mReserved; }
+  XBLReservedKey GetIsReserved() { return mReserved; }
 
   nsXBLPrototypeHandler* GetNextHandler() { return mNextHandler; }
   void SetNextHandler(nsXBLPrototypeHandler* aHandler) { mNextHandler = aHandler; }
@@ -233,7 +242,7 @@ protected:
                              
                              
 
-  bool mReserved;            
+  XBLReservedKey mReserved;  
 
   int32_t mKeyMask;          
                              

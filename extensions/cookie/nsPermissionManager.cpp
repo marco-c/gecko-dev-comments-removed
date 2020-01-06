@@ -135,7 +135,8 @@ static const char* kPermissionsWithDefaults[] = {
   "camera",
   "microphone",
   "geo",
-  "desktop-notification"
+  "desktop-notification",
+  "shortcuts"
 };
 
 
