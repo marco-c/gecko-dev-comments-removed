@@ -46,6 +46,8 @@ std::map<base::ProcessId, ImageBridgeParent*> ImageBridgeParent::sImageBridges;
 
 StaticAutoPtr<mozilla::Monitor> sImageBridgesLock;
 
+static StaticRefPtr<ImageBridgeParent> sImageBridgeParentSingleton;
+
 
 CompositorThreadHolder* GetCompositorThreadHolder();
 
@@ -81,12 +83,6 @@ ImageBridgeParent::~ImageBridgeParent()
 {
 }
 
-static StaticRefPtr<ImageBridgeParent> sImageBridgeParentSingleton;
-
-void ReleaseImageBridgeParentSingleton() {
-  sImageBridgeParentSingleton = nullptr;
-}
-
  ImageBridgeParent*
 ImageBridgeParent::CreateSameProcess()
 {
@@ -114,6 +110,36 @@ ImageBridgeParent::CreateForGPUProcess(Endpoint<PImageBridgeParent>&& aEndpoint)
 
   sImageBridgeParentSingleton = parent;
   return true;
+}
+
+ void
+ImageBridgeParent::ShutdownInternal()
+{
+  
+  
+  nsTArray<RefPtr<ImageBridgeParent>> actors;
+  {
+    MonitorAutoLock lock(*sImageBridgesLock);
+    for (const auto& iter : sImageBridges) {
+      actors.AppendElement(iter.second);
+    }
+  }
+
+  for (auto const& actor : actors) {
+    MOZ_RELEASE_ASSERT(!actor->mClosed);
+    actor->Close();
+  }
+
+  sImageBridgeParentSingleton = nullptr;
+}
+
+ void
+ImageBridgeParent::Shutdown()
+{
+  CompositorThreadHolder::Loop()->PostTask(
+    NS_NewRunnableFunction("ImageBridgeParent::Shutdown", []() -> void {
+      ImageBridgeParent::ShutdownInternal();
+  }));
 }
 
 void
