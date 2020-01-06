@@ -92,6 +92,9 @@ class TooltoolMixin(object):
         if cache:
             cmd.extend(['--cache-dir' if self.topsrcdir else '-c', cache])
 
+        toolchains = os.environ.get('MOZ_TOOLCHAINS')
+        if toolchains:
+            cmd.extend(toolchains.split())
         
         
         
