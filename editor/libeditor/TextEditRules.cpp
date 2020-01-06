@@ -1439,7 +1439,7 @@ TextEditRules::CreateBogusNodeIfNeeded(Selection* aSelection)
   
   
   bool bodyEditable = mTextEditor->IsEditable(body);
-  for (nsCOMPtr<nsIContent> bodyChild = body->GetFirstChild();
+  for (nsIContent* bodyChild = body->GetFirstChild();
        bodyChild;
        bodyChild = bodyChild->GetNextSibling()) {
     if (mTextEditor->IsMozEditorBogusNode(bodyChild) ||
