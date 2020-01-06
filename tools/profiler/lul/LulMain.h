@@ -184,7 +184,6 @@ public:
     : mContext(0)
     , mCFI(0)
     , mFP(0)
-    , mScanned(0)
   {}
 
   template <typename S>
@@ -192,7 +191,6 @@ public:
     : mContext(aOther.mContext)
     , mCFI(aOther.mCFI)
     , mFP(aOther.mFP)
-    , mScanned(aOther.mScanned)
   {}
 
   template <typename S>
@@ -201,21 +199,18 @@ public:
     mContext = aOther.mContext;
     mCFI     = aOther.mCFI;
     mFP      = aOther.mFP;
-    mScanned = aOther.mScanned;
     return *this;
   }
 
   template <typename S>
   uint32_t operator-(const LULStats<S>& aOther) {
     return (mContext - aOther.mContext) +
-           (mCFI - aOther.mCFI) + (mFP - aOther.mFP) +
-           (mScanned - aOther.mScanned);
+           (mCFI - aOther.mCFI) + (mFP - aOther.mFP);
   }
 
   T mContext; 
   T mCFI;     
   T mFP;      
-  T mScanned; 
 };
 
 
@@ -332,21 +327,11 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   void Unwind(uintptr_t* aFramePCs,
               uintptr_t* aFrameSPs,
               size_t* aFramesUsed,
               size_t* aFramePointerFramesAcquired,
-              size_t* aScannedFramesAcquired,
               size_t aFramesAvail,
-              size_t aScannedFramesAllowed,
               UnwindRegs* aStartRegs, StackImage* aStackImg);
 
   

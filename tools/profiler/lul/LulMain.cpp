@@ -597,200 +597,6 @@ class PriMap {
     return mSecMaps.size();
   }
 
-  
-  
-  
-  bool MaybeIsReturnPoint(TaggedUWord aInstrAddr, SegArray* aSegArray) {
-    if (!aInstrAddr.Valid()) {
-      return false;
-    }
-
-    uintptr_t ia = aInstrAddr.Value();
-
-    
-    
-    if (ia < 4096 || ((uintptr_t)(-ia)) < 4096) {
-      return false;
-    }
-
-    
-    
-    uintptr_t insns_min, insns_max;
-    bool b = aSegArray->getBoundingCodeSegment(&insns_min, &insns_max, ia);
-    if (!b) {
-      
-      return false;
-    }
-
-    
-    
-
-#if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    uint8_t* p = (uint8_t*)ia;
-#   if defined(GP_ARCH_amd64)
-    
-    if (ia - 6 >= insns_min && p[-6] == 0xFF && p[-5] == 0x15) {
-      return true;
-    }
-#   endif
-    
-    if (ia - 5 >= insns_min && p[-5] == 0xE8) {
-      return true;
-    }
-    
-    
-    
-    if (ia - 2 >= insns_min &&
-        p[-2] == 0xFF && p[-1] >= 0xD0 && p[-1] <= 0xD7) {
-      return true;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (ia - 3 >= insns_min &&
-        p[-3] == 0xFF &&
-        (p[-2] >= 0x50 && p[-2] <= 0x57 && p[-2] != 0x54)) {
-      
-      return true;
-    }
-    if (ia - 4 >= insns_min &&
-        p[-4] == 0xFF && p[-3] == 0x54 && p[-2] == 0x24) {
-      
-      return true;
-    }
-    if (ia - 6 >= insns_min &&
-        p[-6] == 0xFF &&
-        (p[-5] >= 0x90 && p[-5] <= 0x97 && p[-5] != 0x94)) {
-      
-      return true;
-    }
-    if (ia - 7 >= insns_min &&
-        p[-7] == 0xFF && p[-6] == 0x94 && p[-5] == 0x24) {
-      
-      return true;
-    }
-
-#elif defined(GP_ARCH_arm)
-    if (ia & 1) {
-      uint16_t w0 = 0, w1 = 0;
-      
-      
-      ia &= ~(uintptr_t)1;
-      if (ia - 2 >= insns_min && ia - 1 <= insns_max) {
-        w1 = *(uint16_t*)(ia - 2);
-      }
-      if (ia - 4 >= insns_min && ia - 1 <= insns_max) {
-        w0 = *(uint16_t*)(ia - 4);
-      }
-      
-      
-      if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) {
-        return true;
-      }
-      
-      if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) {
-        return true;
-      }
-      
-      
-      
-      
-    } else {
-      
-      uint32_t a0 = 0;
-      if ((ia & 3) == 0 && ia - 4 >= insns_min && ia - 1 <= insns_max) {
-        a0 = *(uint32_t*)(ia - 4);
-      }
-      
-      
-      
-      if ((a0 & 0xFF000000) == 0xEB000000) {
-        return true;
-      }
-      
-      
-      
-      
-      
-      
-      
-    }
-
-#else
-# error "Unsupported arch"
-#endif
-
-    
-    return false;
-  }
-
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t n = aMallocSizeOf(this);
 
@@ -889,13 +695,12 @@ LUL::MaybeShowStats()
     uint32_t n_new_Context = mStats.mContext - mStatsPrevious.mContext;
     uint32_t n_new_CFI     = mStats.mCFI     - mStatsPrevious.mCFI;
     uint32_t n_new_FP      = mStats.mFP      - mStatsPrevious.mFP;
-    uint32_t n_new_Scanned = mStats.mScanned - mStatsPrevious.mScanned;
     mStatsPrevious = mStats;
     char buf[200];
     SprintfLiteral(buf,
                    "LUL frame stats: TOTAL %5u"
-                   "    CTX %4u    CFI %4u    FP %4u    SCAN %4u",
-                   n_new, n_new_Context, n_new_CFI, n_new_FP, n_new_Scanned);
+                   "    CTX %4u    CFI %4u    FP %4u",
+                   n_new, n_new_Context, n_new_CFI, n_new_FP);
     buf[sizeof(buf)-1] = 0;
     mLog(buf);
   }
@@ -1340,9 +1145,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
             uintptr_t* aFrameSPs,
             size_t* aFramesUsed, 
             size_t* aFramePointerFramesAcquired,
-            size_t* aScannedFramesAcquired,
             size_t aFramesAvail,
-            size_t aScannedFramesAllowed,
             UnwindRegs* aStartRegs, StackImage* aStackImg)
 {
   MOZ_ASSERT(!mAdminMode);
@@ -1354,10 +1157,6 @@ LUL::Unwind(uintptr_t* aFramePCs,
 
   UnwindRegs  regs          = *aStartRegs;
   TaggedUWord last_valid_sp = TaggedUWord();
-
-  
-  unsigned int n_scanned_frames      = 0;  
-  static const int NUM_SCANNED_WORDS = 50; 
 
   while (true) {
 
@@ -1456,48 +1255,48 @@ LUL::Unwind(uintptr_t* aFramePCs,
       mLog(buf);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 #if defined(GP_PLAT_x86_android) || defined(GP_PLAT_x86_linux)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!ruleset && *aFramesUsed == 1 && ia.Valid() && sp.Valid()) {
       uintptr_t insns_min, insns_max;
       uintptr_t eip = ia.Value();
@@ -1523,9 +1322,9 @@ LUL::Unwind(uintptr_t* aFramePCs,
         }
       }
     }
-#endif
     
     
+#endif 
 
     
     if (ruleset) {
@@ -1536,172 +1335,67 @@ LUL::Unwind(uintptr_t* aFramePCs,
       
       
       UseRuleSet(&regs, aStackImg, ruleset, pfxinstrs);
+      continue;
 
-    } else {
-
-      
-      
-      
-      
+    }
 
 #if defined(GP_PLAT_amd64_linux)
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    
+    
+    
+    
 
-      const size_t wordSzB = sizeof(uintptr_t);
-      TaggedUWord old_xsp = regs.xsp;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-      
-      TaggedUWord old_xbp = regs.xbp;
-      
-      TaggedUWord old_xbp_plus1 = regs.xbp + TaggedUWord(1 * wordSzB);
-      
-      TaggedUWord old_xbp_plus2 = regs.xbp + TaggedUWord(2 * wordSzB);
+    const size_t wordSzB = sizeof(uintptr_t);
+    TaggedUWord old_xsp = regs.xsp;
 
-      if (old_xbp.Valid() && old_xbp.IsAligned() &&
-          old_xsp.Valid() && old_xsp.IsAligned() &&
-          old_xsp.Value() <= old_xbp.Value()) {
-        
-        
-        
-        
-        
-        TaggedUWord new_xbp = DerefTUW(old_xbp, aStackImg);
-        if (new_xbp.Valid() && new_xbp.IsAligned() &&
-            old_xbp.Value() < new_xbp.Value()) {
-          TaggedUWord new_xip = DerefTUW(old_xbp_plus1, aStackImg);
-          TaggedUWord new_xsp = old_xbp_plus2;
-          if (new_xbp.Valid() && new_xip.Valid() && new_xsp.Valid()) {
-            regs.xbp = new_xbp;
-            regs.xip = new_xip;
-            regs.xsp = new_xsp;
-            (*aFramePointerFramesAcquired)++;
-            continue;
-          }
+    
+    TaggedUWord old_xbp = regs.xbp;
+    
+    TaggedUWord old_xbp_plus1 = regs.xbp + TaggedUWord(1 * wordSzB);
+    
+    TaggedUWord old_xbp_plus2 = regs.xbp + TaggedUWord(2 * wordSzB);
+
+    if (old_xbp.Valid() && old_xbp.IsAligned() &&
+        old_xsp.Valid() && old_xsp.IsAligned() &&
+        old_xsp.Value() <= old_xbp.Value()) {
+      
+      
+      
+      
+      
+      TaggedUWord new_xbp = DerefTUW(old_xbp, aStackImg);
+      if (new_xbp.Valid() && new_xbp.IsAligned() &&
+          old_xbp.Value() < new_xbp.Value()) {
+        TaggedUWord new_xip = DerefTUW(old_xbp_plus1, aStackImg);
+        TaggedUWord new_xsp = old_xbp_plus2;
+        if (new_xbp.Valid() && new_xip.Valid() && new_xsp.Valid()) {
+          regs.xbp = new_xbp;
+          regs.xip = new_xip;
+          regs.xsp = new_xsp;
+          (*aFramePointerFramesAcquired)++;
+          continue;
         }
-      }
-#endif
-
-      
-      
-
-      
-      if (n_scanned_frames++ >= aScannedFramesAllowed) {
-        break;
-      }
-
-      
-      if (!sp.IsAligned()) {
-        break;
-      }
-
-      bool scan_succeeded = false;
-      for (int i = 0; i < NUM_SCANNED_WORDS; ++i) {
-        TaggedUWord aWord = DerefTUW(sp, aStackImg);
-        
-        
-        if (!aWord.Valid()) {
-          break;
-        }
-
-        
-        
-        if (mPriMap->MaybeIsReturnPoint(aWord, mSegArray)) {
-          
-          
-          scan_succeeded = true;
-          (*aScannedFramesAcquired)++;
-
-#if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
-          
-          
-          
-#         if defined(GP_ARCH_amd64)
-          const int wordSize = 8;
-#         else
-          const int wordSize = 4;
-#         endif
-          
-          
-          
-          
-          regs.xsp = sp + TaggedUWord(wordSize);
-
-          
-          
-          regs.xip = aWord + TaggedUWord((uintptr_t)(-1));
-
-          
-          if (regs.xbp.Valid() &&
-              sp.Valid() && regs.xbp.Value() == sp.Value() - wordSize) {
-            
-            
-            
-            
-            regs.xbp = DerefTUW(regs.xbp, aStackImg);
-          } else if (regs.xbp.Valid() &&
-                     sp.Valid() && regs.xbp.Value() >= sp.Value() + wordSize) {
-            
-            
-            
-            
-            
-            
-          } else {
-            
-            
-            regs.xbp = TaggedUWord();
-          }
-
-          
-          sp = sp + TaggedUWord(wordSize);
-
-#elif defined(GP_ARCH_arm)
-          
-          
-
-          
-          
-          
-          
-          regs.r15 = aWord + TaggedUWord((uintptr_t)(-2));
-
-          
-          
-          regs.r13 = sp + TaggedUWord(4);
-
-          
-          regs.r7 = regs.r11 = regs.r12 = regs.r14 = TaggedUWord();
-
-          
-          sp = sp + TaggedUWord(4);
-
-#else
-# error "Unknown plat"
-#endif
-
-          break;
-        }
-
-      } 
-
-      
-      
-      if (!scan_succeeded) {
-        break;
       }
     }
+#endif 
+
+    
+    
+    break;
 
   } 
 
@@ -1815,13 +1509,10 @@ bool GetAndCheckStackTrace(LUL* aLUL, const char* dstring)
   uintptr_t frameSPs[MAX_TEST_FRAMES];
   size_t framesAvail = mozilla::ArrayLength(framePCs);
   size_t framesUsed  = 0;
-  size_t scannedFramesAllowed = 0;
-  size_t scannedFramesAcquired = 0, framePointerFramesAcquired = 0;
+  size_t framePointerFramesAcquired = 0;
   aLUL->Unwind( &framePCs[0], &frameSPs[0],
-                &framesUsed,
-                &framePointerFramesAcquired, &scannedFramesAcquired,
-                framesAvail, scannedFramesAllowed,
-                &startRegs, stackImg );
+                &framesUsed, &framePointerFramesAcquired,
+                framesAvail, &startRegs, stackImg );
 
   delete stackImg;
 
