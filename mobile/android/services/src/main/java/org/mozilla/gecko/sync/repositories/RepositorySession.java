@@ -4,9 +4,6 @@
 
 package org.mozilla.gecko.sync.repositories;
 
-import android.support.annotation.Nullable;
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -14,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.mozilla.gecko.background.common.log.Logger;
-import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionBeginDelegate;
+import org.mozilla.gecko.sync.SyncException;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFinishDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
@@ -221,10 +218,8 @@ public abstract class RepositorySession {
 
 
 
-
-  public void begin(RepositorySessionBeginDelegate delegate) throws InvalidSessionTransitionException {
+  public void begin() throws SyncException {
     sharedBegin();
-    delegate.deferredBeginDelegate(delegateQueue).onBeginSucceeded(this);
   }
 
   public void unbundle(RepositorySessionBundle bundle) {
