@@ -99,7 +99,7 @@ var gHttpServer;
 
 
 function httpUrl(aFileName) {
-  return "http://localhost:" + gHttpServer.identity.primaryPort + "/" +
+  return "http://www.example.com:" + gHttpServer.identity.primaryPort + "/" +
          aFileName;
 }
 
@@ -631,6 +631,14 @@ add_task(function test_common_initialize() {
       
       gHttpServer.stop(resolve);
     });
+  });
+
+  
+  gHttpServer.identity.setPrimary("http", "www.example.com",
+                                  gHttpServer.identity.primaryPort);
+  Services.prefs.setCharPref("network.dns.localDomains", "www.example.com");
+  do_register_cleanup(function() {
+    Services.prefs.clearUserPref("network.dns.localDomains");
   });
 
   
