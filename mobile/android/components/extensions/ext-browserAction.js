@@ -15,20 +15,23 @@ XPCOMUtils.defineLazyModuleGetter(this, "BrowserActions",
 
 var browserActionMap = new WeakMap();
 
-const {
-  DefaultMap,
-} = ExtensionUtils;
-
 class BrowserAction {
   constructor(options, extension) {
-    
-    this.tabIdToPropertyMap = new DefaultMap(() => ({}));
-    this.tabManager = extension.tabManager;
     this.uuid = `{${extension.uuid}}`;
-    this.name = options.default_title || extension.name;
 
-    GlobalEventDispatcher.registerListener(this, ["Tab:Selected"]);
-    GlobalEventDispatcher.registerListener(this, ["Tab:Closed"]);
+    this.defaults = {
+      name: options.default_title || extension.name,
+    };
+
+    this.tabContext = new TabContext(tab => Object.create(this.defaults),
+                                     extension);
+
+    this.tabManager = extension.tabManager;
+
+    this.tabContext.on("tab-selected", 
+                       (evt, tabId) => { this.onTabSelected(tabId); });
+    this.tabContext.on("tab-closed", 
+                       (evt, tabId) => { this.onTabClosed(tabId); });
 
     BrowserActions.register(this);
     EventEmitter.decorate(this);
@@ -40,7 +43,7 @@ class BrowserAction {
 
   get activeName() {
     let tab = tabTracker.activeTab;
-    return this.tabIdToPropertyMap.get(tab.id).name || this.name;
+    return this.tabContext.get(tab.id).name || this.defaults.name;
   }
 
   
@@ -55,25 +58,8 @@ class BrowserAction {
 
 
 
-
-
-  onEvent(event, data) {
-    switch (event) {
-      case "Tab:Selected":
-        this.onTabSelected(this.tabManager.get(data.id));
-        break;
-      case "Tab:Closed":
-        this.onTabClosed(this.tabManager.get(data.tabId));
-        break;
-    }
-  }
-
-  
-
-
-
   onTabSelected(tab) {
-    let name = this.tabIdToPropertyMap.get(tab.id).name || this.name;
+    let name = this.tabContext.get(tab.id).name || this.defaults.name;
     BrowserActions.update(this.uuid, {name});
   }
 
@@ -82,7 +68,7 @@ class BrowserAction {
 
 
   onTabClosed(tab) {
-    this.tabIdToPropertyMap.delete(tab.id);
+    this.tabContext.clear(tab.id);
   }
 
   
@@ -96,10 +82,10 @@ class BrowserAction {
   setProperty(tab, prop, value) {
     if (tab == null) {
       if (value) {
-        this[prop] = value;
+        this.defaults[prop] = value;
       }
     } else {
-      let properties = this.tabIdToPropertyMap.get(tab.id);
+      let properties = this.tabContext.get(tab.id);
       if (value) {
         properties[prop] = value;
       } else {
@@ -122,16 +108,17 @@ class BrowserAction {
 
   getProperty(tab, prop) {
     if (tab == null) {
-      return this[prop];
+      return this.defaults[prop];
     }
 
-    return this.tabIdToPropertyMap.get(tab.id)[prop] || this[prop];
+    return this.tabContext.get(tab.id)[prop] || this.defaults[prop];
   }
 
   
 
 
   shutdown() {
+    this.tabContext.shutdown();
     BrowserActions.unregister(this.uuid);
   }
 }
