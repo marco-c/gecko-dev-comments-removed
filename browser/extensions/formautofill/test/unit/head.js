@@ -29,20 +29,8 @@ do_get_profile();
 
 
 Cu.import("resource://gre/modules/Timer.jsm");
-var {Loader} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
-var loader = new Loader.Loader({
-  paths: {
-    "": "resource://testing-common/",
-  },
-  globals: {
-    setTimeout,
-    setInterval,
-    clearTimeout,
-    clearInterval,
-  },
-});
-var require = Loader.Require(loader, {id: ""});
-var sinon = require("sinon-2.3.2");
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
+
 
 
 
