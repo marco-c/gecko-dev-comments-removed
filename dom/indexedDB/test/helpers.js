@@ -16,8 +16,10 @@ var testGenerator = testSteps();
 
 
 var c = Object.getOwnPropertyDescriptor(this, "Components");
-if ((!c.value || c.writable) && typeof SpecialPowers === "object")
+if ((!c.value || c.writable) && typeof SpecialPowers === "object") {
+  
   Components = SpecialPowers.Components;
+}
 
 function executeSoon(aFun)
 {
@@ -552,7 +554,7 @@ function workerScript() {
       self._expectingUncaughtException = false;
       ok(true, "Worker: expected exception [" + _file_ + ":" + _line_ + "]: '" +
          _message_ + "'");
-      return;
+      return false;
     }
     ok(false,
        "Worker: uncaught exception [" + _file_ + ":" + _line_ + "]: '" +
