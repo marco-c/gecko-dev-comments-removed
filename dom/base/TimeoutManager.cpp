@@ -533,8 +533,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   
-  
-  interval = std::max(aIsInterval ? 1 : 0, interval);
+  interval = std::max(0, interval);
 
   
   
