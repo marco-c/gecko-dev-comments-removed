@@ -48,21 +48,17 @@ add_task(async function test_activeStatus_observe() {
   do_check_eq(formAutofillParent._onStatusChanged.called, true);
 
   
-  formAutofillParent._computeStatus.returns(!formAutofillParent._active);
-  formAutofillParent._onStatusChanged.reset();
-  formAutofillParent.observe(null, "formautofill-storage-changed", "add");
-  do_check_eq(formAutofillParent._onStatusChanged.called, true);
+  ["add", "update", "remove", "reconcile", "merge"].forEach(event => {
+    formAutofillParent._computeStatus.returns(!formAutofillParent._active);
+    formAutofillParent._onStatusChanged.reset();
+    formAutofillParent.observe(null, "formautofill-storage-changed", event);
+    do_check_eq(formAutofillParent._onStatusChanged.called, true);
+  });
 
   
   formAutofillParent._computeStatus.returns(!formAutofillParent._active);
   formAutofillParent._onStatusChanged.reset();
-  formAutofillParent.observe(null, "formautofill-storage-changed", "remove");
-  do_check_eq(formAutofillParent._onStatusChanged.called, true);
-
-  
-  formAutofillParent._computeStatus.returns(!formAutofillParent._active);
-  formAutofillParent._onStatusChanged.reset();
-  formAutofillParent.observe(null, "formautofill-storage-changed", "update");
+  formAutofillParent.observe(null, "formautofill-storage-changed", "notifyUsed");
   do_check_eq(formAutofillParent._onStatusChanged.called, false);
 });
 

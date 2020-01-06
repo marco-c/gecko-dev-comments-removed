@@ -118,7 +118,7 @@ FormAutofillParent.prototype = {
 
       case "formautofill-storage-changed": {
         
-        if (data != "add" && data != "remove") {
+        if (data == "notifyUsed") {
           break;
         }
 
