@@ -27,9 +27,23 @@ RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder,
   mTarget = aTarget;
   mInvalidBounds = aInvalidRegion.GetBounds();
 
-  AL_LOG("RenderView %p root with invalid area %s\n",
+  
+  
+  mPostClearRegion = aBuilder->GetManager()->GetRegionToClear();
+
+  
+  
+  mPostClearRegion.AndWith(mInvalidBounds);
+
+  
+  
+  mOccludedRegion.OrWith(
+    ViewAs<LayerPixel>(mPostClearRegion, PixelCastJustification::RenderTargetIsParentLayerForRoot));
+
+  AL_LOG("RenderView %p root with invalid area %s, clear area %s\n",
     this,
-    Stringify(mInvalidBounds).c_str());
+    Stringify(mInvalidBounds).c_str(),
+    Stringify(mPostClearRegion).c_str());
 }
 
 RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder,
@@ -327,7 +341,7 @@ RenderViewMLGPU::Prepare()
   
   
   
-  PrepareClear();
+  PrepareClears();
 
   
   
@@ -400,11 +414,16 @@ RenderViewMLGPU::ExecuteRendering()
 
   
   
-  mDevice->DrawClearRegion(mClear);
+  mDevice->DrawClearRegion(mPreClear);
 
   
   for (auto iter = mBackToFront.begin(); iter != mBackToFront.end(); iter++) {
     ExecutePass(*iter);
+  }
+
+  
+  if (!mPostClearRegion.IsEmpty()) {
+    mDevice->DrawClearRegion(mPostClear);
   }
 
   
@@ -487,7 +506,7 @@ RenderViewMLGPU::PrepareDepthBuffer()
 }
 
 void
-RenderViewMLGPU::PrepareClear()
+RenderViewMLGPU::PrepareClears()
 {
   
   
@@ -507,7 +526,17 @@ RenderViewMLGPU::PrepareClear()
   }
 
   nsTArray<IntRect> rects = ToRectArray(region);
-  mDevice->PrepareClearRegion(&mClear, Move(rects), sortIndex);
+  mDevice->PrepareClearRegion(&mPreClear, Move(rects), sortIndex);
+
+  if (!mPostClearRegion.IsEmpty()) {
+    
+    
+    
+    
+    
+    nsTArray<IntRect> rects = ToRectArray(mPostClearRegion);
+    mDevice->PrepareClearRegion(&mPostClear, Move(rects), Nothing());
+  }
 }
 
 } 

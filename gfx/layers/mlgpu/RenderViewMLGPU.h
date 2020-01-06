@@ -71,8 +71,7 @@ private:
   void AddItemFrontToBack(LayerMLGPU* aLayer, ItemInfo& aItem);
   void AddItemBackToFront(LayerMLGPU* aLayer, ItemInfo& aItem);
 
-  void PrepareClear();
-  void DrawClear();
+  void PrepareClears();
 
   void ExecutePass(RenderPassMLGPU* aPass);
 
@@ -92,7 +91,12 @@ private:
   ConstantBufferSection mWorldConstants;
 
   
-  ClearRegionHelper mClear;
+  
+  ClearRegionHelper mPreClear;
+
+  
+  nsIntRegion mPostClearRegion;
+  ClearRegionHelper mPostClear;
 
   
   RefPtr<MLGRenderTarget> mTarget;
