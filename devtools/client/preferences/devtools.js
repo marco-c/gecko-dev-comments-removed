@@ -1,7 +1,6 @@
-# -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 
 pref("devtools.devedition.promo.shown", false);
@@ -77,6 +76,13 @@ pref("devtools.gridinspector.showGridAreas", false);
 pref("devtools.gridinspector.showGridLineNumbers", false);
 pref("devtools.gridinspector.showGridOutline", false);
 pref("devtools.gridinspector.showInfiniteLines", false);
+
+
+pref("devtools.computed.boxmodel.opened", true);
+
+pref("devtools.layout.boxmodel.opened", true);
+
+pref("devtools.layout.grid.opened", true);
 
 
 pref("devtools.eyedropper.zoom", 6);
