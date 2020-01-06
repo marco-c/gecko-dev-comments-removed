@@ -176,13 +176,13 @@ var removeTab = Task.async(function* (tab) {
 
 
 
-var refreshTab = Task.async(function*(tab) {
+var refreshTab = async function (tab = gBrowser.selectedTab) {
   info("Refreshing tab.");
   const finished = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.reloadTab(gBrowser.selectedTab);
-  yield finished;
+  gBrowser.reloadTab(tab);
+  await finished;
   info("Tab finished refreshing.");
-});
+};
 
 
 

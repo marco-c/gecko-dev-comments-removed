@@ -36,7 +36,7 @@ add_task(function* () {
   
   
   sourceSeen = waitForSourceLoad(toolbox, JS_URL);
-  yield refreshTab(tab);
+  yield refreshTab();
   yield sourceSeen;
 
   info(`checking post-reload original location for ${JS_URL}:${GENERATED_LINE}`);
