@@ -1624,7 +1624,7 @@ CacheIndex::ProcessPendingOperations()
             
             
             
-            mIndex.RemoveEntry(*update->Hash());
+            mIndex.RemoveEntry(entry);
             entry = nullptr;
           } else {
             entry->MarkRemoved();
