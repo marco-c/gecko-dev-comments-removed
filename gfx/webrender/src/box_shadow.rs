@@ -4,13 +4,14 @@
 
 use api::{BorderRadiusKind, ColorF, LayerPoint, LayerRect, LayerSize, LayerVector2D};
 use api::{BorderRadius, BoxShadowClipMode, LayoutSize, LayerPrimitiveInfo};
-use api::{ClipMode, ComplexClipRegion, LocalClip, ClipAndScrollInfo};
+use api::{ClipMode, ComplexClipRegion, EdgeAaSegmentMask, LocalClip, ClipAndScrollInfo};
 use clip::ClipSource;
 use frame_builder::FrameBuilder;
 use prim_store::{PrimitiveContainer, RectangleContent, RectanglePrimitive};
 use prim_store::{BrushMaskKind, BrushKind, BrushPrimitive};
 use picture::PicturePrimitive;
 use util::RectHelpers;
+use render_task::MAX_BLUR_STD_DEVIATION;
 
 
 pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
@@ -104,6 +105,7 @@ impl FrameBuilder {
                 clips,
                 PrimitiveContainer::Rectangle(RectanglePrimitive {
                     content: RectangleContent::Fill(*color),
+                    edge_aa_segment_mask: EdgeAaSegmentMask::empty(),
                 }),
             );
         } else {
@@ -229,7 +231,17 @@ impl FrameBuilder {
                     
                     
                     
-                    let brush_rect = brush_rect.inflate(1.0, 1.0);
+                    
+                    
+                    
+                    let mut adjusted_blur_std_deviation = blur_radius * 0.5;
+                    let mut inflate_size = 1.0;
+                    while adjusted_blur_std_deviation > MAX_BLUR_STD_DEVIATION {
+                        adjusted_blur_std_deviation *= 0.5;
+                        inflate_size += 1.0;
+                    }
+
+                    let brush_rect = brush_rect.inflate(inflate_size, inflate_size);
                     let brush_prim = BrushPrimitive {
                         kind: BrushKind::Mask {
                             clip_mode: brush_clip_mode,
@@ -264,7 +276,7 @@ impl FrameBuilder {
                     
                     
                     
-                    let pic_rect = prim_info.rect.inflate(1.0, 1.0);
+                    let pic_rect = prim_info.rect.inflate(inflate_size, inflate_size);
                     let pic_info = LayerPrimitiveInfo::with_clip_rect(
                         pic_rect,
                         prim_info.rect

@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+extern crate euclid;
 extern crate gleam;
 extern crate glutin;
 extern crate webrender;
@@ -10,12 +19,11 @@ extern crate webrender;
 mod boilerplate;
 
 use boilerplate::{Example, HandyDandyRectBuilder};
+use euclid::Radians;
 use webrender::api::*;
 
-
-
-
 struct App {
+    property_key: PropertyBindingKey<LayoutTransform>,
     transform: LayoutTransform,
 }
 
@@ -30,15 +38,21 @@ impl Example for App {
         _document_id: DocumentId,
     ) {
         
-        
-        
-        let bounds = (0, 0).to(100, 100);
-        let info = LayoutPrimitiveInfo::new(bounds);
+        let bounds = (0, 0).to(200, 200);
+        let complex_clip = ComplexClipRegion {
+            rect: bounds,
+            radii: BorderRadius::uniform(50.0),
+            mode: ClipMode::Clip,
+        };
+        let info = LayoutPrimitiveInfo {
+            local_clip: LocalClip::RoundedRect(bounds, complex_clip),
+            .. LayoutPrimitiveInfo::new(bounds)
+        };
 
         builder.push_stacking_context(
             &info,
             ScrollPolicy::Scrollable,
-            Some(PropertyBinding::Binding(PropertyBindingKey::new(42))),
+            Some(PropertyBinding::Binding(self.property_key)),
             TransformStyle::Flat,
             None,
             MixBlendMode::Normal,
@@ -54,24 +68,27 @@ impl Example for App {
     fn on_event(&mut self, event: glutin::Event, api: &RenderApi, document_id: DocumentId) -> bool {
         match event {
             glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(key)) => {
-                let offset = match key {
-                    glutin::VirtualKeyCode::Down => (0.0, 10.0),
-                    glutin::VirtualKeyCode::Up => (0.0, -10.0),
-                    glutin::VirtualKeyCode::Right => (10.0, 0.0),
-                    glutin::VirtualKeyCode::Left => (-10.0, 0.0),
+                let (offset_x, offset_y, angle) = match key {
+                    glutin::VirtualKeyCode::Down => (0.0, 10.0, 0.0),
+                    glutin::VirtualKeyCode::Up => (0.0, -10.0, 0.0),
+                    glutin::VirtualKeyCode::Right => (10.0, 0.0, 0.0),
+                    glutin::VirtualKeyCode::Left => (-10.0, 0.0, 0.0),
+                    glutin::VirtualKeyCode::Comma => (0.0, 0.0, 0.1),
+                    glutin::VirtualKeyCode::Period => (0.0, 0.0, -0.1),
                     _ => return false,
                 };
                 
                 
                 
                 let new_transform = self.transform
-                    .post_translate(LayoutVector3D::new(offset.0, offset.1, 0.0));
+                    .pre_rotate(0.0, 0.0, 1.0, Radians::new(angle))
+                    .post_translate(LayoutVector3D::new(offset_x, offset_y, 0.0));
                 api.generate_frame(
                     document_id,
                     Some(DynamicProperties {
                         transforms: vec![
                             PropertyValue {
-                                key: PropertyBindingKey::new(42),
+                                key: self.property_key,
                                 value: new_transform,
                             },
                         ],
@@ -89,7 +106,8 @@ impl Example for App {
 
 fn main() {
     let mut app = App {
-        transform: LayoutTransform::identity(),
+        property_key: PropertyBindingKey::new(42), 
+        transform: LayoutTransform::create_translation(0.0, 0.0, 0.0),
     };
     boilerplate::main_wrapper(&mut app, None);
 }
