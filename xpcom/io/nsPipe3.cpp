@@ -668,6 +668,7 @@ nsPipe::GetReadSegment(nsPipeReadState& aReadState, const char*& aSegment,
 
   aSegment = aReadState.mReadCursor;
   aLength = aReadState.mReadLimit - aReadState.mReadCursor;
+  MOZ_DIAGNOSTIC_ASSERT(aLength <= aReadState.mAvailable);
 
   return NS_OK;
 }
@@ -815,8 +816,6 @@ nsPipe::DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents)
     return;
   }
 
-  aReadState.mAvailable = 0;
-
   while(mWriteSegment >= aReadState.mSegment) {
 
     
@@ -830,6 +829,13 @@ nsPipe::DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents)
     
     AdvanceReadSegment(aReadState, mon);
   }
+
+  
+  
+  
+  aReadState.mAvailable = 0;
+  aReadState.mReadCursor = nullptr;
+  aReadState.mReadLimit = nullptr;
 
   
   
