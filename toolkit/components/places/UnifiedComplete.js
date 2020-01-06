@@ -177,16 +177,20 @@ function defaultQuery(conditions = "") {
             ON t.url = h.url
            AND t.userContextId = :userContextId
      WHERE h.frecency <> 0
-       AND AUTOCOMPLETE_MATCH(:searchString, h.url,
-                              CASE WHEN bookmarked THEN
-                                IFNULL(btitle, h.title)
-                              ELSE h.title END,
-                              CASE WHEN bookmarked THEN
-                                tags
-                              ELSE '' END,
+       AND CASE WHEN bookmarked
+         THEN
+           AUTOCOMPLETE_MATCH(:searchString, h.url,
+                              IFNULL(btitle, h.title), tags,
                               h.visit_count, h.typed,
-                              bookmarked, t.open_count,
+                              1, t.open_count,
                               :matchBehavior, :searchBehavior)
+         ELSE
+           AUTOCOMPLETE_MATCH(:searchString, h.url,
+                              h.title, '',
+                              h.visit_count, h.typed,
+                              0, t.open_count,
+                              :matchBehavior, :searchBehavior)
+         END
        ${conditions}
      ORDER BY h.frecency DESC, h.id DESC
      LIMIT :maxResults`;
