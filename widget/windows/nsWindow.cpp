@@ -4286,6 +4286,47 @@ bool nsWindow::DispatchPluginEvent(UINT aMessage,
   return ret;
 }
 
+bool nsWindow::TouchEventShouldStartDrag(EventMessage aEventMessage,
+                                         LayoutDeviceIntPoint aEventPoint)
+{
+  
+  if (aEventMessage == eMouseDoubleClick) {
+    return true;
+  }
+
+  
+  
+  if (aEventMessage == eMouseDown) {
+    WidgetMouseEvent hittest(true, eMouseHitTest, this,
+                             WidgetMouseEvent::eReal);
+    hittest.mRefPoint = aEventPoint;
+    hittest.mIgnoreRootScrollFrame = true;
+    hittest.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
+    DispatchInputEvent(&hittest);
+
+    EventTarget* target = hittest.GetDOMEventTarget();
+    if (target) {
+      nsCOMPtr<nsIContent> node = do_QueryInterface(target);
+
+      
+      
+      while (node) {
+        if (node->IsElement()) {
+          nsAutoString startDrag;
+          node->AsElement()->GetAttribute(
+            NS_LITERAL_STRING("touchdownstartsdrag"), startDrag);
+          if (!startDrag.IsEmpty()) {
+            return true;
+          }
+        }
+        node = node->GetParent();
+      }
+    }
+  }
+
+  return false;
+}
+
 
 bool
 nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
@@ -4341,8 +4382,9 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       
       
       
+      
       MOZ_ASSERT(mAPZC);
-      if (aEventMessage == eMouseDoubleClick) {
+      if (TouchEventShouldStartDrag(aEventMessage, eventPoint)) {
         aEventMessage = eMouseTouchDrag;
       } else {
         return result;

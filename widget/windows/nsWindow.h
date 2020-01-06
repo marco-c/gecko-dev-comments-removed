@@ -268,6 +268,8 @@ public:
   bool WidgetTypeSupportsAcceleration() override;
 
   void                    ForcePresent();
+  bool                    TouchEventShouldStartDrag(mozilla::EventMessage aEventMessage,
+                                                    LayoutDeviceIntPoint aEventPoint);
 
   
 
