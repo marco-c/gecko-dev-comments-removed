@@ -219,7 +219,12 @@ CaptureStreamTestHelper2D.prototype.clear = function(canvas) {
 };
 
 
-CaptureStreamTestHelper2D.prototype.drawColor = function(canvas, color) {
+CaptureStreamTestHelper2D.prototype.drawColor = function(canvas, color,
+    { offsetX = 0,
+      offsetY = 0,
+      width = canvas.width / 2,
+      height = canvas.height / 2,
+    } = {}) {
   var ctx = canvas.getContext('2d');
   var rgba = color.data.slice(); 
   rgba[3] = rgba[3] / 255.0; 
@@ -227,7 +232,7 @@ CaptureStreamTestHelper2D.prototype.drawColor = function(canvas, color) {
   ctx.fillStyle = "rgba(" + rgba.join(',') + ")";
 
   
-  ctx.fillRect(0, 0, canvas.width / 2, canvas.height / 2);
+  ctx.fillRect(offsetX, offsetY, width, height);
 };
 
 
