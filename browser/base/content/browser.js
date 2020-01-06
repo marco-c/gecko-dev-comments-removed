@@ -1498,6 +1498,9 @@ var gBrowserInit = {
       }
     }
 
+    
+    setTimeout(function() { SafeBrowsing.init(); }, 2000);
+
     Services.obs.addObserver(gIdentityHandler, "perm-changed");
     Services.obs.addObserver(gRemoteControl, "remote-active");
     Services.obs.addObserver(gSessionHistoryObserver, "browser:purge-session-history");
@@ -4988,18 +4991,8 @@ var CombinedStopReload = {
     });
   },
 
-  
-
-
-  setAnimationImageHeightRelativeToToolbarButtonHeight() {
-    let dwu = window.getInterface(Ci.nsIDOMWindowUtils);
-    let toolbarItem = this.stopReloadContainer.closest(".customization-target > toolbaritem");
-    let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
-    toolbarItem.style.setProperty("--toolbarbutton-height", bounds.height + "px");
-  },
-
   switchToStop(aRequest, aWebProgress) {
-    if (!this._initialized)
+    if (!this._initialized || !this._shouldSwitch(aRequest))
       return;
 
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
@@ -5009,17 +5002,16 @@ var CombinedStopReload = {
                         this.animate;
 
     this._cancelTransition();
-    if (shouldAnimate) {
-      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
+    if (shouldAnimate)
       this.stopReloadContainer.setAttribute("animate", "true");
-    } else {
+    else
       this.stopReloadContainer.removeAttribute("animate");
-    }
     this.reload.setAttribute("displaystop", "true");
   },
 
   switchToReload(aRequest, aWebProgress) {
-    if (!this._initialized)
+    if (!this._initialized || !this._shouldSwitch(aRequest) ||
+        !this.reload.hasAttribute("displaystop"))
       return;
 
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
@@ -5028,12 +5020,10 @@ var CombinedStopReload = {
                         !aWebProgress.isLoadingDocument &&
                         this.animate;
 
-    if (shouldAnimate) {
-      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
+    if (shouldAnimate)
       this.stopReloadContainer.setAttribute("animate", "true");
-    } else {
+    else
       this.stopReloadContainer.removeAttribute("animate");
-    }
 
     this.reload.removeAttribute("displaystop");
 
@@ -5056,6 +5046,19 @@ var CombinedStopReload = {
       self.reload.disabled = XULBrowserWindow.reloadCommand
                                              .getAttribute("disabled") == "true";
     }, 650, this);
+  },
+
+  _shouldSwitch(aRequest) {
+    if (!aRequest ||
+        !aRequest.originalURI ||
+        aRequest.originalURI.spec.startsWith("about:reader"))
+      return true;
+
+    if (aRequest.originalURI.schemeIs("chrome") ||
+        aRequest.originalURI.schemeIs("about"))
+      return false;
+
+    return true;
   },
 
   _cancelTransition() {
