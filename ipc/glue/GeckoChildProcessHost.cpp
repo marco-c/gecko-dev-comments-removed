@@ -147,14 +147,18 @@ GeckoChildProcessHost::GetPathToBinary(FilePath& exePath, GeckoProcessType proce
     if (!::GetModuleFileNameW(nullptr, exePathBuf, MAXPATHLEN)) {
       MOZ_CRASH("GetModuleFileNameW failed (FIXME)");
     }
-    std::wstring exePathStr = exePathBuf;
 #if defined(MOZ_SANDBOX)
     
     
     
-    widget::WinUtils::ResolveJunctionPointsAndSymLinks(exePathStr);
+    std::wstring exePathStr = exePathBuf;
+    if (widget::WinUtils::ResolveJunctionPointsAndSymLinks(exePathStr)) {
+      exePath = FilePath::FromWStringHack(exePathStr);
+    } else
 #endif
-    exePath = FilePath::FromWStringHack(exePathStr);
+    {
+      exePath = FilePath::FromWStringHack(exePathBuf);
+    }
 #elif defined(OS_POSIX)
     exePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
 #else
