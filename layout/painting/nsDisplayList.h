@@ -2515,8 +2515,13 @@ public:
 
 
 
+
+
+
+
   nsRect GetClippedBoundsWithRespectToASR(nsDisplayListBuilder* aBuilder,
-                                          const ActiveScrolledRoot* aASR) const;
+                                          const ActiveScrolledRoot* aASR,
+                                          nsRect* aVisibleRect = nullptr) const;
 
   
 
@@ -3819,7 +3824,9 @@ public:
 
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override
   {
-    mBounds = mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot);
+    nsRect visibleRect;
+    mBounds = mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot,
+                                                     &visibleRect);
     
     
     
@@ -3827,7 +3834,7 @@ public:
     
     
     
-    mVisibleRect.UnionRect(mBaseVisibleRect, mList.GetVisibleRect());
+    mVisibleRect.UnionRect(mBaseVisibleRect, visibleRect);
   }
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override;
