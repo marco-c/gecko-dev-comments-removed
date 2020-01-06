@@ -38,6 +38,17 @@ MOZ_END_STD_NAMESPACE
 #include <stdio.h>
 
 
+namespace {
+
+
+
+
+
+uint32_t min_buffered_audio_frame(uint32_t sample_rate)
+{
+  return sample_rate / 20;
+}
+}
 
 int to_speex_quality(cubeb_resampler_quality q);
 
@@ -75,7 +86,8 @@ public:
   passthrough_resampler(cubeb_stream * s,
                         cubeb_data_callback cb,
                         void * ptr,
-                        uint32_t input_channels);
+                        uint32_t input_channels,
+                        uint32_t sample_rate);
 
   virtual long fill(void * input_buffer, long * input_frames_count,
                     void * output_buffer, long output_frames);
@@ -85,6 +97,15 @@ public:
     return 0;
   }
 
+  void drop_audio_if_needed()
+  {
+    uint32_t to_keep = min_buffered_audio_frame(sample_rate);
+    uint32_t available = samples_to_frames(internal_input_buffer.length());
+    if (available > to_keep) {
+      internal_input_buffer.pop(nullptr, frames_to_samples(available - to_keep));
+    }
+  }
+
 private:
   cubeb_stream * const stream;
   const cubeb_data_callback data_callback;
@@ -92,6 +113,7 @@ private:
   
 
   auto_array<T> internal_input_buffer;
+  uint32_t sample_rate;
 };
 
 
@@ -164,6 +186,7 @@ public:
                                 int quality)
   : processor(channels)
   , resampling_ratio(static_cast<float>(source_rate) / target_rate)
+  , source_rate(source_rate)
   , additional_latency(0)
   , leftover_samples(0)
   {
@@ -296,6 +319,16 @@ public:
     resampling_in_buffer.set_length(leftover_samples +
                                     frames_to_samples(written_frames));
   }
+
+  void drop_audio_if_needed()
+  {
+    
+    uint32_t available = samples_to_frames(resampling_in_buffer.length());
+    uint32_t to_keep = min_buffered_audio_frame(source_rate);
+    if (available > to_keep) {
+      resampling_in_buffer.pop(nullptr, frames_to_samples(available - to_keep));
+    }
+  }
 private:
   
 
@@ -332,6 +365,7 @@ private:
   SpeexResamplerState * speex_resampler;
   
   const float resampling_ratio;
+  const uint32_t source_rate;
   
 
   auto_array<T> resampling_in_buffer;
@@ -351,10 +385,12 @@ public:
   
 
 
-  delay_line(uint32_t frames, uint32_t channels)
+
+  delay_line(uint32_t frames, uint32_t channels, uint32_t sample_rate)
     : processor(channels)
     , length(frames)
     , leftover_samples(0)
+    , sample_rate(sample_rate)
   {
     
     delay_input_buffer.push_silence(frames * channels);
@@ -444,6 +480,15 @@ public:
   {
     return length;
   }
+
+  void drop_audio_if_needed()
+  {
+    size_t available = samples_to_frames(delay_input_buffer.length());
+    uint32_t to_keep = min_buffered_audio_frame(sample_rate);
+    if (available > to_keep) {
+      delay_input_buffer.pop(nullptr, frames_to_samples(available - to_keep));
+    }
+  }
 private:
   
   uint32_t length;
@@ -455,6 +500,7 @@ private:
   
 
   auto_array<T> delay_output_buffer;
+  uint32_t sample_rate;
 };
 
 
@@ -485,7 +531,8 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
       (output_params && !input_params && (output_params->rate == target_rate))) {
     return new passthrough_resampler<T>(stream, callback,
                                         user_ptr,
-                                        input_params ? input_params->channels : 0);
+                                        input_params ? input_params->channels : 0,
+                                        target_rate);
   }
 
   
@@ -517,13 +564,15 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
 
   if (input_resampler && !output_resampler && input_params && output_params) {
     output_delay.reset(new delay_line<T>(input_resampler->latency(),
-                                         output_params->channels));
+                                         output_params->channels,
+                                         output_params->rate));
     if (!output_delay) {
       return NULL;
     }
   } else if (output_resampler && !input_resampler && input_params && output_params) {
     input_delay.reset(new delay_line<T>(output_resampler->latency(),
-                                        input_params->channels));
+                                        input_params->channels,
+                                        output_params->rate));
     if (!input_delay) {
       return NULL;
     }
