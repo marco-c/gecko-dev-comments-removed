@@ -85,7 +85,6 @@
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layout/RenderFrameParent.h"
-#include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/media/MediaParent.h"
 #include "mozilla/Move.h"
@@ -95,7 +94,6 @@
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/ScriptPreloader.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
@@ -286,7 +284,6 @@ using namespace mozilla::net;
 using namespace mozilla::jsipc;
 using namespace mozilla::psm;
 using namespace mozilla::widget;
-using mozilla::loader::PScriptCacheParent;
 
 
 template<>
@@ -2270,14 +2267,12 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 
   
   
+  mMessageManager->InitWithCallback(this);
+
+  
+  
   
   Unused << SendRemoteType(mRemoteType);
-
-  ScriptPreloader::InitContentChild(*this);
-
-  
-  
-  mMessageManager->InitWithCallback(this);
 
   
   
@@ -3123,19 +3118,6 @@ bool
 ContentParent::DeallocPTestShellParent(PTestShellParent* shell)
 {
   delete shell;
-  return true;
-}
-
-PScriptCacheParent*
-ContentParent::AllocPScriptCacheParent(const FileDescOrError& cacheFile, const bool& wantCacheData)
-{
-  return new loader::ScriptCacheParent(wantCacheData);
-}
-
-bool
-ContentParent::DeallocPScriptCacheParent(PScriptCacheParent* cache)
-{
-  delete static_cast<loader::ScriptCacheParent*>(cache);
   return true;
 }
 

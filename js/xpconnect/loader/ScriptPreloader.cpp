@@ -6,7 +6,6 @@
 
 #include "mozilla/ScriptPreloader.h"
 #include "ScriptPreloader-inl.h"
-#include "mozilla/loader/ScriptCacheActors.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -16,6 +15,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ScriptSettings.h"
 
 #include "MainThreadUtils.h"
 #include "nsDebug.h"
@@ -29,7 +29,6 @@
 #include "xpcpublic.h"
 
 #define DELAYED_STARTUP_TOPIC "browser-delayed-startup-finished"
-#define DOC_ELEM_INSERTED_TOPIC "document-element-inserted"
 #define CLEANUP_TOPIC "xpcom-shutdown"
 #define SHUTDOWN_TOPIC "quit-application-granted"
 #define CACHE_FLUSH_TOPIC "startupcache-invalidate"
@@ -42,8 +41,6 @@ static LazyLogModule gLog("ScriptPreloader");
 }
 
 using mozilla::dom::AutoJSAPI;
-using mozilla::dom::ContentChild;
-using mozilla::dom::ContentParent;
 using namespace mozilla::loader;
 
 ProcessType ScriptPreloader::sProcessType;
@@ -138,36 +135,6 @@ ScriptPreloader::GetChildSingleton()
     return *singleton;
 }
 
-void
-ScriptPreloader::InitContentChild(ContentParent& parent)
-{
-    auto& cache = GetChildSingleton();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    auto processType = GetChildProcessType(parent.GetRemoteType());
-    bool wantScriptData = !cache.mInitializedProcesses.contains(processType);
-    cache.mInitializedProcesses += processType;
-
-    auto fd = cache.mCacheData.cloneFileDescriptor();
-    if (fd.IsValid()) {
-        Unused << parent.SendPScriptCacheConstructor(fd, wantScriptData);
-    } else {
-        Unused << parent.SendPScriptCacheConstructor(NS_ERROR_FILE_NOT_FOUND, wantScriptData);
-    }
-}
 
 ProcessType
 ScriptPreloader::GetChildProcessType(const nsAString& remoteType)
@@ -178,8 +145,13 @@ ScriptPreloader::GetChildProcessType(const nsAString& remoteType)
     return ProcessType::Web;
 }
 
-
 namespace {
+
+struct MOZ_RAII AutoSafeJSAPI : public AutoJSAPI
+{
+    AutoSafeJSAPI() { Init(); }
+};
+
 
 static void
 TraceOp(JSTracer* trc, void* data)
@@ -216,18 +188,7 @@ ScriptPreloader::ScriptPreloader()
 
     nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     MOZ_RELEASE_ASSERT(obs);
-
-    if (XRE_IsParentProcess()) {
-        
-        
-        obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false);
-    } else {
-        
-        
-        
-        
-        obs->AddObserver(this, DOC_ELEM_INSERTED_TOPIC, false);
-    }
+    obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false);
     obs->AddObserver(this, SHUTDOWN_TOPIC, false);
     obs->AddObserver(this, CLEANUP_TOPIC, false);
     obs->AddObserver(this, CACHE_FLUSH_TOPIC, false);
@@ -310,27 +271,16 @@ ScriptPreloader::FlushCache()
 nsresult
 ScriptPreloader::Observe(nsISupports* subject, const char* topic, const char16_t* data)
 {
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
     if (!strcmp(topic, DELAYED_STARTUP_TOPIC)) {
+        nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
         obs->RemoveObserver(this, DELAYED_STARTUP_TOPIC);
 
-        MOZ_ASSERT(XRE_IsParentProcess());
-
         mStartupFinished = true;
 
-        if (mChildCache) {
+
+        if (XRE_IsParentProcess() && mChildCache) {
             Unused << NS_NewNamedThread("SaveScripts",
                                         getter_AddRefs(mSaveThread), this);
-        }
-    } else if (!strcmp(topic, DOC_ELEM_INSERTED_TOPIC)) {
-        obs->RemoveObserver(this, DOC_ELEM_INSERTED_TOPIC);
-
-        MOZ_ASSERT(XRE_IsContentProcess());
-
-        mStartupFinished = true;
-
-        if (mChildActor) {
-            mChildActor->Finalize(mSavedScripts);
         }
     } else if (!strcmp(topic, SHUTDOWN_TOPIC)) {
         ForceWriteCacheFile();
@@ -401,31 +351,6 @@ ScriptPreloader::InitCache(const nsAString& basePath)
 
     MOZ_TRY(OpenCache());
 
-    return InitCacheInternal();
-}
-
-Result<Ok, nsresult>
-ScriptPreloader::InitCache(const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCacheChild* cacheChild)
-{
-    MOZ_ASSERT(XRE_IsContentProcess());
-
-    mCacheInitialized = true;
-    mChildActor = cacheChild;
-
-    RegisterWeakMemoryReporter(this);
-
-    if (cacheFile.isNothing()){
-        return Ok();
-    }
-
-    MOZ_TRY(mCacheData.init(cacheFile.ref()));
-
-    return InitCacheInternal();
-}
-
-Result<Ok, nsresult>
-ScriptPreloader::InitCacheInternal()
-{
     auto size = mCacheData.size();
 
     uint32_t headerSize;
@@ -542,7 +467,7 @@ ScriptPreloader::PrepareCacheWrite()
         
         bool found = false;
         for (auto script : mSavedScripts) {
-            if (!script->HasRange() || script->HasArray()) {
+            if (script->mXDRRange.isNothing()) {
                 found = true;
                 break;
             }
@@ -659,10 +584,7 @@ ScriptPreloader::WriteCache()
 
     for (auto script : mSavedScripts) {
         MOZ_TRY(Write(fd, script->Range().begin().get(), script->mSize));
-
-        if (script->mScript) {
-            script->FreeData();
-        }
+        script->mXDRData.reset();
     }
 
     NS_TRY(cacheFile->MoveTo(nullptr, mBaseName + NS_LITERAL_STRING(".bin")));
@@ -707,11 +629,14 @@ ScriptPreloader::FindScript(LinkedList<CachedScript>& scripts, const nsCString& 
 
 void
 ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
-                            JS::HandleScript jsscript)
+                            JS::HandleScript script)
 {
+    if (mStartupFinished || !mCacheInitialized) {
+        return;
+    }
     
     
-    if (mStartupFinished || !mCacheInitialized || cachePath.FindChar('?') >= 0) {
+    if (cachePath.FindChar('?') >= 0) {
         return;
     }
 
@@ -721,58 +646,28 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
         return;
     }
 
-    CachedScript* script = mScripts.Get(cachePath);
-    bool restored = script && FindScript(mRestoredScripts, cachePath);
+    bool exists = mScripts.Get(cachePath);
 
-    if (restored) {
-        script->remove();
-        mSavedScripts.insertBack(script);
-
-        MOZ_ASSERT(jsscript);
-        script->mScript = jsscript;
-        script->mReadyToExecute = true;
-    } else if (!script) {
-        script = new CachedScript(*this, url, cachePath, jsscript);
-        mSavedScripts.insertBack(script);
-        mScripts.Put(cachePath, script);
-    } else {
-        return;
+    CachedScript* restored = nullptr;
+    if (exists) {
+        restored = FindScript(mRestoredScripts, cachePath);
     }
 
-    script->mProcessTypes += CurrentProcessType();
-}
-
-void
-ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
-                            ProcessType processType, nsTArray<uint8_t>&& xdrData)
-{
-    CachedScript* script = mScripts.Get(cachePath);
-    bool restored = script && FindScript(mRestoredScripts, cachePath);
-
     if (restored) {
-        script->remove();
-        mSavedScripts.insertBack(script);
+        restored->remove();
+        mSavedScripts.insertBack(restored);
 
-        script->mReadyToExecute = true;
-    } else {
-        if (!script) {
-            script = new CachedScript(this, url, cachePath, nullptr);
-            mSavedScripts.insertBack(script);
-            mScripts.Put(cachePath, script);
-        }
+        MOZ_ASSERT(script);
+        restored->mProcesses += CurrentProcessType();
+        restored->mScript = script;
+        restored->mReadyToExecute = true;
+    } else if (!exists) {
+        auto cachedScript = new CachedScript(*this, url, cachePath, script);
+        cachedScript->mProcesses += CurrentProcessType();
 
-        if (!script->HasRange()) {
-            MOZ_ASSERT(!script->HasArray());
-
-            script->mSize = xdrData.Length();
-            script->mXDRData.construct<nsTArray<uint8_t>>(Forward<nsTArray<uint8_t>>(xdrData));
-
-            auto& data = script->Array();
-            script->mXDRRange.emplace(data.Elements(), data.Length());
-        }
+        mSavedScripts.insertBack(cachedScript);
+        mScripts.Put(cachePath, cachedScript);
     }
-
-    script->mProcessTypes += processType;
 }
 
 JSScript*
@@ -880,11 +775,11 @@ ScriptPreloader::CachedScript::XDREncode(JSContext* cx)
     JSAutoCompartment ac(cx, mScript);
     JS::RootedScript jsscript(cx, mScript);
 
-    mXDRData.construct<JS::TranscodeBuffer>();
+    mXDRData.emplace();
 
-    JS::TranscodeResult code = JS::EncodeScript(cx, Buffer(), jsscript);
+    JS::TranscodeResult code = JS::EncodeScript(cx, Data(), jsscript);
     if (code == JS::TranscodeResult_Ok) {
-        mXDRRange.emplace(Buffer().begin(), Buffer().length());
+        mXDRRange.emplace(Data().begin(), Data().length());
         return true;
     }
     JS_ClearPendingException(cx);
@@ -919,15 +814,11 @@ ScriptPreloader::CachedScript::GetJSScript(JSContext* cx)
     
     
     if (!mToken) {
-        MOZ_ASSERT(HasRange());
+        MOZ_ASSERT(mXDRRange.isSome());
 
         JS::RootedScript script(cx);
         if (JS::DecodeScript(cx, Range(), &script)) {
             mScript = script;
-
-            if (mCache.mSaveComplete) {
-                FreeData();
-            }
         }
 
         return mScript;

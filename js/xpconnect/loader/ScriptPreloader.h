@@ -11,7 +11,6 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MaybeOneOf.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Range.h"
 #include "mozilla/Vector.h"
@@ -28,15 +27,8 @@
 #include <prio.h>
 
 namespace mozilla {
-namespace dom {
-    class ContentParent;
-}
-namespace ipc {
-    class FileDescriptor;
-}
 namespace loader {
     class InputBuffer;
-    class ScriptCacheChild;
 
     enum class ProcessType : uint8_t {
         Parent,
@@ -52,8 +44,6 @@ class ScriptPreloader : public nsIObserver
                       , public nsIRunnable
 {
     MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
-
-    friend class mozilla::loader::ScriptCacheChild;
 
 public:
     NS_DECL_THREADSAFE_ISUPPORTS
@@ -75,26 +65,15 @@ public:
     
     void NoteScript(const nsCString& url, const nsCString& cachePath, JS::HandleScript script);
 
-    void NoteScript(const nsCString& url, const nsCString& cachePath,
-                    ProcessType processType, nsTArray<uint8_t>&& xdrData);
-
     
     Result<Ok, nsresult> InitCache(const nsAString& = NS_LITERAL_STRING("scriptCache"));
 
-    Result<Ok, nsresult> InitCache(const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCacheChild* cacheChild);
-
-private:
-    Result<Ok, nsresult> InitCacheInternal();
-
-public:
     void Trace(JSTracer* trc);
 
     static ProcessType CurrentProcessType()
     {
         return sProcessType;
     }
-
-    static void InitContentChild(dom::ContentParent& parent);
 
 protected:
     virtual ~ScriptPreloader() = default;
@@ -150,16 +129,6 @@ private:
 
         void Cancel();
 
-        void FreeData()
-        {
-            
-            
-            if (!mXDRData.empty()) {
-                mXDRRange.reset();
-                mXDRData.destroy();
-            }
-        }
-
         
         
         bool XDREncode(JSContext* cx);
@@ -178,48 +147,29 @@ private:
 
         
         
-        JS::TranscodeBuffer& Buffer()
+        JS::TranscodeBuffer& Data()
         {
-            MOZ_ASSERT(HasBuffer());
-            return mXDRData.ref<JS::TranscodeBuffer>();
+            MOZ_ASSERT(mXDRData.isSome());
+            return mXDRData.ref();
         }
-
-        bool HasBuffer() { return mXDRData.constructed<JS::TranscodeBuffer>(); }
 
         
         const JS::TranscodeRange& Range()
         {
-            MOZ_ASSERT(HasRange());
+            MOZ_ASSERT(mXDRRange.isSome());
             return mXDRRange.ref();
         }
-
-        bool HasRange() { return mXDRRange.isSome(); }
-
-        nsTArray<uint8_t>& Array()
-        {
-            MOZ_ASSERT(HasArray());
-            return mXDRData.ref<nsTArray<uint8_t>>();
-        }
-
-        bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
-
 
         JSScript* GetJSScript(JSContext* cx);
 
         size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
         {
             auto size = mallocSizeOf(this);
-
-            if (HasArray()) {
-                size += Array().ShallowSizeOfExcludingThis(mallocSizeOf);
-            } else if (HasBuffer()) {
-                size += Buffer().sizeOfExcludingThis(mallocSizeOf);
-            } else {
-                return size;
+            if (mXDRData.isSome()) {
+                size += (mXDRData->sizeOfExcludingThis(mallocSizeOf) +
+                         mURL.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
+                         mCachePath.SizeOfExcludingThisEvenIfShared(mallocSizeOf));
             }
-
-            size += (mURL.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
-                     mCachePath.SizeOfExcludingThisEvenIfShared(mallocSizeOf));
             return size;
         }
 
@@ -259,7 +209,7 @@ private:
 
         
         
-        MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
+        Maybe<JS::TranscodeBuffer> mXDRData;
     };
 
     
@@ -352,12 +302,7 @@ private:
     
     static ProcessType sProcessType;
 
-    
-    
-    EnumSet<ProcessType> mInitializedProcesses{};
-
     RefPtr<ScriptPreloader> mChildCache;
-    ScriptCacheChild* mChildActor = nullptr;
 
     nsString mBaseName;
 
