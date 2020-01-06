@@ -81,10 +81,6 @@ var ecmaGlobals =
 var interfaceNamesInGlobalScope =
   [
 
-    "AbortController",
-
-    "AbortSignal",
-
     "Blob",
 
     "BroadcastChannel",
