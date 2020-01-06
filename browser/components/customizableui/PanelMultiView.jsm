@@ -868,7 +868,23 @@ this.PanelMultiView = class {
         
         
         const EXTRA_MARGIN_PX = 20;
-        this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
+        maxHeight -= EXTRA_MARGIN_PX;
+        this._viewStack.style.maxHeight = maxHeight + "px";
+
+        
+        
+        
+        
+        
+        
+        if (this._mainView.hasAttribute("blockinboxworkaround")) {
+          let mainViewHeight =
+              this._dwu.getBoundsWithoutFlushing(this._mainView).height;
+          if (mainViewHeight > maxHeight) {
+            this._mainView.style.height = maxHeight + "px";
+            this._mainView.setAttribute("exceeding", "true");
+          }
+        }
         break;
       case "popupshown":
         
@@ -889,6 +905,12 @@ this.PanelMultiView = class {
           this._panel.removeEventListener("mousemove", this);
           this._resetKeyNavigation();
           this._mainViewHeight = 0;
+        }
+        
+        
+        if (this._mainView.hasAttribute("blockinboxworkaround")) {
+          this._mainView.style.removeProperty("height");
+          this._mainView.removeAttribute("exceeding");
         }
         break;
     }
