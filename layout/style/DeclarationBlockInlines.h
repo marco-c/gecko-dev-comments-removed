@@ -46,6 +46,15 @@ DeclarationBlock::EnsureMutable()
     AsGecko()->AssertNotExpanded();
   }
 #endif
+  if (IsServo() && !IsDirty()) {
+    
+    
+    
+    
+    
+    return Clone();
+  }
+
   if (!IsMutable()) {
     return Clone();
   }
