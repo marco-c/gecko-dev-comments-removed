@@ -500,19 +500,22 @@ ChannelWrapper::Matches(const dom::MozRequestFilter& aFilter,
       return false;
     }
 
+    
+    
     bool isProxy = aOptions.mIsProxy && aExtension->HasPermission(nsGkAtoms::proxy);
-    if (!isProxy && IsSystemLoad()) {
-      return false;
-    }
-
-    if (auto origin = DocumentURLInfo()) {
-      nsAutoCString baseURL;
-      aExtension->GetBaseURL(baseURL);
-
-      if (!isProxy &&
-          !StringBeginsWith(origin->CSpec(), baseURL) &&
-          !aExtension->CanAccessURI(*origin)) {
+    if (!isProxy) {
+      if (IsSystemLoad()) {
         return false;
+      }
+
+      if (auto origin = DocumentURLInfo()) {
+        nsAutoCString baseURL;
+        aExtension->GetBaseURL(baseURL);
+
+        if (!StringBeginsWith(origin->CSpec(), baseURL) &&
+            !aExtension->CanAccessURI(*origin)) {
+          return false;
+        }
       }
     }
   }
