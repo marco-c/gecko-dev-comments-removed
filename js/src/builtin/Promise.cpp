@@ -2273,6 +2273,7 @@ PerformPromiseRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
 }
 
 
+
 static MOZ_MUST_USE JSObject*
 CommonStaticResolveRejectImpl(JSContext* cx, HandleValue thisVal, HandleValue argVal,
                               ResolutionMode mode)
@@ -2330,6 +2331,13 @@ CommonStaticResolveRejectImpl(JSContext* cx, HandleValue thisVal, HandleValue ar
 
     
     return promise;
+}
+
+MOZ_MUST_USE JSObject*
+js::PromiseResolve(JSContext* cx, HandleObject constructor, HandleValue value)
+{
+    RootedValue C(cx, ObjectValue(*constructor));
+    return CommonStaticResolveRejectImpl(cx, C, value, ResolveMode);
 }
 
 
@@ -3680,6 +3688,7 @@ CreatePromisePrototype(JSContext* cx, JSProtoKey key)
 static const JSFunctionSpec promise_methods[] = {
     JS_SELF_HOSTED_FN("catch", "Promise_catch", 1, 0),
     JS_FN("then", Promise_then, 2, 0),
+    JS_SELF_HOSTED_FN("finally", "Promise_finally", 1, 0),
     JS_FS_END
 };
 
