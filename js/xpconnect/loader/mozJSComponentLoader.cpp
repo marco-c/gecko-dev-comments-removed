@@ -448,7 +448,12 @@ mozJSComponentLoader::FindTargetObject(JSContext* aCx,
 
     
     
-    if (!aTargetObject) {
+    
+    
+    
+    
+    if (!aTargetObject ||
+        !IsLoaderGlobal(js::GetGlobalForObjectCrossCompartment(aTargetObject))) {
         aTargetObject.set(CurrentGlobalOrNull(aCx));
     }
 }
