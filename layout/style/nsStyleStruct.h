@@ -1476,23 +1476,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
 
   already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
-  void GetListStyleType(nsSubstring& aType) const { mCounterStyle->GetStyleName(aType); }
-  mozilla::CounterStyle* GetCounterStyle() const
-  {
-    return mCounterStyle.get();
-  }
-  void SetCounterStyle(mozilla::CounterStyle* aStyle)
-  {
-    
-    
-    MOZ_ASSERT(NS_IsMainThread() || !aStyle->IsDependentStyle());
-    mCounterStyle = aStyle;
-  }
-  void SetListStyleType(nsIAtom* aType, nsPresContext* aPresContext)
-  {
-    SetCounterStyle(aPresContext->CounterStyleManager()->BuildCounterStyle(aType));
-  }
-
   const nsStyleQuoteValues::QuotePairArray& GetQuotePairs() const;
 
   void SetQuotesInherit(const nsStyleList* aOther);
@@ -1502,8 +1485,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
 
   uint8_t mListStylePosition;                  
   RefPtr<nsStyleImageRequest> mListStyleImage; 
+  mozilla::CounterStylePtr mCounterStyle;      
 private:
-  RefPtr<mozilla::CounterStyle> mCounterStyle; 
   RefPtr<nsStyleQuoteValues> mQuotes;   
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 public:

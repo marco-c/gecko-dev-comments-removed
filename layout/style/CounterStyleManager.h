@@ -7,7 +7,7 @@
 #define mozilla_CounterStyleManager_h_
 
 #include "nsStringFwd.h"
-#include "nsRefPtrHashtable.h"
+#include "nsDataHashtable.h"
 #include "nsHashKeys.h"
 
 #include "nsStyleConsts.h"
@@ -96,8 +96,6 @@ public:
 
   virtual AnonymousCounterStyle* AsAnonymous() { return nullptr; }
 
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
 protected:
   int32_t mStyle;
 };
@@ -132,7 +130,7 @@ public:
   uint8_t GetSystem() const { return mSystem; }
   const nsTArray<nsString>& GetSymbols() const { return mSymbols; }
 
-  NS_INLINE_DECL_REFCOUNTING(AnonymousCounterStyle, override)
+  NS_INLINE_DECL_REFCOUNTING(AnonymousCounterStyle)
 
 private:
   ~AnonymousCounterStyle() {}
@@ -140,6 +138,105 @@ private:
   bool mSingleString;
   uint8_t mSystem;
   nsTArray<nsString> mSymbols;
+};
+
+
+
+
+class CounterStylePtr
+{
+public:
+  CounterStylePtr() : mRaw(0) {}
+  CounterStylePtr(const CounterStylePtr& aOther)
+    : mRaw(aOther.mRaw)
+  {
+    if (IsAnonymous()) {
+      AsAnonymous()->AddRef();
+    }
+  }
+  ~CounterStylePtr() { Reset(); }
+
+  CounterStylePtr& operator=(const CounterStylePtr& aOther)
+  {
+    if (this != &aOther) {
+      Reset();
+      new (this) CounterStylePtr(aOther);
+    }
+    return *this;
+  }
+  CounterStylePtr& operator=(decltype(nullptr))
+  {
+    Reset();
+    return *this;
+  }
+  CounterStylePtr& operator=(AnonymousCounterStyle* aCounterStyle)
+  {
+    Reset();
+    if (aCounterStyle) {
+      CounterStyle* raw = do_AddRef(aCounterStyle).take();
+      AssertPointerAligned(raw);
+      mRaw = reinterpret_cast<uintptr_t>(raw) | kAnonymousFlag;
+    }
+    return *this;
+  }
+  CounterStylePtr& operator=(CounterStyle* aCounterStyle)
+  {
+    Reset();
+    if (aCounterStyle) {
+      MOZ_ASSERT(!aCounterStyle->AsAnonymous());
+      AssertPointerAligned(aCounterStyle);
+      mRaw = reinterpret_cast<uintptr_t>(aCounterStyle);
+    }
+    return *this;
+  }
+
+  operator CounterStyle*() const & { return Get(); }
+  operator CounterStyle*() const && = delete;
+  CounterStyle* operator->() const { return Get(); }
+  explicit operator bool() const { return !!mRaw; }
+  bool operator!() const { return !mRaw; }
+  bool operator==(const CounterStylePtr& aOther) const
+    { return mRaw == aOther.mRaw; }
+  bool operator!=(const CounterStylePtr& aOther) const
+    { return mRaw != aOther.mRaw; }
+
+private:
+  CounterStyle* Get() const
+  {
+    return reinterpret_cast<CounterStyle*>(mRaw & ~kAnonymousFlag);
+  }
+  void AssertPointerAligned(CounterStyle* aPointer)
+  {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aPointer) & kAnonymousFlag));
+  }
+
+  bool IsAnonymous() const { return !!(mRaw & kAnonymousFlag); }
+  AnonymousCounterStyle* AsAnonymous()
+  {
+    MOZ_ASSERT(IsAnonymous());
+    return static_cast<AnonymousCounterStyle*>(
+      reinterpret_cast<CounterStyle*>(mRaw & ~kAnonymousFlag));
+  }
+
+  void Reset()
+  {
+    if (IsAnonymous()) {
+      AsAnonymous()->Release();
+    }
+    mRaw = 0;
+  }
+
+  
+  
+  
+  
+  static const uintptr_t kAnonymousFlag = 1;
+  uintptr_t mRaw;
 };
 
 class CounterStyleManager final
@@ -156,7 +253,7 @@ public:
   bool IsInitial() const
   {
     
-    return mCacheTable.Count() == 2;
+    return mStyles.Count() == 2;
   }
 
   CounterStyle* BuildCounterStyle(nsIAtom* aName);
@@ -176,14 +273,21 @@ public:
   
   
   bool NotifyRuleChanged();
+  
+  
+  
+  void CleanRetiredStyles();
 
   nsPresContext* PresContext() const { return mPresContext; }
 
   NS_INLINE_DECL_REFCOUNTING(CounterStyleManager)
 
 private:
+  void DestroyCounterStyle(CounterStyle* aCounterStyle);
+
   nsPresContext* mPresContext;
-  nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, CounterStyle> mCacheTable;
+  nsDataHashtable<nsRefPtrHashKey<nsIAtom>, CounterStyle*> mStyles;
+  nsTArray<CounterStyle*> mRetiredStyles;
 };
 
 } 
