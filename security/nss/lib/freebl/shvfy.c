@@ -19,6 +19,8 @@
 #include "pqg.h"
 #include "blapii.h"
 
+#ifndef NSS_FIPS_DISABLED
+
 
 
 
@@ -537,3 +539,23 @@ BLAPI_VerifySelf(const char *name)
     }
     return blapi_SHVerify(name, (PRFuncPtr)decodeInt, PR_TRUE);
 }
+
+#else 
+
+PRBool
+BLAPI_SHVerifyFile(const char *shName)
+{
+    return PR_FALSE;
+}
+PRBool
+BLAPI_SHVerify(const char *name, PRFuncPtr addr)
+{
+    return PR_FALSE;
+}
+PRBool
+BLAPI_VerifySelf(const char *name)
+{
+    return PR_FALSE;
+}
+
+#endif 

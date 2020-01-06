@@ -6,6 +6,8 @@
 
 
 
+#ifndef NSS_FIPS_DISABLED
+
 #include "seccomon.h"
 #include "lgdb.h"
 #include "blapi.h"
@@ -113,3 +115,5 @@ lg_FIPSEntryOK()
 #endif
     return lg_self_tests_success;
 }
+
+#endif 

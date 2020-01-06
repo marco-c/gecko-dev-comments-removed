@@ -6,6 +6,7 @@
 
 
 
+#ifndef NSS_FIPS_DISABLED
 #ifdef FREEBL_NO_DEPEND
 #include "stubs.h"
 #endif
@@ -1589,9 +1590,6 @@ static PRBool self_tests_freebl_ran = PR_FALSE;
 static PRBool self_tests_ran = PR_FALSE;
 static PRBool self_tests_freebl_success = PR_FALSE;
 static PRBool self_tests_success = PR_FALSE;
-#if defined(DEBUG)
-static PRBool fips_mode_available = PR_FALSE;
-#endif
 
 
 
@@ -1644,7 +1642,6 @@ bl_startup_tests(void)
 
     PORT_Assert(self_tests_freebl_ran == PR_FALSE);
     PORT_Assert(self_tests_success == PR_FALSE);
-    PORT_Assert(fips_mode_available == PR_FALSE);
     self_tests_freebl_ran = PR_TRUE;      
     self_tests_success = PR_FALSE;        
     self_tests_freebl_success = PR_FALSE; 
@@ -1713,3 +1710,4 @@ BL_FIPSEntryOK(PRBool freebl_only)
     PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
     return SECFailure;
 }
+#endif

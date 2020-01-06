@@ -320,8 +320,12 @@ FREEBL_GetVector(void)
         return NULL;
     }
 #endif
+
+#ifndef NSS_FIPS_DISABLED
     
+
     BL_POSTRan(PR_FALSE);
+#endif
 
     return &vector;
 }

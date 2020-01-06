@@ -22,6 +22,7 @@ struct NSSLOWHASHContextStr {
     void *hashCtxt;
 };
 
+#ifndef NSS_FIPS_DISABLED
 static int
 nsslow_GetFIPSEnabled(void)
 {
@@ -40,9 +41,10 @@ nsslow_GetFIPSEnabled(void)
         return 0;
     if (d != '1')
         return 0;
-#endif
+#endif 
     return 1;
 }
+#endif 
 
 static NSSLOWInitContext dummyContext = { 0 };
 static PRBool post_failed = PR_TRUE;
@@ -54,6 +56,7 @@ NSSLOW_Init(void)
     (void)FREEBL_InitStubs();
 #endif
 
+#ifndef NSS_FIPS_DISABLED
     
 
     if (nsslow_GetFIPSEnabled()) {
@@ -63,6 +66,7 @@ NSSLOW_Init(void)
             return NULL;
         }
     }
+#endif
     post_failed = PR_FALSE;
 
     return &dummyContext;

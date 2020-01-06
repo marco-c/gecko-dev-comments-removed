@@ -5,6 +5,7 @@
 
 
 
+#ifndef NSS_FIPS_DISABLED
 #include "seccomon.h"
 #include "blapi.h"
 #include "softoken.h"
@@ -652,3 +653,11 @@ sftk_FIPSEntryOK()
     }
     return CKR_OK;
 }
+#else
+#include "pkcs11t.h"
+CK_RV
+sftk_FIPSEntryOK()
+{
+    return CKR_DEVICE_ERROR;
+}
+#endif 
