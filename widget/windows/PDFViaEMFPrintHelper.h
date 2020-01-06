@@ -28,7 +28,7 @@ namespace widget {
 class PDFViaEMFPrintHelper
 {
 public:
-  explicit PDFViaEMFPrintHelper(PRLibrary* aPDFiumLibrary);
+  PDFViaEMFPrintHelper();
   ~PDFViaEMFPrintHelper();
 
   
@@ -54,9 +54,8 @@ private:
   bool RenderPageToDC(HDC aDC, unsigned int aPageIndex,
                       int aPageWidth, int aPageHeight);
 
-  UniquePtr<PDFiumEngineShim> mPDFiumEngine;
+  RefPtr<PDFiumEngineShim>    mPDFiumEngine;
   FPDF_DOCUMENT               mPDFDoc;
-  PRLibrary*                  mPDFiumLibrary;
 };
 
 } 
