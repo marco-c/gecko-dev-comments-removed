@@ -141,16 +141,6 @@ this.sidebarAction = class extends ExtensionAPI {
         SidebarUI.show(this.id);
       }
     }
-
-    if (install && !Services.prefs.prefHasUserValue("extensions.sidebar-button.shown")) {
-      Services.prefs.setBoolPref("extensions.sidebar-button.shown", true);
-      
-      
-      let widget = CustomizableUI.getWidget("sidebar-button");
-      if (!widget.areaType) {
-        CustomizableUI.addWidgetToArea("sidebar-button", CustomizableUI.AREA_NAVBAR, 0);
-      }
-    }
   }
 
   sidebarUrl(panel) {
