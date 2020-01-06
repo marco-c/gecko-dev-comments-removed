@@ -14,10 +14,32 @@ namespace gfx {
 StaticAutoPtr<gfxVars> gfxVars::sInstance;
 StaticAutoPtr<nsTArray<gfxVars::VarBase*>> gfxVars::sVarList;
 
+StaticAutoPtr<nsTArray<GfxVarUpdate>> gGfxVarInitUpdates;
+
+void
+gfxVars::SetValuesForInitialize(const nsTArray<GfxVarUpdate>& aInitUpdates)
+{
+  
+  MOZ_RELEASE_ASSERT(!gGfxVarInitUpdates);
+
+  
+  
+  if (sInstance) {
+    
+    for (const auto& varUpdate : aInitUpdates) {
+      ApplyUpdate(varUpdate);
+    }
+  } else {
+      
+      gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(aInitUpdates);
+  }
+}
+
 void
 gfxVars::Initialize()
 {
   if (sInstance) {
+    MOZ_RELEASE_ASSERT(!gGfxVarInitUpdates, "Initial updates should not be present after any gfxVars operation");
     return;
   }
 
@@ -28,13 +50,18 @@ gfxVars::Initialize()
 
   
   
-  
   if (XRE_IsContentProcess()) {
-    InfallibleTArray<GfxVarUpdate> vars;
-    dom::ContentChild::GetSingleton()->SendGetGfxVars(&vars);
-    for (const auto& var : vars) {
-      ApplyUpdate(var);
+    MOZ_ASSERT(gGfxVarInitUpdates, "Initial updates should be provided in content process");
+    if (!gGfxVarInitUpdates) {
+      
+      InfallibleTArray<GfxVarUpdate> initUpdates;
+      dom::ContentChild::GetSingleton()->SendGetGfxVars(&initUpdates);
+      gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(Move(initUpdates));
     }
+    for (const auto& varUpdate : *gGfxVarInitUpdates) {
+      ApplyUpdate(varUpdate);
+    }
+    gGfxVarInitUpdates = nullptr;
   }
 }
 
@@ -47,6 +74,7 @@ gfxVars::Shutdown()
 {
   sInstance = nullptr;
   sVarList = nullptr;
+  gGfxVarInitUpdates = nullptr;
 }
 
  void
@@ -54,7 +82,14 @@ gfxVars::ApplyUpdate(const GfxVarUpdate& aUpdate)
 {
   
   MOZ_ASSERT(!XRE_IsParentProcess());
-  sVarList->ElementAt(aUpdate.index())->SetValue(aUpdate.value());
+  MOZ_DIAGNOSTIC_ASSERT(sVarList || gGfxVarInitUpdates);
+  if (sVarList) {
+    sVarList->ElementAt(aUpdate.index())->SetValue(aUpdate.value());
+  } else if (gGfxVarInitUpdates) {
+    
+    
+    gGfxVarInitUpdates->AppendElement(aUpdate);
+  }
 }
 
  void

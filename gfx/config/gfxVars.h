@@ -58,6 +58,10 @@ class gfxVarReceiver;
 class gfxVars final
 {
 public:
+  
+  
+  static void SetValuesForInitialize(const nsTArray<GfxVarUpdate>& aInitUpdates);
+
   static void Initialize();
   static void Shutdown();
 

@@ -535,6 +535,7 @@ ContentChild::RecvSetXPCOMProcessAttributes(const XPCOMInitData& aXPCOMInit,
                                             nsTArray<LookAndFeelInt>&& aLookAndFeelIntCache)
 {
   mLookAndFeelCache = aLookAndFeelIntCache;
+  gfx::gfxVars::SetValuesForInitialize(aXPCOMInit.gfxNonDefaultVarUpdates());
   InitXPCOM(aXPCOMInit, aInitialData);
   InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
 
@@ -1000,8 +1001,6 @@ ContentChild::AppendProcessId(nsACString& aName)
 void
 ContentChild::InitGraphicsDeviceData(const ContentDeviceData& aData)
 {
-  
-  
   gfxPlatform::InitChild(aData);
 }
 
