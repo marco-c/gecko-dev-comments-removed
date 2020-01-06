@@ -182,7 +182,7 @@ private:
       : mWindowID(aWindowID)
       , mIsAudioCaptured(false)
       , mOwningAudioFocus(!AudioChannelService::IsEnableAudioCompeting())
-      , mShouldSendBlockStopEvent(false)
+      , mShouldSendActiveMediaBlockStopEvent(false)
     {}
 
     void AudioFocusChanged(AudioChannelAgent* aNewPlayingAgent);
@@ -209,7 +209,8 @@ private:
 
     
     
-    bool mShouldSendBlockStopEvent;
+    
+    bool mShouldSendActiveMediaBlockStopEvent;
   private:
     void AudioCapturedChanged(AudioChannelAgent* aAgent,
                               AudioCaptureState aCapture);
