@@ -132,7 +132,8 @@ exports.isIdentity = isIdentity;
 
 
 function getNodeTransformationMatrix(node, ancestor = node.parentElement) {
-  let { a, b, c, d, e, f } = node.getTransformToAncestor(ancestor);
+  let { a, b, c, d, e, f } = ancestor.getTransformToParent()
+                                     .multiply(node.getTransformToAncestor(ancestor));
 
   return [
     a, c, e,
