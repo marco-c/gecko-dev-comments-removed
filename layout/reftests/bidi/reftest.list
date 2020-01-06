@@ -17,7 +17,7 @@ random-if(cocoaWidget) == bidi-006-j.html bidi-006-ref.html # bug 734313
 == bidiSVG-03.svg bidiSVG-03-ref.svg
 fuzzy-if(skiaContent,1,1) == bidiSVG-04.svg bidiSVG-04-ref.svg
 == bidiSVG-05.svg bidiSVG-05-ref.svg
-HTTP(..) == bidiMirroring.svg bidiMirroring-ref.svg
+== bidiMirroring.svg bidiMirroring-ref.svg
 fuzzy-if(Android,9,134) random-if(layersGPUAccelerated) == visualmarquee.html marquee-ref.html
 fuzzy-if(Android,9,134) random-if(layersGPUAccelerated) == logicalmarquee.html marquee-ref.html
 == visualmarquee.html logicalmarquee.html
@@ -149,7 +149,7 @@ fuzzy-if(xulRuntime.widgetToolkit=="gtk3",1,11) == 869833-1.xul 869833-1-ref.xul
 == 1067268-1.html 1067268-1-ref.html
 == 1069941-inline-bidi-border-1.html 1069941-inline-bidi-border-1-ref.html
 == 1069941-inline-bidi-margin-1.html 1069941-inline-bidi-margin-1-ref.html
-!= 1155359-1.xul 1155359-1-ref.xul
+fails-if(stylo||styloVsGecko) != 1155359-1.xul 1155359-1-ref.xul # bug 1408235
 == 1157726-1.html 1157726-1-ref.html
 == 1161752.html 1161752-ref.html
 == 1161752-5-embed.html 1161752-5-embed-ref.html
