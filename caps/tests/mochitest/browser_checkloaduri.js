@@ -261,9 +261,13 @@ add_task(function* () {
       browser,
       testURL.toString(),
       function* (testURLFn) {
+        
         let testURL = eval("(" + testURLFn + ")");
+        
         let ssm = Services.scriptSecurityManager;
+        
         let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
+        
         let makeURI = Cu.import("resource://gre/modules/BrowserUtils.jsm", {}).BrowserUtils.makeURI;
         let b = new content.Blob(["I am a blob"]);
         let contentBlobURI = content.URL.createObjectURL(b);
