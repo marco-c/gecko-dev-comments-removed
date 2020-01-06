@@ -11,5 +11,7 @@
 
 
 this.EXPORTED_SYMBOLS = ["LoadContextInfo"];
+
+
 this.LoadContextInfo = Components.classes["@mozilla.org/load-context-info-factory;1"]
                                  .getService(Components.interfaces.nsILoadContextInfoFactory);

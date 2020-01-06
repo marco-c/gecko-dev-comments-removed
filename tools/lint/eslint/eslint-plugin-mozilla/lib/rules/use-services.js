@@ -109,6 +109,10 @@ function getInterfacesFromServicesFile() {
     }
   });
 
+  
+  
+  delete servicesASTParser.result.nsIPropertyBag2;
+
   return servicesASTParser.result;
 }
 

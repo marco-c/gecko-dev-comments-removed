@@ -7,5 +7,16 @@ module.exports = {
     "complexity": ["error", 41],
 
     "mozilla/no-task": "error",
-  }
+
+    "mozilla/use-services": "error",
+  },
+
+  "overrides": [{
+    
+    
+    "files": "**/*.xml",
+    "rules": {
+      "mozilla/use-services": "off",
+    }
+  }]
 };
