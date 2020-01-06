@@ -60,7 +60,7 @@ return  (function(modules) {
 
 	const { MODE } = __webpack_require__(1);
 	const { REPS, getRep } = __webpack_require__(2);
-	const ObjectInspector = __webpack_require__(44);
+	const ObjectInspector = __webpack_require__(45);
 
 	const {
 	  parseURLEncodedText,
@@ -138,12 +138,13 @@ return  (function(modules) {
 	const ObjectWithURL = __webpack_require__(41);
 	const GripArray = __webpack_require__(42);
 	const GripMap = __webpack_require__(43);
+	const GripMapEntry = __webpack_require__(44);
 	const Grip = __webpack_require__(17);
 
 	
 	
 	
-	let reps = [RegExp, StyleSheet, Event, DateTime, CommentNode, ElementNode, TextNode, Attribute, LongStringRep, Func, PromiseRep, ArrayRep, Document, Window, ObjectWithText, ObjectWithURL, ErrorRep, GripArray, GripMap, Grip, Undefined, Null, StringRep, Number, SymbolRep, InfinityRep, NaNRep, Accessor];
+	let reps = [RegExp, StyleSheet, Event, DateTime, CommentNode, ElementNode, TextNode, Attribute, LongStringRep, Func, PromiseRep, ArrayRep, Document, Window, ObjectWithText, ObjectWithURL, ErrorRep, GripArray, GripMap, GripMapEntry, Grip, Undefined, Null, StringRep, Number, SymbolRep, InfinityRep, NaNRep, Accessor];
 
 	
 
@@ -220,6 +221,7 @@ return  (function(modules) {
 	    Grip,
 	    GripArray,
 	    GripMap,
+	    GripMapEntry,
 	    InfinityRep,
 	    LongStringRep,
 	    NaNRep,
@@ -1277,6 +1279,7 @@ return  (function(modules) {
 	    key = span({ "className": "nodeName" }, name);
 	  } else {
 	    key = Rep(Object.assign({}, props, {
+	      className: "nodeName",
 	      object: name,
 	      mode: mode || MODE.TINY,
 	      defaultRep: Grip
@@ -1342,11 +1345,7 @@ return  (function(modules) {
 	  };
 
 	  if (mode === MODE.TINY) {
-	    let propertiesLength = object.preview && object.preview.ownPropertiesLength ? object.preview.ownPropertiesLength : object.ownPropertyLength;
-
-	    if (object.preview && object.preview.safeGetterValues) {
-	      propertiesLength += Object.keys(object.preview.safeGetterValues).length;
-	    }
+	    let propertiesLength = getPropertiesLength(object);
 
 	    const tinyModeItems = [];
 	    if (getTitle(props, object) !== DEFAULT_TITLE) {
@@ -1385,6 +1384,20 @@ return  (function(modules) {
 	  return props.title || object.class || DEFAULT_TITLE;
 	}
 
+	function getPropertiesLength(object) {
+	  let propertiesLength = object.preview && object.preview.ownPropertiesLength ? object.preview.ownPropertiesLength : object.ownPropertyLength;
+
+	  if (object.preview && object.preview.safeGetterValues) {
+	    propertiesLength += Object.keys(object.preview.safeGetterValues).length;
+	  }
+
+	  if (object.preview && object.preview.ownSymbols) {
+	    propertiesLength += object.preview.ownSymbolsLength;
+	  }
+
+	  return propertiesLength;
+	}
+
 	function safePropIterator(props, object, max) {
 	  max = typeof max === "undefined" ? maxLengthMap.get(MODE.SHORT) : max;
 	  try {
@@ -1412,11 +1425,10 @@ return  (function(modules) {
 	  });
 
 	  let properties = object.preview ? object.preview.ownProperties : {};
-	  let propertiesLength = object.preview && object.preview.ownPropertiesLength ? object.preview.ownPropertiesLength : object.ownPropertyLength;
+	  let propertiesLength = getPropertiesLength(object);
 
 	  if (object.preview && object.preview.safeGetterValues) {
 	    properties = Object.assign({}, properties, object.preview.safeGetterValues);
-	    propertiesLength += Object.keys(object.preview.safeGetterValues).length;
 	  }
 
 	  let indexes = getPropIndexes(properties, max, isInterestingProp);
@@ -1433,6 +1445,27 @@ return  (function(modules) {
 	  
 	  const suppressQuotes = object.class === "Proxy";
 	  let propsArray = getProps(props, properties, indexes, suppressQuotes);
+
+	  
+	  if (object.preview && object.preview.ownSymbols) {
+	    const { ownSymbols } = object.preview;
+	    const length = max - indexes.length;
+
+	    const symbolsProps = ownSymbols.slice(0, length).map(symbolItem => {
+	      return PropRep(Object.assign({}, props, {
+	        mode: MODE.TINY,
+	        name: symbolItem,
+	        object: symbolItem.descriptor.value,
+	        equal: ": ",
+	        defaultRep: Grip,
+	        title: null,
+	        suppressQuotes
+	      }));
+	    });
+
+	    propsArray.push(...symbolsProps);
+	  }
+
 	  if (Object.keys(properties).length > max || propertiesLength > max
 	  
 	  
@@ -1556,7 +1589,8 @@ return  (function(modules) {
 	  if (noGrip === true || !isGrip(object)) {
 	    return false;
 	  }
-	  return object.preview && object.preview.ownProperties;
+
+	  return object.preview ? typeof object.preview.ownProperties !== "undefined" : typeof object.ownPropertyLength !== "undefined";
 	}
 
 	const maxLengthMap = new Map();
@@ -1597,10 +1631,13 @@ return  (function(modules) {
 	};
 
 	function SymbolRep(props) {
-	  let { object } = props;
+	  let {
+	    className = "objectBox objectBox-symbol",
+	    object
+	  } = props;
 	  let { name } = object;
 
-	  return span({ className: "objectBox objectBox-symbol" }, `Symbol(${name || ""})`);
+	  return span({ className }, `Symbol(${name || ""})`);
 	}
 
 	function supportsObject(object, type) {
@@ -3493,7 +3530,7 @@ return  (function(modules) {
 
 	    return PropRep({
 	      name: key,
-	      equal: ": ",
+	      equal: " \u2192 ",
 	      object: value,
 	      mode: MODE.TINY,
 	      onDOMNodeMouseOver,
@@ -3554,6 +3591,80 @@ return  (function(modules) {
 
 
 
+	
+	const React = __webpack_require__(8);
+	
+	const { span } = React.DOM;
+	const {
+	  wrapRender
+	} = __webpack_require__(7);
+	const PropRep = __webpack_require__(16);
+	const { MODE } = __webpack_require__(1);
+	
+
+
+	GripMapEntry.propTypes = {
+	  object: React.PropTypes.object,
+	  
+	  mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+	  onDOMNodeMouseOver: React.PropTypes.func,
+	  onDOMNodeMouseOut: React.PropTypes.func,
+	  onInspectIconClick: React.PropTypes.func
+	};
+
+	function GripMapEntry(props) {
+	  const {
+	    object
+	  } = props;
+
+	  const {
+	    key,
+	    value
+	  } = object.preview;
+
+	  return span({
+	    className: "objectBox objectBox-map-entry"
+	  }, ...PropRep(Object.assign({}, props, {
+	    name: key,
+	    object: value,
+	    equal: " \u2192 ",
+	    title: null,
+	    suppressQuotes: false
+	  })));
+	}
+
+	function supportsObject(grip, type, noGrip = false) {
+	  if (noGrip === true) {
+	    return false;
+	  }
+	  return grip && grip.type === "mapEntry" && grip.preview;
+	}
+
+	function createGripMapEntry(key, value) {
+	  return {
+	    type: "mapEntry",
+	    preview: {
+	      key,
+	      value
+	    }
+	  };
+	}
+
+	
+	module.exports = {
+	  rep: wrapRender(GripMapEntry),
+	  createGripMapEntry,
+	  supportsObject
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+
 	const {
 	  Component,
 	  createFactory,
@@ -3561,13 +3672,16 @@ return  (function(modules) {
 	  PropTypes
 	} = __webpack_require__(8);
 
-	const Tree = createFactory(__webpack_require__(45).Tree);
-	__webpack_require__(47);
+	const Tree = createFactory(__webpack_require__(46).Tree);
+	__webpack_require__(48);
 
-	const classnames = __webpack_require__(49);
+	const classnames = __webpack_require__(50);
 	const Svg = __webpack_require__(33);
 	const {
-	  REPS: { Rep }
+	  REPS: {
+	    Rep,
+	    Grip
+	  }
 	} = __webpack_require__(2);
 	const {
 	  MODE
@@ -3575,14 +3689,19 @@ return  (function(modules) {
 
 	const {
 	  getChildren,
+	  getParent,
 	  getValue,
-	  isDefault,
 	  nodeHasAccessors,
+	  nodeHasAllEntriesInPreview,
 	  nodeHasProperties,
+	  nodeIsDefaultProperties,
+	  nodeIsEntries,
+	  nodeIsMapEntry,
 	  nodeIsMissingArguments,
 	  nodeIsOptimizedOut,
-	  nodeIsPrimitive
-	} = __webpack_require__(50);
+	  nodeIsPrimitive,
+	  nodeIsPrototype
+	} = __webpack_require__(51);
 
 	
 	
@@ -3630,20 +3749,15 @@ return  (function(modules) {
 	    self.getRoots = this.getRoots.bind(this);
 	  }
 
-	  isDefaultProperty(item) {
-	    const roots = this.props.roots;
-	    return isDefault(item, roots);
-	  }
-
-	  getParent(item) {
-	    return null;
-	  }
-
 	  getChildren(item) {
-	    const { getObjectProperties } = this.props;
+	    const {
+	      getObjectEntries,
+	      getObjectProperties
+	    } = this.props;
 	    const { actors } = this;
 
 	    return getChildren({
+	      getObjectEntries,
 	      getObjectProperties,
 	      actors,
 	      item
@@ -3673,12 +3787,22 @@ return  (function(modules) {
 	    if (expand === true) {
 	      const {
 	        getObjectProperties,
-	        loadObjectProperties
+	        getObjectEntries,
+	        loadObjectProperties,
+	        loadObjectEntries
 	      } = this.props;
 
 	      const value = getValue(item);
+	      const parent = getParent(item);
+	      const parentValue = getValue(parent);
+	      const parentActor = parentValue ? parentValue.actor : null;
+
 	      if (nodeHasProperties(item) && value && !getObjectProperties(value.actor)) {
 	        loadObjectProperties(value);
+	      }
+
+	      if (nodeIsEntries(item) && !nodeHasAllEntriesInPreview(parent) && parentActor && !getObjectEntries(parentActor)) {
+	        loadObjectEntries(parentValue);
 	      }
 	    }
 	  }
@@ -3708,7 +3832,7 @@ return  (function(modules) {
 	      objectValue = dom.span({ className: "unavailable" }, "(optimized away)");
 	    } else if (nodeIsMissingArguments(item) || unavailable) {
 	      objectValue = dom.span({ className: "unavailable" }, "(unavailable)");
-	    } else if (nodeHasProperties(item) || nodeHasAccessors(item) || isPrimitive) {
+	    } else if (nodeHasProperties(item) || nodeHasAccessors(item) || nodeIsMapEntry(item) || isPrimitive) {
 	      let repsProp = Object.assign({}, this.props);
 	      if (depth > 0) {
 	        repsProp.mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
@@ -3716,6 +3840,9 @@ return  (function(modules) {
 
 	      objectValue = this.renderGrip(item, repsProp);
 	    }
+
+	    const hasLabel = label !== null && typeof label !== "undefined";
+	    const hasValue = typeof objectValue !== "undefined";
 
 	    const SINGLE_INDENT_WIDTH = 15;
 	    const indentWidth = (depth + (isPrimitive ? 1 : 0)) * SINGLE_INDENT_WIDTH;
@@ -3728,7 +3855,7 @@ return  (function(modules) {
 	    return dom.div({
 	      className: classnames("node object-node", {
 	        focused,
-	        "default-property": this.isDefaultProperty(item)
+	        lessen: !expanded && (nodeIsDefaultProperties(item) || nodeIsPrototype(item))
 	      }),
 	      style: {
 	        marginLeft: indentWidth
@@ -3749,7 +3876,7 @@ return  (function(modules) {
 	      className: classnames({
 	        expanded: expanded
 	      })
-	    }) : null, label ? dom.span({
+	    }) : null, hasLabel ? dom.span({
 	      className: "object-label",
 	      onClick: onLabelClick ? event => {
 	        event.stopPropagation();
@@ -3760,14 +3887,15 @@ return  (function(modules) {
 	          setExpanded: this.setExpanded
 	        });
 	      } : null
-	    }, label) : null, label && objectValue ? dom.span({ className: "object-delimiter" }, " : ") : null, objectValue);
+	    }, label) : null, hasLabel && hasValue ? dom.span({ className: "object-delimiter" }, " : ") : null, hasValue ? objectValue : null);
 	  }
 
 	  renderGrip(item, props) {
 	    const object = getValue(item);
 	    return Rep(Object.assign({}, props, {
 	      object,
-	      mode: props.mode || MODE.TINY
+	      mode: props.mode || MODE.TINY,
+	      defaultRep: Grip
 	    }));
 	  }
 
@@ -3801,7 +3929,7 @@ return  (function(modules) {
 	      focused: focusedItem,
 
 	      getRoots: this.getRoots,
-	      getParent: this.getParent,
+	      getParent,
 	      getChildren: this.getChildren,
 	      getKey: this.getKey,
 
@@ -3837,7 +3965,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	const Tree = __webpack_require__(46);
+	const Tree = __webpack_require__(47);
 
 	module.exports = {
 	  Tree
@@ -4456,14 +4584,36 @@ return  (function(modules) {
 
 
 
-	const get = __webpack_require__(51);
-	const has = __webpack_require__(103);
+	const get = __webpack_require__(52);
+	const has = __webpack_require__(104);
 	const { maybeEscapePropertyName } = __webpack_require__(7);
+	const GripMapEntry = __webpack_require__(44);
+
+	const NODE_TYPES = {
+	  BUCKET: Symbol("[n…n]"),
+	  DEFAULT_PROPERTIES: Symbol("[default properties]"),
+	  ENTRIES: Symbol("<entries>"),
+	  GET: Symbol("<get>"),
+	  GRIP: Symbol("GRIP"),
+	  MAP_ENTRY_KEY: Symbol("<key>"),
+	  MAP_ENTRY_VALUE: Symbol("<value>"),
+	  PROMISE_REASON: Symbol("<reason>"),
+	  PROMISE_STATE: Symbol("<state>"),
+	  PROMISE_VALUE: Symbol("<value>"),
+	  SET: Symbol("<set>"),
+	  PROTOTYPE: Symbol("__proto__")
+	};
 
 	let WINDOW_PROPERTIES = {};
 
 	if (typeof window === "object") {
 	  WINDOW_PROPERTIES = Object.getOwnPropertyNames(window);
+	}
+
+	const SAFE_PATH_PREFIX = "##-";
+
+	function getType(item) {
+	  return item.type;
 	}
 
 	function getValue(item) {
@@ -4482,12 +4632,20 @@ return  (function(modules) {
 	  return undefined;
 	}
 
-	function isBucket(item) {
-	  return item.path && item.path.match(/bucket(\d+)$/);
+	function nodeIsBucket(item) {
+	  return getType(item) === NODE_TYPES.BUCKET;
+	}
+
+	function nodeIsEntries(item) {
+	  return getType(item) === NODE_TYPES.ENTRIES;
+	}
+
+	function nodeIsMapEntry(item) {
+	  return GripMapEntry.supportsObject(getValue(item));
 	}
 
 	function nodeHasChildren(item) {
-	  return Array.isArray(item.contents) || isBucket(item);
+	  return Array.isArray(item.contents) || nodeIsBucket(item);
 	}
 
 	function nodeIsObject(item) {
@@ -4495,7 +4653,8 @@ return  (function(modules) {
 	  return value && value.type === "object";
 	}
 
-	function nodeIsArray(value) {
+	function nodeIsArray(item) {
+	  const value = getValue(item);
 	  return value && value.class === "Array";
 	}
 
@@ -4519,32 +4678,117 @@ return  (function(modules) {
 	}
 
 	function nodeIsPrimitive(item) {
-	  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeHasAccessors(item);
+	  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeIsEntries(item) && !nodeIsMapEntry(item) && !nodeHasAccessors(item);
 	}
 
-	function isPromise(item) {
+	function nodeIsDefaultProperties(item) {
+	  return getType(item) === NODE_TYPES.DEFAULT_PROPERTIES;
+	}
+
+	function isDefaultWindowProperty(name) {
+	  return WINDOW_PROPERTIES.includes(name);
+	}
+
+	function nodeIsPromise(item) {
 	  const value = getValue(item);
+	  if (!value) {
+	    return false;
+	  }
+
 	  return value.class == "Promise";
 	}
 
-	function getPromiseProperties(item) {
+	function nodeIsPrototype(item) {
+	  return getType(item) === NODE_TYPES.PROTOTYPE;
+	}
+
+	function nodeHasAccessors(item) {
+	  return !!getNodeGetter(item) || !!getNodeSetter(item);
+	}
+
+	function nodeSupportsBucketing(item) {
+	  return nodeIsArray(item) || nodeIsEntries(item);
+	}
+
+	function nodeHasEntries(item) {
+	  const value = getValue(item);
+	  if (!value) {
+	    return false;
+	  }
+
+	  return value.class === "Map" || value.class === "Set" || value.class === "WeakMap" || value.class === "WeakSet";
+	}
+
+	function nodeHasAllEntriesInPreview(item) {
+	  const { preview } = getValue(item) || {};
+	  if (!preview) {
+	    return false;
+	  }
+
+	  const {
+	    entries,
+	    items,
+	    length,
+	    size
+	  } = preview;
+
+	  return entries ? entries.length === size : items.length === length;
+	}
+
+	function makeNodesForPromiseProperties(item) {
 	  const { promiseState: { reason, value, state } } = getValue(item);
 
 	  const properties = [];
 
 	  if (state) {
-	    properties.push(createNode("<state>", `${item.path}/state`, { value: state }));
+	    properties.push(createNode(item, "<state>", `${item.path}/${SAFE_PATH_PREFIX}state`, { value: state }, NODE_TYPES.PROMISE_STATE));
 	  }
 
 	  if (reason) {
-	    properties.push(createNode("<reason>", `${item.path}/reason`, { value: reason }));
+	    properties.push(createNode(item, "<reason>", `${item.path}/${SAFE_PATH_PREFIX}reason`, { value: reason }, NODE_TYPES.PROMISE_REASON));
 	  }
 
 	  if (value) {
-	    properties.push(createNode("<value>", `${item.path}/value`, { value: value }));
+	    properties.push(createNode(item, "<value>", `${item.path}/${SAFE_PATH_PREFIX}value`, { value: value }, NODE_TYPES.PROMISE_VALUE));
 	  }
 
 	  return properties;
+	}
+
+	function makeNodesForEntries(item) {
+	  const { path } = item;
+	  const { preview } = getValue(item);
+	  const nodeName = "<entries>";
+	  const entriesPath = `${path}/${SAFE_PATH_PREFIX}entries`;
+
+	  if (nodeHasAllEntriesInPreview(item)) {
+	    let entriesNodes = [];
+	    if (preview.entries) {
+	      entriesNodes = preview.entries.map(([key, value], index) => {
+	        return createNode(item, index, `${entriesPath}/${index}`, {
+	          value: GripMapEntry.createGripMapEntry(key, value)
+	        });
+	      });
+	    } else if (preview.items) {
+	      entriesNodes = preview.items.map((value, index) => {
+	        return createNode(item, index, `${entriesPath}/${index}`, { value });
+	      });
+	    }
+	    return createNode(item, nodeName, entriesPath, entriesNodes, NODE_TYPES.ENTRIES);
+	  }
+	  return createNode(item, nodeName, entriesPath, null, NODE_TYPES.ENTRIES);
+	}
+
+	function makeNodesForMapEntry(item) {
+	  const nodeValue = getValue(item);
+	  if (!nodeValue || !nodeValue.preview) {
+	    return [];
+	  }
+
+	  const { key, value } = nodeValue.preview;
+	  const path = item.path;
+
+	  return [createNode(item, "<key>", `${path}/##key`, { value: key }, NODE_TYPES.MAP_ENTRY_KEY), createNode(item, "<value>", `${path}/##value`, { value }, NODE_TYPES.MAP_ENTRY_VALUE)];
 	}
 
 	function getNodeGetter(item) {
@@ -4555,32 +4799,20 @@ return  (function(modules) {
 	  return get(item, "contents.set", undefined);
 	}
 
-	function nodeHasAccessors(item) {
-	  return !!getNodeGetter(item) || !!getNodeSetter(item);
-	}
-
-	function getAccessors(item) {
+	function makeNodesForAccessors(item) {
 	  const accessors = [];
 
 	  const getter = getNodeGetter(item);
 	  if (getter && getter.type !== "undefined") {
-	    accessors.push(createNode("<get>", `${item.path}/get`, { value: getter }));
+	    accessors.push(createNode(item, "<get>", `${item.path}/${SAFE_PATH_PREFIX}get`, { value: getter }, NODE_TYPES.GET));
 	  }
 
 	  const setter = getNodeSetter(item);
 	  if (setter && setter.type !== "undefined") {
-	    accessors.push(createNode("<set>", `${item.path}/set`, { value: setter }));
+	    accessors.push(createNode(item, "<set>", `${item.path}/${SAFE_PATH_PREFIX}set`, { value: setter }, NODE_TYPES.SET));
 	  }
 
 	  return accessors;
-	}
-
-	function isDefault(item, roots) {
-	  if (roots && roots.length === 1) {
-	    const value = getValue(roots[0]);
-	    return value.class === "Window";
-	  }
-	  return WINDOW_PROPERTIES.includes(item.name);
 	}
 
 	function sortProperties(properties) {
@@ -4597,47 +4829,60 @@ return  (function(modules) {
 	  });
 	}
 
-	function makeNumericalBuckets(props, bucketSize, parentPath, ownProperties) {
-	  const numProperties = props.length;
+	function makeNumericalBuckets(propertiesNames, bucketSize, parent, ownProperties) {
+	  const parentPath = parent.path;
+	  const numProperties = propertiesNames.length;
 	  const numBuckets = Math.ceil(numProperties / bucketSize);
 	  let buckets = [];
 	  for (let i = 1; i <= numBuckets; i++) {
-	    const bucketKey = `bucket${i}`;
+	    const bucketKey = `${SAFE_PATH_PREFIX}bucket${i}`;
 	    const minKey = (i - 1) * bucketSize;
 	    const maxKey = Math.min(i * bucketSize - 1, numProperties);
 	    const bucketName = `[${minKey}..${maxKey}]`;
-	    const bucketProperties = props.slice(minKey, maxKey);
+	    const bucketProperties = propertiesNames.slice(minKey, maxKey);
 
-	    const bucketNodes = bucketProperties.map(name => createNode(name, `${parentPath}/${bucketKey}/${name}`, ownProperties[name]));
+	    const bucketNodes = bucketProperties.map(name => createNode(parent, name, `${parentPath}/${bucketKey}/${name}`, ownProperties[name]));
 
-	    buckets.push(createNode(bucketName, `${parentPath}/${bucketKey}`, bucketNodes));
+	    buckets.push(createNode(parent, bucketName, `${parentPath}/${bucketKey}`, bucketNodes, NODE_TYPES.BUCKET));
 	  }
 	  return buckets;
 	}
 
-	function makeDefaultPropsBucket(props, parentPath, ownProperties) {
-	  const userProps = props.filter(name => !isDefault({ name }));
-	  const defaultProps = props.filter(name => isDefault({ name }));
+	function makeDefaultPropsBucket(propertiesNames, parent, ownProperties) {
+	  const parentPath = parent.path;
 
-	  let nodes = makeNodesForOwnProps(userProps, parentPath, ownProperties);
+	  const userPropertiesNames = [];
+	  const defaultProperties = [];
 
-	  if (defaultProps.length > 0) {
-	    const defaultNodes = defaultProps.map((name, index) => createNode(maybeEscapePropertyName(name), `${parentPath}/bucket${index}/${name}`, ownProperties[name]));
-	    nodes.push(createNode("[default properties]", `${parentPath}/##-default`, defaultNodes));
+	  propertiesNames.forEach(name => {
+	    if (isDefaultWindowProperty(name)) {
+	      defaultProperties.push(name);
+	    } else {
+	      userPropertiesNames.push(name);
+	    }
+	  });
+
+	  let nodes = makeNodesForOwnProps(userPropertiesNames, parent, ownProperties);
+
+	  if (defaultProperties.length > 0) {
+	    const defaultPropertiesNode = createNode(parent, "[default properties]", `${parentPath}/${SAFE_PATH_PREFIX}default`, null, NODE_TYPES.DEFAULT_PROPERTIES);
+
+	    const defaultNodes = defaultProperties.map((name, index) => createNode(defaultPropertiesNode, maybeEscapePropertyName(name), `${parentPath}/${SAFE_PATH_PREFIX}bucket${index}/${name}`, ownProperties[name]));
+	    nodes.push(setNodeChildren(defaultPropertiesNode, defaultNodes));
 	  }
 	  return nodes;
 	}
 
-	function makeNodesForOwnProps(properties, parentPath, ownProperties) {
-	  return properties.map(name => createNode(maybeEscapePropertyName(name), `${parentPath}/${name}`, ownProperties[name]));
+	function makeNodesForOwnProps(propertiesNames, parent, ownProperties) {
+	  const parentPath = parent.path;
+	  return propertiesNames.map(name => createNode(parent, maybeEscapePropertyName(name), `${parentPath}/${name}`, ownProperties[name]));
 	}
 
-	
-
-
-	function makeNodesForProperties(objProps, parent, { bucketSize = 100 } = {}) {
+	function makeNodesForProperties(objProps, parent, {
+	  bucketSize = 100
+	} = {}) {
 	  const {
-	    ownProperties,
+	    ownProperties = {},
 	    ownSymbols,
 	    prototype,
 	    safeGetterValues
@@ -4647,59 +4892,89 @@ return  (function(modules) {
 	  const parentValue = getValue(parent);
 
 	  let allProperties = Object.assign({}, ownProperties, safeGetterValues);
-	  const properties = sortProperties(Object.keys(allProperties)).filter(name => allProperties[name].hasOwnProperty("value") || allProperties[name].hasOwnProperty("getterValue") || allProperties[name].hasOwnProperty("get") || allProperties[name].hasOwnProperty("set"));
 
-	  const numProperties = properties.length;
+	  
+	  const propertiesNames = sortProperties(Object.keys(allProperties)).filter(name => allProperties[name].hasOwnProperty("value") || allProperties[name].hasOwnProperty("getterValue") || allProperties[name].hasOwnProperty("get") || allProperties[name].hasOwnProperty("set"));
+
+	  const numProperties = propertiesNames.length;
 
 	  let nodes = [];
-	  if (nodeIsArray(prototype) && numProperties > bucketSize) {
-	    nodes = makeNumericalBuckets(properties, bucketSize, parentPath, allProperties);
-	  } else if (parentValue.class == "Window") {
-	    nodes = makeDefaultPropsBucket(properties, parentPath, allProperties);
+	  if (nodeSupportsBucketing(parent) && numProperties > bucketSize) {
+	    nodes = makeNumericalBuckets(propertiesNames, bucketSize, parent, allProperties);
+	  } else if (parentValue && parentValue.class == "Window") {
+	    nodes = makeDefaultPropsBucket(propertiesNames, parent, allProperties);
 	  } else {
-	    nodes = makeNodesForOwnProps(properties, parentPath, allProperties);
+	    nodes = makeNodesForOwnProps(propertiesNames, parent, allProperties);
 	  }
 
-	  for (let index in ownSymbols) {
-	    nodes.push(createNode(ownSymbols[index].name, `${parentPath}/##symbol-${index}`, ownSymbols[index].descriptor));
+	  if (Array.isArray(ownSymbols)) {
+	    ownSymbols.forEach((ownSymbol, index) => {
+	      nodes.push(createNode(parent, ownSymbol.name, `${parentPath}/${SAFE_PATH_PREFIX}symbol-${index}`, ownSymbol.descriptor));
+	    }, this);
 	  }
 
-	  if (isPromise(parent)) {
-	    nodes.push(...getPromiseProperties(parent));
+	  if (nodeIsPromise(parent)) {
+	    nodes.push(...makeNodesForPromiseProperties(parent));
+	  }
+
+	  if (nodeHasEntries(parent)) {
+	    nodes.push(makeNodesForEntries(parent));
 	  }
 
 	  
 	  if (prototype && prototype.type !== "null") {
-	    nodes.push(createNode("__proto__", `${parentPath}/__proto__`, { value: prototype }));
+	    nodes.push(createNode(parent, "__proto__", `${parentPath}/__proto__`, { value: prototype }, NODE_TYPES.PROTOTYPE));
 	  }
 
 	  return nodes;
 	}
 
-	function createNode(name, path, contents) {
+	function createNode(parent, name, path, contents, type = NODE_TYPES.GRIP) {
 	  if (contents === undefined) {
 	    return null;
 	  }
+
 	  
 	  
 	  
 	  
 	  
-	  return { name, path, contents };
+	  return {
+	    parent,
+	    name,
+	    path,
+	    contents,
+	    type
+	  };
 	}
 
-	function getChildren({ getObjectProperties, actors, item }) {
+	function setNodeChildren(node, children) {
+	  node.contents = children;
+	  return node;
+	}
+
+	function getChildren(options) {
+	  const {
+	    actors = {},
+	    getObjectEntries,
+	    getObjectProperties,
+	    item
+	  } = options;
 	  
 	  
 	  if (nodeHasAccessors(item)) {
-	    return getAccessors(item);
+	    return makeNodesForAccessors(item);
+	  }
+
+	  if (nodeIsMapEntry(item)) {
+	    return makeNodesForMapEntry(item);
 	  }
 
 	  if (nodeHasChildren(item)) {
 	    return item.contents;
 	  }
 
-	  if (!nodeHasProperties(item)) {
+	  if (!nodeHasProperties(item) && !nodeIsEntries(item)) {
 	    return [];
 	  }
 
@@ -4714,12 +4989,20 @@ return  (function(modules) {
 	    return actors[key];
 	  }
 
-	  if (isBucket(item)) {
+	  if (nodeIsBucket(item)) {
 	    return item.contents.children;
 	  }
 
-	  const actor = get(getValue(item), "actor", undefined);
-	  const loadedProps = getObjectProperties(actor);
+	  let loadedProps;
+	  if (nodeIsEntries(item)) {
+	    
+	    
+	    const parent = getParent(item);
+	    loadedProps = getObjectEntries(get(getValue(parent), "actor", undefined));
+	  } else {
+	    loadedProps = getObjectProperties(get(getValue(item), "actor", undefined));
+	  }
+
 	  const {
 	    ownProperties,
 	    ownSymbols,
@@ -4736,30 +5019,45 @@ return  (function(modules) {
 	  return children;
 	}
 
+	function getParent(item) {
+	  return item.parent;
+	}
+
 	module.exports = {
 	  createNode,
 	  getChildren,
-	  getPromiseProperties,
+	  getParent,
 	  getValue,
-	  isDefault,
-	  isPromise,
+	  makeNodesForEntries,
+	  makeNodesForPromiseProperties,
 	  makeNodesForProperties,
 	  nodeHasAccessors,
+	  nodeHasAllEntriesInPreview,
 	  nodeHasChildren,
+	  nodeHasEntries,
 	  nodeHasProperties,
+	  nodeIsDefaultProperties,
+	  nodeIsEntries,
 	  nodeIsFunction,
+	  nodeIsMapEntry,
 	  nodeIsMissingArguments,
 	  nodeIsObject,
 	  nodeIsOptimizedOut,
 	  nodeIsPrimitive,
-	  sortProperties
+	  nodeIsPromise,
+	  nodeIsPrototype,
+	  nodeSupportsBucketing,
+	  sortProperties,
+	  NODE_TYPES,
+	  
+	  SAFE_PATH_PREFIX
 	};
 
  },
 
  function(module, exports, __webpack_require__) {
 
-	var baseGet = __webpack_require__(52);
+	var baseGet = __webpack_require__(53);
 
 	
 
@@ -4798,8 +5096,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var castPath = __webpack_require__(53),
-	    toKey = __webpack_require__(102);
+	var castPath = __webpack_require__(54),
+	    toKey = __webpack_require__(103);
 
 	
 
@@ -4828,10 +5126,10 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var isArray = __webpack_require__(54),
-	    isKey = __webpack_require__(55),
-	    stringToPath = __webpack_require__(64),
-	    toString = __webpack_require__(99);
+	var isArray = __webpack_require__(55),
+	    isKey = __webpack_require__(56),
+	    stringToPath = __webpack_require__(65),
+	    toString = __webpack_require__(100);
 
 	
 
@@ -4887,8 +5185,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var isArray = __webpack_require__(54),
-	    isSymbol = __webpack_require__(56);
+	var isArray = __webpack_require__(55),
+	    isSymbol = __webpack_require__(57);
 
 	
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -4922,8 +5220,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseGetTag = __webpack_require__(57),
-	    isObjectLike = __webpack_require__(63);
+	var baseGetTag = __webpack_require__(58),
+	    isObjectLike = __webpack_require__(64);
 
 	
 	var symbolTag = '[object Symbol]';
@@ -4957,9 +5255,9 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(58),
-	    getRawTag = __webpack_require__(61),
-	    objectToString = __webpack_require__(62);
+	var Symbol = __webpack_require__(59),
+	    getRawTag = __webpack_require__(62),
+	    objectToString = __webpack_require__(63);
 
 	
 	var nullTag = '[object Null]',
@@ -4991,7 +5289,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(59);
+	var root = __webpack_require__(60);
 
 	
 	var Symbol = root.Symbol;
@@ -5003,7 +5301,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var freeGlobal = __webpack_require__(60);
+	var freeGlobal = __webpack_require__(61);
 
 	
 	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
@@ -5029,7 +5327,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(58);
+	var Symbol = __webpack_require__(59);
 
 	
 	var objectProto = Object.prototype;
@@ -5144,7 +5442,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var memoizeCapped = __webpack_require__(65);
+	var memoizeCapped = __webpack_require__(66);
 
 	
 	var reLeadingDot = /^\./,
@@ -5178,7 +5476,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var memoize = __webpack_require__(66);
+	var memoize = __webpack_require__(67);
 
 	
 	var MAX_MEMOIZE_SIZE = 500;
@@ -5210,7 +5508,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var MapCache = __webpack_require__(67);
+	var MapCache = __webpack_require__(68);
 
 	
 	var FUNC_ERROR_TEXT = 'Expected a function';
@@ -5289,11 +5587,11 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var mapCacheClear = __webpack_require__(68),
-	    mapCacheDelete = __webpack_require__(93),
-	    mapCacheGet = __webpack_require__(96),
-	    mapCacheHas = __webpack_require__(97),
-	    mapCacheSet = __webpack_require__(98);
+	var mapCacheClear = __webpack_require__(69),
+	    mapCacheDelete = __webpack_require__(94),
+	    mapCacheGet = __webpack_require__(97),
+	    mapCacheHas = __webpack_require__(98),
+	    mapCacheSet = __webpack_require__(99);
 
 	
 
@@ -5327,9 +5625,9 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var Hash = __webpack_require__(69),
-	    ListCache = __webpack_require__(84),
-	    Map = __webpack_require__(92);
+	var Hash = __webpack_require__(70),
+	    ListCache = __webpack_require__(85),
+	    Map = __webpack_require__(93);
 
 	
 
@@ -5354,11 +5652,11 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var hashClear = __webpack_require__(70),
-	    hashDelete = __webpack_require__(80),
-	    hashGet = __webpack_require__(81),
-	    hashHas = __webpack_require__(82),
-	    hashSet = __webpack_require__(83);
+	var hashClear = __webpack_require__(71),
+	    hashDelete = __webpack_require__(81),
+	    hashGet = __webpack_require__(82),
+	    hashHas = __webpack_require__(83),
+	    hashSet = __webpack_require__(84);
 
 	
 
@@ -5392,7 +5690,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var nativeCreate = __webpack_require__(71);
+	var nativeCreate = __webpack_require__(72);
 
 	
 
@@ -5413,7 +5711,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getNative = __webpack_require__(72);
+	var getNative = __webpack_require__(73);
 
 	
 	var nativeCreate = getNative(Object, 'create');
@@ -5425,8 +5723,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseIsNative = __webpack_require__(73),
-	    getValue = __webpack_require__(79);
+	var baseIsNative = __webpack_require__(74),
+	    getValue = __webpack_require__(80);
 
 	
 
@@ -5448,10 +5746,10 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var isFunction = __webpack_require__(74),
-	    isMasked = __webpack_require__(76),
-	    isObject = __webpack_require__(75),
-	    toSource = __webpack_require__(78);
+	var isFunction = __webpack_require__(75),
+	    isMasked = __webpack_require__(77),
+	    isObject = __webpack_require__(76),
+	    toSource = __webpack_require__(79);
 
 	
 
@@ -5501,8 +5799,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseGetTag = __webpack_require__(57),
-	    isObject = __webpack_require__(75);
+	var baseGetTag = __webpack_require__(58),
+	    isObject = __webpack_require__(76);
 
 	
 	var asyncTag = '[object AsyncFunction]',
@@ -5581,7 +5879,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var coreJsData = __webpack_require__(77);
+	var coreJsData = __webpack_require__(78);
 
 	
 	var maskSrcKey = (function() {
@@ -5607,7 +5905,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(59);
+	var root = __webpack_require__(60);
 
 	
 	var coreJsData = root['__core-js_shared__'];
@@ -5693,7 +5991,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var nativeCreate = __webpack_require__(71);
+	var nativeCreate = __webpack_require__(72);
 
 	
 	var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -5729,7 +6027,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var nativeCreate = __webpack_require__(71);
+	var nativeCreate = __webpack_require__(72);
 
 	
 	var objectProto = Object.prototype;
@@ -5758,7 +6056,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var nativeCreate = __webpack_require__(71);
+	var nativeCreate = __webpack_require__(72);
 
 	
 	var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -5787,11 +6085,11 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var listCacheClear = __webpack_require__(85),
-	    listCacheDelete = __webpack_require__(86),
-	    listCacheGet = __webpack_require__(89),
-	    listCacheHas = __webpack_require__(90),
-	    listCacheSet = __webpack_require__(91);
+	var listCacheClear = __webpack_require__(86),
+	    listCacheDelete = __webpack_require__(87),
+	    listCacheGet = __webpack_require__(90),
+	    listCacheHas = __webpack_require__(91),
+	    listCacheSet = __webpack_require__(92);
 
 	
 
@@ -5844,7 +6142,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var assocIndexOf = __webpack_require__(87);
+	var assocIndexOf = __webpack_require__(88);
 
 	
 	var arrayProto = Array.prototype;
@@ -5885,7 +6183,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var eq = __webpack_require__(88);
+	var eq = __webpack_require__(89);
 
 	
 
@@ -5955,7 +6253,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var assocIndexOf = __webpack_require__(87);
+	var assocIndexOf = __webpack_require__(88);
 
 	
 
@@ -5980,7 +6278,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var assocIndexOf = __webpack_require__(87);
+	var assocIndexOf = __webpack_require__(88);
 
 	
 
@@ -6002,7 +6300,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var assocIndexOf = __webpack_require__(87);
+	var assocIndexOf = __webpack_require__(88);
 
 	
 
@@ -6034,8 +6332,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getNative = __webpack_require__(72),
-	    root = __webpack_require__(59);
+	var getNative = __webpack_require__(73),
+	    root = __webpack_require__(60);
 
 	
 	var Map = getNative(root, 'Map');
@@ -6047,7 +6345,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getMapData = __webpack_require__(94);
+	var getMapData = __webpack_require__(95);
 
 	
 
@@ -6071,7 +6369,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var isKeyable = __webpack_require__(95);
+	var isKeyable = __webpack_require__(96);
 
 	
 
@@ -6116,7 +6414,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getMapData = __webpack_require__(94);
+	var getMapData = __webpack_require__(95);
 
 	
 
@@ -6138,7 +6436,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getMapData = __webpack_require__(94);
+	var getMapData = __webpack_require__(95);
 
 	
 
@@ -6160,7 +6458,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var getMapData = __webpack_require__(94);
+	var getMapData = __webpack_require__(95);
 
 	
 
@@ -6188,7 +6486,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseToString = __webpack_require__(100);
+	var baseToString = __webpack_require__(101);
 
 	
 
@@ -6222,10 +6520,10 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(58),
-	    arrayMap = __webpack_require__(101),
-	    isArray = __webpack_require__(54),
-	    isSymbol = __webpack_require__(56);
+	var Symbol = __webpack_require__(59),
+	    arrayMap = __webpack_require__(102),
+	    isArray = __webpack_require__(55),
+	    isSymbol = __webpack_require__(57);
 
 	
 	var INFINITY = 1 / 0;
@@ -6292,7 +6590,7 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var isSymbol = __webpack_require__(56);
+	var isSymbol = __webpack_require__(57);
 
 	
 	var INFINITY = 1 / 0;
@@ -6319,8 +6617,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseHas = __webpack_require__(104),
-	    hasPath = __webpack_require__(105);
+	var baseHas = __webpack_require__(105),
+	    hasPath = __webpack_require__(106);
 
 	
 
@@ -6385,12 +6683,12 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var castPath = __webpack_require__(53),
-	    isArguments = __webpack_require__(106),
-	    isArray = __webpack_require__(54),
-	    isIndex = __webpack_require__(108),
-	    isLength = __webpack_require__(109),
-	    toKey = __webpack_require__(102);
+	var castPath = __webpack_require__(54),
+	    isArguments = __webpack_require__(107),
+	    isArray = __webpack_require__(55),
+	    isIndex = __webpack_require__(109),
+	    isLength = __webpack_require__(110),
+	    toKey = __webpack_require__(103);
 
 	
 
@@ -6430,8 +6728,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseIsArguments = __webpack_require__(107),
-	    isObjectLike = __webpack_require__(63);
+	var baseIsArguments = __webpack_require__(108),
+	    isObjectLike = __webpack_require__(64);
 
 	
 	var objectProto = Object.prototype;
@@ -6472,8 +6770,8 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
-	var baseGetTag = __webpack_require__(57),
-	    isObjectLike = __webpack_require__(63);
+	var baseGetTag = __webpack_require__(58),
+	    isObjectLike = __webpack_require__(64);
 
 	
 	var argsTag = '[object Arguments]';
