@@ -13,10 +13,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
   "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
-  "resource://gre/modules/Timer.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm");
 
-const BROWSER_READY_NOTIFICATION = "final-ui-startup";
+const BROWSER_READY_NOTIFICATION = "browser-delayed-startup-finished";
+const BROWSER_SESSION_STORE_NOTIFICATION = "sessionstore-windows-restored";
 const PREF_WHITELIST = [
   "browser.onboarding.enabled",
   "browser.onboarding.hidden",
@@ -71,6 +72,54 @@ function initContentMessageListener() {
   });
 }
 
+let syncTourChecker = {
+  registered: false,
+
+  observe() {
+    this.setComplete();
+  },
+
+  init() {
+    if (Services.prefs.getBoolPref("browser.onboarding.tour.onboarding-tour-sync.completed", false)) {
+      return;
+    }
+    
+    fxAccounts.getSignedInUser().then(user => {
+      if (user) {
+        this.setComplete();
+        return;
+      }
+      
+      this.register();
+    });
+  },
+
+  register() {
+    if (this.registered) {
+      return;
+    }
+    Services.obs.addObserver(this, "fxaccounts:onverified");
+    this.registered = true;
+  },
+
+  setComplete() {
+    Services.prefs.setBoolPref("browser.onboarding.tour.onboarding-tour-sync.completed", true);
+    this.unregister();
+  },
+
+  unregister() {
+    if (!this.registered) {
+      return;
+    }
+    Services.obs.removeObserver(this, "fxaccounts:onverified");
+    this.registered = false;
+  },
+
+  uninit() {
+    this.unregister();
+  },
+}
+
 
 
 
@@ -89,8 +138,15 @@ function observe(subject, topic, data) {
   switch (topic) {
     case BROWSER_READY_NOTIFICATION:
       Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
+      onBrowserReady();
+      break;
+    case BROWSER_SESSION_STORE_NOTIFICATION:
+      Services.obs.removeObserver(observe, BROWSER_SESSION_STORE_NOTIFICATION);
       
-      setTimeout(() => onBrowserReady());
+      
+      
+      
+      Services.tm.idleDispatchToMainThread(() => syncTourChecker.init());
       break;
   }
 }
@@ -103,8 +159,10 @@ function startup(aData, aReason) {
   
   if (aReason === APP_STARTUP || aReason === ADDON_INSTALL) {
     Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
+    Services.obs.addObserver(observe, BROWSER_SESSION_STORE_NOTIFICATION);
   } else {
     onBrowserReady();
+    syncTourChecker.init();
   }
 }
 
@@ -113,4 +171,5 @@ function shutdown(aData, aReason) {
   if (waitingForBrowserReady) {
     Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
   }
+  syncTourChecker.uninit();
 }
