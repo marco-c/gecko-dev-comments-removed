@@ -127,8 +127,19 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
     nsCOMPtr<nsIURI> uri;
-    rv = channel->GetURI(getter_AddRefs(uri));
+    rv = channel->GetOriginalURI(getter_AddRefs(uri));
     if (NS_FAILED(rv)) return rv;
+
+    bool isResource = false;
+    rv = uri->SchemeIs("resource", &isResource);
+    if (NS_FAILED(rv)) return rv;
+
+    
+    
+    if (!isResource) {
+        rv = channel->GetURI(getter_AddRefs(uri));
+        if (NS_FAILED(rv)) return rv;
+    }
 
     channel->SetContentType(NS_LITERAL_CSTRING("text/html"));
 
@@ -544,12 +555,7 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
         
         
         
-        nsCOMPtr<nsIURI> originalUri;
-        rv = channel->GetOriginalURI(getter_AddRefs(originalUri));
-        bool wasResource = false;
-        if (NS_FAILED(rv) ||
-            NS_FAILED(originalUri->SchemeIs("resource", &wasResource)) ||
-            !wasResource) {
+        if (!isResource) {
             buffer.AppendLiteral("<base href=\"");
             nsAdoptingCString htmlEscapedUri(nsEscapeHTML(baseUri.get()));
             buffer.Append(htmlEscapedUri);
