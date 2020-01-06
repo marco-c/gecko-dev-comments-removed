@@ -266,6 +266,25 @@ class AtomicOperations
     static void podMoveSafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src, size_t nelem) {
         memmoveSafeWhenRacy(dest, src, nelem * sizeof(T));
     }
+
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    
+    
+
+    template<typename T>
+    static bool
+    tier1Constraints(const T* addr) {
+        static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+        return (sizeof(T) < 8 || (hasAtomic8() && isLockfree8())) &&
+               !(uintptr_t(addr) & (sizeof(T) - 1));
+    }
+#endif
 };
 
 
