@@ -55,7 +55,10 @@ const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_OVERRIDE_OFFICIAL_CHECK = PREF_BRANCH + "send.overrideOfficialCheck";
 
 const TOPIC_IDLE_DAILY = "idle-daily";
-const TOPIC_QUIT_APPLICATION = "quit-application";
+
+
+const TOPIC_QUIT_APPLICATION_GRANTED = "quit-application-granted";
+const TOPIC_QUIT_APPLICATION_FORCED = "quit-application-forced";
 
 
 
@@ -586,12 +589,15 @@ var TelemetrySendImpl = {
   _testMode: false,
   
   _currentPings: new Map(),
-
+  
+  _isOSShutdown: false,
   
   _overduePingCount: 0,
 
   OBSERVER_TOPICS: [
     TOPIC_IDLE_DAILY,
+    TOPIC_QUIT_APPLICATION_GRANTED,
+    TOPIC_QUIT_APPLICATION_FORCED,
   ],
 
   OBSERVED_PREFERENCES: [
@@ -630,6 +636,11 @@ var TelemetrySendImpl = {
 
   earlyInit() {
     this._annotateCrashReport();
+
+    
+    
+    Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_FORCED);
+    Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_GRANTED);
   },
 
   async setup(testing) {
@@ -761,6 +772,7 @@ var TelemetrySendImpl = {
     this._shutdown = false;
     this._currentPings = new Map();
     this._overduePingCount = 0;
+    this._isOSShutdown = false;
 
     const histograms = [
       "TELEMETRY_SUCCESS",
@@ -786,9 +798,23 @@ var TelemetrySendImpl = {
   },
 
   observe(subject, topic, data) {
+    let setOSShutdown = () => {
+      this._log.trace("setOSShutdown - in OS shutdown");
+      this._isOSShutdown = true;
+      Telemetry.scalarSet("telemetry.os_shutting_down", true);
+    };
+
     switch (topic) {
     case TOPIC_IDLE_DAILY:
       SendScheduler.triggerSendingPings(true);
+      break;
+    case TOPIC_QUIT_APPLICATION_FORCED:
+      setOSShutdown();
+      break;
+    case TOPIC_QUIT_APPLICATION_GRANTED:
+      if (data == "syncShutdown") {
+        setOSShutdown();
+      }
       break;
     }
   },
@@ -826,7 +852,14 @@ var TelemetrySendImpl = {
     
     
     
+    
+    
+    
+    
+    
+    
     if (options.usePingSender &&
+        !this._isOSShutdown &&
         TelemetryReportingPolicy.canUpload() &&
         AppConstants.platform != "android") {
       const url = this._buildSubmissionURL(ping);

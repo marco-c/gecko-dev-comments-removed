@@ -1365,11 +1365,34 @@ add_task(async function test_sendShutdownPing() {
     return;
   }
 
+  const OSSHUTDOWN_SCALAR = "telemetry.os_shutting_down";
+
+  let checkPendingShutdownPing = async function() {
+    let pendingPings = await TelemetryStorage.loadPendingPingList();
+    Assert.equal(pendingPings.length, 2,
+                 "We expect 2 pending pings: shutdown and saved-session.");
+    
+    const pings = [
+      await TelemetryStorage.loadPendingPing(pendingPings[0].id),
+      await TelemetryStorage.loadPendingPing(pendingPings[1].id)
+    ];
+    
+    const shutdownPing = pings.find(p => p.type == "main");
+    Assert.ok(shutdownPing, "The 'shutdown' ping must be saved to disk.");
+    Assert.ok(pings.find(p => p.type == "saved-session"),
+              "The 'saved-session' ping must be saved to disk.");
+    Assert.equal("shutdown", shutdownPing.payload.info.reason,
+                 "The 'shutdown' ping must be saved to disk.");
+    Assert.ok(shutdownPing.payload.processes.parent.scalars[OSSHUTDOWN_SCALAR],
+              "The OS shutdown scalar must be set to true.");
+  };
+
   Preferences.set(PREF_SHUTDOWN_PINGSENDER, true);
   Preferences.set(PREF_POLICY_FIRSTRUN, false);
   
   TelemetryReportingPolicy.testUpdateFirstRun();
   PingServer.clearRequests();
+  Telemetry.clearScalars();
 
   
   let nextPing = PingServer.promiseNextPing();
@@ -1380,7 +1403,8 @@ add_task(async function test_sendShutdownPing() {
   checkPingFormat(ping, ping.type, true, true);
   Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
   Assert.equal(ping.clientId, gClientID);
-
+  Assert.ok(!(OSSHUTDOWN_SCALAR in ping.payload.processes.parent.scalars),
+            "The OS shutdown scalar must not be set.");
   
   
   PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
@@ -1394,6 +1418,26 @@ add_task(async function test_sendShutdownPing() {
   
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+  yield TelemetryController.testReset();
+  Services.obs.notifyObservers(null, "quit-application-forced");
+  yield TelemetryController.testShutdown();
+
+  
+  yield checkPendingShutdownPing();
+
+  
+  yield TelemetryStorage.testClearPendingPings();
+  Telemetry.clearScalars();
+
+  yield TelemetryController.testReset();
+  Services.obs.notifyObservers(null, "quit-application-granted", "syncShutdown");
+  yield TelemetryController.testShutdown();
+  yield checkPendingShutdownPing();
+
+  
+  yield TelemetryStorage.testClearPendingPings();
+
+  
   Preferences.set(PREF_BYPASS_NOTIFICATION, false);
   await TelemetryController.testReset();
   await TelemetryController.testShutdown();
