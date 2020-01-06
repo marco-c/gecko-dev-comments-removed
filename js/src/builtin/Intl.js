@@ -1682,10 +1682,8 @@ function InitializeCollator(collator, locales, options) {
     
     
     
-    
-    
     if (options === undefined)
-        options = {};
+        options = std_Object_create(null);
     else
         options = ToObject(options);
 
@@ -2177,10 +2175,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
-    
-    
     if (options === undefined)
-        options = {};
+        options = std_Object_create(null);
     else
         options = ToObject(options);
 
@@ -3372,7 +3368,7 @@ function InitializePluralRules(pluralRules, locales, options) {
 
     
     if (options === undefined)
-        options = {};
+        options = std_Object_create(null);
     else
         options = ToObject(options);
 
@@ -3593,7 +3589,7 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
 
     
     if (options === undefined)
-        options = {};
+        options = std_Object_create(null);
     else
         options = ToObject(options);
 
@@ -3806,7 +3802,7 @@ function Intl_getDisplayNames(locales, options) {
     
     if (options === undefined)
         
-        options = {};
+        options = std_Object_create(null);
     
     else
         

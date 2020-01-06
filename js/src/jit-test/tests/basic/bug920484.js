@@ -8,8 +8,9 @@ Object.prototype.localeMatcher = "invalid matcher option";
 if (this.hasOwnProperty("Intl")) {
     
     
-    assertThrowsInstanceOf(() => new Intl.Collator(), RangeError);
-    assertThrowsInstanceOf(() => new Intl.NumberFormat(), RangeError);
+    
+    new Intl.Collator().compare("a", "b");
+    new Intl.NumberFormat().format(10);
     new Intl.DateTimeFormat().format(new Date);
 
     
