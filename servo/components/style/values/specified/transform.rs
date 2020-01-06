@@ -39,7 +39,7 @@ pub type TransformOrigin = GenericTransformOrigin<OriginComponent<X>, OriginComp
 impl Transform {
     
     
-    pub fn parse_internal<'i, 't>(
+    fn parse_internal<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         prefixed: bool,
@@ -251,6 +251,25 @@ impl Transform {
                     .map_err(|()| location.new_custom_error(StyleParseErrorKind::UnexpectedFunction(function.clone())))
             })
         })?))
+    }
+
+    
+    
+    #[inline]
+    pub fn parse_prefixed<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Transform::parse_internal(context, input, true)
+    }
+}
+
+impl Parse for Transform {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>
+    ) -> Result<Self, ParseError<'i>> {
+        Transform::parse_internal(context, input, false)
     }
 }
 
