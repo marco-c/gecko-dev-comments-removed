@@ -27,12 +27,13 @@ enum class FlushType : uint8_t {
 
   Style            = 3, 
   Frames           = Style,
-  InterruptibleLayout = 4, 
+  EnsurePresShellInitAndFrames = 4, 
+  InterruptibleLayout = 5, 
 
 
-  Layout           = 5, 
+  Layout           = 6, 
 
-  Display          = 6, 
+  Display          = 7, 
 
   Count
 };
