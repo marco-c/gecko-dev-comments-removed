@@ -54,7 +54,7 @@ struct TableRowGroupReflowInput {
 } 
 
 nsTableRowGroupFrame::nsTableRowGroupFrame(nsStyleContext* aContext)
-  : nsContainerFrame(aContext, LayoutFrameType::TableRowGroup)
+  : nsContainerFrame(aContext, kClassID, LayoutFrameType::TableRowGroup)
 {
   SetRepeatable(false);
 }

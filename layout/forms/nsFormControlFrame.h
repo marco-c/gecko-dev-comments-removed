@@ -25,7 +25,7 @@ public:
 
 
 
-  explicit nsFormControlFrame(nsStyleContext*);
+  explicit nsFormControlFrame(nsStyleContext*, nsIFrame::ClassID);
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {

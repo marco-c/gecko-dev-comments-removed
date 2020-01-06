@@ -603,10 +603,11 @@ public:
   typedef mozilla::Sides Sides;
   typedef mozilla::LogicalSides LogicalSides;
   typedef mozilla::SmallPointerArray<mozilla::DisplayItemData> DisplayItemArray;
+  typedef nsQueryFrame::ClassID ClassID;
 
   NS_DECL_QUERYFRAME_TARGET(nsIFrame)
 
-  explicit nsIFrame(mozilla::LayoutFrameType aType)
+  explicit nsIFrame(ClassID aID, mozilla::LayoutFrameType aType)
     : mRect()
     , mContent(nullptr)
     , mStyleContext(nullptr)
@@ -615,6 +616,7 @@ public:
     , mPrevSibling(nullptr)
     , mState(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)
     , mType(aType)
+    , mClass(aID)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -3901,6 +3903,9 @@ protected:
 
   
   mozilla::LayoutFrameType mType;
+
+  
+  ClassID mClass; 
 
   
   

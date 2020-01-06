@@ -68,6 +68,15 @@ public:
     NON_FRAME_MARKER
   };
 
+  
+  enum class ClassID : uint8_t {
+#define FRAME_ID(classname, ...) classname##_id,
+#define ABSTRACT_FRAME_ID(classname)
+#include "nsFrameIdList.h"
+#undef FRAME_ID
+#undef ABSTRACT_FRAME_ID
+  };
+
   virtual void* QueryFrame(FrameIID id) = 0;
 };
 

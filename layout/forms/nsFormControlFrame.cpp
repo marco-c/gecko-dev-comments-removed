@@ -17,8 +17,9 @@ using namespace mozilla;
 
 
 
-nsFormControlFrame::nsFormControlFrame(nsStyleContext* aContext)
-  : nsAtomicContainerFrame(aContext, LayoutFrameType::FormControl)
+nsFormControlFrame::nsFormControlFrame(nsStyleContext* aContext,
+                                       nsIFrame::ClassID aID)
+  : nsAtomicContainerFrame(aContext, aID, LayoutFrameType::FormControl)
 {
 }
 

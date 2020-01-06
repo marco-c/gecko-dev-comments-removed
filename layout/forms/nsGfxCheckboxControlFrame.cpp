@@ -92,7 +92,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsGfxCheckboxControlFrame)
 
 
 nsGfxCheckboxControlFrame::nsGfxCheckboxControlFrame(nsStyleContext* aContext)
-: nsFormControlFrame(aContext)
+: nsFormControlFrame(aContext, kClassID)
 {
 }
 

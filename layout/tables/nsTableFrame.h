@@ -603,7 +603,7 @@ protected:
   
 
 
-  explicit nsTableFrame(nsStyleContext* aContext);
+  explicit nsTableFrame(nsStyleContext* aContext, ClassID aID = kClassID);
 
   
   virtual ~nsTableFrame();

@@ -34,7 +34,7 @@ NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
                         nsStyleContext* aContext)
 {
   nsIFrame* frame =
-    new (aPresShell) nsSVGContainerFrame(aContext, LayoutFrameType::None);
+    new (aPresShell) nsSVGContainerFrame(aContext, nsSVGContainerFrame::kClassID, LayoutFrameType::None);
   
   
   
@@ -43,7 +43,6 @@ NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsSVGContainerFrame)
-NS_IMPL_FRAMEARENA_HELPERS(nsSVGDisplayContainerFrame)
 
 void
 nsSVGContainerFrame::AppendFrames(ChildListID  aListID,

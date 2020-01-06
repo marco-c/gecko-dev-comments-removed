@@ -51,7 +51,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 
 nsMenuBarFrame::nsMenuBarFrame(nsStyleContext* aContext)
-  : nsBoxFrame(aContext)
+  : nsBoxFrame(aContext, kClassID)
   , mStayActive(false)
   , mIsActive(false)
   , mActiveByKeyboard(false)
