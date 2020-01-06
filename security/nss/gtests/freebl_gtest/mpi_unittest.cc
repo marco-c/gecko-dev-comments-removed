@@ -2,10 +2,15 @@
 
 
 
+#include "secdert.h"
+#include "secitem.h"
+#include "secport.h"
+
 #include "gtest/gtest.h"
 
 #include <stdint.h>
 #include <string.h>
+#include <string>
 
 #ifdef __MACH__
 #include <mach/clock.h>
