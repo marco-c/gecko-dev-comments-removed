@@ -1797,7 +1797,8 @@ class PackageFrontend(MachCommandBase):
                         level = logging.WARN
                     else:
                         level = logging.ERROR
-                    self.log(level, 'artifact', {}, e.message)
+                    
+                    self.log(level, 'artifact', {}, str(e.message))
                     if not should_retry:
                         break
                     if attempt < retry:
