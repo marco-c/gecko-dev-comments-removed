@@ -462,7 +462,7 @@ Inspector.prototype = {
     if (!this._InspectorTabPanel) {
       this._InspectorTabPanel =
         this.React.createFactory(this.browserRequire(
-        "devtools/client/inspector/components/InspectorTabPanel"));
+        "devtools/client/inspector/components/inspector-tab-panel"));
     }
     return this._InspectorTabPanel;
   },
@@ -1124,7 +1124,15 @@ Inspector.prototype = {
   },
 
   _onContextMenu: function (e) {
+    if (e.originalTarget.closest("input[type=text]") ||
+        e.originalTarget.closest("input:not([type])") ||
+        e.originalTarget.closest("textarea")) {
+      return;
+    }
+
+    e.stopPropagation();
     e.preventDefault();
+
     this._openMenu({
       screenX: e.screenX,
       screenY: e.screenY,
