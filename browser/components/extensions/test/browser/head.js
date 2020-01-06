@@ -27,6 +27,7 @@
 
 
 
+
 const {PromiseTestUtils} = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -35,6 +36,11 @@ PromiseTestUtils.whitelistRejectionsGlobally(/Receiving end does not exist/);
 const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
 const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {});
 const {Preferences} = Cu.import("resource://gre/modules/Preferences.jsm", {});
+
+XPCOMUtils.defineLazyGetter(this, "Management", () => {
+  const {Management} = Cu.import("resource://gre/modules/Extension.jsm", {});
+  return Management;
+});
 
 
 
@@ -459,4 +465,19 @@ function promisePrefChangeObserved(pref) {
       Preferences.ignore(pref, prefObserver);
       resolve();
     }));
+}
+
+function awaitEvent(eventName, id) {
+  return new Promise(resolve => {
+    let listener = (_eventName, ...args) => {
+      let extension = args[0];
+      if (_eventName === eventName &&
+          extension.id == id) {
+        Management.off(eventName, listener);
+        resolve();
+      }
+    };
+
+    Management.on(eventName, listener);
+  });
 }
