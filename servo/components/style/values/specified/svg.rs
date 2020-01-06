@@ -8,7 +8,8 @@ use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use style_traits::{CommaWithSpace, ParseError, Separator, StyleParseError};
 use values::generics::svg as generic;
-use values::specified::{LengthOrPercentageOrNumber, NonNegativeLengthOrPercentageOrNumber, Opacity, SpecifiedUrl};
+use values::specified::{LengthOrPercentage, NonNegativeLengthOrPercentage, NonNegativeNumber};
+use values::specified::{Number, Opacity, SpecifiedUrl};
 use values::specified::color::RGBAColor;
 
 
@@ -43,49 +44,59 @@ fn parse_context_value<'i, 't, T>(input: &mut Parser<'i, 't>, value: T)
 }
 
 
-pub type SVGLength = generic::SVGLength<LengthOrPercentageOrNumber>;
+
+pub type SvgLengthOrPercentageOrNumber =
+    generic::SvgLengthOrPercentageOrNumber<LengthOrPercentage, Number>;
+
+
+pub type SVGLength = generic::SVGLength<SvgLengthOrPercentageOrNumber>;
 
 impl Parse for SVGLength {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
                      -> Result<Self, ParseError<'i>> {
-        input.try(|i| LengthOrPercentageOrNumber::parse(context, i))
+        input.try(|i| SvgLengthOrPercentageOrNumber::parse(context, i))
              .map(Into::into)
              .or_else(|_| parse_context_value(input, generic::SVGLength::ContextValue))
     }
 }
 
-impl From<LengthOrPercentageOrNumber> for SVGLength {
-    fn from(length: LengthOrPercentageOrNumber) -> Self {
+impl From<SvgLengthOrPercentageOrNumber> for SVGLength {
+    fn from(length: SvgLengthOrPercentageOrNumber) -> Self {
         generic::SVGLength::Length(length)
     }
 }
 
 
-pub type SVGWidth = generic::SVGLength<NonNegativeLengthOrPercentageOrNumber>;
+
+pub type NonNegativeSvgLengthOrPercentageOrNumber =
+    generic::SvgLengthOrPercentageOrNumber<NonNegativeLengthOrPercentage, NonNegativeNumber>;
+
+
+pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthOrPercentageOrNumber>;
 
 impl Parse for SVGWidth {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
                      -> Result<Self, ParseError<'i>> {
-        input.try(|i| NonNegativeLengthOrPercentageOrNumber::parse(context, i))
+        input.try(|i| NonNegativeSvgLengthOrPercentageOrNumber::parse(context, i))
              .map(Into::into)
              .or_else(|_| parse_context_value(input, generic::SVGLength::ContextValue))
     }
 }
 
-impl From<NonNegativeLengthOrPercentageOrNumber> for SVGWidth {
-    fn from(length: NonNegativeLengthOrPercentageOrNumber) -> Self {
+impl From<NonNegativeSvgLengthOrPercentageOrNumber> for SVGWidth {
+    fn from(length: NonNegativeSvgLengthOrPercentageOrNumber) -> Self {
         generic::SVGLength::Length(length)
     }
 }
 
 
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthOrPercentageOrNumber>;
+pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthOrPercentageOrNumber>;
 
 impl Parse for SVGStrokeDashArray {
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>)
                      -> Result<Self, ParseError<'i>> {
         if let Ok(values) = input.try(|i| CommaWithSpace::parse(i, |i| {
-            NonNegativeLengthOrPercentageOrNumber::parse(context, i)
+            NonNegativeSvgLengthOrPercentageOrNumber::parse(context, i)
         })) {
             Ok(generic::SVGStrokeDashArray::Values(values))
         } else if let Ok(_) = input.try(|i| i.expect_ident_matching("none")) {
