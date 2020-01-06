@@ -40,6 +40,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 
 
 
+
 [
   ["AboutHome", "resource:///modules/AboutHome.jsm"],
   ["BrowserUITelemetry", "resource:///modules/BrowserUITelemetry.jsm"],
@@ -106,9 +107,10 @@ if (AppConstants.MOZ_CRASHREPORTER) {
 
 [
   ["Favicons", "@mozilla.org/browser/favicon-service;1", "mozIAsyncFavicons"],
-  ["WindowsUIUtils", "@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
   ["gAboutNewTabService", "@mozilla.org/browser/aboutnewtab-service;1", "nsIAboutNewTabService"],
   ["gDNSService", "@mozilla.org/network/dns-service;1", "nsIDNSService"],
+  ["Marionette", "@mozilla.org/remote/marionette;1", "nsIMarionette"],
+  ["WindowsUIUtils", "@mozilla.org/windows-ui-utils;1", "nsIWindowsUIUtils"],
 ].forEach(([name, cc, ci]) => XPCOMUtils.defineLazyServiceGetter(this, name, cc, ci));
 
 if (AppConstants.MOZ_CRASHREPORTER) {
@@ -1255,6 +1257,8 @@ var gBrowserInit = {
 
     ToolbarIconColor.init();
 
+    gRemoteControl.updateVisualCue(Marionette.running);
+
     
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
@@ -1393,6 +1397,7 @@ var gBrowserInit = {
     setTimeout(function() { SafeBrowsing.init(); }, 2000);
 
     Services.obs.addObserver(gIdentityHandler, "perm-changed");
+    Services.obs.addObserver(gRemoteControl, "remote-active");
     Services.obs.addObserver(gSessionHistoryObserver, "browser:purge-session-history");
     Services.obs.addObserver(gStoragePressureObserver, "QuotaManager::StoragePressure");
     Services.obs.addObserver(gXPInstallObserver, "addon-install-disabled");
@@ -1713,6 +1718,7 @@ var gBrowserInit = {
       FullZoom.destroy();
 
       Services.obs.removeObserver(gIdentityHandler, "perm-changed");
+      Services.obs.removeObserver(gRemoteControl, "remote-active");
       Services.obs.removeObserver(gSessionHistoryObserver, "browser:purge-session-history");
       Services.obs.removeObserver(gStoragePressureObserver, "QuotaManager::StoragePressure");
       Services.obs.removeObserver(gXPInstallObserver, "addon-install-disabled");
@@ -7817,7 +7823,6 @@ var gIdentityHandler = {
   }
 };
 
-
 var gPageActionButton = {
   get button() {
     delete this.button;
@@ -7858,6 +7863,25 @@ var gPageActionButton = {
   emailLink() {
     this.panel.hidePopup();
     MailIntegration.sendLinkForBrowser(gBrowser.selectedBrowser);
+  },
+};
+
+
+
+
+
+const gRemoteControl = {
+  observe(subject, topic, data) {
+    gRemoteControl.updateVisualCue(data);
+  },
+
+  updateVisualCue(enabled) {
+    const mainWindow = document.documentElement;
+    if (enabled) {
+      mainWindow.setAttribute("remotecontrol", "true");
+    } else {
+      mainWindow.removeAttribute("remotecontrol");
+    }
   },
 };
 

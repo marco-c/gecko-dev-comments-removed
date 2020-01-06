@@ -495,6 +495,27 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 
 
+
+
+
+
+
+
+#main-window[remotecontrol] #urlbar {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 25px,
+    rgba(255,255,255,.3) 25px,
+    rgba(255,255,255,.3) 50px);
+  background-color: rgba(255,170,68,.8);
+  color: black;
+}
+#main-window[remotecontrol] #urlbar #identity-box {
+  background: white;
+}
+
+
 html|input.urlbar-input[textoverflow]:not([focused]) {
   
 
