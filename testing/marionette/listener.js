@@ -40,6 +40,7 @@ const {
 } = Cu.import("chrome://marionette/content/error.js", {});
 Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
+const {ContentEventObserverService} = Cu.import("chrome://marionette/content/dom.js", {});
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/legacyaction.js");
 Cu.import("chrome://marionette/content/navigate.js");
@@ -114,6 +115,9 @@ const modalHandler = function() {
 
 const sandboxes = new Sandboxes(() => curContainer.frame);
 let sandboxName = "default";
+
+const eventObservers = new ContentEventObserverService(
+    content, sendAsyncMessage.bind(this));
 
 
 
@@ -615,6 +619,8 @@ function startListeners() {
   addMessageListenerId("Marionette:sleepSession", sleepSession);
   addMessageListenerId("Marionette:takeScreenshot", takeScreenshotFn);
   addMessageListenerId("Marionette:reftestWait", reftestWaitFn);
+  addMessageListener("Marionette:DOM:AddEventListener", domAddEventListener);
+  addMessageListener("Marionette:DOM:RemoveEventListener", domRemoveEventListener);
 }
 
 
@@ -1904,6 +1910,14 @@ async function reftestWait(url, remote) {
   if (remote) {
     windowUtils.updateLayerTree();
   }
+}
+
+function domAddEventListener(msg) {
+  eventObservers.add(msg.json.type);
+}
+
+function domRemoveEventListener(msg) {
+  eventObservers.remove(msg.json.type);
 }
 
 
