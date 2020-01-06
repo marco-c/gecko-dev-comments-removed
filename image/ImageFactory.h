@@ -7,6 +7,7 @@
 #ifndef mozilla_image_ImageFactory_h
 #define mozilla_image_ImageFactory_h
 
+#include "mozilla/StyleBackendType.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
 
@@ -45,7 +46,8 @@ public:
                                              const nsCString& aMimeType,
                                              ImageURL* aURI,
                                              bool aIsMultiPart,
-                                             uint32_t aInnerWindowId);
+                                             uint32_t aInnerWindowId,
+                                             StyleBackendType aStyleBackendType = StyleBackendType::None);
   
 
 
@@ -83,7 +85,8 @@ private:
                     const nsCString& aMimeType,
                     ImageURL* aURI,
                     uint32_t aImageFlags,
-                    uint32_t aInnerWindowId);
+                    uint32_t aInnerWindowId,
+                    StyleBackendType aStyleBackendType);
 
   
   virtual ~ImageFactory() = 0;
