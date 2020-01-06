@@ -35,6 +35,8 @@ public:
                                                   nsWidgetInitData* aInitData = nullptr,
                                                   bool aForceUseIWidgetParent = false) override;
 
+  virtual nsIWidget* GetTopLevelWidget() override;
+
   virtual void Show(bool aState) override;
   virtual bool IsVisible() const override;
   virtual void Move(double aX, double aY) override;
@@ -85,16 +87,20 @@ public:
                                  nsEventStatus& aStatus) override;
 
 private:
-  ~HeadlessWidget() {}
+  ~HeadlessWidget();
   bool mEnabled;
   bool mVisible;
+  nsIWidget* mTopLevel;
   
   nsSizeMode mLastSizeMode;
   InputContext mInputContext;
   
   
   LayoutDeviceIntRect mRestoreBounds;
-  void SendSetZLevelEvent();
+  
+  
+  void RaiseWindow();
+  static HeadlessWidget* sActiveWindow;
 };
 
 } 
