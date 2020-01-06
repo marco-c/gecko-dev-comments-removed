@@ -3,7 +3,6 @@
 
 
 #ifdef MOZILLA_INTERNAL_API
-#ifdef ENABLE_INTL_API
 
 #include "ICUUtils.h"
 #include "mozilla/Preferences.h"
@@ -274,6 +273,5 @@ ICUUtils::ToICUString(nsAString& aMozString, UnicodeString& aICUString)
 }
 #endif
 
-#endif 
 #endif 
 

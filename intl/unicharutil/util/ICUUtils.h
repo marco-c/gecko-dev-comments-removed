@@ -7,9 +7,6 @@
 #define mozilla_ICUUtils_h__
 
 
-#ifdef ENABLE_INTL_API
-
-
 
 #ifdef MOZILLA_INTERNAL_API
 
@@ -105,7 +102,6 @@ public:
 #endif
 };
 
-#endif 
 #endif 
 
 #endif 
