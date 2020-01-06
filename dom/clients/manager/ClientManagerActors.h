@@ -1,0 +1,31 @@
+
+
+
+
+
+#ifndef _mozilla_dom_ClientManagerActors_h
+#define _mozilla_dom_ClientManagerActors_h
+
+namespace mozilla {
+namespace dom {
+
+class PClientManagerChild;
+class PClientManagerParent;
+
+PClientManagerChild*
+AllocClientManagerChild();
+
+bool
+DeallocClientManagerChild(PClientManagerChild* aActor);
+
+PClientManagerParent*
+AllocClientManagerParent();
+
+bool
+DeallocClientManagerParent(PClientManagerParent* aActor);
+
+
+} 
+} 
+
+#endif 

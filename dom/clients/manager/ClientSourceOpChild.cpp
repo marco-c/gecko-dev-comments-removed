@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "ClientSourceOpChild.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ClientSourceOpChild::ActorDestroy(ActorDestroyReason aReason)
+{
+}
+
+void
+ClientSourceOpChild::Init(const ClientOpConstructorArgs& aArgs)
+{
+}
+
+} 
+} 

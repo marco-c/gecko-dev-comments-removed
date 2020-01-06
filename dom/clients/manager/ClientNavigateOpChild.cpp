@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "ClientNavigateOpChild.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ClientNavigateOpChild::ActorDestroy(ActorDestroyReason aReason)
+{
+}
+
+void
+ClientNavigateOpChild::Init(const ClientNavigateOpConstructorArgs& aArgs)
+{
+}
+
+} 
+} 

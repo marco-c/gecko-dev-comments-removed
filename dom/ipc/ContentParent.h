@@ -636,6 +636,12 @@ public:
 
   void OnCompositorDeviceReset() override;
 
+  virtual PClientOpenWindowOpParent*
+  AllocPClientOpenWindowOpParent(const ClientOpenWindowArgs& aArgs) override;
+
+  virtual bool
+  DeallocPClientOpenWindowOpParent(PClientOpenWindowOpParent* aActor) override;
+
   
   void SetInputPriorityEventEnabled(bool aEnabled);
   bool IsInputPriorityEventEnabled()

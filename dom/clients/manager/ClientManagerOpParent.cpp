@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "ClientManagerOpParent.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ClientManagerOpParent::ActorDestroy(ActorDestroyReason aReason)
+{
+}
+
+void
+ClientManagerOpParent::Init(const ClientOpConstructorArgs& aArgs)
+{
+}
+
+} 
+} 

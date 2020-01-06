@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "ClientOpenWindowOpChild.h"
+
+namespace mozilla {
+namespace dom {
+
+void
+ClientOpenWindowOpChild::ActorDestroy(ActorDestroyReason aReason)
+{
+}
+
+void
+ClientOpenWindowOpChild::Init(const ClientOpenWindowArgs& aArgs)
+{
+}
+
+} 
+} 
