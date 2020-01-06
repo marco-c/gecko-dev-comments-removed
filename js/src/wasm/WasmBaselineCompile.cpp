@@ -656,6 +656,7 @@ class BaseCompiler
     FuncOffsets finish();
 
     MOZ_MUST_USE bool emitFunction();
+    void emitInitStackLocals();
 
     
     operator MacroAssembler&() const { return masm; }
@@ -2260,26 +2261,8 @@ class BaseCompiler
             }
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        if (varLow_ < varHigh_) {
-            ScratchI32 scratch(*this);
-            masm.mov(ImmWord(0), scratch);
-            for (int32_t i = varLow_ ; i < varHigh_ ; i += 4)
-                storeToFrameI32(scratch, i + 4);
-        }
+        if (varLow_ < varHigh_)
+            emitInitStackLocals();
 
         if (debugEnabled_)
             insertBreakablePoint(CallSiteDesc::EnterFrame);
@@ -7495,6 +7478,107 @@ BaseCompiler::emitFunction()
         return false;
 
     return true;
+}
+
+void
+BaseCompiler::emitInitStackLocals()
+{
+    MOZ_ASSERT(varLow_ < varHigh_, "there should be stack locals to initialize");
+
+    static const uint32_t wordSize = sizeof(void*);
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    uint32_t low = varLow_;
+    if (low % wordSize) {
+        masm.store32(Imm32(0), Address(StackPointer, localOffsetToSPOffset(low + 4)));
+        low += 4;
+    }
+    MOZ_ASSERT(low % wordSize == 0);
+
+    const uint32_t high = AlignBytes(varHigh_, wordSize);
+    MOZ_ASSERT(high <= uint32_t(localSize_), "localSize_ should be aligned at least that");
+
+    
+    
+    
+
+    const uint32_t unrollLimit = 16;
+    const uint32_t initWords = (high - low) / wordSize;
+    const uint32_t tailWords = initWords % unrollLimit;
+    const uint32_t loopHigh = high - (tailWords * wordSize);
+
+    
+
+    if (initWords == 1) {
+        masm.storePtr(ImmWord(0), Address(StackPointer, localOffsetToSPOffset(low + wordSize)));
+        return;
+    }
+
+    
+    
+    
+    
+    
+
+    RegI32 zero = needI32();
+    masm.mov(ImmWord(0), zero);
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+
+    if (initWords < 2 * unrollLimit)  {
+        for (uint32_t i = low; i < high; i += wordSize)
+            masm.storePtr(zero, Address(StackPointer, localOffsetToSPOffset(i + wordSize)));
+        freeGPR(zero);
+        return;
+    }
+
+    
+    
+
+    
+    RegI32 p = needI32();
+    masm.computeEffectiveAddress(Address(StackPointer, localOffsetToSPOffset(low + wordSize)),
+                                 p);
+
+    
+    
+    RegI32 lim = needI32();
+    masm.computeEffectiveAddress(Address(StackPointer,
+                                         localOffsetToSPOffset(loopHigh + wordSize)),
+                                 lim);
+
+    
+    Label again;
+    masm.bind(&again);
+    for (uint32_t i = 0; i < unrollLimit; ++i)
+        masm.storePtr(zero, Address(p, -(wordSize * i)));
+    masm.subPtr(Imm32(unrollLimit * wordSize), p);
+    masm.branchPtr(Assembler::LessThan, lim, p, &again);
+
+    
+    for (uint32_t i = 0; i < tailWords; ++i)
+        masm.storePtr(zero, Address(p, -(wordSize * i)));
+
+    freeGPR(p);
+    freeGPR(lim);
+    freeGPR(zero);
 }
 
 BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
