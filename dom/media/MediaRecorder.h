@@ -28,7 +28,6 @@ class GlobalObject;
 namespace dom {
 
 class AudioNode;
-class DOMException;
 
 
 
@@ -135,12 +134,6 @@ protected:
   
   MediaStream* GetSourceMediaStream();
   
-  
-  
-  
-  
-  void InitializeDomExceptions();
-  
   RefPtr<DOMMediaStream> mDOMStream;
   
   RefPtr<AudioNode> mAudioNode;
@@ -165,12 +158,6 @@ protected:
   uint32_t mAudioBitsPerSecond;
   uint32_t mVideoBitsPerSecond;
   uint32_t mBitsPerSecond;
-
-  
-  
-  
-  RefPtr<DOMException> mSecurityDomException;
-  RefPtr<DOMException> mUnknownDomException;
 
 private:
   
