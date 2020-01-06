@@ -41,7 +41,6 @@
 
 
 
-
 class nsISocketTransport;
 class nsIAsyncInputStream;
 class nsIAsyncOutputStream;

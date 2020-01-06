@@ -5233,8 +5233,6 @@ pref("dom.forms.inputmode", false);
 pref("dom.forms.inputmode", true);
 #endif
 
-pref("dom.flyweb.enabled", false);
-
 
 pref("dom.mapped_arraybuffer.enabled", true);
 
