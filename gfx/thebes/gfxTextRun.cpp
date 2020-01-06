@@ -1873,7 +1873,9 @@ gfxFontGroup::AddPlatformFont(const nsAString& aName,
 
     
     gfxPlatformFontList::PlatformFontList()
-        ->FindAndAddFamilies(aName, &aFamilyList, true, &mStyle, mDevToCssSize);
+        ->FindAndAddFamilies(aName, &aFamilyList,
+                             gfxPlatformFontList::FindFamiliesFlags(0),
+                             &mStyle, mDevToCssSize);
 }
 
 void

@@ -138,10 +138,27 @@ public:
     
     
     
+    
+    enum class FindFamiliesFlags {
+        
+        
+        
+        eForceOtherFamilyNamesLoading = 1 << 0,
+        
+        
+        
+        
+        
+        eNoSearchForLegacyFamilyNames = 1 << 1
+    };
+
+    
+    
+    
     virtual bool
     FindAndAddFamilies(const nsAString& aFamily,
                        nsTArray<gfxFontFamily*>* aOutput,
-                       bool aDeferOtherFamilyNamesLoading,
+                       FindFamiliesFlags aFlags,
                        gfxFontStyle* aStyle = nullptr,
                        gfxFloat aDevToCssSize = 1.0);
 
@@ -266,6 +283,9 @@ public:
         gfxPlatformFontList::PlatformFontList()->UpdateFontList();
     }
 
+    bool AddWithLegacyFamilyName(const nsAString& aLegacyName,
+                                 gfxFontEntry* aFontEntry);
+
 protected:
     class InitOtherFamilyNamesRunnable : public mozilla::CancelableRunnable
     {
@@ -360,14 +380,14 @@ protected:
     
     gfxFontFamily*
     FindFamily(const nsAString& aFamily,
-               bool aDeferOtherFamilyNamesLoading = true,
+               FindFamiliesFlags aFlags = FindFamiliesFlags(0),
                gfxFontStyle* aStyle = nullptr,
                gfxFloat aDevToCssSize = 1.0)
     {
         AutoTArray<gfxFontFamily*,1> families;
         return FindAndAddFamilies(aFamily,
                                   &families,
-                                  aDeferOtherFamilyNamesLoading,
+                                  aFlags,
                                   aStyle,
                                   aDevToCssSize) ? families[0] : nullptr;
     }
@@ -477,6 +497,10 @@ protected:
 
     void ApplyWhitelist();
 
+    
+    
+    virtual gfxFontFamily* CreateFontFamily(const nsAString& aName) const = 0;
+
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> FontEntryTable;
 
@@ -564,5 +588,7 @@ protected:
 
     bool mFontFamilyWhitelistActive;
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxPlatformFontList::FindFamiliesFlags)
 
 #endif 

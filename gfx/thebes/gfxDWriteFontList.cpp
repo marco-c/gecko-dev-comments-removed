@@ -282,7 +282,12 @@ gfxDWriteFontFamily::ReadFaceNames(gfxPlatformFontList *aPlatformFontList,
 void
 gfxDWriteFontFamily::LocalizedName(nsAString &aLocalizedName)
 {
-    aLocalizedName.AssignLiteral("Unknown Font");
+    aLocalizedName = Name(); 
+
+    if (!mDWFamily) {
+        return;
+    }
+
     HRESULT hr;
     nsAutoCString locale;
     
@@ -354,6 +359,13 @@ gfxDWriteFontFamily::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 
+
+gfxFontEntry*
+gfxDWriteFontEntry::Clone() const
+{
+    MOZ_ASSERT(!IsUserFont(), "we can only clone installed fonts!");
+    return new gfxDWriteFontEntry(Name(), mFont);
+}
 
 gfxDWriteFontEntry::~gfxDWriteFontEntry()
 {
@@ -1266,7 +1278,7 @@ gfxDWriteFontList::GetStandardFamilyName(const nsAString& aFontName,
 bool
 gfxDWriteFontList::FindAndAddFamilies(const nsAString& aFamily,
                                       nsTArray<gfxFontFamily*>* aOutput,
-                                      bool aDeferOtherFamilyNamesLoading,
+                                      FindFamiliesFlags aFlags,
                                       gfxFontStyle* aStyle,
                                       gfxFloat aDevToCssSize)
 {
@@ -1285,7 +1297,7 @@ gfxDWriteFontList::FindAndAddFamilies(const nsAString& aFamily,
 
     return gfxPlatformFontList::FindAndAddFamilies(aFamily,
                                                    aOutput,
-                                                   aDeferOtherFamilyNamesLoading,
+                                                   aFlags,
                                                    aStyle,
                                                    aDevToCssSize);
 }
@@ -1703,6 +1715,12 @@ gfxDWriteFontList::CreateFontInfoData()
                                );
 
     return fi.forget();
+}
+
+gfxFontFamily*
+gfxDWriteFontList::CreateFontFamily(const nsAString& aName) const
+{
+    return new gfxDWriteFontFamily(aName, nullptr);
 }
 
 

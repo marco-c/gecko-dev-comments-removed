@@ -248,6 +248,25 @@ gfxPlatformFontList::ApplyWhitelist()
     }
 }
 
+bool
+gfxPlatformFontList::AddWithLegacyFamilyName(const nsAString& aLegacyName,
+                                             gfxFontEntry* aFontEntry)
+{
+    bool added = false;
+    nsAutoString key;
+    ToLowerCase(aLegacyName, key);
+    gfxFontFamily* family = mOtherFamilyNames.GetWeak(key);
+    if (!family) {
+        family = CreateFontFamily(aLegacyName);
+        family->SetHasStyles(true); 
+                                    
+        mOtherFamilyNames.Put(key, family);
+        added = true;
+    }
+    family->AddFontEntry(aFontEntry->Clone());
+    return added;
+}
+
 nsresult
 gfxPlatformFontList::InitFontList()
 {
@@ -685,7 +704,7 @@ gfxPlatformFontList::CheckFamily(gfxFontFamily *aFamily)
 bool
 gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
                                         nsTArray<gfxFontFamily*>* aOutput,
-                                        bool aDeferOtherFamilyNamesLoading,
+                                        FindFamiliesFlags aFlags,
                                         gfxFontStyle* aStyle,
                                         gfxFloat aDevToCssSize)
 {
@@ -708,7 +727,7 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
     
     
     if (!familyEntry && !mOtherFamilyNamesInitialized && !IsASCII(aFamily)) {
-        InitOtherFamilyNames(aDeferOtherFamilyNamesLoading);
+        InitOtherFamilyNames(!(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading));
         familyEntry = mOtherFamilyNames.GetWeak(key);
         if (!familyEntry && !mOtherFamilyNamesInitialized) {
             
@@ -721,6 +740,34 @@ gfxPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
     }
 
     familyEntry = CheckFamily(familyEntry);
+
+    
+    
+    
+    
+    
+    if (!familyEntry && !(aFlags & FindFamiliesFlags::eNoSearchForLegacyFamilyNames)) {
+        
+        const char16_t* data = aFamily.BeginReading();
+        int32_t index = aFamily.Length();
+        while (--index > 0) {
+            if (data[index] == ' ') {
+                break;
+            }
+        }
+        if (index > 0) {
+            gfxFontFamily* base =
+                FindFamily(Substring(aFamily, 0, index),
+                           FindFamiliesFlags::eNoSearchForLegacyFamilyNames);
+            
+            
+            
+            if (base && base->CheckForLegacyFamilyNames(this)) {
+                familyEntry = mOtherFamilyNames.GetWeak(key);
+            }
+        }
+    }
+
     if (familyEntry) {
         aOutput->AppendElement(familyEntry);
         return true;
@@ -882,7 +929,8 @@ gfxPlatformFontList::ResolveGenericFontNames(
         style.language = langGroup;
         style.systemFont = false;
         AutoTArray<gfxFontFamily*,10> families;
-        FindAndAddFamilies(genericFamily, &families, true, &style);
+        FindAndAddFamilies(genericFamily, &families, FindFamiliesFlags(0),
+                           &style);
         for (gfxFontFamily* f : families) {
             if (!aGenericFamilies->Contains(f)) {
                 aGenericFamilies->AppendElement(f);
@@ -1509,7 +1557,8 @@ gfxPlatformFontList::CleanupLoader()
 
     if (mOtherNamesMissed) {
         for (auto it = mOtherNamesMissed->Iter(); !it.Done(); it.Next()) {
-            if (FindFamily(it.Get()->GetKey(), false)) {
+            if (FindFamily(it.Get()->GetKey(),
+                           FindFamiliesFlags::eForceOtherFamilyNamesLoading)) {
                 forceReflow = true;
                 ForceGlobalReflow();
                 break;

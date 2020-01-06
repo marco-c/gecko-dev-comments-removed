@@ -110,6 +110,12 @@ public:
 
     
     
+    
+    
+    virtual gfxFontEntry* Clone() const = 0;
+
+    
+    
     const nsString& Name() const { return mName; }
 
     
@@ -606,14 +612,23 @@ public:
         mIsBadUnderlineFamily(false),
         mFamilyCharacterMapInitialized(false),
         mSkipDefaultFeatureSpaceCheck(false),
-        mCheckForFallbackFaces(false)
+        mCheckForFallbackFaces(false),
+        mCheckedForLegacyFamilyNames(false)
         { }
 
     const nsString& Name() { return mName; }
 
     virtual void LocalizedName(nsAString& aLocalizedName);
     virtual bool HasOtherFamilyNames();
+
     
+    
+    
+    
+    
+    
+    bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
+
     nsTArray<RefPtr<gfxFontEntry> >& GetFontList() { return mAvailableFonts; }
     
     void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
@@ -767,6 +782,7 @@ protected:
     bool mFamilyCharacterMapInitialized : 1;
     bool mSkipDefaultFeatureSpaceCheck : 1;
     bool mCheckForFallbackFaces : 1;  
+    bool mCheckedForLegacyFamilyNames : 1;
 
     enum {
         
