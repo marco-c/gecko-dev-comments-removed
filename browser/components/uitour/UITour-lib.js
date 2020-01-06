@@ -197,48 +197,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
-
-
-  Mozilla.UITour.showHeartbeat = function(message, thankyouMessage, flowId, engagementURL,
-					  learnMoreLabel, learnMoreURL, options) {
-    var args = {
-      message,
-      thankyouMessage,
-      flowId,
-      engagementURL,
-      learnMoreLabel,
-      learnMoreURL,
-    };
-
-    if (options) {
-      for (var option in options) {
-	if (!options.hasOwnProperty(option)) {
-	  continue;
-	}
-	args[option] = options[option];
-      }
-    }
-
-    _sendEvent("showHeartbeat", args);
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
 
 
