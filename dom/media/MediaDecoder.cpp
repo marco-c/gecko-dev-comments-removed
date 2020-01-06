@@ -815,9 +815,6 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
   Invalidate();
 
   
-  GetResource()->EnsureCacheUpToDate();
-
-  
   
   
   

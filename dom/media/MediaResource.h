@@ -192,9 +192,6 @@ public:
   
   
   virtual int64_t Tell() = 0;
-  
-  
-  virtual void EnsureCacheUpToDate() {}
 
   
   
@@ -508,7 +505,6 @@ public:
   already_AddRefed<BaseMediaResource> CloneData(
     MediaResourceCallback* aDecoder) override;
   nsresult ReadFromCache(char* aBuffer, int64_t aOffset, uint32_t aCount) override;
-  void     EnsureCacheUpToDate() override;
 
   
   void     SetReadMode(MediaCacheStream::ReadMode aMode) override;

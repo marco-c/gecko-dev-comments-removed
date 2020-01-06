@@ -232,11 +232,6 @@ public:
   
   
   nsIPrincipal* GetCurrentPrincipal() { return mPrincipal; }
-  
-  
-  
-  
-  void EnsureCacheUpdate();
 
   
   
