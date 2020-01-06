@@ -6732,17 +6732,14 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
 
   RefPtr<HTMLEditor> htmlEditor = mHTMLEditor;
 
-  int32_t offset;
-  nsCOMPtr<nsINode> parent = EditorBase::GetNodeLocation(node, &offset);
-
   bool doesCRCreateNewP = htmlEditor->GetReturnInParagraphCreatesNewParagraph();
 
-  bool newBRneeded = false;
   bool newSelNode = false;
   nsCOMPtr<nsIContent> brNode;
   nsCOMPtr<nsIDOMNode> selNode = GetAsDOMNode(aNode);
   int32_t selOffset = aOffset;
 
+  EditorRawDOMPoint pointToInsertBR;
   if (aNode == &aParentDivOrP && doesCRCreateNewP) {
     
     brNode = nullptr;
@@ -6754,7 +6751,7 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
       if (!brNode ||
           !htmlEditor->IsVisibleBRElement(brNode) ||
           TextEditUtils::HasMozAttr(GetAsDOMNode(brNode))) {
-        newBRneeded = true;
+        pointToInsertBR.Set(node);
         brNode = nullptr;
       }
     } else if (aOffset == static_cast<int32_t>(node->Length())) {
@@ -6764,23 +6761,32 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
       if (!brNode ||
           !htmlEditor->IsVisibleBRElement(brNode) ||
           TextEditUtils::HasMozAttr(GetAsDOMNode(brNode))) {
-        newBRneeded = true;
+        pointToInsertBR.Set(node);
+        DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
+        NS_WARNING_ASSERTION(advanced,
+          "Failed to advance offset to after the container");
         brNode = nullptr;
-        offset++;
       }
     } else {
+      nsCOMPtr<nsINode> leftNode = node;
+
       if (doesCRCreateNewP) {
-        nsCOMPtr<nsIDOMNode> tmp;
+        nsCOMPtr<nsIDOMNode> leftDOMNode;
         nsresult rv =
-          htmlEditor->SplitNode(selNode, aOffset, getter_AddRefs(tmp));
+          htmlEditor->SplitNode(selNode, aOffset, getter_AddRefs(leftDOMNode));
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return EditActionResult(rv);
         }
-        selNode = tmp;
+        selNode = leftDOMNode;
+        leftNode = do_QueryInterface(leftDOMNode);
       }
 
-      newBRneeded = true;
-      offset++;
+      
+      
+      pointToInsertBR.Set(leftNode);
+      DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+        "Failed to advance offset to after the container");
     }
   } else {
     
@@ -6796,17 +6802,17 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
                       EditorRawDOMPoint(node, aChildAtOffset, aOffset));
       if (!nearNode || !htmlEditor->IsVisibleBRElement(nearNode) ||
           TextEditUtils::HasMozAttr(GetAsDOMNode(nearNode))) {
-        newBRneeded = true;
-        parent = node;
-        offset = aOffset;
+        pointToInsertBR.Set(node, aOffset);
+        NS_WARNING_ASSERTION(pointToInsertBR.IsSetAndValid(),
+          "Failed to set point to insert <br> to given node");
         newSelNode = true;
       }
     }
-    if (!newBRneeded && TextEditUtils::IsBreak(nearNode)) {
+    if (!pointToInsertBR.IsSet() && TextEditUtils::IsBreak(nearNode)) {
       brNode = nearNode;
     }
   }
-  if (newBRneeded) {
+  if (pointToInsertBR.IsSet()) {
     
     if (NS_WARN_IF(!mHTMLEditor)) {
       return EditActionResult(NS_ERROR_NOT_AVAILABLE);
@@ -6817,11 +6823,12 @@ HTMLEditRules::ReturnInParagraph(Selection& aSelection,
       return EditActionResult(NS_OK);
     }
 
-    brNode = htmlEditor->CreateBR(parent, offset);
+    brNode = htmlEditor->CreateBR(pointToInsertBR.Container(),
+                                  pointToInsertBR.Offset());
     if (newSelNode) {
       
-      selNode = GetAsDOMNode(parent);
-      selOffset = offset + 1;
+      selNode = GetAsDOMNode(pointToInsertBR.Container());
+      selOffset = pointToInsertBR.Offset() + 1;
     }
   }
   EditActionResult result(
