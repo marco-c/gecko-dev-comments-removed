@@ -914,11 +914,12 @@ public abstract class GeckoApp extends GeckoActivity
             enableStrictMode();
         }
 
-        
-        
-        GeckoLoader.loadMozGlue(getApplicationContext());
-
-        if (!HardwareUtils.isSupportedSystem() || !GeckoLoader.neonCompatible()) {
+        boolean supported = HardwareUtils.isSupportedSystem();
+        if (supported) {
+            GeckoLoader.loadMozGlue(getApplicationContext());
+            supported = GeckoLoader.neonCompatible();
+        }
+        if (!supported) {
             
             mIsAbortingAppLaunch = true;
             super.onCreate(savedInstanceState);

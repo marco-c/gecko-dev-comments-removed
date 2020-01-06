@@ -621,8 +621,13 @@ public class BrowserApp extends GeckoApp
         final Context appContext = getApplicationContext();
 
         showSplashScreen = true;
-        GeckoLoader.loadMozGlue(appContext);
-        if (!HardwareUtils.isSupportedSystem() || !GeckoLoader.neonCompatible()) {
+
+        boolean supported = HardwareUtils.isSupportedSystem();
+        if (supported) {
+            GeckoLoader.loadMozGlue(appContext);
+            supported = GeckoLoader.neonCompatible();
+        }
+        if (!supported) {
             
             super.onCreate(savedInstanceState);
             return;
