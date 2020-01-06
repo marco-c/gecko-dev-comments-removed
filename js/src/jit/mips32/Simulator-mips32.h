@@ -38,6 +38,9 @@
 #include "vm/MutexIDs.h"
 
 namespace js {
+
+class WasmActivation;
+
 namespace jit {
 
 class Simulator;
@@ -188,8 +191,11 @@ class Simulator {
     template <typename T>
     T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
 
-    void set_resume_pc(void* value) {
-        resume_pc_ = int32_t(value);
+    void trigger_wasm_interrupt() {
+        
+        
+        
+        wasm_interrupt_ = true;
     }
 
     
@@ -284,6 +290,9 @@ class Simulator {
     void increaseStopCounter(uint32_t code);
     void printStopInfo(uint32_t code);
 
+    
+    void handleWasmInterrupt();
+    void startInterrupt(WasmActivation* act);
 
     
     void instructionDecode(SimInstruction* instr);
@@ -291,8 +300,6 @@ class Simulator {
     void branchDelayInstructionDecode(SimInstruction* instr);
 
   public:
-    static bool ICacheCheckingEnabled;
-
     static int StopSimAt;
 
     
@@ -336,7 +343,8 @@ class Simulator {
     int icount_;
     int break_count_;
 
-    int32_t resume_pc_;
+    
+    bool wasm_interrupt_;
 
     
     char* lastDebuggerInput_;
