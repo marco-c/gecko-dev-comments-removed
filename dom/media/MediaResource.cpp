@@ -82,7 +82,6 @@ ChannelMediaResource::ChannelMediaResource(MediaResourceCallback* aCallback,
   : BaseMediaResource(aCallback, aChannel, aURI)
   , mOffset(0)
   , mReopenOnError(false)
-  , mIgnoreClose(false)
   , mCacheStream(this, aIsPrivateBrowsing)
   , mSuspendAgent(mChannel)
 {
@@ -96,7 +95,6 @@ ChannelMediaResource::ChannelMediaResource(
   : BaseMediaResource(aCallback, aChannel, aURI)
   , mOffset(0)
   , mReopenOnError(false)
-  , mIgnoreClose(false)
   , mCacheStream(this,  false)
   , mChannelStatistics(aStatistics)
   , mSuspendAgent(mChannel)
@@ -321,7 +319,6 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
   mCacheStream.SetTransportSeekable(seekable);
   mChannelStatistics.Start();
   mReopenOnError = false;
-  mIgnoreClose = false;
 
   mSuspendAgent.UpdateSuspendedStatusIfNeeded();
 
@@ -416,19 +413,17 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
     
   }
 
-  if (!mIgnoreClose) {
-    mCacheStream.NotifyDataEnded(aStatus);
+  mCacheStream.NotifyDataEnded(aStatus);
 
-    
-    
-    
-    nsLoadFlags loadFlags;
-    DebugOnly<nsresult> rv = mChannel->GetLoadFlags(&loadFlags);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadFlags() failed!");
+  
+  
+  
+  nsLoadFlags loadFlags;
+  DebugOnly<nsresult> rv = mChannel->GetLoadFlags(&loadFlags);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadFlags() failed!");
 
-    if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
-      ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
-    }
+  if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
+    ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
   }
 
   return NS_OK;
@@ -717,8 +712,6 @@ void ChannelMediaResource::Suspend(bool aCloseImmediately)
   }
 
   if (mChannel && aCloseImmediately && mCacheStream.IsTransportSeekable()) {
-    
-    mIgnoreClose = true;
     CloseChannel();
     element->DownloadSuspended();
   }
@@ -871,10 +864,6 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
   CloseChannel();
 
   mOffset = aOffset;
-
-  
-  
-  mIgnoreClose = true;
 
   if (aResume) {
     mSuspendAgent.Resume();

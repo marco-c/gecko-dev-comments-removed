@@ -573,9 +573,6 @@ protected:
   
   
   bool               mReopenOnError;
-  
-  
-  bool               mIgnoreClose;
 
   
   MediaCacheStream mCacheStream;
