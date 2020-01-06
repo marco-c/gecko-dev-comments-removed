@@ -28,7 +28,27 @@ if (gMultiProcessBrowser) {
 
 
 add_task(async function() {
-  await ensureNoPreloadedBrowser();
+  
+  
+  
+  
+  
+  let preloaded = gBrowser._getPreloadedBrowser();
+  if (preloaded) {
+    preloaded.remove();
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtab.preload", false]],
+  });
+
+  let aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
+                             .getService(Ci.nsIAboutNewTabService);
+  aboutNewTabService.newTabURL = "about:blank";
+
+  registerCleanupFunction(() => {
+    aboutNewTabService.resetNewTabURL();
+  });
 
   
   
