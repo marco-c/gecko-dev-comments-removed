@@ -103,10 +103,15 @@ using UniqueProfilerBacktrace =
 
 
 #define PROFILER_MARKER(marker_name) do {} while (0)
-#define PROFILER_MARKER_PAYLOAD(marker_name, payload) \
-  do { \
-    mozilla::UniquePtr<ProfilerMarkerPayload> payloadDeletor(payload); \
-  } while (0)
+
+
+
+
+
+
+
+
+
 
 #else   
 
@@ -419,8 +424,9 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 
 
 
+void profiler_add_marker(const char* aMarkerName);
 void profiler_add_marker(const char* aMarkerName,
-                         ProfilerMarkerPayload* aPayload = nullptr);
+                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
 
 #define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
 #define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \

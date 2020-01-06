@@ -2945,19 +2945,23 @@ racy_profiler_add_marker(const char* aMarkerName,
 }
 
 void
-profiler_add_marker(const char* aMarkerName, ProfilerMarkerPayload* aPayload)
+profiler_add_marker(const char* aMarkerName,
+                    UniquePtr<ProfilerMarkerPayload> aPayload)
 {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  UniquePtr<ProfilerMarkerPayload> payload(aPayload);
 
   
   if (!RacyFeatures::IsActiveWithoutPrivacy()) {
     return;
   }
 
-  racy_profiler_add_marker(aMarkerName, Move(payload));
+  racy_profiler_add_marker(aMarkerName, Move(aPayload));
+}
+
+void
+profiler_add_marker(const char* aMarkerName)
+{
+  profiler_add_marker(aMarkerName, nullptr);
 }
 
 void
