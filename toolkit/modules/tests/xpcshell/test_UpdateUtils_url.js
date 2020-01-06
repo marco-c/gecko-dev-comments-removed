@@ -131,6 +131,43 @@ function getProcArchitecture() {
 
 
 
+function getSystemCapabilities() {
+  if (AppConstants.platform == "win") {
+    const PF_MMX_INSTRUCTIONS_AVAILABLE = 3; 
+    const PF_XMMI_INSTRUCTIONS_AVAILABLE = 6; 
+    const PF_XMMI64_INSTRUCTIONS_AVAILABLE = 10; 
+    const PF_SSE3_INSTRUCTIONS_AVAILABLE = 13; 
+
+    let lib = ctypes.open("kernel32.dll");
+    let IsProcessorFeaturePresent = lib.declare("IsProcessorFeaturePresent",
+                                                ctypes.winapi_abi,
+                                                ctypes.int32_t, 
+                                                ctypes.uint32_t); 
+    let instructionSet = "unknown";
+    try {
+      if (IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE)) {
+        instructionSet = "SSE3";
+      } else if (IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE)) {
+        instructionSet = "SSE2";
+      } else if (IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
+        instructionSet = "SSE";
+      } else if (IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE)) {
+        instructionSet = "MMX";
+      }
+    } catch (e) {
+      Cu.reportError("Error getting processor instruction set. " +
+                     "Exception: " + e);
+    }
+
+    lib.close();
+    return instructionSet;
+  }
+
+  return "NA";
+}
+
+
+
 function getResult(url) {
   url = UpdateUtils.formatUpdateURL(url);
   return url.substr(URL_PREFIX.length).split("/")[0];
@@ -289,4 +326,11 @@ add_task(function* test_custom() {
   let url = URL_PREFIX + "%CUSTOM%/";
   Assert.equal(getResult(url), "custom",
                "the url query string for %CUSTOM%" + MSG_SHOULD_EQUAL);
+});
+
+
+add_task(function* test_systemCapabilities() {
+  let url = URL_PREFIX + "%SYSTEM_CAPABILITIES%/";
+  Assert.equal(getResult(url), getSystemCapabilities(),
+               "the url param for %SYSTEM_CAPABILITIES%" + MSG_SHOULD_EQUAL);
 });
