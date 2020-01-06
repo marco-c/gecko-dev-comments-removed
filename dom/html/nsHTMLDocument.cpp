@@ -1488,7 +1488,7 @@ already_AddRefed<nsIDocument>
 nsHTMLDocument::Open(JSContext* cx,
                      const nsAString& aType,
                      const nsAString& aReplace,
-                     ErrorResult& rv)
+                     ErrorResult& aError)
 {
   
   
@@ -1497,7 +1497,7 @@ nsHTMLDocument::Open(JSContext* cx,
                "XOW should have caught this!");
   if (!IsHTMLDocument() || mDisableDocWrite) {
     
-    rv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
@@ -1567,7 +1567,7 @@ nsHTMLDocument::Open(JSContext* cx,
     
     
 
-    rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
@@ -1597,7 +1597,7 @@ nsHTMLDocument::Open(JSContext* cx,
            thisURI ? thisURI->GetSpecOrDefault().get() : "");
 #endif
 
-    rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
@@ -1630,34 +1630,34 @@ nsHTMLDocument::Open(JSContext* cx,
   
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
-  rv = NS_NewChannel(getter_AddRefs(channel),
-                     uri,
-                     callerDoc,
-                     nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
-                     nsIContentPolicy::TYPE_OTHER,
-                     group);
+  aError = NS_NewChannel(getter_AddRefs(channel),
+                         uri,
+                         callerDoc,
+                         nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
+                         nsIContentPolicy::TYPE_OTHER,
+                         group);
 
-  if (rv.Failed()) {
+  if (aError.Failed()) {
     return nullptr;
   }
 
   if (callerChannel) {
     nsLoadFlags callerLoadFlags;
-    rv = callerChannel->GetLoadFlags(&callerLoadFlags);
-    if (rv.Failed()) {
+    aError = callerChannel->GetLoadFlags(&callerLoadFlags);
+    if (aError.Failed()) {
       return nullptr;
     }
 
     nsLoadFlags loadFlags;
-    rv = channel->GetLoadFlags(&loadFlags);
-    if (rv.Failed()) {
+    aError = channel->GetLoadFlags(&loadFlags);
+    if (aError.Failed()) {
       return nullptr;
     }
 
     loadFlags |= callerLoadFlags & nsIRequest::INHIBIT_PERSISTENT_CACHING;
 
-    rv = channel->SetLoadFlags(loadFlags);
-    if (rv.Failed()) {
+    aError = channel->SetLoadFlags(loadFlags);
+    if (aError.Failed()) {
       return nullptr;
     }
 
@@ -1701,9 +1701,9 @@ nsHTMLDocument::Open(JSContext* cx,
     SetReadyStateInternal(READYSTATE_UNINITIALIZED);
 
     
-    rv = window->SetNewDocument(this, nullptr,
-                                 false);
-    if (rv.Failed()) {
+    aError = window->SetNewDocument(this, nullptr,
+                                     false);
+    if (aError.Failed()) {
       return nullptr;
     }
 
@@ -1724,8 +1724,8 @@ nsHTMLDocument::Open(JSContext* cx,
     JS::Rooted<JSObject*> wrapper(cx, GetWrapper());
     if (oldScope && newScope != oldScope && wrapper) {
       JSAutoCompartment ac(cx, wrapper);
-      mozilla::dom::ReparentWrapper(cx, wrapper, rv);
-      if (rv.Failed()) {
+      mozilla::dom::ReparentWrapper(cx, wrapper, aError);
+      if (aError.Failed()) {
         return nullptr;
       }
 
@@ -1735,8 +1735,8 @@ nsHTMLDocument::Open(JSContext* cx,
         JS::Rooted<JSObject*> contentsOwnerWrapper(cx,
           mTemplateContentsOwner->GetWrapper());
         if (contentsOwnerWrapper) {
-          mozilla::dom::ReparentWrapper(cx, contentsOwnerWrapper, rv);
-          if (rv.Failed()) {
+          mozilla::dom::ReparentWrapper(cx, contentsOwnerWrapper, aError);
+          if (aError.Failed()) {
             return nullptr;
           }
         }
