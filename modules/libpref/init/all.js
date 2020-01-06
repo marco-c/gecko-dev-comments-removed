@@ -898,12 +898,8 @@ pref("gfx.webrender.force-angle", true);
 
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.layers-free", false);
+pref("gfx.webrender.profiler.enabled", false);
 pref("gfx.webrender.blob-images", false);
-
-
-pref("gfx.webrender.debug.texture-cache", false);
-pref("gfx.webrender.debug.render-targets", false);
-pref("gfx.webrender.debug.profiler", false);
 
 
 pref("gfx.webrendest.enabled", false);

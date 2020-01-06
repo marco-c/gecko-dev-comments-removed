@@ -1420,6 +1420,15 @@ WebRenderBridgeParent::RecvInitReadLocks(ReadLockArray&& aReadLocks)
   return IPC_OK();
 }
 
+void
+WebRenderBridgeParent::SetWebRenderProfilerEnabled(bool aEnabled)
+{
+  if (mWidget) {
+    
+    mApi->SetProfilerEnabled(aEnabled);
+  }
+}
+
 TextureFactoryIdentifier
 WebRenderBridgeParent::GetTextureFactoryIdentifier()
 {
