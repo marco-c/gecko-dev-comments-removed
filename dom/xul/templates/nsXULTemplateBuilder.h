@@ -378,9 +378,6 @@ public:
     static void
     SubstituteTextReplaceVariable(nsXULTemplateBuilder* aThis, const nsAString& aVariable, void* aClosure);
 
-    nsresult
-    IsSystemPrincipal(nsIPrincipal *principal, bool *result);
-
     
 
 
