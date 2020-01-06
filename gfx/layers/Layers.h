@@ -2328,12 +2328,6 @@ public:
     return mEventRegionsOverride;
   }
 
-  void SetFilterChain(nsTArray<CSSFilter>&& aFilterChain) {
-    mFilterChain = aFilterChain;
-  }
-
-  nsTArray<CSSFilter>& GetFilterChain() { return mFilterChain; }
-  
   
   
   virtual void SetInvalidCompositeRect(const gfx::IntRect* aRect) {}
@@ -2424,7 +2418,6 @@ protected:
   
   bool mChildrenChanged;
   EventRegionsOverride mEventRegionsOverride;
-  nsTArray<CSSFilter> mFilterChain;
 };
 
 
