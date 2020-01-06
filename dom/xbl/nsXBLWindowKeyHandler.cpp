@@ -25,17 +25,21 @@
 #include "nsIPresShell.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/Move.h"
 #include "nsISelectionController.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/layers/Keyboard.h"
 #include "nsIEditor.h"
 #include "nsIHTMLEditor.h"
 #include "nsIDOMDocument.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using namespace mozilla::layers;
 
 class nsXBLSpecialDocInfo : public nsIObserver
 {
@@ -146,8 +150,17 @@ nsXBLSpecialDocInfo::GetAllHandlers(const char* aType,
 }
 
 
-nsXBLSpecialDocInfo* nsXBLWindowKeyHandler::sXBLSpecialDocInfo = nullptr;
+static StaticRefPtr<nsXBLSpecialDocInfo> sXBLSpecialDocInfo;
 uint32_t nsXBLWindowKeyHandler::sRefCnt = 0;
+
+ void
+nsXBLWindowKeyHandler::EnsureSpecialDocInfo()
+{
+  if (!sXBLSpecialDocInfo) {
+    sXBLSpecialDocInfo = new nsXBLSpecialDocInfo();
+  }
+  sXBLSpecialDocInfo->LoadDocInfo();
+}
 
 nsXBLWindowKeyHandler::nsXBLWindowKeyHandler(nsIDOMElement* aElement,
                                              EventTarget* aTarget)
@@ -167,7 +180,7 @@ nsXBLWindowKeyHandler::~nsXBLWindowKeyHandler()
 
   --sRefCnt;
   if (!sRefCnt) {
-    NS_IF_RELEASE(sXBLSpecialDocInfo);
+    sXBLSpecialDocInfo = nullptr;
   }
 }
 
@@ -228,11 +241,7 @@ nsXBLWindowKeyHandler::EnsureHandlers()
     nsCOMPtr<nsIContent> content(do_QueryInterface(el));
     BuildHandlerChain(content, &mHandler);
   } else { 
-    if (!sXBLSpecialDocInfo) {
-      sXBLSpecialDocInfo = new nsXBLSpecialDocInfo();
-      NS_ADDREF(sXBLSpecialDocInfo);
-    }
-    sXBLSpecialDocInfo->LoadDocInfo();
+    EnsureSpecialDocInfo();
 
     
     if (IsHTMLEditableFieldFocused()) {
@@ -395,6 +404,41 @@ nsXBLWindowKeyHandler::RemoveKeyboardEventListenersFrom(
   aEventListenerManager->RemoveEventListenerByType(
                            this, NS_LITERAL_STRING("mozkeyuponplugin"),
                            TrustedEventsAtSystemGroupBubble());
+}
+
+ KeyboardMap
+nsXBLWindowKeyHandler::CollectKeyboardShortcuts()
+{
+  
+  EnsureSpecialDocInfo();
+
+  nsXBLPrototypeHandler* handlers = nullptr;
+  nsXBLPrototypeHandler* userHandlers = nullptr;
+  sXBLSpecialDocInfo->GetAllHandlers("browser", &handlers, &userHandlers);
+
+  
+  
+  AutoTArray<KeyboardShortcut, 46> shortcuts;
+
+  for (nsXBLPrototypeHandler* handler = handlers;
+       handler;
+       handler = handler->GetNextHandler()) {
+    KeyboardShortcut shortcut;
+    if (handler->TryConvertToKeyboardShortcut(&shortcut)) {
+      shortcuts.AppendElement(shortcut);
+    }
+  }
+
+  for (nsXBLPrototypeHandler* handler = userHandlers;
+       handler;
+       handler = handler->GetNextHandler()) {
+    KeyboardShortcut shortcut;
+    if (handler->TryConvertToKeyboardShortcut(&shortcut)) {
+      shortcuts.AppendElement(shortcut);
+    }
+  }
+
+  return KeyboardMap(mozilla::Move(shortcuts));
 }
 
 nsIAtom*

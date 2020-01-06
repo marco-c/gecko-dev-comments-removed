@@ -8,13 +8,13 @@
 #define nsXBLWindowKeyHandler_h__
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/layers/Keyboard.h"
 #include "nsWeakPtr.h"
 #include "nsIDOMEventListener.h"
 
 class nsIAtom;
 class nsIDOMElement;
 class nsIDOMKeyEvent;
-class nsXBLSpecialDocInfo;
 class nsXBLPrototypeHandler;
 
 namespace mozilla {
@@ -30,6 +30,7 @@ class nsXBLWindowKeyHandler : public nsIDOMEventListener
 {
   typedef mozilla::EventListenerManager EventListenerManager;
   typedef mozilla::IgnoreModifierState IgnoreModifierState;
+  typedef mozilla::layers::KeyboardMap KeyboardMap;
 
 public:
   nsXBLWindowKeyHandler(nsIDOMElement* aElement, mozilla::dom::EventTarget* aTarget);
@@ -38,6 +39,8 @@ public:
          EventListenerManager* aEventListenerManager);
   void RemoveKeyboardEventListenersFrom(
          EventListenerManager* aEventListenerManager);
+
+  static KeyboardMap CollectKeyboardShortcuts();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
@@ -81,6 +84,9 @@ protected:
              const mozilla::WidgetKeyboardEvent& aWidgetKeyboardEvent) const;
 
   
+  static void EnsureSpecialDocInfo();
+
+  
   
   nsresult EnsureHandlers();
 
@@ -121,7 +127,6 @@ protected:
   nsXBLPrototypeHandler* mUserHandler; 
 
   
-  static nsXBLSpecialDocInfo* sXBLSpecialDocInfo;
   static uint32_t sRefCnt;
 };
 

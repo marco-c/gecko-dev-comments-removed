@@ -10,12 +10,16 @@
 
 #include "InputData.h"          
 #include "nsIScrollableFrame.h" 
+#include "nsTArray.h"           
+#include "mozilla/Maybe.h"      
 
 namespace mozilla {
 
 struct IgnoreModifierState;
 
 namespace layers {
+
+class KeyboardMap;
 
 
 
@@ -75,6 +79,9 @@ public:
                    Modifiers aModifiers,
                    Modifiers aModifiersMask);
 
+protected:
+  friend mozilla::layers::KeyboardMap;
+
   bool Matches(const KeyboardInput& aInput,
                const IgnoreModifierState& aIgnore,
                uint32_t aOverrideCharCode = 0) const;
@@ -105,6 +112,30 @@ public:
 
   
   bool mDispatchToContent;
+};
+
+
+
+
+class KeyboardMap final
+{
+public:
+  KeyboardMap();
+  explicit KeyboardMap(nsTArray<KeyboardShortcut>&& aShortcuts);
+
+  const nsTArray<KeyboardShortcut>& Shortcuts() const { return mShortcuts; }
+
+  
+
+
+  Maybe<KeyboardShortcut> FindMatch(const KeyboardInput& aEvent) const;
+
+private:
+  Maybe<KeyboardShortcut> FindMatchInternal(const KeyboardInput& aEvent,
+                                            const IgnoreModifierState& aIgnore,
+                                            uint32_t aOverrideCharCode = 0) const;
+
+  nsTArray<KeyboardShortcut> mShortcuts;
 };
 
 } 
