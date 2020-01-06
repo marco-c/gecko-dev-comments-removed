@@ -18,8 +18,10 @@
 }
 
 .pane-container {
+  
   display: block;
-  max-width: 800px;
+  width: 664px;
+  min-width: 530px;
 }
 
 #mainPrefPane {
