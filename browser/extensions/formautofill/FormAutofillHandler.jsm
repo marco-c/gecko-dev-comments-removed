@@ -124,11 +124,9 @@ FormAutofillHandler.prototype = {
             if (option.selected) {
               break;
             }
-            
-            
             option.selected = true;
-            element.dispatchEvent(new Event("input", {"bubbles": true}));
-            element.dispatchEvent(new Event("change", {"bubbles": true}));
+            element.dispatchEvent(new element.ownerGlobal.UIEvent("input", {bubbles: true}));
+            element.dispatchEvent(new element.ownerGlobal.Event("change", {bubbles: true}));
             this.changeFieldState(fieldDetail, "AUTO_FILLED");
             break;
           }

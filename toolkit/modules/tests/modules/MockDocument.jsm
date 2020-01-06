@@ -27,9 +27,12 @@ const MockDocument = {
     
     this.mockOwnerGlobalProperty(parsedDoc.documentElement);
 
-    for (let element of parsedDoc.forms) {
-      this.mockOwnerDocumentProperty(element, parsedDoc, aDocumentURL);
-      this.mockOwnerGlobalProperty(element);
+    for (let form of parsedDoc.forms) {
+      this.mockOwnerDocumentProperty(form, parsedDoc, aDocumentURL);
+      this.mockOwnerGlobalProperty(form);
+      for (let field of form.elements) {
+        this.mockOwnerGlobalProperty(field);
+      }
     }
     return parsedDoc;
   },
@@ -62,6 +65,8 @@ const MockDocument = {
           addManuallyManagedState() {},
           removeManuallyManagedState() {},
         }),
+        UIEvent: Event,
+        Event,
       },
       configurable: true,
     });
