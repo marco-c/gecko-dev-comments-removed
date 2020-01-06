@@ -5493,35 +5493,21 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
       
       
       Matrix frameTransform;
-      if (ActiveLayerTracker::IsStyleAnimated(aDisplayListBuilder, aContainerFrame, eCSSProperty_transform) &&
-          aTransform &&
-          (!aTransform->Is2D(&frameTransform) || frameTransform.HasNonTranslationOrFlip())) {
-        
-        
-        bool clamp = true;
-        Matrix oldFrameTransform2d;
-        if (aLayer->GetBaseTransform().Is2D(&oldFrameTransform2d)) {
-          gfxSize oldScale = RoundToFloatPrecision(ThebesMatrix(oldFrameTransform2d).ScaleFactors(true));
-          if (oldScale == scale || oldScale == gfxSize(1.0, 1.0)) {
-            clamp = false;
-          }
-        }
-        if (clamp) {
-          scale.width = gfxUtils::ClampToScaleFactor(scale.width);
-          scale.height = gfxUtils::ClampToScaleFactor(scale.height);
+      if (ActiveLayerTracker::IsScaleSubjectToAnimation(aContainerFrame)) {
+        scale.width = gfxUtils::ClampToScaleFactor(scale.width);
+        scale.height = gfxUtils::ClampToScaleFactor(scale.height);
 
-          
-          nsSize maxScale(4, 4);
-          if (!aVisibleRect.IsEmpty()) {
-            nsSize displaySize = ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
-            maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
-          }
-          if (scale.width > maxScale.width) {
-            scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
-          }
-          if (scale.height > maxScale.height) {
-            scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
-          }
+        
+        nsSize maxScale(4, 4);
+        if (!aVisibleRect.IsEmpty()) {
+          nsSize displaySize = ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
+          maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
+        }
+        if (scale.width > maxScale.width) {
+          scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
+        }
+        if (scale.height > maxScale.height) {
+          scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
         }
       } else {
         
