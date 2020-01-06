@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/layers/CompositorManagerChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
@@ -968,12 +968,12 @@ gfxPlatform::ShutdownLayersIPC()
         gfx::VRManagerChild::ShutDown();
         
         if (gfxPrefs::ChildProcessShutdown()) {
-          layers::CompositorManagerChild::Shutdown();
+          layers::CompositorBridgeChild::ShutDown();
           layers::ImageBridgeChild::ShutDown();
         }
     } else if (XRE_IsParentProcess()) {
         gfx::VRManagerChild::ShutDown();
-        layers::CompositorManagerChild::Shutdown();
+        layers::CompositorBridgeChild::ShutDown();
         layers::ImageBridgeChild::ShutDown();
         
         layers::CompositorThreadHolder::Shutdown();
