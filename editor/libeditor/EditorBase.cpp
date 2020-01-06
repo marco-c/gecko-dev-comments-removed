@@ -2431,7 +2431,17 @@ EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
     
     
     if (offset) {
-      if (offset == static_cast<int32_t>(node->GetChildCount())) {
+      if (AsHTMLEditor()) {
+        
+        
+        nsIContent* child = node->GetChildAt(offset - 1);
+        if (child && child->IsNodeOfType(nsINode::eTEXT)) {
+          NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);
+          aNode = child;
+          aOffset = static_cast<int32_t>(aNode->Length());
+          return;
+        }
+      } else {
         
         
         nsIContent* child = node->GetLastChild();
@@ -2443,15 +2453,6 @@ EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
             return;
           }
           child = child->GetPreviousSibling();
-        }
-      } else {
-        
-        nsIContent* child = node->GetChildAt(offset - 1);
-        if (child && child->IsNodeOfType(nsINode::eTEXT)) {
-          NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);
-          aNode = child;
-          aOffset = static_cast<int32_t>(aNode->Length());
-          return;
         }
       }
     }
