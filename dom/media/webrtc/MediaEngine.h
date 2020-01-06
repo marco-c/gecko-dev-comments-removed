@@ -354,7 +354,7 @@ public:
   void GetSettings(dom::MediaTrackSettings& aOutSettings)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    aOutSettings = mSettings;
+    aOutSettings = *mSettings;
   }
 
 protected:
@@ -362,6 +362,7 @@ protected:
   explicit MediaEngineSource(MediaEngineState aState)
     : mState(aState)
     , mInShutdown(false)
+    , mSettings(MakeRefPtr<media::Refcountable<dom::MediaTrackSettings>>())
   {}
 
   
@@ -449,7 +450,9 @@ protected:
   bool mInShutdown;
 
   
-  dom::MediaTrackSettings mSettings;
+  
+  
+  RefPtr<media::Refcountable<dom::MediaTrackSettings>> mSettings;
 };
 
 class MediaEngineVideoSource : public MediaEngineSource
