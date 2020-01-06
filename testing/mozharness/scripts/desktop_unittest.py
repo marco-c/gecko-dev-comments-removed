@@ -761,6 +761,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
                         
                         
                         self.info("TinderboxPrint: Verification too long: Not all tests were verified.<br/>")
+                        
+                        max_verify_time = 0
                         break
                     final_cmd = copy.copy(cmd)
                     final_cmd.extend(verify_args)
@@ -795,6 +797,10 @@ class DesktopUnittest(TestingMixin, MercurialScript, BlobUploadMixin, MozbaseMix
                     else:
                         self.log("The %s suite: %s ran with return status: %s" %
                                  (suite_category, suite, tbpl_status), level=log_level)
+
+                if max_verify_time <= 0:
+                    
+                    break
         else:
             self.debug('There were no suites to run for %s' % suite_category)
 
