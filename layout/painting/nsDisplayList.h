@@ -742,6 +742,8 @@ public:
 
   void LeavePresShell(nsIFrame* aReferenceFrame, nsDisplayList* aPaintedContents);
 
+  void IncrementPresShellPaintCount(nsIPresShell* aPresShell);
+
   
 
 
