@@ -123,12 +123,12 @@ const Types = exports.__TypesForTests = [
   },
   
   {
-    types: ["imageData"],
+    types: ["imageData", "disconnectedNode", "disconnectedNodeArray"],
     spec: "devtools/shared/specs/node",
     front: null,
   },
   {
-    types: ["domnode"],
+    types: ["domnode", "domnodelist"],
     spec: "devtools/shared/specs/node",
     front: "devtools/shared/fronts/node",
   },

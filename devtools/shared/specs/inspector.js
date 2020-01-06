@@ -11,27 +11,6 @@ const {
   types
 } = require("devtools/shared/protocol");
 
-
-
-
-
-types.addDictType("disconnectedNode", {
-  
-  node: "domnode",
-
-  
-  
-  newParents: "array:domnode"
-});
-
-types.addDictType("disconnectedNodeArray", {
-  
-  nodes: "array:domnode",
-
-  
-  newParents: "array:domnode"
-});
-
 types.addDictType("dommutation", {});
 
 types.addDictType("searchresult", {
@@ -40,29 +19,6 @@ types.addDictType("searchresult", {
   
   metadata: "array:json"
 });
-
-const nodeListSpec = generateActorSpec({
-  typeName: "domnodelist",
-
-  methods: {
-    item: {
-      request: { item: Arg(0) },
-      response: RetVal("disconnectedNode")
-    },
-    items: {
-      request: {
-        start: Arg(0, "nullable:number"),
-        end: Arg(1, "nullable:number")
-      },
-      response: RetVal("disconnectedNodeArray")
-    },
-    release: {
-      release: true
-    }
-  }
-});
-
-exports.nodeListSpec = nodeListSpec;
 
 
 
