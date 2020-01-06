@@ -27,7 +27,6 @@ ALLOWED_URL_PREFIXES = [
     "http://ftp.mozilla.org/",
     "http://download.mozilla.org/",
     "https://archive.mozilla.org/",
-    "https://queue.taskcluster.net/v1/task/",
 ]
 
 DEFAULT_FILENAME_TEMPLATE = "{appName}-{branch}-{version}-{platform}-" \
@@ -287,11 +286,7 @@ def main():
         
         mar_data["branch"] = e.get("branch",
                                    mar_data["repo"].rstrip("/").split("/")[-1])
-        if 'dest_mar' in e:
-            mar_name = e['dest_mar']
-        else:
-            
-            mar_name = args.filename_template.format(**mar_data)
+        mar_name = args.filename_template.format(**mar_data)
         mar_data["mar"] = mar_name
         dest_mar = os.path.join(work_env.workdir, mar_name)
         
