@@ -199,37 +199,40 @@ def get_decision_parameters(options):
     task_config_file = os.path.join(os.getcwd(), 'try_task_config.json')
 
     
-    parameters['try_mode'] = None
-    if os.path.isfile(task_config_file):
-        parameters['try_mode'] = 'try_task_config'
-        with open(task_config_file, 'r') as fh:
-            parameters['try_task_config'] = json.load(fh)
+    if project == 'try':
+        parameters['try_mode'] = None
+        if os.path.isfile(task_config_file):
+            parameters['try_mode'] = 'try_task_config'
+            with open(task_config_file, 'r') as fh:
+                parameters['try_task_config'] = json.load(fh)
+        else:
+            parameters['try_task_config'] = None
+
+        if 'try:' in parameters['message']:
+            parameters['try_mode'] = 'try_option_syntax'
+            args = parse_message(parameters['message'])
+            parameters['try_options'] = args
+        else:
+            parameters['try_options'] = None
+
+        if parameters['try_mode'] == 'try_option_syntax':
+            
+            
+            parameters['optimize_target_tasks'] = True
+        elif parameters['try_mode'] == 'try_task_config':
+            
+            
+            
+            parameters['optimize_target_tasks'] = False
+        else:
+            
+            
+            parameters['optimize_target_tasks'] = True
+
     else:
+        parameters['try_mode'] = None
         parameters['try_task_config'] = None
-
-    if 'try:' in parameters['message']:
-        parameters['try_mode'] = 'try_option_syntax'
-        args = parse_message(parameters['message'])
-        parameters['try_options'] = args
-    else:
         parameters['try_options'] = None
-
-    parameters['optimize_target_tasks'] = {
-        
-        
-        
-        'try_task_config': False,
-
-        
-        
-        
-        
-        'try_option_syntax': True,
-
-        
-        
-        None: True,
-    }[parameters['try_mode']]
 
     return Parameters(**parameters)
 
