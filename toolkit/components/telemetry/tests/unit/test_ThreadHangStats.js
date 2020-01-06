@@ -85,19 +85,16 @@ function run_test() {
       equal(typeof endHangs.hangs[0].stack[0], "string");
 
       
-      if (mozinfo.os == "win" && mozinfo.bits == 32) {
-        
-        ok(Array.isArray(endHangs.nativeStacks.memoryMap));
-        ok(Array.isArray(endHangs.nativeStacks.stacks));
-        ok(endHangs.nativeStacks.stacks.length > 0);
+      ok(Array.isArray(endHangs.nativeStacks.memoryMap));
+      ok(Array.isArray(endHangs.nativeStacks.stacks));
+      ok(endHangs.nativeStacks.stacks.length > 0);
 
-        
-        ok(endHangs.hangs.some((hang) => {
-          return typeof hang.nativeStack == "number" &&
-            hang.nativeStack < endHangs.nativeStacks.stacks.length &&
-            Array.isArray(endHangs.nativeStacks.stacks[hang.nativeStack]);
-        }));
-      }
+      
+      ok(endHangs.hangs.some((hang) => {
+        return typeof hang.nativeStack == "number" &&
+          hang.nativeStack < endHangs.nativeStacks.stacks.length &&
+          Array.isArray(endHangs.nativeStacks.stacks[hang.nativeStack]);
+      }));
 
       check_histogram(endHangs.hangs[0].histogram);
 

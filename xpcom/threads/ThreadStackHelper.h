@@ -26,21 +26,16 @@
 #if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
 #  ifdef MOZ_GECKO_PROFILER
 #    define MOZ_THREADSTACKHELPER_PSEUDO
+#    define MOZ_THREADSTACKHELPER_NATIVE
 #  endif
 #endif
 
-#if defined(MOZ_THREADSTACKHELPER_PSEUDO) && defined(XP_WIN)
-#  define MOZ_THREADSTACKHELPER_NATIVE
-#  if defined(__i386__) || defined(_M_IX86)
-#    define MOZ_THREADSTACKHELPER_X86
-#  elif defined(__x86_64__) || defined(_M_X64)
-#    define MOZ_THREADSTACKHELPER_X64
-#  elif defined(__arm__) || defined(_M_ARM)
-#    define MOZ_THREADSTACKHELPER_ARM
-#  else
-     
-#    undef MOZ_THREADSTACKHELPER_NATIVE
-#  endif
+
+
+
+#if defined(XP_LINUX)
+#  undef MOZ_THREADSTACKHELPER_NATIVE
+#  undef MOZ_THREADSTACKHELPER_PSEUDO
 #endif
 
 namespace mozilla {
@@ -67,11 +62,14 @@ public:
   typedef Telemetry::NativeHangStack NativeStack;
 
 private:
-  Stack* mStackToFill;
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
+  Stack* mStackToFill;
   const PseudoStack* const mPseudoStack;
   size_t mMaxStackSize;
   size_t mMaxBufferSize;
+#endif
+#ifdef MOZ_THREADSTACKHELPER_NATIVE
+  NativeStack* mNativeStackToFill;
 #endif
 
   bool PrepareStackBuffer(Stack& aStack);
@@ -86,18 +84,7 @@ public:
   
 
 
-  static void Startup();
-  
-
-
-  static void Shutdown();
-
-  
-
-
   ThreadStackHelper();
-
-  ~ThreadStackHelper();
 
   
 
@@ -130,27 +117,9 @@ private:
   
   
   void GetStacksInternal(Stack* aStack, NativeStack* aNativeStack);
-#if defined(XP_LINUX)
-private:
-  static int sInitialized;
-  static int sFillStackSignum;
 
-  static void FillStackHandler(int aSignal, siginfo_t* aInfo, void* aContext);
-
-  sem_t mSem;
-  pid_t mThreadID;
-
-#elif defined(XP_WIN)
-private:
-  bool mInitialized;
-  HANDLE mThreadID;
-  void* mStackTop;
-
-#elif defined(XP_MACOSX)
-private:
-  thread_act_t mThreadID;
-
-#endif
+  
+  int mThreadId;
 };
 
 } 
