@@ -409,6 +409,12 @@ public class CustomTabsActivity extends SingleTabActivity implements Tabs.OnTabs
         }
 
         menuItemControl = geckoMenu.findItem(R.id.custom_tabs_menu_control);
+        
+        
+        final Drawable icon = menuItemControl.getIcon();
+        if (icon != null && !icon.isStateful()) {
+            icon.setState(new int[]{android.R.attr.state_enabled});
+        }
 
         geckoMenu.addFooterView(
                 getLayoutInflater().inflate(R.layout.customtabs_options_menu_footer, geckoMenu, false),
