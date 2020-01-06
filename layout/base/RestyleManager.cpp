@@ -1568,6 +1568,18 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         didReflowThisFrame = true;
       }
 
+      
+      
+      
+      
+      
+      if ((hint & nsChangeHint_UpdateOpacityLayer) &&
+          nsSVGUtils::CanOptimizeOpacity(frame) &&
+          frame->IsFrameOfType(nsIFrame::eSVGGeometry)) {
+        hint &= ~nsChangeHint_UpdateOpacityLayer;
+        hint |= nsChangeHint_RepaintFrame;
+      }
+
       if ((hint & nsChangeHint_UpdateUsesOpacity) &&
           frame->IsFrameOfType(nsIFrame::eTablePart)) {
         NS_ASSERTION(hint & nsChangeHint_UpdateOpacityLayer,
