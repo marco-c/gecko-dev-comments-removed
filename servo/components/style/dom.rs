@@ -28,7 +28,7 @@ use selectors::sink::Push;
 use servo_arc::{Arc, ArcBorrow};
 use shared_lock::Locked;
 use std::fmt;
-#[cfg(feature = "gecko")] use hash::HashMap;
+#[cfg(feature = "gecko")] use hash::FnvHashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::Deref;
@@ -651,7 +651,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     #[cfg(feature = "gecko")]
     fn get_css_transitions_info(&self)
-                                -> HashMap<TransitionProperty, Arc<AnimationValue>>;
+                                -> FnvHashMap<TransitionProperty, Arc<AnimationValue>>;
 
     
     
@@ -684,7 +684,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         combined_duration: f32,
         before_change_style: &ComputedValues,
         after_change_style: &ComputedValues,
-        existing_transitions: &HashMap<TransitionProperty, Arc<AnimationValue>>
+        existing_transitions: &FnvHashMap<TransitionProperty, Arc<AnimationValue>>
     ) -> bool;
 
     

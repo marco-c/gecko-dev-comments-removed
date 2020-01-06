@@ -121,38 +121,6 @@ pub struct HashSet<T, S = RandomState> {
     map: HashMap<T, (), S>,
 }
 
-impl<T: Hash + Eq> HashSet<T, RandomState> {
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn new() -> HashSet<T, RandomState> {
-        HashSet { map: HashMap::new() }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> HashSet<T, RandomState> {
-        HashSet { map: HashMap::with_capacity(capacity) }
-    }
-}
-
 impl<T, S> HashSet<T, S>
     where T: Eq + Hash,
           S: BuildHasher

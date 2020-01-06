@@ -583,42 +583,6 @@ impl<K, V, S> HashMap<K, V, S>
     }
 }
 
-impl<K: Hash + Eq, V> HashMap<K, V, RandomState> {
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn new() -> HashMap<K, V, RandomState> {
-        Default::default()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> HashMap<K, V, RandomState> {
-        HashMap::with_capacity_and_hasher(capacity, Default::default())
-    }
-
-    #[inline]
-    pub fn try_with_capacity(capacity: usize) -> Result<HashMap<K, V, RandomState>, FailedAllocationError> {
-        HashMap::try_with_capacity_and_hasher(capacity, Default::default())
-    }
-}
-
 impl<K, V, S> HashMap<K, V, S>
     where K: Eq + Hash,
           S: BuildHasher
