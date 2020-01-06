@@ -189,21 +189,18 @@ HTMLFormElement::BeforeSetAttr(int32_t aNamespaceID, nsIAtom* aName,
 {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::action || aName == nsGkAtoms::target) {
-      
-      if (aValue) {
-        if (mPendingSubmission) {
-          
-          
-          
-          
-          FlushPendingSubmission();
-        }
+      if (mPendingSubmission) {
         
         
-        bool notifiedObservers = mNotifiedObservers;
-        ForgetCurrentSubmission();
-        mNotifiedObservers = notifiedObservers;
+        
+        
+        FlushPendingSubmission();
       }
+      
+      
+      bool notifiedObservers = mNotifiedObservers;
+      ForgetCurrentSubmission();
+      mNotifiedObservers = notifiedObservers;
     }
   }
 
