@@ -76,6 +76,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -338,14 +339,12 @@ private:
 
 class WatchdogManager;
 
-enum WatchdogTimestampCategory
-{
-    TimestampContextStateChange = 0,
+MOZ_DEFINE_ENUM(WatchdogTimestampCategory, (
     TimestampWatchdogWakeup,
     TimestampWatchdogHibernateStart,
     TimestampWatchdogHibernateStop,
-    TimestampCount
-};
+    TimestampContextStateChange
+));
 
 class AsyncFreeSnowWhite;
 
@@ -520,8 +519,13 @@ private:
     
     nsresult mPendingResult;
 
+    
+    enum { CONTEXT_ACTIVE, CONTEXT_INACTIVE } mActive;
+    PRTime mLastStateChange;
+
     friend class XPCJSRuntime;
     friend class Watchdog;
+    friend class WatchdogManager;
     friend class AutoLockWatchdog;
 };
 
