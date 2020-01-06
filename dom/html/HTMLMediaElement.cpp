@@ -5846,6 +5846,12 @@ HTMLMediaElement::UpdateReadyStateInternal()
     return;
   }
 
+  if (!mPaused || mAutoplaying) {
+    
+    
+    mWaitingForKey = NOT_WAITING_FOR_KEY;
+  }
+
   
   
   
@@ -5854,7 +5860,7 @@ HTMLMediaElement::UpdateReadyStateInternal()
   
   
   
-  if (mWaitingForKey == NOT_WAITING_FOR_KEY && mDecoder->CanPlayThrough()) {
+  if (mDecoder->CanPlayThrough()) {
     LOG(LogLevel::Debug, ("MediaElement %p UpdateReadyStateInternal() "
                           "Decoder can play through", this));
     ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA);
@@ -5921,11 +5927,6 @@ void HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
     if (!mPaused) {
       NotifyAboutPlaying();
     }
-  }
-
-  if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_FUTURE_DATA &&
-      (!mPaused || mAutoplaying)) {
-    mWaitingForKey = NOT_WAITING_FOR_KEY;
   }
 
   CheckAutoplayDataReady();
