@@ -6,6 +6,11 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSettingsStore",
+                                  "resource://gre/modules/ExtensionSettingsStore.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
+
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Downloads.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -35,13 +40,6 @@ const PREF_CONTAINERS_EXTENSION = "privacy.userContext.extension";
 const PREF_SHOW_PLUGINS_IN_LIST = "browser.download.show_plugins_in_list";
 const PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS =
   "browser.download.hide_plugins_without_extensions";
-
-
-const PREF_SETTING_TYPE = "prefs";
-const CONTAINERS_KEY = "privacy.containers";
-const HOMEPAGE_OVERRIDE_KEY = "homepage_override";
-const URL_OVERRIDES_TYPE = "url_overrides";
-const NEW_TAB_KEY = "newTabURL";
 
 
 
@@ -220,10 +218,10 @@ var gMainPane = {
 
     this.updateBrowserStartupLastSession();
 
-    handleControllingExtension(URL_OVERRIDES_TYPE, NEW_TAB_KEY);
+    handleControllingExtension("url_overrides", "newTabURL");
     let newTabObserver = {
       observe(subject, topic, data) {
-          handleControllingExtension(URL_OVERRIDES_TYPE, NEW_TAB_KEY);
+          handleControllingExtension("url_overrides", "newTabURL");
       },
     };
     Services.obs.addObserver(newTabObserver, "newtab-url-changed");
@@ -262,11 +260,11 @@ var gMainPane = {
     setEventListener("restoreDefaultHomePage", "command",
       gMainPane.restoreDefaultHomePage);
     setEventListener("disableHomePageExtension", "command",
-                     makeDisableControllingExtension(PREF_SETTING_TYPE, HOMEPAGE_OVERRIDE_KEY));
+                     gMainPane.makeDisableControllingExtension("prefs", "homepage_override"));
     setEventListener("disableContainersExtension", "command",
-                     makeDisableControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY));
+                     gMainPane.makeDisableControllingExtension("prefs", "privacy.containers"));
     setEventListener("disableNewTabExtension", "command",
-                     makeDisableControllingExtension(URL_OVERRIDES_TYPE, NEW_TAB_KEY));
+                     gMainPane.makeDisableControllingExtension("url_overrides", "newTabURL"));
     setEventListener("chooseLanguage", "command",
       gMainPane.showLanguages);
     setEventListener("translationAttributionImage", "click",
@@ -486,7 +484,7 @@ var gMainPane = {
     const containersEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
     const containersCheckbox = document.getElementById("browserContainersCheckbox");
     containersCheckbox.checked = containersEnabled;
-    handleControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY)
+    handleControllingExtension("prefs", "privacy.containers")
       .then((isControlled) => {
         containersCheckbox.disabled = isControlled;
       });
@@ -618,11 +616,11 @@ var gMainPane = {
 
     if (homePref.locked) {
       
-      hideControllingExtension(HOMEPAGE_OVERRIDE_KEY);
+      hideControllingExtension("homepage_override");
       setInputDisabledStates(false);
     } else {
       
-      handleControllingExtension(PREF_SETTING_TYPE, HOMEPAGE_OVERRIDE_KEY)
+      handleControllingExtension("prefs", "homepage_override")
         .then(setInputDisabledStates);
     }
 
@@ -731,7 +729,7 @@ var gMainPane = {
       useCurrent.label = useCurrent.getAttribute("label1");
 
     
-    if (await getControllingExtensionInfo(PREF_SETTING_TYPE, HOMEPAGE_OVERRIDE_KEY)) {
+    if (await getControllingExtensionId("prefs", "homepage_override")) {
       useCurrent.disabled = true;
       return;
     }
@@ -775,6 +773,14 @@ var gMainPane = {
   restoreDefaultHomePage() {
     var homePage = document.getElementById("browser.startup.homepage");
     homePage.value = homePage.defaultValue;
+  },
+
+  makeDisableControllingExtension(type, settingName) {
+    return async function disableExtension() {
+      let id = await getControllingExtensionId(type, settingName);
+      let addon = await AddonManager.getAddonByID(id);
+      addon.userDisabled = true;
+    };
   },
 
   
@@ -2581,6 +2587,75 @@ function getLocalHandlerApp(aFile) {
   localHandlerApp.executable = aFile;
 
   return localHandlerApp;
+}
+
+let extensionControlledContentIds = {
+  "privacy.containers": "browserContainersExtensionContent",
+  "homepage_override": "browserHomePageExtensionContent",
+  "newTabURL": "browserNewTabExtensionContent",
+};
+
+
+
+
+async function getControllingExtensionId(type, settingName) {
+  await ExtensionSettingsStore.initialize();
+  return ExtensionSettingsStore.getTopExtensionId(type, settingName);
+}
+
+function getControllingExtensionEl(settingName) {
+  return document.getElementById(extensionControlledContentIds[settingName]);
+}
+
+async function handleControllingExtension(type, settingName) {
+  let controllingExtensionId = await getControllingExtensionId(type, settingName);
+  let addon = controllingExtensionId
+    && await AddonManager.getAddonByID(controllingExtensionId);
+
+  
+  
+  
+  
+  
+  if (addon) {
+    showControllingExtension(settingName, addon);
+  } else {
+    hideControllingExtension(settingName);
+  }
+
+  return !!addon;
+}
+
+async function showControllingExtension(settingName, addon) {
+  
+  let extensionControlledContent = getControllingExtensionEl(settingName);
+  const defaultIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+  let stringParts = document
+    .getElementById("bundlePreferences")
+    .getString(`extensionControlled.${settingName}`)
+    .split("%S");
+  let description = extensionControlledContent.querySelector("description");
+
+  
+  while (description.firstChild) {
+    description.firstChild.remove();
+  }
+
+  
+  description.appendChild(document.createTextNode(stringParts[0]));
+  let image = document.createElement("image");
+  image.setAttribute("src", addon.iconURL || defaultIcon);
+  image.classList.add("extension-controlled-icon");
+  description.appendChild(image);
+  description.appendChild(document.createTextNode(` ${addon.name}`));
+  description.appendChild(document.createTextNode(stringParts[1]));
+
+  
+  extensionControlledContent.hidden = false;
+}
+
+function hideControllingExtension(settingName) {
+  getControllingExtensionEl(settingName).hidden = true;
 }
 
 
