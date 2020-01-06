@@ -2265,16 +2265,15 @@ nsHttpChannel::ProcessResponse()
         this, httpStatus));
 
     
-    if (gHttpHandler->IsTelemetryEnabled()) {
-        
-        
-        Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_IS_SSL,
+    
+    Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_IS_SSL,
+                          mConnectionInfo->EndToEndSSL());
+    if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
+        Telemetry::Accumulate(Telemetry::HTTP_PAGELOAD_IS_SSL,
                               mConnectionInfo->EndToEndSSL());
-        if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
-            Telemetry::Accumulate(Telemetry::HTTP_PAGELOAD_IS_SSL,
-                                  mConnectionInfo->EndToEndSSL());
-        }
+    }
 
+    if (gHttpHandler->IsTelemetryEnabled()) {
         
         nsAutoCString alt_service;
         Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, alt_service);
