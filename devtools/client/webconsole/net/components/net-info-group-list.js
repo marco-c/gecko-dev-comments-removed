@@ -3,23 +3,20 @@
 
 "use strict";
 
-const React = require("devtools/client/shared/vendor/react");
-const NetInfoGroup = React.createFactory(require("./net-info-group"));
-
-
-const DOM = React.DOM;
-const PropTypes = React.PropTypes;
+const { Component, createFactory, DOM, PropTypes } =
+  require("devtools/client/shared/vendor/react");
+const NetInfoGroup = createFactory(require("./net-info-group"));
 
 
 
 
 
-var NetInfoGroupList = React.createClass({
-  propTypes: {
-    groups: PropTypes.array.isRequired,
-  },
-
-  displayName: "NetInfoGroupList",
+class NetInfoGroupList extends Component {
+  static get propTypes() {
+    return {
+      groups: PropTypes.array.isRequired,
+    };
+  }
 
   render() {
     let groups = this.props.groups;
@@ -41,7 +38,7 @@ var NetInfoGroupList = React.createClass({
       )
     );
   }
-});
+}
 
 
 module.exports = NetInfoGroupList;

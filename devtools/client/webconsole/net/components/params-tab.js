@@ -3,26 +3,23 @@
 
 "use strict";
 
-const React = require("devtools/client/shared/vendor/react");
-const NetInfoParams = React.createFactory(require("./net-info-params"));
-
-
-const DOM = React.DOM;
-const PropTypes = React.PropTypes;
+const { Component, createFactory, DOM, PropTypes } =
+  require("devtools/client/shared/vendor/react");
+const NetInfoParams = createFactory(require("./net-info-params"));
 
 
 
 
 
 
-var ParamsTab = React.createClass({
-  propTypes: {
-    data: PropTypes.shape({
-      request: PropTypes.object.isRequired
-    })
-  },
-
-  displayName: "ParamsTab",
+class ParamsTab extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.shape({
+        request: PropTypes.object.isRequired
+      })
+    };
+  }
 
   render() {
     let data = this.props.data;
@@ -35,7 +32,7 @@ var ParamsTab = React.createClass({
       )
     );
   }
-});
+}
 
 
 module.exports = ParamsTab;

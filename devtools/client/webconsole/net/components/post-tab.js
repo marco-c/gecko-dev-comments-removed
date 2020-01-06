@@ -3,45 +3,57 @@
 
 "use strict";
 
-const React = require("devtools/client/shared/vendor/react");
+const { Component, createFactory, DOM, PropTypes } =
+  require("devtools/client/shared/vendor/react");
 
-const TreeView = React.createFactory(require("devtools/client/shared/components/tree/TreeView"));
+const TreeView =
+  createFactory(require("devtools/client/shared/components/tree/TreeView"));
 
-const { REPS, MODE, parseURLEncodedText } = require("devtools/client/shared/components/reps/reps");
+const { REPS, MODE, parseURLEncodedText } =
+  require("devtools/client/shared/components/reps/reps");
 const { Rep } = REPS;
 
 
-const NetInfoParams = React.createFactory(require("./net-info-params"));
-const NetInfoGroupList = React.createFactory(require("./net-info-group-list"));
-const Spinner = React.createFactory(require("./spinner"));
-const SizeLimit = React.createFactory(require("./size-limit"));
+const NetInfoParams = createFactory(require("./net-info-params"));
+const NetInfoGroupList = createFactory(require("./net-info-group-list"));
+const Spinner = createFactory(require("./spinner"));
+const SizeLimit = createFactory(require("./size-limit"));
 const NetUtils = require("../utils/net");
 const Json = require("../utils/json");
 
 
-const DOM = React.DOM;
-const PropTypes = React.PropTypes;
 
 
 
 
+class PostTab extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.shape({
+        request: PropTypes.object.isRequired
+      }),
+      actions: PropTypes.object.isRequired
+    };
+  }
 
-
-var PostTab = React.createClass({
-  propTypes: {
-    data: PropTypes.shape({
-      request: PropTypes.object.isRequired
-    }),
-    actions: PropTypes.object.isRequired
-  },
-
-  displayName: "PostTab",
+  constructor(props) {
+    super(props);
+    this.isJson = this.isJson.bind(this);
+    this.parseJson = this.parseJson.bind(this);
+    this.renderJson = this.renderJson.bind(this);
+    this.parseXml = this.parseXml.bind(this);
+    this.isXml = this.isXml.bind(this);
+    this.renderXml = this.renderXml.bind(this);
+    this.renderMultiPart = this.renderMultiPart.bind(this);
+    this.renderUrlEncoded = this.renderUrlEncoded.bind(this);
+    this.renderRawData = this.renderRawData.bind(this);
+  }
 
   isJson(file) {
     let text = file.request.postData.text;
     let value = NetUtils.getHeaderValue(file.request.headers, "content-type");
     return Json.isJSON(value, text);
-  },
+  }
 
   parseJson(file) {
     let postData = file.request.postData;
@@ -51,7 +63,7 @@ var PostTab = React.createClass({
 
     let jsonString = new String(postData.text);
     return Json.parseJSONString(jsonString);
-  },
+  }
 
   
 
@@ -83,7 +95,7 @@ var PostTab = React.createClass({
       }),
       name: Locale.$STR("jsonScopeName")
     };
-  },
+  }
 
   parseXml(file) {
     let text = file.request.postData.text;
@@ -95,7 +107,7 @@ var PostTab = React.createClass({
       mimeType: NetUtils.getHeaderValue(file.request.headers, "content-type"),
       text: text,
     });
-  },
+  }
 
   isXml(file) {
     if (isLongString(file.request.postData.text)) {
@@ -108,7 +120,7 @@ var PostTab = React.createClass({
     }
 
     return NetUtils.isHTML(value);
-  },
+  }
 
   renderXml(file) {
     let text = file.request.postData.text;
@@ -127,7 +139,7 @@ var PostTab = React.createClass({
 
     
     return null;
-  },
+  }
 
   
 
@@ -144,7 +156,7 @@ var PostTab = React.createClass({
     }
 
     return;
-  },
+  }
 
   
 
@@ -168,7 +180,7 @@ var PostTab = React.createClass({
       content: NetInfoParams({params: params}),
       name: Locale.$STR("netRequest.params")
     };
-  },
+  }
 
   renderRawData(file) {
     let text = file.request.postData.text;
@@ -202,7 +214,7 @@ var PostTab = React.createClass({
     }
 
     return group;
-  },
+  }
 
   componentDidMount() {
     let { actions, data: file } = this.props;
@@ -211,7 +223,7 @@ var PostTab = React.createClass({
       
       actions.requestData("requestPostData");
     }
-  },
+  }
 
   render() {
     let { actions, data: file } = this.props;
@@ -257,7 +269,7 @@ var PostTab = React.createClass({
       )
     );
   }
-});
+}
 
 
 

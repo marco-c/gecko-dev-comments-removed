@@ -3,11 +3,8 @@
 
 "use strict";
 
-const React = require("devtools/client/shared/vendor/react");
-
-
-const DOM = React.DOM;
-const PropTypes = React.PropTypes;
+const { Component, DOM, PropTypes } =
+  require("devtools/client/shared/vendor/react");
 
 
 
@@ -15,17 +12,22 @@ const PropTypes = React.PropTypes;
 
 
 
-var SizeLimit = React.createClass({
-  propTypes: {
-    data: PropTypes.object.isRequired,
-    message: PropTypes.string.isRequired,
-    link: PropTypes.string.isRequired,
-    actions: PropTypes.shape({
-      resolveString: PropTypes.func.isRequired
-    }),
-  },
+class SizeLimit extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.object.isRequired,
+      message: PropTypes.string.isRequired,
+      link: PropTypes.string.isRequired,
+      actions: PropTypes.shape({
+        resolveString: PropTypes.func.isRequired
+      }),
+    };
+  }
 
-  displayName: "SizeLimit",
+  constructor(props) {
+    super(props);
+    this.onClickLimit = this.onClickLimit.bind(this);
+  }
 
   
 
@@ -34,7 +36,7 @@ var SizeLimit = React.createClass({
     let content = this.props.data;
 
     actions.resolveString(content, "text");
-  },
+  }
 
   
 
@@ -56,7 +58,7 @@ var SizeLimit = React.createClass({
         )
     );
   }
-});
+}
 
 
 module.exports = SizeLimit;

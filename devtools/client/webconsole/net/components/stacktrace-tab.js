@@ -3,20 +3,22 @@
 
 "use strict";
 
-const { PropTypes, createClass, createFactory } = require("devtools/client/shared/vendor/react");
-const StackTrace = createFactory(require("devtools/client/shared/components/StackTrace"));
+const { PropTypes, Component, createFactory } =
+  require("devtools/client/shared/vendor/react");
+const StackTrace =
+  createFactory(require("devtools/client/shared/components/StackTrace"));
 
-const StackTraceTab = createClass({
-  displayName: "StackTraceTab",
-
-  propTypes: {
-    data: PropTypes.object.isRequired,
-    actions: PropTypes.shape({
-      onViewSourceInDebugger: PropTypes.func.isRequired
-    }),
-    
-    sourceMapService: PropTypes.object,
-  },
+class StackTraceTab extends Component {
+  static get propTypes() {
+    return {
+      data: PropTypes.object.isRequired,
+      actions: PropTypes.shape({
+        onViewSourceInDebugger: PropTypes.func.isRequired
+      }),
+      
+      sourceMapService: PropTypes.object,
+    };
+  }
 
   render() {
     let { stacktrace } = this.props.data.cause;
@@ -25,7 +27,7 @@ const StackTraceTab = createClass({
 
     return StackTrace({ stacktrace, onViewSourceInDebugger, sourceMapService });
   }
-});
+}
 
 
 module.exports = StackTraceTab;

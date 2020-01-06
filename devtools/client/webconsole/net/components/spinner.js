@@ -3,24 +3,19 @@
 
 "use strict";
 
-const React = require("devtools/client/shared/vendor/react");
-
-
-const DOM = React.DOM;
+const { Component, DOM } = require("devtools/client/shared/vendor/react");
 
 
 
 
 
-var Spinner = React.createClass({
-  displayName: "Spinner",
-
+class Spinner extends Component {
   render() {
     return (
       DOM.div({className: "devtools-throbber"})
     );
   }
-});
+}
 
 
 module.exports = Spinner;
