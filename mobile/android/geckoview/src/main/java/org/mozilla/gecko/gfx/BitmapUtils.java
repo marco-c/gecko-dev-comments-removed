@@ -19,12 +19,8 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.support.annotation.ColorInt;
-import android.support.v7.graphics.Palette;
 import android.util.Base64;
 import android.util.Log;
-
-import org.mozilla.gecko.util.HardwareUtils;
 
 public final class BitmapUtils {
     private static final String LOGTAG = "GeckoBitmapUtils";
@@ -139,39 +135,13 @@ public final class BitmapUtils {
         }
     }
 
-    public static @ColorInt int getDominantColor(Bitmap source, @ColorInt int defaultColor) {
-        if (HardwareUtils.isX86System()) {
-            
-            
-            
-            
-            
-            return getDominantColorCustomImplementation(source, true, defaultColor);
-        } else {
-            try {
-                final Palette palette = Palette.from(source).generate();
-                return palette.getVibrantColor(defaultColor);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                
-                
-                
-                Log.e(LOGTAG, "Palette generation failed with ArrayIndexOutOfBoundsException", e);
-
-                return defaultColor;
-            }
-        }
+    public static int getDominantColor(Bitmap source) {
+        return getDominantColor(source, true);
     }
 
-    public static @ColorInt int getDominantColorCustomImplementation(Bitmap source) {
-        return getDominantColorCustomImplementation(source, true, Color.WHITE);
-    }
-
-    public static @ColorInt int getDominantColorCustomImplementation(Bitmap source,
-                                                                     boolean applyThreshold,
-                                                                     @ColorInt int defaultColor) {
-      if (source == null) {
-          return defaultColor;
-      }
+    public static int getDominantColor(Bitmap source, boolean applyThreshold) {
+      if (source == null)
+        return Color.argb(255, 255, 255, 255);
 
       
       
@@ -223,9 +193,8 @@ public final class BitmapUtils {
       }
 
       
-      if (maxBin < 0) {
-          return defaultColor;
-      }
+      if (maxBin < 0)
+        return Color.argb(255, 255, 255, 255);
 
       
       hsv[0] = sumHue[maxBin] / colorBins[maxBin];

@@ -37,8 +37,36 @@ public class ColorProcessor implements Processor {
             return;
         }
 
-        final @ColorInt int dominantColor = BitmapUtils.getDominantColor(response.getBitmap(), DEFAULT_COLOR);
-        response.updateColor(dominantColor & 0x7FFFFFFF);
+        if (HardwareUtils.isX86System()) {
+            
+            
+            
+            
+            
+            extractColorUsingCustomImplementation(response);
+        } else {
+            extractColorUsingPaletteSupportLibrary(response);
+        }
+    }
+
+    private void extractColorUsingPaletteSupportLibrary(final IconResponse response) {
+        try {
+            final Palette palette = Palette.from(response.getBitmap()).generate();
+            response.updateColor(palette.getVibrantColor(DEFAULT_COLOR) & 0x7FFFFFFF);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            
+            
+            
+            Log.e(LOGTAG, "Palette generation failed with ArrayIndexOutOfBoundsException", e);
+
+            response.updateColor(DEFAULT_COLOR);
+        }
+    }
+
+    private void extractColorUsingCustomImplementation(final IconResponse response) {
+        final int dominantColor = BitmapUtils.getDominantColor(response.getBitmap());
+
+        response.updateColor(dominantColor);
     }
 
     

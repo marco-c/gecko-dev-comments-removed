@@ -139,7 +139,7 @@ public class ShortcutUtils {
         } else {
             
             
-            final int color = BitmapUtils.getDominantColorCustomImplementation(aSource);
+            final int color = BitmapUtils.getDominantColor(aSource);
             paint.setColor(color);
             canvas.drawRoundRect(new RectF(kOffset, kOffset, size - kOffset, size - kOffset),
                                            kRadius, kRadius, paint);
