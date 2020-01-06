@@ -1886,6 +1886,8 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   }
 #endif
 
+  ClearInDocument();
+
   
   
   
@@ -1900,8 +1902,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     DeleteProperty(nsGkAtoms::animationsOfAfterProperty);
     DeleteProperty(nsGkAtoms::animationsProperty);
   }
-
-  ClearInDocument();
 
   
   
