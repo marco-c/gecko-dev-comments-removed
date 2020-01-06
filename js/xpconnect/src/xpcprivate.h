@@ -1018,7 +1018,7 @@ public:
 
     bool IsAddonScope() { return mIsAddonScope; }
 
-    bool HasInterposition() { return mInterposition; }
+    inline bool HasInterposition() { return mInterposition; }
     nsCOMPtr<nsIAddonInterposition> GetInterposition();
 
     static bool SetAddonInterposition(JSContext* cx,
@@ -3069,6 +3069,11 @@ public:
     
     
     bool isWebExtensionContentScript;
+
+    
+    
+    
+    bool hasInterposition;
 
     
     
