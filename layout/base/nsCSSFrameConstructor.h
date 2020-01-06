@@ -783,7 +783,7 @@ private:
   struct FrameConstructionDataByTag {
     
     
-    const nsAtom * const * const mTag;
+    const nsStaticAtom * const * const mTag;
     const FrameConstructionData mData;
   };
 

@@ -113,7 +113,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    bool IsURL(nsAtom** const* aURLs, nsAtom* aLocalName);
+    bool IsURL(nsStaticAtom** const* aURLs, nsAtom* aLocalName);
 
     
 
@@ -131,7 +131,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
                             nsTHashtable<nsRefPtrHashKey<nsAtom>>* aAllowed,
-                            nsAtom** const* aURLs,
+                            nsStaticAtom** const* aURLs,
                             bool aAllowXLink,
                             bool aAllowStyle,
                             bool aAllowDangerousSrc);

@@ -22,7 +22,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-static nsAtom** const unitMap[] =
+static nsStaticAtom** const unitMap[] =
 {
   nullptr, 
   nullptr, 

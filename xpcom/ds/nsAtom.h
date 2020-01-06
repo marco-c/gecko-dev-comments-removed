@@ -11,9 +11,6 @@
 #include "nsString.h"
 #include "nsStringBuffer.h"
 
-
-
-
 class nsAtom
 {
 public:
@@ -87,11 +84,12 @@ private:
 
   
   nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
-  nsAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash);
+
 protected:
+  nsAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash);
+
   ~nsAtom();
 
-private:
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
   uint32_t mLength: 30;
   uint32_t mKind: 2; 
@@ -101,6 +99,30 @@ private:
   
   
   char16_t* mString;
+};
+
+
+
+
+
+
+
+
+class nsStaticAtom : public nsAtom
+{
+public:
+  
+  
+  MozExternalRefCountType AddRef() = delete;
+  MozExternalRefCountType Release() = delete;
+
+private:
+  friend class nsAtomFriend;
+
+  
+  nsStaticAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash)
+    : nsAtom(aString, aLength, aHash)
+  {}
 };
 
 
@@ -131,7 +153,7 @@ nsrefcnt NS_GetNumberOfAtoms();
 
 
 
-nsAtom* NS_GetStaticAtom(const nsAString& aUTF16String);
+nsStaticAtom* NS_GetStaticAtom(const nsAString& aUTF16String);
 
 
 void NS_SealStaticAtomTable();

@@ -53,7 +53,7 @@ HTMLTagsHashCodeAtom(const void *key)
 #define NS_HTMLTAG_NAME_MAX_LENGTH 10
 
 
-nsAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
+nsStaticAtom* nsHTMLTags::sTagAtomTable[eHTMLTag_userdefined - 1];
 
 #define HTML_TAG(_tag, _classname, _interfacename) \
   NS_STATIC_ATOM_BUFFER(_tag, #_tag)

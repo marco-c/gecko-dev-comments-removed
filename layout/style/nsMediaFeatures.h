@@ -22,7 +22,7 @@ typedef void (*nsMediaFeatureValueGetter)(nsPresContext* aPresContext,
 
 struct nsMediaFeature
 {
-  nsAtom **mName; 
+  nsStaticAtom** mName; 
 
   enum RangeType { eMinMaxAllowed, eMinMaxNotAllowed };
   RangeType mRangeType;

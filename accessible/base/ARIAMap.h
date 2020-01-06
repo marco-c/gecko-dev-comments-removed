@@ -156,7 +156,7 @@ struct nsRoleMapEntry
     { return nsDependentAtomString(*roleAtom); }
 
   
-  nsAtom** roleAtom;
+  nsStaticAtom** roleAtom;
 
   
   mozilla::a11y::role role;

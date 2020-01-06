@@ -184,7 +184,7 @@ SVGLength::GetUserUnitsPerPercent(const nsSVGElement *aElement, uint8_t aAxis)
 
 
 
-static nsAtom** const unitMap[] =
+static nsStaticAtom** const unitMap[] =
 {
   nullptr, 
   nullptr, 

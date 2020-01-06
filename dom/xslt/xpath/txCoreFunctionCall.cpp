@@ -24,7 +24,7 @@ struct txCoreFunctionDescriptor
     int8_t mMinParams;
     int8_t mMaxParams;
     Expr::ResultType mReturnType;
-    nsAtom** mName;
+    nsStaticAtom** mName;
 };
 
 

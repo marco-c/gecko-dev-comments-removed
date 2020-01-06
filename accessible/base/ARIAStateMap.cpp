@@ -20,11 +20,11 @@ using namespace mozilla::a11y::aria;
 struct EnumTypeData
 {
   
-  nsAtom* const mAttrName;
+  nsStaticAtom* const mAttrName;
 
   
   
-  nsAtom* const* const mValues[4];
+  nsStaticAtom* const* const mValues[4];
 
   
   const uint64_t mStates[3];

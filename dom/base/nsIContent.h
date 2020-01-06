@@ -483,7 +483,7 @@ public:
 
 
 
-  typedef nsAtom* const* const AttrValuesArray;
+  typedef nsStaticAtom* const* const AttrValuesArray;
   virtual int32_t FindAttrValueIn(int32_t aNameSpaceID,
                                   nsAtom* aName,
                                   AttrValuesArray* aValues,

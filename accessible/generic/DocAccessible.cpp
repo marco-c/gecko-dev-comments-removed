@@ -62,7 +62,7 @@ using namespace mozilla::a11y;
 
 
 
-static nsAtom** kRelationAttrs[] =
+static nsStaticAtom** kRelationAttrs[] =
 {
   &nsGkAtoms::aria_labelledby,
   &nsGkAtoms::aria_describedby,

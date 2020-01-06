@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-class nsAtom;
+class nsStaticAtom;
 
 
 
@@ -75,7 +75,7 @@ class nsAtom;
 
 
 #define NS_STATIC_ATOM_DECL(name_) \
-  static nsAtom* name_;
+  static nsStaticAtom* name_;
 
 
 #define NS_STATIC_ATOM_SUBCLASS_DECL(type_, name_) \
@@ -84,7 +84,7 @@ class nsAtom;
 
 
 #define NS_STATIC_ATOM_DEFN(class_, name_) \
-  nsAtom* class_::name_;
+  nsStaticAtom* class_::name_;
 
 
 #define NS_STATIC_ATOM_SUBCLASS_DEFN(type_, class_, name_) \
@@ -105,7 +105,7 @@ class nsAtom;
 
 
 #define NS_STATIC_ATOM_SUBCLASS_SETUP(class_, name_) \
-  { name_##_buffer, reinterpret_cast<nsAtom**>(&class_::name_) },
+  { name_##_buffer, reinterpret_cast<nsStaticAtom**>(&class_::name_) },
 
 
 
@@ -113,7 +113,7 @@ class nsAtom;
 struct nsStaticAtomSetup
 {
   const char16_t* const mString;
-  nsAtom** const mAtom;
+  nsStaticAtom** const mAtom;
 };
 
 
