@@ -18,7 +18,7 @@ namespace net {
 ChannelEvent*
 ChannelEventQueue::TakeEvent()
 {
-  MutexAutoLock lock(mMutex);
+  mMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mFlushing);
 
   if (mSuspended || mEventQueue.IsEmpty()) {
@@ -40,57 +40,58 @@ ChannelEventQueue::FlushQueue()
   nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
   mozilla::Unused << kungFuDeathGrip; 
 
-  bool needResumeOnOtherThread = false;
+  
   {
-    
-    
-    ReentrantMonitorAutoEnter monitor(mRunningMonitor);
-
-    
-    {
-      MutexAutoLock lock(mMutex);
-      MOZ_ASSERT(!mFlushing);
-      mFlushing = true;
-    }
-
-    while (true) {
-      UniquePtr<ChannelEvent> event(TakeEvent());
-      if (!event) {
-        break;
-      }
-
-      nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
-      MOZ_ASSERT(target);
-
-      bool isCurrentThread = false;
-      nsresult rv = target->IsOnCurrentThread(&isCurrentThread);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        
-        
-        MOZ_DIAGNOSTIC_ASSERT(false);
-        isCurrentThread = true;
-      }
-
-      if (!isCurrentThread) {
-        
-        
-        Suspend();
-        PrependEvent(event);
-
-        needResumeOnOtherThread = true;
-        break;
-      }
-
-      event->Run();
-    }
-
-    {
-      MutexAutoLock lock(mMutex);
-      MOZ_ASSERT(mFlushing);
-      mFlushing = false;
-      MOZ_ASSERT(mEventQueue.IsEmpty() || (needResumeOnOtherThread || mSuspended || !!mForcedCount));
-    }
+    MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(!mFlushing);
+    mFlushing = true;
   }
+
+  bool needResumeOnOtherThread = false;
+
+  while (true) {
+    UniquePtr<ChannelEvent> event;
+    {
+      MutexAutoLock lock(mMutex);
+      event.reset(TakeEvent());
+      if (!event) {
+        MOZ_ASSERT(mFlushing);
+        mFlushing = false;
+        MOZ_ASSERT(mEventQueue.IsEmpty() || (mSuspended || !!mForcedCount));
+        break;
+      }
+    }
+
+    nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
+    MOZ_ASSERT(target);
+
+    bool isCurrentThread = false;
+    nsresult rv = target->IsOnCurrentThread(&isCurrentThread);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(false);
+      isCurrentThread = true;
+    }
+
+    if (!isCurrentThread) {
+      
+      
+      Suspend();
+      PrependEvent(event);
+
+      needResumeOnOtherThread = true;
+      {
+        MutexAutoLock lock(mMutex);
+        MOZ_ASSERT(mFlushing);
+        mFlushing = false;
+        MOZ_ASSERT(!mEventQueue.IsEmpty());
+      }
+      break;
+    }
+
+    event->Run();
+  } 
 
   
   
