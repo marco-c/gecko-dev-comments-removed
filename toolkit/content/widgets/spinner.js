@@ -127,8 +127,6 @@ function Spinner(props, context) {
 
 
 
-
-
     _onScroll() {
       const { items, itemsView, isInfiniteScroll } = this.state;
       const { viewportSize, viewportTopOffset } = this.props;
@@ -139,13 +137,7 @@ function Spinner(props, context) {
       const value = itemsView[this.state.index + viewportTopOffset].value;
 
       
-      
-      if (this.state.value == value && this.state.isScrolling) {
-        this.state.isScrolling = false;
-      }
-
-      
-      if (this.state.value != value && !this.state.isScrolling) {
+      if (this.state.value != value) {
         this.state.value = value;
         this.props.setValue(value);
       }
@@ -444,10 +436,6 @@ function Spinner(props, context) {
     _smoothScrollToIndex(index) {
       const element = this.elements.spinner.children[index];
       if (element) {
-        
-        
-        
-        this.state.isScrolling = true;
         element.scrollIntoView({
           behavior: "smooth", block: "start"
         });
