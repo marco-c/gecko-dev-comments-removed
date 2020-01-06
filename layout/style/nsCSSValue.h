@@ -616,7 +616,7 @@ public:
   }
 
   
-  enum Serialization { eNormalized, eAuthorSpecified };
+  enum Serialization { eNormalized };
 
   
 
