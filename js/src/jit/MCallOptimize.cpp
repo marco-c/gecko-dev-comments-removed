@@ -2525,23 +2525,31 @@ IonBuilder::inlineIsTypedArrayHelper(CallInfo& callInfo, WrappingBehavior wrappi
     if (!types)
         return InliningStatus_NotInlined;
 
+    
+    
+    
+    
+    auto isPossiblyWrapped = [this, wrappingBehavior, types]() {
+        if (wrappingBehavior != AllowWrappedTypedArrays)
+            return false;
+
+        switch (types->forAllClasses(constraints(), IsProxyClass)) {
+          case TemporaryTypeSet::ForAllResult::ALL_FALSE:
+          case TemporaryTypeSet::ForAllResult::EMPTY:
+            break;
+          case TemporaryTypeSet::ForAllResult::ALL_TRUE:
+          case TemporaryTypeSet::ForAllResult::MIXED:
+            return true;
+        }
+        return false;
+    };
+
     bool result = false;
+    bool isConstant = true;
     switch (types->forAllClasses(constraints(), IsTypedArrayClass)) {
       case TemporaryTypeSet::ForAllResult::ALL_FALSE:
-        
-        
-        
-        
-        if (wrappingBehavior == AllowWrappedTypedArrays) {
-            switch (types->forAllClasses(constraints(), IsProxyClass)) {
-              case TemporaryTypeSet::ForAllResult::ALL_FALSE:
-              case TemporaryTypeSet::ForAllResult::EMPTY:
-                break;
-              case TemporaryTypeSet::ForAllResult::ALL_TRUE:
-              case TemporaryTypeSet::ForAllResult::MIXED:
-                return InliningStatus_NotInlined;
-            }
-        }
+        if (isPossiblyWrapped())
+            return InliningStatus_NotInlined;
 
         MOZ_FALLTHROUGH;
 
@@ -2554,10 +2562,20 @@ IonBuilder::inlineIsTypedArrayHelper(CallInfo& callInfo, WrappingBehavior wrappi
         break;
 
       case TemporaryTypeSet::ForAllResult::MIXED:
-        return InliningStatus_NotInlined;
+        if (isPossiblyWrapped())
+            return InliningStatus_NotInlined;
+
+        isConstant = false;
+        break;
     }
 
-    pushConstant(BooleanValue(result));
+    if (isConstant) {
+        pushConstant(BooleanValue(result));
+    } else {
+        auto* ins = MIsTypedArray::New(alloc(), callInfo.getArg(0));
+        current->add(ins);
+        current->push(ins);
+    }
 
     callInfo.setImplicitlyUsedUnchecked();
     return InliningStatus_Inlined;
