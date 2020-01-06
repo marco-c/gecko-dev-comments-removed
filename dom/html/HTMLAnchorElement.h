@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Link.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIDOMHTMLAnchorElement.h"
 #include "nsDOMTokenList.h"
 
 namespace mozilla {
@@ -18,6 +19,7 @@ class EventChainPreVisitor;
 namespace dom {
 
 class HTMLAnchorElement final : public nsGenericHTMLElement,
+                                public nsIDOMHTMLAnchorElement,
                                 public Link
 {
 public:
@@ -37,8 +39,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLAnchorElement,
                                            nsGenericHTMLElement)
 
-  NS_IMPL_FROMCONTENT_HTML_WITH_TAG(HTMLAnchorElement, a);
-
   virtual int32_t TabIndexDefault() override;
   virtual bool Draggable() const override;
 
@@ -46,6 +46,8 @@ public:
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override;
 
   
+  NS_DECL_NSIDOMHTMLANCHORELEMENT
+
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
@@ -82,15 +84,12 @@ public:
 
   
 
-  void GetHref(nsAString& aValue)
-  {
-    GetURIAttr(nsGkAtoms::href, nullptr, aValue);
-  }
+  
   void SetHref(const nsAString& aValue, mozilla::ErrorResult& rv)
   {
     SetHTMLAttr(nsGkAtoms::href, aValue, rv);
   }
-  void GetTarget(nsAString& aValue);
+  
   void SetTarget(const nsAString& aValue, mozilla::ErrorResult& rv)
   {
     SetHTMLAttr(nsGkAtoms::target, aValue, rv);
@@ -103,10 +102,7 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::download, aValue, rv);
   }
-  void GetPing(DOMString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::ping, aValue);
-  }
+  
   void SetPing(const nsAString& aValue, mozilla::ErrorResult& rv)
   {
     SetHTMLAttr(nsGkAtoms::ping, aValue, rv);
@@ -123,9 +119,9 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::referrerpolicy, aValue, rv);
   }
-  void GetReferrerPolicy(DOMString& aPolicy)
+  void GetReferrerPolicy(nsAString& aReferrer)
   {
-    GetEnumAttr(nsGkAtoms::referrerpolicy, EmptyCString().get(), aPolicy);
+    GetEnumAttr(nsGkAtoms::referrerpolicy, EmptyCString().get(), aReferrer);
   }
   nsDOMTokenList* RelList();
   void GetHreflang(DOMString& aValue)
@@ -136,11 +132,6 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::hreflang, aValue, rv);
   }
-  
-  void GetType(nsAString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::type, aValue);
-  }
   void GetType(DOMString& aValue)
   {
     GetHTMLAttr(nsGkAtoms::type, aValue);
@@ -149,8 +140,11 @@ public:
   {
     SetHTMLAttr(nsGkAtoms::type, aValue, rv);
   }
-  void GetText(nsAString& aValue, mozilla::ErrorResult& rv);
-  void SetText(const nsAString& aValue, mozilla::ErrorResult& rv);
+  
+  void SetText(const nsAString& aValue, mozilla::ErrorResult& rv)
+  {
+    rv = SetText(aValue);
+  }
 
   
 
@@ -181,6 +175,7 @@ public:
   
   
 
+  
   void GetCoords(DOMString& aValue)
   {
     GetHTMLAttr(nsGkAtoms::coords, aValue);
@@ -225,7 +220,6 @@ public:
   {
     GetHref(aResult);
   }
-  void ToString(nsAString& aSource);
 
   virtual void NodeInfoChanged(nsIDocument* aOldDoc) final override
   {
