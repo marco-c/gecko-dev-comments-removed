@@ -4695,8 +4695,8 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
   
   
   
-  gfxMatrix newTM = aThebesContext->CurrentMatrix().Translate(offset).
-                                                    Scale(scale, scale).
+  gfxMatrix newTM = aThebesContext->CurrentMatrix().PreTranslate(offset).
+                                                    PreScale(scale, scale).
                                                     NudgeToIntegers();
   aThebesContext->SetMatrix(newTM);
 
@@ -5093,12 +5093,12 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
   gfxMatrix initialTM = ctx->CurrentMatrix();
 
   if (resize)
-    initialTM.Scale(scale, scale);
+    initialTM.PreScale(scale, scale);
 
   
   gfxPoint surfaceOffset =
     nsLayoutUtils::PointToGfxPoint(-aArea.TopLeft(), pc->AppUnitsPerDevPixel());
-  initialTM.Translate(surfaceOffset);
+  initialTM.PreTranslate(surfaceOffset);
 
   
   
@@ -5120,7 +5120,7 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
     gfxPoint rootOffset =
       nsLayoutUtils::PointToGfxPoint(rangeInfo->mRootOffset,
                                      pc->AppUnitsPerDevPixel());
-    ctx->SetMatrix(gfxMatrix(initialTM).Translate(rootOffset));
+    ctx->SetMatrix(gfxMatrix(initialTM).PreTranslate(rootOffset));
     aArea.MoveBy(-rangeInfo->mRootOffset.x, -rangeInfo->mRootOffset.y);
     nsRegion visible(aArea);
     RefPtr<LayerManager> layerManager =
@@ -10497,7 +10497,7 @@ void ReflowCountMgr::PaintCount(const char*     aName,
       gfxPoint devPixelOffset =
         nsLayoutUtils::PointToGfxPoint(aOffset, appUnitsPerDevPixel);
       aRenderingContext->SetMatrix(
-        aRenderingContext->CurrentMatrix().Translate(devPixelOffset));
+        aRenderingContext->CurrentMatrix().PreTranslate(devPixelOffset));
 
       
       

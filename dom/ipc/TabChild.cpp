@@ -1832,7 +1832,10 @@ TabChild::RequestEditCommands(nsIWidget::NativeKeyBindingsType aType,
       MOZ_ASSERT_UNREACHABLE("Invalid native key bindings type");
   }
 
-  SendRequestNativeKeyBindings(aType, aEvent, &aCommands);
+  
+  
+  WidgetKeyboardEvent localEvent(aEvent);
+  SendRequestNativeKeyBindings(aType, localEvent, &aCommands);
 }
 
 mozilla::ipc::IPCResult
@@ -1919,7 +1922,7 @@ TabChild::RecvRealKeyEvent(const WidgetKeyboardEvent& aEvent)
   
   
   
-  if (localEvent.mFlags.mWantReplyFromContentProcess) {
+  if (localEvent.WantReplyFromContentProcess()) {
     SendReplyKeyEvent(localEvent);
   }
 
