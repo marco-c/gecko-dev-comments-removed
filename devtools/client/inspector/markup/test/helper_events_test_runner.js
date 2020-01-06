@@ -45,8 +45,10 @@ function* runEventPopupTests(url, tests) {
 
 
 
+
+
 function* checkEventsForNode(test, inspector, testActor) {
-  let {selector, expected, beforeTest} = test;
+  let {selector, expected, beforeTest, isSourceMapped} = test;
   let container = yield getContainerForSelector(selector, inspector);
 
   if (typeof beforeTest === "function") {
@@ -65,12 +67,22 @@ function* checkEventsForNode(test, inspector, testActor) {
 
   yield selectNode(selector, inspector);
 
+  let sourceMapPromise = null;
+  if (isSourceMapped) {
+    sourceMapPromise = tooltip.once("event-tooltip-source-map-ready");
+  }
+
   
   info("Clicking evHolder");
   EventUtils.synthesizeMouseAtCenter(evHolder, {},
     inspector.markup.doc.defaultView);
   yield tooltip.once("shown");
   info("tooltip shown");
+
+  if (isSourceMapped) {
+    info("Waiting for source map to be applied");
+    yield sourceMapPromise;
+  }
 
   
   let headers = tooltip.panel.querySelectorAll(".event-header");
