@@ -158,6 +158,11 @@ public:
   bool ShouldReportCrossOriginRedirect() const;
 
   
+  
+  DOMHighResTimeStamp AsyncOpenHighRes();
+
+  
+  DOMHighResTimeStamp WorkerStartHighRes();
   DOMHighResTimeStamp FetchStartHighRes();
   DOMHighResTimeStamp RedirectStartHighRes();
   DOMHighResTimeStamp RedirectEndHighRes();
@@ -273,6 +278,7 @@ private:
   DOMHighResTimeStamp mZeroTime;
 
   TimeStamp mAsyncOpen;
+  TimeStamp mWorkerStart;
   TimeStamp mRedirectStart;
   TimeStamp mRedirectEnd;
   TimeStamp mDomainLookupStart;

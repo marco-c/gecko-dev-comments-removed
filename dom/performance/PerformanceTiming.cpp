@@ -71,6 +71,7 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
 {
   if (aChannel) {
     aChannel->GetAsyncOpen(&mAsyncOpen);
+    aChannel->GetDispatchFetchEventStart(&mWorkerStart);
     aChannel->GetAllRedirectsSameOrigin(&mAllRedirectsSameOrigin);
     aChannel->GetRedirectCount(&mRedirectCount);
     aChannel->GetRedirectStart(&mRedirectStart);
@@ -91,25 +92,33 @@ PerformanceTiming::InitializeTimingInfo(nsITimedChannel* aChannel)
     
     
     
+    
     if (!mAsyncOpen.IsNull()) {
-      if (!mDomainLookupStart.IsNull() && mDomainLookupStart < mAsyncOpen) {
-        mDomainLookupStart = mAsyncOpen;
+      
+      
+      const TimeStamp* clampTime = &mAsyncOpen;
+      if (!mWorkerStart.IsNull() && mWorkerStart > mAsyncOpen) {
+        clampTime = &mWorkerStart;
       }
 
-      if (!mDomainLookupEnd.IsNull() && mDomainLookupEnd < mAsyncOpen) {
-        mDomainLookupEnd = mAsyncOpen;
+      if (!mDomainLookupStart.IsNull() && mDomainLookupStart < *clampTime) {
+        mDomainLookupStart = *clampTime;
       }
 
-      if (!mConnectStart.IsNull() && mConnectStart < mAsyncOpen) {
-        mConnectStart = mAsyncOpen;
+      if (!mDomainLookupEnd.IsNull() && mDomainLookupEnd < *clampTime) {
+        mDomainLookupEnd = *clampTime;
       }
 
-      if (!mSecureConnectionStart.IsNull() && mSecureConnectionStart < mAsyncOpen) {
-        mSecureConnectionStart = mAsyncOpen;
+      if (!mConnectStart.IsNull() && mConnectStart < *clampTime) {
+        mConnectStart = *clampTime;
       }
 
-      if (!mConnectEnd.IsNull() && mConnectEnd < mAsyncOpen) {
-        mConnectEnd = mAsyncOpen;
+      if (!mSecureConnectionStart.IsNull() && mSecureConnectionStart < *clampTime) {
+        mSecureConnectionStart = *clampTime;
+      }
+
+      if (!mConnectEnd.IsNull() && mConnectEnd < *clampTime) {
+        mConnectEnd = *clampTime;
       }
     }
   }
@@ -129,9 +138,13 @@ PerformanceTiming::FetchStartHighRes()
     }
     MOZ_ASSERT(!mAsyncOpen.IsNull(), "The fetch start time stamp should always be "
         "valid if the performance timing is enabled");
-    mFetchStart = (!mAsyncOpen.IsNull())
-        ? TimeStampToDOMHighRes(mAsyncOpen)
-        : 0.0;
+    if (!mAsyncOpen.IsNull()) {
+      if (!mWorkerStart.IsNull() && mWorkerStart > mAsyncOpen) {
+        mFetchStart = TimeStampToDOMHighRes(mWorkerStart);
+      } else {
+        mFetchStart = TimeStampToDOMHighRes(mAsyncOpen);
+      }
+    }
   }
   return mFetchStart;
 }
@@ -203,6 +216,26 @@ PerformanceTiming::ShouldReportCrossOriginRedirect() const
   
   
   return (mRedirectCount != 0) && mReportCrossOriginRedirect;
+}
+
+DOMHighResTimeStamp
+PerformanceTiming::AsyncOpenHighRes()
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      nsContentUtils::ShouldResistFingerprinting() || mAsyncOpen.IsNull()) {
+    return mZeroTime;
+  }
+  return TimeStampToDOMHighRes(mAsyncOpen);
+}
+
+DOMHighResTimeStamp
+PerformanceTiming::WorkerStartHighRes()
+{
+  if (!nsContentUtils::IsPerformanceTimingEnabled() || !IsInitialized() ||
+      nsContentUtils::ShouldResistFingerprinting() || mWorkerStart.IsNull()) {
+    return mZeroTime;
+  }
+  return TimeStampToDOMHighRes(mWorkerStart);
 }
 
 

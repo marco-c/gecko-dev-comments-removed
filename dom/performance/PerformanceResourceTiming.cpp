@@ -71,8 +71,22 @@ PerformanceResourceTiming::~PerformanceResourceTiming()
 DOMHighResTimeStamp
 PerformanceResourceTiming::StartTime() const
 {
-  DOMHighResTimeStamp startTime = mTiming->RedirectStartHighRes();
-  return startTime ? startTime : mTiming->FetchStartHighRes();
+  
+  
+  
+  
+  
+  
+  
+  DOMHighResTimeStamp redirect = mTiming->RedirectStartHighRes();
+  redirect = redirect ? redirect : DBL_MAX;
+
+  DOMHighResTimeStamp worker = mTiming->WorkerStartHighRes();
+  worker = worker ? worker : DBL_MAX;
+
+  DOMHighResTimeStamp asyncOpen = mTiming->AsyncOpenHighRes();
+
+  return std::min(asyncOpen, std::min(redirect, worker));
 }
 
 JSObject*
