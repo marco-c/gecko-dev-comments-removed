@@ -211,7 +211,6 @@ getenv(const char* name)
 
 
 
-
 #if (defined(XP_LINUX) && !defined(__alpha__)) ||                              \
   (defined(__FreeBSD_kernel__) && defined(__GLIBC__))
 #include <sys/syscall.h>
@@ -1021,7 +1020,8 @@ public:
   {
     mArenas.Init();
     mPrivateArenas.Init();
-    mDefaultArena = mLock.Init() ? CreateArena( false) : nullptr;
+    mDefaultArena =
+      mLock.Init() ? CreateArena( false) : nullptr;
     if (mDefaultArena) {
       
       
@@ -1058,17 +1058,14 @@ public:
       return Item<Iterator>(this, *Tree::Iterator::begin());
     }
 
-    Item<Iterator> end()
-    {
-      return Item<Iterator>(this, nullptr);
-    }
+    Item<Iterator> end() { return Item<Iterator>(this, nullptr); }
 
     Tree::TreeNode* Next()
     {
       Tree::TreeNode* result = Tree::Iterator::Next();
       if (!result && mNextTree) {
-	new (this) Iterator(mNextTree, nullptr);
-	result = reinterpret_cast<Tree::TreeNode*>(*Tree::Iterator::begin());
+        new (this) Iterator(mNextTree, nullptr);
+        result = reinterpret_cast<Tree::TreeNode*>(*Tree::Iterator::begin());
       }
       return result;
     }
@@ -4762,7 +4759,8 @@ MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
   inline return_type MozJemalloc::moz_arena_##name(                            \
     arena_id_t aArenaId, ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__))               \
   {                                                                            \
-    BaseAllocator allocator(gArenas.GetById(aArenaId, /* IsPrivate = */ true));\
+    BaseAllocator allocator(                                                   \
+      gArenas.GetById(aArenaId, /* IsPrivate = */ true));                      \
     return allocator.name(ARGS_HELPER(ARGS, ##__VA_ARGS__));                   \
   }
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE

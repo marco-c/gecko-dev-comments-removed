@@ -16,9 +16,9 @@
 
 #define MACRO_CALL2(a, b) a b
 
-#define ARGS_HELPER(name, ...) MACRO_CALL2( \
-  MOZ_PASTE_PREFIX_AND_ARG_COUNT(name, ##__VA_ARGS__), \
-  (__VA_ARGS__))
+#define ARGS_HELPER(name, ...)                                                 \
+  MACRO_CALL2(MOZ_PASTE_PREFIX_AND_ARG_COUNT(name, ##__VA_ARGS__),             \
+              (__VA_ARGS__))
 #define TYPED_ARGS0()
 #define TYPED_ARGS1(t1) t1 arg1
 #define TYPED_ARGS2(t1, t2) TYPED_ARGS1(t1), t2 arg2
@@ -34,20 +34,25 @@
 
 
 
-template <typename T>
-struct Allocator: public T {
-#define MALLOC_DECL(name, return_type, ...) \
+template<typename T>
+struct Allocator : public T
+{
+#define MALLOC_DECL(name, return_type, ...)                                    \
   static return_type name(__VA_ARGS__);
 #include "malloc_decls.h"
 };
 
 
-struct MozJemallocBase {};
+struct MozJemallocBase
+{
+};
 typedef Allocator<MozJemallocBase> MozJemalloc;
 
 #ifdef MOZ_REPLACE_MALLOC
 
-struct ReplaceMallocBase {};
+struct ReplaceMallocBase
+{
+};
 typedef Allocator<ReplaceMallocBase> ReplaceMalloc;
 
 typedef ReplaceMalloc DefaultMalloc;
@@ -59,17 +64,18 @@ typedef MozJemalloc DefaultMalloc;
 
 
 
-template <typename T>
-struct DummyArenaAllocator {
+template<typename T>
+struct DummyArenaAllocator
+{
   static arena_id_t moz_create_arena(void) { return 0; }
 
-  static void moz_dispose_arena(arena_id_t) { }
+  static void moz_dispose_arena(arena_id_t) {}
 
-#define MALLOC_DECL(name, return_type, ...) \
-  static return_type \
-  moz_arena_ ## name(arena_id_t, ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
-  { \
-    return T::name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
+#define MALLOC_DECL(name, return_type, ...)                                    \
+  static return_type moz_arena_##name(arena_id_t,                              \
+                                      ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__))  \
+  {                                                                            \
+    return T::name(ARGS_HELPER(ARGS, ##__VA_ARGS__));                          \
   }
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
 #include "malloc_decls.h"

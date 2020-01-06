@@ -52,21 +52,22 @@ MOZ_BEGIN_EXTERN_C
 
 #ifndef REPLACE_MALLOC_IMPL
 
-MFBT_API ReplaceMallocBridge* get_bridge();
+MFBT_API ReplaceMallocBridge*
+get_bridge();
 #endif
 
 
 
 
-#define MALLOC_DECL(name, return_type, ...) \
-  typedef return_type(name ## _impl_t)(__VA_ARGS__);
+#define MALLOC_DECL(name, return_type, ...)                                    \
+  typedef return_type(name##_impl_t)(__VA_ARGS__);
 
 #include "malloc_decls.h"
 
-#define MALLOC_DECL(name, return_type, ...) \
-  name ## _impl_t * name;
+#define MALLOC_DECL(name, return_type, ...) name##_impl_t* name;
 
-typedef struct {
+typedef struct
+{
 #include "malloc_decls.h"
 } malloc_table_t;
 
@@ -87,12 +88,13 @@ MOZ_END_EXTERN_C
 
 namespace mozilla {
 namespace detail {
-template <typename R, typename... Args>
-struct AllocHookType {
+template<typename R, typename... Args>
+struct AllocHookType
+{
   using Type = R (*)(R, Args...);
 };
 
-template <typename... Args>
+template<typename... Args>
 struct AllocHookType<void, Args...>
 {
   using Type = void (*)(Args...);
@@ -101,11 +103,12 @@ struct AllocHookType<void, Args...>
 } 
 } 
 
-#define MALLOC_DECL(name, return_type, ...) \
-  typename mozilla::detail::AllocHookType<return_type, ##__VA_ARGS__>::Type \
-    name ## _hook;
+#define MALLOC_DECL(name, return_type, ...)                                    \
+  typename mozilla::detail::AllocHookType<return_type, ##__VA_ARGS__>::Type    \
+    name##_hook;
 
-typedef struct {
+typedef struct
+{
 #include "malloc_decls.h"
   
   
@@ -130,7 +133,10 @@ struct DebugFdRegistry
 
 struct ReplaceMallocBridge
 {
-  ReplaceMallocBridge() : mVersion(3) {}
+  ReplaceMallocBridge()
+    : mVersion(3)
+  {
+  }
 
   
   virtual mozilla::dmd::DMDFuncs* GetDMDFuncs() { return nullptr; }
@@ -154,17 +160,22 @@ struct ReplaceMallocBridge
   
   
   
-  virtual const malloc_table_t*
-  RegisterHook(const char* aName, const malloc_table_t* aTable,
-               const malloc_hook_table_t* aHookTable) { return nullptr; }
+  virtual const malloc_table_t* RegisterHook(
+    const char* aName,
+    const malloc_table_t* aTable,
+    const malloc_hook_table_t* aHookTable)
+  {
+    return nullptr;
+  }
 
 #ifndef REPLACE_MALLOC_IMPL
   
   
-  static ReplaceMallocBridge* Get(int aMinimumVersion) {
+  static ReplaceMallocBridge* Get(int aMinimumVersion)
+  {
     static ReplaceMallocBridge* sSingleton = get_bridge();
-    return (sSingleton && sSingleton->mVersion >= aMinimumVersion)
-      ? sSingleton : nullptr;
+    return (sSingleton && sSingleton->mVersion >= aMinimumVersion) ? sSingleton
+                                                                   : nullptr;
   }
 #endif
 
@@ -197,9 +208,10 @@ struct ReplaceMalloc
     }
   }
 
-  static const malloc_table_t*
-  RegisterHook(const char* aName, const malloc_table_t* aTable,
-               const malloc_hook_table_t* aHookTable)
+  static const malloc_table_t* RegisterHook(
+    const char* aName,
+    const malloc_table_t* aTable,
+    const malloc_hook_table_t* aHookTable)
   {
     auto singleton = ReplaceMallocBridge::Get( 3);
     return singleton ? singleton->RegisterHook(aName, aTable, aHookTable)

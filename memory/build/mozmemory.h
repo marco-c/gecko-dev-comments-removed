@@ -28,30 +28,33 @@
 
 
 #ifndef XP_DARWIN
-MOZ_MEMORY_API size_t malloc_good_size_impl(size_t size);
+MOZ_MEMORY_API size_t
+malloc_good_size_impl(size_t size);
 
 
 
 
-static inline size_t _malloc_good_size(size_t size) {
-#  if defined(MOZ_GLUE_IN_PROGRAM) && !defined(IMPL_MFBT)
+static inline size_t
+_malloc_good_size(size_t size)
+{
+#if defined(MOZ_GLUE_IN_PROGRAM) && !defined(IMPL_MFBT)
   if (!malloc_good_size)
     return size;
-#  endif
+#endif
   return malloc_good_size_impl(size);
 }
 
-#  define malloc_good_size _malloc_good_size
+#define malloc_good_size _malloc_good_size
 #endif
 
-#define MALLOC_DECL(name, return_type, ...) \
+#define MALLOC_DECL(name, return_type, ...)                                    \
   MOZ_JEMALLOC_API return_type name(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
 #include "malloc_decls.h"
 
 #endif
 
-#define MALLOC_DECL(name, return_type, ...) \
+#define MALLOC_DECL(name, return_type, ...)                                    \
   MOZ_JEMALLOC_API return_type name(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_ARENA
 #include "malloc_decls.h"
