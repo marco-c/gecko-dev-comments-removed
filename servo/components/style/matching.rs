@@ -24,7 +24,7 @@ use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode, S
 use selectors::matching::{VisitedHandlingMode, AFFECTED_BY_PSEUDO_ELEMENTS};
 use sharing::{StyleSharingBehavior, StyleSharingResult};
 use stylearc::Arc;
-use stylist::ApplicableDeclarationList;
+use stylist::{ApplicableDeclarationList, RuleInclusion};
 
 
 enum InheritMode {
@@ -346,7 +346,13 @@ trait PrivateMatchMethods: TElement {
             
             
             
-            if pseudo.is_eager() {
+            
+            
+            
+            
+            
+            let only_default_rules = context.shared.traversal_flags.for_default_styles();
+            if pseudo.is_eager() && !only_default_rules {
                 let parent = self.parent_element().unwrap();
                 if !parent.may_have_animations() ||
                    primary_style.rules.get_animation_rules().is_empty() {
@@ -896,11 +902,22 @@ pub trait MatchMethods : TElement {
     {
         debug!("Match primary for {:?}, visited: {:?}", self, visited_handling);
 
+        let only_default_rules = context.shared.traversal_flags.for_default_styles();
         let implemented_pseudo = self.implemented_pseudo_element();
         if let Some(ref pseudo) = implemented_pseudo {
             
             debug_assert_eq!(*pseudo, pseudo.canonical());
-            if pseudo.is_eager() {
+            if pseudo.is_eager() && !only_default_rules {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 
                 let parent = self.parent_element().unwrap();
@@ -965,6 +982,12 @@ pub trait MatchMethods : TElement {
             self.apply_selector_flags(map, element, flags);
         };
 
+        let rule_inclusion = if only_default_rules {
+            RuleInclusion::DefaultOnly
+        } else {
+            RuleInclusion::All
+        };
+
         let bloom_filter = context.thread_local.bloom_filter.filter();
         let mut matching_context =
             MatchingContext::new_for_visited(MatchingMode::Normal,
@@ -985,6 +1008,7 @@ pub trait MatchMethods : TElement {
                                                  style_attribute,
                                                  smil_override,
                                                  animation_rules,
+                                                 rule_inclusion,
                                                  &mut applicable_declarations,
                                                  &mut matching_context,
                                                  &mut set_selector_flags);
@@ -1052,7 +1076,14 @@ pub trait MatchMethods : TElement {
         let stylist = &context.shared.stylist;
         let guards = &context.shared.guards;
 
+        let rule_inclusion = if context.shared.traversal_flags.for_default_styles() {
+            RuleInclusion::DefaultOnly
+        } else {
+            RuleInclusion::All
+        };
+
         let bloom_filter = context.thread_local.bloom_filter.filter();
+
         let mut matching_context =
             MatchingContext::new_for_visited(MatchingMode::ForStatelessPseudoElement,
                                              Some(bloom_filter),
@@ -1076,6 +1107,7 @@ pub trait MatchMethods : TElement {
                                                  None,
                                                  None,
                                                  AnimationRules(None, None),
+                                                 rule_inclusion,
                                                  &mut applicable_declarations,
                                                  &mut matching_context,
                                                  &mut set_selector_flags);

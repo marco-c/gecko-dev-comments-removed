@@ -13,6 +13,7 @@ use restyle_hints::{HintComputationContext, RestyleHint};
 use selector_parser::RestyleDamage;
 use sharing::StyleSharingBehavior;
 #[cfg(feature = "servo")] use servo_config::opts;
+use smallvec::SmallVec;
 use std::borrow::BorrowMut;
 
 
@@ -41,6 +42,8 @@ bitflags! {
         /// Traverse and update all elements with CSS animations since
         /// @keyframes rules may have changed
         const FOR_CSS_RULE_CHANGES = 0x08,
+        /// Only include user agent style sheets when selector matching.
+        const FOR_DEFAULT_STYLES = 0x10,
     }
 }
 
@@ -63,6 +66,12 @@ impl TraversalFlags {
     
     pub fn for_css_rule_changes(&self) -> bool {
         self.contains(FOR_CSS_RULE_CHANGES)
+    }
+
+    
+    
+    pub fn for_default_styles(&self) -> bool {
+        self.contains(FOR_DEFAULT_STYLES)
     }
 }
 
@@ -537,10 +546,13 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>,
                                   StyleSharingBehavior::Disallow);
         context.thread_local.end_element(element);
 
-        
-        
-        
-        unsafe { element.note_descendants::<DirtyDescendants>() };
+        if !context.shared.traversal_flags.for_default_styles() {
+            
+            
+            
+            
+            unsafe { element.note_descendants::<DirtyDescendants>() };
+        }
     }
 
     
@@ -595,6 +607,47 @@ pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
                 None => break,
             };
         }
+    }
+}
+
+
+
+
+
+pub fn resolve_default_style<E, F, G, H>(context: &mut StyleContext<E>,
+                                         element: E,
+                                         ensure_data: &F,
+                                         set_data: &G,
+                                         callback: H)
+    where E: TElement,
+          F: Fn(E),
+          G: Fn(E, Option<ElementData>) -> Option<ElementData>,
+          H: FnOnce(&ElementStyles)
+{
+    
+    let mut old_data: SmallVec<[(E, Option<ElementData>); 8]> = SmallVec::new();
+    {
+        let mut e = element;
+        loop {
+            old_data.push((e, set_data(e, None)));
+            match e.parent_element() {
+                Some(parent) => e = parent,
+                None => break,
+            }
+        }
+    }
+
+    
+    resolve_style_internal(context, element, ensure_data);
+
+    
+    
+    
+    callback(element.borrow_data().unwrap().styles());
+
+    
+    for entry in old_data {
+        set_data(entry.0, entry.1);
     }
 }
 
