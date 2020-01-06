@@ -148,7 +148,7 @@ using media::NewTaskFrom;
 using media::Pledge;
 using media::Refcountable;
 
-static Atomic<bool> sInShutdown;
+static Atomic<bool> sHasShutdown;
 
 typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
 
@@ -1095,7 +1095,7 @@ public:
                          const MediaTrackConstraints& aConstraints,
                          dom::CallerType aCallerType) override
         {
-          if (sInShutdown || !mListener) {
+          if (sHasShutdown || !mListener) {
             
             
             RefPtr<PledgeVoid> p = new PledgeVoid();
@@ -1176,14 +1176,14 @@ public:
       }
     }
 
-    if (!domStream || !stream || sInShutdown) {
+    if (!domStream || !stream || sHasShutdown) {
       nsCOMPtr<nsIDOMGetUserMediaErrorCallback> onFailure = mOnFailure.forget();
       LOG(("Returning error for getUserMedia() - no stream"));
 
       if (auto* window = nsGlobalWindowInner::GetInnerWindowWithId(mWindowID)) {
         RefPtr<MediaStreamError> error = new MediaStreamError(window->AsInner(),
             NS_LITERAL_STRING("InternalError"),
-            sInShutdown ? NS_LITERAL_STRING("In shutdown") :
+            sHasShutdown ? NS_LITERAL_STRING("In shutdown") :
                           NS_LITERAL_STRING("No stream."));
         onFailure->OnError(error);
       }
@@ -1978,7 +1978,7 @@ MediaManager::StartupInit()
 void
 MediaManager::PostTask(already_AddRefed<Runnable> task)
 {
-  if (sInShutdown) {
+  if (sHasShutdown) {
     
     
     
@@ -2055,7 +2055,7 @@ void MediaManager::OnDeviceChange() {
   RefPtr<MediaManager> self(this);
   NS_DispatchToMainThread(media::NewRunnableFrom([self]() mutable {
     MOZ_ASSERT(NS_IsMainThread());
-    if (sInShutdown) {
+    if (sHasShutdown) {
       return NS_OK;
     }
     self->DeviceChangeCallback::OnDeviceChange();
@@ -2218,7 +2218,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
     return NS_OK;
   }
 
-  if (sInShutdown) {
+  if (sHasShutdown) {
     RefPtr<MediaStreamError> error =
         new MediaStreamError(aWindow,
                              NS_LITERAL_STRING("AbortError"),
@@ -2816,7 +2816,7 @@ MediaManager::EnumerateDevices(nsPIDOMWindowInner* aWindow,
                                dom::CallerType aCallerType)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_TRUE(!sInShutdown, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(!sHasShutdown, NS_ERROR_FAILURE);
   nsCOMPtr<nsIGetUserMediaDevicesSuccessCallback> onSuccess(aOnSuccess);
   nsCOMPtr<nsIDOMGetUserMediaErrorCallback> onFailure(aOnFailure);
   uint64_t windowId = aWindow->WindowID();
@@ -2908,7 +2908,7 @@ MediaManager::GetBackend(uint64_t aWindowId)
   
   
   if (!mBackend) {
-    MOZ_RELEASE_ASSERT(!sInShutdown);  
+    MOZ_RELEASE_ASSERT(!sHasShutdown);  
 #if defined(MOZ_WEBRTC)
     mBackend = new MediaEngineWebRTC(mPrefs);
 #else
@@ -3086,10 +3086,9 @@ void
 MediaManager::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (sInShutdown) {
+  if (sHasShutdown) {
     return;
   }
-  sInShutdown = true;
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
 
@@ -3127,6 +3126,10 @@ MediaManager::Shutdown()
 #ifdef MOZ_WEBRTC
   StopWebRtcLog();
 #endif
+
+  
+  
+  sHasShutdown = true;
 
   
   
@@ -3291,7 +3294,7 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
       }
     }
 
-    if (sInShutdown) {
+    if (sHasShutdown) {
       return task->Denied(NS_LITERAL_STRING("In shutdown"));
     }
     
