@@ -963,6 +963,22 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
     return 0;
   };
 
+  static intptr_t FcntlTrap(const sandbox::arch_seccomp_data& aArgs,
+                            void* aux)
+  {
+    const auto cmd = static_cast<int>(aArgs.args[1]);
+    switch (cmd) {
+      
+      
+    case F_GETFD:
+      return O_CLOEXEC;
+    case F_SETFD:
+      return 0;
+    default:
+      return -ENOSYS;
+    }
+  }
+
   SandboxOpenedFile* mPlugin;
 public:
   explicit GMPSandboxPolicy(SandboxOpenedFile* aPlugin)
@@ -1016,6 +1032,8 @@ public:
     
     case __NR_uname:
       return Trap(UnameTrap, nullptr);
+    CASES_FOR_fcntl:
+      return Trap(FcntlTrap, nullptr);
 
     default:
       return SandboxPolicyCommon::EvaluateSyscall(sysno);
