@@ -7,6 +7,7 @@
 
 import argparse
 import os
+import posixpath
 import re
 import sys
 import mozinfo
@@ -100,6 +101,9 @@ class VerifyToolsMixin(object):
 
         
         for file in changed_files:
+            
+            
+            file = file.replace(posixpath.sep, os.sep)
             entry = tests_by_path.get(file)
             if entry:
                 self.info("Verification found test %s" % file)
