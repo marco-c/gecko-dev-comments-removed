@@ -594,14 +594,10 @@ public:
 private:
   ~GetUserMediaWindowListener()
   {
-    for (auto& l : mInactiveListeners) {
-      l->NotifyRemoved();
-    }
-    mInactiveListeners.Clear();
-    for (auto& l : mActiveListeners) {
-      l->NotifyRemoved();
-    }
-    mActiveListeners.Clear();
+    MOZ_ASSERT(mInactiveListeners.Length() == 0,
+               "Inactive listeners should already be removed");
+    MOZ_ASSERT(mActiveListeners.Length() == 0,
+               "Active listeners should already be removed");
     Unused << mMediaThread;
     
     
@@ -3117,7 +3113,24 @@ MediaManager::Shutdown()
     prefs->RemoveObserver("media.navigator.audio.full_duplex", this);
   }
 
-  
+  {
+    
+
+    
+    
+    
+    
+    nsTArray<RefPtr<GetUserMediaWindowListener>> listeners(GetActiveWindows()->Count());
+    for (auto iter = GetActiveWindows()->Iter(); !iter.Done(); iter.Next()) {
+      listeners.AppendElement(iter.UserData());
+    }
+    for (auto& listener : listeners) {
+      listener->Stop();
+      listener->RemoveAll();
+    }
+  }
+  MOZ_ASSERT(GetActiveWindows()->Count() == 0);
+
   GetActiveWindows()->Clear();
   mActiveCallbacks.Clear();
   mCallIds.Clear();
