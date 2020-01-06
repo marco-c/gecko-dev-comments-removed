@@ -42,16 +42,6 @@ public:
   virtual void FireTimeUpdate(bool aPeriodic) = 0;
 
   
-  
-  virtual dom::HTMLMediaElement* GetMediaElement()
-  {
-    return nullptr;
-  }
-
-  
-  virtual AbstractThread* AbstractMainThread() const = 0;
-
-  
   virtual bool GetPaused() = 0;
 
   
@@ -144,10 +134,6 @@ public:
   virtual bool IsHidden() const = 0;
 
   
-  
-  virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
-
-  
   virtual void SetAudibleState(bool aAudible) = 0;
 
   
@@ -162,18 +148,12 @@ public:
                                  const nsAString& aInitDataType) = 0;
 
   
-  virtual nsIDocument* GetDocument() const = 0;
-
-  
   
   virtual void ConstructMediaTracks(const MediaInfo* aInfo) = 0;
 
   
   
   virtual void RemoveMediaTracks() = 0;
-
-  
-  virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() = 0;
 
   
   virtual void AsyncResolveSeekDOMPromiseIfExists() = 0;
@@ -184,6 +164,35 @@ public:
   
   
   virtual void NotifyWaitingForKey() {}
+
+  
+
+
+
+  
+  virtual AbstractThread* AbstractMainThread() const { return nullptr; }
+
+  
+  
+  virtual dom::HTMLMediaElement* GetMediaElement() { return nullptr; }
+
+  
+  
+  virtual VideoFrameContainer* GetVideoFrameContainer() { return nullptr; }
+
+  
+  virtual nsIDocument* GetDocument() const { return nullptr; }
+
+  
+  virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper()
+  {
+    return nullptr;
+  }
+
+  
+
+
+
 };
 
 } 
