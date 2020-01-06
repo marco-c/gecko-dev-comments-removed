@@ -273,8 +273,12 @@ var BrowserPageActions = {
 
 
 
-  panelAnchorNodeForAction(action) {
+  panelAnchorNodeForAction(action, event) {
     
+    if (event && event.target.closest("panel")) {
+      return this.mainButtonNode;
+    }
+
     let potentialAnchorNodeIDs = [
       action && action.anchorIDOverride,
       action && this._urlbarButtonNodeIDForActionID(action.id),
@@ -753,7 +757,7 @@ var BrowserPageActionFeedback = {
     this.feedbackLabel.textContent = this.panelNode.getAttribute(action.id + "Feedback");
     this.panelNode.hidden = false;
 
-    let anchor = BrowserPageActions.panelAnchorNodeForAction(action);
+    let anchor = BrowserPageActions.panelAnchorNodeForAction(action, event);
     this.panelNode.openPopup(anchor, {
       position: "bottomcenter topright",
       triggerEvent: event,
