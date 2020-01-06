@@ -114,8 +114,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
   bool apzEnabled = mManager->AsyncPanZoomEnabled();
   EventRegions eventRegions;
 
-  FlattenedDisplayItemIterator iter(aDisplayListBuilder, aDisplayList);
-  while (nsDisplayItem* i = iter.GetNext()) {
+  for (nsDisplayItem* i = aDisplayList->GetBottom(); i; i = i->GetAbove()) {
     nsDisplayItem* item = i;
     DisplayItemType itemType = item->GetType();
 
@@ -133,7 +132,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
     
     AutoTArray<nsDisplayItem*, 1> mergedItems;
     mergedItems.AppendElement(item);
-    while (nsDisplayItem* peek = iter.PeekNext()) {
+    for (nsDisplayItem* peek = item->GetAbove(); peek; peek = peek->GetAbove()) {
       if (!item->CanMerge(peek)) {
         break;
       }
@@ -141,7 +140,7 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       mergedItems.AppendElement(peek);
 
       
-      i = iter.GetNext();
+      i = peek;
     }
 
     if (mergedItems.Length() > 1) {
@@ -213,14 +212,21 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       }
     }
 
-    
-    ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, apzEnabled);
+    nsDisplayList* childItems = item->GetSameCoordinateSystemChildren();
+    if (item->ShouldFlattenAway(aDisplayListBuilder)) {
+      MOZ_ASSERT(childItems);
+      CreateWebRenderCommandsFromDisplayList(childItems, aDisplayListBuilder, aSc,
+                                             aBuilder, aResources);
+    } else {
+      
+      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, apzEnabled);
 
-    
-    
-    if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
-                                       aDisplayListBuilder)) {
-      PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
+      
+      
+      if (!item->CreateWebRenderCommands(aBuilder, aResources, aSc, mManager,
+                                         aDisplayListBuilder)) {
+        PushItemAsImage(item, aBuilder, aResources, aSc, aDisplayListBuilder);
+      }
     }
 
     if (apzEnabled) {

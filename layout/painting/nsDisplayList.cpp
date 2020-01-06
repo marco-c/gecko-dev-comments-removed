@@ -6155,13 +6155,6 @@ CollectItemsWithOpacity(nsDisplayList* aList,
 bool
 nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
 {
-  if (mFrame->GetPrevContinuation() ||
-      mFrame->GetNextContinuation()) {
-    
-    
-    return false;
-  }
-
   if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
     
     
