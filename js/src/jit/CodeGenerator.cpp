@@ -1798,6 +1798,10 @@ JitCompartment::generateRegExpMatcherStub(JSContext* cx)
     
     
     CreateDependentString depStr[2];
+
+    
+    
+    Label failureRestore;
     {
         Label isLatin1, done;
         masm.branchLatin1String(input, &isLatin1);
@@ -1805,7 +1809,6 @@ JitCompartment::generateRegExpMatcherStub(JSContext* cx)
         Label* failure = &oolEntry;
         Register temp4 = (maybeTemp4 == InvalidReg) ? lastIndex : maybeTemp4;
 
-        Label failureRestore;
         if (maybeTemp4 == InvalidReg) {
             failure = &failureRestore;
 
