@@ -197,10 +197,6 @@ public:
   ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
 
   
-  already_AddRefed<RawServoRuleNode>
-  ResolveRuleNode(dom::Element *aElement, nsIAtom *aPseudoTag);
-
-  
   nsresult AppendStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
   nsresult PrependStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
   nsresult RemoveStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
