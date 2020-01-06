@@ -195,14 +195,6 @@ public:
   
   virtual bool UseBufferingHeuristics() const = 0;
 
-  
-  
-  size_t SizeOfVideoQueueInBytes() const;
-
-  
-  
-  size_t SizeOfAudioQueueInBytes() const;
-
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
 
