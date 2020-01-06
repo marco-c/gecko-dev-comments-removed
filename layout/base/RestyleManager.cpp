@@ -1338,13 +1338,48 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
 {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
-  MOZ_ASSERT(!mDestroyedFrames);
+
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mDestroyedFrames, "ProcessRestyledFrames recursion");
 
   if (aChangeList.IsEmpty()) {
     return;
   }
 
-  mDestroyedFrames = MakeUnique<nsTHashtable<nsPtrHashKey<const nsIFrame>>>();
+  
+  
+  
+  
+  
+  
+  typedef decltype(mDestroyedFrames) DestroyedFramesT;
+  class MOZ_RAII MaybeClearDestroyedFrames
+  {
+  private:
+    DestroyedFramesT& mDestroyedFramesRef; 
+    const bool        mResetOnDestruction;
+  public:
+    explicit MaybeClearDestroyedFrames(DestroyedFramesT& aTarget)
+      : mDestroyedFramesRef(aTarget)
+      , mResetOnDestruction(!aTarget) 
+    {
+    }
+    ~MaybeClearDestroyedFrames()
+    {
+      if (mResetOnDestruction) {
+        mDestroyedFramesRef.reset(nullptr);
+      }
+    }
+  };
+
+  MaybeClearDestroyedFrames maybeClear(mDestroyedFrames);
+  if (!mDestroyedFrames) {
+    mDestroyedFrames = MakeUnique<nsTHashtable<nsPtrHashKey<const nsIFrame>>>();
+  }
 
   AUTO_PROFILER_LABEL("RestyleManager::ProcessRestyledFrames", CSS);
 
@@ -1719,7 +1754,6 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   }
 
   frameConstructor->EndUpdate();
-  mDestroyedFrames.reset(nullptr);
 
 #ifdef DEBUG
   
