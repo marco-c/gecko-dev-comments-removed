@@ -118,13 +118,10 @@ FormAutofillHandler.prototype = {
 
 
 
-
-
-
-  collectFormFields(allowDuplicates = false) {
+  collectFormFields() {
     this._cacheValue.allFieldNames = null;
     this._formFieldCount = this.form.elements.length;
-    let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form, allowDuplicates);
+    let fieldDetails = FormAutofillHeuristics.getFormInfo(this.form);
     this.fieldDetails = fieldDetails ? fieldDetails : [];
     log.debug("Collected details on", this.fieldDetails.length, "fields");
 

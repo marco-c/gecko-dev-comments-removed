@@ -123,10 +123,6 @@ class FieldScanner {
       elementWeakRef: Cu.getWeakReference(element),
     };
 
-    if (info._reason) {
-      fieldInfo._reason = info._reason;
-    }
-
     
     if (this.findSameField(info) != -1) {
       
@@ -208,7 +204,7 @@ this.FormAutofillHeuristics = {
       let ruleStart = i;
       for (; i < GRAMMARS.length && GRAMMARS[i][0] && fieldScanner.elementExisting(detailStart); i++, detailStart++) {
         let detail = fieldScanner.getFieldDetailByIndex(detailStart);
-        if (!detail || GRAMMARS[i][0] != detail.fieldName || detail._reason == "autocomplete") {
+        if (!detail || GRAMMARS[i][0] != detail.fieldName) {
           break;
         }
         let element = detail.elementWeakRef.get();
@@ -292,23 +288,7 @@ this.FormAutofillHeuristics = {
     return parsedFields;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getFormInfo(form, allowDuplicates = false) {
+  getFormInfo(form) {
     if (form.autocomplete == "off" || form.elements.length <= 0) {
       return [];
     }
@@ -324,11 +304,7 @@ this.FormAutofillHeuristics = {
         fieldScanner.parsingIndex++;
       }
     }
-    if (allowDuplicates) {
-      return fieldScanner.fieldDetails;
-    } else {
-      return fieldScanner.trimmedFieldDetail;
-    }
+    return fieldScanner.trimmedFieldDetail;
   },
 
   getInfo(element) {
@@ -340,7 +316,6 @@ this.FormAutofillHeuristics = {
     
     
     if (info && info.fieldName && info.fieldName != "on") {
-      info._reason = "autocomplete";
       return info;
     }
 
