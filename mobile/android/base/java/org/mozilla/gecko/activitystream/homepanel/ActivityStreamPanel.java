@@ -145,7 +145,7 @@ public class ActivityStreamPanel extends FrameLayout {
         
         final int tilesSize = (w - (TopSitesPage.NUM_COLUMNS * tileMargin) - tileMargin) / TopSitesPage.NUM_COLUMNS;
 
-        adapter.setTileSize(TopSitesPage.NUM_COLUMNS * TopSitesPage.NUM_ROWS, tilesSize);
+        adapter.setTileSize(tilesSize);
     }
 
     private class HighlightsCallbacks implements LoaderManager.LoaderCallbacks<List<Highlight>> {
