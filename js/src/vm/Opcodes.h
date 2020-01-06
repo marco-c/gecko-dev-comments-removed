@@ -496,9 +496,8 @@
 
 
 
-
  \
-    macro(JSOP_CLASSHERITAGE,  51, "classheritage",   NULL,         1,  1,  2,  JOF_BYTE) \
+    macro(JSOP_CHECKCLASSHERITAGE,  51, "checkclassheritage",   NULL, 1,  1,  1,  JOF_BYTE) \
     
 
 
@@ -2261,7 +2260,15 @@
 
  \
     macro(JSOP_TRY_DESTRUCTURING_ITERCLOSE, 220, "try-destructuring-iterclose", NULL, 1, 0, 0, JOF_BYTE) \
-    macro(JSOP_UNUSED221,     221,"unused221",     NULL,  1,  0,  0,  JOF_BYTE) \
+    \
+    
+
+
+
+
+
+ \
+    macro(JSOP_BUILTINPROTO, 221, "builtinproto", NULL, 2,  0,  1,  JOF_UINT8) \
     macro(JSOP_UNUSED222,     222,"unused222",     NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED223,     223,"unused223",     NULL,  1,  0,  0,  JOF_BYTE) \
     \

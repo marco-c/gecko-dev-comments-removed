@@ -10669,29 +10669,106 @@ BytecodeEmitter::emitClass(ParseNode* pn)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
     if (heritageExpression) {
-        if (!emitTree(heritageExpression))
-            return false;
-        if (!emit1(JSOP_CLASSHERITAGE))
-            return false;
-        if (!emit1(JSOP_OBJWITHPROTO))
+        IfThenElseEmitter ifThenElse(this);
+
+        if (!emitTree(heritageExpression))                      
             return false;
 
         
+        if (!emit1(JSOP_CHECKCLASSHERITAGE))                    
+            return false;
+
         
+        if (!emit1(JSOP_DUP))                                   
+            return false;
+        if (!emit1(JSOP_NULL))                                  
+            return false;
+        if (!emit1(JSOP_STRICTNE))                              
+            return false;
+
         
-        if (!emit1(JSOP_SWAP))
+        if (!ifThenElse.emitIfElse())
+            return false;
+        if (!emit1(JSOP_DUP))                                   
+            return false;
+        if (!emitAtomOp(cx->names().prototype, JSOP_GETPROP))   
+            return false;
+
+        
+        if (!ifThenElse.emitElse())
+            return false;
+        if (!emit1(JSOP_POP))                                   
+            return false;
+        if (!emit2(JSOP_BUILTINPROTO, JSProto_Function))        
+            return false;
+        if (!emit1(JSOP_NULL))                                  
+            return false;
+
+        
+        if (!ifThenElse.emitEnd())
+            return false;
+
+        if (!emit1(JSOP_OBJWITHPROTO))                          
+            return false;
+        if (!emit1(JSOP_SWAP))                                  
             return false;
     } else {
-        if (!emitNewInit(JSProto_Object))
+        if (!emitNewInit(JSProto_Object))                       
             return false;
     }
 
+    
+    
+
     if (constructor) {
-        if (!emitFunction(constructor, !!heritageExpression))
+        if (!emitFunction(constructor, !!heritageExpression))   
             return false;
         if (constructor->pn_funbox->needsHomeObject()) {
-            if (!emit2(JSOP_INITHOMEOBJECT, 0))
+            if (!emit2(JSOP_INITHOMEOBJECT, 0))                 
                 return false;
         }
     } else {
@@ -10712,34 +10789,34 @@ BytecodeEmitter::emitClass(ParseNode* pn)
 
         JSAtom *name = names ? names->innerBinding()->pn_atom : cx->names().empty;
         if (heritageExpression) {
-            if (!emitAtomOp(name, JSOP_DERIVEDCONSTRUCTOR))
+            if (!emitAtomOp(name, JSOP_DERIVEDCONSTRUCTOR))     
                 return false;
         } else {
-            if (!emitAtomOp(name, JSOP_CLASSCONSTRUCTOR))
+            if (!emitAtomOp(name, JSOP_CLASSCONSTRUCTOR))       
                 return false;
         }
     }
 
-    if (!emit1(JSOP_SWAP))
+    if (!emit1(JSOP_SWAP))                                      
         return false;
 
-    if (!emit1(JSOP_DUP2))
+    if (!emit1(JSOP_DUP2))                                          
         return false;
-    if (!emitAtomOp(cx->names().prototype, JSOP_INITLOCKEDPROP))
+    if (!emitAtomOp(cx->names().prototype, JSOP_INITLOCKEDPROP))    
         return false;
-    if (!emitAtomOp(cx->names().constructor, JSOP_INITHIDDENPROP))
+    if (!emitAtomOp(cx->names().constructor, JSOP_INITHIDDENPROP))  
         return false;
 
     RootedPlainObject obj(cx);
-    if (!emitPropertyList(classMethods, &obj, ClassBody))
+    if (!emitPropertyList(classMethods, &obj, ClassBody))       
         return false;
 
-    if (!emit1(JSOP_POP))
+    if (!emit1(JSOP_POP))                                       
         return false;
 
     if (names) {
         ParseNode* innerName = names->innerBinding();
-        if (!emitLexicalInitialization(innerName))
+        if (!emitLexicalInitialization(innerName))              
             return false;
 
         
@@ -10749,14 +10826,16 @@ BytecodeEmitter::emitClass(ParseNode* pn)
 
         ParseNode* outerName = names->outerBinding();
         if (outerName) {
-            if (!emitLexicalInitialization(outerName))
+            if (!emitLexicalInitialization(outerName))          
                 return false;
             
             
-            if (!emit1(JSOP_POP))
+            if (!emit1(JSOP_POP))                               
                 return false;
         }
     }
+
+    
 
     MOZ_ALWAYS_TRUE(sc->setLocalStrictMode(savedStrictness));
 
