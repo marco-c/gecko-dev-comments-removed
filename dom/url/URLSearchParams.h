@@ -77,8 +77,7 @@ public:
 
   bool Has(const nsAString& aName);
 
-  
-  bool Delete(const nsAString& aName);
+  void Delete(const nsAString& aName);
 
   void DeleteAll()
   {
