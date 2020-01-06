@@ -141,8 +141,8 @@ private:
 
 
 
-class nsEmptyContentList: public nsBaseContentList,
-                          public nsIHTMLCollection
+class nsEmptyContentList final : public nsBaseContentList,
+                                 public nsIHTMLCollection
 {
 public:
   explicit nsEmptyContentList(nsINode* aRoot) : nsBaseContentList(),
@@ -156,7 +156,7 @@ public:
                                            nsBaseContentList)
   NS_DECL_NSIDOMHTMLCOLLECTION
   
-  NS_IMETHOD Item(uint32_t aIndex, nsIDOMNode** aReturn);
+  NS_DECL_NSIDOMNODELIST
 
   virtual nsINode* GetParentObject() override
   {
@@ -174,6 +174,10 @@ public:
     nsWrapperCache::PreserveWrapper(aScriptObjectHolder);
   }
 
+  virtual uint32_t Length() override final
+  {
+    return 0;
+  }
   virtual nsIContent* Item(uint32_t aIndex) override;
   virtual mozilla::dom::Element* GetElementAt(uint32_t index) override;
   virtual mozilla::dom::Element*
@@ -336,7 +340,7 @@ public:
   
   NS_DECL_NSIDOMHTMLCOLLECTION
   
-  NS_IMETHOD Item(uint32_t aIndex, nsIDOMNode** aReturn);
+  NS_DECL_NSIDOMNODELIST
 
   
   virtual int32_t IndexOf(nsIContent *aContent, bool aDoFlush) override;
@@ -346,6 +350,10 @@ public:
     return mRootNode;
   }
 
+  virtual uint32_t Length() override final
+  {
+    return Length(true);
+  }
   virtual nsIContent* Item(uint32_t aIndex) override;
   virtual mozilla::dom::Element* GetElementAt(uint32_t index) override;
   virtual mozilla::dom::Element*
