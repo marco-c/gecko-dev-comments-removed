@@ -106,7 +106,7 @@ class WEBRTC_DLLEXPORT VoEExternalMedia {
   
   virtual int ExternalPlayoutData(
                                   int16_t speechData10ms[], int samplingFreqHz, int num_channels,
-                                  int current_delay_ms, int& lengthSamples) = 0;
+                                  int& lengthSamples) = 0;
 
   
   
