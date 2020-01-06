@@ -11,6 +11,7 @@
 #include "GLTextureImage.h"             
 #include "ImageTypes.h"                 
 #include "mozilla/Assertions.h"         
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"         
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"             
@@ -630,6 +631,15 @@ public:
 
   bool SerializeReadLock(ReadLockDescriptor& aDescriptor);
 
+  
+  
+  
+  void AddPaintThreadRef();
+
+  
+  
+  void DropPaintThreadRef();
+
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
  
@@ -718,6 +728,9 @@ protected:
 
   
   const uint64_t mSerial;
+
+  
+  mozilla::Atomic<uintptr_t> mPaintThreadRefs;
 
   
   

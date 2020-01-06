@@ -45,6 +45,7 @@ class CompositorManagerChild;
 class CompositorOptions;
 class TextureClient;
 class TextureClientPool;
+class CapturedPaintState;
 struct FrameMetrics;
 
 class CompositorBridgeChild final : public PCompositorBridgeChild,
@@ -223,11 +224,11 @@ public:
 
   
   
-  void NotifyBeginAsyncPaint();
+  void NotifyBeginAsyncPaint(CapturedPaintState* aState);
 
   
   
-  void NotifyFinishedAsyncPaint();
+  void NotifyFinishedAsyncPaint(CapturedPaintState* aState);
 
   
   
@@ -352,6 +353,10 @@ private:
   uint64_t mProcessToken;
 
   FixedSizeSmallShmemSectionAllocator* mSectionAllocator;
+
+  
+  
+  nsTArray<RefPtr<TextureClient>> mTextureClientsForAsyncPaint;
 
   
   

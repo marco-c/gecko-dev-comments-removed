@@ -171,6 +171,9 @@ CompositorBridgeChild::Destroy()
     wrBridge->Destroy( false);
   }
 
+  
+  FlushAsyncPaints();
+
   const ManagedContainer<PTextureChild>& textures = ManagedPTextureChild();
   for (auto iter = textures.ConstIter(); !iter.Done(); iter.Next()) {
     RefPtr<TextureClient> texture = TextureClient::AsTextureClient(iter.Get()->GetKey());
@@ -1131,7 +1134,7 @@ CompositorBridgeChild::GetNextPipelineId()
 }
 
 void
-CompositorBridgeChild::NotifyBeginAsyncPaint()
+CompositorBridgeChild::NotifyBeginAsyncPaint(CapturedPaintState* aState)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1143,16 +1146,46 @@ CompositorBridgeChild::NotifyBeginAsyncPaint()
   MOZ_ASSERT(!mIsWaitingForPaint);
 
   mOutstandingAsyncPaints++;
+
+  
+  
+  aState->mTextureClient->AddPaintThreadRef();
+  mTextureClientsForAsyncPaint.AppendElement(aState->mTextureClient);
+  if (aState->mTextureClientOnWhite) {
+    aState->mTextureClientOnWhite->AddPaintThreadRef();
+    mTextureClientsForAsyncPaint.AppendElement(aState->mTextureClientOnWhite);
+  }
 }
 
 void
-CompositorBridgeChild::NotifyFinishedAsyncPaint()
+CompositorBridgeChild::NotifyFinishedAsyncPaint(CapturedPaintState* aState)
 {
   MOZ_ASSERT(PaintThread::IsOnPaintThread());
 
   MonitorAutoLock lock(mPaintLock);
 
   mOutstandingAsyncPaints--;
+
+  
+  
+  MOZ_RELEASE_ASSERT(!aState->mTextureClient->HasOneRef());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  aState->mTextureClient->DropPaintThreadRef();
+  aState->mTextureClient = nullptr;
+  if (aState->mTextureClientOnWhite) {
+    aState->mTextureClientOnWhite->DropPaintThreadRef();
+    aState->mTextureClientOnWhite = nullptr;
+  }
 
   
   
@@ -1209,6 +1242,9 @@ CompositorBridgeChild::FlushAsyncPaints()
   while (mIsWaitingForPaint) {
     lock.Wait();
   }
+
+  
+  mTextureClientsForAsyncPaint.Clear();
 }
 
 } 
