@@ -306,19 +306,26 @@ var Manager = {
   },
 
   onCreatedNavigationTarget(browser, data) {
-    const {isSourceTab, createdWindowId, sourceFrameId, url} = data;
+    const {
+      createdOuterWindowId,
+      isSourceTab,
+      sourceFrameId,
+      url,
+    } = data;
 
     
     
     
-    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdWindowId);
+    
+    
+    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdOuterWindowId);
 
     if (!pairedMessage) {
-      this.createdNavigationTargetByOuterWindowId.set(createdWindowId, {browser, data});
+      this.createdNavigationTargetByOuterWindowId.set(createdOuterWindowId, {browser, data});
       return;
     }
 
-    this.createdNavigationTargetByOuterWindowId.delete(createdWindowId);
+    this.createdNavigationTargetByOuterWindowId.delete(createdOuterWindowId);
 
     let sourceTabBrowser;
     let createdTabBrowser;
