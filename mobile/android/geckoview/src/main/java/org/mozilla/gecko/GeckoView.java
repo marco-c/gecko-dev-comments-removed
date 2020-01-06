@@ -75,20 +75,6 @@ public class GeckoView extends LayerView {
         }
     }
 
-    static {
-        EventDispatcher.getInstance().registerUiThreadListener(new BundleEventListener() {
-            @Override
-            public void handleMessage(final String event, final GeckoBundle message,
-                                      final EventCallback callback) {
-                if ("GeckoView:Prompt".equals(event)) {
-                    handlePromptEvent( null, message, callback);
-                }
-            }
-        }, "GeckoView:Prompt");
-    }
-
-    private static PromptDelegate sDefaultPromptDelegate;
-
     private final NativeQueue mNativeQueue =
         new NativeQueue(State.INITIAL, State.READY);
 
@@ -865,17 +851,6 @@ public class GeckoView extends LayerView {
 
 
 
-
-
-    public static void setDefaultPromptDelegate(PromptDelegate delegate) {
-        sDefaultPromptDelegate = delegate;
-    }
-
-    
-
-
-
-
     public void setScrollListener(ScrollListener listener) {
         mScrollHandler.setListener(listener, this);
     }
@@ -884,22 +859,11 @@ public class GeckoView extends LayerView {
 
 
 
-
-    public static PromptDelegate getDefaultPromptDelegate() {
-        return sDefaultPromptDelegate;
-    }
-
-    
-
-
-
-
     public void setPromptDelegate(PromptDelegate delegate) {
         mPromptDelegate = delegate;
     }
 
     
-
 
 
 
@@ -1132,13 +1096,7 @@ public class GeckoView extends LayerView {
      static void handlePromptEvent(final GeckoView view,
                                                 final GeckoBundle message,
                                                 final EventCallback callback) {
-        final PromptDelegate delegate;
-        if (view != null && view.mPromptDelegate != null) {
-            delegate = view.mPromptDelegate;
-        } else {
-            delegate = sDefaultPromptDelegate;
-        }
-
+        final PromptDelegate delegate = view.getPromptDelegate();
         if (delegate == null) {
             
             callback.sendSuccess(null);
