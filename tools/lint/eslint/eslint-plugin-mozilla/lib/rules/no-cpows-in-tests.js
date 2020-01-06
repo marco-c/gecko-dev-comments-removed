@@ -14,12 +14,14 @@
 
 var helpers = require("../helpers");
 
+
+
 var cpows = [
-  /^gBrowser\.contentWindow/,
-  /^gBrowser\.contentDocument/,
-  /^gBrowser\.selectedBrowser.contentWindow/,
-  /^browser\.contentDocument/,
-  /^window\.content/
+  /^gBrowser\.contentWindow$/,
+  /^gBrowser\.contentDocument$/,
+  /^gBrowser\.selectedBrowser\.contentWindow$/,
+  /^browser\.contentDocument$/,
+  /^window\.content$/
 ];
 
 var isInContentTask = false;
@@ -86,7 +88,6 @@ module.exports = function(context) {
       if (!someCpowFound && helpers.getIsGlobalScope(context.getAncestors())) {
         if (/^content\./.test(expression)) {
           showError(node, expression);
-
         }
       }
     },
@@ -96,17 +97,46 @@ module.exports = function(context) {
         return;
       }
 
-      var expression = context.getSource(node);
-      if (expression == "content" || /^content\./.test(expression)) {
-        if (node.parent.type === "MemberExpression" &&
-            node.parent.object &&
-            node.parent.object.type === "Identifier" &&
-            node.parent.object.name != "content") {
-          return;
-        }
-        showError(node, expression);
-
+      if (node.name !== "content" ||
+          
+          
+          node.parent.type === "MemberExpression" ||
+          
+          node.parent.type === "FunctionDeclaration") {
+        return;
       }
+
+      
+      if (node.parent.type === "VariableDeclarator" &&
+          node.parent.id && node.parent.id.name === "content") {
+        return;
+      }
+
+      
+      let parent = node;
+      do {
+        parent = parent.parent;
+
+        
+        if (parent.type === "FunctionDeclaration" &&
+            context.getDeclaredVariables(parent).some(variable => variable.name === "content")) {
+          return;
+        } else if (parent.type === "BlockStatement" || parent.type === "Program") {
+          
+          for (let item of parent.body) {
+            if (item.type === "VariableDeclaration" && item.declarations.length) {
+              for (let declaration of item.declarations) {
+                if (declaration.id && declaration.id.name === "content") {
+                  return;
+                }
+              }
+            }
+          }
+        }
+      } while (parent.parent);
+
+      var expression = context.getSource(node);
+      showError(node, expression);
     }
   };
 };
