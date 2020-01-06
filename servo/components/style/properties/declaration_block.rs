@@ -470,54 +470,56 @@ impl PropertyDeclarationBlock {
         if !definitely_new {
             let mut index_to_remove = None;
             for (i, slot) in self.declarations.iter_mut().enumerate() {
-                if slot.id() == declaration.id() {
-                    let important = self.declarations_importance.get(i as u32);
-                    match (important, importance.important()) {
-                        (false, true) => {}
+                if slot.id() != declaration.id() {
+                    continue;
+                }
 
-                        (true, false) => {
-                            
-                            
-                            if !matches!(source, DeclarationSource::CssOm) {
-                                return false
-                            }
-                        }
-                        _ => if *slot == declaration {
-                            return false;
+                let important = self.declarations_importance.get(i as u32);
+                match (important, importance.important()) {
+                    (false, true) => {}
+
+                    (true, false) => {
+                        
+                        
+                        if !matches!(source, DeclarationSource::CssOm) {
+                            return false
                         }
                     }
+                    _ => if *slot == declaration {
+                        return false;
+                    }
+                }
 
-                    match source {
+                match source {
+                    
+                    
+                    DeclarationSource::CssOm => {
+                        *slot = declaration;
+                        self.declarations_importance.set(i as u32, importance.important());
+                        return true;
+                    }
+                    DeclarationSource::Parsing => {
                         
                         
-                        DeclarationSource::CssOm => {
-                            *slot = declaration;
-                            self.declarations_importance.set(i as u32, importance.important());
-                            return true;
-                        }
-                        DeclarationSource::Parsing => {
-                            
-                            
-                            
-                            
-                            
-                            
-                            if let PropertyDeclaration::Display(old_display) = *slot {
-                                use properties::longhands::display::computed_value::T as display;
+                        
+                        
+                        
+                        
+                        if let PropertyDeclaration::Display(old_display) = *slot {
+                            use properties::longhands::display::computed_value::T as display;
 
-                                if let PropertyDeclaration::Display(new_display) = declaration {
-                                    if display::should_ignore_parsed_value(old_display, new_display) {
-                                        return false;
-                                    }
+                            if let PropertyDeclaration::Display(new_display) = declaration {
+                                if display::should_ignore_parsed_value(old_display, new_display) {
+                                    return false;
                                 }
                             }
-
-                            
-                            
-                            
-                            index_to_remove = Some(i);
-                            break;
                         }
+
+                        
+                        
+                        
+                        index_to_remove = Some(i);
+                        break;
                     }
                 }
             }
