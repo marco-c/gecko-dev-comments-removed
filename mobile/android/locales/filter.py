@@ -17,7 +17,6 @@ def test(mod, path, entity = None):
   if mod == "toolkit":
     
     if path in (
-        "chrome/global/about.dtd",
         "chrome/global/aboutAbout.dtd",
         "chrome/global/aboutReader.properties",
         "chrome/global/aboutRights.dtd",
