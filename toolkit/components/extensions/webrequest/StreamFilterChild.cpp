@@ -5,6 +5,7 @@
 
 
 #include "StreamFilterChild.h"
+#include "StreamFilter.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
@@ -12,6 +13,7 @@
 namespace mozilla {
 namespace extensions {
 
+using mozilla::dom::StreamFilterStatus;
 using mozilla::ipc::IPCResult;
 
 
@@ -224,10 +226,22 @@ StreamFilterChild::SetNextState()
     break;
 
   case State::FinishedTransferringData:
+    if (mStreamFilter) {
+      mStreamFilter->FireEvent(NS_LITERAL_STRING("stop"));
+      
+      
+      mStreamFilter = nullptr;
+    }
     break;
 
   case State::TransferringData:
     FlushBufferedData();
+    break;
+
+  case State::Closed:
+  case State::Disconnected:
+  case State::Error:
+    mStreamFilter = nullptr;
     break;
 
   default:
@@ -250,6 +264,12 @@ StreamFilterChild::MaybeStopRequest()
 
   default:
     mState = State::FinishedTransferringData;
+    if (mStreamFilter) {
+      mStreamFilter->FireEvent(NS_LITERAL_STRING("stop"));
+      
+      
+      mStreamFilter = nullptr;
+    }
     break;
   }
 }
@@ -267,6 +287,10 @@ StreamFilterChild::RecvInitialized(const bool& aSuccess)
     mState = State::Initialized;
   } else {
     mState = State::Error;
+    if (mStreamFilter) {
+      mStreamFilter->FireErrorEvent(NS_LITERAL_STRING("Invalid request ID"));
+      mStreamFilter = nullptr;
+    }
   }
   return IPC_OK();
 }
@@ -338,6 +362,62 @@ StreamFilterChild::Write(Data&& aData, ErrorResult& aRv)
   SendWrite(Move(aData));
 }
 
+StreamFilterStatus
+StreamFilterChild::Status() const
+{
+  switch (mState) {
+  case State::Uninitialized:
+  case State::Initialized:
+    return StreamFilterStatus::Uninitialized;
+
+  case State::TransferringData:
+    return StreamFilterStatus::Transferringdata;
+
+  case State::Suspended:
+    return StreamFilterStatus::Suspended;
+
+  case State::FinishedTransferringData:
+    return StreamFilterStatus::Finishedtransferringdata;
+
+  case State::Resuming:
+  case State::Suspending:
+    switch (mNextState) {
+    case State::TransferringData:
+    case State::Resuming:
+      return StreamFilterStatus::Transferringdata;
+
+    case State::Suspended:
+    case State::Suspending:
+      return StreamFilterStatus::Suspended;
+
+    case State::Closing:
+      return StreamFilterStatus::Closed;
+
+    case State::Disconnecting:
+      return StreamFilterStatus::Disconnected;
+
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected next state");
+      return StreamFilterStatus::Suspended;
+    }
+    break;
+
+  case State::Closing:
+  case State::Closed:
+    return StreamFilterStatus::Closed;
+
+  case State::Disconnecting:
+  case State::Disconnected:
+    return StreamFilterStatus::Disconnected;
+
+  case State::Error:
+    return StreamFilterStatus::Failed;
+  };
+
+  MOZ_ASSERT_UNREACHABLE("Not reached");
+  return StreamFilterStatus::Failed;
+}
+
 
 
 
@@ -349,6 +429,9 @@ StreamFilterChild::RecvStartRequest()
 
   mState = State::TransferringData;
 
+  if (mStreamFilter) {
+    mStreamFilter->FireEvent(NS_LITERAL_STRING("start"));
+  }
   return IPC_OK();
 }
 
@@ -368,6 +451,9 @@ void
 StreamFilterChild::EmitData(const Data& aData)
 {
   MOZ_ASSERT(CanFlushData());
+  if (mStreamFilter) {
+    mStreamFilter->FireDataEvent(aData);
+  }
 
   MaybeStopRequest();
 }
