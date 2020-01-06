@@ -843,6 +843,12 @@ nsContentSink::ProcessMETATag(nsIContent* aContent)
       return NS_OK;
     }
 
+    
+    
+    if (nsGkAtoms::setcookie->Equals(header) && mDocument->IsCookieAverse()) {
+      return NS_OK;
+    }
+
     nsAutoString result;
     aContent->GetAttr(kNameSpaceID_None, nsGkAtoms::content, result);
     if (!result.IsEmpty()) {
