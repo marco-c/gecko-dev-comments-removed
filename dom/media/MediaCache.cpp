@@ -304,7 +304,9 @@ protected:
   
   
   
-  int32_t FindBlockForIncomingData(TimeStamp aNow, MediaCacheStream* aStream);
+  int32_t FindBlockForIncomingData(TimeStamp aNow,
+                                   MediaCacheStream* aStream,
+                                   int32_t aStreamBlockIndex);
   
   
   
@@ -779,15 +781,13 @@ OffsetInBlock(int64_t aOffset)
 
 int32_t
 MediaCache::FindBlockForIncomingData(TimeStamp aNow,
-                                       MediaCacheStream* aStream)
+                                     MediaCacheStream* aStream,
+                                     int32_t aStreamBlockIndex)
 {
   mReentrantMonitor.AssertCurrentThreadIn();
 
   int32_t blockIndex =
-    FindReusableBlock(aNow,
-                      aStream,
-                      OffsetToBlockIndexUnchecked(aStream->mChannelOffset),
-                      INT32_MAX);
+    FindReusableBlock(aNow, aStream, aStreamBlockIndex, INT32_MAX);
 
   if (blockIndex < 0 || !IsBlockFree(blockIndex)) {
     
@@ -1608,7 +1608,8 @@ MediaCache::AllocateAndWriteBlock(MediaCacheStream* aStream,
   
 
   TimeStamp now = TimeStamp::Now();
-  int32_t blockIndex = FindBlockForIncomingData(now, aStream);
+  int32_t blockIndex =
+    FindBlockForIncomingData(now, aStream, aStreamBlockIndex);
   if (blockIndex >= 0) {
     FreeBlock(blockIndex);
 
