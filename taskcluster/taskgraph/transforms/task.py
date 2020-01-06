@@ -17,7 +17,6 @@ import time
 from copy import deepcopy
 
 from mozbuild.util import memoize
-from mozbuild import schedules
 from taskgraph.util.attributes import TRUNK_PROJECTS
 from taskgraph.util.hash import hash_path
 from taskgraph.util.treeherder import split_symbol
@@ -160,10 +159,6 @@ task_description_schema = Schema({
         {'seta': None},
         
         {'skip-unless-changed': [basestring]},
-        
-        {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
-        
-        {'skip-unless-schedules-or-seta': list(schedules.ALL_COMPONENTS)},
     ),
 
     
