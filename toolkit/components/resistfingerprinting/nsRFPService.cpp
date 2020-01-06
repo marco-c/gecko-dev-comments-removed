@@ -148,7 +148,19 @@ nsRFPService::UpdatePref()
     
     if (!mInitialTZValue.IsEmpty()) {
       nsAutoCString tzValue = NS_LITERAL_CSTRING("TZ=") + mInitialTZValue;
-      PR_SetEnv(tzValue.get());
+      static char* tz = nullptr;
+
+      
+      
+      if (tz) {
+        free(tz);
+      }
+      
+      
+      tz = ToNewCString(tzValue);
+      if (tz) {
+        PR_SetEnv(tz);
+      }
     } else {
 #if defined(XP_LINUX) || defined (XP_MACOSX)
       
