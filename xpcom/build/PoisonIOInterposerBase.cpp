@@ -37,6 +37,7 @@ FileDescriptorToHandle(int aFd)
 using namespace mozilla;
 
 namespace {
+
 struct DebugFilesAutoLockTraits
 {
   typedef PRLock* type;
@@ -49,7 +50,6 @@ class DebugFilesAutoLock : public Scoped<DebugFilesAutoLockTraits>
 {
   static PRLock* Lock;
 public:
-  static void Clear();
   static PRLock* getDebugFileIDsLock()
   {
     
@@ -75,12 +75,6 @@ public:
 };
 
 PRLock* DebugFilesAutoLock::Lock;
-void
-DebugFilesAutoLock::Clear()
-{
-  MOZ_ASSERT(Lock != nullptr);
-  Lock = nullptr;
-}
 
 
 
@@ -207,7 +201,6 @@ getDebugFileIDs()
   static FdList DebugFileIDs;
   return DebugFileIDs;
 }
-
 
 } 
 
