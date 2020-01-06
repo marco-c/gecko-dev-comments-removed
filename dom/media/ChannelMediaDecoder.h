@@ -104,6 +104,8 @@ private:
 
   bool CanPlayThroughImpl() override final;
 
+  bool IsLiveStream() override final;
+
   
   void ComputePlaybackRate();
 

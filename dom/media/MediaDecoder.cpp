@@ -684,7 +684,7 @@ MediaDecoder::CallSeek(const SeekTarget& aTarget)
   
   
   
-  mDecoderStateMachine->DispatchIsLiveStream(GetResource()->IsLiveStream());
+  mDecoderStateMachine->DispatchIsLiveStream(IsLiveStream());
 
   mDecoderStateMachine->InvokeSeek(aTarget)
   ->Then(mAbstractMainThread, __func__, this,
