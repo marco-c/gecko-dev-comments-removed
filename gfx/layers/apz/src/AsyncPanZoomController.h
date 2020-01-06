@@ -731,6 +731,11 @@ private:
   
   FrameMetrics mExpectedGeckoMetrics;
 
+  
+  
+  CSSPoint mCompositedScrollOffset;
+  CSSToParentLayerScale2D mCompositedZoom;
+
   AxisX mX;
   AxisY mY;
 
@@ -839,6 +844,26 @@ public:
 
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncTransformConsumer aMode) const;
 
+private:
+  
+
+
+
+
+
+
+
+
+  void SampleCompositedAsyncTransform();
+
+  
+
+
+
+
+
+  CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const;
+  CSSToParentLayerScale2D GetEffectiveZoom(AsyncTransformConsumer aMode) const;
 
   
 

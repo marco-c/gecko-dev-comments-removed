@@ -394,6 +394,13 @@ typedef GenericFlingAnimation FlingAnimation;
 
 
 
+
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -3218,6 +3225,12 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   if (mLastSampleTime == aSampleTime) {
     return false;
   }
+
+  
+  
+  
+  SampleCompositedAsyncTransform();
+
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
 
@@ -3319,8 +3332,8 @@ AsyncPanZoomController::GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode
     return mLastContentPaintMetrics.GetScrollOffset() * mLastContentPaintMetrics.GetZoom();
   }
 
-  return (mFrameMetrics.GetScrollOffset() + mTestAsyncScrollOffset)
-      * mFrameMetrics.GetZoom() * mTestAsyncZoom.scale;
+  return (GetEffectiveScrollOffset(aMode) + mTestAsyncScrollOffset)
+      * GetEffectiveZoom(aMode) * mTestAsyncZoom.scale;
 }
 
 CSSPoint
@@ -3331,7 +3344,7 @@ AsyncPanZoomController::GetCurrentAsyncScrollOffsetInCssPixels(AsyncTransformCon
     return mLastContentPaintMetrics.GetScrollOffset();
   }
 
-  return mFrameMetrics.GetScrollOffset() + mTestAsyncScrollOffset;
+  return GetEffectiveScrollOffset(aMode) + mTestAsyncScrollOffset;
 }
 
 AsyncTransform
@@ -3348,7 +3361,7 @@ AsyncPanZoomController::GetCurrentAsyncTransform(AsyncTransformConsumer aMode) c
     lastPaintScrollOffset = mLastContentPaintMetrics.GetScrollOffset();
   }
 
-  CSSPoint currentScrollOffset = mFrameMetrics.GetScrollOffset() +
+  CSSPoint currentScrollOffset = GetEffectiveScrollOffset(aMode) +
     mTestAsyncScrollOffset;
 
   
@@ -3369,12 +3382,42 @@ AsyncPanZoomController::GetCurrentAsyncTransform(AsyncTransformConsumer aMode) c
     }
   }
 
-  ParentLayerPoint translation = (currentScrollOffset - lastPaintScrollOffset)
-                               * mFrameMetrics.GetZoom() * mTestAsyncZoom.scale;
+  CSSToParentLayerScale2D effectiveZoom = GetEffectiveZoom(aMode);
 
+  ParentLayerPoint translation = (currentScrollOffset - lastPaintScrollOffset)
+                               * effectiveZoom * mTestAsyncZoom.scale;
+
+  LayerToParentLayerScale compositedAsyncZoom =
+      (effectiveZoom / mFrameMetrics.LayersPixelsPerCSSPixel()).ToScaleFactor();
   return AsyncTransform(
-    LayerToParentLayerScale(mFrameMetrics.GetAsyncZoom().scale * mTestAsyncZoom.scale),
+    LayerToParentLayerScale(compositedAsyncZoom.scale * mTestAsyncZoom.scale),
     -translation);
+}
+
+CSSPoint
+AsyncPanZoomController::GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const
+{
+  if (gfxPrefs::APZFrameDelayEnabled() && aMode == eForCompositing) {
+    return mCompositedScrollOffset;
+  }
+  return mFrameMetrics.GetScrollOffset();
+}
+
+CSSToParentLayerScale2D
+AsyncPanZoomController::GetEffectiveZoom(AsyncTransformConsumer aMode) const
+{
+  if (gfxPrefs::APZFrameDelayEnabled() && aMode == eForCompositing) {
+    return mCompositedZoom;
+  }
+  return mFrameMetrics.GetZoom();
+}
+
+void
+AsyncPanZoomController::SampleCompositedAsyncTransform()
+{
+  ReentrantMonitorAutoEnter lock(mMonitor);
+  mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
+  mCompositedZoom = mFrameMetrics.GetZoom();
 }
 
 AsyncTransformComponentMatrix
@@ -3628,6 +3671,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     mExpectedGeckoMetrics = aLayerMetrics;
     ShareCompositorFrameMetrics();
 
+    mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
+    mCompositedZoom = mFrameMetrics.GetZoom();
+
     if (mFrameMetrics.GetDisplayPortMargins() != ScreenMargin()) {
       
       
@@ -3659,11 +3705,14 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
         needContentRepaint = true;
       }
       mFrameMetrics.ZoomBy(totalResolutionChange / presShellResolutionChange);
+      mCompositedZoom.xScale *= (totalResolutionChange / presShellResolutionChange).width;
+      mCompositedZoom.yScale *= (totalResolutionChange / presShellResolutionChange).height;
     } else {
       
       
       
       mFrameMetrics.SetZoom(aLayerMetrics.GetZoom());
+      mCompositedZoom = aLayerMetrics.GetZoom();
       mFrameMetrics.SetDevPixelsPerCSSPixel(aLayerMetrics.GetDevPixelsPerCSSPixel());
     }
     bool scrollableRectChanged = false;
@@ -3702,6 +3751,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       mFrameMetrics.CopyScrollInfoFrom(aLayerMetrics);
+      mCompositedScrollOffset = mFrameMetrics.GetScrollOffset();
       mExpectedGeckoMetrics = aLayerMetrics;
 
       
