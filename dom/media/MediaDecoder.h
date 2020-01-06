@@ -199,7 +199,7 @@ public:
   bool IsMediaSeekable();
   
   
-  bool IsTransportSeekable();
+  virtual bool IsTransportSeekable() = 0;
 
   
   virtual media::TimeIntervals GetSeekable();

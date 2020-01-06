@@ -49,6 +49,8 @@ public:
     return mDemuxer;
   }
 
+  bool IsTransportSeekable() override { return true; }
+
   
   
   void GetMozDebugReaderData(nsACString& aString) override;
