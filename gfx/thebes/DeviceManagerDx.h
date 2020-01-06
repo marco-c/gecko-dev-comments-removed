@@ -64,6 +64,7 @@ public:
   unsigned GetCompositorFeatureLevel() const;
   bool TextureSharingWorks();
   bool IsWARP();
+  bool CanUseNV12();
 
   
   
