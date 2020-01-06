@@ -94,6 +94,8 @@ user_pref("browser.safebrowsing.provider.google.updateURL", "http://127.0.0.1/sa
 user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://127.0.0.1/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google4.updateURL", "http://127.0.0.1/safebrowsing-dummy/update");
 
+user_pref("plugins.flashBlock.enabled", false);
+user_pref("privacy.trackingprotection.annotate_channels", false);
 user_pref("privacy.trackingprotection.enabled", false);
 user_pref("privacy.trackingprotection.pbmode.enabled", false);
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://127.0.0.1/safebrowsing-dummy/gethash");
