@@ -5,10 +5,9 @@
 
 
 use properties::animated_properties::Animatable;
-use values::computed::{Length, LengthOrPercentage, Number};
+use values::computed::{Length, LengthOrPercentage, Number, Percentage};
 use values::generics::transform::TimingFunction as GenericTimingFunction;
 use values::generics::transform::TransformOrigin as GenericTransformOrigin;
-use values::specified::length::Percentage;
 
 
 pub type TransformOrigin = GenericTransformOrigin<LengthOrPercentage, LengthOrPercentage, Length>;

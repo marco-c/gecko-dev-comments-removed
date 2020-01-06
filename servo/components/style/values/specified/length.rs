@@ -20,7 +20,7 @@ use stylesheets::CssRuleType;
 use super::{AllowQuirks, Number, ToComputedValue};
 use values::{Auto, CSSFloat, Either, FONT_MEDIUM_PX, None_, Normal};
 use values::ExtremumLength;
-use values::computed::{ComputedValueAsSpecified, Context};
+use values::computed::{self, Context};
 use values::specified::calc::CalcNode;
 
 pub use values::specified::calc::CalcLengthOrPercentage;
@@ -701,39 +701,81 @@ impl<T: Parse> Either<Length, T> {
 }
 
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub struct Percentage {
+    
+    
+    
+    value: CSSFloat,
+    
+    
+    calc_clamping_mode: Option<AllowedNumericType>,
+}
 
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Default, HasViewportPercentage, PartialEq)]
-#[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
-pub struct Percentage(pub CSSFloat);
+no_viewport_percentage!(Percentage);
 
 impl ToCss for Percentage {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result
         where W: fmt::Write,
     {
-        write!(dest, "{}%", self.0 * 100.)
+        if self.calc_clamping_mode.is_some() {
+            dest.write_str("calc(")?;
+        }
+
+        write!(dest, "{}%", self.value * 100.)?;
+
+        if self.calc_clamping_mode.is_some() {
+            dest.write_str(")")?;
+        }
+        Ok(())
     }
 }
 
 impl Percentage {
     
-    pub fn parse_with_clamping_mode<'i, 't>(context: &ParserContext,
-                                            input: &mut Parser<'i, 't>,
-                                            num_context: AllowedNumericType)
-                                            -> Result<Self, ParseError<'i>> {
+    pub fn new(value: CSSFloat) -> Self {
+        Self {
+            value,
+            calc_clamping_mode: None,
+        }
+    }
+
+    
+    pub fn get(&self) -> CSSFloat {
+        self.calc_clamping_mode.map_or(self.value, |mode| mode.clamp(self.value))
+    }
+
+    
+    
+    
+    pub fn reverse(&mut self) {
+        let new_value = 1. - self.value;
+        self.value = new_value;
+    }
+
+
+    
+    pub fn parse_with_clamping_mode<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        num_context: AllowedNumericType,
+    ) -> Result<Self, ParseError<'i>> {
         match input.next()? {
             Token::Percentage { unit_value, .. } if num_context.is_ok(context.parsing_mode, unit_value) => {
-                Ok(Percentage(unit_value))
+                Ok(Percentage::new(unit_value))
+            }
+            Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
+                let result = input.parse_nested_block(|i| {
+                    CalcNode::parse_percentage(context, i)
+                })?;
+
+                
+                
+                Ok(Percentage {
+                    value: result,
+                    calc_clamping_mode: Some(num_context),
+                })
             }
             t => Err(BasicParseError::UnexpectedToken(t).into())
         }
@@ -749,24 +791,31 @@ impl Percentage {
     
     #[inline]
     pub fn zero() -> Self {
-        Percentage(0.)
+        Percentage {
+            value: 0.,
+            calc_clamping_mode: None,
+        }
     }
 
     
     #[inline]
     pub fn hundred() -> Self {
-        Percentage(1.)
+        Percentage {
+            value: 1.,
+            calc_clamping_mode: None,
+        }
     }
 }
 
 impl Parse for Percentage {
     #[inline]
-    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>
+    ) -> Result<Self, ParseError<'i>> {
         Self::parse_with_clamping_mode(context, input, AllowedNumericType::All)
     }
 }
-
-impl ComputedValueAsSpecified for Percentage {}
 
 
 #[allow(missing_docs)]
@@ -774,7 +823,7 @@ impl ComputedValueAsSpecified for Percentage {}
 #[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
 pub enum LengthOrPercentage {
     Length(NoCalcLength),
-    Percentage(Percentage),
+    Percentage(computed::Percentage),
     Calc(Box<CalcLengthOrPercentage>),
 }
 
@@ -797,6 +846,20 @@ impl From<NoCalcLength> for LengthOrPercentage {
 impl From<Percentage> for LengthOrPercentage {
     #[inline]
     fn from(pc: Percentage) -> Self {
+        if pc.calc_clamping_mode.is_some() {
+            LengthOrPercentage::Calc(Box::new(CalcLengthOrPercentage {
+                percentage: Some(computed::Percentage(pc.get())),
+                .. Default::default()
+            }))
+        } else {
+            LengthOrPercentage::Percentage(computed::Percentage(pc.get()))
+        }
+    }
+}
+
+impl From<computed::Percentage> for LengthOrPercentage {
+    #[inline]
+    fn from(pc: computed::Percentage) -> Self {
         LengthOrPercentage::Percentage(pc)
     }
 }
@@ -820,7 +883,7 @@ impl LengthOrPercentage {
                 NoCalcLength::parse_dimension(context, value, unit).map(LengthOrPercentage::Length)
             }
             Token::Percentage { unit_value, .. } if num_context.is_ok(context.parsing_mode, unit_value) => {
-                return Ok(LengthOrPercentage::Percentage(Percentage(unit_value)))
+                return Ok(LengthOrPercentage::Percentage(computed::Percentage(unit_value)))
             }
             Token::Number { value, .. } if num_context.is_ok(context.parsing_mode, value) => {
                 if value != 0. &&
@@ -925,7 +988,7 @@ impl LengthOrPercentage {
 #[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
 pub enum LengthOrPercentageOrAuto {
     Length(NoCalcLength),
-    Percentage(Percentage),
+    Percentage(computed::Percentage),
     Auto,
     Calc(Box<CalcLengthOrPercentage>),
 }
@@ -937,9 +1000,9 @@ impl From<NoCalcLength> for LengthOrPercentageOrAuto {
     }
 }
 
-impl From<Percentage> for LengthOrPercentageOrAuto {
+impl From<computed::Percentage> for LengthOrPercentageOrAuto {
     #[inline]
-    fn from(pc: Percentage) -> Self {
+    fn from(pc: computed::Percentage) -> Self {
         LengthOrPercentageOrAuto::Percentage(pc)
     }
 }
@@ -956,7 +1019,7 @@ impl LengthOrPercentageOrAuto {
                 NoCalcLength::parse_dimension(context, value, unit).map(LengthOrPercentageOrAuto::Length)
             }
             Token::Percentage { unit_value, .. } if num_context.is_ok(context.parsing_mode, unit_value) => {
-                Ok(LengthOrPercentageOrAuto::Percentage(Percentage(unit_value)))
+                Ok(LengthOrPercentageOrAuto::Percentage(computed::Percentage(unit_value)))
             }
             Token::Number { value, .. } if num_context.is_ok(context.parsing_mode, value) => {
                 if value != 0. &&
@@ -1009,7 +1072,7 @@ impl LengthOrPercentageOrAuto {
 
     
     pub fn zero_percent() -> Self {
-        LengthOrPercentageOrAuto::Percentage(Percentage::zero())
+        LengthOrPercentageOrAuto::Percentage(computed::Percentage::zero())
     }
 }
 
@@ -1037,7 +1100,7 @@ impl LengthOrPercentageOrAuto {
 #[allow(missing_docs)]
 pub enum LengthOrPercentageOrNone {
     Length(NoCalcLength),
-    Percentage(Percentage),
+    Percentage(computed::Percentage),
     Calc(Box<CalcLengthOrPercentage>),
     None,
 }
@@ -1055,7 +1118,7 @@ impl LengthOrPercentageOrNone {
                 NoCalcLength::parse_dimension(context, value, unit).map(LengthOrPercentageOrNone::Length)
             }
             Token::Percentage { unit_value, .. } if num_context.is_ok(context.parsing_mode, unit_value) => {
-                Ok(LengthOrPercentageOrNone::Percentage(Percentage(unit_value)))
+                Ok(LengthOrPercentageOrNone::Percentage(computed::Percentage(unit_value)))
             }
             Token::Number { value, .. } if num_context.is_ok(context.parsing_mode, value) => {
                 if value != 0. && !context.parsing_mode.allows_unitless_lengths() &&

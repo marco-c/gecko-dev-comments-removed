@@ -9,9 +9,8 @@
 
 use std::fmt;
 use style_traits::ToCss;
-use values::computed::LengthOrPercentage;
+use values::computed::{LengthOrPercentage, Percentage};
 use values::generics::position::Position as GenericPosition;
-use values::specified::length::Percentage;
 
 
 pub type Position = GenericPosition<HorizontalPosition, VerticalPosition>;

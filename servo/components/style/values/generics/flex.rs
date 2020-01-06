@@ -4,7 +4,7 @@
 
 
 
-use values::specified::Percentage;
+use values::computed::Percentage;
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
