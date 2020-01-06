@@ -3,6 +3,23 @@
 
 
 var Cu = Components.utils;
+
+
+
+
+
+
+const {PromiseTestUtils} = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
+PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
+PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
+PromiseTestUtils.whitelistRejectionsGlobally(/destroy/);
+PromiseTestUtils.whitelistRejectionsGlobally(/is no longer, usable/);
+PromiseTestUtils.whitelistRejectionsGlobally(/this\._urls is null/);
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.tabTarget is null/);
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.toolbox is null/);
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.webConsoleClient is null/);
+PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
+
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const {TargetFactory} = require("devtools/client/framework/target");
 const {console} = Cu.import("resource://gre/modules/Console.jsm", {});

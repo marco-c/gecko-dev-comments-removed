@@ -7,6 +7,11 @@
 
 
 
+
+
+Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+PromiseTestUtils.expectUncaughtRejection(/NS_ERROR_NOT_INITIALIZED/);
+
 const TEST_URL = URL_ROOT + "doc_markup_links.html";
 
 add_task(function* () {

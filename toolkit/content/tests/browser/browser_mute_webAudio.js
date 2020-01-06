@@ -1,3 +1,10 @@
+
+
+if (!gMultiProcessBrowser) {
+  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  PromiseTestUtils.expectUncaughtRejection(/is no longer, usable/);
+}
+
 const PAGE = "https://example.com/browser/toolkit/content/tests/browser/file_webAudio.html";
 
 async function click_icon(tab) {

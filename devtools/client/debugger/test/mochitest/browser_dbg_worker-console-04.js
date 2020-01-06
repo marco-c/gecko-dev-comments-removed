@@ -2,6 +2,14 @@
 
 "use strict";
 
+
+
+
+
+
+Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
+PromiseTestUtils.whitelistRejectionsGlobally(/[object Object]/);
+
 const TAB_URL = EXAMPLE_URL + "doc_WorkerActor.attachThread-tab.html";
 const WORKER_URL = "code_WorkerActor.attachThread-worker.js";
 
