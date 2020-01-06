@@ -180,9 +180,6 @@ public class BrowserSearch extends HomeFragment
     private OnEditSuggestionListener mEditSuggestionListener;
 
     
-    private boolean mAnimateSuggestions;
-
-    
     private View mSuggestionsOptInPrompt;
 
     public interface OnSearchListener {
@@ -933,8 +930,7 @@ public class BrowserSearch extends HomeFragment
 
                         
                         if (enabled) {
-                            mSuggestionsEnabled = enabled;
-                            mAnimateSuggestions = true;
+                            mSuggestionsEnabled = true;
                             mAdapter.notifyDataSetChanged();
                             filterSuggestions();
                         }
@@ -1164,13 +1160,7 @@ public class BrowserSearch extends HomeFragment
                 row.setSearchTerm(mSearchTerm);
 
                 final SearchEngine engine = mSearchEngines.get(position);
-                final boolean haveSuggestions = (engine.hasSuggestions() || !mSearchHistorySuggestions.isEmpty());
-                final boolean animate = (mAnimateSuggestions && haveSuggestions);
-                row.updateSuggestions(mSuggestionsEnabled, engine, mSearchHistorySuggestions, animate);
-                if (animate) {
-                    
-                    mAnimateSuggestions = false;
-                }
+                row.updateSuggestions(mSuggestionsEnabled, engine, mSearchHistorySuggestions);
             } else {
                 
                 position -= getPrimaryEngineCount();

@@ -17,7 +17,6 @@ import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.DrawableUtil;
 import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.util.HardwareUtils;
-import org.mozilla.gecko.widget.AnimatedHeightLayout;
 import org.mozilla.gecko.widget.FaviconView;
 import org.mozilla.gecko.widget.FlowLayout;
 
@@ -34,9 +33,9 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -45,9 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-class SearchEngineRow extends AnimatedHeightLayout {
-    
-    private static final int ANIMATION_DURATION = 250;
+class SearchEngineRow extends RelativeLayout {
 
     
     private final FlowLayout mSuggestionView;
@@ -84,7 +81,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
     private int mMaxSavedSuggestions;
     private int mMaxSearchSuggestions;
 
-    private final List<Integer> mOccurrences = new ArrayList<Integer>();
+    private final List<Integer> mOccurrences = new ArrayList<>();
 
     public SearchEngineRow(Context context) {
         this(context, null);
@@ -268,7 +265,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
         mEditSuggestionListener = listener;
     }
 
-    private void bindSuggestionView(String suggestion, boolean animate, int recycledSuggestionCount, Integer previousSuggestionChildIndex, boolean isUserSavedSearch, String telemetryTag) {
+    private void bindSuggestionView(String suggestion, int recycledSuggestionCount, Integer previousSuggestionChildIndex, boolean isUserSavedSearch, String telemetryTag) {
         final View suggestionItem;
 
         
@@ -287,13 +284,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
         }
 
         setSuggestionOnView(suggestionItem, suggestion, isUserSavedSearch);
-
-        if (animate) {
-            AlphaAnimation anim = new AlphaAnimation(0, 1);
-            anim.setDuration(ANIMATION_DURATION);
-            anim.setStartOffset(previousSuggestionChildIndex * ANIMATION_DURATION);
-            suggestionItem.startAnimation(anim);
-        }
     }
 
     private void hideRecycledSuggestions(int lastVisibleChildIndex, int recycledSuggestionCount) {
@@ -312,8 +302,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-
-    private void updateFromSavedSearches(List<String> savedSuggestions, boolean animate, int suggestionStartIndex, int recycledSuggestionCount) {
+    private void updateFromSavedSearches(List<String> savedSuggestions, int suggestionStartIndex, int recycledSuggestionCount) {
         if (savedSuggestions == null || savedSuggestions.isEmpty()) {
             hideRecycledSuggestions(suggestionStartIndex, recycledSuggestionCount);
             return;
@@ -325,7 +314,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
             String telemetryTag = "history." + i;
             final String suggestion = savedSuggestions.get(i);
             indexOfPreviousSuggestion = suggestionStartIndex + i;
-            bindSuggestionView(suggestion, animate, recycledSuggestionCount, indexOfPreviousSuggestion, true, telemetryTag);
+            bindSuggestionView(suggestion, recycledSuggestionCount, indexOfPreviousSuggestion, true, telemetryTag);
         }
 
         hideRecycledSuggestions(indexOfPreviousSuggestion + 1, recycledSuggestionCount);
@@ -338,8 +327,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-
-    private int updateFromSearchEngine(boolean animate, List<String> searchEngineSuggestions, int recycledSuggestionCount, int savedSuggestionCount) {
+    private int updateFromSearchEngine(List<String> searchEngineSuggestions, int recycledSuggestionCount, int savedSuggestionCount) {
         int maxSuggestions = mMaxSearchSuggestions;
         
         if (!HardwareUtils.isTablet() && savedSuggestionCount < mMaxSavedSuggestions) {
@@ -356,7 +344,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
             
             String telemetryTag = "engine." + relativeIndex;
             final String suggestion = searchEngineSuggestions.get(relativeIndex);
-            bindSuggestionView(suggestion, animate, recycledSuggestionCount, relativeIndex, false, telemetryTag);
+            bindSuggestionView(suggestion, recycledSuggestionCount, relativeIndex, false, telemetryTag);
         }
 
         hideRecycledSuggestions(relativeIndex + 1, recycledSuggestionCount);
@@ -380,8 +368,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-
-    public void updateSuggestions(boolean searchSuggestionsEnabled, SearchEngine searchEngine, @Nullable List<String> rawSearchHistorySuggestions, boolean animate) {
+    public void updateSuggestions(boolean searchSuggestionsEnabled, SearchEngine searchEngine, @Nullable List<String> rawSearchHistorySuggestions) {
         mSearchEngine = searchEngine;
         
 
@@ -407,7 +394,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
         }
 
 
-        List<String> searchEngineSuggestions = new ArrayList<String>();
+        final List<String> searchEngineSuggestions = new ArrayList<>();
         if (searchSuggestionsEnabled) {
             for (String suggestion : searchEngine.getSuggestions()) {
                 searchHistorySuggestions.remove(suggestion);
@@ -426,12 +413,12 @@ class SearchEngineRow extends AnimatedHeightLayout {
         final int searchHistoryCount = searchHistorySuggestions.size();
 
         if (searchSuggestionsEnabled && savedSearchesEnabled) {
-            final int suggestionViewCount =  updateFromSearchEngine(animate, searchEngineSuggestions, recycledSuggestionCount, searchHistoryCount);
-            updateFromSavedSearches(searchHistorySuggestions, animate, suggestionViewCount, recycledSuggestionCount);
+            final int suggestionViewCount = updateFromSearchEngine(searchEngineSuggestions, recycledSuggestionCount, searchHistoryCount);
+            updateFromSavedSearches(searchHistorySuggestions, suggestionViewCount, recycledSuggestionCount);
         } else if (savedSearchesEnabled) {
-            updateFromSavedSearches(searchHistorySuggestions, animate, 0, recycledSuggestionCount);
+            updateFromSavedSearches(searchHistorySuggestions, 0, recycledSuggestionCount);
         } else if (searchSuggestionsEnabled) {
-            updateFromSearchEngine(animate, searchEngineSuggestions, recycledSuggestionCount, 0);
+            updateFromSearchEngine(searchEngineSuggestions, recycledSuggestionCount, 0);
         } else {
             
             
