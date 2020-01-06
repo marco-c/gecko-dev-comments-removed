@@ -86,7 +86,7 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  std::map<ScrollableLayerGuid, AsyncPanZoomController*> mApzcMap;
+  std::unordered_map<ScrollableLayerGuid, AsyncPanZoomController*, ScrollableLayerGuidHash> mApzcMap;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -380,7 +380,7 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
   
   
   
-  std::map<ScrollableLayerGuid, HitTestingTreeNode*> httnMap;
+  std::unordered_map<ScrollableLayerGuid, HitTestingTreeNode*, ScrollableLayerGuidHash> httnMap;
 
   bool activeAnimations = false;
   uint64_t lastLayersId = -1;
@@ -537,6 +537,8 @@ GetEventRegions(const ScrollNode& aLayer)
   }
   return aLayer.GetEventRegions();
 }
+
+
 
 already_AddRefed<HitTestingTreeNode>
 APZCTreeManager::RecycleOrCreateNode(TreeBuildingState& aState,
