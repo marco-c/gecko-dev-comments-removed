@@ -166,6 +166,18 @@ private:
 
 
 
+  void NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument);
+
+  
+
+
+
+  void DispatchNotifyVisited(nsIURI* aURI, nsIDocument* aDocument);
+
+  
+
+
+
 
   RefPtr<mozilla::places::Database> mDB;
 
@@ -206,6 +218,7 @@ private:
       return array.ShallowSizeOfExcludingThis(aMallocSizeOf);
     }
     ObserverArray array;
+    bool mVisited = false;
   };
 
   nsTHashtable<KeyClass> mObservers;

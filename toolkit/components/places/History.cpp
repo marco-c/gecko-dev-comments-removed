@@ -37,6 +37,7 @@
 #include "nsPrintfCString.h"
 #include "nsTHashtable.h"
 #include "jsapi.h"
+#include "mozilla/dom/Element.h"
 
 
 #define VISIT_OBSERVERS_INITIAL_CACHE_LENGTH 64
@@ -1952,10 +1953,25 @@ History::InitMemoryReporter()
   RegisterWeakMemoryReporter(this);
 }
 
+
+
+
+static nsIDocument*
+GetLinkDocument(Link* aLink)
+{
+  
+  
+  
+  Element* element = aLink->GetElement();
+  return element ? element->OwnerDoc() : nullptr;
+}
+
 NS_IMETHODIMP
 History::NotifyVisited(nsIURI* aURI)
 {
   NS_ENSURE_ARG(aURI);
+  
+  
 
   nsAutoScriptBlocker scriptBlocker;
 
@@ -1977,14 +1993,55 @@ History::NotifyVisited(nsIURI* aURI)
   if (!key) {
     return NS_OK;
   }
+  key->mVisited = true;
 
   
+  MOZ_ASSERT(!key->array.IsEmpty());
+
+  
+  
   {
-    
-    ObserverArray::ForwardIterator iter(key->array);
+    nsTArray<nsIDocument*> seen; 
+    ObserverArray::BackwardIterator iter(key->array);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      link->SetLinkState(eLinkState_Visited);
+      nsIDocument* doc = GetLinkDocument(link);
+      if (seen.Contains(doc)) {
+        continue;
+      }
+      seen.AppendElement(doc);
+      DispatchNotifyVisited(aURI, doc);
+    }
+  }
+
+  return NS_OK;
+}
+
+void
+History::NotifyVisitedForDocument(nsIURI* aURI, nsIDocument* aDocument)
+{
+  
+  
+  nsAutoScriptBlocker scriptBlocker;
+
+  
+  KeyClass* key = mObservers.GetEntry(aURI);
+  if (!key) {
+    return;
+  }
+
+  {
+    
+    
+    ObserverArray::BackwardIterator iter(key->array);
+    while (iter.HasMore()) {
+      Link* link = iter.GetNext();
+      nsIDocument* doc = GetLinkDocument(link);
+      if (doc == aDocument) {
+        link->SetLinkState(eLinkState_Visited);
+        iter.Remove();
+      }
+
       
       
       MOZ_ASSERT(key == mObservers.GetEntry(aURI),
@@ -1993,8 +2050,29 @@ History::NotifyVisited(nsIURI* aURI)
   }
 
   
-  mObservers.RemoveEntry(key);
-  return NS_OK;
+  if (key->array.IsEmpty()) {
+    mObservers.RemoveEntry(key);
+  }
+}
+
+void
+History::DispatchNotifyVisited(nsIURI* aURI, nsIDocument* aDocument)
+{
+  
+  nsCOMPtr<nsIDocument> doc = aDocument;
+  nsCOMPtr<nsIURI> uri = aURI;
+
+  
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction("History::DispatchNotifyVisited", [uri, doc] {
+    nsCOMPtr<IHistory> history = services::GetHistoryService();
+    static_cast<History*>(history.get())->NotifyVisitedForDocument(uri, doc);
+  });
+
+  if (doc) {
+    doc->Dispatch(TaskCategory::Other, runnable.forget());
+  } else {
+    NS_DispatchToMainThread(runnable.forget());
+  }
 }
 
 class ConcurrentStatementsHolder final : public mozIStorageCompletionCallback {
@@ -2617,6 +2695,13 @@ History::RegisterVisitedCallback(nsIURI* aURI,
     
     (void)UnregisterVisitedCallback(aURI, aLink);
     return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+  
+  
+  if (key->mVisited) {
+    DispatchNotifyVisited(aURI, GetLinkDocument(aLink));
   }
 
   return NS_OK;
