@@ -7,6 +7,10 @@
 #ifndef mozilla_RangeBoundary_h
 #define mozilla_RangeBoundary_h
 
+#include "nsCOMPtr.h"
+#include "nsIContent.h"
+#include "mozilla/Maybe.h"
+
 namespace mozilla {
 
 
@@ -203,6 +207,27 @@ public:
     return Offset() <= Container()->Length();
   }
 
+  bool
+  IsStartOfContainer() const
+  {
+    
+    
+    
+    return !Ref() && mOffset.value() == 0;
+  }
+
+  bool
+  IsEndOfContainer() const
+  {
+    
+    
+    
+    
+    return Ref()
+      ? !Ref()->GetNextSibling()
+      : mOffset.value() == Container()->Length();
+  }
+
   
   
   RangeBoundaryBase<nsINode*, nsIContent*>
@@ -225,6 +250,12 @@ public:
   {
     return mParent == aOther.mParent &&
       (mRef ? mRef == aOther.mRef : mOffset == aOther.mOffset);
+  }
+
+  template<typename A, typename B>
+  bool operator!=(const RangeBoundaryBase<A, B>& aOther) const
+  {
+    return !(*this == aOther);
   }
 
 private:
