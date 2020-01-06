@@ -557,7 +557,9 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
 
   
   
-  MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame());
+  
+  MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame() ||
+             backdropFrame->GetParent()->IsCanvasFrame());
   nsTArray<nsIFrame*> wrappersToRestyle;
   ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle);
   aFrame->UpdateStyleOfOwnedChildFrame(backdropFrame, newContext, state);
