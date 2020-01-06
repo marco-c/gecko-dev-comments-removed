@@ -792,6 +792,8 @@ nsContentUtils::Init()
   }
   uuidGenerator.forget(&sUUIDGenerator);
 
+  AsyncPrecreateStringBundles();
+
   RefPtr<UserInteractionObserver> uio = new UserInteractionObserver();
   uio->Init();
   uio.forget(&sUserInteractionObserver);
@@ -3955,6 +3957,23 @@ nsContentUtils::EnsureStringBundle(PropertiesFile aFile)
 }
 
 
+void
+nsContentUtils::AsyncPrecreateStringBundles()
+{
+  for (uint32_t bundleIndex = 0; bundleIndex < PropertiesFile_COUNT; ++bundleIndex) {
+    nsresult rv = NS_IdleDispatchToCurrentThread(
+      NS_NewRunnableFunction("AsyncPrecreateStringBundles",
+                             [bundleIndex]() {
+                               PropertiesFile file = static_cast<PropertiesFile>(bundleIndex);
+                               EnsureStringBundle(file);
+                               nsIStringBundle *bundle = sStringBundles[file];
+                               bundle->AsyncPreload();
+                             }));
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+  }
+}
+
+
 nsresult nsContentUtils::GetLocalizedString(PropertiesFile aFile,
                                             const char* aKey,
                                             nsAString& aResult)
@@ -4105,26 +4124,20 @@ nsContentUtils::ReportToConsoleByWindowID(const nsAString& aErrorText,
       nsJSUtils::GetCallingLocation(cx, spec, &aLineNumber, &aColumnNumber);
     }
   }
+  if (spec.IsEmpty() && aURI) {
+    spec = aURI->GetSpecOrDefault();
+  }
 
   nsCOMPtr<nsIScriptError> errorObject =
       do_CreateInstance(NS_SCRIPTERROR_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!spec.IsEmpty()) {
-    rv = errorObject->InitWithWindowID(aErrorText,
-                                       NS_ConvertUTF8toUTF16(spec), 
-                                       aSourceLine,
-                                       aLineNumber, aColumnNumber,
-                                       aErrorFlags, aCategory,
-                                       aInnerWindowID);
-  } else {
-    rv = errorObject->InitWithSourceURI(aErrorText,
-                                        aURI,
-                                        aSourceLine,
-                                        aLineNumber, aColumnNumber,
-                                        aErrorFlags, aCategory,
-                                        aInnerWindowID);
-  }
+  rv = errorObject->InitWithWindowID(aErrorText,
+                                     NS_ConvertUTF8toUTF16(spec), 
+                                     aSourceLine,
+                                     aLineNumber, aColumnNumber,
+                                     aErrorFlags, aCategory,
+                                     aInnerWindowID);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return sConsoleService->LogMessage(errorObject);
