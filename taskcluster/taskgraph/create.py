@@ -73,8 +73,19 @@ def create_tasks(taskgraph, label_to_taskid, params, decision_task_id=None):
         tasklist = set(taskgraph.graph.visit_postorder())
         alltasks = tasklist.copy()
 
-        def schedule_tasks(f=None):
+        def schedule_tasks():
+            
+            if any(f.done() and f.exception() for f in fs.values()):
+                return
+
             to_remove = set()
+            new = set()
+
+            def submit(task_id, label, task_def):
+                fut = e.submit(create_task, session, task_id, label, task_def)
+                new.add(fut)
+                fs[task_id] = fut
+
             for task_id in tasklist:
                 task_def = taskgraph.tasks[task_id].task
                 
@@ -85,23 +96,26 @@ def create_tasks(taskgraph, label_to_taskid, params, decision_task_id=None):
                 if any((d not in fs or not fs[d].done()) for d in deps):
                     continue
 
-                fs[task_id] = e.submit(create_task, session, task_id,
-                                       taskid_to_label[task_id], task_def)
+                submit(task_id, taskid_to_label[task_id], task_def)
                 to_remove.add(task_id)
 
                 
                 attributes = taskgraph.tasks[task_id].attributes
                 for i in range(1, attributes.get('task_duplicates', 1)):
                     
-                    fs[task_id] = e.submit(create_task, session, slugid(),
-                                           taskid_to_label[task_id], task_def)
+                    submit(slugid(), taskid_to_label[task_id], task_def)
             tasklist.difference_update(to_remove)
 
+            
+            for f in futures.as_completed(new):
+                schedule_tasks()
+
+        
         schedule_tasks()
-        while tasklist:
-            for f in futures.as_completed(fs.values()):
-                f.result()
-            schedule_tasks()
+
+        
+        for f in futures.as_completed(fs.values()):
+            f.result()
 
 
 def create_task(session, task_id, label, task_def):
