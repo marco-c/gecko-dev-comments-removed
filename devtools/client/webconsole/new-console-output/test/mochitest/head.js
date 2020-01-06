@@ -186,21 +186,3 @@ function loadDocument(browser, url) {
     BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
   });
 }
-
-
-
-
-
-
-
-
-
-function waitForNodeMutation(node, observeConfig = {}) {
-  return new Promise(resolve => {
-    const observer = new MutationObserver(mutations => {
-      resolve(mutations);
-      observer.disconnect();
-    });
-    observer.observe(node, observeConfig);
-  });
-}
