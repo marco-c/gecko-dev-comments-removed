@@ -31,8 +31,6 @@ user_pref("extensions.getAddons.cache.enabled", false);
 
 user_pref("extensions.blocklist.enabled", false);
 
-user_pref("urlclassifier.updateinterval", 172800);
-
 user_pref("image.downscale-during-decode.enabled", false);
 
 

@@ -102,8 +102,6 @@ user_pref("geo.wifi.logging.enabled", true);
 user_pref("dom.push.connection.enabled", false);
 
 
-user_pref("urlclassifier.updateinterval", 172800);
-
 user_pref("browser.safebrowsing.downloads.remote.url", "http://%(server)s/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.google.gethashURL", "http://%(server)s/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://%(server)s/safebrowsing-dummy/update");

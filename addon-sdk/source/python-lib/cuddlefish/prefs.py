@@ -114,10 +114,6 @@ DEFAULT_FIREFOX_PREFS = {
     'devtools.chrome.enabled' : True,
 
     
-    
-    
-    'urlclassifier.updateinterval' : 172800,
-    
     'browser.safebrowsing.downloads.remote.url': 'http://localhost/safebrowsing-dummy/downloads',
     'browser.safebrowsing.provider.google.gethashURL' : 'http://localhost/safebrowsing-dummy/gethash',
     'browser.safebrowsing.provider.google.updateURL' : 'http://localhost/safebrowsing-dummy/update',
