@@ -146,7 +146,7 @@ PRTime GetStartTime();
 
 
 
-already_AddRefed<Runnable>
+already_AddRefed<nsIRunnable>
 CreateTracedRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
 
 
