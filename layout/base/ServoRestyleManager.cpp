@@ -15,7 +15,6 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "nsBlockFrame.h"
 #include "nsBulletFrame.h"
-#include "nsFirstLetterFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
@@ -56,13 +55,6 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
   }
 
   const nsIFrame* parent = FirstContinuationOrPartOfIBSplit(aFrame.GetParent());
-  if (nsFirstLetterFrame* fl = do_QueryFrame(const_cast<nsIFrame*>(&aFrame))) {
-    Unused << fl;
-    while (!parent->IsFrameOfType(nsIFrame::eBlockFrame)) {
-      parent = FirstContinuationOrPartOfIBSplit(parent->GetParent());
-    }
-    return parent;
-  }
 
   if (aFrame.IsTableFrame()) {
     MOZ_ASSERT(parent->IsTableWrapperFrame());
@@ -399,9 +391,31 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame,
 }
 
 static void
+UpdateFirstLetterIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
+{
+  if (!aFrame->HasFirstLetterChild()) {
+    return;
+  }
+
+  
+  
+  
+  nsIFrame* block = aFrame;
+  while (!block->IsFrameOfType(nsIFrame::eBlockFrame)) {
+    block = block->GetParent();
+  }
+  static_cast<nsBlockFrame*>(block->FirstContinuation())->
+    UpdateFirstLetterStyle(aRestyleState);
+}
+
+static void
 UpdateFramePseudoElementStyles(nsIFrame* aFrame,
                                ServoRestyleState& aRestyleState)
 {
+  
+  
+  UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
+
   if (aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
     static_cast<nsBlockFrame*>(aFrame)->UpdatePseudoElementStyles(aRestyleState);
   }

@@ -618,6 +618,7 @@ public:
     , mClass(aID)
     , mMayHaveRoundedCorners(false)
     , mHasImageRequest(false)
+    , mHasFirstLetterChild(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -3354,7 +3355,7 @@ public:
   
   
   
-  nsChangeHint UpdateStyleOfOwnedChildFrame(
+  static nsChangeHint UpdateStyleOfOwnedChildFrame(
     nsIFrame* aChildFrame,
     nsStyleContext* aNewStyleContext,
     mozilla::ServoRestyleState& aRestyleState,
@@ -3985,6 +3986,15 @@ public:
 
 
 
+
+  bool HasFirstLetterChild() const { return mHasFirstLetterChild; }
+
+  
+
+
+
+
+
   virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
                                            int32_t aDepth,
                                            int32_t aIncrement,
@@ -4116,6 +4126,14 @@ protected:
 
 
   bool mHasImageRequest : 1;
+
+  
+
+
+
+
+
+  bool mHasFirstLetterChild : 1;
 
   
 

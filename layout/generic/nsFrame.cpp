@@ -10248,7 +10248,7 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   }
 }
 
-nsChangeHint
+ nsChangeHint
 nsIFrame::UpdateStyleOfOwnedChildFrame(
   nsIFrame* aChildFrame,
   nsStyleContext* aNewStyleContext,
@@ -10270,8 +10270,13 @@ nsIFrame::UpdateStyleOfOwnedChildFrame(
     aNewStyleContext,
     &equalStructs,
     &samePointerStructs);
-  childHint = NS_RemoveSubsumedHints(
-    childHint, aRestyleState.ChangesHandledFor(*aChildFrame));
+  
+  
+  
+  if (!aChildFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    childHint = NS_RemoveSubsumedHints(
+      childHint, aRestyleState.ChangesHandledFor(*aChildFrame));
+  }
   if (childHint) {
     if (childHint & nsChangeHint_ReconstructFrame) {
       

@@ -5626,12 +5626,16 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
 }
 
 void
-nsBlockFrame::UpdateFirstLetterStyle(nsIFrame* aLetterFrame,
-                                     ServoRestyleState& aRestyleState)
+nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState)
 {
+  nsIFrame* letterFrame = GetFirstLetter();
+  if (!letterFrame) {
+    return;
+  }
+
   
   
-  nsIFrame* inFlowFrame = aLetterFrame;
+  nsIFrame* inFlowFrame = letterFrame;
   if (inFlowFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
     inFlowFrame = inFlowFrame->GetPlaceholderFrame();
   }
@@ -5649,13 +5653,13 @@ nsBlockFrame::UpdateFirstLetterStyle(nsIFrame* aLetterFrame,
   
   RefPtr<nsStyleContext> continuationStyle =
     aRestyleState.StyleSet().ResolveStyleForFirstLetterContinuation(parentStyle);
-  UpdateStyleOfOwnedChildFrame(aLetterFrame, firstLetterStyle, aRestyleState,
+  UpdateStyleOfOwnedChildFrame(letterFrame, firstLetterStyle, aRestyleState,
                                Some(continuationStyle.get()));
 
   
   
   
-  nsIFrame* textFrame = aLetterFrame->PrincipalChildList().FirstChild();
+  nsIFrame* textFrame = letterFrame->PrincipalChildList().FirstChild();
   RefPtr<nsStyleContext> firstTextStyle =
     aRestyleState.StyleSet().ResolveStyleForText(textFrame->GetContent(),
                                                  firstLetterStyle);
@@ -7563,10 +7567,6 @@ nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState)
     RefPtr<nsStyleContext> newBulletStyle =
       ResolveBulletStyle(type, &aRestyleState.StyleSet());
     UpdateStyleOfOwnedChildFrame(bullet, newBulletStyle, aRestyleState);
-  }
-
-  if (nsIFrame* firstLetter = GetFirstLetter()) {
-    UpdateFirstLetterStyle(firstLetter, aRestyleState);
   }
 }
 
