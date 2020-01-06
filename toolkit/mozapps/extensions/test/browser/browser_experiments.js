@@ -169,13 +169,13 @@ add_task(async function testOpenPreferences() {
 
   let deferred = Promise.defer();
   Services.obs.addObserver(function observer(prefWin, topic, data) {
-    Services.obs.removeObserver(observer, "privacy-pane-loaded");
-    info("Privacy preference pane opened.");
+    Services.obs.removeObserver(observer, "advanced-pane-loaded");
+    info("Advanced preference pane opened.");
     executeSoon(function() {
       
       
       
-      let el = prefWin.document.getElementById("dataCollectionCategory");
+      let el = prefWin.document.getElementById("header-advanced");
       is_element_visible(el);
 
       prefWin.close();
@@ -183,7 +183,7 @@ add_task(async function testOpenPreferences() {
 
       deferred.resolve();
     });
-  }, "privacy-pane-loaded");
+  }, "advanced-pane-loaded");
 
   info("Loading preferences pane.");
   
