@@ -301,7 +301,7 @@ def run_test_harness(parser, options):
     if options is None:
         raise ValueError("Invalid options specified, use --help for a list of valid options")
 
-    options.runByDir = False
+    options.runByManifest = False
     
     
     if options.flavor != 'chrome':
