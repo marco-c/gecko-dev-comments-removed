@@ -366,8 +366,14 @@ Service::minimizeMemory()
       MOZ_ASSERT(NS_SUCCEEDED(rv), "Should have purged sqlite caches");
     } else if (NS_SUCCEEDED(conn->threadOpenedOn->IsOnCurrentThread(&onOpenedThread)) &&
                onOpenedThread) {
-      
-      conn->ExecuteSimpleSQL(shrinkPragma);
+      if (conn->isAsyncExecutionThreadAvailable()) {
+        nsCOMPtr<mozIStoragePendingStatement> ps;
+        DebugOnly<nsresult> rv =
+          conn->ExecuteSimpleSQLAsync(shrinkPragma, nullptr, getter_AddRefs(ps));
+        MOZ_ASSERT(NS_SUCCEEDED(rv), "Should have purged sqlite caches");
+      } else {
+        conn->ExecuteSimpleSQL(shrinkPragma);
+      }
     } else {
       
       

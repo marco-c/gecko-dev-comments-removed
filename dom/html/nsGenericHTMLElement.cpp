@@ -198,17 +198,16 @@ nsGenericHTMLElement::CopyInnerTo(Element* aDst, bool aPreallocateChildren)
       
       
 
-      nsAutoString valStr;
-      value->ToString(valStr);
-
-      DeclarationBlock* decl = value->GetCSSDeclarationValue();
       
       
       
-      RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-      rv = aDst->SetInlineStyleDeclaration(declClone, &valStr, false);
+      nsAttrValue valueCopy(*value);
+      rv = aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
+                               name->GetPrefix(), valueCopy, false);
       NS_ENSURE_SUCCESS(rv, rv);
+
+      DeclarationBlock* cssDeclaration = value->GetCSSDeclarationValue();
+      cssDeclaration->SetImmutable();
     } else if (reparse) {
       nsAutoString valStr;
       value->ToString(valStr);
@@ -726,27 +725,48 @@ nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
     }
     else if (aName == nsGkAtoms::dir) {
       Directionality dir = eDir_LTR;
+      
+      
+      
+      bool recomputeDirectionality = false;
+      
+      
+      
+      EventStates dirStates;
       if (aValue && aValue->Type() == nsAttrValue::eEnum) {
         SetHasValidDir();
+        dirStates |= NS_EVENT_STATE_HAS_DIR_ATTR;
         Directionality dirValue = (Directionality)aValue->GetEnumValue();
         if (dirValue == eDir_Auto) {
-          SetHasDirAuto();
-          ClearHasFixedDir();
+          dirStates |= NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO;
         } else {
           dir = dirValue;
           SetDirectionality(dir, aNotify);
-          ClearHasDirAuto();
-          SetHasFixedDir();
+          if (dirValue == eDir_LTR) {
+            dirStates |= NS_EVENT_STATE_DIR_ATTR_LTR;
+          } else {
+            MOZ_ASSERT(dirValue == eDir_RTL);
+            dirStates |= NS_EVENT_STATE_DIR_ATTR_RTL;
+          }
         }
       } else {
-        ClearHasValidDir();
-        ClearHasFixedDir();
-        if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
-          SetHasDirAuto();
-        } else {
-          ClearHasDirAuto();
-          dir = RecomputeDirectionality(this, aNotify);
+        if (aValue) {
+          
+          dirStates |= NS_EVENT_STATE_HAS_DIR_ATTR;
         }
+        ClearHasValidDir();
+        if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
+          dirStates |= NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO;
+        } else {
+          recomputeDirectionality = true;
+        }
+      }
+      
+      EventStates oldDirStates = State() & DIR_ATTR_STATES;
+      EventStates changedStates = dirStates ^ oldDirStates;
+      ToggleStates(changedStates, aNotify);
+      if (recomputeDirectionality) {
+        dir = RecomputeDirectionality(this, aNotify);
       }
       SetDirectionalityOnDescendants(this, dir, aNotify);
     } else if (aName == nsGkAtoms::contenteditable) {
