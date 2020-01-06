@@ -503,6 +503,10 @@ return  (function(modules) {
 
  function(module, exports, __webpack_require__) {
 
+	
+
+
+
 	const networkRequest = __webpack_require__(7);
 	const workerUtils = __webpack_require__(8);
 
@@ -514,6 +518,10 @@ return  (function(modules) {
  },
 
  function(module, exports) {
+
+	
+
+
 
 	function networkRequest(url, opts) {
 	  return new Promise((resolve, reject) => {
@@ -554,7 +562,9 @@ return  (function(modules) {
 	function WorkerDispatcher() {
 	  this.msgId = 1;
 	  this.worker = null;
-	}
+	} 
+
+
 
 	WorkerDispatcher.prototype = {
 	  start(url) {
