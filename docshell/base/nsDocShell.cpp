@@ -12880,8 +12880,10 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
     srcdoc = VoidString();
   }
 
+  
+  MOZ_ASSERT(triggeringPrincipal, "need a valid triggeringPrincipal to load from history");
   if (!triggeringPrincipal) {
-    triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
+    return NS_ERROR_FAILURE;
   }
 
   
