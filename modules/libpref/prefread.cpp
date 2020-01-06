@@ -2,12 +2,15 @@
 
 
 
+
+
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include "prefread.h"
+
 #include "nsString.h"
 #include "nsUTF8Utils.h"
+#include "prefread.h"
 
 #ifdef TEST_PREFREAD
 #include <stdio.h>
@@ -18,29 +21,30 @@
 #endif
 
 
-enum {
-    PREF_PARSE_INIT,
-    PREF_PARSE_MATCH_STRING,
-    PREF_PARSE_UNTIL_NAME,
-    PREF_PARSE_QUOTED_STRING,
-    PREF_PARSE_UNTIL_COMMA,
-    PREF_PARSE_UNTIL_VALUE,
-    PREF_PARSE_INT_VALUE,
-    PREF_PARSE_COMMENT_MAYBE_START,
-    PREF_PARSE_COMMENT_BLOCK,
-    PREF_PARSE_COMMENT_BLOCK_MAYBE_END,
-    PREF_PARSE_ESC_SEQUENCE,
-    PREF_PARSE_HEX_ESCAPE,
-    PREF_PARSE_UTF16_LOW_SURROGATE,
-    PREF_PARSE_UNTIL_OPEN_PAREN,
-    PREF_PARSE_UNTIL_CLOSE_PAREN,
-    PREF_PARSE_UNTIL_SEMICOLON,
-    PREF_PARSE_UNTIL_EOL
+enum
+{
+  PREF_PARSE_INIT,
+  PREF_PARSE_MATCH_STRING,
+  PREF_PARSE_UNTIL_NAME,
+  PREF_PARSE_QUOTED_STRING,
+  PREF_PARSE_UNTIL_COMMA,
+  PREF_PARSE_UNTIL_VALUE,
+  PREF_PARSE_INT_VALUE,
+  PREF_PARSE_COMMENT_MAYBE_START,
+  PREF_PARSE_COMMENT_BLOCK,
+  PREF_PARSE_COMMENT_BLOCK_MAYBE_END,
+  PREF_PARSE_ESC_SEQUENCE,
+  PREF_PARSE_HEX_ESCAPE,
+  PREF_PARSE_UTF16_LOW_SURROGATE,
+  PREF_PARSE_UNTIL_OPEN_PAREN,
+  PREF_PARSE_UNTIL_CLOSE_PAREN,
+  PREF_PARSE_UNTIL_SEMICOLON,
+  PREF_PARSE_UNTIL_EOL
 };
 
-#define UTF16_ESC_NUM_DIGITS    4
-#define HEX_ESC_NUM_DIGITS      2
-#define BITS_PER_HEX_DIGIT      4
+#define UTF16_ESC_NUM_DIGITS 4
+#define HEX_ESC_NUM_DIGITS 2
+#define BITS_PER_HEX_DIGIT 4
 
 static const char kUserPref[] = "user_pref";
 static const char kPref[] = "pref";
@@ -63,57 +67,53 @@ static const char kFalse[] = "false";
 
 
 
-
-
-
-
-
 static bool
-pref_GrowBuf(PrefParseState *ps)
+pref_GrowBuf(PrefParseState* aPS)
 {
-    int bufLen, curPos, valPos;
+  int bufLen, curPos, valPos;
 
-    bufLen = ps->lbend - ps->lb;
-    curPos = ps->lbcur - ps->lb;
-    valPos = ps->vb    - ps->lb;
+  bufLen = aPS->lbend - aPS->lb;
+  curPos = aPS->lbcur - aPS->lb;
+  valPos = aPS->vb - aPS->lb;
 
-    if (bufLen == 0)
-        bufLen = 128;  
-    else
-        bufLen <<= 1;  
+  if (bufLen == 0) {
+    bufLen = 128; 
+  } else {
+    bufLen <<= 1; 
+  }
 
 #ifdef TEST_PREFREAD
-    fprintf(stderr, ">>> realloc(%d)\n", bufLen);
+  fprintf(stderr, ">>> realloc(%d)\n", bufLen);
 #endif
 
-    ps->lb = (char*) realloc(ps->lb, bufLen);
-    if (!ps->lb)
-        return false;
+  aPS->lb = (char*)realloc(aPS->lb, bufLen);
+  if (!aPS->lb) {
+    return false;
+  }
 
-    ps->lbcur = ps->lb + curPos;
-    ps->lbend = ps->lb + bufLen;
-    ps->vb    = ps->lb + valPos;
+  aPS->lbcur = aPS->lb + curPos;
+  aPS->lbend = aPS->lb + bufLen;
+  aPS->vb = aPS->lb + valPos;
 
-    return true;
+  return true;
 }
-
-
 
 
 static void
-pref_ReportParseProblem(PrefParseState& ps, const char* aMessage, int aLine, bool aError)
+pref_ReportParseProblem(PrefParseState& aPS,
+                        const char* aMessage,
+                        int aLine,
+                        bool aError)
 {
-    if (ps.reporter) {
-        ps.reporter(aMessage, aLine, aError);
-    } else {
-        printf_stderr("**** Preference parsing %s (line %d) = %s **\n",
-                      (aError ? "error" : "warning"), aLine, aMessage);
-    }
+  if (aPS.reporter) {
+    aPS.reporter(aMessage, aLine, aError);
+  } else {
+    printf_stderr("**** Preference parsing %s (line %d) = %s **\n",
+                  (aError ? "error" : "warning"),
+                  aLine,
+                  aMessage);
+  }
 }
-
-
-
-
 
 
 
@@ -123,50 +123,60 @@ pref_ReportParseProblem(PrefParseState& ps, const char* aMessage, int aLine, boo
 
 
 static bool
-pref_DoCallback(PrefParseState *ps)
+pref_DoCallback(PrefParseState* aPS)
 {
-    PrefValue  value;
+  PrefValue value;
 
-    switch (ps->vtype) {
+  switch (aPS->vtype) {
     case PrefType::String:
-        value.stringVal = ps->vb;
-        break;
+      value.stringVal = aPS->vb;
+      break;
+
     case PrefType::Int:
-        if ((ps->vb[0] == '-' || ps->vb[0] == '+') && ps->vb[1] == '\0') {
-            pref_ReportParseProblem(*ps, "invalid integer value", 0, true);
-            NS_WARNING("malformed integer value");
-            return false;
-        }
-        value.intVal = atoi(ps->vb);
-        break;
+      if ((aPS->vb[0] == '-' || aPS->vb[0] == '+') && aPS->vb[1] == '\0') {
+        pref_ReportParseProblem(*aPS, "invalid integer value", 0, true);
+        NS_WARNING("malformed integer value");
+        return false;
+      }
+      value.intVal = atoi(aPS->vb);
+      break;
+
     case PrefType::Bool:
-        value.boolVal = (ps->vb == kTrue);
-        break;
+      value.boolVal = (aPS->vb == kTrue);
+      break;
+
     default:
-        break;
-    }
-    (*ps->reader)(ps->closure, ps->lb, value, ps->vtype, ps->fdefault,
-                  ps->fstickydefault);
-    return true;
+      break;
+  }
+
+  (*aPS->reader)(aPS->closure,
+                 aPS->lb,
+                 value,
+                 aPS->vtype,
+                 aPS->fdefault,
+                 aPS->fstickydefault);
+  return true;
 }
 
 void
-PREF_InitParseState(PrefParseState *ps, PrefReader reader,
-                    PrefParseErrorReporter reporter, void *closure)
+PREF_InitParseState(PrefParseState* aPS,
+                    PrefReader aReader,
+                    PrefParseErrorReporter aReporter,
+                    void* aClosure)
 {
-    memset(ps, 0, sizeof(*ps));
-    ps->reader = reader;
-    ps->closure = closure;
-    ps->reporter = reporter;
+  memset(aPS, 0, sizeof(*aPS));
+  aPS->reader = aReader;
+  aPS->closure = aClosure;
+  aPS->reporter = aReporter;
 }
 
 void
-PREF_FinalizeParseState(PrefParseState *ps)
+PREF_FinalizeParseState(PrefParseState* aPS)
 {
-    if (ps->lb)
-        free(ps->lb);
+  if (aPS->lb) {
+    free(aPS->lb);
+  }
 }
-
 
 
 
@@ -189,469 +199,473 @@ PREF_FinalizeParseState(PrefParseState *ps)
 
 
 bool
-PREF_ParseBuf(PrefParseState *ps, const char *buf, int bufLen)
+PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 {
-    const char *end;
-    char c;
-    char udigit;
-    int state;
+  const char* end;
+  char c;
+  char udigit;
+  int state;
 
-    
-    int lineNum = 0;
+  
+  int lineNum = 0;
 
-    state = ps->state;
-    for (end = buf + bufLen; buf != end; ++buf) {
-        c = *buf;
-        if (c == '\r' || c == '\n' || c == 0x1A) {
-            lineNum ++;
-        }
-
-        switch (state) {
-        
-        case PREF_PARSE_INIT:
-            if (ps->lbcur != ps->lb) { 
-                ps->lbcur = ps->lb;
-                ps->vb    = nullptr;
-                ps->vtype = PrefType::Invalid;
-                ps->fdefault = false;
-                ps->fstickydefault = false;
-            }
-            switch (c) {
-            case '/':       
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-                break;
-            case '#':       
-                state = PREF_PARSE_UNTIL_EOL;
-                break;
-            case 'u':       
-            case 's':       
-            case 'p':       
-                if (c == 'u') {
-                  ps->smatch = kUserPref;
-                } else if (c == 's') {
-                  ps->smatch = kPrefSticky;
-                } else {
-                  ps->smatch = kPref;
-                }
-                ps->sindex = 1;
-                ps->nextstate = PREF_PARSE_UNTIL_OPEN_PAREN;
-                state = PREF_PARSE_MATCH_STRING;
-                break;
-            
-            }
-            break;
-
-        
-        case PREF_PARSE_MATCH_STRING:
-            if (c == ps->smatch[ps->sindex++]) {
-                
-                if (ps->smatch[ps->sindex] == '\0') {
-                    state = ps->nextstate;
-                    ps->nextstate = PREF_PARSE_INIT; 
-                }
-                
-            }
-            else {
-                pref_ReportParseProblem(*ps, "non-matching string", lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-
-        
-        case PREF_PARSE_QUOTED_STRING:
-            
-            if (ps->lbcur == ps->lbend && !pref_GrowBuf(ps))
-                return false; 
-            if (c == '\\')
-                state = PREF_PARSE_ESC_SEQUENCE;
-            else if (c == ps->quotechar) {
-                *ps->lbcur++ = '\0';
-                state = ps->nextstate;
-                ps->nextstate = PREF_PARSE_INIT; 
-            }
-            else
-                *ps->lbcur++ = c;
-            break;
-
-        
-        case PREF_PARSE_UNTIL_NAME:
-            if (c == '\"' || c == '\'') {
-                ps->fdefault = (ps->smatch == kPref || ps->smatch == kPrefSticky);
-                ps->fstickydefault = (ps->smatch == kPrefSticky);
-                ps->quotechar = c;
-                ps->nextstate = PREF_PARSE_UNTIL_COMMA; 
-                state = PREF_PARSE_QUOTED_STRING;
-            }
-            else if (c == '/') {       
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need space, comment or quote", lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-
-        
-        case PREF_PARSE_UNTIL_COMMA:
-            if (c == ',') {
-                ps->vb = ps->lbcur;
-                state = PREF_PARSE_UNTIL_VALUE;
-            }
-            else if (c == '/') {       
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need space, comment or comma", lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-
-        
-        case PREF_PARSE_UNTIL_VALUE:
-            
-
-            if (c == '\"' || c == '\'') {
-                ps->vtype = PrefType::String;
-                ps->quotechar = c;
-                ps->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
-                state = PREF_PARSE_QUOTED_STRING;
-            }
-            else if (c == 't' || c == 'f') {
-                ps->vb = (char *) (c == 't' ? kTrue : kFalse);
-                ps->vtype = PrefType::Bool;
-                ps->smatch = ps->vb;
-                ps->sindex = 1;
-                ps->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
-                state = PREF_PARSE_MATCH_STRING;
-            }
-            else if (isdigit(c) || (c == '-') || (c == '+')) {
-                ps->vtype = PrefType::Int;
-                
-                if (ps->lbcur == ps->lbend && !pref_GrowBuf(ps))
-                    return false; 
-                *ps->lbcur++ = c;
-                state = PREF_PARSE_INT_VALUE;
-            }
-            else if (c == '/') {       
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need value, comment or space", lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-        case PREF_PARSE_INT_VALUE:
-            
-            if (ps->lbcur == ps->lbend && !pref_GrowBuf(ps))
-                return false; 
-            if (isdigit(c))
-                *ps->lbcur++ = c;
-            else {
-                *ps->lbcur++ = '\0'; 
-                if (c == ')')
-                    state = PREF_PARSE_UNTIL_SEMICOLON;
-                else if (c == '/') { 
-                    ps->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
-                    state = PREF_PARSE_COMMENT_MAYBE_START;
-                }
-                else if (isspace(c))
-                    state = PREF_PARSE_UNTIL_CLOSE_PAREN;
-                else {
-                    pref_ReportParseProblem(*ps, "while parsing integer", lineNum, true);
-                    NS_WARNING("malformed pref file");
-                    return false;
-                }
-            }
-            break;
-
-        
-        case PREF_PARSE_COMMENT_MAYBE_START:
-            switch (c) {
-            case '*': 
-                state = PREF_PARSE_COMMENT_BLOCK;
-                break;
-            case '/': 
-                state = PREF_PARSE_UNTIL_EOL;
-                break;
-            default:
-                
-                pref_ReportParseProblem(*ps, "while parsing comment", lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-        case PREF_PARSE_COMMENT_BLOCK:
-            if (c == '*')
-                state = PREF_PARSE_COMMENT_BLOCK_MAYBE_END;
-            break;
-        case PREF_PARSE_COMMENT_BLOCK_MAYBE_END:
-            switch (c) {
-            case '/':
-                state = ps->nextstate;
-                ps->nextstate = PREF_PARSE_INIT;
-                break;
-            case '*':       
-                break;
-            default:
-                state = PREF_PARSE_COMMENT_BLOCK;
-            }
-            break;
-
-        
-        case PREF_PARSE_ESC_SEQUENCE:
-            
-
-
-            switch (c) {
-            case '\"':
-            case '\'':
-            case '\\':
-                break;
-            case 'r':
-                c = '\r';
-                break;
-            case 'n':
-                c = '\n';
-                break;
-            case 'x': 
-            case 'u': 
-                ps->esctmp[0] = c;
-                ps->esclen = 1;
-                ps->utf16[0] = ps->utf16[1] = 0;
-                ps->sindex = (c == 'x' ) ?
-                                HEX_ESC_NUM_DIGITS :
-                                UTF16_ESC_NUM_DIGITS;
-                state = PREF_PARSE_HEX_ESCAPE;
-                continue;
-            default:
-                pref_ReportParseProblem(*ps, "preserving unexpected JS escape sequence",
-                                        lineNum, false);
-                NS_WARNING("preserving unexpected JS escape sequence");
-                
-
-                if ((ps->lbcur+1) == ps->lbend && !pref_GrowBuf(ps))
-                    return false; 
-                *ps->lbcur++ = '\\'; 
-                break;
-            }
-            *ps->lbcur++ = c;
-            state = PREF_PARSE_QUOTED_STRING;
-            break;
-
-        
-        case PREF_PARSE_HEX_ESCAPE:
-            if ( c >= '0' && c <= '9' )
-                udigit = (c - '0');
-            else if ( c >= 'A' && c <= 'F' )
-                udigit = (c - 'A') + 10;
-            else if ( c >= 'a' && c <= 'f' )
-                udigit = (c - 'a') + 10;
-            else {
-                
-                pref_ReportParseProblem(*ps, "preserving invalid or incomplete hex escape",
-                                        lineNum, false);
-                NS_WARNING("preserving invalid or incomplete hex escape");
-                *ps->lbcur++ = '\\';  
-                if ((ps->lbcur + ps->esclen) >= ps->lbend && !pref_GrowBuf(ps))
-                    return false;
-                for (int i = 0; i < ps->esclen; ++i)
-                    *ps->lbcur++ = ps->esctmp[i];
-
-                
-                
-                --buf;
-                state = PREF_PARSE_QUOTED_STRING;
-                continue;
-            }
-
-            
-            ps->esctmp[ps->esclen++] = c; 
-            ps->utf16[1] <<= BITS_PER_HEX_DIGIT;
-            ps->utf16[1] |= udigit;
-            ps->sindex--;
-            if (ps->sindex == 0) {
-                
-                int utf16len = 0;
-                if (ps->utf16[0]) {
-                    
-                    utf16len = 2;
-                }
-                else if (0xD800 == (0xFC00 & ps->utf16[1])) {
-                    
-                    ps->utf16[0] = ps->utf16[1];
-                    ps->utf16[1] = 0;
-                    state = PREF_PARSE_UTF16_LOW_SURROGATE;
-                    break;
-                }
-                else {
-                    
-                    ps->utf16[0] = ps->utf16[1];
-                    utf16len = 1;
-                }
-
-                
-                
-                
-                if (ps->lbcur+6 >= ps->lbend && !pref_GrowBuf(ps))
-                    return false;
-
-                ConvertUTF16toUTF8 converter(ps->lbcur);
-                converter.write(ps->utf16, utf16len);
-                ps->lbcur += converter.Size();
-                state = PREF_PARSE_QUOTED_STRING;
-            }
-            break;
-
-        
-        case PREF_PARSE_UTF16_LOW_SURROGATE:
-            if (ps->sindex == 0 && c == '\\') {
-                ++ps->sindex;
-            }
-            else if (ps->sindex == 1 && c == 'u') {
-                
-                ps->sindex = UTF16_ESC_NUM_DIGITS;
-                ps->esctmp[0] = 'u';
-                ps->esclen = 1;
-                state = PREF_PARSE_HEX_ESCAPE;
-            }
-            else {
-                
-
-
-                 --buf;
-                 if (ps->sindex == 1)
-                     state = PREF_PARSE_ESC_SEQUENCE;
-                 else
-                     state = PREF_PARSE_QUOTED_STRING;
-                 continue;
-            }
-            break;
-
-        
-        case PREF_PARSE_UNTIL_OPEN_PAREN:
-            
-            if (c == '(')
-                state = PREF_PARSE_UNTIL_NAME;
-            else if (c == '/') {
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need space, comment or open parentheses",
-                                        lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-        case PREF_PARSE_UNTIL_CLOSE_PAREN:
-            
-            if (c == ')') {
-                state = PREF_PARSE_UNTIL_SEMICOLON;
-            } else if (c == '/') {
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            } else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need space, comment or closing parentheses",
-                                        lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-
-        
-        case PREF_PARSE_UNTIL_SEMICOLON:
-            
-            if (c == ';') {
-                if (!pref_DoCallback(ps))
-                    return false;
-                state = PREF_PARSE_INIT;
-            }
-            else if (c == '/') {
-                ps->nextstate = state; 
-                state = PREF_PARSE_COMMENT_MAYBE_START;
-            }
-            else if (!isspace(c)) {
-                pref_ReportParseProblem(*ps, "need space, comment or semicolon",
-                                        lineNum, true);
-                NS_WARNING("malformed pref file");
-                return false;
-            }
-            break;
-
-        
-        case PREF_PARSE_UNTIL_EOL:
-            
-
-
-            if (c == '\r' || c == '\n' || c == 0x1A) {
-                state = ps->nextstate;
-                ps->nextstate = PREF_PARSE_INIT; 
-            }
-            break;
-        }
+  state = aPS->state;
+  for (end = aBuf + aBufLen; aBuf != end; ++aBuf) {
+    c = *aBuf;
+    if (c == '\r' || c == '\n' || c == 0x1A) {
+      lineNum++;
     }
-    ps->state = state;
-    return true;
+
+    switch (state) {
+      
+      case PREF_PARSE_INIT:
+        if (aPS->lbcur != aPS->lb) { 
+          aPS->lbcur = aPS->lb;
+          aPS->vb = nullptr;
+          aPS->vtype = PrefType::Invalid;
+          aPS->fdefault = false;
+          aPS->fstickydefault = false;
+        }
+        switch (c) {
+          case '/': 
+            state = PREF_PARSE_COMMENT_MAYBE_START;
+            break;
+          case '#': 
+            state = PREF_PARSE_UNTIL_EOL;
+            break;
+          case 'u': 
+          case 's': 
+          case 'p': 
+            if (c == 'u') {
+              aPS->smatch = kUserPref;
+            } else if (c == 's') {
+              aPS->smatch = kPrefSticky;
+            } else {
+              aPS->smatch = kPref;
+            }
+            aPS->sindex = 1;
+            aPS->nextstate = PREF_PARSE_UNTIL_OPEN_PAREN;
+            state = PREF_PARSE_MATCH_STRING;
+            break;
+            
+        }
+        break;
+
+      
+      case PREF_PARSE_MATCH_STRING:
+        if (c == aPS->smatch[aPS->sindex++]) {
+          
+          if (aPS->smatch[aPS->sindex] == '\0') {
+            state = aPS->nextstate;
+            aPS->nextstate = PREF_PARSE_INIT; 
+          }
+          
+        } else {
+          pref_ReportParseProblem(*aPS, "non-matching string", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      
+      case PREF_PARSE_QUOTED_STRING:
+        
+        if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+          return false; 
+        }
+        if (c == '\\') {
+          state = PREF_PARSE_ESC_SEQUENCE;
+        } else if (c == aPS->quotechar) {
+          *aPS->lbcur++ = '\0';
+          state = aPS->nextstate;
+          aPS->nextstate = PREF_PARSE_INIT; 
+        } else {
+          *aPS->lbcur++ = c;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_NAME:
+        if (c == '\"' || c == '\'') {
+          aPS->fdefault = (aPS->smatch == kPref || aPS->smatch == kPrefSticky);
+          aPS->fstickydefault = (aPS->smatch == kPrefSticky);
+          aPS->quotechar = c;
+          aPS->nextstate = PREF_PARSE_UNTIL_COMMA; 
+          state = PREF_PARSE_QUOTED_STRING;
+        } else if (c == '/') {    
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need space, comment or quote", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_COMMA:
+        if (c == ',') {
+          aPS->vb = aPS->lbcur;
+          state = PREF_PARSE_UNTIL_VALUE;
+        } else if (c == '/') {    
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need space, comment or comma", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_VALUE:
+        
+        
+        if (c == '\"' || c == '\'') {
+          aPS->vtype = PrefType::String;
+          aPS->quotechar = c;
+          aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          state = PREF_PARSE_QUOTED_STRING;
+        } else if (c == 't' || c == 'f') {
+          aPS->vb = (char*)(c == 't' ? kTrue : kFalse);
+          aPS->vtype = PrefType::Bool;
+          aPS->smatch = aPS->vb;
+          aPS->sindex = 1;
+          aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          state = PREF_PARSE_MATCH_STRING;
+        } else if (isdigit(c) || (c == '-') || (c == '+')) {
+          aPS->vtype = PrefType::Int;
+          
+          if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+            return false; 
+          }
+          *aPS->lbcur++ = c;
+          state = PREF_PARSE_INT_VALUE;
+        } else if (c == '/') {    
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need value, comment or space", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      case PREF_PARSE_INT_VALUE:
+        
+        if (aPS->lbcur == aPS->lbend && !pref_GrowBuf(aPS)) {
+          return false; 
+        }
+        if (isdigit(c)) {
+          *aPS->lbcur++ = c;
+        } else {
+          *aPS->lbcur++ = '\0'; 
+          if (c == ')') {
+            state = PREF_PARSE_UNTIL_SEMICOLON;
+          } else if (c == '/') { 
+            aPS->nextstate = PREF_PARSE_UNTIL_CLOSE_PAREN;
+            state = PREF_PARSE_COMMENT_MAYBE_START;
+          } else if (isspace(c)) {
+            state = PREF_PARSE_UNTIL_CLOSE_PAREN;
+          } else {
+            pref_ReportParseProblem(
+              *aPS, "while parsing integer", lineNum, true);
+            NS_WARNING("malformed pref file");
+            return false;
+          }
+        }
+        break;
+
+      
+      case PREF_PARSE_COMMENT_MAYBE_START:
+        switch (c) {
+          case '*': 
+            state = PREF_PARSE_COMMENT_BLOCK;
+            break;
+          case '/': 
+            state = PREF_PARSE_UNTIL_EOL;
+            break;
+          default:
+            
+            pref_ReportParseProblem(
+              *aPS, "while parsing comment", lineNum, true);
+            NS_WARNING("malformed pref file");
+            return false;
+        }
+        break;
+
+      case PREF_PARSE_COMMENT_BLOCK:
+        if (c == '*') {
+          state = PREF_PARSE_COMMENT_BLOCK_MAYBE_END;
+        }
+        break;
+
+      case PREF_PARSE_COMMENT_BLOCK_MAYBE_END:
+        switch (c) {
+          case '/':
+            state = aPS->nextstate;
+            aPS->nextstate = PREF_PARSE_INIT;
+            break;
+          case '*': 
+            break;
+          default:
+            state = PREF_PARSE_COMMENT_BLOCK;
+            break;
+        }
+        break;
+
+      
+      case PREF_PARSE_ESC_SEQUENCE:
+        
+        
+        
+        switch (c) {
+          case '\"':
+          case '\'':
+          case '\\':
+            break;
+          case 'r':
+            c = '\r';
+            break;
+          case 'n':
+            c = '\n';
+            break;
+          case 'x': 
+          case 'u': 
+            aPS->esctmp[0] = c;
+            aPS->esclen = 1;
+            aPS->utf16[0] = aPS->utf16[1] = 0;
+            aPS->sindex =
+              (c == 'x') ? HEX_ESC_NUM_DIGITS : UTF16_ESC_NUM_DIGITS;
+            state = PREF_PARSE_HEX_ESCAPE;
+            continue;
+          default:
+            pref_ReportParseProblem(
+              *aPS, "preserving unexpected JS escape sequence", lineNum, false);
+            NS_WARNING("preserving unexpected JS escape sequence");
+            
+            
+            if ((aPS->lbcur + 1) == aPS->lbend && !pref_GrowBuf(aPS)) {
+              return false; 
+            }
+            *aPS->lbcur++ = '\\'; 
+            break;
+        }
+        *aPS->lbcur++ = c;
+        state = PREF_PARSE_QUOTED_STRING;
+        break;
+
+      
+      case PREF_PARSE_HEX_ESCAPE:
+        if (c >= '0' && c <= '9') {
+          udigit = (c - '0');
+        } else if (c >= 'A' && c <= 'F') {
+          udigit = (c - 'A') + 10;
+        } else if (c >= 'a' && c <= 'f') {
+          udigit = (c - 'a') + 10;
+        } else {
+          
+          pref_ReportParseProblem(*aPS,
+                                  "preserving invalid or incomplete hex escape",
+                                  lineNum,
+                                  false);
+          NS_WARNING("preserving invalid or incomplete hex escape");
+          *aPS->lbcur++ = '\\'; 
+          if ((aPS->lbcur + aPS->esclen) >= aPS->lbend && !pref_GrowBuf(aPS)) {
+            return false;
+          }
+          for (int i = 0; i < aPS->esclen; ++i) {
+            *aPS->lbcur++ = aPS->esctmp[i];
+          }
+
+          
+          
+          --aBuf;
+          state = PREF_PARSE_QUOTED_STRING;
+          continue;
+        }
+
+        
+        aPS->esctmp[aPS->esclen++] = c; 
+        aPS->utf16[1] <<= BITS_PER_HEX_DIGIT;
+        aPS->utf16[1] |= udigit;
+        aPS->sindex--;
+        if (aPS->sindex == 0) {
+          
+          int utf16len = 0;
+          if (aPS->utf16[0]) {
+            
+            utf16len = 2;
+          } else if (0xD800 == (0xFC00 & aPS->utf16[1])) {
+            
+            aPS->utf16[0] = aPS->utf16[1];
+            aPS->utf16[1] = 0;
+            state = PREF_PARSE_UTF16_LOW_SURROGATE;
+            break;
+          } else {
+            
+            aPS->utf16[0] = aPS->utf16[1];
+            utf16len = 1;
+          }
+
+          
+          
+          
+          if (aPS->lbcur + 6 >= aPS->lbend && !pref_GrowBuf(aPS)) {
+            return false;
+          }
+
+          ConvertUTF16toUTF8 converter(aPS->lbcur);
+          converter.write(aPS->utf16, utf16len);
+          aPS->lbcur += converter.Size();
+          state = PREF_PARSE_QUOTED_STRING;
+        }
+        break;
+
+      
+      case PREF_PARSE_UTF16_LOW_SURROGATE:
+        if (aPS->sindex == 0 && c == '\\') {
+          ++aPS->sindex;
+        } else if (aPS->sindex == 1 && c == 'u') {
+          
+          aPS->sindex = UTF16_ESC_NUM_DIGITS;
+          aPS->esctmp[0] = 'u';
+          aPS->esclen = 1;
+          state = PREF_PARSE_HEX_ESCAPE;
+        } else {
+          
+          
+          
+          --aBuf;
+          if (aPS->sindex == 1) {
+            state = PREF_PARSE_ESC_SEQUENCE;
+          } else {
+            state = PREF_PARSE_QUOTED_STRING;
+          }
+          continue;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_OPEN_PAREN:
+        
+        if (c == '(') {
+          state = PREF_PARSE_UNTIL_NAME;
+        } else if (c == '/') {
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need space, comment or open parentheses", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      case PREF_PARSE_UNTIL_CLOSE_PAREN:
+        
+        if (c == ')') {
+          state = PREF_PARSE_UNTIL_SEMICOLON;
+        } else if (c == '/') {
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need space, comment or closing parentheses", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_SEMICOLON:
+        
+        if (c == ';') {
+          if (!pref_DoCallback(aPS)) {
+            return false;
+          }
+          state = PREF_PARSE_INIT;
+        } else if (c == '/') {
+          aPS->nextstate = state; 
+          state = PREF_PARSE_COMMENT_MAYBE_START;
+        } else if (!isspace(c)) {
+          pref_ReportParseProblem(
+            *aPS, "need space, comment or semicolon", lineNum, true);
+          NS_WARNING("malformed pref file");
+          return false;
+        }
+        break;
+
+      
+      case PREF_PARSE_UNTIL_EOL:
+        
+        
+        if (c == '\r' || c == '\n' || c == 0x1A) {
+          state = aPS->nextstate;
+          aPS->nextstate = PREF_PARSE_INIT; 
+        }
+        break;
+    }
+  }
+  aPS->state = state;
+  return true;
 }
 
 #ifdef TEST_PREFREAD
 
 static void
-pref_reader(void       *closure,
-            const char *pref,
-            PrefValue   val,
-            PrefType    type,
-            bool        defPref)
+pref_reader(void* aClosure,
+            const char* aPref,
+            PrefValue aVal,
+            PrefType aType,
+            bool aDefPref)
 {
-    printf("%spref(\"%s\", ", defPref ? "" : "user_", pref);
-    switch (type) {
+  printf("%spref(\"%s\", ", aDefPref ? "" : "user_", aPref);
+  switch (aType) {
     case PREF_STRING:
-        printf("\"%s\");\n", val.stringVal);
-        break;
+      printf("\"%s\");\n", aVal.stringVal);
+      break;
     case PREF_INT:
-        printf("%i);\n", val.intVal);
-        break;
+      printf("%i);\n", aVal.intVal);
+      break;
     case PREF_BOOL:
-        printf("%s);\n", val.boolVal == false ? "false" : "true");
-        break;
-    }
+      printf("%s);\n", aVal.boolVal == false ? "false" : "true");
+      break;
+  }
 }
 
 int
-main(int argc, char **argv)
+main(int aArgc, char** aArgv)
 {
-    PrefParseState ps;
-    char buf[4096];     
-    FILE *fp;
-    int n;
+  PrefParseState aPS;
+  char buf[4096]; 
+  FILE* fp;
+  int n;
 
-    if (argc == 1) {
-        printf("usage: prefread file.js\n");
-        return -1;
-    }
+  if (aArgc == 1) {
+    printf("usage: prefread file.js\n");
+    return -1;
+  }
 
-    fp = fopen(argv[1], "r");
-    if (!fp) {
-        printf("failed to open file\n");
-        return -1;
-    }
+  fp = fopen(aArgv[1], "r");
+  if (!fp) {
+    printf("failed to open file\n");
+    return -1;
+  }
 
-    PREF_InitParseState(&ps, pref_reader, nullptr, nullptr);
+  PREF_InitParseState(&aPS, pref_reader, nullptr, nullptr);
 
-    while ((n = fread(buf, 1, sizeof(buf), fp)) > 0)
-        PREF_ParseBuf(&ps, buf, n);
+  while ((n = fread(buf, 1, sizeof(buf), fp)) > 0) {
+    PREF_ParseBuf(&aPS, buf, n);
+  }
 
-    PREF_FinalizeParseState(&ps);
+  PREF_FinalizeParseState(&aPS);
 
-    fclose(fp);
-    return 0;
+  fclose(fp);
+  return 0;
 }
 
 #endif 
