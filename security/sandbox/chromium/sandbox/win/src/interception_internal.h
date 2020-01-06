@@ -11,13 +11,12 @@
 
 #include <stddef.h>
 
+#include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 namespace sandbox {
 
 const int kMaxThunkDataBytes = 64;
-
-enum InterceptorId;
 
 
 

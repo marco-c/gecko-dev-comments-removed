@@ -142,58 +142,59 @@ typedef uint64_t MitigationFlags;
 
 
 
-const MitigationFlags MITIGATION_DEP                              = 0x00000001;
+const MitigationFlags MITIGATION_DEP = 0x00000001;
 
 
 
 
-const MitigationFlags MITIGATION_DEP_NO_ATL_THUNK                 = 0x00000002;
+const MitigationFlags MITIGATION_DEP_NO_ATL_THUNK = 0x00000002;
 
 
 
 
-const MitigationFlags MITIGATION_SEHOP                            = 0x00000004;
+const MitigationFlags MITIGATION_SEHOP = 0x00000004;
 
 
 
 
-const MitigationFlags MITIGATION_RELOCATE_IMAGE                   = 0x00000008;
+const MitigationFlags MITIGATION_RELOCATE_IMAGE = 0x00000008;
 
 
 
 
-const MitigationFlags MITIGATION_RELOCATE_IMAGE_REQUIRED          = 0x00000010;
+const MitigationFlags MITIGATION_RELOCATE_IMAGE_REQUIRED = 0x00000010;
 
 
 
-const MitigationFlags MITIGATION_HEAP_TERMINATE                   = 0x00000020;
+const MitigationFlags MITIGATION_HEAP_TERMINATE = 0x00000020;
 
 
 
 
 
-const MitigationFlags MITIGATION_BOTTOM_UP_ASLR                   = 0x00000040;
+const MitigationFlags MITIGATION_BOTTOM_UP_ASLR = 0x00000040;
 
 
 
 
 
-const MitigationFlags MITIGATION_HIGH_ENTROPY_ASLR                = 0x00000080;
+const MitigationFlags MITIGATION_HIGH_ENTROPY_ASLR = 0x00000080;
 
 
 
 
-const MitigationFlags MITIGATION_STRICT_HANDLE_CHECKS             = 0x00000100;
+const MitigationFlags MITIGATION_STRICT_HANDLE_CHECKS = 0x00000100;
 
 
 
 
 
+const MitigationFlags MITIGATION_DLL_SEARCH_ORDER = 0x00000200;
 
 
 
-const MitigationFlags MITIGATION_WIN32K_DISABLE                   = 0x00000200;
 
+const MitigationFlags MITIGATION_HARDEN_TOKEN_IL_POLICY = 0x00000400;
 
 
 
@@ -201,31 +202,58 @@ const MitigationFlags MITIGATION_WIN32K_DISABLE                   = 0x00000200;
 
 
 
-const MitigationFlags MITIGATION_EXTENSION_POINT_DISABLE = 0x00000400;
 
+const MitigationFlags MITIGATION_WIN32K_DISABLE = 0x00000800;
 
 
 
-const MitigationFlags MITIGATION_NONSYSTEM_FONT_DISABLE = 0x00000800;
 
 
 
 
 
-const MitigationFlags MITIGATION_DLL_SEARCH_ORDER        = 0x00000001ULL << 32;
+const MitigationFlags MITIGATION_EXTENSION_POINT_DISABLE = 0x00001000;
 
 
 
 
-const MitigationFlags MITIGATION_HARDEN_TOKEN_IL_POLICY  = 0x00000001ULL << 33;
 
 
 
-const MitigationFlags MITIGATION_IMAGE_LOAD_NO_REMOTE = 0x00000001ULL << 52;
 
 
 
-const MitigationFlags MITIGATION_IMAGE_LOAD_NO_LOW_LABEL = 0x00000001ULL << 56;
+const MitigationFlags MITIGATION_DYNAMIC_CODE_DISABLE = 0x00002000;
+const MitigationFlags MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT = 0x00004000;
+
+
+
+const MitigationFlags MITIGATION_DYNAMIC_CODE_OPT_OUT_THIS_THREAD = 0x00008000;
+
+
+
+
+const MitigationFlags MITIGATION_NONSYSTEM_FONT_DISABLE = 0x00010000;
+
+
+
+
+const MitigationFlags MITIGATION_FORCE_MS_SIGNED_BINS = 0x00020000;
+
+
+
+const MitigationFlags MITIGATION_IMAGE_LOAD_NO_REMOTE = 0x00040000;
+
+
+
+const MitigationFlags MITIGATION_IMAGE_LOAD_NO_LOW_LABEL = 0x00080000;
+
+
+
+
+
+
+const MitigationFlags MITIGATION_IMAGE_LOAD_PREFER_SYS32 = 0x00100000;
 
 }  
 

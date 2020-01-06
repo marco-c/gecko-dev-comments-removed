@@ -12,9 +12,8 @@
 namespace base {
 
 
-class BASE_EXPORT CPU {
+class BASE_EXPORT CPU final {
  public:
-  
   CPU();
 
   enum IntelMicroArchitecture {

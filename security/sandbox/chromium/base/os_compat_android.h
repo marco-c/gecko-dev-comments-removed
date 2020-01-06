@@ -25,4 +25,8 @@ inline int lockf(int fd, int cmd, off_t ignored_len) {
   return flock(fd, cmd);
 }
 
+
+
+#define pwrite(fd, buf, count, offset) pwrite64(fd, buf, count, offset)
+
 #endif  

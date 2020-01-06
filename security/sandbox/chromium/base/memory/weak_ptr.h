@@ -155,9 +155,13 @@ class BASE_EXPORT WeakPtrBase {
   WeakPtrBase& operator=(WeakPtrBase&& other) = default;
 
  protected:
-  explicit WeakPtrBase(const WeakReference& ref);
+  WeakPtrBase(const WeakReference& ref, uintptr_t ptr);
 
   WeakReference ref_;
+
+  
+  
+  uintptr_t ptr_;
 };
 
 
@@ -185,7 +189,8 @@ class SupportsWeakPtrBase {
   static WeakPtr<Derived> AsWeakPtrImpl(
       Derived* t, const SupportsWeakPtr<Base>&) {
     WeakPtr<Base> ptr = t->Base::AsWeakPtr();
-    return WeakPtr<Derived>(ptr.ref_, static_cast<Derived*>(ptr.ptr_));
+    return WeakPtr<Derived>(
+        ptr.ref_, static_cast<Derived*>(reinterpret_cast<Base*>(ptr.ptr_)));
   }
 };
 
@@ -209,20 +214,30 @@ template <typename T> class WeakPtrFactory;
 template <typename T>
 class WeakPtr : public internal::WeakPtrBase {
  public:
-  WeakPtr() : ptr_(nullptr) {}
+  WeakPtr() {}
 
-  WeakPtr(std::nullptr_t) : ptr_(nullptr) {}
+  WeakPtr(std::nullptr_t) {}
 
   
   
   template <typename U>
-  WeakPtr(const WeakPtr<U>& other) : WeakPtrBase(other), ptr_(other.ptr_) {
+  WeakPtr(const WeakPtr<U>& other) : WeakPtrBase(other) {
+    
+    
+    T* t = reinterpret_cast<U*>(other.ptr_);
+    ptr_ = reinterpret_cast<uintptr_t>(t);
   }
   template <typename U>
-  WeakPtr(WeakPtr<U>&& other)
-      : WeakPtrBase(std::move(other)), ptr_(other.ptr_) {}
+  WeakPtr(WeakPtr<U>&& other) : WeakPtrBase(std::move(other)) {
+    
+    
+    T* t = reinterpret_cast<U*>(other.ptr_);
+    ptr_ = reinterpret_cast<uintptr_t>(t);
+  }
 
-  T* get() const { return ref_.is_valid() ? ptr_ : nullptr; }
+  T* get() const {
+    return ref_.is_valid() ? reinterpret_cast<T*>(ptr_) : nullptr;
+  }
 
   T& operator*() const {
     DCHECK(get() != nullptr);
@@ -235,7 +250,7 @@ class WeakPtr : public internal::WeakPtrBase {
 
   void reset() {
     ref_ = internal::WeakReference();
-    ptr_ = nullptr;
+    ptr_ = 0;
   }
 
   
@@ -248,13 +263,7 @@ class WeakPtr : public internal::WeakPtrBase {
   friend class WeakPtrFactory<T>;
 
   WeakPtr(const internal::WeakReference& ref, T* ptr)
-      : WeakPtrBase(ref),
-        ptr_(ptr) {
-  }
-
-  
-  
-  T* ptr_;
+      : WeakPtrBase(ref, reinterpret_cast<uintptr_t>(ptr)) {}
 };
 
 
@@ -275,22 +284,33 @@ bool operator==(std::nullptr_t, const WeakPtr<T>& weak_ptr) {
   return weak_ptr == nullptr;
 }
 
+namespace internal {
+class BASE_EXPORT WeakPtrFactoryBase {
+ protected:
+  WeakPtrFactoryBase(uintptr_t ptr);
+  ~WeakPtrFactoryBase();
+  internal::WeakReferenceOwner weak_reference_owner_;
+  uintptr_t ptr_;
+};
+}  
+
 
 
 
 
 
 template <class T>
-class WeakPtrFactory {
+class WeakPtrFactory : public internal::WeakPtrFactoryBase {
  public:
-  explicit WeakPtrFactory(T* ptr) : ptr_(ptr) {
-  }
+  explicit WeakPtrFactory(T* ptr)
+      : WeakPtrFactoryBase(reinterpret_cast<uintptr_t>(ptr)) {}
 
-  ~WeakPtrFactory() { ptr_ = nullptr; }
+  ~WeakPtrFactory() {}
 
   WeakPtr<T> GetWeakPtr() {
     DCHECK(ptr_);
-    return WeakPtr<T>(weak_reference_owner_.GetRef(), ptr_);
+    return WeakPtr<T>(weak_reference_owner_.GetRef(),
+                      reinterpret_cast<T*>(ptr_));
   }
 
   
@@ -306,8 +326,6 @@ class WeakPtrFactory {
   }
 
  private:
-  internal::WeakReferenceOwner weak_reference_owner_;
-  T* ptr_;
   DISALLOW_IMPLICIT_CONSTRUCTORS(WeakPtrFactory);
 };
 

@@ -69,7 +69,10 @@ class SingletonBase {
 
 
 
-bool ConvertToLongPath(base::string16* path);
+
+
+bool ConvertToLongPath(base::string16* path,
+                       const base::string16* drive_letter = nullptr);
 
 
 

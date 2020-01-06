@@ -10,9 +10,11 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/hash.h"
 #include "base/macros.h"
 #include "base/memory/shared_memory_handle.h"
 #include "base/process/process_handle.h"
+#include "base/strings/string16.h"
 #include "build/build_config.h"
 
 #if defined(OS_POSIX)
@@ -34,7 +36,10 @@ class FilePath;
 
 
 struct BASE_EXPORT SharedMemoryCreateOptions {
-#if !(defined(OS_MACOSX) && !defined(OS_IOS))
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+  
+  SharedMemoryHandle::Type type = SharedMemoryHandle::MACH;
+#elif !defined(OS_FUCHSIA)
   
   
   
@@ -61,6 +66,8 @@ struct BASE_EXPORT SharedMemoryCreateOptions {
 
 
 
+
+
 class BASE_EXPORT SharedMemory {
  public:
   SharedMemory();
@@ -69,7 +76,7 @@ class BASE_EXPORT SharedMemory {
   
   
   
-  explicit SharedMemory(const std::wstring& name);
+  explicit SharedMemory(const string16& name);
 #endif
 
   
@@ -89,9 +96,6 @@ class BASE_EXPORT SharedMemory {
   static bool IsHandleValid(const SharedMemoryHandle& handle);
 
   
-  static SharedMemoryHandle NULLHandle();
-
-  
   static void CloseHandle(const SharedMemoryHandle& handle);
 
   
@@ -99,20 +103,13 @@ class BASE_EXPORT SharedMemory {
 
   
   
+  
   static SharedMemoryHandle DuplicateHandle(const SharedMemoryHandle& handle);
 
-#if defined(OS_POSIX) && !(defined(OS_MACOSX) && !defined(OS_IOS))
+#if defined(OS_POSIX) && !defined(OS_FUCHSIA)
   
   static int GetFdFromSharedMemoryHandle(const SharedMemoryHandle& handle);
 #endif
-
-#if defined(OS_POSIX) && !defined(OS_ANDROID)
-  
-  
-  
-  static bool GetSizeFromSharedMemoryHandle(const SharedMemoryHandle& handle,
-                                            size_t* size);
-#endif  
 
   
   
@@ -130,7 +127,7 @@ class BASE_EXPORT SharedMemory {
     return Create(options);
   }
 
-#if !defined(OS_MACOSX) || defined(OS_IOS)
+#if (!defined(OS_MACOSX) || defined(OS_IOS)) && !defined(OS_FUCHSIA)
   
   
   
@@ -211,82 +208,48 @@ class BASE_EXPORT SharedMemory {
   
   
   
-  
-  
-  
-  bool ShareReadOnlyToProcess(ProcessHandle process,
-                              SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(process, new_handle, false, SHARE_READONLY);
-  }
+  SharedMemoryHandle GetReadOnlyHandle();
 
   
   
   
-  
-  
-  
-  bool GiveReadOnlyToProcess(ProcessHandle process,
-                             SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(process, new_handle, true, SHARE_READONLY);
-  }
-
-  
-  
-  
-  
-  
-  
-  bool ShareToProcess(ProcessHandle process,
-                      SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(process, new_handle, false, SHARE_CURRENT_MODE);
-  }
-
-  
-  
-  
-  
-  
-  
-  bool GiveToProcess(ProcessHandle process,
-                     SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(process, new_handle, true, SHARE_CURRENT_MODE);
-  }
+  const UnguessableToken& mapped_id() const { return mapped_id_; }
 
  private:
 #if defined(OS_POSIX) && !defined(OS_NACL) && !defined(OS_ANDROID) && \
-    !(defined(OS_MACOSX) && !defined(OS_IOS))
-  bool PrepareMapFile(ScopedFILE fp, ScopedFD readonly);
+    !defined(OS_FUCHSIA) && (!defined(OS_MACOSX) || defined(OS_IOS))
   bool FilePathForMemoryName(const std::string& mem_name, FilePath* path);
 #endif
-  enum ShareMode {
-    SHARE_READONLY,
-    SHARE_CURRENT_MODE,
-  };
-  bool ShareToProcessCommon(ProcessHandle process,
-                            SharedMemoryHandle* new_handle,
-                            bool close_self,
-                            ShareMode);
 
 #if defined(OS_WIN)
   
   
-  bool external_section_;
-  std::wstring       name_;
-  win::ScopedHandle  mapped_file_;
-#elif defined(OS_MACOSX) && !defined(OS_IOS)
+  bool external_section_ = false;
+  string16 name_;
+#else
+  
+  
+  SharedMemoryHandle readonly_shm_;
+#endif
+
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+  
+  
+  SharedMemoryHandle::Type mapped_memory_mechanism_ = SharedMemoryHandle::MACH;
+#endif
+
   
   SharedMemoryHandle shm_;
-#elif defined(OS_POSIX)
-  int                mapped_file_;
-  int                readonly_mapped_file_;
-#endif
-  size_t             mapped_size_;
-  void*              memory_;
-  bool               read_only_;
-  size_t             requested_size_;
+
+  size_t mapped_size_ = 0;
+  void* memory_ = nullptr;
+  bool read_only_ = false;
+  size_t requested_size_ = 0;
+  base::UnguessableToken mapped_id_;
 
   DISALLOW_COPY_AND_ASSIGN(SharedMemory);
 };
+
 }  
 
 #endif  

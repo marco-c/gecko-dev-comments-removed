@@ -17,8 +17,6 @@
 
 namespace sandbox {
 
-enum EvalResult;
-
 
 class FileSystemPolicy {
  public:

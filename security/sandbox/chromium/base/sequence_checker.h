@@ -5,7 +5,59 @@
 #ifndef BASE_SEQUENCE_CHECKER_H_
 #define BASE_SEQUENCE_CHECKER_H_
 
+#include "base/compiler_specific.h"
+#include "base/logging.h"
 #include "base/sequence_checker_impl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if DCHECK_IS_ON()
+#define SEQUENCE_CHECKER(name) base::SequenceChecker name
+#define DCHECK_CALLED_ON_VALID_SEQUENCE(name) \
+  DCHECK((name).CalledOnValidSequence())
+#define DETACH_FROM_SEQUENCE(name) (name).DetachFromSequence()
+#else  
+#define SEQUENCE_CHECKER(name)
+#define DCHECK_CALLED_ON_VALID_SEQUENCE(name) EAT_STREAM_PARAMETERS
+#define DETACH_FROM_SEQUENCE(name)
+#endif  
 
 namespace base {
 
@@ -15,29 +67,13 @@ namespace base {
 
 class SequenceCheckerDoNothing {
  public:
-  bool CalledOnValidSequence() const { return true; }
-
+  SequenceCheckerDoNothing() = default;
+  bool CalledOnValidSequence() const WARN_UNUSED_RESULT { return true; }
   void DetachFromSequence() {}
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(SequenceCheckerDoNothing);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #if DCHECK_IS_ON()
 class SequenceChecker : public SequenceCheckerImpl {

@@ -12,8 +12,6 @@
 
 namespace sandbox {
 
-enum EvalResult;
-
 
 typedef void* (*OverrideForTestFunction)(const char* name);
 

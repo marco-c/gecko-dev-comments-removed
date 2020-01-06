@@ -22,6 +22,8 @@ namespace base {
 
 static AtExitManager* g_top_manager = NULL;
 
+static bool g_disable_managers = false;
+
 AtExitManager::AtExitManager()
     : processing_callbacks_(false), next_manager_(g_top_manager) {
 
@@ -39,7 +41,8 @@ AtExitManager::~AtExitManager() {
   }
   DCHECK_EQ(this, g_top_manager);
 
-  ProcessCallbacksNow();
+  if (!g_disable_managers)
+    ProcessCallbacksNow();
   g_top_manager = next_manager_;
 }
 
@@ -78,6 +81,10 @@ void AtExitManager::ProcessCallbacksNow() {
     g_top_manager->processing_callbacks_ = true;
   }
 
+  
+  
+  ScopedAllowCrossThreadRefCountAccess allow_cross_thread_ref_count_access;
+
   while (!tasks.empty()) {
     base::Closure task = tasks.top();
     task.Run();
@@ -86,6 +93,11 @@ void AtExitManager::ProcessCallbacksNow() {
 
   
   DCHECK(g_top_manager->stack_.empty());
+}
+
+void AtExitManager::DisableAllAtExitManagers() {
+  AutoLock lock(g_top_manager->lock_);
+  g_disable_managers = true;
 }
 
 AtExitManager::AtExitManager(bool shadow)

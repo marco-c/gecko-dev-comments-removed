@@ -63,9 +63,6 @@ TargetProcess::TargetProcess(base::win::ScopedHandle initial_token,
       base_address_(NULL) {}
 
 TargetProcess::~TargetProcess() {
-  DWORD exit_code = 0;
-  
-  
   
   
   
@@ -75,18 +72,8 @@ TargetProcess::~TargetProcess() {
   if (sandbox_process_info_.IsValid()) {
     ::WaitForSingleObject(sandbox_process_info_.process_handle(), 50);
     
-    if (!::GetExitCodeProcess(sandbox_process_info_.process_handle(),
-                              &exit_code) || (STILL_ACTIVE == exit_code)) {
-      
-      
-      
-      
-      if (shared_section_.IsValid())
-        shared_section_.Take();
-      ignore_result(ipc_server_.release());
-      sandbox_process_info_.TakeProcessHandle();
-      return;
-    }
+    
+    ::TerminateProcess(sandbox_process_info_.process_handle(), 1);
   }
 
   

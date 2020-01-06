@@ -22,7 +22,17 @@ const char kEnableHeapProfiling[]           = "enable-heap-profiling";
 
 
 
+const char kEnableHeapProfilingModePseudo[] = "";
+
+
+
 const char kEnableHeapProfilingModeNative[] = "native";
+
+
+
+
+
+const char kEnableHeapProfilingTaskProfiler[] = "task-profiler";
 
 
 const char kFullMemoryCrashReport[]         = "full-memory-crash-report";

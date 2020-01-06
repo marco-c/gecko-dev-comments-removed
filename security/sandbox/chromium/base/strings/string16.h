@@ -42,7 +42,6 @@ namespace base {
 
 typedef wchar_t char16;
 typedef std::wstring string16;
-typedef std::char_traits<wchar_t> string16_char_traits;
 
 }  
 
@@ -63,6 +62,11 @@ BASE_EXPORT const char16* c16memchr(const char16* s, char16 c, size_t n);
 BASE_EXPORT char16* c16memmove(char16* s1, const char16* s2, size_t n);
 BASE_EXPORT char16* c16memcpy(char16* s1, const char16* s2, size_t n);
 BASE_EXPORT char16* c16memset(char16* s, char16 c, size_t n);
+
+
+
+
+namespace string16_internals {
 
 struct string16_char_traits {
   typedef char16 char_type;
@@ -134,13 +138,21 @@ struct string16_char_traits {
   }
 };
 
-typedef std::basic_string<char16, base::string16_char_traits> string16;
+}  
+
+typedef std::basic_string<char16,
+                          base::string16_internals::string16_char_traits>
+    string16;
+
+namespace string16_internals {
 
 BASE_EXPORT extern std::ostream& operator<<(std::ostream& out,
                                             const string16& str);
 
 
 BASE_EXPORT extern void PrintTo(const string16& str, std::ostream* out);
+
+}  
 
 }  
 
@@ -183,8 +195,9 @@ BASE_EXPORT extern void PrintTo(const string16& str, std::ostream* out);
 
 
 
-extern template
-class BASE_EXPORT std::basic_string<base::char16, base::string16_char_traits>;
+extern template class BASE_EXPORT
+    std::basic_string<base::char16,
+                      base::string16_internals::string16_char_traits>;
 
 
 

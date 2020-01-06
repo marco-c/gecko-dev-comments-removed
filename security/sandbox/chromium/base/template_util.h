@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <iosfwd>
+#include <iterator>
 #include <type_traits>
 #include <utility>
 
@@ -14,13 +15,24 @@
 
 
 
-#define CR_GLIBCXX_4_7_0 20120322
-#define CR_GLIBCXX_4_5_4 20120702
-#define CR_GLIBCXX_4_6_4 20121127
-#if defined(__GLIBCXX__) &&                                               \
-    (__GLIBCXX__ < CR_GLIBCXX_4_7_0 || __GLIBCXX__ == CR_GLIBCXX_4_5_4 || \
-     __GLIBCXX__ == CR_GLIBCXX_4_6_4)
-#define CR_USE_FALLBACKS_FOR_OLD_GLIBCXX
+
+
+
+
+
+#define CR_GLIBCXX_5_0_0 20150123
+#if (defined(__GNUC__) && __GNUC__ < 5) || \
+    (defined(__GLIBCXX__) && __GLIBCXX__ == CR_GLIBCXX_5_0_0)
+#define CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX
+#endif
+
+
+
+
+
+
+#if !defined(__clang__) && defined(_LIBCPP_VERSION)
+#define CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX
 #endif
 
 namespace base {
@@ -29,45 +41,26 @@ template <class T> struct is_non_const_reference : std::false_type {};
 template <class T> struct is_non_const_reference<T&> : std::true_type {};
 template <class T> struct is_non_const_reference<const T&> : std::false_type {};
 
-
-
 namespace internal {
 
-template <typename First, typename Second>
-struct SelectSecond {
-  using type = Second;
+
+template <typename...>
+struct make_void {
+  using type = void;
 };
 
-struct Any {
-  Any(...);
-};
+}  
 
 
 
-template <class Lvalue, class Rvalue>
-typename internal::SelectSecond<
-    decltype((std::declval<Lvalue>() = std::declval<Rvalue>())),
-    std::true_type>::type
-IsAssignableTest(Lvalue&&, Rvalue&&);
-
-
-template <class Rvalue>
-std::false_type IsAssignableTest(internal::Any, Rvalue&&);
 
 
 
-template <class Lvalue,
-          class Rvalue,
-          bool = std::is_void<Lvalue>::value || std::is_void<Rvalue>::value>
-struct IsAssignableImpl
-    : public std::common_type<decltype(
-          internal::IsAssignableTest(std::declval<Lvalue>(),
-                                     std::declval<Rvalue>()))>::type {};
 
+template <typename... Ts>
+using void_t = typename ::base::internal::make_void<Ts...>::type;
 
-
-template <class Lvalue, class Rvalue>
-struct IsAssignableImpl<Lvalue, Rvalue, true> : public std::false_type {};
+namespace internal {
 
 
 template <typename T, typename = void>
@@ -78,56 +71,65 @@ struct SupportsOstreamOperator<T,
                                              << std::declval<T>()))>
     : std::true_type {};
 
+
+
+
+template <typename T, typename = void>
+struct is_iterator : std::false_type {};
+
+template <typename T>
+struct is_iterator<T,
+                   void_t<typename std::iterator_traits<T>::iterator_category>>
+    : std::true_type {};
+
 }  
 
 
 
-template <class Lvalue, class Rvalue>
-struct is_assignable : public internal::IsAssignableImpl<Lvalue, Rvalue> {};
 
 
 
 
-template <class T>
-struct is_copy_assignable
-    : public is_assignable<typename std::add_lvalue_reference<T>::type,
-                           typename std::add_lvalue_reference<
-                               typename std::add_const<T>::type>::type> {};
 
 
 
 
-template <class T>
-struct is_move_assignable
-    : public is_assignable<typename std::add_lvalue_reference<T>::type,
-                           const typename std::add_rvalue_reference<T>::type> {
-};
 
 
 
 
-#if defined(CR_USE_FALLBACKS_FOR_OLD_GLIBCXX)
+
+
+
+
+
+
+
+
+
+
+#if defined(CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX) || \
+    defined(CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX)
 template <typename T>
-struct underlying_type {
-  using type = __underlying_type(T);
-};
+struct is_trivially_copyable {
+
+
+
+#if _GNUC_VER >= 501
+  static constexpr bool value = __is_trivially_copyable(T);
 #else
-template <typename T>
-using underlying_type = std::underlying_type<T>;
+  static constexpr bool value =
+      __has_trivial_copy(T) && __has_trivial_destructor(T);
 #endif
-
-
-
-#if defined(CR_USE_FALLBACKS_FOR_OLD_GLIBCXX)
-template <class T>
-using is_trivially_destructible = std::has_trivial_destructor<T>;
+};
 #else
 template <class T>
-using is_trivially_destructible = std::is_trivially_destructible<T>;
+using is_trivially_copyable = std::is_trivially_copyable<T>;
 #endif
 
 }  
 
-#undef CR_USE_FALLBACKS_FOR_OLD_GLIBCXX
+#undef CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX
+#undef CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX
 
 #endif  

@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "base/compiler_specific.h"
+#include "base/template_util.h"
 #include "build/build_config.h"
 
 
@@ -63,34 +64,10 @@ template <class Dest, class Source>
 inline Dest bit_cast(const Source& source) {
   static_assert(sizeof(Dest) == sizeof(Source),
                 "bit_cast requires source and destination to be the same size");
-
-#if (__GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1) || \
-     (defined(__clang__) && defined(_LIBCPP_VERSION)))
-  
-  
-  
-  
-  static_assert(std::is_trivially_copyable<Dest>::value,
-                "non-trivially-copyable bit_cast is undefined");
-  static_assert(std::is_trivially_copyable<Source>::value,
-                "non-trivially-copyable bit_cast is undefined");
-#elif HAS_FEATURE(is_trivially_copyable)
-  
-  static_assert(__is_trivially_copyable(Dest),
-                "non-trivially-copyable bit_cast is undefined");
-  static_assert(__is_trivially_copyable(Source),
-                "non-trivially-copyable bit_cast is undefined");
-#elif COMPILER_GCC
-  
-  
-  
-  static_assert(__has_trivial_copy(Dest),
-                "non-trivially-copyable bit_cast is undefined");
-  static_assert(__has_trivial_copy(Source),
-                "non-trivially-copyable bit_cast is undefined");
-#else
-  
-#endif
+  static_assert(base::is_trivially_copyable<Dest>::value,
+                "bit_cast requires the destination type to be copyable");
+  static_assert(base::is_trivially_copyable<Source>::value,
+                "bit_cast requires the source type to be copyable");
 
   Dest dest;
   memcpy(&dest, &source, sizeof(dest));

@@ -8,100 +8,198 @@
 #include <stddef.h>
 
 #include <limits>
+#include <ostream>
 #include <type_traits>
 
-#include "base/logging.h"
 #include "base/numerics/safe_conversions_impl.h"
 
+#if !defined(__native_client__) && (defined(__ARMEL__) || defined(__arch64__))
+#include "base/numerics/safe_conversions_arm_impl.h"
+#define BASE_HAS_OPTIMIZED_SAFE_CONVERSIONS (1)
+#else
+#define BASE_HAS_OPTIMIZED_SAFE_CONVERSIONS (0)
+#endif
+
 namespace base {
+namespace internal {
+
+#if !BASE_HAS_OPTIMIZED_SAFE_CONVERSIONS
+template <typename Dst, typename Src>
+struct SaturateFastAsmOp {
+  static const bool is_supported = false;
+  static constexpr Dst Do(Src) {
+    
+    return CheckOnFailure::template HandleFailure<Dst>();
+  }
+};
+#endif  
+#undef BASE_HAS_OPTIMIZED_SAFE_CONVERSIONS
+
+
+
+template <typename Dst, typename Src, typename Enable = void>
+struct IsValueInRangeFastOp {
+  static const bool is_supported = false;
+  static constexpr bool Do(Src value) {
+    
+    return CheckOnFailure::template HandleFailure<bool>();
+  }
+};
+
+
+template <typename Dst, typename Src>
+struct IsValueInRangeFastOp<
+    Dst,
+    Src,
+    typename std::enable_if<
+        std::is_integral<Dst>::value && std::is_integral<Src>::value &&
+        std::is_signed<Dst>::value && std::is_signed<Src>::value &&
+        !IsTypeInRangeForNumericType<Dst, Src>::value>::type> {
+  static const bool is_supported = true;
+
+  static constexpr bool Do(Src value) {
+    
+    
+    return value == static_cast<Dst>(value);
+  }
+};
+
+
+template <typename Dst, typename Src>
+struct IsValueInRangeFastOp<
+    Dst,
+    Src,
+    typename std::enable_if<
+        std::is_integral<Dst>::value && std::is_integral<Src>::value &&
+        !std::is_signed<Dst>::value && std::is_signed<Src>::value &&
+        !IsTypeInRangeForNumericType<Dst, Src>::value>::type> {
+  static const bool is_supported = true;
+
+  static constexpr bool Do(Src value) {
+    
+    
+    return as_unsigned(value) <= as_unsigned(CommonMax<Src, Dst>());
+  }
+};
 
 
 
 template <typename Dst, typename Src>
 constexpr bool IsValueInRangeForNumericType(Src value) {
-  return internal::DstRangeRelationToSrcRange<Dst>(value) ==
-         internal::RANGE_VALID;
+  using SrcType = typename internal::UnderlyingType<Src>::type;
+  return internal::IsValueInRangeFastOp<Dst, SrcType>::is_supported
+             ? internal::IsValueInRangeFastOp<Dst, SrcType>::Do(
+                   static_cast<SrcType>(value))
+             : internal::DstRangeRelationToSrcRange<Dst>(
+                   static_cast<SrcType>(value))
+                   .IsValid();
 }
-
-
-
-template <typename T>
-constexpr typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
-IsValueNegative(T value) {
-  static_assert(std::numeric_limits<T>::is_specialized,
-                "Argument must be numeric.");
-  return value < 0;
-}
-
-template <typename T>
-constexpr typename std::enable_if<!std::numeric_limits<T>::is_signed,
-                                  bool>::type IsValueNegative(T) {
-  static_assert(std::numeric_limits<T>::is_specialized,
-                "Argument must be numeric.");
-  return false;
-}
-
-
-struct CheckOnFailure {
-  template <typename T>
-  static T HandleFailure() {
-    CHECK(false);
-    return T();
-  }
-};
 
 
 
 
 template <typename Dst,
-          class CheckHandler = CheckOnFailure,
+          class CheckHandler = internal::CheckOnFailure,
           typename Src>
 constexpr Dst checked_cast(Src value) {
   
   
-  return IsValueInRangeForNumericType<Dst>(value)
-             ? static_cast<Dst>(value)
+  using SrcType = typename internal::UnderlyingType<Src>::type;
+  return BASE_NUMERICS_LIKELY((IsValueInRangeForNumericType<Dst>(value)))
+             ? static_cast<Dst>(static_cast<SrcType>(value))
              : CheckHandler::template HandleFailure<Dst>();
 }
 
 
-struct SaturatedCastNaNBehaviorReturnZero {
-  template <typename T>
-  static constexpr T HandleFailure() {
-    return T();
+
+
+template <typename T>
+struct SaturationDefaultLimits : public std::numeric_limits<T> {
+  static constexpr T NaN() {
+    return std::numeric_limits<T>::has_quiet_NaN
+               ? std::numeric_limits<T>::quiet_NaN()
+               : T();
+  }
+  using std::numeric_limits<T>::max;
+  static constexpr T Overflow() {
+    return std::numeric_limits<T>::has_infinity
+               ? std::numeric_limits<T>::infinity()
+               : std::numeric_limits<T>::max();
+  }
+  using std::numeric_limits<T>::lowest;
+  static constexpr T Underflow() {
+    return std::numeric_limits<T>::has_infinity
+               ? std::numeric_limits<T>::infinity() * -1
+               : std::numeric_limits<T>::lowest();
   }
 };
 
-namespace internal {
-
-
-template <typename Dst, class NaNHandler, typename Src>
-constexpr Dst saturated_cast_impl(const Src value,
-                                  const RangeConstraint constraint) {
-  return constraint == RANGE_VALID
-             ? static_cast<Dst>(value)
-             : (constraint == RANGE_UNDERFLOW
-                    ? std::numeric_limits<Dst>::min()
-                    : (constraint == RANGE_OVERFLOW
-                           ? std::numeric_limits<Dst>::max()
-                           : (constraint == RANGE_INVALID
-                                  ? NaNHandler::template HandleFailure<Dst>()
-                                  : (NOTREACHED(), static_cast<Dst>(value)))));
+template <typename Dst, template <typename> class S, typename Src>
+constexpr Dst saturated_cast_impl(Src value, RangeCheck constraint) {
+  
+  
+  return !constraint.IsOverflowFlagSet()
+             ? (!constraint.IsUnderflowFlagSet() ? static_cast<Dst>(value)
+                                                 : S<Dst>::Underflow())
+             
+             : (std::is_integral<Src>::value || !constraint.IsUnderflowFlagSet()
+                    ? S<Dst>::Overflow()
+                    : S<Dst>::NaN());
 }
-}  
+
+
+
+
+template <typename Dst, typename Src, typename Enable = void>
+struct SaturateFastOp {
+  static const bool is_supported = false;
+  static constexpr Dst Do(Src value) {
+    
+    return CheckOnFailure::template HandleFailure<Dst>();
+  }
+};
+
+template <typename Dst, typename Src>
+struct SaturateFastOp<
+    Dst,
+    Src,
+    typename std::enable_if<std::is_integral<Src>::value &&
+                            std::is_integral<Dst>::value>::type> {
+  static const bool is_supported = true;
+  static Dst Do(Src value) {
+    if (SaturateFastAsmOp<Dst, Src>::is_supported)
+      return SaturateFastAsmOp<Dst, Src>::Do(value);
+
+    
+    
+    
+    Dst saturated = CommonMaxOrMin<Dst, Src>(
+        IsMaxInRangeForNumericType<Dst, Src>() ||
+        (!IsMinInRangeForNumericType<Dst, Src>() && IsValueNegative(value)));
+    return BASE_NUMERICS_LIKELY(IsValueInRangeForNumericType<Dst>(value))
+               ? static_cast<Dst>(value)
+               : saturated;
+  }
+};
 
 
 
 
 
 template <typename Dst,
-          class NaNHandler = SaturatedCastNaNBehaviorReturnZero,
+          template <typename> class SaturationHandler = SaturationDefaultLimits,
           typename Src>
 constexpr Dst saturated_cast(Src value) {
-  return std::numeric_limits<Dst>::is_iec559
-             ? static_cast<Dst>(value)  
-             : internal::saturated_cast_impl<Dst, NaNHandler>(
-                   value, internal::DstRangeRelationToSrcRange<Dst>(value));
+  using SrcType = typename UnderlyingType<Src>::type;
+  return !IsCompileTimeConstant(value) &&
+                 SaturateFastOp<Dst, SrcType>::is_supported &&
+                 std::is_same<SaturationHandler<Dst>,
+                              SaturationDefaultLimits<Dst>>::value
+             ? SaturateFastOp<Dst, SrcType>::Do(static_cast<SrcType>(value))
+             : saturated_cast_impl<Dst, SaturationHandler, SrcType>(
+                   static_cast<SrcType>(value),
+                   DstRangeRelationToSrcRange<Dst, SaturationHandler, SrcType>(
+                       static_cast<SrcType>(value)));
 }
 
 
@@ -109,21 +207,39 @@ constexpr Dst saturated_cast(Src value) {
 
 template <typename Dst, typename Src>
 constexpr Dst strict_cast(Src value) {
-  static_assert(std::numeric_limits<Src>::is_specialized,
-                "Argument must be numeric.");
-  static_assert(std::numeric_limits<Dst>::is_specialized,
-                "Result must be numeric.");
-  static_assert((internal::StaticDstRangeRelationToSrcRange<Dst, Src>::value ==
-                 internal::NUMERIC_RANGE_CONTAINED),
-                "The numeric conversion is out of range for this type. You "
-                "should probably use one of the following conversion "
-                "mechanisms on the value you want to pass:\n"
-                "- base::checked_cast\n"
-                "- base::saturated_cast\n"
-                "- base::CheckedNumeric");
+  using SrcType = typename UnderlyingType<Src>::type;
+  static_assert(UnderlyingType<Src>::is_numeric, "Argument must be numeric.");
+  static_assert(std::is_arithmetic<Dst>::value, "Result must be numeric.");
 
-  return static_cast<Dst>(value);
+  
+  
+  
+  
+  
+  
+  static_assert(StaticDstRangeRelationToSrcRange<Dst, SrcType>::value ==
+                    NUMERIC_RANGE_CONTAINED,
+                "The source type is out of range for the destination type. "
+                "Please see strict_cast<> comments for more information.");
+
+  return static_cast<Dst>(static_cast<SrcType>(value));
 }
+
+
+template <typename Dst, typename Src, class Enable = void>
+struct IsNumericRangeContained {
+  static const bool value = false;
+};
+
+template <typename Dst, typename Src>
+struct IsNumericRangeContained<
+    Dst,
+    Src,
+    typename std::enable_if<ArithmeticOrUnderlyingEnum<Dst>::value &&
+                            ArithmeticOrUnderlyingEnum<Src>::value>::type> {
+  static const bool value = StaticDstRangeRelationToSrcRange<Dst, Src>::value ==
+                            NUMERIC_RANGE_CONTAINED;
+};
 
 
 
@@ -138,7 +254,7 @@ constexpr Dst strict_cast(Src value) {
 template <typename T>
 class StrictNumeric {
  public:
-  typedef T type;
+  using type = T;
 
   constexpr StrictNumeric() : value_(0) {}
 
@@ -150,13 +266,26 @@ class StrictNumeric {
   
   
   template <typename Src>
-  constexpr StrictNumeric(Src value)
+  constexpr StrictNumeric(Src value)  
       : value_(strict_cast<T>(value)) {}
 
   
-  template <typename Dst>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Dst,
+            typename std::enable_if<
+                IsNumericRangeContained<Dst, T>::value>::type* = nullptr>
   constexpr operator Dst() const {
-    return strict_cast<Dst>(value_);
+    return static_cast<typename ArithmeticOrUnderlyingEnum<Dst>::type>(value_);
   }
 
  private:
@@ -164,7 +293,51 @@ class StrictNumeric {
 };
 
 
-typedef StrictNumeric<size_t> SizeT;
+template <typename T>
+constexpr StrictNumeric<typename UnderlyingType<T>::type> MakeStrictNum(
+    const T value) {
+  return value;
+}
+
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const StrictNumeric<T>& value) {
+  os << static_cast<T>(value);
+  return os;
+}
+
+#define BASE_NUMERIC_COMPARISON_OPERATORS(CLASS, NAME, OP)              \
+  template <typename L, typename R,                                     \
+            typename std::enable_if<                                    \
+                internal::Is##CLASS##Op<L, R>::value>::type* = nullptr> \
+  constexpr bool operator OP(const L lhs, const R rhs) {                \
+    return SafeCompare<NAME, typename UnderlyingType<L>::type,          \
+                       typename UnderlyingType<R>::type>(lhs, rhs);     \
+  }
+
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsLess, <);
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsLessOrEqual, <=);
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsGreater, >);
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsGreaterOrEqual, >=);
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsEqual, ==);
+BASE_NUMERIC_COMPARISON_OPERATORS(Strict, IsNotEqual, !=);
+
+};  
+
+using internal::as_signed;
+using internal::as_unsigned;
+using internal::checked_cast;
+using internal::strict_cast;
+using internal::saturated_cast;
+using internal::SafeUnsignedAbs;
+using internal::StrictNumeric;
+using internal::MakeStrictNum;
+using internal::IsValueInRangeForNumericType;
+using internal::IsTypeInRangeForNumericType;
+using internal::IsValueNegative;
+
+
+using SizeT = StrictNumeric<size_t>;
 
 }  
 

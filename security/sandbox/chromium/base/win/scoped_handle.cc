@@ -11,7 +11,6 @@
 #include "base/debug/alias.h"
 #include "base/debug/stack_trace.h"
 #include "base/hash.h"
-#include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/synchronization/lock_impl.h"
@@ -46,7 +45,10 @@ typedef std::unordered_map<HANDLE, Info, HandleHash> HandleMap;
 
 
 typedef base::internal::LockImpl NativeLock;
-base::LazyInstance<NativeLock>::Leaky g_lock = LAZY_INSTANCE_INITIALIZER;
+NativeLock* GetLock() {
+  static auto* native_lock = new NativeLock();
+  return native_lock;
+}
 
 
 
@@ -70,9 +72,7 @@ class AutoNativeLock {
 
 class ActiveVerifier {
  public:
-  explicit ActiveVerifier(bool enabled)
-      : enabled_(enabled), lock_(g_lock.Pointer()) {
-  }
+  explicit ActiveVerifier(bool enabled) : enabled_(enabled), lock_(GetLock()) {}
 
   
   static ActiveVerifier* Get();
@@ -121,7 +121,7 @@ bool CloseHandleWrapper(HANDLE handle) {
 
 void ThreadSafeAssignOrCreateActiveVerifier(ActiveVerifier* existing_verifier,
                                             bool enabled) {
-  AutoNativeLock lock(g_lock.Get());
+  AutoNativeLock lock(*GetLock());
   
   
   if (g_active_verifier)

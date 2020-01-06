@@ -179,6 +179,9 @@ struct BindUnwrapTraits;
 
 namespace internal {
 
+template <typename Functor, typename SFINAE = void>
+struct FunctorTraits;
+
 template <typename T>
 class UnretainedWrapper {
  public:
@@ -435,8 +438,7 @@ static inline internal::OwnedWrapper<T> Owned(T* o) {
 
 
 template <typename T,
-          typename std::enable_if<!std::is_lvalue_reference<T>::value>::type* =
-              nullptr>
+          typename std::enable_if<!std::is_lvalue_reference<T>::value>::type* = nullptr>
 static inline internal::PassedWrapper<T> Passed(T&& scoper) {
   return internal::PassedWrapper<T>(std::move(scoper));
 }
@@ -518,6 +520,56 @@ template <typename T>
 struct BindUnwrapTraits<internal::PassedWrapper<T>> {
   static T Unwrap(const internal::PassedWrapper<T>& o) {
     return o.Take();
+  }
+};
+
+
+
+
+
+template <typename Functor, typename BoundArgsTuple, typename SFINAE = void>
+struct CallbackCancellationTraits {
+  static constexpr bool is_cancellable = false;
+};
+
+
+template <typename Functor, typename... BoundArgs>
+struct CallbackCancellationTraits<
+    Functor,
+    std::tuple<BoundArgs...>,
+    typename std::enable_if<
+        internal::IsWeakMethod<internal::FunctorTraits<Functor>::is_method,
+                               BoundArgs...>::value>::type> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Receiver, typename... Args>
+  static bool IsCancelled(const Functor&,
+                          const Receiver& receiver,
+                          const Args&...) {
+    return !receiver;
+  }
+};
+
+
+template <typename Signature, typename... BoundArgs>
+struct CallbackCancellationTraits<OnceCallback<Signature>,
+                                  std::tuple<BoundArgs...>> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Functor>
+  static bool IsCancelled(const Functor& functor, const BoundArgs&...) {
+    return functor.IsCancelled();
+  }
+};
+
+template <typename Signature, typename... BoundArgs>
+struct CallbackCancellationTraits<RepeatingCallback<Signature>,
+                                  std::tuple<BoundArgs...>> {
+  static constexpr bool is_cancellable = true;
+
+  template <typename Functor>
+  static bool IsCancelled(const Functor& functor, const BoundArgs&...) {
+    return functor.IsCancelled();
   }
 };
 

@@ -43,21 +43,6 @@
 #define MSVC_DISABLE_OPTIMIZE() __pragma(optimize("", off))
 #define MSVC_ENABLE_OPTIMIZE() __pragma(optimize("", on))
 
-
-
-
-
-
-
-
-
-
-
-
-
-#define NON_EXPORTED_BASE(code) MSVC_SUPPRESS_WARNING(4275) \
-                                code
-
 #else  
 
 #define _Printf_format_string_
@@ -67,7 +52,6 @@
 #define MSVC_POP_WARNING()
 #define MSVC_DISABLE_OPTIMIZE()
 #define MSVC_ENABLE_OPTIMIZE()
-#define NON_EXPORTED_BASE(code) code
 
 #endif  
 
@@ -77,8 +61,7 @@
 
 
 
-
-#define ALLOW_UNUSED_LOCAL(x) false ? (void)x : (void)0
+#define ALLOW_UNUSED_LOCAL(x) (void)x
 
 
 
@@ -112,19 +95,27 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(COMPILER_MSVC)
 #define ALIGNAS(byte_alignment) __declspec(align(byte_alignment))
 #elif defined(COMPILER_GCC)
 #define ALIGNAS(byte_alignment) __attribute__((aligned(byte_alignment)))
-#endif
-
-
-
-
-#if defined(COMPILER_MSVC)
-#define ALIGNOF(type) __alignof(type)
-#elif defined(COMPILER_GCC)
-#define ALIGNOF(type) __alignof__(type)
 #endif
 
 
@@ -143,7 +134,7 @@
 
 
 
-#if defined(COMPILER_GCC)
+#if defined(COMPILER_GCC) || defined(__clang__)
 #define PRINTF_FORMAT(format_param, dots_param) \
     __attribute__((format(printf, format_param, dots_param)))
 #else
@@ -156,6 +147,16 @@
 #define WPRINTF_FORMAT(format_param, dots_param)
 
 
+
+
+#if defined(__has_attribute)
+#if __has_attribute(no_sanitize)
+#define NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+#endif
+#endif
+#if !defined(NO_SANITIZE)
+#define NO_SANITIZE(what)
+#endif
 
 
 #if defined(MEMORY_SANITIZER) && !defined(OS_NACL)
@@ -206,7 +207,7 @@
 
 #if !defined(LIKELY)
 #if defined(COMPILER_GCC)
-#define LIKELY(x) __builtin_expect((x), 1)
+#define LIKELY(x) __builtin_expect(!!(x), 1)
 #else
 #define LIKELY(x) (x)
 #endif  

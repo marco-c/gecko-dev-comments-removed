@@ -5,7 +5,6 @@
 #include "base/threading/thread_local_storage.h"
 
 #include "base/atomicops.h"
-#include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "build/build_config.h"
@@ -92,7 +91,10 @@ struct TlsVectorEntry {
 
 
 
-base::LazyInstance<base::Lock>::Leaky g_tls_metadata_lock;
+base::Lock* GetTLSMetadataLock() {
+  static auto* lock = new base::Lock();
+  return lock;
+}
 TlsMetadata g_tls_metadata[kThreadLocalStorageSize];
 size_t g_last_assigned_slot = 0;
 
@@ -182,7 +184,7 @@ void OnThreadExitInternal(TlsVectorEntry* tls_data) {
   
   TlsMetadata tls_metadata[kThreadLocalStorageSize];
   {
-    base::AutoLock auto_lock(g_tls_metadata_lock.Get());
+    base::AutoLock auto_lock(*GetTLSMetadataLock());
     memcpy(tls_metadata, g_tls_metadata, sizeof(g_tls_metadata));
   }
 
@@ -261,7 +263,7 @@ void ThreadLocalStorage::StaticSlot::Initialize(TLSDestructorFunc destructor) {
   slot_ = kInvalidSlotValue;
   version_ = 0;
   {
-    base::AutoLock auto_lock(g_tls_metadata_lock.Get());
+    base::AutoLock auto_lock(*GetTLSMetadataLock());
     for (int i = 0; i < kThreadLocalStorageSize; ++i) {
       
       
@@ -291,7 +293,7 @@ void ThreadLocalStorage::StaticSlot::Free() {
   DCHECK_NE(slot_, kInvalidSlotValue);
   DCHECK_LT(slot_, kThreadLocalStorageSize);
   {
-    base::AutoLock auto_lock(g_tls_metadata_lock.Get());
+    base::AutoLock auto_lock(*GetTLSMetadataLock());
     g_tls_metadata[slot_].status = TlsStatus::FREE;
     g_tls_metadata[slot_].destructor = nullptr;
     ++(g_tls_metadata[slot_].version);

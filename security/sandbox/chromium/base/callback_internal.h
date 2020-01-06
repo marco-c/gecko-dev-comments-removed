@@ -8,16 +8,28 @@
 #ifndef BASE_CALLBACK_INTERNAL_H_
 #define BASE_CALLBACK_INTERNAL_H_
 
-#include "base/atomic_ref_count.h"
 #include "base/base_export.h"
 #include "base/callback_forward.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
 
 namespace base {
+
+struct FakeBindState;
+
 namespace internal {
-template <CopyMode copy_mode>
+
 class CallbackBase;
+class CallbackBaseCopyable;
+
+class BindStateBase;
+
+template <typename Functor, typename... BoundArgs>
+struct BindState;
+
+struct BindStateBaseRefCountTraits {
+  static void Destruct(const BindStateBase*);
+};
 
 
 
@@ -30,37 +42,42 @@ class CallbackBase;
 
 
 
-class BASE_EXPORT BindStateBase {
+class BASE_EXPORT BindStateBase
+    : public RefCountedThreadSafe<BindStateBase, BindStateBaseRefCountTraits> {
  public:
+  REQUIRE_ADOPTION_FOR_REFCOUNTED_TYPE();
+
   using InvokeFuncStorage = void(*)();
 
- protected:
+ private:
   BindStateBase(InvokeFuncStorage polymorphic_invoke,
                 void (*destructor)(const BindStateBase*));
   BindStateBase(InvokeFuncStorage polymorphic_invoke,
                 void (*destructor)(const BindStateBase*),
                 bool (*is_cancelled)(const BindStateBase*));
+
   ~BindStateBase() = default;
 
- private:
-  friend class scoped_refptr<BindStateBase>;
-  template <CopyMode copy_mode>
+  friend struct BindStateBaseRefCountTraits;
+  friend class RefCountedThreadSafe<BindStateBase, BindStateBaseRefCountTraits>;
+
   friend class CallbackBase;
+  friend class CallbackBaseCopyable;
+
+  
+  template <typename Functor, typename... BoundArgs>
+  friend struct BindState;
+  friend struct ::base::FakeBindState;
 
   bool IsCancelled() const {
     return is_cancelled_(this);
   }
-
-  void AddRef() const;
-  void Release() const;
 
   
   
   
   
   InvokeFuncStorage polymorphic_invoke_;
-
-  mutable AtomicRefCount ref_count_;
 
   
   void (*destructor_)(const BindStateBase*);
@@ -73,17 +90,19 @@ class BASE_EXPORT BindStateBase {
 
 
 
-template <>
-class BASE_EXPORT CallbackBase<CopyMode::MoveOnly> {
+class BASE_EXPORT CallbackBase {
  public:
   CallbackBase(CallbackBase&& c);
   CallbackBase& operator=(CallbackBase&& c);
 
-  explicit CallbackBase(const CallbackBase<CopyMode::Copyable>& c);
-  CallbackBase& operator=(const CallbackBase<CopyMode::Copyable>& c);
+  explicit CallbackBase(const CallbackBaseCopyable& c);
+  CallbackBase& operator=(const CallbackBaseCopyable& c);
+
+  explicit CallbackBase(CallbackBaseCopyable&& c);
+  CallbackBase& operator=(CallbackBaseCopyable&& c);
 
   
-  bool is_null() const { return bind_state_.get() == NULL; }
+  bool is_null() const { return !bind_state_; }
   explicit operator bool() const { return !is_null(); }
 
   
@@ -116,22 +135,18 @@ class BASE_EXPORT CallbackBase<CopyMode::MoveOnly> {
 };
 
 
-template <>
-class BASE_EXPORT CallbackBase<CopyMode::Copyable>
-    : public CallbackBase<CopyMode::MoveOnly> {
+class BASE_EXPORT CallbackBaseCopyable : public CallbackBase {
  public:
-  CallbackBase(const CallbackBase& c);
-  CallbackBase(CallbackBase&& c);
-  CallbackBase& operator=(const CallbackBase& c);
-  CallbackBase& operator=(CallbackBase&& c);
- protected:
-  explicit CallbackBase(BindStateBase* bind_state)
-      : CallbackBase<CopyMode::MoveOnly>(bind_state) {}
-  ~CallbackBase() {}
-};
+  CallbackBaseCopyable(const CallbackBaseCopyable& c);
+  CallbackBaseCopyable(CallbackBaseCopyable&& c);
+  CallbackBaseCopyable& operator=(const CallbackBaseCopyable& c);
+  CallbackBaseCopyable& operator=(CallbackBaseCopyable&& c);
 
-extern template class CallbackBase<CopyMode::MoveOnly>;
-extern template class CallbackBase<CopyMode::Copyable>;
+ protected:
+  explicit CallbackBaseCopyable(BindStateBase* bind_state)
+      : CallbackBase(bind_state) {}
+  ~CallbackBaseCopyable() {}
+};
 
 }  
 }  

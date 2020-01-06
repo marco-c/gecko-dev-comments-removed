@@ -46,6 +46,11 @@ LogMessageHandlerFunction log_message_handler = nullptr;
 
 }  
 
+
+
+
+std::ostream* g_swallow_stream;
+
 void SetMinLogLevel(int level) {
   g_min_log_level = std::min(LOG_FATAL, level);
 }

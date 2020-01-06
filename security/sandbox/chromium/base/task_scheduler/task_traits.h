@@ -8,8 +8,10 @@
 #include <stdint.h>
 
 #include <iosfwd>
+#include <type_traits>
 
 #include "base/base_export.h"
+#include "base/task_scheduler/task_traits_details.h"
 #include "build/build_config.h"
 
 namespace base {
@@ -76,7 +78,50 @@ enum class TaskShutdownBehavior {
 };
 
 
+
+
+
+
+
+struct MayBlock {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct WithBaseSyncPrimitives {};
+
+
 class BASE_EXPORT TaskTraits {
+ private:
+  
+  struct ValidTrait {
+    ValidTrait(TaskPriority) {}
+    ValidTrait(TaskShutdownBehavior) {}
+    ValidTrait(MayBlock) {}
+    ValidTrait(WithBaseSyncPrimitives) {}
+  };
+
  public:
   
   
@@ -84,33 +129,101 @@ class BASE_EXPORT TaskTraits {
   
   
   
-  TaskTraits();
-  TaskTraits(const TaskTraits& other) = default;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <class... ArgTypes,
+            class CheckArgumentsAreValid = internal::InitTypes<
+                decltype(ValidTrait(std::declval<ArgTypes>()))...>>
+  constexpr TaskTraits(ArgTypes... args)
+      : priority_set_explicitly_(
+            internal::HasArgOfType<TaskPriority, ArgTypes...>::value),
+        priority_(internal::GetValueFromArgList(
+            internal::EnumArgGetter<TaskPriority, TaskPriority::USER_VISIBLE>(),
+            args...)),
+        shutdown_behavior_set_explicitly_(
+            internal::HasArgOfType<TaskShutdownBehavior, ArgTypes...>::value),
+        shutdown_behavior_(internal::GetValueFromArgList(
+            internal::EnumArgGetter<TaskShutdownBehavior,
+                                    TaskShutdownBehavior::SKIP_ON_SHUTDOWN>(),
+            args...)),
+        may_block_(internal::GetValueFromArgList(
+            internal::BooleanArgGetter<MayBlock>(),
+            args...)),
+        with_base_sync_primitives_(internal::GetValueFromArgList(
+            internal::BooleanArgGetter<WithBaseSyncPrimitives>(),
+            args...)) {}
+
+  constexpr TaskTraits(const TaskTraits& other) = default;
   TaskTraits& operator=(const TaskTraits& other) = default;
-  ~TaskTraits();
 
   
-  TaskTraits& WithFileIO();
+  
+  
+  static constexpr TaskTraits Override(const TaskTraits& left,
+                                       const TaskTraits& right) {
+    return TaskTraits(left, right);
+  }
 
   
-  TaskTraits& WithPriority(TaskPriority priority);
+  constexpr bool priority_set_explicitly() const {
+    return priority_set_explicitly_;
+  }
 
   
-  TaskTraits& WithShutdownBehavior(TaskShutdownBehavior shutdown_behavior);
+  constexpr TaskPriority priority() const { return priority_; }
 
   
-  bool with_file_io() const { return with_file_io_; }
+  constexpr bool shutdown_behavior_set_explicitly() const {
+    return shutdown_behavior_set_explicitly_;
+  }
 
   
-  TaskPriority priority() const { return priority_; }
+  constexpr TaskShutdownBehavior shutdown_behavior() const {
+    return shutdown_behavior_;
+  }
 
   
-  TaskShutdownBehavior shutdown_behavior() const { return shutdown_behavior_; }
+  constexpr bool may_block() const { return may_block_; }
+
+  
+  constexpr bool with_base_sync_primitives() const {
+    return with_base_sync_primitives_;
+  }
 
  private:
-  bool with_file_io_;
+  constexpr TaskTraits(const TaskTraits& left, const TaskTraits& right)
+      : priority_set_explicitly_(left.priority_set_explicitly_ ||
+                                 right.priority_set_explicitly_),
+        priority_(right.priority_set_explicitly_ ? right.priority_
+                                                 : left.priority_),
+        shutdown_behavior_set_explicitly_(
+            left.shutdown_behavior_set_explicitly_ ||
+            right.shutdown_behavior_set_explicitly_),
+        shutdown_behavior_(right.shutdown_behavior_set_explicitly_
+                               ? right.shutdown_behavior_
+                               : left.shutdown_behavior_),
+        may_block_(left.may_block_ || right.may_block_),
+        with_base_sync_primitives_(left.with_base_sync_primitives_ ||
+                                   right.with_base_sync_primitives_) {}
+
+  bool priority_set_explicitly_;
   TaskPriority priority_;
+  bool shutdown_behavior_set_explicitly_;
   TaskShutdownBehavior shutdown_behavior_;
+  bool may_block_;
+  bool with_base_sync_primitives_;
 };
 
 

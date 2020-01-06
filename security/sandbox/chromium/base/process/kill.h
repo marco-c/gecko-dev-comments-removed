@@ -75,11 +75,10 @@ BASE_EXPORT bool KillProcessGroup(ProcessHandle process_group_id);
 
 
 
-
 BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
                                                    int* exit_code);
 
-#if defined(OS_POSIX)
+#if defined(OS_POSIX) && !defined(OS_FUCHSIA)
 
 
 
@@ -101,6 +100,9 @@ BASE_EXPORT TerminationStatus GetKnownDeadTerminationStatus(
 
 
 
+#if !defined(OS_FUCHSIA)
+
+
 
 
 BASE_EXPORT bool WaitForProcessesToExit(
@@ -118,6 +120,7 @@ BASE_EXPORT bool CleanupProcesses(const FilePath::StringType& executable_name,
                                   base::TimeDelta wait,
                                   int exit_code,
                                   const ProcessFilter* filter);
+#endif  
 
 
 
@@ -135,7 +138,7 @@ BASE_EXPORT bool CleanupProcesses(const FilePath::StringType& executable_name,
 
 BASE_EXPORT void EnsureProcessTerminated(Process process);
 
-#if defined(OS_POSIX) && !defined(OS_MACOSX)
+#if defined(OS_POSIX) && !defined(OS_MACOSX) && !defined(OS_FUCHSIA)
 
 
 BASE_EXPORT void EnsureProcessGetsReaped(ProcessId pid);

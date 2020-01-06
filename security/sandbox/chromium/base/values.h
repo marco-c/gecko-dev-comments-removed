@@ -29,19 +29,19 @@
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
+#include "base/containers/flat_map.h"
+#include "base/containers/span.h"
 #include "base/macros.h"
+#include "base/memory/manual_constructor.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
+#include "base/value_iterators.h"
 
 namespace base {
 
-class BinaryValue;
 class DictionaryValue;
-class FundamentalValue;
 class ListValue;
-class StringValue;
 class Value;
-
 
 
 
@@ -49,52 +49,210 @@ class Value;
 
 class BASE_EXPORT Value {
  public:
-  enum Type {
-    TYPE_NULL = 0,
-    TYPE_BOOLEAN,
-    TYPE_INTEGER,
-    TYPE_DOUBLE,
-    TYPE_STRING,
-    TYPE_BINARY,
-    TYPE_DICTIONARY,
-    TYPE_LIST
+  using BlobStorage = std::vector<char>;
+  using DictStorage = base::flat_map<std::string, std::unique_ptr<Value>>;
+  using ListStorage = std::vector<Value>;
+
+  enum class Type {
+    NONE = 0,
+    BOOLEAN,
+    INTEGER,
+    DOUBLE,
+    STRING,
+    BINARY,
+    DICTIONARY,
+    LIST
     
   };
 
-  virtual ~Value();
+  
+  
+  
+  
+  
+  static std::unique_ptr<Value> CreateWithCopiedBuffer(const char* buffer,
+                                                       size_t size);
 
-  static std::unique_ptr<Value> CreateNullValue();
+  Value(Value&& that) noexcept;
+  Value() noexcept;  
+
+  
+  
+  Value Clone() const;
+
+  explicit Value(Type type);
+  explicit Value(bool in_bool);
+  explicit Value(int in_int);
+  explicit Value(double in_double);
+
+  
+  
+  
+  
+  
+  
+  explicit Value(const char* in_string);
+  explicit Value(const std::string& in_string);
+  explicit Value(std::string&& in_string) noexcept;
+  explicit Value(const char16* in_string);
+  explicit Value(const string16& in_string);
+  explicit Value(StringPiece in_string);
+
+  explicit Value(const BlobStorage& in_blob);
+  explicit Value(BlobStorage&& in_blob) noexcept;
+
+  explicit Value(const DictStorage& in_dict);
+  explicit Value(DictStorage&& in_dict) noexcept;
+
+  explicit Value(const ListStorage& in_list);
+  explicit Value(ListStorage&& in_list) noexcept;
+
+  Value& operator=(Value&& that) noexcept;
+
+  ~Value();
 
   
   static const char* GetTypeName(Type type);
 
   
-  
-  
-  
-  
-  Type GetType() const { return type_; }
+  Type GetType() const { return type_; }  
+  Type type() const { return type_; }
 
   
   bool IsType(Type type) const { return type == type_; }
+  bool is_none() const { return type() == Type::NONE; }
+  bool is_bool() const { return type() == Type::BOOLEAN; }
+  bool is_int() const { return type() == Type::INTEGER; }
+  bool is_double() const { return type() == Type::DOUBLE; }
+  bool is_string() const { return type() == Type::STRING; }
+  bool is_blob() const { return type() == Type::BINARY; }
+  bool is_dict() const { return type() == Type::DICTIONARY; }
+  bool is_list() const { return type() == Type::LIST; }
+
+  
+  bool GetBool() const;
+  int GetInt() const;
+  double GetDouble() const;  
+  const std::string& GetString() const;
+  const BlobStorage& GetBlob() const;
+
+  ListStorage& GetList();
+  const ListStorage& GetList() const;
 
   
   
   
   
-  virtual bool GetAsBoolean(bool* out_value) const;
-  virtual bool GetAsInteger(int* out_value) const;
-  virtual bool GetAsDouble(double* out_value) const;
-  virtual bool GetAsString(std::string* out_value) const;
-  virtual bool GetAsString(string16* out_value) const;
-  virtual bool GetAsString(const StringValue** out_value) const;
-  virtual bool GetAsBinary(const BinaryValue** out_value) const;
   
-  virtual bool GetAsList(ListValue** out_value);
-  virtual bool GetAsList(const ListValue** out_value) const;
   
-  virtual bool GetAsDictionary(DictionaryValue** out_value);
-  virtual bool GetAsDictionary(const DictionaryValue** out_value) const;
+  
+  
+  Value* FindKey(StringPiece key);
+  const Value* FindKey(StringPiece key) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Value* FindKeyOfType(StringPiece key, Type type);
+  const Value* FindKeyOfType(StringPiece key, Type type) const;
+
+  
+  
+  
+  
+  
+  
+  
+  Value* SetKey(StringPiece key, Value value);
+  
+  Value* SetKey(std::string&& key, Value value);
+  
+  Value* SetKey(const char* key, Value value);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Value* FindPath(std::initializer_list<StringPiece> path);
+  Value* FindPath(span<const StringPiece> path);
+  const Value* FindPath(std::initializer_list<StringPiece> path) const;
+  const Value* FindPath(span<const StringPiece> path) const;
+
+  
+  
+  Value* FindPathOfType(std::initializer_list<StringPiece> path, Type type);
+  Value* FindPathOfType(span<const StringPiece> path, Type type);
+  const Value* FindPathOfType(std::initializer_list<StringPiece> path,
+                              Type type) const;
+  const Value* FindPathOfType(span<const StringPiece> path, Type type) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Value* SetPath(std::initializer_list<StringPiece> path, Value value);
+  Value* SetPath(span<const StringPiece> path, Value value);
+
+  using dict_iterator_proxy = detail::dict_iterator_proxy;
+  using const_dict_iterator_proxy = detail::const_dict_iterator_proxy;
+
+  
+  
+  
+  
+  
+  dict_iterator_proxy DictItems();
+  const_dict_iterator_proxy DictItems() const;
+
+  
+  
+  
+  
+  
+  bool GetAsBoolean(bool* out_value) const;
+  
+  bool GetAsInteger(int* out_value) const;
+  
+  bool GetAsDouble(double* out_value) const;
+  
+  bool GetAsString(std::string* out_value) const;
+  bool GetAsString(string16* out_value) const;
+  bool GetAsString(const Value** out_value) const;
+  bool GetAsString(StringPiece* out_value) const;
+  
+  
+  bool GetAsList(ListValue** out_value);
+  bool GetAsList(const ListValue** out_value) const;
+  
+  bool GetAsDictionary(DictionaryValue** out_value);
+  bool GetAsDictionary(const DictionaryValue** out_value) const;
   
 
   
@@ -102,110 +260,46 @@ class BASE_EXPORT Value {
   
   
   
-  virtual Value* DeepCopy() const;
+  
+  Value* DeepCopy() const;
+  
   
   std::unique_ptr<Value> CreateDeepCopy() const;
 
   
-  virtual bool Equals(const Value* other) const;
+  
+  BASE_EXPORT friend bool operator==(const Value& lhs, const Value& rhs);
+  BASE_EXPORT friend bool operator!=(const Value& lhs, const Value& rhs);
+  BASE_EXPORT friend bool operator<(const Value& lhs, const Value& rhs);
+  BASE_EXPORT friend bool operator>(const Value& lhs, const Value& rhs);
+  BASE_EXPORT friend bool operator<=(const Value& lhs, const Value& rhs);
+  BASE_EXPORT friend bool operator>=(const Value& lhs, const Value& rhs);
 
   
   
-  static bool Equals(const Value* a, const Value* b);
+  
+  bool Equals(const Value* other) const;
 
  protected:
   
-  explicit Value(Type type);
-  Value(const Value& that);
-  Value& operator=(const Value& that);
-
- private:
+  
   Type type_;
-};
 
-
-class BASE_EXPORT FundamentalValue : public Value {
- public:
-  explicit FundamentalValue(bool in_value);
-  explicit FundamentalValue(int in_value);
-  explicit FundamentalValue(double in_value);
-  ~FundamentalValue() override;
-
-  
-  bool GetAsBoolean(bool* out_value) const override;
-  bool GetAsInteger(int* out_value) const override;
-  
-  
-  bool GetAsDouble(double* out_value) const override;
-  FundamentalValue* DeepCopy() const override;
-  bool Equals(const Value* other) const override;
-
- private:
   union {
-    bool boolean_value_;
-    int integer_value_;
+    bool bool_value_;
+    int int_value_;
     double double_value_;
+    ManualConstructor<std::string> string_value_;
+    ManualConstructor<BlobStorage> binary_value_;
+    ManualConstructor<DictStorage> dict_;
+    ManualConstructor<ListStorage> list_;
   };
-};
-
-class BASE_EXPORT StringValue : public Value {
- public:
-  
-  explicit StringValue(StringPiece in_value);
-
-  
-  explicit StringValue(const string16& in_value);
-
-  ~StringValue() override;
-
-  
-  std::string* GetString();
-  const std::string& GetString() const;
-
-  
-  bool GetAsString(std::string* out_value) const override;
-  bool GetAsString(string16* out_value) const override;
-  bool GetAsString(const StringValue** out_value) const override;
-  StringValue* DeepCopy() const override;
-  bool Equals(const Value* other) const override;
 
  private:
-  std::string value_;
-};
+  void InternalMoveConstructFrom(Value&& that);
+  void InternalCleanup();
 
-class BASE_EXPORT BinaryValue: public Value {
- public:
-  
-  BinaryValue();
-
-  
-  
-  BinaryValue(std::unique_ptr<char[]> buffer, size_t size);
-
-  ~BinaryValue() override;
-
-  
-  
-  
-  static std::unique_ptr<BinaryValue> CreateWithCopiedBuffer(const char* buffer,
-                                                             size_t size);
-
-  size_t GetSize() const { return size_; }
-
-  
-  char* GetBuffer() { return buffer_.get(); }
-  const char* GetBuffer() const { return buffer_.get(); }
-
-  
-  bool GetAsBinary(const BinaryValue** out_value) const override;
-  BinaryValue* DeepCopy() const override;
-  bool Equals(const Value* other) const override;
-
- private:
-  std::unique_ptr<char[]> buffer_;
-  size_t size_;
-
-  DISALLOW_COPY_AND_ASSIGN(BinaryValue);
+  DISALLOW_COPY_AND_ASSIGN(Value);
 };
 
 
@@ -213,25 +307,25 @@ class BASE_EXPORT BinaryValue: public Value {
 
 class BASE_EXPORT DictionaryValue : public Value {
  public:
-  using Storage = std::map<std::string, std::unique_ptr<Value>>;
+  using const_iterator = DictStorage::const_iterator;
+  using iterator = DictStorage::iterator;
+
   
   static std::unique_ptr<DictionaryValue> From(std::unique_ptr<Value> value);
 
   DictionaryValue();
-  ~DictionaryValue() override;
+  explicit DictionaryValue(const DictStorage& in_dict);
+  explicit DictionaryValue(DictStorage&& in_dict) noexcept;
 
   
-  bool GetAsDictionary(DictionaryValue** out_value) override;
-  bool GetAsDictionary(const DictionaryValue** out_value) const override;
-
   
   bool HasKey(StringPiece key) const;
 
   
-  size_t size() const { return dictionary_.size(); }
+  size_t size() const { return dict_->size(); }
 
   
-  bool empty() const { return dictionary_.empty(); }
+  bool empty() const { return dict_->empty(); }
 
   
   void Clear();
@@ -243,33 +337,44 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   
-  void Set(StringPiece path, std::unique_ptr<Value> in_value);
   
-  void Set(StringPiece path, Value* in_value);
+  
+  Value* Set(StringPiece path, std::unique_ptr<Value> in_value);
 
   
   
-  void SetBoolean(StringPiece path, bool in_value);
-  void SetInteger(StringPiece path, int in_value);
-  void SetDouble(StringPiece path, double in_value);
-  void SetString(StringPiece path, StringPiece in_value);
-  void SetString(StringPiece path, const string16& in_value);
+  
+  Value* SetBoolean(StringPiece path, bool in_value);
+  
+  Value* SetInteger(StringPiece path, int in_value);
+  
+  Value* SetDouble(StringPiece path, double in_value);
+  
+  Value* SetString(StringPiece path, StringPiece in_value);
+  
+  Value* SetString(StringPiece path, const string16& in_value);
+  
+  DictionaryValue* SetDictionary(StringPiece path,
+                                 std::unique_ptr<DictionaryValue> in_value);
+  
+  ListValue* SetList(StringPiece path, std::unique_ptr<ListValue> in_value);
 
   
   
-  void SetWithoutPathExpansion(StringPiece key,
-                               std::unique_ptr<Value> in_value);
   
-  void SetWithoutPathExpansion(StringPiece key, Value* in_value);
+  Value* SetWithoutPathExpansion(StringPiece key,
+                                 std::unique_ptr<Value> in_value);
 
   
-  void SetBooleanWithoutPathExpansion(StringPiece path, bool in_value);
-  void SetIntegerWithoutPathExpansion(StringPiece path, int in_value);
-  void SetDoubleWithoutPathExpansion(StringPiece path, double in_value);
-  void SetStringWithoutPathExpansion(StringPiece path, StringPiece in_value);
-  void SetStringWithoutPathExpansion(StringPiece path,
-                                     const string16& in_value);
+  
+  DictionaryValue* SetDictionaryWithoutPathExpansion(
+      StringPiece path,
+      std::unique_ptr<DictionaryValue> in_value);
+  
+  ListValue* SetListWithoutPathExpansion(StringPiece path,
+                                         std::unique_ptr<ListValue> in_value);
 
+  
   
   
   
@@ -279,46 +384,70 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   bool Get(StringPiece path, const Value** out_value) const;
+  
   bool Get(StringPiece path, Value** out_value);
 
   
   
   
   
+  
   bool GetBoolean(StringPiece path, bool* out_value) const;
+  
   bool GetInteger(StringPiece path, int* out_value) const;
   
   
+  
   bool GetDouble(StringPiece path, double* out_value) const;
+  
   bool GetString(StringPiece path, std::string* out_value) const;
+  
   bool GetString(StringPiece path, string16* out_value) const;
+  
   bool GetStringASCII(StringPiece path, std::string* out_value) const;
-  bool GetBinary(StringPiece path, const BinaryValue** out_value) const;
-  bool GetBinary(StringPiece path, BinaryValue** out_value);
+  
+  bool GetBinary(StringPiece path, const Value** out_value) const;
+  
+  bool GetBinary(StringPiece path, Value** out_value);
+  
   bool GetDictionary(StringPiece path,
                      const DictionaryValue** out_value) const;
+  
   bool GetDictionary(StringPiece path, DictionaryValue** out_value);
+  
   bool GetList(StringPiece path, const ListValue** out_value) const;
+  
   bool GetList(StringPiece path, ListValue** out_value);
 
   
   
+  
   bool GetWithoutPathExpansion(StringPiece key, const Value** out_value) const;
+  
   bool GetWithoutPathExpansion(StringPiece key, Value** out_value);
+  
   bool GetBooleanWithoutPathExpansion(StringPiece key, bool* out_value) const;
+  
   bool GetIntegerWithoutPathExpansion(StringPiece key, int* out_value) const;
+  
   bool GetDoubleWithoutPathExpansion(StringPiece key, double* out_value) const;
+  
   bool GetStringWithoutPathExpansion(StringPiece key,
                                      std::string* out_value) const;
+  
   bool GetStringWithoutPathExpansion(StringPiece key,
                                      string16* out_value) const;
+  
   bool GetDictionaryWithoutPathExpansion(
       StringPiece key,
       const DictionaryValue** out_value) const;
+  
   bool GetDictionaryWithoutPathExpansion(StringPiece key,
                                          DictionaryValue** out_value);
+  
   bool GetListWithoutPathExpansion(StringPiece key,
                                    const ListValue** out_value) const;
+  
   bool GetListWithoutPathExpansion(StringPiece key, ListValue** out_value);
 
   
@@ -327,16 +456,16 @@ class BASE_EXPORT DictionaryValue : public Value {
   
   
   
-  virtual bool Remove(StringPiece path, std::unique_ptr<Value>* out_value);
+  bool Remove(StringPiece path, std::unique_ptr<Value>* out_value);
 
   
   
-  virtual bool RemoveWithoutPathExpansion(StringPiece key,
-                                          std::unique_ptr<Value>* out_value);
+  bool RemoveWithoutPathExpansion(StringPiece key,
+                                  std::unique_ptr<Value>* out_value);
 
   
   
-  virtual bool RemovePath(StringPiece path, std::unique_ptr<Value>* out_value);
+  bool RemovePath(StringPiece path, std::unique_ptr<Value>* out_value);
 
   
   
@@ -350,8 +479,9 @@ class BASE_EXPORT DictionaryValue : public Value {
   void MergeDictionary(const DictionaryValue* dictionary);
 
   
-  virtual void Swap(DictionaryValue* other);
+  void Swap(DictionaryValue* other);
 
+  
   
   
   class BASE_EXPORT Iterator {
@@ -360,7 +490,7 @@ class BASE_EXPORT DictionaryValue : public Value {
     Iterator(const Iterator& other);
     ~Iterator();
 
-    bool IsAtEnd() const { return it_ == target_.dictionary_.end(); }
+    bool IsAtEnd() const { return it_ == target_.dict_->end(); }
     void Advance() { ++it_; }
 
     const std::string& key() const { return it_->first; }
@@ -368,52 +498,68 @@ class BASE_EXPORT DictionaryValue : public Value {
 
    private:
     const DictionaryValue& target_;
-    Storage::const_iterator it_;
+    DictStorage::const_iterator it_;
   };
 
   
-  DictionaryValue* DeepCopy() const override;
+  
+  iterator begin() { return dict_->begin(); }
+  iterator end() { return dict_->end(); }
+
+  
+  const_iterator begin() const { return dict_->begin(); }
+  const_iterator end() const { return dict_->end(); }
+
+  
+  
+  DictionaryValue* DeepCopy() const;
+  
   
   std::unique_ptr<DictionaryValue> CreateDeepCopy() const;
-  bool Equals(const Value* other) const override;
-
- private:
-  Storage dictionary_;
-
-  DISALLOW_COPY_AND_ASSIGN(DictionaryValue);
 };
 
 
 class BASE_EXPORT ListValue : public Value {
  public:
-  using Storage = std::vector<std::unique_ptr<Value>>;
-  using const_iterator = Storage::const_iterator;
-  using iterator = Storage::iterator;
+  using const_iterator = ListStorage::const_iterator;
+  using iterator = ListStorage::iterator;
 
   
   static std::unique_ptr<ListValue> From(std::unique_ptr<Value> value);
 
   ListValue();
-  ~ListValue() override;
+  explicit ListValue(const ListStorage& in_list);
+  explicit ListValue(ListStorage&& in_list) noexcept;
 
+  
   
   void Clear();
 
   
-  size_t GetSize() const { return list_.size(); }
+  
+  size_t GetSize() const { return list_->size(); }
 
   
-  bool empty() const { return list_.empty(); }
+  
+  size_t capacity() const { return list_->capacity(); }
+
+  
+  
+  bool empty() const { return list_->empty(); }
+
+  
+  
+  void Reserve(size_t n);
 
   
   
   
   
   
-  bool Set(size_t index, Value* in_value);
   
   bool Set(size_t index, std::unique_ptr<Value> in_value);
 
+  
   
   
   
@@ -425,17 +571,26 @@ class BASE_EXPORT ListValue : public Value {
   
   
   
+  
   bool GetBoolean(size_t index, bool* out_value) const;
+  
   bool GetInteger(size_t index, int* out_value) const;
   
   
+  
   bool GetDouble(size_t index, double* out_value) const;
+  
   bool GetString(size_t index, std::string* out_value) const;
   bool GetString(size_t index, string16* out_value) const;
-  bool GetBinary(size_t index, const BinaryValue** out_value) const;
-  bool GetBinary(size_t index, BinaryValue** out_value);
+  
+  bool GetBinary(size_t index, const Value** out_value) const;
+  bool GetBinary(size_t index, Value** out_value);
+
   bool GetDictionary(size_t index, const DictionaryValue** out_value) const;
   bool GetDictionary(size_t index, DictionaryValue** out_value);
+
+  using Value::GetList;
+  
   bool GetList(size_t index, const ListValue** out_value) const;
   bool GetList(size_t index, ListValue** out_value);
 
@@ -444,8 +599,10 @@ class BASE_EXPORT ListValue : public Value {
   
   
   
-  virtual bool Remove(size_t index, std::unique_ptr<Value>* out_value);
+  
+  bool Remove(size_t index, std::unique_ptr<Value>* out_value);
 
+  
   
   
   
@@ -455,28 +612,30 @@ class BASE_EXPORT ListValue : public Value {
   
   
   
+  
   iterator Erase(iterator iter, std::unique_ptr<Value>* out_value);
 
   
-  void Append(std::unique_ptr<Value> in_value);
-#if !defined(OS_LINUX)
   
-  void Append(Value* in_value);
-#endif
+  void Append(std::unique_ptr<Value> in_value);
 
+  
   
   void AppendBoolean(bool in_value);
   void AppendInteger(int in_value);
   void AppendDouble(double in_value);
   void AppendString(StringPiece in_value);
   void AppendString(const string16& in_value);
+  
   void AppendStrings(const std::vector<std::string>& in_values);
   void AppendStrings(const std::vector<string16>& in_values);
 
   
   
+  
   bool AppendIfNotPresent(std::unique_ptr<Value> in_value);
 
+  
   
   
   bool Insert(size_t index, std::unique_ptr<Value> in_value);
@@ -484,31 +643,30 @@ class BASE_EXPORT ListValue : public Value {
   
   
   
+  
   const_iterator Find(const Value& value) const;
 
   
-  virtual void Swap(ListValue* other);
+  
+  void Swap(ListValue* other);
 
   
-  iterator begin() { return list_.begin(); }
-  iterator end() { return list_.end(); }
-
-  const_iterator begin() const { return list_.begin(); }
-  const_iterator end() const { return list_.end(); }
+  
+  iterator begin() { return list_->begin(); }
+  
+  iterator end() { return list_->end(); }
 
   
-  bool GetAsList(ListValue** out_value) override;
-  bool GetAsList(const ListValue** out_value) const override;
-  ListValue* DeepCopy() const override;
-  bool Equals(const Value* other) const override;
+  const_iterator begin() const { return list_->begin(); }
+  
+  const_iterator end() const { return list_->end(); }
 
+  
+  
+  ListValue* DeepCopy() const;
+  
   
   std::unique_ptr<ListValue> CreateDeepCopy() const;
-
- private:
-  Storage list_;
-
-  DISALLOW_COPY_AND_ASSIGN(ListValue);
 };
 
 
@@ -543,16 +701,6 @@ class BASE_EXPORT ValueDeserializer {
 BASE_EXPORT std::ostream& operator<<(std::ostream& out, const Value& value);
 
 BASE_EXPORT inline std::ostream& operator<<(std::ostream& out,
-                                            const FundamentalValue& value) {
-  return out << static_cast<const Value&>(value);
-}
-
-BASE_EXPORT inline std::ostream& operator<<(std::ostream& out,
-                                            const StringValue& value) {
-  return out << static_cast<const Value&>(value);
-}
-
-BASE_EXPORT inline std::ostream& operator<<(std::ostream& out,
                                             const DictionaryValue& value) {
   return out << static_cast<const Value&>(value);
 }
@@ -561,6 +709,10 @@ BASE_EXPORT inline std::ostream& operator<<(std::ostream& out,
                                             const ListValue& value) {
   return out << static_cast<const Value&>(value);
 }
+
+
+BASE_EXPORT std::ostream& operator<<(std::ostream& out,
+                                     const Value::Type& type);
 
 }  
 

@@ -34,16 +34,21 @@ enum Version {
   VERSION_WIN8_1 = 6,       
   VERSION_WIN10 = 7,        
   VERSION_WIN10_TH2 = 8,    
+  VERSION_WIN10_RS1 = 9,    
+  VERSION_WIN10_RS2 = 10,   
   VERSION_WIN_LAST,         
 };
 
 
 
 
+
 enum VersionType {
-  SUITE_HOME,
+  SUITE_HOME = 0,
   SUITE_PROFESSIONAL,
   SUITE_SERVER,
+  SUITE_ENTERPRISE,
+  SUITE_EDUCATION,
   SUITE_LAST,
 };
 

@@ -110,7 +110,6 @@
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
-#include "base/containers/hash_tables.h"
 #include "base/macros.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
@@ -181,6 +180,13 @@ class BASE_EXPORT FilePath {
   explicit FilePath(StringPieceType path);
   ~FilePath();
   FilePath& operator=(const FilePath& that);
+
+  
+  
+  FilePath(FilePath&& that) noexcept;
+  
+  
+  FilePath& operator=(FilePath&& that);
 
   bool operator==(const FilePath& that) const;
 
@@ -445,11 +451,8 @@ class BASE_EXPORT FilePath {
   StringType path_;
 };
 
-
-
-
-
-void PrintTo(const FilePath& path, std::ostream* out);
+BASE_EXPORT std::ostream& operator<<(std::ostream& out,
+                                     const FilePath& file_path);
 
 }  
 
@@ -463,13 +466,13 @@ void PrintTo(const FilePath& path, std::ostream* out);
 #define PRFilePath "ls"
 #endif  
 
+namespace std {
 
-
-namespace BASE_HASH_NAMESPACE {
-
-template<>
+template <>
 struct hash<base::FilePath> {
-  size_t operator()(const base::FilePath& f) const {
+  typedef base::FilePath argument_type;
+  typedef std::size_t result_type;
+  result_type operator()(argument_type const& f) const {
     return hash<base::FilePath::StringType>()(f.value());
   }
 };

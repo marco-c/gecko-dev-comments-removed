@@ -13,6 +13,7 @@
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/handle_closer_agent.h"
 #include "sandbox/win/src/handle_interception.h"
+#include "sandbox/win/src/heap_helper.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/process_mitigations.h"
 #include "sandbox/win/src/restricted_token_utils.h"
@@ -21,6 +22,7 @@
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
 
+namespace sandbox {
 namespace {
 
 
@@ -48,14 +50,33 @@ bool FlushCachedRegHandles() {
 
 
 
+
+
+
+bool CsrssDisconnectCleanup() {
+  HANDLE csr_port_heap = FindCsrPortHeap();
+  if (!csr_port_heap) {
+    DLOG(ERROR) << "Failed to find CSR Port heap handle";
+    return false;
+  }
+  HeapDestroy(csr_port_heap);
+  return true;
+}
+
+
+
 bool CloseOpenHandles(bool* is_csrss_connected) {
-  if (sandbox::HandleCloserAgent::NeedsHandlesClosed()) {
-    sandbox::HandleCloserAgent handle_closer;
+  if (HandleCloserAgent::NeedsHandlesClosed()) {
+    HandleCloserAgent handle_closer;
     handle_closer.InitializeHandlesToClose(is_csrss_connected);
+    if (!*is_csrss_connected) {
+      if (!CsrssDisconnectCleanup()) {
+        return false;
+      }
+    }
     if (!handle_closer.CloseHandles())
       return false;
   }
-
   return true;
 }
 
@@ -99,12 +120,11 @@ bool WarmupWindowsLocales() {
 
 
 
-char g_target_services_memory[sizeof(sandbox::TargetServicesBase)];
-sandbox::TargetServicesBase* g_target_services = nullptr;
+char g_target_services_memory[sizeof(TargetServicesBase)];
+TargetServicesBase* g_target_services = nullptr;
 
 }  
 
-namespace sandbox {
 
 SANDBOX_INTERCEPT IntegrityLevel g_shared_delayed_integrity_level =
     INTEGRITY_LEVEL_LAST;

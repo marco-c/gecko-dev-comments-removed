@@ -8,58 +8,59 @@
 #ifndef BASE_ATOMIC_REF_COUNT_H_
 #define BASE_ATOMIC_REF_COUNT_H_
 
-#include "base/atomicops.h"
+#include <atomic>
 
 namespace base {
 
-typedef subtle::AtomicWord AtomicRefCount;
+class AtomicRefCount {
+ public:
+  constexpr AtomicRefCount() : ref_count_(0) {}
+  explicit constexpr AtomicRefCount(int initial_value)
+      : ref_count_(initial_value) {}
 
+  
+  void Increment() { Increment(1); }
 
-inline void AtomicRefCountIncN(volatile AtomicRefCount *ptr,
-                               AtomicRefCount increment) {
-  subtle::NoBarrier_AtomicIncrement(ptr, increment);
-}
+  
+  void Increment(int increment) {
+    ref_count_.fetch_add(increment, std::memory_order_relaxed);
+  }
 
+  
+  
+  
+  bool Decrement() {
+    
+    
+    
+    
+    return ref_count_.fetch_sub(1, std::memory_order_acq_rel) != 1;
+  }
 
+  
+  
+  
+  
+  
+  
+  bool IsOne() const { return ref_count_.load(std::memory_order_acquire) == 1; }
 
+  
+  
+  
+  bool IsZero() const {
+    return ref_count_.load(std::memory_order_acquire) == 0;
+  }
 
+  
+  
+  int SubtleRefCountForDebug() const {
+    return ref_count_.load(std::memory_order_relaxed);
+  }
 
-inline bool AtomicRefCountDecN(volatile AtomicRefCount *ptr,
-                               AtomicRefCount decrement) {
-  bool res = (subtle::Barrier_AtomicIncrement(ptr, -decrement) != 0);
-  return res;
-}
-
-
-inline void AtomicRefCountInc(volatile AtomicRefCount *ptr) {
-  base::AtomicRefCountIncN(ptr, 1);
-}
-
-
-
-
-inline bool AtomicRefCountDec(volatile AtomicRefCount *ptr) {
-  return base::AtomicRefCountDecN(ptr, 1);
-}
-
-
-
-
-
-
-
-inline bool AtomicRefCountIsOne(volatile AtomicRefCount *ptr) {
-  bool res = (subtle::Acquire_Load(ptr) == 1);
-  return res;
-}
-
-
-
-
-inline bool AtomicRefCountIsZero(volatile AtomicRefCount *ptr) {
-  bool res = (subtle::Acquire_Load(ptr) == 0);
-  return res;
-}
+ private:
+  std::atomic_int ref_count_;
+};
 
 }  
 

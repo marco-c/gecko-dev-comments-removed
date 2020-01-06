@@ -13,11 +13,20 @@
 
 #if defined(OS_WIN)
 #include "base/win/scoped_handle.h"
-#endif
+#elif defined(OS_MACOSX)
+#include <mach/mach.h>
 
-#if defined(OS_POSIX)
+#include <list>
+#include <memory>
+
+#include "base/callback_forward.h"
+#include "base/mac/scoped_mach_port.h"
+#include "base/memory/ref_counted.h"
+#include "base/synchronization/lock.h"
+#elif defined(OS_POSIX)
 #include <list>
 #include <utility>
+
 #include "base/memory/ref_counted.h"
 #include "base/synchronization/lock.h"
 #endif
@@ -25,6 +34,7 @@
 namespace base {
 
 class TimeDelta;
+class TimeTicks;
 
 
 
@@ -90,13 +100,21 @@ class BASE_EXPORT WaitableEvent {
   
   
   
+  bool TimedWait(const TimeDelta& wait_delta);
+
   
-  bool TimedWait(const TimeDelta& max_time);
+  
+  
+  
+  bool TimedWaitUntil(const TimeTicks& end_time);
 
 #if defined(OS_WIN)
   HANDLE handle() const { return handle_.Get(); }
 #endif
 
+  
+  
+  
   
   
   
@@ -145,9 +163,78 @@ class BASE_EXPORT WaitableEvent {
 
 #if defined(OS_WIN)
   win::ScopedHandle handle_;
+#elif defined(OS_MACOSX)
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool UseSlowWatchList(ResetPolicy policy);
+
+  
+  
+  
+  
+  static bool PeekPort(mach_port_t port, bool dequeue);
+
+  
+  
+  
+  
+  
+  
+  class ReceiveRight : public RefCountedThreadSafe<ReceiveRight> {
+   public:
+    ReceiveRight(mach_port_t name, bool create_slow_watch_list);
+
+    mach_port_t Name() const { return right_.get(); };
+
+    
+    
+    struct WatchList {
+      WatchList();
+      ~WatchList();
+
+      
+      
+      
+      Lock lock;
+      std::list<OnceClosure> list;
+    };
+
+    WatchList* SlowWatchList() const { return slow_watch_list_.get(); }
+
+   private:
+    friend class RefCountedThreadSafe<ReceiveRight>;
+    ~ReceiveRight();
+
+    mac::ScopedMachReceiveRight right_;
+
+    
+    
+    std::unique_ptr<WatchList> slow_watch_list_;
+
+    DISALLOW_COPY_AND_ASSIGN(ReceiveRight);
+  };
+
+  const ResetPolicy policy_;
+
+  
+  scoped_refptr<ReceiveRight> receive_right_;
+
+  
+  
+  
+  mac::ScopedMachSendRight send_right_;
 #else
   
   
+  
+  
+
   
   
   

@@ -13,6 +13,22 @@ namespace debug {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void BASE_EXPORT Alias(const void* var);
 
 }  

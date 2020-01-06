@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 
+#include "base/unguessable_token.h"
 #include "build/build_config.h"
 
 #if defined(OS_WIN)
@@ -15,6 +16,7 @@
 #elif defined(OS_MACOSX) && !defined(OS_IOS)
 #include <mach/mach.h>
 #include "base/base_export.h"
+#include "base/file_descriptor_posix.h"
 #include "base/macros.h"
 #include "base/process/process_handle.h"
 #elif defined(OS_POSIX)
@@ -26,14 +28,14 @@ namespace base {
 
 
 
-#if defined(OS_POSIX) && !(defined(OS_MACOSX) && !defined(OS_IOS))
-typedef FileDescriptor SharedMemoryHandle;
-#elif defined(OS_WIN)
+
+
+
+
 class BASE_EXPORT SharedMemoryHandle {
  public:
   
   SharedMemoryHandle();
-  SharedMemoryHandle(HANDLE h, base::ProcessId pid);
 
   
   
@@ -44,76 +46,75 @@ class BASE_EXPORT SharedMemoryHandle {
   SharedMemoryHandle& operator=(const SharedMemoryHandle& handle);
 
   
-  bool operator==(const SharedMemoryHandle& handle) const;
-  bool operator!=(const SharedMemoryHandle& handle) const;
-
+  
+  
+  
+  
   
   void Close() const;
 
   
-  bool IsValid() const;
-
   
-  bool BelongsToCurrentProcess() const;
-
-  
-  
-  bool NeedsBrokering() const;
-
   void SetOwnershipPassesToIPC(bool ownership_passes);
   bool OwnershipPassesToIPC() const;
 
-  HANDLE GetHandle() const;
-  base::ProcessId GetPID() const;
-
- private:
-  HANDLE handle_;
+  
+  bool IsValid() const;
 
   
   
-  base::ProcessId pid_;
-
-  
-  
-  
-  
-  
-  bool ownership_passes_to_ipc_;
-};
-#else
-class BASE_EXPORT SharedMemoryHandle {
- public:
-  
-  SharedMemoryHandle();
-
-  
-  
-  explicit SharedMemoryHandle(mach_vm_size_t size);
-
-  
-  
-  SharedMemoryHandle(mach_port_t memory_object,
-                     mach_vm_size_t size,
-                     base::ProcessId pid);
-
-  
-  
-  SharedMemoryHandle(const SharedMemoryHandle& handle);
-
-  
-  
-  SharedMemoryHandle& operator=(const SharedMemoryHandle& handle);
-
   
   SharedMemoryHandle Duplicate() const;
 
   
-  bool operator==(const SharedMemoryHandle& handle) const;
-  bool operator!=(const SharedMemoryHandle& handle) const;
+  
+  
+  base::UnguessableToken GetGUID() const;
+
+  
+  size_t GetSize() const;
+
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+  enum Type {
+    
+    POSIX,
+    
+    MACH,
+  };
 
   
   
-  bool IsValid() const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedMemoryHandle(const base::FileDescriptor& file_descriptor,
+                     size_t size,
+                     const base::UnguessableToken& guid);
+
+  
+  
+  
+  
+  SharedMemoryHandle(mach_vm_size_t size, const base::UnguessableToken& guid);
+
+  
+  
+  
+  
+  SharedMemoryHandle(mach_port_t memory_object,
+                     mach_vm_size_t size,
+                     const base::UnguessableToken& guid);
 
   
   
@@ -121,41 +122,101 @@ class BASE_EXPORT SharedMemoryHandle {
 
   
   
-  bool GetSize(size_t* size) const;
-
-  
-  
   
   
   bool MapAt(off_t offset, size_t bytes, void** memory, bool read_only);
+#elif defined(OS_FUCHSIA)
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedMemoryHandle(mx_handle_t h,
+                     size_t size,
+                     const base::UnguessableToken& guid);
+  mx_handle_t GetHandle() const;
+#elif defined(OS_WIN)
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedMemoryHandle(HANDLE h, size_t size, const base::UnguessableToken& guid);
+  HANDLE GetHandle() const;
+#else
+  
+  
+  
+  
+  
+  
+  
+  SharedMemoryHandle(const base::FileDescriptor& file_descriptor,
+                     size_t size,
+                     const base::UnguessableToken& guid);
 
   
-  void Close() const;
+  
+  
+  
+  static SharedMemoryHandle ImportHandle(int fd, size_t size);
 
-  void SetOwnershipPassesToIPC(bool ownership_passes);
-  bool OwnershipPassesToIPC() const;
+  
+  int GetHandle() const;
+
+  
+  
+  int Release();
+#endif
 
  private:
-  
-  void CopyRelevantData(const SharedMemoryHandle& handle);
+#if defined(OS_MACOSX) && !defined(OS_IOS)
+  friend class SharedMemory;
 
-  mach_port_t memory_object_ = MACH_PORT_NULL;
-
-  
-  
-  mach_vm_size_t size_ = 0;
+  Type type_ = MACH;
 
   
   
-  base::ProcessId pid_ = 0;
+  union {
+    FileDescriptor file_descriptor_;
 
+    struct {
+      mach_port_t memory_object_ = MACH_PORT_NULL;
+
+      
+      
+      
+      
+      bool ownership_passes_to_ipc_ = false;
+    };
+  };
+#elif defined(OS_FUCHSIA)
+  mx_handle_t handle_ = MX_HANDLE_INVALID;
+  bool ownership_passes_to_ipc_ = false;
+#elif defined(OS_WIN)
+  HANDLE handle_ = nullptr;
+
+  
   
   
   
   
   bool ownership_passes_to_ipc_ = false;
-};
+#else
+  FileDescriptor file_descriptor_;
 #endif
+
+  base::UnguessableToken guid_;
+
+  
+  size_t size_ = 0;
+};
 
 }  
 

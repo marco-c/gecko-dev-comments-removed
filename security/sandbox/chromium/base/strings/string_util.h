@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <initializer_list>
 #include <string>
 #include <vector>
 
@@ -284,8 +285,6 @@ BASE_EXPORT bool ContainsOnlyChars(const StringPiece16& input,
 BASE_EXPORT bool IsStringUTF8(const StringPiece& str);
 BASE_EXPORT bool IsStringASCII(const StringPiece& str);
 BASE_EXPORT bool IsStringASCII(const StringPiece16& str);
-
-
 BASE_EXPORT bool IsStringASCII(const string16& str);
 #if defined(WCHAR_T_IS_UTF32)
 BASE_EXPORT bool IsStringASCII(const std::wstring& str);
@@ -432,9 +431,28 @@ BASE_EXPORT wchar_t* WriteInto(std::wstring* str, size_t length_with_null);
 #endif
 
 
+
+
+
+
+
+
+
+
 BASE_EXPORT std::string JoinString(const std::vector<std::string>& parts,
                                    StringPiece separator);
 BASE_EXPORT string16 JoinString(const std::vector<string16>& parts,
+                                StringPiece16 separator);
+BASE_EXPORT std::string JoinString(const std::vector<StringPiece>& parts,
+                                   StringPiece separator);
+BASE_EXPORT string16 JoinString(const std::vector<StringPiece16>& parts,
+                                StringPiece16 separator);
+
+
+
+BASE_EXPORT std::string JoinString(std::initializer_list<StringPiece> parts,
+                                   StringPiece separator);
+BASE_EXPORT string16 JoinString(std::initializer_list<StringPiece16> parts,
                                 StringPiece16 separator);
 
 

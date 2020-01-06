@@ -54,7 +54,8 @@ enum {
 
 
 struct JobTracker {
-  JobTracker(base::win::ScopedHandle job, sandbox::PolicyBase* policy)
+  JobTracker(base::win::ScopedHandle job,
+             scoped_refptr<sandbox::PolicyBase> policy)
       : job(std::move(job)), policy(policy) {}
   ~JobTracker() {
     FreeResources();
@@ -65,7 +66,7 @@ struct JobTracker {
   void FreeResources();
 
   base::win::ScopedHandle job;
-  sandbox::PolicyBase* policy;
+  scoped_refptr<sandbox::PolicyBase> policy;
 };
 
 void JobTracker::FreeResources() {
@@ -79,11 +80,10 @@ void JobTracker::FreeResources() {
 
     
     policy->OnJobEmpty(stale_job_handle);
-    policy->Release();
-    policy = NULL;
+    policy = nullptr;
   }
 }
-
+ 
 
 struct PeerTracker {
   PeerTracker(DWORD process_id, HANDLE broker_job_port)
@@ -168,10 +168,13 @@ BrokerServicesBase::~BrokerServicesBase() {
   ::DeleteCriticalSection(&lock_);
 }
 
-TargetPolicy* BrokerServicesBase::CreatePolicy() {
+scoped_refptr<TargetPolicy> BrokerServicesBase::CreatePolicy() {
   
   
-  return new PolicyBase;
+  scoped_refptr<TargetPolicy> policy(new PolicyBase);
+  
+  policy->Release();
+  return policy;
 }
 
 
@@ -301,7 +304,7 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
 
 ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
                                            const wchar_t* command_line,
-                                           TargetPolicy* policy,
+                                           scoped_refptr<TargetPolicy> policy,
                                            ResultCode* last_warning,
                                            DWORD* last_error,
                                            PROCESS_INFORMATION* target_info) {
@@ -322,7 +325,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   AutoLock lock(&lock_);
 
   
-  PolicyBase* policy_base = static_cast<PolicyBase*>(policy);
+  scoped_refptr<PolicyBase> policy_base(static_cast<PolicyBase*>(policy.get()));
 
   
   
@@ -390,8 +393,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   if (stderr_handle != stdout_handle && stderr_handle != INVALID_HANDLE_VALUE)
     inherited_handle_list.push_back(stderr_handle);
 
-  const base::HandlesToInheritVector& policy_handle_list =
-      policy_base->GetHandlesBeingShared();
+  const auto& policy_handle_list = policy_base->GetHandlesBeingShared();
 
   for (HANDLE handle : policy_handle_list)
     inherited_handle_list.push_back(handle);
@@ -474,7 +476,6 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
 
   
   
-  policy_base->AddRef();
   if (job.IsValid()) {
     std::unique_ptr<JobTracker> tracker =
         base::MakeUnique<JobTracker>(std::move(job), policy_base);
@@ -489,6 +490,11 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
     tracker_list_.push_back(std::move(tracker));
     child_process_ids_.insert(process_info.process_id());
   } else {
+    
+    
+    
+    policy_base->AddRef();
+
     
     
     

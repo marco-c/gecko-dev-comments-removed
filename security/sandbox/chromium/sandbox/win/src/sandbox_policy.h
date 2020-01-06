@@ -206,7 +206,7 @@ class TargetPolicy {
 
   
   
-  virtual void SetDisconnectCsrss() = 0;
+  virtual ResultCode SetDisconnectCsrss() = 0;
 
   
   

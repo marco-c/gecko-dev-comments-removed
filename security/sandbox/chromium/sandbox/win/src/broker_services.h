@@ -30,8 +30,6 @@ struct PeerTracker;
 
 namespace sandbox {
 
-class PolicyBase;
-
 
 
 
@@ -48,10 +46,10 @@ class BrokerServicesBase final : public BrokerServices,
 
   
   ResultCode Init() override;
-  TargetPolicy* CreatePolicy() override;
+  scoped_refptr<TargetPolicy> CreatePolicy() override;
   ResultCode SpawnTarget(const wchar_t* exe_path,
                          const wchar_t* command_line,
-                         TargetPolicy* policy,
+                         scoped_refptr<TargetPolicy> policy,
                          ResultCode* last_warning,
                          DWORD* last_error,
                          PROCESS_INFORMATION* target) override;

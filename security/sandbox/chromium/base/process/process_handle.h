@@ -16,6 +16,10 @@
 #include <windows.h>
 #endif
 
+#if defined(OS_FUCHSIA)
+#include <magenta/types.h>
+#endif
+
 namespace base {
 
 
@@ -27,6 +31,11 @@ typedef DWORD ProcessId;
 typedef HANDLE UserTokenHandle;
 const ProcessHandle kNullProcessHandle = NULL;
 const ProcessId kNullProcessId = 0;
+#elif defined(OS_FUCHSIA)
+typedef mx_handle_t ProcessHandle;
+typedef mx_koid_t ProcessId;
+const ProcessHandle kNullProcessHandle = MX_HANDLE_INVALID;
+const ProcessId kNullProcessId = MX_KOID_INVALID;
 #elif defined(OS_POSIX)
 
 typedef pid_t ProcessHandle;
@@ -34,6 +43,15 @@ typedef pid_t ProcessId;
 const ProcessHandle kNullProcessHandle = 0;
 const ProcessId kNullProcessId = 0;
 #endif  
+
+
+
+
+#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#define CrPRIdPid "ld"
+#else
+#define CrPRIdPid "d"
+#endif
 
 
 
@@ -68,8 +86,10 @@ BASE_EXPORT ProcessHandle GetCurrentProcessHandle();
 
 BASE_EXPORT ProcessId GetProcId(ProcessHandle process);
 
+#if !defined(OS_FUCHSIA)
 
 BASE_EXPORT ProcessId GetParentProcessId(ProcessHandle process);
+#endif  
 
 #if defined(OS_POSIX)
 

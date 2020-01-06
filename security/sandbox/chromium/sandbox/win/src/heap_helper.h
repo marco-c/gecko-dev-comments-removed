@@ -1,0 +1,21 @@
+
+
+
+
+#include <windows.h>
+
+#include "base/win/windows_version.h"
+
+namespace sandbox {
+
+
+
+
+
+bool HeapFlags(HANDLE handle, DWORD* flags);
+
+
+
+HANDLE FindCsrPortHeap();
+
+}  

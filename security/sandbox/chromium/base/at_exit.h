@@ -49,6 +49,10 @@ class BASE_EXPORT AtExitManager {
   
   static void ProcessCallbacksNow();
 
+  
+  
+  static void DisableAllAtExitManagers();
+
  protected:
   
   

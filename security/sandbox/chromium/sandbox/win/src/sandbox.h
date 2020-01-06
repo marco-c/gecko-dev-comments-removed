@@ -21,6 +21,7 @@
 
 #include <windows.h>
 
+#include "base/memory/ref_counted.h"
 #include "sandbox/win/src/sandbox_policy.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -56,7 +57,7 @@ class BrokerServices {
   
   
   
-  virtual TargetPolicy* CreatePolicy() = 0;
+  virtual scoped_refptr<TargetPolicy> CreatePolicy() = 0;
 
   
   
@@ -79,7 +80,7 @@ class BrokerServices {
   
   virtual ResultCode SpawnTarget(const wchar_t* exe_path,
                                  const wchar_t* command_line,
-                                 TargetPolicy* policy,
+                                 scoped_refptr<TargetPolicy> policy,
                                  ResultCode* last_warning,
                                  DWORD* last_error,
                                  PROCESS_INFORMATION* target) = 0;

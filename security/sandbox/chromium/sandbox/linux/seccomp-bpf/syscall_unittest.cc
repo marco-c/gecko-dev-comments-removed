@@ -34,14 +34,6 @@ namespace sandbox {
 
 namespace {
 
-
-
-#ifdef __NR_mmap2
-const int kMMapNr = __NR_mmap2;
-#else
-const int kMMapNr = __NR_mmap;
-#endif
-
 TEST(Syscall, InvalidCallReturnsENOSYS) {
   EXPECT_EQ(-ENOSYS, Syscall::InvalidCall());
 }

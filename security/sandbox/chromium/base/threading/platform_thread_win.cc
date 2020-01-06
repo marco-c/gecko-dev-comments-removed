@@ -10,6 +10,7 @@
 #include "base/debug/alias.h"
 #include "base/debug/profiler.h"
 #include "base/logging.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
 #include "base/tracked_objects.h"
@@ -29,6 +30,10 @@ typedef struct tagTHREADNAME_INFO {
   DWORD dwThreadID;  
   DWORD dwFlags;  
 } THREADNAME_INFO;
+
+
+typedef HRESULT(WINAPI* SetThreadDescription)(HANDLE hThread,
+                                              PCWSTR lpThreadDescription);
 
 
 void SetNameInternal(PlatformThreadId thread_id, const char* name) {
@@ -173,6 +178,15 @@ void PlatformThread::SetName(const std::string& name) {
     tracked_objects::ThreadData::InitializeThreadContext(name);
 
   
+  auto set_thread_description_func =
+      reinterpret_cast<SetThreadDescription>(::GetProcAddress(
+          ::GetModuleHandle(L"Kernel32.dll"), "SetThreadDescription"));
+  if (set_thread_description_func) {
+    set_thread_description_func(::GetCurrentThread(),
+                                base::UTF8ToWide(name).c_str());
+  }
+
+  
   
   
   
@@ -211,9 +225,6 @@ bool PlatformThread::CreateNonJoinableWithPriority(size_t stack_size,
 
 
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
-  
-  base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
-
   DCHECK(thread_handle.platform_handle());
   
   
@@ -223,6 +234,19 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
 #if 0
   base::ThreadRestrictions::AssertIOAllowed();
 #endif
+
+  DWORD thread_id = 0;
+  thread_id = ::GetThreadId(thread_handle.platform_handle());
+  DWORD last_error = 0;
+  if (!thread_id)
+    last_error = ::GetLastError();
+
+  
+  base::debug::Alias(&thread_id);
+  base::debug::Alias(&last_error);
+
+  
+  base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
 
   
   

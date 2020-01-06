@@ -6,6 +6,7 @@
 
 #include "SandboxInitialization.h"
 
+#include "base/memory/ref_counted.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "mozilla/sandboxing/permissionsService.h"
 
@@ -62,9 +63,8 @@ InitializeBrokerServices()
   
   
   
-  sandbox::TargetPolicy* policy = brokerServices->CreatePolicy();
+  scoped_refptr<sandbox::TargetPolicy> policy = brokerServices->CreatePolicy();
   sandbox::ResultCode result = policy->CreateAlternateDesktop(true);
-  policy->Release();
 
   return brokerServices;
 }

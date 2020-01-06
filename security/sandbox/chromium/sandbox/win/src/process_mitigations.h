@@ -18,6 +18,10 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags);
 
 
 
+bool ApplyMitigationsToCurrentThread(MitigationFlags flags);
+
+
+
 MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags);
 
 
@@ -38,6 +42,9 @@ bool CanSetProcessMitigationsPostStartup(MitigationFlags flags);
 
 
 bool CanSetProcessMitigationsPreStartup(MitigationFlags flags);
+
+
+bool CanSetMitigationsPerThread(MitigationFlags flags);
 
 }  
 

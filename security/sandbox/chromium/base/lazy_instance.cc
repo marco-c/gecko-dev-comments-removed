@@ -38,16 +38,16 @@ bool NeedsLazyInstance(subtle::AtomicWord* state) {
 
 void CompleteLazyInstance(subtle::AtomicWord* state,
                           subtle::AtomicWord new_instance,
-                          void* lazy_instance,
-                          void (*dtor)(void*)) {
+                          void (*destructor)(void*),
+                          void* destructor_arg) {
   
   
   
   subtle::Release_Store(state, new_instance);
 
   
-  if (dtor)
-    AtExitManager::RegisterCallback(dtor, lazy_instance);
+  if (destructor)
+    AtExitManager::RegisterCallback(destructor, destructor_arg);
 }
 
 }  

@@ -17,17 +17,12 @@
   TypeName(const TypeName&) = delete
 
 
-#define DISALLOW_ASSIGN(TypeName) \
-  void operator=(const TypeName&) = delete
-
+#define DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
 
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&) = delete;      \
-  void operator=(const TypeName&) = delete
-
-
-
+  DISALLOW_COPY(TypeName);                 \
+  DISALLOW_ASSIGN(TypeName)
 
 
 

@@ -25,9 +25,7 @@ namespace base {
 class BASE_EXPORT SingleThreadTaskRunner : public SequencedTaskRunner {
  public:
   
-  bool BelongsToCurrentThread() const {
-    return RunsTasksOnCurrentThread();
-  }
+  bool BelongsToCurrentThread() const { return RunsTasksInCurrentSequence(); }
 
  protected:
   ~SingleThreadTaskRunner() override {}

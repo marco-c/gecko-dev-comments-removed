@@ -12,7 +12,7 @@
 #include <string>
 
 #include "base/base_export.h"
-#include "base/callback_forward.h"
+#include "base/callback.h"
 #include "base/compiler_specific.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
@@ -28,6 +28,10 @@ namespace base {
 class SequencedTaskRunner;
 
 template <class T> class DeleteHelper;
+
+
+
+
 
 
 
@@ -181,22 +185,23 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  static void RedirectToTaskSchedulerForProcess();
+  static void EnableForProcess();
 
   
   
   
   
+  static void EnableWithRedirectionToTaskSchedulerForProcess();
+
   
   
-  static void ResetRedirectToTaskSchedulerForProcessForTesting();
+  
+  
+  static void DisableForProcessForTesting();
+
+  
+  
+  static bool IsEnabled();
 
   
   
@@ -268,25 +273,12 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   bool PostWorkerTask(const tracked_objects::Location& from_here,
-                      const Closure& task);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool PostDelayedWorkerTask(const tracked_objects::Location& from_here,
-                             const Closure& task,
-                             TimeDelta delay);
+                      OnceClosure task);
 
   
   bool PostWorkerTaskWithShutdownBehavior(
       const tracked_objects::Location& from_here,
-      const Closure& task,
+      OnceClosure task,
       WorkerShutdown shutdown_behavior);
 
   
@@ -302,13 +294,13 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   bool PostSequencedWorkerTask(SequenceToken sequence_token,
                                const tracked_objects::Location& from_here,
-                               const Closure& task);
+                               OnceClosure task);
 
   
   
   bool PostNamedSequencedWorkerTask(const std::string& token_name,
                                     const tracked_objects::Location& from_here,
-                                    const Closure& task);
+                                    OnceClosure task);
 
   
   
@@ -322,7 +314,7 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   bool PostDelayedSequencedWorkerTask(
       SequenceToken sequence_token,
       const tracked_objects::Location& from_here,
-      const Closure& task,
+      OnceClosure task,
       TimeDelta delay);
 
   
@@ -330,14 +322,14 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   bool PostSequencedWorkerTaskWithShutdownBehavior(
       SequenceToken sequence_token,
       const tracked_objects::Location& from_here,
-      const Closure& task,
+      OnceClosure task,
       WorkerShutdown shutdown_behavior);
 
   
   bool PostDelayedTask(const tracked_objects::Location& from_here,
-                       const Closure& task,
+                       OnceClosure task,
                        TimeDelta delay) override;
-  bool RunsTasksOnCurrentThread() const override;
+  bool RunsTasksInCurrentSequence() const override;
 
   
   
@@ -372,12 +364,6 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   void Shutdown(int max_new_blocking_tasks_after_shutdown);
-
-  
-  
-  
-  
-  bool IsShutdownInProgress();
 
  protected:
   ~SequencedWorkerPool() override;

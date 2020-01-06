@@ -76,6 +76,11 @@
 namespace sandbox {
 namespace bpf_dsl {
 
+template <typename T>
+class Caser;
+
+class Elser;
+
 
 using ResultExpr = std::shared_ptr<const internal::ResultExprImpl>;
 

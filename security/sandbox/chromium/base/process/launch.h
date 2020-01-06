@@ -27,6 +27,10 @@
 #include <windows.h>
 #endif
 
+#if defined(OS_FUCHSIA)
+#include <magenta/types.h>
+#endif
+
 namespace base {
 
 class CommandLine;
@@ -35,7 +39,17 @@ class CommandLine;
 typedef std::vector<HANDLE> HandlesToInheritVector;
 #endif
 
-typedef std::vector<std::pair<int, int> > FileHandleMappingVector;
+#if defined(OS_FUCHSIA)
+struct HandleToTransfer {
+  uint32_t id;
+  mx_handle_t handle;
+};
+typedef std::vector<HandleToTransfer> HandlesToTransferVector;
+#endif
+
+#if defined(OS_POSIX)
+typedef std::vector<std::pair<int, int>> FileHandleMappingVector;
+#endif
 
 
 
@@ -73,15 +87,33 @@ struct BASE_EXPORT LaunchOptions {
 
   
   
-  HandlesToInheritVector* handles_to_inherit = nullptr;
+  
+  
+  
+  
+  
+  enum class Inherit {
+    
+    
+    
+    kSpecific,
 
-  
-  
-  
-  
-  
-  
-  bool inherit_handles = false;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    kAll
+  };
+  Inherit inherit_mode = Inherit::kSpecific;
+  HandlesToInheritVector handles_to_inherit;
 
   
   
@@ -100,6 +132,12 @@ struct BASE_EXPORT LaunchOptions {
   
   HANDLE job_handle = nullptr;
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -124,9 +162,7 @@ struct BASE_EXPORT LaunchOptions {
 
   
   
-  
-  
-  const FileHandleMappingVector* fds_to_remap = nullptr;
+  FileHandleMappingVector fds_to_remap;
 
   
   
@@ -151,6 +187,17 @@ struct BASE_EXPORT LaunchOptions {
 
   
   bool kill_on_parent_death = false;
+#endif  
+
+#if defined(OS_FUCHSIA)
+  
+  mx_handle_t job_handle = MX_HANDLE_INVALID;
+
+  
+  
+  
+  
+  HandlesToTransferVector handles_to_transfer;
 #endif  
 
 #if defined(OS_POSIX)
@@ -248,6 +295,13 @@ BASE_EXPORT bool GetAppOutput(const CommandLine& cl, std::string* output);
 BASE_EXPORT bool GetAppOutputAndError(const CommandLine& cl,
                                       std::string* output);
 
+
+
+
+
+BASE_EXPORT bool GetAppOutputWithExitCode(const CommandLine& cl,
+                                          std::string* output, int* exit_code);
+
 #if defined(OS_WIN)
 
 
@@ -264,10 +318,8 @@ BASE_EXPORT bool GetAppOutput(const std::vector<std::string>& argv,
 
 
 
-
-
-BASE_EXPORT bool GetAppOutputWithExitCode(const CommandLine& cl,
-                                          std::string* output, int* exit_code);
+BASE_EXPORT bool GetAppOutputAndError(const std::vector<std::string>& argv,
+                                      std::string* output);
 #endif  
 
 
@@ -296,6 +348,9 @@ void RestoreDefaultExceptionHandler();
 BASE_EXPORT LaunchOptions LaunchOptionsForTest();
 
 #if defined(OS_LINUX) || defined(OS_NACL_NONSFI)
+
+
+
 
 
 

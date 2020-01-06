@@ -15,6 +15,10 @@
 #include "base/win/scoped_handle.h"
 #endif
 
+#if defined(OS_FUCHSIA)
+#include "base/fuchsia/scoped_mx_handle.h"
+#endif
+
 #if defined(OS_MACOSX)
 #include "base/feature_list.h"
 #include "base/process/port_provider_mac.h"
@@ -77,6 +81,9 @@ class BASE_EXPORT Process {
   static bool CanBackgroundProcesses();
 
   
+  static void TerminateCurrentProcessImmediately(int exit_code);
+
+  
   bool IsValid() const;
 
   
@@ -108,12 +115,12 @@ class BASE_EXPORT Process {
   
   
   
-  bool WaitForExit(int* exit_code);
+  bool WaitForExit(int* exit_code) const;
 
   
   
   
-  bool WaitForExitWithTimeout(TimeDelta timeout, int* exit_code);
+  bool WaitForExitWithTimeout(TimeDelta timeout, int* exit_code) const;
 
 #if defined(OS_MACOSX)
   
@@ -136,6 +143,9 @@ class BASE_EXPORT Process {
   
   
   bool SetProcessBackgrounded(PortProvider* port_provider, bool value);
+
+  
+  static bool IsAppNapEnabled();
 #else
   
   
@@ -160,10 +170,15 @@ class BASE_EXPORT Process {
 
  private:
 #if defined(OS_WIN)
-  bool is_current_process_;
   win::ScopedHandle process_;
+#elif defined(OS_FUCHSIA)
+  ScopedMxHandle process_;
 #else
   ProcessHandle process_;
+#endif
+
+#if defined(OS_WIN) || defined(OS_FUCHSIA)
+  bool is_current_process_;
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(Process);

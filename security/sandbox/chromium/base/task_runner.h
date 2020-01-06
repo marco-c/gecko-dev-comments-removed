@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 #include "base/base_export.h"
-#include "base/callback_forward.h"
+#include "base/callback.h"
 #include "base/location.h"
 #include "base/memory/ref_counted.h"
 #include "base/time/time.h"
@@ -61,16 +61,13 @@ class BASE_EXPORT TaskRunner
   
   
   
-  bool PostTask(const tracked_objects::Location& from_here,
-                const Closure& task);
+  bool PostTask(const tracked_objects::Location& from_here, OnceClosure task);
 
   
   
   
-  
-  
   virtual bool PostDelayedTask(const tracked_objects::Location& from_here,
-                               const Closure& task,
+                               OnceClosure task,
                                base::TimeDelta delay) = 0;
 
   
@@ -79,7 +76,17 @@ class BASE_EXPORT TaskRunner
   
   
   
-  virtual bool RunsTasksOnCurrentThread() const = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool RunsTasksInCurrentSequence() const = 0;
 
   
   
@@ -123,8 +130,8 @@ class BASE_EXPORT TaskRunner
   
   
   bool PostTaskAndReply(const tracked_objects::Location& from_here,
-                        const Closure& task,
-                        const Closure& reply);
+                        OnceClosure task,
+                        OnceClosure reply);
 
  protected:
   friend struct TaskRunnerTraits;

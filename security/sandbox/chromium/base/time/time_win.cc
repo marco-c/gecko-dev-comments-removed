@@ -40,7 +40,6 @@
 #include "base/atomicops.h"
 #include "base/bit_cast.h"
 #include "base/cpu.h"
-#include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
@@ -97,8 +96,19 @@ bool g_high_res_timer_enabled = false;
 
 uint32_t g_high_res_timer_count = 0;
 
-base::LazyInstance<base::Lock>::Leaky g_high_res_lock =
-    LAZY_INSTANCE_INITIALIZER;
+
+TimeTicks g_high_res_timer_usage_start;
+
+
+TimeDelta g_high_res_timer_usage;
+
+
+TimeTicks g_high_res_timer_last_activation;
+
+base::Lock* GetHighResLock() {
+  static auto* lock = new base::Lock();
+  return lock;
+}
 
 
 uint64_t QPCNowRaw() {
@@ -119,13 +129,6 @@ bool SafeConvertToWord(int in, WORD* out) {
 }  
 
 
-
-
-
-
-
-
-const int64_t Time::kTimeTToMicrosecondsOffset = INT64_C(11644473600000000);
 
 
 Time Time::Now() {
@@ -191,7 +194,7 @@ FILETIME Time::ToFileTime() const {
 
 
 void Time::EnableHighResolutionTimer(bool enable) {
-  base::AutoLock lock(g_high_res_lock.Get());
+  base::AutoLock lock(*GetHighResLock());
   if (g_high_res_timer_enabled == enable)
     return;
   g_high_res_timer_enabled = enable;
@@ -218,27 +221,61 @@ bool Time::ActivateHighResolutionTimer(bool activating) {
   
   const uint32_t max = std::numeric_limits<uint32_t>::max();
 
-  base::AutoLock lock(g_high_res_lock.Get());
+  base::AutoLock lock(*GetHighResLock());
   UINT period = g_high_res_timer_enabled ? kMinTimerIntervalHighResMs
                                          : kMinTimerIntervalLowResMs;
   if (activating) {
     DCHECK_NE(g_high_res_timer_count, max);
     ++g_high_res_timer_count;
-    if (g_high_res_timer_count == 1)
+    if (g_high_res_timer_count == 1) {
+      g_high_res_timer_last_activation = TimeTicks::Now();
       timeBeginPeriod(period);
+    }
   } else {
     DCHECK_NE(g_high_res_timer_count, 0u);
     --g_high_res_timer_count;
-    if (g_high_res_timer_count == 0)
+    if (g_high_res_timer_count == 0) {
+      g_high_res_timer_usage +=
+          TimeTicks::Now() - g_high_res_timer_last_activation;
       timeEndPeriod(period);
+    }
   }
   return (period == kMinTimerIntervalHighResMs);
 }
 
 
 bool Time::IsHighResolutionTimerInUse() {
-  base::AutoLock lock(g_high_res_lock.Get());
+  base::AutoLock lock(*GetHighResLock());
   return g_high_res_timer_enabled && g_high_res_timer_count > 0;
+}
+
+
+void Time::ResetHighResolutionTimerUsage() {
+  base::AutoLock lock(*GetHighResLock());
+  g_high_res_timer_usage = TimeDelta();
+  g_high_res_timer_usage_start = TimeTicks::Now();
+  if (g_high_res_timer_count > 0)
+    g_high_res_timer_last_activation = g_high_res_timer_usage_start;
+}
+
+
+double Time::GetHighResolutionTimerUsage() {
+  base::AutoLock lock(*GetHighResLock());
+  TimeTicks now = TimeTicks::Now();
+  TimeDelta elapsed_time = now - g_high_res_timer_usage_start;
+  if (elapsed_time.is_zero()) {
+    
+    
+    
+    return 0.0;
+  }
+  TimeDelta used_time = g_high_res_timer_usage;
+  if (g_high_res_timer_count > 0) {
+    
+    
+    used_time += now - g_high_res_timer_last_activation;
+  }
+  return used_time.InMillisecondsF() / elapsed_time.InMillisecondsF() * 100;
 }
 
 

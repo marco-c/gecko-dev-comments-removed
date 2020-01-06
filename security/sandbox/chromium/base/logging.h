@@ -15,8 +15,11 @@
 #include <utility>
 
 #include "base/base_export.h"
+#include "base/callback_forward.h"
+#include "base/compiler_specific.h"
 #include "base/debug/debugger.h"
 #include "base/macros.h"
+#include "base/strings/string_piece_forward.h"
 #include "base/template_util.h"
 #include "build/build_config.h"
 
@@ -203,7 +206,7 @@ struct BASE_EXPORT LoggingSettings {
 
 
 
-#if NDEBUG
+#if defined(NDEBUG)
 #define BaseInitLoggingImpl BaseInitLoggingImpl_built_with_NDEBUG
 #else
 #define BaseInitLoggingImpl BaseInitLoggingImpl_built_without_NDEBUG
@@ -250,10 +253,8 @@ BASE_EXPORT bool ShouldCreateLogMessage(int severity);
 BASE_EXPORT int GetVlogVerbosity();
 
 
-
-
-
 BASE_EXPORT int GetVlogLevelHelper(const char* file_start, size_t N);
+
 
 template <size_t N>
 int GetVlogLevel(const char (&file)[N]) {
@@ -276,8 +277,21 @@ BASE_EXPORT void SetShowErrorDialogs(bool enable_dialogs);
 
 
 
-typedef void (*LogAssertHandlerFunction)(const std::string& str);
-BASE_EXPORT void SetLogAssertHandler(LogAssertHandlerFunction handler);
+
+using LogAssertHandlerFunction =
+    base::Callback<void(const char* file,
+                        int line,
+                        const base::StringPiece message,
+                        const base::StringPiece stack_trace)>;
+
+class BASE_EXPORT ScopedLogAssertHandler {
+ public:
+  explicit ScopedLogAssertHandler(LogAssertHandlerFunction handler);
+  ~ScopedLogAssertHandler();
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(ScopedLogAssertHandler);
+};
 
 
 
@@ -287,6 +301,38 @@ typedef bool (*LogMessageHandlerFunction)(int severity,
     const char* file, int line, size_t message_start, const std::string& str);
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
+
+
+
+
+
+
+
+
+#if defined(__clang_analyzer__)
+
+inline constexpr bool AnalyzerNoReturn() __attribute__((analyzer_noreturn)) {
+  return false;
+}
+
+inline constexpr bool AnalyzerAssumeTrue(bool arg) {
+  
+  
+  return arg || AnalyzerNoReturn();
+}
+
+#define ANALYZER_ASSUME_TRUE(arg) logging::AnalyzerAssumeTrue(!!(arg))
+#define ANALYZER_SKIP_THIS_PATH() \
+  static_cast<void>(::logging::AnalyzerNoReturn())
+#define ANALYZER_ALLOW_UNUSED(var) static_cast<void>(var);
+
+#else  
+
+#define ANALYZER_ASSUME_TRUE(arg) (arg)
+#define ANALYZER_SKIP_THIS_PATH()
+#define ANALYZER_ALLOW_UNUSED(var) static_cast<void>(var);
+
+#endif  
 
 typedef int LogSeverity;
 const LogSeverity LOG_VERBOSE = -1;  
@@ -299,7 +345,7 @@ const LogSeverity LOG_FATAL = 3;
 const LogSeverity LOG_NUM_SEVERITIES = 4;
 
 
-#ifdef NDEBUG
+#if defined(NDEBUG)
 const LogSeverity LOG_DFATAL = LOG_ERROR;
 #else
 const LogSeverity LOG_DFATAL = LOG_FATAL;
@@ -319,17 +365,15 @@ const LogSeverity LOG_DFATAL = LOG_FATAL;
   ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_FATAL, ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...) \
   ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_DFATAL, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...) \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_DCHECK, ##__VA_ARGS__)
 
-#define COMPACT_GOOGLE_LOG_INFO \
-  COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
-#define COMPACT_GOOGLE_LOG_WARNING \
-  COMPACT_GOOGLE_LOG_EX_WARNING(LogMessage)
-#define COMPACT_GOOGLE_LOG_ERROR \
-  COMPACT_GOOGLE_LOG_EX_ERROR(LogMessage)
-#define COMPACT_GOOGLE_LOG_FATAL \
-  COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
-#define COMPACT_GOOGLE_LOG_DFATAL \
-  COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
+#define COMPACT_GOOGLE_LOG_INFO COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
+#define COMPACT_GOOGLE_LOG_WARNING COMPACT_GOOGLE_LOG_EX_WARNING(LogMessage)
+#define COMPACT_GOOGLE_LOG_ERROR COMPACT_GOOGLE_LOG_EX_ERROR(LogMessage)
+#define COMPACT_GOOGLE_LOG_FATAL COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
+#define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
+#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
 
 #if defined(OS_WIN)
 
@@ -407,8 +451,9 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 
 
-#define LOG_ASSERT(condition)  \
-  LOG_IF(FATAL, !(condition)) << "Assert failed: " #condition ". "
+#define LOG_ASSERT(condition)                       \
+  LOG_IF(FATAL, !(ANALYZER_ASSUME_TRUE(condition))) \
+      << "Assert failed: " #condition ". "
 
 #if defined(OS_WIN)
 #define PLOG_STREAM(severity) \
@@ -426,9 +471,23 @@ const LogSeverity LOG_0 = LOG_ERROR;
 #define PLOG_IF(severity, condition) \
   LAZY_STREAM(PLOG_STREAM(severity), LOG_IS_ON(severity) && (condition))
 
+BASE_EXPORT extern std::ostream* g_swallow_stream;
 
-#define EAT_STREAM_PARAMETERS                                           \
-  true ? (void) 0 : ::logging::LogMessageVoidify() & LOG_STREAM(FATAL)
+
+
+
+
+
+
+
+
+
+
+
+
+#define EAT_STREAM_PARAMETERS \
+  true ? (void)0              \
+       : ::logging::LogMessageVoidify() & (*::logging::g_swallow_stream)
 
 
 
@@ -452,24 +511,102 @@ class CheckOpResult {
 
 
 
-#if defined(OFFICIAL_BUILD) && defined(NDEBUG)
 
 
 
 
-#if defined(COMPILER_GCC) || __clang__
-#define LOGGING_CRASH() __builtin_trap()
+
+
+
+
+
+
+
+
+
+
+#if defined(COMPILER_GCC)
+
+#if defined(ARCH_CPU_X86_FAMILY) && !defined(OS_NACL)
+
+#define TRAP_SEQUENCE() \
+  asm volatile(         \
+      "int3; ud2; push %0;" ::"i"(static_cast<unsigned char>(__COUNTER__)))
+
+#elif defined(ARCH_CPU_ARMEL) && !defined(OS_NACL)
+
+
+
+
+#define TRAP_SEQUENCE() \
+  asm volatile("bkpt #0; udf %0;" ::"i"(__COUNTER__ % 256))
+
+#elif defined(ARCH_CPU_ARM64) && !defined(OS_NACL)
+
+#define TRAP_SEQUENCE() \
+  asm volatile("brk #0; hlt %0;" ::"i"(__COUNTER__ % 65536))
+
 #else
-#define LOGGING_CRASH() ((void)(*(volatile char*)0 = 0))
+
+
+#define TRAP_SEQUENCE() __builtin_trap()
+#endif  
+
+#define IMMEDIATE_CRASH()    \
+  ({                         \
+    TRAP_SEQUENCE();         \
+    __builtin_unreachable(); \
+  })
+
+#elif defined(COMPILER_MSVC)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__)
+#define IMMEDIATE_CRASH() ({__asm int 3 __asm ud2 __asm push __COUNTER__})
+#else
+#define IMMEDIATE_CRASH() __debugbreak()
+#endif  
+
+#else
+#error Port
 #endif
 
 
 
 
-#define CHECK(condition)                                                \
-  !(condition) ? LOGGING_CRASH() : EAT_STREAM_PARAMETERS
 
-#define PCHECK(condition) CHECK(condition)
+
+
+
+#if defined(OFFICIAL_BUILD) && defined(NDEBUG)
+
+
+
+
+
+
+
+#define CHECK(condition) \
+  UNLIKELY(!(condition)) ? IMMEDIATE_CRASH() : EAT_STREAM_PARAMETERS
+
+
+
+
+
+#define PCHECK(condition)                                  \
+  LAZY_STREAM(PLOG_STREAM(FATAL), UNLIKELY(!(condition))); \
+  EAT_STREAM_PARAMETERS
 
 #define CHECK_OP(name, op, val1, val2) CHECK((val1) op (val2))
 
@@ -483,26 +620,26 @@ class CheckOpResult {
 
 
 
-#define CHECK(condition)                \
-  __analysis_assume(!!(condition)),     \
-  LAZY_STREAM(LOG_STREAM(FATAL), false) \
-  << "Check failed: " #condition ". "
+#define CHECK(condition)                    \
+  __analysis_assume(!!(condition)),         \
+      LAZY_STREAM(LOG_STREAM(FATAL), false) \
+          << "Check failed: " #condition ". "
 
-#define PCHECK(condition)                \
-  __analysis_assume(!!(condition)),      \
-  LAZY_STREAM(PLOG_STREAM(FATAL), false) \
-  << "Check failed: " #condition ". "
+#define PCHECK(condition)                    \
+  __analysis_assume(!!(condition)),          \
+      LAZY_STREAM(PLOG_STREAM(FATAL), false) \
+          << "Check failed: " #condition ". "
 
 #else  
 
 
 #define CHECK(condition)                                                      \
   LAZY_STREAM(::logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
-              !(condition))
+              !ANALYZER_ASSUME_TRUE(condition))
 
-#define PCHECK(condition)                       \
-  LAZY_STREAM(PLOG_STREAM(FATAL), !(condition)) \
-  << "Check failed: " #condition ". "
+#define PCHECK(condition)                                           \
+  LAZY_STREAM(PLOG_STREAM(FATAL), !ANALYZER_ASSUME_TRUE(condition)) \
+      << "Check failed: " #condition ". "
 
 #endif  
 
@@ -527,10 +664,24 @@ class CheckOpResult {
 
 template <typename T>
 inline typename std::enable_if<
-    base::internal::SupportsOstreamOperator<const T&>::value,
+    base::internal::SupportsOstreamOperator<const T&>::value &&
+        !std::is_function<typename std::remove_pointer<T>::type>::value,
     void>::type
 MakeCheckOpValueString(std::ostream* os, const T& v) {
   (*os) << v;
+}
+
+
+
+
+
+
+template <typename T>
+inline typename std::enable_if<
+    std::is_function<typename std::remove_pointer<T>::type>::value,
+    void>::type
+MakeCheckOpValueString(std::ostream* os, const T& v) {
+  (*os) << reinterpret_cast<const void*>(v);
 }
 
 
@@ -541,7 +692,7 @@ inline typename std::enable_if<
         std::is_enum<T>::value,
     void>::type
 MakeCheckOpValueString(std::ostream* os, const T& v) {
-  (*os) << static_cast<typename base::underlying_type<T>::type>(v);
+  (*os) << static_cast<typename std::underlying_type<T>::type>(v);
 }
 
 
@@ -584,16 +735,24 @@ std::string* MakeCheckOpString<std::string, std::string>(
 
 
 
-#define DEFINE_CHECK_OP_IMPL(name, op) \
-  template <class t1, class t2> \
-  inline std::string* Check##name##Impl(const t1& v1, const t2& v2, \
-                                        const char* names) { \
-    if (v1 op v2) return NULL; \
-    else return ::logging::MakeCheckOpString(v1, v2, names);    \
-  } \
+
+
+
+
+#define DEFINE_CHECK_OP_IMPL(name, op)                                       \
+  template <class t1, class t2>                                              \
+  inline std::string* Check##name##Impl(const t1& v1, const t2& v2,          \
+                                        const char* names) {                 \
+    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                      \
+      return NULL;                                                           \
+    else                                                                     \
+      return ::logging::MakeCheckOpString(v1, v2, names);                    \
+  }                                                                          \
   inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
-    if (v1 op v2) return NULL; \
-    else return ::logging::MakeCheckOpString(v1, v2, names);    \
+    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                      \
+      return NULL;                                                           \
+    else                                                                     \
+      return ::logging::MakeCheckOpString(v1, v2, names);                    \
   }
 DEFINE_CHECK_OP_IMPL(EQ, ==)
 DEFINE_CHECK_OP_IMPL(NE, !=)
@@ -642,13 +801,6 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 #endif  
 
-
-
-
-
-
-enum { DEBUG_MODE = DCHECK_IS_ON() };
-
 #define DLOG(severity)                                          \
   LAZY_STREAM(LOG_STREAM(severity), DLOG_IS_ON(severity))
 
@@ -663,17 +815,15 @@ enum { DEBUG_MODE = DCHECK_IS_ON() };
 
 #if DCHECK_IS_ON()
 
-#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...) \
-  COMPACT_GOOGLE_LOG_EX_FATAL(ClassName , ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_FATAL
+#if defined(SYZYASAN)
+BASE_EXPORT extern LogSeverity LOG_DCHECK;
+#else
 const LogSeverity LOG_DCHECK = LOG_FATAL;
+#endif
 
 #else  
 
 
-#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...) \
-  COMPACT_GOOGLE_LOG_EX_INFO(ClassName , ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_INFO
 const LogSeverity LOG_DCHECK = LOG_INFO;
 
 #endif  
@@ -683,36 +833,50 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
 
 
 
+
+
+
+
 #if defined(_PREFAST_) && defined(OS_WIN)
 
 
-#define DCHECK(condition)                                               \
-  __analysis_assume(!!(condition)),                                     \
-  LAZY_STREAM(LOG_STREAM(DCHECK), false)                                \
-  << "Check failed: " #condition ". "
+#define DCHECK(condition)                    \
+  __analysis_assume(!!(condition)),          \
+      LAZY_STREAM(LOG_STREAM(DCHECK), false) \
+          << "Check failed: " #condition ". "
 
-#define DPCHECK(condition)                                              \
-  __analysis_assume(!!(condition)),                                     \
-  LAZY_STREAM(PLOG_STREAM(DCHECK), false)                               \
-  << "Check failed: " #condition ". "
+#define DPCHECK(condition)                    \
+  __analysis_assume(!!(condition)),           \
+      LAZY_STREAM(PLOG_STREAM(DCHECK), false) \
+          << "Check failed: " #condition ". "
 
 #else  
 
-#define DCHECK(condition)                                                \
-  LAZY_STREAM(LOG_STREAM(DCHECK), DCHECK_IS_ON() ? !(condition) : false) \
+#if DCHECK_IS_ON()
+
+#define DCHECK(condition)                                           \
+  LAZY_STREAM(LOG_STREAM(DCHECK), !ANALYZER_ASSUME_TRUE(condition)) \
+      << "Check failed: " #condition ". "
+#define DPCHECK(condition)                                           \
+  LAZY_STREAM(PLOG_STREAM(DCHECK), !ANALYZER_ASSUME_TRUE(condition)) \
       << "Check failed: " #condition ". "
 
-#define DPCHECK(condition)                                                \
-  LAZY_STREAM(PLOG_STREAM(DCHECK), DCHECK_IS_ON() ? !(condition) : false) \
-      << "Check failed: " #condition ". "
+#else
 
-#endif  
+#define DCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
+#define DPCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
+
+#endif
+
+#endif
 
 
 
 
 
 
+
+#if DCHECK_IS_ON()
 
 #define DCHECK_OP(name, op, val1, val2)                                \
   switch (0) case 0: default:                                          \
@@ -724,6 +888,25 @@ const LogSeverity LOG_DCHECK = LOG_INFO;
   else                                                                 \
     ::logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,   \
                           true_if_passed.message()).stream()
+
+#else  
+
+
+
+
+
+
+
+
+
+#define DCHECK_OP(name, op, val1, val2)                             \
+  EAT_STREAM_PARAMETERS << (::logging::MakeCheckOpValueString(      \
+                                ::logging::g_swallow_stream, val1), \
+                            ::logging::MakeCheckOpValueString(      \
+                                ::logging::g_swallow_stream, val2), \
+                            (val1)op(val2))
+
+#endif  
 
 
 

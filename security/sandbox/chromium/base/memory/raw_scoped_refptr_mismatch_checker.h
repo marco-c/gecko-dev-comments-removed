@@ -25,13 +25,18 @@ namespace internal {
 
 template <typename T>
 struct NeedsScopedRefptrButGetsRawPtr {
+  static_assert(!std::is_reference<T>::value,
+                "NeedsScopedRefptrButGetsRawPtr requires non-reference type.");
+
   enum {
     
     
     
-    value = (std::is_pointer<T>::value &&
-             (std::is_convertible<T, subtle::RefCountedBase*>::value ||
-              std::is_convertible<T, subtle::RefCountedThreadSafeBase*>::value))
+    value =
+        (std::is_pointer<T>::value &&
+         (std::is_convertible<T, const subtle::RefCountedBase*>::value ||
+          std::is_convertible<T,
+                              const subtle::RefCountedThreadSafeBase*>::value))
   };
 };
 

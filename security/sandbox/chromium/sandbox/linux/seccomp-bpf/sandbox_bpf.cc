@@ -38,10 +38,6 @@ namespace {
 
 bool IsRunningOnValgrind() { return RUNNING_ON_VALGRIND; }
 
-bool IsSingleThreaded(int proc_fd) {
-  return ThreadHelpers::IsSingleThreaded(proc_fd);
-}
-
 
 
 bool KernelSupportsSeccompBPF() {
@@ -168,11 +164,6 @@ bool SandboxBPF::StartSandbox(SeccompLevel seccomp_level) {
     
     ThreadHelpers::AssertSingleThreaded(proc_fd_.get());
   } else if (seccomp_level == SeccompLevel::MULTI_THREADED) {
-    if (IsSingleThreaded(proc_fd_.get())) {
-      SANDBOX_DIE("Cannot start sandbox; "
-                  "process may be single-threaded when reported as not");
-      return false;
-    }
     if (!supports_tsync) {
       SANDBOX_DIE("Cannot start sandbox; kernel does not support synchronizing "
                   "filters for a threadgroup");

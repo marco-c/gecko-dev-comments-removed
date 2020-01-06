@@ -41,7 +41,6 @@
 #include "base/base_export.h"
 #include "base/debug/leak_annotations.h"
 #include "base/logging.h"
-#include "base/memory/aligned_memory.h"
 #include "base/threading/thread_restrictions.h"
 
 
@@ -53,22 +52,15 @@
 namespace base {
 
 template <typename Type>
-struct DefaultLazyInstanceTraits {
-  static const bool kRegisterOnExit = true;
-#if DCHECK_IS_ON()
-  static const bool kAllowedToAccessOnNonjoinableThread = false;
-#endif
-
+struct LazyInstanceTraitsBase {
   static Type* New(void* instance) {
-    DCHECK_EQ(reinterpret_cast<uintptr_t>(instance) & (ALIGNOF(Type) - 1), 0u)
-        << ": Bad boy, the buffer passed to placement new is not aligned!\n"
-        "This may break some stuff like SSE-based optimizations assuming the "
-        "<Type> objects are word aligned.";
+    DCHECK_EQ(reinterpret_cast<uintptr_t>(instance) & (alignof(Type) - 1), 0u);
     
     
     return new (instance) Type();
   }
-  static void Delete(Type* instance) {
+
+  static void CallDestructor(Type* instance) {
     
     instance->~Type();
   }
@@ -77,6 +69,25 @@ struct DefaultLazyInstanceTraits {
 
 
 namespace internal {
+
+
+
+
+template <typename Type>
+struct DestructorAtExitLazyInstanceTraits {
+  static const bool kRegisterOnExit = true;
+#if DCHECK_IS_ON()
+  static const bool kAllowedToAccessOnNonjoinableThread = false;
+#endif
+
+  static Type* New(void* instance) {
+    return LazyInstanceTraitsBase<Type>::New(instance);
+  }
+
+  static void Delete(Type* instance) {
+    LazyInstanceTraitsBase<Type>::CallDestructor(instance);
+  }
+};
 
 
 
@@ -95,15 +106,18 @@ struct LeakyLazyInstanceTraits {
 
   static Type* New(void* instance) {
     ANNOTATE_SCOPED_MEMORY_LEAK;
-    return DefaultLazyInstanceTraits<Type>::New(instance);
+    return LazyInstanceTraitsBase<Type>::New(instance);
   }
   static void Delete(Type* instance) {
   }
 };
 
+template <typename Type>
+struct ErrorMustSelectLazyOrDestructorAtExitForLazyInstance {};
 
 
-static const subtle::AtomicWord kLazyInstanceStateCreating = 1;
+
+constexpr subtle::AtomicWord kLazyInstanceStateCreating = 1;
 
 
 
@@ -114,12 +128,45 @@ BASE_EXPORT bool NeedsLazyInstance(subtle::AtomicWord* state);
 
 BASE_EXPORT void CompleteLazyInstance(subtle::AtomicWord* state,
                                       subtle::AtomicWord new_instance,
-                                      void* lazy_instance,
-                                      void (*dtor)(void*));
+                                      void (*destructor)(void*),
+                                      void* destructor_arg);
+
+
+
+
+
+
+template <typename CreatorFunc>
+void* GetOrCreateLazyPointer(subtle::AtomicWord* state,
+                             const CreatorFunc& creator_func,
+                             void (*destructor)(void*),
+                             void* destructor_arg) {
+  
+  
+  constexpr subtle::AtomicWord kLazyInstanceCreatedMask =
+      ~internal::kLazyInstanceStateCreating;
+
+  
+  
+  
+  
+  
+  
+  subtle::AtomicWord value = subtle::Acquire_Load(state);
+  if (!(value & kLazyInstanceCreatedMask) && NeedsLazyInstance(state)) {
+    
+    value = reinterpret_cast<subtle::AtomicWord>(creator_func());
+    CompleteLazyInstance(state, value, destructor, destructor_arg);
+  }
+  return reinterpret_cast<void*>(subtle::NoBarrier_Load(state));
+}
 
 }  
 
-template <typename Type, typename Traits = DefaultLazyInstanceTraits<Type> >
+template <
+    typename Type,
+    typename Traits =
+        internal::ErrorMustSelectLazyOrDestructorAtExitForLazyInstance<Type>>
 class LazyInstance {
  public:
   
@@ -131,7 +178,9 @@ class LazyInstance {
 
   
   
-  typedef LazyInstance<Type, internal::LeakyLazyInstanceTraits<Type> > Leaky;
+  typedef LazyInstance<Type, internal::LeakyLazyInstanceTraits<Type>> Leaky;
+  typedef LazyInstance<Type, internal::DestructorAtExitLazyInstanceTraits<Type>>
+      DestructorAtExit;
 
   Type& Get() {
     return *Pointer();
@@ -143,28 +192,10 @@ class LazyInstance {
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
       ThreadRestrictions::AssertSingletonAllowed();
 #endif
-    
-    
-    static const subtle::AtomicWord kLazyInstanceCreatedMask =
-        ~internal::kLazyInstanceStateCreating;
-
-    
-    
-    
-    
-    
-    
-    
-    subtle::AtomicWord value = subtle::Acquire_Load(&private_instance_);
-    if (!(value & kLazyInstanceCreatedMask) &&
-        internal::NeedsLazyInstance(&private_instance_)) {
-      
-      value = reinterpret_cast<subtle::AtomicWord>(
-          Traits::New(private_buf_.void_data()));
-      internal::CompleteLazyInstance(&private_instance_, value, this,
-                                     Traits::kRegisterOnExit ? OnExit : NULL);
-    }
-    return instance();
+    return static_cast<Type*>(internal::GetOrCreateLazyPointer(
+        &private_instance_,
+        [this]() { return Traits::New(private_buf_); },
+        Traits::kRegisterOnExit ? OnExit : nullptr, this));
   }
 
   bool operator==(Type* p) {
@@ -172,7 +203,7 @@ class LazyInstance {
       case 0:
         return p == NULL;
       case internal::kLazyInstanceStateCreating:
-        return static_cast<void*>(p) == private_buf_.void_data();
+        return static_cast<void*>(p) == private_buf_;
       default:
         return p == instance();
     }
@@ -181,10 +212,22 @@ class LazyInstance {
   
   
   
+#if defined(OS_WIN)
+#pragma warning(push)
+#pragma warning(disable: 4324)
+#endif
 
-  subtle::AtomicWord private_instance_;
   
-  base::AlignedMemory<sizeof(Type), ALIGNOF(Type)> private_buf_;
+  
+  
+  subtle::AtomicWord private_instance_;
+
+  
+  alignas(Type) char private_buf_[sizeof(Type)];
+
+#if defined(OS_WIN)
+#pragma warning(pop)
+#endif
 
  private:
   Type* instance() {
