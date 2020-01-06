@@ -113,7 +113,13 @@ task_description_schema = Schema({
     
     Optional('index'): {
         
-        'product': Any('firefox', 'mobile', 'static-analysis', 'devedition'),
+        'product': Any(
+            'firefox',
+            'mobile',
+            'static-analysis',
+            'devedition',
+            'source',
+        ),
 
         
         'job-name': basestring,
