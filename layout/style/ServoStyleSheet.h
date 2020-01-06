@@ -120,7 +120,7 @@ public:
 
   
   
-  ServoCSSRuleList* GetCssRulesInternal();
+  ServoCSSRuleList* GetCssRulesInternal(bool aRequireUniqueInner = true);
 
   
   OriginFlags GetOrigin();
