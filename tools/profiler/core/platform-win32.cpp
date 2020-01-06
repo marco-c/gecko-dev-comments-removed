@@ -150,9 +150,25 @@ SamplerThread::Stop(PSLockRef aLock)
 void
 SamplerThread::SleepMicro(uint32_t aMicroseconds)
 {
-  int aMilliseconds = std::max(1u, aMicroseconds / 1000);
+  
+  
+  
+  if (mIntervalMicroseconds >= 1000) {
+    ::Sleep(std::max(1u, aMicroseconds / 1000));
+  } else {
+    TimeStamp start = TimeStamp::Now();
+    TimeStamp end = start + TimeDuration::FromMicroseconds(aMicroseconds);
 
-  ::Sleep(aMilliseconds);
+    
+    if (aMicroseconds >= 1000) {
+      ::Sleep(aMicroseconds / 1000);
+    }
+
+    
+    while (TimeStamp::Now() < end) {
+      _mm_pause();
+    }
+  }
 }
 
 void
