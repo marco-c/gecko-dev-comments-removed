@@ -2288,6 +2288,7 @@ pref("network.cookie.cookieBehavior",       0);
 pref("network.cookie.cookieBehavior",       0); 
 #endif
 pref("network.cookie.thirdparty.sessionOnly", false);
+pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 pref("network.cookie.leave-secure-alone",   true);
 pref("network.cookie.ipc.sync",             false);
 pref("network.cookie.lifetimePolicy",       0); 
@@ -5806,11 +5807,7 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 #ifdef MOZ_STYLO
 pref("layout.css.stylo-blocklist.enabled", true);
-#ifdef NIGHTLY_BUILD
-pref("layout.css.stylo-blocklist.blocked_domains", "arewestyloyet.rs");
-#else
 pref("layout.css.stylo-blocklist.blocked_domains", "");
-#endif
 #ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
 #else
