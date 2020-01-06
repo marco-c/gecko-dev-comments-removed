@@ -34,6 +34,12 @@ namespace css {
 class Rule;
 class Declaration;
 class StyleRule;
+
+enum class SupportsParsingSettings {
+  Normal,
+  ImpliedParentheses
+};
+
 } 
 } 
 
@@ -253,10 +259,16 @@ public:
 
 
 
+
+
+
+
   bool EvaluateSupportsCondition(const nsAString& aCondition,
                                  nsIURI* aDocURL,
                                  nsIURI* aBaseURL,
-                                 nsIPrincipal* aDocPrincipal);
+                                 nsIPrincipal* aDocPrincipal,
+                                 mozilla::css::SupportsParsingSettings aSettings
+                                  = mozilla::css::SupportsParsingSettings::Normal);
 
   typedef void (*VariableEnumFunc)(const nsAString&, void*);
 
