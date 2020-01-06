@@ -52,17 +52,14 @@ public:
 
   uint32_t GetLength() const { return mLength; }
 
-  void ToString(nsAString& aBuf) const
-  {
-    
-    nsStringBuffer::FromData(mString)->ToString(mLength, aBuf);
-  }
-
+  void ToString(nsAString& aString) const;
   void ToUTF8String(nsACString& aString) const;
 
+  
   nsStringBuffer* GetStringBuffer() const
   {
     
+    MOZ_ASSERT(IsDynamicAtom());
     return nsStringBuffer::FromData(mString);
   }
 
@@ -90,7 +87,7 @@ private:
 
   
   nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
-  nsAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
+  nsAtom(const char16_t* aString, uint32_t aLength, uint32_t aHash);
 protected:
   ~nsAtom();
 
@@ -99,6 +96,7 @@ private:
   uint32_t mLength: 30;
   uint32_t mKind: 2; 
   uint32_t mHash;
+  
   
   
   

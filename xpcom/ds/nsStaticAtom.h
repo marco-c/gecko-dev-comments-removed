@@ -11,11 +11,14 @@
 #include "nsStringBuffer.h"
 
 #define NS_STATIC_ATOM(buffer_name, atom_ptr) \
-  { (nsStringBuffer*) &buffer_name, atom_ptr }
+  { buffer_name, atom_ptr }
+
+
+
 
 #define NS_STATIC_ATOM_BUFFER(buffer_name, str_data) \
-  static nsFakeStringBuffer<sizeof(str_data)> buffer_name = \
-    { 1, sizeof(str_data) * sizeof(char16_t), (u"" str_data) };
+  static const char16_t buffer_name[sizeof(str_data)] = u"" str_data; \
+  static_assert(sizeof(str_data[0]) == 1, "non-8-bit static atom literal");
 
 
 
@@ -24,21 +27,8 @@
 
 struct nsStaticAtom
 {
-  
-  
-  nsStringBuffer* MOZ_NON_OWNING_REF mStringBuffer;
-  nsAtom** mAtom;
-};
-
-
-
-
-template<uint32_t size>
-struct nsFakeStringBuffer
-{
-  int32_t mRefCnt;
-  uint32_t mSize;
-  char16_t mStringData[size];
+  const char16_t* const mString;
+  nsAtom** const mAtom;
 };
 
 

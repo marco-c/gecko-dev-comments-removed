@@ -179,7 +179,14 @@ public:
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
     MOZ_ASSERT(aAtom || aNullHandling != eNullNotExpected);
     if (aNullHandling == eNullNotExpected || aAtom) {
-      SetStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
+      if (aAtom->IsStaticAtom()) {
+        
+        
+        AsAString().AssignLiteral(aAtom->GetUTF16String(), aAtom->GetLength());
+      } else {
+        
+        SetStringBuffer(aAtom->GetStringBuffer(), aAtom->GetLength());
+      }
     } else if (aNullHandling == eTreatNullAsNull) {
       SetNull();
     }

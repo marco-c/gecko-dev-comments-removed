@@ -65,6 +65,9 @@ public:
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(aLength <= mData.Length());
+
+    
+    
     nsStringBuffer* buf = nsStringBuffer::FromString(mData);
     if (buf) {
       
