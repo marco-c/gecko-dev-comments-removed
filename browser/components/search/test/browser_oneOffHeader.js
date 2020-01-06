@@ -41,11 +41,11 @@ function synthesizeNativeMouseMove(aElement) {
   
   return new Promise((resolve, reject) => {
     function eventOccurred(e) {
-      aElement.removeEventListener("mouseover", eventOccurred, true);
+      aElement.removeEventListener("mousemove", eventOccurred, true);
       resolve();
     }
 
-    aElement.addEventListener("mouseover", eventOccurred, true);
+    aElement.addEventListener("mousemove", eventOccurred, true);
 
     utils.sendNativeMouseEvent(x * scale, y * scale, msg, 0, null);
   });
