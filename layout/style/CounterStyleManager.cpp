@@ -1977,6 +1977,7 @@ CounterStyleManager::CounterStyleManager(nsPresContext* aPresContext)
   
   mStyles.Put(nsGkAtoms::none, GetNoneStyle());
   mStyles.Put(nsGkAtoms::decimal, GetDecimalStyle());
+  mStyles.Put(nsGkAtoms::disc, GetDiscStyle());
 }
 
 CounterStyleManager::~CounterStyleManager()

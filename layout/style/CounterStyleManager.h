@@ -321,7 +321,7 @@ public:
   bool IsInitial() const
   {
     
-    return mStyles.Count() == 2;
+    return mStyles.Count() == 3;
   }
 
   
@@ -341,6 +341,10 @@ public:
   static CounterStyle* GetDecimalStyle()
   {
     return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DECIMAL);
+  }
+  static CounterStyle* GetDiscStyle()
+  {
+    return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
   }
 
   
