@@ -26,12 +26,14 @@ struct ScrollThumbData {
   {}
   ScrollThumbData(ScrollDirection aDirection,
                   float aThumbRatio,
+                  CSSCoord aThumbStart,
                   CSSCoord aThumbLength,
                   bool aIsAsyncDraggable,
                   CSSCoord aScrollTrackStart,
                   CSSCoord aScrollTrackLength)
     : mDirection(aDirection)
     , mThumbRatio(aThumbRatio)
+    , mThumbStart(aThumbStart)
     , mThumbLength(aThumbLength)
     , mIsAsyncDraggable(aIsAsyncDraggable)
     , mScrollTrackStart(aScrollTrackStart)
@@ -43,6 +45,7 @@ struct ScrollThumbData {
   
   
   float mThumbRatio;
+  CSSCoord mThumbStart;
   CSSCoord mThumbLength;
   
   bool mIsAsyncDraggable;
@@ -52,6 +55,7 @@ struct ScrollThumbData {
   bool operator==(const ScrollThumbData& aOther) const {
     return mDirection == aOther.mDirection &&
            mThumbRatio == aOther.mThumbRatio &&
+           mThumbStart == aOther.mThumbStart &&
            mThumbLength == aOther.mThumbLength &&
            mIsAsyncDraggable == aOther.mIsAsyncDraggable &&
            mScrollTrackStart == aOther.mScrollTrackStart &&
