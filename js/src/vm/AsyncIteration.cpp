@@ -128,6 +128,10 @@ js::GetUnwrappedAsyncGenerator(JSFunction* wrapped)
     return unwrapped;
 }
 
+static MOZ_MUST_USE bool
+AsyncGeneratorResume(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                     CompletionKind completionKind, HandleValue argument);
+
 
 MOZ_MUST_USE bool
 js::AsyncGeneratorAwaitedFulfilled(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
@@ -140,24 +144,6 @@ js::AsyncGeneratorAwaitedFulfilled(JSContext* cx, Handle<AsyncGeneratorObject*> 
 MOZ_MUST_USE bool
 js::AsyncGeneratorAwaitedRejected(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                   HandleValue reason)
-{
-    return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
-}
-
-
-MOZ_MUST_USE bool
-js::AsyncGeneratorYieldReturnAwaitedFulfilled(JSContext* cx,
-                                              Handle<AsyncGeneratorObject*> asyncGenObj,
-                                              HandleValue value)
-{
-    return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
-}
-
-
-MOZ_MUST_USE bool
-js::AsyncGeneratorYieldReturnAwaitedRejected(JSContext* cx,
-                                             Handle<AsyncGeneratorObject*> asyncGenObj,
-                                             HandleValue reason)
 {
     return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
 }
@@ -437,12 +423,65 @@ AsyncGeneratorThrown(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
 }
 
 
-
-static MOZ_MUST_USE bool
-AsyncGeneratorYield(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value)
+MOZ_MUST_USE bool
+js::AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
 {
     
 
+    
+    MOZ_ASSERT(!asyncGenObj->isExecuting());
+
+    
+    if (asyncGenObj->isQueueEmpty())
+        return true;
+
+    
+    Rooted<AsyncGeneratorRequest*> request(
+        cx, AsyncGeneratorObject::peekRequest(cx, asyncGenObj));
+    if (!request)
+        return false;
+
+    
+    CompletionKind completionKind = request->completionKind();
+
+    
+    if (completionKind != CompletionKind::Normal) {
+        
+        if (asyncGenObj->isSuspendedStart())
+            asyncGenObj->setCompleted();
+
+        
+        if (asyncGenObj->isCompleted()) {
+            
+            RootedValue value(cx, request->completionValue());
+            if (completionKind == CompletionKind::Return)
+                return AsyncGeneratorResolve(cx, asyncGenObj, value, true);
+            
+            return AsyncGeneratorReject(cx, asyncGenObj, value);
+        }
+    } else if (asyncGenObj->isCompleted()) {
+        
+        return AsyncGeneratorResolve(cx, asyncGenObj, UndefinedHandleValue, true);
+    }
+
+    
+    MOZ_ASSERT(asyncGenObj->isSuspendedStart() || asyncGenObj->isSuspendedYield());
+
+    
+    asyncGenObj->setExecuting();
+
+    RootedValue argument(cx, request->completionValue());
+
+    
+    return AsyncGeneratorResume(cx, asyncGenObj, completionKind, argument);
+}
+
+
+
+static MOZ_MUST_USE bool
+AsyncGeneratorYield(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                    HandleValue value)
+{
     
     asyncGenObj->setSuspendedYield();
 
@@ -455,10 +494,9 @@ AsyncGeneratorYield(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, Ha
 
 
 
-
-MOZ_MUST_USE bool
-js::AsyncGeneratorResume(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-                         CompletionKind completionKind, HandleValue argument)
+static MOZ_MUST_USE bool
+AsyncGeneratorResume(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                     CompletionKind completionKind, HandleValue argument)
 {
     RootedValue generatorVal(cx, asyncGenObj->generatorVal());
 
@@ -476,12 +514,9 @@ js::AsyncGeneratorResume(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenOb
         return AsyncGeneratorThrown(cx, asyncGenObj);
     }
 
-    
     if (asyncGenObj->generatorObj()->isAfterAwait())
         return AsyncGeneratorAwait(cx, asyncGenObj, result);
 
-    
-    
     
     
     
