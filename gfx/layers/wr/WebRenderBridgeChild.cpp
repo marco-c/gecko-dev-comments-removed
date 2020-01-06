@@ -324,6 +324,11 @@ WebRenderBridgeChild::AddOpDestroy(const OpDestroy& aOp)
 void
 WebRenderBridgeChild::ReleaseCompositable(const CompositableHandle& aHandle)
 {
+  if (!IPCOpen()) {
+    
+    
+    return;
+  }
   if (!DestroyInTransaction(aHandle)) {
     SendReleaseCompositable(aHandle);
   }
