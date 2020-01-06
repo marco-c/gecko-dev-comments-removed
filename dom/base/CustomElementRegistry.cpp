@@ -38,8 +38,6 @@ CustomElementCallback::Call()
       nsIDocument* document = mThisObject->GetComposedDoc();
       if (document) {
         NodeInfo* ni = mThisObject->NodeInfo();
-        nsDependentAtomString extType(mOwnerData->mType);
-
         
         
         
@@ -47,7 +45,7 @@ CustomElementCallback::Call()
         CustomElementDefinition* definition =
           nsContentUtils::LookupCustomElementDefinition(document,
             ni->LocalName(), ni->NamespaceID(),
-            extType.IsEmpty() ? nullptr : &extType);
+            mOwnerData->GetCustomElementType());
 
         nsContentUtils::EnqueueLifecycleCallback(
           nsIDocument::eConnected, mThisObject, nullptr, nullptr, definition);
@@ -132,10 +130,10 @@ CustomElementData::CustomElementData(nsAtom* aType)
 }
 
 CustomElementData::CustomElementData(nsAtom* aType, State aState)
-  : mType(aType)
-  , mElementIsBeingCreated(false)
+  : mElementIsBeingCreated(false)
   , mCreatedCallbackInvoked(true)
   , mState(aState)
+  , mType(aType)
 {
 }
 
@@ -156,6 +154,12 @@ CustomElementData::GetCustomElementDefinition()
                                       : mState != State::eCustom);
 
   return mCustomElementDefinition;
+}
+
+nsAtom*
+CustomElementData::GetCustomElementType()
+{
+  return mType;
 }
 
 void
@@ -269,12 +273,10 @@ CustomElementRegistry::~CustomElementRegistry()
 
 CustomElementDefinition*
 CustomElementRegistry::LookupCustomElementDefinition(const nsAString& aLocalName,
-                                                     const nsAString* aIs) const
+                                                     nsAtom* aTypeAtom) const
 {
   RefPtr<nsAtom> localNameAtom = NS_Atomize(aLocalName);
-  RefPtr<nsAtom> typeAtom = aIs ? NS_Atomize(*aIs) : localNameAtom;
-
-  CustomElementDefinition* data = mCustomDefinitions.GetWeak(typeAtom);
+  CustomElementDefinition* data = mCustomDefinitions.GetWeak(aTypeAtom);
   if (data && data->mLocalName == localNameAtom) {
     return data;
   }
@@ -320,50 +322,6 @@ CustomElementRegistry::RegisterUnresolvedElement(Element* aElement, nsAtom* aTyp
   nsWeakPtr* elem = unresolved->AppendElement();
   *elem = do_GetWeakReference(aElement);
   aElement->AddStates(NS_EVENT_STATE_UNRESOLVED);
-}
-
-void
-CustomElementRegistry::SetupCustomElement(Element* aElement,
-                                          const nsAString* aTypeExtension)
-{
-  RefPtr<nsAtom> tagAtom = aElement->NodeInfo()->NameAtom();
-  RefPtr<nsAtom> typeAtom = aTypeExtension ?
-    NS_Atomize(*aTypeExtension) : tagAtom;
-
-  if (aTypeExtension && !aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::is)) {
-    
-    
-    aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::is, *aTypeExtension, true);
-  }
-
-  
-  
-  
-  aElement->SetCustomElementData(new CustomElementData(typeAtom));
-
-  CustomElementDefinition* definition = LookupCustomElementDefinition(
-    aElement->NodeInfo()->LocalName(), aTypeExtension);
-
-  if (!definition) {
-    
-    
-    
-    RegisterUnresolvedElement(aElement, typeAtom);
-    return;
-  }
-
-  if (definition->mLocalName != tagAtom) {
-    
-    
-    
-    return;
-  }
-
-  
-  
-  
-  
-  SyncInvokeReactions(nsIDocument::eCreated, aElement, definition);
 }
 
  UniquePtr<CustomElementCallback>

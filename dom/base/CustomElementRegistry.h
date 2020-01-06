@@ -114,9 +114,7 @@ struct CustomElementData
 
   explicit CustomElementData(nsAtom* aType);
   CustomElementData(nsAtom* aType, State aState);
-  
-  
-  RefPtr<nsAtom> mType;
+
   
   bool mElementIsBeingCreated;
   
@@ -134,6 +132,7 @@ struct CustomElementData
 
   void SetCustomElementDefinition(CustomElementDefinition* aDefinition);
   CustomElementDefinition* GetCustomElementDefinition();
+  nsAtom* GetCustomElementType();
 
   void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
   void Unlink();
@@ -141,6 +140,9 @@ struct CustomElementData
 private:
   virtual ~CustomElementData() {}
 
+  
+  
+  RefPtr<nsAtom> mType;
   RefPtr<CustomElementDefinition> mCustomElementDefinition;
 };
 
@@ -359,7 +361,8 @@ public:
   static bool IsCustomElementEnabled(JSContext* aCx = nullptr,
                                      JSObject* aObject = nullptr)
   {
-    return nsContentUtils::IsCustomElementsEnabled();
+    return nsContentUtils::IsCustomElementsEnabled() ||
+           nsContentUtils::IsWebComponentsEnabled();
   }
 
   explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow);
@@ -369,17 +372,10 @@ public:
 
 
   CustomElementDefinition* LookupCustomElementDefinition(
-    const nsAString& aLocalName, const nsAString* aIs = nullptr) const;
+    const nsAString& aLocalName, nsAtom* aTypeAtom) const;
 
   CustomElementDefinition* LookupCustomElementDefinition(
     JSContext* aCx, JSObject *aConstructor) const;
-
-  
-
-
-
-
-  void SetupCustomElement(Element* aElement, const nsAString* aTypeExtension);
 
   static void EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
                                        Element* aCustomElement,
