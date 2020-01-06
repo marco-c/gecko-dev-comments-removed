@@ -5,9 +5,12 @@
 "use strict";
 
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
+const { flexboxSpec, gridSpec, layoutSpec } = require("devtools/shared/specs/layout");
+const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
-const { gridSpec, layoutSpec } = require("devtools/shared/specs/layout");
+
+loader.lazyRequireGetter(this, "CssLogic", "devtools/server/css-logic", true);
 
 
 
@@ -21,41 +24,34 @@ const { gridSpec, layoutSpec } = require("devtools/shared/specs/layout");
 
 
 
-var GridActor = ActorClassWithSpec(gridSpec, {
+const FlexboxActor = ActorClassWithSpec(flexboxSpec, {
   
 
 
 
 
 
-  initialize: function (layoutActor, containerEl) {
+  initialize(layoutActor, containerEl) {
     Actor.prototype.initialize.call(this, layoutActor.conn);
 
     this.containerEl = containerEl;
     this.walker = layoutActor.walker;
   },
 
-  destroy: function () {
+  destroy() {
     Actor.prototype.destroy.call(this);
 
     this.containerEl = null;
-    this.gridFragments = null;
     this.walker = null;
   },
 
-  form: function (detail) {
+  form(detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
 
-    
-    
-    let gridFragments = this.containerEl.getGridFragments();
-    this.gridFragments = getStringifiableFragments(gridFragments);
-
     let form = {
       actor: this.actorID,
-      gridFragments: this.gridFragments
     };
 
     
@@ -72,15 +68,66 @@ var GridActor = ActorClassWithSpec(gridSpec, {
 
 
 
-var LayoutActor = ActorClassWithSpec(layoutSpec, {
-  initialize: function (conn, tabActor, walker) {
+const GridActor = ActorClassWithSpec(gridSpec, {
+  
+
+
+
+
+
+  initialize(layoutActor, containerEl) {
+    Actor.prototype.initialize.call(this, layoutActor.conn);
+
+    this.containerEl = containerEl;
+    this.walker = layoutActor.walker;
+  },
+
+  destroy() {
+    Actor.prototype.destroy.call(this);
+
+    this.containerEl = null;
+    this.gridFragments = null;
+    this.walker = null;
+  },
+
+  form(detail) {
+    if (detail === "actorid") {
+      return this.actorID;
+    }
+
+    
+    
+    let gridFragments = this.containerEl.getGridFragments();
+    this.gridFragments = getStringifiableFragments(gridFragments);
+
+    let form = {
+      actor: this.actorID,
+      gridFragments: this.gridFragments,
+    };
+
+    
+    
+    
+    if (this.walker.hasNode(this.containerEl)) {
+      form.containerNodeActorID = this.walker.getNode(this.containerEl).actorID;
+    }
+
+    return form;
+  },
+});
+
+
+
+
+const LayoutActor = ActorClassWithSpec(layoutSpec, {
+  initialize(conn, tabActor, walker) {
     Actor.prototype.initialize.call(this, conn);
 
     this.tabActor = tabActor;
     this.walker = walker;
   },
 
-  destroy: function () {
+  destroy() {
     Actor.prototype.destroy.call(this);
 
     this.tabActor = null;
@@ -95,14 +142,78 @@ var LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getGrids: function (rootNode) {
+  getFlexbox(rootNode) {
+    let flexboxes = [];
+
+    if (!rootNode) {
+      return flexboxes;
+    }
+
+    let treeWalker = this.walker.getDocumentWalker(rootNode,
+      nodeFilterConstants.SHOW_ELEMENT);
+
+    while (treeWalker.nextNode()) {
+      let currentNode = treeWalker.currentNode;
+      let computedStyle = CssLogic.getComputedStyle(currentNode);
+
+      if (!computedStyle) {
+        continue;
+      }
+
+      if (computedStyle.display == "inline-flex" || computedStyle.display == "flex") {
+        let flexboxActor = new FlexboxActor(this, currentNode);
+        flexboxes.push(flexboxActor);
+      }
+    }
+
+    return flexboxes;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getAllFlexbox(rootNode, traverseFrames) {
+    let flexboxes = []
+
+    if (!rootNode) {
+      return flexboxes;
+    }
+
+    if (!traverseFrames) {
+      return this.getFlexbox(rootNode.rawNode);
+    }
+
+    for (let {document} of this.tabActor.windows) {
+      flexboxes = [...flexboxes, ...this.getFlexbox(document.documentElement)];
+    }
+
+    return flexboxes;
+  },
+
+  
+
+
+
+
+
+
+
+  getGrids(rootNode) {
     let grids = [];
 
     if (!rootNode) {
       return grids;
     }
 
-    let treeWalker = this.walker.getDocumentWalker(rootNode);
+    let treeWalker = this.walker.getDocumentWalker(rootNode,
+      nodeFilterConstants.SHOW_ELEMENT);
+
     while (treeWalker.nextNode()) {
       let currentNode = treeWalker.currentNode;
 
@@ -124,7 +235,7 @@ var LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-  getAllGrids: function (rootNode, traverseFrames) {
+  getAllGrids(rootNode, traverseFrames) {
     let grids = [];
 
     if (!rootNode) {
@@ -141,8 +252,8 @@ var LayoutActor = ActorClassWithSpec(layoutSpec, {
 
     return grids;
   },
-
 });
 
+exports.FlexboxActor = FlexboxActor;
 exports.GridActor = GridActor;
 exports.LayoutActor = LayoutActor;
