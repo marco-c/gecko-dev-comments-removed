@@ -1514,11 +1514,11 @@
                                                           [ brandShortName ]);
               isContentTitle = true;
             } else {
-              if (browser.currentURI.displaySpec) {
+              if (browser.currentURI.spec) {
                 try {
-                  title = this.mURIFixup.createExposableURI(browser.currentURI).displaySpec;
+                  title = this.mURIFixup.createExposableURI(browser.currentURI).spec;
                 } catch (ex) {
-                  title = browser.currentURI.displaySpec;
+                  title = browser.currentURI.spec;
                 }
               }
 
@@ -2219,10 +2219,14 @@
               let setter;
               switch (name) {
                 case "audioMuted":
-                  getter = () => false;
+                  getter = () => {
+                    return false;
+                  };
                   break;
                 case "contentTitle":
-                  getter = () => SessionStore.getLazyTabValue(aTab, "title");
+                  getter = () => {
+                    return SessionStore.getLazyTabValue(aTab, "title");
+                  };
                   break;
                 case "currentURI":
                   getter = () => {
@@ -2230,23 +2234,29 @@
                     return Services.io.newURI(url);
                   };
                   break;
-                case "fullZoom":
-                case "textZoom":
-                  getter = () => 1;
-                  break;
                 case "getTabBrowser":
-                  getter = () => () => this;
+                  getter = () => {
+                    return () => {
+                      return this;
+                    };
+                  };
                   break;
                 case "isRemoteBrowser":
-                  getter = () => browser.getAttribute("remote") == "true";
+                  getter = () => {
+                    return browser.getAttribute("remote") == "true";
+                  };
                   break;
                 case "permitUnload":
-                  getter = () => () => ({ permitUnload: true, timedOut: false });
+                  getter = () => {
+                    return () => {
+                      return { permitUnload: true, timedOut: false };
+                    };
+                  };
                   break;
                 case "reload":
                 case "reloadWithFlags":
-                  getter = () =>
-                    params => {
+                  getter = () => {
+                    return (params) => {
                       // Wait for load handler to be instantiated before
                       // initializing the reload.
                       aTab.addEventListener("SSTabRestoring", () => {
@@ -2254,21 +2264,25 @@
                       }, { once: true });
                       gBrowser._insertBrowser(aTab);
                     };
+                  };
                   break;
                 case "resumeMedia":
-                  getter = () =>
-                    () => {
+                  getter = () => {
+                    return () => {
                       // No need to insert a browser, so we just call the browser's
                       // method.
                       aTab.addEventListener("SSTabRestoring", () => {
                         browser[name]();
                       }, { once: true });
                     };
+                  };
                   break;
                 case "userTypedValue":
                 case "userTypedClear":
                 case "mediaBlocked":
-                  getter = () => SessionStore.getLazyTabValue(aTab, name);
+                  getter = () => {
+                    return SessionStore.getLazyTabValue(aTab, name);
+                  };
                   break;
                 default:
                   getter = () => {
@@ -2280,7 +2294,7 @@
                     this._insertBrowser(aTab);
                     return browser[name];
                   };
-                  setter = value => {
+                  setter = (value) => {
                     if (AppConstants.NIGHTLY_BUILD) {
                       let message =
                         `[bug 1345098] Lazy browser prematurely inserted via '${name}' property access:\n`
@@ -5944,6 +5958,8 @@
 
           Services.prefs.addObserver("privacy.userContext", this);
           this.observe(null, "nsPref:changed", "privacy.userContext.enabled");
+
+          this._setPositionalAttributes();
         ]]>
       </constructor>
 
@@ -7917,7 +7933,7 @@
       <![CDATA[
         var tab = event.target.tab;
         if (tab) {
-          let overLink = tab.linkedBrowser.currentURI.displaySpec;
+          let overLink = tab.linkedBrowser.currentURI.spec;
           if (overLink == "about:blank")
             overLink = "";
           XULBrowserWindow.setOverLink(overLink, null);
