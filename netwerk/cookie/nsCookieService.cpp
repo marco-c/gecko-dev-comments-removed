@@ -2747,6 +2747,10 @@ nsCookieService::AsyncReadComplete()
   mDefaultDBState->stmtReadDomain = nullptr;
   mDefaultDBState->pendingRead = nullptr;
   mDefaultDBState->readListener = nullptr;
+
+  
+  
+  mDefaultDBState->syncConn->AsyncClose(nullptr);
   mDefaultDBState->syncConn = nullptr;
   mDefaultDBState->hostArray.Clear();
   mDefaultDBState->readSet.Clear();
