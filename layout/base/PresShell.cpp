@@ -4942,8 +4942,8 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
     
     for (; frame; frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
-      info->mBuilder.SetDirtyRect(frame->GetVisualOverflowRect());
-      frame->BuildDisplayListForStackingContext(&info->mBuilder, &info->mList);
+      frame->BuildDisplayListForStackingContext(&info->mBuilder,
+               frame->GetVisualOverflowRect(), &info->mList);
     }
   };
   if (startContainer->NodeType() == nsIDOMNode::TEXT_NODE) {

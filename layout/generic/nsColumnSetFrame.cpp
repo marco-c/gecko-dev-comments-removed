@@ -1278,18 +1278,19 @@ nsColumnSetFrame::Reflow(nsPresContext*           aPresContext,
 
 void
 nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                   const nsRect&           aDirtyRect,
                                    const nsDisplayListSet& aLists)
 {
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
   if (IsVisibleForPainting(aBuilder)) {
     aLists.BorderBackground()->
-      AppendNewToTop(new (aBuilder) nsDisplayColumnRule(aBuilder, this));
+      AppendNewToTop(new (aBuilder)nsDisplayColumnRule(aBuilder, this));
   }
 
   
   for (nsFrameList::Enumerator e(mFrames); !e.AtEnd(); e.Next()) {
-    BuildDisplayListForChild(aBuilder, e.get(), aLists);
+    BuildDisplayListForChild(aBuilder, e.get(), aDirtyRect, aLists);
   }
 }
 

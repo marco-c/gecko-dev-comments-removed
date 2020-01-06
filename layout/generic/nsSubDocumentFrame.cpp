@@ -328,6 +328,7 @@ WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
 
 void
 nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                     const nsRect&           aDirtyRect,
                                      const nsDisplayListSet& aLists)
 {
   if (!IsVisibleForPainting(aBuilder))
@@ -368,7 +369,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 
   if (rfp) {
-    rfp->BuildDisplayList(aBuilder, this, aLists);
+    rfp->BuildDisplayList(aBuilder, this, aDirtyRect, aLists);
     return;
   }
 
@@ -393,7 +394,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   nsIFrame* savedIgnoreScrollFrame = nullptr;
   if (subdocRootFrame) {
     
-    dirty = aBuilder->GetDirtyRect() + GetOffsetToCrossDoc(subdocRootFrame);
+    dirty = aDirtyRect + GetOffsetToCrossDoc(subdocRootFrame);
     
     dirty = dirty.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
 
@@ -401,11 +402,9 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       nsIScrollableFrame* rootScrollableFrame = presShell->GetRootScrollFrameAsScrollable();
       MOZ_ASSERT(rootScrollableFrame);
       
-      nsRect copyOfDirty = dirty;
+      nsRect copy = dirty;
       haveDisplayPort = rootScrollableFrame->DecideScrollableLayer(aBuilder,
-                          &copyOfDirty,
-                           true);
-
+                          &copy,  true);
       if (!gfxPrefs::LayoutUseContainersForRootFrames()) {
         haveDisplayPort = false;
       }
@@ -419,7 +418,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
     aBuilder->EnterPresShell(subdocRootFrame, pointerEventsNone);
   } else {
-    dirty = aBuilder->GetDirtyRect();
+    dirty = aDirtyRect;
   }
 
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
@@ -440,7 +439,6 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   {
     needsOwnLayer = true;
   }
-
   if (!needsOwnLayer && aBuilder->IsBuildingLayerEventRegions() &&
       nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell))
   {
@@ -459,13 +457,6 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       nestedClipState.Clear();
     }
 
-    
-    
-    
-    nsIFrame* frame = subdocRootFrame ? subdocRootFrame : this;
-    nsDisplayListBuilder::AutoBuildingDisplayList
-      building(aBuilder, frame, dirty, true);
-
     if (subdocRootFrame) {
       nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
       nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
@@ -476,7 +467,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
       aBuilder->SetAncestorHasApzAwareEventHandler(false);
       subdocRootFrame->
-        BuildDisplayListForStackingContext(aBuilder, &childItems);
+        BuildDisplayListForStackingContext(aBuilder, dirty, &childItems);
     }
 
     if (!aBuilder->IsForEventDelivery()) {
@@ -495,8 +486,15 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       if (nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
         presShell->AddPrintPreviewBackgroundItem(
-          *aBuilder, childItems, frame, bounds);
+          *aBuilder, childItems, subdocRootFrame ? subdocRootFrame : this,
+          bounds);
       } else {
+        
+        
+        
+        nsIFrame* frame = subdocRootFrame ? subdocRootFrame : this;
+        nsDisplayListBuilder::AutoBuildingDisplayList
+          building(aBuilder, frame, dirty, true);
         
         
         

@@ -229,9 +229,9 @@ public:
 
   typedef void (* DisplayGenericTablePartTraversal)
       (nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
-       const nsDisplayListSet& aLists);
+       const nsRect& aDirtyRect, const nsDisplayListSet& aLists);
   static void GenericTraversal(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
-                               const nsDisplayListSet& aLists);
+                               const nsRect& aDirtyRect, const nsDisplayListSet& aLists);
 
   
 
@@ -246,6 +246,7 @@ public:
 
   static void DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
                                       nsFrame* aFrame,
+                                      const nsRect& aDirtyRect,
                                       const nsDisplayListSet& aLists,
                                       DisplayGenericTablePartTraversal aTraversal = GenericTraversal);
 
@@ -265,6 +266,7 @@ public:
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
   

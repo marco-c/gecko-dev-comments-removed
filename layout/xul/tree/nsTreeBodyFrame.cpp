@@ -2836,6 +2836,7 @@ public:
 
 void
 nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                  const nsRect&           aDirtyRect,
                                   const nsDisplayListSet& aLists)
 {
   
@@ -2843,7 +2844,7 @@ nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return; 
 
   
-  nsLeafBoxFrame::BuildDisplayList(aBuilder, aLists);
+  nsLeafBoxFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
 
   
   

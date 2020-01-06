@@ -146,13 +146,14 @@ nsDeckFrame::GetSelectedBox()
 
 void
 nsDeckFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                              const nsRect&           aDirtyRect,
                               const nsDisplayListSet& aLists)
 {
   
   if (!StyleVisibility()->mVisible)
     return;
 
-  nsBoxFrame::BuildDisplayList(aBuilder, aLists);
+  nsBoxFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
 }
 
 void
@@ -185,6 +186,7 @@ nsDeckFrame::RemoveFrame(ChildListID aListID,
 
 void
 nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
+                                         const nsRect&           aDirtyRect,
                                          const nsDisplayListSet& aLists)
 {
   
@@ -195,7 +197,7 @@ nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
   
   
   nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
-  BuildDisplayListForChild(aBuilder, box, set);
+  BuildDisplayListForChild(aBuilder, box, aDirtyRect, set);
 }
 
 NS_IMETHODIMP

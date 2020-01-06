@@ -45,6 +45,7 @@ nsStackFrame::nsStackFrame(nsStyleContext* aContext):
 
 void
 nsStackFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
+                                          const nsRect&           aDirtyRect,
                                           const nsDisplayListSet& aLists)
 {
   
@@ -55,7 +56,8 @@ nsStackFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
   nsIFrame* kid = mFrames.FirstChild();
   while (kid) {
     
-    BuildDisplayListForChild(aBuilder, kid, kidLists, DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
+    BuildDisplayListForChild(aBuilder, kid, aDirtyRect, kidLists,
+                             DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
     kid = kid->GetNextSibling();
   }
 }

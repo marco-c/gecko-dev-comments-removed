@@ -101,6 +101,7 @@ void nsLeafBoxFrame::UpdateMouseThrough()
 
 void
 nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                 const nsRect&           aDirtyRect,
                                  const nsDisplayListSet& aLists)
 {
   

@@ -238,9 +238,10 @@ nsInlineFrame::StealFrame(nsIFrame* aChild)
 
 void
 nsInlineFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
-  BuildDisplayListForInline(aBuilder, aLists);
+  BuildDisplayListForInline(aBuilder, aDirtyRect, aLists);
 
   
   

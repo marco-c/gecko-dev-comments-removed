@@ -161,6 +161,7 @@ nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
 
 void
 nsListControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                     const nsRect&           aDirtyRect,
                                      const nsDisplayListSet& aLists)
 {
   
@@ -185,7 +186,7 @@ nsListControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         mLastDropdownBackstopColor));
   }
 
-  nsHTMLScrollFrame::BuildDisplayList(aBuilder, aLists);
+  nsHTMLScrollFrame::BuildDisplayList(aBuilder, aDirtyRect, aLists);
 }
 
 

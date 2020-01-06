@@ -148,6 +148,7 @@ nsDisplayFieldSetBorder::GetBounds(nsDisplayListBuilder* aBuilder,
 
 void
 nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                  const nsRect&           aDirtyRect,
                                   const nsDisplayListSet& aLists) {
   
   
@@ -174,7 +175,7 @@ nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 
   if (GetPrevInFlow()) {
-    DisplayOverflowContainers(aBuilder, aLists);
+    DisplayOverflowContainers(aBuilder, aDirtyRect, aLists);
   }
 
   nsDisplayListCollection contentDisplayItems;
@@ -185,13 +186,13 @@ nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     
-    BuildDisplayListForChild(aBuilder, inner, contentDisplayItems);
+    BuildDisplayListForChild(aBuilder, inner, aDirtyRect, contentDisplayItems);
   }
   if (nsIFrame* legend = GetLegend()) {
     
     
     nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
-    BuildDisplayListForChild(aBuilder, legend, set);
+    BuildDisplayListForChild(aBuilder, legend, aDirtyRect, set);
   }
   
   

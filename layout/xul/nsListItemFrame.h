@@ -20,6 +20,7 @@ public:
   
   
   virtual void BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
+                                           const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists) override;
 
   virtual nsSize GetXULPrefSize(nsBoxLayoutState& aState) override;

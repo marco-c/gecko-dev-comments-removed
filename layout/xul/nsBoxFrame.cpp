@@ -1314,6 +1314,7 @@ PaintXULDebugBackground(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 
 void
 nsBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                             const nsRect&           aDirtyRect,
                              const nsDisplayListSet& aLists)
 {
   bool forceLayer = false;
@@ -1352,7 +1353,7 @@ nsBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     contASRTracker.emplace(aBuilder);
   }
 
-  BuildDisplayListForChildren(aBuilder, destination);
+  BuildDisplayListForChildren(aBuilder, aDirtyRect, destination);
 
   
   DisplaySelectionOverlay(aBuilder, destination.Content());
@@ -1383,6 +1384,7 @@ nsBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 void
 nsBoxFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
+                                        const nsRect&           aDirtyRect,
                                         const nsDisplayListSet& aLists)
 {
   nsIFrame* kid = mFrames.FirstChild();
@@ -1391,7 +1393,7 @@ nsBoxFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
   nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
   
   while (kid) {
-    BuildDisplayListForChild(aBuilder, kid, set);
+    BuildDisplayListForChild(aBuilder, kid, aDirtyRect, set);
     kid = kid->GetNextSibling();
   }
 }

@@ -419,6 +419,7 @@ public:
 
 
   void DisplayOverflowContainers(nsDisplayListBuilder*   aBuilder,
+                                 const nsRect&           aDirtyRect,
                                  const nsDisplayListSet& aLists);
 
   
@@ -431,6 +432,7 @@ public:
 
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
   static void PlaceFrameView(nsIFrame* aFrame)
@@ -573,6 +575,7 @@ protected:
 
 
   void BuildDisplayListForNonBlockChildren(nsDisplayListBuilder*   aBuilder,
+                                           const nsRect&           aDirtyRect,
                                            const nsDisplayListSet& aLists,
                                            uint32_t                aFlags = 0);
 
@@ -581,9 +584,11 @@ protected:
 
 
   void BuildDisplayListForInline(nsDisplayListBuilder*   aBuilder,
+                                 const nsRect&           aDirtyRect,
                                  const nsDisplayListSet& aLists) {
     DisplayBorderBackgroundOutline(aBuilder, aLists);
-    BuildDisplayListForNonBlockChildren(aBuilder, aLists, DISPLAY_CHILD_INLINE);
+    BuildDisplayListForNonBlockChildren(aBuilder, aDirtyRect, aLists,
+                                        DISPLAY_CHILD_INLINE);
   }
 
 

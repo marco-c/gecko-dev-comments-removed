@@ -168,6 +168,7 @@ nsTableWrapperFrame::RemoveFrame(ChildListID  aListID,
 
 void
 nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                                      const nsRect&           aDirtyRect,
                                       const nsDisplayListSet& aLists)
 {
   
@@ -176,15 +177,16 @@ nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   if (mCaptionFrames.IsEmpty()) {
-    BuildDisplayListForInnerTable(aBuilder, aLists);
+    BuildDisplayListForInnerTable(aBuilder, aDirtyRect, aLists);
     return;
   }
 
   nsDisplayListCollection set;
-  BuildDisplayListForInnerTable(aBuilder, set);
+  BuildDisplayListForInnerTable(aBuilder, aDirtyRect, set);
 
   nsDisplayListSet captionSet(set, set.BlockBorderBackgrounds());
-  BuildDisplayListForChild(aBuilder, mCaptionFrames.FirstChild(), captionSet);
+  BuildDisplayListForChild(aBuilder, mCaptionFrames.FirstChild(),
+                           aDirtyRect, captionSet);
 
   
   
@@ -198,6 +200,7 @@ nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 void
 nsTableWrapperFrame::BuildDisplayListForInnerTable(nsDisplayListBuilder*   aBuilder,
+                                                   const nsRect&           aDirtyRect,
                                                    const nsDisplayListSet& aLists)
 {
   
@@ -205,7 +208,7 @@ nsTableWrapperFrame::BuildDisplayListForInnerTable(nsDisplayListBuilder*   aBuil
   nsIFrame* kid = mFrames.FirstChild();
   
   while (kid) {
-    BuildDisplayListForChild(aBuilder, kid, aLists);
+    BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
     kid = kid->GetNextSibling();
   }
 }
