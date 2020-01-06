@@ -34,7 +34,7 @@ use msg::constellation_msg::PipelineId;
 use net_traits::{CookieSource, FetchMetadata, NetworkError, ReferrerPolicy};
 use net_traits::request::{CacheMode, CredentialsMode, Destination, Origin};
 use net_traits::request::{RedirectMode, Referrer, Request, RequestMode};
-use net_traits::request::{ResponseTainting, Type};
+use net_traits::request::{ResponseTainting, ServiceWorkersMode, Type};
 use net_traits::response::{HttpsState, Response, ResponseBody, ResponseType};
 use resource_thread::AuthCache;
 use servo_url::{ImmutableOrigin, ServoUrl};
@@ -521,11 +521,25 @@ pub fn http_fetch(request: &mut Request,
     
 
     
-    if !request.skip_service_worker && !request.is_service_worker_global_scope {
+    if request.service_workers_mode != ServiceWorkersMode::None {
         
-        
+        if request.service_workers_mode == ServiceWorkersMode::All {
+            
+        }
 
+        
+        if response.is_none() && request.is_subresource_request() && match request.origin {
+            Origin::Origin(ref origin) if *origin == request.url().origin() => true,
+            _ => false,
+        } {
+            
+        }
+
+        
         if let Some(ref res) = response {
+            
+            
+
             
             
 
@@ -576,7 +590,9 @@ pub fn http_fetch(request: &mut Request,
         }
 
         
-        request.skip_service_worker = true;
+        if request.redirect_mode == RedirectMode::Follow {
+            request.service_workers_mode = ServiceWorkersMode::Foreign;
+        }
 
         
         let mut fetch_result = http_network_or_cache_fetch(
@@ -1238,8 +1254,7 @@ fn cors_preflight_fetch(request: &Request,
                         context: &FetchContext)
                         -> Response {
     
-    let mut preflight = Request::new(request.current_url(), Some(request.origin.clone()),
-                                     request.is_service_worker_global_scope, request.pipeline_id);
+    let mut preflight = Request::new(request.current_url(), Some(request.origin.clone()), request.pipeline_id);
     preflight.method = Method::Options;
     preflight.initiator = request.initiator.clone();
     preflight.type_ = request.type_.clone();
