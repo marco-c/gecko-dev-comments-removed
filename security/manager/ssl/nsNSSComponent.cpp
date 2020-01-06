@@ -1715,12 +1715,13 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
     return srv == SECSuccess ? NS_OK : NS_ERROR_FAILURE;
   }
 
-  const char* profilePathCStr = PromiseFlatCString(profilePath).get();
+
+  const nsCString& profilePathCStr = PromiseFlatCString(profilePath);
   
 #ifndef ANDROID
   PRErrorCode savedPRErrorCode1;
 #endif 
-  SECStatus srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false,
+  SECStatus srv = ::mozilla::psm::InitializeNSS(profilePathCStr.get(), false,
                                                 !safeMode);
   if (srv == SECSuccess) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r/w mode"));
@@ -1731,7 +1732,7 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
   PRErrorCode savedPRErrorCode2;
 #endif 
   
-  srv = ::mozilla::psm::InitializeNSS(profilePathCStr, true, !safeMode);
+  srv = ::mozilla::psm::InitializeNSS(profilePathCStr.get(), true, !safeMode);
   if (srv == SECSuccess) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r-o mode"));
     return NS_OK;
@@ -1752,7 +1753,7 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
     
     
     
-    srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false, false);
+    srv = ::mozilla::psm::InitializeNSS(profilePathCStr.get(), false, false);
     if (srv == SECSuccess) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("FIPS may be the problem"));
       
@@ -1768,12 +1769,12 @@ InitializeNSSWithFallbacks(const nsACString& profilePath, bool nocertdb,
       if (NS_FAILED(rv)) {
         return rv;
       }
-      srv = ::mozilla::psm::InitializeNSS(profilePathCStr, false, true);
+      srv = ::mozilla::psm::InitializeNSS(profilePathCStr.get(), false, true);
       if (srv == SECSuccess) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r/w mode"));
         return NS_OK;
       }
-      srv = ::mozilla::psm::InitializeNSS(profilePathCStr, true, true);
+      srv = ::mozilla::psm::InitializeNSS(profilePathCStr.get(), true, true);
       if (srv == SECSuccess) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r-o mode"));
         return NS_OK;
