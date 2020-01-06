@@ -1499,6 +1499,10 @@ cairo_scaled_font_get_font_options (cairo_scaled_font_t		*scaled_font,
 				    cairo_font_options_t	*options);
 
 
+cairo_public cairo_hint_metrics_t
+cairo_scaled_font_get_hint_metrics (cairo_scaled_font_t		*scaled_font);
+
+
 
 
 cairo_public cairo_font_face_t *
