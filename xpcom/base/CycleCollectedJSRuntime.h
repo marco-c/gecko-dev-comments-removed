@@ -260,6 +260,10 @@ public:
   bool AreGCGrayBitsValid() const;
   void GarbageCollect(uint32_t aReason) const;
 
+  
+  
+  
+  
   void NurseryWrapperAdded(nsWrapperCache* aCache);
   void NurseryWrapperPreserved(JSObject* aWrapper);
   void JSObjectsTenured();
