@@ -510,7 +510,10 @@
 
 
 
+
+
 #![crate_type= "lib"]
+#![doc(html_root_url = "https://docs.rs/clap/2.27.1")]
 #![deny(
         missing_docs,
         missing_debug_implementations,
@@ -524,7 +527,8 @@
 #![cfg_attr(not(any(feature = "lints", feature = "nightly")), forbid(unstable_features))]
 #![cfg_attr(feature = "lints", feature(plugin))]
 #![cfg_attr(feature = "lints", plugin(clippy))]
-#![cfg_attr(feature = "lints", deny(warnings))]
+
+
 #![cfg_attr(feature = "lints", allow(cyclomatic_complexity))]
 #![cfg_attr(feature = "lints", allow(doc_markdown))]
 #![cfg_attr(feature = "lints", allow(explicit_iter_loop))]
@@ -538,11 +542,11 @@ extern crate yaml_rust;
 extern crate unicode_width;
 #[macro_use]
 extern crate bitflags;
+#[cfg(feature = "vec_map")]
 extern crate vec_map;
 #[cfg(feature = "wrap_help")]
 extern crate term_size;
 extern crate textwrap;
-extern crate unicode_segmentation;
 #[cfg(feature = "color")]
 extern crate atty;
 
@@ -565,6 +569,7 @@ mod errors;
 mod osstringext;
 mod strext;
 mod completions;
+mod map;
 
 const INTERNAL_ERROR_MSG: &'static str = "Fatal internal error. Please consider filing a bug \
                                           report at https://github.com/kbknapp/clap-rs/issues";

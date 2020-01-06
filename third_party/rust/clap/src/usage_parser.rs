@@ -1,10 +1,9 @@
 
-use vec_map::VecMap;
-
 
 use INTERNAL_ERROR_MSG;
 use args::Arg;
 use args::settings::ArgSettings;
+use map::VecMap;
 
 #[derive(PartialEq, Debug)]
 enum UsageToken {

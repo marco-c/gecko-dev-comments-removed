@@ -2,6 +2,59 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/isatty/0.1.5")]
+
+
+
+
+
+#[cfg(unix)]
+pub fn stdin_isatty() -> bool {
+    isatty(stream::Stream::Stdin)
+}
+
 pub fn stdout_isatty() -> bool {
     isatty(stream::Stream::Stdout)
 }
@@ -12,6 +65,8 @@ pub fn stderr_isatty() -> bool {
 
 mod stream {
     pub enum Stream {
+        #[cfg(unix)]
+        Stdin,
         Stdout,
         Stderr,
     }
@@ -27,6 +82,7 @@ mod unix {
         extern crate libc;
 
         let fd = match stream {
+            Stream::Stdin => libc::STDIN_FILENO,
             Stream::Stdout => libc::STDOUT_FILENO,
             Stream::Stderr => libc::STDERR_FILENO,
         };

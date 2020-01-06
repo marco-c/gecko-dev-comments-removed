@@ -18,7 +18,6 @@ use std::rc::Rc;
 use std::result::Result as StdResult;
 
 
-use vec_map::{self, VecMap};
 #[cfg(feature = "yaml")]
 use yaml_rust::Yaml;
 
@@ -29,6 +28,7 @@ use args::{AnyArg, Arg, ArgGroup, ArgMatcher, ArgMatches, ArgSettings};
 use errors::Result as ClapResult;
 pub use self::settings::AppSettings;
 use completions::Shell;
+use map::{self, VecMap};
 
 
 
@@ -1153,8 +1153,8 @@ impl<'a, 'b> App<'a, 'b> {
     pub fn print_help(&mut self) -> ClapResult<()> {
         
         
-        self.p.propogate_globals();
-        self.p.propogate_settings();
+        self.p.propagate_globals();
+        self.p.propagate_settings();
         self.p.derive_display_order();
 
         self.p.create_help_and_version();
@@ -1183,8 +1183,8 @@ impl<'a, 'b> App<'a, 'b> {
     pub fn print_long_help(&mut self) -> ClapResult<()> {
         
         
-        self.p.propogate_globals();
-        self.p.propogate_settings();
+        self.p.propagate_globals();
+        self.p.propagate_settings();
         self.p.derive_display_order();
 
         self.p.create_help_and_version();
@@ -1247,8 +1247,8 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     pub fn write_long_help<W: Write>(&mut self, w: &mut W) -> ClapResult<()> {
-        self.p.propogate_globals();
-        self.p.propogate_settings();
+        self.p.propagate_globals();
+        self.p.propagate_settings();
         self.p.derive_display_order();
         self.p.create_help_and_version();
 
@@ -1586,9 +1586,12 @@ impl<'a, 'b> App<'a, 'b> {
     {
         
         
-        self.p.propogate_globals();
-        self.p.propogate_settings();
-        self.p.derive_display_order();
+        if !self.p.is_set(AppSettings::Propagated) {
+            self.p.propagate_globals();
+            self.p.propagate_settings();
+            self.p.derive_display_order();
+            self.p.set(AppSettings::Propagated);
+        }
 
         let mut matcher = ArgMatcher::new();
 
@@ -1619,11 +1622,8 @@ impl<'a, 'b> App<'a, 'b> {
             return Err(e);
         }
 
-        if self.p.is_set(AppSettings::PropagateGlobalValuesDown) {
-            for a in &self.p.global_args {
-                matcher.propagate(a.b.name);
-            }
-        }
+        let global_arg_vec : Vec<&str> = (&self).p.global_args.iter().map(|ga| ga.b.name).collect();
+        matcher.propagate_globals(&global_arg_vec);
 
         Ok(matcher.into())
     }
@@ -1793,9 +1793,10 @@ impl<'n, 'e> AnyArg<'n, 'e> for App<'n, 'e> {
     fn help(&self) -> Option<&'e str> { self.p.meta.about }
     fn long_help(&self) -> Option<&'e str> { self.p.meta.long_about }
     fn default_val(&self) -> Option<&'e OsStr> { None }
-    fn default_vals_ifs(&self) -> Option<vec_map::Values<(&'n str, Option<&'e OsStr>, &'e OsStr)>> {
+    fn default_vals_ifs(&self) -> Option<map::Values<(&'n str, Option<&'e OsStr>, &'e OsStr)>> {
         None
     }
+    fn env<'s>(&'s self) -> Option<(&'n OsStr, Option<&'s OsString>)> { None }
     fn longest_filter(&self) -> bool { true }
     fn aliases(&self) -> Option<Vec<&'e str>> {
         if let Some(ref aliases) = self.p.meta.aliases {

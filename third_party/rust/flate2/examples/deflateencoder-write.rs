@@ -1,0 +1,12 @@
+extern crate flate2;
+
+use std::io::prelude::*;
+use flate2::Compression;
+use flate2::write::DeflateEncoder;
+
+
+fn main() {
+    let mut e = DeflateEncoder::new(Vec::new(), Compression::Default);
+    e.write(b"Hello World").unwrap();
+    println!("{:?}", e.finish().unwrap());
+}

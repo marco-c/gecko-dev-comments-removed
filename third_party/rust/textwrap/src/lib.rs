@@ -41,15 +41,27 @@
 
 
 
+#![doc(html_root_url = "https://docs.rs/textwrap/0.9.0")]
+#![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
+
 extern crate unicode_width;
+#[cfg(feature = "term_size")]
 extern crate term_size;
 #[cfg(feature = "hyphenation")]
 extern crate hyphenation;
+
+use std::fmt;
+use std::borrow::Cow;
+use std::str::CharIndices;
 
 use unicode_width::UnicodeWidthStr;
 use unicode_width::UnicodeWidthChar;
 #[cfg(feature = "hyphenation")]
 use hyphenation::{Hyphenation, Corpus};
+
+
+const NBSP: char = '\u{a0}';
 
 
 
@@ -97,6 +109,8 @@ pub trait WordSplitter {
 
 
 
+
+#[derive(Clone, Debug)]
 pub struct NoHyphenation;
 
 
@@ -112,7 +126,9 @@ impl WordSplitter for NoHyphenation {
 
 
 
+#[derive(Clone, Debug)]
 pub struct HyphenSplitter;
+
 
 
 
@@ -127,13 +143,28 @@ impl WordSplitter for HyphenSplitter {
         
         
         
-        let char_indices = word.char_indices().collect::<Vec<_>>();
-        for w in char_indices.windows(3) {
-            let ((_, prev), (n, c), (_, next)) = (w[0], w[1], w[2]);
-            if prev.is_alphanumeric() && c == '-' && next.is_alphanumeric() {
-                let (head, tail) = word.split_at(n + 1);
+        let mut char_indices = word.char_indices();
+        
+        let mut prev = match char_indices.next() {
+            None => return vec![(word, "", "")],
+            Some((_, ch)) => ch,
+        };
+
+        
+        
+        let (mut idx, mut cur) = match char_indices.next() {
+            None => return vec![(word, "", "")],
+            Some((idx, cur)) => (idx, cur),
+        };
+
+        for (i, next) in char_indices {
+            if prev.is_alphanumeric() && cur == '-' && next.is_alphanumeric() {
+                let (head, tail) = word.split_at(idx + 1);
                 triples.push((head, "", tail));
             }
+            prev = cur;
+            idx = i;
+            cur = next;
         }
 
         
@@ -150,7 +181,7 @@ impl WordSplitter for Corpus {
     fn split<'w>(&self, word: &'w str) -> Vec<(&'w str, &'w str, &'w str)> {
         
         let mut triples = Vec::new();
-        for n in word.opportunities(&self) {
+        for n in word.opportunities(self) {
             let (head, tail) = word.split_at(n);
             let hyphen = if head.ends_with('-') { "" } else { "-" };
             triples.push((head, hyphen, tail));
@@ -162,46 +193,19 @@ impl WordSplitter for Corpus {
     }
 }
 
-struct IndentedString {
-    value: String,
-    empty_len: usize,
-}
 
-impl IndentedString {
-    
-    
-    #[inline]
-    fn new(indent: &str, capacity: usize) -> IndentedString {
-        let mut value = String::with_capacity(capacity);
-        value.push_str(indent);
-        IndentedString {
-            value: value,
-            empty_len: indent.len(),
+fn cow_add_assign<'a>(lhs: &mut Cow<'a, str>, rhs: &'a str) {
+    if lhs.is_empty() {
+        *lhs = Cow::Borrowed(rhs)
+    } else if rhs.is_empty() {
+        return;
+    } else {
+        if let Cow::Borrowed(inner) = *lhs {
+            let mut s = String::with_capacity(lhs.len() + rhs.len());
+            s.push_str(inner);
+            *lhs = Cow::Owned(s);
         }
-    }
-
-    
-    
-    #[inline]
-    fn is_empty(&self) -> bool {
-        self.value.len() == self.empty_len
-    }
-
-    
-    #[inline]
-    fn push(&mut self, ch: char) {
-        self.value.push(ch);
-    }
-
-    
-    #[inline]
-    fn push_str(&mut self, s: &str) {
-        self.value.push_str(s);
-    }
-
-    
-    fn into_string(self) -> String {
-        self.value
+        lhs.to_mut().push_str(rhs);
     }
 }
 
@@ -216,7 +220,11 @@ impl IndentedString {
 
 
 
-pub struct Wrapper<'a> {
+
+
+
+#[derive(Clone, Debug)]
+pub struct Wrapper<'a, S: WordSplitter> {
     
     pub width: usize,
     
@@ -230,19 +238,10 @@ pub struct Wrapper<'a> {
     
     
     
-    
-    
-    
-    
-    
-    pub squeeze_whitespace: bool,
-    
-    
-    
-    pub splitter: Box<WordSplitter>,
+    pub splitter: S,
 }
 
-impl<'a> Wrapper<'a> {
+impl<'a> Wrapper<'a, HyphenSplitter> {
     
     
     
@@ -250,14 +249,43 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn new(width: usize) -> Wrapper<'a> {
+    pub fn new(width: usize) -> Wrapper<'a, HyphenSplitter> {
+        Wrapper::with_splitter(width, HyphenSplitter)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "term_size")]
+    pub fn with_termwidth() -> Wrapper<'a, HyphenSplitter> {
+        Wrapper::new(termwidth())
+    }
+}
+
+impl<'w, 'a: 'w, S: WordSplitter> Wrapper<'a, S> {
+    
+    
+    
+    
+    
+    pub fn with_splitter(width: usize, splitter: S) -> Wrapper<'a, S> {
         Wrapper {
             width: width,
             initial_indent: "",
             subsequent_indent: "",
             break_words: true,
-            squeeze_whitespace: false,
-            splitter: Box::new(HyphenSplitter),
+            splitter: splitter,
         }
     }
 
@@ -266,10 +294,6 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn with_termwidth() -> Wrapper<'a> {
-        Wrapper::new(term_size::dimensions_stdout().map_or(80, |(w, _)| w))
-    }
-
     
     
     
@@ -277,7 +301,11 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn initial_indent(self, indent: &'a str) -> Wrapper<'a> {
+    
+    
+    
+    
+    pub fn initial_indent(self, indent: &'a str) -> Wrapper<'a, S> {
         Wrapper { initial_indent: indent, ..self }
     }
 
@@ -287,7 +315,19 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn subsequent_indent(self, indent: &'a str) -> Wrapper<'a> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn subsequent_indent(self, indent: &'a str) -> Wrapper<'a, S> {
         Wrapper { subsequent_indent: indent, ..self }
     }
 
@@ -296,7 +336,7 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn break_words(self, setting: bool) -> Wrapper<'a> {
+    pub fn break_words(self, setting: bool) -> Wrapper<'a, S> {
         Wrapper { break_words: setting, ..self }
     }
 
@@ -304,24 +344,6 @@ impl<'a> Wrapper<'a> {
     
     
     
-    
-    
-    pub fn squeeze_whitespace(self, setting: bool) -> Wrapper<'a> {
-        Wrapper { squeeze_whitespace: setting, ..self }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn word_splitter(self, splitter: Box<WordSplitter>) -> Wrapper<'a> {
-        Wrapper { splitter: splitter, ..self }
-    }
-
     
     
     
@@ -341,7 +363,48 @@ impl<'a> Wrapper<'a> {
     
     
     pub fn fill(&self, s: &str) -> String {
-        self.wrap(s).join("\n")
+        
+        
+        let mut result = String::with_capacity(s.len());
+
+        for (i, line) in self.wrap_iter(s).enumerate() {
+            if i > 0 {
+                result.push('\n');
+            }
+            result.push_str(&line);
+        }
+
+        result
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn wrap(&self, s: &'a str) -> Vec<Cow<'a, str>> {
+        self.wrap_iter(s).collect::<Vec<_>>()
     }
 
     
@@ -375,106 +438,295 @@ impl<'a> Wrapper<'a> {
     
     
     
-    pub fn wrap(&self, s: &str) -> Vec<String> {
-        let mut lines = Vec::with_capacity(s.len() / (self.width + 1));
-        let mut line = IndentedString::new(self.initial_indent, self.width);
-        let mut remaining = self.width - self.initial_indent.width();
-        const NBSP: char = '\u{a0}'; 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn wrap_iter(&'w self, s: &'a str) -> WrapIter<'w, 'a, S> {
+        WrapIter {
+            wrapper: self,
+            wrap_iter_impl: WrapIterImpl::new(self, s),
+        }
+    }
 
-        for mut word in s.split(|c: char| c.is_whitespace() && c != NBSP) {
-            
-            if self.squeeze_whitespace && word.is_empty() {
-                continue;
-            }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_wrap_iter(self, s: &'a str) -> IntoWrapIter<'a, S> {
+        let wrap_iter_impl = WrapIterImpl::new(&self, s);
 
-            
-            if self.fit_part(word, "", &mut remaining, &mut line) {
-                continue;
-            }
+        IntoWrapIter {
+            wrapper: self,
+            wrap_iter_impl: wrap_iter_impl,
+        }
+    }
+}
 
-            
-            while !word.is_empty() {
-                let splits = self.splitter.split(word);
-                let (smallest, hyphen, longest) = splits[0];
-                let min_width = smallest.width() + hyphen.len();
 
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct IntoWrapIter<'a, S: WordSplitter> {
+    wrapper: Wrapper<'a, S>,
+    wrap_iter_impl: WrapIterImpl<'a>,
+}
+
+impl<'a, S: WordSplitter> Iterator for IntoWrapIter<'a, S> {
+    type Item = Cow<'a, str>;
+
+    fn next(&mut self) -> Option<Cow<'a, str>> {
+        self.wrap_iter_impl.impl_next(&self.wrapper)
+    }
+}
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct WrapIter<'w, 'a: 'w, S: WordSplitter + 'w> {
+    wrapper: &'w Wrapper<'a, S>,
+    wrap_iter_impl: WrapIterImpl<'a>,
+}
+
+impl<'w, 'a: 'w, S: WordSplitter> Iterator for WrapIter<'w, 'a, S> {
+    type Item = Cow<'a, str>;
+
+    fn next(&mut self) -> Option<Cow<'a, str>> {
+        self.wrap_iter_impl.impl_next(self.wrapper)
+    }
+}
+
+struct WrapIterImpl<'a> {
+    
+    source: &'a str,
+    
+    char_indices: CharIndices<'a>,
+    
+    is_next_first: bool,
+    
+    start: usize,
+    
+    split: usize,
+    
+    split_len: usize,
+    
+    line_width: usize,
+    
+    line_width_at_split: usize,
+    
+    in_whitespace: bool,
+    
+    finished: bool,
+}
+
+impl<'a> fmt::Debug for WrapIterImpl<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("WrapIterImpl")
+            .field("source", &self.source)
+            .field("char_indices", &"CharIndices { ... }")
+            .field("is_next_first", &self.is_next_first)
+            .field("start", &self.start)
+            .field("split", &self.split)
+            .field("split_len", &self.split_len)
+            .field("line_width", &self.line_width)
+            .field("line_width_at_split", &self.line_width_at_split)
+            .field("in_whitespace", &self.in_whitespace)
+            .field("finished", &self.finished)
+            .finish()
+    }
+}
+
+impl<'a> WrapIterImpl<'a> {
+    fn new<S: WordSplitter>(wrapper: &Wrapper<'a, S>, s: &'a str) -> WrapIterImpl<'a> {
+        WrapIterImpl {
+            source: s,
+            char_indices: s.char_indices(),
+            is_next_first: true,
+            start: 0,
+            split: 0,
+            split_len: 0,
+            line_width: wrapper.initial_indent.width(),
+            line_width_at_split: wrapper.initial_indent.width(),
+            in_whitespace: false,
+            finished: false,
+        }
+    }
+
+    fn create_result_line<S: WordSplitter>(&mut self, wrapper: &Wrapper<'a, S>) -> Cow<'a, str> {
+        if self.is_next_first {
+            self.is_next_first = false;
+            Cow::from(wrapper.initial_indent)
+        } else {
+            Cow::from(wrapper.subsequent_indent)
+        }
+    }
+
+    fn impl_next<S: WordSplitter>(&mut self, wrapper: &Wrapper<'a, S>) -> Option<Cow<'a, str>> {
+        if self.finished {
+            return None;
+        }
+
+        while let Some((idx, ch)) = self.char_indices.next() {
+            let char_width = ch.width().unwrap_or(0);
+            let char_len = ch.len_utf8();
+            if ch.is_whitespace() && ch != NBSP {
                 
-                
-                if !line.is_empty() && 1 + min_width > remaining {
-                    lines.push(line.into_string());
-                    line = IndentedString::new(self.subsequent_indent, self.width);
-                    remaining = self.width - self.subsequent_indent.width();
+                if self.in_whitespace {
+                    self.split_len += char_len;
+                } else {
+                    self.split = idx;
+                    self.split_len = char_len;
                 }
-
+                self.line_width_at_split = self.line_width + char_width;
+                self.in_whitespace = true;
+            } else if self.line_width + char_width > wrapper.width {
                 
-                for &(head, hyphen, tail) in splits.iter().rev() {
-                    if self.fit_part(head, hyphen, &mut remaining, &mut line) {
-                        word = tail;
+                
+                let remaining_text = &self.source[self.split + self.split_len..];
+                let final_word = match remaining_text
+                          .find(|ch: char| ch.is_whitespace() && ch != NBSP) {
+                    Some(i) => &remaining_text[..i],
+                    None => remaining_text,
+                };
+
+                let mut hyphen = "";
+                let splits = wrapper.splitter.split(final_word);
+                for &(head, hyp, _) in splits.iter().rev() {
+                    if self.line_width_at_split + head.width() + hyp.width() <= wrapper.width {
+                        self.split += head.len();
+                        self.split_len = 0;
+                        hyphen = hyp;
                         break;
                     }
                 }
 
-                
-                
-                if line.is_empty() {
-                    if self.break_words && self.width > 1 {
+                if self.start >= self.split {
+                    
+                    
+                    if wrapper.break_words {
                         
-                        
-                        
-                        
-                        let mut head_width = 0;
-                        for (idx, c) in word.char_indices() {
-                            head_width += c.width().unwrap_or(0);
-                            if head_width > remaining {
-                                let (head, tail) = word.split_at(idx);
-                                line.push_str(head);
-                                lines.push(line.into_string());
-                                line = IndentedString::new(self.subsequent_indent, self.width);
-                                word = tail;
-                                break;
-                            }
-                        }
+                        self.split = idx;
+                        self.split_len = 0;
+                        self.line_width_at_split = self.line_width;
                     } else {
                         
-                        
-                        
-                        lines.push(String::from(smallest) + hyphen);
-                        remaining = self.width;
-                        word = longest;
+                        self.split = self.start + splits[0].0.len();
+                        self.split_len = 0;
+                        self.line_width_at_split = self.line_width;
                     }
                 }
-            }
-        }
-        if !line.is_empty() {
-            lines.push(line.into_string());
-        }
-        lines
-    }
 
-    
-    
-    
-    fn fit_part<'b>(&self,
-                    part: &'b str,
-                    hyphen: &'b str,
-                    remaining: &mut usize,
-                    line: &mut IndentedString)
-                    -> bool {
-        let space = if line.is_empty() { 0 } else { 1 };
-        let space_needed = space + part.width() + hyphen.len();
-        let fits_in_line = space_needed <= *remaining;
-        if fits_in_line {
-            if !line.is_empty() {
-                line.push(' ');
+                if self.start < self.split {
+                    let mut result_line = self.create_result_line(wrapper);
+                    cow_add_assign(&mut result_line, &self.source[self.start..self.split]);
+                    cow_add_assign(&mut result_line, hyphen);
+
+                    self.start = self.split + self.split_len;
+                    self.line_width += wrapper.subsequent_indent.width();
+                    self.line_width -= self.line_width_at_split;
+                    self.line_width += char_width;
+
+                    return Some(result_line);
+                }
+            } else {
+                self.in_whitespace = false;
             }
-            line.push_str(part);
-            line.push_str(hyphen);
-            *remaining -= space_needed;
+            self.line_width += char_width;
         }
 
-        fits_in_line
+        
+        let final_line = if self.start < self.source.len() {
+            let mut result_line = self.create_result_line(wrapper);
+            cow_add_assign(&mut result_line, &self.source[self.start..]);
+
+            Some(result_line)
+        } else {
+            None
+        };
+
+        self.finished = true;
+
+        final_line
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "term_size")]
+pub fn termwidth() -> usize {
+    term_size::dimensions_stdout().map_or(80, |(w, _)| w)
+}
+
+
+
+
+
 
 
 
@@ -494,7 +746,7 @@ impl<'a> Wrapper<'a> {
 
 
 pub fn fill(s: &str, width: usize) -> String {
-    wrap(s, width).join("\n")
+    Wrapper::new(width).fill(s)
 }
 
 
@@ -517,8 +769,52 @@ pub fn fill(s: &str, width: usize) -> String {
 
 
 
-pub fn wrap(s: &str, width: usize) -> Vec<String> {
+
+
+
+
+
+
+
+
+pub fn wrap(s: &str, width: usize) -> Vec<Cow<str>> {
     Wrapper::new(width).wrap(s)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn wrap_iter(s: &str, width: usize) -> IntoWrapIter<HyphenSplitter> {
+    Wrapper::new(width).into_wrap_iter(s)
 }
 
 
@@ -623,7 +919,7 @@ mod tests {
 
     
     
-    fn add_nl(lines: &Vec<&str>) -> String {
+    fn add_nl(lines: &[&str]) -> String {
         lines.join("\n") + "\n"
     }
 
@@ -644,16 +940,31 @@ mod tests {
 
     #[test]
     fn long_word() {
-        assert_eq!(wrap("foo", 0), vec!["foo"]);
+        assert_eq!(wrap("foo", 0), vec!["f", "o", "o"]);
     }
 
     #[test]
     fn long_words() {
-        assert_eq!(wrap("foo bar", 0), vec!["foo", "bar"]);
+        assert_eq!(wrap("foo bar", 0), vec!["f", "o", "o", "b", "a", "r"]);
     }
 
     #[test]
-    fn whitespace_is_significant() {
+    fn max_width() {
+        assert_eq!(wrap("foo bar", usize::max_value()), vec!["foo bar"]);
+    }
+
+    #[test]
+    fn leading_whitespace() {
+        assert_eq!(wrap("  foo bar", 6), vec!["  foo", "bar"]);
+    }
+
+    #[test]
+    fn trailing_whitespace() {
+        assert_eq!(wrap("foo bar  ", 6), vec!["foo", "bar  "]);
+    }
+
+    #[test]
+    fn interior_whitespace() {
         assert_eq!(wrap("foo:   bar baz", 10), vec!["foo:   bar", "baz"]);
     }
 
@@ -663,13 +974,7 @@ mod tests {
         
         
         
-        assert_eq!(wrap("foo               bar", 5), vec!["foo  ", "bar"]);
-    }
-
-    #[test]
-    fn whitespace_is_squeezed() {
-        let wrapper = Wrapper::new(10).squeeze_whitespace(true);
-        assert_eq!(wrapper.wrap(" foo \t  bar  "), vec!["foo bar"]);
+        assert_eq!(wrap("foo               bar", 5), vec!["foo", "bar"]);
     }
 
     #[test]
@@ -756,7 +1061,7 @@ mod tests {
 
     #[test]
     fn no_hyphenation() {
-        let wrapper = Wrapper::new(8).word_splitter(Box::new(NoHyphenation));
+        let wrapper = Wrapper::with_splitter(8, NoHyphenation);
         assert_eq!(wrapper.wrap("foo bar-baz"), vec!["foo", "bar-baz"]);
     }
 
@@ -768,9 +1073,29 @@ mod tests {
         assert_eq!(wrapper.wrap("Internationalization"),
                    vec!["Internatio", "nalization"]);
 
-        let wrapper = wrapper.word_splitter(Box::new(corpus));
+        let wrapper = Wrapper::with_splitter(10, corpus);
         assert_eq!(wrapper.wrap("Internationalization"),
                    vec!["Interna-", "tionaliza-", "tion"]);
+    }
+
+    #[test]
+    #[cfg(feature = "hyphenation")]
+    fn borrowed_lines() {
+        
+        
+        use std::borrow::Cow::{Borrowed, Owned};
+        let corpus = hyphenation::load(Language::English_US).unwrap();
+        let wrapper = Wrapper::with_splitter(10, corpus);
+        let lines = wrapper.wrap("Internationalization");
+        if let Borrowed(s) = lines[0] {
+            assert!(false, "should not have been borrowed: {:?}", s);
+        }
+        if let Borrowed(s) = lines[1] {
+            assert!(false, "should not have been borrowed: {:?}", s);
+        }
+        if let Owned(ref s) = lines[2] {
+            assert!(false, "should not have been owned: {:?}", s);
+        }
     }
 
     #[test]
@@ -780,7 +1105,7 @@ mod tests {
         let wrapper = Wrapper::new(8).break_words(false);
         assert_eq!(wrapper.wrap("over-caffinated"), vec!["over-", "caffinated"]);
 
-        let wrapper = wrapper.word_splitter(Box::new(corpus));
+        let wrapper = Wrapper::with_splitter(8, corpus).break_words(false);
         assert_eq!(wrapper.wrap("over-caffinated"),
                    vec!["over-", "caffi-", "nated"]);
     }
@@ -797,7 +1122,7 @@ mod tests {
 
     #[test]
     fn break_words_zero_width() {
-        assert_eq!(wrap("foobar", 0), vec!["foobar"]);
+        assert_eq!(wrap("foobar", 0), vec!["f", "o", "o", "b", "a", "r"]);
     }
 
     #[test]

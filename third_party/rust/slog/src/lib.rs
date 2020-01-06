@@ -665,6 +665,7 @@ pub struct OwnedKeyValueList {
 
 impl OwnedKeyValueList {
     
+    #[deprecated]
     pub fn new(values: Box<ser::SyncMultiSerialize>, parent: OwnedKeyValueList) -> Self {
         OwnedKeyValueList {
             inner: Arc::new(OwnedKeyValueListInner {
@@ -675,6 +676,7 @@ impl OwnedKeyValueList {
     }
 
     
+    #[deprecated]
     pub fn root(values: Option<Box<ser::SyncMultiSerialize>>) -> Self {
         OwnedKeyValueList {
             inner: Arc::new(OwnedKeyValueListInner {
@@ -689,8 +691,19 @@ impl OwnedKeyValueList {
     
     
     
+    #[deprecated(note="&Option<...> is a stupid type to return. Use `get_parent` for now.")]
     pub fn parent(&self) -> &Option<OwnedKeyValueList> {
         &self.inner.parent
+    }
+
+    
+    
+    
+    
+    
+    #[deprecated]
+    pub fn previous(&self) -> Option<OwnedKeyValueList> {
+        self.inner.parent.clone()
     }
 
     

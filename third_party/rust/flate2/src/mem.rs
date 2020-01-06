@@ -18,6 +18,10 @@ use ffi;
 
 
 
+
+
+
+#[derive(Debug)]
 pub struct Compress {
     inner: Stream<DirCompress>,
 }
@@ -31,10 +35,15 @@ pub struct Compress {
 
 
 
+
+
+
+#[derive(Debug)]
 pub struct Decompress {
     inner: Stream<DirDecompress>,
 }
 
+#[derive(Debug)]
 struct Stream<D: Direction> {
     stream_wrapper: ffi::StreamWrapper,
     total_in: u64,
@@ -49,11 +58,14 @@ trait Direction {
     unsafe fn destroy(stream: *mut ffi::mz_stream) -> c_int;
 }
 
+#[derive(Debug)]
 enum DirCompress {}
+#[derive(Debug)]
 enum DirDecompress {}
 
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Flush {
     
     
@@ -112,6 +124,7 @@ pub struct DataError(());
 
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Status {
     
     
@@ -308,6 +321,12 @@ impl Decompress {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn decompress(&mut self,
                       input: &[u8],
                       output: &mut [u8],
@@ -338,6 +357,12 @@ impl Decompress {
         }
     }
 
+    
+    
+    
+    
+    
+    
     
     
     

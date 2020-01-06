@@ -6,11 +6,11 @@ use std::ffi::{OsString, OsStr};
 use osstringext::OsStrExt3;
 #[cfg(not(target_os="windows"))]
 use std::os::unix::ffi::OsStrExt;
-
+use std::env;
 
 #[cfg(feature = "yaml")]
 use yaml_rust::Yaml;
-use vec_map::VecMap;
+use map::VecMap;
 
 use usage_parser::UsageParser;
 use args::settings::ArgSettings;
@@ -128,6 +128,7 @@ impl<'a, 'b> Arg<'a, 'b> {
                 "default_value" => yaml_to_str!(a, v, default_value),
                 "default_value_if" => yaml_tuple3!(a, v, default_value_if),
                 "default_value_ifs" => yaml_tuple3!(a, v, default_value_if),
+                "env" => yaml_to_str!(a, v, env),
                 "value_names" => yaml_vec_or_str!(v, a, value_name),
                 "groups" => yaml_vec_or_str!(v, a, group),
                 "requires" => yaml_vec_or_str!(v, a, requires),
@@ -2037,6 +2038,39 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn multiple(self, multi: bool) -> Self {
         if multi {
             self.set(ArgSettings::Multiple)
@@ -2096,10 +2130,6 @@ impl<'a, 'b> Arg<'a, 'b> {
         self
     }
 
-    
-    
-    
-    
     
     
     
@@ -3308,6 +3338,119 @@ impl<'a, 'b> Arg<'a, 'b> {
         for &(arg, val, default) in ifs {
             self = self.default_value_if_os(arg, val, default);
         }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn env(self, name: &'a str) -> Self {
+        self.env_os(OsStr::new(name))
+    }
+
+    
+    
+    
+    pub fn env_os(mut self, name: &'a OsStr) -> Self {
+        self.setb(ArgSettings::TakesValue);
+
+        self.v.env = Some((name, env::var_os(name)));
         self
     }
 

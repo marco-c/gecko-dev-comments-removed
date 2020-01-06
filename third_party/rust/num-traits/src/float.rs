@@ -339,10 +339,8 @@ pub trait Float
     
     
     
-    
     fn is_sign_positive(self) -> bool;
 
-    
     
     
     

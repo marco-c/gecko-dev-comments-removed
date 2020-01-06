@@ -7,12 +7,18 @@ use libc;
 use ffi;
 
 
+
+
+#[derive(Debug)]
 pub struct Crc {
     crc: libc::c_ulong,
     amt: u32,
 }
 
 
+
+
+#[derive(Debug)]
 pub struct CrcReader<R> {
     inner: R,
     crc: Crc,
@@ -68,7 +74,9 @@ impl<R: Read> CrcReader<R> {
             crc: Crc::new(),
         }
     }
+}
 
+impl<R> CrcReader<R> {
     
     pub fn crc(&self) -> &Crc {
         &self.crc
