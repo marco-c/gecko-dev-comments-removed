@@ -103,7 +103,7 @@
 #include <algorithm>
 #include <cmath>
 #ifdef XP_WIN
-#include "Objbase.h"
+#include "objbase.h"
 
 
 #undef GetCurrentTime
