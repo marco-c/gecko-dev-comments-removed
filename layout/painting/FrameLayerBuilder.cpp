@@ -2132,16 +2132,16 @@ FrameLayerBuilder::ClearCachedGeometry(nsDisplayItem* aItem)
   }
 }
 
- DisplayItemData*
-FrameLayerBuilder::GetOldDataFor(nsDisplayItem* aItem)
+ Layer*
+FrameLayerBuilder::GetDebugOldLayerFor(nsIFrame* aFrame, uint32_t aDisplayItemKey)
 {
-  const SmallPointerArray<DisplayItemData>& array = aItem->Frame()->DisplayItemData();
+  const SmallPointerArray<DisplayItemData>& array = aFrame->DisplayItemData();
 
   for (uint32_t i = 0; i < array.Length(); i++) {
     DisplayItemData *data = DisplayItemData::AssertDisplayItemData(array.ElementAt(i));
 
-    if (data->mDisplayItemKey == aItem->GetPerFrameKey()) {
-      return data;
+    if (data->mDisplayItemKey == aDisplayItemKey) {
+      return data->mLayer;
     }
   }
   return nullptr;
@@ -4535,15 +4535,7 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     return;
   }
 
-  
-  
-  
-  
   nsAutoPtr<nsDisplayItemGeometry> geometry;
-  if (item->IsReused() && aData->mGeometry) {
-    aData->EndUpdate(geometry);
-    return;
-  }
 
   PaintedDisplayItemLayerUserData* layerData =
     static_cast<PaintedDisplayItemLayerUserData*>(aData->mLayer->GetUserData(&gPaintedDisplayItemLayerUserData));
@@ -4917,7 +4909,7 @@ FrameLayerBuilder::CheckInLayerTreeCompressionMode()
 
   
   
-  mRootPresContext->PresShell()->GetRootFrame()->SchedulePaint(nsIFrame::PAINT_DELAYED_COMPRESS, false);
+  mRootPresContext->PresShell()->GetRootFrame()->SchedulePaint(nsIFrame::PAINT_DELAYED_COMPRESS);
 
   return false;
 }
@@ -5988,8 +5980,8 @@ FrameLayerBuilder::PaintItems(nsTArray<ClippedDisplayItem>& aItems,
       continue;
 
 #ifdef MOZ_DUMP_PAINTING
-    AUTO_PROFILER_LABEL_DYNAMIC("FrameLayerBuilder::PaintItems", GRAPHICS,
-                                cdi->mItem->Name());
+    AUTO_PROFILER_LABEL_DYNAMIC_CSTR("FrameLayerBuilder::PaintItems", GRAPHICS,
+                                     cdi->mItem->Name());
 #else
     AUTO_PROFILER_LABEL("FrameLayerBuilder::PaintItems", GRAPHICS);
 #endif

@@ -1868,8 +1868,7 @@ PresShell::AsyncResizeEventCallback(nsITimer* aTimer, void* aPresShell)
 }
 
 nsresult
-PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight, nscoord aOldWidth,
-                        nscoord aOldHeight, ResizeReflowOptions aOptions)
+PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight)
 {
   if (mZoomConstraintsClient) {
     
@@ -1885,58 +1884,38 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight, nscoord aOldWidth,
     return NS_OK;
   }
 
-  return ResizeReflowIgnoreOverride(aWidth, aHeight, aOldWidth,
-                                    aOldHeight, aOptions);
+  return ResizeReflowIgnoreOverride(aWidth, aHeight, aOldWidth, aOldHeight);
 }
 
 nsresult
-PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
-                                      nscoord aOldWidth, nscoord aOldHeight,
-                                      ResizeReflowOptions aOptions)
+PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight)
 {
   NS_PRECONDITION(!mIsReflowing, "Shouldn't be in reflow here!");
 
+  
+  
+  
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (!rootFrame) {
+  if (!rootFrame && aHeight == NS_UNCONSTRAINEDSIZE) {
     
     
-    
-    if (aHeight == NS_UNCONSTRAINEDSIZE || aWidth == NS_UNCONSTRAINEDSIZE) {
-      
-      
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
-    mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
-    
-    
+  mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
+
+  
+  if (!rootFrame) {
     return NS_OK;
   }
 
   WritingMode wm = rootFrame->GetWritingMode();
-  const bool shrinkToFit = aOptions == ResizeReflowOptions::eBSizeLimit;
-  NS_PRECONDITION(shrinkToFit ||
-                  (wm.IsVertical() ? aWidth : aHeight) !=
-                    NS_UNCONSTRAINEDSIZE,
-                  "unconstrained bsize only usable with eBSizeLimit");
-  NS_PRECONDITION((wm.IsVertical() ? aHeight : aWidth) !=
-                    NS_UNCONSTRAINEDSIZE,
-                  "unconstrained isize not allowed");
-  bool isBSizeChanging = wm.IsVertical() ? aOldWidth != aWidth
-                                         : aOldHeight != aHeight;
-  nscoord targetWidth = aWidth;
-  nscoord targetHeight = aHeight;
+  NS_PRECONDITION((wm.IsVertical() ? aHeight : aWidth) != NS_UNCONSTRAINEDSIZE,
+                  "shouldn't use unconstrained isize anymore");
 
-  if (shrinkToFit) {
-    if (wm.IsVertical()) {
-      targetWidth = NS_UNCONSTRAINEDSIZE;
-    } else {
-      targetHeight = NS_UNCONSTRAINEDSIZE;
-    }
-    isBSizeChanging = true;
-  }
-
-  mPresContext->SetVisibleArea(nsRect(0, 0, targetWidth, targetHeight));
+  const bool isBSizeChanging = wm.IsVertical()
+                               ? aOldWidth != aWidth
+                               : aOldHeight != aHeight;
 
   RefPtr<nsViewManager> viewManager = mViewManager;
   nsCOMPtr<nsIPresShell> kungFuDeathGrip(this);
@@ -1975,28 +1954,7 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
 
         mDirtyRoots.RemoveElement(rootFrame);
         DoReflow(rootFrame, true);
-
-        if (shrinkToFit) {
-          const bool reflowAgain = wm.IsVertical() ?
-                                mPresContext->GetVisibleArea().width > aWidth :
-                                mPresContext->GetVisibleArea().height > aHeight;
-
-          if (reflowAgain) {
-            mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
-            DoReflow(rootFrame, true);
-          }
-        }
       }
-
-      
-      
-      
-      NS_ASSERTION(
-        mPresContext->GetVisibleArea().width != NS_UNCONSTRAINEDSIZE,
-        "width should not be NS_UNCONSTRAINEDSIZE after reflow");
-      NS_ASSERTION(
-        mPresContext->GetVisibleArea().height != NS_UNCONSTRAINEDSIZE,
-        "height should not be NS_UNCONSTRAINEDSIZE after reflow");
 
       DidDoReflow(true);
     }
@@ -2005,16 +1963,13 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
   rootFrame = mFrameConstructor->GetRootFrame();
   if (rootFrame) {
     wm = rootFrame->GetWritingMode();
-    
-    
-    
     if (wm.IsVertical()) {
-      if (mPresContext->GetVisibleArea().width == NS_UNCONSTRAINEDSIZE) {
+      if (aWidth == NS_UNCONSTRAINEDSIZE) {
         mPresContext->SetVisibleArea(
           nsRect(0, 0, rootFrame->GetRect().width, aHeight));
       }
     } else {
-      if (mPresContext->GetVisibleArea().height == NS_UNCONSTRAINEDSIZE) {
+      if (aHeight == NS_UNCONSTRAINEDSIZE) {
         mPresContext->SetVisibleArea(
           nsRect(0, 0, aWidth, rootFrame->GetRect().height));
       }
@@ -2036,7 +1991,7 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
                                                           nsITimer::TYPE_ONE_SHOT,
                                                           "AsyncResizeEventCallback");
       }
-    } else if (mPresContext->ShouldFireResizeEvent()) {
+    } else {
       RefPtr<nsRunnableMethod<PresShell>> event = NewRunnableMethod(
         "PresShell::FireResizeEvent", this, &PresShell::FireResizeEvent);
       nsresult rv = mDocument->Dispatch(TaskCategory::Other,
@@ -2044,7 +1999,6 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
       if (NS_SUCCEEDED(rv)) {
         mResizeEvent = Move(event);
         SetNeedStyleFlush();
-        mPresContext->WillFireResizeEvent();
       }
     }
   }
@@ -2093,7 +2047,8 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
   
   
   
-  aFrame->RemoveDisplayItemDataForDeletion();
+  FrameLayerBuilder::RemoveFrameFromLayerManager(aFrame, aFrame->DisplayItemData());
+  aFrame->DisplayItemData().Clear();
 
   if (!mIgnoreFrameDestruction) {
     if (aFrame->HasImageRequest()) {
@@ -4095,8 +4050,8 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     "Layout",
     "Display"
   };
-  AUTO_PROFILER_LABEL_DYNAMIC("PresShell::DoFlushPendingNotifications",
-                              GRAPHICS, flushTypeNames[flushType]);
+  AUTO_PROFILER_LABEL_DYNAMIC_CSTR("PresShell::DoFlushPendingNotifications",
+                                   GRAPHICS, flushTypeNames[flushType]);
 #endif
 
 #ifdef ACCESSIBILITY
@@ -4822,7 +4777,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
           const DisplayItemClipChain* newClipChain =
             aBuilder->AllocateDisplayItemClipChain(newClip, asr, nullptr);
 
-          i->IntersectClip(aBuilder, newClipChain, true);
+          i->IntersectClip(aBuilder, newClipChain);
           itemToInsert = i;
         }
       }
@@ -4933,7 +4888,6 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
     
     for (; frame; frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
-      info->mBuilder.SetVisibleRect(frame->GetVisualOverflowRect());
       info->mBuilder.SetDirtyRect(frame->GetVisualOverflowRect());
       frame->BuildDisplayListForStackingContext(&info->mBuilder, &info->mList);
     }
@@ -6314,13 +6268,16 @@ PresShell::Paint(nsView*         aViewToPaint,
                  const nsRegion& aDirtyRegion,
                  uint32_t        aFlags)
 {
+#ifdef MOZ_GECKO_PROFILER
   nsIURI* uri = mDocument->GetDocumentURI();
   nsIDocument* contentRoot = GetPrimaryContentDocument();
   if (contentRoot) {
     uri = contentRoot->GetDocumentURI();
   }
-  nsCString uriString = uri ? uri->GetSpecOrDefault() : NS_LITERAL_CSTRING("N/A");
-  AUTO_PROFILER_LABEL_DYNAMIC("PresShell::Paint", GRAPHICS, uriString.get());
+  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(
+    "PresShell::Paint", GRAPHICS,
+    uri ? uri->GetSpecOrDefault() : NS_LITERAL_CSTRING("N/A"));
+#endif
 
   Maybe<js::AutoAssertNoContentJS> nojs;
 
@@ -6835,7 +6792,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     mAPZFocusSequenceNumber = aEvent->mFocusSequenceNumber;
 
     
-    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY, false);
+    aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
   }
 
   if (PointerEventHandler::IsPointerEventEnabled()) {
@@ -8883,15 +8840,19 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
     timeStart = TimeStamp::Now();
   }
 
-  
-  
-  
-  
-  target->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
+  target->SchedulePaint();
+  nsIFrame *parent = nsLayoutUtils::GetCrossDocParentFrame(target);
+  while (parent) {
+    SVGObserverUtils::InvalidateDirectRenderingObservers(parent);
+    parent = nsLayoutUtils::GetCrossDocParentFrame(parent);
+  }
 
+#ifdef MOZ_GECKO_PROFILER
   nsIURI* uri = mDocument->GetDocumentURI();
-  nsCString uriString = uri ? uri->GetSpecOrDefault() : NS_LITERAL_CSTRING("N/A");
-  AUTO_PROFILER_LABEL_DYNAMIC("PresShell::DoReflow", GRAPHICS, uriString.get());
+  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(
+    "PresShell::DoReflow", GRAPHICS,
+    uri ? uri->GetSpecOrDefault() : NS_LITERAL_CSTRING("N/A"));
+#endif
 
   nsDocShell* docShell = static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
   RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
