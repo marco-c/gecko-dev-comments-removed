@@ -496,6 +496,17 @@ this.BrowserUtils = {
 
     let url;
     let linkText;
+
+    
+    if (!selectionStr && focusedElement instanceof Ci.nsIDOMNSEditableElement) {
+      
+      if (focusedElement instanceof Ci.nsIDOMHTMLTextAreaElement ||
+          (focusedElement instanceof Ci.nsIDOMHTMLInputElement &&
+           focusedElement.mozIsTextField(true))) {
+        selectionStr = focusedElement.editor.selection.toString();
+      }
+    }
+
     if (selectionStr) {
       
       
@@ -545,16 +556,6 @@ this.BrowserUtils = {
             url = uriFixup.createFixupURI(linkText, uriFixup.FIXUP_FLAG_NONE);
           } catch (ex) {}
         }
-      }
-    }
-
-    
-    if (!selectionStr && focusedElement instanceof Ci.nsIDOMNSEditableElement) {
-      
-      if (focusedElement instanceof Ci.nsIDOMHTMLTextAreaElement ||
-          (focusedElement instanceof Ci.nsIDOMHTMLInputElement &&
-           focusedElement.mozIsTextField(true))) {
-        selectionStr = focusedElement.editor.selection.toString();
       }
     }
 
