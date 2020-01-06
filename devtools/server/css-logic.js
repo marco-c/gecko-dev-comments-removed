@@ -32,7 +32,14 @@
 const { Cc, Ci, Cu } = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const nodeConstants = require("devtools/shared/dom-node-constants");
-const {l10n, isContentStylesheet, shortSource, FILTER, STATUS} = require("devtools/shared/inspector/css-logic");
+const {
+  getBindingElementAndPseudo,
+  l10n,
+  isContentStylesheet,
+  shortSource,
+  FILTER,
+  STATUS
+} = require("devtools/shared/inspector/css-logic");
 
 
 
@@ -654,21 +661,7 @@ CssLogic.getSelectors = function (domRule) {
 
 
 
-CssLogic.getBindingElementAndPseudo = function (node) {
-  let bindingElement = node;
-  let pseudo = null;
-  if (node.nodeName == "_moz_generated_content_before") {
-    bindingElement = node.parentNode;
-    pseudo = ":before";
-  } else if (node.nodeName == "_moz_generated_content_after") {
-    bindingElement = node.parentNode;
-    pseudo = ":after";
-  }
-  return {
-    bindingElement: bindingElement,
-    pseudo: pseudo
-  };
-};
+CssLogic.getBindingElementAndPseudo = getBindingElementAndPseudo;
 
 
 
