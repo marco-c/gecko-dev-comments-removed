@@ -3,7 +3,7 @@
 
 
 #![feature(box_syntax)]
-#![feature(step_by)]
+#![feature(iterator_step_by)]
 
 #![deny(unsafe_code)]
 
