@@ -182,6 +182,57 @@ PrefTypeToString(PrefType aType)
 }
 #endif
 
+
+static void
+StrEscape(const char* aOriginal, nsCString& aResult)
+{
+  if (aOriginal == nullptr) {
+    aResult.AssignLiteral("\"\"");
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const char* p;
+
+  aResult.Assign('"');
+
+  
+  for (p = aOriginal; *p; ++p) {
+    switch (*p) {
+      case '\n':
+        aResult.AppendLiteral("\\n");
+        break;
+
+      case '\r':
+        aResult.AppendLiteral("\\r");
+        break;
+
+      case '\\':
+        aResult.AppendLiteral("\\\\");
+        break;
+
+      case '\"':
+        aResult.AppendLiteral("\\\"");
+        break;
+
+      default:
+        aResult.Append(*p);
+        break;
+    }
+  }
+
+  aResult.Append('"');
+}
+
 static ArenaAllocator<8192, 1> gPrefNameArena;
 
 class PrefHashEntry : public PLDHashEntryHdr
@@ -351,6 +402,27 @@ public:
     }
   }
 
+  
+  bool UserValueToStringForSaving(nsCString& aStr)
+  {
+    if (HasUserValue() && (!HasDefaultValue() || IsSticky() ||
+                           !mDefaultValue.Equals(Type(), mUserValue))) {
+      if (IsTypeString()) {
+        StrEscape(mUserValue.mStringVal, aStr);
+
+      } else if (IsTypeInt()) {
+        aStr.AppendInt(mUserValue.mIntVal);
+
+      } else if (IsTypeBool()) {
+        aStr = mUserValue.mBoolVal ? "true" : "false";
+      }
+      return true;
+    }
+
+    
+    return false;
+  }
+
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf)
   {
     
@@ -434,57 +506,6 @@ enum
 
 #define PREF_HASHTABLE_INITIAL_LENGTH 1024
 
-
-static void
-StrEscape(const char* aOriginal, nsCString& aResult)
-{
-  if (aOriginal == nullptr) {
-    aResult.AssignLiteral("\"\"");
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const char* p;
-
-  aResult.Assign('"');
-
-  
-  for (p = aOriginal; *p; ++p) {
-    switch (*p) {
-      case '\n':
-        aResult.AppendLiteral("\\n");
-        break;
-
-      case '\r':
-        aResult.AppendLiteral("\\r");
-        break;
-
-      case '\\':
-        aResult.AppendLiteral("\\\\");
-        break;
-
-      case '\"':
-        aResult.AppendLiteral("\\\"");
-        break;
-
-      default:
-        aResult.Append(*p);
-        break;
-    }
-  }
-
-  aResult.Append('"');
-}
-
 static PrefSaveData
 pref_savePrefs()
 {
@@ -493,33 +514,17 @@ pref_savePrefs()
   for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
     auto pref = static_cast<PrefHashEntry*>(iter.Get());
 
-    
-    PrefValue* sourceValue;
-
-    if (pref->HasUserValue() &&
-        (!pref->HasDefaultValue() || pref->IsSticky() ||
-         !pref->mDefaultValue.Equals(pref->Type(), pref->mUserValue))) {
-      sourceValue = &pref->mUserValue;
-    } else {
-      
+    nsAutoCString prefValueStr;
+    if (!pref->UserValueToStringForSaving(prefValueStr)) {
       continue;
     }
 
-    nsAutoCString prefName;
-    StrEscape(pref->Name(), prefName);
+    nsAutoCString prefNameStr;
+    StrEscape(pref->Name(), prefNameStr);
 
-    nsAutoCString prefValue;
-    if (pref->IsTypeString()) {
-      StrEscape(sourceValue->mStringVal, prefValue);
+    nsPrintfCString str(
+      "user_pref(%s, %s);", prefNameStr.get(), prefValueStr.get());
 
-    } else if (pref->IsTypeInt()) {
-      prefValue.AppendInt(sourceValue->mIntVal);
-
-    } else if (pref->IsTypeBool()) {
-      prefValue = sourceValue->mBoolVal ? "true" : "false";
-    }
-
-    nsPrintfCString str("user_pref(%s, %s);", prefName.get(), prefValue.get());
     savedPrefs.AppendElement(str);
   }
 
@@ -621,9 +626,9 @@ PREF_LockPref(const char* aPrefName, bool aLockIt)
   return NS_OK;
 }
 
-
-
-
+  
+  
+  
 
 #ifdef DEBUG
 
