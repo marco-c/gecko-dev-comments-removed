@@ -30,7 +30,12 @@ const BUF_SIZE_LIMIT: usize = 1024 * 1024;
 
 
 
+#[cfg(target_pointer_width = "64")]
 const TABLE_SIZE_LIMIT: u32 = 30 * 60 * 60 * 24 * 7;
+
+
+#[cfg(target_pointer_width = "32")]
+const TABLE_SIZE_LIMIT: u32 = 30 * 60 * 60 * 24;
 
 static DEBUG_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::ATOMIC_BOOL_INIT;
 
@@ -1334,12 +1339,11 @@ fn find_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
 
         let mut end = 0;
         
-        
-        
         for _ in 0..4 {
             let extend_or_len = des.read_u8()?;
-            if extend_or_len < 0x80 {
-                end = extend_or_len + des.position() as u8;
+            end = (end << 7) + (extend_or_len & 0x7F);
+            if (extend_or_len & 0x80) == 0 {
+                end += des.position() as u8;
                 break;
             }
         };
