@@ -1592,7 +1592,7 @@ MacroAssembler::generateBailoutTail(Register scratch, Register bailoutInfo)
         push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
         
         loadJSContext(scratch);
-        enterFakeExitFrame(scratch, scratch, ExitFrameLayoutBareToken);
+        enterFakeExitFrame(scratch, scratch, ExitFrameToken::Bare);
 
         
         Label noMonitor;

@@ -1071,7 +1071,7 @@ IonCacheIRCompiler::emitCallNativeGetterResult()
 
     if (!masm.icBuildOOLFakeExitFrame(GetReturnAddressToIonCode(cx_), save))
         return false;
-    masm.enterFakeExitFrame(argJSContext, scratch, IonOOLNativeExitFrameLayoutToken);
+    masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameToken::IonOOLNative);
 
     
     masm.setupUnalignedABICall(scratch);
@@ -1128,7 +1128,7 @@ IonCacheIRCompiler::emitCallProxyGetResult()
 
     if (!masm.icBuildOOLFakeExitFrame(GetReturnAddressToIonCode(cx_), save))
         return false;
-    masm.enterFakeExitFrame(argJSContext, scratch, IonOOLProxyExitFrameLayoutToken);
+    masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameToken::IonOOLProxy);
 
     
     masm.setupUnalignedABICall(scratch);
@@ -1984,7 +1984,7 @@ IonCacheIRCompiler::emitCallNativeSetter()
 
     if (!masm.icBuildOOLFakeExitFrame(GetReturnAddressToIonCode(cx_), save))
         return false;
-    masm.enterFakeExitFrame(argJSContext, scratch, IonOOLNativeExitFrameLayoutToken);
+    masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameToken::IonOOLNative);
 
     
     masm.setupUnalignedABICall(scratch);
