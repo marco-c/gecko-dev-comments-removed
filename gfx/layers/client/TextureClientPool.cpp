@@ -117,11 +117,11 @@ TextureClientPool::GetTextureClient()
   
   
   
-  if (!mTextureClients.size()) {
+  if (mTextureClients.empty()) {
     AllocateTextureClient();
   }
 
-  if (!mTextureClients.size()) {
+  if (mTextureClients.empty()) {
     
     return nullptr;
   }
@@ -261,7 +261,7 @@ TextureClientPool::ShrinkToMaximumSize()
       this, targetUnusedClients, totalUnusedTextureClients, mOutstandingClients);
 
   while (totalUnusedTextureClients > targetUnusedClients) {
-    if (mTextureClientsDeferred.size()) {
+    if (!mTextureClientsDeferred.empty()) {
       mOutstandingClients--;
       TCP_LOG("TexturePool %p dropped deferred client %p; %u remaining\n",
           this, mTextureClientsDeferred.front().get(),
