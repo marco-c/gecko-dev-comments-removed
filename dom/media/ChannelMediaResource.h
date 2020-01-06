@@ -251,6 +251,9 @@ protected:
   uint32_t mLoadID = 0;
   
   
+  int64_t mPendingSeekOffset = -1;
+  
+  
   bool               mReopenOnError;
 
   

@@ -744,7 +744,9 @@ ChannelMediaResource::Resume()
       if (totalLength < 0 || GetOffset() < totalLength) {
         
         
-        Seek(GetOffset(), false);
+        Seek(mPendingSeekOffset != -1 ? mPendingSeekOffset : GetOffset(),
+             false);
+        mPendingSeekOffset = -1;
         element->DownloadResumed();
       } else {
         
@@ -899,9 +901,12 @@ ChannelMediaResource::Seek(int64_t aOffset, bool aResume)
   
   
   if (mSuspendAgent.IsSuspended()) {
+    
+    mPendingSeekOffset = aOffset;
     return NS_OK;
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(mPendingSeekOffset == -1);
   nsresult rv = RecreateChannel();
   NS_ENSURE_SUCCESS(rv, rv);
 
