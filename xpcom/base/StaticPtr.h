@@ -67,13 +67,6 @@ public:
 
   T& operator*() const { return *get(); }
 
-  T* forget()
-  {
-    T* temp = mRawPtr;
-    mRawPtr = nullptr;
-    return temp;
-  }
-
 private:
   
   

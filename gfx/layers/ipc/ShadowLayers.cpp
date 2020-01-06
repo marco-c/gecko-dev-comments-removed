@@ -764,10 +764,6 @@ ShadowLayerForwarder::EndTransaction(const nsIntRegion& aRegionToClear,
     }
   }
 
-  
-  
-  GetCompositorBridgeChild()->PostponeMessagesIfAsyncPainting();
-
   MOZ_LAYERS_LOG(("[LayersForwarder] sending transaction..."));
   RenderTraceScope rendertrace3("Forward Transaction", "000093");
   if (!mShadowManager->SendUpdate(info)) {
