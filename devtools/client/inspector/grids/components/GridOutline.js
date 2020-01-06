@@ -8,12 +8,17 @@ const { addons, createClass, DOM: dom, PropTypes } =
   require("devtools/client/shared/vendor/react");
 
 const Types = require("../types");
+const { getStr } = require("../utils/l10n");
 
 const COLUMNS = "cols";
 const ROWS = "rows";
 
 
 const GRID_HIGHLIGHTING_DEBOUNCE = 50;
+
+
+const MIN_CELL_HEIGHT = 5;
+const MIN_CELL_WIDTH = 5;
 
 
 
@@ -40,8 +45,9 @@ module.exports = createClass({
 
   getInitialState() {
     return {
-      selectedGrid: null,
       height: 0,
+      selectedGrid: null,
+      showOutline: true,
       width: 0,
     };
   },
@@ -56,7 +62,7 @@ module.exports = createClass({
                             ? this.getTotalWidthAndHeight(selectedGrid)
                             : { width: 0, height: 0 };
 
-    this.setState({ height, width, selectedGrid });
+    this.setState({ height, width, selectedGrid, showOutline: true });
   },
 
   
@@ -135,6 +141,7 @@ module.exports = createClass({
     if (this.highlightTimeout) {
       clearTimeout(this.highlightTimeout);
     }
+
     this.highlightTimeout = setTimeout(() => {
       this.doHighlightCell(e);
       this.highlightTimeout = null;
@@ -168,6 +175,25 @@ module.exports = createClass({
 
 
 
+  renderCannotShowOutlineText() {
+    return dom.div(
+      {
+        className: "grid-outline-text"
+      },
+      dom.span(
+        {
+          className: "grid-outline-text-icon",
+          title: getStr("layout.cannotShowGridOutline.title")
+        }
+      ),
+      getStr("layout.cannotShowGridOutline")
+    );
+  },
+
+  
+
+
+
 
 
   renderGrid(grid) {
@@ -191,6 +217,14 @@ module.exports = createClass({
 
       for (let columnNumber = 1; columnNumber <= numberOfColumns; columnNumber++) {
         width = GRID_CELL_SCALE_FACTOR * (cols.tracks[columnNumber - 1].breadth / 100);
+
+        
+        
+        if (width < MIN_CELL_WIDTH || height < MIN_CELL_HEIGHT) {
+          this.setState({ showOutline: false });
+
+          return [];
+        }
 
         const gridAreaName = this.getGridAreaName(columnNumber, rowNumber, areas);
         const gridCell = this.renderGridCell(id, gridFragmentIndex, x, y,
@@ -420,19 +454,37 @@ module.exports = createClass({
       lineNumber, type);
   },
 
-  render() {
-    const { selectedGrid, height, width } = this.state;
+  renderOutline() {
+    const {
+      height,
+      selectedGrid,
+      showOutline,
+      width,
+    } = this.state;
 
-    return selectedGrid ?
+    return showOutline ?
       dom.svg(
         {
-          className: "grid-outline",
           width: "100%",
           height: this.getHeight(),
           viewBox: `${TRANSLATE_X} ${TRANSLATE_Y} ${width} ${height}`,
         },
         this.renderGridOutline(selectedGrid),
         this.renderGridLines(selectedGrid)
+      )
+      :
+      this.renderCannotShowOutlineText();
+  },
+
+  render() {
+    const { selectedGrid } = this.state;
+
+    return selectedGrid ?
+      dom.div(
+        {
+          className: "grid-outline",
+        },
+        this.renderOutline()
       )
       :
       null;
