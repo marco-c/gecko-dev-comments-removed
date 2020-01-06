@@ -425,6 +425,18 @@ private:
 
 
 
+  nsresult GetSubStringLengthSlowFallback(nsIContent* aContent,
+                                          uint32_t charnum,
+                                          uint32_t nchars,
+                                          float* aResult);
+
+  
+
+
+
+
+
+
 
 
 
