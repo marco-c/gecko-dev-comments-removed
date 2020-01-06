@@ -683,7 +683,6 @@ private:
 
 
 
-
 void
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime, JSContext* aContext,
@@ -748,12 +747,6 @@ skip_to_next_sample:
       }
     } else {
       ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Time entry");
-    }
-
-    if (e.Has() && e.Get().isSample()) {
-      e.Next();
-    } else {
-      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Sample entry");
     }
 
     UniqueStacks::Stack stack =

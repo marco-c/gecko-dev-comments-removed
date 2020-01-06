@@ -849,9 +849,6 @@ MergeStacksIntoProfile(PSLockRef aLock, bool aIsSynchronous,
   }
 
   
-  aBuffer->addEntry(ProfileBufferEntry::Sample("(root)"));
-
-  
   
   
   
