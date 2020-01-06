@@ -17,42 +17,28 @@ namespace mozilla {
 
 
 
-
-
-
-
-nsresult InitOSFileConstants();
-
-
-
-
-
-
-
-
-
-
-void CleanupOSFileConstants();
-
-
-
-
-
-
-
-bool DefineOSFileConstants(JSContext *cx, JS::Handle<JSObject*> global);
-
-
-
-
 class OSFileConstantsService final : public nsIOSFileConstantsService
 {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOSFILECONSTANTSSERVICE
-  OSFileConstantsService();
+
+  static already_AddRefed<OSFileConstantsService>
+  GetOrCreate();
+
+  bool
+  DefineOSFileConstants(JSContext* aCx,
+                        JS::Handle<JSObject*> aGlobal);
+
 private:
+
+  nsresult
+  InitOSFileConstants();
+
+  OSFileConstantsService();
   ~OSFileConstantsService();
+
+  bool mInitialized;
 };
 
 } 
