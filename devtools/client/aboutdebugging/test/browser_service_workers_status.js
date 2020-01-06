@@ -7,7 +7,7 @@
 
 const SERVICE_WORKER = URL_ROOT + "service-workers/delay-sw.js";
 const TAB_URL = URL_ROOT + "service-workers/delay-sw.html";
-const SW_TIMEOUT = 2000;
+const SW_TIMEOUT = 5000;
 
 requestLongerTimeout(2);
 
@@ -36,14 +36,12 @@ add_task(function* () {
 
   let targetElement = name.parentNode.parentNode;
   let status = targetElement.querySelector(".target-status");
+
   
-  if (status.textContent == "Registering") {
-    yield waitForMutation(serviceWorkersElement, { childList: true, subtree: true });
-  }
-
-  is(status.textContent, "Running", "Service worker is currently running");
-
-  yield waitForMutation(serviceWorkersElement, { attributes: true, subtree: true });
+  
+  
+  
+  yield waitUntil(() => status.textContent == "Stopped", 100);
   is(status.textContent, "Stopped", "Service worker is currently stopped");
 
   try {
