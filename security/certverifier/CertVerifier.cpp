@@ -20,6 +20,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "nsNSSComponent.h"
+#include "nsPromiseFlatString.h"
 #include "nsServiceManagerUtils.h"
 #include "pk11pub.h"
 #include "pkix/pkix.h"
@@ -942,7 +943,7 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
                       const SECItem* sctsFromTLS,
                                   Time time,
                       void* pinarg,
-                                  const char* hostname,
+                                  const nsACString& hostname,
                            UniqueCERTCertList& builtChain,
                       UniqueCERTCertList* peerCertChain,
                       bool saveIntermediatesInPermanentDatabase,
@@ -957,21 +958,21 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
 {
   MOZ_ASSERT(peerCert);
   
-  MOZ_ASSERT(hostname);
-  MOZ_ASSERT(hostname[0]);
+  MOZ_ASSERT(!hostname.IsEmpty());
 
   if (evOidPolicy) {
     *evOidPolicy = SEC_OID_UNKNOWN;
   }
 
-  if (!hostname || !hostname[0]) {
+  if (hostname.IsEmpty()) {
     return Result::ERROR_BAD_CERT_DOMAIN;
   }
 
   
   
   Result rv = VerifyCert(peerCert.get(), certificateUsageSSLServer, time,
-                         pinarg, hostname, builtChain, peerCertChain, flags,
+                         pinarg, PromiseFlatCString(hostname).get(), builtChain,
+                         peerCertChain, flags,
                          stapledOCSPResponse, sctsFromTLS, originAttributes,
                          evOidPolicy, ocspStaplingStatus, keySizeStatus,
                          sha1ModeResult, pinningTelemetryInfo, ctInfo);
@@ -1005,8 +1006,9 @@ CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
   }
 
   Input hostnameInput;
-  rv = hostnameInput.Init(BitwiseCast<const uint8_t*, const char*>(hostname),
-                          strlen(hostname));
+  rv = hostnameInput.Init(
+    BitwiseCast<const uint8_t*, const char*>(hostname.BeginReading()),
+    hostname.Length());
   if (rv != Success) {
     return Result::FATAL_ERROR_INVALID_ARGS;
   }

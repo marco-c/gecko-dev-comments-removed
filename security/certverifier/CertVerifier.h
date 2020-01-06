@@ -15,6 +15,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "nsString.h"
 #include "pkix/pkixtypes.h"
 
 #if defined(_MSC_VER)
@@ -148,7 +149,7 @@ public:
         const SECItem* sctsFromTLS,
                     mozilla::pkix::Time time,
         void* pinarg,
-                    const char* hostname,
+                    const nsACString& hostname,
              UniqueCERTCertList& builtChain,
         UniqueCERTCertList* peerCertChain = nullptr,
         bool saveIntermediatesInPermanentDatabase = false,

@@ -1400,14 +1400,13 @@ VerifyCertAtTime(nsIX509Cert* aCert,
   SECOidTag evOidPolicy;
   mozilla::pkix::Result result;
 
-  const nsCString& flatHostname = PromiseFlatCString(aHostname);
   if (!aHostname.IsVoid() && aUsage == certificateUsageSSLServer) {
     result = certVerifier->VerifySSLServerCert(nssCert,
                                                nullptr, 
                                                nullptr, 
                                                aTime,
                                                nullptr, 
-                                               flatHostname.get(),
+                                               aHostname,
                                                resultChain,
                                                nullptr, 
                                                false, 
@@ -1415,6 +1414,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
                                                OriginAttributes(),
                                                &evOidPolicy);
   } else {
+    const nsCString& flatHostname = PromiseFlatCString(aHostname);
     result = certVerifier->VerifyCert(nssCert.get(), aUsage, aTime,
                                       nullptr, 
                                       aHostname.IsVoid() ? nullptr
