@@ -238,19 +238,10 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
     savedItems.AppendToTop(item);
 
     if (apzEnabled) {
-      bool forceNewLayerData = false;
-
       
       
       
-      switch (itemType) {
-      case nsDisplayItem::TYPE_SCROLL_INFO_LAYER:
-      case nsDisplayItem::TYPE_REMOTE:
-        forceNewLayerData = true;
-        break;
-      default:
-        break;
-      }
+      bool forceNewLayerData = item->UpdateScrollData(nullptr, nullptr);
 
       
       
