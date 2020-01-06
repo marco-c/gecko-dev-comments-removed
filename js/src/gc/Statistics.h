@@ -206,7 +206,7 @@ struct Statistics
 
     PhaseKind currentPhaseKind() const;
 
-    static const size_t MAX_NESTING = 20;
+    static const size_t MAX_SUSPENDED_PHASES = MAX_PHASE_NESTING * 3;
 
     struct SliceData {
         SliceData(SliceBudget budget, JS::gcreason::Reason reason,
@@ -304,8 +304,7 @@ struct Statistics
     mutable TimeDuration maxPauseInInterval;
 
     
-    Array<Phase, MAX_NESTING> phaseNesting;
-    size_t phaseNestingDepth;
+    Vector<Phase, MAX_PHASE_NESTING, SystemAllocPolicy> phaseStack;
 
     
 
@@ -314,8 +313,7 @@ struct Statistics
 
 
 
-    Array<Phase, MAX_NESTING * 3> suspendedPhases;
-    size_t suspended;
+    Vector<Phase, MAX_SUSPENDED_PHASES, SystemAllocPolicy> suspendedPhases;
 
     
     Vector<TimeDuration, 0, SystemAllocPolicy> sccTimes;
