@@ -105,12 +105,15 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 const {
   MessageManagerProxy,
 } = ExtensionUtils;
+
+const {DEBUG} = AppConstants;
 
 
 
@@ -221,6 +224,41 @@ class FilteringMessageManager {
 
 
 
+class ResponseManager extends FilteringMessageManager {
+  * getHandlers(messageName, sender, recipient) {
+    let handler = this.handlers.get(messageName);
+    if (handler) {
+      yield handler;
+    }
+  }
+
+  addHandler(messageName, handler) {
+    if (DEBUG && this.handlers.has(messageName)) {
+      throw new Error(`Handler already registered for response ID ${messageName}`);
+    }
+    this.handlers.set(messageName, handler);
+  }
+
+  
+
+
+
+
+
+
+
+  removeHandler(messageName, handler) {
+    if (DEBUG && this.handlers.get(messageName) !== handler) {
+      throw new Error(`Attempting to remove unexpected response handler for ${messageName}`);
+    }
+    this.handlers.delete(messageName);
+  }
+}
+
+
+
+
+
 
 
 
@@ -235,11 +273,15 @@ class FilteringMessageManagerMap extends Map {
 
 
 
-  constructor(messageName, callback) {
+
+
+
+  constructor(messageName, callback, constructor = FilteringMessageManager) {
     super();
 
     this.messageName = messageName;
     this.callback = callback;
+    this._constructor = constructor;
   }
 
   
@@ -256,7 +298,7 @@ class FilteringMessageManagerMap extends Map {
       return super.get(target);
     }
 
-    let broker = new FilteringMessageManager(this.messageName, this.callback, target);
+    let broker = new this._constructor(this.messageName, this.callback, target);
     this.set(target, broker);
 
     if (target instanceof Ci.nsIDOMEventTarget) {
@@ -283,7 +325,8 @@ this.MessageChannel = {
       MESSAGE_MESSAGE, this._handleMessage.bind(this));
 
     this.responseManagers = new FilteringMessageManagerMap(
-      MESSAGE_RESPONSE, this._handleResponse.bind(this));
+      MESSAGE_RESPONSE, this._handleResponse.bind(this),
+      ResponseManager);
 
     
 
