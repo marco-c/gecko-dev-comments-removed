@@ -204,7 +204,8 @@ FinderHighlighter.prototype = {
 
 
 
-  async highlight(highlight, word, linksOnly) {
+
+  async highlight(highlight, word, linksOnly, drawOutline) {
     let window = this.finder._getWindow();
     let dict = this.getForWindow(window);
     let controller = this.finder._getSelectionController(window);
@@ -237,7 +238,7 @@ FinderHighlighter.prototype = {
         dict.visible = true;
       await this.iterator.start(params);
       if (this._found)
-        this.finder._outlineLink(true);
+        this.finder._outlineLink(drawOutline);
     } else {
       this.hide(window);
 
@@ -425,7 +426,7 @@ FinderHighlighter.prototype = {
         if (!dict.visible && !params)
           params = {word: data.searchString, linksOnly: data.linksOnly};
         if (params)
-          this.highlight(true, params.word, params.linksOnly);
+          this.highlight(true, params.word, params.linksOnly, params.drawOutline);
       }
       return;
     }
@@ -445,7 +446,7 @@ FinderHighlighter.prototype = {
     }
 
     if (this._highlightAll)
-      this.highlight(true, data.searchString, data.linksOnly);
+      this.highlight(true, data.searchString, data.linksOnly, data.drawOutline);
   },
 
   
