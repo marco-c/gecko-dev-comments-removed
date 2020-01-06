@@ -632,6 +632,7 @@ void Gecko_CSSCounterStyle_GetCssText(const nsCSSCounterStyleRule* rule, nsAStri
 NS_DECL_FFI_REFCOUNTING(nsCSSCounterStyleRule, CSSCounterStyleRule);
 
 RawGeckoElementBorrowedOrNull Gecko_GetBody(RawGeckoPresContextBorrowed pres_context);
+bool Gecko_IsDocumentBody(RawGeckoElementBorrowed element);
 
 
 
