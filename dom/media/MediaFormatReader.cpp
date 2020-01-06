@@ -1025,9 +1025,11 @@ public:
   void Reset() override
   {
     RefPtr<Wrapper> self = this;
-    mTaskQueue->Dispatch(
-      NS_NewRunnableFunction("MediaFormatReader::DemuxerProxy::Wrapper::Reset",
-                             [self]() { self->mTrackDemuxer->Reset(); }));
+    nsresult rv =
+      mTaskQueue->Dispatch(
+        NS_NewRunnableFunction("MediaFormatReader::DemuxerProxy::Wrapper::Reset",
+                               [self]() { self->mTrackDemuxer->Reset(); }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
   }
 
   nsresult GetNextRandomAccessPoint(TimeUnit* aTime) override
@@ -1084,9 +1086,11 @@ private:
   ~Wrapper()
   {
     RefPtr<MediaTrackDemuxer> trackDemuxer = mTrackDemuxer.forget();
-    mTaskQueue->Dispatch(NS_NewRunnableFunction(
-      "MediaFormatReader::DemuxerProxy::Wrapper::~Wrapper",
-      [trackDemuxer]() { trackDemuxer->BreakCycles(); }));
+    nsresult rv =
+      mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        "MediaFormatReader::DemuxerProxy::Wrapper::~Wrapper",
+        [trackDemuxer]() { trackDemuxer->BreakCycles(); }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
   }
 
   void UpdateRandomAccessPoint()
@@ -1994,7 +1998,8 @@ MediaFormatReader::ScheduleUpdate(TrackType aTrack)
   decoder.mUpdateScheduled = true;
   RefPtr<nsIRunnable> task(NewRunnableMethod<TrackType>(
     "MediaFormatReader::Update", this, &MediaFormatReader::Update, aTrack));
-  OwnerThread()->Dispatch(task.forget());
+  nsresult rv = OwnerThread()->Dispatch(task.forget());
+  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 }
 
 bool
@@ -2068,8 +2073,7 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
       LOG("Attempting Internal Seek");
       InternalSeek(aTrack, decoder.mTimeThreshold.ref());
     }
-    if (decoder.HasWaitingPromise() && !decoder.IsWaitingForKey() &&
-        !decoder.IsWaitingForData()) {
+    if (decoder.HasWaitingPromise() && !decoder.IsWaiting()) {
       MOZ_ASSERT(!decoder.HasPromise());
       LOG("We have new data. Resolving WaitingPromise");
       decoder.mWaitingPromise.Resolve(decoder.mType, __func__);
@@ -2575,9 +2579,9 @@ MediaFormatReader::Update(TrackType aTrack)
     return;
   }
 
-  if ((decoder.IsWaitingForData() &&
+  if ((decoder.mWaitingForData &&
        (!decoder.mTimeThreshold || decoder.mTimeThreshold.ref().mWaiting)) ||
-      (decoder.IsWaitingForKey())) {
+      (decoder.mWaitingForKey && decoder.mDecodeRequest.Exists())) {
     
     LOGV("Still waiting for data or key. data(%d)/key(%d)",
          decoder.mWaitingForData,
@@ -2672,7 +2676,7 @@ MediaFormatReader::WaitForData(MediaData::Type aType)
   TrackType trackType = aType == MediaData::VIDEO_DATA ?
     TrackType::kVideoTrack : TrackType::kAudioTrack;
   auto& decoder = GetDecoderData(trackType);
-  if (!decoder.IsWaitingForData() && !decoder.IsWaitingForKey()) {
+  if (!decoder.IsWaiting()) {
     
     return WaitForDataPromise::CreateAndResolve(decoder.mType, __func__);
   }
@@ -2893,8 +2897,10 @@ MediaFormatReader::ScheduleSeek()
     return;
   }
   mSeekScheduled = true;
-  OwnerThread()->Dispatch(NewRunnableMethod(
-    "MediaFormatReader::AttemptSeek", this, &MediaFormatReader::AttemptSeek));
+  nsresult rv =
+    OwnerThread()->Dispatch(NewRunnableMethod(
+      "MediaFormatReader::AttemptSeek", this, &MediaFormatReader::AttemptSeek));
+  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 }
 
 void
