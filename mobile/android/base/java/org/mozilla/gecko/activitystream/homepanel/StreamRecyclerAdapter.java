@@ -181,20 +181,50 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamViewHolder
         } else if (type == RowItemType.TOP_STORIES_ITEM.getViewType()) {
             final TopStory story = (TopStory) recyclerViewModel.get(position);
             ((WebpageItemRow) holder).bind(story, position, tilesSize);
-        } else if (type == RowItemType.HIGHLIGHTS_TITLE.getViewType()) {
+        } else if (type == RowItemType.HIGHLIGHTS_TITLE.getViewType()
+                || type == RowItemType.HIGHLIGHTS_EMPTY_STATE.getViewType()) {
             final Context context = holder.itemView.getContext();
             final SharedPreferences sharedPreferences = GeckoSharedPrefs.forProfile(context);
             final boolean bookmarksEnabled = sharedPreferences.getBoolean(ActivityStreamPanel.PREF_BOOKMARKS_ENABLED,
                     context.getResources().getBoolean(R.bool.pref_activitystream_recentbookmarks_enabled_default));
             final boolean visitedEnabled = sharedPreferences.getBoolean(ActivityStreamPanel.PREF_VISITED_ENABLED,
                     context.getResources().getBoolean(R.bool.pref_activitystream_visited_enabled_default));
-            ((StreamTitleRow) holder).setVisible(bookmarksEnabled || visitedEnabled);
+            setViewVisible(bookmarksEnabled || visitedEnabled, holder.itemView);
         } else if (type == RowItemType.TOP_STORIES_TITLE.getViewType()) {
             final Context context = holder.itemView.getContext();
             final boolean pocketEnabled = GeckoSharedPrefs.forProfile(context).getBoolean(ActivityStreamPanel.PREF_POCKET_ENABLED,
                     context.getResources().getBoolean(R.bool.pref_activitystream_pocket_enabled_default));
-            ((StreamTitleRow) holder).setVisible(pocketEnabled);
+            setViewVisible(pocketEnabled, holder.itemView);
         }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private static void setViewVisible(boolean toShow, final View view) {
+        view.setVisibility(toShow ? View.VISIBLE : View.GONE);
+        
+        final RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) view.getLayoutParams();
+        if (toShow) {
+            layoutParams.height = RecyclerView.LayoutParams.WRAP_CONTENT;
+            layoutParams.width = RecyclerView.LayoutParams.MATCH_PARENT;
+        } else {
+            layoutParams.height = 0;
+            layoutParams.width = 0;
+        }
+        view.setLayoutParams(layoutParams);
     }
 
     @Override
