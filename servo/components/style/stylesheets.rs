@@ -37,6 +37,7 @@ use servo_config::prefs::PREFS;
 #[cfg(not(feature = "gecko"))]
 use servo_url::ServoUrl;
 use shared_lock::{SharedRwLock, Locked, ToCssWithGuard, SharedRwLockReadGuard};
+use std::borrow::Borrow;
 use std::cell::Cell;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,7 +92,7 @@ pub enum Origin {
 }
 
 
-#[derive(Default, Debug)]
+#[derive(Clone, Default, Debug)]
 #[allow(missing_docs)]
 pub struct Namespaces {
     pub default: Option<Namespace>,
@@ -106,6 +107,15 @@ impl CssRules {
     
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> CssRules {
+        CssRules(
+            self.0.iter().map(|ref x| x.deep_clone_with_lock(lock)).collect()
+        )
     }
 }
 
@@ -469,6 +479,64 @@ impl CssRule {
             }
         }
     }
+
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> CssRule {
+        let guard = lock.read();
+        match *self {
+            CssRule::Namespace(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Namespace(Arc::new(lock.wrap(rule.clone())))
+            },
+            CssRule::Import(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Import(Arc::new(lock.wrap(rule.clone())))
+            },
+            CssRule::Style(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Style(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+            CssRule::Media(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Media(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+            CssRule::FontFace(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::FontFace(Arc::new(lock.wrap(rule.clone())))
+            },
+            CssRule::CounterStyle(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::CounterStyle(Arc::new(lock.wrap(rule.clone())))
+            },
+            CssRule::Viewport(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Viewport(Arc::new(lock.wrap(rule.clone())))
+            },
+            CssRule::Keyframes(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Keyframes(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+            CssRule::Supports(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Supports(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+            CssRule::Page(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Page(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+            CssRule::Document(ref arc) => {
+                let rule = arc.read_with(&guard);
+                CssRule::Document(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock))))
+            },
+        }
+    }
 }
 
 impl ToCssWithGuard for CssRule {
@@ -500,7 +568,7 @@ fn get_location_with_offset(location: SourceLocation, offset: u64)
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub struct NamespaceRule {
     
@@ -538,6 +606,16 @@ pub struct ImportRule {
     
     
     pub stylesheet: Arc<Stylesheet>,
+}
+
+impl Clone for ImportRule {
+    fn clone(&self) -> ImportRule {
+        let stylesheet: &Stylesheet = self.stylesheet.borrow();
+        ImportRule {
+            url: self.url.clone(),
+            stylesheet: Arc::new(stylesheet.clone()),
+        }
+    }
 }
 
 impl ToCssWithGuard for ImportRule {
@@ -604,6 +682,23 @@ impl KeyframesRule {
     }
 }
 
+impl KeyframesRule {
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> KeyframesRule {
+        let guard = lock.read();
+        KeyframesRule {
+            name: self.name.clone(),
+            keyframes: self.keyframes.iter()
+                .map(|ref x| Arc::new(lock.wrap(
+                    x.read_with(&guard).deep_clone_with_lock(lock))))
+                .collect(),
+            vendor_prefix: self.vendor_prefix.clone(),
+            source_location: self.source_location.clone(),
+        }
+    }
+}
+
 #[allow(missing_docs)]
 #[derive(Debug)]
 pub struct MediaRule {
@@ -625,6 +720,21 @@ impl ToCssWithGuard for MediaRule {
             try!(rule.to_css(guard, dest));
         }
         dest.write_str(" }")
+    }
+}
+
+impl MediaRule {
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> MediaRule {
+        let guard = lock.read();
+        let media_queries = self.media_queries.read_with(&guard);
+        let rules = self.rules.read_with(&guard);
+        MediaRule {
+            media_queries: Arc::new(lock.wrap(media_queries.clone())),
+            rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock))),
+            source_location: self.source_location.clone(),
+        }
     }
 }
 
@@ -656,6 +766,20 @@ impl ToCssWithGuard for SupportsRule {
     }
 }
 
+impl SupportsRule {
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> SupportsRule {
+        let guard = lock.read();
+        let rules = self.rules.read_with(&guard);
+        SupportsRule {
+            condition: self.condition.clone(),
+            rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock))),
+            enabled: self.enabled,
+            source_location: self.source_location.clone(),
+        }
+    }
+}
+
 
 
 
@@ -679,6 +803,17 @@ impl ToCssWithGuard for PageRule {
             write!(dest, " ")?;
         }
         dest.write_str("}")
+    }
+}
+
+impl PageRule {
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> PageRule {
+        let guard = lock.read();
+        PageRule {
+            block: Arc::new(lock.wrap(self.block.read_with(&guard).clone())),
+            source_location: self.source_location.clone(),
+        }
     }
 }
 
@@ -708,6 +843,19 @@ impl ToCssWithGuard for StyleRule {
         
         try!(dest.write_str("}"));
         Ok(())
+    }
+}
+
+impl StyleRule {
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> StyleRule {
+        let guard = lock.read();
+        StyleRule {
+            selectors: self.selectors.clone(),
+            block: Arc::new(lock.wrap(self.block.read_with(&guard).clone())),
+            source_location: self.source_location.clone(),
+        }
     }
 }
 
@@ -741,6 +889,20 @@ impl ToCssWithGuard for DocumentRule {
             try!(rule.to_css(guard, dest));
         }
         dest.write_str(" }")
+    }
+}
+
+impl DocumentRule {
+    
+    fn deep_clone_with_lock(&self,
+                            lock: &SharedRwLock) -> DocumentRule {
+        let guard = lock.read();
+        let rules = self.rules.read_with(&guard);
+        DocumentRule {
+            condition: self.condition.clone(),
+            rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock))),
+            source_location: self.source_location.clone(),
+        }
     }
 }
 
@@ -898,6 +1060,35 @@ impl Stylesheet {
     
     pub fn set_disabled(&self, disabled: bool) -> bool {
         self.disabled.swap(disabled, Ordering::SeqCst) != disabled
+    }
+}
+
+impl Clone for Stylesheet {
+    fn clone(&self) -> Stylesheet {
+        
+        let lock = self.shared_lock.clone();
+        let guard = self.shared_lock.read();
+
+        
+        let rules = self.rules.read_with(&guard);
+        let cloned_rules = rules.deep_clone_with_lock(&lock);
+
+        
+        let media = self.media.read_with(&guard);
+        let cloned_media = media.clone();
+
+        Stylesheet {
+            rules: Arc::new(lock.wrap(cloned_rules)),
+            media: Arc::new(lock.wrap(cloned_media)),
+            origin: self.origin,
+            url_data: self.url_data.clone(),
+            shared_lock: lock,
+            namespaces: RwLock::new((*self.namespaces.read()).clone()),
+            dirty_on_viewport_size_change: AtomicBool::new(
+                self.dirty_on_viewport_size_change.load(Ordering::SeqCst)),
+            disabled: AtomicBool::new(self.disabled.load(Ordering::SeqCst)),
+            quirks_mode: self.quirks_mode,
+        }
     }
 }
 

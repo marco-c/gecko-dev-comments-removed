@@ -20,7 +20,7 @@ use style_traits::ToCss;
 use values::specified::url::SpecifiedUrl;
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum UrlMatchingFunction {
     
     
@@ -141,7 +141,7 @@ impl ToCss for UrlMatchingFunction {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DocumentCondition(Vec<UrlMatchingFunction>);
 
 impl DocumentCondition {

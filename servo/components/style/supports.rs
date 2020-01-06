@@ -11,7 +11,7 @@ use std::fmt;
 use style_traits::ToCss;
 use stylesheets::CssRuleType;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 
 
 
@@ -162,7 +162,7 @@ impl ToCss for SupportsCondition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 
 pub struct Declaration {
     
