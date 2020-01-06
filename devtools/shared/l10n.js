@@ -153,11 +153,12 @@ LocalizationHelper.prototype = {
   numberWithDecimals: function (number, decimals = 0) {
     
     if (number === (number|0)) {
-      return number;
+      return getNumberFormatter(0).format(number);
     }
+
     
     if (isNaN(number) || number === null) {
-      return "0";
+      return getNumberFormatter(0).format(0);
     }
 
     
