@@ -12,9 +12,7 @@
 #include "MediaData.h"
 #include "nsAutoPtr.h"
 
-using namespace mozilla;
-
-namespace mp4_demuxer
+namespace mozilla
 {
 
 static const uint8_t kAnnexBDelimiter[] = { 0, 0, 0, 1 };

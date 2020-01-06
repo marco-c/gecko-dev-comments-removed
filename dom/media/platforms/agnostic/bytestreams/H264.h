@@ -9,9 +9,6 @@
 
 namespace mozilla {
 class BitReader;
-}
-
-namespace mp4_demuxer {
 
 
 #define MAX_SPS_COUNT 32

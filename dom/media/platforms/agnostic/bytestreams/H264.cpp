@@ -31,9 +31,7 @@
     aDest.var = uval;                                                          \
   }
 
-using namespace mozilla;
-
-namespace mp4_demuxer {
+namespace mozilla {
 
 
 

@@ -14,10 +14,6 @@ namespace mozilla {
 class BufferReader;
 class MediaRawData;
 class MediaByteBuffer;
-}
-
-namespace mp4_demuxer
-{
 
 class AnnexB
 {
