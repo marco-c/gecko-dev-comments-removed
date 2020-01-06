@@ -336,6 +336,16 @@ WebExtensionChildActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGl
   const global = unwrapDebuggerObjectGlobal(newGlobal);
 
   if (global instanceof Ci.nsIDOMWindow) {
+    try {
+      global.document;
+    } catch (e) {
+      
+      
+      
+      
+      return false;
+    }
+
     
     if (global.document instanceof Ci.nsIDOMXULDocument) {
       return false;
