@@ -184,9 +184,10 @@ public:
 
 
 
+
   static nsresult Clone(nsINode *aNode, bool aDeep,
                         nsNodeInfoManager *aNewNodeInfoManager,
-                        nsCOMArray<nsINode> &aNodesWithProperties,
+                        nsCOMArray<nsINode> *aNodesWithProperties,
                         nsINode **aResult)
   {
     return CloneAndAdopt(aNode, true, aDeep, aNewNodeInfoManager,
@@ -198,9 +199,8 @@ public:
 
   static nsresult Clone(nsINode *aNode, bool aDeep, nsINode **aResult)
   {
-    nsCOMArray<nsINode> dummyNodeWithProperties;
-    return CloneAndAdopt(aNode, true, aDeep, nullptr, nullptr,
-                         dummyNodeWithProperties, aNode->GetParent(), aResult);
+    return CloneAndAdopt(aNode, true, aDeep, nullptr, nullptr, nullptr,
+                         aNode->GetParent(), aResult);
   }
 
   
@@ -226,7 +226,7 @@ public:
   {
     nsCOMPtr<nsINode> node;
     nsresult rv = CloneAndAdopt(aNode, false, true, aNewNodeInfoManager,
-                                aReparentScope, aNodesWithProperties,
+                                aReparentScope, &aNodesWithProperties,
                                 nullptr, getter_AddRefs(node));
 
     nsMutationGuard::DidMutate();
@@ -306,10 +306,11 @@ private:
 
 
 
+
   static nsresult CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
                                 nsNodeInfoManager *aNewNodeInfoManager,
                                 JS::Handle<JSObject*> aReparentScope,
-                                nsCOMArray<nsINode> &aNodesWithProperties,
+                                nsCOMArray<nsINode> *aNodesWithProperties,
                                 nsINode *aParent, nsINode **aResult);
 
   enum class AnimationMutationType
