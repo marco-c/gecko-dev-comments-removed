@@ -21,6 +21,7 @@ const {
   MESSAGE_TYPE,
   MESSAGE_TABLE_RECEIVE,
   MESSAGE_OBJECT_PROPERTIES_RECEIVE,
+  MESSAGE_OBJECT_ENTRIES_RECEIVE,
 } = require("../constants");
 
 const defaultIdGenerator = new IdGenerator();
@@ -126,6 +127,17 @@ function messageObjectPropertiesLoad(id, client, grip) {
   };
 }
 
+function messageObjectEntriesLoad(id, client, grip) {
+  return (dispatch) => {
+    client.enumEntries(enumResponse => {
+      const {iterator} = enumResponse;
+      iterator.slice(0, iterator.count, sliceResponse => {
+        dispatch(messageObjectEntriesReceive(id, grip.actor, sliceResponse));
+      });
+    });
+  };
+}
+
 
 
 
@@ -143,6 +155,23 @@ function messageObjectPropertiesReceive(id, actor, properties) {
   };
 }
 
+
+
+
+
+
+
+
+
+function messageObjectEntriesReceive(id, actor, entries) {
+  return {
+    type: MESSAGE_OBJECT_ENTRIES_RECEIVE,
+    id,
+    actor,
+    entries
+  };
+}
+
 module.exports = {
   messageAdd,
   messagesClear,
@@ -151,8 +180,10 @@ module.exports = {
   messageTableDataGet,
   networkMessageUpdate,
   messageObjectPropertiesLoad,
+  messageObjectEntriesLoad,
   
   messageTableDataReceive,
   messageObjectPropertiesReceive,
+  messageObjectEntriesReceive,
 };
 
