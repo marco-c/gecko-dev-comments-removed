@@ -41,7 +41,7 @@ class nsWindowRoot;
 
 
 
-#if defined(_M_X64) || defined(__x86_64__)
+#if defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__)
 static_assert(sizeof(void*) == 8, "These architectures should be 64-bit");
 #define BOOL_FLAGS_ON_WRAPPER_CACHE
 #else
