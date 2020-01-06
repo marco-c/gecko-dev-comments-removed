@@ -67,7 +67,14 @@ class CheckStaticAtomSizes
 
 
 
-static Atomic<uint32_t, ReleaseAcquire> gUnusedAtomCount(0);
+
+
+
+
+
+
+
+static Atomic<int32_t, ReleaseAcquire> gUnusedAtomCount(0);
 
 #if defined(NS_BUILD_REFCNT_LOGGING)
 
@@ -406,7 +413,7 @@ Atom::GCAtomTableLocked(const MutexAutoLock& aProofOfLock, GCKind aKind)
     sRecentlyUsedMainThreadAtoms[i] = nullptr;
   }
 
-  uint32_t removedCount = 0; 
+  int32_t removedCount = 0; 
   nsAutoCString nonZeroRefcountAtoms;
   uint32_t nonZeroRefcountAtomsCount = 0;
   for (auto i = gAtomTable->Iter(); !i.Done(); i.Next()) {
@@ -480,9 +487,9 @@ Atom::DynamicAddRef()
 #ifdef DEBUG
 
 
-static const uint32_t kAtomGCThreshold = 20;
+static const int32_t kAtomGCThreshold = 20;
 #else
-static const uint32_t kAtomGCThreshold = 10000;
+static const int32_t kAtomGCThreshold = 10000;
 #endif
 
 MozExternalRefCountType
@@ -796,7 +803,7 @@ NS_GetNumberOfAtoms(void)
   return gAtomTable->EntryCount();
 }
 
-uint32_t
+int32_t
 NS_GetUnusedAtomCount(void)
 {
   return gUnusedAtomCount;
