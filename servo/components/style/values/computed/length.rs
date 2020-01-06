@@ -791,6 +791,16 @@ impl NonNegativeLength {
         self.0.px()
     }
 
+    #[inline]
+    
+    pub fn clamp(self) -> Self {
+        if (self.0).0 < 0. {
+            Self::zero()
+        } else {
+            self
+        }
+    }
+
     
     
     
