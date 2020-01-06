@@ -119,6 +119,63 @@ FakePrefs.prototype = {
   }
 };
 
+
+
+
+function EventEmitter() {}
+EventEmitter.decorate = function(objectToDecorate) {
+  let emitter = new EventEmitter();
+  objectToDecorate.on = emitter.on.bind(emitter);
+  objectToDecorate.off = emitter.off.bind(emitter);
+  objectToDecorate.emit = emitter.emit.bind(emitter);
+};
+EventEmitter.prototype = {
+  on(event, listener) {
+    if (!this._eventEmitterListeners) {
+      this._eventEmitterListeners = new Map();
+    }
+    if (!this._eventEmitterListeners.has(event)) {
+      this._eventEmitterListeners.set(event, []);
+    }
+    this._eventEmitterListeners.get(event).push(listener);
+  },
+  off(event, listener) {
+    if (!this._eventEmitterListeners) {
+      return;
+    }
+    let listeners = this._eventEmitterListeners.get(event);
+    if (listeners) {
+      this._eventEmitterListeners.set(event, listeners.filter(
+        l => l !== listener && l._originalListener !== listener
+      ));
+    }
+  },
+  
+  emit(event, ...args) {
+    if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(event)) {
+      return;
+    }
+    let originalListeners = this._eventEmitterListeners.get(event);
+    for (let listener of this._eventEmitterListeners.get(event)) {
+      
+      
+      if (!this._eventEmitterListeners) {
+        break;
+      }
+      
+      
+      if (originalListeners === this._eventEmitterListeners.get(event) ||
+        this._eventEmitterListeners.get(event).some(l => l === listener)) {
+        try {
+          listener(event, ...args);
+        } catch (ex) {
+          
+        }
+      }
+    }
+  }
+};
+
 function FakePerformance() {}
 FakePerformance.prototype = {
   marks: new Map(),
@@ -187,6 +244,7 @@ function mountWithIntl(node, options = {}) {
 module.exports = {
   FakePerformance,
   FakePrefs,
+  EventEmitter,
   GlobalOverrider,
   addNumberReducer,
   mountWithIntl,

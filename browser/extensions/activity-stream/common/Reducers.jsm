@@ -5,6 +5,8 @@
 
 const {actionTypes: at} = Components.utils.import("resource://activity-stream/common/Actions.jsm", {});
 
+const TOP_SITES_SHOWMORE_LENGTH = 12;
+
 const INITIAL_STATE = {
   App: {
     
@@ -12,7 +14,7 @@ const INITIAL_STATE = {
     
     locale: "",
     
-    strings: {},
+    strings: null,
     
     version: null
   },
@@ -67,7 +69,6 @@ function insertPinned(links, pinned) {
   newLinks = newLinks.map(link => {
     if (link && link.isPinned) {
       delete link.isPinned;
-      delete link.pinTitle;
       delete link.pinIndex;
     }
     return link;
@@ -76,7 +77,7 @@ function insertPinned(links, pinned) {
   
   pinned.forEach((val, index) => {
     if (!val) { return; }
-    let link = Object.assign({}, val, {isPinned: true, pinIndex: index, pinTitle: val.title});
+    let link = Object.assign({}, val, {isPinned: true, pinIndex: index});
     if (index > newLinks.length) {
       newLinks[index] = link;
     } else {
@@ -139,7 +140,7 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
       return Object.assign({}, prevState, {rows: newRows});
     case at.PINNED_SITES_UPDATED:
       pinned = action.data;
-      newRows = insertPinned(prevState.rows, pinned);
+      newRows = insertPinned(prevState.rows, pinned).slice(0, TOP_SITES_SHOWMORE_LENGTH);
       return Object.assign({}, prevState, {rows: newRows});
     default:
       return prevState;
@@ -254,8 +255,9 @@ function Snippets(prevState = INITIAL_STATE.Snippets, action) {
 }
 
 this.INITIAL_STATE = INITIAL_STATE;
+this.TOP_SITES_SHOWMORE_LENGTH = TOP_SITES_SHOWMORE_LENGTH;
 
 this.reducers = {TopSites, App, Snippets, Prefs, Dialog, Sections};
 this.insertPinned = insertPinned;
 
-this.EXPORTED_SYMBOLS = ["reducers", "INITIAL_STATE", "insertPinned"];
+this.EXPORTED_SYMBOLS = ["reducers", "INITIAL_STATE", "insertPinned", "TOP_SITES_SHOWMORE_LENGTH"];
