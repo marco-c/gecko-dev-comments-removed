@@ -7,7 +7,7 @@ Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 
 
 
-global.SingletonEventManager = ExtensionCommon.SingletonEventManager;
+global.EventManager = ExtensionCommon.EventManager;
 
 global.initializeBackgroundPage = (contentWindow) => {
   

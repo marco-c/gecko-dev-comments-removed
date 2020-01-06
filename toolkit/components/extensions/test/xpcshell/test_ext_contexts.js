@@ -8,7 +8,7 @@ Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 
 var {
   BaseContext,
-  SingletonEventManager,
+  EventManager,
 } = ExtensionCommon;
 
 class StubContext extends BaseContext {
@@ -60,10 +60,10 @@ add_task(async function test_post_unload_promises() {
 add_task(async function test_post_unload_listeners() {
   let context = new StubContext();
 
-  let fireSingleton;
-  let onSingleton = new SingletonEventManager(context, "onSingleton", fire => {
-    fireSingleton = () => {
-      fire.async();
+  let fire;
+  let manager = new EventManager(context, "EventManager", _fire => {
+    fire = () => {
+      _fire.async();
     };
     return () => {};
   });
@@ -73,17 +73,17 @@ add_task(async function test_post_unload_listeners() {
   };
 
   
-  onSingleton.addListener(fail);
+  manager.addListener(fail);
 
-  let promise = new Promise(resolve => onSingleton.addListener(resolve));
+  let promise = new Promise(resolve => manager.addListener(resolve));
 
-  fireSingleton("onSingleton");
+  fire();
 
   
   
   
   
-  onSingleton.removeListener(fail);
+  manager.removeListener(fail);
 
   
   
@@ -91,15 +91,15 @@ add_task(async function test_post_unload_listeners() {
 
   
   
-  onSingleton.addListener(fail);
+  manager.addListener(fail);
 
   
   
   
   
   
-  fireSingleton("onSingleton");
-  Promise.resolve("onSingleton").then(fireSingleton);
+  fire();
+  Promise.resolve().then(fire);
 
   context.unload();
 
