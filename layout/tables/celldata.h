@@ -144,6 +144,7 @@ enum BCBorderOwner
   eAjaCellOwner      = 10  
 };
 
+
 typedef uint16_t BCPixelSize;
 
 
