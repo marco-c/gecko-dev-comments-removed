@@ -53,21 +53,6 @@
 
   
   
-  function ArrayPop(arr) {
-    assertEq(ArrayIsArray(arr), true,
-             "ArrayPop must only be used on actual arrays");
-
-    var len = arr.length;
-    if (len === 0)
-      return undefined;
-
-    var v = arr[len - 1];
-    arr.length--;
-    return v;
-  }
-
-  
-  
   
   function ArrayPush(arr, val) {
     assertEq(ArrayIsArray(arr), true,
@@ -329,47 +314,6 @@
   var PASSED = " PASSED! ";
   var FAILED = " FAILED! ";
 
-  var callStack = [];
-
-  
-
-
-
-  function enterFunc(funcName) {
-    assertEq(typeof funcName, "string",
-             "enterFunc must be given a string funcName");
-
-    ArrayPush(callStack, funcName);
-  }
-  global.enterFunc = enterFunc;
-
-  
-
-
-
-  function exitFunc(funcName) {
-    assertEq(typeof funcName === "string" || typeof funcName === "undefined",
-             true,
-             "exitFunc must be given no arguments or a string");
-
-    var lastFunc = ArrayPop(callStack);
-    assertEq(typeof lastFunc, "string", "exitFunc called too many times");
-
-    if (typeof funcName === "string" && lastFunc !== funcName) {
-      reportCompare(funcName, lastFunc, "Test driver failure wrong exit function ");
-    }
-  }
-  global.exitFunc = exitFunc;
-
-  
-  function currentFunc() {
-    if (callStack.length == 0)
-      return "top level script";
-
-    
-    return callStack[callStack.length - 1] + "()";
-  }
-
   
 
 
@@ -492,10 +436,9 @@
   function reportFailure(msg) {
     msg = String(msg);
     var lines = StringSplit(msg, "\n");
-    var prefix = "[reported from " + currentFunc() + "] ";
 
     for (var i = 0; i < lines.length; i++)
-      print(FAILED + prefix + lines[i]);
+      print(FAILED + " " + lines[i]);
   }
   global.reportFailure = reportFailure;
 
