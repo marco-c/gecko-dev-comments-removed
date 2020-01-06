@@ -2639,11 +2639,6 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
     DrawBackgroundColor(clipState, &aRenderingCtx, appUnitsPerPixel);
   }
 
-  if (!drawBackgroundImage) {
-    return DrawResult::SUCCESS; 
-                                
-  }
-
   
   
   Sides skipSides = aParams.frame->GetSkipSides();
