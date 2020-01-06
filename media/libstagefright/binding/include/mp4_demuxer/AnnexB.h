@@ -30,9 +30,18 @@ public:
   static already_AddRefed<mozilla::MediaByteBuffer> ConvertExtraDataToAnnexB(
     const mozilla::MediaByteBuffer* aExtraData);
   
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> ExtractExtraData(
+    const mozilla::MediaRawData* aSample);
+  static bool HasSPS(const mozilla::MediaRawData* aSample);
+  static bool HasSPS(const mozilla::MediaByteBuffer* aExtraData);
+  
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
   
   static bool IsAnnexB(const mozilla::MediaRawData* aSample);
+  
+  static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
+                               const mozilla::MediaByteBuffer* aExtraData2);
 
 private:
   
