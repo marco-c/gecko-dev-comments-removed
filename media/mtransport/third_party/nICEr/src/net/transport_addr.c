@@ -436,6 +436,21 @@ int nr_transport_addr_is_link_local(nr_transport_addr *addr)
     return(0);
   }
 
+int nr_transport_addr_check_compatibility(nr_transport_addr *addr1, nr_transport_addr *addr2)
+  {
+    
+    if ((addr1->ip_version != addr2->ip_version) ||
+        (addr1->protocol != addr2->protocol)) {
+      return(1);
+    }
+    
+    if (nr_transport_addr_is_link_local(addr1) !=
+        nr_transport_addr_is_link_local(addr2)) {
+      return(1);
+    }
+    return(0);
+  }
+
 int nr_transport_addr_is_wildcard(nr_transport_addr *addr)
   {
     switch(addr->ip_version){
