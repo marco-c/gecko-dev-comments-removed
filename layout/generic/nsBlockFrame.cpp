@@ -1244,8 +1244,6 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  
-  
   if (state.mReflowStatus.IsFullyComplete()) {
     nsBlockFrame* nif = static_cast<nsBlockFrame*>(GetNextInFlow());
     while (nif) {

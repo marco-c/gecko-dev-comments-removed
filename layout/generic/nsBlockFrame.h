@@ -581,6 +581,14 @@ public:
         "pushed floats must be at the beginning of the float list");
     }
 #endif
+
+    
+    if (HasPushedFloats()) {
+      
+      
+      auto* pushedFloats = GetPushedFloats();
+      return pushedFloats && !pushedFloats->IsEmpty();
+    }
     return false;
   }
 
