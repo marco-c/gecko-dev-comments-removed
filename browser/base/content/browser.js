@@ -4988,18 +4988,8 @@ var CombinedStopReload = {
     });
   },
 
-  
-
-
-  setAnimationImageHeightRelativeToToolbarButtonHeight() {
-    let dwu = window.getInterface(Ci.nsIDOMWindowUtils);
-    let toolbarItem = this.stopReloadContainer.closest(".customization-target > toolbaritem");
-    let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
-    toolbarItem.style.setProperty("--toolbarbutton-height", bounds.height + "px");
-  },
-
   switchToStop(aRequest, aWebProgress) {
-    if (!this._initialized || !this._shouldSwitch(aRequest))
+    if (!this._initialized)
       return;
 
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
@@ -5010,7 +5000,7 @@ var CombinedStopReload = {
 
     this._cancelTransition();
     if (shouldAnimate) {
-      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
+      BrowserUtils.setToolbarButtonHeightProperty(this.stopReloadContainer);
       this.stopReloadContainer.setAttribute("animate", "true");
     } else {
       this.stopReloadContainer.removeAttribute("animate");
@@ -5019,8 +5009,7 @@ var CombinedStopReload = {
   },
 
   switchToReload(aRequest, aWebProgress) {
-    if (!this._initialized || !this._shouldSwitch(aRequest) ||
-        !this.reload.hasAttribute("displaystop"))
+    if (!this._initialized)
       return;
 
     let shouldAnimate = AppConstants.MOZ_PHOTON_ANIMATIONS &&
@@ -5030,7 +5019,7 @@ var CombinedStopReload = {
                         this.animate;
 
     if (shouldAnimate) {
-      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
+      BrowserUtils.setToolbarButtonHeightProperty(this.stopReloadContainer);
       this.stopReloadContainer.setAttribute("animate", "true");
     } else {
       this.stopReloadContainer.removeAttribute("animate");
@@ -5057,19 +5046,6 @@ var CombinedStopReload = {
       self.reload.disabled = XULBrowserWindow.reloadCommand
                                              .getAttribute("disabled") == "true";
     }, 650, this);
-  },
-
-  _shouldSwitch(aRequest) {
-    if (!aRequest ||
-        !aRequest.originalURI ||
-        aRequest.originalURI.spec.startsWith("about:reader"))
-      return true;
-
-    if (aRequest.originalURI.schemeIs("chrome") ||
-        aRequest.originalURI.schemeIs("about"))
-      return false;
-
-    return true;
   },
 
   _cancelTransition() {
