@@ -19,7 +19,8 @@ OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
   
   
   
-  nsAdoptingCString locale = Preferences::GetCString("intl.locale.os");
+  nsAutoCString locale;
+  Preferences::GetCString("intl.locale.os", locale);
   if (!locale.IsEmpty()) {
     aLocaleList.AppendElement(locale);
     return true;

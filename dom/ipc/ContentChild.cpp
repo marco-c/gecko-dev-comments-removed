@@ -1176,6 +1176,9 @@ ContentChild::InitXPCOM(const XPCOMInitData& aXPCOMInit,
   GfxInfoBase::SetFeatureStatus(aXPCOMInit.gfxFeatureStatus());
 
   DataStorage::SetCachedStorageEntries(aXPCOMInit.dataStorage());
+
+  
+  nsThreadManager::get().EnableMainThreadEventPrioritization();
 }
 
 mozilla::ipc::IPCResult
@@ -1514,13 +1517,15 @@ StartMacOSContentSandbox()
   
   
   
-  nsAdoptingCString testingReadPath1 =
-    Preferences::GetCString("security.sandbox.content.mac.testing_read_path1");
+  nsAutoCString testingReadPath1;
+  Preferences::GetCString("security.sandbox.content.mac.testing_read_path1",
+                          testingReadPath1);
   if (!testingReadPath1.IsEmpty()) {
     info.testingReadPath1.assign(testingReadPath1.get());
   }
-  nsAdoptingCString testingReadPath2 =
-    Preferences::GetCString("security.sandbox.content.mac.testing_read_path2");
+  nsAutoCString testingReadPath2;
+  Preferences::GetCString("security.sandbox.content.mac.testing_read_path2",
+                          testingReadPath2);
   if (!testingReadPath2.IsEmpty()) {
     info.testingReadPath2.assign(testingReadPath2.get());
   }
@@ -1608,11 +1613,12 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
     }
     
     std::vector<int> syscallWhitelist;
-    nsAdoptingCString extraSyscalls =
-      Preferences::GetCString("security.sandbox.content.syscall_whitelist");
-    if (extraSyscalls) {
+    nsAutoCString extraSyscalls;
+    nsresult rv =
+      Preferences::GetCString("security.sandbox.content.syscall_whitelist",
+                              extraSyscalls);
+    if (NS_SUCCEEDED(rv)) {
       for (const nsACString& callNrString : extraSyscalls.Split(',')) {
-        nsresult rv;
         int callNr = PromiseFlatCString(callNrString).ToInteger(&rv);
         if (NS_SUCCEEDED(rv)) {
           syscallWhitelist.push_back(callNr);

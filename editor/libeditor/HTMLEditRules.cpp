@@ -276,8 +276,8 @@ HTMLEditRules::Init(TextEditor* aTextEditor)
   
   static const char kPrefName[] =
     "editor.html.typing.returnInEmptyListItemClosesList";
-  nsAdoptingCString returnInEmptyLIKillsList =
-    Preferences::GetCString(kPrefName);
+  nsAutoCString returnInEmptyLIKillsList;
+  Preferences::GetCString(kPrefName, returnInEmptyLIKillsList);
 
   
   
