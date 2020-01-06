@@ -648,10 +648,8 @@ pref("apz.axis_lock.direct_pan_angle", "1.047197");
 pref("apz.content_response_timeout", 400);
 #ifdef NIGHTLY_BUILD
 pref("apz.drag.enabled", true);
-pref("apz.drag.initial.enabled", true);
 #else
 pref("apz.drag.enabled", false);
-pref("apz.drag.initial.enabled", false);
 #endif
 pref("apz.danger_zone_x", 50);
 pref("apz.danger_zone_y", 100);
@@ -905,6 +903,11 @@ pref("accessibility.AOM.enabled", false);
 
 pref("accessibility.delay_plugins", false);
 pref("accessibility.delay_plugin_time", 10000);
+
+
+#ifndef HAVE_64BIT_BUILD
+pref("accessibility.handler.enabled", true);
+#endif
 #endif
 
 pref("focusmanager.testmode", false);
