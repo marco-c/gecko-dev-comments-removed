@@ -24,16 +24,6 @@ void
 WebRenderCanvasRenderer::Initialize(const CanvasInitializeData& aData)
 {
   ShareableCanvasRenderer::Initialize(aData);
-
-  
-  if (!mGLContext || mGLFrontbuffer)
-    return;
-
-  gl::GLScreenBuffer* screen = mGLContext->Screen();
-  auto factory = MakeUnique<gl::SurfaceFactory_Basic>(mGLContext,
-                                                      screen->mCaps,
-                                                      mFlags);
-  screen->Morph(Move(factory));
 }
 
 WebRenderCanvasRendererSync::~WebRenderCanvasRendererSync()
