@@ -186,7 +186,20 @@ public:
                                     nsRestyleHint aRestyleHint);
   void ProcessPendingRestyles();
 
-  void UpdateAnimationStylesForHitTesting();
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void UpdateOnlyAnimationStyles();
 
   void ContentStateChanged(nsIContent* aContent, EventStates aStateMask);
   void AttributeWillChange(dom::Element* aElement,

@@ -550,7 +550,7 @@ GeckoRestyleManager::ProcessPendingRestyles()
     mHavePendingNonAnimationRestyles || mDoRebuildAllStyleData;
   if (haveNonAnimation) {
     ++mAnimationGeneration;
-    UpdateAnimationStyles();
+    UpdateOnlyAnimationStyles();
   } else {
     
     
@@ -642,7 +642,7 @@ GeckoRestyleManager::EndProcessingRestyles()
 }
 
 void
-GeckoRestyleManager::UpdateAnimationStyles()
+GeckoRestyleManager::UpdateOnlyAnimationStyles()
 {
   bool doCSS = PresContext()->EffectCompositor()->HasPendingStyleUpdates();
 
@@ -673,27 +673,6 @@ GeckoRestyleManager::UpdateAnimationStyles()
   if (doSMIL) {
     animationController->AddStyleUpdatesTo(tracker);
   }
-
-  ProcessRestyles(tracker);
-
-  transitionManager->SetInAnimationOnlyStyleUpdate(false);
-}
-
-void
-GeckoRestyleManager::UpdateAnimationStylesForHitTesting()
-{
-  MOZ_ASSERT(PresContext()->EffectCompositor()->HasThrottledStyleUpdates(),
-             "Should have throttled animation");
-
-  nsTransitionManager* transitionManager = PresContext()->TransitionManager();
-
-  transitionManager->SetInAnimationOnlyStyleUpdate(true);
-
-  RestyleTracker tracker(ELEMENT_HAS_PENDING_ANIMATION_ONLY_RESTYLE |
-                         ELEMENT_IS_POTENTIAL_ANIMATION_ONLY_RESTYLE_ROOT);
-  tracker.Init(this);
-
-  PresContext()->EffectCompositor()->AddStyleUpdatesTo(tracker);
 
   ProcessRestyles(tracker);
 

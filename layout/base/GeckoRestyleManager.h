@@ -239,8 +239,9 @@ public:
   
   
   
-  void UpdateAnimationStyles();
-  void UpdateAnimationStylesForHitTesting();
+  
+  
+  void UpdateOnlyAnimationStyles();
 
   
   
