@@ -439,6 +439,9 @@ private:
   bool UpdatePrincipal(nsIPrincipal* aPrincipal);
 
   
+  MediaCache* mMediaCache;
+
+  
   ChannelMediaResource*  mClient;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
