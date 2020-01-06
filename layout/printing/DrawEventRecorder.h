@@ -34,11 +34,15 @@ public:
   }
 
   void Close() {
-    Flush();
-    PR_Close(mFd);
-    mFd = nullptr;
-    mBuffer.reset();
-    mBufferPos = 0;
+    
+    
+    if (IsOpen()) {
+      Flush();
+      PR_Close(mFd);
+      mFd = nullptr;
+      mBuffer.reset();
+      mBufferPos = 0;
+    }
   }
 
   bool IsOpen() {
@@ -46,7 +50,6 @@ public:
   }
 
   void Flush() {
-    
     
     if (IsOpen() && mBufferPos > 0) {
       PR_Write(mFd, static_cast<const void*>(mBuffer.get()), mBufferPos);
