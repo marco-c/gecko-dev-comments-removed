@@ -35,25 +35,34 @@ try {
       let prefix = msg.data.prefix;
       let addonId = msg.data.addonId;
 
-      let conn = DebuggerServer.connectToParent(prefix, mm);
-      conn.parentMessageManager = mm;
-      connections.set(prefix, conn);
+      
+      
+      
+      
+      
+      
+      
+      Cu.blockThreadedExecution(() => {
+        let conn = DebuggerServer.connectToParent(prefix, mm);
+        conn.parentMessageManager = mm;
+        connections.set(prefix, conn);
 
-      let actor;
+        let actor;
 
-      if (addonId) {
-        const { WebExtensionChildActor } = require("devtools/server/actors/webextension");
-        actor = new WebExtensionChildActor(conn, chromeGlobal, prefix, addonId);
-      } else {
-        const { ContentActor } = require("devtools/server/actors/childtab");
-        actor = new ContentActor(conn, chromeGlobal, prefix);
-      }
+        if (addonId) {
+          const { WebExtensionChildActor } = require("devtools/server/actors/webextension");
+          actor = new WebExtensionChildActor(conn, chromeGlobal, prefix, addonId);
+        } else {
+          const { ContentActor } = require("devtools/server/actors/childtab");
+          actor = new ContentActor(conn, chromeGlobal, prefix);
+        }
 
-      let actorPool = new ActorPool(conn);
-      actorPool.addActor(actor);
-      conn.addActorPool(actorPool);
+        let actorPool = new ActorPool(conn);
+        actorPool.addActor(actor);
+        conn.addActorPool(actorPool);
 
-      sendAsyncMessage("debug:actor", {actor: actor.form(), prefix: prefix});
+        sendAsyncMessage("debug:actor", {actor: actor.form(), prefix: prefix});
+      });
     });
 
     addMessageListener("debug:connect", onConnect);
@@ -99,6 +108,8 @@ try {
         
         return;
       }
+
+      Cu.unblockThreadedExecution();
 
       removeMessageListener("debug:disconnect", onDisconnect);
       
