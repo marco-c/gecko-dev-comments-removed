@@ -474,10 +474,7 @@ nsresult
 HTMLFormElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mWantsWillHandleEvent = true;
-  
-  
-  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
-      aVisitor.mEvent->IsTrusted()) {
+  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this)) {
     uint32_t msg = aVisitor.mEvent->mMessage;
     if (msg == eFormSubmit) {
       if (mGeneratingSubmit) {
@@ -519,10 +516,7 @@ HTMLFormElement::WillHandleEvent(EventChainPostVisitor& aVisitor)
 nsresult
 HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 {
-  
-  
-  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
-      aVisitor.mEvent->IsTrusted()) {
+  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this)) {
     EventMessage msg = aVisitor.mEvent->mMessage;
     if (msg == eFormSubmit) {
       
