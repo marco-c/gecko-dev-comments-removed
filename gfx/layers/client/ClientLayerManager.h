@@ -17,6 +17,7 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/FocusTarget.h"  
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/PaintThread.h" 
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/layers/APZTestData.h" 
 #include "nsCOMPtr.h"                   
@@ -158,6 +159,7 @@ public:
   bool IsRepeatTransaction() { return mIsRepeatTransaction; }
 
   void SetTransactionIncomplete() { mTransactionIncomplete = true; }
+  void SetNeedTextureSyncOnPaintThread() { mTextureSyncOnPaintThread = true; }
 
   bool HasShadowTarget() { return !!mShadowTarget; }
 
@@ -349,6 +351,7 @@ private:
   bool mTransactionIncomplete;
   bool mCompositorMightResample;
   bool mNeedsComposite;
+  bool mTextureSyncOnPaintThread;
 
   
   

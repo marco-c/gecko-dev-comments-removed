@@ -100,6 +100,7 @@ ClientLayerManager::ClientLayerManager(nsIWidget* aWidget)
   , mTransactionIncomplete(false)
   , mCompositorMightResample(false)
   , mNeedsComposite(false)
+  , mTextureSyncOnPaintThread(false)
   , mPaintSequenceNumber(0)
   , mDeviceResetSequenceNumber(0)
   , mForwarder(new ShadowLayerForwarder(this))
@@ -358,6 +359,7 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   ClientLayer* root = ClientLayer::ToClientLayer(GetRoot());
 
   mTransactionIncomplete = false;
+  mTextureSyncOnPaintThread = false;
 
   
   
@@ -632,8 +634,8 @@ ClientLayerManager::MakeSnapshotIfRequired()
           RefPtr<DataSourceSurface> surf = GetSurfaceForDescriptor(outSnapshot);
           DrawTarget* dt = mShadowTarget->GetDrawTarget();
 
-          Rect dstRect(bounds.x, bounds.y, bounds.Width(), bounds.Height());
-          Rect srcRect(0, 0, bounds.Width(), bounds.Height());
+          Rect dstRect(bounds.x, bounds.y, bounds.width, bounds.height);
+          Rect srcRect(0, 0, bounds.width, bounds.height);
 
           gfx::Matrix rotate =
             ComputeTransformForUnRotation(outerBounds.ToUnknownRect(),
@@ -726,10 +728,16 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
 
   
   
+  
   if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
     if (mForwarder->GetSyncObject() &&
         mForwarder->GetSyncObject()->IsSyncObjectValid()) {
-      mForwarder->GetSyncObject()->Synchronize();
+      if (mTextureSyncOnPaintThread) {
+        
+        PaintThread::Get()->SynchronizePaintTextures(mForwarder->GetSyncObject());
+      } else {
+        mForwarder->GetSyncObject()->Synchronize();
+      }
     }
   }
 
