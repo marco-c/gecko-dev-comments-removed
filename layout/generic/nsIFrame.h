@@ -3330,15 +3330,10 @@ public:
   
   
   
-  
-  
-  
-  
   nsChangeHint UpdateStyleOfOwnedChildFrame(
     nsIFrame* aChildFrame,
     nsStyleContext* aNewStyleContext,
-    mozilla::ServoRestyleState& aRestyleState,
-    const Maybe<nsStyleContext*>& aContinuationStyleContext = Nothing());
+    mozilla::ServoRestyleState& aRestyleState);
 
   struct OwnedAnonBox
   {
