@@ -42,14 +42,14 @@ BEGIN_TEST(testGCUID)
     CHECK(!obj->zone()->hasUniqueId(obj));
 
     
-    CHECK(obj->zone()->getUniqueId(obj, &uid));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
     CHECK(uid > js::gc::LargestTaggedNullCellPointer);
 
     
     CHECK(obj->zone()->hasUniqueId(obj));
 
     
-    CHECK(obj->zone()->getUniqueId(obj, &tmp));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
     CHECK(uid == tmp);
 
     
@@ -58,7 +58,7 @@ BEGIN_TEST(testGCUID)
     CHECK(tenuredAddr != nurseryAddr);
     CHECK(!js::gc::IsInsideNursery(obj));
     CHECK(obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getUniqueId(obj, &tmp));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
     CHECK(uid == tmp);
 
     
@@ -76,7 +76,7 @@ BEGIN_TEST(testGCUID)
     MinimizeHeap(cx);
     CHECK(uintptr_t(obj.get()) == tenuredAddr);
     CHECK(!obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getUniqueId(obj, &tmp));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
     CHECK(uid != tmp);
     uid = tmp;
 
@@ -106,7 +106,7 @@ BEGIN_TEST(testGCUID)
     obj = vec2.back();
     CHECK(obj);
     tenuredAddr = uintptr_t(obj.get());
-    CHECK(obj->zone()->getUniqueId(obj, &uid));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
 
     
     
@@ -115,7 +115,7 @@ BEGIN_TEST(testGCUID)
     MinimizeHeap(cx);
     CHECK(uintptr_t(obj.get()) != tenuredAddr);
     CHECK(obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getUniqueId(obj, &tmp));
+    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
     CHECK(uid == tmp);
 
     return true;
