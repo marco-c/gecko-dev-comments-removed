@@ -286,8 +286,6 @@ loadListener.prototype = {
     Ci.nsIStreamListener,
     Ci.nsIChannelEventSink,
     Ci.nsIInterfaceRequestor,
-    
-    Ci.nsIHttpEventSink,
     Ci.nsIProgressEventSink
   ]),
 
@@ -338,9 +336,6 @@ loadListener.prototype = {
     return this.QueryInterface(aIID);
   },
 
-  
-  
-  onRedirect(aChannel, aNewChannel) {},
   
   onProgress(aRequest, aContext, aProgress, aProgressMax) {},
   onStatus(aRequest, aContext, aStatus, aStatusArg) {}

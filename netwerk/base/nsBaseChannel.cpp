@@ -12,7 +12,6 @@
 #include "nsIContentSniffer.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsMimeTypes.h"
-#include "nsIHttpEventSink.h"
 #include "nsIHttpChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIStreamConverterService.h"
@@ -132,8 +131,6 @@ nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
   }
 
   
-  
-  
 
   RefPtr<nsAsyncRedirectVerifyHelper> redirectCallbackHelper =
       new nsAsyncRedirectVerifyHelper();
@@ -158,23 +155,6 @@ nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
 nsresult
 nsBaseChannel::ContinueRedirect()
 {
-  
-  
-  
-  if (!(mRedirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL)) {
-    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface();
-    if (httpChannel) {
-      nsCOMPtr<nsIHttpEventSink> httpEventSink;
-      GetCallback(httpEventSink);
-      if (httpEventSink) {
-        nsresult rv = httpEventSink->OnRedirect(httpChannel, mRedirectChannel);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-      }
-    }
-  }
-
   
   mRedirectChannel->SetOriginalURI(OriginalURI());
 

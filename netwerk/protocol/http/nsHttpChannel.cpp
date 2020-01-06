@@ -76,7 +76,6 @@
 #include "nsICancelable.h"
 #include "nsIHttpChannelAuthProvider.h"
 #include "nsIHttpChannelInternal.h"
-#include "nsIHttpEventSink.h"
 #include "nsIPrompt.h"
 #include "nsInputStreamPump.h"
 #include "nsURLHelper.h"
@@ -3015,18 +3014,6 @@ nsHttpChannel::OpenRedirectChannel(nsresult rv)
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
     
-    nsCOMPtr<nsIHttpEventSink> httpEventSink;
-    GetCallback(httpEventSink);
-    if (httpEventSink) {
-        
-        
-        rv = httpEventSink->OnRedirect(this, mRedirectChannel);
-        if (NS_FAILED(rv)) {
-            return rv;
-        }
-    }
-
-    
     if (mLoadInfo && mLoadInfo->GetEnforceSecurity()) {
         MOZ_ASSERT(!mListenerContext, "mListenerContext should be null!");
         rv = mRedirectChannel->AsyncOpen2(mListener);
@@ -5793,16 +5780,6 @@ nsHttpChannel::ContinueProcessRedirection(nsresult rv)
     
     mRedirectChannel->SetOriginalURI(mOriginalURI);
 
-    
-    nsCOMPtr<nsIHttpEventSink> httpEventSink;
-    GetCallback(httpEventSink);
-    if (httpEventSink) {
-        
-        
-        rv = httpEventSink->OnRedirect(this, mRedirectChannel);
-        if (NS_FAILED(rv))
-            return rv;
-    }
     
     
 
