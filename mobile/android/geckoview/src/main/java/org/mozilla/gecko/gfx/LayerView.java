@@ -50,11 +50,7 @@ public class LayerView extends FrameLayout {
     private static AccessibilityManager sAccessibilityManager;
 
     private PanZoomController mPanZoomController;
-    private DynamicToolbarAnimator mToolbarAnimator;
     private FullScreenState mFullScreenState;
-
-    
-    private ImmutableViewportMetrics mViewportMetrics;
 
     
     private final Overscroll mOverscroll;
@@ -62,24 +58,6 @@ public class LayerView extends FrameLayout {
     private int mDefaultClearColor = Color.WHITE;
      GetPixelsResult mGetPixelsResult;
     private final List<DrawListener> mDrawListeners;
-
-    
-    
-    
-    
-     final static int STATIC_TOOLBAR_NEEDS_UPDATE      = 0;  
-     final static int STATIC_TOOLBAR_READY             = 1;  
-     final static int TOOLBAR_HIDDEN                   = 2;  
-     final static int TOOLBAR_VISIBLE                  = 3;  
-     final static int TOOLBAR_SHOW                     = 4;  
-     final static int FIRST_PAINT                      = 5;  
-     final static int REQUEST_SHOW_TOOLBAR_IMMEDIATELY = 6;  
-     final static int REQUEST_SHOW_TOOLBAR_ANIMATED    = 7;  
-     final static int REQUEST_HIDE_TOOLBAR_IMMEDIATELY = 8;  
-     final static int REQUEST_HIDE_TOOLBAR_ANIMATED    = 9;  
-     final static int LAYERS_UPDATED                   = 10; 
-     final static int TOOLBAR_SNAPSHOT_FAILED          = 11; 
-     final static int COMPOSITOR_CONTROLLER_OPEN       = 20; 
 
     private void postCompositorMessage(final int message) {
         ThreadUtils.postToUiThread(new Runnable() {
@@ -93,61 +71,6 @@ public class LayerView extends FrameLayout {
      boolean isCompositorReady() {
         ThreadUtils.assertOnUiThread();
         return mCompositor != null && mCompositor.isReady();
-    }
-
-     void handleToolbarAnimatorMessage(int message) {
-        switch (message) {
-            case STATIC_TOOLBAR_NEEDS_UPDATE:
-                
-                Bitmap bm = mToolbarAnimator.getBitmapOfToolbarChrome();
-                if (bm == null) {
-                    postCompositorMessage(TOOLBAR_SNAPSHOT_FAILED);
-                    break;
-                }
-                final int width = bm.getWidth();
-                final int height = bm.getHeight();
-                int[] pixels = new int[bm.getByteCount() / 4];
-                try {
-                    bm.getPixels(pixels,  0,  width,  0,  0, width, height);
-                    mCompositor.sendToolbarPixelsToCompositor(width, height, pixels);
-                } catch (Exception e) {
-                    Log.e(LOGTAG, "Caught exception while getting toolbar pixels from Bitmap: " + e.toString());
-                }
-                break;
-            case STATIC_TOOLBAR_READY:
-                
-                mToolbarAnimator.onToggleChrome(false);
-                adjustViewportSize();
-                postCompositorMessage(TOOLBAR_HIDDEN);
-                break;
-            case TOOLBAR_SHOW:
-                
-                mToolbarAnimator.onToggleChrome(true);
-                adjustViewportSize();
-                postCompositorMessage(TOOLBAR_VISIBLE);
-                break;
-            case FIRST_PAINT:
-                setSurfaceBackgroundColor(Color.TRANSPARENT);
-                break;
-            case LAYERS_UPDATED:
-                for (DrawListener listener : mDrawListeners) {
-                    listener.drawFinished();
-                }
-                break;
-            case COMPOSITOR_CONTROLLER_OPEN:
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mCompositor.setDefaultClearColor(mDefaultClearColor);
-                        mCompositor.enableLayerUpdateNotifications(!mDrawListeners.isEmpty());
-                        mToolbarAnimator.updateCompositor();
-                    }
-                });
-                break;
-            default:
-                Log.e(LOGTAG, "Unhandled Toolbar Animator Message: " + message);
-                break;
-        }
     }
 
      void onCompositorReady() {
@@ -172,14 +95,10 @@ public class LayerView extends FrameLayout {
     }
 
     public void initializeView() {
-        mToolbarAnimator = new DynamicToolbarAnimator(this);
         mPanZoomController = PanZoomController.Factory.create(this);
         if (mOverscroll != null) {
             mPanZoomController.setOverscrollHandler(mOverscroll);
         }
-
-        mViewportMetrics = new ImmutableViewportMetrics()
-                .setViewportSize(getWidth(), getHeight());
     }
 
     
@@ -281,11 +200,6 @@ public class LayerView extends FrameLayout {
     }
 
     public PanZoomController getPanZoomController() { return mPanZoomController; }
-    public DynamicToolbarAnimator getDynamicToolbarAnimator() { return mToolbarAnimator; }
-
-    public ImmutableViewportMetrics getViewportMetrics() {
-        return mViewportMetrics;
-    }
 
     public void setSurfaceBackgroundColor(int newColor) {
     }
@@ -326,8 +240,6 @@ public class LayerView extends FrameLayout {
         mCompositor = session.mCompositor;
         mCompositor.layerView = this;
 
-        mToolbarAnimator.notifyCompositorCreated(mCompositor);
-
         final NativePanZoomController npzc = (NativePanZoomController) mPanZoomController;
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
@@ -344,31 +256,10 @@ public class LayerView extends FrameLayout {
         return isCompositorReady() ? mCompositor : null;
     }
 
-    private void adjustViewportSize() {
-        final IntSize viewportSize = mToolbarAnimator.getViewportSize();
-
-        if (mViewportMetrics.viewportRectWidth == viewportSize.width &&
-            mViewportMetrics.viewportRectHeight == viewportSize.height) {
-            return;
-        }
-
-        mViewportMetrics = mViewportMetrics.setViewportSize(viewportSize.width,
-                                                            viewportSize.height);
-    }
-
      void onSizeChanged(int width, int height) {
-        adjustViewportSize();
-
         if (mOverscroll != null) {
             mOverscroll.setSize(width, height);
         }
-    }
-
-     void onMetricsChanged(final float scrollX, final float scrollY,
-                                        final float zoom) {
-        mViewportMetrics = mViewportMetrics.setViewportOrigin(scrollX, scrollY)
-                                           .setZoomFactor(zoom);
-        mToolbarAnimator.onMetricsChanged(mViewportMetrics);
     }
 
     @RobocopTarget
@@ -424,24 +315,12 @@ public class LayerView extends FrameLayout {
         public void drawFinished();
     }
 
-    public float getZoomFactor() {
-        return getViewportMetrics().zoomFactor;
-    }
-
     public void setFullScreenState(FullScreenState state) {
         mFullScreenState = state;
     }
 
     public boolean isFullScreen() {
         return mFullScreenState != FullScreenState.NONE;
-    }
-
-    public void setMaxToolbarHeight(int maxHeight) {
-        mToolbarAnimator.setMaxToolbarHeight(maxHeight);
-    }
-
-    public int getCurrentToolbarHeight() {
-        return mToolbarAnimator.getCurrentToolbarHeight();
     }
 
     public void setClearColor(final int color) {
