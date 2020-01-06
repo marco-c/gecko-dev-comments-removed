@@ -36,7 +36,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/InputAPZContext.h"
-#include "mozilla/layers/PLayerTransactionChild.h"
+#include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layout/RenderFrameChild.h"
@@ -2915,7 +2915,7 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
       gfx::VRManagerChild::IdentifyTextureHost(mTextureFactoryIdentifier);
       InitAPZState();
     } else {
-      
+      NS_WARNING("Fallback to BasicLayerManager");
       mLayersConnected = Some(false);
     }
 
@@ -2952,6 +2952,15 @@ TabChild::CreateRemoteLayerManager(mozilla::layers::PCompositorBridgeChild* aCom
       success = true;
     }
     if (!success) {
+      
+      
+      
+      
+      
+      if (shadowManager) {
+        static_cast<LayerTransactionChild*>(shadowManager)->Destroy();
+        shadowManager = nullptr;
+      }
       NS_WARNING("failed to allocate layer transaction");
     } else {
       success = mPuppetWidget->CreateRemoteLayerManager([&] (LayerManager* aLayerManager) -> bool {
@@ -3299,7 +3308,9 @@ TabChild::ReinitRenderingForDeviceReset()
       fwd->SynchronouslyShutdown();
     }
   } else {
-    return;
+    if (mLayersConnected.isNothing()) {
+      return;
+    }
   }
 
   
