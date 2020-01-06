@@ -110,9 +110,7 @@ function getPromptState(ui) {
   state.defButton1 = isDefaultButton(ui.button1);
   state.defButton2 = isDefaultButton(ui.button2);
 
-  let fm = Cc["@mozilla.org/focus-manager;1"].
-           getService(Ci.nsIFocusManager);
-  let e = fm.focusedElement;
+  let e = Services.focus.focusedElement;
 
   if (e == null) {
     state.focused = null;
@@ -202,10 +200,8 @@ function dismissPrompt(ui, action) {
 function getDialogDoc() {
   
   
-  var wm = Cc["@mozilla.org/appshell/window-mediator;1"].
-           getService(Ci.nsIWindowMediator);
   
-  var enumerator = wm.getXULWindowEnumerator(null);
+  var enumerator = Services.wm.getXULWindowEnumerator(null);
 
   while (enumerator.hasMoreElements()) {
     var win = enumerator.getNext();
@@ -230,9 +226,7 @@ function getDialogDoc() {
 
         
         
-        let fm = Cc["@mozilla.org/focus-manager;1"].
-                 getService(Ci.nsIFocusManager);
-        if (fm.focusedWindow != childDoc.defaultView)
+        if (Services.focus.focusedWindow != childDoc.defaultView)
           continue;
 
         return childDoc;

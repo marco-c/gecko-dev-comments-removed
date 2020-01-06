@@ -28,7 +28,7 @@ function* tests() {
   try {
     
     let testfile = do_get_file("formhistory_v999a.sqlite");
-    let profileDir = dirSvc.get("ProfD", Ci.nsIFile);
+    let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
 
     
     let destFile = profileDir.clone();

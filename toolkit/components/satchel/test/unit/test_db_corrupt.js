@@ -7,7 +7,7 @@ var bakFile;
 function run_test() {
   
   let testfile = do_get_file("formhistory_CORRUPT.sqlite");
-  let profileDir = dirSvc.get("ProfD", Ci.nsIFile);
+  let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
 
   
   let destFile = profileDir.clone();

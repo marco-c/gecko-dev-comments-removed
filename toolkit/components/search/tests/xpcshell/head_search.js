@@ -24,6 +24,7 @@ const MODE_TRUNCATE = FileUtils.MODE_TRUNCATE;
 const CACHE_FILENAME = "search.json.mozlz4";
 
 
+
 var XULRuntime = Components.classesByID["{95d89e3e-a169-41a3-8e56-719978e15b12}"]
                            .getService(Ci.nsIXULRuntime);
 
