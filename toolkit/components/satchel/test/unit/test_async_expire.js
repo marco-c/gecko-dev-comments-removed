@@ -2,8 +2,7 @@
 
 
 
-var dbFile, oldSize;
-var currentTestIndex = 0;
+var dbFile;
 
 function triggerExpiration() {
   
