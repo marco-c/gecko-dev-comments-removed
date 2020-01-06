@@ -26,6 +26,8 @@
 #endif
 
 #include "nsAutoPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIRunnable.h"
 #include "nsThreadUtils.h"
 
 class nsIThread;
@@ -112,12 +114,12 @@ public:
   
   
 
-  void PostTask(already_AddRefed<mozilla::Runnable> task);
+  void PostTask(already_AddRefed<nsIRunnable> task);
 
-  void PostDelayedTask(already_AddRefed<mozilla::Runnable> task, int delay_ms);
+  void PostDelayedTask(already_AddRefed<nsIRunnable> task, int delay_ms);
 
   
-  void PostIdleTask(already_AddRefed<mozilla::Runnable> task);
+  void PostIdleTask(already_AddRefed<nsIRunnable> task);
 
   
   void Run();
@@ -282,12 +284,12 @@ public:
 
   
   struct PendingTask {
-    RefPtr<mozilla::Runnable> task;    
+    nsCOMPtr<nsIRunnable> task;        
     base::TimeTicks delayed_run_time;  
     int sequence_num;                  
     bool nestable;                     
 
-    PendingTask(already_AddRefed<mozilla::Runnable> aTask, bool aNestable)
+    PendingTask(already_AddRefed<nsIRunnable> aTask, bool aNestable)
         : task(aTask), sequence_num(0), nestable(aNestable) {
     }
 
@@ -355,10 +357,10 @@ public:
   
   
   
-  bool QueueOrRunTask(already_AddRefed<mozilla::Runnable> new_task);
+  bool QueueOrRunTask(already_AddRefed<nsIRunnable> new_task);
 
   
-  void RunTask(already_AddRefed<mozilla::Runnable> task);
+  void RunTask(already_AddRefed<nsIRunnable> task);
 
   
   
@@ -378,7 +380,7 @@ public:
   bool DeletePendingTasks();
 
   
-  void PostTask_Helper(already_AddRefed<mozilla::Runnable> task, int delay_ms);
+  void PostTask_Helper(already_AddRefed<nsIRunnable> task, int delay_ms);
 
   
   virtual bool DoWork() override;
