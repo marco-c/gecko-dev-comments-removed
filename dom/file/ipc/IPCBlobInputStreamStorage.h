@@ -9,7 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
-#include "nsISupportsImpl.h"
+#include "nsIObserver.h"
 
 class nsIInputStream;
 struct nsID;
@@ -19,10 +19,11 @@ namespace dom {
 
 class IPCBlobInputStreamParentCallback;
 
-class IPCBlobInputStreamStorage final
+class IPCBlobInputStreamStorage final : public nsIObserver
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamStorage);
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
   
   static void
@@ -32,7 +33,7 @@ public:
   Get();
 
   void
-  AddStream(nsIInputStream* aInputStream, const nsID& aID);
+  AddStream(nsIInputStream* aInputStream, const nsID& aID, uint64_t aChildID);
 
   void
   ForgetStream(const nsID& aID);
@@ -54,6 +55,10 @@ private:
   {
     nsCOMPtr<nsIInputStream> mInputStream;
     RefPtr<IPCBlobInputStreamParentCallback> mCallback;
+
+    
+    
+    uint64_t mChildID;
   };
 
   nsClassHashtable<nsIDHashKey, StreamData> mStorage;
