@@ -20,11 +20,30 @@ let webpackConfig = {
   },
 
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.(png|svg)$/,
         loader: "file-loader?name=[path][name].[ext]",
       },
+      {
+        
+
+
+
+
+
+
+
+        test: /\.js/,
+        loader: "rewrite-raw",
+      },
+    ]
+  },
+
+  resolveLoader: {
+    modules: [
+      path.resolve("./node_modules"),
+      path.resolve("./webpack"),
     ]
   },
 
@@ -61,6 +80,7 @@ webpackConfig.resolve = {
     "devtools/client/locales": path.join(__dirname, "../../client/locales/en-US"),
     "toolkit/locales": path.join(__dirname, "../../../toolkit/locales/en-US"),
     "devtools/shared/locales": path.join(__dirname, "../../shared/locales/en-US"),
+    "devtools/shim/locales": path.join(__dirname, "../../shared/locales/en-US"),
     "devtools/shared/plural-form": path.join(__dirname, "../../shared/plural-form"),
     "devtools/shared/l10n": path.join(__dirname, "../../shared/l10n"),
     "devtools/shared/system": path.join(projectPath, "system-stub"),
@@ -116,19 +136,18 @@ const mappings = [
 webpackConfig.plugins = mappings.map(([regex, res]) =>
   new NormalModuleReplacementPlugin(regex, res));
 
-
 const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
 const baseName = path.basename(__dirname);
-webpackConfig.babelExcludes = new RegExp(`^${basePath}(.(?!${baseName}))*$`);
 
-let config = toolboxConfig(webpackConfig, getConfig());
-
-
-
-
+let config = toolboxConfig(webpackConfig, getConfig(), {
+  
+  babelExcludes: new RegExp(`^${basePath}(.(?!${baseName}))*$`)
+});
 
 
-config.module.loaders = config.module.loaders
-  .filter((loader) => !["svg-inline", "raw"].includes(loader.loader));
+
+
+config.module.rules = config.module.rules
+  .filter((rule) => !["svg-inline-loader"].includes(rule.loader));
 
 module.exports = config;
