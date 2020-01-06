@@ -343,7 +343,7 @@ AllowOperation(int aReqFlags, int aPerms)
 static bool
 AllowAccess(int aReqFlags, int aPerms)
 {
-  if (aReqFlags & ~(R_OK|W_OK|F_OK)) {
+  if (aReqFlags & ~(R_OK|W_OK|X_OK|F_OK)) {
     return false;
   }
   int needed = 0;
@@ -662,17 +662,7 @@ SandboxBroker::ThreadMain(void)
 
       case SANDBOX_FILE_ACCESS:
         if (permissive || AllowAccess(req.mFlags, perms)) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (stat(pathBuf, (struct stat*)&respBuf) == 0) {
+          if (access(pathBuf, req.mFlags) == 0) {
             resp.mError = 0;
           } else {
             resp.mError = -errno;
