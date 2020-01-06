@@ -105,7 +105,7 @@ function test() {
     return;
   }
 
-  let data = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject.data.code;
+  let data = Cc["@mozilla.org/test/startuprecorder;1"].getService().wrappedJSObject.data;
   
   
   for (let phase in data) {
