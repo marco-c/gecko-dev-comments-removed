@@ -52,6 +52,12 @@ class CollectionValidator {
     this.name = name;
     this.props = props;
     this.idProp = idProp;
+
+    
+    
+    
+    
+    this.ignoresMissingClients = false;
   }
 
   
@@ -177,7 +183,7 @@ class CollectionValidator {
       if (!client && !server) {
         throw new Error("Impossible: no client or server record for " + id);
       } else if (server && !client) {
-        if (server.understood) {
+        if (!this.ignoresMissingClients && server.understood) {
           problems.clientMissing.push(id);
         }
       } else if (client && !server) {
