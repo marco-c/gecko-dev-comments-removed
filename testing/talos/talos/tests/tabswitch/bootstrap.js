@@ -165,9 +165,8 @@ function loadTPSContentScript(browser) {
         Services.profiler.AddMarker("Content saw transaction id: " + event.transactionId);
         if (event.transactionId > lastTransactionId) {
           Services.profiler.AddMarker("Content saw correct MozAfterPaint");
-          sendAsyncMessage("TPS:ContentSawPaint", {
-            time: Date.now().valueOf(),
-          });
+          let time = Math.floor(content.performance.timing.navigationStart + content.performance.now());
+          sendAsyncMessage("TPS:ContentSawPaint", { time });
           removeEventListener("MozAfterPaint", onPaint);
         }
       });
@@ -192,6 +191,7 @@ function loadTPSContentScript(browser) {
 function switchToTab(tab) {
   let browser = tab.linkedBrowser;
   let gBrowser = tab.ownerGlobal.gBrowser;
+  let window = tab.ownerGlobal;
 
   
   
@@ -205,7 +205,7 @@ function switchToTab(tab) {
       
       
       yield loadTPSContentScript(browser);
-      let start = Date.now().valueOf();
+      let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
       TalosParentProfiler.resume("start (" + start + "): " + browser.currentURI.spec);
 
       
@@ -229,7 +229,7 @@ function switchToTab(tab) {
     let winUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
                       .getInterface(Ci.nsIDOMWindowUtils);
 
-    let start = Date.now().valueOf();
+    let start = Math.floor(window.performance.timing.navigationStart + window.performance.now());
     TalosParentProfiler.resume("start (" + start + "): " + browser.currentURI.spec);
 
     
@@ -318,7 +318,8 @@ function waitForContentPresented(browser, lastTransactionId) {
         if (event.transactionId > lastTransactionId) {
           win.removeEventListener("MozAfterPaint", onPaint);
           TalosParentProfiler.mark("Content saw MozAfterPaint");
-          resolve(Date.now().valueOf());
+          let time = Math.floor(win.performance.timing.navigationStart + win.performance.now());
+          resolve(time);
         }
       }
     });
