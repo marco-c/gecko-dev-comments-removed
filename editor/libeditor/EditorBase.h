@@ -213,6 +213,23 @@ private:
 
 
 
+enum class SplitAtEdges
+{
+  
+  
+  
+  eDoNotCreateEmptyContainer,
+  
+  
+  
+  eAllowToCreateEmptyContainer
+};
+
+
+
+
+
+
 
 
 
@@ -1130,11 +1147,9 @@ public:
 
   nsresult IsPreformatted(nsIDOMNode* aNode, bool* aResult);
 
-  enum class EmptyContainers { no, yes };
   int32_t SplitNodeDeep(nsIContent& aNode, nsIContent& aSplitPointParent,
                         int32_t aSplitPointOffset,
-                        EmptyContainers aEmptyContainers =
-                          EmptyContainers::yes,
+                        SplitAtEdges aSplitAtEdges,
                         nsIContent** outLeftNode = nullptr,
                         nsIContent** outRightNode = nullptr,
                         nsCOMPtr<nsIContent>* ioChildAtSplitPointOffset =
