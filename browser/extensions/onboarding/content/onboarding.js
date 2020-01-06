@@ -800,7 +800,6 @@ class Onboarding {
     
     div.innerHTML = `
       <div id="onboarding-overlay-dialog">
-        <button id="onboarding-overlay-close-btn" class="onboarding-close-btn"></button>
         <header id="onboarding-header"></header>
         <nav>
           <ul id="onboarding-tour-list"></ul>
@@ -808,6 +807,7 @@ class Onboarding {
         <footer id="onboarding-footer">
           <input type="checkbox" id="onboarding-tour-hidden-checkbox" /><label for="onboarding-tour-hidden-checkbox"></label>
         </footer>
+        <button id="onboarding-overlay-close-btn" class="onboarding-close-btn"></button>
       </div>
     `;
 
