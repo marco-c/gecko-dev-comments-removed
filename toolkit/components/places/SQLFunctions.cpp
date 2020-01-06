@@ -776,6 +776,40 @@ namespace places {
 
   
   nsresult
+  IsValidGUIDFunction::create(mozIStorageConnection *aDBConn)
+  {
+    RefPtr<IsValidGUIDFunction> function = new IsValidGUIDFunction();
+    return aDBConn->CreateFunction(
+      NS_LITERAL_CSTRING("is_valid_guid"), 1, function
+    );
+  }
+
+  NS_IMPL_ISUPPORTS(
+    IsValidGUIDFunction,
+    mozIStorageFunction
+  )
+
+  NS_IMETHODIMP
+  IsValidGUIDFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
+                                      nsIVariant **_result)
+  {
+    
+    MOZ_ASSERT(aArguments);
+
+    nsAutoCString guid;
+    aArguments->GetUTF8String(0, guid);
+
+    RefPtr<nsVariant> result = new nsVariant();
+    result->SetAsBool(IsValidGUID(guid));
+    result.forget(_result);
+    return NS_OK;
+  }
+
+
+
+
+  
+  nsresult
   GetUnreversedHostFunction::create(mozIStorageConnection *aDBConn)
   {
     RefPtr<GetUnreversedHostFunction> function = new GetUnreversedHostFunction();

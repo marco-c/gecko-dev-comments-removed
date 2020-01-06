@@ -247,6 +247,29 @@ private:
 
 
 
+class IsValidGUIDFunction final : public mozIStorageFunction
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection *aDBConn);
+private:
+  ~IsValidGUIDFunction() {}
+};
+
+
+
+
+
+
+
 
 
 class GetUnreversedHostFunction final : public mozIStorageFunction
