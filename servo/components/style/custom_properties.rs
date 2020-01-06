@@ -13,7 +13,7 @@ use properties::{CSSWideKeyword, DeclaredValue};
 use selectors::parser::SelectorParseError;
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, hash_map, HashSet};
 use std::fmt;
 use style_traits::{HasViewportPercentage, ToCss, StyleParseError, ParseError};
 use stylearc::Arc;
@@ -92,7 +92,65 @@ impl ToCss for ComputedValue {
 
 
 
-pub type ComputedValuesMap = HashMap<Name, ComputedValue>;
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct CustomPropertiesMap {
+    
+    index: Vec<Name>,
+    
+    values: HashMap<Name, ComputedValue>,
+}
+
+impl CustomPropertiesMap {
+    
+    pub fn new() -> Self {
+        CustomPropertiesMap {
+            index: Vec::new(),
+            values: HashMap::new(),
+        }
+    }
+
+    
+    pub fn insert(&mut self, name: &Name, value: ComputedValue) {
+        debug_assert!(!self.index.contains(name));
+        self.index.push(name.clone());
+        self.values.insert(name.clone(), value);
+    }
+
+    
+    pub fn get_computed_value(&self, name: &Name) -> Option<&ComputedValue> {
+        let value = self.values.get(name);
+        debug_assert_eq!(value.is_some(), self.index.contains(name));
+        value
+    }
+
+    
+    pub fn get_name_at(&self, index: u32) -> Option<&Name> {
+        self.index.get(index as usize)
+    }
+
+    
+    pub fn iter(&self) -> hash_map::Iter<Name, ComputedValue> {
+        self.values.iter()
+    }
+
+    
+    pub fn len(&self) -> usize {
+        debug_assert_eq!(self.values.len(), self.index.len());
+        self.values.len()
+    }
+}
+
+impl Eq for CustomPropertiesMap {}
+impl PartialEq for CustomPropertiesMap {
+    fn eq(&self, other: &CustomPropertiesMap) -> bool {
+        self.values == other.values && self.index == other.index
+    }
+}
 
 impl ComputedValue {
     fn empty() -> ComputedValue {
@@ -335,7 +393,7 @@ fn parse_var_function<'i, 't>(input: &mut Parser<'i, 't>,
 
 
 pub fn cascade<'a>(custom_properties: &mut Option<HashMap<&'a Name, BorrowedSpecifiedValue<'a>>>,
-                   inherited: &'a Option<Arc<HashMap<Name, ComputedValue>>>,
+                   inherited: &'a Option<Arc<CustomPropertiesMap>>,
                    seen: &mut HashSet<&'a Name>,
                    name: &'a Name,
                    specified_value: DeclaredValue<'a, Box<SpecifiedValue>>) {
@@ -388,8 +446,8 @@ pub fn cascade<'a>(custom_properties: &mut Option<HashMap<&'a Name, BorrowedSpec
 
 
 pub fn finish_cascade(specified_values_map: Option<HashMap<&Name, BorrowedSpecifiedValue>>,
-                      inherited: &Option<Arc<HashMap<Name, ComputedValue>>>)
-                      -> Option<Arc<HashMap<Name, ComputedValue>>> {
+                      inherited: &Option<Arc<CustomPropertiesMap>>)
+                      -> Option<Arc<CustomPropertiesMap>> {
     if let Some(mut map) = specified_values_map {
         remove_cycles(&mut map);
         Some(Arc::new(substitute_all(map, inherited)))
@@ -445,18 +503,19 @@ fn remove_cycles(map: &mut HashMap<&Name, BorrowedSpecifiedValue>) {
 
 
 fn substitute_all(specified_values_map: HashMap<&Name, BorrowedSpecifiedValue>,
-                  inherited: &Option<Arc<HashMap<Name, ComputedValue>>>)
-                  -> HashMap<Name, ComputedValue> {
-    let mut computed_values_map = HashMap::new();
+                  inherited: &Option<Arc<CustomPropertiesMap>>)
+                  -> CustomPropertiesMap {
+    let mut custom_properties_map = CustomPropertiesMap::new();
     let mut invalid = HashSet::new();
     for (&name, value) in &specified_values_map {
         
         
         let _ = substitute_one(
             name, value, &specified_values_map, inherited, None,
-            &mut computed_values_map, &mut invalid);
+            &mut custom_properties_map, &mut invalid);
     }
-    computed_values_map
+
+    custom_properties_map
 }
 
 
@@ -466,12 +525,12 @@ fn substitute_all(specified_values_map: HashMap<&Name, BorrowedSpecifiedValue>,
 fn substitute_one(name: &Name,
                   specified_value: &BorrowedSpecifiedValue,
                   specified_values_map: &HashMap<&Name, BorrowedSpecifiedValue>,
-                  inherited: &Option<Arc<HashMap<Name, ComputedValue>>>,
+                  inherited: &Option<Arc<CustomPropertiesMap>>,
                   partial_computed_value: Option<&mut ComputedValue>,
-                  computed_values_map: &mut HashMap<Name, ComputedValue>,
+                  custom_properties_map: &mut CustomPropertiesMap,
                   invalid: &mut HashSet<Name>)
                   -> Result<TokenSerializationType, ()> {
-    if let Some(computed_value) = computed_values_map.get(name) {
+    if let Some(computed_value) = custom_properties_map.get_computed_value(&name) {
         if let Some(partial_computed_value) = partial_computed_value {
             partial_computed_value.push_variable(computed_value)
         }
@@ -491,7 +550,7 @@ fn substitute_one(name: &Name,
             &mut |name, partial_computed_value| {
                 if let Some(other_specified_value) = specified_values_map.get(name) {
                     substitute_one(name, other_specified_value, specified_values_map, inherited,
-                                   Some(partial_computed_value), computed_values_map, invalid)
+                                   Some(partial_computed_value), custom_properties_map, invalid)
                 } else {
                     Err(())
                 }
@@ -502,7 +561,7 @@ fn substitute_one(name: &Name,
             partial_computed_value
         } else {
             
-            if let Some(inherited_value) = inherited.as_ref().and_then(|i| i.get(name)) {
+            if let Some(inherited_value) = inherited.as_ref().and_then(|i| i.values.get(name)) {
                 inherited_value.clone()
             } else {
                 invalid.insert(name.clone());
@@ -521,7 +580,7 @@ fn substitute_one(name: &Name,
         partial_computed_value.push_variable(&computed_value)
     }
     let last_token_type = computed_value.last_token_type;
-    computed_values_map.insert(name.clone(), computed_value);
+    custom_properties_map.insert(name, computed_value);
     Ok(last_token_type)
 }
 
@@ -616,7 +675,7 @@ fn substitute_block<'i, 't, F>(input: &mut Parser<'i, 't>,
 
 
 pub fn substitute<'i>(input: &'i str, first_token_type: TokenSerializationType,
-                      computed_values_map: &Option<Arc<HashMap<Name, ComputedValue>>>)
+                      computed_values_map: &Option<Arc<CustomPropertiesMap>>)
                       -> Result<String, ParseError<'i>> {
     let mut substituted = ComputedValue::empty();
     let mut input = ParserInput::new(input);
@@ -624,7 +683,7 @@ pub fn substitute<'i>(input: &'i str, first_token_type: TokenSerializationType,
     let mut position = (input.position(), first_token_type);
     let last_token_type = substitute_block(
         &mut input, &mut position, &mut substituted, &mut |name, substituted| {
-            if let Some(value) = computed_values_map.as_ref().and_then(|map| map.get(name)) {
+            if let Some(value) = computed_values_map.as_ref().and_then(|map| map.get_computed_value(name)) {
                 substituted.push_variable(value);
                 Ok(value.last_token_type)
             } else {
