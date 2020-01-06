@@ -640,11 +640,6 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 pref("media.cubeb.logging_level", "");
 
-#ifdef NIGHTLY_BUILD
-
-pref("media.cubeb.sandbox", true);
-#endif
-
 
 pref("media.playback.warnings-as-errors", false);
 
