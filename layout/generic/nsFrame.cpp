@@ -893,7 +893,7 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
   
   
   
-  if (aOldLayers) {
+  if (aOldLayers && aFrame->HasImageRequest()) {
     CompareLayers(aOldLayers, aNewLayers,
       [&imageLoader, aFrame](imgRequestProxy* aReq)
       { imageLoader->DisassociateRequestFromFrame(aReq, aFrame); }
