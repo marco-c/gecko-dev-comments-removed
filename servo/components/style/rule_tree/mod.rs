@@ -1211,15 +1211,15 @@ impl StrongRuleNode {
             for node in element_rule_node.self_and_ancestors() {
                 let source = node.style_source();
                 let declarations = if source.is_some() {
-                    source.read(node.cascade_level().guard(guards)).declarations()
+                    source.read(node.cascade_level().guard(guards)).declaration_importance_iter()
                 } else {
                     continue
                 };
 
                 
                 let node_importance = node.importance();
-                let longhands = declarations.iter().rev()
-                    .filter_map(|&(ref declaration, importance)| {
+                let longhands = declarations.rev()
+                    .filter_map(|(declaration, importance)| {
                         if importance != node_importance { return None }
                         match declaration.id() {
                             PropertyDeclarationId::Longhand(id) => {
@@ -1329,9 +1329,8 @@ impl StrongRuleNode {
         let mut result = (LonghandIdSet::new(), false);
         for node in iter {
             let style = node.style_source();
-            for &(ref decl, important) in style.read(node.cascade_level().guard(guards))
-                                               .declarations()
-                                               .iter() {
+            for (decl, important) in style.read(node.cascade_level().guard(guards))
+                                               .declaration_importance_iter() {
                 
                 
                 
