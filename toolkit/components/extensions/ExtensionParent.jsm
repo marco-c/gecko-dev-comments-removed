@@ -1114,9 +1114,9 @@ let IconDetails = {
     let result = {};
 
     try {
-      if (details.imageData) {
-        let imageData = details.imageData;
+      let {imageData, path, themeIcons} = details;
 
+      if (imageData) {
         if (typeof imageData == "string") {
           imageData = {"19": imageData};
         }
@@ -1129,13 +1129,12 @@ let IconDetails = {
         }
       }
 
-      if (details.path) {
-        let path = details.path;
+      let baseURI = context ? context.uri : extension.baseURI;
+
+      if (path) {
         if (typeof path != "object") {
           path = {"19": path};
         }
-
-        let baseURI = context ? context.uri : extension.baseURI;
 
         for (let size of Object.keys(path)) {
           if (!INTEGER.test(size)) {
@@ -1148,16 +1147,27 @@ let IconDetails = {
           
           
           
-          try {
-            Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
-              extension.principal, url,
-              Services.scriptSecurityManager.DISALLOW_SCRIPT);
-          } catch (e) {
-            throw new ExtensionError(`Illegal URL ${url}`);
-          }
+          this._checkURL(url, extension.principal);
 
           result[size] = url;
         }
+      }
+
+      if (themeIcons) {
+        themeIcons.forEach(({size, light, dark}) => {
+          let lightURL = baseURI.resolve(light);
+          let darkURL = baseURI.resolve(dark);
+
+          this._checkURL(lightURL, extension.principal);
+          this._checkURL(darkURL, extension.principal);
+
+          let defaultURL = result[size];
+          result[size] = {
+            "default": defaultURL || lightURL, 
+            "light": lightURL,
+            "dark": darkURL,
+          };
+        });
       }
     } catch (e) {
       
@@ -1171,6 +1181,18 @@ let IconDetails = {
     }
 
     return result;
+  },
+
+  
+  
+  _checkURL(url, principal) {
+    try {
+      Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+        principal, url,
+        Services.scriptSecurityManager.DISALLOW_SCRIPT);
+    } catch (e) {
+      throw new ExtensionError(`Illegal URL ${url}`);
+    }
   },
 
   
