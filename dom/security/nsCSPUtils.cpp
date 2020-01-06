@@ -281,6 +281,15 @@ CSP_CreateHostSrcFromSelfURI(nsIURI* aSelfURI)
   aSelfURI->GetScheme(scheme);
   hostsrc->setScheme(NS_ConvertUTF8toUTF16(scheme));
 
+  
+  
+  
+  if (host.EqualsLiteral("")) {
+    hostsrc->setIsUniqueOrigin();
+    
+    return hostsrc;
+  }
+
   int32_t port;
   aSelfURI->GetPort(&port);
   
@@ -523,6 +532,7 @@ nsCSPSchemeSrc::toString(nsAString& outStr) const
 nsCSPHostSrc::nsCSPHostSrc(const nsAString& aHost)
   : mHost(aHost)
   , mGeneratedFromSelfKeyword(false)
+  , mIsUniqueOrigin(false)
   , mWithinFrameAncstorsDir(false)
 {
   ToLowerCase(mHost);
@@ -624,7 +634,7 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
                  aUri->GetSpecOrDefault().get()));
   }
 
-  if (mInvalidated) {
+  if (mInvalidated || mIsUniqueOrigin) {
     return false;
   }
 
