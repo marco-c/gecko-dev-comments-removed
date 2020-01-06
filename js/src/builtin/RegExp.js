@@ -281,32 +281,25 @@ function RegExpReplace(string, replaceValue) {
 
         
         if (global) {
-            
-            var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
-
             if (functionalReplace) {
                 
                 
                 if (lengthS > 5000) {
                     var elemBase = GetElemBaseForLambda(replaceValue);
                     if (IsObject(elemBase)) {
-                        return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue,
-                                                              fullUnicode, elemBase);
+                        return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue, flags,
+                                                              elemBase);
                     }
                 }
-                return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue,
-                                                  fullUnicode);
+                return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue, flags);
             }
             if (firstDollarIndex !== -1) {
-                return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue,
-                                                   fullUnicode, firstDollarIndex);
+                return RegExpGlobalReplaceOptSubst(rx, S, lengthS, replaceValue, flags,
+                                                   firstDollarIndex);
             }
-            if (lengthS < 0x7fff) {
-                return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue,
-                                                   fullUnicode);
-            }
-            return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue,
-                                          fullUnicode);
+            if (lengthS < 0x7fff)
+                return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags);
+            return RegExpGlobalReplaceOpt(rx, S, lengthS, replaceValue, flags);
         }
 
         if (functionalReplace)
@@ -537,8 +530,11 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
 
 
 
-function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, fullUnicode)
+function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue, flags)
 {
+    
+    var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+
     
     var lastIndex = 0;
     rx.lastIndex = 0;

@@ -18,7 +18,7 @@
 
 
 
-function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
+function FUNC_NAME(rx, S, lengthS, replaceValue, flags
 #ifdef SUBSTITUTION
                    , firstDollarIndex
 #endif
@@ -28,6 +28,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
                   )
 {
     
+    var fullUnicode = !!(flags & REGEXP_UNICODE_FLAG);
+
+    
     var lastIndex = 0;
     rx.lastIndex = 0;
 
@@ -35,7 +38,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
     
     
     var originalSource = UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT);
-    var originalFlags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
+    var originalFlags = flags;
 #endif
 
     
