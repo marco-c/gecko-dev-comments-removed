@@ -58,6 +58,8 @@ task_description_schema = Schema({
 
     
     
+    
+    
     Optional('scopes'): [basestring],
 
     
@@ -950,11 +952,12 @@ def add_index_routes(config, tasks):
 @transforms.add
 def build_task(config, tasks):
     for task in tasks:
-        worker_type = task['worker-type'].format(level=str(config.params['level']))
+        level = str(config.params['level'])
+        worker_type = task['worker-type'].format(level=level)
         provisioner_id, worker_type = worker_type.split('/', 1)
 
         routes = task.get('routes', [])
-        scopes = task.get('scopes', [])
+        scopes = [s.format(level=level) for s in task.get('scopes', [])]
 
         
         extra = task.get('extra', {})

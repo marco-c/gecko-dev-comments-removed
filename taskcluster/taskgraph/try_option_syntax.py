@@ -595,8 +595,8 @@ class TryOptionSyntax(object):
             
             
             
-            if self.jobs and job_try_name not in self.jobs:
-                return False
+            if self.jobs:
+                return job_try_name in self.jobs
             elif not self.jobs and 'build' in task.dependencies:
                 
                 
