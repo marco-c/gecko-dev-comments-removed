@@ -2260,6 +2260,21 @@ var NativeWindow = {
     this.contextmenus.init();
   },
 
+  loadDex: function(zipFile, implClass) {
+    GlobalEventDispatcher.sendRequest({
+      type: "Dex:Load",
+      zipfile: zipFile,
+      impl: implClass || "Main"
+    });
+  },
+
+  unloadDex: function(zipFile) {
+    GlobalEventDispatcher.sendRequest({
+      type: "Dex:Unload",
+      zipfile: zipFile
+    });
+  },
+
   menu: {
     _callbacks: [],
     _menuId: 1,
@@ -5359,6 +5374,7 @@ var XPInstallObserver = {
         }
 
         new Prompt({
+          window: window,
           title: Strings.browser.GetStringFromName("addonError.titleError"),
           message: message,
           buttons: buttons
@@ -5393,6 +5409,7 @@ var XPInstallObserver = {
             strings.GetStringFromName("unsignedAddonsDisabled.dismiss")
         ];
         new Prompt({
+          window: window,
           title: Strings.browser.GetStringFromName("addonError.titleBlocked"),
           message: message,
           buttons: buttons
@@ -5409,6 +5426,7 @@ var XPInstallObserver = {
           return;
 
         new Prompt({
+          window: window,
           title: Strings.browser.GetStringFromName("addonError.titleBlocked"),
           message: strings.formatStringFromName("xpinstallPromptWarningDirect", [brandShortName], 1),
           buttons: [strings.GetStringFromName("unsignedAddonsDisabled.dismiss")]
@@ -6634,6 +6652,7 @@ var ExternalApps = {
         if (apps.length > 1) {
           
           HelperApps.prompt(apps, {
+            window: window,
             title: Strings.browser.GetStringFromName("openInApp.pageAction"),
             buttons: [
               Strings.browser.GetStringFromName("openInApp.ok"),
