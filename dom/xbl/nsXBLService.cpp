@@ -126,7 +126,7 @@ public:
     
     
     if (nsIPresShell* shell = doc->GetShell()) {
-      shell->DestroyFramesFor(mBoundElement->AsElement());
+      shell->DestroyFramesForAndRestyle(mBoundElement->AsElement());
     }
     MOZ_ASSERT(!mBoundElement->GetPrimaryFrame());
   }

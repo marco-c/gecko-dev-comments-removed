@@ -2922,7 +2922,7 @@ PresShell::CancelAllPendingReflows()
 }
 
 void
-PresShell::DestroyFramesFor(Element* aElement)
+PresShell::DestroyFramesForAndRestyle(Element* aElement)
 {
   MOZ_ASSERT(aElement);
   NS_ENSURE_TRUE_VOID(mPresContext);
@@ -2940,21 +2940,15 @@ PresShell::DestroyFramesFor(Element* aElement)
   bool didReconstruct = fc->DestroyFramesFor(aElement);
   fc->EndUpdate();
 
-  
-  if (!didReconstruct) {
-    PostRecreateFramesFor(aElement);
-  }
+  auto changeHint = didReconstruct
+    ? nsChangeHint(0)
+    : nsChangeHint_ReconstructFrame;
 
   
   
   
-  
-  
-  
-  
-  
   mPresContext->RestyleManager()->PostRestyleEvent(
-    aElement, eRestyle_Subtree, nsChangeHint(0));
+    aElement, eRestyle_Subtree, changeHint);
 
   --mChangeNestCount;
 }
