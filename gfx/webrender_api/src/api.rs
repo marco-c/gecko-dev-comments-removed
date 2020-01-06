@@ -144,6 +144,7 @@ pub enum DocumentMsg {
     SetPan(DeviceIntPoint),
     SetRootPipeline(PipelineId),
     RemovePipeline(PipelineId),
+    EnableFrameOutput(PipelineId, bool),
     SetWindowParameters {
         window_size: DeviceUintSize,
         inner_rect: DeviceUintRect,
@@ -170,6 +171,7 @@ impl fmt::Debug for DocumentMsg {
             DocumentMsg::TickScrollingBounce => "DocumentMsg::TickScrollingBounce",
             DocumentMsg::GetScrollNodeState(..) => "DocumentMsg::GetScrollNodeState",
             DocumentMsg::GenerateFrame(..) => "DocumentMsg::GenerateFrame",
+            DocumentMsg::EnableFrameOutput(..) => "DocumentMsg::EnableFrameOutput",
         })
     }
 }
@@ -182,6 +184,8 @@ pub enum DebugCommand {
     EnableTextureCacheDebug(bool),
     
     EnableRenderTargetDebug(bool),
+    
+    EnableAlphaRectsDebug(bool),
     
     FetchDocuments,
     
@@ -579,6 +583,15 @@ impl RenderApi {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.send(document_id, DocumentMsg::GetScrollNodeState(tx));
         rx.recv().unwrap()
+    }
+
+    
+    
+    pub fn enable_frame_output(&self,
+                               document_id: DocumentId,
+                               pipeline_id: PipelineId,
+                               enable: bool) {
+        self.send(document_id, DocumentMsg::EnableFrameOutput(pipeline_id, enable));
     }
 
     
