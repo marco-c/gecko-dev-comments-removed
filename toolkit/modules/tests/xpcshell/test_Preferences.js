@@ -113,6 +113,8 @@ add_test(function test_set_unsupported_pref() {
 });
 
 
+
+
 add_test(function test_get_string_pref() {
   let svc = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService).
