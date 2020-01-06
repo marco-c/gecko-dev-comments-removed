@@ -31,7 +31,6 @@ import org.mozilla.gecko.widget.themed.ThemedLinearLayout;
 import org.mozilla.gecko.widget.themed.ThemedTextView;
 
 import android.content.Context;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.text.Spannable;
@@ -444,18 +443,6 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         }
 
         mUiMode = uiMode;
-
-        
-        
-        
-        if (mUiMode == UIMode.PROGRESS) {
-            Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
-                  " - page load start");
-        } else {
-            Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
-                  " - page load stop");
-        }
-
         updatePageActions();
     }
 
