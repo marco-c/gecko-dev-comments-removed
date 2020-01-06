@@ -155,6 +155,7 @@ public:
 
   static ID2D1Factory1 *factory();
   static void CleanupD2D();
+  static IDWriteFactory *GetDWriteFactory();
 
   operator std::string() const {
     std::stringstream stream;
@@ -293,6 +294,7 @@ private:
   bool mDidComplexBlendWithListInList;
 
   static ID2D1Factory1 *mFactory;
+  static IDWriteFactory *mDWriteFactory;
   
   uint32_t mDeviceSeq;
 
