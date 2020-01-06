@@ -1088,6 +1088,14 @@ function _loadURIWithFlags(browser, uri, params) {
   }
 
   let mustChangeProcess = requiredRemoteType != currentRemoteType;
+  let newFrameloader = false;
+  if (browser.getAttribute("isPreloadBrowser") == "true" && uri != "about:newtab") {
+    
+    
+    mustChangeProcess = true;
+    newFrameloader = true;
+    browser.removeAttribute("isPreloadBrowser");
+  }
 
   
   if (!requiredRemoteType) {
@@ -1122,7 +1130,8 @@ function _loadURIWithFlags(browser, uri, params) {
         referrer: referrer ? referrer.spec : null,
         referrerPolicy,
         remoteType: requiredRemoteType,
-        postData
+        postData,
+        newFrameloader,
       }
 
       if (params.userContextId) {
@@ -1167,6 +1176,11 @@ function LoadInOtherProcess(browser, loadOptions, historyIndex = -1) {
 
 
 function RedirectLoad({ target: browser, data }) {
+  if (browser.getAttribute("isPreloadBrowser") == "true") {
+    browser.removeAttribute("isPreloadBrowser");
+    data.loadOptions.newFrameloader = true;
+  }
+
   if (data.loadOptions.reloadInFreshProcess) {
     
     
