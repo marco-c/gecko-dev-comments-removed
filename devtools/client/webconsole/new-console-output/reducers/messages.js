@@ -54,12 +54,10 @@ const MessageState = Immutable.Record({
   networkMessagesUpdateById: {},
 });
 
-function messages(state = new MessageState(), action, filtersState, prefsState) {
+function addMessage(state, filtersState, prefsState, newMessage) {
   const {
     messagesById,
     messagesUiById,
-    messagesTableDataById,
-    networkMessagesUpdateById,
     groupsById,
     currentGroup,
     repeatById,
@@ -67,82 +65,115 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     filteredMessagesCount,
   } = state;
 
+  if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
+    
+    return state;
+  }
+
+  if (newMessage.type === constants.MESSAGE_TYPE.END_GROUP) {
+    
+    return state.set("currentGroup", getNewCurrentGroup(currentGroup, groupsById));
+  }
+
+  if (newMessage.allowRepeating && messagesById.size > 0) {
+    let lastMessage = messagesById.last();
+    if (
+      lastMessage.repeatId === newMessage.repeatId
+      && lastMessage.groupId === currentGroup
+    ) {
+      return state.set(
+        "repeatById",
+        Object.assign({}, repeatById, {
+          [lastMessage.id]: (repeatById[lastMessage.id] || 1) + 1
+        })
+      );
+    }
+  }
+
+  return state.withMutations(function (record) {
+    
+    let parentGroups = getParentGroups(currentGroup, groupsById);
+    newMessage.groupId = currentGroup;
+    newMessage.indent = parentGroups.length;
+
+    const addedMessage = Object.freeze(newMessage);
+    record.set(
+      "messagesById",
+      messagesById.set(newMessage.id, addedMessage)
+    );
+
+    if (newMessage.type === "trace") {
+      
+      record.set("messagesUiById", messagesUiById.push(newMessage.id));
+    } else if (isGroupType(newMessage.type)) {
+      record.set("currentGroup", newMessage.id);
+      record.set("groupsById", groupsById.set(newMessage.id, parentGroups));
+
+      if (newMessage.type === constants.MESSAGE_TYPE.START_GROUP) {
+        
+        record.set("messagesUiById", messagesUiById.push(newMessage.id));
+      }
+    }
+
+    const {
+      visible,
+      cause
+    } = getMessageVisibility(addedMessage, record, filtersState);
+
+    if (visible) {
+      record.set("visibleMessages", [...visibleMessages, newMessage.id]);
+    } else if (DEFAULT_FILTERS.includes(cause)) {
+      record.set("filteredMessagesCount", Object.assign({}, filteredMessagesCount, {
+        global: filteredMessagesCount.global + 1,
+        [cause]: filteredMessagesCount[cause] + 1
+      }));
+    }
+  });
+}
+
+function messages(state = new MessageState(), action, filtersState, prefsState) {
+  const {
+    messagesById,
+    messagesUiById,
+    messagesTableDataById,
+    networkMessagesUpdateById,
+    groupsById,
+    visibleMessages,
+  } = state;
+
   const {logLimit} = prefsState;
 
+  let newState;
   switch (action.type) {
-    case constants.MESSAGE_ADD:
-      let newMessage = action.message;
+    case constants.MESSAGES_ADD:
+      newState = state;
 
-      if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
-        
-        return state;
-      }
-
-      if (newMessage.type === constants.MESSAGE_TYPE.END_GROUP) {
-        
-        return state.set("currentGroup", getNewCurrentGroup(currentGroup, groupsById));
-      }
-
-      if (newMessage.allowRepeating && messagesById.size > 0) {
-        let lastMessage = messagesById.last();
-        if (
-          lastMessage.repeatId === newMessage.repeatId
-          && lastMessage.groupId === currentGroup
-        ) {
-          return state.set(
-            "repeatById",
-            Object.assign({}, repeatById, {
-              [lastMessage.id]: (repeatById[lastMessage.id] || 1) + 1
-            })
-          );
-        }
-      }
-
-      return state.withMutations(function (record) {
-        
-        let parentGroups = getParentGroups(currentGroup, groupsById);
-        newMessage.groupId = currentGroup;
-        newMessage.indent = parentGroups.length;
-
-        const addedMessage = Object.freeze(newMessage);
-        record.set(
-          "messagesById",
-          messagesById.set(newMessage.id, addedMessage)
-        );
-
-        if (newMessage.type === "trace") {
+      
+      let list = [];
+      let prunableCount = 0;
+      for (let i = action.messages.length - 1; i >= 0; i--) {
+        if (!action.messages[i].groupId && !isGroupType(action.messages[i].type) &&
+            action.messages[i].type !== MESSAGE_TYPE.END_GROUP) {
+          prunableCount++;
           
-          record.set("messagesUiById", messagesUiById.push(newMessage.id));
-        } else if (isGroupType(newMessage.type)) {
-          record.set("currentGroup", newMessage.id);
-          record.set("groupsById", groupsById.set(newMessage.id, parentGroups));
-
-          if (newMessage.type === constants.MESSAGE_TYPE.START_GROUP) {
-            
-            record.set("messagesUiById", messagesUiById.push(newMessage.id));
+          
+          if (prunableCount <= logLimit) {
+            list.unshift(action.messages[i]);
           }
+        } else {
+          list.unshift(action.messages[i]);
         }
+      }
 
-        const {
-          visible,
-          cause
-        } = getMessageVisibility(addedMessage, record, filtersState);
-
-        if (visible) {
-          record.set("visibleMessages", [...visibleMessages, newMessage.id]);
-        } else if (DEFAULT_FILTERS.includes(cause)) {
-          record.set("filteredMessagesCount", Object.assign({}, filteredMessagesCount, {
-            global: filteredMessagesCount.global + 1,
-            [cause]: filteredMessagesCount[cause] + 1
-          }));
-        }
-
-        
-        
-        if (record.messagesById.size > logLimit) {
-          limitTopLevelMessageCount(state, record, logLimit);
-        }
+      list.forEach(message => {
+        newState = addMessage(newState, filtersState, prefsState, message);
       });
+
+      return limitTopLevelMessageCount(newState, logLimit);
+
+    case constants.MESSAGE_ADD:
+      newState = addMessage(state, filtersState, prefsState, action.message);
+      return limitTopLevelMessageCount(newState, logLimit);
 
     case constants.MESSAGES_CLEAR:
       return new MessageState({
@@ -266,7 +297,7 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
         }
       }
 
-      let newState = state.set(
+      newState = state.set(
         "networkMessagesUpdateById",
         Object.assign({}, networkMessagesUpdateById, {
           [action.id]: Object.assign({}, request, values)
@@ -341,99 +372,99 @@ function getParentGroups(currentGroup, groupsById) {
 
 
 
-function limitTopLevelMessageCount(state, record, logLimit) {
-  let topLevelCount = record.groupsById.size === 0
-    ? record.messagesById.size
-    : getToplevelMessageCount(record);
+function limitTopLevelMessageCount(state, logLimit) {
+  return state.withMutations(function (record) {
+    let topLevelCount = record.groupsById.size === 0
+      ? record.messagesById.size
+      : getToplevelMessageCount(record);
 
-  if (topLevelCount <= logLimit) {
-    return record;
-  }
-
-  const removedMessagesId = [];
-  const removedActors = [];
-  let visibleMessages = [...record.visibleMessages];
-
-  let cleaningGroup = false;
-  record.messagesById.forEach((message, id) => {
-    
-    
-    if (cleaningGroup === true && !message.groupId) {
-      cleaningGroup = false;
+    if (topLevelCount <= logLimit) {
+      return;
     }
 
-    
-    
-    if (cleaningGroup === false && topLevelCount <= logLimit) {
-      return false;
-    }
+    const removedMessagesId = [];
+    const removedActors = [];
+    let visibleMessages = [...record.visibleMessages];
 
-    
-    
-    if (cleaningGroup === false && record.groupsById.has(id)) {
-      cleaningGroup = true;
-    }
-
-    if (!message.groupId) {
-      topLevelCount--;
-    }
-
-    removedMessagesId.push(id);
-    removedActors.push(...getAllActorsInMessage(message, record));
-
-    const index = visibleMessages.indexOf(id);
-    if (index > -1) {
-      visibleMessages.splice(index, 1);
-    }
-
-    return true;
-  });
-
-  if (removedActors.length > 0) {
-    record.set("removedActors", record.removedActors.concat(removedActors));
-  }
-
-  if (record.visibleMessages.length > visibleMessages.length) {
-    record.set("visibleMessages", visibleMessages);
-  }
-
-  const isInRemovedId = id => removedMessagesId.includes(id);
-  const mapHasRemovedIdKey = map => map.findKey((value, id) => isInRemovedId(id));
-  const objectHasRemovedIdKey = obj => Object.keys(obj).findIndex(isInRemovedId) !== -1;
-  const cleanUpCollection = map => removedMessagesId.forEach(id => map.remove(id));
-  const cleanUpList = list => list.filter(id => {
-    return isInRemovedId(id) === false;
-  });
-  const cleanUpObject = object => [...Object.entries(object)]
-    .reduce((res, [id, value]) => {
-      if (!isInRemovedId(id)) {
-        res[id] = value;
+    let cleaningGroup = false;
+    record.messagesById.forEach((message, id) => {
+      
+      
+      if (cleaningGroup === true && !message.groupId) {
+        cleaningGroup = false;
       }
-      return res;
-    }, {});
 
-  record.set("messagesById", record.messagesById.withMutations(cleanUpCollection));
+      
+      
+      if (cleaningGroup === false && topLevelCount <= logLimit) {
+        return false;
+      }
 
-  if (record.messagesUiById.find(isInRemovedId)) {
-    record.set("messagesUiById", cleanUpList(record.messagesUiById));
-  }
-  if (mapHasRemovedIdKey(record.messagesTableDataById)) {
-    record.set("messagesTableDataById",
-      record.messagesTableDataById.withMutations(cleanUpCollection));
-  }
-  if (mapHasRemovedIdKey(record.groupsById)) {
-    record.set("groupsById", record.groupsById.withMutations(cleanUpCollection));
-  }
-  if (objectHasRemovedIdKey(record.repeatById)) {
-    record.set("repeatById", cleanUpObject(record.repeatById));
-  }
+      
+      
+      if (cleaningGroup === false && record.groupsById.has(id)) {
+        cleaningGroup = true;
+      }
 
-  if (objectHasRemovedIdKey(record.networkMessagesUpdateById)) {
-    record.set("networkMessagesUpdateById",
-      cleanUpObject(record.networkMessagesUpdateById));
-  }
+      if (!message.groupId) {
+        topLevelCount--;
+      }
 
-  return record;
+      removedMessagesId.push(id);
+      removedActors.push(...getAllActorsInMessage(message, record));
+
+      const index = visibleMessages.indexOf(id);
+      if (index > -1) {
+        visibleMessages.splice(index, 1);
+      }
+
+      return true;
+    });
+
+    if (removedActors.length > 0) {
+      record.set("removedActors", record.removedActors.concat(removedActors));
+    }
+
+    if (record.visibleMessages.length > visibleMessages.length) {
+      record.set("visibleMessages", visibleMessages);
+    }
+
+    const isInRemovedId = id => removedMessagesId.includes(id);
+    const mapHasRemovedIdKey = map => map.findKey((value, id) => isInRemovedId(id));
+    const objectHasRemovedIdKey = obj => Object.keys(obj).findIndex(isInRemovedId) !== -1;
+    const cleanUpCollection = map => removedMessagesId.forEach(id => map.remove(id));
+    const cleanUpList = list => list.filter(id => {
+      return isInRemovedId(id) === false;
+    });
+    const cleanUpObject = object => [...Object.entries(object)]
+      .reduce((res, [id, value]) => {
+        if (!isInRemovedId(id)) {
+          res[id] = value;
+        }
+        return res;
+      }, {});
+
+    record.set("messagesById", record.messagesById.withMutations(cleanUpCollection));
+
+    if (record.messagesUiById.find(isInRemovedId)) {
+      record.set("messagesUiById", cleanUpList(record.messagesUiById));
+    }
+    if (mapHasRemovedIdKey(record.messagesTableDataById)) {
+      record.set("messagesTableDataById",
+        record.messagesTableDataById.withMutations(cleanUpCollection));
+    }
+    if (mapHasRemovedIdKey(record.groupsById)) {
+      record.set("groupsById", record.groupsById.withMutations(cleanUpCollection));
+    }
+    if (objectHasRemovedIdKey(record.repeatById)) {
+      record.set("repeatById", cleanUpObject(record.repeatById));
+    }
+
+    if (objectHasRemovedIdKey(record.networkMessagesUpdateById)) {
+      record.set("networkMessagesUpdateById",
+        cleanUpObject(record.networkMessagesUpdateById));
+    }
+  });
 }
 
 
