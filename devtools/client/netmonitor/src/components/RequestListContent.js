@@ -28,6 +28,7 @@ const { div } = DOM;
 
 
 const REQUESTS_TOOLTIP_TOGGLE_DELAY = 500;
+const MAX_SCROLL_HEIGHT = 2147483647;
 
 
 
@@ -99,10 +100,11 @@ class RequestListContent extends Component {
     
     this.setScalingStyles(prevProps);
 
+    let node = this.refs.contentEl;
     
-    if (this.shouldScrollBottom) {
-      let node = this.refs.contentEl;
-      node.scrollTop = node.scrollHeight;
+    if (this.shouldScrollBottom && node.scrollTop !== MAX_SCROLL_HEIGHT) {
+      
+      node.scrollTop = MAX_SCROLL_HEIGHT;
     }
   }
 
