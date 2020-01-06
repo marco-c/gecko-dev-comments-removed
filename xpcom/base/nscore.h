@@ -194,6 +194,26 @@
 
 typedef MozRefCountType nsrefcnt;
 
+namespace mozilla {
+
+
+
+
+
+
+namespace detail {
+
+
+
+template<typename T> struct UnusedZero;
+template<>
+struct UnusedZero<nsresult>
+{
+  static const bool value = true;
+};
+} 
+} 
+
 
 
 
