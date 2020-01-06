@@ -8,8 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.RecyclerView;
 
-import org.mozilla.gecko.activitystream.homepanel.stream.TopPanel;
-
 
 
 
