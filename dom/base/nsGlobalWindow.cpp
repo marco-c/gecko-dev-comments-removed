@@ -10641,13 +10641,21 @@ void nsGlobalWindow::SetIsBackground(bool aIsBackground)
   if (aIsBackground) {
     
     
+    
+    
     if (inner && changed) {
       inner->StopGamepadHaptics();
+      
+      
+      inner->ResetVRTelemetry(true);
     }
     return;
   }
 
   if (inner) {
+    
+    
+    inner->ResetVRTelemetry(false);
     inner->SyncGamepadState();
   }
 }
@@ -10720,6 +10728,14 @@ nsGlobalWindow::DisableVRUpdates()
   if (mVREventObserver) {
     mVREventObserver->DisconnectFromOwner();
     mVREventObserver = nullptr;
+  }
+}
+
+void
+nsGlobalWindow::ResetVRTelemetry(bool aUpdate)
+{
+  if (mVREventObserver) {
+    mVREventObserver->UpdateSpentTimeIn2DTelemetry(aUpdate);
   }
 }
 

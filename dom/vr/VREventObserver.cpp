@@ -25,10 +25,11 @@ using namespace gfx;
 VREventObserver::VREventObserver(nsGlobalWindow* aGlobalWindow)
   : mWindow(aGlobalWindow)
   , mIs2DView(true)
+  , mHasReset(false)
 {
   MOZ_ASSERT(aGlobalWindow && aGlobalWindow->IsInnerWindow());
 
-  mSpendTimeIn2DView = TimeStamp::Now();
+  UpdateSpentTimeIn2DTelemetry(false);
   VRManagerChild* vmc = VRManagerChild::Get();
   if (vmc) {
     vmc->AddListener(this);
@@ -46,19 +47,33 @@ VREventObserver::DisconnectFromOwner()
   
   
   
-  if (mWindow && mIs2DView) {
-    
-    
-    Telemetry::Accumulate(Telemetry::WEBVR_USERS_VIEW_IN, 0);
-    Telemetry::AccumulateTimeDelta(Telemetry::WEBVR_TIME_SPENT_VIEWING_IN_2D,
-                                   mSpendTimeIn2DView);
-  }
+  UpdateSpentTimeIn2DTelemetry(true);
   mWindow = nullptr;
 
   
   if (VRManagerChild::IsCreated()) {
     VRManagerChild* vmc = VRManagerChild::Get();
     vmc->RemoveListener(this);
+  }
+}
+
+void
+VREventObserver::UpdateSpentTimeIn2DTelemetry(bool aUpdate)
+{
+  
+  
+  
+  
+  if (mWindow && mIs2DView && aUpdate && mHasReset) {
+    
+    
+    Telemetry::Accumulate(Telemetry::WEBVR_USERS_VIEW_IN, 0);
+    Telemetry::AccumulateTimeDelta(Telemetry::WEBVR_TIME_SPENT_VIEWING_IN_2D,
+                                   mSpendTimeIn2DView);
+    mHasReset = false;
+  } else if (!aUpdate) {
+    mSpendTimeIn2DView = TimeStamp::Now();
+    mHasReset = true;
   }
 }
 

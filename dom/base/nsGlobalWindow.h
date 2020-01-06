@@ -773,6 +773,10 @@ public:
   
   void EnableVRUpdates();
   void DisableVRUpdates();
+  
+  
+  
+  void ResetVRTelemetry(bool aUpdate);
 
   
   bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
