@@ -169,8 +169,7 @@ WSRunObject::PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
 already_AddRefed<Element>
 WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
                          int32_t* aInOutOffset,
-                         nsIEditor::EDirection aSelect,
-                         nsCOMPtr<nsIContent>* aInOutChildAtOffset)
+                         nsIEditor::EDirection aSelect)
 {
   
   
@@ -229,8 +228,7 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
   }
 
   
-  return mHTMLEditor->CreateBRImpl(aInOutParent, aInOutOffset,
-                                   aInOutChildAtOffset, aSelect);
+  return mHTMLEditor->CreateBRImpl(aInOutParent, aInOutOffset, aSelect);
 }
 
 nsresult
