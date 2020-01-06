@@ -2937,11 +2937,6 @@ nsDisplaySolidColor::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aB
                                              mozilla::layers::WebRenderLayerManager* aManager,
                                              nsDisplayListBuilder* aDisplayListBuilder)
 {
-  ContainerLayerParameters parameter;
-  if (GetLayerState(aDisplayListBuilder, aManager, parameter) != LAYER_ACTIVE) {
-    return false;
-  }
-
   LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
         mVisibleRect, mFrame->PresContext()->AppUnitsPerDevPixel());
   wr::LayoutRect transformedRect = aSc.ToRelativeLayoutRect(bounds);
@@ -4764,11 +4759,6 @@ nsDisplayCaret::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
                                         mozilla::layers::WebRenderLayerManager* aManager,
                                         nsDisplayListBuilder* aDisplayListBuilder)
 {
-  ContainerLayerParameters parameter;
-  if (GetLayerState(aDisplayListBuilder, aManager, parameter) != LAYER_ACTIVE) {
-    return false;
-  }
-
   using namespace mozilla::layers;
   int32_t contentOffset;
   nsIFrame* frame = mCaret->GetFrame(&contentOffset);
@@ -5332,8 +5322,7 @@ nsDisplayBoxShadowOuter::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowOuterBoxShadow) &&
-      CanBuildWebRenderDisplayItems()) {
+  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowOuterBoxShadow)) {
     return LAYER_ACTIVE;
   }
 
@@ -5398,8 +5387,7 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
                                                  mozilla::layers::WebRenderLayerManager* aManager,
                                                  nsDisplayListBuilder* aDisplayListBuilder)
 {
-  ContainerLayerParameters parameter;
-  if (GetLayerState(aDisplayListBuilder, aManager, parameter) != LAYER_ACTIVE) {
+  if (!CanBuildWebRenderDisplayItems()) {
     return false;
   }
 
@@ -5574,8 +5562,7 @@ nsDisplayBoxShadowInner::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowInsetBoxShadow) &&
-      CanCreateWebRenderCommands(aBuilder, mFrame, ToReferenceFrame())) {
+  if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowInsetBoxShadow)) {
     return LAYER_ACTIVE;
   }
 
@@ -5661,8 +5648,7 @@ nsDisplayBoxShadowInner::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
                                                  mozilla::layers::WebRenderLayerManager* aManager,
                                                  nsDisplayListBuilder* aDisplayListBuilder)
 {
-  ContainerLayerParameters parameter;
-  if (GetLayerState(aDisplayListBuilder, aManager, parameter) != LAYER_ACTIVE) {
+  if (!CanCreateWebRenderCommands(aDisplayListBuilder, mFrame, ToReferenceFrame())) {
     return false;
   }
 
@@ -9306,32 +9292,7 @@ nsDisplayFilter::GetLayerState(nsDisplayListBuilder* aBuilder,
                                LayerManager* aManager,
                                const ContainerLayerParameters& aParameters)
 {
-  if (mFrame->IsFrameOfType(nsIFrame::eSVG)) {
-    return LAYER_SVG_EFFECTS;
-  }
-
-  if (!ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowFilterLayers)) {
-    return LAYER_SVG_EFFECTS;
-  }
-
-  if (mFrame->StyleEffects()->mOpacity != 1.0f) {
-    return LAYER_SVG_EFFECTS;
-  }
-
-  
-  
-  
-  for (const nsStyleFilter& filter : mFrame->StyleEffects()->mFilters) {
-    if (filter.GetType() != NS_STYLE_FILTER_BRIGHTNESS &&
-        filter.GetType() != NS_STYLE_FILTER_CONTRAST &&
-        filter.GetType() != NS_STYLE_FILTER_GRAYSCALE &&
-        filter.GetType() != NS_STYLE_FILTER_INVERT &&
-        filter.GetType() != NS_STYLE_FILTER_SEPIA) {
-      return LAYER_SVG_EFFECTS;
-    }
-  }
-
-  return LAYER_ACTIVE;
+  return LAYER_SVG_EFFECTS;
 }
 
 bool
@@ -9397,10 +9358,21 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
                                          mozilla::layers::WebRenderLayerManager* aManager,
                                          nsDisplayListBuilder* aDisplayListBuilder)
 {
-  ContainerLayerParameters parameter;
-  if (GetLayerState(aDisplayListBuilder, aManager, parameter) != LAYER_ACTIVE) {
-    
+  if (mFrame->IsFrameOfType(nsIFrame::eSVG) || mFrame->StyleEffects()->mOpacity != 1.0f) {
     return false;
+  }
+
+  
+  
+  
+  for (const nsStyleFilter& filter : mFrame->StyleEffects()->mFilters) {
+    if (filter.GetType() != NS_STYLE_FILTER_BRIGHTNESS &&
+        filter.GetType() != NS_STYLE_FILTER_CONTRAST &&
+        filter.GetType() != NS_STYLE_FILTER_GRAYSCALE &&
+        filter.GetType() != NS_STYLE_FILTER_INVERT &&
+        filter.GetType() != NS_STYLE_FILTER_SEPIA) {
+      return false;
+    }
   }
 
   nsTArray<mozilla::wr::WrFilterOp> wrFilters;
