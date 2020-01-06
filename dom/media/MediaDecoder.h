@@ -13,7 +13,6 @@
 #include "MediaEventSource.h"
 #include "MediaMetadataManager.h"
 #include "MediaResource.h"
-#include "MediaResourceCallback.h"
 #include "MediaStatistics.h"
 #include "MediaStreamGraph.h"
 #include "SeekTarget.h"
@@ -88,41 +87,6 @@ struct MediaDecoderInit
 class MediaDecoder : public AbstractMediaDecoder
 {
 public:
-  
-  
-  class ResourceCallback : public MediaResourceCallback
-  {
-    
-    
-    static const uint32_t sDelay = 500;
-
-  public:
-    explicit ResourceCallback(AbstractThread* aMainThread);
-    
-    void Connect(MediaDecoder* aDecoder);
-    
-    void Disconnect();
-
-  private:
-    
-    MediaDecoderOwner* GetMediaOwner() const override;
-    void SetInfinite(bool aInfinite) override;
-    void NotifyNetworkError() override;
-    void NotifyDataArrived() override;
-    void NotifyDataEnded(nsresult aStatus) override;
-    void NotifyPrincipalChanged() override;
-    void NotifySuspendedStatusChanged() override;
-    void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) override;
-
-    static void TimerCallback(nsITimer* aTimer, void* aClosure);
-
-    
-    MediaDecoder* mDecoder = nullptr;
-    nsCOMPtr<nsITimer> mTimer;
-    bool mTimerArmed = false;
-    const RefPtr<AbstractThread> mAbstractMainThread;
-  };
-
   typedef MozPromise<bool , bool ,
                       true>
     SeekPromise;
@@ -145,9 +109,6 @@ public:
 
   explicit MediaDecoder(MediaDecoderInit& aInit);
 
-  
-  
-  MediaResourceCallback* GetResourceCallback() const;
   
   
   virtual MediaDecoderStateMachine* CreateStateMachine() = 0;
@@ -578,12 +539,6 @@ protected:
     media::TimeUnit::FromMicroseconds(250000);
 
 private:
-  void NotifyDataArrivedInternal();
-
-  
-  
-  void DownloadProgressed();
-
   nsCString GetDebugInfo();
 
   
@@ -628,14 +583,47 @@ private:
   
   RefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
 
-  RefPtr<ResourceCallback> mResourceCallback;
-
   MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
   RefPtr<CDMProxyPromise> mCDMProxyPromise;
 
 protected:
+  void NotifyDataArrivedInternal();
   void DiscardOngoingSeekIfExists();
   virtual void CallSeek(const SeekTarget& aTarget);
+
+  
+  
+  void DownloadProgressed();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetInfinite(bool aInfinite);
+
+  
+  
+  
+  
+  void NotifySuspendedStatusChanged();
+
+  
+  
+  void NotifyPrincipalChanged();
+
+  
+  
+  
+  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
+
+  
+  
+  
+  void NotifyDownloadEnded(nsresult aStatus);
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
 
@@ -848,38 +836,6 @@ public:
 private:
   
   void NotifyAudibleStateChanged();
-
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  void SetInfinite(bool aInfinite);
-
-  
-  
-  void NotifyPrincipalChanged();
-
-  
-  
-  
-  
-  void NotifySuspendedStatusChanged();
-
-  
-  
-  
-  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
-
-  
-  
-  
-  void NotifyDownloadEnded(nsresult aStatus);
 
   bool mTelemetryReported;
 

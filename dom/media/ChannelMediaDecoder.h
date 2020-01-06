@@ -8,13 +8,60 @@
 #define ChannelMediaDecoder_h_
 
 #include "MediaDecoder.h"
+#include "MediaResourceCallback.h"
 
 namespace mozilla {
 
 class ChannelMediaDecoder : public MediaDecoder
 {
+  
+  
+  class ResourceCallback : public MediaResourceCallback
+  {
+    
+    
+    static const uint32_t sDelay = 500;
+
+  public:
+    explicit ResourceCallback(AbstractThread* aMainThread);
+    
+    void Connect(ChannelMediaDecoder* aDecoder);
+    
+    void Disconnect();
+
+  private:
+    
+    MediaDecoderOwner* GetMediaOwner() const override;
+    void SetInfinite(bool aInfinite) override;
+    void NotifyNetworkError() override;
+    void NotifyDataArrived() override;
+    void NotifyDataEnded(nsresult aStatus) override;
+    void NotifyPrincipalChanged() override;
+    void NotifySuspendedStatusChanged() override;
+    void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) override;
+
+    static void TimerCallback(nsITimer* aTimer, void* aClosure);
+
+    
+    ChannelMediaDecoder* mDecoder = nullptr;
+    nsCOMPtr<nsITimer> mTimer;
+    bool mTimerArmed = false;
+    const RefPtr<AbstractThread> mAbstractMainThread;
+  };
+
+  RefPtr<ResourceCallback> mResourceCallback;
+
 public:
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
+
+  
+  
+  MediaResourceCallback* GetResourceCallback() const
+  {
+    return mResourceCallback;
+  }
+
+  void Shutdown() override;
 
   
   
