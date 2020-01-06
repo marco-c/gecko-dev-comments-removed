@@ -397,10 +397,7 @@ var PingPicker = {
     
     let archivedPingList = await TelemetryArchive.promiseArchivedPingList();
     let sourceArchived = document.getElementById("ping-source-archive");
-    let sourceArchivedContainer = document.getElementById("ping-source-archive-container");
-    let archivedDisabled = (archivedPingList.length == 0);
-    sourceArchived.disabled = archivedDisabled;
-    sourceArchivedContainer.classList.toggle("disabled", archivedDisabled);
+    sourceArchived.disabled = (archivedPingList.length == 0);
 
     if (currentChanged) {
       if (this.viewCurrentPingData) {
@@ -994,6 +991,17 @@ var StackRenderer = {
   }
 };
 
+var RawPayload = {
+  
+
+
+  render(aPing) {
+    setHasData("raw-ping-data-section", true);
+    let pre = document.getElementById("raw-ping-data");
+    pre.textContent = JSON.stringify(aPing, null, 2);
+  }
+};
+
 function SymbolicationRequest(aPrefix, aRenderHeader,
                               aMemoryMap, aStacks, aDurations = null) {
   this.prefix = aPrefix;
@@ -1121,57 +1129,6 @@ var CapturedStacks = {
   }
 };
 
-var ThreadHangStats = {
-
-  
-
-
-  render(aPayload) {
-    let div = document.getElementById("thread-hang-stats");
-    removeAllChildNodes(div);
-
-    let stats = aPayload.threadHangStats;
-    setHasData("thread-hang-stats-section", stats && (stats.length > 0));
-    if (!stats) {
-      return;
-    }
-
-    stats.forEach((thread) => {
-      div.appendChild(this.renderThread(thread));
-    });
-  },
-
-  
-
-
-  renderThread(aThread) {
-    let div = document.createElement("div");
-
-    let title = document.createElement("h2");
-    title.textContent = aThread.name;
-    div.appendChild(title);
-
-    
-    
-    Histogram.render(div, aThread.name + "-Activity",
-                     aThread.activity, {exponential: true}, true);
-    aThread.hangs.forEach((hang, index) => {
-      let hangName = aThread.name + "-Hang-" + (index + 1);
-      let hangDiv = Histogram.render(
-        div, hangName, hang.histogram, {exponential: true}, true);
-      let stackDiv = document.createElement("div");
-      hang.stack.forEach((frame) => {
-        stackDiv.appendChild(document.createTextNode(frame));
-        
-        stackDiv.appendChild(document.createElement("br"));
-      });
-      
-      hangDiv.insertBefore(stackDiv, hangDiv.childNodes[1]);
-    });
-    return div;
-  },
-};
-
 var Histogram = {
 
   hgramSamplesCaption: bundle.GetStringFromName("histogramSamples"),
@@ -1191,10 +1148,9 @@ var Histogram = {
 
 
 
-
-  render: function Histogram_render(aParent, aName, aHgram, aOptions, aIsBHR) {
+  render: function Histogram_render(aParent, aName, aHgram, aOptions) {
     let options = aOptions || {};
-    let hgram = this.processHistogram(aHgram, aName, aIsBHR);
+    let hgram = this.processHistogram(aHgram, aName);
 
     let outerDiv = document.createElement("div");
     outerDiv.className = "histogram";
@@ -1235,7 +1191,7 @@ var Histogram = {
     return outerDiv;
   },
 
-  processHistogram(aHgram, aName, aIsBHR) {
+  processHistogram(aHgram, aName) {
     const values = Object.keys(aHgram.values).map(k => aHgram.values[k]);
     if (!values.length) {
       
@@ -1253,30 +1209,8 @@ var Histogram = {
     const average = Math.round(aHgram.sum * 10 / sample_count) / 10;
     const max_value = Math.max(...values);
 
-    function labelFunc(k) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!aIsBHR) {
-        return k;
-      }
-      return k == 1 ? 0 : (k + 1) / 2;
-    }
-
     const labelledValues = Object.keys(aHgram.values)
-                           .filter(label => !aIsBHR || Number(label) != 0) 
-                           .map(k => [labelFunc(Number(k)), aHgram.values[k]]);
+                           .map(k => [Number(k), aHgram.values[k]]);
 
     let result = {
       values: labelledValues,
@@ -1882,18 +1816,13 @@ function changeUrlPath(selectedSection, subSection) {
 
 
 function show(selected) {
-  let selectedValue = selected.getAttribute("value");
-  if (selectedValue === "raw-json-viewer") {
-    openJsonInFirefoxJsonViewer(JSON.stringify(gPingData, null, 2));
-    return;
-  }
-
   let current_button = document.querySelector(".category.selected");
   current_button.classList.remove("selected");
   selected.classList.add("selected");
   
   document.getSelection().empty();
 
+  let selectedValue = selected.getAttribute("value");
   let current_section = document.querySelector("section.active");
   let selected_section = document.getElementById(selectedValue);
   if (current_section == selected_section)
@@ -2039,10 +1968,6 @@ function urlStateRestore() {
       }
     }
   }
-}
-
-function openJsonInFirefoxJsonViewer(json) {
-  window.open("data:application/json;base64," + btoa(json));
 }
 
 function onLoad() {
@@ -2293,7 +2218,7 @@ function togglePingSections(isMainPing) {
                                 "home",
                                 "general-data-section",
                                 "environment-data-section",
-                                "raw-json-viewer"]);
+                                "raw-ping-data-section"]);
 
   let elements = document.querySelectorAll(".category");
   for (let section of elements) {
@@ -2306,6 +2231,9 @@ function togglePingSections(isMainPing) {
 
 function displayPingData(ping, updatePayloadList = false) {
   gPingData = ping;
+  
+  RawPayload.render(ping);
+
   try {
     PingPicker.render();
     displayRichPingData(ping, updatePayloadList);
@@ -2380,9 +2308,6 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   TelLog.render(payload);
-
-  
-  ThreadHangStats.render(payload);
 
   
   SimpleMeasurements.render(payload);
