@@ -582,10 +582,9 @@ public:
       
       
       
-      aFrameMetrics.SetScrollOffset(
-          aFrameMetrics.CalculateScrollRange().ClampPoint(
-              CSSPoint::FromAppUnits(nsPoint(mXAxisModel.GetDestination(),
-                                             mYAxisModel.GetDestination()))));
+      aFrameMetrics.ClampAndSetScrollOffset(
+          CSSPoint::FromAppUnits(nsPoint(mXAxisModel.GetDestination(),
+                                         mYAxisModel.GetDestination())));
       return false;
     }
 
@@ -3789,9 +3788,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       
-      mFrameMetrics.SetScrollOffset(
-          mFrameMetrics.CalculateScrollRange().ClampPoint(
-              mFrameMetrics.GetScrollOffset()));
+      mFrameMetrics.ClampAndSetScrollOffset(mFrameMetrics.GetScrollOffset());
     }
   }
 

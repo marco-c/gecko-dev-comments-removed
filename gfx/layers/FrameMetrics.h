@@ -335,6 +335,12 @@ public:
     mScrollOffset = aScrollOffset;
   }
 
+  
+  void ClampAndSetScrollOffset(const CSSPoint& aScrollOffset)
+  {
+    SetScrollOffset(CalculateScrollRange().ClampPoint(aScrollOffset));
+  }
+
   const CSSPoint& GetScrollOffset() const
   {
     return mScrollOffset;
