@@ -51,6 +51,10 @@ public:
   {
     return mMode;
   }
+  bool IsClosed()
+  {
+    return mMode == ShadowRootMode::Closed;
+  }
 
   
   void AddToIdTable(Element* aElement, nsAtom* aId);

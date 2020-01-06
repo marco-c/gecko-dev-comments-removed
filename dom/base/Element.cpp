@@ -1155,6 +1155,25 @@ Element::GetSlot(nsAString& aName)
 }
 
 
+ShadowRoot*
+Element::GetShadowRootByMode() const
+{
+  
+
+
+
+  ShadowRoot* shadowRoot = GetShadowRoot();
+  if (!shadowRoot || shadowRoot->IsClosed()) {
+    return nullptr;
+  }
+
+  
+
+
+  return shadowRoot;
+}
+
+
 already_AddRefed<ShadowRoot>
 Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
 {

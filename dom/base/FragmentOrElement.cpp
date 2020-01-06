@@ -155,6 +155,36 @@ nsIContent::FindFirstNonChromeOnlyAccessContent() const
   return nullptr;
 }
 
+
+HTMLSlotElement*
+nsIContent::GetAssignedSlotByMode() const
+{
+  
+
+
+
+
+
+  HTMLSlotElement* slot = GetAssignedSlot();
+  if (!slot) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(GetParent());
+  MOZ_ASSERT(GetParent()->GetShadowRoot());
+
+  
+
+
+
+
+  if (GetParent()->GetShadowRoot()->IsClosed()) {
+    return nullptr;
+  }
+
+  return slot;
+}
+
 nsINode*
 nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
 {

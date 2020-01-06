@@ -758,6 +758,15 @@ public:
 
   virtual void SetAssignedSlot(mozilla::dom::HTMLSlotElement* aSlot) = 0;
 
+  
+
+
+
+
+
+
+  mozilla::dom::HTMLSlotElement* GetAssignedSlotByMode() const;
+
   nsIContent* GetXBLInsertionParent() const
   {
     nsIContent* ip = GetXBLInsertionPoint();
