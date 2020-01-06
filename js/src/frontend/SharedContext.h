@@ -62,51 +62,6 @@ StatementKindIsUnlabeledBreakTarget(StatementKind kind)
     return StatementKindIsLoop(kind) || kind == StatementKind::Switch;
 }
 
-
-class AnyContextFlags
-{
-    
-    friend class SharedContext;
-
-    
-    bool hasExplicitUseStrict:1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool bindingsAccessedDynamically:1;
-
-    
-    
-    
-    bool hasDebuggerStatement:1;
-
-    
-    bool hasDirectEval:1;
-
-  public:
-    AnyContextFlags()
-     :  hasExplicitUseStrict(false),
-        bindingsAccessedDynamically(false),
-        hasDebuggerStatement(false),
-        hasDirectEval(false)
-    { }
-};
-
 class FunctionContextFlags
 {
     
@@ -224,7 +179,6 @@ class SharedContext
 {
   public:
     JSContext* const context;
-    AnyContextFlags anyCxFlags;
 
   protected:
     enum class Kind : uint8_t {
@@ -250,6 +204,36 @@ class SharedContext
     bool inWith_:1;
     bool needsThisTDZChecks_:1;
 
+    
+    bool hasExplicitUseStrict_:1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool bindingsAccessedDynamically_:1;
+
+    
+    
+    
+    bool hasDebuggerStatement_:1;
+
+    
+    bool hasDirectEval_:1;
+
     void computeAllowSyntax(Scope* scope);
     void computeInWith(Scope* scope);
     void computeThisBinding(Scope* scope);
@@ -257,7 +241,6 @@ class SharedContext
   public:
     SharedContext(JSContext* cx, Kind kind, Directives directives, bool extraWarnings)
       : context(cx),
-        anyCxFlags(),
         kind_(kind),
         thisBinding_(ThisBinding::Global),
         strictScript(directives.strict()),
@@ -267,7 +250,11 @@ class SharedContext
         allowSuperProperty_(false),
         allowSuperCall_(false),
         inWith_(false),
-        needsThisTDZChecks_(false)
+        needsThisTDZChecks_(false),
+        hasExplicitUseStrict_(false),
+        bindingsAccessedDynamically_(false),
+        hasDebuggerStatement_(false),
+        hasDirectEval_(false)
     { }
 
     
@@ -291,15 +278,15 @@ class SharedContext
     bool inWith()                      const { return inWith_; }
     bool needsThisTDZChecks()          const { return needsThisTDZChecks_; }
 
-    bool hasExplicitUseStrict()        const { return anyCxFlags.hasExplicitUseStrict; }
-    bool bindingsAccessedDynamically() const { return anyCxFlags.bindingsAccessedDynamically; }
-    bool hasDebuggerStatement()        const { return anyCxFlags.hasDebuggerStatement; }
-    bool hasDirectEval()               const { return anyCxFlags.hasDirectEval; }
+    bool hasExplicitUseStrict()        const { return hasExplicitUseStrict_; }
+    bool bindingsAccessedDynamically() const { return bindingsAccessedDynamically_; }
+    bool hasDebuggerStatement()        const { return hasDebuggerStatement_; }
+    bool hasDirectEval()               const { return hasDirectEval_; }
 
-    void setExplicitUseStrict()           { anyCxFlags.hasExplicitUseStrict        = true; }
-    void setBindingsAccessedDynamically() { anyCxFlags.bindingsAccessedDynamically = true; }
-    void setHasDebuggerStatement()        { anyCxFlags.hasDebuggerStatement        = true; }
-    void setHasDirectEval()               { anyCxFlags.hasDirectEval               = true; }
+    void setExplicitUseStrict()           { hasExplicitUseStrict_        = true; }
+    void setBindingsAccessedDynamically() { bindingsAccessedDynamically_ = true; }
+    void setHasDebuggerStatement()        { hasDebuggerStatement_        = true; }
+    void setHasDirectEval()               { hasDirectEval_               = true; }
 
     inline bool allBindingsClosedOver();
 
