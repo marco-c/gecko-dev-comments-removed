@@ -459,7 +459,8 @@ function* run_test_5(generator)
 
   
   
-  do_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   do_get_cookie_file(profile).remove(false);
