@@ -924,6 +924,11 @@ class XPCShellTests(object):
         if self.mozInfo.get("topsrcdir") is not None:
             self.env["MOZ_DEVELOPER_REPO_DIR"] = self.mozInfo["topsrcdir"].encode()
 
+        
+        
+        
+        self.env["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
+
     def buildEnvironment(self):
         """
           Create and returns a dictionary of self.env to include all the appropriate env variables and values.

@@ -2377,7 +2377,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 #ifdef MOZ_CONTENT_SANDBOX
   bool shouldSandbox = true;
   MaybeFileDesc brokerFd = void_t();
-#ifdef XP_LINUX
   
   
   
@@ -2386,6 +2385,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   shouldSandbox = (GetEffectiveContentSandboxLevel() > 0) &&
     !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX");
 
+#ifdef XP_LINUX
   if (shouldSandbox) {
     MOZ_ASSERT(!mSandboxBroker);
     UniquePtr<SandboxBroker::Policy> policy =
