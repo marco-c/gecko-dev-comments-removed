@@ -640,6 +640,12 @@ const PanelUI = {
     }
   },
 
+  onAreaReset(aArea, aContainer) {
+    if (gPhotonStructure && aContainer == this.overflowFixedList) {
+      this.updateOverflowStatus();
+    }
+  },
+
   
 
 
