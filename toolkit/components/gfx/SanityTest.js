@@ -18,6 +18,10 @@ const LEFT_EDGE = 8;
 const TOP_EDGE = 8;
 const CANVAS_WIDTH = 32;
 const CANVAS_HEIGHT = 64;
+
+
+const VIDEO_WIDTH = 132;
+const VIDEO_HEIGHT = 132;
 const DRIVER_PREF = "sanity-test.driver-version";
 const DEVICE_PREF = "sanity-test.device-id";
 const VERSION_PREF = "sanity-test.version";
@@ -114,13 +118,11 @@ function takeWindowSnapshot(win, ctx) {
 
 
 
-
-
 function verifyVideoRendering(ctx) {
-  return testPixel(ctx, 41, 105, 255, 255, 255, 255, 64) &&
-    testPixel(ctx, 107, 105, 0, 255, 0, 255, 64) &&
-    testPixel(ctx, 41, 171, 0, 0, 255, 255, 64) &&
-    testPixel(ctx, 107, 171, 255, 0, 0, 255, 64);
+  return testPixel(ctx, LEFT_EDGE + VIDEO_WIDTH / 4, TOP_EDGE + CANVAS_HEIGHT + VIDEO_HEIGHT / 4, 255, 255, 255, 255, 64) &&
+    testPixel(ctx, LEFT_EDGE + 3 * VIDEO_WIDTH / 4, TOP_EDGE + CANVAS_HEIGHT + VIDEO_HEIGHT / 4, 0, 255, 0, 255, 64) &&
+    testPixel(ctx, LEFT_EDGE + VIDEO_WIDTH / 4, TOP_EDGE + CANVAS_HEIGHT + 3 * VIDEO_HEIGHT / 4, 0, 0, 255, 255, 64) &&
+    testPixel(ctx, LEFT_EDGE + 3 * VIDEO_WIDTH / 4, TOP_EDGE + CANVAS_HEIGHT + 3 * VIDEO_HEIGHT / 4, 255, 0, 0, 255, 64);
 }
 
 
