@@ -211,11 +211,7 @@ public:
   
   
   
-  
-  
-  
-  
-  virtual void DownloadResumed(bool aForceNetworkLoading = false) final override;
+  void DownloadResumed();
 
   
   virtual void DownloadProgressed() final override;
@@ -1549,10 +1545,6 @@ protected:
 
   
   double mCurrentPlayRangeStart;
-
-  
-  
-  bool mBegun;
 
   
   bool mLoadedDataFired;

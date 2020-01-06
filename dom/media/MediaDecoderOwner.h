@@ -98,15 +98,6 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  virtual void DownloadResumed(bool aForceNetworkLoading = false) = 0;
-
-  
-  
   virtual void NotifySuspendedByCache(bool aSuspendedByCache) = 0;
 
   
