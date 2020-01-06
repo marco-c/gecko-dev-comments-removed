@@ -100,8 +100,11 @@ public:
 
   inline void ResolveSameStructsAs(const ServoStyleContext* aOther);
 
+  
+  
+  
   void AddSizeOfIncludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
-                              bool aIsDOM) const
+                              size_t* aCVsSize) const
   {
     
     
@@ -115,11 +118,7 @@ public:
     
     
     
-    if (aIsDOM) {
-      aSizes.mComputedValuesDom += ServoComputedValuesMallocSizeOf(p);
-    } else {
-      aSizes.mComputedValuesNonDom += ServoComputedValuesMallocSizeOf(p);
-    }
+    *aCVsSize += ServoComputedValuesMallocSizeOf(p);
     mSource.AddSizeOfExcludingThis(aState, aSizes);
   }
 

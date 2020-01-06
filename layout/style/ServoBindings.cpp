@@ -263,6 +263,18 @@ ServoComputedData::AddSizeOfExcludingThis(SizeOfState& aState,
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 #undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
+
+  if (visited_style.mPtr && !aState.HaveSeenPtr(visited_style.mPtr)) {
+    visited_style.mPtr->AddSizeOfIncludingThis(
+      aState, aSizes, &aSizes.mComputedValuesVisited);
+  }
+
+  
+  
+  
+  
+  
+  
 }
 
 void
