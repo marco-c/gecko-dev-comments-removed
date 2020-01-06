@@ -198,7 +198,9 @@ protected:
 
 
 
-  void Shutdown();
+
+
+  void Shutdown(bool aInitSucceeded);
 
   bool IsShutdownStarted() const;
 
@@ -221,8 +223,7 @@ protected:
 
 
 
-
-  nsresult InitFaviconsDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
+  nsresult EnsureFaviconsDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage);
 
   
 
@@ -238,6 +239,15 @@ protected:
 
 
   nsresult ForceCrashAndReplaceDatabase(const nsCString& aReason);
+
+  
+
+
+
+
+
+
+  nsresult SetupDatabaseConnection(nsCOMPtr<mozIStorageService>& aStorage);
 
   
 

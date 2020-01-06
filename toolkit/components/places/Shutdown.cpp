@@ -188,7 +188,7 @@ ConnectionShutdownBlocker::BlockShutdown(nsIAsyncShutdownClient* aParentClient)
   Database::gDatabase = nullptr;
 
   
-  mDatabase->Shutdown();
+  mDatabase->Shutdown(true);
   mState = CALLED_STORAGESHUTDOWN;
   return NS_OK;
 }
