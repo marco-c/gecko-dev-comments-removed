@@ -8,7 +8,7 @@ for (let [key, val] of Object.entries({
 
 
 
-WEAVE_VERSION: "1.59.0",
+WEAVE_VERSION: "1.60.0",
 
 
 SYNC_API_VERSION:                      "1.5",
