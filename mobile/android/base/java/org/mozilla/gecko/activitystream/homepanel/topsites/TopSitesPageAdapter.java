@@ -34,13 +34,12 @@ import java.util.List;
     private final HomePager.OnUrlOpenListener onUrlOpenListener;
     private final HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener;
 
-     TopSitesPageAdapter(Context context, int pageNumber, int tilesSize,
+     TopSitesPageAdapter(Context context, int pageNumber,
                                HomePager.OnUrlOpenListener onUrlOpenListener, HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener) {
         setHasStableIds(true);
 
         this.topSites = new ArrayList<>();
         this.pageNumber = pageNumber;
-        this.tilesSize = tilesSize;
 
         this.onUrlOpenListener = onUrlOpenListener;
         this.onUrlOpenInBackgroundListener = onUrlOpenInBackgroundListener;
@@ -50,7 +49,8 @@ import java.util.List;
 
 
 
-    public void swapCursor(Cursor cursor, int startIndex) {
+    public void swapCursor(final Cursor cursor, final int startIndex, final int tilesSize) {
+        this.tilesSize = tilesSize;
         topSites.clear();
 
         if (cursor == null) {
