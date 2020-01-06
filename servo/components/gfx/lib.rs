@@ -3,18 +3,13 @@
 
 
 
-#![feature(cfg_target_feature)]
-#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(heap_api))]
-
-#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(alloc))]
+#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(allocator_api))]
 #![feature(box_syntax)]
+#![feature(cfg_target_feature)]
 #![feature(range_contains)]
 #![feature(unique)]
 
 #![deny(unsafe_code)]
-
-#[cfg(any(target_os = "linux", target_os = "android"))]
-extern crate alloc;
 
 extern crate app_units;
 #[macro_use]
