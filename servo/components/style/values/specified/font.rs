@@ -168,6 +168,7 @@ impl ToComputedValue for KeywordSize {
     type ComputedValue = NonNegativeLength;
     #[inline]
     fn to_computed_value(&self, cx: &Context) -> NonNegativeLength {
+        use context::QuirksMode;
         use values::specified::length::au_to_int_px;
         
         
@@ -188,9 +189,29 @@ impl ToComputedValue for KeywordSize {
             [9,   10,    13,    16,    18,    24,    32,    48]
         ];
 
-        static FONT_SIZE_FACTORS: [i32; 8] = [60, 75, 89, 100, 120, 150, 200, 300];
-
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        static QUIRKS_FONT_SIZE_MAPPING: [[i32; 8]; 8] = [
+            [9,    9,     9,     9,    11,    14,    18,    28],
+            [9,    9,     9,    10,    12,    15,    20,    31],
+            [9,    9,     9,    11,    13,    17,    22,    34],
+            [9,    9,    10,    12,    14,    18,    24,    37],
+            [9,    9,    10,    13,    16,    20,    26,    40],
+            [9,    9,    11,    14,    17,    21,    28,    42],
+            [9,   10,    12,    15,    17,    23,    30,    45],
+            [9,   10,    13,    16,    18,    24,    32,    48]
+        ];
+
+        static FONT_SIZE_FACTORS: [i32; 8] = [60, 75, 89, 100, 120, 150, 200, 300];
 
         let ref gecko_font = cx.style().get_font().gecko();
         let base_size = unsafe { Atom::with(gecko_font.mLanguage.mRawPtr, |atom| {
@@ -200,7 +221,12 @@ impl ToComputedValue for KeywordSize {
         let base_size_px = au_to_int_px(base_size as f32);
         let html_size = self.html_size() as usize;
         if base_size_px >= 9 && base_size_px <= 16 {
-            Au::from_px(FONT_SIZE_MAPPING[(base_size_px - 9) as usize][html_size]).into()
+            let mapping = if cx.quirks_mode == QuirksMode::Quirks {
+                QUIRKS_FONT_SIZE_MAPPING
+            } else {
+                FONT_SIZE_MAPPING
+            };
+            Au::from_px(mapping[(base_size_px - 9) as usize][html_size]).into()
         } else {
             Au(FONT_SIZE_FACTORS[html_size] * base_size / 100).into()
         }
