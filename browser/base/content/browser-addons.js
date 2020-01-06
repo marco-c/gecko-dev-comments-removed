@@ -5,6 +5,9 @@
 
 
 
+
+
+
 function removeNotificationOnEnd(notification, installs) {
   let count = installs.length;
 
@@ -29,7 +32,7 @@ function removeNotificationOnEnd(notification, installs) {
   }
 }
 
-const gXPInstallObserver = {
+var gXPInstallObserver = {
   _findChildShell(aDocShell, aSoughtShell) {
     if (aDocShell == aSoughtShell)
       return aDocShell;
@@ -482,7 +485,7 @@ const gXPInstallObserver = {
   }
 };
 
-const gExtensionsNotifications = {
+var gExtensionsNotifications = {
   initialized: false,
   init() {
     this.updateAlerts();
