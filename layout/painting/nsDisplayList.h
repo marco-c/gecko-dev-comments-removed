@@ -2829,8 +2829,7 @@ public:
   
 
 
-
-  uint32_t Count() const;
+  uint32_t Count() const { return mLength; }
   
 
 
