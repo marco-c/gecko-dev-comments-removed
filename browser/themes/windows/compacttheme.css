@@ -30,17 +30,22 @@
   text-shadow: none !important;
 }
 
+@media (-moz-os-version: windows-win7) {
+  @media (-moz-windows-default-theme) {
+    
+    #TabsToolbar,
+    #TabsToolbar toolbarbutton[disabled="true"] {
+      color: hsl(240,9%,98%);
+    }
+
+    
+    .tabbrowser-tab {
+      color: var(--chrome-color) !important;
+    }
+  }
+}
+
 @media (-moz-windows-glass) {
-  
-  #TabsToolbar {
-    color: hsl(240,9%,98%);
-  }
-
-  
-  .tabbrowser-tab {
-    color: var(--chrome-color) !important;
-  }
-
   
   #toolbar-menubar {
     text-shadow: 0 0 .5em white, 0 0 .5em white, 0 1px 0 rgba(255,255,255,.4);
