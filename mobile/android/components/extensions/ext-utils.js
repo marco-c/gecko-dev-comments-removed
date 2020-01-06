@@ -438,13 +438,13 @@ class Tab extends TabBase {
 }
 
 
-class TabContext {
+class TabContext extends EventEmitter {
   constructor(getDefaults, extension) {
+    super();
+
     this.extension = extension;
     this.getDefaults = getDefaults;
     this.tabData = new Map();
-
-    EventEmitter.decorate(this);
 
     GlobalEventDispatcher.registerListener(this, [
       "Tab:Selected",
