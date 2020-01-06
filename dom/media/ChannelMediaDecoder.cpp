@@ -104,19 +104,8 @@ void
 ChannelMediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mDecoder) {
-    return;
-  }
-  mDecoder->NotifyDownloadEnded(aStatus);
-  if (NS_SUCCEEDED(aStatus)) {
-    MediaDecoderOwner* owner = GetMediaOwner();
-    MOZ_ASSERT(owner);
-    owner->DownloadSuspended();
-
-    
-    
-    
-    owner->NotifySuspendedByCache(true);
+  if (mDecoder) {
+    mDecoder->NotifyDownloadEnded(aStatus);
   }
 }
 
@@ -305,19 +294,21 @@ ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus)
 
   LOG("NotifyDownloadEnded, status=%" PRIx32, static_cast<uint32_t>(aStatus));
 
+  MediaDecoderOwner* owner = GetOwner();
   if (aStatus == NS_BINDING_ABORTED) {
     
-    GetOwner()->LoadAborted();
+    owner->LoadAborted();
     return;
   }
 
   UpdatePlaybackRate();
 
   if (NS_SUCCEEDED(aStatus)) {
+    owner->DownloadSuspended();
     
     
     
-    
+    owner->NotifySuspendedByCache(true);
   } else if (aStatus != NS_BASE_STREAM_CLOSED) {
     NetworkError();
   }
