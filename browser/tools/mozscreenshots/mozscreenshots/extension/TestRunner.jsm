@@ -21,7 +21,7 @@ Cu.import("resource://gre/modules/Geometry.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserTestUtils",
                                   "resource://testing-common/BrowserTestUtils.jsm");
 
-Cu.import("chrome://mozscreenshots/content/Screenshot.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Screenshot", "chrome://mozscreenshots/content/Screenshot.jsm");
 
 
 
@@ -120,9 +120,35 @@ this.TestRunner = {
 
 
 
+
+
+  filterRestrictions(setName) {
+    let match = /\[([^\]]+)\]$/.exec(setName);
+    if (!match) {
+      throw new Error(`Invalid restrictions in ${setName}`);
+    }
+    
+    setName = setName.slice(0, match.index);
+    let restrictions = match[1].split(",").reduce((set, name) => set.add(name.trim())
+                                                 , new Set());
+
+    return { trimmedSetName: setName, restrictions };
+  },
+
+  
+
+
+
+
   loadSets(setNames) {
     let sets = [];
     for (let setName of setNames) {
+      let restrictions = null;
+      if (setName.includes("[")) {
+        let filteredData = this.filterRestrictions(setName);
+        setName = filteredData.trimmedSetName;
+        restrictions = filteredData.restrictions;
+      }
       try {
         let imported = {};
         Cu.import("chrome://mozscreenshots/content/configurations/" + setName + ".jsm",
@@ -132,12 +158,24 @@ this.TestRunner = {
         if (!configurationNames.length) {
           throw new Error(setName + " has no configurations for this environment");
         }
+        
+        if (restrictions) {
+          let incorrectConfigs = [...restrictions].filter(r => !configurationNames.includes(r));
+          if (incorrectConfigs.length) {
+            throw new Error("non existent configurations: " + incorrectConfigs);
+          }
+        }
+        let configurations = {};
         for (let config of configurationNames) {
           
           
           imported[setName].configurations[config].name = config;
+          
+          if (!restrictions || restrictions.has(config)) {
+            configurations[config] = imported[setName].configurations[config];
+          }
         }
-        sets.push(imported[setName].configurations);
+        sets.push(configurations);
       } catch (ex) {
         log.error("Error loading set: " + setName);
         log.error(ex);
@@ -308,6 +346,45 @@ this.TestRunner = {
       return a + "_" + b.name;
     }, "");
   },
+
+  
+
+
+
+
+  findComma(envVar) {
+    let nestingDepth = 0;
+    for (let i = 0; i < envVar.length; i++) {
+      if (envVar[i] === "[") {
+        nestingDepth += 1;
+      } else if (envVar[i] === "]") {
+        nestingDepth -= 1;
+      } else if (envVar[i] === "," && nestingDepth === 0) {
+        return i;
+      }
+    }
+
+    return -1;
+  },
+
+  
+
+
+
+
+
+  splitEnv(envVar) {
+    let result = [];
+
+    let commaIndex = this.findComma(envVar);
+    while (commaIndex != -1) {
+      result.push(envVar.slice(0, commaIndex).trim());
+      envVar = envVar.slice(commaIndex + 1);
+      commaIndex = this.findComma(envVar);
+    }
+    result.push(envVar.trim());
+    return result;
+  }
 };
 
 
