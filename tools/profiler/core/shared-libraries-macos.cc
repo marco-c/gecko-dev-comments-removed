@@ -7,19 +7,16 @@
 #include <mach-o/arch.h>
 #include <mach-o/loader.h>
 #include <mach-o/dyld_images.h>
-#include <mach-o/dyld.h>
 #include <mach/task_info.h>
 #include <mach/task.h>
 #include <mach/mach_init.h>
 #include <mach/mach_traps.h>
-#include <dlfcn.h>
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
 #include <sstream>
 #include "mozilla/Unused.h"
 #include "nsNativeCharsetUtils.h"
-#include "ClearOnShutdown.h"
 
 #include "shared-libraries.h"
 
@@ -38,74 +35,8 @@ typedef segment_command_64 mach_segment_command_type;
 #define seg_size uint64_t
 #endif
 
-struct NativeSharedLibrary
-{
-  const platform_mach_header* header;
-  nsCString path;
-};
-static UniquePtr<nsTArray<NativeSharedLibrary>> sSharedLibrariesList;
-static StaticMutex sSharedLibrariesMutex;
-
-static void
-SharedLibraryAddImage(const struct mach_header* mh, intptr_t vmaddr_slide)
-{
-  
-  
-  
-  auto header = reinterpret_cast<const platform_mach_header*>(mh);
-
-  Dl_info info;
-  if (!dladdr(header, &info)) {
-    return;
-  }
-
-  StaticMutexAutoLock lock(sSharedLibrariesMutex);
-  if (!sSharedLibrariesList) {
-    return;
-  }
-
-  NativeSharedLibrary lib;
-  lib.header = header;
-  lib.path.AssignASCII(info.dli_fname);
-  sSharedLibrariesList.get()->AppendElement(lib);
-}
-
-static void
-SharedLibraryRemoveImage(const struct mach_header* mh, intptr_t vmaddr_slide)
-{
-  
-  
-  
-  auto header = reinterpret_cast<const platform_mach_header*>(mh);
-
-  StaticMutexAutoLock lock(sSharedLibrariesMutex);
-  if (!sSharedLibrariesList) {
-    return;
-  }
-
-  auto& list = *sSharedLibrariesList.get();
-  uint32_t count = list.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    if (list[i].header == header) {
-      list.RemoveElementAt(i);
-      return;
-    }
-  }
-}
-
-void
-SharedLibraryInfo::Initialize()
-{
-  MOZ_ASSERT(!sSharedLibrariesList);
-  sSharedLibrariesList = MakeUnique<nsTArray<NativeSharedLibrary>>();
-  ClearOnShutdown(&sSharedLibrariesList);
-
-  _dyld_register_func_for_add_image(SharedLibraryAddImage);
-  _dyld_register_func_for_remove_image(SharedLibraryRemoveImage);
-}
-
 static
-void addSharedLibrary(const platform_mach_header* header, const char *path, SharedLibraryInfo &info) {
+void addSharedLibrary(const platform_mach_header* header, char *path, SharedLibraryInfo &info) {
   const struct load_command *cmd =
     reinterpret_cast<const struct load_command *>(header + 1);
 
@@ -162,19 +93,59 @@ void addSharedLibrary(const platform_mach_header* header, const char *path, Shar
 
 
 
-SharedLibraryInfo
-SharedLibraryInfo::GetInfoForSelf()
+SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
 {
-  StaticMutexAutoLock lock(sSharedLibrariesMutex);
   SharedLibraryInfo sharedLibraryInfo;
 
-  if (NS_WARN_IF(!sSharedLibrariesList.get())) {
-    return sharedLibraryInfo;
+  const dyld_image_info* infoArray = nullptr;
+  size_t infoCount = 0;
+
+  
+  
+  
+  
+  int retryCount = 100;
+  while (!infoArray && --retryCount > 0) {
+    task_dyld_info_data_t task_dyld_info;
+    mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
+    if (task_info(mach_task_self (), TASK_DYLD_INFO, (task_info_t)&task_dyld_info,
+                  &count) != KERN_SUCCESS) {
+      return sharedLibraryInfo;
+    }
+
+    struct dyld_all_image_infos* aii =
+      (struct dyld_all_image_infos*)task_dyld_info.all_image_info_addr;
+    infoCount = aii->infoArrayCount;
+    infoArray = aii->infoArray;
+
+    
+    
+    if (!infoArray) {
+      
+      
+      infoCount = 0;
+      PR_Sleep(0);
+    }
   }
 
-  for (auto& info : *sSharedLibrariesList.get()) {
-    addSharedLibrary(info.header, info.path.get(), sharedLibraryInfo);
+  
+  
+  for (size_t i = 0; i < infoCount; ++i) {
+    const dyld_image_info& info = infoArray[i];
+
+    
+    
+    if (info.imageLoadAddress->magic != MACHO_MAGIC_NUMBER) {
+      continue;
+    }
+
+    const platform_mach_header* header =
+      reinterpret_cast<const platform_mach_header*>(info.imageLoadAddress);
+
+    
+    addSharedLibrary(header, (char*)info.imageFilePath, sharedLibraryInfo);
   }
 
   return sharedLibraryInfo;
 }
+
