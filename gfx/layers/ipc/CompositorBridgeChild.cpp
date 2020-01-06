@@ -430,7 +430,7 @@ CompositorBridgeChild::RecvUpdatePluginConfigurations(const LayoutDeviceIntPoint
         
         widget->Resize(aContentOffset.x + bounds.x,
                        aContentOffset.y + bounds.y,
-                       bounds.Width(), bounds.Height(), true);
+                       bounds.width, bounds.height, true);
       }
 
       widget->Enable(isVisible);
@@ -1189,15 +1189,18 @@ CompositorBridgeChild::NotifyFinishedAsyncPaint(CapturedPaintState* aState)
 }
 
 void
-CompositorBridgeChild::NotifyFinishedAsyncPaintLayer()
+CompositorBridgeChild::NotifyFinishedAsyncPaintTransaction()
 {
   MOZ_ASSERT(PaintThread::IsOnPaintThread());
   MonitorAutoLock lock(mPaintLock);
+  
+  
+  MOZ_RELEASE_ASSERT(mOutstandingAsyncPaints == 0);
 
   
   
   
-  if (mIsWaitingForPaint && mOutstandingAsyncPaints == 0) {
+  if (mIsWaitingForPaint) {
     ResumeIPCAfterAsyncPaint();
 
     

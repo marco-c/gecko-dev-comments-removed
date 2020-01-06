@@ -243,7 +243,8 @@ public:
   
   
   
-  void NotifyFinishedAsyncPaintLayer();
+  
+  void NotifyFinishedAsyncPaintTransaction();
 
 private:
   
