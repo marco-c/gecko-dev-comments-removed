@@ -8,11 +8,11 @@ var {AppConstants} = SpecialPowers.Cu.import("resource://gre/modules/AppConstant
 
 
 
-if (location.pathname.includes("test-oop-extensions")) {
-  SpecialPowers.pushPrefEnv({set: [
-    ["extensions.webextensions.remote", true],
-    ["layers.popups.compositing.enabled", true],
-  ]});
+let remote = location.pathname.includes("test-oop-extensions");
+SpecialPowers.pushPrefEnv({set: [
+  ["extensions.webextensions.remote", remote],
+]});
+if (remote) {
   
   
   SpecialPowers.setIntPref("dom.ipc.keepProcessesAlive.extension", 1);
