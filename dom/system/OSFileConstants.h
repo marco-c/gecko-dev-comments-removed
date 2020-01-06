@@ -42,6 +42,16 @@ private:
   ~OSFileConstantsService();
 
   bool mInitialized;
+
+  struct Paths;
+  nsAutoPtr<Paths> mPaths;
+
+  
+
+
+
+
+  uint32_t mUserUmask;
 };
 
 } 
