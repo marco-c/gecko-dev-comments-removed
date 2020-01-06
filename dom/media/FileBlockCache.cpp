@@ -103,43 +103,53 @@ FileBlockCache::FileBlockCache()
 FileBlockCache::~FileBlockCache()
 {
   NS_ASSERTION(!mIsOpen, "Should Close() FileBlockCache before destroying");
-  {
-    
-    
-    MonitorAutoLock mon(mFileMonitor);
-    if (mFD) {
-      PRStatus prrc;
-      prrc = PR_Close(mFD);
-      if (prrc != PR_SUCCESS) {
-        NS_WARNING("PR_Close() failed.");
-      }
-      mFD = nullptr;
-    }
-  }
 }
 
 void FileBlockCache::Close()
 {
   LOG("Close()");
 
-  MonitorAutoLock mon(mDataMonitor);
-  if (!mIsOpen) {
-    return;
+  nsCOMPtr<nsIThread> thread;
+  {
+    MonitorAutoLock mon(mDataMonitor);
+    if (!mIsOpen) {
+      return;
+    }
+    mIsOpen = false;
+    if (!mThread) {
+      return;
+    }
+    thread.swap(mThread);
   }
-  mIsOpen = false;
-  if (!mThread) {
-    return;
+
+  PRFileDesc* fd;
+  {
+    MonitorAutoLock lock(mFileMonitor);
+    fd = mFD;
+    mFD = nullptr;
   }
+
   
   
   
-  
-  
-  
-  nsCOMPtr<nsIRunnable> event = new ShutdownThreadEvent(mThread);
-  SystemGroup::Dispatch(
-    "ShutdownThreadEvent", TaskCategory::Other, event.forget());
-  mThread = nullptr;
+  nsresult rv = thread->Dispatch(NS_NewRunnableFunction([thread, fd] {
+    if (fd) {
+      PRStatus prrc;
+      prrc = PR_Close(fd);
+      if (prrc != PR_SUCCESS) {
+        NS_WARNING("PR_Close() failed.");
+      }
+    }
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIRunnable> event = new ShutdownThreadEvent(thread);
+    SystemGroup::Dispatch(
+      "ShutdownThreadEvent", TaskCategory::Other, event.forget());
+  }), NS_DISPATCH_NORMAL);
+  NS_ENSURE_SUCCESS_VOID(rv);
 }
 
 template<typename Container, typename Value>
