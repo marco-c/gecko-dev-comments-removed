@@ -1816,12 +1816,6 @@ KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 
   
   
-  if (mDocument->IsStyledByServo()) {
-    return false;
-  }
-
-  
-  
   return NS_IsHintSubset(
     mCumulativeChangeHint, nsChangeHint_Hints_CanIgnoreIfNotVisible);
 }
