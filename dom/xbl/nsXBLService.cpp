@@ -55,7 +55,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoRestyleManager.h"
-#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Element.h"
 
@@ -384,63 +383,7 @@ nsXBLService::IsChromeOrResourceURI(nsIURI* aURI)
 }
 
 
-
-
-static void
-EnsureSubtreeStyled(Element* aElement)
-{
-  if (!aElement->IsStyledByServo() || !aElement->HasServoData()) {
-    return;
-  }
-
-  if (Servo_Element_IsDisplayNone(aElement)) {
-    return;
-  }
-
-  nsIPresShell* presShell = aElement->OwnerDoc()->GetShell();
-  if (!presShell || !presShell->DidInitialize()) {
-    return;
-  }
-
-  ServoStyleSet* servoSet = presShell->StyleSet()->AsServo();
-  StyleChildrenIterator iter(aElement);
-  for (nsIContent* child = iter.GetNextChild();
-       child;
-       child = iter.GetNextChild()) {
-    if (!child->IsElement()) {
-      continue;
-    }
-
-    if (child->AsElement()->HasServoData()) {
-      
-      
-      return;
-    }
-
-    servoSet->StyleNewSubtree(child->AsElement());
-  }
-}
-
-
-class MOZ_RAII AutoEnsureSubtreeStyled
-{
-public:
-  explicit AutoEnsureSubtreeStyled(Element* aElement)
-    : mElement(aElement)
-  {
-  }
-
-  ~AutoEnsureSubtreeStyled()
-  {
-    EnsureSubtreeStyled(mElement);
-  }
-
-private:
-  Element* mElement;
-};
-
-
-class MOZ_RAII AutoStyleElement
+class MOZ_STACK_CLASS AutoStyleElement
 {
 public:
   explicit AutoStyleElement(Element* aElement)
@@ -458,8 +401,9 @@ public:
       return;
     }
 
-    ServoStyleSet* servoSet = presShell->StyleSet()->AsServo();
-    servoSet->StyleNewSubtree(mElement);
+    if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
+      servoSet->StyleNewSubtree(mElement);
+    }
   }
 
 private:
@@ -479,23 +423,11 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   *aBinding = nullptr;
   *aResolveStyle = false;
 
-  AutoEnsureSubtreeStyled subtreeStyled(aContent->AsElement());
-
-  if (MOZ_UNLIKELY(!aURL)) {
-    return NS_OK;
-  }
-
-  
-  nsXBLBinding* binding = aContent->GetXBLBinding();
-  if (binding && !binding->MarkedForDeath() &&
-      binding->PrototypeBinding()->CompareBindingURI(aURL)) {
-    return NS_OK;
-  }
+  nsresult rv;
 
   nsCOMPtr<nsIDocument> document = aContent->OwnerDoc();
 
   nsAutoCString urlspec;
-  nsresult rv;
   bool ok = nsContentUtils::GetWrapperSafeScriptFilename(document, aURL,
                                                          urlspec, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -508,9 +440,35 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<AutoStyleElement> styleElement;
+  if (aContent->IsStyledByServo()) {
+    styleElement.emplace(aContent->AsElement());
+  }
+
+  nsXBLBinding* binding = aContent->GetXBLBinding();
   if (binding) {
-    FlushStyleBindings(aContent);
-    binding = nullptr;
+    if (binding->MarkedForDeath()) {
+      FlushStyleBindings(aContent);
+      binding = nullptr;
+    }
+    else {
+      
+      if (binding->PrototypeBinding()->CompareBindingURI(aURL))
+        return NS_OK;
+      FlushStyleBindings(aContent);
+      binding = nullptr;
+    }
   }
 
   bool ready;
@@ -532,11 +490,15 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  AutoStyleElement styleElement(aContent->AsElement());
-
   
-  
-  aContent->SetXBLBinding(newBinding);
+  if (binding) {
+    
+    binding->RootBinding()->SetBaseBinding(newBinding);
+  }
+  else {
+    
+    aContent->SetXBLBinding(newBinding);
+  }
 
   {
     nsAutoScriptBlocker scriptBlocker;
@@ -1071,6 +1033,11 @@ nsXBLService::FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoun
   nsCOMPtr<nsIDocument> doc;
   rv = NS_NewXMLDocument(getter_AddRefs(doc));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  doc->ForceEnableXULXBL();
 
   
   

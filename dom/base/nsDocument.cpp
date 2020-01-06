@@ -173,6 +173,7 @@
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/MediaSource.h"
+#include "mozilla/dom/FlyWebService.h"
 
 #include "mozAutoDocUpdate.h"
 #include "nsGlobalWindow.h"
@@ -6397,7 +6398,7 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
   
   
   
-  nsTArray<RefPtr<nsGenericHTMLElement>>& constructionStack =
+  nsTArray<RefPtr<Element>>& constructionStack =
     definition->mConstructionStack;
   if (constructionStack.Length()) {
     element = constructionStack.LastElement();
@@ -9118,6 +9119,13 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
   
   
   if (ContainsMSEContent()) {
+    return false;
+  }
+
+  
+  
+  FlyWebService* flyWebService = FlyWebService::GetExisting();
+  if (flyWebService && flyWebService->HasConnectionOrServer(win->WindowID())) {
     return false;
   }
 

@@ -3393,9 +3393,9 @@ GetCustomElementReactionsStack(JS::Handle<JSObject*> aObj);
 
 
 
-already_AddRefed<nsGenericHTMLElement>
-CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
-                  JS::Handle<JSObject*> aGivenProto, ErrorResult& aRv);
+already_AddRefed<Element>
+CreateXULOrHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
+                       JS::Handle<JSObject*> aGivenProto, ErrorResult& aRv);
 
 void
 SetDocumentAndPageUseCounter(JSObject* aObject, UseCounter aUseCounter);

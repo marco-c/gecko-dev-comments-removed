@@ -1911,7 +1911,7 @@ class CGClassConstructor(CGAbstractStaticMethod):
             
             
             callGenerator = CGPerSignatureCall(signatures[0][0], signatures[0][1],
-                                               "CreateHTMLElement", True,
+                                               "CreateXULOrHTMLElement", True,
                                                self.descriptor, self._ctor,
                                                isConstructor=True)
         else:

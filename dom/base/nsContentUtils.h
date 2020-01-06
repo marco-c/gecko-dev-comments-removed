@@ -20,6 +20,7 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "js/RootingAPI.h"
+#include "mozilla/dom/FromParser.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/GuardObjects.h"
@@ -3027,6 +3028,14 @@ public:
 
 
   static void TryToUpgradeElement(Element* aElement);
+
+  
+
+
+
+  static nsresult NewXULOrHTMLElement(Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
+                                      mozilla::dom::FromParser aFromParser, const nsAString* aIs,
+                                      mozilla::dom::CustomElementDefinition* aDefinition);
 
   
 

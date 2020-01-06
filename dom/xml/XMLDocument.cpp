@@ -236,6 +236,12 @@ NS_NewXBLDocument(nsIDOMDocument** aInstancePtrResult,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIDocument> idoc = do_QueryInterface(*aInstancePtrResult);
+
+  
+  
+  
+  idoc->ForceEnableXULXBL();
+
   nsDocument* doc = static_cast<nsDocument*>(idoc.get());
   doc->SetLoadedAsInteractiveData(true);
   doc->SetReadyStateInternal(nsIDocument::READYSTATE_COMPLETE);

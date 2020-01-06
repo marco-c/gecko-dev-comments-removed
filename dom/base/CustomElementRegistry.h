@@ -174,7 +174,7 @@ struct CustomElementDefinition
   UniquePtr<mozilla::dom::LifecycleCallbacks> mCallbacks;
 
   
-  nsTArray<RefPtr<nsGenericHTMLElement>> mConstructionStack;
+  nsTArray<RefPtr<Element>> mConstructionStack;
 
   
   uint32_t mDocOrder;
