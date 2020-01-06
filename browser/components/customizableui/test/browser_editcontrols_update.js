@@ -153,27 +153,25 @@ add_task(async function test_panelui_customize_to_toolbar() {
   window.resizeTo(originalWidth, window.outerHeight);
   await waitForCondition(() => !navbar.hasAttribute("overflowing"));
 
-  if (gPhotonStructure) {
-    CustomizableUI.addWidgetToArea("edit-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
-    
-    updateEditUIVisibility();
+  CustomizableUI.addWidgetToArea("edit-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  
+  updateEditUIVisibility();
 
-    overridePromise = expectCommandUpdate(isMac ? 1 : 0);
-    gURLBar.select();
-    await overridePromise;
+  overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+  gURLBar.select();
+  await overridePromise;
 
-    
-    overridePromise = expectCommandUpdate(1);
-    await navbar.overflowable.show();
-    gURLBar.select();
-    await overridePromise;
+  
+  overridePromise = expectCommandUpdate(1);
+  await navbar.overflowable.show();
+  gURLBar.select();
+  await overridePromise;
 
-    
-    kOverflowPanel.hidePopup();
-    overridePromise = expectCommandUpdate(isMac ? 1 : 0);
-    gURLBar.select();
-    await overridePromise;
-  }
+  
+  kOverflowPanel.hidePopup();
+  overridePromise = expectCommandUpdate(isMac ? 1 : 0);
+  gURLBar.select();
+  await overridePromise;
 });
 
 
