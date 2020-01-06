@@ -20,6 +20,7 @@ namespace dom {
 class BlobImpl;
 class ContentChild;
 class ContentParent;
+class PBlobChild;
 
 } 
 
@@ -69,6 +70,14 @@ public:
   
   static PBackgroundChild*
   SynchronouslyCreateForCurrentThread();
+
+  static mozilla::dom::PBlobChild*
+  GetOrCreateActorForBlob(PBackgroundChild* aBackgroundActor,
+                          nsIDOMBlob* aBlob);
+
+  static mozilla::dom::PBlobChild*
+  GetOrCreateActorForBlobImpl(PBackgroundChild* aBackgroundActor,
+                              mozilla::dom::BlobImpl* aBlobImpl);
 
   
   static void
