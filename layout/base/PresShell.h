@@ -128,7 +128,6 @@ public:
                                   eInferFromBitToAdd) override;
   virtual void FrameNeedsToContinueReflow(nsIFrame *aFrame) override;
   virtual void CancelAllPendingReflows() override;
-  virtual bool IsSafeToFlush() const override;
   virtual void DoFlushPendingNotifications(mozilla::FlushType aType) override;
   virtual void DoFlushPendingNotifications(mozilla::ChangesToFlush aType) override;
   virtual void DestroyFramesForAndRestyle(mozilla::dom::Element* aElement) override;
@@ -856,11 +855,6 @@ protected:
   uint64_t                  mAPZFocusSequenceNumber;
   
   FocusTarget               mAPZFocusTarget;
-
-  
-  
-  
-  uint16_t                  mChangeNestCount;
 
   bool                      mDocumentLoading : 1;
   bool                      mIgnoreFrameDestruction : 1;

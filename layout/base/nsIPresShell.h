@@ -543,9 +543,7 @@ public:
   
 
 
-
-
-  virtual bool IsSafeToFlush() const = 0;
+  bool IsSafeToFlush() const;
 
   
 
@@ -1707,6 +1705,11 @@ protected:
   mozilla::Maybe<float>     mResolution;
 
   int16_t                   mSelectionFlags;
+
+  
+  
+  
+  uint16_t                  mChangeNestCount;
 
   
   
