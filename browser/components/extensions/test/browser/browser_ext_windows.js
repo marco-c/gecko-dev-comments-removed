@@ -160,6 +160,41 @@ add_task(async function testWindowTitle() {
   };
   await updateWindow({titlePreface: PREFACE2}, apiWin, expected);
 
+  
+  apiWin = await createApiWin({url: START_URL, titlePreface: PREFACE1});
+  realWin = windowTracker.getWindow(apiWin.id);
+
+  
+  expected = {
+    before: {
+      preface: PREFACE1,
+      text: START_TITLE,
+    },
+    after: {
+      preface: "",
+      text: START_TITLE,
+    },
+  };
+  await updateWindow({titlePreface: ""}, apiWin, expected);
+  ok(!realWin.document.title.startsWith(expected.before.preface), "Updated window has the expected empty title preface.");
+
+  
+  apiWin = await createApiWin({url: START_URL, titlePreface: PREFACE1});
+  realWin = windowTracker.getWindow(apiWin.id);
+
+  
+  expected = {
+    before: {
+      preface: PREFACE1,
+      text: START_TITLE,
+    },
+    after: {
+      preface: PREFACE1,
+      text: START_TITLE,
+    },
+  };
+  await updateWindow({}, apiWin, expected);
+
   await extension.unload();
 });
 
