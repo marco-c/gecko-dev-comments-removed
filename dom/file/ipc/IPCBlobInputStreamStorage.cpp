@@ -122,12 +122,24 @@ void
 IPCBlobInputStreamStorage::GetStream(const nsID& aID,
                                      nsIInputStream** aInputStream)
 {
-  mozilla::StaticMutexAutoLock lock(gMutex);
-  StreamData* data = mStorage.Get(aID);
-  if (!data) {
-    *aInputStream = nullptr;
-    return;
+  *aInputStream = nullptr;
+
+  nsCOMPtr<nsIInputStream> inputStream;
+
+  
+  
+  
+  {
+    mozilla::StaticMutexAutoLock lock(gMutex);
+    StreamData* data = mStorage.Get(aID);
+    if (!data) {
+      return;
+    }
+
+    inputStream = data->mInputStream;
   }
+
+  MOZ_ASSERT(inputStream);
 
   
   
@@ -136,13 +148,20 @@ IPCBlobInputStreamStorage::GetStream(const nsID& aID,
   nsCOMPtr<nsIInputStream> replacementStream;
 
   nsresult rv =
-    NS_CloneInputStream(data->mInputStream, getter_AddRefs(clonedStream),
+    NS_CloneInputStream(inputStream, getter_AddRefs(clonedStream),
                         getter_AddRefs(replacementStream));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
 
   if (replacementStream) {
+    mozilla::StaticMutexAutoLock lock(gMutex);
+    StreamData* data = mStorage.Get(aID);
+    
+    if (!data) {
+      return;
+    }
+
     data->mInputStream = replacementStream;
   }
 
