@@ -1131,10 +1131,10 @@ public abstract class GeckoApp extends GeckoActivity
             final String action = intent.getAction();
             final String args = GeckoApplication.addDefaultGeckoArgs(
                     intent.getStringExtra("args"));
+            final int flags = ACTION_DEBUG.equals(action) ? GeckoThread.FLAG_DEBUGGING : 0;
 
             sAlreadyLoaded = true;
-            GeckoThread.initMainProcess( null, args,
-                                         ACTION_DEBUG.equals(action));
+            GeckoThread.initMainProcess( null, args, flags);
 
             
             ThreadUtils.postToBackgroundThread(new Runnable() {

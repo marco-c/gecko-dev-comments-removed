@@ -20,6 +20,7 @@ import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -462,7 +463,7 @@ public class GeckoView extends LayerView {
 
 
     public static void preload(final Context context) {
-        preload(context,  null);
+        preload(context,  null,  false);
     }
 
     
@@ -472,21 +473,24 @@ public class GeckoView extends LayerView {
 
 
 
-    public static void preload(final Context context, final String geckoArgs) {
+
+    public static void preload(final Context context, final String geckoArgs,
+                               final boolean multiprocess) {
         final Context appContext = context.getApplicationContext();
         if (GeckoAppShell.getApplicationContext() == null) {
             GeckoAppShell.setApplicationContext(appContext);
         }
 
-        if (GeckoThread.initMainProcess( null,
-                                        geckoArgs,
-                                         false)) {
+        final int flags = multiprocess ? GeckoThread.FLAG_PRELOAD_CHILD : 0;
+        if (GeckoThread.initMainProcess( null, geckoArgs, flags)) {
             GeckoThread.launch();
         }
     }
 
     private void init(final Context context, final GeckoViewSettings settings) {
-        preload(context);
+        final boolean multiprocess = settings != null &&
+                                     settings.getBoolean(GeckoViewSettings.USE_MULTIPROCESS);
+        preload(context,  null, multiprocess);
 
         initializeView();
         mListener.registerListeners();

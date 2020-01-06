@@ -8,6 +8,7 @@ package org.mozilla.gecko;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
+import org.mozilla.gecko.process.GeckoProcessManager;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -116,9 +117,12 @@ public class GeckoThread extends Thread {
     private String[] mArgs;
 
     
+    public static final int FLAG_DEBUGGING = 1; 
+    public static final int FLAG_PRELOAD_CHILD = 2; 
+
     private GeckoProfile mProfile;
     private String mExtraArgs;
-    private boolean mDebugging;
+    private int mFlags;
 
     
     private int mCrashFileDescriptor = -1;
@@ -134,7 +138,7 @@ public class GeckoThread extends Thread {
     }
 
     private synchronized boolean init(final GeckoProfile profile, final String[] args,
-                                      final String extraArgs, final boolean debugging,
+                                      final String extraArgs, final int flags,
                                       final int crashFd, final int ipcFd) {
         ThreadUtils.assertOnUiThread();
         uiThreadId = android.os.Process.myTid();
@@ -146,7 +150,7 @@ public class GeckoThread extends Thread {
         mProfile = profile;
         mArgs = args;
         mExtraArgs = extraArgs;
-        mDebugging = debugging;
+        mFlags = flags;
         mCrashFileDescriptor = crashFd;
         mIPCFileDescriptor = ipcFd;
 
@@ -156,15 +160,15 @@ public class GeckoThread extends Thread {
     }
 
     public static boolean initMainProcess(final GeckoProfile profile, final String extraArgs,
-                                          final boolean debugging) {
-        return INSTANCE.init(profile,  null, extraArgs, debugging,
+                                          final int flags) {
+        return INSTANCE.init(profile,  null, extraArgs, flags,
                                   -1,  -1);
     }
 
     public static boolean initChildProcess(final String[] args, final int crashFd,
                                            final int ipcFd) {
         return INSTANCE.init( null, args,  null,
-                                  false, crashFd, ipcFd);
+                                  0, crashFd, ipcFd);
     }
 
     private static boolean canUseProfile(final Context context, final GeckoProfile profile,
@@ -219,7 +223,7 @@ public class GeckoThread extends Thread {
 
         
         return initMainProcess(GeckoProfile.get(context, profileName, profileDir),
-                               args,  false);
+                               args,  0);
     }
 
     public static boolean launch() {
@@ -364,6 +368,16 @@ public class GeckoThread extends Thread {
 
         initGeckoEnvironment();
 
+        if ((mFlags & FLAG_PRELOAD_CHILD) != 0) {
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @Override
+                public void run() {
+                    
+                    GeckoProcessManager.getInstance().preload("tab");
+                }
+            });
+        }
+
         
         synchronized (this) {
             while (!mInitialized) {
@@ -376,7 +390,7 @@ public class GeckoThread extends Thread {
 
         final String[] args = isChildProcess() ? mArgs : getMainProcessArgs();
 
-        if (mDebugging) {
+        if ((mFlags & FLAG_DEBUGGING) != 0) {
             try {
                 Thread.sleep(5 * 1000 );
             } catch (final InterruptedException e) {
@@ -385,7 +399,7 @@ public class GeckoThread extends Thread {
 
         Log.w(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() + " - runGecko");
 
-        if (mDebugging) {
+        if ((mFlags & FLAG_DEBUGGING) != 0) {
             Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
         }
 
