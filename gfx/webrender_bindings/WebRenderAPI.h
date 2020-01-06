@@ -310,8 +310,6 @@ public:
   
   Maybe<wr::WrClipId> TopmostClipId();
   
-  Maybe<layers::FrameMetrics::ViewID> TopmostScrollId();
-  
   
   
   Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
