@@ -7267,6 +7267,13 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
 
 
 
+
+
+
+
+
+
+
 bool
 nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
                                             nsIContent* aContainer,
@@ -7301,6 +7308,12 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 
   
   
+  nsIContent* parent = aChild->GetFlattenedTreeParent();
+  if (!parent) {
+    
+    return true;
+  }
+
 
   
   if (aOperation == CONTENTINSERT) {
@@ -7325,7 +7338,6 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 
   
   
-  nsIContent* parent = aChild->GetFlattenedTreeParent();
   CheckBitsForLazyFrameConstruction(parent);
 
   if (mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
