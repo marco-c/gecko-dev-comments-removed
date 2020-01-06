@@ -17,7 +17,6 @@
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/Unused.h"
-#include "VRManagerChild.h"
 
 namespace mozilla {
 namespace gl {
@@ -318,22 +317,15 @@ SurfaceFactory::~SurfaceFactory()
 }
 
 already_AddRefed<layers::SharedSurfaceTextureClient>
-SurfaceFactory::NewTexClient(const gfx::IntSize& size, const layers::LayersIPCChannel* aLayersChannel)
+SurfaceFactory::NewTexClient(const gfx::IntSize& size)
 {
     while (!mRecycleFreePool.empty()) {
         RefPtr<layers::SharedSurfaceTextureClient> cur = mRecycleFreePool.front();
         mRecycleFreePool.pop();
 
-        if (cur->Surf()->mSize == size){
-            
-            
-            
-            
-            if (aLayersChannel && (aLayersChannel == cur->GetAllocator()) ||
-                cur->GetAllocator() != gfx::VRManagerChild::Get()) {
-                cur->Surf()->WaitForBufferOwnership();
-                return cur.forget();
-            }
+        if (cur->Surf()->mSize == size) {
+            cur->Surf()->WaitForBufferOwnership();
+            return cur.forget();
         }
 
         StopRecycling(cur);
