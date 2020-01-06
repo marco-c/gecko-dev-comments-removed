@@ -78,6 +78,22 @@ function isValidCCNumber(value) {
 
 
 
+const IGNORE_ATTRIBUTES = [
+  ["type", new Set(["password", "hidden", "button", "image", "submit", "reset"])],
+  ["autocomplete", new Set(["off"])]
+];
+function shouldIgnoreNode(node) {
+  for (let i = 0; i < IGNORE_ATTRIBUTES.length; ++i) {
+    let [attrName, attrValues] = IGNORE_ATTRIBUTES[i];
+    if (node.hasAttribute(attrName) && attrValues.has(node.getAttribute(attrName).toLowerCase())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
 
 
 this.FormData = Object.freeze({
@@ -118,27 +134,11 @@ var FormDataInternal = {
 
 
   get restorableFormNodesXPath() {
-    
-    
-    let ignoreInputs = new Map([
-      ["type", ["password", "hidden", "button", "image", "submit", "reset"]],
-      ["autocomplete", ["off"]]
-    ]);
-    
-    let toLowerCase = '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"';
-    let ignores = [];
-    for (let [attrName, attrValues] of ignoreInputs) {
-      for (let attrValue of attrValues)
-        ignores.push(`translate(@${attrName}, ${toLowerCase})='${attrValue}'`);
-    }
-    let ignore = `not(${ignores.join(" or ")})`;
-
-    let formNodesXPath = `//textarea[${ignore}]|//xhtml:textarea[${ignore}]|` +
-      `//select[${ignore}]|//xhtml:select[${ignore}]|` +
-      `//input[${ignore}]|//xhtml:input[${ignore}]`;
-
-    
-    formNodesXPath += '|/xul:window[@id="config"]//xul:textbox[@id="textbox"]';
+    let formNodesXPath = "//textarea|//xhtml:textarea|" +
+      "//select|//xhtml:select|" +
+      "//input|//xhtml:input" +
+      
+      "|/xul:window[@id='config']//xul:textbox[@id='textbox']";
 
     delete this.restorableFormNodesXPath;
     return (this.restorableFormNodesXPath = formNodesXPath);
@@ -184,6 +184,9 @@ var FormDataInternal = {
     let generatedCount = 0;
 
     while ((node = formNodes.iterateNext())) {
+      if (shouldIgnoreNode(node)) {
+        continue;
+      }
       let hasDefaultValue = true;
       let value;
 
