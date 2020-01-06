@@ -3485,10 +3485,8 @@ ASTSerializer::functionArgsAndBody(ParseNode* pn, NodeVector& args, NodeVector& 
         ParseNode* pnstart = pnbody->pn_head;
 
         
-        if (pnstart && pnstart->isKind(PNK_INITIALYIELD)) {
-            MOZ_ASSERT(pnstart->getOp() == JSOP_INITIALYIELD);
+        if (pnstart && pnstart->isKind(PNK_INITIALYIELD))
             pnstart = pnstart->pn_next;
-        }
 
         
         

@@ -430,7 +430,6 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -849,8 +848,8 @@ struct NullaryNode : public ParseNode
 
 struct UnaryNode : public ParseNode
 {
-    UnaryNode(ParseNodeKind kind, JSOp op, const TokenPos& pos, ParseNode* kid)
-      : ParseNode(kind, op, PN_UNARY, pos)
+    UnaryNode(ParseNodeKind kind, const TokenPos& pos, ParseNode* kid)
+      : ParseNode(kind, JSOP_NOP, PN_UNARY, pos)
     {
         pn_kid = kid;
     }
@@ -1143,7 +1142,7 @@ class ThisLiteral : public UnaryNode
 {
   public:
     ThisLiteral(const TokenPos& pos, ParseNode* thisName)
-      : UnaryNode(PNK_THIS, JSOP_NOP, pos, thisName)
+      : UnaryNode(PNK_THIS, pos, thisName)
     { }
 };
 
