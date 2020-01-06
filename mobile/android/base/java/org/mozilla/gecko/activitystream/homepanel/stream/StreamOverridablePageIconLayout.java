@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 
 
 
-public class StreamPageIconLayout extends FrameLayout implements IconCallback {
+public class StreamOverridablePageIconLayout extends FrameLayout implements IconCallback {
 
     private enum UIMode {
         FAVICON_IMAGE, NONFAVICON_IMAGE
@@ -45,9 +45,9 @@ public class StreamPageIconLayout extends FrameLayout implements IconCallback {
 
     private @Nullable Future<IconResponse> ongoingFaviconLoad;
 
-    public StreamPageIconLayout(final Context context, final AttributeSet attrs) {
+    public StreamOverridablePageIconLayout(final Context context, final AttributeSet attrs) {
         super(context, attrs);
-        LayoutInflater.from(context).inflate(R.layout.activity_stream_page_icon_layout, this, true);
+        LayoutInflater.from(context).inflate(R.layout.activity_stream_overridable_page_icon_layout, this, true);
         initViews();
     }
 
