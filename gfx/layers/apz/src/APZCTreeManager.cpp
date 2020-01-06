@@ -1417,7 +1417,8 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     
     
     
-    mInScrollbarTouchDrag = gfxPrefs::APZDragEnabled() && hitScrollbarNode &&
+    mInScrollbarTouchDrag = gfxPrefs::APZDragEnabled() &&
+                            gfxPrefs::APZTouchDragEnabled() && hitScrollbarNode &&
                             hitScrollbarNode->IsScrollThumbNode() &&
                             hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable;
 
