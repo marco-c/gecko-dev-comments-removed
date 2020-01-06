@@ -1060,6 +1060,14 @@ HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr, bool* mus
     RootedScript script(cx, frame->script());
     jsbytecode* pc = script->baselineScript()->icEntryFromReturnAddress(retAddr).pc(script);
 
+    if (*pc == JSOP_DEBUGAFTERYIELD) {
+        
+        
+        MOZ_ASSERT(!frame->isDebuggee());
+        if (!DebugAfterYield(cx, frame))
+            return false;
+    }
+
     MOZ_ASSERT(frame->isDebuggee());
     MOZ_ASSERT(script->stepModeEnabled() || script->hasBreakpointsAt(pc));
 
