@@ -48,6 +48,9 @@ private:
   
   
   nsCString mDescription;
+  bool mIsHardwareAccelerated;
+  nsCString mHardwareAcceleratedReason;
+  MediaDataDecoder::ConversionRequired mConversion;
 };
 
 
