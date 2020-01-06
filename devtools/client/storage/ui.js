@@ -1127,11 +1127,12 @@ StorageUI.prototype = {
 
   onAddItem: function () {
     let front = this.getCurrentFront();
+    let [, host] = this.tree.selectedItem;
 
     
     this.table.scrollIntoViewOnUpdate = true;
     this.table.editBookmark = createGUID();
-    front.addItem(this.table.editBookmark);
+    front.addItem(this.table.editBookmark, host);
   },
 
   
