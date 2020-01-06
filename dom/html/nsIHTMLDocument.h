@@ -11,7 +11,6 @@
 #include "nsCompatibility.h"
 
 class nsIContent;
-class nsIEditor;
 class nsContentList;
 
 #define NS_IHTMLDOCUMENT_IID \
@@ -112,7 +111,7 @@ public:
   
 
 
-  virtual void TearingDownEditor(nsIEditor *aEditor) = 0;
+  virtual void TearingDownEditor() = 0;
 
   virtual void SetIsXHTML(bool aXHTML) = 0;
 
