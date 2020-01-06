@@ -40,29 +40,6 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
 
   ScrollingLayersHelper scroller(this, aBuilder, aSc);
 
-  Maybe<WrImageMask> mask = BuildWrMaskLayer(aSc, nullptr);
-  WrImageMask* imageMask = mask.ptrOr(nullptr);
-
-  ParentLayerRect clip = GetLocalTransformTyped().TransformBounds(Bounds());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  LayerRect clipInParentLayerSpace = ViewAs<LayerPixel>(clip,
-      PixelCastJustification::MovingDownToChildren);
-  aBuilder.PushClip(aSc.ToRelativeWrRect(clipInParentLayerSpace), imageMask);
-
   if (mItem) {
     WrSize contentSize; 
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
@@ -86,8 +63,6 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
 
   aBuilder.PushBuiltDisplayList(Move(mBuiltDisplayList));
   WrBridge()->AddWebRenderParentCommands(mParentCommands);
-
-  aBuilder.PopClip();
 }
 
 Maybe<wr::ImageKey>
