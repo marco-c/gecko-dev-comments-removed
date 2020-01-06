@@ -60,6 +60,12 @@ public:
 
 
 
+  OSPreferences();
+
+  
+
+
+
 
 
 
@@ -144,7 +150,7 @@ protected:
   nsTArray<nsCString> mRegionalPrefsLocales;
 
 private:
-  virtual ~OSPreferences() {};
+  virtual ~OSPreferences();
 
   static StaticRefPtr<OSPreferences> sInstance;
 
