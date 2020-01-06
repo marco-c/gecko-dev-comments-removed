@@ -20,6 +20,7 @@
 #include "LoadInfo.h"
 #include "nsContentUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "nsContentUtils.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
 #include "nsIFileStreams.h"
@@ -253,14 +254,10 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
   mozilla::ipc::URIParams uri;
   SerializeURI(mURI, uri);
 
-  
-  OptionalLoadInfoArgs loadInfo;
-  NS_TRY(mozilla::ipc::LoadInfoToLoadInfoArgs(mLoadInfo, &loadInfo));
-
   RefPtr<ExtensionStreamGetter> self = this;
   if (mIsJarChannel) {
     
-    gNeckoChild->SendGetExtensionFD(uri, loadInfo)->Then(
+    gNeckoChild->SendGetExtensionFD(uri)->Then(
       mMainThreadEventTarget,
       __func__,
       [self] (const FileDescriptor& fd) {
@@ -274,7 +271,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
   }
 
   
-  gNeckoChild->SendGetExtensionStream(uri, loadInfo)->Then(
+  gNeckoChild->SendGetExtensionStream(uri)->Then(
     mMainThreadEventTarget,
     __func__,
     [self] (const OptionalIPCStream& stream) {
@@ -555,13 +552,10 @@ ExtensionProtocolHandler::DevRepoContains(nsIFile* aRequestedFile,
 #endif 
 
 Result<nsCOMPtr<nsIInputStream>, nsresult>
-ExtensionProtocolHandler::NewStream(nsIURI* aChildURI,
-                                    nsILoadInfo* aChildLoadInfo,
-                                    bool* aTerminateSender)
+ExtensionProtocolHandler::NewStream(nsIURI* aChildURI, bool* aTerminateSender)
 {
   MOZ_ASSERT(!IsNeckoChild());
   NS_TRY(aChildURI ? NS_OK : NS_ERROR_INVALID_ARG);
-  NS_TRY(aChildLoadInfo ? NS_OK : NS_ERROR_INVALID_ARG);
   NS_TRY(aTerminateSender ? NS_OK : NS_ERROR_INVALID_ARG);
 
   *aTerminateSender = true;
@@ -614,10 +608,15 @@ ExtensionProtocolHandler::NewStream(nsIURI* aChildURI,
 
 
 
+  
+  
+  
   nsCOMPtr<nsIChannel> channel;
-  NS_TRY(NS_NewChannelInternal(getter_AddRefs(channel),
-                               aChildURI,
-                               aChildLoadInfo));
+  NS_TRY(NS_NewChannel(getter_AddRefs(channel),
+                       aChildURI,
+                       nsContentUtils::GetSystemPrincipal(),
+                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                       nsIContentPolicy::TYPE_OTHER));
 
   
   
@@ -671,13 +670,11 @@ ExtensionProtocolHandler::NewStream(nsIURI* aChildURI,
 
 Result<Ok, nsresult>
 ExtensionProtocolHandler::NewFD(nsIURI* aChildURI,
-                                nsILoadInfo* aChildLoadInfo,
                                 bool* aTerminateSender,
                                 NeckoParent::GetExtensionFDResolver& aResolve)
 {
   MOZ_ASSERT(!IsNeckoChild());
   NS_TRY(aChildURI ? NS_OK : NS_ERROR_INVALID_ARG);
-  NS_TRY(aChildLoadInfo ? NS_OK : NS_ERROR_INVALID_ARG);
   NS_TRY(aTerminateSender ? NS_OK : NS_ERROR_INVALID_ARG);
 
   *aTerminateSender = true;

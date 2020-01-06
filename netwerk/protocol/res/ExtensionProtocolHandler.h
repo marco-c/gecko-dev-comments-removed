@@ -44,9 +44,7 @@ public:
 
 
 
-
   Result<nsCOMPtr<nsIInputStream>, nsresult> NewStream(nsIURI* aChildURI,
-                                                       nsILoadInfo* aChildLoadInfo,
                                                        bool* aTerminateSender);
 
   
@@ -69,9 +67,7 @@ public:
 
 
 
-
   Result<Ok, nsresult> NewFD(nsIURI* aChildURI,
-                             nsILoadInfo* aChildLoadInfo,
                              bool* aTerminateSender,
                              NeckoParent::GetExtensionFDResolver& aResolve);
 
