@@ -5253,7 +5253,6 @@ nsCSSFrameConstructor::FlushAccumulatedBlock(nsFrameConstructorState& aState,
   
   nsContainerFrame* blockFrame =
     NS_NewMathMLmathBlockFrame(mPresShell, blockContext);
-  blockFrame->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
 
   InitAndRestoreFrame(aState, aContent, aParentFrame, blockFrame);
   ReparentFrames(this, blockFrame, aBlockItems);
@@ -5887,10 +5886,8 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
           
           styleSet->StyleNewChildren(element);
 
-          
-          
           styleContext =
-            styleSet->ResolveStyleFor(element, nullptr,
+            styleSet->ResolveStyleFor(element, styleContext->GetParentAllowServo()->AsServo(),
                                       LazyComputeBehavior::Assert);
         } else {
           styleContext =
