@@ -1710,10 +1710,7 @@ protected:
   
   virtual nsresult OnAttrSetButNotChanged(int32_t aNamespaceID, nsAtom* aName,
                                           const nsAttrValueOrString& aValue,
-                                          bool aNotify)
-  {
-    return NS_OK;
-  }
+                                          bool aNotify);
 
   
 
