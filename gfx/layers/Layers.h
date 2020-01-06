@@ -1800,7 +1800,7 @@ public:
 
 
 
-  void ClearInvalidRect() { mInvalidRegion.SetEmpty(); }
+  virtual void ClearInvalidRect() { mInvalidRegion.SetEmpty(); }
 
   
   
@@ -1997,31 +1997,54 @@ public:
   {
     MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ValidRegion", this));
     mValidRegion = aRegion;
+    mValidRegionIsCurrent = true;
     Mutated();
   }
 
   
 
 
-  const nsIntRegion& GetValidRegion() const { return mValidRegion; }
+  const nsIntRegion& GetValidRegion() const
+  {
+    EnsureValidRegionIsCurrent();
+    return mValidRegion;
+  }
 
   void InvalidateWholeLayer()
   {
-    InvalidateRegion(GetValidRegion().GetBounds());
+    mInvalidRegion.Add(GetValidRegion().GetBounds());
+    ClearValidRegion();
   }
 
-  void ClearValidRegion() { mValidRegion.SetEmpty(); }
+  void ClearValidRegion()
+  {
+    mValidRegion.SetEmpty();
+    mValidRegionIsCurrent = true;
+  }
   void AddToValidRegion(const nsIntRegion& aRegion)
   {
+    EnsureValidRegionIsCurrent();
     mValidRegion.OrWith(aRegion);
   }
   void SubtractFromValidRegion(const nsIntRegion& aRegion)
   {
+    EnsureValidRegionIsCurrent();
     mValidRegion.SubOut(aRegion);
   }
   void UpdateValidRegionAfterInvalidRegionChanged()
   {
-    SubtractFromValidRegion(mInvalidRegion.GetRegion());
+    
+    
+    mValidRegionIsCurrent = false;
+  }
+
+  void ClearInvalidRect() override
+  {
+    
+    
+    
+    EnsureValidRegionIsCurrent();
+    mInvalidRegion.SetEmpty();
   }
 
   virtual PaintedLayer* AsPaintedLayer() override { return this; }
@@ -2081,6 +2104,7 @@ protected:
               LayerManager::PaintedLayerCreationHint aCreationHint = LayerManager::NONE)
     : Layer(aManager, aImplData)
     , mValidRegion()
+    , mValidRegionIsCurrent(true)
     , mCreationHint(aCreationHint)
     , mUsedForReadback(false)
     , mAllowResidualTranslation(false)
@@ -2099,7 +2123,34 @@ protected:
   gfxPoint mResidualTranslation;
 
 private:
-  nsIntRegion mValidRegion;
+  
+
+
+
+  void EnsureValidRegionIsCurrent() const
+  {
+    if (!mValidRegionIsCurrent) {
+      
+      if (!mValidRegion.IsEmpty()) {
+        
+        
+        
+        
+        mValidRegion.SubOut(mInvalidRegion.GetRegion());
+      }
+      mValidRegionIsCurrent = true;
+    }
+  }
+
+  
+
+
+
+
+
+  mutable nsIntRegion mValidRegion;
+
+  mutable bool mValidRegionIsCurrent;
 
 protected:
   
