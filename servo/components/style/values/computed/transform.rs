@@ -5,11 +5,15 @@
 
 
 use properties::animated_properties::Animatable;
-use values::computed::{Length, LengthOrPercentage};
+use values::computed::{Length, LengthOrPercentage, Number};
+use values::generics::transform::TimingFunction as GenericTimingFunction;
 use values::generics::transform::TransformOrigin as GenericTransformOrigin;
 
 
 pub type TransformOrigin = GenericTransformOrigin<LengthOrPercentage, LengthOrPercentage, Length>;
+
+
+pub type TimingFunction = GenericTimingFunction<u32, Number>;
 
 impl TransformOrigin {
     
