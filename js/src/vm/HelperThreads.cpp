@@ -72,6 +72,17 @@ js::EnsureHelperThreadsInitialized()
 }
 
 static size_t
+ClampDefaultCPUCount(size_t cpuCount)
+{
+    
+    
+    
+    
+    
+    return Min<size_t>(cpuCount, 8);
+}
+
+static size_t
 ThreadCountForCPUCount(size_t cpuCount)
 {
     
@@ -968,7 +979,7 @@ GlobalHelperThreadState::GlobalHelperThreadState()
    wasmTier2GeneratorsFinished_(0),
    helperLock(mutexid::GlobalHelperThreadState)
 {
-    cpuCount = GetCPUCount();
+    cpuCount = ClampDefaultCPUCount(GetCPUCount());
     threadCount = ThreadCountForCPUCount(cpuCount);
 
     MOZ_ASSERT(cpuCount > 0, "GetCPUCount() seems broken");
