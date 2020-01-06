@@ -163,7 +163,6 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
 
     if (mBuffer->Lock(lockMode)) {
       
-      
       FinalizeFrame(result.mRegionToDraw);
 
       if (!mBuffer->AdjustTo(dest.mBufferRect,
@@ -853,26 +852,8 @@ ContentClientDoubleBuffered::BeginPaint(PaintedLayer* aLayer,
                                         uint32_t aFlags)
 {
   mIsNewBuffer = false;
-
   if (!mFrontBuffer || !mBuffer) {
     mFrontAndBackBufferDiffer = false;
-  }
-
-  if (mFrontAndBackBufferDiffer) {
-    if (mFrontBuffer->DidSelfCopy()) {
-      
-      
-      
-      
-      gfx::IntRect backBufferRect = mBuffer->BufferRect();
-      backBufferRect.MoveTo(mFrontBuffer->BufferRect().TopLeft());
-
-      mBuffer->SetBufferRect(backBufferRect);
-      mBuffer->SetBufferRotation(IntPoint(0,0));
-    } else {
-      mBuffer->SetBufferRect(mFrontBuffer->BufferRect());
-      mBuffer->SetBufferRotation(mFrontBuffer->BufferRotation());
-    }
   }
 
   return ContentClient::BeginPaint(aLayer, aFlags);
@@ -892,11 +873,13 @@ void
 ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
 {
   if (!mFrontAndBackBufferDiffer) {
-    MOZ_ASSERT(!mFrontBuffer->DidSelfCopy(), "If we have to copy the world, then our buffers are different, right?");
+    MOZ_ASSERT(!mFrontBuffer || !mFrontBuffer->DidSelfCopy(),
+               "If the front buffer did a self copy then our front and back buffer must be different.");
     return;
   }
-  MOZ_ASSERT(mFrontBuffer);
-  if (!mFrontBuffer) {
+
+  MOZ_ASSERT(mFrontBuffer && mBuffer);
+  if (!mFrontBuffer || !mBuffer) {
     return;
   }
 
@@ -909,8 +892,20 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
 
   mFrontAndBackBufferDiffer = false;
 
+  
+  
+  gfx::IntRect backBufferRect = mBuffer->BufferRect();
+  backBufferRect.MoveTo(mFrontBuffer->BufferRect().TopLeft());
+  mBuffer->SetBufferRect(backBufferRect);
+  mBuffer->SetBufferRotation(mFrontBuffer->BufferRotation());
+
+  
   nsIntRegion updateRegion = mFrontUpdatedRegion;
   if (mFrontBuffer->DidSelfCopy()) {
+    
+    
+    mBuffer->SetBufferRotation(IntPoint(0,0));
+
     mFrontBuffer->ClearDidSelfCopy();
     updateRegion = mBuffer->BufferRect();
   }
@@ -919,10 +914,6 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
   
   updateRegion.Sub(updateRegion, aRegionToDraw);
   if (updateRegion.IsEmpty()) {
-    return;
-  }
-
-  if (!mBuffer) {
     return;
   }
 
