@@ -7,6 +7,7 @@ package org.mozilla.gecko.home;
 
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenListener;
+import org.mozilla.gecko.widget.themed.ThemedListView;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -17,13 +18,12 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ListView;
 
 
 
 
 
-public class HomeListView extends ListView
+public class HomeListView extends ThemedListView
                           implements OnItemLongClickListener {
 
     
