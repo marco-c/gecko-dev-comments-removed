@@ -95,6 +95,7 @@ public:
                                                                LayoutDeviceRect& aImageRect);
 
   void RemoveUnusedAndResetWebRenderUserData();
+  void ClearCachedResources();
 
   
   
