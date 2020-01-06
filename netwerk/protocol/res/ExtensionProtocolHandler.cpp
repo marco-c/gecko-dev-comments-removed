@@ -604,23 +604,37 @@ ExtensionProtocolHandler::NewStream(nsIURI* aChildURI, bool* aTerminateSender)
   }
 
   
+  
+  
+  
+  nsAutoCString resolvedSpec;
+  NS_TRY(ResolveURI(aChildURI, resolvedSpec));
 
+  nsAutoCString resolvedScheme;
+  NS_TRY(net_ExtractURLScheme(resolvedSpec, resolvedScheme));
+  if (!resolvedScheme.EqualsLiteral("file")) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
 
+  nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
+  NS_TRY(rv);
 
+  nsCOMPtr<nsIURI> resolvedURI;
+  NS_TRY(ioService->NewURI(resolvedSpec,
+                           nullptr,
+                           nullptr,
+                           getter_AddRefs(resolvedURI)));
 
   
   
   
   nsCOMPtr<nsIChannel> channel;
   NS_TRY(NS_NewChannel(getter_AddRefs(channel),
-                       aChildURI,
+                       resolvedURI,
                        nsContentUtils::GetSystemPrincipal(),
                        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                        nsIContentPolicy::TYPE_OTHER));
 
-  
-  
-  
   nsCOMPtr<nsIFileChannel> fileChannel = do_QueryInterface(channel, &rv);
   NS_TRY(rv);
 
