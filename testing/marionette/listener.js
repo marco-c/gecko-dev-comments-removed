@@ -198,7 +198,11 @@ var loadListener = {
     try {
       curContainer.frame.removeEventListener("beforeunload", this);
       curContainer.frame.removeEventListener("unload", this);
-    } catch (e if e.name == "TypeError") {}
+    } catch (e) {
+      if (e.name != "TypeError") {
+        throw e;
+      }
+    }
 
     
     
