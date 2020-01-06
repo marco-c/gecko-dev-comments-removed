@@ -2851,6 +2851,14 @@ public:
 
 
 
+  static mozilla::Maybe<ScrollMetadata> GetRootMetadata(nsDisplayListBuilder* aBuilder,
+                                                        Layer* aRootLayer,
+                                                        const ContainerLayerParameters& aContainerParameters);
+
+  
+
+
+
 
 
 

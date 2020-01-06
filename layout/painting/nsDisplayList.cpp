@@ -2232,51 +2232,8 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
       root->SetEventRegionsOverride(EventRegionsOverride::NoOverride);
     }
 
-    
-    
-    
-    
-    bool addMetrics = gfxPrefs::LayoutUseContainersForRootFrames() ||
-        (XRE_IsParentProcess() && !presShell->GetRootScrollFrame());
-
-    
-    
-    bool ensureMetricsForRootId =
-      nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-      !gfxPrefs::LayoutUseContainersForRootFrames() &&
-      aBuilder->IsPaintingToWindow() &&
-      !presContext->GetParentPresContext();
-
-    nsIContent* content = nullptr;
-    nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
-    if (rootScrollFrame) {
-      content = rootScrollFrame->GetContent();
-    } else {
-      
-      
-      
-      
-      content = document->GetDocumentElement();
-    }
-
-    if (ensureMetricsForRootId && content) {
-      ViewID scrollId = nsLayoutUtils::FindOrCreateIDFor(content);
-      if (nsLayoutUtils::ContainsMetricsWithId(root, scrollId)) {
-        ensureMetricsForRootId = false;
-      }
-    }
-
-    if (addMetrics || ensureMetricsForRootId) {
-      bool isRootContent = presContext->IsRootContentDocument();
-
-      nsRect viewport(aBuilder->ToReferenceFrame(frame), frame->GetSize());
-
-      root->SetScrollMetadata(
-        nsLayoutUtils::ComputeScrollMetadata(frame,
-                           rootScrollFrame, content,
-                           aBuilder->FindReferenceFrameFor(frame),
-                           root, FrameMetrics::NULL_SCROLL_ID, viewport, Nothing(),
-                           isRootContent, containerParameters));
+    if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(aBuilder, root, containerParameters)) {
+      root->SetScrollMetadata(rootMetadata.value());
     }
 
     
