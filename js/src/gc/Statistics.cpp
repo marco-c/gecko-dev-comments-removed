@@ -124,10 +124,10 @@ t(TimeDuration duration)
     return duration.ToMilliseconds();
 }
 
-inline Phase
+Phase
 Statistics::currentPhase() const
 {
-    return phaseStack.empty() ? Phase::NONE : phaseStack.back();
+    return phaseNestingDepth ? phaseNesting[phaseNestingDepth - 1] : Phase::NONE;
 }
 
 PhaseKind
@@ -137,7 +137,7 @@ Statistics::currentPhaseKind() const
     
 
     Phase phase = currentPhase();
-    MOZ_ASSERT_IF(phase == Phase::MUTATOR, phaseStack.length() == 1);
+    MOZ_ASSERT_IF(phase == Phase::MUTATOR, phaseNestingDepth == 1);
     if (phase == Phase::NONE || phase == Phase::MUTATOR)
         return PhaseKind::NONE;
 
@@ -638,6 +638,8 @@ Statistics::Statistics(JSRuntime* rt)
     nonincrementalReason_(gc::AbortReason::None),
     preBytes(0),
     maxPauseInInterval(0),
+    phaseNestingDepth(0),
+    suspended(0),
     sliceCallback(nullptr),
     nurseryCollectionCallback(nullptr),
     aborted(false),
@@ -646,10 +648,6 @@ Statistics::Statistics(JSRuntime* rt)
 {
     for (auto& count : counts)
         count = 0;
-    PodZero(&totalTimes_);
-
-    MOZ_ALWAYS_TRUE(phaseStack.reserve(MAX_PHASE_NESTING));
-    MOZ_ALWAYS_TRUE(suspendedPhases.reserve(MAX_SUSPENDED_PHASES));
 
     const char* env = getenv("MOZ_GCTIMER");
     if (env) {
@@ -676,6 +674,8 @@ Statistics::Statistics(JSRuntime* rt)
         enableProfiling_ = true;
         profileThreshold_ = TimeDuration::FromMilliseconds(atoi(env));
     }
+
+    PodZero(&totalTimes_);
 }
 
 Statistics::~Statistics()
@@ -879,6 +879,7 @@ Statistics::endGC()
 
         runtime->addTelemetry(JS_TELEMETRY_GC_MS, t(total));
         runtime->addTelemetry(JS_TELEMETRY_GC_MAX_PAUSE_MS, t(longest));
+        runtime->addTelemetry(JS_TELEMETRY_GC_MAX_PAUSE_MS_2, t(longest));
 
         const double mmu50 = computeMMU(TimeDuration::FromMilliseconds(50));
         runtime->addTelemetry(JS_TELEMETRY_GC_MMU_50, mmu50 * 100);
@@ -951,31 +952,27 @@ void
 Statistics::endSlice()
 {
     if (!aborted) {
-        auto& slice = slices_.back();
-        slice.end = TimeStamp::Now();
-        slice.endFaults = GetPageFaultCount();
-        slice.finalState = runtime->gc.state();
+        slices_.back().end = TimeStamp::Now();
+        slices_.back().endFaults = GetPageFaultCount();
+        slices_.back().finalState = runtime->gc.state();
 
-        TimeDuration sliceTime = slice.end - slice.start;
+        TimeDuration sliceTime = slices_.back().end - slices_.back().start;
         runtime->addTelemetry(JS_TELEMETRY_GC_SLICE_MS, t(sliceTime));
-        runtime->addTelemetry(JS_TELEMETRY_GC_RESET, slice.wasReset());
-        if (slice.wasReset())
-            runtime->addTelemetry(JS_TELEMETRY_GC_RESET_REASON, uint32_t(slice.resetReason));
+        runtime->addTelemetry(JS_TELEMETRY_GC_RESET, slices_.back().wasReset());
+        if (slices_.back().wasReset())
+            runtime->addTelemetry(JS_TELEMETRY_GC_RESET_REASON, uint32_t(slices_.back().resetReason));
 
-        if (slice.budget.isTimeBudget()) {
-            int64_t budget_ms = slice.budget.timeBudget.budget;
+        if (slices_.back().budget.isTimeBudget()) {
+            int64_t budget_ms = slices_.back().budget.timeBudget.budget;
             runtime->addTelemetry(JS_TELEMETRY_GC_BUDGET_MS, budget_ms);
             if (budget_ms == runtime->gc.defaultSliceBudget())
                 runtime->addTelemetry(JS_TELEMETRY_GC_ANIMATION_MS, t(sliceTime));
 
             
             if (sliceTime.ToMilliseconds() > 2 * budget_ms) {
-                reportLongestPhase(slice.phaseTimes, JS_TELEMETRY_GC_SLOW_PHASE);
-                
-                
-                TimeDuration joinTime = SumPhase(PhaseKind::JOIN_PARALLEL_TASKS, slice.phaseTimes);
-                if (joinTime.ToMilliseconds() > budget_ms)
-                    reportLongestPhase(slice.parallelTimes, JS_TELEMETRY_GC_SLOW_TASK);
+                PhaseKind longest = LongestPhaseSelfTime(slices_.back().phaseTimes);
+                uint8_t bucket = phaseKinds[longest].telemetryBucket;
+                runtime->addTelemetry(JS_TELEMETRY_GC_SLOW_PHASE, bucket);
             }
         }
 
@@ -1016,28 +1013,17 @@ Statistics::endSlice()
     }
 }
 
-void
-Statistics::reportLongestPhase(const PhaseTimeTable& times, int telemetryId)
-{
-    PhaseKind longest = LongestPhaseSelfTime(times);
-    if (longest == PhaseKind::NONE)
-        return;
-
-    uint8_t bucket = phaseKinds[longest].telemetryBucket;
-    runtime->addTelemetry(telemetryId, bucket);
-}
-
 bool
 Statistics::startTimingMutator()
 {
-    if (phaseStack.length() != 0) {
+    if (phaseNestingDepth != 0) {
         
-        MOZ_ASSERT(phaseStack.length() == 1);
-        MOZ_ASSERT(phaseStack[0] == Phase::MUTATOR);
+        MOZ_ASSERT(phaseNestingDepth == 1);
+        MOZ_ASSERT(phaseNesting[0] == Phase::MUTATOR);
         return false;
     }
 
-    MOZ_ASSERT(suspendedPhases.empty());
+    MOZ_ASSERT(suspended == 0);
 
     timedGCTime = 0;
     phaseStartTimes[Phase::MUTATOR] = TimeStamp();
@@ -1052,7 +1038,7 @@ bool
 Statistics::stopTimingMutator(double& mutator_ms, double& gc_ms)
 {
     
-    if (phaseStack.length() != 1 || phaseStack[0] != Phase::MUTATOR)
+    if (phaseNestingDepth != 1 || phaseNesting[0] != Phase::MUTATOR)
         return false;
 
     endPhase(PhaseKind::MUTATOR);
@@ -1067,27 +1053,30 @@ Statistics::suspendPhases(PhaseKind suspension)
 {
     MOZ_ASSERT(suspension == PhaseKind::EXPLICIT_SUSPENSION ||
                suspension == PhaseKind::IMPLICIT_SUSPENSION);
-    while (!phaseStack.empty()) {
-        MOZ_ASSERT(suspendedPhases.length() < MAX_SUSPENDED_PHASES);
-        Phase parent = phaseStack.back();
-        suspendedPhases.infallibleAppend(parent);
+    while (phaseNestingDepth) {
+        MOZ_ASSERT(suspended < mozilla::ArrayLength(suspendedPhases));
+        Phase parent = phaseNesting[phaseNestingDepth - 1];
+        suspendedPhases[suspended++] = parent;
         recordPhaseEnd(parent);
     }
-    suspendedPhases.infallibleAppend(lookupChildPhase(suspension));
+    suspendedPhases[suspended++] = lookupChildPhase(suspension);
 }
 
 void
 Statistics::resumePhases()
 {
-    MOZ_ASSERT(suspendedPhases.back() == Phase::EXPLICIT_SUSPENSION ||
-               suspendedPhases.back() == Phase::IMPLICIT_SUSPENSION);
-    suspendedPhases.popBack();
+    suspended--;
+#ifdef DEBUG
+    Phase popped = suspendedPhases[suspended];
+    MOZ_ASSERT(popped == Phase::EXPLICIT_SUSPENSION ||
+               popped == Phase::IMPLICIT_SUSPENSION);
+#endif
 
-    while (!suspendedPhases.empty() &&
-           suspendedPhases.back() != Phase::EXPLICIT_SUSPENSION &&
-           suspendedPhases.back() != Phase::IMPLICIT_SUSPENSION)
+    while (suspended &&
+           suspendedPhases[suspended - 1] != Phase::EXPLICIT_SUSPENSION &&
+           suspendedPhases[suspended - 1] != Phase::IMPLICIT_SUSPENSION)
     {
-        Phase resumePhase = suspendedPhases.popCopy();
+        Phase resumePhase = suspendedPhases[--suspended];
         if (resumePhase == Phase::MUTATOR)
             timedGCTime += TimeStamp::Now() - timedGCStart;
         recordPhaseBegin(resumePhase);
@@ -1101,8 +1090,9 @@ Statistics::beginPhase(PhaseKind phaseKind)
     MOZ_ASSERT(phaseKind != PhaseKind::GC_BEGIN && phaseKind != PhaseKind::GC_END);
 
     
-    if (currentPhase() == Phase::MUTATOR)
+    if (currentPhase() == Phase::MUTATOR) {
         suspendPhases(PhaseKind::IMPLICIT_SUSPENSION);
+    }
 
     recordPhaseBegin(lookupChildPhase(phaseKind));
 }
@@ -1113,10 +1103,12 @@ Statistics::recordPhaseBegin(Phase phase)
     
     MOZ_ASSERT(!phaseStartTimes[phase]);
 
-    MOZ_ASSERT(phaseStack.length() < MAX_PHASE_NESTING);
+    MOZ_ASSERT(phaseNestingDepth < MAX_NESTING);
     MOZ_ASSERT(phases[phase].parent == currentPhase());
 
-    phaseStack.infallibleAppend(phase);
+    phaseNesting[phaseNestingDepth] = phase;
+    phaseNestingDepth++;
+
     phaseStartTimes[phase] = TimeStamp::Now();
 }
 
@@ -1128,7 +1120,7 @@ Statistics::recordPhaseEnd(Phase phase)
     if (phase == Phase::MUTATOR)
         timedGCStart = now;
 
-    phaseStack.popBack();
+    phaseNestingDepth--;
 
     TimeDuration t = now - phaseStartTimes[phase];
     if (!slices_.empty())
@@ -1148,27 +1140,11 @@ Statistics::endPhase(PhaseKind phaseKind)
 
     
     
-    if (phaseStack.empty() &&
-        !suspendedPhases.empty() &&
-        suspendedPhases.back() == Phase::IMPLICIT_SUSPENSION)
+    if (phaseNestingDepth == 0 &&
+        suspended > 0 &&
+        suspendedPhases[suspended - 1] == Phase::IMPLICIT_SUSPENSION)
     {
         resumePhases();
-    }
-}
-
-void
-Statistics::recordParallelPhase(PhaseKind phaseKind, TimeDuration duration)
-{
-    Phase phase = lookupChildPhase(phaseKind);
-
-    
-    
-    
-    while (phase != Phase::NONE) {
-        if (!slices_.empty())
-            slices_.back().parallelTimes[phase] += duration;
-        parallelTimes[phase] += duration;
-        phase = phases[phase].parent;
     }
 }
 
@@ -1176,7 +1152,7 @@ void
 Statistics::endParallelPhase(PhaseKind phaseKind, const GCParallelTask* task)
 {
     Phase phase = lookupChildPhase(phaseKind);
-    phaseStack.popBack();
+    phaseNestingDepth--;
 
     if (!slices_.empty())
         slices_.back().phaseTimes[phase] += task->duration();
