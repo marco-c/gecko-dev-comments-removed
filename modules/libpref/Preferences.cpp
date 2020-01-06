@@ -137,12 +137,6 @@ struct PrefHashEntry;
 
 extern PLDHashTable* gHashTable;
 
-namespace mozilla {
-namespace dom {
-class PrefSetting;
-} 
-} 
-
 typedef nsTArray<mozilla::UniqueFreePtr<char>> PrefSaveData;
 
 PrefSaveData
