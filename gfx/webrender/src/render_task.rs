@@ -4,13 +4,13 @@
 
 use gpu_cache::GpuCacheHandle;
 use internal_types::{HardwareCompositeOp, LowLevelFilterOp};
-use mask_cache::{MaskBounds, MaskCacheInfo};
+use mask_cache::MaskCacheInfo;
 use prim_store::{PrimitiveCacheKey, PrimitiveIndex};
 use std::{cmp, f32, i32, mem, usize};
 use tiling::{ClipScrollGroupIndex, PackedLayerIndex, RenderPass, RenderTargetIndex};
 use tiling::{RenderTargetKind, StackingContextIndex};
-use webrender_traits::{ClipId, DeviceIntLength, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use webrender_traits::{MixBlendMode};
+use api::{ClipId, DeviceIntLength, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
+use api::{MixBlendMode};
 
 const FLOATS_PER_RENDER_TASK_INFO: usize = 12;
 
@@ -84,20 +84,14 @@ pub enum MaskGeometryKind {
     
 }
 
+pub type ClipWorkItem = (PackedLayerIndex, MaskCacheInfo);
+
 #[derive(Debug, Clone)]
 pub struct CacheMaskTask {
     actual_rect: DeviceIntRect,
     inner_rect: DeviceIntRect,
-    pub clips: Vec<(PackedLayerIndex, MaskCacheInfo)>,
+    pub clips: Vec<ClipWorkItem>,
     pub geometry_kind: MaskGeometryKind,
-}
-
-#[derive(Debug)]
-pub enum MaskResult {
-    
-    Outside,
-    
-    Inside(RenderTask),
 }
 
 #[derive(Debug, Clone)]
@@ -149,9 +143,9 @@ impl RenderTask {
         RenderTask {
             id: RenderTaskId::Static(task_index),
             children: Vec::new(),
-            location: location,
+            location,
             kind: RenderTaskKind::Alpha(AlphaRenderTask {
-                screen_origin: screen_origin,
+                screen_origin,
                 items: Vec::new(),
             }),
         }
@@ -184,56 +178,32 @@ impl RenderTask {
         }
     }
 
-    pub fn new_mask(actual_rect: DeviceIntRect,
+    pub fn new_mask(task_rect: DeviceIntRect,
                     mask_key: MaskCacheKey,
-                    clips: &[(PackedLayerIndex, MaskCacheInfo)])
-                    -> MaskResult {
-        if clips.is_empty() {
-            return MaskResult::Outside;
-        }
-
+                    raw_clips: &[ClipWorkItem],
+                    extra_clip: Option<ClipWorkItem>)
+                    -> Option<RenderTask> {
         
-        
-        
-
-        
-        
-        
-        let mut result = Some(actual_rect);
-        for &(_, ref clip) in clips {
-            match *clip.bounds.as_ref().unwrap() {
-                MaskBounds::OuterInner(ref outer, _) |
-                MaskBounds::Outer(ref outer) => {
-                    result = result.and_then(|rect| {
-                        rect.intersection(&outer.bounding_rect)
-                    });
+        let mut inner_rect = Some(task_rect);
+        let clips: Vec<_> = raw_clips.iter()
+                                     .chain(extra_clip.iter())
+                                     .filter(|&&(_, ref clip_info)| {
+            match clip_info.bounds.inner {
+                Some(ref inner) if !inner.device_rect.is_empty() => {
+                    inner_rect = inner_rect.and_then(|r| r.intersection(&inner.device_rect));
+                    !inner.device_rect.contains_rect(&task_rect)
                 }
-                MaskBounds::None => {
-                    result = Some(actual_rect);
-                    break;
+                _ => {
+                    inner_rect = None;
+                    true
                 }
             }
+        }).cloned().collect();
+
+        
+        if clips.is_empty() {
+            return None
         }
-
-        let task_rect = match result {
-            None => return MaskResult::Outside,
-            Some(rect) => rect,
-        };
-
-        
-        
-        
-        let inner_rect = clips.iter()
-                              .fold(Some(task_rect), |current, clip| {
-            current.and_then(|rect| {
-                let inner_rect = match *clip.1.bounds.as_ref().unwrap() {
-                    MaskBounds::Outer(..) |
-                    MaskBounds::None => DeviceIntRect::zero(),
-                    MaskBounds::OuterInner(_, ref inner) => inner.bounding_rect
-                };
-                rect.intersection(&inner_rect)
-            })
-        });
 
         
         
@@ -242,25 +212,24 @@ impl RenderTask {
         
         let mut geometry_kind = MaskGeometryKind::Default;
         if inner_rect.is_some() && clips.len() == 1 {
-            let (_, ref clip_info) = clips[0];
-            if clip_info.image.is_none() &&
-               clip_info.effective_complex_clip_count == 1 &&
-               clip_info.is_aligned {
+            let (_, ref info) = clips[0];
+            if info.border_corners.is_empty() &&
+               info.image.is_none() &&
+               info.complex_clip_range.get_count() == 1 &&
+               info.layer_clip_range.get_count() == 0 {
                 geometry_kind = MaskGeometryKind::CornersOnly;
             }
         }
 
-        let inner_rect = inner_rect.unwrap_or(DeviceIntRect::zero());
-
-        MaskResult::Inside(RenderTask {
+        Some(RenderTask {
             id: RenderTaskId::Dynamic(RenderTaskKey::CacheMask(mask_key)),
             children: Vec::new(),
             location: RenderTaskLocation::Dynamic(None, task_rect.size),
             kind: RenderTaskKind::CacheMask(CacheMaskTask {
                 actual_rect: task_rect,
-                inner_rect: inner_rect,
-                clips: clips.to_vec(),
-                geometry_kind: geometry_kind,
+                inner_rect: inner_rect.unwrap_or(DeviceIntRect::zero()),
+                clips,
+                geometry_kind,
             }),
         })
     }

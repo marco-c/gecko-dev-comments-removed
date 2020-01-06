@@ -7,9 +7,9 @@
 
 
 
-use webrender_traits::DeviceIntSize;
-use webrender_traits::{GLContextAttributes, GLLimits};
-use webrender_traits::WebGLCommand;
+use api::DeviceIntSize;
+use api::{GLContextAttributes, GLLimits};
+use api::WebGLCommand;
 
 pub struct GLContextHandleWrapper;
 

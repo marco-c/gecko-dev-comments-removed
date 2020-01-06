@@ -59,7 +59,6 @@ mod freelist;
 mod geometry;
 mod glyph_rasterizer;
 mod gpu_cache;
-mod gpu_store;
 mod internal_types;
 mod mask_cache;
 mod prim_store;
@@ -134,7 +133,7 @@ extern crate gleam;
 extern crate num_traits;
 
 extern crate time;
-extern crate webrender_traits;
+pub extern crate webrender_api;
 #[cfg(feature = "webgl")]
 extern crate offscreen_gl_context;
 extern crate byteorder;
@@ -146,3 +145,5 @@ extern crate gamma_lut;
 
 pub use renderer::{ExternalImage, ExternalImageSource, ExternalImageHandler};
 pub use renderer::{GraphicsApi, GraphicsApiInfo, ReadPixelsFormat, Renderer, RendererOptions};
+
+pub use webrender_api as api;

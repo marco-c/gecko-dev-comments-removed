@@ -4,7 +4,7 @@
 
 #![allow(dead_code)]
 
-use webrender_traits::ColorF;
+use api::ColorF;
 
 
 

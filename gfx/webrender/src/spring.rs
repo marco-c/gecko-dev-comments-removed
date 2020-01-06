@@ -2,7 +2,7 @@
 
 
 
-use webrender_traits::LayerPoint;
+use api::LayerPoint;
 
 
 pub const EPSILON: f32 = 0.1;
@@ -34,8 +34,8 @@ impl Spring {
             cur: pos,
             prev: pos,
             dest: pos,
-            stiffness: stiffness,
-            damping: damping,
+            stiffness,
+            damping,
         }
     }
 

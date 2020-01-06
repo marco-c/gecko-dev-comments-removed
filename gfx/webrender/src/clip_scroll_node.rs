@@ -2,18 +2,14 @@
 
 
 
+use api::{ClipId, DeviceIntRect, LayerPixel, LayerPoint, LayerRect, LayerSize};
+use api::{LayerToScrollTransform, LayerToWorldTransform, LayerVector2D, PipelineId};
+use api::{ScrollClamping, ScrollEventPhase, ScrollLocation, WorldPoint};
 use geometry::ray_intersects_rect;
-use mask_cache::{ClipSource, MaskCacheInfo, RegionMode};
-use prim_store::GpuBlock32;
-use renderer::VertexDataStore;
+use mask_cache::{ClipRegion, ClipSource, MaskCacheInfo};
 use spring::{DAMPING, STIFFNESS, Spring};
 use tiling::PackedLayerIndex;
-use util::TransformedRectKind;
-use webrender_traits::{ClipId, ClipRegion, DeviceIntRect, LayerPixel, LayerPoint, LayerRect};
-use webrender_traits::{LayerSize, LayerToScrollTransform, LayerToWorldTransform, PipelineId};
-use webrender_traits::{ScrollClamping, ScrollEventPhase, ScrollLayerRect, ScrollLocation};
-use webrender_traits::{WorldPoint, LayerVector2D};
-use webrender_traits::{as_scroll_parent_vector};
+use util::{MatrixHelpers, TransformedRectKind};
 
 #[cfg(target_os = "macos")]
 const CAN_OVERSCROLL: bool = true;
@@ -28,7 +24,7 @@ pub struct ClipInfo {
 
     
     
-    pub mask_cache_info: Option<MaskCacheInfo>,
+    pub mask_cache_info: MaskCacheInfo,
 
     
     
@@ -38,32 +34,31 @@ pub struct ClipInfo {
     
     
     pub screen_bounding_rect: Option<(TransformedRectKind, DeviceIntRect)>,
+
+    
+    
+    pub screen_inner_rect: DeviceIntRect,
+
+    
+    
+    pub clip_rect: LayerRect,
 }
 
 impl ClipInfo {
-    pub fn new(clip_region: &ClipRegion,
-               clip_store: &mut VertexDataStore<GpuBlock32>,
-               packed_layer_index: PackedLayerIndex,)
-               -> ClipInfo {
-        
-        
-        let clip_sources = vec![ClipSource::Region(clip_region.clone(), RegionMode::IncludeRect)];
+    pub fn new(clip_region: ClipRegion, packed_layer_index: PackedLayerIndex) -> ClipInfo {
+        let clip_rect = LayerRect::new(clip_region.origin, clip_region.main.size);
+        let clip_sources = vec![ClipSource::Region(clip_region)];
         ClipInfo {
-            mask_cache_info: MaskCacheInfo::new(&clip_sources, clip_store),
-            clip_sources: clip_sources,
-            packed_layer_index: packed_layer_index,
+            mask_cache_info: MaskCacheInfo::new(&clip_sources),
+            clip_sources,
+            packed_layer_index,
             screen_bounding_rect: None,
+            screen_inner_rect: DeviceIntRect::zero(),
+            clip_rect: clip_rect,
         }
     }
-
-    pub fn is_masking(&self) -> bool {
-        match self.mask_cache_info {
-            Some(ref info) => info.is_masking(),
-            _ => false,
-        }
-    }
-
 }
+
 #[derive(Clone, Debug)]
 pub enum NodeType {
     
@@ -90,6 +85,9 @@ pub struct ClipScrollNode {
     
     pub local_clip_rect: LayerRect,
 
+    
+    
+    
     
     
     pub combined_local_viewport_rect: LayerRect,
@@ -123,11 +121,11 @@ pub struct ClipScrollNode {
 impl ClipScrollNode {
     pub fn new_scroll_frame(pipeline_id: PipelineId,
                             parent_id: ClipId,
-                            content_rect: &LayerRect,
-                            frame_rect: &LayerRect)
+                            frame_rect: &LayerRect,
+                            content_size: &LayerSize)
                             -> ClipScrollNode {
         ClipScrollNode {
-            content_size: content_rect.size,
+            content_size: *content_size,
             local_viewport_rect: *frame_rect,
             local_clip_rect: *frame_rect,
             combined_local_viewport_rect: LayerRect::zero(),
@@ -136,31 +134,23 @@ impl ClipScrollNode {
             reference_frame_relative_scroll_offset: LayerVector2D::zero(),
             parent: Some(parent_id),
             children: Vec::new(),
-            pipeline_id: pipeline_id,
+            pipeline_id,
             node_type: NodeType::ScrollFrame(ScrollingState::new()),
         }
     }
 
-    pub fn new(pipeline_id: PipelineId,
-               parent_id: ClipId,
-               content_rect: &LayerRect,
-               clip_rect: &LayerRect,
-               clip_info: ClipInfo)
-               -> ClipScrollNode {
-        
-        
-        let local_viewport_rect = LayerRect::new(content_rect.origin, clip_rect.size);
+    pub fn new(pipeline_id: PipelineId, parent_id: ClipId, clip_info: ClipInfo) -> ClipScrollNode {
         ClipScrollNode {
-            content_size: content_rect.size,
-            local_viewport_rect: local_viewport_rect,
-            local_clip_rect: local_viewport_rect,
+            content_size: clip_info.clip_rect.size,
+            local_viewport_rect: clip_info.clip_rect,
+            local_clip_rect: clip_info.clip_rect,
             combined_local_viewport_rect: LayerRect::zero(),
             world_viewport_transform: LayerToWorldTransform::identity(),
             world_content_transform: LayerToWorldTransform::identity(),
             reference_frame_relative_scroll_offset: LayerVector2D::zero(),
             parent: Some(parent_id),
             children: Vec::new(),
-            pipeline_id: pipeline_id,
+            pipeline_id,
             node_type: NodeType::Clip(clip_info),
         }
     }
@@ -172,7 +162,7 @@ impl ClipScrollNode {
                                pipeline_id: PipelineId)
                                -> ClipScrollNode {
         ClipScrollNode {
-            content_size: content_size,
+            content_size,
             local_viewport_rect: *local_viewport_rect,
             local_clip_rect: *local_viewport_rect,
             combined_local_viewport_rect: LayerRect::zero(),
@@ -181,7 +171,7 @@ impl ClipScrollNode {
             reference_frame_relative_scroll_offset: LayerVector2D::zero(),
             parent: parent_id,
             children: Vec::new(),
-            pipeline_id: pipeline_id,
+            pipeline_id,
             node_type: NodeType::ReferenceFrame(*local_transform),
         }
     }
@@ -192,7 +182,11 @@ impl ClipScrollNode {
 
     pub fn finalize(&mut self, new_scrolling: &ScrollingState) {
         match self.node_type {
-            NodeType::ReferenceFrame(_) | NodeType::Clip(_) => (),
+            NodeType::ReferenceFrame(_) | NodeType::Clip(_) => {
+                if new_scrolling.offset != LayerVector2D::zero() {
+                    warn!("Tried to scroll a non-scroll node.");
+                }
+            }
             NodeType::ScrollFrame(ref mut scrolling) => *scrolling = *new_scrolling,
         }
     }
@@ -234,53 +228,30 @@ impl ClipScrollNode {
 
     pub fn update_transform(&mut self,
                             parent_reference_frame_transform: &LayerToWorldTransform,
-                            parent_combined_viewport_rect: &ScrollLayerRect,
+                            parent_combined_viewport_rect: &LayerRect,
                             parent_scroll_offset: LayerVector2D,
                             parent_accumulated_scroll_offset: LayerVector2D) {
-        self.reference_frame_relative_scroll_offset = match self.node_type {
-            NodeType::ReferenceFrame(_) => LayerVector2D::zero(),
-            NodeType::Clip(_) | NodeType::ScrollFrame(..) => parent_accumulated_scroll_offset,
-        };
 
-        let local_transform = match self.node_type {
-            NodeType::ReferenceFrame(transform) => transform,
-            NodeType::Clip(_) | NodeType::ScrollFrame(..) => LayerToScrollTransform::identity(),
-        };
+        let scrolled_parent_combined_clip = parent_combined_viewport_rect
+            .translate(&-parent_scroll_offset);
 
-        let inv_transform = match local_transform.inverse() {
-            Some(transform) => transform,
-            None => {
+        let (local_transform, combined_clip, reference_frame_scroll_offset) = match self.node_type {
+            NodeType::ReferenceFrame(transform) => {
+                let combined_clip = transform.with_destination::<LayerPixel>()
+                                             .inverse_rect_footprint(&scrolled_parent_combined_clip);
+                (transform, combined_clip, LayerVector2D::zero())
+            }
+            NodeType::Clip(_) | NodeType::ScrollFrame(_) => {
                 
                 
-                self.combined_local_viewport_rect = LayerRect::zero();
-                return;
+                let combined_clip = scrolled_parent_combined_clip.intersection(&self.local_clip_rect)
+                                                                 .unwrap_or(LayerRect::zero());
+                (LayerToScrollTransform::identity(), combined_clip, parent_accumulated_scroll_offset)
             }
         };
 
-        
-        
-        
-        
-        
-        let parent_combined_viewport_in_local_space =
-            inv_transform.pre_translate(-as_scroll_parent_vector(&parent_scroll_offset).to_3d())
-                         .transform_rect(parent_combined_viewport_rect);
-
-        
-        
-        
-        self.combined_local_viewport_rect = match self.node_type {
-            NodeType::Clip(_) | NodeType::ScrollFrame(..) => {
-                parent_combined_viewport_in_local_space.intersection(&self.local_clip_rect)
-                                                       .unwrap_or(LayerRect::zero())
-            }
-            NodeType::ReferenceFrame(_) => parent_combined_viewport_in_local_space,
-        };
-
-        
-        if (local_transform.m13, local_transform.m23) != (0.0, 0.0) {
-            self.combined_local_viewport_rect = self.local_clip_rect;
-        }
+        self.combined_local_viewport_rect = combined_clip;
+        self.reference_frame_relative_scroll_offset = reference_frame_scroll_offset;
 
         
         

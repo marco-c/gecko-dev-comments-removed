@@ -2,7 +2,7 @@
 
 
 
-use webrender_traits::{LayerPoint, LayerSize};
+use api::{LayerPoint, LayerSize};
 use std::f32::consts::FRAC_PI_2;
 
 
@@ -23,8 +23,8 @@ impl Ellipse {
                                                   radius.height);
 
         Ellipse {
-            radius: radius,
-            total_arc_length: total_arc_length,
+            radius,
+            total_arc_length,
         }
     }
 
