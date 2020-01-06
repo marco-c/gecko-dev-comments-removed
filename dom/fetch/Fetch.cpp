@@ -60,6 +60,9 @@ class FetchSignalProxy final : public FetchSignal::Follower
   RefPtr<FetchSignal> mSignalMainThread;
 
   
+  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
+
+  
   
   const bool mAborted;
 
@@ -87,9 +90,11 @@ class FetchSignalProxy final : public FetchSignal::Follower
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchSignalProxy)
 
-  explicit FetchSignalProxy(FetchSignal* aSignal)
-    : mAborted(aSignal->Aborted())
+  FetchSignalProxy(FetchSignal* aSignal, nsIEventTarget* aMainThreadEventTarget)
+    : mMainThreadEventTarget(aMainThreadEventTarget)
+    , mAborted(aSignal->Aborted())
   {
+    MOZ_ASSERT(mMainThreadEventTarget);
     Follow(aSignal);
   }
 
@@ -98,7 +103,7 @@ public:
   {
     RefPtr<FetchSignalProxyRunnable> runnable =
       new FetchSignalProxyRunnable(this);
-    NS_DispatchToMainThread(runnable);
+    mMainThreadEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   }
 
   FetchSignal*
@@ -120,7 +125,7 @@ public:
 private:
   ~FetchSignalProxy()
   {
-    NS_ReleaseOnMainThread(mSignalMainThread.forget());
+    NS_ProxyRelease(mMainThreadEventTarget, mSignalMainThread.forget());
   }
 };
 
@@ -152,7 +157,8 @@ public:
 
     RefPtr<FetchSignalProxy> signalProxy;
     if (aSignal) {
-      signalProxy = new FetchSignalProxy(aSignal);
+      signalProxy =
+        new FetchSignalProxy(aSignal, aWorkerPrivate->MainThreadEventTarget());
     }
 
     RefPtr<WorkerFetchResolver> r =
