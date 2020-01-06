@@ -8,6 +8,7 @@
 
 
 
+
 const bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
            getService(Ci.nsINavBookmarksService);
 
@@ -24,7 +25,7 @@ function run_test() {
   
   bs.setItemTitle(itemId, null);
   
-  do_check_eq(bs.getItemTitle(itemId), null);
+  do_check_eq(bs.getItemTitle(itemId), "");
   
   bs.removeItem(itemId);
 
@@ -34,7 +35,7 @@ function run_test() {
                              bs.DEFAULT_INDEX,
                              null);
   
-  do_check_eq(bs.getItemTitle(itemId), null);
+  do_check_eq(bs.getItemTitle(itemId), "");
   
   bs.setItemTitle(itemId, "");
   
