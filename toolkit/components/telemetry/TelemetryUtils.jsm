@@ -11,6 +11,7 @@ this.EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Preferences.jsm", this);
+Cu.import("resource://gre/modules/Services.jsm", this);
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -183,4 +184,16 @@ this.TelemetryUtils = {
       + sign(tzOffset) + padNumber(Math.floor(Math.abs(tzOffset / 60)), 2)
       + ":" + padNumber(Math.abs(tzOffset % 60), 2);
   },
+
+  
+
+
+
+  monotonicNow() {
+    try {
+      return Services.telemetry.msSinceProcessStart();
+    } catch (ex) {
+      return Date.now();
+    }
+  }
 };
