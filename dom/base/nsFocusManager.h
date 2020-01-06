@@ -71,11 +71,6 @@ public:
   
 
 
-  bool IsFocused(nsIContent* aContent);
-
-  
-
-
   nsPIDOMWindowOuter* GetFocusedWindow() const { return mFocusedWindow; }
 
   
