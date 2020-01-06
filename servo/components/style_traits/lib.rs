@@ -62,6 +62,12 @@ pub enum CSSPixel {}
 
 
 
+#[derive(Copy, Clone, Debug)]
+pub enum DevicePixel {}
+
+
+
+
 
 
 
