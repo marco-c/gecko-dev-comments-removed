@@ -88,7 +88,8 @@ private:
   class ChannelEntry
   {
   public:
-    ~ChannelEntry();
+    void DetachAll();
+
     
     
     
