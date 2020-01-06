@@ -25,78 +25,107 @@ do_register_cleanup(function() {
   PlacesUtils.bookmarks.removeObserver(observer);
 });
 
-function run_test() {
+
+function do_check_date_eq( t1, t2) {
+  return do_check_eq(t1.getTime(), t2.getTime()) ;
+}
+
+add_task(async function test_bookmark_update_notifications() {
   
   
   
-  const PAST_PRTIME = (Date.now() - 86400000) * 1000;
+  const PAST_DATE = new Date(Date.now() - 86400000);
 
   
-  let testFolder = PlacesUtils.bookmarks.createFolder(
-    PlacesUtils.placesRootId, "test Folder",
-    PlacesUtils.bookmarks.DEFAULT_INDEX);
-  let bookmarkId = PlacesUtils.bookmarks.insertBookmark(
-    testFolder, uri("http://google.com/"),
-    PlacesUtils.bookmarks.DEFAULT_INDEX, "");
+  let testFolder = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    title: "test Folder",
+    parentGuid: PlacesUtils.bookmarks.menuGuid
+  });
+
+  let bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: testFolder.guid,
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    url: "http://google.com/",
+    title: "a bookmark"
+  });
 
   
   do_check_true(observer.itemChangedProperty === undefined);
 
   
-  PlacesUtils.bookmarks.setItemDateAdded(bookmarkId, PAST_PRTIME);
+  await PlacesUtils.bookmarks.update({
+    guid: bookmark.guid,
+    dateAdded: PAST_DATE
+  });
+
   do_check_eq(observer._itemChangedProperty, "dateAdded");
-  do_check_eq(observer._itemChangedValue, PAST_PRTIME);
-  let dateAdded = PlacesUtils.bookmarks.getItemDateAdded(bookmarkId);
-  do_check_eq(dateAdded, PAST_PRTIME);
+  do_check_eq(observer._itemChangedValue, PlacesUtils.toPRTime(PAST_DATE));
 
   
-  do_check_eq(PlacesUtils.bookmarks.getItemLastModified(bookmarkId), dateAdded);
+  do_check_date_eq(bookmark.lastModified, bookmark.dateAdded);
+
+  let updatedBookmark = await PlacesUtils.bookmarks.fetch({
+    guid: bookmark.guid
+  });
+
+  do_check_date_eq(updatedBookmark.dateAdded, PAST_DATE);
 
   
-  PlacesUtils.bookmarks.setItemLastModified(bookmarkId, PAST_PRTIME);
+  updatedBookmark = await PlacesUtils.bookmarks.update({
+    guid: bookmark.guid,
+    lastModified: PAST_DATE
+  });
+
   do_check_eq(observer._itemChangedProperty, "lastModified");
-  do_check_eq(observer._itemChangedValue, PAST_PRTIME);
-  do_check_eq(PlacesUtils.bookmarks.getItemLastModified(bookmarkId),
-              PAST_PRTIME);
+  do_check_eq(observer._itemChangedValue, PlacesUtils.toPRTime(PAST_DATE));
+  do_check_date_eq(updatedBookmark.lastModified, PAST_DATE);
 
   
-  PlacesUtils.bookmarks.setItemTitle(bookmarkId, "Google");
+  updatedBookmark = await PlacesUtils.bookmarks.update({
+    guid: bookmark.guid,
+    title: "Google"
+  });
 
   
-  do_check_eq(observer._itemChangedId, bookmarkId);
+  do_check_eq(observer._itemChangedId, await PlacesUtils.promiseItemId(bookmark.guid));
   do_check_eq(observer._itemChangedProperty, "title");
   do_check_eq(observer._itemChangedValue, "Google");
 
   
-  is_time_ordered(PAST_PRTIME,
-                  PlacesUtils.bookmarks.getItemLastModified(bookmarkId));
+  do_check_true(is_time_ordered(PAST_DATE,
+    updatedBookmark.lastModified.getTime()));
 
   
-  let root = PlacesUtils.getFolderContents(testFolder).root;
+  let testFolderId = await PlacesUtils.promiseItemId(testFolder.guid);
+  let root = PlacesUtils.getFolderContents(testFolderId).root;
   do_check_eq(root.childCount, 1);
   let childNode = root.getChild(0);
 
   
-  do_check_eq(PlacesUtils.bookmarks.getItemDateAdded(bookmarkId),
-              childNode.dateAdded);
-  do_check_eq(PlacesUtils.bookmarks.getItemLastModified(bookmarkId),
-              childNode.lastModified);
+  do_check_eq(PlacesUtils.toPRTime(updatedBookmark.dateAdded),
+   childNode.dateAdded);
+  do_check_eq(PlacesUtils.toPRTime(updatedBookmark.lastModified),
+   childNode.lastModified);
 
   
-  PlacesUtils.bookmarks.setItemLastModified(bookmarkId, PAST_PRTIME);
-  PlacesUtils.bookmarks.setItemTitle(bookmarkId, "Google");
+  updatedBookmark = await PlacesUtils.bookmarks.update({
+    guid: bookmark.guid,
+    lastModified: PAST_DATE,
+    title: "Google"
+  });
 
   
-  is_time_ordered(PAST_PRTIME, childNode.lastModified);
+  do_check_true(is_time_ordered(PAST_DATE, childNode.lastModified));
   
-  do_check_eq(PlacesUtils.bookmarks.getItemLastModified(bookmarkId),
-              childNode.lastModified);
+  do_check_eq(PlacesUtils.toPRTime(updatedBookmark.lastModified),
+   childNode.lastModified);
 
   
-  PlacesUtils.bookmarks.setItemDateAdded(bookmarkId, PAST_PRTIME);
-  do_check_eq(childNode.dateAdded, PAST_PRTIME);
-  PlacesUtils.bookmarks.setItemLastModified(bookmarkId, PAST_PRTIME);
-  do_check_eq(childNode.lastModified, PAST_PRTIME);
+  await PlacesUtils.bookmarks.update({guid: bookmark.guid, dateAdded: PAST_DATE});
+  do_check_eq(childNode.dateAdded, PlacesUtils.toPRTime(PAST_DATE));
+  await PlacesUtils.bookmarks.update({guid: bookmark.guid, lastModified: PAST_DATE})
+  do_check_eq(childNode.lastModified, PlacesUtils.toPRTime(PAST_DATE));
 
   root.containerOpen = false;
-}
+});
