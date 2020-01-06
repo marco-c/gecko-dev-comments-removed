@@ -159,7 +159,7 @@ DBAction::OpenConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
 
     
     
-    rv = WipeDatabase(dbFile, aDBDir);
+    rv = WipeDatabase(aQuotaInfo, dbFile, aDBDir);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
     rv = ss->OpenDatabaseWithFileURL(dbFileUrl, getter_AddRefs(conn));
@@ -172,7 +172,7 @@ DBAction::OpenConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   if (schemaVersion > 0 && schemaVersion < db::kFirstShippedSchemaVersion) {
     conn = nullptr;
-    rv = WipeDatabase(dbFile, aDBDir);
+    rv = WipeDatabase(aQuotaInfo, dbFile, aDBDir);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
     rv = ss->OpenDatabaseWithFileURL(dbFileUrl, getter_AddRefs(conn));
@@ -188,16 +188,20 @@ DBAction::OpenConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
 }
 
 nsresult
-DBAction::WipeDatabase(nsIFile* aDBFile, nsIFile* aDBDir)
+DBAction::WipeDatabase(const QuotaInfo& aQuotaInfo, nsIFile* aDBFile,
+                       nsIFile* aDBDir)
 {
-  nsresult rv = aDBFile->Remove(false);
+  MOZ_DIAGNOSTIC_ASSERT(aDBFile);
+  MOZ_DIAGNOSTIC_ASSERT(aDBDir);
+
+  nsresult rv = RemoveNsIFile(aQuotaInfo, aDBFile);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   
   
 
   
-  rv = BodyDeleteDir(aDBDir);
+  rv = BodyDeleteDir(aQuotaInfo, aDBDir);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   return rv;

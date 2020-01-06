@@ -7,6 +7,7 @@
 #include "mozilla/dom/cache/FileUtils.h"
 
 #include "mozilla/dom/quota/FileStreams.h"
+#include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/SnappyCompressOutputStream.h"
 #include "mozilla/Unused.h"
 #include "nsIFile.h"
@@ -24,6 +25,7 @@ namespace cache {
 using mozilla::dom::quota::FileInputStream;
 using mozilla::dom::quota::FileOutputStream;
 using mozilla::dom::quota::PERSISTENCE_TYPE_DEFAULT;
+using mozilla::dom::quota::QuotaManager;
 
 namespace {
 
@@ -63,7 +65,7 @@ BodyCreateDir(nsIFile* aBaseDir)
 
 
 nsresult
-BodyDeleteDir(nsIFile* aBaseDir)
+BodyDeleteDir(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir)
 {
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
 
@@ -74,11 +76,7 @@ BodyDeleteDir(nsIFile* aBaseDir)
   rv = aBodyDir->Append(NS_LITERAL_STRING("morgue"));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-  rv = aBodyDir->Remove( true);
-  if (rv == NS_ERROR_FILE_NOT_FOUND ||
-      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    rv = NS_OK;
-  }
+  rv = RemoveNsIFileRecursively(aQuotaInfo, aBodyDir);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   return rv;
@@ -211,6 +209,9 @@ BodyFinalizeWrite(nsIFile* aBaseDir, const nsID& aId)
   rv = finalFile->GetLeafName(finalFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
+  
+  
+  
   rv = tmpFile->RenameTo(nullptr, finalFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
@@ -247,7 +248,8 @@ BodyOpen(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir, const nsID& aId,
 
 
 nsresult
-BodyDeleteFiles(nsIFile* aBaseDir, const nsTArray<nsID>& aIdList)
+BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
+                const nsTArray<nsID>& aIdList)
 {
   nsresult rv = NS_OK;
 
@@ -257,12 +259,7 @@ BodyDeleteFiles(nsIFile* aBaseDir, const nsTArray<nsID>& aIdList)
                       getter_AddRefs(tmpFile));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = tmpFile->Remove(false );
-    if (rv == NS_ERROR_FILE_NOT_FOUND ||
-        rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-      rv = NS_OK;
-    }
-
+    rv = RemoveNsIFile(aQuotaInfo, tmpFile);
     
     
     
@@ -273,12 +270,7 @@ BodyDeleteFiles(nsIFile* aBaseDir, const nsTArray<nsID>& aIdList)
                       getter_AddRefs(finalFile));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = finalFile->Remove(false );
-    if (rv == NS_ERROR_FILE_NOT_FOUND ||
-        rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-      rv = NS_OK;
-    }
-
+    rv = RemoveNsIFile(aQuotaInfo, finalFile);
     
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
@@ -321,7 +313,8 @@ BodyIdToFile(nsIFile* aBaseDir, const nsID& aId, BodyFileType aType,
 } 
 
 nsresult
-BodyDeleteOrphanedFiles(nsIFile* aBaseDir, nsTArray<nsID>& aKnownBodyIdList)
+BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
+                        nsTArray<nsID>& aKnownBodyIdList)
 {
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
 
@@ -357,7 +350,7 @@ BodyDeleteOrphanedFiles(nsIFile* aBaseDir, nsTArray<nsID>& aKnownBodyIdList)
 
     
     if (NS_WARN_IF(!isDir)) {
-      rv = subdir->Remove(false );
+      rv = RemoveNsIFile(aQuotaInfo, subdir);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
       continue;
     }
@@ -384,7 +377,7 @@ BodyDeleteOrphanedFiles(nsIFile* aBaseDir, nsTArray<nsID>& aKnownBodyIdList)
       
       if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".tmp"))) {
         
-        rv = file->Remove(true );
+        rv = RemoveNsIFileRecursively(aQuotaInfo, file);
         MOZ_ASSERT(NS_SUCCEEDED(rv));
         continue;
       }
@@ -407,7 +400,7 @@ BodyDeleteOrphanedFiles(nsIFile* aBaseDir, nsTArray<nsID>& aKnownBodyIdList)
 
       if (!aKnownBodyIdList.Contains(id)) {
         
-        rv = file->Remove(true );
+        rv = RemoveNsIFileRecursively(aQuotaInfo, file);
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
     }
@@ -468,11 +461,8 @@ DeleteMarkerFile(const QuotaInfo& aQuotaInfo)
   nsresult rv = GetMarkerFileHandle(aQuotaInfo, getter_AddRefs(marker));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-  rv = marker->Remove( false);
-  if (rv == NS_ERROR_FILE_NOT_FOUND ||
-      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    rv = NS_OK;
-  }
+  rv = RemoveNsIFile(aQuotaInfo, marker);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
   
@@ -494,6 +484,78 @@ MarkerFileExists(const QuotaInfo& aQuotaInfo)
   if (NS_WARN_IF(NS_FAILED(rv))) { return false; }
 
   return exists;
+}
+
+
+nsresult
+RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aFile);
+
+  bool isDirectory = false;
+  nsresult rv = aFile->IsDirectory(&isDirectory);
+  if (rv == NS_ERROR_FILE_NOT_FOUND ||
+      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  if (!isDirectory) {
+    return RemoveNsIFile(aQuotaInfo, aFile);
+  }
+
+  
+  
+  nsCOMPtr<nsISimpleEnumerator> entries;
+  rv = aFile->GetDirectoryEntries(getter_AddRefs(entries));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  bool hasMore = false;
+  while (NS_SUCCEEDED((rv = entries->HasMoreElements(&hasMore))) && hasMore) {
+    nsCOMPtr<nsISupports> entry;
+    rv = entries->GetNext(getter_AddRefs(entry));
+    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+    nsCOMPtr<nsIFile> file = do_QueryInterface(entry);
+    MOZ_ASSERT(file);
+
+    rv = RemoveNsIFileRecursively(aQuotaInfo, file);
+    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  
+  rv = aFile->Remove( false);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  return rv;
+}
+
+
+nsresult
+RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aFile);
+
+  int64_t fileSize = 0;
+  nsresult rv = aFile->GetFileSize(&fileSize);
+  if (rv == NS_ERROR_FILE_NOT_FOUND ||
+      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = aFile->Remove(  false);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_DIAGNOSTIC_ASSERT(quotaManager);
+
+  quotaManager->DecreaseUsageForOrigin(PERSISTENCE_TYPE_DEFAULT,
+                                       aQuotaInfo.mGroup, aQuotaInfo.mOrigin,
+                                       fileSize);
+
+  return rv;
 }
 
 } 
