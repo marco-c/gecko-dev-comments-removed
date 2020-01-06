@@ -1185,7 +1185,7 @@ HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
 
   
   while (nsCOMPtr<nsIContent> child = docfrag->GetFirstChild()) {
-    nsresult rv = InsertNode(*child, *headNode, offsetOfNewNode++, nullptr);
+    nsresult rv = InsertNode(*child, *headNode, offsetOfNewNode++);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1628,15 +1628,9 @@ HTMLEditor::InsertNodeAtPoint(nsIDOMNode* aNode,
     }
   }
   
-  nsCOMPtr<nsIContent> child;
-  if (ioChildAtOffset) {
-    child = do_QueryInterface(*ioChildAtOffset);
-  }
-  nsresult rv = InsertNode(*node, *parent, *ioOffset, child);
+  nsresult rv = InsertNode(*node, *parent, *ioOffset);
   if (isDocumentFragment) {
     *ioChildAtOffset = do_QueryInterface(parent->GetChildAt(*ioOffset));
-  } else if (ioChildAtOffset) {
-    *ioChildAtOffset = GetAsDOMNode(child);
   }
   return rv;
 }

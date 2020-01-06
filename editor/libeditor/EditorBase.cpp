@@ -1701,13 +1701,13 @@ EditorBase::ReplaceContainer(Element* aOldContainer,
       nsresult rv = DeleteNode(child);
       NS_ENSURE_SUCCESS(rv, nullptr);
 
-      rv = InsertNode(*child, *ret, -1, nullptr);
+      rv = InsertNode(*child, *ret, -1);
       NS_ENSURE_SUCCESS(rv, nullptr);
     }
   }
 
   
-  nsresult rv = InsertNode(*ret, *parent, offset, aOldContainer);
+  nsresult rv = InsertNode(*ret, *parent, offset);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   
@@ -1738,17 +1738,13 @@ EditorBase::RemoveContainer(nsIContent* aNode)
   AutoRemoveContainerSelNotify selNotify(mRangeUpdater, aNode, parent,
                                          offset, nodeOrigLen);
 
-  nsIContent* childAtOffset = aNode;
-
   while (aNode->HasChildren()) {
     nsCOMPtr<nsIContent> child = aNode->GetLastChild();
     nsresult rv = DeleteNode(child);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = InsertNode(*child, *parent, offset, childAtOffset);
+    rv = InsertNode(*child, *parent, offset);
     NS_ENSURE_SUCCESS(rv, rv);
-
-    childAtOffset = childAtOffset->GetPreviousSibling();
   }
 
   return DeleteNode(aNode);
@@ -1787,20 +1783,17 @@ EditorBase::InsertContainerAbove(nsIContent* aNode,
   AutoInsertContainerSelNotify selNotify(mRangeUpdater);
 
   
-  nsIContent* nextSibling = aNode->GetNextSibling();
   nsresult rv = DeleteNode(aNode);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   {
     AutoTransactionsConserveSelection conserveSelection(this);
-    rv = InsertNode(*aNode, *newContent, 0, nullptr);
+    rv = InsertNode(*aNode, *newContent, 0);
     NS_ENSURE_SUCCESS(rv, nullptr);
   }
 
   
-  
-  
-  rv = InsertNode(*newContent, *parent, offset, nextSibling);
+  rv = InsertNode(*newContent, *parent, offset);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   return newContent.forget();
@@ -2554,7 +2547,7 @@ EditorBase::InsertTextImpl(const nsAString& aStringToInsert,
       RefPtr<nsTextNode> newNode =
         EditorBase::CreateTextNode(*aDoc, EmptyString());
       
-      nsresult rv = InsertNode(*newNode, *node, offset, child);
+      nsresult rv = InsertNode(*newNode, *node, offset);
       NS_ENSURE_SUCCESS(rv, rv);
       node = newNode;
       offset = 0;
@@ -2582,7 +2575,7 @@ EditorBase::InsertTextImpl(const nsAString& aStringToInsert,
       RefPtr<nsTextNode> newNode =
         EditorBase::CreateTextNode(*aDoc, aStringToInsert);
       
-      nsresult rv = InsertNode(*newNode, *node, offset, child);
+      nsresult rv = InsertNode(*newNode, *node, offset);
       NS_ENSURE_SUCCESS(rv, rv);
       node = newNode;
       offset = lengthToInsert.value();
