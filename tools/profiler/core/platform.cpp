@@ -2828,7 +2828,8 @@ profiler_get_backtrace()
   regs.Clear();
 #endif
 
-  auto buffer = MakeUnique<ProfileBuffer>(PROFILER_GET_BACKTRACE_ENTRIES);
+  
+  auto buffer = MakeUnique<ProfileBuffer>(1000);
 
   DoSyncSample(lock, *info, now, regs, buffer.get());
 
