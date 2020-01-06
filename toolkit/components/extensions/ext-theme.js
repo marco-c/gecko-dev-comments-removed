@@ -281,6 +281,19 @@ this.theme = class extends ExtensionAPI {
 
           this.theme.load(details);
         },
+        reset: () => {
+          if (!gThemesEnabled) {
+            
+            return;
+          }
+
+          if (!this.theme) {
+            
+            return;
+          }
+
+          this.theme.unload();
+        }
       },
     };
   }
