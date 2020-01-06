@@ -1866,35 +1866,27 @@ MediaCacheStream::NotifyDataStarted(int64_t aOffset)
   }
 }
 
-bool
+void
 MediaCacheStream::UpdatePrincipal(nsIPrincipal* aPrincipal)
 {
-  return nsContentUtils::CombineResourcePrincipals(&mPrincipal, aPrincipal);
+  MOZ_ASSERT(NS_IsMainThread());
+  MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
+  while (MediaCacheStream* stream = iter.Next()) {
+    if (nsContentUtils::CombineResourcePrincipals(&stream->mPrincipal,
+                                                  aPrincipal)) {
+      stream->mClient->CacheClientNotifyPrincipalChanged();
+    }
+  }
 }
 
 void
-MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
-    nsIPrincipal* aPrincipal)
+MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData)
 {
   
 
   
   
   MOZ_DIAGNOSTIC_ASSERT(!mClosed);
-
-  
-  
-  
-  
-  
-  {
-    MediaCache::ResourceStreamIterator iter(mMediaCache, mResourceID);
-    while (MediaCacheStream* stream = iter.Next()) {
-      if (stream->UpdatePrincipal(aPrincipal)) {
-        stream->mClient->CacheClientNotifyPrincipalChanged();
-      }
-    }
-  }
 
   ReentrantMonitorAutoEnter mon(mMediaCache->GetReentrantMonitor());
   int64_t size = aSize;

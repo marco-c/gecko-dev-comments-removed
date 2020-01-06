@@ -551,6 +551,8 @@ protected:
   nsresult SetupChannelHeaders(int64_t aOffset);
   
   void CloseChannel();
+  
+  void UpdatePrincipal();
 
   int64_t GetOffset() const;
 
@@ -563,14 +565,13 @@ protected:
                                    int64_t& aRangeTotal);
 
   static nsresult CopySegmentToCache(nsIInputStream* aInStream,
-                                     void* aClosure,
+                                     void* aResource,
                                      const char* aFromSegment,
                                      uint32_t aToOffset,
                                      uint32_t aCount,
                                      uint32_t* aWriteCount);
 
-  nsresult CopySegmentToCache(nsIPrincipal* aPrincipal,
-                              const char* aFromSegment,
+  nsresult CopySegmentToCache(const char* aFromSegment,
                               uint32_t aCount,
                               uint32_t* aWriteCount);
 
