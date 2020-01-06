@@ -687,7 +687,7 @@ constexpr TimeDelta TimeDelta::FromProduct(int64_t value,
           
           
           
-          DCHECK(positive_value > 0),
+          static_cast<void>(DCHECK(positive_value > 0)),
 #endif
           value > std::numeric_limits<int64_t>::max() / positive_value
               ? Max()
