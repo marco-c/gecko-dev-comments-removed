@@ -9,6 +9,7 @@ import os
 import stat
 import platform
 import errno
+import re
 
 from mach.decorators import (
     CommandArgument,
@@ -277,18 +278,22 @@ class FormatProvider(MachCommandBase):
 
     def generate_path_list(self, paths):
         pathToThirdparty = os.path.join(self.topsrcdir,
-                                        "tools",
-                                        "rewriting",
-                                        "ThirdPartyPaths.txt")
-        with open(pathToThirdparty) as f:
+                                        ".clang-format-ignore")
+        ignored_dir = []
+        for line in open(pathToThirdparty):
             
-            ignored_dir = tuple(d.rstrip('/') for d in f.read().splitlines())
+            if line.startswith('#') or len(line.strip()) == 0:
+                continue
+            ignored_dir.append(line.rstrip())
 
+        
+        ignored_dir_re = '(%s)' % '|'.join(ignored_dir)
         extensions = ('.cpp', '.c', '.h')
 
         path_list = []
         for f in paths:
-            if f.startswith(ignored_dir):
+            if re.match(ignored_dir_re, f):
+                
                 print("clang-format: Ignored third party code '{0}'".format(f))
                 continue
 
@@ -298,7 +303,7 @@ class FormatProvider(MachCommandBase):
                     subs.sort()
                     for filename in sorted(files):
                         f_in_dir = os.path.join(folder, filename)
-                        if f_in_dir.endswith(extensions):
+                        if f_in_dir.endswith(extensions) and not re.match(ignored_dir_re, f_in_dir):
                             
                             path_list.append(f_in_dir)
             else:
