@@ -13,6 +13,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
+#include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIDOMEventTarget.h"
 #include "nsPrintfCString.h"
@@ -513,6 +514,30 @@ WidgetEvent::GetOriginalDOMEventTarget() const
     return GetTargetForDOMEvent(mOriginalTarget);
   }
   return GetDOMEventTarget();
+}
+
+void
+WidgetEvent::PreventDefault(bool aCalledByDefaultHandler,
+                            nsIPrincipal* aPrincipal)
+{
+  if (mMessage == ePointerDown) {
+    if (aCalledByDefaultHandler) {
+      
+      
+      
+      MOZ_ASSERT(false);
+      return;
+    }
+    if (aPrincipal) {
+      nsAutoString addonId;
+      Unused << NS_WARN_IF(NS_FAILED(aPrincipal->GetAddonId(addonId)));
+      if (!addonId.IsEmpty()) {
+        
+        return;
+      }
+    }
+  }
+  mFlags.PreventDefault(aCalledByDefaultHandler);
 }
 
 

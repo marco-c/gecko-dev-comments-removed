@@ -244,7 +244,8 @@ public:
 
 
 
-  void PreventDefaultInternal(bool aCalledByDefaultHandler);
+  void PreventDefaultInternal(bool aCalledByDefaultHandler,
+                              nsIPrincipal* aPrincipal = nullptr);
 
   bool IsMainThreadEvent()
   {
