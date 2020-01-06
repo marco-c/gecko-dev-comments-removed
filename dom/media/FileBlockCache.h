@@ -62,8 +62,10 @@ protected:
 
 public:
   
-  
   nsresult Init() override;
+
+  
+  void Flush() override;
 
   
   

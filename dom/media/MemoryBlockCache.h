@@ -42,6 +42,8 @@ public:
   
   virtual nsresult Init() override;
 
+  void Flush() override;
+
   
   
   int32_t GetMaxBlocks() const override { return mMaxBlocks; }
@@ -82,7 +84,7 @@ private:
   Mutex mMutex;
 
   nsTArray<uint8_t> mBuffer;
-  bool mHasGrown;
+  bool mHasGrown = false;
 };
 
 } 

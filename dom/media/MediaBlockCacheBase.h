@@ -49,8 +49,11 @@ protected:
 
 public:
   
-  
   virtual nsresult Init() = 0;
+
+  
+  
+  virtual void Flush() = 0;
 
   
   
