@@ -583,7 +583,7 @@ JSContext::requestInterrupt(InterruptMode mode)
         
         
         
-        
+        interruptRegExpJit_ = true;
         fx.lock();
         if (fx.isWaiting())
             fx.wake(FutexThread::WakeForJSInterrupt);
@@ -598,6 +598,7 @@ JSContext::handleInterrupt()
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
     if (interrupt_ || jitStackLimit == UINTPTR_MAX) {
         interrupt_ = false;
+        interruptRegExpJit_ = false;
         resetJitStackLimit();
         return InvokeInterruptCallback(this);
     }
