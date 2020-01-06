@@ -119,9 +119,9 @@ NeckoChild::AllocPAltDataOutputStreamChild(
         const nsCString& type,
         PHttpChannelChild* channel)
 {
-  AltDataOutputStreamChild* stream = new AltDataOutputStreamChild();
-  stream->AddIPDLReference();
-  return stream;
+  
+  NS_NOTREACHED("AllocPAltDataOutputStreamChild should not be called");
+  return nullptr;
 }
 
 bool
