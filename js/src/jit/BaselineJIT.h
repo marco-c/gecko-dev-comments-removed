@@ -194,7 +194,12 @@ struct BaselineScript
         ION_COMPILED_OR_INLINED = 1 << 4,
 
         
-        PROFILER_INSTRUMENTATION_ON = 1 << 5
+        PROFILER_INSTRUMENTATION_ON = 1 << 5,
+
+        
+        
+        
+        USES_ENVIRONMENT_CHAIN = 1 << 6,
     };
 
   private:
@@ -320,6 +325,13 @@ struct BaselineScript
     }
     bool ionCompiledOrInlined() const {
         return flags_ & ION_COMPILED_OR_INLINED;
+    }
+
+    void setUsesEnvironmentChain() {
+        flags_ |= USES_ENVIRONMENT_CHAIN;
+    }
+    bool usesEnvironmentChain() const {
+        return flags_ & USES_ENVIRONMENT_CHAIN;
     }
 
     uint32_t prologueOffset() const {

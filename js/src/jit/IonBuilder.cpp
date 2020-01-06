@@ -1124,7 +1124,11 @@ IonBuilder::initLocals()
 bool
 IonBuilder::usesEnvironmentChain()
 {
-    return analysis_.usesEnvironmentChain();
+    
+    
+    if (info().analysisMode() == Analysis_ArgumentsUsage)
+        return true;
+    return script()->baselineScript()->usesEnvironmentChain();
 }
 
 AbortReasonOr<Ok>
