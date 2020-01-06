@@ -23,15 +23,6 @@ CTFontDescriptorRef gfxCoreTextShaper::sDisableLigaturesDescriptor = nullptr;
 CTFontDescriptorRef gfxCoreTextShaper::sIndicFeaturesDescriptor = nullptr;
 CTFontDescriptorRef gfxCoreTextShaper::sIndicDisableLigaturesDescriptor = nullptr;
 
-static CFStringRef sCTWritingDirectionAttributeName = nullptr;
-
-
-enum {
-    kMyCTWritingDirectionEmbedding = (0 << 1),
-    kMyCTWritingDirectionOverride = (1 << 1)
-};
-
-
 
 
 CFDictionaryRef
@@ -40,7 +31,7 @@ gfxCoreTextShaper::CreateAttrDict(bool aRightToLeft)
     
     
     
-    SInt16 dirOverride = kMyCTWritingDirectionOverride |
+    SInt16 dirOverride = kCTWritingDirectionOverride |
                          (aRightToLeft ? kCTWritingDirectionRightToLeft
                                        : kCTWritingDirectionLeftToRight);
     CFNumberRef dirNumber =
@@ -51,7 +42,7 @@ gfxCoreTextShaper::CreateAttrDict(bool aRightToLeft)
                         (const void **) &dirNumber, 1,
                         &kCFTypeArrayCallBacks);
     ::CFRelease(dirNumber);
-    CFTypeRef attrs[] = { kCTFontAttributeName, sCTWritingDirectionAttributeName };
+    CFTypeRef attrs[] = { kCTFontAttributeName, kCTWritingDirectionAttributeName };
     CFTypeRef values[] = { mCTFont, dirArray };
     CFDictionaryRef attrDict =
         ::CFDictionaryCreate(kCFAllocatorDefault,
@@ -62,34 +53,11 @@ gfxCoreTextShaper::CreateAttrDict(bool aRightToLeft)
     return attrDict;
 }
 
-CFDictionaryRef
-gfxCoreTextShaper::CreateAttrDictWithoutDirection()
-{
-    CFTypeRef attrs[] = { kCTFontAttributeName };
-    CFTypeRef values[] = { mCTFont };
-    CFDictionaryRef attrDict =
-        ::CFDictionaryCreate(kCFAllocatorDefault,
-                             attrs, values, ArrayLength(attrs),
-                             &kCFTypeDictionaryKeyCallBacks,
-                             &kCFTypeDictionaryValueCallBacks);
-    return attrDict;
-}
-
 gfxCoreTextShaper::gfxCoreTextShaper(gfxMacFont *aFont)
     : gfxFontShaper(aFont)
     , mAttributesDictLTR(nullptr)
     , mAttributesDictRTL(nullptr)
 {
-    static bool sInitialized = false;
-    if (!sInitialized) {
-        CFStringRef* pstr = (CFStringRef*)
-            dlsym(RTLD_DEFAULT, "kCTWritingDirectionAttributeName");
-        if (pstr) {
-            sCTWritingDirectionAttributeName = *pstr;
-        }
-        sInitialized = true;
-    }
-
     
     mCTFont = CreateCTFontWithFeatures(aFont->GetAdjustedSize(),
                                        GetDefaultFeaturesDescriptor());
@@ -128,76 +96,19 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
     
     bool isRightToLeft = aShapedText->IsRightToLeft();
     const UniChar* text = reinterpret_cast<const UniChar*>(aText);
-    uint32_t length = aLength;
 
-    uint32_t startOffset;
-    CFStringRef stringObj;
-    CFDictionaryRef attrObj;
+    CFStringRef stringObj =
+        ::CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault,
+                                             text, aLength,
+                                             kCFAllocatorNull);
 
-    if (sCTWritingDirectionAttributeName) {
-        startOffset = 0;
-        stringObj = ::CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault,
-                                                         text, length,
-                                                         kCFAllocatorNull);
-
-        
-        
-        attrObj = isRightToLeft ? mAttributesDictRTL : mAttributesDictLTR;
-        if (!attrObj) {
-            attrObj = CreateAttrDict(isRightToLeft);
-            (isRightToLeft ? mAttributesDictRTL : mAttributesDictLTR) = attrObj;
-        }
-    } else {
-        
-        
-        
-        bool bidiWrap = isRightToLeft;
-        if (!bidiWrap && !aShapedText->TextIs8Bit()) {
-            uint32_t i;
-            for (i = 0; i < length; ++i) {
-                if (gfxFontUtils::PotentialRTLChar(aText[i])) {
-                    bidiWrap = true;
-                    break;
-                }
-            }
-        }
-
-        
-        
-        
-        static const UniChar beginLTR[]    = { 0x202d, 0x20 };
-        static const UniChar beginRTL[]    = { 0x202e, 0x20 };
-        static const UniChar endBidiWrap[] = { 0x20, 0x2e, 0x202c };
-
-        if (bidiWrap) {
-            startOffset = isRightToLeft ? ArrayLength(beginRTL)
-                                        : ArrayLength(beginLTR);
-            CFMutableStringRef mutableString =
-                ::CFStringCreateMutable(kCFAllocatorDefault,
-                                        length + startOffset +
-                                            ArrayLength(endBidiWrap));
-            ::CFStringAppendCharacters(mutableString,
-                                       isRightToLeft ? beginRTL : beginLTR,
-                                       startOffset);
-            ::CFStringAppendCharacters(mutableString, text, length);
-            ::CFStringAppendCharacters(mutableString, endBidiWrap,
-                                       ArrayLength(endBidiWrap));
-            stringObj = mutableString;
-        } else {
-            startOffset = 0;
-            stringObj =
-                ::CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault,
-                                                     text, length,
-                                                     kCFAllocatorNull);
-        }
-
-        
-        
-        
-        if (!mAttributesDictLTR) {
-            mAttributesDictLTR = CreateAttrDictWithoutDirection();
-        }
-        attrObj = mAttributesDictLTR;
+    
+    
+    CFDictionaryRef attrObj =
+        isRightToLeft ? mAttributesDictRTL : mAttributesDictLTR;
+    if (!attrObj) {
+        attrObj = CreateAttrDict(isRightToLeft);
+        (isRightToLeft ? mAttributesDictRTL : mAttributesDictLTR) = attrObj;
     }
 
     CTFontRef tempCTFont = nullptr;
@@ -248,18 +159,11 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
     uint32_t numRuns = ::CFArrayGetCount(glyphRuns);
 
     
-    
-    
     bool success = true;
     for (uint32_t runIndex = 0; runIndex < numRuns; runIndex++) {
         CTRunRef aCTRun =
             (CTRunRef)::CFArrayGetValueAtIndex(glyphRuns, runIndex);
-        
         CFRange range = ::CTRunGetStringRange(aCTRun);
-        if (uint32_t(range.location + range.length) <= startOffset ||
-            range.location - startOffset >= aLength) {
-            continue;
-        }
         CFDictionaryRef runAttr = ::CTRunGetAttributes(aCTRun);
         if (runAttr != attrObj) {
             
@@ -274,7 +178,7 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
                 
                 
                 if (range.length == 1) {
-                    char16_t ch = aText[range.location - startOffset];
+                    char16_t ch = aText[range.location];
                     if (gfxFontUtils::IsJoinControl(ch) ||
                         gfxFontUtils::IsVarSelector(ch)) {
                         continue;
@@ -285,8 +189,7 @@ gfxCoreTextShaper::ShapeText(DrawTarget      *aDrawTarget,
                 break;
             }
         }
-        if (SetGlyphsFromRun(aShapedText, aOffset, aLength, aCTRun,
-                             startOffset) != NS_OK) {
+        if (SetGlyphsFromRun(aShapedText, aOffset, aLength, aCTRun) != NS_OK) {
             success = false;
             break;
         }
@@ -308,13 +211,8 @@ nsresult
 gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
                                     uint32_t       aOffset,
                                     uint32_t       aLength,
-                                    CTRunRef       aCTRun,
-                                    int32_t        aStringOffset)
+                                    CTRunRef       aCTRun)
 {
-    
-    
-    
-
     int32_t direction = aShapedText->IsRightToLeft() ? -1 : 1;
 
     int32_t numGlyphs = ::CTRunGetGlyphCount(aCTRun);
@@ -328,15 +226,12 @@ gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
     
     
     
-    
-    
-    
 
     
     CFRange stringRange = ::CTRunGetStringRange(aCTRun);
     
-    if (stringRange.location - aStringOffset + stringRange.length <= 0 ||
-        stringRange.location - aStringOffset >= wordLength) {
+    if (stringRange.location + stringRange.length <= 0 ||
+        stringRange.location >= wordLength) {
         return NS_OK;
     }
 
@@ -553,14 +448,14 @@ gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
             while (charEnd >= 0 && charToGlyph[charEnd] == NO_GLYPH) {
                 charEnd--;
             }
-            baseCharIndex = charEnd + stringRange.location - aStringOffset + 1;
-            endCharIndex = charStart + stringRange.location - aStringOffset + 1;
+            baseCharIndex = charEnd + stringRange.location + 1;
+            endCharIndex = charStart + stringRange.location + 1;
         } else {
             while (charEnd < stringRange.length && charToGlyph[charEnd] == NO_GLYPH) {
                 charEnd++;
             }
-            baseCharIndex = charStart + stringRange.location - aStringOffset;
-            endCharIndex = charEnd + stringRange.location - aStringOffset;
+            baseCharIndex = charStart + stringRange.location;
+            endCharIndex = charEnd + stringRange.location;
         }
 
         
