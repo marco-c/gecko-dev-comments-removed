@@ -1559,10 +1559,18 @@ IMContextWrapper::DispatchCompositionCommitEvent(
 
     RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
 
+    
+    mSelection.CollapseTo(
+        mCompositionStart +
+            (aCommitString ? aCommitString->Length() :
+                             mDispatchedCompositionString.Length()),
+        mSelection.mWritingMode);
+
     mCompositionState = eCompositionState_NotComposing;
     mCompositionStart = UINT32_MAX;
     mCompositionTargetRange.Clear();
     mDispatchedCompositionString.Truncate();
+    mSelectedStringRemovedByComposition.Truncate();
 
     nsEventStatus status;
     rv = dispatcher->CommitComposition(status, aCommitString);
