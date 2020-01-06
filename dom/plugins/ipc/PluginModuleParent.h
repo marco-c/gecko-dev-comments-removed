@@ -697,7 +697,6 @@ private:
 
     bool                mInitOnAsyncConnect;
     nsresult            mAsyncInitRv;
-    NPError             mAsyncInitError;
     
     
     
