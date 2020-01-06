@@ -129,8 +129,8 @@ impl Parse for CounterStyleOrNone {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct FontSettingTag<T> {
     
     pub tag: u32,
@@ -187,7 +187,7 @@ impl<T: Parse> Parse for FontSettingTag<T> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub enum FontSettings<T> {
     
     Normal,
@@ -210,16 +210,17 @@ impl<T: Parse> Parse for FontSettings<T> {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct FontSettingTagInt(pub u32);
 
 
 
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+
 #[cfg_attr(feature = "gecko", derive(Animate, ComputeSquaredDistance))]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct FontSettingTagFloat(pub f32);
 
 impl ToCss for FontSettingTagInt {
