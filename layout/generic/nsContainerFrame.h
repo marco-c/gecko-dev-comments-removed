@@ -521,10 +521,6 @@ public:
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(ExcessOverflowContainersProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(BackdropProperty)
 
-  
-  
-  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(FirstLetterProperty, nsIFrame)
-
 #ifdef DEBUG
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(DebugReflowingWithInfiniteISize, bool)
