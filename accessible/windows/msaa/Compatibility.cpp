@@ -229,7 +229,8 @@ Compatibility::Init()
 
   
   
-  if ((sConsumers & (~NVDA)) &&
+  
+  if ((sConsumers & (~(UIAUTOMATION | NVDA))) &&
       BrowserTabsRemoteAutostart()) {
     sUser32Interceptor.Init("user32.dll");
     if (!sInSendMessageExStub) {
