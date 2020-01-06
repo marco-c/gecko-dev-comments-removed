@@ -59,61 +59,14 @@ struct ProfilerBacktraceDestructor
 using UniqueProfilerBacktrace =
   mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
 
-#if !defined(MOZ_GECKO_PROFILER)
+#if defined(MOZ_GECKO_PROFILER)
 
 
 
 
 
-#define PROFILER_FUNC(decl, rv)  static inline decl { return rv; }
-#define PROFILER_FUNC_VOID(decl) static inline void decl {}
-
-
-
-
-
-
-#define PROFILER_LABEL(name_space, info, category) do {} while (0)
-
-
-
-#define PROFILER_LABEL_FUNC(category) do {} while (0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
-  do {} while (0)
-
-
-
-
-
-#define PROFILER_MARKER(marker_name) do {} while (0)
-
-
-
-
-
-
-
-
-
-
-#else   
+#define PROFILER_FUNC(decl, rv)  decl;
+#define PROFILER_FUNC_VOID(decl) void decl;
 
 #if defined(__GNUC__) || defined(_MSC_VER)
 # define PROFILER_FUNCTION_NAME __FUNCTION__
@@ -122,8 +75,10 @@ using UniqueProfilerBacktrace =
 # define PROFILER_FUNCTION_NAME __func__
 #endif
 
-#define PROFILER_FUNC(decl, rv)  decl;
-#define PROFILER_FUNC_VOID(decl) void decl;
+
+
+
+
 
 
 
@@ -134,11 +89,29 @@ using UniqueProfilerBacktrace =
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, nullptr, \
                                              __LINE__, category)
 
+
+
 #define PROFILER_LABEL_FUNC(category) \
   PROFILER_PLATFORM_TRACING(PROFILER_FUNCTION_NAME) \
   mozilla::AutoProfilerLabel \
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(PROFILER_FUNCTION_NAME, nullptr, \
                                              __LINE__, category)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
   PROFILER_PLATFORM_TRACING(name_space "::" info) \
@@ -146,9 +119,36 @@ using UniqueProfilerBacktrace =
   PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, dynamicStr, \
                                              __LINE__, category)
 
+
+
+
+
 #define PROFILER_MARKER(marker_name) profiler_add_marker(marker_name)
+
+
 #define PROFILER_MARKER_PAYLOAD(marker_name, payload) \
   profiler_add_marker(marker_name, payload)
+
+#else   
+
+#define PROFILER_FUNC(decl, rv)  static inline decl { return rv; }
+#define PROFILER_FUNC_VOID(decl) static inline void decl {}
+
+#define PROFILER_LABEL(name_space, info, category) do {} while (0)
+
+#define PROFILER_LABEL_FUNC(category) do {} while (0)
+
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
+  do {} while (0)
+
+#define PROFILER_MARKER(marker_name) do {} while (0)
+
+
+
+
+
+
+
 
 #endif  
 
