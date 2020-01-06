@@ -2853,6 +2853,24 @@ function UpdateUrlbarSearchSplitterState() {
   }
 
   
+  
+  
+  
+  
+  
+  
+  if ((urlbar && !urlbar.width) || (searchbar && !searchbar.width)) {
+    let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDOMWindowUtils);
+    if (urlbar) {
+      urlbar.width = windowUtils.getBoundsWithoutFlushing(urlbar).width;
+    }
+    if (searchbar) {
+      searchbar.width = windowUtils.getBoundsWithoutFlushing(searchbar).width;
+    }
+  }
+
+  
   if (splitter &&
       ((splitter.nextSibling == searchbar && splitter.previousSibling == urlbar) ||
        (splitter.nextSibling == urlbar && splitter.previousSibling == searchbar))) {
