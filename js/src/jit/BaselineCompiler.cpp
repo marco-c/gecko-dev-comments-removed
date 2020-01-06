@@ -1414,6 +1414,11 @@ static const VMFunction ThrowUninitializedThisInfo =
     FunctionInfo<ThrowUninitializedThisFn>(BaselineThrowUninitializedThis,
                                            "BaselineThrowUninitializedThis");
 
+typedef bool (*ThrowInitializedThisFn)(JSContext*, BaselineFrame* frame);
+static const VMFunction ThrowInitializedThisInfo =
+    FunctionInfo<ThrowInitializedThisFn>(BaselineThrowInitializedThis,
+                                         "BaselineThrowInitializedThis");
+
 bool
 BaselineCompiler::emit_JSOP_CHECKTHIS()
 {
@@ -1424,18 +1429,35 @@ BaselineCompiler::emit_JSOP_CHECKTHIS()
 }
 
 bool
-BaselineCompiler::emitCheckThis(ValueOperand val)
+BaselineCompiler::emit_JSOP_CHECKTHISREINIT()
+{
+    frame.syncStack(0);
+    masm.loadValue(frame.addressOfStackValue(frame.peek(-1)), R0);
+
+    return emitCheckThis(R0, true);
+}
+
+bool
+BaselineCompiler::emitCheckThis(ValueOperand val, bool reinit)
 {
     Label thisOK;
-    masm.branchTestMagic(Assembler::NotEqual, val, &thisOK);
+    if (reinit)
+        masm.branchTestMagic(Assembler::Equal, val, &thisOK);
+    else
+        masm.branchTestMagic(Assembler::NotEqual, val, &thisOK);
 
     prepareVMCall();
 
     masm.loadBaselineFramePtr(BaselineFrameReg, val.scratchReg());
     pushArg(val.scratchReg());
 
-    if (!callVM(ThrowUninitializedThisInfo))
-        return false;
+    if (reinit) {
+        if (!callVM(ThrowInitializedThisInfo))
+            return false;
+    } else {
+        if (!callVM(ThrowUninitializedThisInfo))
+            return false;
+    }
 
     masm.bind(&thisOK);
     return true;
@@ -4219,6 +4241,56 @@ BaselineCompiler::emit_JSOP_SUPERBASE()
 
     
     masm.bind(&hasProto);
+    masm.tagValue(JSVAL_TYPE_OBJECT, proto, R1);
+    frame.push(R1);
+    return true;
+}
+
+typedef JSObject* (*SuperFunOperationFn)(JSContext*, HandleObject);
+static const VMFunction SuperFunOperationInfo =
+    FunctionInfo<SuperFunOperationFn>(SuperFunOperation, "SuperFunOperation");
+
+bool
+BaselineCompiler::emit_JSOP_SUPERFUN()
+{
+    frame.syncStack(0);
+
+    Register callee = R0.scratchReg();
+    Register proto = R1.scratchReg();
+    Register scratch = R2.scratchReg();
+
+    
+    getThisEnvironmentCallee(callee);
+
+    
+    masm.loadObjProto(callee, proto);
+
+    
+    Label needVMCall;
+    MOZ_ASSERT(uintptr_t(TaggedProto::LazyProto) == 1);
+    masm.branchPtr(Assembler::BelowOrEqual, proto, ImmWord(1), &needVMCall);
+
+    
+    masm.branchTestObjClass(Assembler::NotEqual, proto, scratch, &JSFunction::class_, &needVMCall);
+
+    
+    masm.load16ZeroExtend(Address(proto, JSFunction::offsetOfFlags()), scratch);
+    masm.branchTest32(Assembler::Zero, scratch, Imm32(JSFunction::CONSTRUCTOR), &needVMCall);
+
+    
+    Label hasSuperFun;
+    masm.jump(&hasSuperFun);
+
+    
+    masm.bind(&needVMCall);
+    prepareVMCall();
+    pushArg(callee);
+    if (!callVM(SuperFunOperationInfo))
+        return false;
+    masm.movePtr(ReturnReg, proto);
+
+    
+    masm.bind(&hasSuperFun);
     masm.tagValue(JSVAL_TYPE_OBJECT, proto, R1);
     frame.push(R1);
     return true;
