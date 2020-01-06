@@ -139,19 +139,9 @@ class SymbolRegistry : public GCHashSet<ReadBarrieredSymbol,
     SymbolRegistry() {}
 };
 
-} 
-
-namespace js {
-
 
 bool
 SymbolDescriptiveString(JSContext* cx, JS::Symbol* sym, JS::MutableHandleValue result);
-
-bool
-IsSymbolOrSymbolWrapper(const JS::Value& v);
-
-JS::Symbol*
-ToSymbolPrimitive(const JS::Value& v);
 
 } 
 
