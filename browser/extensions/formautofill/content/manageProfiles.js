@@ -63,7 +63,7 @@ ManageProfileDialog.prototype = {
 
 
   loadAddresses() {
-    return this.getAddresses().then(addresses => {
+    return this.getRecords({collectionName: "addresses"}).then(addresses => {
       log.debug("addresses:", addresses);
       
       addresses.sort((a, b) => b.timeLastModified - a.timeLastModified);
@@ -77,13 +77,23 @@ ManageProfileDialog.prototype = {
 
 
 
-  getAddresses() {
+
+
+
+
+
+
+
+
+
+
+  getRecords(data) {
     return new Promise(resolve => {
-      Services.cpmm.addMessageListener("FormAutofill:Addresses", function getResult(result) {
-        Services.cpmm.removeMessageListener("FormAutofill:Addresses", getResult);
+      Services.cpmm.addMessageListener("FormAutofill:Records", function getResult(result) {
+        Services.cpmm.removeMessageListener("FormAutofill:Records", getResult);
         resolve(result.data);
       });
-      Services.cpmm.sendAsyncMessage("FormAutofill:GetAddresses", {});
+      Services.cpmm.sendAsyncMessage("FormAutofill:GetRecords", data);
     });
   },
 

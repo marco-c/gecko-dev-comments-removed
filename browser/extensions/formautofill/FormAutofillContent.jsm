@@ -105,21 +105,24 @@ AutofillProfileAutoCompleteSearch.prototype = {
       return;
     }
 
-    this._getAddresses({info, searchString}).then((addresses) => {
+    let collectionName = FormAutofillUtils.isAddressField(info.fieldName) ?
+      "addresses" : "creditCards";
+
+    this._getRecords({collectionName, info, searchString}).then((records) => {
       if (this.forceStop) {
         return;
       }
       
-      addresses.sort((a, b) => b.timeLastUsed - a.timeLastUsed);
+      records.sort((a, b) => b.timeLastUsed - a.timeLastUsed);
 
       let handler = FormAutofillContent.getFormHandler(focusedInput);
-      let adaptedAddresses = handler.getAdaptedProfiles(addresses);
+      let adaptedRecords = handler.getAdaptedProfiles(records);
 
       let allFieldNames = FormAutofillContent.getAllFieldNames(focusedInput);
       let result = new ProfileAutoCompleteResult(searchString,
                                                  info.fieldName,
                                                  allFieldNames,
-                                                 adaptedAddresses,
+                                                 adaptedRecords,
                                                  {});
 
       listener.onSearchResult(this, result);
@@ -148,15 +151,17 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
 
-  _getAddresses(data) {
-    this.log.debug("_getAddresses with data:", data);
+
+
+  _getRecords(data) {
+    this.log.debug("_getRecords with data:", data);
     return new Promise((resolve) => {
-      Services.cpmm.addMessageListener("FormAutofill:Addresses", function getResult(result) {
-        Services.cpmm.removeMessageListener("FormAutofill:Addresses", getResult);
+      Services.cpmm.addMessageListener("FormAutofill:Records", function getResult(result) {
+        Services.cpmm.removeMessageListener("FormAutofill:Records", getResult);
         resolve(result.data);
       });
 
-      Services.cpmm.sendAsyncMessage("FormAutofill:GetAddresses", data);
+      Services.cpmm.sendAsyncMessage("FormAutofill:GetRecords", data);
     });
   },
 };
