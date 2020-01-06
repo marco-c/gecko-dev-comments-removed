@@ -762,7 +762,7 @@ nsIPresShell::nsIPresShell()
     , mFrozen(false)
     , mIsFirstPaint(false)
     , mObservesMutationsForPrint(false)
-    , mSuppressInterruptibleReflows(false)
+    , mWasLastReflowInterrupted(false)
     , mScrollPositionClampingScrollPortSizeSet(false)
     , mNeedLayoutFlush(true)
     , mNeedStyleFlush(true)
@@ -4197,7 +4197,7 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     
 
-    if (flushType >= (mSuppressInterruptibleReflows
+    if (flushType >= (SuppressInterruptibleReflows()
                         ? FlushType::Layout
                         : FlushType::InterruptibleLayout) &&
         !mIsDestroying) {
@@ -9457,7 +9457,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
     
     
     
-    mSuppressInterruptibleReflows = true;
+    mWasLastReflowInterrupted = true;
     MaybeScheduleReflow();
   }
 

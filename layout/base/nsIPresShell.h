@@ -1582,6 +1582,21 @@ public:
   }
 
   
+
+
+  bool IsReflowInterrupted() const {
+    return mWasLastReflowInterrupted;
+  }
+
+  
+
+
+
+  bool SuppressInterruptibleReflows() const {
+    return mWasLastReflowInterrupted;
+  }
+
+  
   
   
 
@@ -1794,7 +1809,8 @@ protected:
   bool                      mIsFirstPaint : 1;
   bool                      mObservesMutationsForPrint : 1;
 
-  bool                      mSuppressInterruptibleReflows : 1;
+  
+  bool                      mWasLastReflowInterrupted : 1;
   bool                      mScrollPositionClampingScrollPortSizeSet : 1;
 
   
