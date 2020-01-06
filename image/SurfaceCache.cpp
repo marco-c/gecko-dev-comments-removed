@@ -614,12 +614,26 @@ public:
     return false;
   }
 
+  template<typename Function>
   void CollectSizeOfSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
-                             MallocSizeOf                    aMallocSizeOf)
+                             MallocSizeOf                    aMallocSizeOf,
+                             Function&&                      aRemoveCallback)
   {
     CachedSurface::SurfaceMemoryReport report(aCounters, aMallocSizeOf);
-    for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
+    for (auto iter = mSurfaces.Iter(); !iter.Done(); iter.Next()) {
       NotNull<CachedSurface*> surface = WrapNotNull(iter.UserData());
+
+      
+      
+      
+      
+      DrawableSurface drawableSurface = surface->GetDrawableSurface();
+      if (!drawableSurface) {
+        aRemoveCallback(surface);
+        iter.Remove();
+        continue;
+      }
+
       const IntSize& size = surface->GetSurfaceKey().Size();
       bool factor2Size = false;
       if (mFactor2Mode) {
@@ -1073,6 +1087,8 @@ public:
 
     cache->Prune([this, &aAutoLock](NotNull<CachedSurface*> aSurface) -> void {
       StopTracking(aSurface,  true, aAutoLock);
+      
+      mCachedSurfacesDiscard.AppendElement(aSurface);
     });
   }
 
@@ -1165,7 +1181,8 @@ public:
 
   void CollectSizeOfSurfaces(const ImageKey                  aImageKey,
                              nsTArray<SurfaceMemoryCounter>& aCounters,
-                             MallocSizeOf                    aMallocSizeOf)
+                             MallocSizeOf                    aMallocSizeOf,
+                             const StaticMutexAutoLock&      aAutoLock)
   {
     RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
     if (!cache) {
@@ -1173,7 +1190,12 @@ public:
     }
 
     
-    cache->CollectSizeOfSurfaces(aCounters, aMallocSizeOf);
+    cache->CollectSizeOfSurfaces(aCounters, aMallocSizeOf,
+      [this, &aAutoLock](NotNull<CachedSurface*> aSurface) -> void {
+      StopTracking(aSurface,  true, aAutoLock);
+      
+      mCachedSurfacesDiscard.AppendElement(aSurface);
+    });
   }
 
 private:
@@ -1544,9 +1566,13 @@ SurfaceCache::RemoveImage(const ImageKey aImageKey)
  void
 SurfaceCache::PruneImage(const ImageKey aImageKey)
 {
-  StaticMutexAutoLock lock(sInstanceMutex);
-  if (sInstance) {
-    sInstance->PruneImage(aImageKey, lock);
+  nsTArray<RefPtr<CachedSurface>> discard;
+  {
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (sInstance) {
+      sInstance->PruneImage(aImageKey, lock);
+      sInstance->TakeDiscard(discard, lock);
+    }
   }
 }
 
@@ -1568,12 +1594,16 @@ SurfaceCache::CollectSizeOfSurfaces(const ImageKey                  aImageKey,
                                     nsTArray<SurfaceMemoryCounter>& aCounters,
                                     MallocSizeOf                    aMallocSizeOf)
 {
-  StaticMutexAutoLock lock(sInstanceMutex);
-  if (!sInstance) {
-    return;
-  }
+  nsTArray<RefPtr<CachedSurface>> discard;
+  {
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (!sInstance) {
+      return;
+    }
 
-  return sInstance->CollectSizeOfSurfaces(aImageKey, aCounters, aMallocSizeOf);
+    sInstance->CollectSizeOfSurfaces(aImageKey, aCounters, aMallocSizeOf, lock);
+    sInstance->TakeDiscard(discard, lock);
+  }
 }
 
  size_t
