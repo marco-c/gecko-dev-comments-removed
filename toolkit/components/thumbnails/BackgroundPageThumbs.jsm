@@ -68,7 +68,7 @@ const BackgroundPageThumbs = {
 
 
   capture(url, options = {}) {
-    if (!PageThumbs._prefEnabled() || this.isBlacklistedUrl(url)) {
+    if (!PageThumbs._prefEnabled()) {
       if (options.onDone)
         schedule(() => options.onDone(url));
       return;
@@ -100,23 +100,6 @@ const BackgroundPageThumbs = {
 
 
 
-  isBlacklistedUrl(url) {
-    try {
-      const domain = Services.eTLD.getBaseDomain(Services.io.newURI(url));
-      
-      
-      return domain === "twitch.tv";
-    } catch (ex) {}
-    return false;
-  },
-
-  
-
-
-
-
-
-
 
 
 
@@ -124,7 +107,7 @@ const BackgroundPageThumbs = {
   async captureIfMissing(url, options = {}) {
     
     
-    if (!PageThumbs._prefEnabled() || this.isBlacklistedUrl(url)) {
+    if (!PageThumbs._prefEnabled()) {
       if (options.onDone)
         options.onDone(url);
       return url;
