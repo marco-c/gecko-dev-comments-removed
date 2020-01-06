@@ -124,9 +124,7 @@ PrincipalVerifier::VerifyOnMainThread()
   }
 
   
-  
-  if (NS_WARN_IF(principal->GetIsNullPrincipal() ||
-                 principal->GetUnknownAppId())) {
+  if (NS_WARN_IF(principal->GetIsNullPrincipal())) {
     DispatchToInitiatingThread(NS_ERROR_FAILURE);
     return;
   }
