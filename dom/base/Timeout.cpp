@@ -142,6 +142,7 @@ Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   if (mWindow->IsFrozen()) {
     mWhen = TimeStamp();
     mTimeRemaining = aDelay;
+    mScheduledDelay = TimeDuration(0);
     return;
   }
 
@@ -150,6 +151,7 @@ Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   
   mWhen = aBaseTime + aDelay;
   mTimeRemaining = TimeDuration(0);
+  mScheduledDelay = aDelay;
 }
 
 void
@@ -175,6 +177,13 @@ Timeout::TimeRemaining() const
   
   
   return mTimeRemaining;
+}
+
+const TimeDuration&
+Timeout::ScheduledDelay() const
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mWhen.IsNull());
+  return mScheduledDelay;
 }
 
 } 

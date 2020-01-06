@@ -61,6 +61,9 @@ public:
   const TimeDuration& TimeRemaining() const;
 
   
+  const TimeDuration& ScheduledDelay() const;
+
+  
   RefPtr<nsGlobalWindow> mWindow;
 
   
@@ -109,8 +112,13 @@ private:
   
   
   TimeStamp mWhen;
+
   
   TimeDuration mTimeRemaining;
+
+  
+  
+  TimeDuration mScheduledDelay;
 
   ~Timeout();
 };
