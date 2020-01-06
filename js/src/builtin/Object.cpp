@@ -791,6 +791,59 @@ TryAssignNative(JSContext* cx, HandleObject to, HandleObject from, bool* optimiz
 }
 
 static bool
+TryAssignFromUnboxed(JSContext* cx, HandleObject to, HandleObject from, bool* optimized)
+{
+    *optimized = false;
+
+    if (!from->is<UnboxedPlainObject>() || !to->isNative())
+        return true;
+
+    
+    UnboxedPlainObject* fromUnboxed = &from->as<UnboxedPlainObject>();
+    if (fromUnboxed->maybeExpando())
+        return true;
+
+    *optimized = true;
+
+    RootedObjectGroup fromGroup(cx, from->group());
+
+    RootedValue propValue(cx);
+    RootedId nextKey(cx);
+    RootedValue toReceiver(cx, ObjectValue(*to));
+
+    const UnboxedLayout& layout = fromUnboxed->layout();
+    for (size_t i = 0; i < layout.properties().length(); i++) {
+        const UnboxedLayout::Property& property = layout.properties()[i];
+        nextKey = NameToId(property.name);
+
+        
+        
+        
+        if (MOZ_LIKELY(from->group() == fromGroup)) {
+            propValue = from->as<UnboxedPlainObject>().getValue(property);
+        } else {
+            
+            
+            bool enumerable;
+            if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable))
+                return false;
+            if (!enumerable)
+                continue;
+            if (!GetProperty(cx, from, from, nextKey, &propValue))
+                return false;
+        }
+
+        ObjectOpResult result;
+        if (MOZ_UNLIKELY(!SetProperty(cx, to, nextKey, propValue, toReceiver, result)))
+            return false;
+        if (MOZ_UNLIKELY(!result.checkStrict(cx, to, nextKey)))
+            return false;
+    }
+
+    return true;
+}
+
+static bool
 AssignSlow(JSContext* cx, HandleObject to, HandleObject from)
 {
     
@@ -853,6 +906,11 @@ obj_assign(JSContext* cx, unsigned argc, Value* vp)
         
         bool optimized;
         if (!TryAssignNative(cx, to, from, &optimized))
+            return false;
+        if (optimized)
+            continue;
+
+        if (!TryAssignFromUnboxed(cx, to, from, &optimized))
             return false;
         if (optimized)
             continue;
