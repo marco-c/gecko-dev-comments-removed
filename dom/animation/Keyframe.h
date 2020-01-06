@@ -25,6 +25,15 @@ enum class CompositeOperation : uint8_t;
 
 struct PropertyValuePair
 {
+  PropertyValuePair(nsCSSPropertyID aProperty, nsCSSValue&& aValue)
+    : mProperty(aProperty), mValue(Move(aValue)) { }
+  PropertyValuePair(nsCSSPropertyID aProperty,
+                    RefPtr<RawServoDeclarationBlock>&& aValue)
+    : mProperty(aProperty), mServoDeclarationBlock(Move(aValue))
+  {
+    MOZ_ASSERT(mServoDeclarationBlock, "Should be valid property value");
+  }
+
   nsCSSPropertyID mProperty;
   
   
@@ -37,7 +46,7 @@ struct PropertyValuePair
 #ifdef DEBUG
   
   
-  bool mSimulateComputeValuesFailure;
+  bool mSimulateComputeValuesFailure = false;
 #endif
 
   bool operator==(const PropertyValuePair&) const;
