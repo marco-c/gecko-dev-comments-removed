@@ -673,9 +673,7 @@ js::Nursery::collect(JS::gcreason::Reason reason)
     }
 
     
-    startProfile(ProfileKey::Resize);
     maybeResizeNursery(reason);
-    endProfile(ProfileKey::Resize);
 
     
     
