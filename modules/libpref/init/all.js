@@ -817,7 +817,6 @@ pref("gfx.font_rendering.wordcache.maxentries", 10000);
 pref("gfx.font_rendering.graphite.enabled", true);
 
 #ifdef XP_WIN
-pref("gfx.font_rendering.directwrite.force-enabled", false);
 pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
@@ -2520,7 +2519,6 @@ pref("font.name-list.monospace.x-math", "monospace");
 
 pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
 
-pref("images.dither", "auto");
 pref("security.directory",              "");
 
 pref("signed.applets.codebase_principal_support", false);
@@ -4884,10 +4882,6 @@ pref("layers.shared-buffer-provider.enabled", false);
 
 
 pref("layers.force-active", false);
-
-
-
-pref("layers.gralloc.disable", false);
 
 
 pref("geo.enabled", true);
