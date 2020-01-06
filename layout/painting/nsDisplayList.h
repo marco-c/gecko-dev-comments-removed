@@ -2063,7 +2063,7 @@ public:
     return mFrame;
   }
 
-  bool HasDeletedFrame() const { return !mFrame; }
+  virtual bool HasDeletedFrame() const { return !mFrame; }
 
   virtual nsIFrame* StyleFrame() const { return mFrame; }
 
@@ -4343,8 +4343,7 @@ public:
 class nsDisplayCompositorHitTestInfo : public nsDisplayEventReceiver {
 public:
   nsDisplayCompositorHitTestInfo(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                                 mozilla::gfx::CompositorHitTestInfo aHitTestInfo,
-                                 uint32_t aIndex = 0);
+                                 mozilla::gfx::CompositorHitTestInfo aHitTestInfo);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayCompositorHitTestInfo()
@@ -4354,7 +4353,6 @@ public:
 #endif
 
   mozilla::gfx::CompositorHitTestInfo HitTestInfo() const { return mHitTestInfo; }
-  void SetArea(const nsRect& aArea);
 
   bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -4362,18 +4360,12 @@ public:
                                mozilla::layers::WebRenderLayerManager* aManager,
                                nsDisplayListBuilder* aDisplayListBuilder) override;
   void WriteDebugInfo(std::stringstream& aStream) override;
-  uint32_t GetPerFrameKey() const override;
-  int32_t ZIndex() const override;
-  void SetOverrideZIndex(int32_t aZIndex);
 
   NS_DISPLAY_DECL_NAME("CompositorHitTestInfo", TYPE_COMPOSITOR_HITTEST_INFO)
 
 private:
   mozilla::gfx::CompositorHitTestInfo mHitTestInfo;
   mozilla::Maybe<mozilla::layers::FrameMetrics::ViewID> mScrollTarget;
-  mozilla::Maybe<nsRect> mArea;
-  uint32_t mIndex;
-  mozilla::Maybe<int32_t> mOverrideZIndex;
 };
 
 
@@ -6162,6 +6154,12 @@ public:
   nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aTransformFrame,
                        nsIFrame* aPerspectiveFrame,
                        nsDisplayList* aList);
+  ~nsDisplayPerspective()
+  {
+    if (mTransformFrame) {
+      mTransformFrame->RemoveDisplayItem(this);
+    }
+  }
 
   virtual uint32_t GetPerFrameKey() const override {
     return (mIndex << TYPE_BITS) | nsDisplayItem::GetPerFrameKey();
@@ -6266,6 +6264,16 @@ public:
   {
     mList.GetChildren()->DeleteAll(aBuilder);
     nsDisplayItem::Destroy(aBuilder);
+  }
+
+  virtual bool HasDeletedFrame() const override { return !mTransformFrame || nsDisplayItem::HasDeletedFrame(); }
+
+  virtual void RemoveFrame(nsIFrame* aFrame) override
+  {
+    if (aFrame == mTransformFrame) {
+      mTransformFrame = nullptr;
+    }
+    nsDisplayItem::RemoveFrame(aFrame);
   }
 
 private:
