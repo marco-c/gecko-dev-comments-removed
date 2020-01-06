@@ -45,15 +45,36 @@ extern "C" {
 
 void RPC_ENTRY GetProxyDllInfo(const ProxyFileInfo*** aInfo, const CLSID** aId);
 
+#if defined(_MSC_VER)
+extern IMAGE_DOS_HEADER __ImageBase;
+#endif
+
 }
 
 namespace mozilla {
 namespace mscom {
 
+static HMODULE
+GetContainingModule()
+{
+  HMODULE thisModule = nullptr;
+#if defined(_MSC_VER)
+  thisModule = reinterpret_cast<HMODULE>(&__ImageBase);
+#else
+  if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                         GET_MODULE_HANDLE_EX_UNCHANGED_REFCOUNT,
+                         reinterpret_cast<LPCTSTR>(&GetContainingModule),
+                         &thisModule)) {
+    return nullptr;
+  }
+#endif
+  return thisModule;
+}
+
 static bool
 GetContainingLibPath(wchar_t* aBuffer, size_t aBufferLen)
 {
-  HMODULE thisModule = reinterpret_cast<HMODULE>(GetContainingModuleHandle());
+  HMODULE thisModule = GetContainingModule();
   if (!thisModule) {
     return false;
   }
@@ -178,7 +199,10 @@ RegisterProxy(const wchar_t* aLeafName, RegistrationFlags aFlags)
 
   
   
-  ActivationContextRegion actCtxRgn(proxyDll.get());
+  ActivationContext actCtx(proxyDll);
+  if (!actCtx) {
+    return nullptr;
+  }
 
   auto GetProxyDllInfoFn = reinterpret_cast<decltype(&GetProxyDllInfo)>(
       GetProcAddress(proxyDll, "GetProxyDllInfo"));
