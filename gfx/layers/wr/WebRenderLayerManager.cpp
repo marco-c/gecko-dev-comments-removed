@@ -158,6 +158,11 @@ WebRenderLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 bool
 WebRenderLayerManager::BeginTransaction()
 {
+  if (!WrBridge()->IPCOpen()) {
+    gfxCriticalNote << "IPC Channel is already torn down unexpectedly\n";
+    return false;
+  }
+
   
   
   
@@ -730,12 +735,7 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
           mLayerScrollData.back().SetEventRegionsOverride(EventRegionsOverride::ForceDispatchToContent);
         }
       }
-      RefPtr<WebRenderLayerManager> self(this);
-      auto callback = [self](FrameMetrics::ViewID aScrollId) -> bool {
-        return self->mScrollData.HasMetadataFor(aScrollId);
-      };
-      if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
-            aDisplayListBuilder, nullptr, ContainerLayerParameters(), callback)) {
+      if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(aDisplayListBuilder, nullptr, ContainerLayerParameters())) {
         mLayerScrollData.back().AppendScrollMetadata(mScrollData, rootMetadata.ref());
       }
       
