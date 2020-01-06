@@ -20,19 +20,28 @@ namespace layers {
 
 struct ScrollThumbData {
   ScrollThumbData()
-    : mDirection(ScrollDirection::NONE), mThumbRatio(0.0f) {}
-  ScrollThumbData(ScrollDirection aDirection, float aThumbRatio)
-    : mDirection(aDirection), mThumbRatio(aThumbRatio) {}
+    : mDirection(ScrollDirection::NONE)
+    , mThumbRatio(0.0f)
+  {}
+  ScrollThumbData(ScrollDirection aDirection,
+                  float aThumbRatio,
+                  CSSCoord aThumbLength)
+    : mDirection(aDirection)
+    , mThumbRatio(aThumbRatio)
+    , mThumbLength(aThumbLength)
+  {}
 
   ScrollDirection mDirection;
   
   
   
   float mThumbRatio;
+  CSSCoord mThumbLength;
 
   bool operator==(const ScrollThumbData& aOther) const {
     return mDirection == aOther.mDirection &&
-           mThumbRatio == aOther.mThumbRatio;
+           mThumbRatio == aOther.mThumbRatio &&
+           mThumbLength == aOther.mThumbLength;
   }
   bool operator!=(const ScrollThumbData& aOther) const {
     return !(*this == aOther);
