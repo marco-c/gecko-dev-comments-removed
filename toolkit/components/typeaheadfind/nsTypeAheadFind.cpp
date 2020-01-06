@@ -1218,13 +1218,11 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
     return false;
 
   nsIFrame *frame = content->GetPrimaryFrame();
-  if (!frame) {
+  if (!frame)
     return false;  
-  }
 
-  if (!frame->StyleVisibility()->IsVisible()) {
+  if (!frame->StyleVisibility()->IsVisible())
     return false;
-  }
 
   
   
@@ -1234,6 +1232,8 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
   }
 
   
+  if (!aMustBeInViewPort)
+    return true; 
 
   
   int32_t startFrameOffset, endFrameOffset;
@@ -1269,18 +1269,8 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
                                     minDistance);
 
     if (rectVisibility != nsRectVisibility_kAboveViewport) {
-      
-      
-      return IsRangeRendered(aPresShell, aPresContext, aRange);
+      return true;
     }
-  }
-
-  
-
-  if (!aMustBeInViewPort) {
-    
-    
-    return true;
   }
 
   
@@ -1298,9 +1288,8 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
                             false  
                             );
 
-  if (!frameTraversal) {
+  if (!frameTraversal)
     return false;
-  }
 
   while (rectVisibility == nsRectVisibility_kAboveViewport) {
     frameTraversal->Next();
@@ -1324,86 +1313,6 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
       (*aFirstVisibleRange)->SetStart(firstVisibleNode, startFrameOffset);
       (*aFirstVisibleRange)->SetEnd(firstVisibleNode, endFrameOffset);
     }
-  }
-
-  return false;
-}
-
-NS_IMETHODIMP
-nsTypeAheadFind::IsRangeRendered(nsIDOMRange *aRange,
-                                bool *aResult)
-{
-  
-  nsCOMPtr<nsIDOMNode> node;
-  aRange->GetStartContainer(getter_AddRefs(node));
-  nsCOMPtr<nsIDOMDocument> document;
-  node->GetOwnerDocument(getter_AddRefs(document));
-  nsCOMPtr<mozIDOMWindowProxy> window;
-  document->GetDefaultView(getter_AddRefs(window));
-  nsCOMPtr<nsIWebNavigation> navNav (do_GetInterface(window));
-  nsCOMPtr<nsIDocShell> docShell (do_GetInterface(navNav));
-
-  
-  nsCOMPtr<nsIPresShell> presShell (docShell->GetPresShell());
-  RefPtr<nsPresContext> presContext = presShell->GetPresContext();
-  *aResult = IsRangeRendered(presShell, presContext, aRange);
-  return NS_OK;
-}
-
-bool
-nsTypeAheadFind::IsRangeRendered(nsIPresShell *aPresShell,
-                                 nsPresContext *aPresContext,
-                                 nsIDOMRange *aRange)
-{
-  NS_ASSERTION(aPresShell && aPresContext && aRange,
-               "params are invalid");
-
-  nsCOMPtr<nsIDOMNode> node;
-  aRange->GetCommonAncestorContainer(getter_AddRefs(node));
-
-  nsCOMPtr<nsIContent> content(do_QueryInterface(node));
-  if (!content) {
-    return false;
-  }
-
-  nsIFrame *frame = content->GetPrimaryFrame();
-  if (!frame) {
-    return false;  
-  }
-
-  if (!frame->StyleVisibility()->IsVisible()) {
-    return false;
-  }
-
-  
-  
-  AutoTArray<nsIFrame*,8> frames;
-  nsIFrame *rootFrame = aPresShell->GetRootFrame();
-  RefPtr<nsRange> range = static_cast<nsRange*>(aRange);
-  RefPtr<mozilla::dom::DOMRectList> rects = range->GetClientRects(true, false);
-  for (uint32_t i = 0; i < rects->Length(); ++i) {
-    RefPtr<mozilla::dom::DOMRect> rect = rects->Item(i);
-    nsRect r(nsPresContext::CSSPixelsToAppUnits((float)rect->X()),
-             nsPresContext::CSSPixelsToAppUnits((float)rect->Y()),
-             nsPresContext::CSSPixelsToAppUnits((float)rect->Width()),
-             nsPresContext::CSSPixelsToAppUnits((float)rect->Height()));
-    
-    nsLayoutUtils::GetFramesForArea(rootFrame, r, frames,
-      nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
-      nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME |
-      nsLayoutUtils::ONLY_VISIBLE);
-
-    
-    
-    
-    
-    for (const auto &f: frames) {
-      if (f->GetContent() == content) {
-        return true;
-      }
-    }
-
-    frames.ClearAndRetainStorage();
   }
 
   return false;
