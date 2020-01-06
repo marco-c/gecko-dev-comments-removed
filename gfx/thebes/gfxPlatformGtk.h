@@ -22,8 +22,6 @@ struct _XDisplay;
 typedef struct _XDisplay Display;
 #endif 
 
-class gfxFontconfigUtils;
-
 class gfxPlatformGtk : public gfxPlatform {
 public:
     gfxPlatformGtk();
@@ -138,8 +136,6 @@ public:
 #endif 
 
 protected:
-    static gfxFontconfigUtils *sFontconfigUtils;
-
     int8_t mMaxGenericSubstitutions;
 
 private:
