@@ -2094,6 +2094,8 @@ ContentParent::ContentParent(ContentParent* aOpener,
   , mCreatedPairedMinidumps(false)
   , mShutdownPending(false)
   , mIPCOpen(true)
+  , mIsRemoteInputEventQueueEnabled(false)
+  , mIsInputPriorityEventEnabled(false)
   , mHangMonitorActor(nullptr)
 {
   
@@ -2444,6 +2446,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   pluginHost->SendPluginsToContent();
+  MaybeEnableRemoteInputEventQueue();
 }
 
 bool
@@ -2507,6 +2510,47 @@ void
 ContentParent::OnCompositorDeviceReset()
 {
   Unused << SendReinitRenderingForDeviceReset();
+}
+
+void
+ContentParent::MaybeEnableRemoteInputEventQueue()
+{
+  MOZ_ASSERT(!mIsRemoteInputEventQueueEnabled);
+  if (!IsInputEventQueueSupported()) {
+    return;
+  }
+  mIsRemoteInputEventQueueEnabled = true;
+  Unused << SendSetInputEventQueueEnabled();
+  SetInputPriorityEventEnabled(true);
+}
+
+void
+ContentParent::SetInputPriorityEventEnabled(bool aEnabled)
+{
+  if (!IsInputEventQueueSupported() ||
+      !mIsRemoteInputEventQueueEnabled ||
+      mIsInputPriorityEventEnabled == aEnabled) {
+    return;
+  }
+  mIsInputPriorityEventEnabled = aEnabled;
+  
+  
+  Unused << SendSuspendInputEventQueue();
+  Unused << SendFlushInputEventQueue();
+  Unused << SendResumeInputEventQueue();
+}
+
+ bool
+ContentParent::IsInputEventQueueSupported()
+{
+  static bool sSupported = false;
+  static bool sInitialized = false;
+  if (!sInitialized) {
+    MOZ_ASSERT(Preferences::IsServiceAvailable());
+    sSupported = Preferences::GetBool("input_event_queue.supported", false);
+    sInitialized = true;
+  }
+  return sSupported;
 }
 
 void

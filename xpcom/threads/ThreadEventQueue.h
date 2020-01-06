@@ -49,6 +49,9 @@ public:
   void Disconnect(const MutexAutoLock& aProofOfLock) final {}
 
   void EnableInputEventPrioritization() final;
+  void FlushInputEventPrioritization() final;
+  void SuspendInputEventPrioritization() final;
+  void ResumeInputEventPrioritization() final;
 
   
 

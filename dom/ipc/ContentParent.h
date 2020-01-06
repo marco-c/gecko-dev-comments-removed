@@ -638,6 +638,15 @@ public:
 
   void OnCompositorDeviceReset() override;
 
+  
+  void SetInputPriorityEventEnabled(bool aEnabled);
+  bool IsInputPriorityEventEnabled()
+  {
+    return mIsInputPriorityEventEnabled;
+  }
+
+  static bool IsInputEventQueueSupported();
+
 protected:
   void OnChannelConnected(int32_t pid) override;
 
@@ -1171,6 +1180,11 @@ private:
 
   virtual mozilla::ipc::IPCResult RecvBHRThreadHang(
     const HangDetails& aHangDetails) override;
+
+  
+  
+  void MaybeEnableRemoteInputEventQueue();
+
 public:
   void SendGetFilesResponseAndForget(const nsID& aID,
                                      const GetFilesResponseResult& aResult);
@@ -1232,6 +1246,14 @@ private:
   bool mCreatedPairedMinidumps;
   bool mShutdownPending;
   bool mIPCOpen;
+
+  
+  
+  bool mIsRemoteInputEventQueueEnabled;
+
+  
+  
+  bool mIsInputPriorityEventEnabled;
 
   RefPtr<nsConsoleService>  mConsoleService;
   nsConsoleService* GetConsoleService();

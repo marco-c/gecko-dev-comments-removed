@@ -59,18 +59,17 @@ public:
   
   void SetMutexRef(Mutex& aMutex) { mMutex = &aMutex; }
 
-#ifndef RELEASE_OR_BETA
   
   
   
   void SetNextIdleDeadlineRef(TimeStamp& aDeadline) { mNextIdleDeadline = &aDeadline; }
-#endif
 
   void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
+  void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
+  void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
+  void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
 
 private:
-  class EnablePrioritizationRunnable;
-
   
   mozilla::TimeStamp GetIdleDeadline();
 
@@ -83,11 +82,9 @@ private:
   
   Mutex* mMutex = nullptr;
 
-#ifndef RELEASE_OR_BETA
   
   
   TimeStamp* mNextIdleDeadline = nullptr;
-#endif
 
   
   
@@ -108,14 +105,14 @@ private:
 
   TimeStamp mInputHandlingStartTime;
 
-  
-  
-  
-  
-  
-  
-  bool mWriteToInputQueue = false;
-  bool mReadFromInputQueue = false;
+  enum InputEventQueueState
+  {
+    STATE_DISABLED,
+    STATE_FLUSHING,
+    STATE_SUSPEND,
+    STATE_ENABLED
+  };
+  InputEventQueueState mInputQueueState = STATE_DISABLED;
 };
 
 class EventQueue;
