@@ -935,7 +935,7 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
   browser = null;
 
   
-  let hostName = alternativeURI.host;
+  let hostName = alternativeURI.displayHost;
   
   let asciiHost = alternativeURI.asciiHost;
   
