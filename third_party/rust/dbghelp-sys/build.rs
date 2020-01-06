@@ -1,0 +1,6 @@
+
+
+extern crate build;
+fn main() {
+    build::link("dbghelp", true)
+}
