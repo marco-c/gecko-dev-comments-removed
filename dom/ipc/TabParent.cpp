@@ -98,6 +98,7 @@
 #include "mozilla/WebBrowserPersistDocumentParent.h"
 #include "nsIGroupedSHistory.h"
 #include "PartialSHistory.h"
+#include "ProcessPriorityManager.h"
 #include "nsString.h"
 
 #ifdef XP_WIN
@@ -2647,6 +2648,10 @@ TabParent::SetDocShellIsActive(bool isActive)
   mIsPrerendered &= !isActive;
   mDocShellIsActive = isActive;
   Unused << SendSetDocShellIsActive(isActive, mPreserveLayers, mLayerTreeEpoch);
+
+  
+  
+  ProcessPriorityManager::TabActivityChanged(this, isActive);
 
   
   
