@@ -423,7 +423,6 @@ impl<Impl: SelectorImpl> Selector<Impl> {
         ))
     }
 
-
     
     
     
@@ -493,6 +492,11 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     pub fn len(&self) -> usize {
         self.0.slice.len()
+    }
+
+    
+    pub fn thin_arc_heap_ptr(&self) -> *const ::std::os::raw::c_void {
+        self.0.heap_ptr()
     }
 }
 

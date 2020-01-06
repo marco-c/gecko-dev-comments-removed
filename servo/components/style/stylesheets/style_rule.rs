@@ -12,7 +12,7 @@ use servo_arc::Arc;
 use shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt;
 use style_traits::ToCss;
-use stylesheets::{MallocSizeOf, MallocSizeOfFn, MallocSizeOfWithGuard};
+use stylesheets::{MallocSizeOf, MallocSizeOfFn, MallocSizeOfVec, MallocSizeOfWithGuard};
 
 
 #[derive(Debug)]
@@ -47,8 +47,22 @@ impl MallocSizeOfWithGuard for StyleRule {
         guard: &SharedRwLockReadGuard,
         malloc_size_of: MallocSizeOfFn
     ) -> usize {
+        let mut n = 0;
+
         
-        self.block.read_with(guard).malloc_size_of_children(malloc_size_of)
+        
+        n += self.selectors.0.malloc_shallow_size_of_vec(malloc_size_of);
+        for selector in self.selectors.0.iter() {
+            
+            
+            
+            let ptr = selector.thin_arc_heap_ptr();
+            n += unsafe { (malloc_size_of.0)(ptr) };
+        }
+
+        n += self.block.read_with(guard).malloc_size_of_children(malloc_size_of);
+
+        n
     }
 }
 

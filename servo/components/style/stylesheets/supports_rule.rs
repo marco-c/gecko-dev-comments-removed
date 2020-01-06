@@ -13,7 +13,7 @@ use servo_arc::Arc;
 use shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt;
 use style_traits::{ToCss, ParseError, StyleParseError};
-use stylesheets::{CssRuleType, CssRules};
+use stylesheets::{CssRuleType, CssRules, MallocSizeOfFn, MallocSizeOfWithGuard};
 
 
 
@@ -28,6 +28,15 @@ pub struct SupportsRule {
     pub enabled: bool,
     
     pub source_location: SourceLocation,
+}
+
+impl SupportsRule {
+    
+    pub fn malloc_size_of_children(&self, guard: &SharedRwLockReadGuard,
+                                   malloc_size_of: MallocSizeOfFn) -> usize {
+        
+        self.rules.read_with(guard).malloc_size_of_children(guard, malloc_size_of)
+    }
 }
 
 impl ToCssWithGuard for SupportsRule {

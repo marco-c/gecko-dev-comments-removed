@@ -676,6 +676,12 @@ impl<H: 'static, T: 'static> ThinArc<H, T> {
         
         result
     }
+
+    
+    
+    pub fn heap_ptr(&self) -> *const c_void {
+        self.ptr as *const ArcInner<T> as *const c_void
+    }
 }
 
 impl<H, T> Deref for ThinArc<H, T> {
