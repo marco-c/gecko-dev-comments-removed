@@ -414,6 +414,7 @@ GK_ATOM(_false, "false")
 GK_ATOM(farthest, "farthest")
 GK_ATOM(field, "field")
 GK_ATOM(fieldset, "fieldset")
+GK_ATOM(file, "file")
 GK_ATOM(figcaption, "figcaption")
 GK_ATOM(figure, "figure")
 GK_ATOM(fixed, "fixed")
@@ -2007,6 +2008,10 @@ GK_ATOM(ondevicechange, "ondevicechange")
 
 
 GK_ATOM(mozinputrangeignorepreventdefault, "mozinputrangeignorepreventdefault")
+
+
+GK_ATOM(http, "http")
+GK_ATOM(https, "https")
 
 
 
