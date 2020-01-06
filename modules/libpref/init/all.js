@@ -437,7 +437,11 @@ pref("media.decoder-doctor.wmf-disabled-is-failure", false);
 pref("media.decoder-doctor.new-issue-endpoint", "https://webcompat.com/issues/new");
 
 
+#ifdef NIGHTLY_BUILD
 pref("media.suspend-bkgnd-video.enabled", true);
+#else
+pref("media.suspend-bkgnd-video.enabled", false);
+#endif
 
 
 pref("media.suspend-bkgnd-video.delay-ms", 10000);
@@ -871,11 +875,6 @@ pref("gfx.webrender.enabled", false);
 #ifdef XP_WIN
 pref("gfx.webrender.force-angle", true);
 #endif
-
-pref("gfx.webrender.profiler.enabled", false);
-
-
-pref("gfx.webrendest.enabled", false);
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
@@ -1394,7 +1393,7 @@ pref("javascript.options.mem.high_water_mark", 128);
 pref("javascript.options.mem.max", -1);
 pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
-pref("javascript.options.mem.gc_incremental_slice_ms", 10);
+pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 pref("javascript.options.mem.gc_compacting", true);
 pref("javascript.options.mem.log", false);
 pref("javascript.options.mem.notify", false);
@@ -3143,9 +3142,7 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
-
-
-#if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
+#ifdef RELEASE_OR_BETA
 pref("dom.ipc.processCount", 1);
 #else
 pref("dom.ipc.processCount", 4);
@@ -5744,6 +5741,9 @@ pref("layers.advanced.solid-color", 2);
 pref("layers.advanced.table", 2);
 pref("layers.advanced.text-layers", 2);
 pref("layers.advanced.filter-layers", 2);
+
+
+pref("gfx.webrendest.enabled", false);
 
 
 pref("dom.xhr.lowercase_header.enabled", true);
