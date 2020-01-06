@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_mscom_InterfaceRegistrationAnnotator_h
-#define mozilla_mscom_InterfaceRegistrationAnnotator_h
+#ifndef mozilla_mscom_RegistrationAnnotator_h
+#define mozilla_mscom_RegistrationAnnotator_h
 
 #if !defined(MOZ_CRASHREPORTER)
 #error "This header requires crash reporting to be enabled"
@@ -15,6 +15,7 @@ namespace mozilla {
 namespace mscom {
 
 void AnnotateInterfaceRegistration(REFIID aIid);
+void AnnotateClassRegistration(REFCLSID aClsid);
 
 } 
 } 

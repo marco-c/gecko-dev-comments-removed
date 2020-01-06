@@ -5,14 +5,20 @@
 
 
 #include "mozilla/Move.h"
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
+#include "HandlerData.h"
+#include "mozilla/a11y/Platform.h"
+#include "mozilla/mscom/ActivationContext.h"
+#endif 
 #include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Utils.h"
 
 #if defined(MOZ_CRASHREPORTER)
-#include "InterfaceRegistrationAnnotator.h"
+#include "mozilla/mscom/Objref.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
+#include "RegistrationAnnotator.h"
 #endif
 
 #include <windows.h>
@@ -73,19 +79,30 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
     return;
   }
 
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
+  const uint32_t expectedStreamLen = GetOBJREFSize(WrapNotNull(mStream));
+  nsAutoCString strActCtx;
+#endif 
+
   HRESULT unmarshalResult = S_OK;
 
   
   
   
 
-  auto marshalFn = [&]() -> void
+  auto marshalFn = [this, &strActCtx, &unmarshalResult, &aIID]() -> void
   {
-    
-    
+#if defined(ACCESSIBILITY) && defined(MOZ_CRASHREPORTER)
+    auto curActCtx = ActivationContext::GetCurrent();
+    if (curActCtx.isOk()) {
+      strActCtx.AppendPrintf("0x%p", curActCtx.unwrap());
+    } else {
+      strActCtx.AppendPrintf("HRESULT 0x%08X", curActCtx.unwrapErr());
+    }
+#endif 
+
     unmarshalResult =
-      ::CoGetInterfaceAndReleaseStream(mStream.forget().take(), aIID,
-                                       getter_AddRefs(mUnmarshaledProxy));
+      ::CoUnmarshalInterface(mStream, aIID, getter_AddRefs(mUnmarshaledProxy));
     MOZ_ASSERT(SUCCEEDED(unmarshalResult));
   };
 
@@ -98,12 +115,33 @@ ProxyStream::ProxyStream(REFIID aIID, const BYTE* aInitBuf,
     EnsureMTA mta(marshalFn);
   }
 
+  mStream = nullptr;
+
 #if defined(MOZ_CRASHREPORTER)
-  if (FAILED(unmarshalResult)) {
+  if (FAILED(unmarshalResult) || !mUnmarshaledProxy) {
     nsPrintfCString hrAsStr("0x%08X", unmarshalResult);
     CrashReporter::AnnotateCrashReport(
-        NS_LITERAL_CSTRING("CoGetInterfaceAndReleaseStreamFailure"), hrAsStr);
+        NS_LITERAL_CSTRING("CoUnmarshalInterfaceResult"), hrAsStr);
     AnnotateInterfaceRegistration(aIID);
+#if defined(ACCESSIBILITY)
+    AnnotateClassRegistration(CLSID_AccessibleHandler);
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("UnmarshalActCtx"),
+                                       strActCtx);
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("A11yHandlerRegistered"),
+                                       a11y::IsHandlerRegistered() ?
+                                       NS_LITERAL_CSTRING("true") :
+                                       NS_LITERAL_CSTRING("false"));
+
+    nsAutoCString strExpectedStreamLen;
+    strExpectedStreamLen.AppendInt(expectedStreamLen);
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ExpectedStreamLen"),
+                                       strExpectedStreamLen);
+
+    nsAutoCString actualStreamLen;
+    actualStreamLen.AppendInt(aInitBufSize);
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ActualStreamLen"),
+                                       actualStreamLen);
+#endif 
   }
 #endif 
 }
