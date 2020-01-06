@@ -615,7 +615,9 @@ this.PanelMultiView = class {
               this._transitionEndListener = null;
               onTransitionEnd();
               this._transitioning = false;
-              this._resetKeyNavigation(previousViewNode);
+              if (reverse) {
+                this._resetKeyNavigation(previousViewNode);
+              }
 
               
               
@@ -644,6 +646,7 @@ this.PanelMultiView = class {
                 this._viewContainer.removeAttribute("transition-reverse");
 
                 this._dispatchViewEvent(viewNode, "ViewShown");
+                this._updateKeyboardFocus(viewNode);
               }, { once: true });
             });
           }, { once: true });
@@ -996,6 +999,62 @@ this.PanelMultiView = class {
 
 
 
+  _updateSelectedKeyNav(navMap, buttons, isDown) {
+    let lastSelected = navMap.selected && navMap.selected.get();
+    let newButton = null;
+    let maxIdx = buttons.length - 1;
+    if (lastSelected) {
+      let buttonIndex = buttons.indexOf(lastSelected);
+      if (buttonIndex != -1) {
+        
+        
+        do {
+          buttonIndex = buttonIndex + (isDown ? 1 : -1);
+        } while (buttons[buttonIndex] && buttons[buttonIndex].disabled)
+        if (isDown && buttonIndex > maxIdx)
+          buttonIndex = 0;
+        else if (!isDown && buttonIndex < 0)
+          buttonIndex = maxIdx;
+        newButton = buttons[buttonIndex];
+      } else {
+        
+        let allButtons = lastSelected.closest("panelview").getElementsByTagName("toolbarbutton");
+        let maxAllButtonIdx = allButtons.length - 1;
+        let allButtonIndex = allButtons.indexOf(lastSelected);
+        while (allButtonIndex >= 0 && allButtonIndex <= maxAllButtonIdx) {
+          allButtonIndex++;
+          
+          buttonIndex = buttons.indexOf(allButtons[allButtonIndex]);
+          if (buttonIndex != -1) {
+            
+            
+            
+            
+            newButton = buttons[isDown ? buttonIndex : buttonIndex - 1];
+            break;
+          }
+        }
+      }
+    }
+
+    
+    if (!newButton) {
+      newButton = buttons[isDown ? 0 : maxIdx];
+    }
+    navMap.selected = Cu.getWeakReference(newButton);
+    return newButton;
+  }
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1036,22 +1095,8 @@ this.PanelMultiView = class {
       case "ArrowUp": {
         stop();
         let isDown = (keyCode == "ArrowDown");
-        let maxIdx = buttons.length - 1;
-        let buttonIndex = isDown ? 0 : maxIdx;
-        if (typeof navMap.selected == "number") {
-          
-          
-          do {
-            buttonIndex = navMap.selected = (navMap.selected + (isDown ? 1 : -1));
-          } while (buttons[buttonIndex] && buttons[buttonIndex].disabled)
-          if (isDown && buttonIndex > maxIdx)
-            buttonIndex = 0;
-          else if (!isDown && buttonIndex < 0)
-            buttonIndex = maxIdx;
-        }
-        let button = buttons[buttonIndex];
+        let button = this._updateSelectedKeyNav(navMap, buttons, isDown);
         button.focus();
-        navMap.selected = buttonIndex;
         break;
       }
       case "ArrowLeft":
@@ -1066,13 +1111,15 @@ this.PanelMultiView = class {
         }
         
         
-        if (!navMap.selected || !buttons[navMap.selected].classList.contains("subviewbutton-nav"))
+        if (!navMap.selected || !navMap.selected.get() ||
+            !navMap.selected.get().classList.contains("subviewbutton-nav")) {
           break;
+        }
         
       }
       case "Space":
       case "Enter": {
-        let button = buttons[navMap.selected];
+        let button = navMap.selected && navMap.selected.get();
         if (!button)
           break;
         stop();
@@ -1096,19 +1143,24 @@ this.PanelMultiView = class {
 
 
 
-  _resetKeyNavigation(view = this._currentSubView) {
-    let navMap = this._keyNavigationMap.get(view);
-    this._keyNavigationMap.clear();
-    if (!navMap)
-      return;
 
-    let buttons = this._getNavigableElements(view);
-    if (!buttons.length)
-      return;
+  _resetKeyNavigation(view) {
+    let viewToBlur = view || this._currentSubView;
+    let navMap = this._keyNavigationMap.get(viewToBlur);
+    if (navMap && navMap.selected && navMap.selected.get()) {
+      navMap.selected.get().blur();
+    }
 
-    let button = buttons[navMap.selected];
-    if (button)
-      button.blur();
+    
+    
+    
+    
+    
+    if (view) {
+      this._keyNavigationMap.delete(view);
+    } else {
+      this._keyNavigationMap.clear();
+    }
   }
 
   
@@ -1127,6 +1179,18 @@ this.PanelMultiView = class {
       let bounds = dwu.getBoundsWithoutFlushing(button);
       return bounds.width > 0 && bounds.height > 0;
     });
+  }
+
+  
+
+
+
+
+  _updateKeyboardFocus(view) {
+    let navMap = this._keyNavigationMap.get(view);
+    if (navMap && navMap.selected && navMap.selected.get()) {
+      navMap.selected.get().focus();
+    }
   }
 
   
