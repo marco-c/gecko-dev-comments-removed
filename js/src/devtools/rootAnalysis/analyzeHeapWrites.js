@@ -492,7 +492,7 @@ function ignoreContents(entry)
 
         
         /EffectCompositor::GetServoAnimationRule/,
-        /LookAndFeel::GetColor/,
+        /Gecko_GetLookAndFeelSystemColor/,
     ];
     if (entry.matches(whitelist))
         return true;
