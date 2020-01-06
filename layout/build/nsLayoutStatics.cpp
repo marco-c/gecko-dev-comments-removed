@@ -93,6 +93,10 @@
 #include "nsSynthVoiceRegistry.h"
 #endif
 
+#ifdef MOZ_ANDROID_OMX
+#include "AndroidMediaPluginHost.h"
+#endif
+
 #include "CubebUtils.h"
 #include "Latency.h"
 #include "WebAudioUtils.h"
@@ -292,7 +296,7 @@ nsLayoutStatics::Initialize()
   ServiceWorkerRegistrar::Initialize();
 
 #ifdef DEBUG
-  GeckoStyleContext::Initialize();
+  nsStyleContext::Initialize();
   mozilla::LayerAnimationInfo::Initialize();
 #endif
 
@@ -388,6 +392,11 @@ nsLayoutStatics::Shutdown()
   nsAutoCopyListener::Shutdown();
   FrameLayerBuilder::Shutdown();
 
+
+#ifdef MOZ_ANDROID_OMX
+  AndroidMediaPluginHost::Shutdown();
+#endif
+
   CubebUtils::ShutdownLibrary();
   AsyncLatencyLogger::ShutdownLogger();
   WebAudioUtils::Shutdown();
@@ -424,8 +433,6 @@ nsLayoutStatics::Shutdown()
   ContentParent::ShutDown();
 
   DisplayItemClip::Shutdown();
-
-  CustomElementRegistry::XPCOMShutdown();
 
   CacheObserver::Shutdown();
 
