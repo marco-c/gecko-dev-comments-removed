@@ -454,6 +454,10 @@ protected:
   nsCOMPtr<nsIURI> mProxyURI;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIURI> mTopWindowURI;
+  nsCOMPtr<nsIStreamListener> mListener;
+  nsCOMPtr<nsISupports> mListenerContext;
+  
+  nsCOMPtr<nsIStreamListener> mCompressListener;
 
 private:
   
@@ -466,12 +470,7 @@ protected:
 
   nsTArray<Pair<nsString, nsString>> mSecurityConsoleMessages;
 
-  nsCOMPtr<nsIStreamListener>       mListener;
-  nsCOMPtr<nsISupports>             mListenerContext;
   nsCOMPtr<nsISupports>             mOwner;
-
-  
-  nsCOMPtr<nsIStreamListener>       mCompressListener;
 
   nsHttpRequestHead                 mRequestHead;
   
