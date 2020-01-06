@@ -103,6 +103,14 @@ FocusState::Update(uint64_t aRootLayerTreeId,
         
         
         mLastContentProcessedEvent = target.mSequenceNumber;
+
+        
+        
+        
+        if (mLastAPZProcessedEvent == 1 &&
+            mLastContentProcessedEvent > mLastAPZProcessedEvent) {
+          mLastAPZProcessedEvent = mLastContentProcessedEvent;
+        }
         return;
       }
       case FocusTarget::eNone: {
