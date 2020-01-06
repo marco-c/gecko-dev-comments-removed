@@ -2549,14 +2549,6 @@ main(int argc, char **argv)
         tmp = PR_GetEnvSecure("TMPDIR");
     if (!tmp)
         tmp = PR_GetEnvSecure("TEMP");
-
-    
-    rv = NSS_Initialize(dir, certPrefix, certPrefix, SECMOD_DB, NSS_INIT_READONLY);
-    if (rv != SECSuccess) {
-        fputs("NSS_Init failed.\n", stderr);
-        exit(8);
-    }
-
     if (envString) {
         
         listen_sock = PR_GetInheritedFD(inheritableSockName);
@@ -2610,6 +2602,13 @@ main(int argc, char **argv)
 
     
     PK11_SetPasswordFunc(SECU_GetModulePassword);
+
+    
+    rv = NSS_Initialize(dir, certPrefix, certPrefix, SECMOD_DB, NSS_INIT_READONLY);
+    if (rv != SECSuccess) {
+        fputs("NSS_Init failed.\n", stderr);
+        exit(8);
+    }
 
     
     if (cipherString) {

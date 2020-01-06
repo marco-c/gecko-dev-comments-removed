@@ -276,10 +276,7 @@ RSAPrivateKey *
 RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
 {
     unsigned int primeLen;
-    mp_int p = { 0, 0, 0, NULL };
-    mp_int q = { 0, 0, 0, NULL };
-    mp_int e = { 0, 0, 0, NULL };
-    mp_int d = { 0, 0, 0, NULL };
+    mp_int p, q, e, d;
     int kiter;
     int max_attempts;
     mp_err err = MP_OKAY;
@@ -294,13 +291,33 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
         return NULL;
     }
     
-    MP_DIGITS(&e) = 0;
-    CHECK_MPI_OK(mp_init(&e));
-    SECITEM_TO_MPINT(*publicExponent, &e);
-    if (mp_iseven(&e) || !(mp_cmp_d(&e, 2) > 0)) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        goto cleanup;
+    arena = PORT_NewArena(NSS_FREEBL_DEFAULT_CHUNKSIZE);
+    if (!arena) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return NULL;
     }
+    key = PORT_ArenaZNew(arena, RSAPrivateKey);
+    if (!key) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        PORT_FreeArena(arena, PR_TRUE);
+        return NULL;
+    }
+    key->arena = arena;
+    
+    primeLen = keySizeInBits / (2 * PR_BITS_PER_BYTE);
+    MP_DIGITS(&p) = 0;
+    MP_DIGITS(&q) = 0;
+    MP_DIGITS(&e) = 0;
+    MP_DIGITS(&d) = 0;
+    CHECK_MPI_OK(mp_init(&p));
+    CHECK_MPI_OK(mp_init(&q));
+    CHECK_MPI_OK(mp_init(&e));
+    CHECK_MPI_OK(mp_init(&d));
+    
+    SECITEM_AllocItem(arena, &key->version, 1);
+    key->version.data[0] = 0;
+    
+    SECITEM_TO_MPINT(*publicExponent, &e);
 #ifndef NSS_FIPS_DISABLED
     
     if (mp_cmp_d(&e, 0x10001) < 0) {
@@ -308,31 +325,6 @@ RSA_NewKey(int keySizeInBits, SECItem *publicExponent)
         goto cleanup;
     }
 #endif
-
-    
-    arena = PORT_NewArena(NSS_FREEBL_DEFAULT_CHUNKSIZE);
-    if (!arena) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto cleanup;
-    }
-    key = PORT_ArenaZNew(arena, RSAPrivateKey);
-    if (!key) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto cleanup;
-    }
-    key->arena = arena;
-    
-    primeLen = keySizeInBits / (2 * PR_BITS_PER_BYTE);
-    MP_DIGITS(&p) = 0;
-    MP_DIGITS(&q) = 0;
-    MP_DIGITS(&d) = 0;
-    CHECK_MPI_OK(mp_init(&p));
-    CHECK_MPI_OK(mp_init(&q));
-    CHECK_MPI_OK(mp_init(&d));
-    
-    SECITEM_AllocItem(arena, &key->version, 1);
-    key->version.data[0] = 0;
-
     kiter = 0;
     max_attempts = 5 * (keySizeInBits / 2); 
     do {

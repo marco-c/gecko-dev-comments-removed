@@ -13,9 +13,10 @@
 
 
 
+
 #include "kremlib.h"
-#ifndef __Hacl_Curve25519_H
-#define __Hacl_Curve25519_H
+#ifndef __Hacl_Curve25519_64_H
+#define __Hacl_Curve25519_64_H
 
 typedef uint64_t Hacl_Bignum_Constants_limb;
 
@@ -51,7 +52,9 @@ typedef uint8_t *Hacl_EC_Format_uint8_p;
 
 void Hacl_EC_crypto_scalarmult(uint8_t *mypublic, uint8_t *secret, uint8_t *basepoint);
 
-typedef uint8_t *Hacl_Curve25519_uint8_p;
+typedef uint8_t *Curve25519_uint8_p;
 
-void Hacl_Curve25519_crypto_scalarmult(uint8_t *mypublic, uint8_t *secret, uint8_t *basepoint);
+void *Curve25519_op_String_Access(FStar_Monotonic_HyperStack_mem h, uint8_t *b);
+
+void Curve25519_crypto_scalarmult(uint8_t *mypublic, uint8_t *secret, uint8_t *basepoint);
 #endif

@@ -12,172 +12,69 @@
 
 
 
-
 #ifndef __KREMLIB_H
 #define __KREMLIB_H
 
-#include "kremlib_base.h"
+#include <inttypes.h>
+#include <stdlib.h>
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 
 
-
-void WasmSupport_check_buffer_size(uint32_t s);
-
+#ifndef _MSC_VER
 
 
-
-
-
-
-
-typedef void *FStar_Seq_Base_seq, *Prims_prop, *FStar_HyperStack_mem,
-    *FStar_Set_set, *Prims_st_pre_h, *FStar_Heap_heap, *Prims_all_pre_h,
-    *FStar_TSet_set, *Prims_list, *FStar_Map_t, *FStar_UInt63_t_,
-    *FStar_Int63_t_, *FStar_UInt63_t, *FStar_Int63_t, *FStar_UInt_uint_t,
-    *FStar_Int_int_t, *FStar_HyperStack_stackref, *FStar_Bytes_bytes,
-    *FStar_HyperHeap_rid, *FStar_Heap_aref, *FStar_Monotonic_Heap_heap,
-    *FStar_Monotonic_Heap_aref, *FStar_Monotonic_HyperHeap_rid,
-    *FStar_Monotonic_HyperStack_mem, *FStar_Char_char_;
-
-typedef const char *Prims_string;
-
-
-
-#ifndef KRML_HOST_PRINTF
-#define KRML_HOST_PRINTF printf
+#ifndef __cdecl
+#define __cdecl
 #endif
-
-#ifndef KRML_HOST_EXIT
-#define KRML_HOST_EXIT exit
+#ifndef __stdcall
+#define __stdcall
 #endif
-
-#ifndef KRML_HOST_MALLOC
-#define KRML_HOST_MALLOC malloc
+#ifndef __fastcall
+#define __fastcall
+#endif
 #endif
 
 
-#define KRML_EXIT                                                                  \
-    do {                                                                           \
-        KRML_HOST_PRINTF("Unimplemented function at %s:%d\n", __FILE__, __LINE__); \
-        KRML_HOST_EXIT(254);                                                       \
-    } while (0)
+
+#ifdef __GNU_C__
+#ifndef __clang__
+#define force_inline inline __attribute__((always_inline))
+#else
+#define force_inline inline
+#endif
+#else
+#define force_inline inline
+#endif
+
+
+
+extern int exit_success;
+extern int exit_failure;
 
 
 
 
-#define KRML_EABORT(t, msg)                                                     \
-    (KRML_HOST_PRINTF("KreMLin abort at %s:%d\n%s\n", __FILE__, __LINE__, msg), \
-     KRML_HOST_EXIT(255), *((t *)KRML_HOST_MALLOC(sizeof(t))))
+typedef void *Prims_pos, *Prims_nat, *Prims_nonzero, *FStar_Seq_Base_seq,
+    *Prims_int, *Prims_prop, *FStar_HyperStack_mem, *FStar_Set_set,
+    *Prims_st_pre_h, *FStar_Heap_heap, *Prims_all_pre_h, *FStar_TSet_set,
+    *Prims_string, *Prims_list, *FStar_Map_t, *FStar_UInt63_t_, *FStar_Int63_t_,
+    *FStar_UInt63_t, *FStar_Int63_t, *FStar_UInt_uint_t, *FStar_Int_int_t,
+    *FStar_HyperStack_stackref, *FStar_Bytes_bytes, *FStar_HyperHeap_rid,
+    *FStar_Heap_aref, *FStar_Monotonic_Heap_heap,
+    *FStar_Monotonic_HyperHeap_rid, *FStar_Monotonic_HyperStack_mem;
 
-
-
-
-#define KRML_CHECK_SIZE(elt, size)                                            \
-    if (((size_t)size) > SIZE_MAX / sizeof(elt)) {                            \
-        KRML_HOST_PRINTF(                                                     \
-            "Maximum allocatable size exceeded, aborting before overflow at " \
-            "%s:%d\n",                                                        \
-            __FILE__, __LINE__);                                              \
-        KRML_HOST_EXIT(253);                                                  \
+#define KRML_CHECK_SIZE(elt, size)                                               \
+    if (((size_t)size) > SIZE_MAX / sizeof(elt)) {                               \
+        printf("Maximum allocatable size exceeded, aborting before overflow at " \
+               "%s:%d\n",                                                        \
+               __FILE__, __LINE__);                                              \
+        exit(253);                                                               \
     }
-
-
-
-
-#ifdef __GNUC__
-#define KRML_FORMAT(X) _Generic((X),                                           \
-  uint8_t : "0x%08" PRIx8,                                                     \
-  uint16_t: "0x%08" PRIx16,                                                    \
-  uint32_t: "0x%08" PRIx32,                                                    \
-  uint64_t: "0x%08" PRIx64,                                                    \
-  int8_t  : "0x%08" PRIx8,                                                     \
-  int16_t : "0x%08" PRIx16,                                                    \
-  int32_t : "0x%08" PRIx32,                                                    \
-  int64_t : "0x%08" PRIx64,                                                    \
-  default : "%s")
-
-#define KRML_FORMAT_ARG(X) _Generic((X),                                       \
-  uint8_t : X,                                                                 \
-  uint16_t: X,                                                                 \
-  uint32_t: X,                                                                 \
-  uint64_t: X,                                                                 \
-  int8_t  : X,                                                                 \
-  int16_t : X,                                                                 \
-  int32_t : X,                                                                 \
-  int64_t : X,                                                                 \
-  default : "unknown")
-
-
-#define KRML_DEBUG_RETURN(X)                                        \
-    ({                                                              \
-        __auto_type _ret = (X);                                     \
-        KRML_HOST_PRINTF("returning: ");                            \
-        KRML_HOST_PRINTF(KRML_FORMAT(_ret), KRML_FORMAT_ARG(_ret)); \
-        KRML_HOST_PRINTF(" \n");                                    \
-        _ret;                                                       \
-    })
-#endif
-
-#define FStar_Buffer_eqb(b1, b2, n) \
-    (memcmp((b1), (b2), (n) * sizeof((b1)[0])) == 0)
-
-
-
-
-
-#define FStar_HyperHeap_root 0
-#define FStar_Pervasives_Native_fst(x) (x).fst
-#define FStar_Pervasives_Native_snd(x) (x).snd
-#define FStar_Seq_Base_createEmpty(x) 0
-#define FStar_Seq_Base_create(len, init) 0
-#define FStar_Seq_Base_upd(s, i, e) 0
-#define FStar_Seq_Base_eq(l1, l2) 0
-#define FStar_Seq_Base_length(l1) 0
-#define FStar_Seq_Base_append(x, y) 0
-#define FStar_Seq_Base_slice(x, y, z) 0
-#define FStar_Seq_Properties_snoc(x, y) 0
-#define FStar_Seq_Properties_cons(x, y) 0
-#define FStar_Seq_Base_index(x, y) 0
-#define FStar_HyperStack_is_eternal_color(x) 0
-#define FStar_Monotonic_HyperHeap_root 0
-#define FStar_Buffer_to_seq_full(x) 0
-#define FStar_Buffer_recall(x)
-#define FStar_HyperStack_ST_op_Colon_Equals(x, v) KRML_EXIT
-#define FStar_HyperStack_ST_op_Bang(x) 0
-#define FStar_HyperStack_ST_salloc(x) 0
-#define FStar_HyperStack_ST_ralloc(x, y) 0
-#define FStar_HyperStack_ST_new_region(x) (0)
-#define FStar_Monotonic_RRef_m_alloc(x) \
-    {                                   \
-        0                               \
-    }
-
-#define FStar_HyperStack_ST_recall(x) \
-    do {                              \
-        (void)(x);                    \
-    } while (0)
-
-#define FStar_HyperStack_ST_recall_region(x) \
-    do {                                     \
-        (void)(x);                           \
-    } while (0)
-
-#define FStar_Monotonic_RRef_m_recall(x1, x2) \
-    do {                                      \
-        (void)(x1);                           \
-        (void)(x2);                           \
-    } while (0)
-
-#define FStar_Monotonic_RRef_m_write(x1, x2, x3, x4, x5) \
-    do {                                                 \
-        (void)(x1);                                      \
-        (void)(x2);                                      \
-        (void)(x3);                                      \
-        (void)(x4);                                      \
-        (void)(x5);                                      \
-    } while (0)
-
-
 
 
 
@@ -204,32 +101,13 @@ typedef const char *Prims_string;
 #define be32toh(x) OSSwapBigToHostInt32(x)
 
 
-#elif defined(__sun__)
-#include <sys/byteorder.h>
-#define htole64(x) LE_64(x)
-#define le64toh(x) LE_IN64(x)
-#define htobe64(x) BE_64(x)
-#define be64toh(x) BE_IN64(x)
+#elif (defined(_WIN16) || defined(_WIN32) || defined(_WIN64)) && \
+    !defined(__WINDOWS__)
+#include <windows.h>
 
-#define htole16(x) LE_16(x)
-#define le16toh(x) LE_IN16(x)
-#define htobe16(x) BE_16(x)
-#define be16toh(x) BE_IN16(x)
+#if BYTE_ORDER == LITTLE_ENDIAN
 
-#define htole32(x) LE_32(x)
-#define le32toh(x) LE_IN32(x)
-#define htobe32(x) BE_32(x)
-#define be32toh(x) BE_IN32(x)
-
-
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-#include <sys/endian.h>
-#elif defined(__OpenBSD__)
-#include <endian.h>
-
-
-#elif defined(_MSC_VER)
-
+#if defined(_MSC_VER)
 #include <stdlib.h>
 #define htobe16(x) _byteswap_ushort(x)
 #define htole16(x) (x)
@@ -246,9 +124,7 @@ typedef const char *Prims_string;
 #define be64toh(x) _byteswap_uint64(x)
 #define le64toh(x) (x)
 
-
-#elif (defined(_WIN32) || defined(_WIN64)) && \
-    (defined(__GNUC__) || defined(__clang__))
+#elif defined(__GNUC__) || defined(__clang__)
 
 #define htobe16(x) __builtin_bswap16(x)
 #define htole16(x) (x)
@@ -264,64 +140,11 @@ typedef const char *Prims_string;
 #define htole64(x) (x)
 #define be64toh(x) __builtin_bswap64(x)
 #define le64toh(x) (x)
+#endif
 
+#endif
 
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-
-
-
-
-
-#define htobe32(x) (x)
-#define be32toh(x) (x)
-#define htole32(x)                                                      \
-    (__extension__({                                                    \
-        uint32_t _temp = (x);                                           \
-        ((_temp >> 24) & 0x000000FF) | ((_temp >> 8) & 0x0000FF00) |    \
-            ((_temp << 8) & 0x00FF0000) | ((_temp << 24) & 0xFF000000); \
-    }))
-#define le32toh(x) (htole32((x)))
-
-#define htobe64(x) (x)
-#define be64toh(x) (x)
-#define htole64(x)                                           \
-    (__extension__({                                         \
-        uint64_t __temp = (x);                               \
-        uint32_t __low = htobe32((uint32_t)__temp);          \
-        uint32_t __high = htobe32((uint32_t)(__temp >> 32)); \
-        (((uint64_t)__low) << 32) | __high;                  \
-    }))
-#define le64toh(x) (htole64((x)))
-
-
-#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-
-#define htole32(x) (x)
-#define le32toh(x) (x)
-#define htobe32(x)                                                      \
-    (__extension__({                                                    \
-        uint32_t _temp = (x);                                           \
-        ((_temp >> 24) & 0x000000FF) | ((_temp >> 8) & 0x0000FF00) |    \
-            ((_temp << 8) & 0x00FF0000) | ((_temp << 24) & 0xFF000000); \
-    }))
-#define be32toh(x) (htobe32((x)))
-
-#define htole64(x) (x)
-#define le64toh(x) (x)
-#define htobe64(x)                                           \
-    (__extension__({                                         \
-        uint64_t __temp = (x);                               \
-        uint32_t __low = htobe32((uint32_t)__temp);          \
-        uint32_t __high = htobe32((uint32_t)(__temp >> 32)); \
-        (((uint64_t)__low) << 32) | __high;                  \
-    }))
-#define be64toh(x) (htobe64((x)))
-
-
-#else
-#error "Please define __BYTE_ORDER__!"
-
-#endif 
+#endif
 
 
 
@@ -384,137 +207,99 @@ store64(uint8_t *b, uint64_t i)
 #define store64_be(b, i) (store64(b, htobe64(i)))
 
 
+typedef uint64_t FStar_UInt64_t, FStar_UInt64_t_;
+typedef int64_t FStar_Int64_t, FStar_Int64_t_;
+typedef uint32_t FStar_UInt32_t, FStar_UInt32_t_;
+typedef int32_t FStar_Int32_t, FStar_Int32_t_;
+typedef uint16_t FStar_UInt16_t, FStar_UInt16_t_;
+typedef int16_t FStar_Int16_t, FStar_Int16_t_;
+typedef uint8_t FStar_UInt8_t, FStar_UInt8_t_;
+typedef int8_t FStar_Int8_t, FStar_Int8_t_;
 
 
-
-typedef int32_t Prims_pos, Prims_nat, Prims_nonzero, Prims_int,
-    krml_checked_int_t;
-
-inline static bool
-Prims_op_GreaterThanOrEqual(int32_t x, int32_t y)
+static inline uint8_t
+FStar_UInt8_eq_mask(uint8_t x, uint8_t y)
 {
-    return x >= y;
+    x = ~(x ^ y);
+    x &= x << 4;
+    x &= x << 2;
+    x &= x << 1;
+    return (int8_t)x >> 7;
 }
 
-inline static bool
-Prims_op_LessThanOrEqual(int32_t x, int32_t y)
+static inline uint8_t
+FStar_UInt8_gte_mask(uint8_t x, uint8_t y)
 {
-    return x <= y;
+    return ~(uint8_t)(((int32_t)x - y) >> 31);
 }
 
-inline static bool
-Prims_op_GreaterThan(int32_t x, int32_t y)
+static inline uint16_t
+FStar_UInt16_eq_mask(uint16_t x, uint16_t y)
 {
-    return x > y;
+    x = ~(x ^ y);
+    x &= x << 8;
+    x &= x << 4;
+    x &= x << 2;
+    x &= x << 1;
+    return (int16_t)x >> 15;
 }
 
-inline static bool
-Prims_op_LessThan(int32_t x, int32_t y)
+static inline uint16_t
+FStar_UInt16_gte_mask(uint16_t x, uint16_t y)
 {
-    return x < y;
+    return ~(uint16_t)(((int32_t)x - y) >> 31);
 }
 
-#define RETURN_OR(x)                                                            \
-    do {                                                                        \
-        int64_t __ret = x;                                                      \
-        if (__ret < INT32_MIN || INT32_MAX < __ret) {                           \
-            KRML_HOST_PRINTF("Prims.{int,nat,pos} integer overflow at %s:%d\n", \
-                             __FILE__, __LINE__);                               \
-            KRML_HOST_EXIT(252);                                                \
-        }                                                                       \
-        return (int32_t)__ret;                                                  \
-    } while (0)
-
-inline static int32_t
-Prims_pow2(int32_t x)
+static inline uint32_t
+FStar_UInt32_eq_mask(uint32_t x, uint32_t y)
 {
-    RETURN_OR((int64_t)1 << (int64_t)x);
+    x = ~(x ^ y);
+    x &= x << 16;
+    x &= x << 8;
+    x &= x << 4;
+    x &= x << 2;
+    x &= x << 1;
+    return ((int32_t)x) >> 31;
 }
 
-inline static int32_t
-Prims_op_Multiply(int32_t x, int32_t y)
+static inline uint32_t
+FStar_UInt32_gte_mask(uint32_t x, uint32_t y)
 {
-    RETURN_OR((int64_t)x * (int64_t)y);
+    return ~((uint32_t)(((int64_t)x - y) >> 63));
 }
 
-inline static int32_t
-Prims_op_Addition(int32_t x, int32_t y)
+static inline uint64_t
+FStar_UInt64_eq_mask(uint64_t x, uint64_t y)
 {
-    RETURN_OR((int64_t)x + (int64_t)y);
+    x = ~(x ^ y);
+    x &= x << 32;
+    x &= x << 16;
+    x &= x << 8;
+    x &= x << 4;
+    x &= x << 2;
+    x &= x << 1;
+    return ((int64_t)x) >> 63;
 }
 
-inline static int32_t
-Prims_op_Subtraction(int32_t x, int32_t y)
+static inline uint64_t
+FStar_UInt64_gte_mask(uint64_t x, uint64_t y)
 {
-    RETURN_OR((int64_t)x - (int64_t)y);
-}
-
-inline static int32_t
-Prims_op_Division(int32_t x, int32_t y)
-{
-    RETURN_OR((int64_t)x / (int64_t)y);
-}
-
-inline static int32_t
-Prims_op_Modulus(int32_t x, int32_t y)
-{
-    RETURN_OR((int64_t)x % (int64_t)y);
-}
-
-inline static int8_t
-FStar_UInt8_uint_to_t(int8_t x)
-{
-    return x;
-}
-inline static int16_t
-FStar_UInt16_uint_to_t(int16_t x)
-{
-    return x;
-}
-inline static int32_t
-FStar_UInt32_uint_to_t(int32_t x)
-{
-    return x;
-}
-inline static int64_t
-FStar_UInt64_uint_to_t(int64_t x)
-{
-    return x;
-}
-
-inline static int8_t
-FStar_UInt8_v(int8_t x)
-{
-    return x;
-}
-inline static int16_t
-FStar_UInt16_v(int16_t x)
-{
-    return x;
-}
-inline static int32_t
-FStar_UInt32_v(int32_t x)
-{
-    return x;
-}
-inline static int64_t
-FStar_UInt64_v(int64_t x)
-{
-    return x;
+    uint64_t low63 =
+        ~((uint64_t)((int64_t)((int64_t)(x & UINT64_C(0x7fffffffffffffff)) -
+                               (int64_t)(y & UINT64_C(0x7fffffffffffffff))) >>
+                     63));
+    uint64_t high_bit =
+        ~((uint64_t)((int64_t)((int64_t)(x & UINT64_C(0x8000000000000000)) -
+                               (int64_t)(y & UINT64_C(0x8000000000000000))) >>
+                     63));
+    return low63 & high_bit;
 }
 
 
 
 
-#ifndef KRML_NOUINT128
+#ifdef HAVE_INT128_SUPPORT
 typedef unsigned __int128 FStar_UInt128_t, FStar_UInt128_t_, uint128_t;
-
-static inline void
-print128(const char *where, uint128_t n)
-{
-    KRML_HOST_PRINTF("%s: [%" PRIu64 ",%" PRIu64 "]\n", where,
-                     (uint64_t)(n >> 64), (uint64_t)n);
-}
 
 static inline uint128_t
 load128_le(uint8_t *b)
@@ -559,6 +344,8 @@ store128_be(uint8_t *b, uint128_t n)
 #define FStar_UInt128_shift_right(x, y) ((x) >> (y))
 #define FStar_UInt128_uint64_to_uint128(x) ((uint128_t)(x))
 #define FStar_UInt128_uint128_to_uint64(x) ((uint64_t)(x))
+#define FStar_Int_Cast_Full_uint64_to_uint128(x) ((uint128_t)(x))
+#define FStar_Int_Cast_Full_uint128_to_uint64(x) ((uint64_t)(x))
 #define FStar_UInt128_mul_wide(x, y) ((uint128_t)(x) * (y))
 #define FStar_UInt128_op_Hat_Hat(x, y) ((x) ^ (y))
 
@@ -583,17 +370,9 @@ FStar_UInt128_gte_mask(uint128_t x, uint128_t y)
 
 #else 
 
-
-#include "FStar.h"
+#include "fstar_uint128.h"
 
 typedef FStar_UInt128_uint128 FStar_UInt128_t_, uint128_t;
-
-
-static inline void
-print128_(const char *where, uint128_t *n)
-{
-    KRML_HOST_PRINTF("%s: [0x%08" PRIx64 ",0x%08" PRIx64 "]\n", where, n->high, n->low);
-}
 
 static inline void
 load128_le_(uint8_t *b, uint128_t *r)
@@ -623,50 +402,11 @@ store128_be_(uint8_t *b, uint128_t *n)
     store64_be(b + 8, n->low);
 }
 
-#ifndef KRML_NOSTRUCT_PASSING
 
-static inline void
-print128(const char *where, uint128_t n)
-{
-    print128_(where, &n);
-}
-
-static inline uint128_t
-load128_le(uint8_t *b)
-{
-    uint128_t r;
-    load128_le_(b, &r);
-    return r;
-}
-
-static inline void
-store128_le(uint8_t *b, uint128_t n)
-{
-    store128_le_(b, &n);
-}
-
-static inline uint128_t
-load128_be(uint8_t *b)
-{
-    uint128_t r;
-    load128_be_(b, &r);
-    return r;
-}
-
-static inline void
-store128_be(uint8_t *b, uint128_t n)
-{
-    store128_be_(b, &n);
-}
-
-#else 
-
-#define print128 print128_
 #define load128_le load128_le_
 #define store128_le store128_le_
 #define load128_be load128_be_
 #define store128_be store128_be_
 
-#endif 
 #endif 
 #endif 
