@@ -46,11 +46,17 @@ public:
   
   
   
+  
   virtual already_AddRefed<nsIRunnable> GetEvent(EventPriority* aPriority,
                                                  const MutexAutoLock& aProofOfLock) = 0;
 
   
-  virtual bool HasPendingEvent(const MutexAutoLock& aProofOfLock) = 0;
+  virtual bool IsEmpty(const MutexAutoLock& aProofOfLock) = 0;
+
+  
+  
+  
+  virtual bool HasReadyEvent(const MutexAutoLock& aProofOfLock) = 0;
 
   
   virtual size_t Count(const MutexAutoLock& aProofOfLock) const = 0;

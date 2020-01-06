@@ -1684,6 +1684,18 @@ NS_SetMainThread();
 
 
 
+void
+NS_SetMainThread(PRThread* aVirtualThread);
+
+
+
+
+void
+NS_UnsetMainThread();
+
+
+
+
 
 
 

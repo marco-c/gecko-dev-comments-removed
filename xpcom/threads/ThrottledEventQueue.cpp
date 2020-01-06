@@ -170,7 +170,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
       
       
       
-      if (mEventQueue.HasPendingEvent(lock)) {
+      if (mEventQueue.HasReadyEvent(lock)) {
         
         
         

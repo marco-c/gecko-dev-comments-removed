@@ -95,14 +95,6 @@ class ThreadLocal
   };
 #endif
 
-  bool initialized() const {
-#ifdef MOZ_HAS_THREAD_LOCAL
-    return true;
-#else
-    return mInited;
-#endif
-  }
-
 public:
   
   
@@ -111,6 +103,14 @@ public:
     : mKey(0), mInited(false)
   {}
 #endif
+
+  bool initialized() const {
+#ifdef MOZ_HAS_THREAD_LOCAL
+    return true;
+#else
+    return mInited;
+#endif
+  }
 
   MOZ_MUST_USE inline bool init();
   void infallibleInit() {

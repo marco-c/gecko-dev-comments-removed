@@ -46,6 +46,15 @@ public:
 
   
   
+  
+  
+  
+  
+  nsThread* CreateCurrentThread(mozilla::SynchronizedEventQueue* aQueue,
+                                nsThread::MainThreadFlag aMainThread);
+
+  
+  
   uint32_t GetHighestNumberOfThreads();
 
   

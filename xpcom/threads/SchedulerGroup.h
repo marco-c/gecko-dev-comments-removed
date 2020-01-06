@@ -9,6 +9,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TaskCategory.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsILabelableRunnable.h"
@@ -50,22 +51,13 @@ public:
   
   virtual bool IsBackground() const { return false; }
 
-  class MOZ_STACK_CLASS AutoProcessEvent final {
-  public:
-    AutoProcessEvent();
-    ~AutoProcessEvent();
-
-  private:
-    SchedulerGroup* mPrevRunningDispatcher;
-  };
-
   
   
   
   
   bool IsSafeToRun() const
   {
-    return !sRunningDispatcher || mAccessValid;
+    return !sTlsValidatingAccess.get() || mIsRunning;
   }
 
   
@@ -73,7 +65,7 @@ public:
   
   static bool IsSafeToRunUnlabeled()
   {
-    return !sRunningDispatcher;
+    return !sTlsValidatingAccess.get();
   }
 
   
@@ -114,7 +106,7 @@ public:
   };
   friend class Runnable;
 
-  bool* GetValidAccessPtr() { return &mAccessValid; }
+  bool* GetValidAccessPtr() { return &mIsRunning; }
 
   virtual nsresult Dispatch(TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable);
@@ -135,6 +127,15 @@ public:
   static void MarkVsyncReceived();
 
   static void MarkVsyncRan();
+
+  void SetIsRunning(bool aIsRunning) { mIsRunning = aIsRunning; }
+  bool IsRunning() const { return mIsRunning; }
+
+  enum ValidationType {
+    StartValidation,
+    EndValidation,
+  };
+  static void SetValidatingAccess(ValidationType aType);
 
 protected:
   static nsresult InternalUnlabeledDispatch(TaskCategory aCategory,
@@ -161,14 +162,9 @@ protected:
   
   void Shutdown(bool aXPCOMShutdown);
 
-  enum ValidationType {
-    StartValidation,
-    EndValidation,
-  };
-  void SetValidatingAccess(ValidationType aType);
+  static MOZ_THREAD_LOCAL(bool) sTlsValidatingAccess;
 
-  static SchedulerGroup* sRunningDispatcher;
-  bool mAccessValid;
+  bool mIsRunning;
 
   nsCOMPtr<nsISerialEventTarget> mEventTargets[size_t(TaskCategory::Count)];
   RefPtr<AbstractThread> mAbstractThreads[size_t(TaskCategory::Count)];
