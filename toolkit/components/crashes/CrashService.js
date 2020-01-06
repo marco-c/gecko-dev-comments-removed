@@ -118,8 +118,17 @@ function processExtraFile(extraPath) {
     try {
       let decoder = new TextDecoder();
       let extraData = await OS.File.read(extraPath);
+      let keyValuePairs = parseKeyValuePairs(decoder.decode(extraData));
 
-      return parseKeyValuePairs(decoder.decode(extraData));
+      
+      
+      
+      
+      [ "TelemetryEnvironment", "StackTraces" ].forEach(field => {
+        keyValuePairs[field] = keyValuePairs[field].replace(/\n/g, "n");
+      });
+
+      return keyValuePairs;
     } catch (e) {
       Cu.reportError(e);
       return {};
