@@ -583,6 +583,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
       EnsureMenuItemIsVisible(mCurrentMenu);
     }
 
+#ifndef MOZ_WIDGET_GTK
     
     
     if (mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::animate,
@@ -593,6 +594,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
                                        mPopupShownDispatcher, false, false);
       return;
     }
+#endif
 
     
     nsCOMPtr<nsIRunnable> event = new nsXULPopupShownEvent(GetContent(), pc);
