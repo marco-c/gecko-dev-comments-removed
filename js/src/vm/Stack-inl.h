@@ -28,20 +28,6 @@
 
 namespace js {
 
-
-
-
-
-
-static inline bool
-IsCacheableEnvironment(JSObject* obj)
-{
-    bool cacheable = obj->is<CallObject>() || obj->is<LexicalEnvironmentObject>();
-
-    MOZ_ASSERT_IF(cacheable, !obj->getOpsLookupProperty());
-    return cacheable;
-}
-
 inline HandleObject
 InterpreterFrame::environmentChain() const
 {

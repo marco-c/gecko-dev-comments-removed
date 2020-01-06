@@ -1477,38 +1477,25 @@ JS_STATIC_ASSERT(JSOP_IFNE == JSOP_IFEQ + 1);
 
 
 
-
-
-
-
-
-
-
-
-
-
 static inline Value
-ComputeImplicitThis(JSObject* obj)
+ComputeImplicitThis(JSObject* env)
 {
-    if (obj->is<GlobalObject>())
+    
+    if (env->is<GlobalObject>())
         return UndefinedValue();
 
-    if (obj->is<NonSyntacticVariablesObject>())
-        return UndefinedValue();
-
-    if (obj->is<WithEnvironmentObject>())
-        return GetThisValueOfWith(obj);
-
-    if (IsCacheableEnvironment(obj))
-        return UndefinedValue();
+    
+    if (env->is<WithEnvironmentObject>())
+        return GetThisValueOfWith(env);
 
     
     
     
-    if (obj->is<DebugEnvironmentProxy>())
-        return ComputeImplicitThis(&obj->as<DebugEnvironmentProxy>().environment());
+    if (env->is<DebugEnvironmentProxy>())
+        return ComputeImplicitThis(&env->as<DebugEnvironmentProxy>().environment());
 
-    return GetThisValue(obj);
+    MOZ_ASSERT(env->is<EnvironmentObject>());
+    return UndefinedValue();
 }
 
 static MOZ_ALWAYS_INLINE bool
