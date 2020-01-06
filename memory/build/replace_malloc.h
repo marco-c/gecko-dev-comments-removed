@@ -76,7 +76,6 @@
 
 #define MOZ_NO_MOZALLOC 1
 
-#include "mozilla/MacroArgs.h"
 #include "mozilla/Types.h"
 
 MOZ_BEGIN_EXTERN_C
@@ -88,18 +87,13 @@ MOZ_BEGIN_EXTERN_C
 #endif
 
 
-
-
-#ifdef MOZ_REPLACE_MALLOC_PREFIX
-#define replace_init MOZ_CONCAT(MOZ_REPLACE_MALLOC_PREFIX, _init)
-#define MOZ_REPLACE_PUBLIC
-#else
-#define MOZ_REPLACE_PUBLIC MOZ_EXPORT
-#endif
-
-
-MOZ_REPLACE_PUBLIC void
+MOZ_EXPORT void
 replace_init(malloc_table_t*, struct ReplaceMallocBridge**) MOZ_REPLACE_WEAK;
+
+
+#define MALLOC_DECL(name, return_type, ...)                                    \
+  return_type replace_##name(__VA_ARGS__);
+#include "malloc_decls.h"
 
 MOZ_END_EXTERN_C
 

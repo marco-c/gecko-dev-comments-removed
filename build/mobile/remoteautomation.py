@@ -60,11 +60,14 @@ class RemoteAutomation(Automation):
         self._remoteLog = logfile
 
     
-    def environment(self, env=None, xrePath=None, crashreporter=True, debugger=False, lsanPath=None, ubsanPath=None):
+    def environment(self, env=None, xrePath=None, crashreporter=True, debugger=False, dmdPath=None, lsanPath=None, ubsanPath=None):
         
         
         if env is None:
             env = {}
+
+        if dmdPath:
+            env['MOZ_REPLACE_MALLOC_LIB'] = os.path.join(dmdPath, 'libdmd.so')
 
         
         
