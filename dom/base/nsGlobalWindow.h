@@ -1725,7 +1725,6 @@ protected:
 public:
   
   nsDOMWindowList* GetWindowList();
-
 protected:
   
   already_AddRefed<nsICSSDeclaration>

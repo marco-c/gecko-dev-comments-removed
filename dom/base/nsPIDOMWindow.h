@@ -748,6 +748,9 @@ protected:
 
   
   uint32_t mNumOfIndexedDBDatabases;
+
+  
+  uint32_t mNumOfOpenWebSockets;
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
@@ -925,6 +928,13 @@ public:
   
   
   bool HasActiveIndexedDBDatabases();
+
+  
+  void UpdateWebSocketCount(int32_t aDelta);
+
+  
+  
+  bool HasOpenWebSockets() const;
 
 protected:
   void CreatePerformanceObjectIfNeeded();

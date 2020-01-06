@@ -1268,12 +1268,7 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
     return false;
   }
 
-  bool active;
-  
-  RefPtr<WebSocketEventService> eventService = WebSocketEventService::Get();
-  if (eventService &&
-      NS_SUCCEEDED(eventService->HasListenerFor(mWindow.WindowID(), &active)) &&
-      active) {
+  if (mWindow.AsInner()->HasOpenWebSockets()) {
     return false;
   }
 

@@ -634,6 +634,12 @@ WebSocketImpl::Disconnect()
 
   if (NS_IsMainThread()) {
     DisconnectInternal();
+
+    
+    
+    if (mWebSocket->GetOwner()) {
+      mWebSocket->GetOwner()->UpdateWebSocketCount(-1);
+    }
   } else {
     RefPtr<DisconnectInternalRunnable> runnable =
       new DisconnectInternalRunnable(this);
@@ -1302,6 +1308,10 @@ WebSocket::ConstructorCommon(const GlobalObject& aGlobal,
   bool connectionFailed = true;
 
   if (NS_IsMainThread()) {
+    
+    
+    webSocket->GetOwner()->UpdateWebSocketCount(1);
+
     aRv =
       webSocketImpl->Init(aGlobal.Context(), principal, !!aTransportProvider,
                           aUrl, protocolArray, EmptyCString(), 0, 0,
@@ -1438,8 +1448,8 @@ WebSocket::ConstructorCommon(const GlobalObject& aGlobal,
                                                webSocket->mImpl->mInnerWindowID,
                                                webSocket->mURI,
                                                webSocket->mImpl->mRequestedProtocolList);
-
   cws.Done();
+
   return webSocket.forget();
 }
 
@@ -1477,6 +1487,13 @@ void
 WebSocket::DisconnectFromOwner()
 {
   AssertIsOnMainThread();
+
+  
+  
+  if (mImpl && !mImpl->mDisconnectingOrDisconnected) {
+    GetOwner()->UpdateWebSocketCount(-1);
+  }
+
   DOMEventTargetHelper::DisconnectFromOwner();
 
   if (mImpl) {
