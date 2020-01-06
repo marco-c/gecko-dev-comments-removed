@@ -10,6 +10,8 @@ use element_state::ElementState;
 use fallible::FallibleVec;
 use hashglobe::FailedAllocationError;
 use selector_map::{MaybeCaseInsensitiveHashMap, SelectorMap, SelectorMapEntry};
+#[cfg(feature = "gecko")]
+use selector_parser::Direction;
 use selector_parser::SelectorImpl;
 use selectors::attr::NamespaceConstraint;
 use selectors::parser::{Combinator, Component};
@@ -19,21 +21,15 @@ use smallvec::SmallVec;
 
 #[cfg(feature = "gecko")]
 
-pub fn dir_selector_to_state(s: &[u16]) -> ElementState {
-    use element_state::ElementState;
-
-    
-    const LTR: [u16; 4] = [b'l' as u16, b't' as u16, b'r' as u16, 0];
-    const RTL: [u16; 4] = [b'r' as u16, b't' as u16, b'l' as u16, 0];
-
-    if LTR == *s {
-        ElementState::IN_LTR_STATE
-    } else if RTL == *s {
-        ElementState::IN_RTL_STATE
-    } else {
-        
-        
-        ElementState::empty()
+pub fn dir_selector_to_state(dir: &Direction) -> ElementState {
+    match *dir {
+        Direction::Ltr => ElementState::IN_LTR_STATE,
+        Direction::Rtl => ElementState::IN_RTL_STATE,
+        Direction::Other(_) => {
+            
+            
+            ElementState::empty()
+        },
     }
 }
 
@@ -342,8 +338,8 @@ impl SelectorVisitor for CompoundSelectorDependencyCollector {
                 self.other_attributes |= pc.is_attr_based();
                 self.state |= match *pc {
                     #[cfg(feature = "gecko")]
-                    NonTSPseudoClass::Dir(ref s) => {
-                        dir_selector_to_state(s)
+                    NonTSPseudoClass::Dir(ref dir) => {
+                        dir_selector_to_state(dir)
                     }
                     _ => pc.state_flag(),
                 };

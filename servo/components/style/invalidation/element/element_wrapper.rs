@@ -182,9 +182,9 @@ impl<'a, E> Element for ElementWrapper<'a, E>
             
             
             #[cfg(feature = "gecko")]
-            NonTSPseudoClass::Dir(ref s) => {
+            NonTSPseudoClass::Dir(ref dir) => {
                 use invalidation::element::invalidation_map::dir_selector_to_state;
-                let selector_flag = dir_selector_to_state(s);
+                let selector_flag = dir_selector_to_state(dir);
                 if selector_flag.is_empty() {
                     
                     return false;
