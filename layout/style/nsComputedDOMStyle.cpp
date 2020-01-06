@@ -1536,57 +1536,11 @@ nsComputedDOMStyle::DoGetTransformStyle()
   return val.forget();
 }
 
-
-
-
-
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetTransform()
 {
-  
   const nsStyleDisplay* display = StyleDisplay();
-
-  
-
-
-  if (!display->mSpecifiedTransform) {
-    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-
-    
-    val->SetIdent(eCSSKeyword_none);
-    return val.forget();
-  }
-
-  
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-  nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame,
-                                                       nsSize(0, 0));
-
-   RuleNodeCacheConditions dummy;
-   bool dummyBool;
-   gfx::Matrix4x4 matrix =
-     nsStyleTransformMatrix::ReadTransforms(display->mSpecifiedTransform->mHead,
-                                            mStyleContext,
-                                            mStyleContext->PresContext(),
-                                            dummy,
-                                            refBox,
-                                            float(mozilla::AppUnitsPerCSSPixel()),
-                                            &dummyBool);
-
-  return MatrixToCSSValue(matrix);
+  return GetTransformValue(display->mSpecifiedTransform);
 }
 
 already_AddRefed<CSSValue>
@@ -4235,6 +4189,33 @@ nsComputedDOMStyle::DoGetWindowOpacity()
 }
 
 already_AddRefed<CSSValue>
+nsComputedDOMStyle::DoGetWindowTransform()
+{
+  const nsStyleUIReset* uiReset = StyleUIReset();
+  return GetTransformValue(uiReset->mSpecifiedWindowTransform);
+}
+
+already_AddRefed<CSSValue>
+nsComputedDOMStyle::DoGetWindowTransformOrigin()
+{
+  RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(false);
+
+  const nsStyleUIReset* uiReset = StyleUIReset();
+
+  RefPtr<nsROCSSPrimitiveValue> originX = new nsROCSSPrimitiveValue;
+  SetValueToCoord(originX, uiReset->mWindowTransformOrigin[0], false,
+                  &nsComputedDOMStyle::GetFrameBoundsWidthForTransform);
+  valueList->AppendCSSValue(originX.forget());
+
+  RefPtr<nsROCSSPrimitiveValue> originY = new nsROCSSPrimitiveValue;
+  SetValueToCoord(originY, uiReset->mWindowTransformOrigin[1], false,
+                  &nsComputedDOMStyle::GetFrameBoundsHeightForTransform);
+  valueList->AppendCSSValue(originY.forget());
+
+  return valueList.forget();
+}
+
+already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetWordBreak()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
@@ -5869,6 +5850,56 @@ nsComputedDOMStyle::GetSVGPaintFor(bool aFill)
   }
 
   return val.forget();
+}
+
+
+
+
+
+already_AddRefed<CSSValue>
+nsComputedDOMStyle::GetTransformValue(nsCSSValueSharedList* aSpecifiedTransform)
+{
+  
+
+
+  if (!aSpecifiedTransform) {
+    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+
+    
+    val->SetIdent(eCSSKeyword_none);
+    return val.forget();
+  }
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame,
+                                                       nsSize(0, 0));
+
+   RuleNodeCacheConditions dummy;
+   bool dummyBool;
+   gfx::Matrix4x4 matrix =
+     nsStyleTransformMatrix::ReadTransforms(aSpecifiedTransform->mHead,
+                                            mStyleContext,
+                                            mStyleContext->PresContext(),
+                                            dummy,
+                                            refBox,
+                                            float(mozilla::AppUnitsPerCSSPixel()),
+                                            &dummyBool);
+
+  return MatrixToCSSValue(matrix);
 }
 
 already_AddRefed<CSSValue>
