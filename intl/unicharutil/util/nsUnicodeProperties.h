@@ -12,10 +12,8 @@
 #include "nsUnicodeScriptCodes.h"
 #include "harfbuzz/hb.h"
 
-#if ENABLE_INTL_API
 #include "unicode/uchar.h"
 #include "unicode/uscript.h"
-#endif
 
 const nsCharProps2& GetCharProps2(uint32_t aCh);
 
@@ -47,8 +45,6 @@ enum IdentifierType {
   IDTYPE_RESTRICTED = 0,
   IDTYPE_ALLOWED = 1,
 };
-
-#if ENABLE_INTL_API 
 
 extern const hb_unicode_general_category_t sICUtoHBcategory[];
 
@@ -175,63 +171,6 @@ IsDefaultIgnorable(uint32_t aCh)
 {
   return u_hasBinaryProperty(aCh, UCHAR_DEFAULT_IGNORABLE_CODE_POINT);
 }
-
-#else 
-
-
-uint32_t GetMirroredChar(uint32_t aCh);
-
-bool HasMirroredChar(uint32_t aChr);
-
-uint8_t GetCombiningClass(uint32_t aCh);
-
-
-uint8_t GetGeneralCategory(uint32_t aCh);
-
-nsCharType GetBidiCat(uint32_t aCh);
-
-uint8_t GetLineBreakClass(uint32_t aCh);
-
-Script GetScriptCode(uint32_t aCh);
-
-
-
-
-
-inline bool
-HasScript(uint32_t aCh, Script aScript)
-{
-  return false;
-}
-
-uint32_t GetScriptTagForCode(Script aScriptCode);
-
-PairedBracketType GetPairedBracketType(uint32_t aCh);
-uint32_t GetPairedBracket(uint32_t aCh);
-
-
-
-
-
-
-
-int8_t GetNumericValue(uint32_t aCh);
-
-uint32_t GetUppercase(uint32_t aCh);
-uint32_t GetLowercase(uint32_t aCh);
-uint32_t GetTitlecaseForLower(uint32_t aCh); 
-uint32_t GetTitlecaseForAll(uint32_t aCh); 
-
-
-bool IsEastAsianWidthFWH(uint32_t aCh);
-
-
-inline bool IsDefaultIgnorable(uint32_t aCh)
-{
-  return GetCharProps2(aCh).mDefaultIgnorable;
-}
-
-#endif 
 
 
 inline nsUGenCategory GetGenCategory(uint32_t aCh) {
