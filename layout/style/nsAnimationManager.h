@@ -10,6 +10,7 @@
 #include "mozilla/EventForwards.h"
 #include "AnimationCommon.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/Keyframe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TimeStamp.h"
 
@@ -356,6 +357,39 @@ public:
   }
   void SortEvents()      { mEventDispatcher.SortEvents(); }
   void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <class IterType, class TimingFunctionType>
+  static bool FindMatchingKeyframe(
+    IterType&& aIter,
+    double aOffset,
+    const TimingFunctionType& aTimingFunctionToMatch,
+    size_t& aIndex)
+  {
+    aIndex = 0;
+    for (mozilla::Keyframe& keyframe : aIter) {
+      if (keyframe.mOffset.value() != aOffset) {
+        break;
+      }
+      if (keyframe.mTimingFunction == aTimingFunctionToMatch) {
+        return true;
+      }
+      ++aIndex;
+    }
+    return false;
+  }
 
 protected:
   ~nsAnimationManager() override = default;

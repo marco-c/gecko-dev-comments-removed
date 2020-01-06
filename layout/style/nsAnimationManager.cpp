@@ -885,40 +885,6 @@ GeckoCSSAnimationBuilder::GetKeyframePropertyValues(
   return result;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class IterType>
-static bool
-FindMatchingKeyframe(
-    IterType&& aIter,
-    double aOffset,
-    const Maybe<ComputedTimingFunction>& aTimingFunctionToMatch,
-    size_t& aIndex)
-{
-  aIndex = 0;
-  for (Keyframe& keyframe : aIter) {
-    if (keyframe.mOffset.value() != aOffset) {
-      break;
-    }
-    if (keyframe.mTimingFunction == aTimingFunctionToMatch) {
-      return true;
-    }
-    ++aIndex;
-  }
-  return false;
-}
-
 void
 GeckoCSSAnimationBuilder::FillInMissingKeyframeValues(
     nsCSSPropertyIDSet aAnimatedProperties,
@@ -932,8 +898,10 @@ GeckoCSSAnimationBuilder::FillInMissingKeyframeValues(
   
   size_t startKeyframeIndex = kNotSet;
   if (!aAnimatedProperties.Equals(aPropertiesSetAtStart) &&
-      !FindMatchingKeyframe(aKeyframes, 0.0, aInheritedTimingFunction,
-                            startKeyframeIndex)) {
+      !nsAnimationManager::FindMatchingKeyframe(aKeyframes,
+                                                0.0,
+                                                aInheritedTimingFunction,
+                                                startKeyframeIndex)) {
     Keyframe newKeyframe;
     newKeyframe.mOffset.emplace(0.0);
     newKeyframe.mTimingFunction = aInheritedTimingFunction;
@@ -943,8 +911,10 @@ GeckoCSSAnimationBuilder::FillInMissingKeyframeValues(
   
   size_t endKeyframeIndex = kNotSet;
   if (!aAnimatedProperties.Equals(aPropertiesSetAtEnd)) {
-    if (!FindMatchingKeyframe(Reversed(aKeyframes), 1.0,
-                              aInheritedTimingFunction, endKeyframeIndex)) {
+    if (!nsAnimationManager::FindMatchingKeyframe(Reversed(aKeyframes),
+                                                  1.0,
+                                                  aInheritedTimingFunction,
+                                                  endKeyframeIndex)) {
       Keyframe newKeyframe;
       newKeyframe.mOffset.emplace(1.0);
       newKeyframe.mTimingFunction = aInheritedTimingFunction;
