@@ -18,6 +18,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/FetchStreamReader.h"
 #include "mozilla/dom/RequestBinding.h"
 
 class nsIGlobalObject;
@@ -185,6 +186,8 @@ public:
   void
   MaybeTeeReadableStreamBody(JSContext* aCx,
                              JS::MutableHandle<JSObject*> aBodyOut,
+                             FetchStreamReader** aStreamReader,
+                             nsIInputStream** aInputStream,
                              ErrorResult& aRv);
 
   
@@ -201,10 +204,13 @@ public:
     return mMimeType;
   }
 
+  
   void
   NullifyStream() override
   {
     mReadableStreamBody = nullptr;
+    mReadableStreamReader = nullptr;
+    mFetchStreamReader = nullptr;
   }
 
 protected:
@@ -216,6 +222,10 @@ protected:
   
   
   JS::Heap<JSObject*> mReadableStreamBody;
+
+  
+  JS::Heap<JSObject*> mReadableStreamReader;
+  RefPtr<FetchStreamReader> mFetchStreamReader;
 
   explicit FetchBody(nsIGlobalObject* aOwner);
 
