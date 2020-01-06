@@ -993,7 +993,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         FlushRepaintsToClearScreenToGeckoTransform();
       }
 
-      HitTestingTreeNode* hitScrollbarNode = nullptr;
+      RefPtr<HitTestingTreeNode> hitScrollbarNode = nullptr;
       RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(mouseInput.mOrigin,
             &hitResult, &hitScrollbarNode);
       bool hitScrollbar = hitScrollbarNode;
@@ -2033,17 +2033,21 @@ APZCTreeManager::GetTargetNode(const ScrollableLayerGuid& aGuid,
 already_AddRefed<AsyncPanZoomController>
 APZCTreeManager::GetTargetAPZC(const ScreenPoint& aPoint,
                                HitTestResult* aOutHitResult,
-                               HitTestingTreeNode** aOutHitScrollbar)
+                               RefPtr<HitTestingTreeNode>* aOutScrollbarNode)
 {
   MutexAutoLock lock(mTreeLock);
   HitTestResult hitResult = HitNothing;
+  HitTestingTreeNode* scrollbarNode = nullptr;
   ParentLayerPoint point = ViewAs<ParentLayerPixel>(aPoint,
     PixelCastJustification::ScreenIsParentLayerForRoot);
   RefPtr<AsyncPanZoomController> target = GetAPZCAtPoint(mRootNode, point,
-      &hitResult, aOutHitScrollbar);
+      &hitResult, &scrollbarNode);
 
   if (aOutHitResult) {
     *aOutHitResult = hitResult;
+  }
+  if (aOutScrollbarNode) {
+    *aOutScrollbarNode = scrollbarNode;
   }
   return target.forget();
 }
@@ -2223,9 +2227,7 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
       MOZ_ASSERT(resultNode);
       for (HitTestingTreeNode* n = resultNode; n; n = n->GetParent()) {
         if (n->IsScrollbarNode()) {
-          if (aOutScrollbarNode) {
-            *aOutScrollbarNode = n;
-          }
+          *aOutScrollbarNode = n;
           
           
           
@@ -2547,6 +2549,7 @@ APZCTreeManager::CommonAncestor(AsyncPanZoomController* aApzc1, AsyncPanZoomCont
 LayerToParentLayerMatrix4x4
 APZCTreeManager::ComputeTransformForNode(const HitTestingTreeNode* aNode) const
 {
+  mTreeLock.AssertCurrentThreadOwns();
   if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
     
     
