@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
     name='run-missing-tests',
     title='Run Missing Tests',
     symbol='rmt',
-    description="""
-    Run tests in the selected push that were optimized away, usually by SETA.
-
-    This action is for use on pushes that will be merged into another branch,
-    to check that optimization hasn't hidden any failures.
-    """,
+    description=(
+        "Run tests in the selected push that were optimized away, usually by SETA."
+        "\n"
+        "This action is for use on pushes that will be merged into another branch,"
+        "to check that optimization hasn't hidden any failures."
+    ),
     order=100,  
     context=[],  
 )
