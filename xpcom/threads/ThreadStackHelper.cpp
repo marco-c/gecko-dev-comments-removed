@@ -138,7 +138,7 @@ ThreadStackHelper::GetStacksInternal(Stack* aStack,
   ScopedSetPtr<NativeStack> nativeStackPtr(mNativeStackToFill, aNativeStack);
 #endif
 
-  Vector<char, 1000> nameBuffer;
+  char nameBuffer[1000] = {0};
   auto callback = [&, this] (void** aPCs, size_t aCount, bool aIsMainThread) {
     
     
@@ -149,10 +149,9 @@ ThreadStackHelper::GetStacksInternal(Stack* aStack,
     
     
     if (aIsMainThread && nsThread::sMainThreadRunnableName) {
-      MOZ_ALWAYS_TRUE(
-        nameBuffer.append(nsThread::sMainThreadRunnableName->BeginReading(),
-                          std::min(uint32_t(nameBuffer.sMaxInlineStorage),
-                                   uint32_t(nsThread::sMainThreadRunnableName->Length()))));
+      strncpy(nameBuffer, nsThread::sMainThreadRunnableName, sizeof(nameBuffer));
+      
+      nameBuffer[sizeof(nameBuffer) - 1] = '\0';
     }
 
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
@@ -178,8 +177,8 @@ ThreadStackHelper::GetStacksInternal(Stack* aStack,
   }
 
   
-  if (nameBuffer.length() > 0) {
-    aRunnableName.AssignASCII(nameBuffer.begin(), nameBuffer.length());
+  if (nameBuffer[0] != 0) {
+    aRunnableName = nameBuffer;
   }
 #endif
 }
