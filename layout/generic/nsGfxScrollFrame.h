@@ -552,7 +552,7 @@ public:
   
   
   
-  bool mSupppressScrollbarUpdate:1;
+  bool mSuppressScrollbarUpdate:1;
   
   
   
@@ -1072,13 +1072,13 @@ protected:
                     nsIFrame::ClassID aID,
                     bool aIsRoot);
   void SetSuppressScrollbarUpdate(bool aSuppress) {
-    mHelper.mSupppressScrollbarUpdate = aSuppress;
+    mHelper.mSuppressScrollbarUpdate = aSuppress;
   }
   bool GuessHScrollbarNeeded(const ScrollReflowInput& aState);
   bool GuessVScrollbarNeeded(const ScrollReflowInput& aState);
 
   bool IsScrollbarUpdateSuppressed() const {
-    return mHelper.mSupppressScrollbarUpdate;
+    return mHelper.mSuppressScrollbarUpdate;
   }
 
   
