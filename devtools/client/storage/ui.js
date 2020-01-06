@@ -299,7 +299,7 @@ StorageUI.prototype = {
 
 
 
-  makeFieldsEditable: function (editableFields) {
+  makeFieldsEditable: function* (editableFields) {
     if (editableFields && editableFields.length > 0) {
       this.table.makeFieldsEditable(editableFields);
     } else if (this.table._editableFieldsEngine) {
@@ -318,7 +318,7 @@ StorageUI.prototype = {
 
 
 
-  removeItemFromTable: Task.async(function* (name) {
+  removeItemFromTable: function (name) {
     if (this.table.isSelected(name) && this.table.items.size > 1) {
       if (this.table.selectedIndex == 0) {
         this.table.selectNextRow();
@@ -328,8 +328,8 @@ StorageUI.prototype = {
     }
 
     this.table.remove(name);
-    yield this.updateObjectSidebar();
-  }),
+    this.updateObjectSidebar();
+  },
 
   
 
@@ -401,36 +401,30 @@ StorageUI.prototype = {
 
 
 
-  onUpdate: Task.async(function* ({ changed, added, deleted }) {
+  onUpdate: function ({ changed, added, deleted }) {
+    if (deleted) {
+      this.handleDeletedItems(deleted);
+    }
+
     if (added) {
-      yield this.handleAddedItems(added);
+      this.handleAddedItems(added);
     }
 
     if (changed) {
-      yield this.handleChangedItems(changed);
-    }
-
-    
-    
-    
-    
-    
-    
-    if (deleted) {
-      this.handleDeletedItems(deleted);
+      this.handleChangedItems(changed);
     }
 
     if (added || deleted || changed) {
       this.emit("store-objects-updated");
     }
-  }),
+  },
 
   
 
 
 
 
-  handleAddedItems: Task.async(function* (added) {
+  handleAddedItems: function (added) {
     for (let type in added) {
       for (let host in added[type]) {
         this.tree.add([type, {id: host, type: "url"}]);
@@ -443,8 +437,8 @@ StorageUI.prototype = {
             this.tree.add([type, host, ...name]);
             if (!this.tree.selectedItem) {
               this.tree.selectedItem = [type, host, name[0], name[1]];
-              yield this.fetchStorageObjects(type, host, [JSON.stringify(name)],
-                                             REASON.NEW_ROW);
+              this.fetchStorageObjects(type, host, [JSON.stringify(name)],
+                                       REASON.NEW_ROW);
             }
           } catch (ex) {
             
@@ -452,19 +446,19 @@ StorageUI.prototype = {
         }
 
         if (this.tree.isSelected([type, host])) {
-          yield this.fetchStorageObjects(type, host, added[type][host],
-                                         REASON.NEW_ROW);
+          this.fetchStorageObjects(type, host, added[type][host],
+                                   REASON.NEW_ROW);
         }
       }
     }
-  }),
+  },
 
   
 
 
 
 
-  handleDeletedItems: Task.async(function* (deleted) {
+  handleDeletedItems: function (deleted) {
     for (let type in deleted) {
       for (let host in deleted[type]) {
         if (!deleted[type][host].length) {
@@ -497,26 +491,26 @@ StorageUI.prototype = {
               if (names.length > 0) {
                 let tableItemName = names.pop();
                 if (this.tree.isSelected([type, host, ...names])) {
-                  yield this.removeItemFromTable(tableItemName);
+                  this.removeItemFromTable(tableItemName);
                 }
               }
             } catch (ex) {
               if (this.tree.isSelected([type, host])) {
-                yield this.removeItemFromTable(name);
+                this.removeItemFromTable(name);
               }
             }
           }
         }
       }
     }
-  }),
+  },
 
   
 
 
 
 
-  handleChangedItems: Task.async(function* (changed) {
+  handleChangedItems: function (changed) {
     let [type, host, db, objectStore] = this.tree.selectedItem;
     if (!changed[type] || !changed[type][host] ||
         changed[type][host].length == 0) {
@@ -530,11 +524,11 @@ StorageUI.prototype = {
           toUpdate.push(name);
         }
       }
-      yield this.fetchStorageObjects(type, host, toUpdate, REASON.UPDATE);
+      this.fetchStorageObjects(type, host, toUpdate, REASON.UPDATE);
     } catch (ex) {
-      yield this.fetchStorageObjects(type, host, changed[type][host], REASON.UPDATE);
+      this.fetchStorageObjects(type, host, changed[type][host], REASON.UPDATE);
     }
-  }),
+  },
 
   
 
@@ -590,9 +584,9 @@ StorageUI.prototype = {
 
       let {data} = yield storageType.getStoreObjects(host, names, fetchOpts);
       if (data.length) {
-        yield this.populateTable(data, reason);
+        this.populateTable(data, reason);
       }
-      this.updateToolbar();
+      yield this.updateToolbar();
       this.emit("store-objects-updated");
     } catch (ex) {
       console.error(ex);
@@ -602,7 +596,7 @@ StorageUI.prototype = {
   
 
 
-  updateToolbar: function () {
+  updateToolbar: Task.async(function* () {
     let item = this.tree.selectedItem;
     let howManyNodesIn = item ? item.length : 0;
 
@@ -618,7 +612,7 @@ StorageUI.prototype = {
       this._addButton.hidden = true;
       this._addButton.removeAttribute("tooltiptext");
     }
-  },
+  }),
 
   
 
@@ -863,7 +857,7 @@ StorageUI.prototype = {
 
 
 
-  onHostSelect: Task.async(function* (event, item) {
+  onHostSelect: function (event, item) {
     this.table.clear();
     this.hideSidebar();
     this.searchBox.value = "";
@@ -881,9 +875,9 @@ StorageUI.prototype = {
     if (item.length > 2) {
       names = [JSON.stringify(item.slice(2))];
     }
-    yield this.fetchStorageObjects(type, host, names, REASON.POPULATE);
+    this.fetchStorageObjects(type, host, names, REASON.POPULATE);
     this.itemOffset = 0;
-  }),
+  },
 
   
 
@@ -897,7 +891,7 @@ StorageUI.prototype = {
 
 
 
-  resetColumns: Task.async(function* (type, host, subtype) {
+  resetColumns: function* (type, host, subtype) {
     this.table.host = host;
     this.table.datatype = type;
 
@@ -946,8 +940,8 @@ StorageUI.prototype = {
     this.table.setColumns(columns, null, hiddenFields, privateFields);
     this.hideSidebar();
 
-    this.makeFieldsEditable(editableFields);
-  }),
+    yield this.makeFieldsEditable(editableFields);
+  },
 
   
 
@@ -957,7 +951,7 @@ StorageUI.prototype = {
 
 
 
-  populateTable: Task.async(function* (data, reason) {
+  populateTable: function (data, reason) {
     for (let item of data) {
       if (item.value) {
         item.valueActor = item.value;
@@ -988,14 +982,14 @@ StorageUI.prototype = {
         case REASON.UPDATE:
           this.table.update(item);
           if (item == this.table.selectedRow && !this.sidebar.hidden) {
-            yield this.updateObjectSidebar();
+            this.updateObjectSidebar();
           }
           break;
       }
 
       this.shouldLoadMoreItems = true;
     }
-  }),
+  },
 
   
 
@@ -1025,7 +1019,7 @@ StorageUI.prototype = {
   
 
 
-  handleScrollEnd: Task.async(function* () {
+  handleScrollEnd: function () {
     if (!this.shouldLoadMoreItems) {
       return;
     }
@@ -1038,8 +1032,8 @@ StorageUI.prototype = {
     if (item.length > 2) {
       names = [JSON.stringify(item.slice(2))];
     }
-    yield this.fetchStorageObjects(type, host, names, REASON.NEXT_50_ITEMS);
-  }),
+    this.fetchStorageObjects(type, host, names, REASON.NEXT_50_ITEMS);
+  },
 
   
 
