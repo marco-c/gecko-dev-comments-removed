@@ -203,7 +203,6 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, nsDocument,
                                    mAnchors,
                                    mScripts,
                                    mForms,
-                                   mFormControls,
                                    mWyciwygChannel,
                                    mMidasCommandManager)
 
@@ -3710,7 +3709,6 @@ nsHTMLDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
 {
   nsDocument::DocAddSizeOfExcludingThis(aWindowSizes);
 
-  
   
   
   

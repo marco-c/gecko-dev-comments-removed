@@ -44,7 +44,6 @@
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/FileSystemSecurity.h"
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -2646,26 +2645,6 @@ nsContentUtils::ContentIsFlattenedTreeDescendantOf(
 }
 
 
-bool
-nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
-  const nsINode* aPossibleDescendant,
-  const nsINode* aPossibleAncestor)
-{
-  NS_PRECONDITION(aPossibleDescendant, "The possible descendant is null!");
-  NS_PRECONDITION(aPossibleAncestor, "The possible ancestor is null!");
-
-  do {
-    if (aPossibleDescendant == aPossibleAncestor) {
-      return true;
-    }
-    aPossibleDescendant =
-      aPossibleDescendant->GetFlattenedTreeParentNodeForStyle();
-  } while (aPossibleDescendant);
-
-  return false;
-}
-
-
 nsresult
 nsContentUtils::GetAncestors(nsINode* aNode,
                              nsTArray<nsINode*>& aArray)
@@ -2790,16 +2769,6 @@ nsContentUtils::GetCommonFlattenedTreeAncestorHelper(nsIContent* aContent1,
 {
   return GetCommonAncestorInternal(aContent1, aContent2, [](nsIContent* aContent) {
     return aContent->GetFlattenedTreeParent();
-  });
-}
-
-
-Element*
-nsContentUtils::GetCommonFlattenedTreeAncestorForStyle(Element* aElement1,
-                                                       Element* aElement2)
-{
-  return GetCommonAncestorInternal(aElement1, aElement2, [](Element* aElement) {
-    return aElement->GetFlattenedTreeParentElementForStyle();
   });
 }
 
@@ -3085,22 +3054,15 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
                                      true,
                                      false);
     }
-    RefPtr<nsContentList> htmlFormControls = htmlDoc->GetExistingFormControls();
-    if (!htmlFormControls) {
-      
-      
-      
-      htmlFormControls = new nsContentList(aDocument,
-                                           nsHTMLDocument::MatchFormControls,
-                                           nullptr, nullptr,
-                                            true,
-                                            nullptr,
-                                            kNameSpaceID_None,
-                                            true,
-                                            false);
-    }
-
-    NS_ENSURE_TRUE(htmlForms && htmlFormControls, NS_ERROR_OUT_OF_MEMORY);
+    RefPtr<nsContentList> htmlFormControls =
+      new nsContentList(aDocument,
+                        nsHTMLDocument::MatchFormControls,
+                        nullptr, nullptr,
+                         true,
+                         nullptr,
+                         kNameSpaceID_None,
+                         true,
+                         false);
 
     
     
@@ -3117,7 +3079,7 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
     
     
     nsCOMPtr<nsIFormControl> control(do_QueryInterface(aContent));
-    if (control && htmlFormControls && htmlForms) {
+    if (control) {
 
       
       KeyAppendInt(control->ControlType(), aKey);
