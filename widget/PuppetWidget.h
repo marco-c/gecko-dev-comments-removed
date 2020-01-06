@@ -411,6 +411,14 @@ protected:
 
 private:
   bool mNeedIMEStateInit;
+  
+  
+  
+  
+  
+  
+  
+  bool mIgnoreCompositionEvents;
 };
 
 class PuppetScreen : public nsBaseScreen

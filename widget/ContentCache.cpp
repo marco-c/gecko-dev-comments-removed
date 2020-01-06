@@ -1389,8 +1389,6 @@ ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
   
   
   
-  
-  
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   mRequestIMEToCommitCompositionResults.
     AppendElement(RequestIMEToCommitCompositionResult::eHandledSynchronously);

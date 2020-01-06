@@ -93,6 +93,7 @@ PuppetWidget::PuppetWidget(TabChild* aTabChild)
   , mDefaultScale(-1)
   , mCursorHotspotX(0)
   , mCursorHotspotY(0)
+  , mIgnoreCompositionEvents(false)
 {
   
   mInputContext.mIMEState.mEnabled = IMEState::UNKNOWN;
@@ -345,6 +346,20 @@ PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent, nsEventStatus& aStatus)
     "before dispatched");
 
   if (aEvent->mClass == eCompositionEventClass) {
+    
+    
+    
+    
+    
+    if (mIgnoreCompositionEvents) {
+      if (aEvent->mMessage != eCompositionStart) {
+        aStatus = nsEventStatus_eIgnore;
+        return NS_OK;
+      }
+      
+      
+      mIgnoreCompositionEvents = false;
+    }
     
     
     WidgetCompositionEvent* compositionEvent = aEvent->AsCompositionEvent();
@@ -645,6 +660,16 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
     return NS_OK;
   }
 
+  
+  if (NS_WARN_IF(mIgnoreCompositionEvents)) {
+#ifdef DEBUG
+    RefPtr<TextComposition> composition =
+      IMEStateManager::GetTextCompositionFor(this);
+    MOZ_ASSERT(!composition);
+#endif 
+    return NS_OK;
+  }
+
   RefPtr<TextComposition> composition =
     IMEStateManager::GetTextCompositionFor(this);
   
@@ -675,6 +700,16 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
   compositionCommitEvent.mData = committedString;
   nsEventStatus status = nsEventStatus_eIgnore;
   DispatchEvent(&compositionCommitEvent, status);
+
+#ifdef DEBUG
+  RefPtr<TextComposition> currentComposition =
+    IMEStateManager::GetTextCompositionFor(this);
+  MOZ_ASSERT(!currentComposition);
+#endif 
+
+  
+  
+  mIgnoreCompositionEvents = true;
 
   Unused <<
     mTabChild->SendOnEventNeedingAckHandled(eCompositionCommitRequestHandled);
