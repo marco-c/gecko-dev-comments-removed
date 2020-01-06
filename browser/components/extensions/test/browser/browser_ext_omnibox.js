@@ -94,8 +94,10 @@ add_task(async function() {
     
     
     
-    await BrowserTestUtils.waitForCondition(() => gURLBar.controller.matchCount >= 2,
-                                            "waiting urlbar search to complete");
+    await BrowserTestUtils.waitForCondition(
+      () => gURLBar.controller.matchCount >= 2 &&
+            gURLBar.popup.richlistbox.children[1].getAttribute("ac-text") == gURLBar.controller.searchString,
+      "waiting urlbar search to complete");
     return "t";
   }
 

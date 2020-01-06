@@ -1,3 +1,6 @@
+
+
+
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
   await promiseAutocompleteResultPopup("www.mozilla.org");
@@ -13,5 +16,5 @@ add_task(async function() {
   is(gURLBar.selectionStart, 5, "Should have moved the cursor");
   is(gURLBar.selectionEnd, 5, "And not selected anything");
 
-  gBrowser.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });
