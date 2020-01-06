@@ -701,7 +701,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     
     if (syncDelegate.fullSyncNecessary) {
       Logger.info(LOG_TAG, "Syncing done. Full follow-up sync necessary, requesting immediate sync.");
-      fxAccount.requestImmediateSync(null, null);
+      fxAccount.requestImmediateSync(null, null, false);
       return;
     }
 
@@ -724,6 +724,6 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
     
     Logger.info(LOG_TAG, "Syncing done. Requesting an immediate follow-up sync.");
-    fxAccount.requestImmediateSync(stagesToSyncAgain, null);
+    fxAccount.requestImmediateSync(stagesToSyncAgain, null, false);
   }
 }

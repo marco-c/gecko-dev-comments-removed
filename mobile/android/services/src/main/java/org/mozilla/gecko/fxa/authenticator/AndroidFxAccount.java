@@ -683,8 +683,9 @@ public class AndroidFxAccount {
 
 
 
-  public void requestImmediateSync(String[] stagesToSync, String[] stagesToSkip) {
-    FirefoxAccounts.requestImmediateSync(getAndroidAccount(), stagesToSync, stagesToSkip);
+
+  public void requestImmediateSync(String[] stagesToSync, String[] stagesToSkip, boolean ignoreSettings) {
+    FirefoxAccounts.requestImmediateSync(getAndroidAccount(), stagesToSync, stagesToSkip, ignoreSettings);
   }
 
   

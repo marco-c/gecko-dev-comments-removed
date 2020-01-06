@@ -269,7 +269,7 @@ public class FxAccountStatusFragment
 
     if (preference == syncNowPreference) {
       if (fxAccount != null) {
-        fxAccount.requestImmediateSync(null, null);
+        fxAccount.requestImmediateSync(null, null, true);
       }
       return true;
     }
@@ -857,7 +857,7 @@ public class FxAccountStatusFragment
         fxAccount.dump();
       } else if ("debug_force_sync".equals(key)) {
         Logger.info(LOG_TAG, "Force syncing.");
-        fxAccount.requestImmediateSync(null, null);
+        fxAccount.requestImmediateSync(null, null, true);
         
       } else if ("debug_forget_certificate".equals(key)) {
         State state = fxAccount.getState();
@@ -943,7 +943,7 @@ public class FxAccountStatusFragment
       
       
       
-      fxAccount.requestImmediateSync(STAGES_TO_SYNC_ON_DEVICE_NAME_CHANGE, null);
+      fxAccount.requestImmediateSync(STAGES_TO_SYNC_ON_DEVICE_NAME_CHANGE, null, true);
       hardRefresh(); 
       return true;
     }
