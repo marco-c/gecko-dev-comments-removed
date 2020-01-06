@@ -225,65 +225,43 @@ XPCOMUtils.defineLazyGetter(this, "SYNCED_ROOTS", () => [
   PlacesUtils.bookmarks.mobileGuid,
 ]);
 
+
+
+
+
+XPCOMUtils.defineLazyGetter(this, "ROOT_GUID_TO_QUERY_FOLDER_NAME", () => ({
+  [PlacesUtils.bookmarks.rootGuid]: "PLACES_ROOT",
+  [PlacesUtils.bookmarks.menuGuid]: "BOOKMARKS_MENU",
+
+  
+  
+  [PlacesUtils.bookmarks.tagsGuid]: "TAGS",
+
+  [PlacesUtils.bookmarks.unfiledGuid]: "UNFILED_BOOKMARKS",
+  [PlacesUtils.bookmarks.toolbarGuid]: "TOOLBAR",
+  [PlacesUtils.bookmarks.mobileGuid]: "MOBILE_BOOKMARKS",
+}));
+
 class BookmarkValidator {
 
   async canValidate() {
     return !await PlacesSyncUtils.bookmarks.havePendingChanges();
   }
 
-  async _followQueries(recordMap) {
-    for (let [guid, entry] of recordMap) {
+  _followQueries(recordsByQueryId) {
+    for (let entry of recordsByQueryId.values()) {
       if (entry.type !== "query" && (!entry.bmkUri || !entry.bmkUri.startsWith(QUERY_PROTOCOL))) {
         continue;
       }
-      
-      
-      let id;
-      try {
-        id = await PlacesUtils.promiseItemId(guid);
-      } catch (ex) {
-        
-        continue;
-      }
-      let queryNodeParent = PlacesUtils.getFolderContents(id, false, true);
-      if (!queryNodeParent || !queryNodeParent.root.hasChildren) {
-        continue;
-      }
-      queryNodeParent = queryNodeParent.root;
-      let queryNode = null;
-      let numSiblings = 0;
-      let containerWasOpen = queryNodeParent.containerOpen;
-      queryNodeParent.containerOpen = true;
-      try {
-        try {
-          numSiblings = queryNodeParent.childCount;
-        } catch (e) {
-          
-          
-          continue;
+      let params = new URLSearchParams(entry.bmkUri.slice(QUERY_PROTOCOL.length));
+      entry.concreteItems = [];
+      let queryIds = params.getAll("folder");
+      for (let queryId of queryIds) {
+        let concreteItem = recordsByQueryId.get(queryId);
+        if (concreteItem) {
+          entry.concreteItems.push(concreteItem);
         }
-        for (let i = 0; i < numSiblings && !queryNode; ++i) {
-          let child = queryNodeParent.getChild(i);
-          if (child && child.bookmarkGuid && child.bookmarkGuid === guid) {
-            queryNode = child;
-          }
-        }
-      } finally {
-        queryNodeParent.containerOpen = containerWasOpen;
       }
-      if (!queryNode) {
-        continue;
-      }
-
-      let concreteId = PlacesUtils.getConcreteItemGuid(queryNode);
-      if (!concreteId) {
-        continue;
-      }
-      let concreteItem = recordMap.get(concreteId);
-      if (!concreteItem) {
-        continue;
-      }
-      entry.concrete = concreteItem;
     }
   }
 
@@ -291,7 +269,12 @@ class BookmarkValidator {
     
     
     let records = [];
-    let recordsByGuid = new Map();
+    
+    
+    
+    
+    
+    let recordsByQueryId = new Map();
     let syncedRoots = SYNCED_ROOTS;
     let maybeYield = Async.jankYielder();
     async function traverse(treeNode, synced) {
@@ -301,6 +284,7 @@ class BookmarkValidator {
       } else if (isNodeIgnored(treeNode)) {
         synced = false;
       }
+      let localId = treeNode.id;
       let guid = PlacesSyncUtils.bookmarks.guidToSyncId(treeNode.guid);
       let itemType = "item";
       treeNode.ignored = !synced;
@@ -347,8 +331,17 @@ class BookmarkValidator {
       treeNode.pos = treeNode.index;
       treeNode.bmkUri = treeNode.uri;
       records.push(treeNode);
-      
-      recordsByGuid.set(treeNode.guid, treeNode);
+      if (treeNode.guid in ROOT_GUID_TO_QUERY_FOLDER_NAME) {
+        let queryId = ROOT_GUID_TO_QUERY_FOLDER_NAME[treeNode.guid];
+        recordsByQueryId.set(queryId, treeNode);
+      }
+      if (localId) {
+        
+        
+        
+        
+        recordsByQueryId.set(localId.toString(10), treeNode);
+      }
       if (treeNode.type === "folder") {
         treeNode.childGUIDs = [];
         if (!treeNode.children) {
@@ -364,7 +357,7 @@ class BookmarkValidator {
     }
     await traverse(clientTree, false);
     clientTree.id = "places";
-    await this._followQueries(recordsByGuid);
+    this._followQueries(recordsByQueryId);
     return records;
   }
 
@@ -642,10 +635,10 @@ class BookmarkValidator {
       }
       seenEver.add(node);
       let children = node.children || [];
-      if (node.concrete) {
-        children.push(node.concrete);
+      if (node.concreteItems) {
+        children.push(...node.concreteItems);
       }
-      if (children) {
+      if (children.length) {
         pathLookup.add(node);
         currentPath.push(node);
         for (let child of children) {
