@@ -163,7 +163,8 @@ gfxMacFont::ShapeText(DrawTarget     *aDrawTarget,
 
     
     
-    if (static_cast<MacOSFontEntry*>(GetFontEntry())->RequiresAATLayout() &&
+    auto macFontEntry = static_cast<MacOSFontEntry*>(GetFontEntry());
+    if (macFontEntry->RequiresAATLayout() &&
         !aVertical) {
         if (!mCoreTextShaper) {
             mCoreTextShaper = MakeUnique<gfxCoreTextShaper>(this);
@@ -173,6 +174,24 @@ gfxMacFont::ShapeText(DrawTarget     *aDrawTarget,
                                        aShapedText)) {
             PostShapingFixup(aDrawTarget, aText, aOffset,
                              aLength, aVertical, aShapedText);
+
+            if (macFontEntry->HasTrackingTable()) {
+                
+                
+                float trackSize = GetAdjustedSize() *
+                    aShapedText->GetAppUnitsPerDevUnit() /
+                    AppUnitsPerCSSPixel();
+                float tracking =
+                    macFontEntry->TrackingForCSSPx(trackSize) *
+                    mFUnitsConvFactor;
+                
+                
+                
+                
+                aShapedText->AdjustAdvancesForSyntheticBold(tracking,
+                                                            aOffset, aLength);
+            }
+
             return true;
         }
     }

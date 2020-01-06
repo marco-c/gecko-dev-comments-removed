@@ -40,6 +40,9 @@ public:
                    bool aIsDataUserFont, bool aIsLocal);
 
     virtual ~MacOSFontEntry() {
+        if (mTrakTable) {
+            hb_blob_destroy(mTrakTable);
+        }
         ::CGFontRelease(mFontRef);
     }
 
@@ -61,11 +64,25 @@ public:
     bool HasVariations();
     bool IsCFF();
 
+    
+    
+    
+    bool HasTrackingTable();
+
+    
+    
+    float TrackingForCSSPx(float aPointSize) const;
+
 protected:
     gfxFont* CreateFontInstance(const gfxFontStyle *aFontStyle,
                                 bool aNeedsBold) override;
 
     bool HasFontTable(uint32_t aTableTag) override;
+
+    
+    
+    
+    bool ParseTrakTable();
 
     static void DestroyBlobFunc(void* aUserData);
 
@@ -79,9 +96,18 @@ protected:
     bool mIsCFFInitialized;
     bool mHasVariations;
     bool mHasVariationsInitialized;
+    bool mCheckedForTracking;
     nsTHashtable<nsUint32HashKey> mAvailableTables;
 
     mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
+
+    
+    
+    hb_blob_t* mTrakTable;
+    
+    const mozilla::AutoSwap_PRInt16* mTrakValues;
+    const mozilla::AutoSwap_PRInt32* mTrakSizeTable;
+    uint16_t mNumTrakSizes;
 };
 
 class gfxMacPlatformFontList : public gfxPlatformFontList {
