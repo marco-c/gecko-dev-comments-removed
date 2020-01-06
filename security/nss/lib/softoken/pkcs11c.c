@@ -65,7 +65,6 @@ sftk_Null(void *data, PRBool freeit)
     return;
 }
 
-#ifndef NSS_DISABLE_ECC
 #ifdef EC_DEBUG
 #define SEC_PRINT(str1, str2, num, sitem)             \
     printf("pkcs11c.c:%s:%s (keytype=%d) [len=%d]\n", \
@@ -78,7 +77,6 @@ sftk_Null(void *data, PRBool freeit)
 #undef EC_DEBUG
 #define SEC_PRINT(a, b, c, d)
 #endif
-#endif 
 
 
 
@@ -124,7 +122,6 @@ sftk_MapCryptError(int error)
             return CKR_KEY_SIZE_RANGE; 
         case SEC_ERROR_UNSUPPORTED_EC_POINT_FORM:
             return CKR_TEMPLATE_INCONSISTENT;
-        
         case SEC_ERROR_UNSUPPORTED_KEYALG:
             return CKR_MECHANISM_INVALID;
         case SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE:
@@ -2417,7 +2414,6 @@ nsc_DSA_Sign_Stub(void *ctx, void *sigBuf,
     return rv;
 }
 
-#ifndef NSS_DISABLE_ECC
 static SECStatus
 nsc_ECDSAVerifyStub(void *ctx, void *sigBuf, unsigned int sigLen,
                     void *dataBuf, unsigned int dataLen)
@@ -2452,7 +2448,6 @@ nsc_ECDSASignStub(void *ctx, void *sigBuf,
     *sigLen = signature.len;
     return rv;
 }
-#endif 
 
 
 
@@ -2612,7 +2607,6 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
 
             break;
 
-#ifndef NSS_DISABLE_ECC
         case CKM_ECDSA_SHA1:
             context->multi = PR_TRUE;
             crv = sftk_doSubSHA1(context);
@@ -2635,7 +2629,6 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
             context->maxLen = MAX_ECKEY_LEN * 2;
 
             break;
-#endif 
 
 #define INIT_HMAC_MECH(mmm)                                               \
     case CKM_##mmm##_HMAC_GENERAL:                                        \
@@ -3303,7 +3296,6 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
             context->verify = (SFTKVerify)nsc_DSA_Verify_Stub;
             context->destroy = sftk_Null;
             break;
-#ifndef NSS_DISABLE_ECC
         case CKM_ECDSA_SHA1:
             context->multi = PR_TRUE;
             crv = sftk_doSubSHA1(context);
@@ -3324,7 +3316,6 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
             context->verify = (SFTKVerify)nsc_ECDSAVerifyStub;
             context->destroy = sftk_Null;
             break;
-#endif 
 
             INIT_HMAC_MECH(MD2)
             INIT_HMAC_MECH(MD5)
@@ -4624,12 +4615,10 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession,
                 pairwise_digest_length = subPrimeLen;
                 mech.mechanism = CKM_DSA;
                 break;
-#ifndef NSS_DISABLE_ECC
             case CKK_EC:
                 signature_length = MAX_ECKEY_LEN * 2;
                 mech.mechanism = CKM_ECDSA;
                 break;
-#endif
             default:
                 return CKR_DEVICE_ERROR;
         }
@@ -4746,12 +4735,10 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
     
     DHPrivateKey *dhPriv;
 
-#ifndef NSS_DISABLE_ECC
     
     SECItem ecEncodedParams; 
     ECPrivateKey *ecPriv;
     ECParams *ecParams;
-#endif 
 
     CHECK_FORK();
 
@@ -5097,7 +5084,6 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             PORT_FreeArena(dhPriv->arena, PR_TRUE);
             break;
 
-#ifndef NSS_DISABLE_ECC
         case CKM_EC_KEY_PAIR_GEN:
             sftk_DeleteAttributeType(privateKey, CKA_EC_PARAMS);
             sftk_DeleteAttributeType(privateKey, CKA_VALUE);
@@ -5166,7 +5152,6 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             
             PORT_FreeArena(ecPriv->ecParams.arena, PR_TRUE);
             break;
-#endif 
 
         default:
             crv = CKR_MECHANISM_INVALID;
@@ -5296,12 +5281,10 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
     void *dummy, *param = NULL;
     SECStatus rv = SECSuccess;
     SECItem *encodedKey = NULL;
-#ifndef NSS_DISABLE_ECC
 #ifdef EC_DEBUG
     SECItem *fordebug;
 #endif
     int savelen;
-#endif
 
     if (!key) {
         *crvp = CKR_KEY_HANDLE_INVALID; 
@@ -5353,7 +5336,6 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
                                        nsslowkey_PQGParamsTemplate);
             algorithm = SEC_OID_ANSIX9_DSA_SIGNATURE;
             break;
-#ifndef NSS_DISABLE_ECC
         case NSSLOWKEYECKey:
             prepare_low_ec_priv_key_for_asn1(lk);
             
@@ -5382,7 +5364,6 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
 
             algorithm = SEC_OID_ANSIX962_EC_PUBLIC_KEY;
             break;
-#endif 
         case NSSLOWKEYDHKey:
         default:
             dummy = NULL;
@@ -5641,8 +5622,7 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             prepare_low_dsa_priv_key_export_for_asn1(lpk);
             prepare_low_pqg_params_for_asn1(&lpk->u.dsa.params);
             break;
-
-#ifndef NSS_DISABLE_ECC
+        
         case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
             keyTemplate = nsslowkey_ECPrivateKeyTemplate;
             paramTemplate = NULL;
@@ -5651,7 +5631,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             prepare_low_ec_priv_key_for_asn1(lpk);
             prepare_low_ecparams_for_asn1(&lpk->u.ec.ecParams);
             break;
-#endif 
         default:
             keyTemplate = NULL;
             paramTemplate = NULL;
@@ -5666,7 +5645,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
     
     rv = SEC_QuickDERDecodeItem(arena, lpk, keyTemplate, &pki->privateKey);
 
-#ifndef NSS_DISABLE_ECC
     if (lpk->keyType == NSSLOWKEYECKey) {
         
         lpk->u.ec.publicValue.len >>= 3;
@@ -5677,7 +5655,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             goto loser;
         }
     }
-#endif 
 
     if (rv != SECSuccess) {
         goto loser;
@@ -5790,8 +5767,7 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             keyType = CKK_DH;
             break;
 #endif
-
-#ifndef NSS_DISABLE_ECC
+        
         case NSSLOWKEYECKey:
             keyType = CKK_EC;
             crv = (sftk_hasAttribute(key, CKA_NETSCAPE_DB)) ? CKR_OK : CKR_KEY_TYPE_INCONSISTENT;
@@ -5823,7 +5799,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
                 break;
             
             break;
-#endif 
         default:
             crv = CKR_KEY_TYPE_INCONSISTENT;
             break;
@@ -6153,7 +6128,6 @@ sftk_MapKeySize(CK_KEY_TYPE keyType)
     return 0;
 }
 
-#ifndef NSS_DISABLE_ECC
 
 
 
@@ -6266,7 +6240,6 @@ sftk_ANSI_X9_63_kdf(CK_BYTE **key, CK_ULONG key_len,
     else
         return CKR_MECHANISM_INVALID;
 }
-#endif 
 
 
 
@@ -7242,7 +7215,6 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             break;
         }
 
-#ifndef NSS_DISABLE_ECC
         case CKM_ECDH1_DERIVE:
         case CKM_ECDH1_COFACTOR_DERIVE: {
             SECItem ecScalar, ecPoint;
@@ -7382,7 +7354,6 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             }
             break;
         }
-#endif 
 
         
         case CKM_NSS_HKDF_SHA1:

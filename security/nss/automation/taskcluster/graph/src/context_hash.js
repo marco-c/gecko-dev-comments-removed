@@ -28,13 +28,23 @@ function collectFilesInDirectory(dir) {
 }
 
 
-export default function (context_path) {
+function collectFileHashes(context_path) {
   let root = path.join(__dirname, "../../../..");
   let dir = path.join(root, context_path);
   let files = collectFilesInDirectory(dir).sort();
-  let hashes = files.map(file => {
+
+  return files.map(file => {
     return sha256(file + "|" + fs.readFileSync(file, "utf-8"));
   });
+}
+
+
+export default function (context_path) {
+  
+  let hashes = collectFileHashes("automation/taskcluster/image_builder");
+
+  
+  hashes = hashes.concat(collectFileHashes(context_path));
 
   
   let now = new Date();

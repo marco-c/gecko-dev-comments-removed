@@ -2,8 +2,6 @@
 
 
 
-#ifndef NSS_DISABLE_ECC
-
 #ifdef FREEBL_NO_DEPEND
 #include "stubs.h"
 #endif
@@ -252,5 +250,3 @@ EC_GetPointSize(const ECParams *params)
     }
     return curveParams->pointSize - 1;
 }
-
-#endif 

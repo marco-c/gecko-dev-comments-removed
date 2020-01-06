@@ -380,7 +380,6 @@ CERTUTIL_FileForRNG(const char *noise)
     return SECSuccess;
 }
 
-#ifndef NSS_DISABLE_ECC
 typedef struct curveNameTagPairStr {
     char *curveName;
     SECOidTag curveOidTag;
@@ -506,7 +505,6 @@ getECParams(const char *curve)
 
     return ecparams;
 }
-#endif 
 
 SECKEYPrivateKey *
 CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
@@ -564,14 +562,12 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
                 params = (void *)&default_pqg_params;
             }
             break;
-#ifndef NSS_DISABLE_ECC
         case ecKey:
             mechanism = CKM_EC_KEY_PAIR_GEN;
             
             if ((params = (void *)getECParams(pqgFile)) == NULL)
                 return NULL;
             break;
-#endif 
         default:
             return NULL;
     }
@@ -589,11 +585,9 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
             if (dsaparams)
                 CERTUTIL_DestroyParamsPQG(dsaparams);
             break;
-#ifndef NSS_DISABLE_ECC
         case ecKey:
             SECITEM_FreeItem((SECItem *)params, PR_TRUE);
             break;
-#endif
         default: 
             break;
     }

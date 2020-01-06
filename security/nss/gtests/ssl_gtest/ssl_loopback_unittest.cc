@@ -168,24 +168,6 @@ TEST_P(TlsConnectDatagram, ConnectSrtp) {
   SendReceive();
 }
 
-
-
-TEST_P(TlsConnectStreamPre13, ConnectAndClientRenegotiate) {
-  Connect();
-  server_->PrepareForRenegotiate();
-  client_->StartRenegotiate();
-  Handshake();
-  CheckConnected();
-}
-
-TEST_P(TlsConnectStreamPre13, ConnectAndServerRenegotiate) {
-  Connect();
-  client_->PrepareForRenegotiate();
-  server_->StartRenegotiate();
-  Handshake();
-  CheckConnected();
-}
-
 TEST_P(TlsConnectGeneric, ConnectSendReceive) {
   Connect();
   SendReceive();
@@ -230,8 +212,8 @@ TEST_P(TlsConnectStream, ShortRead) {
 
 TEST_P(TlsConnectGeneric, ConnectWithCompressionEnabled) {
   EnsureTlsSetup();
-  client_->EnableCompression();
-  server_->EnableCompression();
+  client_->SetOption(SSL_ENABLE_DEFLATE, PR_TRUE);
+  server_->SetOption(SSL_ENABLE_DEFLATE, PR_TRUE);
   Connect();
   EXPECT_FALSE(client_->is_compressed());
   SendReceive();

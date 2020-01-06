@@ -1500,9 +1500,9 @@ ssl3_SendRenegotiationInfoXtn(
     
 
 
-
-    if (!ss || ss->ssl3.hs.sendingSCSV)
+    if (ss->ssl3.hs.sendingSCSV) {
         return 0;
+    }
     if (ss->firstHsDone) {
         len = ss->sec.isServer ? ss->ssl3.hs.finishedBytes * 2
                                : ss->ssl3.hs.finishedBytes;

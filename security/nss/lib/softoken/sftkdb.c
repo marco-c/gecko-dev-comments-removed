@@ -2311,6 +2311,13 @@ loser:
         crv = (*handle->update->sdb_GetMetaData)(handle->update, "password",
                                                  &item1, &item2);
         if (crv != CKR_OK) {
+            
+
+
+            item1.data[0] = 0;
+            item2.data[0] = 0;
+            item1.len = item2.len = 1;
+            crv = (*handle->db->sdb_PutMetaData)(handle->db, "empty", &item1, &item2);
             goto done;
         }
         crv = (*handle->db->sdb_PutMetaData)(handle->db, "password", &item1,
