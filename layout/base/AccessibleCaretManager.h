@@ -145,13 +145,13 @@ protected:
   
   
   
-  void UpdateCarets(UpdateCaretsHintSet aHints = UpdateCaretsHint::Default);
+  void UpdateCarets(const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
 
   
   void HideCarets();
 
-  void UpdateCaretsForCursorMode(UpdateCaretsHintSet aHints);
-  void UpdateCaretsForSelectionMode(UpdateCaretsHintSet aHints);
+  void UpdateCaretsForCursorMode(const UpdateCaretsHintSet& aHints);
+  void UpdateCaretsForSelectionMode(const UpdateCaretsHintSet& aHints);
 
   
   void ProvideHapticFeedback();
