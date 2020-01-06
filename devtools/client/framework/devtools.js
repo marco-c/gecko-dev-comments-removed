@@ -425,6 +425,9 @@ DevTools.prototype = {
 
 
 
+  _firstShowToolbox: true,
+
+  
 
 
 
@@ -441,7 +444,13 @@ DevTools.prototype = {
 
 
 
-  showToolbox: Task.async(function* (target, toolId, hostType, hostOptions) {
+
+
+
+
+
+
+  showToolbox: Task.async(function* (target, toolId, hostType, hostOptions, startTime) {
     let toolbox = this._toolboxes.get(target);
     if (toolbox) {
       if (hostType != null && toolbox.hostType != hostType) {
@@ -465,9 +474,36 @@ DevTools.prototype = {
       this._creatingToolboxes.set(target, toolboxPromise);
       toolbox = yield toolboxPromise;
       this._creatingToolboxes.delete(target);
+
+      if (startTime) {
+        this.logToolboxOpenTime(toolbox.currentToolId, startTime);
+      }
+      this._firstShowToolbox = false;
     }
     return toolbox;
   }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  logToolboxOpenTime(toolId, startTime) {
+    let { performance } = Services.appShell.hiddenDOMWindow;
+    let delay = performance.now() - startTime;
+    let telemetryKey = this._firstShowToolbox ?
+      "DEVTOOLS_COLD_TOOLBOX_OPEN_DELAY_MS" : "DEVTOOLS_WARM_TOOLBOX_OPEN_DELAY_MS";
+    let histogram = Services.telemetry.getKeyedHistogramById(telemetryKey);
+    histogram.add(toolId, delay);
+  },
 
   createToolbox: Task.async(function* (target, toolId, hostType, hostOptions) {
     let manager = new ToolboxHostManager(target, hostType, hostOptions);
@@ -578,10 +614,13 @@ DevTools.prototype = {
 
 
 
-  async inspectNode(tab, nodeSelectors) {
+
+
+
+  async inspectNode(tab, nodeSelectors, startTime) {
     let target = TargetFactory.forTab(tab);
 
-    let toolbox = await gDevTools.showToolbox(target, "inspector");
+    let toolbox = await gDevTools.showToolbox(target, "inspector", null, null, startTime);
     let inspector = toolbox.getCurrentPanel();
 
     

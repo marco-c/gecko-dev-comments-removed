@@ -160,12 +160,18 @@ this.DevToolsShim = {
 
 
   inspectNode: function (tab, selectors) {
+    
+    
+    
+    let { performance } = Services.appShell.hiddenDOMWindow;
+    let startTime = performance.now();
+
     let devtoolsReady = this._maybeInitializeDevTools("ContextMenu");
     if (!devtoolsReady) {
       return Promise.resolve();
     }
 
-    return this._gDevTools.inspectNode(tab, selectors);
+    return this._gDevTools.inspectNode(tab, selectors, startTime);
   },
 
   _onDevToolsRegistered: function () {

@@ -73,7 +73,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   
-  toggleToolboxCommand(gBrowser) {
+  toggleToolboxCommand(gBrowser, startTime) {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     let toolbox = gDevTools.getToolbox(target);
 
@@ -81,7 +81,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     
     
     let isDocked = toolbox && toolbox.hostType != Toolbox.HostType.WINDOW;
-    isDocked ? gDevTools.closeToolbox(target) : gDevTools.showToolbox(target);
+    if (isDocked) {
+      gDevTools.closeToolbox(target);
+    } else {
+      gDevTools.showToolbox(target, null, null, null, startTime);
+    }
   },
 
   
@@ -216,7 +220,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   
   
-  selectToolCommand(gBrowser, toolId) {
+  selectToolCommand(gBrowser, toolId, startTime) {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     let toolbox = gDevTools.getToolbox(target);
     let toolDefinition = gDevTools.getToolDefinition(toolId);
@@ -234,7 +238,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       }
       gDevTools.emit("select-tool-command", toolId);
     } else {
-      gDevTools.showToolbox(target, toolId).then(newToolbox => {
+      gDevTools.showToolbox(target, toolId, null, null, startTime).then(newToolbox => {
         newToolbox.fireCustomKey(toolId);
         gDevTools.emit("select-tool-command", toolId);
       });
@@ -254,17 +258,20 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  onKeyShortcut(window, key) {
+
+
+
+  onKeyShortcut(window, key, startTime) {
     
     if (key.toolId) {
-      gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId);
+      gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
       return;
     }
     
     switch (key.id) {
       case "toggleToolbox":
       case "toggleToolboxF12":
-        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser);
+        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
         break;
       case "toggleToolbar":
         gDevToolsBrowser.getDeveloperToolbar(window).focusToggle();
