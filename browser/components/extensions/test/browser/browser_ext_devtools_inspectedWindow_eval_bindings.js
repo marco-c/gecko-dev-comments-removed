@@ -138,6 +138,34 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
       });
       let objectInspectors = [...messageNode.querySelectorAll(".tree")];
       is(objectInspectors.length, 1, "There is the expected number of object inspectors");
+
+      
+      const [oi] = objectInspectors;
+      let nodes = oi.querySelectorAll(".node");
+
+      ok(nodes.length >= 1, "The object preview is rendered as expected");
+
+      
+      if (nodes.length === 1) {
+        info("Waiting for the object properties to be displayed");
+        
+        await new Promise(resolve => {
+          const observer = new MutationObserver(mutations => {
+            resolve();
+            observer.disconnect();
+          });
+          observer.observe(oi, {childList: true});
+        });
+
+        
+        nodes = oi.querySelectorAll(".node");
+      }
+
+      
+      
+      
+      
+      is(nodes.length, 3, "The object preview has the expected number of nodes");
     } else {
       const options = await new Promise(resolve => {
         jsterm.once("variablesview-open", (evt, view, options) => resolve(options));
