@@ -853,6 +853,22 @@ this.PlacesDBUtils = {
     });
 
     
+    cleanupStatements.push({
+      query:
+      `UPDATE moz_bookmarks
+       SET dateAdded = COALESCE(dateAdded, lastModified, (
+             SELECT MIN(visit_date) FROM moz_historyvisits
+             WHERE place_id = fk
+           ), STRFTIME('%s', 'now', 'localtime', 'utc') * 1000000),
+           lastModified = COALESCE(lastModified, dateAdded, (
+             SELECT MAX(visit_date) FROM moz_historyvisits
+             WHERE place_id = fk
+           ), STRFTIME('%s', 'now', 'localtime', 'utc') * 1000000)
+       WHERE dateAdded IS NULL OR
+             lastModified IS NULL`,
+    });
+
+    
 
     return cleanupStatements;
   },
