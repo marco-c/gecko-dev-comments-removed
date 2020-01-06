@@ -436,8 +436,8 @@ pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevine
 #else
 pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMF,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaUnsupportedLibavcodec");
 #endif
-pref("media.decoder-doctor.decode-errors-allowed", "");
-pref("media.decoder-doctor.decode-warnings-allowed", "");
+pref("media.decoder-doctor.decode-errors-allowed", "NS_ERROR_DOM_MEDIA_DEMUXER_ERR, NS_ERROR_DOM_MEDIA_METADATA_ERR");
+pref("media.decoder-doctor.decode-warnings-allowed", "NS_ERROR_DOM_MEDIA_DEMUXER_ERR, NS_ERROR_DOM_MEDIA_METADATA_ERR");
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -488,7 +488,6 @@ pref("media.peerconnection.video.h264_enabled", false);
 pref("media.peerconnection.video.vp9_enabled", true);
 pref("media.getusermedia.aec", 1);
 pref("media.getusermedia.browser.enabled", false);
-pref("media.getusermedia.channels", 0);
 
 
 pref("media.peerconnection.video.min_bitrate", 0);
@@ -4685,7 +4684,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
-pref("network.tcp.tcp_fastopen_enable", false);
+pref("network.tcp.tcp_fastopen_enable", true);
 pref("network.tcp.tcp_fastopen_consecutive_failure_limit", 5);
 
 
@@ -5726,7 +5725,11 @@ pref("fuzzing.enabled", false);
 #endif
 
 #if defined(XP_WIN)
+#if defined(NIGHTLY_BUILD)
+pref("layers.mlgpu.dev-enabled", true);
+#else
 pref("layers.mlgpu.dev-enabled", false);
+#endif
 
 
 
