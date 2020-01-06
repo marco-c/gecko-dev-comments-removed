@@ -7492,8 +7492,7 @@ nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
                          aBorderPadding.BEnd(wm));
 
   if (aStatus->IsIncomplete() &&
-      aFinalSize.BSize(wm) < aReflowInput.AvailableBSize()) {
-    
+      aFinalSize.BSize(wm) <= aReflowInput.AvailableBSize()) {
     
     
     aStatus->SetOverflowIncomplete();
