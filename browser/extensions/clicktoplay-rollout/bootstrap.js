@@ -14,8 +14,8 @@ Cu.import("resource://gre/modules/TelemetryEnvironment.jsm");
 
 
 const TEST_THRESHOLD = {
-  "beta": 0.5,  
-  "release": 0.05,  
+  "beta": 1.0,  
+  "release": 0.25,  
 };
 
 if (AppConstants.RELEASE_OR_BETA) {
@@ -73,6 +73,7 @@ function defineCohort() {
     case undefined:
     case "test":
     case "control":
+    case "excluded":
     {
       
       
