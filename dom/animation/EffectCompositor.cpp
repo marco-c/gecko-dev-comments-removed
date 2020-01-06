@@ -982,6 +982,16 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
              "Traversal root, if provided, should be bound to a display "
              "document");
 
+  
+  
+  
+  
+  if (aRoot &&
+      (aRoot->IsGeneratedContentContainerForBefore() ||
+       aRoot->IsGeneratedContentContainerForAfter())) {
+    aRoot = aRoot->GetParentElement();
+  }
+
   AutoRestore<bool> guard(mIsInPreTraverse);
   mIsInPreTraverse = true;
 
