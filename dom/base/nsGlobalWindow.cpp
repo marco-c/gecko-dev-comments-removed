@@ -4,12 +4,12 @@
 
 
 
+#include <stdint.h>
+
 static const char kStorageEnabled[] = "dom.storage.enabled";
 
-static int32_t              gRefCnt                           = 0;
 static bool                 gMouseDown                        = false;
 static bool                 gDragServiceDisabled              = false;
-static uint32_t             gSerialCounter                    = 0;
 
 
 #include "nsGlobalWindowOuter.cpp"

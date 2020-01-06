@@ -3273,6 +3273,13 @@ public:
 
   static PopupControlState GetPopupControlState() { return sPopupControlState; }
 
+  
+  static uint32_t InnerOrOuterWindowCreated();
+  
+  static void InnerOrOuterWindowDestroyed();
+  
+  static int32_t GetCurrentInnerOrOuterWindowCount() { return sInnerOrOuterWindowCount; }
+
 private:
   static bool InitializeEventTable();
 
@@ -3463,6 +3470,9 @@ private:
   static mozilla::LazyLogModule sDOMDumpLog;
 
   static PopupControlState sPopupControlState;
+
+  static int32_t sInnerOrOuterWindowCount;
+  static uint32_t sInnerOrOuterWindowSerialCounter;
 };
 
  inline
