@@ -4127,8 +4127,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     
     
     
-    itemVisibleRect = itemVisibleRect.Intersect(
-      ScaleToOutsidePixels(item->GetVisibleRect(), false));
+    if (!prerenderedTransform) {
+      itemVisibleRect = itemVisibleRect.Intersect(
+        ScaleToOutsidePixels(item->GetVisibleRect(), false));
+    }
 
     if (maxLayers != -1 && layerCount >= maxLayers) {
       forceInactive = true;
