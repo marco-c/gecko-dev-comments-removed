@@ -217,6 +217,9 @@ RenderFrameParent::AttachLayerManager()
     if (content) {
       lm = nsContentUtils::LayerManagerForContent(content);
     }
+    if (!lm) {
+      lm = GetFrom(mFrameLoader);
+    }
   }
 
   
