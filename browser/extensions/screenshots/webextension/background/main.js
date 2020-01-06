@@ -18,16 +18,10 @@ this.main = (function() {
     if (!hasSeenOnboarding) {
       setIconActive(false, null);
       
-      if (!startBackground.usePhotonPageAction) {
-        browser.browserAction.setTitle({
-          title: "Firefox Screenshots"
-        });
-      } else {
-        startBackground.photonPageActionPort.postMessage({
-          type: "setProperties",
-          title: "Firefox Screenshots"
-        });
-      }
+      startBackground.photonPageActionPort.postMessage({
+        type: "setProperties",
+        title: "Firefox Screenshots"
+      });
     }
   }).catch((error) => {
     log.error("Error getting hasSeenOnboarding:", error);
@@ -62,21 +56,10 @@ this.main = (function() {
     if ((!hasSeenOnboarding) && !active) {
       path = "icons/icon-starred-32-v2.svg";
     }
-    if (!startBackground.usePhotonPageAction) {
-      browser.browserAction.setIcon({path, tabId}).catch((error) => {
-        
-        if (error.message && /Invalid tab ID/.test(error.message)) {
-          
-        } else {
-          catcher.unhandled(error);
-        }
-      });
-    } else {
-      startBackground.photonPageActionPort.postMessage({
-        type: "setProperties",
-        iconPath: path
-      });
-    }
+    startBackground.photonPageActionPort.postMessage({
+      type: "setProperties",
+      iconPath: path
+    });
   }
 
   function toggleSelector(tab) {
@@ -111,7 +94,6 @@ this.main = (function() {
     return /^about:(?:newtab|blank|home)/i.test(url) || /^resource:\/\/activity-streams\//i.test(url);
   }
 
-  
   
   exports.onClicked = catcher.watchFunction((tab) => {
     if (tab.incognito) {
@@ -289,16 +271,10 @@ this.main = (function() {
     hasSeenOnboarding = true;
     catcher.watchPromise(browser.storage.local.set({hasSeenOnboarding}));
     setIconActive(false, null);
-    if (!startBackground.usePhotonPageAction) {
-      browser.browserAction.setTitle({
-        title: browser.i18n.getMessage("contextMenuLabel")
-      });
-    } else {
-      startBackground.photonPageActionPort.postMessage({
-        type: "setProperties",
-        title: browser.i18n.getMessage("contextMenuLabel")
-      });
-    }
+    startBackground.photonPageActionPort.postMessage({
+      type: "setProperties",
+      title: browser.i18n.getMessage("contextMenuLabel")
+    });
   });
 
   communication.register("abortFrameset", () => {
