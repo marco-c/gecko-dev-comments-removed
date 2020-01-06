@@ -30,7 +30,7 @@
 }
 
 #customization-header {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 1.2em;
   margin: 20px 20px 15px;
 }
@@ -419,11 +419,16 @@ toolbarpaletteitem[place=toolbar] > toolbarspring {
   color: var(--arrowpanel-color);
   background: var(--arrowpanel-background);
   background-clip: padding-box;
-  border: 1px solid var(--arrowpanel-border-color);
-  box-shadow: 0 0 10px hsla(0,0%,0%,.2);
 %ifdef XP_MACOSX
+  
+
+  border: 1px solid var(--arrowpanel-dimmed-even-further);
+  box-shadow: 0 4px 10px hsla(0,0%,0%,.3);
   -moz-appearance: none;
   border-radius: var(--arrowpanel-border-radius);
+%else
+  border: 1px solid var(--arrowpanel-border-color);
+  box-shadow: 0 0 4px hsla(0,0%,0%,.2);
 %endif
 }
 
@@ -431,6 +436,17 @@ toolbarpaletteitem[place=toolbar] > toolbarspring {
   position: relative;
   height: 10px;
   margin-bottom: -1px;
+}
+
+
+#nav-bar[customizing] > .overflow-button {
+  
+  fill: hsla(0,0%,30%,.4);
+}
+
+#nav-bar[customizing] > .overflow-button > .toolbarbutton-icon {
+  background-color: var(--toolbarbutton-active-background);
+  opacity: 1;
 }
 
 #customization-panelWrapper > .panel-arrowbox > .panel-arrow[side="top"] {
@@ -461,7 +477,7 @@ toolbarpaletteitem[place=toolbar] > toolbarspring {
 
 
 
-  margin-inline-end: calc(4px + 3 * var(--toolbarbutton-inner-padding));
+  margin-inline-end: calc(9px + 3 * var(--toolbarbutton-inner-padding));
   vertical-align: top;
 }
 
