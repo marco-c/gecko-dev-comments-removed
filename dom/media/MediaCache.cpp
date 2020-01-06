@@ -1176,6 +1176,8 @@ MediaCache::Update()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
+  ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+
   struct StreamAction
   {
     enum
@@ -1196,283 +1198,272 @@ MediaCache::Update()
   
   AutoTArray<StreamAction,10> actions;
 
-  {
-    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    mUpdateQueued = false;
+  mUpdateQueued = false;
 #ifdef DEBUG
-    mInUpdate = true;
+  mInUpdate = true;
 #endif
 
-    int32_t maxBlocks = mBlockCache->GetMaxBlocks();
-    TimeStamp now = TimeStamp::Now();
+  int32_t maxBlocks = mBlockCache->GetMaxBlocks();
+  TimeStamp now = TimeStamp::Now();
 
-    int32_t freeBlockCount = mFreeBlocks.GetCount();
-    TimeDuration latestPredictedUseForOverflow = 0;
-    if (mIndex.Length() > uint32_t(maxBlocks)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
-           --blockIndex) {
-        if (IsBlockFree(blockIndex)) {
-          
-          --freeBlockCount;
-          continue;
-        }
-        TimeDuration predictedUse = PredictNextUse(now, blockIndex);
-        latestPredictedUseForOverflow = std::max(latestPredictedUseForOverflow, predictedUse);
-      }
-    } else {
-      freeBlockCount += maxBlocks - mIndex.Length();
-    }
-
+  int32_t freeBlockCount = mFreeBlocks.GetCount();
+  TimeDuration latestPredictedUseForOverflow = 0;
+  if (mIndex.Length() > uint32_t(maxBlocks)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
          --blockIndex) {
-      if (IsBlockFree(blockIndex))
-        continue;
-
-      Block* block = &mIndex[blockIndex];
-      
-      
-      
-      int32_t destinationBlockIndex =
-        FindReusableBlock(now, block->mOwners[0].mStream,
-                          block->mOwners[0].mStreamBlock, maxBlocks);
-      if (destinationBlockIndex < 0) {
+      if (IsBlockFree(blockIndex)) {
         
-        
-        break;
-      }
-
-      if (IsBlockFree(destinationBlockIndex) ||
-          PredictNextUse(now, destinationBlockIndex) > latestPredictedUseForOverflow) {
-        
-        
-
-        nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
-
-        if (NS_SUCCEEDED(rv)) {
-          
-          LOG("Swapping blocks %d and %d (trimming cache)",
-              blockIndex, destinationBlockIndex);
-          
-          
-          SwapBlocks(blockIndex, destinationBlockIndex);
-          
-          LOG("Released block %d (trimming cache)", blockIndex);
-          FreeBlock(blockIndex);
-        }
-      } else {
-        LOG("Could not trim cache block %d (destination %d, "
-            "predicted next use %f, latest predicted use for overflow %f",
-            blockIndex, destinationBlockIndex,
-            PredictNextUse(now, destinationBlockIndex).ToSeconds(),
-            latestPredictedUseForOverflow.ToSeconds());
-      }
-    }
-    
-    Truncate();
-
-    
-    
-    
-    int32_t nonSeekableReadaheadBlockCount = 0;
-    for (uint32_t i = 0; i < mStreams.Length(); ++i) {
-      MediaCacheStream* stream = mStreams[i];
-      if (!stream->mIsTransportSeekable) {
-        nonSeekableReadaheadBlockCount += stream->mReadaheadBlocks.GetCount();
-      }
-    }
-
-    
-    
-    TimeDuration latestNextUse;
-    if (freeBlockCount == 0) {
-      int32_t reusableBlock = FindReusableBlock(now, nullptr, 0, maxBlocks);
-      if (reusableBlock >= 0) {
-        latestNextUse = PredictNextUse(now, reusableBlock);
-      }
-    }
-
-    int32_t resumeThreshold = Preferences::GetInt("media.cache_resume_threshold", 10);
-    int32_t readaheadLimit = Preferences::GetInt("media.cache_readahead_limit", 30);
-
-    for (uint32_t i = 0; i < mStreams.Length(); ++i) {
-      actions.AppendElement(StreamAction{});
-
-      MediaCacheStream* stream = mStreams[i];
-      if (stream->mClosed) {
-        LOG("Stream %p closed", stream);
+        --freeBlockCount;
         continue;
       }
-
-      
-      
-      int64_t dataOffset = stream->GetCachedDataEndInternal(stream->mStreamOffset);
-      MOZ_ASSERT(dataOffset >= 0);
-
-      
-      int64_t desiredOffset = dataOffset;
-      if (stream->mIsTransportSeekable) {
-        if (desiredOffset > stream->mChannelOffset &&
-            desiredOffset <= stream->mChannelOffset + SEEK_VS_READ_THRESHOLD) {
-          
-          
-          desiredOffset = stream->mChannelOffset;
-        }
-      } else {
-        
-        if (stream->mChannelOffset > desiredOffset) {
-          
-          
-          
-          NS_WARNING("Can't seek backwards, so seeking to 0");
-          desiredOffset = 0;
-          
-          
-          
-          
-          ReleaseStreamBlocks(stream);
-        } else {
-          
-          
-          desiredOffset = stream->mChannelOffset;
-        }
-      }
-
-      
-      
-      bool enableReading;
-      if (stream->mStreamLength >= 0 && dataOffset >= stream->mStreamLength) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        LOG("Stream %p at end of stream", stream);
-        enableReading = !stream->mCacheSuspended &&
-          stream->mStreamLength == stream->mChannelOffset;
-      } else if (desiredOffset < stream->mStreamOffset) {
-        
-        
-        LOG("Stream %p catching up", stream);
-        enableReading = true;
-      } else if (desiredOffset < stream->mStreamOffset + BLOCK_SIZE) {
-        
-        LOG("Stream %p feeding reader", stream);
-        enableReading = true;
-      } else if (!stream->mIsTransportSeekable &&
-                 nonSeekableReadaheadBlockCount >= maxBlocks*NONSEEKABLE_READAHEAD_MAX) {
-        
-        
-        
-        LOG("Stream %p throttling non-seekable readahead", stream);
-        enableReading = false;
-      } else if (mIndex.Length() > uint32_t(maxBlocks)) {
-        
-        
-        LOG("Stream %p throttling to reduce cache size", stream);
-        enableReading = false;
-      } else {
-        TimeDuration predictedNewDataUse = PredictNextUseForIncomingData(stream);
-
-        if (stream->mThrottleReadahead &&
-            stream->mCacheSuspended &&
-            predictedNewDataUse.ToSeconds() > resumeThreshold) {
-          
-          LOG("Stream %p avoiding wakeup since more data is not needed", stream);
-          enableReading = false;
-        } else if (stream->mThrottleReadahead &&
-                   predictedNewDataUse.ToSeconds() > readaheadLimit) {
-          
-          LOG("Stream %p throttling to avoid reading ahead too far", stream);
-          enableReading = false;
-        } else if (freeBlockCount > 0) {
-          
-          LOG("Stream %p reading since there are free blocks", stream);
-          enableReading = true;
-        } else if (latestNextUse <= TimeDuration(0)) {
-          
-          LOG("Stream %p throttling due to no reusable blocks", stream);
-          enableReading = false;
-        } else {
-          
-          
-          LOG("Stream %p predict next data in %f, current worst block is %f",
-              stream, predictedNewDataUse.ToSeconds(), latestNextUse.ToSeconds());
-          enableReading = predictedNewDataUse < latestNextUse;
-        }
-      }
-
-      if (enableReading) {
-        for (uint32_t j = 0; j < i; ++j) {
-          MediaCacheStream* other = mStreams[j];
-          if (other->mResourceID == stream->mResourceID && !other->mClosed &&
-              !other->mClient->IsSuspended() &&
-              OffsetToBlockIndexUnchecked(other->mChannelOffset) ==
-                OffsetToBlockIndexUnchecked(desiredOffset)) {
-            
-            
-            enableReading = false;
-            LOG("Stream %p waiting on same block (%" PRId32 ") from stream %p",
-                stream,
-                OffsetToBlockIndexUnchecked(desiredOffset),
-                other);
-            break;
-          }
-        }
-      }
-
-      if (stream->mChannelOffset != desiredOffset && enableReading) {
-        
-        NS_ASSERTION(stream->mIsTransportSeekable || desiredOffset == 0,
-                     "Trying to seek in a non-seekable stream!");
-        
-        
-        
-        stream->mChannelOffset =
-          OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
-        actions[i].mTag = StreamAction::SEEK;
-        actions[i].mResume = stream->mCacheSuspended;
-        actions[i].mSeekTarget = stream->mChannelOffset;
-        
-        
-        
-        stream->mLoadID = 0;
-      } else if (enableReading && stream->mCacheSuspended) {
-        actions[i].mTag = StreamAction::RESUME;
-      } else if (!enableReading && !stream->mCacheSuspended) {
-        actions[i].mTag = StreamAction::SUSPEND;
-      }
+      TimeDuration predictedUse = PredictNextUse(now, blockIndex);
+      latestPredictedUseForOverflow = std::max(latestPredictedUseForOverflow, predictedUse);
     }
-#ifdef DEBUG
-    mInUpdate = false;
-#endif
+  } else {
+    freeBlockCount += maxBlocks - mIndex.Length();
+  }
+
+  
+  for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
+       --blockIndex) {
+    if (IsBlockFree(blockIndex))
+      continue;
+
+    Block* block = &mIndex[blockIndex];
+    
+    
+    
+    int32_t destinationBlockIndex =
+      FindReusableBlock(now, block->mOwners[0].mStream,
+                        block->mOwners[0].mStreamBlock, maxBlocks);
+    if (destinationBlockIndex < 0) {
+      
+      
+      break;
+    }
+
+    if (IsBlockFree(destinationBlockIndex) ||
+        PredictNextUse(now, destinationBlockIndex) > latestPredictedUseForOverflow) {
+      
+      
+
+      nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
+
+      if (NS_SUCCEEDED(rv)) {
+        
+        LOG("Swapping blocks %d and %d (trimming cache)",
+            blockIndex, destinationBlockIndex);
+        
+        
+        SwapBlocks(blockIndex, destinationBlockIndex);
+        
+        LOG("Released block %d (trimming cache)", blockIndex);
+        FreeBlock(blockIndex);
+      }
+    } else {
+      LOG("Could not trim cache block %d (destination %d, "
+          "predicted next use %f, latest predicted use for overflow %f",
+          blockIndex, destinationBlockIndex,
+          PredictNextUse(now, destinationBlockIndex).ToSeconds(),
+          latestPredictedUseForOverflow.ToSeconds());
+    }
+  }
+  
+  Truncate();
+
+  
+  
+  
+  int32_t nonSeekableReadaheadBlockCount = 0;
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    MediaCacheStream* stream = mStreams[i];
+    if (!stream->mIsTransportSeekable) {
+      nonSeekableReadaheadBlockCount += stream->mReadaheadBlocks.GetCount();
+    }
   }
 
   
   
-  
-  
-  
-  
-  
+  TimeDuration latestNextUse;
+  if (freeBlockCount == 0) {
+    int32_t reusableBlock = FindReusableBlock(now, nullptr, 0, maxBlocks);
+    if (reusableBlock >= 0) {
+      latestNextUse = PredictNextUse(now, reusableBlock);
+    }
+  }
+
+  int32_t resumeThreshold = Preferences::GetInt("media.cache_resume_threshold", 10);
+  int32_t readaheadLimit = Preferences::GetInt("media.cache_readahead_limit", 30);
+
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    actions.AppendElement(StreamAction{});
+
+    MediaCacheStream* stream = mStreams[i];
+    if (stream->mClosed) {
+      LOG("Stream %p closed", stream);
+      continue;
+    }
+
+    
+    
+    int64_t dataOffset = stream->GetCachedDataEndInternal(stream->mStreamOffset);
+    MOZ_ASSERT(dataOffset >= 0);
+
+    
+    int64_t desiredOffset = dataOffset;
+    if (stream->mIsTransportSeekable) {
+      if (desiredOffset > stream->mChannelOffset &&
+          desiredOffset <= stream->mChannelOffset + SEEK_VS_READ_THRESHOLD) {
+        
+        
+        desiredOffset = stream->mChannelOffset;
+      }
+    } else {
+      
+      if (stream->mChannelOffset > desiredOffset) {
+        
+        
+        
+        NS_WARNING("Can't seek backwards, so seeking to 0");
+        desiredOffset = 0;
+        
+        
+        
+        
+        ReleaseStreamBlocks(stream);
+      } else {
+        
+        
+        desiredOffset = stream->mChannelOffset;
+      }
+    }
+
+    
+    
+    bool enableReading;
+    if (stream->mStreamLength >= 0 && dataOffset >= stream->mStreamLength) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      LOG("Stream %p at end of stream", stream);
+      enableReading = !stream->mCacheSuspended &&
+        stream->mStreamLength == stream->mChannelOffset;
+    } else if (desiredOffset < stream->mStreamOffset) {
+      
+      
+      LOG("Stream %p catching up", stream);
+      enableReading = true;
+    } else if (desiredOffset < stream->mStreamOffset + BLOCK_SIZE) {
+      
+      LOG("Stream %p feeding reader", stream);
+      enableReading = true;
+    } else if (!stream->mIsTransportSeekable &&
+               nonSeekableReadaheadBlockCount >= maxBlocks*NONSEEKABLE_READAHEAD_MAX) {
+      
+      
+      
+      LOG("Stream %p throttling non-seekable readahead", stream);
+      enableReading = false;
+    } else if (mIndex.Length() > uint32_t(maxBlocks)) {
+      
+      
+      LOG("Stream %p throttling to reduce cache size", stream);
+      enableReading = false;
+    } else {
+      TimeDuration predictedNewDataUse = PredictNextUseForIncomingData(stream);
+
+      if (stream->mThrottleReadahead &&
+          stream->mCacheSuspended &&
+          predictedNewDataUse.ToSeconds() > resumeThreshold) {
+        
+        LOG("Stream %p avoiding wakeup since more data is not needed", stream);
+        enableReading = false;
+      } else if (stream->mThrottleReadahead &&
+                 predictedNewDataUse.ToSeconds() > readaheadLimit) {
+        
+        LOG("Stream %p throttling to avoid reading ahead too far", stream);
+        enableReading = false;
+      } else if (freeBlockCount > 0) {
+        
+        LOG("Stream %p reading since there are free blocks", stream);
+        enableReading = true;
+      } else if (latestNextUse <= TimeDuration(0)) {
+        
+        LOG("Stream %p throttling due to no reusable blocks", stream);
+        enableReading = false;
+      } else {
+        
+        
+        LOG("Stream %p predict next data in %f, current worst block is %f",
+            stream, predictedNewDataUse.ToSeconds(), latestNextUse.ToSeconds());
+        enableReading = predictedNewDataUse < latestNextUse;
+      }
+    }
+
+    if (enableReading) {
+      for (uint32_t j = 0; j < i; ++j) {
+        MediaCacheStream* other = mStreams[j];
+        if (other->mResourceID == stream->mResourceID && !other->mClosed &&
+            !other->mClient->IsSuspended() &&
+            OffsetToBlockIndexUnchecked(other->mChannelOffset) ==
+              OffsetToBlockIndexUnchecked(desiredOffset)) {
+          
+          
+          enableReading = false;
+          LOG("Stream %p waiting on same block (%" PRId32 ") from stream %p",
+              stream,
+              OffsetToBlockIndexUnchecked(desiredOffset),
+              other);
+          break;
+        }
+      }
+    }
+
+    if (stream->mChannelOffset != desiredOffset && enableReading) {
+      
+      NS_ASSERTION(stream->mIsTransportSeekable || desiredOffset == 0,
+                   "Trying to seek in a non-seekable stream!");
+      
+      
+      
+      stream->mChannelOffset =
+        OffsetToBlockIndexUnchecked(desiredOffset) * BLOCK_SIZE;
+      actions[i].mTag = StreamAction::SEEK;
+      actions[i].mResume = stream->mCacheSuspended;
+      actions[i].mSeekTarget = stream->mChannelOffset;
+      
+      
+      
+      stream->mLoadID = 0;
+    } else if (enableReading && stream->mCacheSuspended) {
+      actions[i].mTag = StreamAction::RESUME;
+    } else if (!enableReading && !stream->mCacheSuspended) {
+      actions[i].mTag = StreamAction::SUSPEND;
+    }
+  }
+#ifdef DEBUG
+  mInUpdate = false;
+#endif
 
   
   
