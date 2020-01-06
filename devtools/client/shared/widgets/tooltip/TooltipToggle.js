@@ -154,7 +154,7 @@ TooltipToggle.prototype = {
 
   _onMouseOut: function (event) {
     
-    if (event && this._baseNode && this._baseNode.contains(event.relatedTarget)) {
+    if (event && this._baseNode && !this._baseNode.contains(event.relatedTarget)) {
       return;
     }
 
