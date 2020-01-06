@@ -5830,6 +5830,14 @@ nsContentUtils::RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable)
 }
 
 
+bool
+nsContentUtils::IsInStableOrMetaStableState()
+{
+  MOZ_ASSERT(CycleCollectedJSContext::Get(), "Must be on a script thread!");
+  return CycleCollectedJSContext::Get()->IsInStableOrMetaStableState();
+}
+
+
 nsISerialEventTarget*
 nsContentUtils::GetStableStateEventTarget()
 {

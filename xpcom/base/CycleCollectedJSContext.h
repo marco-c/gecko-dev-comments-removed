@@ -242,6 +242,11 @@ public:
 
   void DispatchMicroTaskRunnable(already_AddRefed<MicroTaskRunnable> aRunnable);
 
+  bool IsInStableOrMetaStableState()
+  {
+    return mDoingStableStates;
+  }
+
   
   
   

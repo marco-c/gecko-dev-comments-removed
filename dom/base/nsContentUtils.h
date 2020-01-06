@@ -1975,6 +1975,11 @@ public:
   
 
 
+  static bool IsInStableOrMetaStableState();
+
+  
+
+
 
 
 
