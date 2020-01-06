@@ -3071,7 +3071,6 @@ SearchService.prototype = {
 
 
 
-
   _readCacheFile: function SRCH_SVC__readCacheFile() {
     if (this._cacheFileJSON) {
       return this._cacheFileJSON;
@@ -3107,36 +3106,6 @@ SearchService.prototype = {
       return json;
     } catch (ex) {
       LOG("_readCacheFile: Error reading cache file: " + ex);
-    } finally {
-      stream.close();
-    }
-
-    try {
-      cacheFile.leafName = "search-metadata.json";
-      stream = Cc["@mozilla.org/network/file-input-stream;1"].
-                 createInstance(Ci.nsIFileInputStream);
-      stream.init(cacheFile, MODE_RDONLY, PERMS_FILE, 0);
-      let metadata = parseJsonFromStream(stream);
-      let json = {};
-      if ("[global]" in metadata) {
-        LOG("_readCacheFile: migrating metadata from search-metadata.json");
-        let data = metadata["[global]"];
-        json.metaData = {};
-        let fields = ["searchDefault", "searchDefaultHash",
-                      "current", "hash",
-                      "visibleDefaultEngines", "visibleDefaultEnginesHash"];
-        for (let field of fields) {
-          let name = field.toLowerCase();
-          if (name in data)
-            json.metaData[field] = data[name];
-        }
-      }
-      delete metadata["[global]"];
-      json._oldMetadata = metadata;
-
-      return json;
-    } catch (ex) {
-      LOG("_readCacheFile: failed to read old metadata: " + ex);
       return {};
     } finally {
       stream.close();
@@ -3144,7 +3113,6 @@ SearchService.prototype = {
   },
 
   
-
 
 
 
@@ -3168,28 +3136,6 @@ SearchService.prototype = {
     } catch (ex) {
       LOG("_asyncReadCacheFile: Error reading cache file: " + ex);
       json = {};
-
-      let oldMetadata =
-        OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-      try {
-        let bytes = await OS.File.read(oldMetadata);
-        let metadata = JSON.parse(new TextDecoder().decode(bytes));
-        if ("[global]" in metadata) {
-          LOG("_asyncReadCacheFile: migrating metadata from search-metadata.json");
-          let data = metadata["[global]"];
-          json.metaData = {};
-          let fields = ["searchDefault", "searchDefaultHash",
-                        "current", "hash",
-                        "visibleDefaultEngines", "visibleDefaultEnginesHash"];
-          for (let field of fields) {
-            let name = field.toLowerCase();
-            if (name in data)
-              json.metaData[field] = data[name];
-          }
-        }
-        delete metadata["[global]"];
-        json._oldMetadata = metadata;
-      } catch (ex) {}
     }
     if (!gInitialized && json.metaData)
       this._metaData = json.metaData;
@@ -3265,17 +3211,6 @@ SearchService.prototype = {
   },
 
   _loadEnginesMetadataFromCache: function SRCH_SVC__loadEnginesMetadataFromCache(cache) {
-    if (cache._oldMetadata) {
-      
-      
-      for (let name in this._engines) {
-        let engine = this._engines[name];
-        if (engine._id && cache._oldMetadata[engine._id])
-          engine._metaData = cache._oldMetadata[engine._id];
-      }
-      return;
-    }
-
     if (!cache.engines)
       return;
 
