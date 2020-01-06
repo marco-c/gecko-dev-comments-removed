@@ -144,7 +144,7 @@ public:
   void AppendAllChildSheets(nsTArray<StyleSheet*>& aArray);
 
   
-  enum DocumentAssociationMode : uint8_t {
+  enum DocumentAssociationMode {
     
     
     OwnedByDocument,
@@ -332,8 +332,6 @@ protected:
   const StyleBackendType mType;
   bool                  mDisabled;
 
-  bool mDirty; 
-
   
   
   
@@ -342,6 +340,8 @@ protected:
   
   
   StyleSheetInfo* mInner;
+
+  bool mDirty; 
 
   nsTArray<StyleSetHandle> mStyleSets;
 
