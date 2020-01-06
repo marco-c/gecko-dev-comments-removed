@@ -315,6 +315,11 @@ public:
   
   void TypesListMayHaveChanged();
 
+  
+  
+  already_AddRefed<DataTransfer> MozCloneForEvent(const nsAString& aEvent,
+                                                  ErrorResult& aRv);
+
 protected:
 
   
