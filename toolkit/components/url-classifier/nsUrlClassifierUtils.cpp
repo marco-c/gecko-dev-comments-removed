@@ -253,6 +253,9 @@ static const struct {
   { "goog-downloadwhite-proto", CSD_DOWNLOAD_WHITELIST},  
 
   
+  { "goog-passwordwhite-proto", CSD_WHITELIST}, 
+
+  
   { "test-phish-proto",    SOCIAL_ENGINEERING_PUBLIC}, 
   { "test-unwanted-proto", UNWANTED_SOFTWARE},         
 };
