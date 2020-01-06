@@ -366,19 +366,41 @@ this.BrowserTestUtils = {
 
 
 
-  waitForNewTab(tabbrowser, url) {
+
+
+
+  waitForNewTab(tabbrowser, url, waitForLoad = false) {
+    let urlMatches = url ? (urlToMatch) => urlToMatch == url
+                         : (urlToMatch) => urlToMatch != "about:blank";
     return new Promise((resolve, reject) => {
       tabbrowser.tabContainer.addEventListener("TabOpen", function(openEvent) {
+        let newTab = openEvent.target;
+        let newBrowser = newTab.linkedBrowser;
+        let result;
+        if (waitForLoad) {
+          
+          
+          result = BrowserTestUtils.browserLoaded(newBrowser, false, urlMatches)
+                                   .then(() => newTab);
+        } else {
+          
+          result = newTab;
+        }
+
         let progressListener = {
           onLocationChange(aBrowser) {
-            if (aBrowser != openEvent.target.linkedBrowser ||
-                (url && aBrowser.currentURI.spec != url) ||
-                (!url && aBrowser.currentURI.spec == "about:blank")) {
+            
+            if (aBrowser != newBrowser) {
+              return;
+            }
+
+            
+            if (!urlMatches(aBrowser.currentURI.spec)) {
               return;
             }
 
             tabbrowser.removeTabsProgressListener(progressListener);
-            resolve(openEvent.target);
+            resolve(result);
           },
         };
         tabbrowser.addTabsProgressListener(progressListener);
