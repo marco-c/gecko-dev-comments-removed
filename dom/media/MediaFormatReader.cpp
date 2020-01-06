@@ -2019,21 +2019,21 @@ MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
   decoder.mFlushed = false;
   decoder.mDecoder->Decode(aSample)
     ->Then(mTaskQueue, __func__,
-           [self, this, aTrack, &decoder]
+           [self, aTrack, &decoder]
            (const MediaDataDecoder::DecodedData& aResults) {
              decoder.mDecodeRequest.Complete();
-             NotifyNewOutput(aTrack, aResults);
+             self->NotifyNewOutput(aTrack, aResults);
 
              
              
              if (aTrack == TrackType::kVideoTrack) {
                GPUProcessCrashTelemetryLogger::ReportTelemetry(
-                 mMediaDecoderOwnerID, decoder.mDecoder.get());
+                 self->mMediaDecoderOwnerID, decoder.mDecoder.get());
              }
            },
-           [self, this, aTrack, &decoder](const MediaResult& aError) {
+           [self, aTrack, &decoder](const MediaResult& aError) {
              decoder.mDecodeRequest.Complete();
-             NotifyError(aTrack, aError);
+             self->NotifyError(aTrack, aError);
            })
     ->Track(decoder.mDecodeRequest);
 }
@@ -2208,21 +2208,21 @@ MediaFormatReader::DrainDecoder(TrackType aTrack)
   RefPtr<MediaFormatReader> self = this;
   decoder.mDecoder->Drain()
     ->Then(mTaskQueue, __func__,
-           [self, this, aTrack, &decoder]
+           [self, aTrack, &decoder]
            (const MediaDataDecoder::DecodedData& aResults) {
              decoder.mDrainRequest.Complete();
              if (aResults.IsEmpty()) {
                decoder.mDrainState = DrainState::DrainCompleted;
              } else {
-               NotifyNewOutput(aTrack, aResults);
+               self->NotifyNewOutput(aTrack, aResults);
                
                decoder.mDrainState = DrainState::PartialDrainPending;
              }
-             ScheduleUpdate(aTrack);
+             self->ScheduleUpdate(aTrack);
            },
-           [self, this, aTrack, &decoder](const MediaResult& aError) {
+           [self, aTrack, &decoder](const MediaResult& aError) {
              decoder.mDrainRequest.Complete();
-             NotifyError(aTrack, aError);
+             self->NotifyError(aTrack, aError);
            })
     ->Track(decoder.mDrainRequest);
   LOG("Requesting %s decoder to drain", TrackTypeToStr(aTrack));

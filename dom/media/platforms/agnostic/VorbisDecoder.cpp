@@ -276,12 +276,12 @@ RefPtr<MediaDataDecoder::FlushPromise>
 VorbisDataDecoder::Flush()
 {
   RefPtr<VorbisDataDecoder> self = this;
-  return InvokeAsync(mTaskQueue, __func__, [self, this]() {
+  return InvokeAsync(mTaskQueue, __func__, [self]() {
     
     
     
-    vorbis_synthesis_restart(&mVorbisDsp);
-    mLastFrameTime.reset();
+    vorbis_synthesis_restart(&self->mVorbisDsp);
+    self->mLastFrameTime.reset();
     return FlushPromise::CreateAndResolve(true, __func__);
   });
 }
