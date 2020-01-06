@@ -61,8 +61,8 @@ impl Zero for Au {
 
 
 
-pub const MAX_AU: Au = Au((1 << 30) - 1);
-pub const MIN_AU: Au = Au(- ((1 << 30) - 1));
+pub const MAX_AU: Au = Au(1 << 30);
+pub const MIN_AU: Au = Au(- (1 << 30));
 
 impl Encodable for Au {
     fn encode<S: Encoder>(&self, e: &mut S) -> Result<(), S::Error> {
