@@ -7,6 +7,8 @@
 #ifndef mozilla_ipc_CrashReporterHost_h
 #define mozilla_ipc_CrashReporterHost_h
 
+#include <functional>
+
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/Shmem.h"
 #include "base/process.h"
@@ -36,6 +38,61 @@ class CrashReporterHost
 #endif
 
 public:
+
+  template <typename T>
+  class CallbackWrapper {
+  public:
+    void Init(std::function<void(T)>&& aCallback, bool aAsync)
+    {
+      mCallback = Move(aCallback);
+      mAsync = aAsync;
+      if (IsAsync()) {
+        
+        
+        
+        mTargetThread = do_GetCurrentThread();
+      }
+    }
+
+    bool IsEmpty()
+    {
+      return !mCallback;
+    }
+
+    bool IsAsync()
+    {
+      return mAsync;
+    }
+
+    void Invoke(T aResult)
+    {
+      if (IsAsync()) {
+        decltype(mCallback) callback = Move(mCallback);
+        mTargetThread->
+          Dispatch(NS_NewRunnableFunction([callback, aResult](){
+                     callback(aResult);
+                   }), NS_DISPATCH_NORMAL);
+      } else {
+        MOZ_ASSERT(!mTargetThread);
+        mCallback(aResult);
+      }
+
+      Clear();
+    }
+
+  private:
+    void Clear()
+    {
+      mCallback = nullptr;
+      mTargetThread = nullptr;
+      mAsync = false;
+    }
+
+    bool mAsync;
+    std::function<void(T)> mCallback;
+    nsCOMPtr<nsIThread> mTargetThread;
+  };
+
   CrashReporterHost(GeckoProcessType aProcessType,
                     const Shmem& aShmem,
                     ThreadId aThreadId);
@@ -63,10 +120,13 @@ public:
   
   
   
-  bool
+  
+  void
   GenerateMinidumpAndPair(GeckoChildProcessHost* aChildProcess,
                           nsIFile* aMinidumpToPair,
-                          const nsACString& aPairName);
+                          const nsACString& aPairName,
+                          std::function<void(bool)>&& aCallback,
+                          bool aAsync);
 
   
   
@@ -94,6 +154,7 @@ private:
                             const nsString& aChildDumpID);
 
 private:
+  CallbackWrapper<bool> mCreateMinidumpCallback;
   GeckoProcessType mProcessType;
   Shmem mShmem;
   ThreadId mThreadId;

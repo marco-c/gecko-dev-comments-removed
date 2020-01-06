@@ -11,6 +11,7 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/HangAnnotations.h"
 #include "mozilla/PluginLibrary.h"
+#include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/plugins/PluginProcessParent.h"
 #include "mozilla/plugins/PPluginModuleParent.h"
 #include "mozilla/plugins/PluginMessageUtils.h"
@@ -38,9 +39,6 @@ class nsPluginTag;
 
 namespace mozilla {
 
-namespace ipc {
-class CrashReporterHost;
-} 
 namespace layers {
 class TextureClientRecycleAllocator;
 } 
@@ -420,6 +418,10 @@ class PluginModuleChromeParent
     , public mozilla::HangMonitor::Annotator
 {
     friend class mozilla::ipc::CrashReporterHost;
+    using TerminateChildProcessCallback =
+        mozilla::ipc::CrashReporterHost::CallbackWrapper<bool>;
+    using TakeFullMinidumpCallback =
+        mozilla::ipc::CrashReporterHost::CallbackWrapper<nsString>;
   public:
     
 
@@ -455,9 +457,13 @@ class PluginModuleChromeParent
 
 
 
-    void TakeFullMinidump(base::ProcessId aContentPid,
-                          const nsAString& aBrowserDumpId,
-                          nsString& aDumpId);
+
+
+    void
+    TakeFullMinidump(base::ProcessId aContentPid,
+                     const nsAString& aBrowserDumpId,
+                     std::function<void(nsString)>&& aCallback,
+                     bool aAsync);
 
     
 
@@ -476,10 +482,46 @@ class PluginModuleChromeParent
 
 
 
-    void TerminateChildProcess(MessageLoop* aMsgLoop,
-                               base::ProcessId aContentPid,
-                               const nsCString& aMonitorDescription,
-                               const nsAString& aDumpId);
+
+
+
+    void
+    TerminateChildProcess(MessageLoop* aMsgLoop,
+                          base::ProcessId aContentPid,
+                          const nsCString& aMonitorDescription,
+                          const nsAString& aDumpId,
+                          std::function<void(bool)>&& aCallback,
+                          bool aAsync);
+
+    
+
+
+
+
+    template<typename T>
+    static std::function<void(T)> DummyCallback()
+    {
+        return std::function<void(T)>([](T aResult) { });
+    }
+
+  private:
+#ifdef MOZ_CRASHREPORTER
+    
+    
+    void TakeBrowserAndPluginMinidumps(bool aReportsReady,
+                                       base::ProcessId aContentPid,
+                                       const nsAString& aBrowserDumpId,
+                                       bool aAsync);
+    void OnTakeFullMinidumpComplete(bool aReportsReady,
+                                    base::ProcessId aContentPid,
+                                    const nsAString& aBrowserDumpId);
+
+#endif
+    
+    
+    void TerminateChildProcessOnDumpComplete(MessageLoop* aMsgLoop,
+                                             const nsCString& aMonitorDescription);
+  public:
 
 #ifdef XP_WIN
     
@@ -537,6 +579,8 @@ private:
 #ifdef MOZ_CRASHREPORTER
     void ProcessFirstMinidump();
     void WriteExtraDataForMinidump();
+    void RetainPluginRef();
+    void ReleasePluginRef();
 #endif
 
     PluginProcessParent* Process() const { return mSubprocess; }
@@ -666,6 +710,12 @@ private:
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
     mozilla::SandboxPermissions mSandboxPermissions;
 #endif
+
+#ifdef MOZ_CRASHREPORTER
+    nsCOMPtr<nsIFile> mBrowserDumpFile;
+    TakeFullMinidumpCallback mTakeFullMinidumpCallback;
+#endif
+    TerminateChildProcessCallback mTerminateChildProcessCallback;
 };
 
 } 

@@ -11,6 +11,7 @@
 #include "mozilla/dom/nsIContentParent.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
 #include "mozilla/gfx/GPUProcessListener.h"
+#include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FileUtils.h"
@@ -75,7 +76,6 @@ class OptionalURIParams;
 class PFileDescriptorSetParent;
 class URIParams;
 class TestShellParent;
-class CrashReporterHost;
 } 
 
 namespace jsipc {
@@ -812,6 +812,8 @@ private:
 
   
   void StartForceKillTimer();
+
+  void OnGenerateMinidumpComplete(bool aDumpResult);
 
   
   
