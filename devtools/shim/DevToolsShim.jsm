@@ -4,9 +4,15 @@
 
 "use strict";
 
-const Cu = Components.utils;
-const Ci = Components.interfaces;
+const {utils: Cu, classes: Cc, interfaces: Ci} = Components;
 const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+
+const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
+XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
+  return Cc["@mozilla.org/devtools/startup-clh;1"]
+            .getService(Ci.nsICommandLineHandler)
+            .wrappedJSObject;
+});
 
 this.EXPORTED_SYMBOLS = [
   "DevToolsShim",
@@ -230,12 +236,24 @@ this.DevToolsShim = {
       return Promise.resolve();
     }
 
+    
+    if (!this.isInitialized()) {
+      this._initDevTools("ContextMenu");
+    }
+
     return this.gDevTools.inspectNode(tab, selectors);
   },
 
-  _initDevTools: function () {
-    let { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-    loader.require("devtools/client/framework/devtools-browser");
+  
+
+
+
+
+
+
+
+  _initDevTools: function (reason) {
+    DevtoolsStartup.initDevTools(reason);
   },
 
   _onDevToolsRegistered: function () {
