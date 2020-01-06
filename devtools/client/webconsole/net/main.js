@@ -5,8 +5,6 @@
 
 
 
-var { utils: Cu } = Components;
-
 
 
 
@@ -16,7 +14,7 @@ const require = BrowserLoader({
   window}).require;
 
 const NetRequest = require("./net-request");
-const { loadSheet } = require("sdk/stylesheet/utils");
+const { loadSheet } = require("devtools/shared/layout/utils");
 
 
 const {LocalizationHelper} = require("devtools/shared/l10n");
@@ -58,6 +56,7 @@ this.Locale = {
     } catch (err) {
       console.error(key + ": " + err);
     }
+    return key;
   }
 };
 
@@ -88,8 +87,6 @@ function onNetworkEvent(log) {
   if (log.update) {
     netRequest.updateBody(response);
   }
-
-  return;
 }
 
 
