@@ -652,7 +652,15 @@ pref("media.suspend-bkgnd-video.enabled", true);
 
 pref("image.downscale-during-decode.enabled", true);
 
+
 pref("browser.safebrowsing.downloads.enabled", false);
+
+
+pref("urlclassifier.downloadAllowTable", "");
+pref("urlclassifier.downloadBlockTable", "");
+
+
+pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,test-harmful-simple,test-malware-simple,test-unwanted-simple");
 
 
 pref("browser.firstrun.show.uidiscovery", true);

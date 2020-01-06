@@ -1709,17 +1709,6 @@ pref("extensions.formautofill.loglevel", "Warn");
 
 pref("browser.sessionstore.restore_tabs_lazily", true);
 
-
-pref("urlclassifier.malwareTable", "goog-malware-proto,goog-unwanted-proto,test-harmful-simple,test-malware-simple,test-unwanted-simple");
-#ifdef MOZILLA_OFFICIAL
-pref("urlclassifier.phishTable", "goog-phish-proto,test-phish-simple");
-#else
-pref("urlclassifier.phishTable", "googpub-phish-proto,test-phish-simple");
-#endif
-
-pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
-pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
-
 pref("browser.suppress_first_window_animation", true);
 
 
