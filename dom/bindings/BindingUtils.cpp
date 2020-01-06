@@ -1543,11 +1543,15 @@ ResolvePrototypeOrConstructor(JSContext* cx, JS::Handle<JSObject*> wrapper,
   {
     JSAutoCompartment ac(cx, global);
     ProtoAndIfaceCache& protoAndIfaceCache = *GetProtoAndIfaceCache(global);
+    
+    
+    
+    
+    
+    
     JSObject* protoOrIface =
-      protoAndIfaceCache.EntrySlotIfExists(protoAndIfaceCacheIndex);
-    if (!protoOrIface) {
-      return false;
-    }
+      protoAndIfaceCache.EntrySlotMustExist(protoAndIfaceCacheIndex);
+    MOZ_RELEASE_ASSERT(protoOrIface, "How can this object not exist?");
 
     cacheOnHolder = true;
 
