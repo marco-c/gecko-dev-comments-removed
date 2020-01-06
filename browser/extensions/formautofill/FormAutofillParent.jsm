@@ -411,8 +411,8 @@ FormAutofillParent.prototype = {
       this._recordFormFillingTime("address", "manual", timeStartedFillingMS);
 
       
-      if (Services.prefs.getBoolPref("extensions.formautofill.firstTimeUse")) {
-        Services.prefs.setBoolPref("extensions.formautofill.firstTimeUse", false);
+      if (FormAutofillUtils.isAutofillAddressesFirstTimeUse) {
+        Services.prefs.setBoolPref(FormAutofillUtils.ADDRESSES_FIRST_TIME_USE_PREF, false);
         FormAutofillDoorhanger.show(target, "firstTimeUse").then((state) => {
           if (state !== "open-pref") {
             return;
@@ -431,8 +431,19 @@ FormAutofillParent.prototype = {
   async _onCreditCardSubmit(creditCard, target, timeStartedFillingMS) {
     
     
+    let setUsedStatus = status => {
+      if (FormAutofillUtils.AutofillCreditCardsUsedStatus < status) {
+        Services.prefs.setIntPref(FormAutofillUtils.CREDITCARDS_USED_STATUS_PREF, status);
+      }
+    };
+
+    
+    
     
     if (creditCard.guid) {
+      
+      setUsedStatus(3);
+
       let originalCCData = this.profileStorage.creditCards.get(creditCard.guid);
       let unchanged = Object.keys(creditCard.record).every(field => {
         if (creditCard.record[field] === "" && !originalCCData[field]) {
@@ -458,6 +469,11 @@ FormAutofillParent.prototype = {
       this._recordFormFillingTime("creditCard", "autofill-update", timeStartedFillingMS);
     } else {
       
+      
+      
+      setUsedStatus(1);
+
+      
       Services.telemetry.scalarAdd("formautofill.creditCards.fill_type_manual", 1);
       this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
     }
@@ -468,6 +484,9 @@ FormAutofillParent.prototype = {
       this.profileStorage.creditCards.notifyUsed(dupGuid);
       return;
     }
+
+    
+    setUsedStatus(2);
 
     let state = await FormAutofillDoorhanger.show(target, creditCard.guid ? "updateCreditCard" : "addCreditCard");
     if (state == "cancel") {
