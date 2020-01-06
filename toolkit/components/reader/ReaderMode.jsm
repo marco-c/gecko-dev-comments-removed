@@ -63,18 +63,10 @@ this.ReaderMode = {
     return this.isEnabledForParseOnLoad = this._getStateForParseOnLoad();
   },
 
-  get isOnLowMemoryPlatform() {
-    let memory = Cc["@mozilla.org/xpcom/memory-service;1"].getService(Ci.nsIMemory);
-    delete this.isOnLowMemoryPlatform;
-    return this.isOnLowMemoryPlatform = memory.isLowMemoryPlatform();
-  },
-
   _getStateForParseOnLoad() {
     let isEnabled = Services.prefs.getBoolPref("reader.parse-on-load.enabled");
     let isForceEnabled = Services.prefs.getBoolPref("reader.parse-on-load.force-enabled");
-    
-    
-    return isForceEnabled || (isEnabled && !this.isOnLowMemoryPlatform);
+    return isForceEnabled || isEnabled;
   },
 
   observe(aMessage, aTopic, aData) {
