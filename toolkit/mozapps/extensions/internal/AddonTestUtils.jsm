@@ -220,6 +220,7 @@ var AddonTestUtils = {
   testUnpacked: false,
   useRealCertChecks: false,
   usePrivilegedSignatures: true,
+  aomStartup: null,
 
   init(testScope) {
     this.testScope = testScope;
@@ -1273,6 +1274,28 @@ var AddonTestUtils = {
       });
     });
   },
+
+  
+
+
+
+
+
+  async overrideBuiltIns(data) {
+    
+    
+    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+    aomStartup.initializeURLPreloader();
+
+    let file = FileUtils.getFile("TmpD", "override.txt");
+    let manifest = Services.io.newFileURI(file);
+    await OS.File.writeAtomic(file.path,
+      new TextEncoder().encode(JSON.stringify(data)));
+    this.aomStartup = aomStartup.registerChrome(manifest, [
+      ["override", "chrome://browser/content/built_in_addons.json",
+       Services.io.newFileURI(file).spec],
+    ]);
+  }
 };
 
 for (let [key, val] of Object.entries(AddonTestUtils)) {
