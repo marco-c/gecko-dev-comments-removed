@@ -26,11 +26,6 @@
 #include "nsIThread.h"
 #include "mozilla/Mutex.h"
 
-
-#ifdef GetLastError
-#undef GetLastError
-#endif
-
 #include "signaling/src/jsep/JsepSession.h"
 #include "signaling/src/jsep/JsepSessionImpl.h"
 #include "signaling/src/sdp/SdpMediaSection.h"
