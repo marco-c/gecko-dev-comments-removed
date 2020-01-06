@@ -122,6 +122,11 @@ impl RuleTree {
         self.root.clone()
     }
 
+    
+    pub fn is_empty(&self) -> bool {
+        self.root.get().first_child.load(Ordering::Relaxed).is_null()
+    }
+
     fn dump<W: Write>(&self, guards: &StylesheetGuards, writer: &mut W) {
         let _ = writeln!(writer, " + RuleTree");
         self.root.get().dump(guards, writer, 0);
@@ -499,6 +504,25 @@ impl CascadeLevel {
 }
 
 
+
+struct PrevSiblingOrFreeCount(AtomicPtr<RuleNode>);
+impl PrevSiblingOrFreeCount {
+    fn new() -> Self {
+        PrevSiblingOrFreeCount(AtomicPtr::new(ptr::null_mut()))
+    }
+
+    unsafe fn as_prev_sibling(&self) -> &AtomicPtr<RuleNode> {
+        &self.0
+    }
+
+    unsafe fn as_free_count(&self) -> &AtomicUsize {
+        unsafe {
+            mem::transmute(&self.0)
+        }
+    }
+}
+
+
 pub struct RuleNode {
     
     root: Option<WeakRuleNode>,
@@ -516,18 +540,16 @@ pub struct RuleNode {
     refcount: AtomicUsize,
     first_child: AtomicPtr<RuleNode>,
     next_sibling: AtomicPtr<RuleNode>,
-    prev_sibling: AtomicPtr<RuleNode>,
+
+    
+    
+    
+    
+    
+    prev_sibling_or_free_count: PrevSiblingOrFreeCount,
 
     
     next_free: AtomicPtr<RuleNode>,
-
-    
-    
-    
-    
-    
-    
-    free_count: AtomicUsize,
 }
 
 unsafe impl Sync for RuleTree {}
@@ -547,9 +569,8 @@ impl RuleNode {
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
             next_sibling: AtomicPtr::new(ptr::null_mut()),
-            prev_sibling: AtomicPtr::new(ptr::null_mut()),
+            prev_sibling_or_free_count: PrevSiblingOrFreeCount::new(),
             next_free: AtomicPtr::new(ptr::null_mut()),
-            free_count: AtomicUsize::new(0),
         }
     }
 
@@ -562,9 +583,8 @@ impl RuleNode {
             refcount: AtomicUsize::new(1),
             first_child: AtomicPtr::new(ptr::null_mut()),
             next_sibling: AtomicPtr::new(ptr::null_mut()),
-            prev_sibling: AtomicPtr::new(ptr::null_mut()),
+            prev_sibling_or_free_count: PrevSiblingOrFreeCount::new(),
             next_free: AtomicPtr::new(FREE_LIST_SENTINEL),
-            free_count: AtomicUsize::new(0),
         }
     }
 
@@ -583,6 +603,16 @@ impl RuleNode {
         }
     }
 
+    fn prev_sibling(&self) -> &AtomicPtr<RuleNode> {
+        debug_assert!(!self.is_root());
+        unsafe { self.prev_sibling_or_free_count.as_prev_sibling() }
+    }
+
+    fn free_count(&self) -> &AtomicUsize {
+        debug_assert!(self.is_root());
+        unsafe { self.prev_sibling_or_free_count.as_free_count() }
+    }
+
     
     
     
@@ -596,7 +626,7 @@ impl RuleNode {
         
         
         let prev_sibling =
-            self.prev_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
+            self.prev_sibling().swap(ptr::null_mut(), Ordering::Relaxed);
 
         let next_sibling =
             self.next_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
@@ -615,7 +645,7 @@ impl RuleNode {
         
         if !next_sibling.is_null() {
             let next = &*next_sibling;
-            next.prev_sibling.store(prev_sibling, Ordering::Relaxed);
+            next.prev_sibling().store(prev_sibling, Ordering::Relaxed);
         }
     }
 
@@ -760,7 +790,7 @@ impl StrongRuleNode {
                     
                     
                     if let Some(ref l) = last {
-                        node.prev_sibling.store(l.ptr(), Ordering::Relaxed);
+                        node.prev_sibling().store(l.ptr(), Ordering::Relaxed);
                     }
 
                     return StrongRuleNode::new(node);
@@ -908,14 +938,14 @@ impl StrongRuleNode {
             let _ = Box::from_raw(weak.ptr());
         }
 
-        me.free_count.store(0, Ordering::Relaxed);
+        me.free_count().store(0, Ordering::Relaxed);
 
         debug_assert!(me.next_free.load(Ordering::Relaxed) == FREE_LIST_SENTINEL);
     }
 
     unsafe fn maybe_gc(&self) {
         debug_assert!(self.get().is_root(), "Can't call GC on a non-root node!");
-        if self.get().free_count.load(Ordering::Relaxed) > RULE_TREE_GC_INTERVAL {
+        if self.get().free_count().load(Ordering::Relaxed) > RULE_TREE_GC_INTERVAL {
             self.gc();
         }
     }
@@ -1338,6 +1368,11 @@ impl Drop for StrongRuleNode {
         
         
         node.next_free.store(old_head, Ordering::Relaxed);
+
+        
+        
+        let old_free_count = root.free_count().load(Ordering::Relaxed);
+        root.free_count().store(old_free_count + 1, Ordering::Relaxed);
 
         
         

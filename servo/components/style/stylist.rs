@@ -1283,10 +1283,10 @@ impl Drop for Stylist {
         
         
         
-        
-        
-        
         unsafe { self.rule_tree.gc(); }
+
+        
+        debug_assert!(self.rule_tree.is_empty());
     }
 }
 
