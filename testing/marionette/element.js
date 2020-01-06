@@ -238,8 +238,9 @@ element.Store = class {
 
 
 element.find = function(container, strategy, selector, opts = {}) {
-  opts.all = !!opts.all;
-  opts.timeout = opts.timeout || 0;
+  let all = !!opts.all;
+  let timeout = opts.timeout || 0;
+  let startNode = opts.startNode;
 
   let searchFn;
   if (opts.all) {
@@ -250,13 +251,14 @@ element.find = function(container, strategy, selector, opts = {}) {
 
   return new Promise((resolve, reject) => {
     let findElements = new PollPromise((resolve, reject) => {
-      let res = find_(container, strategy, selector, searchFn, opts);
+      let res = find_(container, strategy, selector, searchFn,
+          {all, startNode});
       if (res.length > 0) {
         resolve(Array.from(res));
       } else {
         reject([]);
       }
-    }, opts.timeout);
+    }, {timeout});
 
     findElements.then(foundEls => {
       
@@ -284,13 +286,11 @@ element.find = function(container, strategy, selector, opts = {}) {
   });
 };
 
-function find_(container, strategy, selector, searchFn, opts) {
+function find_(container, strategy, selector, searchFn,
+    {startNode = null, all = false} = {}) {
   let rootNode = container.shadowRoot || container.frame.document;
-  let startNode;
 
-  if (opts.startNode) {
-    startNode = opts.startNode;
-  } else {
+  if (!startNode) {
     switch (strategy) {
       
       
@@ -315,7 +315,7 @@ function find_(container, strategy, selector, searchFn, opts) {
   }
 
   if (res) {
-    if (opts.all) {
+    if (all) {
       return res;
     }
     return [res];
