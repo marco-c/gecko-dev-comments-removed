@@ -100,5 +100,5 @@ fn main() {
                                            launcher);
 
     
-    start(addr, MarionetteHandler::new(settings));
+    start(addr, MarionetteHandler::new(settings), vec![]);
 }
