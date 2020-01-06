@@ -6,37 +6,6 @@
 
 
 
-if (Promise === undefined && this.setTimeout === undefined) {
-  if(/\$DONE()/.test(code))
-    $ERROR("Async test capability is not supported in your test environment");
-}
-
-if (Promise !== undefined && this.setTimeout === undefined) {
-  (function(that) {
-     that.setTimeout = function(callback, delay) {
-      var p = Promise.resolve();
-      var start = Date.now();
-      var end = start + delay;
-      function check(){
-        var timeLeft = end - Date.now();
-        if(timeLeft > 0)
-          p.then(check);
-        else
-          callback();
-      }
-      p.then(check);
-    }
-  })(this);
-}
-
-
-
-
-
-
-
-
-
 var __globalObject = Function("return this;")();
 function fnGlobalObject() {
   return __globalObject;
@@ -580,6 +549,20 @@ var byteConversionValues = {
 
 
 
+var distinctNaNs = [
+  0/0, Infinity/Infinity, -(0/0), Math.pow(-1, 0.5), -Math.pow(-1, 0.5)
+];
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -707,18 +690,27 @@ function testBuiltInObject(obj, isFunction, isConstructor, properties, length) {
 
 
 
+if (Promise === undefined && this.setTimeout === undefined) {
+  if(/\$DONE()/.test(code))
+    $ERROR("Async test capability is not supported in your test environment");
+}
 
-
-
-function checkSequence(arr, message) {
-  arr.forEach(function(e, i) {
-    if (e !== (i+1)) {
-      $ERROR((message ? message : "Steps in unexpected sequence:") +
-             " '" + arr.join(',') + "'");
+if (Promise !== undefined && this.setTimeout === undefined) {
+  (function(that) {
+     that.setTimeout = function(callback, delay) {
+      var p = Promise.resolve();
+      var start = Date.now();
+      var end = start + delay;
+      function check(){
+        var timeLeft = end - Date.now();
+        if(timeLeft > 0)
+          p.then(check);
+        else
+          callback();
+      }
+      p.then(check);
     }
-  });
-
-  return true;
+  })(this);
 }
 
 
@@ -861,9 +853,17 @@ var $MAX_ITERATIONS = 100000;
 
 
 
-var distinctNaNs = [
-  0/0, Infinity/Infinity, -(0/0), Math.pow(-1, 0.5), -Math.pow(-1, 0.5)
-];
+
+function checkSequence(arr, message) {
+  arr.forEach(function(e, i) {
+    if (e !== (i+1)) {
+      $ERROR((message ? message : "Steps in unexpected sequence:") +
+             " '" + arr.join(',') + "'");
+    }
+  });
+
+  return true;
+}
 
 
 
