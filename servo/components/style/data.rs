@@ -162,6 +162,13 @@ impl fmt::Debug for EagerPseudoArray {
     }
 }
 
+
+
+#[cfg(feature = "gecko")]
+const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None, None];
+#[cfg(feature = "servo")]
+const EMPTY_PSEUDO_ARRAY: &'static EagerPseudoArrayInner = &[None, None, None];
+
 impl EagerPseudoStyles {
     
     pub fn is_empty(&self) -> bool {
@@ -169,11 +176,17 @@ impl EagerPseudoStyles {
     }
 
     
-    pub fn as_array(&self) -> Option<&EagerPseudoArrayInner> {
+    pub fn as_optional_array(&self) -> Option<&EagerPseudoArrayInner> {
         match self.0 {
             None => None,
             Some(ref x) => Some(&x.0),
         }
+    }
+
+    
+    
+    pub fn as_array(&self) -> &EagerPseudoArrayInner {
+        self.as_optional_array().unwrap_or(EMPTY_PSEUDO_ARRAY)
     }
 
     
