@@ -245,6 +245,11 @@ static const wchar_t* gBlockedInprocDlls[] = {
 bool
 LazyInstantiator::IsBlockedInjection()
 {
+  
+  if (PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
+    return false;
+  }
+
   if (Compatibility::HasKnownNonUiaConsumer()) {
     
     return false;
