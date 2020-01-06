@@ -111,6 +111,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   policy->AddDir(rdonly, "/sys/devices/system/cpu");
 
   
+  policy->AddPrefix(rdonly, "/sys/dev/char/226:");
+
+  
   
   mozilla::Array<const char*, 3> confDirs = {
     ".config",
