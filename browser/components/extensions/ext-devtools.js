@@ -13,8 +13,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "gDevTools",
-                                  "resource://devtools/client/framework/gDevTools.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
+                                  "chrome://devtools-shim/content/DevToolsShim.jsm");
 
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
@@ -142,7 +142,7 @@ class DevToolsPage extends HiddenExtensionPage {
     extensions.emit("extension-browser-inserted", this.browser, {
       devtoolsToolboxInfo: {
         inspectedWindowTabId: getTargetTabIdForToolbox(this.toolbox),
-        themeName: gDevTools.getTheme(),
+        themeName: DevToolsShim.getTheme(),
       },
     });
 
@@ -220,7 +220,7 @@ class DevToolsPageDefinition {
 
     
     if (this.devtoolsPageForTarget.size === 0) {
-      gDevTools.on("theme-changed", this.onThemeChanged);
+      DevToolsShim.on("theme-changed", this.onThemeChanged);
     }
     this.devtoolsPageForTarget.set(toolbox.target, devtoolsPage);
 
@@ -240,7 +240,7 @@ class DevToolsPageDefinition {
 
       
       if (this.devtoolsPageForTarget.size === 0) {
-        gDevTools.off("theme-changed", this.onThemeChanged);
+        DevToolsShim.off("theme-changed", this.onThemeChanged);
       }
     }
   }
@@ -272,7 +272,7 @@ initDevTools = function() {
   
   
   
-  gDevTools.on("toolbox-created", (evt, toolbox) => {
+  DevToolsShim.on("toolbox-created", (evt, toolbox) => {
     if (!toolbox.target.isLocalTab) {
       
       
@@ -294,7 +294,7 @@ initDevTools = function() {
 
   
   
-  gDevTools.on("toolbox-destroy", (evt, target) => {
+  DevToolsShim.on("toolbox-destroy", (evt, target) => {
     if (!target.isLocalTab) {
       
       

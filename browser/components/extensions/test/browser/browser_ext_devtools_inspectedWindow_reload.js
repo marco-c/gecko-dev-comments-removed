@@ -6,10 +6,8 @@
 
 requestLongerTimeout(4);
 
-XPCOMUtils.defineLazyModuleGetter(this, "gDevTools",
-                                  "resource://devtools/client/framework/gDevTools.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "devtools",
-                                  "resource://devtools/shared/Loader.jsm");
+const {DevToolsShim} = Cu.import("chrome://devtools-shim/content/DevToolsShim.jsm", {});
+const {gDevTools} = DevToolsShim;
 
 
 async function runReloadTestCase({urlParams, background, devtoolsPage, testCase}) {
@@ -39,7 +37,7 @@ async function runReloadTestCase({urlParams, background, devtoolsPage, testCase}
 
   await extension.startup();
 
-  let target = devtools.TargetFactory.forTab(tab);
+  let target = gDevTools.getTargetForTab(tab);
 
   await gDevTools.showToolbox(target, "webconsole");
   info("developer toolbox opened");

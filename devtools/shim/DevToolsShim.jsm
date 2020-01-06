@@ -214,7 +214,17 @@ let addonSdkMethods = [
   "showToolbox",
 ];
 
-for (let method of addonSdkMethods) {
+
+
+
+
+
+
+let webExtensionsMethods = [
+  "getTheme",
+];
+
+for (let method of [...addonSdkMethods, ...webExtensionsMethods]) {
   this.DevToolsShim[method] = function () {
     if (!this.isInstalled()) {
       throw new Error(`Method ${method} unavailable if DevTools are not installed`);
