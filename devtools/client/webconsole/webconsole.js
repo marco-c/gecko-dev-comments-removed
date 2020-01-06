@@ -491,6 +491,10 @@ WebConsoleFrame.prototype = {
     };
     allReady.then(notifyObservers, notifyObservers);
 
+    if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
+      allReady.then(this.newConsoleOutput.init);
+    }
+
     return allReady;
   },
 
@@ -531,6 +535,10 @@ WebConsoleFrame.prototype = {
   _initUI: function () {
     this.document = this.window.document;
     this.rootElement = this.document.documentElement;
+    this.NEW_CONSOLE_OUTPUT_ENABLED = !this.isBrowserConsole
+      && !this.owner.target.chrome
+      && Services.prefs.getBoolPref(PREF_NEW_FRONTEND_ENABLED);
+
     this.outputNode = this.document.getElementById("output-container");
     this.outputWrapper = this.document.getElementById("output-wrapper");
     this.completeNode = this.document.querySelector(".jsterm-complete-node");
@@ -540,28 +548,55 @@ WebConsoleFrame.prototype = {
     
     this.outputScroller = this.outputWrapper;
 
+    
+    
+    this._updateCharSize();
+
     this.jsterm = new JSTerm(this);
     this.jsterm.init();
 
     let toolbox = gDevTools.getToolbox(this.owner.target);
 
-    
-    this._commandController = new CommandController(this);
-    this.window.controllers.insertControllerAt(0, this._commandController);
+    if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
+      
+      this.window.jsterm = this.jsterm;
 
-    this._contextMenuHandler = new ConsoleContextMenu(this);
+      
+      this.outputWrapper.removeAttribute("context");
 
-    this._initDefaultFilterPrefs();
-    this.filterBox = this.document.querySelector(".hud-filter-box");
-    this._setFilterTextBoxEvents();
-    this._initFilterButtons();
+      
+      
+      this.experimentalOutputNode = this.outputNode.cloneNode();
+      this.experimentalOutputNode.removeAttribute("tabindex");
+      this.outputNode.hidden = true;
+      this.outputNode.parentNode.appendChild(this.experimentalOutputNode);
+      
+      
 
-    let clearButton =
-      this.document.getElementsByClassName("webconsole-clear-console-button")[0];
-    clearButton.addEventListener("command", () => {
-      this.owner._onClearButton();
-      this.jsterm.clearOutput(true);
-    });
+      this.newConsoleOutput = new this.window.NewConsoleOutput(
+        this.experimentalOutputNode, this.jsterm, toolbox, this.owner, this.document);
+
+      let filterToolbar = this.document.querySelector(".hud-console-filter-toolbar");
+      filterToolbar.hidden = true;
+    } else {
+      
+      this._commandController = new CommandController(this);
+      this.window.controllers.insertControllerAt(0, this._commandController);
+
+      this._contextMenuHandler = new ConsoleContextMenu(this);
+
+      this._initDefaultFilterPrefs();
+      this.filterBox = this.document.querySelector(".hud-filter-box");
+      this._setFilterTextBoxEvents();
+      this._initFilterButtons();
+      let clearButton =
+        this.document.getElementsByClassName("webconsole-clear-console-button")[0];
+      clearButton.addEventListener("command", () => {
+        this.owner._onClearButton();
+        this.jsterm.clearOutput(true);
+      });
+
+    }
 
     this.resize();
     this.window.addEventListener("resize", this.resize, true);
@@ -593,6 +628,13 @@ WebConsoleFrame.prototype = {
         return;
       }
 
+      
+      if (this.NEW_CONSOLE_OUTPUT_ENABLED &&
+          event.target.nodeName.toLowerCase() === "input" &&
+          event.target.getAttribute("type").toLowerCase() === "search") {
+        return;
+      }
+
       this.jsterm.focus();
     });
 
@@ -613,7 +655,12 @@ WebConsoleFrame.prototype = {
 
 
   resize: function () {
-    this.outputNode.style.width = this.outputWrapper.clientWidth + "px";
+    if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
+      this.experimentalOutputNode.style.width =
+        this.outputWrapper.clientWidth + "px";
+    } else {
+      this.outputNode.style.width = this.outputWrapper.clientWidth + "px";
+    }
   },
 
   
@@ -795,6 +842,32 @@ WebConsoleFrame.prototype = {
         this.document.querySelector("toolbarbutton[category=server]");
       serverLogging.removeAttribute("accesskey");
     }
+  },
+
+  
+
+
+
+
+
+  _updateCharSize: function () {
+    let doc = this.document;
+    let tempLabel = doc.createElementNS(XHTML_NS, "span");
+    let style = tempLabel.style;
+    style.position = "fixed";
+    style.padding = "0";
+    style.margin = "0";
+    style.width = "auto";
+    style.color = "transparent";
+    WebConsoleUtils.copyTextStyles(this.inputNode, tempLabel);
+    tempLabel.textContent = "x";
+    doc.documentElement.appendChild(tempLabel);
+    this._inputCharWidth = tempLabel.offsetWidth;
+    tempLabel.remove();
+    
+    
+    this._chevronWidth = +doc.defaultView.getComputedStyle(this.inputNode)
+                             .paddingLeft.replace(/[^0-9.]/g, "") - 4;
   },
 
   
@@ -1901,8 +1974,14 @@ WebConsoleFrame.prototype = {
   handleTabNavigated: function (event, packet) {
     if (event == "will-navigate") {
       if (this.persistLog) {
-        let marker = new Messages.NavigationMarker(packet, Date.now());
-        this.output.addMessage(marker);
+        if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
+          
+          packet._type = true;
+          this.newConsoleOutput.dispatchMessageAdd(packet);
+        } else {
+          let marker = new Messages.NavigationMarker(packet, Date.now());
+          this.output.addMessage(marker);
+        }
       } else {
         this.jsterm.clearOutput();
       }
@@ -2625,7 +2704,9 @@ WebConsoleFrame.prototype = {
 
   _onToolboxPrefChanged: function () {
     let newValue = Services.prefs.getBoolPref(PREF_MESSAGE_TIMESTAMP);
-    if (newValue) {
+    if (this.NEW_CONSOLE_OUTPUT_ENABLED) {
+      this.newConsoleOutput.dispatchTimestampsToggle(newValue);
+    } else if (newValue) {
       this.outputNode.classList.remove("hideTimestamps");
     } else {
       this.outputNode.classList.add("hideTimestamps");

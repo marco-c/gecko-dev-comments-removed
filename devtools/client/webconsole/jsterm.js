@@ -261,10 +261,6 @@ JSTerm.prototype = {
     this.completeNode = doc.querySelector(".jsterm-complete-node");
     this.inputNode = doc.querySelector(".jsterm-input-node");
 
-    
-    
-    this._updateCharSize();
-
     if (this.hud.isBrowserConsole &&
         !Services.prefs.getBoolPref("devtools.chrome.enabled")) {
       inputContainer.style.display = "none";
@@ -586,11 +582,6 @@ JSTerm.prototype = {
 
 
   openVariablesView: function (options) {
-    
-    if (!this.hud.document.querySelector("#webconsole-sidebar")) {
-      return Promise.resolve(null);
-    }
-
     let onContainerReady = (window) => {
       let container = window.document.querySelector("#variables");
       let view = this._variablesView;
@@ -949,23 +940,17 @@ JSTerm.prototype = {
 
   clearOutput: function (clearStorage) {
     let hud = this.hud;
-
-    if (hud.NEW_CONSOLE_OUTPUT_ENABLED) {
-      hud.newConsoleOutput.dispatchMessagesClear();
-    } else {
-      let outputNode = hud.outputNode;
-      let node;
-      while ((node = outputNode.firstChild)) {
-        hud.removeOutputMessage(node);
-      }
-
-      hud.groupDepth = 0;
-      hud._outputQueue.forEach(hud._destroyItem, hud);
-      hud._outputQueue = [];
-      hud._repeatNodes = {};
+    let outputNode = hud.outputNode;
+    let node;
+    while ((node = outputNode.firstChild)) {
+      hud.removeOutputMessage(node);
     }
 
+    hud.groupDepth = 0;
+    hud._outputQueue.forEach(hud._destroyItem, hud);
+    hud._outputQueue = [];
     this.webConsoleClient.clearNetworkRequests();
+    hud._repeatNodes = {};
 
     if (clearStorage) {
       this.webConsoleClient.clearMessagesCache();
@@ -973,7 +958,9 @@ JSTerm.prototype = {
 
     this._sidebarDestroy();
 
-    this.focus();
+    if (hud.NEW_CONSOLE_OUTPUT_ENABLED) {
+      hud.newConsoleOutput.dispatchMessagesClear();
+    }
 
     this.emit("messages-cleared");
   },
@@ -1601,8 +1588,8 @@ JSTerm.prototype = {
     if (items.length > 1 && !popup.isOpen) {
       let str = this.getInputValue().substr(0, this.inputNode.selectionStart);
       let offset = str.length - (str.lastIndexOf("\n") + 1) - lastPart.length;
-      let x = offset * this._inputCharWidth;
-      popup.openPopup(inputNode, x + this._chevronWidth);
+      let x = offset * this.hud._inputCharWidth;
+      popup.openPopup(inputNode, x + this.hud._chevronWidth);
       this._autocompletePopupNavigated = false;
     } else if (items.length < 2 && popup.isOpen) {
       popup.hidePopup();
@@ -1701,32 +1688,6 @@ JSTerm.prototype = {
     
     let prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
     this.completeNode.value = prefix + suffix;
-  },
-
-  
-
-
-
-
-
-  _updateCharSize: function () {
-    let doc = this.hud.document;
-    let tempLabel = doc.createElementNS(XHTML_NS, "span");
-    let style = tempLabel.style;
-    style.position = "fixed";
-    style.padding = "0";
-    style.margin = "0";
-    style.width = "auto";
-    style.color = "transparent";
-    WebConsoleUtils.copyTextStyles(this.inputNode, tempLabel);
-    tempLabel.textContent = "x";
-    doc.documentElement.appendChild(tempLabel);
-    this._inputCharWidth = tempLabel.offsetWidth;
-    tempLabel.remove();
-    
-    
-    this._chevronWidth = +doc.defaultView.getComputedStyle(this.inputNode)
-                             .paddingLeft.replace(/[^0-9.]/g, "") - 4;
   },
 
   
