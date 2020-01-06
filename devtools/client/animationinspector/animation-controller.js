@@ -229,10 +229,13 @@ var AnimationsController = {
 
   onNewNodeFront: Task.async(function* () {
     
-    if (!this.isPanelVisible() ||
-        this.nodeFront === gInspector.selection.nodeFront) {
+    
+    
+    if (!this.isPanelVisible() || (this.nodeFront === gInspector.selection.nodeFront &&
+                                   !this.mutationsDetectedWhileHidden)) {
       return;
     }
+    this.isMutationsEventOccuredDuringHidden = false;
 
     this.nodeFront = gInspector.selection.nodeFront;
     let done = gInspector.updating("animationscontroller");
@@ -361,8 +364,14 @@ var AnimationsController = {
       }
     }
 
-    
-    this.emit(this.PLAYERS_UPDATED_EVENT, this.animationPlayers);
+    if (this.isPanelVisible()) {
+      
+      this.emit(this.PLAYERS_UPDATED_EVENT, this.animationPlayers);
+    } else {
+      
+      
+      this.mutationsDetectedWhileHidden = true;
+    }
   },
 
   
