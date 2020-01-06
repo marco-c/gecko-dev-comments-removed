@@ -34,9 +34,6 @@ cron_yml_schema = Schema({
             Required('treeherder-symbol'): basestring,
 
             
-            'triggered-by': basestring,
-
-            
             'target-tasks-method': basestring,
         }),
 
