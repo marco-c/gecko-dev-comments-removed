@@ -97,9 +97,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   nsCOMPtr<nsIRunnable> mExecutor;
 
   
-  Atomic<uint32_t> mExecutionDepth;
-
-  
   bool mShutdownStarted;
 
   explicit Inner(nsIEventTarget* aBaseTarget)
@@ -108,7 +105,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
     , mEventsAvailable(mMutex, "[ThrottledEventQueue::Inner.mEventsAvailable]")
     , mEventQueue(mEventsAvailable, nsEventQueue::eNormalQueue)
     , mBaseTarget(aBaseTarget)
-    , mExecutionDepth(0)
     , mShutdownStarted(false)
   {
   }
@@ -139,12 +135,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
     }
 
     if (nsCOMPtr<nsINamed> named = do_QueryInterface(event)) {
-      
-      
-      
-      mExecutionDepth++;
       nsresult rv = named->GetName(aName);
-      mExecutionDepth--;
       return rv;
     }
 
@@ -196,9 +187,7 @@ class ThrottledEventQueue::Inner final : public nsIObserver
     }
 
     
-    ++mExecutionDepth;
     Unused << event->Run();
-    --mExecutionDepth;
 
     
     
@@ -377,27 +366,7 @@ public:
   nsresult
   IsOnCurrentThread(bool* aResult)
   {
-    
-
-    bool shutdownAndIdle = false;
-    {
-      MutexAutoLock lock(mMutex);
-      shutdownAndIdle = mShutdownStarted && mEventQueue.Count(lock) == 0;
-    }
-
-    bool onBaseTarget = false;
-    nsresult rv = mBaseTarget->IsOnCurrentThread(&onBaseTarget);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    
-    
-    
-    *aResult = onBaseTarget && (mExecutionDepth || shutdownAndIdle);
-
-    return NS_OK;
+    return mBaseTarget->IsOnCurrentThread(aResult);
   }
 
   NS_DECL_THREADSAFE_ISUPPORTS
