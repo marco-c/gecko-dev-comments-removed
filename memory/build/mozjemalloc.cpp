@@ -387,11 +387,29 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 
 
 
+
 #if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) && !defined(__aarch64__)
-#define MALLOC_STATIC_SIZES 1
+#define MALLOC_STATIC_PAGESIZE 1
 #endif
 
-#ifdef MALLOC_STATIC_SIZES
+
+
+#define QUANTUM_DEFAULT  (size_t(1) << QUANTUM_2POW_MIN)
+static const size_t quantum = QUANTUM_DEFAULT;
+static const size_t quantum_mask = QUANTUM_DEFAULT - 1;
+
+
+
+static const size_t small_min = (QUANTUM_DEFAULT >> 1) + 1;
+static const size_t small_max = size_t(SMALL_MAX_DEFAULT);
+
+
+static const unsigned ntbins = unsigned(QUANTUM_2POW_MIN - TINY_MIN_2POW);
+
+ 
+static const unsigned nqbins = unsigned(SMALL_MAX_DEFAULT >> QUANTUM_2POW_MIN);
+
+#ifdef MALLOC_STATIC_PAGESIZE
 
 
 
@@ -410,24 +428,7 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 #define pagesize_mask (pagesize - 1)
 
 
-
-#define QUANTUM_DEFAULT  (size_t(1) << QUANTUM_2POW_MIN)
-static const size_t quantum = QUANTUM_DEFAULT;
-static const size_t quantum_mask = QUANTUM_DEFAULT - 1;
-
-
-
-static const size_t small_min = (QUANTUM_DEFAULT >> 1) + 1;
-static const size_t small_max = size_t(SMALL_MAX_DEFAULT);
-
-
 static const size_t bin_maxclass = pagesize >> 1;
-
- 
-static const unsigned ntbins = unsigned(QUANTUM_2POW_MIN - TINY_MIN_2POW);
-
- 
-static const unsigned nqbins = unsigned(SMALL_MAX_DEFAULT >> QUANTUM_2POW_MIN);
 
 
 static const unsigned nsbins = unsigned(pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1);
@@ -441,16 +442,7 @@ static size_t pagesize_2pow;
 
 
 static size_t bin_maxclass; 
-static unsigned ntbins; 
-static unsigned nqbins; 
 static unsigned nsbins; 
-static size_t small_min;
-static size_t small_max;
-
-
-static size_t quantum;
-static size_t quantum_mask; 
-
 #endif
 
 
@@ -478,7 +470,7 @@ static size_t quantum_mask;
 
 #define CHUNK_RECYCLE_LIMIT 128
 
-#ifdef MALLOC_STATIC_SIZES
+#ifdef MALLOC_STATIC_PAGESIZE
 #define CHUNKSIZE_DEFAULT ((size_t) 1 << CHUNK_2POW_DEFAULT)
 static const size_t chunksize = CHUNKSIZE_DEFAULT;
 static const size_t chunksize_mask = CHUNKSIZE_DEFAULT - 1;
@@ -1133,15 +1125,6 @@ static const bool	opt_zero = false;
 #endif
 
 static size_t	opt_dirty_max = DIRTY_MAX_DEFAULT;
-#ifdef MALLOC_STATIC_SIZES
-#define opt_quantum_2pow	QUANTUM_2POW_MIN
-#define opt_small_max_2pow	SMALL_MAX_2POW_DEFAULT
-#define opt_chunk_2pow		CHUNK_2POW_DEFAULT
-#else
-static size_t	opt_quantum_2pow = QUANTUM_2POW_MIN;
-static size_t	opt_small_max_2pow = SMALL_MAX_2POW_DEFAULT;
-static size_t	opt_chunk_2pow = CHUNK_2POW_DEFAULT;
-#endif
 
 
 
@@ -3213,12 +3196,12 @@ arena_t::MallocSmall(size_t aSize, bool aZero)
   } else if (aSize <= small_max) {
     
     aSize = QUANTUM_CEILING(aSize);
-    bin = &mBins[ntbins + (aSize >> opt_quantum_2pow) - 1];
+    bin = &mBins[ntbins + (aSize >> QUANTUM_2POW_MIN) - 1];
   } else {
     
     aSize = pow2_ceil(aSize);
     bin = &mBins[ntbins + nqbins
-        + (ffs((int)(aSize >> opt_small_max_2pow)) - 2)];
+        + (ffs((int)(aSize >> SMALL_MAX_2POW_DEFAULT)) - 2)];
   }
   MOZ_DIAGNOSTIC_ASSERT(aSize == bin->reg_size);
 
@@ -3919,8 +3902,8 @@ arena_ralloc(void* aPtr, size_t aSize, size_t aOldSize, arena_t* aArena)
     }
   } else if (aSize <= small_max) {
     if (aOldSize >= small_min && aOldSize <= small_max &&
-        (QUANTUM_CEILING(aSize) >> opt_quantum_2pow) ==
-        (QUANTUM_CEILING(aOldSize) >> opt_quantum_2pow)) {
+        (QUANTUM_CEILING(aSize) >> QUANTUM_2POW_MIN) ==
+        (QUANTUM_CEILING(aOldSize) >> QUANTUM_2POW_MIN)) {
       goto IN_PLACE; 
     }
   } else if (aSize <= bin_maxclass) {
@@ -4378,7 +4361,7 @@ malloc_init_hard(void)
   result = GetKernelPageSize();
   
   MOZ_ASSERT(((result - 1) & result) == 0);
-#ifdef MALLOC_STATIC_SIZES
+#ifdef MALLOC_STATIC_PAGESIZE
   if (pagesize % (size_t) result) {
     _malloc_message(_getprogname(),
         "Compile-time page size does not divide the runtime one.\n");
@@ -4432,43 +4415,6 @@ MALLOC_OUT:
           opt_junk = true;
           break;
 #endif
-#ifndef MALLOC_STATIC_SIZES
-        case 'k':
-          
-
-
-
-
-          if (opt_chunk_2pow > pagesize_2pow + 1)
-            opt_chunk_2pow--;
-          break;
-        case 'K':
-          if (opt_chunk_2pow + 1 <
-              (sizeof(size_t) << 3))
-            opt_chunk_2pow++;
-          break;
-#endif
-#ifndef MALLOC_STATIC_SIZES
-        case 'q':
-          if (opt_quantum_2pow > QUANTUM_2POW_MIN)
-            opt_quantum_2pow--;
-          break;
-        case 'Q':
-          if (opt_quantum_2pow < pagesize_2pow -
-              1)
-            opt_quantum_2pow++;
-          break;
-        case 's':
-          if (opt_small_max_2pow >
-              QUANTUM_2POW_MIN)
-            opt_small_max_2pow--;
-          break;
-        case 'S':
-          if (opt_small_max_2pow < pagesize_2pow
-              - 1)
-            opt_small_max_2pow++;
-          break;
-#endif
 #ifdef MOZ_DEBUG
         case 'z':
           opt_zero = false;
@@ -4492,33 +4438,13 @@ MALLOC_OUT:
     }
   }
 
-#ifndef MALLOC_STATIC_SIZES
-  
-  if (opt_small_max_2pow < opt_quantum_2pow) {
-    opt_small_max_2pow = opt_quantum_2pow;
-  }
-  small_max = (1U << opt_small_max_2pow);
-
+#ifndef MALLOC_STATIC_PAGESIZE
   
   bin_maxclass = (pagesize >> 1);
-  MOZ_ASSERT(opt_quantum_2pow >= TINY_MIN_2POW);
-  ntbins = opt_quantum_2pow - TINY_MIN_2POW;
-  MOZ_ASSERT(ntbins <= opt_quantum_2pow);
-  nqbins = (small_max >> opt_quantum_2pow);
-  nsbins = pagesize_2pow - opt_small_max_2pow - 1;
+  nsbins = pagesize_2pow - SMALL_MAX_2POW_DEFAULT - 1;
 
   
-  quantum = (1U << opt_quantum_2pow);
-  quantum_mask = quantum - 1;
-  if (ntbins > 0) {
-    small_min = (quantum >> 1) + 1;
-  } else {
-    small_min = 1;
-  }
-  MOZ_ASSERT(small_min <= quantum);
-
-  
-  chunksize = (1LU << opt_chunk_2pow);
+  chunksize = (1LU << CHUNK_2POW_DEFAULT);
   chunksize_mask = chunksize - 1;
   chunk_npages = (chunksize >> pagesize_2pow);
 
@@ -4578,7 +4504,7 @@ MALLOC_OUT:
 
   thread_arena.set(gMainArena);
 
-  chunk_rtree = malloc_rtree_new((SIZEOF_PTR << 3) - opt_chunk_2pow);
+  chunk_rtree = malloc_rtree_new((SIZEOF_PTR << 3) - CHUNK_2POW_DEFAULT);
   if (!chunk_rtree) {
     return true;
   }
