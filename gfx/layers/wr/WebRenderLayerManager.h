@@ -246,9 +246,6 @@ public:
     return res.forget();
   }
 
-  bool ShouldNotifyInvalidation() const { return mShouldNotifyInvalidation; }
-  void SetNotifyInvalidation(bool aShouldNotifyInvalidation) { mShouldNotifyInvalidation = aShouldNotifyInvalidation; }
-
   bool SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
                                                 const ScrollUpdateInfo& aUpdateInfo) override;
 
@@ -387,10 +384,6 @@ private:
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
   
   CanvasDataSet mLastCanvasDatas;
-
-  
-  
-  bool mShouldNotifyInvalidation;
 
   WebRenderUserDataRefTable mWebRenderUserDatas;
 };

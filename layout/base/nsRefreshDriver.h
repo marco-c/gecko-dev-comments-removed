@@ -217,6 +217,9 @@ public:
   bool ViewManagerFlushIsPending() {
     return mViewManagerFlushIsPending;
   }
+  bool HasScheduleFlush() {
+    return mHasScheduleFlush;
+  }
 
   
 
@@ -442,6 +445,11 @@ private:
   bool mNeedToRecomputeVisibility;
   bool mTestControllingRefreshes;
   bool mViewManagerFlushIsPending;
+
+  
+  
+  bool mHasScheduleFlush;
+
   bool mInRefresh;
 
   

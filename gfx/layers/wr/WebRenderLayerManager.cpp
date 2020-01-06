@@ -42,7 +42,6 @@ WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   , mEndTransactionWithoutLayers(false)
   , mTarget(nullptr)
   , mPaintSequenceNumber(0)
-  , mShouldNotifyInvalidation(false)
 {
   MOZ_COUNT_CTOR(WebRenderLayerManager);
 }
@@ -332,14 +331,6 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
       }
     }
 
-    
-    if (!mShouldNotifyInvalidation) {
-      nsRect invalid;
-      if (item->IsInvalid(invalid)) {
-        mShouldNotifyInvalidation = true;
-      }
-    }
-
     { 
       ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache, AsyncPanZoomEnabled());
 
@@ -513,15 +504,8 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
         aManager->SetRoot(layer);
         layerBuilder->WillEndTransaction();
 
-        nsIntRegion invalid;
-        props->ComputeDifferences(layer, invalid, nullptr);
-
         static_cast<nsDisplayFilter*>(aItem)->PaintAsLayer(aDisplayListBuilder,
                                                            context, aManager);
-
-        if (!invalid.IsEmpty()) {
-          aWrManager->SetNotifyInvalidation(true);
-        }
       }
 
       if (aManager->InTransaction()) {
@@ -769,9 +753,6 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
 
   if (mEndTransactionWithoutLayers) {
     
-    mShouldNotifyInvalidation = false;
-
-    
     
     
     if (aDisplayList && aDisplayListBuilder) {
@@ -819,9 +800,6 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
       for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
         RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
         WebRenderCanvasRendererAsync* canvas = canvasData->GetCanvasRenderer();
-        if (canvas->IsDirty()) {
-          mShouldNotifyInvalidation = true;
-        }
         canvas->UpdateCompositableClient();
       }
     }
