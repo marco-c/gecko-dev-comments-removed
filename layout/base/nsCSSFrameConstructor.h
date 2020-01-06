@@ -11,6 +11,7 @@
 #ifndef nsCSSFrameConstructor_h___
 #define nsCSSFrameConstructor_h___
 
+#include "mozilla/ArenaAllocator.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/RestyleManager.h"
@@ -62,6 +63,7 @@ public:
   nsCSSFrameConstructor(nsIDocument* aDocument, nsIPresShell* aPresShell);
   ~nsCSSFrameConstructor() {
     MOZ_ASSERT(mUpdateCount == 0, "Dying in the middle of our own update?");
+    MOZ_ASSERT(mFCItemsInUse == 0);
   }
 
   
@@ -2142,6 +2144,10 @@ public:
   friend class nsFrameConstructorState;
 
 private:
+  
+  friend struct FrameConstructionItem;
+  void* AllocateFCItem();
+  void FreeFCItem(FrameConstructionItem*);
 
   nsIDocument*        mDocument;  
 
@@ -2156,6 +2162,13 @@ private:
   
   nsContainerFrame*   mDocElementContainingBlock;
   nsIFrame*           mPageSequenceFrame;
+
+  
+  mozilla::ArenaAllocator<4096, 8> mFCItemPool;
+  struct FreeFCItemLink { FreeFCItemLink* mNext; };
+  FreeFCItemLink* mFirstFreeFCItem;
+  size_t mFCItemsInUse;
+
   nsQuoteList         mQuoteList;
   nsCounterManager    mCounterManager;
   
