@@ -15,7 +15,6 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/DrawEventRecorder.h"
-#include "mozilla/gfx/InlineTranslator.h"
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -115,8 +114,9 @@ ClientPaintedLayer::UpdatePaintRegion(PaintState& aState)
 }
 
 void
-ClientPaintedLayer::ReplayPaintedLayer(DrawEventRecorderMemory* aRecorder)
+ClientPaintedLayer::PaintOffMainThread(DrawEventRecorderMemory* aRecorder)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   LayerIntRegion visibleRegion = GetVisibleRegion();
   mContentClient->BeginPaint();
 
@@ -141,12 +141,7 @@ ClientPaintedLayer::ReplayPaintedLayer(DrawEventRecorderMemory* aRecorder)
     SetAntialiasingFlags(this, target);
 
     
-    
-    
-    
-    std::istream& stream = aRecorder->GetInputStream();
-    InlineTranslator translator(target, nullptr);
-    translator.TranslateRecording(stream);
+    PaintThread::Get()->PaintContents(aRecorder, target);
 
     mContentClient->ReturnDrawTargetToBuffer(target);
     didUpdate = true;
@@ -305,7 +300,7 @@ ClientPaintedLayer::RenderLayerWithReadback(ReadbackProcessor *aReadback)
         return;
       }
 
-      ReplayPaintedLayer(recorder);
+      PaintOffMainThread(recorder);
       return;
     }
   }

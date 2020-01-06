@@ -7,10 +7,16 @@
 #ifndef MOZILLA_LAYERS_PAINTTHREAD_H
 #define MOZILLA_LAYERS_PAINTTHREAD_H
 
+#include "base/platform_thread.h"
 #include "mozilla/StaticPtr.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
+namespace gfx {
+class DrawEventRecorderMemory;
+class DrawTarget;
+};
+
 namespace layers {
 
 class PaintThread final
@@ -19,12 +25,24 @@ public:
   static void Start();
   static void Shutdown();
   static PaintThread* Get();
+  void PaintContents(gfx::DrawEventRecorderMemory* aRecording,
+                     gfx::DrawTarget* aTarget);
+  
+  
+  
+  
+  void Release();
+  void AddRef();
 
 private:
+  bool IsOnPaintThread();
   bool Init();
   void ShutdownImpl();
+  void InitOnPaintThread();
+
   static StaticAutoPtr<PaintThread> sSingleton;
   RefPtr<nsIThread> mThread;
+  PlatformThreadId mThreadId;
 };
 
 } 
