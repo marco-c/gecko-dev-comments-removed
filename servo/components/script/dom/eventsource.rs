@@ -474,8 +474,6 @@ pub struct AnnounceConnectionRunnable {
 }
 
 impl Runnable for AnnounceConnectionRunnable {
-    fn name(&self) -> &'static str { "EventSource AnnounceConnectionRunnable" }
-
     // https://html.spec.whatwg.org/multipage/#announce-the-connection
     fn handler(self: Box<AnnounceConnectionRunnable>) {
         let event_source = self.event_source.root();
@@ -491,8 +489,6 @@ pub struct FailConnectionRunnable {
 }
 
 impl Runnable for FailConnectionRunnable {
-    fn name(&self) -> &'static str { "EventSource FailConnectionRunnable" }
-
     // https://html.spec.whatwg.org/multipage/#fail-the-connection
     fn handler(self: Box<FailConnectionRunnable>) {
         let event_source = self.event_source.root();
@@ -509,8 +505,6 @@ pub struct ReestablishConnectionRunnable {
 }
 
 impl Runnable for ReestablishConnectionRunnable {
-    fn name(&self) -> &'static str { "EventSource ReestablishConnectionRunnable" }
-
     // https://html.spec.whatwg.org/multipage/#reestablish-the-connection
     fn handler(self: Box<ReestablishConnectionRunnable>) {
         let event_source = self.event_source.root();
@@ -543,21 +537,21 @@ pub struct EventSourceTimeoutCallback {
 }
 
 impl EventSourceTimeoutCallback {
-    // https://html.spec.whatwg.org/multipage/#reestablish-the-connection
+    
     pub fn invoke(self) {
         let event_source = self.event_source.root();
         let global = event_source.global();
-        // Step 5.1
+        
         if event_source.ready_state.get() != ReadyState::Connecting {
             return;
         }
-        // Step 5.2
+        
         let mut request = event_source.request();
-        // Step 5.3
+        
         if !event_source.last_event_id.borrow().is_empty() {
             request.headers.set(LastEventId(String::from(event_source.last_event_id.borrow().clone())));
         }
-        // Step 5.4
+        
         global.core_resource_thread().send(CoreResourceMsg::Fetch(request, self.action_sender)).unwrap();
     }
 }
@@ -568,8 +562,6 @@ pub struct DispatchEventRunnable {
 }
 
 impl Runnable for DispatchEventRunnable {
-    fn name(&self) -> &'static str { "EventSource DispatchEventRunnable" }
-
     
     fn handler(self: Box<DispatchEventRunnable>) {
         let event_source = self.event_source.root();

@@ -781,7 +781,7 @@ impl VirtualMethods for HTMLMediaElement {
         };
     }
 
-    // https://html.spec.whatwg.org/multipage/#playing-the-media-resource:remove-an-element-from-a-document
+    
     fn unbind_from_tree(&self, context: &UnbindContext) {
         self.super_type().unwrap().unbind_from_tree(context);
 
@@ -835,8 +835,6 @@ impl FireSimpleEventTask {
 }
 
 impl Runnable for FireSimpleEventTask {
-    fn name(&self) -> &'static str { "FireSimpleEventTask" }
-
     fn handler(self: Box<FireSimpleEventTask>) {
         let elem = self.elem.root();
         elem.fire_simple_event(self.type_);
@@ -856,8 +854,6 @@ impl DedicatedMediaSourceFailureTask {
 }
 
 impl Runnable for DedicatedMediaSourceFailureTask {
-    fn name(&self) -> &'static str { "DedicatedMediaSourceFailureTask" }
-
     fn handler(self: Box<DedicatedMediaSourceFailureTask>) {
         self.elem.root().dedicated_media_source_failure();
     }

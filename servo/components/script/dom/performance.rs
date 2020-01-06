@@ -154,19 +154,19 @@ impl Performance {
 
         // Step 4.
         // If the "add to performance entry buffer flag" is set, add the
-        // new entry to the buffer.
+        
         if add_to_performance_entries_buffer {
             self.entries.borrow_mut().entries.push(Root::from_ref(entry));
         }
 
-        // Step 5.
-        // If there is already a queued notification task, we just bail out.
+        
+        
         if self.pending_notification_observers_task.get() {
             return;
         }
 
-        // Step 6.
-        // Queue a new notification task.
+        
+        
         self.pending_notification_observers_task.set(true);
         let global = self.global();
         let window = global.as_window();
@@ -174,18 +174,18 @@ impl Performance {
         task_source.queue_notification(self, window);
     }
 
-    /// Observers notifications task.
-    ///
-    /// Algorithm spec (step 7):
-    /// https://w3c.github.io/performance-timeline/#queue-a-performanceentry
+    
+    
+    
+    
     fn notify_observers(&self) {
-        // Step 7.1.
+        
         self.pending_notification_observers_task.set(false);
 
-        // Step 7.2.
-        // We have to operate over a copy of the performance observers to avoid
-        // the risk of an observer's callback modifying the list of registered
-        // observers.
+        
+        
+        
+        
         let observers: Vec<Root<DOMPerformanceObserver>> =
             self.observers.borrow().iter()
                                    .map(|o| DOMPerformanceObserver::new(&self.global(),
@@ -193,7 +193,7 @@ impl Performance {
                                                                         o.observer.entries()))
                                    .collect();
 
-        // Step 7.3.
+        
         for o in observers.iter() {
             o.notify();
         }
@@ -213,8 +213,6 @@ impl NotifyPerformanceObserverRunnable {
 }
 
 impl Runnable for NotifyPerformanceObserverRunnable {
-    fn name(&self) -> &'static str { "NotifyPerformanceObserverRunnable" }
-
     fn main_thread_handler(self: Box<NotifyPerformanceObserverRunnable>,
                            _: &ScriptThread) {
         self.owner.root().notify_observers();
