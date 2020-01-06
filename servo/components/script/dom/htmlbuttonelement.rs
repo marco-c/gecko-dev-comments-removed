@@ -62,94 +62,94 @@ impl HTMLButtonElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLButtonElement> {
-        Node::reflect_node(box HTMLButtonElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLButtonElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLButtonElementBinding::Wrap)
     }
 }
 
 impl HTMLButtonElementMethods for HTMLButtonElement {
-    // https://html.spec.whatwg.org/multipage/#dom-cva-validity
+    
     fn Validity(&self) -> DomRoot<ValidityState> {
         let window = window_from_node(self);
         ValidityState::new(&window, self.upcast())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-button-type
+    
     make_enumerated_getter!(Type, "type", "submit", "reset" | "button" | "menu");
 
-    // https://html.spec.whatwg.org/multipage/#dom-button-type
+    
     make_setter!(SetType, "type");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formaction
+    
     make_form_action_getter!(FormAction, "formaction");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formaction
+    
     make_setter!(SetFormAction, "formaction");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formenctype
+    
     make_enumerated_getter!(FormEnctype,
                             "formenctype",
                             "application/x-www-form-urlencoded",
                             "text/plain" | "multipart/form-data");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formenctype
+    
     make_setter!(SetFormEnctype, "formenctype");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formmethod
+    
     make_enumerated_getter!(FormMethod, "formmethod", "get", "post" | "dialog");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formmethod
+    
     make_setter!(SetFormMethod, "formmethod");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formtarget
+    
     make_getter!(FormTarget, "formtarget");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-formtarget
+    
     make_setter!(SetFormTarget, "formtarget");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fs-formnovalidate
+    
     make_bool_getter!(FormNoValidate, "formnovalidate");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fs-formnovalidate
+    
     make_bool_setter!(SetFormNoValidate, "formnovalidate");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-name
+    
     make_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-button-value
+    
     make_getter!(Value, "value");
 
-    // https://html.spec.whatwg.org/multipage/#dom-button-value
+    
     make_setter!(SetValue, "value");
 
-    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
+    
     fn Labels(&self) -> DomRoot<NodeList> {
         self.upcast::<HTMLElement>().labels()
     }
 }
 
 impl HTMLButtonElement {
-    /// https://html.spec.whatwg.org/multipage/#constructing-the-form-data-set
-    /// Steps range from 3.1 to 3.7 (specific to HTMLButtonElement)
+    
+    
     pub fn form_datum(&self, submitter: Option<FormSubmitter>) -> Option<FormDatum> {
-        // Step 3.1: disabled state check is in get_unclean_dataset
+        
 
-        // Step 3.1: only run steps if this is the submitter
+        
         if let Some(FormSubmitter::ButtonElement(submitter)) = submitter {
             if submitter != self {
                 return None
@@ -157,17 +157,17 @@ impl HTMLButtonElement {
         } else {
             return None
         }
-        // Step 3.2
+        
         let ty = self.Type();
-        // Step 3.4
+        
         let name = self.Name();
 
         if name.is_empty() {
-            // Step 3.1: Must have a name
+            
             return None;
         }
 
-        // Step 3.9
+        
         Some(FormDatum {
             ty: ty,
             name: name,

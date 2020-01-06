@@ -28,19 +28,19 @@ impl TextEncoder {
     }
 
     pub fn new(global: &GlobalScope) -> DomRoot<TextEncoder> {
-        reflect_dom_object(box TextEncoder::new_inherited(),
+        reflect_dom_object(Box::new(TextEncoder::new_inherited()),
                            global,
                            TextEncoderBinding::Wrap)
     }
 
-    // https://encoding.spec.whatwg.org/#dom-textencoder
+    
     pub fn Constructor(global: &GlobalScope) -> Fallible<DomRoot<TextEncoder>> {
         Ok(TextEncoder::new(global))
     }
 }
 
 impl TextEncoderMethods for TextEncoder {
-    // https://encoding.spec.whatwg.org/#dom-textencoder-encoding
+    
     fn Encoding(&self) -> DOMString {
         DOMString::from("utf-8")
     }

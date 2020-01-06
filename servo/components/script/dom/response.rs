@@ -68,55 +68,55 @@ impl Response {
 
     
     pub fn new(global: &GlobalScope) -> DomRoot<Response> {
-        reflect_dom_object(box Response::new_inherited(), global, ResponseBinding::Wrap)
+        reflect_dom_object(Box::new(Response::new_inherited()), global, ResponseBinding::Wrap)
     }
 
     pub fn Constructor(global: &GlobalScope, body: Option<BodyInit>, init: &ResponseBinding::ResponseInit)
                        -> Fallible<DomRoot<Response>> {
-        // Step 1
+        
         if init.status < 200 || init.status > 599 {
             return Err(Error::Range(
                 format!("init's status member should be in the range 200 to 599, inclusive, but is {}"
                         , init.status)));
         }
 
-        // Step 2
+        
         if !is_valid_status_text(&init.statusText) {
             return Err(Error::Type("init's statusText member does not match the reason-phrase token production"
                                    .to_string()));
         }
 
-        // Step 3
+        
         let r = Response::new(global);
 
-        // Step 4
+        
         *r.status.borrow_mut() = Some(StatusCode::from_u16(init.status));
 
-        // Step 5
+        
         *r.raw_status.borrow_mut() = Some((init.status, init.statusText.clone().into()));
 
-        // Step 6
+        
         if let Some(ref headers_member) = init.headers {
-            // Step 6.1
+            
             r.Headers().empty_header_list();
 
-            // Step 6.2
+            
             r.Headers().fill(Some(headers_member.clone()))?;
         }
 
-        // Step 7
+        
         if let Some(ref body) = body {
-            // Step 7.1
+            
             if is_null_body_status(init.status) {
                 return Err(Error::Type(
                     "Body is non-null but init's status member is a null body status".to_string()));
             };
 
-            // Step 7.3
+            
             let (extracted_body, content_type) = body.extract();
             *r.body.borrow_mut() = NetTraitsResponseBody::Done(extracted_body);
 
-            // Step 7.4
+            
             if let Some(content_type_contents) = content_type {
                 if !r.Headers().Has(ByteString::new(b"Content-Type".to_vec())).unwrap() {
                     r.Headers().Append(ByteString::new(b"Content-Type".to_vec()),
@@ -125,20 +125,20 @@ impl Response {
             };
         }
 
-        // Step 8
+        
         *r.mime_type.borrow_mut() = r.Headers().extract_mime_type();
 
-        // Step 9
-        // TODO: `entry settings object` is not implemented in Servo yet.
+        
+        
 
-        // Step 10
-        // TODO: Write this step once Promises are merged in
+        
+        
 
-        // Step 11
+        
         Ok(r)
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-error
+    
     pub fn Error(global: &GlobalScope) -> DomRoot<Response> {
         let r = Response::new(global);
         *r.response_type.borrow_mut() = DOMResponseType::Error;
@@ -147,47 +147,47 @@ impl Response {
         r
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-redirect
+    
     pub fn Redirect(global: &GlobalScope, url: USVString, status: u16) -> Fallible<DomRoot<Response>> {
-        // Step 1
+        
         let base_url = global.api_base_url();
         let parsed_url = base_url.join(&url.0);
 
-        // Step 2
+        
         let url = match parsed_url {
             Ok(url) => url,
             Err(_) => return Err(Error::Type("ServoUrl could not be parsed".to_string())),
         };
 
-        // Step 3
+        
         if !is_redirect_status(status) {
             return Err(Error::Range("status is not a redirect status".to_string()));
         }
 
-        // Step 4
-        // see Step 4 continued
+        
+        
         let r = Response::new(global);
 
-        // Step 5
+        
         *r.status.borrow_mut() = Some(StatusCode::from_u16(status));
         *r.raw_status.borrow_mut() = Some((status, b"".to_vec()));
 
-        // Step 6
+        
         let url_bytestring = ByteString::from_str(url.as_str()).unwrap_or(ByteString::new(b"".to_vec()));
         r.Headers().Set(ByteString::new(b"Location".to_vec()), url_bytestring)?;
 
-        // Step 4 continued
-        // Headers Guard is set to Immutable here to prevent error in Step 6
+        
+        
         r.Headers().set_guard(Guard::Immutable);
 
-        // Step 7
+        
         Ok(r)
     }
 
-    // https://fetch.spec.whatwg.org/#concept-body-locked
+    
     fn locked(&self) -> bool {
-        // TODO: ReadableStream is unimplemented. Just return false
-        // for now.
+        
+        
         false
     }
 }
@@ -225,14 +225,14 @@ impl BodyOperations for Response {
     }
 }
 
-// https://fetch.spec.whatwg.org/#redirect-status
+
 fn is_redirect_status(status: u16) -> bool {
     status == 301 || status == 302 || status == 303 || status == 307 || status == 308
 }
 
-// https://tools.ietf.org/html/rfc7230#section-3.1.2
+
 fn is_valid_status_text(status_text: &ByteString) -> bool {
-    // reason-phrase  = *( HTAB / SP / VCHAR / obs-text )
+    
     for byte in status_text.iter() {
         if !(*byte == b'\t' || *byte == b' ' || is_vchar(*byte) || is_obs_text(*byte)) {
             return false;
@@ -241,29 +241,29 @@ fn is_valid_status_text(status_text: &ByteString) -> bool {
     true
 }
 
-// https://fetch.spec.whatwg.org/#null-body-status
+
 fn is_null_body_status(status: u16) -> bool {
     status == 101 || status == 204 || status == 205 || status == 304
 }
 
 impl ResponseMethods for Response {
-    // https://fetch.spec.whatwg.org/#dom-response-type
+    
     fn Type(&self) -> DOMResponseType {
-        *self.response_type.borrow()//into()
+        *self.response_type.borrow()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-url
+    
     fn Url(&self) -> USVString {
         USVString(String::from((*self.url.borrow()).as_ref().map(|u| serialize_without_fragment(u)).unwrap_or("")))
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-redirected
+    
     fn Redirected(&self) -> bool {
         let url_list_len = self.url_list.borrow().len();
         url_list_len > 1
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-status
+    
     fn Status(&self) -> u16 {
         match *self.raw_status.borrow() {
             Some((s, _)) => s,
@@ -271,7 +271,7 @@ impl ResponseMethods for Response {
         }
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-ok
+    
     fn Ok(&self) -> bool {
         match *self.status.borrow() {
             Some(s) => {
@@ -282,7 +282,7 @@ impl ResponseMethods for Response {
         }
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-statustext
+    
     fn StatusText(&self) -> ByteString {
         match *self.raw_status.borrow() {
             Some((_, ref st)) => ByteString::new(st.clone()),
@@ -290,14 +290,14 @@ impl ResponseMethods for Response {
         }
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-headers
+    
     fn Headers(&self) -> DomRoot<Headers> {
         self.headers_reflector.or_init(|| Headers::for_response(&self.global()))
     }
 
-    // https://fetch.spec.whatwg.org/#dom-response-clone
+    
     fn Clone(&self) -> Fallible<DomRoot<Response>> {
-        // Step 1
+        
         if self.is_locked() || self.body_used.get() {
             return Err(Error::Type("cannot clone a disturbed response".to_string()));
         }

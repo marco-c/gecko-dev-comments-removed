@@ -204,12 +204,12 @@ impl XMLHttpRequest {
         }
     }
     pub fn new(global: &GlobalScope) -> DomRoot<XMLHttpRequest> {
-        reflect_dom_object(box XMLHttpRequest::new_inherited(global),
+        reflect_dom_object(Box::new(XMLHttpRequest::new_inherited(global)),
                            global,
                            XMLHttpRequestBinding::Wrap)
     }
 
-    // https://xhr.spec.whatwg.org/#constructors
+    
     pub fn Constructor(global: &GlobalScope) -> Fallible<DomRoot<XMLHttpRequest>> {
         Ok(XMLHttpRequest::new(global))
     }
@@ -224,11 +224,11 @@ impl XMLHttpRequest {
                           init: RequestInit) {
         impl FetchResponseListener for XHRContext {
             fn process_request_body(&mut self) {
-                // todo
+                
             }
 
             fn process_request_eof(&mut self) {
-                // todo
+                
             }
 
             fn process_response(&mut self,
@@ -263,29 +263,29 @@ impl XMLHttpRequest {
             task_source: task_source,
             canceller: Some(global.task_canceller())
         };
-        ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+        ROUTER.add_route(action_receiver.to_opaque(), Box::new(move |message| {
             listener.notify_fetch(message.to().unwrap());
-        });
+        }));
         global.core_resource_thread().send(Fetch(init, action_sender)).unwrap();
     }
 }
 
 impl XMLHttpRequestMethods for XMLHttpRequest {
-    // https://xhr.spec.whatwg.org/#handler-xhr-onreadystatechange
+    
     event_handler!(readystatechange, GetOnreadystatechange, SetOnreadystatechange);
 
-    // https://xhr.spec.whatwg.org/#dom-xmlhttprequest-readystate
+    
     fn ReadyState(&self) -> u16 {
         self.ready_state.get() as u16
     }
 
-    // https://xhr.spec.whatwg.org/#the-open()-method
+    
     fn Open(&self, method: ByteString, url: USVString) -> ErrorResult {
-        // Step 8
+        
         self.Open_(method, url, true, None, None)
     }
 
-    // https://xhr.spec.whatwg.org/#the-open()-method
+    
     fn Open_(&self, method: ByteString, url: USVString, async: bool,
              username: Option<USVString>, password: Option<USVString>) -> ErrorResult {
         // Step 1

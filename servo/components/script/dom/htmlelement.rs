@@ -62,7 +62,7 @@ impl HTMLElement {
 
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document) -> DomRoot<HTMLElement> {
-        Node::reflect_node(box HTMLElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLElementBinding::Wrap)
     }
@@ -101,8 +101,8 @@ impl HTMLElement {
                     } else {
                         node.set_flag(SEQUENTIALLY_FOCUSABLE, false);
                     }
-                    //TODO set SEQUENTIALLY_FOCUSABLE flag if editing host
-                    //TODO set SEQUENTIALLY_FOCUSABLE flag if "sorting interface th elements"
+                    
+                    
                 },
             }
         }
@@ -110,7 +110,7 @@ impl HTMLElement {
 }
 
 impl HTMLElementMethods for HTMLElement {
-    // https://html.spec.whatwg.org/multipage/#the-style-attribute
+    
     fn Style(&self) -> DomRoot<CSSStyleDeclaration> {
         self.style_decl.or_init(|| {
             let global = window_from_node(self);
@@ -121,33 +121,33 @@ impl HTMLElementMethods for HTMLElement {
         })
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-title
+    
     make_getter!(Title, "title");
-    // https://html.spec.whatwg.org/multipage/#attr-title
+    
     make_setter!(SetTitle, "title");
 
-    // https://html.spec.whatwg.org/multipage/#attr-lang
+    
     make_getter!(Lang, "lang");
-    // https://html.spec.whatwg.org/multipage/#attr-lang
+    
     make_setter!(SetLang, "lang");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hidden
+    
     make_bool_getter!(Hidden, "hidden");
-    // https://html.spec.whatwg.org/multipage/#dom-hidden
+    
     make_bool_setter!(SetHidden, "hidden");
 
-    // https://html.spec.whatwg.org/multipage/#globaleventhandlers
+    
     global_event_handlers!(NoOnload);
 
-    // https://html.spec.whatwg.org/multipage/#documentandelementeventhandlers
+    
     document_and_element_event_handlers!();
 
-    // https://html.spec.whatwg.org/multipage/#dom-dataset
+    
     fn Dataset(&self) -> DomRoot<DOMStringMap> {
         self.dataset.or_init(|| DOMStringMap::new(self))
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onload
+    
     fn GetOnload(&self) -> Option<Rc<EventHandlerNonNull>> {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -161,7 +161,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onload
+    
     fn SetOnload(&self, listener: Option<Rc<EventHandlerNonNull>>) {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -173,7 +173,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onresize
+    
     fn GetOnresize(&self) -> Option<Rc<EventHandlerNonNull>> {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -187,7 +187,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onresize
+    
     fn SetOnresize(&self, listener: Option<Rc<EventHandlerNonNull>>) {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -199,7 +199,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onblur
+    
     fn GetOnblur(&self) -> Option<Rc<EventHandlerNonNull>> {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -213,7 +213,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onblur
+    
     fn SetOnblur(&self, listener: Option<Rc<EventHandlerNonNull>>) {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -225,7 +225,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onfocus
+    
     fn GetOnfocus(&self) -> Option<Rc<EventHandlerNonNull>> {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -239,7 +239,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onfocus
+    
     fn SetOnfocus(&self, listener: Option<Rc<EventHandlerNonNull>>) {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -251,7 +251,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onscroll
+    
     fn GetOnscroll(&self) -> Option<Rc<EventHandlerNonNull>> {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -265,7 +265,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#handler-onscroll
+    
     fn SetOnscroll(&self, listener: Option<Rc<EventHandlerNonNull>>) {
         if self.is_body_or_frameset() {
             let document = document_from_node(self);
@@ -277,7 +277,7 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-click
+    
     fn Click(&self) {
         if !self.upcast::<Element>().disabled_state() {
             synthetic_click_activation(self.upcast::<Element>(),
@@ -289,30 +289,30 @@ impl HTMLElementMethods for HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-focus
+    
     fn Focus(&self) {
-        // TODO: Mark the element as locked for focus and run the focusing steps.
-        // https://html.spec.whatwg.org/multipage/#focusing-steps
+        
+        
         let document = document_from_node(self);
         document.begin_focus_transaction();
         document.request_focus(self.upcast());
         document.commit_focus_transaction(FocusType::Element);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-blur
+    
     fn Blur(&self) {
-        // TODO: Run the unfocusing steps.
+        
         if !self.upcast::<Element>().focus_state() {
             return;
         }
-        // https://html.spec.whatwg.org/multipage/#unfocusing-steps
+        
         let document = document_from_node(self);
         document.begin_focus_transaction();
-        // If `request_focus` is not called, focus will be set to None.
+        
         document.commit_focus_transaction(FocusType::Element);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetparent
+    
     fn GetOffsetParent(&self) -> Option<DomRoot<Element>> {
         if self.is::<HTMLBodyElement>() || self.is::<HTMLHtmlElement>() {
             return None;
@@ -325,7 +325,7 @@ impl HTMLElementMethods for HTMLElement {
         element
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsettop
+    
     fn OffsetTop(&self) -> i32 {
         if self.is::<HTMLBodyElement>() {
             return 0;
@@ -338,7 +338,7 @@ impl HTMLElementMethods for HTMLElement {
         rect.origin.y.to_nearest_px()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetleft
+    
     fn OffsetLeft(&self) -> i32 {
         if self.is::<HTMLBodyElement>() {
             return 0;
@@ -351,7 +351,7 @@ impl HTMLElementMethods for HTMLElement {
         rect.origin.x.to_nearest_px()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetwidth
+    
     fn OffsetWidth(&self) -> i32 {
         let node = self.upcast::<Node>();
         let window = window_from_node(self);
@@ -360,7 +360,7 @@ impl HTMLElementMethods for HTMLElement {
         rect.size.width.to_nearest_px()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-htmlelement-offsetheight
+    
     fn OffsetHeight(&self) -> i32 {
         let node = self.upcast::<Node>();
         let window = window_from_node(self);
@@ -370,7 +370,7 @@ impl HTMLElementMethods for HTMLElement {
     }
 }
 
-// https://html.spec.whatwg.org/multipage/#attr-data-*
+
 
 static DATA_PREFIX: &str = "data-";
 static DATA_HYPHEN_SEPARATOR: char = '\x2d';
@@ -398,10 +398,10 @@ fn to_snake_case(name: DOMString) -> DOMString {
 }
 
 
-// https://html.spec.whatwg.org/multipage/#attr-data-*
-// if this attribute is in snake case with a data- prefix,
-// this function returns a name converted to camel case
-// without the data prefix.
+
+
+
+
 
 fn to_camel_case(name: &str) -> Option<DOMString> {
     if !name.starts_with(DATA_PREFIX) {
@@ -415,7 +415,7 @@ fn to_camel_case(name: &str) -> Option<DOMString> {
     let mut result = String::with_capacity(name.len().saturating_sub(DATA_PREFIX.len()));
     let mut name_chars = name.chars();
     while let Some(curr_char) = name_chars.next() {
-        //check for hyphen followed by character
+        
         if curr_char == DATA_HYPHEN_SEPARATOR {
             if let Some(next_char) = name_chars.next() {
                 if is_ascii_lowercase(next_char) {
@@ -445,22 +445,22 @@ impl HTMLElement {
     }
 
     pub fn get_custom_attr(&self, local_name: DOMString) -> Option<DOMString> {
-        // FIXME(ajeffrey): Convert directly from DOMString to LocalName
+        
         let local_name = LocalName::from(to_snake_case(local_name));
         self.upcast::<Element>().get_attribute(&ns!(), &local_name).map(|attr| {
-            DOMString::from(&**attr.value()) // FIXME(ajeffrey): Convert directly from AttrValue to DOMString
+            DOMString::from(&**attr.value()) 
         })
     }
 
     pub fn delete_custom_attr(&self, local_name: DOMString) {
-        // FIXME(ajeffrey): Convert directly from DOMString to LocalName
+        
         let local_name = LocalName::from(to_snake_case(local_name));
         self.upcast::<Element>().remove_attribute(&ns!(), &local_name);
     }
 
-    // https://html.spec.whatwg.org/multipage/#category-label
+    
     pub fn is_labelable_element(&self) -> bool {
-        // Note: HTMLKeygenElement is omitted because Servo doesn't currently implement it
+        
         match self.upcast::<Node>().type_id() {
             NodeTypeId::Element(ElementTypeId::HTMLElement(type_id)) =>
                 match type_id {
@@ -478,10 +478,10 @@ impl HTMLElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#category-listed
+    
     pub fn is_listed_element(&self) -> bool {
-        // Servo does not implement HTMLKeygenElement
-        // https://github.com/servo/servo/issues/2782
+        
+        
         if self.upcast::<Element>().local_name() == &local_name!("keygen") {
             return true;
         }
@@ -510,21 +510,21 @@ impl HTMLElement {
         }).collect()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
+    
     pub fn labels(&self) -> DomRoot<NodeList> {
         debug_assert!(self.is_labelable_element());
 
         let element = self.upcast::<Element>();
         let window = window_from_node(element);
 
-        // Traverse ancestors for implicitly associated <label> elements
-        // https://html.spec.whatwg.org/multipage/#the-label-element:attr-label-for-4
+        
+        
         let ancestors =
             self.upcast::<Node>()
                 .ancestors()
                 .filter_map(DomRoot::downcast::<HTMLElement>)
-                // If we reach a labelable element, we have a guarantee no ancestors above it
-                // will be a label for this HTMLElement
+                
+                
                 .take_while(|elem| !elem.is_labelable_element())
                 .filter_map(DomRoot::downcast::<HTMLLabelElement>)
                 .filter(|elem| !elem.upcast::<Element>().has_attribute(&local_name!("for")))
@@ -537,7 +537,7 @@ impl HTMLElement {
             id => id,
         };
 
-        // Traverse entire tree for <label> elements with `for` attribute matching `id`
+        
         let root_element = element.root_element();
         let root_node = root_element.upcast::<Node>();
         let children = root_node.traverse_preorder()

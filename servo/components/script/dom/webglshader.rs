@@ -82,7 +82,7 @@ impl WebGLShader {
                id: WebGLShaderId,
                shader_type: u32)
                -> DomRoot<WebGLShader> {
-        reflect_dom_object(box WebGLShader::new_inherited(renderer, id, shader_type),
+        reflect_dom_object(Box::new(WebGLShader::new_inherited(renderer, id, shader_type)),
                            window,
                            WebGLShaderBinding::Wrap)
     }
@@ -98,7 +98,7 @@ impl WebGLShader {
         self.gl_type
     }
 
-    /// glCompileShader
+    
     pub fn compile(&self, ext: &WebGLExtensions) {
         if self.compilation_status.get() != ShaderCompilationStatus::NotCompiled {
             debug!("Compiling already compiled shader {}", self.id);
@@ -114,9 +114,9 @@ impl WebGLShader {
             match validator.compile_and_translate(&[source]) {
                 Ok(translated_source) => {
                     debug!("Shader translated: {}", translated_source);
-                    // NOTE: At this point we should be pretty sure that the compilation in the paint thread
-                    // will succeed.
-                    // It could be interesting to retrieve the info log from the paint thread though
+                    
+                    
+                    
                     let msg = WebGLCommand::CompileShader(self.id, translated_source);
                     self.renderer.send(msg).unwrap();
                     self.compilation_status.set(ShaderCompilationStatus::Succeeded);

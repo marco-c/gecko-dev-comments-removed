@@ -40,7 +40,7 @@ impl HTMLLabelElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLLabelElement> {
-        Node::reflect_node(box HTMLLabelElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLLabelElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLLabelElementBinding::Wrap)
     }
@@ -55,16 +55,16 @@ impl Activatable for HTMLLabelElement {
         true
     }
 
-    // https://html.spec.whatwg.org/multipage/#run-pre-click-activation-steps
-    // https://html.spec.whatwg.org/multipage/#the-button-element:activation-behavior
+    
+    
     fn pre_click_activation(&self) {
     }
 
-    // https://html.spec.whatwg.org/multipage/#run-canceled-activation-steps
+    
     fn canceled_activation(&self) {
     }
 
-    // https://html.spec.whatwg.org/multipage/#run-post-click-activation-steps
+    
     fn activation_behavior(&self, _event: &Event, _target: &EventTarget) {
         if let Some(e) = self.GetControl() {
             let elem = e.upcast::<Element>();
@@ -77,28 +77,28 @@ impl Activatable for HTMLLabelElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#implicit-submission
+    
     fn implicit_submission(&self, _ctrl_key: bool, _shift_key: bool, _alt_key: bool, _meta_key: bool) {
-        //FIXME: Investigate and implement implicit submission for label elements
-        // Issue filed at https://github.com/servo/servo/issues/8263
+        
+        
     }
 
 
 }
 
 impl HTMLLabelElementMethods for HTMLLabelElement {
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-label-htmlfor
+    
     make_getter!(HtmlFor, "for");
 
-    // https://html.spec.whatwg.org/multipage/#dom-label-htmlfor
+    
     make_atomic_setter!(SetHtmlFor, "for");
 
-    // https://html.spec.whatwg.org/multipage/#dom-label-control
+    
     fn GetControl(&self) -> Option<DomRoot<HTMLElement>> {
         if !self.upcast::<Node>().is_in_doc() {
             return None;

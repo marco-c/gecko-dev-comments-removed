@@ -36,7 +36,7 @@ impl HTMLTableSectionElement {
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document)
                -> DomRoot<HTMLTableSectionElement> {
-        Node::reflect_node(box HTMLTableSectionElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLTableSectionElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLTableSectionElementBinding::Wrap)
     }
@@ -52,12 +52,12 @@ impl CollectionFilter for RowsFilter {
 }
 
 impl HTMLTableSectionElementMethods for HTMLTableSectionElement {
-    // https://html.spec.whatwg.org/multipage/#dom-tbody-rows
+    
     fn Rows(&self) -> DomRoot<HTMLCollection> {
-        HTMLCollection::create(&window_from_node(self), self.upcast(), box RowsFilter)
+        HTMLCollection::create(&window_from_node(self), self.upcast(), Box::new(RowsFilter))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tbody-insertrow
+    
     fn InsertRow(&self, index: i32) -> Fallible<DomRoot<HTMLElement>> {
         let node = self.upcast::<Node>();
         node.insert_cell_or_row(
@@ -66,7 +66,7 @@ impl HTMLTableSectionElementMethods for HTMLTableSectionElement {
             || HTMLTableRowElement::new(local_name!("tr"), None, &node.owner_doc()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tbody-deleterow
+    
     fn DeleteRow(&self, index: i32) -> ErrorResult {
         let node = self.upcast::<Node>();
         node.delete_cell_or_row(

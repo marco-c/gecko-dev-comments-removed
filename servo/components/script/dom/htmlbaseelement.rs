@@ -33,12 +33,12 @@ impl HTMLBaseElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLBaseElement> {
-        Node::reflect_node(box HTMLBaseElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLBaseElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLBaseElementBinding::Wrap)
     }
 
-    /// https://html.spec.whatwg.org/multipage/#frozen-base-url
+    
     pub fn frozen_base_url(&self) -> ServoUrl {
         let href = self.upcast::<Element>().get_attribute(&ns!(), &local_name!("href"))
             .expect("The frozen base url is only defined for base elements \
@@ -49,8 +49,8 @@ impl HTMLBaseElement {
         parsed.unwrap_or(base)
     }
 
-    /// Update the cached base element in response to binding or unbinding from
-    /// a tree.
+    
+    
     pub fn bind_unbind(&self, tree_in_doc: bool) {
         if !tree_in_doc {
             return;
@@ -64,32 +64,32 @@ impl HTMLBaseElement {
 }
 
 impl HTMLBaseElementMethods for HTMLBaseElement {
-    // https://html.spec.whatwg.org/multipage/#dom-base-href
+    
     fn Href(&self) -> DOMString {
-        // Step 1.
+        
         let document = document_from_node(self);
 
-        // Step 2.
+        
         let attr = self.upcast::<Element>().get_attribute(&ns!(), &local_name!("href"));
         let value = attr.as_ref().map(|attr| attr.value());
         let url = value.as_ref().map_or("", |value| &**value);
 
-        // Step 3.
+        
         let url_record = document.fallback_base_url().join(url);
 
         match url_record {
             Err(_) => {
-                // Step 4.
+                
                 url.into()
             }
             Ok(url_record) => {
-                // Step 5.
+                
                 url_record.into_string().into()
             },
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-base-href
+    
     make_setter!(SetHref, "href");
 }
 

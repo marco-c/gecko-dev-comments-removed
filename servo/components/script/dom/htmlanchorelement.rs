@@ -57,12 +57,12 @@ impl HTMLAnchorElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLAnchorElement> {
-        Node::reflect_node(box HTMLAnchorElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLAnchorElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLAnchorElementBinding::Wrap)
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-hyperlink-url-set
+    
     fn set_url(&self) {
         let attribute = self.upcast::<Element>().get_attribute(&ns!(), &local_name!("href"));
         *self.url.borrow_mut() = attribute.and_then(|attribute| {
@@ -71,19 +71,19 @@ impl HTMLAnchorElement {
         });
     }
 
-    // https://html.spec.whatwg.org/multipage/#reinitialise-url
+    
     fn reinitialize_url(&self) {
-        // Step 1.
+        
         match *self.url.borrow() {
             Some(ref url) if url.scheme() == "blob" && url.cannot_be_a_base() => return,
             _ => (),
         }
 
-        // Step 2.
+        
         self.set_url();
     }
 
-    // https://html.spec.whatwg.org/multipage/#update-href
+    
     fn update_href(&self, url: DOMString) {
         self.upcast::<Element>().set_string_attribute(&local_name!("href"), url);
     }

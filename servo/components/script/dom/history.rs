@@ -33,7 +33,7 @@ impl History {
     }
 
     pub fn new(window: &Window) -> DomRoot<History> {
-        reflect_dom_object(box History::new_inherited(window),
+        reflect_dom_object(Box::new(History::new_inherited(window)),
                            window,
                            HistoryBinding::Wrap)
     }
@@ -51,7 +51,7 @@ impl History {
 }
 
 impl HistoryMethods for History {
-    // https://html.spec.whatwg.org/multipage/#dom-history-length
+    
     fn GetLength(&self) -> Fallible<u32> {
         if !self.window.Document().is_fully_active() {
             return Err(Error::Security);

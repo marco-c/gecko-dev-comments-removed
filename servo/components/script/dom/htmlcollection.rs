@@ -82,7 +82,7 @@ impl HTMLCollection {
 
     #[allow(unrooted_must_root)]
     pub fn new(window: &Window, root: &Node, filter: Box<CollectionFilter + 'static>) -> DomRoot<HTMLCollection> {
-        reflect_dom_object(box HTMLCollection::new_inherited(root, filter),
+        reflect_dom_object(Box::new(HTMLCollection::new_inherited(root, filter)),
                            window, HTMLCollectionBinding::Wrap)
     }
 
@@ -92,11 +92,11 @@ impl HTMLCollection {
     }
 
     fn validate_cache(&self) {
-        // Clear the cache if the root version is different from our cached version
+        
         let cached_version = self.cached_version.get();
         let curr_version = self.root.inclusive_descendants_version();
         if curr_version != cached_version {
-            // Default values for the cache
+            
             self.cached_version.set(curr_version);
             self.cached_cursor_element.set(None);
             self.cached_length.set(OptionU32::none());
@@ -114,10 +114,10 @@ impl HTMLCollection {
         }
     }
 
-    // https://dom.spec.whatwg.org/#concept-getelementsbytagname
+    
     pub fn by_qualified_name(window: &Window, root: &Node, qualified_name: LocalName)
                              -> DomRoot<HTMLCollection> {
-        // case 1
+        
         if qualified_name == local_name!("*") {
             #[derive(HeapSizeOf, JSTraceable)]
             struct AllFilter;
@@ -126,7 +126,7 @@ impl HTMLCollection {
                     true
                 }
             }
-            return HTMLCollection::create(window, root, box AllFilter);
+            return HTMLCollection::create(window, root, Box::new(AllFilter));
         }
 
         #[derive(HeapSizeOf, JSTraceable)]
@@ -136,9 +136,9 @@ impl HTMLCollection {
         }
         impl CollectionFilter for HtmlDocumentFilter {
             fn filter(&self, elem: &Element, root: &Node) -> bool {
-                if root.is_in_html_doc() && elem.namespace() == &ns!(html) {    // case 2
+                if root.is_in_html_doc() && elem.namespace() == &ns!(html) {    
                     HTMLCollection::match_element(elem, &self.ascii_lower_qualified_name)
-                } else {    // case 2 and 3
+                } else {    
                     HTMLCollection::match_element(elem, &self.qualified_name)
                 }
             }
@@ -148,7 +148,7 @@ impl HTMLCollection {
             ascii_lower_qualified_name: qualified_name.to_ascii_lowercase(),
             qualified_name: qualified_name,
         };
-        HTMLCollection::create(window, root, box filter)
+        HTMLCollection::create(window, root, Box::new(filter))
     }
 
     fn match_element(elem: &Element, qualified_name: &LocalName) -> bool {
@@ -182,7 +182,7 @@ impl HTMLCollection {
         let filter = TagNameNSFilter {
             qname: qname
         };
-        HTMLCollection::create(window, root, box filter)
+        HTMLCollection::create(window, root, Box::new(filter))
     }
 
     pub fn by_class_name(window: &Window, root: &Node, classes: DOMString)
@@ -208,7 +208,7 @@ impl HTMLCollection {
         let filter = ClassNameFilter {
             classes: classes
         };
-        HTMLCollection::create(window, root, box filter)
+        HTMLCollection::create(window, root, Box::new(filter))
     }
 
     pub fn children(window: &Window, root: &Node) -> DomRoot<HTMLCollection> {
@@ -219,23 +219,23 @@ impl HTMLCollection {
                 root.is_parent_of(elem.upcast())
             }
         }
-        HTMLCollection::create(window, root, box ElementChildFilter)
+        HTMLCollection::create(window, root, Box::new(ElementChildFilter))
     }
 
     pub fn elements_iter_after<'a>(&'a self, after: &'a Node) -> impl Iterator<Item=DomRoot<Element>> + 'a {
-        // Iterate forwards from a node.
+        
         after.following_nodes(&self.root)
             .filter_map(DomRoot::downcast)
             .filter(move |element| self.filter.filter(&element, &self.root))
     }
 
     pub fn elements_iter<'a>(&'a self) -> impl Iterator<Item=DomRoot<Element>> + 'a {
-        // Iterate forwards from the root.
+        
         self.elements_iter_after(&*self.root)
     }
 
     pub fn elements_iter_before<'a>(&'a self, before: &'a Node) -> impl Iterator<Item=DomRoot<Element>> + 'a {
-        // Iterate backwards from a node.
+        
         before.preceding_nodes(&self.root)
             .filter_map(DomRoot::downcast)
             .filter(move |element| self.filter.filter(&element, &self.root))
@@ -247,95 +247,95 @@ impl HTMLCollection {
 }
 
 impl HTMLCollectionMethods for HTMLCollection {
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-length
+    
     fn Length(&self) -> u32 {
         self.validate_cache();
 
         if let Some(cached_length) = self.cached_length.get().to_option() {
-            // Cache hit
+            
             cached_length
         } else {
-            // Cache miss, calculate the length
+            
             let length = self.elements_iter().count() as u32;
             self.cached_length.set(OptionU32::some(length));
             length
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-item
+    
     fn Item(&self, index: u32) -> Option<DomRoot<Element>> {
         self.validate_cache();
 
         if let Some(element) = self.cached_cursor_element.get() {
-            // Cache hit, the cursor element is set
+            
             if let Some(cached_index) = self.cached_cursor_index.get().to_option() {
                 if cached_index == index {
-                    // The cursor is the element we're looking for
+                    
                     Some(element)
                 } else if cached_index < index {
-                    // The cursor is before the element we're looking for
-                    // Iterate forwards, starting at the cursor.
+                    
+                    
                     let offset = index - (cached_index + 1);
                     let node: DomRoot<Node> = DomRoot::upcast(element);
                     let mut iter = self.elements_iter_after(&node);
                     self.set_cached_cursor(index, iter.nth(offset as usize))
                 } else {
-                    // The cursor is after the element we're looking for
-                    // Iterate backwards, starting at the cursor.
+                    
+                    
                     let offset = cached_index - (index + 1);
                     let node: DomRoot<Node> = DomRoot::upcast(element);
                     let mut iter = self.elements_iter_before(&node);
                     self.set_cached_cursor(index, iter.nth(offset as usize))
                 }
             } else {
-                // Cache miss
-                // Iterate forwards through all the nodes
+                
+                
                 self.set_cached_cursor(index, self.elements_iter().nth(index as usize))
             }
         } else {
-            // Cache miss
-            // Iterate forwards through all the nodes
+            
+            
             self.set_cached_cursor(index, self.elements_iter().nth(index as usize))
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-nameditem
+    
     fn NamedItem(&self, key: DOMString) -> Option<DomRoot<Element>> {
-        // Step 1.
+        
         if key.is_empty() {
             return None;
         }
 
-        // Step 2.
+        
         self.elements_iter().find(|elem| {
             elem.get_string_attribute(&local_name!("id")) == key ||
             (elem.namespace() == &ns!(html) && elem.get_string_attribute(&local_name!("name")) == key)
         })
     }
 
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-item
+    
     fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Element>> {
         self.Item(index)
     }
 
-    // check-tidy: no specs after this line
+    
     fn NamedGetter(&self, name: DOMString) -> Option<DomRoot<Element>> {
         self.NamedItem(name)
     }
 
-    // https://dom.spec.whatwg.org/#interface-htmlcollection
+    
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
-        // Step 1
+        
         let mut result = vec![];
 
-        // Step 2
+        
         for elem in self.elements_iter() {
-            // Step 2.1
+            
             let id_attr = elem.get_string_attribute(&local_name!("id"));
             if !id_attr.is_empty() && !result.contains(&id_attr) {
                 result.push(id_attr)
             }
-            // Step 2.2
+            
             let name_attr = elem.get_string_attribute(&local_name!("name"));
             if !name_attr.is_empty() && !result.contains(&name_attr) && *elem.namespace() == ns!(html) {
                 result.push(name_attr)

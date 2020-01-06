@@ -84,12 +84,12 @@ impl HTMLSelectElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLSelectElement> {
-        Node::reflect_node(box HTMLSelectElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLSelectElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLSelectElementBinding::Wrap)
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-select-option-list
+    
     fn list_of_options(&self) -> impl Iterator<Item=DomRoot<HTMLOptionElement>> {
         self.upcast::<Node>()
             .children()
@@ -105,7 +105,7 @@ impl HTMLSelectElement {
             })
     }
 
-    // https://html.spec.whatwg.org/multipage/#the-select-element:concept-form-reset-control
+    
     pub fn reset(&self) {
         for opt in self.list_of_options() {
             opt.set_selectedness(opt.DefaultSelected());
@@ -114,7 +114,7 @@ impl HTMLSelectElement {
         self.ask_for_reset();
     }
 
-    // https://html.spec.whatwg.org/multipage/#ask-for-a-reset
+    
     pub fn ask_for_reset(&self) {
         if self.Multiple() {
             return;
@@ -161,7 +161,7 @@ impl HTMLSelectElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-select-pick
+    
     pub fn pick_option(&self, picked: &HTMLOptionElement) {
         if !self.Multiple() {
             let picked = picked.upcast();
@@ -173,7 +173,7 @@ impl HTMLSelectElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#concept-select-size
+    
     fn display_size(&self) -> u32 {
          if self.Size() == 0 {
              if self.Multiple() {
@@ -188,47 +188,47 @@ impl HTMLSelectElement {
 }
 
 impl HTMLSelectElementMethods for HTMLSelectElement {
-    // https://html.spec.whatwg.org/multipage/#dom-cva-validity
+    
     fn Validity(&self) -> DomRoot<ValidityState> {
         let window = window_from_node(self);
         ValidityState::new(&window, self.upcast())
     }
 
-    // Note: this function currently only exists for union.html.
-    // https://html.spec.whatwg.org/multipage/#dom-select-add
+    
+    
     fn Add(&self, _element: HTMLOptionElementOrHTMLOptGroupElement, _before: Option<HTMLElementOrLong>) {
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-multiple
+    
     make_bool_getter!(Multiple, "multiple");
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-multiple
+    
     make_bool_setter!(SetMultiple, "multiple");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-name
+    
     make_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-size
+    
     make_uint_getter!(Size, "size", DEFAULT_SELECT_SIZE);
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-size
+    
     make_uint_setter!(SetSize, "size", DEFAULT_SELECT_SIZE);
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-type
+    
     fn Type(&self) -> DOMString {
         DOMString::from(if self.Multiple() {
             "select-multiple"
@@ -237,56 +237,56 @@ impl HTMLSelectElementMethods for HTMLSelectElement {
         })
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
+    
     fn Labels(&self) -> DomRoot<NodeList> {
         self.upcast::<HTMLElement>().labels()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-options
+    
     fn Options(&self) -> DomRoot<HTMLOptionsCollection> {
         self.options.or_init(|| {
             let window = window_from_node(self);
             HTMLOptionsCollection::new(
-                &window, self, box OptionsFilter)
+                &window, self, Box::new(OptionsFilter))
         })
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-length
+    
     fn Length(&self) -> u32 {
         self.Options().Length()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-length
+    
     fn SetLength(&self, length: u32) {
         self.Options().SetLength(length)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-item
+    
     fn Item(&self, index: u32) -> Option<DomRoot<Element>> {
         self.Options().upcast().Item(index)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-item
+    
     fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Element>> {
         self.Options().IndexedGetter(index)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-nameditem
+    
     fn NamedItem(&self, name: DOMString) -> Option<DomRoot<HTMLOptionElement>> {
         self.Options().NamedGetter(name).map_or(None, |e| DomRoot::downcast::<HTMLOptionElement>(e))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-remove
+    
     fn Remove_(&self, index: i32) {
         self.Options().Remove(index)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-remove
+    
     fn Remove(&self) {
         self.upcast::<Element>().Remove()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-value
+    
     fn Value(&self) -> DOMString {
         self.list_of_options()
             .filter(|opt_elem| opt_elem.Selected())
@@ -295,10 +295,10 @@ impl HTMLSelectElementMethods for HTMLSelectElement {
             .unwrap_or_default()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-value
+    
     fn SetValue(&self, value: DOMString) {
         let mut opt_iter = self.list_of_options();
-        // Reset until we find an <option> with a matching value
+        
         for opt in opt_iter.by_ref() {
             if opt.Value() == value {
                 opt.set_selectedness(true);
@@ -307,13 +307,13 @@ impl HTMLSelectElementMethods for HTMLSelectElement {
             }
             opt.set_selectedness(false);
         }
-        // Reset remaining <option> elements
+        
         for opt in opt_iter {
             opt.set_selectedness(false);
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-selectedindex
+    
     fn SelectedIndex(&self) -> i32 {
         self.list_of_options()
             .enumerate()
@@ -323,7 +323,7 @@ impl HTMLSelectElementMethods for HTMLSelectElement {
             .unwrap_or(-1)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-select-selectedindex
+    
     fn SetSelectedIndex(&self, index: i32) {
         let mut opt_iter = self.list_of_options();
         for opt in opt_iter.by_ref().take(index as usize) {
@@ -332,7 +332,7 @@ impl HTMLSelectElementMethods for HTMLSelectElement {
         if let Some(opt) = opt_iter.next() {
             opt.set_selectedness(true);
             opt.set_dirtiness(true);
-            // Reset remaining <option> elements
+            
             for opt in opt_iter {
                 opt.set_selectedness(false);
             }

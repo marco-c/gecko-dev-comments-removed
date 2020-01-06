@@ -2,7 +2,6 @@
 
 
 
-#![feature(box_syntax)]
 #![feature(conservative_impl_trait)]
 #![feature(const_fn)]
 #![feature(const_ptr_null)]

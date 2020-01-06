@@ -30,16 +30,16 @@ impl HTMLDataElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLDataElement> {
-        Node::reflect_node(box HTMLDataElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLDataElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLDataElementBinding::Wrap)
     }
 }
 
 impl HTMLDataElementMethods for HTMLDataElement {
-    // https://html.spec.whatwg.org/multipage/#dom-data-value
+    
     make_getter!(Value, "value");
 
-    // https://html.spec.whatwg.org/multipage/#dom-data-value
+    
     make_setter!(SetValue, "value");
 }

@@ -125,30 +125,30 @@ impl WebSocket {
     }
 
     fn new(global: &GlobalScope, url: ServoUrl) -> DomRoot<WebSocket> {
-        reflect_dom_object(box WebSocket::new_inherited(url),
+        reflect_dom_object(Box::new(WebSocket::new_inherited(url)),
                            global, WebSocketBinding::Wrap)
     }
 
-    /// https://html.spec.whatwg.org/multipage/#dom-websocket
+    
     pub fn Constructor(global: &GlobalScope,
                        url: DOMString,
                        protocols: Option<StringOrStringSequence>)
                        -> Fallible<DomRoot<WebSocket>> {
-        // Steps 1-2.
+        
         let url_record = ServoUrl::parse(&url).or(Err(Error::Syntax))?;
 
-        // Step 3.
+        
         match url_record.scheme() {
             "ws" | "wss" => {},
             _ => return Err(Error::Syntax),
         }
 
-        // Step 4.
+        
         if url_record.fragment().is_some() {
             return Err(Error::Syntax);
         }
 
-        // Step 5.
+        
         let protocols = protocols.map_or(vec![], |p| {
             match p {
                 StringOrStringSequence::String(string) => vec![string.into()],
@@ -158,16 +158,16 @@ impl WebSocket {
             }
         });
 
-        // Step 6.
+        
         for (i, protocol) in protocols.iter().enumerate() {
-            // https://tools.ietf.org/html/rfc6455#section-4.1
-            // Handshake requirements, step 10
+            
+            
 
             if protocols[i + 1..].iter().any(|p| p.eq_ignore_ascii_case(protocol)) {
                 return Err(Error::Syntax);
             }
 
-            // https://tools.ietf.org/html/rfc6455#section-4.1
+            
             if !is_token(protocol.as_bytes()) {
                 return Err(Error::Syntax);
             }
@@ -182,7 +182,7 @@ impl WebSocket {
             protocols: protocols,
         };
 
-        // Create the interface for communication with the resource thread
+        
         let (dom_action_sender, resource_action_receiver):
                 (IpcSender<WebSocketDomAction>,
                 IpcReceiver<WebSocketDomAction>) = ipc::channel().unwrap();
@@ -195,7 +195,7 @@ impl WebSocket {
             action_receiver: resource_action_receiver,
         };
 
-        // Step 8.
+        
         let _ = global.core_resource_thread().send(WebsocketConnect(connect, connect_data));
 
         *ws.sender.borrow_mut() = Some(dom_action_sender);
@@ -231,11 +231,11 @@ impl WebSocket {
             }
         });
 
-        // Step 7.
+        
         Ok(ws)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-send
+    
     fn send_impl(&self, data_byte_len: u64) -> Fallible<bool> {
         let return_after_buffer = match self.ready_state.get() {
             WebSocketRequestState::Connecting => {
@@ -259,9 +259,9 @@ impl WebSocket {
         if !self.clearing_buffer.get() && self.ready_state.get() == WebSocketRequestState::Open {
             self.clearing_buffer.set(true);
 
-            let task = box BufferedAmountTask {
+            let task = Box::new(BufferedAmountTask {
                 address: address,
-            };
+            });
 
             self.global()
                 .script_chan()
@@ -274,49 +274,49 @@ impl WebSocket {
 }
 
 impl WebSocketMethods for WebSocket {
-    // https://html.spec.whatwg.org/multipage/#handler-websocket-onopen
+    
     event_handler!(open, GetOnopen, SetOnopen);
 
-    // https://html.spec.whatwg.org/multipage/#handler-websocket-onclose
+    
     event_handler!(close, GetOnclose, SetOnclose);
 
-    // https://html.spec.whatwg.org/multipage/#handler-websocket-onerror
+    
     event_handler!(error, GetOnerror, SetOnerror);
 
-    // https://html.spec.whatwg.org/multipage/#handler-websocket-onmessage
+    
     event_handler!(message, GetOnmessage, SetOnmessage);
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-url
+    
     fn Url(&self) -> DOMString {
         DOMString::from(self.url.as_str())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-readystate
+    
     fn ReadyState(&self) -> u16 {
         self.ready_state.get() as u16
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-bufferedamount
+    
     fn BufferedAmount(&self) -> u64 {
         self.buffered_amount.get()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-binarytype
+    
     fn BinaryType(&self) -> BinaryType {
         self.binary_type.get()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-binarytype
+    
     fn SetBinaryType(&self, btype: BinaryType) {
         self.binary_type.set(btype)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-protocol
+    
     fn Protocol(&self) -> DOMString {
          DOMString::from(self.protocol.borrow().clone())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-send
+    
     fn Send(&self, data: USVString) -> ErrorResult {
         let data_byte_len = data.0.as_bytes().len() as u64;
         let send_data = self.send_impl(data_byte_len)?;
@@ -330,12 +330,12 @@ impl WebSocketMethods for WebSocket {
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-send
+    
     fn Send_(&self, blob: &Blob) -> ErrorResult {
-        /* As per https://html.spec.whatwg.org/multipage/#websocket
-           the buffered amount needs to be clamped to u32, even though Blob.Size() is u64
-           If the buffer limit is reached in the first place, there are likely other major problems
-        */
+        
+
+
+
         let data_byte_len = blob.Size();
         let send_data = self.send_impl(data_byte_len)?;
 
@@ -349,25 +349,25 @@ impl WebSocketMethods for WebSocket {
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-websocket-close
+    
     fn Close(&self, code: Option<u16>, reason: Option<USVString>) -> ErrorResult {
         if let Some(code) = code {
-            //Fail if the supplied code isn't normal and isn't reserved for libraries, frameworks, and applications
+            
             if code != close_code::NORMAL && (code < 3000 || code > 4999) {
                 return Err(Error::InvalidAccess);
             }
         }
         if let Some(ref reason) = reason {
-            if reason.0.as_bytes().len() > 123 { //reason cannot be larger than 123 bytes
+            if reason.0.as_bytes().len() > 123 { 
                 return Err(Error::Syntax);
             }
         }
 
         match self.ready_state.get() {
-            WebSocketRequestState::Closing | WebSocketRequestState::Closed  => {} //Do nothing
-            WebSocketRequestState::Connecting => { //Connection is not yet established
-                /*By setting the state to closing, the open function
-                  will abort connecting the websocket*/
+            WebSocketRequestState::Closing | WebSocketRequestState::Closed  => {} 
+            WebSocketRequestState::Connecting => { 
+                
+
                 self.ready_state.set(WebSocketRequestState::Closing);
 
                 let address = Trusted::new(self);
@@ -377,43 +377,43 @@ impl WebSocketMethods for WebSocket {
             WebSocketRequestState::Open => {
                 self.ready_state.set(WebSocketRequestState::Closing);
 
-                // Kick off _Start the WebSocket Closing Handshake_
-                // https://tools.ietf.org/html/rfc6455#section-7.1.2
+                
+                
                 let reason = reason.map(|reason| reason.0);
                 let mut other_sender = self.sender.borrow_mut();
                 let my_sender = other_sender.as_mut().unwrap();
                 let _ = my_sender.send(WebSocketDomAction::Close(code, reason));
             }
         }
-        Ok(()) //Return Ok
+        Ok(()) 
     }
 }
 
 
-/// Task queued when *the WebSocket connection is established*.
-/// https://html.spec.whatwg.org/multipage/#feedback-from-the-protocol:concept-websocket-established
+
+
 struct ConnectionEstablishedTask {
     address: Trusted<WebSocket>,
     protocol_in_use: Option<String>,
 }
 
 impl TaskOnce for ConnectionEstablishedTask {
-    /// https://html.spec.whatwg.org/multipage/#feedback-from-the-protocol:concept-websocket-established
+    
     fn run_once(self) {
         let ws = self.address.root();
 
-        // Step 1.
+        
         ws.ready_state.set(WebSocketRequestState::Open);
 
-        // Step 2: Extensions.
-        // TODO: Set extensions to extensions in use.
+        
+        
 
-        // Step 3.
+        
         if let Some(protocol_name) = self.protocol_in_use {
             *ws.protocol.borrow_mut() = protocol_name;
         };
 
-        // Step 4.
+        
         ws.upcast().fire_event(atom!("open"));
     }
 }
@@ -423,11 +423,11 @@ struct BufferedAmountTask {
 }
 
 impl TaskOnce for BufferedAmountTask {
-    // See https://html.spec.whatwg.org/multipage/#dom-websocket-bufferedamount
-    //
-    // To be compliant with standards, we need to reset bufferedAmount only when the event loop
-    // reaches step 1.  In our implementation, the bytes will already have been sent on a background
-    // thread.
+    
+    
+    
+    
+    
     fn run_once(self) {
         let ws = self.address.root();
 
@@ -448,22 +448,22 @@ impl TaskOnce for CloseTask {
         let ws = self.address.root();
 
         if ws.ready_state.get() == WebSocketRequestState::Closed {
-            // Do nothing if already closed.
+            
             return;
         }
 
-        // Perform _the WebSocket connection is closed_ steps.
-        // https://html.spec.whatwg.org/multipage/#closeWebSocket
+        
+        
 
-        // Step 1.
+        
         ws.ready_state.set(WebSocketRequestState::Closed);
 
-        // Step 2.
+        
         if self.failed {
             ws.upcast().fire_event(atom!("error"));
         }
 
-        // Step 3.
+        
         let clean_close = !self.failed;
         let code = self.code.unwrap_or(close_code::NO_STATUS);
         let reason = DOMString::from(self.reason.unwrap_or("".to_owned()));
@@ -490,14 +490,14 @@ impl TaskOnce for MessageReceivedTask {
         debug!("MessageReceivedTask::handler({:p}): readyState={:?}", &*ws,
                ws.ready_state.get());
 
-        // Step 1.
+        
         if ws.ready_state.get() != WebSocketRequestState::Open {
             return;
         }
 
-        // Step 2-5.
+        
         let global = ws.global();
-        // global.get_cx() returns a valid `JSContext` pointer, so this is safe.
+        
         unsafe {
             let cx = global.get_cx();
             let _ac = JSAutoCompartment::new(cx, ws.reflector().get_jsobject().get());

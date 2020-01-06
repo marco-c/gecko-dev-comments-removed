@@ -52,24 +52,24 @@ impl DOMException {
     }
 
     pub fn new(global: &GlobalScope, code: DOMErrorName) -> DomRoot<DOMException> {
-        reflect_dom_object(box DOMException::new_inherited(code),
+        reflect_dom_object(Box::new(DOMException::new_inherited(code)),
                            global,
                            DOMExceptionBinding::Wrap)
     }
 }
 
 impl DOMExceptionMethods for DOMException {
-    // https://heycam.github.io/webidl/#dfn-DOMException
+    
     fn Code(&self) -> u16 {
         self.code as u16
     }
 
-    // https://heycam.github.io/webidl/#idl-DOMException-error-names
+    
     fn Name(&self) -> DOMString {
         DOMString::from(format!("{:?}", self.code))
     }
 
-    // https://heycam.github.io/webidl/#error-names
+    
     fn Message(&self) -> DOMString {
         let message = match self.code {
             DOMErrorName::IndexSizeError => "The index is not in the allowed range.",
@@ -99,7 +99,7 @@ impl DOMExceptionMethods for DOMException {
         DOMString::from(message)
     }
 
-    // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-error.prototype.tostring
+    
     fn Stringifier(&self) -> DOMString {
         DOMString::from(format!("{}: {}", self.Name(), self.Message()))
     }

@@ -759,7 +759,7 @@ unsafe impl<T: JSTraceable + 'static> JSTraceable for RootedTraceableBox<T> {
 impl<T: JSTraceable + 'static> RootedTraceableBox<T> {
     
     pub fn new(traceable: T) -> RootedTraceableBox<T> {
-        let traceable = Box::into_raw(box traceable);
+        let traceable = Box::into_raw(Box::new(traceable));
         unsafe {
             RootedTraceableSet::add(traceable);
         }
@@ -801,10 +801,10 @@ impl<T: JSTraceable + 'static> Drop for RootedTraceableBox<T> {
     }
 }
 
-/// A vector of items to be rooted with `RootedVec`.
-/// Guaranteed to be empty when not rooted.
-/// Usage: `rooted_vec!(let mut v);` or if you have an
-/// iterator of `DomRoot`s, `rooted_vec!(let v <- iterator);`.
+
+
+
+
 #[allow(unrooted_must_root)]
 #[derive(JSTraceable)]
 #[allow_unrooted_interior]
@@ -813,7 +813,7 @@ pub struct RootableVec<T: JSTraceable> {
 }
 
 impl<T: JSTraceable> RootableVec<T> {
-    /// Create a vector of items of type T that can be rooted later.
+    
     pub fn new_unrooted() -> RootableVec<T> {
         RootableVec {
             v: vec![],
@@ -821,15 +821,15 @@ impl<T: JSTraceable> RootableVec<T> {
     }
 }
 
-/// A vector of items that are rooted for the lifetime 'a.
+
 #[allow_unrooted_interior]
 pub struct RootedVec<'a, T: 'static + JSTraceable> {
     root: &'a mut RootableVec<T>,
 }
 
 impl<'a, T: 'static + JSTraceable> RootedVec<'a, T> {
-    /// Create a vector of items of type T that is rooted for
-    /// the lifetime of this struct
+    
+    
     pub fn new(root: &'a mut RootableVec<T>) -> Self {
         unsafe {
             RootedTraceableSet::add(root);
@@ -841,8 +841,8 @@ impl<'a, T: 'static + JSTraceable> RootedVec<'a, T> {
 }
 
 impl<'a, T: 'static + JSTraceable + DomObject> RootedVec<'a, Dom<T>> {
-    /// Create a vector of items of type Dom<T> that is rooted for
-    /// the lifetime of this struct
+    
+    
     pub fn from_iter<I>(root: &'a mut RootableVec<Dom<T>>, iter: I) -> Self
         where I: Iterator<Item = DomRoot<T>>
     {
@@ -878,7 +878,7 @@ impl<'a, T: JSTraceable> DerefMut for RootedVec<'a, T> {
     }
 }
 
-/// SM Callback that traces the rooted traceables
+
 pub unsafe fn trace_traceables(tracer: *mut JSTracer) {
     trace!("tracing stack-rooted traceables");
     ROOTED_TRACEABLES.with(|ref traceables| {

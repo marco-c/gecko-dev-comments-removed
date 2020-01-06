@@ -68,7 +68,7 @@ impl HTMLCanvasElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLCanvasElement> {
-        Node::reflect_node(box HTMLCanvasElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLCanvasElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLCanvasElementBinding::Wrap)
     }
@@ -227,7 +227,7 @@ impl HTMLCanvasElement {
                 }
             },
             Some(&CanvasContext::WebGL(_)) => {
-                // TODO: add a method in WebGLRenderingContext to get the pixels.
+                
                 return None;
             },
             None => {
@@ -240,20 +240,20 @@ impl HTMLCanvasElement {
 }
 
 impl HTMLCanvasElementMethods for HTMLCanvasElement {
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-width
+    
     make_uint_getter!(Width, "width", DEFAULT_WIDTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-width
+    
     make_uint_setter!(SetWidth, "width", DEFAULT_WIDTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-height
+    
     make_uint_getter!(Height, "height", DEFAULT_HEIGHT);
 
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-height
+    
     make_uint_setter!(SetHeight, "height", DEFAULT_HEIGHT);
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-getcontext
+    
     unsafe fn GetContext(&self,
                   cx: *mut JSContext,
                   id: DOMString,
@@ -273,24 +273,24 @@ impl HTMLCanvasElementMethods for HTMLCanvasElement {
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-canvas-todataurl
+    
     unsafe fn ToDataURL(&self,
                  _context: *mut JSContext,
                  _mime_type: Option<DOMString>,
                  _arguments: Vec<HandleValue>) -> Fallible<DOMString> {
-        // Step 1.
+        
         if let Some(CanvasContext::Context2d(ref context)) = *self.context.borrow() {
             if !context.origin_is_clean() {
                 return Err(Error::Security);
             }
         }
 
-        // Step 2.
+        
         if self.Width() == 0 || self.Height() == 0 {
             return Ok(DOMString::from("data:,"));
         }
 
-        // Step 3.
+        
         let raw_data = match *self.context.borrow() {
             Some(CanvasContext::Context2d(ref context)) => {
                 let image_data = context.GetImageData(Finite::wrap(0f64), Finite::wrap(0f64),
@@ -299,13 +299,13 @@ impl HTMLCanvasElementMethods for HTMLCanvasElement {
                 image_data.get_data_array()
             }
             None => {
-                // Each pixel is fully-transparent black.
+                
                 vec![0; (self.Width() * self.Height() * 4) as usize]
             }
-            _ => return Err(Error::NotSupported) // WebGL
+            _ => return Err(Error::NotSupported) 
         };
 
-        // Only handle image/png for now.
+        
         let mime_type = "image/png";
 
         let mut encoded = Vec::new();

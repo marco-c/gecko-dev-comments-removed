@@ -34,17 +34,17 @@ impl HTMLAppletElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLAppletElement> {
-        Node::reflect_node(box HTMLAppletElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLAppletElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLAppletElementBinding::Wrap)
     }
 }
 
 impl HTMLAppletElementMethods for HTMLAppletElement {
-    // https://html.spec.whatwg.org/multipage/#the-applet-element:dom-applet-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#the-applet-element:dom-applet-name
+    
     make_atomic_setter!(SetName, "name");
 }
 

@@ -54,7 +54,7 @@ impl PerformanceObserver {
                entries: DOMPerformanceEntryList)
         -> DomRoot<PerformanceObserver> {
         let observer = PerformanceObserver::new_inherited(callback, DomRefCell::new(entries));
-        reflect_dom_object(box observer, global, PerformanceObserverBinding::Wrap)
+        reflect_dom_object(Box::new(observer), global, PerformanceObserverBinding::Wrap)
     }
 
     pub fn Constructor(global: &GlobalScope, callback: Rc<PerformanceObserverCallback>)
@@ -62,13 +62,13 @@ impl PerformanceObserver {
         Ok(PerformanceObserver::new(global, callback, Vec::new()))
     }
 
-    /// Buffer a new performance entry.
+    
     pub fn queue_entry(&self, entry: &PerformanceEntry) {
         self.entries.borrow_mut().push(DomRoot::from_ref(entry));
     }
 
-    /// Trigger performance observer callback with the list of performance entries
-    /// buffered since the last callback call.
+    
+    
     pub fn notify(&self) {
         let entries = self.entries.borrow();
         if entries.is_empty() {
@@ -95,16 +95,16 @@ impl PerformanceObserver {
 }
 
 impl PerformanceObserverMethods for PerformanceObserver {
-    // https://w3c.github.io/performance-timeline/#dom-performanceobserver-observe()
+    
     fn Observe(&self, options: &PerformanceObserverInit) -> Fallible<()> {
-        // step 1
-        // Make sure the client is asking to observe events from allowed entry types.
+        
+        
         let entry_types = options.entryTypes.iter()
                                             .filter(|e| VALID_ENTRY_TYPES.contains(&e.as_ref()))
                                             .map(|e| e.clone())
                                             .collect::<Vec<DOMString>>();
-        // step 2
-        // There must be at least one valid entry type.
+        
+        
         if entry_types.is_empty() {
             return Err((Error::Type("entryTypes cannot be empty".to_string())));
         }

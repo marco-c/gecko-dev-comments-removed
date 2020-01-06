@@ -45,12 +45,12 @@ impl File {
     #[allow(unrooted_must_root)]
     pub fn new(global: &GlobalScope, blob_impl: BlobImpl,
                name: DOMString, modified: Option<i64>, typeString: &str) -> DomRoot<File> {
-        reflect_dom_object(box File::new_inherited(blob_impl, name, modified, typeString),
+        reflect_dom_object(Box::new(File::new_inherited(blob_impl, name, modified, typeString)),
                            global,
                            FileBinding::Wrap)
     }
 
-    // Construct from selected file message from file manager thread
+    
     pub fn new_from_selected(window: &Window, selected: SelectedFile) -> DomRoot<File> {
         let name = DOMString::from(selected.filename.to_str().expect("File name encoding error"));
 
@@ -58,7 +58,7 @@ impl File {
                   name, Some(selected.modified as i64), &selected.type_string)
     }
 
-    // https://w3c.github.io/FileAPI/#file-constructor
+    
     pub fn Constructor(global: &GlobalScope,
                        fileBits: Vec<BlobOrString>,
                        filename: DOMString,
@@ -73,8 +73,8 @@ impl File {
         let ref typeString = blobPropertyBag.type_;
 
         let modified = filePropertyBag.lastModified;
-        // NOTE: Following behaviour might be removed in future,
-        // see https://github.com/w3c/FileAPI/issues/41
+        
+        
         let replaced_filename = DOMString::from_string(filename.replace("/", ":"));
         Ok(File::new(global,
                      BlobImpl::new_from_bytes(bytes),

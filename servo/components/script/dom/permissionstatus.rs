@@ -31,7 +31,7 @@ impl PermissionStatus {
     }
 
     pub fn new(global: &GlobalScope, query: &PermissionDescriptor) -> DomRoot<PermissionStatus> {
-        reflect_dom_object(box PermissionStatus::new_inherited(query.name),
+        reflect_dom_object(Box::new(PermissionStatus::new_inherited(query.name)),
                            global,
                            PermissionStatusBinding::Wrap)
     }
@@ -46,12 +46,12 @@ impl PermissionStatus {
 }
 
 impl PermissionStatusMethods for PermissionStatus {
-    // https://w3c.github.io/permissions/#dom-permissionstatus-state
+    
     fn State(&self) -> PermissionState {
         self.state.get()
     }
 
-    // https://w3c.github.io/permissions/#dom-permissionstatus-onchange
+    
     event_handler!(onchange, GetOnchange, SetOnchange);
 }
 

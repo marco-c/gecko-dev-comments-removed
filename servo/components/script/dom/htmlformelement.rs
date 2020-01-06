@@ -86,85 +86,85 @@ impl HTMLFormElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLFormElement> {
-        Node::reflect_node(box HTMLFormElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLFormElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLFormElementBinding::Wrap)
     }
 }
 
 impl HTMLFormElementMethods for HTMLFormElement {
-    // https://html.spec.whatwg.org/multipage/#dom-form-acceptcharset
+    
     make_getter!(AcceptCharset, "accept-charset");
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-acceptcharset
+    
     make_setter!(SetAcceptCharset, "accept-charset");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-action
+    
     make_form_action_getter!(Action, "action");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-action
+    
     make_setter!(SetAction, "action");
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-autocomplete
+    
     make_enumerated_getter!(Autocomplete, "autocomplete", "on", "off");
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-autocomplete
+    
     make_setter!(SetAutocomplete, "autocomplete");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-enctype
+    
     make_enumerated_getter!(Enctype,
                             "enctype",
                             "application/x-www-form-urlencoded",
                             "text/plain" | "multipart/form-data");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-enctype
+    
     make_setter!(SetEnctype, "enctype");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-encoding
+    
     fn Encoding(&self) -> DOMString {
         self.Enctype()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-encoding
+    
     fn SetEncoding(&self, value: DOMString) {
         self.SetEnctype(value)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-method
+    
     make_enumerated_getter!(Method, "method", "get", "post" | "dialog");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-method
+    
     make_setter!(SetMethod, "method");
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-name
+    
     make_atomic_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-novalidate
+    
     make_bool_getter!(NoValidate, "novalidate");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-novalidate
+    
     make_bool_setter!(SetNoValidate, "novalidate");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-target
+    
     make_getter!(Target, "target");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fs-target
+    
     make_setter!(SetTarget, "target");
 
-    // https://html.spec.whatwg.org/multipage/#the-form-element:concept-form-submit
+    
     fn Submit(&self) {
         self.submit(SubmittedFrom::FromForm, FormSubmitter::FormElement(self));
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-reset
+    
     fn Reset(&self) {
         self.reset(ResetFrom::FromForm);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-elements
+    
     fn Elements(&self) -> DomRoot<HTMLFormControlsCollection> {
         #[derive(HeapSizeOf, JSTraceable)]
         struct ElementsFilter {
@@ -217,18 +217,18 @@ impl HTMLFormElementMethods for HTMLFormElement {
             }
         }
         DomRoot::from_ref(self.elements.init_once(|| {
-            let filter = box ElementsFilter { form: DomRoot::from_ref(self) };
+            let filter = Box::new(ElementsFilter { form: DomRoot::from_ref(self) });
             let window = window_from_node(self);
             HTMLFormControlsCollection::new(&window, self.upcast(), filter)
         }))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-length
+    
     fn Length(&self) -> u32 {
         self.Elements().Length() as u32
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-form-item
+    
     fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Element>> {
         let elements = self.Elements();
         elements.IndexedGetter(index)
@@ -249,64 +249,64 @@ pub enum ResetFrom {
 
 
 impl HTMLFormElement {
-    // https://html.spec.whatwg.org/multipage/#picking-an-encoding-for-the-form
+    
     fn pick_encoding(&self) -> EncodingRef {
-        // Step 2
+        
         if self.upcast::<Element>().has_attribute(&local_name!("accept-charset")) {
-            // Substep 1
+            
             let input = self.upcast::<Element>().get_string_attribute(&local_name!("accept-charset"));
 
-            // Substep 2, 3, 4
+            
             let mut candidate_encodings = split_html_space_chars(&*input).filter_map(encoding_from_whatwg_label);
 
-            // Substep 5, 6
+            
             return candidate_encodings.next().unwrap_or(UTF_8);
         }
 
-        // Step 1, 3
+        
         document_from_node(self).encoding()
     }
 
-    // https://html.spec.whatwg.org/multipage/#text/plain-encoding-algorithm
+    
     fn encode_plaintext(&self, form_data: &mut Vec<FormDatum>) -> String {
-        // Step 1
+        
         let mut result = String::new();
 
-        // Step 2
+        
         let encoding = self.pick_encoding();
 
-        // Step 3
+        
         let charset = &*encoding.whatwg_name().unwrap();
 
         for entry in form_data.iter_mut() {
-            // Step 4, 5
+            
             let value = entry.replace_value(charset);
 
-            // Step 6
+            
             result.push_str(&*format!("{}={}\r\n", entry.name, value));
         }
 
-        // Step 7
+        
         result
     }
 
-    /// [Form submission](https://html.spec.whatwg.org/multipage/#concept-form-submit)
+    
     pub fn submit(&self, submit_method_flag: SubmittedFrom, submitter: FormSubmitter) {
-        // Step 1
+        
         let doc = document_from_node(self);
         let base = doc.base_url();
-        // TODO: Handle browsing contexts (Step 2, 3)
-        // Step 4
+        
+        
         if submit_method_flag == SubmittedFrom::NotFromForm &&
            !submitter.no_validate(self)
         {
             if self.interactive_validation().is_err() {
-                // TODO: Implement event handlers on all form control elements
+                
                 self.upcast::<EventTarget>().fire_event(atom!("invalid"));
                 return;
             }
         }
-        // Step 5
+        
         if submit_method_flag == SubmittedFrom::NotFromForm {
             let event = self.upcast::<EventTarget>()
                 .fire_bubbling_cancelable_event(atom!("submit"));
@@ -314,67 +314,67 @@ impl HTMLFormElement {
                 return;
             }
         }
-        // Step 6
+        
         let mut form_data = self.get_form_dataset(Some(submitter));
 
-        // Step 7
+        
         let encoding = self.pick_encoding();
 
-        // Step 8
+        
         let mut action = submitter.action();
 
-        // Step 9
+        
         if action.is_empty() {
             action = DOMString::from(base.as_str());
         }
-        // Step 10-11
+        
         let action_components = match base.join(&action) {
             Ok(url) => url,
             Err(_) => return
         };
-        // Step 12-15
+        
         let scheme = action_components.scheme().to_owned();
         let enctype = submitter.enctype();
         let method = submitter.method();
         let _target = submitter.target();
-        // TODO: Handle browsing contexts, partially loaded documents (step 16-17)
+        
 
         let mut load_data = LoadData::new(action_components, None, doc.get_referrer_policy(), Some(doc.url()));
 
-        // Step 18
+        
         match (&*scheme, method) {
             (_, FormMethod::FormDialog) => {
-                // TODO: Submit dialog
-                // https://html.spec.whatwg.org/multipage/#submit-dialog
+                
+                
             }
-            // https://html.spec.whatwg.org/multipage/#submit-mutate-action
+            
             ("http", FormMethod::FormGet) | ("https", FormMethod::FormGet) | ("data", FormMethod::FormGet) => {
                 load_data.headers.set(ContentType::form_url_encoded());
                 self.mutate_action_url(&mut form_data, load_data, encoding);
             }
-            // https://html.spec.whatwg.org/multipage/#submit-body
+            
             ("http", FormMethod::FormPost) | ("https", FormMethod::FormPost) => {
                 load_data.method = Method::Post;
                 self.submit_entity_body(&mut form_data, load_data, enctype, encoding);
             }
-            // https://html.spec.whatwg.org/multipage/#submit-get-action
+            
             ("file", _) | ("about", _) | ("data", FormMethod::FormPost) |
             ("ftp", _) | ("javascript", _) => {
                 self.plan_to_navigate(load_data);
             }
             ("mailto", FormMethod::FormPost) => {
-                // TODO: Mail as body
-                // https://html.spec.whatwg.org/multipage/#submit-mailto-body
+                
+                
             }
             ("mailto", FormMethod::FormGet) => {
-                // TODO: Mail with headers
-                // https://html.spec.whatwg.org/multipage/#submit-mailto-headers
+                
+                
             }
             _ => return,
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#submit-mutate-action
+    
     fn mutate_action_url(&self, form_data: &mut Vec<FormDatum>, mut load_data: LoadData, encoding: EncodingRef) {
         let charset = &*encoding.whatwg_name().unwrap();
 
@@ -388,7 +388,7 @@ impl HTMLFormElement {
         self.plan_to_navigate(load_data);
     }
 
-    // https://html.spec.whatwg.org/multipage/#submit-body
+    
     fn submit_entity_body(&self, form_data: &mut Vec<FormDatum>, mut load_data: LoadData,
                           enctype: FormEncType, encoding: EncodingRef) {
         let boundary = generate_boundary();
@@ -421,18 +421,18 @@ impl HTMLFormElement {
         self.plan_to_navigate(load_data);
     }
 
-    /// [Planned navigation](https://html.spec.whatwg.org/multipage/#planned-navigation)
+    
     fn plan_to_navigate(&self, load_data: LoadData) {
         let window = window_from_node(self);
 
-        // Step 1
-        // Each planned navigation task is tagged with a generation ID, and
-        // before the task is handled, it first checks whether the HTMLFormElement's
-        // generation ID is the same as its own generation ID.
+        
+        
+        
+        
         let generation_id = GenerationId(self.generation_id.get().0 + 1);
         self.generation_id.set(generation_id);
 
-        // Step 2.
+        
         let pipeline_id = window.upcast::<GlobalScope>().pipeline_id();
         let script_chan = window.main_thread_script_chan().clone();
         let this = Trusted::new(self);
@@ -447,31 +447,31 @@ impl HTMLFormElement {
             )).unwrap();
         });
 
-        // Step 3.
+        
         window.dom_manipulation_task_source().queue(task, window.upcast()).unwrap();
     }
 
-    /// Interactively validate the constraints of form elements
-    /// https://html.spec.whatwg.org/multipage/#interactively-validate-the-constraints
+    
+    
     fn interactive_validation(&self) -> Result<(), ()> {
-        // Step 1-3
+        
         let _unhandled_invalid_controls = match self.static_validation() {
             Ok(()) => return Ok(()),
             Err(err) => err
         };
-        // TODO: Report the problems with the constraints of at least one of
-        //       the elements given in unhandled invalid controls to the user
-        // Step 4
+        
+        
+        
         Err(())
     }
 
-    /// Statitically validate the constraints of form elements
-    /// https://html.spec.whatwg.org/multipage/#statically-validate-the-constraints
+    
+    
     fn static_validation(&self) -> Result<(), Vec<FormSubmittableElement>> {
         let node = self.upcast::<Node>();
-        // FIXME(#3553): This is an incorrect way of getting controls owned by the
-        //               form, refactor this when html5ever's form owner PR lands
-        // Step 1-3
+        
+        
+        
         let invalid_controls = node.traverse_preorder().filter_map(|field| {
             if let Some(el) = field.downcast::<Element>() {
                 if el.disabled_state() {
@@ -493,32 +493,32 @@ impl HTMLFormElement {
                 None
             }
         }).collect::<Vec<FormSubmittableElement>>();
-        // Step 4
+        
         if invalid_controls.is_empty() { return Ok(()); }
-        // Step 5-6
+        
         let unhandled_invalid_controls = invalid_controls.into_iter().filter_map(|field| {
             let event = field.as_event_target()
                 .fire_cancelable_event(atom!("invalid"));
             if !event.DefaultPrevented() { return Some(field); }
             None
         }).collect::<Vec<FormSubmittableElement>>();
-        // Step 7
+        
         Err(unhandled_invalid_controls)
     }
 
-    /// https://html.spec.whatwg.org/multipage/#constructing-the-form-data-set
-    /// Steps range from 1 to 3
+    
+    
     fn get_unclean_dataset(&self, submitter: Option<FormSubmitter>) -> Vec<FormDatum> {
         let controls = self.controls.borrow();
         let mut data_set = Vec::new();
         for child in controls.iter() {
-            // Step 3.1: The field element is disabled.
+            
             if child.disabled_state() {
                 continue;
             }
             let child = child.upcast::<Node>();
 
-            // Step 3.1: The field element has a datalist element ancestor.
+            
             if child.ancestors()
                     .any(|a| DomRoot::downcast::<HTMLDataListElement>(a).is_some()) {
                 continue;
@@ -537,7 +537,7 @@ impl HTMLFormElement {
                         }
                     }
                     HTMLElementTypeId::HTMLObjectElement => {
-                        // Unimplemented
+                        
                         ()
                     }
                     HTMLElementTypeId::HTMLSelectElement => {
@@ -560,14 +560,14 @@ impl HTMLFormElement {
             }
         }
         data_set
-        // TODO: Handle `dirnames` (needs directionality support)
-        //       https://html.spec.whatwg.org/multipage/#the-directionality
+        
+        
     }
 
-    /// https://html.spec.whatwg.org/multipage/#constructing-the-form-data-set
+    
     pub fn get_form_dataset(&self, submitter: Option<FormSubmitter>) -> Vec<FormDatum> {
         fn clean_crlf(s: &str) -> DOMString {
-            // Step 4
+            
             let mut buf = "".to_owned();
             let mut prev = ' ';
             for ch in s.chars() {
@@ -579,8 +579,8 @@ impl HTMLFormElement {
                     '\n' => {
                         buf.push('\n');
                     },
-                    // This character isn't LF but is
-                    // preceded by CR
+                    
+                    
                     _ if prev == '\r' => {
                         buf.push('\r');
                         buf.push('\n');
@@ -590,19 +590,19 @@ impl HTMLFormElement {
                 };
                 prev = ch;
             }
-            // In case the last character was CR
+            
             if prev == '\r' {
                 buf.push('\n');
             }
             DOMString::from(buf)
         }
 
-        // Step 1-3
+        
         let mut ret = self.get_unclean_dataset(submitter);
-        // Step 4
+        
         for datum in &mut ret {
             match &*datum.ty {
-                "file" | "textarea" => (), // TODO
+                "file" | "textarea" => (), 
                 _ => {
                     datum.name = clean_crlf(&datum.name);
                     datum.value = FormDatumValue::String(clean_crlf(match datum.value {
@@ -612,12 +612,12 @@ impl HTMLFormElement {
                 }
             }
         };
-        // Step 5
+        
         ret
     }
 
     pub fn reset(&self, _reset_method_flag: ResetFrom) {
-        // https://html.spec.whatwg.org/multipage/#locked-for-reset
+        
         if self.marked_for_reset.get() {
             return;
         } else {
@@ -638,11 +638,11 @@ impl HTMLFormElement {
                 NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLInputElement)) => {
                     child.downcast::<HTMLInputElement>().unwrap().reset();
                 }
-                // TODO HTMLKeygenElement unimplemented
-                //NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLKeygenElement)) => {
-                //    // Unimplemented
-                //    {}
-                //}
+                
+                
+                
+                
+                
                 NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLSelectElement)) => {
                     child.downcast::<HTMLSelectElement>().unwrap().reset();
                 }
@@ -650,7 +650,7 @@ impl HTMLFormElement {
                     child.downcast::<HTMLTextAreaElement>().unwrap().reset();
                 }
                 NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLOutputElement)) => {
-                    // Unimplemented
+                    
                 }
                 _ => {}
             }
@@ -720,8 +720,8 @@ pub enum FormMethod {
 pub enum FormSubmittableElement {
     ButtonElement(DomRoot<HTMLButtonElement>),
     InputElement(DomRoot<HTMLInputElement>),
-    // TODO: HTMLKeygenElement unimplemented
-    // KeygenElement(&'a HTMLKeygenElement),
+    
+    
     ObjectElement(DomRoot<HTMLObjectElement>),
     SelectElement(DomRoot<HTMLSelectElement>),
     TextAreaElement(DomRoot<HTMLTextAreaElement>),
@@ -764,7 +764,7 @@ pub enum FormSubmitter<'a> {
     FormElement(&'a HTMLFormElement),
     InputElement(&'a HTMLInputElement),
     ButtonElement(&'a HTMLButtonElement)
-    // TODO: image submit, etc etc
+    
 }
 
 impl<'a> FormSubmitter<'a> {
@@ -801,8 +801,8 @@ impl<'a> FormSubmitter<'a> {
         match &*attr {
             "multipart/form-data" => FormEncType::FormDataEncoded,
             "text/plain" => FormEncType::TextPlainEncoded,
-            // https://html.spec.whatwg.org/multipage/#attr-fs-enctype
-            // urlencoded is the default
+            
+            
             _ => FormEncType::UrlEncoded
         }
     }
@@ -872,10 +872,10 @@ pub trait FormControl: DomObject {
         true
     }
 
-    // https://html.spec.whatwg.org/multipage/#create-an-element-for-the-token
-    // Part of step 12.
-    // '..suppress the running of the reset the form owner algorithm
-    // when the parser subsequently attempts to insert the element..'
+    
+    
+    
+    
     fn set_form_owner_from_parser(&self, form: &HTMLFormElement) {
         let elem = self.to_element();
         let node = elem.upcast::<Node>();
@@ -884,7 +884,7 @@ pub trait FormControl: DomObject {
         self.set_form_owner(Some(form));
     }
 
-    // https://html.spec.whatwg.org/multipage/#reset-the-form-owner
+    
     fn reset_form_owner(&self) {
         let elem = self.to_element();
         let node = elem.upcast::<Node>();
@@ -894,7 +894,7 @@ pub trait FormControl: DomObject {
                                         .filter_map(DomRoot::downcast::<HTMLFormElement>)
                                         .next();
 
-        // Step 1
+        
         if old_owner.is_some() && !(self.is_listed() && has_form_id) {
             if nearest_form_ancestor == old_owner {
                 return;
@@ -902,12 +902,12 @@ pub trait FormControl: DomObject {
         }
 
         let new_owner = if self.is_listed() && has_form_id && elem.is_connected() {
-            // Step 3
+            
             let doc = document_from_node(node);
             let form_id = elem.get_string_attribute(&local_name!("form"));
             doc.GetElementById(form_id).and_then(DomRoot::downcast::<HTMLFormElement>)
         } else {
-            // Step 4
+            
             nearest_form_ancestor
         };
 
@@ -923,7 +923,7 @@ pub trait FormControl: DomObject {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#association-of-controls-and-forms
+    
     fn form_attribute_mutated(&self, mutation: AttributeMutation) {
         match mutation {
             AttributeMutation::Set(_) => {
@@ -937,7 +937,7 @@ pub trait FormControl: DomObject {
         self.reset_form_owner();
     }
 
-    // https://html.spec.whatwg.org/multipage/#association-of-controls-and-forms
+    
     fn register_if_necessary(&self) {
         let elem = self.to_element();
         let form_id = elem.get_string_attribute(&local_name!("form"));
@@ -959,15 +959,15 @@ pub trait FormControl: DomObject {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#association-of-controls-and-forms
+    
     fn bind_form_control_to_tree(&self) {
         let elem = self.to_element();
         let node = elem.upcast::<Node>();
 
-        // https://html.spec.whatwg.org/multipage/#create-an-element-for-the-token
-        // Part of step 12.
-        // '..suppress the running of the reset the form owner algorithm
-        // when the parser subsequently attempts to insert the element..'
+        
+        
+        
+        
         let must_skip_reset = node.get_flag(PARSER_ASSOCIATED_FORM_OWNER);
         node.set_flag(PARSER_ASSOCIATED_FORM_OWNER, false);
 
@@ -976,7 +976,7 @@ pub trait FormControl: DomObject {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#association-of-controls-and-forms
+    
     fn unbind_form_control_from_tree(&self) {
         let elem = self.to_element();
         let has_form_attr = elem.has_attribute(&local_name!("form"));
@@ -986,11 +986,11 @@ pub trait FormControl: DomObject {
 
         self.unregister_if_necessary();
 
-        // Since this control has been unregistered from the id->listener map
-        // in the previous step, reset_form_owner will not be invoked on it
-        // when the form owner element is unbound (i.e it is in the same
-        // subtree) if it appears later in the tree order. Hence invoke
-        // reset from here if this control has the form attribute set.
+        
+        
+        
+        
+        
         if !same_subtree || (self.is_listed() && has_form_attr) {
             self.reset_form_owner();
         }
@@ -1026,9 +1026,9 @@ pub trait FormControl: DomObject {
         }
     }
 
-    // XXXKiChjang: Implement these on inheritors
-    // fn candidate_for_validation(&self) -> bool;
-    // fn satisfies_constraints(&self) -> bool;
+    
+    
+    
 }
 
 impl VirtualMethods for HTMLFormElement {

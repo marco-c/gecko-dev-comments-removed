@@ -43,15 +43,15 @@ impl DOMImplementation {
 
     pub fn new(document: &Document) -> DomRoot<DOMImplementation> {
         let window = document.window();
-        reflect_dom_object(box DOMImplementation::new_inherited(document),
+        reflect_dom_object(Box::new(DOMImplementation::new_inherited(document)),
                            window,
                            DOMImplementationBinding::Wrap)
     }
 }
 
-// https://dom.spec.whatwg.org/#domimplementation
+
 impl DOMImplementationMethods for DOMImplementation {
-    // https://dom.spec.whatwg.org/#dom-domimplementation-createdocumenttype
+    
     fn CreateDocumentType(&self,
                           qualified_name: DOMString,
                           pubid: DOMString,
@@ -61,7 +61,7 @@ impl DOMImplementationMethods for DOMImplementation {
         Ok(DocumentType::new(qualified_name, Some(pubid), Some(sysid), &self.document))
     }
 
-    // https://dom.spec.whatwg.org/#dom-domimplementation-createdocument
+    
     fn CreateDocument(&self,
                       maybe_namespace: Option<DOMString>,
                       qname: DOMString,
@@ -77,7 +77,7 @@ impl DOMImplementationMethods for DOMImplementation {
             _ => "application/xml"
         };
 
-        // Step 1.
+        
         let doc = XMLDocument::new(win,
                                    HasBrowsingContext::No,
                                    None,
@@ -88,7 +88,7 @@ impl DOMImplementationMethods for DOMImplementation {
                                    DocumentActivity::Inactive,
                                    DocumentSource::NotFromParser,
                                    loader);
-        // Step 2-3.
+        
         let maybe_elem = if qname.is_empty() {
             None
         } else {
@@ -102,30 +102,30 @@ impl DOMImplementationMethods for DOMImplementation {
         {
             let doc_node = doc.upcast::<Node>();
 
-            // Step 4.
+            
             if let Some(doc_type) = maybe_doctype {
                 doc_node.AppendChild(doc_type.upcast()).unwrap();
             }
 
-            // Step 5.
+            
             if let Some(ref elem) = maybe_elem {
                 doc_node.AppendChild(elem.upcast()).unwrap();
             }
         }
 
-        // Step 6.
-        // FIXME: https://github.com/mozilla/servo/issues/1522
+        
+        
 
-        // Step 7.
+        
         Ok(doc)
     }
 
-    // https://dom.spec.whatwg.org/#dom-domimplementation-createhtmldocument
+    
     fn CreateHTMLDocument(&self, title: Option<DOMString>) -> DomRoot<Document> {
         let win = self.document.window();
         let loader = DocumentLoader::new(&self.document.loader());
 
-        // Step 1-2.
+        
         let doc = Document::new(win,
                                 HasBrowsingContext::No,
                                 None,
@@ -140,14 +140,14 @@ impl DOMImplementationMethods for DOMImplementation {
                                 None);
 
         {
-            // Step 3.
+            
             let doc_node = doc.upcast::<Node>();
             let doc_type = DocumentType::new(DOMString::from("html"), None, None, &doc);
             doc_node.AppendChild(doc_type.upcast()).unwrap();
         }
 
         {
-            // Step 4.
+            
             let doc_node = doc.upcast::<Node>();
             let doc_html = DomRoot::upcast::<Node>(HTMLHtmlElement::new(local_name!("html"),
                                                                      None,
@@ -155,28 +155,28 @@ impl DOMImplementationMethods for DOMImplementation {
             doc_node.AppendChild(&doc_html).expect("Appending failed");
 
             {
-                // Step 5.
+                
                 let doc_head = DomRoot::upcast::<Node>(HTMLHeadElement::new(local_name!("head"),
                                                                          None,
                                                                          &doc));
                 doc_html.AppendChild(&doc_head).unwrap();
 
-                // Step 6.
+                
                 if let Some(title_str) = title {
-                    // Step 6.1.
+                    
                     let doc_title =
                         DomRoot::upcast::<Node>(HTMLTitleElement::new(local_name!("title"),
                                                                    None,
                                                                    &doc));
                     doc_head.AppendChild(&doc_title).unwrap();
 
-                    // Step 6.2.
+                    
                     let title_text = Text::new(title_str, &doc);
                     doc_title.AppendChild(title_text.upcast()).unwrap();
                 }
             }
 
-            // Step 7.
+            
             let doc_body = HTMLBodyElement::new(local_name!("body"), None, &doc);
             doc_html.AppendChild(doc_body.upcast()).unwrap();
         }

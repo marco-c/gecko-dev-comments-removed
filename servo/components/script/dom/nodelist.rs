@@ -37,7 +37,7 @@ impl NodeList {
 
     #[allow(unrooted_must_root)]
     pub fn new(window: &Window, list_type: NodeListType) -> DomRoot<NodeList> {
-        reflect_dom_object(box NodeList::new_inherited(list_type),
+        reflect_dom_object(Box::new(NodeList::new_inherited(list_type)),
                            window,
                            NodeListBinding::Wrap)
     }
@@ -61,7 +61,7 @@ impl NodeList {
 }
 
 impl NodeListMethods for NodeList {
-    // https://dom.spec.whatwg.org/#dom-nodelist-length
+    
     fn Length(&self) -> u32 {
         match self.list_type {
             NodeListType::Simple(ref elems) => elems.len() as u32,
@@ -69,7 +69,7 @@ impl NodeListMethods for NodeList {
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-nodelist-item
+    
     fn Item(&self, index: u32) -> Option<DomRoot<Node>> {
         match self.list_type {
             NodeListType::Simple(ref elems) => {
@@ -79,7 +79,7 @@ impl NodeListMethods for NodeList {
         }
     }
 
-    // https://dom.spec.whatwg.org/#dom-nodelist-item
+    
     fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Node>> {
         self.Item(index)
     }

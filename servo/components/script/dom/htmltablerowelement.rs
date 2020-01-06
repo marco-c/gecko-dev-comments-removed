@@ -52,13 +52,13 @@ impl HTMLTableRowElement {
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document)
                -> DomRoot<HTMLTableRowElement> {
-        Node::reflect_node(box HTMLTableRowElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLTableRowElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLTableRowElementBinding::Wrap)
     }
 
-    /// Determine the index for this `HTMLTableRowElement` within the given
-    /// `HTMLCollection`. Returns `-1` if not found within collection.
+    
+    
     fn row_index(&self, collection: DomRoot<HTMLCollection>) -> i32 {
         collection.elements_iter()
                   .position(|elem| (&elem as &Element) == self.upcast())
@@ -67,22 +67,22 @@ impl HTMLTableRowElement {
 }
 
 impl HTMLTableRowElementMethods for HTMLTableRowElement {
-    // https://html.spec.whatwg.org/multipage/#dom-tr-bgcolor
+    
     make_getter!(BgColor, "bgcolor");
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-bgcolor
+    
     make_legacy_color_setter!(SetBgColor, "bgcolor");
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-cells
+    
     fn Cells(&self) -> DomRoot<HTMLCollection> {
         self.cells.or_init(|| {
             let window = window_from_node(self);
-            let filter = box CellsFilter;
+            let filter = Box::new(CellsFilter);
             HTMLCollection::create(&window, self.upcast(), filter)
         })
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-insertcell
+    
     fn InsertCell(&self, index: i32) -> Fallible<DomRoot<HTMLElement>> {
         let node = self.upcast::<Node>();
         node.insert_cell_or_row(
@@ -91,7 +91,7 @@ impl HTMLTableRowElementMethods for HTMLTableRowElement {
             || HTMLTableDataCellElement::new(local_name!("td"), None, &node.owner_doc()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-deletecell
+    
     fn DeleteCell(&self, index: i32) -> ErrorResult {
         let node = self.upcast::<Node>();
         node.delete_cell_or_row(
@@ -100,7 +100,7 @@ impl HTMLTableRowElementMethods for HTMLTableRowElement {
             |n| n.is::<HTMLTableDataCellElement>())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-rowindex
+    
     fn RowIndex(&self) -> i32 {
         let parent = match self.upcast::<Node>().GetParentNode() {
             Some(parent) => parent,
@@ -120,7 +120,7 @@ impl HTMLTableRowElementMethods for HTMLTableRowElement {
                    .map_or(-1, |table| self.row_index(table.Rows()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-tr-sectionrowindex
+    
     fn SectionRowIndex(&self) -> i32 {
         let parent = match self.upcast::<Node>().GetParentNode() {
             Some(parent) => parent,

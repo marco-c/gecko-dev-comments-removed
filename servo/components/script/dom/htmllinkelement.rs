@@ -86,7 +86,7 @@ impl HTMLLinkElement {
                prefix: Option<Prefix>,
                document: &Document,
                creator: ElementCreator) -> DomRoot<HTMLLinkElement> {
-        Node::reflect_node(box HTMLLinkElement::new_inherited(local_name, prefix, document, creator),
+        Node::reflect_node(Box::new(HTMLLinkElement::new_inherited(local_name, prefix, document, creator)),
                            document,
                            HTMLLinkElementBinding::Wrap)
     }
@@ -95,8 +95,8 @@ impl HTMLLinkElement {
         self.request_generation_id.get()
     }
 
-    // FIXME(emilio): These methods are duplicated with
-    // HTMLStyleElement::set_stylesheet.
+    
+    
     pub fn set_stylesheet(&self, s: Arc<Stylesheet>) {
         let doc = document_from_node(self);
         if let Some(ref s) = *self.stylesheet.borrow() {
@@ -117,8 +117,8 @@ impl HTMLLinkElement {
                 CSSStyleSheet::new(&window_from_node(self),
                                    self.upcast::<Element>(),
                                    "text/css".into(),
-                                   None, // todo handle location
-                                   None, // todo handle title
+                                   None, 
+                                   None, 
                                    sheet)
             })
         })
@@ -154,9 +154,9 @@ fn string_is_stylesheet(value: &Option<String>) -> bool {
     }
 }
 
-/// Favicon spec usage in accordance with CEF implementation:
-/// only url of icon is required/used
-/// https://html.spec.whatwg.org/multipage/#rel-icon
+
+
+
 fn is_favicon(value: &Option<String>) -> bool {
     match *value {
         Some(ref value) => {

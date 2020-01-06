@@ -105,9 +105,9 @@ pub fn Fetch(global: &GlobalScope, input: RequestInfo, init: RootedTraceableBox<
         canceller: Some(global.task_canceller())
     };
 
-    ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+    ROUTER.add_route(action_receiver.to_opaque(), Box::new(move |message| {
         listener.notify_fetch(message.to().unwrap());
-    });
+    }));
     core_resource_thread.send(NetTraitsFetch(request_init, action_sender)).unwrap();
 
     promise
@@ -117,23 +117,23 @@ impl PreInvoke for FetchContext {}
 
 impl FetchResponseListener for FetchContext {
     fn process_request_body(&mut self) {
-        // TODO
+        
     }
 
     fn process_request_eof(&mut self) {
-        // TODO
+        
     }
 
     #[allow(unrooted_must_root)]
     fn process_response(&mut self, fetch_metadata: Result<FetchMetadata, NetworkError>) {
         let promise = self.fetch_promise.take().expect("fetch promise is missing").root();
 
-        // JSAutoCompartment needs to be manually made.
-        // Otherwise, Servo will crash.
+        
+        
         let promise_cx = promise.global().get_cx();
         let _ac = JSAutoCompartment::new(promise_cx, promise.reflector().get_jsobject().get());
         match fetch_metadata {
-            // Step 4.1
+            
             Err(_) => {
                 promise.reject_error(Error::Type("Network error occurred".to_string()));
                 self.fetch_promise = Some(TrustedPromise::new(promise));

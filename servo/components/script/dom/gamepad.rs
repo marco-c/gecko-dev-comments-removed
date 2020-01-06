@@ -75,18 +75,22 @@ impl Gamepad {
         let buttons = GamepadButtonList::new_from_vr(&global, &state.buttons);
         let pose = VRPose::new(&global, &state.pose);
 
-        let gamepad = reflect_dom_object(box Gamepad::new_inherited(state.gamepad_id,
-                                                                    data.name.clone(),
-                                                                    index,
-                                                                    state.connected,
-                                                                    state.timestamp,
-                                                                    "".into(),
-                                                                    &buttons,
-                                                                    Some(&pose),
-                                                                    data.hand.clone(),
-                                                                    data.display_id),
-                                         global,
-                                         GamepadBinding::Wrap);
+        let gamepad = reflect_dom_object(
+            Box::new(Gamepad::new_inherited(
+                state.gamepad_id,
+                data.name.clone(),
+                index,
+                state.connected,
+                state.timestamp,
+                "".into(),
+                &buttons,
+                Some(&pose),
+                data.hand.clone(),
+                data.display_id
+            )),
+            global,
+            GamepadBinding::Wrap
+        );
 
         let cx = global.get_cx();
         rooted!(in (cx) let mut array = ptr::null_mut());
@@ -100,43 +104,43 @@ impl Gamepad {
 }
 
 impl GamepadMethods for Gamepad {
-    // https://w3c.github.io/gamepad/#dom-gamepad-id
+    
     fn Id(&self) -> DOMString {
         DOMString::from(self.id.clone())
     }
 
-    // https://w3c.github.io/gamepad/#dom-gamepad-index
+    
     fn Index(&self) -> i32 {
         self.index.get()
     }
 
-    // https://w3c.github.io/gamepad/#dom-gamepad-connected
+    
     fn Connected(&self) -> bool {
         self.connected.get()
     }
 
-    // https://w3c.github.io/gamepad/#dom-gamepad-timestamp
+    
     fn Timestamp(&self) -> Finite<f64> {
         Finite::wrap(self.timestamp.get())
     }
 
-    // https://w3c.github.io/gamepad/#dom-gamepad-mapping
+    
     fn Mapping(&self) -> DOMString {
         DOMString::from(self.mapping_type.clone())
     }
 
     #[allow(unsafe_code)]
-    // https://w3c.github.io/gamepad/#dom-gamepad-axes
+    
     unsafe fn Axes(&self, _cx: *mut JSContext) -> NonZero<*mut JSObject> {
         NonZero::new_unchecked(self.axes.get())
     }
 
-    // https://w3c.github.io/gamepad/#dom-gamepad-buttons
+    
     fn Buttons(&self) -> DomRoot<GamepadButtonList> {
         DomRoot::from_ref(&*self.buttons)
     }
 
-    // https://w3c.github.io/gamepad/extensions.html#gamepadhand-enum
+    
     fn Hand(&self) -> DOMString {
         let value = match self.hand {
             WebVRGamepadHand::Unknown => "",

@@ -140,15 +140,15 @@ impl Performance {
     pub fn new(global: &GlobalScope,
                navigation_start: u64,
                navigation_start_precise: f64) -> DomRoot<Performance> {
-        reflect_dom_object(box Performance::new_inherited(global,
-                                                          navigation_start,
-                                                          navigation_start_precise),
-                           global,
-                           PerformanceBinding::Wrap)
+        reflect_dom_object(
+            Box::new(Performance::new_inherited(global, navigation_start, navigation_start_precise)),
+            global,
+            PerformanceBinding::Wrap
+        )
     }
 
-    /// Add a PerformanceObserver to the list of observers with a set of
-    /// observed entry types.
+    
+    
     pub fn add_observer(&self,
                         observer: &DOMPerformanceObserver,
                         entry_types: Vec<DOMString>,
@@ -164,10 +164,10 @@ impl Performance {
         }
         let mut observers = self.observers.borrow_mut();
         match observers.iter().position(|o| *o.observer == *observer) {
-            // If the observer is already in the list, we only update the observed
-            // entry types.
+            
+            
             Some(p) => observers[p].entry_types = entry_types,
-            // Otherwise, we create and insert the new PerformanceObserver.
+            
             None => observers.push(PerformanceObserver {
                 observer: DomRoot::from_ref(observer),
                 entry_types
@@ -175,7 +175,7 @@ impl Performance {
         };
     }
 
-    /// Remove a PerformanceObserver from the list of observers.
+    
     pub fn remove_observer(&self, observer: &DOMPerformanceObserver) {
         let mut observers = self.observers.borrow_mut();
         let index = match observers.iter().position(|o| &(*o.observer) == observer) {
@@ -194,54 +194,54 @@ impl Performance {
         observers.remove(index);
     }
 
-    /// Queue a notification for each performance observer interested in
-    /// this type of performance entry and queue a low priority task to
-    /// notify the observers if no other notification task is already queued.
-    ///
-    /// Algorithm spec:
-    /// https://w3c.github.io/performance-timeline/#queue-a-performanceentry
+    
+    
+    
+    
+    
+    
     pub fn queue_entry(&self, entry: &PerformanceEntry,
                        add_to_performance_entries_buffer: bool) {
-        // Steps 1-3.
-        // Add the performance entry to the list of performance entries that have not
-        // been notified to each performance observer owner, filtering the ones it's
-        // interested in.
+        
+        
+        
+        
         for o in self.observers.borrow().iter().filter(|o| o.entry_types.contains(entry.entry_type())) {
             o.observer.queue_entry(entry);
         }
 
-        // Step 4.
-        // If the "add to performance entry buffer flag" is set, add the
-        // new entry to the buffer.
+        
+        
+        
         if add_to_performance_entries_buffer {
             self.entries.borrow_mut().entries.push(DomRoot::from_ref(entry));
         }
 
-        // Step 5.
-        // If there is already a queued notification task, we just bail out.
+        
+        
         if self.pending_notification_observers_task.get() {
             return;
         }
 
-        // Step 6.
-        // Queue a new notification task.
+        
+        
         self.pending_notification_observers_task.set(true);
         let task_source = self.global().performance_timeline_task_source();
         task_source.queue_notification(&self.global());
     }
 
-    /// Observers notifications task.
-    ///
-    /// Algorithm spec (step 7):
-    /// https://w3c.github.io/performance-timeline/#queue-a-performanceentry
+    
+    
+    
+    
     pub fn notify_observers(&self) {
-        // Step 7.1.
+        
         self.pending_notification_observers_task.set(false);
 
-        // Step 7.2.
-        // We have to operate over a copy of the performance observers to avoid
-        // the risk of an observer's callback modifying the list of registered
-        // observers.
+        
+        
+        
+        
         let observers: Vec<DomRoot<DOMPerformanceObserver>> =
             self.observers.borrow().iter()
                                    .map(|o| DOMPerformanceObserver::new(&self.global(),
@@ -249,7 +249,7 @@ impl Performance {
                                                                         o.observer.entries()))
                                    .collect();
 
-        // Step 7.3.
+        
         for o in observers.iter() {
             o.notify();
         }
@@ -265,7 +265,7 @@ impl Performance {
 }
 
 impl PerformanceMethods for Performance {
-    // https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/NavigationTiming/Overview.html#performance-timing-attribute
+    
     fn Timing(&self) -> DomRoot<PerformanceTiming> {
         match self.timing {
             Some(ref timing) => DomRoot::from_ref(&*timing),
@@ -273,60 +273,60 @@ impl PerformanceMethods for Performance {
         }
     }
 
-    // https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/HighResolutionTime/Overview.html#dom-performance-now
+    
     fn Now(&self) -> DOMHighResTimeStamp {
         Finite::wrap(self.now())
     }
 
-    // https://www.w3.org/TR/performance-timeline-2/#dom-performance-getentries
+    
     fn GetEntries(&self) -> Vec<DomRoot<PerformanceEntry>> {
         self.entries.borrow().get_entries_by_name_and_type(None, None)
     }
 
-    // https://www.w3.org/TR/performance-timeline-2/#dom-performance-getentriesbytype
+    
     fn GetEntriesByType(&self, entry_type: DOMString) -> Vec<DomRoot<PerformanceEntry>> {
         self.entries.borrow().get_entries_by_name_and_type(None, Some(entry_type))
     }
 
-    // https://www.w3.org/TR/performance-timeline-2/#dom-performance-getentriesbyname
+    
     fn GetEntriesByName(&self, name: DOMString, entry_type: Option<DOMString>)
         -> Vec<DomRoot<PerformanceEntry>> {
         self.entries.borrow().get_entries_by_name_and_type(Some(name), entry_type)
     }
 
-    // https://w3c.github.io/user-timing/#dom-performance-mark
+    
     fn Mark(&self, mark_name: DOMString) -> Fallible<()> {
         let global = self.global();
-        // Step 1.
+        
         if global.is::<Window>() && INVALID_ENTRY_NAMES.contains(&mark_name.as_ref()) {
             return Err(Error::Syntax);
         }
 
-        // Steps 2 to 6.
+        
         let entry = PerformanceMark::new(&global,
                                          mark_name,
                                          self.now(),
                                          0.);
-        // Steps 7 and 8.
+        
         self.queue_entry(&entry.upcast::<PerformanceEntry>(),
-                         true /* buffer performance entry */);
+                         true );
 
-        // Step 9.
+        
         Ok(())
     }
 
-    // https://w3c.github.io/user-timing/#dom-performance-clearmarks
+    
     fn ClearMarks(&self, mark_name: Option<DOMString>) {
         self.entries.borrow_mut().clear_entries_by_name_and_type(mark_name,
                                                                  Some(DOMString::from("mark")));
     }
 
-    // https://w3c.github.io/user-timing/#dom-performance-measure
+    
     fn Measure(&self,
                measure_name: DOMString,
                start_mark: Option<DOMString>,
                end_mark: Option<DOMString>) -> Fallible<()> {
-        // Steps 1 and 2.
+        
         let end_time = match end_mark {
             Some(name) =>
                 self.entries.borrow().get_last_entry_start_time_with_name_and_type(
@@ -334,7 +334,7 @@ impl PerformanceMethods for Performance {
             None => self.now(),
         };
 
-        // Step 3.
+        
         let start_time = match start_mark {
             Some(name) =>
                 self.entries.borrow().get_last_entry_start_time_with_name_and_type(
@@ -342,21 +342,21 @@ impl PerformanceMethods for Performance {
             None => 0.,
         };
 
-        // Steps 4 to 8.
+        
         let entry = PerformanceMeasure::new(&self.global(),
                                             measure_name,
                                             start_time,
                                             end_time - start_time);
 
-        // Step 9 and 10.
+        
         self.queue_entry(&entry.upcast::<PerformanceEntry>(),
-                         true /* buffer performance entry */);
+                         true );
 
-        // Step 11.
+        
         Ok(())
     }
 
-    // https://w3c.github.io/user-timing/#dom-performance-clearmeasures
+    
     fn ClearMeasures(&self, measure_name: Option<DOMString>) {
         self.entries.borrow_mut().clear_entries_by_name_and_type(measure_name,
                                                                  Some(DOMString::from("measure")));

@@ -68,88 +68,87 @@ impl Request {
 
     pub fn new(global: &GlobalScope,
                url: ServoUrl) -> DomRoot<Request> {
-        reflect_dom_object(box Request::new_inherited(global,
-                                                      url),
+        reflect_dom_object(Box::new(Request::new_inherited(global, url)),
                            global, RequestBinding::Wrap)
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request
+    
     pub fn Constructor(global: &GlobalScope,
                        input: RequestInfo,
                        init: RootedTraceableBox<RequestInit>)
                        -> Fallible<DomRoot<Request>> {
-        // Step 1
+        
         let temporary_request: NetTraitsRequest;
 
-        // Step 2
+        
         let mut fallback_mode: Option<NetTraitsRequestMode> = None;
 
-        // Step 3
+        
         let mut fallback_credentials: Option<NetTraitsRequestCredentials> = None;
 
-        // Step 4
+        
         let base_url = global.api_base_url();
 
         match input {
-            // Step 5
+            
             RequestInfo::USVString(USVString(ref usv_string)) => {
-                // Step 5.1
+                
                 let parsed_url = base_url.join(&usv_string);
-                // Step 5.2
+                
                 if parsed_url.is_err() {
                     return Err(Error::Type("Url could not be parsed".to_string()))
                 }
-                // Step 5.3
+                
                 let url = parsed_url.unwrap();
                 if includes_credentials(&url) {
                     return Err(Error::Type("Url includes credentials".to_string()))
                 }
-                // Step 5.4
+                
                 temporary_request = net_request_from_global(global, url);
-                // Step 5.5
+                
                 fallback_mode = Some(NetTraitsRequestMode::CorsMode);
-                // Step 5.6
+                
                 fallback_credentials = Some(NetTraitsRequestCredentials::Omit);
             }
-            // Step 6
+            
             RequestInfo::Request(ref input_request) => {
-                // Step 6.1
+                
                 if request_is_disturbed(input_request) || request_is_locked(input_request) {
                     return Err(Error::Type("Input is disturbed or locked".to_string()))
                 }
-                // Step 6.2
+                
                 temporary_request = input_request.request.borrow().clone();
             }
         }
 
-        // Step 7
-        // TODO: `entry settings object` is not implemented yet.
+        
+        
         let origin = base_url.origin();
 
-        // Step 8
+        
         let mut window = Window::Client;
 
-        // Step 9
-        // TODO: `environment settings object` is not implemented in Servo yet.
+        
+        
 
-        // Step 10
+        
         if !init.window.handle().is_null_or_undefined() {
             return Err(Error::Type("Window is present and is not null".to_string()))
         }
 
-        // Step 11
+        
         if !init.window.handle().is_undefined() {
             window = Window::NoWindow;
         }
 
-        // Step 12
+        
         let mut request: NetTraitsRequest;
         request = net_request_from_global(global, temporary_request.current_url());
         request.method = temporary_request.method;
         request.headers = temporary_request.headers.clone();
         request.unsafe_request = true;
         request.window = window;
-        // TODO: `entry settings object` is not implemented in Servo yet.
+        
         request.origin = Origin::Client;
         request.referrer = temporary_request.referrer;
         request.referrer_policy = temporary_request.referrer_policy;
@@ -159,7 +158,7 @@ impl Request {
         request.redirect_mode = temporary_request.redirect_mode;
         request.integrity_metadata = temporary_request.integrity_metadata;
 
-        // Step 13
+        
         if init.body.is_some() ||
             init.cache.is_some() ||
             init.credentials.is_some() ||
@@ -171,32 +170,32 @@ impl Request {
             init.referrer.is_some() ||
             init.referrerPolicy.is_some() ||
             !init.window.handle().is_undefined() {
-                // Step 13.1
+                
                 if request.mode == NetTraitsRequestMode::Navigate {
                     request.mode = NetTraitsRequestMode::SameOrigin;
                 }
-                // Step 13.2
+                
                 request.referrer = NetTraitsRequestReferrer::Client;
-                // Step 13.3
+                
                 request.referrer_policy = None;
             }
 
-        // Step 14
+        
         if let Some(init_referrer) = init.referrer.as_ref() {
-            // Step 14.1
+            
             let ref referrer = init_referrer.0;
-            // Step 14.2
+            
             if referrer.is_empty() {
                 request.referrer = NetTraitsRequestReferrer::NoReferrer;
             } else {
-                // Step 14.3
+                
                 let parsed_referrer = base_url.join(referrer);
-                // Step 14.4
+                
                 if parsed_referrer.is_err() {
                     return Err(Error::Type(
                         "Failed to parse referrer url".to_string()));
                 }
-                // Step 14.5
+                
                 if let Ok(parsed_referrer) = parsed_referrer {
                     if (parsed_referrer.cannot_be_a_base() &&
                         parsed_referrer.scheme() == "about" &&
@@ -204,47 +203,47 @@ impl Request {
                        parsed_referrer.origin() != origin {
                             request.referrer = NetTraitsRequestReferrer::Client;
                         } else {
-                            // Step 14.6
+                            
                             request.referrer = NetTraitsRequestReferrer::ReferrerUrl(parsed_referrer);
                         }
                 }
             }
         }
 
-        // Step 15
+        
         if let Some(init_referrerpolicy) = init.referrerPolicy.as_ref() {
             let init_referrer_policy = init_referrerpolicy.clone().into();
             request.referrer_policy = Some(init_referrer_policy);
         }
 
-        // Step 16
+        
         let mode = init.mode.as_ref().map(|m| m.clone().into()).or(fallback_mode);
 
-        // Step 17
+        
         if let Some(NetTraitsRequestMode::Navigate) = mode {
             return Err(Error::Type("Request mode is Navigate".to_string()));
         }
 
-        // Step 18
+        
         if let Some(m) = mode {
             request.mode = m;
         }
 
-        // Step 19
+        
         let credentials = init.credentials.as_ref().map(|m| m.clone().into()).or(fallback_credentials);
 
-        // Step 20
+        
         if let Some(c) = credentials {
             request.credentials_mode = c;
         }
 
-        // Step 21
+        
         if let Some(init_cache) = init.cache.as_ref() {
             let cache = init_cache.clone().into();
             request.cache_mode = cache;
         }
 
-        // Step 22
+        
         if request.cache_mode == NetTraitsRequestCache::OnlyIfCached {
             if request.mode != NetTraitsRequestMode::SameOrigin {
                 return Err(Error::Type(
@@ -252,44 +251,44 @@ impl Request {
             }
         }
 
-        // Step 23
+        
         if let Some(init_redirect) = init.redirect.as_ref() {
             let redirect = init_redirect.clone().into();
             request.redirect_mode = redirect;
         }
 
-        // Step 24
+        
         if let Some(init_integrity) = init.integrity.as_ref() {
             let integrity = init_integrity.clone().to_string();
             request.integrity_metadata = integrity;
         }
 
-        // Step 25
+        
         if let Some(init_method) = init.method.as_ref() {
-            // Step 25.1
+            
             if !is_method(&init_method) {
                 return Err(Error::Type("Method is not a method".to_string()));
             }
             if is_forbidden_method(&init_method) {
                 return Err(Error::Type("Method is forbidden".to_string()));
             }
-            // Step 25.2
+            
             let method = match init_method.as_str() {
                 Some(s) => normalize_method(s),
                 None => return Err(Error::Type("Method is not a valid UTF8".to_string())),
             };
-            // Step 25.3
+            
             request.method = method;
         }
 
-        // Step 26
+        
         let r = Request::from_net_request(global, request);
         r.headers.or_init(|| Headers::for_request(&r.global()));
 
-        // Step 27
+        
         let mut headers_copy = r.Headers();
 
-        // Step 28
+        
         if let Some(possible_header) = init.headers.as_ref() {
             match possible_header {
                 &HeadersInit::Headers(ref init_headers) => {
@@ -306,34 +305,34 @@ impl Request {
             }
         }
 
-        // Step 29
-        // We cannot empty `r.Headers().header_list` because
-        // we would undo the Step 27 above.  One alternative is to set
-        // `headers_copy` as a deep copy of `r.Headers()`. However,
-        // `r.Headers()` is a `DomRoot<T>`, and therefore it is difficult
-        // to obtain a mutable reference to `r.Headers()`. Without the
-        // mutable reference, we cannot mutate `r.Headers()` to be the
-        // deep copied headers in Step 27.
+        
+        
+        
+        
+        
+        
+        
+        
 
-        // Step 30
+        
         if r.request.borrow().mode == NetTraitsRequestMode::NoCors {
             let borrowed_request = r.request.borrow();
-            // Step 30.1
+            
             if !is_cors_safelisted_method(&borrowed_request.method) {
                 return Err(Error::Type(
                     "The mode is 'no-cors' but the method is not a cors-safelisted method".to_string()));
             }
-            // Step 30.2
+            
             r.Headers().set_guard(Guard::RequestNoCors);
         }
 
-        // Step 31
+        
         match init.headers {
             None => {
-                // This is equivalent to the specification's concept of
-                // "associated headers list". If an init headers is not given,
-                // but an input with headers is given, set request's
-                // headers as the input's Headers.
+                
+                
+                
+                
                 if let RequestInfo::Request(ref input_request) = input {
                     r.Headers().fill(Some(HeadersInit::Headers(input_request.Headers())))?;
                 }
@@ -342,7 +341,7 @@ impl Request {
             _ => {},
         }
 
-        // Step 32
+        
         let mut input_body = if let RequestInfo::Request(ref input_request) = input {
             let input_request_request = input_request.request.borrow();
             input_request_request.body.clone()
@@ -350,7 +349,7 @@ impl Request {
             None
         };
 
-        // Step 33
+        
         if let Some(init_body_option) = init.body.as_ref() {
             if init_body_option.is_some() || input_body.is_some() {
                 let req = r.request.borrow();
@@ -365,14 +364,14 @@ impl Request {
             }
         }
 
-        // Step 34
+        
         if let Some(Some(ref init_body)) = init.body {
-            // Step 34.2
+            
             let extracted_body_tmp = init_body.extract();
             input_body = Some(extracted_body_tmp.0);
             let content_type = extracted_body_tmp.1;
 
-            // Step 34.3
+            
             if let Some(contents) = content_type {
                 if !r.Headers().Has(ByteString::new(b"Content-Type".to_vec())).unwrap() {
                     r.Headers().Append(ByteString::new(b"Content-Type".to_vec()),
@@ -381,24 +380,24 @@ impl Request {
             }
         }
 
-        // Step 35
+        
         r.request.borrow_mut().body = input_body;
 
-        // Step 36
+        
         let extracted_mime_type = r.Headers().extract_mime_type();
         *r.mime_type.borrow_mut() = extracted_mime_type;
 
-        // Step 37
-        // TODO: `ReadableStream` object is not implemented in Servo yet.
+        
+        
 
-        // Step 38
+        
         Ok(r)
     }
 
-    // https://fetch.spec.whatwg.org/#concept-body-locked
+    
     fn locked(&self) -> bool {
-        // TODO: ReadableStream is unimplemented. Just return false
-        // for now.
+        
+        
         false
     }
 }
@@ -446,7 +445,7 @@ fn net_request_from_global(global: &GlobalScope,
                           Some(pipeline_id))
 }
 
-// https://fetch.spec.whatwg.org/#concept-method-normalize
+
 fn normalize_method(m: &str) -> HttpMethod {
     match_ignore_ascii_case! { m,
         "delete" => return HttpMethod::Delete,
@@ -460,7 +459,7 @@ fn normalize_method(m: &str) -> HttpMethod {
     HttpMethod::Extension(m.to_string())
 }
 
-// https://fetch.spec.whatwg.org/#concept-method
+
 fn is_method(m: &ByteString) -> bool {
     match m.to_lower().as_str() {
         Some("get") => true,
@@ -475,7 +474,7 @@ fn is_method(m: &ByteString) -> bool {
     }
 }
 
-// https://fetch.spec.whatwg.org/#forbidden-method
+
 fn is_forbidden_method(m: &ByteString) -> bool {
     match m.to_lower().as_str() {
         Some("connect") => true,
@@ -485,59 +484,59 @@ fn is_forbidden_method(m: &ByteString) -> bool {
     }
 }
 
-// https://fetch.spec.whatwg.org/#cors-safelisted-method
+
 fn is_cors_safelisted_method(m: &HttpMethod) -> bool {
     m == &HttpMethod::Get ||
         m == &HttpMethod::Head ||
         m == &HttpMethod::Post
 }
 
-// https://url.spec.whatwg.org/#include-credentials
+
 fn includes_credentials(input: &ServoUrl) -> bool {
     !input.username().is_empty() || input.password().is_some()
 }
 
-// TODO: `Readable Stream` object is not implemented in Servo yet.
-// https://fetch.spec.whatwg.org/#concept-body-disturbed
+
+
 fn request_is_disturbed(_input: &Request) -> bool {
     false
 }
 
-// TODO: `Readable Stream` object is not implemented in Servo yet.
-// https://fetch.spec.whatwg.org/#concept-body-locked
+
+
 fn request_is_locked(_input: &Request) -> bool {
     false
 }
 
 impl RequestMethods for Request {
-    // https://fetch.spec.whatwg.org/#dom-request-method
+    
     fn Method(&self) -> ByteString {
         let r = self.request.borrow();
         ByteString::new(r.method.as_ref().as_bytes().into())
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-url
+    
     fn Url(&self) -> USVString {
         let r = self.request.borrow();
         USVString(r.url_list.get(0).map_or("", |u| u.as_str()).into())
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-headers
+    
     fn Headers(&self) -> DomRoot<Headers> {
         self.headers.or_init(|| Headers::new(&self.global()))
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-type
+    
     fn Type(&self) -> RequestType {
         self.request.borrow().type_.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-destination
+    
     fn Destination(&self) -> RequestDestination {
         self.request.borrow().destination.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-referrer
+    
     fn Referrer(&self) -> USVString {
         let r = self.request.borrow();
         USVString(match r.referrer {
@@ -550,48 +549,48 @@ impl RequestMethods for Request {
         })
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-referrerpolicy
+    
     fn ReferrerPolicy(&self) -> ReferrerPolicy {
         self.request.borrow().referrer_policy.map(|m| m.into()).unwrap_or(ReferrerPolicy::_empty)
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-mode
+    
     fn Mode(&self) -> RequestMode {
         self.request.borrow().mode.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-credentials
+    
     fn Credentials(&self) -> RequestCredentials {
         let r = self.request.borrow().clone();
         r.credentials_mode.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-cache
+    
     fn Cache(&self) -> RequestCache {
         let r = self.request.borrow().clone();
         r.cache_mode.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-redirect
+    
     fn Redirect(&self) -> RequestRedirect {
         let r = self.request.borrow().clone();
         r.redirect_mode.into()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-integrity
+    
     fn Integrity(&self) -> DOMString {
         let r = self.request.borrow();
         DOMString::from_string(r.integrity_metadata.clone())
     }
 
-    // https://fetch.spec.whatwg.org/#dom-body-bodyused
+    
     fn BodyUsed(&self) -> bool {
         self.body_used.get()
     }
 
-    // https://fetch.spec.whatwg.org/#dom-request-clone
+    
     fn Clone(&self) -> Fallible<DomRoot<Request>> {
-        // Step 1
+        
         if request_is_locked(self) {
             return Err(Error::Type("Request is locked".to_string()));
         }
@@ -599,30 +598,30 @@ impl RequestMethods for Request {
             return Err(Error::Type("Request is disturbed".to_string()));
         }
 
-        // Step 2
+        
         Request::clone_from(self)
     }
 
     #[allow(unrooted_must_root)]
-    // https://fetch.spec.whatwg.org/#dom-body-text
+    
     fn Text(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Text)
     }
 
     #[allow(unrooted_must_root)]
-    // https://fetch.spec.whatwg.org/#dom-body-blob
+    
     fn Blob(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Blob)
     }
 
     #[allow(unrooted_must_root)]
-    // https://fetch.spec.whatwg.org/#dom-body-formdata
+    
     fn FormData(&self) -> Rc<Promise> {
         consume_body(self, BodyType::FormData)
     }
 
     #[allow(unrooted_must_root)]
-    // https://fetch.spec.whatwg.org/#dom-body-json
+    
     fn Json(&self) -> Rc<Promise> {
         consume_body(self, BodyType::Json)
     }

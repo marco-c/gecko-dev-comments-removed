@@ -56,7 +56,7 @@ impl HTMLOptionElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLOptionElement> {
-        Node::reflect_node(box HTMLOptionElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLOptionElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLOptionElementBinding::Wrap)
     }
@@ -81,7 +81,7 @@ impl HTMLOptionElement {
     }
 }
 
-// FIXME(ajeffrey): Provide a way of buffering DOMStrings other than using Strings
+
 fn collect_text(element: &Element, value: &mut String) {
     let svg_script = *element.namespace() == ns!(svg) && element.local_name() == &local_name!("script");
     let html_script = element.is::<HTMLScriptElement>();
@@ -100,25 +100,25 @@ fn collect_text(element: &Element, value: &mut String) {
 }
 
 impl HTMLOptionElementMethods for HTMLOptionElement {
-    // https://html.spec.whatwg.org/multipage/#dom-option-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-text
+    
     fn Text(&self) -> DOMString {
         let mut content = String::new();
         collect_text(self.upcast(), &mut content);
         DOMString::from(str_join(split_html_space_chars(&content), " "))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-text
+    
     fn SetText(&self, value: DOMString) {
         self.upcast::<Node>().SetTextContent(Some(value))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         let parent = self.upcast::<Node>().GetParentNode().and_then(|p|
             if p.is::<HTMLOptGroupElement>() {
@@ -131,7 +131,7 @@ impl HTMLOptionElementMethods for HTMLOptionElement {
         parent.and_then(|p| p.downcast::<HTMLSelectElement>().and_then(|s| s.GetForm()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-option-value
+    
     fn Value(&self) -> DOMString {
         let element = self.upcast::<Element>();
         let attr = &local_name!("value");
@@ -142,10 +142,10 @@ impl HTMLOptionElementMethods for HTMLOptionElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-option-value
+    
     make_setter!(SetValue, "value");
 
-    // https://html.spec.whatwg.org/multipage/#attr-option-label
+    
     fn Label(&self) -> DOMString {
         let element = self.upcast::<Element>();
         let attr = &local_name!("label");
@@ -156,21 +156,21 @@ impl HTMLOptionElementMethods for HTMLOptionElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-option-label
+    
     make_setter!(SetLabel, "label");
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-defaultselected
+    
     make_bool_getter!(DefaultSelected, "selected");
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-defaultselected
+    
     make_bool_setter!(SetDefaultSelected, "selected");
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-selected
+    
     fn Selected(&self) -> bool {
         self.selectedness.get()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-option-selected
+    
     fn SetSelected(&self, selected: bool) {
         self.dirtiness.set(true);
         self.selectedness.set(selected);

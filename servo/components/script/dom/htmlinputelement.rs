@@ -165,7 +165,7 @@ impl HTMLInputElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLInputElement> {
-        Node::reflect_node(box HTMLInputElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLInputElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLInputElementBinding::Wrap)
     }
@@ -176,7 +176,7 @@ impl HTMLInputElement {
             .map_or_else(|| atom!(""), |a| a.value().as_atom().to_owned())
     }
 
-    // https://html.spec.whatwg.org/multipage/#input-type-attr-summary
+    
     fn value_mode(&self) -> ValueMode {
         match self.input_type.get() {
             InputType::InputSubmit |
@@ -267,7 +267,7 @@ impl LayoutHTMLInputElementHelpers for LayoutDom<HTMLInputElement> {
                 let text = get_raw_textinput_value(self);
                 let sel = textinput.get_absolute_selection_range();
 
-                // Translate indices from the raw value to indices in the replacement value.
+                
                 let char_start = text[.. sel.start].chars().count();
                 let char_end = char_start + text[sel].chars().count();
 
@@ -293,36 +293,36 @@ impl LayoutHTMLInputElementHelpers for LayoutDom<HTMLInputElement> {
 }
 
 impl HTMLInputElementMethods for HTMLInputElement {
-    // https://html.spec.whatwg.org/multipage/#dom-input-accept
+    
     make_getter!(Accept, "accept");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-accept
+    
     make_setter!(SetAccept, "accept");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-alt
+    
     make_getter!(Alt, "alt");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-alt
+    
     make_setter!(SetAlt, "alt");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-dirName
+    
     make_getter!(DirName, "dirname");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-dirName
+    
     make_setter!(SetDirName, "dirname");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-files
+    
     fn GetFiles(&self) -> Option<DomRoot<FileList>> {
         match self.filelist.get() {
             Some(ref fl) => Some(fl.clone()),
@@ -330,35 +330,35 @@ impl HTMLInputElementMethods for HTMLInputElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-defaultchecked
+    
     make_bool_getter!(DefaultChecked, "checked");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-defaultchecked
+    
     make_bool_setter!(SetDefaultChecked, "checked");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-checked
+    
     fn Checked(&self) -> bool {
         self.upcast::<Element>().state().contains(IN_CHECKED_STATE)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-checked
+    
     fn SetChecked(&self, checked: bool) {
         self.update_checked_state(checked, true);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-readonly
+    
     make_bool_getter!(ReadOnly, "readonly");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-readonly
+    
     make_bool_setter!(SetReadOnly, "readonly");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-size
+    
     make_uint_getter!(Size, "size", DEFAULT_INPUT_SIZE);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-size
+    
     make_limited_uint_setter!(SetSize, "size", DEFAULT_INPUT_SIZE);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-type
+    
     make_enumerated_getter!(Type,
                             "type",
                             "text",
@@ -370,10 +370,10 @@ impl HTMLInputElementMethods for HTMLInputElement {
                             "checkbox" | "radio" | "file" |
                             "submit" | "image" | "reset" | "button");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-type
+    
     make_atomic_setter!(SetType, "type");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-value
+    
     fn Value(&self) -> DOMString {
         match self.value_mode() {
             ValueMode::Value => self.textinput.borrow().get_content(),
@@ -406,7 +406,7 @@ impl HTMLInputElementMethods for HTMLInputElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-value
+    
     fn SetValue(&self, value: DOMString) -> ErrorResult {
         match self.value_mode() {
             ValueMode::Value => {
@@ -433,122 +433,122 @@ impl HTMLInputElementMethods for HTMLInputElement {
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-defaultvalue
+    
     make_getter!(DefaultValue, "value");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-defaultvalue
+    
     make_setter!(SetDefaultValue, "value");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fe-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fe-name
+    
     make_atomic_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-placeholder
+    
     make_getter!(Placeholder, "placeholder");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-placeholder
+    
     make_setter!(SetPlaceholder, "placeholder");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formaction
+    
     make_form_action_getter!(FormAction, "formaction");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formaction
+    
     make_setter!(SetFormAction, "formaction");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formenctype
+    
     make_enumerated_getter!(FormEnctype,
                             "formenctype",
                             "application/x-www-form-urlencoded",
                             "text/plain" | "multipart/form-data");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formenctype
+    
     make_setter!(SetFormEnctype, "formenctype");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formmethod
+    
     make_enumerated_getter!(FormMethod, "formmethod", "get", "post" | "dialog");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formmethod
+    
     make_setter!(SetFormMethod, "formmethod");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formtarget
+    
     make_getter!(FormTarget, "formtarget");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-formtarget
+    
     make_setter!(SetFormTarget, "formtarget");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fs-formnovalidate
+    
     make_bool_getter!(FormNoValidate, "formnovalidate");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fs-formnovalidate
+    
     make_bool_setter!(SetFormNoValidate, "formnovalidate");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-max
+    
     make_getter!(Max, "max");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-max
+    
     make_setter!(SetMax, "max");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-maxlength
+    
     make_int_getter!(MaxLength, "maxlength", DEFAULT_MAX_LENGTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-maxlength
+    
     make_limited_int_setter!(SetMaxLength, "maxlength", DEFAULT_MAX_LENGTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-minlength
+    
     make_int_getter!(MinLength, "minlength", DEFAULT_MIN_LENGTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-minlength
+    
     make_limited_int_setter!(SetMinLength, "minlength", DEFAULT_MIN_LENGTH);
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-min
+    
     make_getter!(Min, "min");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-min
+    
     make_setter!(SetMin, "min");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-multiple
+    
     make_bool_getter!(Multiple, "multiple");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-multiple
+    
     make_bool_setter!(SetMultiple, "multiple");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-pattern
+    
     make_getter!(Pattern, "pattern");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-pattern
+    
     make_setter!(SetPattern, "pattern");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-required
+    
     make_bool_getter!(Required, "required");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-required
+    
     make_bool_setter!(SetRequired, "required");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-src
+    
     make_url_getter!(Src, "src");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-src
+    
     make_setter!(SetSrc, "src");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-step
+    
     make_getter!(Step, "step");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-step
+    
     make_setter!(SetStep, "step");
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-indeterminate
+    
     fn Indeterminate(&self) -> bool {
         self.upcast::<Element>().state().contains(IN_INDETERMINATE_STATE)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-indeterminate
+    
     fn SetIndeterminate(&self, val: bool) {
         self.upcast::<Element>().set_state(IN_INDETERMINATE_STATE, val)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
+    
     fn Labels(&self) -> DomRoot<NodeList> {
         if self.type_() == atom!("hidden") {
             let window = window_from_node(self);
@@ -558,41 +558,41 @@ impl HTMLInputElementMethods for HTMLInputElement {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-input-selectionstart
+    
     fn SelectionStart(&self) -> u32 {
         self.textinput.borrow().get_selection_start()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionstart
+    
     fn SetSelectionStart(&self, start: u32) {
         let selection_end = self.SelectionEnd();
         self.textinput.borrow_mut().set_selection_range(start, selection_end);
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionend
+    
     fn SelectionEnd(&self) -> u32 {
         self.textinput.borrow().get_absolute_insertion_point() as u32
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionend
+    
     fn SetSelectionEnd(&self, end: u32) {
         let selection_start = self.SelectionStart();
         self.textinput.borrow_mut().set_selection_range(selection_start, end);
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectiondirection
+    
     fn SelectionDirection(&self) -> DOMString {
         DOMString::from(self.textinput.borrow().selection_direction)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectiondirection
+    
     fn SetSelectionDirection(&self, direction: DOMString) {
         self.textinput.borrow_mut().selection_direction = SelectionDirection::from(direction);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-setselectionrange
+    
     fn SetSelectionRange(&self, start: u32, end: u32, direction: Option<DOMString>) {
         let direction = direction.map_or(SelectionDirection::None, |d| SelectionDirection::from(d));
         self.textinput.borrow_mut().selection_direction = direction;
@@ -607,10 +607,10 @@ impl HTMLInputElementMethods for HTMLInputElement {
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // Select the files based on filepaths passed in,
-    // enabled by dom.htmlinputelement.select_files.enabled,
-    // used for test purpose.
-    // check-tidy: no specs after this line
+    
+    
+    
+    
     fn SelectFiles(&self, paths: Vec<DOMString>) {
         if self.input_type.get() == InputType::InputFile {
             self.select_files(Some(paths));

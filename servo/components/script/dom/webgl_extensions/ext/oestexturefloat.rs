@@ -25,7 +25,7 @@ impl OESTextureFloat {
 impl WebGLExtension for OESTextureFloat {
     type Extension = OESTextureFloat;
     fn new(ctx: &WebGLRenderingContext) -> DomRoot<OESTextureFloat> {
-        reflect_dom_object(box OESTextureFloat::new_inherited(),
+        reflect_dom_object(Box::new(OESTextureFloat::new_inherited()),
                            &*ctx.global(),
                            OESTextureFloatBinding::Wrap)
     }
@@ -37,11 +37,11 @@ impl WebGLExtension for OESTextureFloat {
     }
 
     fn enable(ext: &WebGLExtensions) {
-        // Enable FLOAT text data type
+        
         ext.enable_tex_type(webgl::FLOAT);
         let needs_replace = !ext.supports_gl_extension("GL_OES_texture_float");
         if needs_replace {
-            // Special internal formats must be used to avoid clamped float values
+            
             ext.add_effective_tex_internal_format(webgl::RGBA, webgl::FLOAT, gl::RGBA32F);
             ext.add_effective_tex_internal_format(webgl::RGB, webgl::FLOAT, gl::RGB32F);
             ext.add_effective_tex_internal_format(webgl::LUMINANCE, webgl::FLOAT, gl::LUMINANCE32F_ARB);

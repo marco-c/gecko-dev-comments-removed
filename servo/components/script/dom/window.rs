@@ -344,20 +344,20 @@ impl Window {
 
     pub fn new_script_pair(&self) -> (Box<ScriptChan + Send>, Box<ScriptPort + Send>) {
         let (tx, rx) = channel();
-        (box SendableMainThreadScriptChan(tx), box rx)
+        (Box::new(SendableMainThreadScriptChan(tx)), Box::new(rx))
     }
 
     pub fn image_cache(&self) -> Arc<ImageCache> {
         self.image_cache.clone()
     }
 
-    /// This can panic if it is called after the browsing context has been discarded
+    
     pub fn window_proxy(&self) -> DomRoot<WindowProxy> {
         self.window_proxy.get().unwrap()
     }
 
-    /// Returns the window proxy if it has not been discarded.
-    /// https://html.spec.whatwg.org/multipage/#a-browsing-context-is-discarded
+    
+    
     pub fn undiscarded_window_proxy(&self) -> Option<DomRoot<WindowProxy>> {
         self.window_proxy.get()
             .and_then(|window_proxy| if window_proxy.is_browsing_context_discarded() {
@@ -379,9 +379,9 @@ impl Window {
         &self.error_reporter
     }
 
-    /// Sets a new list of scroll offsets.
-    ///
-    /// This is called when layout gives us new ones and WebRender is in use.
+    
+    
+    
     pub fn set_scroll_offsets(&self, offsets: HashMap<UntrustedNodeAddress, Vector2D<f32>>) {
         *self.scroll_offsets.borrow_mut() = offsets
     }
@@ -408,9 +408,9 @@ impl Window {
     }
 
     pub fn pending_image_notification(&self, response: PendingImageResponse) {
-        //XXXjdm could be more efficient to send the responses to the layout thread,
-        //       rather than making the layout thread talk to the image cache to
-        //       obtain the same data.
+        
+        
+        
         let mut images = self.pending_layout_images.borrow_mut();
         let nodes = images.entry(response.id);
         let nodes = match nodes {
@@ -439,32 +439,32 @@ fn display_alert_dialog(message: &str) {
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 fn display_alert_dialog(_message: &str) {
-    // tinyfiledialogs not supported on Android
+    
 }
 
-// https://html.spec.whatwg.org/multipage/#atob
+
 pub fn base64_btoa(input: DOMString) -> Fallible<DOMString> {
-    // "The btoa() method must throw an InvalidCharacterError exception if
-    //  the method's first argument contains any character whose code point
-    //  is greater than U+00FF."
+    
+    
+    
     if input.chars().any(|c: char| c > '\u{FF}') {
         Err(Error::InvalidCharacter)
     } else {
-        // "Otherwise, the user agent must convert that argument to a
-        //  sequence of octets whose nth octet is the eight-bit
-        //  representation of the code point of the nth character of
-        //  the argument,"
+        
+        
+        
+        
         let octets = input.chars().map(|c: char| c as u8).collect::<Vec<u8>>();
 
-        // "and then must apply the base64 algorithm to that sequence of
-        //  octets, and return the result. [RFC4648]"
+        
+        
         Ok(DOMString::from(base64::encode(&octets)))
     }
 }
 
-// https://html.spec.whatwg.org/multipage/#atob
+
 pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
-    // "Remove all space characters from input."
+    
     fn is_html_space(c: char) -> bool {
         HTML_SPACE_CHARACTERS.iter().any(|&m| m == c)
     }
@@ -473,9 +473,9 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
         .collect::<String>();
     let mut input = &*without_spaces;
 
-    // "If the length of input divides by 4 leaving no remainder, then:
-    //  if input ends with one or two U+003D EQUALS SIGN (=) characters,
-    //  remove them from input."
+    
+    
+    
     if input.len() % 4 == 0 {
         if input.ends_with("==") {
             input = &input[..input.len() - 2]
@@ -484,19 +484,19 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
         }
     }
 
-    // "If the length of input divides by 4 leaving a remainder of 1,
-    //  throw an InvalidCharacterError exception and abort these steps."
+    
+    
     if input.len() % 4 == 1 {
         return Err(Error::InvalidCharacter)
     }
 
-    // "If input contains a character that is not in the following list of
-    //  characters and character ranges, throw an InvalidCharacterError
-    //  exception and abort these steps:
-    //
-    //  U+002B PLUS SIGN (+)
-    //  U+002F SOLIDUS (/)
-    //  Alphanumeric ASCII characters"
+    
+    
+    
+    
+    
+    
+    
     if input.chars().any(|c| c != '+' && c != '/' && !c.is_alphanumeric()) {
         return Err(Error::InvalidCharacter)
     }
@@ -508,16 +508,16 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
 }
 
 impl WindowMethods for Window {
-    // https://html.spec.whatwg.org/multipage/#dom-alert
+    
     fn Alert_(&self) {
         self.Alert(DOMString::new());
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-alert
+    
     fn Alert(&self, s: DOMString) {
-        // Right now, just print to the console
-        // Ensure that stderr doesn't trample through the alert() we use to
-        // communicate test results (see executorservo.py in wptrunner).
+        
+        
+        
         {
             let stderr = stderr();
             let mut stderr = stderr.lock();
@@ -537,84 +537,84 @@ impl WindowMethods for Window {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-closed
+    
     fn Closed(&self) -> bool {
         self.window_proxy.get()
             .map(|ref proxy| proxy.is_browsing_context_discarded())
             .unwrap_or(true)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-close
+    
     fn Close(&self) {
         self.main_thread_script_chan()
             .send(MainThreadScriptMsg::ExitWindow(self.upcast::<GlobalScope>().pipeline_id()))
             .unwrap();
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-document-2
+    
     fn Document(&self) -> DomRoot<Document> {
         self.document.get().expect("Document accessed before initialization.")
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-history
+    
     fn History(&self) -> DomRoot<History> {
         self.history.or_init(|| History::new(self))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-customelements
+    
     fn CustomElements(&self) -> DomRoot<CustomElementRegistry> {
         self.custom_element_registry.or_init(|| CustomElementRegistry::new(self))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location
+    
     fn Location(&self) -> DomRoot<Location> {
         self.location.or_init(|| Location::new(self))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-sessionstorage
+    
     fn SessionStorage(&self) -> DomRoot<Storage> {
         self.session_storage.or_init(|| Storage::new(self, StorageType::Session))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-localstorage
+    
     fn LocalStorage(&self) -> DomRoot<Storage> {
         self.local_storage.or_init(|| Storage::new(self, StorageType::Local))
     }
 
-    // https://dvcs.w3.org/hg/webcrypto-api/raw-file/tip/spec/Overview.html#dfn-GlobalCrypto
+    
     fn Crypto(&self) -> DomRoot<Crypto> {
         self.upcast::<GlobalScope>().crypto()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-frameelement
+    
     fn GetFrameElement(&self) -> Option<DomRoot<Element>> {
-        // Steps 1-3.
+        
         let window_proxy = match self.window_proxy.get() {
             None => return None,
             Some(window_proxy) => window_proxy,
         };
-        // Step 4-5.
+        
         let container = match window_proxy.frame_element() {
             None => return None,
             Some(container) => container,
         };
-        // Step 6.
+        
         let container_doc = document_from_node(container);
         let current_doc = GlobalScope::current().expect("No current global object").as_window().Document();
         if !current_doc.origin().same_origin_domain(container_doc.origin()) {
             return None;
         }
-        // Step 7.
+        
         Some(DomRoot::from_ref(container))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-navigator
+    
     fn Navigator(&self) -> DomRoot<Navigator> {
         self.navigator.or_init(|| Navigator::new(self))
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-settimeout
+    
     unsafe fn SetTimeout(&self, _cx: *mut JSContext, callback: Rc<Function>, timeout: i32,
                          args: Vec<HandleValue>) -> i32 {
         self.upcast::<GlobalScope>().set_timeout_or_interval(
@@ -625,7 +625,7 @@ impl WindowMethods for Window {
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-settimeout
+    
     unsafe fn SetTimeout_(&self, _cx: *mut JSContext, callback: DOMString,
                           timeout: i32, args: Vec<HandleValue>) -> i32 {
         self.upcast::<GlobalScope>().set_timeout_or_interval(
@@ -635,13 +635,13 @@ impl WindowMethods for Window {
             IsInterval::NonInterval)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-cleartimeout
+    
     fn ClearTimeout(&self, handle: i32) {
         self.upcast::<GlobalScope>().clear_timeout_or_interval(handle);
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-setinterval
+    
     unsafe fn SetInterval(&self, _cx: *mut JSContext, callback: Rc<Function>,
                           timeout: i32, args: Vec<HandleValue>) -> i32 {
         self.upcast::<GlobalScope>().set_timeout_or_interval(
@@ -652,7 +652,7 @@ impl WindowMethods for Window {
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-setinterval
+    
     unsafe fn SetInterval_(&self, _cx: *mut JSContext, callback: DOMString,
                            timeout: i32, args: Vec<HandleValue>) -> i32 {
         self.upcast::<GlobalScope>().set_timeout_or_interval(
@@ -662,54 +662,54 @@ impl WindowMethods for Window {
             IsInterval::Interval)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-windowtimers-clearinterval
+    
     fn ClearInterval(&self, handle: i32) {
         self.ClearTimeout(handle);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window
+    
     fn Window(&self) -> DomRoot<WindowProxy> {
         self.window_proxy()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-self
+    
     fn Self_(&self) -> DomRoot<WindowProxy> {
         self.window_proxy()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-frames
+    
     fn Frames(&self) -> DomRoot<WindowProxy> {
         self.window_proxy()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-parent
+    
     fn GetParent(&self) -> Option<DomRoot<WindowProxy>> {
-        // Steps 1-3.
+        
         let window_proxy = match self.undiscarded_window_proxy() {
             Some(window_proxy) => window_proxy,
             None => return None,
         };
-        // Step 4.
+        
         if let Some(parent) = window_proxy.parent() {
             return Some(DomRoot::from_ref(parent));
         }
-        // Step 5.
+        
         Some(window_proxy)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-top
+    
     fn GetTop(&self) -> Option<DomRoot<WindowProxy>> {
-        // Steps 1-3.
+        
         let window_proxy = match self.undiscarded_window_proxy() {
             Some(window_proxy) => window_proxy,
             None => return None,
         };
-        // Steps 4-5.
+        
         Some(DomRoot::from_ref(window_proxy.top()))
     }
 
-    // https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/
-    // NavigationTiming/Overview.html#sec-window.performance-attribute
+    
+    
     fn Performance(&self) -> DomRoot<Performance> {
         self.performance.or_init(|| {
             let global_scope = self.upcast::<GlobalScope>();
@@ -718,52 +718,52 @@ impl WindowMethods for Window {
         })
     }
 
-    // https://html.spec.whatwg.org/multipage/#globaleventhandlers
+    
     global_event_handlers!();
 
-    // https://html.spec.whatwg.org/multipage/#windoweventhandlers
+    
     window_event_handlers!();
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/Window/screen
+    
     fn Screen(&self) -> DomRoot<Screen> {
         self.screen.or_init(|| Screen::new(self))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-windowbase64-btoa
+    
     fn Btoa(&self, btoa: DOMString) -> Fallible<DOMString> {
         base64_btoa(btoa)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-windowbase64-atob
+    
     fn Atob(&self, atob: DOMString) -> Fallible<DOMString> {
         base64_atob(atob)
     }
 
-    /// https://html.spec.whatwg.org/multipage/#dom-window-requestanimationframe
+    
     fn RequestAnimationFrame(&self, callback: Rc<FrameRequestCallback>) -> u32 {
         self.Document()
             .request_animation_frame(AnimationFrameCallback::FrameRequestCallback { callback })
     }
 
-    /// https://html.spec.whatwg.org/multipage/#dom-window-cancelanimationframe
+    
     fn CancelAnimationFrame(&self, ident: u32) {
         let doc = self.Document();
         doc.cancel_animation_frame(ident);
     }
 
     #[allow(unsafe_code)]
-    // https://html.spec.whatwg.org/multipage/#dom-window-postmessage
+    
     unsafe fn PostMessage(&self,
                    cx: *mut JSContext,
                    message: HandleValue,
                    origin: DOMString)
                    -> ErrorResult {
-        // Step 3-5.
+        
         let origin = match &origin[..] {
             "*" => None,
             "/" => {
-                // TODO(#12715): Should be the origin of the incumbent settings
-                //               object, not self's.
+                
+                
                 Some(self.Document().origin().immutable().clone())
             },
             url => match ServoUrl::parse(&url) {
@@ -772,26 +772,26 @@ impl WindowMethods for Window {
             }
         };
 
-        // Step 1-2, 6-8.
-        // TODO(#12717): Should implement the `transfer` argument.
+        
+        
         let data = StructuredCloneData::write(cx, message)?;
 
-        // Step 9.
+        
         self.post_message(origin, data);
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-captureevents
+    
     fn CaptureEvents(&self) {
-        // This method intentionally does nothing
+        
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-releaseevents
+    
     fn ReleaseEvents(&self) {
-        // This method intentionally does nothing
+        
     }
 
-    // check-tidy: no specs after this line
+    
     fn Debug(&self, message: DOMString) {
         debug!("{}", message);
     }
@@ -824,11 +824,11 @@ impl WindowMethods for Window {
         }
     }
 
-    // https://drafts.csswg.org/cssom/#dom-window-getcomputedstyle
+    
     fn GetComputedStyle(&self,
                         element: &Element,
                         pseudo: Option<DOMString>) -> DomRoot<CSSStyleDeclaration> {
-        // Steps 1-4.
+        
         let pseudo = match pseudo.map(|mut s| { s.make_ascii_lowercase(); s }) {
             Some(ref pseudo) if pseudo == ":before" || pseudo == "::before" =>
                 Some(PseudoElement::Before),
@@ -837,164 +837,164 @@ impl WindowMethods for Window {
             _ => None
         };
 
-        // Step 5.
+        
         CSSStyleDeclaration::new(self,
                                  CSSStyleOwner::Element(Dom::from_ref(element)),
                                  pseudo,
                                  CSSModificationAccess::Readonly)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-innerheight
-    //TODO Include Scrollbar
+    
+    
     fn InnerHeight(&self) -> i32 {
         self.window_size.get()
                         .and_then(|e| e.initial_viewport.height.to_i32())
                         .unwrap_or(0)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-innerwidth
-    //TODO Include Scrollbar
+    
+    
     fn InnerWidth(&self) -> i32 {
         self.window_size.get()
                         .and_then(|e| e.initial_viewport.width.to_i32())
                         .unwrap_or(0)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrollx
+    
     fn ScrollX(&self) -> i32 {
         self.current_viewport.get().origin.x.to_px()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-pagexoffset
+    
     fn PageXOffset(&self) -> i32 {
         self.ScrollX()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrolly
+    
     fn ScrollY(&self) -> i32 {
         self.current_viewport.get().origin.y.to_px()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-pageyoffset
+    
     fn PageYOffset(&self) -> i32 {
         self.ScrollY()
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scroll
+    
     fn Scroll(&self, options: &ScrollToOptions) {
-        // Step 1
+        
         let left = options.left.unwrap_or(0.0f64);
         let top = options.top.unwrap_or(0.0f64);
         self.scroll(left, top, options.parent.behavior);
 
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scroll
+    
     fn Scroll_(&self, x: f64, y: f64) {
         self.scroll(x, y, ScrollBehavior::Auto);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrollto
+    
     fn ScrollTo(&self, options: &ScrollToOptions) {
         self.Scroll(options);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrollto
+    
     fn ScrollTo_(&self, x: f64, y: f64) {
         self.scroll(x, y, ScrollBehavior::Auto);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrollby
+    
     fn ScrollBy(&self, options: &ScrollToOptions)  {
-        // Step 1
+        
         let x = options.left.unwrap_or(0.0f64);
         let y = options.top.unwrap_or(0.0f64);
         self.ScrollBy_(x, y);
         self.scroll(x, y, options.parent.behavior);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-scrollby
+    
     fn ScrollBy_(&self, x: f64, y: f64)  {
-        // Step 3
+        
         let left = x + self.ScrollX() as f64;
-        // Step 4
+        
         let top =  y + self.ScrollY() as f64;
 
-        // Step 5
+        
         self.scroll(left, top, ScrollBehavior::Auto);
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-resizeto
+    
     fn ResizeTo(&self, x: i32, y: i32) {
-        // Step 1
-        //TODO determine if this operation is allowed
+        
+        
         let size = Size2D::new(x.to_u32().unwrap_or(1), y.to_u32().unwrap_or(1));
         self.send_to_constellation(ScriptMsg::ResizeTo(size));
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-resizeby
+    
     fn ResizeBy(&self, x: i32, y: i32) {
         let (size, _) = self.client_window();
-        // Step 1
+        
         self.ResizeTo(x + size.width.to_i32().unwrap_or(1), y + size.height.to_i32().unwrap_or(1))
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-moveto
+    
     fn MoveTo(&self, x: i32, y: i32) {
-        // Step 1
-        //TODO determine if this operation is allowed
+        
+        
         let point = Point2D::new(x, y);
         self.send_to_constellation(ScriptMsg::MoveTo(point));
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-moveby
+    
     fn MoveBy(&self, x: i32, y: i32) {
         let (_, origin) = self.client_window();
-        // Step 1
+        
         self.MoveTo(x + origin.x, y + origin.y)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-screenx
+    
     fn ScreenX(&self) -> i32 {
         let (_, origin) = self.client_window();
         origin.x
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-screeny
+    
     fn ScreenY(&self) -> i32 {
         let (_, origin) = self.client_window();
         origin.y
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-outerheight
+    
     fn OuterHeight(&self) -> i32 {
         let (size, _) = self.client_window();
         size.height.to_i32().unwrap_or(1)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-outerwidth
+    
     fn OuterWidth(&self) -> i32 {
         let (size, _) = self.client_window();
         size.width.to_i32().unwrap_or(1)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-devicepixelratio
+    
     fn DevicePixelRatio(&self) -> Finite<f64> {
         let dpr = self.window_size.get().map_or(1.0f32, |data| data.device_pixel_ratio.get());
         Finite::wrap(dpr as f64)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-status
+    
     fn Status(&self) -> DOMString {
         self.status.borrow().clone()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-window-status
+    
     fn SetStatus(&self, status: DOMString) {
         *self.status.borrow_mut() = status
     }
 
-    // check-tidy: no specs after this line
+    
     fn OpenURLInDefaultBrowser(&self, href: DOMString) -> ErrorResult {
         let url = ServoUrl::parse(&href).map_err(|e| {
             Error::Type(format!("Couldn't parse URL: {}", e))
@@ -1005,7 +1005,7 @@ impl WindowMethods for Window {
         }
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-window-matchmedia
+    
     fn MatchMedia(&self, query: DOMString) -> DomRoot<MediaQueryList> {
         let mut input = ParserInput::new(&query);
         let mut parser = Parser::new(&mut input);
@@ -1023,12 +1023,12 @@ impl WindowMethods for Window {
     }
 
     #[allow(unrooted_must_root)]
-    // https://fetch.spec.whatwg.org/#fetch-method
+    
     fn Fetch(&self, input: RequestOrUSVString, init: RootedTraceableBox<RequestInit>) -> Rc<Promise> {
         fetch::Fetch(&self.upcast(), input, init)
     }
 
-    // https://drafts.css-houdini.org/css-paint-api-1/#paint-worklet
+    
     fn PaintWorklet(&self) -> DomRoot<Worklet> {
         self.paint_worklet.or_init(|| self.new_paint_worklet())
     }
@@ -1045,40 +1045,40 @@ impl Window {
         }
     }
 
-    /// Cancels all the tasks associated with that window.
-    ///
-    /// This sets the current `ignore_further_async_events` sentinel value to
-    /// `true` and replaces it with a brand new one for future tasks.
+    
+    
+    
+    
     pub fn cancel_all_tasks(&self) {
         let cancelled = mem::replace(&mut *self.ignore_further_async_events.borrow_mut(), Default::default());
         cancelled.store(true, Ordering::Relaxed);
     }
 
     pub fn clear_js_runtime(&self) {
-        // We tear down the active document, which causes all the attached
-        // nodes to dispose of their layout data. This messages the layout
-        // thread, informing it that it can safely free the memory.
+        
+        
+        
         self.Document().upcast::<Node>().teardown();
 
-        // Clean up any active promises
-        // https://github.com/servo/servo/issues/15318
+        
+        
         if let Some(custom_elements) = self.custom_element_registry.get() {
             custom_elements.teardown();
         }
 
-        // The above code may not catch all DOM objects (e.g. DOM
-        // objects removed from the tree that haven't been collected
-        // yet). There should not be any such DOM nodes with layout
-        // data, but if there are, then when they are dropped, they
-        // will attempt to send a message to the closed layout thread.
-        // This causes memory safety issues, because the DOM node uses
-        // the layout channel from its window, and the window has
-        // already been GC'd.  For nodes which do not have a live
-        // pointer, we can avoid this by GCing now:
+        
+        
+        
+        
+        
+        
+        
+        
+        
         self.Gc();
-        // but there may still be nodes being kept alive by user
-        // script.
-        // TODO: ensure that this doesn't happen!
+        
+        
+        
 
         self.current_state.set(WindowState::Zombie);
         *self.js_runtime.borrow_mut() = None;
@@ -1086,26 +1086,26 @@ impl Window {
         self.ignore_further_async_events.borrow().store(true, Ordering::SeqCst);
     }
 
-    /// https://drafts.csswg.org/cssom-view/#dom-window-scroll
+    
     pub fn scroll(&self, x_: f64, y_: f64, behavior: ScrollBehavior) {
-        // Step 3
+        
         let xfinite = if x_.is_finite() { x_ } else { 0.0f64 };
         let yfinite = if y_.is_finite() { y_ } else { 0.0f64 };
 
-        // Step 4
+        
         if self.window_size.get().is_none() {
             return;
         }
 
-        // Step 5
-        //TODO remove scrollbar width
+        
+        
         let width = self.InnerWidth() as f64;
-        // Step 6
-        //TODO remove scrollbar height
+        
+        
         let height = self.InnerHeight() as f64;
 
-        // Step 7 & 8
-        //TODO use overflow direction
+        
+        
         let body = self.Document().GetBody();
         let (x, y) = match body {
             Some(e) => {
@@ -1120,15 +1120,15 @@ impl Window {
             }
         };
 
-        // Step 10
-        //TODO handling ongoing smooth scrolling
+        
+        
         if x == self.ScrollX() as f64 && y == self.ScrollY() as f64 {
             return;
         }
 
-        //TODO Step 11
-        //let document = self.Document();
-        // Step 12
+        
+        
+        
         let global_scope = self.upcast::<GlobalScope>();
         let x = x.to_f32().unwrap_or(0.0f32);
         let y = y.to_f32().unwrap_or(0.0f32);
@@ -1140,19 +1140,19 @@ impl Window {
                               None);
     }
 
-    /// https://drafts.csswg.org/cssom-view/#perform-a-scroll
+    
     pub fn perform_a_scroll(&self,
                             x: f32,
                             y: f32,
                             scroll_root_id: ClipId,
                             behavior: ScrollBehavior,
                             element: Option<&Element>) {
-        //TODO Step 1
+        
         let point = Point2D::new(x, y);
         let smooth = match behavior {
             ScrollBehavior::Auto => {
                 element.map_or(false, |_element| {
-                    // TODO check computed scroll-behaviour CSS property
+                    
                     true
                 })
             }
@@ -1181,33 +1181,33 @@ impl Window {
         recv.recv().unwrap_or((Size2D::zero(), Point2D::zero()))
     }
 
-    /// Advances the layout animation clock by `delta` milliseconds, and then
-    /// forces a reflow if `tick` is true.
+    
+    
     pub fn advance_animation_clock(&self, delta: i32, tick: bool) {
         self.layout_chan.send(Msg::AdvanceClockMs(delta, tick)).unwrap();
     }
 
-    /// Reflows the page unconditionally if possible and not suppressed. This
-    /// method will wait for the layout thread to complete (but see the `TODO`
-    /// below). If there is no window size yet, the page is presumed invisible
-    /// and no reflow is performed. If reflow is suppressed, no reflow will be
-    /// performed for ForDisplay goals.
-    ///
-    /// TODO(pcwalton): Only wait for style recalc, since we have
-    /// off-main-thread layout.
-    ///
-    /// Returns true if layout actually happened, false otherwise.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[allow(unsafe_code)]
     pub fn force_reflow(&self, reflow_goal: ReflowGoal, reason: ReflowReason) -> bool {
-        // Check if we need to unsuppress reflow. Note that this needs to be
-        // *before* any early bailouts, or reflow might never be unsuppresed!
+        
+        
         match reason {
             ReflowReason::FirstLoad |
             ReflowReason::RefreshTick => self.suppress_reflow.set(false),
             _ => (),
         }
 
-        // If there is no window size, we have nothing to do.
+        
         let window_size = match self.window_size.get() {
             Some(window_size) => window_size,
             None => return false,
@@ -1228,10 +1228,10 @@ impl Window {
             None
         };
 
-        // Layout will let us know when it's done.
+        
         let (join_chan, join_port) = channel();
 
-        // On debug mode, print the reflow event information.
+        
         if opts::get().relayout_event {
             debug_reflow_events(self.upcast::<GlobalScope>().pipeline_id(), &reflow_goal, &reason);
         }
@@ -1240,7 +1240,7 @@ impl Window {
 
         let stylesheets_changed = document.flush_stylesheets_for_reflow();
 
-        // Send new document and relevant styles to layout.
+        
         let needs_display = reflow_goal.needs_display();
         let reflow = ScriptReflow {
             reflow_info: Reflow {
@@ -1271,8 +1271,8 @@ impl Window {
 
         debug!("script: layout joined");
 
-        // Pending reflows require display, so only reset the pending reflow count if this reflow
-        // was to be displayed.
+        
+        
         if needs_display {
             self.pending_reflow_count.set(0);
         }
@@ -1297,9 +1297,9 @@ impl Window {
                 let (responder, responder_listener) = ipc::channel().unwrap();
                 let pipeline = self.upcast::<GlobalScope>().pipeline_id();
                 let image_cache_chan = self.image_cache_chan.clone();
-                ROUTER.add_route(responder_listener.to_opaque(), box move |message| {
+                ROUTER.add_route(responder_listener.to_opaque(), Box::new(move |message| {
                     let _ = image_cache_chan.send((pipeline, message.to().unwrap()));
-                });
+                }));
                 self.image_cache.add_listener(id, ImageResponder::new(responder, id));
                 nodes.push(Dom::from_ref(&*node));
             }
@@ -1312,19 +1312,19 @@ impl Window {
         true
     }
 
-    /// Reflows the page if it's possible to do so and the page is dirty. This
-    /// method will wait for the layout thread to complete (but see the `TODO`
-    /// below). If there is no window size yet, the page is presumed invisible
-    /// and no reflow is performed.
-    ///
-    /// TODO(pcwalton): Only wait for style recalc, since we have
-    /// off-main-thread layout.
-    ///
-    /// Returns true if layout actually happened, false otherwise.
-    /// This return value is useful for script queries, that wait for a lock
-    /// that layout might hold if the first layout hasn't happened yet (which
-    /// may happen in the only case a query reflow may bail out, that is, if the
-    /// viewport size is not present). See #11223 for an example of that.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn reflow(&self, reflow_goal: ReflowGoal, reason: ReflowReason) -> bool {
         let for_display = reflow_goal == ReflowGoal::Full;
 
@@ -1332,9 +1332,9 @@ impl Window {
         if !for_display || self.Document().needs_reflow() {
             issued_reflow = self.force_reflow(reflow_goal, reason);
 
-            // If window_size is `None`, we don't reflow, so the document stays
-            // dirty. Otherwise, we shouldn't need a reflow immediately after a
-            // reflow, except if we're waiting for a deferred paint.
+            
+            
+            
             assert!(!self.Document().needs_reflow() ||
                     (!for_display && self.Document().needs_paint()) ||
                     self.window_size.get().is_none() ||
@@ -1343,21 +1343,21 @@ impl Window {
             debug!("Document doesn't need reflow - skipping it (reason {:?})", reason);
         }
 
-        // If writing a screenshot, check if the script has reached a state
-        // where it's safe to write the image. This means that:
-        // 1) The reflow is for display (otherwise it could be a query)
-        // 2) The html element doesn't contain the 'reftest-wait' class
-        // 3) The load event has fired.
-        // When all these conditions are met, notify the constellation
-        // that this pipeline is ready to write the image (from the script thread
-        // perspective at least).
+        
+        
+        
+        
+        
+        
+        
+        
         if (opts::get().output_file.is_some() ||
             opts::get().exit_after_load ||
             opts::get().webdriver_port.is_some()) && for_display {
             let document = self.Document();
 
-            // Checks if the html element has reftest-wait attribute present.
-            // See http://testthewebforward.org/docs/reftests.html
+            
+            
             let html_element = document.GetDocumentElement();
             let reftest_wait = html_element.map_or(false, |elem| {
                 elem.has_class(&atom!("reftest-wait"), CaseSensitivity::CaseSensitive)
@@ -1423,9 +1423,9 @@ impl Window {
 
     pub fn overflow_query(&self,
                           node: TrustedNodeAddress) -> Point2D<overflow_x::computed_value::T> {
-        // NB: This is only called if the document is fully active, and the only
-        // reason to bail out from a query is if there's no viewport, so this
-        // *must* issue a reflow.
+        
+        
+        
         assert!(self.reflow(ReflowGoal::NodeOverflowQuery(node), ReflowReason::Query));
 
         self.layout_rpc.node_overflow().0.unwrap()
@@ -1440,7 +1440,7 @@ impl Window {
         Vector2D::new(0.0, 0.0)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-element-scroll
+    
     pub fn scroll_node(&self,
                        node: &Node,
                        x_: f64,
@@ -1451,15 +1451,15 @@ impl Window {
             return;
         }
 
-        // The scroll offsets are immediatly updated since later calls
-        // to topScroll and others may access the properties before
-        // webrender has a chance to update the offsets.
+        
+        
+        
         self.scroll_offsets.borrow_mut().insert(node.to_untrusted_node_address(),
                                                 Vector2D::new(x_ as f32, y_ as f32));
 
         let NodeScrollRootIdResponse(scroll_root_id) = self.layout_rpc.node_scroll_root_id();
 
-        // Step 12
+        
         self.perform_a_scroll(x_.to_f32().unwrap_or(0.0f32),
                               y_.to_f32().unwrap_or(0.0f32),
                               scroll_root_id,
@@ -1523,7 +1523,7 @@ impl Window {
         if !opts::get().unminify_js {
             return;
         }
-        // Create a folder for the document host to store unminified scripts.
+        
         if let Some(&Host::Domain(ref host)) = document.url().origin().host() {
             let mut path = env::current_dir().unwrap();
             path.push("unminified-js");
@@ -1539,16 +1539,16 @@ impl Window {
         }
     }
 
-    /// Commence a new URL load which will either replace this window or scroll to a fragment.
+    
     pub fn load_url(&self, url: ServoUrl, replace: bool, force_reload: bool,
                     referrer_policy: Option<ReferrerPolicy>) {
         let doc = self.Document();
         let referrer_policy = referrer_policy.or(doc.get_referrer_policy());
 
-        // https://html.spec.whatwg.org/multipage/#navigating-across-documents
+        
         if !force_reload && url.as_url()[..Position::AfterQuery] ==
             doc.url().as_url()[..Position::AfterQuery] {
-                // Step 5
+                
                 if let Some(fragment) = url.fragment() {
                     doc.check_and_scroll_fragment(fragment);
                     doc.set_url(url.clone());
@@ -1608,10 +1608,10 @@ impl Window {
     pub fn set_page_clip_rect_with_new_viewport(&self, viewport: Rect<f32>) -> bool {
         let rect = f32_rect_to_au_rect(viewport.clone());
         self.current_viewport.set(rect);
-        // We use a clipping rectangle that is five times the size of the of the viewport,
-        // so that we don't collect display list items for areas too far outside the viewport,
-        // but also don't trigger reflows every time the viewport changes.
-        static VIEWPORT_EXPANSION: f32 = 2.0; // 2 lengths on each side plus original length is 5 total.
+        
+        
+        
+        static VIEWPORT_EXPANSION: f32 = 2.0; 
         let proposed_clip_rect = f32_rect_to_au_rect(
             viewport.inflate(viewport.size.width * VIEWPORT_EXPANSION,
             viewport.size.height * VIEWPORT_EXPANSION));
@@ -1627,41 +1627,41 @@ impl Window {
 
         self.page_clip_rect.set(proposed_clip_rect);
 
-        // If we didn't have a clip rect, the previous display doesn't need rebuilding
-        // because it was built for infinite clip (max_rect()).
+        
+        
         had_clip_rect
     }
 
-    // https://html.spec.whatwg.org/multipage/#accessing-other-browsing-contexts
+    
     pub fn IndexedGetter(&self, _index: u32, _found: &mut bool) -> Option<DomRoot<Window>> {
         None
     }
 
     pub fn suspend(&self) {
-        // Suspend timer events.
+        
         self.upcast::<GlobalScope>().suspend();
 
-        // Set the window proxy to be a cross-origin window.
+        
         if self.window_proxy().currently_active() == Some(self.global().pipeline_id()) {
             self.window_proxy().unset_currently_active();
         }
 
-        // A hint to the JS runtime that now would be a good time to
-        // GC any unreachable objects generated by user script,
-        // or unattached DOM nodes. Attached DOM nodes can't be GCd yet,
-        // as the document might be reactivated later.
+        
+        
+        
+        
         self.Gc();
     }
 
     pub fn resume(&self) {
-        // Resume timer events.
+        
         self.upcast::<GlobalScope>().resume();
 
-        // Set the window proxy to be this object.
+        
         self.window_proxy().set_currently_active(self);
 
-        // Push the document title to the compositor since we are
-        // activating this document due to a navigation.
+        
+        
         self.Document().title_changed();
     }
 
@@ -1701,7 +1701,7 @@ impl Window {
         self.current_state.get() == WindowState::Alive
     }
 
-    // https://html.spec.whatwg.org/multipage/#top-level-browsing-context
+    
     pub fn is_top_level(&self) -> bool {
         match self.parent_info {
             Some((_, FrameType::IFrame)) => false,
@@ -1709,13 +1709,13 @@ impl Window {
         }
     }
 
-    /// Returns whether this window is mozbrowser.
+    
     pub fn is_mozbrowser(&self) -> bool {
         PREFS.is_mozbrowser_enabled() && self.parent_info().is_none()
     }
 
-    /// Returns whether mozbrowser is enabled and `obj` has been created
-    /// in a top-level `Window` global.
+    
+    
     #[allow(unsafe_code)]
     pub unsafe fn global_is_mozbrowser(_: *mut JSContext, obj: HandleObject) -> bool {
         GlobalScope::from_object(obj.get())
@@ -1734,7 +1734,7 @@ impl Window {
         self.media_query_lists.evaluate_and_report_changes();
     }
 
-    /// Slow down/speed up timers based on visibility.
+    
     pub fn alter_resource_utilization(&self, visible: bool) {
         if visible {
             self.upcast::<GlobalScope>().speed_up_timers();
@@ -1804,7 +1804,7 @@ impl Window {
             pipelineid,
             script_chan: Arc::new(Mutex::new(control_chan)),
         };
-        let win = box Self {
+        let win = Box::new(Self {
             globalscope: GlobalScope::new_inherited(
                 pipelineid,
                 devtools_chan,
@@ -1868,7 +1868,7 @@ impl Window {
             unminified_js_dir: Default::default(),
             test_worklet: Default::default(),
             paint_worklet: Default::default(),
-        };
+        });
 
         unsafe {
             WindowBinding::Wrap(runtime.cx(), win)
@@ -1882,9 +1882,9 @@ fn should_move_clip_rect(clip_rect: Rect<Au>, new_viewport: Rect<f32>) -> bool {
                               Size2D::new(clip_rect.size.width.to_f32_px(),
                                           clip_rect.size.height.to_f32_px()));
 
-    // We only need to move the clip rect if the viewport is getting near the edge of
-    // our preexisting clip rect. We use half of the size of the viewport as a heuristic
-    // for "close."
+    
+    
+    
     static VIEWPORT_SCROLL_MARGIN_SIZE: f32 = 0.5;
     let viewport_scroll_margin = new_viewport.size * VIEWPORT_SCROLL_MARGIN_SIZE;
 
@@ -1940,7 +1940,7 @@ fn debug_reflow_events(id: PipelineId, reflow_goal: &ReflowGoal, reason: &Reflow
 }
 
 impl Window {
-    // https://html.spec.whatwg.org/multipage/#dom-window-postmessage step 7.
+    
     pub fn post_message(
         &self,
         target_origin: Option<ImmutableOrigin>,
@@ -1978,11 +1978,11 @@ impl Window {
                 message_clone.handle(),
             );
         });
-        // FIXME(nox): Why are errors silenced here?
-        // TODO(#12718): Use the "posted message task source".
+        
+        
         let _ = self.script_chan.send(CommonScriptMsg::Task(
             ScriptThreadEventCategory::DomEvent,
-            box self.task_canceller().wrap_task(task),
+            Box::new(self.task_canceller().wrap_task(task)),
         ));
     }
 }

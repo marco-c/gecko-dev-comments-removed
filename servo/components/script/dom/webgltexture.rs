@@ -78,7 +78,7 @@ impl WebGLTexture {
                renderer: WebGLMsgSender,
                id: WebGLTextureId)
                -> DomRoot<WebGLTexture> {
-        reflect_dom_object(box WebGLTexture::new_inherited(renderer, id),
+        reflect_dom_object(Box::new(WebGLTexture::new_inherited(renderer, id)),
                            window,
                            WebGLTextureBinding::Wrap)
     }
@@ -90,7 +90,7 @@ impl WebGLTexture {
         self.id
     }
 
-    // NB: Only valid texture targets come here
+    
     pub fn bind(&self, target: u32) -> WebGLResult<()> {
         if self.is_deleted.get() {
             return Err(WebGLError::InvalidOperation);
@@ -101,7 +101,7 @@ impl WebGLTexture {
                 return Err(WebGLError::InvalidOperation);
             }
         } else {
-            // This is the first time binding
+            
             let face_count = match target {
                 constants::TEXTURE_2D => 1,
                 constants::TEXTURE_CUBE_MAP => 6,

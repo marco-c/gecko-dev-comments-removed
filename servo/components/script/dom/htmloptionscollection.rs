@@ -37,7 +37,7 @@ impl HTMLOptionsCollection {
     pub fn new(window: &Window, select: &HTMLSelectElement, filter: Box<CollectionFilter + 'static>)
         -> DomRoot<HTMLOptionsCollection>
     {
-        reflect_dom_object(box HTMLOptionsCollection::new_inherited(select, filter),
+        reflect_dom_object(Box::new(HTMLOptionsCollection::new_inherited(select, filter)),
                            window,
                            HTMLOptionsCollectionBinding::Wrap)
     }
@@ -56,44 +56,44 @@ impl HTMLOptionsCollection {
 }
 
 impl HTMLOptionsCollectionMethods for HTMLOptionsCollection {
-    // FIXME: This shouldn't need to be implemented here since HTMLCollection (the parent of
-    // HTMLOptionsCollection) implements NamedGetter.
-    // https://github.com/servo/servo/issues/5875
-    //
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-nameditem
+    
+    
+    
+    
+    
     fn NamedGetter(&self, name: DOMString) -> Option<DomRoot<Element>> {
         self.upcast().NamedItem(name)
     }
 
-    // https://heycam.github.io/webidl/#dfn-supported-property-names
+    
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         self.upcast().SupportedPropertyNames()
     }
 
-    // FIXME: This shouldn't need to be implemented here since HTMLCollection (the parent of
-    // HTMLOptionsCollection) implements IndexedGetter.
-    // https://github.com/servo/servo/issues/5875
-    //
-    // https://dom.spec.whatwg.org/#dom-htmlcollection-item
+    
+    
+    
+    
+    
     fn IndexedGetter(&self, index: u32) -> Option<DomRoot<Element>> {
         self.upcast().IndexedGetter(index)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-setter
+    
     fn IndexedSetter(&self, index: u32, value: Option<&HTMLOptionElement>) -> ErrorResult {
         if let Some(value) = value {
-            // Step 2
+            
             let length = self.upcast().Length();
 
-            // Step 3
+            
             let n = index as i32 - length as i32;
 
-            // Step 4
+            
             if n > 0 {
                 self.add_new_elements(n as u32)?;
             }
 
-            // Step 5
+            
             let node = value.upcast::<Node>();
             let root = self.upcast().root_node();
             if n >= 0 {
@@ -105,33 +105,33 @@ impl HTMLOptionsCollectionMethods for HTMLOptionsCollection {
                 root.ReplaceChild(node, child_node).map(|_| ())
             }
         } else {
-            // Step 1
+            
             self.Remove(index as i32);
             Ok(())
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-length
+    
     fn Length(&self) -> u32 {
         self.upcast().Length()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-length
+    
     fn SetLength(&self, length: u32) {
         let current_length = self.upcast().Length();
         let delta = length as i32 - current_length as i32;
         if delta < 0 {
-            // new length is lower - deleting last option elements
+            
             for index in (length..current_length).rev() {
                 self.Remove(index as i32)
             }
         } else if delta > 0 {
-            // new length is higher - adding new option elements
+            
             self.add_new_elements(delta as u32).unwrap();
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-add
+    
     fn Add(&self, element: HTMLOptionElementOrHTMLOptGroupElement, before: Option<HTMLElementOrLong>) -> ErrorResult {
         let root = self.upcast().root_node();
 
@@ -140,25 +140,25 @@ impl HTMLOptionsCollectionMethods for HTMLOptionsCollection {
             HTMLOptionElementOrHTMLOptGroupElement::HTMLOptGroupElement(ref element) => element.upcast(),
         };
 
-        // Step 1
+        
         if node.is_ancestor_of(&root) {
             return Err(Error::HierarchyRequest);
         }
 
         if let Some(HTMLElementOrLong::HTMLElement(ref before_element)) = before {
-            // Step 2
+            
             let before_node = before_element.upcast::<Node>();
             if !root.is_ancestor_of(before_node) {
                 return Err(Error::NotFound);
             }
 
-            // Step 3
+            
             if node == before_node {
                 return Ok(());
             }
         }
 
-        // Step 4
+        
         let reference_node = before.and_then(|before| {
             match before {
                 HTMLElementOrLong::HTMLElement(element) => Some(DomRoot::upcast::<Node>(element)),
@@ -168,25 +168,25 @@ impl HTMLOptionsCollectionMethods for HTMLOptionsCollection {
             }
         });
 
-        // Step 5
+        
         let parent = if let Some(reference_node) = reference_node.r() {
             reference_node.GetParentNode().unwrap()
         } else {
             root
         };
 
-        // Step 6
+        
         Node::pre_insert(node, &parent, reference_node.r()).map(|_| ())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-remove
+    
     fn Remove(&self, index: i32) {
         if let Some(element) = self.upcast().IndexedGetter(index as u32) {
             element.Remove();
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-selectedindex
+    
     fn SelectedIndex(&self) -> i32 {
         self.upcast()
             .root_node()
@@ -195,7 +195,7 @@ impl HTMLOptionsCollectionMethods for HTMLOptionsCollection {
             .SelectedIndex()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-htmloptionscollection-selectedindex
+    
     fn SetSelectedIndex(&self, index: i32) {
         self.upcast()
             .root_node()

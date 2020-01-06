@@ -36,7 +36,7 @@ impl Storage {
     }
 
     pub fn new(global: &Window, storage_type: StorageType) -> DomRoot<Storage> {
-        reflect_dom_object(box Storage::new_inherited(storage_type), global, StorageBinding::Wrap)
+        reflect_dom_object(Box::new(Storage::new_inherited(storage_type)), global, StorageBinding::Wrap)
     }
 
     fn get_url(&self) -> ServoUrl {
@@ -50,7 +50,7 @@ impl Storage {
 }
 
 impl StorageMethods for Storage {
-    // https://html.spec.whatwg.org/multipage/#dom-storage-length
+    
     fn Length(&self) -> u32 {
         let (sender, receiver) = ipc::channel().unwrap();
 
@@ -58,7 +58,7 @@ impl StorageMethods for Storage {
         receiver.recv().unwrap() as u32
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-storage-key
+    
     fn Key(&self, index: u32) -> Option<DOMString> {
         let (sender, receiver) = ipc::channel().unwrap();
 
@@ -68,7 +68,7 @@ impl StorageMethods for Storage {
         receiver.recv().unwrap().map(DOMString::from)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-storage-getitem
+    
     fn GetItem(&self, name: DOMString) -> Option<DOMString> {
         let (sender, receiver) = ipc::channel().unwrap();
         let name = String::from(name);
@@ -78,7 +78,7 @@ impl StorageMethods for Storage {
         receiver.recv().unwrap().map(DOMString::from)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-storage-setitem
+    
     fn SetItem(&self, name: DOMString, value: DOMString) -> ErrorResult {
         let (sender, receiver) = ipc::channel().unwrap();
         let name = String::from(name);
@@ -97,7 +97,7 @@ impl StorageMethods for Storage {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-storage-removeitem
+    
     fn RemoveItem(&self, name: DOMString) {
         let (sender, receiver) = ipc::channel().unwrap();
         let name = String::from(name);
@@ -109,7 +109,7 @@ impl StorageMethods for Storage {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-storage-clear
+    
     fn Clear(&self) {
         let (sender, receiver) = ipc::channel().unwrap();
 
@@ -119,7 +119,7 @@ impl StorageMethods for Storage {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#the-storage-interface:supported-property-names
+    
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         let (sender, receiver) = ipc::channel().unwrap();
 
@@ -131,7 +131,7 @@ impl StorageMethods for Storage {
                 .collect()
     }
 
-    // check-tidy: no specs after this line
+    
     fn NamedGetter(&self, name: DOMString) -> Option<DOMString> {
         self.GetItem(name)
     }
@@ -147,7 +147,7 @@ impl StorageMethods for Storage {
 
 
 impl Storage {
-    /// https://html.spec.whatwg.org/multipage/#send-a-storage-notification
+    
     fn broadcast_change_notification(&self, key: Option<String>, old_value: Option<String>,
                                      new_value: Option<String>) {
         let storage = self.storage_type;
@@ -156,7 +156,7 @@ impl Storage {
         self.global().script_to_constellation_chan().send(msg).unwrap();
     }
 
-    /// https://html.spec.whatwg.org/multipage/#send-a-storage-notification
+    
     pub fn queue_storage_event(
         &self,
         url: ServoUrl,

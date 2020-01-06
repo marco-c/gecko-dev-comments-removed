@@ -40,17 +40,17 @@ impl HTMLDetailsElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLDetailsElement> {
-        Node::reflect_node(box HTMLDetailsElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLDetailsElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLDetailsElementBinding::Wrap)
     }
 }
 
 impl HTMLDetailsElementMethods for HTMLDetailsElement {
-    // https://html.spec.whatwg.org/multipage/#dom-details-open
+    
     make_bool_getter!(Open, "open");
 
-    // https://html.spec.whatwg.org/multipage/#dom-details-open
+    
     make_bool_setter!(SetOpen, "open");
 }
 
@@ -68,7 +68,7 @@ impl VirtualMethods for HTMLDetailsElement {
 
             let window = window_from_node(self);
             let this = Trusted::new(self);
-            // FIXME(nox): Why are errors silenced here?
+            
             let _ = window.dom_manipulation_task_source().queue(
                 task!(details_notification_task_steps: move || {
                     let this = this.root();

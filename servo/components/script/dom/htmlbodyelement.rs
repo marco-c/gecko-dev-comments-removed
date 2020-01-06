@@ -43,12 +43,12 @@ impl HTMLBodyElement {
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document)
                -> DomRoot<HTMLBodyElement> {
-        Node::reflect_node(box HTMLBodyElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLBodyElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLBodyElementBinding::Wrap)
     }
 
-    /// https://drafts.csswg.org/cssom-view/#the-html-body-element
+    
     pub fn is_the_html_body_element(&self) -> bool {
         let self_node = self.upcast::<Node>();
         let root_elem = self.upcast::<Element>().root_element();
@@ -60,22 +60,22 @@ impl HTMLBodyElement {
 }
 
 impl HTMLBodyElementMethods for HTMLBodyElement {
-    // https://html.spec.whatwg.org/multipage/#dom-body-bgcolor
+    
     make_getter!(BgColor, "bgcolor");
 
-    // https://html.spec.whatwg.org/multipage/#dom-body-bgcolor
+    
     make_legacy_color_setter!(SetBgColor, "bgcolor");
 
-    // https://html.spec.whatwg.org/multipage/#dom-body-text
+    
     make_getter!(Text, "text");
 
-    // https://html.spec.whatwg.org/multipage/#dom-body-text
+    
     make_legacy_color_setter!(SetText, "text");
 
-    // https://html.spec.whatwg.org/multipage/#dom-body-background
+    
     make_getter!(Background, "background");
 
-    // https://html.spec.whatwg.org/multipage/#dom-body-background
+    
     fn SetBackground(&self, input: DOMString) {
         let value = AttrValue::from_resolved_url(
             &document_from_node(self).base_url(),
@@ -84,7 +84,7 @@ impl HTMLBodyElementMethods for HTMLBodyElement {
         self.upcast::<Element>().set_attribute(&local_name!("background"), value);
     }
 
-    // https://html.spec.whatwg.org/multipage/#windoweventhandlers
+    
     window_event_handlers!(ForwardToWindow);
 }
 

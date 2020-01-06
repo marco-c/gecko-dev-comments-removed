@@ -335,7 +335,7 @@ impl HTMLIFrameElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLIFrameElement> {
-        Node::reflect_node(box HTMLIFrameElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLIFrameElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLIFrameElementBinding::Wrap)
     }
@@ -359,7 +359,7 @@ impl HTMLIFrameElement {
         if self.visibility.get() != visibility {
             self.visibility.set(visibility);
 
-            // Visibility changes are only exposed to Mozbrowser iframes
+            
             if self.Mozbrowser() {
                 self.dispatch_mozbrowser_event(MozBrowserEvent::VisibilityChange(visibility));
             }
@@ -372,31 +372,31 @@ impl HTMLIFrameElement {
         window.upcast::<GlobalScope>().script_to_constellation_chan().send(msg).unwrap();
     }
 
-    /// https://html.spec.whatwg.org/multipage/#iframe-load-event-steps steps 1-4
+    
     pub fn iframe_load_event_steps(&self, loaded_pipeline: PipelineId) {
-        // TODO(#9592): assert that the load blocker is present at all times when we
-        //              can guarantee that it's created for the case of iframe.reload().
+        
+        
         if Some(loaded_pipeline) != self.pending_pipeline_id.get() { return; }
 
-        // TODO A cross-origin child document would not be easily accessible
-        //      from this script thread. It's unclear how to implement
-        //      steps 2, 3, and 5 efficiently in this case.
-        // TODO Step 2 - check child document `mute iframe load` flag
-        // TODO Step 3 - set child document  `mut iframe load` flag
+        
+        
+        
+        
+        
 
-        // Step 4
+        
         self.upcast::<EventTarget>().fire_event(atom!("load"));
 
         let mut blocker = self.load_blocker.borrow_mut();
         LoadBlocker::terminate(&mut blocker);
 
-        // TODO Step 5 - unset child document `mut iframe load` flag
+        
 
         let window = window_from_node(self);
         window.reflow(ReflowGoal::Full, ReflowReason::IFrameLoadEvent);
     }
 
-    /// Check whether the iframe has the mozprivatebrowsing attribute set
+    
     pub fn privatebrowsing(&self) -> bool {
         if self.Mozbrowser() {
             let element = self.upcast::<Element>();
@@ -457,9 +457,9 @@ impl HTMLIFrameElementLayoutMethods for LayoutDom<HTMLIFrameElement> {
 
 #[allow(unsafe_code)]
 pub fn build_mozbrowser_custom_event(window: &Window, event: MozBrowserEvent) -> DomRoot<CustomEvent> {
-    // TODO(gw): Support mozbrowser event types that have detail which is not a string.
-    // See https://developer.mozilla.org/en-US/docs/Web/API/Using_the_Browser_API
-    // for a list of mozbrowser events.
+    
+    
+    
     let cx = window.get_cx();
     let _ac = JSAutoCompartment::new(cx, window.reflector().get_jsobject().get());
     rooted!(in(cx) let mut detail = UndefinedValue());
@@ -493,13 +493,13 @@ unsafe fn build_mozbrowser_event_detail(event: MozBrowserEvent,
         },
         MozBrowserEvent::SecurityChange(https_state) => {
             BrowserElementSecurityChangeDetail {
-                // https://developer.mozilla.org/en-US/docs/Web/Events/mozbrowsersecuritychange
+                
                 state: Some(DOMString::from(match https_state {
                     HttpsState::Modern => "secure",
                     HttpsState::Deprecated => "broken",
                     HttpsState::None => "insecure",
                 }.to_owned())),
-                // FIXME - Not supported yet:
+                
                 trackingContent: None,
                 mixedContent: None,
                 trackingState: None,
@@ -567,51 +567,51 @@ pub fn Navigate(iframe: &HTMLIFrameElement, direction: TraversalDirection) -> Er
 }
 
 impl HTMLIFrameElementMethods for HTMLIFrameElement {
-    // https://html.spec.whatwg.org/multipage/#dom-iframe-src
+    
     make_url_getter!(Src, "src");
 
-    // https://html.spec.whatwg.org/multipage/#dom-iframe-src
+    
     make_setter!(SetSrc, "src");
 
-    // https://html.spec.whatwg.org/multipage/#dom-iframe-sandbox
+    
     fn Sandbox(&self) -> DomRoot<DOMTokenList> {
         self.sandbox.or_init(|| DOMTokenList::new(self.upcast::<Element>(), &local_name!("sandbox")))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-iframe-contentwindow
+    
     fn GetContentWindow(&self) -> Option<DomRoot<WindowProxy>> {
         self.browsing_context_id.get()
             .and_then(|browsing_context_id| ScriptThread::find_window_proxy(browsing_context_id))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-iframe-contentdocument
-    // https://html.spec.whatwg.org/multipage/#concept-bcc-content-document
+    
+    
     fn GetContentDocument(&self) -> Option<DomRoot<Document>> {
-        // Step 1.
+        
         let pipeline_id = match self.pipeline_id.get() {
             None => return None,
             Some(pipeline_id) => pipeline_id,
         };
-        // Step 2-3.
-        // Note that this lookup will fail if the document is dissimilar-origin,
-        // so we should return None in that case.
+        
+        
+        
         let document = match ScriptThread::find_document(pipeline_id) {
             None => return None,
             Some(document) => document,
         };
-        // Step 4.
+        
         let current = GlobalScope::current().expect("No current global object").as_window().Document();
         if !current.origin().same_origin_domain(document.origin()) {
             return None;
         }
-        // Step 5.
+        
         Some(document)
     }
 
-    // Experimental mozbrowser implementation is based on the webidl
-    // present in the gecko source tree, and the documentation here:
-    // https://developer.mozilla.org/en-US/docs/Web/API/Using_the_Browser_API
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-mozbrowser
+    
+    
+    
+    
     fn Mozbrowser(&self) -> bool {
         if window_from_node(self).is_mozbrowser() {
             let element = self.upcast::<Element>();
@@ -621,28 +621,28 @@ impl HTMLIFrameElementMethods for HTMLIFrameElement {
         }
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-mozbrowser
+    
     fn SetMozbrowser(&self, value: bool) {
         let element = self.upcast::<Element>();
         element.set_bool_attribute(&local_name!("mozbrowser"), value);
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-iframe-allowfullscreen
+    
     make_bool_getter!(AllowFullscreen, "allowfullscreen");
-    // https://html.spec.whatwg.org/multipage/#attr-iframe-allowfullscreen
+    
     make_bool_setter!(SetAllowFullscreen, "allowfullscreen");
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/goBack
+    
     fn GoBack(&self) -> ErrorResult {
         Navigate(self, TraversalDirection::Back(1))
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/goForward
+    
     fn GoForward(&self) -> ErrorResult {
         Navigate(self, TraversalDirection::Forward(1))
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/reload
+    
     fn Reload(&self, _hard_reload: bool) -> ErrorResult {
         if self.Mozbrowser() {
             if self.upcast::<Node>().is_in_doc_with_browsing_context() {
@@ -656,7 +656,7 @@ impl HTMLIFrameElementMethods for HTMLIFrameElement {
         }
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/setVisible
+    
     fn SetVisible(&self, visible: bool) -> ErrorResult {
         if self.Mozbrowser() {
             self.set_visible(visible);
@@ -668,7 +668,7 @@ impl HTMLIFrameElementMethods for HTMLIFrameElement {
         }
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/getVisible
+    
     fn GetVisible(&self) -> Fallible<bool> {
         if self.Mozbrowser() {
             Ok(self.visibility.get())
@@ -680,27 +680,27 @@ impl HTMLIFrameElementMethods for HTMLIFrameElement {
     }
 
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/stop
+    
     fn Stop(&self) -> ErrorResult {
         Err(Error::NotSupported)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-dim-width
+    
     make_getter!(Width, "width");
-    // https://html.spec.whatwg.org/multipage/#dom-dim-width
+    
     make_dimension_setter!(SetWidth, "width");
 
-    // https://html.spec.whatwg.org/multipage/#dom-dim-height
+    
     make_getter!(Height, "height");
-    // https://html.spec.whatwg.org/multipage/#dom-dim-height
+    
     make_dimension_setter!(SetHeight, "height");
 
-    // https://html.spec.whatwg.org/multipage/#other-elements,-attributes-and-apis:attr-iframe-frameborder
+    
     make_getter!(FrameBorder, "frameborder");
-    // https://html.spec.whatwg.org/multipage/#other-elements,-attributes-and-apis:attr-iframe-frameborder
+    
     make_setter!(SetFrameBorder, "frameborder");
 
-    // check-tidy: no specs after this line
+    
     fn SetMozprivatebrowsing(&self, value: bool) {
         let element = self.upcast::<Element>();
         element.set_bool_attribute(&LocalName::from("mozprivatebrowsing"), value);

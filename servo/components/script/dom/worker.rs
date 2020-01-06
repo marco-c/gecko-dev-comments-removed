@@ -61,15 +61,15 @@ impl Worker {
     pub fn new(global: &GlobalScope,
                sender: Sender<(TrustedWorkerAddress, WorkerScriptMsg)>,
                closing: Arc<AtomicBool>) -> DomRoot<Worker> {
-        reflect_dom_object(box Worker::new_inherited(sender, closing),
+        reflect_dom_object(Box::new(Worker::new_inherited(sender, closing)),
                            global,
                            WorkerBinding::Wrap)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-worker
+    
     #[allow(unsafe_code)]
     pub fn Constructor(global: &GlobalScope, script_url: DOMString) -> Fallible<DomRoot<Worker>> {
-        // Step 2-4.
+        
         let worker_url = match global.api_base_url().join(&script_url) {
             Ok(url) => url,
             Err(_) => return Err(Error::Syntax),

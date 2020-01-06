@@ -32,29 +32,29 @@ impl HTMLHRElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLHRElement> {
-        Node::reflect_node(box HTMLHRElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLHRElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLHRElementBinding::Wrap)
     }
 }
 
 impl HTMLHRElementMethods for HTMLHRElement {
-    // https://html.spec.whatwg.org/multipage/#dom-hr-align
+    
     make_getter!(Align, "align");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hr-align
+    
     make_atomic_setter!(SetAlign, "align");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hr-color
+    
     make_getter!(Color, "color");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hr-color
+    
     make_legacy_color_setter!(SetColor, "color");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hr-width
+    
     make_getter!(Width, "width");
 
-    // https://html.spec.whatwg.org/multipage/#dom-hr-width
+    
     make_dimension_setter!(SetWidth, "width");
 }
 

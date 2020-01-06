@@ -71,13 +71,13 @@ impl CSSRuleList {
     #[allow(unrooted_must_root)]
     pub fn new(window: &Window, parent_stylesheet: &CSSStyleSheet,
                rules: RulesSource) -> DomRoot<CSSRuleList> {
-        reflect_dom_object(box CSSRuleList::new_inherited(parent_stylesheet, rules),
+        reflect_dom_object(Box::new(CSSRuleList::new_inherited(parent_stylesheet, rules)),
                            window,
                            CSSRuleListBinding::Wrap)
     }
 
-    /// Should only be called for CssRules-backed rules. Use append_lazy_rule
-    /// for keyframes-backed rules.
+    
+    
     pub fn insert_rule(&self, rule: &str, idx: u32, nested: bool) -> Fallible<u32> {
         let css_rules = if let RulesSource::Rules(ref rules) = self.rules {
             rules
@@ -106,7 +106,7 @@ impl CSSRuleList {
         Ok((idx))
     }
 
-    // In case of a keyframe rule, index must be valid.
+    
     pub fn remove_rule(&self, index: u32) -> ErrorResult {
         let index = index as usize;
         let mut guard = self.parent_stylesheet.shared_lock().write();
@@ -120,7 +120,7 @@ impl CSSRuleList {
                 Ok(())
             }
             RulesSource::Keyframes(ref kf) => {
-                // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-deleterule
+                
                 let mut dom_rules = self.dom_rules.borrow_mut();
                 dom_rules[index].get().map(|r| r.detach());
                 dom_rules.remove(index);
@@ -130,7 +130,7 @@ impl CSSRuleList {
         }
     }
 
-    // Remove parent stylesheets from all children
+    
     pub fn deparent_all(&self) {
         for rule in self.dom_rules.borrow().iter() {
             rule.get().map(|r| DomRoot::upcast(r).deparent());
@@ -161,11 +161,11 @@ impl CSSRuleList {
         })
     }
 
-    /// Add a rule to the list of DOM rules. This list is lazy,
-    /// so we just append a placeholder.
-    ///
-    /// Should only be called for keyframes-backed rules, use insert_rule
-    /// for CssRules-backed rules
+    
+    
+    
+    
+    
     pub fn append_lazy_dom_rule(&self) {
         if let RulesSource::Rules(..) = self.rules {
             panic!("Can only call append_lazy_rule with keyframes-backed CSSRules");

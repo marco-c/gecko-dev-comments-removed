@@ -37,12 +37,12 @@ impl TextDecoder {
     }
 
     pub fn new(global: &GlobalScope, encoding: EncodingRef, fatal: bool) -> DomRoot<TextDecoder> {
-        reflect_dom_object(box TextDecoder::new_inherited(encoding, fatal),
+        reflect_dom_object(Box::new(TextDecoder::new_inherited(encoding, fatal)),
                            global,
                            TextDecoderBinding::Wrap)
     }
 
-    /// https://encoding.spec.whatwg.org/#dom-textdecoder
+    
     pub fn Constructor(global: &GlobalScope,
                        label: DOMString,
                        options: &TextDecoderBinding::TextDecoderOptions)
@@ -51,10 +51,10 @@ impl TextDecoder {
             None => return TextDecoder::make_range_error(),
             Some(enc) => enc
         };
-        // The rust-encoding crate has WHATWG compatibility, so we are
-        // guaranteed to have a whatwg_name because we successfully got
-        // the encoding from encoding_from_whatwg_label.
-        // Use match + panic! instead of unwrap for better error message
+        
+        
+        
+        
         match encoding.whatwg_name() {
             None => panic!("Label {} fits valid encoding without valid name", label),
             Some("replacement") => return TextDecoder::make_range_error(),
@@ -66,18 +66,18 @@ impl TextDecoder {
 
 
 impl TextDecoderMethods for TextDecoder {
-    // https://encoding.spec.whatwg.org/#dom-textdecoder-encoding
+    
     fn Encoding(&self) -> DOMString {
         DOMString::from(self.encoding.whatwg_name().unwrap())
     }
 
-    // https://encoding.spec.whatwg.org/#dom-textdecoder-fatal
+    
     fn Fatal(&self) -> bool {
         self.fatal
     }
 
     #[allow(unsafe_code)]
-    // https://encoding.spec.whatwg.org/#dom-textdecoder-decode
+    
     unsafe fn Decode(&self, _cx: *mut JSContext, input: Option<*mut JSObject>)
               -> Fallible<USVString> {
         let input = match input {

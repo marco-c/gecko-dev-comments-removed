@@ -32,22 +32,22 @@ impl HTMLFormControlsCollection {
     pub fn new(window: &Window, root: &Node, filter: Box<CollectionFilter + 'static>)
         -> DomRoot<HTMLFormControlsCollection>
     {
-        reflect_dom_object(box HTMLFormControlsCollection::new_inherited(root, filter),
+        reflect_dom_object(Box::new(HTMLFormControlsCollection::new_inherited(root, filter)),
                            window,
                            HTMLFormControlsCollectionBinding::Wrap)
     }
 
-    // FIXME: This shouldn't need to be implemented here since HTMLCollection (the parent of
-    // HTMLFormControlsCollection) implements Length
+    
+    
     pub fn Length(&self) -> u32 {
         self.collection.Length()
     }
 }
 
 impl HTMLFormControlsCollectionMethods for HTMLFormControlsCollection {
-    // https://html.spec.whatwg.org/multipage/#dom-htmlformcontrolscollection-nameditem
+    
     fn NamedItem(&self, name: DOMString) -> Option<RadioNodeListOrElement> {
-        // Step 1
+        
         if name.is_empty() { return None; }
 
         let mut filter_map = self.collection.elements_iter().filter_map(|elem| {

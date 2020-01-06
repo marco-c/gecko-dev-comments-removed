@@ -61,7 +61,7 @@ impl KeyboardEvent {
     }
 
     pub fn new_uninitialized(window: &Window) -> DomRoot<KeyboardEvent> {
-        reflect_dom_object(box KeyboardEvent::new_inherited(),
+        reflect_dom_object(Box::new(KeyboardEvent::new_inherited()),
                            window,
                            KeyboardEventBinding::Wrap)
     }
@@ -159,7 +159,7 @@ impl KeyboardEvent {
     }
 }
 
-// https://w3c.github.io/uievents-key/#key-value-tables
+
 pub fn key_value(ch: Option<char>, key: Key, mods: KeyModifiers) -> Cow<'static, str> {
     if let Some(ch) = ch {
         return Cow::from(format!("{}", ch));
@@ -512,7 +512,7 @@ fn key_from_string(key_string: &str, location: u32) -> Option<Key> {
     }
 }
 
-// https://w3c.github.io/uievents-code/#code-value-tables
+
 fn code_value(key: Key) -> &'static str {
     match key {
         Key::Space => "Space",
@@ -662,10 +662,10 @@ fn key_location(key: Key) -> u32 {
     }
 }
 
-// https://w3c.github.io/uievents/#legacy-key-models
+
 fn key_keycode(key: Key) -> u32 {
     match key {
-        // https://w3c.github.io/uievents/#legacy-key-models
+        
         Key::Backspace => 8,
         Key::Tab => 9,
         Key::Enter => 13,
@@ -685,7 +685,7 @@ fn key_keycode(key: Key) -> u32 {
         Key::Down => 40,
         Key::Delete => 46,
 
-        // https://w3c.github.io/uievents/#optionally-fixed-virtual-key-codes
+        
         Key::Semicolon => 186,
         Key::Equal => 187,
         Key::Comma => 188,
@@ -697,7 +697,7 @@ fn key_keycode(key: Key) -> u32 {
         Key::RightBracket => 221,
         Key::Apostrophe => 222,
 
-        //§ B.2.1.3
+        
         Key::Num0 |
         Key::Num1 |
         Key::Num2 |
@@ -709,7 +709,7 @@ fn key_keycode(key: Key) -> u32 {
         Key::Num8 |
         Key::Num9 => key as u32 - Key::Num0 as u32 + '0' as u32,
 
-        //§ B.2.1.4
+        
         Key::A |
         Key::B |
         Key::C |
@@ -737,7 +737,7 @@ fn key_keycode(key: Key) -> u32 {
         Key::Y |
         Key::Z => key as u32 - Key::A as u32 + 'A' as u32,
 
-        //§ B.2.1.8
+        
         _ => 0
     }
 }
@@ -758,7 +758,7 @@ impl KeyEventProperties {
 }
 
 impl KeyboardEventMethods for KeyboardEvent {
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-initKeyboardEvent
+    
     fn InitKeyboardEvent(&self,
                          type_arg: DOMString,
                          can_bubble_arg: bool,
@@ -780,52 +780,52 @@ impl KeyboardEventMethods for KeyboardEvent {
         self.repeat.set(repeat);
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-key
+    
     fn Key(&self) -> DOMString {
         self.key_string.borrow().clone()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-code
+    
     fn Code(&self) -> DOMString {
         self.code.borrow().clone()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-location
+    
     fn Location(&self) -> u32 {
         self.location.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-ctrlKey
+    
     fn CtrlKey(&self) -> bool {
         self.ctrl.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-shiftKey
+    
     fn ShiftKey(&self) -> bool {
         self.shift.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-altKey
+    
     fn AltKey(&self) -> bool {
         self.alt.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-metaKey
+    
     fn MetaKey(&self) -> bool {
         self.meta.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-repeat
+    
     fn Repeat(&self) -> bool {
         self.repeat.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-KeyboardEvent-isComposing
+    
     fn IsComposing(&self) -> bool {
         self.is_composing.get()
     }
 
-    // https://w3c.github.io/uievents/#dom-keyboardevent-getmodifierstate
+    
     fn GetModifierState(&self, key_arg: DOMString) -> bool {
         match &*key_arg {
             "Ctrl" => self.CtrlKey(),

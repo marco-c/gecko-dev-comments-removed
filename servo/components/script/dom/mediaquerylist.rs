@@ -49,7 +49,7 @@ impl MediaQueryList {
     }
 
     pub fn new(document: &Document, media_query_list: MediaList) -> DomRoot<MediaQueryList> {
-        reflect_dom_object(box MediaQueryList::new_inherited(document, media_query_list),
+        reflect_dom_object(Box::new(MediaQueryList::new_inherited(document, media_query_list)),
                            document.window(),
                            MediaQueryListBinding::Wrap)
     }
@@ -81,14 +81,14 @@ impl MediaQueryList {
 }
 
 impl MediaQueryListMethods for MediaQueryList {
-    // https://drafts.csswg.org/cssom-view/#dom-mediaquerylist-media
+    
     fn Media(&self) -> DOMString {
         let mut s = String::new();
         self.media_query_list.to_css(&mut s).unwrap();
         DOMString::from_string(s)
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-mediaquerylist-matches
+    
     fn Matches(&self) -> bool {
         match self.last_match_state.get() {
             None => self.evaluate(),
@@ -96,7 +96,7 @@ impl MediaQueryListMethods for MediaQueryList {
         }
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-mediaquerylist-addlistener
+    
     fn AddListener(&self, listener: Option<Rc<EventListener>>) {
         self.upcast::<EventTarget>().add_event_listener(
             DOMString::from_string("change".to_owned()),
@@ -105,7 +105,7 @@ impl MediaQueryListMethods for MediaQueryList {
         );
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-mediaquerylist-removelistener
+    
     fn RemoveListener(&self, listener: Option<Rc<EventListener>>) {
         self.upcast::<EventTarget>().remove_event_listener(
             DOMString::from_string("change".to_owned()),
@@ -114,7 +114,7 @@ impl MediaQueryListMethods for MediaQueryList {
         );
     }
 
-    // https://drafts.csswg.org/cssom-view/#dom-mediaquerylist-onchange
+    
     event_handler!(change, GetOnchange, SetOnchange);
 }
 
@@ -124,7 +124,7 @@ pub struct WeakMediaQueryListVec {
 }
 
 impl WeakMediaQueryListVec {
-    /// Create a new vector of weak references to MediaQueryList
+    
     pub fn new() -> Self {
         WeakMediaQueryListVec { cell: DomRefCell::new(WeakRefVec::new()) }
     }
@@ -133,18 +133,18 @@ impl WeakMediaQueryListVec {
         self.cell.borrow_mut().push(WeakRef::new(mql));
     }
 
-    /// Evaluate media query lists and report changes
-    /// https://drafts.csswg.org/cssom-view/#evaluate-media-queries-and-report-changes
+    
+    
     pub fn evaluate_and_report_changes(&self) {
         rooted_vec!(let mut mql_list);
         self.cell.borrow_mut().update(|mql| {
             let mql = mql.root().unwrap();
             if let MediaQueryListMatchState::Changed(_) = mql.evaluate_changes() {
-                // Recording list of changed Media Queries
+                
                 mql_list.push(Dom::from_ref(&*mql));
             }
         });
-        // Sending change events for all changed Media Queries
+        
         for mql in mql_list.iter() {
             let event = MediaQueryListEvent::new(&mql.global(),
                                                  atom!("change"),

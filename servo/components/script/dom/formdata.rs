@@ -48,18 +48,18 @@ impl FormData {
     }
 
     pub fn new(form: Option<&HTMLFormElement>, global: &GlobalScope) -> DomRoot<FormData> {
-        reflect_dom_object(box FormData::new_inherited(form),
+        reflect_dom_object(Box::new(FormData::new_inherited(form)),
                            global, FormDataWrap)
     }
 
     pub fn Constructor(global: &GlobalScope, form: Option<&HTMLFormElement>) -> Fallible<DomRoot<FormData>> {
-        // TODO: Construct form data set for form if it is supplied
+        
         Ok(FormData::new(form, global))
     }
 }
 
 impl FormDataMethods for FormData {
-    // https://xhr.spec.whatwg.org/#dom-formdata-append
+    
     fn Append(&self, name: USVString, str_value: USVString) {
         let datum = FormDatum {
             ty: DOMString::from("string"),
@@ -75,7 +75,7 @@ impl FormDataMethods for FormData {
     }
 
     #[allow(unrooted_must_root)]
-    // https://xhr.spec.whatwg.org/#dom-formdata-append
+    
     fn Append_(&self, name: USVString, blob: &Blob, filename: Option<USVString>) {
         let datum = FormDatum {
             ty: DOMString::from("file"),
@@ -91,12 +91,12 @@ impl FormDataMethods for FormData {
         }
     }
 
-    // https://xhr.spec.whatwg.org/#dom-formdata-delete
+    
     fn Delete(&self, name: USVString) {
         self.data.borrow_mut().remove(&LocalName::from(name.0));
     }
 
-    // https://xhr.spec.whatwg.org/#dom-formdata-get
+    
     fn Get(&self, name: USVString) -> Option<FileOrUSVString> {
         self.data.borrow()
                  .get(&LocalName::from(name.0))
@@ -106,7 +106,7 @@ impl FormDataMethods for FormData {
                  })
     }
 
-    // https://xhr.spec.whatwg.org/#dom-formdata-getall
+    
     fn GetAll(&self, name: USVString) -> Vec<FileOrUSVString> {
         self.data.borrow()
                  .get(&LocalName::from(name.0))
@@ -118,12 +118,12 @@ impl FormDataMethods for FormData {
                  )
     }
 
-    // https://xhr.spec.whatwg.org/#dom-formdata-has
+    
     fn Has(&self, name: USVString) -> bool {
         self.data.borrow().contains_key(&LocalName::from(name.0))
     }
 
-    // https://xhr.spec.whatwg.org/#dom-formdata-set
+    
     fn Set(&self, name: USVString, str_value: USVString) {
         self.data.borrow_mut().insert(LocalName::from(name.0.clone()), vec![FormDatum {
             ty: DOMString::from("string"),
@@ -133,7 +133,7 @@ impl FormDataMethods for FormData {
     }
 
     #[allow(unrooted_must_root)]
-    // https://xhr.spec.whatwg.org/#dom-formdata-set
+    
     fn Set_(&self, name: USVString, blob: &Blob, filename: Option<USVString>) {
         self.data.borrow_mut().insert(LocalName::from(name.0.clone()), vec![FormDatum {
             ty: DOMString::from("file"),
@@ -146,8 +146,8 @@ impl FormDataMethods for FormData {
 
 
 impl FormData {
-    // https://xhr.spec.whatwg.org/#create-an-entry
-    // Steps 3-4.
+    
+    
     fn create_an_entry(&self, blob: &Blob, opt_filename: Option<USVString>) -> DomRoot<File> {
         let name = match opt_filename {
             Some(filename) => DOMString::from(filename.0),

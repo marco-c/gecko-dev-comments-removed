@@ -52,7 +52,7 @@ impl HTMLMetaElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLMetaElement> {
-        Node::reflect_node(box HTMLMetaElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLMetaElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLMetaElementBinding::Wrap)
     }
@@ -67,8 +67,8 @@ impl HTMLMetaElement {
                 CSSStyleSheet::new(&window_from_node(self),
                                    self.upcast::<Element>(),
                                    "text/css".into(),
-                                   None, // todo handle location
-                                   None, // todo handle title
+                                   None, 
+                                   None, 
                                    sheet)
             })
         })
@@ -135,7 +135,7 @@ impl HTMLMetaElement {
         }
     }
 
-    /// https://html.spec.whatwg.org/multipage/#meta-referrer
+    
     fn apply_referrer(&self) {
         if let Some(parent) = self.upcast::<Node>().GetParentElement() {
             if let Some(head) = parent.downcast::<HTMLHeadElement>() {
@@ -146,16 +146,16 @@ impl HTMLMetaElement {
 }
 
 impl HTMLMetaElementMethods for HTMLMetaElement {
-    // https://html.spec.whatwg.org/multipage/#dom-meta-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-meta-name
+    
     make_atomic_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-meta-content
+    
     make_getter!(Content, "content");
 
-    // https://html.spec.whatwg.org/multipage/#dom-meta-content
+    
     make_setter!(SetContent, "content");
 }
 

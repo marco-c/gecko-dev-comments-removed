@@ -29,16 +29,16 @@ impl HTMLDivElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLDivElement> {
-        Node::reflect_node(box HTMLDivElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLDivElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLDivElementBinding::Wrap)
     }
 }
 
 impl HTMLDivElementMethods for HTMLDivElement {
-    // https://html.spec.whatwg.org/multipage/#dom-div-align
+    
     make_getter!(Align, "align");
 
-    // https://html.spec.whatwg.org/multipage/#dom-div-align
+    
     make_setter!(SetAlign, "align");
 }

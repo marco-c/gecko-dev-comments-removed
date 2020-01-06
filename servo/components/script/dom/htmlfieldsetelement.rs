@@ -43,14 +43,14 @@ impl HTMLFieldSetElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLFieldSetElement> {
-        Node::reflect_node(box HTMLFieldSetElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLFieldSetElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLFieldSetElementBinding::Wrap)
     }
 }
 
 impl HTMLFieldSetElementMethods for HTMLFieldSetElement {
-    // https://html.spec.whatwg.org/multipage/#dom-fieldset-elements
+    
     fn Elements(&self) -> DomRoot<HTMLCollection> {
         #[derive(HeapSizeOf, JSTraceable)]
         struct ElementsFilter;
@@ -60,24 +60,24 @@ impl HTMLFieldSetElementMethods for HTMLFieldSetElement {
                     .map_or(false, HTMLElement::is_listed_element)
             }
         }
-        let filter = box ElementsFilter;
+        let filter = Box::new(ElementsFilter);
         let window = window_from_node(self);
         HTMLCollection::create(&window, self.upcast(), filter)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-cva-validity
+    
     fn Validity(&self) -> DomRoot<ValidityState> {
         let window = window_from_node(self);
         ValidityState::new(&window, self.upcast())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-fieldset-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fieldset-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }

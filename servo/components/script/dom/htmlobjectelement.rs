@@ -47,7 +47,7 @@ impl HTMLObjectElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLObjectElement> {
-        Node::reflect_node(box HTMLObjectElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLObjectElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLObjectElementBinding::Wrap)
     }
@@ -58,16 +58,16 @@ trait ProcessDataURL {
 }
 
 impl<'a> ProcessDataURL for &'a HTMLObjectElement {
-    // Makes the local `data` member match the status of the `data` attribute and starts
-    /// prefetching the image. This method must be called after `data` is changed.
+    
+    
     fn process_data_url(&self) {
         let elem = self.upcast::<Element>();
 
-        // TODO: support other values
+        
         match (elem.get_attribute(&ns!(), &local_name!("type")),
                elem.get_attribute(&ns!(), &local_name!("data"))) {
             (None, Some(_uri)) => {
-                // TODO(gw): Prefetch the image here.
+                
             }
             _ => { }
         }
@@ -75,19 +75,19 @@ impl<'a> ProcessDataURL for &'a HTMLObjectElement {
 }
 
 impl HTMLObjectElementMethods for HTMLObjectElement {
-    // https://html.spec.whatwg.org/multipage/#dom-cva-validity
+    
     fn Validity(&self) -> DomRoot<ValidityState> {
         let window = window_from_node(self);
         ValidityState::new(&window, self.upcast())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-object-type
+    
     make_getter!(Type, "type");
 
-    // https://html.spec.whatwg.org/multipage/#dom-object-type
+    
     make_setter!(SetType, "type");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
@@ -99,7 +99,7 @@ impl Validatable for HTMLObjectElement {
     }
     fn validate(&self, validate_flags: ValidationFlags) -> bool {
         if validate_flags.is_empty() {}
-        // Need more flag check for different validation types later
+        
         true
     }
 }

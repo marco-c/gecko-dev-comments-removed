@@ -63,7 +63,7 @@ impl HTMLTableElement {
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document)
                -> DomRoot<HTMLTableElement> {
-        Node::reflect_node(box HTMLTableElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLTableElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLTableElementBinding::Wrap)
     }
@@ -72,8 +72,8 @@ impl HTMLTableElement {
         self.border.get()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-table-thead
-    // https://html.spec.whatwg.org/multipage/#dom-table-tfoot
+    
+    
     fn get_first_section_of_type(&self, atom: &LocalName) -> Option<DomRoot<HTMLTableSectionElement>> {
         self.upcast::<Node>()
             .child_elements()
@@ -81,8 +81,8 @@ impl HTMLTableElement {
             .and_then(|n| n.downcast().map(DomRoot::from_ref))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-table-thead
-    // https://html.spec.whatwg.org/multipage/#dom-table-tfoot
+    
+    
     fn set_first_section_of_type<P>(&self,
                                     atom: &LocalName,
                                     section: Option<&HTMLTableSectionElement>,
@@ -109,8 +109,8 @@ impl HTMLTableElement {
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-table-createthead
-    // https://html.spec.whatwg.org/multipage/#dom-table-createtfoot
+    
+    
     fn create_section_of_type(&self, atom: &LocalName) -> DomRoot<HTMLTableSectionElement> {
         if let Some(section) = self.get_first_section_of_type(atom) {
             return section
@@ -151,7 +151,7 @@ impl HTMLTableElementMethods for HTMLTableElement {
     // https://html.spec.whatwg.org/multipage/#dom-table-rows
     fn Rows(&self) -> DomRoot<HTMLCollection> {
         let filter = self.get_rows();
-        HTMLCollection::new(&window_from_node(self), self.upcast(), box filter)
+        HTMLCollection::new(&window_from_node(self), self.upcast(), Box::new(filter))
     }
 
     // https://html.spec.whatwg.org/multipage/#dom-table-caption
@@ -264,7 +264,7 @@ impl HTMLTableElementMethods for HTMLTableElement {
 
         self.tbodies.or_init(|| {
             let window = window_from_node(self);
-            let filter = box TBodiesFilter;
+            let filter = Box::new(TBodiesFilter);
             HTMLCollection::create(&window, self.upcast(), filter)
         })
     }

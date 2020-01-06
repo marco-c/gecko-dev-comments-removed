@@ -34,7 +34,7 @@ impl DocumentFragment {
     }
 
     pub fn new(document: &Document) -> DomRoot<DocumentFragment> {
-        Node::reflect_node(box DocumentFragment::new_inherited(document),
+        Node::reflect_node(Box::new(DocumentFragment::new_inherited(document)),
                            document,
                            DocumentFragmentBinding::Wrap)
     }
@@ -47,13 +47,13 @@ impl DocumentFragment {
 }
 
 impl DocumentFragmentMethods for DocumentFragment {
-    // https://dom.spec.whatwg.org/#dom-parentnode-children
+    
     fn Children(&self) -> DomRoot<HTMLCollection> {
         let window = window_from_node(self);
         HTMLCollection::children(&window, self.upcast())
     }
 
-    // https://dom.spec.whatwg.org/#dom-nonelementparentnode-getelementbyid
+    
     fn GetElementById(&self, id: DOMString) -> Option<DomRoot<Element>> {
         let node = self.upcast::<Node>();
         let id = Atom::from(id);

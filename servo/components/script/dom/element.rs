@@ -281,7 +281,7 @@ impl Element {
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<Element> {
         Node::reflect_node(
-            box Element::new_inherited(local_name, namespace, prefix, document),
+            Box::new(Element::new_inherited(local_name, namespace, prefix, document)),
             document,
             ElementBinding::Wrap)
     }
@@ -290,8 +290,8 @@ impl Element {
         let doc = self.node.owner_doc();
         let mut restyle = doc.ensure_pending_restyle(self);
 
-        // FIXME(bholley): I think we should probably only do this for
-        // NodeStyleDamaged, but I'm preserving existing behavior.
+        
+        
         restyle.hint.insert(RESTYLE_SELF);
 
         if damage == NodeDamage::OtherNodeDamage {
@@ -336,8 +336,8 @@ impl Element {
     }
 
     pub fn invoke_reactions(&self) {
-        // TODO: This is not spec compliant, as this will allow some reactions to be processed
-        // after clear_reaction_queue has been called.
+        
+        
         rooted_vec!(let mut reactions);
         while !self.custom_element_reaction_queue.borrow().is_empty() {
             mem::swap(&mut *reactions, &mut *self.custom_element_reaction_queue.borrow_mut());
@@ -348,29 +348,29 @@ impl Element {
         }
     }
 
-    // https://drafts.csswg.org/cssom-view/#css-layout-box
-    // Elements that have a computed value of the display property
-    // that is table-column or table-column-group
-    // FIXME: Currently, it is assumed to be true always
+    
+    
+    
+    
     fn has_css_layout_box(&self) -> bool {
         true
     }
 
-    // https://drafts.csswg.org/cssom-view/#potentially-scrollable
+    
     fn potentially_scrollable(&self) -> bool {
         self.has_css_layout_box() &&
         !self.overflow_x_is_visible() &&
         !self.overflow_y_is_visible()
     }
 
-    // used value of overflow-x is "visible"
+    
     fn overflow_x_is_visible(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
         overflow_pair.x == overflow_x::computed_value::T::visible
     }
 
-    // used value of overflow-y is "visible"
+    
     fn overflow_y_is_visible(&self) -> bool {
         let window = window_from_node(self);
         let overflow_pair = window.overflow_query(self.upcast::<Node>().to_trusted_node_address());
@@ -391,7 +391,7 @@ pub trait RawLayoutElementHelpers {
 #[allow(unsafe_code)]
 pub unsafe fn get_attr_for_layout<'a>(elem: &'a Element, namespace: &Namespace, name: &LocalName)
                                       -> Option<LayoutDom<Attr>> {
-    // cast to point to T in RefCell<T> directly
+    
     let attrs = elem.attrs.borrow_for_layout();
     attrs.iter().find(|attr| {
         let attr = attr.to_layout();
@@ -479,7 +479,7 @@ impl LayoutElementHelpers for LayoutDom<Element> {
     unsafe fn synthesize_presentational_hints_for_legacy_attributes<V>(&self, hints: &mut V)
         where V: Push<ApplicableDeclarationBlock>
     {
-        // FIXME(emilio): Just a single PDB should be enough.
+        
         #[inline]
         fn from_declaration(shared_lock: &SharedRwLock, declaration: PropertyDeclaration)
                             -> ApplicableDeclarationBlock {
@@ -532,10 +532,10 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         let color = if let Some(this) = self.downcast::<HTMLFontElement>() {
             this.get_color()
         } else if let Some(this) = self.downcast::<HTMLBodyElement>() {
-            // https://html.spec.whatwg.org/multipage/#the-page:the-body-element-20
+            
             this.get_color()
         } else if let Some(this) = self.downcast::<HTMLHRElement>() {
-            // https://html.spec.whatwg.org/multipage/#the-hr-element-2:presentational-hints-5
+            
             this.get_color()
         } else {
             None
@@ -598,16 +598,16 @@ impl LayoutElementHelpers for LayoutDom<Element> {
 
 
         let size = if let Some(this) = self.downcast::<HTMLInputElement>() {
-            // FIXME(pcwalton): More use of atoms, please!
+            
             match (*self.unsafe_get()).get_attr_val_for_layout(&ns!(), &local_name!("type")) {
-                // Not text entry widget
+                
                 Some("hidden") | Some("date") | Some("month") | Some("week") |
                 Some("time") | Some("datetime-local") | Some("number") | Some("range") |
                 Some("color") | Some("checkbox") | Some("radio") | Some("file") |
                 Some("submit") | Some("image") | Some("reset") | Some("button") => {
                     None
                 },
-                // Others
+                
                 _ => {
                     match this.size_for_layout() {
                         0 => None,
@@ -636,7 +636,7 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         } else if let Some(this) = self.downcast::<HTMLTableCellElement>() {
             this.get_width()
         } else if let Some(this) = self.downcast::<HTMLHRElement>() {
-            // https://html.spec.whatwg.org/multipage/#the-hr-element-2:attr-hr-width
+            
             this.get_width()
         } else if let Some(this) = self.downcast::<HTMLCanvasElement>() {
             this.get_width()
@@ -644,7 +644,7 @@ impl LayoutElementHelpers for LayoutDom<Element> {
             LengthOrPercentageOrAuto::Auto
         };
 
-        // FIXME(emilio): Use from_computed value here and below.
+        
         match width {
             LengthOrPercentageOrAuto::Auto => {}
             LengthOrPercentageOrAuto::Percentage(percentage) => {
@@ -703,11 +703,11 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         };
 
         if let Some(cols) = cols {
-            // TODO(mttr) ServoCharacterWidth uses the size math for <input type="text">, but
-            // the math for <textarea> is a little different since we need to take
-            // scrollbar size into consideration (but we don't have a scrollbar yet!)
-            //
-            // https://html.spec.whatwg.org/multipage/#textarea-effective-width
+            
+            
+            
+            
+            
             let value = specified::NoCalcLength::ServoCharacterWidth(specified::CharacterWidth(cols));
             hints.push(from_declaration(
                 shared_lock,
@@ -724,9 +724,9 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         };
 
         if let Some(rows) = rows {
-            // TODO(mttr) This should take scrollbar size into consideration.
-            //
-            // https://html.spec.whatwg.org/multipage/#textarea-effective-height
+            
+            
+            
             let value = specified::NoCalcLength::FontRelative(specified::FontRelativeLength::Em(rows as CSSFloat));
             hints.push(from_declaration(
                 shared_lock,
@@ -762,8 +762,8 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         if let Some(this) = self.downcast::<HTMLTableCellElement>() {
             this.get_colspan().unwrap_or(1)
         } else {
-            // Don't panic since `display` can cause this to be called on arbitrary
-            // elements.
+            
+            
             1
         }
     }
@@ -773,8 +773,8 @@ impl LayoutElementHelpers for LayoutDom<Element> {
         if let Some(this) = self.downcast::<HTMLTableCellElement>() {
             this.get_rowspan().unwrap_or(1)
         } else {
-            // Don't panic since `display` can cause this to be called on arbitrary
-            // elements.
+            
+            
             1
         }
     }
@@ -834,8 +834,8 @@ impl LayoutElementHelpers for LayoutDom<Element> {
                     None => continue
                 }
             }
-            // TODO: Check meta tags for a pragma-set default language
-            // TODO: Check HTTP Content-Language header
+            
+            
             String::new()
         }
     }
@@ -843,7 +843,7 @@ impl LayoutElementHelpers for LayoutDom<Element> {
     #[inline]
     #[allow(unsafe_code)]
     fn get_checked_state_for_layout(&self) -> bool {
-        // TODO option and menuitem can also have a checked state.
+        
         match self.downcast::<HTMLInputElement>() {
             Some(input) => unsafe {
                 input.checked_state_for_layout()
@@ -855,7 +855,7 @@ impl LayoutElementHelpers for LayoutDom<Element> {
     #[inline]
     #[allow(unsafe_code)]
     fn get_indeterminate_state_for_layout(&self) -> bool {
-        // TODO progress elements can also be matched with :indeterminate
+        
         match self.downcast::<HTMLInputElement>() {
             Some(input) => unsafe {
                 input.indeterminate_state_for_layout()
@@ -923,7 +923,7 @@ impl Element {
         Ref::map(self.attrs.borrow(), |attrs| &**attrs)
     }
 
-    // Element branch of https://dom.spec.whatwg.org/#locate-a-namespace
+    
     pub fn locate_namespace(&self, prefix: Option<DOMString>) -> Namespace {
         let prefix = prefix.map(String::from).map(LocalName::from);
 
@@ -932,16 +932,16 @@ impl Element {
                 .inclusive_ancestors()
                 .filter_map(DomRoot::downcast::<Self>);
 
-        // Steps 3-4.
+        
         for element in inclusive_ancestor_elements {
-            // Step 1.
+            
             if element.namespace() != &ns!() &&
                 element.prefix().as_ref().map(|p| &**p) == prefix.as_ref().map(|p| &**p)
             {
                 return element.namespace().clone();
             }
 
-            // Step 2.
+            
             let attr = ref_filter_map(self.attrs(), |attrs| {
                 attrs.iter().find(|attr| {
                     if attr.namespace() != &ns!(xmlns) {
@@ -3065,11 +3065,11 @@ pub struct ElementPerformFullscreenEnter {
 
 impl ElementPerformFullscreenEnter {
     pub fn new(element: Trusted<Element>, promise: TrustedPromise, error: bool) -> Box<ElementPerformFullscreenEnter> {
-        box ElementPerformFullscreenEnter {
+        Box::new(ElementPerformFullscreenEnter {
             element: element,
             promise: promise,
             error: error,
-        }
+        })
     }
 }
 
@@ -3108,10 +3108,10 @@ pub struct ElementPerformFullscreenExit {
 
 impl ElementPerformFullscreenExit {
     pub fn new(element: Trusted<Element>, promise: TrustedPromise) -> Box<ElementPerformFullscreenExit> {
-        box ElementPerformFullscreenExit {
+        Box::new(ElementPerformFullscreenExit {
             element: element,
             promise: promise,
-        }
+        })
     }
 }
 

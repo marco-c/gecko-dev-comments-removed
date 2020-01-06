@@ -30,7 +30,7 @@ impl Location {
     }
 
     pub fn new(window: &Window) -> DomRoot<Location> {
-        reflect_dom_object(box Location::new_inherited(window),
+        reflect_dom_object(Box::new(Location::new_inherited(window)),
                            window,
                            LocationBinding::Wrap)
     }
@@ -56,7 +56,7 @@ impl Location {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-reload
+    
     pub fn reload_without_origin_check(&self) {
         self.window.load_url(self.get_url(), true, true, None);
     }
@@ -68,11 +68,11 @@ impl Location {
 }
 
 impl LocationMethods for Location {
-    // https://html.spec.whatwg.org/multipage/#dom-location-assign
+    
     fn Assign(&self, url: USVString) -> ErrorResult {
         self.check_same_origin_domain()?;
-        // TODO: per spec, we should use the _API base URL_ specified by the
-        //       _entry settings object_.
+        
+        
         let base_url = self.window.get_url();
         if let Ok(url) = base_url.join(&url.0) {
             self.window.load_url(url, false, false, None);
@@ -82,18 +82,18 @@ impl LocationMethods for Location {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-reload
+    
     fn Reload(&self) -> ErrorResult {
         self.check_same_origin_domain()?;
         self.window.load_url(self.get_url(), true, true, None);
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-replace
+    
     fn Replace(&self, url: USVString) -> ErrorResult {
-        // Note: no call to self.check_same_origin_domain()
-        // TODO: per spec, we should use the _API base URL_ specified by the
-        //       _entry settings object_.
+        
+        
+        
         let base_url = self.window.get_url();
         if let Ok(url) = base_url.join(&url.0) {
             self.window.load_url(url, true, false, None);
@@ -103,13 +103,13 @@ impl LocationMethods for Location {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-hash
+    
     fn GetHash(&self) -> Fallible<USVString> {
         self.check_same_origin_domain()?;
         Ok(UrlHelper::Hash(&self.get_url()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-hash
+    
     fn SetHash(&self, mut value: USVString) -> ErrorResult {
         if value.0.is_empty() {
             value = USVString("#".to_owned());
@@ -119,47 +119,47 @@ impl LocationMethods for Location {
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-host
+    
     fn GetHost(&self) -> Fallible<USVString> {
         self.check_same_origin_domain()?;
         Ok(UrlHelper::Host(&self.get_url()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-host
+    
     fn SetHost(&self, value: USVString) -> ErrorResult {
         self.check_same_origin_domain()?;
         self.set_url_component(value, UrlHelper::SetHost);
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-origin
+    
     fn GetOrigin(&self) -> Fallible<USVString> {
         self.check_same_origin_domain()?;
         Ok(UrlHelper::Origin(&self.get_url()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-hostname
+    
     fn GetHostname(&self) -> Fallible<USVString> {
         self.check_same_origin_domain()?;
         Ok(UrlHelper::Hostname(&self.get_url()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-hostname
+    
     fn SetHostname(&self, value: USVString) -> ErrorResult {
         self.check_same_origin_domain()?;
         self.set_url_component(value, UrlHelper::SetHostname);
         Ok(())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-href
+    
     fn GetHref(&self) -> Fallible<USVString> {
         self.check_same_origin_domain()?;
         Ok(UrlHelper::Href(&self.get_url()))
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-location-href
+    
     fn SetHref(&self, value: USVString) -> ErrorResult {
-        // Note: no call to self.check_same_origin_domain()
+        
         let url = match self.window.get_url().join(&value.0) {
             Ok(url) => url,
             Err(e) => return Err(Error::Type(format!("Couldn't parse URL: {}", e))),

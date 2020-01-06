@@ -52,7 +52,7 @@ impl MouseEvent {
     }
 
     pub fn new_uninitialized(window: &Window) -> DomRoot<MouseEvent> {
-        reflect_dom_object(box MouseEvent::new_inherited(),
+        reflect_dom_object(Box::new(MouseEvent::new_inherited()),
                            window,
                            MouseEventBinding::Wrap)
     }
@@ -102,61 +102,61 @@ impl MouseEvent {
 }
 
 impl MouseEventMethods for MouseEvent {
-    // https://w3c.github.io/uievents/#widl-MouseEvent-screenX
+    
     fn ScreenX(&self) -> i32 {
         self.screen_x.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-screenY
+    
     fn ScreenY(&self) -> i32 {
         self.screen_y.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-clientX
+    
     fn ClientX(&self) -> i32 {
         self.client_x.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-clientY
+    
     fn ClientY(&self) -> i32 {
         self.client_y.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-ctrlKey
+    
     fn CtrlKey(&self) -> bool {
         self.ctrl_key.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-shiftKey
+    
     fn ShiftKey(&self) -> bool {
         self.shift_key.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-altKey
+    
     fn AltKey(&self) -> bool {
         self.alt_key.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-metaKey
+    
     fn MetaKey(&self) -> bool {
         self.meta_key.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-button
+    
     fn Button(&self) -> i16 {
         self.button.get()
     }
 
-    // https://w3c.github.io/uievents/#widl-MouseEvent-relatedTarget
+    
     fn GetRelatedTarget(&self) -> Option<DomRoot<EventTarget>> {
         self.related_target.get()
     }
 
-    // See discussion at:
-    //  - https://github.com/servo/servo/issues/6643
-    //  - https://bugzilla.mozilla.org/show_bug.cgi?id=1186125
-    // This returns the same result as current gecko.
-    // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/which
+    
+    
+    
+    
+    
     fn Which(&self) -> i32 {
         if PREFS.get("dom.mouseevent.which.enabled").as_boolean().unwrap_or(false) {
             (self.button.get() + 1) as i32

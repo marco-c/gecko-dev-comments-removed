@@ -125,7 +125,7 @@ impl HTMLTextAreaElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLTextAreaElement> {
-        Node::reflect_node(box HTMLTextAreaElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLTextAreaElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLTextAreaElementBinding::Wrap)
     }
@@ -140,137 +140,137 @@ impl HTMLTextAreaElement {
 }
 
 impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
-    // TODO A few of these attributes have default values and additional
-    // constraints
+    
+    
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-cols
+    
     make_uint_getter!(Cols, "cols", DEFAULT_COLS);
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-cols
+    
     make_limited_uint_setter!(SetCols, "cols", DEFAULT_COLS);
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_getter!(Disabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fe-disabled
+    
     make_bool_setter!(SetDisabled, "disabled");
 
-    // https://html.spec.whatwg.org/multipage/#dom-fae-form
+    
     fn GetForm(&self) -> Option<DomRoot<HTMLFormElement>> {
         self.form_owner()
     }
 
-    // https://html.spec.whatwg.org/multipage/#attr-fe-name
+    
     make_getter!(Name, "name");
 
-    // https://html.spec.whatwg.org/multipage/#attr-fe-name
+    
     make_setter!(SetName, "name");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-placeholder
+    
     make_getter!(Placeholder, "placeholder");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-placeholder
+    
     make_setter!(SetPlaceholder, "placeholder");
 
-    // https://html.spec.whatwg.org/multipage/#attr-textarea-readonly
+    
     make_bool_getter!(ReadOnly, "readonly");
 
-    // https://html.spec.whatwg.org/multipage/#attr-textarea-readonly
+    
     make_bool_setter!(SetReadOnly, "readonly");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-required
+    
     make_bool_getter!(Required, "required");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-required
+    
     make_bool_setter!(SetRequired, "required");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-rows
+    
     make_uint_getter!(Rows, "rows", DEFAULT_ROWS);
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-rows
+    
     make_limited_uint_setter!(SetRows, "rows", DEFAULT_ROWS);
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-wrap
+    
     make_getter!(Wrap, "wrap");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-wrap
+    
     make_setter!(SetWrap, "wrap");
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-type
+    
     fn Type(&self) -> DOMString {
         DOMString::from("textarea")
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-defaultvalue
+    
     fn DefaultValue(&self) -> DOMString {
         self.upcast::<Node>().GetTextContent().unwrap()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-defaultvalue
+    
     fn SetDefaultValue(&self, value: DOMString) {
         self.upcast::<Node>().SetTextContent(Some(value));
 
-        // if the element's dirty value flag is false, then the element's
-        // raw value must be set to the value of the element's textContent IDL attribute
+        
+        
         if !self.value_changed.get() {
             self.reset();
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-value
+    
     fn Value(&self) -> DOMString {
         self.textinput.borrow().get_content()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea-value
+    
     fn SetValue(&self, value: DOMString) {
-        // TODO move the cursor to the end of the field
+        
         self.textinput.borrow_mut().set_content(value);
         self.value_changed.set(true);
 
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
+    
     fn Labels(&self) -> DomRoot<NodeList> {
         self.upcast::<HTMLElement>().labels()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectiondirection
+    
     fn SetSelectionDirection(&self, direction: DOMString) {
         self.textinput.borrow_mut().selection_direction = SelectionDirection::from(direction);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectiondirection
+    
     fn SelectionDirection(&self) -> DOMString {
         DOMString::from(self.textinput.borrow().selection_direction)
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionend
+    
     fn SetSelectionEnd(&self, end: u32) {
         let selection_start = self.SelectionStart();
         self.textinput.borrow_mut().set_selection_range(selection_start, end);
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionend
+    
     fn SelectionEnd(&self) -> u32 {
         self.textinput.borrow().get_absolute_insertion_point() as u32
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionstart
+    
     fn SetSelectionStart(&self, start: u32) {
         let selection_end = self.SelectionEnd();
         self.textinput.borrow_mut().set_selection_range(start, selection_end);
         self.upcast::<Node>().dirty(NodeDamage::OtherNodeDamage);
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-selectionstart
+    
     fn SelectionStart(&self) -> u32 {
         self.textinput.borrow().get_selection_start()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-textarea/input-setselectionrange
+    
     fn SetSelectionRange(&self, start: u32, end: u32, direction: Option<DOMString>) {
         let direction = direction.map_or(SelectionDirection::None, |d| SelectionDirection::from(d));
         self.textinput.borrow_mut().selection_direction = direction;
@@ -289,7 +289,7 @@ impl HTMLTextAreaElementMethods for HTMLTextAreaElement {
 
 impl HTMLTextAreaElement {
     pub fn reset(&self) {
-        // https://html.spec.whatwg.org/multipage/#the-textarea-element:concept-form-reset-control
+        
         self.SetValue(self.DefaultValue());
         self.value_changed.set(false);
     }
@@ -389,20 +389,20 @@ impl VirtualMethods for HTMLTextAreaElement {
         }
     }
 
-    // copied and modified from htmlinputelement.rs
+    
     fn handle_event(&self, event: &Event) {
         if let Some(s) = self.super_type() {
             s.handle_event(event);
         }
 
         if event.type_() == atom!("click") && !event.DefaultPrevented() {
-            //TODO: set the editing position for text inputs
+            
 
             document_from_node(self).request_focus(self.upcast());
         } else if event.type_() == atom!("keydown") && !event.DefaultPrevented() {
             if let Some(kevent) = event.downcast::<KeyboardEvent>() {
-                // This can't be inlined, as holding on to textinput.borrow_mut()
-                // during self.implicit_submission will cause a panic.
+                
+                
                 let action = self.textinput.borrow_mut().handle_keydown(kevent);
                 match action {
                     KeyReaction::TriggerDefaultAction => (),

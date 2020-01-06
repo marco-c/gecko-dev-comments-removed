@@ -31,7 +31,7 @@ impl RadioNodeList {
 
     #[allow(unrooted_must_root)]
     pub fn new(window: &Window, list_type: NodeListType) -> DomRoot<RadioNodeList> {
-        reflect_dom_object(box RadioNodeList::new_inherited(list_type),
+        reflect_dom_object(Box::new(RadioNodeList::new_inherited(list_type)),
                            window,
                            RadioNodeListBinding::Wrap)
     }
@@ -41,19 +41,19 @@ impl RadioNodeList {
         RadioNodeList::new(window, NodeListType::Simple(iter.map(|r| Dom::from_ref(&*r)).collect()))
     }
 
-    // FIXME: This shouldn't need to be implemented here since NodeList (the parent of
-    // RadioNodeList) implements Length
-    // https://github.com/servo/servo/issues/5875
+    
+    
+    
     pub fn Length(&self) -> u32 {
         self.node_list.Length()
     }
 }
 
 impl RadioNodeListMethods for RadioNodeList {
-    // https://html.spec.whatwg.org/multipage/#dom-radionodelist-value
+    
     fn Value(&self) -> DOMString {
         self.upcast::<NodeList>().as_simple_list().iter().filter_map(|node| {
-            // Step 1
+            
             node.downcast::<HTMLInputElement>().and_then(|input| {
                 match input.type_() {
                     atom!("radio") if input.Checked() => {

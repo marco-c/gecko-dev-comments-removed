@@ -41,7 +41,7 @@ impl BluetoothPermissionResult {
     }
 
     pub fn new(global: &GlobalScope, status: &PermissionStatus) -> DomRoot<BluetoothPermissionResult> {
-        reflect_dom_object(box BluetoothPermissionResult::new_inherited(status),
+        reflect_dom_object(Box::new(BluetoothPermissionResult::new_inherited(status)),
                            global,
                            BluetoothPermissionResultBinding::Wrap)
     }
@@ -73,7 +73,7 @@ impl BluetoothPermissionResult {
 }
 
 impl BluetoothPermissionResultMethods for BluetoothPermissionResult {
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothpermissionresult-devices
+    
     fn Devices(&self) -> Vec<DomRoot<BluetoothDevice>> {
         let device_vec: Vec<DomRoot<BluetoothDevice>> =
             self.devices.borrow().iter().map(|d| DomRoot::from_ref(&**d)).collect();
@@ -84,19 +84,19 @@ impl BluetoothPermissionResultMethods for BluetoothPermissionResult {
 impl AsyncBluetoothListener for BluetoothPermissionResult {
     fn handle_response(&self, response: BluetoothResponse, promise: &Rc<Promise>) {
         match response {
-            // https://webbluetoothcg.github.io/web-bluetooth/#request-bluetooth-devices
-            // Step 3, 11, 13 - 14.
+            
+            
             BluetoothResponse::RequestDevice(device) => {
                 self.set_state(PermissionState::Granted);
                 let bluetooth = self.get_bluetooth();
                 let mut device_instance_map = bluetooth.get_device_map().borrow_mut();
                 if let Some(ref existing_device) = device_instance_map.get(&device.id) {
-                    // https://webbluetoothcg.github.io/web-bluetooth/#request-the-bluetooth-permission
-                    // Step 3.
+                    
+                    
                     self.set_devices(vec!(Dom::from_ref(&*existing_device)));
 
-                    // https://w3c.github.io/permissions/#dom-permissions-request
-                    // Step 8.
+                    
+                    
                     return promise.resolve_native(self);
                 }
                 let bt_device = BluetoothDevice::new(&self.global(),
@@ -110,12 +110,12 @@ impl AsyncBluetoothListener for BluetoothPermissionResult {
                         mayUseGATT: true,
                     }
                 );
-                // https://webbluetoothcg.github.io/web-bluetooth/#request-the-bluetooth-permission
-                // Step 3.
+                
+                
                 self.set_devices(vec!(Dom::from_ref(&bt_device)));
 
-                // https://w3c.github.io/permissions/#dom-permissions-request
-                // Step 8.
+                
+                
                 promise.resolve_native(self);
             },
             _ => promise.reject_error(Error::Type("Something went wrong...".to_owned())),

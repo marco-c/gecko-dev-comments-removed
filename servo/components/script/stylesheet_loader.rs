@@ -231,9 +231,9 @@ impl<'a> StylesheetLoader<'a> {
             task_source: document.window().networking_task_source(),
             canceller: Some(document.window().task_canceller())
         };
-        ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+        ROUTER.add_route(action_receiver.to_opaque(), Box::new(move |message| {
             listener.notify_fetch(message.to().unwrap());
-        });
+        }));
 
 
         let owner = self.elem.upcast::<Element>().as_stylesheet_owner()
@@ -249,14 +249,14 @@ impl<'a> StylesheetLoader<'a> {
             url: url.clone(),
             type_: RequestType::Style,
             destination: Destination::Style,
-            // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-            // Step 1
+            
+            
             mode: match cors_setting {
                 Some(_) => RequestMode::CorsMode,
                 None => RequestMode::NoCors,
             },
-            // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-            // Step 3-4
+            
+            
             credentials_mode: match cors_setting {
                 Some(CorsSettings::Anonymous) => CredentialsMode::CredentialsSameOrigin,
                 _ => CredentialsMode::Include,
@@ -274,8 +274,8 @@ impl<'a> StylesheetLoader<'a> {
 }
 
 impl<'a> StyleStylesheetLoader for StylesheetLoader<'a> {
-    /// Request a stylesheet after parsing a given `@import` rule, and return
-    /// the constructed `@import` rule.
+    
+    
     fn request_stylesheet(
         &self,
         url: SpecifiedUrl,
@@ -307,8 +307,8 @@ impl<'a> StyleStylesheetLoader for StylesheetLoader<'a> {
             None => return Arc::new(lock.wrap(import)),
         };
 
-        // TODO (mrnayak) : Whether we should use the original loader's CORS
-        // setting? Fix this when spec has more details.
+        
+        
         let source = StylesheetContextSource::Import(sheet.clone());
         self.load(source, url, None, "".to_owned());
 

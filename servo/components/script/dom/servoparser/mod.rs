@@ -338,7 +338,7 @@ impl ServoParser {
            last_chunk_state: LastChunkState,
            kind: ParserKind)
            -> DomRoot<Self> {
-        reflect_dom_object(box ServoParser::new_inherited(document, tokenizer, last_chunk_state, kind),
+        reflect_dom_object(Box::new(ServoParser::new_inherited(document, tokenizer, last_chunk_state, kind)),
                            document.window(),
                            ServoParserBinding::Wrap)
     }
@@ -384,8 +384,8 @@ impl ServoParser {
     fn do_parse_sync(&self) {
         assert!(self.script_input.borrow().is_empty());
 
-        // This parser will continue to parse while there is either pending input or
-        // the parser remains unsuspended.
+        
+        
 
         if self.last_chunk_received.get() {
             if let Some(_) = self.incomplete_utf8.borrow_mut().take() {
@@ -447,7 +447,7 @@ impl ServoParser {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/#the-end
+    
     fn finish(&self) {
         assert!(!self.suspended.get());
         assert!(self.last_chunk_received.get());
@@ -455,14 +455,14 @@ impl ServoParser {
         assert!(self.network_input.borrow().is_empty());
         assert!(self.incomplete_utf8.borrow().is_none());
 
-        // Step 1.
+        
         self.document.set_ready_state(DocumentReadyState::Interactive);
 
-        // Step 2.
+        
         self.tokenizer.borrow_mut().end();
         self.document.set_current_parser(None);
 
-        // Steps 3-12 are in another castle, namely finish_load.
+        
         let url = self.tokenizer.borrow().url().clone();
         self.document.finish_load(LoadType::PageSource(url));
     }
@@ -549,17 +549,17 @@ impl Tokenizer {
     }
 }
 
-/// The context required for asynchronously fetching a document
-/// and parsing it progressively.
+
+
 #[derive(JSTraceable)]
 pub struct ParserContext {
-    /// The parser that initiated the request.
+    
     parser: Option<Trusted<ServoParser>>,
-    /// Is this a synthesized document
+    
     is_synthesized_document: bool,
-    /// The pipeline associated with this document.
+    
     id: PipelineId,
-    /// The URL for this document.
+    
     url: ServoUrl,
 }
 
@@ -631,14 +631,14 @@ impl FetchResponseListener for ParserContext {
 
             },
             Some(ContentType(Mime(TopLevel::Text, SubLevel::Plain, _))) => {
-                // https://html.spec.whatwg.org/multipage/#read-text
+                
                 let page = "<pre>\n".into();
                 parser.push_string_input_chunk(page);
                 parser.parse_sync();
                 parser.tokenizer.borrow_mut().set_plaintext_state();
             },
             Some(ContentType(Mime(TopLevel::Text, SubLevel::Html, _))) => {
-                // Handle text/html
+                
                 if let Some(reason) = ssl_error {
                     self.is_synthesized_document = true;
                     let page_bytes = read_resource_file("badcert.html").unwrap();
@@ -656,14 +656,14 @@ impl FetchResponseListener for ParserContext {
                     parser.parse_sync();
                 }
             },
-            Some(ContentType(Mime(TopLevel::Text, SubLevel::Xml, _))) => {}, // Handle text/xml
+            Some(ContentType(Mime(TopLevel::Text, SubLevel::Xml, _))) => {}, 
             Some(ContentType(Mime(toplevel, sublevel, _))) => {
                 if toplevel.as_str() == "application" && sublevel.as_str() == "xhtml+xml" {
-                    // Handle xhtml (application/xhtml+xml).
+                    
                     return;
                 }
 
-                // Show warning page for unknown mime types.
+                
                 let page = format!("<html><body><p>Unknown content type ({}/{}).</p></body></html>",
                                    toplevel.as_str(),
                                    sublevel.as_str());
@@ -672,8 +672,8 @@ impl FetchResponseListener for ParserContext {
                 parser.parse_sync();
             },
             None => {
-                // No content-type header.
-                // Merge with #4212 when fixed.
+                
+                
             },
         }
     }
@@ -702,7 +702,7 @@ impl FetchResponseListener for ParserContext {
         }
 
         if let Err(err) = status {
-            // TODO(Savago): we should send a notification to callers #5463.
+            
             debug!("Failed to load page URL {}, error: {:?}", self.url, err);
         }
 
@@ -751,7 +751,7 @@ pub struct Sink {
     script: MutNullableDom<HTMLScriptElement>,
 }
 
-#[allow(unrooted_must_root)]  // FIXME: really?
+#[allow(unrooted_must_root)]  
 impl TreeSink for Sink {
     type Output = Self;
     fn finish(self) -> Self { self }
@@ -843,7 +843,7 @@ impl TreeSink for Sink {
         if let Some(control) = control {
             control.set_form_owner_from_parser(&form);
         } else {
-            // TODO remove this code when keygen is implemented.
+            
             assert!(node.NodeName() == "KEYGEN", "Unknown form-associatable element");
         }
     }
@@ -930,8 +930,8 @@ impl TreeSink for Sink {
         }
     }
 
-    /// https://html.spec.whatwg.org/multipage/#html-integration-point
-    /// Specifically, the <annotation-xml> cases.
+    
+    
     fn is_mathml_annotation_xml_integration_point(&self, handle: &Dom<Node>) -> bool {
         let elem = handle.downcast::<Element>().unwrap();
         elem.get_attribute(&ns!(), &local_name!("encoding")).map_or(false, |attr| {

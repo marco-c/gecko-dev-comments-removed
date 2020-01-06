@@ -40,27 +40,27 @@ impl ServiceWorkerContainer {
     pub fn new(global: &GlobalScope) -> DomRoot<ServiceWorkerContainer> {
         let client = Client::new(&global.as_window());
         let container = ServiceWorkerContainer::new_inherited(&*client);
-        reflect_dom_object(box container, global, Wrap)
+        reflect_dom_object(Box::new(container), global, Wrap)
     }
 }
 
 impl ServiceWorkerContainerMethods for ServiceWorkerContainer {
-    // https://w3c.github.io/ServiceWorker/#service-worker-container-controller-attribute
+    
     fn GetController(&self) -> Option<DomRoot<ServiceWorker>> {
         self.client.get_controller()
     }
 
     #[allow(unrooted_must_root)]
-    // https://w3c.github.io/ServiceWorker/#service-worker-container-register-method and - A
-    // https://w3c.github.io/ServiceWorker/#start-register-algorithm - B
+    
+    
     fn Register(&self,
                 script_url: USVString,
                 options: &RegistrationOptions) -> Rc<Promise> {
-        // A: Step 1
+        
         let promise = Promise::new(&*self.global());
         let USVString(ref script_url) = script_url;
         let api_base_url = self.global().api_base_url();
-        // A: Step 3-5
+        
         let script_url = match api_base_url.join(script_url) {
             Ok(url) => url,
             Err(_) => {
@@ -68,7 +68,7 @@ impl ServiceWorkerContainerMethods for ServiceWorkerContainer {
                 return promise;
             }
         };
-        // B: Step 2
+        
         match script_url.scheme() {
             "https" | "http" => {},
             _ => {
@@ -76,13 +76,13 @@ impl ServiceWorkerContainerMethods for ServiceWorkerContainer {
                 return promise;
             }
         }
-        // B: Step 3
+        
         if script_url.path().to_ascii_lowercase().contains("%2f") ||
         script_url.path().to_ascii_lowercase().contains("%5c") {
             promise.reject_error(Error::Type("Script URL contains forbidden characters".to_owned()));
             return promise;
         }
-        // B: Step 4-5
+        
         let scope = match options.scope {
             Some(ref scope) => {
                 let &USVString(ref inner_scope) = scope;
@@ -96,7 +96,7 @@ impl ServiceWorkerContainerMethods for ServiceWorkerContainer {
             },
             None => script_url.join("./").unwrap()
         };
-        // B: Step 6
+        
         match scope.scheme() {
             "https" | "http" => {},
             _ => {
@@ -104,7 +104,7 @@ impl ServiceWorkerContainerMethods for ServiceWorkerContainer {
                 return promise;
             }
         }
-        // B: Step 7
+        
         if scope.path().to_ascii_lowercase().contains("%2f") ||
         scope.path().to_ascii_lowercase().contains("%5c") {
             promise.reject_error(Error::Type("Scope URL contains forbidden characters".to_owned()));

@@ -413,7 +413,7 @@ impl EventSource {
     }
 
     fn new(global: &GlobalScope, url: ServoUrl, with_credentials: bool) -> DomRoot<EventSource> {
-        reflect_dom_object(box EventSource::new_inherited(url, with_credentials),
+        reflect_dom_object(Box::new(EventSource::new_inherited(url, with_credentials)),
                            global,
                            Wrap)
     }
@@ -425,29 +425,29 @@ impl EventSource {
     pub fn Constructor(global: &GlobalScope,
                        url: DOMString,
                        event_source_init: &EventSourceInit) -> Fallible<DomRoot<EventSource>> {
-        // TODO: Step 2 relevant settings object
-        // Step 3
+        
+        
         let base_url = global.api_base_url();
         let url_record = match base_url.join(&*url) {
             Ok(u) => u,
-            //  Step 4
+            
             Err(_) => return Err(Error::Syntax)
         };
-        // Step 1, 5
+        
         let ev = EventSource::new(global, url_record.clone(), event_source_init.withCredentials);
-        // Steps 6-7
+        
         let cors_attribute_state = if event_source_init.withCredentials {
             CorsSettings::UseCredentials
         } else {
             CorsSettings::Anonymous
         };
-        // Step 8
-        // TODO: Step 9 set request's client settings
+        
+        
         let mut request = RequestInit {
             url: url_record,
             origin: global.origin().immutable().clone(),
             pipeline_id: Some(global.pipeline_id()),
-            // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
+            
             use_url_credentials: true,
             mode: RequestMode::CorsMode,
             credentials_mode: if cors_attribute_state == CorsSettings::Anonymous {
@@ -457,13 +457,13 @@ impl EventSource {
             },
             ..RequestInit::default()
         };
-        // Step 10
+        
         request.headers.set(Accept(vec![qitem(mime!(Text / EventStream))]));
-        // Step 11
+        
         request.cache_mode = CacheMode::NoStore;
-        // Step 12
+        
         *ev.request.borrow_mut() = Some(request.clone());
-        // Step 14
+        
         let (action_sender, action_receiver) = ipc::channel().unwrap();
         let context = EventSourceContext {
             incomplete_utf8: None,
@@ -486,41 +486,41 @@ impl EventSource {
             task_source: global.networking_task_source(),
             canceller: Some(global.task_canceller())
         };
-        ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+        ROUTER.add_route(action_receiver.to_opaque(), Box::new(move |message| {
             listener.notify_fetch(message.to().unwrap());
-        });
+        }));
         global.core_resource_thread().send(CoreResourceMsg::Fetch(request, action_sender)).unwrap();
-        // Step 13
+        
         Ok(ev)
     }
 }
 
 impl EventSourceMethods for EventSource {
-    // https://html.spec.whatwg.org/multipage/#handler-eventsource-onopen
+    
     event_handler!(open, GetOnopen, SetOnopen);
 
-    // https://html.spec.whatwg.org/multipage/#handler-eventsource-onmessage
+    
     event_handler!(message, GetOnmessage, SetOnmessage);
 
-    // https://html.spec.whatwg.org/multipage/#handler-eventsource-onerror
+    
     event_handler!(error, GetOnerror, SetOnerror);
 
-    // https://html.spec.whatwg.org/multipage/#dom-eventsource-url
+    
     fn Url(&self) -> DOMString {
         DOMString::from(self.url.as_str())
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-eventsource-withcredentials
+    
     fn WithCredentials(&self) -> bool {
         self.with_credentials
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-eventsource-readystate
+    
     fn ReadyState(&self) -> u16 {
         self.ready_state.get() as u16
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-eventsource-close
+    
     fn Close(&self) {
         let GenerationId(prev_id) = self.generation_id.get();
         self.generation_id.set(GenerationId(prev_id + 1));

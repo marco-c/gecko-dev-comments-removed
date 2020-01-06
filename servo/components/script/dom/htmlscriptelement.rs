@@ -84,15 +84,15 @@ impl HTMLScriptElement {
     #[allow(unrooted_must_root)]
     pub fn new(local_name: LocalName, prefix: Option<Prefix>, document: &Document,
                creator: ElementCreator) -> DomRoot<HTMLScriptElement> {
-        Node::reflect_node(box HTMLScriptElement::new_inherited(local_name, prefix, document, creator),
+        Node::reflect_node(Box::new(HTMLScriptElement::new_inherited(local_name, prefix, document, creator)),
                            document,
                            HTMLScriptElementBinding::Wrap)
     }
 }
 
 
-/// Supported script types as defined by
-/// <https://html.spec.whatwg.org/multipage/#javascript-mime-type>.
+
+
 static SCRIPT_JS_MIMES: StaticStringVec = &[
     "application/ecmascript",
     "application/javascript",
@@ -139,29 +139,29 @@ impl ClassicScript {
 
 pub type ScriptResult = Result<ClassicScript, NetworkError>;
 
-/// The context required for asynchronously loading an external script source.
+
 struct ScriptContext {
-    /// The element that initiated the request.
+    
     elem: Trusted<HTMLScriptElement>,
-    /// The kind of external script.
+    
     kind: ExternalScriptKind,
-    /// The (fallback) character encoding argument to the "fetch a classic
-    /// script" algorithm.
+    
+    
     character_encoding: EncodingRef,
-    /// The response body received to date.
+    
     data: Vec<u8>,
-    /// The response metadata received to date.
+    
     metadata: Option<Metadata>,
-    /// The initial URL requested.
+    
     url: ServoUrl,
-    /// Indicates whether the request failed, and why
+    
     status: Result<(), NetworkError>
 }
 
 impl FetchResponseListener for ScriptContext {
-    fn process_request_body(&mut self) {} // TODO(KiChjang): Perhaps add custom steps to perform fetch here?
+    fn process_request_body(&mut self) {} 
 
-    fn process_request_eof(&mut self) {} // TODO(KiChjang): Perhaps add custom steps to perform fetch here?
+    fn process_request_eof(&mut self) {} 
 
     fn process_response(&mut self,
                         metadata: Result<FetchMetadata, NetworkError>) {
@@ -179,7 +179,7 @@ impl FetchResponseListener for ScriptContext {
 
         self.status = match status_code {
             0 => Err(NetworkError::Internal("No http status code received".to_owned())),
-            200...299 => Ok(()), // HTTP ok status codes
+            200...299 => Ok(()), 
             _ => Err(NetworkError::Internal(format!("HTTP error code {}", status_code)))
         };
     }
@@ -190,26 +190,26 @@ impl FetchResponseListener for ScriptContext {
         }
     }
 
-    /// https://html.spec.whatwg.org/multipage/#fetch-a-classic-script
-    /// step 4-9
+    
+    
     fn process_response_eof(&mut self, response: Result<(), NetworkError>) {
-        // Step 5.
+        
         let load = response.and(self.status.clone()).map(|_| {
             let metadata = self.metadata.take().unwrap();
 
-            // Step 6.
+            
             let encoding = metadata.charset
                 .and_then(|encoding| encoding_from_whatwg_label(&encoding))
                 .unwrap_or(self.character_encoding);
 
-            // Step 7.
+            
             let source_text = encoding.decode(&self.data, DecoderTrap::Replace).unwrap();
             ClassicScript::external(DOMString::from(source_text), metadata.final_url)
         });
 
-        // Step 9.
-        // https://html.spec.whatwg.org/multipage/#prepare-a-script
-        // Step 18.6 (When the chosen algorithm asynchronously completes).
+        
+        
+        
         let elem = self.elem.root();
         let document = document_from_node(&*elem);
 
@@ -226,7 +226,7 @@ impl FetchResponseListener for ScriptContext {
 
 impl PreInvoke for ScriptContext {}
 
-/// https://html.spec.whatwg.org/multipage/#fetch-a-classic-script
+
 fn fetch_a_classic_script(script: &HTMLScriptElement,
                           kind: ExternalScriptKind,
                           url: ServoUrl,
@@ -235,19 +235,19 @@ fn fetch_a_classic_script(script: &HTMLScriptElement,
                           character_encoding: EncodingRef) {
     let doc = document_from_node(script);
 
-    // Step 1, 2.
+    
     let request = RequestInit {
         url: url.clone(),
         type_: RequestType::Script,
         destination: Destination::Script,
-        // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-        // Step 1
+        
+        
         mode: match cors_setting {
             Some(_) => RequestMode::CorsMode,
             None => RequestMode::NoCors,
         },
-        // https://html.spec.whatwg.org/multipage/#create-a-potential-cors-request
-        // Step 3-4
+        
+        
         credentials_mode: match cors_setting {
             Some(CorsSettings::Anonymous) => CredentialsMode::CredentialsSameOrigin,
             _ => CredentialsMode::Include,
@@ -260,7 +260,7 @@ fn fetch_a_classic_script(script: &HTMLScriptElement,
         .. RequestInit::default()
     };
 
-    // TODO: Step 3, Add custom steps to perform fetch
+    
 
     let context = Arc::new(Mutex::new(ScriptContext {
         elem: Trusted::new(script),
@@ -279,33 +279,33 @@ fn fetch_a_classic_script(script: &HTMLScriptElement,
         canceller: Some(doc.window().task_canceller())
     };
 
-    ROUTER.add_route(action_receiver.to_opaque(), box move |message| {
+    ROUTER.add_route(action_receiver.to_opaque(), Box::new(move |message| {
         listener.notify_fetch(message.to().unwrap());
-    });
+    }));
     doc.fetch_async(LoadType::Script(url), request, action_sender);
 }
 
 impl HTMLScriptElement {
-    /// https://html.spec.whatwg.org/multipage/#prepare-a-script
+    
     pub fn prepare(&self) {
-        // Step 1.
+        
         if self.already_started.get() {
             return;
         }
 
-        // Step 2.
+        
         let was_parser_inserted = self.parser_inserted.get();
         self.parser_inserted.set(false);
 
-        // Step 3.
+        
         let element = self.upcast::<Element>();
         let async = element.has_attribute(&local_name!("async"));
-        // Note: confusingly, this is done if the element does *not* have an "async" attribute.
+        
         if was_parser_inserted && !async {
             self.non_blocking.set(true);
         }
 
-        // Step 4.
+        
         let text = self.Text();
         if text.is_empty() && !element.has_attribute(&local_name!("src")) {
             return;

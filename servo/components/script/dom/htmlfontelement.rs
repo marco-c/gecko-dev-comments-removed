@@ -37,29 +37,29 @@ impl HTMLFontElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLFontElement> {
-        Node::reflect_node(box HTMLFontElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLFontElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLFontElementBinding::Wrap)
     }
 }
 
 impl HTMLFontElementMethods for HTMLFontElement {
-    // https://html.spec.whatwg.org/multipage/#dom-font-color
+    
     make_getter!(Color, "color");
 
-    // https://html.spec.whatwg.org/multipage/#dom-font-color
+    
     make_legacy_color_setter!(SetColor, "color");
 
-    // https://html.spec.whatwg.org/multipage/#dom-font-face
+    
     make_getter!(Face, "face");
 
-    // https://html.spec.whatwg.org/multipage/#dom-font-face
+    
     make_atomic_setter!(SetFace, "face");
 
-    // https://html.spec.whatwg.org/multipage/#dom-font-size
+    
     make_getter!(Size, "size");
 
-    // https://html.spec.whatwg.org/multipage/#dom-font-size
+    
     fn SetSize(&self, value: DOMString) {
         let element = self.upcast::<Element>();
         element.set_attribute(&local_name!("size"), parse_size(&value));
@@ -76,7 +76,7 @@ impl VirtualMethods for HTMLFontElement {
             return true;
         }
 
-        // FIXME: Should also return true for `size` and `face` changes!
+        
         self.super_type().unwrap().attribute_affects_presentational_hints(attr)
     }
 

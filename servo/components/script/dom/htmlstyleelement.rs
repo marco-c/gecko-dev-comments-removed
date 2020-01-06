@@ -64,7 +64,7 @@ impl HTMLStyleElement {
                prefix: Option<Prefix>,
                document: &Document,
                creator: ElementCreator) -> DomRoot<HTMLStyleElement> {
-        Node::reflect_node(box HTMLStyleElement::new_inherited(local_name, prefix, document, creator),
+        Node::reflect_node(Box::new(HTMLStyleElement::new_inherited(local_name, prefix, document, creator)),
                            document,
                            HTMLStyleElementBinding::Wrap)
     }
@@ -105,7 +105,7 @@ impl HTMLStyleElement {
 
         let sheet = Arc::new(sheet);
 
-        // No subresource loads were triggered, just fire the load event now.
+        
         if self.pending_loads.get() == 0 {
             self.upcast::<EventTarget>().fire_event(atom!("load"));
         }
@@ -113,7 +113,7 @@ impl HTMLStyleElement {
         self.set_stylesheet(sheet);
     }
 
-    // FIXME(emilio): This is duplicated with HTMLLinkElement::set_stylesheet.
+    
     pub fn set_stylesheet(&self, s: Arc<Stylesheet>) {
         let doc = document_from_node(self);
         if let Some(ref s) = *self.stylesheet.borrow() {
@@ -134,8 +134,8 @@ impl HTMLStyleElement {
                 CSSStyleSheet::new(&window_from_node(self),
                                    self.upcast::<Element>(),
                                    "text/css".into(),
-                                   None, // todo handle location
-                                   None, // todo handle title
+                                   None, 
+                                   None, 
                                    sheet)
             })
         })
@@ -150,11 +150,11 @@ impl VirtualMethods for HTMLStyleElement {
     fn children_changed(&self, mutation: &ChildrenMutation) {
         self.super_type().unwrap().children_changed(mutation);
 
-        // https://html.spec.whatwg.org/multipage/#update-a-style-block
-        // Handles the case when:
-        // "The element is not on the stack of open elements of an HTML parser or XML parser,
-        // and one of its child nodes is modified by a script."
-        // TODO: Handle Text child contents being mutated.
+        
+        
+        
+        
+        
         if self.upcast::<Node>().is_in_doc() && !self.in_stack_of_open_elements.get() {
             self.parse_own_css();
         }
@@ -163,10 +163,10 @@ impl VirtualMethods for HTMLStyleElement {
     fn bind_to_tree(&self, tree_in_doc: bool) {
         self.super_type().unwrap().bind_to_tree(tree_in_doc);
 
-        // https://html.spec.whatwg.org/multipage/#update-a-style-block
-        // Handles the case when:
-        // "The element is not on the stack of open elements of an HTML parser or XML parser,
-        // and it becomes connected or disconnected."
+        
+        
+        
+        
         if tree_in_doc && !self.in_stack_of_open_elements.get() {
             self.parse_own_css();
         }
@@ -175,9 +175,9 @@ impl VirtualMethods for HTMLStyleElement {
     fn pop(&self) {
         self.super_type().unwrap().pop();
 
-        // https://html.spec.whatwg.org/multipage/#update-a-style-block
-        // Handles the case when:
-        // "The element is popped off the stack of open elements of an HTML parser or XML parser."
+        
+        
+        
         self.in_stack_of_open_elements.set(false);
         if self.upcast::<Node>().is_in_doc() {
             self.parse_own_css();

@@ -26,7 +26,7 @@ impl OESStandardDerivatives {
 impl WebGLExtension for OESStandardDerivatives {
     type Extension = OESStandardDerivatives;
     fn new(ctx: &WebGLRenderingContext) -> DomRoot<OESStandardDerivatives> {
-        reflect_dom_object(box OESStandardDerivatives::new_inherited(),
+        reflect_dom_object(Box::new(OESStandardDerivatives::new_inherited()),
                            &*ctx.global(),
                            OESStandardDerivativesBinding::Wrap)
     }
@@ -35,7 +35,7 @@ impl WebGLExtension for OESStandardDerivatives {
         if cfg!(any(target_os = "android", target_os = "ios")) {
             return ext.supports_any_gl_extension(&["GL_OES_standard_derivatives"]);
         }
-        // The standard derivatives are always available in desktop OpenGL.
+        
         true
     }
 

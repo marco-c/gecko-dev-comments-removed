@@ -226,7 +226,7 @@ pub unsafe fn create_global_object(
     
     JS_SetReservedSlot(rval.get(), DOM_OBJECT_SLOT, PrivateValue(private));
     let proto_array: Box<ProtoOrIfaceArray> =
-        box [0 as *mut JSObject; PrototypeList::PROTO_OR_IFACE_LENGTH];
+        Box::new([0 as *mut JSObject; PrototypeList::PROTO_OR_IFACE_LENGTH]);
     JS_SetReservedSlot(rval.get(),
                        DOM_PROTOTYPE_SLOT,
                        PrivateValue(Box::into_raw(proto_array) as *const libc::c_void));
@@ -235,17 +235,17 @@ pub unsafe fn create_global_object(
     JS_FireOnNewGlobalObject(cx, rval.handle());
 }
 
-// https://html.spec.whatwg.org/multipage/#htmlconstructor
+
 pub unsafe fn html_constructor<T>(window: &Window, call_args: &CallArgs) -> Fallible<DomRoot<T>>
                                   where T: DerivedFrom<Element> {
     let document = window.Document();
 
-    // Step 1
+    
     let registry = window.CustomElements();
 
-    // Step 2 is checked in the generated caller code
+    
 
-    // Step 3
+    
     rooted!(in(window.get_cx()) let new_target = call_args.new_target().to_object());
     let definition = match registry.lookup_definition_by_constructor(new_target.handle()) {
         Some(definition) => definition,
@@ -263,20 +263,20 @@ pub unsafe fn html_constructor<T>(window: &Window, call_args: &CallArgs) -> Fall
         rooted!(in(window.get_cx()) let global_object = CurrentGlobalOrNull(window.get_cx()));
 
         if definition.is_autonomous() {
-            // Step 4
-            // Since this element is autonomous, its active function object must be the HTMLElement
+            
+            
 
-            // Retrieve the constructor object for HTMLElement
+            
             HTMLElementBinding::GetConstructorObject(window.get_cx(), global_object.handle(), constructor.handle_mut());
 
         } else {
-            // Step 5
+            
             get_constructor_object_from_local_name(definition.local_name.clone(),
                                                    window.get_cx(),
                                                    global_object.handle(),
                                                    constructor.handle_mut());
         }
-        // Callee must be the same as the element interface's constructor object.
+        
         if constructor.get() != callee.get() {
             return Err(Error::Type("Custom element does not extend the proper interface".to_owned()));
         }
@@ -284,9 +284,9 @@ pub unsafe fn html_constructor<T>(window: &Window, call_args: &CallArgs) -> Fall
 
     let entry = definition.construction_stack.borrow().last().cloned();
     match entry {
-        // Step 8
+        
         None => {
-            // Step 8.1
+            
             let name = QualName::new(None, ns!(html), definition.local_name.clone());
             let element = if definition.is_autonomous() {
                 DomRoot::upcast(HTMLElement::new(name.local, None, &*document))
@@ -294,30 +294,30 @@ pub unsafe fn html_constructor<T>(window: &Window, call_args: &CallArgs) -> Fall
                 create_native_html_element(name, None, &*document, ElementCreator::ScriptCreated)
             };
 
-            // Step 8.2 is performed in the generated caller code.
+            
 
-            // Step 8.3
+            
             element.set_custom_element_state(CustomElementState::Custom);
 
-            // Step 8.4
+            
             element.set_custom_element_definition(definition.clone());
 
-            // Step 8.5
+            
             DomRoot::downcast(element).ok_or(Error::InvalidState)
         },
-        // Step 9
+        
         Some(ConstructionStackEntry::Element(element)) => {
-            // Step 11 is performed in the generated caller code.
+            
 
-            // Step 12
+            
             let mut construction_stack = definition.construction_stack.borrow_mut();
             construction_stack.pop();
             construction_stack.push(ConstructionStackEntry::AlreadyConstructedMarker);
 
-            // Step 13
+            
             DomRoot::downcast(element).ok_or(Error::InvalidState)
         },
-        // Step 10
+        
         Some(ConstructionStackEntry::AlreadyConstructedMarker) => Err(Error::InvalidState),
     }
 }
@@ -330,7 +330,7 @@ pub fn pop_current_element_queue() {
     ScriptThread::pop_current_element_queue();
 }
 
-/// Create and define the interface object of a callback interface.
+
 pub unsafe fn create_callback_interface_object(
         cx: *mut JSContext,
         global: HandleObject,
@@ -345,7 +345,7 @@ pub unsafe fn create_callback_interface_object(
     define_on_global_object(cx, global, name, rval.handle());
 }
 
-/// Create the interface prototype object of a non-callback interface.
+
 pub unsafe fn create_interface_prototype_object(
         cx: *mut JSContext,
         proto: HandleObject,
@@ -371,7 +371,7 @@ pub unsafe fn create_interface_prototype_object(
     }
 }
 
-/// Create and define the interface object of a non-callback interface.
+
 pub unsafe fn create_noncallback_interface_object(
         cx: *mut JSContext,
         global: HandleObject,
@@ -397,7 +397,7 @@ pub unsafe fn create_noncallback_interface_object(
     define_on_global_object(cx, global, name, rval.handle());
 }
 
-/// Create and define the named constructors of a non-callback interface.
+
 pub unsafe fn create_named_constructors(
         cx: *mut JSContext,
         global: HandleObject,
@@ -429,7 +429,7 @@ pub unsafe fn create_named_constructors(
     }
 }
 
-/// Create a new object with a unique type.
+
 pub unsafe fn create_object(
         cx: *mut JSContext,
         proto: HandleObject,
@@ -445,7 +445,7 @@ pub unsafe fn create_object(
     define_guarded_constants(cx, rval.handle(), constants);
 }
 
-/// Conditionally define constants on an object.
+
 pub unsafe fn define_guarded_constants(
         cx: *mut JSContext,
         obj: HandleObject,
@@ -457,7 +457,7 @@ pub unsafe fn define_guarded_constants(
     }
 }
 
-/// Conditionally define methods on an object.
+
 pub unsafe fn define_guarded_methods(
         cx: *mut JSContext,
         obj: HandleObject,
@@ -469,7 +469,7 @@ pub unsafe fn define_guarded_methods(
     }
 }
 
-/// Conditionally define properties on an object.
+
 pub unsafe fn define_guarded_properties(
         cx: *mut JSContext,
         obj: HandleObject,
@@ -481,16 +481,16 @@ pub unsafe fn define_guarded_properties(
     }
 }
 
-/// Returns whether an interface with exposure set given by `globals` should
-/// be exposed in the global object `obj`.
+
+
 pub unsafe fn is_exposed_in(object: HandleObject, globals: Globals) -> bool {
-    let unwrapped = UncheckedUnwrapObject(object.get(), /* stopAtWindowProxy = */ 0);
+    let unwrapped = UncheckedUnwrapObject(object.get(),  0);
     let dom_class = get_dom_class(unwrapped).unwrap();
     globals.contains(dom_class.global)
 }
 
-/// Define a property with a given name on the global object. Should be called
-/// through the resolve hook.
+
+
 pub unsafe fn define_on_global_object(
         cx: *mut JSContext,
         global: HandleObject,
@@ -533,7 +533,7 @@ unsafe extern "C" fn fun_to_string_hook(cx: *mut JSContext,
     ret
 }
 
-/// Hook for instanceof on interface objects.
+
 unsafe extern "C" fn has_instance_hook(cx: *mut JSContext,
         obj: HandleObject,
         value: MutableHandleValue,
@@ -547,15 +547,15 @@ unsafe extern "C" fn has_instance_hook(cx: *mut JSContext,
     }
 }
 
-/// Return whether a value is an instance of a given prototype.
-/// http://heycam.github.io/webidl/#es-interface-hasinstance
+
+
 unsafe fn has_instance(
         cx: *mut JSContext,
         interface_object: HandleObject,
         value: HandleValue)
         -> Result<bool, ()> {
     if !value.is_object() {
-        // Step 1.
+        
         return Ok(false);
     }
     rooted!(in(cx) let mut value = value.to_object());
@@ -564,31 +564,31 @@ unsafe fn has_instance(
     let object_class = &*(js_class as *const NonCallbackInterfaceObjectClass);
 
     if let Ok(dom_class) = get_dom_class(UncheckedUnwrapObject(value.get(),
-                                                               /* stopAtWindowProxy = */ 0)) {
+                                                                0)) {
         if dom_class.interface_chain[object_class.proto_depth as usize] == object_class.proto_id {
-            // Step 4.
+            
             return Ok(true);
         }
     }
 
-    // Step 2.
+    
     let global = GetGlobalForObjectCrossCompartment(interface_object.get());
     assert!(!global.is_null());
     let proto_or_iface_array = get_proto_or_iface_array(global);
     rooted!(in(cx) let prototype = (*proto_or_iface_array)[object_class.proto_id as usize]);
     assert!(!prototype.is_null());
-    // Step 3 only concern legacy callback interface objects (i.e. NodeFilter).
+    
 
     while JS_GetPrototype(cx, value.handle(), value.handle_mut()) {
         if value.is_null() {
-            // Step 5.2.
+            
             return Ok(false);
         } else if value.get() as *const _ == prototype.get() {
-            // Step 5.3.
+            
             return Ok(true);
         }
     }
-    // JS_GetPrototype threw an exception.
+    
     Err(())
 }
 
@@ -647,8 +647,8 @@ unsafe extern "C" fn non_new_constructor(
     false
 }
 
-/// Returns the constructor object for the element associated with the given local name.
-/// This list should only include elements marked with the [HTMLConstructor] extended attribute.
+
+
 pub fn get_constructor_object_from_local_name(name: LocalName,
                                               cx: *mut JSContext,
                                               global: HandleObject,

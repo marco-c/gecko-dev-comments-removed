@@ -37,49 +37,49 @@ impl HTMLDialogElement {
     pub fn new(local_name: LocalName,
                prefix: Option<Prefix>,
                document: &Document) -> DomRoot<HTMLDialogElement> {
-        Node::reflect_node(box HTMLDialogElement::new_inherited(local_name, prefix, document),
+        Node::reflect_node(Box::new(HTMLDialogElement::new_inherited(local_name, prefix, document)),
                            document,
                            HTMLDialogElementBinding::Wrap)
     }
 }
 
 impl HTMLDialogElementMethods for HTMLDialogElement {
-    // https://html.spec.whatwg.org/multipage/#dom-dialog-open
+    
     make_bool_getter!(Open, "open");
 
-    // https://html.spec.whatwg.org/multipage/#dom-dialog-open
+    
     make_bool_setter!(SetOpen, "open");
 
-    // https://html.spec.whatwg.org/multipage/#dom-dialog-returnvalue
+    
     fn ReturnValue(&self) -> DOMString {
         let return_value = self.return_value.borrow();
         return_value.clone()
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-dialog-returnvalue
+    
     fn SetReturnValue(&self, return_value: DOMString) {
         *self.return_value.borrow_mut() = return_value;
     }
 
-    // https://html.spec.whatwg.org/multipage/#dom-dialog-close
+    
     fn Close(&self, return_value: Option<DOMString>) {
         let element = self.upcast::<Element>();
         let target = self.upcast::<EventTarget>();
         let win = window_from_node(self);
 
-        // Step 1 & 2
+        
         if element.remove_attribute(&ns!(), &local_name!("open")).is_none() {
             return;
         }
 
-        // Step 3
+        
         if let Some(new_value) = return_value {
             *self.return_value.borrow_mut() = new_value;
         }
 
-        // TODO: Step 4 implement pending dialog stack removal
+        
 
-        // Step 5
+        
         win.dom_manipulation_task_source().queue_simple_event(target, atom!("close"), &win);
     }
 }

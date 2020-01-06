@@ -94,7 +94,7 @@ impl Worklet {
 
     pub fn new(window: &Window, global_type: WorkletGlobalScopeType) -> DomRoot<Worklet> {
         debug!("Creating worklet {:?}.", global_type);
-        reflect_dom_object(box Worklet::new_inherited(window, global_type), window, Wrap)
+        reflect_dom_object(Box::new(Worklet::new_inherited(window, global_type)), window, Wrap)
     }
 
     pub fn worklet_id(&self) -> WorkletId {
@@ -109,16 +109,16 @@ impl Worklet {
 
 impl WorkletMethods for Worklet {
     #[allow(unrooted_must_root)]
-    /// https://drafts.css-houdini.org/worklets/#dom-worklet-addmodule
+    
     fn AddModule(&self, module_url: USVString, options: &WorkletOptions) -> Rc<Promise> {
-        // Step 1.
+        
         let promise = Promise::new(self.window.upcast());
 
-        // Step 3.
+        
         let module_url_record = match self.window.Document().base_url().join(&module_url.0) {
             Ok(url) => url,
             Err(err) => {
-                // Step 4.
+                
                 debug!("URL {:?} parse error {:?}.", module_url.0, err);
                 promise.reject_error(Error::Syntax);
                 return promise;
@@ -126,7 +126,7 @@ impl WorkletMethods for Worklet {
         };
         debug!("Adding Worklet module {}.", module_url_record);
 
-        // Steps 6-12 in parallel.
+        
         let pending_tasks_struct = PendingTasksStruct::new();
         let global = self.window.upcast::<GlobalScope>();
         let pool = ScriptThread::worklet_thread_pool();
@@ -141,13 +141,13 @@ impl WorkletMethods for Worklet {
                                                pending_tasks_struct,
                                                &promise);
 
-        // Step 5.
+        
         debug!("Returning promise.");
         promise
     }
 }
 
-/// A guid for worklets.
+
 #[derive(Clone, Copy, Debug, Eq, Hash, JSTraceable, PartialEq)]
 pub struct WorkletId(Uuid);
 
@@ -159,7 +159,7 @@ impl WorkletId {
     }
 }
 
-/// https://drafts.css-houdini.org/worklets/#pending-tasks-struct
+
 #[derive(Clone, Debug)]
 struct PendingTasksStruct(Arc<AtomicIsize>);
 
@@ -177,62 +177,62 @@ impl PendingTasksStruct {
     }
 }
 
-/// Worklets execute in a dedicated thread pool.
-///
-/// The goal is to ensure that there is a primary worklet thread,
-/// which is able to responsively execute worklet code. In particular,
-/// worklet execution should not be delayed by GC, or by script
-/// loading.
-///
-/// To achieve this, we implement a three-thread pool, with the
-/// threads cycling between three thread roles:
-///
-///  * The primary worklet thread is the one available to execute
-///    worklet code.
-///
-///  * The hot backup thread may peform GC, but otherwise is expected
-///    to take over the primary role.
-///
-///  * The cold backup thread may peform script loading and other
-///    long-running tasks.
-///
-/// In the implementation, we use two kinds of messages:
-///
-///  * Data messages are expected to be processed quickly, and include
-///    the worklet tasks to be performed by the primary thread, as
-///    well as requests to change role or quit execution.
-///
-///  * Control messages are expected to be processed more slowly, and
-///    include script loading.
-///
-/// Data messages are targeted at a role, for example, task execution
-/// is expected to be performed by whichever thread is currently
-/// primary. Control messages are targeted at a thread, for example
-/// adding a module is performed in every thread, even if they change roles
-/// in the middle of module loading.
-///
-/// The thread pool lives in the script thread, and is initialized
-/// when a worklet adds a module. It is dropped when the script thread
-/// is dropped, and asks each of the worklet threads to quit.
-///
-/// The layout thread can end up blocking on the primary worklet thread
-/// (e.g. when invoking a paint callback), so it is important to avoid
-/// deadlock by making sure the primary worklet thread doesn't end up
-/// blocking waiting on layout. In particular, since the constellation
-/// can block waiting on layout, this means the primary worklet thread
-/// can't block waiting on the constellation. In general, the primary
-/// worklet thread shouldn't perform any blocking operations. If a worklet
-/// thread needs to do anything blocking, it should send a control
-/// message, to make sure that the blocking operation is performed
-/// by a backup thread, not by the primary thread.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Clone, JSTraceable)]
 pub struct WorkletThreadPool {
-    // Channels to send data messages to the three roles.
+    
     primary_sender: Sender<WorkletData>,
     hot_backup_sender: Sender<WorkletData>,
     cold_backup_sender: Sender<WorkletData>,
-    // Channels to send control messages to the three threads.
+    
     control_sender_0: Sender<WorkletControl>,
     control_sender_1: Sender<WorkletControl>,
     control_sender_2: Sender<WorkletControl>,
@@ -247,8 +247,8 @@ impl Drop for WorkletThreadPool {
 }
 
 impl WorkletThreadPool {
-    /// Create a new thread pool and spawn the threads.
-    /// When the thread pool is dropped, the threads will be asked to quit.
+    
+    
     pub fn spawn(global_init: WorkletGlobalScopeInit) -> WorkletThreadPool {
         let primary_role = WorkletThreadRole::new(false, false);
         let hot_backup_role = WorkletThreadRole::new(true, false);
@@ -272,10 +272,10 @@ impl WorkletThreadPool {
         }
     }
 
-    /// Loads a worklet module into every worklet thread.
-    /// If all of the threads load successfully, the promise is resolved.
-    /// If any of the threads fails to load, the promise is rejected.
-    /// https://drafts.css-houdini.org/worklets/#fetch-and-invoke-a-worklet-script
+    
+    
+    
+    
     fn fetch_and_invoke_a_worklet_script(&self,
                                          pipeline_id: PipelineId,
                                          worklet_id: WorkletId,
@@ -287,7 +287,7 @@ impl WorkletThreadPool {
                                          pending_tasks_struct: PendingTasksStruct,
                                          promise: &Rc<Promise>)
     {
-        // Send each thread a control message asking it to load the script.
+        
         for sender in &[&self.control_sender_0, &self.control_sender_1, &self.control_sender_2] {
             let _ = sender.send(WorkletControl::FetchAndInvokeAWorkletScript {
                 pipeline_id: pipeline_id,
@@ -301,13 +301,13 @@ impl WorkletThreadPool {
                 promise: TrustedPromise::new(promise.clone()),
             });
         }
-        // If any of the threads are blocked waiting on data, wake them up.
+        
         let _ = self.cold_backup_sender.send(WorkletData::WakeUp);
         let _ = self.hot_backup_sender.send(WorkletData::WakeUp);
         let _ = self.primary_sender.send(WorkletData::WakeUp);
     }
 
-    /// For testing.
+    
     pub fn test_worklet_lookup(&self, id: WorkletId, key: String) -> Option<String> {
         let (sender, receiver) = mpsc::channel();
         let msg = WorkletData::Task(id, WorkletTask::Test(TestWorkletTask::Lookup(key, sender)));
@@ -316,7 +316,7 @@ impl WorkletThreadPool {
     }
 }
 
-/// The data messages sent to worklet threads
+
 enum WorkletData {
     Task(WorkletId, WorkletTask),
     StartSwapRoles(Sender<WorkletData>),
@@ -325,7 +325,7 @@ enum WorkletData {
     Quit,
 }
 
-/// The control message sent to worklet threads
+
 enum WorkletControl {
     FetchAndInvokeAWorkletScript {
         pipeline_id: PipelineId,
@@ -340,12 +340,12 @@ enum WorkletControl {
     },
 }
 
-/// A role that a worklet thread can be playing.
-///
-/// These roles are used as tokens or capabilities, we track unique
-/// ownership using Rust's types, and use atomic swapping to exchange
-/// them between worklet threads. This ensures that each thread pool has
-/// exactly one primary, one hot backup and one cold backup.
+
+
+
+
+
+
 struct WorkletThreadRole {
     receiver: Receiver<WorkletData>,
     sender: Sender<WorkletData>,
@@ -365,42 +365,42 @@ impl WorkletThreadRole {
     }
 }
 
-/// Data to initialize a worklet thread.
+
 #[derive(Clone)]
 struct WorkletThreadInit {
-    /// Senders
+    
     primary_sender: Sender<WorkletData>,
     hot_backup_sender: Sender<WorkletData>,
     cold_backup_sender: Sender<WorkletData>,
 
-    /// Data for initializing new worklet global scopes
+    
     global_init: WorkletGlobalScopeInit,
 }
 
-/// A thread for executing worklets.
+
 #[must_root]
 struct WorkletThread {
-    /// Which role the thread is currently playing
+    
     role: WorkletThreadRole,
 
-    /// The thread's receiver for control messages
+    
     control_receiver: Receiver<WorkletControl>,
 
-    /// Senders
+    
     primary_sender: Sender<WorkletData>,
     hot_backup_sender: Sender<WorkletData>,
     cold_backup_sender: Sender<WorkletData>,
 
-    /// Data for initializing new worklet global scopes
+    
     global_init: WorkletGlobalScopeInit,
 
-    /// The global scopes created by this thread
+    
     global_scopes: HashMap<WorkletId, Dom<WorkletGlobalScope>>,
 
-    /// A one-place buffer for control messages
+    
     control_buffer: Option<WorkletControl>,
 
-    /// The JS runtime
+    
     runtime: Runtime,
     should_gc: bool,
     gc_threshold: u32,
@@ -415,16 +415,16 @@ unsafe impl JSTraceable for WorkletThread {
 }
 
 impl WorkletThread {
-    /// Spawn a new worklet thread, returning the channel to send it control messages.
+    
     #[allow(unsafe_code)]
     #[allow(unrooted_must_root)]
     fn spawn(role: WorkletThreadRole, init: WorkletThreadInit) -> Sender<WorkletControl> {
         let (control_sender, control_receiver) = mpsc::channel();
-        // TODO: name this thread
+        
         thread::spawn(move || {
-            // TODO: add a new IN_WORKLET thread state?
-            // TODO: set interrupt handler?
-            // TODO: configure the JS runtime (e.g. discourage GC, encourage agressive JIT)
+            
+            
+            
             debug!("Initializing worklet thread.");
             thread_state::initialize(thread_state::SCRIPT | thread_state::IN_WORKER);
             let roots = RootCollection::new();
@@ -447,43 +447,43 @@ impl WorkletThread {
         control_sender
     }
 
-    /// The main event loop for a worklet thread
+    
     fn run(&mut self) {
         loop {
-            // The handler for data messages
+            
             let message = self.role.receiver.recv().unwrap();
             match message {
-                // The whole point of this thread pool is to perform tasks!
+                
                 WorkletData::Task(id, task) => {
                     self.perform_a_worklet_task(id, task);
                 }
-                // To start swapping roles, get ready to perform an atomic swap,
-                // and block waiting for the other end to finish it.
-                // NOTE: the cold backup can block on the primary or the hot backup;
-                //       the hot backup can block on the primary;
-                //       the primary can block on nothing;
-                //       this total ordering on thread roles is what guarantees deadlock-freedom.
+                
+                
+                
+                
+                
+                
                 WorkletData::StartSwapRoles(sender) => {
                     let (our_swapper, their_swapper) = swapper();
                     sender.send(WorkletData::FinishSwapRoles(their_swapper)).unwrap();
                     let _ = our_swapper.swap(&mut self.role);
                 }
-                // To finish swapping roles, perform the atomic swap.
-                // The other end should have already started the swap, so this shouldn't block.
+                
+                
                 WorkletData::FinishSwapRoles(swapper) => {
                     let _ = swapper.swap(&mut self.role);
                 }
-                // Wake up! There may be control messages to process.
+                
                 WorkletData::WakeUp => {
                 }
-                // Quit!
+                
                 WorkletData::Quit => {
                     return;
                 }
             }
-            // Only process control messages if we're the cold backup,
-            // otherwise if there are outstanding control messages,
-            // try to become the cold backup.
+            
+            
+            
             if self.role.is_cold_backup {
                 if let Some(control) = self.control_buffer.take() {
                     self.process_control(control);
@@ -499,9 +499,9 @@ impl WorkletThread {
                     let _ = self.cold_backup_sender.send(msg);
                 }
             }
-            // If we are tight on memory, and we're a backup then perform a gc.
-            // If we are tight on memory, and we're the primary then try to become the hot backup.
-            // Hopefully this happens soon!
+            
+            
+            
             if self.current_memory_usage() > self.gc_threshold {
                 if self.role.is_hot_backup || self.role.is_cold_backup {
                     self.should_gc = false;
@@ -515,13 +515,13 @@ impl WorkletThread {
         }
     }
 
-    /// The current memory usage of the thread
+    
     #[allow(unsafe_code)]
     fn current_memory_usage(&self) -> u32 {
         unsafe { JS_GetGCParameter(self.runtime.rt(), JSGCParamKey::JSGC_BYTES) }
     }
 
-    /// Perform a GC.
+    
     #[allow(unsafe_code)]
     fn gc(&mut self) {
         debug!("BEGIN GC (usage = {}, threshold = {}).", self.current_memory_usage(), self.gc_threshold);
@@ -530,8 +530,8 @@ impl WorkletThread {
         debug!("END GC (usage = {}, threshold = {}).", self.current_memory_usage(), self.gc_threshold);
     }
 
-    /// Get the worklet global scope for a given worklet.
-    /// Creates the worklet global scope if it doesn't exist.
+    
+    
     fn get_worklet_global_scope(&mut self,
                                 pipeline_id: PipelineId,
                                 worklet_id: WorkletId,
@@ -551,8 +551,8 @@ impl WorkletThread {
         }
     }
 
-    /// Fetch and invoke a worklet script.
-    /// https://drafts.css-houdini.org/worklets/#fetch-and-invoke-a-worklet-script
+    
+    
     fn fetch_and_invoke_a_worklet_script(&self,
                                          global_scope: &WorkletGlobalScope,
                                          pipeline_id: PipelineId,
@@ -563,13 +563,13 @@ impl WorkletThread {
                                          promise: TrustedPromise)
     {
         debug!("Fetching from {}.", script_url);
-        // Step 1.
-        // TODO: Settings object?
+        
+        
 
-        // Step 2.
-        // TODO: Fetch a module graph, not just a single script.
-        // TODO: Fetch the script asynchronously?
-        // TODO: Caching.
+        
+        
+        
+        
         let resource_fetcher = self.global_init.resource_threads.sender();
         let request = RequestInit {
             url: script_url,
@@ -583,23 +583,23 @@ impl WorkletThread {
         let script = load_whole_resource(request, &resource_fetcher).ok()
             .and_then(|(_, bytes)| String::from_utf8(bytes).ok());
 
-        // Step 4.
-        // NOTE: the spec parses and executes the script in separate steps,
-        // but our JS API doesn't separate these, so we do the steps out of order.
-        // Also, the spec currently doesn't allow exceptions to be propagated
-        // to the main script thread.
-        // https://github.com/w3c/css-houdini-drafts/issues/407
+        
+        
+        
+        
+        
+        
         let ok = script.map(|script| global_scope.evaluate_js(&*script)).unwrap_or(false);
 
         if !ok {
-            // Step 3.
+            
             debug!("Failed to load script.");
             let old_counter = pending_tasks_struct.set_counter_to(-1);
             if old_counter > 0 {
                 self.run_in_script_thread(promise.reject_task(Error::Abort));
             }
         } else {
-            // Step 5.
+            
             debug!("Finished adding script.");
             let old_counter = pending_tasks_struct.decrement_counter_by(1);
             if old_counter == 1 {
@@ -611,7 +611,7 @@ impl WorkletThread {
         }
     }
 
-    /// Perform a task.
+    
     fn perform_a_worklet_task(&self, worklet_id: WorkletId, task: WorkletTask) {
         match self.global_scopes.get(&worklet_id) {
             Some(global) => global.perform_a_worklet_task(task),
@@ -619,7 +619,7 @@ impl WorkletThread {
         }
     }
 
-    /// Process a control message.
+    
     fn process_control(&mut self, control: WorkletControl) {
         match control {
             WorkletControl::FetchAndInvokeAWorkletScript {
@@ -641,18 +641,18 @@ impl WorkletThread {
         }
     }
 
-    /// Run a task in the main script thread.
+    
     fn run_in_script_thread<T>(&self, task: T)
     where
         T: TaskBox + 'static,
     {
-        let msg = CommonScriptMsg::Task(ScriptThreadEventCategory::WorkletEvent, box task);
+        let msg = CommonScriptMsg::Task(ScriptThreadEventCategory::WorkletEvent, Box::new(task));
         let msg = MainThreadScriptMsg::Common(msg);
         self.global_init.to_script_thread_sender.send(msg).expect("Worklet thread outlived script thread.");
     }
 }
 
-/// An executor of worklet tasks
+
 #[derive(Clone, HeapSizeOf, JSTraceable)]
 pub struct WorkletExecutor {
     worklet_id: WorkletId,

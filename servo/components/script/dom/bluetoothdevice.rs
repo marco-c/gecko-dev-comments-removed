@@ -66,9 +66,7 @@ impl BluetoothDevice {
                name: Option<DOMString>,
                context: &Bluetooth)
                -> DomRoot<BluetoothDevice> {
-        reflect_dom_object(box BluetoothDevice::new_inherited(id,
-                                                              name,
-                                                              context),
+        reflect_dom_object(Box::new(BluetoothDevice::new_inherited(id, name, context)),
                            global,
                            BluetoothDeviceBinding::Wrap)
     }
@@ -158,18 +156,18 @@ impl BluetoothDevice {
         self.global().as_window().bluetooth_thread()
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#clean-up-the-disconnected-device
+    
     #[allow(unrooted_must_root)]
     pub fn clean_up_disconnected_device(&self) {
-        // Step 1.
+        
         self.get_gatt().set_connected(false);
 
-        // TODO: Step 2: Implement activeAlgorithms internal slot for BluetoothRemoteGATTServer.
+        
 
-        // Step 3: We don't need `context`, we get the attributeInstanceMap from the device.
-        // https://github.com/WebBluetoothCG/web-bluetooth/issues/330
+        
+        
 
-        // Step 4.
+        
         let mut service_map = self.attribute_instance_map.0.borrow_mut();
         let service_ids = service_map.drain().map(|(id, _)| id).collect();
 
@@ -179,33 +177,33 @@ impl BluetoothDevice {
         let mut descriptor_map = self.attribute_instance_map.2.borrow_mut();
         let descriptor_ids = descriptor_map.drain().map(|(id, _)| id).collect();
 
-        // Step 5, 6.4, 7.
-        // TODO: Step 6: Implement `active notification context set` for BluetoothRemoteGATTCharacteristic.
+        
+        
         let _ = self.get_bluetooth_thread().send(
                      BluetoothRequest::SetRepresentedToNull(service_ids, characteristic_ids, descriptor_ids));
 
-        // Step 8.
+        
         self.upcast::<EventTarget>().fire_bubbling_event(atom!("gattserverdisconnected"));
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#garbage-collect-the-connection
+    
     #[allow(unrooted_must_root)]
     pub fn garbage_collect_the_connection(&self) -> ErrorResult {
-        // Step 1: TODO: Check if other systems using this device.
+        
 
-        // Step 2.
+        
         let context = self.get_context();
         for (id, device) in context.get_device_map().borrow().iter() {
-            // Step 2.1 - 2.2.
+            
             if id == &self.Id().to_string() {
                 if device.get_gatt().Connected() {
                     return Ok(());
                 }
-                // TODO: Step 2.3: Implement activeAlgorithms internal slot for BluetoothRemoteGATTServer.
+                
             }
         }
 
-        // Step 3.
+        
         let (sender, receiver) = ipc::channel().unwrap();
         self.get_bluetooth_thread().send(
             BluetoothRequest::GATTServerDisconnect(String::from(self.Id()), sender)).unwrap();
@@ -214,64 +212,64 @@ impl BluetoothDevice {
 }
 
 impl BluetoothDeviceMethods for BluetoothDevice {
-     // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-id
+     
     fn Id(&self) -> DOMString {
         self.id.clone()
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-name
+    
     fn GetName(&self) -> Option<DOMString> {
         self.name.clone()
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-gatt
+    
     fn GetGatt(&self) -> Option<DomRoot<BluetoothRemoteGATTServer>> {
-        // Step 1.
+        
         if self.global().as_window().bluetooth_extra_permission_data()
                .allowed_devices_contains_id(self.id.clone()) && !self.is_represented_device_null() {
             return Some(self.get_gatt())
         }
-        // Step 2.
+        
         None
     }
 
     #[allow(unrooted_must_root)]
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-watchadvertisements
+    
     fn WatchAdvertisements(&self) -> Rc<Promise> {
         let p = Promise::new(&self.global());
         let sender = response_async(&p, self);
-        // TODO: Step 1.
-        // Note: Steps 2 - 3 are implemented in components/bluetooth/lib.rs in watch_advertisements function
-        // and in handle_response function.
+        
+        
+        
         self.get_bluetooth_thread().send(
             BluetoothRequest::WatchAdvertisements(String::from(self.Id()), sender)).unwrap();
         return p;
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-unwatchadvertisements
+    
     fn UnwatchAdvertisements(&self) {
-        // Step 1.
+        
         self.watching_advertisements.set(false)
-        // TODO: Step 2.
+        
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-watchingadvertisements
+    
     fn WatchingAdvertisements(&self) -> bool {
         self.watching_advertisements.get()
     }
 
-    // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdeviceeventhandlers-ongattserverdisconnected
+    
     event_handler!(gattserverdisconnected, GetOngattserverdisconnected, SetOngattserverdisconnected);
 }
 
 impl AsyncBluetoothListener for BluetoothDevice {
     fn handle_response(&self, response: BluetoothResponse, promise: &Rc<Promise>) {
         match response {
-            // https://webbluetoothcg.github.io/web-bluetooth/#dom-bluetoothdevice-unwatchadvertisements
+            
             BluetoothResponse::WatchAdvertisements(_result) => {
-                // Step 3.1.
+                
                 self.watching_advertisements.set(true);
-                // Step 3.2.
+                
                 promise.resolve_native(&());
             },
             _ => promise.reject_error(Error::Type("Something went wrong...".to_owned())),

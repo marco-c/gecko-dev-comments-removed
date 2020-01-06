@@ -77,7 +77,7 @@ impl WebGLFramebuffer {
                renderer: WebGLMsgSender,
                id: WebGLFramebufferId)
                -> DomRoot<WebGLFramebuffer> {
-        reflect_dom_object(box WebGLFramebuffer::new_inherited(renderer, id),
+        reflect_dom_object(Box::new(WebGLFramebuffer::new_inherited(renderer, id)),
                            window,
                            WebGLFramebufferBinding::Wrap)
     }
@@ -90,9 +90,9 @@ impl WebGLFramebuffer {
     }
 
     pub fn bind(&self, target: u32) {
-        // Update the framebuffer status on binding.  It may have
-        // changed if its attachments were resized or deleted while
-        // we've been unbound.
+        
+        
+        
         self.update_status();
 
         self.target.set(Some(target));
@@ -126,19 +126,19 @@ impl WebGLFramebuffer {
         let has_zs = zs.is_some();
         let attachments = [&*c, &*z, &*s, &*zs];
 
-        // From the WebGL spec, 6.6 ("Framebuffer Object Attachments"):
-        //
-        //    "In the WebGL API, it is an error to concurrently attach
-        //     renderbuffers to the following combinations of
-        //     attachment points:
-        //
-        //     DEPTH_ATTACHMENT + DEPTH_STENCIL_ATTACHMENT
-        //     STENCIL_ATTACHMENT + DEPTH_STENCIL_ATTACHMENT
-        //     DEPTH_ATTACHMENT + STENCIL_ATTACHMENT
-        //
-        //     If any of the constraints above are violated, then:
-        //
-        //     checkFramebufferStatus must return FRAMEBUFFER_UNSUPPORTED."
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if (has_zs && (has_z || has_s)) ||
             (has_z && has_s) {
             self.status.set(constants::FRAMEBUFFER_UNSUPPORTED);
@@ -147,7 +147,7 @@ impl WebGLFramebuffer {
 
         let mut fb_size = None;
         for attachment in &attachments {
-            // Get the size of this attachment.
+            
             let size = match **attachment {
                 Some(WebGLFramebufferAttachment::Renderbuffer(ref att_rb)) => {
                     att_rb.size()
@@ -159,8 +159,8 @@ impl WebGLFramebuffer {
                 None => None,
             };
 
-            // Make sure that, if we've found any other attachment,
-            // that the size matches.
+            
+            
             if size.is_some() {
                 if fb_size.is_some() && size != fb_size {
                     self.status.set(constants::FRAMEBUFFER_INCOMPLETE_DIMENSIONS);
@@ -224,29 +224,29 @@ impl WebGLFramebuffer {
         };
 
         let tex_id = match texture {
-            // Note, from the GLES 2.0.25 spec, page 113:
-            //      "If texture is zero, then textarget and level are ignored."
+            
+            
             Some(texture) => {
-                // From the GLES 2.0.25 spec, page 113:
-                //
-                //     "level specifies the mipmap level of the texture image
-                //      to be attached to the framebuffer and must be
-                //      0. Otherwise, INVALID_VALUE is generated."
+                
+                
+                
+                
+                
                 if level != 0 {
                     return Err(WebGLError::InvalidValue);
                 }
 
-                //     "If texture is not zero, then texture must either
-                //      name an existing texture object with an target of
-                //      textarget, or texture must name an existing cube
-                //      map texture and textarget must be one of:
-                //      TEXTURE_CUBE_MAP_POSITIVE_X,
-                //      TEXTURE_CUBE_MAP_POSITIVE_Y,
-                //      TEXTURE_CUBE_MAP_POSITIVE_Z,
-                //      TEXTURE_CUBE_MAP_NEGATIVE_X,
-                //      TEXTURE_CUBE_MAP_NEGATIVE_Y, or
-                //      TEXTURE_CUBE_MAP_NEGATIVE_Z. Otherwise,
-                //      INVALID_OPERATION is generated."
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 let is_cube = match textarget {
                     constants::TEXTURE_2D => false,
 
