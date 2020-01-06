@@ -76,7 +76,9 @@ static inline bool FlattenedTreeParentIsParent(const nsINode* aNode)
 
   
   
-  if (Type == nsIContent::eForStyle && aNode->HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT) &&
+  
+  if (Type == nsIContent::eForStyle &&
+      aNode->HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT) &&
       aNode->OwnerDoc()->GetRootElement() == aNode->GetParentNode())
   {
     return false;
@@ -84,8 +86,10 @@ static inline bool FlattenedTreeParentIsParent(const nsINode* aNode)
 
   
   
+  
+  
   nsIContent* parent = aNode->GetParent();
-  if (parent && parent->GetShadowRoot()) {
+  if (parent && (parent->GetShadowRoot() || parent->GetXBLBinding())) {
     return false;
   }
 
