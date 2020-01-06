@@ -19,7 +19,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 40
+#define DATABASE_SCHEMA_VERSION 41
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -280,21 +280,6 @@ protected:
   
 
 
-  nsresult MigrateV13Up();
-  nsresult MigrateV15Up();
-  nsresult MigrateV17Up();
-  nsresult MigrateV18Up();
-  nsresult MigrateV19Up();
-  nsresult MigrateV20Up();
-  nsresult MigrateV21Up();
-  nsresult MigrateV22Up();
-  nsresult MigrateV23Up();
-  nsresult MigrateV24Up();
-  nsresult MigrateV25Up();
-  nsresult MigrateV26Up();
-  nsresult MigrateV27Up();
-  nsresult MigrateV28Up();
-  nsresult MigrateV30Up();
   nsresult MigrateV31Up();
   nsresult MigrateV32Up();
   nsresult MigrateV33Up();
@@ -305,6 +290,7 @@ protected:
   nsresult MigrateV38Up();
   nsresult MigrateV39Up();
   nsresult MigrateV40Up();
+  nsresult MigrateV41Up();
 
   nsresult UpdateBookmarkRootTitles();
 
