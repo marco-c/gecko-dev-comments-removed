@@ -14,6 +14,8 @@ config = {
         'build',
         
         'package',
+        'dump-symbols',
+        'upload',
     ],
 
     'tooltool_manifest_file': "android.manifest",
@@ -25,6 +27,8 @@ config = {
     },
     'dump_syms_binary': 'dump_syms',
     'arch': 'arm',
+    
+    'min_sdk': 16,
     'use_mock': True,
     'mock_target': 'mozilla-centos6-x86_64',
     'mock_packages': ['make', 'git', 'nasm', 'glibc-devel.i686',
@@ -36,4 +40,7 @@ config = {
         ('/tools/tooltool.py', '/builds/tooltool.py'),
     ],
     'operating_system': 'android',
+    'partial_env': {
+        'PATH': '%(abs_work_dir)s/android-sdk-linux/tools:%(PATH)s',
+    },
 }
