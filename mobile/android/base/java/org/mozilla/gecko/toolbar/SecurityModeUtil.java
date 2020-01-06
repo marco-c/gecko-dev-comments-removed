@@ -27,31 +27,32 @@ public class SecurityModeUtil {
 
 
 
+
     public enum IconType {
-        UNKNOWN,
-        DEFAULT,
-        SEARCH,
-        LOCK_SECURE,
-        LOCK_WARNING, 
-        LOCK_INSECURE,
-        WARNING,
-        TRACKING_CONTENT_BLOCKED,
-        TRACKING_CONTENT_LOADED
-    }
+        UNKNOWN(0),
+        DEFAULT(0),
+        SEARCH(6),
+        LOCK_SECURE(1),
+        LOCK_WARNING(-1), 
+        LOCK_INSECURE(3),
+        WARNING(2),
+        TRACKING_CONTENT_BLOCKED(4),
+        TRACKING_CONTENT_LOADED(5);
 
-    
-    private static final Map<IconType, Integer> imgLevelMap = new HashMap<>();
+        private final int imageLevel;
 
-    
-    static {
-        imgLevelMap.put(IconType.UNKNOWN, 0);
-        imgLevelMap.put(IconType.DEFAULT, 0);
-        imgLevelMap.put(IconType.LOCK_SECURE, 1);
-        imgLevelMap.put(IconType.WARNING, 2);
-        imgLevelMap.put(IconType.LOCK_INSECURE, 3);
-        imgLevelMap.put(IconType.TRACKING_CONTENT_BLOCKED, 4);
-        imgLevelMap.put(IconType.TRACKING_CONTENT_LOADED, 5);
-        imgLevelMap.put(IconType.SEARCH, 6);
+        private IconType(int imageLevel) {
+            this.imageLevel = imageLevel;
+        }
+
+        
+
+
+
+
+        public int getImageLevel() {
+            return imageLevel;
+        }
     }
 
     
@@ -63,18 +64,6 @@ public class SecurityModeUtil {
         securityModeMap.put(SecurityMode.IDENTIFIED, IconType.LOCK_SECURE);
         securityModeMap.put(SecurityMode.VERIFIED, IconType.LOCK_SECURE);
         securityModeMap.put(SecurityMode.CHROMEUI, IconType.UNKNOWN);
-    }
-
-    
-
-
-
-
-
-    public static int getImageLevel(@NonNull final IconType type) {
-        return imgLevelMap.containsKey(type)
-                ? imgLevelMap.get(type)
-                : imgLevelMap.get(IconType.UNKNOWN);
     }
 
     
