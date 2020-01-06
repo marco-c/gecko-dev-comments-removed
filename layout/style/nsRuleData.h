@@ -21,8 +21,11 @@
 #include "nsStyleStructFwd.h"
 
 class nsPresContext;
-class nsStyleContext;
 struct nsRuleData;
+
+namespace mozilla {
+class GeckoStyleContext;
+} 
 
 typedef void (*nsPostResolveFunc)(void* aStyleStruct, nsRuleData* aData);
 
@@ -31,7 +34,7 @@ struct nsRuleData final : mozilla::GenericSpecifiedValues
   mozilla::RuleNodeCacheConditions mConditions;
   bool mIsImportantRule;
   mozilla::SheetType mLevel;
-  nsStyleContext* const mStyleContext;
+  mozilla::GeckoStyleContext* const mStyleContext;
 
   
   
@@ -52,7 +55,7 @@ struct nsRuleData final : mozilla::GenericSpecifiedValues
   nsRuleData(uint32_t aSIDs,
              nsCSSValue* aValueStorage,
              nsPresContext* aContext,
-             nsStyleContext* aStyleContext);
+             mozilla::GeckoStyleContext* aStyleContext);
 
 #ifdef DEBUG
   ~nsRuleData();

@@ -4096,21 +4096,30 @@ nsTextPaintStyle::InitSelectionColorsAndShadow()
 
   if (selectionElement &&
       selectionStatus == nsISelectionController::SELECTION_ON) {
-    RefPtr<nsStyleContext> sc = nullptr;
-    sc = mPresContext->StyleSet()->
-      ProbePseudoElementStyle(selectionElement,
-                              CSSPseudoElementType::mozSelection,
-                              mFrame->StyleContext());
+    RefPtr<nsStyleContext> sc =
+      mPresContext->StyleSet()->
+        ProbePseudoElementStyle(selectionElement,
+                                CSSPseudoElementType::mozSelection,
+                                mFrame->StyleContext());
     
     if (sc) {
       mSelectionBGColor =
         sc->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
       mSelectionTextColor =
         sc->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor);
-      mHasSelectionShadow =
-        nsRuleNode::HasAuthorSpecifiedRules(sc,
-                                            NS_AUTHOR_SPECIFIED_TEXT_SHADOW,
-                                            true);
+      if (auto* geckoStyleContext = sc->GetAsGecko()) {
+        mHasSelectionShadow =
+          nsRuleNode::HasAuthorSpecifiedRules(geckoStyleContext,
+                                              NS_AUTHOR_SPECIFIED_TEXT_SHADOW,
+                                              true);
+      } else {
+        NS_WARNING("stylo: Need a way to get HasAuthorSpecifiedRules from a "
+                   "raw style context");
+        
+        
+        
+        mHasSelectionShadow = true;
+      }
       if (mHasSelectionShadow) {
         mSelectionShadow = sc->StyleText()->mTextShadow;
       }

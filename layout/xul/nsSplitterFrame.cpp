@@ -285,11 +285,16 @@ nsSplitterFrame::Init(nsIContent*       aContent,
                                            nsGkAtoms::orient)) {
         aContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
                           NS_LITERAL_STRING("vertical"), false);
-        GeckoStyleContext* parentStyleContext = StyleContext()->GetParent();
-        RefPtr<nsStyleContext> newContext = PresContext()->StyleSet()->
-          ResolveStyleFor(aContent->AsElement(), parentStyleContext,
-                          LazyComputeBehavior::Allow);
-        SetStyleContextWithoutNotification(newContext);
+        if (StyleContext()->IsGecko()) {
+          
+          
+          GeckoStyleContext* parentStyleContext =
+            StyleContext()->AsGecko()->GetParent();
+          RefPtr<nsStyleContext> newContext = PresContext()->StyleSet()->
+            ResolveStyleFor(aContent->AsElement(), parentStyleContext,
+                            LazyComputeBehavior::Allow);
+          SetStyleContextWithoutNotification(newContext);
+        }
       }
     }
   }

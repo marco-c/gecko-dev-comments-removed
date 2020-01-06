@@ -32,8 +32,8 @@ struct nsCSSValuePairList;
 struct nsRuleData;
 
 namespace mozilla {
-  class GeckoStyleContext;
-}
+class GeckoStyleContext;
+} 
 
 struct nsInheritedStyleData
 {
@@ -992,7 +992,7 @@ public:
   #undef STYLE_STRUCT_INHERITED
 
   static bool
-    HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
+    HasAuthorSpecifiedRules(mozilla::GeckoStyleContext* aStyleContext,
                             uint32_t ruleTypeMask,
                             bool aAuthorColorsAllowed);
 
@@ -1010,6 +1010,12 @@ public:
   
   static nscoord CalcLengthWithInitialFont(nsPresContext* aPresContext,
                                            const nsCSSValue& aValue);
+
+  
+  
+  
+  
+  
   
   static nscoord CalcLength(const nsCSSValue& aValue,
                             nsStyleContext* aStyleContext,

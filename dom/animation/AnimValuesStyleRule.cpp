@@ -5,8 +5,8 @@
 
 
 #include "AnimValuesStyleRule.h"
-#include "nsRuleData.h"
 #include "mozilla/GeckoStyleContext.h"
+#include "nsRuleData.h"
 
 namespace mozilla {
 
@@ -15,7 +15,7 @@ NS_IMPL_ISUPPORTS(AnimValuesStyleRule, nsIStyleRule)
 void
 AnimValuesStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
-  GeckoStyleContext *contextParent = aRuleData->mStyleContext->GetParent();
+  GeckoStyleContext* contextParent = aRuleData->mStyleContext->GetParent();
   if (contextParent && contextParent->HasPseudoElementData()) {
     
     

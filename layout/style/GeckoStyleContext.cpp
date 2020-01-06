@@ -776,7 +776,7 @@ GeckoStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
   if (mPseudoTag == nsCSSPseudoElements::firstLetter) {
     const nsStyleTextReset* textReset = StyleTextReset();
     if (textReset->mInitialLetterSize != 0.0f) {
-      nsStyleContext* containerSC = mParent;
+      GeckoStyleContext* containerSC = GetParent();
       const nsStyleDisplay* containerDisp = containerSC->StyleDisplay();
       while (containerDisp->mDisplay == mozilla::StyleDisplay::Contents) {
         if (!containerSC->GetParent()) {
@@ -938,7 +938,7 @@ GeckoStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     
     
     
-    nsStyleContext* containerContext = mParent;
+    GeckoStyleContext* containerContext = GetParent();
     const nsStyleDisplay* containerDisp = containerContext->StyleDisplay();
     while (containerDisp->mDisplay == mozilla::StyleDisplay::Contents) {
       if (!containerContext->GetParent()) {
