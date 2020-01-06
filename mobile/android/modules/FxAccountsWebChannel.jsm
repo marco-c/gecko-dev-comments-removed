@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 
 
@@ -379,7 +380,7 @@ var singleton;
 
 
 
-this.EnsureFxAccountsWebChannel = function() {
+this.EnsureFxAccountsWebChannel = () => {
   if (!singleton) {
     let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
     

@@ -10,7 +10,7 @@
 
 this.EXPORTED_SYMBOLS = ["NS_ASSERT"];
 
-var gTraceOnAssert = true;
+var gTraceOnAssert = false;
 
 
 
@@ -47,8 +47,6 @@ this.NS_ASSERT = function NS_ASSERT(condition, message) {
     }
   } catch (ex) {}
 
-  
-  var caller = arguments.callee.caller;
   var assertionText = "ASSERT: " + message + "\n";
 
   
@@ -63,6 +61,8 @@ this.NS_ASSERT = function NS_ASSERT(condition, message) {
   if (gTraceOnAssert) {
     stackText = "Stack Trace: \n";
     var count = 0;
+    
+    var caller = arguments.callee.caller;
     while (caller) {
       stackText += count++ + ":" + caller.name + "(";
       for (var i = 0; i < caller.arguments.length; ++i) {

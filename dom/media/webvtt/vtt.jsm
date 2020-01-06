@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 this.EXPORTED_SYMBOLS = ["WebVTT"];
 
@@ -351,7 +352,6 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
         return null;
       }
       var element = window.document.createElement(tagName);
-      element.localName = tagName;
       var name = TAG_ANNOTATION[type];
       if (name) {
         element[name] = annotation ? annotation.trim() : "";

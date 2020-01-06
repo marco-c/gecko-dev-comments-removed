@@ -3,6 +3,7 @@
 
 
 
+"use strict";
 
 this.EXPORTED_SYMBOLS = ["OnRefTestLoad", "OnRefTestUnload"];
 
@@ -852,9 +853,9 @@ function AddTestItem(aTest, aFilter)
     if (!aFilter)
         aFilter = [null, [], false];
 
-    globalFilter = aFilter[0];
-    manifestFilter = aFilter[1];
-    invertManifest = aFilter[2];
+    var globalFilter = aFilter[0];
+    var manifestFilter = aFilter[1];
+    var invertManifest = aFilter[2];
     if ((globalFilter && !globalFilter.test(aTest.url1.spec)) ||
         (manifestFilter &&
          !(invertManifest ^ manifestFilter.test(aTest.url1.spec))))
@@ -1495,7 +1496,7 @@ function StartCurrentURI(aState)
 
 function DoneTests()
 {
-    logger.suiteEnd(extra={'results': gTestResults});
+    logger.suiteEnd({'results': gTestResults});
     logger.info("Slowest test took " + gSlowestTestTime + "ms (" + gSlowestTestURL + ")");
     logger.info("Total canvas count = " + gRecycledCanvases.length);
     if (gFailedUseWidgetLayers) {

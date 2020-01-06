@@ -315,7 +315,11 @@ EngineSynchronizer.prototype = {
         this._log.trace("The " + engineName + " engine was disabled remotely.");
 
         
-        engine.enabled = false;
+        try {
+          engine.enabled = false;
+        } catch (e) {
+          this._log.trace("Failed to disable engine " + engineName);
+        }
       }
     }
 

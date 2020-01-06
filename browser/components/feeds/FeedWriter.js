@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -78,6 +79,13 @@ function FeedWriter() {
   this._selectedAppMenuItem = null;
   this._subscribeCallback = null;
   this._defaultHandlerMenuItem = null;
+
+
+  XPCOMUtils.defineLazyGetter(this, "_mm", () =>
+    this._window.QueryInterface(Ci.nsIInterfaceRequestor).
+                 getInterface(Ci.nsIDocShell).
+                 QueryInterface(Ci.nsIInterfaceRequestor).
+                 getInterface(Ci.nsIContentFrameMessageManager));
 }
 
 FeedWriter.prototype = {
@@ -975,15 +983,6 @@ FeedWriter.prototype = {
     } else {
       subscribeCallback();
     }
-  },
-
-  get _mm() {
-    let mm = this._window.QueryInterface(Ci.nsIInterfaceRequestor).
-                          getInterface(Ci.nsIDocShell).
-                          QueryInterface(Ci.nsIInterfaceRequestor).
-                          getInterface(Ci.nsIContentFrameMessageManager);
-    delete this._mm;
-    return this._mm = mm;
   },
 
   classID: FEEDWRITER_CID,

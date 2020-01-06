@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 
 
@@ -441,6 +442,8 @@ function dbCreateAsyncStatement(aQuery, aParams, aBindingArrays) {
   return stmt;
 }
 
+var dbMigrate;
+
 
 
 
@@ -498,7 +501,7 @@ function dbCreate() {
   _dbConnection.schemaVersion = DB_SCHEMA_VERSION;
 }
 
-function dbMigrate(oldVersion) {
+dbMigrate = (oldVersion) => {
   log("Attempting to migrate from version " + oldVersion);
 
   if (oldVersion > DB_SCHEMA_VERSION) {
@@ -539,7 +542,7 @@ function dbMigrate(oldVersion) {
   _dbConnection.commitTransaction();
 
   log("DB migration completed.");
-}
+};
 
 
 
