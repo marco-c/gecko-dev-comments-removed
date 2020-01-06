@@ -373,6 +373,26 @@ mozilla::Keyframe* Gecko_AnimationAppendKeyframe(RawGeckoKeyframeListBorrowedMut
                                                  const nsTimingFunction* timingFunction);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  float offset,
+  const nsTimingFunction* timingFunction);
+
+
 void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
 
 
