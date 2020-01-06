@@ -53,6 +53,7 @@ var openInspectorSidebarTab = Task.async(function* (id) {
 
   info("Selecting the " + id + " sidebar");
 
+  let onSidebarSelect = inspector.sidebar.once("select");
   if (id === "computedview" || id === "layoutview") {
     
     let onBoxModelViewReady = inspector.once("boxmodel-view-updated");
@@ -61,6 +62,7 @@ var openInspectorSidebarTab = Task.async(function* (id) {
   } else {
     inspector.sidebar.select(id);
   }
+  yield onSidebarSelect;
 
   return {
     toolbox,
