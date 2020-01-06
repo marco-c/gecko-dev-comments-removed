@@ -50,11 +50,6 @@ public class FxAccountDeletedService extends IntentService {
   @Override
   protected void onHandleIntent(final Intent intent) {
     
-    
-    
-    AndroidFxAccount.invalidateCaches();
-
-    
     if (intent == null) {
       Logger.debug(LOG_TAG, "Short-circuiting on null intent.");
       return;

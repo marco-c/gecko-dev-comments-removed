@@ -160,21 +160,6 @@ public class AndroidFxAccount {
 
 
 
-  private static final ConcurrentHashMap<String, ExtendedJSONObject> perAccountBundleCache =
-      new ConcurrentHashMap<>();
-
-  public static void invalidateCaches() {
-    perAccountBundleCache.clear();
-  }
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -244,10 +229,6 @@ public class AndroidFxAccount {
     
     accountManager.setUserData(account, ACCOUNT_KEY_UID, unpickledAccountUID);
 
-    
-    
-    invalidateCaches();
-
     return unpickledAccountUID;
   }
 
@@ -256,28 +237,15 @@ public class AndroidFxAccount {
 
 
   private synchronized void persistBundle(ExtendedJSONObject bundle) {
-    perAccountBundleCache.put(getAccountUID(), bundle);
     accountManager.setUserData(account, ACCOUNT_KEY_DESCRIPTOR, bundle.toJSONString());
-  }
-
-   ExtendedJSONObject unbundle() {
-    return unbundle(true);
   }
 
   
 
 
 
-  private synchronized ExtendedJSONObject unbundle(boolean allowCachedBundle) {
-    final String accountUID = getAccountUID();
-
-    if (allowCachedBundle) {
-      final ExtendedJSONObject cachedBundle = perAccountBundleCache.get(accountUID);
-      if (cachedBundle != null) {
-        Logger.debug(LOG_TAG, "Returning cached account bundle.");
-        return cachedBundle;
-      }
-    }
+   synchronized ExtendedJSONObject unbundle() {
+    final String bundleString = accountManager.getUserData(account, ACCOUNT_KEY_DESCRIPTOR);
 
     final int version = getAccountVersion();
     if (version < CURRENT_ACCOUNT_VERSION) {
@@ -288,17 +256,14 @@ public class AndroidFxAccount {
 
     if (version > CURRENT_ACCOUNT_VERSION) {
       
-      return null;
+      throw new IllegalStateException("Invalid account bundle version. Current: " + CURRENT_ACCOUNT_VERSION + ", bundle version: " + version);
     }
 
-    String bundleString = accountManager.getUserData(account, ACCOUNT_KEY_DESCRIPTOR);
     if (bundleString == null) {
       return null;
     }
-    final ExtendedJSONObject bundle = unbundleAccountV2(bundleString);
-    perAccountBundleCache.put(accountUID, bundle);
-    Logger.info(LOG_TAG, "Account bundle persisted to cache.");
-    return bundle;
+
+    return unbundleAccountV2(bundleString);
   }
 
   private String getBundleData(String key) {
@@ -1135,7 +1100,6 @@ public class AndroidFxAccount {
             account = updatedAccount;
             migrateSyncSettingsCallback.run();
 
-            invalidateCaches();
             callback.run();
           }
         } catch (OperationCanceledException | IOException | AuthenticatorException e) {
@@ -1192,9 +1156,6 @@ public class AndroidFxAccount {
         }
 
         
-
-        
-        invalidateCaches();
 
         
         final Account newAccount = new Account(email, FxAccountConstants.ACCOUNT_TYPE);
