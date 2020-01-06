@@ -272,7 +272,10 @@ AsyncImagePipelineManager::ApplyAsyncImages()
       
       
       
-      mApi->UpdateResources(resourceUpdates);
+      mApi->UpdatePipelineResources(resourceUpdates, pipelineId, epoch);
+      if (pipeline->mCurrentTexture) {
+        HoldExternalImage(pipelineId, epoch, pipeline->mCurrentTexture->AsWebRenderTextureHost());
+      }
       continue;
     }
 
