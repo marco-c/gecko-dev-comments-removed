@@ -334,6 +334,16 @@ public class FxAccountAuthenticator extends AbstractAccountAuthenticator {
   @Override
   public Bundle getAccountRemovalAllowed(final AccountAuthenticatorResponse response, Account account)
       throws NetworkErrorException {
+    
+    
+    final String renameInProgress = accountManager.getUserData(
+            account, AndroidFxAccount.ACCOUNT_KEY_RENAME_IN_PROGRESS);
+    if (AndroidFxAccount.ACCOUNT_VALUE_RENAME_IN_PROGRESS.equals(renameInProgress)) {
+      final Bundle overrideResult = new Bundle();
+      overrideResult.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, true);
+      return overrideResult;
+    }
+
     Bundle result = super.getAccountRemovalAllowed(response, account);
 
     if (result == null ||
