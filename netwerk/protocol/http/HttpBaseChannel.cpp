@@ -3651,6 +3651,16 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
         mAllRedirectsPassTimingAllowCheck &&
         oldTimedChannel->TimingAllowCheck(principal));
     }
+
+    
+    
+    
+    newTimedChannel->SetLaunchServiceWorkerStart(mLaunchServiceWorkerStart);
+    newTimedChannel->SetLaunchServiceWorkerEnd(mLaunchServiceWorkerEnd);
+    newTimedChannel->SetDispatchFetchEventStart(mDispatchFetchEventStart);
+    newTimedChannel->SetDispatchFetchEventEnd(mDispatchFetchEventEnd);
+    newTimedChannel->SetHandleFetchEventStart(mHandleFetchEventStart);
+    newTimedChannel->SetHandleFetchEventEnd(mHandleFetchEventEnd);
   }
 
   
