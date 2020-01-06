@@ -2,19 +2,19 @@
 
 "use strict";
 
-
-
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://gre/modules/Downloads.jsm");
 
 const gServer = createHttpServer();
 gServer.registerDirectory("/data/", do_get_file("data"));
 
+gServer.registerPathHandler("/dir/", (_, res) => res.write("length=8"));
+
 const WINDOWS = AppConstants.platform == "win";
 
-const BASE = `http://localhost:${gServer.identity.primaryPort}/data`;
+const BASE = `http://localhost:${gServer.identity.primaryPort}/`;
 const FILE_NAME = "file_download.txt";
-const FILE_URL = BASE + "/" + FILE_NAME;
+const FILE_URL = BASE + "data/" + FILE_NAME;
 const FILE_NAME_UNIQUE = "file_download(1).txt";
 const FILE_LEN = 46;
 
@@ -237,6 +237,17 @@ add_task(async function test_downloads() {
   });
 
   
+  if (WINDOWS) {
+    await download({
+      url: FILE_URL,
+      filename: "like:this",
+    }).then(msg => {
+      equal(msg.status, "error", "downloads.download() fails with illegal chars");
+      equal(msg.errmsg, "filename must not contain illegal characters", "error message correct");
+    });
+  }
+
+  
   const BLOB_STRING = "Hello, world";
   await testDownload({
     blobme: [BLOB_STRING],
@@ -249,6 +260,11 @@ add_task(async function test_downloads() {
     blobme: [BLOB_STRING],
   }, "download", BLOB_STRING.length, "blob url with no filename");
   extension.sendMessage("killTheBlob");
+
+  
+  await testDownload({
+    url: BASE + "dir/",
+  }, "download", 8, "normal url with empty filename");
 
   await extension.unload();
 });
