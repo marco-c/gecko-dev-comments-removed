@@ -494,6 +494,20 @@ private:
     return broker->Readlink(path, buf, size);
   }
 
+  static intptr_t ReadlinkAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto buf = reinterpret_cast<char*>(aArgs.args[2]);
+    auto size = static_cast<size_t>(aArgs.args[3]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative readlinkat(%d, %s, %p, %u)",
+                        fd, path, buf, size);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Readlink(path, buf, size);
+  }
+
   static intptr_t GetPPidTrap(ArgsRef aArgs, void* aux) {
     
     
@@ -629,6 +643,8 @@ public:
         return Trap(UnlinkTrap, mBroker);
       case __NR_readlink:
         return Trap(ReadlinkTrap, mBroker);
+      case __NR_readlinkat:
+        return Trap(ReadlinkAtTrap, mBroker);
       }
     } else {
       
@@ -648,6 +664,7 @@ public:
       case __NR_rmdir:
       case __NR_unlink:
       case __NR_readlink:
+      case __NR_readlinkat:
         return Allow();
       }
     }
@@ -679,15 +696,6 @@ public:
       
     case __NR_utime:
       return Error(EPERM);
-#endif
-
-    case __NR_readlinkat:
-#ifdef DESKTOP
-      
-      return Allow();
-#else
-      
-      return Error(EINVAL);
 #endif
 
     CASES_FOR_select:
