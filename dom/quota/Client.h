@@ -99,6 +99,12 @@ public:
   }
 
   virtual nsresult
+  UpgradeStorageFrom2_0To3_0(nsIFile* aDirectory)
+  {
+    return NS_OK;
+  }
+
+  virtual nsresult
   InitOrigin(PersistenceType aPersistenceType,
              const nsACString& aGroup,
              const nsACString& aOrigin,
