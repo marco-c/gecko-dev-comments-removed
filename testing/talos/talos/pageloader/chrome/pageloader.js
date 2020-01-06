@@ -384,7 +384,7 @@ function plLoadPage() {
   failTimeout.register(loadFail, timeout);
 
   
-  TalosParentProfiler.mark("Opening " + pages[pageIndex].url.path);
+  TalosParentProfiler.mark("Opening " + pages[pageIndex].url.pathQueryRef);
 
   if (reportRSS) {
     collectMemory(startAndLoadURI, pageName);
