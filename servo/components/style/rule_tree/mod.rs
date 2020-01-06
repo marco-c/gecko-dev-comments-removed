@@ -1411,13 +1411,41 @@ impl Drop for StrongRuleNode {
         
         
         
+        
+        
+        
+        
+        
+        
+        
         if old_head.is_null() {
             debug_assert!(!thread_state::get().is_worker() &&
                           (thread_state::get().is_layout() ||
                            thread_state::get().is_script()));
-            unsafe { node.remove_from_child_list(); }
-            log_drop(self.ptr());
-            let _ = unsafe { Box::from_raw(self.ptr()) };
+            
+            debug_assert!(node.next_free.load(Ordering::Relaxed).is_null());
+            node.next_free.store(FREE_LIST_SENTINEL, Ordering::Relaxed);
+            free_list.store(node as *const _ as *mut _, Ordering::Relaxed);
+
+            
+            
+            
+            
+            
+            
+            
+            let strong_root: StrongRuleNode = node.root.as_ref().unwrap().upgrade();
+            unsafe { strong_root.gc(); }
+
+            
+            
+            debug_assert_eq!(root.next_free.load(Ordering::Relaxed),
+                             FREE_LIST_SENTINEL);
+            root.next_free.store(ptr::null_mut(), Ordering::Relaxed);
+
+            
+            
+            
             return;
         }
 
