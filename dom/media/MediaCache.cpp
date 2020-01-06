@@ -125,8 +125,11 @@ MediaCacheFlusher::UnregisterMediaCache(MediaCache* aMediaCache)
   }
 }
 
-class MediaCache {
+class MediaCache
+{
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaCache)
+
   friend class MediaCacheStream::BlockList;
   typedef MediaCacheStream::BlockList BlockList;
   static const int64_t BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE;
@@ -136,17 +139,7 @@ public:
   
   
   
-  
-  
-  
-  static MediaCache* GetMediaCache(int64_t aContentLength);
-
-  
-  
-  
-  
-  
-  void MaybeShutdown();
+  static RefPtr<MediaCache> GetMediaCache(int64_t aContentLength);
 
   
   void Flush();
@@ -264,17 +257,31 @@ protected:
     , mNextResourceID(1)
     , mReentrantMonitor("MediaCache.mReentrantMonitor")
     , mUpdateQueued(false)
-    , mShutdownInsteadOfUpdating(false)
 #ifdef DEBUG
     , mInUpdate(false)
 #endif
   {
+    NS_ASSERTION(NS_IsMainThread(), "Only construct MediaCache on main thread");
     MOZ_COUNT_CTOR(MediaCache);
     MediaCacheFlusher::RegisterMediaCache(this);
   }
 
   ~MediaCache()
   {
+    NS_ASSERTION(NS_IsMainThread(), "Only destroy MediaCache on main thread");
+    if (this == gMediaCache) {
+      
+      gMediaCache = nullptr;
+    }
+    if (mContentLength > 0) {
+      
+      gMediaMemoryCachesCombinedSize -= mContentLength;
+      LOG("~MediaCache(Memory-backed MediaCache %p) -> combined size now %" PRIi64,
+          this,
+          gMediaMemoryCachesCombinedSize);
+    } else {
+      LOG("~MediaCache(Global file-backed MediaCache)");
+    }
     MediaCacheFlusher::UnregisterMediaCache(this);
     NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
     Truncate();
@@ -396,8 +403,6 @@ protected:
   
   
   
-  void ShutdownAndDestroyThis();
-
   
   static MediaCache* gMediaCache;
 
@@ -432,9 +437,6 @@ protected:
   BlockList       mFreeBlocks;
   
   bool            mUpdateQueued;
-  
-  
-  bool            mShutdownInsteadOfUpdating;
 #ifdef DEBUG
   bool            mInUpdate;
 #endif
@@ -719,53 +721,7 @@ MediaCache::CloseStreamsForPrivateBrowsing()
   }
 }
 
-void
-MediaCache::MaybeShutdown()
-{
-  NS_ASSERTION(NS_IsMainThread(),
-               "MediaCache::MaybeShutdown called on non-main thread");
-  if (!mStreams.IsEmpty()) {
-    
-    return;
-  }
-
-  ShutdownAndDestroyThis();
-}
-
-void
-MediaCache::ShutdownAndDestroyThis()
-{
-  NS_ASSERTION(NS_IsMainThread(),
-               "MediaCache::Shutdown called on non-main thread");
-  
-  
-
-  if (this == gMediaCache) {
-    
-    
-    gMediaCache = nullptr;
-  }
-
-  if (mUpdateQueued) {
-    
-    mShutdownInsteadOfUpdating = true;
-    return;
-  }
-
-  if (mContentLength > 0) {
-    
-    gMediaMemoryCachesCombinedSize -= mContentLength;
-    LOG("ShutdownAndDestroyThis(Memory-backed MediaCache %p) -> combined size now %" PRIi64,
-        this,
-        gMediaMemoryCachesCombinedSize);
-  } else {
-    LOG("ShutdownAndDestroyThis(Global file-backed MediaCache)");
-  }
-
-  delete this;
-}
-
- MediaCache*
+ RefPtr<MediaCache>
 MediaCache::GetMediaCache(int64_t aContentLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
@@ -779,20 +735,19 @@ MediaCache::GetMediaCache(int64_t aContentLength)
         sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100)) {
     
     
-    MediaCache* mc = new MediaCache(aContentLength);
+    RefPtr<MediaCache> mc = new MediaCache(aContentLength);
     nsresult rv = mc->Init();
     if (NS_SUCCEEDED(rv)) {
       gMediaMemoryCachesCombinedSize += aContentLength;
       LOG("GetMediaCache(%" PRIi64
           ") -> Memory MediaCache %p, combined size %" PRIi64,
           aContentLength,
-          mc,
+          mc.get(),
           gMediaMemoryCachesCombinedSize);
       return mc;
     }
     
     
-    delete mc;
   }
 
   if (gMediaCache) {
@@ -804,7 +759,6 @@ MediaCache::GetMediaCache(int64_t aContentLength)
   gMediaCache = new MediaCache(-1);
   nsresult rv = gMediaCache->Init();
   if (NS_FAILED(rv)) {
-    delete gMediaCache;
     gMediaCache = nullptr;
     LOG("GetMediaCache(%" PRIi64 ") -> Failed to create file-backed MediaCache",
         aContentLength);
@@ -1191,14 +1145,6 @@ MediaCache::Update()
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
-  if (mShutdownInsteadOfUpdating) {
-    
-    
-    mUpdateQueued = false;
-    ShutdownAndDestroyThis();
-    return;
-  }
-
   
   
   
@@ -1544,7 +1490,7 @@ MediaCache::Update()
 class UpdateEvent : public Runnable
 {
 public:
-  explicit UpdateEvent(MediaCache& aMediaCache)
+  explicit UpdateEvent(MediaCache* aMediaCache)
     : Runnable("MediaCache::UpdateEvent")
     , mMediaCache(aMediaCache)
   {
@@ -1552,12 +1498,12 @@ public:
 
   NS_IMETHOD Run() override
   {
-    mMediaCache.Update();
+    mMediaCache->Update();
     return NS_OK;
   }
 
 private:
-  MediaCache& mMediaCache;
+  RefPtr<MediaCache> mMediaCache;
 };
 
 void
@@ -1575,7 +1521,7 @@ MediaCache::QueueUpdate()
   
   
   
-  nsCOMPtr<nsIRunnable> event = new UpdateEvent(*this);
+  nsCOMPtr<nsIRunnable> event = new UpdateEvent(this);
   SystemGroup::Dispatch("MediaCache::UpdateEvent",
                         TaskCategory::Other,
                         event.forget());
@@ -2108,7 +2054,6 @@ MediaCacheStream::~MediaCacheStream()
   if (mMediaCache) {
     NS_ASSERTION(mClosed, "Stream was not closed");
     mMediaCache->ReleaseStream(this);
-    mMediaCache->MaybeShutdown();
   }
 
   uint32_t lengthKb = uint32_t(

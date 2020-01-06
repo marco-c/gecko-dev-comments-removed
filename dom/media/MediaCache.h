@@ -440,7 +440,7 @@ private:
   bool UpdatePrincipal(nsIPrincipal* aPrincipal);
 
   
-  MediaCache* mMediaCache;
+  RefPtr<MediaCache> mMediaCache;
 
   
   ChannelMediaResource*  mClient;
