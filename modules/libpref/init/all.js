@@ -4606,6 +4606,10 @@ pref("image.infer-src-animation.threshold-ms", 2000);
 
 
 
+pref("image.layout_network_priority", true);
+
+
+
 
 
 
