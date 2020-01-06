@@ -272,6 +272,11 @@ description > html|a {
   margin-inline-start: 0;
 }
 
+groupbox {
+  
+  margin-top: 15px !important;
+}
+
 #tabsElement {
   margin-inline-end: 4px; 
 }
@@ -614,6 +619,7 @@ description > html|a {
 }
 
 .search-tooltip {
+  font-size: 1.25rem;
   position: absolute;
   padding: 0 10px;
   bottom: 100%;
