@@ -6,6 +6,7 @@
 
 
 const promise = require("promise");
+const defer = require("devtools/shared/defer");
 const protocol = require("devtools/shared/protocol");
 const {CallWatcherActor} = require("devtools/server/actors/call-watcher");
 const {CallWatcherFront} = require("devtools/shared/fronts/call-watcher");
