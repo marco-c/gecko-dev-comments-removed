@@ -730,6 +730,9 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
           mLayerScrollData.back().SetEventRegionsOverride(EventRegionsOverride::ForceDispatchToContent);
         }
       }
+      if (Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(aDisplayListBuilder, nullptr, ContainerLayerParameters())) {
+        mLayerScrollData.back().AppendScrollMetadata(mScrollData, rootMetadata.ref());
+      }
       
       
       
