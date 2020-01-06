@@ -29,6 +29,7 @@
 #include "nsIDocumentInlines.h"
 #include "nsILoadContext.h"
 #include "nsIFrame.h"
+#include "nsIMemoryReporter.h"
 #include "nsINode.h"
 #include "nsIPresShell.h"
 #include "nsIPresShellInlines.h"
@@ -226,7 +227,7 @@ ServoComputedData::GetStyleVariables() const
             "called");
 }
 
-MOZ_DEFINE_MALLOC_SIZE_OF(ServoStyleStructsMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoStyleStructsMallocEnclosingSizeOf)
 
 void
 ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
@@ -236,28 +237,13 @@ ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 #define STYLE_STRUCT(name_, cb_) \
   static_assert(alignof(nsStyle##name_) <= sizeof(size_t), \
                 "alignment will break AddSizeOfExcludingThis()"); \
-  const char* p##name_ = reinterpret_cast<const char*>(GetStyle##name_()); \
-  p##name_ -= sizeof(size_t); \
+  const void* p##name_ = GetStyle##name_(); \
   if (!aSizes.mState.HaveSeenPtr(p##name_)) { \
     aSizes.mServoStyleSizes.NS_STYLE_SIZES_FIELD(name_) += \
-      ServoStyleStructsMallocSizeOf(p##name_); \
+      ServoStyleStructsMallocEnclosingSizeOf(p##name_); \
   }
   #define STYLE_STRUCT_LIST_IGNORE_VARIABLES
 #include "nsStyleStructList.h"
@@ -375,13 +361,6 @@ Gecko_NoteDirtyElement(RawGeckoElementBorrowed aElement)
 {
   MOZ_ASSERT(NS_IsMainThread());
   const_cast<Element*>(aElement)->NoteDirtyForServo();
-}
-
-void
-Gecko_NoteDirtySubtreeForInvalidation(RawGeckoElementBorrowed aElement)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  const_cast<Element*>(aElement)->NoteDirtySubtreeForServo();
 }
 
 void
