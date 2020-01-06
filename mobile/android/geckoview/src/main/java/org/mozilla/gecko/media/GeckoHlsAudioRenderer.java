@@ -7,7 +7,6 @@ package org.mozilla.gecko.media;
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodec.CryptoInfo;
-import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.exoplayer2.C;
@@ -109,7 +108,7 @@ public class GeckoHlsAudioRenderer extends GeckoHlsRendererBase {
     @Override
     protected void handleEndOfStream(DecoderInputBuffer bufferForRead) {
         mInputStreamEnded = true;
-        mDemuxedInputSamples.offer(GeckoHlsSample.EOS);
+        mDemuxedInputSamples.offer(GeckoHLSSample.EOS);
     }
 
     @Override
@@ -132,7 +131,7 @@ public class GeckoHlsAudioRenderer extends GeckoHlsRendererBase {
         assertTrue(mFormats.size() >= 0);
         
         
-        GeckoHlsSample sample = GeckoHlsSample.create(buffer,
+        GeckoHLSSample sample = GeckoHLSSample.create(buffer,
                                                       bufferInfo,
                                                       cryptoInfo,
                                                       mFormats.size() - 1);

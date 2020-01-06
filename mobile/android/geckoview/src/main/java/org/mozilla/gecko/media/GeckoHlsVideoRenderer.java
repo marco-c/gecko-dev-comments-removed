@@ -7,7 +7,6 @@ package org.mozilla.gecko.media;
 import android.media.MediaCodec;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodec.CryptoInfo;
-import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.exoplayer2.C;
@@ -44,7 +43,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
     
     private CodecMaxValues mCodecMaxValues;
     
-    private ConcurrentLinkedQueue<GeckoHlsSample> mDemuxedNoDurationSamples =
+    private ConcurrentLinkedQueue<GeckoHLSSample> mDemuxedNoDurationSamples =
         new ConcurrentLinkedQueue<>();
 
     
@@ -199,7 +198,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
             mRendererReconfigurationState = RECONFIGURATION_STATE.WRITE_PENDING;
         }
         mInputStreamEnded = true;
-        GeckoHlsSample sample = GeckoHlsSample.EOS;
+        GeckoHLSSample sample = GeckoHLSSample.EOS;
         calculatDuration(sample);
     }
 
@@ -231,7 +230,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
         assertTrue(mFormats.size() > 0);
         
         
-        GeckoHlsSample sample = GeckoHlsSample.create(buffer,
+        GeckoHLSSample sample = GeckoHLSSample.create(buffer,
                                                       bufferInfo,
                                                       cryptoInfo,
                                                       mFormats.size() - 1);
@@ -299,7 +298,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
         mPlayerEventDispatcher.onVideoInputFormatChanged(newFormat);
     }
 
-    private void calculateSamplesWithin(GeckoHlsSample[] samples, int range) {
+    private void calculateSamplesWithin(GeckoHLSSample[] samples, int range) {
         
         for (int i = 0; i < range; i++) {
             
@@ -315,7 +314,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
         }
     }
 
-    private void calculatDuration(GeckoHlsSample inputSample) {
+    private void calculatDuration(GeckoHLSSample inputSample) {
         
 
 
@@ -340,12 +339,12 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
         int sizeOfNoDura = mDemuxedNoDurationSamples.size();
         
         int range = sizeOfNoDura >= 17 ? 17 : sizeOfNoDura;
-        GeckoHlsSample[] inputArray =
-            mDemuxedNoDurationSamples.toArray(new GeckoHlsSample[sizeOfNoDura]);
+        GeckoHLSSample[] inputArray =
+            mDemuxedNoDurationSamples.toArray(new GeckoHLSSample[sizeOfNoDura]);
         if (range >= 17 && !mInputStreamEnded) {
             calculateSamplesWithin(inputArray, range);
 
-            GeckoHlsSample toQueue = mDemuxedNoDurationSamples.poll();
+            GeckoHLSSample toQueue = mDemuxedNoDurationSamples.poll();
             mDemuxedInputSamples.offer(toQueue);
             if (DEBUG) {
                 Log.d(LOGTAG, "Demuxed sample PTS : " +
@@ -362,7 +361,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
             
             
             long prevDuration = 33333;
-            GeckoHlsSample sample = null;
+            GeckoHLSSample sample = null;
             for (sample = mDemuxedNoDurationSamples.poll(); sample != null; sample = mDemuxedNoDurationSamples.poll()) {
                 if (sample.duration == Long.MAX_VALUE) {
                     sample.duration = prevDuration;
@@ -384,7 +383,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
     
     public long getNextKeyFrameTime() {
         long nextKeyFrameTime = Long.MAX_VALUE;
-        for (GeckoHlsSample sample : mDemuxedInputSamples) {
+        for (GeckoHLSSample sample : mDemuxedInputSamples) {
             if (sample != null &&
                 (sample.info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
                 nextKeyFrameTime = sample.info.presentationTimeUs;
