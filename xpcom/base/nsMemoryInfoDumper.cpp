@@ -38,7 +38,9 @@
 #define MOZ_SUPPORTS_FIFO 1
 #endif
 
-#if defined(XP_LINUX) || defined(__FreeBSD__)
+
+
+#if !defined(ANDROID) && (defined(XP_LINUX) || defined(__FreeBSD__))
 #define MOZ_SUPPORTS_RT_SIGNALS 1
 #endif
 
