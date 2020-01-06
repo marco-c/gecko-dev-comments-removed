@@ -446,90 +446,88 @@ class ViewPopup extends BasePopup {
 
 
 
-  attach(viewNode) {
-    return (async () => {
-      this.viewNode = viewNode;
-      this.viewNode.addEventListener(this.DESTROY_EVENT, this);
+  async attach(viewNode) {
+    this.viewNode = viewNode;
+    this.viewNode.addEventListener(this.DESTROY_EVENT, this);
 
-      
-      
-      
-      
-      
-      await Promise.all([
-        this.browserReady,
-        Promise.race([
-          
-          
-          this.browserLoaded.catch(() => {}),
-          new Promise(resolve => setTimeout(resolve, POPUP_LOAD_TIMEOUT_MS)),
-        ]),
-      ]);
+    
+    
+    
+    
+    
+    await Promise.all([
+      this.browserReady,
+      Promise.race([
+        
+        
+        this.browserLoaded.catch(() => {}),
+        new Promise(resolve => setTimeout(resolve, POPUP_LOAD_TIMEOUT_MS)),
+      ]),
+    ]);
 
-      if (!this.destroyed && !this.panel) {
-        this.destroy();
-      }
+    if (!this.destroyed && !this.panel) {
+      this.destroy();
+    }
 
-      if (this.destroyed) {
-        CustomizableUI.hidePanelForNode(viewNode);
-        return false;
-      }
+    if (this.destroyed) {
+      CustomizableUI.hidePanelForNode(viewNode);
+      return false;
+    }
 
-      this.attached = true;
+    this.attached = true;
 
 
-      
-      
-      this.viewHeight = this.viewNode.boxObject.height;
+    
+    
+    this.viewHeight = this.viewNode.boxObject.height;
 
-      
-      
-      let popupRect = this.panel.getBoundingClientRect();
+    
+    
+    let popupRect = this.panel.getBoundingClientRect();
 
-      this.setBackground(this.background);
+    this.setBackground(this.background);
 
-      let win = this.window;
-      let popupBottom = win.mozInnerScreenY + popupRect.bottom;
-      let popupTop = win.mozInnerScreenY + popupRect.top;
+    let win = this.window;
+    let popupBottom = win.mozInnerScreenY + popupRect.bottom;
+    let popupTop = win.mozInnerScreenY + popupRect.top;
 
-      let screenBottom = win.screen.availTop + win.screen.availHeight;
-      this.extraHeight = {
-        bottom: Math.max(0, screenBottom - popupBottom),
-        top:  Math.max(0, popupTop - win.screen.availTop),
-      };
+    let screenBottom = win.screen.availTop + win.screen.availHeight;
+    this.extraHeight = {
+      bottom: Math.max(0, screenBottom - popupBottom),
+      top:  Math.max(0, popupTop - win.screen.availTop),
+    };
 
-      
-      let browser = this.browser;
-      await this.createBrowser(this.viewNode);
+    
+    let browser = this.browser;
+    await this.createBrowser(this.viewNode);
 
-      this.ignoreResizes = false;
+    this.ignoreResizes = false;
 
-      this.browser.swapDocShells(browser);
-      this.destroyBrowser(browser);
+    this.browser.swapDocShells(browser);
+    this.destroyBrowser(browser);
 
-      if (this.dimensions && !this.fixedWidth) {
-        this.resizeBrowser(this.dimensions);
-      }
+    if (this.dimensions && !this.fixedWidth) {
+      this.resizeBrowser(this.dimensions);
+    }
 
-      this.tempPanel.remove();
-      this.tempPanel = null;
+    this.tempPanel.remove();
+    this.tempPanel = null;
 
-      this.shown = true;
+    this.shown = true;
 
-      if (this.destroyed) {
-        this.closePopup();
-        this.destroy();
-        return false;
-      }
+    if (this.destroyed) {
+      this.closePopup();
+      this.destroy();
+      return false;
+    }
 
-      let event = new this.window.CustomEvent("WebExtPopupLoaded", {
-        bubbles: true,
-        detail: {extension: this.extension},
-      });
-      this.browser.dispatchEvent(event);
+    let event = new this.window.CustomEvent("WebExtPopupLoaded", {
+      bubbles: true,
+      detail: {extension: this.extension},
+    });
+    this.browser.dispatchEvent(event);
 
-      return true;
-    })();
+    return true;
   }
 
   destroy() {

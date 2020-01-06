@@ -174,76 +174,70 @@ const getKBHash = async function(fxaService) {
 
 
 class EncryptionRemoteTransformer {
-  encode(record) {
-    const self = this;
-    return (async function() {
-      const keyBundle = await self.getKeys();
-      if (record.ciphertext) {
-        throw new Error("Attempt to reencrypt??");
-      }
-      let id = await self.getEncodedRecordId(record);
-      if (!id) {
-        throw new Error("Record ID is missing or invalid");
-      }
+  async encode(record) {
+    const keyBundle = await this.getKeys();
+    if (record.ciphertext) {
+      throw new Error("Attempt to reencrypt??");
+    }
+    let id = await this.getEncodedRecordId(record);
+    if (!id) {
+      throw new Error("Record ID is missing or invalid");
+    }
 
-      let IV = Svc.Crypto.generateRandomIV();
-      let ciphertext = Svc.Crypto.encrypt(JSON.stringify(record),
-                                          keyBundle.encryptionKeyB64, IV);
-      let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
-      const encryptedResult = {ciphertext, IV, hmac, id};
+    let IV = Svc.Crypto.generateRandomIV();
+    let ciphertext = Svc.Crypto.encrypt(JSON.stringify(record),
+                                        keyBundle.encryptionKeyB64, IV);
+    let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
+    const encryptedResult = {ciphertext, IV, hmac, id};
 
-      
-      
-      
-      
-      encryptedResult._status = record._status == "deleted" ? "updated" : record._status;
-      if (record.hasOwnProperty("last_modified")) {
-        encryptedResult.last_modified = record.last_modified;
-      }
+    
+    
+    
+    
+    encryptedResult._status = record._status == "deleted" ? "updated" : record._status;
+    if (record.hasOwnProperty("last_modified")) {
+      encryptedResult.last_modified = record.last_modified;
+    }
 
-      return encryptedResult;
-    })();
+    return encryptedResult;
   }
 
-  decode(record) {
-    const self = this;
-    return (async function() {
-      if (!record.ciphertext) {
-        
-        if (record.deleted) {
-          return record;
-        }
-        throw new Error("No ciphertext: nothing to decrypt?");
-      }
-      const keyBundle = await self.getKeys();
+  async decode(record) {
+    if (!record.ciphertext) {
       
-      let computedHMAC = ciphertextHMAC(keyBundle, record.id, record.IV, record.ciphertext);
-
-      if (computedHMAC != record.hmac) {
-        Utils.throwHMACMismatch(record.hmac, computedHMAC);
+      if (record.deleted) {
+        return record;
       }
+      throw new Error("No ciphertext: nothing to decrypt?");
+    }
+    const keyBundle = await this.getKeys();
+    
+    let computedHMAC = ciphertextHMAC(keyBundle, record.id, record.IV, record.ciphertext);
 
-      
-      let cleartext = Svc.Crypto.decrypt(record.ciphertext,
-                                         keyBundle.encryptionKeyB64, record.IV);
-      let jsonResult = JSON.parse(cleartext);
-      if (!jsonResult || typeof jsonResult !== "object") {
-        throw new Error("Decryption failed: result is <" + jsonResult + ">, not an object.");
-      }
+    if (computedHMAC != record.hmac) {
+      Utils.throwHMACMismatch(record.hmac, computedHMAC);
+    }
 
-      if (record.hasOwnProperty("last_modified")) {
-        jsonResult.last_modified = record.last_modified;
-      }
+    
+    let cleartext = Svc.Crypto.decrypt(record.ciphertext,
+                                       keyBundle.encryptionKeyB64, record.IV);
+    let jsonResult = JSON.parse(cleartext);
+    if (!jsonResult || typeof jsonResult !== "object") {
+      throw new Error("Decryption failed: result is <" + jsonResult + ">, not an object.");
+    }
 
-      
-      
-      
-      if (jsonResult._status == "deleted") {
-        jsonResult.deleted = true;
-      }
+    if (record.hasOwnProperty("last_modified")) {
+      jsonResult.last_modified = record.last_modified;
+    }
 
-      return jsonResult;
-    })();
+    
+    
+    
+    if (jsonResult._status == "deleted") {
+      jsonResult.deleted = true;
+    }
+
+    return jsonResult;
   }
 
   
@@ -309,13 +303,10 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
   
   
   
-  encode(record) {
-    const encodePromise = super.encode(record);
-    return (async function() {
-      const encoded = await encodePromise;
-      encoded.kbHash = record.kbHash;
-      return encoded;
-    })();
+  async encode(record) {
+    const encoded = await super.encode(record);
+    encoded.kbHash = record.kbHash;
+    return encoded;
   }
 
   async decode(record) {
@@ -680,18 +671,15 @@ let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTra
     this.extensionId = extensionId;
   }
 
-  getKeys() {
-    const self = this;
-    return (async function() {
+  async getKeys() {
+    
+    const collectionKeys = await this.cryptoCollection.getKeyRing();
+    if (!collectionKeys.hasKeysFor([this.extensionId])) {
       
-      const collectionKeys = await self.cryptoCollection.getKeyRing();
-      if (!collectionKeys.hasKeysFor([self.extensionId])) {
-        
-        
-        throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
-      }
-      return collectionKeys.keyForCollection(self.extensionId);
-    })();
+      
+      throw new Error(`tried to encrypt records for ${this.extensionId}, but key is not present`);
+    }
+    return collectionKeys.keyForCollection(this.extensionId);
   }
 
   getEncodedRecordId(record) {

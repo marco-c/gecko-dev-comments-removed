@@ -316,69 +316,67 @@ this.ExtensionData = class {
     return `moz-extension://${this.uuid}/${path}`;
   }
 
-  readDirectory(path) {
-    return (async () => {
-      if (this.rootURI instanceof Ci.nsIFileURL) {
-        let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
-        let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
+  async readDirectory(path) {
+    if (this.rootURI instanceof Ci.nsIFileURL) {
+      let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
+      let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
 
-        let iter = new OS.File.DirectoryIterator(fullPath);
-        let results = [];
+      let iter = new OS.File.DirectoryIterator(fullPath);
+      let results = [];
 
-        try {
-          await iter.forEach(entry => {
-            results.push(entry);
-          });
-        } catch (e) {
-          
-          
-        }
-        iter.close();
-
-        return results;
+      try {
+        await iter.forEach(entry => {
+          results.push(entry);
+        });
+      } catch (e) {
+        
+        
       }
+      iter.close();
+
+      return results;
+    }
+
+    
+
+    let uri = this.rootURI.QueryInterface(Ci.nsIJARURI);
+
+    let file = uri.JARFile.QueryInterface(Ci.nsIFileURL).file;
+    let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
+    zipReader.open(file);
+    try {
+      let results = [];
 
       
+      path = `${uri.JAREntry}/${path}`;
+      path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
 
-      let uri = this.rootURI.QueryInterface(Ci.nsIJARURI);
+      
+      let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
 
-      let file = uri.JARFile.QueryInterface(Ci.nsIFileURL).file;
-      let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
-      zipReader.open(file);
-      try {
-        let results = [];
-
-        
-        path = `${uri.JAREntry}/${path}`;
-        path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
-
-        
-        let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
-
-        let enumerator = zipReader.findEntries(pattern + "*");
-        while (enumerator.hasMore()) {
-          let name = enumerator.getNext();
-          if (!name.startsWith(path)) {
-            throw new Error("Unexpected ZipReader entry");
-          }
-
-          
-          
-          
-          name = name.slice(path.length);
-          if (name && !/\/./.test(name)) {
-            results.push({
-              name: name.replace("/", ""),
-              isDir: name.endsWith("/"),
-            });
-          }
+      let enumerator = zipReader.findEntries(pattern + "*");
+      while (enumerator.hasMore()) {
+        let name = enumerator.getNext();
+        if (!name.startsWith(path)) {
+          throw new Error("Unexpected ZipReader entry");
         }
 
-        return results;
-      } finally {
-        zipReader.close();
+        
+        
+        
+        name = name.slice(path.length);
+        if (name && !/\/./.test(name)) {
+          results.push({
+            name: name.replace("/", ""),
+            isDir: name.endsWith("/"),
+          });
+        }
       }
-    })();
+
+      return results;
+    } finally {
+      zipReader.close();
+    }
   }
 
   readJSON(path) {
@@ -569,20 +567,18 @@ this.ExtensionData = class {
 
   
   
-  readLocaleFile(locale) {
-    return (async () => {
-      let locales = await this.promiseLocales();
-      let dir = locales.get(locale) || locale;
-      let file = `_locales/${dir}/messages.json`;
+  async readLocaleFile(locale) {
+    let locales = await this.promiseLocales();
+    let dir = locales.get(locale) || locale;
+    let file = `_locales/${dir}/messages.json`;
 
-      try {
-        let messages = await this.readJSON(file);
-        return this.localeData.addLocale(locale, messages, this);
-      } catch (e) {
-        this.packagingError(`Loading locale file ${file}: ${e}`);
-        return new Map();
-      }
-    })();
+    try {
+      let messages = await this.readJSON(file);
+      return this.localeData.addLocale(locale, messages, this);
+    } catch (e) {
+      this.packagingError(`Loading locale file ${file}: ${e}`);
+      return new Map();
+    }
   }
 
   
@@ -621,27 +617,25 @@ this.ExtensionData = class {
   
   
   
-  initAllLocales() {
-    return (async () => {
-      let locales = await this.promiseLocales();
+  async initAllLocales() {
+    let locales = await this.promiseLocales();
 
-      await Promise.all(Array.from(locales.keys(),
-                                   locale => this.readLocaleFile(locale)));
+    await Promise.all(Array.from(locales.keys(),
+                                 locale => this.readLocaleFile(locale)));
 
-      let defaultLocale = this.defaultLocale;
-      if (defaultLocale) {
-        if (!locales.has(defaultLocale)) {
-          this.manifestError('Value for "default_locale" property must correspond to ' +
-                             'a directory in "_locales/". Not found: ' +
-                             JSON.stringify(`_locales/${this.manifest.default_locale}/`));
-        }
-      } else if (locales.size) {
-        this.manifestError('The "default_locale" property is required when a ' +
-                           '"_locales/" directory is present.');
+    let defaultLocale = this.defaultLocale;
+    if (defaultLocale) {
+      if (!locales.has(defaultLocale)) {
+        this.manifestError('Value for "default_locale" property must correspond to ' +
+                           'a directory in "_locales/". Not found: ' +
+                           JSON.stringify(`_locales/${this.manifest.default_locale}/`));
       }
+    } else if (locales.size) {
+      this.manifestError('The "default_locale" property is required when a ' +
+                         '"_locales/" directory is present.');
+    }
 
-      return this.localeData.messages;
-    })();
+    return this.localeData.messages;
   }
 
   
@@ -652,24 +646,22 @@ this.ExtensionData = class {
   
   
   
-  initLocale(locale = this.defaultLocale) {
-    return (async () => {
-      if (locale == null) {
-        return null;
-      }
+  async initLocale(locale = this.defaultLocale) {
+    if (locale == null) {
+      return null;
+    }
 
-      let promises = [this.readLocaleFile(locale)];
+    let promises = [this.readLocaleFile(locale)];
 
-      let {defaultLocale} = this;
-      if (locale != defaultLocale && !this.localeData.has(defaultLocale)) {
-        promises.push(this.readLocaleFile(defaultLocale));
-      }
+    let {defaultLocale} = this;
+    if (locale != defaultLocale && !this.localeData.has(defaultLocale)) {
+      promises.push(this.readLocaleFile(defaultLocale));
+    }
 
-      let results = await Promise.all(promises);
+    let results = await Promise.all(promises);
 
-      this.localeData.selectedLocale = locale;
-      return results[0];
-    })();
+    this.localeData.selectedLocale = locale;
+    return results[0];
   }
 };
 

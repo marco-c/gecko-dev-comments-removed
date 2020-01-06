@@ -2087,21 +2087,19 @@ function escapeAddonURI(aAddon, aUri, aUpdateType, aAppVersion) {
   return uri;
 }
 
-function removeAsync(aFile) {
-  return (async function() {
-    let info = null;
-    try {
-      info = await OS.File.stat(aFile.path);
-      if (info.isDir)
-        await OS.File.removeDir(aFile.path);
-      else
-        await OS.File.remove(aFile.path);
-    } catch (e) {
-      if (!(e instanceof OS.File.Error) || !e.becauseNoSuchFile)
-        throw e;
-      
-    }
-  })();
+async function removeAsync(aFile) {
+  let info = null;
+  try {
+    info = await OS.File.stat(aFile.path);
+    if (info.isDir)
+      await OS.File.removeDir(aFile.path);
+    else
+      await OS.File.remove(aFile.path);
+  } catch (e) {
+    if (!(e instanceof OS.File.Error) || !e.becauseNoSuchFile)
+      throw e;
+    
+  }
 }
 
 
@@ -4468,7 +4466,6 @@ this.XPIProvider = {
                    resolve => XPIDatabase.getVisibleAddonForID(addon.id, resolve));
 
     let extraParams = {};
-    extraParams.temporarilyInstalled = aInstallLocation === TemporaryInstallLocation;
     if (oldAddon) {
       if (!oldAddon.bootstrap) {
         logger.warn("Non-restartless Add-on is already installed", addon.id);
@@ -5946,110 +5943,108 @@ class AddonInstall {
 
 
 
-  loadManifest(file) {
-    return (async () => {
-      let zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
-          createInstance(Ci.nsIZipReader);
-      try {
-        zipreader.open(file);
-      } catch (e) {
-        zipreader.close();
-        return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, e]);
-      }
-
-      try {
-        
-        this.addon = await loadManifestFromZipReader(zipreader, this.installLocation);
-      } catch (e) {
-        zipreader.close();
-        return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, e]);
-      }
-
-      if (!this.addon.id) {
-        let err = new Error(`Cannot find id for addon ${file.path}`);
-        return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, err]);
-      }
-
-      if (this.existingAddon) {
-        
-        if (this.addon.id != this.existingAddon.id) {
-          zipreader.close();
-          return Promise.reject([AddonManager.ERROR_INCORRECT_ID,
-                                 `Refusing to upgrade addon ${this.existingAddon.id} to different ID ${this.addon.id}`]);
-        }
-
-        if (isWebExtension(this.existingAddon.type) && !isWebExtension(this.addon.type)) {
-          zipreader.close();
-          return Promise.reject([AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
-                                 "WebExtensions may not be upated to other extension types"]);
-        }
-      }
-
-      if (mustSign(this.addon.type)) {
-        if (this.addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) {
-          
-          
-          let state = this.addon.signedState;
-          this.addon = null;
-          zipreader.close();
-
-          if (state == AddonManager.SIGNEDSTATE_MISSING)
-            return Promise.reject([AddonManager.ERROR_SIGNEDSTATE_REQUIRED,
-                                   "signature is required but missing"])
-
-          return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
-                                 "signature verification failed"])
-        }
-      } else if (this.addon.signedState == AddonManager.SIGNEDSTATE_UNKNOWN ||
-               this.addon.signedState == AddonManager.SIGNEDSTATE_NOT_REQUIRED) {
-        
-        let x509 = zipreader.getSigningCert(null);
-        if (x509) {
-          logger.debug("Verifying XPI signature");
-          if (verifyZipSigning(zipreader, x509)) {
-            this.certificate = x509;
-            if (this.certificate.commonName.length > 0) {
-              this.certName = this.certificate.commonName;
-            } else {
-              this.certName = this.certificate.organization;
-            }
-          } else {
-            zipreader.close();
-            return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
-                                   "XPI is incorrectly signed"]);
-          }
-        }
-      }
-
+  async loadManifest(file) {
+    let zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
+        createInstance(Ci.nsIZipReader);
+    try {
+      zipreader.open(file);
+    } catch (e) {
       zipreader.close();
+      return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, e]);
+    }
 
-      this.updateAddonURIs();
-
-      this.addon._install = this;
-      this.name = this.addon.selectedLocale.name;
-      this.type = this.addon.type;
-      this.version = this.addon.version;
-
+    try {
       
-      
+      this.addon = await loadManifestFromZipReader(zipreader, this.installLocation);
+    } catch (e) {
+      zipreader.close();
+      return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, e]);
+    }
 
-      
-      let repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+    if (!this.addon.id) {
+      let err = new Error(`Cannot find id for addon ${file.path}`);
+      return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, err]);
+    }
 
+    if (this.existingAddon) {
       
-      if (!repoAddon) {
-        await new Promise(resolve => AddonRepository.cacheAddons([this.addon.id], resolve));
-        repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+      if (this.addon.id != this.existingAddon.id) {
+        zipreader.close();
+        return Promise.reject([AddonManager.ERROR_INCORRECT_ID,
+                               `Refusing to upgrade addon ${this.existingAddon.id} to different ID ${this.addon.id}`]);
       }
 
-      this.addon._repositoryAddon = repoAddon;
-      this.name = this.name || this.addon._repositoryAddon.name;
-      this.addon.compatibilityOverrides = repoAddon ?
-        repoAddon.compatibilityOverrides :
-        null;
-      this.addon.appDisabled = !isUsableAddon(this.addon);
-      return undefined;
-    })();
+      if (isWebExtension(this.existingAddon.type) && !isWebExtension(this.addon.type)) {
+        zipreader.close();
+        return Promise.reject([AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
+                               "WebExtensions may not be upated to other extension types"]);
+      }
+    }
+
+    if (mustSign(this.addon.type)) {
+      if (this.addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) {
+        
+        
+        let state = this.addon.signedState;
+        this.addon = null;
+        zipreader.close();
+
+        if (state == AddonManager.SIGNEDSTATE_MISSING)
+          return Promise.reject([AddonManager.ERROR_SIGNEDSTATE_REQUIRED,
+                                 "signature is required but missing"])
+
+        return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
+                               "signature verification failed"])
+      }
+    } else if (this.addon.signedState == AddonManager.SIGNEDSTATE_UNKNOWN ||
+             this.addon.signedState == AddonManager.SIGNEDSTATE_NOT_REQUIRED) {
+      
+      let x509 = zipreader.getSigningCert(null);
+      if (x509) {
+        logger.debug("Verifying XPI signature");
+        if (verifyZipSigning(zipreader, x509)) {
+          this.certificate = x509;
+          if (this.certificate.commonName.length > 0) {
+            this.certName = this.certificate.commonName;
+          } else {
+            this.certName = this.certificate.organization;
+          }
+        } else {
+          zipreader.close();
+          return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
+                                 "XPI is incorrectly signed"]);
+        }
+      }
+    }
+
+    zipreader.close();
+
+    this.updateAddonURIs();
+
+    this.addon._install = this;
+    this.name = this.addon.selectedLocale.name;
+    this.type = this.addon.type;
+    this.version = this.addon.version;
+
+    
+    
+
+    
+    let repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+
+    
+    if (!repoAddon) {
+      await new Promise(resolve => AddonRepository.cacheAddons([this.addon.id], resolve));
+      repoAddon = await new Promise(resolve => AddonRepository.getCachedAddonByID(this.addon.id, resolve));
+    }
+
+    this.addon._repositoryAddon = repoAddon;
+    this.name = this.name || this.addon._repositoryAddon.name;
+    this.addon.compatibilityOverrides = repoAddon ?
+      repoAddon.compatibilityOverrides :
+      null;
+    this.addon.appDisabled = !isUsableAddon(this.addon);
+    return undefined;
   }
 
   getIcon(desiredSize = 64) {
@@ -6296,44 +6291,42 @@ class AddonInstall {
   
 
 
-  stageInstall(restartRequired, stagedAddon, isUpgrade) {
-    return (async () => {
-      let stagedJSON = stagedAddon.clone();
-      stagedJSON.leafName = this.addon.id + ".json";
+  async stageInstall(restartRequired, stagedAddon, isUpgrade) {
+    let stagedJSON = stagedAddon.clone();
+    stagedJSON.leafName = this.addon.id + ".json";
 
-      let installedUnpacked = 0;
+    let installedUnpacked = 0;
+
+    
+    if (this.addon.unpack || Preferences.get(PREF_XPI_UNPACK, false)) {
+      logger.debug("Addon " + this.addon.id + " will be installed as " +
+                   "an unpacked directory");
+      stagedAddon.leafName = this.addon.id;
+      await OS.File.makeDir(stagedAddon.path);
+      await ZipUtils.extractFilesAsync(this.file, stagedAddon);
+      installedUnpacked = 1;
+    } else {
+      logger.debug(`Addon ${this.addon.id} will be installed as a packed xpi`);
+      stagedAddon.leafName = this.addon.id + ".xpi";
+
+      await OS.File.copy(this.file.path, stagedAddon.path);
+    }
+
+    if (restartRequired) {
+      
+      this.addon._sourceBundle = stagedAddon;
 
       
-      if (this.addon.unpack || Preferences.get(PREF_XPI_UNPACK, false)) {
-        logger.debug("Addon " + this.addon.id + " will be installed as " +
-                     "an unpacked directory");
-        stagedAddon.leafName = this.addon.id;
-        await OS.File.makeDir(stagedAddon.path);
-        await ZipUtils.extractFilesAsync(this.file, stagedAddon);
-        installedUnpacked = 1;
-      } else {
-        logger.debug(`Addon ${this.addon.id} will be installed as a packed xpi`);
-        stagedAddon.leafName = this.addon.id + ".xpi";
+      writeStringToFile(stagedJSON, JSON.stringify(this.addon));
 
-        await OS.File.copy(this.file.path, stagedAddon.path);
+      logger.debug("Staged install of " + this.addon.id + " from " + this.sourceURI.spec + " ready; waiting for restart.");
+      if (isUpgrade) {
+        delete this.existingAddon.pendingUpgrade;
+        this.existingAddon.pendingUpgrade = this.addon;
       }
+    }
 
-      if (restartRequired) {
-        
-        this.addon._sourceBundle = stagedAddon;
-
-        
-        writeStringToFile(stagedJSON, JSON.stringify(this.addon));
-
-        logger.debug("Staged install of " + this.addon.id + " from " + this.sourceURI.spec + " ready; waiting for restart.");
-        if (isUpgrade) {
-          delete this.existingAddon.pendingUpgrade;
-          this.existingAddon.pendingUpgrade = this.addon;
-        }
-      }
-
-      return installedUnpacked;
-    })();
+    return installedUnpacked;
   }
 
   
@@ -6405,95 +6398,93 @@ class LocalAddonInstall extends AddonInstall {
 
 
 
-  init() {
-    return (async () => {
-      this.file = this.sourceURI.QueryInterface(Ci.nsIFileURL).file;
+  async init() {
+    this.file = this.sourceURI.QueryInterface(Ci.nsIFileURL).file;
 
-      if (!this.file.exists()) {
-        logger.warn("XPI file " + this.file.path + " does not exist");
-        this.state = AddonManager.STATE_DOWNLOAD_FAILED;
-        this.error = AddonManager.ERROR_NETWORK_FAILURE;
-        XPIProvider.removeActiveInstall(this);
-        return;
-      }
+    if (!this.file.exists()) {
+      logger.warn("XPI file " + this.file.path + " does not exist");
+      this.state = AddonManager.STATE_DOWNLOAD_FAILED;
+      this.error = AddonManager.ERROR_NETWORK_FAILURE;
+      XPIProvider.removeActiveInstall(this);
+      return;
+    }
 
-      this.state = AddonManager.STATE_DOWNLOADED;
-      this.progress = this.file.fileSize;
-      this.maxProgress = this.file.fileSize;
+    this.state = AddonManager.STATE_DOWNLOADED;
+    this.progress = this.file.fileSize;
+    this.maxProgress = this.file.fileSize;
 
-      if (this.hash) {
-        let crypto = Cc["@mozilla.org/security/hash;1"].
-            createInstance(Ci.nsICryptoHash);
-        try {
-          crypto.initWithString(this.hash.algorithm);
-        } catch (e) {
-          logger.warn("Unknown hash algorithm '" + this.hash.algorithm + "' for addon " + this.sourceURI.spec, e);
-          this.state = AddonManager.STATE_DOWNLOAD_FAILED;
-          this.error = AddonManager.ERROR_INCORRECT_HASH;
-          XPIProvider.removeActiveInstall(this);
-          return;
-        }
-
-        let fis = Cc["@mozilla.org/network/file-input-stream;1"].
-            createInstance(Ci.nsIFileInputStream);
-        fis.init(this.file, -1, -1, false);
-        crypto.updateFromStream(fis, this.file.fileSize);
-        let calculatedHash = getHashStringForCrypto(crypto);
-        if (calculatedHash != this.hash.data) {
-          logger.warn("File hash (" + calculatedHash + ") did not match provided hash (" +
-                      this.hash.data + ")");
-          this.state = AddonManager.STATE_DOWNLOAD_FAILED;
-          this.error = AddonManager.ERROR_INCORRECT_HASH;
-          XPIProvider.removeActiveInstall(this);
-          return;
-        }
-      }
-
+    if (this.hash) {
+      let crypto = Cc["@mozilla.org/security/hash;1"].
+          createInstance(Ci.nsICryptoHash);
       try {
-        await this.loadManifest(this.file);
-      } catch ([error, message]) {
-        logger.warn("Invalid XPI", message);
+        crypto.initWithString(this.hash.algorithm);
+      } catch (e) {
+        logger.warn("Unknown hash algorithm '" + this.hash.algorithm + "' for addon " + this.sourceURI.spec, e);
         this.state = AddonManager.STATE_DOWNLOAD_FAILED;
-        this.error = error;
+        this.error = AddonManager.ERROR_INCORRECT_HASH;
         XPIProvider.removeActiveInstall(this);
-        AddonManagerPrivate.callInstallListeners("onNewInstall",
-                                                 this.listeners,
-                                                 this.wrapper);
-        flushJarCache(this.file);
         return;
       }
 
-      let addon = await new Promise(resolve => {
-        XPIDatabase.getVisibleAddonForID(this.addon.id, resolve);
-      });
-
-      this.existingAddon = addon;
-      if (addon)
-        applyBlocklistChanges(addon, this.addon);
-      this.addon.updateDate = Date.now();
-      this.addon.installDate = addon ? addon.installDate : this.addon.updateDate;
-
-      if (!this.addon.isCompatible) {
-        this.state = AddonManager.STATE_CHECKING;
-
-        await new Promise(resolve => {
-          new UpdateChecker(this.addon, {
-            onUpdateFinished: aAddon => {
-              this.state = AddonManager.STATE_DOWNLOADED;
-              AddonManagerPrivate.callInstallListeners("onNewInstall",
-                                                       this.listeners,
-                                                       this.wrapper);
-              resolve();
-            }
-          }, AddonManager.UPDATE_WHEN_ADDON_INSTALLED);
-        });
-      } else {
-        AddonManagerPrivate.callInstallListeners("onNewInstall",
-                                                 this.listeners,
-                                                 this.wrapper);
-
+      let fis = Cc["@mozilla.org/network/file-input-stream;1"].
+          createInstance(Ci.nsIFileInputStream);
+      fis.init(this.file, -1, -1, false);
+      crypto.updateFromStream(fis, this.file.fileSize);
+      let calculatedHash = getHashStringForCrypto(crypto);
+      if (calculatedHash != this.hash.data) {
+        logger.warn("File hash (" + calculatedHash + ") did not match provided hash (" +
+                    this.hash.data + ")");
+        this.state = AddonManager.STATE_DOWNLOAD_FAILED;
+        this.error = AddonManager.ERROR_INCORRECT_HASH;
+        XPIProvider.removeActiveInstall(this);
+        return;
       }
-    })();
+    }
+
+    try {
+      await this.loadManifest(this.file);
+    } catch ([error, message]) {
+      logger.warn("Invalid XPI", message);
+      this.state = AddonManager.STATE_DOWNLOAD_FAILED;
+      this.error = error;
+      XPIProvider.removeActiveInstall(this);
+      AddonManagerPrivate.callInstallListeners("onNewInstall",
+                                               this.listeners,
+                                               this.wrapper);
+      flushJarCache(this.file);
+      return;
+    }
+
+    let addon = await new Promise(resolve => {
+      XPIDatabase.getVisibleAddonForID(this.addon.id, resolve);
+    });
+
+    this.existingAddon = addon;
+    if (addon)
+      applyBlocklistChanges(addon, this.addon);
+    this.addon.updateDate = Date.now();
+    this.addon.installDate = addon ? addon.installDate : this.addon.updateDate;
+
+    if (!this.addon.isCompatible) {
+      this.state = AddonManager.STATE_CHECKING;
+
+      await new Promise(resolve => {
+        new UpdateChecker(this.addon, {
+          onUpdateFinished: aAddon => {
+            this.state = AddonManager.STATE_DOWNLOADED;
+            AddonManagerPrivate.callInstallListeners("onNewInstall",
+                                                     this.listeners,
+                                                     this.wrapper);
+            resolve();
+          }
+        }, AddonManager.UPDATE_WHEN_ADDON_INSTALLED);
+      });
+    } else {
+      AddonManagerPrivate.callInstallListeners("onNewInstall",
+                                               this.listeners,
+                                               this.wrapper);
+
+    }
   }
 
   install() {

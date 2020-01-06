@@ -35,28 +35,26 @@ let initDevTools;
 
 
 
-global.getDevToolsTargetForContext = (context) => {
-  return (async function asyncGetTabTarget() {
-    if (context.devToolsTarget) {
-      await context.devToolsTarget.makeRemote();
-      return context.devToolsTarget;
-    }
-
-    if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
-      throw new Error("Unable to get a TabTarget for a context not associated to any toolbox");
-    }
-
-    if (!context.devToolsToolbox.target.isLocalTab) {
-      throw new Error("Unexpected target type: only local tabs are currently supported.");
-    }
-
-    const {TabTarget} = require("devtools/client/framework/target");
-
-    context.devToolsTarget = new TabTarget(context.devToolsToolbox.target.tab);
+global.getDevToolsTargetForContext = async (context) => {
+  if (context.devToolsTarget) {
     await context.devToolsTarget.makeRemote();
-
     return context.devToolsTarget;
-  })();
+  }
+
+  if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
+    throw new Error("Unable to get a TabTarget for a context not associated to any toolbox");
+  }
+
+  if (!context.devToolsToolbox.target.isLocalTab) {
+    throw new Error("Unexpected target type: only local tabs are currently supported.");
+  }
+
+  const {TabTarget} = require("devtools/client/framework/target");
+
+  context.devToolsTarget = new TabTarget(context.devToolsToolbox.target.tab);
+  await context.devToolsTarget.makeRemote();
+
+  return context.devToolsTarget;
 };
 
 
@@ -117,37 +115,35 @@ class DevToolsPage extends HiddenExtensionPage {
     });
   }
 
-  build() {
-    return (async () => {
-      await this.createBrowserElement();
+  async build() {
+    await this.createBrowserElement();
 
+    
+    this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
       
-      this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
+      
+      context.devToolsToolbox = this.toolbox;
+
+      if (!this.topLevelContext) {
+        this.topLevelContext = context;
+
         
         
-        context.devToolsToolbox = this.toolbox;
+        this.topLevelContext.callOnClose(this);
 
-        if (!this.topLevelContext) {
-          this.topLevelContext = context;
+        this.resolveTopLevelContext(context);
+      }
+    });
 
-          
-          
-          this.topLevelContext.callOnClose(this);
+    extensions.emit("extension-browser-inserted", this.browser, {
+      devtoolsToolboxInfo: {
+        inspectedWindowTabId: getTargetTabIdForToolbox(this.toolbox),
+      },
+    });
 
-          this.resolveTopLevelContext(context);
-        }
-      });
+    this.browser.loadURI(this.url);
 
-      extensions.emit("extension-browser-inserted", this.browser, {
-        devtoolsToolboxInfo: {
-          inspectedWindowTabId: getTargetTabIdForToolbox(this.toolbox),
-        },
-      });
-
-      this.browser.loadURI(this.url);
-
-      await this.waitForTopLevelContext;
-    })();
+    await this.waitForTopLevelContext;
   }
 
   close() {
