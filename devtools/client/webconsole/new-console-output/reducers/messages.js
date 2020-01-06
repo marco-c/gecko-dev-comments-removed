@@ -40,16 +40,6 @@ const MessageState = Immutable.Record({
   messagesTableDataById: Immutable.Map(),
   
   
-  
-  
-  messagesObjectPropertiesById: Immutable.Map(),
-  
-  
-  
-  
-  messagesObjectEntriesById: Immutable.Map(),
-  
-  
   groupsById: Immutable.Map(),
   
   currentGroup: null,
@@ -69,8 +59,6 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     messagesById,
     messagesUiById,
     messagesTableDataById,
-    messagesObjectPropertiesById,
-    messagesObjectEntriesById,
     networkMessagesUpdateById,
     groupsById,
     currentGroup,
@@ -241,27 +229,6 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     case constants.MESSAGE_TABLE_RECEIVE:
       const {id, data} = action;
       return state.set("messagesTableDataById", messagesTableDataById.set(id, data));
-
-    case constants.MESSAGE_OBJECT_PROPERTIES_RECEIVE:
-      return state.set(
-        "messagesObjectPropertiesById",
-        messagesObjectPropertiesById.set(
-          action.id,
-          Object.assign({
-            [action.actor]: action.properties
-          }, messagesObjectPropertiesById.get(action.id))
-        )
-      );
-    case constants.MESSAGE_OBJECT_ENTRIES_RECEIVE:
-      return state.set(
-        "messagesObjectEntriesById",
-        messagesObjectEntriesById.set(
-          action.id,
-          Object.assign({
-            [action.actor]: action.entries
-          }, messagesObjectEntriesById.get(action.id))
-        )
-      );
 
     case constants.NETWORK_MESSAGE_UPDATE:
       return state.set(
@@ -457,14 +424,6 @@ function limitTopLevelMessageCount(state, record, logLimit) {
   if (mapHasRemovedIdKey(record.groupsById)) {
     record.set("groupsById", record.groupsById.withMutations(cleanUpCollection));
   }
-  if (mapHasRemovedIdKey(record.messagesObjectPropertiesById)) {
-    record.set("messagesObjectPropertiesById",
-      record.messagesObjectPropertiesById.withMutations(cleanUpCollection));
-  }
-  if (mapHasRemovedIdKey(record.messagesObjectEntriesById)) {
-    record.set("messagesObjectEntriesById",
-      record.messagesObjectEntriesById.withMutations(cleanUpCollection));
-  }
   if (objectHasRemovedIdKey(record.repeatById)) {
     record.set("repeatById", cleanUpObject(record.repeatById));
   }
@@ -476,8 +435,6 @@ function limitTopLevelMessageCount(state, record, logLimit) {
 
   return record;
 }
-
-
 
 
 
@@ -498,16 +455,6 @@ function getAllActorsInMessage(message, state) {
     }
     return res;
   }, [])];
-
-  const loadedProperties = state.messagesObjectPropertiesById.get(message.id);
-  if (loadedProperties) {
-    actors.push(...Object.keys(loadedProperties));
-  }
-
-  const loadedEntries = state.messagesObjectEntriesById.get(message.id);
-  if (loadedEntries) {
-    actors.push(...Object.keys(loadedEntries));
-  }
 
   return actors;
 }
