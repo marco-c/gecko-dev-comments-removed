@@ -61,7 +61,7 @@ public:
   
 
 
-  bool Playback(HDC aDeviceContext, const RECT* aRect);
+  bool Playback(HDC aDeviceContext, const RECT& aRect);
 
   
 
