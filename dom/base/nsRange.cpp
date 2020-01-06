@@ -947,6 +947,23 @@ nsRange::IntersectsNode(nsINode& aNode, ErrorResult& aRv)
   return result;
 }
 
+void
+nsRange::NotifySelectionListenersAfterRangeSet()
+{
+  if (mSelection) {
+    
+    
+    
+    
+    AutoCalledByJSRestore calledByJSRestorer(*this);
+    mCalledByJS = false;
+    
+    
+    RefPtr<Selection> selection = mSelection;
+    selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
+  }
+}
+
 
 
 
@@ -1030,17 +1047,13 @@ nsRange::DoSetRange(const RawRangeBoundary& aStart,
 
   
   
+  
+  
   if (mSelection) {
-    
-    
-    
-    
-    AutoCalledByJSRestore calledByJSRestorer(*this);
-    mCalledByJS = false;
-    
-    
-    RefPtr<Selection> selection = mSelection;
-    selection->NotifySelectionListeners(calledByJSRestorer.SavedValue());
+    nsContentUtils::AddScriptRunner(NewRunnableMethod(
+                                    "NotifySelectionListenersAfterRangeSet",
+                                    this,
+                                    &nsRange::NotifySelectionListenersAfterRangeSet));
   }
 }
 

@@ -427,6 +427,11 @@ public:
 
   void ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges);
 
+  
+
+
+  void NotifySelectionListenersAfterRangeSet();
+
   typedef nsTHashtable<nsPtrHashKey<nsRange> > RangeHashTable;
 protected:
 
