@@ -76,6 +76,10 @@ public:
   
   size_t SizeOfCurrentMemoryBuffer() const;
 
+  PRFileDesc* GetFD() const;
+
+  void CloseFD();
+
 private:
   ~MutableBlobStorage();
 
