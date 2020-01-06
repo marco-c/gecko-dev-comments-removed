@@ -295,10 +295,6 @@ public:
     mozilla::GeckoStyleContext* aStyleContext,
     StyleAnimationValue& aComputedValue);
 
-  static already_AddRefed<nsCSSValue::Array>
-    AppendTransformFunction(nsCSSKeyword aTransformFunction,
-                            nsCSSValueList**& aListTail);
-
   
 
 
@@ -645,6 +641,10 @@ struct AnimationValue
   
   static AnimationValue Transform(StyleBackendType aBackendType,
                                   nsCSSValueSharedList& aList);
+
+  static already_AddRefed<nsCSSValue::Array>
+  AppendTransformFunction(nsCSSKeyword aTransformFunction,
+                          nsCSSValueList**& aListTail);
 
   
   
