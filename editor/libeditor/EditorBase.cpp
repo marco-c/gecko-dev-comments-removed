@@ -2751,7 +2751,10 @@ EditorBase::SetTextImpl(Selection& aSelection, const nsAString& aString,
     }
   }
 
-  nsresult rv = DoTransaction(&aSelection, transaction);
+  
+  
+  
+  nsresult rv = transaction->DoTransaction();
 
   
   {
