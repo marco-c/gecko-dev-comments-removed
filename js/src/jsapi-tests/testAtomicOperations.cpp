@@ -5,6 +5,7 @@
 
 
 
+#include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 
 #include "jit/AtomicOperations.h"
@@ -85,8 +86,9 @@ END_TEST(testAtomicFence)
 
 
 
-static uint8_t atomicMem[8];
-static uint8_t atomicMem2[8];
+
+MOZ_ALIGNED_DECL(static uint8_t atomicMem[8], 8);
+MOZ_ALIGNED_DECL(static uint8_t atomicMem2[8], 8);
 
 
 
@@ -104,9 +106,9 @@ static uint8_t atomicMem2[8];
     CHECK(*q == B);                                                     \
     CHECK(jit::AtomicOperations::exchangeSeqCst(p, A) == B);            \
     CHECK(*q == A);                                                     \
-    CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, (T)0, (T)1) == A); /*failure*/ \
+    CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, (T)0, (T)1) == A);  \
     CHECK(*q == A);                                                     \
-    CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, A, B) == A);  /*success*/ \
+    CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, A, B) == A);   \
     CHECK(*q == B);                                                     \
     *q = A;                                                             \
     CHECK(jit::AtomicOperations::fetchAddSeqCst(p, B) == A);            \
