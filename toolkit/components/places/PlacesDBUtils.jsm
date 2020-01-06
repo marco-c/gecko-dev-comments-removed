@@ -11,66 +11,66 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+                                  "resource://gre/modules/PlacesUtils.jsm");
 
 this.EXPORTED_SYMBOLS = [ "PlacesDBUtils" ];
 
 
 
-const FINISHED_MAINTENANCE_TOPIC = "places-maintenance-finished";
-
 const BYTES_PER_MEBIBYTE = 1048576;
 
-
-
-XPCOMUtils.defineLazyGetter(this, "DBConn", function() {
-  return PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnection;
-});
-
-
-
 this.PlacesDBUtils = {
+
   
 
 
 
 
 
-
-
-  _executeTasks: function PDBU__executeTasks(aTasks) {
-    if (PlacesDBUtils._isShuttingDown) {
-      aTasks.log("- We are shutting down. Will not schedule the tasks.");
-      aTasks.clear();
+  getLegacyLog(taskStatusMap) {
+    let logs = [];
+    for (let [key, value] of taskStatusMap) {
+      logs.push(`> Task: ${key}`);
+      let prefix = value.succeeded ? "+ " : "- ";
+      logs = logs.concat(value.logs.map(m => `${prefix}${m}`));
     }
-
-    let task = aTasks.pop();
-    if (task) {
-      task.call(PlacesDBUtils, aTasks);
-    } else {
-      
-      
-      if (aTasks._telemetryStart) {
-        Services.telemetry.getHistogramById("PLACES_IDLE_MAINTENANCE_TIME_MS")
-                          .add(Date.now() - aTasks._telemetryStart);
-        aTasks._telemetryStart = 0;
-      }
-
-      if (aTasks.callback) {
-        let scope = aTasks.scope || Cu.getGlobalForObject(aTasks.callback);
-        aTasks.callback.call(scope, aTasks.messages);
-      }
-
-      
-      Services.obs.notifyObservers(null, FINISHED_MAINTENANCE_TOPIC);
-    }
+    return logs;
   },
 
   _isShuttingDown: false,
-  shutdown: function PDBU_shutdown() {
+  shutdown() {
     PlacesDBUtils._isShuttingDown = true;
   },
 
+  _clearTaskQueue: false,
+  clearPendingTasks() {
+    PlacesDBUtils._clearTaskQueue = true;
+  },
+
+  
+
+
+
+
+
+
+  async maintenanceOnIdle() {
+    let tasks = [
+      this.checkIntegrity,
+      this.checkCoherence,
+      this._refreshUI
+    ];
+    let telemetryStartTime = Date.now();
+    let taskStatusMap = await PlacesDBUtils.runTasks(tasks);
+
+    Services.prefs.setIntPref("places.database.lastMaintenance",
+                               parseInt(Date.now() / 1000));
+    Services.telemetry.getHistogramById("PLACES_IDLE_MAINTENANCE_TIME_MS")
+                      .add(Date.now() - telemetryStartTime);
+    return taskStatusMap;
+  },
+
   
 
 
@@ -79,22 +79,66 @@ this.PlacesDBUtils = {
 
 
 
+  async checkAndFixDatabase() {
+    let tasks = [
+      this.checkIntegrity,
+      this.checkCoherence,
+      this.expire,
+      this.vacuum,
+      this.stats,
+      this._refreshUI,
+    ];
+    return PlacesDBUtils.runTasks(tasks);
+  },
 
-  maintenanceOnIdle: function PDBU_maintenanceOnIdle(aCallback, aScope) {
-    let tasks = new Tasks([
-      this.checkIntegrity
-    , this.checkCoherence
-    , this._refreshUI
-    ]);
-    tasks._telemetryStart = Date.now();
-    tasks.callback = function() {
-      Services.prefs.setIntPref("places.database.lastMaintenance",
-                                parseInt(Date.now() / 1000));
-      if (aCallback)
-        aCallback();
+  
+
+
+
+
+
+  async _refreshUI() {
+    
+    let observers = PlacesUtils.history.getObservers();
+    for (let observer of observers) {
+      observer.onBeginUpdateBatch();
+      observer.onEndUpdateBatch();
     }
-    tasks.scope = aScope;
-    this._executeTasks(tasks);
+    return [];
+  },
+
+  
+
+
+
+
+
+
+  async reindex() {
+    try {
+      let logs = [];
+      await PlacesUtils.withConnectionWrapper(
+        "PlacesDBUtils: Reindex the database",
+        async (db) => {
+          let query = "REINDEX";
+          await db.execute(query);
+          logs.push("The database has been re indexed");
+        });
+      return logs;
+    } catch (ex) {
+      throw new Error("Unable to reindex the database.");
+    }
+  },
+
+  
+
+
+
+
+
+
+  async _checkIntegritySkipReindex() {
+    return this.checkIntegrity(true);
   },
 
   
@@ -107,128 +151,45 @@ this.PlacesDBUtils = {
 
 
 
-  checkAndFixDatabase: function PDBU_checkAndFixDatabase(aCallback, aScope) {
-    let tasks = new Tasks([
-      this.checkIntegrity
-    , this.checkCoherence
-    , this.expire
-    , this.vacuum
-    , this.stats
-    , this._refreshUI
-    ]);
-    tasks.callback = aCallback;
-    tasks.scope = aScope;
-    this._executeTasks(tasks);
-  },
+  async checkIntegrity(skipReindex) {
+    let logs = [];
 
-  
-
-
-
-
-
-  _refreshUI: function PDBU__refreshUI(aTasks) {
-    let tasks = new Tasks(aTasks);
-
-    
-    PlacesUtils.history.runInBatchMode({
-      runBatched(aUserData) {}
-    }, null);
-    PlacesDBUtils._executeTasks(tasks);
-  },
-
-  _handleError: function PDBU__handleError(aError) {
-    Cu.reportError("Async statement execution returned with '" +
-                   aError.result + "', '" + aError.message + "'");
-  },
-
-  
-
-
-
-
-
-  reindex: function PDBU_reindex(aTasks) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Reindex");
-
-    let stmt = DBConn.createAsyncStatement("REINDEX");
-    stmt.executeAsync({
-      handleError: PlacesDBUtils._handleError,
-      handleResult() {},
-
-      handleCompletion(aReason) {
-        if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          tasks.log("+ The database has been reindexed");
+    try {
+      
+      await PlacesUtils.withConnectionWrapper("PlacesDBUtils: check the integrity", async (db) => {
+        let row;
+        await db.execute(
+          "PRAGMA integrity_check",
+          null,
+          r => {
+            row = r;
+            throw StopIteration;
+          });
+        if (row.getResultByIndex(0) === "ok") {
+          logs.push("The database is sane");
         } else {
-          tasks.log("- Unable to reindex database");
-        }
-
-        PlacesDBUtils._executeTasks(tasks);
-      }
-    });
-    stmt.finalize();
-  },
-
-  
-
-
-
-
-
-  _checkIntegritySkipReindex: function PDBU__checkIntegritySkipReindex(aTasks) {
-    return this.checkIntegrity(aTasks, true);
-  },
-
-  
-
-
-
-
-
-
-
-  checkIntegrity: function PDBU_checkIntegrity(aTasks, aSkipReindex) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Integrity check");
-
-    
-    let stmt = DBConn.createAsyncStatement("PRAGMA integrity_check(1)");
-    stmt.executeAsync({
-      handleError: PlacesDBUtils._handleError,
-
-      _corrupt: false,
-      handleResult(aResultSet) {
-        let row = aResultSet.getNextRow();
-        this._corrupt = row.getResultByIndex(0) != "ok";
-      },
-
-      handleCompletion(aReason) {
-        if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          if (this._corrupt) {
-            tasks.log("- The database is corrupt");
-            if (aSkipReindex) {
-              tasks.log("- Unable to fix corruption, database will be replaced on next startup");
-              Services.prefs.setBoolPref("places.database.replaceOnStartup", true);
-              tasks.clear();
-            } else {
-              
-              
-              tasks.push(PlacesDBUtils._checkIntegritySkipReindex);
-              tasks.push(PlacesDBUtils.reindex);
-            }
+          
+          logs.push("The database is corrupt");
+          if (skipReindex) {
+            Services.prefs.setBoolPref("places.database.replaceOnStartup", true);
+            PlacesDBUtils.clearPendingTasks();
+            throw new Error("Unable to fix corruption, database will be replaced on next startup");
           } else {
-            tasks.log("+ The database is sane");
+            
+            let reindexLogs = await PlacesDBUtils.reindex();
+            let checkLogs = await PlacesDBUtils._checkIntegritySkipReindex();
+            logs = logs.concat(reindexLogs).concat(checkLogs);
           }
-        } else {
-          tasks.log("- Unable to check database status");
-          tasks.clear();
         }
-
-        PlacesDBUtils._executeTasks(tasks);
+      });
+    } catch (ex) {
+      if (ex.message.indexOf("Unable to fix corruption") !== 0) {
+        
+        PlacesDBUtils.clearPendingTasks();
+        throw new Error("Unable to check database integrity");
       }
-    });
-    stmt.finalize();
+    }
+    return logs;
   },
 
   
@@ -237,48 +198,58 @@ this.PlacesDBUtils = {
 
 
 
-  checkCoherence: function PDBU_checkCoherence(aTasks) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Coherence check");
 
-    let stmts = PlacesDBUtils._getBoundCoherenceStatements();
-    DBConn.executeAsync(stmts, stmts.length, {
-      handleError: PlacesDBUtils._handleError,
-      handleResult() {},
+  async checkCoherence() {
+    let logs = [];
 
-      handleCompletion(aReason) {
-        if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          tasks.log("+ The database is coherent");
-        } else {
-          tasks.log("- Unable to check database coherence");
-          tasks.clear();
+    let stmts = await PlacesDBUtils._getBoundCoherenceStatements();
+    let allStatementsPromises = [];
+    let coherenceCheck = true;
+    await PlacesUtils.withConnectionWrapper(
+      "PlacesDBUtils: coherence check:",
+      db => db.executeTransaction(async () => {
+        for (let {query, params} of stmts) {
+          params = params ? params : null;
+          allStatementsPromises.push(db.execute(query, params).catch(ex => {
+            Cu.reportError(ex);
+            coherenceCheck = false;
+          }));
         }
+      })
+    );
 
-        PlacesDBUtils._executeTasks(tasks);
-      }
-    });
-    stmts.forEach(aStmt => aStmt.finalize());
+    await Promise.all(allStatementsPromises);
+    if (coherenceCheck) {
+      logs.push("The database is coherent");
+    } else {
+      PlacesDBUtils.clearPendingTasks();
+      throw new Error("Unable to check database coherence");
+    }
+    return logs;
   },
 
-  _getBoundCoherenceStatements: function PDBU__getBoundCoherenceStatements() {
+  async _getBoundCoherenceStatements() {
     let cleanupStatements = [];
 
     
     
     
     
-    let deleteObsoleteAnnos = DBConn.createAsyncStatement(
+    let deleteObsoleteAnnos = {
+      query:
       `DELETE FROM moz_annos
        WHERE type = 4
           OR anno_attribute_id IN (
          SELECT id FROM moz_anno_attributes
          WHERE name = 'downloads/destinationFileName' OR
                name BETWEEN 'weave/' AND 'weave0'
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteObsoleteAnnos);
 
     
-    let deleteObsoleteItemsAnnos = DBConn.createAsyncStatement(
+    let deleteObsoleteItemsAnnos = {
+      query:
       `DELETE FROM moz_items_annos
        WHERE type = 4
           OR anno_attribute_id IN (
@@ -286,62 +257,78 @@ this.PlacesDBUtils = {
          WHERE name = 'sync/children'
             OR name = 'placesInternal/GUID'
             OR name BETWEEN 'weave/' AND 'weave0'
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteObsoleteItemsAnnos);
 
     
-    let deleteUnusedAnnoAttributes = DBConn.createAsyncStatement(
+    let deleteUnusedAnnoAttributes = {
+      query:
       `DELETE FROM moz_anno_attributes WHERE id IN (
          SELECT id FROM moz_anno_attributes n
          WHERE NOT EXISTS
              (SELECT id FROM moz_annos WHERE anno_attribute_id = n.id LIMIT 1)
            AND NOT EXISTS
              (SELECT id FROM moz_items_annos WHERE anno_attribute_id = n.id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteUnusedAnnoAttributes);
 
     
     
-    let deleteInvalidAttributeAnnos = DBConn.createAsyncStatement(
+    let deleteInvalidAttributeAnnos = {
+      query:
       `DELETE FROM moz_annos WHERE id IN (
          SELECT id FROM moz_annos a
          WHERE NOT EXISTS
            (SELECT id FROM moz_anno_attributes
              WHERE id = a.anno_attribute_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteInvalidAttributeAnnos);
 
     
-    let deleteOrphanAnnos = DBConn.createAsyncStatement(
+    let deleteOrphanAnnos = {
+      query:
       `DELETE FROM moz_annos WHERE id IN (
          SELECT id FROM moz_annos a
          WHERE NOT EXISTS
            (SELECT id FROM moz_places WHERE id = a.place_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanAnnos);
 
     
     
     
     
-    let selectPlacesRoot = DBConn.createStatement(
-      "SELECT id FROM moz_bookmarks WHERE id = :places_root");
+    let selectPlacesRoot = {
+      query: "SELECT id FROM moz_bookmarks WHERE id = :places_root",
+      params: {}
+    };
     selectPlacesRoot.params["places_root"] = PlacesUtils.placesRootId;
-    if (!selectPlacesRoot.executeStep()) {
+    let db = await PlacesUtils.promiseDBConnection();
+    let rows = await db.execute(selectPlacesRoot.query, selectPlacesRoot.params);
+    if (rows.length === 0) {
       
-      let createPlacesRoot = DBConn.createAsyncStatement(
-        `INSERT INTO moz_bookmarks (id, type, fk, parent, position, title,
-                                    guid)
-         VALUES (:places_root, 2, NULL, 0, 0, :title, :guid)`);
+      let createPlacesRoot = {
+        query:
+        `INSERT INTO moz_bookmarks (id, type, fk, parent, position, title, guid)
+           VALUES (:places_root, 2, NULL, 0, 0, :title, :guid)`,
+        params: {}
+      };
       createPlacesRoot.params["places_root"] = PlacesUtils.placesRootId;
       createPlacesRoot.params["title"] = "";
       createPlacesRoot.params["guid"] = PlacesUtils.bookmarks.rootGuid;
       cleanupStatements.push(createPlacesRoot);
 
       
-      let fixPlacesRootChildren = DBConn.createAsyncStatement(
+      let fixPlacesRootChildren = {
+        query:
         `UPDATE moz_bookmarks SET parent = :places_root WHERE guid IN
-           ( :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid )`);
+             ( :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid )`,
+        params: {}
+      };
       fixPlacesRootChildren.params["places_root"] = PlacesUtils.placesRootId;
       fixPlacesRootChildren.params["menuGuid"] = PlacesUtils.bookmarks.menuGuid;
       fixPlacesRootChildren.params["toolbarGuid"] = PlacesUtils.bookmarks.toolbarGuid;
@@ -349,38 +336,51 @@ this.PlacesDBUtils = {
       fixPlacesRootChildren.params["tagsGuid"] = PlacesUtils.bookmarks.tagsGuid;
       cleanupStatements.push(fixPlacesRootChildren);
     }
-    selectPlacesRoot.finalize();
-
     
     
     
     let updateRootTitleSql = `UPDATE moz_bookmarks SET title = :title
                               WHERE id = :root_id AND title <> :title`;
     
-    let fixPlacesRootTitle = DBConn.createAsyncStatement(updateRootTitleSql);
+    let fixPlacesRootTitle = {
+      query: updateRootTitleSql,
+      params: {}
+    };
     fixPlacesRootTitle.params["root_id"] = PlacesUtils.placesRootId;
     fixPlacesRootTitle.params["title"] = "";
     cleanupStatements.push(fixPlacesRootTitle);
     
-    let fixBookmarksMenuTitle = DBConn.createAsyncStatement(updateRootTitleSql);
+    let fixBookmarksMenuTitle = {
+      query: updateRootTitleSql,
+      params: {}
+    };
     fixBookmarksMenuTitle.params["root_id"] = PlacesUtils.bookmarksMenuFolderId;
     fixBookmarksMenuTitle.params["title"] =
       PlacesUtils.getString("BookmarksMenuFolderTitle");
     cleanupStatements.push(fixBookmarksMenuTitle);
     
-    let fixBookmarksToolbarTitle = DBConn.createAsyncStatement(updateRootTitleSql);
+    let fixBookmarksToolbarTitle = {
+      query: updateRootTitleSql,
+      params: {}
+    };
     fixBookmarksToolbarTitle.params["root_id"] = PlacesUtils.toolbarFolderId;
     fixBookmarksToolbarTitle.params["title"] =
       PlacesUtils.getString("BookmarksToolbarFolderTitle");
     cleanupStatements.push(fixBookmarksToolbarTitle);
     
-    let fixUnsortedBookmarksTitle = DBConn.createAsyncStatement(updateRootTitleSql);
+    let fixUnsortedBookmarksTitle = {
+      query: updateRootTitleSql,
+      params: {}
+    };
     fixUnsortedBookmarksTitle.params["root_id"] = PlacesUtils.unfiledBookmarksFolderId;
     fixUnsortedBookmarksTitle.params["title"] =
       PlacesUtils.getString("OtherBookmarksFolderTitle");
     cleanupStatements.push(fixUnsortedBookmarksTitle);
     
-    let fixTagsRootTitle = DBConn.createAsyncStatement(updateRootTitleSql);
+    let fixTagsRootTitle = {
+      query: updateRootTitleSql,
+      params: {}
+    };
     fixTagsRootTitle.params["root_id"] = PlacesUtils.tagsFolderId;
     fixTagsRootTitle.params["title"] =
       PlacesUtils.getString("TagsFolderTitle");
@@ -389,14 +389,17 @@ this.PlacesDBUtils = {
     
     
     
-    let deleteNoPlaceItems = DBConn.createAsyncStatement(
+    let deleteNoPlaceItems = {
+      query:
       `DELETE FROM moz_bookmarks WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
          SELECT b.id FROM moz_bookmarks b
          WHERE fk NOT NULL AND b.type = :bookmark_type
            AND NOT EXISTS (SELECT url FROM moz_places WHERE id = b.fk LIMIT 1)
-       )`);
+       )`,
+      params: {}
+    };
     deleteNoPlaceItems.params["bookmark_type"] = PlacesUtils.bookmarks.TYPE_BOOKMARK;
     deleteNoPlaceItems.params["rootGuid"] = PlacesUtils.bookmarks.rootGuid;
     deleteNoPlaceItems.params["menuGuid"] = PlacesUtils.bookmarks.menuGuid;
@@ -406,7 +409,8 @@ this.PlacesDBUtils = {
     cleanupStatements.push(deleteNoPlaceItems);
 
     
-    let deleteBogusTagChildren = DBConn.createAsyncStatement(
+    let deleteBogusTagChildren = {
+      query:
       `DELETE FROM moz_bookmarks WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
@@ -414,7 +418,9 @@ this.PlacesDBUtils = {
          WHERE b.parent IN
            (SELECT id FROM moz_bookmarks WHERE parent = :tags_folder)
            AND b.type <> :bookmark_type
-       )`);
+       )`,
+      params: {}
+    };
     deleteBogusTagChildren.params["tags_folder"] = PlacesUtils.tagsFolderId;
     deleteBogusTagChildren.params["bookmark_type"] = PlacesUtils.bookmarks.TYPE_BOOKMARK;
     deleteBogusTagChildren.params["rootGuid"] = PlacesUtils.bookmarks.rootGuid;
@@ -425,7 +431,8 @@ this.PlacesDBUtils = {
     cleanupStatements.push(deleteBogusTagChildren);
 
     
-    let deleteEmptyTags = DBConn.createAsyncStatement(
+    let deleteEmptyTags = {
+      query:
       `DELETE FROM moz_bookmarks WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
@@ -434,7 +441,9 @@ this.PlacesDBUtils = {
            (SELECT id FROM moz_bookmarks WHERE parent = :tags_folder)
            AND NOT EXISTS
              (SELECT id from moz_bookmarks WHERE parent = b.id LIMIT 1)
-       )`);
+       )`,
+      params: {}
+    };
     deleteEmptyTags.params["tags_folder"] = PlacesUtils.tagsFolderId;
     deleteEmptyTags.params["rootGuid"] = PlacesUtils.bookmarks.rootGuid;
     deleteEmptyTags.params["menuGuid"] = PlacesUtils.bookmarks.menuGuid;
@@ -444,14 +453,17 @@ this.PlacesDBUtils = {
     cleanupStatements.push(deleteEmptyTags);
 
     
-    let fixOrphanItems = DBConn.createAsyncStatement(
+    let fixOrphanItems = {
+      query:
       `UPDATE moz_bookmarks SET parent = :unsorted_folder WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
          SELECT b.id FROM moz_bookmarks b
          WHERE NOT EXISTS
            (SELECT id FROM moz_bookmarks WHERE id = b.parent LIMIT 1)
-       )`);
+       )`,
+      params: {}
+    };
     fixOrphanItems.params["unsorted_folder"] = PlacesUtils.unfiledBookmarksFolderId;
     fixOrphanItems.params["rootGuid"] = PlacesUtils.bookmarks.rootGuid;
     fixOrphanItems.params["menuGuid"] = PlacesUtils.bookmarks.menuGuid;
@@ -464,14 +476,17 @@ this.PlacesDBUtils = {
     
     
     
-    let fixBookmarksAsFolders = DBConn.createAsyncStatement(
+    let fixBookmarksAsFolders = {
+      query:
       `UPDATE moz_bookmarks SET type = :bookmark_type WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
          SELECT id FROM moz_bookmarks b
          WHERE type IN (:folder_type, :separator_type)
            AND fk NOTNULL
-       )`);
+       )`,
+      params: {}
+    };
     fixBookmarksAsFolders.params["bookmark_type"] = PlacesUtils.bookmarks.TYPE_BOOKMARK;
     fixBookmarksAsFolders.params["folder_type"] = PlacesUtils.bookmarks.TYPE_FOLDER;
     fixBookmarksAsFolders.params["separator_type"] = PlacesUtils.bookmarks.TYPE_SEPARATOR;
@@ -485,14 +500,17 @@ this.PlacesDBUtils = {
     
     
     
-    let fixFoldersAsBookmarks = DBConn.createAsyncStatement(
+    let fixFoldersAsBookmarks = {
+      query:
       `UPDATE moz_bookmarks SET type = :folder_type WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
          SELECT id FROM moz_bookmarks b
          WHERE type = :bookmark_type
            AND fk IS NULL
-       )`);
+       )`,
+      params: {}
+    };
     fixFoldersAsBookmarks.params["bookmark_type"] = PlacesUtils.bookmarks.TYPE_BOOKMARK;
     fixFoldersAsBookmarks.params["folder_type"] = PlacesUtils.bookmarks.TYPE_FOLDER;
     fixFoldersAsBookmarks.params["rootGuid"] = PlacesUtils.bookmarks.rootGuid;
@@ -505,7 +523,8 @@ this.PlacesDBUtils = {
     
     
     
-    let fixInvalidParents = DBConn.createAsyncStatement(
+    let fixInvalidParents = {
+      query:
       `UPDATE moz_bookmarks SET parent = :unsorted_folder WHERE guid NOT IN (
          :rootGuid, :menuGuid, :toolbarGuid, :unfiledGuid, :tagsGuid  /* skip roots */
        ) AND id IN (
@@ -514,7 +533,9 @@ this.PlacesDBUtils = {
            (SELECT id FROM moz_bookmarks WHERE id = b.parent
              AND type IN (:bookmark_type, :separator_type)
              LIMIT 1)
-       )`);
+       )`,
+      params: {}
+    };
     fixInvalidParents.params["unsorted_folder"] = PlacesUtils.unfiledBookmarksFolderId;
     fixInvalidParents.params["bookmark_type"] = PlacesUtils.bookmarks.TYPE_BOOKMARK;
     fixInvalidParents.params["separator_type"] = PlacesUtils.bookmarks.TYPE_SEPARATOR;
@@ -531,14 +552,16 @@ this.PlacesDBUtils = {
     
     
     
-    cleanupStatements.push(DBConn.createAsyncStatement(
+    cleanupStatements.push({
+      query:
       `CREATE TEMP TABLE IF NOT EXISTS moz_bm_reindex_temp (
          id INTEGER PRIMARY_KEY
        , parent INTEGER
        , position INTEGER
        )`
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
+    });
+    cleanupStatements.push({
+      query:
       `INSERT INTO moz_bm_reindex_temp
        SELECT id, parent, 0
        FROM moz_bookmarks b
@@ -549,46 +572,51 @@ this.PlacesDBUtils = {
          HAVING (SUM(DISTINCT position + 1) - (count(*) * (count(*) + 1) / 2)) <> 0
        )
        ORDER BY parent ASC, position ASC, ROWID ASC`
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
+    });
+    cleanupStatements.push({
+      query:
       `CREATE INDEX IF NOT EXISTS moz_bm_reindex_temp_index
        ON moz_bm_reindex_temp(parent)`
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
+    });
+    cleanupStatements.push({
+      query:
       `UPDATE moz_bm_reindex_temp SET position = (
          ROWID - (SELECT MIN(t.ROWID) FROM moz_bm_reindex_temp t
                   WHERE t.parent = moz_bm_reindex_temp.parent)
        )`
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
+    });
+    cleanupStatements.push({
+      query:
       `CREATE TEMP TRIGGER IF NOT EXISTS moz_bm_reindex_temp_trigger
        BEFORE DELETE ON moz_bm_reindex_temp
        FOR EACH ROW
        BEGIN
          UPDATE moz_bookmarks SET position = OLD.position WHERE id = OLD.id;
        END`
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
-      "DELETE FROM moz_bm_reindex_temp "
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
-      "DROP INDEX moz_bm_reindex_temp_index "
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
-      "DROP TRIGGER moz_bm_reindex_temp_trigger "
-    ));
-    cleanupStatements.push(DBConn.createAsyncStatement(
-      "DROP TABLE moz_bm_reindex_temp "
-    ));
+    });
+    cleanupStatements.push({
+      query: "DELETE FROM moz_bm_reindex_temp "
+    });
+    cleanupStatements.push({
+      query: "DROP INDEX moz_bm_reindex_temp_index "
+    });
+    cleanupStatements.push({
+      query: "DROP TRIGGER moz_bm_reindex_temp_trigger "
+    });
+    cleanupStatements.push({
+      query: "DROP TABLE moz_bm_reindex_temp "
+    });
 
     
     
     
-    let fixEmptyNamedTags = DBConn.createAsyncStatement(
+    let fixEmptyNamedTags = {
+      query:
       `UPDATE moz_bookmarks SET title = :empty_title
        WHERE length(title) = 0 AND type = :folder_type
-         AND parent = :tags_folder`
-    );
+         AND parent = :tags_folder`,
+      params: {}
+    };
     fixEmptyNamedTags.params["empty_title"] = "(notitle)";
     fixEmptyNamedTags.params["folder_type"] = PlacesUtils.bookmarks.TYPE_FOLDER;
     fixEmptyNamedTags.params["tags_folder"] = PlacesUtils.tagsFolderId;
@@ -596,71 +624,86 @@ this.PlacesDBUtils = {
 
     
     
-    let deleteOrphanIconPages = DBConn.createAsyncStatement(
+    let deleteOrphanIconPages = {
+      query:
       `DELETE FROM moz_pages_w_icons WHERE page_url_hash NOT IN (
          SELECT url_hash FROM moz_places
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanIconPages);
 
-    let deleteOrphanIcons = DBConn.createAsyncStatement(
+    let deleteOrphanIcons = {
+      query:
       `DELETE FROM moz_icons WHERE root = 0 AND id NOT IN (
          SELECT icon_id FROM moz_icons_to_pages
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanIcons);
 
     
     
-    let deleteOrphanVisits = DBConn.createAsyncStatement(
+    let deleteOrphanVisits = {
+      query:
       `DELETE FROM moz_historyvisits WHERE id IN (
          SELECT id FROM moz_historyvisits v
          WHERE NOT EXISTS
            (SELECT id FROM moz_places WHERE id = v.place_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanVisits);
 
     
     
-    let deleteOrphanInputHistory = DBConn.createAsyncStatement(
+    let deleteOrphanInputHistory = {
+      query:
       `DELETE FROM moz_inputhistory WHERE place_id IN (
          SELECT place_id FROM moz_inputhistory i
          WHERE NOT EXISTS
            (SELECT id FROM moz_places WHERE id = i.place_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanInputHistory);
 
     
     
-    let deleteInvalidAttributeItemsAnnos = DBConn.createAsyncStatement(
+    let deleteInvalidAttributeItemsAnnos = {
+      query:
       `DELETE FROM moz_items_annos WHERE id IN (
          SELECT id FROM moz_items_annos t
          WHERE NOT EXISTS
            (SELECT id FROM moz_anno_attributes
              WHERE id = t.anno_attribute_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteInvalidAttributeItemsAnnos);
 
     
-    let deleteOrphanItemsAnnos = DBConn.createAsyncStatement(
+    let deleteOrphanItemsAnnos = {
+      query:
       `DELETE FROM moz_items_annos WHERE id IN (
          SELECT id FROM moz_items_annos t
          WHERE NOT EXISTS
            (SELECT id FROM moz_bookmarks WHERE id = t.item_id LIMIT 1)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteOrphanItemsAnnos);
 
     
     
-    let deleteUnusedKeywords = DBConn.createAsyncStatement(
+    let deleteUnusedKeywords = {
+      query:
       `DELETE FROM moz_keywords WHERE id IN (
          SELECT id FROM moz_keywords k
          WHERE NOT EXISTS
            (SELECT 1 FROM moz_places h WHERE k.place_id = h.id)
-       )`);
+       )`
+    };
     cleanupStatements.push(deleteUnusedKeywords);
 
     
     
-    let fixVisitStats = DBConn.createAsyncStatement(
+    let fixVisitStats = {
+      query:
       `UPDATE moz_places
        SET visit_count = (SELECT count(*) FROM moz_historyvisits
                           WHERE place_id = moz_places.id AND visit_type NOT IN (0,4,7,8,9)),
@@ -672,11 +715,13 @@ this.PlacesDBUtils = {
                                WHERE v.place_id = h.id AND visit_type NOT IN (0,4,7,8,9))
             OR last_visit_date <> (SELECT MAX(visit_date) FROM moz_historyvisits v
                                    WHERE v.place_id = h.id)
-       )`);
+       )`
+    };
     cleanupStatements.push(fixVisitStats);
 
     
-    let fixRedirectsHidden = DBConn.createAsyncStatement(
+    let fixRedirectsHidden = {
+      query:
       `UPDATE moz_places
        SET hidden = 1
        WHERE id IN (
@@ -685,19 +730,23 @@ this.PlacesDBUtils = {
          JOIN moz_historyvisits dst ON dst.from_visit = src.id AND dst.visit_type IN (5,6)
          LEFT JOIN moz_bookmarks on fk = h.id AND fk ISNULL
          GROUP BY src.place_id HAVING count(*) = visit_count
-       )`);
+       )`
+    };
     cleanupStatements.push(fixRedirectsHidden);
 
     
-    let fixForeignCount = DBConn.createAsyncStatement(
+    let fixForeignCount = {
+      query:
       `UPDATE moz_places SET foreign_count =
          (SELECT count(*) FROM moz_bookmarks WHERE fk = moz_places.id ) +
-         (SELECT count(*) FROM moz_keywords WHERE place_id = moz_places.id )`);
+         (SELECT count(*) FROM moz_keywords WHERE place_id = moz_places.id )`
+    };
     cleanupStatements.push(fixForeignCount);
 
     
-    let fixMissingHashes = DBConn.createAsyncStatement(
-      `UPDATE moz_places SET url_hash = hash(url) WHERE url_hash = 0`);
+    let fixMissingHashes = {
+      query: `UPDATE moz_places SET url_hash = hash(url) WHERE url_hash = 0`
+    };
     cleanupStatements.push(fixMissingHashes);
 
     
@@ -711,36 +760,28 @@ this.PlacesDBUtils = {
 
 
 
-  vacuum: function PDBU_vacuum(aTasks) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Vacuum");
 
+  async vacuum() {
+    let logs = [];
     let DBFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     DBFile.append("places.sqlite");
-    tasks.log("Initial database size is " +
-              parseInt(DBFile.fileSize / 1024) + " KiB");
-
-    let stmt = DBConn.createAsyncStatement("VACUUM");
-    stmt.executeAsync({
-      handleError: PlacesDBUtils._handleError,
-      handleResult() {},
-
-      handleCompletion(aReason) {
-        if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
-          tasks.log("+ The database has been vacuumed");
-          let vacuumedDBFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
-          vacuumedDBFile.append("places.sqlite");
-          tasks.log("Final database size is " +
-                    parseInt(vacuumedDBFile.fileSize / 1024) + " KiB");
-        } else {
-          tasks.log("- Unable to vacuum database");
-          tasks.clear();
-        }
-
-        PlacesDBUtils._executeTasks(tasks);
-      }
-    });
-    stmt.finalize();
+    logs.push("Initial database size is " +
+                parseInt(DBFile.fileSize / 1024) + " KiB");
+    return PlacesUtils.withConnectionWrapper(
+      "PlacesDBUtils: vacuum",
+      async (db) => {
+        await db.execute("VACUUM");
+      }).then(() => {
+        logs.push("The database has been vacuumed");
+        let vacuumedDBFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
+        vacuumedDBFile.append("places.sqlite");
+        logs.push("Final database size is " +
+                   parseInt(vacuumedDBFile.fileSize / 1024) + " KiB");
+        return logs;
+      }).catch(() => {
+        PlacesDBUtils.clearPendingTasks();
+        throw new Error("Unable to vacuum database");
+      });
   },
 
   
@@ -749,21 +790,24 @@ this.PlacesDBUtils = {
 
 
 
-  expire: function PDBU_expire(aTasks) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Orphans expiration");
+  async expire() {
+    let logs = [];
 
-    let expiration = Cc["@mozilla.org/places/expiration;1"].
-                     getService(Ci.nsIObserver);
+    let expiration = Cc["@mozilla.org/places/expiration;1"]
+                       .getService(Ci.nsIObserver);
 
-    Services.obs.addObserver(function(aSubject, aTopic, aData) {
-      Services.obs.removeObserver(arguments.callee, aTopic);
-      tasks.log("+ Database cleaned up");
-      PlacesDBUtils._executeTasks(tasks);
-    }, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
+    let returnPromise = new Promise(res => {
+      let observer = (subject, topic, data) => {
+        Services.obs.removeObserver(observer, topic);
+        logs.push("Database cleaned up");
+        res(logs);
+      };
+      Services.obs.addObserver(observer, PlacesUtils.TOPIC_EXPIRATION_FINISHED);
+    });
 
     
     expiration.observe(null, "places-debug-start-expiration", 0);
+    return returnPromise;
   },
 
   
@@ -772,70 +816,75 @@ this.PlacesDBUtils = {
 
 
 
-  stats: function PDBU_stats(aTasks) {
-    let tasks = new Tasks(aTasks);
-    tasks.log("> Statistics");
 
+  async stats() {
+    let logs = [];
     let DBFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     DBFile.append("places.sqlite");
-    tasks.log("Database size is " + parseInt(DBFile.fileSize / 1024) + " KiB");
+    logs.push("Database size is " + parseInt(DBFile.fileSize / 1024) + " KiB");
 
-    [ "user_version"
-    , "page_size"
-    , "cache_size"
-    , "journal_mode"
-    , "synchronous"
-    ].forEach(function(aPragma) {
-      let stmt = DBConn.createStatement("PRAGMA " + aPragma);
-      stmt.executeStep();
-      tasks.log(aPragma + " is " + stmt.getString(0));
-      stmt.finalize();
-    });
+    
+    let pragmas = [ "user_version",
+                    "page_size",
+                    "cache_size",
+                    "journal_mode",
+                    "synchronous"
+                  ].map(p => `pragma_${p}`);
+    let pragmaQuery = `SELECT * FROM ${ pragmas.join(", ") }`;
+    await PlacesUtils.withConnectionWrapper(
+      "PlacesDBUtils: pragma for stats",
+      async (db) => {
+        let row = (await db.execute(pragmaQuery))[0];
+        for (let i = 0; i != pragmas.length; i++) {
+          logs.push(`${ pragmas[i] } is ${ row.getResultByIndex(i) }`);
+        }
+      }).catch(() => {
+        logs.push("Could not set pragma for stat collection");
+      });
 
     
     try {
       let limitURIs = Services.prefs.getIntPref(
         "places.history.expiration.transient_current_max_pages");
-      tasks.log("History can store a maximum of " + limitURIs + " unique pages");
+      logs.push("History can store a maximum of " + limitURIs + " unique pages");
     } catch (ex) {}
 
-    let stmt = DBConn.createStatement(
-      "SELECT name FROM sqlite_master WHERE type = :type");
-    stmt.params.type = "table";
-    while (stmt.executeStep()) {
-      let tableName = stmt.getString(0);
-      let countStmt = DBConn.createStatement(
-        `SELECT count(*) FROM ${tableName}`);
-      countStmt.executeStep();
-      tasks.log("Table " + tableName + " has " + countStmt.getInt32(0) + " records");
-      countStmt.finalize();
-    }
-    stmt.reset();
+    let query = "SELECT name FROM sqlite_master WHERE type = :type";
+    let params = {};
+    let _getTableCount = async (tableName) => {
+      let db = await PlacesUtils.promiseDBConnection();
+      let rows = await db.execute(`SELECT count(*) FROM ${tableName}`);
+      logs.push(`Table ${tableName} has ${rows[0].getResultByIndex(0)} records`);
+    };
 
-    stmt.params.type = "index";
-    while (stmt.executeStep()) {
-      tasks.log("Index " + stmt.getString(0));
-    }
-    stmt.reset();
+    try {
+      params.type = "table";
+      let db = await PlacesUtils.promiseDBConnection();
+      await db.execute(query, params,
+                       r => _getTableCount(r.getResultByIndex(0)));
 
-    stmt.params.type = "trigger";
-    while (stmt.executeStep()) {
-      tasks.log("Trigger " + stmt.getString(0));
-    }
-    stmt.finalize();
+      params.type = "index";
+      await db.execute(query, params, r => {
+        logs.push(`Index ${r.getResultByIndex(0)}`);
+      });
 
-    PlacesDBUtils._executeTasks(tasks);
+      params.type = "trigger";
+      await db.execute(query, params, r => {
+        logs.push(`Trigger ${r.getResultByIndex(0)}`);
+      });
+
+    } catch (ex) {
+      throw new Error("Unable to collect stats.");
+    }
+
+    return logs;
   },
 
   
 
 
 
-
-
-  telemetry: function PDBU_telemetry(aTasks) {
-    let tasks = new Tasks(aTasks);
-
+  async telemetry() {
     
     
     let probeValues = {};
@@ -955,50 +1004,28 @@ this.PlacesDBUtils = {
           return;
         }
 
-        let stmt = DBConn.createAsyncStatement(probe.query);
-        for (let param in params) {
-          if (probe.query.indexOf(":" + param) > 0) {
-            stmt.params[param] = params[param];
+        let filteredParams = {};
+        for (let p in params) {
+          if (probe.query.includes(`:${p}`)) {
+            filteredParams[p] = params[p];
           }
         }
-
-        try {
-          stmt.executeAsync({
-            handleError: reject,
-            handleResult(aResultSet) {
-              let row = aResultSet.getNextRow();
-              resolve([probe, row.getResultByIndex(0)]);
-            },
-            handleCompletion() {}
-          });
-        } finally {
-          stmt.finalize();
-        }
+        PlacesUtils.promiseDBConnection()
+          .then(db => db.execute(probe.query, filteredParams))
+          .then(rows => resolve([probe, rows[0].getResultByIndex(0)]))
+          .catch(ex => reject(new Error("Unable to get telemetry from database.")));
       });
-
       
       
-      promiseDone.then(
-        
-        ([aProbe, aValue]) => {
-          let value = aValue;
-          try {
-            if ("callback" in aProbe) {
-              value = aProbe.callback(value);
-            }
-            probeValues[aProbe.histogram] = value;
-            Services.telemetry.getHistogramById(aProbe.histogram).add(value);
-          } catch (ex) {
-            Components.utils.reportError("Error adding value " + value +
-                                         " to histogram " + aProbe.histogram +
-                                         ": " + ex);
-          }
-        },
-        
-        this._handleError);
+      promiseDone.then(([aProbe, aValue]) => {
+        let value = aValue;
+        if ("callback" in aProbe) {
+          value = aProbe.callback(value);
+        }
+        probeValues[aProbe.histogram] = value;
+        Services.telemetry.getHistogramById(aProbe.histogram).add(value);
+      }).catch(Cu.reportError);
     }
-
-    PlacesDBUtils._executeTasks(tasks);
   },
 
   
@@ -1011,90 +1038,29 @@ this.PlacesDBUtils = {
 
 
 
-  runTasks: function PDBU_runTasks(aTasks, aCallback) {
-    let tasks = new Tasks(aTasks);
-    tasks.callback = aCallback;
-    PlacesDBUtils._executeTasks(tasks);
+  async runTasks(tasks) {
+    PlacesDBUtils._clearTaskQueue = false;
+    let tasksMap = new Map();
+    for (let task of tasks) {
+      if (PlacesDBUtils._isShuttingDown) {
+        tasksMap.set(
+          task.name,
+          { succeeded: false, logs: ["Shutting down, will now schedule the task."] });
+        continue;
+      }
+
+      if (PlacesDBUtils._clearTaskQueue) {
+        tasksMap.set(
+          task.name,
+          { succeeded: false, logs: ["The task queue was cleared by an error in another task."] });
+        continue;
+      }
+
+      let result =
+          await task().then(logs => { return { succeeded: true, logs }; })
+                      .catch(err => { return { succeeded: false, logs: [err.message] }; });
+      tasksMap.set(task.name, result);
+    }
+    return tasksMap;
   }
 };
-
-
-
-
-
-
-
-function Tasks(aTasks) {
-  if (aTasks) {
-    if (Array.isArray(aTasks)) {
-      this._list = aTasks.slice(0, aTasks.length);
-    } else if (typeof(aTasks) == "object" &&
-               (Tasks instanceof Tasks || "list" in aTasks)) {
-      
-      
-      this._list = aTasks.list;
-      this._log = aTasks.messages;
-      this.callback = aTasks.callback;
-      this.scope = aTasks.scope;
-      this._telemetryStart = aTasks._telemetryStart;
-    }
-  }
-}
-
-Tasks.prototype = {
-  _list: [],
-  _log: [],
-  callback: null,
-  scope: null,
-  _telemetryStart: 0,
-
-  
-
-
-
-
-
-  push: function T_push(aNewElt) {
-    this._list.unshift(aNewElt);
-  },
-
-  
-
-
-
-
-  pop: function T_pop() {
-    return this._list.shift();
-  },
-
-  
-
-
-  clear: function T_clear() {
-    this._list.length = 0;
-  },
-
-  
-
-
-  get list() {
-    return this._list.slice(0, this._list.length);
-  },
-
-  
-
-
-
-
-
-  log: function T_log(aMsg) {
-    this._log.push(aMsg);
-  },
-
-  
-
-
-  get messages() {
-    return this._log.slice(0, this._log.length);
-  },
-}
