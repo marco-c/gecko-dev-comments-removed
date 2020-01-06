@@ -463,9 +463,11 @@ CompositorBridgeParent::StopAndClearResources()
     });
     mWrBridge->Destroy();
     mWrBridge = nullptr;
-    mAsyncImageManager->Destroy();
-    
-    mAsyncImageManager = nullptr;
+    if (mAsyncImageManager) {
+      mAsyncImageManager->Destroy();
+      
+      mAsyncImageManager = nullptr;
+    }
   }
 
   if (mCompositor) {
