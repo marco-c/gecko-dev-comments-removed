@@ -31,8 +31,8 @@ HTMLSharedElement::~HTMLSharedElement()
 {
 }
 
-NS_IMPL_ADDREF_INHERITED(HTMLSharedElement, Element)
-NS_IMPL_RELEASE_INHERITED(HTMLSharedElement, Element)
+NS_IMPL_ADDREF_INHERITED(HTMLSharedElement, nsGenericHTMLElement)
+NS_IMPL_RELEASE_INHERITED(HTMLSharedElement, nsGenericHTMLElement)
 
 
 NS_INTERFACE_MAP_BEGIN(HTMLSharedElement)
