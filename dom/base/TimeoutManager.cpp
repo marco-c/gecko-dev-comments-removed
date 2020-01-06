@@ -198,6 +198,11 @@ namespace {
 #define DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS 4
 uint32_t gMaxConsecutiveCallbacksMilliseconds;
 
+
+
+#define DEFAULT_DISABLE_OPEN_CLICK_DELAY 0
+int32_t gDisableOpenClickDelay;
+
 } 
 
 TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
@@ -258,6 +263,10 @@ TimeoutManager::Initialize()
   Preferences::AddUintVarCache(&gMaxConsecutiveCallbacksMilliseconds,
                                "dom.timeout.max_consecutive_callbacks_ms",
                                DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS);
+
+  Preferences::AddIntVarCache(&gDisableOpenClickDelay,
+                              "dom.disable_open_click_delay",
+                              DEFAULT_DISABLE_OPEN_CLICK_DELAY);
 }
 
 uint32_t
@@ -374,13 +383,10 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     
     
 
-    int32_t delay =
-      Preferences::GetInt("dom.disable_open_click_delay");
-
     
     
     
-    if (interval <= delay) {
+    if (interval <= gDisableOpenClickDelay) {
       timeout->mPopupState = mWindow.GetPopupControlState();
     }
   }
