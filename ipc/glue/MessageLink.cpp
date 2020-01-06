@@ -72,6 +72,8 @@ ProcessLink::~ProcessLink()
 void
 ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Side aSide)
 {
+    mChan->AssertWorkerThread();
+
     NS_PRECONDITION(aTransport, "need transport layer");
 
     
@@ -131,7 +133,11 @@ ProcessLink::Open(mozilla::ipc::Transport* aTransport, MessageLoop *aIOLoop, Sid
         }
 
         
-        while (!mChan->Connected() && mChan->mChannelState != ChannelError) {
+        
+        
+        
+        
+        while (mChan->mChannelState == ChannelClosed) {
             mChan->mMonitor->Wait();
         }
     }
