@@ -343,8 +343,6 @@ var interfaceNamesInGlobalScope =
 
     "EventTarget",
 
-    "External",
-
     "File",
 
     "FileList",
