@@ -3,8 +3,9 @@
 
 
 
-#ifndef _NSPROFILER_H_
-#define _NSPROFILER_H_
+
+#ifndef nsProfiler_h
+#define nsProfiler_h
 
 #include "nsIProfiler.h"
 #include "nsIObserver.h"
@@ -18,28 +19,28 @@ class ProfileGatherer;
 class nsProfiler final : public nsIProfiler, public nsIObserver
 {
 public:
-    nsProfiler();
+  nsProfiler();
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
-    NS_DECL_NSIPROFILER
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIPROFILER
 
-    nsresult Init();
+  nsresult Init();
 
-    static nsProfiler* GetOrCreate()
-    {
-	nsCOMPtr<nsIProfiler> iprofiler =
-	    do_GetService("@mozilla.org/tools/profiler;1");
-	return static_cast<nsProfiler*>(iprofiler.get());
-    }
+  static nsProfiler* GetOrCreate()
+  {
+    nsCOMPtr<nsIProfiler> iprofiler =
+      do_GetService("@mozilla.org/tools/profiler;1");
+    return static_cast<nsProfiler*>(iprofiler.get());
+  }
 
-    void GatheredOOPProfile(const nsACString& aProfile);
+  void GatheredOOPProfile(const nsACString& aProfile);
 
 private:
-    ~nsProfiler();
+  ~nsProfiler();
 
-    RefPtr<mozilla::ProfileGatherer> mGatherer;
-    bool mLockedForPrivateBrowsing;
+  RefPtr<mozilla::ProfileGatherer> mGatherer;
+  bool mLockedForPrivateBrowsing;
 };
 
 #endif 
