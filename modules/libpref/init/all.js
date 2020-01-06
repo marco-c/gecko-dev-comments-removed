@@ -711,10 +711,11 @@ pref("apz.frame_delay.enabled", false);
 #endif
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_ANDROID)
 pref("apz.keyboard.enabled", true);
+pref("apz.keyboard.passive-listeners", true);
 #else
 pref("apz.keyboard.enabled", false);
-#endif
 pref("apz.keyboard.passive-listeners", false);
+#endif
 pref("apz.max_velocity_inches_per_ms", "-1.0");
 pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");
@@ -1760,12 +1761,6 @@ pref("network.http.enforce-framing.http1", false);
 pref("network.http.enforce-framing.soft", true);
 
 
-
-
-
-pref("network.http.keep_empty_response_headers_as_empty_string", true);
-
-
 pref("network.http.max_response_header_size", 393216);
 
 
@@ -2040,7 +2035,7 @@ pref("network.standard-url.enable-rust", false);
 
 
 
-pref("network.standard-url.punycode-host", false);
+pref("network.standard-url.punycode-host", true);
 
 
 pref("network.ftp.idleConnectionTimeout", 300);
