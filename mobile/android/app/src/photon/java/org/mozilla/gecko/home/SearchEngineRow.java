@@ -215,14 +215,10 @@ class SearchEngineRow extends ThemedRelativeLayout {
         refreshOccurrencesWith(searchTerm, suggestion);
         if (mOccurrences.size() > 0) {
             final SpannableStringBuilder sb = new SpannableStringBuilder(suggestion);
-            int nextStartSpanIndex = 0;
-            
-            mOccurrences.add(suggestion.length());
             for (int occurrence : mOccurrences) {
                 
-                StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
-                sb.setSpan(boldSpan, nextStartSpanIndex, occurrence, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-                nextStartSpanIndex = occurrence + searchTermLength;
+                final StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
+                sb.setSpan(boldSpan, occurrence, occurrence + searchTermLength, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
             }
             mOccurrences.clear();
             suggestionText.setText(sb);
@@ -245,7 +241,10 @@ class SearchEngineRow extends ThemedRelativeLayout {
     }
 
     public void setSearchTerm(String searchTerm) {
-        mUserEnteredTextView.setText(searchTerm);
+        final SpannableStringBuilder sb = new SpannableStringBuilder(searchTerm);
+        final StyleSpan boldSpan = new StyleSpan(Typeface.BOLD);
+        sb.setSpan(boldSpan, 0, searchTerm.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+        mUserEnteredTextView.setText(sb);
 
         
         

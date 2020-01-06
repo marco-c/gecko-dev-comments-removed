@@ -54,7 +54,8 @@ public class FadedSingleColorTextView extends FadedTextView {
         super.setText(text, type);
         final boolean previousTextDirectionRtl = mIsTextDirectionRtl;
         if (!TextUtils.isEmpty(text)) {
-            mIsTextDirectionRtl = BidiFormatter.getInstance().isRtl((String) text);
+            
+            mIsTextDirectionRtl = BidiFormatter.getInstance().isRtl(text.toString());
         }
         if (mIsTextDirectionRtl != previousTextDirectionRtl) {
             mTextGradient = null;
