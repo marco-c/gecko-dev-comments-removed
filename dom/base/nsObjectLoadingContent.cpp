@@ -3435,6 +3435,14 @@ nsObjectLoadingContent::HasGoodFallback() {
 
     
     
+    if (rulesList[i].EqualsLiteral("nosrc")) {
+      if (!mOriginalURI) {
+        return true;
+      }
+    }
+
+    
+    
     if (rulesList[i].EqualsLiteral("adobelink")) {
       nsTArray<nsINodeList*> childNodes;
       for (nsIContent* child = thisContent->GetFirstChild();
