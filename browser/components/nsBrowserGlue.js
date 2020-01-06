@@ -540,7 +540,8 @@ BrowserGlue.prototype = {
     this._flashHangCount = 0;
     this._firstWindowReady = new Promise(resolve => this._firstWindowLoaded = resolve);
 
-    if (AppConstants.platform == "macosx") {
+    if (AppConstants.platform == "macosx" ||
+        (AppConstants.platform == "win" && AppConstants.RELEASE_OR_BETA)) {
       
       
       E10SAccessibilityCheck.init();
