@@ -418,7 +418,7 @@ photonpanelmultiview panelview {
 
 
 #appMenu-popup[touchmode] panelview {
-  min-width: calc(@menuPanelWidth@ + 24px);
+  min-width: calc(@menuPanelWidth@ + 32px);
 }
 
 photonpanelmultiview .panel-subview-body {

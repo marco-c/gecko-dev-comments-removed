@@ -512,6 +512,7 @@ this.PanelMultiView = class {
       
       let showingSameView = viewNode == previousViewNode;
       let playTransition = (!!previousViewNode && !showingSameView && this._panel.state == "open");
+      let isMainView = viewNode.id == this._mainViewId;
 
       let dwu, previousRect;
       if (playTransition || this.panelViews) {
@@ -521,14 +522,13 @@ this.PanelMultiView = class {
         if (this.panelViews) {
           
           
+          
           if (!this._mainViewWidth) {
             this._mainViewWidth = previousRect.width;
             let top = dwu.getBoundsWithoutFlushing(previousViewNode.firstChild || previousViewNode).top;
             let bottom = dwu.getBoundsWithoutFlushing(previousViewNode.lastChild || previousViewNode).bottom;
             this._viewVerticalPadding = previousRect.height - (bottom - top);
           }
-          
-          
           if (!this._mainViewHeight) {
             this._mainViewHeight = previousRect.height;
             this._viewContainer.style.minHeight = this._mainViewHeight + "px";
@@ -540,7 +540,7 @@ this.PanelMultiView = class {
       
       
       
-      if (viewNode.id == this._mainViewId)
+      if (isMainView)
         viewNode.setAttribute("mainview", true);
       else
         viewNode.removeAttribute("mainview");
@@ -551,7 +551,7 @@ this.PanelMultiView = class {
           viewNode.setAttribute("title", aAnchor.getAttribute("label"));
         viewNode.classList.add("PanelUI-subView");
       }
-      if (this.panelViews && this._mainViewWidth)
+      if (this.panelViews && !isMainView && this._mainViewWidth)
         viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
 
       if (!showingSameView || !viewNode.hasAttribute("current")) {
