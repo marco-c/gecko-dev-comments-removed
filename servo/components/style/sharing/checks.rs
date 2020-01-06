@@ -19,17 +19,38 @@ use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
 
+
+
+
+
+
 pub fn same_computed_values<E>(first: Option<E>, second: Option<E>) -> bool
     where E: TElement,
 {
-    let (a, b) = match (first, second) {
+    let (first, second) = match (first, second) {
         (Some(f), Some(s)) => (f, s),
         _ => return false,
     };
 
-    let eq = Arc::ptr_eq(a.borrow_data().unwrap().styles.primary(),
-                         b.borrow_data().unwrap().styles.primary());
-    eq
+    debug_assert_ne!(first, second);
+
+    let first_data = first.borrow_data().unwrap();
+    let second_data = second.borrow_data().unwrap();
+
+    
+    
+    
+    
+    
+    
+    if !first_data.restyle.is_restyle() || !second_data.restyle.is_restyle() {
+        return false;
+    }
+
+    let same_computed_values =
+        Arc::ptr_eq(first_data.styles.primary(), second_data.styles.primary());
+
+    same_computed_values
 }
 
 
