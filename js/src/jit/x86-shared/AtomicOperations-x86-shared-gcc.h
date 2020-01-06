@@ -12,6 +12,8 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"
 
+#include "vm/ArrayBufferObject.h"
+
 #if !defined(__clang__) && !defined(__GNUC__)
 # error "This file only for gcc-compatible compilers"
 #endif
@@ -58,309 +60,176 @@
 
 
 
-# define LOCKFREE8
-
-
-
-
-
-
-
-
-
-# if defined(__clang__) && defined(__i386)
-#  undef LOCKFREE8
-# endif
 
 inline bool
 js::jit::AtomicOperations::isLockfree8()
 {
-# ifndef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int8_t), 0));
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int16_t), 0));
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int32_t), 0));
-# endif
-# ifdef LOCKFREE8
-#  ifndef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int64_t), 0));
-#  endif
     return true;
-# else
-    return false;
-# endif
 }
 
 inline void
 js::jit::AtomicOperations::fenceSeqCst()
 {
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    __sync_synchronize();
-# else
     __atomic_thread_fence(__ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::loadSeqCst(T* addr)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    
-    
-    
-    
-    T v = *static_cast<T volatile*>(addr);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     T v;
     __atomic_load(addr, &v, __ATOMIC_SEQ_CST);
-# endif
     return v;
 }
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::loadSeqCst(int64_t* addr)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::loadSeqCst(uint64_t* addr)
-{
-    MOZ_CRASH();
-}
-# endif 
 
 template<typename T>
 inline void
 js::jit::AtomicOperations::storeSeqCst(T* addr, T val)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    *static_cast<T volatile*>(addr) = val;
-    __sync_synchronize();
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     __atomic_store(addr, &val, __ATOMIC_SEQ_CST);
-# endif
 }
-
-# ifndef LOCKFREE8
-template<>
-inline void
-js::jit::AtomicOperations::storeSeqCst(int64_t* addr, int64_t val)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline void
-js::jit::AtomicOperations::storeSeqCst(uint64_t* addr, uint64_t val)
-{
-    MOZ_CRASH();
-}
-# endif 
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    T v;
-    do {
-        
-        
-        v = *addr;
-    } while (!__sync_bool_compare_and_swap(addr, v, val));
-    return v;
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     T v;
     __atomic_exchange(addr, &val, &v, __ATOMIC_SEQ_CST);
     return v;
-# endif
 }
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::exchangeSeqCst(int64_t* addr, int64_t val)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::exchangeSeqCst(uint64_t* addr, uint64_t val)
-{
-    MOZ_CRASH();
-}
-# endif 
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::compareExchangeSeqCst(T* addr, T oldval, T newval)
 {
-    MOZ_ASSERT(sizeof(T) < 8 || isLockfree8());
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_val_compare_and_swap(addr, oldval, newval);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     __atomic_compare_exchange(addr, &oldval, &newval, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
     return oldval;
-# endif
 }
-
-# ifndef LOCKFREE8
-template<>
-inline int64_t
-js::jit::AtomicOperations::compareExchangeSeqCst(int64_t* addr, int64_t oldval, int64_t newval)
-{
-    MOZ_CRASH();
-}
-
-template<>
-inline uint64_t
-js::jit::AtomicOperations::compareExchangeSeqCst(uint64_t* addr, uint64_t oldval, uint64_t newval)
-{
-    MOZ_CRASH();
-}
-# endif 
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::fetchAddSeqCst(T* addr, T val)
 {
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_add(addr, val);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     return __atomic_fetch_add(addr, val, __ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::fetchSubSeqCst(T* addr, T val)
 {
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_sub(addr, val);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     return __atomic_fetch_sub(addr, val, __ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::fetchAndSeqCst(T* addr, T val)
 {
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_and(addr, val);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     return __atomic_fetch_and(addr, val, __ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::fetchOrSeqCst(T* addr, T val)
 {
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_or(addr, val);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     return __atomic_fetch_or(addr, val, __ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val)
 {
-    static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    return __sync_fetch_and_xor(addr, val);
-# else
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
     return __atomic_fetch_xor(addr, val, __ATOMIC_SEQ_CST);
-# endif
 }
 
 template<typename T>
 inline T
 js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
 {
-    return *addr;               
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
+    T v;
+    __atomic_load(addr, &v, __ATOMIC_RELAXED);
+    return v;
 }
+
+namespace js { namespace jit {
+
+template<>
+inline uint8_clamped
+js::jit::AtomicOperations::loadSafeWhenRacy(uint8_clamped* addr)
+{
+    uint8_t v;
+    __atomic_load(&addr->val, &v, __ATOMIC_RELAXED);
+    return uint8_clamped(v);
+}
+
+} }
 
 template<typename T>
 inline void
 js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
 {
-    *addr = val;                
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    MOZ_ASSERT_IF(sizeof(T) == 8, isLockfree8());
+    __atomic_store(addr, &val, __ATOMIC_RELAXED);
 }
+
+namespace js { namespace jit {
+
+template<>
+inline void
+js::jit::AtomicOperations::storeSafeWhenRacy(uint8_clamped* addr, uint8_clamped val)
+{
+    __atomic_store(&addr->val, &val.val, __ATOMIC_RELAXED);
+}
+
+} }
 
 inline void
 js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
 {
     MOZ_ASSERT(!((char*)dest <= (char*)src && (char*)src < (char*)dest+nbytes));
     MOZ_ASSERT(!((char*)src <= (char*)dest && (char*)dest < (char*)src+nbytes));
-    ::memcpy(dest, src, nbytes); 
+    ::memcpy(dest, src, nbytes);
 }
 
 inline void
 js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
 {
-    ::memmove(dest, src, nbytes); 
+    ::memmove(dest, src, nbytes);
 }
 
 template<size_t nbytes>
 inline void
 js::jit::RegionLock::acquire(void* addr)
 {
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    while (!__sync_bool_compare_and_swap(&spinlock, 0, 1))
-        continue;
-# else
     uint32_t zero = 0;
     uint32_t one = 1;
     while (!__atomic_compare_exchange(&spinlock, &zero, &one, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
         zero = 0;
     }
-# endif
 }
 
 template<size_t nbytes>
@@ -368,15 +237,8 @@ inline void
 js::jit::RegionLock::release(void* addr)
 {
     MOZ_ASSERT(AtomicOperations::loadSeqCst(&spinlock) == 1, "releasing unlocked region lock");
-# ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-    __sync_sub_and_fetch(&spinlock, 1); 
-# else
     uint32_t zero = 0;
     __atomic_store(&spinlock, &zero, __ATOMIC_SEQ_CST);
-# endif
 }
-
-# undef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-# undef LOCKFREE8
 
 #endif 
