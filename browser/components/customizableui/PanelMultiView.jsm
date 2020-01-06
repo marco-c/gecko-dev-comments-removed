@@ -1024,7 +1024,7 @@ this.PanelMultiView = class {
 
 
   descriptionHeightWorkaround(viewNode = this._mainView) {
-    if (!viewNode.hasAttribute("descriptionheightworkaround")) {
+    if (!this.node.hasAttribute("descriptionheightworkaround")) {
       
       return;
     }
@@ -1033,20 +1033,8 @@ this.PanelMultiView = class {
     
     
     let items = [];
-    
-    
-    
-    let isMultiline = ":not(:-moz-any([hidden],[value],:empty))";
-    let selector = [
-      "description" + isMultiline,
-      "label" + isMultiline,
-      "toolbarbutton[wrap]:not([hidden])",
-    ].join(",");
-    for (let element of viewNode.querySelectorAll(selector)) {
-      
-      if (element.closest("[hidden]")) {
-        continue;
-      }
+    for (let element of viewNode.querySelectorAll(
+         "description:not([hidden]):not([value]),toolbarbutton[wrap]:not([hidden])")) {
       
       element = element.labelElement || element;
 
