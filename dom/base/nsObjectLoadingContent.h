@@ -101,6 +101,8 @@ class nsObjectLoadingContent : public nsImageLoadingContent
       eFallbackVulnerableUpdatable = nsIObjectLoadingContent::PLUGIN_VULNERABLE_UPDATABLE,
       
       eFallbackVulnerableNoUpdate = nsIObjectLoadingContent::PLUGIN_VULNERABLE_NO_UPDATE,
+      
+      eFallbackClickToPlayQuiet = nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY_QUIET,
     };
 
     nsObjectLoadingContent();
