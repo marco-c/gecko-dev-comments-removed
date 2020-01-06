@@ -63,7 +63,7 @@ registerCleanupFunction(() => {
 });
 
 
-const { ResponsiveUIManager } = require("resource://devtools/client/responsivedesign/responsivedesign.jsm");
+loader.lazyRequireGetter(this, "ResponsiveUIManager", "devtools/client/responsivedesign/responsivedesign");
 
 
 
