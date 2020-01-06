@@ -2640,6 +2640,46 @@ profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
 }
 
 static void
+PollJSSamplingForCurrentThread()
+{
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  PSAutoLock lock(gPSMutex);
+
+  ThreadInfo* info = TLSInfo::Info(lock);
+  if (!info) {
+    return;
+  }
+
+  info->PollJSSampling();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+TriggerPollJSSamplingOnMainThread()
+{
+  nsCOMPtr<nsIThread> mainThread;
+  nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
+  if (NS_SUCCEEDED(rv) && mainThread) {
+    nsCOMPtr<nsIRunnable> task =
+      NS_NewRunnableFunction("TriggerPollJSSamplingOnMainThread", []() {
+        PollJSSamplingForCurrentThread();
+      });
+    SystemGroup::Dispatch(TaskCategory::Other, task.forget());
+  }
+}
+
+static void
 locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
                       uint32_t aFeatures,
                       const char** aFilters, uint32_t aFilterCount)
@@ -2689,6 +2729,11 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
           
           
           info->PollJSSampling();
+        } else if (info->IsMainThread()) {
+          
+          
+          
+          TriggerPollJSSamplingOnMainThread();
         }
       }
     }
@@ -3076,17 +3121,7 @@ void
 profiler_js_interrupt_callback()
 {
   
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  PSAutoLock lock(gPSMutex);
-
-  ThreadInfo* info = TLSInfo::Info(lock);
-  if (!info) {
-    return;
-  }
-
-  info->PollJSSampling();
+  PollJSSamplingForCurrentThread();
 }
 
 double
