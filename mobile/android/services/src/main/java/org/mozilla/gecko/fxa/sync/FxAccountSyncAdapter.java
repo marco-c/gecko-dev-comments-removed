@@ -466,7 +466,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
     tokenServerclient.getTokenFromBrowserIDAssertion(assertion, true, clientState, delegate);
   }
 
-  public void maybeRegisterDevice(Context context, AndroidFxAccount fxAccount) {
+  private void maybeRegisterDevice(Context context, AndroidFxAccount fxAccount) {
     
     
     
