@@ -62,8 +62,6 @@ use gecko_bindings::structs::ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO;
 use gecko_bindings::structs::ELEMENT_HAS_SNAPSHOT;
 use gecko_bindings::structs::EffectCompositor_CascadeLevel as CascadeLevel;
 use gecko_bindings::structs::NODE_DESCENDANTS_NEED_FRAMES;
-use gecko_bindings::structs::NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE;
-use gecko_bindings::structs::NODE_IS_NATIVE_ANONYMOUS;
 use gecko_bindings::structs::nsChangeHint;
 use gecko_bindings::structs::nsIDocument_DocumentTheme as DocumentTheme;
 use gecko_bindings::structs::nsRestyleHint;
@@ -221,12 +219,6 @@ impl<'ln> GeckoNode<'ln> {
         }
     }
 
-    
-    fn is_root_of_native_anonymous_subtree(&self) -> bool {
-        use gecko_bindings::structs::NODE_IS_NATIVE_ANONYMOUS_ROOT;
-        return self.flags() & (NODE_IS_NATIVE_ANONYMOUS_ROOT as u32) != 0
-    }
-
     fn contains_non_whitespace_content(&self) -> bool {
         unsafe { Gecko_IsSignificantChild(self.0, true, false) }
     }
@@ -234,15 +226,6 @@ impl<'ln> GeckoNode<'ln> {
     #[inline]
     fn may_have_anonymous_children(&self) -> bool {
         self.get_bool_flag(nsINode_BooleanFlag::ElementMayHaveAnonymousChildren)
-    }
-
-    
-    #[inline]
-    fn is_in_anonymous_subtree(&self) -> bool {
-        use gecko_bindings::structs::NODE_IS_IN_SHADOW_TREE;
-        self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) != 0 ||
-        ((self.flags() & (NODE_IS_IN_SHADOW_TREE as u32) == 0) &&
-         self.as_element().map_or(false, |e| e.has_xbl_binding_parent()))
     }
 }
 
@@ -289,7 +272,7 @@ impl<'ln> TNode for GeckoNode<'ln> {
             
             
             
-            if self.is_in_anonymous_subtree() ||
+            if element.is_in_anonymous_subtree() ||
                element.has_xbl_binding_with_content() ||
                self.may_have_anonymous_children() {
                 unsafe {
@@ -731,9 +714,38 @@ impl<'le> GeckoElement<'le> {
     }
 
     
+    #[inline]
     fn is_root_of_anonymous_subtree(&self) -> bool {
         use gecko_bindings::structs::NODE_IS_ANONYMOUS_ROOT;
         self.flags() & (NODE_IS_ANONYMOUS_ROOT as u32) != 0
+    }
+
+    
+    #[inline]
+    fn is_root_of_native_anonymous_subtree(&self) -> bool {
+        use gecko_bindings::structs::NODE_IS_NATIVE_ANONYMOUS_ROOT;
+        return self.flags() & (NODE_IS_NATIVE_ANONYMOUS_ROOT as u32) != 0
+    }
+
+    
+    #[inline]
+    fn is_in_native_anonymous_subtree(&self) -> bool {
+        use gecko_bindings::structs::NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE;
+        self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) != 0
+    }
+
+    
+    #[inline]
+    fn is_in_shadow_tree(&self) -> bool {
+        use gecko_bindings::structs::NODE_IS_IN_SHADOW_TREE;
+        self.flags() & (NODE_IS_IN_SHADOW_TREE as u32) != 0
+    }
+
+    
+    #[inline]
+    fn is_in_anonymous_subtree(&self) -> bool {
+        self.is_in_native_anonymous_subtree() ||
+        (!self.is_in_shadow_tree() && self.has_xbl_binding_parent())
     }
 }
 
@@ -1071,6 +1083,7 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     fn is_native_anonymous(&self) -> bool {
+        use gecko_bindings::structs::NODE_IS_NATIVE_ANONYMOUS;
         self.flags() & (NODE_IS_NATIVE_ANONYMOUS as u32) != 0
     }
 
@@ -1244,7 +1257,7 @@ impl<'le> TElement for GeckoElement<'le> {
                 }
             }
 
-            if element.as_node().is_root_of_native_anonymous_subtree() {
+            if element.is_root_of_native_anonymous_subtree() {
                 
                 break;
             }
@@ -2016,6 +2029,6 @@ impl<'a> NamespaceConstraintHelpers for NamespaceConstraint<&'a Namespace> {
 impl<'le> ElementExt for GeckoElement<'le> {
     #[inline]
     fn matches_user_and_author_rules(&self) -> bool {
-        self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) == 0
+        !self.is_in_native_anonymous_subtree()
     }
 }
