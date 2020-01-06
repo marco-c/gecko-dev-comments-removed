@@ -953,7 +953,14 @@ nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
   if (!info && useXULCache) {
     
     
-    info = cache->GetXBLDocumentInfo(documentURI);
+    
+    StyleBackendType styleBackend
+      = aBoundDocument ? aBoundDocument->GetStyleBackendType()
+                       : StyleBackendType::Gecko;
+
+    
+    
+    info = cache->GetXBLDocumentInfo(documentURI, styleBackend);
   }
 
   bool useStartupCache = useXULCache && IsChromeOrResourceURI(documentURI);
@@ -1015,6 +1022,12 @@ nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
     
     bindingManager->PutXBLDocumentInfo(info);
   }
+
+  MOZ_ASSERT(!aBoundDocument || !info ||
+             aBoundDocument->GetStyleBackendType() ==
+               info->GetDocument()->GetStyleBackendType(),
+             "Style backend type mismatched between the bound document and "
+             "the XBL document loaded.");
 
   info.forget(aResult);
 
