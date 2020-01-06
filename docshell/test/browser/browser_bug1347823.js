@@ -52,8 +52,10 @@ add_task(async function testExpiredCache() {
       await BrowserTestUtils.browserLoaded(browser);
 
       
-      await new Promise(resolve => {
-        setTimeout(resolve, 3000);
+      await ContentTask.spawn(browser, null, () => {
+        return new Promise(resolve => {
+          content.setTimeout(resolve, 3000);
+        });
       });
 
       
