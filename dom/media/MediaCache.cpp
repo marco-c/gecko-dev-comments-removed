@@ -151,7 +151,7 @@ public:
   
   static RefPtr<MediaCache> GetMediaCache(int64_t aContentLength);
 
-  nsIEventTarget* OwnerThread() const { return sThread; }
+  nsIEventTarget* OwnerThread() const { return mThread; }
 
   
   void Flush();
@@ -266,15 +266,6 @@ public:
     uint32_t mNext;
   };
 
-  
-  void operator=(std::nullptr_t)
-  {
-    nsCOMPtr<nsIThread> thread = sThread.forget();
-    if (thread) {
-      thread->Shutdown();
-    }
-  }
-
 protected:
   explicit MediaCache(MediaBlockCacheBase* aCache)
     : mNextResourceID(1)
@@ -288,17 +279,9 @@ protected:
     NS_ASSERTION(NS_IsMainThread(), "Only construct MediaCache on main thread");
     MOZ_COUNT_CTOR(MediaCache);
     MediaCacheFlusher::RegisterMediaCache(this);
-
-    if (!sThreadInit) {
-      sThreadInit = true;
-      nsCOMPtr<nsIThread> thread;
-      nsresult rv = NS_NewNamedThread("MediaCache", getter_AddRefs(thread));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to create a thread for MediaCache.");
-        return;
-      }
-      sThread = thread.forget();
-      ClearOnShutdown(this, ShutdownPhase::ShutdownThreads);
+    nsresult rv = NS_NewNamedThread("MediaCache", getter_AddRefs(mThread));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to create a thread for MediaCache.");
     }
   }
 
@@ -330,6 +313,11 @@ protected:
     NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
     Truncate();
     NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
+
+    nsCOMPtr<nsIThread> thread = mThread.forget();
+    if (thread) {
+      thread->Shutdown();
+    }
 
     MOZ_COUNT_DTOR(MediaCache);
   }
@@ -461,18 +449,11 @@ protected:
   nsTArray<int64_t> mSuspendedStatusToNotify;
   
   
-  
-  static StaticRefPtr<nsIThread> sThread;
-  
-  
-  static bool sThreadInit;
+  nsCOMPtr<nsIThread> mThread;
 };
 
 
  MediaCache* MediaCache::gMediaCache;
-
- StaticRefPtr<nsIThread> MediaCache::sThread;
- bool MediaCache::sThreadInit = false;
 
 NS_IMETHODIMP
 MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t const *aData)
