@@ -199,7 +199,9 @@ private:
 
   
   
-  bool PushAPZStateToWR();
+  
+  
+  bool PushAPZStateToWR(nsTArray<WrTransformProperty>& aTransformArray);
 
 private:
   struct PendingTransactionId {

@@ -23,6 +23,7 @@
 #include "mozilla/layers/AndroidDynamicToolbarAnimator.h"
 #endif 
 
+struct WrTransformProperty;
 
 namespace mozilla {
 class MultiTouchInput;
@@ -157,8 +158,11 @@ public:
 
 
 
+
+
   bool PushStateToWR(wr::WebRenderAPI* aWrApi,
-                     const TimeStamp& aSampleTime);
+                     const TimeStamp& aSampleTime,
+                     nsTArray<WrTransformProperty>& aTransformArray);
 
   
 
