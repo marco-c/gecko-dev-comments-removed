@@ -168,6 +168,8 @@ protected:
   uint32_t mVideoBitsPerSecond;
   uint32_t mBitsPerSecond;
 
+  TimeStamp mStartTime;
+
   
   
   
