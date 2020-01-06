@@ -1862,11 +1862,6 @@ protected:
   
   
   RenderFlags               mRenderFlags;
-
-  
-  
-  
-  bool                      mStylesHaveChanged : 1;
   bool                      mDidInitialize : 1;
   bool                      mIsDestroying : 1;
   bool                      mIsReflowing : 1;
@@ -1905,15 +1900,6 @@ protected:
   bool mNeedThrottledAnimationFlush : 1;
 
   uint32_t                  mPresShellId;
-
-  
-  
-  
-  
-  
-  
-  
-  AutoTArray<RefPtr<mozilla::dom::Element>,1> mChangedScopeStyleRoots;
 
   static nsIContent*        gKeyDownTarget;
 
