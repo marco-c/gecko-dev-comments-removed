@@ -45,7 +45,7 @@ public:
     nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
                                         const nsACString& aList,
                                         const nsACString& aProvider,
-                                        const nsACString& aPrefix);
+                                        const nsACString& aFullHash);
 
     
     
@@ -96,7 +96,7 @@ public:
                                       nsresult aErrorCode,
                                       const nsACString& aList,
                                       const nsACString& aProvider,
-                                      const nsACString& aPrefix);
+                                      const nsACString& aFullHash);
     static nsresult NotifyTrackingProtectionDisabled(nsIChannel *aChannel);
 };
 

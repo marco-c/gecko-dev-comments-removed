@@ -581,7 +581,7 @@ FTPChannelParent::NotifyTrackingResource()
 NS_IMETHODIMP
 FTPChannelParent::SetClassifierMatchedInfo(const nsACString& aList,
                                            const nsACString& aProvider,
-                                           const nsACString& aPrefix)
+                                           const nsACString& aFullHash)
 {
   
   return NS_OK;

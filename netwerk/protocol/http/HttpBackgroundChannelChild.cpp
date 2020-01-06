@@ -429,7 +429,9 @@ HttpBackgroundChannelChild::RecvSetClassifierMatchedInfo(const ClassifierInfo& i
 
   
   
-  mChannelChild->ProcessSetClassifierMatchedInfo(info.list(), info.provider(), info.prefix());
+  mChannelChild->ProcessSetClassifierMatchedInfo(info.list(),
+                                                 info.provider(),
+                                                 info.fullhash());
 
   return IPC_OK();
 }
