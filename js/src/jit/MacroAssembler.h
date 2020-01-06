@@ -373,9 +373,6 @@ class MacroAssembler : public MacroAssemblerSpecific
         initWithAllocator();
         armbuffer_.id = 0;
 #endif
-
-        
-        disableProtection();
     }
 
     void constructRoot(JSContext* cx) {
