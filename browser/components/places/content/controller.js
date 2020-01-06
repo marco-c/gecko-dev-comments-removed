@@ -874,21 +874,15 @@ PlacesController.prototype = {
 
 
 
-
   async _removeRange(range, transactions, removedFolders) {
     NS_ASSERT(transactions instanceof Array, "Must pass a transactions array");
     if (!removedFolders)
       removedFolders = [];
 
-    let bmGuidsToRemove = [];
-    let totalItems = 0;
-
     for (var i = 0; i < range.length; ++i) {
       var node = range[i];
       if (this._shouldSkipNode(node, removedFolders))
         continue;
-
-      totalItems++;
 
       if (PlacesUtils.nodeIsTagQuery(node.parent)) {
         
@@ -948,17 +942,14 @@ PlacesController.prototype = {
           removedFolders.push(node);
         }
         if (PlacesUIUtils.useAsyncTransactions) {
-          bmGuidsToRemove.push(node.bookmarkGuid);
+          transactions.push(
+            PlacesTransactions.Remove({ guid: node.bookmarkGuid }));
         } else {
           let txn = new PlacesRemoveItemTransaction(node.itemId);
           transactions.push(txn);
         }
       }
     }
-    if (bmGuidsToRemove.length) {
-      transactions.push(PlacesTransactions.Remove({ guids: bmGuidsToRemove }));
-    }
-    return totalItems;
   },
 
   
@@ -967,18 +958,17 @@ PlacesController.prototype = {
 
 
   async _removeRowsFromBookmarks(txnName) {
-    let ranges = this._view.removableSelectionRanges;
-    let transactions = [];
-    let removedFolders = [];
-    let totalItems = 0;
+    var ranges = this._view.removableSelectionRanges;
+    var transactions = [];
+    var removedFolders = [];
 
     for (let range of ranges) {
-      totalItems += await this._removeRange(range, transactions, removedFolders);
+      await this._removeRange(range, transactions, removedFolders);
     }
 
     if (transactions.length > 0) {
       if (PlacesUIUtils.useAsyncTransactions) {
-        await PlacesUIUtils.batchUpdatesForNode(this._view.result, totalItems, async () => {
+        await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactions.length, async () => {
           await PlacesTransactions.batch(transactions);
         });
       } else {

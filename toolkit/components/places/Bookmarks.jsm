@@ -756,72 +756,56 @@ var Bookmarks = Object.freeze({
 
 
 
-
   remove(guidOrInfo, options = {}) {
-    let infos = guidOrInfo;
-    if (!infos)
+    let info = guidOrInfo;
+    if (!info)
       throw new Error("Input should be a valid object");
-    if (!Array.isArray(guidOrInfo)) {
-      if (typeof(guidOrInfo) != "object") {
-        infos = [{ guid: guidOrInfo }];
-      } else {
-        infos = [guidOrInfo];
-      }
+    if (typeof(guidOrInfo) != "object")
+      info = { guid: guidOrInfo };
+
+    
+    if ([this.rootGuid, this.menuGuid, this.toolbarGuid, this.unfiledGuid,
+         this.tagsGuid, this.mobileGuid].includes(info.guid)) {
+      throw new Error("It's not possible to remove Places root folders.");
     }
 
     if (!("source" in options)) {
       options.source = Bookmarks.SOURCES.DEFAULT;
     }
 
-    let removeInfos = [];
-    for (let info of infos) {
-      
-      if ([
-        Bookmarks.rootGuid, Bookmarks.menuGuid, Bookmarks.toolbarGuid,
-        Bookmarks.unfiledGuid, Bookmarks.tagsGuid, Bookmarks.mobileGuid
-      ].includes(info.guid)) {
-        throw new Error("It's not possible to remove Places root folders.");
-      }
-
-      
-      
-      let removeInfo = validateBookmarkObject("Bookmarks.jsm: remove", info);
-      removeInfos.push(removeInfo);
-    }
+    
+    
+    let removeInfo = validateBookmarkObject("Bookmarks.jsm: remove", info);
 
     return (async function() {
-      let removeItems = [];
-      for (let info of removeInfos) {
-        let item = await fetchBookmark(info);
-        if (!item)
-          throw new Error("No bookmarks found for the provided GUID.");
+      let item = await fetchBookmark(removeInfo);
+      if (!item)
+        throw new Error("No bookmarks found for the provided GUID.");
 
-        removeItems.push(item);
-      }
-
-      await removeBookmarks(removeItems, options);
+      item = await removeBookmark(item, options);
 
       
-      for (let item of removeItems) {
-        let observers = PlacesUtils.bookmarks.getObservers();
-        let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
-        let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
-        notify(observers, "onItemRemoved", [ item._id, item._parentId, item.index,
-                                             item.type, uri, item.guid,
-                                             item.parentGuid,
-                                             options.source ],
-                                           { isTagging: isUntagging });
+      let observers = PlacesUtils.bookmarks.getObservers();
+      let uri = item.hasOwnProperty("url") ? PlacesUtils.toURI(item.url) : null;
+      let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
+      notify(observers, "onItemRemoved", [ item._id, item._parentId, item.index,
+                                           item.type, uri, item.guid,
+                                           item.parentGuid,
+                                           options.source ],
+                                         { isTagging: isUntagging });
 
-        if (isUntagging) {
-          for (let entry of (await fetchBookmarksByURL(item, true))) {
-            notify(observers, "onItemChanged", [ entry._id, "tags", false, "",
-                                                 PlacesUtils.toPRTime(entry.lastModified),
-                                                 entry.type, entry._parentId,
-                                                 entry.guid, entry.parentGuid,
-                                                 "", options.source ]);
-          }
+      if (isUntagging) {
+        for (let entry of (await fetchBookmarksByURL(item, true))) {
+          notify(observers, "onItemChanged", [ entry._id, "tags", false, "",
+                                               PlacesUtils.toPRTime(entry.lastModified),
+                                               entry.type, entry._parentId,
+                                               entry.guid, entry.parentGuid,
+                                               "", options.source ]);
         }
       }
+
+      
+      return Object.assign({}, item);
     })();
   },
 
@@ -1526,7 +1510,7 @@ async function insertLivemarkData(item) {
   
   let placeholder = await Bookmarks.fetch(item.guid);
   let index = placeholder.index;
-  await removeBookmarks([item], {source: item.source});
+  await removeBookmark(item, {source: item.source});
 
   let feedURI = null;
   let siteURI = null;
@@ -1803,83 +1787,70 @@ async function fetchBookmarksByParent(db, info) {
 
 
 
-function removeBookmarks(items, options) {
-  return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: removeBookmarks",
+function removeBookmark(item, options) {
+  return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: removeBookmark",
     async function(db) {
-    let urls = [];
+    let urls;
+    let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
 
     await db.executeTransaction(async function transaction() {
-      let parentGuids = new Set();
+      
+      if (item.type == Bookmarks.TYPE_FOLDER) {
+        if (options.preventRemovalOfNonEmptyFolders && item._childCount > 0) {
+          throw new Error("Cannot remove a non-empty folder.");
+        }
+        urls = await removeFoldersContents(db, [item.guid], options);
+      }
+
+      
+      if (!isUntagging) {
+        
+        
+        
+        await removeAnnotationsForItem(db, item._id);
+      }
+
+      
+      await db.executeCached(
+        `DELETE FROM moz_bookmarks WHERE guid = :guid`, { guid: item.guid });
+
+      
+      await db.executeCached(
+        `UPDATE moz_bookmarks SET position = position - 1 WHERE
+         parent = :parentId AND position > :index
+        `, { parentId: item._parentId, index: item.index });
+
       let syncChangeDelta =
         PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
 
-      for (let item of items) {
-        parentGuids.add(item.parentGuid);
+      
+      await adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
 
-        
-        if (item.type == Bookmarks.TYPE_FOLDER) {
-          if (options.preventRemovalOfNonEmptyFolders && item._childCount > 0) {
-            throw new Error("Cannot remove a non-empty folder.");
-          }
-          urls = urls.concat(await removeFoldersContents(db, [item.guid], options));
-        }
-      }
-
-      for (let chunk of chunkArray(items, SQLITE_MAX_VARIABLE_NUMBER)) {
+      if (isUntagging) {
         
         
-        
-        await removeAnnotationsForItems(db, chunk);
-
-        
-        await db.executeCached(
-          `DELETE FROM moz_bookmarks WHERE guid IN (${
-            new Array(chunk.length).fill("?").join(",")})`,
-          chunk.map(item => item.guid)
-        );
-      }
-
-      for (let item of items) {
-        
-        await db.executeCached(
-          `UPDATE moz_bookmarks SET position = position - 1 WHERE
-           parent = :parentId AND position > :index
-          `, { parentId: item._parentId, index: item.index });
-
-        if (item._grandParentId == PlacesUtils.tagsFolderId) {
-          
-          
-          await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
-            db, item.url, syncChangeDelta);
-        }
-
-        await adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
-      }
-
-      for (let guid of parentGuids) {
-        
-        await setAncestorsLastModified(db, guid, new Date(), syncChangeDelta);
+        await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+          db, item.url, syncChangeDelta);
       }
 
       
-      await insertTombstones(db, items, syncChangeDelta);
+      await insertTombstone(db, item, syncChangeDelta);
+
+      await setAncestorsLastModified(db, item.parentGuid, new Date(),
+                                     syncChangeDelta);
     });
 
     
-    
-    for (let item of items) {
-      let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
-
+    if (item.type == Bookmarks.TYPE_BOOKMARK && !isUntagging) {
       
-      if (item.type == Bookmarks.TYPE_BOOKMARK && !isUntagging) {
-        
-        updateFrecency(db, [item.url]).catch(Cu.reportError);
-      }
+      updateFrecency(db, [item.url]).catch(Cu.reportError);
     }
 
-    if (urls.length) {
+    if (urls && urls.length && item.type == Bookmarks.TYPE_FOLDER) {
       updateFrecency(db, urls, true).catch(Cu.reportError);
     }
+
+    return item;
   });
 }
 
@@ -2185,12 +2156,11 @@ var removeOrphanAnnotations = async function(db) {
 
 
 
-var removeAnnotationsForItems = async function(db, items) {
-  
-  let ids = sqlList(items.map(item => item._id));
+var removeAnnotationsForItem = async function(db, itemId) {
   await db.executeCached(
-    `DELETE FROM moz_items_annos WHERE item_id IN (${ids})`,
-  );
+    `DELETE FROM moz_items_annos
+     WHERE item_id = :id
+    `, { id: itemId });
   await db.executeCached(
     `DELETE FROM moz_anno_attributes
      WHERE id IN (SELECT n.id from moz_anno_attributes n
@@ -2481,12 +2451,4 @@ function* chunkArray(array, chunkLength) {
   while (startIndex < array.length) {
     yield array.slice(startIndex, startIndex += chunkLength);
   }
-}
-
-
-
-
-
-function sqlList(list) {
-  return list.map(JSON.stringify).join();
 }
