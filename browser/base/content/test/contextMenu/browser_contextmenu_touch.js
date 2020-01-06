@@ -28,6 +28,16 @@ async function openAndCheckContextMenu(contextMenu, target) {
 }
 
 
+add_task(async function setup() {
+  let isWindows = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["apz.test.fails_with_native_injection", isWindows]
+    ]
+  });
+});
+
+
 add_task(async function test_contentarea_contextmenu_touch() {
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
     let contextMenu = document.getElementById("contentAreaContextMenu");
