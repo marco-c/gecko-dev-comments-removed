@@ -5,6 +5,7 @@
 "use strict";
 
 const Services = require("Services");
+const { Task } = require("devtools/shared/task");
 
 const SwatchColorPickerTooltip = require("devtools/client/shared/widgets/tooltip/SwatchColorPickerTooltip");
 const { throttle } = require("devtools/client/inspector/shared/utils");
@@ -43,45 +44,45 @@ const GRID_COLORS = [
   "#005A71"
 ];
 
-class GridInspector {
+function GridInspector(inspector, window) {
+  this.document = window.document;
+  this.highlighters = inspector.highlighters;
+  this.inspector = inspector;
+  this.store = inspector.store;
+  this.telemetry = inspector.telemetry;
+  this.walker = this.inspector.walker;
 
-  constructor(inspector, window) {
-    this.document = window.document;
-    this.highlighters = inspector.highlighters;
-    this.inspector = inspector;
-    this.store = inspector.store;
-    this.telemetry = inspector.telemetry;
-    this.walker = this.inspector.walker;
+  this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
+  this.updateGridPanel = this.updateGridPanel.bind(this);
 
-    this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
-    this.updateGridPanel = this.updateGridPanel.bind(this);
+  this.onHighlighterChange = this.onHighlighterChange.bind(this);
+  this.onNavigate = this.onNavigate.bind(this);
+  this.onReflow = throttle(this.onReflow, 500, this);
+  this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
+  this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
+  this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
+  this.onShowGridLineNamesHighlight = this.onShowGridLineNamesHighlight.bind(this);
+  this.onSidebarSelect = this.onSidebarSelect.bind(this);
+  this.onToggleGridHighlighter = this.onToggleGridHighlighter.bind(this);
+  this.onToggleShowGridAreas = this.onToggleShowGridAreas.bind(this);
+  this.onToggleShowGridLineNumbers = this.onToggleShowGridLineNumbers.bind(this);
+  this.onToggleShowInfiniteLines = this.onToggleShowInfiniteLines.bind(this);
 
-    this.onHighlighterChange = this.onHighlighterChange.bind(this);
-    this.onNavigate = this.onNavigate.bind(this);
-    this.onReflow = throttle(this.onReflow, 500, this);
-    this.onSetGridOverlayColor = this.onSetGridOverlayColor.bind(this);
-    this.onShowGridAreaHighlight = this.onShowGridAreaHighlight.bind(this);
-    this.onShowGridCellHighlight = this.onShowGridCellHighlight.bind(this);
-    this.onShowGridLineNamesHighlight = this.onShowGridLineNamesHighlight.bind(this);
-    this.onSidebarSelect = this.onSidebarSelect.bind(this);
-    this.onToggleGridHighlighter = this.onToggleGridHighlighter.bind(this);
-    this.onToggleShowGridAreas = this.onToggleShowGridAreas.bind(this);
-    this.onToggleShowGridLineNumbers = this.onToggleShowGridLineNumbers.bind(this);
-    this.onToggleShowInfiniteLines = this.onToggleShowInfiniteLines.bind(this);
+  this.init();
+}
 
-    this.init();
-  }
+GridInspector.prototype = {
 
   
 
 
 
-  async init() {
+  init: Task.async(function* () {
     if (!this.inspector) {
       return;
     }
 
-    this.layoutInspector = await this.inspector.walker.getLayoutInspector();
+    this.layoutInspector = yield this.inspector.walker.getLayoutInspector();
 
     this.loadHighlighterSettings();
 
@@ -100,7 +101,7 @@ class GridInspector {
     this.inspector.on("new-root", this.onNavigate);
 
     this.onSidebarSelect();
-  }
+  }),
 
   
 
@@ -127,7 +128,7 @@ class GridInspector {
     this.store = null;
     this.swatchColorPickerTooltip = null;
     this.walker = null;
-  }
+  },
 
   getComponentProps() {
     return {
@@ -141,7 +142,7 @@ class GridInspector {
       onToggleShowGridLineNumbers: this.onToggleShowGridLineNumbers,
       onToggleShowInfiniteLines: this.onToggleShowInfiniteLines,
     };
-  }
+  },
 
   
 
@@ -168,7 +169,7 @@ class GridInspector {
     }
 
     return color || fallbackColor;
-  }
+  },
 
   
 
@@ -187,7 +188,7 @@ class GridInspector {
     }
 
     return null;
-  }
+  },
 
   
 
@@ -205,14 +206,14 @@ class GridInspector {
     return Object.assign({}, highlighterSettings, {
       color
     });
-  }
+  },
 
   
 
 
   getSwatchColorPickerTooltip() {
     return this.swatchColorPickerTooltip;
-  }
+  },
 
   
 
@@ -238,7 +239,7 @@ class GridInspector {
     const newFragments = newGridFront.gridFragments;
 
     return !compareFragmentsGeometry(oldFragments, newFragments);
-  }
+  },
 
   
 
@@ -247,7 +248,7 @@ class GridInspector {
     return this.inspector && this.inspector.toolbox && this.inspector.sidebar &&
            this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar.getCurrentTabID() === "layoutview";
-  }
+  },
 
   
 
@@ -262,7 +263,7 @@ class GridInspector {
     dispatch(updateShowGridAreas(showGridAreas));
     dispatch(updateShowGridLineNumbers(showGridLineNumbers));
     dispatch(updateShowInfiniteLines(showInfinteLines));
-  }
+  },
 
   showGridHighlighter(node, settings) {
     this.lastHighlighterColor = settings.color;
@@ -270,7 +271,7 @@ class GridInspector {
     this.lastHighlighterState = true;
 
     this.highlighters.showGridHighlighter(node, settings);
-  }
+  },
 
   toggleGridHighlighter(node, settings) {
     this.lastHighlighterColor = settings.color;
@@ -278,13 +279,13 @@ class GridInspector {
     this.lastHighlighterState = node !== this.highlighters.gridHighlighterShown;
 
     this.highlighters.toggleGridHighlighter(node, settings, "grid");
-  }
+  },
 
   
 
 
 
-  async updateGridPanel() {
+  updateGridPanel: Task.async(function* () {
     
     if (!this.inspector || !this.store) {
       return;
@@ -293,7 +294,7 @@ class GridInspector {
     
     let gridFronts;
     try {
-      gridFronts = await this.layoutInspector.getAllGrids(this.walker.rootNode);
+      gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
     } catch (e) {
       
       
@@ -318,7 +319,7 @@ class GridInspector {
       
       if (!nodeFront) {
         try {
-          nodeFront = await this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
+          nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
         } catch (e) {
           
           
@@ -340,7 +341,7 @@ class GridInspector {
     }
 
     this.store.dispatch(updateGrids(grids));
-  }
+  }),
 
   
 
@@ -373,7 +374,7 @@ class GridInspector {
     this.lastHighlighterColor = null;
     this.lastHighlighterNode = null;
     this.lastHighlighterState = null;
-  }
+  },
 
   
 
@@ -383,7 +384,7 @@ class GridInspector {
     if (this.isPanelVisible()) {
       this.updateGridPanel();
     }
-  }
+  },
 
   
 
@@ -398,7 +399,7 @@ class GridInspector {
 
 
 
-  async onReflow() {
+  onReflow: Task.async(function* () {
     if (!this.isPanelVisible()) {
       return;
     }
@@ -409,7 +410,7 @@ class GridInspector {
     
     let newGridFronts;
     try {
-      newGridFronts = await this.layoutInspector.getAllGrids(this.walker.rootNode);
+      newGridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
     } catch (e) {
       
       
@@ -443,7 +444,7 @@ class GridInspector {
 
     
     this.updateGridPanel(newGridFronts);
-  }
+  }),
 
   
 
@@ -466,7 +467,7 @@ class GridInspector {
         this.showGridHighlighter(node, highlighterSettings);
       }
     }
-  }
+  },
 
   
 
@@ -490,7 +491,7 @@ class GridInspector {
     this.showGridHighlighter(node, highlighterSettings);
 
     this.store.dispatch(updateGridHighlighted(node, true));
-  }
+  },
 
   
 
@@ -520,7 +521,7 @@ class GridInspector {
     this.showGridHighlighter(node, highlighterSettings);
 
     this.store.dispatch(updateGridHighlighted(node, true));
-  }
+  },
 
   
 
@@ -553,7 +554,7 @@ class GridInspector {
     this.showGridHighlighter(node, highlighterSettings);
 
     this.store.dispatch(updateGridHighlighted(node, true));
-  }
+  },
 
   
 
@@ -568,7 +569,7 @@ class GridInspector {
 
     this.inspector.reflowTracker.trackReflows(this, this.onReflow);
     this.updateGridPanel();
-  }
+  },
 
   
 
@@ -584,7 +585,7 @@ class GridInspector {
 
     this.store.dispatch(updateGridHighlighted(node,
       node !== this.highlighters.gridHighlighterShown));
-  }
+  },
 
   
 
@@ -610,7 +611,7 @@ class GridInspector {
         this.highlighters.showGridHighlighter(grid.nodeFront, highlighterSettings);
       }
     }
-  }
+  },
 
   
 
@@ -637,7 +638,7 @@ class GridInspector {
         this.showGridHighlighter(grid.nodeFront, highlighterSettings);
       }
     }
-  }
+  },
 
   
 
@@ -664,8 +665,8 @@ class GridInspector {
         this.showGridHighlighter(grid.nodeFront, highlighterSettings);
       }
     }
-  }
+  },
 
-}
+};
 
 module.exports = GridInspector;
