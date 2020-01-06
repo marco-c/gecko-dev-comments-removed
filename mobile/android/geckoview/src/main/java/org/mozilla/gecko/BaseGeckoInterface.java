@@ -52,12 +52,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     
     @Override
-    public AbsoluteLayout getPluginContainer() {
-        return null;
-    }
-
-    
-    @Override
     public void invalidateOptionsMenu() {}
 
     @Override
