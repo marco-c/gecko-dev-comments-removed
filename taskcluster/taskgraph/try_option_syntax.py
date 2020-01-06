@@ -33,12 +33,6 @@ BUILD_KINDS = set([
 ])
 
 
-JOB_KINDS_MATCHING_BUILD_PLATFORM = set([
-    'toolchain',
-    'android-stuff',
-])
-
-
 
 
 def alias_prefix(prefix):
@@ -595,16 +589,9 @@ class TryOptionSyntax(object):
             if self.jobs is None or job_try_name in self.jobs:
                 if self.platforms is None or attr('build_platform') not in self.platforms:
                     return True
-
-        if attr('kind') == 'test':
+        elif attr('kind') == 'test':
             return match_test(self.unittests, 'unittest_try_name') \
                  or match_test(self.talos, 'talos_try_name')
-        elif attr('kind') in JOB_KINDS_MATCHING_BUILD_PLATFORM:
-            
-            if not self.jobs:
-                return True
-            if attr('build_platform') in self.jobs:
-                return True
         elif attr('kind') in BUILD_KINDS:
             if attr('build_type') not in self.build_types:
                 return False
