@@ -9,8 +9,10 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
 
+#include "MainThreadUtils.h"
 #include "nsEffectiveTLDService.h"
 #include "nsIIDNService.h"
 #include "nsNetUtil.h"
@@ -211,6 +213,20 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     return NS_ERROR_HOST_IS_IP_ADDRESS;
 
   
+  TLDCacheEntry* entry = nullptr;
+  if (aAdditionalParts == 1) {
+    if (LookupForAdd(aHostname, &entry)) {
+      
+      aBaseDomain = entry->mBaseDomain;
+      if (trailingDot) {
+        aBaseDomain.Append('.');
+      }
+
+      return NS_OK;
+    }
+  }
+
+  
   
   
   const char *prevDomain = nullptr;
@@ -290,6 +306,13 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
 
   aBaseDomain = Substring(iter, end);
+
+  
+  if (entry) {
+    entry->mHost = aHostname;
+    entry->mBaseDomain = aBaseDomain;
+  }
+
   
   if (trailingDot)
     aBaseDomain.Append('.');
@@ -311,4 +334,14 @@ nsEffectiveTLDService::NormalizeHostname(nsCString &aHostname)
 
   ToLowerCase(aHostname);
   return NS_OK;
+}
+
+bool
+nsEffectiveTLDService::LookupForAdd(const nsACString& aHost, TLDCacheEntry** aEntry)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  const uint32_t hash = HashString(aHost.BeginReading(), aHost.Length());
+  *aEntry = &mMruTable[hash % kTableSize];
+  return (*aEntry)->mHost == aHost;
 }
