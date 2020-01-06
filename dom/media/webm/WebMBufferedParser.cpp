@@ -275,6 +275,12 @@ WebMBufferedParser::EndSegmentOffset(int64_t aOffset)
   return mBlockEndOffset;
 }
 
+int64_t
+WebMBufferedParser::GetClusterOffset() const
+{
+  return mClusterOffset;
+}
+
 
 
 

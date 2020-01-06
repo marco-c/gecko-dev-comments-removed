@@ -67,7 +67,7 @@ struct WebMBufferedParser
     , mVIntLeft(0)
     , mBlockSize(0)
     , mClusterTimecode(0)
-    , mClusterOffset(0)
+    , mClusterOffset(-1)
     , mClusterEndOffset(-1)
     , mBlockOffset(0)
     , mBlockTimecode(0)
@@ -85,6 +85,12 @@ struct WebMBufferedParser
   uint32_t GetTimecodeScale() {
     MOZ_ASSERT(mGotTimecodeScale);
     return mTimecodeScale;
+  }
+
+  
+  void AppendMediaSegmentOnly()
+  {
+    mGotTimecodeScale = true;
   }
 
   
@@ -114,6 +120,9 @@ struct WebMBufferedParser
   
   
   int64_t EndSegmentOffset(int64_t aOffset);
+
+  
+  int64_t GetClusterOffset() const;
 
   
   
