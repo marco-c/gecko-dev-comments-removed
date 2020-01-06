@@ -1704,6 +1704,8 @@ pref("browser.onboarding.hidden", false);
 
 
 pref("browser.onboarding.notification.finished", false);
+pref("browser.onboarding.newtour", "private,addons,customize,search,default,sync");
+pref("browser.onboarding.updatetour", "");
 
 
 
