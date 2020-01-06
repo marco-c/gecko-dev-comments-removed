@@ -48,7 +48,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
                      xbl:inherits="pageproxystate,parentfocused=focused"/>
         </xul:hbox>
         <xul:dropmarker anonid="historydropmarker"
-                        class="autocomplete-history-dropmarker urlbar-history-dropmarker"
+                        class="autocomplete-history-dropmarker urlbar-history-dropmarker urlbar-icon"
                         tooltiptext="&urlbar.openHistoryPopup.tooltip;"
                         allowevents="true"
                         xbl:inherits="open,enablehistory,parentfocused=focused"/>
@@ -941,26 +941,6 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
         ]]></body>
       </method>
 
-      <method name="makeURIReadable">
-        <parameter name="aURI"/>
-        <body>
-          <![CDATA[
-            // Avoid copying 'about:reader?url=', and always provide the original URI:
-            // Reader mode ensures we call createExposableURI itself.
-            let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(aURI.displaySpec);
-            if (readerStrippedURI) {
-              aURI = readerStrippedURI;
-            } else {
-              // Only copy exposable URIs
-              try {
-                aURI = Services.uriFixup.createExposableURI(aURI);
-              } catch (ex) {}
-            }
-            return aURI;
-          ]]>
-        </body>
-      </method>
-
       <method name="_getSelectedValueForClipboard">
         <body><![CDATA[
           // Grab the actual input field's value, not our value, which could include moz-action:
@@ -999,7 +979,17 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
               return selectedVal;
           }
 
-          uri = this.makeURIReadable(uri);
+          // Avoid copying 'about:reader?url=', and always provide the original URI:
+          // Reader mode ensures we call createExposableURI itself.
+          let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(uri.displaySpec);
+          if (readerStrippedURI) {
+            uri = readerStrippedURI;
+          } else {
+            // Only copy exposable URIs
+            try {
+              uri = uriFixup.createExposableURI(uri);
+            } catch (ex) {}
+          }
 
           // If the entire URL is selected, just use the actual loaded URI,
           // unless we want a decoded URI, or it's a data: or javascript: URI,
