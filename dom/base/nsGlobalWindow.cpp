@@ -3861,7 +3861,7 @@ nsGlobalWindow::ConfirmDialogIfNeeded()
 {
   MOZ_ASSERT(IsOuterWindow());
 
-  NS_ENSURE_TRUE(mDocShell, false);
+  NS_ENSURE_TRUE(!IsCleanedUp(), false);
   nsCOMPtr<nsIPromptService> promptSvc =
     do_GetService("@mozilla.org/embedcomp/prompt-service;1");
 
@@ -4766,6 +4766,12 @@ nsGlobalWindow::GetParentOuter()
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
+  
+  
+  if (mCleanedUp) {
+    return nullptr;
+  }
+
   if (!mDocShell) {
     return nullptr;
   }
@@ -5109,7 +5115,7 @@ nsGlobalWindow::GetClosedOuter()
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
   
-  return mIsClosed || !mDocShell;
+  return mIsClosed || mCleanedUp;
 }
 
 bool
@@ -5448,6 +5454,12 @@ nsGlobalWindow::GetSanitizedOpener(nsPIDOMWindowOuter* aOpener)
 
   
   if (win->IsChromeWindow()) {
+    return nullptr;
+  }
+
+  
+  
+  if (mCleanedUp || win->mCleanedUp) {
     return nullptr;
   }
 
@@ -9380,7 +9392,7 @@ nsGlobalWindow::CloseOuter(bool aTrustedCaller)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
-  if (!mDocShell || IsInModalState() ||
+  if (mCleanedUp || !mDocShell || IsInModalState() ||
       (IsFrame() && !mDocShell->GetIsMozBrowser())) {
     
     
@@ -9470,7 +9482,7 @@ nsGlobalWindow::ForceClose()
   MOZ_ASSERT(IsOuterWindow());
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
-  if (IsFrame() || !mDocShell) {
+  if (IsFrame() || mCleanedUp) {
     
     
     return;
