@@ -73,8 +73,7 @@
 #include "nsIContentSecurityPolicy.h"
 #include "mozilla/dom/SRICheck.h"
 
-#include "mozilla/dom/EncodingUtils.h"
-using mozilla::dom::EncodingUtils;
+#include "mozilla/Encoding.h"
 
 using namespace mozilla::dom;
 
@@ -676,9 +675,12 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
 
   aCharset.Truncate();
 
-  if (nsContentUtils::CheckForBOM((const unsigned char*)aSegment.BeginReading(),
-                                  aSegment.Length(),
-                                  aCharset)) {
+  const Encoding* encoding;
+  size_t bomLength;
+  Tie(encoding, bomLength) = Encoding::ForBOM(aSegment);
+  Unused << bomLength;
+  if (encoding) {
+    encoding->Name(aCharset);
     
     
     mCharset.Assign(aCharset);
@@ -691,7 +693,9 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
   aLoader->GetChannel(getter_AddRefs(channel));
   if (channel) {
     channel->GetContentCharset(specified);
-    if (EncodingUtils::FindEncodingForLabel(specified, aCharset)) {
+    encoding = Encoding::ForLabel(specified);
+    if (encoding) {
+      encoding->Name(aCharset);
       mCharset.Assign(aCharset);
       LOG(("  Setting from HTTP to: %s", PromiseFlatCString(aCharset).get()));
       return NS_OK;
@@ -701,9 +705,11 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
   if (GetCharsetFromData(aSegment.BeginReading(),
                          aSegment.Length(),
                          specified)) {
-    if (EncodingUtils::FindEncodingForLabel(specified, aCharset)) {
-      if (aCharset.EqualsLiteral("UTF-16BE") ||
-          aCharset.EqualsLiteral("UTF-16LE")) {
+    encoding = Encoding::ForLabel(specified);
+    if (encoding) {
+      encoding->Name(aCharset);
+      if (encoding == UTF_16BE_ENCODING ||
+          encoding == UTF_16LE_ENCODING) {
         
         
         
@@ -721,7 +727,9 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
   if (mOwningElement) {
     nsAutoString specified16;
     mOwningElement->GetCharset(specified16);
-    if (EncodingUtils::FindEncodingForLabel(specified16, aCharset)) {
+    encoding = Encoding::ForLabel(specified16);
+    if (encoding) {
+      encoding->Name(aCharset);
       mCharset.Assign(aCharset);
       LOG(("  Setting from charset attribute to: %s",
           PromiseFlatCString(aCharset).get()));
@@ -731,7 +739,9 @@ SheetLoadData::OnDetermineCharset(nsIUnicharStreamLoader* aLoader,
 
   
   
-  if (EncodingUtils::FindEncodingForLabel(mCharsetHint, aCharset)) {
+  encoding = Encoding::ForLabel(mCharsetHint);
+  if (encoding) {
+    encoding->Name(aCharset);
     mCharset.Assign(aCharset);
       LOG(("  Setting from charset attribute (preload case) to: %s",
           PromiseFlatCString(aCharset).get()));

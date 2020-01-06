@@ -622,42 +622,6 @@ public:
 
 
 
-
-
-
-
-
-  static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
-                                            const char* aInput,
-                                            uint32_t aInputLen,
-                                            nsAString& aOutput);
-
-  static nsresult ConvertStringFromEncoding(const nsACString& aEncoding,
-                                            const nsACString& aInput,
-                                            nsAString& aOutput) {
-    return ConvertStringFromEncoding(
-        aEncoding, aInput.BeginReading(), aInput.Length(), aOutput);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static bool CheckForBOM(const unsigned char* aBuffer, uint32_t aLength,
-                          nsACString& aCharset);
-
-  
-
-
-
   static bool IsCustomElementName(nsIAtom* aName);
 
   static nsresult CheckQName(const nsAString& aQualifiedName,

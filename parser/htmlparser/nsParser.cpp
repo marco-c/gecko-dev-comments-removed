@@ -34,16 +34,14 @@
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
 #include "nsCharsetSource.h"
-#include "nsContentUtils.h"
 #include "nsThreadUtils.h"
 #include "nsIHTMLContentSink.h"
 
-#include "mozilla/dom/EncodingUtils.h"
-#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/Encoding.h"
 
 using namespace mozilla;
-using mozilla::dom::EncodingUtils;
 
 #define NS_PARSER_FLAG_OBSERVERS_ENABLED      0x00000004
 #define NS_PARSER_FLAG_PENDING_CONTINUE_EVENT 0x00000008
@@ -1334,23 +1332,27 @@ ParserWriteFunc(nsIInputStream* in,
     pws->mNeedCharsetCheck = false;
     int32_t source;
     nsAutoCString preferred;
-    nsAutoCString maybePrefer;
     pws->mParser->GetDocumentCharset(preferred, source);
 
     
     
-    if (nsContentUtils::CheckForBOM(buf, count, maybePrefer)) {
+    const Encoding* encoding;
+    size_t bomLength;
+    Tie(encoding, bomLength) = Encoding::ForBOM(MakeSpan(buf, count));
+    Unused << bomLength;
+    if (encoding) {
       
       
       
-      preferred.Assign(maybePrefer);
+      encoding->Name(preferred);
       source = kCharsetFromByteOrderMark;
     } else if (source < kCharsetFromChannel) {
       nsAutoCString declCharset;
 
       if (ExtractCharsetFromXmlDeclaration(buf, count, declCharset)) {
-        if (EncodingUtils::FindEncodingForLabel(declCharset, maybePrefer)) {
-          preferred.Assign(maybePrefer);
+        encoding = Encoding::ForLabel(declCharset);
+        if (encoding) {
+          encoding->Name(preferred);
           source = kCharsetFromMetaTag;
         }
       }
