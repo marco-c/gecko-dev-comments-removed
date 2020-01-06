@@ -1858,6 +1858,8 @@ AttemptToRenamePKCS11ModuleDB(const nsACString& profilePath,
 
 
 
+
+
 static nsresult
 AttemptToRenameBothPKCS11ModuleDBVersions(const nsACString& profilePath)
 {
