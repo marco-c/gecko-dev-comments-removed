@@ -3312,6 +3312,16 @@ static MOZ_ALWAYS_INLINE bool
 ToCodePoint(JSContext* cx, HandleValue code, uint32_t* codePoint)
 {
     
+
+    
+    if (code.isInt32()) {
+        int32_t nextCP = code.toInt32();
+        if (nextCP >= 0 && nextCP <= int32_t(unicode::NonBMPMax)) {
+            *codePoint = uint32_t(nextCP);
+            return true;
+        }
+    }
+
     double nextCP;
     if (!ToNumber(cx, code, &nextCP))
         return false;
