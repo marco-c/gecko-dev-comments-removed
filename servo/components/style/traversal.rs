@@ -86,20 +86,6 @@ impl PreTraverseToken {
 }
 
 
-pub enum LogBehavior {
-    
-    MayLog,
-    
-    DontLog,
-}
-use self::LogBehavior::*;
-impl LogBehavior {
-    fn allow(&self) -> bool {
-        matches!(*self, MayLog)
-    }
-}
-
-
 #[derive(Debug, Copy, Clone)]
 pub enum TraversalDriver {
     
@@ -132,10 +118,15 @@ fn is_servo_nonincremental_layout() -> bool {
 
 pub trait DomTraversal<E: TElement> : Sync {
     
-    fn process_preorder(&self,
-                        data: &PerLevelTraversalData,
-                        context: &mut StyleContext<E>,
-                        node: E::ConcreteNode);
+    
+    
+    
+    fn process_preorder<F>(&self,
+                           data: &PerLevelTraversalData,
+                           context: &mut StyleContext<E>,
+                           node: E::ConcreteNode,
+                           note_child: F)
+        where F: FnMut(E::ConcreteNode);
 
     
     
@@ -235,15 +226,28 @@ pub trait DomTraversal<E: TElement> : Sync {
             };
         }
 
-        
-        
-        
-        if let Some(mut data) = root.mutate_data() {
+        let flags = shared_context.traversal_flags;
+        let data = root.mutate_data();
+        let should_traverse = if data.as_ref().map_or(true, |d| !d.has_styles()) {
+            !flags.for_animation_only()
+        } else {
+            let mut data = data.unwrap();
+            
+            
+            
             data.invalidate_style_if_needed(root, shared_context);
-        }
+
+            let parent = root.traversal_parent();
+            let parent_data = match parent {
+                None => None,
+                Some(ref x) => Some(x.borrow_data().unwrap())
+            };
+            let parent_data_borrow = parent_data.as_ref().map(|x| &**x);
+            Self::element_needs_traversal(root, flags, &*data, parent_data_borrow)
+        };
 
         PreTraverseToken {
-            traverse: Self::node_needs_traversal(root.as_node(), traversal_flags),
+            traverse: should_traverse,
             unstyled_children_only: false,
         }
     }
@@ -251,16 +255,23 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    fn text_node_needs_traversal(node: E::ConcreteNode) -> bool {
+    fn text_node_needs_traversal(node: E::ConcreteNode, _parent_data: &ElementData) -> bool {
         debug_assert!(node.is_text_node());
         false
     }
 
     
-    fn node_needs_traversal(
-        node: E::ConcreteNode,
-        traversal_flags: TraversalFlags
+    
+    
+    
+    fn element_needs_traversal(
+        el: E,
+        traversal_flags: TraversalFlags,
+        data: &ElementData,
+        parent_data: Option<&ElementData>,
     ) -> bool {
+        debug_assert!(data.has_styles(), "Caller should check this");
+
         
         if is_servo_nonincremental_layout() {
             return true;
@@ -269,11 +280,6 @@ pub trait DomTraversal<E: TElement> : Sync {
         if traversal_flags.for_reconstruct() {
             return true;
         }
-
-        let el = match node.as_element() {
-            None => return Self::text_node_needs_traversal(node),
-            Some(el) => el,
-        };
 
         
         
@@ -289,8 +295,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if el.is_native_anonymous() {
-            if let Some(parent) = el.traversal_parent() {
-                let parent_data = parent.borrow_data().unwrap();
+            if let Some(parent_data) = parent_data {
                 let going_to_reframe =
                     parent_data.restyle.reconstructed_self_or_ancestor();
 
@@ -322,40 +327,14 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if traversal_flags.for_animation_only() {
-            
-            
-            let data = match el.borrow_data() {
-                Some(d) => d,
-                None => return false,
-            };
-
-            if !data.has_styles() {
-                return false;
-            }
-
-            if el.has_animation_only_dirty_descendants() {
-                return true;
-            }
-
-            return data.restyle.hint.has_animation_hint() ||
+            return el.has_animation_only_dirty_descendants() ||
+                   data.restyle.hint.has_animation_hint() ||
                    data.restyle.hint.has_recascade_self();
         }
 
         
         
         if el.has_dirty_descendants() {
-            return true;
-        }
-
-        
-        
-        let data = match el.borrow_data() {
-            Some(d) => d,
-            None => return true,
-        };
-
-        
-        if !data.has_styles() {
             return true;
         }
 
@@ -386,16 +365,11 @@ pub trait DomTraversal<E: TElement> : Sync {
     }
 
     
-    
-    
-    
-    
-    fn should_traverse_children(
+    fn should_cull_subtree(
         &self,
         context: &mut StyleContext<E>,
         parent: E,
         parent_data: &ElementData,
-        log: LogBehavior
     ) -> bool {
         
         debug_assert!(cfg!(feature = "gecko") ||
@@ -403,11 +377,8 @@ pub trait DomTraversal<E: TElement> : Sync {
 
         
         if parent_data.styles.is_display_none() {
-            if log.allow() {
-                debug!("Parent {:?} is display:none, culling traversal",
-                       parent);
-            }
-            return false;
+            debug!("Parent {:?} is display:none, culling traversal", parent);
+            return true;
         }
 
         
@@ -431,61 +402,13 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if cfg!(feature = "gecko") && context.thread_local.is_initial_style() &&
-           parent_data.styles.primary().has_moz_binding() {
-            if log.allow() {
-                debug!("Parent {:?} has XBL binding, deferring traversal",
-                       parent);
-            }
-            return false;
+            parent_data.styles.primary().has_moz_binding()
+        {
+            debug!("Parent {:?} has XBL binding, deferring traversal", parent);
+            return true;
         }
 
-        return true;
-    }
-
-    
-    
-    fn traverse_children<F>(
-        &self,
-        context: &mut StyleContext<E>,
-        parent: E,
-        mut f: F
-    )
-    where
-        F: FnMut(&mut StyleContext<E>, E::ConcreteNode)
-    {
-        
-        let should_traverse =
-            self.should_traverse_children(
-                context,
-                parent,
-                &parent.borrow_data().unwrap(),
-                MayLog
-            );
-
-        context.thread_local.end_element(parent);
-        if !should_traverse {
-            return;
-        }
-
-        for kid in parent.as_node().traversal_children() {
-            if Self::node_needs_traversal(kid, self.shared_context().traversal_flags) {
-                
-                
-                
-                if !self.shared_context().traversal_flags.for_reconstruct() {
-                    let el = kid.as_element();
-                    if el.as_ref().and_then(|el| el.borrow_data())
-                         .map_or(false, |d| d.has_styles()) {
-                        if self.shared_context().traversal_flags.for_animation_only() {
-                            unsafe { parent.set_animation_only_dirty_descendants(); }
-                        } else {
-                            unsafe { parent.set_dirty_descendants(); }
-                        }
-                    }
-                }
-                f(context, kid);
-            }
-        }
+        return false;
     }
 
     
@@ -586,16 +509,18 @@ where
 
 #[inline]
 #[allow(unsafe_code)]
-pub fn recalc_style_at<E, D>(
+pub fn recalc_style_at<E, D, F>(
     traversal: &D,
     traversal_data: &PerLevelTraversalData,
     context: &mut StyleContext<E>,
     element: E,
-    data: &mut ElementData
+    data: &mut ElementData,
+    note_child: F,
 )
 where
     E: TElement,
     D: DomTraversal<E>,
+    F: FnMut(E::ConcreteNode),
 {
     context.thread_local.begin_element(element, data);
     context.thread_local.statistics.elements_traversed += 1;
@@ -660,32 +585,52 @@ where
                   "Should have computed style or haven't yet valid computed \
                    style in case of animation-only restyle");
 
+    let flags = context.shared.traversal_flags;
     let has_dirty_descendants_for_this_restyle =
-        if context.shared.traversal_flags.for_animation_only() {
+        if flags.for_animation_only() {
             element.has_animation_only_dirty_descendants()
         } else {
             element.has_dirty_descendants()
         };
+    if flags.for_animation_only() {
+        unsafe { element.unset_animation_only_dirty_descendants(); }
+    }
 
     
     
-    let should_traverse_children = traversal.should_traverse_children(
-        context,
-        element,
-        &data,
-        DontLog
-    );
-    if should_traverse_children &&
-        (has_dirty_descendants_for_this_restyle || !propagated_hint.is_empty()) {
-        let reconstructed_ancestor =
-            data.restyle.reconstructed_self_or_ancestor();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let mut traverse_children = has_dirty_descendants_for_this_restyle ||
+                                !propagated_hint.is_empty() ||
+                                context.thread_local.is_initial_style() ||
+                                data.restyle.reconstructed_self() ||
+                                flags.for_reconstruct() ||
+                                is_servo_nonincremental_layout();
 
-        preprocess_children::<E>(
+    traverse_children = traverse_children &&
+                        !traversal.should_cull_subtree(context, element, &data);
+
+    
+    if traverse_children {
+        note_children::<E, D, F>(
             context,
             element,
+            data,
             propagated_hint,
-            reconstructed_ancestor,
-        )
+            data.restyle.reconstructed_self_or_ancestor(),
+            note_child
+        );
     }
 
     
@@ -693,10 +638,6 @@ where
     
     if context.shared.traversal_flags.for_reconstruct() {
         data.clear_restyle_state();
-    }
-
-    if context.shared.traversal_flags.for_animation_only() {
-        unsafe { element.unset_animation_only_dirty_descendants(); }
     }
 
     
@@ -718,6 +659,8 @@ where
        context.shared.traversal_flags.for_reconstruct() {
         unsafe { element.unset_dirty_descendants(); }
     }
+
+    context.thread_local.end_element(element);
 }
 
 fn compute_style<E>(
@@ -813,31 +756,43 @@ where
     )
 }
 
-fn preprocess_children<E>(
+fn note_children<E, D, F>(
     context: &mut StyleContext<E>,
     element: E,
+    data: &ElementData,
     propagated_hint: RestyleHint,
     reconstructed_ancestor: bool,
+    mut note_child: F,
 )
 where
     E: TElement,
+    D: DomTraversal<E>,
+    F: FnMut(E::ConcreteNode),
 {
-    trace!("preprocess_children: {:?}", element);
+    trace!("note_children: {:?}", element);
+    let flags = context.shared.traversal_flags;
 
     
-    for child in element.as_node().traversal_children() {
-        
-        let child = match child.as_element() {
+    for child_node in element.as_node().traversal_children() {
+        let child = match child_node.as_element() {
             Some(el) => el,
-            None => continue,
+            None => {
+                if is_servo_nonincremental_layout() ||
+                   D::text_node_needs_traversal(child_node, data) {
+                    note_child(child_node);
+                }
+                continue;
+            },
         };
 
-        
-        if child.borrow_data().map_or(true, |d| !d.has_styles()) {
+        let child_data = child.mutate_data();
+        if child_data.as_ref().map_or(true, |d| !d.has_styles()) {
+            if !flags.for_animation_only() {
+                note_child(child_node);
+            }
             continue;
         }
-
-        let mut child_data = unsafe { child.ensure_data() };
+        let mut child_data = child_data.unwrap();
 
         trace!(" > {:?} -> {:?} + {:?}, pseudo: {:?}",
                child,
@@ -857,6 +812,24 @@ where
         
         
         child_data.invalidate_style_if_needed(child, &context.shared);
+
+        if D::element_needs_traversal(child, flags, &*child_data, Some(data)) {
+            note_child(child_node);
+
+            
+            
+            
+            
+            
+            
+            if !context.shared.traversal_flags.for_reconstruct() {
+                if context.shared.traversal_flags.for_animation_only() {
+                    unsafe { element.set_animation_only_dirty_descendants(); }
+                } else {
+                    unsafe { element.set_dirty_descendants(); }
+                }
+            }
+        }
     }
 }
 

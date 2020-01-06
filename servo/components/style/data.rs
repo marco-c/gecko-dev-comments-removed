@@ -70,10 +70,15 @@ impl RestyleData {
     
     
     pub fn reconstructed_self_or_ancestor(&self) -> bool {
-        self.reconstructed_ancestor() ||
+        self.reconstructed_ancestor() || self.reconstructed_self()
+    }
+
+    
+    pub fn reconstructed_self(&self) -> bool {
         self.damage.contains(RestyleDamage::reconstruct())
     }
 
+    
     
     fn reconstructed_ancestor(&self) -> bool {
         self.flags.contains(ANCESTOR_WAS_RECONSTRUCTED)
