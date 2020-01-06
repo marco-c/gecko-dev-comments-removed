@@ -95,6 +95,16 @@ ReadRequestedLocales(nsTArray<nsCString>& aRetVal)
   
   
   aRetVal.AppendElement(locale);
+
+  
+  
+  
+  
+  
+  
+  if (!locale.Equals("en-US")) {
+    aRetVal.AppendElement("en-US");
+  }
   return true;
 }
 
@@ -293,15 +303,6 @@ LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
   if (mRequestedLocales.IsEmpty()) {
     ReadRequestedLocales(mRequestedLocales);
 
-    
-    
-    
-    
-    
-    
-    if (!mRequestedLocales.Contains("en-US")) {
-      mRequestedLocales.AppendElement("en-US");
-    }
   }
 
   aRetVal = mRequestedLocales;
