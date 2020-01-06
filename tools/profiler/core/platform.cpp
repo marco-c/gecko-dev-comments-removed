@@ -1241,6 +1241,9 @@ DoNativeBacktrace(PSLockRef aLock, const ThreadInfo& aThreadInfo,
 
 
 
+
+
+
 static inline void
 DoSharedSample(PSLockRef aLock, bool aIsSynchronous,
                ThreadInfo& aThreadInfo, const TimeStamp& aNow,

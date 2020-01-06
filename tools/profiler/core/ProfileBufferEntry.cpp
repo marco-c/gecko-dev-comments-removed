@@ -7,6 +7,7 @@
 #include <ostream>
 #include "platform.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/Sprintf.h"
 
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
@@ -533,7 +534,7 @@ void UniqueStacks::StreamFrame(const OnStackFrameKey& aFrame)
 struct ProfileSample
 {
   uint32_t mStack;
-  Maybe<double> mTime;
+  double mTime;
   Maybe<double> mResponsiveness;
   Maybe<double> mRSS;
   Maybe<double> mUSS;
@@ -553,9 +554,7 @@ static void WriteSample(SpliceableJSONWriter& aWriter, ProfileSample& aSample)
 
   writer.IntElement(STACK, aSample.mStack);
 
-  if (aSample.mTime.isSome()) {
-    writer.DoubleElement(TIME, *aSample.mTime);
-  }
+  writer.DoubleElement(TIME, aSample.mTime);
 
   if (aSample.mResponsiveness.isSome()) {
     writer.DoubleElement(RESPONSIVENESS, *aSample.mResponsiveness);
@@ -570,146 +569,313 @@ static void WriteSample(SpliceableJSONWriter& aWriter, ProfileSample& aSample)
   }
 }
 
-void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                                        double aSinceTime, JSContext* aContext,
-                                        UniqueStacks& aUniqueStacks)
+class EntryGetter
 {
-  Maybe<ProfileSample> sample;
-  int readPos = mReadPos;
-  int currentThreadID = -1;
-  Maybe<double> currentTime;
-  UniquePtr<char[]> strbuf = MakeUnique<char[]>(DYNAMIC_MAX_STRING);
+public:
+  explicit EntryGetter(ProfileBuffer* aBuffer)
+    : mEntries(aBuffer->mEntries.get())
+    , mReadPos(aBuffer->mReadPos)
+    , mWritePos(aBuffer->mWritePos)
+    , mEntrySize(aBuffer->mEntrySize)
+  {}
 
-  while (readPos != mWritePos) {
-    ProfileBufferEntry entry = mEntries[readPos];
-    if (entry.isThreadId()) {
-      currentThreadID = entry.u.mInt;
-      currentTime.reset();
-      int readAheadPos = (readPos + 1) % mEntrySize;
-      if (readAheadPos != mWritePos) {
-        ProfileBufferEntry readAheadEntry = mEntries[readAheadPos];
-        if (readAheadEntry.isTime()) {
-          currentTime = Some(readAheadEntry.u.mDouble);
+  bool Has() const { return mReadPos != mWritePos; }
+  const ProfileBufferEntry& Get() const { return mEntries[mReadPos]; }
+  void Next() { mReadPos = (mReadPos + 1) % mEntrySize; }
+
+private:
+  const ProfileBufferEntry* const mEntries;
+  int mReadPos;
+  const int mWritePos;
+  const int mEntrySize;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+                                   double aSinceTime, JSContext* aContext,
+                                   UniqueStacks& aUniqueStacks)
+{
+  UniquePtr<char[]> strbuf = MakeUnique<char[]>(kMaxDynamicStringLength);
+
+  
+  
+  
+  #define ERROR_AND_SKIP_TO_NEXT_SAMPLE(msg) \
+    do { \
+      fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
+      MOZ_ASSERT(false, msg); \
+      goto skip_to_next_sample; \
+    } while (0)
+
+  EntryGetter e(this);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+skip_to_next_sample:
+  while (e.Has()) {
+    if (e.Get().isThreadId()) {
+      break;
+    } else {
+      e.Next();
+    }
+  }
+
+  while (e.Has()) {
+    if (e.Get().isThreadId()) {
+      int threadId = e.Get().u.mInt;
+      e.Next();
+
+      
+      if (threadId != aThreadId) {
+        goto skip_to_next_sample;
+      }
+    } else {
+      
+      
+      MOZ_CRASH();
+    }
+
+    ProfileSample sample;
+
+    if (e.Has() && e.Get().isTime()) {
+      sample.mTime = e.Get().u.mDouble;
+      e.Next();
+
+      
+      if (sample.mTime < aSinceTime) {
+        goto skip_to_next_sample;
+      }
+    } else {
+      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Time entry");
+    }
+
+    if (e.Has() && e.Get().isSample()) {
+      e.Next();
+    } else {
+      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected a Sample entry");
+    }
+
+    UniqueStacks::Stack stack =
+      aUniqueStacks.BeginStack(UniqueStacks::OnStackFrameKey("(root)"));
+
+    int numFrames = 0;
+    while (e.Has()) {
+      if (e.Get().isNativeLeafAddr()) {
+        numFrames++;
+
+        
+        
+        unsigned long long pc = (unsigned long long)(uintptr_t)e.Get().u.mPtr;
+        char buf[20];
+        SprintfLiteral(buf, "%#llx", pc);
+        stack.AppendFrame(UniqueStacks::OnStackFrameKey(buf));
+        e.Next();
+
+      } else if (e.Get().isCodeLocation()) {
+        numFrames++;
+        const char* string = e.Get().u.mString;
+        e.Next();
+
+        strbuf[0] = '\0';
+        char* p = &strbuf[0];
+        while (e.Has()) {
+          if (e.Get().isEmbeddedString()) {
+            if (p < &strbuf[kMaxDynamicStringLength]) {
+              
+              
+              static_assert(kMaxDynamicStringLength % 8 == 0, "bad strbuf sz");
+              memcpy(p, e.Get().u.mChars, ProfileBufferEntry::kNumChars);
+              p += ProfileBufferEntry::kNumChars;
+            }
+
+            e.Next();
+          } else {
+            break;
+          }
         }
+        strbuf[kMaxDynamicStringLength - 1] = '\0';
+
+        if (strbuf[0] != '\0') {
+          
+          
+          MOZ_ASSERT(string[0] == '\0');
+          string = strbuf.get();
+        }
+
+        UniqueStacks::OnStackFrameKey frameKey(string);
+
+        if (e.Has() && e.Get().isLineNumber()) {
+          frameKey.mLine = Some(unsigned(e.Get().u.mInt));
+          e.Next();
+        }
+
+        if (e.Has() && e.Get().isCategory()) {
+          frameKey.mCategory = Some(unsigned(e.Get().u.mInt));
+          e.Next();
+        }
+
+        stack.AppendFrame(frameKey);
+
+      } else if (e.Get().isJitReturnAddr()) {
+        numFrames++;
+
+        
+        void* pc = e.Get().u.mPtr;
+        unsigned depth = aUniqueStacks.LookupJITFrameDepth(pc);
+        if (depth == 0) {
+          StreamJSFramesOp framesOp(pc, stack);
+          MOZ_RELEASE_ASSERT(aContext);
+          JS::ForEachProfiledFrame(aContext, pc, framesOp);
+          aUniqueStacks.AddJITFrameDepth(pc, framesOp.depth());
+        } else {
+          for (unsigned i = 0; i < depth; i++) {
+            UniqueStacks::OnStackFrameKey inlineFrameKey(pc, i);
+            stack.AppendFrame(inlineFrameKey);
+          }
+        }
+
+        e.Next();
+
+      } else {
+        break;
       }
     }
-    if (currentThreadID == aThreadId && (currentTime.isNothing() || *currentTime >= aSinceTime)) {
-      switch (entry.kind()) {
-      case ProfileBufferEntry::Kind::Responsiveness:
-        if (sample.isSome()) {
-          sample->mResponsiveness = Some(entry.u.mDouble);
-        }
-        break;
-      case ProfileBufferEntry::Kind::ResidentMemory:
-        if (sample.isSome()) {
-          sample->mRSS = Some(entry.u.mDouble);
-        }
-        break;
-      case ProfileBufferEntry::Kind::UnsharedMemory:
-        if (sample.isSome()) {
-          sample->mUSS = Some(entry.u.mDouble);
-         }
-        break;
-      case ProfileBufferEntry::Kind::Sample:
-        {
-          
-          if (sample.isSome()) {
-            WriteSample(aWriter, *sample);
-            sample.reset();
-          }
-          
-          sample.emplace();
-          sample->mTime = currentTime;
 
-          
-
-          UniqueStacks::Stack stack =
-            aUniqueStacks.BeginStack(UniqueStacks::OnStackFrameKey("(root)"));
-
-          int entryPos = (readPos + 1) % mEntrySize;
-          ProfileBufferEntry entry = mEntries[entryPos];
-          while (entryPos != mWritePos && !entry.isSample() &&
-                 !entry.isThreadId()) {
-            int incBy = 1;
-            entry = mEntries[entryPos];
-
-            
-            
-            const char* string = entry.u.mString;
-            int readAheadPos = (entryPos + 1) % mEntrySize;
-            
-            
-            strbuf[DYNAMIC_MAX_STRING-1] = '\0';
-
-            if (readAheadPos != mWritePos &&
-                mEntries[readAheadPos].isEmbeddedString()) {
-              string =
-                processEmbeddedString(readAheadPos, &incBy, strbuf.get());
-            }
-
-            
-            
-            
-            
-            
-            
-            if (entry.isNativeLeafAddr()) {
-              
-              
-              
-              unsigned long long pc =
-                (unsigned long long)(uintptr_t)entry.u.mPtr;
-              snprintf(strbuf.get(), DYNAMIC_MAX_STRING, "%#llx", pc);
-              stack.AppendFrame(UniqueStacks::OnStackFrameKey(strbuf.get()));
-
-            } else if (entry.isCodeLocation()) {
-              UniqueStacks::OnStackFrameKey frameKey(string);
-              readAheadPos = (entryPos + incBy) % mEntrySize;
-              if (readAheadPos != mWritePos &&
-                  mEntries[readAheadPos].isLineNumber()) {
-                frameKey.mLine = Some((unsigned) mEntries[readAheadPos].u.mInt);
-                incBy++;
-              }
-              readAheadPos = (entryPos + incBy) % mEntrySize;
-              if (readAheadPos != mWritePos &&
-                  mEntries[readAheadPos].isCategory()) {
-                frameKey.mCategory =
-                  Some((unsigned) mEntries[readAheadPos].u.mInt);
-                incBy++;
-              }
-              stack.AppendFrame(frameKey);
-
-            } else if (entry.isJitReturnAddr()) {
-              
-              void* pc = entry.u.mPtr;
-              unsigned depth = aUniqueStacks.LookupJITFrameDepth(pc);
-              if (depth == 0) {
-                StreamJSFramesOp framesOp(pc, stack);
-                MOZ_RELEASE_ASSERT(aContext);
-                JS::ForEachProfiledFrame(aContext, pc, framesOp);
-                aUniqueStacks.AddJITFrameDepth(pc, framesOp.depth());
-              } else {
-                for (unsigned i = 0; i < depth; i++) {
-                  UniqueStacks::OnStackFrameKey inlineFrameKey(pc, i);
-                  stack.AppendFrame(inlineFrameKey);
-                }
-              }
-            }
-            entryPos = (entryPos + incBy) % mEntrySize;
-          }
-
-          sample->mStack = stack.GetOrAddIndex();
-          break;
-        }
-      default:
-        break;
-      } 
+    if (numFrames == 0) {
+      ERROR_AND_SKIP_TO_NEXT_SAMPLE("expected one or more frame entries");
     }
-    readPos = (readPos + 1) % mEntrySize;
+
+    sample.mStack = stack.GetOrAddIndex();
+
+    
+    while (e.Has()) {
+      if (e.Get().isMarker()) {
+        e.Next();
+      } else {
+        break;
+      }
+    }
+
+    if (e.Has() && e.Get().isResponsiveness()) {
+      sample.mResponsiveness = Some(e.Get().u.mDouble);
+      e.Next();
+    }
+
+    if (e.Has() && e.Get().isResidentMemory()) {
+      sample.mRSS = Some(e.Get().u.mDouble);
+      e.Next();
+    }
+
+    if (e.Has() && e.Get().isUnsharedMemory()) {
+      sample.mUSS = Some(e.Get().u.mDouble);
+      e.Next();
+    }
+
+    WriteSample(aWriter, sample);
   }
-  if (sample.isSome()) {
-    WriteSample(aWriter, *sample);
-  }
+
+  #undef ERROR_AND_SKIP_TO_NEXT_SAMPLE
 }
 
 void
@@ -719,19 +885,22 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
                                    double aSinceTime,
                                    UniqueStacks& aUniqueStacks)
 {
-  int readPos = mReadPos;
+  EntryGetter e(this);
+
   int currentThreadID = -1;
-  while (readPos != mWritePos) {
-    ProfileBufferEntry entry = mEntries[readPos];
-    if (entry.isThreadId()) {
-      currentThreadID = entry.u.mInt;
-    } else if (currentThreadID == aThreadId && entry.isMarker()) {
-      const ProfilerMarker* marker = entry.u.mMarker;
+
+  
+  
+  while (e.Has()) {
+    if (e.Get().isThreadId()) {
+      currentThreadID = e.Get().u.mInt;
+    } else if (currentThreadID == aThreadId && e.Get().isMarker()) {
+      const ProfilerMarker* marker = e.Get().u.mMarker;
       if (marker->GetTime() >= aSinceTime) {
-        entry.u.mMarker->StreamJSON(aWriter, aProcessStartTime, aUniqueStacks);
+        marker->StreamJSON(aWriter, aProcessStartTime, aUniqueStacks);
       }
     }
-    readPos = (readPos + 1) % mEntrySize;
+    e.Next();
   }
 }
 

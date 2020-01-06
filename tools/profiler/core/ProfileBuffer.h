@@ -42,6 +42,10 @@ public:
   
   void addThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
 
+  
+  
+  static const size_t kMaxDynamicStringLength = 8192;
+
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,
                            UniqueStacks& aUniqueStacks);
@@ -64,9 +68,7 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-protected:
-  char* processEmbeddedString(int aReadaheadPos, int* aEntriesConsumed,
-                              char* aStrBuf);
+private:
   int FindLastSampleOfThread(int aThreadId, const LastSample& aLS);
 
 public:
