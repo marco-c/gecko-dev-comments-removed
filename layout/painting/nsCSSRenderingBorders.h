@@ -100,7 +100,7 @@ public:
                       const Float* aBorderWidths,
                       RectCornerRadii& aBorderRadii,
                       const nscolor* aBorderColors,
-                      nsBorderColors* const* aCompositeColors,
+                      const nsBorderColors* aCompositeColors,
                       nscolor aBackgroundColor,
                       bool aBackfaceIsVisible);
 
@@ -152,7 +152,9 @@ private:
   nscolor mBorderColors[4];
 
   
-  nsBorderColors* mCompositeColors[4];
+  
+  
+  const nsTArray<nscolor>* mCompositeColors[4];
 
   
   nscolor mBackgroundColor;
@@ -237,7 +239,8 @@ private:
   void DrawBorderSides (int aSides);
 
   
-  void DrawBorderSidesCompositeColors(int aSides, const nsBorderColors *compositeColors);
+  void DrawBorderSidesCompositeColors(
+    int aSides, const nsTArray<nscolor>& compositeColors);
 
   
   void SetupDashedOptions(StrokeOptions* aStrokeOptions,
