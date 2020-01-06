@@ -12,6 +12,7 @@
 #include "nsINetAddr.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsITimer.h"
+#include "nsContentUtils.h"
 #include "mozilla/net/DNS.h"
 #include "prerror.h"
 
@@ -258,13 +259,7 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   
   RefPtr<UDPServerListener> serverListener = new UDPServerListener(waiter);
 
-  nsCOMPtr<nsIScriptSecurityManager> secman =
-    do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
-
-  nsCOMPtr<nsIPrincipal> systemPrincipal;
-  rv = secman->GetSystemPrincipal(getter_AddRefs(systemPrincipal));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  nsCOMPtr<nsIPrincipal> systemPrincipal = nsContentUtils::GetSystemPrincipal();
 
   
   rv = server->Init(0, false, systemPrincipal, true, 0);

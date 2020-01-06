@@ -1857,11 +1857,7 @@ nsIOService::SpeculativeConnectInternal(nsIURI *aURI,
     
     
     if (!aPrincipal) {
-        nsCOMPtr<nsIScriptSecurityManager> secMan(
-            do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv));
-        NS_ENSURE_SUCCESS(rv, rv);
-        rv = secMan->GetSystemPrincipal(getter_AddRefs(loadingPrincipal));
-        NS_ENSURE_SUCCESS(rv, rv);
+        loadingPrincipal = nsContentUtils::GetSystemPrincipal();
     }
 
     
