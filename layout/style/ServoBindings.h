@@ -515,7 +515,7 @@ const char* Gecko_CSSKeywordString(nsCSSKeyword keyword, uint32_t* len);
 
 
 
-nsCSSFontFaceRule* Gecko_CSSFontFaceRule_Create();
+nsCSSFontFaceRule* Gecko_CSSFontFaceRule_Create(uint32_t line, uint32_t column);
 void Gecko_CSSFontFaceRule_GetCssText(const nsCSSFontFaceRule* rule, nsAString* result);
 NS_DECL_FFI_REFCOUNTING(nsCSSFontFaceRule, CSSFontFaceRule);
 
