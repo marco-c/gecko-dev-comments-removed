@@ -82,8 +82,6 @@ public:
   
   ScreenIntCoord GetCompositionHeight() const;
   
-  bool SetCompositionSize(ScreenIntSize aSize);
-  
   
   
   
@@ -95,6 +93,8 @@ public:
   void FirstPaint();
   
   void UpdateRootFrameMetrics(const FrameMetrics& aMetrics);
+  
+  void MaybeUpdateCompositionSizeAndRootFrameMetrics(const FrameMetrics& aMetrics);
   
   
   void EnableLayersUpdateNotifications(bool aEnable);
@@ -225,6 +225,7 @@ protected:
   bool mCompositorReceivedFirstPaint;   
   bool mCompositorWaitForPageResize;    
   bool mCompositorToolbarShowRequested; 
+  bool mCompositorSendResponseForSnapshotUpdate;  
   AnimationStyle mCompositorAnimationStyle;       
   ScreenIntCoord mCompositorMaxToolbarHeight;     
   ScreenIntCoord mCompositorToolbarHeight;        

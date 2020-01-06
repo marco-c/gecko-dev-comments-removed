@@ -24,7 +24,6 @@ import org.mozilla.gecko.bookmarks.BookmarkEditFragment;
 import org.mozilla.gecko.bookmarks.BookmarkUtils;
 import org.mozilla.gecko.bookmarks.EditBookmarkTask;
 import org.mozilla.gecko.cleanup.FileCleanupController;
-import org.mozilla.gecko.dawn.DawnHelper;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.SuggestedSites;
@@ -1112,8 +1111,6 @@ public class BrowserApp extends GeckoApp
     public void onAttachedToWindow() {
         
         checkFirstrun(this, new SafeIntent(getIntent()));
-
-        DawnHelper.conditionallyNotifyDawn(this);
     }
 
     @Override
@@ -1708,7 +1705,15 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void toggleToolbarChrome(final boolean aShow) {
-        toggleChrome(aShow);
+        if (aShow) {
+            mBrowserChrome.setVisibility(View.VISIBLE);
+        } else {
+            
+            
+            
+            
+            mBrowserChrome.setVisibility(View.INVISIBLE);
+        }
     }
 
     public void refreshToolbarHeight() {
@@ -1730,22 +1735,17 @@ public class BrowserApp extends GeckoApp
 
     @Override
     void toggleChrome(final boolean aShow) {
-        if (aShow) {
-            mBrowserChrome.setVisibility(View.VISIBLE);
-        } else {
-            
-            
-            
-            
-            mBrowserChrome.setVisibility(View.INVISIBLE);
+        if (mDynamicToolbar != null) {
+            mDynamicToolbar.setVisible(aShow, VisibilityTransition.IMMEDIATE);
         }
-
         super.toggleChrome(aShow);
     }
 
     @Override
     void focusChrome() {
-        mBrowserChrome.setVisibility(View.VISIBLE);
+        if (mDynamicToolbar != null) {
+            mDynamicToolbar.setVisible(true, VisibilityTransition.IMMEDIATE);
+        }
         mActionBarFlipper.requestFocusFromTouch();
 
         super.focusChrome();

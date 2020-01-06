@@ -945,23 +945,24 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             if (*aOutFoundRoot) {
               mRootScrollableId = metrics.GetScrollId();
               Compositor* compositor = mLayerManager->GetCompositor();
-              if (mIsFirstPaint) {
-                if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
-                  AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
-                  MOZ_ASSERT(animator);
+              if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
+                AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
+                MOZ_ASSERT(animator);
+                if (mIsFirstPaint) {
                   animator->UpdateRootFrameMetrics(metrics);
                   animator->FirstPaint();
+                  mIsFirstPaint = false;
                 }
-              }
-              if (mLayersUpdated) {
-                if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
-                  AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
-                  MOZ_ASSERT(animator);
+                if (mLayersUpdated) {
                   animator->NotifyLayersUpdated();
+                  mLayersUpdated = false;
                 }
-                mLayersUpdated = false;
+                
+                
+                if (!metrics.IsRootContent()) {
+                  animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(metrics);
+                }
               }
-              mIsFirstPaint = false;
               fixedLayerMargins = mFixedLayerMargins;
             }
           }

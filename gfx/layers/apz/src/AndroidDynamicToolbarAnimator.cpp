@@ -67,6 +67,7 @@ AndroidDynamicToolbarAnimator::AndroidDynamicToolbarAnimator()
   , mCompositorReceivedFirstPaint(false)
   , mCompositorWaitForPageResize(false)
   , mCompositorToolbarShowRequested(false)
+  , mCompositorSendResponseForSnapshotUpdate(false)
   , mCompositorAnimationStyle(eAnimate)
   , mCompositorMaxToolbarHeight(0)
   , mCompositorToolbarHeight(0)
@@ -270,30 +271,6 @@ AndroidDynamicToolbarAnimator::GetCompositionHeight() const
   return mCompositorCompositionSize.height;
 }
 
-bool
-AndroidDynamicToolbarAnimator::SetCompositionSize(ScreenIntSize aSize)
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (mCompositorCompositionSize == aSize) {
-    return false;
-  }
-
-  ScreenIntSize prevSize = mCompositorCompositionSize;
-  mCompositorCompositionSize = aSize;
-
-  
-  if ((prevSize.width != aSize.width) && (mToolbarState != eToolbarVisible)) {
-    PostMessage(STATIC_TOOLBAR_NEEDS_UPDATE);
-  }
-
-  if (prevSize.height != aSize.height) {
-    UpdateControllerCompositionHeight(aSize.height);
-    UpdateFixedLayerMargins();
-  }
-
-  return true;
-}
-
 void
 AndroidDynamicToolbarAnimator::SetScrollingRootContent()
 {
@@ -319,7 +296,7 @@ AndroidDynamicToolbarAnimator::ToolbarAnimatorMessageFromUI(int32_t aMessage)
       }
     } else {
       
-      mCompositorAnimationDeferred = false;
+      StartCompositorAnimation(MOVE_TOOLBAR_UP, mCompositorAnimationStyle, mCompositorToolbarHeight, mCompositorWaitForPageResize);
     }
     break;
   case TOOLBAR_VISIBLE:
@@ -470,6 +447,35 @@ AndroidDynamicToolbarAnimator::UpdateRootFrameMetrics(const FrameMetrics& aMetri
   UpdateFrameMetrics(scrollOffset, scale, cssPageRect);
 }
 
+void
+AndroidDynamicToolbarAnimator::MaybeUpdateCompositionSizeAndRootFrameMetrics(const FrameMetrics& aMetrics)
+{
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  CSSToScreenScale scale = ViewTargetAs<ScreenPixel>(aMetrics.GetZoom().ToScaleFactor(),
+                                                     PixelCastJustification::ScreenIsParentLayerForRoot);
+  ScreenIntSize size = ScreenIntSize::Round(aMetrics.GetRootCompositionSize() * scale);
+
+  if (mCompositorCompositionSize == size) {
+    return;
+  }
+
+  ScreenIntSize prevSize = mCompositorCompositionSize;
+  mCompositorCompositionSize = size;
+
+  
+  if ((prevSize.width != size.width) && (mToolbarState == eToolbarUnlocked)) {
+    
+    PostMessage(STATIC_TOOLBAR_NEEDS_UPDATE);
+  }
+
+  if (prevSize.height != size.height) {
+    UpdateControllerCompositionHeight(size.height);
+    UpdateFixedLayerMargins();
+  }
+
+  UpdateRootFrameMetrics(aMetrics);
+}
+
 
 void
 AndroidDynamicToolbarAnimator::EnableLayersUpdateNotifications(bool aEnable)
@@ -525,7 +531,8 @@ AndroidDynamicToolbarAnimator::GetToolbarEffect(CompositorOGL* gl)
     uiController->DeallocShmem(mCompositorToolbarPixels.ref());
     mCompositorToolbarPixels.reset();
     
-    if (mCompositorToolbarTexture) {
+    if (mCompositorToolbarTexture && mCompositorSendResponseForSnapshotUpdate) {
+      mCompositorSendResponseForSnapshotUpdate = false;
       CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod(this, &AndroidDynamicToolbarAnimator::PostToolbarReady));
     }
   }
@@ -574,6 +581,7 @@ AndroidDynamicToolbarAnimator::ProcessTouchDelta(StaticToolbarState aCurrentTool
 
   if (aCurrentToolbarState == eToolbarVisible) {
     if (tryingToHideToolbar && (mControllerState != eUnlockPending)) {
+      mCompositorSendResponseForSnapshotUpdate = true;
       PostMessage(STATIC_TOOLBAR_NEEDS_UPDATE);
       mControllerState = eUnlockPending;
     }
@@ -796,7 +804,7 @@ AndroidDynamicToolbarAnimator::UpdateFixedLayerMargins()
     }
     AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
     if (manager) {
-      if (mToolbarState == eToolbarAnimating) {
+      if ((mToolbarState == eToolbarAnimating) && mCompositorAnimationStarted) {
         manager->SetFixedLayerMargins(mCompositorToolbarHeight, 0);
       } else {
         manager->SetFixedLayerMargins(0, GetFixedLayerMarginsBottom());
@@ -851,6 +859,7 @@ AndroidDynamicToolbarAnimator::StartCompositorAnimation(int32_t aDirection, Anim
   
   if ((initialToolbarState != eToolbarUnlocked) && (initialToolbarState != eToolbarAnimating)) {
     mCompositorAnimationDeferred = true;
+    mCompositorSendResponseForSnapshotUpdate = true;
     PostMessage(STATIC_TOOLBAR_NEEDS_UPDATE);
   } else {
     
@@ -861,11 +870,12 @@ AndroidDynamicToolbarAnimator::StartCompositorAnimation(int32_t aDirection, Anim
     }
     
     NotifyControllerAnimationStarted();
-    CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
-    if (parent) {
-      mCompositorAnimationStartTimeStamp = parent->GetAPZCTreeManager()->GetFrameTime();
-    }
+    
     if (initialToolbarState != eToolbarAnimating) {
+      CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
+      if (parent) {
+        mCompositorAnimationStartTimeStamp = parent->GetAPZCTreeManager()->GetFrameTime();
+      }
       
       RequestComposite();
     }
