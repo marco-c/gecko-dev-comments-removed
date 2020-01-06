@@ -2225,8 +2225,8 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     }
   }
   
-  nsTArray<FontFamilyListEntry> fontFamilies;
-  gfxPlatform::GetPlatform()->GetSystemFontFamilyList(&fontFamilies);
+  nsTArray<SystemFontListEntry> fontList;
+  gfxPlatform::GetPlatform()->GetSystemFontList(&fontList);
   nsTArray<LookAndFeelInt> lnfCache = LookAndFeel::GetIntCache();
 
   
@@ -2269,7 +2269,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   screenManager.CopyScreensToRemote(this);
 
   Unused << SendSetXPCOMProcessAttributes(xpcomInit, initialData, lnfCache,
-                                          fontFamilies);
+                                          fontList);
 
   if (aSendRegisteredChrome) {
     nsCOMPtr<nsIChromeRegistry> registrySvc = nsChromeRegistry::GetService();
