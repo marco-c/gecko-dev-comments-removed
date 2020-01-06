@@ -2765,6 +2765,12 @@ public class BrowserApp extends GeckoApp
         
         
         if (isAboutHome(tab)) {
+            
+            if (splashScreen != null && splashScreen.getVisibility() == View.VISIBLE) {
+                
+                splashScreen.hide();
+            }
+
             String panelId = AboutPages.getPanelIdFromAboutHomeUrl(tab.getURL());
             Bundle panelRestoreData = null;
             if (panelId == null) {
@@ -2800,7 +2806,7 @@ public class BrowserApp extends GeckoApp
             
             if (showSplashScreen && !GeckoThread.isRunning()) {
 
-                final ViewGroup main = (ViewGroup) findViewById(R.id.main_layout);
+                final ViewGroup main = (ViewGroup) findViewById(R.id.gecko_layout);
                 final View splashLayout = LayoutInflater.from(this).inflate(R.layout.splash_screen, main);
                 splashScreen = (SplashScreen) splashLayout.findViewById(R.id.splash_root);
 
