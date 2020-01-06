@@ -3468,7 +3468,6 @@ Zone::destroy(FreeOp* fop)
 
 
 
-
 void
 Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime)
 {

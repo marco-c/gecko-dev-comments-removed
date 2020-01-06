@@ -621,10 +621,9 @@ struct JSCompartment
   public:
     bool                         isSelfHosting;
     bool                         marked;
-    bool                         warnedAboutDateToLocaleFormat : 1;
-    bool                         warnedAboutExprClosure : 1;
-    bool                         warnedAboutForEach : 1;
-    bool                         warnedAboutLegacyGenerator : 1;
+    bool                         warnedAboutDateToLocaleFormat;
+    bool                         warnedAboutExprClosure;
+    bool                         warnedAboutForEach;
     uint32_t                     warnedAboutStringGenericsMethods;
 
 #ifdef DEBUG
@@ -684,6 +683,9 @@ struct JSCompartment
 
     
     inline js::GlobalObject* unsafeUnbarrieredMaybeGlobal() const;
+
+    
+    inline bool globalIsAboutToBeFinalized();
 
     inline void initGlobal(js::GlobalObject& global);
 

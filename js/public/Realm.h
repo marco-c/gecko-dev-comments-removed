@@ -13,12 +13,51 @@
 #ifndef js_Realm_h
 #define js_Realm_h
 
-#include "jstypes.h"
+#include "jspubtd.h"
+#include "js/GCPolicyAPI.h"
+#include "js/TypeDecls.h"  
 
-struct JSContext;
-class JSObject;
+namespace js {
+namespace gc {
+JS_PUBLIC_API(void) TraceRealm(JSTracer* trc, JS::Realm* realm, const char* name);
+JS_PUBLIC_API(bool) RealmNeedsSweep(JS::Realm* realm);
+}
+}
 
 namespace JS {
+
+
+template <>
+struct GCPolicy<Realm*>
+{
+    static Realm* initial() { return nullptr; }
+    static void trace(JSTracer* trc, Realm** vp, const char* name) {
+        if (*vp)
+            ::js::gc::TraceRealm(trc, *vp, name);
+    }
+    static bool needsSweep(Realm** vp) {
+        return *vp && ::js::gc::RealmNeedsSweep(*vp);
+    }
+};
+
+
+
+extern JS_PUBLIC_API(Realm*)
+GetCurrentRealmOrNull(JSContext* cx);
+
+
+inline JSCompartment*
+GetCompartmentForRealm(Realm* realm) {
+    
+    
+    return reinterpret_cast<JSCompartment*>(realm);
+}
+
+
+inline Realm*
+GetRealmForCompartment(JSCompartment* compartment) {
+    return reinterpret_cast<Realm*>(compartment);
+}
 
 extern JS_PUBLIC_API(JSObject*)
 GetRealmObjectPrototype(JSContext* cx);

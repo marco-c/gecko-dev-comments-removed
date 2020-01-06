@@ -7,11 +7,33 @@
 #include "js/Realm.h"
 
 #include "jscntxt.h"
-#include "jscompartment.h" 
+#include "jscompartment.h"
 
 #include "vm/GlobalObject.h"
 
+#include "jscompartmentinlines.h"
+
 using namespace js;
+
+JS_PUBLIC_API(void)
+gc::TraceRealm(JSTracer* trc, JS::Realm* realm, const char* name)
+{
+    
+    
+    
+    
+    
+    
+    
+    JS::GetCompartmentForRealm(realm)->traceGlobal(trc);
+}
+
+JS_PUBLIC_API(bool)
+gc::RealmNeedsSweep(JS::Realm* realm)
+{
+    return JS::GetCompartmentForRealm(realm)->globalIsAboutToBeFinalized();
+}
+
 
 JS_PUBLIC_API(JSObject*)
 JS::GetRealmObjectPrototype(JSContext* cx)

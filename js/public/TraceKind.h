@@ -144,6 +144,10 @@ struct MapTypeToRootKind<T*> {
     static const JS::RootKind kind =
         JS::MapTraceKindToRootKind<JS::MapTypeToTraceKind<T>::kind>::kind;
 };
+template <> struct MapTypeToRootKind<JS::Realm*> {
+    
+    static const JS::RootKind kind = JS::RootKind::Traceable;
+};
 template <typename T>
 struct MapTypeToRootKind<mozilla::UniquePtr<T>> {
     static const JS::RootKind kind = JS::MapTypeToRootKind<T>::kind;
