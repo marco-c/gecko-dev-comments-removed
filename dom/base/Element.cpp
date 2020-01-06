@@ -1607,9 +1607,14 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     UnsetFlags(NODE_FORCE_XBL_BINDINGS |
                
-               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
-    
-    UnsetRestyleFlagsIfGecko();
+               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES |
+               
+               
+               
+               
+               
+               
+               ELEMENT_ALL_RESTYLE_FLAGS);
   } else if (IsInShadowTree()) {
     
     
@@ -1617,9 +1622,10 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
-    UnsetFlags(NODE_FORCE_XBL_BINDINGS |
-               NODE_NEEDS_FRAME | NODE_DESCENDANTS_NEED_FRAMES);
-    UnsetRestyleFlagsIfGecko();
+    
+    
+    UnsetFlags(NODE_FORCE_XBL_BINDINGS | NODE_NEEDS_FRAME |
+               NODE_DESCENDANTS_NEED_FRAMES | ELEMENT_ALL_RESTYLE_FLAGS);
   } else {
     
     
@@ -2613,36 +2619,26 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     }
   }
 
-  if (nsContentUtils::IsWebComponentsEnabled()) {
-    if (CustomElementData* data = GetCustomElementData()) {
-      if (CustomElementDefinition* definition =
-            nsContentUtils::GetElementDefinitionIfObservingAttr(this,
-                                                                data->mType,
-                                                                aName)) {
-        nsCOMPtr<nsIAtom> oldValueAtom;
-        if (oldValue) {
-          oldValueAtom = oldValue->GetAsAtom();
-        } else {
-          
-          
-          oldValueAtom = aParsedValue.GetAsAtom();
-        }
-        nsCOMPtr<nsIAtom> newValueAtom = valueForAfterSetAttr.GetAsAtom();
-        nsAutoString ns;
-        nsContentUtils::NameSpaceManager()->GetNameSpaceURI(aNamespaceID, ns);
-
-        LifecycleCallbackArgs args = {
-          nsDependentAtomString(aName),
-          aModType == nsIDOMMutationEvent::ADDITION ?
-            NullString() : nsDependentAtomString(oldValueAtom),
-          nsDependentAtomString(newValueAtom),
-          (ns.IsEmpty() ? NullString() : ns)
-        };
-
-        nsContentUtils::EnqueueLifecycleCallback(
-          OwnerDoc(), nsIDocument::eAttributeChanged, this, &args, definition);
-      }
+  nsIDocument* ownerDoc = OwnerDoc();
+  if (ownerDoc && GetCustomElementData()) {
+    nsCOMPtr<nsIAtom> oldValueAtom;
+    if (oldValue) {
+      oldValueAtom = oldValue->GetAsAtom();
+    } else {
+      
+      
+      oldValueAtom = aParsedValue.GetAsAtom();
     }
+    nsCOMPtr<nsIAtom> newValueAtom = valueForAfterSetAttr.GetAsAtom();
+    LifecycleCallbackArgs args = {
+      nsDependentAtomString(aName),
+      aModType == nsIDOMMutationEvent::ADDITION ?
+        NullString() : nsDependentAtomString(oldValueAtom),
+      nsDependentAtomString(newValueAtom)
+    };
+
+    nsContentUtils::EnqueueLifecycleCallback(
+      ownerDoc, nsIDocument::eAttributeChanged, this, &args);
   }
 
   if (aCallAfterSetAttr) {
@@ -2917,27 +2913,17 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     }
   }
 
-  if (nsContentUtils::IsWebComponentsEnabled()) {
-    if (CustomElementData* data = GetCustomElementData()) {
-      if (CustomElementDefinition* definition =
-            nsContentUtils::GetElementDefinitionIfObservingAttr(this,
-                                                                data->mType,
-                                                                aName)) {
-        nsAutoString ns;
-        nsContentUtils::NameSpaceManager()->GetNameSpaceURI(aNameSpaceID, ns);
+  nsIDocument* ownerDoc = OwnerDoc();
+  if (ownerDoc && GetCustomElementData()) {
+    nsCOMPtr<nsIAtom> oldValueAtom = oldValue.GetAsAtom();
+    LifecycleCallbackArgs args = {
+      nsDependentAtomString(aName),
+      nsDependentAtomString(oldValueAtom),
+      NullString()
+    };
 
-        nsCOMPtr<nsIAtom> oldValueAtom = oldValue.GetAsAtom();
-        LifecycleCallbackArgs args = {
-          nsDependentAtomString(aName),
-          nsDependentAtomString(oldValueAtom),
-          NullString(),
-          (ns.IsEmpty() ? NullString() : ns)
-        };
-
-        nsContentUtils::EnqueueLifecycleCallback(
-          OwnerDoc(), nsIDocument::eAttributeChanged, this, &args, definition);
-      }
-    }
+    nsContentUtils::EnqueueLifecycleCallback(
+      ownerDoc, nsIDocument::eAttributeChanged, this, &args);
   }
 
   rv = AfterSetAttr(aNameSpaceID, aName, nullptr, &oldValue, aNotify);
