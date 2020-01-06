@@ -433,6 +433,9 @@ private:
 
 
 
+
+
+
 template<class ElementType, size_t Extent>
 class Span
 {
@@ -782,9 +785,13 @@ public:
   
 
 
+
+
   constexpr pointer Elements() const { return data(); }
 
   
+
+
 
 
   constexpr pointer data() const { return storage_.data(); }
@@ -826,7 +833,9 @@ private:
     MOZ_SPAN_ASSERTION_CONSTEXPR storage_type(pointer elements,
                                               OtherExtentType ext)
       : ExtentType(ext)
-      , data_(elements)
+      
+      
+      , data_(elements ? elements : reinterpret_cast<pointer>(0x1))
     {
       MOZ_RELEASE_ASSERT(
         (!elements && ExtentType::size() == 0) ||
