@@ -253,13 +253,27 @@ GridInspector.prototype = {
 
     
     if (!gridFronts) {
-      gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
+      try {
+        gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
+      } catch(e) {
+        
+        
+        return;
+      }
     }
 
     let grids = [];
     for (let i = 0; i < gridFronts.length; i++) {
       let grid = gridFronts[i];
-      let nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
+
+      let nodeFront;
+      try {
+        nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
+      } catch (e) {
+        
+        
+        return;
+      }
 
       let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
       let color = this.getInitialGridColor(nodeFront, fallbackColor);
@@ -300,7 +314,7 @@ GridInspector.prototype = {
 
 
 
-  onHighlighterChange(event, nodeFront, options) {
+  onHighlighterChange(event, nodeFront, options = {}) {
     let highlighted = event === "grid-highlighter-shown";
     let { color } = options;
 
