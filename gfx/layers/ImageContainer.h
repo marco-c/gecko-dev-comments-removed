@@ -817,16 +817,7 @@ public:
   
 
 
-
-
-
-
-  virtual bool AdoptData(const Data &aData);
-
-  
-
-
-  virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) = 0;
+  virtual bool AdoptData(const Data& aData);
 
   
 
@@ -882,7 +873,6 @@ public:
   explicit RecyclingPlanarYCbCrImage(BufferRecycleBin *aRecycleBin) : mRecycleBin(aRecycleBin) {}
   virtual ~RecyclingPlanarYCbCrImage() override;
   virtual bool CopyData(const Data& aData) override;
-  virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) override;
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
 protected:
 

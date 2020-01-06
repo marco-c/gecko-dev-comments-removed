@@ -96,47 +96,9 @@ SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData)
   return true;
 }
 
-
-
-uint8_t*
-SharedPlanarYCbCrImage::AllocateAndGetNewBuffer(uint32_t aSize)
-{
-  MOZ_ASSERT(!mTextureClient, "This image already has allocated data");
-  size_t size = ImageDataSerializer::ComputeYCbCrBufferSize(aSize);
-  if (!size) {
-    return nullptr;
-  }
-
-  
-  mTextureClient = TextureClient::CreateForYCbCrWithBufferSize(mCompositable->GetForwarder(),
-                                                               size,
-                                                               YUVColorSpace::BT601,
-                                                               mCompositable->GetTextureFlags());
-
-  
-  if (!mTextureClient) {
-    return nullptr;
-  }
-
-  
-  mBufferSize = size;
-
-  MappedYCbCrTextureData mapped;
-  if (mTextureClient->BorrowMappedYCbCrData(mapped)) {
-    
-    
-    return mapped.y.data;
-  } else {
-    MOZ_CRASH("GFX: Cannot borrow mapped YCbCr data");
-  }
-}
-
 bool
-SharedPlanarYCbCrImage::AdoptData(const Data &aData)
+SharedPlanarYCbCrImage::AdoptData(const Data& aData)
 {
-  
-  
-
   MOZ_ASSERT(mTextureClient, "This Image should have already allocated data");
   if (!mTextureClient) {
     return false;
