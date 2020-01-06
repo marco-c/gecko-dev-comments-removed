@@ -27,7 +27,6 @@ namespace mozilla {
 namespace dom {
 
 class AnyCallback;
-class DOMError;
 class MediaStreamError;
 class PromiseInit;
 class PromiseNativeHandler;
