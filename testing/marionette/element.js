@@ -19,6 +19,7 @@ const {PollPromise} = Cu.import("chrome://marionette/content/sync.js", {});
 
 this.EXPORTED_SYMBOLS = ["element"];
 
+const SVGNS = "http://www.w3.org/2000/svg";
 const XBLNS = "http://www.mozilla.org/xbl";
 const XHTMLNS = "http://www.w3.org/1999/xhtml";
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -1062,6 +1063,22 @@ element.isDOMElement = function(node) {
       node !== null &&
       node.nodeType === node.ELEMENT_NODE &&
       node.namespaceURI === XHTMLNS;
+};
+
+
+
+
+
+
+
+
+
+
+element.isSVGElement = function(node) {
+  return typeof node == "object" &&
+      node !== null &&
+      node.nodeType === node.ELEMENT_NODE &&
+      node.namespaceURI === SVGNS;
 };
 
 
