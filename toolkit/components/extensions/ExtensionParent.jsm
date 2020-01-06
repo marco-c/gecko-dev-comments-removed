@@ -483,7 +483,12 @@ defineLazyGetter(ProxyContextParent.prototype, "apiObj", function() {
 });
 
 defineLazyGetter(ProxyContextParent.prototype, "sandbox", function() {
-  return Cu.Sandbox(this.principal, {sandboxName: this.uri.spec});
+  
+  
+  return Cu.Sandbox(this.principal, {
+    sandboxName: this.uri.spec,
+    wantGlobalProperties: ["Blob", "URL"],
+  });
 });
 
 

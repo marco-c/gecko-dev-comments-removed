@@ -212,6 +212,39 @@ WebExtensionPolicy::GetURL(const nsAString& aPath) const
   return NS_ConvertUTF8toUTF16(spec);
 }
 
+void
+WebExtensionPolicy::RegisterContentScript(WebExtensionContentScript& script,
+                                          ErrorResult& aRv)
+{
+  
+  
+  if (script.mExtension != this || mContentScripts.Contains(&script)) {
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  RefPtr<WebExtensionContentScript> newScript = &script;
+
+  if (!mContentScripts.AppendElement(Move(newScript), fallible)) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
+
+  WebExtensionPolicyBinding::ClearCachedContentScriptsValue(this);
+}
+
+void
+WebExtensionPolicy::UnregisterContentScript(const WebExtensionContentScript& script,
+                                            ErrorResult& aRv)
+{
+  if (script.mExtension != this || !mContentScripts.RemoveElement(&script)) {
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  WebExtensionPolicyBinding::ClearCachedContentScriptsValue(this);
+}
+
  bool
 WebExtensionPolicy::UseRemoteWebExtensions(GlobalObject& aGlobal)
 {
