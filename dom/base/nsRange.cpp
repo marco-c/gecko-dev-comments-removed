@@ -2133,9 +2133,7 @@ nsRange::CutContents(DocumentFragment** aFragment)
     return rv;
   }
 
-  
-
-  iter.Last();
+  iter.First();
 
   bool handled = false;
 
@@ -2150,8 +2148,15 @@ nsRange::CutContents(DocumentFragment** aFragment)
 
     
     
+    
+    
 
-    iter.Prev();
+    iter.Next();
+    nsCOMPtr<nsINode> nextNode = iter.GetCurrentNode();
+    while (nextNode && nsContentUtils::ContentIsDescendantOf(nextNode, node)) {
+      iter.Next();
+      nextNode = iter.GetCurrentNode();
+    }
 
     handled = false;
 
@@ -2277,12 +2282,11 @@ nsRange::CutContents(DocumentFragment** aFragment)
       nsCOMPtr<nsINode> oldCommonAncestor = commonAncestor;
       if (!iter.IsDone()) {
         
-        nsCOMPtr<nsINode> prevNode = iter.GetCurrentNode();
-        NS_ENSURE_STATE(prevNode);
+        NS_ENSURE_STATE(nextNode);
 
         
         
-        commonAncestor = nsContentUtils::GetCommonAncestor(node, prevNode);
+        commonAncestor = nsContentUtils::GetCommonAncestor(node, nextNode);
         NS_ENSURE_STATE(commonAncestor);
 
         nsCOMPtr<nsINode> parentCounterNode = node;
@@ -2301,18 +2305,26 @@ nsRange::CutContents(DocumentFragment** aFragment)
                                getter_AddRefs(farthestAncestor));
       NS_ENSURE_SUCCESS(rv, rv);
 
+      ErrorResult res;
       if (farthestAncestor)
       {
         nsCOMPtr<nsINode> n = do_QueryInterface(commonCloneAncestor);
-        rv = PrependChild(n, farthestAncestor);
-        NS_ENSURE_SUCCESS(rv, rv);
+        n->AppendChild(*farthestAncestor, res);
+        if (NS_WARN_IF(res.Failed())) {
+          return res.StealNSResult();
+        }
       }
 
       nsMutationGuard guard;
       nsCOMPtr<nsINode> parent = nodeToResult->GetParentNode();
-      rv = closestAncestor ? PrependChild(closestAncestor, nodeToResult)
-                           : PrependChild(commonCloneAncestor, nodeToResult);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (closestAncestor) {
+        closestAncestor->AppendChild(*nodeToResult, res);
+      } else {
+        commonCloneAncestor->AppendChild(*nodeToResult, res);
+      }
+      if (NS_WARN_IF(res.Failed())) {
+        return res.StealNSResult();
+      }
       NS_ENSURE_STATE(!guard.Mutated(parent ? 2 : 1) ||
                       ValidateCurrentNode(this, iter));
     } else if (nodeToResult) {
