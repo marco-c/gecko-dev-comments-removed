@@ -768,6 +768,8 @@ pub enum ConstellationMsg {
     
     NewBrowser(ServoUrl, IpcSender<TopLevelBrowsingContextId>),
     
+    CloseBrowser(TopLevelBrowsingContextId),
+    
     SelectBrowser(TopLevelBrowsingContextId),
 }
 

@@ -974,8 +974,13 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             
             
             FromCompositorMsg::NewBrowser(url, response_chan) => {
-                debug!("constellation got init load URL message");
+                debug!("constellation got NewBrowser message");
                 self.handle_new_top_level_browsing_context(url, response_chan);
+            }
+            
+            FromCompositorMsg::CloseBrowser(top_level_browsing_context_id) => {
+                debug!("constellation got CloseBrowser message");
+                self.handle_close_top_level_browsing_context(top_level_browsing_context_id);
             }
             
             FromCompositorMsg::SelectBrowser(top_level_browsing_context_id) => {
@@ -1542,6 +1547,11 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
             load_data: load_data,
             replace_instant: None,
         });
+    }
+
+    fn handle_close_top_level_browsing_context(&mut self, top_level_browsing_context_id: TopLevelBrowsingContextId) {
+        let browsing_context_id = BrowsingContextId::from(top_level_browsing_context_id);
+        self.close_browsing_context(browsing_context_id, ExitPipelineMode::Normal);
     }
 
     fn handle_iframe_size_msg(&mut self,

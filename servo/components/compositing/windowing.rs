@@ -80,6 +80,8 @@ pub enum WindowEvent {
     
     NewBrowser(ServoUrl, IpcSender<TopLevelBrowsingContextId>),
     
+    CloseBrowser(TopLevelBrowsingContextId),
+    
     
     SelectBrowser(TopLevelBrowsingContextId),
     
@@ -106,6 +108,7 @@ impl Debug for WindowEvent {
             WindowEvent::Quit => write!(f, "Quit"),
             WindowEvent::Reload(..) => write!(f, "Reload"),
             WindowEvent::NewBrowser(..) => write!(f, "NewBrowser"),
+            WindowEvent::CloseBrowser(..) => write!(f, "CloseBrowser"),
             WindowEvent::SelectBrowser(..) => write!(f, "SelectBrowser"),
             WindowEvent::ToggleWebRenderDebug(..) => write!(f, "ToggleWebRenderDebug"),
         }
