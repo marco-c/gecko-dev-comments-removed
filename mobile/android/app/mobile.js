@@ -711,9 +711,6 @@ pref("network.tickle-wifi.enabled", true);
 pref("network.manage-offline-status", true);
 
 
-pref("dom.min_background_timeout_value", 900000);
-
-
 pref("media.plugins.enabled", true);
 
 
