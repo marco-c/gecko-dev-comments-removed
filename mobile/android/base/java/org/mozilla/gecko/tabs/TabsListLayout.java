@@ -6,6 +6,7 @@
 package org.mozilla.gecko.tabs;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.Tabs;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -47,7 +48,7 @@ public class TabsListLayout extends TabsLayout {
     }
 
     @Override
-    public void closeAll() {
+    public void onCloseAll() {
         final int childCount = getChildCount();
 
         
@@ -94,7 +95,12 @@ public class TabsListLayout extends TabsLayout {
                     TabsListLayout.this.setEnabled(true);
 
                     
-                    closeAllTabs();
+                    if (isNormal()) {
+                        Tabs.getInstance().closeAllTabs();
+                    } else {
+                        Tabs.getInstance().closeAllPrivateTabs();
+                    }
+
                 }
             });
 
