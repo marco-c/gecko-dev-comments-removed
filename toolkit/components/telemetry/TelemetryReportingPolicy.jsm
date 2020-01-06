@@ -16,6 +16,7 @@ Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://services-common/observers.js", this);
+Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
                                   "resource://gre/modules/TelemetrySend.jsm");
@@ -31,25 +32,6 @@ const OLDEST_ALLOWED_ACCEPTANCE_YEAR = 2012;
 
 const PREF_BRANCH = "datareporting.policy.";
 
-
-const PREF_FIRST_RUN = "toolkit.telemetry.reportingpolicy.firstRun";
-
-const PREF_BYPASS_NOTIFICATION = PREF_BRANCH + "dataSubmissionPolicyBypassNotification";
-
-const PREF_DATA_SUBMISSION_ENABLED = PREF_BRANCH + "dataSubmissionEnabled";
-
-
-const PREF_CURRENT_POLICY_VERSION = PREF_BRANCH + "currentPolicyVersion";
-
-
-const PREF_MINIMUM_POLICY_VERSION = PREF_BRANCH + "minimumPolicyVersion";
-
-const PREF_ACCEPTED_POLICY_VERSION = PREF_BRANCH + "dataSubmissionPolicyAcceptedVersion";
-
-const PREF_ACCEPTED_POLICY_DATE = PREF_BRANCH + "dataSubmissionPolicyNotifiedTime";
-
-
-const PREF_FIRST_RUN_URL = PREF_BRANCH + "firstRunURL";
 
 
 const DEPRECATED_FHR_PREFS = [
@@ -204,7 +186,7 @@ var TelemetryReportingPolicyImpl = {
 
 
   get dataSubmissionPolicyNotifiedDate() {
-    let prefString = Preferences.get(PREF_ACCEPTED_POLICY_DATE, "0");
+    let prefString = Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyDate, "0");
     let valueInteger = parseInt(prefString, 10);
 
     
@@ -241,7 +223,7 @@ var TelemetryReportingPolicyImpl = {
       return;
     }
 
-    Preferences.set(PREF_ACCEPTED_POLICY_DATE, aDate.getTime().toString());
+    Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyDate, aDate.getTime().toString());
   },
 
   
@@ -252,11 +234,11 @@ var TelemetryReportingPolicyImpl = {
 
   get dataSubmissionEnabled() {
     
-    return Preferences.get(PREF_DATA_SUBMISSION_ENABLED, true);
+    return Preferences.get(TelemetryUtils.Preferences.DataSubmissionEnabled, true);
   },
 
   get currentPolicyVersion() {
-    return Preferences.get(PREF_CURRENT_POLICY_VERSION,
+    return Preferences.get(TelemetryUtils.Preferences.CurrentPolicyVersion,
                            TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION);
   },
 
@@ -265,7 +247,7 @@ var TelemetryReportingPolicyImpl = {
 
 
   get minimumPolicyVersion() {
-    const minPolicyVersion = Preferences.get(PREF_MINIMUM_POLICY_VERSION, 1);
+    const minPolicyVersion = Preferences.get(TelemetryUtils.Preferences.MinimumPolicyVersion, 1);
 
     
     
@@ -276,16 +258,16 @@ var TelemetryReportingPolicyImpl = {
       this._log.error("minimumPolicyVersion - Unable to retrieve the current channel.");
       return minPolicyVersion;
     }
-    const channelPref = PREF_MINIMUM_POLICY_VERSION + ".channel-" + channel;
+    const channelPref = TelemetryUtils.Preferences.MinimumPolicyVersion + ".channel-" + channel;
     return Preferences.get(channelPref, minPolicyVersion);
   },
 
   get dataSubmissionPolicyAcceptedVersion() {
-    return Preferences.get(PREF_ACCEPTED_POLICY_VERSION, 0);
+    return Preferences.get(TelemetryUtils.Preferences.AcceptedPolicyVersion, 0);
   },
 
   set dataSubmissionPolicyAcceptedVersion(value) {
-    Preferences.set(PREF_ACCEPTED_POLICY_VERSION, value);
+    Preferences.set(TelemetryUtils.Preferences.AcceptedPolicyVersion, value);
   },
 
   
@@ -365,7 +347,7 @@ var TelemetryReportingPolicyImpl = {
 
     
     
-    const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
+    const bypassNotification = Preferences.get(TelemetryUtils.Preferences.BypassNotification, false);
     return this.isUserNotifiedOfCurrentPolicy || bypassNotification;
   },
 
@@ -392,7 +374,7 @@ var TelemetryReportingPolicyImpl = {
       return false;
     }
 
-    const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
+    const bypassNotification = Preferences.get(TelemetryUtils.Preferences.BypassNotification, false);
     if (this.isUserNotifiedOfCurrentPolicy || bypassNotification) {
       this._log.trace("_shouldNotify - User already notified or bypassing the policy.");
       return false;
@@ -449,7 +431,7 @@ var TelemetryReportingPolicyImpl = {
       return false;
     }
 
-    let firstRunPolicyURL = Preferences.get(PREF_FIRST_RUN_URL, "");
+    let firstRunPolicyURL = Preferences.get(TelemetryUtils.Preferences.FirsRunURL, "");
     if (!firstRunPolicyURL) {
       return false;
     }
@@ -508,10 +490,10 @@ var TelemetryReportingPolicyImpl = {
       return;
     }
 
-    this._isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
+    this._isFirstRun = Preferences.get(TelemetryUtils.Preferences.FirstRun, true);
     if (this._isFirstRun) {
       
-      Preferences.set(PREF_FIRST_RUN, false);
+      Preferences.set(TelemetryUtils.Preferences.FirstRun, false);
 
       try {
         if (this._openFirstRunPage()) {
