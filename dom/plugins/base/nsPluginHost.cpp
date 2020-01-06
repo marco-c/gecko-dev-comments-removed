@@ -51,7 +51,6 @@
 #include "nsICategoryManager.h"
 #include "nsPluginStreamListenerPeer.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FakePluginTagInitBinding.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/plugins/PluginAsyncSurrogate.h"
@@ -270,6 +269,14 @@ nsPluginHost::nsPluginHost()
 {
   
   
+  
+  
+  if (XRE_IsParentProcess()) {
+    IncrementChromeEpoch();
+  }
+
+  
+  
   mOverrideInternalTypes =
     Preferences::GetBool("plugin.override_internal_types", false);
 
@@ -296,13 +303,6 @@ nsPluginHost::nsPluginHost()
   PLUGIN_LOG(PLUGIN_LOG_ALWAYS,("nsPluginHost::ctor\n"));
   PR_LogFlush();
 #endif
-
-  
-  
-  if (XRE_IsParentProcess())
-  {
-    LoadPlugins();
-  }
 }
 
 nsPluginHost::~nsPluginHost()
@@ -360,20 +360,8 @@ nsresult nsPluginHost::ReloadPlugins()
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
   ("nsPluginHost::ReloadPlugins Begin\n"));
 
-  
-  
-  
-  if (XRE_IsContentProcess())
-  {
-    Unused << mozilla::dom::ContentChild::GetSingleton()->SendMaybeReloadPlugins();
-    
-    
-    
-    
-    
-    
-    return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
-  }
+  nsresult rv = NS_OK;
+
   
   
   if (!mPluginsLoaded)
@@ -393,14 +381,6 @@ nsresult nsPluginHost::ReloadPlugins()
   
   if (!pluginschanged)
     return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
-
-  return ActuallyReloadPlugins();
-}
-
-nsresult
-nsPluginHost::ActuallyReloadPlugins()
-{
-  nsresult rv = NS_OK;
 
   
   RefPtr<nsPluginTag> prev;
@@ -434,13 +414,6 @@ nsPluginHost::ActuallyReloadPlugins()
 
   
   rv = LoadPlugins();
-
-  if (XRE_IsParentProcess())
-  {
-    
-    
-    SendPluginsToContent();
-  }
 
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
   ("nsPluginHost::ReloadPlugins End\n"));
@@ -2303,11 +2276,11 @@ WatchRegKey(uint32_t aRoot, nsCOMPtr<nsIWindowsRegKey>& aKey)
 
 nsresult nsPluginHost::LoadPlugins()
 {
-  
-  
+#ifdef ANDROID
   if (XRE_IsContentProcess()) {
     return NS_OK;
   }
+#endif
   
   
   if (mPluginsLoaded)
@@ -2342,24 +2315,32 @@ nsresult nsPluginHost::LoadPlugins()
 }
 
 nsresult
-nsPluginHost::SetPluginsInContent(uint32_t aPluginEpoch,
-                                  nsTArray<mozilla::plugins::PluginTag>& aPlugins,
-                                  nsTArray<mozilla::plugins::FakePluginTag>& aFakePlugins)
+nsPluginHost::FindPluginsInContent(bool aCreatePluginList, bool* aPluginsChanged)
 {
   MOZ_ASSERT(XRE_IsContentProcess());
 
+  dom::ContentChild* cp = dom::ContentChild::GetSingleton();
+  nsresult rv;
   nsTArray<PluginTag> plugins;
-
   nsTArray<FakePluginTag> fakePlugins;
+  uint32_t parentEpoch;
+  if (!cp->SendFindPlugins(ChromeEpochForContent(), &rv, &plugins, &fakePlugins, &parentEpoch) ||
+      NS_FAILED(rv)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
-  if (aPluginEpoch != ChromeEpochForContent()) {
+  if (parentEpoch != ChromeEpochForContent()) {
+    *aPluginsChanged = true;
+    if (!aCreatePluginList) {
+      return NS_OK;
+    }
+
     
     
-    ActuallyReloadPlugins();
+    SetChromeEpochForContent(parentEpoch);
 
-    SetChromeEpochForContent(aPluginEpoch);
-
-    for (auto tag : aPlugins) {
+    for (size_t i = 0; i < plugins.Length(); i++) {
+      PluginTag& tag = plugins[i];
 
       
       if (nsPluginTag* existing = PluginWithId(tag.id())) {
@@ -2386,7 +2367,7 @@ nsPluginHost::SetPluginsInContent(uint32_t aPluginEpoch,
       AddPluginTag(pluginTag);
     }
 
-    for (const auto& tag : aFakePlugins) {
+    for (const auto& tag : fakePlugins) {
       
       for (const auto& existingTag : mFakePlugins) {
         if (existingTag->Id() == tag.id()) {
@@ -2413,12 +2394,6 @@ nsPluginHost::SetPluginsInContent(uint32_t aPluginEpoch,
         }
       }
     }
-
-    nsCOMPtr<nsIObserverService> obsService =
-      mozilla::services::GetObserverService();
-    if (obsService) {
-      obsService->NotifyObservers(nullptr, "plugins-list-updated", nullptr);
-    }
   }
 
   mPluginsLoaded = true;
@@ -2436,10 +2411,8 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList, bool * aPluginsChange
 
   *aPluginsChanged = false;
 
-  
-  
   if (XRE_IsContentProcess()) {
-    return NS_OK;
+    return FindPluginsInContent(aCreatePluginList, aPluginsChanged);
   }
 
   nsresult rv;
@@ -2568,19 +2541,35 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList, bool * aPluginsChange
 }
 
 nsresult
-nsPluginHost::SendPluginsToContent()
+mozilla::plugins::FindPluginsForContent(uint32_t aPluginEpoch,
+                                        nsTArray<PluginTag>* aPlugins,
+                                        nsTArray<FakePluginTag>* aFakePlugins,
+                                        uint32_t* aNewPluginEpoch)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  nsTArray<PluginTag> pluginTags;
-  nsTArray<FakePluginTag> fakePluginTags;
+  RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
+  return host->FindPluginsForContent(aPluginEpoch, aPlugins, aFakePlugins, aNewPluginEpoch);
+}
+
+nsresult
+nsPluginHost::FindPluginsForContent(uint32_t aPluginEpoch,
+                                    nsTArray<PluginTag>* aPlugins,
+                                    nsTArray<FakePluginTag>* aFakePlugins,
+                                    uint32_t* aNewPluginEpoch)
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   
   nsresult rv = LoadPlugins();
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  uint32_t newPluginEpoch = ChromeEpoch();
+  *aNewPluginEpoch = ChromeEpoch();
+  if (aPluginEpoch == ChromeEpoch()) {
+    return NS_OK;
+  }
 
   nsTArray<nsCOMPtr<nsIInternalPluginTag>> plugins;
   GetPlugins(plugins, true);
@@ -2595,15 +2584,15 @@ nsPluginHost::SendPluginsToContent()
       nsFakePluginTag* tag = static_cast<nsFakePluginTag*>(basetag.get());
       mozilla::ipc::URIParams handlerURI;
       SerializeURI(tag->HandlerURI(), handlerURI);
-      fakePluginTags.AppendElement(FakePluginTag(tag->Id(),
-                                                 handlerURI,
-                                                 tag->Name(),
-                                                 tag->Description(),
-                                                 tag->MimeTypes(),
-                                                 tag->MimeDescriptions(),
-                                                 tag->Extensions(),
-                                                 tag->GetNiceFileName(),
-                                                 tag->SandboxScript()));
+      aFakePlugins->AppendElement(FakePluginTag(tag->Id(),
+                                                handlerURI,
+                                                tag->Name(),
+                                                tag->Description(),
+                                                tag->MimeTypes(),
+                                                tag->MimeDescriptions(),
+                                                tag->Extensions(),
+                                                tag->GetNiceFileName(),
+                                                tag->SandboxScript()));
       continue;
     }
 
@@ -2611,27 +2600,21 @@ nsPluginHost::SendPluginsToContent()
     
     nsPluginTag *tag = static_cast<nsPluginTag *>(basetag.get());
 
-    pluginTags.AppendElement(PluginTag(tag->mId,
-                                       tag->Name(),
-                                       tag->Description(),
-                                       tag->MimeTypes(),
-                                       tag->MimeDescriptions(),
-                                       tag->Extensions(),
-                                       tag->mIsJavaPlugin,
-                                       tag->mIsFlashPlugin,
-                                       tag->mSupportsAsyncInit,
-                                       tag->mSupportsAsyncRender,
-                                       tag->FileName(),
-                                       tag->Version(),
-                                       tag->mLastModifiedTime,
-                                       tag->IsFromExtension(),
-                                       tag->mSandboxLevel));
-  }
-  nsTArray<dom::ContentParent*> parents;
-  dom::ContentParent::GetAll(parents);
-  for (auto p : parents)
-  {
-    Unused << p->SendSetPluginList(newPluginEpoch, pluginTags, fakePluginTags);
+    aPlugins->AppendElement(PluginTag(tag->mId,
+                                      tag->Name(),
+                                      tag->Description(),
+                                      tag->MimeTypes(),
+                                      tag->MimeDescriptions(),
+                                      tag->Extensions(),
+                                      tag->mIsJavaPlugin,
+                                      tag->mIsFlashPlugin,
+                                      tag->mSupportsAsyncInit,
+                                      tag->mSupportsAsyncRender,
+                                      tag->FileName(),
+                                      tag->Version(),
+                                      tag->mLastModifiedTime,
+                                      tag->IsFromExtension(),
+                                      tag->mSandboxLevel));
   }
   return NS_OK;
 }
