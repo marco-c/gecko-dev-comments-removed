@@ -815,6 +815,15 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
 
     
     
+    
+    
+    
+    
+
+    uint32_t memoryLength = instance.memory()->buffer().byteLength();
+
+    
+    
     Disassembler::HeapAccess access;
     uint8_t* end = Disassembler::DisassembleHeapAccess(pc, &access);
     const Disassembler::ComplexAddress& address = access.address();
@@ -853,7 +862,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
                        instance.memoryMappedSize(),
                        "Access extends beyond the asm.js heap guard region");
     MOZ_RELEASE_ASSERT(accessAddress + access.size() > instance.memoryBase() +
-                       instance.memoryLength(),
+                       memoryLength,
                        "Computed access address is not actually out of bounds");
 
     
@@ -874,7 +883,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
     uint32_t wrappedOffset = uint32_t(unwrappedOffset);
     size_t size = access.size();
     MOZ_RELEASE_ASSERT(wrappedOffset + size > wrappedOffset);
-    bool inBounds = wrappedOffset + size < instance.memoryLength();
+    bool inBounds = wrappedOffset + size < memoryLength;
 
     if (inBounds) {
         
@@ -883,7 +892,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
         SharedMem<uint8_t*> wrappedAddress = instance.memoryBase() + wrappedOffset;
         MOZ_RELEASE_ASSERT(wrappedAddress >= instance.memoryBase());
         MOZ_RELEASE_ASSERT(wrappedAddress + size > wrappedAddress);
-        MOZ_RELEASE_ASSERT(wrappedAddress + size <= instance.memoryBase() + instance.memoryLength());
+        MOZ_RELEASE_ASSERT(wrappedAddress + size <= instance.memoryBase() + memoryLength);
         switch (access.kind()) {
           case Disassembler::HeapAccess::Load:
             SetRegisterToLoadedValue(context, wrappedAddress.cast<void*>(), size, access.otherOperand());

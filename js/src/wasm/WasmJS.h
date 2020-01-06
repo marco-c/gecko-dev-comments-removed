@@ -192,6 +192,7 @@ class WasmMemoryObject : public NativeObject
     static bool bufferGetter(JSContext* cx, unsigned argc, Value* vp);
     static bool growImpl(JSContext* cx, const CallArgs& args);
     static bool grow(JSContext* cx, unsigned argc, Value* vp);
+    static uint32_t growShared(HandleWasmMemoryObject memory, uint32_t delta, JSContext* cx);
 
     using InstanceSet = JS::WeakCache<GCHashSet<ReadBarrieredWasmInstanceObject,
                                                 MovableCellHasher<ReadBarrieredWasmInstanceObject>,
@@ -211,9 +212,27 @@ class WasmMemoryObject : public NativeObject
     static WasmMemoryObject* create(JSContext* cx,
                                     Handle<ArrayBufferObjectMaybeShared*> buffer,
                                     HandleObject proto);
+
+    
+    
+    
+    
+    
+    
+    
     ArrayBufferObjectMaybeShared& buffer() const;
 
+    
+    
+    
+    uint32_t volatileMemoryLength() const;
+
+    bool isShared() const;
     bool movingGrowable() const;
+
+    
+    SharedArrayRawBuffer* sharedArrayRawBuffer() const;
+
     bool addMovingGrowObserver(JSContext* cx, WasmInstanceObject* instance);
     static uint32_t grow(HandleWasmMemoryObject memory, uint32_t delta, JSContext* cx);
 };

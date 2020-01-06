@@ -5598,7 +5598,8 @@ GetSharedArrayBuffer(JSContext* cx, unsigned argc, Value* vp)
             
             
             MOZ_ASSERT(cx->compartment()->creationOptions().getSharedMemoryAndAtomicsEnabled());
-            newObj = SharedArrayBufferObject::New(cx, buf);
+            SharedArrayRawBuffer::Lock l(buf);
+            newObj = SharedArrayBufferObject::New(cx, buf, buf->byteLength(l));
             if (!newObj) {
                 buf->dropReference();
                 return false;
