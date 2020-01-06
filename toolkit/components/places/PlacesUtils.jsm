@@ -2408,12 +2408,25 @@ XPCOMUtils.defineLazyGetter(this, "gKeywordsCachePromise", () =>
          FROM moz_keywords k
          JOIN moz_places h ON h.id = k.place_id
         `);
+      let brokenKeywords = [];
       for (let row of rows) {
         let keyword = row.getResultByName("keyword");
-        let entry = { keyword,
-                      url: new URL(row.getResultByName("url")),
-                      postData: row.getResultByName("post_data") };
-        cache.set(keyword, entry);
+        try {
+          let entry = { keyword,
+                        url: new URL(row.getResultByName("url")),
+                        postData: row.getResultByName("post_data") };
+          cache.set(keyword, entry);
+        } catch (ex) {
+          
+          
+          brokenKeywords.push(keyword);
+        }
+      }
+      if (brokenKeywords.length) {
+        await db.execute(
+          `DELETE FROM moz_keywords
+           WHERE keyword IN (${brokenKeywords.map(JSON.stringify).join(",")})
+          `);
       }
 
       
