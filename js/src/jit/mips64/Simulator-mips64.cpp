@@ -3041,6 +3041,9 @@ Simulator::decodeTypeRegister(SimInstruction* instr)
                 }
                 break;
               case ff_movf_fmt:
+              
+                cc = instr->fbccValue();
+                fcsr_cc = GetFCSRConditionBit(cc);
                 if (testFCSRBit(fcsr_cc)) {
                   setFpuRegisterDouble(fd_reg, getFpuRegisterDouble(fs_reg));
                 }
