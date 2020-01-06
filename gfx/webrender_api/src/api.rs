@@ -3,17 +3,13 @@
 
 
 use channel::{self, MsgSender, Payload, PayloadSenderHelperMethods, PayloadSender};
-#[cfg(feature = "webgl")]
-use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
-use {BuiltDisplayList, BuiltDisplayListDescriptor, ClipId, ColorF, DeviceIntPoint, DeviceIntSize};
+use {BuiltDisplayList, BuiltDisplayListDescriptor, ClipId, ColorF, DeviceIntPoint};
 use {DeviceUintRect, DeviceUintSize, FontKey, GlyphDimensions, GlyphKey};
 use {ImageData, ImageDescriptor, ImageKey, LayoutPoint, LayoutVector2D, LayoutSize, LayoutTransform};
-use {FontInstanceKey, NativeFontHandle, WorldPoint};
-#[cfg(feature = "webgl")]
-use {WebGLCommand, WebGLContextId};
+use {FontInstance, NativeFontHandle, WorldPoint};
 
 pub type TileSize = u16;
 
@@ -148,7 +144,7 @@ pub enum ApiMsg {
     
     UpdateResources(ResourceUpdates),
     
-    GetGlyphDimensions(FontInstanceKey, Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
+    GetGlyphDimensions(FontInstance, Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
     
     GetGlyphIndices(FontKey, String, MsgSender<Vec<Option<u32>>>),
     
@@ -159,11 +155,6 @@ pub enum ApiMsg {
     UpdateDocument(DocumentId, DocumentMsg),
     
     DeleteDocument(DocumentId),
-    RequestWebGLContext(DeviceIntSize, GLContextAttributes, MsgSender<Result<(WebGLContextId, GLLimits), String>>),
-    ResizeWebGLContext(WebGLContextId, DeviceIntSize),
-    WebGLCommand(WebGLContextId, WebGLCommand),
-    
-    VRCompositorCommand(WebGLContextId, VRCompositorCommand),
     
     
     
@@ -185,10 +176,6 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::AddDocument(..) => "ApiMsg::AddDocument",
             ApiMsg::UpdateDocument(..) => "ApiMsg::UpdateDocument",
             ApiMsg::DeleteDocument(..) => "ApiMsg::DeleteDocument",
-            ApiMsg::RequestWebGLContext(..) => "ApiMsg::RequestWebGLContext",
-            ApiMsg::ResizeWebGLContext(..) => "ApiMsg::ResizeWebGLContext",
-            ApiMsg::WebGLCommand(..) => "ApiMsg::WebGLCommand",
-            ApiMsg::VRCompositorCommand(..) => "ApiMsg::VRCompositorCommand",
             ApiMsg::ExternalEvent(..) => "ApiMsg::ExternalEvent",
             ApiMsg::ClearNamespace(..) => "ApiMsg::ClearNamespace",
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
@@ -200,24 +187,6 @@ impl fmt::Debug for ApiMsg {
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Epoch(pub u32);
-
-#[cfg(not(feature = "webgl"))]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-pub struct WebGLContextId(pub usize);
-
-#[cfg(not(feature = "webgl"))]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GLContextAttributes([u8; 0]);
-
-#[cfg(not(feature = "webgl"))]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GLLimits([u8; 0]);
-
-#[cfg(not(feature = "webgl"))]
-#[derive(Clone, Deserialize, Serialize)]
-pub enum WebGLCommand {
-    Flush,
-}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
@@ -343,7 +312,7 @@ impl RenderApi {
     
     
     pub fn get_glyph_dimensions(&self,
-                                font: FontInstanceKey,
+                                font: FontInstance,
                                 glyph_keys: Vec<GlyphKey>)
                                 -> Vec<Option<GlyphDimensions>> {
         let (tx, rx) = channel::msg_channel().unwrap();
@@ -371,30 +340,10 @@ impl RenderApi {
 
     
     pub fn update_resources(&self, resources: ResourceUpdates) {
+        if resources.updates.is_empty() {
+            return;
+        }
         self.api_sender.send(ApiMsg::UpdateResources(resources)).unwrap();
-    }
-
-    pub fn request_webgl_context(&self, size: &DeviceIntSize, attributes: GLContextAttributes)
-                                 -> Result<(WebGLContextId, GLLimits), String> {
-        let (tx, rx) = channel::msg_channel().unwrap();
-        let msg = ApiMsg::RequestWebGLContext(*size, attributes, tx);
-        self.api_sender.send(msg).unwrap();
-        rx.recv().unwrap()
-    }
-
-    pub fn resize_webgl_context(&self, context_id: WebGLContextId, size: &DeviceIntSize) {
-        let msg = ApiMsg::ResizeWebGLContext(context_id, *size);
-        self.api_sender.send(msg).unwrap();
-    }
-
-    pub fn send_webgl_command(&self, context_id: WebGLContextId, command: WebGLCommand) {
-        let msg = ApiMsg::WebGLCommand(context_id, command);
-        self.api_sender.send(msg).unwrap();
-    }
-
-    pub fn send_vr_compositor_command(&self, context_id: WebGLContextId, command: VRCompositorCommand) {
-        let msg = ApiMsg::VRCompositorCommand(context_id, command);
-        self.api_sender.send(msg).unwrap();
     }
 
     pub fn send_external_event(&self, evt: ExternalEvent) {
@@ -705,31 +654,9 @@ pub struct DynamicProperties {
     pub floats: Vec<PropertyValue<f32>>,
 }
 
-pub type VRCompositorId = u64;
-
-
-#[derive(Clone, Deserialize, Serialize)]
-pub enum VRCompositorCommand {
-    Create(VRCompositorId),
-    SyncPoses(VRCompositorId, f64, f64, MsgSender<Result<Vec<u8>,()>>),
-    SubmitFrame(VRCompositorId, [f32; 4], [f32; 4]),
-    Release(VRCompositorId)
-}
-
-
-
-pub trait VRCompositorHandler: Send {
-    fn handle(&mut self, command: VRCompositorCommand, texture: Option<(u32, DeviceIntSize)>);
-}
-
 pub trait RenderNotifier: Send {
     fn new_frame_ready(&mut self);
     fn new_scroll_frame_ready(&mut self, composite_needed: bool);
     fn external_event(&mut self, _evt: ExternalEvent) { unimplemented!() }
     fn shut_down(&mut self) {}
-}
-
-
-pub trait RenderDispatcher: Send {
-    fn dispatch(&self, Box<Fn() + Send>);
 }

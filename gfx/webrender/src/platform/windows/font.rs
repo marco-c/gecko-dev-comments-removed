@@ -3,7 +3,7 @@
 
 
 use api::{FontKey, FontRenderMode, GlyphDimensions};
-use api::{FontInstanceKey, GlyphKey, GlyphOptions, SubpixelDirection};
+use api::{FontInstance, GlyphKey, GlyphOptions, SubpixelDirection};
 use gamma_lut::{GammaLut, Color as ColorLut};
 use internal_types::FastHashMap;
 
@@ -155,7 +155,7 @@ impl FontContext {
     }
 
     fn create_glyph_analysis(&self,
-                             font: &FontInstanceKey,
+                             font: &FontInstance,
                              key: &GlyphKey) ->
                             dwrote::GlyphRunAnalysis {
         let face = self.fonts.get(&font.font_key).unwrap();
@@ -202,7 +202,7 @@ impl FontContext {
 
     
     pub fn get_glyph_dimensions(&self,
-                                font: &FontInstanceKey,
+                                font: &FontInstance,
                                 key: &GlyphKey)
                                 -> Option<GlyphDimensions> {
         
@@ -283,7 +283,7 @@ impl FontContext {
     }
 
     pub fn rasterize_glyph(&mut self,
-                           font: &FontInstanceKey,
+                           font: &FontInstance,
                            key: &GlyphKey)
                            -> Option<RasterizedGlyph> {
         let analysis = self.create_glyph_analysis(font, key);
