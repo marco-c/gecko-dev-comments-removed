@@ -125,10 +125,14 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
     } else if (!container) {
       
       mImageContainers.RemoveElementAt(i);
+    } else {
+      
+      
+      container = nullptr;
     }
   }
 
-  if (i >= 0 && container) {
+  if (container) {
     switch (entry->mLastDrawResult) {
       case DrawResult::SUCCESS:
       case DrawResult::BAD_IMAGE:
