@@ -8,8 +8,9 @@
 #include "nsIAsyncInputStream.h"
 #include "nsICancelableRunnable.h"
 #include "nsIRunnable.h"
-#include "nsIThread.h"
+#include "nsISerialEventTarget.h"
 #include "nsStreamUtils.h"
+#include "nsThreadUtils.h"
 
 using mozilla::dom::workers::Canceling;
 using mozilla::dom::workers::GetCurrentThreadWorkerPrivate;
@@ -26,7 +27,7 @@ class IPCStreamSource::Callback final : public nsIInputStreamCallback
 public:
   explicit Callback(IPCStreamSource* aSource)
     : mSource(aSource)
-    , mOwningThread(NS_GetCurrentThread())
+    , mOwningEventTarget(GetCurrentThreadSerialEventTarget())
   {
     MOZ_ASSERT(mSource);
   }
@@ -35,14 +36,14 @@ public:
   OnInputStreamReady(nsIAsyncInputStream* aStream) override
   {
     
-    if (mOwningThread == NS_GetCurrentThread()) {
+    if (mOwningEventTarget->IsOnCurrentThread()) {
       return Run();
     }
 
     
     
     
-    nsresult rv = mOwningThread->Dispatch(this, nsIThread::DISPATCH_NORMAL);
+    nsresult rv = mOwningEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL);
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to dispatch stream readable event to owning thread");
     }
@@ -53,7 +54,7 @@ public:
   NS_IMETHOD
   Run() override
   {
-    MOZ_ASSERT(mOwningThread == NS_GetCurrentThread());
+    MOZ_ASSERT(mOwningEventTarget->IsOnCurrentThread());
     if (mSource) {
       mSource->OnStreamReady(this);
     }
@@ -72,7 +73,7 @@ public:
   void
   ClearSource()
   {
-    MOZ_ASSERT(mOwningThread == NS_GetCurrentThread());
+    MOZ_ASSERT(mOwningEventTarget->IsOnCurrentThread());
     MOZ_ASSERT(mSource);
     mSource = nullptr;
   }
@@ -91,7 +92,7 @@ private:
   
   IPCStreamSource* mSource;
 
-  nsCOMPtr<nsIThread> mOwningThread;
+  nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 
   NS_DECL_THREADSAFE_ISUPPORTS
 };
