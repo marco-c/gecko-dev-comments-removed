@@ -1910,8 +1910,11 @@ public:
     
     
 #ifndef MOZ_WIDGET_ANDROID
-    
-    Reader()->ReleaseResources();
+    if (!mMaster->mLooping) {
+      
+      
+      Reader()->ReleaseResources();
+    }
 #endif
     bool hasNextFrame = (!mMaster->HasAudio() || !mMaster->mAudioCompleted)
                         && (!mMaster->HasVideo() || !mMaster->mVideoCompleted);
