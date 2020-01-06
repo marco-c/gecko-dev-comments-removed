@@ -277,9 +277,13 @@ evaluate.toJSON = function(obj, seenEls) {
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
   
+  } else if (WebElement.isReference(obj)) {
+    return obj;
+
+  
   } else if (element.isElement(obj)) {
-    let uuid = seenEls.add(obj);
-    return element.makeWebElement(uuid);
+    let webEl = seenEls.add(obj);
+    return webEl.toJSON();
 
   
   } else if (typeof obj.toJSON == "function") {
