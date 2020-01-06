@@ -194,7 +194,7 @@ var SidebarUI = {
     }
 
     this._box.setAttribute("width", sourceUI._box.boxObject.width);
-    this._show(commandID);
+    this.showInitially(commandID);
 
     return true;
   },
@@ -229,7 +229,7 @@ var SidebarUI = {
     }
 
     if (document.getElementById(commandID)) {
-      this._show(commandID);
+      this.showInitially(commandID);
     } else {
       
       
@@ -334,6 +334,17 @@ var SidebarUI = {
       BrowserUITelemetry.countSidebarEvent(commandID, "show");
     });
   },
+
+  
+
+
+
+
+
+
+   showInitially(commandID) {
+     return this._show(commandID);
+   },
 
   
 
