@@ -184,12 +184,6 @@ public:
   
   
   
-  already_AddRefed<ServoStyleContext>
-  ReresolveStyleForBindings(Element* aElement);
-
-  
-  
-  
   
   
   
@@ -603,8 +597,7 @@ private:
     ResolveStyleLazilyInternal(dom::Element* aElement,
                                CSSPseudoElementType aPseudoType,
                                StyleRuleInclusion aRules =
-                                 StyleRuleInclusion::All,
-                               bool aIgnoreExistingStyles = false);
+                                 StyleRuleInclusion::All);
 
   void RunPostTraversalTasks();
 
