@@ -10,57 +10,8 @@
 
 Cu.import("resource://gre/modules/Downloads.jsm", this);
 Cu.import("resource://gre/modules/DownloadPaths.jsm", this);
+Cu.import("resource://testing-common/FileTestUtils.jsm", this);
 Cu.import("resource://testing-common/MockRegistrar.jsm", this);
-
-const TEST_TARGET_FILE_NAME = "test-download.txt";
-
-
-
-
-
-let gFileCounter = Math.floor(Math.random() * 1000000);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getTempFile(aLeafName) {
-  
-  let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
-  let leafName = base + "-" + gFileCounter + ext;
-  gFileCounter++;
-
-  
-  let file = FileUtils.getFile("TmpD", [leafName]);
-  Assert.ok(!file.exists());
-
-  registerCleanupFunction(() => {
-    try {
-      file.remove(false);
-    } catch (ex) {
-      
-      
-      if (!(ex instanceof Components.Exception &&
-            (ex.result == Cr.NS_ERROR_FILE_ACCESS_DENIED ||
-             ex.result == Cr.NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-             ex.result == Cr.NS_ERROR_FILE_NOT_FOUND))) {
-        throw ex;
-      }
-    }
-  });
-
-  return file;
-}
 
 add_task(async function test_setup() {
   
@@ -71,7 +22,7 @@ add_task(async function test_setup() {
     },
     promptForSaveToFileAsync(launcher) {
       
-      let file = getTempFile(TEST_TARGET_FILE_NAME);
+      let file = FileTestUtils.getTempFile();
       file.create(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
       launcher.saveDestinationAvailable(file);
     },

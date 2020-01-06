@@ -17,6 +17,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FileTestUtils",
+                                  "resource://testing-common/FileTestUtils.jsm");
 
 const BackgroundFileSaverOutputStream = Components.Constructor(
       "@mozilla.org/network/background-file-saver;1?mode=outputstream",
@@ -33,14 +35,8 @@ const TEST_FILE_NAME_1 = "test-backgroundfilesaver-1.txt";
 
 
 
-function getTempFile(aLeafName) {
-  let file = FileUtils.getFile("TmpD", [aLeafName]);
-  do_register_cleanup(function GTF_cleanup() {
-    if (file.exists()) {
-      file.remove(false);
-    }
-  });
-  return file;
+function getTempFile(leafName) {
+  return FileTestUtils.getTempFile(leafName);
 }
 
 
