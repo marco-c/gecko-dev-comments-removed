@@ -223,9 +223,9 @@ public:
   
   virtual void Pause();
   
-  virtual void SetVolume(double aVolume);
+  void SetVolume(double aVolume);
 
-  virtual void SetPlaybackRate(double aPlaybackRate);
+  void SetPlaybackRate(double aPlaybackRate);
   void SetPreservesPitch(bool aPreservesPitch);
 
   bool GetMinimizePreroll() const { return mMinimizePreroll; }
