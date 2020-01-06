@@ -9479,68 +9479,97 @@ Parser<SyntaxParseHandler, char16_t>::newRegExp()
     return handler.newRegExp(SyntaxParseHandler::NodeGeneric, pos(), *this);
 }
 
+
+
 template <class ParseHandler, typename CharT>
-void
+bool
 Parser<ParseHandler, CharT>::checkDestructuringAssignmentTarget(Node expr, TokenPos exprPos,
+                                                                PossibleError* exprPossibleError,
                                                                 PossibleError* possibleError,
                                                                 TargetBehavior behavior)
 {
+    
+    
+    
+    if (!possibleError || handler.isPropertyAccess(expr))
+        return exprPossibleError->checkForExpressionError();
+
+    
+    
+    
+    
+
+    exprPossibleError->transferErrorsTo(possibleError);
+
+    
+    if (possibleError->hasPendingDestructuringError())
+        return true;
+
+    if (handler.isNameAnyParentheses(expr)) {
+        checkDestructuringAssignmentName(expr, exprPos, possibleError);
+        return true;
+    }
+
+    if (handler.isUnparenthesizedDestructuringPattern(expr)) {
+        if (behavior == TargetBehavior::ForbidAssignmentPattern)
+            possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_TARGET);
+        return true;
+    }
+
+    
+    
+    
+    if (handler.isParenthesizedDestructuringPattern(expr) &&
+        behavior != TargetBehavior::ForbidAssignmentPattern)
+    {
+        possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_PARENS);
+    } else {
+        possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_TARGET);
+    }
+
+    return true;
+}
+
+template <class ParseHandler, typename CharT>
+void
+Parser<ParseHandler, CharT>::checkDestructuringAssignmentName(Node name, TokenPos namePos,
+                                                              PossibleError* possibleError)
+{
+    MOZ_ASSERT(handler.isNameAnyParentheses(name));
+
     
     if (possibleError->hasPendingDestructuringError())
         return;
 
     if (pc->sc()->needStrictChecks()) {
-        if (handler.isArgumentsAnyParentheses(expr, context)) {
+        if (handler.isArgumentsAnyParentheses(name, context)) {
             if (pc->sc()->strict()) {
-                possibleError->setPendingDestructuringErrorAt(exprPos,
+                possibleError->setPendingDestructuringErrorAt(namePos,
                                                               JSMSG_BAD_STRICT_ASSIGN_ARGUMENTS);
             } else {
-                possibleError->setPendingDestructuringWarningAt(exprPos,
+                possibleError->setPendingDestructuringWarningAt(namePos,
                                                                 JSMSG_BAD_STRICT_ASSIGN_ARGUMENTS);
             }
             return;
         }
 
-        if (handler.isEvalAnyParentheses(expr, context)) {
+        if (handler.isEvalAnyParentheses(name, context)) {
             if (pc->sc()->strict()) {
-                possibleError->setPendingDestructuringErrorAt(exprPos,
+                possibleError->setPendingDestructuringErrorAt(namePos,
                                                               JSMSG_BAD_STRICT_ASSIGN_EVAL);
             } else {
-                possibleError->setPendingDestructuringWarningAt(exprPos,
+                possibleError->setPendingDestructuringWarningAt(namePos,
                                                                 JSMSG_BAD_STRICT_ASSIGN_EVAL);
             }
             return;
         }
     }
-
-    if (behavior == TargetBehavior::ForbidAssignmentPattern) {
-        if (handler.isUnparenthesizedDestructuringPattern(expr) ||
-            handler.isParenthesizedDestructuringPattern(expr))
-        {
-            possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_TARGET);
-            return;
-        }
-    }
-
-    
-    
-    if (!handler.isUnparenthesizedDestructuringPattern(expr) &&
-        !handler.isNameAnyParentheses(expr) &&
-        !handler.isPropertyAccess(expr))
-    {
-        
-        
-        
-        if (handler.isParenthesizedDestructuringPattern(expr))
-            possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_PARENS);
-        else
-            possibleError->setPendingDestructuringErrorAt(exprPos, JSMSG_BAD_DESTRUCT_TARGET);
-    }
 }
 
 template <class ParseHandler, typename CharT>
-void
+bool
 Parser<ParseHandler, CharT>::checkDestructuringAssignmentElement(Node expr, TokenPos exprPos,
+                                                                 PossibleError* exprPossibleError,
                                                                  PossibleError* possibleError)
 {
     
@@ -9553,8 +9582,16 @@ Parser<ParseHandler, CharT>::checkDestructuringAssignmentElement(Node expr, Toke
     
     
     
-    if (!handler.isUnparenthesizedAssignment(expr))
-        checkDestructuringAssignmentTarget(expr, exprPos, possibleError);
+    if (handler.isUnparenthesizedAssignment(expr)) {
+        
+        
+        if (!possibleError)
+            return exprPossibleError->checkForExpressionError();
+
+        exprPossibleError->transferErrorsTo(possibleError);
+        return true;
+    }
+    return checkDestructuringAssignmentTarget(expr, exprPos, exprPossibleError, possibleError);
 }
 
 template <class ParseHandler, typename CharT>
@@ -9612,12 +9649,17 @@ Parser<ParseHandler, CharT>::arrayInitializer(YieldHandling yieldHandling,
                 if (!tokenStream.peekTokenPos(&innerPos, TokenStream::Operand))
                     return null();
 
+                PossibleError possibleErrorInner(*this);
                 Node inner = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
-                                        possibleError);
+                                        &possibleErrorInner);
                 if (!inner)
                     return null();
-                if (possibleError)
-                    checkDestructuringAssignmentTarget(inner, innerPos, possibleError);
+                if (!checkDestructuringAssignmentTarget(inner, innerPos, &possibleErrorInner,
+                                                        possibleError))
+                {
+                    return null();
+                }
+
                 if (!handler.addSpreadElement(literal, begin, inner))
                     return null();
             } else {
@@ -9625,12 +9667,16 @@ Parser<ParseHandler, CharT>::arrayInitializer(YieldHandling yieldHandling,
                 if (!tokenStream.peekTokenPos(&elementPos, TokenStream::Operand))
                     return null();
 
+                PossibleError possibleErrorInner(*this);
                 Node element = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
-                                          possibleError);
+                                          &possibleErrorInner);
                 if (!element)
                     return null();
-                if (possibleError)
-                    checkDestructuringAssignmentElement(element, elementPos, possibleError);
+                if (!checkDestructuringAssignmentElement(element, elementPos, &possibleErrorInner,
+                                                         possibleError))
+                {
+                    return null();
+                }
                 if (foldConstants && !FoldConstants(context, &element, this))
                     return null();
                 handler.addArrayElement(literal, element);
@@ -9913,13 +9959,16 @@ Parser<ParseHandler, CharT>::objectLiteral(YieldHandling yieldHandling,
             if (!tokenStream.peekTokenPos(&innerPos, TokenStream::Operand))
                 return null();
 
+            PossibleError possibleErrorInner(*this);
             Node inner = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
-                                    possibleError);
+                                    &possibleErrorInner);
             if (!inner)
                 return null();
-            if (possibleError) {
-                checkDestructuringAssignmentTarget(inner, innerPos, possibleError,
-                                                   TargetBehavior::ForbidAssignmentPattern);
+            if (!checkDestructuringAssignmentTarget(inner, innerPos, &possibleErrorInner,
+                                                    possibleError,
+                                                    TargetBehavior::ForbidAssignmentPattern))
+            {
+                return null();
             }
             if (!handler.addSpreadProperty(literal, begin, inner))
                 return null();
@@ -9936,15 +9985,19 @@ Parser<ParseHandler, CharT>::objectLiteral(YieldHandling yieldHandling,
                 if (!tokenStream.peekTokenPos(&exprPos, TokenStream::Operand))
                     return null();
 
+                PossibleError possibleErrorInner(*this);
                 Node propExpr = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
-                                           possibleError);
+                                           &possibleErrorInner);
                 if (!propExpr)
                     return null();
 
                 handler.checkAndSetIsDirectRHSAnonFunction(propExpr);
 
-                if (possibleError)
-                    checkDestructuringAssignmentElement(propExpr, exprPos, possibleError);
+                if (!checkDestructuringAssignmentElement(propExpr, exprPos, &possibleErrorInner,
+                                                         possibleError))
+                {
+                    return null();
+                }
 
                 if (foldConstants && !FoldConstants(context, &propExpr, this))
                     return null();
@@ -9993,7 +10046,7 @@ Parser<ParseHandler, CharT>::objectLiteral(YieldHandling yieldHandling,
                     return null();
 
                 if (possibleError)
-                    checkDestructuringAssignmentTarget(nameExpr, namePos, possibleError);
+                    checkDestructuringAssignmentName(nameExpr, namePos, possibleError);
 
                 if (!handler.addShorthand(literal, propName, nameExpr))
                     return null();
