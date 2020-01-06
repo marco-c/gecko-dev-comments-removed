@@ -258,6 +258,11 @@ ServoStyleSet::ResolveMappedAttrDeclarationBlocks()
 void
 ServoStyleSet::PreTraverseSync()
 {
+  
+  
+  
+  mozilla::Unused << mPresContext->Document()->GetRootElement();
+
   ResolveMappedAttrDeclarationBlocks();
 
   nsCSSRuleProcessor::InitSystemMetrics();
@@ -331,11 +336,6 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   bool forThrottledAnimationFlush = !!(aFlags & ServoTraversalFlags::AnimationOnly);
 
   AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), forThrottledAnimationFlush);
-
-  
-  
-  
-  mozilla::Unused << aRoot->OwnerDoc()->GetRootElement();
 
   MOZ_ASSERT(!StylistNeedsUpdate());
   AutoSetInServoTraversal guard(this);
