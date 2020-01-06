@@ -25,11 +25,11 @@ package nu.validator.htmlparser.impl;
 
 import java.io.IOException;
 
+import org.xml.sax.SAXException;
+
 import nu.validator.htmlparser.annotation.Auto;
 import nu.validator.htmlparser.annotation.Inline;
 import nu.validator.htmlparser.common.ByteReadable;
-
-import org.xml.sax.SAXException;
 
 public abstract class MetaScanner {
 
@@ -37,7 +37,7 @@ public abstract class MetaScanner {
 
 
     private static final char[] CHARSET = { 'h', 'a', 'r', 's', 'e', 't' };
-    
+
     
 
 
@@ -58,13 +58,13 @@ public abstract class MetaScanner {
     private static final int NO = 0;
 
     private static final int M = 1;
-    
+
     private static final int E = 2;
-    
+
     private static final int T = 3;
 
     private static final int A = 4;
-    
+
     private static final int DATA = 0;
 
     private static final int TAG_OPEN = 1;
@@ -90,7 +90,7 @@ public abstract class MetaScanner {
     private static final int AFTER_ATTRIBUTE_VALUE_QUOTED = 11;
 
     private static final int MARKUP_DECLARATION_OPEN = 13;
-    
+
     private static final int MARKUP_DECLARATION_HYPHEN = 14;
 
     private static final int COMMENT_START = 15;
@@ -102,11 +102,11 @@ public abstract class MetaScanner {
     private static final int COMMENT_END_DASH = 18;
 
     private static final int COMMENT_END = 19;
-    
+
     private static final int SELF_CLOSING_START_TAG = 20;
-    
+
     private static final int HTTP_EQUIV_NOT_SEEN = 0;
-    
+
     private static final int HTTP_EQUIV_CONTENT_TYPE = 1;
 
     private static final int HTTP_EQUIV_OTHER = 2;
@@ -115,7 +115,7 @@ public abstract class MetaScanner {
 
 
     protected ByteReadable readable;
-    
+
     
 
 
@@ -125,7 +125,7 @@ public abstract class MetaScanner {
 
 
     private int contentIndex = Integer.MAX_VALUE;
-    
+
     
 
 
@@ -155,13 +155,13 @@ public abstract class MetaScanner {
 
 
     private @Auto char[] strBuf;
-    
+
     private String content;
-    
+
     private String charset;
-    
+
     private int httpEquivState;
-    
+
     
 
     public MetaScanner(
@@ -180,15 +180,16 @@ public abstract class MetaScanner {
         this.charset = null;
         this.httpEquivState = HTTP_EQUIV_NOT_SEEN;
         
+        
     }
-    
+
     @SuppressWarnings("unused") private void destructor() {
         Portability.releaseString(content);
         Portability.releaseString(charset);
     }
 
     
-    
+
     
 
 
@@ -350,7 +351,7 @@ public abstract class MetaScanner {
                                 httpEquivIndex = Integer.MAX_VALUE;
                                 contentTypeIndex = Integer.MAX_VALUE;
                                 state = MetaScanner.ATTRIBUTE_NAME;
-                                break beforeattributenameloop;                                
+                                break beforeattributenameloop;
                             case 'h':
                             case 'H':
                                 contentIndex = Integer.MAX_VALUE;
@@ -358,7 +359,7 @@ public abstract class MetaScanner {
                                 httpEquivIndex = 0;
                                 contentTypeIndex = Integer.MAX_VALUE;
                                 state = MetaScanner.ATTRIBUTE_NAME;
-                                break beforeattributenameloop;                                
+                                break beforeattributenameloop;
                             default:
                                 contentIndex = Integer.MAX_VALUE;
                                 charsetIndex = Integer.MAX_VALUE;
@@ -416,7 +417,7 @@ public abstract class MetaScanner {
                                         ++httpEquivIndex;
                                     } else {
                                         httpEquivIndex = Integer.MAX_VALUE;
-                                    }                                    
+                                    }
                                 }
                                 continue;
                         }
@@ -823,7 +824,7 @@ public abstract class MetaScanner {
         httpEquivState = HTTP_EQUIV_NOT_SEEN;
         return stop;
     }
-    
+
     private boolean handleTagInner() throws SAXException {
         if (charset != null && tryCharset(charset)) {
                 return true;
@@ -850,5 +851,5 @@ public abstract class MetaScanner {
 
 
     protected abstract boolean tryCharset(String encoding) throws SAXException;
-    
+
 }
