@@ -4376,16 +4376,13 @@ nsRuleNode::ComputeFontData(void* aStartStruct,
   
   const nsCSSValue* familyValue = aRuleData->ValueForFontFamily();
   if (eCSSUnit_FontFamilyList == familyValue->GetUnit()) {
-    const FontFamilyList* fontlist = familyValue->GetFontFamilyListValue();
-    FontFamilyList& fl = font->mFont.fontlist;
-    fl = *fontlist;
+    const SharedFontList* fontlist = familyValue->GetFontFamilyListValue();
+    font->mFont.fontlist = FontFamilyList(fontlist);
 
     
-    FontFamilyType fontType = fontlist->FirstGeneric();
-
-    
-    if (fontlist->Length() == 1) {
-      switch (fontType) {
+    if (fontlist->mNames.Length() == 1) {
+      
+      switch (font->mFont.fontlist.FirstGeneric()) {
         case eFamily_serif:
           generic = kGenericFont_serif;
           break;
