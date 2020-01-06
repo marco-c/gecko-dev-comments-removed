@@ -27,8 +27,6 @@ const PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED = "app.update.notifiedUnsupported";
 const PREF_APP_UPDATE_TEST_LOOP           = "app.update.test.loop";
 const PREF_APP_UPDATE_URL_MANUAL          = "app.update.url.manual";
 
-const PREFBRANCH_APP_UPDATE_NEVER         = "app.update.never.";
-
 const UPDATE_TEST_LOOP_INTERVAL = 2000;
 
 const URI_UPDATES_PROPERTIES  = "chrome://mozapps/locale/update/updates.properties";
@@ -234,12 +232,6 @@ var gUpdates = {
     
     
     
-    
-    
-    
-    
-    let neverPrefName = PREFBRANCH_APP_UPDATE_NEVER + this.update.appVersion;
-    Services.prefs.setBoolPref(neverPrefName, true);
     let aus = CoC["@mozilla.org/updates/update-service;1"].
               getService(CoI.nsIApplicationUpdateService);
     if (aus.elevationRequired) {
@@ -502,8 +494,6 @@ var gCheckingPage = {
     
     
     
-    
-    Services.prefs.deleteBranch(PREFBRANCH_APP_UPDATE_NEVER);
     if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
       Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
     }
@@ -552,10 +542,15 @@ var gCheckingPage = {
           return;
         }
 
-        if (!aus.canApplyUpdates || gUpdates.update.elevationFailure) {
+        if (gUpdates.update.elevationFailure) {
           
           
           gUpdates.never();
+          gUpdates.wiz.goTo("manualUpdate");
+          return;
+        }
+
+        if (!aus.canApplyUpdates) {
           gUpdates.wiz.goTo("manualUpdate");
           return;
         }
@@ -654,9 +649,8 @@ var gUpdatesFoundBasicPage = {
   onPageShow() {
     gUpdates.wiz.canRewind = false;
     var update = gUpdates.update;
-    gUpdates.setButtons("askLaterButton",
-                        update.showNeverForVersion ? "noThanksButton" : null,
-                        "updateButton_" + update.type, true);
+    gUpdates.setButtons("askLaterButton", null, "updateButton_" + update.type,
+                        true);
     var btn = gUpdates.wiz.getButton("next");
     btn.focus();
 
@@ -688,11 +682,6 @@ var gUpdatesFoundBasicPage = {
   },
 
   onExtra1() {
-    gUpdates.wiz.cancel();
-  },
-
-  onExtra2() {
-    gUpdates.never();
     gUpdates.wiz.cancel();
   }
 };
