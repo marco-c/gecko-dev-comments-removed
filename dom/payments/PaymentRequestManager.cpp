@@ -418,13 +418,15 @@ PaymentRequestManager::CreatePayment(JSContext* aCx,
 
 
 
+  nsAutoString shippingOption;
+  SetDOMStringToNull(shippingOption);
   if (aOptions.mRequestShipping) {
     request->SetShippingType(
         Nullable<PaymentShippingType>(aOptions.mShippingType));
-    nsAutoString shippingOption;
     GetSelectedShippingOption(aDetails, shippingOption);
-    request->SetShippingOption(shippingOption);
   }
+  request->SetShippingOption(shippingOption);
+
 
   nsAutoString internalId;
   request->GetInternalId(internalId);

@@ -68,16 +68,15 @@ PaymentRequestUpdateEvent::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value
   }
 
   
-  nsresult rv = mRequest->IsValidDetailsUpdate(details);
+  
+  
+  
+  
+  nsresult rv = mRequest->IsValidDetailsUpdate(details, true);
   if (NS_FAILED(rv)) {
     mRequest->AbortUpdate(rv);
     return;
   }
-
-  
-  
-  
-  
 
   
   if (NS_FAILED(mRequest->UpdatePayment(aCx, details))) {
