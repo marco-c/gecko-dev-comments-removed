@@ -217,10 +217,6 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
                                    nsIFile* parentMinidump,
                                    const nsACString& name);
 
-
-
-void GetChildProcessTmpDir(nsIFile** aOutTmpDir);
-
 #  if defined(XP_WIN32) || defined(XP_MACOSX)
 
 const char* GetChildNotificationPipe();
@@ -251,7 +247,7 @@ void UnregisterInjectorCallback(DWORD processID);
 
 
 bool SetRemoteExceptionHandler(const nsACString& crashPipe);
-void InitChildProcessTmpDir(nsIFile* aDirOverride = nullptr);
+void InitChildProcessTmpDir();
 
 #  elif defined(XP_LINUX)
 
