@@ -510,9 +510,7 @@ NativeObject::addAccessorPropertyInternal(JSContext* cx,
     AutoRooterGetterSetter gsRoot(cx, attrs, &getter, &setter);
 
     
-
-
-
+    
     ShapeTable* table = nullptr;
     if (!obj->inDictionaryMode()) {
         if (ShouldConvertToDictionary(obj)) {
@@ -578,9 +576,7 @@ NativeObject::addDataPropertyInternal(JSContext* cx,
                slot < JSCLASS_RESERVED_SLOTS(obj->getClass()));
 
     
-
-
-
+    
     ShapeTable* table = nullptr;
     if (!obj->inDictionaryMode()) {
         if (ShouldConvertToDictionary(obj)) {
@@ -808,15 +804,6 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
     AssertValidArrayIndex(obj, id);
 
     
-
-
-
-
-
-
-
-
-
     AutoKeepShapeTables keep(cx);
     ShapeTable::Entry* entry;
     RootedShape shape(cx);
@@ -827,12 +814,8 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
     }
 
     if (!shape) {
-        
-
-
-
-        MOZ_ASSERT(obj->nonProxyIsExtensible());
-
+        MOZ_ASSERT(obj->nonProxyIsExtensible(),
+                   "Can't add new property to non-extensible object");
         return addDataPropertyInternal(cx, obj, id, SHAPE_INVALID_SLOT, attrs, entry, keep);
     }
 
@@ -842,10 +825,8 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
     AssertCanChangeAttrs(shape, attrs);
 
     
-
-
-
-
+    
+    
     bool hadSlot = shape->isDataProperty();
     uint32_t oldSlot = shape->maybeSlot();
     uint32_t slot = hadSlot ? oldSlot : SHAPE_INVALID_SLOT;
@@ -859,17 +840,13 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
     }
 
     
-
-
-
+    
     if (shape->matchesParamsAfterId(nbase, slot, attrs, nullptr, nullptr))
         return shape;
 
     
-
-
-
-
+    
+    
     if (shape != obj->lastProperty() && !obj->inDictionaryMode()) {
         if (!toDictionaryMode(cx, obj))
             return nullptr;
@@ -883,11 +860,9 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
 
     if (obj->inDictionaryMode()) {
         
-
-
-
-
-
+        
+        
+        
         bool updateLast = (shape == obj->lastProperty());
         shape = NativeObject::replaceWithNewEquivalentShape(cx, obj, shape, nullptr,
                                                              false);
@@ -895,10 +870,6 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
             return nullptr;
         if (!updateLast && !NativeObject::generateOwnShape(cx, obj))
             return nullptr;
-
-        
-
-
 
         if (slot == SHAPE_INVALID_SLOT) {
             if (!allocDictionarySlot(cx, obj, &slot))
@@ -915,9 +886,7 @@ NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id
         shape->flags = Shape::IN_DICTIONARY;
     } else {
         
-
-
-
+        
         StackBaseShape base(obj->lastProperty()->base());
 
         UnownedBaseShape* nbase = BaseShape::getUnowned(cx, base);
@@ -950,15 +919,6 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
     AutoRooterGetterSetter gsRoot(cx, attrs, &getter, &setter);
 
     
-
-
-
-
-
-
-
-
-
     AutoKeepShapeTables keep(cx);
     ShapeTable::Entry* entry;
     RootedShape shape(cx);
@@ -969,12 +929,8 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
     }
 
     if (!shape) {
-        
-
-
-
-        MOZ_ASSERT(obj->nonProxyIsExtensible());
-
+        MOZ_ASSERT(obj->nonProxyIsExtensible(),
+                   "Can't add new property to non-extensible object");
         return addAccessorPropertyInternal(cx, obj, id, getter, setter, attrs, entry, keep);
     }
 
@@ -995,17 +951,13 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
     }
 
     
-
-
-
+    
     if (shape->matchesParamsAfterId(nbase, SHAPE_INVALID_SLOT, attrs, getter, setter))
         return shape;
 
     
-
-
-
-
+    
+    
     if (shape != obj->lastProperty() && !obj->inDictionaryMode()) {
         if (!toDictionaryMode(cx, obj))
             return nullptr;
@@ -1017,11 +969,9 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
 
     if (obj->inDictionaryMode()) {
         
-
-
-
-
-
+        
+        
+        
         bool updateLast = (shape == obj->lastProperty());
         shape = NativeObject::replaceWithNewEquivalentShape(cx, obj, shape, nullptr,
                                                              true);
@@ -1045,9 +995,7 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
         GetterSetterWriteBarrierPost(&accShape);
     } else {
         
-
-
-
+        
         StackBaseShape base(obj->lastProperty()->base());
 
         UnownedBaseShape* nbase = BaseShape::getUnowned(cx, base);
@@ -1066,11 +1014,9 @@ NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleI
     }
 
     
-
-
-
-
-
+    
+    
+    
     if (hadSlot && oldSlot < obj->slotSpan())
         obj->freeSlot(cx, oldSlot);
 
