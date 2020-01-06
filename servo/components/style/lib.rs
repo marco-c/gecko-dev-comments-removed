@@ -38,6 +38,7 @@
 #![recursion_limit = "500"]  
 
 extern crate app_units;
+extern crate arrayvec;
 extern crate atomic_refcell;
 extern crate bit_vec;
 #[macro_use]
