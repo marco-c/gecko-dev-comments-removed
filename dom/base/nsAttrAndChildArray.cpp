@@ -569,8 +569,14 @@ nsAttrAndChildArray::IndexOfAttr(nsIAtom* aLocalName, int32_t aNamespaceID) cons
   uint32_t slotCount = AttrSlotCount();
   if (aNamespaceID == kNameSpaceID_None) {
     
-    for (i = 0; i < slotCount && AttrSlotIsTaken(i); ++i) {
+    
+    
+    
+    
+    
+    for (i = 0; i < slotCount; ++i) {
       if (ATTRS(mImpl)[i].mName.Equals(aLocalName)) {
+        MOZ_ASSERT(AttrSlotIsTaken(i), "sanity check");
         return i;
       }
     }

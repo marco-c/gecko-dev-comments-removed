@@ -101,6 +101,10 @@ public:
   }
 
   
+  
+  
+  
+  
   bool Equals(nsIAtom* aAtom) const
   {
     return reinterpret_cast<uintptr_t>(aAtom) == mBits;
