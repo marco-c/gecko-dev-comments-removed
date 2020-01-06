@@ -1832,7 +1832,9 @@ toolbar#nav-bar {
            '5.1' in platform.version() and options.e10s:
             prefs['layers.acceleration.disabled'] = True
 
-        sandbox_whitelist_paths = [SCRIPT_DIR] + options.sandboxReadWhitelist
+        
+        tests_dir = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+        sandbox_whitelist_paths = [tests_dir] + options.sandboxReadWhitelist
         if (platform.system() == "Linux" or
             platform.system() in ("Windows", "Microsoft")):
             
