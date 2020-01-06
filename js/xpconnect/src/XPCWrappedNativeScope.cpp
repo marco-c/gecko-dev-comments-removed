@@ -123,7 +123,10 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
     JS_SetCompartmentPrivate(c, priv);
 
     
-    priv->scope = this;
+    Realm* realm = JS::GetObjectRealmOrNull(aGlobal);
+    RealmPrivate* realmPriv = new RealmPrivate(realm);
+    realmPriv->scope = this;
+    JS::SetRealmPrivate(realm, realmPriv);
 
     
     
@@ -333,8 +336,10 @@ GetXBLScope(JSContext* cx, JSObject* contentScopeArg)
     MOZ_ASSERT(!IsInAddonScope(contentScopeArg));
 
     JS::RootedObject contentScope(cx, contentScopeArg);
+    JSCompartment* addonComp = js::GetObjectCompartment(contentScope);
+    JS::Rooted<JS::Realm*> addonRealm(cx, JS::GetRealmForCompartment(addonComp));
     JSAutoCompartment ac(cx, contentScope);
-    JSObject* scope = CompartmentPrivate::Get(contentScope)->scope->EnsureContentXBLScope(cx);
+    JSObject* scope = RealmPrivate::Get(addonRealm)->scope->EnsureContentXBLScope(cx);
     NS_ENSURE_TRUE(scope, nullptr); 
     scope = js::UncheckedUnwrap(scope);
     JS::ExposeObjectToActiveJS(scope);
@@ -351,7 +356,7 @@ GetScopeForXBLExecution(JSContext* cx, HandleObject contentScope, JSAddonId* add
         return global;
 
     JSAutoCompartment ac(cx, contentScope);
-    XPCWrappedNativeScope* nativeScope = CompartmentPrivate::Get(contentScope)->scope;
+    XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
     bool isSystem = nsContentUtils::IsSystemPrincipal(nativeScope->GetPrincipal());
 
     RootedObject scope(cx);
@@ -371,23 +376,21 @@ GetScopeForXBLExecution(JSContext* cx, HandleObject contentScope, JSAddonId* add
 bool
 AllowContentXBLScope(JS::Realm* realm)
 {
-    XPCWrappedNativeScope* scope =
-        CompartmentPrivate::Get(JS::GetCompartmentForRealm(realm))->scope;
+    XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
     return scope && scope->AllowContentXBLScope();
 }
 
 bool
 UseContentXBLScope(JS::Realm* realm)
 {
-    XPCWrappedNativeScope* scope =
-        CompartmentPrivate::Get(JS::GetCompartmentForRealm(realm))->scope;
+    XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
     return scope && scope->UseContentXBLScope();
 }
 
 void
 ClearContentXBLScope(JSObject* global)
 {
-    CompartmentPrivate::Get(global)->scope->ClearContentXBLScope();
+    RealmPrivate::Get(global)->scope->ClearContentXBLScope();
 }
 
 } 
@@ -444,7 +447,7 @@ xpc::GetAddonScope(JSContext* cx, JS::HandleObject contentScope, JSAddonId* addo
     }
 
     JSAutoCompartment ac(cx, contentScope);
-    XPCWrappedNativeScope* nativeScope = CompartmentPrivate::Get(contentScope)->scope;
+    XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
     if (nativeScope->GetPrincipal() != nsXPConnect::SystemPrincipal()) {
         
         
@@ -641,7 +644,7 @@ XPCWrappedNativeScope::KillDyingScopes()
     while (cur) {
         XPCWrappedNativeScope* next = cur->mNext;
         if (cur->mGlobalJSObject)
-            CompartmentPrivate::Get(cur->mGlobalJSObject)->scope = nullptr;
+            RealmPrivate::Get(cur->mGlobalJSObject)->scope = nullptr;
         delete cur;
         cur = next;
     }

@@ -3016,6 +3016,10 @@ enum WrapperDenialType {
 };
 bool ReportWrapperDenial(JSContext* cx, JS::HandleId id, WrapperDenialType type, const char* reason);
 
+
+
+
+
 class CompartmentPrivate
 {
     CompartmentPrivate() = delete;
@@ -3125,13 +3129,6 @@ public:
     
     bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
-    
-    Scriptability scriptability;
-
-    
-    
-    XPCWrappedNativeScope* scope;
-
     const nsACString& GetLocation() {
         if (location.IsEmpty() && locationURI) {
 
@@ -3199,10 +3196,60 @@ CrashIfNotInAutomation()
     MOZ_RELEASE_ASSERT(IsInAutomation());
 }
 
+
+
+
+
+
+
+
+class RealmPrivate
+{
+    RealmPrivate() = delete;
+    RealmPrivate(const RealmPrivate&) = delete;
+
+public:
+    explicit RealmPrivate(JS::Realm* realm);
+
+    static RealmPrivate* Get(JS::Realm* realm)
+    {
+        MOZ_ASSERT(realm);
+        void* priv = JS::GetRealmPrivate(realm);
+        return static_cast<RealmPrivate*>(priv);
+    }
+
+    
+    
+    
+    static RealmPrivate* Get(JSObject* object)
+    {
+        JS::Realm* realm = JS::GetObjectRealmOrNull(object);
+        return Get(realm);
+    }
+
+    
+    
+    
+    
+    bool writeToGlobalPrototype;
+
+    
+    
+    
+    bool skipWriteToGlobalPrototype;
+
+    
+    Scriptability scriptability;
+
+    
+    
+    XPCWrappedNativeScope* scope;
+};
+
 inline XPCWrappedNativeScope*
 ObjectScope(JSObject* obj)
 {
-    return CompartmentPrivate::Get(obj)->scope;
+    return RealmPrivate::Get(obj)->scope;
 }
 
 JSObject* NewOutObject(JSContext* cx);
