@@ -14,12 +14,7 @@ class nsSMILNullType : public nsISMILType
 {
 public:
   
-  static nsSMILNullType*
-  Singleton()
-  {
-    static nsSMILNullType sSingleton;
-    return &sSingleton;
-  }
+  static nsSMILNullType* Singleton();
 
 protected:
   
