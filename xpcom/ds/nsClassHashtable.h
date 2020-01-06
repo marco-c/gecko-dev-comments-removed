@@ -30,6 +30,7 @@ public:
   typedef nsBaseHashtable<KeyClass, nsAutoPtr<T>, T*> base_type;
 
   using base_type::IsEmpty;
+  using base_type::Remove;
 
   nsClassHashtable() {}
   explicit nsClassHashtable(uint32_t aInitLength)
@@ -57,17 +58,9 @@ public:
   UserDataType Get(KeyType aKey) const;
 
   
-
-
-
-
-
-
-
-
-
-
-  void RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut);
+  void RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut) {
+    Remove(aKey, &aOut);
+  }
 };
 
 
@@ -119,23 +112,6 @@ nsClassHashtable<KeyClass, T>::Get(KeyType aKey) const
   }
 
   return ent->mData;
-}
-
-template<class KeyClass, class T>
-void
-nsClassHashtable<KeyClass, T>::RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut)
-{
-  aOut = nullptr;
-
-  typename base_type::EntryType* ent = this->GetEntry(aKey);
-  if (!ent) {
-    return;
-  }
-
-  
-  aOut = mozilla::Move(ent->mData);
-
-  this->RemoveEntry(ent);
 }
 
 #endif 
