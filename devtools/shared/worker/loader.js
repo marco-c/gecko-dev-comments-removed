@@ -578,8 +578,6 @@ this.worker = new WorkerDebuggerLoader({
   },
   paths: {
     
-    "": "resource://gre/modules/commonjs/",
-    
     
     
     

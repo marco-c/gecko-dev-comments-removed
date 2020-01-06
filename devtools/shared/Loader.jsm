@@ -30,8 +30,6 @@ BuiltinProvider.prototype = {
   load: function () {
     const paths = {
       
-      "": "resource://gre/modules/commonjs/",
-      
       
       
       
