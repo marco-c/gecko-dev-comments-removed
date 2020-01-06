@@ -213,8 +213,9 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     return NS_ERROR_HOST_IS_IP_ADDRESS;
 
   
+  
   TLDCacheEntry* entry = nullptr;
-  if (aAdditionalParts == 1) {
+  if (aAdditionalParts == 1 && NS_IsMainThread()) {
     if (LookupForAdd(aHostname, &entry)) {
       
       aBaseDomain = entry->mBaseDomain;
