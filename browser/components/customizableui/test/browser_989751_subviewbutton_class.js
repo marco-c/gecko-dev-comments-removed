@@ -15,6 +15,11 @@ function insertClassNameToMenuChildren(parentMenu) {
 
 function checkSubviewButtonClass(menuId, buttonId, subviewId) {
   return async function() {
+    
+    
+    Cu.import("resource://devtools/shared/Loader.jsm", {})
+        .require("devtools/client/framework/devtools-browser");
+
     info("Checking for items without the subviewbutton class in " + buttonId + " widget");
     let menu = document.getElementById(menuId);
     insertClassNameToMenuChildren(menu);
