@@ -131,7 +131,9 @@ class NativePanZoomController extends JNIObject implements PanZoomController {
         final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
         event.getPointerCoords(0, coords);
         final float x = coords.x;
-        final float y = coords.y;
+        
+        
+        final float y = coords.y - mView.getCurrentToolbarHeight();
 
         return handleMouseEvent(event.getActionMasked(), event.getEventTime(), event.getMetaState(), x, y, event.getButtonState());
     }
