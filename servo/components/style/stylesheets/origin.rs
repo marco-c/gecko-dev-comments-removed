@@ -169,20 +169,6 @@ impl<T> PerOrigin<T> {
 }
 
 
-pub trait PerOriginClear {
-    
-    fn clear(&mut self);
-}
-
-impl<T> PerOriginClear for PerOrigin<T> where T: PerOriginClear {
-    fn clear(&mut self) {
-        self.user_agent.clear();
-        self.user.clear();
-        self.author.clear();
-    }
-}
-
-
 
 
 
