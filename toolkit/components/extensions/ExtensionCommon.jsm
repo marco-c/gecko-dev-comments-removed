@@ -1010,7 +1010,7 @@ class SchemaAPIManager extends EventEmitter {
 
     module.loaded = true;
 
-    return this.global[name];
+    return this._initModule(module, this.global[name]);
   }
   
 
@@ -1037,7 +1037,7 @@ class SchemaAPIManager extends EventEmitter {
 
       module.loaded = true;
 
-      return this.global[name];
+      return this._initModule(module, this.global[name]);
     });
 
     return module.asyncLoaded;
@@ -1074,6 +1074,14 @@ class SchemaAPIManager extends EventEmitter {
     }
 
     return true;
+  }
+
+  _initModule(info, cls) {
+    
+    cls.namespaceName = cls.namespaceName;
+    cls.scopes = new Set(info.scopes);
+
+    return cls;
   }
 
   _checkLoadModule(module, name) {
