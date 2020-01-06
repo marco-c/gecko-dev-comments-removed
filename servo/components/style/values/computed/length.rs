@@ -706,6 +706,11 @@ impl CSSPixelLength {
     pub fn abs(self) -> Self {
         CSSPixelLength::new(self.0.abs())
     }
+
+    
+    pub fn zero() -> Self {
+        CSSPixelLength::new(0.)
+    }
 }
 
 impl ToCss for CSSPixelLength {
