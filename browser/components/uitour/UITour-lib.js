@@ -370,7 +370,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
   Mozilla.UITour.previewTheme = function(theme) {
     _stopCyclingThemes();
 
