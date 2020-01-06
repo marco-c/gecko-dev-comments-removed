@@ -38,10 +38,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PermissionsUtils",
                                   "resource://gre/modules/PermissionsUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-                                  "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserToolboxProcess",
+                                  "resource://devtools/client/framework/ToolboxProcess.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ConsoleAPI",
                                   "resource://gre/modules/Console.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ProductAddonChecker",
@@ -195,7 +195,7 @@ XPCOMUtils.defineConstant(this, "DB_SCHEMA", 21);
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_NON_MPC", PREF_ALLOW_NON_MPC);
 
-const NOTIFICATION_TOOLBOX_CONNECTION_CHANGE      = "toolbox-connection-change";
+const NOTIFICATION_TOOLBOXPROCESS_LOADED      = "ToolboxProcessLoaded";
 
 
 const PROP_LOCALE_SINGLE = ["name", "description", "creator", "homepageURL"];
@@ -1879,6 +1879,8 @@ this.XPIProvider = {
   
   _addonFileMap: new Map(),
   
+  _toolboxProcessLoaded: false,
+  
   _closing: false,
 
   
@@ -2219,7 +2221,21 @@ this.XPIProvider = {
       Services.prefs.addObserver(PREF_ALLOW_LEGACY, this);
       Services.prefs.addObserver(PREF_ALLOW_NON_MPC, this);
       Services.obs.addObserver(this, NOTIFICATION_FLUSH_PERMISSIONS);
-      Services.obs.addObserver(this, NOTIFICATION_TOOLBOX_CONNECTION_CHANGE);
+
+      
+      
+      if (ResProtocolHandler.hasSubstitution("devtools")) {
+        if (Cu.isModuleLoaded("resource://devtools/client/framework/ToolboxProcess.jsm")) {
+          
+          
+          this._toolboxProcessLoaded = true;
+          BrowserToolboxProcess.on("connectionchange",
+                                   this.onDebugConnectionChange.bind(this));
+        } else {
+          
+          Services.obs.addObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED);
+        }
+      }
 
 
       let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
@@ -3900,12 +3916,12 @@ this.XPIProvider = {
     }
   },
 
-  onDebugConnectionChange({what, connection}) {
-    if (what != "opened")
+  onDebugConnectionChange(aEvent, aWhat, aConnection) {
+    if (aWhat != "opened")
       return;
 
     for (let [id, val] of this.activeAddons) {
-      connection.setAddonOptions(
+      aConnection.setAddonOptions(
         id, { global: val.bootstrapScope });
     }
   },
@@ -3921,9 +3937,11 @@ this.XPIProvider = {
         this.importPermissions();
       }
       return;
-    } else if (aTopic == NOTIFICATION_TOOLBOX_CONNECTION_CHANGE) {
-      this.onDebugConnectionChange(aSubject.wrappedJSObject);
-      return;
+    } else if (aTopic == NOTIFICATION_TOOLBOXPROCESS_LOADED) {
+      Services.obs.removeObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED);
+      this._toolboxProcessLoaded = true;
+      BrowserToolboxProcess.on("connectionchange",
+                               this.onDebugConnectionChange.bind(this));
     }
 
     if (aTopic == "nsPref:changed") {
@@ -4291,8 +4309,12 @@ this.XPIProvider = {
     }
 
     
-    let wrappedJSObject = { id: aId, options: { global: activeAddon.bootstrapScope }};
-    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
+    
+    
+    if (this._toolboxProcessLoaded) {
+      BrowserToolboxProcess.setAddonOptions(aId,
+        { global: activeAddon.bootstrapScope });
+    }
   },
 
   
@@ -4312,8 +4334,10 @@ this.XPIProvider = {
     this.addAddonsToCrashReporter();
 
     
-    let wrappedJSObject = { id: aId, options: { global: null }};
-    Services.obs.notifyObservers({ wrappedJSObject }, "toolbox-update-addon-options");
+    
+    if (this._toolboxProcessLoaded) {
+      BrowserToolboxProcess.setAddonOptions(aId, { global: null });
+    }
   },
 
   
