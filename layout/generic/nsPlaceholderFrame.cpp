@@ -209,25 +209,10 @@ nsPlaceholderFrame::GetParentStyleContextForOutOfFlow(nsIFrame** aProviderFrame)
 nsStyleContext*
 nsPlaceholderFrame::GetLayoutParentStyleForOutOfFlow(nsIFrame** aProviderFrame) const
 {
-  nsIFrame* parentFrame = GetParent();
   
   
   
-  
-  
-  if ((GetStateBits() & PLACEHOLDER_FOR_TOPLAYER) &&
-      parentFrame->IsTableWrapperFrame()) {
-    MOZ_ASSERT(mOutOfFlowFrame->IsBackdropFrame(),
-               "Only placeholder of backdrop frame can be put inside "
-               "a table wrapper frame");
-    *aProviderFrame = parentFrame;
-    return parentFrame->StyleContext();
-  }
-
-  
-  
-  
-  *aProviderFrame = CorrectStyleParentFrame(parentFrame,
+  *aProviderFrame = CorrectStyleParentFrame(GetParent(),
                                             nsGkAtoms::placeholderFrame);
   return *aProviderFrame ? (*aProviderFrame)->StyleContext() : nullptr;
 }
