@@ -3976,7 +3976,6 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
       
       resultNode = new nsNavHistoryQueryResultNode(aTitle, aTime, queries, options);
       resultNode->mItemId = itemId;
-      resultNode->mBookmarkGuid = aBookmarkGuid;
     }
   }
 
@@ -3987,7 +3986,6 @@ nsNavHistory::QueryRowToResult(int64_t itemId,
     
     resultNode = new nsNavHistoryQueryResultNode(aTitle, aURI);
     resultNode->mItemId = itemId;
-    resultNode->mBookmarkGuid = aBookmarkGuid;
     
     resultNode->GetAsQuery()->Options()->SetExcludeItems(true);
   }
