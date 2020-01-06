@@ -320,40 +320,70 @@ AtomicOperations::isLockfree(int32_t size)
 } 
 } 
 
-#if defined(JS_CODEGEN_ARM)
-# include "jit/arm/AtomicOperations-arm.h"
-#elif defined(JS_CODEGEN_ARM64)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+# if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
+#  include "jit/x86-shared/AtomicOperations-x86-shared.h"
+# else
+#  error "No AtomicOperations support for this platform+compiler combination"
+# endif
+#elif defined(__arm__)
+# if defined(__clang__) || defined(__GNUC__)
+#  include "jit/arm/AtomicOperations-arm.h"
+# else
+#  error "No AtomicOperations support for this platform+compiler combination"
+# endif
+#elif defined(__aarch64__)
 # include "jit/arm64/AtomicOperations-arm64.h"
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-# include "jit/mips-shared/AtomicOperations-mips-shared.h"
+#elif defined(__mips__)
+# if defined(__clang__) || defined(__GNUC__)
+#  include "jit/mips-shared/AtomicOperations-mips-shared.h"
+# else
+#  error "No AtomicOperations support for this platform+compiler combination"
+# endif
 #elif defined(__ppc__) || defined(__PPC__)
 # include "jit/none/AtomicOperations-feeling-lucky.h"
 #elif defined(__sparc__)
 # include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(JS_CODEGEN_NONE)
-  
-  
-  
-  
-  
-  
-# if defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)
-#  include "jit/none/AtomicOperations-feeling-lucky.h"
-# elif defined(__aarch64__)
-#  include "jit/arm64/AtomicOperations-arm64.h"
-# elif defined(__alpha__)
-#  include "jit/none/AtomicOperations-feeling-lucky.h"
-# elif defined(__hppa__)
-#  include "jit/none/AtomicOperations-feeling-lucky.h"
-# elif defined(__sh__)
-#  include "jit/none/AtomicOperations-feeling-lucky.h"
-# else
-#  include "jit/none/AtomicOperations-none.h" 
-# endif
-#elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-# include "jit/x86-shared/AtomicOperations-x86-shared.h"
+#elif defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)
+# include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__alpha__)
+# include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__hppa__)
+# include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__sh__)
+# include "jit/none/AtomicOperations-feeling-lucky.h"
 #else
-# error "Atomic operations must be defined for this platform"
+# error "No AtomicOperations support provided for this platform"
 #endif
 
 #endif 
