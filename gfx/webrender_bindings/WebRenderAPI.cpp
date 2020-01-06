@@ -4,6 +4,7 @@
 
 
 #include "WebRenderAPI.h"
+#include "DisplayItemClipChain.h"
 #include "LayersLogging.h"
 #include "mozilla/webrender/RendererOGL.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -729,9 +730,7 @@ DisplayListBuilder::PushClip(const wr::WrClipId& aClipId,
   if (!aParent) {
     mClipStack.push_back(wr::ScrollOrClipId(aClipId));
   } else {
-    auto it = mCacheOverride.insert({ aParent, std::vector<wr::WrClipId>() });
-    it.first->second.push_back(aClipId);
-    WRDL_LOG("Pushing override %p -> %" PRIu64 "\n", mWrState, aParent, aClipId.id);
+    PushCacheOverride(aParent, aClipId);
   }
 }
 
@@ -743,16 +742,52 @@ DisplayListBuilder::PopClip(const DisplayItemClipChain* aParent)
     MOZ_ASSERT(mClipStack.back().is<wr::WrClipId>());
     mClipStack.pop_back();
   } else {
-    auto it = mCacheOverride.find(aParent);
+    PopCacheOverride(aParent);
+  }
+  wr_dp_pop_clip(mWrState);
+}
+
+void
+DisplayListBuilder::PushCacheOverride(const DisplayItemClipChain* aParent,
+                                      const wr::WrClipId& aClipId)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const DisplayItemClipChain* i = aParent; i; i = i->mParent) {
+    auto it = mCacheOverride.insert({ i, std::vector<wr::WrClipId>() });
+    it.first->second.push_back(aClipId);
+    WRDL_LOG("Pushing override %p -> %" PRIu64 "\n", mWrState, i, aClipId.id);
+  }
+}
+
+void
+DisplayListBuilder::PopCacheOverride(const DisplayItemClipChain* aParent)
+{
+  for (const DisplayItemClipChain* i = aParent; i; i = i->mParent) {
+    auto it = mCacheOverride.find(i);
     MOZ_ASSERT(it != mCacheOverride.end());
     MOZ_ASSERT(!(it->second.empty()));
-    WRDL_LOG("Popping override %p -> %" PRIu64 "\n", mWrState, aParent, it->second.back().id);
+    WRDL_LOG("Popping override %p -> %" PRIu64 "\n", mWrState, i, it->second.back().id);
     it->second.pop_back();
     if (it->second.empty()) {
       mCacheOverride.erase(it);
     }
   }
-  wr_dp_pop_clip(mWrState);
 }
 
 Maybe<wr::WrClipId>
@@ -791,23 +826,14 @@ DisplayListBuilder::PushStickyFrame(const wr::WrStickyId& aStickyId,
   
   wr::WrClipId stickyIdAsClipId;
   stickyIdAsClipId.id = aStickyId.id;
-  auto it = mCacheOverride.insert({ aParent, std::vector<wr::WrClipId>() });
-  it.first->second.push_back(stickyIdAsClipId);
-  WRDL_LOG("Pushing override %p -> %" PRIu64 "\n", mWrState, aParent, aStickyId.id);
+  PushCacheOverride(aParent, stickyIdAsClipId);
 }
 
 void
 DisplayListBuilder::PopStickyFrame(const DisplayItemClipChain* aParent)
 {
   WRDL_LOG("PopSticky\n", mWrState);
-  auto it = mCacheOverride.find(aParent);
-  MOZ_ASSERT(it != mCacheOverride.end());
-  MOZ_ASSERT(!(it->second.empty()));
-  WRDL_LOG("Popping override %p -> %" PRIu64 "\n", mWrState, aParent, it->second.back().id);
-  it->second.pop_back();
-  if (it->second.empty()) {
-    mCacheOverride.erase(it);
-  }
+  PopCacheOverride(aParent);
   wr_dp_pop_clip(mWrState);
 }
 
