@@ -22,6 +22,16 @@ public:
     return false;
   }
 
+  bool TestOpusTryCreation(const AudioSegment& aSegment, int aSamplingRate)
+  {
+    if (TryInit(aSegment, aSamplingRate) == NS_OK) {
+      if (GetPacketDuration()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   
   
   
@@ -30,6 +40,20 @@ public:
     return mInitialized ? GetOutputSampleRate() : 0;
   }
 };
+
+static AudioSegment
+CreateTestSegment()
+{
+  RefPtr<SharedBuffer> dummyBuffer = SharedBuffer::Create(2);
+  AutoTArray<const int16_t*, 1> channels;
+  const int16_t* channelData = static_cast<const int16_t*>(dummyBuffer->Data());
+  channels.AppendElement(channelData);
+
+  AudioSegment testSegment;
+  testSegment.AppendFrames(
+    dummyBuffer.forget(), channels, 1 , PRINCIPAL_HANDLE_NONE);
+  return testSegment;
+}
 
 static bool
 TestOpusInit(int aChannels, int aSamplingRate)
@@ -75,6 +99,69 @@ TEST(Media, OpusEncoder_Init)
   EXPECT_TRUE(TestOpusInit(2, 192000));
   EXPECT_FALSE(TestOpusInit(2, 192001));
   EXPECT_FALSE(TestOpusInit(2, 200000));
+}
+
+TEST(Media, OpusEncoder_TryInit)
+{
+  {
+    
+    
+    
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment;
+    testSegment.AppendNullData(48000 * 100);
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
+
+    
+    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 48000));
+  }
+
+  {
+    
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment;
+    testSegment.AppendNullData(1);
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 48000));
+  }
+
+  {
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment = CreateTestSegment();
+    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 48000));
+  }
+
+  {
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment = CreateTestSegment();
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 7999));
+  }
+
+  {
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment = CreateTestSegment();
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 7999));
+    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 8000));
+  }
+
+  {
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment = CreateTestSegment();
+    EXPECT_FALSE(encoder.TestOpusTryCreation(testSegment, 192001));
+  }
+
+  {
+    
+    TestOpusTrackEncoder encoder;
+    AudioSegment testSegment = CreateTestSegment();
+    EXPECT_TRUE(encoder.TestOpusTryCreation(testSegment, 192000));
+  }
 }
 
 TEST(Media, OpusEncoder_Resample)
