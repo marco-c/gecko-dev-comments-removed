@@ -34,9 +34,6 @@ function performTest() {
   
   gEditor.focus();
   synthesizeKeyFromKeyTag(gDebugger.document.getElementById("tokenSearchKey"));
-  let focusedEl = Services.focus.focusedElement;
-  focusedEl = focusedEl.ownerDocument.getBindingParent(focusedEl) || focusedEl;
-  is(focusedEl, gDebugger.document.getElementById("searchbox"), "Searchbox is focused");
 
   setText(gSearchBox, "#html");
 
