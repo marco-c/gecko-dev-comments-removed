@@ -17,8 +17,9 @@ public interface Item {
 
 
 
+
     @NonNull
-    Metadata getMetadataSlow();
+    String getImageUrl();
 
     
 
