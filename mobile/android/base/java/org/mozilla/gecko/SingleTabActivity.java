@@ -76,7 +76,7 @@ public abstract class SingleTabActivity extends GeckoApp {
 
         
         if (tabToSelect != null && GeckoApplication.getSessionUUID().equals(mLastSessionUUID) &&
-                tabs.currentActivityMatchesTab(tabToSelect)) {
+                tabToSelect.matchesActivity(this)) {
             tabs.selectTab(mLastSelectedTabId);
         } else {
             
@@ -98,7 +98,7 @@ public abstract class SingleTabActivity extends GeckoApp {
 
         if (hasGeckoTab(intent)) {
             final Tab tabToSelect = tabs.getTab(intent.getIntExtra(INTENT_EXTRA_TAB_ID, INVALID_TAB_ID));
-            if (tabs.currentActivityMatchesTab(tabToSelect)) {
+            if (tabToSelect.matchesActivity(this)) {
                 
                 
                 return true;
@@ -125,7 +125,7 @@ public abstract class SingleTabActivity extends GeckoApp {
 
         final Tab tabToSelect = tabs.getTab(lastSelectedTabId);
         if (tabToSelect != null && GeckoApplication.getSessionUUID().equals(lastSessionUUID) &&
-                tabs.currentActivityMatchesTab(tabToSelect)) {
+                tabToSelect.matchesActivity(this)) {
             intent.getUnsafe().putExtra(INTENT_EXTRA_TAB_ID, lastSelectedTabId);
             intent.getUnsafe().putExtra(INTENT_EXTRA_SESSION_UUID, lastSessionUUID);
             return true;
