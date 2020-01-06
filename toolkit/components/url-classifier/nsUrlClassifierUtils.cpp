@@ -154,9 +154,14 @@ IsAllowedOnCurrentPlatform(uint32_t aThreatType)
     
     
     return ANDROID_PLATFORM == platform;
-  default:
-    return true;
+  case MALICIOUS_BINARY:
+  case CSD_DOWNLOAD_WHITELIST:
+    
+    
+    return ANDROID_PLATFORM != platform;
   }
+  
+  return true;
 }
 
 } 
