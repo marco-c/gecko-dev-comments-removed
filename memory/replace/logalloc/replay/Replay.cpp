@@ -286,7 +286,7 @@ MOZ_BEGIN_EXTERN_C
 
 
 
-#if defined(_WIN32) && !defined(MOZ_JEMALLOC4)
+#if defined(_WIN32)
 void malloc_init_hard(void);
 #endif
 
@@ -475,7 +475,7 @@ main()
   FdReader reader(0);
   Replay replay;
 
-#if defined(_WIN32) && !defined(MOZ_JEMALLOC4)
+#if defined(_WIN32)
   malloc_init_hard();
 #endif
 

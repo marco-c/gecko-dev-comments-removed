@@ -64,10 +64,6 @@
 #include "nsExceptionHandler.h"
 #endif
 
-#if defined(MOZ_JEMALLOC4)
-#include "mozmemory.h"
-#endif
-
 #ifdef XP_WIN
 #include <windows.h>
 #endif
@@ -152,18 +148,6 @@ public:
               mActive = false;
           }
       } else {
-#if defined(MOZ_JEMALLOC4)
-          if (mPurge) {
-              
-
-
-
-
-
-              Telemetry::AutoTimer<Telemetry::MEMORY_FREE_PURGED_PAGES_MS> timer;
-              jemalloc_free_dirty_pages();
-          }
-#endif
           mActive = false;
       }
       return NS_OK;
