@@ -29,11 +29,13 @@ function test() {
   var newTab = BrowserTestUtils.addTab(gBrowser);
   gBrowser.selectedTab = newTab;
   gTestBrowser = gBrowser.selectedBrowser;
-  newTab.linkedBrowser.stop()
 
-  BrowserTestUtils.browserLoaded(gTestBrowser, true ).then(MixedTest1A);
-  var url = gHttpTestRoot + "file_bug902350.html";
-  gTestBrowser.loadURI(url);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(() => {
+    
+    var url = gHttpTestRoot + "file_bug902350.html";
+    BrowserTestUtils.browserLoaded(gTestBrowser, true ).then(MixedTest1A);
+    gTestBrowser.loadURI(url);
+  });
 }
 
 
