@@ -209,7 +209,8 @@ NewConsoleOutputWrapper.prototype = {
     
     
     let promise;
-    if (waitForResponse) {
+    
+    if (waitForResponse && document.visibilityState === "visible") {
       promise = new Promise(resolve => {
         let jsterm = this.jsterm;
         jsterm.hud.on("new-messages", function onThisMessage(e, messages) {

@@ -35,6 +35,9 @@ add_task(async function() {
   await togglePref(optionsPanel, observer);
   observer.destroy();
 
+  
+  await toolbox.selectTool("webconsole");
+
   await testChangedPref(hud);
 
   Services.prefs.clearUserPref(PREF_MESSAGE_TIMESTAMP);
