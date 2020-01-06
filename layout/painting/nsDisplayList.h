@@ -5542,7 +5542,7 @@ public:
 private:
   
   
-  bool ShouldPaintOnMaskLayer(LayerManager* aManager);
+  bool CanPaintOnMaskLayer(LayerManager* aManager);
 
   nsTArray<nsRect> mDestRects;
 };
