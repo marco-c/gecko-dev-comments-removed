@@ -100,6 +100,11 @@ HTMLSourceElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                 nsIPrincipal* aMaybeScriptedPrincipal,
                                 bool aNotify)
 {
+  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::srcset) {
+    mSrcsetTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
+        this, aValue ? aValue->GetStringValue() : EmptyString(),
+        aMaybeScriptedPrincipal);
+  }
   
   
   Element *parent = nsINode::GetParentElement();
