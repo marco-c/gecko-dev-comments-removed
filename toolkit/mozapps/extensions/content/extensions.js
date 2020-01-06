@@ -3651,15 +3651,15 @@ var gDetailView = {
         whenViewLoaded(async () => {
           await this._addon.startupPromise;
 
-          let browser = await this.createOptionsBrowser(rows);
+          const browserContainer = await this.createOptionsBrowser(rows);
 
           
           
           document.addEventListener("ViewChanged", function() {
-            browser.remove();
+            browserContainer.remove();
           }, {once: true});
 
-          finish(browser);
+          finish(browserContainer);
         });
 
         if (aCallback)
@@ -3734,6 +3734,9 @@ var gDetailView = {
   },
 
   async createOptionsBrowser(parentNode) {
+    let stack = document.createElement("stack");
+    stack.setAttribute("id", "addon-options-prompts-stack");
+
     let browser = document.createElement("browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("disableglobalhistory", "true");
@@ -3762,7 +3765,8 @@ var gDetailView = {
       readyPromise = promiseEvent("load", browser, true);
     }
 
-    parentNode.appendChild(browser);
+    stack.appendChild(browser);
+    parentNode.appendChild(stack);
 
     
     browser.clientTop;
@@ -3776,7 +3780,7 @@ var gDetailView = {
           if (name === "Extension:BrowserResized")
             browser.style.height = `${data.height}px`;
           else if (name === "Extension:BrowserContentLoaded")
-            resolve(browser);
+            resolve(stack);
         },
       };
 
@@ -4130,5 +4134,20 @@ var gDragDrop = {
     }
 
     aEvent.preventDefault();
+  }
+};
+
+
+
+
+var gBrowser = {
+  getTabModalPromptBox(browser) {
+    const parentWindow = document.docShell.chromeEventHandler.ownerGlobal;
+
+    if (parentWindow.gBrowser) {
+      return parentWindow.gBrowser.getTabModalPromptBox(browser);
+    }
+
+    return null;
   }
 };

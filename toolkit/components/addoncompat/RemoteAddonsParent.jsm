@@ -441,7 +441,12 @@ var EventTargetParent = {
       
       
       let window = target.ownerGlobal;
-      if (window && target.contains(window.gBrowser)) {
+
+      
+      
+      if (window &&
+          window.gBrowser instanceof Ci.nsIDOMXULElement &&
+          target.contains(window.gBrowser)) {
         return window;
       }
     }
