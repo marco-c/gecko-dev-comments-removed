@@ -22,7 +22,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Schemas: "resource://gre/modules/Schemas.jsm",
 });
 
+
+
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
+const testEnv = {
+  expectRemote: false,
+};
+
+add_task(function check_remote() {
+  Assert.equal(WebExtensionPolicy.useRemoteWebExtensions, testEnv.expectRemote, "useRemoteWebExtensions matches");
+  Assert.equal(WebExtensionPolicy.isExtensionProcess, !testEnv.expectRemote, "testing from extension process");
+});
 
 ExtensionTestUtils.init(this);
 
