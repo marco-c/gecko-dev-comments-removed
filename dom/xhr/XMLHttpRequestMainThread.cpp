@@ -189,7 +189,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mUploadTransferred(0), mUploadTotal(0), mUploadComplete(true),
     mProgressSinceLastProgressEvent(false),
     mRequestSentTime(0), mTimeoutMilliseconds(0),
-    mErrorLoad(false), mErrorParsingXML(false),
+    mErrorLoad(ErrorType::eOK), mErrorParsingXML(false),
     mWaitingForOnStopRequest(false),
     mProgressTimerIsActive(false),
     mIsHtml(false),
@@ -942,7 +942,7 @@ XMLHttpRequestMainThread::GetStatus(ErrorResult& aRv)
     return 0;
   }
 
-  if (mErrorLoad) {
+  if (mErrorLoad != ErrorType::eOK) {
     
     nsCOMPtr<nsIJARChannel> jarChannel = GetCurrentJARChannel();
     if (jarChannel) {
@@ -1004,7 +1004,7 @@ XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
     return;
   }
 
-  if (mErrorLoad) {
+  if (mErrorLoad != ErrorType::eOK) {
     return;
   }
 
@@ -1221,7 +1221,7 @@ XMLHttpRequestMainThread::GetAllResponseHeaders(nsACString& aResponseHeaders,
     return;
   }
 
-  if (mErrorLoad) {
+  if (mErrorLoad != ErrorType::eOK) {
     return;
   }
 
@@ -1943,11 +1943,13 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
   nsresult status;
   request->GetStatus(&status);
-  mErrorLoad = mErrorLoad || NS_FAILED(status);
+  if (mErrorLoad == ErrorType::eOK && NS_FAILED(status)) {
+    mErrorLoad = ErrorType::eRequest;
+  }
 
   
   
-  if (mUpload && !mUploadComplete && !mErrorLoad && !mFlagSynchronous) {
+  if (mUpload && !mUploadComplete && mErrorLoad == ErrorType::eOK && !mFlagSynchronous) {
     StopProgressEventTimer();
 
     mUploadTransferred = mUploadTotal;
@@ -2325,7 +2327,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
     
     
 
-    mErrorLoad = true;
+    mErrorLoad = ErrorType::eUnreachable;
     mResponseXML = nullptr;
   }
 
@@ -2430,13 +2432,14 @@ XMLHttpRequestMainThread::ChangeStateToDone()
 
   
   
-  DispatchProgressEvent(this,
-                        mErrorLoad ? ProgressEventType::error :
-                                     ProgressEventType::load,
-                        mErrorLoad ? 0 : mLoadTransferred,
-                        mErrorLoad ? -1 : mLoadTotal);
+  if (mErrorLoad != ErrorType::eOK) {
+    DispatchProgressEvent(this, ProgressEventType::error, 0, -1);
+  } else {
+    DispatchProgressEvent(this, ProgressEventType::load,
+                          mLoadTransferred, mLoadTotal);
+  }
 
-  if (mErrorLoad) {
+  if (mErrorLoad != ErrorType::eOK) {
     
     
     
@@ -2785,7 +2788,7 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
     mChannel->SetNotificationCallbacks(mNotificationCallbacks);
     mChannel = nullptr;
 
-    mErrorLoad = true;
+    mErrorLoad = ErrorType::eChannelOpen;
 
     
     if (mFlagSynchronous) {
@@ -2933,7 +2936,7 @@ XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody)
   mUploadTotal = 0;
   
   mUploadComplete = true;
-  mErrorLoad = false;
+  mErrorLoad = ErrorType::eOK;
   mLoadTotal = -1;
   nsCOMPtr<nsIInputStream> uploadStream;
   nsAutoCString uploadContentType;
@@ -3445,7 +3448,7 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
       mAuthorRequestHeaders.ApplyToChannel(httpChannel);
     }
   } else {
-    mErrorLoad = true;
+    mErrorLoad = ErrorType::eRedirect;
   }
 
   mNewRedirectChannel = nullptr;
@@ -3690,7 +3693,7 @@ XMLHttpRequestMainThread::HandleProgressTimerCallback()
 
   mProgressTimerIsActive = false;
 
-  if (!mProgressSinceLastProgressEvent || mErrorLoad) {
+  if (!mProgressSinceLastProgressEvent || mErrorLoad != ErrorType::eOK) {
     return;
   }
 
