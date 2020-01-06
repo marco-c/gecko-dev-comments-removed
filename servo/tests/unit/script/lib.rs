@@ -2,11 +2,11 @@
 
 
 
-extern crate euclid;
-extern crate msg;
-extern crate script;
-extern crate servo_url;
-extern crate style;
+#[cfg(test)] extern crate euclid;
+#[cfg(test)] extern crate msg;
+#[cfg(test)] extern crate script;
+#[cfg(test)] extern crate servo_url;
+#[cfg(test)] extern crate style;
 
 #[cfg(test)] mod origin;
 #[cfg(all(test, target_pointer_width = "64"))] mod size_of;
@@ -15,3 +15,15 @@ extern crate style;
 #[cfg(test)] mod htmlareaelement;
 #[cfg(test)] mod htmlimageelement;
 
+
+
+
+
+
+
+
+
+
+
+
+pub fn trustedpromise_does_not_impl_clone() {}
