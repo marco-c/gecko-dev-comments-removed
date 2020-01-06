@@ -474,6 +474,9 @@ where
             cascade_flags.insert(SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP);
         }
         if cascade_visited.visited_dependent_only() {
+            
+            
+            
             if pseudo.is_some() || !self.element.is_link() {
                 parent_style = parent_style.map(|s| {
                     s.get_visited_style().unwrap_or(s)
