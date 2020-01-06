@@ -40,10 +40,10 @@ from __future__ import print_function
 import difflib
 import os
 import re
-import subprocess
 import sys
-import traceback
-from check_utils import get_all_toplevel_filenames
+
+from mozversioncontrol import get_repository_from_env
+
 
 
 
@@ -249,8 +249,10 @@ def check_style():
     non_js_inclnames = set()        
     js_names = dict()               
 
+    repo = get_repository_from_env()
+
     
-    for filename in get_all_toplevel_filenames():
+    for filename in repo.get_files_in_working_directory():
         for non_js_dir in non_js_dirnames:
             if filename.startswith(non_js_dir) and filename.endswith('.h'):
                 inclname = 'mozilla/' + filename.split('/')[-1]
@@ -285,7 +287,7 @@ def check_style():
 
             
             
-            with open(os.path.join('../..', filename)) as f:
+            with open(os.path.join(repo.path, filename)) as f:
                 do_file(filename, inclname, file_kind, f, all_inclnames, included_h_inclnames)
 
         edges[inclname] = included_h_inclnames
