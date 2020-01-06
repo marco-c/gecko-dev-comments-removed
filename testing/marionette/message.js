@@ -13,7 +13,6 @@ const {truncate} = Cu.import("chrome://marionette/content/format.js", {});
 this.EXPORTED_SYMBOLS = [
   "Command",
   "Message",
-  "MessageOrigin",
   "Response",
 ];
 
@@ -71,7 +70,7 @@ class Message {
 
 
 
-const MessageOrigin = {
+Message.Origin = {
   
   Client: 0,
   
@@ -130,7 +129,7 @@ class Command extends Message {
     this.onerror = null;
     this.onresult = null;
 
-    this.origin = MessageOrigin.Client;
+    this.origin = Message.Origin.Client;
     this.sent = false;
   }
 
@@ -264,7 +263,7 @@ class Response extends Message {
     this.error = null;
     this.body = ResponseBody();
 
-    this.origin = MessageOrigin.Server;
+    this.origin = Message.Origin.Server;
     this.sent = false;
   }
 
