@@ -69,81 +69,51 @@ RenderDXGITextureHostOGL::EnsureLockable()
 
   const auto& egl = &gl::sEGLLibrary;
 
+  
+  
+  
+  if (!egl->IsExtensionSupported(gl::GLLibraryEGL::NV_stream_consumer_gltexture_yuv) ||
+      !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture_nv12)) {
+    return false;
+  }
+
+  
+  EGLDeviceEXT eglDevice = nullptr;
+  egl->fQueryDisplayAttribEXT(egl->Display(), LOCAL_EGL_DEVICE_EXT, (EGLAttrib*)&eglDevice);
+  MOZ_ASSERT(eglDevice);
+  ID3D11Device* device = nullptr;
+  egl->fQueryDeviceAttribEXT(eglDevice, LOCAL_EGL_D3D11_DEVICE_ANGLE, (EGLAttrib*)&device);
+  
+  if (!device) {
+    return false;
+  }
+
+  
+  if (FAILED(device->OpenSharedResource((HANDLE)mHandle,
+                                        __uuidof(ID3D11Texture2D),
+                                        (void**)(ID3D11Texture2D**)getter_AddRefs(mTexture)))) {
+    NS_WARNING("RenderDXGITextureHostOGL::Lock(): Failed to open shared texture");
+    return false;
+  }
+
+  mTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mKeyedMutex));
+
+  
+  mStream = egl->fCreateStreamKHR(egl->Display(), nullptr);
+  MOZ_ASSERT(mStream);
+
   if (mFormat != gfx::SurfaceFormat::NV12) {
     
-    
-    
-    if (!egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_d3d_share_handle_client_buffer)) {
-      return false;
-    }
 
-    if (!mHandle) {
-      return false;
-    }
-
-    
-    EGLint pbufferAttributes[] = {
-        LOCAL_EGL_WIDTH, mSize.width,
-        LOCAL_EGL_HEIGHT, mSize.height,
-        LOCAL_EGL_TEXTURE_TARGET, LOCAL_EGL_TEXTURE_2D,
-        LOCAL_EGL_TEXTURE_FORMAT, GetEGLTextureFormat(mFormat),
-        LOCAL_EGL_MIPMAP_TEXTURE, LOCAL_EGL_FALSE,
-        LOCAL_EGL_NONE
-    };
-    mSurface = egl->fCreatePbufferFromClientBuffer(egl->Display(),
-                                                   LOCAL_EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE,
-                                                   reinterpret_cast<EGLClientBuffer>(mHandle),
-                                                   gl::GLContextEGL::Cast(mGL.get())->mConfig,
-                                                   pbufferAttributes);
-    if (!mSurface) {
-      return false;
-    }
-
-    
-    egl->fQuerySurfacePointerANGLE(egl->Display(),
-                                   mSurface,
-                                   LOCAL_EGL_DXGI_KEYED_MUTEX_ANGLE,
-                                   (void**)getter_AddRefs(mKeyedMutex));
-
-    mGL->fGenTextures(1, &mTextureHandle[0]);
+    mGL->fGenTextures(1, mTextureHandle);
     mGL->fActiveTexture(LOCAL_GL_TEXTURE0);
-    mGL->fBindTexture(LOCAL_GL_TEXTURE_2D, mTextureHandle[0]);
-    mGL->TexParams_SetClampNoMips(LOCAL_GL_TEXTURE_2D);
-    egl->fBindTexImage(egl->Display(), mSurface, LOCAL_EGL_BACK_BUFFER);
+    mGL->fBindTexture(LOCAL_GL_TEXTURE_EXTERNAL_OES, mTextureHandle[0]);
+    mGL->fTexParameteri(LOCAL_GL_TEXTURE_EXTERNAL_OES, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
+
+    MOZ_ALWAYS_TRUE(egl->fStreamConsumerGLTextureExternalAttribsNV(egl->Display(), mStream, nullptr));
+    MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureNV12ANGLE(egl->Display(), mStream, nullptr));
   } else {
     
-    
-    
-
-    if (!egl->IsExtensionSupported(gl::GLLibraryEGL::NV_stream_consumer_gltexture_yuv) ||
-        !egl->IsExtensionSupported(gl::GLLibraryEGL::ANGLE_stream_producer_d3d_texture_nv12)) {
-      return false;
-    }
-
-    
-    EGLDeviceEXT eglDevice = nullptr;
-    egl->fQueryDisplayAttribEXT(egl->Display(), LOCAL_EGL_DEVICE_EXT, (EGLAttrib*)&eglDevice);
-    MOZ_ASSERT(eglDevice);
-    ID3D11Device* device = nullptr;
-    egl->fQueryDeviceAttribEXT(eglDevice, LOCAL_EGL_D3D11_DEVICE_ANGLE, (EGLAttrib*)&device);
-    
-    if (!device) {
-      return false;
-    }
-
-    
-    if (FAILED(device->OpenSharedResource((HANDLE)mHandle,
-                                          __uuidof(ID3D11Texture2D),
-                                          (void**)(ID3D11Texture2D**)getter_AddRefs(mTexture)))) {
-      NS_WARNING("RenderDXGITextureHostOGL::Lock(): Failed to open shared texture");
-      return false;
-    }
-
-    mTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mKeyedMutex));
-
-    
-    mStream = egl->fCreateStreamKHR(egl->Display(), nullptr);
-    MOZ_ASSERT(mStream);
 
     
     EGLAttrib consumerAttributes[] = {
@@ -166,14 +136,14 @@ RenderDXGITextureHostOGL::EnsureLockable()
     mGL->fTexParameteri(LOCAL_GL_TEXTURE_EXTERNAL_OES, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
     MOZ_ALWAYS_TRUE(egl->fStreamConsumerGLTextureExternalAttribsNV(egl->Display(), mStream, consumerAttributes));
     MOZ_ALWAYS_TRUE(egl->fCreateStreamProducerD3DTextureNV12ANGLE(egl->Display(), mStream, nullptr));
-
-    
-    MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureNV12ANGLE(egl->Display(), mStream, (void*)mTexture.get(), nullptr));
-
-    
-    egl->fStreamConsumerAcquireKHR(egl->Display(), mStream);
-    MOZ_ASSERT(egl->fGetError() == LOCAL_EGL_SUCCESS);
   }
+
+  
+  MOZ_ALWAYS_TRUE(egl->fStreamPostD3DTextureNV12ANGLE(egl->Display(), mStream, (void*)mTexture.get(), nullptr));
+
+  
+  egl->fStreamConsumerAcquireKHR(egl->Display(), mStream);
+  MOZ_ASSERT(egl->fGetError() == LOCAL_EGL_SUCCESS);
 
   return true;
 }
@@ -326,7 +296,7 @@ RenderDXGIYCbCrTextureHostOGL::EnsureLockable()
     if (FAILED(device->OpenSharedResource((HANDLE)mHandles[i],
                                           __uuidof(ID3D11Texture2D),
                                           (void**)(ID3D11Texture2D**)getter_AddRefs(mTextures[i])))) {
-      NS_WARNING("RenderDXGITextureHostOGL::Lock(): Failed to open shared texture");
+      NS_WARNING("RenderDXGIYCbCrTextureHostOGL::Lock(): Failed to open shared texture");
       return false;
     }
   }
