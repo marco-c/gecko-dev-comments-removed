@@ -621,7 +621,7 @@ SourceBuffer::AdvanceIteratorOrScheduleResume(SourceBufferIterator& aIterator,
   if (MOZ_UNLIKELY(mChunks.Length() == 0)) {
     
     AddWaitingConsumer(aConsumer);
-    return aIterator.SetWaiting();
+    return aIterator.SetWaiting(!!aConsumer);
   }
 
   uint32_t iteratorChunkIdx = aIterator.mData.mIterating.mChunk;
@@ -659,7 +659,7 @@ SourceBuffer::AdvanceIteratorOrScheduleResume(SourceBufferIterator& aIterator,
   
   
   AddWaitingConsumer(aConsumer);
-  return aIterator.SetWaiting();
+  return aIterator.SetWaiting(!!aConsumer);
 }
 
 nsresult
