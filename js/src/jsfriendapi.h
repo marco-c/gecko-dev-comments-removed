@@ -435,7 +435,7 @@ ForgetSourceHook(JSContext* cx);
 
 
 extern JS_FRIEND_API(bool)
-UseInternalJobQueues(JSContext* cx);
+UseInternalJobQueues(JSContext* cx, bool cooperative = false);
 
 
 
