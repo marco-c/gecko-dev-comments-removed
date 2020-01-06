@@ -761,6 +761,7 @@ public:
   
   
   
+  
   static const nsTArray<TabChild*>& GetActiveTabs()
   {
     MOZ_ASSERT(HasActiveTabs());
@@ -793,6 +794,9 @@ protected:
                                                             const UIStateChangeType& aShowFocusRings) override;
 
   virtual mozilla::ipc::IPCResult RecvStopIMEStateManagement() override;
+
+  virtual mozilla::ipc::IPCResult RecvMenuKeyboardListenerInstalled(
+    const bool& aInstalled) override;
 
   virtual mozilla::ipc::IPCResult RecvNotifyAttachGroupedSHistory(const uint32_t& aOffset) override;
 
