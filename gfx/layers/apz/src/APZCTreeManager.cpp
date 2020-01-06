@@ -1359,7 +1359,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
       
       
-      MOZ_ASSERT(result == nsEventStatus_eConsumeNoDefault);
+      MOZ_ASSERT(result == nsEventStatus_eConsumeDoDefault ||
+                 result == nsEventStatus_eConsumeNoDefault);
 
       keyInput.mHandledByAPZ = true;
       focusSetter.MarkAsNonFocusChanging();

@@ -72,6 +72,26 @@ HasListenersForKeyEvents(nsIContent* aContent)
 }
 
 static bool
+HasListenersForNonPassiveKeyEvents(nsIContent* aContent)
+{
+  if (!aContent) {
+    return false;
+  }
+
+  WidgetEvent event(true, eVoidEvent);
+  nsTArray<EventTarget*> targets;
+  nsresult rv = EventDispatcher::Dispatch(aContent, nullptr, &event, nullptr,
+      nullptr, nullptr, &targets);
+  NS_ENSURE_SUCCESS(rv, false);
+  for (size_t i = 0; i < targets.Length(); i++) {
+    if (targets[i]->HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool
 IsEditableNode(nsINode* aNode)
 {
   return aNode && aNode->IsEditable();
@@ -116,16 +136,25 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   
   nsCOMPtr<nsIContent> focusedContent = presShell->GetFocusedContentInOurWindow();
+  nsCOMPtr<nsIContent> keyEventTarget = focusedContent;
 
   
   
-  mFocusHasKeyEventListeners =
-    HasListenersForKeyEvents(focusedContent ? focusedContent.get()
-                                            : document->GetUnfocusedKeyEventTarget());
+  if (!keyEventTarget) {
+    keyEventTarget = document->GetUnfocusedKeyEventTarget();
+  }
 
   
   
-  if (IsEditableNode(focusedContent) ||
+  if (gfxPrefs::APZKeyboardPassiveListeners()) {
+    mFocusHasKeyEventListeners = HasListenersForNonPassiveKeyEvents(keyEventTarget.get());
+  } else {
+    mFocusHasKeyEventListeners = HasListenersForKeyEvents(keyEventTarget.get());
+  }
+
+  
+  
+  if (IsEditableNode(keyEventTarget) ||
       IsEditableNode(document)) {
     FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for editable node)\n",
            aFocusSequenceNumber,
@@ -136,7 +165,7 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   }
 
   
-  if (TabParent* browserParent = TabParent::GetFrom(focusedContent)) {
+  if (TabParent* browserParent = TabParent::GetFrom(keyEventTarget)) {
     RenderFrameParent* rfp = browserParent->GetRenderFrame();
 
     

@@ -552,8 +552,14 @@ pref("media.navigator.audio.full_duplex", true);
 pref("media.peerconnection.capture_delay", 100);
 pref("media.getusermedia.playout_delay", 100);
 pref("media.navigator.audio.full_duplex", true);
+
+#ifdef NIGHTLY_BUILD
 pref("media.navigator.hardware.vp8_encode.acceleration_enabled", true);
 pref("media.navigator.hardware.vp8_encode.acceleration_remote_enabled", true);
+#else
+pref("media.navigator.hardware.vp8_encode.acceleration_enabled", false);
+pref("media.navigator.hardware.vp8_encode.acceleration_remote_enabled", false);
+#endif
 pref("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
 #elif defined(XP_LINUX)
 pref("media.peerconnection.capture_delay", 70);
@@ -714,6 +720,7 @@ pref("apz.keyboard.enabled", true);
 #else
 pref("apz.keyboard.enabled", false);
 #endif
+pref("apz.keyboard.passive-listeners", false);
 pref("apz.max_velocity_inches_per_ms", "-1.0");
 pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");

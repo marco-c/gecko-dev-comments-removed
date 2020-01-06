@@ -306,7 +306,10 @@ InputQueue::ReceiveKeyboardInput(const RefPtr<AsyncPanZoomController>& aTarget,
 
   ProcessQueue();
 
-  return nsEventStatus_eConsumeNoDefault;
+  
+  
+  return gfxPrefs::APZKeyboardPassiveListeners() ? nsEventStatus_eConsumeDoDefault
+                                                 : nsEventStatus_eConsumeNoDefault;
 }
 
 static bool

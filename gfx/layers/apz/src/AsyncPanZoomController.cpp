@@ -415,6 +415,12 @@ typedef GenericFlingAnimation FlingAnimation;
 
 
 
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -1750,7 +1756,7 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
     
     APZC_LOG("%p keyboard scrolling to snap point %s\n", this, Stringify(*snapPoint).c_str());
     SmoothScrollTo(*snapPoint);
-    return nsEventStatus_eConsumeNoDefault;
+    return nsEventStatus_eConsumeDoDefault;
   }
 
   
@@ -1775,7 +1781,7 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
                                CSSPixel::ToAppUnits(destination),
                                nsSize(velocity.x, velocity.y));
 
-  return nsEventStatus_eConsumeNoDefault;
+  return nsEventStatus_eConsumeDoDefault;
 }
 
 CSSPoint
