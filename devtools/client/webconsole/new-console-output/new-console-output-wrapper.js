@@ -38,161 +38,166 @@ function NewConsoleOutputWrapper(parentNode, jsterm, toolbox, owner, document) {
 }
 NewConsoleOutputWrapper.prototype = {
   init: function () {
-    const attachRefToHud = (id, node) => {
-      this.jsterm.hud[id] = node;
-    };
-    
-    this.parentNode.addEventListener("click", (event) => {
+    return new Promise((resolve) => {
+      const attachRefToHud = (id, node) => {
+        this.jsterm.hud[id] = node;
+      };
       
-      if (event.detail !== 1 || event.button !== 0) {
-        return;
-      }
+      this.parentNode.addEventListener("click", (event) => {
+        
+        if (event.detail !== 1 || event.button !== 0) {
+          return;
+        }
+
+        
+        let target = event.originalTarget || event.target;
+        if (target.closest("a")) {
+          return;
+        }
+
+        
+        if (target.closest("input")) {
+          return;
+        }
+
+        
+        
+        if (!target.closest(".webconsole-output-wrapper")) {
+          return;
+        }
+
+        
+        let selection = this.document.defaultView.getSelection();
+        if (selection && !selection.isCollapsed) {
+          return;
+        }
+
+        this.jsterm.focus();
+      });
+
+      let { hud } = this.jsterm;
+
+      const serviceContainer = {
+        attachRefToHud,
+        emitNewMessage: (node, messageId, timeStamp) => {
+          this.jsterm.hud.emit("new-messages", new Set([{
+            node,
+            messageId,
+            timeStamp,
+          }]));
+        },
+        hudProxy: hud.proxy,
+        openLink: url => {
+          hud.owner.openLink(url);
+        },
+        createElement: nodename => {
+          return this.document.createElement(nodename);
+        },
+        getLongString: (grip) => {
+          return hud.proxy.webConsoleClient.getString(grip);
+        },
+      };
 
       
-      let target = event.originalTarget || event.target;
-      if (target.closest("a")) {
-        return;
+      
+      
+      serviceContainer.openContextMenu = (e, message) => {
+        let { screenX, screenY, target } = e;
+
+        let messageEl = target.closest(".message");
+        let clipboardText = messageEl ? messageEl.textContent : null;
+
+        let messageVariable = target.closest(".objectBox");
+        
+        let variableText = (messageVariable
+          && !(messageEl.classList.contains("startGroup"))
+          && !(messageEl.classList.contains("startGroupCollapsed")))
+            ? messageVariable.textContent : null;
+
+        
+        let actorEl = target.closest("[data-link-actor-id]");
+        let actor = actorEl ? actorEl.dataset.linkActorId : null;
+
+        let menu = createContextMenu(this.jsterm, this.parentNode,
+          { actor, clipboardText, variableText, message, serviceContainer });
+
+        
+        menu.once("open", () => this.emit("menu-open"));
+        menu.popup(screenX, screenY, this.toolbox);
+
+        return menu;
+      };
+
+      if (this.toolbox) {
+        Object.assign(serviceContainer, {
+          onViewSourceInDebugger: frame => {
+            this.toolbox.viewSourceInDebugger(frame.url, frame.line).then(() =>
+              this.jsterm.hud.emit("source-in-debugger-opened")
+            );
+          },
+          onViewSourceInScratchpad: frame => this.toolbox.viewSourceInScratchpad(
+            frame.url,
+            frame.line
+          ),
+          onViewSourceInStyleEditor: frame => this.toolbox.viewSourceInStyleEditor(
+            frame.url,
+            frame.line
+          ),
+          openNetworkPanel: (requestId) => {
+            return this.toolbox.selectTool("netmonitor").then((panel) => {
+              return panel.panelWin.Netmonitor.inspectRequest(requestId);
+            });
+          },
+          sourceMapService: this.toolbox ? this.toolbox.sourceMapURLService : null,
+          highlightDomElement: (grip, options = {}) => {
+            return this.toolbox.highlighterUtils
+              ? this.toolbox.highlighterUtils.highlightDomValueGrip(grip, options)
+              : null;
+          },
+          unHighlightDomElement: (forceHide = false) => {
+            return this.toolbox.highlighterUtils
+              ? this.toolbox.highlighterUtils.unhighlight(forceHide)
+              : null;
+          },
+          openNodeInInspector: async (grip) => {
+            let onSelectInspector = this.toolbox.selectTool("inspector");
+            let onGripNodeToFront = this.toolbox.highlighterUtils.gripToNodeFront(grip);
+            let [
+              front,
+              inspector
+            ] = await Promise.all([onGripNodeToFront, onSelectInspector]);
+
+            let onInspectorUpdated = inspector.once("inspector-updated");
+            let onNodeFrontSet = this.toolbox.selection.setNodeFront(front, "console");
+
+            return Promise.all([onNodeFrontSet, onInspectorUpdated]);
+          }
+        });
       }
 
-      
-      if (target.closest("input")) {
-        return;
-      }
+      let childComponent = ConsoleOutput({
+        serviceContainer,
+        onFirstMeaningfulPaint: resolve
+      });
 
-      
-      
-      if (!target.closest(".webconsole-output-wrapper")) {
-        return;
-      }
+      let filterBar = FilterBar({
+        serviceContainer: {
+          attachRefToHud
+        }
+      });
 
-      
-      let selection = this.document.defaultView.getSelection();
-      if (selection && !selection.isCollapsed) {
-        return;
-      }
+      let provider = React.createElement(
+        Provider,
+        { store },
+        React.DOM.div(
+          {className: "webconsole-output-wrapper"},
+          filterBar,
+          childComponent
+      ));
+      this.body = ReactDOM.render(provider, this.parentNode);
 
       this.jsterm.focus();
     });
-
-    let { hud } = this.jsterm;
-
-    const serviceContainer = {
-      attachRefToHud,
-      emitNewMessage: (node, messageId, timeStamp) => {
-        this.jsterm.hud.emit("new-messages", new Set([{
-          node,
-          messageId,
-          timeStamp,
-        }]));
-      },
-      hudProxy: hud.proxy,
-      openLink: url => {
-        hud.owner.openLink(url);
-      },
-      createElement: nodename => {
-        return this.document.createElement(nodename);
-      },
-      getLongString: (grip) => {
-        return hud.proxy.webConsoleClient.getString(grip);
-      },
-    };
-
-    
-    
-    
-    serviceContainer.openContextMenu = (e, message) => {
-      let { screenX, screenY, target } = e;
-
-      let messageEl = target.closest(".message");
-      let clipboardText = messageEl ? messageEl.textContent : null;
-
-      let messageVariable = target.closest(".objectBox");
-      
-      let variableText = (messageVariable
-        && !(messageEl.classList.contains("startGroup"))
-        && !(messageEl.classList.contains("startGroupCollapsed")))
-          ? messageVariable.textContent : null;
-
-      
-      let actorEl = target.closest("[data-link-actor-id]");
-      let actor = actorEl ? actorEl.dataset.linkActorId : null;
-
-      let menu = createContextMenu(this.jsterm, this.parentNode,
-        { actor, clipboardText, variableText, message, serviceContainer });
-
-      
-      menu.once("open", () => this.emit("menu-open"));
-      menu.popup(screenX, screenY, this.toolbox);
-
-      return menu;
-    };
-
-    if (this.toolbox) {
-      Object.assign(serviceContainer, {
-        onViewSourceInDebugger: frame => {
-          this.toolbox.viewSourceInDebugger(frame.url, frame.line).then(() =>
-            this.jsterm.hud.emit("source-in-debugger-opened")
-          );
-        },
-        onViewSourceInScratchpad: frame => this.toolbox.viewSourceInScratchpad(
-          frame.url,
-          frame.line
-        ),
-        onViewSourceInStyleEditor: frame => this.toolbox.viewSourceInStyleEditor(
-          frame.url,
-          frame.line
-        ),
-        openNetworkPanel: (requestId) => {
-          return this.toolbox.selectTool("netmonitor").then((panel) => {
-            return panel.panelWin.Netmonitor.inspectRequest(requestId);
-          });
-        },
-        sourceMapService: this.toolbox ? this.toolbox.sourceMapURLService : null,
-        highlightDomElement: (grip, options = {}) => {
-          return this.toolbox.highlighterUtils
-            ? this.toolbox.highlighterUtils.highlightDomValueGrip(grip, options)
-            : null;
-        },
-        unHighlightDomElement: (forceHide = false) => {
-          return this.toolbox.highlighterUtils
-            ? this.toolbox.highlighterUtils.unhighlight(forceHide)
-            : null;
-        },
-        openNodeInInspector: async (grip) => {
-          let onSelectInspector = this.toolbox.selectTool("inspector");
-          let onGripNodeToFront = this.toolbox.highlighterUtils.gripToNodeFront(grip);
-          let [
-            front,
-            inspector
-          ] = await Promise.all([onGripNodeToFront, onSelectInspector]);
-
-          let onInspectorUpdated = inspector.once("inspector-updated");
-          let onNodeFrontSet = this.toolbox.selection.setNodeFront(front, "console");
-
-          return Promise.all([onNodeFrontSet, onInspectorUpdated]);
-        }
-      });
-    }
-
-    let childComponent = ConsoleOutput({serviceContainer});
-
-    let filterBar = FilterBar({
-      serviceContainer: {
-        attachRefToHud
-      }
-    });
-
-    let provider = React.createElement(
-      Provider,
-      { store },
-      React.DOM.div(
-        {className: "webconsole-output-wrapper"},
-        filterBar,
-        childComponent
-    ));
-    this.body = ReactDOM.render(provider, this.parentNode);
-
-    this.jsterm.focus();
   },
 
   dispatchMessageAdd: function (message, waitForResponse) {

@@ -76,29 +76,21 @@ NewWebConsoleFrame.prototype = {
 
 
 
-  init() {
+  async init() {
     this._initUI();
     let connectionInited = this._initConnection();
+    
+    
+    let onJsTermHistoryLoaded = this.jsterm.historyLoaded
+      .catch(() => {});
 
-    
-    
-    let allReady = this.jsterm.historyLoaded.catch(() => {}).then(() => {
-      return connectionInited;
-    });
+    await Promise.all([connectionInited, onJsTermHistoryLoaded]);
+    await this.newConsoleOutput.init();
 
-    
-    
-    
-    let notifyObservers = () => {
-      let id = WebConsoleUtils.supportsString(this.hudId);
-      if (Services.obs) {
-        Services.obs.notifyObservers(id, "web-console-created");
-      }
-    };
-    allReady.then(notifyObservers, notifyObservers)
-            .then(this.newConsoleOutput.init);
-
-    return allReady;
+    let id = WebConsoleUtils.supportsString(this.hudId);
+    if (Services.obs) {
+      Services.obs.notifyObservers(id, "web-console-created");
+    }
   },
   destroy() {
     if (this._destroyer) {
