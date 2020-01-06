@@ -14462,6 +14462,12 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
     aTriggeringPrincipal ? aTriggeringPrincipal
                          : aContent->NodePrincipal();
 
+  
+  
+  bool inOnLoadHandler = false;
+  GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+  uint32_t loadType = inOnLoadHandler ? LOAD_NORMAL_REPLACE : LOAD_LINK;
+
   nsresult rv = InternalLoad(clonedURI,                 
                              nullptr,                   
                              Nothing(),                 
@@ -14477,7 +14483,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
                              aPostDataStream,           
                              aPostDataStreamLength,     
                              aHeadersDataStream,        
-                             LOAD_LINK,                 
+                             loadType,                  
                              nullptr,                   
                              true,                      
                              VoidString(),              
