@@ -73,7 +73,7 @@ async function openNewTabAndConsole(url, clearJstermHistory = true) {
 
 function waitForMessages({ hud, messages }) {
   return new Promise(resolve => {
-    let numMatched = 0;
+    const matchedMessages = [];
     let receivedLog = hud.ui.on("new-messages",
       function messagesReceived(e, newMessages) {
         for (let message of messages) {
@@ -84,22 +84,36 @@ function waitForMessages({ hud, messages }) {
           for (let newMessage of newMessages) {
             let messageBody = newMessage.node.querySelector(".message-body");
             if (messageBody.textContent.includes(message.text)) {
-              numMatched++;
+              matchedMessages.push(newMessage);
               message.matched = true;
-              info("Matched a message with text: " + message.text +
-                ", still waiting for " + (messages.length - numMatched) + " messages");
+              const messagesLeft = messages.length - matchedMessages.length;
+              info(`Matched a message with text: "${message.text}", ` + (messagesLeft > 0
+                ? `still waiting for ${messagesLeft} messages.`
+                : `all messages received.`)
+              );
               break;
             }
           }
 
-          if (numMatched === messages.length) {
+          if (matchedMessages.length === messages.length) {
             hud.ui.off("new-messages", messagesReceived);
-            resolve(receivedLog);
+            resolve(matchedMessages);
             return;
           }
         }
       });
   });
+}
+
+
+
+
+
+
+
+async function waitForMessage(hud, text) {
+  const messages = await waitForMessages({hud, messages: [{text}]});
+  return messages[0];
 }
 
 
