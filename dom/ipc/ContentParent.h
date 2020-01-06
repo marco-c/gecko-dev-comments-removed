@@ -532,6 +532,7 @@ public:
                    const bool& aCalledFromJS,
                    const bool& aPositionSpecified,
                    const bool& aSizeSpecified,
+                   const OptionalURIParams& aURIToLoad,
                    const nsCString& aFeatures,
                    const nsCString& aBaseURI,
                    const float& aFullZoom,
@@ -687,6 +688,9 @@ private:
       const bool& aIsForBrowser) override;
   using PContentParent::SendPTestShellConstructor;
 
+  
+  
+  
   mozilla::ipc::IPCResult
   CommonCreateWindow(PBrowserParent* aThisTab,
                      bool aSetOpener,
@@ -703,7 +707,8 @@ private:
                      nsresult& aResult,
                      nsCOMPtr<nsITabParent>& aNewTabParent,
                      bool* aWindowIsNew,
-                     nsIPrincipal* aTriggeringPrincipal);
+                     nsIPrincipal* aTriggeringPrincipal,
+                     bool aLoadUri);
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
