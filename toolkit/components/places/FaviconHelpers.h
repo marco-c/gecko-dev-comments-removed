@@ -354,5 +354,35 @@ private:
   nsCOMPtr<mozIStorageConnection> mDB;
 };
 
+
+
+
+class AsyncCopyFavicons final : public Runnable
+{
+public:
+  NS_DECL_NSIRUNNABLE
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  AsyncCopyFavicons(PageData& aFromPage,
+                    PageData& aToPage,
+                    nsIFaviconDataCallback* aCallback);
+
+private:
+  PageData mFromPage;
+  PageData mToPage;
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
+};
+
 } 
 } 
