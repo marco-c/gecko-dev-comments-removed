@@ -677,6 +677,11 @@ public:
       return If((mode & S_IFMT) == S_IFCHR, Error(EPERM))
         .Else(InvalidSyscall());
     }
+
+      
+      
+    case __NR_utime:
+      return Error(EPERM);
 #endif
 
     case __NR_readlinkat:
