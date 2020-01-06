@@ -189,6 +189,13 @@ pub mod specified {
         NonNegative
     }
 
+    impl Default for AllowedLengthType {
+        #[inline]
+        fn default() -> Self {
+            AllowedLengthType::All
+        }
+    }
+
     impl AllowedLengthType {
         
         #[inline]
