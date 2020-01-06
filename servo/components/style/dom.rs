@@ -464,6 +464,28 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     
+    fn has_current_styles(&self, data: &ElementData) -> bool {
+        if self.has_snapshot() && !self.handled_snapshot() {
+            return false;
+        }
+
+        data.has_styles() &&
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        !data.restyle.hint.has_non_animation_invalidations()
+    }
+
+    
+    
     
     unsafe fn set_dirty_descendants(&self);
 
