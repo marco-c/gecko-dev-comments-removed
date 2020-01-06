@@ -8,7 +8,7 @@ package org.mozilla.gecko.tests;
 
 
 
-public class testSettingsPages extends BaseTest {
+public class testSettingsPages extends OldBaseTest {
 
     public void testSettingsPages() {
         blockForGeckoReady();

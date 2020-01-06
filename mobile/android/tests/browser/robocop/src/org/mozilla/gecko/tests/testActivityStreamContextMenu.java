@@ -30,7 +30,7 @@ import org.mozilla.gecko.activitystream.homepanel.model.TopSite;
 
 
 
-public class testActivityStreamContextMenu extends BaseTest {
+public class testActivityStreamContextMenu extends OldBaseTest {
     private static final String TEST_URL = "http://example.com/test/url";
 
     private BrowserDB db;

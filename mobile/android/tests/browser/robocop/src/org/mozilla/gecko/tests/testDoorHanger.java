@@ -17,7 +17,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 
-public class testDoorHanger extends BaseTest {
+public class testDoorHanger extends OldBaseTest {
     private boolean offlineAllowedByDefault = true;
 
     public void testDoorHanger() {

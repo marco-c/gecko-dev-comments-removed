@@ -15,7 +15,7 @@ import android.content.Context;
 
 
 
-public class testJarReader extends BaseTest {
+public class testJarReader extends OldBaseTest {
     public void testJarReader() {
         
         final String s = GeckoJarReader.computeJarURI("some[1].apk", "something/else");

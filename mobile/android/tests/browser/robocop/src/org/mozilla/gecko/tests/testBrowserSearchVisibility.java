@@ -15,7 +15,7 @@ import com.robotium.solo.Condition;
 
 
 
-public class testBrowserSearchVisibility extends BaseTest {
+public class testBrowserSearchVisibility extends OldBaseTest {
     public void testSearchSuggestions() {
         blockForGeckoReady();
 

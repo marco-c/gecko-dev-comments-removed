@@ -25,7 +25,6 @@ import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.test.IsolatedContext;
 import android.test.RenamingDelegatingContext;
 import android.test.mock.MockContentResolver;
@@ -50,7 +49,7 @@ import android.test.mock.MockContext;
 
 
 
-abstract class ContentProviderTest extends BaseTest {
+abstract class ContentProviderTest extends OldBaseTest {
     protected ContentProvider mProvider;
     protected ChangeRecordingMockContentResolver mResolver;
     protected ArrayList<Runnable> mTests;

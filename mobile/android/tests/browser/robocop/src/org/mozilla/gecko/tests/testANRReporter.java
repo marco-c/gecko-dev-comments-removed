@@ -20,7 +20,7 @@ import org.json.JSONObject;
 
 
 
-public class testANRReporter extends BaseTest {
+public class testANRReporter extends OldBaseTest {
 
     private static final String ANR_ACTION = "android.intent.action.ANR";
     private static final String PING_DIR = "saved-telemetry-pings";

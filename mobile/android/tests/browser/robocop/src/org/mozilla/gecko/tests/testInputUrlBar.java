@@ -15,7 +15,7 @@ import android.widget.EditText;
 
 
 
-public final class testInputUrlBar extends BaseTest {
+public final class testInputUrlBar extends OldBaseTest {
     private Element mUrlBarEditElement;
     private EditText mUrlBarEditView;
 

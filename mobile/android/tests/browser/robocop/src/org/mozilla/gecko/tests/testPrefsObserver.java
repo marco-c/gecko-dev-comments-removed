@@ -12,7 +12,7 @@ import org.mozilla.gecko.Actions;
 
 
 
-public class testPrefsObserver extends BaseTest {
+public class testPrefsObserver extends OldBaseTest {
     private static final String PREF_TEST_PREF = "robocop.tests.dummy";
 
     private Actions.PrefWaiter prefWaiter;

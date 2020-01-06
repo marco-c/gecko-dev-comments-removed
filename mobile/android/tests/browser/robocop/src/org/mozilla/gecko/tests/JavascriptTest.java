@@ -18,7 +18,7 @@ import android.util.Log;
 
 
 
-public class JavascriptTest extends BaseTest {
+public class JavascriptTest extends OldBaseTest {
     private static final String LOGTAG = "JavascriptTest";
     private static final String EVENT_TYPE = JavascriptBridge.EVENT_TYPE;
 

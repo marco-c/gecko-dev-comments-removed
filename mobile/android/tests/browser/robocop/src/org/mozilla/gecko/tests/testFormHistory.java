@@ -20,7 +20,7 @@ import android.net.Uri;
 
 
 
-public class testFormHistory extends BaseTest {
+public class testFormHistory extends OldBaseTest {
     private static final String DB_NAME = "formhistory.sqlite";
 
     public void testFormHistory() {
