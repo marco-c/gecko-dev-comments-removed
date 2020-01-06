@@ -758,8 +758,7 @@ function canRunInSafeMode(aAddon) {
   if (aAddon._installLocation.name == KEY_APP_TEMPORARY)
     return true;
 
-  return aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-         aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS;
+  return aAddon._installLocation.isSystem;
 }
 
 
@@ -2205,7 +2204,8 @@ XPIState.prototype = {
     
     
     let mustGetMod = (aDBAddon.visible && !aDBAddon.disabled && !this.enabled);
-    this.enabled = (aDBAddon.visible && !aDBAddon.disabled);
+
+    this.enabled = aDBAddon.visible && !aDBAddon.disabled;
     this.version = aDBAddon.version;
     
     if (aUpdated || mustGetMod) {
@@ -2248,12 +2248,11 @@ this.XPIStates = {
   sideLoadedAddons: new Map(),
 
   get size() {
-    if (!this.db) {
-      return 0;
-    }
     let count = 0;
-    for (let location of this.db.values()) {
-      count += location.size;
+    if (this.db) {
+      for (let location of this.db.values()) {
+        count += location.size;
+      }
     }
     return count;
   },
@@ -2388,10 +2387,7 @@ this.XPIStates = {
 
   getAddon(aLocation, aId) {
     let location = this.db.get(aLocation);
-    if (!location) {
-      return null;
-    }
-    return location.get(aId);
+    return location && location.get(aId);
   },
 
   
@@ -2450,14 +2446,13 @@ this.XPIStates = {
   removeAddon(aLocation, aId) {
     logger.debug("Removing XPIState for " + aLocation + ":" + aId);
     let location = this.db.get(aLocation);
-    if (!location) {
-      return;
+    if (location) {
+      location.delete(aId);
+      if (location.size == 0) {
+        this.db.delete(aLocation);
+      }
+      this.save();
     }
-    location.delete(aId);
-    if (location.size == 0) {
-      this.db.delete(aLocation);
-    }
-    this.save();
   },
 };
 
@@ -4584,10 +4579,8 @@ this.XPIProvider = {
       return false;
 
     
-    let locName = aAddon._installLocation ? aAddon._installLocation.name
-                                          : undefined;
-    if (locName == KEY_APP_SYSTEM_DEFAULTS ||
-        locName == KEY_APP_SYSTEM_ADDONS)
+    let loc = aAddon._installLocation;
+    if (loc && loc.isSystem)
       return false;
 
     if (isAddonPartOfE10SRollout(aAddon)) {
@@ -4618,10 +4611,8 @@ this.XPIProvider = {
       return false;
 
     
-    let locName = aAddon._installLocation ? aAddon._installLocation.name
-                                          : undefined;
-    if (locName == KEY_APP_SYSTEM_DEFAULTS ||
-        locName == KEY_APP_SYSTEM_ADDONS)
+    let loc = aAddon._installLocation;
+    if (loc && loc.isSystem)
       return false;
 
     return true;
@@ -4899,10 +4890,7 @@ this.XPIProvider = {
         activeAddon.bootstrapScope[name] = BOOTSTRAP_REASONS[name];
 
       
-      const features = [ "Worker", "ChromeWorker" ];
-
-      for (let feature of features)
-        activeAddon.bootstrapScope[feature] = gGlobalScope[feature];
+      Object.assign(activeAddon.bootstrapScope, {Worker, ChromeWorker});
 
       
       XPCOMUtils.defineLazyGetter(
@@ -7327,8 +7315,7 @@ AddonInternal.prototype = {
     if (!this._installLocation.locked && !this.pendingUninstall) {
       
       
-      let isSystem = (this._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-                      this._installLocation.name == KEY_APP_SYSTEM_ADDONS);
+      let isSystem = this._installLocation.isSystem;
       
       if (this.type != "experiment" &&
           !this._installLocation.isLinkedAddon(this.id) && !isSystem) {
@@ -7695,14 +7682,12 @@ AddonWrapper.prototype = {
     if (addon._installLocation.name == KEY_APP_TEMPORARY)
       return false;
 
-    return (addon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-            addon._installLocation.name == KEY_APP_SYSTEM_ADDONS);
+    return addon._installLocation.isSystem;
   },
 
   get isSystem() {
     let addon = addonFor(this);
-    return (addon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-            addon._installLocation.name == KEY_APP_SYSTEM_ADDONS);
+    return addon._installLocation.isSystem;
   },
 
   
@@ -8069,6 +8054,9 @@ class DirectoryInstallLocation {
     this._scope = aScope
     this._IDToFileMap = {};
     this._linkedAddons = [];
+
+    this.isSystem = (aName == KEY_APP_SYSTEM_ADDONS ||
+                     aName == KEY_APP_SYSTEM_DEFAULTS);
 
     if (!aDirectory || !aDirectory.exists())
       return;
