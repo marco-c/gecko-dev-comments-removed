@@ -154,7 +154,7 @@ function requestsReducer(state = Requests(), action) {
       
       
       
-      return closeCustomRequest(state.set("preselectedId", action.id));
+      return closeCustomRequest({...state, preselectedId: action.id});
     }
 
     
