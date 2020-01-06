@@ -250,30 +250,6 @@ private:
   nsChangeHint mComputedHint;
 };
 
-
-
-static nsIFrame*
-FindFirstLetterFrameForElement(const Element* aElement)
-{
-  nsIFrame* frame = aElement->GetPrimaryFrame();
-  if (!frame) {
-    return nullptr;
-  }
-  
-  
-  frame = frame->GetContentInsertionFrame();
-  if (!frame) {
-    
-    return nullptr;
-  }
-
-  if (!frame->IsFrameOfType(nsIFrame::eBlockFrame)) {
-    return nullptr;
-  }
-
-  return static_cast<nsBlockFrame*>(frame)->GetFirstLetter();
-}
-
 static void
 UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
 {
@@ -591,11 +567,8 @@ ServoRestyleManager::FrameForPseudoElement(const Element* aElement,
     return pseudoElement ? nsLayoutUtils::GetStyleFrame(pseudoElement) : nullptr;
   }
 
-  if (aPseudoTagOrNull == nsCSSPseudoElements::firstLetter) {
-    return FindFirstLetterFrameForElement(aElement);
-  }
-
-  if (aPseudoTagOrNull == nsCSSPseudoElements::firstLine) {
+  if (aPseudoTagOrNull == nsCSSPseudoElements::firstLine ||
+      aPseudoTagOrNull == nsCSSPseudoElements::firstLetter) {
     
     return nullptr;
   }
