@@ -1841,7 +1841,7 @@ public abstract class GeckoApp extends GeckoActivity
             startActivity(settingsIntent);
         }
 
-        mPromptService = new PromptService(this);
+        mPromptService = new PromptService(this, getAppEventDispatcher());
 
         
         
