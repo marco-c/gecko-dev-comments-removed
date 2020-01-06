@@ -2103,6 +2103,15 @@ Layer::RemoveUserData(void* aKey)
 }
 
 void
+Layer::SetManager(LayerManager* aManager, HostLayer* aSelf)
+{
+  
+  MOZ_ASSERT(aSelf);
+  MOZ_ASSERT(aSelf->GetLayer() == this);
+  mManager = aManager;
+}
+
+void
 PaintedLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 {
   Layer::PrintInfo(aStream, aPrefix);
