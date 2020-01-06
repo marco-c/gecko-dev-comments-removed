@@ -86,7 +86,6 @@ private:
   
   dom::MediaSource* mMediaSource;
   RefPtr<MediaSourceDemuxer> mDemuxer;
-  RefPtr<MediaFormatReader> mReader;
   MediaEventProducer<void> mWaitingForKeyEvent;
 
   bool mEnded;

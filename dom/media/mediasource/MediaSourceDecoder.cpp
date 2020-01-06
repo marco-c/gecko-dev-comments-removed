@@ -245,7 +245,9 @@ void
 MediaSourceDecoder::GetMozDebugReaderData(nsACString& aString)
 {
   if (mReader && mDemuxer) {
-    mReader->GetMozDebugReaderData(aString);
+    
+    auto reader = static_cast<MediaFormatReader*>(mReader.get());
+    reader->GetMozDebugReaderData(aString);
     mDemuxer->GetMozDebugReaderData(aString);
   }
 }
