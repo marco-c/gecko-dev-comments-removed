@@ -457,24 +457,25 @@ StyleSheet::EnsureUniqueInner()
   mInner->RemoveSheet(this);
   mInner = clone;
 
-  
-  
-  
-  
-  
-  
   if (CSSStyleSheet* geckoSheet = GetAsGecko()) {
+    
+    
+    
+    
+    
+    
     geckoSheet->ClearRuleCascades();
+  } else {
+    
+    
+    
+    AsServo()->BuildChildListAfterInnerClone();
   }
 
   
   
   
   for (StyleSetHandle& setHandle : mStyleSets) {
-    if (ServoStyleSet* servoSet = setHandle->GetAsServo()) {
-      MOZ_ASSERT(IsServo(), "Only servo sheets should be in servo stylesets.");
-      servoSet->UpdateStyleSheet(GetAsServo());
-    }
     setHandle->SetNeedsRestyleAfterEnsureUniqueInner();
   }
 }
@@ -718,9 +719,16 @@ StyleSheet::ClearAssociatedDocument()
 void
 StyleSheet::PrependStyleSheet(StyleSheet* aSheet)
 {
-  NS_PRECONDITION(nullptr != aSheet, "null arg");
-
   WillDirty();
+  PrependStyleSheetSilently(aSheet);
+  DidDirty();
+}
+
+void
+StyleSheet::PrependStyleSheetSilently(StyleSheet* aSheet)
+{
+  MOZ_ASSERT(aSheet);
+
   aSheet->mNext = SheetInfo().mFirstChild;
   SheetInfo().mFirstChild = aSheet;
 
@@ -728,7 +736,6 @@ StyleSheet::PrependStyleSheet(StyleSheet* aSheet)
   
   aSheet->mParent = this;
   aSheet->SetAssociatedDocument(mDocument, mDocumentAssociationMode);
-  DidDirty();
 }
 
 size_t

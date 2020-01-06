@@ -493,6 +493,38 @@ Gecko_GetUnvisitedLinkAttrDeclarationBlock(RawGeckoElementBorrowed aElement)
   return AsRefRawStrong(sheet->GetServoUnvisitedLinkDecl());
 }
 
+ServoStyleSheet* Gecko_StyleSheet_Clone(
+    const ServoStyleSheet* aSheet,
+    const ServoStyleSheet* aNewParentSheet)
+{
+  MOZ_ASSERT(aSheet);
+  MOZ_ASSERT(aSheet->GetParentSheet(), "Should only be used for @import");
+  MOZ_ASSERT(aNewParentSheet, "Wat");
+
+  RefPtr<StyleSheet> newSheet =
+    aSheet->Clone(nullptr, nullptr, nullptr, nullptr);
+
+  
+  
+  
+  
+  
+  
+  return static_cast<ServoStyleSheet*>(newSheet.forget().take());
+}
+
+void
+Gecko_StyleSheet_AddRef(const ServoStyleSheet* aSheet)
+{
+  const_cast<ServoStyleSheet*>(aSheet)->AddRef();
+}
+
+void
+Gecko_StyleSheet_Release(const ServoStyleSheet* aSheet)
+{
+  const_cast<ServoStyleSheet*>(aSheet)->Release();
+}
+
 RawServoDeclarationBlockStrongBorrowedOrNull
 Gecko_GetVisitedLinkAttrDeclarationBlock(RawGeckoElementBorrowed aElement)
 {
@@ -2337,7 +2369,7 @@ Gecko_GetAppUnitsPerPhysicalInch(RawGeckoPresContextBorrowed aPresContext)
   return presContext->DeviceContext()->AppUnitsPerPhysicalInch();
 }
 
-void
+ServoStyleSheet*
 Gecko_LoadStyleSheet(css::Loader* aLoader,
                      ServoStyleSheet* aParent,
                      css::LoaderReusableStyleSheets* aReusableSheets,
@@ -2351,23 +2383,35 @@ Gecko_LoadStyleSheet(css::Loader* aLoader,
   MOZ_ASSERT(aParent, "Only used for @import, so parent should exist!");
   MOZ_ASSERT(aURLString, "Invalid URLs shouldn't be loaded!");
   MOZ_ASSERT(aBaseURLData, "Need base URL data");
-  RefPtr<dom::MediaList> media = new ServoMediaList(aMediaList.Consume());
 
+  RefPtr<dom::MediaList> media = new ServoMediaList(aMediaList.Consume());
   nsDependentCSubstring urlSpec(reinterpret_cast<const char*>(aURLString),
                                 aURLStringLength);
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), urlSpec, nullptr,
                           aBaseURLData->BaseURI());
 
-  if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    return;
+  StyleSheet* previousFirstChild = aParent->GetFirstChild();
+  if (NS_SUCCEEDED(rv)) {
+    rv = aLoader->LoadChildSheet(aParent, uri, media, nullptr, aReusableSheets);
   }
 
-  aLoader->LoadChildSheet(aParent, uri, media, nullptr, aReusableSheets);
+  if (NS_FAILED(rv) ||
+      !aParent->GetFirstChild() ||
+      aParent->GetFirstChild() == previousFirstChild) {
+    
+    
+    
+    
+    RefPtr<ServoStyleSheet> emptySheet =
+      aParent->CreateEmptyChildSheet(media.forget());
+    aParent->PrependStyleSheet(emptySheet);
+    return emptySheet.forget().take();
+  }
+
+  RefPtr<ServoStyleSheet> sheet =
+    static_cast<ServoStyleSheet*>(aParent->GetFirstChild());
+  return sheet.forget().take();
 }
 
 const nsMediaFeature*
