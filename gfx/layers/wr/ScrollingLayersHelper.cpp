@@ -21,7 +21,6 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
   : mLayer(aLayer)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
-  , mPushedClipAndScroll(false)
 {
   if (!mLayer->WrManager()->AsyncPanZoomEnabled()) {
     
@@ -93,96 +92,9 @@ ScrollingLayersHelper::ScrollingLayersHelper(nsDisplayItem* aItem,
   : mLayer(nullptr)
   , mBuilder(&aBuilder)
   , mPushedLayerLocalClip(false)
-  , mPushedClipAndScroll(false)
 {
-  int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
-
-  
-  
-  
-  
-  
-  
-  const ActiveScrolledRoot* leafmostASR = aItem->GetActiveScrolledRoot();
-  if (aItem->GetClipChain()) {
-    leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR,
-        aItem->GetClipChain()->mASR);
-  }
-  DefineAndPushScrollLayers(aItem, leafmostASR,
-      aItem->GetClipChain(), aBuilder, auPerDevPixel, aStackingContext, aCache);
-
-  
-  
-  
-  
-  
   DefineAndPushChain(aItem->GetClipChain(), aBuilder, aStackingContext,
-      auPerDevPixel, aCache);
-
-  
-  
-  
-  
-  
-  FrameMetrics::ViewID scrollId = aItem->GetActiveScrolledRoot()
-      ? nsLayoutUtils::ViewIDForASR(aItem->GetActiveScrolledRoot())
-      : FrameMetrics::NULL_SCROLL_ID;
-  if (aBuilder.TopmostScrollId() != Some(scrollId)) {
-    Maybe<wr::WrClipId> clipId = mBuilder->TopmostClipId();
-    mBuilder->PushClipAndScrollInfo(scrollId, clipId.ptrOr(nullptr));
-    mPushedClipAndScroll = true;
-  }
-}
-
-void
-ScrollingLayersHelper::DefineAndPushScrollLayers(nsDisplayItem* aItem,
-                                                 const ActiveScrolledRoot* aAsr,
-                                                 const DisplayItemClipChain* aChain,
-                                                 wr::DisplayListBuilder& aBuilder,
-                                                 int32_t aAppUnitsPerDevPixel,
-                                                 const StackingContextHelper& aStackingContext,
-                                                 WebRenderLayerManager::ClipIdMap& aCache)
-{
-  if (!aAsr) {
-    return;
-  }
-  Maybe<ScrollMetadata> metadata = aAsr->mScrollableFrame->ComputeScrollMetadata(
-      nullptr, aItem->ReferenceFrame(), ContainerLayerParameters(), nullptr);
-  MOZ_ASSERT(metadata);
-  FrameMetrics::ViewID scrollId = metadata->GetMetrics().GetScrollId();
-  if (aBuilder.TopmostScrollId() == Some(scrollId)) {
-    
-    return;
-  }
-
-  
-  
-  
-  
-  const DisplayItemClipChain* asrClippedBy = aChain;
-  while (asrClippedBy &&
-         ActiveScrolledRoot::PickAncestor(asrClippedBy->mASR, aAsr) == aAsr) {
-    asrClippedBy = asrClippedBy->mParent;
-  }
-
-  
-  
-  DefineAndPushScrollLayers(aItem, aAsr->mParent, asrClippedBy, aBuilder,
-      aAppUnitsPerDevPixel, aStackingContext, aCache);
-
-  
-  
-  
-  
-  DefineAndPushChain(asrClippedBy, aBuilder, aStackingContext,
-      aAppUnitsPerDevPixel, aCache);
-  
-  
-  
-  
-  if (PushScrollLayer(metadata->GetMetrics(), aStackingContext)) {
-    mPushedClips.push_back(wr::ScrollOrClipId(scrollId));
-  }
+      aItem->Frame()->PresContext()->AppUnitsPerDevPixel(), aCache);
 }
 
 void
@@ -300,17 +212,10 @@ ScrollingLayersHelper::~ScrollingLayersHelper()
 {
   if (!mLayer) {
     
-    if (mPushedClipAndScroll) {
-      mBuilder->PopClipAndScrollInfo();
-    }
     while (!mPushedClips.empty()) {
       wr::ScrollOrClipId id = mPushedClips.back();
-      if (id.is<wr::WrClipId>()) {
-        mBuilder->PopClip();
-      } else {
-        MOZ_ASSERT(id.is<FrameMetrics::ViewID>());
-        mBuilder->PopScrollLayer();
-      }
+      MOZ_ASSERT(id.is<wr::WrClipId>());
+      mBuilder->PopClip();
       mPushedClips.pop_back();
     }
     return;
