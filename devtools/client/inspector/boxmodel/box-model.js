@@ -127,16 +127,19 @@ BoxModel.prototype = {
     }
 
     let lastRequest = Task.spawn((function* () {
-      if (!(this.isPanelVisible() &&
-          this.inspector.selection.isConnected() &&
-          this.inspector.selection.isElementNode())) {
+      if (!this.inspector ||
+          !this.isPanelVisible() ||
+          !this.inspector.selection.isConnected() ||
+          !this.inspector.selection.isElementNode()) {
         return null;
       }
 
       let node = this.inspector.selection.nodeFront;
+
       let layout = yield this.inspector.pageStyle.getLayout(node, {
         autoMargins: true,
       });
+
       let styleEntries = yield this.inspector.pageStyle.getApplied(node, {
         
         skipPseudo: true
@@ -146,12 +149,13 @@ BoxModel.prototype = {
       
       
       let isPositionEditable = yield this.inspector.pageStyle.isPositionEditable(node);
+
       layout = Object.assign({}, layout, {
         isPositionEditable,
       });
 
-      const actorCanGetOffSetParent
-        = yield this.inspector.target.actorHasMethod("domwalker", "getOffsetParent");
+      const actorCanGetOffSetParent =
+        yield this.inspector.target.actorHasMethod("domwalker", "getOffsetParent");
 
       if (actorCanGetOffSetParent) {
         

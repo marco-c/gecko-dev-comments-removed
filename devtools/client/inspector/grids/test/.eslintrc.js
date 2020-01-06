@@ -1,0 +1,9 @@
+"use strict";
+
+module.exports = {
+  
+  "extends": "../../../../.eslintrc.mochitests.js",
+  "globals": {
+    "waitUntilState": true
+  }
+};
