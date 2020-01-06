@@ -726,6 +726,7 @@ CustomizeMode.prototype = {
       
       let bundle = this.document.getElementById("bundle_browser");
       const kLabelClass = "customization-tipPanel-link";
+      
       messageNode.innerHTML = bundle.getFormattedString("customizeTips.tip0", [
         "<label class=\"customization-tipPanel-em\" value=\"" +
           bundle.getString("customizeTips.tip0.hint") + "\"/>",
@@ -803,12 +804,6 @@ CustomizeMode.prototype = {
     CustomizableUI.addWidgetToArea(aNode.id, panel);
     if (!this._customizing) {
       CustomizableUI.dispatchToolboxEvent("customizationchange");
-    }
-
-    if (AppConstants.MOZ_PHOTON_ANIMATIONS &&
-        Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
-      let overflowButton = this.document.getElementById("nav-bar-overflow-button");
-      overflowButton.setAttribute("animate", "true");
     }
   },
 

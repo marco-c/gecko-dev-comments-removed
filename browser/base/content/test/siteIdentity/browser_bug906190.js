@@ -40,6 +40,7 @@ async function doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefres
 
     
     let mainDiv = content.document.createElement("div");
+    
     mainDiv.innerHTML =
       '<p><a id="linkToOpenInNewTab" href="' + childTabSpec + '">Link</a></p>';
     content.document.body.appendChild(mainDiv);

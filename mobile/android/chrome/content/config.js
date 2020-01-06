@@ -597,6 +597,7 @@ Pref.prototype = {
       this.li.setAttribute("contextmenu", "prefs-context-menu");
 
       
+      
       this.li.innerHTML =
         "<div class='pref-name' " +
             "onclick='AboutConfig.selectOrToggleBoolPref(event);'>" +

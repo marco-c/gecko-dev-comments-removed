@@ -819,6 +819,7 @@ Editor.prototype = {
 
     let marker = cm.getWrapperElement().ownerDocument.createElement("div");
     marker.className = markerClass;
+    
     marker.innerHTML = content;
     cm.setGutterMarker(info.line, gutterName, marker);
   },

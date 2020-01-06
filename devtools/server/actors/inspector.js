@@ -1997,6 +1997,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     if (rawNode.nodeType !== rawNode.ownerDocument.ELEMENT_NODE) {
       throw new Error("Can only change innerHTML to element nodes");
     }
+    
     rawNode.innerHTML = value;
   },
 
@@ -2036,12 +2037,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       if (parsedDOM.head.innerHTML === "") {
         parentNode.replaceChild(parsedDOM.body, rawNode);
       } else {
+      
         rawNode.outerHTML = value;
       }
     } else if (rawNode.tagName === "HEAD") {
       if (parsedDOM.body.innerHTML === "") {
         parentNode.replaceChild(parsedDOM.head, rawNode);
       } else {
+        
         rawNode.outerHTML = value;
       }
     } else if (node.isDocumentElement()) {
@@ -2065,6 +2068,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       rawNode.replaceChild(parsedDOM.head, rawNode.querySelector("head"));
       rawNode.replaceChild(parsedDOM.body, rawNode.querySelector("body"));
     } else {
+      
       rawNode.outerHTML = value;
     }
   },

@@ -636,6 +636,7 @@ function prompt(aBrowser, aRequest) {
               string = bundle.getFormattedString("getUserMedia.shareFirefoxWarning.message",
                                                  [brand, learnMore]);
             }
+            
             warning.innerHTML = string;
           }
 
