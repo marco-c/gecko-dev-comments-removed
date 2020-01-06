@@ -253,23 +253,28 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
 
     
     if (RefPtr<RotatedBuffer> frontBuffer = GetFrontBuffer()) {
-      RefPtr<CapturedBufferState> bufferState = new CapturedBufferState();
+      nsIntRegion updateRegion = newBuffer->BufferRect();
+      updateRegion.Sub(updateRegion, result.mRegionToDraw);
 
-      bufferState->mBufferCopy = Some(CapturedBufferState::Copy {
-        frontBuffer->ShallowCopy(),
-        newBuffer->ShallowCopy(),
-        newBuffer->BufferRect(),
-      });
+      if (!updateRegion.IsEmpty()) {
+        RefPtr<CapturedBufferState> bufferState = new CapturedBufferState();
 
-      
-      
-      if (asyncPaint) {
-        MOZ_ASSERT(!result.mBufferState);
-        result.mBufferState = bufferState;
-      } else {
-        if (!bufferState->PrepareBuffer()) {
-          gfxCriticalNote << "Failed to copy front buffer to back buffer.";
-          return result;
+        bufferState->mBufferCopy = Some(CapturedBufferState::Copy {
+          frontBuffer->ShallowCopy(),
+          newBuffer->ShallowCopy(),
+          updateRegion.GetBounds(),
+        });
+
+        
+        
+        if (asyncPaint) {
+          MOZ_ASSERT(!result.mBufferState);
+          result.mBufferState = bufferState;
+        } else {
+          if (!bufferState->PrepareBuffer()) {
+            gfxCriticalNote << "Failed to copy front buffer to back buffer.";
+            return result;
+          }
         }
       }
 
