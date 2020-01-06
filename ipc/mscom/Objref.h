@@ -8,6 +8,9 @@
 #define mozilla_mscom_Objref_h
 
 #include "mozilla/NotNull.h"
+#include "mozilla/RefPtr.h"
+
+#include <guiddef.h>
 
 struct IStream;
 
@@ -38,6 +41,15 @@ StripHandlerFromOBJREF(NotNull<IStream*> aStream,
 
 uint32_t
 GetOBJREFSize(NotNull<IStream*> aStream);
+
+
+
+
+
+
+
+bool
+SetIID(NotNull<IStream*> aStream, const uint64_t aStart, REFIID aNewIid);
 
 } 
 } 

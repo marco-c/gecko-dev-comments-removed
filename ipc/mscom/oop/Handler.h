@@ -14,6 +14,7 @@
 #include <objidl.h>
 
 #include "mozilla/mscom/Aggregation.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 
 
@@ -79,6 +80,11 @@ public:
 
 
   virtual REFIID MarshalAs(REFIID aRequestedIid) { return aRequestedIid; }
+
+  virtual HRESULT GetMarshalInterface(REFIID aMarshalAsIid,
+                                      NotNull<IUnknown*> aProxy,
+                                      NotNull<IID*> aOutIid,
+                                      NotNull<IUnknown**> aOutUnk);
 
   
 
