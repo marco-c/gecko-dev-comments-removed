@@ -632,6 +632,9 @@ pref("media.video_stats.enabled", true);
 pref("media.decoder.recycle.enabled", false);
 
 
+pref("media.decoder.skip-to-next-key-frame.enabled", true);
+
+
 
 pref("media.cubeb.log_level", "");
 
