@@ -230,8 +230,6 @@ pref("extensions.compatability.locales.buildid", "0");
 
 pref("extensions.installDistroAddons", false);
 
-pref("extensions.webextPermissionPrompts", true);
-
 
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; object-src 'self' https://* moz-extension: blob: filesystem:;");
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
@@ -740,10 +738,6 @@ pref("media.stagefright.omxcodec.flags", 0);
 
 
 pref("dom.event.touch.coalescing.enabled", false);
-
-
-
-pref("memory.free_dirty_pages", true);
 
 pref("layout.framevisibility.numscrollportwidths", 1);
 pref("layout.framevisibility.numscrollportheights", 1);
