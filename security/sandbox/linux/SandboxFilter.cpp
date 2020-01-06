@@ -791,9 +791,6 @@ public:
         .ElseIf(request == TCGETS, Error(ENOTTY))
         
         
-        .ElseIf(request == FIONREAD, Allow())
-        
-        
         .ElseIf(shifted_type != kTtyIoctls, Allow())
         .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
     }
@@ -920,11 +917,14 @@ public:
       
       return Error(ECHILD);
 
-    case __NR_eventfd2:
+      
+      
+      
     case __NR_inotify_init:
     case __NR_inotify_init1:
-    case __NR_inotify_add_watch:
-    case __NR_inotify_rm_watch:
+      return Error(ENOSYS);
+
+    case __NR_eventfd2:
       return Allow();
 
 #ifdef __NR_memfd_create
