@@ -36,18 +36,30 @@ MillisecondsSinceStartup()
 enum PromiseHandler {
     PromiseHandlerIdentity = 0,
     PromiseHandlerThrower,
-    PromiseHandlerAsyncFunctionAwaitFulfilled,
-    PromiseHandlerAsyncFunctionAwaitRejected,
-    PromiseHandlerAsyncGeneratorAwaitFulfilled,
-    PromiseHandlerAsyncGeneratorAwaitRejected,
+
+    
+    PromiseHandlerAsyncFunctionAwaitedFulfilled,
+    PromiseHandlerAsyncFunctionAwaitedRejected,
+
+    
+    PromiseHandlerAsyncGeneratorAwaitedFulfilled,
+    PromiseHandlerAsyncGeneratorAwaitedRejected,
+
+    
+    PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled,
+    PromiseHandlerAsyncGeneratorResumeNextReturnRejected,
+
+    
+    PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled,
+    PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected,
 
     
     
     
     
     
-    PromiseHandlerAsyncIteratorValueUnwrapDone,
-    PromiseHandlerAsyncIteratorValueUnwrapNotDone,
+    PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone,
+    PromiseHandlerAsyncFromSyncIteratorValueUnwrapNotDone,
 };
 
 enum ResolutionMode {
@@ -197,8 +209,8 @@ enum ReactionRecordSlots {
 #define REACTION_FLAG_RESOLVED                  0x1
 #define REACTION_FLAG_FULFILLED                 0x2
 #define REACTION_FLAG_IGNORE_DEFAULT_RESOLUTION 0x4
-#define REACTION_FLAG_ASYNC_FUNCTION_AWAIT      0x8
-#define REACTION_FLAG_ASYNC_GENERATOR_AWAIT     0x10
+#define REACTION_FLAG_ASYNC_FUNCTION            0x8
+#define REACTION_FLAG_ASYNC_GENERATOR           0x10
 
 
 class PromiseReactionRecord : public NativeObject
@@ -225,28 +237,28 @@ class PromiseReactionRecord : public NativeObject
             flags |= REACTION_FLAG_FULFILLED;
         setFixedSlot(ReactionRecordSlot_Flags, Int32Value(flags));
     }
-    void setIsAsyncFunctionAwait() {
+    void setIsAsyncFunction() {
         int32_t flags = this->flags();
-        flags |= REACTION_FLAG_ASYNC_FUNCTION_AWAIT;
+        flags |= REACTION_FLAG_ASYNC_FUNCTION;
         setFixedSlot(ReactionRecordSlot_Flags, Int32Value(flags));
     }
-    bool isAsyncFunctionAwait() {
+    bool isAsyncFunction() {
         int32_t flags = this->flags();
-        return flags & REACTION_FLAG_ASYNC_FUNCTION_AWAIT;
+        return flags & REACTION_FLAG_ASYNC_FUNCTION;
     }
-    void setIsAsyncGeneratorAwait(Handle<AsyncGeneratorObject*> asyncGenObj) {
+    void setIsAsyncGenerator(Handle<AsyncGeneratorObject*> asyncGenObj) {
         int32_t flags = this->flags();
-        flags |= REACTION_FLAG_ASYNC_GENERATOR_AWAIT;
+        flags |= REACTION_FLAG_ASYNC_GENERATOR;
         setFixedSlot(ReactionRecordSlot_Flags, Int32Value(flags));
 
         setFixedSlot(ReactionRecordSlot_Generator, ObjectValue(*asyncGenObj));
     }
-    bool isAsyncGeneratorAwait() {
+    bool isAsyncGenerator() {
         int32_t flags = this->flags();
-        return flags & REACTION_FLAG_ASYNC_GENERATOR_AWAIT;
+        return flags & REACTION_FLAG_ASYNC_GENERATOR;
     }
     AsyncGeneratorObject* asyncGenerator() {
-        MOZ_ASSERT(isAsyncGeneratorAwait());
+        MOZ_ASSERT(isAsyncGenerator());
         return &getFixedSlot(ReactionRecordSlot_Generator).toObject()
                                                           .as<AsyncGeneratorObject>();
     }
@@ -859,10 +871,10 @@ TriggerPromiseReactions(JSContext* cx, HandleValue reactionsVal, JS::PromiseStat
 }
 
 static MOZ_MUST_USE bool
-AsyncFunctionAwaitPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
-                                     MutableHandleValue rval)
+AsyncFunctionPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
+                                MutableHandleValue rval)
 {
-    MOZ_ASSERT(reaction->isAsyncFunctionAwait());
+    MOZ_ASSERT(reaction->isAsyncFunction());
 
     RootedValue handlerVal(cx, reaction->handler());
     RootedValue argument(cx, reaction->handlerArg());
@@ -870,15 +882,14 @@ AsyncFunctionAwaitPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord
     RootedValue generatorVal(cx, resultPromise->getFixedSlot(PromiseSlot_AwaitGenerator));
 
     int32_t handlerNum = int32_t(handlerVal.toNumber());
-    MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFunctionAwaitFulfilled ||
-               handlerNum == PromiseHandlerAsyncFunctionAwaitRejected);
 
     
     
-    if (handlerNum == PromiseHandlerAsyncFunctionAwaitFulfilled) {
+    if (handlerNum == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
         if (!AsyncFunctionAwaitedFulfilled(cx, resultPromise, generatorVal, argument))
             return false;
     } else {
+        MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFunctionAwaitedRejected);
         if (!AsyncFunctionAwaitedRejected(cx, resultPromise, generatorVal, argument))
             return false;
     }
@@ -888,26 +899,47 @@ AsyncFunctionAwaitPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord
 }
 
 static MOZ_MUST_USE bool
-AsyncGeneratorAwaitPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
-                                      MutableHandleValue rval)
+AsyncGeneratorPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
+                                 MutableHandleValue rval)
 {
-    MOZ_ASSERT(reaction->isAsyncGeneratorAwait());
+    MOZ_ASSERT(reaction->isAsyncGenerator());
 
     RootedValue handlerVal(cx, reaction->handler());
     RootedValue argument(cx, reaction->handlerArg());
     Rooted<AsyncGeneratorObject*> asyncGenObj(cx, reaction->asyncGenerator());
 
     int32_t handlerNum = int32_t(handlerVal.toNumber());
-    MOZ_ASSERT(handlerNum == PromiseHandlerAsyncGeneratorAwaitFulfilled ||
-               handlerNum == PromiseHandlerAsyncGeneratorAwaitRejected);
 
     
     
-    if (handlerNum == PromiseHandlerAsyncGeneratorAwaitFulfilled) {
+    if (handlerNum == PromiseHandlerAsyncGeneratorAwaitedFulfilled) {
+        
         if (!AsyncGeneratorAwaitedFulfilled(cx, asyncGenObj, argument))
             return false;
-    } else {
+    } else if (handlerNum == PromiseHandlerAsyncGeneratorAwaitedRejected) {
+        
         if (!AsyncGeneratorAwaitedRejected(cx, asyncGenObj, argument))
+            return false;
+    } else if (handlerNum == PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled) {
+        asyncGenObj->setCompleted();
+        
+        if (!AsyncGeneratorResolve(cx, asyncGenObj, argument, true))
+            return false;
+    } else if (handlerNum == PromiseHandlerAsyncGeneratorResumeNextReturnRejected) {
+        asyncGenObj->setCompleted();
+        
+        if (!AsyncGeneratorReject(cx, asyncGenObj, argument))
+            return false;
+    } else if (handlerNum == PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled) {
+        asyncGenObj->setExecuting();
+        
+        if (!AsyncGeneratorYieldReturnAwaitedFulfilled(cx, asyncGenObj, argument))
+            return false;
+    } else {
+        MOZ_ASSERT(handlerNum == PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected);
+        asyncGenObj->setExecuting();
+        
+        if (!AsyncGeneratorYieldReturnAwaitedRejected(cx, asyncGenObj, argument))
             return false;
     }
 
@@ -958,10 +990,10 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 
     
     Rooted<PromiseReactionRecord*> reaction(cx, &reactionObj->as<PromiseReactionRecord>());
-    if (reaction->isAsyncFunctionAwait())
-        return AsyncFunctionAwaitPromiseReactionJob(cx, reaction, args.rval());
-    if (reaction->isAsyncGeneratorAwait())
-        return AsyncGeneratorAwaitPromiseReactionJob(cx, reaction, args.rval());
+    if (reaction->isAsyncFunction())
+        return AsyncFunctionPromiseReactionJob(cx, reaction, args.rval());
+    if (reaction->isAsyncGenerator())
+        return AsyncGeneratorPromiseReactionJob(cx, reaction, args.rval());
 
     
     RootedValue handlerVal(cx, reaction->handler());
@@ -983,10 +1015,10 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
             resolutionMode = RejectMode;
             handlerResult = argument;
         } else {
-            MOZ_ASSERT(handlerNum == PromiseHandlerAsyncIteratorValueUnwrapDone ||
-                       handlerNum == PromiseHandlerAsyncIteratorValueUnwrapNotDone);
+            MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone ||
+                       handlerNum == PromiseHandlerAsyncFromSyncIteratorValueUnwrapNotDone);
 
-            bool done = handlerNum == PromiseHandlerAsyncIteratorValueUnwrapDone;
+            bool done = handlerNum == PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone;
             
             RootedObject resultObj(cx, CreateIterResultObject(cx, argument, done));
             if (!resultObj)
@@ -2261,8 +2293,11 @@ js::AsyncFunctionReturned(JSContext* cx, Handle<PromiseObject*> resultPromise, H
 }
 
 
-MOZ_MUST_USE bool
-js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value)
+
+template <typename T>
+static MOZ_MUST_USE bool
+InternalAwait(JSContext* cx, HandleValue value, HandleObject resultPromise,
+              HandleValue onFulfilled, HandleValue onRejected, T extraStep)
 {
     
     Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
@@ -2272,10 +2307,6 @@ js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, Hand
     
     if (!ResolvePromiseInternal(cx, promise, value))
         return false;
-
-    
-    RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncFunctionAwaitFulfilled));
-    RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncFunctionAwaitRejected));
 
     RootedObject incumbentGlobal(cx);
     if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
@@ -2289,10 +2320,26 @@ js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, Hand
     if (!reaction)
         return false;
 
-    reaction->setIsAsyncFunctionAwait();
+    
+    extraStep(reaction);
 
     
     return PerformPromiseThenWithReaction(cx, promise, reaction);
+}
+
+
+MOZ_MUST_USE bool
+js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value)
+{
+    
+    RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncFunctionAwaitedFulfilled));
+    RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncFunctionAwaitedRejected));
+
+    
+    auto extra = [](Handle<PromiseReactionRecord*> reaction) {
+        reaction->setIsAsyncFunction();
+    };
+    return InternalAwait(cx, value, resultPromise, onFulfilled, onRejected, extra);
 }
 
 
@@ -2301,36 +2348,14 @@ js::AsyncGeneratorAwait(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj
                         HandleValue value)
 {
     
-    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
-    if (!promise)
-        return false;
+    RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncGeneratorAwaitedFulfilled));
+    RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncGeneratorAwaitedRejected));
 
     
-    if (!ResolvePromiseInternal(cx, promise, value))
-        return false;
-
-    
-    RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncGeneratorAwaitFulfilled));
-    RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncGeneratorAwaitRejected));
-
-    RootedObject incumbentGlobal(cx);
-    if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
-        return false;
-
-    
-
-    
-    Rooted<PromiseReactionRecord*> reaction(cx, NewReactionRecord(cx, nullptr,
-                                                                  onFulfilled, onRejected,
-                                                                  nullptr, nullptr,
-                                                                  incumbentGlobal));
-    if (!reaction)
-        return false;
-
-    reaction->setIsAsyncGeneratorAwait(asyncGenObj);
-
-    
-    return PerformPromiseThenWithReaction(cx, promise, reaction);
+    auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+        reaction->setIsAsyncGenerator(asyncGenObj);
+    };
+    return InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra);
 }
 
 
@@ -2459,38 +2484,23 @@ js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind co
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
 
     
-    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
-    if (!promise)
-        return false;
-
-    
-    if (!ResolvePromiseInternal(cx, promise, value))
-        return false;
-
-    
     RootedValue onFulfilled(cx, Int32Value(done
-                                           ? PromiseHandlerAsyncIteratorValueUnwrapDone
-                                           : PromiseHandlerAsyncIteratorValueUnwrapNotDone));
-
-    RootedObject incumbentGlobal(cx);
-    if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
-        return false;
+                                           ? PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone
+                                           : PromiseHandlerAsyncFromSyncIteratorValueUnwrapNotDone));
 
     
-    Rooted<PromiseReactionRecord*> reaction(cx, NewReactionRecord(cx, resultPromise, onFulfilled,
-                                                                  UndefinedHandleValue,
-                                                                  nullptr, nullptr,
-                                                                  incumbentGlobal));
-    if (!reaction)
-        return false;
-
-    if (!PerformPromiseThenWithReaction(cx, promise, reaction))
+    auto extra = [](Handle<PromiseReactionRecord*> reaction) {
+    };
+    if (!InternalAwait(cx, value, resultPromise, onFulfilled, UndefinedHandleValue, extra))
         return false;
 
     
     args.rval().setObject(*resultPromise);
     return true;
 }
+
+static MOZ_MUST_USE bool
+AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj);
 
 
 MOZ_MUST_USE bool
@@ -2512,32 +2522,14 @@ js::AsyncGeneratorResolve(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenO
     RootedObject resultPromise(cx, request->promise());
 
     
-    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
-    if (!promise)
+    RootedObject resultObj(cx, CreateIterResultObject(cx, value, done));
+    if (!resultObj)
         return false;
+
+    RootedValue resultValue(cx, ObjectValue(*resultObj));
 
     
-    if (!ResolvePromiseInternal(cx, promise, value))
-        return false;
-
-    
-    RootedValue onFulfilled(cx, Int32Value(done
-                                           ? PromiseHandlerAsyncIteratorValueUnwrapDone
-                                           : PromiseHandlerAsyncIteratorValueUnwrapNotDone));
-
-    RootedObject incumbentGlobal(cx);
-    if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
-        return false;
-
-    
-    Rooted<PromiseReactionRecord*> reaction(cx, NewReactionRecord(cx, resultPromise, onFulfilled,
-                                                                  UndefinedHandleValue,
-                                                                  nullptr, nullptr,
-                                                                  incumbentGlobal));
-    if (!reaction)
-        return false;
-
-    if (!PerformPromiseThenWithReaction(cx, promise, reaction))
+    if (!ResolvePromiseInternal(cx, resultPromise, resultValue))
         return false;
 
     
@@ -2577,6 +2569,97 @@ js::AsyncGeneratorReject(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenOb
 
     
     return true;
+}
+
+
+static MOZ_MUST_USE bool
+AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
+{
+    
+
+    
+    MOZ_ASSERT(!asyncGenObj->isExecuting());
+
+    
+    if (asyncGenObj->isAwaitingYieldReturn() || asyncGenObj->isAwaitingReturn())
+        return true;
+
+    
+    if (asyncGenObj->isQueueEmpty())
+        return true;
+
+    
+    Rooted<AsyncGeneratorRequest*> request(
+        cx, AsyncGeneratorObject::peekRequest(cx, asyncGenObj));
+    if (!request)
+        return false;
+
+    
+    CompletionKind completionKind = request->completionKind();
+
+    
+    if (completionKind != CompletionKind::Normal) {
+        
+        if (asyncGenObj->isSuspendedStart())
+            asyncGenObj->setCompleted();
+
+        
+        if (asyncGenObj->isCompleted()) {
+            RootedValue value(cx, request->completionValue());
+
+            
+            if (completionKind == CompletionKind::Return) {
+                
+                asyncGenObj->setAwaitingReturn();
+
+                
+                RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled));
+                RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncGeneratorResumeNextReturnRejected));
+
+                
+                auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+                    reaction->setIsAsyncGenerator(asyncGenObj);
+                };
+                return InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra);
+            }
+
+            
+            MOZ_ASSERT(completionKind == CompletionKind::Throw);
+
+            
+            return AsyncGeneratorReject(cx, asyncGenObj, value);
+        }
+    } else if (asyncGenObj->isCompleted()) {
+        
+        return AsyncGeneratorResolve(cx, asyncGenObj, UndefinedHandleValue, true);
+    }
+
+    
+    MOZ_ASSERT(asyncGenObj->isSuspendedStart() || asyncGenObj->isSuspendedYield());
+
+    
+    asyncGenObj->setExecuting();
+
+    RootedValue argument(cx, request->completionValue());
+
+    if (completionKind == CompletionKind::Return) {
+        
+        
+        
+        
+        asyncGenObj->setAwaitingYieldReturn();
+
+        RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled));
+        RootedValue onRejected(cx, Int32Value(PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected));
+
+        auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+            reaction->setIsAsyncGenerator(asyncGenObj);
+        };
+        return InternalAwait(cx, argument, nullptr, onFulfilled, onRejected, extra);
+    }
+
+    
+    return AsyncGeneratorResume(cx, asyncGenObj, completionKind, argument);
 }
 
 
