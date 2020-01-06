@@ -116,7 +116,6 @@ LightweightThemeConsumer.prototype = {
 
     let root = this._doc.documentElement;
     let active = !!aData.headerURL;
-    let stateChanging = (active != this._active);
 
     
     
@@ -160,27 +159,6 @@ LightweightThemeConsumer.prototype = {
     else
       root.removeAttribute("lwthemefooter");
 
-    
-    
-    
-    
-    
-    if (AppConstants.platform == "macosx" && stateChanging) {
-      if (!root.hasAttribute("chromemargin-nonlwtheme")) {
-        root.setAttribute("chromemargin-nonlwtheme", root.getAttribute("chromemargin"));
-      }
-
-      if (active) {
-        root.setAttribute("chromemargin", "0,-1,-1,-1");
-      } else {
-        let defaultChromemargin = root.getAttribute("chromemargin-nonlwtheme");
-        if (defaultChromemargin) {
-          root.setAttribute("chromemargin", defaultChromemargin);
-        } else {
-          root.removeAttribute("chromemargin");
-        }
-      }
-    }
     Services.obs.notifyObservers(this._win, "lightweight-theme-window-updated",
                                  JSON.stringify(aData));
   }

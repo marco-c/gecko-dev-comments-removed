@@ -288,26 +288,11 @@ var TabsInTitlebar = {
 
 function updateTitlebarDisplay() {
   if (AppConstants.platform == "macosx") {
-    
-    
-    
-    
-    
     if (TabsInTitlebar.enabled) {
-      document.documentElement.setAttribute("chromemargin-nonlwtheme", "0,-1,-1,-1");
       document.documentElement.setAttribute("chromemargin", "0,-1,-1,-1");
       document.documentElement.removeAttribute("drawtitle");
     } else {
-      
-      
-      
-      document.documentElement.setAttribute("chromemargin-nonlwtheme", "");
-      let isCustomizing = document.documentElement.hasAttribute("customizing");
-      let hasLWTheme = document.documentElement.hasAttribute("lwtheme");
-      let isPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
-      if ((!hasLWTheme || isCustomizing) && !isPrivate) {
-        document.documentElement.removeAttribute("chromemargin");
-      }
+      document.documentElement.removeAttribute("chromemargin");
       document.documentElement.setAttribute("drawtitle", "true");
     }
   } else if (TabsInTitlebar.enabled) {
