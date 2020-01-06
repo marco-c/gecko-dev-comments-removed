@@ -182,7 +182,7 @@ pref("devtools.scratchpad.editorFontSize", 12);
 pref("devtools.scratchpad.enableAutocompletion", true);
 
 
-pref("devtools.storage.enabled", false);
+pref("devtools.storage.enabled", true);
 
 
 pref("devtools.styleeditor.enabled", true);
