@@ -517,24 +517,9 @@ NS_NewBufferedInputStream(nsIInputStream** aResult,
 
 
 
-nsresult NS_NewBufferedOutputStream(nsIOutputStream **result,
-                                    nsIOutputStream  *str,
-                                    uint32_t          bufferSize);
-
-
-
-
-
-
-
-
-
-
-
-
-already_AddRefed<nsIOutputStream>
-NS_BufferOutputStream(nsIOutputStream *aOutputStream,
-                      uint32_t aBufferSize);
+nsresult NS_NewBufferedOutputStream(nsIOutputStream** aResult,
+                                    already_AddRefed<nsIOutputStream> aOutputStream,
+                                    uint32_t aBufferSize);
 
 
 nsresult NS_NewPostDataStream(nsIInputStream  **result,

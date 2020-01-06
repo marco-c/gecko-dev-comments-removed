@@ -105,7 +105,7 @@ public:
       
       nsCOMPtr<nsIOutputStream> bufferedOutputStream;
       res = NS_NewBufferedOutputStream(getter_AddRefs(bufferedOutputStream),
-                                       outStream, 4096);
+                                       outStream.forget(), 4096);
       if (NS_FAILED(res)) {
         return res;
       }

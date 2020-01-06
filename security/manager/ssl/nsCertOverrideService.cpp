@@ -281,7 +281,8 @@ nsCertOverrideService::Write(const MutexAutoLock& aProofOfLock)
 
   
   nsCOMPtr<nsIOutputStream> bufferedOutputStream;
-  rv = NS_NewBufferedOutputStream(getter_AddRefs(bufferedOutputStream), fileOutputStream, 4096);
+  rv = NS_NewBufferedOutputStream(getter_AddRefs(bufferedOutputStream),
+                                  fileOutputStream.forget(), 4096);
   if (NS_FAILED(rv)) {
     return rv;
   }
