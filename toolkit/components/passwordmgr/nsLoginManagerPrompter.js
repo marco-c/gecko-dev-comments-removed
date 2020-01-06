@@ -808,6 +808,9 @@ LoginManagerPrompter.prototype = {
 
   _showLoginCaptureDoorhanger(login, type) {
     let { browser } = this._getNotifyWindow();
+    if (!browser) {
+      return;
+    }
 
     let saveMsgNames = {
       prompt: login.username === "" ? "saveLoginMsgNoUser"
@@ -1420,10 +1423,33 @@ LoginManagerPrompter.prototype = {
 
 
   _getChromeWindow(aWindow) {
+    
+    if (!Cu.isCrossProcessWrapper(aWindow)) {
+      let chromeWin = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIWebNavigation)
+                             .QueryInterface(Ci.nsIDocShell)
+                             .chromeEventHandler.ownerGlobal;
+      if (!chromeWin) {
+        return null;
+      }
+
+      
+      let tabbrowser = chromeWin.gBrowser || chromeWin.getBrowser();
+      
+      
+      if (!tabbrowser || typeof tabbrowser.getBrowserForContentWindow != "function") {
+        return { win: chromeWin };
+      }
+
+      let browser = tabbrowser.getBrowserForContentWindow(aWindow);
+      return { win: chromeWin, browser };
+    }
+
     let windows = Services.wm.getEnumerator(null);
     while (windows.hasMoreElements()) {
       let win = windows.getNext();
-      let browser = win.gBrowser.getBrowserForContentWindow(aWindow);
+      let tabbrowser = win.gBrowser || win.getBrowser();
+      let browser = tabbrowser.getBrowserForContentWindow(aWindow);
       if (browser) {
         return { win, browser };
       }
