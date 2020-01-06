@@ -341,7 +341,7 @@ public:
 
 
 
-    virtual void GetSystemFontList(
+    virtual void ReadSystemFontList(
       InfallibleTArray<mozilla::dom::SystemFontListEntry>* aFontList)
     { }
 
