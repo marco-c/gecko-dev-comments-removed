@@ -732,7 +732,10 @@ function RegExpSplit(string, limit) {
 
         
         
-        splitter = regexp_construct_raw_flags(rx, flags & ~REGEXP_STICKY_FLAG);
+        if (flags & REGEXP_STICKY_FLAG)
+            splitter = regexp_construct_raw_flags(rx, flags & ~REGEXP_STICKY_FLAG);
+        else
+            splitter = rx;
     } else {
         
         flags = ToString(rx.flags);
@@ -760,7 +763,7 @@ function RegExpSplit(string, limit) {
     
     var lim;
     if (limit === undefined)
-        lim = MAX_NUMERIC_INDEX;
+        lim = MAX_UINT32;
     else
         lim = limit >>> 0;
 
