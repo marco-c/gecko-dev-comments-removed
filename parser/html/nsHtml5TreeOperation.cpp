@@ -445,7 +445,9 @@ nsHtml5TreeOperation::CreateHTMLElement(
                             false);
 
         
-        if (kNameSpaceID_None == nsuri && !prefix && nsGkAtoms::is == localName) {
+        if (nsContentUtils::IsWebComponentsEnabled() &&
+            kNameSpaceID_None == nsuri &&
+            !prefix && nsGkAtoms::is == localName) {
           nsContentUtils::SetupCustomElement(newContent, &value);
         }
       }
