@@ -105,7 +105,7 @@ var healthReportWrapper = {
 
   handleRemoteCommand(evt) {
     
-    let allowedPrincipal = Services.scriptSecurityManager.getCodebasePrincipal(this._getReportURI());
+    let allowedPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(this._getReportURI(), {});
     let targetPrincipal = evt.target.nodePrincipal;
     if (!allowedPrincipal.equals(targetPrincipal)) {
       Cu.reportError(`Origin check failed for message "${evt.detail.command}": ` +

@@ -25,7 +25,6 @@ template<class T> class nsReadingIterator;
 
 #include "nsIContentSecurityPolicy.h"
 #include "nsNetUtil.h"
-#include "nsIScriptSecurityManager.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
@@ -92,9 +91,6 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
                  const char* aExpectedResult) {
 
   nsresult rv;
-  nsCOMPtr<nsIScriptSecurityManager> secman =
-    do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsCOMPtr<nsIURI> selfURI;
@@ -102,10 +98,10 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIPrincipal> selfURIPrincipal;
-  
-  
-  rv = secman->GetCodebasePrincipal(selfURI, getter_AddRefs(selfURIPrincipal));
-  NS_ENSURE_SUCCESS(rv, rv);
+  mozilla::OriginAttributes attrs;
+  selfURIPrincipal =
+    mozilla::BasePrincipal::CreateCodebasePrincipal(selfURI, attrs);
+  NS_ENSURE_TRUE(selfURIPrincipal, NS_ERROR_FAILURE);
 
   
   nsCOMPtr<nsIContentSecurityPolicy> csp =
