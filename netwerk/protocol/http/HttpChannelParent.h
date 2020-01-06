@@ -13,6 +13,7 @@
 #include "mozilla/net/PHttpChannelParent.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
+#include "mozilla/MozPromise.h"
 #include "nsIObserver.h"
 #include "nsIParentRedirectingChannel.h"
 #include "nsIProgressEventSink.h"
@@ -37,6 +38,7 @@ class PBrowserOrId;
 
 namespace net {
 
+class HttpBackgroundChannelParent;
 class HttpChannelParentListener;
 class ChannelEventQueue;
 
@@ -52,6 +54,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor
                               , public nsIAuthPromptProvider
                               , public nsIDeprecationWarner
                               , public HttpChannelSecurityWarningReporter
+                              , public nsIAsyncVerifyRedirectReadyCallback
 {
   virtual ~HttpChannelParent();
 
@@ -65,6 +68,7 @@ public:
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIAUTHPROMPTPROVIDER
   NS_DECL_NSIDEPRECATIONWARNER
+  NS_DECL_NSIASYNCVERIFYREDIRECTREADYCALLBACK
 
   NS_DECLARE_STATIC_IID_ACCESSOR(HTTP_CHANNEL_PARENT_IID)
 
@@ -99,10 +103,22 @@ public:
   MOZ_MUST_USE nsresult OpenAlternativeOutputStream(const nsACString & type,
                                                     nsIOutputStream * *_retval);
 
+  
+  
+  
+  
+  void TryInvokeAsyncOpen(nsresult aRv);
+
   void InvokeAsyncOpen(nsresult rv);
 
   
   void DoSendSetPriority(int16_t aValue);
+
+  
+  void OnBackgroundParentReady(HttpBackgroundChannelParent* aBgParent);
+  
+  void OnBackgroundParentDestroyed();
+
 protected:
   
   
@@ -217,8 +233,26 @@ private:
   void MaybeFlushPendingDiversion();
   void ResponseSynthesized();
 
+  
+  
+  
+  
+  void ContinueRedirect2Verify(const nsresult& aResult);
+
   void AsyncOpenFailed(nsresult aRv);
 
+  
+  
+  
+  
+  already_AddRefed<GenericPromise> WaitForBgParent();
+
+  
+  
+  
+  void CleanupBackgroundChannel();
+
+  friend class HttpBackgroundChannelParent;
   friend class DivertDataAvailableEvent;
   friend class DivertStopRequestEvent;
   friend class DivertCompleteEvent;
@@ -238,7 +272,6 @@ private:
   
   bool mIgnoreProgress              : 1;
 
-  bool mSentRedirect1Begin          : 1;
   bool mSentRedirect1BeginFailed    : 1;
   bool mReceivedRedirect2Verify     : 1;
 
@@ -274,6 +307,20 @@ private:
   dom::TabId mNestedFrameId;
 
   RefPtr<ChannelEventQueue> mEventQ;
+
+  RefPtr<HttpBackgroundChannelParent> mBgParent;
+
+  
+  
+  
+  
+  uint8_t mAsyncOpenBarrier = 0;
+
+  
+  uint32_t mRedirectRegistrarId = 0;
+
+  MozPromiseHolder<GenericPromise> mPromise;
+  MozPromiseRequestHolder<GenericPromise> mRequest;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpChannelParent,

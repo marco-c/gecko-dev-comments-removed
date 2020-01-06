@@ -15,12 +15,26 @@ using mozilla::ipc::IPCResult;
 namespace mozilla {
 namespace net {
 
+class HttpChannelChild;
+
 class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild
 {
+  friend class BackgroundChannelCreateCallback;
 public:
   explicit HttpBackgroundChannelChild();
 
-  virtual ~HttpBackgroundChannelChild();
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HttpBackgroundChannelChild)
+
+  
+  
+  nsresult Init(HttpChannelChild* aChannelChild);
+
+  
+  
+  void OnChannelClosed();
+
+  
+  void OnBackgroundChannelCreationFailed();
 
 protected:
   IPCResult RecvOnTransportAndData(const nsresult& aChannelStatus,
@@ -44,6 +58,19 @@ protected:
   IPCResult RecvOnStartRequestSent() override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+private:
+  virtual ~HttpBackgroundChannelChild();
+
+  
+  
+  bool CreateBackgroundChannel();
+
+  
+  
+  
+  
+  RefPtr<HttpChannelChild> mChannelChild;
 };
 
 } 

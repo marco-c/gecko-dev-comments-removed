@@ -9,19 +9,48 @@
 #define mozilla_net_HttpBackgroundChannelParent_h
 
 #include "mozilla/net/PHttpBackgroundChannelParent.h"
+#include "mozilla/Atomics.h"
+#include "nsID.h"
+#include "nsISupportsImpl.h"
+
+class nsIEventTarget;
 
 namespace mozilla {
 namespace net {
+
+class HttpChannelParent;
 
 class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent
 {
 public:
   explicit HttpBackgroundChannelParent();
 
-  virtual ~HttpBackgroundChannelParent();
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HttpBackgroundChannelParent)
+
+  
+  
+  nsresult Init(const uint64_t& aChannelId);
+
+  
+  
+  void LinkToChannel(HttpChannelParent* aChannelParent);
+
+  
+  
+  void OnChannelClosed();
 
 protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+private:
+  virtual ~HttpBackgroundChannelParent();
+
+  Atomic<bool> mIPCOpened;
+
+  nsCOMPtr<nsIEventTarget> mBackgroundThread;
+
+  
+  RefPtr<HttpChannelParent> mChannelParent;
 };
 
 } 

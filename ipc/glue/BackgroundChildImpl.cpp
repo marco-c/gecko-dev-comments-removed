@@ -33,6 +33,7 @@
 #include "mozilla/ipc/PChildToParentStreamChild.h"
 #include "mozilla/ipc/PParentToChildStreamChild.h"
 #include "mozilla/layout/VsyncChild.h"
+#include "mozilla/net/HttpBackgroundChannelChild.h"
 #include "mozilla/net/PUDPSocketChild.h"
 #include "mozilla/dom/network/UDPSocketChild.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
@@ -569,8 +570,11 @@ BackgroundChildImpl::AllocPHttpBackgroundChannelChild(const uint64_t& aChannelId
 bool
 BackgroundChildImpl::DeallocPHttpBackgroundChannelChild(PHttpBackgroundChannelChild* aActor)
 {
-  MOZ_ASSERT(aActor);
   
+  
+  
+  RefPtr<net::HttpBackgroundChannelChild> child =
+    dont_AddRef(static_cast<net::HttpBackgroundChannelChild*>(aActor));
   return true;
 }
 

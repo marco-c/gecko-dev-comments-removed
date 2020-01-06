@@ -39,6 +39,7 @@ class nsInputStreamPump;
 namespace mozilla {
 namespace net {
 
+class HttpBackgroundChannelChild;
 class InterceptedChannelContent;
 class InterceptStreamListener;
 
@@ -116,6 +117,11 @@ public:
   mozilla::ipc::IPCResult RecvSetClassifierMatchedInfo(const ClassifierInfo& aInfo) override;
 
   void OnCopyComplete(nsresult aStatus) override;
+
+  
+  void OnBackgroundChildReady(HttpBackgroundChannelChild* aBgChild);
+  
+  void OnBackgroundChildDestroyed();
 
 protected:
   mozilla::ipc::IPCResult RecvOnStartRequest(const nsresult& channelStatus,
@@ -312,6 +318,12 @@ private:
   
   bool mSuspendParentAfterSynthesizeResponse;
 
+  RefPtr<HttpBackgroundChannelChild> mBgChild;
+
+  
+  
+  void CleanupBackgroundChannel();
+
   
   nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
   nsCOMPtr<nsISupports> mInterceptedRedirectContext;
@@ -403,6 +415,7 @@ private:
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
+  friend class HttpBackgroundChannelChild;
 };
 
 

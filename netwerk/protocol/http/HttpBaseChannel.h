@@ -364,6 +364,11 @@ public:
       mIsTrackingResource = true;
     }
 
+    const uint64_t& ChannelId() const
+    {
+      return mChannelId;
+    }
+
 protected:
   
   void     DoNotifyListener();
