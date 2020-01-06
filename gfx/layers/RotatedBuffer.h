@@ -302,9 +302,8 @@ public:
 
 
 
-  gfx::DrawTarget* BorrowDrawTargetForRecording(PaintState& aPaintState,
-                                                DrawIterator* aIter,
-                                                gfx::Matrix* aOutTransform);
+  RefPtr<CapturedPaintState> BorrowDrawTargetForRecording(PaintState& aPaintState,
+                                                          DrawIterator* aIter);
 
   void ExpandDrawRegion(PaintState& aPaintState,
                         DrawIterator* aIter,
