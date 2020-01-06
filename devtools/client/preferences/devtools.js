@@ -59,7 +59,7 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.colorWidget.enabled", false);
 
-pref("devtools.inspector.shapesHighlighter.enabled", false);
+pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 
 pref("devtools.fontinspector.enabled", true);
