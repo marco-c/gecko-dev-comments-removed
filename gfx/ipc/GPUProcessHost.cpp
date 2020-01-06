@@ -190,25 +190,18 @@ GPUProcessHost::Shutdown()
 void
 GPUProcessHost::OnChannelClosed()
 {
-  if (!mShutdownRequested) {
+  mChannelClosed = true;
+
+  if (!mShutdownRequested && mListener) {
     
-    mChannelClosed = true;
-    if (mListener) {
-      mListener->OnProcessUnexpectedShutdown(this);
-    }
+    mListener->OnProcessUnexpectedShutdown(this);
+  } else {
+    DestroyProcess();
   }
 
   
   GPUChild::Destroy(Move(mGPUChild));
   MOZ_ASSERT(!mGPUChild);
-
-  
-  
-  
-  
-  if (mShutdownRequested) {
-    DestroyProcess();
-  }
 }
 
 void
