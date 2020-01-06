@@ -34,7 +34,6 @@ class nsDependentSubstring;
 class nsPromiseFlatString;
 class nsStringComparator;
 class nsDefaultStringComparator;
-class nsXPIDLString;
 
 
 class nsACString;
@@ -46,6 +45,6 @@ class nsDependentCSubstring;
 class nsPromiseFlatCString;
 class nsCStringComparator;
 class nsDefaultCStringComparator;
-class nsXPIDLCString;
+class nsXPIDLCString; 
 
 #endif 
