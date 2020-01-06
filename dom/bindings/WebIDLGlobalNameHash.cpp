@@ -219,8 +219,14 @@ WebIDLGlobalNameHash::DefineIfEnabled(JSContext* aCx,
   }
 
   {
+    
+    
+    
+#ifdef DEBUG
+    JS::Rooted<JSObject*> temp(aCx, global);
     DebugOnly<nsGlobalWindow*> win;
-    MOZ_ASSERT(NS_SUCCEEDED(UNWRAP_OBJECT(Window, global, win)));
+    MOZ_ASSERT(NS_SUCCEEDED(UNWRAP_OBJECT(Window, &temp, win)));
+#endif
   }
 
   if (checkEnabledForScope && !checkEnabledForScope(aCx, global)) {

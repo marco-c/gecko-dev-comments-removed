@@ -186,45 +186,86 @@ IsDOMObject(JSObject* obj)
   return IsDOMClass(js::GetObjectClass(obj));
 }
 
+
+
+
+
 #define UNWRAP_OBJECT(Interface, obj, value)                                 \
   mozilla::dom::UnwrapObject<mozilla::dom::prototypes::id::Interface,        \
+    mozilla::dom::Interface##Binding::NativeType>(obj, value)
+
+
+#define IS_INSTANCE_OF(Interface, obj)                                  \
+  mozilla::dom::IsInstanceOf<mozilla::dom::prototypes::id::Interface,   \
+                             mozilla::dom::Interface##Binding::NativeType>(obj)
+
+
+
+
+#define UNWRAP_NON_WRAPPER_OBJECT(Interface, obj, value)                        \
+  mozilla::dom::UnwrapNonWrapperObject<mozilla::dom::prototypes::id::Interface, \
     mozilla::dom::Interface##Binding::NativeType>(obj, value)
 
 
 
 
 
-template <class T, typename U>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace binding_detail {
+template <class T, bool mayBeWrapper, typename U, typename V>
 MOZ_ALWAYS_INLINE nsresult
-UnwrapObject(JSObject* obj, U& value, prototypes::ID protoID,
-             uint32_t protoDepth)
+UnwrapObjectInternal(V& obj, U& value, prototypes::ID protoID,
+                     uint32_t protoDepth)
 {
   
   const DOMJSClass* domClass = GetDOMClass(obj);
-  if (!domClass) {
+  if (domClass) {
     
-    if (!js::IsWrapper(obj)) {
-      
-      return NS_ERROR_XPC_BAD_CONVERT_JS;
-    }
 
-    obj = js::CheckedUnwrap(obj,  false);
-    if (!obj) {
-      return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
-    }
-    MOZ_ASSERT(!js::IsWrapper(obj));
-    domClass = GetDOMClass(obj);
-    if (!domClass) {
-      
-      return NS_ERROR_XPC_BAD_CONVERT_JS;
+
+    if (domClass->mInterfaceChain[protoDepth] == protoID) {
+      value = UnwrapDOMObject<T>(obj);
+      return NS_OK;
     }
   }
 
   
+  if (!mayBeWrapper || !js::IsWrapper(obj)) {
+    
+    return NS_ERROR_XPC_BAD_CONVERT_JS;
+  }
 
-
-  if (domClass->mInterfaceChain[protoDepth] == protoID) {
-    value = UnwrapDOMObject<T>(obj);
+  JSObject* unwrappedObj =
+    js::CheckedUnwrap(obj,  false);
+  if (!unwrappedObj) {
+    return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
+  }
+  MOZ_ASSERT(!js::IsWrapper(unwrappedObj));
+  
+  
+  
+  nsresult rv = UnwrapObjectInternal<T, false>(unwrappedObj, value,
+                                               protoID, protoDepth);
+  if (NS_SUCCEEDED(rv)) {
+    
+    
+    
+    
+    
+    obj = unwrappedObj;
     return NS_OK;
   }
 
@@ -232,12 +273,121 @@ UnwrapObject(JSObject* obj, U& value, prototypes::ID protoID,
   return NS_ERROR_XPC_BAD_CONVERT_JS;
 }
 
-template <prototypes::ID PrototypeID, class T, typename U>
+struct MutableObjectHandleWrapper {
+  explicit MutableObjectHandleWrapper(JS::MutableHandle<JSObject*> aHandle)
+    : mHandle(aHandle)
+  {
+  }
+
+  void operator=(JSObject* aObject)
+  {
+    MOZ_ASSERT(aObject);
+    mHandle.set(aObject);
+  }
+
+  operator JSObject*() const
+  {
+    return mHandle;
+  }
+
+private:
+  JS::MutableHandle<JSObject*> mHandle;
+};
+
+struct MutableValueHandleWrapper {
+  explicit MutableValueHandleWrapper(JS::MutableHandle<JS::Value> aHandle)
+    : mHandle(aHandle)
+  {
+  }
+
+  void operator=(JSObject* aObject)
+  {
+    MOZ_ASSERT(aObject);
+    mHandle.setObject(*aObject);
+  }
+
+  operator JSObject*() const
+  {
+    return &mHandle.toObject();
+  }
+
+private:
+  JS::MutableHandle<JS::Value> mHandle;
+};
+
+} 
+
+
+template<prototypes::ID PrototypeID, class T, typename U>
 MOZ_ALWAYS_INLINE nsresult
-UnwrapObject(JSObject* obj, U& value)
+UnwrapObject(JS::MutableHandle<JSObject*> obj, U& value)
 {
-  return UnwrapObject<T>(obj, value, PrototypeID,
-                         PrototypeTraits<PrototypeID>::Depth);
+  binding_detail::MutableObjectHandleWrapper wrapper(obj);
+  return binding_detail::UnwrapObjectInternal<T, true>(
+    wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+}
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapObject(JS::MutableHandle<JS::Value> obj, U& value)
+{
+  MOZ_ASSERT(obj.isObject());
+  binding_detail::MutableValueHandleWrapper wrapper(obj);
+  return binding_detail::UnwrapObjectInternal<T, true>(
+    wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+}
+
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapObject(JSObject* obj, RefPtr<U>& value)
+{
+  return binding_detail::UnwrapObjectInternal<T, true>(
+    obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+}
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapObject(JSObject* obj, nsCOMPtr<U>& value)
+{
+  return binding_detail::UnwrapObjectInternal<T, true>(
+    obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+}
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapObject(JSObject* obj, OwningNonNull<U>& value)
+{
+  return binding_detail::UnwrapObjectInternal<T, true>(
+    obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+}
+
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapObject(JS::Handle<JS::Value> obj, U& value)
+{
+  MOZ_ASSERT(obj.isObject());
+  return UnwrapObject<PrototypeID, T>(&obj.toObject(), value);
+}
+
+template<prototypes::ID PrototypeID, class T>
+MOZ_ALWAYS_INLINE bool
+IsInstanceOf(JSObject* obj)
+{
+  void* ignored;
+  nsresult unwrapped = binding_detail::UnwrapObjectInternal<T, true>(
+    obj, ignored, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
+  return NS_SUCCEEDED(unwrapped);
+}
+
+template<prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult
+UnwrapNonWrapperObject(JSObject* obj, U& value)
+{
+  MOZ_ASSERT(!js::IsWrapper(obj));
+  return binding_detail::UnwrapObjectInternal<T, false>(
+    obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
 MOZ_ALWAYS_INLINE bool

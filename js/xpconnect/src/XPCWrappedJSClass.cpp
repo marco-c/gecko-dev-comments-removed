@@ -252,8 +252,9 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
                 if (jsexception.isObject()) {
                     
                     
+                    JS::Rooted<JSObject*> exceptionObj(cx, &jsexception.toObject());
                     Exception* e = nullptr;
-                    UNWRAP_OBJECT(Exception, &jsexception.toObject(), e);
+                    UNWRAP_OBJECT(Exception, &exceptionObj, e);
 
                     if (e &&
                         NS_SUCCEEDED(e->GetResult(&rv)) &&
