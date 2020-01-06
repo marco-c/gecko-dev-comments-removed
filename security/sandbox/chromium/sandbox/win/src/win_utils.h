@@ -115,9 +115,6 @@ DWORD GetLastErrorFromNtStatus(NTSTATUS status);
 
 
 
-
-
-
 void* GetProcessBaseAddress(HANDLE process);
 
 }  
