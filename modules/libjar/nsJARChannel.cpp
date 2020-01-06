@@ -346,12 +346,6 @@ nsJARChannel::LookupFile(bool aAllowAsync)
     
     NS_UnescapeURL(mJarEntry);
 
-    if (mJarFileOverride) {
-        mJarFile = mJarFileOverride;
-        LOG(("nsJARChannel::LookupFile [this=%p] Overriding mJarFile\n", this));
-        return NS_OK;
-    }
-
     
     {
         nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(mJarBaseURI);
@@ -889,17 +883,6 @@ nsJARChannel::GetJarFile(nsIFile **aFile)
     NS_IF_ADDREF(*aFile = mJarFile);
     return NS_OK;
 }
-
-NS_IMETHODIMP
-nsJARChannel::SetJarFile(nsIFile *aFile)
-{
-    if (mOpened) {
-        return NS_ERROR_IN_PROGRESS;
-    }
-    mJarFileOverride = aFile;
-    return NS_OK;
-}
-
 
 NS_IMETHODIMP
 nsJARChannel::GetZipEntry(nsIZipEntry **aZipEntry)

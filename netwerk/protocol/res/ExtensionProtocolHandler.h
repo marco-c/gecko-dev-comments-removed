@@ -6,9 +6,8 @@
 #ifndef ExtensionProtocolHandler_h___
 #define ExtensionProtocolHandler_h___
 
-#include "mozilla/net/NeckoParent.h"
-#include "mozilla/LazyIdleThread.h"
 #include "SubstitutingProtocolHandler.h"
+#include "nsWeakReference.h"
 
 namespace mozilla {
 namespace net {
@@ -24,62 +23,10 @@ public:
   NS_FORWARD_NSIPROTOCOLHANDLER(SubstitutingProtocolHandler::)
   NS_FORWARD_NSISUBSTITUTINGPROTOCOLHANDLER(SubstitutingProtocolHandler::)
 
-  static already_AddRefed<ExtensionProtocolHandler> GetSingleton();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Result<nsCOMPtr<nsIInputStream>, nsresult> NewStream(nsIURI* aChildURI,
-                                                       nsILoadInfo* aChildLoadInfo,
-                                                       bool* aTerminateSender);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Result<Ok, nsresult> NewFD(nsIURI* aChildURI,
-                             nsILoadInfo* aChildLoadInfo,
-                             bool* aTerminateSender,
-                             NeckoParent::GetExtensionFDResolver& aResolve);
+  ExtensionProtocolHandler() : SubstitutingProtocolHandler("moz-extension") {}
 
 protected:
   ~ExtensionProtocolHandler() {}
-
-private:
-  explicit ExtensionProtocolHandler();
 
   MOZ_MUST_USE bool ResolveSpecialCases(const nsACString& aHost,
                                         const nsACString& aPath,
@@ -93,72 +40,6 @@ private:
   virtual MOZ_MUST_USE nsresult SubstituteChannel(nsIURI* uri,
                                                   nsILoadInfo* aLoadInfo,
                                                   nsIChannel** result) override;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Result<Ok, nsresult> SubstituteRemoteChannel(nsIURI* aURI,
-                                               nsILoadInfo* aLoadInfo,
-                                               nsIChannel** aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void SubstituteRemoteFileChannel(nsIURI* aURI,
-                                   nsILoadInfo* aLoadinfo,
-                                   nsACString& aResolvedFileSpec,
-                                   nsIChannel** aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  Result<Ok, nsresult> SubstituteRemoteJarChannel(nsIURI* aURI,
-                                                  nsILoadInfo* aLoadinfo,
-                                                  nsACString& aResolvedSpec,
-                                                  nsIChannel** aRetVal);
-
-  
-  
-  RefPtr<mozilla::LazyIdleThread> mFileOpenerThread;
-
-  
-  
-  static StaticRefPtr<ExtensionProtocolHandler> sSingleton;
-
-  
-  
-  bool mUseRemoteFileChannels;
 };
 
 } 
