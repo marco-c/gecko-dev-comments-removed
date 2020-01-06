@@ -97,6 +97,10 @@ private:
   std::unordered_map<uint64_t, FocusTarget> mFocusTree;
 
   
+  
+  bool mFocusHasKeyEventListeners;
+
+  
   uint64_t mFocusLayersId;
   
   

@@ -99,6 +99,10 @@ public:
   
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) {}
 
+  
+  
+  bool HasUntrustedOrNonSystemGroupKeyEventListeners() const;
+
   virtual bool IsApzAware() const;
 
 protected:

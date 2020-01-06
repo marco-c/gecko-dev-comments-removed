@@ -5,7 +5,9 @@
 
 #include "mozilla/layers/FocusTarget.h"
 
-#include "mozilla/dom/TabParent.h"  
+#include "mozilla/dom/EventTarget.h" 
+#include "mozilla/dom/TabParent.h"   
+#include "mozilla/EventDispatcher.h" 
 #include "mozilla/layout/RenderFrameParent.h" 
 #include "nsIPresShell.h"  
 #include "nsLayoutUtils.h" 
@@ -38,11 +40,34 @@ GetRetargetEventPresShell(nsIPresShell* aRootPresShell)
   return presShell.forget();
 }
 
-FocusTarget::FocusTarget() : mType(FocusTarget::eNone)
+static bool
+HasListenersForKeyEvents(nsIContent* aContent)
+{
+  if (!aContent) {
+    return false;
+  }
+
+  WidgetEvent event(true, eVoidEvent);
+  nsTArray<EventTarget*> targets;
+  nsresult rv = EventDispatcher::Dispatch(aContent, nullptr, &event, nullptr,
+      nullptr, nullptr, &targets);
+  NS_ENSURE_SUCCESS(rv, false);
+  for (size_t i = 0; i < targets.Length(); i++) {
+    if (targets[i]->HasUntrustedOrNonSystemGroupKeyEventListeners()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+FocusTarget::FocusTarget()
+  : mFocusHasKeyEventListeners(false)
+  , mType(FocusTarget::eNone)
 {
 }
 
 FocusTarget::FocusTarget(nsIPresShell* aRootPresShell)
+  : mFocusHasKeyEventListeners(false)
 {
   MOZ_ASSERT(aRootPresShell);
   MOZ_ASSERT(NS_IsMainThread());
@@ -53,6 +78,10 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell)
   
   
   nsCOMPtr<nsIContent> scrollTarget = presShell->GetContentForScrolling();
+
+  
+  
+  mFocusHasKeyEventListeners = HasListenersForKeyEvents(scrollTarget);
 
   
   if (TabParent* browserParent = TabParent::GetFrom(scrollTarget)) {

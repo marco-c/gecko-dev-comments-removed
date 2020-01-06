@@ -9,7 +9,8 @@ namespace mozilla {
 namespace layers {
 
 FocusState::FocusState()
-  : mFocusLayersId(0)
+  : mFocusHasKeyEventListeners(false)
+  , mFocusLayersId(0)
   , mFocusHorizontalTarget(FrameMetrics::NULL_SCROLL_ID)
   , mFocusVerticalTarget(FrameMetrics::NULL_SCROLL_ID)
 {
@@ -24,6 +25,7 @@ FocusState::Update(uint64_t aRootLayerTreeId,
   mFocusTree[aOriginatingLayersId] = aState;
 
   
+  mFocusHasKeyEventListeners = false;
   mFocusLayersId = aRootLayerTreeId;
   mFocusHorizontalTarget = FrameMetrics::NULL_SCROLL_ID;
   mFocusVerticalTarget = FrameMetrics::NULL_SCROLL_ID;
@@ -38,6 +40,9 @@ FocusState::Update(uint64_t aRootLayerTreeId,
     }
 
     const FocusTarget& target = currentNode->second;
+
+    
+    mFocusHasKeyEventListeners |= target.mFocusHasKeyEventListeners;
 
     switch (target.mType) {
       case FocusTarget::eRefLayer: {

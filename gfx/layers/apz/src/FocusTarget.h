@@ -53,6 +53,10 @@ public:
   FocusTarget(nsIPresShell* aRootPresShell);
 
 public:
+  
+  
+  bool mFocusHasKeyEventListeners;
+
   FocusTargetType mType;
   FocusTargetData mData;
 };
