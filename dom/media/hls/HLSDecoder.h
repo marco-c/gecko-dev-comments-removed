@@ -25,8 +25,6 @@ public:
 
   void Shutdown() override;
 
-  MediaDecoderStateMachine* CreateStateMachine() override;
-
   
   static bool IsEnabled();
 
@@ -45,6 +43,8 @@ public:
   void Resume() override;
 
 private:
+  MediaDecoderStateMachine* CreateStateMachine();
+
   bool CanPlayThroughImpl() override final
   {
     
