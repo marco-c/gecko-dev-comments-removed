@@ -622,14 +622,10 @@ NS_NewInputStreamChannelInternal(nsIChannel        **outChannel,
                                  nsILoadInfo        *aLoadInfo,
                                  bool                aIsSrcdocChannel )
 {
-  nsresult rv;
-  nsCOMPtr<nsIStringInputStream> stream;
-  stream = do_CreateInstance(NS_STRINGINPUTSTREAM_CONTRACTID, &rv);
+  nsCOMPtr<nsIInputStream> stream;
+  nsresult rv = NS_NewCStringInputStream(getter_AddRefs(stream),
+                                         NS_ConvertUTF16toUTF8(aData));
   NS_ENSURE_SUCCESS(rv, rv);
-
-    uint32_t len;
-    char* utf8Bytes = ToNewUTF8String(aData, &len);
-    rv = stream->AdoptData(utf8Bytes, len);
 
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewInputStreamChannelInternal(getter_AddRefs(channel),
@@ -1454,12 +1450,8 @@ NS_NewPostDataStream(nsIInputStream  **result,
     }
 
     
-    nsCOMPtr<nsIStringInputStream> stream
-        (do_CreateInstance("@mozilla.org/io/string-input-stream;1", &rv));
-    if (NS_FAILED(rv))
-        return rv;
-
-    rv = stream->SetData(data.BeginReading(), data.Length());
+    nsCOMPtr<nsIInputStream> stream;
+    rv = NS_NewCStringInputStream(getter_AddRefs(stream), data);
     if (NS_FAILED(rv))
         return rv;
 
@@ -2569,14 +2561,6 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
         aShouldUpgrade = true;
         return NS_OK;
       }
-
-      if (aLoadInfo->GetForceHSTSPriming()) {
-        
-        
-        
-        aShouldUpgrade = false;
-        return NS_OK;
-      }
     }
 
     
@@ -2606,21 +2590,6 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
       Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 1);
     }
   } else {
-    if (aLoadInfo) {
-      if (aLoadInfo->GetIsHSTSPriming()) {
-        
-        aShouldUpgrade = false;
-        return NS_OK;
-      }
-
-      if (aLoadInfo->GetIsHSTSPrimingUpgrade()) {
-        
-        
-        aShouldUpgrade = false;
-        return NS_OK;
-      }
-    }
-
     Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
   }
   aShouldUpgrade = false;
