@@ -881,40 +881,6 @@ ServoRestyleManager::UpdateOnlyAnimationStyles()
 }
 
 void
-ServoRestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
-                                              nsIContent* aChild)
-{
-  
-  
-  
-  
-  
-  
-  
-}
-
-void
-ServoRestyleManager::RestyleForAppend(nsIContent* aContainer,
-                                      nsIContent* aFirstNewContent)
-{
-  
-  
-  
-  
-  
-  
-  
-}
-
-void
-ServoRestyleManager::ContentRemoved(nsINode* aContainer,
-                                    nsIContent* aOldChild,
-                                    nsIContent* aFollowingSibling)
-{
-  NS_WARNING("stylo: ServoRestyleManager::ContentRemoved not implemented");
-}
-
-void
 ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
                                          EventStates aChangedBits)
 {
