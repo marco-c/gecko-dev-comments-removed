@@ -484,7 +484,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
 
     FxAccountDeviceListUpdater deviceListUpdater = new FxAccountDeviceListUpdater(fxAccount, context.getContentResolver());
     
-    deviceListUpdater.update();
+    deviceListUpdater.updateAndMaybeRenewRegistration(context);
   }
 
   
