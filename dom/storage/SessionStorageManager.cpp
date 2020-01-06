@@ -5,7 +5,9 @@
 
 
 #include "SessionStorageManager.h"
+
 #include "SessionStorage.h"
+#include "SessionStorageCache.h"
 #include "StorageUtils.h"
 
 namespace mozilla {
