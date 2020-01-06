@@ -54,7 +54,6 @@ this.Utils = {
   makeHMACHasher: CryptoUtils.makeHMACHasher,
   hkdfExpand: CryptoUtils.hkdfExpand,
   pbkdf2Generate: CryptoUtils.pbkdf2Generate,
-  deriveKeyFromPassphrase: CryptoUtils.deriveKeyFromPassphrase,
   getHTTPMACSHA1Header: CryptoUtils.getHTTPMACSHA1Header,
 
   
@@ -288,39 +287,6 @@ this.Utils = {
            .slice(0, SYNC_KEY_DECODED_LENGTH);
   },
 
-  base64Key: function base64Key(keyData) {
-    return btoa(keyData);
-  },
-
-  
-
-
-
-  derivePresentableKeyFromPassphrase: function derivePresentableKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
-    let k = CryptoUtils.deriveKeyFromPassphrase(passphrase, salt, keyLength,
-                                                forceJS);
-    return Utils.encodeKeyBase32(k);
-  },
-
-  
-
-
-
-  deriveEncodedKeyFromPassphrase: function deriveEncodedKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
-    let k = CryptoUtils.deriveKeyFromPassphrase(passphrase, salt, keyLength,
-                                                forceJS);
-    return Utils.base64Key(k);
-  },
-
-  
-
-
-
-
-  presentEncodedKeyAsSyncKey: function presentEncodedKeyAsSyncKey(encodedKey) {
-    return Utils.encodeKeyBase32(atob(encodedKey));
-  },
-
   jsonFilePath(filePath) {
     return OS.Path.normalize(OS.Path.join(OS.Constants.Path.profileDir, "weave", filePath + ".json"));
   },
@@ -454,21 +420,6 @@ this.Utils = {
   
 
 
-  generatePassphrase: function generatePassphrase() {
-    
-    
-    
-    return Utils.encodeKeyBase32(CryptoUtils.generateRandomBytes(16));
-  },
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -483,40 +434,6 @@ this.Utils = {
       return /^[abcdefghijkmnpqrstuvwxyz23456789]{26}$/.test(Utils.normalizePassphrase(s));
     }
     return false;
-  },
-
-  
-
-
-
-
-
-  hyphenatePassphrase: function hyphenatePassphrase(passphrase) {
-    
-    return Utils.hyphenatePartialPassphrase(passphrase, true);
-  },
-
-  hyphenatePartialPassphrase: function hyphenatePartialPassphrase(passphrase, omitTrailingDash) {
-    if (!passphrase)
-      return null;
-
-    
-    let data = passphrase.toLowerCase().replace(/[^abcdefghijkmnpqrstuvwxyz23456789]/g, "");
-
-    
-    if ((data.length == 1) && !omitTrailingDash)
-      return data + "-";
-
-    
-    let y = data.substr(0, 1);
-    let z = data.substr(1).replace(/(.{1,5})/g, "-$1");
-
-    
-    if ((z.length == 30) || omitTrailingDash)
-      return y + z;
-
-    
-    return (y + z.replace(/([^-]{5})$/, "$1-")).substr(0, SYNC_KEY_HYPHENATED_LENGTH);
   },
 
   normalizePassphrase: function normalizePassphrase(pp) {
