@@ -77,6 +77,10 @@ RenderDXGITextureHostOGL::EnsureLockable()
       return false;
     }
 
+    if (!mHandle) {
+      return false;
+    }
+
     
     EGLint pbufferAttributes[] = {
         LOCAL_EGL_WIDTH, mSize.width,
