@@ -19,6 +19,10 @@ public class testSessionOOMSave extends SessionTest {
     protected void setUp() throws Exception {
         super.setUp();
 
+        
+        
+        
+        
         final HomeConfig homeConfig = HomeConfig.getDefault(getInstrumentation().getTargetContext());
         final HomeConfig.State state = homeConfig.load();
         mEditor = state.edit();
