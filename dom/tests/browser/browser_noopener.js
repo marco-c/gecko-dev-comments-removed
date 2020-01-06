@@ -44,7 +44,7 @@ async function doTests(private, container) {
 
     let waitFor;
     if (test.newWindow || alwaysNewWindow) {
-      waitFor = BrowserTestUtils.waitForNewWindow(window.gBrowser, TARGET_URL, true);
+      waitFor = BrowserTestUtils.waitForNewWindow(true, TARGET_URL);
       
     } else {
       waitFor = BrowserTestUtils.waitForNewTab(window.gBrowser, TARGET_URL, true);
