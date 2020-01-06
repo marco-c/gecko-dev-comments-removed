@@ -1392,7 +1392,6 @@ private:
   const OpenMode mOpenMode;
   enum State {
     eInitial, 
-    eBackgroundChildPending, 
     eOpening, 
     eOpened, 
     eClosing, 
@@ -1474,7 +1473,6 @@ ChildRunnable::Run()
       return NS_OK;
     }
 
-    case eBackgroundChildPending:
     case eOpening:
     case eOpened:
     case eFinished: {
