@@ -139,16 +139,6 @@ CompositorBridgeChild::Destroy()
   
   RefPtr<CompositorBridgeChild> selfRef = this;
 
-  if (!mCanSend) {
-    
-    
-    
-    MessageLoop::current()->PostTask(NewRunnableMethod(
-      "CompositorBridgeChild::AfterDestroy",
-      selfRef, &CompositorBridgeChild::AfterDestroy));
-    return;
-  }
-
   for (size_t i = 0; i < mTexturePools.Length(); i++) {
     mTexturePools[i]->Destroy();
   }
@@ -161,6 +151,16 @@ CompositorBridgeChild::Destroy()
   if (mLayerManager) {
     mLayerManager->Destroy();
     mLayerManager = nullptr;
+  }
+
+  if (!mCanSend) {
+    
+    
+    
+    MessageLoop::current()->PostTask(NewRunnableMethod(
+      "CompositorBridgeChild::AfterDestroy",
+      selfRef, &CompositorBridgeChild::AfterDestroy));
+    return;
   }
 
   AutoTArray<PLayerTransactionChild*, 16> transactions;
