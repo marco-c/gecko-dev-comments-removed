@@ -72,8 +72,6 @@ public:
   
   virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) { }
 
-  virtual already_AddRefed<GMPCrashHelper> GetCrashHelper() { return nullptr; }
-
   
   
   
