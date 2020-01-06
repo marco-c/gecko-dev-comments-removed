@@ -115,7 +115,8 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  MoveOverflowToChildList(aReflowInput.mLineLayout->LineContainerFrame());
+  MoveInlineOverflowToChildList(
+    aReflowInput.mLineLayout->LineContainerFrame());
 
   
   mLeadings.Reset();

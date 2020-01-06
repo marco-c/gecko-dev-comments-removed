@@ -1516,7 +1516,7 @@ nsContainerFrame::PushChildren(nsIFrame* aFromChild,
 }
 
 bool
-nsContainerFrame::MoveOverflowToChildList(nsIFrame* aLineContainer)
+nsContainerFrame::MoveOverflowToChildList()
 {
   bool result = false;
 
@@ -1528,26 +1528,45 @@ nsContainerFrame::MoveOverflowToChildList(nsIFrame* aLineContainer)
     if (prevOverflowFrames) {
       
       
-      
-      
-      
-      
-      
-      
-      NS_ASSERTION(mFrames.IsEmpty() || IsTableFrame() || aLineContainer,
-                   "bad overflow list");
-      
-      
-      if (aLineContainer && aLineContainer->GetPrevContinuation()) {
-        ReparentFloatsForInlineChild(aLineContainer,
-                                     prevOverflowFrames->FirstChild(),
-                                     true);
-      }
+      NS_ASSERTION(mFrames.IsEmpty() || IsTableFrame(), "bad overflow list");
       
       
       nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames,
                                               prevInFlow, this);
       mFrames.AppendFrames(this, *prevOverflowFrames);
+      result = true;
+    }
+  }
+
+  
+  return DrainSelfOverflowList() || result;
+}
+
+bool
+nsContainerFrame::MoveInlineOverflowToChildList(nsIFrame* aLineContainer)
+{
+  MOZ_ASSERT(aLineContainer,
+             "Must have line container for moving inline overflows");
+
+  bool result = false;
+
+  
+  if (auto prevInFlow = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
+    AutoFrameListPtr prevOverflowFrames(PresContext(),
+                                        prevInFlow->StealOverflowFrames());
+    if (prevOverflowFrames) {
+      
+      
+      if (aLineContainer->GetPrevContinuation()) {
+        ReparentFloatsForInlineChild(aLineContainer,
+                                     prevOverflowFrames->FirstChild(), true);
+      }
+      
+      
+      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames,
+                                              prevInFlow, this);
+      
+      mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
       result = true;
     }
   }
