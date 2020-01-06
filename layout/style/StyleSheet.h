@@ -262,6 +262,9 @@ public:
   nsresult InsertRuleIntoGroup(const nsAString& aRule,
                                css::GroupRule* aGroup, uint32_t aIndex);
 
+  
+  uint64_t FindOwningWindowInnerID() const;
+
   template<typename Func>
   void EnumerateChildSheets(Func aCallback) {
     for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {

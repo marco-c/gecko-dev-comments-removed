@@ -139,10 +139,18 @@ ErrorReporter::ReleaseGlobals()
 }
 
 ErrorReporter::ErrorReporter(const nsCSSScanner& aScanner,
-                             const CSSStyleSheet* aSheet,
+                             const StyleSheet* aSheet,
                              const Loader* aLoader,
                              nsIURI* aURI)
   : mScanner(&aScanner), mSheet(aSheet), mLoader(aLoader), mURI(aURI),
+    mInnerWindowID(0), mErrorLineNumber(0), mPrevErrorLineNumber(0),
+    mErrorColNumber(0)
+{
+}
+
+ErrorReporter::ErrorReporter(const StyleSheet* aSheet,
+                             const Loader* aLoader)
+  : mScanner(nullptr), mSheet(aSheet), mLoader(aLoader), mURI(nullptr),
     mInnerWindowID(0), mErrorLineNumber(0), mPrevErrorLineNumber(0),
     mErrorColNumber(0)
 {
@@ -228,11 +236,36 @@ ErrorReporter::OutputError()
 }
 
 void
-ErrorReporter::OutputError(uint32_t aLineNumber, uint32_t aLineOffset)
+ErrorReporter::OutputError(uint32_t aLineNumber, uint32_t aColNumber)
 {
   mErrorLineNumber = aLineNumber;
-  mErrorColNumber = aLineOffset;
+  mErrorColNumber = aColNumber;
   OutputError();
+}
+
+
+
+
+
+
+
+
+void
+ErrorReporter::OutputError(uint32_t aLineNumber,
+                           uint32_t aColNumber,
+                           nsIURI* aURI,
+                           const nsACString& aSourceLine)
+{
+  DebugOnly<bool> equal = false;
+  MOZ_ASSERT(!mURI || (NS_SUCCEEDED(mURI->Equals(aURI, &equal)) && equal));
+  mURI = aURI;
+  mErrorLine.Truncate();
+  
+  if (!AppendUTF8toUTF16(aSourceLine, mErrorLine, fallible)) {
+    mErrorLine.Truncate();
+  }
+  mPrevErrorLineNumber = aLineNumber;
+  OutputError(aLineNumber, aColNumber);
 }
 
 void
@@ -248,15 +281,15 @@ ErrorReporter::AddToError(const nsString &aErrorText)
 
   if (mError.IsEmpty()) {
     mError = aErrorText;
-    mErrorLineNumber = mScanner->GetLineNumber();
-    mErrorColNumber = mScanner->GetColumnNumber();
+    mErrorLineNumber = mScanner ? mScanner->GetLineNumber() : 0;
+    mErrorColNumber = mScanner ? mScanner->GetColumnNumber() : 0;
     
     
     
     if (mErrorLine.IsEmpty() || mErrorLineNumber != mPrevErrorLineNumber) {
       
       
-      if (!mErrorLine.Assign(mScanner->GetCurrentLine(), fallible)) {
+      if (!mScanner || !mErrorLine.Assign(mScanner->GetCurrentLine(), fallible)) {
         mErrorLine.Truncate();
       }
       mPrevErrorLineNumber = mErrorLineNumber;
@@ -296,6 +329,21 @@ ErrorReporter::ReportUnexpected(const char *aMessage,
 }
 
 void
+ErrorReporter::ReportUnexpectedUnescaped(const char *aMessage,
+                                         const nsAutoString& aParam)
+{
+  if (!ShouldReportErrors()) return;
+
+  const char16_t *params[1] = { aParam.get() };
+
+  nsAutoString str;
+  sStringBundle->FormatStringFromName(NS_ConvertASCIItoUTF16(aMessage).get(),
+                                      params, ArrayLength(params),
+                                      getter_Copies(str));
+  AddToError(str);
+}
+
+void
 ErrorReporter::ReportUnexpected(const char *aMessage,
                                 const nsCSSToken &aToken)
 {
@@ -303,13 +351,7 @@ ErrorReporter::ReportUnexpected(const char *aMessage,
 
   nsAutoString tokenString;
   aToken.AppendToString(tokenString);
-  const char16_t *params[1] = { tokenString.get() };
-
-  nsAutoString str;
-  sStringBundle->FormatStringFromName(NS_ConvertASCIItoUTF16(aMessage).get(),
-                                      params, ArrayLength(params),
-                                      getter_Copies(str));
-  AddToError(str);
+  ReportUnexpectedUnescaped(aMessage, tokenString);
 }
 
 void
