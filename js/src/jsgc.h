@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef jsgc_h
 #define jsgc_h
 
@@ -32,38 +34,6 @@ class Nursery;
 
 namespace gc {
 
-#define GCSTATES(D) \
-    D(NotActive) \
-    D(MarkRoots) \
-    D(Mark) \
-    D(Sweep) \
-    D(Finalize) \
-    D(Compact) \
-    D(Decommit)
-enum class State {
-#define MAKE_STATE(name) name,
-    GCSTATES(MAKE_STATE)
-#undef MAKE_STATE
-};
-
-
-#define GC_ABORT_REASONS(D) \
-    D(None) \
-    D(NonIncrementalRequested) \
-    D(AbortRequested) \
-    D(Unused1) \
-    D(IncrementalDisabled) \
-    D(ModeChange) \
-    D(MallocBytesTrigger) \
-    D(GCBytesTrigger) \
-    D(ZoneChange) \
-    D(CompartmentRevived)
-enum class AbortReason {
-#define MAKE_REASON(name) name,
-    GC_ABORT_REASONS(MAKE_REASON)
-#undef MAKE_REASON
-};
-
 
 
 
@@ -84,15 +54,7 @@ template <typename T> struct ParticipatesInCC {};
 JS_FOR_EACH_TRACEKIND(EXPAND_PARTICIPATES_IN_CC)
 #undef EXPAND_PARTICIPATES_IN_CC
 
-
-const size_t MAX_EMPTY_CHUNK_AGE = 4;
-
-extern bool
-InitializeStaticData();
-
 } 
-
-class InterpreterFrame;
 
 extern void
 TraceRuntime(JSTracer* trc);
@@ -272,31 +234,6 @@ inline void CheckValueAfterMovingGC(const JS::Value& value);
 
 #endif 
 
-#define JS_FOR_EACH_ZEAL_MODE(D)               \
-            D(RootsChange, 1)                  \
-            D(Alloc, 2)                        \
-            D(FrameGC, 3)                      \
-            D(VerifierPre, 4)                  \
-            D(FrameVerifierPre, 5)             \
-            D(GenerationalGC, 7)               \
-            D(IncrementalRootsThenFinish, 8)   \
-            D(IncrementalMarkAllThenFinish, 9) \
-            D(IncrementalMultipleSlices, 10)   \
-            D(IncrementalMarkingValidator, 11) \
-            D(ElementsBarrier, 12)             \
-            D(CheckHashTablesOnMinorGC, 13)    \
-            D(Compact, 14)                     \
-            D(CheckHeapAfterGC, 15)            \
-            D(CheckNursery, 16)                \
-            D(IncrementalSweepThenFinish, 17)
-
-enum class ZealMode {
-#define ZEAL_MODE(name, value) name = value,
-    JS_FOR_EACH_ZEAL_MODE(ZEAL_MODE)
-#undef ZEAL_MODE
-    Limit = 17
-};
-
 enum VerifierType {
     PreBarrierVerifier
 };
@@ -317,14 +254,10 @@ void DumpArenaInfo();
 #else
 
 static inline void
-VerifyBarriers(JSRuntime* rt, VerifierType type)
-{
-}
+VerifyBarriers(JSRuntime* rt, VerifierType type) {}
 
 static inline void
-MaybeVerifyBarriers(JSContext* cx, bool always = false)
-{
-}
+MaybeVerifyBarriers(JSContext* cx, bool always = false) {}
 
 #endif
 
