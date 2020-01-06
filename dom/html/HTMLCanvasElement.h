@@ -310,7 +310,7 @@ public:
   already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* aBuilder,
                                          Layer *aOldLayer,
                                          LayerManager *aManager);
-  void InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
+  bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                 CanvasRenderer* aRenderer);
   
   

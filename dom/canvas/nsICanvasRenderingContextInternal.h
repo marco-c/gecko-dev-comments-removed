@@ -141,9 +141,9 @@ public:
                                                  Layer *oldLayer,
                                                  LayerManager *manager,
                                                  bool aMirror = false) = 0;
-  virtual void InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
+  virtual bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                         CanvasRenderer* aRenderer,
-                                        bool aMirror = false) { };
+                                        bool aMirror = false) { return true; }
 
   
   
