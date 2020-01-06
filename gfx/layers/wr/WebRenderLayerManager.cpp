@@ -184,7 +184,14 @@ bool
 WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 {
   if (!mRoot) {
-    return false;
+    
+    
+    
+    
+    
+    
+    WrBridge()->SendSetFocusTarget(mFocusTarget);
+    return true;
   }
 
   
