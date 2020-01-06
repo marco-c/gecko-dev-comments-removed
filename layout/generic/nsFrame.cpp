@@ -2810,7 +2810,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   if (aBuilder->IsRetainingDisplayList() && BuiltBlendContainer()) {
     dirtyRect = visibleRect;
-    aBuilder->MarkFrameModifiedDuringBuilding(this);
+    aBuilder->MarkCurrentFrameModifiedDuringBuilding();
   }
 
   bool usingFilter = StyleEffects()->HasFilters();
@@ -2973,7 +2973,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
         aBuilder->IsRetainingDisplayList()) {
       SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
-      aBuilder->MarkFrameModifiedDuringBuilding(this);
+      aBuilder->MarkCurrentFrameModifiedDuringBuilding();
 
       
       
