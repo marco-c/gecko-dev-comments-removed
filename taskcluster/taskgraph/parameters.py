@@ -57,14 +57,16 @@ class Parameters(ReadOnlyDict):
             raise KeyError("taskgraph parameter {!r} not found".format(k))
 
 
-def load_parameters_file(options):
+def load_parameters_file(filename):
     """
-    Load parameters from the --parameters option
+    Load parameters from a path, url, decision task-id or project.
+
+    Examples:
+        task-id=fdtgsD5DQUmAQZEaGMvQ4Q
+        project=mozilla-central
     """
     import urllib
-    from taskgraph.util.taskcluster import get_artifact_url
-
-    filename = options['parameters']
+    from taskgraph.util.taskcluster import get_artifact_url, find_task_id
 
     if not filename:
         return Parameters()
@@ -74,8 +76,14 @@ def load_parameters_file(options):
         f = open(filename)
     except IOError:
         
+        task_id = None
         if filename.startswith("task-id="):
             task_id = filename.split("=")[1]
+        elif filename.startswith("project="):
+            index = "gecko.v2.{}.latest.firefox.decision".format(filename.split("=")[1])
+            task_id = find_task_id(index)
+
+        if task_id:
             filename = get_artifact_url(task_id, 'public/parameters.yml')
         f = urllib.urlopen(filename)
 
