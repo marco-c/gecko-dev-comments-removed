@@ -22,8 +22,8 @@ use std::rc::Rc;
 
 
 const VALID_ENTRY_TYPES: &'static [&'static str] = &[
-    
-    
+    "mark", 
+    "measure", 
     
     
     "paint", 
