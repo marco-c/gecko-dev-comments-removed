@@ -31,7 +31,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
     var lastIndex = 0;
     rx.lastIndex = 0;
 
-#if defined(FUNCTIONAL)
+#if defined(FUNCTIONAL) || defined(ELEMBASE)
     
     
     var originalSource = UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT);
@@ -109,7 +109,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, fullUnicode
                 break;
         }
 
-#if defined(FUNCTIONAL)
+#if defined(FUNCTIONAL) || defined(ELEMBASE)
         
         
         if (UnsafeGetStringFromReservedSlot(rx, REGEXP_SOURCE_SLOT) !== originalSource ||
