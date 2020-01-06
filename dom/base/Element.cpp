@@ -492,8 +492,7 @@ Element::GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult)
   
   bool isXULorPluginElement = (IsXULElement() ||
                                IsHTMLElement(nsGkAtoms::object) ||
-                               IsHTMLElement(nsGkAtoms::embed) ||
-                               IsHTMLElement(nsGkAtoms::applet));
+                               IsHTMLElement(nsGkAtoms::embed));
   nsIPresShell* shell = aDocument->GetShell();
   if (!shell || GetPrimaryFrame() || !isXULorPluginElement) {
     *aResult = nullptr;

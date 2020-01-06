@@ -2940,8 +2940,7 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   
   
   nsTArray<nsINodeList*> childNodes;
-  if ((thisContent->IsHTMLElement(nsGkAtoms::object) ||
-       thisContent->IsHTMLElement(nsGkAtoms::applet)) &&
+  if (thisContent->IsHTMLElement(nsGkAtoms::object) &&
       (aType == eFallbackUnsupported ||
        aType == eFallbackDisabled ||
        aType == eFallbackBlocklisted ||
@@ -3772,11 +3771,6 @@ nsObjectLoadingContent::BlockEmbedOrObjectContentLoading()
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-  if (!thisContent->IsHTMLElement(nsGkAtoms::embed) &&
-      !thisContent->IsHTMLElement(nsGkAtoms::object)) {
-    
-    return false;
-  }
 
   
   

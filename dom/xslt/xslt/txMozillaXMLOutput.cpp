@@ -288,7 +288,6 @@ txMozillaXMLOutput::endElement()
         
         if (element->IsAnyOfHTMLElements(nsGkAtoms::title,
                                          nsGkAtoms::object,
-                                         nsGkAtoms::applet,
                                          nsGkAtoms::select,
                                          nsGkAtoms::textarea) ||
             element->IsSVGElement(nsGkAtoms::title)) {

@@ -121,7 +121,6 @@ nsHTMLContentSerializer::SerializeHTMLAttributes(nsIContent* aContent,
         
         
         
-        
         nsCOMPtr<nsIURI> uri = aContent->GetBaseURI();
         if (uri) {
           nsAutoString absURI;

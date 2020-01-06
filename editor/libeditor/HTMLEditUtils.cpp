@@ -594,6 +594,10 @@ static const ElementInfo kElements[eHTMLTag_userdefined] = {
   ELEM(acronym, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
   ELEM(address, true, true, GROUP_BLOCK,
        GROUP_INLINE_ELEMENT | GROUP_P),
+  
+  
+  
+  
   ELEM(applet, true, true, GROUP_SPECIAL | GROUP_BLOCK,
        GROUP_FLOW_ELEMENT | GROUP_OBJECT_CONTENT),
   ELEM(area, false, false, GROUP_MAP_CONTENT, GROUP_NONE),

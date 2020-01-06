@@ -3097,6 +3097,7 @@ protected:
   
   
   
+  
   nsAutoPtr<nsTHashtable<nsPtrHashKey<nsISupports> > > mActivityObservers;
 
   
