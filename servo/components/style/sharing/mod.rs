@@ -85,7 +85,9 @@ mod checks;
 
 
 
-pub const STYLE_SHARING_CANDIDATE_CACHE_SIZE: usize = 8;
+
+
+pub const STYLE_SHARING_CANDIDATE_CACHE_SIZE: usize = 31;
 
 
 #[derive(Clone, Copy, PartialEq)]
