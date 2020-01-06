@@ -429,7 +429,10 @@ public:
     do {
       state = other.Advance(pos);
       if (state != SourceBufferIterator::READY) {
-        MOZ_ASSERT_UNREACHABLE("Cannot advance to existing position");
+        
+        
+        
+        MOZ_ASSERT(NS_FAILED(other.CompletionStatus()));
         return Nothing();
       }
       MOZ_ASSERT(pos >= other.Length());
