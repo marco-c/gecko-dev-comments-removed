@@ -260,8 +260,9 @@ nsSMILCSSValueType::Add(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
   MOZ_ASSERT(destWrapper || valueToAddWrapper,
              "need at least one fully-initialized value");
 
-  nsCSSPropertyID property = (valueToAddWrapper ? valueToAddWrapper->mPropID :
-                            destWrapper->mPropID);
+  nsCSSPropertyID property = valueToAddWrapper
+                             ? valueToAddWrapper->mPropID
+                             : destWrapper->mPropID;
   
   
   if (property == eCSSProperty_font_size_adjust ||
