@@ -752,12 +752,6 @@ public abstract class GeckoApp extends GeckoActivity
             
             Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST, "text");
 
-        } else if ("Snackbar:Show".equals(event)) {
-            SnackbarBuilder.builder(this)
-                    .fromEvent(message)
-                    .callback(callback)
-                    .buildAndShow();
-
         } else if ("SystemUI:Visibility".equals(event)) {
             if (message.getBoolean("visible", true)) {
                 mMainLayout.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
@@ -2044,8 +2038,6 @@ public abstract class GeckoApp extends GeckoActivity
         
         super.onResume();
 
-        EventDispatcher.getInstance().registerUiThreadListener(this, "Snackbar:Show");
-
         if (mIsAbortingAppLaunch) {
             return;
         }
@@ -2117,8 +2109,6 @@ public abstract class GeckoApp extends GeckoActivity
     @Override
     public void onPause()
     {
-        EventDispatcher.getInstance().unregisterUiThreadListener(this, "Snackbar:Show");
-
         if (mIsAbortingAppLaunch) {
             super.onPause();
             return;
