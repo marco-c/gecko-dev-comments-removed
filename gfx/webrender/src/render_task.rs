@@ -244,7 +244,8 @@ impl RenderTask {
     pub fn new_mask(key: Option<ClipId>,
                     task_rect: DeviceIntRect,
                     raw_clips: &[ClipWorkItem],
-                    extra_clip: Option<ClipWorkItem>)
+                    extra_clip: Option<ClipWorkItem>,
+                    prim_rect: DeviceIntRect)
                     -> Option<RenderTask> {
         
         let mut inner_rect = Some(task_rect);
@@ -283,13 +284,20 @@ impl RenderTask {
         
         
         let mut geometry_kind = MaskGeometryKind::Default;
-        if inner_rect.is_some() && clips.len() == 1 {
-            let (_, ref info) = clips[0];
-            if info.border_corners.is_empty() &&
-               info.image.is_none() &&
-               info.complex_clip_range.get_count() == 1 &&
-               info.layer_clip_range.get_count() == 0 {
-                geometry_kind = MaskGeometryKind::CornersOnly;
+        if let Some(inner_rect) = inner_rect {
+            
+            
+            if inner_rect.contains_rect(&prim_rect) {
+                return None;
+            }
+            if clips.len() == 1 {
+                let (_, ref info) = clips[0];
+                if info.border_corners.is_empty() &&
+                   info.image.is_none() &&
+                   info.complex_clip_range.get_count() == 1 &&
+                   info.layer_clip_range.get_count() == 0 {
+                    geometry_kind = MaskGeometryKind::CornersOnly;
+                }
             }
         }
 

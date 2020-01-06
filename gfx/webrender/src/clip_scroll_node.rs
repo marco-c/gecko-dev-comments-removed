@@ -6,9 +6,9 @@ use api::{ClipId, DeviceIntRect, LayerPixel, LayerPoint, LayerRect, LayerSize};
 use api::{LayerToScrollTransform, LayerToWorldTransform, LayerVector2D, PipelineId};
 use api::{ScrollClamping, ScrollEventPhase, ScrollLocation, ScrollSensitivity, StickyFrameInfo};
 use api::WorldPoint;
+use clip::{ClipRegion, ClipSource, ClipSources};
 use clip_scroll_tree::TransformUpdateState;
 use geometry::ray_intersects_rect;
-use mask_cache::{ClipRegion, ClipSource, MaskCacheInfo};
 use spring::{DAMPING, STIFFNESS, Spring};
 use tiling::PackedLayerIndex;
 use util::{MatrixHelpers, TransformedRectKind};
@@ -19,14 +19,10 @@ const CAN_OVERSCROLL: bool = true;
 #[cfg(not(target_os = "macos"))]
 const CAN_OVERSCROLL: bool = false;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ClipInfo {
     
-    pub clip_sources: Vec<ClipSource>,
-
-    
-    
-    pub mask_cache_info: MaskCacheInfo,
+    pub clip_sources: ClipSources,
 
     
     
@@ -39,29 +35,22 @@ pub struct ClipInfo {
 
     
     
-    pub screen_inner_rect: DeviceIntRect,
-
-    
-    
     pub clip_rect: LayerRect,
 }
 
 impl ClipInfo {
     pub fn new(clip_region: ClipRegion, packed_layer_index: PackedLayerIndex) -> ClipInfo {
         let clip_rect = LayerRect::new(clip_region.origin, clip_region.main.size);
-        let clip_sources = vec![ClipSource::Region(clip_region)];
         ClipInfo {
-            mask_cache_info: MaskCacheInfo::new(&clip_sources),
-            clip_sources,
+            clip_sources: ClipSources::new(vec![ClipSource::Region(clip_region)]),
             packed_layer_index,
             screen_bounding_rect: None,
-            screen_inner_rect: DeviceIntRect::zero(),
             clip_rect: clip_rect,
         }
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum NodeType {
     
     ReferenceFrame(ReferenceFrameInfo),
@@ -81,7 +70,7 @@ pub enum NodeType {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ClipScrollNode {
     
     pub content_size: LayerSize,
