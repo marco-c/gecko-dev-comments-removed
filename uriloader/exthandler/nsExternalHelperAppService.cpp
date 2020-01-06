@@ -903,17 +903,17 @@ NS_IMETHODIMP nsExternalHelperAppService::ExternalProtocolHandlerExists(const ch
   nsCOMPtr<nsIHandlerInfo> handlerInfo;
   nsresult rv = GetProtocolHandlerInfo(nsDependentCString(aProtocolScheme), 
                                        getter_AddRefs(handlerInfo));
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_SUCCEEDED(rv)) {
+    
+    nsCOMPtr<nsIMutableArray> possibleHandlers;
+    handlerInfo->GetPossibleApplicationHandlers(getter_AddRefs(possibleHandlers));
 
-  
-  nsCOMPtr<nsIMutableArray> possibleHandlers;
-  handlerInfo->GetPossibleApplicationHandlers(getter_AddRefs(possibleHandlers));
-
-  uint32_t length;
-  possibleHandlers->GetLength(&length);
-  if (length) {
-    *aHandlerExists = true;
-    return NS_OK;
+    uint32_t length;
+    possibleHandlers->GetLength(&length);
+    if (length) {
+      *aHandlerExists = true;
+      return NS_OK;
+    }
   }
 
   
