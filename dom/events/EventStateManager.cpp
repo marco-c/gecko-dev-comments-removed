@@ -1772,6 +1772,12 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
 
       RefPtr<DataTransfer> dataTransfer =
         new DataTransfer(window, eDragStart, false, -1);
+      auto protectDataTransfer = MakeScopeExit([&] {
+        if (dataTransfer) {
+          dataTransfer->SetMode(DataTransfer::Mode::Protected);
+          dataTransfer->ClearAll();
+        }
+      });
 
       nsCOMPtr<nsISelection> selection;
       nsCOMPtr<nsIContent> eventContent, targetContent;
@@ -1838,11 +1844,6 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                          "on-datatransfer-available",
                                          nullptr);
       }
-
-      
-      
-      
-      dataTransfer->SetMode(DataTransfer::Mode::ReadOnly);
 
       if (status != nsEventStatus_eConsumeNoDefault) {
         bool dragStarted = DoDefaultDragStart(aPresContext, event, dataTransfer,
@@ -2009,6 +2010,18 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   
   
   
+  RefPtr<DataTransfer> dataTransfer;
+  aDataTransfer->Clone(aDragTarget, eDrop, aDataTransfer->MozUserCancelled(),
+                       false, getter_AddRefs(dataTransfer));
+
+  
+  uint32_t dropEffect;
+  aDataTransfer->GetDropEffectInt(&dropEffect);
+  dataTransfer->SetDropEffectInt(dropEffect);
+
+  
+  
+  
   RefPtr<DragEvent> event =
     NS_NewDOMDragEvent(dragTarget, aPresContext, aDragEvent);
 
@@ -2018,7 +2031,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
   
   if (!dragImage && aSelection) {
     dragService->InvokeDragSessionWithSelection(aSelection, transArray,
-                                                action, event, aDataTransfer);
+                                                action, event, dataTransfer);
   }
   else {
     
@@ -2045,7 +2058,7 @@ EventStateManager::DoDefaultDragStart(nsPresContext* aPresContext,
                                             dragImage ? dragImage->AsDOMNode() :
                                                         nullptr,
                                             imageX, imageY, event,
-                                            aDataTransfer);
+                                            dataTransfer);
   }
 
   return true;
