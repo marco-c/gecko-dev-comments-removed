@@ -1727,20 +1727,6 @@ Navigator::HasUserMediaSupport(JSContext* ,
 }
 
 
-bool
-Navigator::IsE10sEnabled(JSContext* aCx, JSObject* aGlobal)
-{
-  return XRE_IsContentProcess();
-}
-
-bool
-Navigator::MozE10sEnabled()
-{
-  
-  return true;
-}
-
-
 already_AddRefed<nsPIDOMWindowInner>
 Navigator::GetWindowFromGlobal(JSObject* aGlobal)
 {
