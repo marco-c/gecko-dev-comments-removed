@@ -213,7 +213,9 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
       if (responseStatus == HTTP_REQUESTED_RANGE_NOT_SATISFIABLE_CODE) {
         
         
-        mCacheStream.NotifyDataEnded(status);
+        
+        mCacheStream.NotifyLoadID(mLoadID);
+        mCacheStream.NotifyDataEnded(mLoadID, status);
       } else {
         mCallback->NotifyNetworkError(
           MediaResult(NS_ERROR_FAILURE, "HTTP error"));
@@ -391,7 +393,7 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
     ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
   }
 
-  mCacheStream.NotifyDataEnded(aStatus, aReopenOnError);
+  mCacheStream.NotifyDataEnded(mLoadID, aStatus, aReopenOnError);
   return NS_OK;
 }
 

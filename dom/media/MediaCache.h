@@ -267,8 +267,16 @@ public:
   
   
   void FlushPartialBlock();
+
   
-  void NotifyDataEnded(nsresult aStatus, bool aReopenOnError = false);
+  
+  
+  void NotifyLoadID(uint32_t aLoadID);
+
+  
+  void NotifyDataEnded(uint32_t aLoadID,
+                       nsresult aStatus,
+                       bool aReopenOnError = false);
 
   
   
@@ -444,6 +452,10 @@ private:
   
   
   void FlushPartialBlockInternal(bool aNotify, ReentrantMonitorAutoEnter& aReentrantMonitor);
+
+  void NotifyDataEndedInternal(uint32_t aLoadID,
+                               nsresult aStatus,
+                               bool aReopenOnError);
 
   
   RefPtr<MediaCache> mMediaCache;
