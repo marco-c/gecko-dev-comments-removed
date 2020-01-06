@@ -3143,7 +3143,7 @@ pref("browser.tabs.remote.separateFileUriProcess", false);
 
 
 
-pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
+pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
 pref("svg.path-caching.enabled", true);
