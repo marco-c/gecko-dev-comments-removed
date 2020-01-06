@@ -177,11 +177,11 @@ async function webdriverClickElement(el, a11y) {
   if (el.localName == "option") {
     interaction.selectOption(el);
   } else {
+    
+    let clicked = interaction.flushEventLoop(containerEl);
     event.synthesizeMouseAtPoint(clickPoint.x, clickPoint.y, {}, win);
+    await clicked;
   }
-
-  
-  await interaction.flushEventLoop(win);
 
   
   
@@ -298,25 +298,26 @@ interaction.selectOption = function(el) {
 
 
 
+interaction.flushEventLoop = async function(el) {
+  const win = el.ownerGlobal;
+  let unloadEv, clickEv;
 
-
-
-
-
-interaction.flushEventLoop = async function(win) {
   return new Promise(resolve => {
-    let handleEvent = () => {
-      win.removeEventListener("beforeunload", this);
-      resolve();
+    unloadEv = resolve;
+    clickEv = () => {
+      if (win.closed) {
+        resolve();
+      } else {
+        win.setTimeout(resolve, 0);
+      }
     };
 
-    if (win.closed) {
-      resolve();
-      return;
-    }
-
-    win.addEventListener("beforeunload", handleEvent);
-    win.requestAnimationFrame(handleEvent);
+    win.addEventListener("unload", unloadEv, {mozSystemGroup: true});
+    el.addEventListener("click", clickEv, {mozSystemGroup: true});
+  }).then(() => {
+    
+    win.removeEventListener("unload", unloadEv);
+    el.removeEventListener("click", clickEv);
   });
 };
 
