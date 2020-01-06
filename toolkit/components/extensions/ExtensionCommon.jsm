@@ -1077,6 +1077,7 @@ class SchemaAPIManager extends EventEmitter {
   }
 
   _initModule(info, cls) {
+    
     cls.namespaceName = cls.namespaceName;
     cls.scopes = new Set(info.scopes);
 
