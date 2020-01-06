@@ -1,3 +1,4 @@
+
 function testExpected(expected, msg) {
   is(document.getElementById("context-openlinkincurrent").hidden, expected, msg);
 }

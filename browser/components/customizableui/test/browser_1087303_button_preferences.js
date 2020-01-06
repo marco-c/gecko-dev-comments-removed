@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 var newTab = null;

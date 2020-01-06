@@ -8,6 +8,7 @@
 
 
 
+
 add_task(async function() {
   let testURL = getRootDirectory(gTestPath) + "browser_frame_history_index.html";
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);

@@ -1,3 +1,4 @@
+
 let NS_OSX_PICTURE_DOCUMENTS_DIR = "Pct";
 let NS_MAC_USER_LIB_DIR = "ULibDir";
 

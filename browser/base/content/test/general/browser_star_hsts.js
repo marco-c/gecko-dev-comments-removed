@@ -2,6 +2,7 @@
 
 
 
+
 var secureURL = "https://example.com/browser/browser/base/content/test/general/browser_star_hsts.sjs";
 var unsecureURL = "http://example.com/browser/browser/base/content/test/general/browser_star_hsts.sjs";
 

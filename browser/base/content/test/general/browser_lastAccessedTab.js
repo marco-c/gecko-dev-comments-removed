@@ -3,6 +3,7 @@
 
 
 
+
 const CURRENT_TIME_TOLERANCE_MS = 15;
 
 function isCurrent(tab, msg) {
