@@ -189,16 +189,6 @@ ThreadStackHelper::PrepareStackBuffer(Stack& aStack)
   
   aStack.clear();
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
-  
-
-
-
-
-#ifdef MOZ_WIDGET_GONK
-  if (!mPseudoStack) {
-    return false;
-  }
-#endif
   MOZ_ASSERT(mPseudoStack);
   if (!aStack.reserve(mMaxStackSize) ||
       !aStack.reserve(aStack.capacity()) || 

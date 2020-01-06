@@ -160,8 +160,7 @@ void ReadAheadFile(pathstr_t aFilePath, const size_t aOffset = 0,
 void ReadAhead(filedesc_t aFd, const size_t aOffset = 0,
                const size_t aCount = SIZE_MAX);
 
-
-#if defined(MOZ_WIDGET_GONK) || defined(XP_UNIX)
+#if defined(XP_UNIX)
 #define MOZ_TEMP_FAILURE_RETRY(exp) (__extension__({ \
   typeof (exp) _rc; \
   do { \
@@ -170,50 +169,6 @@ void ReadAhead(filedesc_t aFd, const size_t aOffset = 0,
   _rc; \
 }))
 #endif
-
-
-
-
-#if (defined(MOZ_WIDGET_GONK) || defined(DEBUG)) && defined(XP_UNIX)
-
-#ifndef ReadSysFile_PRESENT
-#define ReadSysFile_PRESENT
-#endif 
-
-#ifndef WriteSysFile_PRESENT
-#define WriteSysFile_PRESENT
-#endif 
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool ReadSysFile(const char* aFilename, char* aBuf, size_t aBufSize);
-
-
-
-
-
-bool ReadSysFile(const char* aFilename, int* aVal);
-
-
-
-
-
-
-bool ReadSysFile(const char* aFilename, bool* aVal);
-
-bool WriteSysFile(const char* aFilename, const char* aBuf);
-
-#endif 
 
 } 
 

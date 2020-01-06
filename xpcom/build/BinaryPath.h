@@ -136,12 +136,6 @@ private:
     
     
     const char* greHome = getenv("GRE_HOME");
-#if defined(MOZ_WIDGET_GONK)
-    if (!greHome) {
-      greHome = "/system/b2g";
-    }
-#endif
-
     if (!greHome) {
       return NS_ERROR_FAILURE;
     }

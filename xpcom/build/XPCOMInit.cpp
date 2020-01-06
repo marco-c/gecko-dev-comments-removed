@@ -1074,17 +1074,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 
   NS_LogTerm();
 
-#if defined(MOZ_WIDGET_GONK)
-  
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-      NS_WARNING("Exiting child process early!");
-      _exit(0);
-  }
-#endif
-
   return NS_OK;
 }
 
