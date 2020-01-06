@@ -2091,7 +2091,7 @@ nsStyleImageRequest::~nsStyleImageRequest()
         mDocGroup->Dispatch(TaskCategory::Other, task.forget());
       } else {
         
-        NS_DispatchToMainThread(task.forget());
+        SystemGroup::Dispatch(TaskCategory::Other, task.forget());
       }
     }
   }
