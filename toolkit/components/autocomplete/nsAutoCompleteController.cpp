@@ -503,6 +503,11 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool *_retval)
       input->GetCompleteSelectedIndex(&completeSelection);
 
       
+      
+      
+      Unused << StopSearch();
+
+      
       popup->SelectBy(reverse, page);
 
       if (completeSelection)
