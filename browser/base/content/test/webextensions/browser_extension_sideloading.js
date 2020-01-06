@@ -133,6 +133,7 @@ add_task(async function() {
   is(gBrowser.currentURI.spec, "about:addons", "Foreground tab is at about:addons");
 
   const VIEW = "addons://list/extension";
+  
   let win = gBrowser.selectedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
@@ -168,6 +169,7 @@ add_task(async function() {
   
   is(gBrowser.currentURI.spec, "about:addons", "Foreground tab is at about:addons");
 
+  
   win = gBrowser.selectedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");

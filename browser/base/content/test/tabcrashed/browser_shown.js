@@ -56,6 +56,7 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
 
     let tab = gBrowser.getTabForBrowser(browser);
     await BrowserTestUtils.crashBrowser(browser);
+    
     let doc = browser.contentDocument;
 
     
@@ -82,6 +83,7 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
     }
 
     let crashReport = promiseCrashReport(expectedExtra);
+    
     let restoreTab = browser.contentDocument.getElementById("restoreTab");
     restoreTab.click();
     await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
@@ -178,4 +180,3 @@ add_task(async function test_send_all() {
     "Email": EMAIL,
   });
 });
-

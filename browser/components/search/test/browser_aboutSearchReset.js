@@ -61,6 +61,7 @@ var gTests = [
     rawEngine.setAttr("loadPathHash", "broken");
 
     let loadPromise = promiseStoppedLoad(expectedURL);
+    
     gBrowser.contentDocument.getElementById("searchResetKeepCurrent").click();
     await loadPromise;
 
@@ -78,6 +79,7 @@ var gTests = [
   async run() {
     let currentEngine = Services.search.currentEngine;
     let originalEngine = Services.search.originalDefaultEngine;
+    
     let doc = gBrowser.contentDocument;
     let defaultEngineSpan = doc.getElementById("defaultEngine");
     is(defaultEngineSpan.textContent, originalEngine.name,
@@ -107,6 +109,7 @@ var gTests = [
     let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser,
                                                      false,
                                                      "about:preferences");
+    
     gBrowser.contentDocument.getElementById("linkSettingsPage").click();
     await loadPromise;
 

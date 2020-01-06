@@ -14,6 +14,7 @@ function withAboutStudies(testFunc) {
 decorate_task(
   withAboutStudies,
   async function testAboutStudiesWorks(browser) {
+    
     ok(browser.contentDocument.getElementById("app"), "App element was found");
   }
 );
@@ -50,11 +51,13 @@ decorate_task(
       });
     });
 
+    
     if (gBrowser.contentDocument.readyState !== "complete") {
       await BrowserTestUtils.waitForEvent(gBrowser.contentWindow, "load");
     }
 
     const location = gBrowser.contentWindow.location.href;
+    
     is(
       location,
       "about:preferences#privacy",

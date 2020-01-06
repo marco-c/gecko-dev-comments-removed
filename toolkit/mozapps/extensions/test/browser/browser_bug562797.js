@@ -8,6 +8,7 @@
 
 
 
+
 const MAIN_URL = "https://example.com/" + RELATIVE_DIR + "discovery.html";
 const SECOND_URL = "https://example.com/" + RELATIVE_DIR + "releaseNotes.xhtml";
 

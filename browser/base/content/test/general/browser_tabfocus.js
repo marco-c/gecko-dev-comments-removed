@@ -91,6 +91,7 @@ function focusInChild() {
     content.document.getElementById(message.data.id)[message.data.type]();
   });
 
+  
   addMessageListener("Browser:GetFocusedElement", function getFocusedElement(message) {
     var focusedWindow = {};
     var node = contentFM.getFocusedElementForWindow(content, false, focusedWindow);
@@ -128,6 +129,7 @@ function focusElementInChild(elementid, type) {
     browser.contentDocument.getElementById(elementid)[type]();
   }
 }
+
 
 add_task(async function() {
   tab1 = BrowserTestUtils.addTab(gBrowser);

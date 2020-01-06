@@ -8,6 +8,7 @@ function switchToCustomHistoryMode(doc) {
 }
 
 function testPrefStateMatchesLockedState() {
+  
   let win = gBrowser.contentWindow;
   let doc = win.document;
   switchToCustomHistoryMode(doc);

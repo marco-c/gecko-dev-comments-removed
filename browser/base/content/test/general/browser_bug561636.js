@@ -285,6 +285,7 @@ add_task(async function() {
     Services.obs.addObserver(gObserver, "invalidformsubmit");
 
     executeSoon(function() {
+      
       browser.contentDocument.getElementById("s").click();
     });
   });
@@ -330,6 +331,7 @@ add_task(async function() {
   checkPopupShow();
   await checkChildFocus(browser, gInvalidFormPopup.firstChild.textContent);
 
+  
   let inputPromise = promiseWaitForEvent(gBrowser.contentDocument.getElementById("i"), "input");
   EventUtils.synthesizeKey("f", {});
   await inputPromise;

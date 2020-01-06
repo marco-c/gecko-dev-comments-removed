@@ -8,6 +8,7 @@ add_task(async function setup() {
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   info("Preferences page opened on the general pane.");
 
+  
   await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
   info("Apps list loaded.");
 
@@ -17,6 +18,7 @@ add_task(async function setup() {
 });
 
 add_task(async function getFeedItem() {
+  
   win = gBrowser.selectedBrowser.contentWindow;
 
   container = win.document.getElementById("handlersView");
@@ -82,6 +84,7 @@ add_task(async function reselectInternalOptionForFeed() {
 });
 
 add_task(async function sortingCheck() {
+  
   win = gBrowser.selectedBrowser.contentWindow;
 
   const handlerView = win.document.getElementById("handlersView");

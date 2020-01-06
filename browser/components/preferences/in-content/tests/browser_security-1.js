@@ -52,6 +52,7 @@ add_task(async function() {
 
     
     checkbox.scrollIntoView();
+    
     EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
 
     

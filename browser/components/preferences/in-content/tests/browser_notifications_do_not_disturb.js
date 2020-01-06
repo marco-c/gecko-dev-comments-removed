@@ -11,6 +11,7 @@ add_task(async function() {
   let prefs = await openPreferencesViaOpenPreferencesAPI("panePrivacy", {leaveOpen: true});
   is(prefs.selectedPane, "panePrivacy", "Privacy pane was selected");
 
+  
   let doc = gBrowser.contentDocument;
   let notificationsDoNotDisturbBox = doc.getElementById("notificationsDoNotDisturbBox");
   if (notificationsDoNotDisturbBox.hidden) {

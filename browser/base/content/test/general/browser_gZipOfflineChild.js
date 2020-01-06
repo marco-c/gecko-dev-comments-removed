@@ -72,6 +72,7 @@ function test() {
   registerCleanupFunction(() => gBrowser.removeCurrentTab());
 
   BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => {
+    
     let window = gBrowser.selectedBrowser.contentWindow;
 
     window.addEventListener("message", handleMessageEvents);

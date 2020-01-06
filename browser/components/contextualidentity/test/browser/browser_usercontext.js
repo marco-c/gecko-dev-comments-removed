@@ -69,6 +69,7 @@ add_task(async function test() {
     await BrowserTestUtils.browserLoaded(browser);
 
     
+    
     let title = browser.contentDocument.title.trim().split("|");
 
     

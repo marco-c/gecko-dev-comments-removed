@@ -1,6 +1,8 @@
 
 
 
+
+
 Services.prefs.setBoolPref("browser.preferences.instantApply", true);
 
 registerCleanupFunction(function() {
