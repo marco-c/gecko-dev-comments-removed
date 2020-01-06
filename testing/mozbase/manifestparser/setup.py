@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup
 
 PACKAGE_NAME = "manifestparser"
@@ -11,7 +12,9 @@ setup(name=PACKAGE_NAME,
       version=PACKAGE_VERSION,
       description="Library to create and manage test manifests",
       long_description="see http://mozbase.readthedocs.org/",
-      classifiers=[],  
+      classifiers=['Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 2 :: Only'],
+                  
       keywords='mozilla manifests',
       author='Mozilla Automation and Testing Team',
       author_email='tools@lists.mozilla.org',

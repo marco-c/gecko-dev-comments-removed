@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup, find_packages
 
 PACKAGE_VERSION = '0.8'
@@ -13,7 +14,9 @@ setup(name='moztest',
       version=PACKAGE_VERSION,
       description="Package for storing and outputting Mozilla test results",
       long_description="see http://mozbase.readthedocs.org/",
-      classifiers=[],  
+      classifiers=['Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 2 :: Only'],
+      
       keywords='mozilla',
       author='Mozilla Automation and Tools team',
       author_email='tools@lists.mozilla.org',

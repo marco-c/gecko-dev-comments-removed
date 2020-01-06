@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup, find_packages
 import sys
 
@@ -27,7 +28,9 @@ setup(name='tps',
       description='run automated multi-profile sync tests',
       long_description="""\
 """,
-      classifiers=[], 
+      classifiers=['Programming Language :: Python :: 2.7',
+		   'Programming Language :: Python :: 2 :: Only',
+		  ], 
       keywords='',
       author='Mozilla Automation and Tools team',
       author_email='tools@lists.mozilla.org',

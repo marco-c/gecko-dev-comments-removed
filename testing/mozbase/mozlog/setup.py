@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup, find_packages
 
 PACKAGE_NAME = 'mozlog'
@@ -26,7 +27,8 @@ setup(name=PACKAGE_NAME,
                    'License :: OSI Approved :: Mozilla Public License 1.1 (MPL 1.1)',
                    'Operating System :: OS Independent',
                    'Topic :: Software Development :: Libraries :: Python Modules',
-                   ],
+                   'Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 2 :: Only'],
       package_data={"mozlog": ["formatters/html/main.js",
                                "formatters/html/style.css"]},
       entry_points={

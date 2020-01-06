@@ -2,6 +2,7 @@
 
 
 
+
 import os
 import re
 from setuptools import setup, find_packages
@@ -27,7 +28,9 @@ setup(name='firefox-ui-harness',
       version=get_version(),
       description="Firefox UI Harness",
       long_description=long_description,
-      classifiers=[],  
+      classifiers=['Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 2 :: Only'],
+      
       keywords='mozilla',
       author='Auto-tools',
       author_email='tools-marionette@lists.mozilla.org',

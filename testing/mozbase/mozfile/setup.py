@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup
 
 PACKAGE_NAME = 'mozfile'
@@ -11,7 +12,9 @@ setup(name=PACKAGE_NAME,
       version=PACKAGE_VERSION,
       description="Library of file utilities for use in Mozilla testing",
       long_description="see http://mozbase.readthedocs.org/",
-      classifiers=[],  
+      classifiers=['Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 2 :: Only'],
+      
       keywords='mozilla',
       author='Mozilla Automation and Tools team',
       author_email='tools@lists.mozilla.org',

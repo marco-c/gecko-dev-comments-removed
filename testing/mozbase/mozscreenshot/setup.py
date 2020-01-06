@@ -2,6 +2,7 @@
 
 
 
+
 from setuptools import setup
 
 
@@ -14,7 +15,9 @@ setup(
     version=PACKAGE_VERSION,
     description="Library for taking screenshots in tests harness",
     long_description="see http://mozbase.readthedocs.org/",
-    classifiers=[],  
+    classifiers=['Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 2 :: Only'],
+    
     keywords='mozilla',
     author='Mozilla Automation and Tools team',
     author_email='tools@lists.mozilla.org',
