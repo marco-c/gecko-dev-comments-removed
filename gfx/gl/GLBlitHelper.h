@@ -10,152 +10,178 @@
 #include "GLContextTypes.h"
 #include "GLConsts.h"
 #include "nsSize.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/Point.h"
+
+#ifdef XP_WIN
+#include <windows.h>
+#endif
 
 namespace mozilla {
 
 namespace layers {
+class D3D11YCbCrImage;
 class Image;
+class GPUVideoImage;
 class PlanarYCbCrImage;
 class SurfaceTextureImage;
 class MacIOSurfaceImage;
 class EGLImageImage;
+class SurfaceDescriptorD3D10;
+class SurfaceDescriptorDXGIYCbCr;
 } 
 
 namespace gl {
 
+class BindAnglePlanes;
 class GLContext;
+
+bool
+GuessDivisors(const gfx::IntSize& ySize, const gfx::IntSize& uvSize,
+              gfx::IntSize* const out_divisors);
+
+class DrawBlitProg final
+{
+    GLBlitHelper& mParent;
+    const GLuint mProg;
+    const GLint mLoc_u1ForYFlip;
+    const GLint mLoc_uClipRect;
+    const GLint mLoc_uTexSize0;
+    const GLint mLoc_uTexSize1;
+    const GLint mLoc_uDivisors;
+    const GLint mLoc_uColorMatrix;
+
+public:
+    DrawBlitProg(GLBlitHelper* parent, GLuint prog);
+    ~DrawBlitProg();
+
+    struct BaseArgs final {
+        gfx::IntSize destSize;
+        bool yFlip;
+        gfx::IntRect clipRect;
+        gfx::IntSize texSize0;
+    };
+    struct YUVArgs final {
+        gfx::IntSize texSize1;
+        gfx::IntSize divisors;
+        YUVColorSpace colorSpace;
+    };
+
+    void Draw(const BaseArgs& args, const YUVArgs* argsYUV = nullptr) const;
+};
+
+class ScopedSaveMultiTex final
+{
+    GLContext& mGL;
+    const uint8_t mTexCount;
+    const GLenum mTexTarget;
+    const GLuint mOldTexUnit;
+    GLuint mOldTexSampler[3];
+    GLuint mOldTex[3];
+
+public:
+    ScopedSaveMultiTex(GLContext* gl, uint8_t texCount, GLenum texTarget);
+    ~ScopedSaveMultiTex();
+};
 
 
 class GLBlitHelper final
 {
-    enum Channel
+    friend class BindAnglePlanes;
+    friend class DrawBlitProg;
+    friend class GLContext;
+
+    enum class DrawBlitType : uint8_t
     {
-        Channel_Y = 0,
-        Channel_Cb,
-        Channel_Cr,
-        Channel_Max,
+        Tex2DRGBA,
+        Tex2DPlanarYUV,
+        TexRectRGBA,
+        
+        TexExtNV12,
+        TexExtPlanarYUV,
     };
 
-    
+    GLContext* const mGL;
+    std::map<uint8_t, UniquePtr<DrawBlitProg>> mDrawBlitProgs;
+
+    GLuint mQuadVAO;
+
+    GLuint mYuvUploads[3];
+    gfx::IntSize mYuvUploads_YSize;
+    gfx::IntSize mYuvUploads_UVSize;
+
+#ifdef XP_WIN
+    mutable RefPtr<ID3D11Device> mD3D11;
+
+    ID3D11Device* GetD3D11() const;
+#endif
 
 
 
+    const DrawBlitProg* GetDrawBlitProg(DrawBlitType type) const;
 
-
-
-
-
-
-
-    enum BlitType
-    {
-        BlitTex2D,
-        BlitTexRect,
-        ConvertPlanarYCbCr,
-        ConvertSurfaceTexture,
-        ConvertEGLImage,
-        ConvertMacIOSurfaceImage
-    };
-    
-    GLContext* mGL;
-
-    GLuint mTexBlit_Buffer;
-    GLuint mTexBlit_VertShader;
-    GLuint mTex2DBlit_FragShader;
-    GLuint mTex2DRectBlit_FragShader;
-    GLuint mTex2DBlit_Program;
-    GLuint mTex2DRectBlit_Program;
-
-    GLint mYFlipLoc;
-
-    GLint mTextureTransformLoc;
-
-    
-    GLuint mTexExternalBlit_FragShader;
-    GLuint mTexYUVPlanarBlit_FragShader;
-    GLuint mTexNV12PlanarBlit_FragShader;
-    GLuint mTexExternalBlit_Program;
-    GLuint mTexYUVPlanarBlit_Program;
-    GLuint mTexNV12PlanarBlit_Program;
-    GLuint mFBO;
-    GLuint mSrcTexY;
-    GLuint mSrcTexCb;
-    GLuint mSrcTexCr;
-    GLuint mSrcTexEGL;
-    GLint mYTexScaleLoc;
-    GLint mCbCrTexScaleLoc;
-    GLint mYuvColorMatrixLoc;
-    int mTexWidth;
-    int mTexHeight;
-
-    
-    float mCurYScale;
-    float mCurCbCrScale;
-
-    void UseBlitProgram();
-    void SetBlitFramebufferForDestTexture(GLuint aTexture);
-
-    bool UseTexQuadProgram(BlitType target, const gfx::IntSize& srcSize);
-    bool InitTexQuadProgram(BlitType target = BlitTex2D);
-    void DeleteTexBlitProgram();
-    void BindAndUploadYUVTexture(Channel which, uint32_t width, uint32_t height, void* data, bool allocation);
-    void BindAndUploadEGLImage(EGLImage image, GLuint target);
-
-    bool BlitPlanarYCbCrImage(layers::PlanarYCbCrImage* yuvImage);
+    bool BlitImage(layers::PlanarYCbCrImage* yuvImage, const gfx::IntSize& destSize,
+                   OriginPos destOrigin);
 #ifdef MOZ_WIDGET_ANDROID
     
-    bool BlitSurfaceTextureImage(layers::SurfaceTextureImage* stImage);
-    bool BlitEGLImageImage(layers::EGLImageImage* eglImage);
+    bool BlitImage(layers::SurfaceTextureImage* stImage);
+    bool BlitImage(layers::EGLImageImage* eglImage);
 #endif
 #ifdef XP_MACOSX
-    bool BlitMacIOSurfaceImage(layers::MacIOSurfaceImage* ioImage);
+    bool BlitImage(layers::MacIOSurfaceImage* ioImage);
 #endif
 
     explicit GLBlitHelper(GLContext* gl);
-
-    friend class GLContext;
-
 public:
     ~GLBlitHelper();
 
-    
-    
-    
+    void BlitFramebuffer(const gfx::IntSize& srcSize,
+                         const gfx::IntSize& destSize) const;
     void BlitFramebufferToFramebuffer(GLuint srcFB, GLuint destFB,
                                       const gfx::IntSize& srcSize,
-                                      const gfx::IntSize& destSize,
-                                      bool internalFBs = false);
-    void BlitFramebufferToFramebuffer(GLuint srcFB, GLuint destFB,
-                                      const gfx::IntSize& srcSize,
-                                      const gfx::IntSize& destSize,
-                                      const GLFormats& srcFormats,
-                                      bool internalFBs = false);
-    void BlitTextureToFramebuffer(GLuint srcTex, GLuint destFB,
-                                  const gfx::IntSize& srcSize,
+                                      const gfx::IntSize& destSize) const;
+    void BlitFramebufferToTexture(GLuint destTex, const gfx::IntSize& srcSize,
                                   const gfx::IntSize& destSize,
-                                  GLenum srcTarget = LOCAL_GL_TEXTURE_2D,
-                                  bool internalFBs = false);
-    void DrawBlitTextureToFramebuffer(GLuint srcTex, GLuint destFB,
-                                      const gfx::IntSize& srcSize,
-                                      const gfx::IntSize& destSize,
-                                      GLenum srcTarget = LOCAL_GL_TEXTURE_2D,
-                                      bool internalFBs = false);
-    void BlitFramebufferToTexture(GLuint srcFB, GLuint destTex,
-                                  const gfx::IntSize& srcSize,
+                                  GLenum destTarget = LOCAL_GL_TEXTURE_2D) const;
+    void BlitTextureToFramebuffer(GLuint srcTex, const gfx::IntSize& srcSize,
                                   const gfx::IntSize& destSize,
-                                  GLenum destTarget = LOCAL_GL_TEXTURE_2D,
-                                  bool internalFBs = false);
+                                  GLenum srcTarget = LOCAL_GL_TEXTURE_2D) const;
     void BlitTextureToTexture(GLuint srcTex, GLuint destTex,
                               const gfx::IntSize& srcSize,
                               const gfx::IntSize& destSize,
                               GLenum srcTarget = LOCAL_GL_TEXTURE_2D,
-                              GLenum destTarget = LOCAL_GL_TEXTURE_2D);
+                              GLenum destTarget = LOCAL_GL_TEXTURE_2D) const;
+
+
+    void DrawBlitTextureToFramebuffer(GLuint srcTex, const gfx::IntSize& srcSize,
+                                      const gfx::IntSize& destSize,
+                                      GLenum srcTarget = LOCAL_GL_TEXTURE_2D) const;
+
     bool BlitImageToFramebuffer(layers::Image* srcImage, const gfx::IntSize& destSize,
-                                GLuint destFB, OriginPos destOrigin);
-    bool BlitImageToTexture(layers::Image* srcImage, const gfx::IntSize& destSize,
-                            GLuint destTex, GLenum destTarget, OriginPos destOrigin);
+                                OriginPos destOrigin);
+
+private:
+#ifdef XP_WIN
+    
+    bool BlitImage(layers::GPUVideoImage* srcImage, const gfx::IntSize& destSize,
+                   OriginPos destOrigin) const;
+    bool BlitImage(layers::D3D11YCbCrImage* srcImage, const gfx::IntSize& destSize,
+                   OriginPos destOrigin) const;
+
+    bool BlitDescriptor(const layers::SurfaceDescriptorD3D10& desc,
+                        const gfx::IntSize& destSize, OriginPos destOrigin) const;
+
+    bool BlitAngleYCbCr(const WindowsHandle (&handleList)[3],
+                        const gfx::IntRect& clipRect,
+                        const gfx::IntSize& ySize, const gfx::IntSize& uvSize,
+                        const YUVColorSpace colorSpace,
+                        const gfx::IntSize& destSize, OriginPos destOrigin) const;
+
+    bool BlitAnglePlanes(uint8_t numPlanes, const RefPtr<ID3D11Texture2D>* texD3DList,
+                         const DrawBlitProg* prog, const DrawBlitProg::BaseArgs& baseArgs,
+                         const DrawBlitProg::YUVArgs* const yuvArgs) const;
+#endif
 };
 
 } 

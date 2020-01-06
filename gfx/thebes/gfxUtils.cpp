@@ -1112,46 +1112,28 @@ gfxUtils::EncodeSourceSurface(SourceSurface* aSurface,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static const float kRec601[9] = {
-  1.16438f, 0.00000f, 1.59603f,
-  1.16438f,-0.39176f,-0.81297f,
-  1.16438f, 2.01723f, 0.00000f,
+const float kBT601NarrowYCbCrToRGB_RowMajor[16] = {
+  1.16438f, 0.00000f, 1.59603f,-0.87420f,
+  1.16438f,-0.39176f,-0.81297f, 0.53167f,
+  1.16438f, 2.01723f, 0.00000f,-1.08563f,
+  0.00000f, 0.00000f, 0.00000f, 1.00000f
 };
-static const float kRec709[9] = {
-  1.16438f, 0.00000f, 1.79274f,
-  1.16438f,-0.21325f,-0.53291f,
-  1.16438f, 2.11240f, 0.00000f,
+const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
+  1.16438f, 0.00000f, 1.79274f,-0.97295f,
+  1.16438f,-0.21325f,-0.53291f, 0.30148f,
+  1.16438f, 2.11240f, 0.00000f,-1.13340f,
+  0.00000f, 0.00000f, 0.00000f, 1.00000f
 };
 
  const float*
 gfxUtils::YuvToRgbMatrix4x3RowMajor(YUVColorSpace aYUVColorSpace)
 {
-  #define X(x) { x[0], x[1], x[2], 0.0f, \
-                 x[3], x[4], x[5], 0.0f, \
-                 x[6], x[7], x[8], 0.0f }
+  #define X(x) { x[0], x[1], x[ 2], 0.0f, \
+                 x[4], x[5], x[ 6], 0.0f, \
+                 x[8], x[9], x[10], 0.0f }
 
-  static const float rec601[12] = X(kRec601);
-  static const float rec709[12] = X(kRec709);
+  static const float rec601[12] = X(kBT601NarrowYCbCrToRGB_RowMajor);
+  static const float rec709[12] = X(kBT709NarrowYCbCrToRGB_RowMajor);
 
   #undef X
 
@@ -1169,12 +1151,36 @@ gfxUtils::YuvToRgbMatrix4x3RowMajor(YUVColorSpace aYUVColorSpace)
  const float*
 gfxUtils::YuvToRgbMatrix3x3ColumnMajor(YUVColorSpace aYUVColorSpace)
 {
-  #define X(x) { x[0], x[3], x[6], \
-                 x[1], x[4], x[7], \
-                 x[2], x[5], x[8] }
+  #define X(x) { x[0], x[4], x[ 8], \
+                 x[1], x[5], x[ 9], \
+                 x[2], x[6], x[10] }
 
-  static const float rec601[9] = X(kRec601);
-  static const float rec709[9] = X(kRec709);
+  static const float rec601[9] = X(kBT601NarrowYCbCrToRGB_RowMajor);
+  static const float rec709[9] = X(kBT709NarrowYCbCrToRGB_RowMajor);
+
+  #undef X
+
+  switch (aYUVColorSpace) {
+  case YUVColorSpace::BT601:
+    return rec601;
+  case YUVColorSpace::BT709:
+    return rec709;
+  default: 
+    MOZ_ASSERT(false, "unknown aYUVColorSpace");
+    return rec601;
+  }
+}
+
+ const float*
+gfxUtils::YuvToRgbMatrix4x4ColumnMajor(YUVColorSpace aYUVColorSpace)
+{
+  #define X(x) { x[0], x[4], x[ 8], x[12], \
+                 x[1], x[5], x[ 9], x[13], \
+                 x[2], x[6], x[10], x[14], \
+                 x[3], x[7], x[11], x[15] }
+
+  static const float rec601[16] = X(kBT601NarrowYCbCrToRGB_RowMajor);
+  static const float rec709[16] = X(kBT709NarrowYCbCrToRGB_RowMajor);
 
   #undef X
 
