@@ -479,7 +479,7 @@ private:
         "ftyp", "moov", 
         "pdin", "free", "sidx", 
         "styp", "moof", "mdat", 
-        "mfra", "skip", "meta", "meco", "ssix", "prft" 
+        "mfra", "skip", "meta", "meco", "ssix", "prft", 
         "pssh", 
         "emsg", 
         "bloc", "uuid" 
