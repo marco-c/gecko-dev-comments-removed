@@ -8,7 +8,7 @@ use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::cell::Cell;
 use std::fmt;
 use std::marker::PhantomData;
-use {AuxiliaryLists, AuxiliaryListsDescriptor, BuiltDisplayList, BuiltDisplayListDescriptor};
+use {BuiltDisplayList, BuiltDisplayListDescriptor};
 use {ClipId, ColorF, DeviceIntPoint, DeviceIntSize, DeviceUintRect, DeviceUintSize, FontKey};
 use {GlyphDimensions, GlyphKey, ImageData, ImageDescriptor, ImageKey, LayoutPoint, LayoutSize};
 use {LayoutTransform, NativeFontHandle, WorldPoint};
@@ -34,13 +34,11 @@ pub enum ApiMsg {
     
     
     
-    
     SetDisplayList(Option<ColorF>,
                    Epoch,
                    PipelineId,
                    LayoutSize,
                    BuiltDisplayListDescriptor,
-                   AuxiliaryListsDescriptor,
                    bool),
     SetPageZoom(ZoomFactor),
     SetPinchZoom(ZoomFactor),
@@ -299,21 +297,18 @@ impl RenderApi {
     
     
     
-    
     pub fn set_display_list(&self,
                             background_color: Option<ColorF>,
                             epoch: Epoch,
                             viewport_size: LayoutSize,
-                            (pipeline_id, display_list, auxiliary_lists): (PipelineId, BuiltDisplayList, AuxiliaryLists),
+                            (pipeline_id, display_list): (PipelineId, BuiltDisplayList),
                             preserve_frame_state: bool) {
         let (dl_data, dl_desc) = display_list.into_data();
-        let (aux_data, aux_desc) = auxiliary_lists.into_data();
         let msg = ApiMsg::SetDisplayList(background_color,
                                              epoch,
                                              pipeline_id,
                                              viewport_size,
                                              dl_desc,
-                                             aux_desc,
                                              preserve_frame_state);
         self.api_sender.send(msg).unwrap();
 
@@ -321,7 +316,6 @@ impl RenderApi {
             epoch: epoch,
             pipeline_id: pipeline_id,
             display_list_data: dl_data,
-            auxiliary_lists_data: aux_data
         }).unwrap();
     }
 

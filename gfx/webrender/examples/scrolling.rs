@@ -10,7 +10,7 @@ extern crate webrender_traits;
 use gleam::gl;
 use std::env;
 use std::path::PathBuf;
-use webrender_traits::{ClipId, ClipRegion, ColorF, DeviceUintSize, Epoch, LayoutPoint, LayoutRect};
+use webrender_traits::{ClipId, ColorF, DeviceUintSize, Epoch, LayoutPoint, LayoutRect};
 use webrender_traits::{LayoutSize, PipelineId, ScrollEventPhase, ScrollLocation, TransformStyle};
 use webrender_traits::WorldPoint;
 
@@ -123,47 +123,55 @@ fn main() {
                                       webrender_traits::MixBlendMode::Normal,
                                       Vec::new());
         
+        let clip = builder.push_clip_region(&scrollbox, vec![], None);
         let clip_id = builder.define_clip((0, 0).to(1000, 1000),
-                                          ClipRegion::simple(&scrollbox),
+                                          clip,
                                           Some(ClipId::new(42, pipeline_id)));
         builder.push_clip_id(clip_id);
         
         
+        let clip = builder.push_clip_region(&(0, 0).to(1000, 1000), vec![], None);
         builder.push_rect((0, 0).to(500, 500),
-                          ClipRegion::simple(&(0, 0).to(1000, 1000)),
+                          clip,
                           ColorF::new(1.0, 1.0, 1.0, 1.0));
         
+        let clip = builder.push_clip_region(&(0, 0).to(50, 50), vec![], None);
         builder.push_rect((0, 0).to(50, 50),
-                          ClipRegion::simple(&(0, 0).to(50, 50)),
+                          clip,
                           ColorF::new(0.0, 0.0, 1.0, 1.0));
         
         
+        let clip = builder.push_clip_region(&(60, 10).to(110, 60), vec![], None);
         builder.push_rect((50, 0).to(100, 50),
-                          ClipRegion::simple(&(60, 10).to(110, 60)),
+                          clip,
                           ColorF::new(0.0, 1.0, 0.0, 1.0));
 
         
         
         
+        let clip = builder.push_clip_region(&(0, 100).to(200, 300), vec![], None);
         let nested_clip_id = builder.define_clip((0, 100).to(300, 400),
-                                                 ClipRegion::simple(&(0, 100).to(200, 300)),
+                                                 clip,
                                                  Some(ClipId::new(43, pipeline_id)));
         builder.push_clip_id(nested_clip_id);
         
         
+        let clip = builder.push_clip_region(&(-1000, -1000).to(5000, 5000), vec![], None);
         builder.push_rect((-1000, -1000).to(5000, 5000),
-                          ClipRegion::simple(&(-1000, -1000).to(5000, 5000)),
+                          clip,
                           ColorF::new(0.5, 0.5, 0.5, 1.0));
         
         
+        let clip = builder.push_clip_region(&(0, 100).to(50, 150), vec![], None);
         builder.push_rect((0, 100).to(50, 150),
-                          ClipRegion::simple(&(0, 100).to(50, 150)),
+                          clip,
                           ColorF::new(0.0, 1.0, 1.0, 1.0));
         
         
         
+        let clip = builder.push_clip_region(&(250, 350).to(300, 400), vec![], None);
         builder.push_rect((250, 350).to(300, 400),
-                          ClipRegion::simple(&(250, 350).to(300, 400)),
+                          clip,
                           ColorF::new(0.0, 1.0, 1.0, 1.0));
         builder.pop_clip_id(); 
 
