@@ -789,9 +789,6 @@ struct ArenaAvailTreeTrait : public ArenaChunkMapLink
   }
 };
 
-typedef RedBlackTree<arena_chunk_map_t, ArenaAvailTreeTrait> arena_avail_tree_t;
-typedef RedBlackTree<arena_chunk_map_t, ArenaRunTreeTrait> arena_run_tree_t;
-
 
 struct arena_chunk_t {
 	
@@ -831,8 +828,6 @@ struct ArenaDirtyChunkTrait
     return CompareAddr(aNode, aOther);
   }
 };
-
-typedef RedBlackTree<arena_chunk_t, ArenaDirtyChunkTrait> arena_chunk_tree_t;
 
 #ifdef MALLOC_DOUBLE_PURGE
 namespace mozilla {
@@ -882,7 +877,7 @@ struct arena_bin_t {
 
 
 
-	arena_run_tree_t runs;
+	RedBlackTree<arena_chunk_map_t, ArenaRunTreeTrait> runs;
 
 	
 	size_t		reg_size;
@@ -920,7 +915,7 @@ struct arena_t {
 
 private:
   
-  arena_chunk_tree_t mChunksDirty;
+  RedBlackTree<arena_chunk_t, ArenaDirtyChunkTrait> mChunksDirty;
 
 #ifdef MALLOC_DOUBLE_PURGE
   
@@ -958,7 +953,7 @@ private:
 
 
 
-  arena_avail_tree_t mRunsAvail;
+  RedBlackTree<arena_chunk_map_t, ArenaAvailTreeTrait> mRunsAvail;
 
 public:
   
@@ -1048,8 +1043,6 @@ struct ArenaTreeTrait
   }
 };
 
-typedef RedBlackTree<arena_t, ArenaTreeTrait> arena_tree_t;
-
 
 
 
@@ -1113,7 +1106,7 @@ static arena_t** arenas;
 
 
 
-static arena_tree_t gArenaTree;
+static RedBlackTree<arena_t, ArenaTreeTrait> gArenaTree;
 static unsigned narenas;
 static malloc_spinlock_t arenas_lock; 
 
