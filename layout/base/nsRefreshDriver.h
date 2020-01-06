@@ -464,7 +464,7 @@ private:
   mozilla::TimeStamp mNextRecomputeVisibilityTick;
 
   
-  ObserverArray mObservers[3];
+  ObserverArray mObservers[4];
   RequestTable mRequests;
   ImageStartTable mStartTable;
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;
