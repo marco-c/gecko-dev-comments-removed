@@ -904,6 +904,12 @@ CustomizeMode.prototype = {
     let removable = aPlace == "palette" || CustomizableUI.isWidgetRemovable(aNode);
     wrapper.setAttribute("removable", removable);
 
+    if (AppConstants.platform == "win") {
+      
+      
+      wrapper.setAttribute("touchdownstartsdrag", "true");
+    }
+
     let contextMenuAttrName = "";
     if (aNode.getAttribute("context")) {
       contextMenuAttrName = "context";
