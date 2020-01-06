@@ -3,9 +3,9 @@
 
 
 
-#include "gfxPlatform.h"
 #include "HeadlessCompositorWidget.h"
 #include "HeadlessWidget.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
 
 #include "InProcessX11CompositorWidget.h"
 #include "nsWindow.h"
@@ -18,14 +18,16 @@ CompositorWidget::CreateLocal(const CompositorWidgetInitData& aInitData,
                               const layers::CompositorOptions& aOptions,
                               nsIWidget* aWidget)
 {
-  if (gfxPlatform::IsHeadless()) {
-    return new HeadlessCompositorWidget(aInitData, aOptions, static_cast<HeadlessWidget*>(aWidget));
+  if (aInitData.type() == CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
+    return new HeadlessCompositorWidget(aInitData.get_HeadlessCompositorWidgetInitData(),
+                                        aOptions, static_cast<HeadlessWidget*>(aWidget));
   } else {
-    return new InProcessX11CompositorWidget(aInitData, aOptions, static_cast<nsWindow*>(aWidget));
+    return new InProcessX11CompositorWidget(aInitData.get_X11CompositorWidgetInitData(),
+                                            aOptions, static_cast<nsWindow*>(aWidget));
   }
 }
 
-InProcessX11CompositorWidget::InProcessX11CompositorWidget(const CompositorWidgetInitData& aInitData,
+InProcessX11CompositorWidget::InProcessX11CompositorWidget(const X11CompositorWidgetInitData& aInitData,
                                                            const layers::CompositorOptions& aOptions,
                                                            nsWindow* aWindow)
   : X11CompositorWidget(aInitData, aOptions, aWindow)

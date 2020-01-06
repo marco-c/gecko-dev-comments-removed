@@ -17,7 +17,8 @@ class nsWindow;
 namespace mozilla {
 namespace widget {
 
-class CompositorWidgetDelegate
+class PlatformCompositorWidgetDelegate
+  : public CompositorWidgetDelegate
 {
 public:
   
@@ -32,19 +33,29 @@ public:
   
   
   virtual HDC GetTransparentDC() const = 0;
+
+  
+
+  PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() override {
+    return this;
+  }
 };
- 
+
+class WinCompositorWidgetInitData;
+
 
 
 
 
 class WinCompositorWidget
  : public CompositorWidget,
-   public CompositorWidgetDelegate
+   public PlatformCompositorWidgetDelegate
 {
 public:
-  WinCompositorWidget(const CompositorWidgetInitData& aInitData,
+  WinCompositorWidget(const WinCompositorWidgetInitData& aInitData,
                       const layers::CompositorOptions& aOptions);
+
+  
 
   bool PreRender(WidgetRenderingContext*) override;
   void PostRender(WidgetRenderingContext*) override;
@@ -67,6 +78,7 @@ public:
   bool IsHidden() const override;
 
   
+
   void EnterPresentLock() override;
   void LeavePresentLock() override;
   void OnDestroyWindow() override;

@@ -42,7 +42,22 @@ class CompositorWidgetInitData;
 
 
 
-class CompositorWidgetDelegate;
+class PlatformCompositorWidgetDelegate;
+
+
+class HeadlessCompositorWidget;
+
+class CompositorWidgetDelegate
+{
+public:
+  virtual PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() {
+    return nullptr;
+  }
+
+  virtual HeadlessCompositorWidget* AsHeadlessCompositorWidget() {
+    return nullptr;
+  }
+};
 
 
 #if defined(XP_WIN) || defined(MOZ_X11)
