@@ -941,6 +941,14 @@ public:
 
   static void Shutdown();
 
+  
+
+
+  bool IsRequired() const
+  {
+    return HasAttr(kNameSpaceID_None, nsGkAtoms::required);
+  }
+
 protected:
   virtual ~HTMLInputElement();
 

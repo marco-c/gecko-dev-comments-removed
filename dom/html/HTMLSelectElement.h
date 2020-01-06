@@ -341,7 +341,7 @@ public:
 
   NS_IMETHOD IsOptionDisabled(int32_t aIndex,
                               bool* aIsDisabled);
-  bool IsOptionDisabled(HTMLOptionElement* aOption);
+  bool IsOptionDisabled(HTMLOptionElement* aOption) const;
 
   
 
@@ -521,7 +521,7 @@ protected:
 
   
   void UpdateBarredFromConstraintValidation();
-  bool IsValueMissing();
+  bool IsValueMissing() const;
 
   
 
