@@ -1396,7 +1396,7 @@ protected:
     MOZ_ASSERT(aVideo);
     SLOG("DropVideoUpToSeekTarget() frame [%" PRId64 ", %" PRId64 "]",
          aVideo->mTime.ToMicroseconds(), aVideo->GetEndTime().ToMicroseconds());
-    const auto target = mSeekJob.mTarget->GetTime();
+    const auto target = GetSeekTarget();
 
     
     
@@ -1456,6 +1456,12 @@ protected:
   
   
   RefPtr<VideoData> mFirstVideoFrameAfterSeek;
+
+private:
+  virtual media::TimeUnit GetSeekTarget() const
+  {
+    return mSeekJob.mTarget->GetTime();
+  }
 };
 
 
@@ -1802,6 +1808,15 @@ public:
     mMaster->ResetDecode(TrackInfo::kVideoTrack);
 
     DemuxerSeek();
+  }
+
+private:
+  
+  media::TimeUnit GetSeekTarget() const override
+  {
+    return mMaster->mMediaSink->IsStarted()
+           ? mMaster->GetClock()
+           : mSeekJob.mTarget->GetTime();
   }
 };
 
