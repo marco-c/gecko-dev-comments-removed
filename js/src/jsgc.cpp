@@ -6992,12 +6992,11 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
 
 
 
-
         repeat = false;
         if (!isIncrementalGCInProgress()) {
             if (wasReset) {
                 repeat = true;
-            } else if (rootsRemoved && cleanUpEverything) {
+            } else if (rootsRemoved && IsShutdownGC(reason)) {
                 
                 JS::PrepareForFullGC(rt->activeContextFromOwnThread());
                 repeat = true;
