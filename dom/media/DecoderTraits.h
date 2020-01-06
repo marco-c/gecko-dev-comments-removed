@@ -21,6 +21,7 @@ class MediaContainerType;
 struct MediaDecoderInit;
 class MediaDecoderOwner;
 class MediaDecoderReader;
+class MediaResource;
 
 enum CanPlayStatus {
   CANPLAY_NO,
@@ -50,7 +51,8 @@ public:
   
   
   static MediaDecoderReader* CreateReader(const MediaContainerType& aType,
-                                          AbstractMediaDecoder* aDecoder);
+                                          AbstractMediaDecoder* aDecoder,
+                                          MediaResource* aResource);
 
   
   

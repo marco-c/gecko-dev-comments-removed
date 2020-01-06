@@ -193,7 +193,8 @@ MediaDecodeTask::CreateReader()
   
   
 
-  mDecoderReader = DecoderTraits::CreateReader(mContainerType, mBufferDecoder);
+  mDecoderReader =
+    DecoderTraits::CreateReader(mContainerType, mBufferDecoder, resource);
 
   if (!mDecoderReader) {
     return false;
