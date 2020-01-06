@@ -954,6 +954,13 @@ VectorImage::Draw(gfxContext* aContext,
     SendOnUnlockedDraw(aFlags);
   }
 
+  
+  
+  
+  if (aContext->GetDrawTarget()->GetBackendType() == BackendType::RECORDING) {
+    aFlags |= FLAG_BYPASS_SURFACE_CACHE;
+  }
+
   MOZ_ASSERT(!(aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) ||
              (aSVGContext && aSVGContext->GetViewportSize()),
              "Viewport size is required when using "
