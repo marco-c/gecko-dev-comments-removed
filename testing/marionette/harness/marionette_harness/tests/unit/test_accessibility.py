@@ -8,7 +8,8 @@ import unittest
 from marionette_driver.by import By
 from marionette_driver.errors import (
     ElementNotAccessibleException,
-    ElementNotInteractableException
+    ElementNotInteractableException,
+    ElementClickInterceptedException,
 )
 
 from marionette_harness import MarionetteTestCase
@@ -83,7 +84,14 @@ class TestAccessibility(MarionetteTestCase):
     disabled_elementIDs = ["button11", "no_accessible_but_disabled"]
 
     
-    disabled_accessibility_elementIDs = ["button12", "button15", "button16"]
+    
+    aria_disabled_elementIDs = ["button12"]
+
+    
+    
+    
+    
+    pointer_events_none_elementIDs = ["button15", "button16"]
 
     
     valid_option_elementIDs = ["option1", "option2"]
@@ -167,20 +175,31 @@ class TestAccessibility(MarionetteTestCase):
     def test_element_is_not_enabled_to_accessbility(self):
         self.setup_accessibility()
         
-        self.run_element_test(self.disabled_accessibility_elementIDs,
+        self.run_element_test(self.aria_disabled_elementIDs,
+                              lambda element: self.assertRaises(ElementNotAccessibleException,
+                                                                element.is_enabled))
+        self.run_element_test(self.pointer_events_none_elementIDs,
                               lambda element: self.assertRaises(ElementNotAccessibleException,
                                                                 element.is_enabled))
 
         
         
-        self.run_element_test(self.disabled_accessibility_elementIDs,
+        
+        self.run_element_test(self.aria_disabled_elementIDs,
+                              lambda element: self.assertRaises(ElementNotAccessibleException,
+                                                                element.click))
+        self.run_element_test(self.pointer_events_none_elementIDs,
                               lambda element: self.assertRaises(ElementNotAccessibleException,
                                                                 element.click))
 
         self.setup_accessibility(False, False)
-        self.run_element_test(self.disabled_accessibility_elementIDs,
+        self.run_element_test(self.aria_disabled_elementIDs,
                               lambda element: element.is_enabled())
-        self.run_element_test(self.disabled_accessibility_elementIDs,
+        self.run_element_test(self.pointer_events_none_elementIDs,
+                              lambda element: element.is_enabled())
+        self.run_element_test(self.aria_disabled_elementIDs,
+                              lambda element: element.click())
+        self.run_element_test(self.pointer_events_none_elementIDs,
                               lambda element: element.click())
 
     def test_element_is_enabled_to_accessibility(self):
