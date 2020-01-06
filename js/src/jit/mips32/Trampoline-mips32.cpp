@@ -129,7 +129,7 @@ GeneratePrologue(MacroAssembler& masm)
 
 
 JitCode*
-JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
+JitRuntime::generateEnterJIT(JSContext* cx)
 {
     const Register reg_code = a0;
     const Register reg_argc = a1;
@@ -151,8 +151,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.loadPtr(slotToken, s2);
 
     
-    if (type == EnterJitBaseline)
-        masm.movePtr(StackPointer, BaselineFrameReg);
+    masm.movePtr(StackPointer, BaselineFrameReg);
 
     
     masm.loadPtr(slotVp, s3);
@@ -205,7 +204,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     CodeLabel returnLabel;
     CodeLabel oomReturnLabel;
-    if (type == EnterJitBaseline) {
+    {
         
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
         regs.take(OsrFrameReg);
@@ -317,7 +316,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
     masm.callJitNoProfiler(reg_code);
 
-    if (type == EnterJitBaseline) {
+    {
         
         masm.bind(returnLabel.target());
         masm.addCodeLabel(returnLabel);

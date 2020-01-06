@@ -32,7 +32,7 @@ static const LiveRegisterSet AllRegs =
 
 
 JitCode*
-JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
+JitRuntime::generateEnterJIT(JSContext* cx)
 {
     MacroAssembler masm(cx);
     masm.assertStackAlignment(ABIStackAlignment, -int32_t(sizeof(uintptr_t)) );
@@ -166,7 +166,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     CodeLabel returnLabel;
     CodeLabel oomReturnLabel;
-    if (type == EnterJitBaseline) {
+    {
         
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
         regs.takeUnchecked(OsrFrameReg);
@@ -290,7 +290,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
     masm.callJitNoProfiler(reg_code);
 
-    if (type == EnterJitBaseline) {
+    {
         
         masm.use(returnLabel.target());
         masm.addCodeLabel(returnLabel);

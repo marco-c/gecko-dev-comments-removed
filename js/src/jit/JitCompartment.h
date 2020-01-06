@@ -27,11 +27,6 @@ namespace jit {
 
 class FrameSizeClass;
 
-enum EnterJitType {
-    EnterJitBaseline = 0,
-    EnterJitOptimized = 1
-};
-
 struct EnterJitData
 {
     explicit EnterJitData(JSContext* cx)
@@ -105,9 +100,6 @@ class JitRuntime
     ExclusiveAccessLockWriteOnceData<JitCode*> enterJIT_;
 
     
-    ExclusiveAccessLockWriteOnceData<JitCode*> enterBaselineJIT_;
-
-    
     typedef Vector<JitCode*, 4, SystemAllocPolicy> BailoutTableVector;
     ExclusiveAccessLockWriteOnceData<BailoutTableVector> bailoutTables_;
 
@@ -159,7 +151,7 @@ class JitRuntime
     JitCode* generateProfilerExitFrameTailStub(JSContext* cx);
     JitCode* generateExceptionTailStub(JSContext* cx, void* handler);
     JitCode* generateBailoutTailStub(JSContext* cx);
-    JitCode* generateEnterJIT(JSContext* cx, EnterJitType type);
+    JitCode* generateEnterJIT(JSContext* cx);
     JitCode* generateArgumentsRectifier(JSContext* cx, void** returnAddrOut);
     JitCode* generateBailoutTable(JSContext* cx, uint32_t frameClass);
     JitCode* generateBailoutHandler(JSContext* cx);
@@ -267,12 +259,8 @@ class JitRuntime
         return invalidator_;
     }
 
-    EnterJitCode enterIon() const {
+    EnterJitCode enterJit() const {
         return enterJIT_->as<EnterJitCode>();
-    }
-
-    EnterJitCode enterBaseline() const {
-        return enterBaselineJIT_->as<EnterJitCode>();
     }
 
     JitCode* preBarrier(MIRType type) const {

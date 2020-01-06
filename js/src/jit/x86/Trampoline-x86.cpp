@@ -52,7 +52,7 @@ enum EnterJitEbpArgumentOffset {
 
 
 JitCode*
-JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
+JitRuntime::generateEnterJIT(JSContext* cx)
 {
     MacroAssembler masm(cx);
     masm.assertStackAlignment(ABIStackAlignment, -int32_t(sizeof(uintptr_t)) );
@@ -162,7 +162,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     CodeLabel returnLabel;
     CodeLabel oomReturnLabel;
-    if (type == EnterJitBaseline) {
+    {
         
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
         regs.take(JSReturnOperand);
@@ -286,7 +286,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     masm.call(Address(ebp, ARG_JITCODE));
 
-    if (type == EnterJitBaseline) {
+    {
         
         masm.use(returnLabel.target());
         masm.addCodeLabel(returnLabel);

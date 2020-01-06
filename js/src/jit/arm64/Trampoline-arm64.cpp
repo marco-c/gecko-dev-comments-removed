@@ -31,7 +31,7 @@ static const LiveRegisterSet AllRegs =
 
 
 JitCode*
-JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
+JitRuntime::generateEnterJIT(JSContext* cx)
 {
     MacroAssembler masm(cx);
 
@@ -167,7 +167,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.Push(r19);
 
     Label osrReturnPoint;
-    if (type == EnterJitBaseline) {
+    {
         
         Label notOsr;
         masm.branchTestPtr(Assembler::Zero, OsrFrameReg, OsrFrameReg, &notOsr);
@@ -230,8 +230,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.callJitNoProfiler(reg_code);
 
     
-    if (type == EnterJitBaseline)
-        masm.bind(&osrReturnPoint);
+    masm.bind(&osrReturnPoint);
 
     
     masm.Pop(r19);

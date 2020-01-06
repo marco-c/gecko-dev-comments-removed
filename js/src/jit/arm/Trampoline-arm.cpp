@@ -105,7 +105,7 @@ struct EnterJITStack
 
 
 JitCode*
-JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
+JitRuntime::generateEnterJIT(JSContext* cx)
 {
     const Address slot_token(sp, offsetof(EnterJITStack, token));
     const Address slot_vp(sp, offsetof(EnterJITStack, vp));
@@ -145,8 +145,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.loadPtr(slot_token, r9);
 
     
-    if (type == EnterJitBaseline)
-        masm.movePtr(sp, r11);
+    masm.movePtr(sp, r11);
 
     
     masm.loadPtr(slot_vp, r10);
@@ -215,7 +214,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.finishDataTransfer();
 
     Label returnLabel;
-    if (type == EnterJitBaseline) {
+    {
         
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
         regs.take(JSReturnOperand);
@@ -352,10 +351,8 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
     masm.callJitNoProfiler(r0);
 
-    if (type == EnterJitBaseline) {
-        
-        masm.bind(&returnLabel);
-    }
+    
+    masm.bind(&returnLabel);
 
     
     
