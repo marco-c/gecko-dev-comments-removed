@@ -24,8 +24,8 @@ add_task(function*() {
 
   
   
-  ok(!findElement(dbg, "sourceFooter"), "Footer is hidden");
+  ok(!findElement(dbg, "editorFooter"), "Footer is hidden");
 
   yield selectSource(dbg, "math.min.js");
-  ok(findElement(dbg, "sourceFooter"), "Footer is hidden");
+  ok(findElement(dbg, "editorFooter"), "Footer is hidden");
 });
