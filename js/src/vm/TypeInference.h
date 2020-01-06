@@ -1245,6 +1245,9 @@ class TypeScript
                                TypeSet::Type type);
     static inline void Monitor(JSContext* cx, const js::Value& rval);
 
+    static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
+                               StackTypeSet* types, const js::Value& val);
+
     
     static inline void MonitorAssign(JSContext* cx, HandleObject obj, jsid id);
 
