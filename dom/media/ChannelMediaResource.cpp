@@ -744,12 +744,12 @@ ChannelMediaResource::RecreateChannel()
   MediaDecoderOwner* owner = mCallback->GetMediaOwner();
   if (!owner) {
     
-    return NS_OK;
+    return NS_ERROR_ABORT;
   }
   dom::HTMLMediaElement* element = owner->GetMediaElement();
   if (!element) {
     
-    return NS_OK;
+    return NS_ERROR_ABORT;
   }
   nsCOMPtr<nsILoadGroup> loadGroup = element->GetDocumentLoadGroup();
   NS_ENSURE_TRUE(loadGroup, NS_ERROR_NULL_POINTER);
