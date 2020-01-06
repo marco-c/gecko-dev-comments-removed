@@ -657,7 +657,17 @@ int getPosition(){
           }
         case 44: break;
         case 2: 
-          { Long val=Long.valueOf(yytext()); return new Yytoken(Yytoken.TYPE_VALUE, val);
+          {
+            String text = yytext();
+            try {
+              Long val = Long.valueOf(text);
+              return new Yytoken(Yytoken.TYPE_VALUE, val);
+            } catch (NumberFormatException e) {
+              
+              
+              Double val = Double.valueOf(text);
+              return new Yytoken(Yytoken.TYPE_VALUE, val);
+            }
           }
         case 45: break;
         case 18: 
