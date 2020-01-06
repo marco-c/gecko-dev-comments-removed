@@ -6625,7 +6625,10 @@ nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
   
   
   
-  if (aNativeMessage == GDK_BUTTON_PRESS || aNativeMessage == GDK_BUTTON_RELEASE) {
+  if (aNativeMessage == GDK_BUTTON_PRESS ||
+      aNativeMessage == GDK_BUTTON_RELEASE ||
+      aNativeMessage == GDK_2BUTTON_PRESS ||
+      aNativeMessage == GDK_3BUTTON_PRESS) {
     GdkEvent event;
     memset(&event, 0, sizeof(GdkEvent));
     event.type = (GdkEventType)aNativeMessage;
