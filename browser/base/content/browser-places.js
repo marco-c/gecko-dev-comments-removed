@@ -216,7 +216,7 @@ var StarUI = {
     if (typeof(aNode) == "number") {
       let itemId = aNode;
       let guid = await PlacesUtils.promiseItemGuid(itemId);
-      aNode = await PlacesUIUtils.promiseNodeLike(guid);
+      aNode = await PlacesUIUtils.fetchNodeLike(guid);
     }
 
     
@@ -418,7 +418,7 @@ var PlacesCommandHook = {
         charset = aBrowser.characterSet;
       } catch (e) { }
 
-      if (aShowEditUI && isNewBookmark) {
+      if (aShowEditUI) {
         
         
         
@@ -450,17 +450,17 @@ var PlacesCommandHook = {
     
     
     if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
-      StarUI.showEditBookmarkPopup(itemId, BookmarkingUI.anchor,
-                                   "bottomcenter topright", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(itemId, BookmarkingUI.anchor,
+                                        "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isVisible(identityIcon)) {
-      StarUI.showEditBookmarkPopup(itemId, identityIcon,
-                                   "bottomcenter topright", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(itemId, identityIcon,
+                                        "bottomcenter topright", isNewBookmark);
     } else {
-      StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap", isNewBookmark);
     }
   },
 
@@ -525,17 +525,17 @@ var PlacesCommandHook = {
     
     
     if (BookmarkingUI.anchor && isVisible(BookmarkingUI.anchor)) {
-      StarUI.showEditBookmarkPopup(node, BookmarkingUI.anchor,
+      await StarUI.showEditBookmarkPopup(node, BookmarkingUI.anchor,
                                    "bottomcenter topright", isNewBookmark);
       return;
     }
 
     let identityIcon = document.getElementById("identity-icon");
     if (isVisible(identityIcon)) {
-      StarUI.showEditBookmarkPopup(node, identityIcon,
+      await StarUI.showEditBookmarkPopup(node, identityIcon,
                                    "bottomcenter topright", isNewBookmark);
     } else {
-      StarUI.showEditBookmarkPopup(node, aBrowser, "overlap", isNewBookmark);
+      await StarUI.showEditBookmarkPopup(node, aBrowser, "overlap", isNewBookmark);
     }
   },
 
@@ -555,7 +555,8 @@ var PlacesCommandHook = {
 
 
   bookmarkCurrentPage: function PCH_bookmarkCurrentPage(aShowEditUI, aParent) {
-    this.bookmarkPage(gBrowser.selectedBrowser, aParent, aShowEditUI);
+    this.bookmarkPage(gBrowser.selectedBrowser, aParent, aShowEditUI)
+        .catch(Components.utils.reportError);
   },
 
   
