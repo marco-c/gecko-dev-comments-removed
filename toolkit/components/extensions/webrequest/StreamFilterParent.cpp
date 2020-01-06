@@ -165,9 +165,13 @@ StreamFilterParent::RecvClose()
 
   if (!mSentStop) {
     RefPtr<StreamFilterParent> self(this);
-    RunOnMainThread(FUNC, [=] {
-      nsresult rv = self->EmitStopRequest(NS_OK);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+    
+    
+    RunOnIOThread(FUNC, [=] {
+      RunOnMainThread(FUNC, [=] {
+        nsresult rv = self->EmitStopRequest(NS_OK);
+        Unused << NS_WARN_IF(NS_FAILED(rv));
+      });
     });
   }
 
