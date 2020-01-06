@@ -72,4 +72,10 @@ impl test {
       } else { // Should not trigger
           "false"
       } 
+
+    if  true { 
+        42
+    } else {
+        let xif = 42 in {  xif  } 
+    }
 }
