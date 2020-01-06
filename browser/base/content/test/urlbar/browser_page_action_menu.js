@@ -118,6 +118,16 @@ add_task(async function sendToDevice_nonSendable() {
   
   
   await BrowserTestUtils.withNewTab("about:home", async () => {
+    
+    
+    
+    
+    Assert.equal(
+      window.getComputedStyle(BrowserPageActions.mainButtonNode).visibility,
+      "collapse",
+      "Main button should be hidden on about:home"
+    );
+    BrowserPageActions.mainButtonNode.style.visibility = "visible";
     await promiseSyncReady();
     
     await promisePageActionPanelOpen();
@@ -127,6 +137,8 @@ add_task(async function sendToDevice_nonSendable() {
     let hiddenPromise = promisePageActionPanelHidden();
     BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
+    
+    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
   });
 });
 
