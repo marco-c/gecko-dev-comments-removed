@@ -232,6 +232,10 @@ this.SessionStore = {
     return SessionStoreInternal.promiseInitialized;
   },
 
+  get promiseAllWindowsRestored() {
+    return SessionStoreInternal.promiseAllWindowsRestored;
+  },
+
   get canRestoreLastSession() {
     return SessionStoreInternal.canRestoreLastSession;
   },
@@ -549,6 +553,22 @@ var SessionStoreInternal = {
 
   
   _sessionInitialized: false,
+
+  
+  _deferredAllWindowsRestored: (function() {
+    let deferred = {};
+
+    deferred.promise = new Promise((resolve, reject) => {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+    });
+
+    return deferred;
+  })(),
+
+  get promiseAllWindowsRestored() {
+    return this._deferredAllWindowsRestored.promise;
+  },
 
   
   
@@ -1147,6 +1167,7 @@ var SessionStoreInternal = {
 
           
           Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
+          this._deferredAllWindowsRestored.resolve();
         } else {
           TelemetryTimestamps.add("sessionRestoreRestoring");
           this._restoreCount = aInitialState.windows ? aInitialState.windows.length : 0;
@@ -1165,6 +1186,7 @@ var SessionStoreInternal = {
       } else {
         
         Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
+        this._deferredAllWindowsRestored.resolve();
       }
     
     } else if (!this._isWindowLoaded(aWindow)) {
@@ -4468,8 +4490,15 @@ var SessionStoreInternal = {
       return;
 
     
-    Services.obs.notifyObservers(null,
-      this._browserSetState ? NOTIFY_BROWSER_STATE_RESTORED : NOTIFY_WINDOWS_RESTORED);
+    if (!this._browserSetState) {
+      Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
+      this._deferredAllWindowsRestored.resolve();
+    } else {
+      
+      
+      
+      Services.obs.notifyObservers(null, NOTIFY_BROWSER_STATE_RESTORED);
+    }
 
     this._browserSetState = false;
     this._restoreCount = -1;
