@@ -51,7 +51,8 @@ Cu.import("resource://gre/modules/osfile/ospath.jsm", Path);
 
 
 Cu.import("resource://gre/modules/Promise.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 
 
 Cu.import("resource://gre/modules/PromiseWorker.jsm", this);
@@ -304,9 +305,11 @@ var Scheduler = this.Scheduler = {
         let message = ["Meta_shutdown", [reset]];
 
         Scheduler.latestReceived = [];
-        Scheduler.latestSent = [Date.now(),
-          Task.Debugging.generateReadableStack(new Error().stack),
-          ...message];
+        let stack = new Error().stack;
+        
+        if (stack.includes("/Task.jsm:"))
+          stack = Task.Debugging.generateReadableStack(stack);
+        Scheduler.latestSent = [Date.now(), stack, ...message];
 
         
         let resources;

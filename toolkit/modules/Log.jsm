@@ -191,7 +191,11 @@ this.Log = {
     }
     
     if (e.stack) {
-      return "JS Stack trace: " + Task.Debugging.generateReadableStack(e.stack).trim()
+      let stack = e.stack;
+      
+      if (stack.includes("/Task.jsm:"))
+        stack = Task.Debugging.generateReadableStack(stack);
+      return "JS Stack trace: " + stack.trim()
         .replace(/\n/g, " < ").replace(/@[^@]*?([^\/\.]+\.\w+:)/g, "@$1");
     }
 

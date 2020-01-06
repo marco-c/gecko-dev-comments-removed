@@ -322,7 +322,12 @@ function getOrigin(topFrame, filename = null, lineNumber = null, stack = null) {
         frames.push(frame.filename + ":" + frame.name + ":" + frame.lineNumber);
         frame = frame.caller;
       }
-      stack = Task.Debugging.generateReadableStack(frames.join("\n")).split("\n");
+      stack = frames.join("\n");
+      
+      if (stack.includes("/Task.jsm:")) {
+        stack = Task.Debugging.generateReadableStack(stack);
+      }
+      stack = stack.split("\n");
     }
 
     return {

@@ -591,7 +591,11 @@ ConnectionData.prototype = Object.freeze({
           try {
             
             
-            result = await Task.spawn(func); 
+            result = func();
+            if (Object.prototype.toString.call(result) == "[object Generator]")
+              result = await Task.spawn(func); 
+            else
+              result = await result;
           } catch (ex) {
             
             
