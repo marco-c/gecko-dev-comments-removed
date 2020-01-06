@@ -2032,13 +2032,6 @@ public:
 
 
 
-  virtual bool MustPaintOnContentSide() const { return false; }
-
-  
-
-
-
-
   virtual nsDisplayList* GetSameCoordinateSystemChildren() { return nullptr; }
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) {}
   
@@ -3287,7 +3280,6 @@ public:
                                    bool* aSnap) override;
   virtual mozilla::Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) override;
   virtual bool ProvidesFontSmoothingBackgroundColor(nscolor* aColor) override;
-  virtual bool MustPaintOnContentSide() const override { return true; }
 
   
 

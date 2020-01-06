@@ -159,18 +159,6 @@ class DidCompositeObserver {
 
 
 
-enum class PaintedLayerCreationHint: uint8_t {
-  NONE                = 0,
-  SCROLLABLE          = 1 << 0,
-  CONTENT_SIDE_PAINT  = 1 << 1,
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PaintedLayerCreationHint)
-
-
-
-
-
-
 
 
 
@@ -410,6 +398,17 @@ public:
 
   virtual void Mutated(Layer* aLayer) { }
   virtual void MutatedSimple(Layer* aLayer) { }
+
+  
+
+
+
+
+
+
+  enum PaintedLayerCreationHint {
+    NONE, SCROLLABLE
+  };
 
   
 
@@ -2102,7 +2101,7 @@ public:
     ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
   }
 
-  PaintedLayerCreationHint GetCreationHint() const { return mCreationHint; }
+  LayerManager::PaintedLayerCreationHint GetCreationHint() const { return mCreationHint; }
 
   bool UsedForReadback() { return mUsedForReadback; }
   void SetUsedForReadback(bool aUsed) { mUsedForReadback = aUsed; }
@@ -2110,7 +2109,7 @@ public:
   
 
 
-  virtual bool IsOptimizedFor(PaintedLayerCreationHint aCreationHint)
+  virtual bool IsOptimizedFor(LayerManager::PaintedLayerCreationHint aCreationHint)
   { return true; }
 
   
@@ -2125,7 +2124,7 @@ public:
 
 protected:
   PaintedLayer(LayerManager* aManager, void* aImplData,
-              PaintedLayerCreationHint aCreationHint = PaintedLayerCreationHint::NONE)
+              LayerManager::PaintedLayerCreationHint aCreationHint = LayerManager::NONE)
     : Layer(aManager, aImplData)
     , mValidRegion()
     , mValidRegionIsCurrent(true)
@@ -2180,7 +2179,7 @@ protected:
   
 
 
-  const PaintedLayerCreationHint mCreationHint;
+  const LayerManager::PaintedLayerCreationHint mCreationHint;
   
 
 
