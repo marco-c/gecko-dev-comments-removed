@@ -163,7 +163,6 @@ nsBaseWidget::nsBaseWidget()
 , mSizeMode(nsSizeMode_Normal)
 , mPopupLevel(ePopupLevelTop)
 , mPopupType(ePopupTypeAny)
-, mHasRemoteContent(false)
 , mCompositorWidgetDelegate(nullptr)
 , mUpdateCursor(true)
 , mUseAttachedEvents(false)
@@ -381,7 +380,6 @@ void nsBaseWidget::BaseCreate(nsIWidget* aParent,
     mBorderStyle = aInitData->mBorderStyle;
     mPopupLevel = aInitData->mPopupLevel;
     mPopupType = aInitData->mPopupHint;
-    mHasRemoteContent = aInitData->mHasRemoteContent;
   }
 
   if (aParent) {
@@ -894,7 +892,7 @@ nsBaseWidget::UseAPZ()
   return (gfxPlatform::AsyncPanZoomEnabled() &&
           (WindowType() == eWindowType_toplevel ||
            WindowType() == eWindowType_child ||
-           (WindowType() == eWindowType_popup && HasRemoteContent())));
+           (WindowType() == eWindowType_popup && !IsSmallPopup())));
 }
 
 void nsBaseWidget::CreateCompositor()
@@ -2287,6 +2285,15 @@ nsIWidget::OnWindowedPluginKeyEvent(const NativeEventData& aKeyEventData,
 void
 nsIWidget::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent)
 {
+}
+
+void
+nsIWidget::GetEditCommands(nsIWidget::NativeKeyBindingsType aType,
+                           const WidgetKeyboardEvent& aEvent,
+                           nsTArray<CommandInt>& aCommands)
+{
+  MOZ_ASSERT(aEvent.IsTrusted());
+  MOZ_ASSERT(aCommands.IsEmpty());
 }
 
 namespace mozilla {

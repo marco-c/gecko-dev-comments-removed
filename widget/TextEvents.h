@@ -309,7 +309,15 @@ public:
     mEditCommandsForRichTextEditorInitialized = true;
   }
 
-#ifdef DEBUG
+  
+
+
+  const nsTArray<CommandInt>&
+    EditCommandsConstRef(nsIWidget::NativeKeyBindingsType aType) const
+  {
+    return const_cast<WidgetKeyboardEvent*>(this)->EditCommandsRef(aType);
+  }
+
   
 
 
@@ -321,6 +329,7 @@ public:
              IsEditCommandsInitializedRef(aType);
   }
 
+#ifdef DEBUG
   
 
 
@@ -339,8 +348,9 @@ public:
 
 
 
+  typedef void (*DoCommandCallback)(Command, void*);
   bool ExecuteEditCommands(nsIWidget::NativeKeyBindingsType aType,
-                           nsIWidget::DoCommandCallback aCallback,
+                           DoCommandCallback aCallback,
                            void* aCallbackData);
 
   
