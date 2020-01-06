@@ -129,7 +129,6 @@ pub enum WebGLCommand {
     CreateVertexArray(MsgSender<Option<WebGLVertexArrayId>>),
     DeleteVertexArray(WebGLVertexArrayId),
     BindVertexArray(Option<WebGLVertexArrayId>),
-    FenceAndWaitSync,
 }
 
 #[cfg(feature = "nightly")]
@@ -389,8 +388,7 @@ impl fmt::Debug for WebGLCommand {
             GenerateMipmap(..) => "GenerateMipmap",
             CreateVertexArray(..) => "CreateVertexArray",
             DeleteVertexArray(..) => "DeleteVertexArray",
-            BindVertexArray(..) => "BindVertexArray",
-            FenceAndWaitSync => "FenceAndWaitSync",
+            BindVertexArray(..) => "BindVertexArray"
         };
 
         write!(f, "CanvasWebGLMsg::{}(..)", name)
@@ -633,8 +631,6 @@ impl WebGLCommand {
                 ctx.gl().delete_vertex_arrays(&[id.get()]),
             WebGLCommand::BindVertexArray(id) =>
                 ctx.gl().bind_vertex_array(id.map_or(0, WebGLVertexArrayId::get)),
-            WebGLCommand::FenceAndWaitSync =>
-                Self::fence_and_wait_sync(ctx.gl()),
         }
 
         
@@ -1043,14 +1039,5 @@ impl WebGLCommand {
     fn compile_shader(gl: &gl::Gl, shader_id: WebGLShaderId, source: String) {
         gl.shader_source(shader_id.get(), &[source.as_bytes()]);
         gl.compile_shader(shader_id.get());
-    }
-
-    fn fence_and_wait_sync(gl: &gl::Gl) {
-        
-        let sync = gl.fence_sync(gl::SYNC_GPU_COMMANDS_COMPLETE, 0);
-        
-        gl.wait_sync(sync, gl::SYNC_FLUSH_COMMANDS_BIT, gl::TIMEOUT_IGNORED);
-        
-        gl.delete_sync(sync);
     }
 }
