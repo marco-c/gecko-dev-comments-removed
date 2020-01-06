@@ -22,6 +22,8 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
+                                  "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
@@ -29,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
 
 const CLOUD_SERVICES_PREF = "cloud.services.";
 const CLOUD_PROVIDERS_URI = "resource://cloudstorage/providers.json";
+
+
 
 
 
@@ -190,6 +194,30 @@ this.CloudStorage = {
 
 
 
+
+  getPreferredProviderMetaData() {
+    return CloudStorageInternal.getPreferredProviderMetaData();
+  },
+
+  
+
+
+
+
+
+
+  getProviderIfInUse() {
+    return CloudStorageInternal.getProviderIfInUse();
+  },
+
+  
+
+
+
+
+
+
+
   getStorageProviders() {
     return CloudStorageInternal.getStorageProviders();
   },
@@ -229,8 +257,45 @@ var CloudStorageInternal = {
 
 
 
+  async resetFolderListPref() {
+    let folderListValue = Services.prefs.getIntPref("browser.download.folderList", 0);
+    if (folderListValue !== 3) {
+      return;
+    }
+
+    let downloadDirPath = Services.prefs.getComplexValue("browser.download.dir",
+                                                         Ci.nsIFile).path;
+    if (!downloadDirPath ||
+        (downloadDirPath === Services.dirsvc.get("Desk", Ci.nsIFile).path)) {
+      
+      folderListValue = 0;
+    } else if (downloadDirPath === await Downloads.getSystemDownloadsDirectory()) {
+      
+      folderListValue = 1;
+    } else {
+      
+      folderListValue = 2;
+    }
+    Services.prefs.setIntPref("browser.download.folderList", folderListValue);
+  },
+
+  
+
+
+
+
 
   async initProviders() {
+    
+    
+    
+    if (!this.isAPIEnabled) {
+      this.resetFolderListPref().catch((err) => {
+        Cu.reportError("CloudStorage: Failed to reset folderList pref " + err);
+      });
+      return false;
+    }
+
     let response = await this._downloadJSON(CLOUD_PROVIDERS_URI);
     this.providersMetaData = await this._parseProvidersJSON(response);
 
@@ -563,6 +628,36 @@ var CloudStorageInternal = {
     Services.prefs.setCharPref(CLOUD_SERVICES_PREF + "storage.key", key);
     Services.prefs.setIntPref("browser.download.folderList", 3);
   },
+
+  
+
+
+
+
+
+  getPreferredProviderMetaData() {
+    
+    return this.providersMetaData.hasOwnProperty(this.preferredProviderKey) ?
+      this.providersMetaData[this.preferredProviderKey] : null;
+  },
+
+  
+
+
+
+
+
+
+
+  async getProviderIfInUse() {
+    
+    
+    if (this.isAPIEnabled && this.preferredProviderKey && await this.getDownloadFolder()) {
+      let provider = this.getPreferredProviderMetaData();
+      return provider.displayName || null;
+    }
+    return null;
+  },
 };
 
 
@@ -588,5 +683,12 @@ XPCOMUtils.defineLazyPreferenceGetter(CloudStorageInternal, "lastPromptTime",
 
 XPCOMUtils.defineLazyPreferenceGetter(CloudStorageInternal, "promptInterval",
   CLOUD_SERVICES_PREF + "interval.prompt", 0 );
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(CloudStorageInternal, "isAPIEnabled",
+  CLOUD_SERVICES_PREF + "api.enabled", false, () => CloudStorage.init());
 
 CloudStorageInternal.promiseInit = CloudStorage.init();
