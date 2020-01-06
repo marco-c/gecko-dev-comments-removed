@@ -20,8 +20,6 @@ this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
 
 
 
-var sharedGlobalBlocklist = ["sdk/indexed-db"];
-
 
 
 
@@ -73,7 +71,7 @@ BuiltinProvider.prototype = {
       paths,
       invisibleToDebugger: this.invisibleToDebugger,
       sharedGlobal: true,
-      sharedGlobalBlocklist,
+      sharedGlobalBlocklist: [],
       sandboxName: "DevTools (Module loader)",
       noSandboxAddonId: true,
       requireHook: (id, require) => {
