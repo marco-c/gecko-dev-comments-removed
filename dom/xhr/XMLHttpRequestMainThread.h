@@ -158,7 +158,6 @@ public:
 
 class XMLHttpRequestMainThread final : public XMLHttpRequest,
                                        public nsIXMLHttpRequest,
-                                       public nsIJSXMLHttpRequest,
                                        public nsIStreamListener,
                                        public nsIChannelEventSink,
                                        public nsIProgressEventSink,
