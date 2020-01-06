@@ -538,7 +538,7 @@ nsProfiler::ReceiveShutdownProfile(const nsCString& aProfile)
   if (mExitProfiles.Length() >= MAX_SUBPROCESS_EXIT_PROFILES) {
     mExitProfiles.RemoveElementAt(0);
   }
-  mExitProfiles.AppendElement(aProfile);
+  mExitProfiles.AppendElement(ExitProfile{ aProfile, TimeStamp::Now() });
 }
 
 RefPtr<nsProfiler::GatheringPromise>
@@ -565,9 +565,12 @@ nsProfiler::StartGathering(double aSinceTime)
 
   mWriter.emplace();
 
+  TimeStamp thisProcessFirstSampleTime;
+
   
   mWriter->Start(SpliceableJSONWriter::SingleLineStyle);
-  if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime)) {
+  if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
+                                             &thisProcessFirstSampleTime)) {
     
     
     
@@ -579,9 +582,15 @@ nsProfiler::StartGathering(double aSinceTime)
 
   
   
-  for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
-    if (!mExitProfiles[i].IsEmpty()) {
-      mWriter->Splice(mExitProfiles[i].get());
+  for (auto& exitProfile : mExitProfiles) {
+    if (thisProcessFirstSampleTime &&
+        exitProfile.mGatherTime < thisProcessFirstSampleTime) {
+      
+      
+      continue;
+    }
+    if (!exitProfile.mJSON.IsEmpty()) {
+      mWriter->Splice(exitProfile.mJSON.get());
     }
   }
   mExitProfiles.Clear();
