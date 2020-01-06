@@ -2406,6 +2406,15 @@ NewReactionRecord(JSContext* cx, HandleObject resultPromise, HandleValue onFulfi
                   HandleValue onRejected, HandleObject resolve, HandleObject reject,
                   HandleObject incumbentGlobalObject)
 {
+    
+    
+    
+    
+    MOZ_ASSERT_IF(resultPromise && !resultPromise->is<PromiseObject>(), resolve);
+    MOZ_ASSERT_IF(resultPromise && !resultPromise->is<PromiseObject>(), IsCallable(resolve));
+    MOZ_ASSERT_IF(resultPromise && !resultPromise->is<PromiseObject>(), reject);
+    MOZ_ASSERT_IF(resultPromise && !resultPromise->is<PromiseObject>(), IsCallable(reject));
+
     Rooted<PromiseReactionRecord*> reaction(cx, NewObjectWithClassProto<PromiseReactionRecord>(cx));
     if (!reaction)
         return nullptr;
@@ -3113,7 +3122,7 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
         
         bool addToDependent = true;
 
-        if (C == PromiseCtor) {
+        if (C == PromiseCtor && resultPromise->is<PromiseObject>()) {
             addToDependent = false;
         } else {
             
@@ -3177,6 +3186,8 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
     
     
     if (!unwrappedPromiseObj->is<PromiseObject>())
+        return true;
+    if (!blockedPromise_->is<PromiseObject>())
         return true;
 
     Rooted<PromiseObject*> promise(cx, &unwrappedPromiseObj->as<PromiseObject>());
