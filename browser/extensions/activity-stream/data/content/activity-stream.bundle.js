@@ -816,7 +816,7 @@ class SnippetsMap extends Map {
     return this._dbTransaction(db => db.put(value, key));
   }
 
-  delete(key, value) {
+  delete(key) {
     super.delete(key);
     return this._dbTransaction(db => db.delete(key));
   }
@@ -824,6 +824,28 @@ class SnippetsMap extends Map {
   clear() {
     super.clear();
     return this._dbTransaction(db => db.clear());
+  }
+
+  get blockList() {
+    return this.get("blockList") || [];
+  }
+
+  
+
+
+
+
+
+
+  async blockSnippetById(id) {
+    if (!id) {
+      return;
+    }
+    let blockList = this.blockList;
+    if (!blockList.includes(id)) {
+      blockList.push(id);
+    }
+    await this.set("blockList", blockList);
   }
 
   
@@ -980,7 +1002,6 @@ class SnippetsProvider {
 
   _showRemoteSnippets() {
     const snippetsEl = document.getElementById(this.elementId);
-    const containerEl = document.getElementById(this.containerElementId);
     const payload = this.snippetsMap.get("snippets");
 
     if (!snippetsEl) {
@@ -1002,15 +1023,9 @@ class SnippetsProvider {
       relocatedScript.text = scriptEl.text;
       scriptEl.parentNode.replaceChild(relocatedScript, scriptEl);
     }
-
-    
-    if (containerEl) {
-      containerEl.style.display = "block";
-    }
   }
 
   
-
 
 
 
@@ -1023,7 +1038,6 @@ class SnippetsProvider {
     Object.assign(this, {
       appData: {},
       elementId: "snippets",
-      containerElementId: "snippets-container",
       connect: true
     }, options);
 
@@ -1054,9 +1068,35 @@ class SnippetsProvider {
   }
 }
 
-module.exports.SnippetsMap = SnippetsMap;
-module.exports.SnippetsProvider = SnippetsProvider;
-module.exports.SNIPPETS_UPDATE_INTERVAL_MS = SNIPPETS_UPDATE_INTERVAL_MS;
+
+
+
+
+
+
+
+
+function addSnippetsSubscriber(store) {
+  const snippets = new SnippetsProvider();
+  const unsubscribe = store.subscribe(() => {
+    const state = store.getState();
+    if (state.Snippets.initialized) {
+      if (state.Snippets.onboardingFinished) {
+        snippets.init({ appData: state.Snippets });
+      }
+      unsubscribe();
+    }
+  });
+  
+  return snippets;
+}
+
+module.exports = {
+  addSnippetsSubscriber,
+  SnippetsMap,
+  SnippetsProvider,
+  SNIPPETS_UPDATE_INTERVAL_MS
+};
 }.call(exports, __webpack_require__(24)))
 
  }),
@@ -1430,7 +1470,8 @@ class Card extends React.Component {
     const index = _props.index,
           link = _props.link,
           dispatch = _props.dispatch,
-          contextMenuOptions = _props.contextMenuOptions;
+          contextMenuOptions = _props.contextMenuOptions,
+          eventSource = _props.eventSource;
 
     const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
     const hostname = shortURL(link);
@@ -1503,6 +1544,7 @@ class Card extends React.Component {
       React.createElement(LinkMenu, {
         dispatch: dispatch,
         index: index,
+        source: eventSource,
         onUpdate: this.onMenuUpdate,
         options: link.context_menu_options || contextMenuOptions,
         site: link,
@@ -1942,7 +1984,7 @@ class PreferencesPane extends React.Component {
               titleStringId: "settings_pane_search_header", descStringId: "settings_pane_search_body" }),
             React.createElement(PreferencesInput, { className: "showTopSites", prefName: "showTopSites", value: prefs.showTopSites, onChange: this.handleChange,
               titleStringId: "settings_pane_topsites_header", descStringId: "settings_pane_topsites_body" }),
-            this.topStoriesOptions && React.createElement(PreferencesInput, { className: "showTopStories", prefName: "feeds.section.topstories",
+            this.topStoriesOptions && !this.topStoriesOptions.hidden && React.createElement(PreferencesInput, { className: "showTopStories", prefName: "feeds.section.topstories",
               value: prefs["feeds.section.topstories"], onChange: this.handleChange,
               titleStringId: "header_recommended_by", titleStringValues: { provider: this.topStoriesOptions.provider_name },
               descStringId: this.topStoriesOptions.provider_description })
@@ -2655,7 +2697,7 @@ const DetectUserSessionStart = __webpack_require__(8);
 
 var _require3 = __webpack_require__(10);
 
-const SnippetsProvider = _require3.SnippetsProvider;
+const addSnippetsSubscriber = _require3.addSnippetsSubscriber;
 
 
 new DetectUserSessionStart().sendEventOrAddListener();
@@ -2668,15 +2710,7 @@ ReactDOM.render(React.createElement(
   React.createElement(Base, null)
 ), document.getElementById("root"));
 
-
-const snippets = new SnippetsProvider();
-const unsubscribe = store.subscribe(() => {
-  const state = store.getState();
-  if (state.Snippets.initialized) {
-    snippets.init({ appData: state.Snippets });
-    unsubscribe();
-  }
-});
+addSnippetsSubscriber(store);
 
  })
  ]);
