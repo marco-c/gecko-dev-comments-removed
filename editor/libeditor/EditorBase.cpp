@@ -175,6 +175,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEventTarget)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEventListener)
+ NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderTransaction)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSavedSel);
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRangeUpdater);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -195,6 +196,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocStateListeners)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventTarget)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventListener)
+ NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderTransaction)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSavedSel);
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRangeUpdater);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -688,15 +690,12 @@ EditorBase::GetSelection(SelectionType aSelectionType)
 NS_IMETHODIMP
 EditorBase::DoTransaction(nsITransaction* aTxn)
 {
-  if (mPlaceholderBatch && !mPlaceholderTransactionWeak) {
-    RefPtr<PlaceholderTransaction> placeholderTransaction =
+  if (mPlaceholderBatch && !mPlaceholderTransaction) {
+    mPlaceholderTransaction =
       new PlaceholderTransaction(*this, mPlaceholderName, Move(mSelState));
 
     
-    mPlaceholderTransactionWeak = placeholderTransaction;
-
-    
-    DoTransaction(placeholderTransaction);
+    DoTransaction(mPlaceholderTransaction);
 
     if (mTxnMgr) {
       nsCOMPtr<nsITransaction> topTransaction = mTxnMgr->PeekUndoStack();
@@ -710,7 +709,7 @@ EditorBase::DoTransaction(nsITransaction* aTxn)
           
           
           
-          mPlaceholderTransactionWeak = topPlaceholderTransaction;
+          mPlaceholderTransaction = topPlaceholderTransaction;
         }
       }
     }
@@ -965,7 +964,7 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
     NotifyEditorObservers(eNotifyEditorObserversOfBefore);
     
     BeginUpdateViewBatch();
-    mPlaceholderTransactionWeak = nullptr;
+    mPlaceholderTransaction = nullptr;
     mPlaceholderName = aName;
     RefPtr<Selection> selection = GetSelection();
     if (selection) {
@@ -1037,15 +1036,14 @@ EditorBase::EndPlaceHolderTransaction()
       mSelState = nullptr;
     }
     
-    if (mPlaceholderTransactionWeak) {
-      RefPtr<PlaceholderTransaction> placeholderTransaction =
-        mPlaceholderTransactionWeak.get();
-      placeholderTransaction->EndPlaceHolderBatch();
+    if (mPlaceholderTransaction) {
+      mPlaceholderTransaction->EndPlaceHolderBatch();
       
       
       if (!mComposition) {
         NotifyEditorObservers(eNotifyEditorObserversOfEnd);
       }
+      mPlaceholderTransaction = nullptr;
     } else {
       NotifyEditorObservers(eNotifyEditorObserversOfCancel);
     }

@@ -1127,7 +1127,7 @@ protected:
   nsCOMPtr<dom::EventTarget> mEventTarget;
   nsCOMPtr<nsIDOMEventListener> mEventListener;
   
-  WeakPtr<PlaceholderTransaction> mPlaceholderTransactionWeak;
+  RefPtr<PlaceholderTransaction> mPlaceholderTransaction;
   
   nsIAtom* mPlaceholderName;
   
