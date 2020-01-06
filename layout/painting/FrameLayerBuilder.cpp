@@ -3913,10 +3913,7 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   maskCtx->SetMatrix(gfxMatrix::Translation(-itemRect.TopLeft()));
   maskCtx->Multiply(gfxMatrix::Scaling(mParameters.mXScale, mParameters.mYScale));
 
-  if (!aMaskItem->PaintMask(mBuilder, maskCtx)) {
-    
-    return;
-  }
+  aMaskItem->PaintMask(mBuilder, maskCtx);
 
   RefPtr<ImageContainer> imgContainer =
     imageData.CreateImageAndImageContainer();
