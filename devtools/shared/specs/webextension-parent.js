@@ -1,0 +1,24 @@
+
+
+
+"use strict";
+
+const {RetVal, generateActorSpec} = require("devtools/shared/protocol");
+
+const webExtensionSpec = generateActorSpec({
+  typeName: "webExtensionAddon",
+
+  methods: {
+    reload: {
+      request: { },
+      response: { addon: RetVal("json") },
+    },
+
+    connect: {
+      request: { },
+      response: { form: RetVal("json") },
+    },
+  },
+});
+
+exports.webExtensionSpec = webExtensionSpec;

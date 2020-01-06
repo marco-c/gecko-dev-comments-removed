@@ -4,19 +4,14 @@
 
 "use strict";
 
-const { Ci, Cu } = require("chrome");
+const { Ci, Cu, Cc } = require("chrome");
 const Services = require("Services");
+
 const { ChromeActor } = require("./chrome");
 const makeDebugger = require("./utils/make-debugger");
 
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var { assert } = DevToolsUtils;
-
 loader.lazyRequireGetter(this, "mapURIToAddonID", "devtools/server/actors/utils/map-uri-to-addon-id");
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/script", true);
-
-loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
-loader.lazyImporter(this, "XPIProvider", "resource://gre/modules/addons/XPIProvider.jsm");
 
 const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet.";
 
@@ -45,21 +40,40 @@ const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet."
 
 
 
-function WebExtensionActor(conn, addon) {
+
+
+
+
+
+
+
+
+
+
+
+
+function WebExtensionChildActor(conn, chromeGlobal, prefix, addonId) {
   ChromeActor.call(this, conn);
 
-  this.id = addon.id;
-  this.addon = addon;
+  this._chromeGlobal = chromeGlobal;
+  this._prefix = prefix;
+  this.id = addonId;
 
   
   
   this._allowSource = this._allowSource.bind(this);
+  this._onParentExit = this._onParentExit.bind(this);
+
+  this._chromeGlobal.addMessageListener("debug:webext_parent_exit", this._onParentExit);
 
   
   
   this.consoleAPIListenerOptions = {
-    addonId: addon.id,
+    addonId: this.id,
   };
+
+  this.aps = Cc["@mozilla.org/addons/policy-service;1"]
+               .getService(Ci.nsIAddonPolicyService);
 
   
   this.makeDebugger = makeDebugger.bind(null, {
@@ -70,71 +84,40 @@ function WebExtensionActor(conn, addon) {
   });
 
   
-  this.preferredTargetWindow = null;
-  this._findAddonPreferredTargetWindow();
+  
+  let extensionWindow = this._searchForExtensionWindow();
 
-  AddonManager.addAddonListener(this);
+  if (extensionWindow) {
+    this._setWindow(extensionWindow);
+  }
 }
-exports.WebExtensionActor = WebExtensionActor;
+exports.WebExtensionChildActor = WebExtensionChildActor;
 
-WebExtensionActor.prototype = Object.create(ChromeActor.prototype);
+WebExtensionChildActor.prototype = Object.create(ChromeActor.prototype);
 
-WebExtensionActor.prototype.actorPrefix = "webExtension";
-WebExtensionActor.prototype.constructor = WebExtensionActor;
-
-
+WebExtensionChildActor.prototype.actorPrefix = "webExtension";
+WebExtensionChildActor.prototype.constructor = WebExtensionChildActor;
 
 
-WebExtensionActor.prototype.isRootActor = true;
 
-WebExtensionActor.prototype.form = function () {
-  assert(this.actorID, "addon should have an actorID.");
 
-  let baseForm = ChromeActor.prototype.form.call(this);
+WebExtensionChildActor.prototype.isRootActor = true;
 
-  return Object.assign(baseForm, {
-    actor: this.actorID,
-    id: this.id,
-    name: this.addon.name,
-    url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
-    iconURL: this.addon.iconURL,
-    debuggable: this.addon.isDebuggable,
-    temporarilyInstalled: this.addon.temporarilyInstalled,
-    isWebExtension: this.addon.isWebExtension,
-  });
-};
 
-WebExtensionActor.prototype._attach = function () {
-  
-  
-  
 
-  
-  
-  if (this.preferredTargetWindow) {
-    this._setWindow(this.preferredTargetWindow);
-  } else {
-    this._createFallbackWindow();
+
+WebExtensionChildActor.prototype.exit = function () {
+  if (this._chromeGlobal) {
+    let chromeGlobal = this._chromeGlobal;
+    this._chromeGlobal = null;
+
+    chromeGlobal.removeMessageListener("debug:webext_parent_exit", this._onParentExit);
+
+    chromeGlobal.sendAsyncMessage("debug:webext_child_exit", {
+      actor: this.actorID
+    });
   }
 
-  
-  ChromeActor.prototype._attach.apply(this);
-};
-
-WebExtensionActor.prototype._detach = function () {
-  this._destroyFallbackWindow();
-
-  
-  ChromeActor.prototype._detach.apply(this);
-};
-
-
-
-
-WebExtensionActor.prototype.exit = function () {
-  AddonManager.removeAddonListener(this);
-
-  this.preferredTargetWindow = null;
   this.addon = null;
   this.id = null;
 
@@ -143,61 +126,7 @@ WebExtensionActor.prototype.exit = function () {
 
 
 
-
-
-
-WebExtensionActor.prototype.onReload = function () {
-  return this.addon.reload()
-    .then(() => {
-      
-      return {};
-    });
-};
-
-
-
-
-WebExtensionActor.prototype.setOptions = function (addonOptions) {
-  if ("global" in addonOptions) {
-    
-    
-    this.preferredTargetWindow = addonOptions.global;
-  }
-};
-
-
-
-WebExtensionActor.prototype.onInstalled = function (addon) {
-  if (addon.id != this.id) {
-    return;
-  }
-
-  
-  this.addon = addon;
-};
-
-WebExtensionActor.prototype.onUninstalled = function (addon) {
-  if (addon != this.addon) {
-    return;
-  }
-
-  this.exit();
-};
-
-WebExtensionActor.prototype.onPropertyChanged = function (addon, changedPropNames) {
-  if (addon != this.addon) {
-    return;
-  }
-
-  
-  if (changedPropNames.includes("debugGlobal")) {
-    this._findAddonPreferredTargetWindow();
-  }
-};
-
-
-
-WebExtensionActor.prototype._createFallbackWindow = function () {
+WebExtensionChildActor.prototype._createFallbackWindow = function () {
   if (this.fallbackWindow) {
     
     return;
@@ -207,26 +136,16 @@ WebExtensionActor.prototype._createFallbackWindow = function () {
   
   
   this.fallbackWebNav = Services.appShell.createWindowlessBrowser(true);
-  this.fallbackWebNav.loadURI(
-    `data:text/html;charset=utf-8,${FALLBACK_DOC_MESSAGE}`,
-    0, null, null, null
-  );
-
-  this.fallbackDocShell = this.fallbackWebNav
-    .QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIDocShell);
-
-  Object.defineProperty(this, "docShell", {
-    value: this.fallbackDocShell,
-    configurable: true
-  });
 
   
-  this.fallbackWindow = this.fallbackDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                             .getInterface(Ci.nsIDOMWindow);
+  this.fallbackWindow = this.fallbackWebNav.QueryInterface(Ci.nsIInterfaceRequestor)
+                                           .getInterface(Ci.nsIDOMWindow);
+
+  
+  this.fallbackWindow.document.body.innerText = FALLBACK_DOC_MESSAGE;
 };
 
-WebExtensionActor.prototype._destroyFallbackWindow = function () {
+WebExtensionChildActor.prototype._destroyFallbackWindow = function () {
   if (this.fallbackWebNav) {
     
     
@@ -241,62 +160,170 @@ WebExtensionActor.prototype._destroyFallbackWindow = function () {
 
 
 
-WebExtensionActor.prototype._findAddonPreferredTargetWindow = function () {
-  return new Promise(resolve => {
-    let activeAddon = XPIProvider.activeAddons.get(this.id);
 
-    if (!activeAddon) {
-      
-      
-      resolve(null);
-    } else {
-      AddonManager.getAddonByInstanceID(activeAddon.instanceID)
-        .then(privateWrapper => {
-          let targetWindow = privateWrapper.getDebugGlobal();
+WebExtensionChildActor.prototype._searchForExtensionWindow = function () {
+  let e = Services.ww.getWindowEnumerator(null);
+  while (e.hasMoreElements()) {
+    let window = e.getNext();
 
-          
-          if (!(targetWindow instanceof Ci.nsIDOMWindow)) {
-            targetWindow = null;
-          }
-
-          resolve(targetWindow);
-        });
+    if (window.document.nodePrincipal.addonId == this.id) {
+      return window;
     }
-  }).then(preferredTargetWindow => {
-    this.preferredTargetWindow = preferredTargetWindow;
+  }
 
-    if (!preferredTargetWindow) {
-      
+  return undefined;
+};
+
+
+
+WebExtensionChildActor.prototype._onDocShellDestroy = function (docShell) {
+  
+  
+  this._unwatchDocShell(docShell);
+
+  
+  let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIWebProgress);
+  this._notifyDocShellDestroy(webProgress);
+
+  
+  
+  if (this.attached && docShell == this.docShell) {
+    
+    this._createFallbackWindow();
+    this._changeTopLevelDocument(this.fallbackWindow);
+  }
+};
+
+WebExtensionChildActor.prototype._onNewExtensionWindow = function (window) {
+  if (!this.window || this.window === this.fallbackWindow) {
+    this._changeTopLevelDocument(window);
+  }
+};
+
+WebExtensionChildActor.prototype._attach = function () {
+  
+  
+  
+
+  if (!this.window || this.window.document.nodePrincipal.addonId !== this.id) {
+    
+    let extensionWindow = this._searchForExtensionWindow();
+
+    if (!extensionWindow) {
       this._createFallbackWindow();
-    } else if (this.attached) {
-      
-      this._changeTopLevelDocument(preferredTargetWindow);
+      this._setWindow(this.fallbackWindow);
+    } else {
+      this._setWindow(extensionWindow);
     }
+  }
+
+  
+  ChromeActor.prototype._attach.apply(this);
+};
+
+WebExtensionChildActor.prototype._detach = function () {
+  
+  ChromeActor.prototype._detach.apply(this);
+
+  
+  this._destroyFallbackWindow();
+};
+
+
+
+
+WebExtensionChildActor.prototype._docShellToWindow = function (docShell) {
+  const baseWindowDetails = ChromeActor.prototype._docShellToWindow.call(this, docShell);
+
+  let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIWebProgress);
+  let window = webProgress.DOMWindow;
+
+  
+  
+  let addonID = window.document.nodePrincipal.addonId;
+  let sameTypeRootAddonID = docShell.QueryInterface(Ci.nsIDocShellTreeItem)
+                                    .sameTypeRootTreeItem
+                                    .QueryInterface(Ci.nsIInterfaceRequestor)
+                                    .getInterface(Ci.nsIDOMWindow)
+                                    .document.nodePrincipal.addonId;
+
+  return Object.assign(baseWindowDetails, {
+    addonID,
+    sameTypeRootAddonID,
   });
 };
 
 
 
 
-WebExtensionActor.prototype._docShellsToWindows = function (docshells) {
+WebExtensionChildActor.prototype._docShellsToWindows = function (docshells) {
   return ChromeActor.prototype._docShellsToWindows.call(this, docshells)
                     .filter(windowDetails => {
                       
-                      return windowDetails.addonID == this.id;
+                      
+                      return windowDetails.addonID === this.id ||
+                             windowDetails.sameTypeRootAddonID === this.id;
                     });
+};
+
+WebExtensionChildActor.prototype.isExtensionWindow = function (window) {
+  return window.document.nodePrincipal.addonId == this.id;
+};
+
+WebExtensionChildActor.prototype.isExtensionWindowDescendent = function (window) {
+  
+  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDocShell);
+  let rootWin = docShell.sameTypeRootTreeItem.QueryInterface(Ci.nsIInterfaceRequestor)
+                                             .getInterface(Ci.nsIDOMWindow);
+  return this.isExtensionWindow(rootWin);
 };
 
 
 
 
 
-WebExtensionActor.prototype._allowSource = function (source) {
+WebExtensionChildActor.prototype._allowSource = function (source) {
+  
+  if (source.element) {
+    let domEl = unwrapDebuggerObjectGlobal(source.element);
+    return (this.isExtensionWindow(domEl.ownerGlobal) ||
+            this.isExtensionWindowDescendent(domEl.ownerGlobal));
+  }
+
+  
+
+  
+  let url = source.url.split(" -> ").pop();
+
+  
+  if (url === "debugger eval code") {
+    return false;
+  }
+
+  let uri;
+
+  
   try {
-    let uri = Services.io.newURI(source.url);
-    let addonID = mapURIToAddonID(uri);
+    uri = Services.io.newURI(url);
+  } catch (err) {
+    Cu.reportError(`Unexpected invalid url: ${url}`);
+    return false;
+  }
+
+  
+  if (["resource", "chrome", "file"].includes(uri.scheme)) {
+    return false;
+  }
+
+  try {
+    let addonID = this.aps.extensionURIToAddonId(uri);
 
     return addonID == this.id;
-  } catch (e) {
+  } catch (err) {
+    
     return false;
   }
 };
@@ -305,11 +332,22 @@ WebExtensionActor.prototype._allowSource = function (source) {
 
 
 
-WebExtensionActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGlobal) {
+WebExtensionChildActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGlobal) {
   const global = unwrapDebuggerObjectGlobal(newGlobal);
 
   if (global instanceof Ci.nsIDOMWindow) {
-    return global.document.nodePrincipal.addonId == this.id;
+    
+    if (global.document instanceof Ci.nsIDOMXULDocument) {
+      return false;
+    }
+
+    
+    if (global.document.ownerGlobal && this.isExtensionWindow(global)) {
+      this._onNewExtensionWindow(global.document.ownerGlobal);
+    }
+
+    return global.document.ownerGlobal &&
+           this.isExtensionWindowDescendent(global.document.ownerGlobal);
   }
 
   try {
@@ -327,7 +365,10 @@ WebExtensionActor.prototype._shouldAddNewGlobalAsDebuggee = function (newGlobal)
 
 
 
+WebExtensionChildActor.prototype._onParentExit = function (msg) {
+  if (msg.json.actor !== this.actorID) {
+    return;
+  }
 
-
-
-WebExtensionActor.prototype.requestTypes.reload = WebExtensionActor.prototype.onReload;
+  this.exit();
+};

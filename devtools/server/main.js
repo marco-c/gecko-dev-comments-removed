@@ -1009,7 +1009,7 @@ var DebuggerServer = {
 
 
 
-  connectToChild(connection, frame, onDestroy) {
+  connectToChild(connection, frame, onDestroy, {addonId} = {}) {
     let deferred = SyncPromise.defer();
 
     
@@ -1122,6 +1122,9 @@ var DebuggerServer = {
     };
 
     let destroy = DevToolsUtils.makeInfallible(function () {
+      events.off(connection, "closed", destroy);
+      Services.obs.removeObserver(onMessageManagerClose, "message-manager-close");
+
       
       
       parentModules.forEach(mod => {
@@ -1168,8 +1171,6 @@ var DebuggerServer = {
 
       
       untrackMessageManager();
-      Services.obs.removeObserver(onMessageManagerClose, "message-manager-close");
-      events.off(connection, "closed", destroy);
     });
 
     
@@ -1188,7 +1189,7 @@ var DebuggerServer = {
     
     events.on(connection, "closed", destroy);
 
-    mm.sendAsyncMessage("debug:connect", { prefix });
+    mm.sendAsyncMessage("debug:connect", { prefix, addonId });
 
     return deferred.promise;
   },

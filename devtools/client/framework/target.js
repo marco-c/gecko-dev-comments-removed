@@ -351,15 +351,15 @@ TabTarget.prototype = {
   },
 
   get isAddon() {
-    return !!(this._form && this._form.actor && (
-      this._form.actor.match(/conn\d+\.addon\d+/) ||
-      this._form.actor.match(/conn\d+\.webExtension\d+/)
-    ));
+    return !!(this._form && this._form.actor &&
+              this._form.actor.match(/conn\d+\.addon\d+/)) || this.isWebExtension;
   },
 
   get isWebExtension() {
-    return !!(this._form && this._form.actor &&
-              this._form.actor.match(/conn\d+\.webExtension\d+/));
+    return !!(this._form && this._form.actor && (
+      this._form.actor.match(/conn\d+\.webExtension\d+/) ||
+      this._form.actor.match(/child\d+\/webExtension\d+/)
+    ));
   },
 
   get isLocalTab() {
@@ -375,7 +375,7 @@ TabTarget.prototype = {
 
 
 
-  makeRemote: function () {
+  makeRemote: async function () {
     if (this._remote) {
       return this._remote.promise;
     }
@@ -398,6 +398,22 @@ TabTarget.prototype = {
       this._client = new DebuggerClient(DebuggerServer.connectPipe());
       
       this._chrome = false;
+    } else if (this._form.isWebExtension &&
+          this.client.mainRoot.traits.webExtensionAddonConnect) {
+      
+      
+      
+      
+      
+      
+      
+      let {form} = await this._client.request({
+        to: this._form.actor, type: "connect",
+      });
+
+      this._form = form;
+      this._url = form.url;
+      this._title = form.title;
     }
 
     this._setupRemoteListeners();
