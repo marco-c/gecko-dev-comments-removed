@@ -1433,25 +1433,27 @@ public abstract class GeckoApp extends GeckoActivity
         }
         mTextSelection.create();
 
-        
-        mLastSessionCrashed = updateCrashedState();
-        mShouldRestore = getSessionRestoreState(savedInstanceState);
-        if (mShouldRestore && savedInstanceState != null) {
-            boolean wasInBackground =
-                savedInstanceState.getBoolean(SAVED_STATE_IN_BACKGROUND, false);
-
-            
-            
-            if (!wasInBackground && !mIsRestoringActivity) {
-                Telemetry.addToHistogram("FENNEC_WAS_KILLED", 1);
-            }
-
-            mPrivateBrowsingSession = savedInstanceState.getString(SAVED_STATE_PRIVATE_SESSION);
-        }
-
+        final Bundle finalSavedInstanceState = savedInstanceState;
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
             public void run() {
+                
+                mLastSessionCrashed = updateCrashedState();
+                mShouldRestore = getSessionRestoreState(finalSavedInstanceState);
+                if (mShouldRestore && finalSavedInstanceState != null) {
+                    boolean wasInBackground =
+                            finalSavedInstanceState.getBoolean(SAVED_STATE_IN_BACKGROUND, false);
+
+                    
+                    
+                    if (!wasInBackground && !mIsRestoringActivity) {
+                        Telemetry.addToHistogram("FENNEC_WAS_KILLED", 1);
+                    }
+
+                    mPrivateBrowsingSession =
+                            finalSavedInstanceState.getString(SAVED_STATE_PRIVATE_SESSION);
+                }
+
                 
                 GeckoBundle restoreMessage = null;
                 if (!mIsRestoringActivity && mShouldRestore) {
