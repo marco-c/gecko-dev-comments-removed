@@ -737,7 +737,6 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mAPZCId(sAsyncPanZoomControllerCount++),
      mSharedLock(nullptr),
      mAsyncTransformAppliedToContent(false),
-     mTestHasAsyncKeyScrolled(false),
      mCheckerboardEventLock("APZCBELock")
 {
   if (aGestures == USE_GESTURE_DETECTOR) {
@@ -1703,9 +1702,6 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
 {
   
   ReportKeyboardScrollAction(aEvent.mAction);
-
-  
-  mTestHasAsyncKeyScrolled = true;
 
   
   CSSPoint destination = GetKeyboardDestination(aEvent.mAction);

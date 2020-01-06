@@ -275,10 +275,6 @@ function isApzEnabled() {
   return enabled;
 }
 
-function isKeyApzEnabled() {
-  return isApzEnabled() && SpecialPowers.getBoolPref("apz.keyboard.enabled");
-}
-
 
 
 
