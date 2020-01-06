@@ -82,22 +82,23 @@ public:
                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
     : mFrame(aFrame)
     , mFrameInUse(aFrameInUse)
+    , mChainCounter(aChainCounter)
     , mMaxChainLength(aMaxChainLength)
+    , mBrokeReference(false)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(aFrame && aFrameInUse && aChainCounter);
     MOZ_ASSERT(aMaxChainLength > 0);
     MOZ_ASSERT(*aChainCounter == noChain ||
                (*aChainCounter >= 0 && *aChainCounter < aMaxChainLength));
-
-    if (*aChainCounter == noChain) {
-      
-      *aChainCounter = aMaxChainLength;
-    }
-    mChainCounter = aChainCounter;
   }
 
   ~AutoReferenceChainGuard() {
+    if (mBrokeReference) {
+      
+      return;
+    }
+
     *mFrameInUse = false;
 
     
@@ -121,22 +122,30 @@ public:
 
   MOZ_MUST_USE bool Reference() {
     if (MOZ_UNLIKELY(*mFrameInUse)) {
+      mBrokeReference = true;
       ReportErrorToConsole();
       return false;
     }
 
+    if (*mChainCounter == noChain) {
+      
+      *mChainCounter = mMaxChainLength;
+    } else {
+      
+      
+      MOZ_ASSERT(*mChainCounter >= 0);
+
+      if (MOZ_UNLIKELY(*mChainCounter < 1)) {
+        mBrokeReference = true;
+        ReportErrorToConsole();
+        return false;
+      }
+    }
+
+    
     *mFrameInUse = true;
-
-    
-    
-    MOZ_ASSERT(*mChainCounter >= 0);
-
     (*mChainCounter)--;
 
-    if (MOZ_UNLIKELY(*mChainCounter < 0)) {
-      ReportErrorToConsole();
-      return false;
-    }
     return true;
   }
 
@@ -157,6 +166,7 @@ private:
   bool* mFrameInUse;
   int16_t* mChainCounter;
   const int16_t mMaxChainLength;
+  bool mBrokeReference;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
