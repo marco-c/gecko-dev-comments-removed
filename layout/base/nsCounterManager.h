@@ -76,24 +76,18 @@ struct nsCounterNode : public nsGenConNode {
 };
 
 struct nsCounterUseNode : public nsCounterNode {
-    
-    
-    
-    RefPtr<nsCSSValue::Array> mCounterFunction;
-
-    nsPresContext* mPresContext;
     mozilla::CounterStylePtr mCounterStyle;
+    nsString mSeparator;
 
     
     bool mAllCounters;
 
     
-    nsCounterUseNode(nsPresContext* aPresContext,
-                     nsCSSValue::Array* aCounterFunction,
+    nsCounterUseNode(nsStyleContentData::CounterFunction* aCounterFunction,
                      uint32_t aContentIndex, bool aAllCounters)
         : nsCounterNode(aContentIndex, USE)
-        , mCounterFunction(aCounterFunction)
-        , mPresContext(aPresContext)
+        , mCounterStyle(aCounterFunction->mCounterStyle)
+        , mSeparator(aCounterFunction->mSeparator)
         , mAllCounters(aAllCounters)
     {
         NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
@@ -102,7 +96,6 @@ struct nsCounterUseNode : public nsCounterNode {
     virtual bool InitTextFrame(nsGenConList* aList,
             nsIFrame* aPseudoFrame, nsIFrame* aTextFrame) override;
 
-    mozilla::CounterStyle* GetCounterStyle();
     void SetCounterStyleDirty()
     {
         mCounterStyle = nullptr;
