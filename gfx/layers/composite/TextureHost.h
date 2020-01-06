@@ -6,6 +6,7 @@
 #ifndef MOZILLA_GFX_TEXTUREHOST_H
 #define MOZILLA_GFX_TEXTUREHOST_H
 
+#include <functional>
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "gfxTypes.h"
@@ -38,6 +39,7 @@ class Shmem;
 } 
 
 namespace wr {
+class DisplayListBuilder;
 class WebRenderAPI;
 }
 
@@ -598,11 +600,33 @@ public:
 
   
   
+  
+  
+  
+  virtual void GetWRImageKeys(nsTArray<wr::ImageKey>& aImageKeys,
+                              const std::function<wr::ImageKey()>& aImageKeyAllocator)
+  {
+    MOZ_ASSERT(aImageKeys.IsEmpty());
+    MOZ_ASSERT_UNREACHABLE("No GetWRImageKeys() implementation for this TextureHost type.");
+  }
+
+  
+  
   virtual void AddWRImage(wr::WebRenderAPI* aAPI,
                           Range<const wr::ImageKey>& aImageKeys,
                           const wr::ExternalImageId& aExtID)
   {
     MOZ_ASSERT_UNREACHABLE("No AddWRImage() implementation for this TextureHost type.");
+  }
+
+  
+  virtual void PushExternalImage(wr::DisplayListBuilder& aBuilder,
+                                 const WrRect& aBounds,
+                                 const WrClipRegionToken aClip,
+                                 wr::ImageRendering aFilter,
+                                 Range<const wr::ImageKey>& aKeys)
+  {
+    MOZ_ASSERT_UNREACHABLE("No PushExternalImage() implementation for this TextureHost type.");
   }
 
 protected:
