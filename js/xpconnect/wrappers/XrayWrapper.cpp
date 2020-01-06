@@ -2359,12 +2359,11 @@ XrayWrapper<Base, Traits>::getOwnEnumerablePropertyKeys(JSContext* cx,
 }
 
 template <typename Base, typename Traits>
-bool
-XrayWrapper<Base, Traits>::enumerate(JSContext* cx, HandleObject wrapper,
-                                     MutableHandleObject objp) const
+JSObject*
+XrayWrapper<Base, Traits>::enumerate(JSContext* cx, HandleObject wrapper) const
 {
     
-    return js::BaseProxyHandler::enumerate(cx, wrapper, objp);
+    return js::BaseProxyHandler::enumerate(cx, wrapper);
 }
 
 template <typename Base, typename Traits>

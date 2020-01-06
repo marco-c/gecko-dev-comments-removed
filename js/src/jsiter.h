@@ -157,22 +157,18 @@ class StringIteratorObject : public JSObject
 StringIteratorObject*
 NewStringIteratorObject(JSContext* cx, NewObjectKind newKind = GenericObject);
 
-bool
-GetIterator(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleObject objp);
+JSObject*
+GetIterator(JSContext* cx, HandleObject obj, unsigned flags);
+
+
+
+
 
 JSObject*
-GetIteratorObject(JSContext* cx, HandleObject obj, unsigned flags);
+EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj, unsigned flags, AutoIdVector& props);
 
-
-
-
-
-bool
-EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj, unsigned flags, AutoIdVector& props,
-                             MutableHandleObject objp);
-
-bool
-NewEmptyPropertyIterator(JSContext* cx, unsigned flags, MutableHandleObject objp);
+JSObject*
+NewEmptyPropertyIterator(JSContext* cx, unsigned flags);
 
 
 
