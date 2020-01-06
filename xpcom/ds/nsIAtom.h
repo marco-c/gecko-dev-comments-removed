@@ -79,7 +79,11 @@ public:
 
   
   
-  uint32_t hash() const { return mHash; }
+  uint32_t hash() const
+  {
+    MOZ_ASSERT(!IsHTML5Atom());
+    return mHash;
+  }
 
 protected:
   uint32_t mLength: 30;
@@ -107,9 +111,10 @@ public:
 private:
   friend class nsIAtom;
   friend class nsAtomFriend;
+  friend class nsHtml5AtomEntry;
 
   
-  nsAtom(const nsAString& aString, uint32_t aHash);
+  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
   nsAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
   ~nsAtom();
 
