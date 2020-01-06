@@ -70,8 +70,9 @@ impl<'a> SelectorParser<'a> {
 
     
     
-    pub fn in_chrome_stylesheet(&self) -> bool {
-        self.url_data.map_or(false, |d| d.is_chrome())
+    pub fn chrome_rules_enabled(&self) -> bool {
+        self.url_data.map_or(false, |d| d.is_chrome()) ||
+            self.stylesheet_origin == Origin::User
     }
 }
 
