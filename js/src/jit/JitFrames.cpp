@@ -833,17 +833,13 @@ ReadAllocation(const JSJitFrameIter& frame, const LAllocation* a)
 #endif
 
 static void
-TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame)
+TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame, JitFrameLayout* layout)
 {
     
     
     
     
     
-
-    JitFrameLayout* layout = frame.isExitFrameLayout<LazyLinkExitFrameLayout>()
-                             ? frame.exitFrame()->as<LazyLinkExitFrameLayout>()->jsFrame()
-                             : frame.jsFrame();
 
     if (!CalleeTokenIsFunction(layout->calleeToken()))
         return;
@@ -853,6 +849,7 @@ TraceThisAndArguments(JSTracer* trc, const JSJitFrameIter& frame)
 
     JSFunction* fun = CalleeTokenToFunction(layout->calleeToken());
     if (!frame.isExitFrameLayout<LazyLinkExitFrameLayout>() &&
+        !frame.isExitFrameLayout<InterpreterStubExitFrameLayout>() &&
         !fun->nonLazyScript()->mayReadFrameArgsDirectly())
     {
         nformals = fun->nargs();
@@ -905,7 +902,7 @@ TraceIonJSFrame(JSTracer* trc, const JSJitFrameIter& frame)
         ionScript = frame.ionScriptFromCalleeToken();
     }
 
-    TraceThisAndArguments(trc, frame);
+    TraceThisAndArguments(trc, frame, frame.jsFrame());
 
     const SafepointIndex* si = ionScript->getSafepointIndex(frame.returnAddressToFp());
 
@@ -963,7 +960,7 @@ TraceBailoutFrame(JSTracer* trc, const JSJitFrameIter& frame)
 
     
     
-    TraceThisAndArguments(trc, frame);
+    TraceThisAndArguments(trc, frame, frame.jsFrame());
 
     
     
@@ -1149,11 +1146,18 @@ TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame)
     }
 
     if (frame.isExitFrameLayout<LazyLinkExitFrameLayout>()) {
-        LazyLinkExitFrameLayout* ll = frame.exitFrame()->as<LazyLinkExitFrameLayout>();
-        JitFrameLayout* layout = ll->jsFrame();
+        auto* layout = frame.exitFrame()->as<LazyLinkExitFrameLayout>();
+        JitFrameLayout* jsLayout = layout->jsFrame();
+        jsLayout->replaceCalleeToken(TraceCalleeToken(trc, jsLayout->calleeToken()));
+        TraceThisAndArguments(trc, frame, jsLayout);
+        return;
+    }
 
-        layout->replaceCalleeToken(TraceCalleeToken(trc, layout->calleeToken()));
-        TraceThisAndArguments(trc, frame);
+    if (frame.isExitFrameLayout<InterpreterStubExitFrameLayout>()) {
+        auto* layout = frame.exitFrame()->as<InterpreterStubExitFrameLayout>();
+        JitFrameLayout* jsLayout = layout->jsFrame();
+        jsLayout->replaceCalleeToken(TraceCalleeToken(trc, jsLayout->calleeToken()));
+        TraceThisAndArguments(trc, frame, jsLayout);
         return;
     }
 
@@ -2415,7 +2419,7 @@ AssertJitStackInvariants(JSContext* cx)
                 prevFrameSize = frameSize;
                 frameSize = callerFp - calleeFp;
 
-                if (frames.prevType() == JitFrame_Rectifier) {
+                if (frames.isScripted() && frames.prevType() == JitFrame_Rectifier) {
                     MOZ_RELEASE_ASSERT(frameSize % JitStackAlignment == 0,
                       "The rectifier frame should keep the alignment");
 

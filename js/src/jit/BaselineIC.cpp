@@ -1851,7 +1851,7 @@ TryAttachFunApplyStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
         return true;
     RootedFunction target(cx, &thisv.toObject().as<JSFunction>());
 
-    bool isScripted = target->hasJITCode();
+    bool isScripted = target->hasScript();
 
     
     if (argv[1].isMagic(JS_OPTIMIZED_ARGUMENTS) && !script->needsArgsObj()) {
@@ -2205,13 +2205,6 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
         
         if (!constructing && fun->isClassConstructor())
             return true;
-
-        if (!fun->hasJITCode()) {
-            
-            
-            *handled = true;
-            return true;
-        }
 
         
         if (stub->scriptedStubsAreGeneralized()) {
@@ -2865,7 +2858,6 @@ ICCallStubCompiler::guardFunApply(MacroAssembler& masm, AllocatableGeneralRegist
     Register temp = regs.takeAny();
     masm.branchIfFunctionHasNoScript(target, failure);
     masm.branchFunctionKind(Assembler::Equal, JSFunction::ClassConstructor, callee, temp, failure);
-    masm.loadJitCodeRaw(target, temp, failure);
     regs.add(temp);
     return target;
 }
@@ -3123,11 +3115,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
     Register code;
     if (!isConstructing_) {
         code = regs.takeAny();
-        masm.loadJitCodeRaw(callee, code, &failure);
-    } else {
-        masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), callee);
-        Address scriptCode(callee, JSScript::offsetOfBaselineOrIonRaw());
-        masm.branchPtr(Assembler::Equal, scriptCode, ImmPtr(nullptr), &failure);
+        masm.loadJitCodeRaw(callee, code);
     }
 
     
@@ -3137,8 +3125,6 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
     enterStubFrame(masm, regs.getAny());
     if (canUseTailCallReg)
         regs.add(ICTailCallReg);
-
-    Label failureLeaveStubFrame;
 
     if (isConstructing_) {
         
@@ -3218,7 +3204,7 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
         regs.takeUnchecked(callee);
 
         code = regs.takeAny();
-        masm.loadJitCodeRaw(callee, code, &failureLeaveStubFrame);
+        masm.loadJitCodeRaw(callee, code);
 
         
         
@@ -3318,13 +3304,6 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
 
     
     EmitEnterTypeMonitorIC(masm);
-
-    
-    assumeStubFrame(masm);
-    masm.bind(&failureLeaveStubFrame);
-    leaveStubFrame(masm, false);
-    if (argcReg != R0.scratchReg())
-        masm.movePtr(argcReg, R0.scratchReg());
 
     masm.bind(&failure);
     EmitStubGuardFailure(masm);
@@ -3737,7 +3716,7 @@ ICCall_ScriptedApplyArray::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     masm.load16ZeroExtend(Address(target, JSFunction::offsetOfNargs()), scratch);
-    masm.loadJitCodeRaw(target, target, nullptr);
+    masm.loadJitCodeRaw(target, target);
 
     
     Label noUnderflow;
@@ -3825,7 +3804,7 @@ ICCall_ScriptedApplyArguments::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     masm.load16ZeroExtend(Address(target, JSFunction::offsetOfNargs()), scratch);
-    masm.loadJitCodeRaw(target, target, nullptr);
+    masm.loadJitCodeRaw(target, target);
 
     
     Label noUnderflow;
@@ -3893,7 +3872,7 @@ ICCall_ScriptedFunCall::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     Register code = regs.takeAny();
-    masm.loadJitCodeRaw(callee, code, &failure);
+    masm.loadJitCodeRaw(callee, code);
 
     
     regs.add(R1);

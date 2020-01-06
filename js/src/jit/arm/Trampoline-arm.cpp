@@ -527,9 +527,8 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     masm.ma_push(r6); 
 
     
-    
     masm.andPtr(Imm32(CalleeTokenMask), r1);
-    masm.loadJitCodeRaw(r1, r3, nullptr);
+    masm.loadJitCodeRaw(r1, r3);
     argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(r3);
 
     

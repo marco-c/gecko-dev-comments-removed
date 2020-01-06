@@ -504,9 +504,8 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
     masm.push(ebx); 
 
     
-    
     masm.andl(Imm32(CalleeTokenMask), eax);
-    masm.loadJitCodeRaw(eax, eax, nullptr);
+    masm.loadJitCodeRaw(eax, eax);
     argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(eax);
 
     

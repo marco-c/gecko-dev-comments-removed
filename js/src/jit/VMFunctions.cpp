@@ -121,6 +121,35 @@ InvokeFunctionShuffleNewTarget(JSContext* cx, HandleObject obj, uint32_t numActu
     return InvokeFunction(cx, obj, true, false, numActualArgs, argv, rval);
 }
 
+bool
+InvokeFromInterpreterStub(JSContext* cx, InterpreterStubExitFrameLayout* frame)
+{
+    JitFrameLayout* jsFrame = frame->jsFrame();
+    CalleeToken token = jsFrame->calleeToken();
+
+    Value* argv = jsFrame->argv();
+    uint32_t numActualArgs = jsFrame->numActualArgs();
+    bool constructing = CalleeTokenIsConstructing(token);
+    RootedFunction fun(cx, CalleeTokenToFunction(token));
+
+    
+    
+    if (constructing && numActualArgs < fun->nargs())
+        argv[1 + numActualArgs] = argv[1 + fun->nargs()];
+
+    RootedValue rval(cx);
+    if (!InvokeFunction(cx, fun, constructing,
+                         false,
+                        numActualArgs, argv, &rval))
+    {
+        return false;
+    }
+
+    
+    argv[0] = rval;
+    return true;
+}
+
 #ifdef JS_SIMULATOR
 static bool
 CheckSimulatorRecursionLimitWithExtra(JSContext* cx, uint32_t extra)

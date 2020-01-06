@@ -623,7 +623,7 @@ BaselineCacheIRCompiler::emitCallScriptedGetterResult()
 
         masm.loadPtr(getterAddr, callee);
         masm.branchIfFunctionHasNoScript(callee, failure->label());
-        masm.loadJitCodeRaw(callee, code, failure->label());
+        masm.loadJitCodeRaw(callee, code);
     }
 
     allocator.discardStack(masm);
@@ -1722,7 +1722,6 @@ BaselineCacheIRCompiler::emitCallScriptedSetter()
 
         masm.loadPtr(setterAddr, scratch1);
         masm.branchIfFunctionHasNoScript(scratch1, failure->label());
-        masm.loadJitCodeRaw(scratch1, scratch2, failure->label());
     }
 
     allocator.discardStack(masm);
@@ -1753,7 +1752,7 @@ BaselineCacheIRCompiler::emitCallScriptedSetter()
     
     Label noUnderflow;
     masm.load16ZeroExtend(Address(scratch1, JSFunction::offsetOfNargs()), scratch2);
-    masm.loadJitCodeRaw(scratch1, scratch1, nullptr);
+    masm.loadJitCodeRaw(scratch1, scratch1);
 
     
     masm.branch32(Assembler::BelowOrEqual, scratch2, Imm32(1), &noUnderflow);

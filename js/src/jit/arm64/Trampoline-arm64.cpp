@@ -397,7 +397,7 @@ JitRuntime::generateArgumentsRectifier(MacroAssembler& masm)
               r6); 
 
     
-    masm.loadJitCodeRaw(r5, r3, nullptr);
+    masm.loadJitCodeRaw(r5, r3);
     argumentsRectifierReturnOffset_ = masm.callJitNoProfiler(r3);
 
     

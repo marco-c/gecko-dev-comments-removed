@@ -127,11 +127,12 @@ js::jit::MaybeEnterJit(JSContext* cx, RunState& state)
 {
     JSScript* script = state.script();
 
-    uint8_t* code = script->baselineOrIonRawPointer();
+    uint8_t* code = script->jitCodeRaw();
     do {
         
         
-        if (code)
+        
+        if (script->hasBaselineScript())
             break;
 
         
@@ -140,7 +141,7 @@ js::jit::MaybeEnterJit(JSContext* cx, RunState& state)
             if (status == jit::Method_Error)
                 return EnterJitStatus::Error;
             if (status == jit::Method_Compiled) {
-                code = script->baselineOrIonRawPointer();
+                code = script->jitCodeRaw();
                 break;
             }
         }
@@ -151,7 +152,7 @@ js::jit::MaybeEnterJit(JSContext* cx, RunState& state)
             if (status == jit::Method_Error)
                 return EnterJitStatus::Error;
             if (status == jit::Method_Compiled) {
-                code = script->baselineOrIonRawPointer();
+                code = script->jitCodeRaw();
                 break;
             }
         }
