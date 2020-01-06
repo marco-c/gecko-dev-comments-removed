@@ -344,7 +344,7 @@ IMMHandler::InitKeyboardLayout(nsWindow* aWindow,
     
     sIMEName.SetLength(++IMENameLength);
     IMENameLength =
-      ::ImmGetDescriptionW(aKeyboardLayout, wwc(sIMEName.BeginWriting()),
+      ::ImmGetDescriptionW(aKeyboardLayout, sIMEName.get(),
                            IMENameLength);
     
     sIMEName.SetLength(IMENameLength);
