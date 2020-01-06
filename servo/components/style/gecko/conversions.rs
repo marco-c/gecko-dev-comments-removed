@@ -138,7 +138,7 @@ impl Angle {
 
 impl nsStyleImage {
     
-    pub fn set(&mut self, image: Image, cacheable: &mut bool) {
+    pub fn set(&mut self, image: Image) {
         match image {
             GenericImage::Gradient(gradient) => {
                 self.set_gradient(gradient)
@@ -146,29 +146,12 @@ impl nsStyleImage {
             GenericImage::Url(ref url) => {
                 unsafe {
                     Gecko_SetLayerImageImageValue(self, url.image_value.clone().unwrap().get());
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    *cacheable = false;
                 }
             },
             GenericImage::Rect(ref image_rect) => {
                 unsafe {
                     Gecko_SetLayerImageImageValue(self, image_rect.url.image_value.clone().unwrap().get());
                     Gecko_InitializeImageCropRect(self);
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    *cacheable = false;
 
                     
                     let ref mut rect = *self.mCropRect.mPtr;

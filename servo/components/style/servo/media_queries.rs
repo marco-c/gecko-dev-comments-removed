@@ -229,9 +229,7 @@ impl Range<specified::Length> {
         
         let context = computed::Context {
             is_root_element: false,
-            device: device,
-            inherited_style: default_values,
-            style: StyleBuilder::for_derived_style(device, default_values, None),
+            builder: StyleBuilder::for_derived_style(device, default_values, None, None),
             
             
             

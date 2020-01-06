@@ -69,15 +69,9 @@ pub struct Context<'a> {
     pub is_root_element: bool,
 
     
-    pub device: &'a Device,
-
-    
-    pub inherited_style: &'a ComputedValues,
-
     
     
-    
-    pub style: StyleBuilder<'a>,
+    pub builder: StyleBuilder<'a>,
 
     
     
@@ -105,18 +99,34 @@ pub struct Context<'a> {
 
 impl<'a> Context<'a> {
     
-    pub fn is_root_element(&self) -> bool { self.is_root_element }
+    pub fn is_root_element(&self) -> bool {
+        self.is_root_element
+    }
+
     
-    pub fn viewport_size(&self) -> Size2D<Au> { self.device.au_viewport_size() }
+    pub fn device(&self) -> &Device {
+        self.builder.device
+    }
+
     
-    pub fn inherited_style(&self) -> &ComputedValues { &self.inherited_style }
+    pub fn viewport_size(&self) -> Size2D<Au> {
+        self.builder.device.au_viewport_size()
+    }
+
     
+    pub fn inherited_style(&self) -> &ComputedValues {
+        self.builder.inherited_style()
+    }
+
     
-    pub fn style(&self) -> &StyleBuilder { &self.style }
+    pub fn default_style(&self) -> &ComputedValues {
+        self.builder.default_style()
+    }
+
     
-    pub fn mutate_style(&mut self) -> &mut StyleBuilder<'a> { &mut self.style }
-    
-    pub fn mutate_style_with_device(&mut self) -> (&mut StyleBuilder<'a>, &Device) { (&mut self.style, &self.device) }
+    pub fn style(&self) -> &StyleBuilder {
+        &self.builder
+    }
 }
 
 
@@ -395,7 +405,7 @@ impl ToComputedValue for specified::JustifyItems {
         
         
         if self.0 == align::ALIGN_AUTO {
-            let inherited = context.inherited_style.get_position().clone_justify_items();
+            let inherited = context.inherited_style().get_position().clone_justify_items();
             if inherited.0.contains(align::ALIGN_LEGACY) {
                 return inherited
             }
