@@ -372,30 +372,6 @@ Gecko_NoteAnimationOnlyDirtyElement(RawGeckoElementBorrowed aElement)
   const_cast<Element*>(aElement)->NoteAnimationOnlyDirtyForServo();
 }
 
-nsStyleContext*
-Gecko_GetStyleContext(RawGeckoElementBorrowed aElement,
-                      nsIAtom* aPseudoTagOrNull)
-{
-  nsIFrame* relevantFrame =
-    ServoRestyleManager::FrameForPseudoElement(aElement, aPseudoTagOrNull);
-  if (relevantFrame) {
-    return relevantFrame->StyleContext();
-  }
-
-  if (aPseudoTagOrNull) {
-    return nullptr;
-  }
-
-  
-  nsIPresShell* shell = aElement->OwnerDoc()->GetShell();
-  NS_ENSURE_TRUE(shell, nullptr);
-  nsCSSFrameConstructor* fc = shell->GetPresContext()->FrameConstructor();
-
-  
-  
-  return fc->GetDisplayContentsStyleFor(aElement);
-}
-
 CSSPseudoElementType
 Gecko_GetImplementedPseudo(RawGeckoElementBorrowed aElement)
 {

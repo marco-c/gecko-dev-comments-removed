@@ -384,10 +384,6 @@ void Gecko_NoteDirtyElement(RawGeckoElementBorrowed element);
 void Gecko_NoteAnimationOnlyDirtyElement(RawGeckoElementBorrowed element);
 
 
-
-
-nsStyleContext* Gecko_GetStyleContext(RawGeckoElementBorrowed element,
-                                      nsIAtom* aPseudoTagOrNull);
 mozilla::CSSPseudoElementType Gecko_GetImplementedPseudo(RawGeckoElementBorrowed element);
 
 

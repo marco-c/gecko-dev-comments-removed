@@ -222,15 +222,6 @@ public:
 
 
 
-
-
-  static nsIFrame* FrameForPseudoElement(const Element* aElement,
-                                         nsIAtom* aPseudoTagOrNull);
-
-  
-
-
-
   static void ClearServoDataFromSubtree(Element* aElement);
 
   
