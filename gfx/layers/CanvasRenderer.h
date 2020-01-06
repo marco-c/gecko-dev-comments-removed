@@ -41,7 +41,6 @@ struct CanvasInitializeData {
     , mSize(0,0)
     , mHasAlpha(false)
     , mIsGLAlphaPremult(true)
-    , mIsMirror(false)
   { }
 
   
@@ -66,10 +65,6 @@ struct CanvasInitializeData {
 
   
   bool mIsGLAlphaPremult;
-
-  
-  
-  bool mIsMirror;
 };
 
 

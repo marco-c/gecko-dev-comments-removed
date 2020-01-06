@@ -62,7 +62,7 @@ ShareableCanvasRenderer::Initialize(const CanvasInitializeData& aData)
   UniquePtr<gl::SurfaceFactory> factory =
     gl::GLScreenBuffer::CreateFactory(mGLContext, caps, forwarder, mFlags);
 
-  if (mGLFrontbuffer || aData.mIsMirror) {
+  if (mGLFrontbuffer) {
     
     
     mFactory = Move(factory);
