@@ -71,7 +71,7 @@ add_task(function* testTemporaryWebExtension() {
 
   let addons = document.querySelectorAll("#temporary-extensions .addon-target-container");
   
-  let container = addons[addons.length-1];
+  let container = addons[addons.length - 1];
   let addonId = container.dataset.addonId;
 
   let temporaryID = container.querySelector(".temporary-id-url");
