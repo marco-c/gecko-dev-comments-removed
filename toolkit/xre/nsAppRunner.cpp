@@ -2584,7 +2584,9 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
 #endif
 
   if (!count) {
-    gDoMigration = true;
+    
+    
+    gDoMigration = false;
     gDoProfileReset = false;
 
     
