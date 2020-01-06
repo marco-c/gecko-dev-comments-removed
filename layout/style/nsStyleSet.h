@@ -333,7 +333,8 @@ class nsStyleSet final
   void Shutdown();
 
   
-  void RecordStyleSheetChange(mozilla::CSSStyleSheet* aStyleSheet);
+  void RecordStyleSheetChange(mozilla::CSSStyleSheet* aStyleSheet,
+                              mozilla::StyleSheet::ChangeType);
 
   
   void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot);
