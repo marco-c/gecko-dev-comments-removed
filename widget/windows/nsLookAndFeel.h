@@ -9,7 +9,6 @@
 #include "nsXPLookAndFeel.h"
 #include "gfxFont.h"
 #include "mozilla/RangedArray.h"
-#include "nsIWindowsRegKey.h"
 
 
 
@@ -53,13 +52,6 @@ public:
 
 private:
   
-
-
-
-
-  nsresult GetAccentColor(nscolor& aColor);
-
-  
   
   int32_t mUseAccessibilityTheme;
   int32_t mUseDefaultTheme; 
@@ -79,8 +71,6 @@ private:
   mozilla::RangedArray<CachedSystemFont,
                        FontID_MINIMUM,
                        FontID_MAXIMUM + 1 - FontID_MINIMUM> mSystemFontCache;
-
-  nsCOMPtr<nsIWindowsRegKey> mDwmKey;
 };
 
 #endif
