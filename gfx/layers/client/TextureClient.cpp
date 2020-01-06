@@ -1141,11 +1141,6 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
     return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
   }
 
-  if (moz2DBackend == BackendType::SKIA && aFormat == SurfaceFormat::B8G8R8X8) {
-    
-    aAllocFlags = TextureAllocationFlags(aAllocFlags | ALLOC_CLEAR_BUFFER);
-  }
-
   
   return TextureClient::CreateForRawBufferAccess(aAllocator, aFormat, aSize,
                                                  moz2DBackend, aLayersBackend,
@@ -1250,13 +1245,20 @@ TextureClient::CreateForRawBufferAccess(LayersIPCChannel* aAllocator,
     return nullptr;
   }
 
-  
-  if (aMoz2DBackend == gfx::BackendType::DIRECT2D ||
-      aMoz2DBackend == gfx::BackendType::DIRECT2D1_1) {
-    aMoz2DBackend = gfx::BackendType::CAIRO;
+  if (aFormat == SurfaceFormat::B8G8R8X8) {
+    
+    aAllocFlags = TextureAllocationFlags(aAllocFlags | ALLOC_CLEAR_BUFFER);
   }
 
-  TextureData* texData = BufferTextureData::Create(aSize, aFormat, aMoz2DBackend,
+  
+  
+  
+  NS_WARNING_ASSERTION(aMoz2DBackend != gfx::BackendType::SKIA &&
+                       aMoz2DBackend != gfx::BackendType::DIRECT2D &&
+                       aMoz2DBackend != gfx::BackendType::DIRECT2D1_1,
+                       "Unsupported TextureClient backend type");
+
+  TextureData* texData = BufferTextureData::Create(aSize, aFormat, gfx::BackendType::SKIA,
                                                    aLayersBackend, aTextureFlags,
                                                    aAllocFlags, aAllocator);
   if (!texData) {
