@@ -138,7 +138,7 @@ AudioStreamAnalyser.prototype = {
     do {
       await new Promise(resolve => requestAnimationFrame(resolve));
       if (aborted) {
-        throw error;
+        throw await cancel;
       }
     }
     while (!analysisFunction(this.getByteFrequencyData()));
@@ -647,11 +647,11 @@ function createOneShotEventWrapper(wrapper, obj, event) {
 
 
 
-function haveEvents(target, name, count, cancelPromise) {
+function haveEvents(target, name, count, cancel) {
   var listener;
   var counter = count || 1;
   return Promise.race([
-    (cancelPromise || new Promise(() => {})).then(e => Promise.reject(e)),
+    (cancel || new Promise(() => {})).then(e => Promise.reject(e)),
     new Promise(resolve =>
         target.addEventListener(name, listener = e => (--counter < 1 && resolve(e))))
   ])
@@ -672,8 +672,8 @@ function haveEvents(target, name, count, cancelPromise) {
 
 
 
-function haveEvent(target, name, cancelPromise) {
-  return haveEvents(target, name, 1, cancelPromise);
+function haveEvent(target, name, cancel) {
+  return haveEvents(target, name, 1, cancel);
 };
 
 
@@ -711,8 +711,8 @@ function haveNoEvent(target, name, timeoutPromise) {
 
 
 
-function haveEventsButNoMore(target, name, count, cancelPromise) {
-  return haveEvents(target, name, count, cancelPromise)
+function haveEventsButNoMore(target, name, count, cancel) {
+  return haveEvents(target, name, count, cancel)
     .then(e => haveNoEvent(target, name).then(() => e));
 };
 
@@ -975,47 +975,57 @@ class VideoStreamHelper {
     this._helper = new CaptureStreamTestHelper2D(50,50);
   }
 
-  checkHasFrame(video, offsetX, offsetY, threshold) {
+  async checkHasFrame(video, { offsetX, offsetY, threshold } = {}) {
     const h = this._helper;
-    return h.waitForPixel(video, offsetX, offsetY, px => {
+    await h.waitForPixel(video, px => {
       let result = h.isOpaquePixelNot(px, h.black, threshold);
       info("Checking that we have a frame, got [" +
            Array.slice(px) + "]. Ref=[" +
            Array.slice(h.black.data) + "]. Threshold=" + threshold +
            ". Pass=" + result);
       return result;
-    });
+    }, { offsetX, offsetY });
   }
 
-  async checkVideoPlaying(video, offsetX, offsetY, threshold) {
+  async checkVideoPlaying(video, { offsetX = 10, offsetY = 10,
+                                   threshold = 16,
+                                 } = {}) {
     const h = this._helper;
-    await this.checkHasFrame(video, offsetX, offsetY, threshold);
-    let startPixel = { data: h.getPixel(video, offsetX, offsetY)
-                     , name: "startcolor"
-                     };
-    return h.waitForPixel(video, offsetX, offsetY, px => {
-      let result = h.isPixelNot(px, startPixel, threshold)
+    await this.checkHasFrame(video, { offsetX, offsetY, threshold });
+    let startPixel = {
+      data: h.getPixel(video, offsetX, offsetY),
+      name: "startcolor",
+    };
+    await h.waitForPixel(video, px => {
+      let result = h.isPixelNot(px, startPixel, threshold);
       info("Checking playing, [" +
            Array.slice(px) + "] vs [" + Array.slice(startPixel.data) +
            "]. Threshold=" + threshold + " Pass=" + result);
       return result;
-    });
+    }, { offsetX, offsetY });
   }
 
-  async checkVideoPaused(video, offsetX, offsetY, threshold, timeout) {
+  async checkVideoPaused(video, { offsetX = 10, offsetY = 10,
+                                  threshold = 16, time = 5000,
+                                }={}) {
     const h = this._helper;
-    await this.checkHasFrame(video, offsetX, offsetY, threshold);
-    let startPixel = { data: h.getPixel(video, offsetX, offsetY)
-                     , name: "startcolor"
-                     };
-    const changed = await h.waitForPixel(video, offsetX, offsetY, px => {
-      let result = h.isOpaquePixelNot(px, startPixel, threshold);
-      info("Checking paused, [" +
-           Array.slice(px) + "] vs [" + Array.slice(startPixel.data) +
-           "]. Threshold=" + threshold + " Pass=" + result);
-      return result;
-    }, timeout);
-    ok(!changed, "Frame shouldn't change within " + timeout / 1000 + " seconds.");
+    await this.checkHasFrame(video, { offsetX, offsetY, threshold });
+    let startPixel = {
+      data: h.getPixel(video, offsetX, offsetY),
+      name: "startcolor",
+    };
+    try {
+      await h.waitForPixel(video, px => {
+          let result = h.isOpaquePixelNot(px, startPixel, threshold);
+          info("Checking paused, [" +
+               Array.slice(px) + "] vs [" + Array.slice(startPixel.data) +
+               "]. Threshold=" + threshold + " Pass=" + result);
+          return result;
+        }, { offsetX, offsetY, cancel: wait(time, "timeout") });
+      ok(false, "Frame changed within " + time/1000 + " seconds");
+    } catch (e) {
+      is(e, "timeout", "Frame shouldn't change for " + time/1000 + " seconds");
+    }
   }
 }
 

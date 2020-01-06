@@ -62,12 +62,7 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  getPixel: function (video, offsetX, offsetY, width, height) {
-    offsetX = offsetX || 0; 
-    offsetY = offsetY || 0; 
-    width = width || 0; 
-    height = height || 0; 
-
+  getPixel: function (video, offsetX = 0, offsetY = 0, width = 0, height = 0) {
     
     CaptureStreamTestHelper2D.prototype.clear.call(this, this.cout);
 
@@ -85,8 +80,9 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  isPixel: function (px, refColor, threshold) {
-    threshold = threshold || 0; 
+
+
+  isPixel: function (px, refColor, threshold = 0) {
     return px.every((ch, i) => Math.abs(ch - refColor.data[i]) <= threshold);
   },
 
@@ -95,11 +91,9 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  isPixelNot: function (px, refColor, threshold) {
-    if (threshold === undefined) {
-      
-      threshold = 127;
-    }
+
+
+  isPixelNot: function (px, refColor, threshold = 127) {
     return px.some((ch, i) => Math.abs(ch - refColor.data[i]) > threshold);
   },
 
@@ -115,27 +109,30 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixel: function (video, offsetX, offsetY, test, timeout, width, height) {
-    return new Promise(resolve => {
-      const startTime = video.currentTime;
-      var ontimeupdate = () => {
-        var pixelMatch = false;
-        try {
-            pixelMatch = test(this.getPixel(video, offsetX, offsetY, width, height));
-        } catch (e) {
-          info("Waiting for pixel but no video available: " + e + "\n" + e.stack);
-        }
-        if (!pixelMatch &&
-            (!timeout || video.currentTime < startTime + (timeout / 1000.0))) {
-          
-          
+  waitForPixel: async function (video, test, {
+                                  offsetX = 0, offsetY = 0,
+                                  width = 0, height = 0,
+                                  cancel = new Promise(() => {}),
+                                } = {}) {
+    let aborted = false;
+    cancel.then(e => aborted = true);
+
+    while (true) {
+      await Promise.race([
+        new Promise(resolve => video.addEventListener("timeupdate", resolve, { once: true })),
+        cancel,
+      ]);
+      if (aborted) {
+        throw await cancel;
+      }
+      try {
+        if (test(this.getPixel(video, offsetX, offsetY, width, height))) {
           return;
         }
-        video.removeEventListener("timeupdate", ontimeupdate);
-        resolve(pixelMatch);
-      };
-      video.addEventListener("timeupdate", ontimeupdate);
-    });
+      } catch (e) {
+        info("Waiting for pixel but no video available: " + e + "\n" + e.stack);
+      }
+    }
   },
 
   
@@ -143,21 +140,29 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixelColor: function (video, refColor, threshold, infoString) {
+  pixelMustBecome: async function (video, refColor, {
+                                     threshold = 0, infoString = "n/a",
+                                     cancel = new Promise(() => {}),
+                                   } = {}) {
     info("Waiting for video " + video.id + " to match [" +
          refColor.data.join(',') + "] - " + refColor.name +
          " (" + infoString + ")");
     var paintedFrames = video.mozPaintedFrames-1;
-    return this.waitForPixel(video, 0, 0,
-                             px => { if (paintedFrames != video.mozPaintedFrames) {
-				       info("Frame: " + video.mozPaintedFrames +
-					    " IsPixel ref=" + refColor.data +
-					    " threshold=" + threshold +
-					    " value=" + px);
-				       paintedFrames = video.mozPaintedFrames;
-				     }
-				     return this.isPixel(px, refColor, threshold); })
-      .then(() => ok(true, video.id + " " + infoString));
+    await this.waitForPixel(video, px => {
+        if (paintedFrames != video.mozPaintedFrames) {
+         info("Frame: " + video.mozPaintedFrames +
+             " IsPixel ref=" + refColor.data +
+             " threshold=" + threshold +
+             " value=" + px);
+         paintedFrames = video.mozPaintedFrames;
+        }
+        return this.isPixel(px, refColor, threshold);
+      }, {
+        offsetX: 0, offsetY: 0,
+        width: 0, height: 0,
+        cancel,
+      });
+    ok(true, video.id + " " + infoString);
   },
 
   
@@ -165,13 +170,21 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixelColorTimeout: function (video, refColor, threshold, timeout, infoString) {
-    info("Waiting for " + video.id + " to time out after " + timeout +
+  pixelMustNotBecome: async function (video, refColor, {
+                                        threshold = 0, time = 5000,
+                                        infoString = "n/a",
+                                      } = {}) {
+    info("Waiting for " + video.id + " to time out after " + time +
          "ms against [" + refColor.data.join(',') + "] - " + refColor.name);
-    return this.waitForPixel(video, 0, 0,
-                             px => this.isPixel(px, refColor, threshold),
-                             timeout)
-      .then(result => ok(!result, video.id + " " + infoString));
+    let timeout = new Promise(resolve => setTimeout(resolve, time));
+    let analysis = async () => {
+      await this.waitForPixel(video, px => this.isPixel(px, refColor, threshold), {
+          offsetX: 0, offsetY: 0, width: 0, height: 0,
+        });
+      throw new Error("Got color " + refColor.name + ". " + infoString);
+    };
+    await Promise.race([timeout, analysis()]);
+    ok(true, video.id + " " + infoString);
   },
 
   
