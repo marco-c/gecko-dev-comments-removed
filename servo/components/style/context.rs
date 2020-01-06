@@ -16,7 +16,7 @@ use euclid::Size2D;
 use fnv::FnvHashMap;
 use font_metrics::FontMetricsProvider;
 #[cfg(feature = "gecko")] use gecko_bindings::structs;
-use parallel::STYLE_THREAD_STACK_SIZE_KB;
+use parallel::{STACK_SAFETY_MARGIN_KB, STYLE_THREAD_STACK_SIZE_KB};
 #[cfg(feature = "servo")] use parking_lot::RwLock;
 use properties::ComputedValues;
 #[cfg(feature = "servo")] use properties::PropertyId;
@@ -633,19 +633,30 @@ impl StackLimitChecker {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        if cfg!(debug_assertions) {
+            
+            
+            
+            
+            
+            let stack_bottom = self.lower_limit - STACK_SAFETY_MARGIN_KB * 1024;
+
+            
+            
+            
+            
+            
+            debug_assert!(stack_bottom < curr_sp);
+
+            
+            
+            
+            
+            
+            let distance_to_stack_bottom = curr_sp - stack_bottom;
+            let max_allowable_distance = (STYLE_THREAD_STACK_SIZE_KB + 10) * 1024;
+            debug_assert!(distance_to_stack_bottom <= max_allowable_distance);
+        }
 
         
         curr_sp <= self.lower_limit
@@ -714,7 +725,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             current_element_info: None,
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
             stack_limit_checker: StackLimitChecker::new(
-                (STYLE_THREAD_STACK_SIZE_KB - 40) * 1024),
+                (STYLE_THREAD_STACK_SIZE_KB - STACK_SAFETY_MARGIN_KB) * 1024),
         }
     }
 
@@ -729,15 +740,8 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             statistics: TraversalStatistics::default(),
             current_element_info: None,
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
-            
-            
-            
-            
-            
-            
-            
             stack_limit_checker: StackLimitChecker::new(
-                (STYLE_THREAD_STACK_SIZE_KB - 40) * 1024),
+                (STYLE_THREAD_STACK_SIZE_KB - STACK_SAFETY_MARGIN_KB) * 1024),
         }
     }
 

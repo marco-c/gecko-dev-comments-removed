@@ -139,7 +139,7 @@ pub trait DomTraversal<E: TElement> : Sync {
     fn pre_traverse(
         root: E,
         shared_context: &SharedStyleContext,
-        traversal_flags: TraversalFlags
+        traversal_flags: TraversalFlags,
     ) -> PreTraverseToken {
         
         
@@ -155,7 +155,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         if let Some(ref mut data) = data {
             
             
-            data.invalidate_style_if_needed(root, shared_context);
+            data.invalidate_style_if_needed(root, shared_context, None);
 
             
             
@@ -828,7 +828,11 @@ where
             
             
             
-            child_data.invalidate_style_if_needed(child, &context.shared);
+            child_data.invalidate_style_if_needed(
+                child,
+                &context.shared,
+                Some(&context.thread_local.stack_limit_checker)
+            );
         }
 
         if D::element_needs_traversal(child, flags, child_data.map(|d| &*d), Some(data)) {

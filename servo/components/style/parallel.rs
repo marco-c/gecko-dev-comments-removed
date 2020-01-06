@@ -46,6 +46,22 @@ pub const STYLE_THREAD_STACK_SIZE_KB: usize = 128;
 
 
 
+
+
+pub const STACK_SAFETY_MARGIN_KB: usize = 45;
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub const WORK_UNIT_MAX: usize = 16;
 
 
