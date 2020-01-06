@@ -96,7 +96,7 @@ function processPrefFile(url) {
   content.match(/pref\("[^"]+",\s*.+\s*\)/g).forEach(item => {
     let m = item.match(/pref\("([^"]+)",\s*(.+)\s*\)/);
     let name = m[1];
-    let val = m[2];
+    let val = m[2].trim();
 
     
     if (Services.prefs.prefHasUserValue(name)) {
