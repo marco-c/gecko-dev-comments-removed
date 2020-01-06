@@ -60,10 +60,6 @@ namespace gl {
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
-#ifdef MOZ_GL_DEBUG
-unsigned GLContext::sCurrentGLContextTLS = -1;
-#endif
-
 MOZ_THREAD_LOCAL(const GLContext*) GLContext::sCurrentContext;
 
 
@@ -3035,20 +3031,6 @@ GLContext::MakeCurrent(bool aForce) const
     if (MOZ_UNLIKELY( IsDestroyed() ))
         return false;
 
-#ifdef MOZ_GL_DEBUG
-    PR_SetThreadPrivate(sCurrentGLContextTLS, (void*)this);
-
-    
-    
-#if 0
-    
-    
-    
-    
-    NS_ASSERTION(IsOwningThreadCurrent(),
-                 "MakeCurrent() called on different thread than this context was created on!");
-#endif
-#endif
     if (mUseTLSIsCurrent && !aForce && sCurrentContext.get() == this) {
         MOZ_ASSERT(IsCurrent());
         return true;
@@ -3086,14 +3068,6 @@ GLContext::BeforeGLCall_Debug(const char* const funcName) const
 
     if (mDebugFlags & DebugFlagTrace) {
         printf_stderr("[gl:%p] > %s\n", this, funcName);
-    }
-
-    GLContext* tlsContext = (GLContext*)PR_GetThreadPrivate(sCurrentGLContextTLS);
-    if (this != tlsContext) {
-        printf_stderr("Fatal: %s called on non-current context %p. The"
-                      " current context for this thread is %p.\n",
-                      funcName, this, tlsContext);
-        MOZ_CRASH("GFX: GLContext is not current.");
     }
 }
 
