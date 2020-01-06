@@ -147,6 +147,13 @@ var gMenuBuilder = {
     let menuPopup = element.firstChild;
     if (menuPopup && menuPopup.childNodes.length == 1) {
       let onlyChild = menuPopup.firstChild;
+
+      
+      
+      if (AppConstants.platform === "linux" && onlyChild.getAttribute("type") === "checkbox") {
+        return element;
+      }
+
       onlyChild.remove();
       return onlyChild;
     }
