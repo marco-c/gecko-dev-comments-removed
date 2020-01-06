@@ -98,10 +98,8 @@ SamplerThread::Stop(PSLockRef aLock)
 }
 
 void
-SamplerThread::SleepMicro(int aMicroseconds)
+SamplerThread::SleepMicro(uint32_t aMicroseconds)
 {
-  aMicroseconds = std::max(0, aMicroseconds);
-
   usleep(aMicroseconds);
   
   
