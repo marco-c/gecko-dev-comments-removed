@@ -61,6 +61,8 @@ public:
 
     void InitFontCache();
 
+    void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
+
     
 
 
