@@ -1362,7 +1362,7 @@ PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg, HandleId id)
 
 
 
-static inline bool
+static MOZ_ALWAYS_INLINE bool
 PurgeEnvironmentChain(JSContext* cx, HandleObject obj, HandleId id)
 {
     if (obj->isDelegate() && obj->isNative())
