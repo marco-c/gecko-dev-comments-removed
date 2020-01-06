@@ -44,6 +44,7 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
 
 
 
+
 _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_EN_US = [
     "update/target.complete.mar",
 ]
