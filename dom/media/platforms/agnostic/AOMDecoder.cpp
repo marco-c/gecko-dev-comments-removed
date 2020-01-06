@@ -221,6 +221,19 @@ AOMDecoder::IsAV1(const nsACString& aMimeType)
 
 
 bool
+AOMDecoder::IsSupportedCodec(const nsAString& aCodecType)
+{
+  
+  
+  
+  auto version = NS_ConvertASCIItoUTF16("av1.experimental.");
+  version.AppendLiteral("4d668d7feb1f8abd809d1bca0418570a7f142a36");
+  return aCodecType.EqualsLiteral("av1") ||
+         aCodecType.Equals(version);
+}
+
+
+bool
 AOMDecoder::IsKeyframe(Span<const uint8_t> aBuffer) {
   aom_codec_stream_info_t info;
   PodZero(&info);

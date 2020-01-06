@@ -5,6 +5,9 @@
 
 
 #include "mozilla/Preferences.h"
+#ifdef MOZ_AV1
+#include "AOMDecoder.h"
+#endif
 #include "MediaContainerType.h"
 #include "MediaDecoderStateMachine.h"
 #include "WebMDemuxer.h"
@@ -51,6 +54,11 @@ WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
          codec.EqualsLiteral("vp9") || codec.EqualsLiteral("vp9.0"))) {
       continue;
     }
+#ifdef MOZ_AV1
+    if (isVideo && AOMDecoder::IsSupportedCodec(codec)) {
+      continue;
+    }
+#endif
     
     return false;
   }
