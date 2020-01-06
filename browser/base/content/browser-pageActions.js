@@ -820,7 +820,11 @@ BrowserPageActions.sendToDevice = {
       }
       item.setAttribute("tooltiptext", name);
       item.addEventListener("command", event => {
-        BrowserPageActionFeedback.show("sendToDevice", event);
+        
+        
+        if (event.target.classList.contains("sendtab-target")) {
+          BrowserPageActionFeedback.show("sendToDevice", event);
+        }
       });
       return item;
     });
