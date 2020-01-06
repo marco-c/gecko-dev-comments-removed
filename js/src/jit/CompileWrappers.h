@@ -34,7 +34,7 @@ class CompileRuntime
     const JitRuntime* jitRuntime();
 
     
-    GeckoProfiler& geckoProfiler();
+    GeckoProfilerRuntime& geckoProfiler();
 
     bool jitSupportsFloatingPoint();
     bool hadOutOfMemory();

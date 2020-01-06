@@ -33,7 +33,7 @@ static const FloatRegisterSet NonVolatileFloatRegs =
                      (1ULL << FloatRegisters::d15));
 
 static void
-GenerateReturn(MacroAssembler& masm, int returnCode, GeckoProfiler* prof)
+GenerateReturn(MacroAssembler& masm, int returnCode)
 {
     
     masm.transferMultipleByRuns(NonVolatileFloatRegs, IsLoad, StackPointer, IA);
@@ -377,7 +377,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
 
     
-    GenerateReturn(masm, true, &cx->runtime()->geckoProfiler());
+    GenerateReturn(masm, true);
 
     Linker linker(masm);
     AutoFlushICache afc("EnterJIT");
