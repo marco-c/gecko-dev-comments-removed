@@ -698,6 +698,8 @@ def build_docker_worker_payload(config, task, task_def):
             }
         payload['artifacts'] = artifacts
 
+    run_task = payload.get('command', [''])[0].endswith('run-task')
+
     if 'caches' in worker:
         caches = {}
 
@@ -708,8 +710,6 @@ def build_docker_worker_payload(config, task, task_def):
         
         
         
-
-        run_task = payload.get('command', [''])[0].endswith('run-task')
 
         if run_task:
             suffix = '-%s' % _run_task_suffix()
@@ -734,6 +734,11 @@ def build_docker_worker_payload(config, task, task_def):
                 caches.values()))
 
         payload['cache'] = caches
+
+    
+    if run_task and worker.get('volumes'):
+        payload['env']['TASKCLUSTER_VOLUMES'] = ';'.join(
+            sorted(worker['volumes']))
 
     if features:
         payload['features'] = features
