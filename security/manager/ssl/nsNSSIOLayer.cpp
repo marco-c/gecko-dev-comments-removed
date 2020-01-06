@@ -316,23 +316,25 @@ nsNSSSocketInfo::SetHandshakeCompleted()
     Telemetry::Accumulate(Telemetry::SSL_HANDSHAKE_TYPE, handshakeType);
   }
 
-
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  if (PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity)) {
     PRFileDesc* poppedPlaintext =
-      PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
-    if (poppedPlaintext) {
       PR_PopIOLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
-      poppedPlaintext->dtor(poppedPlaintext);
-    }
+    poppedPlaintext->dtor(poppedPlaintext);
+  }
 
-    mHandshakeCompleted = true;
+  mHandshakeCompleted = true;
 
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-           ("[%p] nsNSSSocketInfo::SetHandshakeCompleted\n", (void*) mFd));
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+          ("[%p] nsNSSSocketInfo::SetHandshakeCompleted\n", (void*) mFd));
 
-    mIsFullHandshake = false; 
+  mIsFullHandshake = false; 
 }
 
 void
@@ -992,10 +994,13 @@ nsNSSSocketInfo::CloseSocketAndDestroy(
 
   
   
-  PRFileDesc* poppedPlaintext =
-    PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
-  if (poppedPlaintext) {
-    PR_PopIOLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
+  
+  
+  
+  
+  if (PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity)) {
+    PRFileDesc* poppedPlaintext =
+      PR_PopIOLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
     poppedPlaintext->dtor(poppedPlaintext);
   }
 
@@ -2817,7 +2822,11 @@ nsSSLIOLayerAddToSocket(int32_t family,
     layer->dtor(layer);
   }
   if (plaintextLayer) {
-    PR_PopIOLayer(fd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
+    
+    
+    
+    
+    plaintextLayer = PR_PopIOLayer(fd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
     plaintextLayer->dtor(plaintextLayer);
   }
   return NS_ERROR_FAILURE;
