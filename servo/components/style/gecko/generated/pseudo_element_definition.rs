@@ -1377,7 +1377,7 @@ impl PseudoElement {
     
     #[inline]
     pub fn from_slice(s: &str, in_ua_stylesheet: bool) -> Option<Self> {
-        use std::ascii::AsciiExt;
+        #[allow(unused_imports)] use std::ascii::AsciiExt;
 
         
         
@@ -1747,7 +1747,7 @@ impl PseudoElement {
     
     #[inline]
     pub fn tree_pseudo_element(name: &str, args: Box<[Atom]>) -> Option<Self> {
-        use std::ascii::AsciiExt;
+        #[allow(unused_imports)] use std::ascii::AsciiExt;
         debug_assert!(name.starts_with("-moz-tree-"));
         let tree_part = &name[10..];
             if tree_part.eq_ignore_ascii_case("column") {
