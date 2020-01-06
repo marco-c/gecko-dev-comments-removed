@@ -171,6 +171,18 @@ protected:
                               nsIEditor::EDirection aDir,
                               nsresult aResult);
   nsresult InsertBRIfNeeded(Selection* aSelection);
+
+  
+
+
+
+
+
+
+
+
+  nsresult InsertBRIfNeededInternal(nsINode& aNode, bool aInsertMozBR);
+
   mozilla::EditorDOMPoint GetGoodSelPointForNode(nsINode& aNode,
                                                  nsIEditor::EDirection aAction);
 
@@ -402,7 +414,25 @@ protected:
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);
   nsresult UpdateDocChangeRange(nsRange* aRange);
   nsresult ConfirmSelectionInBody();
-  nsresult InsertMozBRIfNeeded(nsINode& aNode);
+
+  
+
+
+
+  nsresult InsertBRIfNeeded(nsINode& aNode)
+  {
+    return InsertBRIfNeededInternal(aNode, false);
+  }
+
+  
+
+
+
+  nsresult InsertMozBRIfNeeded(nsINode& aNode)
+  {
+    return InsertBRIfNeededInternal(aNode, true);
+  }
+
   bool IsEmptyInline(nsINode& aNode);
   bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
   nsresult RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,

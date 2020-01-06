@@ -212,8 +212,33 @@ protected:
 
   void RemoveIMETextFromPWBuf(uint32_t& aStart, nsAString* aIMEString);
 
-  nsresult CreateMozBR(nsIDOMNode* inParent, int32_t inOffset,
-                       nsIDOMNode** outBRNode = nullptr);
+  
+
+
+
+
+
+
+
+  nsresult CreateBR(nsIDOMNode* aParent, int32_t aOffset,
+                    nsIDOMNode** aOutBRNode = nullptr)
+  {
+    return CreateBRInternal(aParent, aOffset, false, aOutBRNode);
+  }
+
+  
+
+
+
+
+
+
+
+  nsresult CreateMozBR(nsIDOMNode* aParent, int32_t aOffset,
+                       nsIDOMNode** aOutBRNode = nullptr)
+  {
+    return CreateBRInternal(aParent, aOffset, true, aOutBRNode);
+  }
 
   void UndefineCaretBidiLevel(Selection* aSelection);
 
@@ -238,6 +263,23 @@ protected:
 private:
   
   TextEditor* mTextEditor;
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult CreateBRInternal(nsIDOMNode* aParent,
+                            int32_t aOffset,
+                            bool aMozBR,
+                            nsIDOMNode** aOutBRNode = nullptr);
+
 
 protected:
   

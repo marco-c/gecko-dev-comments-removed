@@ -6617,9 +6617,14 @@ HTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = InsertMozBRIfNeeded(*leftPara);
+  
+  
+  
+  
+  
+  rv = InsertBRIfNeeded(*leftPara);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = InsertMozBRIfNeeded(*rightPara);
+  rv = InsertBRIfNeeded(*rightPara);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -8236,21 +8241,27 @@ HTMLEditRules::UpdateDocChangeRange(nsRange* aRange)
 }
 
 nsresult
-HTMLEditRules::InsertMozBRIfNeeded(nsINode& aNode)
+HTMLEditRules::InsertBRIfNeededInternal(nsINode& aNode,
+                                        bool aInsertMozBR)
 {
   if (!IsBlockNode(aNode)) {
     return NS_OK;
   }
 
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return NS_ERROR_UNEXPECTED;
+  }
   bool isEmpty;
-  NS_ENSURE_STATE(mHTMLEditor);
   nsresult rv = mHTMLEditor->IsEmptyNode(&aNode, &isEmpty);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   if (!isEmpty) {
     return NS_OK;
   }
 
-  return CreateMozBR(aNode.AsDOMNode(), 0);
+  return aInsertMozBR ? CreateMozBR(aNode.AsDOMNode(), 0) :
+                        CreateBR(aNode.AsDOMNode(), 0);
 }
 
 NS_IMETHODIMP
