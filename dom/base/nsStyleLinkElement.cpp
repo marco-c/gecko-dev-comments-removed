@@ -224,7 +224,8 @@ IsScopedStyleElement(nsIContent* aContent)
   
   return (aContent->IsHTMLElement(nsGkAtoms::style) ||
           aContent->IsSVGElement(nsGkAtoms::style)) &&
-         aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::scoped);
+         aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::scoped) &&
+         nsContentUtils::IsScopedStyleEnabled(aContent->OwnerDoc());
 }
 
 static bool
