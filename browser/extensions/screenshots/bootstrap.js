@@ -82,6 +82,11 @@ function shutdown(data, reason) {
     resourceURI: addonResourceURI
   });
   
+  if (reason === APP_SHUTDOWN) {
+    stop(webExtension, reason);
+    return;
+  }
+  
   appStartupPromise = appStartupPromise.then(() => { stop(webExtension, reason); });
 }
 
