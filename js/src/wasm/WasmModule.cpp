@@ -536,14 +536,19 @@ Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
 
 
 bool
-Module::extractCode(JSContext* cx, MutableHandleValue vp) const
+Module::extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const
 {
     RootedPlainObject result(cx, NewBuiltinClassInstance<PlainObject>(cx));
     if (!result)
         return false;
 
-    
-    Tier tier = code().stableTier();
+    if (tier == Tier::Ion)
+        blockOnIonCompileFinished();
+
+    if (!code_->hasTier(tier)) {
+        vp.setNull();
+        return true;
+    }
 
     const CodeSegment& codeSegment = code_->segment(tier);
     RootedObject code(cx, JS_NewUint8Array(cx, codeSegment.length()));
