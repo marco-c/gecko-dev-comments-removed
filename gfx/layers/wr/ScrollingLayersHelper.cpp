@@ -117,6 +117,19 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
 
   
   
+  
+  
+  
+  if (!needClipAndScroll &&
+      InsideClipAndScroll() &&
+      mBuilder->TopmostScrollId() == scrollId &&
+      !mBuilder->TopmostIsClip()) {
+    MOZ_ASSERT(mItemClipStack.back().mClipAndScroll->first == scrollId);
+    needClipAndScroll = true;
+  }
+
+  
+  
   if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
     MOZ_ASSERT(leafmostId == scrollId); 
     clips.mScrollId = Some(scrollId);
@@ -261,23 +274,39 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
     }
   } else {
     MOZ_ASSERT(!ancestorIds.second);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     FrameMetrics::ViewID scrollId = aChain->mASR ? nsLayoutUtils::ViewIDForASR(aChain->mASR) : FrameMetrics::NULL_SCROLL_ID;
-    if (mBuilder->TopmostScrollId() == scrollId && mBuilder->TopmostIsClip()) {
-      ancestorIds.first = Nothing();
-      ancestorIds.second = mBuilder->TopmostClipId();
+    if (mBuilder->TopmostScrollId() == scrollId) {
+      if (mBuilder->TopmostIsClip()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        ancestorIds.first = Nothing();
+        ancestorIds.second = mBuilder->TopmostClipId();
+      } else if (InsideClipAndScroll()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(mItemClipStack.back().mClipAndScroll->first == scrollId);
+        ancestorIds.first = Nothing();
+        ancestorIds.second = mItemClipStack.back().mClipAndScroll->second;
+      }
     }
   }
   
@@ -414,6 +443,12 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
 
   ids.first = Some(scrollId);
   return ids;
+}
+
+bool
+ScrollingLayersHelper::InsideClipAndScroll() const
+{
+  return !mItemClipStack.empty() && mItemClipStack.back().mClipAndScroll.isSome();
 }
 
 ScrollingLayersHelper::~ScrollingLayersHelper()

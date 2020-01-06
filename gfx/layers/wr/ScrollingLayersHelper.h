@@ -65,6 +65,8 @@ private:
                       int32_t aAppUnitsPerDevPixel,
                       const StackingContextHelper& aSc);
 
+  bool InsideClipAndScroll() const;
+
   
   
   
