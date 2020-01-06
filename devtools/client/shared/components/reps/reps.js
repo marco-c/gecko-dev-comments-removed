@@ -114,10 +114,11 @@ return  (function(modules) {
 	const LongStringRep = __webpack_require__(12);
 	const Number = __webpack_require__(13);
 	const ArrayRep = __webpack_require__(14);
-	const Obj = __webpack_require__(16);
-	const SymbolRep = __webpack_require__(19);
-	const InfinityRep = __webpack_require__(20);
-	const NaNRep = __webpack_require__(21);
+	const Obj = __webpack_require__(15);
+	const SymbolRep = __webpack_require__(18);
+	const InfinityRep = __webpack_require__(19);
+	const NaNRep = __webpack_require__(20);
+	const Accessor = __webpack_require__(21);
 
 	
 	const Attribute = __webpack_require__(22);
@@ -137,12 +138,12 @@ return  (function(modules) {
 	const ObjectWithURL = __webpack_require__(41);
 	const GripArray = __webpack_require__(42);
 	const GripMap = __webpack_require__(43);
-	const Grip = __webpack_require__(18);
+	const Grip = __webpack_require__(17);
 
 	
 	
 	
-	let reps = [RegExp, StyleSheet, Event, DateTime, CommentNode, ElementNode, TextNode, Attribute, LongStringRep, Func, PromiseRep, ArrayRep, Document, Window, ObjectWithText, ObjectWithURL, ErrorRep, GripArray, GripMap, Grip, Undefined, Null, StringRep, Number, SymbolRep, InfinityRep, NaNRep];
+	let reps = [RegExp, StyleSheet, Event, DateTime, CommentNode, ElementNode, TextNode, Attribute, LongStringRep, Func, PromiseRep, ArrayRep, Document, Window, ObjectWithText, ObjectWithURL, ErrorRep, GripArray, GripMap, Grip, Undefined, Null, StringRep, Number, SymbolRep, InfinityRep, NaNRep, Accessor];
 
 	
 
@@ -206,6 +207,7 @@ return  (function(modules) {
 	module.exports = {
 	  Rep,
 	  REPS: {
+	    Accessor,
 	    ArrayRep,
 	    Attribute,
 	    CommentNode,
@@ -885,7 +887,6 @@ return  (function(modules) {
 	const {
 	  wrapRender
 	} = __webpack_require__(7);
-	const Caption = __webpack_require__(15);
 	const { MODE } = __webpack_require__(1);
 
 	const ModePropType = React.PropTypes.oneOf(
@@ -918,7 +919,14 @@ return  (function(modules) {
 
 	  if (mode === MODE.TINY) {
 	    let isEmpty = object.length === 0;
-	    items = [DOM.span({ className: "length" }, isEmpty ? "" : object.length)];
+	    if (isEmpty) {
+	      items = [];
+	    } else {
+	      items = [DOM.span({
+	        className: "more-ellipsis",
+	        title: "more…"
+	      }, "…")];
+	    }
 	    brackets = needSpace(false);
 	  } else {
 	    items = arrayIterator(props, object, maxLengthMap.get(mode));
@@ -961,9 +969,10 @@ return  (function(modules) {
 	  }
 
 	  if (array.length > max) {
-	    items.push(Caption({
-	      object: DOM.span({}, "more…")
-	    }));
+	    items.push(DOM.span({
+	      className: "more-ellipsis",
+	      title: "more…"
+	    }, "…"));
 	  }
 
 	  return items;
@@ -1014,43 +1023,16 @@ return  (function(modules) {
 
 	
 	const React = __webpack_require__(8);
-	const DOM = React.DOM;
-
-	const { wrapRender } = __webpack_require__(7);
-
-	
-
-
-
-	Caption.propTypes = {
-	  object: React.PropTypes.oneOfType([React.PropTypes.number, React.PropTypes.string]).isRequired
-	};
-
-	function Caption(props) {
-	  return DOM.span({ "className": "caption" }, props.object);
-	}
-
-	
-	module.exports = wrapRender(Caption);
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-
-	
-	const React = __webpack_require__(8);
 	const {
 	  wrapRender
 	} = __webpack_require__(7);
-	const Caption = __webpack_require__(15);
-	const PropRep = __webpack_require__(17);
+	const PropRep = __webpack_require__(16);
 	const { MODE } = __webpack_require__(1);
 	
 	const { span } = React.DOM;
+
+	const DEFAULT_TITLE = "Object";
+
 	
 
 
@@ -1066,20 +1048,38 @@ return  (function(modules) {
 	  let object = props.object;
 	  let propsArray = safePropIterator(props, object);
 
-	  if (props.mode === MODE.TINY || !propsArray.length) {
-	    return span({ className: "objectBox objectBox-object" }, getTitle(props, object));
+	  if (props.mode === MODE.TINY) {
+	    const tinyModeItems = [];
+	    if (getTitle(props, object) !== DEFAULT_TITLE) {
+	      tinyModeItems.push(getTitleElement(props, object));
+	    } else {
+	      tinyModeItems.push(span({
+	        className: "objectLeftBrace"
+	      }, "{"), propsArray.length > 0 ? span({
+	        key: "more",
+	        className: "more-ellipsis",
+	        title: "more…"
+	      }, "…") : null, span({
+	        className: "objectRightBrace"
+	      }, "}"));
+	    }
+
+	    return span({ className: "objectBox objectBox-object" }, ...tinyModeItems);
 	  }
 
-	  return span({ className: "objectBox objectBox-object" }, getTitle(props, object), span({
+	  return span({ className: "objectBox objectBox-object" }, getTitleElement(props, object), span({
 	    className: "objectLeftBrace"
 	  }, " { "), ...propsArray, span({
 	    className: "objectRightBrace"
 	  }, " }"));
 	}
 
+	function getTitleElement(props, object) {
+	  return span({ className: "objectTitle" }, getTitle(props, object));
+	}
+
 	function getTitle(props, object) {
-	  let title = props.title || object.class || "Object";
-	  return span({ className: "objectTitle" }, title);
+	  return props.title || object.class || DEFAULT_TITLE;
 	}
 
 	function safePropIterator(props, object, max) {
@@ -1116,9 +1116,10 @@ return  (function(modules) {
 
 	  let propsArray = getPropsArray(interestingObject);
 	  if (Object.keys(object).length > max) {
-	    propsArray.push(Caption({
-	      object: span({}, "more…")
-	    }));
+	    propsArray.push(span({
+	      className: "more-ellipsis",
+	      title: "more…"
+	    }, "…"));
 	  }
 
 	  return unfoldProps(propsArray);
@@ -1256,7 +1257,7 @@ return  (function(modules) {
 
 
 	function PropRep(props) {
-	  const Grip = __webpack_require__(18);
+	  const Grip = __webpack_require__(17);
 	  const { Rep } = __webpack_require__(2);
 
 	  let {
@@ -1305,8 +1306,7 @@ return  (function(modules) {
 	  isGrip,
 	  wrapRender
 	} = __webpack_require__(7);
-	const Caption = __webpack_require__(15);
-	const PropRep = __webpack_require__(17);
+	const PropRep = __webpack_require__(16);
 	const { MODE } = __webpack_require__(1);
 	
 	const { span } = React.DOM;
@@ -1328,6 +1328,8 @@ return  (function(modules) {
 	  noGrip: React.PropTypes.bool
 	};
 
+	const DEFAULT_TITLE = "Object";
+
 	function GripRep(props) {
 	  let {
 	    mode = MODE.SHORT,
@@ -1340,23 +1342,47 @@ return  (function(modules) {
 	  };
 
 	  if (mode === MODE.TINY) {
-	    return span(config, getTitle(props, object));
+	    let propertiesLength = object.preview && object.preview.ownPropertiesLength ? object.preview.ownPropertiesLength : object.ownPropertyLength;
+
+	    if (object.preview && object.preview.safeGetterValues) {
+	      propertiesLength += Object.keys(object.preview.safeGetterValues).length;
+	    }
+
+	    const tinyModeItems = [];
+	    if (getTitle(props, object) !== DEFAULT_TITLE) {
+	      tinyModeItems.push(getTitleElement(props, object));
+	    } else {
+	      tinyModeItems.push(span({
+	        className: "objectLeftBrace"
+	      }, "{"), propertiesLength > 0 ? span({
+	        key: "more",
+	        className: "more-ellipsis",
+	        title: "more…"
+	      }, "…") : null, span({
+	        className: "objectRightBrace"
+	      }, "}"));
+	    }
+
+	    return span(config, ...tinyModeItems);
 	  }
 
 	  let propsArray = safePropIterator(props, object, maxLengthMap.get(mode));
 
-	  return span(config, getTitle(props, object), span({
+	  return span(config, getTitleElement(props, object), span({
 	    className: "objectLeftBrace"
 	  }, " { "), ...propsArray, span({
 	    className: "objectRightBrace"
 	  }, " }"));
 	}
 
-	function getTitle(props, object) {
-	  let title = props.title || object.class || "Object";
+	function getTitleElement(props, object) {
 	  return span({
 	    className: "objectTitle"
-	  }, title);
+	  }, getTitle(props, object));
+	}
+
+	function getTitle(props, object) {
+	  return props.title || object.class || DEFAULT_TITLE;
 	}
 
 	function safePropIterator(props, object, max) {
@@ -1407,11 +1433,16 @@ return  (function(modules) {
 	  
 	  const suppressQuotes = object.class === "Proxy";
 	  let propsArray = getProps(props, properties, indexes, suppressQuotes);
-	  if (Object.keys(properties).length > max || propertiesLength > max) {
+	  if (Object.keys(properties).length > max || propertiesLength > max
+	  
+	  
+	  || propertiesLength > propsArray.length) {
 	    
-	    propsArray.push(Caption({
-	      object: span({}, "more…")
-	    }));
+	    propsArray.push(span({
+	      key: "more",
+	      className: "more-ellipsis",
+	      title: "more…"
+	    }, "…"));
 	  }
 
 	  return unfoldProps(propsArray);
@@ -1666,6 +1697,74 @@ return  (function(modules) {
 
 	
 	const React = __webpack_require__(8);
+	const {
+	  wrapRender
+	} = __webpack_require__(7);
+	const { MODE } = __webpack_require__(1);
+	
+	const {
+	  span
+	} = React.DOM;
+	
+
+
+
+	Accessor.propTypes = {
+	  object: React.PropTypes.object.isRequired,
+	  mode: React.PropTypes.oneOf(Object.values(MODE))
+	};
+
+	function Accessor(props) {
+	  const {
+	    object
+	  } = props;
+
+	  const accessors = [];
+	  if (hasGetter(object)) {
+	    accessors.push("Getter");
+	  }
+	  if (hasSetter(object)) {
+	    accessors.push("Setter");
+	  }
+	  const title = accessors.join(" & ");
+
+	  return span({ className: "objectBox objectBox-accessor" }, span({
+	    className: "objectTitle"
+	  }, title));
+	}
+
+	function hasGetter(object) {
+	  return object && object.get && object.get.type !== "undefined";
+	}
+
+	function hasSetter(object) {
+	  return object && object.set && object.set.type !== "undefined";
+	}
+
+	function supportsObject(object, type, noGrip = false) {
+	  if (noGrip !== true && (hasGetter(object) || hasSetter(object))) {
+	    return true;
+	  }
+
+	  return false;
+	}
+
+	
+	module.exports = {
+	  rep: wrapRender(Accessor),
+	  supportsObject
+	};
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	
+
+
+
+	
+	const React = __webpack_require__(8);
 
 	
 	const {
@@ -1858,7 +1957,7 @@ return  (function(modules) {
 	} = __webpack_require__(7);
 
 	const { MODE } = __webpack_require__(1);
-	const { rep } = __webpack_require__(18);
+	const { rep } = __webpack_require__(17);
 
 	
 
@@ -2050,7 +2149,7 @@ return  (function(modules) {
 	  wrapRender
 	} = __webpack_require__(7);
 
-	const PropRep = __webpack_require__(17);
+	const PropRep = __webpack_require__(16);
 	const { MODE } = __webpack_require__(1);
 	
 	const { span } = React.DOM;
@@ -3059,7 +3158,6 @@ return  (function(modules) {
 	  isGrip,
 	  wrapRender
 	} = __webpack_require__(7);
-	const Caption = __webpack_require__(15);
 	const { MODE } = __webpack_require__(1);
 
 	
@@ -3094,9 +3192,14 @@ return  (function(modules) {
 	  if (mode === MODE.TINY) {
 	    let objectLength = getLength(object);
 	    let isEmpty = objectLength === 0;
-	    items = [span({
-	      className: "length"
-	    }, isEmpty ? "" : objectLength)];
+	    if (isEmpty) {
+	      items = [];
+	    } else {
+	      items = [span({
+	        className: "more-ellipsis",
+	        title: "more…"
+	      }, "…")];
+	    }
 	    brackets = needSpace(false);
 	  } else {
 	    let max = maxLengthMap.get(mode);
@@ -3150,7 +3253,7 @@ return  (function(modules) {
 	    return null;
 	  }
 
-	  return grip.preview.items || grip.preview.childNodes || null;
+	  return grip.preview.items || grip.preview.childNodes || [];
 	}
 
 	function arrayIterator(props, grip, max) {
@@ -3164,10 +3267,6 @@ return  (function(modules) {
 	  }
 
 	  const previewItems = getPreviewItems(grip);
-	  if (!previewItems) {
-	    return items;
-	  }
-
 	  let provider = props.provider;
 
 	  let emptySlots = 0;
@@ -3215,9 +3314,10 @@ return  (function(modules) {
 
 	  const itemsShown = items.length + foldedEmptySlots;
 	  if (gripLength > itemsShown) {
-	    items.push(Caption({
-	      object: span({}, "more…")
-	    }));
+	    items.push(span({
+	      className: "more-ellipsis",
+	      title: "more…"
+	    }, "…"));
 	  }
 
 	  return items;
@@ -3261,8 +3361,7 @@ return  (function(modules) {
 	  isGrip,
 	  wrapRender
 	} = __webpack_require__(7);
-	const Caption = __webpack_require__(15);
-	const PropRep = __webpack_require__(17);
+	const PropRep = __webpack_require__(16);
 	const { MODE } = __webpack_require__(1);
 	
 	const { span } = React.DOM;
@@ -3340,12 +3439,13 @@ return  (function(modules) {
 	  }
 
 	  let entries = getEntries(props, mapEntries, indexes);
-	  if (entries.length < mapEntries.length) {
+	  if (entries.length < object.preview.size) {
 	    
-	    entries.push(Caption({
+	    entries.push(span({
 	      key: "more",
-	      object: span({}, "more…")
-	    }));
+	      className: "more-ellipsis",
+	      title: "more…"
+	    }, "…"));
 	  }
 
 	  return unfoldEntries(entries);
@@ -3477,6 +3577,7 @@ return  (function(modules) {
 	  getChildren,
 	  getValue,
 	  isDefault,
+	  nodeHasAccessors,
 	  nodeHasProperties,
 	  nodeIsMissingArguments,
 	  nodeIsOptimizedOut,
@@ -3599,25 +3700,25 @@ return  (function(modules) {
 	    let label = item.name;
 	    let itemValue = getValue(item);
 
-	    const unavailable = nodeIsPrimitive(item) && itemValue && itemValue.hasOwnProperty && itemValue.hasOwnProperty("unavailable");
+	    const isPrimitive = nodeIsPrimitive(item);
+
+	    const unavailable = isPrimitive && itemValue && itemValue.hasOwnProperty && itemValue.hasOwnProperty("unavailable");
 
 	    if (nodeIsOptimizedOut(item)) {
 	      objectValue = dom.span({ className: "unavailable" }, "(optimized away)");
 	    } else if (nodeIsMissingArguments(item) || unavailable) {
 	      objectValue = dom.span({ className: "unavailable" }, "(unavailable)");
-	    } else if (nodeHasProperties(item) || nodeIsPrimitive(item)) {
-	      let mode;
-	      if (depth === 0) {
-	        mode = this.props.mode;
-	      } else {
-	        mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
+	    } else if (nodeHasProperties(item) || nodeHasAccessors(item) || isPrimitive) {
+	      let repsProp = Object.assign({}, this.props);
+	      if (depth > 0) {
+	        repsProp.mode = this.props.mode === MODE.LONG ? MODE.SHORT : MODE.TINY;
 	      }
 
-	      objectValue = this.renderGrip(item, this.props, mode);
+	      objectValue = this.renderGrip(item, repsProp);
 	    }
 
 	    const SINGLE_INDENT_WIDTH = 15;
-	    const indentWidth = (depth + (nodeIsPrimitive(item) ? 1 : 0)) * SINGLE_INDENT_WIDTH;
+	    const indentWidth = (depth + (isPrimitive ? 1 : 0)) * SINGLE_INDENT_WIDTH;
 
 	    const {
 	      onDoubleClick,
@@ -3632,10 +3733,10 @@ return  (function(modules) {
 	      style: {
 	        marginLeft: indentWidth
 	      },
-	      onClick: e => {
+	      onClick: isPrimitive === false ? e => {
 	        e.stopPropagation();
 	        this.setExpanded(item, !expanded);
-	      },
+	      } : null,
 	      onDoubleClick: onDoubleClick ? e => {
 	        e.stopPropagation();
 	        onDoubleClick(item, {
@@ -3644,7 +3745,7 @@ return  (function(modules) {
 	          expanded
 	        });
 	      } : null
-	    }, nodeIsPrimitive(item) === false ? Svg("arrow", {
+	    }, isPrimitive === false ? Svg("arrow", {
 	      className: classnames({
 	        expanded: expanded
 	      })
@@ -3662,11 +3763,11 @@ return  (function(modules) {
 	    }, label) : null, label && objectValue ? dom.span({ className: "object-delimiter" }, " : ") : null, objectValue);
 	  }
 
-	  renderGrip(item, props, mode = MODE.TINY) {
+	  renderGrip(item, props) {
 	    const object = getValue(item);
 	    return Rep(Object.assign({}, props, {
 	      object,
-	      mode
+	      mode: props.mode || MODE.TINY
 	    }));
 	  }
 
@@ -3686,7 +3787,7 @@ return  (function(modules) {
 
 	    let roots = this.getRoots();
 	    if (roots.length === 1 && nodeIsPrimitive(roots[0])) {
-	      return this.renderGrip(roots[0], this.props, this.props.mode);
+	      return this.renderGrip(roots[0], this.props);
 	    }
 
 	    return Tree({
@@ -4356,6 +4457,7 @@ return  (function(modules) {
 
 
 	const get = __webpack_require__(51);
+	const has = __webpack_require__(103);
 	const { maybeEscapePropertyName } = __webpack_require__(7);
 
 	let WINDOW_PROPERTIES = {};
@@ -4365,7 +4467,19 @@ return  (function(modules) {
 	}
 
 	function getValue(item) {
-	  return get(item, "contents.value", undefined);
+	  if (has(item, "contents.value")) {
+	    return get(item, "contents.value");
+	  }
+
+	  if (has(item, "contents.getterValue")) {
+	    return get(item, "contents.getterValue", undefined);
+	  }
+
+	  if (nodeHasAccessors(item)) {
+	    return item.contents;
+	  }
+
+	  return undefined;
 	}
 
 	function isBucket(item) {
@@ -4405,7 +4519,7 @@ return  (function(modules) {
 	}
 
 	function nodeIsPrimitive(item) {
-	  return !nodeHasChildren(item) && !nodeHasProperties(item);
+	  return !nodeHasChildren(item) && !nodeHasProperties(item) && !nodeHasAccessors(item);
 	}
 
 	function isPromise(item) {
@@ -4431,6 +4545,34 @@ return  (function(modules) {
 	  }
 
 	  return properties;
+	}
+
+	function getNodeGetter(item) {
+	  return get(item, "contents.get", undefined);
+	}
+
+	function getNodeSetter(item) {
+	  return get(item, "contents.set", undefined);
+	}
+
+	function nodeHasAccessors(item) {
+	  return !!getNodeGetter(item) || !!getNodeSetter(item);
+	}
+
+	function getAccessors(item) {
+	  const accessors = [];
+
+	  const getter = getNodeGetter(item);
+	  if (getter && getter.type !== "undefined") {
+	    accessors.push(createNode("<get>", `${item.path}/get`, { value: getter }));
+	  }
+
+	  const setter = getNodeSetter(item);
+	  if (setter && setter.type !== "undefined") {
+	    accessors.push(createNode("<set>", `${item.path}/set`, { value: setter }));
+	  }
+
+	  return accessors;
 	}
 
 	function isDefault(item, roots) {
@@ -4493,22 +4635,29 @@ return  (function(modules) {
 	
 
 
-
 	function makeNodesForProperties(objProps, parent, { bucketSize = 100 } = {}) {
-	  const { ownProperties, prototype, ownSymbols } = objProps;
+	  const {
+	    ownProperties,
+	    ownSymbols,
+	    prototype,
+	    safeGetterValues
+	  } = objProps;
+
 	  const parentPath = parent.path;
 	  const parentValue = getValue(parent);
-	  const properties = sortProperties(Object.keys(ownProperties)).filter(name => ownProperties[name].hasOwnProperty("value"));
+
+	  let allProperties = Object.assign({}, ownProperties, safeGetterValues);
+	  const properties = sortProperties(Object.keys(allProperties)).filter(name => allProperties[name].hasOwnProperty("value") || allProperties[name].hasOwnProperty("getterValue") || allProperties[name].hasOwnProperty("get") || allProperties[name].hasOwnProperty("set"));
 
 	  const numProperties = properties.length;
 
 	  let nodes = [];
 	  if (nodeIsArray(prototype) && numProperties > bucketSize) {
-	    nodes = makeNumericalBuckets(properties, bucketSize, parentPath, ownProperties);
+	    nodes = makeNumericalBuckets(properties, bucketSize, parentPath, allProperties);
 	  } else if (parentValue.class == "Window") {
-	    nodes = makeDefaultPropsBucket(properties, parentPath, ownProperties);
+	    nodes = makeDefaultPropsBucket(properties, parentPath, allProperties);
 	  } else {
-	    nodes = makeNodesForOwnProps(properties, parentPath, ownProperties);
+	    nodes = makeNodesForOwnProps(properties, parentPath, allProperties);
 	  }
 
 	  for (let index in ownSymbols) {
@@ -4540,10 +4689,12 @@ return  (function(modules) {
 	}
 
 	function getChildren({ getObjectProperties, actors, item }) {
-	  const obj = item.contents;
+	  
+	  
+	  if (nodeHasAccessors(item)) {
+	    return getAccessors(item);
+	  }
 
-	  
-	  
 	  if (nodeHasChildren(item)) {
 	    return item.contents;
 	  }
@@ -4551,8 +4702,6 @@ return  (function(modules) {
 	  if (!nodeHasProperties(item)) {
 	    return [];
 	  }
-
-	  const actor = obj.value.actor;
 
 	  
 	  
@@ -4569,10 +4718,16 @@ return  (function(modules) {
 	    return item.contents.children;
 	  }
 
+	  const actor = get(getValue(item), "actor", undefined);
 	  const loadedProps = getObjectProperties(actor);
-	  const { ownProperties, prototype } = loadedProps || {};
+	  const {
+	    ownProperties,
+	    ownSymbols,
+	    safeGetterValues,
+	    prototype
+	  } = loadedProps || {};
 
-	  if (!ownProperties && !prototype) {
+	  if (!ownProperties && !ownSymbols && !safeGetterValues && !prototype) {
 	    return [];
 	  }
 
@@ -4589,6 +4744,7 @@ return  (function(modules) {
 	  isDefault,
 	  isPromise,
 	  makeNodesForProperties,
+	  nodeHasAccessors,
 	  nodeHasChildren,
 	  nodeHasProperties,
 	  nodeIsFunction,
@@ -6157,6 +6313,252 @@ return  (function(modules) {
 	}
 
 	module.exports = toKey;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseHas = __webpack_require__(104),
+	    hasPath = __webpack_require__(105);
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function has(object, path) {
+	  return object != null && hasPath(object, path, baseHas);
+	}
+
+	module.exports = has;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var objectProto = Object.prototype;
+
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+
+	
+
+
+
+
+
+
+
+	function baseHas(object, key) {
+	  return object != null && hasOwnProperty.call(object, key);
+	}
+
+	module.exports = baseHas;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var castPath = __webpack_require__(53),
+	    isArguments = __webpack_require__(106),
+	    isArray = __webpack_require__(54),
+	    isIndex = __webpack_require__(108),
+	    isLength = __webpack_require__(109),
+	    toKey = __webpack_require__(102);
+
+	
+
+
+
+
+
+
+
+
+	function hasPath(object, path, hasFunc) {
+	  path = castPath(path, object);
+
+	  var index = -1,
+	      length = path.length,
+	      result = false;
+
+	  while (++index < length) {
+	    var key = toKey(path[index]);
+	    if (!(result = object != null && hasFunc(object, key))) {
+	      break;
+	    }
+	    object = object[key];
+	  }
+	  if (result || ++index != length) {
+	    return result;
+	  }
+	  length = object == null ? 0 : object.length;
+	  return !!length && isLength(length) && isIndex(key, length) &&
+	    (isArray(object) || isArguments(object));
+	}
+
+	module.exports = hasPath;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseIsArguments = __webpack_require__(107),
+	    isObjectLike = __webpack_require__(63);
+
+	
+	var objectProto = Object.prototype;
+
+	
+	var hasOwnProperty = objectProto.hasOwnProperty;
+
+	
+	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
+	  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
+	    !propertyIsEnumerable.call(value, 'callee');
+	};
+
+	module.exports = isArguments;
+
+
+ },
+
+ function(module, exports, __webpack_require__) {
+
+	var baseGetTag = __webpack_require__(57),
+	    isObjectLike = __webpack_require__(63);
+
+	
+	var argsTag = '[object Arguments]';
+
+	
+
+
+
+
+
+
+	function baseIsArguments(value) {
+	  return isObjectLike(value) && baseGetTag(value) == argsTag;
+	}
+
+	module.exports = baseIsArguments;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
+
+	
+	var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+	
+
+
+
+
+
+
+
+	function isIndex(value, length) {
+	  length = length == null ? MAX_SAFE_INTEGER : length;
+	  return !!length &&
+	    (typeof value == 'number' || reIsUint.test(value)) &&
+	    (value > -1 && value % 1 == 0 && value < length);
+	}
+
+	module.exports = isIndex;
+
+
+ },
+
+ function(module, exports) {
+
+	
+	var MAX_SAFE_INTEGER = 9007199254740991;
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function isLength(value) {
+	  return typeof value == 'number' &&
+	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+	}
+
+	module.exports = isLength;
 
 
  }

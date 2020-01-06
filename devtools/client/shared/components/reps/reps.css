@@ -194,6 +194,12 @@
 
 
 
+.more-ellipsis {
+  color: var(--theme-comment);
+}
+
+
+
 
 .tree {
   overflow: auto;
