@@ -238,7 +238,7 @@ function* runIncrementTest(propertyEditor, view, tests) {
   
   let onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
-  view.debounce.flush();
+  view.throttle.flush();
   yield onRuleViewChanged;
 }
 
@@ -272,7 +272,7 @@ function* testIncrement(editor, options, view) {
 
   
   if (options.start !== options.end) {
-    view.debounce.flush();
+    view.throttle.flush();
     yield onRuleViewChanged;
   }
 

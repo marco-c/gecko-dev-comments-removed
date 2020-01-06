@@ -110,8 +110,7 @@ exports.advanceValidate = advanceValidate;
 
 
 
-
-function debounce(func, wait, scope) {
+function throttle(func, wait, scope) {
   let timer = null;
 
   return function () {
@@ -124,55 +123,6 @@ function debounce(func, wait, scope) {
       timer = null;
       func.apply(scope, args);
     }, wait);
-  };
-}
-
-exports.debounce = debounce;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function throttle(func, wait, scope) {
-  let args, result;
-  let timeout = null;
-  let previous = 0;
-
-  let later = function () {
-    previous = Date.now();
-    timeout = null;
-    result = func.apply(scope, args);
-    args = null;
-  };
-
-  return function () {
-    let now = Date.now();
-    let remaining = wait - (now - previous);
-    args = arguments;
-    if (remaining <= 0) {
-      clearTimeout(timeout);
-      timeout = null;
-      previous = now;
-      result = func.apply(scope, args);
-      args = null;
-    } else if (!timeout) {
-      timeout = setTimeout(later, remaining);
-    }
-    return result;
   };
 }
 

@@ -19,18 +19,6 @@ const GridFront = FrontClassWithSpec(gridSpec, {
   
 
 
-
-  get containerNodeFront() {
-    if (!this._form.containerNodeActorID) {
-      return null;
-    }
-
-    return this.conn.getActor(this._form.containerNodeActorID);
-  },
-
-  
-
-
   get gridFragments() {
     return this._form.gridFragments;
   }

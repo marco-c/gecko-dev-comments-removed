@@ -80,7 +80,7 @@ function openRuleView() {
   return openInspectorSidebarTab("ruleview").then(data => {
     
     
-    data.inspector.getPanel("ruleview").view.debounce = manualDebounce();
+    data.inspector.getPanel("ruleview").view.throttle = manualThrottle();
 
     return {
       toolbox: data.toolbox,
@@ -205,10 +205,10 @@ var selectNode = Task.async(function* (selector, inspector, reason = "test") {
 
 
 
-function manualDebounce() {
+function manualThrottle() {
   let calls = [];
 
-  function debounce(func, wait, scope) {
+  function throttle(func, wait, scope) {
     return function () {
       let existingCall = calls.find(call => call.func === func);
       if (existingCall) {
@@ -219,12 +219,12 @@ function manualDebounce() {
     };
   }
 
-  debounce.flush = function () {
+  throttle.flush = function () {
     calls.forEach(({func, scope, args}) => func.apply(scope, args));
     calls = [];
   };
 
-  return debounce;
+  return throttle;
 }
 
 

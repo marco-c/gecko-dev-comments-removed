@@ -15,7 +15,7 @@ add_task(function* () {
 
   
   
-  view.debounce = () => {};
+  view.throttle = () => {};
 
   yield selectNode("div", inspector);
 

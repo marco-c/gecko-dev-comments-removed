@@ -75,7 +75,7 @@ function TextPropertyEditor(ruleEditor, property) {
   this._onSwatchCommit = this._onSwatchCommit.bind(this);
   this._onSwatchPreview = this._onSwatchPreview.bind(this);
   this._onSwatchRevert = this._onSwatchRevert.bind(this);
-  this._onValidate = this.ruleView.debounce(this._previewValue, 10, this);
+  this._onValidate = this.ruleView.throttle(this._previewValue, 10, this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
 
