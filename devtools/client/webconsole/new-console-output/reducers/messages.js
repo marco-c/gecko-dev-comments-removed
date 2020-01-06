@@ -39,7 +39,8 @@ const MessageState = Immutable.Record({
   currentGroup: null,
   
   
-  removedMessages: [],
+  
+  removedActors: [],
   
   repeatById: {},
   
@@ -131,11 +132,8 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
       return new MessageState({
         
         
-        
-        "removedMessages": [...state.messagesById].reduce((res, [id, msg]) => {
-          if (msg.parameters) {
-            res.push(msg);
-          }
+        "removedActors": [...state.messagesById].reduce((res, [id, msg]) => {
+          res.push(...getAllActorsInMessage(msg, state));
           return res;
         }, [])
       });
@@ -218,8 +216,8 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
         })
       );
 
-    case constants.REMOVED_MESSAGES_CLEAR:
-      return state.set("removedMessages", []);
+    case constants.REMOVED_ACTORS_CLEAR:
+      return state.set("removedActors", []);
 
     case constants.FILTER_TOGGLE:
     case constants.FILTER_TEXT_SET:
@@ -281,7 +279,7 @@ function limitTopLevelMessageCount(state, record, logLimit) {
   }
 
   const removedMessagesId = [];
-  const removedMessages = [];
+  const removedActors = [];
   let visibleMessages = [...record.visibleMessages];
 
   let cleaningGroup = false;
@@ -309,12 +307,7 @@ function limitTopLevelMessageCount(state, record, logLimit) {
     }
 
     removedMessagesId.push(id);
-
-    
-    
-    if (message && message.parameters) {
-      removedMessages.push(message);
-    }
+    removedActors.push(...getAllActorsInMessage(message, record));
 
     const index = visibleMessages.indexOf(id);
     if (index > -1) {
@@ -324,8 +317,8 @@ function limitTopLevelMessageCount(state, record, logLimit) {
     return true;
   });
 
-  if (removedMessages.length > 0) {
-    record.set("removedMessages", record.removedMessages.concat(removedMessages));
+  if (removedActors.length > 0) {
+    record.set("removedActors", record.removedActors.concat(removedActors));
   }
 
   if (record.visibleMessages.length > visibleMessages.length) {
@@ -359,6 +352,10 @@ function limitTopLevelMessageCount(state, record, logLimit) {
   if (mapHasRemovedIdKey(record.groupsById)) {
     record.set("groupsById", record.groupsById.withMutations(cleanUpCollection));
   }
+  if (mapHasRemovedIdKey(record.messagesObjectPropertiesById)) {
+    record.set("messagesObjectPropertiesById",
+      record.messagesObjectPropertiesById.withMutations(cleanUpCollection));
+  }
   if (objectHasRemovedIdKey(record.repeatById)) {
     record.set("repeatById", cleanUpObject(record.repeatById));
   }
@@ -369,6 +366,36 @@ function limitTopLevelMessageCount(state, record, logLimit) {
   }
 
   return record;
+}
+
+
+
+
+
+
+
+
+
+
+function getAllActorsInMessage(message, state) {
+  
+  if (!message || !Array.isArray(message.parameters) || message.parameters.length === 0) {
+    return [];
+  }
+
+  const actors = [...message.parameters.reduce((res, parameter) => {
+    if (parameter.actor) {
+      res.push(parameter.actor);
+    }
+    return res;
+  }, [])];
+
+  const loadedProperties = state.messagesObjectPropertiesById.get(message.id);
+  if (loadedProperties) {
+    actors.push(...Object.keys(loadedProperties));
+  }
+
+  return actors;
 }
 
 
