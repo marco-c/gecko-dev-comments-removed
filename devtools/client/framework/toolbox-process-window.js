@@ -31,7 +31,7 @@ var Prefs = new PrefsHelper("devtools.debugger", {
 
 var gToolbox, gClient;
 
-var connect = Task.async(function*() {
+var connect = Task.async(function* () {
   window.removeEventListener("load", connect);
   
   let transport = yield DebuggerClient.socketConnect({
@@ -68,7 +68,7 @@ function setPrefDefaults() {
   Services.prefs.setBoolPref("devtools.debugger.client-source-maps-enabled", true);
 }
 
-window.addEventListener("load", function() {
+window.addEventListener("load", function () {
   let cmdClose = document.getElementById("toolbox-cmd-close");
   cmdClose.addEventListener("command", onCloseCommand);
   setPrefDefaults();
@@ -99,10 +99,10 @@ function openToolbox({ form, chrome, isTabActor }) {
     
     let selectedTool =
       Services.prefs.getCharPref("devtools.browsertoolbox.panel",
-                                 Services.prefs.getCharPref("devtools.toolbox.selectedTool",
-                                                            "jsdebugger"));
+        Services.prefs.getCharPref("devtools.toolbox.selectedTool",
+                                   "jsdebugger"));
 
-    let options = { customIframe: frame };
+    options = { customIframe: frame };
     gDevTools.showToolbox(target,
                           selectedTool,
                           Toolbox.HostType.CUSTOM,
@@ -115,7 +115,8 @@ function onNewToolbox(toolbox) {
   gToolbox = toolbox;
   bindToolboxHandlers();
   raise();
-  let env = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment);
+  let env = Components.classes["@mozilla.org/process/environment;1"]
+    .getService(Components.interfaces.nsIEnvironment);
   let testScript = env.get("MOZ_TOOLBOX_TEST_SCRIPT");
   if (testScript) {
     
@@ -139,15 +140,16 @@ function bindToolboxHandlers() {
   gToolbox.once("destroyed", quitApp);
   window.addEventListener("unload", onUnload);
 
-#ifdef XP_MACOSX
-  
-  updateBadgeText(false);
+  if (Services.appinfo.OS == "Darwin") {
+    
+    
+    updateBadgeText(false);
 
-  
-  gToolbox.getPanelWhenReady("jsdebugger").then(panel => {
-    setupThreadListeners(panel);
-  });
-#endif
+    
+    gToolbox.getPanelWhenReady("jsdebugger").then(panel => {
+      setupThreadListeners(panel);
+    });
+  }
 }
 
 function setupThreadListeners(panel) {
@@ -165,7 +167,8 @@ function setupThreadListeners(panel) {
 }
 
 function updateBadgeText(paused) {
-  let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"].getService(Ci.nsIMacDockSupport);
+  let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
+    .getService(Ci.nsIMacDockSupport);
   dockSupport.badgeText = paused ? "▐▐ " : " ▶";
 }
 
@@ -188,7 +191,9 @@ function onMessage(event) {
         setTitle(json.data.value);
         break;
     }
-  } catch(e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 window.addEventListener("message", onMessage);
@@ -212,7 +217,7 @@ function quitApp() {
   }
 }
 
-function getParameterByName (name) {
+function getParameterByName(name) {
   name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
   let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
   let results = regex.exec(window.location.search);
