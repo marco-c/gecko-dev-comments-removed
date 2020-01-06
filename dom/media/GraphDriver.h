@@ -445,12 +445,6 @@ public:
     return this;
   }
 
-  uint32_t OutputChannelCount()
-  {
-    MOZ_ASSERT(mOuputChannels != 0 && mOuputChannels <= 8);
-    return mOuputChannels;
-  }
-
   
 
   void EnqueueStreamAndPromiseForOperation(MediaStream* aStream,
