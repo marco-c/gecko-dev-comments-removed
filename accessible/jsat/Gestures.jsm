@@ -50,8 +50,8 @@ XPCOMUtils.defineLazyModuleGetter(this, 'setTimeout',
   'resource://gre/modules/Timer.jsm');
 XPCOMUtils.defineLazyModuleGetter(this, 'clearTimeout', 
   'resource://gre/modules/Timer.jsm');
-XPCOMUtils.defineLazyModuleGetter(this, 'Promise', 
-  'resource://gre/modules/Promise.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, 'PromiseUtils', 
+  'resource://gre/modules/PromiseUtils.jsm');
 
 
 const SWIPE_MAX_DURATION = 200;
@@ -324,7 +324,7 @@ function Gesture(aTimeStamp, aPoints = {}, aLastEvent = undefined) {
   Logger.gesture('Creating', this.id, 'gesture.');
   this.points = aPoints;
   this.lastEvent = aLastEvent;
-  this._deferred = Promise.defer();
+  this._deferred = PromiseUtils.defer();
   
   
   this.promise = this._deferred.promise.then(this._handleResolve.bind(this),

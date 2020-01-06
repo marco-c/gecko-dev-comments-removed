@@ -27,8 +27,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-                                  "resource://gre/modules/Promise.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
 
 
 
@@ -61,7 +61,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
 
 
 function DownloadLegacyTransfer() {
-  this._deferDownload = Promise.defer();
+  this._deferDownload = PromiseUtils.defer();
 }
 
 DownloadLegacyTransfer.prototype = {

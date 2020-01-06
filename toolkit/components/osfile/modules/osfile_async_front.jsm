@@ -50,7 +50,8 @@ var Path = {};
 Cu.import("resource://gre/modules/osfile/ospath.jsm", Path);
 
 
-Cu.import("resource://gre/modules/Promise.jsm", this);
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
@@ -276,7 +277,7 @@ var Scheduler = this.Scheduler = {
     
     
     
-    let deferred = Promise.defer();
+    let deferred = PromiseUtils.defer();
     let savedQueue = this.queue;
     this.queue = deferred.promise;
 
