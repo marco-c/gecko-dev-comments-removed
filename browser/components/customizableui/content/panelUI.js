@@ -532,7 +532,12 @@ const PanelUI = {
       return;
     }
 
-    let highlights = await NewTabUtils.activityStreamLinks.getHighlights({ withFavicons: true });
+    let highlights = await NewTabUtils.activityStreamLinks.getHighlights({
+      
+      
+      numItems: 6,
+      withFavicons: true
+    });
     
     if (!highlights.length || viewNode.panelMultiView.getAttribute("panelopen") != "true") {
       this._loadingRecentHighlights = false;
