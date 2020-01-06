@@ -4870,9 +4870,11 @@ nsDisplayEventReceiver::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder&
 
 nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuilder* aBuilder,
                                                                nsIFrame* aFrame,
-                                                               mozilla::gfx::CompositorHitTestInfo aHitTestInfo)
+                                                               mozilla::gfx::CompositorHitTestInfo aHitTestInfo,
+                                                               uint32_t aIndex)
   : nsDisplayEventReceiver(aBuilder, aFrame)
   , mHitTestInfo(aHitTestInfo)
+  , mIndex(aIndex)
 {
   MOZ_COUNT_CTOR(nsDisplayCompositorHitTestInfo);
   
@@ -4889,6 +4891,12 @@ nsDisplayCompositorHitTestInfo::nsDisplayCompositorHitTestInfo(nsDisplayListBuil
   }
 }
 
+void
+nsDisplayCompositorHitTestInfo::SetArea(const nsRect& aArea)
+{
+  mArea = Some(aArea);
+}
+
 bool
 nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                                         mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -4896,26 +4904,31 @@ nsDisplayCompositorHitTestInfo::CreateWebRenderCommands(mozilla::wr::DisplayList
                                                         mozilla::layers::WebRenderLayerManager* aManager,
                                                         nsDisplayListBuilder* aDisplayListBuilder)
 {
-  nsRect borderBox;
-  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
-  if (scrollFrame) {
-    
-    
-    
-    
-    
-    borderBox = mFrame->GetScrollableOverflowRect();
-  } else {
-    borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
+  if (mArea.isNothing()) {
+    nsRect borderBox;
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(mFrame);
+    if (scrollFrame) {
+      
+      
+      
+      
+      
+      borderBox = mFrame->GetScrollableOverflowRect();
+    } else {
+      borderBox = nsRect(nsPoint(0, 0), mFrame->GetSize());
+    }
+
+    if (borderBox.IsEmpty()) {
+      return true;
+    }
+
+    mArea = Some(borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame));
   }
 
-  if (borderBox.IsEmpty()) {
-    return true;
-  }
-
+  MOZ_ASSERT(mArea.isSome());
   wr::LayoutRect rect = aSc.ToRelativeLayoutRect(
       LayoutDeviceRect::FromAppUnits(
-          borderBox + aDisplayListBuilder->ToReferenceFrame(mFrame),
+          *mArea,
           mFrame->PresContext()->AppUnitsPerDevPixel()));
 
   
@@ -4943,6 +4956,24 @@ void
 nsDisplayCompositorHitTestInfo::WriteDebugInfo(std::stringstream& aStream)
 {
   aStream << nsPrintfCString(" (hitTestInfo 0x%x)", (int)mHitTestInfo).get();
+}
+
+uint32_t
+nsDisplayCompositorHitTestInfo::GetPerFrameKey() const
+{
+  return (mIndex << TYPE_BITS) | nsDisplayItem::GetPerFrameKey();
+}
+
+int32_t
+nsDisplayCompositorHitTestInfo::ZIndex() const
+{
+  return mOverrideZIndex ? *mOverrideZIndex : nsDisplayItem::ZIndex();
+}
+
+void
+nsDisplayCompositorHitTestInfo::SetOverrideZIndex(int32_t aZIndex)
+{
+  mOverrideZIndex = Some(aZIndex);
 }
 
 void
