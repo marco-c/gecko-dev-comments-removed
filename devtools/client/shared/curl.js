@@ -88,20 +88,20 @@ const Curl = {
       postData.push(escapeString(text));
       ignoredHeaders.add("content-length");
     }
-
     
-    
-    
-    if (!(data.method == "GET" || data.method == "POST")) {
-      command.push("-X");
-      command.push(data.method);
-    }
+    ignoredHeaders.add("host");
 
     
     
     
     if (data.method == "HEAD") {
       command.push("-I");
+    } else if (!(data.method == "GET" || data.method == "POST")) {
+      
+      
+      
+      command.push("-X");
+      command.push(data.method);
     }
 
     
