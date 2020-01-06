@@ -5,12 +5,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
-
-function promiseEvent(target, event) {
-  return new Promise(resolve => {
-    target.addEventListener(event, resolve, {capture: true, once: true});
-  });
-}
+Cu.import("resource://testing-common/TestUtils.jsm");
 
 let aps = Cc["@mozilla.org/addons/policy-service;1"].getService(Ci.nsIAddonPolicyService).wrappedJSObject;
 
@@ -64,7 +59,7 @@ add_task(function*() {
   webnavB.close();
 
   
-  yield new Promise(resolve => setTimeout(resolve, 0));
+  yield TestUtils.topicObserved("inner-window-destroyed");
 
   
   let result = getThing();
