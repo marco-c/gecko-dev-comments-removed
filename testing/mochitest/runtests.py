@@ -1797,6 +1797,10 @@ toolbar#nav-bar {
             "dom.ipc.tabs.nested.enabled=%s" %
             ('true' if options.nested_oop else 'false'))
 
+        options.extraPrefs.append(
+            "idle.lastDailyNotification=%d" %
+            (int(time.time()) * 1000))
+
         
         extensions = self.getExtensionsToInstall(options)
 
