@@ -511,6 +511,23 @@ impl<E: TElement> StyleSharingCandidateCache<E> {
 
         
         
+        
+        
+        
+        
+        
+        
+        if element.has_animations() {
+            debug!("Failing to insert to the cache: running animations");
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
         let box_style = style.get_box();
         if box_style.specifies_transitions() {
             debug!("Failing to insert to the cache: transitions");
