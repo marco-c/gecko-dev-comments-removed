@@ -907,6 +907,11 @@ public:
   
 
 
+  nsresult CollapseSelectionToEnd(Selection* aSelection);
+
+  
+
+
 
   nsresult CreateRange(nsIDOMNode* aStartContainer, int32_t aStartOffset,
                        nsIDOMNode* aEndContainer, int32_t aEndOffset,

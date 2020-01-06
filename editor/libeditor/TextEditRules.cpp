@@ -136,7 +136,7 @@ TextEditRules::Init(TextEditor* aTextEditor)
   rv = selection->GetRangeCount(&rangeCount);
   NS_ENSURE_SUCCESS(rv, rv);
   if (!rangeCount) {
-    rv = mTextEditor->EndOfDocument();
+    rv = mTextEditor->CollapseSelectionToEnd(selection);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -482,7 +482,7 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded(Selection* aSelection)
   
   
   if (!aSelection->RangeCount()) {
-    mTextEditor->EndOfDocument();
+    mTextEditor->CollapseSelectionToEnd(aSelection);
   }
 
   
