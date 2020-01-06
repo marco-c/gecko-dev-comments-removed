@@ -163,12 +163,6 @@ class WinUtils
   static SetThreadDpiAwarenessContextProc sSetThreadDpiAwarenessContext;
   static EnableNonClientDpiScalingProc sEnableNonClientDpiScaling;
 
-  
-  
-  static LRESULT WINAPI
-  NonClientDpiScalingDefWindowProcW(HWND hWnd, UINT msg,
-                                    WPARAM wParam, LPARAM lParam);
-
 public:
   class AutoSystemDpiAware
   {
@@ -191,11 +185,11 @@ public:
     DPI_AWARENESS_CONTEXT mPrevContext;
   };
 
-  static decltype(::DefWindowProcW)* GetDefWindowProc()
-  {
-    return sEnableNonClientDpiScaling ? NonClientDpiScalingDefWindowProcW :
-                                        ::DefWindowProcW;
-  }
+  
+  
+  static LRESULT WINAPI
+  NonClientDpiScalingDefWindowProcW(HWND hWnd, UINT msg,
+                                    WPARAM wParam, LPARAM lParam);
 
   
 
