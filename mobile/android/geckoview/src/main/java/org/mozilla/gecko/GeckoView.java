@@ -1029,24 +1029,23 @@ public class GeckoView extends LayerView {
         }
 
         @Override 
-        public void confirm(final Uri uri) {
+        public void confirm(final Context context, final Uri uri) {
             if ("file".equals(mType)) {
-                confirm(uri == null ? null : new Uri[] { uri });
+                confirm(context, uri == null ? null : new Uri[] { uri });
                 return;
             } else {
                 throw new UnsupportedOperationException();
             }
         }
 
-        private static String getFile(final Uri uri) {
+        private static String getFile(final Context context, final Uri uri) {
             if (uri == null) {
                 return null;
             }
             if ("file".equals(uri.getScheme())) {
                 return uri.getPath();
             }
-            final ContentResolver cr =
-                    GeckoAppShell.getApplicationContext().getContentResolver();
+            final ContentResolver cr = context.getContentResolver();
             final Cursor cur = cr.query(uri, new String[] { "_data" },  null,
                                          null,  null);
             if (cur == null) {
@@ -1073,14 +1072,14 @@ public class GeckoView extends LayerView {
         }
 
         @Override 
-        public void confirm(final Uri[] uris) {
+        public void confirm(final Context context, final Uri[] uris) {
             if ("single".equals(mMode) && (uris == null || uris.length != 1)) {
                 throw new IllegalArgumentException();
             }
             if ("file".equals(mType)) {
                 final String[] paths = new String[uris != null ? uris.length : 0];
                 for (int i = 0; i < paths.length; i++) {
-                    paths[i] = getFile(uris[i]);
+                    paths[i] = getFile(context, uris[i]);
                     if (paths[i] == null) {
                         Log.e(LOGTAG, "Only file URI is supported: " + uris[i]);
                     }
@@ -1769,7 +1768,8 @@ public class GeckoView extends LayerView {
 
 
 
-            void confirm(Uri uri);
+
+            void confirm(Context context, Uri uri);
 
             
 
@@ -1777,7 +1777,8 @@ public class GeckoView extends LayerView {
 
 
 
-            void confirm(Uri[] uris);
+
+            void confirm(Context context, Uri[] uris);
         }
 
         static final int FILE_TYPE_SINGLE = 1;
