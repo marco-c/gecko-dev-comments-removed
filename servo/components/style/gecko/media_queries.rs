@@ -11,7 +11,7 @@ use cssparser::{CssStringWriter, Parser, RGBA, Token, BasicParseError};
 use euclid::ScaleFactor;
 use euclid::Size2D;
 use font_metrics::get_metrics_provider_for_product;
-use gecko::values::convert_nscolor_to_rgba;
+use gecko::values::{convert_nscolor_to_rgba, convert_rgba_to_nscolor};
 use gecko_bindings::bindings;
 use gecko_bindings::structs;
 use gecko_bindings::structs::{nsCSSKeyword, nsCSSProps_KTableEntry, nsCSSValue, nsCSSUnit};
@@ -27,7 +27,7 @@ use rule_cache::RuleCacheConditions;
 use servo_arc::Arc;
 use std::cell::RefCell;
 use std::fmt::{self, Write};
-use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicUsize, Ordering};
 use str::starts_with_ignore_ascii_case;
 use string_cache::Atom;
 use style_traits::{CSSPixel, DevicePixel};
@@ -56,6 +56,11 @@ pub struct Device {
     root_font_size: AtomicIsize,
     
     
+    
+    
+    body_text_color: AtomicUsize,
+    
+    
     used_root_font_size: AtomicBool,
     
     
@@ -74,6 +79,7 @@ impl Device {
             default_values: ComputedValues::default_values(unsafe { &*pres_context }),
             
             root_font_size: AtomicIsize::new(font_size::get_initial_value().0.to_i32_au() as isize),
+            body_text_color: AtomicUsize::new(unsafe { &*pres_context }.mDefaultColor as usize),
             used_root_font_size: AtomicBool::new(false),
             used_viewport_size: AtomicBool::new(false),
         }
@@ -108,6 +114,18 @@ impl Device {
     
     pub fn set_root_font_size(&self, size: Au) {
         self.root_font_size.store(size.0 as isize, Ordering::Relaxed)
+    }
+
+    
+    
+    
+    pub fn set_body_text_color(&self, color: RGBA) {
+        self.body_text_color.store(convert_rgba_to_nscolor(&color) as usize, Ordering::Relaxed)
+    }
+
+    
+    pub fn body_text_color(&self) -> RGBA {
+        convert_nscolor_to_rgba(self.body_text_color.load(Ordering::Relaxed) as u32)
     }
 
     

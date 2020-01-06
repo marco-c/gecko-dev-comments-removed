@@ -7,7 +7,8 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
-use context::{ElementCascadeInputs, SelectorFlagsMap, SharedStyleContext, StyleContext};
+use context::{ElementCascadeInputs, QuirksMode, SelectorFlagsMap};
+use context::{SharedStyleContext, StyleContext};
 use data::ElementData;
 use dom::TElement;
 use invalidation::element::restyle_hints::{RESTYLE_CSS_ANIMATIONS, RESTYLE_CSS_TRANSITIONS};
@@ -551,10 +552,6 @@ pub trait MatchMethods : TElement {
 
         
         
-        
-        
-        
-        
         if cfg!(feature = "servo") {
             let layout_parent =
                 self.inheritance_parent().map(|e| e.layout_parent());
@@ -587,6 +584,21 @@ pub trait MatchMethods : TElement {
                 if device.used_root_font_size() {
                     cascade_requirement = ChildCascadeRequirement::MustCascadeDescendants;
                 }
+            }
+        }
+
+        if context.shared.stylist.quirks_mode() == QuirksMode::Quirks {
+            if self.is_html_document_body_element() {
+                
+                
+                
+                
+
+                let device = context.shared.stylist.device();
+
+                
+                let text_color = new_primary_style.get_color().clone_color();
+                device.set_body_text_color(text_color);
             }
         }
 
