@@ -474,12 +474,6 @@ gfxUserFontEntry::ContinueLoad()
     }
 }
 
-static bool
-IgnorePrincipal(gfxFontSrcURI* aURI)
-{
-    return aURI->InheritsSecurityContext();
-}
-
 void
 gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync)
 {
@@ -541,16 +535,9 @@ gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync)
                     currSrc.mFormatFlags)) {
 
                 if (ServoStyleSet* set = ServoStyleSet::Current()) {
-                    
-                    
-                    
-                    
-                    
-                    if (currSrc.mUseOriginPrincipal && IgnorePrincipal(currSrc.mURI)) {
-                        set->AppendTask(PostTraversalTask::LoadFontEntry(this));
-                        SetLoadState(STATUS_LOAD_PENDING);
-                        return;
-                    }
+                    set->AppendTask(PostTraversalTask::LoadFontEntry(this));
+                    SetLoadState(STATUS_LOAD_PENDING);
+                    return;
                 }
 
                 gfxFontSrcPrincipal* principal = nullptr;
@@ -578,14 +565,6 @@ gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync)
                             }
                             return;
                         }
-                    }
-
-                    if (ServoStyleSet* set = ServoStyleSet::Current()) {
-                        
-                        
-                        set->AppendTask(PostTraversalTask::LoadFontEntry(this));
-                        SetLoadState(STATUS_LOAD_PENDING);
-                        return;
                     }
 
                     
@@ -1155,6 +1134,12 @@ gfxUserFontSet::UserFontCache::Flusher::Observe(nsISupports* aSubject,
     }
 
     return NS_OK;
+}
+
+static bool
+IgnorePrincipal(gfxFontSrcURI* aURI)
+{
+    return aURI->InheritsSecurityContext();
 }
 
 bool
