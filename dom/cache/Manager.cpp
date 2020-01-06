@@ -86,6 +86,10 @@ public:
 
         rv = BodyDeleteFiles(aQuotaInfo, aDBDir, deletedBodyIdList);
         if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+        if (deletedPaddingSize > 0) {
+          DecreaseUsageForQuotaInfo(aQuotaInfo, deletedPaddingSize);
+        }
       }
 
       
@@ -449,6 +453,8 @@ public:
   RunSyncWithDBOnTarget(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
                         mozIStorageConnection* aConn) override
   {
+    mQuotaInfo.emplace(aQuotaInfo);
+
     mozStorageTransaction trans(aConn, false,
                                 mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
@@ -467,6 +473,10 @@ public:
   {
     mManager->NoteOrphanedBodyIdList(mDeletedBodyIdList);
 
+    if (mDeletedPaddingSize > 0) {
+      DecreaseUsageForQuotaInfo(mQuotaInfo.ref(), mDeletedPaddingSize);
+    }
+
     
     mManager = nullptr;
   }
@@ -475,6 +485,7 @@ private:
   RefPtr<Manager> mManager;
   const CacheId mCacheId;
   nsTArray<nsID> mDeletedBodyIdList;
+  Maybe<QuotaInfo> mQuotaInfo;
   
   int64_t mDeletedPaddingSize;
 };
@@ -627,6 +638,7 @@ public:
     , mExpectedAsyncCopyCompletions(1)
     , mAsyncResult(NS_OK)
     , mMutex("cache::Manager::CachePutAllAction")
+    , mUpdatedPaddingSize(0)
     , mDeletedPaddingSize(0)
   {
     MOZ_DIAGNOSTIC_ASSERT(!aPutList.IsEmpty());
@@ -768,6 +780,22 @@ private:
         }
       }
       if (e.mResponseStream) {
+        
+        if (e.mResponse.type() == ResponseType::Opaque) {
+          
+          rv = BodyMaybeUpdatePaddingSize(mQuotaInfo.ref(), mDBDir,
+                                          e.mResponseBodyId,
+                                          &e.mResponse.paddingSize());
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            DoResolve(rv);
+            return;
+          }
+
+          MOZ_DIAGNOSTIC_ASSERT(INT64_MAX - e.mResponse.paddingSize() >=
+                                mUpdatedPaddingSize);
+          mUpdatedPaddingSize += e.mResponse.paddingSize();
+        }
+
         rv = BodyFinalizeWrite(mDBDir, e.mResponseBodyId);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           DoResolve(rv);
@@ -775,15 +803,20 @@ private:
         }
       }
 
+      int64_t deletedPaddingSize = 0;
       rv = db::CachePut(mConn, mCacheId, e.mRequest,
                         e.mRequestStream ? &e.mRequestBodyId : nullptr,
                         e.mResponse,
                         e.mResponseStream ? &e.mResponseBodyId : nullptr,
-                        mDeletedBodyIdList, &mDeletedPaddingSize);
+                        mDeletedBodyIdList, &deletedPaddingSize);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         DoResolve(rv);
         return;
       }
+
+      MOZ_DIAGNOSTIC_ASSERT(INT64_MAX - mDeletedPaddingSize >=
+                            deletedPaddingSize);
+      mDeletedPaddingSize += deletedPaddingSize;
     }
 
     
@@ -806,6 +839,10 @@ private:
     }
 
     mManager->NoteOrphanedBodyIdList(mDeletedBodyIdList);
+
+    if (mDeletedPaddingSize > 0) {
+      DecreaseUsageForQuotaInfo(mQuotaInfo.ref(), mDeletedPaddingSize);
+    }
 
     Listener* listener = mManager->GetListener(mListenerId);
     mManager = nullptr;
@@ -946,6 +983,9 @@ private:
     
     if (NS_FAILED(aRv)) {
       BodyDeleteFiles(mQuotaInfo.ref(), mDBDir, mBodyIdWrittenList);
+      if (mUpdatedPaddingSize > 0) {
+        DecreaseUsageForQuotaInfo(mQuotaInfo.ref(), mUpdatedPaddingSize);
+      }
     }
 
     
@@ -990,6 +1030,9 @@ private:
 
   Maybe<QuotaInfo> mQuotaInfo;
   
+  
+  int64_t mUpdatedPaddingSize;
+  
   int64_t mDeletedPaddingSize;
 };
 
@@ -1011,6 +1054,8 @@ public:
   RunSyncWithDBOnTarget(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
                         mozIStorageConnection* aConn) override
   {
+    mQuotaInfo.emplace(aQuotaInfo);
+
     mozStorageTransaction trans(aConn, false,
                                 mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
@@ -1045,6 +1090,7 @@ private:
   const CacheDeleteArgs mArgs;
   bool mSuccess;
   nsTArray<nsID> mDeletedBodyIdList;
+  Maybe<QuotaInfo> mQuotaInfo;
   
   int64_t mDeletedPaddingSize;
 };
