@@ -2016,67 +2016,46 @@ TelemetryHistogram::RegisteredKeyedHistograms(uint32_t aDataset,
 
 nsresult
 TelemetryHistogram::GetKeyedHistogramSnapshots(JSContext *cx,
-                                               JS::MutableHandle<JS::Value> ret,
-                                               bool subsession,
-                                               bool clearSubsession)
+                                               JS::MutableHandle<JS::Value> ret)
 {
   
   JS::Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));
   if (!obj) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  for (uint32_t id = 0; id < HistogramCount; ++id) {
+    if (!gHistogramInfos[id].keyed) {
+      continue;
+    }
+
+    
+    
+
+    
+    KeyedHistogram* keyed = internal_GetKeyedHistogramById(HistogramID(id), ProcessID::Parent,
+                                                            false);
+    if (!keyed) {
+      continue;
+    }
+
+    JS::RootedObject snapshot(cx, JS_NewPlainObject(cx));
+    if (!snapshot) {
+      return NS_ERROR_FAILURE;
+    }
+
+    if (!NS_SUCCEEDED(keyed->GetJSSnapshot(cx, snapshot, false, false))) {
+      return NS_ERROR_FAILURE;
+    }
+
+    if (!JS_DefineProperty(cx, obj, gHistogramInfos[id].name(),
+                           snapshot, JSPROP_ENUMERATE)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   ret.setObject(*obj);
-
-  
-  
-  bool includeGPUProcess = false;
-  if (auto gpm = mozilla::gfx::GPUProcessManager::Get()) {
-    includeGPUProcess = gpm->AttemptedGPUProcess();
-  }
-
-  for (uint32_t process = 0; process < static_cast<uint32_t>(ProcessID::Count); ++process) {
-    JS::Rooted<JSObject*> processObject(cx, JS_NewPlainObject(cx));
-    if (!processObject) {
-      return NS_ERROR_FAILURE;
-    }
-    if (!JS_DefineProperty(cx, obj, GetNameForProcessID(ProcessID(process)),
-                           processObject, JSPROP_ENUMERATE)) {
-      return NS_ERROR_FAILURE;
-    }
-    for (size_t id = 0; id < HistogramCount; ++id) {
-      const HistogramInfo& info = gHistogramInfos[id];
-      if (!info.keyed) {
-        continue;
-      }
-
-      if (!CanRecordInProcess(info.record_in_processes, ProcessID(process)) ||
-        ((ProcessID(process) == ProcessID::Gpu) && !includeGPUProcess)) {
-        continue;
-      }
-
-      KeyedHistogram* keyed = internal_GetKeyedHistogramById(HistogramID(id),
-                                                             ProcessID(process),
-                                                              false);
-      if (!keyed) {
-        continue;
-      }
-
-      JS::RootedObject snapshot(cx, JS_NewPlainObject(cx));
-      if (!snapshot) {
-        return NS_ERROR_FAILURE;
-      }
-
-      if (!NS_SUCCEEDED(keyed->GetJSSnapshot(cx, snapshot, subsession,
-                                             clearSubsession))) {
-        return NS_ERROR_FAILURE;
-      }
-
-      if (!JS_DefineProperty(cx, processObject, gHistogramInfos[id].name(),
-                             snapshot, JSPROP_ENUMERATE)) {
-        return NS_ERROR_FAILURE;
-      }
-    }
-  }
   return NS_OK;
 }
 
