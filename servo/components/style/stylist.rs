@@ -257,7 +257,7 @@ impl DocumentCascadeData {
                             Some(pseudo) => {
                                 origin_cascade_data
                                     .pseudos_map
-                                    .get_or_insert_with(&pseudo.canonical(), SelectorMap::new)
+                                    .get_or_insert_with(&pseudo.canonical(), || Box::new(SelectorMap::new()))
                                     .expect("Unexpected tree pseudo-element?")
                             }
                         };
@@ -1797,7 +1797,11 @@ struct CascadeData {
 
     
     
-    pseudos_map: PerPseudoElementMap<SelectorMap<Rule>>,
+    
+    
+    
+    
+    pseudos_map: PerPseudoElementMap<Box<SelectorMap<Rule>>>,
 
     
     
@@ -1875,7 +1879,7 @@ impl CascadeData {
     #[inline]
     fn borrow_for_pseudo(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
         match pseudo {
-            Some(pseudo) => self.pseudos_map.get(&pseudo.canonical()),
+            Some(pseudo) => self.pseudos_map.get(&pseudo.canonical()).map(|p| &**p),
             None => Some(&self.element_map),
         }
     }
