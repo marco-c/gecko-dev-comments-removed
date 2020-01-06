@@ -100,7 +100,7 @@ function* testCompletion([key, modifiers, completion, open, selected, change],
   EventUtils.synthesizeKey(key, modifiers, view.styleWindow);
 
   
-  view.throttle.flush();
+  view.debounce.flush();
 
   yield onDone;
   yield onPopupEvent;
