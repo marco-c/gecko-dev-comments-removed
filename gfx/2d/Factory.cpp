@@ -48,6 +48,7 @@
 #include "mozilla/Mutex.h"
 #endif
 
+#include "DrawTargetCapture.h"
 #include "DrawTargetDual.h"
 #include "DrawTargetTiled.h"
 #include "DrawTargetWrapAndRecord.h"
@@ -416,6 +417,12 @@ already_AddRefed<DrawTarget>
 Factory::CreateRecordingDrawTarget(DrawEventRecorder *aRecorder, DrawTarget *aDT, IntSize aSize)
 {
   return MakeAndAddRef<DrawTargetRecording>(aRecorder, aDT, aSize);
+}
+
+already_AddRefed<DrawTargetCapture>
+Factory::CreateCaptureDrawTarget(BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat)
+{
+  return MakeAndAddRef<DrawTargetCaptureImpl>(aBackend, aSize, aFormat);
 }
 
 already_AddRefed<DrawTarget>

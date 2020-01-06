@@ -1237,14 +1237,6 @@ public:
 
 
 
-  virtual already_AddRefed<DrawTargetCapture> CreateCaptureDT(const IntSize& aSize);
-
-  
-
-
-
-
-
 
 
   virtual already_AddRefed<DrawTarget>
@@ -1496,6 +1488,16 @@ public:
 
   static already_AddRefed<DrawTarget>
     CreateDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
+
+  
+
+
+
+
+
+  static already_AddRefed<DrawTargetCapture>
+    CreateCaptureDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
+
 
   static already_AddRefed<DrawTarget>
     CreateWrapAndRecordDrawTarget(DrawEventRecorder *aRecorder, DrawTarget *aDT);

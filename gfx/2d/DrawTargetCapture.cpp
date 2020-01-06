@@ -5,6 +5,7 @@
 
 #include "DrawTargetCapture.h"
 #include "DrawCommand.h"
+#include "gfxPlatform.h"
 
 namespace mozilla {
 namespace gfx {
@@ -20,6 +21,31 @@ DrawTargetCaptureImpl::~DrawTargetCaptureImpl()
     reinterpret_cast<DrawingCommand*>(current + sizeof(uint32_t))->~DrawingCommand();
     current += *(uint32_t*)current;
   }
+}
+
+DrawTargetCaptureImpl::DrawTargetCaptureImpl(BackendType aBackend,
+                                             const IntSize& aSize,
+                                             SurfaceFormat aFormat)
+  : mSize(aSize)
+{
+  RefPtr<DrawTarget> screenRefDT =
+      gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+
+  if (aBackend == screenRefDT->GetBackendType()) {
+    mRefDT = screenRefDT;
+  } else {
+    
+    
+    
+    gfxWarning() << "Creating a RefDT in DrawTargetCapture.";
+
+    
+    
+    IntSize size(1, 1);
+    mRefDT = Factory::CreateDrawTarget(aBackend, size, mFormat);
+  }
+
+  mFormat = aFormat;
 }
 
 bool
@@ -39,7 +65,7 @@ DrawTargetCaptureImpl::Init(const IntSize& aSize, DrawTarget* aRefDT)
 already_AddRefed<SourceSurface>
 DrawTargetCaptureImpl::Snapshot()
 {
-  RefPtr<DrawTarget> dt = mRefDT->CreateSimilarDrawTarget(mSize, mRefDT->GetFormat());
+  RefPtr<DrawTarget> dt = mRefDT->CreateSimilarDrawTarget(mSize, mFormat);
 
   ReplayToDrawTarget(dt, Matrix());
 
