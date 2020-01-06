@@ -903,7 +903,8 @@ TextEditRules::WillSetText(Selection& aSelection,
 
   
   
-  nsresult rv = textEditor->SetTextImpl(tString, *curNode->GetAsText());
+  nsresult rv = textEditor->SetTextImpl(aSelection, tString,
+                                        *curNode->GetAsText());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
