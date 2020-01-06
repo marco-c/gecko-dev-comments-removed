@@ -1555,8 +1555,14 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
   if (!providerFrame) {
     
     
-    providerFrame = nsFrame::CorrectStyleParentFrame(aFrame->GetParent(),
-                                                     oldContext->GetPseudo());
+    
+    
+    if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+      aFrame->GetPlaceholderFrame()->GetLayoutParentStyleForOutOfFlow(&providerFrame);
+    } else {
+      providerFrame = nsFrame::CorrectStyleParentFrame(aFrame->GetParent(),
+                                                       oldContext->GetPseudo());
+    }
   }
   ServoStyleContext* layoutParent = providerFrame->StyleContext()->AsServo();
 

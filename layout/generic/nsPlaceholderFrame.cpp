@@ -203,6 +203,12 @@ nsPlaceholderFrame::GetParentStyleContextForOutOfFlow(nsIFrame** aProviderFrame)
     }
   }
 
+  return GetLayoutParentStyleForOutOfFlow(aProviderFrame);
+}
+
+nsStyleContext*
+nsPlaceholderFrame::GetLayoutParentStyleForOutOfFlow(nsIFrame** aProviderFrame) const
+{
   nsIFrame* parentFrame = GetParent();
   
   
