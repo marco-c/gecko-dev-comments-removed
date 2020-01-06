@@ -1491,8 +1491,8 @@ nsCellMap::AppendCell(nsTableCellMap&   aMap,
     
     
     
-    uint32_t height = zeroRowSpan ? endRowIndex - aRowIndex  :
-                                    1 + endRowIndex - aRowIndex;
+    uint32_t height = std::min(zeroRowSpan ? rowSpan - 1 : rowSpan,
+                               GetRowCount() - aRowIndex);
     SetDamageArea(startColIndex, aRgFirstRowIndex + aRowIndex,
                   1 + endColIndex - startColIndex, height, aDamageArea);
   }
