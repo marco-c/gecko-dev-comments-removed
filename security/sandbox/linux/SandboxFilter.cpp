@@ -570,12 +570,17 @@ public:
     switch(aCall) {
       
       
-#ifdef MOZ_ALSA
+      
+      
+    case SHMGET:
+    case SHMCTL:
+    case SHMAT:
+    case SHMDT:
     case SEMGET:
     case SEMCTL:
     case SEMOP:
+    case MSGGET:
       return Some(Allow());
-#endif
     default:
       return SandboxPolicyCommon::EvaluateIpcCall(aCall);
     }
