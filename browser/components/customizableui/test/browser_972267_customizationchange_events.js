@@ -7,7 +7,6 @@
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   let newWindow = await openAndLoadWindow();
   let otherToolbox = newWindow.gNavToolbox;
 
@@ -24,13 +23,6 @@ add_task(async function() {
   gCustomizeMode.addToPanel(homeButton);
 
   is(handlerCalledCount, 2, "Should be called for both windows.");
-
-  
-  
-  if (homeButton.parentNode.id == "BrowserToolbarPalette") {
-    await PanelUI.ensureReady();
-    isnot(homeButton.parentNode.id, "BrowserToolbarPalette", "Home button should now be in panel");
-  }
 
   handlerCalledCount = 0;
   gCustomizeMode.addToToolbar(homeButton);

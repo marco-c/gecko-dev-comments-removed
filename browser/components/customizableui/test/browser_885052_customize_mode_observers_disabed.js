@@ -11,15 +11,12 @@ function isFullscreenSizeMode() {
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+  CustomizableUI.addWidgetToArea("fullscreen-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   
+  await document.getElementById("nav-bar").overflowable.show();
+
   
-  let shownPanelPromise = promisePanelShown(window);
-  PanelUI.toggle({type: "command"});
-  await shownPanelPromise;
-  let hiddenPanelPromise = promisePanelHidden(window);
-  PanelUI.toggle({type: "command"});
-  await hiddenPanelPromise;
+  document.getElementById("widget-overflow").hidePopup();
 
   let fullscreenButton = document.getElementById("fullscreen-button");
   ok(!fullscreenButton.checked, "Fullscreen button should not be checked when not in fullscreen.")
@@ -43,4 +40,5 @@ add_task(async function() {
   fullscreenButton = document.getElementById("fullscreen-button");
   await waitForCondition(() => !isFullscreenSizeMode());
   ok(!fullscreenButton.checked, "Fullscreen button should not be checked when not in fullscreen.")
+  CustomizableUI.reset();
 });

@@ -6,21 +6,22 @@
 
 var button, menuButton;
 
-add_task(async function() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+add_task(async function plain_button() {
   button = document.createElement("toolbarbutton");
   button.id = "browser_940307_button";
   button.setAttribute("label", "Button");
-  PanelUI.contents.appendChild(button);
-  await PanelUI.show();
-  let hiddenAgain = promisePanelHidden(window);
+  gNavToolbox.palette.appendChild(button);
+  CustomizableUI.addWidgetToArea(button.id, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  await document.getElementById("nav-bar").overflowable.show();
+  let hiddenAgain = promiseOverflowHidden(window);
   EventUtils.synthesizeMouseAtCenter(button, {});
   await hiddenAgain;
+  CustomizableUI.removeWidgetFromArea(button.id);
   button.remove();
 });
 
 
-add_task(async function() {
+add_task(async function menu_button_popup() {
   menuButton = document.createElement("toolbarbutton");
   menuButton.setAttribute("type", "menu-button");
   menuButton.id = "browser_940307_menubutton";
@@ -35,37 +36,39 @@ add_task(async function() {
 
   menuPopup.appendChild(menuItem);
   menuButton.appendChild(menuPopup);
-  PanelUI.contents.appendChild(menuButton);
+  gNavToolbox.palette.appendChild(menuButton);
+  CustomizableUI.addWidgetToArea(menuButton.id, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
 
-  await PanelUI.show();
-  let hiddenAgain = promisePanelHidden(window);
+  await document.getElementById("nav-bar").overflowable.show();
+  let hiddenAgain = promiseOverflowHidden(window);
   let innerButton = document.getAnonymousElementByAttribute(menuButton, "anonid", "button");
   EventUtils.synthesizeMouseAtCenter(innerButton, {});
   await hiddenAgain;
 
   
-  await PanelUI.show();
-  hiddenAgain = promisePanelHidden(window);
+  await document.getElementById("nav-bar").overflowable.show();
+  hiddenAgain = promiseOverflowHidden(window);
   let menuShown = promisePanelElementShown(window, menuPopup);
   let dropmarker = document.getAnonymousElementByAttribute(menuButton, "type", "menu-button");
   EventUtils.synthesizeMouseAtCenter(dropmarker, {});
   await menuShown;
   
-  ok(isPanelUIOpen(), "Panel should still be open");
+  ok(isOverflowOpen(), "Panel should still be open");
   let menuHidden = promisePanelElementHidden(window, menuPopup);
   
   EventUtils.synthesizeMouseAtCenter(menuItem, {});
   await menuHidden;
   await hiddenAgain;
+  CustomizableUI.removeWidgetFromArea(menuButton.id);
   menuButton.remove();
 });
 
-add_task(async function() {
+add_task(async function searchbar_in_panel() {
   let searchbar = document.getElementById("searchbar");
   gCustomizeMode.addToPanel(searchbar);
   let placement = CustomizableUI.getPlacementOfWidget("search-container");
-  is(placement.area, CustomizableUI.AREA_PANEL, "Should be in panel");
-  await PanelUI.show();
+  is(placement.area, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL, "Should be in panel");
+  await document.getElementById("nav-bar").overflowable.show();
   await waitForCondition(() => "value" in searchbar && searchbar.value === "");
 
   
@@ -82,7 +85,7 @@ add_task(async function() {
   EventUtils.synthesizeMouseAtCenter(searchbar, {type: "contextmenu", button: 2});
   await contextMenuShown;
 
-  ok(isPanelUIOpen(), "Panel should still be open");
+  ok(isOverflowOpen(), "Panel should still be open");
 
   let selectAll = contextmenu.querySelector("[cmd='cmd_selectAll']");
   let contextMenuHidden = promisePanelElementHidden(window, contextmenu);
@@ -92,12 +95,12 @@ add_task(async function() {
   
   searchbar.textbox.popup.hidePopup();
 
-  ok(isPanelUIOpen(), "Panel should still be open");
+  ok(isOverflowOpen(), "Panel should still be open");
 
-  let hiddenPanelPromise = promisePanelHidden(window);
+  let hiddenPanelPromise = promiseOverflowHidden(window);
   EventUtils.synthesizeKey("VK_ESCAPE", {});
   await hiddenPanelPromise;
-  ok(!isPanelUIOpen(), "Panel should no longer be open");
+  ok(!isOverflowOpen(), "Panel should no longer be open");
 
   
   gURLBar.select();
@@ -105,17 +108,18 @@ add_task(async function() {
   CustomizableUI.reset();
 });
 
-add_task(async function() {
+add_task(async function disabled_button_in_panel() {
   button = document.createElement("toolbarbutton");
   button.id = "browser_946166_button_disabled";
   button.setAttribute("disabled", "true");
   button.setAttribute("label", "Button");
-  PanelUI.contents.appendChild(button);
-  await PanelUI.show();
+  gNavToolbox.palette.appendChild(button);
+  CustomizableUI.addWidgetToArea(button.id, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  await document.getElementById("nav-bar").overflowable.show();
   EventUtils.synthesizeMouseAtCenter(button, {});
-  is(PanelUI.panel.state, "open", "Popup stays open");
+  is(PanelUI.overflowPanel.state, "open", "Popup stays open");
   button.removeAttribute("disabled");
-  let hiddenAgain = promisePanelHidden(window);
+  let hiddenAgain = promiseOverflowHidden(window);
   EventUtils.synthesizeMouseAtCenter(button, {});
   await hiddenAgain;
   button.remove();
@@ -131,7 +135,8 @@ registerCleanupFunction(function() {
   
   
   
-  if (isPanelUIOpen()) {
-    PanelUI.hide();
+  if (isOverflowOpen()) {
+    PanelUI.overflowPanel.hidePopup();
   }
+  CustomizableUI.reset();
 });

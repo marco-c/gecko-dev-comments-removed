@@ -19,8 +19,6 @@ function checkDefaults() {
 }
 
 add_task(async function test_defaults() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
-
   
   checkDefaults();
 });
@@ -28,7 +26,7 @@ add_task(async function test_defaults() {
 add_task(async function test_syncPreferenceWithWidget() {
   
   
-  CustomizableUI.addWidgetToArea(WIDGET_ID, CustomizableUI.AREA_PANEL);
+  CustomizableUI.addWidgetToArea(WIDGET_ID, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   ok(!Services.prefs.getBoolPref(PREF_NAME));
 
   
