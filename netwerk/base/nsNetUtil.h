@@ -100,6 +100,9 @@ nsresult NS_NewFileURI(nsIURI **result,
                        nsIFile *spec,
                        nsIIOService *ioService = nullptr);     
 
+nsresult NS_GetSanitizedURIStringFromURI(nsIURI *aUri,
+                                         nsAString &aSanitizedSpec);
+
 
 
 

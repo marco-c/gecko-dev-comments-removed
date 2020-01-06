@@ -330,10 +330,12 @@ FramingChecker::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
       break;
   }
 
-  rv = errorObject->InitWithWindowID(msg, EmptyString(), EmptyString(), 0, 0,
-                                     nsIScriptError::errorFlag,
-                                     "X-Frame-Options",
-                                     topInnerWindow->WindowID());
+  
+  
+  rv = errorObject->InitWithSanitizedSource(msg, EmptyString(), EmptyString(),
+                                            0, 0, nsIScriptError::errorFlag,
+                                            "X-Frame-Options",
+                                            topInnerWindow->WindowID());
   if (NS_FAILED(rv)) {
     return;
   }
