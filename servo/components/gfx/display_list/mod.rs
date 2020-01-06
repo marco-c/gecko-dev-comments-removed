@@ -1154,8 +1154,6 @@ pub struct DefineClipScrollNodeItem {
 #[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
 pub enum BoxShadowClipMode {
     
-    None,
-    
     
     Outset,
     
