@@ -9,7 +9,10 @@ function setupFrames() {
         b: 'http://example.com/tests/dom/security/test/csp/file_frameancestors.sjs'
   };
 
-  var host = { a: 'http://mochi.test:8888', b: 'http://example.com:80' };
+  
+  
+  
+  var host = { a: 'http://mochi.test:8888/foo/', b: 'http://example.com:80/bar/' };
 
   var innerframeuri = null;
   var elt = null;
