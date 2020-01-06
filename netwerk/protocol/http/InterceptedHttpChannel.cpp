@@ -475,14 +475,6 @@ InterceptedHttpChannel::SetupFallbackChannel(const char*  aFallbackKey)
 }
 
 NS_IMETHODIMP
-InterceptedHttpChannel::ForceIntercepted(uint64_t aInterceptionID)
-{
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 InterceptedHttpChannel::GetResponseSynthesized(bool* aResponseSynthesized)
 {
   *aResponseSynthesized = mResponseHead || mBodyReader;

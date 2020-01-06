@@ -165,7 +165,6 @@ public:
     NS_IMETHOD GetEncodedBodySize(uint64_t *aEncodedBodySize) override;
     
     NS_IMETHOD SetupFallbackChannel(const char *aFallbackKey) override;
-    NS_IMETHOD ForceIntercepted(uint64_t aInterceptionID) override;
     NS_IMETHOD SetChannelIsForDownload(bool aChannelIsForDownload) override;
     
     NS_IMETHOD SetPriority(int32_t value) override;
@@ -264,7 +263,6 @@ public:
       uint32_t mKeep : 2;
     };
 
-    void MarkIntercepted();
     NS_IMETHOD GetResponseSynthesized(bool* aSynthesized) override;
     bool AwaitingCacheCallbacks();
     void SetCouldBeSynthesized();
@@ -557,20 +555,6 @@ private:
     
     
     uint32_t                          mSuspendTotalTime;
-
-    
-    enum {
-        DO_NOT_INTERCEPT,  
-        MAYBE_INTERCEPT,   
-        INTERCEPTED,       
-    } mInterceptCache;
-    
-    
-    uint64_t mInterceptionID;
-
-    bool PossiblyIntercepted() {
-        return mInterceptCache != DO_NOT_INTERCEPT;
-    }
 
     
     
