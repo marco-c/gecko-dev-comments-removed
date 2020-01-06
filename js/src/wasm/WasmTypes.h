@@ -1288,15 +1288,6 @@ struct ExportArg
 struct TlsData
 {
     
-    JSContext* cx;
-
-    
-    Instance* instance;
-
-    
-    uint8_t* globalData;
-
-    
     uint8_t* memoryBase;
 
 #ifndef WASM_HUGE_MEMORY
@@ -1305,9 +1296,13 @@ struct TlsData
 #endif
 
     
+    uint8_t* globalData;
+
     
+    Instance* instance;
+
     
-    void* stackLimit;
+    JSContext** addressOfContext;
 
     
     

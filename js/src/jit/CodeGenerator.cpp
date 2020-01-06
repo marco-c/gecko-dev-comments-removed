@@ -9571,12 +9571,8 @@ CodeGenerator::generateWasm(wasm::SigIdDesc sigId, wasm::BytecodeOffset trapOffs
     
     
     Label onOverflow;
-    if (!omitOverRecursedCheck()) {
-        masm.branchPtr(Assembler::AboveOrEqual,
-                       Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
-                       masm.getStackPointer(),
-                       &onOverflow);
-    }
+    if (!omitOverRecursedCheck())
+        masm.wasmEmitStackCheck(masm.getStackPointer(), ABINonArgReg0, &onOverflow);
 
     if (!generateBody())
         return false;

@@ -309,7 +309,8 @@ LoadActivation(MacroAssembler& masm, Register dest)
 {
     
     
-    masm.loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);
+    masm.loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, addressOfContext)), dest);
+    masm.loadPtr(Address(dest, 0), dest);
     masm.loadPtr(Address(dest, JSContext::offsetOfActivation()), dest);
     masm.loadPtr(Address(dest, Activation::offsetOfPrev()), dest);
 }

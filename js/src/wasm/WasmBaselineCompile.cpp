@@ -2229,10 +2229,7 @@ class BaseCompiler
         
 
         stackAddOffset_ = masm.add32ToPtrWithPatch(StackPointer, ABINonArgReg0);
-        masm.branchPtr(Assembler::AboveOrEqual,
-                       Address(WasmTlsReg, offsetof(TlsData, stackLimit)),
-                       ABINonArgReg0,
-                       &stackOverflowLabel_);
+        masm.wasmEmitStackCheck(ABINonArgReg0, ABINonArgReg1, &stackOverflowLabel_);
 
         
 
