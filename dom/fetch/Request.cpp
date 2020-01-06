@@ -57,14 +57,20 @@ Request::Request(nsIGlobalObject* aOwner, InternalRequest* aRequest,
                  AbortSignal* aSignal)
   : FetchBody<Request>(aOwner)
   , mRequest(aRequest)
-  , mSignal(aSignal)
 {
   MOZ_ASSERT(aRequest->Headers()->Guard() == HeadersGuardEnum::Immutable ||
              aRequest->Headers()->Guard() == HeadersGuardEnum::Request ||
              aRequest->Headers()->Guard() == HeadersGuardEnum::Request_no_cors);
   SetMimeType();
 
-  
+  if (aSignal) {
+    
+    
+    mSignal = new AbortSignal(aSignal->Aborted());
+    if (!mSignal->Aborted()) {
+      mSignal->Follow(aSignal);
+    }
+  }
 }
 
 Request::~Request()
