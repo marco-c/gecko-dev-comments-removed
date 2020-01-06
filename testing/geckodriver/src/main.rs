@@ -1,12 +1,14 @@
-#![feature(slicing_syntax)]
-#![feature(unboxed_closures)]
 
+#![allow(unstable)]
+#![allow(non_snake_case)]
+
+
+#[macro_use] extern crate log;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate core;
 extern crate getopts;
 extern crate hyper;
-#[macro_use] extern crate log;
 extern crate regex;
-extern crate serialize;
 
 use getopts::{usage,optflag, getopts, OptGroup};
 use httpserver::start;
@@ -44,8 +46,8 @@ fn print_usage(opts: &[OptGroup]) {
     io::stderr().write_line(usage(msg.as_slice(), opts).as_slice()).unwrap();
 }
 
-
-
+// Valid addresses to parse are "HOST:PORT" or ":PORT".
+// If the host isn't specified, 127.0.0.1 will be assumed.
 fn parse_addr(s: String) -> Result<SocketAddr, String> {
     let mut parts: Vec<&str> = s.as_slice().splitn(1, ':').collect();
     if parts.len() == 2 {
