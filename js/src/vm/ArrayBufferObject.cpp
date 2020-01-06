@@ -96,6 +96,145 @@ js::ToClampedIndex(JSContext* cx, HandleValue v, uint32_t length, uint32_t* out)
 
 
 
+static mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> liveBufferCount(0);
+
+static const int32_t MaximumLiveMappedBuffers = 1000;
+
+int32_t
+js::LiveMappedBufferCount()
+{
+    return liveBufferCount;
+}
+
+void*
+js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize)
+{
+    MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
+    MOZ_ASSERT(initialCommittedSize % gc::SystemPageSize() == 0);
+    MOZ_ASSERT(initialCommittedSize <= mappedSize);
+
+    
+    
+    if (++liveBufferCount >= MaximumLiveMappedBuffers) {
+        if (OnLargeAllocationFailure)
+            OnLargeAllocationFailure();
+        if (liveBufferCount >= MaximumLiveMappedBuffers) {
+            liveBufferCount--;
+            return nullptr;
+        }
+    }
+
+#ifdef XP_WIN
+    void* data = VirtualAlloc(nullptr, mappedSize, MEM_RESERVE, PAGE_NOACCESS);
+    if (!data) {
+        liveBufferCount--;
+        return nullptr;
+    }
+
+    if (!VirtualAlloc(data, initialCommittedSize, MEM_COMMIT, PAGE_READWRITE)) {
+        VirtualFree(data, 0, MEM_RELEASE);
+        liveBufferCount--;
+        return nullptr;
+    }
+#else  
+    void* data = MozTaggedAnonymousMmap(nullptr, mappedSize, PROT_NONE,
+                                        MAP_PRIVATE | MAP_ANON, -1, 0, "wasm-reserved");
+    if (data == MAP_FAILED) {
+        liveBufferCount--;
+        return nullptr;
+    }
+
+    
+    if (mprotect(data, initialCommittedSize, PROT_READ | PROT_WRITE)) {
+        munmap(data, mappedSize);
+        liveBufferCount--;
+        return nullptr;
+    }
+#endif  
+
+#if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
+    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)data + initialCommittedSize,
+                                                   mappedSize - initialCommittedSize);
+#endif
+
+    return data;
+}
+
+bool
+js::CommitBufferMemory(void* dataEnd, uint32_t delta)
+{
+    MOZ_ASSERT(delta);
+    MOZ_ASSERT(delta % gc::SystemPageSize() == 0);
+
+#ifdef XP_WIN
+    if (!VirtualAlloc(dataEnd, delta, MEM_COMMIT, PAGE_READWRITE))
+        return false;
+#else  
+    if (mprotect(dataEnd, delta, PROT_READ | PROT_WRITE))
+        return false;
+#endif  
+
+#if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
+    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)dataEnd, delta);
+#endif
+
+    return true;
+}
+
+#ifndef WASM_HUGE_MEMORY
+bool
+js::ExtendBufferMapping(void* dataPointer, size_t mappedSize, size_t newMappedSize)
+{
+    MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
+    MOZ_ASSERT(newMappedSize % gc::SystemPageSize() == 0);
+    MOZ_ASSERT(newMappedSize >= mappedSize);
+
+#ifdef XP_WIN
+    void* mappedEnd = (char*)dataPointer + mappedSize;
+    uint32_t delta = newMappedSize - mappedSize;
+    if (!VirtualAlloc(mappedEnd, delta, MEM_RESERVE, PAGE_NOACCESS))
+        return false;
+    return true;
+#elif defined(XP_LINUX)
+    
+    if (MAP_FAILED == mremap(dataPointer, mappedSize, newMappedSize, 0))
+        return false;
+    return true;
+#else
+    
+    
+    return false;
+#endif
+}
+#endif
+
+void
+js::UnmapBufferMemory(void* base, size_t mappedSize)
+{
+    MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
+
+#ifdef XP_WIN
+    VirtualFree(base, 0, MEM_RELEASE);
+#else  
+    munmap(base, mappedSize);
+#endif  
+
+#if defined(MOZ_VALGRIND) && defined(VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE)
+    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)base, mappedSize);
+#endif
+
+    
+    
+    liveBufferCount--;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -563,17 +702,9 @@ class js::WasmArrayRawBuffer
 
         uint8_t* dataEnd = dataPointer() + oldSize;
         MOZ_ASSERT(uintptr_t(dataEnd) % gc::SystemPageSize() == 0);
-# ifdef XP_WIN
-        if (delta && !VirtualAlloc(dataEnd, delta, MEM_COMMIT, PAGE_READWRITE))
-            return false;
-# else  
-        if (delta && mprotect(dataEnd, delta, PROT_READ | PROT_WRITE))
-            return false;
-# endif  
 
-#  if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-        VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)dataEnd, delta);
-#  endif
+        if (delta && !CommitBufferMemory(dataEnd, delta))
+            return false;
 
         return true;
     }
@@ -585,20 +716,8 @@ class js::WasmArrayRawBuffer
         if (mappedSize_ == newMappedSize)
             return true;
 
-# ifdef XP_WIN
-        uint8_t* mappedEnd = dataPointer() + mappedSize_;
-        uint32_t delta = newMappedSize - mappedSize_;
-        if (!VirtualAlloc(mappedEnd, delta, MEM_RESERVE, PAGE_NOACCESS))
+        if (!ExtendBufferMapping(dataPointer(), mappedSize_, newMappedSize))
             return false;
-# elif defined(XP_LINUX)
-        
-        if (MAP_FAILED == mremap(dataPointer(), mappedSize_, newMappedSize, 0))
-            return false;
-# else
-        
-        
-        return false;
-# endif
 
         mappedSize_ = newMappedSize;
         return true;
@@ -638,32 +757,9 @@ WasmArrayRawBuffer::Allocate(uint32_t numBytes, const Maybe<uint32_t>& maxSize)
     uint64_t mappedSizeWithHeader = mappedSize + gc::SystemPageSize();
     uint64_t numBytesWithHeader = numBytes + gc::SystemPageSize();
 
-# ifdef XP_WIN
-    void* data = VirtualAlloc(nullptr, (size_t) mappedSizeWithHeader, MEM_RESERVE, PAGE_NOACCESS);
+    void* data = MapBufferMemory((size_t) mappedSizeWithHeader, (size_t) numBytesWithHeader);
     if (!data)
         return nullptr;
-
-    if (!VirtualAlloc(data, numBytesWithHeader, MEM_COMMIT, PAGE_READWRITE)) {
-        VirtualFree(data, 0, MEM_RELEASE);
-        return nullptr;
-    }
-# else  
-    void* data = MozTaggedAnonymousMmap(nullptr, (size_t) mappedSizeWithHeader, PROT_NONE,
-                                        MAP_PRIVATE | MAP_ANON, -1, 0, "wasm-reserved");
-    if (data == MAP_FAILED)
-        return nullptr;
-
-    
-    if (mprotect(data, numBytesWithHeader, PROT_READ | PROT_WRITE)) {
-        munmap(data, mappedSizeWithHeader);
-        return nullptr;
-    }
-# endif  
-
-#  if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)data + numBytesWithHeader,
-                                                   mappedSizeWithHeader - numBytesWithHeader);
-#  endif
 
     uint8_t* base = reinterpret_cast<uint8_t*>(data) + gc::SystemPageSize();
     uint8_t* header = base - sizeof(WasmArrayRawBuffer);
@@ -676,19 +772,11 @@ WasmArrayRawBuffer::Allocate(uint32_t numBytes, const Maybe<uint32_t>& maxSize)
 WasmArrayRawBuffer::Release(void* mem)
 {
     WasmArrayRawBuffer* header = (WasmArrayRawBuffer*)((uint8_t*)mem - sizeof(WasmArrayRawBuffer));
-    uint8_t* base = header->basePointer();
+
     MOZ_RELEASE_ASSERT(header->mappedSize() <= SIZE_MAX - gc::SystemPageSize());
-
-# ifdef XP_WIN
-    VirtualFree(base, 0, MEM_RELEASE);
-# else  
     size_t mappedSizeWithHeader = header->mappedSize() + gc::SystemPageSize();
-    munmap(base, mappedSizeWithHeader);
-# endif  
 
-#  if defined(MOZ_VALGRIND) && defined(VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(base, mappedSizeWithHeader);
-#  endif
+    UnmapBufferMemory(header->basePointer(), mappedSizeWithHeader);
 }
 
 WasmArrayRawBuffer*
