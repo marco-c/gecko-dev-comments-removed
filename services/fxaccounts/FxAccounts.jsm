@@ -1211,6 +1211,9 @@ FxAccountsInternal.prototype = {
       if (error && error.retryAfter) {
         
         nextPollMs = (error.retryAfter + 3) * 1000;
+        log.warn(`the server rejected our email status check and told us to try again in ${nextPollMs}ms`);
+      } else {
+        log.error(`checkEmailStatus failed to poll`, error);
       }
     }
     if (why == "push") {
