@@ -249,7 +249,6 @@ class BasePopup {
     
     
     browser.setAttribute("flex", "1");
-    stack.setAttribute("flex", "1");
 
     
     
