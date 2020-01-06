@@ -69,9 +69,6 @@ public class Experiments {
     public static final String TOP_ADDONS_MENU = "top-addons-menu";
 
     
-    public static final String COMPACT_TABS = "compact-tabs";
-
-    
     public static final String FULL_BOOKMARK_MANAGEMENT = "full-bookmark-management";
 
     
