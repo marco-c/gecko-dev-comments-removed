@@ -31,6 +31,28 @@ function FormAutofillHandler(form) {
   this.fieldDetails = [];
   this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils);
+
+  this.address = {
+    
+
+
+    fieldDetails: [],
+    
+
+
+    filledRecordGUID: null,
+  };
+
+  this.creditCard = {
+    
+
+
+    fieldDetails: [],
+    
+
+
+    filledRecordGUID: null,
+  };
 }
 
 FormAutofillHandler.prototype = {
@@ -59,27 +81,12 @@ FormAutofillHandler.prototype = {
   
 
 
-
-  addressFieldDetails: null,
-
-  
-
-
-
-  creditCardFieldDetails: null,
-
-  get isValidAddressForm() {
-    return this.addressFieldDetails.length >= FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD;
-  },
-
-  get isValidCreditCardForm() {
-    return this.creditCardFieldDetails.some(i => i.fieldName == "cc-number");
-  },
+  address: null,
 
   
 
 
-  filledProfileGUID: null,
+  creditCard: null,
 
   
 
@@ -109,6 +116,8 @@ FormAutofillHandler.prototype = {
   
 
 
+
+
   collectFormFields() {
     this._cacheValue.allFieldNames = null;
     this._formFieldCount = this.form.elements.length;
@@ -116,12 +125,27 @@ FormAutofillHandler.prototype = {
     this.fieldDetails = fieldDetails ? fieldDetails : [];
     log.debug("Collected details on", this.fieldDetails.length, "fields");
 
-    this.addressFieldDetails = this.fieldDetails.filter(
+    this.address.fieldDetails = this.fieldDetails.filter(
       detail => FormAutofillUtils.isAddressField(detail.fieldName)
     );
-    this.creditCardFieldDetails = this.fieldDetails.filter(
+    this.creditCard.fieldDetails = this.fieldDetails.filter(
       detail => FormAutofillUtils.isCreditCardField(detail.fieldName)
     );
+
+    if (this.address.fieldDetails.length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
+      log.debug("Ignoring address related fields since it has only",
+                this.address.fieldDetails.length,
+                "field(s)");
+      this.address.fieldDetails = [];
+    }
+
+    if (!this.creditCard.fieldDetails.some(i => i.fieldName == "cc-number")) {
+      log.debug("Ignoring credit card related fields since it's without credit card number field");
+      this.creditCard.fieldDetails = [];
+    }
+
+    return Array.of(...(this.address.fieldDetails),
+                    ...(this.creditCard.fieldDetails));
   },
 
   getFieldDetailByName(fieldName) {
@@ -193,8 +217,8 @@ FormAutofillHandler.prototype = {
   autofillFormFields(profile, focusedInput) {
     log.debug("profile in autofillFormFields:", profile);
 
-    this.filledProfileGUID = profile.guid;
-    for (let fieldDetail of this.addressFieldDetails) {
+    this.address.filledRecordGUID = profile.guid;
+    for (let fieldDetail of this.address.fieldDetails) {
       
       
       
@@ -255,7 +279,7 @@ FormAutofillHandler.prototype = {
         return;
       }
 
-      for (let fieldDetail of this.addressFieldDetails) {
+      for (let fieldDetail of this.address.fieldDetails) {
         let element = fieldDetail.elementWeakRef.get();
 
         if (!element) {
@@ -273,7 +297,7 @@ FormAutofillHandler.prototype = {
       if (!hasFilledFields) {
         this.form.rootElement.removeEventListener("input", onChangeHandler);
         this.form.rootElement.removeEventListener("reset", onChangeHandler);
-        this.filledProfileGUID = null;
+        this.address.filledRecordGUID = null;
       }
     };
 
@@ -290,7 +314,7 @@ FormAutofillHandler.prototype = {
   previewFormFields(profile) {
     log.debug("preview profile in autofillFormFields:", profile);
 
-    for (let fieldDetail of this.addressFieldDetails) {
+    for (let fieldDetail of this.address.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       let value = profile[fieldDetail.fieldName] || "";
 
@@ -322,7 +346,7 @@ FormAutofillHandler.prototype = {
   clearPreviewedFormFields() {
     log.debug("clear previewed fields in:", this.form);
 
-    for (let fieldDetail of this.addressFieldDetails) {
+    for (let fieldDetail of this.address.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       if (!element) {
         log.warn(fieldDetail.fieldName, "is unreachable");
@@ -387,7 +411,7 @@ FormAutofillHandler.prototype = {
   createProfile() {
     let profile = {};
 
-    this.addressFieldDetails.forEach(detail => {
+    this.address.fieldDetails.forEach(detail => {
       let element = detail.elementWeakRef.get();
       
       let value = element && element.value.trim();
