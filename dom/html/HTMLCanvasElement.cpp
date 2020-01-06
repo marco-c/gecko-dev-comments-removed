@@ -1056,7 +1056,7 @@ HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect)
   
   
   CanvasRenderer* renderer = nullptr;
-  if (gfxPrefs::WebRenderLayersFree() && frame->HasProperty(nsIFrame::WebRenderUserDataProperty())) {
+  if (frame->HasProperty(nsIFrame::WebRenderUserDataProperty())) {
     nsIFrame::WebRenderUserDataTable* userDataTable =
       frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
     RefPtr<WebRenderUserData> data;
