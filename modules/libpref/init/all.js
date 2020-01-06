@@ -642,7 +642,7 @@ pref("media.decoder.skip-to-next-key-frame.enabled", true);
 
 
 
-pref("media.cubeb.log_level", "");
+pref("media.cubeb.logging_level", "");
 
 
 pref("media.playback.warnings-as-errors", false);
@@ -5674,9 +5674,6 @@ pref("dom.input.fallbackUploadDir", "");
 
 
 pref("plugins.rewrite_youtube_embeds", true);
-
-
-pref("plugins.navigator_hide_disabled_flash", false);
 
 
 pref("dom.mozBrowserFramesEnabled", false);
