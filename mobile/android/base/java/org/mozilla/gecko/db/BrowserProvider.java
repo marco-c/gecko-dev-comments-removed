@@ -969,14 +969,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         
         
         
-        
-        
         String pinnedSitesFromClause = "FROM " + TABLE_BOOKMARKS + " WHERE " +
                 Bookmarks.PARENT + " = " + Bookmarks.FIXED_PINNED_LIST_ID +
                 " AND " + Bookmarks.IS_DELETED + " IS NOT 1";
-        if (nonPositionedPins != null) {
-            pinnedSitesFromClause += " AND " + Bookmarks.POSITION + " = " + Bookmarks.FIXED_AS_PIN_POSITION;
-        } else {
+        if (nonPositionedPins == null) {
             pinnedSitesFromClause += " AND " + Bookmarks.POSITION + " != " + Bookmarks.FIXED_AS_PIN_POSITION;
         }
 
