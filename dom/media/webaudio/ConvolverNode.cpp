@@ -66,8 +66,7 @@ public:
     switch (aIndex) {
     case SAMPLE_RATE:
       mSampleRate = aParam;
-      
-      
+      AdjustReverb();
       break;
     default:
       NS_ERROR("Bad ConvolverNodeEngine DoubleParameter");
@@ -76,7 +75,11 @@ public:
   void SetBuffer(already_AddRefed<ThreadSharedFloatArrayBufferList> aBuffer) override
   {
     mBuffer = aBuffer;
+    AdjustReverb();
+  }
 
+  void AdjustReverb()
+  {
     
     
     
