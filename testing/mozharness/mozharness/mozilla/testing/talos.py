@@ -217,19 +217,24 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin, TooltoolMixin,
                 opts = None
 
             if opts:
-              
-              
-              opts = opts.split('\n')[0]
-              opts = re.sub(r'\w+:.*', '', opts).strip().split(' ')
-              if "--geckoProfile" in opts:
-                  
-                  self.gecko_profile = True
-              try:
-                  idx = opts.index('--geckoProfileInterval')
-                  if len(opts) > idx + 1:
-                      self.gecko_profile_interval = opts[idx + 1]
-              except ValueError:
-                  pass
+                
+                
+                opts = opts.split('\n')[0]
+                opts = re.sub(r'\w+:.*', '', opts).strip().split(' ')
+                if "--geckoProfile" in opts:
+                    
+                    self.gecko_profile = True
+                try:
+                    idx = opts.index('--geckoProfileInterval')
+                    if len(opts) > idx + 1:
+                        self.gecko_profile_interval = opts[idx + 1]
+                except ValueError:
+                    pass
+            else:
+                
+                if self.try_message_has_flag('geckoProfile'):
+                    self.gecko_profile = True
+
         
         if self.gecko_profile:
             gecko_results.append('--geckoProfile')
