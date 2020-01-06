@@ -157,7 +157,7 @@ public:
 
 
 
-  void TryToFlushPendingNotifications();
+  void TryToFlushPendingNotifications(bool aAllowAsync);
 
   
 
