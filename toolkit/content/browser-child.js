@@ -257,8 +257,6 @@ var WebNavigation =  {
     addMessageListener("WebNavigation:SetOriginAttributes", this);
     addMessageListener("WebNavigation:Reload", this);
     addMessageListener("WebNavigation:Stop", this);
-    
-    sendAsyncMessage("Content:BrowserChildReady", { time: Services.telemetry.msSystemNow() });
   },
 
   get webNavigation() {
