@@ -134,20 +134,29 @@ function test_restore_session_apis() {
   let initDevToolsBackup = DevToolsShim.initDevTools;
   let devtoolsEnabledValue = Services.prefs.getBoolPref("devtools.enabled");
 
+  
+  let sessionWithoutDevTools = {};
+  let sessionWithDevTools = {
+    scratchpads: [{}],
+    browserConsole: true,
+  };
+
   Services.prefs.setBoolPref("devtools.enabled", false);
   ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
   ok(!DevToolsShim.isEnabled(), "DevTools are not enabled");
 
   
   DevToolsShim.saveDevToolsSession({});
-  DevToolsShim.restoreDevToolsSession({
-    scratchpads: [{}],
-    browserConsole: true,
-  });
+  DevToolsShim.restoreDevToolsSession(sessionWithDevTools);
 
   Services.prefs.setBoolPref("devtools.enabled", true);
   ok(DevToolsShim.isEnabled(), "DevTools are enabled");
   ok(!DevToolsShim.isInitialized(), "DevTools are not initialized");
+
+  
+  
+  DevToolsShim.restoreDevToolsSession(sessionWithoutDevTools);
+  ok(!DevToolsShim.isInitialized(), "DevTools are still not initialized");
 
   let mock = createMockDevTools();
   DevToolsShim.initDevTools = () => {
@@ -156,9 +165,8 @@ function test_restore_session_apis() {
     DevToolsShim.register(mock);
   };
 
-  let scratchpadSessions = [{}];
-  DevToolsShim.restoreDevToolsSession(scratchpadSessions);
-  checkCalls(mock, "restoreDevToolsSession", 1, [scratchpadSessions]);
+  DevToolsShim.restoreDevToolsSession(sessionWithDevTools);
+  checkCalls(mock, "restoreDevToolsSession", 1, [sessionWithDevTools]);
 
   ok(DevToolsShim.isInitialized(), "DevTools are initialized");
 

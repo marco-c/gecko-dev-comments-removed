@@ -153,6 +153,13 @@ this.DevToolsShim = {
       return;
     }
 
+    let {scratchpads, browserConsole} = session;
+    let hasDevToolsData = browserConsole || (scratchpads && scratchpads.length);
+    if (!hasDevToolsData) {
+      
+      return;
+    }
+
     this.initDevTools();
     this._gDevTools.restoreDevToolsSession(session);
   },
