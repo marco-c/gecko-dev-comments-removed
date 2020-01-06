@@ -1983,16 +1983,6 @@ public:
 
 
 
-
-
-  static nsISerialEventTarget* GetStableStateEventTarget();
-
-  
-
-
-
-
-
   static nsresult ProcessViewportInfo(nsIDocument *aDocument,
                                       const nsAString &viewportInfo);
 
@@ -3429,8 +3419,6 @@ private:
 
 
   static bool sFragmentParsingActive;
-
-  static nsISerialEventTarget* sStableStateEventTarget;
 
   static nsString* sShiftText;
   static nsString* sControlText;
