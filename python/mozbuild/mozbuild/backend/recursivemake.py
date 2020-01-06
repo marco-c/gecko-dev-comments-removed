@@ -742,7 +742,20 @@ class RecursiveMakeBackend(CommonBackend):
 
         all_compile_deps = reduce(lambda x,y: x|y,
             self._compile_graph.values()) if self._compile_graph else set()
-        compile_roots = set(self._compile_graph.keys()) - all_compile_deps
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        compile_roots = [t for t, deps in self._compile_graph.iteritems()
+                         if not deps or t not in all_compile_deps]
 
         rule = root_deps_mk.create_rule(['recurse_compile'])
         rule.add_dependencies(compile_roots)
