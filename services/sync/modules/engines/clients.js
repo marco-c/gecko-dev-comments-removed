@@ -49,6 +49,13 @@ const CLIENTS_TTL = 1814400;
 const CLIENTS_TTL_REFRESH = 604800; 
 const STALE_CLIENT_REMOTE_AGE = 604800; 
 
+
+const NOTIFY_TAB_SENT_TTL_SECS = 1 * 3600; 
+
+
+const COLLECTION_MODIFIED_REASON_SENDTAB = "sendtab";
+const COLLECTION_MODIFIED_REASON_FIRSTSYNC = "firstsync";
+
 const SUPPORTED_PROTOCOL_VERSIONS = [SYNC_API_VERSION];
 const LAST_MODIFIED_ON_PROCESS_COMMAND_PREF = "services.sync.clients.lastModifiedOnProcessCommands";
 
@@ -470,7 +477,7 @@ ClientEngine.prototype = {
       if (id == this.localID) {
         if (this.isFirstSync) {
           this._log.info("Uploaded our client record for the first time, notifying other clients.");
-          this._notifyCollectionChanged();
+          this._notifyClientRecordUploaded();
         }
         if (this.localCommands) {
           this.localCommands = this.localCommands.filter(command => !hasDupeCommand(commandChanges, command));
@@ -509,16 +516,33 @@ ClientEngine.prototype = {
       return fxaDeviceId ? acc.concat(fxaDeviceId) : acc;
     }, []);
     if (idsToNotify.length > 0) {
-      this._notifyCollectionChanged(idsToNotify, NOTIFY_TAB_SENT_TTL_SECS);
+      this._notifyOtherClientsModified(idsToNotify);
     }
   },
 
-  async _notifyCollectionChanged(ids = null, ttl = 0) {
+  _notifyOtherClientsModified(ids) {
+    
+    this._notifyCollectionChanged(ids, NOTIFY_TAB_SENT_TTL_SECS,
+                                  COLLECTION_MODIFIED_REASON_SENDTAB);
+  },
+
+  _notifyClientRecordUploaded() {
+    
+    this._notifyCollectionChanged(null, 0, COLLECTION_MODIFIED_REASON_FIRSTSYNC);
+  },
+
+  
+
+
+
+
+  async _notifyCollectionChanged(ids, ttl, reason) {
     const message = {
       version: 1,
       command: "sync:collection_changed",
       data: {
-        collections: ["clients"]
+        collections: ["clients"],
+        reason
       }
     };
     let excludedIds = null;

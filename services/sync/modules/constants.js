@@ -90,9 +90,6 @@ MAX_HISTORY_UPLOAD:                    5000,
 MAX_HISTORY_DOWNLOAD:                  5000,
 
 
-NOTIFY_TAB_SENT_TTL_SECS:              1 * 3600, 
-
-
 STATUS_OK:                             "success.status_ok",
 SYNC_FAILED:                           "error.sync.failed",
 LOGIN_FAILED:                          "error.login.failed",
