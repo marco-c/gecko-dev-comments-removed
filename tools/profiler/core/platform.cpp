@@ -34,7 +34,6 @@
 #include "nsMemoryReporterManager.h"
 #include "nsXULAppAPI.h"
 #include "nsProfilerStartParams.h"
-#include "ProfilerParent.h"
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 #include "ProfilerMarkerPayload.h"
@@ -116,9 +115,6 @@ typedef const PSAutoLock& PSLockRef;
   PS_GET(type_, name_) \
   static void Set##name_(PSLockRef, type_ a##name_) \
     { sInstance->m##name_ = a##name_; }
-
-
-
 
 
 
@@ -301,37 +297,23 @@ private:
     }
 
     if (mInterposeObserver) {
-      
-      
-      if (NS_IsMainThread()) {
-        IOInterposer::Register(IOInterposeObserver::OpAll, mInterposeObserver);
-      } else {
-        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
-        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
-          IOInterposer::Register(IOInterposeObserver::OpAll, observer);
-        }));
-      }
+      mozilla::IOInterposer::Register(mozilla::IOInterposeObserver::OpAll,
+                                      mInterposeObserver.get());
     }
   }
 
   ~ActivePS()
   {
     if (mInterposeObserver) {
-      
-      
-      if (NS_IsMainThread()) {
-        IOInterposer::Unregister(IOInterposeObserver::OpAll, mInterposeObserver);
-      } else {
-        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
-        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
-          IOInterposer::Unregister(IOInterposeObserver::OpAll, observer);
-        }));
-      }
+      mozilla::IOInterposer::Unregister(mozilla::IOInterposeObserver::OpAll,
+                                        mInterposeObserver.get());
     }
   }
 
   bool ThreadSelected(const char* aThreadName)
   {
+    
+
     MOZ_RELEASE_ASSERT(sInstance);
 
     if (mFilters.empty()) {
@@ -385,6 +367,8 @@ public:
 
   static bool ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo)
   {
+    
+
     MOZ_RELEASE_ASSERT(sInstance);
 
     return ((aInfo->IsMainThread() || FeatureThreads(aLock)) &&
@@ -465,7 +449,7 @@ private:
   SamplerThread* const mSamplerThread;
 
   
-  const RefPtr<mozilla::ProfilerIOInterposeObserver> mInterposeObserver;
+  const UniquePtr<mozilla::ProfilerIOInterposeObserver> mInterposeObserver;
 
   
   bool mIsPaused;
@@ -546,6 +530,19 @@ MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
+
+static bool
+CanNotifyObservers()
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+#if defined(GP_OS_android)
+  
+  return NS_IsMainThread();
+#else
+  return true;
+#endif
+}
 
 
 
@@ -1382,6 +1379,7 @@ static void
 StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 {
 #ifdef MOZ_TASK_TRACER
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   aWriter.StartArrayProperty("data");
@@ -1418,28 +1416,10 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 static void
 StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   aWriter.IntProperty("version", 6);
-
-  
-  
-  
-  mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - CorePS::ProcessStartTime(aLock);
-  aWriter.DoubleProperty(
-    "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
-
-  if (!NS_IsMainThread()) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
   aWriter.DoubleProperty("interval", ActivePS::Interval(aLock));
   aWriter.IntProperty("stackwalk", ActivePS::FeatureStackWalk(aLock));
 
@@ -1453,6 +1433,14 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 
   bool asyncStacks = Preferences::GetBool("javascript.options.asyncstack");
   aWriter.IntProperty("asyncstack", asyncStacks);
+
+  
+  
+  
+  mozilla::TimeDuration delta =
+    mozilla::TimeStamp::Now() - CorePS::ProcessStartTime(aLock);
+  aWriter.DoubleProperty(
+    "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
 
   aWriter.IntProperty("processType", XRE_GetProcessType());
 
@@ -1565,6 +1553,7 @@ locked_profiler_stream_json_for_this_process(PSLockRef aLock,
 {
   LOG("locked_profiler_stream_json_for_this_process");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   
@@ -1629,6 +1618,7 @@ profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter, double aSin
 {
   LOG("profiler_stream_json_for_this_process");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -1951,6 +1941,8 @@ NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 static ThreadInfo*
 FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
 {
+  
+
   ThreadInfo* ret = nullptr;
   Thread::tid_t id = Thread::GetCurrentId();
   const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(aLock);
@@ -1971,6 +1963,8 @@ FindLiveThreadInfo(PSLockRef aLock, int* aIndexOut = nullptr)
 static void
 locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   MOZ_RELEASE_ASSERT(!FindLiveThreadInfo(aLock));
@@ -1997,32 +1991,18 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
 }
 
 static void
-NotifyObservers(const char* aTopic, nsISupports* aSubject = nullptr)
-{
-  if (!NS_IsMainThread()) {
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsISupports> subject = aSubject;
-    NS_DispatchToMainThread(NS_NewRunnableFunction([=] {
-      NotifyObservers(aTopic, subject);
-    }));
-    return;
-  }
-
-  if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
-    os->NotifyObservers(aSubject, aTopic, nullptr);
-  }
-}
-
-static void
 NotifyProfilerStarted(const int aEntries, double aInterval, uint32_t aFeatures,
                       const char** aFilters, uint32_t aFilterCount)
 {
+  if (!CanNotifyObservers()) {
+    return;
+  }
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (!os) {
+    return;
+  }
+
   nsTArray<nsCString> filtersArray;
   for (size_t i = 0; i < aFilterCount; ++i) {
     filtersArray.AppendElement(aFilters[i]);
@@ -2031,8 +2011,22 @@ NotifyProfilerStarted(const int aEntries, double aInterval, uint32_t aFeatures,
   nsCOMPtr<nsIProfilerStartParams> params =
     new nsProfilerStartParams(aEntries, aInterval, aFeatures, filtersArray);
 
-  ProfilerParent::ProfilerStarted(params);
-  NotifyObservers("profiler-started", params);
+  os->NotifyObservers(params, "profiler-started", nullptr);
+}
+
+static void
+NotifyObservers(const char* aTopic)
+{
+  if (!CanNotifyObservers()) {
+    return;
+  }
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (!os) {
+    return;
+  }
+
+  os->NotifyObservers(nullptr, aTopic, nullptr);
 }
 
 static void
@@ -2177,7 +2171,6 @@ profiler_shutdown()
   
   
   if (samplerThread) {
-    ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -2188,6 +2181,7 @@ profiler_get_profile(double aSinceTime)
 {
   LOG("profiler_get_profile");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   SpliceableChunkedJSONWriter b;
@@ -2211,6 +2205,7 @@ void
 profiler_get_start_params(int* aEntries, double* aInterval, uint32_t* aFeatures,
                           mozilla::Vector<const char*>* aFilters)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   if (NS_WARN_IF(!aEntries) || NS_WARN_IF(!aInterval) ||
@@ -2244,6 +2239,7 @@ locked_profiler_save_profile_to_file(PSLockRef aLock, const char* aFilename)
 {
   LOG("locked_profiler_save_profile_to_file(%s)", aFilename);
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   std::ofstream stream;
@@ -2270,6 +2266,7 @@ profiler_save_profile_to_file(const char* aFilename)
 {
   LOG("profiler_save_profile_to_file(%s)", aFilename);
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2284,6 +2281,7 @@ profiler_save_profile_to_file(const char* aFilename)
 uint32_t
 profiler_get_available_features()
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   uint32_t features = 0;
@@ -2317,6 +2315,7 @@ profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
   
   
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2354,6 +2353,7 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
     }
   }
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && !ActivePS::Exists(aLock));
 
   
@@ -2410,6 +2410,7 @@ profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
 {
   LOG("profiler_start");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   SamplerThread* samplerThread = nullptr;
   {
@@ -2432,7 +2433,6 @@ profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
   
   
   if (samplerThread) {
-    ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -2445,6 +2445,7 @@ locked_profiler_stop(PSLockRef aLock)
 {
   LOG("locked_profiler_stop");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
 #ifdef MOZ_TASK_TRACER
@@ -2492,6 +2493,7 @@ profiler_stop()
 {
   LOG("profiler_stop");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   SamplerThread* samplerThread;
@@ -2508,9 +2510,6 @@ profiler_stop()
   
   
   
-  
-  
-  ProfilerParent::ProfilerStopped();
   NotifyObservers("profiler-stopped");
 
   
@@ -2528,6 +2527,7 @@ profiler_stop()
 bool
 profiler_is_paused()
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2544,6 +2544,7 @@ profiler_pause()
 {
   LOG("profiler_pause");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   {
@@ -2557,7 +2558,6 @@ profiler_pause()
   }
 
   
-  ProfilerParent::ProfilerPaused();
   NotifyObservers("profiler-paused");
 }
 
@@ -2566,6 +2566,7 @@ profiler_resume()
 {
   LOG("profiler_resume");
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   {
@@ -2579,7 +2580,6 @@ profiler_resume()
   }
 
   
-  ProfilerParent::ProfilerResumed();
   NotifyObservers("profiler-resumed");
 }
 
@@ -2713,6 +2713,7 @@ void
 profiler_js_interrupt_callback()
 {
   
+  
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -2729,6 +2730,8 @@ profiler_js_interrupt_callback()
 double
 profiler_time()
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2741,6 +2744,7 @@ profiler_time()
 UniqueProfilerBacktrace
 profiler_get_backtrace()
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2790,6 +2794,7 @@ ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace)
 void
 profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   MOZ_ASSERT(outputSize >= 2);
@@ -2845,9 +2850,11 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 }
 
 static void
-locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
+locked_profiler_add_marker(PSLockRef aLock, const char* aMarkerName,
                            ProfilerMarkerPayload* aPayload)
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock) &&
                      !ActivePS::FeaturePrivacy(aLock));
@@ -2864,13 +2871,15 @@ locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
                             ? payload->GetStartTime()
                             : mozilla::TimeStamp::Now();
   mozilla::TimeDuration delta = origin - CorePS::ProcessStartTime(aLock);
-  racyInfo->AddPendingMarker(aMarker, payload.release(),
+  racyInfo->AddPendingMarker(aMarkerName, payload.release(),
                              delta.ToMilliseconds());
 }
 
 void
-profiler_add_marker(const char* aMarker, ProfilerMarkerPayload* aPayload)
+profiler_add_marker(const char* aMarkerName, ProfilerMarkerPayload* aPayload)
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2882,12 +2891,15 @@ profiler_add_marker(const char* aMarker, ProfilerMarkerPayload* aPayload)
     return;
   }
 
-  locked_profiler_add_marker(lock, aMarker, payload.release());
+  locked_profiler_add_marker(lock, aMarkerName, payload.release());
 }
 
 void
-profiler_tracing(const char* aCategory, const char* aInfo, TracingKind aKind)
+profiler_tracing(const char* aCategory, const char* aMarkerName,
+                 TracingKind aKind)
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2896,14 +2908,16 @@ profiler_tracing(const char* aCategory, const char* aInfo, TracingKind aKind)
     return;
   }
 
-  auto marker = new ProfilerMarkerTracing(aCategory, aKind);
-  locked_profiler_add_marker(lock, aInfo, marker);
+  auto payload = new ProfilerMarkerTracing(aCategory, aKind);
+  locked_profiler_add_marker(lock, aMarkerName, payload);
 }
 
 void
-profiler_tracing(const char* aCategory, const char* aInfo,
+profiler_tracing(const char* aCategory, const char* aMarkerName,
                  UniqueProfilerBacktrace aCause, TracingKind aKind)
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -2912,26 +2926,32 @@ profiler_tracing(const char* aCategory, const char* aInfo,
     return;
   }
 
-  auto marker =
+  auto payload =
     new ProfilerMarkerTracing(aCategory, aKind, mozilla::Move(aCause));
-  locked_profiler_add_marker(lock, aInfo, marker);
+  locked_profiler_add_marker(lock, aMarkerName, payload);
 }
 
 void
 profiler_log(const char* aStr)
 {
+  
+
   profiler_tracing("log", aStr);
 }
 
 PseudoStack*
 profiler_get_pseudo_stack()
 {
+  
+
   return TLSInfo::Stack();
 }
 
 void
 profiler_set_js_context(JSContext* aCx)
 {
+  
+
   MOZ_ASSERT(aCx);
 
   PSAutoLock lock(gPSMutex);
@@ -2947,6 +2967,8 @@ profiler_set_js_context(JSContext* aCx)
 void
 profiler_clear_js_context()
 {
+  
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
