@@ -390,7 +390,7 @@ const SECMODModule* SmartCardMonitoringThread::GetModule()
 
 void SmartCardMonitoringThread::LaunchExecute(void* arg)
 {
-  AutoProfilerRegister registerThread("SmartCard");
+  AutoProfilerRegisterThread registerThread("SmartCard");
   NS_SetCurrentThreadName("SmartCard");
 
   ((SmartCardMonitoringThread*)arg)->Execute();

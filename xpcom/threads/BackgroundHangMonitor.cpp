@@ -60,7 +60,7 @@ private:
   
   static void MonitorThread(void* aData)
   {
-    AutoProfilerRegister registerThread("BgHangMonitor");
+    AutoProfilerRegisterThread registerThread("BgHangMonitor");
     NS_SetCurrentThreadName("BgHangManager");
 
     
