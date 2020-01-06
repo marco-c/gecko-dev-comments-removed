@@ -137,7 +137,7 @@ impl<'a> InorderFlowTraversal for ResolveGeneratedContent<'a> {
 }
 
 
-struct ResolveGeneratedContentFragmentMutator<'a,'b:'a> {
+struct ResolveGeneratedContentFragmentMutator<'a, 'b: 'a> {
     
     traversal: &'a mut ResolveGeneratedContent<'b>,
     
@@ -148,7 +148,7 @@ struct ResolveGeneratedContentFragmentMutator<'a,'b:'a> {
     incremented: bool,
 }
 
-impl<'a,'b> ResolveGeneratedContentFragmentMutator<'a,'b> {
+impl<'a, 'b> ResolveGeneratedContentFragmentMutator<'a, 'b> {
     fn mutate_fragment(&mut self, fragment: &mut Fragment) {
         
         

@@ -467,15 +467,6 @@ def check_rust(file_name, lines):
         prev_indent = indent
         indent = len(original_line) - len(line)
 
-        
-        if multi_line_string:
-            if line.startswith('"#'):
-                multi_line_string = False
-            else:
-                continue
-        if line.endswith('r#"'):
-            multi_line_string = True
-
         is_attribute = re.search(r"#\[.*\]", line)
         is_comment = re.search(r"^//|^/\*|^\*", line)
 
@@ -494,6 +485,14 @@ def check_rust(file_name, lines):
             line = merged_lines + line
             merged_lines = ''
 
+        if multi_line_string:
+            line, count = re.subn(
+                r'^(\\.|[^"\\])*?"', '', line, count=1)
+            if count == 1:
+                multi_line_string = False
+            else:
+                continue
+
         
         
         if import_block:
@@ -504,9 +503,17 @@ def check_rust(file_name, lines):
                     import_block = False
 
         
-        if not is_attribute:
+        if not is_attribute and not is_comment:
             line = re.sub(r'"(\\.|[^\\"])*?"', '""', line)
-            line = re.sub(r"'(\\.|[^\\'])*?'", "''", line)
+            line = re.sub(
+                r"'(\\.|[^\\']|(\\x[0-9a-fA-F]{2})|(\\u{[0-9a-fA-F]{1,6}}))'",
+                "''", line)
+            
+            
+            
+            if line.count('"') % 2 == 1:
+                line = re.sub(r'"(\\.|[^\\"])*?$', '""', line)
+                multi_line_string = True
 
         
         line = re.sub('//.*?$|/\*.*?$|^\*.*?$', '//', line)
