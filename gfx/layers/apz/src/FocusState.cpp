@@ -74,53 +74,67 @@ FocusState::Update(uint64_t aRootLayerTreeId,
     
     mFocusHasKeyEventListeners |= target.mFocusHasKeyEventListeners;
 
-    switch (target.mType) {
-      case FocusTarget::eRefLayer: {
-        
-        MOZ_ASSERT(mFocusLayersId != target.mData.mRefLayerId);
-        if (mFocusLayersId == target.mData.mRefLayerId) {
-          FS_LOG("Setting target to nil (bailing out of infinite loop, lt=%" PRIu64 ")\n",
-                 mFocusLayersId);
-          return;
-        }
+    
+    
+    
+    
+    struct FocusTargetDataMatcher {
 
-        FS_LOG("Looking for target in lt=%" PRIu64 "\n", target.mData.mRefLayerId);
+      FocusState& mFocusState;
+      const uint64_t mSequenceNumber;
 
-        
-        mFocusLayersId = target.mData.mRefLayerId;
-        break;
-      }
-      case FocusTarget::eScrollLayer: {
-        FS_LOG("Setting target to h=%" PRIu64 ", v=%" PRIu64 ", and seq=%" PRIu64 "\n",
-               target.mData.mScrollTargets.mHorizontal,
-               target.mData.mScrollTargets.mVertical,
-               target.mSequenceNumber);
-
-        
-        mFocusHorizontalTarget = target.mData.mScrollTargets.mHorizontal;
-        mFocusVerticalTarget = target.mData.mScrollTargets.mVertical;
-
-        
-        
-        mLastContentProcessedEvent = target.mSequenceNumber;
-
-        
-        
-        
-        if (mLastAPZProcessedEvent == 1 &&
-            mLastContentProcessedEvent > mLastAPZProcessedEvent) {
-          mLastAPZProcessedEvent = mLastContentProcessedEvent;
-        }
-        return;
-      }
-      case FocusTarget::eNone: {
+      bool match(const FocusTarget::NoFocusTarget& aNoFocusTarget) {
         FS_LOG("Setting target to nil (reached a nil target)\n");
 
         
         
-        mLastContentProcessedEvent = target.mSequenceNumber;
-        return;
+        mFocusState.mLastContentProcessedEvent = mSequenceNumber;
+        return true;
       }
+
+      bool match(const FocusTarget::RefLayerId aRefLayerId) {
+        
+        MOZ_ASSERT(mFocusState.mFocusLayersId != aRefLayerId);
+        if (mFocusState.mFocusLayersId == aRefLayerId) {
+          FS_LOG("Setting target to nil (bailing out of infinite loop, lt=%" PRIu64 ")\n",
+                 mFocusState.mFocusLayersId);
+          return true;
+        }
+
+        FS_LOG("Looking for target in lt=%" PRIu64 "\n", aRefLayerId);
+
+        
+        mFocusState.mFocusLayersId = aRefLayerId;
+        return false;
+      }
+
+      bool match(const FocusTarget::ScrollTargets& aScrollTargets) {
+        FS_LOG("Setting target to h=%" PRIu64 ", v=%" PRIu64 ", and seq=%" PRIu64 "\n",
+               aScrollTargets.mHorizontal,
+               aScrollTargets.mVertical,
+               mSequenceNumber);
+
+        
+        mFocusState.mFocusHorizontalTarget = aScrollTargets.mHorizontal;
+        mFocusState.mFocusVerticalTarget = aScrollTargets.mVertical;
+
+        
+        
+        mFocusState.mLastContentProcessedEvent = mSequenceNumber;
+
+        
+        
+        
+        if (mFocusState.mLastAPZProcessedEvent == 1 &&
+            mFocusState.mLastContentProcessedEvent > mFocusState.mLastAPZProcessedEvent) {
+          mFocusState.mLastAPZProcessedEvent = mFocusState.mLastContentProcessedEvent;
+        }
+        return true;
+      }
+    }; 
+
+    if (target.mData.match(FocusTargetDataMatcher{*this, target.mSequenceNumber})) {
+      return;
     }
   }
 }
