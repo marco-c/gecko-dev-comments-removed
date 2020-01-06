@@ -7,19 +7,7 @@
 #include "ScreenHelperGTK.h"
 
 #ifdef MOZ_X11
-#include <X11/Xatom.h>
 #include <gdk/gdkx.h>
-
-typedef struct {
-   int   screen_number;
-   short x_org;
-   short y_org;
-   short width;
-   short height;
-} XineramaScreenInfo;
-
-typedef Bool (*_XnrmIsActive_fn)(Display *dpy);
-typedef XineramaScreenInfo* (*_XnrmQueryScreens_fn)(Display *dpy, int *number);
 #endif
 #include <dlfcn.h>
 #include <gtk/gtk.h>
@@ -28,8 +16,6 @@ typedef XineramaScreenInfo* (*_XnrmQueryScreens_fn)(Display *dpy, int *number);
 #include "mozilla/Logging.h"
 #include "nsGtkUtils.h"
 #include "nsTArray.h"
-
-#define SCREEN_MANAGER_LIBRARY_LOAD_FAILED ((PRLibrary*)1)
 
 namespace mozilla {
 namespace widget {
@@ -71,15 +57,16 @@ root_window_event_filter(GdkXEvent* aGdkXEvent, GdkEvent* aGdkEvent,
 }
 
 ScreenHelperGTK::ScreenHelperGTK()
-  : mXineramalib(nullptr)
-  , mRootWindow(nullptr)
+  : mRootWindow(nullptr)
+#ifdef MOZ_X11
   , mNetWorkareaAtom(0)
+#endif
 {
   MOZ_LOG(sScreenLog, LogLevel::Debug, ("ScreenHelperGTK created"));
   GdkScreen *defaultScreen = gdk_screen_get_default();
   if (!defaultScreen) {
     
-    MOZ_LOG(sScreenLog, LogLevel::Debug, ("mRootWindow is nullptr, running headless"));
+    MOZ_LOG(sScreenLog, LogLevel::Debug, ("defaultScreen is nullptr, running headless"));
     return;
   }
   mRootWindow = gdk_get_default_root_window();
@@ -115,37 +102,21 @@ ScreenHelperGTK::~ScreenHelperGTK()
     g_object_unref(mRootWindow);
     mRootWindow = nullptr;
   }
-
-  
-
-
-
-
-
-
 }
 
 gint
-ScreenHelperGTK::GetGTKMonitorScaleFactor()
+ScreenHelperGTK::GetGTKMonitorScaleFactor(gint aMonitorNum)
 {
 #if (MOZ_WIDGET_GTK >= 3)
   
   static auto sGdkScreenGetMonitorScaleFactorPtr = (gint (*)(GdkScreen*, gint))
     dlsym(RTLD_DEFAULT, "gdk_screen_get_monitor_scale_factor");
   if (sGdkScreenGetMonitorScaleFactorPtr) {
-    
-    
     GdkScreen *screen = gdk_screen_get_default();
-    return sGdkScreenGetMonitorScaleFactorPtr(screen, 0);
+    return sGdkScreenGetMonitorScaleFactorPtr(screen, aMonitorNum);
   }
 #endif
   return 1;
-}
-
-static float
-GetDefaultCssScale()
-{
-  return ScreenHelperGTK::GetGTKMonitorScaleFactor() * gfxPlatformGtk::GetFontScaleFactor();
 }
 
 static uint32_t
@@ -156,111 +127,36 @@ GetGTKPixelDepth()
 }
 
 static already_AddRefed<Screen>
-MakeScreen(GdkWindow* aRootWindow)
+MakeScreen(GdkScreen* aScreen, gint aMonitorNum)
 {
-  RefPtr<Screen> screen;
+  GdkRectangle monitor;
+  GdkRectangle workarea;
+  gdk_screen_get_monitor_geometry(aScreen, aMonitorNum, &monitor);
+  gdk_screen_get_monitor_workarea(aScreen, aMonitorNum, &workarea);
+  gint gdkScaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitorNum);
 
-  gint scale = ScreenHelperGTK::GetGTKMonitorScaleFactor();
-  gint width = gdk_screen_width() * scale;
-  gint height = gdk_screen_height() * scale;
+  
+  
+  
+  LayoutDeviceIntRect rect(monitor.x * gdkScaleFactor,
+                           monitor.y * gdkScaleFactor,
+                           monitor.width * gdkScaleFactor,
+                           monitor.height * gdkScaleFactor);
+  LayoutDeviceIntRect availRect(workarea.x * gdkScaleFactor,
+                                workarea.y * gdkScaleFactor,
+                                workarea.width * gdkScaleFactor,
+                                workarea.height * gdkScaleFactor);
   uint32_t pixelDepth = GetGTKPixelDepth();
   DesktopToLayoutDeviceScale contentsScale(1.0);
-  CSSToLayoutDeviceScale defaultCssScale(GetDefaultCssScale());
+  CSSToLayoutDeviceScale defaultCssScale(
+    gdkScaleFactor * gfxPlatformGtk::GetFontScaleFactor());
 
-  LayoutDeviceIntRect rect;
-  LayoutDeviceIntRect availRect;
-  rect = availRect = LayoutDeviceIntRect(0, 0, width, height);
-
-#ifdef MOZ_X11
-  
-  
-
-  
-  
-  
-  
-
-  long *workareas;
-  GdkAtom type_returned;
-  int format_returned;
-  int length_returned;
-
-  GdkAtom cardinal_atom = gdk_x11_xatom_to_atom(XA_CARDINAL);
-
-  gdk_error_trap_push();
-
-  
-  if (!gdk_property_get(aRootWindow,
-                        gdk_atom_intern ("_NET_WORKAREA", FALSE),
-                        cardinal_atom,
-                        0, G_MAXLONG - 3, FALSE,
-                        &type_returned,
-                        &format_returned,
-                        &length_returned,
-                        (guchar **) &workareas)) {
-    
-    
-    MOZ_LOG(sScreenLog, LogLevel::Debug, ("New screen [%d %d %d %d %d %f]",
-                                          rect.x, rect.y, rect.width, rect.height,
-                                          pixelDepth, defaultCssScale.scale));
-    screen = new Screen(rect, availRect,
-                        pixelDepth, pixelDepth,
-                        contentsScale, defaultCssScale);
-    return screen.forget();
-  }
-
-  
-  gdk_flush();
-
-  if (!gdk_error_trap_pop() &&
-      type_returned == cardinal_atom &&
-      length_returned && (length_returned % 4) == 0 &&
-      format_returned == 32) {
-    int num_items = length_returned / sizeof(long);
-
-    for (int i = 0; i < num_items; i += 4) {
-      LayoutDeviceIntRect workarea(workareas[i],     workareas[i + 1],
-                                   workareas[i + 2], workareas[i + 3]);
-      if (!rect.Contains(workarea)) {
-        
-        
-        
-        
-        
-        
-        
-        NS_WARNING("Invalid bounds");
-        continue;
-      }
-
-      availRect.IntersectRect(availRect, workarea);
-    }
-  }
-  g_free(workareas);
-#endif
-  MOZ_LOG(sScreenLog, LogLevel::Debug, ("New screen [%d %d %d %d %d %f]",
-                                        rect.x, rect.y, rect.width, rect.height,
-                                        pixelDepth, defaultCssScale.scale));
-  screen = new Screen(rect, availRect,
-                      pixelDepth, pixelDepth,
-                      contentsScale, defaultCssScale);
-  return screen.forget();
-}
-
-static already_AddRefed<Screen>
-MakeScreen(const XineramaScreenInfo& aScreenInfo)
-{
-  LayoutDeviceIntRect xineRect(aScreenInfo.x_org, aScreenInfo.y_org,
-                               aScreenInfo.width, aScreenInfo.height);
-  uint32_t pixelDepth = GetGTKPixelDepth();
-  DesktopToLayoutDeviceScale contentsScale(1.0);
-  CSSToLayoutDeviceScale defaultCssScale(GetDefaultCssScale());
-
-  MOZ_LOG(sScreenLog, LogLevel::Debug, ("New screen [%d %d %d %d %d %f]",
-                                        xineRect.x, xineRect.y,
-                                        xineRect.width, xineRect.height,
-                                        pixelDepth, defaultCssScale.scale));
-  RefPtr<Screen> screen = new Screen(xineRect, xineRect,
+  MOZ_LOG(sScreenLog, LogLevel::Debug,
+           ("New screen [%d %d %d %d (%d %d %d %d) %d %f]",
+            rect.x, rect.y, rect.width, rect.height,
+            availRect.x, availRect.y, availRect.width, availRect.height,
+            pixelDepth, defaultCssScale.scale));
+  RefPtr<Screen> screen = new Screen(rect, availRect,
                                      pixelDepth, pixelDepth,
                                      contentsScale, defaultCssScale);
   return screen.forget();
@@ -271,57 +167,16 @@ ScreenHelperGTK::RefreshScreens()
 {
   MOZ_LOG(sScreenLog, LogLevel::Debug, ("Refreshing screens"));
   AutoTArray<RefPtr<Screen>, 4> screenList;
-#ifdef MOZ_X11
-  XineramaScreenInfo *screenInfo = nullptr;
-  int numScreens;
 
-  bool useXinerama = GDK_IS_X11_DISPLAY(gdk_display_get_default());
+  GdkScreen *defaultScreen = gdk_screen_get_default();
+  gint numScreens = gdk_screen_get_n_monitors(defaultScreen);
+  MOZ_LOG(sScreenLog, LogLevel::Debug,
+          ("GDK reports %d screens", numScreens));
 
-  if (useXinerama && !mXineramalib) {
-    mXineramalib = PR_LoadLibrary("libXinerama.so.1");
-    if (!mXineramalib) {
-      mXineramalib = SCREEN_MANAGER_LIBRARY_LOAD_FAILED;
-    }
-  }
-  if (mXineramalib && mXineramalib != SCREEN_MANAGER_LIBRARY_LOAD_FAILED) {
-    _XnrmIsActive_fn _XnrmIsActive = (_XnrmIsActive_fn)
-        PR_FindFunctionSymbol(mXineramalib, "XineramaIsActive");
-
-    _XnrmQueryScreens_fn _XnrmQueryScreens = (_XnrmQueryScreens_fn)
-        PR_FindFunctionSymbol(mXineramalib, "XineramaQueryScreens");
-
-    
-    Display *display = GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
-    if (_XnrmIsActive && _XnrmQueryScreens && _XnrmIsActive(display)) {
-      screenInfo = _XnrmQueryScreens(display, &numScreens);
-    }
+  for (gint i = 0; i < numScreens; i++) {
+    screenList.AppendElement(MakeScreen(defaultScreen, i));
   }
 
-  
-  
-  if (!screenInfo || numScreens == 1) {
-    numScreens = 1;
-#endif
-    MOZ_LOG(sScreenLog, LogLevel::Debug, ("Find only one screen available"));
-    
-    screenList.AppendElement(MakeScreen(mRootWindow));
-#ifdef MOZ_X11
-  }
-  
-  
-  
-  else {
-    MOZ_LOG(sScreenLog, LogLevel::Debug,
-            ("Xinerama enabled for %d screens", numScreens));
-    for (int i = 0; i < numScreens; ++i) {
-      screenList.AppendElement(MakeScreen(screenInfo[i]));
-    }
-  }
-
-  if (screenInfo) {
-    XFree(screenInfo);
-  }
-#endif
   ScreenManager& screenManager = ScreenManager::GetSingleton();
   screenManager.Refresh(Move(screenList));
 }
