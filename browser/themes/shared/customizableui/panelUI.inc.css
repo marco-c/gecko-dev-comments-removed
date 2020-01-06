@@ -2065,7 +2065,11 @@ photonpanelmultiview #panelMenu_pocket {
   -moz-appearance: none; 
   -moz-context-properties: fill;
   fill: currentColor;
+%ifdef XP_MACOSX
   list-style-image: url("chrome://browser/skin/find.svg");
+%else
+  list-style-image: url("chrome://browser/skin/folder.svg");
+%endif
   
   margin: calc(1em - 2px) 0 0;
   padding: 4px;
