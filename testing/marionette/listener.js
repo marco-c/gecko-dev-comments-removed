@@ -72,9 +72,11 @@ let legacyactions = new legacyaction.Chain(checkForInterrupted);
 
 let multiLast = {};
 
-const logger = Log.repository.getLogger("Marionette");
 
+
+const logger = Log.repository.getLogger("Marionette");
 if (logger.ownAppenders.length == 0) {
+  logger.level = sendSyncMessage("Marionette:GetLogLevel");
   logger.addAppender(new Log.DumpAppender());
 }
 
