@@ -140,12 +140,25 @@ let BreakpointActor = ActorClassWithSpec(breakpointSpec, {
     
     
     let generatedLocation = this.threadActor.sources.getFrameLocation(frame);
-    let { originalSourceActor } = this.threadActor.unsafeSynchronize(
+    let {
+      originalSourceActor,
+      originalLine,
+      originalColumn
+    } = this.threadActor.unsafeSynchronize(
       this.threadActor.sources.getOriginalLocation(generatedLocation));
     let url = originalSourceActor.url;
 
     if (this.threadActor.sources.isBlackBoxed(url)
         || frame.onStep) {
+      return undefined;
+    }
+
+    
+    
+    const locationAtFinish = frame.onPop && frame.onPop.originalLocation;
+    if (locationAtFinish &&
+        locationAtFinish.originalLine === originalLine &&
+        locationAtFinish.originalColumn === originalColumn) {
       return undefined;
     }
 

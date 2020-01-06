@@ -775,9 +775,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     };
   },
 
-  _makeOnPop: function (
-    { thread, pauseAndRespond, createValueGrip: createValueGripHook }) {
-    return function (completion) {
+  _makeOnPop: function ({ thread, pauseAndRespond, createValueGrip: createValueGripHook,
+                          startLocation }) {
+    const result = function (completion) {
       
 
       const generatedLocation = thread.sources.getFrameLocation(this);
@@ -807,6 +807,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         return packet;
       });
     };
+
+    
+    
+    
+    
+    
+    
+    
+    result.originalLocation = startLocation;
+
+    return result;
   },
 
   _makeOnStep: function ({ thread, pauseAndRespond, startFrame,

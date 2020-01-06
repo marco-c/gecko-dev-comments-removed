@@ -774,6 +774,20 @@ function stepOver(client, threadClient) {
 
 
 
+function stepOut(client, threadClient) {
+  dumpn("Stepping out.");
+  return threadClient.stepOut()
+    .then(() => waitForPause(client));
+}
+
+
+
+
+
+
+
+
+
 
 function getFrames(threadClient, first, count) {
   dumpn("Getting frames.");
