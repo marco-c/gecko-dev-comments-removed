@@ -19,7 +19,6 @@
 #include "nsIFrame.h"
 #include "nsRenderingContext.h"
 #include "nsStyleStructInlines.h"
-#include "nsSVGDisplayableFrame.h"
 #include "nsSVGEffects.h"
 #include "nsSVGIntegrationUtils.h"
 
@@ -193,16 +192,11 @@ nsImageRenderer::PrepareImage()
       mImageElementSurface =
         nsLayoutUtils::SurfaceFromElement(property->GetReferencedElement());
       if (!mImageElementSurface.GetSourceSurface()) {
-        nsIFrame* paintServerFrame = property->GetReferencedFrame();
-        
-        
-        if (!paintServerFrame ||
-            (paintServerFrame->IsFrameOfType(nsIFrame::eSVG) &&
-             !static_cast<nsSVGDisplayableFrame*>(do_QueryFrame(paintServerFrame)))) {
+        mPaintServerFrame = property->GetReferencedFrame();
+        if (!mPaintServerFrame) {
           mPrepareResult = DrawResult::BAD_IMAGE;
           return false;
         }
-        mPaintServerFrame = paintServerFrame;
       }
 
       mPrepareResult = DrawResult::SUCCESS;
