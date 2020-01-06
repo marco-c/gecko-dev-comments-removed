@@ -907,7 +907,7 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
 
   static const uint32_t kPreallocSize = 1024;
 
-  nsString sheetText;
+  nsCString sheetText;
   sheetText.SetCapacity(kPreallocSize);
 
 #define NS_GET_R_G_B(color_) \
@@ -990,13 +990,12 @@ nsLayoutStylesheetCache::BuildPreferenceSheet(RefPtr<StyleSheet>* aSheet,
                "sheet without reallocation");
 
   if (sheet->IsGecko()) {
-    sheet->AsGecko()->ReparseSheet(sheetText);
+    sheet->AsGecko()->ReparseSheet(NS_ConvertUTF8toUTF16(sheetText));
   } else {
     ServoStyleSheet* servoSheet = sheet->AsServo();
     
-    nsresult rv =
-      servoSheet->ParseSheet(nullptr, sheetText, uri, uri, nullptr, 0,
-                             eCompatibility_FullStandards);
+    nsresult rv = servoSheet->ParseSheet(
+      nullptr, sheetText, uri, uri, nullptr, 0, eCompatibility_FullStandards);
     
     
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));

@@ -475,6 +475,8 @@ with modules["LAYOUT"]:
     
     errors["NS_TABLELAYOUT_CELL_NOT_FOUND"] = SUCCESS(0)
     
+    errors["NS_OK_PARSE_SHEET"] = SUCCESS(1)
+    
     errors["NS_POSITION_BEFORE_TABLE"] = SUCCESS(3)
     
     

@@ -3738,10 +3738,8 @@ XULDocument::AddPrototypeSheets()
         nsCOMPtr<nsIURI> uri = sheets[i];
 
         RefPtr<StyleSheet> incompleteSheet;
-        rv = CSSLoader()->LoadSheet(uri,
-                                    mCurrentPrototype->DocumentPrincipal(),
-                                    EmptyCString(), this,
-                                    &incompleteSheet);
+        rv = CSSLoader()->LoadSheet(
+          uri, mCurrentPrototype->DocumentPrincipal(), this, &incompleteSheet);
 
         
         

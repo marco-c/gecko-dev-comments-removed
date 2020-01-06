@@ -380,14 +380,8 @@ public:
 
 
 
-
-
-
-
-
   nsresult LoadSheet(nsIURI* aURL,
                      nsIPrincipal* aOriginPrincipal,
-                     const nsCString& aCharset,
                      nsICSSLoaderObserver* aObserver,
                      RefPtr<StyleSheet>* aSheet);
 
@@ -398,7 +392,7 @@ public:
   nsresult LoadSheet(nsIURI* aURL,
                      bool aIsPreload,
                      nsIPrincipal* aOriginPrincipal,
-                     const nsCString& aCharset,
+                     const Encoding* aPreloadEncoding,
                      nsICSSLoaderObserver* aObserver,
                      CORSMode aCORSMode = CORS_NONE,
                      ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Unset,
@@ -477,6 +471,7 @@ public:
 
 private:
   friend class SheetLoadData;
+  friend class StreamLoader;
 
   nsresult CheckContentPolicy(nsIPrincipal* aSourcePrincipal,
                               nsIURI* aTargetURI,
@@ -520,17 +515,18 @@ private:
                             StyleSheet* aParentSheet,
                             ImportRule* aGeckoParentRule);
 
-  nsresult InternalLoadNonDocumentSheet(nsIURI* aURL,
-                                        bool aIsPreload,
-                                        SheetParsingMode aParsingMode,
-                                        bool aUseSystemPrincipal,
-                                        nsIPrincipal* aOriginPrincipal,
-                                        const nsCString& aCharset,
-                                        RefPtr<StyleSheet>* aSheet,
-                                        nsICSSLoaderObserver* aObserver,
-                                        CORSMode aCORSMode = CORS_NONE,
-                                        ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Unset,
-                                        const nsAString& aIntegrity = EmptyString());
+  nsresult InternalLoadNonDocumentSheet(
+    nsIURI* aURL,
+    bool aIsPreload,
+    SheetParsingMode aParsingMode,
+    bool aUseSystemPrincipal,
+    nsIPrincipal* aOriginPrincipal,
+    const Encoding* aPreloadEncoding,
+    RefPtr<StyleSheet>* aSheet,
+    nsICSSLoaderObserver* aObserver,
+    CORSMode aCORSMode = CORS_NONE,
+    ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Unset,
+    const nsAString& aIntegrity = EmptyString());
 
   
   
@@ -561,7 +557,9 @@ private:
   
   
   
-  nsresult ParseSheet(const nsAString& aInput,
+  
+  nsresult ParseSheet(const nsAString& aUTF16,
+                      Span<const uint8_t> aUTF8,
                       SheetLoadData* aLoadData,
                       bool& aCompleted);
 

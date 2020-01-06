@@ -89,6 +89,14 @@ mozilla_encoding_decode_to_nscstring_without_bom_handling(
   nsACString* dst);
 
 nsresult
+mozilla_encoding_decode_from_slice_to_nscstring_without_bom_handling(
+  mozilla::Encoding const* encoding,
+  uint8_t const* src,
+  size_t src_len,
+  nsACString* dst,
+  size_t already_validated);
+
+nsresult
 mozilla_encoding_decode_to_nscstring_without_bom_handling_and_without_replacement(
   mozilla::Encoding const* encoding,
   nsACString const* src,
@@ -550,6 +558,41 @@ public:
     }
     return mozilla_encoding_decode_to_nscstring_without_bom_handling_and_without_replacement(
       this, bytes, out);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  inline nsresult DecodeWithoutBOMHandling(Span<const uint8_t> aBytes,
+                                           nsACString& aOut,
+                                           size_t aAlreadyValidated) const
+  {
+    return mozilla_encoding_decode_from_slice_to_nscstring_without_bom_handling(
+      this, aBytes.Elements(), aBytes.Length(), &aOut, aAlreadyValidated);
   }
 
   
