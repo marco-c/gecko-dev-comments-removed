@@ -78,7 +78,6 @@ function getSelection(window) {
 
 const NON_PAGE_CONTEXT_ELTS = [
   Ci.nsIDOMHTMLAnchorElement,
-  Ci.nsIDOMHTMLAppletElement,
   Ci.nsIDOMHTMLAreaElement,
   Ci.nsIDOMHTMLButtonElement,
   Ci.nsIDOMHTMLCanvasElement,

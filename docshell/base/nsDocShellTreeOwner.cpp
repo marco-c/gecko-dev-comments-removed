@@ -42,7 +42,6 @@
 #include "nsIDOMHTMLInputElement.h"
 #include "nsIDOMHTMLTextAreaElement.h"
 #include "nsIDOMHTMLHtmlElement.h"
-#include "nsIDOMHTMLAppletElement.h"
 #include "nsIDOMHTMLObjectElement.h"
 #include "nsIDOMHTMLEmbedElement.h"
 #include "nsIDOMHTMLDocument.h"
@@ -1592,9 +1591,8 @@ ChromeContextMenuListener::HandleEvent(nsIDOMEvent* aMouseEvent)
       objectElement = do_QueryInterface(node);
     }
     nsCOMPtr<nsIDOMHTMLEmbedElement> embedElement(do_QueryInterface(node));
-    nsCOMPtr<nsIDOMHTMLAppletElement> appletElement(do_QueryInterface(node));
 
-    if (objectElement || embedElement || appletElement) {
+    if (objectElement || embedElement) {
       return NS_OK;
     }
   }
