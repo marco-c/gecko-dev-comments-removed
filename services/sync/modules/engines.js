@@ -30,6 +30,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesSyncUtils: "resource://gre/modules/PlacesSyncUtils.jsm",
 });
 
+function ensureDirectory(path) {
+  let basename = OS.Path.dirname(path);
+  return OS.File.makeDir(basename, { from: OS.Constants.Path.profileDir });
+}
+
 
 
 
@@ -58,8 +63,6 @@ this.Tracker = function Tracker(name, engine) {
   this._ignored = [];
   this._storage = new JSONFile({
     path: Utils.jsonFilePath("changes/" + this.file),
-    
-    
     dataPostProcessor: json => this._dataPostProcessor(json),
     beforeSave: () => this._beforeSave(),
   });
@@ -93,8 +96,7 @@ Tracker.prototype = {
 
   
   _beforeSave() {
-    let basename = OS.Path.dirname(this._storage.path);
-    return OS.File.makeDir(basename, { from: OS.Constants.Path.profileDir });
+    return ensureDirectory(this._storage.path);
   },
 
   get changedIDs() {
@@ -765,6 +767,18 @@ Engine.prototype = {
 this.SyncEngine = function SyncEngine(name, service) {
   Engine.call(this, name || "SyncEngine", service);
 
+  this._toFetchStorage = new JSONFile({
+    path: Utils.jsonFilePath("toFetch/" + this.name),
+    dataPostProcessor: json => this._metadataPostProcessor(json),
+    beforeSave: () => this._beforeSaveMetadata(),
+  });
+
+  this._previousFailedStorage = new JSONFile({
+    path: Utils.jsonFilePath("failed/" + this.name),
+    dataPostProcessor: json => this._metadataPostProcessor(json),
+    beforeSave: () => this._beforeSaveMetadata(),
+  });
+
   
 
   
@@ -812,6 +826,23 @@ SyncEngine.prototype = {
   
   _defaultSort: undefined,
 
+  _metadataPostProcessor(json) {
+    if (Array.isArray(json)) {
+      
+      
+      return { ids: json };
+    }
+    if (!json.ids) {
+      json.ids = [];
+    }
+    return json;
+  },
+
+  async _beforeSaveMetadata() {
+    await ensureDirectory(this._toFetchStorage.path);
+    await ensureDirectory(this._previousFailedStorage.path);
+  },
+
   
   
   
@@ -830,8 +861,8 @@ SyncEngine.prototype = {
   downloadBatchSize: DEFAULT_DOWNLOAD_BATCH_SIZE,
 
   async initialize() {
-    await this.loadToFetch();
-    await this.loadPreviousFailed();
+    await this._toFetchStorage.load();
+    await this._previousFailedStorage.load();
     this._log.debug("SyncEngine initialized", this.name);
   },
 
@@ -880,64 +911,22 @@ SyncEngine.prototype = {
   },
 
   get toFetch() {
-    return this._toFetch;
-  },
-  set toFetch(val) {
-    
-    if (val + "" == this._toFetch) {
-      return;
-    }
-    this._toFetch = val;
-    CommonUtils.namedTimer(function() {
-      try {
-        Async.promiseSpinningly(Utils.jsonSave("toFetch/" + this.name, this, this._toFetch));
-      } catch (error) {
-        this._log.error("Failed to read JSON records to fetch", error);
-      }
-      
-      Observers.notify("sync-testing:file-saved:toFetch", null, this.name);
-    }, 0, this, "_toFetchDelay");
+    this._toFetchStorage.ensureDataReady();
+    return this._toFetchStorage.data.ids;
   },
 
-  async loadToFetch() {
-    
-    this._toFetch = [];
-    let toFetch = await Utils.jsonLoad("toFetch/" + this.name, this);
-    if (toFetch) {
-      this._toFetch = toFetch;
-    }
+  set toFetch(ids) {
+    this._toFetchStorage.data = { ids };
+    this._toFetchStorage.saveSoon();
   },
 
   get previousFailed() {
-    return this._previousFailed;
+    this._previousFailedStorage.ensureDataReady();
+    return this._previousFailedStorage.data.ids;
   },
-  set previousFailed(val) {
-    
-    if (val + "" == this._previousFailed) {
-      return;
-    }
-    this._previousFailed = val;
-    CommonUtils.namedTimer(function() {
-      Utils.jsonSave("failed/" + this.name, this, this._previousFailed).then(() => {
-        this._log.debug("Successfully wrote previousFailed.");
-      })
-      .catch((error) => {
-        this._log.error("Failed to set previousFailed", error);
-      })
-      .then(() => {
-        
-        Observers.notify("sync-testing:file-saved:previousFailed", null, this.name);
-      });
-    }, 0, this, "_previousFailedDelay");
-  },
-
-  async loadPreviousFailed() {
-    
-    this._previousFailed = [];
-    let previousFailed = await Utils.jsonLoad("failed/" + this.name, this);
-    if (previousFailed) {
-      this._previousFailed = previousFailed;
-    }
+  set previousFailed(ids) {
+    this._previousFailedStorage.data = { ids };
+    this._previousFailedStorage.saveSoon();
   },
 
   
@@ -1905,6 +1894,12 @@ SyncEngine.prototype = {
     for (let [id, change] of this._modified.entries()) {
       this._tracker.addChangedID(id, change);
     }
+  },
+
+  async finalize() {
+    await super.finalize();
+    await this._toFetchStorage.finalize();
+    await this._previousFailedStorage.finalize();
   },
 };
 
