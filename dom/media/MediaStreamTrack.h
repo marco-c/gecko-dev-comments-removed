@@ -62,6 +62,7 @@ public:
   public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrackSource::Sink)
     virtual void PrincipalChanged() = 0;
+    virtual void MutedChanged(bool aNewState) = 0;
   };
 
   MediaStreamTrackSource(nsIPrincipal* aPrincipal,
@@ -197,6 +198,25 @@ protected:
   }
 
   
+
+
+
+
+  void MutedChanged(bool aNewState)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    nsTArray<WeakPtr<Sink>> sinks(mSinks);
+    for (auto& sink : sinks) {
+      if (!sink) {
+        MOZ_ASSERT_UNREACHABLE("Sink was not explicitly removed");
+        mSinks.RemoveElement(sink);
+        continue;
+      }
+      sink->MutedChanged(aNewState);
+    }
+  }
+
+  
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
@@ -298,6 +318,7 @@ public:
   virtual void GetLabel(nsAString& aLabel, CallerType ) { GetSource().GetLabel(aLabel); }
   bool Enabled() { return mEnabled; }
   void SetEnabled(bool aEnabled);
+  bool Muted() { return mMuted; }
   void Stop();
   void GetConstraints(dom::MediaTrackConstraints& aResult);
   void GetSettings(dom::MediaTrackSettings& aResult, CallerType aCallerType);
@@ -308,6 +329,8 @@ public:
   already_AddRefed<MediaStreamTrack> Clone();
   MediaStreamTrackState ReadyState() { return mReadyState; }
 
+  IMPL_EVENT_HANDLER(mute)
+  IMPL_EVENT_HANDLER(unmute)
   IMPL_EVENT_HANDLER(ended)
 
   
@@ -373,6 +396,16 @@ public:
 
   
   void PrincipalChanged() override;
+  
+
+
+
+
+
+
+
+
+  void MutedChanged(bool aNewState) override;
 
   
 
@@ -442,6 +475,11 @@ public:
 protected:
   virtual ~MediaStreamTrack();
 
+  
+
+
+  void SetMuted(bool aMuted) { mMuted = aMuted; }
+
   void Destroy();
 
   
@@ -486,6 +524,7 @@ protected:
   nsString mID;
   MediaStreamTrackState mReadyState;
   bool mEnabled;
+  bool mMuted;
   dom::MediaTrackConstraints mConstraints;
 };
 
