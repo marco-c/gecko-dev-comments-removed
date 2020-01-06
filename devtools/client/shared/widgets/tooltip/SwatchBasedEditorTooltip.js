@@ -22,78 +22,79 @@ const INLINE_TOOLTIP_CLASS = "inline-tooltip-container";
 
 
 
-function SwatchBasedEditorTooltip(document, useInline) {
-  EventEmitter.decorate(this);
 
-  this.useInline = useInline;
+class SwatchBasedEditorTooltip {
+  constructor(document, useInline) {
+    EventEmitter.decorate(this);
 
-  
-  if (useInline) {
-    this.tooltip = new InlineTooltip(document);
-  } else {
+    this.useInline = useInline;
+
+    
+    if (useInline) {
+      this.tooltip = new InlineTooltip(document);
+    } else {
+      
+      
+      
+      this.tooltip = new HTMLTooltip(document, {
+        type: "arrow",
+        consumeOutsideClicks: true,
+        useXulWrapper: true,
+      });
+    }
+
     
     
-    
-    this.tooltip = new HTMLTooltip(document, {
-      type: "arrow",
-      consumeOutsideClicks: true,
-      useXulWrapper: true,
+    this.shortcuts = new KeyShortcuts({
+      window: this.tooltip.topWindow
     });
+    this.shortcuts.on("Escape", (name, event) => {
+      if (!this.tooltip.isVisible()) {
+        return;
+      }
+      this.revert();
+      this.hide();
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    this.shortcuts.on("Return", (name, event) => {
+      if (!this.tooltip.isVisible()) {
+        return;
+      }
+      this.commit();
+      this.hide();
+      event.stopPropagation();
+      event.preventDefault();
+    });
+
+    
+    this.swatches = new Map();
+
+    
+    
+    
+    this.activeSwatch = null;
+
+    this._onSwatchClick = this._onSwatchClick.bind(this);
+  }
+
+ 
+
+
+
+
+  isVisible() {
+    return this.tooltip.isVisible();
   }
 
   
-  
-  this.shortcuts = new KeyShortcuts({
-    window: this.tooltip.topWindow
-  });
-  this.shortcuts.on("Escape", (name, event) => {
-    if (!this.tooltip.isVisible()) {
-      return;
-    }
-    this.revert();
-    this.hide();
-    event.stopPropagation();
-    event.preventDefault();
-  });
-  this.shortcuts.on("Return", (name, event) => {
-    if (!this.tooltip.isVisible()) {
-      return;
-    }
-    this.commit();
-    this.hide();
-    event.stopPropagation();
-    event.preventDefault();
-  });
-
-  
-  this.swatches = new Map();
-
-  
-  
-  
-  this.activeSwatch = null;
-
-  this._onSwatchClick = this._onSwatchClick.bind(this);
-}
-
-SwatchBasedEditorTooltip.prototype = {
-  
 
 
 
 
-  isVisible: function () {
-    return this.tooltip.isVisible();
-  },
-
-  
-
-
-
-
-  isEditing: function () {
+  isEditing() {
     return this.isVisible();
-  },
+  }
 
   
 
@@ -101,7 +102,7 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-  show: function () {
+  show() {
     let tooltipAnchor = this.useInline ?
       this.activeSwatch.closest(`.${INLINE_TOOLTIP_CLASS}`) :
       this.activeSwatch;
@@ -128,11 +129,11 @@ SwatchBasedEditorTooltip.prototype = {
     }
 
     return Promise.resolve();
-  },
+  }
 
-  hide: function () {
+  hide() {
     this.tooltip.hide();
-  },
+  }
 
   
 
@@ -151,7 +152,7 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-  addSwatch: function (swatchEl, callbacks = {}) {
+  addSwatch(swatchEl, callbacks = {}) {
     if (!callbacks.onShow) {
       callbacks.onShow = function () {};
     }
@@ -169,9 +170,9 @@ SwatchBasedEditorTooltip.prototype = {
       callbacks: callbacks
     });
     swatchEl.addEventListener("click", this._onSwatchClick);
-  },
+  }
 
-  removeSwatch: function (swatchEl) {
+  removeSwatch(swatchEl) {
     if (this.swatches.has(swatchEl)) {
       if (this.activeSwatch === swatchEl) {
         this.hide();
@@ -180,9 +181,9 @@ SwatchBasedEditorTooltip.prototype = {
       swatchEl.removeEventListener("click", this._onSwatchClick);
       this.swatches.delete(swatchEl);
     }
-  },
+  }
 
-  _onSwatchClick: function (event) {
+  _onSwatchClick(event) {
     let swatch = this.swatches.get(event.target);
 
     if (event.shiftKey) {
@@ -195,22 +196,22 @@ SwatchBasedEditorTooltip.prototype = {
       swatch.callbacks.onShow();
       event.stopPropagation();
     }
-  },
+  }
 
   
 
 
-  preview: function (value) {
+  preview(value) {
     if (this.activeSwatch) {
       let swatch = this.swatches.get(this.activeSwatch);
       swatch.callbacks.onPreview(value);
     }
-  },
+  }
 
   
 
 
-  revert: function () {
+  revert() {
     if (this.activeSwatch) {
       this._reverted = true;
       let swatch = this.swatches.get(this.activeSwatch);
@@ -218,25 +219,25 @@ SwatchBasedEditorTooltip.prototype = {
         swatch.callbacks.onRevert();
       });
     }
-  },
+  }
 
   
 
 
-  commit: function () {
+  commit() {
     if (this.activeSwatch) {
       let swatch = this.swatches.get(this.activeSwatch);
       swatch.callbacks.onCommit();
     }
-  },
+  }
 
-  destroy: function () {
+  destroy() {
     this.swatches.clear();
     this.activeSwatch = null;
     this.tooltip.off("keypress", this._onTooltipKeypress);
     this.tooltip.destroy();
     this.shortcuts.destroy();
   }
-};
+}
 
 module.exports = SwatchBasedEditorTooltip;

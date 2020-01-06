@@ -87,76 +87,77 @@ const POPUP_EVENTS = ["shown", "hidden", "showing", "hiding"];
 
 
 
-function Tooltip(doc, {
+
+class Tooltip {
+  constructor(doc, {
   consumeOutsideClick = false,
   closeOnKeys = [ESCAPE_KEYCODE],
   noAutoFocus = true,
   closeOnEvents = [],
   } = {}) {
-  EventEmitter.decorate(this);
+    EventEmitter.decorate(this);
 
-  this.doc = doc;
-  this.consumeOutsideClick = consumeOutsideClick;
-  this.closeOnKeys = closeOnKeys;
-  this.noAutoFocus = noAutoFocus;
-  this.closeOnEvents = closeOnEvents;
+    this.defaultPosition = "before_start";
+    
+    this.defaultOffsetX = 0;
+    
+    this.defaultOffsetY = 0;
+    
 
-  this.panel = this._createPanel();
+    this.doc = doc;
+    this.consumeOutsideClick = consumeOutsideClick;
+    this.closeOnKeys = closeOnKeys;
+    this.noAutoFocus = noAutoFocus;
+    this.closeOnEvents = closeOnEvents;
+
+    this.panel = this._createPanel();
+
+    
+    
+    this._toggle = new TooltipToggle(this);
+    this.startTogglingOnHover = this._toggle.start.bind(this._toggle);
+    this.stopTogglingOnHover = this._toggle.stop.bind(this._toggle);
 
   
-  
-  this._toggle = new TooltipToggle(this);
-  this.startTogglingOnHover = this._toggle.start.bind(this._toggle);
-  this.stopTogglingOnHover = this._toggle.stop.bind(this._toggle);
+    for (let eventName of POPUP_EVENTS) {
+      this["_onPopup" + eventName] = (name => {
+        return e => {
+          if (e.target === this.panel) {
+            this.emit(name);
+          }
+        };
+      })(eventName);
+      this.panel.addEventListener("popup" + eventName,
+        this["_onPopup" + eventName]);
+    }
 
   
-  for (let eventName of POPUP_EVENTS) {
-    this["_onPopup" + eventName] = (name => {
-      return e => {
-        if (e.target === this.panel) {
-          this.emit(name);
+    let win = this.doc.querySelector("window");
+    this._onKeyPress = event => {
+      if (this.panel.hidden) {
+        return;
+      }
+
+      this.emit("keypress", event.keyCode);
+      if (this.closeOnKeys.indexOf(event.keyCode) !== -1 &&
+          this.isShown()) {
+        event.stopPropagation();
+        this.hide();
+      }
+    };
+    win.addEventListener("keypress", this._onKeyPress);
+
+  
+    this.hide = this.hide.bind(this);
+    for (let {emitter, event, useCapture} of this.closeOnEvents) {
+      for (let add of ["addEventListener", "on"]) {
+        if (add in emitter) {
+          emitter[add](event, this.hide, useCapture);
+          break;
         }
-      };
-    })(eventName);
-    this.panel.addEventListener("popup" + eventName,
-      this["_onPopup" + eventName]);
-  }
-
-  
-  let win = this.doc.querySelector("window");
-  this._onKeyPress = event => {
-    if (this.panel.hidden) {
-      return;
-    }
-
-    this.emit("keypress", event.keyCode);
-    if (this.closeOnKeys.indexOf(event.keyCode) !== -1 &&
-        this.isShown()) {
-      event.stopPropagation();
-      this.hide();
-    }
-  };
-  win.addEventListener("keypress", this._onKeyPress);
-
-  
-  this.hide = this.hide.bind(this);
-  for (let {emitter, event, useCapture} of this.closeOnEvents) {
-    for (let add of ["addEventListener", "on"]) {
-      if (add in emitter) {
-        emitter[add](event, this.hide, useCapture);
-        break;
       }
     }
   }
-}
-
-Tooltip.prototype = {
-  defaultPosition: "before_start",
-  
-  defaultOffsetX: 0,
-  
-  defaultOffsetY: 0,
-  
 
   
 
@@ -170,61 +171,61 @@ Tooltip.prototype = {
 
 
 
-  show: function (anchor,
+  show(anchor,
     position = this.defaultPosition,
     x = this.defaultOffsetX,
     y = this.defaultOffsetY) {
     this.panel.hidden = false;
     this.panel.openPopup(anchor, position, x, y);
-  },
+  }
 
   
 
 
-  hide: function () {
+  hide() {
     this.panel.hidden = true;
     this.panel.hidePopup();
-  },
+  }
 
-  isShown: function () {
+  isShown() {
     return this.panel &&
            this.panel.state !== "closed" &&
            this.panel.state !== "hiding";
-  },
+  }
 
-  setSize: function (width, height) {
+  setSize(width, height) {
     this.panel.sizeTo(width, height);
-  },
+  }
 
   
 
 
-  empty: function () {
+  empty() {
     while (this.panel.hasChildNodes()) {
       this.panel.firstChild.remove();
     }
-  },
+  }
 
   
 
 
 
-  isHidden: function () {
+  isHidden() {
     return this.panel.state == "closed" || this.panel.state == "hiding";
-  },
+  }
 
   
 
 
 
-  isEmpty: function () {
+  isEmpty() {
     return !this.panel.hasChildNodes();
-  },
+  }
 
   
 
 
-  destroy: function () {
+  destroy() {
     this.hide();
 
     for (let eventName of POPUP_EVENTS) {
@@ -252,7 +253,7 @@ Tooltip.prototype = {
 
     this.panel.remove();
     this.panel = null;
-  },
+  }
 
   
 
@@ -261,7 +262,7 @@ Tooltip.prototype = {
 
   get container() {
     return this.panel;
-  },
+  }
 
   
 
@@ -284,11 +285,11 @@ Tooltip.prototype = {
     if (content) {
       this.panel.appendChild(content);
     }
-  },
+  }
 
   get content() {
     return this.panel.firstChild;
-  },
+  }
 
   
 
@@ -300,7 +301,7 @@ Tooltip.prototype = {
 
 
 
-  setTextContent: function (
+  setTextContent(
     {
       messages,
       messagesClass,
@@ -331,7 +332,7 @@ Tooltip.prototype = {
     }
 
     this.content = vbox;
-  },
+  }
 
   
 
@@ -357,7 +358,7 @@ Tooltip.prototype = {
 
 
 
-  setIFrameContent: function ({width, height}, url) {
+  setIFrameContent({width, height}, url) {
     let def = defer();
 
     
@@ -383,7 +384,7 @@ Tooltip.prototype = {
     this.content = iframe;
 
     return def.promise;
-  },
+  }
 
   
 
@@ -405,6 +406,6 @@ Tooltip.prototype = {
 
     return panel;
   }
-};
+}
 
 module.exports = Tooltip;

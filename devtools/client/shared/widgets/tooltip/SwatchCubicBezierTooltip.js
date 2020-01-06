@@ -5,11 +5,8 @@
 "use strict";
 
 const defer = require("devtools/shared/defer");
-const {Task} = require("devtools/shared/task");
 const {CubicBezierWidget} = require("devtools/client/shared/widgets/CubicBezierWidget");
 const SwatchBasedEditorTooltip = require("devtools/client/shared/widgets/tooltip/SwatchBasedEditorTooltip");
-
-const {extend} = require("devtools/shared/extend");
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -25,22 +22,24 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function SwatchCubicBezierTooltip(document) {
-  SwatchBasedEditorTooltip.call(this, document);
+
+class SwatchCubicBezierTooltip extends SwatchBasedEditorTooltip {
+  constructor(document) {
+    super(document);
+
+    
+    
+    this.widget = this.setCubicBezierContent([0, 0, 1, 1]);
+    this._onUpdate = this._onUpdate.bind(this);
+  }
 
   
-  
-  this.widget = this.setCubicBezierContent([0, 0, 1, 1]);
-  this._onUpdate = this._onUpdate.bind(this);
-}
-
-SwatchCubicBezierTooltip.prototype = extend(SwatchBasedEditorTooltip.prototype, {
-  
 
 
 
 
-  setCubicBezierContent: function (bezier) {
+
+  setCubicBezierContent(bezier) {
     let { doc } = this.tooltip;
 
     let container = doc.createElementNS(XHTML_NS, "div");
@@ -58,15 +57,15 @@ SwatchCubicBezierTooltip.prototype = extend(SwatchBasedEditorTooltip.prototype, 
     });
 
     return def.promise;
-  },
+  }
 
   
 
 
 
-  show: Task.async(function* () {
+  async show() {
     
-    yield SwatchBasedEditorTooltip.prototype.show.call(this);
+    await super.show();
     
     if (this.activeSwatch) {
       this.currentBezierValue = this.activeSwatch.nextSibling;
@@ -77,25 +76,25 @@ SwatchCubicBezierTooltip.prototype = extend(SwatchBasedEditorTooltip.prototype, 
         this.emit("ready");
       });
     }
-  }),
+  }
 
-  _onUpdate: function (event, bezier) {
+  _onUpdate(event, bezier) {
     if (!this.activeSwatch) {
       return;
     }
 
     this.currentBezierValue.textContent = bezier + "";
     this.preview(bezier + "");
-  },
+  }
 
-  destroy: function () {
-    SwatchBasedEditorTooltip.prototype.destroy.call(this);
+  destroy() {
+    super.destroy();
     this.currentBezierValue = null;
     this.widget.then(widget => {
       widget.off("updated", this._onUpdate);
       widget.destroy();
     });
   }
-});
+}
 
 module.exports = SwatchCubicBezierTooltip;
