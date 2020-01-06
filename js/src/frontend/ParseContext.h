@@ -447,28 +447,7 @@ class ParseContext : public Nestable<ParseContext>
     
     PooledVectorPtr<AtomVector> closedOverBindingsForLazy_;
 
-    
-    uint32_t scriptId_;
-
-    
-    
-    bool isStandaloneFunctionBody_;
-
-    
-    
-    bool superScopeNeedsHomeObject_;
-
   public:
-    
-    
-    static const uint32_t NoYieldOffset = UINT32_MAX;
-    uint32_t lastYieldOffset;
-
-    
-    
-    static const uint32_t NoAwaitOffset = UINT32_MAX;
-    uint32_t         lastAwaitOffset;
-
     
     Rooted<GCVector<JSFunction*, 8>> innerFunctionsForLazy;
 
@@ -480,10 +459,26 @@ class ParseContext : public Nestable<ParseContext>
     Directives* newDirectives;
 
     
-    bool funHasReturnExpr;
+    
+    static const uint32_t NoYieldOffset = UINT32_MAX;
+    uint32_t lastYieldOffset;
 
     
-    bool funHasReturnVoid;
+    
+    static const uint32_t NoAwaitOffset = UINT32_MAX;
+    uint32_t lastAwaitOffset;
+
+  private:
+    
+    uint32_t scriptId_;
+
+    
+    
+    bool isStandaloneFunctionBody_;
+
+    
+    
+    bool superScopeNeedsHomeObject_;
 
   public:
     inline ParseContext(JSContext* cx, ParseContext*& parent, SharedContext* sc, ErrorReporter& errorReporter,
@@ -501,15 +496,13 @@ class ParseContext : public Nestable<ParseContext>
         varScope_(nullptr),
         positionalFormalParameterNames_(cx->frontendCollectionPool()),
         closedOverBindingsForLazy_(cx->frontendCollectionPool()),
-        scriptId_(usedNames.nextScriptId()),
-        isStandaloneFunctionBody_(false),
-        superScopeNeedsHomeObject_(false),
-        lastYieldOffset(NoYieldOffset),
-        lastAwaitOffset(NoAwaitOffset),
         innerFunctionsForLazy(cx, GCVector<JSFunction*, 8>(cx)),
         newDirectives(newDirectives),
-        funHasReturnExpr(false),
-        funHasReturnVoid(false)
+        lastYieldOffset(NoYieldOffset),
+        lastAwaitOffset(NoAwaitOffset),
+        scriptId_(usedNames.nextScriptId()),
+        isStandaloneFunctionBody_(false),
+        superScopeNeedsHomeObject_(false)
     {
         if (isFunctionBox()) {
             if (functionBox()->function()->isNamedLambda())
