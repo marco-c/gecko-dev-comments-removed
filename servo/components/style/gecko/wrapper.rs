@@ -387,7 +387,12 @@ impl<'a> Iterator for GeckoChildrenIterator<'a> {
                 curr
             },
             GeckoChildrenIterator::GeckoIterator(ref mut it) => unsafe {
-                Gecko_GetNextStyleChild(it).map(GeckoNode)
+                
+                
+                
+                
+                
+                Gecko_GetNextStyleChild(&mut * (it as *mut _)).map(GeckoNode)
             }
         }
     }
