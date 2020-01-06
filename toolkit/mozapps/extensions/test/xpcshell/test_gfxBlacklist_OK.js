@@ -35,10 +35,7 @@ function run_test() {
   var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
 
   
-  if (!(gfxInfo instanceof Ci.nsIGfxInfoDebug)) {
-    do_test_finished();
-    return;
-  }
+  do_check_true(gfxInfo instanceof Ci.nsIGfxInfoDebug);
 
   gfxInfo.QueryInterface(Ci.nsIGfxInfoDebug);
 
