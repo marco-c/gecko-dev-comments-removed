@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
 
 Cu.import("resource://gre/modules/ExtensionCommon.jsm");
 
-global.EventManager = ExtensionCommon.EventManager;
+global.SingletonEventManager = ExtensionCommon.SingletonEventManager;
 
 
 

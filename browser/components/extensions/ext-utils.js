@@ -122,7 +122,7 @@ class WindowTracker extends WindowTrackerBase {
 
 
 
-global.WindowEventManager = class extends EventManager {
+global.WindowEventManager = class extends SingletonEventManager {
   constructor(context, name, event, listener) {
     super(context, name, fire => {
       let listener2 = listener.bind(null, fire);

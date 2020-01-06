@@ -39,7 +39,7 @@ this.windows = class extends ExtensionAPI {
           fire.async(windowTracker.getId(window));
         }).api(),
 
-        onFocusChanged: new EventManager(context, "windows.onFocusChanged", fire => {
+        onFocusChanged: new SingletonEventManager(context, "windows.onFocusChanged", fire => {
           
           let lastOnFocusChangedWindowId;
 

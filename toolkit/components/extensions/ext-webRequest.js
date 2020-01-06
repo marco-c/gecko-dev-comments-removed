@@ -118,10 +118,10 @@ function WebRequestEventManager(context, eventName) {
     };
   };
 
-  return EventManager.call(this, context, name, register);
+  return SingletonEventManager.call(this, context, name, register);
 }
 
-WebRequestEventManager.prototype = Object.create(EventManager.prototype);
+WebRequestEventManager.prototype = Object.create(SingletonEventManager.prototype);
 
 this.webRequest = class extends ExtensionAPI {
   getAPI(context) {
