@@ -8,7 +8,7 @@ XPCOMUtils.defineLazyModuleGetter(global, "EventEmitter",
 
 
 
-function getSender(extension, target, sender) {
+const getSender = (extension, target, sender) => {
   let tabId;
   if ("tabId" in sender) {
     
@@ -26,7 +26,7 @@ function getSender(extension, target, sender) {
       sender.tab = tab.convert();
     }
   }
-}
+};
 
 
 global.tabGetSender = getSender;
