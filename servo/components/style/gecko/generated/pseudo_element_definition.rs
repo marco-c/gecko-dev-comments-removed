@@ -362,7 +362,7 @@ impl PseudoElement {
 
     
     #[inline]
-    fn is_anon_box(&self) -> bool {
+    pub fn is_anon_box(&self) -> bool {
         match *self {
                     PseudoElement::MozText => true,
                     PseudoElement::OofPlaceholder => true,

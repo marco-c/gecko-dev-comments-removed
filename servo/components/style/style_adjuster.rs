@@ -86,6 +86,22 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     }
 
     
+    pub fn set_bits(&mut self) {
+        use properties::computed_value_flags::IS_IN_DISPLAY_NONE_SUBTREE;
+        use properties::computed_value_flags::IS_IN_PSEUDO_ELEMENT_SUBTREE;
+
+        if self.style.inherited_flags().contains(IS_IN_DISPLAY_NONE_SUBTREE) ||
+            self.style.get_box().clone_display() == display::none {
+            self.style.flags.insert(IS_IN_DISPLAY_NONE_SUBTREE);
+        }
+
+        if self.style.inherited_flags().contains(IS_IN_PSEUDO_ELEMENT_SUBTREE) ||
+            self.style.is_pseudo_element() {
+            self.style.flags.insert(IS_IN_PSEUDO_ELEMENT_SUBTREE);
+        }
+    }
+
+    
     
     
     
@@ -94,6 +110,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     #[cfg(feature = "gecko")]
     pub fn adjust_for_text(&mut self) {
         self.adjust_for_text_combine_upright();
+        self.set_bits();
     }
 
     
@@ -522,5 +539,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         {
             self.adjust_for_ruby(layout_parent_style, flags);
         }
+        self.set_bits();
     }
 }

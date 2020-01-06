@@ -146,6 +146,11 @@ impl PseudoElement {
     }
 
     
+    pub fn is_anon_box(&self) -> bool {
+        self.is_precomputed()
+    }
+
+    
     #[inline]
     pub fn is_precomputed(&self) -> bool {
         self.cascade_type() == PseudoElementCascadeType::Precomputed
