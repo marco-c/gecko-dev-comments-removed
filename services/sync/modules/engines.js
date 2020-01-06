@@ -814,7 +814,6 @@ SyncEngine.prototype = {
   
   
   guidFetchBatchSize: DEFAULT_GUID_FETCH_BATCH_SIZE,
-  mobileGUIDFetchBatchSize: DEFAULT_MOBILE_GUID_FETCH_BATCH_SIZE,
 
   
   applyIncomingBatchSize: DEFAULT_STORE_BATCH_SIZE,
@@ -1056,7 +1055,6 @@ SyncEngine.prototype = {
 
     
     let batchSize = this.downloadLimit || Infinity;
-    let isMobile = (Svc.Prefs.get("client.type") == "mobile");
 
     if (!newitems) {
       newitems = this.itemSource();
@@ -1066,9 +1064,6 @@ SyncEngine.prototype = {
       newitems.sort = this._defaultSort;
     }
 
-    if (isMobile) {
-      batchSize = MOBILE_BATCH_SIZE;
-    }
     newitems.newer = this.lastSync;
     newitems.full  = true;
     newitems.limit = batchSize;
@@ -1281,8 +1276,7 @@ SyncEngine.prototype = {
     
     
     
-    batchSize = isMobile ? this.mobileGUIDFetchBatchSize :
-                           this.guidFetchBatchSize;
+    batchSize = this.guidFetchBatchSize;
 
     while (fetchBatch.length && !aborting) {
       

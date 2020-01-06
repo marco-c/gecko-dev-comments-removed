@@ -57,22 +57,18 @@ MASTER_PASSWORD_LOCKED_RETRY_INTERVAL: 15 * 60 * 1000,
 DEFAULT_BLOCK_PERIOD:                  2 * 24 * 60 * 60 * 1000, 
 
 
-MOBILE_BATCH_SIZE:                     50,
-
-
 
 
 
 DEFAULT_GUID_FETCH_BATCH_SIZE:         50,
-DEFAULT_MOBILE_GUID_FETCH_BATCH_SIZE:  50,
 
 
 DEFAULT_STORE_BATCH_SIZE:              1,
-HISTORY_STORE_BATCH_SIZE:              50,      
-FORMS_STORE_BATCH_SIZE:                50,      
-PASSWORDS_STORE_BATCH_SIZE:            50,      
+HISTORY_STORE_BATCH_SIZE:              50,
+FORMS_STORE_BATCH_SIZE:                50,
+PASSWORDS_STORE_BATCH_SIZE:            50,
 ADDONS_STORE_BATCH_SIZE:               1000000, 
-APPS_STORE_BATCH_SIZE:                 50,      
+APPS_STORE_BATCH_SIZE:                 50,
 
 
 
