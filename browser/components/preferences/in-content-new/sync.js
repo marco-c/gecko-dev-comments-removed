@@ -302,7 +302,7 @@ var gSyncPane = {
       document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
 
       
-      document.getElementById("fxaProfileImage").style.removeProperty("list-style-image");
+      document.querySelector("#fxaLoginVerified > .fxaProfileImage").style.removeProperty("list-style-image");
 
       
       
@@ -331,7 +331,7 @@ var gSyncPane = {
         }
         if (data.avatar) {
           let bgImage = "url(\"" + data.avatar + "\")";
-          let profileImageElement = document.getElementById("fxaProfileImage");
+          let profileImageElement = document.querySelector("#fxaLoginVerified > .fxaProfileImage");
           profileImageElement.style.listStyleImage = bgImage;
 
           let img = new Image();
