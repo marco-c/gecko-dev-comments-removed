@@ -178,7 +178,20 @@ nsEventStatus GestureEventListener::HandleInputTouchSingleStart()
     CreateMaxTapTimeoutTask();
     break;
   case GESTURE_FIRST_SINGLE_TOUCH_UP:
-    SetState(GESTURE_SECOND_SINGLE_TOUCH_DOWN);
+    if (SecondTapIsFar()) {
+      
+      
+      CancelLongTapTimeoutTask();
+      CancelMaxTapTimeoutTask();
+      mSingleTapSent = Nothing();
+      SetState(GESTURE_NONE);
+    } else {
+      
+      
+      
+      mTouchStartPosition = mLastTouchInput.mTouches[0].mLocalScreenPoint;
+      SetState(GESTURE_SECOND_SINGLE_TOUCH_DOWN);
+    }
     break;
   default:
     NS_WARNING("Unhandled state upon single touch start");
@@ -240,12 +253,25 @@ nsEventStatus GestureEventListener::HandleInputTouchMultiStart()
   return rv;
 }
 
-bool GestureEventListener::MoveDistanceIsLarge()
+bool GestureEventListener::MoveDistanceExceeds(ScreenCoord aThreshold) const
 {
   const ParentLayerPoint start = mLastTouchInput.mTouches[0].mLocalScreenPoint;
   ParentLayerPoint delta = start - mTouchStartPosition;
   ScreenPoint screenDelta = mAsyncPanZoomController->ToScreenCoordinates(delta, start);
-  return (screenDelta.Length() > AsyncPanZoomController::GetTouchStartTolerance());
+  return (screenDelta.Length() > aThreshold);
+}
+
+bool GestureEventListener::MoveDistanceIsLarge() const
+{
+  return MoveDistanceExceeds(AsyncPanZoomController::GetTouchStartTolerance());
+}
+
+bool GestureEventListener::SecondTapIsFar() const
+{
+  
+  
+  
+  return MoveDistanceExceeds(AsyncPanZoomController::GetSecondTapTolerance());
 }
 
 nsEventStatus GestureEventListener::HandleInputTouchMove()

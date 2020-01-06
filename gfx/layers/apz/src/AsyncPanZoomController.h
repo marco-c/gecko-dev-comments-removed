@@ -115,6 +115,12 @@ public:
 
 
   static ScreenCoord GetTouchStartTolerance();
+  
+
+
+
+
+  static ScreenCoord GetSecondTapTolerance();
 
   AsyncPanZoomController(uint64_t aLayersId,
                          APZCTreeManager* aTreeManager,

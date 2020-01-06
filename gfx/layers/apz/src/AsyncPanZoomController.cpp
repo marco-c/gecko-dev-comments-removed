@@ -425,6 +425,14 @@ typedef GenericFlingAnimation FlingAnimation;
 
 
 
+
+
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -830,6 +838,12 @@ ScreenCoord
 AsyncPanZoomController::GetTouchStartTolerance()
 {
   return (gfxPrefs::APZTouchStartTolerance() * APZCTreeManager::GetDPI());
+}
+
+ScreenCoord
+AsyncPanZoomController::GetSecondTapTolerance()
+{
+  return (gfxPrefs::APZSecondTapTolerance() * APZCTreeManager::GetDPI());
 }
 
 AsyncPanZoomController::AxisLockMode AsyncPanZoomController::GetAxisLockMode()
