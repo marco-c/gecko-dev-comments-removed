@@ -24,6 +24,7 @@ loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 loader.lazyRequireGetter(this, "appendStyleSheet", "devtools/client/shared/stylesheet-utils", true);
+loader.lazyRequireGetter(this, "DeveloperToolbar", "devtools/client/shared/developer-toolbar", true);
 
 loader.lazyImporter(this, "CustomizableUI", "resource:///modules/CustomizableUI.jsm");
 loader.lazyImporter(this, "CustomizableWidgets", "resource:///modules/CustomizableWidgets.jsm");
@@ -54,6 +55,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   _browserStyleSheets: new WeakMap(),
+
+  
+
+
+  _toolbars: new WeakMap(),
 
   _tabStats: {
     peakOpen: 0,
@@ -108,7 +114,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       focusEl.setAttribute("disabled", "true");
     }
     if (devToolbarEnabled && Services.prefs.getBoolPref("devtools.toolbar.visible")) {
-      win.DeveloperToolbar.show(false).catch(console.error);
+      this.getDeveloperToolbar(win).show(false).catch(console.error);
     }
 
     
@@ -499,12 +505,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     
     gDevToolsBrowser.installDeveloperWidget();
 
-    
-    loader.lazyGetter(win, "DeveloperToolbar", function () {
-      let { DeveloperToolbar } = require("devtools/client/shared/developer-toolbar");
-      return new DeveloperToolbar(win);
-    });
-
     this.updateCommandAvailability(win);
     this.updateDevtoolsThemeAttribute(win);
     this.ensurePrefObserver();
@@ -516,6 +516,22 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     tabContainer.addEventListener("TabClose", this);
     tabContainer.addEventListener("TabPinned", this);
     tabContainer.addEventListener("TabUnpinned", this);
+  },
+
+  
+
+
+
+
+
+  getDeveloperToolbar(win) {
+    let toolbar = this._toolbars.get(win);
+    if (toolbar) {
+      return toolbar;
+    }
+    toolbar = new DeveloperToolbar(win);
+    this._toolbars.set(win, toolbar);
+    return toolbar;
   },
 
   
@@ -727,11 +743,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       this._browserStyleSheets.delete(win);
     }
 
-    
-    let desc = Object.getOwnPropertyDescriptor(win, "DeveloperToolbar");
-    if (desc && !desc.get) {
-      win.DeveloperToolbar.destroy();
-    }
+    this._toolbars.delete(win);
 
     let tabContainer = win.gBrowser.tabContainer;
     tabContainer.removeEventListener("TabSelect", this);

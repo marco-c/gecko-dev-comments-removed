@@ -75,9 +75,9 @@ exports.menuitems = [
       
       
       if (event.target.tagName.toLowerCase() == "menuitem") {
-        window.DeveloperToolbar.toggle();
+        gDevToolsBrowser.getDeveloperToolbar(window).toggle();
       } else {
-        window.DeveloperToolbar.focusToggle();
+        gDevToolsBrowser.getDeveloperToolbar(window).focusToggle();
       }
     },
     key: {
