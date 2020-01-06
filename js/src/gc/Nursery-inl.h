@@ -16,6 +16,14 @@
 #include "gc/Zone.h"
 #include "js/TracingAPI.h"
 #include "vm/Runtime.h"
+#include "vm/SharedMem.h"
+
+template<typename T>
+bool
+js::Nursery::isInside(const SharedMem<T>& p) const
+{
+    return isInside(p.unwrap());
+}
 
 MOZ_ALWAYS_INLINE  bool
 js::Nursery::getForwardedPointer(JSObject** ref)

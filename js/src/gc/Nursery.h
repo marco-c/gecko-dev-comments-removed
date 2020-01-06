@@ -11,18 +11,10 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
 
-#include "jsalloc.h"
-#include "jspubtd.h"
-
-#include "ds/BitArray.h"
-#include "gc/Memory.h"
 #include "js/Class.h"
-#include "js/GCAPI.h"
-#include "js/HashTable.h"
 #include "js/HeapAPI.h"
-#include "js/Value.h"
+#include "js/TracingAPI.h"
 #include "js/Vector.h"
-#include "vm/SharedMem.h"
 
 #define FOR_EACH_NURSERY_PROFILE_TIME(_)
                                 \
@@ -46,6 +38,8 @@
     _(ClearNursery,             "clear")                                      \
     _(Resize,                   "resize")                                     \
     _(Pretenure,                "pretnr")
+
+template<typename T> class SharedMem;
 
 namespace JS {
 struct Zone;
@@ -105,7 +99,7 @@ class TenuringTracer : public JSTracer
     
     void traceObject(JSObject* src);
     void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t length);
-    void traceSlots(JS::Value* vp, uint32_t nslots) { traceSlots(vp, vp + nslots); }
+    void traceSlots(JS::Value* vp, uint32_t nslots);
 
   private:
     Nursery& nursery() { return nursery_; }
@@ -174,9 +168,7 @@ class Nursery
     }
 
     template<typename T>
-    bool isInside(const SharedMem<T>& p) const {
-        return isInside(p.unwrap());
-    }
+    inline bool isInside(const SharedMem<T>& p) const;
 
     
 
