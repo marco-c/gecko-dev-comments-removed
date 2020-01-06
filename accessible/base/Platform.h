@@ -44,6 +44,10 @@ void PreInit();
 bool ShouldA11yBeEnabled();
 #endif
 
+#if defined(XP_WIN)
+bool IsHandlerRegistered();
+#endif
+
 
 
 
