@@ -40,6 +40,14 @@ using namespace mozilla::dom;
 
 ServoStyleSet* ServoStyleSet::sInServoTraversal = nullptr;
 
+#ifdef DEBUG
+bool
+ServoStyleSet::IsCurrentThreadInServoTraversal()
+{
+  return sInServoTraversal && (NS_IsMainThread() || Servo_IsWorkerThread());
+}
+#endif
+
 namespace mozilla {
 
 
