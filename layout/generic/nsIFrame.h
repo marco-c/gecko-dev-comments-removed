@@ -3033,6 +3033,11 @@ public:
   void SchedulePaint(PaintType aType = PAINT_DEFAULT);
 
   
+  
+  void SchedulePaintWithoutInvalidatingObservers(
+    PaintType aType = PAINT_DEFAULT);
+
+  
 
 
 
