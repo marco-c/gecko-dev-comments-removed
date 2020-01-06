@@ -279,6 +279,18 @@ public:
 
     RefPtr<CachedSurface> surface;
     mSurfaces.Remove(aSurface->GetSurfaceKey(), getter_AddRefs(surface));
+
+    if (IsEmpty() && mFactor2Mode) {
+      
+      
+      
+      
+      
+      
+      
+      mFactor2Mode = mFactor2Pruned = false;
+    }
+
     return surface.forget();
   }
 
@@ -534,6 +546,8 @@ public:
       return aSize;
     }
 
+    
+    
     MOZ_ASSERT(!IsEmpty());
 
     
@@ -758,7 +772,7 @@ public:
     return InsertOutcome::SUCCESS;
   }
 
-  bool Remove(NotNull<CachedSurface*> aSurface,
+  void Remove(NotNull<CachedSurface*> aSurface,
               const StaticMutexAutoLock& aAutoLock)
   {
     ImageKey imageKey = aSurface->GetImageKey();
@@ -782,10 +796,7 @@ public:
     
     if (cache->IsEmpty() && !cache->IsLocked()) {
       mImageCaches.Remove(imageKey);
-      return true;
     }
-
-    return false;
   }
 
   void StartTracking(NotNull<CachedSurface*> aSurface,
@@ -911,9 +922,7 @@ public:
 
       
       
-      if (Remove(WrapNotNull(surface), aAutoLock)) {
-        break;
-      }
+      Remove(WrapNotNull(surface), aAutoLock);
     }
 
     MOZ_ASSERT_IF(matchType == MatchType::EXACT,
