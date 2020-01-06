@@ -725,16 +725,16 @@ FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules)
     
     
     
-    if (handledRules.Contains(aRules[i].mRule)) {
+    nsCSSFontFaceRule* rule = aRules[i].mRule;
+    if (!handledRules.EnsureInserted(rule)) {
+      
       continue;
     }
-    nsCSSFontFaceRule* rule = aRules[i].mRule;
     RefPtr<FontFace> f = ruleFaceMap.Get(rule);
     if (!f.get()) {
       f = FontFace::CreateForRule(GetParentObject(), this, rule);
     }
     InsertRuleFontFace(f, aRules[i].mSheetType, oldRecords, modified);
-    handledRules.PutEntry(aRules[i].mRule);
   }
 
   for (size_t i = 0, i_end = mNonRuleFaces.Length(); i < i_end; ++i) {
