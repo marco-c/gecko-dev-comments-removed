@@ -592,10 +592,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     break;
   }
 
-  uint32_t nestingLevel = sNestingLevel + 1;
-  if (!aIsInterval) {
-    timeout->mNestingLevel = nestingLevel;
-  }
+  timeout->mNestingLevel = sNestingLevel + 1;
 
   
   TimeDuration realInterval = CalculateDelay(timeout);
@@ -985,6 +982,10 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   if (!aTimeout->mIsInterval) {
     return false;
   }
+
+  
+  
+  aTimeout->mNestingLevel += 1;
 
   
   
