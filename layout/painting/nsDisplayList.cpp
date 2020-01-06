@@ -697,7 +697,7 @@ GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
   {
     
     gfxContextMatrixAutoSaveRestore save(sourceCtx);
-    sourceCtx->SetMatrix(sourceCtx->CurrentMatrix().Translate(bounds.TopLeft()));
+    sourceCtx->SetMatrix(sourceCtx->CurrentMatrix().PreTranslate(bounds.TopLeft()));
 
     nsLayoutUtils::PaintFrame(aContext, aFrame,
                               nsRect(nsPoint(0, 0), aFrame->GetSize()),
@@ -8410,7 +8410,7 @@ ComputeMaskGeometry(PaintFramesParams& aParams)
                                    frame->PresContext()->AppUnitsPerDevPixel());
 
   gfxContextMatrixAutoSaveRestore matSR(&ctx);
-  ctx.SetMatrix(ctx.CurrentMatrix().Translate(devPixelOffsetToUserSpace));
+  ctx.SetMatrix(ctx.CurrentMatrix().PreTranslate(devPixelOffsetToUserSpace));
 
   
   int32_t appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();

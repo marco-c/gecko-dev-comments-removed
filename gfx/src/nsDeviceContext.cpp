@@ -403,13 +403,13 @@ nsDeviceContext::CreateRenderingContextCommon(bool aWantReferenceContext)
     if (mPrintTarget->RotateNeededForLandscape()) {
       
       IntSize size = mPrintTarget->GetSize();
-      transform.Translate(gfxPoint(0, size.width));
+      transform.PreTranslate(gfxPoint(0, size.width));
       gfxMatrix rotate(0, -1,
                        1,  0,
                        0,  0);
       transform = rotate * transform;
     }
-    transform.Scale(mPrintingScale, mPrintingScale);
+    transform.PreScale(mPrintingScale, mPrintingScale);
 
     pContext->SetMatrix(transform);
     return pContext.forget();

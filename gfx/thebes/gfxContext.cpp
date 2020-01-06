@@ -232,7 +232,8 @@ gfxContext::Rectangle(const gfxRect& rect, bool snapToPixels)
       gfxMatrix mat = ThebesMatrix(mTransform);
       if (mat.Invert()) {
         
-        rec = ToRect(mat.TransformBounds(newRect));
+        newRect.TransformBoundsBy(mat);
+        rec = ToRect(newRect);
       } else {
         rec = Rect();
       }

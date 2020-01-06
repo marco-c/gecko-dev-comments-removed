@@ -2085,9 +2085,9 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
                        ? -M_PI / 2.0 : M_PI / 2.0;
         gfxMatrix mat =
             aRunParams.context->CurrentMatrix().
-            Translate(p).     
-            Rotate(rotation). 
-            Translate(-p);    
+            PreTranslate(p).     
+            PreRotate(rotation). 
+            PreTranslate(-p);    
 
         
         
@@ -2100,7 +2100,7 @@ gfxFont::Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
         
         if (aTextRun->UseCenterBaseline()) {
             gfxPoint baseAdj(0, (metrics.emAscent - metrics.emDescent) / 2);
-            mat.Translate(baseAdj);
+            mat.PreTranslate(baseAdj);
         }
 
         aRunParams.context->SetMatrix(mat);
@@ -2224,8 +2224,8 @@ gfxFont::RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint,
 
     aContext->Save();
     aContext->SetMatrix(
-      aContext->CurrentMatrix().Translate(aPoint.x, aPoint.y).
-                                Scale(devUnitsPerSVGUnit, devUnitsPerSVGUnit));
+      aContext->CurrentMatrix().PreTranslate(aPoint.x, aPoint.y).
+                                PreScale(devUnitsPerSVGUnit, devUnitsPerSVGUnit));
 
     aContextPaint->InitStrokeGeometry(aContext, devUnitsPerSVGUnit);
 

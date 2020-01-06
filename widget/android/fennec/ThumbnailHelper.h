@@ -159,7 +159,7 @@ class ThumbnailHelper final
         RefPtr<gfxContext> context = gfxContext::CreateOrNull(dt);
         MOZ_ASSERT(context); 
 
-        context->SetMatrix(context->CurrentMatrix().Scale(
+        context->SetMatrix(context->CurrentMatrix().PreScale(
                 aZoomFactor * float(aThumbWidth) / aPageRect.width,
                 aZoomFactor * float(aThumbHeight) / aPageRect.height));
 

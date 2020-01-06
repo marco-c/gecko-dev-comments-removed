@@ -3538,7 +3538,7 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
           nsLayoutUtils::PointToGfxPoint(pos,
                                          presContext->AppUnitsPerDevPixel());
         aRenderingContext->SetMatrix(
-          aRenderingContext->CurrentMatrix().Translate(devPixelOffset));
+          aRenderingContext->CurrentMatrix().PreTranslate(devPixelOffset));
       }
     }
     builder.SetIgnoreScrollFrame(rootScrollFrame);
@@ -6547,7 +6547,7 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
       imageSpaceAnchorPoint = StableRound(imageSpaceAnchorPoint);
       anchorPoint = imageSpaceAnchorPoint;
       anchorPoint = MapToFloatUserPixels(imageSize, devPixelDest, anchorPoint);
-      anchorPoint = currentMatrix.Transform(anchorPoint);
+      anchorPoint = currentMatrix.TransformPoint(anchorPoint);
       anchorPoint = StableRound(anchorPoint);
     }
 
@@ -6587,15 +6587,19 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
   if (didSnap && !invTransform.HasNonIntegerTranslation()) {
     
     
-    devPixelDirty = currentMatrix.Transform(devPixelDirty);
+    devPixelDirty.TransformBy(currentMatrix);
     devPixelDirty.RoundOut();
     fill = fill.Intersect(devPixelDirty);
   }
   if (fill.IsEmpty())
     return SnappedImageDrawingParameters();
 
-  gfxRect imageSpaceFill(didSnap ? invTransform.Transform(fill)
-                                 : invTransform.TransformBounds(fill));
+  gfxRect imageSpaceFill = fill;
+  if (didSnap) {
+    imageSpaceFill.TransformBy(invTransform);
+  } else {
+    imageSpaceFill.TransformBoundsBy(invTransform);
+  }
 
   
   
