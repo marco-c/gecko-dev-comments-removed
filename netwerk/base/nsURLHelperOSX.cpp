@@ -176,7 +176,7 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
       
       
       FSRef testRef;
-      possibleVolName.Insert("/", 0);
+      possibleVolName.InsertLiteral("/", 0);
       if (::FSPathMakeRef((UInt8*)possibleVolName.get(), &testRef, nullptr) != noErr)
         bHFSPath = true;
     }

@@ -425,8 +425,7 @@ SubstitutingProtocolHandler::ResolveURI(nsIURI *uri, nsACString &result)
     rv = baseURI->GetSpec(result);
   } else {
     
-    path.InsertLiteral(".", 0);
-
+    path.Insert('.', 0);
     rv = baseURI->Resolve(path, result);
   }
 
