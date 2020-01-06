@@ -148,6 +148,10 @@ public class FaviconView extends ImageView {
 
     private void formatImage() {
         
+        
+        
+        
+        
         final boolean canImageBeShown = (mIconBitmap != null && getWidth() != 0 && getHeight() != 0);
         if (!canImageBeShown) {
             showNoImage();
