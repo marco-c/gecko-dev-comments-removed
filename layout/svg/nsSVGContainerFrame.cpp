@@ -375,7 +375,7 @@ nsSVGDisplayContainerFrame::ReflowSVG()
   
   
   
-  MOZ_ASSERT(mContent->IsSVGElement(nsGkAtoms::svg) ||
+  MOZ_ASSERT(mContent->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol) ||
              (mContent->IsSVGElement(nsGkAtoms::use) &&
               mRect.Size() == nsSize(0,0)) ||
              mRect.IsEqualEdges(nsRect()),
