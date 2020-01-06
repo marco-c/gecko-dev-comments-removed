@@ -337,6 +337,19 @@ function expectedException(actual, expected) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 proto.throws = function(block, expected, message) {
   let actual;
 
@@ -473,4 +486,3 @@ proto.less = function less(lhs, rhs, message) {
 proto.lessOrEqual = function lessOrEqual(lhs, rhs, message) {
   compareNumbers.call(this, lhs > rhs, lhs, rhs, message, "<=");
 };
-
