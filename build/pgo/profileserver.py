@@ -4,20 +4,17 @@
 
 
 
+import json
+import os
+import shutil
+import tempfile
+
+from buildconfig import substs
+from mozbuild.base import MozbuildObject
+from mozhttpd import MozHttpd
 from mozprofile import FirefoxProfile, Profile, Preferences
 from mozprofile.permissions import ServerLocations
 from mozrunner import FirefoxRunner, CLI
-from mozhttpd import MozHttpd
-import json
-import socket
-import threading
-import os
-import sys
-import shutil
-import tempfile
-from datetime import datetime
-from mozbuild.base import MozbuildObject
-from buildconfig import substs
 
 PORT = 8888
 
