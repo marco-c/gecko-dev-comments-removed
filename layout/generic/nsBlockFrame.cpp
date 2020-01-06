@@ -6664,7 +6664,8 @@ static void
 DisplayLine(nsDisplayListBuilder* aBuilder, const nsRect& aLineArea,
             nsBlockFrame::LineIterator& aLine,
             int32_t aDepth, int32_t& aDrawnLines, const nsDisplayListSet& aLists,
-            nsBlockFrame* aFrame, TextOverflow* aTextOverflow) {
+            nsBlockFrame* aFrame, TextOverflow* aTextOverflow,
+            uint32_t aLineNumberForTextOverflow) {
   
   
   
@@ -6708,7 +6709,7 @@ DisplayLine(nsDisplayListBuilder* aBuilder, const nsRect& aLineArea,
   }
 
   if (lineMayHaveTextOverflow) {
-    aTextOverflow->ProcessLine(collection, aLine.get());
+    aTextOverflow->ProcessLine(collection, aLine.get(), aLineNumberForTextOverflow);
   }
 
   collection.MoveTo(aLists);
@@ -6766,7 +6767,10 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  nsLineBox* cursor = aBuilder->ShouldDescendIntoFrame(this) ?
+  
+  
+  
+  nsLineBox* cursor = (aBuilder->ShouldDescendIntoFrame(this) || textOverflow) ?
     nullptr : GetFirstLineContaining(aBuilder->GetDirtyRect().y);
   LineIterator line_end = LinesEnd();
 
@@ -6781,13 +6785,14 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         if (lineArea.y >= aBuilder->GetDirtyRect().YMost()) {
           break;
         }
+        MOZ_ASSERT(!textOverflow);
         DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
-                    linesDisplayListCollection, this, textOverflow.get());
+                    linesDisplayListCollection, this, nullptr, 0);
       }
     }
   } else {
     bool nonDecreasingYs = true;
-    int32_t lineCount = 0;
+    uint32_t lineCount = 0;
     nscoord lastY = INT32_MIN;
     nscoord lastYMost = INT32_MIN;
     for (LineIterator line = LinesBegin();
@@ -6795,7 +6800,7 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
          ++line) {
       nsRect lineArea = line->GetVisualOverflowArea();
       DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
-                  linesDisplayListCollection, this, textOverflow.get());
+                  linesDisplayListCollection, this, textOverflow.get(), lineCount);
       if (!lineArea.IsEmpty()) {
         if (lineArea.y < lastY
             || lineArea.YMost() < lastYMost) {
