@@ -1910,7 +1910,7 @@ CacheStorageService::DoomStorageEntries(const nsACString& aContextKey,
     
     
     nsAutoPtr<CacheEntryTable> memoryEntries;
-    sGlobalEntryTables->RemoveAndForget(memoryStorageID, memoryEntries);
+    sGlobalEntryTables->Remove(memoryStorageID, &memoryEntries);
 
     CacheEntryTable* diskEntries;
     if (memoryEntries && sGlobalEntryTables->Get(aContextKey, &diskEntries)) {

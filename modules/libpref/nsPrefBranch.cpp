@@ -764,7 +764,7 @@ NS_IMETHODIMP nsPrefBranch::RemoveObserver(const char *aDomain, nsIObserver *aOb
   
   PrefCallback key(aDomain, aObserver, this);
   nsAutoPtr<PrefCallback> pCallback;
-  mObservers.RemoveAndForget(&key, pCallback);
+  mObservers.Remove(&key, &pCallback);
   if (pCallback) {
     
     const PrefName& pref = getPrefName(aDomain);

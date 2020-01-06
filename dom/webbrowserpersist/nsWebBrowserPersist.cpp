@@ -2416,7 +2416,7 @@ nsWebBrowserPersist::FixRedirectedChannelEntry(nsIChannel *aNewChannel)
         
         
         nsAutoPtr<OutputData> outputData;
-        mOutputMap.RemoveAndForget(matchingKey, outputData);
+        mOutputMap.Remove(matchingKey, &outputData);
         NS_ENSURE_TRUE(outputData, NS_ERROR_FAILURE);
 
         
