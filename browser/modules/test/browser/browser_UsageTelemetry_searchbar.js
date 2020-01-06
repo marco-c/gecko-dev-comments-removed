@@ -106,9 +106,8 @@ add_task(async function test_plainQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
-  let search_hist = getSearchCountsHistogram();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -147,9 +146,8 @@ add_task(async function test_oneOff_enter() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
-  let search_hist = getSearchCountsHistogram();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -191,8 +189,7 @@ add_task(async function test_oneOff_enter() {
 add_task(async function test_oneOff_enterSelection() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   
   
@@ -235,8 +232,7 @@ add_task(async function test_oneOff_enterSelection() {
 add_task(async function test_oneOff_click() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -260,9 +256,8 @@ add_task(async function test_suggestion_click() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
-  let search_hist = getSearchCountsHistogram();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
+  let search_hist = getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   
   
@@ -319,8 +314,7 @@ add_task(async function test_suggestion_click() {
 add_task(async function test_suggestion_enterSelection() {
   
   Services.telemetry.clearScalars();
-  let resultMethodHist = Services.telemetry.getHistogramById("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
-  resultMethodHist.clear();
+  let resultMethodHist = getAndClearHistogram("FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
   
   
