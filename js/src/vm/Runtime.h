@@ -1176,21 +1176,13 @@ class MOZ_RAII AutoLockGC
     explicit AutoLockGC(JSRuntime* rt
                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : runtime_(rt)
-      , startBgAlloc(false)
     {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
         lock();
     }
 
     ~AutoLockGC() {
-        unlock();
-        
-
-
-
-
-        if (startBgAlloc)
-            runtime_->gc.startBackgroundAllocTaskIfIdle();
+        lockGuard_.reset();
     }
 
     void lock() {
@@ -1203,6 +1195,46 @@ class MOZ_RAII AutoLockGC
         lockGuard_.reset();
     }
 
+    js::LockGuard<js::Mutex>& guard() {
+        return lockGuard_.ref();
+    }
+
+  protected:
+    JSRuntime* runtime() const { return runtime_; }
+
+  private:
+    JSRuntime* runtime_;
+    mozilla::Maybe<js::LockGuard<js::Mutex>> lockGuard_;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+    AutoLockGC(const AutoLockGC&) = delete;
+    AutoLockGC& operator=(const AutoLockGC&) = delete;
+};
+
+
+
+
+
+class MOZ_RAII AutoLockGCBgAlloc : public AutoLockGC
+{
+  public:
+    explicit AutoLockGCBgAlloc(JSRuntime* rt)
+      : AutoLockGC(rt)
+      , startBgAlloc(false)
+    {}
+
+    ~AutoLockGCBgAlloc() {
+        unlock();
+
+        
+
+
+
+
+        if (startBgAlloc)
+            runtime()->gc.startBackgroundAllocTaskIfIdle();
+    }
+
     
 
 
@@ -1213,21 +1245,10 @@ class MOZ_RAII AutoLockGC
         startBgAlloc = true;
     }
 
-    js::LockGuard<js::Mutex>& guard() {
-        return lockGuard_.ref();
-    }
-
   private:
-    JSRuntime* runtime_;
-    mozilla::Maybe<js::LockGuard<js::Mutex>> lockGuard_;
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-
     
     
     bool startBgAlloc;
-
-    AutoLockGC(const AutoLockGC&) = delete;
-    AutoLockGC& operator=(const AutoLockGC&) = delete;
 };
 
 class MOZ_RAII AutoUnlockGC
