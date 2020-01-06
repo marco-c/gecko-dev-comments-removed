@@ -287,10 +287,9 @@ CompositionTransaction::SetIMESelection(EditorBase& aEditorBase,
     }
 
     
-    nsCOMPtr<nsISelection> selectionOfIME;
-    rv = selCon->GetSelection(ToRawSelectionType(textRange.mRangeType),
-                              getter_AddRefs(selectionOfIME));
-    if (NS_FAILED(rv)) {
+    RefPtr<Selection> selectionOfIME =
+      selCon->GetDOMSelection(ToRawSelectionType(textRange.mRangeType));
+    if (!selectionOfIME) {
       NS_WARNING("Failed to get IME selection");
       break;
     }
@@ -302,14 +301,8 @@ CompositionTransaction::SetIMESelection(EditorBase& aEditorBase,
     }
 
     
-    nsCOMPtr<nsISelectionPrivate> selectionOfIMEPriv =
-                                    do_QueryInterface(selectionOfIME);
-    if (!selectionOfIMEPriv) {
-      NS_WARNING("Failed to get nsISelectionPrivate interface from selection");
-      continue; 
-    }
-    rv = selectionOfIMEPriv->SetTextRangeStyle(clauseRange,
-                                               textRange.mRangeStyle);
+    rv = selectionOfIME->SetTextRangeStyle(clauseRange,
+                                           textRange.mRangeStyle);
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to set selection style");
       break; 
