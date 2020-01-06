@@ -87,6 +87,12 @@ public:
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  void Shutdown() override {
+    Stop(mSource, mTrackID);
+    MonitorAutoLock lock(mMonitor);
+    mImageContainer = nullptr;
+  }
+
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
@@ -96,15 +102,18 @@ protected:
 
   friend class MediaEngineDefault;
 
+  RefPtr<SourceMediaStream> mSource;
   TrackID mTrackID;
   nsCOMPtr<nsITimer> mTimer;
+
+#ifndef MOZ_WEBRTC
   
   
   
   Monitor mMonitor;
   RefPtr<layers::Image> mImage;
-
   RefPtr<layers::ImageContainer> mImageContainer;
+#endif
 
   MediaEnginePrefs mOpts;
   int mCb;
@@ -199,6 +208,12 @@ public:
   void Shutdown() override {
     MutexAutoLock lock(mMutex);
 
+    for (auto& source : mVSources) {
+      source->Shutdown();
+    }
+    for (auto& source : mASources) {
+      source->Shutdown();
+    }
     mVSources.Clear();
     mASources.Clear();
   };
@@ -208,7 +223,6 @@ private:
 
   Mutex mMutex;
   
-
   nsTArray<RefPtr<MediaEngineVideoSource> > mVSources;
   nsTArray<RefPtr<MediaEngineAudioSource> > mASources;
 };

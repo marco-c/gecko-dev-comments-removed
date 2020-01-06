@@ -65,14 +65,9 @@ public:
   {
     MonitorAutoLock lock(mMonitor);
     
-    
-    
-    
-    
-
     Unused << NS_WARN_IF(mImage);
-
     mImage = nullptr;
+    mImageContainer = nullptr;
   }
 
 protected:
