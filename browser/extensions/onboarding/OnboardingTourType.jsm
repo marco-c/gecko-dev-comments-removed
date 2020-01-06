@@ -32,7 +32,6 @@ var OnboardingTourType = {
     } else if (Services.prefs.getIntPref(PREF_SEEN_TOURSET_VERSION) < TOURSET_VERSION) {
       
       Services.prefs.setStringPref(PREF_TOUR_TYPE, "update");
-      Services.prefs.setBoolPref("browser.onboarding.hidden", false);
       
       Services.prefs.setBoolPref("browser.onboarding.notification.finished", false);
       Services.prefs.clearUserPref("browser.onboarding.notification.prompt-count");

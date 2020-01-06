@@ -29,7 +29,6 @@ function resetOnboardingDefaultState() {
   
   
   Preferences.set("browser.onboarding.enabled", true);
-  Preferences.set("browser.onboarding.hidden", false);
   Preferences.set("browser.onboarding.notification.finished", false);
   Preferences.set("browser.onboarding.notification.mute-duration-on-first-session-ms", 300000);
   Preferences.set("browser.onboarding.notification.max-life-time-per-tour-ms", 432000000);
