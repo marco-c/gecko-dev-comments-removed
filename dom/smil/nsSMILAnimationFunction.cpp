@@ -470,6 +470,30 @@ nsSMILAnimationFunction::InterpolateResult(const nsSMILValueArray& aValues,
     } else {
       uint32_t index = (uint32_t)floor(scaledSimpleProgress * aValues.Length());
       aResult = aValues[index];
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aResult.mType == &nsSMILCSSValueType::sSingleton) {
+        
+        
+        
+        
+        if (index + 1 >= aValues.Length()) {
+          MOZ_ASSERT(aResult.mU.mPtr, "The last value should not be empty");
+        } else {
+          
+          nsSMILCSSValueType::FinalizeValue(aResult, aValues[index + 1]);
+        }
+      }
     }
     rv = NS_OK;
   }

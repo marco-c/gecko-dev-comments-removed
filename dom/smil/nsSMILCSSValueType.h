@@ -124,6 +124,22 @@ public:
 
   static nsCSSPropertyID PropertyFromValue(const nsSMILValue& aValue);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static void FinalizeValue(nsSMILValue& aValue,
+                            const nsSMILValue& aValueToMatch);
+
 private:
   
   constexpr nsSMILCSSValueType() {}
