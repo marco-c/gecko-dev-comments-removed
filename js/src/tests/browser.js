@@ -203,22 +203,48 @@
 
 
 
-  var ReflectApply = global.Reflect.apply;
+  var undefined; 
 
-  
-  
-  
-  
-  
-  var ObjectGetOwnPropertyDescriptor = global.Object.getOwnPropertyDescriptor;
-
+  var Error = global.Error;
+  var Number = global.Number;
+  var Object = global.Object;
   var String = global.String;
 
+  var decodeURIComponent = global.decodeURIComponent;
+  var ReflectApply = global.Reflect.apply;
+  var ObjectDefineProperty = Object.defineProperty;
+  var ObjectPrototypeHasOwnProperty = Object.prototype.hasOwnProperty;
+  var ObjectPrototypeIsPrototypeOf = Object.prototype.isPrototypeOf;
+
+  
+  
+  
+  
+  
+  var ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+
+  var window = global.window;
   var document = global.document;
-  var DocumentCreateElement = global.document.createElement;
+  var documentDocumentElement = document.documentElement;
+  var DocumentCreateElement = document.createElement;
+  var ElementSetClassName =
+    ObjectGetOwnPropertyDescriptor(global.Element.prototype, "className").set;
   var NodePrototypeAppendChild = global.Node.prototype.appendChild;
   var NodePrototypeTextContentSetter =
     ObjectGetOwnPropertyDescriptor(global.Node.prototype, "textContent").set;
+  var setTimeout = global.setTimeout;
+
+  
+  var dump = global.dump;
+  var gczeal = global.gczeal;
+  var optionsClear = global.optionsClear;
+  var print = global.print;
+  var reportFailure = global.reportFailure;
+  var TestCase = global.TestCase;
+
+  var SpecialPowers = global.SpecialPowers;
+  var SpecialPowersCu = SpecialPowers.Cu;
+  var SpecialPowersForceGC = SpecialPowers.forceGC;
 
   
   
@@ -231,6 +257,25 @@
   
 
 
+
+  function ArrayPush(array, value) {
+    ReflectApply(ObjectDefineProperty, null, [
+      array, array.length,
+      {__proto__: null, value, writable: true, enumerable: true, configurable: true}
+    ]);
+  }
+
+  function ArrayPop(array) {
+    if (array.length) {
+      var item = array[array.length - 1];
+      array.length -= 1;
+      return item;
+    }
+  }
+
+  function HasOwnProperty(object, property) {
+    return ReflectApply(ObjectPrototypeHasOwnProperty, object, [property]);
+  }
 
   function AppendChild(elt, kid) {
     ReflectApply(NodePrototypeAppendChild, elt, [kid]);
@@ -271,51 +316,41 @@
     AppendChild(printOutputContainer, h2);
   }
   global.writeHeaderToLog = writeHeaderToLog;
-  
-
-
 
   
-  var jstestsOptions;
+
+
+
+  
+  
+  
+  
+  var expectedError;
 
   window.onerror = function (msg, page, line, column, error) {
     
-    global.options = jstestsOptions;
+    global.options = options;
 
     optionsClear();
 
-    if (typeof DESCRIPTION == 'undefined') {
-      DESCRIPTION = 'Unknown';
+    if (DESCRIPTION === undefined) {
+      DESCRIPTION = "Unknown";
     }
 
     var actual = "error";
-    var expected;
-
-    var href = document.location.href;
-    if (href.indexOf('-n.js') !== -1) {
+    var expected = expectedError;
+    if (expected !== "error" && expected !== "Unknown") {
       
-      expected = "error";
-    } else if (href.indexOf('error=') !== -1) {
       
-      var startIndex = href.indexOf('error=');
-      var endIndex = href.indexOf(';', startIndex);
-      if (endIndex === -1)
-        endIndex = href.length;
-      var errorType = href.substring(startIndex + 'error='.length, endIndex);
-
       
-      if (Error.prototype.isPrototypeOf(error)) {
+      if (ReflectApply(ObjectPrototypeIsPrototypeOf, Error.prototype, [error])) {
         actual = error.constructor.name;
-        expected = errorType;
       } else {
         expected = "error";
       }
-    } else {
-      
-      expected = "Unknown";
     }
 
-    var reason = page + ':' + line + ': ' + msg;
+    var reason = `${page}:${line}: ${msg}`;
     new TestCase(DESCRIPTION, expected, actual, reason);
 
     reportFailure(msg);
@@ -325,15 +360,11 @@
 
 
 
-  function gc()
-  {
-    try
-    {
-      SpecialPowers.forceGC();
-    }
-    catch(ex)
-    {
-      print('gc: ' + ex);
+  function gc() {
+    try {
+      SpecialPowersForceGC();
+    } catch (ex) {
+      print("gc: " + ex);
     }
   }
   global.gc = gc;
@@ -350,7 +381,7 @@
     }
 
     if (aOptionName) {
-      if (!(aOptionName in SpecialPowers.Cu)) {
+      if (!HasOwnProperty(SpecialPowersCu, aOptionName)) {
         
         
         
@@ -360,11 +391,11 @@
       if (aOptionName in options.currvalues) {
         
         delete options.currvalues[aOptionName];
-        SpecialPowers.Cu[aOptionName] = false;
+        SpecialPowersCu[aOptionName] = false;
       } else {
         
         options.currvalues[aOptionName] = true;
-        SpecialPowers.Cu[aOptionName] = true;
+        SpecialPowersCu[aOptionName] = true;
       }
     }
 
@@ -373,72 +404,55 @@
   global.options = options;
 
   
-  
-  
-  var jstestsOptions = options;
-
-  
 
 
 
-  function jsTestDriverBrowserInit()
-  {
+  function jsTestDriverBrowserInit() {
     
     
     for (var optionName of ["strict", "werror", "strict_mode"]) {
-      if (!(optionName in SpecialPowers.Cu))
+      if (!HasOwnProperty(SpecialPowersCu, optionName))
         throw "options is out of sync with Components.utils";
 
       
       
       
-      if (SpecialPowers.Cu[optionName])
-        SpecialPowers.Cu[optionName] = false;
+      if (SpecialPowersCu[optionName])
+        SpecialPowersCu[optionName] = false;
     }
 
     
     
     options.currvalues = Object.create(null);
 
-    if (document.location.search.indexOf('?') != 0)
-    {
+    if (document.location.search.indexOf("?") !== 0) {
       
       return;
     }
 
-    var properties = {};
-    var fields = document.location.search.slice(1).split(';');
-    for (var ifield = 0; ifield < fields.length; ifield++)
-    {
-      var propertycaptures = /^([^=]+)=(.*)$/.exec(fields[ifield]);
-      if (!propertycaptures)
-      {
-        properties[fields[ifield]] = true;
-      }
-      else
-      {
+    var properties = Object.create(null);
+    var fields = document.location.search.slice(1).split(";");
+    for (var i = 0; i < fields.length; i++) {
+      var propertycaptures = /^([^=]+)=(.*)$/.exec(fields[i]);
+      if (propertycaptures === null) {
+        properties[fields[i]] = true;
+      } else {
         properties[propertycaptures[1]] = decodeURIComponent(propertycaptures[2]);
-        if (propertycaptures[1] == 'language')
-        {
+        if (propertycaptures[1] === "language") {
           
-          properties.mimetype = fields[ifield+1];
+          properties.mimetype = fields[i + 1];
         }
       }
     }
 
-    if (properties.language != 'type')
-    {
-      try
-      {
-        properties.version = /javascript([.0-9]+)/.exec(properties.mimetype)[1];
-      }
-      catch(ex)
-      {
+    if (properties.language !== "type") {
+      var mimetypeVersion = /javascript([.0-9]+)/.exec(properties.mimetype);
+      if (mimetypeVersion !== null) {
+        properties.version = mimetypeVersion[1];
       }
     }
 
-    if (!properties.version && navigator.userAgent.indexOf('Gecko/') != -1)
-    {
+    if (!properties.version && navigator.userAgent.indexOf("Gecko/") !== -1) {
       
       
       
@@ -450,51 +464,58 @@
       
       
       
-      if (properties.test.match(/^js1_6/))
-      {
-        properties.version = '1.6';
-      }
-      else if (properties.test.match(/^js1_7/))
-      {
-        properties.version = '1.7';
-      }
-      else if (properties.test.match(/^js1_8/))
-      {
-        properties.version = '1.8';
+      var versions = [
+         { path: "js1_6", version: "1.6" },
+         { path: "js1_7", version: "1.7" },
+         { path: "js1_8", version: "1.8" },
+      ];
+      for (var {path, version} of versions) {
+        if (properties.test.startsWith(path)) {
+          properties.version = version;
+          break;
+        }
       }
     }
 
     
     
-    if (!properties.language)
-    {
-      properties.language = 'type';
-      properties.mimetype = 'text/javascript';
+    if (!properties.language) {
+      properties.language = "type";
+      properties.mimetype = "text/javascript";
     }
 
-    gTestPath = properties.test;
-
-    if (properties.gczeal)
-    {
-      gczeal(Number(properties.gczeal));
-    }
+    global.gTestPath = properties.test;
 
     var testpathparts = properties.test.split("/");
-
-    if (testpathparts.length < 2)
-    {
+    if (testpathparts.length < 2) {
       
       return;
     }
 
-    document.write('<title>' + properties.test + '<\/title>');
+    var testFileName = testpathparts[testpathparts.length - 1];
+
+    if (testFileName.endsWith("-n.js")) {
+      
+      expectedError = "error";
+    } else if (properties.error) {
+      
+      expectedError = properties.error;
+    } else {
+      
+      expectedError = "Unknown";
+    }
+
+    if (properties.gczeal) {
+      gczeal(Number(properties.gczeal));
+    }
+
+    document.write(`<title>${ properties.test }<\/title>`);
 
     
     
     var prepath = "";
     var scripts = [];
-    var end = testpathparts.length - 1;
-    for (var i = 0; i < end; i++) {
+    for (var i = 0; i < testpathparts.length - 1; i++) {
       prepath += testpathparts[i] + "/";
 
       scripts.push({src: prepath + "shell.js", module: false});
@@ -503,7 +524,7 @@
 
     
     var moduleTest = !!properties.module;
-    scripts.push({src: prepath + testpathparts[end], module: moduleTest});
+    scripts.push({src: prepath + testFileName, module: moduleTest});
 
     
     scripts.push({src: "js-test-driver-end.js", module: false});
@@ -511,7 +532,7 @@
     if (!moduleTest) {
       
       
-      document.write('<script></script>');
+      document.write("<script></script>");
 
       var key, value;
       if (properties.language !== "type") {
@@ -537,16 +558,11 @@
       
 
       
-      var ReflectApply = Reflect.apply;
-      var NodePrototypeAppendChild = Node.prototype.appendChild;
-      var documentElement = document.documentElement;
-
-      
       function appendScript(index) {
         var script = scriptElements[index];
         scriptElements[index] = null;
         if (script !== null) {
-          ReflectApply(NodePrototypeAppendChild, documentElement, [script]);
+          ReflectApply(NodePrototypeAppendChild, documentDocumentElement, [script]);
         }
       }
 
@@ -585,44 +601,37 @@
   }
 
   
-  function jsTestDriverEnd()
-  {
-    
-    
+  function jsTestDriverEnd() {
     
     
     
     
     
 
-    if (gDelayTestDriverEnd)
-    {
+    if (gDelayTestDriverEnd) {
       return;
     }
 
     window.onerror = null;
 
     
-    global.options = jstestsOptions;
+    global.options = options;
 
     try {
       optionsClear();
-    } catch(ex) {
-      dump('jsTestDriverEnd ' + ex);
+    } catch (ex) {
+      dump("jsTestDriverEnd " + ex);
     }
 
-    if (window.opener && window.opener.runNextTest)
-    {
-      if (window.opener.reportCallBack)
-      {
+    if (window.opener && window.opener.runNextTest) {
+      if (window.opener.reportCallBack) {
         window.opener.reportCallBack(window.opener.gWindow);
       }
-      setTimeout('window.opener.runNextTest()', 250);
-    }
-    else
-    {
+
+      setTimeout("window.opener.runNextTest()", 250);
+    } else {
       
-      document.documentElement.className = '';
+      ReflectApply(ElementSetClassName, documentDocumentElement, [""]);
       
       gPageCompleted = true;
     }
@@ -635,70 +644,48 @@
 
   
 
-  var gDialogCloser;
-  var gDialogCloserObserver;
+  
+  var dialogCloserSubjects = [];
+  var dialogCloser = SpecialPowers
+                     .Cc["@mozilla.org/embedcomp/window-watcher;1"]
+                     .getService(SpecialPowers.Ci.nsIWindowWatcher);
+  var dialogCloserObserver = {
+    observe(subject, topic, data) {
+      if (topic === "domwindowopened" && subject.isChromeWindow) {
+        ArrayPush(dialogCloserSubjects, subject);
 
-  function registerDialogCloser()
-  {
-    gDialogCloser = SpecialPowers.
-      Cc['@mozilla.org/embedcomp/window-watcher;1'].
-      getService(SpecialPowers.Ci.nsIWindowWatcher);
+        
+        subject.setTimeout(closeDialog, 0);
+      }
+    }
+  };
 
-    gDialogCloserObserver = {observe: dialogCloser_observe};
-
-    gDialogCloser.registerNotification(gDialogCloserObserver);
+  function closeDialog() {
+    while (dialogCloserSubjects.length > 0) {
+      var subject = ArrayPop(dialogCloserSubjects);
+      subject.close();
+    }
   }
 
-  function unregisterDialogCloser()
-  {
+  function unregisterDialogCloser() {
     gczeal(0);
 
-    if (!gDialogCloserObserver || !gDialogCloser)
-    {
+    if (!dialogCloserObserver || !dialogCloser) {
       return;
     }
 
-    gDialogCloser.unregisterNotification(gDialogCloserObserver);
+    dialogCloser.unregisterNotification(dialogCloserObserver);
 
-    gDialogCloserObserver = null;
-    gDialogCloser = null;
+    dialogCloserObserver = null;
+    dialogCloser = null;
   }
+
+  dialogCloser.registerNotification(dialogCloserObserver);
+  window.addEventListener("unload", unregisterDialogCloser, true);
 
   
-  
-  var gDialogCloserSubjects = [];
 
-  function dialogCloser_observe(subject, topic, data)
-  {
-    if (topic == 'domwindowopened' && subject.isChromeWindow)
-    {
-      gDialogCloserSubjects.push(subject);
-      
-      subject.setTimeout(closeDialog, 0);
-    }
-  }
 
-  function closeDialog()
-  {
-    var subject;
-
-    while ( (subject = gDialogCloserSubjects.pop()) != null)
-    {
-      if (subject.document instanceof XULDocument &&
-          subject.document.documentURI == 'chrome://global/content/commonDialog.xul')
-      {
-        subject.close();
-      }
-      else
-      {
-        
-        subject.close();
-      }
-    }
-  }
-
-  registerDialogCloser();
-  window.addEventListener('unload', unregisterDialogCloser, true);
 
   jsTestDriverBrowserInit();
 

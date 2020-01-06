@@ -559,8 +559,6 @@
     
     
     
-    
-    
 
     if (gDelayTestDriverEnd) {
       return;
@@ -590,7 +588,7 @@
       return;
 
     
-    var optionNames = currentOptions.split(',');
+    var optionNames = StringSplit(currentOptions, ",");
     for (var i = 0; i < optionNames.length; i++) {
       var optionName = optionNames[i];
       if (optionName) {
