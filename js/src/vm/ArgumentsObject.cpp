@@ -651,11 +651,26 @@ MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj, Handl
 
     
     Rooted<PropertyDescriptor> newArgDesc(cx, desc);
+
+    
     if (!desc.isAccessorDescriptor() && isMapped) {
         
-        
-        newArgDesc.setGetter(MappedArgGetter);
-        newArgDesc.setSetter(MappedArgSetter);
+        if (desc.hasWritable() && !desc.writable()) {
+            if (!desc.hasValue()) {
+                RootedValue v(cx, argsobj->element(JSID_TO_INT(id)));
+                newArgDesc.setValue(v);
+            }
+            newArgDesc.setGetter(nullptr);
+            newArgDesc.setSetter(nullptr);
+        } else {
+            
+            
+            
+            newArgDesc.setGetter(MappedArgGetter);
+            newArgDesc.setSetter(MappedArgSetter);
+            newArgDesc.value().setUndefined();
+            newArgDesc.attributesRef() |= JSPROP_IGNORE_VALUE;
+        }
     }
 
     
