@@ -71,6 +71,10 @@ function GetHomeDir() {
   return (homeDir);
 }
 
+function GetPerUserExtensionDir() {
+  return Services.dirsvc.get("XREUSysExt", Ci.nsIFile);
+}
+
 
 
 function GetProfileEntry(name) {
