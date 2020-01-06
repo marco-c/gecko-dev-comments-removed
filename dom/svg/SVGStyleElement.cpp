@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGStyleElement.h"
@@ -20,17 +20,13 @@ SVGStyleElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
   return SVGStyleElementBinding::Wrap(aCx, this, aGivenProto);
 }
 
-//----------------------------------------------------------------------
-// nsISupports methods
 
-NS_IMPL_ADDREF_INHERITED(SVGStyleElement, SVGStyleElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGStyleElement, SVGStyleElementBase)
 
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGStyleElement)
-  NS_INTERFACE_TABLE_INHERITED(SVGStyleElement,
-                               nsIStyleSheetLinkingElement,
-                               nsIMutationObserver)
-NS_INTERFACE_TABLE_TAIL_INHERITING(SVGStyleElementBase)
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGStyleElement,
+                                             SVGStyleElementBase,
+                                             nsIStyleSheetLinkingElement,
+                                             nsIMutationObserver)
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(SVGStyleElement)
 
@@ -44,8 +40,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(SVGStyleElement,
   tmp->nsStyleLinkElement::Unlink();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
-//----------------------------------------------------------------------
-// Implementation
+
+
 
 SVGStyleElement::SVGStyleElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : SVGStyleElementBase(aNodeInfo)
@@ -57,15 +53,15 @@ SVGStyleElement::~SVGStyleElement()
 {
 }
 
-//----------------------------------------------------------------------
-// nsIDOMNode methods
+
+
 
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGStyleElement)
 
 
-//----------------------------------------------------------------------
-// nsIContent methods
+
+
 
 nsresult
 SVGStyleElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
@@ -150,8 +146,8 @@ SVGStyleElement::ParseAttribute(int32_t aNamespaceID,
                                              aResult);
 }
 
-//----------------------------------------------------------------------
-// nsIMutationObserver methods
+
+
 
 void
 SVGStyleElement::CharacterDataChanged(nsIDocument* aDocument,
@@ -197,7 +193,7 @@ SVGStyleElement::ContentChanged(nsIContent* aContent)
   }
 }
 
-//----------------------------------------------------------------------
+
 
 void
 SVGStyleElement::GetXmlspace(nsAString & aXmlspace)
@@ -259,8 +255,8 @@ SVGStyleElement::SetTitle(const nsAString& aTitle, ErrorResult& rv)
   rv = SetAttr(kNameSpaceID_None, nsGkAtoms::title, aTitle, true);
 }
 
-//----------------------------------------------------------------------
-// nsStyleLinkElement methods
+
+
 
 already_AddRefed<nsIURI>
 SVGStyleElement::GetStyleSheetURL(bool* aIsInline)
@@ -284,8 +280,8 @@ SVGStyleElement::GetStyleSheetInfo(nsAString& aTitle,
   aTitle.Assign(title);
 
   GetAttr(kNameSpaceID_None, nsGkAtoms::media, aMedia);
-  // The SVG spec is formulated in terms of the CSS2 spec,
-  // which specifies that media queries are case insensitive.
+  
+  
   nsContentUtils::ASCIIToLower(aMedia);
 
   GetAttr(kNameSpaceID_None, nsGkAtoms::type, aType);
@@ -303,6 +299,6 @@ SVGStyleElement::GetCORSMode() const
   return AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin));
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 

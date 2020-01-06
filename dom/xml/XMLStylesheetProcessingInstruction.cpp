@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "XMLStylesheetProcessingInstruction.h"
 #include "mozilla/dom/XMLStylesheetProcessingInstructionBinding.h"
@@ -12,18 +12,13 @@
 namespace mozilla {
 namespace dom {
 
-// nsISupports implementation
 
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(XMLStylesheetProcessingInstruction)
-  NS_INTERFACE_TABLE_INHERITED(XMLStylesheetProcessingInstruction, nsIDOMNode,
-                               nsIDOMProcessingInstruction,
-                               nsIStyleSheetLinkingElement)
-NS_INTERFACE_TABLE_TAIL_INHERITING(ProcessingInstruction)
 
-NS_IMPL_ADDREF_INHERITED(XMLStylesheetProcessingInstruction,
-                         ProcessingInstruction)
-NS_IMPL_RELEASE_INHERITED(XMLStylesheetProcessingInstruction,
-                          ProcessingInstruction)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(XMLStylesheetProcessingInstruction,
+                                             ProcessingInstruction,
+                                             nsIDOMNode,
+                                             nsIDOMProcessingInstruction,
+                                             nsIStyleSheetLinkingElement)
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(XMLStylesheetProcessingInstruction)
 
@@ -48,7 +43,7 @@ XMLStylesheetProcessingInstruction::WrapNode(JSContext *aCx, JS::Handle<JSObject
   return XMLStylesheetProcessingInstructionBinding::Wrap(aCx, this, aGivenProto);
 }
 
-// nsIContent
+
 
 nsresult
 XMLStylesheetProcessingInstruction::BindToTree(nsIDocument* aDocument,
@@ -78,7 +73,7 @@ XMLStylesheetProcessingInstruction::UnbindFromTree(bool aDeep, bool aNullParent)
   UpdateStyleSheetInternal(oldDoc, nullptr);
 }
 
-// nsIDOMNode
+
 
 void
 XMLStylesheetProcessingInstruction::SetNodeValueInternal(const nsAString& aNodeValue,
@@ -90,7 +85,7 @@ XMLStylesheetProcessingInstruction::SetNodeValueInternal(const nsAString& aNodeV
   }
 }
 
-// nsStyleLinkElement
+
 
 NS_IMETHODIMP
 XMLStylesheetProcessingInstruction::GetCharset(nsAString& aCharset)
@@ -98,7 +93,7 @@ XMLStylesheetProcessingInstruction::GetCharset(nsAString& aCharset)
   return GetAttrValue(nsGkAtoms::charset, aCharset) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-/* virtual */ void
+ void
 XMLStylesheetProcessingInstruction::OverrideBaseURI(nsIURI* aNewBaseURI)
 {
   mOverriddenBaseURI = aNewBaseURI;
@@ -139,7 +134,7 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo(nsAString& aTitle,
   *aIsScoped = false;
   *aIsAlternate = false;
 
-  // xml-stylesheet PI is special only in prolog
+  
   if (!nsContentUtils::InProlog(this)) {
     return;
   }
@@ -154,9 +149,9 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo(nsAString& aTitle,
                                           nsGkAtoms::alternate,
                                           alternate);
 
-  // if alternate, does it have title?
+  
   if (alternate.EqualsLiteral("yes")) {
-    if (aTitle.IsEmpty()) { // alternates must have title
+    if (aTitle.IsEmpty()) { 
       return;
     }
 
@@ -175,8 +170,8 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo(nsAString& aTitle,
     return;
   }
 
-  // If we get here we assume that we're loading a css file, so set the
-  // type to 'text/css'
+  
+  
   aType.AssignLiteral("text/css");
 }
 
@@ -190,5 +185,5 @@ XMLStylesheetProcessingInstruction::CloneDataNode(mozilla::dom::NodeInfo *aNodeI
   return new XMLStylesheetProcessingInstruction(ni.forget(), data);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

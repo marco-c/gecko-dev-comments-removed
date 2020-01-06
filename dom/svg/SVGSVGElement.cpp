@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ContentEvents.h"
 #include "mozilla/dom/SVGSVGElement.h"
@@ -54,8 +54,8 @@ NS_IMPL_RELEASE_INHERITED(DOMSVGTranslatePoint, nsISVGPoint)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMSVGTranslatePoint)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  // We have to qualify nsISVGPoint because NS_GET_IID looks for a class in the
-  // global namespace
+  
+  
   NS_INTERFACE_MAP_ENTRY(mozilla::nsISVGPoint)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
@@ -102,8 +102,8 @@ SVGSVGElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
   return SVGSVGElementBinding::Wrap(aCx, this, aGivenProto);
 }
 
-//----------------------------------------------------------------------
-// nsISupports methods
+
+
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(SVGSVGElement)
 
@@ -120,13 +120,11 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(SVGSVGElement,
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-NS_IMPL_ADDREF_INHERITED(SVGSVGElement,SVGSVGElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGSVGElement,SVGSVGElementBase)
-
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGSVGElement)
-  NS_INTERFACE_TABLE_INHERITED(SVGSVGElement, nsIDOMNode, nsIDOMElement,
-                               nsIDOMSVGElement)
-NS_INTERFACE_TABLE_TAIL_INHERITING(SVGSVGElementBase)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGSVGElement,
+                                             SVGSVGElementBase,
+                                             nsIDOMNode,
+                                             nsIDOMElement,
+                                             nsIDOMSVGElement)
 
 SVGView::SVGView()
 {
@@ -136,8 +134,8 @@ SVGView::SVGView()
   mPreserveAspectRatio.Init();
 }
 
-//----------------------------------------------------------------------
-// Implementation
+
+
 
 SVGSVGElement::SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
                              FromParser aFromParser)
@@ -157,13 +155,13 @@ SVGSVGElement::~SVGSVGElement()
 {
 }
 
-//----------------------------------------------------------------------
-// nsIDOMNode methods
+
+
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT_AND_PARSER(SVGSVGElement)
 
-//----------------------------------------------------------------------
-// nsIDOMSVGSVGElement methods:
+
+
 
 already_AddRefed<SVGAnimatedLength>
 SVGSVGElement::X()
@@ -243,27 +241,27 @@ SVGSVGElement::CurrentTranslate()
 uint32_t
 SVGSVGElement::SuspendRedraw(uint32_t max_wait_milliseconds)
 {
-  // suspendRedraw is a no-op in Mozilla, so it doesn't matter what
-  // we return
+  
+  
   return 1;
 }
 
 void
 SVGSVGElement::UnsuspendRedraw(uint32_t suspend_handle_id)
 {
-  // no-op
+  
 }
 
 void
 SVGSVGElement::UnsuspendRedrawAll()
 {
-  // no-op
+  
 }
 
 void
 SVGSVGElement::ForceRedraw()
 {
-  // no-op
+  
 }
 
 void
@@ -272,7 +270,7 @@ SVGSVGElement::PauseAnimations()
   if (mTimedDocumentRoot) {
     mTimedDocumentRoot->Pause(nsSMILTimeContainer::PAUSE_SCRIPT);
   }
-  // else we're not the outermost <svg> or not bound to a tree, so silently fail
+  
 }
 
 void
@@ -281,7 +279,7 @@ SVGSVGElement::UnpauseAnimations()
   if (mTimedDocumentRoot) {
     mTimedDocumentRoot->Resume(nsSMILTimeContainer::PAUSE_SCRIPT);
   }
-  // else we're not the outermost <svg> or not bound to a tree, so silently fail
+  
 }
 
 bool
@@ -307,22 +305,22 @@ void
 SVGSVGElement::SetCurrentTime(float seconds)
 {
   if (mTimedDocumentRoot) {
-    // Make sure the timegraph is up-to-date
+    
     FlushAnimations();
     double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
-    // Round to nearest whole number before converting, to avoid precision
-    // errors
+    
+    
     nsSMILTime lMilliseconds = int64_t(NS_round(fMilliseconds));
     mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
     AnimationNeedsResample();
-    // Trigger synchronous sample now, to:
-    //  - Make sure we get an up-to-date paint after this method
-    //  - re-enable event firing (it got disabled during seeking, and it
-    //  doesn't get re-enabled until the first sample after the seek -- so
-    //  let's make that happen now.)
+    
+    
+    
+    
+    
     FlushAnimations();
   }
-  // else we're not the outermost <svg> or not bound to a tree, so silently fail
+  
 }
 
 void
@@ -392,8 +390,8 @@ SVGSVGElement::CreateSVGTransformFromMatrix(SVGMatrix& matrix)
   return transform.forget();
 }
 
-//----------------------------------------------------------------------
-// helper method for implementing SetCurrentScale/Translate
+
+
 
 void
 SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
@@ -403,30 +401,30 @@ SVGSVGElement::SetCurrentScaleTranslate(float s, float x, float y)
     return;
   }
 
-  // Prevent bizarre behaviour and maxing out of CPU and memory by clamping
+  
   if (s < CURRENT_SCALE_MIN)
     s = CURRENT_SCALE_MIN;
   else if (s > CURRENT_SCALE_MAX)
     s = CURRENT_SCALE_MAX;
 
-  // IMPORTANT: If either mCurrentTranslate *or* mCurrentScale is changed then
-  // mPreviousTranslate_x, mPreviousTranslate_y *and* mPreviousScale must all
-  // be updated otherwise SVGZoomEvents will end up with invalid data. I.e. an
-  // SVGZoomEvent's properties previousScale and previousTranslate must contain
-  // the state of currentScale and currentTranslate immediately before the
-  // change that caused the event's dispatch, which is *not* necessarily the
-  // same thing as the values of currentScale and currentTranslate prior to
-  // their own last change.
-  //
-  // XXX This comment is out-of-date due to removal of SVGZoomEvent.  Can we
-  // remove some of this code?
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mPreviousScale = mCurrentScale;
   mPreviousTranslate = mCurrentTranslate;
 
   mCurrentScale = s;
   mCurrentTranslate = SVGPoint(x, y);
 
-  // now dispatch the appropriate event if we are the root element
+  
   nsIDocument* doc = GetUncomposedDoc();
   if (doc) {
     nsCOMPtr<nsIPresShell> presShell = doc->GetShell();
@@ -447,8 +445,8 @@ SVGSVGElement::SetCurrentTranslate(float x, float y)
   SetCurrentScaleTranslate(mCurrentScale, x, y);
 }
 
-//----------------------------------------------------------------------
-// SVGZoomAndPanValues
+
+
 uint16_t
 SVGSVGElement::ZoomAndPan()
 {
@@ -467,7 +465,7 @@ SVGSVGElement::SetZoomAndPan(uint16_t aZoomAndPan, ErrorResult& rv)
   rv.ThrowRangeError<MSG_INVALID_ZOOMANDPAN_VALUE_ERROR>();
 }
 
-//----------------------------------------------------------------------
+
 nsSMILTimeContainer*
 SVGSVGElement::GetTimedDocumentRoot()
 {
@@ -475,18 +473,18 @@ SVGSVGElement::GetTimedDocumentRoot()
     return mTimedDocumentRoot;
   }
 
-  // We must not be the outermost <svg> element, try to find it
+  
   SVGSVGElement *outerSVGElement =
     SVGContentUtils::GetOuterSVGElement(this);
 
   if (outerSVGElement) {
     return outerSVGElement->GetTimedDocumentRoot();
   }
-  // invalid structure
+  
   return nullptr;
 }
-//----------------------------------------------------------------------
-// nsSVGElement
+
+
 nsresult
 SVGSVGElement::BindToTree(nsIDocument* aDocument,
                           nsIContent* aParent,
@@ -498,16 +496,16 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
   if (aDocument) {
     smilController = aDocument->GetAnimationController();
     if (smilController) {
-      // SMIL is enabled in this document
+      
       if (WillBeOutermostSVG(aParent, aBindingParent)) {
-        // We'll be the outermost <svg> element.  We'll need a time container.
+        
         if (!mTimedDocumentRoot) {
           mTimedDocumentRoot = new nsSMILTimeContainer();
         }
       } else {
-        // We're a child of some other <svg> element, so we don't need our own
-        // time container. However, we need to make sure that we'll get a
-        // kick-start if we get promoted to be outermost later on.
+        
+        
+        
         mTimedDocumentRoot = nullptr;
         mStartAnimationOnBindToTree = true;
       }
@@ -521,9 +519,9 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
 
   nsIDocument* doc = GetComposedDoc();
   if (doc) {
-    // Setup the style sheet during binding, not element construction,
-    // because we could move the root SVG element from the document
-    // that created it to another document.
+    
+    
+    
     auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
     doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
   }
@@ -564,9 +562,9 @@ SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   if (aVisitor.mEvent->mMessage == eSVGLoad) {
     if (mTimedDocumentRoot) {
       mTimedDocumentRoot->Begin();
-      // Set 'resample needed' flag, so that if any script calls a DOM method
-      // that requires up-to-date animations before our first sample callback,
-      // we'll force a synchronous sample.
+      
+      
+      
       AnimationNeedsResample();
     }
   }
@@ -576,18 +574,18 @@ SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 bool
 SVGSVGElement::IsEventAttributeNameInternal(nsIAtom* aName)
 {
-  /* The events in EventNameType_SVGSVG are for events that are only
-     applicable to outermost 'svg' elements. We don't check if we're an outer
-     'svg' element in case we're not inserted into the document yet, but since
-     the target of the events in question will always be the outermost 'svg'
-     element, this shouldn't cause any real problems.
-  */
+  
+
+
+
+
+
   return nsContentUtils::IsEventAttributeName(aName,
          (EventNameType_SVGGraphic | EventNameType_SVGSVG));
 }
 
-//----------------------------------------------------------------------
-// public helpers:
+
+
 
 int32_t
 SVGSVGElement::GetIntrinsicWidth()
@@ -595,10 +593,10 @@ SVGSVGElement::GetIntrinsicWidth()
   if (mLengthAttributes[ATTR_WIDTH].IsPercentage()) {
     return -1;
   }
-  // Passing |this| as a SVGViewportElement* invokes the variant of GetAnimValue
-  // that uses the passed argument as the context, but that's fine since we
-  // know the length isn't a percentage so the context won't be used (and we
-  // need to pass the element to be able to resolve em/ex units).
+  
+  
+  
+  
   float width = mLengthAttributes[ATTR_WIDTH].GetAnimValue(this);
   return nsSVGUtils::ClampToInt(width);
 }
@@ -609,10 +607,10 @@ SVGSVGElement::GetIntrinsicHeight()
   if (mLengthAttributes[ATTR_HEIGHT].IsPercentage()) {
     return -1;
   }
-  // Passing |this| as a SVGViewportElement* invokes the variant of GetAnimValue
-  // that uses the passed argument as the context, but that's fine since we
-  // know the length isn't a percentage so the context won't be used (and we
-  // need to pass the element to be able to resolve em/ex units).
+  
+  
+  
+  
   float height = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(this);
   return nsSVGUtils::ClampToInt(height);
 }
@@ -630,8 +628,8 @@ SVGSVGElement::FlushImageTransformInvalidation()
   }
 }
 
-//----------------------------------------------------------------------
-// implementation helpers
+
+
 
 bool
 SVGSVGElement::WillBeOutermostSVG(nsIContent* aParent,
@@ -641,7 +639,7 @@ SVGSVGElement::WillBeOutermostSVG(nsIContent* aParent,
 
   while (parent && parent->IsSVGElement()) {
     if (parent->IsSVGElement(nsGkAtoms::foreignObject)) {
-      // SVG in a foreignObject must have its own <svg> (nsSVGOuterSVGFrame).
+      
       return false;
     }
     if (parent->IsSVGElement(nsGkAtoms::svg)) {
@@ -657,7 +655,7 @@ void
 SVGSVGElement::InvalidateTransformNotifyFrame()
 {
   nsISVGSVGFrame* svgframe = do_QueryFrame(GetPrimaryFrame());
-  // might fail this check if we've failed conditional processing
+  
   if (svgframe) {
     svgframe->NotifyViewportOrTransformChanged(
                 nsSVGDisplayableFrame::TRANSFORM_CHANGED);
@@ -682,14 +680,14 @@ SVGSVGElement::
 
   bool hasViewBoxRect = HasViewBoxRect();
   if (!hasViewBoxRect && ShouldSynthesizeViewBox()) {
-    // My non-<svg:image> clients will have been painting me with a synthesized
-    // viewBox, but my <svg:image> client that's about to paint me now does NOT
-    // want that.  Need to tell ourselves to flush our transform.
+    
+    
+    
     mImageNeedsTransformInvalidation = true;
   }
 
   if (!hasViewBoxRect) {
-    return; // preserveAspectRatio irrelevant (only matters if we have viewBox)
+    return; 
   }
 
   if (SetPreserveAspectRatioProperty(aPAR)) {
@@ -706,9 +704,9 @@ SVGSVGElement::ClearImageOverridePreserveAspectRatio()
 #endif
 
   if (!HasViewBoxRect() && ShouldSynthesizeViewBox()) {
-    // My non-<svg:image> clients will want to paint me with a synthesized
-    // viewBox, but my <svg:image> client that just painted me did NOT
-    // use that.  Need to tell ourselves to flush our transform.
+    
+    
+    
     mImageNeedsTransformInvalidation = true;
   }
 
@@ -729,7 +727,7 @@ SVGSVGElement::SetPreserveAspectRatioProperty(const SVGPreserveAspectRatio& aPAR
              "Setting override value when it's already set...?");
 
   if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-    // property-insertion failed (e.g. OOM in property-table code)
+    
     delete pAROverridePtr;
     return false;
   }
@@ -769,14 +767,14 @@ SVGSVGElement::GetPreserveAspectRatioWithOverride() const
 
   SVGViewElement* viewElement = GetCurrentViewElement();
 
-  // This check is equivalent to "!HasViewBoxRect() && ShouldSynthesizeViewBox()".
-  // We're just holding onto the viewElement that HasViewBoxRect() would look up,
-  // so that we don't have to look it up again later.
+  
+  
+  
   if (!((viewElement && viewElement->mViewBox.HasRect()) ||
         (mSVGView && mSVGView->mViewBox.HasRect()) ||
         mViewBox.HasRect()) &&
       ShouldSynthesizeViewBox()) {
-    // If we're synthesizing a viewBox, use preserveAspectRatio="none";
+    
     return SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE, SVG_MEETORSLICE_SLICE);
   }
 
@@ -793,7 +791,7 @@ SVGViewElement*
 SVGSVGElement::GetCurrentViewElement() const
 {
   if (mCurrentViewID) {
-    //XXXsmaug It is unclear how this should work in case we're in Shadow DOM.
+    
     nsIDocument* doc = GetUncomposedDoc();
     if (doc) {
       Element *element = doc->GetElementById(*mCurrentViewID);
@@ -826,5 +824,5 @@ SVGSVGElement::GetTransformInternal() const
          ? mSVGView->mTransforms: mTransforms;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ArrayUtils.h"
 
@@ -31,7 +31,7 @@ nsSVGElement::StringInfo SVGMPathElement::sStringInfo[2] =
   { &nsGkAtoms::href, kNameSpaceID_XLink, false }
 };
 
-// Cycle collection magic -- based on SVGUseElement
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(SVGMPathElement)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(SVGMPathElement,
@@ -44,19 +44,17 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(SVGMPathElement,
   tmp->mHrefTarget.Traverse(&cb);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-//----------------------------------------------------------------------
-// nsISupports methods
 
-NS_IMPL_ADDREF_INHERITED(SVGMPathElement,SVGMPathElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGMPathElement,SVGMPathElementBase)
 
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGMPathElement)
-  NS_INTERFACE_TABLE_INHERITED(SVGMPathElement, nsIDOMNode, nsIDOMElement,
-                               nsIDOMSVGElement,
-                               nsIMutationObserver)
-NS_INTERFACE_TABLE_TAIL_INHERITING(SVGMPathElementBase)
 
-// Constructor
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGMPathElement,
+                                             SVGMPathElementBase,
+                                             nsIDOMNode,
+                                             nsIDOMElement,
+                                             nsIDOMSVGElement,
+                                             nsIMutationObserver)
+
+
 SVGMPathElement::SVGMPathElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : SVGMPathElementBase(aNodeInfo),
     mHrefTarget(this)
@@ -68,8 +66,8 @@ SVGMPathElement::~SVGMPathElement()
   UnlinkHrefTarget(false);
 }
 
-//----------------------------------------------------------------------
-// nsIDOMNode methods
+
+
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGMPathElement)
 
@@ -81,8 +79,8 @@ SVGMPathElement::Href()
          : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }
 
-//----------------------------------------------------------------------
-// nsIContent methods
+
+
 
 nsresult
 SVGMPathElement::BindToTree(nsIDocument* aDocument,
@@ -130,11 +128,11 @@ SVGMPathElement::ParseAttribute(int32_t aNamespaceID,
        aNamespaceID == kNameSpaceID_None ) &&
       aAttribute == nsGkAtoms::href &&
       IsInUncomposedDoc()) {
-    // Note: If we fail the IsInDoc call, it's ok -- we'll update the target
-    // on next BindToTree call.
+    
+    
 
-    // Note: "href" takes priority over xlink:href. So if "xlink:href" is being
-    // set here, we only let that update our target if "href" is *unset*.
+    
+    
     if (aNamespaceID != kNameSpaceID_XLink ||
         !mStringAttributes[HREF].IsExplicitlySet()) {
       UpdateHrefTarget(GetParent(), aValue);
@@ -155,8 +153,8 @@ SVGMPathElement::UnsetAttr(int32_t aNamespaceID,
     if (aNamespaceID == kNameSpaceID_None) {
       UnlinkHrefTarget(true);
 
-      // After unsetting href, we may still have xlink:href, so we should
-      // try to add it back.
+      
+      
       const nsAttrValue* xlinkHref =
         mAttrsAndChildren.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink);
       if (xlinkHref) {
@@ -164,15 +162,15 @@ SVGMPathElement::UnsetAttr(int32_t aNamespaceID,
       }
     } else if (!HasAttr(kNameSpaceID_None, nsGkAtoms::href)) {
       UnlinkHrefTarget(true);
-    } // else: we unset xlink:href, but we still have href attribute, so keep
-      // the target linking to href.
+    } 
+      
   }
 
   return NS_OK;
 }
 
-//----------------------------------------------------------------------
-// nsSVGElement methods
+
+
 
 nsSVGElement::StringAttributesInfo
 SVGMPathElement::GetStringInfo()
@@ -181,8 +179,8 @@ SVGMPathElement::GetStringInfo()
                               ArrayLength(sStringInfo));
 }
 
-//----------------------------------------------------------------------
-// nsIMutationObserver methods
+
+
 
 void
 SVGMPathElement::AttributeChanged(nsIDocument* aDocument,
@@ -199,8 +197,8 @@ SVGMPathElement::AttributeChanged(nsIDocument* aDocument,
   }
 }
 
-//----------------------------------------------------------------------
-// Public helper methods
+
+
 
 SVGPathElement*
 SVGMPathElement::GetReferencedPath()
@@ -220,8 +218,8 @@ SVGMPathElement::GetReferencedPath()
   return nullptr;
 }
 
-//----------------------------------------------------------------------
-// Protected helper methods
+
+
 
 void
 SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
@@ -232,23 +230,23 @@ SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI),
                                             aHrefStr, OwnerDoc(), baseURI);
 
-  // Stop observing old target (if any)
+  
   if (mHrefTarget.get()) {
     mHrefTarget.get()->RemoveMutationObserver(this);
   }
 
   if (aParent) {
-    // Pass in |aParent| instead of |this| -- first argument is only used
-    // for a call to GetComposedDoc(), and |this| might not have a current
-    // document yet (if our caller is BindToTree).
+    
+    
+    
     mHrefTarget.Reset(aParent, targetURI);
   } else {
-    // if we don't have a parent, then there's no animateMotion element
-    // depending on our target, so there's no point tracking it right now.
+    
+    
     mHrefTarget.Unlink();
   }
 
-  // Start observing new target (if any)
+  
   if (mHrefTarget.get()) {
     mHrefTarget.get()->AddMutationObserver(this);
   }
@@ -259,7 +257,7 @@ SVGMPathElement::UpdateHrefTarget(nsIContent* aParent,
 void
 SVGMPathElement::UnlinkHrefTarget(bool aNotifyParent)
 {
-  // Stop observing old target (if any)
+  
   if (mHrefTarget.get()) {
     mHrefTarget.get()->RemoveMutationObserver(this);
   }
@@ -283,6 +281,6 @@ SVGMPathElement::NotifyParentOfMpathChange(nsIContent* aParent)
   }
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 

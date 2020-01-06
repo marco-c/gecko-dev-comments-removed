@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=2 et tw=79: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
@@ -37,14 +37,9 @@
 
 using namespace mozilla;
 
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsHtml5TreeOpExecutor)
-  NS_INTERFACE_TABLE_INHERITED(nsHtml5TreeOpExecutor,
-                               nsIContentSink)
-NS_INTERFACE_TABLE_TAIL_INHERITING(nsHtml5DocumentBuilder)
-
-NS_IMPL_ADDREF_INHERITED(nsHtml5TreeOpExecutor, nsContentSink)
-
-NS_IMPL_RELEASE_INHERITED(nsHtml5TreeOpExecutor, nsContentSink)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsHtml5TreeOpExecutor,
+                                             nsHtml5DocumentBuilder,
+                                             nsIContentSink)
 
 class nsHtml5ExecutorReflusher : public Runnable
 {
@@ -70,7 +65,7 @@ nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
   , mSuppressEOF(false)
   , mReadingFromStage(false)
   , mStreamParser(nullptr)
-  , mPreloadedURLs(23)  // Mean # of preloadable resources per page on dmoz
+  , mPreloadedURLs(23)  
   , mSpeculationReferrerPolicy(mozilla::net::RP_Unset)
   , mStarted(false)
   , mRunFlushLoopOnStack(false)
@@ -96,7 +91,7 @@ nsHtml5TreeOpExecutor::~nsHtml5TreeOpExecutor()
   NS_ASSERTION(mOpQueue.IsEmpty(), "Somehow there's stuff in the op queue.");
 }
 
-// nsIContentSink
+
 NS_IMETHODIMP
 nsHtml5TreeOpExecutor::WillParse()
 {
@@ -112,25 +107,25 @@ nsHtml5TreeOpExecutor::WillBuildModel(nsDTDMode aDTDMode)
   GetDocument()->BeginLoad();
   if (mDocShell && !GetDocument()->GetWindow() &&
       !IsExternalViewSource()) {
-    // Not loading as data but script global object not ready
+    
     return MarkAsBroken(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
   return NS_OK;
 }
 
 
-// This is called when the tree construction has ended
+
 NS_IMETHODIMP
 nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated)
 {
   if (!aTerminated) {
-    // This is needed to avoid unblocking loads too many times on one hand
-    // and on the other hand to avoid destroying the frame constructor from
-    // within an update batch. See bug 537683.
+    
+    
+    
     EndDocUpdate();
     
-    // If the above caused a call to nsIParser::Terminate(), let that call
-    // win.
+    
+    
     if (!mParser) {
       return NS_OK;
     }
@@ -142,19 +137,19 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated)
 
   GetParser()->DropStreamParser();
 
-  // This comes from nsXMLContentSink and nsHTMLContentSink
-  // If this parser has been marked as broken, treat the end of parse as
-  // forced termination.
+  
+  
+  
   DidBuildModelImpl(aTerminated || NS_FAILED(IsBroken()));
 
   if (!mLayoutStarted) {
-    // We never saw the body, and layout never got started. Force
-    // layout *now*, to get an initial reflow.
+    
+    
 
-    // NOTE: only force the layout if we are NOT destroying the
-    // docshell. If we are destroying it, then starting layout will
-    // likely cause us to crash, or at best waste a lot of time as we
-    // are just going to tear it down anyway.
+    
+    
+    
+    
     bool destroying = true;
     if (mDocShell) {
       mDocShell->IsBeingDestroyed(&destroying);
@@ -168,13 +163,13 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated)
   ScrollToRef();
   mDocument->RemoveObserver(this);
   if (!mParser) {
-    // DidBuildModelImpl may cause mParser to be nulled out
-    // Return early to avoid unblocking the onload event too many times.
+    
+    
     return NS_OK;
   }
 
-  // We may not have called BeginLoad() if loading is terminated before
-  // OnStartRequest call.
+  
+  
   if (mStarted) {
     mDocument->EndLoad();
   }
@@ -218,7 +213,7 @@ void
 nsHtml5TreeOpExecutor::FlushPendingNotifications(FlushType aType)
 {
   if (aType >= FlushType::EnsurePresShellInitAndFrames) {
-    // Bug 577508 / 253951
+    
     nsContentSink::StartLayout(true);
   }
 }
@@ -237,10 +232,10 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
   if (mStreamParser) {
     mStreamParser->Terminate();
   }
-  // We are under memory pressure, but let's hope the following allocation
-  // works out so that we get to terminate and clean up the parser from
-  // a safer point.
-  if (mParser && mDocument) { // can mParser ever be null here?
+  
+  
+  
+  if (mParser && mDocument) { 
     nsCOMPtr<nsIRunnable> terminator =
       NewRunnableMethod("nsHtml5Parser::Terminate", GetParser(), &nsHtml5Parser::Terminate);
     if (NS_FAILED(mDocument->Dispatch(TaskCategory::Network,
@@ -252,7 +247,7 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
 }
 
 static bool
-BackgroundFlushCallback(TimeStamp /*aDeadline*/)
+BackgroundFlushCallback(TimeStamp )
 {
   RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
@@ -288,14 +283,14 @@ nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync()
       NS_WARNING("We've already scheduled a task for background list flush.");
       return;
     }
-    // Now we set up a repetitive idle scheduler for flushing background list.
+    
     gBackgroundFlushRunner =
       IdleTaskRunner::Create(&BackgroundFlushCallback,
                              "nsHtml5TreeOpExecutor::BackgroundFlushCallback",
-                             250, // The hard deadline: 250ms.
-                             nsContentSink::sInteractiveParseTime / 1000, // Required budget.
-                             true, // repeating
-                             []{ return false; }); // MayStopProcessing
+                             250, 
+                             nsContentSink::sInteractiveParseTime / 1000, 
+                             true, 
+                             []{ return false; }); 
   }
 }
 
@@ -310,7 +305,7 @@ nsHtml5TreeOpExecutor::FlushSpeculativeLoads()
        iter < end;
        ++iter) {
     if (MOZ_UNLIKELY(!mParser)) {
-      // An extension terminated the parser from a HTTP observer.
+      
       return;
     }
     iter->Perform(this);
@@ -351,30 +346,30 @@ class nsHtml5FlushLoopGuard
     }
 };
 
-/**
- * The purpose of the loop here is to avoid returning to the main event loop
- */
+
+
+
 void
 nsHtml5TreeOpExecutor::RunFlushLoop()
 {
   AUTO_PROFILER_LABEL("nsHtml5TreeOpExecutor::RunFlushLoop", OTHER);
 
   if (mRunFlushLoopOnStack) {
-    // There's already a RunFlushLoop() on the call stack.
+    
     return;
   }
   
-  nsHtml5FlushLoopGuard guard(this); // this is also the self-kungfu!
+  nsHtml5FlushLoopGuard guard(this); 
   
   RefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
 
-  // Remember the entry time
+  
   (void) nsContentSink::WillParseImpl();
 
   for (;;) {
     if (!mParser) {
-      // Parse has terminated.
-      mOpQueue.Clear(); // clear in order to be able to assert in destructor
+      
+      mOpQueue.Clear(); 
       return;
     }
 
@@ -383,18 +378,18 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
     }
 
     if (!parserKungFuDeathGrip->IsParserEnabled()) {
-      // The parser is blocked.
+      
       return;
     }
   
     if (mFlushState != eNotFlushing) {
-      // XXX Can this happen? In case it can, let's avoid crashing.
+      
       return;
     }
     
-    // If there are scripts executing, then the content sink is jumping the gun
-    // (probably due to a synchronous XMLHttpRequest) and will re-enable us
-    // later, see bug 460706.
+    
+    
+    
     if (IsScriptExecuting()) {
       return;
     }
@@ -402,8 +397,8 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
     if (mReadingFromStage) {
       nsTArray<nsHtml5SpeculativeLoad> speculativeLoadQueue;
       mStage.MoveOpsAndSpeculativeLoadsTo(mOpQueue, speculativeLoadQueue);
-      // Make sure speculative loads never start after the corresponding
-      // normal loads for the same URLs.
+      
+      
       const nsHtml5SpeculativeLoad* start = speculativeLoadQueue.Elements();
       const nsHtml5SpeculativeLoad* end = start + speculativeLoadQueue.Length();
       for (nsHtml5SpeculativeLoad* iter = (nsHtml5SpeculativeLoad*)start;
@@ -411,27 +406,27 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
            ++iter) {
         iter->Perform(this);
         if (MOZ_UNLIKELY(!mParser)) {
-          // An extension terminated the parser from a HTTP observer.
-          mOpQueue.Clear(); // clear in order to be able to assert in destructor
+          
+          mOpQueue.Clear(); 
           return;
         }
       }
     } else {
-      FlushSpeculativeLoads(); // Make sure speculative loads never start after
-                               // the corresponding normal loads for the same
-                               // URLs.
+      FlushSpeculativeLoads(); 
+                               
+                               
       if (MOZ_UNLIKELY(!mParser)) {
-        // An extension terminated the parser from a HTTP observer.
-        mOpQueue.Clear(); // clear in order to be able to assert in destructor
+        
+        mOpQueue.Clear(); 
         return;
       }
-      // Not sure if this grip is still needed, but previously, the code
-      // gripped before calling ParseUntilBlocked();
+      
+      
       RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip = 
         GetParser()->GetStreamParser();
-      mozilla::Unused << streamKungFuDeathGrip; // Not used within function
-      // Now parse content left in the document.write() buffer queue if any.
-      // This may generate tree ops on its own or dequeue a speculation.
+      mozilla::Unused << streamKungFuDeathGrip; 
+      
+      
       nsresult rv = GetParser()->ParseUntilBlocked();
       if (NS_FAILED(rv)) {
         MarkAsBroken(rv);
@@ -440,8 +435,8 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
     }
 
     if (mOpQueue.IsEmpty()) {
-      // Avoid bothering the rest of the engine with a doc update if there's 
-      // nothing to do.
+      
+      
       return;
     }
 
@@ -458,7 +453,7 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
     const nsHtml5TreeOperation* last = first + numberOfOpsToFlush - 1;
     for (nsHtml5TreeOperation* iter = const_cast<nsHtml5TreeOperation*>(first);;) {
       if (MOZ_UNLIKELY(!mParser)) {
-        // The previous tree op caused a call to nsIParser::Terminate().
+        
         break;
       }
       NS_ASSERTION(mFlushState == eInDocUpdate, 
@@ -469,7 +464,7 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
         break;
       }
 
-      // Be sure not to check the deadline if the last op was just performed.
+      
       if (MOZ_UNLIKELY(iter == last)) {
         break;
       } else if (MOZ_UNLIKELY(interrupted) ||
@@ -498,15 +493,15 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
     mFlushState = eNotFlushing;
 
     if (MOZ_UNLIKELY(!mParser)) {
-      // The parse ended already.
+      
       return;
     }
 
     if (scriptElement) {
-      // must be tail call when mFlushState is eNotFlushing
+      
       RunScript(scriptElement);
       
-      // Always check the clock in nsContentSink right after a script
+      
       StopDeflecting();
       if (nsContentSink::DidProcessATokenImpl() == 
           NS_ERROR_HTMLPARSER_INTERRUPTED) {
@@ -527,26 +522,26 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
   nsresult rv = IsBroken();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  FlushSpeculativeLoads(); // Make sure speculative loads never start after the
-                // corresponding normal loads for the same URLs.
+  FlushSpeculativeLoads(); 
+                
 
   if (MOZ_UNLIKELY(!mParser)) {
-    // The parse has ended.
-    mOpQueue.Clear(); // clear in order to be able to assert in destructor
+    
+    mOpQueue.Clear(); 
     return rv;
   }
   
   if (mFlushState != eNotFlushing) {
-    // XXX Can this happen? In case it can, let's avoid crashing.
+    
     return rv;
   }
 
   mFlushState = eInFlush;
 
-  // avoid crashing near EOF
+  
   RefPtr<nsHtml5TreeOpExecutor> kungFuDeathGrip(this);
   RefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
-  mozilla::Unused << parserKungFuDeathGrip; // Intentionally not used within function
+  mozilla::Unused << parserKungFuDeathGrip; 
 
   NS_ASSERTION(!mReadingFromStage,
     "Got doc write flush when reading from stage");
@@ -568,7 +563,7 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
        iter < end;
        ++iter) {
     if (MOZ_UNLIKELY(!mParser)) {
-      // The previous tree op caused a call to nsIParser::Terminate().
+      
       break;
     }
     NS_ASSERTION(mFlushState == eInDocUpdate, 
@@ -587,29 +582,29 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
   mFlushState = eNotFlushing;
 
   if (MOZ_UNLIKELY(!mParser)) {
-    // Ending the doc update caused a call to nsIParser::Terminate().
+    
     return rv;
   }
 
   if (scriptElement) {
-    // must be tail call when mFlushState is eNotFlushing
+    
     RunScript(scriptElement);
   }
   return rv;
 }
 
-// copied from HTML content sink
+
 bool
 nsHtml5TreeOpExecutor::IsScriptEnabled()
 {
-  // Note that if we have no document or no docshell or no global or whatnot we
-  // want to claim script _is_ enabled, so we don't parse the contents of
-  // <noscript> tags!
+  
+  
+  
   if (!mDocument || !mDocShell)
     return true;
   nsCOMPtr<nsIScriptGlobalObject> globalObject = do_QueryInterface(mDocument->GetInnerWindow());
-  // Getting context is tricky if the document hasn't had its
-  // GlobalObject set yet
+  
+  
   if (!globalObject) {
     globalObject = mDocShell->GetScriptGlobalObject();
   }
@@ -626,7 +621,7 @@ nsHtml5TreeOpExecutor::StartLayout(bool* aInterrupted) {
   EndDocUpdate();
 
   if (MOZ_UNLIKELY(!mParser)) {
-    // got terminate
+    
     return;
   }
 
@@ -641,8 +636,8 @@ nsHtml5TreeOpExecutor::StartLayout(bool* aInterrupted) {
 
 void
 nsHtml5TreeOpExecutor::PauseDocUpdate(bool* aInterrupted) {
-  // Pausing the document update allows JS to run, and potentially block
-  // further parsing.
+  
+  
   EndDocUpdate();
 
   if (MOZ_LIKELY(mParser)) {
@@ -652,24 +647,24 @@ nsHtml5TreeOpExecutor::PauseDocUpdate(bool* aInterrupted) {
   }
 }
 
-/**
- * The reason why this code is here and not in the tree builder even in the 
- * main-thread case is to allow the control to return from the tokenizer 
- * before scripts run. This way, the tokenizer is not invoked re-entrantly 
- * although the parser is.
- *
- * The reason why this is called as a tail call when mFlushState is set to
- * eNotFlushing is to allow re-entry to Flush() but only after the current 
- * Flush() has cleared the op queue and is otherwise done cleaning up after 
- * itself.
- */
+
+
+
+
+
+
+
+
+
+
+
 void
 nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement)
 {
   if (mRunsToCompletion) {
-    // We are in createContextualFragment() or in the upcoming document.parse().
-    // Do nothing. Let's not even mark scripts malformed here, because that
-    // could cause serialization weirdness later.
+    
+    
+    
     return;
   }
 
@@ -682,9 +677,9 @@ nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement)
   
   if (!mParser) {
     NS_ASSERTION(sele->IsMalformed(), "Script wasn't marked as malformed.");
-    // We got here not because of an end tag but because the tree builder
-    // popped an incomplete script element on EOF. Returning here to avoid
-    // calling back into mParser anymore.
+    
+    
+    
     return;
   }
   
@@ -700,22 +695,22 @@ nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement)
   
   sele->SetCreatorParser(GetParser());
 
-  // Copied from nsXMLContentSink
-  // Now tell the script that it's ready to go. This may execute the script
-  // or return true, or neither if the script doesn't need executing.
+  
+  
+  
   bool block = sele->AttemptToExecute();
 
-  // If the act of insertion evaluated the script, we're fine.
-  // Else, block the parser till the script has loaded.
+  
+  
   if (block) {
     if (mParser) {
       GetParser()->BlockParser();
     }
   } else {
-    // mParser may have been nulled out by now, but the flusher deals
+    
 
-    // If this event isn't needed, it doesn't do anything. It is sometimes
-    // necessary for the parse to continue after complex situations.
+    
+    
     nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync();
   }
 }
@@ -735,7 +730,7 @@ nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding,
   EndDocUpdate();
 
   if (MOZ_UNLIKELY(!mParser)) {
-    // got terminate
+    
     return;
   }
   
@@ -744,17 +739,17 @@ nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding,
     return;
   }
 
-  // ask the webshellservice to load the URL
+  
   if (NS_SUCCEEDED(wss->StopDocumentLoad())) {
     nsAutoCString charset;
     aEncoding->Name(charset);
     wss->ReloadDocument(charset.get(), aSource);
   }
-  // if the charset switch was accepted, wss has called Terminate() on the
-  // parser by now
+  
+  
 
   if (!mParser) {
-    // success
+    
     if (aSource == kCharsetFromMetaTag) {
       MaybeComplainAboutCharset("EncLateMetaReload", false, aLineNumber);
     }
@@ -778,15 +773,15 @@ nsHtml5TreeOpExecutor::MaybeComplainAboutCharset(const char* aMsgId,
   if (mAlreadyComplainedAboutCharset) {
     return;
   }
-  // The EncNoDeclaration case for advertising iframes is so common that it
-  // would result is way too many errors. The iframe case doesn't matter
-  // when the ad is an image or a Flash animation anyway. When the ad is
-  // textual, a misrendered ad probably isn't a huge loss for users.
-  // Let's suppress the message in this case.
-  // This means that errors about other different-origin iframes in mashups
-  // are lost as well, but generally, the site author isn't in control of
-  // the embedded different-origin pages anyway and can't fix problems even
-  // if alerted about them.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!strcmp(aMsgId, "EncNoDeclaration") && mDocShell) {
     nsCOMPtr<nsIDocShellTreeItem> parent;
     mDocShell->GetSameTypeParent(getter_AddRefs(parent));
@@ -846,9 +841,9 @@ nsHtml5TreeOpExecutor::GetViewSourceBaseURI()
 {
   if (!mViewSourceBaseURI) {
 
-    // We query the channel for the baseURI because in certain situations it
-    // cannot otherwise be determined. If this process fails, fall back to the
-    // standard method.
+    
+    
+    
     nsCOMPtr<nsIViewSourceChannel> vsc =
       do_QueryInterface(mDocument->GetChannel());
     if (vsc) {
@@ -866,15 +861,15 @@ nsHtml5TreeOpExecutor::GetViewSourceBaseURI()
       NS_ASSERTION(nested, "URI with scheme view-source didn't QI to nested!");
       nested->GetInnerURI(getter_AddRefs(mViewSourceBaseURI));
     } else {
-      // Fail gracefully if the base URL isn't a view-source: URL.
-      // Not sure if this can ever happen.
+      
+      
       mViewSourceBaseURI = orig;
     }
   }
   return mViewSourceBaseURI;
 }
 
-//static
+
 void
 nsHtml5TreeOpExecutor::InitializeStatics()
 {
@@ -895,19 +890,19 @@ nsHtml5TreeOpExecutor::IsExternalViewSource()
   return isViewSource;
 }
 
-// Speculative loading
+
 
 nsIURI*
 nsHtml5TreeOpExecutor::BaseURIForPreload()
 {
-  // The URL of the document without <base>
+  
   nsIURI* documentURI = mDocument->GetDocumentURI();
-  // The URL of the document with non-speculative <base>
+  
   nsIURI* documentBaseURI = mDocument->GetDocBaseURI();
 
-  // If the two above are different, use documentBaseURI. If they are the same,
-  // the document object isn't aware of a <base>, so attempt to use the
-  // mSpeculationBaseURI or, failing, that, documentURI.
+  
+  
+  
   return (documentURI == documentBaseURI) ?
           (mSpeculationBaseURI ?
            mSpeculationBaseURI.get() : documentURI)
@@ -1003,7 +998,7 @@ nsHtml5TreeOpExecutor::PreloadImage(const nsAString& aURL,
   nsCOMPtr<nsIURI> uri = mDocument->ResolvePreloadImage(baseURI, aURL, aSrcset,
                                                         aSizes, &isImgSet);
   if (uri && ShouldPreloadURI(uri)) {
-    // use document wide referrer policy
+    
     mozilla::net::ReferrerPolicy referrerPolicy = mSpeculationReferrerPolicy;
     mozilla::net::ReferrerPolicy imageReferrerPolicy =
       mozilla::net::AttributeReferrerPolicyFromString(aImageReferrerPolicy);
@@ -1015,8 +1010,8 @@ nsHtml5TreeOpExecutor::PreloadImage(const nsAString& aURL,
   }
 }
 
-// These calls inform the document of picture state and seen sources, such that
-// it can use them to inform ResolvePreLoadImage as necessary
+
+
 void
 nsHtml5TreeOpExecutor::PreloadPictureSource(const nsAString& aSrcset,
                                             const nsAString& aSizes,
@@ -1052,7 +1047,7 @@ void
 nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL)
 {
   if (mSpeculationBaseURI) {
-    // the first one wins
+    
     return;
   }
   auto encoding = mDocument->GetDocumentCharacterSet();
@@ -1064,18 +1059,18 @@ nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL)
 void
 nsHtml5TreeOpExecutor::SetSpeculationReferrerPolicy(const nsAString& aReferrerPolicy)
 {
-  // Specs says:
-  // - Let value be the result of stripping leading and trailing whitespace from
-  // the value of element's content attribute.
-  // - If value is not the empty string, then:
+  
+  
+  
+  
   if (aReferrerPolicy.IsEmpty()) {
     return;
   }
 
   ReferrerPolicy policy = mozilla::net::ReferrerPolicyFromString(aReferrerPolicy);
-  // Specs says:
-  // - If policy is not the empty string, then set element's node document's
-  // referrer policy to policy
+  
+  
+  
   if (policy != mozilla::net::RP_Unset) {
     SetSpeculationReferrerPolicy(policy);
   }
@@ -1096,14 +1091,14 @@ nsHtml5TreeOpExecutor::AddSpeculationCSP(const nsAString& aCSP)
   nsresult rv = principal->EnsurePreloadCSP(domDoc, getter_AddRefs(preloadCsp));
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  // please note that meta CSPs and CSPs delivered through a header need
-  // to be joined together.
+  
+  
   rv = preloadCsp->AppendPolicy(aCSP,
-                                false, // csp via meta tag can not be report only
-                                true); // delivered through the meta tag
+                                false, 
+                                true); 
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  // Record "speculated" referrer policy for preloads
+  
   bool hasReferrerPolicy = false;
   uint32_t referrerPolicy = mozilla::net::RP_Unset;
   rv = preloadCsp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
@@ -1118,9 +1113,9 @@ nsHtml5TreeOpExecutor::AddSpeculationCSP(const nsAString& aCSP)
 void
 nsHtml5TreeOpExecutor::SetSpeculationReferrerPolicy(ReferrerPolicy aReferrerPolicy)
 {
-  // Record "speculated" referrer policy locally and thread through the
-  // speculation phase.  The actual referrer policy will be set by
-  // HTMLMetaElement::BindToTree().
+  
+  
+  
   mSpeculationReferrerPolicy = aReferrerPolicy;
 }
 

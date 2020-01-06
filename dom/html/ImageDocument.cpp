@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImageDocument.h"
 #include "mozilla/dom/ImageDocumentBinding.h"
@@ -47,7 +47,7 @@
 #define AUTOMATIC_IMAGE_RESIZING_PREF "browser.enable_automatic_image_resizing"
 #define CLICK_IMAGE_RESIZING_PREF "browser.enable_click_image_resizing"
 
-//XXX A hack needed for Firefox's site specific zoom.
+
 static bool IsSiteSpecific()
 {
   return !mozilla::Preferences::GetBool("privacy.resistFingerprinting", false) &&
@@ -89,7 +89,7 @@ ImageListener::OnStartRequest(nsIRequest* request, nsISupports *ctxt)
   nsCOMPtr<nsPIDOMWindowOuter> domWindow = imgDoc->GetWindow();
   NS_ENSURE_TRUE(domWindow, NS_ERROR_UNEXPECTED);
 
-  // Do a ShouldProcess check to see whether to keep loading the image.
+  
   nsCOMPtr<nsIURI> channelURI;
   channel->GetURI(getter_AddRefs(channelURI));
 
@@ -165,13 +165,11 @@ ImageDocument::~ImageDocument()
 NS_IMPL_CYCLE_COLLECTION_INHERITED(ImageDocument, MediaDocument,
                                    mImageContent)
 
-NS_IMPL_ADDREF_INHERITED(ImageDocument, MediaDocument)
-NS_IMPL_RELEASE_INHERITED(ImageDocument, MediaDocument)
-
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(ImageDocument)
-  NS_INTERFACE_TABLE_INHERITED(ImageDocument, nsIImageDocument,
-                               imgINotificationObserver, nsIDOMEventListener)
-NS_INTERFACE_TABLE_TAIL_INHERITING(MediaDocument)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(ImageDocument,
+                                             MediaDocument,
+                                             nsIImageDocument,
+                                             imgINotificationObserver,
+                                             nsIDOMEventListener)
 
 
 nsresult
@@ -223,12 +221,12 @@ void
 ImageDocument::Destroy()
 {
   if (mImageContent) {
-    // Remove our event listener from the image content.
+    
     nsCOMPtr<EventTarget> target = do_QueryInterface(mImageContent);
     target->RemoveEventListener(NS_LITERAL_STRING("load"), this, false);
     target->RemoveEventListener(NS_LITERAL_STRING("click"), this, false);
 
-    // Break reference cycle with mImageContent, if we have one
+    
     if (mObservingImageLoader) {
       nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mImageContent);
       if (imageLoader) {
@@ -245,8 +243,8 @@ ImageDocument::Destroy()
 void
 ImageDocument::SetScriptGlobalObject(nsIScriptGlobalObject* aScriptGlobalObject)
 {
-  // If the script global object is changing, we need to unhook our event
-  // listeners on the window.
+  
+  
   nsCOMPtr<EventTarget> target;
   if (mScriptGlobalObject &&
       aScriptGlobalObject != mScriptGlobalObject) {
@@ -256,13 +254,13 @@ ImageDocument::SetScriptGlobalObject(nsIScriptGlobalObject* aScriptGlobalObject)
                                 false);
   }
 
-  // Set the script global object on the superclass before doing
-  // anything that might require it....
+  
+  
   MediaDocument::SetScriptGlobalObject(aScriptGlobalObject);
 
   if (aScriptGlobalObject) {
     if (!GetRootElement()) {
-      // Create synthetic document
+      
 #ifdef DEBUG
       nsresult rv =
 #endif
@@ -344,15 +342,15 @@ ImageDocument::ShrinkToFit()
   }
   if (GetZoomLevel() != mOriginalZoomLevel && mImageIsResized &&
       !nsContentUtils::IsChildOfSameType(this)) {
-    // If we're zoomed, so that we don't maintain the invariant that
-    // mImageIsResized if and only if its displayed width/height fit in
-    // mVisibleWidth/mVisibleHeight, then we may need to switch to/from the
-    // overflowingVertical class here, because our viewport size may have
-    // changed and we don't plan to adjust the image size to compensate.  Since
-    // mImageIsResized it has a "height" attribute set, and we can just get the
-    // displayed image height by getting .height on the HTMLImageElement.
-    //
-    // Hold strong ref, because Height() can run script.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RefPtr<HTMLImageElement> img = HTMLImageElement::FromContent(mImageContent);
     uint32_t imageHeight = img->Height();
     nsDOMTokenList* classList = img->ClassList();
@@ -366,7 +364,7 @@ ImageDocument::ShrinkToFit()
     return;
   }
 
-  // Keep image content alive while changing the attributes.
+  
   RefPtr<HTMLImageElement> image = HTMLImageElement::FromContent(mImageContent);
   {
     IgnoredErrorResult ignored;
@@ -379,12 +377,12 @@ ImageDocument::ShrinkToFit()
                      ignored);
   }
 
-  // The view might have been scrolled when zooming in, scroll back to the
-  // origin now that we're showing a shrunk-to-window version.
+  
+  
   ScrollImageTo(0, 0, false);
 
   if (!mImageContent) {
-    // ScrollImageTo flush destroyed our content.
+    
     return;
   }
 
@@ -441,7 +439,7 @@ ImageDocument::RestoreImage()
   if (!mImageContent) {
     return;
   }
-  // Keep image content alive while changing the attributes.
+  
   nsCOMPtr<Element> imageContent = mImageContent;
   imageContent->UnsetAttr(kNameSpaceID_None, nsGkAtoms::width, true);
   imageContent->UnsetAttr(kNameSpaceID_None, nsGkAtoms::height, true);
@@ -500,8 +498,8 @@ ImageDocument::Notify(imgIRequest* aRequest, int32_t aType, const nsIntRect* aDa
     return OnSizeAvailable(aRequest, image);
   }
 
-  // Run this using a script runner because HAS_TRANSPARENCY notifications can
-  // come during painting and this will trigger invalidation.
+  
+  
   if (aType == imgINotificationObserver::HAS_TRANSPARENCY) {
     nsCOMPtr<nsIRunnable> runnable =
       NewRunnableMethod("dom::ImageDocument::OnHasTransparency",
@@ -566,14 +564,14 @@ ImageDocument::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
   int32_t oldWidth = mImageWidth;
   int32_t oldHeight = mImageHeight;
 
-  // Styles have not yet been applied, so we don't know the final size. For now,
-  // default to the image's intrinsic size.
+  
+  
   aImage->GetWidth(&mImageWidth);
   aImage->GetHeight(&mImageHeight);
 
-  // Multipart images send size available for each part; ignore them if it
-  // doesn't change our size. (We may not even support changing size in
-  // multipart images in the future.)
+  
+  
+  
   if (oldWidth == mImageWidth && oldHeight == mImageHeight) {
     return NS_OK;
   }
@@ -593,7 +591,7 @@ ImageDocument::OnLoadComplete(imgIRequest* aRequest, nsresult aStatus)
 {
   UpdateTitleAndCharset();
 
-  // mImageContent can be null if the document is already destroyed
+  
   if (NS_FAILED(aStatus) && mStringBundle && mImageContent) {
     nsAutoCString src;
     mDocumentURI->GetSpec(src);
@@ -647,13 +645,13 @@ ImageDocument::HandleEvent(nsIDOMEvent* aEvent)
 void
 ImageDocument::UpdateSizeFromLayout()
 {
-  // Pull an updated size from the content frame to account for any size
-  // change due to CSS properties like |image-orientation|.
+  
+  
   if (!mImageContent) {
     return;
   }
 
-  // Need strong ref, because GetPrimaryFrame can run script.
+  
   nsCOMPtr<Element> imageContent = mImageContent;
   nsIFrame* contentFrame = imageContent->GetPrimaryFrame(FlushType::Frames);
   if (!contentFrame) {
@@ -670,7 +668,7 @@ ImageDocument::UpdateSizeFromLayout()
     mImageHeight = nsPresContext::AppUnitsToFloatCSSPixels(newSize.height.GetCoordValue());
   }
 
-  // Ensure that our information about overflow is up-to-date if needed.
+  
   if (mImageWidth != oldSize.width || mImageHeight != oldSize.height) {
     CheckOverflowing(false);
   }
@@ -679,11 +677,11 @@ ImageDocument::UpdateSizeFromLayout()
 nsresult
 ImageDocument::CreateSyntheticDocument()
 {
-  // Synthesize an html document that refers to the image
+  
   nsresult rv = MediaDocument::CreateSyntheticDocument();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Add the image element
+  
   Element* body = GetBodyElement();
   if (!body) {
     NS_WARNING("no body on image document!");
@@ -706,7 +704,7 @@ ImageDocument::CreateSyntheticDocument()
   mDocumentURI->GetSpec(src);
 
   NS_ConvertUTF8toUTF16 srcString(src);
-  // Make sure not to start the image load from here...
+  
   imageLoader->SetLoadingEnabled(false);
   mImageContent->SetAttr(kNameSpaceID_None, nsGkAtoms::src, srcString, false);
   mImageContent->SetAttr(kNameSpaceID_None, nsGkAtoms::alt, srcString, false);
@@ -720,10 +718,10 @@ ImageDocument::CreateSyntheticDocument()
 nsresult
 ImageDocument::CheckOverflowing(bool changeState)
 {
-  /* Create a scope so that the style context gets destroyed before we might
-   * call RebuildStyleData.  Also, holding onto pointers to the
-   * presentation through style resolution is potentially dangerous.
-   */
+  
+
+
+
   {
     nsIPresShell *shell = GetShell();
     if (!shell) {
@@ -786,13 +784,13 @@ ImageDocument::UpdateTitleAndCharset()
     nsCString::const_iterator iter = end;
     if (FindInReadable(NS_LITERAL_CSTRING("IMAGE/"), start, iter) &&
         iter != end) {
-      // strip out "X-" if any
+      
       if (*iter == 'X') {
         ++iter;
         if (iter != end && *iter == '-') {
           ++iter;
           if (iter == end) {
-            // looks like "IMAGE/X-" is the type??  Bail out of here.
+            
             mimeType.BeginReading(iter);
           }
         } else {
@@ -858,8 +856,8 @@ ImageDocument::GetZoomLevel()
   return zoomLevel;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 nsresult
 NS_NewImageDocument(nsIDocument** aResult)

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ArrayUtils.h"
 
@@ -30,8 +30,8 @@ SVGUseElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
   return SVGUseElementBinding::Wrap(aCx, this, aGivenProto);
 }
 
-////////////////////////////////////////////////////////////////////////
-// implementation
+
+
 
 nsSVGElement::LengthInfo SVGUseElement::sLengthInfo[4] =
 {
@@ -47,8 +47,8 @@ nsSVGElement::StringInfo SVGUseElement::sStringInfo[2] =
   { &nsGkAtoms::href, kNameSpaceID_XLink, true }
 };
 
-//----------------------------------------------------------------------
-// nsISupports methods
+
+
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(SVGUseElement)
 
@@ -64,15 +64,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(SVGUseElement,
   tmp->mSource.Traverse(&cb);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-NS_IMPL_ADDREF_INHERITED(SVGUseElement,SVGUseElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGUseElement,SVGUseElementBase)
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGUseElement,
+                                             SVGUseElementBase,
+                                             nsIMutationObserver)
 
-NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(SVGUseElement)
-  NS_INTERFACE_TABLE_INHERITED(SVGUseElement, nsIMutationObserver)
-NS_INTERFACE_TABLE_TAIL_INHERITING(SVGUseElementBase)
 
-//----------------------------------------------------------------------
-// Implementation
+
 
 SVGUseElement::SVGUseElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : SVGUseElementBase(aNodeInfo), mSource(this)
@@ -84,8 +81,8 @@ SVGUseElement::~SVGUseElement()
   UnlinkSource();
 }
 
-//----------------------------------------------------------------------
-// nsIDOMNode methods
+
+
 
 nsresult
 SVGUseElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
@@ -99,7 +96,7 @@ SVGUseElement::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult,
   nsresult rv1 = it->Init();
   nsresult rv2 = const_cast<SVGUseElement*>(this)->CopyInnerTo(it, aPreallocateChildren);
 
-  // SVGUseElement specific portion - record who we cloned from
+  
   it->mOriginal = const_cast<SVGUseElement*>(this);
 
   if (NS_SUCCEEDED(rv1) && NS_SUCCEEDED(rv2)) {
@@ -117,7 +114,7 @@ SVGUseElement::Href()
          : mStringAttributes[XLINK_HREF].ToDOMAnimatedString(this);
 }
 
-//----------------------------------------------------------------------
+
 
 already_AddRefed<SVGAnimatedLength>
 SVGUseElement::X()
@@ -143,8 +140,8 @@ SVGUseElement::Height()
   return mLengthAttributes[ATTR_HEIGHT].ToDOMAnimatedLength(this);
 }
 
-//----------------------------------------------------------------------
-// nsIMutationObserver methods
+
+
 
 void
 SVGUseElement::CharacterDataChanged(nsIDocument *aDocument,
@@ -210,7 +207,7 @@ SVGUseElement::NodeWillBeDestroyed(const nsINode *aNode)
   UnlinkSource();
 }
 
-//----------------------------------------------------------------------
+
 
 already_AddRefed<nsIContent>
 SVGUseElement::CreateAnonymousContent()
@@ -224,8 +221,8 @@ SVGUseElement::CreateAnonymousContent()
   if (!targetContent)
     return nullptr;
 
-  // make sure target is valid type for <use>
-  // QIable nsSVGGraphicsElement would eliminate enumerating all elements
+  
+  
   if (!targetContent->IsAnyOfSVGElements(nsGkAtoms::svg,
                                          nsGkAtoms::symbol,
                                          nsGkAtoms::g,
@@ -241,13 +238,13 @@ SVGUseElement::CreateAnonymousContent()
                                          nsGkAtoms::use))
     return nullptr;
 
-  // circular loop detection
+  
 
-  // check 1 - check if we're a document descendent of the target
+  
   if (nsContentUtils::ContentIsDescendantOf(this, targetContent))
     return nullptr;
 
-  // check 2 - check if we're a clone, and if we already exist in the hierarchy
+  
   if (GetParent() && mOriginal) {
     for (nsCOMPtr<nsIContent> content = GetParent();
          content;
@@ -280,7 +277,7 @@ SVGUseElement::CreateAnonymousContent()
       newElement->SetLength(nsGkAtoms::height, mLengthAttributes[ATTR_HEIGHT]);
   }
 
-  // Store the base URI
+  
   nsCOMPtr<nsIURI> baseURI = targetContent->GetBaseURI();
   if (!baseURI) {
     return nullptr;
@@ -292,13 +289,13 @@ SVGUseElement::CreateAnonymousContent()
   targetContent->AddMutationObserver(this);
 
 #ifdef DEBUG
-  // Our anonymous clone can get restyled by various things
-  // (e.g. SMIL).  Reconstructing its frame is OK, though, because
-  // it's going to be our _only_ child in the frame tree, so can't get
-  // mis-ordered with anything.
+  
+  
+  
+  
   newcontent->SetProperty(nsGkAtoms::restylableAnonymousNode,
                           reinterpret_cast<void*>(true));
-#endif // DEBUG
+#endif 
 
   return newcontent.forget();
 }
@@ -323,8 +320,8 @@ SVGUseElement::OurWidthAndHeightAreUsed() const
   return frame->GetContentClone()->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol);
 }
 
-//----------------------------------------------------------------------
-// implementation helpers
+
+
 
 void
 SVGUseElement::SyncWidthOrHeight(nsIAtom* aName)
@@ -345,14 +342,14 @@ SVGUseElement::SyncWidthOrHeight(nsIAtom* aName)
       return;
     }
     if (clone->IsSVGElement(nsGkAtoms::svg)) {
-      // Our width/height attribute is now no longer explicitly set, so we
-      // need to revert the clone's width/height to the width/height of the
-      // content that's being cloned.
+      
+      
+      
       TriggerReclone();
       return;
     }
-    // Our width/height attribute is now no longer explicitly set, so we
-    // need to set the value to 100%
+    
+    
     nsSVGLength2 length;
     length.Init(SVGContentUtils::XY, 0xff,
                 100, nsIDOMSVGLength::SVG_LENGTHTYPE_PERCENTAGE);
@@ -408,14 +405,14 @@ SVGUseElement::UnlinkSource()
   mSource.Unlink();
 }
 
-//----------------------------------------------------------------------
-// nsSVGElement methods
 
-/* virtual */ gfxMatrix
+
+
+ gfxMatrix
 SVGUseElement::PrependLocalTransformsTo(
   const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
 {
-  // 'transform' attribute:
+  
   gfxMatrix userToParent;
 
   if (aWhich == eUserSpaceToParent || aWhich == eAllTransforms) {
@@ -426,7 +423,7 @@ SVGUseElement::PrependLocalTransformsTo(
     }
   }
 
-  // our 'x' and 'y' attributes:
+  
   float x, y;
   const_cast<SVGUseElement*>(this)->GetAnimatedLengthValues(&x, &y, nullptr);
 
@@ -438,17 +435,17 @@ SVGUseElement::PrependLocalTransformsTo(
 
   MOZ_ASSERT(aWhich == eChildToUserSpace, "Unknown TransformTypes");
 
-  // The following may look broken because pre-multiplying our eChildToUserSpace
-  // transform with another matrix without including our eUserSpaceToParent
-  // transform between the two wouldn't make sense.  We don't expect that to
-  // ever happen though.  We get here either when the identity matrix has been
-  // passed because our caller just wants our eChildToUserSpace transform, or
-  // when our eUserSpaceToParent transform has already been multiplied into the
-  // matrix that our caller passes (such as when we're called from PaintSVG).
+  
+  
+  
+  
+  
+  
+  
   return childToUser * aMatrix;
 }
 
-/* virtual */ bool
+ bool
 SVGUseElement::HasValidDimensions() const
 {
   return (!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
@@ -479,8 +476,8 @@ SVGUseElement::GetFrame() const
   return static_cast<nsSVGUseFrame*>(frame);
 }
 
-//----------------------------------------------------------------------
-// nsIContent methods
+
+
 
 NS_IMETHODIMP_(bool)
 SVGUseElement::IsAttributeMapped(const nsIAtom* name) const
@@ -500,5 +497,5 @@ SVGUseElement::IsAttributeMapped(const nsIAtom* name) const
     SVGUseElementBase::IsAttributeMapped(name);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
