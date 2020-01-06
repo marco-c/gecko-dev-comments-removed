@@ -4,34 +4,26 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
-
+add_task(async function() {
   
-  let testTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {skipAnimation: true});
+  let testTab = BrowserTestUtils.addTab(gBrowser, "about:blank", { skipAnimation: true });
   is(gBrowser.visibleTabs.length, 2, "just added a tab, so 2 tabs");
-  gBrowser.selectedTab = testTab;
+  await BrowserTestUtils.switchTab(gBrowser, testTab);
 
   let numVisBeforeHide, numVisAfterHide;
-  gBrowser.tabContainer.addEventListener("TabSelect", function() {
-    
-    numVisBeforeHide = gBrowser.visibleTabs.length;
-    gBrowser.hideTab(testTab);
-    numVisAfterHide = gBrowser.visibleTabs.length;
-  }, {once: true});
-  gBrowser.removeTab(testTab, {animate: true});
 
   
-  (function checkRemoved() {
-    return setTimeout(function() {
-      if (gBrowser.tabs.length != 1) {
-        checkRemoved();
-        return;
-      }
+  
+  let tabClosed = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabClose");
+  let tabRemoved = BrowserTestUtils.removeTab(testTab, { animate: true });
+  await tabClosed;
 
-      is(numVisBeforeHide, 1, "animated remove has in 1 tab left");
-      is(numVisAfterHide, 1, "hiding a removing tab is also has 1 tab");
-      finish();
-    }, 50);
-  })();
-}
+  numVisBeforeHide = gBrowser.visibleTabs.length;
+  gBrowser.hideTab(testTab);
+  numVisAfterHide = gBrowser.visibleTabs.length;
+
+  is(numVisBeforeHide, 1, "animated remove has in 1 tab left");
+  is(numVisAfterHide, 1, "hiding a removing tab also has 1 tab");
+
+  await tabRemoved;
+});
