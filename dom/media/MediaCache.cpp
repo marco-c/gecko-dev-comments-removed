@@ -252,10 +252,11 @@ public:
   };
 
 protected:
-  explicit MediaCache(int64_t aContentLength)
+  explicit MediaCache(int64_t aContentLength, MediaBlockCacheBase* aCache)
     : mContentLength(aContentLength)
     , mNextResourceID(1)
     , mReentrantMonitor("MediaCache.mReentrantMonitor")
+    , mBlockCache(aCache)
     , mUpdateQueued(false)
 #ifdef DEBUG
     , mInUpdate(false)
@@ -305,11 +306,6 @@ protected:
 
     MOZ_COUNT_DTOR(MediaCache);
   }
-
-  
-  
-  
-  nsresult Init();
 
   
   
@@ -674,25 +670,6 @@ MediaCacheStream::BlockList::NotifyBlockSwapped(int32_t aBlockIndex1,
   }
 }
 
-nsresult
-MediaCache::Init()
-{
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-  NS_ASSERTION(!mBlockCache, "Block cache already open?");
-
-  if (mContentLength <= 0) {
-    
-    mBlockCache = new FileBlockCache();
-  } else {
-    
-    mBlockCache = new MemoryBlockCache(mContentLength);
-  }
-  nsresult rv = mBlockCache->Init();
-  NS_ENSURE_SUCCESS(rv,rv);
-
-  return NS_OK;
-}
-
 void
 MediaCache::Flush()
 {
@@ -736,9 +713,10 @@ MediaCache::GetMediaCache(int64_t aContentLength)
         sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100)) {
     
     
-    RefPtr<MediaCache> mc = new MediaCache(aContentLength);
-    nsresult rv = mc->Init();
+    RefPtr<MediaBlockCacheBase> bc = new MemoryBlockCache(aContentLength);
+    nsresult rv = bc->Init();
     if (NS_SUCCEEDED(rv)) {
+      RefPtr<MediaCache> mc = new MediaCache(aContentLength, bc);
       gMediaMemoryCachesCombinedSize += aContentLength;
       LOG("GetMediaCache(%" PRIi64
           ") -> Memory MediaCache %p, combined size %" PRIi64,
@@ -757,14 +735,14 @@ MediaCache::GetMediaCache(int64_t aContentLength)
     return gMediaCache;
   }
 
-  gMediaCache = new MediaCache(-1);
-  nsresult rv = gMediaCache->Init();
-  if (NS_FAILED(rv)) {
-    gMediaCache = nullptr;
-    LOG("GetMediaCache(%" PRIi64 ") -> Failed to create file-backed MediaCache",
+  RefPtr<MediaBlockCacheBase> bc = new FileBlockCache();
+  nsresult rv = bc->Init();
+  if (NS_SUCCEEDED(rv)) {
+    gMediaCache = new MediaCache(-1, bc);
+    LOG("GetMediaCache(%" PRIi64 ") -> Created file-backed MediaCache",
         aContentLength);
   } else {
-    LOG("GetMediaCache(%" PRIi64 ") -> Created file-backed MediaCache",
+    LOG("GetMediaCache(%" PRIi64 ") -> Failed to create file-backed MediaCache",
         aContentLength);
   }
 
