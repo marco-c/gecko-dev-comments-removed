@@ -564,14 +564,22 @@ exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
 
 
 
-function moveInfobar(container, bounds, win) {
+
+
+
+
+
+
+
+
+function moveInfobar(container, bounds, win, options = {}) {
   let zoom = getCurrentZoom(win);
   let viewport = getViewportDimensions(win);
 
   let { computedStyle } = container;
 
-  
-  let margin = parseFloat(computedStyle
+  let margin = 2;
+  let arrowSize = parseFloat(computedStyle
                               .getPropertyValue("--highlighter-bubble-arrow-size"));
   let containerHeight = parseFloat(computedStyle.getPropertyValue("height"));
   let containerWidth = parseFloat(computedStyle.getPropertyValue("width"));
@@ -583,17 +591,16 @@ function moveInfobar(container, bounds, win) {
 
   pageYOffset *= zoom;
   pageXOffset *= zoom;
-  containerHeight += margin;
 
   
   let topBoundary = margin;
-  let bottomBoundary = viewportHeight - containerHeight;
+  let bottomBoundary = viewportHeight - containerHeight - margin - 1;
   let leftBoundary = containerHalfWidth + margin;
   let rightBoundary = viewportWidth - containerHalfWidth - margin;
 
   
-  let top = bounds.y - containerHeight;
-  let bottom = bounds.bottom + margin;
+  let top = bounds.y - containerHeight - arrowSize;
+  let bottom = bounds.bottom + margin + arrowSize;
   let left = bounds.x + bounds.width / 2;
   let isOverlapTheNode = false;
   let positionAttribute = "top";
@@ -608,8 +615,10 @@ function moveInfobar(container, bounds, win) {
   
   let canBePlacedOnTop = top >= pageYOffset;
   let canBePlacedOnBottom = bottomBoundary + pageYOffset - bottom > 0;
+  let forcedOnTop = options.position === "top";
+  let forcedOnBottom = options.position === "bottom";
 
-  if (!canBePlacedOnTop && canBePlacedOnBottom) {
+  if ((!canBePlacedOnTop && canBePlacedOnBottom && !forcedOnTop) || forcedOnBottom) {
     top = bottom;
     positionAttribute = "bottom";
   }
@@ -630,7 +639,10 @@ function moveInfobar(container, bounds, win) {
     top -= pageYOffset;
   }
 
-  if (isOverlapTheNode) {
+  if (isOverlapTheNode && options.hideIfOffscreen) {
+    container.setAttribute("hidden", "true");
+    return;
+  } else if (isOverlapTheNode) {
     left = Math.min(Math.max(leftBoundary, left - pageXOffset), rightBoundary);
 
     position = "fixed";
