@@ -23,8 +23,20 @@ const LOCKED_BIT: U8 = 4;
 const PARKED_BIT: U8 = 8;
 
 
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub enum OnceState {
+    
+    New,
 
-pub struct OnceState(bool);
+    
+    Poisoned,
+
+    
+    InProgress,
+
+    
+    Done,
+}
 
 impl OnceState {
     
@@ -33,7 +45,20 @@ impl OnceState {
     
     #[inline]
     pub fn poisoned(&self) -> bool {
-        self.0
+        match *self {
+            OnceState::Poisoned => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn done(&self) -> bool {
+        match *self {
+            OnceState::Done => true,
+            _ => false,
+        }
     }
 }
 
@@ -78,6 +103,21 @@ impl Once {
     #[inline]
     pub fn new() -> Once {
         Once(AtomicU8::new(0))
+    }
+
+    
+    #[inline]
+    pub fn state(&self) -> OnceState {
+        let state = self.0.load(Ordering::Acquire);
+        if state & DONE_BIT != 0 {
+            OnceState::Done
+        } else if state & LOCKED_BIT != 0 {
+            OnceState::InProgress
+        } else if state & POISON_BIT != 0 {
+            OnceState::Poisoned
+        } else {
+            OnceState::New
+        }
     }
 
     
@@ -160,9 +200,7 @@ impl Once {
 
         let mut f = Some(f);
         self.call_once_slow(true,
-                            &mut |state| unsafe {
-                                f.take().unchecked_unwrap()(state)
-                            });
+                            &mut |state| unsafe { f.take().unchecked_unwrap()(state) });
     }
 
     
@@ -267,7 +305,12 @@ impl Once {
         
         
         let guard = PanicGuard(self);
-        f(OnceState(state & POISON_BIT != 0));
+        let once_state = if state & POISON_BIT != 0 {
+            OnceState::Poisoned
+        } else {
+            OnceState::New
+        };
+        f(once_state);
         mem::forget(guard);
 
         
@@ -348,15 +391,11 @@ mod tests {
         static O: Once = ONCE_INIT;
 
         
-        let t = panic::catch_unwind(|| {
-            O.call_once(|| panic!());
-        });
+        let t = panic::catch_unwind(|| { O.call_once(|| panic!()); });
         assert!(t.is_err());
 
         
-        let t = panic::catch_unwind(|| {
-            O.call_once(|| {});
-        });
+        let t = panic::catch_unwind(|| { O.call_once(|| {}); });
         assert!(t.is_err());
 
         
@@ -377,9 +416,7 @@ mod tests {
         static O: Once = ONCE_INIT;
 
         
-        let t = panic::catch_unwind(|| {
-            O.call_once(|| panic!());
-        });
+        let t = panic::catch_unwind(|| { O.call_once(|| panic!()); });
         assert!(t.is_err());
 
         
@@ -398,9 +435,7 @@ mod tests {
         
         let t2 = thread::spawn(|| {
             let mut called = false;
-            O.call_once(|| {
-                called = true;
-            });
+            O.call_once(|| { called = true; });
             assert!(!called);
         });
 
