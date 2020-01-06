@@ -1633,52 +1633,6 @@ FirstCharMatcher8bit(const char* text, uint32_t n, const char pat)
     return reinterpret_cast<const char*>(memchr(text, pat, n));
 }
 
-static const char16_t*
-FirstCharMatcher16bit(const char16_t* text, uint32_t n, const char16_t pat)
-{
-#if defined(XP_DARWIN) || defined(XP_WIN)
-    
-
-
-
-    return FirstCharMatcherUnrolled<char16_t, char16_t>(text, n, pat);
-#else
-    
-
-
-
-
-
-    const char* text8 = (const char*) text;
-    const char* pat8 = reinterpret_cast<const char*>(&pat);
-
-    MOZ_ASSERT(n < UINT32_MAX/2);
-    n *= 2;
-
-    uint32_t i = 0;
-    while (i < n) {
-        
-        const char* pos8 = FirstCharMatcher8bit(text8 + i, n - i, pat8[0]);
-        if (pos8 == nullptr)
-            return nullptr;
-        i = static_cast<uint32_t>(pos8 - text8);
-
-        
-        if (i % 2 != 0) {
-            i++;
-            continue;
-        }
-
-        
-        if (pat8[1] == text8[i + 1])
-            return (text + (i/2));
-
-        i += 2;
-    }
-    return nullptr;
-#endif
-}
-
 template <class InnerMatch, typename TextChar, typename PatChar>
 static int
 Matcher(const TextChar* text, uint32_t textlen, const PatChar* pat, uint32_t patlen)
@@ -1690,9 +1644,7 @@ Matcher(const TextChar* text, uint32_t textlen, const PatChar* pat, uint32_t pat
     while (i < n) {
         const TextChar* pos;
 
-        if (sizeof(TextChar) == 2 && sizeof(PatChar) == 2)
-            pos = (TextChar*) FirstCharMatcher16bit((char16_t*)text + i, n - i, pat[0]);
-        else if (sizeof(TextChar) == 1 && sizeof(PatChar) == 1)
+        if (sizeof(TextChar) == 1 && sizeof(PatChar) == 1)
             pos = (TextChar*) FirstCharMatcher8bit((char*) text + i, n - i, pat[0]);
         else
             pos = (TextChar*) FirstCharMatcherUnrolled<TextChar, PatChar>(text + i, n - i, pat[0]);
