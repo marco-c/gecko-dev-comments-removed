@@ -1217,7 +1217,17 @@ function ReadManifest(aURL, inherited_status, aFilter)
             if (gCompareStyloToGecko) {
                 type = TYPE_REFTEST_EQUAL;
                 refURI = testURI;
+
+                
+                
+                
+                
+                if (expected_status === EXPECTED_FAIL ||
+                    expected_status === EXPECTED_RANDOM) {
+                    expected_status = EXPECTED_DEATH;
+                }
             }
+
             AddTestItem({ type: type,
                           expected: expected_status,
                           allowSilentFail: allow_silent_fail,
