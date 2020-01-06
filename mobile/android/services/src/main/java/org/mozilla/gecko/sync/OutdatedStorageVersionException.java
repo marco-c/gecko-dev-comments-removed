@@ -1,0 +1,9 @@
+
+
+
+
+package org.mozilla.gecko.sync;
+
+ class OutdatedStorageVersionException extends SyncException {
+    private static final long serialVersionUID = 1703691318986965545L;
+}
