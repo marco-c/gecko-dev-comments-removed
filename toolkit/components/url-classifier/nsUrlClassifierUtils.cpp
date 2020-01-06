@@ -2,6 +2,7 @@
 
 
 
+#include "chromium/safebrowsing.pb.h"
 #include "nsEscape.h"
 #include "nsString.h"
 #include "nsIURI.h"
@@ -11,7 +12,6 @@
 #include "nsReadableUtils.h"
 #include "plbase64.h"
 #include "nsPrintfCString.h"
-#include "safebrowsing.pb.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Mutex.h"
 #include "nsIRedirectHistoryEntry.h"
