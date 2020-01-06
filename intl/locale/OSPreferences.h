@@ -128,6 +128,19 @@ public:
   static bool GetDateTimeConnectorPattern(const nsACString& aLocale,
                                           nsAString& aRetVal);
 
+  
+
+
+
+
+
+
+
+
+
+
+  void Refresh();
+
 protected:
   nsTArray<nsCString> mSystemLocales;
   nsTArray<nsCString> mRegionalPrefsLocales;
@@ -187,19 +200,6 @@ private:
                            DateTimeFormatStyle aTimeFormatStyle,
                            const nsACString& aLocale,
                            nsAString& aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void Refresh();
 };
 
 } 

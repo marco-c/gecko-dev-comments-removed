@@ -530,9 +530,14 @@ LocaleService::Observe(nsISupports *aSubject, const char *aTopic,
 {
   MOZ_ASSERT(mIsServer, "This should only be called in the server mode.");
 
-  
-  
   NS_ConvertUTF16toUTF8 pref(aData);
+
+  
+  if (pref.EqualsLiteral(ANDROID_OS_LOCALE_PREF)) {
+    OSPreferences::GetInstance()->Refresh();
+  }
+  
+  
   if (pref.EqualsLiteral(MATCH_OS_LOCALE_PREF) ||
       pref.EqualsLiteral(SELECTED_LOCALE_PREF) ||
       pref.EqualsLiteral(ANDROID_OS_LOCALE_PREF)) {
