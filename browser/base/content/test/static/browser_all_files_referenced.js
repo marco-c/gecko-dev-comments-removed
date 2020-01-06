@@ -88,6 +88,9 @@ var whitelist = [
   {file: "resource://app/modules/NewTabWebChannel.jsm"},
 
   
+  {file: "resource://app/modules/PingCentre.jsm"},
+
+  
   {file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties"},
   {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
 
