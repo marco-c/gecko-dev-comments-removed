@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef nsStyleStructFwd_h_
 #define nsStyleStructFwd_h_
 

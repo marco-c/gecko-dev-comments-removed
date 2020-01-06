@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsImageBoxFrame_h___
 #define nsImageBoxFrame_h___
 

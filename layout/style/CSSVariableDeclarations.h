@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef mozilla_CSSVariableDeclarations_h
 #define mozilla_CSSVariableDeclarations_h
 

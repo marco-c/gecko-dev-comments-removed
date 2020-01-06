@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_BindingStyleRule_h__
 #define mozilla_BindingStyleRule_h__
 

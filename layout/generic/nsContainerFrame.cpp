@@ -5,6 +5,7 @@
 
 
 
+
 #include "nsContainerFrame.h"
 
 #include "mozilla/dom/HTMLDetailsElement.h"

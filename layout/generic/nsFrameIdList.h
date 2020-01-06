@@ -2,6 +2,8 @@
 
 
 
+
+
 FRAME_ID(BRFrame, Br, Leaf)
 FRAME_ID(DetailsFrame, Details, NotLeaf)
 FRAME_ID(nsAutoRepeatBoxFrame, Box, NotLeaf)

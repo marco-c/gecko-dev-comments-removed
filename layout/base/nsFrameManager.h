@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef _nsFrameManager_h_
 #define _nsFrameManager_h_
 

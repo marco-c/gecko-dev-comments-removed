@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsMenuBarListener_h
 #define nsMenuBarListener_h
 

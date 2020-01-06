@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsMathMLmrowFrame_h___
 #define nsMathMLmrowFrame_h___
 

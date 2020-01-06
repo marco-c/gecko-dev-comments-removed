@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsSimplePageSequenceFrame_h___
 #define nsSimplePageSequenceFrame_h___
 

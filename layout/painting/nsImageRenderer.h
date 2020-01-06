@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsImageRenderer_h__
 #define nsImageRenderer_h__
 

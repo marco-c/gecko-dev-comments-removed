@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef nsIObjectFrame_h___
 #define nsIObjectFrame_h___
 

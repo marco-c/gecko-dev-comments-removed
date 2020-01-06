@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef nsICSSDeclaration_h__
 #define nsICSSDeclaration_h__
 

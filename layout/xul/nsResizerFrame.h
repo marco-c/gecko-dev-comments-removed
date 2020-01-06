@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsResizerFrame_h___
 #define nsResizerFrame_h___
 

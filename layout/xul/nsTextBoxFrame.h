@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsTextBoxFrame_h___
 #define nsTextBoxFrame_h___
 

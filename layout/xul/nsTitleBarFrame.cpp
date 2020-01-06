@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsCOMPtr.h"
 #include "nsTitleBarFrame.h"
 #include "nsIContent.h"

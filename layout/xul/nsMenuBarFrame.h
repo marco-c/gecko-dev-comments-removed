@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef nsMenuBarFrame_h__
 #define nsMenuBarFrame_h__
 

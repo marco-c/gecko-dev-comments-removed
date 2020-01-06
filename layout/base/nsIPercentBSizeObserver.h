@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsIPercentBSizeObserver_h___
 #define nsIPercentBSizeObserver_h___
 

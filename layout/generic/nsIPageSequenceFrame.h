@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef nsIPageSequenceFrame_h___
 #define nsIPageSequenceFrame_h___
 

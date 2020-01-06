@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef mozilla_RestyleTracker_h
 #define mozilla_RestyleTracker_h
 

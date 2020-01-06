@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsColorControlFrame.h"
 
 #include "nsContentCreatorFunctions.h"

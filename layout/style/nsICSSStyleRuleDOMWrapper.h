@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef nsICSSStyleRuleDOMWrapper_h_
 #define nsICSSStyleRuleDOMWrapper_h_
 

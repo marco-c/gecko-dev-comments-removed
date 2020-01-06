@@ -10,6 +10,7 @@
 
 
 
+
 #include "gfxContext.h"
 #include "nsSplitterFrame.h"
 #include "nsGkAtoms.h"

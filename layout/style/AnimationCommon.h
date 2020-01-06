@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_css_AnimationCommon_h
 #define mozilla_css_AnimationCommon_h
 

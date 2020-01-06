@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsMathMLFrame_h___
 #define nsMathMLFrame_h___
 

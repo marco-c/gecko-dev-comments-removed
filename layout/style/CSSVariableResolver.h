@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef mozilla_CSSVariableResolver_h
 #define mozilla_CSSVariableResolver_h
 

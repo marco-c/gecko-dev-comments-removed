@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef mozilla_GeckoRestyleManager_h
 #define mozilla_GeckoRestyleManager_h
 

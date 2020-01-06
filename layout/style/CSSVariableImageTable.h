@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef mozilla_CSSVariableImageTable_h
 #define mozilla_CSSVariableImageTable_h
 

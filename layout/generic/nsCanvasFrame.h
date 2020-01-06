@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef nsCanvasFrame_h___
 #define nsCanvasFrame_h___
 

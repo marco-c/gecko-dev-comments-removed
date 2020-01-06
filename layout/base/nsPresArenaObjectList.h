@@ -6,6 +6,7 @@
 
 
 
+
 #ifdef STYLE_STRUCT
 #error Sorry nsPresArenaObjectList.h needs to use STYLE_STRUCT!
 #endif

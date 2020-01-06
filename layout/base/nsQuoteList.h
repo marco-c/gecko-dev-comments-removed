@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef nsQuoteList_h___
 #define nsQuoteList_h___
 

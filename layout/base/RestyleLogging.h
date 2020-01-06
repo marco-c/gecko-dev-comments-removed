@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef mozilla_RestyleLogging_h
 #define mozilla_RestyleLogging_h
 

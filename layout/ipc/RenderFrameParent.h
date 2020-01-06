@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_layout_RenderFrameParent_h
 #define mozilla_layout_RenderFrameParent_h
 

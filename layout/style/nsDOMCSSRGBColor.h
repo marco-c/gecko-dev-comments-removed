@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef nsDOMCSSRGBColor_h__
 #define nsDOMCSSRGBColor_h__
 

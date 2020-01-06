@@ -4,6 +4,7 @@
 
 
 
+
 #ifndef nsMathMLmencloseFrame_h___
 #define nsMathMLmencloseFrame_h___
 

@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsNumberControlFrame_h__
 #define nsNumberControlFrame_h__
 

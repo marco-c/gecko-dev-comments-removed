@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef __NS_SVGPATTERNFRAME_H__
 #define __NS_SVGPATTERNFRAME_H__
 

@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_RestyleTrackerInlines_h
 #define mozilla_RestyleTrackerInlines_h
 

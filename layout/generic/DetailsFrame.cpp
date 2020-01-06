@@ -3,6 +3,7 @@
 
 
 
+
 #include "DetailsFrame.h"
 
 #include "mozilla/Attributes.h"

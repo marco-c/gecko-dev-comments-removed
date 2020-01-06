@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_layout_ipc_VsyncChild_h
 #define mozilla_layout_ipc_VsyncChild_h
 

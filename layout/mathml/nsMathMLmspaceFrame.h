@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef nsMathMLmspaceFrame_h___
 #define nsMathMLmspaceFrame_h___
 
