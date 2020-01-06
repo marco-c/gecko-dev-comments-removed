@@ -43,6 +43,7 @@ namespace widget {
 nsWindow* IMEHandler::sFocusedWindow = nullptr;
 InputContextAction::Cause IMEHandler::sLastContextActionCause =
   InputContextAction::CAUSE_UNKNOWN;
+bool IMEHandler::sForceDisableCurrentIMM_IME = false;
 bool IMEHandler::sPluginHasFocus = false;
 
 #ifdef NS_ENABLE_TSF
@@ -82,6 +83,8 @@ IMEHandler::Initialize()
 #endif 
 
   IMMHandler::Initialize();
+
+  sForceDisableCurrentIMM_IME = IMMHandler::IsActiveIMEInBlockList();
 }
 
 
@@ -185,8 +188,23 @@ IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
   }
 #endif 
 
-  return IMMHandler::ProcessMessage(aWindow, aMessage, aWParam, aLParam,
-                                    aResult);
+  bool keepGoing =
+    IMMHandler::ProcessMessage(aWindow, aMessage, aWParam, aLParam, aResult);
+
+  
+  
+  
+  if (aMessage == WM_INPUTLANGCHANGE) {
+    bool disableIME = IMMHandler::IsActiveIMEInBlockList();
+    if (disableIME != sForceDisableCurrentIMM_IME) {
+      bool enable =
+        !disableIME && WinUtils::IsIMEEnabled(aWindow->InputContextRef());
+      AssociateIMEContext(aWindow, enable);
+      sForceDisableCurrentIMM_IME = disableIME;
+    }
+  }
+
+  return keepGoing;
 }
 
 #ifdef NS_ENABLE_TSF
@@ -421,7 +439,8 @@ IMEHandler::OnDestroyWindow(nsWindow* aWindow)
 bool
 IMEHandler::NeedsToAssociateIMC()
 {
-  return !sAssociateIMCOnlyWhenIMM_IMEActive || !IsIMMActive();
+  return !sForceDisableCurrentIMM_IME &&
+         (!sAssociateIMCOnlyWhenIMM_IMEActive || !IsIMMActive());
 }
 #endif 
 
