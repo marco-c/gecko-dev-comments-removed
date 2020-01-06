@@ -121,11 +121,12 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   
   if (!needClipAndScroll &&
-      InsideClipAndScroll() &&
       mBuilder->TopmostScrollId() == scrollId &&
       !mBuilder->TopmostIsClip()) {
-    MOZ_ASSERT(mItemClipStack.back().mClipAndScroll->first == scrollId);
-    needClipAndScroll = true;
+    if (auto cs = EnclosingClipAndScroll()) {
+      MOZ_ASSERT(cs->first == scrollId);
+      needClipAndScroll = true;
+    }
   }
 
   
@@ -292,7 +293,7 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
         
         ancestorIds.first = Nothing();
         ancestorIds.second = mBuilder->TopmostClipId();
-      } else if (InsideClipAndScroll()) {
+      } else if (auto cs = EnclosingClipAndScroll()) {
         
         
         
@@ -303,9 +304,9 @@ ScrollingLayersHelper::RecurseAndDefineClip(nsDisplayItem* aItem,
         
         
         
-        MOZ_ASSERT(mItemClipStack.back().mClipAndScroll->first == scrollId);
+        MOZ_ASSERT(cs->first == scrollId);
         ancestorIds.first = Nothing();
-        ancestorIds.second = mItemClipStack.back().mClipAndScroll->second;
+        ancestorIds.second = cs->second;
       }
     }
   }
@@ -445,10 +446,21 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   return ids;
 }
 
-bool
-ScrollingLayersHelper::InsideClipAndScroll() const
+Maybe<ScrollingLayersHelper::ClipAndScroll>
+ScrollingLayersHelper::EnclosingClipAndScroll() const
 {
-  return !mItemClipStack.empty() && mItemClipStack.back().mClipAndScroll.isSome();
+  for (auto it = mItemClipStack.rbegin(); it != mItemClipStack.rend(); it++) {
+    if (it->mClipAndScroll) {
+      return it->mClipAndScroll;
+    }
+    
+    
+    
+    if (it->mClipId || it->mScrollId) {
+      break;
+    }
+  }
+  return Nothing();
 }
 
 ScrollingLayersHelper::~ScrollingLayersHelper()
