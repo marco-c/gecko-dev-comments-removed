@@ -187,6 +187,17 @@ this.LabelUtils = {
   
   
   EXCLUDED_TAGS: ["SCRIPT", "NOSCRIPT", "OPTION", "STYLE"],
+
+  
+  
+  
+  _mappedLabels: null,
+
+  
+  
+  
+  _unmappedLabels: null,
+
   
 
 
@@ -204,8 +215,7 @@ this.LabelUtils = {
         return;
       }
 
-      if (el.nodeType == Ci.nsIDOMNode.TEXT_NODE ||
-          el.childNodes.length == 0) {
+      if (el.nodeType == Ci.nsIDOMNode.TEXT_NODE || el.childNodes.length == 0) {
         let trimmedText = el.textContent.trim();
         if (trimmedText) {
           strings.push(trimmedText);
@@ -214,8 +224,8 @@ this.LabelUtils = {
       }
 
       for (let node of el.childNodes) {
-        if (node.nodeType != Ci.nsIDOMNode.ELEMENT_NODE &&
-            node.nodeType != Ci.nsIDOMNode.TEXT_NODE) {
+        let nodeType = node.nodeType;
+        if (nodeType != Ci.nsIDOMNode.ELEMENT_NODE && nodeType != Ci.nsIDOMNode.TEXT_NODE) {
           continue;
         }
         _extractLabelStrings(node);
@@ -225,38 +235,50 @@ this.LabelUtils = {
     return strings;
   },
 
+  generateLabelMap(doc) {
+    let mappedLabels = new Map();
+    let unmappedLabels = [];
+
+    for (let label of doc.getElementsByTagName("label")) {
+      let id = label.htmlFor;
+      if (!id) {
+        let control = label.control;
+        if (!control) {
+          continue;
+        }
+        id = control.id;
+      }
+      if (id) {
+        let labels = mappedLabels.get(id);
+        if (labels) {
+          labels.push(label);
+        } else {
+          mappedLabels.set(id, [label]);
+        }
+      } else {
+        unmappedLabels.push(label);
+      }
+    }
+
+    this._mappedLabels = mappedLabels;
+    this._unmappedLabels = unmappedLabels;
+  },
+
+  clearLabelMap() {
+    this._mappedLabels = null;
+    this._unmappedLabels = null;
+  },
+
   findLabelElements(element) {
-    let document = element.ownerDocument;
-    let labels = [];
-    
-    
-    
-    for (let label of document.querySelectorAll("label[for]")) {
-      if (element.id == label.htmlFor) {
-        labels.push(label);
-      }
+    if (!this._mappedLabels) {
+      this.generateLabelMap(element.ownerDocument);
     }
 
-    if (labels.length > 0) {
-      log.debug("Label found by ID", element.id);
-      return labels;
+    let id = element.id;
+    if (!id) {
+      return this._unmappedLabels.filter(label => label.control == element);
     }
-
-    let parent = element.parentNode;
-    if (!parent) {
-      return [];
-    }
-    do {
-      if (parent.tagName == "LABEL" &&
-          parent.control == element &&
-          !parent.hasAttribute("for")) {
-        log.debug("Label found in input's parent or ancestor.");
-        return [parent];
-      }
-      parent = parent.parentNode;
-    } while (parent);
-
-    return [];
+    return this._mappedLabels.get(id) || [];
   },
 };
 
@@ -402,6 +424,9 @@ this.FormAutofillHeuristics = {
         fieldScanner.parsingIndex++;
       }
     }
+
+    LabelUtils.clearLabelMap();
+
     if (allowDuplicates) {
       return fieldScanner.fieldDetails;
     }
