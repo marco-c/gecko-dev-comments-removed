@@ -121,9 +121,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.18.0"
-#define SQLITE_VERSION_NUMBER 3018000
-#define SQLITE_SOURCE_ID      "2017-03-28 18:48:43 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37"
+#define SQLITE_VERSION        "3.19.0"
+#define SQLITE_VERSION_NUMBER 3019000
+#define SQLITE_SOURCE_ID      "2017-05-22 13:58:13 28a94eb282822cad1d1420f2dad6bf65e4b8b9062eda4a0b9ee8270b2c608e40"
 
 
 
@@ -2212,9 +2212,6 @@ SQLITE_API int sqlite3_total_changes(sqlite3*);
 
 
 
-
-
-
 SQLITE_API void sqlite3_interrupt(sqlite3*);
 
 
@@ -2672,6 +2669,13 @@ SQLITE_API sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
 
 
 SQLITE_API void sqlite3_randomness(int N, void *P);
+
+
+
+
+
+
+
 
 
 
@@ -3705,7 +3709,7 @@ SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 
 
 
-typedef struct Mem sqlite3_value;
+typedef struct sqlite3_value sqlite3_value;
 
 
 
@@ -4743,6 +4747,11 @@ SQLITE_API void *sqlite3_user_data(sqlite3_context*);
 
 
 SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
+
+
+
+
+
 
 
 
@@ -9387,7 +9396,7 @@ typedef struct sqlite3_changegroup sqlite3_changegroup;
 
 
 
-int sqlite3changegroup_new(sqlite3_changegroup **pp);
+SQLITE_API int sqlite3changegroup_new(sqlite3_changegroup **pp);
 
 
 
@@ -9464,7 +9473,7 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp);
 
 
 
-int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
+SQLITE_API int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 
 
 
@@ -9490,7 +9499,7 @@ int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 
 
 
-int sqlite3changegroup_output(
+SQLITE_API int sqlite3changegroup_output(
   sqlite3_changegroup*,
   int *pnData,                    
   void **ppData                   
@@ -9499,7 +9508,7 @@ int sqlite3changegroup_output(
 
 
 
-void sqlite3changegroup_delete(sqlite3_changegroup*);
+SQLITE_API void sqlite3changegroup_delete(sqlite3_changegroup*);
 
 
 
@@ -9888,11 +9897,11 @@ SQLITE_API int sqlite3session_patchset_strm(
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
 );
-int sqlite3changegroup_add_strm(sqlite3_changegroup*, 
+SQLITE_API int sqlite3changegroup_add_strm(sqlite3_changegroup*, 
     int (*xInput)(void *pIn, void *pData, int *pnData),
     void *pIn
 );
-int sqlite3changegroup_output_strm(sqlite3_changegroup*,
+SQLITE_API int sqlite3changegroup_output_strm(sqlite3_changegroup*,
     int (*xOutput)(void *pOut, const void *pData, int nData), 
     void *pOut
 );
