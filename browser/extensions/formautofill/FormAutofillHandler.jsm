@@ -375,7 +375,7 @@ FormAutofillHandler.prototype = {
       }
 
       let element = fieldDetail.elementWeakRef.get();
-      if (!(element instanceof Ci.nsIDOMHTMLSelectElement)) {
+      if (ChromeUtils.getClassName(element) !== "HTMLSelectElement") {
         continue;
       }
 
@@ -515,7 +515,7 @@ FormAutofillHandler.prototype = {
         }
       }
 
-      if (element instanceof Ci.nsIDOMHTMLSelectElement) {
+      if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
         let cache = this._cacheValue.matchingSelectOption.get(element) || {};
         let option = cache[value] && cache[value].get();
         if (!option) {
@@ -595,7 +595,7 @@ FormAutofillHandler.prototype = {
         continue;
       }
 
-      if (element instanceof Ci.nsIDOMHTMLSelectElement) {
+      if (ChromeUtils.getClassName(element) === "HTMLSelectElement") {
         
         
         if (value) {
@@ -745,7 +745,7 @@ FormAutofillHandler.prototype = {
         
         if (type == "address" &&
             detail.fieldName == "address-level1" &&
-            element instanceof Ci.nsIDOMHTMLSelectElement) {
+            ChromeUtils.getClassName(element) === "HTMLSelectElement") {
           
           
           

@@ -63,7 +63,8 @@ let FormLikeFactory = {
 
 
   createFromField(aField) {
-    if ((!(aField instanceof Ci.nsIDOMHTMLInputElement) && !(aField instanceof Ci.nsIDOMHTMLSelectElement)) ||
+    if ((!(aField instanceof Ci.nsIDOMHTMLInputElement) &&
+         ChromeUtils.getClassName(aField) !== "HTMLSelectElement") ||
         !aField.ownerDocument) {
       throw new Error("createFromField requires a field in a document");
     }
