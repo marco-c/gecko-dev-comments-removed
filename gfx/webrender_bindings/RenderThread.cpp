@@ -275,11 +275,13 @@ RenderThread::DecPendingFrameCount(wr::WindowId aWindowId)
 }
 
 void
-RenderThread::RegisterExternalImage(uint64_t aExternalImageId, RenderTextureHost* aTexture)
+RenderThread::RegisterExternalImage(uint64_t aExternalImageId, already_AddRefed<RenderTextureHost> aTexture)
 {
   MutexAutoLock lock(mRenderTextureMapLock);
-  MOZ_ASSERT(!mRenderTextures.Get(aExternalImageId));
-  mRenderTextures.Put(aExternalImageId, aTexture);
+
+  MOZ_ASSERT(!mRenderTextures.Get(aExternalImageId).get());
+  RefPtr<RenderTextureHost> texture(aTexture);
+  mRenderTextures.Put(aExternalImageId, Move(texture));
 }
 
 void
@@ -287,12 +289,35 @@ RenderThread::UnregisterExternalImage(uint64_t aExternalImageId)
 {
   MutexAutoLock lock(mRenderTextureMapLock);
   MOZ_ASSERT(mRenderTextures.Get(aExternalImageId).get());
-  mRenderTextures.Remove(aExternalImageId);
+  if (!IsInRenderThread()) {
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<RenderTextureHost> texture = mRenderTextures.Get(aExternalImageId);
+    mRenderTextures.Remove(aExternalImageId);
+    Loop()->PostTask(NewRunnableMethod<RefPtr<RenderTextureHost>>(
+      this, &RenderThread::DeferredRenderTextureHostDestroy, Move(texture)
+    ));
+  } else {
+    mRenderTextures.Remove(aExternalImageId);
+  }
+}
+
+void
+RenderThread::DeferredRenderTextureHostDestroy(RefPtr<RenderTextureHost>)
+{
+  
 }
 
 RenderTextureHost*
 RenderThread::GetRenderTexture(WrExternalImageId aExternalImageId)
 {
+  MOZ_ASSERT(IsInRenderThread());
+
   MutexAutoLock lock(mRenderTextureMapLock);
   MOZ_ASSERT(mRenderTextures.Get(aExternalImageId.mHandle).get());
   return mRenderTextures.Get(aExternalImageId.mHandle).get();

@@ -105,10 +105,13 @@ public:
   void Pause(wr::WindowId aWindowId);
   bool Resume(wr::WindowId aWindowId);
 
-  void RegisterExternalImage(uint64_t aExternalImageId, RenderTextureHost* aTexture);
+  
+  void RegisterExternalImage(uint64_t aExternalImageId, already_AddRefed<RenderTextureHost> aTexture);
 
+  
   void UnregisterExternalImage(uint64_t aExternalImageId);
 
+  
   RenderTextureHost* GetRenderTexture(WrExternalImageId aExternalImageId);
 
   
@@ -120,6 +123,8 @@ public:
 
 private:
   explicit RenderThread(base::Thread* aThread);
+
+  void DeferredRenderTextureHostDestroy(RefPtr<RenderTextureHost> aTexture);
 
   ~RenderThread();
 
