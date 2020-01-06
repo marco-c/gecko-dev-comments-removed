@@ -309,7 +309,7 @@ protected:
 
 
   EditActionResult ReturnInParagraph(Selection& aSelection,
-                                     nsINode& aParentDivOrP);
+                                     Element& aParentDivOrP);
 
   
 
@@ -321,17 +321,11 @@ protected:
 
 
 
-
-
-
-
-
-
-  nsresult SplitParagraph(nsIDOMNode* aPara,
+  nsresult SplitParagraph(Selection& aSelection,
+                          Element& aPara,
                           nsIContent* aBRNode,
-                          Selection* aSelection,
-                          nsCOMPtr<nsIDOMNode>* aSelNode,
-                          int32_t* aOffset);
+                          nsINode& aSelNode,
+                          int32_t aOffset);
 
   nsresult ReturnInListItem(Selection& aSelection, Element& aHeader,
                             nsINode& aNode, int32_t aOffset);
