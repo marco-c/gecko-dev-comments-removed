@@ -107,20 +107,16 @@ import java.util.concurrent.Future;
         }
         TextViewCompat.setCompoundDrawablesRelativeWithIntrinsicBounds(title, pinDrawable, null, null, null);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
-                topSite.getUrl(), title);
-        titleAsyncTask.execute();
+        final String provider = topSite.getMetadata().getProvider();
+        if (!TextUtils.isEmpty(provider)) {
+            title.setText(provider.toLowerCase());
+        } else {
+            
+            
+            final UpdateCardTitleAsyncTask titleAsyncTask = new UpdateCardTitleAsyncTask(itemView.getContext(),
+                    topSite.getUrl(), title);
+            titleAsyncTask.execute();
+        }
     }
 
     @Override
