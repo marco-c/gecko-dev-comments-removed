@@ -37,9 +37,6 @@ CreateQuotaClient();
 
 
 
-nsresult
-InitPaddingFile(nsIFile* aBaseDir);
-
 
 
 
