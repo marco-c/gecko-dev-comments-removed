@@ -608,27 +608,7 @@ public:
     mOnVideoPopped.DisconnectIfExists();
   }
 
-  void Step() override
-  {
-    if (mMaster->mPlayState != MediaDecoder::PLAY_STATE_PLAYING &&
-        mMaster->IsPlaying()) {
-      
-      
-      mMaster->StopPlayback();
-    }
-
-    
-    if (!mIsPrerolling) {
-      mMaster->MaybeStartPlayback();
-    }
-
-    mMaster->UpdatePlaybackPositionPeriodically();
-
-    MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),
-               "Must have timer scheduled");
-
-    MaybeStartBuffering();
-  }
+  void Step() override;
 
   State GetState() const override
   {
@@ -2313,6 +2293,51 @@ DecodingState::Enter()
 
 void
 MediaDecoderStateMachine::
+DecodingState::Step()
+{
+  if (mMaster->mPlayState != MediaDecoder::PLAY_STATE_PLAYING &&
+      mMaster->IsPlaying()) {
+    
+    
+    mMaster->StopPlayback();
+  }
+
+  
+  if (!mIsPrerolling) {
+    mMaster->MaybeStartPlayback();
+  }
+
+  TimeUnit before = mMaster->GetMediaTime();
+  mMaster->UpdatePlaybackPositionPeriodically();
+
+  
+  
+  TimeUnit adjusted = mMaster->GetClock();
+  Reader()->AdjustByLooping(adjusted);
+  
+  
+  
+  
+  
+  
+  if (mMaster->mMediaSink->IsStarted() && !mMaster->mLooping &&
+      adjusted < before) {
+    mMaster->StopPlayback();
+    mMaster->mAudioDataRequest.DisconnectIfExists();
+    AudioQueue().Finish();
+    mMaster->mAudioCompleted = true;
+    SetState<CompletedState>();
+    return;
+  }
+
+  MOZ_ASSERT(!mMaster->IsPlaying() || mMaster->IsStateMachineScheduled(),
+             "Must have timer scheduled");
+
+  MaybeStartBuffering();
+}
+
+void
+MediaDecoderStateMachine::
 DecodingState::HandleEndOfAudio()
 {
   AudioQueue().Finish();
@@ -3480,7 +3505,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
     
     
     mReader->AdjustByLooping(clockTime);
-    bool loopback = clockTime < GetMediaTime();
+    bool loopback = clockTime < GetMediaTime() && mLooping;
 
     
     
