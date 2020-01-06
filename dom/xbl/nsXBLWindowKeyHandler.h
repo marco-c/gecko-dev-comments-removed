@@ -19,6 +19,7 @@ class nsXBLPrototypeHandler;
 
 namespace mozilla {
 class EventListenerManager;
+class WidgetKeyboardEvent;
 struct IgnoreModifierState;
 namespace dom {
 class Element;
@@ -76,6 +77,11 @@ protected:
   
   bool HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
                           bool* aOutReservedForChrome = nullptr);
+
+  
+  
+  bool IsReservedKey(mozilla::WidgetKeyboardEvent* aKeyEvent,
+                     nsXBLPrototypeHandler* aHandler);
 
   
   

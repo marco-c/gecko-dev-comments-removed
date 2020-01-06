@@ -626,7 +626,11 @@ var gPermissionObject = {
   },
   "persistent-storage": {
     exactHostMatch: true
-  }
+  },
+
+  "shortcuts": {
+    states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
+  },
 };
 
 

@@ -10,7 +10,7 @@ const STORAGE_MANAGER_ENABLED = Services.prefs.getBoolPref("browser.storageManag
 
 add_task(async function testPermissionsListing() {
   let expectedPermissions = ["camera", "cookie", "desktop-notification", "focus-tab-by-prompt",
-     "geo", "image", "install", "microphone", "popup", "screen"];
+     "geo", "image", "install", "microphone", "popup", "screen", "shortcuts"];
   if (STORAGE_MANAGER_ENABLED) {
     
     
@@ -58,6 +58,18 @@ add_task(async function testGetAllByURI() {
   SitePermissions.set(uri, "addon", SitePermissions.BLOCK);
   Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
   SitePermissions.remove(uri, "addon");
+
+  Assert.equal(Services.prefs.getIntPref("permissions.default.shortcuts"), 0);
+  SitePermissions.set(uri, "shortcuts", SitePermissions.BLOCK);
+
+  
+  Assert.equal(Services.prefs.getIntPref("permissions.default.shortcuts"), 0);
+  Assert.deepEqual(SitePermissions.getAllByURI(uri), [
+      { id: "shortcuts", state: SitePermissions.BLOCK, scope: SitePermissions.SCOPE_PERSISTENT },
+  ]);
+
+  SitePermissions.remove(uri, "shortcuts");
+  Services.prefs.clearUserPref("permissions.default.shortcuts");
 });
 
 add_task(async function testGetAvailableStates() {
@@ -96,7 +108,7 @@ add_task(async function testExactHostMatch() {
     
     exactHostMatched.push("persistent-storage");
   }
-  let nonExactHostMatched = ["image", "cookie", "popup", "install"];
+  let nonExactHostMatched = ["image", "cookie", "popup", "install", "shortcuts"];
 
   let permissions = SitePermissions.listPermissions();
   for (let permission of permissions) {
