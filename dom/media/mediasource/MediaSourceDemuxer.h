@@ -138,11 +138,15 @@ private:
   media::TimeUnit GetNextRandomAccessPoint();
 
   RefPtr<MediaSourceDemuxer> mParent;
-  RefPtr<TrackBuffersManager> mManager;
   TrackInfo::TrackType mType;
   
   Monitor mMonitor;
   media::TimeUnit mNextRandomAccessPoint;
+  
+  
+  
+  RefPtr<TrackBuffersManager> mManager;
+
   Maybe<RefPtr<MediaRawData>> mNextSample;
   
   
