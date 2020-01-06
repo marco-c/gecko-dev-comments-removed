@@ -63,8 +63,10 @@ public:
     
     UnresolvedNamesOnly
   };
-  static void GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                       NameType aNameType, nsTArray<nsString>& aNames);
+  
+  static bool GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                       NameType aNameType,
+                       JS::AutoIdVector& aNames);
 
 private:
   friend struct WebIDLNameTableEntry;
