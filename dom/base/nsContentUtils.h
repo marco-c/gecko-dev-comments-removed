@@ -501,7 +501,9 @@ public:
     
     eParseHTMLInteger_Error                 = 1 << 3,
     eParseHTMLInteger_ErrorNoValue          = 1 << 4,
-    eParseHTMLInteger_ErrorOverflow         = 1 << 5
+    eParseHTMLInteger_ErrorOverflow         = 1 << 5,
+    
+    eParseHTMLInteger_Negative              = 1 << 6,
   };
   static int32_t ParseHTMLInteger(const nsAString& aValue,
                                   ParseHTMLIntegerResultFlags *aResult);

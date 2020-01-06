@@ -372,6 +372,19 @@ public:
 
 
 
+  void ParseClampedNonNegativeInt(const nsAString& aString, int32_t aDefault,
+                                  int32_t aMin, int32_t aMax);
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
