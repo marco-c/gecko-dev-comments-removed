@@ -93,7 +93,6 @@ private:
   
   MediaDecoderStateMachine* CreateStateMachine();
 
-  nsresult OpenResource(nsIStreamListener** aStreamListener);
   nsresult Load(BaseMediaResource* aOriginal);
 
   
