@@ -81,20 +81,6 @@ template<typename MethodType, typename TargetType>
 using ReturnTypeIs =
   IsConvertible<typename detail::MethodTrait<MethodType>::ReturnType, TargetType>;
 
-template<typename ResolveValueT, typename RejectValueT, bool IsExclusive>
-class MozPromise;
-
-template<typename Return>
-struct IsMozPromise : FalseType
-{
-};
-
-template<typename ResolveValueT, typename RejectValueT, bool IsExclusive>
-struct IsMozPromise<MozPromise<ResolveValueT, RejectValueT, IsExclusive>>
-  : TrueType
-{
-};
-
 
 
 
@@ -517,58 +503,43 @@ protected:
 
 
 
-  template<typename ThisType, typename MethodType, typename ValueType>
-  static typename EnableIf<
-    TakesArgument<MethodType>::value,
-    typename detail::MethodTrait<MethodType>::ReturnType>::Type
-  InvokeMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
-  {
-    return (aThisVal->*aMethod)(Forward<ValueType>(aValue));
-  }
 
   template<typename ThisType, typename MethodType, typename ValueType>
-  static typename EnableIf<
-    !TakesArgument<MethodType>::value,
-    typename detail::MethodTrait<MethodType>::ReturnType>::Type
-  InvokeMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
+  static typename EnableIf<ReturnTypeIs<MethodType, RefPtr<MozPromise>>::value &&
+                           TakesArgument<MethodType>::value,
+                           already_AddRefed<MozPromise>>::Type
+  InvokeCallbackMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
   {
-    return (aThisVal->*aMethod)();
+    return ((*aThisVal).*aMethod)(Forward<ValueType>(aValue)).forget();
   }
 
-  
-  template<bool SupportChaining,
-           typename ThisType,
-           typename MethodType,
-           typename ValueType,
-           typename CompletionPromiseType>
-  static typename EnableIf<SupportChaining, void>::Type InvokeCallbackMethod(
-    ThisType* aThisVal,
-    MethodType aMethod,
-    ValueType&& aValue,
-    CompletionPromiseType&& aCompletionPromise)
+  template<typename ThisType, typename MethodType, typename ValueType>
+  static typename EnableIf<ReturnTypeIs<MethodType, void>::value &&
+                           TakesArgument<MethodType>::value,
+                           already_AddRefed<MozPromise>>::Type
+  InvokeCallbackMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
   {
-    auto p = InvokeMethod(aThisVal, aMethod, Forward<ValueType>(aValue));
-    if (aCompletionPromise) {
-      p->ChainTo(aCompletionPromise.forget(), "<chained completion promise>");
-    }
+    ((*aThisVal).*aMethod)(Forward<ValueType>(aValue));
+    return nullptr;
   }
 
-  
-  template<bool SupportChaining,
-           typename ThisType,
-           typename MethodType,
-           typename ValueType,
-           typename CompletionPromiseType>
-  static typename EnableIf<!SupportChaining, void>::Type InvokeCallbackMethod(
-    ThisType* aThisVal,
-    MethodType aMethod,
-    ValueType&& aValue,
-    CompletionPromiseType&& aCompletionPromise)
+  template<typename ThisType, typename MethodType, typename ValueType>
+  static typename EnableIf<ReturnTypeIs<MethodType, RefPtr<MozPromise>>::value &&
+                           !TakesArgument<MethodType>::value,
+                           already_AddRefed<MozPromise>>::Type
+  InvokeCallbackMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
   {
-    MOZ_DIAGNOSTIC_ASSERT(
-      !aCompletionPromise,
-      "Can't do promise chaining for a non-promise-returning method.");
-    InvokeMethod(aThisVal, aMethod, Forward<ValueType>(aValue));
+    return ((*aThisVal).*aMethod)().forget();
+  }
+
+  template<typename ThisType, typename MethodType, typename ValueType>
+  static typename EnableIf<ReturnTypeIs<MethodType, void>::value &&
+                           !TakesArgument<MethodType>::value,
+                           already_AddRefed<MozPromise>>::Type
+  InvokeCallbackMethod(ThisType* aThisVal, MethodType aMethod, ValueType&& aValue)
+  {
+    ((*aThisVal).*aMethod)();
+    return nullptr;
   }
 
   template<typename>
@@ -584,17 +555,10 @@ protected:
     : public ThenValueBase
   {
     friend class ThenCommand<ThenValue>;
-
-    using R1 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<ResolveMethodType>::ReturnType>::Type;
-    using R2 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<RejectMethodType>::ReturnType>::Type;
-    using SupportChaining =
-      IntegralConstant<bool, IsMozPromise<R1>::value && IsSame<R1, R2>::value>;
-
-    
-    using PromiseType =
-      typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
+    using SupportChaining = IntegralConstant<
+      bool,
+      ReturnTypeIs<ResolveMethodType, RefPtr<MozPromise>>::value &&
+        ReturnTypeIs<RejectMethodType, RefPtr<MozPromise>>::value>;
 
   public:
     ThenValue(AbstractThread* aResponseTarget,
@@ -627,18 +591,13 @@ protected:
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
+      RefPtr<MozPromise> result;
       if (aValue.IsResolve()) {
-        InvokeCallbackMethod<SupportChaining::value>(
-          mThisVal.get(),
-          mResolveMethod,
-          MaybeMove(aValue.ResolveValue()),
-          Move(mCompletionPromise));
+        result = InvokeCallbackMethod(
+          mThisVal.get(), mResolveMethod, MaybeMove(aValue.ResolveValue()));
       } else {
-        InvokeCallbackMethod<SupportChaining::value>(
-          mThisVal.get(),
-          mRejectMethod,
-          MaybeMove(aValue.RejectValue()),
-          Move(mCompletionPromise));
+        result = InvokeCallbackMethod(
+          mThisVal.get(), mRejectMethod, MaybeMove(aValue.RejectValue()));
       }
 
       
@@ -646,27 +605,30 @@ protected:
       
       
       mThisVal = nullptr;
+
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     RefPtr<ThisType> mThisVal; 
     ResolveMethodType mResolveMethod;
     RejectMethodType mRejectMethod;
-    RefPtr<typename PromiseType::Private> mCompletionPromise;
+    RefPtr<Private> mCompletionPromise;
   };
 
   template<typename ThisType, typename ResolveRejectMethodType>
   class ThenValue<ThisType*, ResolveRejectMethodType> : public ThenValueBase
   {
     friend class ThenCommand<ThenValue>;
-
-    using R1 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<ResolveRejectMethodType>::ReturnType>::Type;
-    using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value>;
-
-    
-    using PromiseType =
-      typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
+    using SupportChaining =
+      ReturnTypeIs<ResolveRejectMethodType, RefPtr<MozPromise>>;
 
   public:
     ThenValue(AbstractThread* aResponseTarget,
@@ -696,22 +658,29 @@ protected:
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
-      InvokeCallbackMethod<SupportChaining::value>(mThisVal.get(),
-                                                   mResolveRejectMethod,
-                                                   MaybeMove(aValue),
-                                                   Move(mCompletionPromise));
+      RefPtr<MozPromise> result = InvokeCallbackMethod(
+        mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue));
 
       
       
       
       
       mThisVal = nullptr;
+
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     RefPtr<ThisType> mThisVal; 
     ResolveRejectMethodType mResolveRejectMethod;
-    RefPtr<typename PromiseType::Private> mCompletionPromise;
+    RefPtr<Private> mCompletionPromise;
   };
 
   
@@ -719,17 +688,10 @@ protected:
   class ThenValue<ResolveFunction, RejectFunction> : public ThenValueBase
   {
     friend class ThenCommand<ThenValue>;
-
-    using R1 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<ResolveFunction>::ReturnType>::Type;
-    using R2 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<RejectFunction>::ReturnType>::Type;
-    using SupportChaining =
-      IntegralConstant<bool, IsMozPromise<R1>::value && IsSame<R1, R2>::value>;
-
-    
-    using PromiseType =
-      typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
+    using SupportChaining = IntegralConstant<
+      bool,
+      ReturnTypeIs<ResolveFunction, RefPtr<MozPromise>>::value &&
+        ReturnTypeIs<RejectFunction, RefPtr<MozPromise>>::value>;
 
   public:
     ThenValue(AbstractThread* aResponseTarget,
@@ -767,18 +729,15 @@ protected:
       
       
       
+      RefPtr<MozPromise> result;
       if (aValue.IsResolve()) {
-        InvokeCallbackMethod<SupportChaining::value>(
-          mResolveFunction.ptr(),
-          &ResolveFunction::operator(),
-          MaybeMove(aValue.ResolveValue()),
-          Move(mCompletionPromise));
+        result = InvokeCallbackMethod(mResolveFunction.ptr(),
+                                      &ResolveFunction::operator(),
+                                      MaybeMove(aValue.ResolveValue()));
       } else {
-        InvokeCallbackMethod<SupportChaining::value>(
-          mRejectFunction.ptr(),
-          &RejectFunction::operator(),
-          MaybeMove(aValue.RejectValue()),
-          Move(mCompletionPromise));
+        result = InvokeCallbackMethod(mRejectFunction.ptr(),
+                                      &RejectFunction::operator(),
+                                      MaybeMove(aValue.RejectValue()));
       }
 
       
@@ -787,26 +746,29 @@ protected:
       
       mResolveFunction.reset();
       mRejectFunction.reset();
+
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     Maybe<ResolveFunction> mResolveFunction; 
     Maybe<RejectFunction> mRejectFunction; 
-    RefPtr<typename PromiseType::Private> mCompletionPromise;
+    RefPtr<Private> mCompletionPromise;
   };
 
   template<typename ResolveRejectFunction>
   class ThenValue<ResolveRejectFunction> : public ThenValueBase
   {
     friend class ThenCommand<ThenValue>;
-
-    using R1 = typename RemoveSmartPointer<
-      typename detail::MethodTrait<ResolveRejectFunction>::ReturnType>::Type;
-    using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value>;
-
-    
-    using PromiseType =
-      typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
+    using SupportChaining =
+      ReturnTypeIs<ResolveRejectFunction, RefPtr<MozPromise>>;
 
   public:
     ThenValue(AbstractThread* aResponseTarget,
@@ -841,22 +803,30 @@ protected:
       
       
       
-      InvokeCallbackMethod<SupportChaining::value>(
-        mResolveRejectFunction.ptr(),
-        &ResolveRejectFunction::operator(),
-        MaybeMove(aValue),
-        Move(mCompletionPromise));
+      RefPtr<MozPromise> result =
+        InvokeCallbackMethod(mResolveRejectFunction.ptr(),
+                             &ResolveRejectFunction::operator(),
+                             MaybeMove(aValue));
 
       
       
       
       
       mResolveRejectFunction.reset();
+
+      MOZ_DIAGNOSTIC_ASSERT(
+        !mCompletionPromise || result,
+        "Can't do promise chaining for a non-promise-returning method.");
+
+      if (mCompletionPromise && result) {
+        result->ChainTo(mCompletionPromise.forget(),
+                        "<chained completion promise>");
+      }
     }
 
   private:
     Maybe<ResolveRejectFunction> mResolveRejectFunction; 
-    RefPtr<typename PromiseType::Private> mCompletionPromise;
+    RefPtr<Private> mCompletionPromise;
   };
 
 public:
@@ -890,13 +860,7 @@ protected:
   template<typename ThenValueType>
   class ThenCommand
   {
-    
-    
-    template<typename, typename, bool>
     friend class MozPromise;
-
-    using PromiseType = typename ThenValueType::PromiseType;
-    using Private = typename PromiseType::Private;
 
     ThenCommand(AbstractThread* aResponseThread,
                 const char* aCallSite,
@@ -924,7 +888,8 @@ protected:
     
     
     
-    operator RefPtr<PromiseType>()
+    template <typename...>
+    operator RefPtr<MozPromise>()
     {
       static_assert(
         ThenValueType::SupportChaining::value,
@@ -933,8 +898,8 @@ protected:
 
       RefPtr<ThenValueType> thenValue = mThenValue.forget();
       
-      RefPtr<Private> p =
-        new Private("<completion promise>", true );
+      RefPtr<MozPromise::Private> p = new MozPromise::Private(
+        "<completion promise>", true );
       thenValue->mCompletionPromise = p;
       
       
@@ -942,12 +907,11 @@ protected:
       return p;
     }
 
-    template<typename... Ts>
+    template <typename... Ts>
     auto Then(Ts&&... aArgs)
-      -> decltype(DeclVal<PromiseType>().Then(Forward<Ts>(aArgs)...))
+      -> decltype(DeclVal<MozPromise>().Then(Forward<Ts>(aArgs)...))
     {
-      return static_cast<RefPtr<PromiseType>>(*this)->Then(
-        Forward<Ts>(aArgs)...);
+      return static_cast<RefPtr<MozPromise>>(*this)->Then(Forward<Ts>(aArgs)...);
     }
 
     void Track(MozPromiseRequestHolder<MozPromise>& aRequestHolder)
@@ -1338,6 +1302,16 @@ public:
 private:
   RefPtr<typename PromiseType::Request> mRequest;
 };
+
+template <typename Return>
+struct IsMozPromise
+  : FalseType
+{};
+
+template<typename ResolveValueT, typename RejectValueT, bool IsExclusive>
+struct IsMozPromise<MozPromise<ResolveValueT, RejectValueT, IsExclusive>>
+  : TrueType
+{};
 
 
 
