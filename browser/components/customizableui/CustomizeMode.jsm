@@ -320,6 +320,12 @@ CustomizeMode.prototype = {
         
         if (!window.PanelUI.isReady) {
           await window.PanelUI.ensureReady(true);
+          
+          
+          
+          
+          
+          await new Promise(resolve => window.requestIdleCallback(resolve));
         }
 
         
