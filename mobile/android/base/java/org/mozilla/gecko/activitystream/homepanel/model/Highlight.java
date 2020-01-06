@@ -18,7 +18,7 @@ import org.mozilla.gecko.activitystream.ranking.HighlightsRanking;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Highlight implements Item, StreamRecyclerAdapter.RowItem {
+public class Highlight implements WebpageModel, RowModel {
 
     
 

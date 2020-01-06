@@ -1,3 +1,8 @@
+
+
+
+
+
 package org.mozilla.gecko.activitystream.homepanel.model;
 
 import android.support.annotation.NonNull;
@@ -6,7 +11,7 @@ import android.support.annotation.Nullable;
 
 
 
-public interface Item {
+public interface WebpageModel {
     String getTitle();
 
     String getUrl();

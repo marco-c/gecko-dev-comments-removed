@@ -8,8 +8,8 @@ package org.mozilla.gecko.activitystream.homepanel.stream;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-public abstract class StreamItem extends RecyclerView.ViewHolder {
-    public StreamItem(View itemView) {
+public abstract class StreamViewHolder extends RecyclerView.ViewHolder {
+    public StreamViewHolder(View itemView) {
         super(itemView);
     }
 }
