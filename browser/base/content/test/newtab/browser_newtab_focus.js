@@ -26,7 +26,7 @@ add_task(async function() {
   }
   let tab = await addNewTabPageTab();
   if (onbardingEnabled) {
-    FOCUS_COUNT += 2;
+    FOCUS_COUNT += 3;
     await promiseTourNotificationOpened(tab.linkedBrowser);
   }
   gURLBar.focus();
@@ -37,7 +37,7 @@ add_task(async function() {
 
   let expectedCount = 4;
   if (onbardingEnabled) {
-    expectedCount += 2;
+    expectedCount += 3;
   }
   countFocus(expectedCount);
 
