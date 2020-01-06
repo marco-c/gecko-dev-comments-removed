@@ -204,6 +204,10 @@ task_description_schema = Schema({
 
             
             'mount-point': basestring,
+
+            
+            
+            Optional('skip-untrusted', default=False): bool,
         }],
 
         
@@ -586,6 +590,7 @@ def index_builder(name):
 @payload_builder('docker-worker')
 def build_docker_worker_payload(config, task, task_def):
     worker = task['worker']
+    level = int(config.params['level'])
 
     image = worker['docker-image']
     if isinstance(image, dict):
@@ -685,7 +690,14 @@ def build_docker_worker_payload(config, task, task_def):
         else:
             suffix = ''
 
+        skip_untrusted = config.params['project'] == 'try' or level == 1
+
         for cache in worker['caches']:
+            
+            
+            if cache.get('skip-untrusted') and skip_untrusted:
+                continue
+
             name = '%s%s' % (cache['name'], suffix)
             caches[name] = cache['mount-point']
             task_def['scopes'].append('docker-worker:cache:%s' % name)
@@ -703,7 +715,7 @@ def build_docker_worker_payload(config, task, task_def):
         payload['capabilities'] = capabilities
 
     
-    if 'coalesce-name' in task and int(config.params['level']) > 1:
+    if 'coalesce-name' in task and level > 1:
         key = COALESCE_KEY.format(
             project=config.params['project'],
             name=task['coalesce-name'])
