@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 Cu.import("resource://testing-common/LoginTestUtils.jsm", this);
@@ -25,6 +26,7 @@ const AUTOFILL_CREDITCARDS_AVAILABLE_PREF = "extensions.formautofill.creditCards
 const ENABLED_AUTOFILL_CREDITCARDS_PREF = "extensions.formautofill.creditCards.enabled";
 const SYNC_USERNAME_PREF = "services.sync.username";
 const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
+const SYNC_CREDITCARDS_PREF = "services.sync.engine.creditcards";
 
 const TEST_ADDRESS_1 = {
   "given-name": "John",
@@ -248,8 +250,13 @@ async function clickDoorhangerButton(button, index) {
   await popuphidden;
 }
 
+
 function getDoorhangerCheckbox() {
   return getNotification().checkbox;
+}
+
+function getDoorhangerButton(button) {
+  return getNotification()[button];
 }
 
 
