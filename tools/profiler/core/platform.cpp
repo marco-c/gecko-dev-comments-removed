@@ -836,6 +836,8 @@ static void
 MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
                        const TickSample& aSample, NativeStack& aNativeStack)
 {
+  
+
   NotNull<RacyThreadInfo*> racyInfo = aSample.mRacyInfo;
   js::ProfileEntry* pseudoEntries = racyInfo->entries;
   uint32_t pseudoCount = racyInfo->stackSize();
@@ -1049,6 +1051,8 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
   
+
+  
   
   
   
@@ -1079,6 +1083,8 @@ static void
 DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
+  
+
   const mcontext_t* mcontext = &aSample.mContext->uc_mcontext;
   mcontext_t savedContext;
   NotNull<RacyThreadInfo*> racyInfo = aSample.mRacyInfo;
@@ -1156,6 +1162,8 @@ static void
 DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
+  
+
   const mcontext_t* mc = &aSample.mContext->uc_mcontext;
 
   lul::UnwindRegs startRegs;
@@ -1283,6 +1291,8 @@ DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
 void
 Tick(PSLockRef aLock, const TickSample& aSample, ProfileBuffer* aBuffer)
 {
+  
+
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
 
   aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
