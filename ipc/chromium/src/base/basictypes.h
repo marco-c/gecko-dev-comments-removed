@@ -266,7 +266,4 @@ enum LinkerInitialized { LINKER_INITIALIZED };
 }  
 
 
-#include "nscore.h"             
-
-
 #endif  
