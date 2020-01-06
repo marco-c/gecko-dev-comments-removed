@@ -156,6 +156,29 @@ union PrefValue {
         MOZ_CRASH("Unhandled enum value");
     }
   }
+
+  void Init(PrefType aNewType, PrefValue aNewValue)
+  {
+    if (aNewType == PrefType::String) {
+      MOZ_ASSERT(aNewValue.mStringVal);
+      aNewValue.mStringVal = moz_xstrdup(aNewValue.mStringVal);
+    }
+    *this = aNewValue;
+  }
+
+  void Clear(PrefType aType)
+  {
+    if (aType == PrefType::String) {
+      free(const_cast<char*>(mStringVal));
+      mStringVal = nullptr;
+    }
+  }
+
+  void Replace(PrefType aOldType, PrefType aNewType, PrefValue aNewValue)
+  {
+    Clear(aOldType);
+    Init(aNewType, aNewValue);
+  }
 };
 
 #ifdef DEBUG
@@ -244,10 +267,8 @@ public:
     
     
 
-    if (IsTypeString()) {
-      free(const_cast<char*>(mDefaultValue.mStringVal));
-      free(const_cast<char*>(mUserValue.mStringVal));
-    }
+    mDefaultValue.Clear(Type());
+    mUserValue.Clear(Type());
   }
 
   const char* Name() { return mName; }
@@ -434,34 +455,6 @@ public:
   }
 
 private:
-  
-  
-  
-  void ReplaceValue(PrefValueKind aKind, PrefType aNewType, PrefValue aNewValue)
-  {
-    PrefValue* value =
-      aKind == PrefValueKind::Default ? &mDefaultValue : &mUserValue;
-
-    if (Type() == PrefType::String) {
-      free(const_cast<char*>(value->mStringVal));
-    }
-
-    SetType(aNewType);
-
-    if (aNewType == PrefType::String) {
-      MOZ_ASSERT(aNewValue.mStringVal);
-      value->mStringVal = moz_xstrdup(aNewValue.mStringVal);
-    } else {
-      *value = aNewValue;
-    }
-
-    if (aKind == PrefValueKind::Default) {
-      mHasDefaultValue = true;
-    } else {
-      mHasUserValue = true;
-    }
-  }
-
   bool ValueMatches(PrefValueKind aKind, PrefType aType, PrefValue aValue)
   {
     return IsType(aType) &&
@@ -498,7 +491,8 @@ public:
       
       
       if (!IsLocked() && !ValueMatches(PrefValueKind::Default, aType, aValue)) {
-        ReplaceValue(PrefValueKind::Default, aType, aValue);
+        mDefaultValue.Replace(Type(), aType, aValue);
+        mHasDefaultValue = true;
         if (aIsSticky) {
           mIsSticky = true;
         }
@@ -531,7 +525,9 @@ public:
         
         
       } else if (!ValueMatches(PrefValueKind::User, aType, aValue)) {
-        ReplaceValue(PrefValueKind::User, aType, aValue);
+        mUserValue.Replace(Type(), aType, aValue);
+        SetType(aType);   
+        mHasUserValue = true;
         if (!IsLocked()) {
           *aDirty = true;
           *aValueChanged = true;
