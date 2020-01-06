@@ -15,11 +15,9 @@ namespace mozilla {
 class MediaContainerType;
 
 
-class MP4Decoder : public ChannelMediaDecoder
+class MP4Decoder
 {
 public:
-  explicit MP4Decoder(MediaDecoderInit& aInit);
-
   
   
   
@@ -45,14 +43,6 @@ public:
   static already_AddRefed<dom::Promise>
   IsVideoAccelerated(layers::KnowsCompositor* aKnowsCompositor, nsIGlobalObject* aParent);
 
-private:
-  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override
-  {
-    if (!IsEnabled()) {
-      return nullptr;
-    }
-    return new MP4Decoder(aInit);
-  }
 };
 
 } 
