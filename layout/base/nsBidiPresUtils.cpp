@@ -831,7 +831,7 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
   }
 
   nsIFrame* lastRealFrame = nullptr;
-  nsBidiLevel lastEmbedingLevel = kBidiLevelNone;
+  nsBidiLevel lastEmbeddingLevel = kBidiLevelNone;
   nsBidiLevel precedingControl = kBidiLevelNone;
 
   auto storeBidiDataToFrame = [&]() {
@@ -843,13 +843,13 @@ nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd)
     
     
     if (precedingControl >= embeddingLevel ||
-        precedingControl >= lastEmbedingLevel) {
+        precedingControl >= lastEmbeddingLevel) {
       bidiData.precedingControl = kBidiLevelNone;
     } else {
       bidiData.precedingControl = precedingControl;
     }
     precedingControl = kBidiLevelNone;
-    lastEmbedingLevel = embeddingLevel;
+    lastEmbeddingLevel = embeddingLevel;
     frame->SetProperty(nsIFrame::BidiDataProperty(), bidiData);
   };
 
