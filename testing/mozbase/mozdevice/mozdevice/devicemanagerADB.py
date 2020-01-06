@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import logging
 import re
 import os
@@ -13,10 +11,10 @@ import traceback
 
 from distutils import dir_util
 
-from .devicemanager import DeviceManager, DMError
+from devicemanager import DeviceManager, DMError
 from mozprocess import ProcessHandler
 import mozfile
-from . import version_codes
+import version_codes
 
 
 class DeviceManagerADB(DeviceManager):

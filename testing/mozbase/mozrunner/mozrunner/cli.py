@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import os
 import sys
 
@@ -139,7 +137,7 @@ class CLI(MozProfileCLI):
         
         debug_args, interactive = self.debugger_arguments()
         runner.start(debug_args=debug_args, interactive=interactive)
-        print('Starting: ' + ' '.join(runner.command))
+        print 'Starting: ' + ' '.join(runner.command)
         try:
             runner.wait()
         except KeyboardInterrupt:

@@ -1,7 +1,5 @@
 
 
-from __future__ import absolute_import
-
 import mozprofile
 import os
 import shutil

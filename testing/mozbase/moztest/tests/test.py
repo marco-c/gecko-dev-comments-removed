@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 import math
 import time
 import unittest

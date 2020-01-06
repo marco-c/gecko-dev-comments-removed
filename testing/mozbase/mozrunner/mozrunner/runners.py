@@ -2,13 +2,10 @@
 
 
 
-
 """
 This module contains a set of shortcut methods that create runners for commonly
 used Mozilla applications, such as Firefox or B2G emulator.
 """
-
-from __future__ import absolute_import
 
 from .application import get_app_context
 from .base import DeviceRunner, GeckoRuntimeRunner, FennecRunner

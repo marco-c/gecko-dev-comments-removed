@@ -2,14 +2,12 @@
 
 
 
-from __future__ import absolute_import
+from emulator import BaseEmulator, Emulator, EmulatorAVD
+from base import Device
 
-from .emulator import BaseEmulator, Emulator, EmulatorAVD
-from .base import Device
-
-from mozrunner.devices import emulator_battery
-from mozrunner.devices import emulator_geo
-from mozrunner.devices import emulator_screen
+import emulator_battery
+import emulator_geo
+import emulator_screen
 
 __all__ = ['BaseEmulator', 'Emulator', 'EmulatorAVD', 'Device',
            'emulator_battery', 'emulator_geo', 'emulator_screen']

@@ -8,7 +8,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import os
 import platform
@@ -292,15 +292,15 @@ def main(args=None):
     flag = False
     for key, value in options.__dict__.items():
         if value is True:
-            print('%s choices: %s' % (key, ' '.join([str(choice)
-                                                     for choice in choices[key]])))
+            print '%s choices: %s' % (key, ' '.join([str(choice)
+                                                     for choice in choices[key]]))
             flag = True
     if flag:
         return
 
     
     for key, value in info.items():
-        print('%s: %s' % (key, value))
+        print '%s: %s' % (key, value)
 
 
 if __name__ == '__main__':

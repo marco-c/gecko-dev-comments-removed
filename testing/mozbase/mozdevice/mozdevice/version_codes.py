@@ -7,7 +7,6 @@ VERSION CODES of the android releases.
 
 See http://developer.android.com/reference/android/os/Build.VERSION_CODES.html.
 """
-from __future__ import absolute_import
 
 
 

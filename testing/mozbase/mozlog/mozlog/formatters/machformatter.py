@@ -2,9 +2,6 @@
 
 
 
-
-from __future__ import absolute_import
-
 import time
 from collections import defaultdict
 
@@ -13,7 +10,7 @@ try:
 except ImportError:
     blessings = None
 
-from . import base
+import base
 from .process import strstatus
 
 

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from telnetlib import Telnet
 import datetime
 import os

@@ -2,12 +2,9 @@
 
 
 
-
-from __future__ import absolute_import
-
 import json
 
-from .base import BaseFormatter
+from base import BaseFormatter
 
 
 class ErrorSummaryFormatter(BaseFormatter):

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import
+import adapters
 
-from moztest import adapters
 __all__ = ['adapters']

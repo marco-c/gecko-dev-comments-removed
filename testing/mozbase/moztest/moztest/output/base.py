@@ -2,8 +2,8 @@
 
 
 
-from __future__ import absolute_import, with_statement
 
+from __future__ import with_statement
 from contextlib import closing
 from StringIO import StringIO
 

@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 
 class RunnerException(Exception):
     """Base exception handler for mozrunner related errors"""

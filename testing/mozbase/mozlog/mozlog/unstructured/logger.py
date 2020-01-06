@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import
-
 from logging import getLogger as getSysLogger
 from logging import *
 

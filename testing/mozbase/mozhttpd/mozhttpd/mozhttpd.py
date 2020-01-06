@@ -4,8 +4,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import BaseHTTPServer
 import SimpleHTTPServer
 import errno
@@ -325,7 +323,7 @@ def main(args=sys.argv[1:]):
     
     server = MozHttpd(host=host, port=options.port, docroot=options.docroot)
 
-    print("Serving '%s' at %s:%s" % (server.docroot, server.host, server.port))
+    print "Serving '%s' at %s:%s" % (server.docroot, server.host, server.port)
     server.start(block=True)
 
 

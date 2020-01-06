@@ -2,13 +2,10 @@
 
 
 
-
-from __future__ import absolute_import
-
 from .cli import *
 from .errors import *
 from .runners import *
 
-import mozrunner.base
-import mozrunner.devices
-import mozrunner.utils
+import base
+import devices
+import utils

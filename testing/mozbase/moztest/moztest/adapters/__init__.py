@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
-from moztest.adapters import unit
+import unit
 
 __all__ = ['unit']

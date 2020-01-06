@@ -2,13 +2,9 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import re
 import sys
 import traceback
-
-from six import reraise
 
 __all__ = ['parse', 'ParseError', 'ExpressionParser']
 
@@ -309,8 +305,10 @@ class ExpressionParser(object):
         except:
             extype, ex, tb = sys.exc_info()
             formatted = ''.join(traceback.format_exception_only(extype, ex))
-            reraise(ParseError("could not parse: %s\nexception: %svariables: %s" %
-                    (self.text, formatted, self.valuemapping)), None, tb)
+            raise ParseError("could not parse: "
+                             "%s\nexception: %svariables: %s" % (self.text,
+                                                                 formatted,
+                                                                 self.valuemapping)), None, tb
 
     __call__ = parse
 

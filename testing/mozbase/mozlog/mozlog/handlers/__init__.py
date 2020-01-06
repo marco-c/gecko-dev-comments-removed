@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from .base import LogLevelFilter, StreamHandler, BaseHandler
 from .statushandler import StatusHandler
 from .bufferhandler import BufferHandler
