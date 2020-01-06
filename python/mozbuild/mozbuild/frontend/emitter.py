@@ -759,7 +759,12 @@ class TreeMetadataEmitter(LoggingMixin):
         if not (linkables or host_linkables):
             return
 
-        self._compile_dirs.add(context.objdir)
+        
+        
+        
+        if not all(isinstance(l, (RustLibrary, HostRustLibrary))
+                   for l in linkables + host_linkables):
+            self._compile_dirs.add(context.objdir)
 
         sources = defaultdict(list)
         gen_sources = defaultdict(list)
