@@ -470,7 +470,9 @@ pref("browser.tabs.drawInTitlebar", true);
 
 
 
-pref("browser.tabs.restorebutton", false);
+
+
+pref("browser.tabs.restorebutton", 0);
 
 
 
