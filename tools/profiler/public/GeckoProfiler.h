@@ -30,19 +30,8 @@ class SpliceableJSONWriter;
 
 namespace mozilla {
 class MallocAllocPolicy;
-class TimeStamp;
-template <class T,
-          size_t MinInlineCapacity,
-          class AllocPolicy>
-class Vector;
-
-namespace dom {
-class Promise;
+template <class T, size_t MinInlineCapacity, class AllocPolicy> class Vector;
 } 
-
-} 
-
-class nsIProfilerStartParams;
 
 enum TracingKind {
   TRACING_EVENT,
@@ -68,15 +57,50 @@ using UniqueProfilerBacktrace =
 #define PROFILER_FUNC(decl, rv)  decl;
 #define PROFILER_FUNC_VOID(decl) void decl;
 
+
+
+
+#ifdef MOZ_USE_SYSTRACE
+# ifndef ATRACE_TAG
+#  define ATRACE_TAG ATRACE_TAG_ALWAYS
+# endif
+
+
+# ifndef HAVE_ANDROID_OS
+#  define HAVE_ANDROID_OS
+#  define REMOVE_HAVE_ANDROID_OS
+# endif
+
+
+
+
+
+
+# undef _LIBS_CUTILS_TRACE_H
+# include <utils/Trace.h>
+# define PROFILER_PLATFORM_TRACING(name) \
+    android::ScopedTrace \
+    PROFILER_APPEND_LINE_NUMBER(scopedTrace)(ATRACE_TAG, name);
+# ifdef REMOVE_HAVE_ANDROID_OS
+#  undef HAVE_ANDROID_OS
+#  undef REMOVE_HAVE_ANDROID_OS
+# endif
+#else
+# define PROFILER_PLATFORM_TRACING(name)
+#endif
+
+#define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
+#define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \
+  PROFILER_APPEND_LINE_NUMBER_PASTE(id, line)
+#define PROFILER_APPEND_LINE_NUMBER(id) \
+  PROFILER_APPEND_LINE_NUMBER_EXPAND(id, __LINE__)
+
 #if defined(__GNUC__) || defined(_MSC_VER)
 # define PROFILER_FUNCTION_NAME __FUNCTION__
 #else
   
 # define PROFILER_FUNCTION_NAME __func__
 #endif
-
-
-
 
 
 
@@ -135,9 +159,7 @@ using UniqueProfilerBacktrace =
 #define PROFILER_FUNC_VOID(decl) static inline void decl {}
 
 #define PROFILER_LABEL(name_space, info, category) do {} while (0)
-
 #define PROFILER_LABEL_FUNC(category) do {} while (0)
-
 #define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
   do {} while (0)
 
@@ -415,7 +437,6 @@ PROFILER_FUNC_VOID(profiler_suspend_and_sample_thread(int aThreadId,
 # undef min
 #endif
 
-class nsISupports;
 class ProfilerMarkerPayload;
 
 
@@ -427,44 +448,6 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 void profiler_add_marker(const char* aMarkerName);
 void profiler_add_marker(const char* aMarkerName,
                          mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
-
-#define PROFILER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
-#define PROFILER_APPEND_LINE_NUMBER_EXPAND(id, line) \
-  PROFILER_APPEND_LINE_NUMBER_PASTE(id, line)
-#define PROFILER_APPEND_LINE_NUMBER(id) \
-  PROFILER_APPEND_LINE_NUMBER_EXPAND(id, __LINE__)
-
-
-
-
-#ifdef MOZ_USE_SYSTRACE
-# ifndef ATRACE_TAG
-#  define ATRACE_TAG ATRACE_TAG_ALWAYS
-# endif
-
-
-# ifndef HAVE_ANDROID_OS
-#  define HAVE_ANDROID_OS
-#  define REMOVE_HAVE_ANDROID_OS
-# endif
-
-
-
-
-
-
-# undef _LIBS_CUTILS_TRACE_H
-# include <utils/Trace.h>
-# define PROFILER_PLATFORM_TRACING(name) \
-    android::ScopedTrace \
-    PROFILER_APPEND_LINE_NUMBER(scopedTrace)(ATRACE_TAG, name);
-# ifdef REMOVE_HAVE_ANDROID_OS
-#  undef HAVE_ANDROID_OS
-#  undef REMOVE_HAVE_ANDROID_OS
-# endif
-#else
-# define PROFILER_PLATFORM_TRACING(name)
-#endif
 
 #if !defined(ARCH_ARMV6)
 # define PROFILER_DEFAULT_ENTRIES 1000000
