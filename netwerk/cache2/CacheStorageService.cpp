@@ -33,6 +33,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Services.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/SizePrintfMacros.h"
 
 namespace mozilla {
 namespace net {
@@ -107,7 +108,8 @@ NS_IMPL_ISUPPORTS(CacheStorageService,
                   nsICacheStorageService,
                   nsIMemoryReporter,
                   nsITimerCallback,
-                  nsICacheTesting)
+                  nsICacheTesting,
+                  nsINamed)
 
 CacheStorageService* CacheStorageService::sSelf = nullptr;
 
@@ -295,7 +297,7 @@ private:
         mNotifyStorage = false;
 
       } else {
-        LOG(("  entry [left=%zu, canceled=%d]", mEntryArray.Length(), (bool)mCancel));
+        LOG(("  entry [left=%" PRIuSIZE ", canceled=%d]", mEntryArray.Length(), (bool)mCancel));
 
         
         if (!mEntryArray.Length() || mCancel) {
@@ -1333,6 +1335,13 @@ CacheStorageService::Notify(nsITimer* aTimer)
     Dispatch(event);
   }
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CacheStorageService::GetName(nsACString& aName)
+{
+  aName.AssignLiteral("CacheStorageService");
   return NS_OK;
 }
 

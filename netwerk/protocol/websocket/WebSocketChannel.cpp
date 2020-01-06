@@ -89,7 +89,8 @@ NS_IMPL_ISUPPORTS(WebSocketChannel,
                   nsIInterfaceRequestor,
                   nsIChannelEventSink,
                   nsIThreadRetargetableRequest,
-                  nsIObserver)
+                  nsIObserver,
+                  nsINamed)
 
 
 #define SEC_WEBSOCKET_VERSION "13"
@@ -3317,6 +3318,15 @@ WebSocketChannel::Notify(nsITimer *timer)
     MOZ_ASSERT(0, "Unknown Timer");
   }
 
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+WebSocketChannel::GetName(nsACString& aName)
+{
+  aName.AssignLiteral("WebSocketChannel");
   return NS_OK;
 }
 

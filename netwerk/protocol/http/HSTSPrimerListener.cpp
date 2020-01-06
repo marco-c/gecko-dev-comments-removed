@@ -29,7 +29,7 @@ using namespace mozilla;
 
 NS_IMPL_ISUPPORTS(HSTSPrimingListener, nsIStreamListener,
                   nsIRequestObserver, nsIInterfaceRequestor,
-                  nsITimerCallback)
+                  nsITimerCallback, nsINamed)
 
 
 
@@ -211,6 +211,14 @@ HSTSPrimingListener::Notify(nsITimer* timer)
   }
 
   return NS_OK; 
+}
+
+
+NS_IMETHODIMP
+HSTSPrimingListener::GetName(nsACString& aName)
+{
+  aName.AssignLiteral("HSTSPrimingListener");
+  return NS_OK;
 }
 
 

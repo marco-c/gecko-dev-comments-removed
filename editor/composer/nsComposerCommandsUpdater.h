@@ -12,6 +12,7 @@
 
 #include "nsCOMPtr.h"                   
 #include "nsIDocumentStateListener.h"
+#include "nsINamed.h"
 #include "nsISelectionListener.h"
 #include "nsISupportsImpl.h"            
 #include "nsITimer.h"                   
@@ -27,7 +28,8 @@ class nsPICommandUpdater;
 class nsComposerCommandsUpdater : public nsISelectionListener,
                                   public nsIDocumentStateListener,
                                   public nsITransactionListener,
-                                  public nsITimerCallback
+                                  public nsITimerCallback,
+                                  public nsINamed
 {
 public:
 
@@ -44,6 +46,9 @@ public:
 
   
   NS_DECL_NSITIMERCALLBACK
+
+  
+  NS_DECL_NSINAMED
 
   
 

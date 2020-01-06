@@ -20,6 +20,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
+#include "nsINamed.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
 #include "nsRect.h"
@@ -284,10 +285,11 @@ RefPtr<GenericPromise> InvokeUntil(Work aWork, Condition aCondition) {
 }
 
 
-class SimpleTimer : public nsITimerCallback
+class SimpleTimer : public nsITimerCallback, public nsINamed
 {
 public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSINAMED
 
   
   

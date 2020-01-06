@@ -55,6 +55,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIEventTarget.h"
+#include "nsINamed.h"
 #include "nsITimer.h"
 #include "nsNetCID.h"
 #include "runnable_utils.h"
@@ -87,7 +88,8 @@ protected:
 };
 
 class nrappkitTimerCallback : public nrappkitCallback,
-                              public nsITimerCallback {
+                              public nsITimerCallback,
+                              public nsINamed {
  public:
   
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -110,12 +112,18 @@ class nrappkitTimerCallback : public nrappkitCallback,
     Release(); 
   }
 
+  NS_IMETHOD
+  GetName(nsACString& aName) override {
+    aName.AssignLiteral("nrappkitTimerCallback");
+    return NS_OK;
+  }
+
  private:
   nsCOMPtr<nsITimer> timer_;
   virtual ~nrappkitTimerCallback() {}
 };
 
-NS_IMPL_ISUPPORTS(nrappkitTimerCallback, nsITimerCallback)
+NS_IMPL_ISUPPORTS(nrappkitTimerCallback, nsITimerCallback, nsINamed)
 
 NS_IMETHODIMP nrappkitTimerCallback::Notify(nsITimer *timer) {
   r_log(LOG_GENERIC, LOG_DEBUG, "Timer callback fired (set in %s:%d)",

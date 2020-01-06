@@ -19,6 +19,7 @@
 
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
+#include "nsINamed.h"
 #include "nsITimer.h"
 
 
@@ -118,7 +119,8 @@ class TransportLayerLoopback : public TransportLayer {
 
   
   
-  class Deliverer : public nsITimerCallback {
+  class Deliverer : public nsITimerCallback
+                  , public nsINamed {
    public:
     explicit Deliverer(TransportLayerLoopback *layer) :
         layer_(layer) {}
@@ -128,6 +130,7 @@ class TransportLayerLoopback : public TransportLayer {
 
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSITIMERCALLBACK
+    NS_DECL_NSINAMED
 
  private:
     virtual ~Deliverer() {
