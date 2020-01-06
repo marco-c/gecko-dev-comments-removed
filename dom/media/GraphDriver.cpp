@@ -30,9 +30,11 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
   : mIterationStart(0),
     mIterationEnd(0),
     mGraphImpl(aGraphImpl),
+    mWaitState(WAITSTATE_RUNNING),
     mCurrentTimeStamp(TimeStamp::Now()),
     mPreviousDriver(nullptr),
-    mNextDriver(nullptr)
+    mNextDriver(nullptr),
+    mScheduled(false)
 { }
 
 void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
@@ -117,6 +119,12 @@ void GraphDriver::SetPreviousDriver(GraphDriver* aPreviousDriver)
 {
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   mPreviousDriver = aPreviousDriver;
+}
+
+bool GraphDriver::Scheduled()
+{
+  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
+  return mScheduled;
 }
 
 ThreadedDriver::ThreadedDriver(MediaStreamGraphImpl* aGraphImpl)
@@ -208,7 +216,8 @@ ThreadedDriver::Start()
     
     nsresult rv = NS_NewNamedThread("MediaStreamGrph", getter_AddRefs(mThread));
     if (NS_SUCCEEDED(rv)) {
-      mThread->EventTarget()->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
+      rv = mThread->EventTarget()->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
+      mScheduled = NS_SUCCEEDED(rv);
     }
   }
 }
@@ -254,7 +263,6 @@ SystemClockDriver::SystemClockDriver(MediaStreamGraphImpl* aGraphImpl)
   : ThreadedDriver(aGraphImpl),
     mInitialTimeStamp(TimeStamp::Now()),
     mLastTimeStamp(TimeStamp::Now()),
-    mWaitState(WAITSTATE_RUNNING),
     mIsFallback(false)
 {}
 
@@ -276,7 +284,8 @@ SystemClockDriver::IsFallback()
 void
 ThreadedDriver::RunThread()
 {
-  while (true) {
+  bool stillProcessing = true;
+  while (stillProcessing) {
     mIterationStart = IterationEnd();
     mIterationEnd += GetIntervalForIteration();
 
@@ -315,16 +324,10 @@ ThreadedDriver::RunThread()
          (long)stateComputedTime,
          (long)nextStateComputedTime));
 
-    bool stillProcessing = mGraphImpl->OneIteration(nextStateComputedTime);
+    stillProcessing = mGraphImpl->OneIteration(nextStateComputedTime);
 
-    if (!stillProcessing) {
-      
-      
-      mGraphImpl->SignalMainThreadCleanup();
-      return;
-    }
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
-    if (NextDriver()) {
+    if (NextDriver() && stillProcessing) {
       LOG(LogLevel::Debug, ("Switching to AudioCallbackDriver"));
       RemoveCallback();
       NextDriver()->SetGraphTime(this, mIterationStart, mIterationEnd);
@@ -537,7 +540,6 @@ AudioCallbackDriver::AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl)
   , mAddedMixer(false)
   , mInCallback(false)
   , mMicrophoneActive(false)
-  , mShouldFallbackIfError(false)
   , mFromFallback(false)
 {
   LOG(LogLevel::Debug, ("AudioCallbackDriver ctor for graph %p", aGraphImpl));
@@ -613,7 +615,14 @@ AudioCallbackDriver::Init()
   }
 
   
-  mOutputChannels = std::max<uint32_t>(1, mGraphImpl->AudioChannelCount());
+  mOutputChannels = mGraphImpl->AudioChannelCount();
+  if (!mOutputChannels) {
+    LOG(LogLevel::Warning, ("Output number of channels is 0."));
+    MonitorAutoLock lock(GraphImpl()->GetMonitor());
+    FallbackToSystemClockDriver();
+    return true;
+  }
+
   mBuffer = AudioCallbackBufferWrapper<AudioDataValue>(mOutputChannels);
   mScratchBuffer = SpillBuffer<AudioDataValue, WEBAUDIO_BLOCK_SIZE * 2>(mOutputChannels);
 
@@ -695,18 +704,8 @@ AudioCallbackDriver::Init()
       if (!mFromFallback) {
         CubebUtils::ReportCubebStreamInitFailure(firstStream);
       }
-      
-      
       MonitorAutoLock lock(GraphImpl()->GetMonitor());
-      SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
-      SetNextDriver(nextDriver);
-      nextDriver->MarkAsFallback();
-      nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
-      
-      
-      
-      mGraphImpl->SetCurrentDriver(nextDriver);
-      nextDriver->Start();
+      FallbackToSystemClockDriver();
       return true;
     }
   }
@@ -722,6 +721,15 @@ AudioCallbackDriver::Init()
 
   LOG(LogLevel::Debug, ("AudioCallbackDriver started."));
   return true;
+}
+
+
+void
+AudioCallbackDriver::Destroy()
+{
+  LOG(LogLevel::Debug, ("AudioCallbackDriver destroyed."));
+  mAudioInput = nullptr;
+  mAudioStream.reset();
 }
 
 void
@@ -749,13 +757,13 @@ AudioCallbackDriver::Start()
        "to ensure it runs after previous shutdown."));
   RefPtr<AsyncCubebTask> initEvent =
     new AsyncCubebTask(AsAudioCallbackDriver(), AsyncCubebOperation::INIT);
-  initEvent->Dispatch();
+  nsresult rv = initEvent->Dispatch();
+  mScheduled = NS_SUCCEEDED(rv);
 }
 
 bool
 AudioCallbackDriver::StartStream()
 {
-  mShouldFallbackIfError = true;
   if (cubeb_stream_start(mAudioStream) != CUBEB_OK) {
     NS_WARNING("Could not start cubeb stream for MSG.");
     return false;
@@ -764,6 +772,7 @@ AudioCallbackDriver::StartStream()
   {
     MonitorAutoLock mon(mGraphImpl->GetMonitor());
     mStarted = true;
+    mWaitState = WAITSTATE_RUNNING;
   }
   return true;
 }
@@ -997,25 +1006,13 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   mGraphImpl->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
                                mSampleRate, mOutputChannels);
 
-  if (!stillProcessing) {
-    
-    
-    
-    mShouldFallbackIfError = false;
-    
-    
-    mGraphImpl->SignalMainThreadCleanup();
-    return aFrames - 1;
-  }
-
   bool switching = false;
   {
     MonitorAutoLock mon(mGraphImpl->GetMonitor());
     switching = !!NextDriver();
   }
 
-  if (switching) {
-    mShouldFallbackIfError = false;
+  if (switching && stillProcessing) {
     
     
     MonitorAutoLock mon(mGraphImpl->GetMonitor());
@@ -1032,6 +1029,11 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     return aFrames - 1;
   }
 
+  if (!stillProcessing) {
+    LOG(LogLevel::Debug,
+        ("Stopping audio thread for MediaStreamGraph %p", this));
+    return aFrames - 1;
+  }
   return aFrames;
 }
 
@@ -1040,20 +1042,24 @@ AudioCallbackDriver::StateCallback(cubeb_state aState)
 {
   LOG(LogLevel::Debug, ("AudioCallbackDriver State: %d", aState));
 
-  if (aState == CUBEB_STATE_ERROR && mShouldFallbackIfError) {
+  if (aState == CUBEB_STATE_ERROR) {
+    if (!mAudioStream) {
+      
+      
+      
+      return;
+    }
+
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
-    
-    
-    SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
-    SetNextDriver(nextDriver);
+
+    if (NextDriver() && NextDriver()->Scheduled()) {
+      
+      
+      return;
+    }
+
     RemoveCallback();
-    nextDriver->MarkAsFallback();
-    nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
-    
-    
-    
-    mGraphImpl->SetCurrentDriver(nextDriver);
-    nextDriver->Start();
+    FallbackToSystemClockDriver();
   }
 }
 
@@ -1197,6 +1203,19 @@ void AudioCallbackDriver::CompleteAudioContextOperations(AsyncCubebOperation aOp
   }
 }
 
+void AudioCallbackDriver::FallbackToSystemClockDriver()
+{
+  GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
+  SystemClockDriver* nextDriver = new SystemClockDriver(GraphImpl());
+  SetNextDriver(nextDriver);
+  nextDriver->MarkAsFallback();
+  nextDriver->SetGraphTime(this, mIterationStart, mIterationEnd);
+  
+  
+  
+  mGraphImpl->SetCurrentDriver(nextDriver);
+  nextDriver->Start();
+}
 
 } 
 

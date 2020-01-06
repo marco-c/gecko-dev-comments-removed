@@ -119,6 +119,7 @@ public:
   virtual void WaitForNextIteration() = 0;
   
   virtual void WakeUp() = 0;
+  virtual void Destroy() {}
   
   virtual void Start() = 0;
   
@@ -144,6 +145,9 @@ public:
   GraphDriver* PreviousDriver();
   void SetNextDriver(GraphDriver* aNextDriver);
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
+
+  
+  bool Scheduled();
 
   
 
@@ -215,6 +219,22 @@ protected:
   MediaStreamGraphImpl* mGraphImpl;
 
   
+  enum WaitState {
+    
+    WAITSTATE_RUNNING,
+    
+    
+    WAITSTATE_WAITING_FOR_NEXT_ITERATION,
+    
+    WAITSTATE_WAITING_INDEFINITELY,
+    
+    
+    WAITSTATE_WAKING_UP
+  };
+  
+  WaitState mWaitState;
+
+  
   
   
   TimeStamp mCurrentTimeStamp;
@@ -232,6 +252,9 @@ protected:
   
   
   RefPtr<GraphDriver> mNextDriver;
+  
+  
+  bool mScheduled;
   virtual ~GraphDriver()
   { }
 };
@@ -294,23 +317,6 @@ private:
   
   TimeStamp mInitialTimeStamp;
   TimeStamp mLastTimeStamp;
-
-  
-  enum WaitState {
-    
-    WAITSTATE_RUNNING,
-    
-    
-    WAITSTATE_WAITING_FOR_NEXT_ITERATION,
-    
-    WAITSTATE_WAITING_INDEFINITELY,
-    
-    
-    WAITSTATE_WAKING_UP
-  };
-  
-  WaitState mWaitState;
-
   
   
   bool mIsFallback;
@@ -383,6 +389,7 @@ public:
   explicit AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl);
   virtual ~AudioCallbackDriver();
 
+  void Destroy() override;
   void Start() override;
   void Revive() override;
   void RemoveCallback() override;
@@ -485,6 +492,10 @@ private:
   friend class AsyncCubebTask;
   bool Init();
   void Stop();
+  
+
+
+  void FallbackToSystemClockDriver();
 
   
   uint32_t mOutputChannels;
@@ -551,14 +562,6 @@ private:
 
 
   Atomic<bool> mMicrophoneActive;
-  
-
-
-
-
-
-
-  bool mShouldFallbackIfError;
   
 
   bool mFromFallback;
