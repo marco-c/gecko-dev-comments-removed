@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_x86_MacroAssembler_x86_h
 #define jit_x86_MacroAssembler_x86_h
@@ -19,7 +19,7 @@ namespace jit {
 class MacroAssemblerX86 : public MacroAssemblerX86Shared
 {
   private:
-    // Perform a downcast. Should be removed by Bug 996602.
+    
     MacroAssembler& asMasm();
     const MacroAssembler& asMasm() const;
 
@@ -28,8 +28,8 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
 
   private:
     Operand payloadOfAfterStackPush(const Address& address) {
-        // If we are basing off %esp, the address will be invalid after the
-        // first push.
+        
+        
         if (address.base == StackPointer)
             return Operand(address.base, address.offset + 4);
         return payloadOf(address);
@@ -59,13 +59,13 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     {
     }
 
-    // The buffer is about to be linked, make sure any constant pools or excess
-    // bookkeeping has been flushed to the instruction stream.
+    
+    
     void finish();
 
-    /////////////////////////////////////////////////////////////////
-    // X86-specific interface.
-    /////////////////////////////////////////////////////////////////
+    
+    
+    
 
     Operand ToPayload(Operand base) {
         return base;
@@ -93,9 +93,9 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         return ToType(Operand(base)).toAddress();
     }
 
-    /////////////////////////////////////////////////////////////////
-    // X86/X64-common interface.
-    /////////////////////////////////////////////////////////////////
+    
+    
+    
     void storeValue(ValueOperand val, Operand dest) {
         movl(val.payloadReg(), ToPayload(dest));
         movl(val.typeReg(), ToType(dest));
@@ -130,13 +130,13 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         Operand payload = ToPayload(src);
         Operand type = ToType(src);
 
-        // Ensure that loading the payload does not erase the pointer to the
-        // Value in memory or the index.
+        
+        
         Register baseReg = Register::FromCode(src.base());
         Register indexReg = (src.kind() == Operand::MEM_SCALE) ? Register::FromCode(src.index()) : InvalidReg;
 
-        // If we have a BaseIndex that uses both result registers, first compute
-        // the address and then load the Value from there.
+        
+        
         if ((baseReg == val.payloadReg() && indexReg == val.typeReg()) ||
             (baseReg == val.typeReg() && indexReg == val.payloadReg()))
         {
@@ -222,7 +222,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         movl(src, dest);
     }
 
-    // Returns the register containing the type tag.
+    
     Register splitTagForTest(const ValueOperand& value) {
         return value.typeReg();
     }
@@ -526,9 +526,9 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         test32(lhs, Imm32(rhs.value));
     }
 
-    /////////////////////////////////////////////////////////////////
-    // Common interface.
-    /////////////////////////////////////////////////////////////////
+    
+    
+    
 
     template <typename T, typename S>
     void branchPtr(Condition cond, T lhs, S ptr, RepatchLabel* label) {
@@ -587,10 +587,10 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     void load32(AbsoluteAddress address, Register dest) {
         movl(Operand(address), dest);
     }
-    void load64(const Address& address, Register64 dest) {
-        movl(Operand(Address(address.base, address.offset + INT64LOW_OFFSET)), dest.low);
-        int32_t highOffset = (address.offset < 0) ? -int32_t(INT64HIGH_OFFSET) : INT64HIGH_OFFSET;
-        movl(Operand(Address(address.base, address.offset + highOffset)), dest.high);
+    template <typename T>
+    void load64(const T& address, Register64 dest) {
+        movl(Operand(LowWord(address)), dest.low);
+        movl(Operand(HighWord(address)), dest.high);
     }
     template <typename T>
     void storePtr(ImmWord imm, T address) {
@@ -622,13 +622,14 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     void store16(Register src, AbsoluteAddress address) {
         movw(src, Operand(address));
     }
-    void store64(Register64 src, Address address) {
-        movl(src.low, Operand(Address(address.base, address.offset + INT64LOW_OFFSET)));
-        movl(src.high, Operand(Address(address.base, address.offset + INT64HIGH_OFFSET)));
+    template <typename T>
+    void store64(Register64 src, const T& address) {
+        movl(src.low, Operand(LowWord(address)));
+        movl(src.high, Operand(HighWord(address)));
     }
     void store64(Imm64 imm, Address address) {
-        movl(imm.low(), Operand(Address(address.base, address.offset + INT64LOW_OFFSET)));
-        movl(imm.hi(), Operand(Address(address.base, address.offset + INT64HIGH_OFFSET)));
+        movl(imm.low(), Operand(LowWord(address)));
+        movl(imm.hi(), Operand(HighWord(address)));
     }
 
     void setStackArg(Register reg, uint32_t arg) {
@@ -714,9 +715,9 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         xorl(Imm32(1), val.payloadReg());
     }
 
-    // Extended unboxing API. If the payload is already in a register, returns
-    // that register. Otherwise, provides a move to the given scratch register,
-    // and returns that.
+    
+    
+    
     Register extractObject(const Address& address, Register scratch) {
         movl(payloadOf(address), scratch);
         return scratch;
@@ -790,10 +791,10 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         movl(Operand(StackPointer, 0x0), dest);
     }
 
-    // Note: this function clobbers the source register.
+    
     inline void convertUInt32ToDouble(Register src, FloatRegister dest);
 
-    // Note: this function clobbers the source register.
+    
     inline void convertUInt32ToFloat32(Register src, FloatRegister dest);
 
     void convertUInt64ToFloat32(Register64 src, FloatRegister dest, Register temp);
@@ -821,21 +822,21 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, globalArea) + globalDataOffset), dest);
     }
     void loadWasmPinnedRegsFromTls() {
-        // x86 doesn't have any pinned registers.
+        
     }
 
   public:
-    // Used from within an Exit frame to handle a pending exception.
+    
     void handleFailureWithHandlerTail(void* handler);
 
-    // Instrumentation for entering and leaving the profiler.
+    
     void profilerEnterFrame(Register framePtr, Register scratch);
     void profilerExitFrame();
 };
 
 typedef MacroAssemblerX86 MacroAssemblerSpecific;
 
-} // namespace jit
-} // namespace js
+} 
+} 
 
-#endif /* jit_x86_MacroAssembler_x86_h */
+#endif 

@@ -7,6 +7,7 @@
 #ifndef jit_shared_Assembler_shared_h
 #define jit_shared_Assembler_shared_h
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/PodOperations.h"
 
 #include <limits.h>
@@ -33,6 +34,8 @@
 
 namespace js {
 namespace jit {
+
+using mozilla::CheckedInt;
 
 namespace Disassembler {
 class HeapAccess;
@@ -298,6 +301,24 @@ struct Address
     Address() { mozilla::PodZero(this); }
 };
 
+#if JS_BITS_PER_WORD == 32
+
+static inline Address
+LowWord(const Address& address) {
+    CheckedInt<int32_t> offset = CheckedInt<int32_t>(address.offset) + INT64LOW_OFFSET;
+    MOZ_ALWAYS_TRUE(offset.isValid());
+    return Address(address.base, offset.value());
+}
+
+static inline Address
+HighWord(const Address& address) {
+    CheckedInt<int32_t> offset = CheckedInt<int32_t>(address.offset) + INT64HIGH_OFFSET;
+    MOZ_ALWAYS_TRUE(offset.isValid());
+    return Address(address.base, offset.value());
+}
+
+#endif
+
 
 
 struct BaseIndex
@@ -313,6 +334,24 @@ struct BaseIndex
 
     BaseIndex() { mozilla::PodZero(this); }
 };
+
+#if JS_BITS_PER_WORD == 32
+
+static inline BaseIndex
+LowWord(const BaseIndex& address) {
+    CheckedInt<int32_t> offset = CheckedInt<int32_t>(address.offset) + INT64LOW_OFFSET;
+    MOZ_ALWAYS_TRUE(offset.isValid());
+    return BaseIndex(address.base, address.index, address.scale, offset.value());
+}
+
+static inline BaseIndex
+HighWord(const BaseIndex& address) {
+    CheckedInt<int32_t> offset = CheckedInt<int32_t>(address.offset) + INT64HIGH_OFFSET;
+    MOZ_ALWAYS_TRUE(offset.isValid());
+    return BaseIndex(address.base, address.index, address.scale, offset.value());
+}
+
+#endif
 
 
 
