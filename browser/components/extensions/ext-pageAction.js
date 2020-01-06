@@ -91,7 +91,11 @@ this.pageAction = class extends ExtensionAPI {
 
     this.tabContext.shutdown();
 
-    if (this.browserPageAction) {
+    
+    
+    
+    
+    if (reason != "APP_SHUTDOWN" && this.browserPageAction) {
       this.browserPageAction.remove();
       this.browserPageAction = null;
     }
