@@ -59,6 +59,11 @@ function frameScript() {
   Components.utils.import("resource://gre/modules/Services.jsm");
 
   Services.obs.notifyObservers(this, "tab-content-frameloader-created");
+
+  
+  addEventListener("MozHeapMinimize", () => {
+    Services.obs.notifyObservers(null, "memory-pressure", "heap-minimize");
+  }, true, true);
 }
 
 const FRAME_SCRIPT = `data:text/javascript,(${encodeURI(frameScript)}).call(this)`;
