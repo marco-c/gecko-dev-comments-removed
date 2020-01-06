@@ -1172,11 +1172,11 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext,
   gfxContextAutoSaveRestore autoSR(ctx);
   gfxMatrix matrix;
   if (!snapped) { 
-    matrix = ctx->CurrentMatrix();
+    matrix = ctx->CurrentMatrixDouble();
   }
   matrix.Translate(origin);
   matrix.Scale(scaleFactor, scaleFactor); 
-  ctx->SetMatrix(matrix);
+  ctx->SetMatrixDouble(matrix);
 
   
   

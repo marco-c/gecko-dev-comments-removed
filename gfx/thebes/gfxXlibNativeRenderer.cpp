@@ -467,7 +467,7 @@ void
 gfxXlibNativeRenderer::Draw(gfxContext* ctx, IntSize size,
                             uint32_t flags, Screen *screen, Visual *visual)
 {
-    gfxMatrix matrix = ctx->CurrentMatrix();
+    Matrix matrix = ctx->CurrentMatrix();
 
     
     

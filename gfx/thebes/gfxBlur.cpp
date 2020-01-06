@@ -52,7 +52,7 @@ gfxAlphaBoxBlur::Init(gfxContext* aDestinationCtx,
 
   RefPtr<gfxContext> context = gfxContext::CreateOrNull(dt);
   MOZ_ASSERT(context); 
-  context->SetMatrix(gfxMatrix::Translation(-mBlur.GetRect().TopLeft()));
+  context->SetMatrix(Matrix::Translation(-mBlur.GetRect().TopLeft()));
   return context.forget();
 }
 
@@ -588,7 +588,7 @@ GetBlur(gfxContext* aDestinationCtx,
   
   
   
-  Matrix destMatrix = ToMatrix(aDestinationCtx->CurrentMatrix());
+  Matrix destMatrix = aDestinationCtx->CurrentMatrix();
   bool useDestRect = !destMatrix.IsRectilinear() || destMatrix.HasNonIntegerTranslation() ||
                      aDestinationCtx->GetDrawTarget()->IsRecording();
   if (useDestRect) {

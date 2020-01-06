@@ -71,7 +71,7 @@ nsFilterInstance::PaintFilteredFrame(nsIFrame *aFilteredFrame,
   UniquePtr<UserSpaceMetrics> metrics = UserSpaceMetricsForFrame(aFilteredFrame);
 
   gfxContextMatrixAutoSaveRestore autoSR(aCtx);
-  gfxSize scaleFactors = aCtx->CurrentMatrix().ScaleFactors(true);
+  gfxSize scaleFactors = aCtx->CurrentMatrixDouble().ScaleFactors(true);
   if (scaleFactors.IsEmpty()) {
     return;
   }
@@ -85,7 +85,7 @@ nsFilterInstance::PaintFilteredFrame(nsIFrame *aFilteredFrame,
   MOZ_ASSERT(invertible);
   
   
-  aCtx->SetMatrix(reverseScaleMatrix * aCtx->CurrentMatrix());
+  aCtx->SetMatrixDouble(reverseScaleMatrix * aCtx->CurrentMatrixDouble());
 
   gfxMatrix scaleMatrixInDevUnits =
     scaleMatrix * nsSVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
@@ -414,8 +414,8 @@ nsFilterInstance::BuildSourcePaint(SourceInfo *aSource,
   MOZ_ASSERT(ctx); 
   gfxContextAutoSaveRestore saver(ctx);
 
-  ctx->SetMatrix(mPaintTransform *
-                 gfxMatrix::Translation(-neededRect.TopLeft()));
+  ctx->SetMatrixDouble(mPaintTransform *
+                       gfxMatrix::Translation(-neededRect.TopLeft()));
   GeneralPattern pattern;
   if (aSource == &mFillPaint) {
     nsSVGUtils::MakeFillPatternFor(mTargetFrame, ctx, &pattern, aImgParams);
@@ -483,8 +483,8 @@ nsFilterInstance::BuildSourceImage(DrawTarget *aDest, imgDrawingParams& aImgPara
   gfxMatrix devPxToCssPxTM = nsSVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
   DebugOnly<bool> invertible = devPxToCssPxTM.Invert();
   MOZ_ASSERT(invertible);
-  ctx->SetMatrix(devPxToCssPxTM * mPaintTransform *
-                 gfxMatrix::Translation(-neededRect.TopLeft()));
+  ctx->SetMatrixDouble(devPxToCssPxTM * mPaintTransform *
+                       gfxMatrix::Translation(-neededRect.TopLeft()));
 
   mPaintCallback->Paint(*ctx, mTargetFrame, mPaintTransform, &dirty, aImgParams);
 

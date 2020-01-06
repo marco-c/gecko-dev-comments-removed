@@ -1685,8 +1685,8 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
         nsLayoutUtils::PointToGfxPoint(nsPoint(shadowItem->mXOffset,
                                                shadowItem->mYOffset),
                                        aPresContext->AppUnitsPerDevPixel());
-      shadowContext->SetMatrix(
-        shadowContext->CurrentMatrix().PreTranslate(devPixelOffset));
+      shadowContext->SetMatrixDouble(
+        shadowContext->CurrentMatrixDouble().PreTranslate(devPixelOffset));
 
       nsRect nativeRect = aDirtyRect;
       nativeRect.MoveBy(-nsPoint(shadowItem->mXOffset, shadowItem->mYOffset));
@@ -4479,7 +4479,7 @@ nsContextBoxBlur::Init(const nsRect& aRect, nscoord aSpreadRadius,
     nsLayoutUtils::RectToGfxRect(aDirtyRect, aAppUnitsPerDevPixel);
   dirtyRect.RoundOut();
 
-  gfxMatrix transform = aDestinationCtx->CurrentMatrix();
+  gfxMatrix transform = aDestinationCtx->CurrentMatrixDouble();
   rect = transform.TransformBounds(rect);
 
   mPreTransformed = !transform.IsIdentity();
@@ -4516,7 +4516,7 @@ nsContextBoxBlur::DoPaint()
   gfxContextMatrixAutoSaveRestore saveMatrix(mDestinationCtx);
 
   if (mPreTransformed) {
-    mDestinationCtx->SetMatrix(gfxMatrix());
+    mDestinationCtx->SetMatrix(Matrix());
   }
 
   mAlphaBoxBlur.Paint(mDestinationCtx);
@@ -4577,12 +4577,12 @@ nsContextBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
   
   
   
-  gfxMatrix transform = aDestinationCtx->CurrentMatrix();
+  gfxMatrix transform = aDestinationCtx->CurrentMatrixDouble();
   
   if (!transform.HasNonAxisAlignedTransform() && transform._11 > 0.0 && transform._22 > 0.0) {
     scaleX = transform._11;
     scaleY = transform._22;
-    aDestinationCtx->SetMatrix(gfxMatrix());
+    aDestinationCtx->SetMatrix(Matrix());
   } else {
     transform = gfxMatrix();
   }
@@ -4677,13 +4677,13 @@ nsContextBoxBlur::InsetBoxBlur(gfxContext* aDestinationCtx,
   
   
   
-  gfxSize scale = aDestinationCtx->CurrentMatrix().ScaleFactors(true);
-  Matrix transform = ToMatrix(aDestinationCtx->CurrentMatrix());
+  gfx::Size scale = aDestinationCtx->CurrentMatrix().ScaleFactors(true);
+  Matrix transform = aDestinationCtx->CurrentMatrix();
 
   
   if (!transform.HasNonAxisAlignedTransform() && transform._11 > 0.0 && transform._22 > 0.0) {
     
-    aDestinationCtx->SetMatrix(gfxMatrix());
+    aDestinationCtx->SetMatrix(Matrix());
   } else {
     
     transform = Matrix();

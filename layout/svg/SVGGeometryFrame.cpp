@@ -277,7 +277,7 @@ SVGGeometryFrame::PaintSVG(gfxContext& aContext,
 
   
   gfxMatrix newMatrix =
-    aContext.CurrentMatrix().PreMultiply(aTransform).NudgeToIntegers();
+    aContext.CurrentMatrixDouble().PreMultiply(aTransform).NudgeToIntegers();
   if (newMatrix.IsSingular()) {
     return;
   }
@@ -767,7 +767,7 @@ SVGGeometryFrame::Render(gfxContext* aContext,
   
   
   gfxContextMatrixAutoSaveRestore autoRestoreTransform(aContext);
-  aContext->SetMatrix(aNewTransform);
+  aContext->SetMatrixDouble(aNewTransform);
 
   if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
     
