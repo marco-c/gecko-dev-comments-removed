@@ -81,7 +81,7 @@ impl Parse for TrackSize<LengthOrPercentage> {
 
 
 
-pub fn parse_line_names<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Vec<CustomIdent>, ParseError<'i>> {
+pub fn parse_line_names<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Box<[CustomIdent]>, ParseError<'i>> {
     input.expect_square_bracket_block()?;
     input.parse_nested_block(|input| {
         let mut values = vec![];
@@ -90,7 +90,7 @@ pub fn parse_line_names<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Vec<Custom
             values.push(ident);
         }
 
-        Ok(values)
+        Ok(values.into_boxed_slice())
     })
 }
 
@@ -128,7 +128,7 @@ impl TrackRepeat<LengthOrPercentage> {
                 let mut current_names;
 
                 loop {
-                    current_names = input.try(parse_line_names).unwrap_or(vec![]);
+                    current_names = input.try(parse_line_names).unwrap_or(vec![].into_boxed_slice());
                     if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
                         if !track_size.is_fixed() {
                             if is_auto {
@@ -150,7 +150,7 @@ impl TrackRepeat<LengthOrPercentage> {
                             
                             
                             
-                            names.push(input.try(parse_line_names).unwrap_or(vec![]));
+                            names.push(input.try(parse_line_names).unwrap_or(vec![].into_boxed_slice()));
                             break
                         }
                     } else {
@@ -167,7 +167,7 @@ impl TrackRepeat<LengthOrPercentage> {
                 let repeat = TrackRepeat {
                     count: count,
                     track_sizes: values,
-                    line_names: names,
+                    line_names: names.into_boxed_slice(),
                 };
 
                 Ok((repeat, repeat_type))
@@ -194,6 +194,8 @@ impl Parse for TrackList<LengthOrPercentage> {
         
         
         
+        
+        
         let mut current_names = vec![];
         let mut names = vec![];
         let mut values = vec![];
@@ -205,7 +207,7 @@ impl Parse for TrackList<LengthOrPercentage> {
         let mut atleast_one_not_fixed = false;
 
         loop {
-            current_names.append(&mut input.try(parse_line_names).unwrap_or(vec![]));
+            current_names.extend_from_slice(&mut input.try(parse_line_names).unwrap_or(vec![].into_boxed_slice()));
             if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
                 if !track_size.is_fixed() {
                     atleast_one_not_fixed = true;
@@ -215,7 +217,8 @@ impl Parse for TrackList<LengthOrPercentage> {
                     }
                 }
 
-                names.push(mem::replace(&mut current_names, vec![]));
+                let vec = mem::replace(&mut current_names, vec![]);
+                names.push(vec.into_boxed_slice());
                 values.push(track_size);
             } else if let Ok((repeat, type_)) = input.try(|i| TrackRepeat::parse_with_repeat_type(context, i)) {
                 if list_type == TrackListType::Explicit {
@@ -237,7 +240,8 @@ impl Parse for TrackList<LengthOrPercentage> {
 
                         list_type = TrackListType::Auto(values.len() as u16);
                         auto_repeat = Some(repeat);
-                        names.push(mem::replace(&mut current_names, vec![]));
+                        let vec = mem::replace(&mut current_names, vec![]);
+                        names.push(vec.into_boxed_slice());
                         continue
                     },
                     RepeatType::Fixed => (),
@@ -245,10 +249,11 @@ impl Parse for TrackList<LengthOrPercentage> {
 
                 
                 let mut repeat = repeat.expand();
-                let mut repeat_names_iter = repeat.line_names.drain(..);
+                let mut repeat_names_iter = repeat.line_names.iter();
                 for (size, repeat_names) in repeat.track_sizes.drain(..).zip(&mut repeat_names_iter) {
                     current_names.extend_from_slice(&repeat_names);
-                    names.push(mem::replace(&mut current_names, vec![]));
+                    let vec = mem::replace(&mut current_names, vec![]);
+                    names.push(vec.into_boxed_slice());
                     values.push(size);
                 }
 
@@ -260,7 +265,7 @@ impl Parse for TrackList<LengthOrPercentage> {
                     return Err(StyleParseError::UnspecifiedError.into())
                 }
 
-                names.push(current_names);
+                names.push(current_names.into_boxed_slice());
                 break
             }
         }
@@ -268,7 +273,7 @@ impl Parse for TrackList<LengthOrPercentage> {
         Ok(TrackList {
             list_type: list_type,
             values: values,
-            line_names: names,
+            line_names: names.into_boxed_slice(),
             auto_repeat: auto_repeat,
         })
     }
