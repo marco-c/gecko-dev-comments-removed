@@ -186,8 +186,9 @@ AnimationEffectReadOnly::GetComputedTimingAt(
   
   
   result.mCurrentIteration =
-    result.mIterations >= UINT64_MAX &&
-      result.mPhase == ComputedTiming::AnimationPhase::After
+    (result.mIterations >= UINT64_MAX
+     && result.mPhase == ComputedTiming::AnimationPhase::After)
+    || overallProgress >= UINT64_MAX
     ? UINT64_MAX 
                  
     : static_cast<uint64_t>(overallProgress);
