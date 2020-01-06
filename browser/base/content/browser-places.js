@@ -626,28 +626,23 @@ var PlacesCommandHook = {
 
 
 
-  async bookmarkLink(aParentId, aURL, aTitle, aDescription = "") {
-    let node = await PlacesUIUtils.fetchNodeLike({ url: aURL });
+  async bookmarkLink(parentId, url, title, description = "") {
+    let node = await PlacesUIUtils.fetchNodeLike({ url });
     if (node) {
-      PlacesUIUtils.showBookmarkDialog({ action: "edit",
-                                         node
-                                       }, window.top);
+      PlacesUIUtils.showBookmarkDialog({ action: "edit", node }, window.top);
       return;
     }
 
-    let parentGuid = aParentId == PlacesUtils.bookmarksMenuFolderId ?
+    let parentGuid = parentId == PlacesUtils.bookmarksMenuFolderId ?
                        PlacesUtils.bookmarks.menuGuid :
-                       await PlacesUtils.promiseItemGuid(aParentId);
-    let ip = new InsertionPoint(aParentId,
-                                PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON,
-                                null, null, parentGuid);
+                       await PlacesUtils.promiseItemGuid(parentId);
+    let defaultInsertionPoint = new InsertionPoint({ parentId, parentGuid });
     PlacesUIUtils.showBookmarkDialog({ action: "add",
                                        type: "bookmark",
-                                       uri: makeURI(aURL),
-                                       title: aTitle,
-                                       description: aDescription,
-                                       defaultInsertionPoint: ip,
+                                       uri: makeURI(url),
+                                       title,
+                                       description,
+                                       defaultInsertionPoint,
                                        hiddenRows: [ "description",
                                                      "location",
                                                      "loadInSidebar",
@@ -717,10 +712,10 @@ var PlacesCommandHook = {
 
 
   async addLiveBookmark(url, feedTitle, feedSubtitle) {
-    let toolbarIP = new InsertionPoint(PlacesUtils.toolbarFolderId,
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       Components.interfaces.nsITreeView.DROP_ON,
-                                       null, null, PlacesUtils.bookmarks.toolbarGuid);
+    let toolbarIP = new InsertionPoint({
+      parentId: PlacesUtils.toolbarFolderId,
+      parentGuid: PlacesUtils.bookmarks.toolbarGuid
+    });
 
     let feedURI = makeURI(url);
     let title = feedTitle || gBrowser.contentTitle;
@@ -1134,10 +1129,10 @@ var PlacesMenuDNDHandler = {
 
 
   onDragOver: function PMDH_onDragOver(event) {
-    let ip = new InsertionPoint(PlacesUtils.bookmarksMenuFolderId,
-                                PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON,
-                                null, null, PlacesUtils.bookmarks.menuGuid);
+    let ip = new InsertionPoint({
+      parentId: PlacesUtils.bookmarksMenuFolderId,
+      parentGuid: PlacesUtils.bookmarks.menuGuid
+    });
     if (ip && PlacesControllerDragHelper.canDrop(ip, event.dataTransfer))
       event.preventDefault();
 
@@ -1151,10 +1146,10 @@ var PlacesMenuDNDHandler = {
 
   onDrop: function PMDH_onDrop(event) {
     
-    let ip = new InsertionPoint(PlacesUtils.bookmarksMenuFolderId,
-                                PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                Components.interfaces.nsITreeView.DROP_ON,
-                                null, null, PlacesUtils.bookmarks.menuGuid);
+    let ip = new InsertionPoint({
+      parentId: PlacesUtils.bookmarksMenuFolderId,
+      parentGuid: PlacesUtils.bookmarks.menuGuid
+    });
     PlacesControllerDragHelper.onDrop(ip, event.dataTransfer);
     PlacesControllerDragHelper.currentDropTarget = null;
     event.stopPropagation();

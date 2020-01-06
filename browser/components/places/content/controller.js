@@ -43,15 +43,17 @@ const RELOAD_ACTION_MOVE = 3;
 
 
 
-function InsertionPoint(aItemId, aIndex, aOrientation, aTagName = null,
-                        aDropNearNode = null, aGuid = null) {
-
-  this.itemId = aItemId;
-  this.guid = aGuid;
-  this._index = aIndex;
-  this.orientation = aOrientation;
-  this.tagName = aTagName;
-  this.dropNearNode = aDropNearNode;
+function InsertionPoint({ parentId, parentGuid,
+                          index = PlacesUtils.bookmarks.DEFAULT_INDEX,
+                          orientation = Components.interfaces.nsITreeView.DROP_ON,
+                          tagName = null,
+                          dropNearNode = null }) {
+  this.itemId = parentId;
+  this.guid = parentGuid;
+  this._index = index;
+  this.orientation = orientation;
+  this.tagName = tagName;
+  this.dropNearNode = dropNearNode;
 }
 
 InsertionPoint.prototype = {
@@ -59,29 +61,7 @@ InsertionPoint.prototype = {
     return this._index = val;
   },
 
- 
-  promiseGuid() {
-    return this.guid || PlacesUtils.promiseItemGuid(this.itemId);
-  },
-
-  
-  get index() {
-    if (this.dropNearNode && typeof this.dropNearNode != "number")
-      throw new Error("dropNearNode is not a number, use getIndex() instead?");
-    if (this.dropNearNode > 0) {
-      
-      
-      var index = PlacesUtils.bookmarks.getItemIndex(this.dropNearNode);
-      return this.orientation == Ci.nsITreeView.DROP_BEFORE ? index : index + 1;
-    }
-    return this._index;
-  },
-
   async getIndex() {
-    
-    if (typeof this.dropNearNode == "number")
-      return this.index;
-
     if (this.dropNearNode) {
       
       
@@ -788,8 +768,7 @@ PlacesController.prototype = {
       return;
     }
 
-    let txn = PlacesTransactions.NewSeparator({ parentGuid: await ip.promiseGuid(),
-                                                index });
+    let txn = PlacesTransactions.NewSeparator({ parentGuid: ip.guid, index });
     let guid = await txn.transact();
     let itemId = await PlacesUtils.promiseItemId(guid);
     
@@ -1299,7 +1278,7 @@ PlacesController.prototype = {
       } else {
         await PlacesTransactions.batch(async function() {
           let insertionIndex = await ip.getIndex();
-          let parent = await ip.promiseGuid();
+          let parent = ip.guid;
 
           for (let item of items) {
             let doCopy = action == "copy";
@@ -1583,8 +1562,7 @@ var PlacesControllerDragHelper = {
     let transactions = [];
     let dropCount = dt.mozItemCount;
     let movedCount = 0;
-    let parentGuid = PlacesUIUtils.useAsyncTransactions ?
-                       (await insertionPoint.promiseGuid()) : null;
+    let parentGuid = insertionPoint.guid;
     let tagName = insertionPoint.tagName;
 
     
