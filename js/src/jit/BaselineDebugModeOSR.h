@@ -10,7 +10,7 @@
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
-#include "jit/JitFrameIterator.h"
+#include "jit/JSJitFrameIter.h"
 
 #include "vm/Debugger.h"
 

@@ -2148,7 +2148,7 @@ testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp)
     ScriptFrameIter iter(cx);
     if (!iter.done() && iter.isIon()) {
         
-        jit::JitFrameIterator jitIter(cx);
+        jit::JSJitFrameIter jitIter(cx);
         ++jitIter;
         jitIter.script()->resetWarmUpResetCounter();
     } else {

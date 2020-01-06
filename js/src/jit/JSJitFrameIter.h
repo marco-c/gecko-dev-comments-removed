@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_JitFrameIterator_h
-#define jit_JitFrameIterator_h
+#ifndef jit_JSJitFrameIter_h
+#define jit_JSJitFrameIter_h
 
 #include "jsfun.h"
 #include "jsscript.h"
@@ -90,7 +90,7 @@ void AssertJitStackInvariants(JSContext* cx);
 
 
 
-class JitFrameIterator
+class JSJitFrameIter
 {
   protected:
     uint8_t* current_;
@@ -106,8 +106,8 @@ class JitFrameIterator
 
   public:
     
-    explicit JitFrameIterator(const JitActivation* activation);
-    explicit JitFrameIterator(JSContext* cx);
+    explicit JSJitFrameIter(const JitActivation* activation);
+    explicit JSJitFrameIter(JSContext* cx);
 
     
     void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
@@ -354,7 +354,7 @@ struct MaybeReadFallback
 
     JSContext* maybeCx;
     JitActivation* activation;
-    const JitFrameIterator* frame;
+    const JSJitFrameIter* frame;
     const NoGCValue unreadablePlaceholder_;
     const FallbackConsequence consequence;
 
@@ -367,7 +367,7 @@ struct MaybeReadFallback
     {
     }
 
-    MaybeReadFallback(JSContext* cx, JitActivation* activation, const JitFrameIterator* frame,
+    MaybeReadFallback(JSContext* cx, JitActivation* activation, const JSJitFrameIter* frame,
                       FallbackConsequence consequence = Fallback_Invalidate)
       : maybeCx(cx),
         activation(activation),
@@ -544,7 +544,7 @@ class SnapshotIterator
     
     
 
-    SnapshotIterator(const JitFrameIterator& iter, const MachineState* machineState);
+    SnapshotIterator(const JSJitFrameIter& iter, const MachineState* machineState);
     SnapshotIterator();
 
     Value read() {
@@ -624,7 +624,7 @@ class SnapshotIterator
 
 class InlineFrameIterator
 {
-    const JitFrameIterator* frame_;
+    const JSJitFrameIter* frame_;
     SnapshotIterator start_;
     SnapshotIterator si_;
     uint32_t framesRead_;
@@ -662,7 +662,7 @@ class InlineFrameIterator
                                       bool* hasInitialEnv = nullptr) const;
 
   public:
-    InlineFrameIterator(JSContext* cx, const JitFrameIterator* iter);
+    InlineFrameIterator(JSContext* cx, const JSJitFrameIter* iter);
     InlineFrameIterator(JSContext* cx, const InlineFrameIterator* iter);
 
     bool more() const {
@@ -845,9 +845,9 @@ class InlineFrameIterator
 
     void dump() const;
 
-    void resetOn(const JitFrameIterator* iter);
+    void resetOn(const JSJitFrameIter* iter);
 
-    const JitFrameIterator& frame() const {
+    const JSJitFrameIter& frame() const {
         return *frame_;
     }
 
