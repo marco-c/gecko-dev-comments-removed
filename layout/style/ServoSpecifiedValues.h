@@ -17,11 +17,11 @@
 
 namespace mozilla {
 
-class ServoSpecifiedValues final: public GenericSpecifiedValues
+class ServoSpecifiedValues final : public GenericSpecifiedValues
 {
 public:
-
-  ServoSpecifiedValues(nsPresContext* aContext, RawServoDeclarationBlock* aDecl);
+  ServoSpecifiedValues(nsPresContext* aContext,
+                       RawServoDeclarationBlock* aDecl);
 
   
   bool PropertyIsSet(nsCSSPropertyID aId);

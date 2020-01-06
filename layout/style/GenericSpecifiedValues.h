@@ -27,90 +27,97 @@ class ServoSpecifiedValues;
 
 
 
-class GenericSpecifiedValues {
+class GenericSpecifiedValues
+{
 protected:
-    explicit GenericSpecifiedValues(StyleBackendType aType, nsPresContext* aPresContext,
-                                    uint32_t aSIDs)
-        : mType(aType), mPresContext(aPresContext), mSIDs(aSIDs) {}
+  explicit GenericSpecifiedValues(StyleBackendType aType,
+                                  nsPresContext* aPresContext,
+                                  uint32_t aSIDs)
+    : mType(aType)
+    , mPresContext(aPresContext)
+    , mSIDs(aSIDs)
+  {}
 
 public:
-    MOZ_DECL_STYLO_METHODS(nsRuleData, ServoSpecifiedValues)
+  MOZ_DECL_STYLO_METHODS(nsRuleData, ServoSpecifiedValues)
 
-    
-    inline bool PropertyIsSet(nsCSSPropertyID aId);
-    
-    
-    
-    inline bool ShouldComputeStyleStruct(uint64_t aInheritBits) {
-        return aInheritBits & mSIDs;
-    }
+  
+  inline bool PropertyIsSet(nsCSSPropertyID aId);
+  
+  
+  
+  inline bool ShouldComputeStyleStruct(uint64_t aInheritBits)
+  {
+    return aInheritBits & mSIDs;
+  }
 
-    inline nsPresContext* PresContext() {
-        return mPresContext;
-    }
+  inline nsPresContext* PresContext() { return mPresContext; }
 
-    
-    inline void SetIdentStringValue(nsCSSPropertyID aId, const nsString& aValue);
-    inline void SetIdentStringValueIfUnset(nsCSSPropertyID aId, const nsString& aValue);
+  
+  inline void SetIdentStringValue(nsCSSPropertyID aId, const nsString& aValue);
+  inline void SetIdentStringValueIfUnset(nsCSSPropertyID aId,
+                                         const nsString& aValue);
 
-    inline void SetIdentAtomValue(nsCSSPropertyID aId, nsIAtom* aValue);
-    inline void SetIdentAtomValueIfUnset(nsCSSPropertyID aId, nsIAtom* aValue);
+  inline void SetIdentAtomValue(nsCSSPropertyID aId, nsIAtom* aValue);
+  inline void SetIdentAtomValueIfUnset(nsCSSPropertyID aId, nsIAtom* aValue);
 
-    
-    inline void SetKeywordValue(nsCSSPropertyID aId, int32_t aValue);
-    inline void SetKeywordValueIfUnset(nsCSSPropertyID aId, int32_t aValue);
+  
+  inline void SetKeywordValue(nsCSSPropertyID aId, int32_t aValue);
+  inline void SetKeywordValueIfUnset(nsCSSPropertyID aId, int32_t aValue);
 
-    template<typename T,
-             typename = typename std::enable_if<std::is_enum<T>::value>::type>
-    void SetKeywordValue(nsCSSPropertyID aId, T aValue) {
-        static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
-                      "aValue must be an enum that fits within 32 bits");
-        SetKeywordValue(aId, static_cast<int32_t>(aValue));
-    }
-    template<typename T,
-             typename = typename std::enable_if<std::is_enum<T>::value>::type>
-    void SetKeywordValueIfUnset(nsCSSPropertyID aId, T aValue) {
-        static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
-                      "aValue must be an enum that fits within 32 bits");
-        SetKeywordValueIfUnset(aId, static_cast<int32_t>(aValue));
-    }
+  template<typename T,
+           typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  void SetKeywordValue(nsCSSPropertyID aId, T aValue)
+  {
+    static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
+                  "aValue must be an enum that fits within 32 bits");
+    SetKeywordValue(aId, static_cast<int32_t>(aValue));
+  }
+  template<typename T,
+           typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  void SetKeywordValueIfUnset(nsCSSPropertyID aId, T aValue)
+  {
+    static_assert(mozilla::EnumTypeFitsWithin<T, int32_t>::value,
+                  "aValue must be an enum that fits within 32 bits");
+    SetKeywordValueIfUnset(aId, static_cast<int32_t>(aValue));
+  }
 
-    
-    inline void SetIntValue(nsCSSPropertyID aId, int32_t aValue);
-    
-    inline void SetPixelValue(nsCSSPropertyID aId, float aValue);
-    inline void SetPixelValueIfUnset(nsCSSPropertyID aId, float aValue);
+  
+  inline void SetIntValue(nsCSSPropertyID aId, int32_t aValue);
+  
+  inline void SetPixelValue(nsCSSPropertyID aId, float aValue);
+  inline void SetPixelValueIfUnset(nsCSSPropertyID aId, float aValue);
 
-    inline void SetLengthValue(nsCSSPropertyID aId, nsCSSValue aValue);
+  inline void SetLengthValue(nsCSSPropertyID aId, nsCSSValue aValue);
 
-    
-    inline void SetNumberValue(nsCSSPropertyID aId, float aValue);
+  
+  inline void SetNumberValue(nsCSSPropertyID aId, float aValue);
 
-    
-    inline void SetPercentValue(nsCSSPropertyID aId, float aValue);
-    inline void SetPercentValueIfUnset(nsCSSPropertyID aId, float aValue);
+  
+  inline void SetPercentValue(nsCSSPropertyID aId, float aValue);
+  inline void SetPercentValueIfUnset(nsCSSPropertyID aId, float aValue);
 
-    
-    inline void SetAutoValue(nsCSSPropertyID aId);
-    inline void SetAutoValueIfUnset(nsCSSPropertyID aId);
+  
+  inline void SetAutoValue(nsCSSPropertyID aId);
+  inline void SetAutoValueIfUnset(nsCSSPropertyID aId);
 
-    
-    inline void SetCurrentColor(nsCSSPropertyID aId);
-    inline void SetCurrentColorIfUnset(nsCSSPropertyID aId);
+  
+  inline void SetCurrentColor(nsCSSPropertyID aId);
+  inline void SetCurrentColorIfUnset(nsCSSPropertyID aId);
 
-    
-    inline void SetColorValue(nsCSSPropertyID aId, nscolor aValue);
-    inline void SetColorValueIfUnset(nsCSSPropertyID aId, nscolor aValue);
+  
+  inline void SetColorValue(nsCSSPropertyID aId, nscolor aValue);
+  inline void SetColorValueIfUnset(nsCSSPropertyID aId, nscolor aValue);
 
-    
-    inline void SetFontFamily(const nsString& aValue);
-    
-    inline void SetTextDecorationColorOverride();
-    inline void SetBackgroundImage(nsAttrValue& value);
+  
+  inline void SetFontFamily(const nsString& aValue);
+  
+  inline void SetTextDecorationColorOverride();
+  inline void SetBackgroundImage(nsAttrValue& value);
 
-    const mozilla::StyleBackendType mType;
-    nsPresContext* const mPresContext;
-    const uint32_t mSIDs;
+  const mozilla::StyleBackendType mType;
+  nsPresContext* const mPresContext;
+  const uint32_t mSIDs;
 };
 
 } 
