@@ -13,11 +13,6 @@ this.EXPORTED_SYMBOLS = ["FormAutofillPreferences"];
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
-const PREF_AUTOFILL_ENABLED = "extensions.formautofill.addresses.enabled";
-
-
-
-
 const BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";
 const MANAGE_ADDRESSES_URL = "chrome://formautofill/content/manageAddresses.xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -25,6 +20,12 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
+
+const {ENABLED_AUTOFILL_ADDRESSES_PREF} = FormAutofillUtils;
+
+
+
+
 
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
@@ -35,15 +36,6 @@ function FormAutofillPreferences({useOldOrganization}) {
 }
 
 FormAutofillPreferences.prototype = {
-  
-
-
-
-
-  get isAutofillEnabled() {
-    return Services.prefs.getBoolPref(PREF_AUTOFILL_ENABLED);
-  },
-
   
 
 
@@ -104,7 +96,7 @@ FormAutofillPreferences.prototype = {
     addressAutofillCheckbox.setAttribute("label", this.bundle.GetStringFromName("enableAddressAutofill"));
 
     
-    if (this.isAutofillEnabled) {
+    if (FormAutofillUtils.isAutofillAddressesEnabled) {
       addressAutofillCheckbox.setAttribute("checked", true);
     }
 
@@ -127,7 +119,7 @@ FormAutofillPreferences.prototype = {
 
         if (target == this.refs.addressAutofillCheckbox) {
           
-          Services.prefs.setBoolPref(PREF_AUTOFILL_ENABLED, target.checked);
+          Services.prefs.setBoolPref(ENABLED_AUTOFILL_ADDRESSES_PREF, target.checked);
         } else if (target == this.refs.savedAddressesBtn) {
           target.ownerGlobal.gSubDialog.open(MANAGE_ADDRESSES_URL);
         }

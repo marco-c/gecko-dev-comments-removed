@@ -39,12 +39,14 @@ add_task(async function test_activeStatus_observe() {
   formAutofillParent._active = true;
   formAutofillParent._computeStatus.returns(true);
   formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.creditCards.enabled");
   do_check_eq(formAutofillParent._onStatusChanged.called, false);
 
   
   formAutofillParent._computeStatus.returns(false);
   formAutofillParent._onStatusChanged.reset();
   formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
+  formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.creditCards.enabled");
   do_check_eq(formAutofillParent._onStatusChanged.called, true);
 
   
@@ -66,6 +68,7 @@ add_task(async function test_activeStatus_computeStatus() {
   let formAutofillParent = new FormAutofillParent();
   do_register_cleanup(function cleanup() {
     Services.prefs.clearUserPref("extensions.formautofill.addresses.enabled");
+    Services.prefs.clearUserPref("extensions.formautofill.creditCards.enabled");
   });
 
   sinon.stub(profileStorage.addresses, "getAll");
@@ -73,19 +76,32 @@ add_task(async function test_activeStatus_computeStatus() {
 
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
+  Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", true);
   do_check_eq(formAutofillParent._computeStatus(), false);
 
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
+  Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
   do_check_eq(formAutofillParent._computeStatus(), false);
 
   profileStorage.addresses.getAll.returns([{"given-name": "John"}]);
   formAutofillParent.observe(null, "formautofill-storage-changed", "add");
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
   do_check_eq(formAutofillParent._computeStatus(), true);
 
   
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
+  Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
+  do_check_eq(formAutofillParent._computeStatus(), true);
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
+  Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", true);
+  do_check_eq(formAutofillParent._computeStatus(), true);
+
+
+  
+  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", false);
+  Services.prefs.setBoolPref("extensions.formautofill.creditCards.enabled", false);
   do_check_eq(formAutofillParent._computeStatus(), false);
 });
