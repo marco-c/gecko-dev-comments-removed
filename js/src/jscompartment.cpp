@@ -24,7 +24,6 @@
 #include "js/RootingAPI.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/Debugger.h"
-#include "vm/StopIterationObject.h"
 #include "vm/WrapperObject.h"
 
 #include "jsatominlines.h"
@@ -392,17 +391,6 @@ JSCompartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHa
     obj.set(UncheckedUnwrap(obj,  true));
     if (obj->compartment() == this) {
         MOZ_ASSERT(!IsWindow(obj));
-        return true;
-    }
-
-    
-    if (obj->is<StopIterationObject>()) {
-        
-        
-        RootedObject stopIteration(cx);
-        if (!GetBuiltinConstructor(cx, JSProto_StopIteration, &stopIteration))
-            return false;
-        obj.set(stopIteration);
         return true;
     }
 

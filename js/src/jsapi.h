@@ -6203,15 +6203,6 @@ ExceptionStackOrNull(JS::HandleObject obj);
 
 
 
-extern JS_PUBLIC_API(bool)
-JS_ThrowStopIteration(JSContext* cx);
-
-extern JS_PUBLIC_API(bool)
-JS_IsStopIteration(const JS::Value& v);
-
-
-
-
 
 
 

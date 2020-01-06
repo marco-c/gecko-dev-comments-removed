@@ -51,9 +51,8 @@ assertThrowsInstanceOf(function() {
 
 
 
-
 var m = new Map([["one", 1]]);
 Object.getPrototypeOf(m[Symbol.iterator]()).next = function () { throw "FAIL"; };
-assertThrowsInstanceOf(function () {
-  m.forEach(function () { throw StopIteration; });
-}, StopIteration, "Map.prototype.forEach should use intrinsic next method.");
+assertThrowsValue(function () {
+  m.forEach(function () { throw Math; });
+}, Math, "Map.prototype.forEach should use intrinsic next method.");

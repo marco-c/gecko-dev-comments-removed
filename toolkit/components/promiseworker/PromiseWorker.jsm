@@ -88,9 +88,6 @@ const EXCEPTION_CONSTRUCTORS = {
     result.stack = error.stack;
     return result;
   },
-  StopIteration() {
-    return StopIteration;
-  }
 };
 
 

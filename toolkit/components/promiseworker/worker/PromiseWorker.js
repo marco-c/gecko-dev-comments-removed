@@ -169,14 +169,6 @@ AbstractWorker.prototype = {
         stack: exn.moduleStack
       };
       this.postMessage({fail: error, id, durationMs});
-    } else if (exn == StopIteration) {
-      
-      
-      this.log("Sending back StopIteration, id is", id);
-      let error = {
-        exn: "StopIteration"
-      };
-      this.postMessage({fail: error, id, durationMs});
     } else if ("toMsg" in exn) {
       
       

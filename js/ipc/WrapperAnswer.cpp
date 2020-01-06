@@ -62,11 +62,6 @@ WrapperAnswer::fail(AutoJSAPI& jsapi, ReturnStatus* rs)
     if (!jsapi.StealException(&exn))
         return true;
 
-    if (JS_IsStopIteration(exn)) {
-        *rs = ReturnStatus(ReturnStopIteration());
-        return true;
-    }
-
     
     
     (void) toVariant(cx, exn, &rs->get_ReturnException().exn());

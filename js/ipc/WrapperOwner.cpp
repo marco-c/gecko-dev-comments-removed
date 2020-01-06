@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=80:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "WrapperOwner.h"
 #include "JavaScriptLogging.h"
@@ -30,11 +30,11 @@ struct AuxCPOWData
     bool isConstructor;
     bool isDOMObject;
 
-    // The object tag is just some auxilliary information that clients can use
-    // however they see fit.
+    
+    
     nsCString objectTag;
 
-    // The class name for WrapperOwner::className, below.
+    
     nsCString className;
 
     AuxCPOWData(ObjectId id,
@@ -293,9 +293,9 @@ WrapperOwner::delete_(JSContext* cx, HandleObject proxy, HandleId id, ObjectOpRe
 JSObject*
 CPOWProxyHandler::enumerate(JSContext* cx, HandleObject proxy) const
 {
-    // Using a CPOW for the Iterator would slow down for .. in performance, instead
-    // call the base hook, that will use our implementation of getOwnEnumerablePropertyKeys
-    // and follow the proto chain.
+    
+    
+    
     return BaseProxyHandler::enumerate(cx, proxy);
 }
 
@@ -388,8 +388,8 @@ CPOWToString(JSContext* cx, unsigned argc, Value* vp)
 bool
 WrapperOwner::toString(JSContext* cx, HandleObject cpow, JS::CallArgs& args)
 {
-    // Ask the other side to call its toString method. Update the callee so that
-    // it points to the CPOW and not to the synthesized CPOWToString function.
+    
+    
     args.setCallee(ObjectValue(*cpow));
     if (!callOrConstruct(cx, cpow, args, false))
         return false;
@@ -402,8 +402,8 @@ WrapperOwner::toString(JSContext* cx, HandleObject cpow, JS::CallArgs& args)
     if (!toStringResult.init(cx, cpowResult))
         return false;
 
-    // We don't want to wrap toString() results for things like the location
-    // object, where toString() is supposed to return a URL and nothing else.
+    
+    
     nsAutoString result;
     if (toStringResult[0] == '[') {
         result.AppendLiteral("[object CPOW ");
@@ -424,8 +424,8 @@ WrapperOwner::toString(JSContext* cx, HandleObject cpow, JS::CallArgs& args)
 bool
 WrapperOwner::DOMQI(JSContext* cx, JS::HandleObject proxy, JS::CallArgs& args)
 {
-    // Someone's calling us, handle nsISupports specially to avoid unnecessary
-    // CPOW traffic.
+    
+    
     HandleValue id = args[0];
     if (id.isObject()) {
         RootedObject idobj(cx, &id.toObject());
@@ -440,19 +440,19 @@ WrapperOwner::DOMQI(JSContext* cx, JS::HandleObject proxy, JS::CallArgs& args)
                 return true;
             }
 
-            // Webidl-implemented DOM objects never have nsIClassInfo.
+            
             if (idptr->Equals(NS_GET_IID(nsIClassInfo)))
                 return Throw(cx, NS_ERROR_NO_INTERFACE);
         }
     }
 
-    // It wasn't nsISupports, call into the other process to do the QI for us
-    // (since we don't know what other interfaces our object supports). Note
-    // that we have to use JS_GetPropertyDescriptor here to avoid infinite
-    // recursion back into CPOWDOMQI via WrapperOwner::get().
-    // We could stash the actual QI function on our own function object to avoid
-    // if we're called multiple times, but since we're transient, there's no
-    // point right now.
+    
+    
+    
+    
+    
+    
+    
     JS::Rooted<PropertyDescriptor> propDesc(cx);
     if (!JS_GetPropertyDescriptor(cx, proxy, "QueryInterface", &propDesc))
         return false;
@@ -483,8 +483,8 @@ WrapperOwner::get(JSContext* cx, HandleObject proxy, HandleValue receiver,
         idVar.type() == JSIDVariant::TnsString &&
         idVar.get_nsString().EqualsLiteral("QueryInterface"))
     {
-        // Handle QueryInterface on DOM Objects specially since we can assume
-        // certain things about their implementation.
+        
+        
         RootedFunction qi(cx, JS_NewFunction(cx, CPOWDOMQI, 1, 0,
                                              "QueryInterface"));
         if (!qi)
@@ -635,8 +635,8 @@ WrapperOwner::callOrConstruct(JSContext* cx, HandleObject proxy, const CallArgs&
 
     RootedValue v(cx);
     for (size_t i = 0; i < args.length() + 2; i++) {
-        // The |this| value for constructors is a magic value that we won't be
-        // able to convert, so skip it.
+        
+        
         if (i == 1 && construct)
             v = UndefinedValue();
         else
@@ -644,7 +644,7 @@ WrapperOwner::callOrConstruct(JSContext* cx, HandleObject proxy, const CallArgs&
         if (v.isObject()) {
             RootedObject obj(cx, &v.toObject());
             if (xpc::IsOutObject(cx, obj)) {
-                // Make sure it is not an in-out object.
+                
                 bool found;
                 if (!JS_HasProperty(cx, obj, "value", &found))
                     return false;
@@ -681,12 +681,12 @@ WrapperOwner::callOrConstruct(JSContext* cx, HandleObject proxy, const CallArgs&
 
     RootedObject obj(cx);
     for (size_t i = 0; i < outparams.Length(); i++) {
-        // Don't bother doing anything for outparams that weren't set.
+        
         if (outparams[i].type() == JSParam::Tvoid_t)
             continue;
 
-        // Take the value the child process returned, and set it on the XPC
-        // object.
+        
+        
         if (!fromVariant(cx, outparams[i], &v))
             return false;
 
@@ -919,8 +919,8 @@ CPOWProxyHandler::isConstructor(JSObject* proxy) const
 void
 WrapperOwner::drop(JSObject* obj)
 {
-    // The association may have already been swept from the table but if it's
-    // there then remove it.
+    
+    
     ObjectId objId = idOfUnchecked(obj);
     if (cpows_.findPreserveColor(objId) == obj)
         cpows_.remove(objId);
@@ -1018,8 +1018,8 @@ DOMInstanceOf(JSContext* cx, JSObject* proxyArg, int prototypeID, int depth, boo
     FORWARD(domInstanceOf, (cx, proxy, prototypeID, depth, bp), false);
 }
 
-} /* namespace jsipc */
-} /* namespace mozilla */
+} 
+} 
 
 nsresult
 WrapperOwner::instanceOf(JSObject* obj, const nsID* id, bool* bp)
@@ -1076,9 +1076,6 @@ WrapperOwner::ok(JSContext* cx, const ReturnStatus& status)
     if (status.type() == ReturnStatus::TReturnSuccess)
         return true;
 
-    if (status.type() == ReturnStatus::TReturnStopIteration)
-        return JS_ThrowStopIteration(cx);
-
     if (status.type() == ReturnStatus::TReturnDeadCPOW) {
         JS_ReportErrorASCII(cx, "operation not possible on dead CPOW");
         return false;
@@ -1102,9 +1099,9 @@ WrapperOwner::ok(JSContext* cx, const ReturnStatus& status, ObjectOpResult& resu
     return result.succeed();
 }
 
-// CPOWs can have a tag string attached to them, originating in the local
-// process from this function.  It's sent with the CPOW to the remote process,
-// where it can be fetched with Components.utils.getCrossProcessWrapperTag.
+
+
+
 static nsCString
 GetRemoteObjectTag(JS::Handle<JSObject*> obj)
 {
@@ -1137,10 +1134,10 @@ WrapperOwner::toObjectVariant(JSContext* cx, JSObject* objArg, ObjectVariant* ob
     RootedObject obj(cx, objArg);
     MOZ_ASSERT(obj);
 
-    // We always save objects unwrapped in the CPOW table. If we stored
-    // wrappers, then the wrapper might be GCed while the target remained alive.
-    // Whenever operating on an object that comes from the table, we wrap it
-    // in findObjectById.
+    
+    
+    
+    
     unsigned wrapperFlags = 0;
     obj = js::UncheckedUnwrap(obj, true, &wrapperFlags);
     if (obj && IsCPOW(obj) && OwnerOf(obj) == this) {
@@ -1156,8 +1153,8 @@ WrapperOwner::toObjectVariant(JSContext* cx, JSObject* objArg, ObjectVariant* ob
         return true;
     }
 
-    // Need to call PreserveWrapper on |obj| in case it's a reflector.
-    // FIXME: What if it's an XPCWrappedNative?
+    
+    
     if (mozilla::dom::IsDOMObject(obj))
         mozilla::dom::TryPreserveWrapper(obj);
 
@@ -1188,12 +1185,12 @@ WrapperOwner::fromRemoteObjectVariant(JSContext* cx, const RemoteObject& objVar)
     RootedObject obj(cx, findCPOWById(objId));
     if (!obj) {
 
-        // All CPOWs live in the privileged junk scope.
+        
         RootedObject junkScope(cx, xpc::PrivilegedJunkScope());
         JSAutoCompartment ac(cx, junkScope);
         RootedValue v(cx, UndefinedValue());
-        // We need to setLazyProto for the getPrototype/getPrototypeIfOrdinary
-        // hooks.
+        
+        
         ProxyOptions options;
         options.setLazyProto(true);
         obj = NewProxyObject(cx,
@@ -1209,7 +1206,7 @@ WrapperOwner::fromRemoteObjectVariant(JSContext* cx, const RemoteObject& objVar)
 
         nextCPOWNumber_ = objId.serialNumber() + 1;
 
-        // Incref once we know the decref will be called.
+        
         incref();
 
         AuxCPOWData* aux = new AuxCPOWData(objId,
