@@ -24,8 +24,7 @@ add_task(function* () {
 
   yield clickTimelinePlayPauseButton(panel);
 
-  const timelineComponent = panel.animationsTimelineComponent;
-  const timeBlockComponents = timelineComponent.timeBlocks;
+  const timeBlockComponents = getAnimationTimeBlocks(panel);
 
   
   let time = -5000;

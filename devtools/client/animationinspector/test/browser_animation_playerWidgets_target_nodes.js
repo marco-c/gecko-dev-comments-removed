@@ -15,7 +15,7 @@ add_task(function* () {
   info("Select the simple animated node");
   yield selectNodeAndWaitForAnimations(".animated", inspector);
 
-  let targetNodeComponent = panel.animationsTimelineComponent.targetNodes[0];
+  let targetNodeComponent = getAnimationTargetNodes(panel)[0];
   let {previewer} = targetNodeComponent;
 
   

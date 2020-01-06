@@ -90,15 +90,19 @@ function* reloadTab(inspector) {
 
 var selectNodeAndWaitForAnimations = Task.async(
   function* (data, inspector, reason = "test") {
+    
+    
+    let {AnimationsController, AnimationsPanel} =
+      inspector.sidebar.getWindowForTab(TAB_NAME);
+    let onUiUpdated = AnimationsPanel.once(AnimationsPanel.UI_UPDATED_EVENT);
+
     yield selectNode(data, inspector, reason);
 
-    
-    
-    let {AnimationsPanel} = inspector.sidebar.getWindowForTab(TAB_NAME);
-    yield waitForAllAnimationTargets(AnimationsPanel);
-
-    
-    yield waitForAnimationTimelineRendering(AnimationsPanel);
+    yield onUiUpdated;
+    if (AnimationsController.animationPlayers.length !== 0) {
+      yield waitForAnimationTimelineRendering(AnimationsPanel);
+      yield waitForAllAnimationTargets(AnimationsPanel);
+    }
   }
 );
 
@@ -160,12 +164,10 @@ var openAnimationInspector = Task.async(function* () {
     yield AnimationsPanel.once(AnimationsPanel.PANEL_INITIALIZED);
   }
 
-  
-  
-  
-  yield waitForAllAnimationTargets(AnimationsPanel);
-  
-  yield waitForAnimationTimelineRendering(AnimationsPanel);
+  if (AnimationsController.animationPlayers.length !== 0) {
+    yield waitForAnimationTimelineRendering(AnimationsPanel);
+    yield waitForAllAnimationTargets(AnimationsPanel);
+  }
 
   return {
     toolbox: toolbox,
@@ -255,8 +257,10 @@ function isNodeVisible(node) {
 
 
 
+
+
 var waitForAllAnimationTargets = Task.async(function* (panel) {
-  let targets = panel.animationsTimelineComponent.targetNodes;
+  let targets = getAnimationTargetNodes(panel);
   yield promise.all(targets.map(t => {
     if (!t.previewer.nodeFront) {
       return t.once("target-retrieved");
@@ -299,14 +303,14 @@ function* assertScrubberMoving(panel, isMoving) {
 
 function* clickTimelinePlayPauseButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
-  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
+  let onRendered = waitForAnimationTimelineRendering(panel);
 
   let btn = panel.playTimelineButtonEl;
   let win = btn.ownerDocument.defaultView;
   EventUtils.sendMouseEvent({type: "click"}, btn, win);
 
   yield onUiUpdated;
-  yield onAnimationTimelineRendered;
+  yield onRendered;
   yield waitForAllAnimationTargets(panel);
 }
 
@@ -317,14 +321,14 @@ function* clickTimelinePlayPauseButton(panel) {
 
 function* clickTimelineRewindButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
-  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
+  let onRendered = waitForAnimationTimelineRendering(panel);
 
   let btn = panel.rewindTimelineButtonEl;
   let win = btn.ownerDocument.defaultView;
   EventUtils.sendMouseEvent({type: "click"}, btn, win);
 
   yield onUiUpdated;
-  yield onAnimationTimelineRendered;
+  yield onRendered;
   yield waitForAllAnimationTargets(panel);
 }
 
@@ -336,7 +340,7 @@ function* clickTimelineRewindButton(panel) {
 
 function* changeTimelinePlaybackRate(panel, rate) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
-  const onAnimationTimelineRendered = waitForAnimationTimelineRendering(panel);
+  let onRendered = waitForAnimationTimelineRendering(panel);
 
   let select = panel.rateSelectorEl.firstChild;
   let win = select.ownerDocument.defaultView;
@@ -355,7 +359,7 @@ function* changeTimelinePlaybackRate(panel, rate) {
   EventUtils.synthesizeMouseAtCenter(option, {type: "mouseup"}, win);
 
   yield onUiUpdated;
-  yield onAnimationTimelineRendered;
+  yield onRendered;
   yield waitForAllAnimationTargets(panel);
 
   
@@ -377,11 +381,7 @@ function* waitForAnimationSelecting(panel) {
 
 
 function* waitForAnimationTimelineRendering(panel) {
-  const ready =
-    panel.animationsTimelineComponent.animations.length === 0
-    ? Promise.resolve()
-    : panel.animationsTimelineComponent.once("animation-timeline-rendering-completed");
-  yield ready;
+  return panel.animationsTimelineComponent.once("animation-timeline-rendering-completed");
 }
 
 
@@ -485,18 +485,17 @@ function* setStyle(animation, panel, name, value, selector) {
        name + " to " + value + " of " + selector);
 
   const onAnimationChanged = animation ? once(animation, "changed") : Promise.resolve();
+  const onRendered = waitForAnimationTimelineRendering(panel);
+
   yield executeInContent("devtools:test:setStyle", {
     selector: selector,
     propertyName: name,
     propertyValue: value
   });
-  yield onAnimationChanged;
 
-  
-  
+  yield onAnimationChanged;
+  yield onRendered;
   yield waitForAllAnimationTargets(panel);
-  
-  yield waitForAnimationTimelineRendering(panel);
 }
 
 
@@ -591,5 +590,29 @@ function isPassingThrough(pathSegList, x, y) {
 function findStopElement(svgEl, offset) {
   return [...svgEl.querySelectorAll("stop")].find(stopEl => {
     return stopEl.getAttribute("offset") == offset;
+  });
+}
+
+
+
+
+
+
+
+function getAnimationTargetNodes(panel) {
+  return panel.animationsTimelineComponent.animations.map(animation => {
+    return panel.animationsTimelineComponent.componentsMap[animation.actorID].targetNode;
+  });
+}
+
+
+
+
+
+
+
+function getAnimationTimeBlocks(panel) {
+  return panel.animationsTimelineComponent.animations.map(animation => {
+    return panel.animationsTimelineComponent.componentsMap[animation.actorID].timeBlock;
   });
 }
