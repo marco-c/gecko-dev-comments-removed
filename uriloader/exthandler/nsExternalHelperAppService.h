@@ -417,8 +417,8 @@ protected:
 
 
 
-  void RequestSaveDestination(const nsAFlatString &aDefaultFile,
-                              const nsAFlatString &aDefaultFileExt);
+  void RequestSaveDestination(const nsString& aDefaultFile,
+                              const nsString& aDefaultFileExt);
 
   
 
@@ -464,7 +464,7 @@ protected:
   
 
 
-  void SendStatusChange(ErrorType type, nsresult aStatus, nsIRequest *aRequest, const nsAFlatString &path);
+  void SendStatusChange(ErrorType type, nsresult aStatus, nsIRequest *aRequest, const nsString& path);
 
   
 

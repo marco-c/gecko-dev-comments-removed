@@ -321,8 +321,9 @@ nsXBLBinding::GenerateAnonymousContent()
     nsIDocument* doc = mBoundElement->OwnerDoc();
 
     nsCOMPtr<nsINode> clonedNode;
-    nsNodeUtils::Clone(content, true, doc->NodeInfoManager(), nullptr,
-                       getter_AddRefs(clonedNode));
+    nsCOMArray<nsINode> nodesWithProperties;
+    nsNodeUtils::Clone(content, true, doc->NodeInfoManager(),
+                       nodesWithProperties, getter_AddRefs(clonedNode));
     mContent = clonedNode->AsElement();
 
     
@@ -988,7 +989,7 @@ GetProtoBindingFromClassObject(JSObject* obj)
 nsresult
 nsXBLBinding::DoInitJSClass(JSContext *cx,
                             JS::Handle<JSObject*> obj,
-                            const nsAFlatString& aClassName,
+                            const nsString& aClassName,
                             nsXBLPrototypeBinding* aProtoBinding,
                             JS::MutableHandle<JSObject*> aClassObject,
                             bool* aNew)

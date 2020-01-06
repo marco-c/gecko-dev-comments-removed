@@ -318,13 +318,13 @@ LogEvicted(nsCookie *aCookie, const char* details)
 
 
 static inline void
-LogFailure(bool aSetCookie, nsIURI *aHostURI, const nsAFlatCString &aCookieString, const char *aReason)
+LogFailure(bool aSetCookie, nsIURI *aHostURI, const nsCString& aCookieString, const char *aReason)
 {
   LogFailure(aSetCookie, aHostURI, aCookieString.get(), aReason);
 }
 
 static inline void
-LogSuccess(bool aSetCookie, nsIURI *aHostURI, const nsAFlatCString &aCookieString, nsCookie *aCookie, bool aReplacing)
+LogSuccess(bool aSetCookie, nsIURI *aHostURI, const nsCString& aCookieString, nsCookie *aCookie, bool aReplacing)
 {
   LogSuccess(aSetCookie, aHostURI, aCookieString.get(), aCookie, aReplacing);
 }
@@ -5010,9 +5010,9 @@ nsCookieService::FindSecureCookie(const nsCookieKey    &aKey,
 
 bool
 nsCookieService::FindCookie(const nsCookieKey    &aKey,
-                            const nsAFlatCString &aHost,
-                            const nsAFlatCString &aName,
-                            const nsAFlatCString &aPath,
+                            const nsCString& aHost,
+                            const nsCString& aName,
+                            const nsCString& aPath,
                             nsListIter           &aIter)
 {
   EnsureReadDomain(aKey);

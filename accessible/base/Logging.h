@@ -209,7 +209,7 @@ void Stack();
 
 
 
-void Enable(const nsAFlatCString& aModules);
+void Enable(const nsCString& aModules);
 
 
 

@@ -408,14 +408,14 @@ public:
   static bool IsPredefinedCounterStyle(const nsACString& aStyle);
 
   
-  static const nsAFlatCString& GetStringValue(nsCSSPropertyID aProperty);
-  static const nsAFlatCString& GetStringValue(nsCSSFontDesc aFontDesc);
-  static const nsAFlatCString& GetStringValue(nsCSSCounterDesc aCounterDesc);
+  static const nsCString& GetStringValue(nsCSSPropertyID aProperty);
+  static const nsCString& GetStringValue(nsCSSFontDesc aFontDesc);
+  static const nsCString& GetStringValue(nsCSSCounterDesc aCounterDesc);
 
   
   
   
-  static const nsAFlatCString& LookupPropertyValue(nsCSSPropertyID aProperty, int32_t aValue);
+  static const nsCString& LookupPropertyValue(nsCSSPropertyID aProperty, int32_t aValue);
 
   
   
@@ -445,12 +445,11 @@ public:
     return ValueToKeywordEnum(static_cast<int16_t>(aValue), aTable);
   }
   
-  static const nsAFlatCString& ValueToKeyword(int32_t aValue,
-                                              const KTableEntry aTable[]);
+  static const nsCString& ValueToKeyword(int32_t aValue,
+                                         const KTableEntry aTable[]);
   template<typename T,
            typename = typename std::enable_if<std::is_enum<T>::value>::type>
-  static const nsAFlatCString& ValueToKeyword(T aValue,
-                                              const KTableEntry aTable[])
+  static const nsCString& ValueToKeyword(T aValue, const KTableEntry aTable[])
   {
     static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
                   "aValue must be an enum that fits within KTableEntry::mValue");

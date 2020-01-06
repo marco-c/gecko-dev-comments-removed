@@ -102,8 +102,8 @@ static bool statefulCharset(const char *charset)
 }
 
 nsresult
-nsTextToSubURI::convertURItoUnicode(const nsAFlatCString& aCharset,
-                                    const nsAFlatCString& aURI,
+nsTextToSubURI::convertURItoUnicode(const nsCString& aCharset,
+                                    const nsCString& aURI,
                                     nsAString& aOut)
 {
   

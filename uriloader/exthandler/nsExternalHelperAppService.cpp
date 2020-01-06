@@ -1287,6 +1287,7 @@ nsExternalAppHandler::DidDivertRequest(nsIRequest *request)
   MOZ_ASSERT(XRE_IsContentProcess(), "in child process");
   
   RetargetLoadNotifications(request);
+  MaybeCloseWindow();
 }
 
 NS_IMETHODIMP nsExternalAppHandler::SetWebProgressListener(nsIWebProgressListener2 * aWebProgressListener)
@@ -1802,7 +1803,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest *request, nsISuppo
 
 
 
-void nsExternalAppHandler::SendStatusChange(ErrorType type, nsresult rv, nsIRequest *aRequest, const nsAFlatString &path)
+void nsExternalAppHandler::SendStatusChange(ErrorType type, nsresult rv, nsIRequest *aRequest, const nsString& path)
 {
     nsAutoString msgId;
     switch (rv) {
@@ -2260,7 +2261,7 @@ nsresult nsExternalAppHandler::SaveDestinationAvailable(nsIFile * aFile)
   return NS_OK;
 }
 
-void nsExternalAppHandler::RequestSaveDestination(const nsAFlatString &aDefaultFile, const nsAFlatString &aFileExtension)
+void nsExternalAppHandler::RequestSaveDestination(const nsString& aDefaultFile, const nsString& aFileExtension)
 {
   
   

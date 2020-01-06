@@ -246,11 +246,11 @@ protected:
   
   
   nsresult GenerateFlatTextContent(nsIContent* aContent,
-                                   nsAFlatString& aString,
+                                   nsString& aString,
                                    LineBreakType aLineBreakType);
   
   nsresult GenerateFlatTextContent(nsRange* aRange,
-                                   nsAFlatString& aString,
+                                   nsString& aString,
                                    LineBreakType aLineBreakType);
   
   

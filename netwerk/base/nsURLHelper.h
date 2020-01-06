@@ -99,7 +99,7 @@ nsresult net_ExtractURLScheme(const nsACString &inURI,
 
 bool net_IsValidScheme(const char *scheme, uint32_t schemeLen);
 
-inline bool net_IsValidScheme(const nsAFlatCString &scheme)
+inline bool net_IsValidScheme(const nsCString& scheme)
 {
     return net_IsValidScheme(scheme.get(), scheme.Length());
 }

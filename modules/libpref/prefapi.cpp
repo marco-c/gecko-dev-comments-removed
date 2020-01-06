@@ -184,7 +184,7 @@ void PREF_CleanupPrefs()
 }
 
 
-static void str_escape(const char * original, nsAFlatCString& aResult)
+static void str_escape(const char * original, nsCString& aResult)
 {
     
 

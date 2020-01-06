@@ -19,8 +19,8 @@ private:
   virtual ~nsTextToSubURI();
 
   
-  nsresult convertURItoUnicode(const nsAFlatCString &aCharset,
-                               const nsAFlatCString &aURI, 
+  nsresult convertURItoUnicode(const nsCString& aCharset,
+                               const nsCString& aURI,
                                nsAString &_retval);
 
   

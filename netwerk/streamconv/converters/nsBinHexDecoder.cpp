@@ -468,7 +468,7 @@ nsBinHexDecoder::OnStartRequest(nsIRequest* request, nsISupports *aCtxt)
 
 
 nsresult nsBinHexDecoder::DetectContentType(nsIRequest* aRequest,
-                                            const nsAFlatCString &aFilename)
+                                            const nsCString& aFilename)
 {
   if (aFilename.IsEmpty()) {
     

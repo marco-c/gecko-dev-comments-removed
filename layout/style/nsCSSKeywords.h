@@ -36,7 +36,7 @@ public:
   static nsCSSKeyword LookupKeyword(const nsAString& aKeyword);
 
   
-  static const nsAFlatCString& GetStringValue(nsCSSKeyword aKeyword);
+  static const nsCString& GetStringValue(nsCSSKeyword aKeyword);
 };
 
 #endif 

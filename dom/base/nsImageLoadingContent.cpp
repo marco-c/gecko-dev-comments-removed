@@ -1128,7 +1128,7 @@ nsImageLoadingContent::StringToURI(const nsAString& aSpec,
   nsCOMPtr<nsIURI> baseURL = thisContent->GetBaseURI();
 
   
-  const nsAFlatCString &charset = aDocument->GetDocumentCharacterSet();
+  const nsCString& charset = aDocument->GetDocumentCharacterSet();
 
   
   return NS_NewURI(aURI,
