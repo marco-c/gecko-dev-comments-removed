@@ -73,6 +73,7 @@
 #include "mozilla/dom/WorkerDebuggerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerGlobalScopeBinding.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SizePrintfMacros.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/WorkerTimelineMarker.h"
@@ -6633,7 +6634,7 @@ WorkerPrivate::RescheduleTimeoutTimer(JSContext* aCx)
     (mTimeouts[0]->mTargetTime - TimeStamp::Now()).ToMilliseconds();
   uint32_t delay = delta > 0 ? std::min(delta, double(UINT32_MAX)) : 0;
 
-  LOG(TimeoutsLog(), ("Worker %p scheduled timer for %d ms, %zu pending timeouts\n",
+  LOG(TimeoutsLog(), ("Worker %p scheduled timer for %d ms, %" PRIuSIZE " pending timeouts\n",
                       this, delay, mTimeouts.Length()));
 
   nsresult rv = mTimer->InitWithCallback(mTimerRunnable, delay, nsITimer::TYPE_ONE_SHOT);
@@ -6780,14 +6781,23 @@ WorkerPrivate::MemoryPressureInternal()
 {
   AssertIsOnWorkerThread();
 
-  RefPtr<Console> console = mScope ? mScope->GetConsoleIfExists() : nullptr;
-  if (console) {
-    console->ClearStorage();
+  if (mScope) {
+    RefPtr<Console> console = mScope->GetConsoleIfExists();
+    if (console) {
+      console->ClearStorage();
+    }
+
+    RefPtr<Performance> performance = mScope->GetPerformanceIfExists();
+    if (performance) {
+      performance->MemoryPressure();
+    }
   }
 
-  console = mDebuggerScope ? mDebuggerScope->GetConsoleIfExists() : nullptr;
-  if (console) {
-    console->ClearStorage();
+  if (mDebuggerScope) {
+    RefPtr<Console> console = mDebuggerScope->GetConsoleIfExists();
+    if (console) {
+      console->ClearStorage();
+    }
   }
 
   for (uint32_t index = 0; index < mChildWorkers.Length(); index++) {
