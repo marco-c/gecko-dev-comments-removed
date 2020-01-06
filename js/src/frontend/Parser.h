@@ -609,7 +609,6 @@ enum class PropertyType {
 
 
 enum YieldHandling { YieldIsName, YieldIsKeyword };
-enum AwaitHandling { AwaitIsName, AwaitIsKeyword, AwaitIsModuleKeyword };
 enum InHandling { InAllowed, InProhibited };
 enum DefaultHandling { NameRequired, AllowDefaultName };
 enum TripledotHandling { TripledotAllowed, TripledotProhibited };
@@ -816,11 +815,11 @@ class ParserBase : public StrictModeGetter
     
     bool isUnexpectedEOF_:1;
 
-    AwaitHandling awaitHandling_:2;
+    bool awaitIsKeyword_:1;
 
   public:
     bool awaitIsKeyword() const {
-        return awaitHandling_ != AwaitIsName;
+      return awaitIsKeyword_;
     }
 
     ParserBase(JSContext* cx, LifoAlloc& alloc, const ReadOnlyCompileOptions& options,
@@ -1136,7 +1135,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     ~Parser();
 
     friend class AutoAwaitIsKeyword<Parser>;
-    void setAwaitHandling(AwaitHandling awaitHandling);
+    void setAwaitIsKeyword(bool isKeyword);
 
     bool checkOptions();
 
@@ -1577,21 +1576,17 @@ class MOZ_STACK_CLASS AutoAwaitIsKeyword
 {
   private:
     Parser* parser_;
-    AwaitHandling oldAwaitHandling_;
+    bool oldAwaitIsKeyword_;
 
   public:
-    AutoAwaitIsKeyword(Parser* parser, AwaitHandling awaitHandling) {
+    AutoAwaitIsKeyword(Parser* parser, bool awaitIsKeyword) {
         parser_ = parser;
-        oldAwaitHandling_ = parser_->awaitHandling_;
-
-        
-        
-        if (oldAwaitHandling_ != AwaitIsModuleKeyword)
-            parser_->setAwaitHandling(awaitHandling);
+        oldAwaitIsKeyword_ = parser_->awaitIsKeyword_;
+        parser_->setAwaitIsKeyword(awaitIsKeyword);
     }
 
     ~AutoAwaitIsKeyword() {
-        parser_->setAwaitHandling(oldAwaitHandling_);
+        parser_->setAwaitIsKeyword(oldAwaitIsKeyword_);
     }
 };
 
