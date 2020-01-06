@@ -32,7 +32,6 @@
 #include "irregexp/RegExpEngine.h"
 #include "irregexp/RegExpParser.h"
 #endif
-#include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
 #include "js/Debug.h"
 #include "js/HashTable.h"
@@ -551,16 +550,6 @@ WasmThreadsSupported(JSContext* cx, unsigned argc, Value* vp)
 #else
     bool isSupported = false;
 #endif
-
-    
-    
-
-    
-    
-    
-
-    isSupported = isSupported && jit::AtomicOperations::isLockfree8();
-
     args.rval().setBoolean(isSupported);
     return true;
 }
