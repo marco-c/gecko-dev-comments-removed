@@ -113,6 +113,9 @@ var SMILUtil =
   getMotionFakeAttributeName : function() {
     return "_motion";
   },
+
+  
+  stripPx: str => str.replace(/px\s*$/, ''),
 };
 
 
@@ -404,6 +407,19 @@ AnimTestcase.prototype =
     for (var i in aSeekList) {
       var entry = aSeekList[i];
       SMILUtil.getSVGRoot().setCurrentTime(entry[0]);
+
+      
+      
+      
+      if (['stroke-width',
+           'stroke-dasharray',
+           'stroke-dashoffset'].includes(aTargetAttr.attrName)) {
+        var attr = SMILUtil.stripPx(
+          SMILUtil.getAttributeValue(aTargetElem, aTargetAttr));
+        var expectedVal = SMILUtil.stripPx(entry[1]);
+        is(attr, expectedVal, entry[2]);
+        return;
+      }
       is(SMILUtil.getAttributeValue(aTargetElem, aTargetAttr),
          entry[1], entry[2]);
     }
