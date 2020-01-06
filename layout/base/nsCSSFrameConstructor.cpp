@@ -6897,8 +6897,8 @@ nsCSSFrameConstructor::FindFrameForContentSibling(nsIContent* aContent,
     }
     if (!sibling) {
       
-      sibling = aPrevSibling ? nsLayoutUtils::GetBeforeFrame(aContent)
-                             : nsLayoutUtils::GetAfterFrame(aContent);
+      sibling = aPrevSibling ? nsLayoutUtils::GetAfterFrame(aContent)
+                             : nsLayoutUtils::GetBeforeFrame(aContent);
     }
     if (!sibling) {
       return nullptr;
@@ -8344,7 +8344,9 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     
     nsIFrame* firstChild = insertion.mParentFrame->PrincipalChildList().FirstChild();
 
-    if (firstChild && firstChild == nsLayoutUtils::GetBeforeFrame(container)) {
+    if (firstChild &&
+        nsLayoutUtils::IsGeneratedContentFor(container, firstChild,
+                                             nsCSSPseudoElements::before)) {
       
       prevSibling = firstChild->GetTailContinuation();
       insertion.mParentFrame = prevSibling->GetParent()->GetContentInsertionFrame();
