@@ -103,12 +103,12 @@ class nsScannerBufferList
           public:
 
             Position() {}
-            
+
             Position( Buffer* buffer, char16_t* position )
               : mBuffer(buffer)
               , mPosition(position)
               {}
-            
+
             inline
             explicit Position( const nsScannerIterator& aIter );
 
@@ -133,7 +133,7 @@ class nsScannerBufferList
       void  AddRef()  { ++mRefCnt; }
       void  Release() { if (--mRefCnt == 0) delete this; }
 
-      void  Append( Buffer* buf ) { mBuffers.insertBack(buf); } 
+      void  Append( Buffer* buf ) { mBuffers.insertBack(buf); }
       void  InsertAfter( Buffer* buf, Buffer* prev ) { prev->setNext(buf); }
       void  SplitBuffer( const Position& );
       void  DiscardUnreferencedPrefix( Buffer* );
@@ -223,7 +223,7 @@ class nsScannerSubstring
               mBufferList->Release();
             }
         }
-      
+
       void init_range_from_buffer_list()
         {
           mStart.mBuffer = mBufferList->Head();
@@ -340,7 +340,7 @@ class nsScannerIterator
       friend class nsScannerSharedSubstring;
 
     public:
-      nsScannerIterator() {}
+      
       
       
 
@@ -351,7 +351,7 @@ class nsScannerIterator
         {
           return mPosition;
         }
-      
+
       char16_t operator*() const
         {
           return *get();
@@ -467,7 +467,7 @@ struct nsCharSourceTraits<nsScannerIterator>
       {
         return iter.get();
       }
-    
+
     static
     void
     advance( nsScannerIterator& s, difference_type n )
@@ -593,7 +593,7 @@ RFindInReadable( const nsAString& aPattern,
 
 inline
 bool
-CaseInsensitiveFindInReadable( const nsAString& aPattern, 
+CaseInsensitiveFindInReadable( const nsAString& aPattern,
                                nsScannerIterator& aStart,
                                nsScannerIterator& aEnd )
   {
