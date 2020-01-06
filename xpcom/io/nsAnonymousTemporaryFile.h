@@ -29,3 +29,12 @@
 nsresult
 NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc);
 
+
+
+
+
+
+
+
+nsresult
+NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile);
