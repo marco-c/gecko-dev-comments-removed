@@ -271,17 +271,15 @@ ExtensionPolicyService::CheckWindow(nsPIDOMWindowOuter* aWindow)
   
   
   nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc();
-  if (!doc || doc->IsInitialDocument()) {
+  if (!doc || doc->IsInitialDocument() ||
+      doc->GetReadyStateEnum() == nsIDocument::READYSTATE_UNINITIALIZED) {
     return;
   }
 
-  nsCOMPtr<nsIURI> aboutBlank;
-  NS_ENSURE_SUCCESS_VOID(NS_NewURI(getter_AddRefs(aboutBlank),
-                                   "about:blank"));
-
-  nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();
-  bool equal;
-  if (!uri || NS_FAILED(uri->EqualsExceptRef(aboutBlank, &equal)) || !equal) {
+  nsCOMPtr<nsIURI> docUri = doc->GetDocumentURI();
+  nsCOMPtr<nsIURI> uri;
+  if (!docUri || NS_FAILED(docUri->CloneIgnoringRef(getter_AddRefs(uri))) ||
+      !NS_IsAboutBlank(uri)) {
     return;
   }
 
