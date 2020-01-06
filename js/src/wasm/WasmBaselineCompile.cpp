@@ -2341,6 +2341,10 @@ class BaseCompiler
         
         MOZ_ASSERT(maxFramePushed_ >= localSize_);
         masm.flush();
+
+        
+        if (masm.oom())
+            return false;
         masm.patchAdd32ToPtr(stackAddOffset_, Imm32(-int32_t(maxFramePushed_ - localSize_)));
 
         
