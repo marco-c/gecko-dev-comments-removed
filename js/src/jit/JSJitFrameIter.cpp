@@ -455,7 +455,7 @@ JSJitFrameIter::verifyReturnAddressUsingNativeToBytecodeMap()
 }
 #endif 
 
-JitProfilingFrameIterator::JitProfilingFrameIterator(
+JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(
         JSContext* cx, const JS::ProfilingFrameIterator::RegisterState& state)
 {
     
@@ -524,7 +524,7 @@ GetPreviousRawFrame(CommonFrameLayout* frame)
     return ReturnType((uint8_t*)frame + prevSize);
 }
 
-JitProfilingFrameIterator::JitProfilingFrameIterator(void* exitFrame)
+JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(void* exitFrame)
 {
     
     ExitFrameLayout* frame = (ExitFrameLayout*) exitFrame;
@@ -532,7 +532,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(void* exitFrame)
 }
 
 bool
-JitProfilingFrameIterator::tryInitWithPC(void* pc)
+JSJitProfilingFrameIterator::tryInitWithPC(void* pc)
 {
     JSScript* callee = frameScript();
 
@@ -554,7 +554,7 @@ JitProfilingFrameIterator::tryInitWithPC(void* pc)
 }
 
 bool
-JitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc, JSRuntime* rt,
+JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc, JSRuntime* rt,
                                             bool forLastCallSite)
 {
     if (!pc)
@@ -613,7 +613,7 @@ JitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc,
 }
 
 void
-JitProfilingFrameIterator::fixBaselineReturnAddress()
+JSJitProfilingFrameIterator::fixBaselineReturnAddress()
 {
     MOZ_ASSERT(type_ == JitFrame_BaselineJS);
     BaselineFrame* bl = (BaselineFrame*)(fp_ - BaselineFrame::FramePointerOffset -
@@ -637,14 +637,14 @@ JitProfilingFrameIterator::fixBaselineReturnAddress()
 }
 
 void
-JitProfilingFrameIterator::operator++()
+JSJitProfilingFrameIterator::operator++()
 {
     JitFrameLayout* frame = framePtr();
     moveToNextFrame(frame);
 }
 
 void
-JitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
+JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
 {
     
 
@@ -761,4 +761,3 @@ JitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
 
     MOZ_CRASH("Bad frame type.");
 }
-
