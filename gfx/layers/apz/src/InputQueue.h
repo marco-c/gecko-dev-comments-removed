@@ -30,6 +30,7 @@ class TouchBlockState;
 class WheelBlockState;
 class DragBlockState;
 class PanGestureBlockState;
+class KeyboardBlockState;
 class AsyncDragMetrics;
 class QueuedInput;
 
@@ -106,6 +107,7 @@ public:
   WheelBlockState* GetCurrentWheelBlock() const;
   DragBlockState* GetCurrentDragBlock() const;
   PanGestureBlockState* GetCurrentPanGestureBlock() const;
+  KeyboardBlockState* GetCurrentKeyboardBlock() const;
   
 
 
@@ -169,6 +171,9 @@ private:
                                         bool aTargetConfirmed,
                                         const PanGestureInput& aEvent,
                                         uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveKeyboardInput(const RefPtr<AsyncPanZoomController>& aTarget,
+                                     const KeyboardInput& aEvent,
+                                     uint64_t* aOutInputBlockId);
 
   
 
@@ -202,6 +207,7 @@ private:
   RefPtr<WheelBlockState> mActiveWheelBlock;
   RefPtr<DragBlockState> mActiveDragBlock;
   RefPtr<PanGestureBlockState> mActivePanGestureBlock;
+  RefPtr<KeyboardBlockState> mActiveKeyboardBlock;
 
   
   RefPtr<AsyncPanZoomController> mLastActiveApzc;

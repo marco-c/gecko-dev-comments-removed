@@ -113,5 +113,35 @@ FocusState::RemoveFocusTarget(uint64_t aLayersId)
   mFocusTree.erase(aLayersId);
 }
 
+Maybe<ScrollableLayerGuid>
+FocusState::GetHorizontalTarget() const
+{
+  
+  
+  
+  
+  if (!IsCurrent() ||
+      mFocusHasKeyEventListeners ||
+      mFocusHorizontalTarget == FrameMetrics::NULL_SCROLL_ID) {
+    return Nothing();
+  }
+  return Some(ScrollableLayerGuid(mFocusLayersId, 0, mFocusHorizontalTarget));
+}
+
+Maybe<ScrollableLayerGuid>
+FocusState::GetVerticalTarget() const
+{
+  
+  
+  
+  
+  if (!IsCurrent() ||
+      mFocusHasKeyEventListeners ||
+      mFocusVerticalTarget == FrameMetrics::NULL_SCROLL_ID) {
+    return Nothing();
+  }
+  return Some(ScrollableLayerGuid(mFocusLayersId, 0, mFocusVerticalTarget));
+}
+
 } 
 } 

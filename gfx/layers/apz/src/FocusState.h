@@ -115,6 +115,31 @@ public:
 
   void RemoveFocusTarget(uint64_t aLayersId);
 
+  
+
+
+
+
+
+
+
+
+
+  Maybe<ScrollableLayerGuid> GetHorizontalTarget() const;
+  
+
+
+  Maybe<ScrollableLayerGuid> GetVerticalTarget() const;
+
+  
+
+
+
+  bool CanIgnoreKeyboardShortcutMisses() const
+  {
+    return IsCurrent() && !mFocusHasKeyEventListeners;
+  }
+
 private:
   
   std::unordered_map<uint64_t, FocusTarget> mFocusTree;

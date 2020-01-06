@@ -343,6 +343,13 @@ public:
   
 
 
+  bool HasScrollSnapping() const {
+    return mScrollMetadata.GetSnapInfo().HasScrollSnapping();
+  }
+
+  
+
+
   bool IsPannable() const;
 
   

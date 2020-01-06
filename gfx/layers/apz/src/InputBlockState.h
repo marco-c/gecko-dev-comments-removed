@@ -27,6 +27,7 @@ class TouchBlockState;
 class WheelBlockState;
 class DragBlockState;
 class PanGestureBlockState;
+class KeyboardBlockState;
 
 
 
@@ -66,6 +67,9 @@ public:
     return nullptr;
   }
   virtual PanGestureBlockState* AsPanGestureBlock() {
+    return nullptr;
+  }
+  virtual KeyboardBlockState* AsKeyboardBlock() {
     return nullptr;
   }
 
@@ -484,6 +488,23 @@ private:
   ScreenIntPoint mSlopOrigin;
   
   TouchCounter& mTouchCounter;
+};
+
+
+
+
+class KeyboardBlockState : public InputBlockState
+{
+public:
+  explicit KeyboardBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc);
+
+  KeyboardBlockState* AsKeyboardBlock() override {
+    return this;
+  }
+
+  bool MustStayActive() override {
+    return false;
+  }
 };
 
 } 
