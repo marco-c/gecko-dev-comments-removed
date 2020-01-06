@@ -1393,6 +1393,7 @@ protected:
   
   
   bool OnGraphThreadOrNotRunning() const;
+  bool OnGraphThread() const;
 
   
   nsTArray<nsCOMPtr<nsIRunnable> > mPendingUpdateRunnables;
