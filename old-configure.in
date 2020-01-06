@@ -1191,10 +1191,6 @@ case "$target" in
     fi
     ;;
 
-*-solaris*)
-    MOZ_FIX_LINK_PATHS=
-    ;;
-
 esac
 
 AC_SUBST_LIST(MMX_FLAGS)
@@ -2023,7 +2019,7 @@ else
    NSS_CFLAGS="-I${DIST}/include/nss"
    case "${OS_ARCH}" in
         # Only few platforms have been tested with GYP
-        WINNT|Darwin|Linux|DragonFly|FreeBSD|NetBSD|OpenBSD|SunOS)
+        WINNT|Darwin|Linux|DragonFly|FreeBSD|NetBSD|OpenBSD)
             ;;
         *)
             AC_MSG_ERROR([building in-tree NSS is not supported on this platform. Use --with-system-nss])
@@ -4136,9 +4132,6 @@ if test -z "$MOZ_MEMORY"; then
       ;;
   esac
 else
-  if test "x$MOZ_DEBUG" = "x1"; then
-    AC_DEFINE(MOZ_MEMORY_DEBUG)
-  fi
   dnl The generic feature tests that determine how to compute ncpus are long and
   dnl complicated.  Therefore, simply define special cpp variables for the
   dnl platforms we have special knowledge of.
