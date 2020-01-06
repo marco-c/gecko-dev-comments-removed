@@ -1638,9 +1638,7 @@ var gBrowserInit = {
     }
 
     
-    requestIdleCallback(() => {
-      gSync.init();
-    }, {timeout: 1000 * 5});
+    gSync.init();
 
     if (AppConstants.MOZ_DATA_REPORTING)
       gDataNotificationInfoBar.init();
