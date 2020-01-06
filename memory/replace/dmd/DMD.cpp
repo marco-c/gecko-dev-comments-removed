@@ -755,7 +755,39 @@ StackTrace::Get(Thread* aT)
     AutoUnlockState unlock;
     
     
-#ifdef XP_MACOSX
+    
+#if defined(XP_WIN) && defined(_M_IX86)
+    
+    
+    
+    
+    
+    
+    CONTEXT context;
+    RtlCaptureContext(&context);
+    void* fp = reinterpret_cast<void*>(context.Ebp);
+
+    
+    
+#if defined(_MSC_VER)
+    NT_TIB* pTib;
+    __asm {
+      MOV EAX, FS:[18h]
+      MOV pTib, EAX
+    }
+#elif defined(__GNUC__)
+    NT_TIB* pTib;
+    asm ( "movl %%fs:0x18, %0\n"
+         : "=r" (pTib)
+        );
+#else
+#   error "unknown compiler"
+#endif
+    void* stackEnd = static_cast<void*>(pTib->StackBase);
+    bool ok = FramePointerStackWalk(StackWalkCallback,  0,
+                                    MaxFrames, &tmp,
+                                    reinterpret_cast<void**>(fp), stackEnd);
+#elif defined(XP_MACOSX)
     
     
     
@@ -774,8 +806,13 @@ StackTrace::Get(Thread* aT)
                                     MaxFrames, &tmp,
                                     reinterpret_cast<void**>(fp), stackEnd);
 #else
-    bool ok = MozStackWalk(StackWalkCallback,  2,
-                           MaxFrames, &tmp, 0, nullptr);
+#if defined(XP_WIN) && defined(_M_X64)
+    int skipFrames = 1;
+#else
+    int skipFrames = 2;
+#endif
+    bool ok = MozStackWalk(StackWalkCallback, skipFrames, MaxFrames, &tmp, 0,
+                           nullptr);
 #endif
     if (!ok) {
       tmp.mLength = 0; 
