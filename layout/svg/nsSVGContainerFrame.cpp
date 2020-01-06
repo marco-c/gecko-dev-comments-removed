@@ -110,8 +110,9 @@ nsSVGContainerFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
  void
 nsSVGContainerFrame::ReflowSVGNonDisplayText(nsIFrame* aContainer)
 {
-  NS_ASSERTION(aContainer->GetStateBits() & NS_FRAME_IS_DIRTY,
-               "expected aContainer to be NS_FRAME_IS_DIRTY");
+  if (!(aContainer->GetStateBits() & NS_FRAME_IS_DIRTY)) {
+    return;
+  }
   NS_ASSERTION((aContainer->GetStateBits() & NS_FRAME_IS_NONDISPLAY) ||
                !aContainer->IsFrameOfType(nsIFrame::eSVG),
                "it is wasteful to call ReflowSVGNonDisplayText on a container "
