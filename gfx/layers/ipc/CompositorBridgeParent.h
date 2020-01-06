@@ -272,21 +272,6 @@ public:
 
 
 
-
-
-
-
-  bool ResetCompositor(const nsTArray<LayersBackend>& aBackendHints,
-                       uint64_t aSeqNo,
-                       TextureFactoryIdentifier* aOutIdentifier);
-
-  
-
-
-
-
-
-
   mozilla::ipc::IPCResult RecvForceIsFirstPaint() override;
 
   static void SetShadowProperties(Layer* aLayer);
