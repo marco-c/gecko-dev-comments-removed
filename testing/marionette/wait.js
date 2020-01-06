@@ -6,9 +6,12 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("chrome://marionette/content/error.js");
+const {
+  error,
+  TimeoutError,
+} = Cu.import("chrome://marionette/content/error.js", {});
 
-this.EXPORTED_SYMBOLS = ["wait"];
+this.EXPORTED_SYMBOLS = ["wait", "TimedPromise"];
 
 
 
@@ -16,6 +19,8 @@ this.EXPORTED_SYMBOLS = ["wait"];
 
 
 this.wait = {};
+
+const {TYPE_ONE_SHOT, TYPE_REPEATING_SLACK} = Ci.nsITimer;
 
 
 
@@ -104,9 +109,8 @@ wait.until = function(func, timeout = 2000, interval = 10) {
     
     evalFn();
 
-    timer.init(evalFn, interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
+    timer.init(evalFn, interval, TYPE_REPEATING_SLACK);
 
-  
   }).then(res => {
     timer.cancel();
     return res;
@@ -115,3 +119,59 @@ wait.until = function(func, timeout = 2000, interval = 10) {
     throw err;
   });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function TimedPromise(fn, {timeout = 1500, throws = TimeoutError} = {}) {
+  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+
+  return new Promise((resolve, reject) => {
+    
+    
+    let bail = res => {
+      if (throws !== null) {
+        let err = new throws();
+        reject(err);
+      } else {
+        resolve();
+      }
+    };
+
+    timer.initWithCallback({notify: bail}, timeout, TYPE_ONE_SHOT);
+
+    try {
+      fn(resolve, reject);
+    } catch (e) {
+      reject(e);
+    }
+
+  }).then(res => {
+    timer.cancel();
+    return res;
+  }, err => {
+    timer.cancel();
+    throw err;
+  });
+}
