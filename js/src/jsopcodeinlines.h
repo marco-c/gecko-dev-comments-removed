@@ -14,10 +14,8 @@
 namespace js {
 
 static inline unsigned
-GetDefCount(JSScript* script, unsigned offset)
+GetDefCount(jsbytecode* pc)
 {
-    jsbytecode* pc = script->offsetToPC(offset);
-
     
 
 
@@ -41,10 +39,8 @@ GetDefCount(JSScript* script, unsigned offset)
 }
 
 static inline unsigned
-GetUseCount(JSScript* script, unsigned offset)
+GetUseCount(jsbytecode* pc)
 {
-    jsbytecode* pc = script->offsetToPC(offset);
-
     if (JSOp(*pc) == JSOP_PICK || JSOp(*pc) == JSOP_UNPICK)
         return pc[1] + 1;
 
