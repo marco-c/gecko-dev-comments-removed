@@ -154,7 +154,6 @@
 #include "DOMIntersectionObserver.h"
 
 #include "nsISpeculativeConnect.h"
-#include "nsIIOService.h"
 
 #include "DOMMatrix.h"
 
@@ -4292,6 +4291,7 @@ BitsArePropagated(const Element* aElement, uint32_t aBits, nsINode* aRestyleRoot
     nsINode* parentNode = curr->GetParentNode();
     curr = curr->GetFlattenedTreeParentElementForStyle();
     MOZ_ASSERT_IF(!curr,
+                  !parentNode || 
                   parentNode == aElement->OwnerDoc() ||
                   parentNode == parentNode->OwnerDoc()->GetRootElement());
   }
@@ -4454,7 +4454,10 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     }
   }
 
+  
+  
   MOZ_ASSERT(aElement == doc->GetServoRestyleRoot() ||
+             !doc->GetServoRestyleRoot()->IsElement() ||
              nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
                aElement, doc->GetServoRestyleRoot()));
   MOZ_ASSERT(aElement == doc->GetServoRestyleRoot() ||
