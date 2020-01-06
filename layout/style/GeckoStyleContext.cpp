@@ -38,6 +38,7 @@ GeckoStyleContext::GeckoStyleContext(GeckoStyleContext* aParent,
                                      bool aSkipParentDisplayBasedStyleFixup)
   : nsStyleContext(aParent, aPseudoTag, aPseudoType)
   , mCachedResetData(nullptr)
+  , mRefCnt(0)
   , mChild(nullptr)
   , mEmptyChild(nullptr)
   , mRuleNode(Move(aRuleNode))
@@ -79,6 +80,21 @@ GeckoStyleContext::operator new(size_t sz, nsPresContext* aPresContext)
   
   return aPresContext->PresShell()->
     AllocateByObjectID(eArenaObjectID_GeckoStyleContext, sz);
+}
+
+
+
+void
+GeckoStyleContext::Destroy()
+{
+  
+  RefPtr<nsPresContext> presContext = PresContext();
+  
+  this->~GeckoStyleContext();
+  
+  
+  presContext->PresShell()->
+    FreeByObjectID(eArenaObjectID_GeckoStyleContext, this);
 }
 
 GeckoStyleContext::~GeckoStyleContext()

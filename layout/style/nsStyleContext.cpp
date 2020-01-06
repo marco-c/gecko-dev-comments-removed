@@ -84,7 +84,6 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
   : mParent(aParent)
   , mPseudoTag(aPseudoTag)
   , mBits(((uint64_t)aPseudoType) << NS_STYLE_CONTEXT_TYPE_SHIFT)
-  , mRefCnt(0)
 #ifdef DEBUG
   , mFrameRefCnt(0)
 #endif
@@ -435,7 +434,8 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
     str.AppendLiteral("  ");
   }
   str.Append(nsPrintfCString("%p(%d) parent=%p ",
-                             (void*)this, mRefCnt, (void *)mParent));
+                             (void*)this, IsGecko() ? AsGecko()->mRefCnt : 0,
+                             (void *)mParent));
   if (mPseudoTag) {
     nsAutoString  buffer;
     mPseudoTag->ToString(buffer);
@@ -471,25 +471,6 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
   }
 }
 #endif
-
-
-
-void
-nsStyleContext::Destroy()
-{
-  if (IsGecko()) {
-    
-    RefPtr<nsPresContext> presContext = PresContext();
-    
-    this->AsGecko()->~GeckoStyleContext();
-    
-    
-    presContext->PresShell()->
-      FreeByObjectID(eArenaObjectID_GeckoStyleContext, this);
-  } else {
-    delete static_cast<ServoStyleContext*>(this);
-  }
-}
 
 already_AddRefed<GeckoStyleContext>
 NS_NewStyleContext(GeckoStyleContext* aParentContext,
