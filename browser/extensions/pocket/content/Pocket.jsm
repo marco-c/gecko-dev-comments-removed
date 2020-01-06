@@ -1,4 +1,4 @@
-
+  
 
 
 
@@ -34,7 +34,9 @@ var Pocket = {
     let iframe = window.pktUI.getPanelFrame();
 
     let libraryButton = document.getElementById("library-button");
-    BrowserUtils.setToolbarButtonHeightProperty(libraryButton);
+    if (libraryButton) {
+      BrowserUtils.setToolbarButtonHeightProperty(libraryButton);
+    }
 
     let urlToSave = Pocket._urlToSave;
     let titleToSave = Pocket._titleToSave;
