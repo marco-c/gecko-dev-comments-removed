@@ -1551,6 +1551,9 @@ EditorBase::SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
   {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
+      
+      
+      
       listener->WillSplitNode(aStartOfRightNode.Container()->AsDOMNode(),
                               aStartOfRightNode.Offset());
     }
@@ -1566,18 +1569,14 @@ EditorBase::SplitNode(const EditorRawDOMPoint& aStartOfRightNode,
   mRangeUpdater.SelAdjSplitNode(*aStartOfRightNode.Container()->AsContent(),
                                 newNode);
 
-  nsresult rv = aError.StealNSResult();
   {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
       listener->DidSplitNode(aStartOfRightNode.Container()->AsDOMNode(),
-                             aStartOfRightNode.Offset(),
-                             GetAsDOMNode(newNode), rv);
+                             GetAsDOMNode(newNode));
     }
   }
-  
-  
-  aError = rv;
+
   if (NS_WARN_IF(aError.Failed())) {
     return nullptr;
   }
