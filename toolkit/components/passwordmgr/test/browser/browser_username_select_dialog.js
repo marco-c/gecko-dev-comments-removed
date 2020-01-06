@@ -7,8 +7,10 @@
 function getSelectDialogDoc() {
   
   
+  var wm = Cc["@mozilla.org/appshell/window-mediator;1"].
+           getService(Ci.nsIWindowMediator);
   
-  var enumerator = Services.wm.getXULWindowEnumerator(null);
+  var enumerator = wm.getXULWindowEnumerator(null);
 
   while (enumerator.hasMoreElements()) {
     var win = enumerator.getNext();
