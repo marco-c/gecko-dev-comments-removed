@@ -26,6 +26,7 @@ namespace mozilla {
 class CDMProxy;
 class MediaDecoderReader;
 class TaskQueue;
+class VideoFrameContainer;
 
 struct WaitForDataRejectValue
 {
@@ -59,6 +60,18 @@ struct MetadataHolder
 {
   UniquePtr<MediaInfo> mInfo;
   UniquePtr<MetadataTags> mTags;
+};
+
+struct MOZ_STACK_CLASS MediaDecoderReaderInit
+{
+  AbstractMediaDecoder* const mDecoder;
+  MediaResource* mResource = nullptr;
+  VideoFrameContainer* mVideoFrameContainer = nullptr;
+
+  explicit MediaDecoderReaderInit(AbstractMediaDecoder* aDecoder)
+    : mDecoder(aDecoder)
+  {
+  }
 };
 
 
@@ -97,8 +110,7 @@ public:
 
   
   
-  explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder,
-                              MediaResource* aResource = nullptr);
+  explicit MediaDecoderReader(const MediaDecoderReaderInit& aInit);
 
   
   
