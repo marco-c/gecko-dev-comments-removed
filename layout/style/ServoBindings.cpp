@@ -29,6 +29,7 @@
 #include "nsIDocumentInlines.h"
 #include "nsILoadContext.h"
 #include "nsIFrame.h"
+#include "nsIMemoryReporter.h"
 #include "nsINode.h"
 #include "nsIPresShell.h"
 #include "nsIPresShellInlines.h"
@@ -226,7 +227,7 @@ ServoComputedData::GetStyleVariables() const
             "called");
 }
 
-MOZ_DEFINE_MALLOC_SIZE_OF(ServoStyleStructsMallocSizeOf)
+MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoStyleStructsMallocEnclosingSizeOf)
 
 void
 ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
@@ -236,28 +237,13 @@ ServoComputedData::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 #define STYLE_STRUCT(name_, cb_) \
   static_assert(alignof(nsStyle##name_) <= sizeof(size_t), \
                 "alignment will break AddSizeOfExcludingThis()"); \
-  const char* p##name_ = reinterpret_cast<const char*>(GetStyle##name_()); \
-  p##name_ -= sizeof(size_t); \
+  const void* p##name_ = GetStyle##name_(); \
   if (!aSizes.mState.HaveSeenPtr(p##name_)) { \
     aSizes.mServoStyleSizes.NS_STYLE_SIZES_FIELD(name_) += \
-      ServoStyleStructsMallocSizeOf(p##name_); \
+      ServoStyleStructsMallocEnclosingSizeOf(p##name_); \
   }
   #define STYLE_STRUCT_LIST_IGNORE_VARIABLES
 #include "nsStyleStructList.h"
@@ -1453,19 +1439,52 @@ Gecko_CopyCounterStyle(CounterStylePtr* aDst, const CounterStylePtr* aSrc)
   *aDst = *aSrc;
 }
 
-nsIAtom*
-Gecko_CounterStyle_GetName(const CounterStylePtr* aPtr)
-{
-  if (!aPtr->IsResolved()) {
-    return aPtr->AsAtom();
-  }
-  return (*aPtr)->GetStyleName();
+bool
+Gecko_CounterStyle_IsNone(const CounterStylePtr* aPtr) {
+  MOZ_ASSERT(aPtr);
+  return (*aPtr)->IsNone();
 }
 
-const AnonymousCounterStyle*
-Gecko_CounterStyle_GetAnonymous(const CounterStylePtr* aPtr)
-{
-  return aPtr->AsAnonymous();
+bool
+Gecko_CounterStyle_IsName(const CounterStylePtr* aPtr) {
+  return !Gecko_CounterStyle_IsNone(aPtr) && !(*aPtr)->AsAnonymous();
+}
+
+void
+Gecko_CounterStyle_GetName(const CounterStylePtr* aPtr,
+                           nsAString* aResult) {
+  MOZ_ASSERT(Gecko_CounterStyle_IsName(aPtr));
+  (*aPtr)->GetStyleName(*aResult);
+}
+
+const nsTArray<nsString>&
+Gecko_CounterStyle_GetSymbols(const CounterStylePtr* aPtr) {
+  MOZ_ASSERT((*aPtr)->AsAnonymous());
+  AnonymousCounterStyle* anonymous = (*aPtr)->AsAnonymous();
+  return anonymous->GetSymbols();
+}
+
+uint8_t
+Gecko_CounterStyle_GetSystem(const CounterStylePtr* aPtr) {
+  MOZ_ASSERT((*aPtr)->AsAnonymous());
+  AnonymousCounterStyle* anonymous = (*aPtr)->AsAnonymous();
+  return anonymous->GetSystem();
+}
+
+bool
+Gecko_CounterStyle_IsSingleString(const CounterStylePtr* aPtr) {
+  MOZ_ASSERT(aPtr);
+  AnonymousCounterStyle* anonymous = (*aPtr)->AsAnonymous();
+  return anonymous ? anonymous->IsSingleString() : false;
+}
+
+void
+Gecko_CounterStyle_GetSingleString(const CounterStylePtr* aPtr,
+                                   nsAString* aResult) {
+  MOZ_ASSERT(Gecko_CounterStyle_IsSingleString(aPtr));
+  const nsTArray<nsString>& symbols = Gecko_CounterStyle_GetSymbols(aPtr);
+  MOZ_ASSERT(symbols.Length() == 1);
+  aResult->Assign(symbols[0]);
 }
 
 already_AddRefed<css::URLValue>
