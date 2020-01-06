@@ -2269,6 +2269,27 @@ nsCookieService::CreatePurgeList(nsICookie2* aCookie)
 
 
 
+NS_IMETHODIMP
+nsCookieService::RunInTransaction(nsICookieTransactionCallback* aCallback)
+{
+  NS_ENSURE_ARG(aCallback);
+  if (NS_WARN_IF(!mDefaultDBState->dbConn)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mozStorageTransaction transaction(mDefaultDBState->dbConn, true);
+
+  if (NS_FAILED(aCallback->Callback())) {
+    Unused << transaction.Rollback();
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
+
+
+
+
+
 void
 nsCookieService::PrefChanged(nsIPrefBranch *aPrefBranch)
 {
