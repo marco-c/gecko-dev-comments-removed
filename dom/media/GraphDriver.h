@@ -146,9 +146,6 @@ public:
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
   
-  bool Scheduled();
-
-  
 
 
 
@@ -235,9 +232,6 @@ protected:
   
   
   RefPtr<GraphDriver> mNextDriver;
-  
-  
-  bool mScheduled;
   virtual ~GraphDriver()
   { }
 };
@@ -557,6 +551,14 @@ private:
 
 
   Atomic<bool> mMicrophoneActive;
+  
+
+
+
+
+
+
+  bool mShouldFallbackIfError;
   
 
   bool mFromFallback;
