@@ -196,7 +196,9 @@ function treatAsSafeArgument(entry, varName, csuName)
         [/Gecko_SetContentDataImageValue/, "aList", null],
         [/Gecko_SetContentData/, "aContent", null],
         [/Gecko_EnsureStyle.*?ArrayLength/, "aArray", null],
-        ["Gecko_AnimationAppendKeyframe", "aKeyframes", null],
+        ["Gecko_GetOrCreateKeyframeAtStart", "aKeyframes", null],
+        ["Gecko_GetOrCreateInitialKeyframe", "aKeyframes", null],
+        ["Gecko_GetOrCreateFinalKeyframe", "aKeyframes", null],
         ["Gecko_SetStyleCoordCalcValue", null, null],
         ["Gecko_StyleClipPath_SetURLValue", "aClip", null],
         ["Gecko_nsStyleFilter_SetURLValue", "aEffects", null],
@@ -377,7 +379,9 @@ function ignoreContents(entry)
 
         
         
-        "Gecko_AnimationAppendKeyframe",
+        "Gecko_GetOrCreateKeyframeAtStart",
+        "Gecko_GetOrCreateInitialKeyframe",
+        "Gecko_GetOrCreateFinalKeyframe",
         "Gecko_NewStyleQuoteValues",
         "Gecko_NewCSSValueSharedList",
         "Gecko_NewGridTemplateAreasValue",

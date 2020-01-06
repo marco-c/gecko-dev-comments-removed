@@ -382,9 +382,42 @@ void Gecko_ClearWillChange(nsStyleDisplay* display, size_t length);
 void Gecko_AppendWillChange(nsStyleDisplay* display, nsIAtom* atom);
 void Gecko_CopyWillChangeFrom(nsStyleDisplay* dest, nsStyleDisplay* src);
 
-mozilla::Keyframe* Gecko_AnimationAppendKeyframe(RawGeckoKeyframeListBorrowedMut keyframes,
-                                                 float offset,
-                                                 const nsTimingFunction* timingFunction);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  float offset,
+  const nsTimingFunction* timingFunction);
+
+
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  const nsTimingFunction* timingFunction);
+
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  const nsTimingFunction* timingFunction);
 
 
 void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
