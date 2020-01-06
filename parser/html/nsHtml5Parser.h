@@ -248,6 +248,11 @@ class nsHtml5Parser final : public nsIParser,
       return mStreamListener->GetDelegate();
     }
 
+    void PermanentlyUndefineInsertionPoint()
+    {
+      mInsertionPointPermanentlyUndefined = true;
+    }
+
     
 
 
@@ -293,6 +298,20 @@ class nsHtml5Parser final : public nsIParser,
     bool                          mDocumentClosed;
 
     bool                          mInDocumentWrite;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    bool mInsertionPointPermanentlyUndefined;
 
     
     

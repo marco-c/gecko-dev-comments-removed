@@ -509,6 +509,13 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
         }
       }
 
+      if (MOZ_UNLIKELY(!mParser)) {
+        
+        return;
+      }
+      if (streamEnded) {
+        GetParser()->PermanentlyUndefineInsertionPoint();
+      }
     } 
 
     if (MOZ_UNLIKELY(!mParser)) {
@@ -586,12 +593,9 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
     
     nsHtml5AutoFlush autoFlush(this);
 
-
-  nsHtml5TreeOperation* start = mOpQueue.Elements();
-  nsHtml5TreeOperation* end = start + mOpQueue.Length();
-  for (nsHtml5TreeOperation* iter = start;
-       iter < end;
-       ++iter) {
+    nsHtml5TreeOperation* start = mOpQueue.Elements();
+    nsHtml5TreeOperation* end = start + mOpQueue.Length();
+    for (nsHtml5TreeOperation* iter = start; iter < end; ++iter) {
       if (MOZ_UNLIKELY(!mParser)) {
         
         return rv;
@@ -605,6 +609,14 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
       }
     }
 
+    if (MOZ_UNLIKELY(!mParser)) {
+      
+      return rv;
+    }
+    if (streamEnded) {
+      
+      GetParser()->PermanentlyUndefineInsertionPoint();
+    }
   } 
 
   if (MOZ_UNLIKELY(!mParser)) {
