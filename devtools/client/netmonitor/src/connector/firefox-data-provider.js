@@ -236,6 +236,15 @@ class FirefoxDataProvider {
 
 
 
+  isPayloadQueueEmpty() {
+    return this.payloadQueue.length === 0;
+  }
+
+  
+
+
+
+
 
   isRequestPayloadReady(id) {
     let record = this.rdpRequestMap.get(id);
