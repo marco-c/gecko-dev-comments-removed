@@ -675,6 +675,9 @@ pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 
+
+pref("accessibility.loadedInLastSession", false);
+
 pref("plugins.click_to_play", true);
 pref("plugins.testmode", false);
 
@@ -987,6 +990,9 @@ pref("toolkit.crashreporter.infoURL",
 
 
 pref("app.support.baseURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/");
+
+
+pref("app.support.e10sAccessibilityUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/accessibility-ppt");
 
 
 #ifdef MOZ_DEV_EDITION

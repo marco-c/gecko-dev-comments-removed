@@ -267,6 +267,11 @@
 
 static NS_DEFINE_CID(kCClipboardCID, NS_CLIPBOARD_CID);
 
+#if defined(XP_WIN)
+
+extern const char* kForceEnableE10sPref;
+#endif
+
 using base::ChildPrivileges;
 using base::KillProcess;
 
@@ -1305,8 +1310,13 @@ ContentParent::Init()
   
   if (nsIPresShell::IsAccessibilityActive()) {
 #if defined(XP_WIN)
-    Unused << SendActivateA11y(::GetCurrentThreadId(),
-                                a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+#if defined(RELEASE_OR_BETA)
+    
+    
+    if (Preferences::GetBool(kForceEnableE10sPref, false))
+#endif
+      Unused << SendActivateA11y(::GetCurrentThreadId(),
+                                 a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
 #else
     Unused << SendActivateA11y(0, 0);
 #endif
@@ -2840,8 +2850,13 @@ ContentParent::Observe(nsISupports* aSubject,
       
       
 #if defined(XP_WIN)
-      Unused << SendActivateA11y(::GetCurrentThreadId(),
-                                  a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
+#if defined(RELEASE_OR_BETA)
+      
+      
+      if (Preferences::GetBool(kForceEnableE10sPref, false))
+#endif
+        Unused << SendActivateA11y(::GetCurrentThreadId(),
+                                   a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
 #else
       Unused << SendActivateA11y(0, 0);
 #endif
