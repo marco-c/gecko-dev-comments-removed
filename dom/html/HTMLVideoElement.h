@@ -129,10 +129,6 @@ public:
 
   bool MozHasAudio() const;
 
-  bool MozUseScreenWakeLock() const;
-
-  void SetMozUseScreenWakeLock(bool aValue);
-
   void NotifyOwnerDocumentActivityChanged() override;
 
   
@@ -165,7 +161,6 @@ protected:
   virtual void WakeLockRelease() override;
   void UpdateScreenWakeLock();
 
-  bool mUseScreenWakeLock;
   RefPtr<WakeLock> mScreenWakeLock;
 
   bool mIsOrientationLocked;
