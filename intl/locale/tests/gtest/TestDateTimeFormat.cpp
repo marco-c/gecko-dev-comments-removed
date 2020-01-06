@@ -11,7 +11,7 @@ static nsAutoCString nt(nsAutoCString aDatetime)
   
   int32_t ind = datetime.Find("January 01");
   if (ind != kNotFound)
-    datetime.Replace(ind, 10, "January 1");
+    datetime.ReplaceLiteral(ind, 10, "January 1");
 
   
   ind = datetime.Find(" GMT");
@@ -21,10 +21,11 @@ static nsAutoCString nt(nsAutoCString aDatetime)
   
   ind = datetime.Find("Thursday, ");
   if (ind == 0)
-    datetime.Replace(0, 10, "");
+    datetime.ReplaceLiteral(0, 10, "");
+
   ind = datetime.Find("Wednesday, ");
   if (ind == 0)
-    datetime.Replace(0, 11, "");
+    datetime.ReplaceLiteral(0, 11, "");
 
   return datetime;
 }

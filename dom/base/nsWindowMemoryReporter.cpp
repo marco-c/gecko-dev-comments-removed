@@ -297,7 +297,7 @@ CollectWindowReports(nsGlobalWindow *aWindow,
 
   
   nsCString censusWindowPath(windowPath);
-  censusWindowPath.Replace(0, strlen("explicit"), "event-counts");
+  censusWindowPath.ReplaceLiteral(0, strlen("explicit"), "event-counts");
 
   
   aWindowPaths->Put(aWindow->WindowID(), windowPath);
