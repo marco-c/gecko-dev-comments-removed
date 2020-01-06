@@ -54,6 +54,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
 
 
 
+
+
+
+
 async function withReflowObserver(testFn, expectedReflows = [], win = window) {
   let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
                .getInterface(Ci.nsIDOMWindowUtils);
@@ -108,6 +112,9 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
       if (index != -1) {
         Assert.ok(true, "expected uninterruptible reflow: '" +
                   JSON.stringify(pathWithLineNumbers, null, "\t") + "'");
+        if (expectedReflows[index].minTimes) {
+          expectedReflows[index].minTimes--;
+        }
         if (--expectedReflows[index].times == 0) {
           expectedReflows.splice(index, 1);
         }
@@ -139,11 +146,13 @@ async function withReflowObserver(testFn, expectedReflows = [], win = window) {
     await testFn(dirtyFrameFn);
   } finally {
     for (let remainder of expectedReflows) {
-      Assert.ok(false,
-                `Unused expected reflow: ${JSON.stringify(remainder.stack, null, "\t")}\n` +
-                `This reflow was supposed to be hit ${remainder.times} more time(s).\n` +
-                "This is probably a good thing - just remove it from the " +
-                "expected list.");
+      if (!Number.isInteger(remainder.minTimes) || remainder.minTimes > 0) {
+        Assert.ok(false,
+                  `Unused expected reflow: ${JSON.stringify(remainder.stack, null, "\t")}\n` +
+                  `This reflow was supposed to be hit ${remainder.minTimes || remainder.times} more time(s).\n` +
+                  "This is probably a good thing - just remove it from the " +
+                  "expected list.");
+      }
     }
 
     els.removeListenerForAllEvents(win, dirtyFrameFn, true);
@@ -241,6 +250,7 @@ async function removeAllButFirstTab() {
 
 
 async function addDummyHistoryEntries() {
+  await PlacesTestUtils.clearHistory();
   const NUM_VISITS = 10;
   let visits = [];
 

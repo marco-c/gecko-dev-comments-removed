@@ -19,6 +19,20 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
   
   {
     stack: [
+      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
+      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
+      "_onChanged@chrome://global/content/bindings/autocomplete.xml",
+      "_appendCurrentResult/<@chrome://global/content/bindings/autocomplete.xml",
+      "setTimeout handler*_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
+      "invalidate@chrome://global/content/bindings/autocomplete.xml"
+    ],
+    times: 6, 
+    minTimes: 0, 
+  },
+
+  {
+    stack: [
       "_rebuild@chrome://browser/content/search/search.xml",
       "set_popup@chrome://browser/content/search/search.xml",
       "enableOneOffSearches@chrome://browser/content/urlbarBindings.xml",
@@ -67,7 +81,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 330, 
+    times: 60, 
   },
 
   {
@@ -108,18 +122,6 @@ const EXPECTED_REFLOWS_SECOND_OPEN = [
       "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
     ],
     times: 3, 
-  },
-
-  {
-    stack: [
-      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
-      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
-      "_reuseAcItem@chrome://global/content/bindings/autocomplete.xml",
-      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
-      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
-      "invalidate@chrome://global/content/bindings/autocomplete.xml"
-    ],
-    times: 384, 
   },
 
   
@@ -208,8 +210,10 @@ add_task(async function() {
     await hiddenPromise;
   };
 
+  info("First opening");
   await withReflowObserver(testFn, EXPECTED_REFLOWS_FIRST_OPEN, win);
 
+  info("Second opening");
   await withReflowObserver(testFn, EXPECTED_REFLOWS_SECOND_OPEN, win);
 
   await BrowserTestUtils.closeWindow(win);
