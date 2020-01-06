@@ -2893,8 +2893,25 @@ void AsyncPanZoomController::CallDispatchScroll(ParentLayerPoint& aStartPoint,
   if (!treeManagerLocal) {
     return;
   }
+
+  
+  ParentLayerPoint endPoint = aEndPoint;
+  if (aOverscrollHandoffState.mChainIndex > 0) {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    if (!mX.OverscrollBehaviorAllowsHandoff()) {
+      endPoint.x = aStartPoint.x;
+    }
+    if (!mY.OverscrollBehaviorAllowsHandoff()) {
+      endPoint.y = aStartPoint.y;
+    }
+    if (aStartPoint == endPoint) {
+      
+      return;
+    }
+  }
+
   treeManagerLocal->DispatchScroll(this,
-                                   aStartPoint, aEndPoint,
+                                   aStartPoint, endPoint,
                                    aOverscrollHandoffState);
 }
 
