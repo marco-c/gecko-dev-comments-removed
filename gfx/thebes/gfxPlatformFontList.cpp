@@ -615,17 +615,33 @@ gfxPlatformFontList::CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
 
         familyName.AppendASCII(fallbackFamily);
         gfxFontFamily *fallback = FindFamilyByCanonicalName(familyName);
-        if (!fallback)
+        if (!fallback) {
             continue;
+        }
 
         gfxFontEntry *fontEntry;
         bool needsBold;  
 
         
         fontEntry = fallback->FindFontForStyle(*aMatchStyle, needsBold);
-        if (fontEntry && fontEntry->HasCharacter(aCh)) {
-            *aMatchedFamily = fallback;
-            return fontEntry;
+        if (fontEntry) {
+            if (fontEntry->HasCharacter(aCh)) {
+                *aMatchedFamily = fallback;
+                return fontEntry;
+            }
+            
+            
+            if (!fontEntry->IsNormalStyle()) {
+                
+                
+                
+                GlobalFontMatch data(aCh, aMatchStyle);
+                fallback->SearchAllFontsForChar(&data);
+                if (data.mBestMatch) {
+                    *aMatchedFamily = fallback;
+                    return data.mBestMatch;
+                }
+            }
         }
     }
 
