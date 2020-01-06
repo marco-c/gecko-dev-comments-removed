@@ -1264,17 +1264,10 @@ RasterImage::Decode(const IntSize& aSize,
     
     
     
-    
-    
-    
-    
-    
-    
-    
 #ifdef DEBUG
     gfx::IntRect rect =
 #endif
-      mAnimationState->UpdateState(mAnimationFinished, this, mSize);
+      mAnimationState->UpdateState(mAnimationFinished, this, mSize, false);
     MOZ_ASSERT(rect.IsEmpty());
   } else {
     task = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),

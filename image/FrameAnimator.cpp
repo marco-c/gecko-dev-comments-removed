@@ -30,7 +30,8 @@ namespace image {
 const gfx::IntRect
 AnimationState::UpdateState(bool aAnimationFinished,
                             RasterImage *aImage,
-                            const gfx::IntSize& aSize)
+                            const gfx::IntSize& aSize,
+                            bool aAllowInvalidation )
 {
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(aImage),
@@ -44,7 +45,8 @@ AnimationState::UpdateState(bool aAnimationFinished,
 const gfx::IntRect
 AnimationState::UpdateStateInternal(LookupResult& aResult,
                                     bool aAnimationFinished,
-                                    const gfx::IntSize& aSize)
+                                    const gfx::IntSize& aSize,
+                                    bool aAllowInvalidation )
 {
   
   if (aResult.Type() == MatchType::NOT_FOUND) {
@@ -78,31 +80,33 @@ AnimationState::UpdateStateInternal(LookupResult& aResult,
 
   gfx::IntRect ret;
 
-  
-  if (mIsCurrentlyDecoded || aAnimationFinished) {
+  if (aAllowInvalidation) {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mCompositedFrameInvalid) {
+    if (mIsCurrentlyDecoded || aAnimationFinished) {
       
-      ret.SizeTo(aSize);
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mCompositedFrameInvalid) {
+        
+        ret.SizeTo(aSize);
+      }
+      mCompositedFrameInvalid = false;
+    } else if (aResult.Type() == MatchType::NOT_FOUND ||
+               aResult.Type() == MatchType::PENDING) {
+      if (mHasBeenDecoded) {
+        MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
+        mCompositedFrameInvalid = true;
+      }
     }
-    mCompositedFrameInvalid = false;
-  } else if (aResult.Type() == MatchType::NOT_FOUND ||
-             aResult.Type() == MatchType::PENDING) {
-    if (mHasBeenDecoded) {
-      MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-      mCompositedFrameInvalid = true;
-    }
+    
+    
   }
-  
-  
 
   return ret;
 }
