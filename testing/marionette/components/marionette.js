@@ -251,9 +251,9 @@ MarionetteComponent.prototype.init = function () {
   }
 
   
-  Services.tm.mainThread.idleDispatch(() => {
+  Services.tm.idleDispatchToMainThread(() => {
     
-    Services.tm.mainThread.idleDispatch(() => {
+    Services.tm.idleDispatchToMainThread(() => {
       let s;
       try {
         Cu.import("chrome://marionette/content/server.js");
