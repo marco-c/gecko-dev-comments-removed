@@ -306,11 +306,13 @@ nsDisplayTextOverflowMarker::CreateWebRenderCommands(mozilla::wr::DisplayListBui
   }
 
   
-  RefPtr<TextDrawTarget> textDrawer = new TextDrawTarget(aBuilder, aSc, aManager, this, bounds);
+  RefPtr<TextDrawTarget> textDrawer = new TextDrawTarget(aSc);
   RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(textDrawer);
+  
+  textDrawer->StartDrawing(TextDrawTarget::Phase::eGlyphs);
   Paint(aDisplayListBuilder, captureCtx);
 
-  return !textDrawer->HasUnsupportedFeatures();
+  return textDrawer->CreateWebRenderCommands(aBuilder, aSc, aManager, this, bounds);
 }
 
 
