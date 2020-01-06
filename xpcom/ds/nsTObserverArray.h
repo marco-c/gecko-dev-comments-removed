@@ -96,6 +96,18 @@ public:
   
   
   
+  const elem_type* Elements() const
+  {
+    return mArray.Elements();
+  }
+  elem_type* Elements()
+  {
+    return mArray.Elements();
+  }
+
+  
+  
+  
   
   
   elem_type& ElementAt(index_type aIndex)
@@ -361,7 +373,7 @@ public:
     elem_type& GetNext()
     {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
-      return base_type::mArray.ElementAt(base_type::mPosition++);
+      return base_type::mArray.Elements()[base_type::mPosition++];
     }
   };
 
@@ -390,7 +402,7 @@ public:
     elem_type& GetNext()
     {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
-      return base_type::mArray.ElementAt(base_type::mPosition++);
+      return base_type::mArray.Elements()[base_type::mPosition++];
     }
 
   private:
@@ -426,7 +438,7 @@ public:
     elem_type& GetNext()
     {
       NS_ASSERTION(HasMore(), "iterating beyond start of array");
-      return base_type::mArray.ElementAt(--base_type::mPosition);
+      return base_type::mArray.Elements()[--base_type::mPosition];
     }
 
     
