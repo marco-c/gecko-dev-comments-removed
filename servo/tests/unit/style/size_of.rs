@@ -2,7 +2,10 @@
 
 
 
+use style::invalidation::element::invalidation_map::Dependency;
 use style::properties;
+
+size_of_test!(test_size_of_dependency, Dependency, 16);
 
 size_of_test!(test_size_of_property_declaration, properties::PropertyDeclaration, 32);
 
