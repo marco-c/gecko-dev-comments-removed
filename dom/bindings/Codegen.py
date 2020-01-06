@@ -7709,7 +7709,7 @@ class CGPerSignatureCall(CGThing):
             argsPre.append("global")
 
         if isConstructor and idlNode.isHTMLConstructor():
-            argsPre.append("args")
+            argsPre.extend(["args", "desiredProto"])
 
         
         

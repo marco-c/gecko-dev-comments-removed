@@ -3563,7 +3563,7 @@ GetCustomElementReactionsStack(JS::Handle<JSObject*> aObj)
 
 already_AddRefed<nsGenericHTMLElement>
 CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
-                  ErrorResult& aRv)
+                  JS::Handle<JSObject*> aGivenProto, ErrorResult& aRv)
 {
   
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal.GetAsSupports());
@@ -3699,6 +3699,22 @@ CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
   }
 
   
+  
+  
+  
+  
+  JS::Rooted<JSObject*> reflector(cx, element->GetWrapper());
+  if (reflector) {
+    
+    JSAutoCompartment ac(cx, reflector);
+    JS::Rooted<JSObject*> givenProto(cx, aGivenProto);
+    if (!JS_WrapObject(cx, &givenProto) ||
+        !JS_SetPrototype(cx, reflector, givenProto)) {
+      aRv.NoteJSContextException(cx);
+      return nullptr;
+    }
+  }
+
   
   return element.forget();
 }
