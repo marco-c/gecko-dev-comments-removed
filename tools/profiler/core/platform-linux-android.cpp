@@ -115,33 +115,6 @@ tgkill(pid_t tgid, pid_t tid, int signalno)
   return syscall(SYS_tgkill, tgid, tid, signalno);
 }
 
-static void
-SleepMicro(int aMicroseconds)
-{
-  aMicroseconds = std::max(0, aMicroseconds);
-
-  if (aMicroseconds >= 1000000) {
-    
-    
-    MOZ_ALWAYS_TRUE(!::usleep(aMicroseconds));
-    return;
-  }
-
-  struct timespec ts;
-  ts.tv_sec  = 0;
-  ts.tv_nsec = aMicroseconds * 1000UL;
-
-  int rv = ::nanosleep(&ts, &ts);
-
-  while (rv != 0 && errno == EINTR) {
-    
-    
-    rv = ::nanosleep(&ts, &ts);
-  }
-
-  MOZ_ASSERT(!rv, "nanosleep call failed");
-}
-
 class PlatformData
 {
 public:
@@ -356,6 +329,33 @@ SamplerThread::Stop(PSLockRef aLock)
   
   
   sigaction(SIGPROF, &mOldSigprofHandler, 0);
+}
+
+void
+SamplerThread::SleepMicro(int aMicroseconds)
+{
+  aMicroseconds = std::max(0, aMicroseconds);
+
+  if (aMicroseconds >= 1000000) {
+    
+    
+    MOZ_ALWAYS_TRUE(!::usleep(aMicroseconds));
+    return;
+  }
+
+  struct timespec ts;
+  ts.tv_sec  = 0;
+  ts.tv_nsec = aMicroseconds * 1000UL;
+
+  int rv = ::nanosleep(&ts, &ts);
+
+  while (rv != 0 && errno == EINTR) {
+    
+    
+    rv = ::nanosleep(&ts, &ts);
+  }
+
+  MOZ_ASSERT(!rv, "nanosleep call failed");
 }
 
 void

@@ -1685,10 +1685,6 @@ PrintUsageThenExit(int aExitCode)
 
 
 
-
-
-static void SleepMicro(int aMicroseconds);
-
 #if defined(GP_OS_linux) || defined(GP_OS_android)
 struct SigHandlerCoordinator;
 #endif
@@ -1716,6 +1712,10 @@ public:
   void Stop(PSLockRef aLock);
 
 private:
+  
+  
+  void SleepMicro(int aMicroseconds);
+
   
   const uint32_t mActivityGeneration;
 

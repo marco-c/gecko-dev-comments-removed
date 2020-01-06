@@ -37,18 +37,6 @@ Thread::GetCurrentId()
   return gettid();
 }
 
-static void
-SleepMicro(int aMicroseconds)
-{
-  aMicroseconds = std::max(0, aMicroseconds);
-
-  usleep(aMicroseconds);
-  
-  
-  
-  
-}
-
 class PlatformData
 {
 public:
@@ -107,6 +95,18 @@ void
 SamplerThread::Stop(PSLockRef aLock)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+}
+
+void
+SamplerThread::SleepMicro(int aMicroseconds)
+{
+  aMicroseconds = std::max(0, aMicroseconds);
+
+  usleep(aMicroseconds);
+  
+  
+  
+  
 }
 
 void
