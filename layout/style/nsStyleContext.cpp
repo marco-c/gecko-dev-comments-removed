@@ -174,6 +174,10 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
   if (IsGecko()) {
     
     
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    
     
     const nsStyleVariables* thisVariables = PeekStyleVariables();
     if (thisVariables) {
