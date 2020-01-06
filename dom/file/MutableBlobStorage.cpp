@@ -435,6 +435,14 @@ MutableBlobStorage::GetBlobWhenReady(nsISupports* aParent,
     return mDataLen;
   }
 
+  
+  if (previousState == eWaitingForTemporaryFile) {
+    mPendingParent = aParent;
+    mPendingContentType = aContentType;
+    mPendingCallback = aCallback;
+    return mDataLen;
+  }
+
   RefPtr<BlobImpl> blobImpl;
 
   if (mData) {
@@ -586,16 +594,25 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mStorageState == eWaitingForTemporaryFile ||
              mStorageState == eClosed);
+  MOZ_ASSERT_IF(mPendingCallback, mStorageState == eClosed);
 
-  if (mStorageState == eClosed) {
+  
+  
+  if (mStorageState == eClosed && !mPendingCallback) {
     RefPtr<Runnable> runnable = new CloseFileRunnable(aFD);
     DispatchToIOThread(runnable.forget());
     return;
   }
 
-  mStorageState = eInTemporaryFile;
+  
+  if (mStorageState == eWaitingForTemporaryFile) {
+    mStorageState = eInTemporaryFile;
+  }
+
   mFD = aFD;
 
+  
+  
   RefPtr<WriteRunnable> runnable =
     WriteRunnable::AdoptBuffer(this, mFD, mData, mDataLen);
   MOZ_ASSERT(runnable);
@@ -603,6 +620,23 @@ MutableBlobStorage::TemporaryFileCreated(PRFileDesc* aFD)
   mData = nullptr;
 
   DispatchToIOThread(runnable.forget());
+
+  
+  
+  
+  
+  
+  if (mStorageState == eClosed) {
+    MOZ_ASSERT(mPendingCallback);
+
+    RefPtr<Runnable> runnable =
+      new LastRunnable(this, mPendingParent, mPendingContentType,
+                       mPendingCallback);
+    DispatchToIOThread(runnable.forget());
+
+    mPendingParent = nullptr;
+    mPendingCallback = nullptr;
+  }
 }
 
 void
