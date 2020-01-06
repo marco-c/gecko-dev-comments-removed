@@ -90,8 +90,6 @@ class gfxUserFontSet;
 
 class gfxPlatformFontList : public gfxFontInfoLoader
 {
-    friend class InitOtherFamilyNamesRunnable;
-
 public:
     typedef mozilla::unicode::Script Script;
 
@@ -139,7 +137,6 @@ public:
     virtual bool
     FindAndAddFamilies(const nsAString& aFamily,
                        nsTArray<gfxFontFamily*>* aOutput,
-                       bool aDeferOtherFamilyNamesLoading,
                        gfxFontStyle* aStyle = nullptr,
                        gfxFloat aDevToCssSize = 1.0);
 
@@ -265,42 +262,6 @@ public:
     }
 
 protected:
-    class InitOtherFamilyNamesRunnable : public mozilla::CancelableRunnable
-    {
-    public:
-        InitOtherFamilyNamesRunnable()
-            : CancelableRunnable("gfxPlatformFontList::InitOtherFamilyNamesRunnable")
-            , mIsCanceled(false)
-        {
-        }
-
-        NS_IMETHOD Run() override
-        {
-            if (mIsCanceled) {
-                return NS_OK;
-            }
-
-            gfxPlatformFontList* fontList = gfxPlatformFontList::PlatformFontList();
-            if (!fontList) {
-                return NS_OK;
-            }
-
-            fontList->InitOtherFamilyNamesInternal(true);
-
-            return NS_OK;
-        }
-
-        NS_IMETHOD Cancel() override
-        {
-            mIsCanceled = true;
-
-            return NS_OK;
-        }
-
-    private:
-        bool mIsCanceled;
-    };
-
     class MemoryReporter final : public nsIMemoryReporter
     {
         ~MemoryReporter() {}
@@ -357,17 +318,12 @@ protected:
     
     
     gfxFontFamily*
-    FindFamily(const nsAString& aFamily,
-               bool aDeferOtherFamilyNamesLoading = true,
-               gfxFontStyle* aStyle = nullptr,
+    FindFamily(const nsAString& aFamily, gfxFontStyle* aStyle = nullptr,
                gfxFloat aDevToCssSize = 1.0)
     {
         AutoTArray<gfxFontFamily*,1> families;
-        return FindAndAddFamilies(aFamily,
-                                  &families,
-                                  aDeferOtherFamilyNamesLoading,
-                                  aStyle,
-                                  aDevToCssSize) ? families[0] : nullptr;
+        return FindAndAddFamilies(aFamily, &families, aStyle, aDevToCssSize)
+               ? families[0] : nullptr;
     }
 
     
@@ -418,9 +374,7 @@ protected:
     gfxFontFamily* CheckFamily(gfxFontFamily *aFamily);
 
     
-    void InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading);
-    void InitOtherFamilyNamesInternal(bool aDeferOtherFamilyNamesLoading);
-    void CancelInitOtherFamilyNamesTask();
+    void InitOtherFamilyNames();
 
     
     
@@ -499,9 +453,6 @@ protected:
 
     
     bool mOtherFamilyNamesInitialized;
-
-    
-    RefPtr<mozilla::CancelableRunnable> mPendingOtherFamilyNameTask;
 
     
     bool mFaceNameListsInitialized;
