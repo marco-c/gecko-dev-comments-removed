@@ -15,6 +15,9 @@ class nsRange;
 
 namespace mozilla {
 
+template<typename T, typename U>
+class EditorDOMPointBase;
+
 
 
 
@@ -44,6 +47,8 @@ class RangeBoundaryBase
 {
   template<typename T, typename U>
   friend class RangeBoundaryBase;
+  template<typename T, typename U>
+  friend class EditorDOMPointBase;
 
   
   
