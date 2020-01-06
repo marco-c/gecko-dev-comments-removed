@@ -8,6 +8,7 @@
 
 #include "jsapi.h"
 #include "js/StructuredClone.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -114,6 +115,15 @@ public:
   {
     MOZ_ASSERT(mBuffer, "Write() has never been called.");
     return mBuffer->data();
+  }
+
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf)
+  {
+    size_t size = 0;
+    if (HasData()) {
+      size += mBuffer->sizeOfIncludingThis(aMallocSizeOf);
+    }
+    return size;
   }
 
 protected:
@@ -305,6 +315,12 @@ protected:
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
+
+  
+  
+  
+  
+  
 
   
   nsTArray<RefPtr<BlobImpl>> mBlobImplArray;
