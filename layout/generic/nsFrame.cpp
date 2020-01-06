@@ -7182,10 +7182,10 @@ nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix, uint32_t aFlags) con
     aTo += nsPrintfCString(" perspective");
   }
   if (Extend3DContext()) {
-    aTo += nsPrintfCString(" extend-3d");
+    aTo += nsPrintfCString(" preserves-3d-children");
   }
   if (Combines3DTransformWithAncestors()) {
-    aTo += nsPrintfCString(" combines-3d-transform-with-ancestors");
+    aTo += nsPrintfCString(" preserves-3d");
   }
   if (mContent) {
     aTo += nsPrintfCString(" [content=%p]", static_cast<void*>(mContent));
@@ -10231,6 +10231,17 @@ nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   
   ServoRestyleState childrenState(aRestyleState, childHint);
   aChildFrame->UpdateStyleOfOwnedAnonBoxes(childrenState);
+
+  
+  
+  
+
+  
+  
+  if (aChildFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
+    auto block = static_cast<nsBlockFrame*>(aChildFrame);
+    block->UpdatePseudoElementStyles(childrenState);
+  }
 }
 
 nsChangeHint

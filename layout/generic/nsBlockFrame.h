@@ -44,6 +44,8 @@ class nsBlockInFlowLineIterator;
 class nsBulletFrame;
 namespace mozilla {
 class BlockReflowInput;
+class ServoRestyleState;
+class StyleSetHandle;
 } 
 
 
@@ -394,6 +396,12 @@ public:
     nsLineList mLines;
     nsFrameList mFrames;
   };
+
+  
+
+
+
+  void UpdatePseudoElementStyles(mozilla::ServoRestyleState& aRestyleState);
 
 protected:
   explicit nsBlockFrame(nsStyleContext* aContext, ClassID aID = kClassID)
@@ -902,6 +910,13 @@ protected:
   nsFrameList* EnsurePushedFloats();
   
   nsFrameList* RemovePushedFloats();
+
+  
+  
+  
+  already_AddRefed<nsStyleContext> ResolveBulletStyle(
+    mozilla::CSSPseudoElementType aType,
+    mozilla::StyleSetHandle aStyleSet);
 
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);
