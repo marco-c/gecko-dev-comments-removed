@@ -38,22 +38,54 @@ public:
                        bool aBubbles, bool aOnlyChromeDispatch)
     : mTarget(aTarget)
     , mEventType(aEventType)
+    , mEventMessage(eUnidentifiedEvent)
     , mBubbles(aBubbles)
     , mOnlyChromeDispatch(aOnlyChromeDispatch)
   {
+  }
+
+  
+
+
+
+
+
+  AsyncEventDispatcher(nsINode* aTarget,
+                       mozilla::EventMessage aEventMessage,
+                       bool aBubbles, bool aOnlyChromeDispatch)
+    : mTarget(aTarget)
+    , mEventMessage(aEventMessage)
+    , mBubbles(aBubbles)
+    , mOnlyChromeDispatch(aOnlyChromeDispatch)
+  {
+    mEventType.SetIsVoid(true);
+    MOZ_ASSERT(mEventMessage != eUnidentifiedEvent);
   }
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, const nsAString& aEventType,
                        bool aBubbles)
     : mTarget(aTarget)
     , mEventType(aEventType)
+    , mEventMessage(eUnidentifiedEvent)
     , mBubbles(aBubbles)
   {
+  }
+
+  AsyncEventDispatcher(dom::EventTarget* aTarget,
+                       mozilla::EventMessage aEventMessage,
+                       bool aBubbles)
+    : mTarget(aTarget)
+    , mEventMessage(aEventMessage)
+    , mBubbles(aBubbles)
+  {
+    mEventType.SetIsVoid(true);
+    MOZ_ASSERT(mEventMessage != eUnidentifiedEvent);
   }
 
   AsyncEventDispatcher(dom::EventTarget* aTarget, nsIDOMEvent* aEvent)
     : mTarget(aTarget)
     , mEvent(aEvent)
+    , mEventMessage(eUnidentifiedEvent)
   {
   }
 
@@ -71,7 +103,11 @@ public:
 
   nsCOMPtr<dom::EventTarget> mTarget;
   nsCOMPtr<nsIDOMEvent> mEvent;
+  
+  
+  
   nsString              mEventType;
+  mozilla::EventMessage mEventMessage;
   bool                  mBubbles = false;
   bool                  mOnlyChromeDispatch = false;
   bool                  mCanceled = false;
