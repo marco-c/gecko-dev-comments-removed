@@ -57,8 +57,9 @@ CompositorThreadHolder::CompositorThreadHolder()
 CompositorThreadHolder::~CompositorThreadHolder()
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  DestroyCompositorThread(mCompositorThread);
+  if (mCompositorThread) {
+    DestroyCompositorThread(mCompositorThread);
+  }
 }
 
  void
@@ -117,14 +118,26 @@ CompositorThreadHolder::Start()
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
   MOZ_ASSERT(!sCompositorThreadHolder, "The compositor thread has already been started!");
 
+  
+  
+  
+  
+  
   sCompositorThreadHolder = new CompositorThreadHolder();
+  if (!sCompositorThreadHolder->GetCompositorThread()) {
+    gfxCriticalNote << "Compositor thread not started (" << XRE_IsParentProcess() << ")";
+    sCompositorThreadHolder = nullptr;
+  }
 }
 
 void
 CompositorThreadHolder::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
-  MOZ_ASSERT(sCompositorThreadHolder, "The compositor thread has already been shut down!");
+  if (!sCompositorThreadHolder) {
+    
+    return;
+  }
 
   ImageBridgeParent::Shutdown();
   gfx::ReleaseVRManagerParentSingleton();
