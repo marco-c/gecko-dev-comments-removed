@@ -126,6 +126,12 @@ def run(paths, linters, fmt, outgoing, workdir, list_linters=None, **lintargs):
     lint.read(find_linters(linters))
 
     
+    invalid_paths = [path for path in paths if not os.path.exists(path)]
+    if invalid_paths:
+        print("Error: The following paths do not exist:\n{}".format("\n".join(invalid_paths)))
+        return 1
+
+    
     results = lint.roll(paths, outgoing=outgoing, workdir=workdir)
     formatter = formatters.get(fmt)
 
