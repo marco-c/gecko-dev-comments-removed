@@ -5190,10 +5190,16 @@ GetMaxWebProcessCount()
     return std::max(1u, optInPrefValue);
   }
 
+#ifdef RELEASE_OR_BETA
+  
+  
+  
   if (Preferences::HasUserValue("dom.ipc.processCount.web")) {
     
     return std::max(1, Preferences::GetInt("dom.ipc.processCount.web", 1));
   }
+#endif
+
   return optInPrefValue;
 }
 
