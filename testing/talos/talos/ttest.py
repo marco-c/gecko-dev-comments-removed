@@ -118,14 +118,11 @@ class TTest(object):
             )
 
         
-        
         global_counters = {}
         if browser_config.get('xperf_path'):
             for c in test_config.get('xperf_counters', []):
                 global_counters[c] = []
 
-        if test_config['shutdown']:
-            global_counters['shutdown'] = []
         if test_config.get('responsiveness') and \
            platform.system() != "Darwin":
             

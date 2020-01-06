@@ -214,7 +214,6 @@ GLOBAL_OVERRIDES = (
     'gecko_profile',
     'gecko_profile_interval',
     'gecko_profile_entries',
-    'shutdown',
     'tpcycles',
     'tppagecycles',
     'tpmanifest',
@@ -330,11 +329,6 @@ def get_global_overrides(config):
         if key != 'gecko_profile':
             config.pop(key)
 
-    
-    
-    
-    if config['xperf_path']:
-        global_overrides['shutdown'] = False
     return global_overrides
 
 
