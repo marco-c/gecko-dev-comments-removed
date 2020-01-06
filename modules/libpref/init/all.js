@@ -1030,6 +1030,12 @@ pref("toolkit.asyncshutdown.crash_timeout", 60000);
 pref("toolkit.asyncshutdown.log", false);
 
 
+
+
+
+pref("devtools.enabled", true);
+
+
 pref("devtools.errorconsole.deprecation_warnings", true);
 
 #ifdef NIGHTLY_BUILD
