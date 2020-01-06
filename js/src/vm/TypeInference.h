@@ -830,6 +830,9 @@ class TemporaryTypeSet : public TypeSet
     bool maybeCallable(CompilerConstraintList* constraints);
 
     
+    bool maybeProxy(CompilerConstraintList* constraints);
+
+    
     bool maybeEmulatesUndefined(CompilerConstraintList* constraints);
 
     
