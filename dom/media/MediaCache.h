@@ -523,7 +523,7 @@ private:
   
   nsresult          mNotifyDataEndedStatus;
   
-  ReadMode          mCurrentMode;
+  ReadMode mCurrentMode = MODE_METADATA;
   
   bool              mMetadataInPartialBlockBuffer;
   
