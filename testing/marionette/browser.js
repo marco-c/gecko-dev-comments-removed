@@ -25,7 +25,6 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-
 browser.getBrowserForTab = function (tab) {
   if ("browser" in tab) {
     
@@ -149,14 +148,19 @@ browser.Context = class {
 
 
 
-  get currentURL() {
+
+
+
+
+
+  get currentURI() {
     
     
     if (this.contentBrowser) {
-      return this.contentBrowser.currentURI.spec;
-
+      return this.contentBrowser.currentURI;
     } else {
-      throw new NoSuchWindowError("Current window does not have a content browser");
+      throw new NoSuchWindowError(
+          "Current window does not have a content browser");
     }
   }
 
