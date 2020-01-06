@@ -18,27 +18,9 @@
 #include "nsElementTable.h"
 
 using mozilla::DebugOnly;
+using mozilla::RawRangeBoundary;
 
 
-
-
-
-
-
-static nsINode*
-NodeToParentOffset(nsINode* aNode, int32_t* aOffset)
-{
-  *aOffset = 0;
-
-  nsINode* parent = aNode->GetParentNode();
-
-  if (parent) {
-    *aOffset = parent->IndexOf(aNode);
-    NS_WARNING_ASSERTION(*aOffset >= 0, "bad offset");
-  }
-
-  return parent;
-}
 
 
 
@@ -46,27 +28,27 @@ NodeToParentOffset(nsINode* aNode, int32_t* aOffset)
 
 static bool
 NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
-                       nsINode* aStartContainer, int32_t aStartOffset,
-                       nsINode* aEndContainer, int32_t aEndOffset)
+                       const RawRangeBoundary& aStart,
+                       const RawRangeBoundary& aEnd)
 {
-  if (NS_WARN_IF(!aStartContainer) || NS_WARN_IF(!aEndContainer) ||
+  if (NS_WARN_IF(!aStart.IsSet()) || NS_WARN_IF(!aEnd.IsSet()) ||
       NS_WARN_IF(!aNode)) {
     return false;
   }
 
   
   
-  if (aNode == aStartContainer || aNode == aEndContainer) {
+  if (aNode == aStart.Container() || aNode == aEnd.Container()) {
     if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
       return true; 
     }
     if (!aNode->HasChildren()) {
-      MOZ_ASSERT(aNode != aStartContainer || !aStartOffset,
-        "aStartContainer doesn't have children and not a data node, "
-        "aStartOffset should be 0");
-      MOZ_ASSERT(aNode != aEndContainer || !aEndOffset,
-        "aEndContainer doesn't have children and not a data node, "
-        "aEndOffset should be 0");
+      MOZ_ASSERT(aNode != aStart.Container() || aStart.IsStartOfContainer(),
+        "aStart.Container() doesn't have children and not a data node, "
+        "aStart should be at the beginning of its container");
+      MOZ_ASSERT(aNode != aEnd.Container() || aEnd.IsStartOfContainer(),
+        "aEnd.Container() doesn't have children and not a data node, "
+        "aEnd should be at the beginning of its container");
       return true;
     }
   }
@@ -76,22 +58,22 @@ NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
     return false;
   }
 
-  int32_t indx = parent->IndexOf(aNode);
-  NS_WARNING_ASSERTION(indx != -1, "bad indx");
-
   if (!aIsPreMode) {
     
-    return nsContentUtils::ComparePoints(aStartContainer, aStartOffset,
-                                         parent, indx + 1) < 0 &&
-           nsContentUtils::ComparePoints(aEndContainer, aEndOffset,
-                                         parent, indx + 1) >= 0;
+    
+    nsIContent* content = NS_WARN_IF(!aNode->IsContent())
+      ? nullptr
+      : aNode->AsContent();
+    
+    RawRangeBoundary afterNode(parent, content);
+    return nsContentUtils::ComparePoints(aStart, afterNode) < 0 &&
+           nsContentUtils::ComparePoints(aEnd, afterNode) >= 0;
   }
 
   
-  return nsContentUtils::ComparePoints(aStartContainer, aStartOffset,
-                                       parent, indx) <= 0 &&
-         nsContentUtils::ComparePoints(aEndContainer, aEndOffset,
-                                       parent, indx) > 0;
+  RawRangeBoundary beforeNode(parent, aNode->GetPreviousSibling());
+  return nsContentUtils::ComparePoints(aStart, beforeNode) <= 0 &&
+         nsContentUtils::ComparePoints(aEnd, beforeNode) > 0;
 }
 
 
@@ -116,6 +98,9 @@ public:
   virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset) override;
 
+  virtual nsresult Init(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd) override;
+
   virtual void First() override;
 
   virtual void Last() override;
@@ -139,8 +124,8 @@ protected:
 
 
 
-  nsresult InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
-                        nsINode* aEndContainer, uint32_t aEndOffset);
+  nsresult InitInternal(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd);
 
   
   
@@ -287,8 +272,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
     return NS_ERROR_INVALID_ARG;
   }
 
-  return InitInternal(range->GetStartContainer(), range->StartOffset(),
-                      range->GetEndContainer(), range->EndOffset());
+  return InitInternal(range->StartRef().AsRaw(), range->EndRef().AsRaw());
 }
 
 nsresult
@@ -302,46 +286,57 @@ nsContentIterator::Init(nsINode* aStartContainer, uint32_t aStartOffset,
     return NS_ERROR_INVALID_ARG;
   }
 
-  return InitInternal(aStartContainer, aStartOffset,
-                      aEndContainer, aEndOffset);
+  return InitInternal(RawRangeBoundary(aStartContainer, aStartOffset),
+                      RawRangeBoundary(aEndContainer, aEndOffset));
 }
 
+nsresult
+nsContentIterator::Init(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd)
+{
+  mIsDone = false;
+
+
+  if (NS_WARN_IF(!nsRange::IsValidPoints(aStart.Container(), aStart.Offset(),
+                                         aEnd.Container(), aEnd.Offset()))) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  return InitInternal(aStart, aEnd);
+}
 
 nsresult
-nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
-                                nsINode* aEndContainer, uint32_t aEndOffset)
+nsContentIterator::InitInternal(const RawRangeBoundary& aStart,
+                                const RawRangeBoundary& aEnd)
 {
   
   mCommonParent =
-    nsContentUtils::GetCommonAncestor(aStartContainer, aEndContainer);
+    nsContentUtils::GetCommonAncestor(aStart.Container(), aEnd.Container());
   if (NS_WARN_IF(!mCommonParent)) {
     return NS_ERROR_FAILURE;
   }
 
-  bool startIsData = aStartContainer->IsNodeOfType(nsINode::eDATA_NODE);
+  bool startIsData = aStart.Container()->IsNodeOfType(nsINode::eDATA_NODE);
 
   
-  if (aStartContainer == aEndContainer) {
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-    if (!startIsData && aStartOffset == aEndOffset) {
-      MakeEmpty();
-      return NS_OK;
-    }
+  if (!startIsData && aStart == aEnd) {
+    MakeEmpty();
+    return NS_OK;
+  }
 
-    if (startIsData) {
-      
-      mFirst   = aStartContainer->AsContent();
-      mLast    = mFirst;
-      mCurNode = mFirst;
+  
+  if (startIsData && aStart.Container() == aEnd.Container()) {
+    mFirst = aStart.Container()->AsContent();
+    mLast = mFirst;
+    mCurNode = mFirst;
 
-      return NS_OK;
-    }
+    return NS_OK;
   }
 
   
@@ -350,9 +345,8 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
 
   
   
-  if (!startIsData && aStartOffset < aStartContainer->GetChildCount()) {
-    cChild = aStartContainer->GetChildAt(aStartOffset);
-    NS_WARNING_ASSERTION(cChild, "GetChildAt returned null");
+  if (!startIsData) {
+    cChild = aStart.GetChildAtOffset();
   }
 
   if (!cChild) {
@@ -368,33 +362,31 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
       
       
       bool startIsContainer = true;
-      if (aStartContainer->IsHTMLElement()) {
-        nsIAtom* name = aStartContainer->NodeInfo()->NameAtom();
+      if (aStart.Container()->IsHTMLElement()) {
+        nsIAtom* name = aStart.Container()->NodeInfo()->NameAtom();
         startIsContainer =
           nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
       }
-      if (!startIsData && (startIsContainer || aStartOffset)) {
-        mFirst = GetNextSibling(aStartContainer);
+      if (!startIsData && (startIsContainer || !aStart.IsStartOfContainer())) {
+        mFirst = GetNextSibling(aStart.Container());
         NS_WARNING_ASSERTION(mFirst, "GetNextSibling returned null");
 
         
         
         if (mFirst &&
-            NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre,
-                                               aStartContainer, aStartOffset,
-                                               aEndContainer, aEndOffset))) {
+            NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, aStart, aEnd))) {
           mFirst = nullptr;
         }
       } else {
-        mFirst = aStartContainer->AsContent();
+        mFirst = aStart.Container()->AsContent();
       }
     } else {
       
-      if (NS_WARN_IF(!aStartContainer->IsContent())) {
+      if (NS_WARN_IF(!aStart.Container()->IsContent())) {
         
         mFirst = nullptr;
       } else {
-        mFirst = aStartContainer->AsContent();
+        mFirst = aStart.Container()->AsContent();
       }
     }
   } else {
@@ -408,9 +400,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
       
       
 
-      if (mFirst &&
-          !NodeIsInTraversalRange(mFirst, mPre, aStartContainer, aStartOffset,
-                                  aEndContainer, aEndOffset)) {
+      if (mFirst && !NodeIsInTraversalRange(mFirst, mPre, aStart, aEnd)) {
         mFirst = nullptr;
       }
     }
@@ -419,11 +409,11 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
 
   
 
-  bool endIsData = aEndContainer->IsNodeOfType(nsINode::eDATA_NODE);
+  bool endIsData = aEnd.Container()->IsNodeOfType(nsINode::eDATA_NODE);
 
-  if (endIsData || !aEndContainer->HasChildren() || !aEndOffset) {
+  if (endIsData || !aEnd.Container()->HasChildren() || aEnd.IsStartOfContainer()) {
     if (mPre) {
-      if (NS_WARN_IF(!aEndContainer->IsContent())) {
+      if (NS_WARN_IF(!aEnd.Container()->IsContent())) {
         
         mLast = nullptr;
       } else {
@@ -431,22 +421,22 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
         
         
         bool endIsContainer = true;
-        if (aEndContainer->IsHTMLElement()) {
-          nsIAtom* name = aEndContainer->NodeInfo()->NameAtom();
+        if (aEnd.Container()->IsHTMLElement()) {
+          nsIAtom* name = aEnd.Container()->NodeInfo()->NameAtom();
           endIsContainer =
             nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
         }
-        if (!endIsData && !endIsContainer && !aEndOffset) {
-          mLast = PrevNode(aEndContainer);
+        if (!endIsData && !endIsContainer && aEnd.IsStartOfContainer()) {
+          mLast = PrevNode(aEnd.Container());
           NS_WARNING_ASSERTION(mLast, "PrevNode returned null");
           if (mLast && mLast != mFirst &&
               NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                                 mFirst, 0,
-                                                 aEndContainer, aEndOffset))) {
+                                                 RawRangeBoundary(mFirst, 0),
+                                                 aEnd))) {
             mLast = nullptr;
           }
         } else {
-          mLast = aEndContainer->AsContent();
+          mLast = aEnd.Container()->AsContent();
         }
       }
     } else {
@@ -456,22 +446,18 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
       
 
       if (!endIsData) {
-        mLast = GetPrevSibling(aEndContainer);
+        mLast = GetPrevSibling(aEnd.Container());
         NS_WARNING_ASSERTION(mLast, "GetPrevSibling returned null");
 
-        if (!NodeIsInTraversalRange(mLast, mPre,
-                                    aStartContainer, aStartOffset,
-                                    aEndContainer, aEndOffset)) {
+        if (!NodeIsInTraversalRange(mLast, mPre, aStart, aEnd)) {
           mLast = nullptr;
         }
       } else {
-        mLast = aEndContainer->AsContent();
+        mLast = aEnd.Container()->AsContent();
       }
     }
   } else {
-    int32_t indx = aEndOffset;
-
-    cChild = aEndContainer->GetChildAt(--indx);
+    cChild = aEnd.Ref();
 
     if (NS_WARN_IF(!cChild)) {
       
@@ -483,9 +469,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
       mLast  = GetDeepLastChild(cChild);
       NS_WARNING_ASSERTION(mLast, "GetDeepLastChild returned null");
 
-      if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                             aStartContainer, aStartOffset,
-                                             aEndContainer, aEndOffset))) {
+      if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre, aStart, aEnd))) {
         mLast = nullptr;
       }
     } else {
@@ -784,51 +768,42 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
 
   
 
-  nsINode* firstNode = mFirst;
-  nsINode* lastNode = mLast;
-  int32_t firstOffset = 0, lastOffset = 0;
+  RawRangeBoundary first(mFirst, 0);
+  RawRangeBoundary last(mLast, 0);
 
-  if (firstNode && lastNode) {
+  if (mFirst && mLast) {
     if (mPre) {
-      firstNode = NodeToParentOffset(mFirst, &firstOffset);
-      NS_WARNING_ASSERTION(firstNode, "NodeToParentOffset returned null");
-      NS_WARNING_ASSERTION(firstOffset >= 0, "bad firstOffset");
+      
+      
+      first.SetAfterRef(mFirst->GetParentNode(), mFirst->GetPreviousSibling());
 
-      if (lastNode->GetChildCount()) {
-        lastOffset = 0;
-      } else {
-        lastNode = NodeToParentOffset(mLast, &lastOffset);
-        NS_WARNING_ASSERTION(lastNode, "NodeToParentOffset returned null");
-        NS_WARNING_ASSERTION(lastOffset >= 0, "bad lastOffset");
-        ++lastOffset;
+      
+      if (!mLast->HasChildren()) {
+        last.SetAfterRef(mLast->GetParentNode(), mLast->AsContent());
       }
     } else {
-      uint32_t numChildren = firstNode->GetChildCount();
-
-      if (numChildren) {
-        firstOffset = numChildren;
-        NS_WARNING_ASSERTION(firstOffset >= 0, "bad firstOffset");
+      
+      
+      if (mFirst->HasChildren()) {
+        first.SetAfterRef(mFirst, mFirst->GetLastChild());
       } else {
-        firstNode = NodeToParentOffset(mFirst, &firstOffset);
-        NS_WARNING_ASSERTION(firstNode, "NodeToParentOffset returned null");
-        NS_WARNING_ASSERTION(firstOffset >= 0, "bad firstOffset");
+        first.SetAfterRef(mFirst->GetParentNode(), mFirst->GetPreviousSibling());
       }
 
-      lastNode = NodeToParentOffset(mLast, &lastOffset);
-      NS_WARNING_ASSERTION(lastNode, "NodeToParentOffset returned null");
-      NS_WARNING_ASSERTION(lastOffset >= 0, "bad lastOffset");
-      ++lastOffset;
+      
+      last.SetAfterRef(mLast->GetParentNode(), mLast->AsContent());
     }
   }
+
+  NS_WARNING_ASSERTION(first.IsSetAndValid(), "first is not valid");
+  NS_WARNING_ASSERTION(last.IsSetAndValid(), "last is not valid");
 
   
   
   
   if (mFirst != mCurNode && mLast != mCurNode &&
-      (NS_WARN_IF(!firstNode) || NS_WARN_IF(!lastNode) ||
-       NS_WARN_IF(!NodeIsInTraversalRange(mCurNode, mPre,
-                                          firstNode, firstOffset,
-                                          lastNode, lastOffset)))) {
+      (NS_WARN_IF(!first.IsSet()) || NS_WARN_IF(!last.IsSet()) ||
+       NS_WARN_IF(!NodeIsInTraversalRange(mCurNode, mPre, first, last)))) {
     mIsDone = true;
     return NS_ERROR_FAILURE;
   }
@@ -885,6 +860,9 @@ public:
 
   virtual nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
                         nsINode* aEndContainer, uint32_t aEndOffset) override;
+
+  virtual nsresult Init(const RawRangeBoundary& aStart,
+                        const RawRangeBoundary& aEnd) override;
 
   virtual void Next() override;
 
@@ -988,21 +966,25 @@ nsresult
 nsContentSubtreeIterator::Init(nsINode* aStartContainer, uint32_t aStartOffset,
                                nsINode* aEndContainer, uint32_t aEndOffset)
 {
+  return Init(RawRangeBoundary(aStartContainer, aStartOffset),
+              RawRangeBoundary(aEndContainer, aEndOffset));
+}
+
+nsresult
+nsContentSubtreeIterator::Init(const RawRangeBoundary& aStart,
+                               const RawRangeBoundary& aEnd)
+{
   mIsDone = false;
 
   RefPtr<nsRange> range;
-  nsresult rv = nsRange::CreateRange(aStartContainer, aStartOffset,
-                                     aEndContainer, aEndOffset,
-                                     getter_AddRefs(range));
+  nsresult rv = nsRange::CreateRange(aStart, aEnd, getter_AddRefs(range));
   if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!range) ||
       NS_WARN_IF(!range->IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (NS_WARN_IF(range->GetStartContainer() != aStartContainer) ||
-      NS_WARN_IF(range->GetEndContainer() != aEndContainer) ||
-      NS_WARN_IF(range->StartOffset() != aStartOffset) ||
-      NS_WARN_IF(range->EndOffset() != aEndOffset)) {
+  if (NS_WARN_IF(range->StartRef() != aStart) ||
+      NS_WARN_IF(range->EndRef() != aEnd)) {
     return NS_ERROR_UNEXPECTED;
   }
 
