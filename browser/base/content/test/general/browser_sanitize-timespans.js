@@ -1,7 +1,7 @@
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-requestLongerTimeout(2);
+requestLongerTimeout(5);
 
 
 var now_mSec = Date.now();
