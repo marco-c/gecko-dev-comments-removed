@@ -40,41 +40,45 @@ AssemblerX86Shared::copyDataRelocationTable(uint8_t* dest)
 }
 
 static void
-TraceDataRelocations(JSTracer* trc, uint8_t* buffer, CompactBufferReader& reader)
+TraceDataRelocations(JSTracer* trc, CompactBufferReader& reader,
+                     uint8_t* buffer, size_t bufferSize)
 {
     while (reader.more()) {
         size_t offset = reader.readUnsigned();
-        void* ptr = X86Encoding::GetPointer(buffer + offset);
+        MOZ_ASSERT(offset >= sizeof(void*) && offset <= bufferSize);
+
+        uint8_t* src = buffer + offset;
+        void* data = X86Encoding::GetPointer(src);
 
 #ifdef JS_PUNBOX64
         
         
-        uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
+        uintptr_t word = reinterpret_cast<uintptr_t>(data);
         if (word >> JSVAL_TAG_SHIFT) {
-            Value v = Value::fromRawBits(word);
-            TraceManuallyBarrieredEdge(trc, &v, "jit-masm-value");
-            if (word != v.asRawBits()) {
+            Value value = Value::fromRawBits(word);
+            MOZ_ASSERT_IF(value.isGCThing(), gc::IsCellPointerValid(value.toGCThing()));
+            TraceManuallyBarrieredEdge(trc, &value, "jit-masm-value");
+            if (word != value.asRawBits()) {
                 
                 
-                X86Encoding::SetPointer(buffer + offset, v.bitsAsPunboxPointer());
+                X86Encoding::SetPointer(src, value.bitsAsPunboxPointer());
             }
             continue;
         }
 #endif
 
-        
-        gc::Cell* cellPtr = reinterpret_cast<gc::Cell*>(ptr);
-        TraceManuallyBarrieredGenericPointerEdge(trc, &cellPtr, "jit-masm-ptr");
-        if (cellPtr != ptr)
-            X86Encoding::SetPointer(buffer + offset, cellPtr);
+        gc::Cell* cell = static_cast<gc::Cell*>(data);
+        MOZ_ASSERT(gc::IsCellPointerValid(cell));
+        TraceManuallyBarrieredGenericPointerEdge(trc, &cell, "jit-masm-ptr");
+        if (cell != data)
+            X86Encoding::SetPointer(src, cell);
     }
 }
-
 
 void
 AssemblerX86Shared::TraceDataRelocations(JSTracer* trc, JitCode* code, CompactBufferReader& reader)
 {
-    ::TraceDataRelocations(trc, code->raw(), reader);
+    ::TraceDataRelocations(trc, reader, code->raw(), code->instructionsSize());
 }
 
 void
@@ -90,8 +94,7 @@ AssemblerX86Shared::trace(JSTracer* trc)
     }
     if (dataRelocations_.length()) {
         CompactBufferReader reader(dataRelocations_);
-        unsigned char* code = masm.data();
-        ::TraceDataRelocations(trc, code, reader);
+        ::TraceDataRelocations(trc, reader, masm.data(), masm.size());
     }
 }
 
