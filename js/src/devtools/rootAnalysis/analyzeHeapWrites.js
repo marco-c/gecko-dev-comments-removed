@@ -102,10 +102,6 @@ function checkIndirectCall(entry, location, callee)
     var name = entry.name;
 
     
-    if (callee.startsWith('malloc_table_t.'))
-        return;
-
-    
     if (/PLDHashTable/.test(name) && (/matchEntry/.test(callee) || /hashKey/.test(callee)))
         return;
     if (/PL_HashTable/.test(name) && /keyCompare/.test(callee))
@@ -117,12 +113,6 @@ function checkIndirectCall(entry, location, callee)
 function checkVariableAssignment(entry, location, variable)
 {
     var name = entry.name;
-
-    
-    if (/replace_malloc_initialized/.test(variable))
-        return;
-    if (name == "replace_init")
-        return;
 
     dumpError(entry, location, "Variable assignment " + variable);
 }
@@ -353,7 +343,6 @@ function ignoreContents(entry)
 
         
         "NS_DebugBreak",
-        "replace_free", "replace_malloc",
         /mozalloc_handle_oom/,
         /^NS_Log/, /log_print/, /LazyLogModule::operator/,
         /SprintfLiteral/, "PR_smprintf", "PR_smprintf_free",
@@ -367,6 +356,7 @@ function ignoreContents(entry)
         "malloc",
         "free",
         "realloc",
+        "jemalloc_thread_local_arena",
         /profiler_register_thread/,
         /profiler_unregister_thread/,
 
@@ -393,7 +383,6 @@ function ignoreContents(entry)
         "Gecko_ClearMozBorderColors",
         "Gecko_AppendMozBorderColors",
         "Gecko_CopyMozBorderColors",
-        "Gecko_SetJemallocThreadLocalArena",
         "Gecko_SetNullImageValue",
 
         
