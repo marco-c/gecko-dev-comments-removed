@@ -475,11 +475,7 @@ this.BrowserTestUtils = {
 
 
 
-
-
-
-  async waitForNewWindow(delayedStartup=true,
-                                          initialBrowserLoaded=null) {
+  async waitForNewWindow(initialBrowserLoaded=null) {
     let win = await this.domWindowOpened();
 
     let promises = [
