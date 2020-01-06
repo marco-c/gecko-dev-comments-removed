@@ -23,8 +23,7 @@ function Damp() {
   
   this._snapshot = null;
 
-  
-  Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
+  Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", true);
 }
 
 Damp.prototype = {
