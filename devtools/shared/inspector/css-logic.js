@@ -9,6 +9,8 @@
 const { getRootBindingParent } = require("devtools/shared/layout/utils");
 const { getTabPrefs } = require("devtools/shared/indentation");
 
+const MAX_DATA_URL_LENGTH = 40;
+
 
 
 
@@ -110,6 +112,13 @@ exports.shortSource = function (sheet) {
   }
 
   
+  let dataUrl = sheet.href.trim().match(/^data:.*?,((?:.|\r|\n)*)$/);
+  if (dataUrl) {
+    return dataUrl[1].length > MAX_DATA_URL_LENGTH ?
+      `${dataUrl[1].substr(0, MAX_DATA_URL_LENGTH - 1)}…` : dataUrl[1];
+  }
+
+  
   let url = {};
   try {
     url = new URL(sheet.href);
@@ -129,8 +138,7 @@ exports.shortSource = function (sheet) {
     return url.query;
   }
 
-  let dataUrl = sheet.href.match(/^(data:[^,]*),/);
-  return dataUrl ? dataUrl[1] : sheet.href;
+  return sheet.href;
 };
 
 const TAB_CHARS = "\t";
