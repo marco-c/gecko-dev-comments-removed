@@ -434,8 +434,18 @@ this.Download.prototype = {
 
         
         this._saverExecuting = true;
-        await this.saver.execute(DS_setProgressBytes.bind(this),
-                                 DS_setProperties.bind(this));
+        try {
+          await this.saver.execute(DS_setProgressBytes.bind(this),
+                                   DS_setProperties.bind(this));
+        } catch (ex) {
+          
+          
+          
+          if (!this.hasPartialData && !this.hasBlockedData) {
+            await this.saver.removeData();
+          }
+          throw ex;
+        }
 
         
         
@@ -446,14 +456,11 @@ this.Download.prototype = {
         
         
         if (this._promiseCanceled) {
-          try {
-            await OS.File.remove(this.target.path);
-          } catch (ex) {
-            Cu.reportError(ex);
-          }
-
-          this.target.exists = false;
-          this.target.size = 0;
+          
+          
+          
+          
+          await this.saver.removeData();
 
           
           throw new DownloadError();
@@ -637,13 +644,9 @@ this.Download.prototype = {
     }
 
     this._promiseConfirmBlock = (async () => {
-      try {
-        await OS.File.remove(this.target.partFilePath);
-      } catch (ex) {
-        await this.refresh();
-        this._promiseConfirmBlock = null;
-        throw ex;
-      }
+      
+      
+      await this.saver.removeData();
 
       this.hasBlockedData = false;
       this._notifyChange();
@@ -811,7 +814,7 @@ this.Download.prototype = {
             await this._promiseCanceled;
           }
           
-          await this.saver.removePartialData();
+          await this.saver.removeData();
           
           if (this.currentBytes != 0 || this.hasPartialData) {
             this.currentBytes = 0;
@@ -1662,7 +1665,7 @@ this.DownloadSaver.prototype = {
 
 
 
-  execute: function DS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
+  async execute(aSetProgressBytesFn, aSetPropertiesFn) {
     throw new Error("Not implemented.");
   },
 
@@ -1684,9 +1687,8 @@ this.DownloadSaver.prototype = {
 
 
 
-  removePartialData: function DS_removePartialData() {
-    return Promise.resolve();
-  },
+
+  async removeData() {},
 
   
 
@@ -1827,7 +1829,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  execute: function DCS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
+  async execute(aSetProgressBytesFn, aSetPropertiesFn) {
     let copySaver = this;
 
     this._canceled = false;
@@ -1837,280 +1839,259 @@ this.DownloadCopySaver.prototype = {
     let partFilePath = download.target.partFilePath;
     let keepPartialData = download.tryToKeepPartialData;
 
-    return (async () => {
+    
+    
+    
+    
+    
+    if (!this.alreadyAddedToHistory) {
+      this.addToHistory();
+      this.alreadyAddedToHistory = true;
+    }
+
+    
+    
+    
+    
+    
+    try {
+      
+      let file = await OS.File.open(targetPath, { write: true });
+      await file.close();
+    } catch (ex) {
+      if (!(ex instanceof OS.File.Error)) {
+        throw ex;
+      }
       
       
       
+      let error = new DownloadError({ message: ex.toString() });
+      error.becauseTargetFailed = true;
+      throw error;
+    }
+
+    let deferSaveComplete = PromiseUtils.defer();
+
+    if (this._canceled) {
       
       
-      if (!this.alreadyAddedToHistory) {
-        this.addToHistory();
-        this.alreadyAddedToHistory = true;
+      throw new DownloadError({ message: "Saver canceled." });
+    }
+
+    
+    let backgroundFileSaver = new BackgroundFileSaverStreamListener();
+    try {
+      
+      
+      backgroundFileSaver.observer = {
+        onTargetChange() { },
+        onSaveComplete: (aSaver, aStatus) => {
+          
+          if (Components.isSuccessCode(aStatus)) {
+            
+            this._sha256Hash = aSaver.sha256Hash;
+            this._signatureInfo = aSaver.signatureInfo;
+            this._redirects = aSaver.redirects;
+            deferSaveComplete.resolve();
+          } else {
+            
+            
+            let properties = { result: aStatus, inferCause: true };
+            deferSaveComplete.reject(new DownloadError(properties));
+          }
+          
+          backgroundFileSaver.observer = null;
+          this._backgroundFileSaver = null;
+        },
+      };
+
+      
+      
+      let channel = NetUtil.newChannel({
+        uri: download.source.url,
+        loadUsingSystemPrincipal: true,
+      });
+      if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
+        channel.setPrivate(download.source.isPrivate);
+      }
+      if (channel instanceof Ci.nsIHttpChannel &&
+          download.source.referrer) {
+        channel.referrer = NetUtil.newURI(download.source.referrer);
       }
 
       
       
-      
-      
-      
-      try {
-        
-        let file = await OS.File.open(targetPath, { write: true });
-        await file.close();
-      } catch (ex) {
-        if (!(ex instanceof OS.File.Error)) {
-          throw ex;
-        }
-        
-        
-        
-        let error = new DownloadError({ message: ex.toString() });
-        error.becauseTargetFailed = true;
-        throw error;
+      if (channel instanceof Ci.nsIHttpChannelInternal) {
+        channel.channelIsForDownload = true;
       }
 
-      try {
-        let deferSaveComplete = PromiseUtils.defer();
-
-        if (this._canceled) {
-          
-          
-          throw new DownloadError({ message: "Saver canceled." });
-        }
-
-        
-        let backgroundFileSaver = new BackgroundFileSaverStreamListener();
+      
+      
+      let resumeAttempted = false;
+      let resumeFromBytes = 0;
+      if (channel instanceof Ci.nsIResumableChannel && this.entityID &&
+          partFilePath && keepPartialData) {
         try {
+          let stat = await OS.File.stat(partFilePath);
+          channel.resumeAt(stat.size, this.entityID);
+          resumeAttempted = true;
+          resumeFromBytes = stat.size;
+        } catch (ex) {
+          if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+            throw ex;
+          }
+        }
+      }
+
+      channel.notificationCallbacks = {
+        QueryInterface: XPCOMUtils.generateQI([Ci.nsIInterfaceRequestor]),
+        getInterface: XPCOMUtils.generateQI([Ci.nsIProgressEventSink]),
+        onProgress: function DCSE_onProgress(aRequest, aContext, aProgress,
+                                             aProgressMax) {
+          let currentBytes = resumeFromBytes + aProgress;
+          let totalBytes = aProgressMax == -1 ? -1 : (resumeFromBytes +
+                                                      aProgressMax);
+          aSetProgressBytesFn(currentBytes, totalBytes, aProgress > 0 &&
+                              partFilePath && keepPartialData);
+        },
+        onStatus() { },
+      };
+
+      
+      if (download.source.adjustChannel) {
+        await download.source.adjustChannel(channel);
+      }
+
+      
+      backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
+      channel.asyncOpen2({
+        onStartRequest: function(aRequest, aContext) {
+          backgroundFileSaver.onStartRequest(aRequest, aContext);
+
           
           
-          backgroundFileSaver.observer = {
-            onTargetChange() { },
-            onSaveComplete: (aSaver, aStatus) => {
+          if (aRequest instanceof Ci.nsIHttpChannel &&
+              aRequest.responseStatus == 450) {
+            
+            
+            this.download._blockedByParentalControls = true;
+            aRequest.cancel(Cr.NS_BINDING_ABORTED);
+            return;
+          }
+
+          aSetPropertiesFn({ contentType: channel.contentType });
+
+          
+          
+          
+          if (channel.contentLength >= 0) {
+            aSetProgressBytesFn(0, channel.contentLength);
+          }
+
+          
+          
+          
+          
+          if (channel instanceof Ci.nsIEncodedChannel &&
+              channel.contentEncodings) {
+            let uri = channel.URI;
+            if (uri instanceof Ci.nsIURL && uri.fileExtension) {
               
-              if (Components.isSuccessCode(aStatus)) {
-                
-                this._sha256Hash = aSaver.sha256Hash;
-                this._signatureInfo = aSaver.signatureInfo;
-                this._redirects = aSaver.redirects;
-                deferSaveComplete.resolve();
-              } else {
-                
-                
-                let properties = { result: aStatus, inferCause: true };
-                deferSaveComplete.reject(new DownloadError(properties));
-              }
-              
-              backgroundFileSaver.observer = null;
-              this._backgroundFileSaver = null;
-            },
-          };
-
-          
-          
-          let channel = NetUtil.newChannel({
-            uri: download.source.url,
-            loadUsingSystemPrincipal: true,
-          });
-          if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
-            channel.setPrivate(download.source.isPrivate);
-          }
-          if (channel instanceof Ci.nsIHttpChannel &&
-              download.source.referrer) {
-            channel.referrer = NetUtil.newURI(download.source.referrer);
-          }
-
-          
-          
-          if (channel instanceof Ci.nsIHttpChannelInternal) {
-            channel.channelIsForDownload = true;
-          }
-
-          
-          
-          let resumeAttempted = false;
-          let resumeFromBytes = 0;
-          if (channel instanceof Ci.nsIResumableChannel && this.entityID &&
-              partFilePath && keepPartialData) {
-            try {
-              let stat = await OS.File.stat(partFilePath);
-              channel.resumeAt(stat.size, this.entityID);
-              resumeAttempted = true;
-              resumeFromBytes = stat.size;
-            } catch (ex) {
-              if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
-                throw ex;
+              let encoding = channel.contentEncodings.getNext();
+              if (encoding) {
+                channel.applyConversion =
+                  gExternalHelperAppService.applyDecodingForExtension(
+                                            uri.fileExtension, encoding);
               }
             }
           }
 
-          channel.notificationCallbacks = {
-            QueryInterface: XPCOMUtils.generateQI([Ci.nsIInterfaceRequestor]),
-            getInterface: XPCOMUtils.generateQI([Ci.nsIProgressEventSink]),
-            onProgress: function DCSE_onProgress(aRequest, aContext, aProgress,
-                                                 aProgressMax) {
-              let currentBytes = resumeFromBytes + aProgress;
-              let totalBytes = aProgressMax == -1 ? -1 : (resumeFromBytes +
-                                                          aProgressMax);
-              aSetProgressBytesFn(currentBytes, totalBytes, aProgress > 0 &&
-                                  partFilePath && keepPartialData);
-            },
-            onStatus() { },
-          };
-
-          
-          if (download.source.adjustChannel) {
-            await download.source.adjustChannel(channel);
-          }
-
-          
-          backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
-          channel.asyncOpen2({
-            onStartRequest: function(aRequest, aContext) {
-              backgroundFileSaver.onStartRequest(aRequest, aContext);
-
-              
-              
-              if (aRequest instanceof Ci.nsIHttpChannel &&
-                  aRequest.responseStatus == 450) {
-                
-                
-                this.download._blockedByParentalControls = true;
-                aRequest.cancel(Cr.NS_BINDING_ABORTED);
-                return;
-              }
-
-              aSetPropertiesFn({ contentType: channel.contentType });
-
-              
-              
-              
-              if (channel.contentLength >= 0) {
-                aSetProgressBytesFn(0, channel.contentLength);
-              }
-
-              
-              
-              
-              
-              if (channel instanceof Ci.nsIEncodedChannel &&
-                  channel.contentEncodings) {
-                let uri = channel.URI;
-                if (uri instanceof Ci.nsIURL && uri.fileExtension) {
-                  
-                  let encoding = channel.contentEncodings.getNext();
-                  if (encoding) {
-                    channel.applyConversion =
-                      gExternalHelperAppService.applyDecodingForExtension(
-                                                uri.fileExtension, encoding);
-                  }
-                }
-              }
-
-              if (keepPartialData) {
-                
-                
-                if (aRequest instanceof Ci.nsIResumableChannel) {
-                  try {
-                    
-                    this.entityID = aRequest.entityID;
-                  } catch (ex) {
-                    if (!(ex instanceof Components.Exception) ||
-                        ex.result != Cr.NS_ERROR_NOT_RESUMABLE) {
-                      throw ex;
-                    }
-                    keepPartialData = false;
-                  }
-                } else {
-                  keepPartialData = false;
-                }
-              }
-
-              
-              
-              backgroundFileSaver.enableSha256();
-              backgroundFileSaver.enableSignatureInfo();
-              if (partFilePath) {
-                
-                if (resumeAttempted) {
-                  
-                  backgroundFileSaver.enableAppend();
-                }
-
-                
-                backgroundFileSaver.setTarget(new FileUtils.File(partFilePath),
-                                              keepPartialData);
-              } else {
-                
-                backgroundFileSaver.setTarget(new FileUtils.File(targetPath),
-                                              false);
-              }
-            }.bind(copySaver),
-
-            onStopRequest(aRequest, aContext, aStatusCode) {
+          if (keepPartialData) {
+            
+            
+            if (aRequest instanceof Ci.nsIResumableChannel) {
               try {
-                backgroundFileSaver.onStopRequest(aRequest, aContext,
-                                                  aStatusCode);
-              } finally {
                 
-                
-                
-                if (Components.isSuccessCode(aStatusCode)) {
-                  backgroundFileSaver.finish(Cr.NS_OK);
+                this.entityID = aRequest.entityID;
+              } catch (ex) {
+                if (!(ex instanceof Components.Exception) ||
+                    ex.result != Cr.NS_ERROR_NOT_RESUMABLE) {
+                  throw ex;
                 }
+                keepPartialData = false;
               }
-            },
-
-            onDataAvailable(aRequest, aContext, aInputStream,
-                                      aOffset, aCount) {
-              backgroundFileSaver.onDataAvailable(aRequest, aContext,
-                                                  aInputStream, aOffset,
-                                                  aCount);
-            },
-          });
-
-          
-          
-          
-          if (this._canceled) {
-            throw new DownloadError({ message: "Saver canceled." });
+            } else {
+              keepPartialData = false;
+            }
           }
 
           
-          this._backgroundFileSaver = backgroundFileSaver;
-        } catch (ex) {
           
-          
-          backgroundFileSaver.finish(Cr.NS_ERROR_FAILURE);
-          
-          
-          deferSaveComplete.promise.catch(() => {});
-          throw ex;
-        }
+          backgroundFileSaver.enableSha256();
+          backgroundFileSaver.enableSignatureInfo();
+          if (partFilePath) {
+            
+            if (resumeAttempted) {
+              
+              backgroundFileSaver.enableAppend();
+            }
 
-        
-        
-        await deferSaveComplete.promise;
-
-        await this._checkReputationAndMove(aSetPropertiesFn);
-      } catch (ex) {
-        
-        
-        
-        try {
-          await OS.File.remove(targetPath);
-        } catch (e2) {
-          
-          
-          
-          
-          if (!(e2 instanceof OS.File.Error &&
-                (e2.becauseNoSuchFile || e2.becauseAccessDenied))) {
-            Cu.reportError(e2);
+            
+            backgroundFileSaver.setTarget(new FileUtils.File(partFilePath),
+                                          keepPartialData);
+          } else {
+            
+            backgroundFileSaver.setTarget(new FileUtils.File(targetPath),
+                                          false);
           }
-        }
-        throw ex;
+        }.bind(copySaver),
+
+        onStopRequest(aRequest, aContext, aStatusCode) {
+          try {
+            backgroundFileSaver.onStopRequest(aRequest, aContext,
+                                              aStatusCode);
+          } finally {
+            
+            
+            
+            if (Components.isSuccessCode(aStatusCode)) {
+              backgroundFileSaver.finish(Cr.NS_OK);
+            }
+          }
+        },
+
+        onDataAvailable(aRequest, aContext, aInputStream,
+                                  aOffset, aCount) {
+          backgroundFileSaver.onDataAvailable(aRequest, aContext,
+                                              aInputStream, aOffset,
+                                              aCount);
+        },
+      });
+
+      
+      
+      
+      if (this._canceled) {
+        throw new DownloadError({ message: "Saver canceled." });
       }
-    })();
+
+      
+      this._backgroundFileSaver = backgroundFileSaver;
+    } catch (ex) {
+      
+      
+      backgroundFileSaver.finish(Cr.NS_ERROR_FAILURE);
+      
+      
+      deferSaveComplete.promise.catch(() => {});
+      throw ex;
+    }
+
+    
+    
+    await deferSaveComplete.promise;
+
+    await this._checkReputationAndMove(aSetPropertiesFn);
   },
 
   
@@ -2141,11 +2122,7 @@ this.DownloadCopySaver.prototype = {
       
       
       if (!DownloadIntegration.shouldKeepBlockedData() || !partFilePath) {
-        try {
-          await OS.File.remove(partFilePath || targetPath);
-        } catch (ex) {
-          Cu.reportError(ex);
-        }
+        await this.removeData();
       } else {
         newProperties.hasBlockedData = true;
       }
@@ -2177,18 +2154,32 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  removePartialData() {
-    return (async () => {
-      if (this.download.target.partFilePath) {
-        try {
-          await OS.File.remove(this.download.target.partFilePath);
-        } catch (ex) {
-          if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
-            throw ex;
-          }
+  async removeData() {
+    
+    async function _tryToRemoveFile(path) {
+      try {
+        await OS.File.remove(path);
+      } catch (ex) {
+        
+        
+        
+        
+        if (!(ex instanceof OS.File.Error &&
+              (ex.becauseNoSuchFile || ex.becauseAccessDenied))) {
+          Cu.reportError(ex);
         }
       }
-    })();
+    }
+
+    if (this.download.target.partFilePath) {
+      await _tryToRemoveFile(this.download.target.partFilePath);
+    }
+
+    if (this.download.target.path) {
+      await _tryToRemoveFile(this.download.target.path);
+      this.download.target.exists = false;
+      this.download.target.size = 0;
+    }
   },
 
   
@@ -2421,7 +2412,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  execute: function DLS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
+  async execute(aSetProgressBytesFn, aSetPropertiesFn) {
     
     
     if (this.firstExecutionFinished) {
@@ -2431,7 +2422,8 @@ this.DownloadLegacySaver.prototype = {
         this.copySaver.entityID = this.entityID;
         this.copySaver.alreadyAddedToHistory = true;
       }
-      return this.copySaver.execute.apply(this.copySaver, arguments);
+      await this.copySaver.execute.apply(this.copySaver, arguments);
+      return;
     }
 
     this.setProgressBytesFn = aSetProgressBytesFn;
@@ -2439,75 +2431,58 @@ this.DownloadLegacySaver.prototype = {
       this.onProgressBytes(this.currentBytes, this.totalBytes);
     }
 
-    return (async () => {
-      try {
-        
-        await this.deferExecuted.promise;
+    try {
+      
+      await this.deferExecuted.promise;
 
-        
-        
-        
-        if (!this.progressWasNotified &&
-            this.request instanceof Ci.nsIChannel &&
-            this.request.contentLength >= 0) {
-          aSetProgressBytesFn(0, this.request.contentLength);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!this.download.target.partFilePath) {
-          try {
-            
-            let file = await OS.File.open(this.download.target.path,
-                                          { create: true });
-            await file.close();
-          } catch (ex) {
-            if (!(ex instanceof OS.File.Error) || !ex.becauseExists) {
-              throw ex;
-            }
-          }
-        }
-
-        await this._checkReputationAndMove(aSetPropertiesFn);
-
-      } catch (ex) {
-        
-        
-        
-        try {
-          await OS.File.remove(this.download.target.path);
-        } catch (e2) {
-          
-          
-          
-          
-          if (!(e2 instanceof OS.File.Error &&
-                (e2.becauseNoSuchFile || e2.becauseAccessDenied))) {
-            Cu.reportError(e2);
-          }
-        }
-        
-        
-        this.deferCanceled.resolve();
-        throw ex;
-      } finally {
-        
-        
-        
-        this.request = null;
-        this.deferCanceled = null;
-        
-        this.firstExecutionFinished = true;
+      
+      
+      
+      if (!this.progressWasNotified &&
+          this.request instanceof Ci.nsIChannel &&
+          this.request.contentLength >= 0) {
+        aSetProgressBytesFn(0, this.request.contentLength);
       }
-    })();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!this.download.target.partFilePath) {
+        try {
+          
+          let file = await OS.File.open(this.download.target.path,
+                                        { create: true });
+          await file.close();
+        } catch (ex) {
+          if (!(ex instanceof OS.File.Error) || !ex.becauseExists) {
+            throw ex;
+          }
+        }
+      }
+
+      await this._checkReputationAndMove(aSetPropertiesFn);
+
+    } catch (ex) {
+      
+      
+      this.deferCanceled.resolve();
+      throw ex;
+    } finally {
+      
+      
+      
+      this.request = null;
+      this.deferCanceled = null;
+      
+      this.firstExecutionFinished = true;
+    }
   },
 
   _checkReputationAndMove() {
@@ -2535,11 +2510,11 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  removePartialData() {
+  removeData() {
     
     
     
-    return DownloadCopySaver.prototype.removePartialData.call(this);
+    return DownloadCopySaver.prototype.removeData.call(this);
   },
 
   
@@ -2642,88 +2617,86 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  execute(aSetProgressBytesFn, aSetPropertiesFn) {
-    return (async () => {
-      if (!this.download.source.windowRef) {
-        throw new DownloadError({
-          message: "PDF saver must be passed an open window, and cannot be restarted.",
-          becauseSourceFailed: true,
-        });
-      }
+  async execute(aSetProgressBytesFn, aSetPropertiesFn) {
+    if (!this.download.source.windowRef) {
+      throw new DownloadError({
+        message: "PDF saver must be passed an open window, and cannot be restarted.",
+        becauseSourceFailed: true,
+      });
+    }
 
-      let win = this.download.source.windowRef.get();
+    let win = this.download.source.windowRef.get();
 
-      
-      this.download.source.windowRef = null;
+    
+    this.download.source.windowRef = null;
 
-      if (!win) {
-        throw new DownloadError({
-          message: "PDF saver can't save a window that has been closed.",
-          becauseSourceFailed: true,
-        });
-      }
+    if (!win) {
+      throw new DownloadError({
+        message: "PDF saver can't save a window that has been closed.",
+        becauseSourceFailed: true,
+      });
+    }
 
-      this.addToHistory();
+    this.addToHistory();
 
-      let targetPath = this.download.target.path;
+    let targetPath = this.download.target.path;
 
-      
-      let file = await OS.File.open(targetPath, { truncate: true });
-      await file.close();
+    
+    let file = await OS.File.open(targetPath, { truncate: true });
+    await file.close();
 
-      let printSettings = gPrintSettingsService.newPrintSettings;
+    let printSettings = gPrintSettingsService.newPrintSettings;
 
-      printSettings.printToFile = true;
-      printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
-      printSettings.toFileName = targetPath;
+    printSettings.printToFile = true;
+    printSettings.outputFormat = Ci.nsIPrintSettings.kOutputFormatPDF;
+    printSettings.toFileName = targetPath;
 
-      printSettings.printSilent = true;
-      printSettings.showPrintProgress = false;
+    printSettings.printSilent = true;
+    printSettings.showPrintProgress = false;
 
-      printSettings.printBGImages = true;
-      printSettings.printBGColors = true;
-      printSettings.printFrameType = Ci.nsIPrintSettings.kFramesAsIs;
-      printSettings.headerStrCenter = "";
-      printSettings.headerStrLeft = "";
-      printSettings.headerStrRight = "";
-      printSettings.footerStrCenter = "";
-      printSettings.footerStrLeft = "";
-      printSettings.footerStrRight = "";
+    printSettings.printBGImages = true;
+    printSettings.printBGColors = true;
+    printSettings.printFrameType = Ci.nsIPrintSettings.kFramesAsIs;
+    printSettings.headerStrCenter = "";
+    printSettings.headerStrLeft = "";
+    printSettings.headerStrRight = "";
+    printSettings.footerStrCenter = "";
+    printSettings.footerStrLeft = "";
+    printSettings.footerStrRight = "";
 
-      this._webBrowserPrint = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIWebBrowserPrint);
+    this._webBrowserPrint = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIWebBrowserPrint);
 
-      try {
-        await new Promise((resolve, reject) => {
-          this._webBrowserPrint.print(printSettings, {
-            onStateChange(webProgress, request, stateFlags, status) {
-              if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-                if (!Components.isSuccessCode(status)) {
-                  reject(new DownloadError({ result: status,
-                                             inferCause: true }));
-                } else {
-                  resolve();
-                }
+    try {
+      await new Promise((resolve, reject) => {
+        this._webBrowserPrint.print(printSettings, {
+          onStateChange(webProgress, request, stateFlags, status) {
+            if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+              if (!Components.isSuccessCode(status)) {
+                reject(new DownloadError({ result: status,
+                                           inferCause: true }));
+              } else {
+                resolve();
               }
-            },
-            onProgressChange(webProgress, request, curSelfProgress,
-                                       maxSelfProgress, curTotalProgress,
-                                       maxTotalProgress) {
-              aSetProgressBytesFn(curTotalProgress, maxTotalProgress, false);
-            },
-            onLocationChange() {},
-            onStatusChange() {},
-            onSecurityChange() {},
-          });
+            }
+          },
+          onProgressChange(webProgress, request, curSelfProgress,
+                                     maxSelfProgress, curTotalProgress,
+                                     maxTotalProgress) {
+            aSetProgressBytesFn(curTotalProgress, maxTotalProgress, false);
+          },
+          onLocationChange() {},
+          onStatusChange() {},
+          onSecurityChange() {},
         });
-      } finally {
-        
-        this._webBrowserPrint = null;
-      }
+      });
+    } finally {
+      
+      this._webBrowserPrint = null;
+    }
 
-      let fileInfo = await OS.File.stat(targetPath);
-      aSetProgressBytesFn(fileInfo.size, fileInfo.size, false);
-    })();
+    let fileInfo = await OS.File.stat(targetPath);
+    aSetProgressBytesFn(fileInfo.size, fileInfo.size, false);
   },
 
   
