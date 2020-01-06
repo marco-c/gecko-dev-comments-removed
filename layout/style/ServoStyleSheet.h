@@ -95,8 +95,6 @@ public:
 
   void LoadFailed();
 
-  nsresult ReparseSheet(const nsAString& aInput);
-
   const RawServoStyleSheet* RawSheet() const {
     return Inner()->mSheet;
   }
