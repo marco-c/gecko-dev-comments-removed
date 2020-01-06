@@ -31,9 +31,6 @@ protected:
   nsCOMPtr<nsINetworkInterceptController> mController;
 
   
-  nsCOMPtr<nsIOutputStream> mResponseBody;
-
-  
   Maybe<nsAutoPtr<nsHttpResponseHead>> mSynthesizedResponseHead;
 
   nsCOMPtr<nsIConsoleReportCollector> mReportCollector;
@@ -73,7 +70,6 @@ public:
 
   NS_DECL_ISUPPORTS
 
-  NS_IMETHOD GetResponseBody(nsIOutputStream** aOutput) override;
   NS_IMETHOD GetConsoleReportCollector(nsIConsoleReportCollector** aCollectorOut) override;
   NS_IMETHOD SetReleaseHandle(nsISupports* aHandle) override;
 
@@ -170,9 +166,6 @@ class InterceptedChannelContent : public InterceptedChannelBase
 {
   
   RefPtr<HttpChannelChild> mChannel;
-
-  
-  nsCOMPtr<nsIInputStream> mSynthesizedInput;
 
   
   
