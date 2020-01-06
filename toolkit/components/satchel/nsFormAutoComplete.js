@@ -157,8 +157,6 @@ function FormAutoComplete() {
 
 
 
-
-
 FormAutoComplete.prototype = {
   classID: Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),

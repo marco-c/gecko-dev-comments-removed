@@ -441,8 +441,6 @@ function dbCreateAsyncStatement(aQuery, aParams, aBindingArrays) {
 
 
 
-
-
 function dbInit() {
   log("Initializing Database");
 
@@ -543,8 +541,6 @@ var Migrators = {
 
 
 
-
-
 function dbAreExpectedColumnsPresent() {
   for (let name in dbSchema.tables) {
     let table = dbSchema.tables[name];
@@ -563,8 +559,6 @@ function dbAreExpectedColumnsPresent() {
   log("verified that expected columns are present in DB.");
   return true;
 }
-
-
 
 
 
@@ -608,8 +602,6 @@ function dbClose(aShutdown) {
     Services.tm.spinEventLoopUntil(() => closed);
   }
 }
-
-
 
 
 
@@ -724,8 +716,6 @@ function updateFormHistoryWrite(aChanges, aCallbacks) {
 
 
 
-
-
 function expireOldEntriesDeletion(aExpireTime, aBeginningCount) {
   log("expireOldEntriesDeletion(" + aExpireTime + "," + aBeginningCount + ")");
 
@@ -742,8 +732,6 @@ function expireOldEntriesDeletion(aExpireTime, aBeginningCount) {
       }
   });
 }
-
-
 
 
 
