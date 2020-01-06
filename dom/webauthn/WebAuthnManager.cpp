@@ -8,6 +8,7 @@
 #include "nsNetCID.h"
 #include "nsICryptoHash.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/AuthenticatorAttestationResponse.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnManager.h"
 #include "mozilla/dom/WebAuthnUtil.h"
@@ -677,22 +678,16 @@ WebAuthnManager::FinishMakeCredential(nsTArray<uint8_t>& aRegBuffer,
   
   
   
+  RefPtr<AuthenticatorAttestationResponse> attestation =
+      new AuthenticatorAttestationResponse(mCurrentParent);
+  attestation->SetClientDataJSON(clientDataBuf);
+  attestation->SetAttestationObject(regData);
 
-  RefPtr<ScopedCredential> credential = new ScopedCredential(mCurrentParent);
-  credential->SetType(ScopedCredentialType::ScopedCred);
-  credential->SetId(keyHandleBuf);
+  RefPtr<PublicKeyCredential> credential = new PublicKeyCredential(mCurrentParent);
+  credential->SetRawId(keyHandleBuf);
+  credential->SetResponse(attestation);
 
-  RefPtr<WebAuthnAttestation> attestation = new WebAuthnAttestation(mCurrentParent);
-  attestation->SetFormat(NS_LITERAL_STRING("u2f"));
-  attestation->SetClientData(clientDataBuf);
-  attestation->SetAuthenticatorData(authenticatorDataBuf);
-  attestation->SetAttestation(regData);
-
-  RefPtr<ScopedCredentialInfo> info = new ScopedCredentialInfo(mCurrentParent);
-  info->SetCredential(credential);
-  info->SetAttestation(attestation);
-
-  mTransactionPromise->MaybeResolve(info);
+  mTransactionPromise->MaybeResolve(credential);
   MaybeClearTransaction();
 }
 
