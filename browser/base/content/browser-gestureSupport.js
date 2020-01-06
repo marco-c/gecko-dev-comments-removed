@@ -13,6 +13,9 @@
 
 
 
+
+
+
 var gGestureSupport = {
   _currentRotation: 0,
   _lastRotateDelta: 0,

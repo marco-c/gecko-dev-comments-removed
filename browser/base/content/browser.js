@@ -122,6 +122,8 @@ XPCOMUtils.defineLazyScriptGetter(this, "CustomizationHandler",
                                   "chrome://browser/content/browser-customization.js");
 XPCOMUtils.defineLazyScriptGetter(this, ["PointerLock", "FullScreen"],
                                   "chrome://browser/content/browser-fullScreenAndPointerLock.js");
+XPCOMUtils.defineLazyScriptGetter(this, ["gGestureSupport", "gHistorySwipeAnimation"],
+                                  "chrome://browser/content/browser-gestureSupport.js");
 
 
 
@@ -1321,12 +1323,6 @@ var gBrowserInit = {
     gBrowser.addProgressListener(window.XULBrowserWindow);
     gBrowser.addTabsProgressListener(window.TabsProgressListener);
 
-    
-    gGestureSupport.init(true);
-
-    
-    gHistorySwipeAnimation.init();
-
     SidebarUI.init();
 
     
@@ -1664,6 +1660,14 @@ var gBrowserInit = {
 
     if (AppConstants.MOZ_DATA_REPORTING)
       gDataNotificationInfoBar.init();
+
+    requestIdleCallback(() => {
+      
+      gGestureSupport.init(true);
+
+      
+      gHistorySwipeAnimation.init();
+    });
 
     gBrowserThumbnails.init();
 
@@ -4756,7 +4760,8 @@ var XULBrowserWindow = {
     UpdateBackForwardCommands(gBrowser.webNavigation);
     ReaderParent.updateReaderButton(gBrowser.selectedBrowser);
 
-    gGestureSupport.restoreRotationState();
+    if (!gMultiProcessBrowser) 
+      gGestureSupport.restoreRotationState();
 
     
     
