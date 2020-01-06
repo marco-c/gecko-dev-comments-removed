@@ -457,7 +457,7 @@ var BrowserPageActions = {
       
       
       for (let n = node.parentNode; n && !action; n = n.parentNode) {
-        if (n.id == "urlbar-icons" || n.localName == "panelview") {
+        if (n.id == "page-action-buttons" || n.localName == "panelview") {
           
           
           break;
