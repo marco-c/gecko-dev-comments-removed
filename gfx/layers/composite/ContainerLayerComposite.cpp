@@ -185,6 +185,12 @@ ContainerPrepare(ContainerT* aContainer,
                  LayerManagerComposite* aManager,
                  const RenderTargetIntRect& aClipRect)
 {
+  
+  
+  
+  if (aContainer->mPrepared) {
+    return;
+  }
   aContainer->mPrepared = MakeUnique<PreparedData>();
   aContainer->mPrepared->mNeedsSurfaceCopy = false;
 
@@ -687,6 +693,10 @@ void
 ContainerLayerComposite::Cleanup()
 {
   mPrepared = nullptr;
+
+  for (Layer* l = GetFirstChild(); l; l = l->GetNextSibling()) {
+    static_cast<LayerComposite*>(l->AsHostLayer())->Cleanup();
+  }
 }
 
 void
@@ -752,6 +762,16 @@ void
 RefLayerComposite::Prepare(const RenderTargetIntRect& aClipRect)
 {
   ContainerPrepare(this, mCompositeManager, aClipRect);
+}
+
+void
+RefLayerComposite::Cleanup()
+{
+  mPrepared = nullptr;
+
+  for (Layer* l = GetFirstChild(); l; l = l->GetNextSibling()) {
+    static_cast<LayerComposite*>(l->AsHostLayer())->Cleanup();
+  }
 }
 
 void
