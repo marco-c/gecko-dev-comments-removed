@@ -19,10 +19,11 @@ var gSearchResultsPane = {
     this.searchInput.hidden = !Services.prefs.getBoolPref("browser.preferences.search");
     if (!this.searchInput.hidden) {
       this.searchInput.addEventListener("command", this);
-      window.addEventListener("load", () => {
+      window.addEventListener("DOMContentLoaded", () => {
         this.searchInput.focus();
-        this.initializeCategories();
       });
+      
+      window.requestIdleCallback(() => this.initializeCategories());
     }
     let strings = this.strings;
     this.searchInput.placeholder = AppConstants.platform == "win" ?
@@ -31,9 +32,9 @@ var gSearchResultsPane = {
   },
 
   handleEvent(event) {
-    if (event.type === "command") {
-      this.searchFunction(event);
-    }
+    
+    this.initializeCategories();
+    this.searchFunction(event);
   },
 
   
