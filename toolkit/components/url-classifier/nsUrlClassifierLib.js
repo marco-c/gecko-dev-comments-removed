@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 
 
@@ -12,8 +12,159 @@ const G_GDEBUG = false;
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-#include ./content/moz/lang.js
-#include ./content/request-backoff.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.BindToObject = function BindToObject(fn, self, opt_args) {
+  var boundargs = fn.boundArgs_ || [];
+  boundargs = boundargs.concat(Array.slice(arguments, 2, arguments.length));
+
+  if (fn.boundSelf_)
+    self = fn.boundSelf_;
+  if (fn.boundFn_)
+    fn = fn.boundFn_;
+
+  var newfn = function() {
+    
+    var args = boundargs.concat(Array.slice(arguments));
+    return fn.apply(self, args);
+  }
+
+  newfn.boundArgs_ = boundargs;
+  newfn.boundSelf_ = self;
+  newfn.boundFn_ = fn;
+
+  return newfn;
+}
+
+
+
+
+
+
+
+
+
+
+
+this.HTTP_FOUND                 = 302;
+this.HTTP_SEE_OTHER             = 303;
+this.HTTP_TEMPORARY_REDIRECT    = 307;
+
+
+
+
+
+
+
+
+
+
+
+this.RequestBackoff =
+function RequestBackoff(maxErrors, retryIncrement,
+                        maxRequests, requestPeriod,
+                        timeoutIncrement, maxTimeout) {
+  this.MAX_ERRORS_ = maxErrors;
+  this.RETRY_INCREMENT_ = retryIncrement;
+  this.MAX_REQUESTS_ = maxRequests;
+  this.REQUEST_PERIOD_ = requestPeriod;
+  this.TIMEOUT_INCREMENT_ = timeoutIncrement;
+  this.MAX_TIMEOUT_ = maxTimeout;
+
+  
+  this.requestTimes_ = [];
+
+  this.numErrors_ = 0;
+  this.errorTimeout_ = 0;
+  this.nextRequestTime_ = 0;
+}
+
+
+
+
+RequestBackoff.prototype.reset = function() {
+  this.numErrors_ = 0;
+  this.errorTimeout_ = 0;
+  this.nextRequestTime_ = 0;
+}
+
+
+
+
+RequestBackoff.prototype.canMakeRequest = function() {
+  var now = Date.now();
+  if (now < this.nextRequestTime_) {
+    return false;
+  }
+
+  return (this.requestTimes_.length < this.MAX_REQUESTS_ ||
+          (now - this.requestTimes_[0]) > this.REQUEST_PERIOD_);
+}
+
+RequestBackoff.prototype.noteRequest = function() {
+  var now = Date.now();
+  this.requestTimes_.push(now);
+
+  
+  if (this.requestTimes_.length > this.MAX_REQUESTS_)
+    this.requestTimes_.shift();
+}
+
+RequestBackoff.prototype.nextRequestDelay = function() {
+  return Math.max(0, this.nextRequestTime_ - Date.now());
+}
+
+
+
+
+RequestBackoff.prototype.noteServerResponse = function(status) {
+  if (this.isErrorStatus(status)) {
+    this.numErrors_++;
+
+    if (this.numErrors_ < this.MAX_ERRORS_)
+      this.errorTimeout_ = this.RETRY_INCREMENT_;
+    else if (this.numErrors_ == this.MAX_ERRORS_)
+      this.errorTimeout_ = this.TIMEOUT_INCREMENT_;
+    else
+      this.errorTimeout_ *= 2;
+
+    this.errorTimeout_ = Math.min(this.errorTimeout_, this.MAX_TIMEOUT_);
+    this.nextRequestTime_ = Date.now() + this.errorTimeout_;
+  } else {
+    
+    this.reset();
+  }
+}
+
+
+
+
+
+
+RequestBackoff.prototype.isErrorStatus = function(status) {
+  return ((400 <= status && status <= 599) ||
+          HTTP_FOUND == status ||
+          HTTP_SEE_OTHER == status ||
+          HTTP_TEMPORARY_REDIRECT == status);
+}
 
 
 
