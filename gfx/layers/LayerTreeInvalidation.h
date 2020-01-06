@@ -64,8 +64,11 @@ public:
 
 
 
-  virtual nsIntRegion ComputeDifferences(Layer* aRoot,
-                                         NotifySubDocInvalidationFunc aCallback) = 0;
+
+
+  virtual bool ComputeDifferences(Layer* aRoot,
+                                  nsIntRegion& aOutRegion,
+                                  NotifySubDocInvalidationFunc aCallback) = 0;
 
   virtual void MoveBy(const gfx::IntPoint& aOffset) = 0;
 };

@@ -496,7 +496,10 @@ LayerManagerComposite::UpdateAndRender()
     
     
     
-    nsIntRegion changed = mClonedLayerTreeProperties->ComputeDifferences(mRoot, nullptr);
+    nsIntRegion changed;
+    if (!mClonedLayerTreeProperties->ComputeDifferences(mRoot, changed, nullptr)) {
+      changed = mTargetBounds;
+    }
 
     if (mTarget) {
       
