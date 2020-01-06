@@ -44,7 +44,7 @@ const BASE_URL = `http://localhost:${server.identity.primaryPort}`;
 
 
 
-const AUTOCLOSE_TAGS = new Set(["img"]);
+const AUTOCLOSE_TAGS = new Set(["img", "source"]);
 
 
 
@@ -437,6 +437,10 @@ add_task(async function test_contentscript_triggeringPrincipals() {
       element: ["audio", {}],
       src: "audio.webm",
     },
+    {
+      element: ["audio", {}, ["source", {}]],
+      src: "audio-source.webm",
+    },
     
     {
       element: ["iframe", {}],
@@ -459,6 +463,10 @@ add_task(async function test_contentscript_triggeringPrincipals() {
     {
       element: ["video", {}],
       src: "video.webm",
+    },
+    {
+      element: ["video", {}, ["source", {}]],
+      src: "video-source.webm",
     },
   ];
 

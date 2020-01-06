@@ -59,13 +59,18 @@ public:
   MediaSource* GetSrcMediaSource() { return mSrcMediaSource; };
 
   
-  void GetSrc(nsString& aSrc)
+  void GetSrc(nsString& aSrc, nsIPrincipal&)
   {
     GetURIAttr(nsGkAtoms::src, nullptr, aSrc);
   }
-  void SetSrc(const nsAString& aSrc, mozilla::ErrorResult& rv)
+  void SetSrc(const nsAString& aSrc, nsIPrincipal& aTriggeringPrincipal, mozilla::ErrorResult& rv)
   {
-    SetHTMLAttr(nsGkAtoms::src, aSrc, rv);
+    SetHTMLAttr(nsGkAtoms::src, aSrc, aTriggeringPrincipal, rv);
+  }
+
+  nsIPrincipal* GetSrcTriggeringPrincipal() const
+  {
+    return mSrcTriggeringPrincipal;
   }
 
   void GetType(DOMString& aType)
@@ -119,6 +124,9 @@ protected:
 private:
   RefPtr<MediaList> mMediaList;
   RefPtr<MediaSource> mSrcMediaSource;
+
+  
+  nsCOMPtr<nsIPrincipal> mSrcTriggeringPrincipal;
 
   
   void UpdateMediaList(const nsAttrValue* aValue);
