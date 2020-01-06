@@ -170,7 +170,7 @@ nsInlineFrame::IsEmpty()
 
 nsIFrame::FrameSearchResult
 nsInlineFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                                   bool aRespectClusters)
+                                   PeekOffsetCharacterOptions aOptions)
 {
   
   NS_ASSERTION (aOffset && *aOffset <= 1, "aOffset out of range");

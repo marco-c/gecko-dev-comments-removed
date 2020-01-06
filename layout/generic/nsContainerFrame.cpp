@@ -402,8 +402,9 @@ nsContainerFrame::PeekOffsetNoAmount(bool aForward, int32_t* aOffset)
 }
 
 nsIFrame::FrameSearchResult
-nsContainerFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                                      bool aRespectClusters)
+nsContainerFrame::PeekOffsetCharacter(
+                    bool aForward, int32_t* aOffset,
+                    PeekOffsetCharacterOptions aOptions)
 {
   NS_ASSERTION (aOffset && *aOffset <= 1, "aOffset out of range");
   

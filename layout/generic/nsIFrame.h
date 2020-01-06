@@ -667,6 +667,26 @@ public:
     CONTINUE_UNSELECTABLE = 0x4 | CONTINUE,
   };
 
+  
+
+
+  struct MOZ_STACK_CLASS PeekOffsetCharacterOptions
+  {
+    
+    
+    
+    bool mRespectClusters;
+    
+    
+    bool mIgnoreUserStyleAll;
+
+    PeekOffsetCharacterOptions()
+      : mRespectClusters(true)
+      , mIgnoreUserStyleAll(false)
+    {
+    }
+  };
+
 protected:
   
 
@@ -4124,9 +4144,12 @@ protected:
 
 
 
-
-  virtual FrameSearchResult PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                                     bool aRespectClusters = true) = 0;
+  virtual FrameSearchResult
+  PeekOffsetCharacter(bool aForward, int32_t* aOffset,
+                      PeekOffsetCharacterOptions aOptions =
+                        PeekOffsetCharacterOptions()) = 0;
+  static_assert(sizeof(PeekOffsetCharacterOptions) <= sizeof(intptr_t),
+                "aOptions should be changed to const reference");
 
   
 
