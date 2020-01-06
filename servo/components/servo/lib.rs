@@ -204,7 +204,8 @@ impl<Window> Servo<Window> where Window: WindowMethods + 'static {
         };
 
         let webrender_api = webrender_api_sender.create_api();
-        let webrender_document = webrender_api.add_document(window.framebuffer_size());
+        let wr_document_layer = 0; 
+        let webrender_document = webrender_api.add_document(window.framebuffer_size(), wr_document_layer);
 
         
         
