@@ -1,0 +1,51 @@
+
+
+
+
+
+
+ "use strict";
+
+ define(function (require, exports, module) {
+   const { Component } = require("devtools/client/shared/vendor/react");
+   const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+   const { createFactories } = require("devtools/client/shared/react-utils");
+
+   const { Toolbar, ToolbarButton } = createFactories(require("./reps/Toolbar"));
+
+   
+
+
+
+   class HeadersToolbar extends Component {
+     static get propTypes() {
+       return {
+         actions: PropTypes.object,
+       };
+     }
+
+     constructor(props) {
+       super(props);
+       this.onCopy = this.onCopy.bind(this);
+     }
+
+     
+
+     onCopy(event) {
+       this.props.actions.onCopyHeaders();
+     }
+
+     render() {
+       return (
+         Toolbar({},
+           ToolbarButton({className: "btn copy", onClick: this.onCopy},
+             JSONView.Locale.$STR("jsonViewer.Copy")
+           )
+         )
+       );
+     }
+   }
+
+   
+   exports.HeadersToolbar = HeadersToolbar;
+ });

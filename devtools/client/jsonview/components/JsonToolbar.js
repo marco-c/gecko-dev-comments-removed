@@ -1,0 +1,63 @@
+
+
+
+
+
+
+"use strict";
+
+define(function (require, exports, module) {
+  const { Component } = require("devtools/client/shared/vendor/react");
+  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+  const { createFactories } = require("devtools/client/shared/react-utils");
+
+  const { SearchBox } = createFactories(require("./SearchBox"));
+  const { Toolbar, ToolbarButton } = createFactories(require("./reps/Toolbar"));
+
+  
+
+
+  class JsonToolbar extends Component {
+    static get propTypes() {
+      return {
+        actions: PropTypes.object,
+      };
+    }
+
+    constructor(props) {
+      super(props);
+      this.onSave = this.onSave.bind(this);
+      this.onCopy = this.onCopy.bind(this);
+    }
+
+    
+
+    onSave(event) {
+      this.props.actions.onSaveJson();
+    }
+
+    onCopy(event) {
+      this.props.actions.onCopyJson();
+    }
+
+    render() {
+      return (
+        Toolbar({},
+          ToolbarButton({className: "btn save", onClick: this.onSave},
+            JSONView.Locale.$STR("jsonViewer.Save")
+          ),
+          ToolbarButton({className: "btn copy", onClick: this.onCopy},
+            JSONView.Locale.$STR("jsonViewer.Copy")
+          ),
+          SearchBox({
+            actions: this.props.actions
+          })
+        )
+      );
+    }
+  }
+
+  
+  exports.JsonToolbar = JsonToolbar;
+});
