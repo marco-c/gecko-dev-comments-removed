@@ -257,10 +257,9 @@ const BOOKMARK_VALIDATORS = Object.freeze({
 
 const SYNC_BOOKMARK_VALIDATORS = Object.freeze({
   
-  syncId: simpleValidateFunc(v => typeof v == "string" && (
-                                  (PlacesSyncUtils.bookmarks.ROOTS.includes(v) ||
-                                   PlacesUtils.isValidGuid(v)))),
-  parentSyncId: v => SYNC_BOOKMARK_VALIDATORS.syncId(v),
+  recordId: simpleValidateFunc(v => typeof v == "string" && (
+                                (PlacesSyncUtils.bookmarks.ROOTS.includes(v) || PlacesUtils.isValidGuid(v)))),
+  parentRecordId: v => SYNC_BOOKMARK_VALIDATORS.recordId(v),
   
   
   kind: simpleValidateFunc(v => typeof v == "string" &&

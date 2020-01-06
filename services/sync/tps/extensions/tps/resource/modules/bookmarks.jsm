@@ -928,7 +928,7 @@ Separator.prototype = {
       expected_pos = this.props.last_item_pos + 1;
     }
     
-    let children = await PlacesSyncUtils.bookmarks.fetchChildSyncIds(this.props.parentGuid);
+    let children = await PlacesSyncUtils.bookmarks.fetchChildRecordIds(this.props.parentGuid);
     this.props.guid = children[expected_pos];
     if (this.props.guid == null) {
       Logger.logPotentialError("No separator found at position " + expected_pos);

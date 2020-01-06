@@ -638,7 +638,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     
     
     
-    let repairable = await PlacesSyncUtils.bookmarks.fetchSyncIdsForRepair(request.ids);
+    let repairable = await PlacesSyncUtils.bookmarks.fetchRecordIdsForRepair(request.ids);
     if (repairable.length == 0) {
       
       
@@ -647,7 +647,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
 
     
     let itemSource = engine.itemSource();
-    itemSource.ids = repairable.map(item => item.syncId);
+    itemSource.ids = repairable.map(item => item.recordId);
     log.trace(`checking the server for items`, itemSource.ids);
     let itemsResponse = await itemSource.get();
     
@@ -667,7 +667,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     
     
     
-    for (let { syncId: id, syncable } of repairable) {
+    for (let { recordId: id, syncable } of repairable) {
       if (requested.has(id)) {
         if (syncable) {
           log.debug(`repair request to upload item '${id}' which exists locally; uploading`);
