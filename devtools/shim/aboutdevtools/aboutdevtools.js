@@ -156,8 +156,11 @@ function createFeatureEl(feature) {
 window.addEventListener("load", function () {
   const inspectorShortcut = getToolboxShortcut();
   const welcomeMessage = document.getElementById("welcome-message");
-  welcomeMessage.textContent = welcomeMessage.textContent.replace(
-    "##INSPECTOR_SHORTCUT##", inspectorShortcut);
+
+  
+  
+  welcomeMessage.textContent = aboutDevtoolsBundle.formatStringFromName("welcome.message",
+    [inspectorShortcut], 1);
 
   
   if (reason == "ContextMenu") {
