@@ -10,6 +10,7 @@ use Atom;
 use bloom::StyleBloom;
 use context::{SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
+use selectors::context::NthIndexCache;
 use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
@@ -99,16 +100,25 @@ pub fn revalidate<E>(target: &mut StyleSharingTarget<E>,
                      candidate: &mut StyleSharingCandidate<E>,
                      shared_context: &SharedStyleContext,
                      bloom: &StyleBloom<E>,
+                     nth_index_cache: &mut NthIndexCache,
                      selector_flags_map: &mut SelectorFlagsMap<E>)
                      -> bool
     where E: TElement,
 {
     let stylist = &shared_context.stylist;
 
-    let for_element =
-        target.revalidation_match_results(stylist, bloom, selector_flags_map);
+    let for_element = target.revalidation_match_results(
+        stylist,
+        bloom,
+        nth_index_cache,
+        selector_flags_map,
+    );
 
-    let for_candidate = candidate.revalidation_match_results(stylist, bloom);
+    let for_candidate = candidate.revalidation_match_results(
+        stylist,
+        bloom,
+        nth_index_cache,
+    );
 
     
     

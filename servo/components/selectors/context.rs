@@ -72,12 +72,19 @@ impl QuirksMode {
 
 
 
-#[derive(Clone)]
+#[derive(Default)]
+pub struct NthIndexCache(usize);
+
+
+
+
 pub struct MatchingContext<'a> {
     
     pub matching_mode: MatchingMode,
     
     pub bloom_filter: Option<&'a BloomFilter>,
+    
+    nth_index_cache: Option<&'a mut NthIndexCache>,
     
     pub visited_handling: VisitedHandlingMode,
     
@@ -94,12 +101,14 @@ impl<'a> MatchingContext<'a> {
     
     pub fn new(matching_mode: MatchingMode,
                bloom_filter: Option<&'a BloomFilter>,
+               nth_index_cache: Option<&'a mut NthIndexCache>,
                quirks_mode: QuirksMode)
                -> Self
     {
         Self {
             matching_mode: matching_mode,
             bloom_filter: bloom_filter,
+            nth_index_cache: nth_index_cache,
             visited_handling: VisitedHandlingMode::AllLinksUnvisited,
             relevant_link_found: false,
             quirks_mode: quirks_mode,
@@ -110,6 +119,7 @@ impl<'a> MatchingContext<'a> {
     
     pub fn new_for_visited(matching_mode: MatchingMode,
                            bloom_filter: Option<&'a BloomFilter>,
+                           nth_index_cache: Option<&'a mut NthIndexCache>,
                            visited_handling: VisitedHandlingMode,
                            quirks_mode: QuirksMode)
                            -> Self
@@ -119,6 +129,7 @@ impl<'a> MatchingContext<'a> {
             bloom_filter: bloom_filter,
             visited_handling: visited_handling,
             relevant_link_found: false,
+            nth_index_cache: nth_index_cache,
             quirks_mode: quirks_mode,
             classes_and_ids_case_sensitivity: quirks_mode.classes_and_ids_case_sensitivity(),
         }

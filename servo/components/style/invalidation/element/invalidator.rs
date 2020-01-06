@@ -633,9 +633,11 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
         debug!("TreeStyleInvalidator::process_invalidation({:?}, {:?}, {:?})",
                self.element, invalidation, invalidation_kind);
 
+        
         let mut context =
             MatchingContext::new_for_visited(
                 MatchingMode::Normal,
+                None,
                 None,
                 VisitedHandlingMode::AllLinksVisitedAndUnvisited,
                 self.shared_context.quirks_mode(),
@@ -946,12 +948,14 @@ impl<'a, 'b: 'a, E> InvalidationCollector<'a, 'b, E>
         
         
         
+        
+        
         let mut now_context =
-            MatchingContext::new_for_visited(MatchingMode::Normal, None,
+            MatchingContext::new_for_visited(MatchingMode::Normal, None, None,
                                              VisitedHandlingMode::AllLinksUnvisited,
                                              self.shared_context.quirks_mode());
         let mut then_context =
-            MatchingContext::new_for_visited(MatchingMode::Normal, None,
+            MatchingContext::new_for_visited(MatchingMode::Normal, None, None,
                                              VisitedHandlingMode::AllLinksUnvisited,
                                              self.shared_context.quirks_mode());
 
