@@ -133,7 +133,7 @@ public class LayerView extends FrameLayout {
 
         
         if (mOverscroll != null) {
-            mOverscroll.draw(canvas, mSession.getViewportMetrics());
+            mOverscroll.draw(canvas);
         }
     }
 

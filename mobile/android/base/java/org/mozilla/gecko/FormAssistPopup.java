@@ -6,8 +6,6 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.animation.ViewHelper;
-import org.mozilla.gecko.gfx.FloatSize;
-import org.mozilla.gecko.gfx.ImmutableViewportMetrics;
 import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
@@ -18,7 +16,9 @@ import org.mozilla.gecko.widget.SwipeDismissListViewTouchListener.OnDismissCallb
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.PointF;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Pair;
@@ -254,10 +254,6 @@ public class FormAssistPopup extends RelativeLayout implements BundleEventListen
     }
 
     private void positionAndShowPopup() {
-        positionAndShowPopup(mGeckoView.getSession().getViewportMetrics());
-    }
-
-    private void positionAndShowPopup(ImmutableViewportMetrics aMetrics) {
         ThreadUtils.assertOnUiThread();
 
         
@@ -282,34 +278,30 @@ public class FormAssistPopup extends RelativeLayout implements BundleEventListen
             sValidationMessageHeight = (int) (res.getDimension(R.dimen.validation_message_height));
         }
 
-        float zoom = aMetrics.zoomFactor;
+        
+        
+        final Matrix matrix = new Matrix();
+        final RectF input = new RectF((float) mX, (float) mY,
+                                      (float) (mX + mW), (float) (mY + mH));
+        mGeckoView.getSession().getClientToSurfaceMatrix(matrix);
+        matrix.mapRect(input);
 
-        
-        
-        int left = (int) (mX * zoom - aMetrics.viewportRectLeft);
-        int top = (int) (mY * zoom - aMetrics.viewportRectTop + mGeckoView.getTop() +
-                         mGeckoView.getDynamicToolbarAnimator().getCurrentToolbarHeight());
-        int width = (int) (mW * zoom);
-        int height = (int) (mH * zoom);
+        final Rect page = new Rect();
+        mGeckoView.getSession().getSurfaceBounds(page);
 
         int popupWidth = LayoutParams.MATCH_PARENT;
-        int popupLeft = left < 0 ? 0 : left;
-
-        FloatSize viewport = aMetrics.getSize();
+        int popupLeft = Math.max((int) input.left, page.left);
 
         
         
-        if ((mPopupType == PopupType.AUTOCOMPLETE) && (left + width) < viewport.width) {
-            popupWidth = left < 0 ? left + width : width;
+        if ((mPopupType == PopupType.AUTOCOMPLETE) && (int) input.right < page.right) {
+            
+            final int visibleWidth = (int) input.right - popupLeft;
+            popupWidth = Math.max(visibleWidth, sAutoCompleteMinWidth);
 
             
-            if (popupWidth < sAutoCompleteMinWidth) {
-                popupWidth = sAutoCompleteMinWidth;
-
-                
-                if ((popupLeft + popupWidth) > viewport.width) {
-                    popupLeft = (int) (viewport.width - popupWidth);
-                }
+            if ((popupLeft + popupWidth) > page.right) {
+                popupLeft = Math.max(page.right - popupWidth, page.left);
             }
         }
 
@@ -326,7 +318,7 @@ public class FormAssistPopup extends RelativeLayout implements BundleEventListen
             popupHeight = sValidationMessageHeight;
         }
 
-        int popupTop = top + height;
+        int popupTop = (int) input.bottom;
 
         if (mPopupType == PopupType.VALIDATIONMESSAGE) {
             mValidationMessageText.setLayoutParams(sValidationTextLayoutNormal);
@@ -336,20 +328,15 @@ public class FormAssistPopup extends RelativeLayout implements BundleEventListen
 
         
         
-        if ((popupTop + popupHeight) > (mGeckoView.getTop() + viewport.height)) {
+        if ((popupTop + popupHeight) > page.bottom) {
             
-            if ((viewport.height - popupTop) > top) {
+            if ((page.bottom - (int) input.bottom) > ((int) input.top - page.top)) {
                 
-                popupHeight = (int) (viewport.height - popupTop);
+                popupHeight = page.bottom - (int) input.bottom;
             } else {
-                if (popupHeight < top) {
-                    
-                    popupTop = (top - popupHeight);
-                } else {
-                    
-                    popupTop = 0;
-                    popupHeight = top;
-                }
+                
+                popupTop = Math.max((int) input.top - popupHeight, page.top);
+                popupHeight = (int) input.top - popupTop;
 
                 if (mPopupType == PopupType.VALIDATIONMESSAGE) {
                     mValidationMessageText.setLayoutParams(sValidationTextLayoutInverted);

@@ -96,7 +96,6 @@ import org.mozilla.gecko.extensions.ExtensionPermissionsHelper;
 import org.mozilla.gecko.firstrun.FirstrunAnimationContainer;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator;
 import org.mozilla.gecko.gfx.DynamicToolbarAnimator.PinReason;
-import org.mozilla.gecko.gfx.ImmutableViewportMetrics;
 import org.mozilla.gecko.home.BrowserSearch;
 import org.mozilla.gecko.home.HomeBanner;
 import org.mozilla.gecko.home.HomeConfig;
@@ -4358,7 +4357,7 @@ public class BrowserApp extends GeckoApp
 
             
             
-            if (mDynamicToolbar.isEnabled() && toolbar.getCurrentToolbarHeight() == 0) {
+            if (mDynamicToolbar.isEnabled() && !isToolbarChromeVisible()) {
                 toggleToolbarChrome(true);
                 mShowingToolbarChromeForActionBar = true;
             }

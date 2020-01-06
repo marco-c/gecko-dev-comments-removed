@@ -22,6 +22,9 @@ var FormAssistant = {
   
   _doingAutocomplete: false,
 
+  
+  _lastPanZoomState: "NOTHING",
+
   init: function() {
     Services.obs.addObserver(this, "PanZoom:StateChange");
   },
@@ -83,6 +86,7 @@ var FormAssistant = {
           
           this._hideFormAssistPopup(focused);
         }
+        this._lastPanZoomState = aData;
         break;
     }
   },
@@ -184,7 +188,7 @@ var FormAssistant = {
         let focused = this.focusedElement;
         if (focused && focused.ownerGlobal == aEvent.target) {
           
-          this.observe(null, "PanZoom:StateChange", "NOTHING");
+          this.observe(null, "PanZoom:StateChange", this._lastPanZoomState);
           
           focused.ownerGlobal.addEventListener(
               "resize", this, {capture: true, mozSystemGroup: true, once: true});
@@ -364,11 +368,7 @@ var FormAssistant = {
       document = document.defaultView.frameElement.ownerDocument;
     }
 
-    let cwu = document.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                                  .getInterface(Ci.nsIDOMWindowUtils);
-    let scrollX = {}, scrollY = {};
-    cwu.getScrollXY(false, scrollX, scrollY);
-
+    let scrollX = 0, scrollY = 0;
     let r = aElement.getBoundingClientRect();
 
     
@@ -378,13 +378,13 @@ var FormAssistant = {
       let rect = frame.frameElement.getBoundingClientRect();
       let left = frame.getComputedStyle(frame.frameElement).borderLeftWidth;
       let top = frame.getComputedStyle(frame.frameElement).borderTopWidth;
-      scrollX.value += rect.left + parseInt(left);
-      scrollY.value += rect.top + parseInt(top);
+      scrollX += rect.left + parseInt(left);
+      scrollY += rect.top + parseInt(top);
     }
 
     return {
-      x: r.left + scrollX.value,
-      y: r.top + scrollY.value,
+      x: r.left + scrollX,
+      y: r.top + scrollY,
       w: r.width,
       h: r.height,
     };
