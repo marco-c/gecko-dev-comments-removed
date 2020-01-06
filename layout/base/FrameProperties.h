@@ -306,8 +306,6 @@ public:
   }
 
 private:
-  friend class ::nsIFrame;
-
   
   
   FrameProperties(const FrameProperties&) = delete;
