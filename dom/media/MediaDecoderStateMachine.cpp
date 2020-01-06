@@ -1025,6 +1025,8 @@ protected:
   SeekJob mSeekJob;
 
   virtual void DoSeek() = 0;
+  
+  virtual void GoToNextState() { SetState<DecodingState>(); }
   void SeekCompleted();
   virtual TimeUnit CalculateNewCurrentTime() const = 0;
 };
@@ -1733,12 +1735,8 @@ public:
   {
     mFutureSeekJob = Move(aFutureSeekJob);
 
-    SeekJob seekJob(Move(aCurrentSeekJob));
-    
-    
-    seekJob.mTransition = false;
-
-    AccurateSeekingState::Enter(Move(seekJob), EventVisibility::Suppressed)
+    AccurateSeekingState::Enter(Move(aCurrentSeekJob),
+                                EventVisibility::Suppressed)
       ->Then(OwnerThread(),
              __func__,
              [this]() {
@@ -1761,6 +1759,9 @@ public:
 private:
   MozPromiseRequestHolder<MediaDecoder::SeekPromise> mAccurateSeekRequest;
   SeekJob mFutureSeekJob;
+
+  
+  void GoToNextState() override { 
 };
 
 RefPtr<MediaDecoder::SeekPromise>
@@ -2535,9 +2536,7 @@ SeekingState::SeekCompleted()
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
   }
 
-  if (mSeekJob.mTransition) {
-    SetState<DecodingState>();
-  }
+  GoToNextState();
 }
 
 void
