@@ -2050,7 +2050,8 @@ ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats& rtStats,
     
     
     nsCString rtPath2(rtPath);
-    rtPath2.Replace(0, strlen("explicit"), NS_LITERAL_CSTRING("decommitted"));
+    rtPath2.ReplaceLiteral(0, strlen("explicit"), "decommitted");
+
     REPORT_GC_BYTES(rtPath2 + NS_LITERAL_CSTRING("gc-heap/decommitted-arenas"),
         rtStats.gcHeapDecommittedArenas,
         "GC arenas in non-empty chunks that is decommitted, i.e. it takes up "
