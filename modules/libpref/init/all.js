@@ -1762,6 +1762,10 @@ pref("network.http.focused_window_transaction_ratio", "0.9");
 
 
 
+pref("network.http.active_tab_priority", true);
+
+
+
 
 
 pref("network.ftp.data.qos", 0);

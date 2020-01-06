@@ -535,8 +535,20 @@ private:
     MOZ_MUST_USE bool ProcessPendingQForEntry(nsConnectionEntry *,
                                               bool considerAll);
     bool DispatchPendingQ(nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
-                                   nsConnectionEntry *ent,
-                                   bool considerAll);
+                          nsConnectionEntry *ent,
+                          bool considerAll);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    void PreparePendingQForDispatching(nsConnectionEntry *ent,
+                                       nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
+                                       bool considerAll);
 
     
     
@@ -732,6 +744,9 @@ private:
     bool mActiveTabUnthrottledTransactionsExist;
 
     void LogActiveTransactions(char);
+
+    nsTArray<RefPtr<PendingTransactionInfo>>*
+    GetTransactionPendingQHelper(nsConnectionEntry *ent, nsAHttpTransaction *trans);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnectionMgr::nsHalfOpenSocket, NS_HALFOPENSOCKET_IID)

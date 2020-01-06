@@ -1029,6 +1029,102 @@ nsHttpConnectionMgr::MaxPersistConnections(nsConnectionEntry *ent) const
     return static_cast<uint32_t>(mMaxPersistConnsPerHost);
 }
 
+void
+nsHttpConnectionMgr::PreparePendingQForDispatching(
+                            nsConnectionEntry *ent,
+                            nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
+                            bool considerAll)
+{
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+    pendingQ.Clear();
+
+    uint32_t totalCount = TotalActiveConnections(ent);
+    uint32_t maxPersistConns = MaxPersistConnections(ent);
+    uint32_t availableConnections = maxPersistConns > totalCount
+        ? maxPersistConns - totalCount
+        : 0;
+
+    
+    if (!availableConnections) {
+        return;
+    }
+
+    
+    if (!gHttpHandler->ActiveTabPriority()) {
+        ent->AppendPendingQForFocusedWindow(0, pendingQ, availableConnections);
+        return;
+    }
+
+    uint32_t maxFocusedWindowConnections =
+        availableConnections * gHttpHandler->FocusedWindowTransactionRatio();
+    MOZ_ASSERT(maxFocusedWindowConnections < availableConnections);
+
+    if (!maxFocusedWindowConnections) {
+        maxFocusedWindowConnections = 1;
+    }
+
+    
+    
+    if (!considerAll) {
+        ent->AppendPendingQForFocusedWindow(
+            mCurrentTopLevelOuterContentWindowId,
+            pendingQ,
+            maxFocusedWindowConnections);
+
+        if (pendingQ.IsEmpty()) {
+            ent->AppendPendingQForNonFocusedWindows(
+                mCurrentTopLevelOuterContentWindowId,
+                pendingQ,
+                availableConnections);
+        }
+        return;
+    }
+
+    uint32_t maxNonFocusedWindowConnections =
+        availableConnections - maxFocusedWindowConnections;
+    nsTArray<RefPtr<PendingTransactionInfo>> remainingPendingQ;
+
+    ent->AppendPendingQForFocusedWindow(
+        mCurrentTopLevelOuterContentWindowId,
+        pendingQ,
+        maxFocusedWindowConnections);
+
+    if (maxNonFocusedWindowConnections) {
+        ent->AppendPendingQForNonFocusedWindows(
+            mCurrentTopLevelOuterContentWindowId,
+            remainingPendingQ,
+            maxNonFocusedWindowConnections);
+    }
+
+    
+    
+    
+    if (remainingPendingQ.Length() < maxNonFocusedWindowConnections) {
+        ent->AppendPendingQForFocusedWindow(
+            mCurrentTopLevelOuterContentWindowId,
+            pendingQ,
+            maxNonFocusedWindowConnections - remainingPendingQ.Length());
+    } else if (pendingQ.Length() < maxFocusedWindowConnections) {
+        ent->AppendPendingQForNonFocusedWindows(
+            mCurrentTopLevelOuterContentWindowId,
+            remainingPendingQ,
+            maxFocusedWindowConnections - pendingQ.Length());
+    }
+
+    MOZ_ASSERT(pendingQ.Length() + remainingPendingQ.Length() <=
+               availableConnections);
+
+    LOG(("nsHttpConnectionMgr::PreparePendingQForDispatching "
+         "focused window pendingQ.Length()=%" PRIuSIZE
+         ", remainingPendingQ.Length()=%" PRIuSIZE "\n",
+         pendingQ.Length(), remainingPendingQ.Length()));
+
+    
+    
+    pendingQ.AppendElements(Move(remainingPendingQ));
+}
+
 bool
 nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool considerAll)
 {
@@ -1072,95 +1168,14 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool consid
         return dispatchedSuccessfully;
     }
 
-    uint32_t totalCount = TotalActiveConnections(ent);
-    uint32_t maxPersistConns = MaxPersistConnections(ent);
-    uint32_t availableConnections = maxPersistConns > totalCount
-        ? maxPersistConns - totalCount
-        : 0;
-
-    
-    if (!availableConnections) {
-        return dispatchedSuccessfully;
-    }
-
-    uint32_t maxFocusedWindowConnections =
-        availableConnections * gHttpHandler->FocusedWindowTransactionRatio();
-    MOZ_ASSERT(maxFocusedWindowConnections < availableConnections);
-
-    if (!maxFocusedWindowConnections) {
-        maxFocusedWindowConnections = 1;
-    }
-
-    
-    
-    if (!considerAll) {
-        nsTArray<RefPtr<PendingTransactionInfo>> pendingQ;
-        ent->AppendPendingQForFocusedWindow(
-            mCurrentTopLevelOuterContentWindowId,
-            pendingQ,
-            maxFocusedWindowConnections);
-
-        if (pendingQ.IsEmpty()) {
-            ent->AppendPendingQForNonFocusedWindows(
-                mCurrentTopLevelOuterContentWindowId,
-                pendingQ,
-                availableConnections);
-        }
-
-        dispatchedSuccessfully |=
-            DispatchPendingQ(pendingQ, ent, considerAll);
-
-        
-        for (const auto& transactionInfo : pendingQ) {
-            ent->InsertTransaction(transactionInfo);
-        }
-
-        return dispatchedSuccessfully;
-    }
-
-    uint32_t maxNonFocusedWindowConnections =
-        availableConnections - maxFocusedWindowConnections;
     nsTArray<RefPtr<PendingTransactionInfo>> pendingQ;
-    nsTArray<RefPtr<PendingTransactionInfo>> remainingPendingQ;
+    PreparePendingQForDispatching(ent, pendingQ, considerAll);
 
-    ent->AppendPendingQForFocusedWindow(
-        mCurrentTopLevelOuterContentWindowId,
-        pendingQ,
-        maxFocusedWindowConnections);
-
-    if (maxNonFocusedWindowConnections) {
-        ent->AppendPendingQForNonFocusedWindows(
-            mCurrentTopLevelOuterContentWindowId,
-            remainingPendingQ,
-            maxNonFocusedWindowConnections);
+    
+    
+    if (pendingQ.IsEmpty()) {
+        return dispatchedSuccessfully;
     }
-
-    
-    
-    
-    if (remainingPendingQ.Length() < maxNonFocusedWindowConnections) {
-        ent->AppendPendingQForFocusedWindow(
-            mCurrentTopLevelOuterContentWindowId,
-            pendingQ,
-            maxNonFocusedWindowConnections - remainingPendingQ.Length());
-    } else if (pendingQ.Length() < maxFocusedWindowConnections) {
-        ent->AppendPendingQForNonFocusedWindows(
-            mCurrentTopLevelOuterContentWindowId,
-            remainingPendingQ,
-            maxFocusedWindowConnections - pendingQ.Length());
-    }
-
-    MOZ_ASSERT(pendingQ.Length() + remainingPendingQ.Length() <=
-               availableConnections);
-
-    LOG(("nsHttpConnectionMgr::ProcessPendingQForEntry "
-         "pendingQ.Length()=%" PRIuSIZE
-         ", remainingPendingQ.Length()=%" PRIuSIZE "\n",
-         pendingQ.Length(), remainingPendingQ.Length()));
-
-    
-    
-    pendingQ.AppendElements(Move(remainingPendingQ));
 
     dispatchedSuccessfully |=
         DispatchPendingQ(pendingQ, ent, considerAll);
@@ -1171,7 +1186,9 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool consid
     }
 
     
-    ent->RemoveEmptyPendingQ();
+    if (considerAll) {
+        ent->RemoveEmptyPendingQ();
+    }
 
     return dispatchedSuccessfully;
 }
@@ -2263,6 +2280,28 @@ nsHttpConnectionMgr::OnMsgNewTransaction(int32_t priority, ARefBase *param)
         trans->Close(rv); 
 }
 
+static uint64_t TabIdForQueuing(nsAHttpTransaction *transaction)
+{
+  return gHttpHandler->ActiveTabPriority()
+      ? transaction->TopLevelOuterContentWindowId()
+      : 0;
+}
+
+nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo>>*
+nsHttpConnectionMgr::GetTransactionPendingQHelper(nsConnectionEntry *ent,
+                                                  nsAHttpTransaction *trans)
+{
+    nsTArray<RefPtr<PendingTransactionInfo>> *pendingQ = nullptr;
+    int32_t caps = trans->Caps();
+    if (caps & NS_HTTP_URGENT_START) {
+        pendingQ = &(ent->mUrgentStartQ);
+    } else {
+        pendingQ =
+            ent->mPendingTransactionTable.Get(TabIdForQueuing(trans));
+    }
+    return pendingQ;
+}
+
 void
 nsHttpConnectionMgr::OnMsgReschedTransaction(int32_t priority, ARefBase *param)
 {
@@ -2278,15 +2317,8 @@ nsHttpConnectionMgr::OnMsgReschedTransaction(int32_t priority, ARefBase *param)
     nsConnectionEntry *ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
 
     if (ent) {
-        int32_t caps = trans->Caps();
-        nsTArray<RefPtr<PendingTransactionInfo>> *pendingQ = nullptr;
-        if (caps & NS_HTTP_URGENT_START) {
-            pendingQ = &(ent->mUrgentStartQ);
-        } else {
-            pendingQ =
-                ent->mPendingTransactionTable.Get(
-                    trans->TopLevelOuterContentWindowId());
-        }
+        nsTArray<RefPtr<PendingTransactionInfo>> *pendingQ =
+            GetTransactionPendingQHelper(ent, trans);
 
         int32_t index = pendingQ
             ? pendingQ->IndexOf(trans, 0, PendingComparator())
@@ -2340,19 +2372,13 @@ nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason, ARefBase *param)
             ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
         }
         if (ent) {
-            uint32_t caps = trans->Caps();
             int32_t transIndex;
             
             
-            nsTArray<RefPtr<PendingTransactionInfo>> *infoArray;
-            RefPtr<PendingTransactionInfo> pendingTransInfo;
-            if (caps & NS_HTTP_URGENT_START) {
-                infoArray = &ent->mUrgentStartQ;
-            } else {
-                infoArray = ent->mPendingTransactionTable.Get(
-                    trans->TopLevelOuterContentWindowId());
-            }
+            nsTArray<RefPtr<PendingTransactionInfo>> *infoArray =
+                GetTransactionPendingQHelper(ent, trans);
 
+            RefPtr<PendingTransactionInfo> pendingTransInfo;
             transIndex = infoArray
                 ? infoArray->IndexOf(trans, 0, PendingComparator())
                 : -1;
@@ -4008,15 +4034,8 @@ already_AddRefed<nsHttpConnectionMgr::PendingTransactionInfo>
 nsHttpConnectionMgr::
 nsHalfOpenSocket::FindTransactionHelper(bool removeWhenFound)
 {
-    uint32_t caps = mTransaction->Caps();
-    nsTArray<RefPtr<PendingTransactionInfo>> *pendingQ = nullptr;
-    if (caps & NS_HTTP_URGENT_START) {
-        pendingQ = &mEnt->mUrgentStartQ;
-    } else {
-        pendingQ =
-            mEnt->mPendingTransactionTable.Get(
-                mTransaction->TopLevelOuterContentWindowId());
-    }
+    nsTArray<RefPtr<PendingTransactionInfo>> *pendingQ =
+        gHttpHandler->ConnMgr()->GetTransactionPendingQHelper(mEnt, mTransaction);
 
     int32_t index = pendingQ
         ? pendingQ->IndexOf(mTransaction, 0, PendingComparator())
@@ -4987,7 +5006,7 @@ nsConnectionEntry::InsertTransaction(PendingTransactionInfo *info,
        info->mTransaction.get(),
        info->mTransaction->TopLevelOuterContentWindowId()));
 
-  uint64_t windowId = info->mTransaction->TopLevelOuterContentWindowId();
+  uint64_t windowId = TabIdForQueuing(info->mTransaction);
   nsTArray<RefPtr<PendingTransactionInfo>> *infoArray;
   if (!mPendingTransactionTable.Get(windowId, &infoArray)) {
     infoArray = new nsTArray<RefPtr<PendingTransactionInfo>>();

@@ -385,6 +385,11 @@ public:
         return mFocusedWindowTransactionRatio;
     }
 
+    bool ActiveTabPriority() const
+    {
+        return mActiveTabPriority;
+    }
+
 private:
     virtual ~nsHttpHandler();
 
@@ -608,6 +613,9 @@ private:
     Atomic<bool, Relaxed> mFastOpenSupported;
     uint32_t mFastOpenConsecutiveFailureLimit;
     uint32_t mFastOpenConsecutiveFailureCounter;
+
+    
+    bool mActiveTabPriority;
 
 private:
     
