@@ -1441,13 +1441,12 @@ ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   
   
   
+  
+  
 #ifdef DEBUG
   {
     nsIFrame* f = aFrame->GetParent();
     while (f && !f->IsLineFrame()) {
-      MOZ_ASSERT(f->IsInlineFrame(),
-                 "Must only have inline frames between us and the first-line "
-                 "frame");
       f = f->GetParent();
     }
     MOZ_ASSERT(f, "Must have found a first-line frame");
