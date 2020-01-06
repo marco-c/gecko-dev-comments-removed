@@ -132,6 +132,9 @@ var validGradientAndElementValues = [
   "linear-gradient(to right bottom, red, 50%, green 50%, 50%, blue)",
   "linear-gradient(to right bottom, red, 0%, green 50%, 100%, blue)",
 
+  
+  "linear-gradient(0, red, blue)",
+
   "radial-gradient(red, blue)",
   "radial-gradient(red, yellow, blue)",
   "radial-gradient(red 1px, yellow 20%, blue 24em, green)",
@@ -238,8 +241,6 @@ var invalidGradientAndElementValues = [
   "radial-gradient(at 10% bottom, ffffff, black) scroll no-repeat",
   
   "linear-gradient(red -99, yellow, green, blue 120%)",
-  
-  "linear-gradient(0, red, blue)",
   
   "linear-gradient(30deg red, blue)",
   "linear-gradient(to top left red, blue)",
