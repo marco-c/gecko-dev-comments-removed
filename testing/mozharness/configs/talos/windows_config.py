@@ -49,5 +49,9 @@ config = {
     "python3_manifest": {
         "win32": "python3.manifest",
         "win64": "python3_x64.manifest",
+    },
+    "env": {
+        
+        "PATH": "%(PATH)s;c:\\slave\\test\\build\\application\\firefox;"
     }
 }
