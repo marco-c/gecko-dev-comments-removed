@@ -1254,6 +1254,7 @@ photonpanelmultiview .subviewbutton:focus {
 }
 
 photonpanelmultiview .subviewbutton > .toolbarbutton-text {
+  padding: 0;
   padding-inline-start: 24px; 
 }
 

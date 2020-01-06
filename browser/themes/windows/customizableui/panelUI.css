@@ -111,20 +111,18 @@ toolbarbutton.social-provider-menuitem > .toolbarbutton-icon {
 
 menu.subviewbutton > .menu-right {
   -moz-appearance: none;
-  list-style-image: url(chrome://browser/skin/customizableui/menu-arrow.svg);
-  -moz-context-properties: fill;
-  fill: MenuText;
+  list-style-image: url(chrome://browser/skin/customizableui/menu-arrow.svg#arrow);
   
   -moz-image-region: auto;
 }
 
 menu[disabled="true"].subviewbutton > .menu-right {
-  fill: GrayText;
+  list-style-image: url(chrome://browser/skin/customizableui/menu-arrow.svg#arrow-disabled);
 }
 
 @media (-moz-windows-default-theme: 0) {
   menu[_moz-menuactive].subviewbutton > .menu-right {
-    fill: HighlightText;
+    list-style-image: url(chrome://browser/skin/customizableui/menu-arrow.svg#arrow-hover);
   }
 }
 
@@ -152,8 +150,12 @@ menu.subviewbutton > .menu-right:-moz-locale-dir(rtl) {
 photonpanelmultiview .subviewbutton > .toolbarbutton-text,
 photonpanelmultiview .subviewbutton > .toolbarbutton-icon,
 photonpanelmultiview .panel-banner-item > .toolbarbutton-multiline-text {
-  padding: 0;
   margin: 0;
+}
+
+photonpanelmultiview .subviewbutton > .toolbarbutton-icon,
+photonpanelmultiview .panel-banner-item > .toolbarbutton-multiline-text {
+  padding: 0;
 }
 
 
