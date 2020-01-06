@@ -27,9 +27,7 @@ def _get_platform():
     if platform.system() == "Linux":
         return 'linux_'
     elif platform.system() in ("Windows", "Microsoft"):
-        if '5.1' in platform.version():  
-            return 'win_'
-        elif '6.1' in platform.version():  
+        if '6.1' in platform.version():  
             return 'w7_'
         elif '6.2' in platform.version():  
             return 'w8_'
