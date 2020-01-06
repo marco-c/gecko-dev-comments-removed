@@ -1728,7 +1728,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 49;
+    const UI_VERSION = 50;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2069,6 +2069,23 @@ BrowserGlue.prototype = {
     if (currentUIVersion < 49) {
       
       Services.prefs.setIntPref("browser.onboarding.seen-tourset-version", 0);
+    }
+
+    if (currentUIVersion < 50) {
+      try {
+        
+        
+        
+        
+        if (Services.prefs.getBoolPref("devtools.webconsole.filter.networkinfo")) {
+          Services.prefs.setBoolPref("devtools.webconsole.filter.net", true);
+        }
+        if (Services.prefs.getBoolPref("devtools.webconsole.filter.cssparser")) {
+          Services.prefs.setBoolPref("devtools.webconsole.filter.css", true);
+        }
+      } catch (ex) {
+        
+      }
     }
 
     
