@@ -563,9 +563,6 @@ where
         } else {
             element.has_dirty_descendants()
         };
-    if flags.for_animation_only() {
-        unsafe { element.unset_animation_only_dirty_descendants(); }
-    }
 
     
     
