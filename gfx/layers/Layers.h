@@ -1291,9 +1291,10 @@ public:
 
 
 
-  void SetScrollbarData(FrameMetrics::ViewID aScrollId, ScrollDirection aDir, float aThumbRatio)
+
+  void SetScrollThumbData(FrameMetrics::ViewID aScrollId, const ScrollThumbData& aThumbData)
   {
-    if (mSimpleAttrs.SetScrollbarData(aScrollId, aDir, aThumbRatio)) {
+    if (mSimpleAttrs.SetScrollThumbData(aScrollId, aThumbData)) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ScrollbarData", this));
       MutatedSimple();
     }
@@ -1367,8 +1368,7 @@ public:
   const LayerRect& GetStickyScrollRangeOuter() { return mSimpleAttrs.StickyScrollRangeOuter(); }
   const LayerRect& GetStickyScrollRangeInner() { return mSimpleAttrs.StickyScrollRangeInner(); }
   FrameMetrics::ViewID GetScrollbarTargetContainerId() { return mSimpleAttrs.ScrollbarTargetContainerId(); }
-  ScrollDirection GetScrollbarDirection() { return mSimpleAttrs.ScrollbarDirection(); }
-  float GetScrollbarThumbRatio() { return mSimpleAttrs.ScrollbarThumbRatio(); }
+  const ScrollThumbData& GetScrollThumbData() const { return mSimpleAttrs.ThumbData(); }
   bool IsScrollbarContainer() { return mSimpleAttrs.IsScrollbarContainer(); }
   Layer* GetMaskLayer() const { return mMaskLayer; }
   void CheckCanary() const { mCanary.Check(); }

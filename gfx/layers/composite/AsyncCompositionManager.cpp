@@ -804,7 +804,7 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
   
   Layer* scrollbar = BreadthFirstSearch<ReverseIterator>(aRoot,
     [aRootScrollId](Layer* aNode) {
-      return (aNode->GetScrollbarDirection() == ScrollDirection::HORIZONTAL &&
+      return (aNode->GetScrollThumbData().mDirection == ScrollDirection::HORIZONTAL &&
               aNode->GetScrollbarTargetContainerId() == aRootScrollId);
     });
   if (scrollbar) {
@@ -1080,7 +1080,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
 
         ExpandRootClipRect(layer, fixedLayerMargins);
 
-        if (layer->GetScrollbarDirection() != ScrollDirection::NONE) {
+        if (layer->GetScrollThumbData().mDirection != ScrollDirection::NONE) {
           ApplyAsyncTransformToScrollbar(layer);
         }
       });
@@ -1128,7 +1128,8 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
-  if (aScrollbar->GetScrollbarDirection() == ScrollDirection::VERTICAL) {
+  const ScrollThumbData& thumbData = aScrollbar->GetScrollThumbData();
+  if (thumbData.mDirection == ScrollDirection::VERTICAL) {
     const ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
 
@@ -1143,7 +1144,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     
     
     
-    const float ratio = aScrollbar->GetScrollbarThumbRatio() /
+    const float ratio = thumbData.mThumbRatio /
         (metrics.GetPresShellResolution() * asyncZoomY);
     
     
@@ -1180,7 +1181,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     scrollbarTransform.PostScale(1.f, yScale, 1.f);
     scrollbarTransform.PostTranslate(0, yTranslation, 0);
   }
-  if (aScrollbar->GetScrollbarDirection() == ScrollDirection::HORIZONTAL) {
+  if (thumbData.mDirection == ScrollDirection::HORIZONTAL) {
     
 
     const ParentLayerCoord asyncScrollX = asyncTransform._41;
@@ -1190,7 +1191,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
 
     const CSSToParentLayerScale effectiveZoom(metrics.GetZoom().xScale * asyncZoomX);
 
-    const float ratio = aScrollbar->GetScrollbarThumbRatio() /
+    const float ratio = thumbData.mThumbRatio /
         (metrics.GetPresShellResolution() * asyncZoomX);
     ParentLayerCoord xTranslation = -asyncScrollX * ratio;
 

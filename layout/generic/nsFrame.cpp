@@ -2792,7 +2792,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       new (aBuilder) nsDisplayOwnLayer(aBuilder, this, &resultList,
                                        aBuilder->CurrentActiveScrolledRoot(), 0,
                                        mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
-                                       0.0f,  false));
+                                       ScrollThumbData{},  false));
   }
 
   
