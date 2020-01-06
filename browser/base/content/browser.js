@@ -4968,10 +4968,11 @@ var CombinedStopReload = {
 
     
     
-    this.reload.setAttribute("temporarily-disabled", "true");
+    this.reload.disabled = true;
     this._timer = setTimeout(function(self) {
       self._timer = 0;
-      self.reload.removeAttribute("temporarily-disabled");
+      self.reload.disabled = XULBrowserWindow.reloadCommand
+                                             .getAttribute("disabled") == "true";
     }, 650, this);
   },
 
