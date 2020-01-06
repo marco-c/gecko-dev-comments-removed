@@ -20,6 +20,7 @@
 
 #if defined(ANDROID)
 #include <sys/syscall.h>
+#include <math.h>
 
 #include <android/api-level.h>
 #if __ANDROID_API__ < 8
@@ -331,25 +332,6 @@ void *
 SystemElf::GetSymbolPtr(const char *symbol) const
 {
   void *sym = dlsym(dlhandle, symbol);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!sym &&
-      !strcmp(symbol, "isnanf") &&
-      !strcmp(GetName(), "libm.so")) {
-    sym = dlsym(dlhandle, "__isnanf");
-  }
   DEBUG_LOG("dlsym(%p [\"%s\"], \"%s\") = %p", dlhandle, GetPath(), symbol, sym);
   ElfLoader::Singleton.lastError = dlerror();
   return sym;
@@ -576,6 +558,9 @@ ElfLoader::Init()
   if (dladdr(FunctionPtr(syscall), &info) != 0) {
     libc = LoadedElf::Create(info.dli_fname, info.dli_fbase);
   }
+  if (dladdr(FunctionPtr<int (*)(double)>(isnan), &info) != 0) {
+    libm = LoadedElf::Create(info.dli_fname, info.dli_fbase);
+  }
 #endif
 }
 
@@ -591,6 +576,7 @@ ElfLoader::~ElfLoader()
   self_elf = nullptr;
 #if defined(ANDROID)
   libc = nullptr;
+  libm = nullptr;
 #endif
 
   AutoLock lock(&handlesMutex);

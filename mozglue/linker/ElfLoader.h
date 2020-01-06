@@ -473,6 +473,9 @@ private:
 
 
   RefPtr<LibHandle> libc;
+
+  
+  RefPtr<LibHandle> libm;
 #endif
 
   
