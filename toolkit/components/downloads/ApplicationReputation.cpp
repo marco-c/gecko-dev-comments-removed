@@ -170,7 +170,7 @@ private:
   bool IsBinaryFile();
 
   
-  ClientDownloadRequest::DownloadType GetDownloadType(const nsAString& aFilename);
+  ClientDownloadRequest::DownloadType GetDownloadType(const nsACString& aFilename);
 
   
   
@@ -401,177 +401,177 @@ PendingLookup::~PendingLookup()
   LOG(("Destroying pending lookup [this = %p]", this));
 }
 
-static const char16_t* const kBinaryFileExtensions[] = {
+static const char* const kBinaryFileExtensions[] = {
     
     
     
     
     
     
-    u".ade", 
-    u".adp", 
-    u".apk", 
-    u".app", 
-    u".application", 
-    u".appref-ms", 
-    
-    
-    u".as", 
-    u".asp", 
-    u".asx", 
-    
-    
-    u".bas", 
-    u".bash", 
-    u".bat", 
-    
-    
-    u".bz", 
-    u".bz2", 
-    u".bzip2", 
-    u".cab", 
-    u".cdr", 
-    u".cfg", 
-    u".chi", 
-    u".chm", 
-    u".class", 
-    u".cmd", 
-    u".com", 
-    u".command", 
-    u".cpgz", 
-    
-    u".cpl", 
-    u".crt", 
-    u".crx", 
-    u".csh", 
-    u".dart", 
-    u".dc42", 
-    u".deb", 
-    u".dex", 
-    u".diskcopy42", 
-    u".dll", 
-    u".dmg", 
-    u".dmgpart", 
-    
-    
-    
-    
-    
-    u".drv", 
-    u".dvdr", 
-    u".efi", 
-    u".eml", 
-    u".exe", 
+    ".ade", 
+    ".adp", 
+    ".apk", 
+    ".app", 
+    ".application", 
+    ".appref-ms", 
+    
+    
+    ".as", 
+    ".asp", 
+    ".asx", 
+    
+    
+    ".bas", 
+    ".bash", 
+    ".bat", 
+    
+    
+    ".bz", 
+    ".bz2", 
+    ".bzip2", 
+    ".cab", 
+    ".cdr", 
+    ".cfg", 
+    ".chi", 
+    ".chm", 
+    ".class", 
+    ".cmd", 
+    ".com", 
+    ".command", 
+    ".cpgz", 
+    
+    ".cpl", 
+    ".crt", 
+    ".crx", 
+    ".csh", 
+    ".dart", 
+    ".dc42", 
+    ".deb", 
+    ".dex", 
+    ".diskcopy42", 
+    ".dll", 
+    ".dmg", 
+    ".dmgpart", 
+    
+    
+    
+    
+    
+    ".drv", 
+    ".dvdr", 
+    ".efi", 
+    ".eml", 
+    ".exe", 
     
-    u".fon", 
-    u".fxp", 
-    u".gadget", 
-    u".grp", 
-    u".gz", 
-    u".gzip", 
-    u".hfs", 
-    u".hlp", 
-    u".hqx", 
-    u".hta", 
-    u".htm",
-    u".html",
-    u".htt", 
-    u".img", 
-    u".imgpart", 
-    u".inf", 
-    u".ini", 
-    u".ins", 
+    ".fon", 
+    ".fxp", 
+    ".gadget", 
+    ".grp", 
+    ".gz", 
+    ".gzip", 
+    ".hfs", 
+    ".hlp", 
+    ".hqx", 
+    ".hta", 
+    ".htm",
+    ".html",
+    ".htt", 
+    ".img", 
+    ".imgpart", 
+    ".inf", 
+    ".ini", 
+    ".ins", 
     
-    u".iso", 
-    u".isp", 
+    ".iso", 
+    ".isp", 
     
-    u".jar", 
-    u".jnlp", 
+    ".jar", 
+    ".jnlp", 
     
-    u".js", 
-    u".jse", 
-    u".ksh", 
+    ".js", 
+    ".jse", 
+    ".ksh", 
     
-    u".lnk", 
-    u".local", 
+    ".lnk", 
+    ".local", 
     
     
     
     
     
-    u".mad", 
-    u".maf", 
-    u".mag", 
-    u".mam", 
-    u".manifest", 
-    u".maq", 
-    u".mar", 
-    u".mas", 
-    u".mat", 
-    u".mau", 
-    u".mav", 
-    u".maw", 
-    u".mda", 
-    u".mdb", 
-    u".mde", 
-    u".mdt", 
-    u".mdw", 
-    u".mdz", 
-    u".mht", 
-    u".mhtml", 
-    u".mim", 
-    u".mmc", 
-    u".mof", 
-    u".mpkg", 
-    u".msc", 
-    u".msg", 
-    u".msh", 
-    u".msh1", 
-    u".msh1xml", 
-    u".msh2", 
-    u".msh2xml", 
-    u".mshxml", 
-    u".msi", 
-    u".msp", 
-    u".mst", 
-    u".ndif", 
+    ".mad", 
+    ".maf", 
+    ".mag", 
+    ".mam", 
+    ".manifest", 
+    ".maq", 
+    ".mar", 
+    ".mas", 
+    ".mat", 
+    ".mau", 
+    ".mav", 
+    ".maw", 
+    ".mda", 
+    ".mdb", 
+    ".mde", 
+    ".mdt", 
+    ".mdw", 
+    ".mdz", 
+    ".mht", 
+    ".mhtml", 
+    ".mim", 
+    ".mmc", 
+    ".mof", 
+    ".mpkg", 
+    ".msc", 
+    ".msg", 
+    ".msh", 
+    ".msh1", 
+    ".msh1xml", 
+    ".msh2", 
+    ".msh2xml", 
+    ".mshxml", 
+    ".msi", 
+    ".msp", 
+    ".mst", 
+    ".ndif", 
     
-    u".ocx", 
-    u".ops", 
+    ".ocx", 
+    ".ops", 
     
     
     
     
     
     
-    u".partial", 
-    u".pax", 
-    u".pcd", 
-    u".pdf", 
+    ".partial", 
+    ".pax", 
+    ".pcd", 
+    ".pdf", 
     
-    u".pet", 
-    u".pif", 
-    u".pkg", 
-    u".pl", 
-    u".plg", 
+    ".pet", 
+    ".pif", 
+    ".pkg", 
+    ".pl", 
+    ".plg", 
     
     
     
     
     
-    u".prf", 
-    u".prg", 
-    u".ps1", 
-    u".ps1xml", 
-    u".ps2", 
-    u".ps2xml", 
-    u".psc1", 
-    u".psc2", 
-    u".pst", 
-    u".pup", 
-    u".py", 
-    u".pyc", 
-    u".pyw", 
+    ".prf", 
+    ".prg", 
+    ".ps1", 
+    ".ps1xml", 
+    ".ps2", 
+    ".ps2xml", 
+    ".psc1", 
+    ".psc2", 
+    ".pst", 
+    ".pup", 
+    ".py", 
+    ".pyc", 
+    ".pyw", 
     
     
     
@@ -604,108 +604,108 @@ static const char16_t* const kBinaryFileExtensions[] = {
     
     
     
-    u".rb", 
-    u".reg", 
-    u".rels", 
+    ".rb", 
+    ".reg", 
+    ".rels", 
     
-    u".rpm", 
+    ".rpm", 
     
     
-    u".scf", 
-    u".scr", 
-    u".sct", 
-    u".search-ms", 
-    u".sh", 
-    u".shar", 
-    u".shb", 
-    u".shs", 
+    ".scf", 
+    ".scr", 
+    ".sct", 
+    ".search-ms", 
+    ".sh", 
+    ".shar", 
+    ".shb", 
+    ".shs", 
     
     
-    u".slp", 
-    u".smi", 
-    u".sparsebundle", 
-    u".sparseimage", 
-    u".spl", 
+    ".slp", 
+    ".smi", 
+    ".sparsebundle", 
+    ".sparseimage", 
+    ".spl", 
     
-    u".svg",
-    u".swf", 
-    u".swm", 
-    u".sys", 
-    u".tar", 
-    u".taz", 
-    u".tbz", 
-    u".tbz2", 
-    u".tcsh", 
-    u".tgz", 
+    ".svg",
+    ".swf", 
+    ".swm", 
+    ".sys", 
+    ".tar", 
+    ".taz", 
+    ".tbz", 
+    ".tbz2", 
+    ".tcsh", 
+    ".tgz", 
     
     
-    u".tpz", 
-    u".txz", 
-    u".tz", 
+    ".tpz", 
+    ".txz", 
+    ".tz", 
     
-    u".udf", 
-    u".udif", 
-    u".url", 
+    ".udf", 
+    ".udif", 
+    ".url", 
     
     
-    u".vb", 
-    u".vbe", 
-    u".vbs", 
+    ".vb", 
+    ".vbe", 
+    ".vbs", 
     
-    u".vhd", 
-    u".vhdx", 
-    u".vmdk", 
-    u".vsd", 
-    u".vsmacros", 
-    u".vss", 
-    u".vst", 
-    u".vsw", 
-    u".website",  
-    u".wim", 
+    ".vhd", 
+    ".vhdx", 
+    ".vmdk", 
+    ".vsd", 
+    ".vsmacros", 
+    ".vss", 
+    ".vst", 
+    ".vsw", 
+    ".website",  
+    ".wim", 
     
     
-    u".ws", 
-    u".wsc", 
-    u".wsf", 
-    u".wsh", 
-    u".xar", 
-    u".xbap", 
-    u".xhtml",
-    u".xhtm",
-    u".xht",
-    u".xip", 
+    ".ws", 
+    ".wsc", 
+    ".wsf", 
+    ".wsh", 
+    ".xar", 
+    ".xbap", 
+    ".xhtml",
+    ".xhtm",
+    ".xht",
+    ".xip", 
     
     
     
     
-    u".xml",
-    u".xnk", 
-    u".xrm-ms", 
-    u".xsl", 
+    ".xml",
+    ".xnk", 
+    ".xrm-ms", 
+    ".xsl", 
     
-    u".xz", 
-    u".z", 
+    ".xz", 
+    ".z", 
 #ifdef XP_WIN 
-    u".zip", 
+    ".zip", 
 #endif
-    u".zipx", 
+    ".zipx", 
     
 };
 
 bool
 PendingLookup::IsBinaryFile()
 {
-  nsString fileName;
+  nsCString fileName;
   nsresult rv = mQuery->GetSuggestedFileName(fileName);
   if (NS_FAILED(rv)) {
     LOG(("No suggested filename [this = %p]", this));
     return false;
   }
-  LOG(("Suggested filename: %s [this = %p]",
-       NS_ConvertUTF16toUTF8(fileName).get(), this));
+  LOG(("Suggested filename: %s [this = %p]", fileName.get(), this));
 
   for (size_t i = 0; i < ArrayLength(kBinaryFileExtensions); ++i) {
-    if (StringEndsWith(fileName, nsDependentString(kBinaryFileExtensions[i]))) {
+    if (StringEndsWith(fileName,
+                       nsDependentCString(kBinaryFileExtensions[i]))) {
       return true;
     }
   }
@@ -714,33 +714,33 @@ PendingLookup::IsBinaryFile()
 }
 
 ClientDownloadRequest::DownloadType
-PendingLookup::GetDownloadType(const nsAString& aFilename) {
+PendingLookup::GetDownloadType(const nsACString& aFilename) {
   MOZ_ASSERT(IsBinaryFile());
 
   
-  if (StringEndsWith(aFilename, NS_LITERAL_STRING(".zip"))) {
+  if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".zip"))) {
     return ClientDownloadRequest::ZIPPED_EXECUTABLE;
-  } else if (StringEndsWith(aFilename, NS_LITERAL_STRING(".apk"))) {
+  } else if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".apk"))) {
     return ClientDownloadRequest::ANDROID_APK;
-  } else if (StringEndsWith(aFilename, NS_LITERAL_STRING(".app")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".cdr")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".dart")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".dc42")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".diskcopy42")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".dmg")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".dmgpart")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".dvdr")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".img")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".imgpart")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".iso")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".mpkg")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".ndif")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".pkg")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".smi")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".sparsebundle")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".sparseimage")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".toast")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".udif"))) {
+  } else if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".app")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".cdr")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dc42")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".diskcopy42")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dmg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dmgpart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".dvdr")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".img")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".imgpart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".iso")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".mpkg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".ndif")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".pkg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".smi")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".sparsebundle")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".sparseimage")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".toast")) ||
+             StringEndsWith(aFilename, NS_LITERAL_CSTRING(".udif"))) {
     return ClientDownloadRequest::MAC_EXECUTABLE;
   }
 
@@ -1318,10 +1318,10 @@ PendingLookup::SendRemoteQueryInternal()
   rv = mQuery->GetSha256Hash(sha256Hash);
   NS_ENSURE_SUCCESS(rv, rv);
   mRequest.mutable_digests()->set_sha256(sha256Hash.Data());
-  nsString fileName;
+  nsCString fileName;
   rv = mQuery->GetSuggestedFileName(fileName);
   NS_ENSURE_SUCCESS(rv, rv);
-  mRequest.set_file_basename(NS_ConvertUTF16toUTF8(fileName).get());
+  mRequest.set_file_basename(fileName.get());
   mRequest.set_download_type(GetDownloadType(fileName));
 
   if (mRequest.signature().trusted()) {
