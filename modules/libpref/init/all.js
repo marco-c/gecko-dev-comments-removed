@@ -209,7 +209,7 @@ pref("dom.compartment_per_addon", true);
 
 
 
-pref("dom.script_loader.bytecode_cache.enabled", true);
+pref("dom.script_loader.bytecode_cache.enabled", false);
 
 
 
@@ -5890,6 +5890,11 @@ pref("dom.payments.loglevel", "Warn");
 
 #ifdef FUZZING
 pref("fuzzing.enabled", false);
+#endif
+
+#ifdef MOZ_ASAN_REPORTER
+pref("asanreporter.apiurl", "https://anf1.fuzzing.mozilla.org/crashproxy/submit/");
+pref("asanreporter.clientid", "unknown");
 #endif
 
 #if defined(XP_WIN)
