@@ -43,7 +43,7 @@ var PdfjsContentUtils = {
     if (!this._mm) {
       this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
         getService(Ci.nsISyncMessageSender);
-      this._mm.addMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
       Services.obs.addObserver(this, "quit-application");
     }
@@ -51,7 +51,7 @@ var PdfjsContentUtils = {
 
   uninit() {
     if (this._mm) {
-      this._mm.removeMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.removeMessageListener("PDFJS:Child:updateSettings", this);
       Services.obs.removeObserver(this, "quit-application");
     }
     this._mm = null;
@@ -101,14 +101,6 @@ var PdfjsContentUtils = {
 
 
 
-  isDefaultHandlerApp() {
-    return this._mm.sendSyncMessage("PDFJS:Parent:isDefaultHandlerApp")[0];
-  },
-
-  
-
-
-
   displayWarning(aWindow, aMessage, aLabel, aAccessKey) {
     
     let winmm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -134,13 +126,17 @@ var PdfjsContentUtils = {
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
-      case "PDFJS:Child:refreshSettings":
+      case "PDFJS:Child:updateSettings":
         
         if (Services.appinfo.processType ===
             Services.appinfo.PROCESS_TYPE_CONTENT) {
           let jsm = "resource://pdf.js/PdfJs.jsm";
           let pdfjs = Components.utils.import(jsm, {}).PdfJs;
-          pdfjs.updateRegistration();
+          if (aMsg.data.enabled) {
+            pdfjs.ensureRegistered();
+          } else {
+            pdfjs.ensureUnregistered();
+          }
         }
         break;
     }

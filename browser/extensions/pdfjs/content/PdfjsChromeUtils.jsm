@@ -124,7 +124,7 @@ var PdfjsChromeUtils = {
 
 
 
-  notifyChildOfSettingsChange() {
+  notifyChildOfSettingsChange(enabled) {
     if (Services.appinfo.processType ===
         Services.appinfo.PROCESS_TYPE_DEFAULT && this._ppmm) {
       
@@ -132,7 +132,7 @@ var PdfjsChromeUtils = {
       
       
       
-      this._ppmm.broadcastAsyncMessage("PDFJS:Child:refreshSettings", {});
+      this._ppmm.broadcastAsyncMessage("PDFJS:Child:updateSettings", {enabled});
     }
   },
 
