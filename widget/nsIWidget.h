@@ -1298,13 +1298,6 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void CleanupWebRenderWindowOverlay(mozilla::layers::WebRenderBridgeChild* aWrBridge,
-                                               mozilla::wr::IpcResourceUpdateQueue& aResources) {}
-
-    
-
-
-
 
 
 
