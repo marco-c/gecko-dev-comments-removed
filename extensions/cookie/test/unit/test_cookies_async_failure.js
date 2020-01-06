@@ -163,9 +163,29 @@ function* run_test_1(generator)
   
   do_check_eq(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
 
+  let isRebuildingDone = false;
+  let rebuildingObserve = function (subject, topic, data) {
+    isRebuildingDone = true;
+    Services.obs.removeObserver(rebuildingObserve, "cookie-db-rebuilding");
+  };
+  Services.obs.addObserver(rebuildingObserve, "cookie-db-rebuilding");
+
   
-  new _observer(sub_generator, "cookie-db-rebuilding");
-  yield;
+  
+  
+  
+  for (let i = 0; i < 10; ++i) {
+    do_check_eq(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
+    do_execute_soon(function() { do_run_generator(sub_generator); });
+    yield;
+  }
+
+  
+  if (!isRebuildingDone) {
+    Services.obs.removeObserver(rebuildingObserve, "cookie-db-rebuilding");
+    new _observer(sub_generator, "cookie-db-rebuilding");
+    yield;
+  }
   do_execute_soon(function() { do_run_generator(sub_generator); });
   yield;
 
