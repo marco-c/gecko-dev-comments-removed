@@ -200,6 +200,32 @@ nsHangDetails::Submit()
     if (os) {
       os->NotifyObservers(hangDetails, "bhr-thread-hang", nullptr);
     }
+
+    
+    
+    switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Content: {
+      auto cc = dom::ContentChild::GetSingleton();
+      if (cc) {
+        Unused << cc->SendBHRThreadHang(hangDetails->mDetails);
+      }
+      break;
+    }
+    case GeckoProcessType_GPU: {
+      auto gp = gfx::GPUParent::GetSingleton();
+      if (gp) {
+        Unused << gp->SendBHRThreadHang(hangDetails->mDetails);
+      }
+      break;
+    }
+    case GeckoProcessType_Default:
+      break;
+    default:
+      
+      
+      NS_WARNING("Unsupported BHR process type - discarding hang.");
+      break;
+    }
   });
 
   nsresult rv = SystemGroup::Dispatch(TaskCategory::Other,
@@ -240,21 +266,19 @@ ParamTraits<mozilla::HangDetails>::Write(Message* aMsg, const mozilla::HangDetai
   WriteParam(aMsg, aParam.mPseudoStack);
 
   
-  
-  
-  if (!aParam.mAnnotations) {
-    WriteParam(aMsg, (size_t) 0);
-  } else {
+  {
+    
+    if (!aParam.mAnnotations) {
+      WriteParam(aMsg, 0);
+    }
     size_t length = aParam.mAnnotations->Count();
     WriteParam(aMsg, length);
     auto enumerator = aParam.mAnnotations->GetEnumerator();
-    if (enumerator) {
-      nsAutoString key;
-      nsAutoString value;
-      while (enumerator->Next(key, value)) {
-        WriteParam(aMsg, key);
-        WriteParam(aMsg, value);
-      }
+    nsAutoString key;
+    nsAutoString value;
+    while (enumerator->Next(key, value)) {
+      WriteParam(aMsg, key);
+      WriteParam(aMsg, value);
     }
   }
 
