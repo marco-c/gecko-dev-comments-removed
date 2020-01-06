@@ -231,11 +231,11 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   bool mShowVScrollbar;
 
   ScrollReflowInput(nsIScrollableFrame* aFrame,
-                    const ReflowInput& aReflowInput) :
-    mReflowInput(aReflowInput),
+                    const ReflowInput& aState) :
+    mReflowInput(aState),
     
     
-    mBoxState(aReflowInput.mFrame->PresContext(), aReflowInput.mRenderingContext, 0),
+    mBoxState(aState.mFrame->PresContext(), aState.mRenderingContext, 0),
     mStyles(aFrame->GetScrollbarStyles()) {
   }
 };

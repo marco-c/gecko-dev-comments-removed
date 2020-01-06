@@ -995,12 +995,12 @@ protected:
   
   void CalculateHypotheticalPosition(nsPresContext* aPresContext,
                                      nsPlaceholderFrame* aPlaceholderFrame,
-                                     const ReflowInput* aReflowInput,
+                                     const ReflowInput* cbrs,
                                      nsHypotheticalPosition& aHypotheticalPos,
                                      mozilla::LayoutFrameType aFrameType) const;
 
   void InitAbsoluteConstraints(nsPresContext* aPresContext,
-                               const ReflowInput* aReflowInput,
+                               const ReflowInput* cbrs,
                                const mozilla::LogicalSize& aContainingBlockSize,
                                mozilla::LayoutFrameType aFrameType);
 

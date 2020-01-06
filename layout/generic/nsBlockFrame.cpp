@@ -7221,7 +7221,7 @@ nsBlockFrame::ReflowBullet(nsIFrame* aBulletFrame,
                            ReflowOutput& aMetrics,
                            nscoord aLineTop)
 {
-  const ReflowInput &ri = aState.mReflowInput;
+  const ReflowInput &rs = aState.mReflowInput;
 
   
   WritingMode bulletWM = aBulletFrame->GetWritingMode();
@@ -7233,7 +7233,7 @@ nsBlockFrame::ReflowBullet(nsIFrame* aBulletFrame,
   
   
   
-  ReflowInput reflowInput(aState.mPresContext, ri,
+  ReflowInput reflowInput(aState.mPresContext, rs,
                                 aBulletFrame, availSize);
   nsReflowStatus  status;
   aBulletFrame->Reflow(aState.mPresContext, aMetrics, reflowInput, status);
@@ -7262,13 +7262,13 @@ nsBlockFrame::ReflowBullet(nsIFrame* aBulletFrame,
   
   
   
-  WritingMode wm = ri.GetWritingMode();
+  WritingMode wm = rs.GetWritingMode();
   
   
   LogicalMargin bulletMargin =
     reflowInput.ComputedLogicalMargin().ConvertTo(wm, bulletWM);
   nscoord iStart = floatAvailSpace.IStart(wm) -
-                   ri.ComputedLogicalBorderPadding().IStart(wm) -
+                   rs.ComputedLogicalBorderPadding().IStart(wm) -
                    bulletMargin.IEnd(wm) -
                    aMetrics.ISize(wm);
 
