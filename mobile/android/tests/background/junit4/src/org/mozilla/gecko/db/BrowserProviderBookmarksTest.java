@@ -7,6 +7,7 @@ import android.content.ContentProviderClient;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.RemoteException;
 
 import org.junit.After;
@@ -18,9 +19,12 @@ import org.mozilla.gecko.background.testhelpers.TestRunner;
 import org.mozilla.gecko.sync.repositories.android.BrowserContractHelpers;
 import org.robolectric.shadows.ShadowContentResolver;
 
+import org.mozilla.gecko.db.BrowserContract.Bookmarks;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,18 +32,22 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.INVALID_TIMESTAMP;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.assertVersionsForSelection;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.bookmarksTestSyncUri;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.bookmarksTestUri;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.getBookmarkIdFromGuid;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.insertBookmark;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.withDeleted;
+import static org.mozilla.gecko.db.BrowserProviderGeneralTest.withSync;
 
 
 
 
 @RunWith(TestRunner.class)
 public class BrowserProviderBookmarksTest {
-
-    private static final long INVALID_ID = -1;
-    private static final long INVALID_TIMESTAMP = -1;
-
     private ContentProviderClient bookmarksClient;
-    private Uri bookmarksTestUri;
     private BrowserProvider provider;
 
     @Before
@@ -50,8 +58,6 @@ public class BrowserProviderBookmarksTest {
 
         ShadowContentResolver contentResolver = new ShadowContentResolver();
         bookmarksClient = contentResolver.acquireContentProviderClient(BrowserContractHelpers.BOOKMARKS_CONTENT_URI);
-
-        bookmarksTestUri = testUri(BrowserContract.Bookmarks.CONTENT_URI);
     }
 
     @After
@@ -62,8 +68,8 @@ public class BrowserProviderBookmarksTest {
 
     @Test
     public void testBookmarkChangedCountsOnUpdates() throws RemoteException {
-        final long rootId = getBookmarkIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
-        insertBookmark("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+        insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
 
         ContentValues values = new ContentValues();
@@ -76,29 +82,38 @@ public class BrowserProviderBookmarksTest {
         assertEquals(1, changed);
 
         
-        insertBookmark("bookmark-1", null, "parent", rootId, BrowserContract.Bookmarks.TYPE_FOLDER);
-        long parentId = getBookmarkIdFromGuid("parent");
+        insert("bookmark-1", null, "parent", rootId, BrowserContract.Bookmarks.TYPE_FOLDER);
+        long parentId = getIdFromGuid("parent");
         values = new ContentValues();
         values.put(BrowserContract.Bookmarks.PARENT, parentId);
 
+        Uri uriWithOldParent = bookmarksTestUri.buildUpon()
+                .appendQueryParameter(BrowserContract.PARAM_OLD_BOOKMARK_PARENT, String.valueOf(rootId))
+                .build();
         changed = bookmarksClient.update(
-                bookmarksTestUri.buildUpon()
-                        .appendQueryParameter(
-                                BrowserContract.PARAM_OLD_BOOKMARK_PARENT,
-                                String.valueOf(rootId)
-                        ).build(),
+                uriWithOldParent,
                 values,
                 BrowserContract.Bookmarks.GUID + " = ?",
                 new String[] { "guid-1" }
         );
 
         assertEquals(3, changed);
+
+        
+        changed = bookmarksClient.update(
+                withSync(uriWithOldParent),
+                values,
+                BrowserContract.Bookmarks.GUID + " = ?",
+                new String[] { "guid-1" }
+        );
+
+        assertEquals(1, changed);
     }
 
     @Test
     public void testBookmarkChangedCountsOnDeletions() throws RemoteException {
-        final long rootId = getBookmarkIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
-        insertBookmark("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+        insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
 
         int changed = bookmarksClient.delete(bookmarksTestUri,
@@ -108,11 +123,11 @@ public class BrowserProviderBookmarksTest {
         
         assertEquals(2, changed);
 
-        insertBookmark("bookmark-2", "https://www.mozilla-2.org", "guid-2",
+        insert("bookmark-2", "https://www.mozilla-2.org", "guid-2",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
-        insertBookmark("bookmark-3", "https://www.mozilla-3.org", "guid-3",
+        insert("bookmark-3", "https://www.mozilla-3.org", "guid-3",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
-        insertBookmark("bookmark-4", "https://www.mozilla-4.org", "guid-4",
+        insert("bookmark-4", "https://www.mozilla-4.org", "guid-4",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
 
         changed = bookmarksClient.delete(bookmarksTestUri,
@@ -122,16 +137,16 @@ public class BrowserProviderBookmarksTest {
         assertEquals(4, changed);
 
         
-        final Uri parentUri = insertBookmark("parent", null, "parent", rootId,
+        final Uri parentUri = insert("parent", null, "parent", rootId,
                 BrowserContract.Bookmarks.TYPE_FOLDER);
         final long parentId = Long.parseLong(parentUri.getLastPathSegment());
 
-        insertBookmark("bookmark-5", "https://www.mozilla-2.org", "guid-5",
+        insert("bookmark-5", "https://www.mozilla-2.org", "guid-5",
                 parentId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
-        insertBookmark("bookmark-6", "https://www.mozilla-3.org", "guid-6",
+        insert("bookmark-6", "https://www.mozilla-3.org", "guid-6",
                 parentId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
         
-        insertBookmark("bookmark-7", "https://www.mozilla-4.org", "guid-7",
+        insert("bookmark-7", "https://www.mozilla-4.org", "guid-7",
                 rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
 
         changed = bookmarksClient.delete(bookmarksTestUri,
@@ -144,7 +159,7 @@ public class BrowserProviderBookmarksTest {
 
     @Test
     public void testBookmarkFolderLastModifiedOnDeletion() throws RemoteException {
-        final long rootId = getBookmarkIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
 
         
         
@@ -152,16 +167,19 @@ public class BrowserProviderBookmarksTest {
         
         
 
-        final Uri parentUri = insertBookmark("parent", null, "parent", rootId,
+        final Uri parentUri = insert("parent", null, "parent", rootId,
                                              BrowserContract.Bookmarks.TYPE_FOLDER);
-        final Uri siblingUri = insertBookmark("sibling", null, "sibling", rootId,
+        final Uri siblingUri = insert("sibling", null, "sibling", rootId,
                                               BrowserContract.Bookmarks.TYPE_FOLDER);
 
         final long parentId = Long.parseLong(parentUri.getLastPathSegment());
-        final Uri child1Uri = insertBookmark("child-1", null, "child-1", parentId,
+        final Uri child1Uri = insert("child-1", null, "child-1", parentId,
                                              BrowserContract.Bookmarks.TYPE_FOLDER);
-        final Uri child2Uri = insertBookmark("child-2", null, "child-2", parentId,
-                                             BrowserContract.Bookmarks.TYPE_FOLDER);
+        
+        
+        
+        final Uri child2Uri = insert("child-2", null, "child-2", parentId,
+                                             BrowserContract.Bookmarks.TYPE_FOLDER, true);
 
         final long parentLastModifiedBeforeDeletion = getLastModified(parentUri);
         final long siblingLastModifiedBeforeDeletion = getLastModified(siblingUri);
@@ -169,7 +187,7 @@ public class BrowserProviderBookmarksTest {
         final long child1LastModifiedBeforeDeletion = getLastModified(child1Uri);
         final long child2LastModifiedBeforeDeletion = getLastModified(child2Uri);
 
-        bookmarksClient.delete(child2Uri, null, null);
+        bookmarksClient.delete(bookmarksTestUri, "guid = ?", new String[] {"child-2"});
 
         final long parentLastModifiedAfterDeletion = getLastModified(parentUri);
         final long siblingLastModifiedAfterDeletion = getLastModified(siblingUri);
@@ -188,17 +206,21 @@ public class BrowserProviderBookmarksTest {
 
     @Test
     public void testDeleteBookmarkFolder() throws RemoteException {
-        final long rootId = getBookmarkIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
 
         
-        final Uri parentUri = insertBookmark("parent", null, "parent", rootId,
-                                             BrowserContract.Bookmarks.TYPE_FOLDER);
+        
+        
+
+        
+        final Uri parentUri = insert("parent", null, "parent", rootId,
+                                             BrowserContract.Bookmarks.TYPE_FOLDER, true);
         final long parentId = Long.parseLong(parentUri.getLastPathSegment());
 
         
         for (int i = 0; i < 10; i++) {
-            insertBookmark("bookmark-" + i, "https://www.mozilla-" + i + ".org", "guid-" + i,
-                           parentId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
+            insert("bookmark-" + i, "https://www.mozilla-" + i + ".org", "guid-" + i,
+                           parentId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
         }
 
         final String selection = BrowserContract.Bookmarks._ID + " = ? OR " +
@@ -277,12 +299,257 @@ public class BrowserProviderBookmarksTest {
         }
     }
 
-    private Uri testUri(Uri baseUri) {
-        return baseUri.buildUpon().appendQueryParameter(BrowserContract.PARAM_IS_TEST, "1").build();
+    @Test
+    public void testBookmarkVersioning() throws Exception {
+        
+        
+
+        
+        
+
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 1, 0);
+
+        
+        String guid1 = UUID.randomUUID().toString();
+        String guid2 = UUID.randomUUID().toString();
+
+        assertEquals(7, getTotalNumberOfBookmarks());
+
+        insert("bookmark-1", "https://www.mozilla-1.org", guid1,
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK);
+        assertVersionsForGuid(guid1, 1, 0);
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        assertEquals(8, getTotalNumberOfBookmarks());
+
+        
+        insert("bookmark-2", "https://www.mozilla-2.org", guid2,
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
+        assertVersionsForGuid(guid2, 1, 1);
+        
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        assertEquals(9, getTotalNumberOfBookmarks());
+
+        
+
+        
+        updateBookmarkTitleByGuid(bookmarksTestUri, guid1, "new title");
+        assertVersionsForGuid(guid1, 2, 0);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        updateBookmarkTitleByGuid(bookmarksTestUri, guid2, "another title");
+        assertVersionsForGuid(guid2, 2, 1);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        
+        updateBookmarkTitleByGuid(bookmarksTestSyncUri, guid1, "another title");
+        assertVersionsForGuid(guid1, 2, 0);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        updateBookmarkTitleByGuid(bookmarksTestSyncUri, guid2, "just title");
+        assertVersionsForGuid(guid2, 2, 1);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 2, 0);
+
+        
+        deleteByGuid(bookmarksTestUri, guid1);
+        assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid1}));
+
+        assertEquals(8, getTotalNumberOfBookmarks());
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
+
+        
+        String guid3 = UUID.randomUUID().toString();
+        insert("bookmark-3", "https://www.mozilla-3.org", guid3,
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, true);
+
+        assertEquals(9, getTotalNumberOfBookmarks());
+
+        
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 3, 0);
+
+        assertVersionsForGuid(guid3, 1, 1);
+        deleteByGuid(bookmarksTestUri, guid3);
+
+        
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 4, 0);
+
+        
+        assertEquals(9, getTotalNumberOfBookmarks());
+
+        
+        assertEquals(1, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid3}));
+        assertVersionsForGuid(guid3, 2, 1);
+
+        
+        deleteByGuid(bookmarksTestSyncUri, guid2);
+        assertEquals(8, getTotalNumberOfBookmarks());
+        assertEquals(0, getRowCount(Bookmarks.GUID + " = ?", new String[]{guid2}));
+
+        
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 4, 0);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        insert("folder-1", null, "folder-1", rootId,
+                Bookmarks.TYPE_FOLDER);
+        insert("sibling", "http://www.mozilla-1.org", "sibling", rootId,
+                Bookmarks.TYPE_BOOKMARK);
+
+        final Uri parentUri = insert("parent", null, "parent", rootId,
+                Bookmarks.TYPE_FOLDER, true);
+        final long parentId = Long.parseLong(parentUri.getLastPathSegment());
+        insert("child-1", null, "child-1", parentId,
+                Bookmarks.TYPE_FOLDER, true);
+        
+        
+        
+        insert("child-2", "http://www.mozilla-2.org", "child-2", parentId,
+                Bookmarks.TYPE_BOOKMARK, true);
+        final Uri folder2Uri = insert("folder-2", null, "folder-2", parentId,
+                Bookmarks.TYPE_FOLDER, true);
+        final long folder2Id = Long.parseLong(folder2Uri.getLastPathSegment());
+
+        insert("child-3", "http://www.mozilla-4.org", "child-3", folder2Id,
+                Bookmarks.TYPE_BOOKMARK, true);
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 6, 0);
+        assertVersionsForGuid("sibling", 1, 0);
+        assertVersionsForGuid("folder-1", 1, 0);
+        assertVersionsForGuid("parent", 1, 1);
+        assertVersionsForGuid("child-1", 1, 1);
+        assertVersionsForGuid("child-2", 1, 1);
+        assertVersionsForGuid("folder-2", 1, 1);
+        assertVersionsForGuid("child-3", 1, 1);
+
+        deleteByGuid(bookmarksTestUri, "parent");
+
+        assertVersionsForGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID, 7, 0);
+        assertVersionsForGuid("sibling", 1, 0);
+        assertVersionsForGuid("folder-1", 1, 0);
+        assertVersionsForGuid("parent", 2, 1);
+        assertVersionsForGuid("child-1", 2, 1);
+        assertVersionsForGuid("child-2", 2, 1);
+        assertVersionsForGuid("folder-2", 2, 1);
+        assertVersionsForGuid("child-3", 2, 1);
     }
 
-    private Uri withDeleted(Uri baseUri) {
-        return baseUri.buildUpon().appendQueryParameter(BrowserContract.PARAM_SHOW_DELETED, "true").build();
+    }
+
+    @Test
+    public void testThatVersionsCanNotBeSetManually() throws Exception {
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+
+        
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, 1, 1, true);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, 1, null, true);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, null, 1, true);
+            fail();
+        } catch (IllegalArgumentException e) {}
+
+        
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, 1, 1, false);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, 1, null, false);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                    rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, null, 1, false);
+            fail();
+        } catch (IllegalArgumentException e) {}
+    }
+
+    @Test
+    public void testThatVersionsCanNotBeModifiedManually() throws Exception {
+        final long rootId = getIdFromGuid(BrowserContract.Bookmarks.MOBILE_FOLDER_GUID);
+
+        insert("bookmark-1", "https://www.mozilla-1.org", "guid-1",
+                rootId, BrowserContract.Bookmarks.TYPE_BOOKMARK, false);
+        assertVersionsForGuid("guid-1", 1, 0);
+
+        
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestSyncUri, "guid-1", 2, 2);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestSyncUri, "guid-1", 2, null);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestSyncUri, "guid-1", null, 2);
+            fail();
+        } catch (IllegalArgumentException e) {}
+
+        
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestUri, "guid-1", 2, 2);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestUri, "guid-1", 2, null);
+            fail();
+        } catch (IllegalArgumentException e) {}
+        try {
+            updateBookmarkVersionsByGuid(bookmarksTestUri, "guid-1", null, 2);
+            fail();
+        } catch (IllegalArgumentException e) {}
+
+        assertVersionsForGuid("guid-1", 1, 0);
+    }
+
+    private void deleteByGuid(Uri uri, String guid) throws RemoteException {
+        bookmarksClient.delete(uri,
+                Bookmarks.GUID + " = ?",
+                new String[] { guid });
+    }
+
+    private void updateBookmarkTitleByGuid(Uri uri, String guid, String newTitle) throws RemoteException {
+        ContentValues values = new ContentValues();
+        values.put(Bookmarks.TITLE, newTitle);
+        bookmarksClient.update(uri, values, Bookmarks.GUID + " = ?", new String[] {guid});
+    }
+
+    private void updateBookmarkVersionsByGuid(Uri uri, String guid, Integer localVersion, Integer syncVersion) throws RemoteException {
+        ContentValues values = new ContentValues();
+        values.put(Bookmarks.LOCAL_VERSION, localVersion);
+        values.put(Bookmarks.SYNC_VERSION, syncVersion);
+        bookmarksClient.update(uri, values, Bookmarks.GUID + " = ?", new String[] {guid});
+    }
+
+    private void assertVersionsForGuid(String guid, int localVersion, int syncVersion) throws RemoteException {
+        assertVersionsForSelection(bookmarksClient, bookmarksTestUri, Bookmarks.GUID + " = ?", new String[] {guid}, localVersion, syncVersion);
     }
 
     private long getLastModified(final Uri uri) throws RemoteException {
@@ -305,54 +572,38 @@ public class BrowserProviderBookmarksTest {
         return lastModified;
     }
 
-    private long getBookmarkIdFromGuid(String guid) throws RemoteException {
-        Cursor cursor = bookmarksClient.query(BrowserContract.Bookmarks.CONTENT_URI,
-                                              new String[] { BrowserContract.Bookmarks._ID },
-                                              BrowserContract.Bookmarks.GUID + " = ?",
-                                              new String[] { guid },
-                                              null);
-        assertNotNull(cursor);
-
-        long id = INVALID_ID;
-        try {
-            assertTrue(cursor.moveToFirst());
-            id = cursor.getLong(cursor.getColumnIndexOrThrow(BrowserContract.Bookmarks._ID));
-        } finally {
-            cursor.close();
-        }
-        assertNotEquals(id, INVALID_ID);
-        return id;
+    private long getIdFromGuid(String guid) throws RemoteException {
+        return getBookmarkIdFromGuid(bookmarksClient, guid);
     }
 
-    private Uri insertBookmark(String title, String url, String guid, long parentId, int type) throws RemoteException {
-        final ContentValues values = new ContentValues();
-        if (title != null) {
-            values.put(BrowserContract.Bookmarks.TITLE, title);
-        }
-        if (url != null) {
-            values.put(BrowserContract.Bookmarks.URL, url);
-        }
-        if (guid != null) {
-            values.put(BrowserContract.Bookmarks.GUID, guid);
-        }
-        values.put(BrowserContract.Bookmarks.PARENT, parentId);
-        values.put(BrowserContract.Bookmarks.TYPE, type);
+    private Uri insert(String title, String url, String guid, long parentId, int type) throws RemoteException {
+        return insert(title, url, guid, parentId, type, false);
+    }
 
-        final long now = System.currentTimeMillis();
-        values.put(BrowserContract.Bookmarks.DATE_CREATED, now);
-        values.put(BrowserContract.Bookmarks.DATE_MODIFIED, now);
+    private Uri insert(String title, String url, String guid, long parentId, int type, boolean fromSync) throws RemoteException {
+        return insert(title, url, guid, parentId, type, null, null, fromSync);
+    }
 
-        return bookmarksClient.insert(bookmarksTestUri, values);
+    private Uri insert(String title, String url, String guid, long parentId, int type, Integer localVersion, Integer syncVersion, boolean fromSync) throws RemoteException {
+        return insertBookmark(bookmarksClient, title, url, guid, parentId, type, localVersion, syncVersion, fromSync);
+    }
+
+    private int getTotalNumberOfBookmarks() throws RemoteException {
+        return getRowCount(null, null);
     }
 
     private int getRowCount(String selection, String[] selectionArgs) throws RemoteException {
-        final Cursor cursor = bookmarksClient.query(bookmarksTestUri,
-                                                    new String[] { BrowserContract.Bookmarks._ID },
+        final Cursor cursor = bookmarksClient.query(withDeleted(bookmarksTestUri),
+                                                    new String[] { BrowserContract.Bookmarks._ID, Bookmarks.GUID },
                                                     selection,
                                                     selectionArgs,
                                                     null);
         assertNotNull(cursor);
         try {
+            while (cursor.moveToNext()) {
+                String guid = cursor.getString(cursor.getColumnIndexOrThrow(Bookmarks.GUID));
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(Bookmarks._ID));
+            }
             return cursor.getCount();
         } finally {
             cursor.close();

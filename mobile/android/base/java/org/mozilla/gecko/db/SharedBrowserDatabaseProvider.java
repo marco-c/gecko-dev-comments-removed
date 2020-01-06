@@ -7,6 +7,7 @@ package org.mozilla.gecko.db;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.db.BrowserContract.CommonColumns;
 import org.mozilla.gecko.db.BrowserContract.SyncColumns;
+import org.mozilla.gecko.db.BrowserContract.VersionColumns;
 import org.mozilla.gecko.db.PerProfileDatabases.DatabaseHelperFactory;
 
 import android.content.Context;
@@ -91,9 +92,6 @@ public abstract class SharedBrowserDatabaseProvider extends AbstractPerProfileDa
 
         
         
-        
-
-        
         final long MAX_AGE_OF_DELETED_RECORDS = 86400000 * 20;
 
         
@@ -115,7 +113,24 @@ public abstract class SharedBrowserDatabaseProvider extends AbstractPerProfileDa
             cursor.close();
         }
 
-        db.delete(tableName, inClause, null);
+        int deletedExpired = db.delete(tableName, inClause, null);
+        Log.d(LOGTAG, "Dropped old deleted records: " + deletedExpired);
+
+        
+        if (!BrowserContract.Bookmarks.TABLE_NAME.equals(tableName)) {
+            return;
+        }
+
+        
+        
+        
+        int deletedNew = db.delete(tableName,
+                SyncColumns.IS_DELETED + " = 1 " +
+                " AND " +
+                VersionColumns.SYNC_VERSION + " = 0",
+                null
+        );
+        Log.d(LOGTAG, "Dropped non-synced deleted records: " + deletedNew);
     }
 
     

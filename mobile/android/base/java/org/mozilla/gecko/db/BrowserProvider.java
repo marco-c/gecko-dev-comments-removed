@@ -206,6 +206,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         map.put(Bookmarks.DATE_MODIFIED, Bookmarks.DATE_MODIFIED);
         map.put(Bookmarks.GUID, Bookmarks.GUID);
         map.put(Bookmarks.IS_DELETED, Bookmarks.IS_DELETED);
+        map.put(Bookmarks.LOCAL_VERSION, Bookmarks.LOCAL_VERSION);
+        map.put(Bookmarks.SYNC_VERSION, Bookmarks.SYNC_VERSION);
         BOOKMARKS_PROJECTION_MAP = Collections.unmodifiableMap(map);
 
         
@@ -709,6 +711,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         int match = URI_MATCHER.match(uri);
         long id = -1;
 
+        if (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION) || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION)) {
+            throw new IllegalArgumentException("Can not manually set record versions.");
+        }
+
         switch (match) {
             case BOOKMARKS: {
                 trace("Insert on BOOKMARKS: " + uri);
@@ -791,6 +797,10 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             String[] selectionArgs) {
         trace("Calling update in transaction on URI: " + uri);
 
+        if (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION) || values.containsKey(BrowserContract.VersionColumns.SYNC_VERSION)) {
+            throw new IllegalArgumentException("Can not manually update record versions.");
+        }
+
         int match = URI_MATCHER.match(uri);
         int updated = 0;
 
@@ -816,7 +826,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             case BOOKMARKS_PARENT: {
                 debug("Update on BOOKMARKS_PARENT: " + uri);
                 beginWrite(db);
-                updated = updateBookmarkParents(db, values, selection, selectionArgs);
+                updated = updateBookmarkParents(db, uri, values, selection, selectionArgs);
                 break;
             }
 
@@ -1581,7 +1591,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
 
 
-    private int updateBookmarkParents(SQLiteDatabase db, ContentValues values, String selection, String[] selectionArgs) {
+    private int updateBookmarkParents(SQLiteDatabase db, Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         if (selectionArgs != null) {
             trace("Updating bookmark parents of " + selection + " (" + selectionArgs[0] + ")");
         } else {
@@ -1592,7 +1602,15 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                        " SELECT DISTINCT " + Bookmarks.PARENT +
                        " FROM " + TABLE_BOOKMARKS +
                        " WHERE " + selection + " )";
-        return db.update(TABLE_BOOKMARKS, values, where, selectionArgs);
+
+        final int changed;
+        if (!isCallerSync(uri)) {
+            changed = updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, values, where, selectionArgs);
+        } else {
+            changed = db.update(TABLE_BOOKMARKS, values, where, selectionArgs);
+        }
+
+        return changed;
     }
 
     private long insertBookmark(Uri uri, ContentValues values) {
@@ -1625,6 +1643,16 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         String url = values.getAsString(Bookmarks.URL);
 
+        values.put(Bookmarks.LOCAL_VERSION, 1);
+
+        
+        
+        if (isCallerSync(uri)) {
+            values.put(Bookmarks.SYNC_VERSION, 1);
+        } else {
+            values.put(Bookmarks.SYNC_VERSION, 0);
+        }
+
         debug("Inserting bookmark in database with URL: " + url);
         final SQLiteDatabase db = getWritableDatabase(uri);
         beginWrite(db);
@@ -1648,14 +1676,12 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         
         
         final long parentId = values.getAsLong(Bookmarks.PARENT);
-        db.update(TABLE_BOOKMARKS,
-                  parentValues,
-                  Bookmarks._ID + " = ?",
-                  new String[] { String.valueOf(parentId) });
+        final String parentSelection = Bookmarks._ID + " = ?";
+        final String[] parentSelectionArgs = new String[] { String.valueOf(parentId) };
+        updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, parentValues, parentSelection, parentSelectionArgs);
 
         return insertedId;
     }
-
 
     private int updateOrInsertBookmark(Uri uri, ContentValues values, String selection,
             String[] selectionArgs) {
@@ -1703,14 +1729,22 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         beginWrite(db);
 
-        int updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
+        int updated;
+        
+        if (!isCallerSync(uri)) {
+            updated = updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, values, inClause, null);
+        } else {
+            updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
+        }
+
         if (updated == 0) {
             trace("No update on URI: " + uri);
             return updated;
         }
 
+        
+        
         if (isCallerSync(uri)) {
-            
             return updated;
         }
 
@@ -1726,9 +1760,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         parentValues.put(Bookmarks.DATE_MODIFIED, lastModified);
 
         
-        updated += db.update(TABLE_BOOKMARKS, parentValues,
-                  Bookmarks._ID + " in (?, ?)",
-                  new String[] { String.valueOf(oldParentId), String.valueOf(newParentId) });
+        final String parentSelection = Bookmarks._ID + " IN (?, ?)";
+        final String[] parentSelectionArgs = new String[] { String.valueOf(oldParentId), String.valueOf(newParentId) };
+        updated += updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, parentValues, parentSelection, parentSelectionArgs);
 
         return updated;
     }
@@ -2256,11 +2290,13 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
 
 
-    private int bulkDeleteByBookmarkGUIDs(SQLiteDatabase db, List<String> bookmarkGUIDs, String table, String bookmarkGUIDColumn) {
+    private int bulkDeleteByBookmarkGUIDs(SQLiteDatabase db, Uri uri, List<String> bookmarkGUIDs) {
         
         
-        int deleted = 0;
+        int updated = 0;
 
+        
+        
         final ContentValues values = new ContentValues();
         values.put(Bookmarks.IS_DELETED, 1);
         values.put(Bookmarks.POSITION, 0);
@@ -2272,7 +2308,6 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         values.putNull(Bookmarks.TAGS);
         values.putNull(Bookmarks.FAVICON_ID);
 
-        
         values.put(Bookmarks.DATE_MODIFIED, System.currentTimeMillis());
 
         
@@ -2285,14 +2320,12 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 chunkEnd = bookmarkGUIDs.size();
             }
             final List<String> chunkGUIDs = bookmarkGUIDs.subList(chunkStart, chunkEnd);
-            deleted += db.update(table,
-                                 values,
-                                 DBUtils.computeSQLInClause(chunkGUIDs.size(), bookmarkGUIDColumn),
-                                 chunkGUIDs.toArray(new String[chunkGUIDs.size()])
-            );
+            final String selection = DBUtils.computeSQLInClause(chunkGUIDs.size(), Bookmarks.GUID);
+            final String[] selectionArgs = chunkGUIDs.toArray(new String[chunkGUIDs.size()]);
+            updated += updateAndIncrementLocalVersion(db, uri, TABLE_BOOKMARKS, values, selection, selectionArgs);
         }
 
-        return deleted;
+        return updated;
     }
 
     private int deleteVisits(Uri uri, String selection, String[] selectionArgs) {
@@ -2329,14 +2362,14 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         
         final ContentValues parentValues = new ContentValues();
         parentValues.put(Bookmarks.DATE_MODIFIED, System.currentTimeMillis());
-        changed += updateBookmarkParents(db, parentValues, selection, selectionArgs);
+        changed += updateBookmarkParents(db, uri, parentValues, selection, selectionArgs);
 
         
         
         
         
         final List<String> guids = getBookmarkDescendantGUIDs(db, selection, selectionArgs);
-        changed += bulkDeleteByBookmarkGUIDs(db, guids, TABLE_BOOKMARKS, Bookmarks.GUID);
+        changed += bulkDeleteByBookmarkGUIDs(db, uri, guids);
 
         try {
             cleanUpSomeDeletedRecords(uri, TABLE_BOOKMARKS);
@@ -2836,4 +2869,37 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         return null;
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    private static int updateAndIncrementLocalVersion(SQLiteDatabase db, Uri uri, String table, ContentValues values, String selection, String[] selectionArgs) {
+        
+        
+        if (isCallerSync(uri)) {
+            throw new IllegalStateException("Attempted to increment change counter from within a Sync");
+        }
+
+        
+        if (values.containsKey(BrowserContract.VersionColumns.LOCAL_VERSION)) {
+            throw new IllegalStateException("Attempted manually setting local version");
+        }
+
+        final ContentValues incrementLocalVersion = new ContentValues();
+        incrementLocalVersion.put(BrowserContract.VersionColumns.LOCAL_VERSION, BrowserContract.VersionColumns.LOCAL_VERSION + " + 1");
+
+        final ContentValues[] valuesAndVisits = { values,  incrementLocalVersion };
+        UpdateOperation[] ops = new UpdateOperation[]{ UpdateOperation.ASSIGN, UpdateOperation.EXPRESSION };
+
+        return DBUtils.updateArrays(db, table, valuesAndVisits, ops, selection, selectionArgs);
+    }
+
 }
