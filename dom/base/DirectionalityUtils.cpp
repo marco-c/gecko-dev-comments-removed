@@ -244,16 +244,6 @@ DoesNotParticipateInAutoDirection(const Element* aElement)
           aElement->IsInAnonymousSubtree());
 }
 
-static inline bool
-IsBdiWithoutDirAuto(const Element* aElement)
-{
-  
-  
-  
-  return (aElement->IsHTMLElement(nsGkAtoms::bdi) &&
-          (!aElement->HasValidDir() || aElement->HasFixedDir()));
-}
-
 
 
 
@@ -263,7 +253,7 @@ static bool
 DoesNotAffectDirectionOfAncestors(const Element* aElement)
 {
   return (DoesNotParticipateInAutoDirection(aElement) ||
-          IsBdiWithoutDirAuto(aElement) ||
+          aElement->IsHTMLElement(nsGkAtoms::bdi) ||
           aElement->HasFixedDir());
 }
 
