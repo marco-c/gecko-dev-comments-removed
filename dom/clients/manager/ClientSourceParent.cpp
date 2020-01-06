@@ -9,14 +9,78 @@
 #include "ClientHandleParent.h"
 #include "ClientManagerService.h"
 #include "ClientSourceOpParent.h"
+#include "ClientValidation.h"
 #include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/PClientManagerParent.h"
+#include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace dom {
 
+using mozilla::ipc::BackgroundParent;
 using mozilla::ipc::IPCResult;
 using mozilla::ipc::PrincipalInfo;
+
+namespace {
+
+
+
+
+class KillContentParentRunnable final : public Runnable
+{
+  RefPtr<ContentParent> mContentParent;
+
+public:
+  explicit KillContentParentRunnable(RefPtr<ContentParent>&& aContentParent)
+    : Runnable("KillContentParentRunnable")
+    , mContentParent(Move(aContentParent))
+  {
+    MOZ_ASSERT(mContentParent);
+  }
+
+  NS_IMETHOD
+  Run()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    mContentParent->KillHard("invalid ClientSourceParent actor");
+    mContentParent = nullptr;
+    return NS_OK;
+  }
+};
+
+} 
+
+void
+ClientSourceParent::KillInvalidChild()
+{
+  
+  RefPtr<ContentParent> process =
+    BackgroundParent::GetContentParent(Manager()->Manager());
+
+  
+  
+  Unused << ClientSourceParent::Send__delete__(this);
+
+  
+  
+  
+  
+  if (!process) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "invalid ClientSourceParent in non-e10s");
+    return;
+  }
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> r = new KillContentParentRunnable(Move(process));
+  MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
+}
 
 IPCResult
 ClientSourceParent::RecvTeardown()
@@ -28,7 +92,8 @@ ClientSourceParent::RecvTeardown()
 void
 ClientSourceParent::ActorDestroy(ActorDestroyReason aReason)
 {
-  mService->RemoveSource(this);
+  DebugOnly<bool> removed = mService->RemoveSource(this);
+  MOZ_ASSERT(removed);
 
   nsTArray<ClientHandleParent*> handleList(mHandleList);
   for (ClientHandleParent* handle : handleList) {
@@ -57,12 +122,31 @@ ClientSourceParent::ClientSourceParent(const ClientSourceConstructorArgs& aArgs)
   : mClientInfo(aArgs.id(), aArgs.type(), aArgs.principalInfo(), aArgs.creationTime())
   , mService(ClientManagerService::GetOrCreateInstance())
 {
-  mService->AddSource(this);
 }
 
 ClientSourceParent::~ClientSourceParent()
 {
   MOZ_DIAGNOSTIC_ASSERT(mHandleList.IsEmpty());
+}
+
+void
+ClientSourceParent::Init()
+{
+  
+  
+  
+  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
+    KillInvalidChild();
+    return;
+  }
+
+  
+  
+  
+  if (NS_WARN_IF(!mService->AddSource(this))) {
+    KillInvalidChild();
+    return;
+  }
 }
 
 const ClientInfo&

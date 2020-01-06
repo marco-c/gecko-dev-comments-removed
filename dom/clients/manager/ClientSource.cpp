@@ -9,6 +9,7 @@
 #include "ClientManager.h"
 #include "ClientManagerChild.h"
 #include "ClientSourceChild.h"
+#include "ClientValidation.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 
 namespace mozilla {
@@ -44,6 +45,15 @@ ClientSource::Activate(PClientManagerChild* aActor)
   MOZ_ASSERT(!GetActor());
 
   if (IsShutdown()) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
+    Shutdown();
     return;
   }
 
