@@ -399,6 +399,7 @@ var CloudStorageInternal = {
 
 
 
+
   async getDownloadFolder(dataType = "default") {
     
     if (!this.providersMetaData) {

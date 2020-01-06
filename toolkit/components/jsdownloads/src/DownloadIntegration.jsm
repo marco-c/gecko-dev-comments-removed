@@ -316,8 +316,8 @@ this.DownloadIntegration = {
       case 3: 
         try {
           directoryPath = await CloudStorage.getDownloadFolder();
-        } catch(ex) {
-          
+        } catch(ex) {}
+        if (!directoryPath) {
           directoryPath = await this.getSystemDownloadsDirectory();
         }
         break;
