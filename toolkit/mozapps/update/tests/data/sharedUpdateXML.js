@@ -92,6 +92,8 @@ const STATE_FAILED_INVALID_CALLBACK_PATH_ERROR =
 const STATE_FAILED_INVALID_CALLBACK_DIR_ERROR =
   STATE_FAILED + STATE_FAILED_DELIMETER + INVALID_CALLBACK_DIR_ERROR;
 
+const DEFAULT_UPDATE_VERSION = "999999.0";
+
 
 
 
@@ -100,10 +102,10 @@ const STATE_FAILED_INVALID_CALLBACK_DIR_ERROR =
 
 
 function getRemoteUpdatesXMLString(aUpdates) {
-  return "<?xml version=\"1.0\"?>\n" +
-         "<updates>\n" +
-           aUpdates +
-         "</updates>\n";
+  return "<?xml version=\"1.0\"?>" +
+         "<updates>" +
+         aUpdates +
+         "</updates>";
 }
 
 
@@ -114,16 +116,30 @@ function getRemoteUpdatesXMLString(aUpdates) {
 
 
 
-function getRemoteUpdateString(aPatches, aType, aName, aDisplayVersion,
-                               aAppVersion, aBuildID, aDetailsURL, aShowPrompt,
-                               aShowNeverForVersion, aPromptWaitTime,
-                               aBackgroundInterval, aCustom1, aCustom2) {
-  return getUpdateString(aType, aName, aDisplayVersion, aAppVersion,
-                         aBuildID, aDetailsURL, aShowPrompt,
-                         aShowNeverForVersion, aPromptWaitTime,
-                         aBackgroundInterval, aCustom1, aCustom2) + ">\n" +
-              aPatches +
-         "  </update>\n";
+
+
+
+function getRemoteUpdateString(aUpdateProps, aPatches) {
+  const updateProps = {
+    type: "major",
+    name: "App Update Test",
+    displayVersion: null,
+    appVersion: DEFAULT_UPDATE_VERSION,
+    buildID: "20080811053724",
+    detailsURL: URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS",
+    promptWaitTime: null,
+    backgroundInterval: null,
+    custom1: null,
+    custom2: null
+  };
+
+  for (let name in aUpdateProps) {
+    updateProps[name] = aUpdateProps[name];
+  }
+
+  return getUpdateString(updateProps) + ">" +
+         aPatches +
+         "</update>";
 }
 
 
@@ -132,9 +148,35 @@ function getRemoteUpdateString(aPatches, aType, aName, aDisplayVersion,
 
 
 
-function getRemotePatchString(aType, aURL, aHashFunction, aHashValue, aSize) {
-  return getPatchString(aType, aURL, aHashFunction, aHashValue, aSize) +
-         "/>\n";
+
+
+
+function getRemotePatchString(aPatchProps) {
+  const patchProps = {
+    type: "complete",
+    _url: null,
+    get url() {
+      if (this._url) {
+        return this._url;
+      }
+      if (gURLData) {
+        return gURLData + FILE_SIMPLE_MAR;
+      }
+      return null;
+    },
+    set url(val) {
+      this._url = val;
+    },
+    hashFunction: "MD5",
+    hashValue: MD5_HASH_SIMPLE_MAR,
+    size: SIZE_SIMPLE_MAR
+  };
+
+  for (let name in aPatchProps) {
+    patchProps[name] = aPatchProps[name];
+  }
+
+  return getPatchString(patchProps) + "/>";
 }
 
 
@@ -149,8 +191,8 @@ function getLocalUpdatesXMLString(aUpdates) {
     return "<updates xmlns=\"http://www.mozilla.org/2005/app-update\"/>";
   }
   return ("<updates xmlns=\"http://www.mozilla.org/2005/app-update\">" +
-            aUpdates +
-          "</updates>").replace(/>\s+\n*</g, "><");
+          aUpdates +
+          "</updates>");
 }
 
 
@@ -164,53 +206,66 @@ function getLocalUpdatesXMLString(aUpdates) {
 
 
 
+function getLocalUpdateString(aUpdateProps, aPatches) {
+  const updateProps = {
+    type: "major",
+    name: "App Update Test",
+    displayVersion: null,
+    _appVersion: null,
+    get appVersion() {
+      if (this._appVersion) {
+        return this._appVersion;
+      }
+      if (Services && Services.appinfo && Services.appinfo.version) {
+        return Services.appinfo.version;
+      }
+      return DEFAULT_UPDATE_VERSION;
+    },
+    set appVersion(val) {
+      this._appVersion = val;
+    },
+    buildID: "20080811053724",
+    detailsURL: URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS",
+    promptWaitTime: null,
+    backgroundInterval: null,
+    custom1: null,
+    custom2: null,
+    serviceURL: "http://test_service/",
+    installDate: "1238441400314",
+    statusText: "Install Pending",
+    isCompleteUpdate: "true",
+    channel: gDefaultPrefBranch.getCharPref(PREF_APP_UPDATE_CHANNEL),
+    foregroundDownload: "true",
+    previousAppVersion: null
+  };
 
+  for (let name in aUpdateProps) {
+    updateProps[name] = aUpdateProps[name];
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getLocalUpdateString(aPatches, aType, aName, aDisplayVersion,
-                              aAppVersion, aBuildID, aDetailsURL, aServiceURL,
-                              aInstallDate, aStatusText, aIsCompleteUpdate,
-                              aChannel, aForegroundDownload, aShowPrompt,
-                              aShowNeverForVersion, aPromptWaitTime,
-                              aBackgroundInterval, aPreviousAppVersion,
-                              aCustom1, aCustom2) {
-  let serviceURL = aServiceURL ? aServiceURL : "http://test_service/";
-  let installDate = aInstallDate ? aInstallDate : "1238441400314";
-  let statusText = aStatusText ? aStatusText : "Install Pending";
+  let previousAppVersion = updateProps.previousAppVersion ?
+    "previousAppVersion=\"" + updateProps.previousAppVersion + "\" " : "";
+  let serviceURL = "serviceURL=\"" + updateProps.serviceURL + "\" ";
+  let installDate = "installDate=\"" + updateProps.installDate + "\" ";
+  let statusText = updateProps.statusText ?
+    "statusText=\"" + updateProps.statusText + "\" " : "";
   let isCompleteUpdate =
-    typeof aIsCompleteUpdate == "string" ? aIsCompleteUpdate : "true";
-  let channel = aChannel ? aChannel
-                         : gDefaultPrefBranch.getCharPref(PREF_APP_UPDATE_CHANNEL);
-  let foregroundDownload =
-    typeof aForegroundDownload == "string" ? aForegroundDownload : "true";
-  let previousAppVersion = aPreviousAppVersion ? "previousAppVersion=\"" +
-                                                 aPreviousAppVersion + "\" "
-                                               : "";
-  return getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
-                         aDetailsURL, aShowPrompt, aShowNeverForVersion,
-                         aPromptWaitTime, aBackgroundInterval, aCustom1, aCustom2) +
-                   " " +
-                   previousAppVersion +
-                   "serviceURL=\"" + serviceURL + "\" " +
-                   "installDate=\"" + installDate + "\" " +
-                   "statusText=\"" + statusText + "\" " +
-                   "isCompleteUpdate=\"" + isCompleteUpdate + "\" " +
-                   "channel=\"" + channel + "\" " +
-                   "foregroundDownload=\"" + foregroundDownload + "\">" +
-              aPatches +
-         "  </update>";
+    "isCompleteUpdate=\"" + updateProps.isCompleteUpdate + "\" ";
+  let channel = "channel=\"" + updateProps.channel + "\" ";
+  let foregroundDownload = updateProps.foregroundDownload ?
+    "foregroundDownload=\"" + updateProps.foregroundDownload + "\">" : ">";
+
+  return getUpdateString(updateProps) +
+         " " +
+         previousAppVersion +
+         serviceURL +
+         installDate +
+         statusText +
+         isCompleteUpdate +
+         channel +
+         foregroundDownload +
+         aPatches +
+         "</update>";
 }
 
 
@@ -222,17 +277,26 @@ function getLocalUpdateString(aPatches, aType, aName, aDisplayVersion,
 
 
 
+function getLocalPatchString(aPatchProps) {
+  const patchProps = {
+    type: "complete",
+    url: gURLData + FILE_SIMPLE_MAR,
+    hashFunction: "MD5",
+    hashValue: MD5_HASH_SIMPLE_MAR,
+    size: SIZE_SIMPLE_MAR,
+    selected: "true",
+    state: STATE_SUCCEEDED
+  };
 
+  for (let name in aPatchProps) {
+    patchProps[name] = aPatchProps[name];
+  }
 
-
-
-function getLocalPatchString(aType, aURL, aHashFunction, aHashValue, aSize,
-                             aSelected, aState) {
-  let selected = typeof aSelected == "string" ? aSelected : "true";
-  let state = aState ? aState : STATE_SUCCEEDED;
-  return getPatchString(aType, aURL, aHashFunction, aHashValue, aSize) + " " +
-         "selected=\"" + selected + "\" " +
-         "state=\"" + state + "\"/>\n";
+  let selected = "selected=\"" + patchProps.selected + "\" ";
+  let state = "state=\"" + patchProps.state + "\"/>";
+  return getPatchString(patchProps) + " " +
+         selected +
+         state;
 }
 
 
@@ -244,87 +308,32 @@ function getLocalPatchString(aType, aURL, aHashFunction, aHashValue, aSize,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
-                         aDetailsURL, aShowPrompt, aShowNeverForVersion,
-                         aPromptWaitTime, aBackgroundInterval, aCustom1,
-                         aCustom2) {
-  let type = aType ? aType : "major";
-  let name = aName ? aName : "App Update Test";
-  let displayVersion = aDisplayVersion ? "displayVersion=\"" +
-                                         aDisplayVersion + "\" "
-                                       : "";
-  let appVersion = "appVersion=\"" +
-                   (aAppVersion ? aAppVersion : DEFAULT_UPDATE_VERSION) +
-                   "\" ";
-  let buildID = aBuildID ? aBuildID : "20080811053724";
+function getUpdateString(aUpdateProps) {
+  let type = "type=\"" + aUpdateProps.type + "\" ";
+  let name = "name=\"" + aUpdateProps.name + "\" ";
+  let displayVersion = aUpdateProps.displayVersion ?
+    "displayVersion=\"" + aUpdateProps.displayVersion + "\" " : "";
+  let appVersion = "appVersion=\"" + aUpdateProps.appVersion + "\" ";
   
+  let detailsURL = "detailsURL=\"" + aUpdateProps.detailsURL + "\" ";
+  let promptWaitTime = aUpdateProps.promptWaitTime ?
+    "promptWaitTime=\"" + aUpdateProps.promptWaitTime + "\" " : "";
+  let backgroundInterval = aUpdateProps.backgroundInterval ?
+    "backgroundInterval=\"" + aUpdateProps.backgroundInterval + "\" " : "";
+  let custom1 = aUpdateProps.custom1 ? aUpdateProps.custom1 + " " : "";
+  let custom2 = aUpdateProps.custom2 ? aUpdateProps.custom2 + " " : "";
+  let buildID = "buildID=\"" + aUpdateProps.buildID + "\"";
 
-  let detailsURL = "detailsURL=\"" +
-                   (aDetailsURL ? aDetailsURL
-                                : URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS") + "\" ";
-  let showPrompt = aShowPrompt ? "showPrompt=\"" + aShowPrompt + "\" " : "";
-  let showNeverForVersion = aShowNeverForVersion ? "showNeverForVersion=\"" +
-                                                   aShowNeverForVersion + "\" "
-                                                 : "";
-  let promptWaitTime = aPromptWaitTime ? "promptWaitTime=\"" + aPromptWaitTime +
-                                         "\" "
-                                       : "";
-  let backgroundInterval = aBackgroundInterval ? "backgroundInterval=\"" +
-                                                 aBackgroundInterval + "\" "
-                                               : "";
-  let custom1 = aCustom1 ? aCustom1 + " " : "";
-  let custom2 = aCustom2 ? aCustom2 + " " : "";
-  return "  <update type=\"" + type + "\" " +
-                   "name=\"" + name + "\" " +
-                    displayVersion +
-                    appVersion +
-                    detailsURL +
-                    showPrompt +
-                    showNeverForVersion +
-                    promptWaitTime +
-                    backgroundInterval +
-                    custom1 +
-                    custom2 +
-                   "buildID=\"" + buildID + "\"";
+  return "  <update " + type +
+                        name +
+                        displayVersion +
+                        appVersion +
+                        detailsURL +
+                        promptWaitTime +
+                        backgroundInterval +
+                        custom1 +
+                        custom2 +
+                        buildID;
 }
 
 
@@ -335,30 +344,16 @@ function getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getPatchString(aType, aURL, aHashFunction, aHashValue, aSize) {
-  let type = aType ? aType : "complete";
-  let url = aURL ? aURL : gURLData + FILE_SIMPLE_MAR;
-  let hashFunction = aHashFunction ? aHashFunction : "MD5";
-  let hashValue = aHashValue ? aHashValue : MD5_HASH_SIMPLE_MAR;
-  let size = aSize ? aSize : SIZE_SIMPLE_MAR;
-  return "    <patch type=\"" + type + "\" " +
-                     "URL=\"" + url + "\" " +
-                     "hashFunction=\"" + hashFunction + "\" " +
-                     "hashValue=\"" + hashValue + "\" " +
-                     "size=\"" + size + "\"";
+function getPatchString(aPatchProps) {
+  let type = "type=\"" + aPatchProps.type + "\" ";
+  let url = "URL=\"" + aPatchProps.url + "\" ";
+  let hashFunction = "hashFunction=\"" + aPatchProps.hashFunction + "\" ";
+  let hashValue = "hashValue=\"" + aPatchProps.hashValue + "\" ";
+  let size = "size=\"" + aPatchProps.size + "\"";
+  return "<patch " +
+         type +
+         url +
+         hashFunction +
+         hashValue +
+         size;
 }
