@@ -53,7 +53,7 @@ FILE_PATTERNS_TO_CHECK = ["*.rs", "*.rc", "*.cpp", "*.c",
                           "*.yml"]
 
 
-FILE_PATTERNS_TO_IGNORE = ["*.#*", "*.pyc", "fake-ld.sh"]
+FILE_PATTERNS_TO_IGNORE = ["*.#*", "*.pyc", "fake-ld.sh", "*.ogv", "*.webm"]
 
 SPEC_BASE_PATH = "components/script/dom/"
 
