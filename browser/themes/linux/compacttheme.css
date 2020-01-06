@@ -34,14 +34,3 @@
   -moz-image-region: var(--urlbar-dropmarker-region);
 }
 
-
-.sidebar-header,
-#sidebar-header {
-  text-shadow: none;
-}
-
-.ac-type-icon {
-  
-
-  margin-inline-start: 11px;
-}
