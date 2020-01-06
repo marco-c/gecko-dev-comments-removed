@@ -83,6 +83,23 @@ public:
                          "Constructing RangeBoundary with invalid value");
   }
 
+protected:
+  RangeBoundaryBase(nsINode* aContainer, nsIContent* aRef, int32_t aOffset)
+    : mParent(aContainer)
+    , mRef(aRef)
+    , mOffset(mozilla::Some(aOffset))
+  {
+    MOZ_RELEASE_ASSERT(aContainer,
+      "This constructor shouldn't be used when pointing nowhere");
+    if (!mRef) {
+      MOZ_ASSERT(mOffset.value() == 0);
+      return;
+    }
+    MOZ_ASSERT(mOffset.value() > 0);
+    MOZ_ASSERT(mParent->GetChildAt(mOffset.value() - 1) == mRef);
+  }
+
+public:
   RangeBoundaryBase()
     : mParent(nullptr)
     , mRef(nullptr)
@@ -122,6 +139,42 @@ public:
     }
     MOZ_ASSERT(mParent->GetChildAt(Offset()) == mRef->GetNextSibling());
     return mRef->GetNextSibling();
+  }
+
+  
+
+
+
+
+  nsIContent*
+  GetNextSiblingOfChildAtOffset() const
+  {
+    if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
+      return nullptr;
+    }
+    if (NS_WARN_IF(!mRef->GetNextSibling())) {
+      
+      return nullptr;
+    }
+    return mRef->GetNextSibling()->GetNextSibling();
+  }
+
+  
+
+
+
+
+  nsIContent*
+  GetPreviousSiblingOfChildAtOffset() const
+  {
+    if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mParent->IsContainerNode())) {
+      return nullptr;
+    }
+    if (NS_WARN_IF(!mRef)) {
+      
+      return nullptr;
+    }
+    return mRef;
   }
 
   uint32_t
@@ -181,6 +234,88 @@ public:
 
     NS_WARNING_ASSERTION(!mRef || mRef->GetParentNode() == mParent,
                          "Setting RangeBoundary to invalid value");
+  }
+
+  
+
+
+
+
+
+
+
+  void
+  AdvanceOffset()
+  {
+    if (NS_WARN_IF(!mParent)) {
+      return;
+    }
+    if (!mRef) {
+      if (!mParent->IsContainerNode()) {
+        
+        MOZ_ASSERT(mOffset.isSome());
+        if (NS_WARN_IF(mOffset.value() == mParent->Length())) {
+          
+          return;
+        }
+        mOffset = mozilla::Some(mOffset.value() + 1);
+        return;
+      }
+      mRef = mParent->GetFirstChild();
+      if (NS_WARN_IF(!mRef)) {
+        
+        mOffset = mozilla::Some(0);
+      } else {
+        mOffset = mozilla::Some(1);
+      }
+      return;
+    }
+
+    nsIContent* nextSibling = mRef->GetNextSibling();
+    if (NS_WARN_IF(!nextSibling)) {
+      
+      return;
+    }
+    mRef = nextSibling;
+    if (mOffset.isSome()) {
+      mOffset = mozilla::Some(mOffset.value() + 1);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  void
+  RewindOffset()
+  {
+    if (NS_WARN_IF(!mParent)) {
+      return;
+    }
+    if (!mRef) {
+      if (NS_WARN_IF(mParent->IsContainerNode())) {
+        
+        mOffset = mozilla::Some(0);
+        return;
+      }
+      
+      MOZ_ASSERT(mOffset.isSome());
+      if (NS_WARN_IF(mOffset.value() == 0)) {
+        
+        return;
+      }
+      mOffset = mozilla::Some(mOffset.value() - 1);
+      return;
+    }
+
+    mRef = mRef->GetPreviousSibling();
+    if (mOffset.isSome()) {
+      mOffset = mozilla::Some(mOffset.value() - 1);
+    }
   }
 
   void

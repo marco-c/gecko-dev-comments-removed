@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
+#include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/mozalloc.h"
@@ -650,8 +651,7 @@ WSRunObject::GetWSNodes()
             mLastNBSPOffset = pos;
           }
         }
-        start.node = textNode;
-        start.offset = pos;
+        start.Set(textNode, pos);
       }
     }
   }
@@ -661,8 +661,8 @@ WSRunObject::GetWSNodes()
     nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(start, wsBoundingParent);
     if (priorNode) {
       if (IsBlockNode(priorNode)) {
-        mStartNode = start.node;
-        mStartOffset = start.offset;
+        mStartNode = start.Container();
+        mStartOffset = start.Offset();
         mStartReason = WSType::otherBlock;
         mStartReasonNode = priorNode;
       } else if (priorNode->IsNodeOfType(nsINode::eTEXT) &&
@@ -678,7 +678,7 @@ WSRunObject::GetWSNodes()
         if (len < 1) {
           
           
-          start.SetPoint(priorNode, 0);
+          start.Set(priorNode, 0);
         } else {
           for (int32_t pos = len - 1; pos >= 0; pos--) {
             
@@ -704,14 +704,14 @@ WSRunObject::GetWSNodes()
                 mLastNBSPOffset = pos;
               }
             }
-            start.SetPoint(textNode, pos);
+            start.Set(textNode, pos);
           }
         }
       } else {
         
         
-        mStartNode = start.node;
-        mStartOffset = start.offset;
+        mStartNode = start.Container();
+        mStartOffset = start.Offset();
         if (TextEditUtils::IsBreak(priorNode)) {
           mStartReason = WSType::br;
         } else {
@@ -721,8 +721,8 @@ WSRunObject::GetWSNodes()
       }
     } else {
       
-      mStartNode = start.node;
-      mStartOffset = start.offset;
+      mStartNode = start.Container();
+      mStartOffset = start.Offset();
       mStartReason = WSType::thisBlock;
       mStartReasonNode = wsBoundingParent;
     }
@@ -759,7 +759,7 @@ WSRunObject::GetWSNodes()
             mFirstNBSPOffset = pos;
           }
         }
-        end.SetPoint(textNode, pos + 1);
+        end.Set(textNode, pos + 1);
       }
     }
   }
@@ -770,8 +770,8 @@ WSRunObject::GetWSNodes()
     if (nextNode) {
       if (IsBlockNode(nextNode)) {
         
-        mEndNode = end.node;
-        mEndOffset = end.offset;
+        mEndNode = end.Container();
+        mEndOffset = end.Offset();
         mEndReason = WSType::otherBlock;
         mEndReasonNode = nextNode;
       } else if (nextNode->IsNodeOfType(nsINode::eTEXT) &&
@@ -787,7 +787,7 @@ WSRunObject::GetWSNodes()
         if (len < 1) {
           
           
-          end.SetPoint(textNode, 0);
+          end.Set(textNode, 0);
         } else {
           for (uint32_t pos = 0; pos < len; pos++) {
             
@@ -813,15 +813,15 @@ WSRunObject::GetWSNodes()
                 mFirstNBSPOffset = pos;
               }
             }
-            end.SetPoint(textNode, pos + 1);
+            end.Set(textNode, pos + 1);
           }
         }
       } else {
         
         
         
-        mEndNode = end.node;
-        mEndOffset = end.offset;
+        mEndNode = end.Container();
+        mEndOffset = end.Offset();
         if (TextEditUtils::IsBreak(nextNode)) {
           mEndReason = WSType::br;
         } else {
@@ -831,8 +831,8 @@ WSRunObject::GetWSNodes()
       }
     } else {
       
-      mEndNode = end.node;
-      mEndOffset = end.offset;
+      mEndNode = end.Container();
+      mEndOffset = end.Offset();
       mEndReason = WSType::thisBlock;
       mEndReasonNode = wsBoundingParent;
     }
@@ -1033,35 +1033,40 @@ WSRunObject::GetPreviousWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-WSRunObject::GetPreviousWSNode(EditorDOMPoint aPoint,
+WSRunObject::GetPreviousWSNode(const EditorDOMPoint& aPoint,
                                nsINode* aBlockParent)
 {
   
   
   
-  MOZ_ASSERT(aPoint.node && aBlockParent);
+  MOZ_ASSERT(aPoint.IsSet() && aBlockParent);
 
-  if (aPoint.node->NodeType() == nsIDOMNode::TEXT_NODE) {
-    return GetPreviousWSNodeInner(aPoint.node, aBlockParent);
+  if (aPoint.Container()->NodeType() == nsIDOMNode::TEXT_NODE) {
+    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.node)) {
-    return GetPreviousWSNodeInner(aPoint.node, aBlockParent);
+  if (!mHTMLEditor->IsContainer(aPoint.Container())) {
+    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
   }
 
-  if (!aPoint.offset) {
-    if (aPoint.node == aBlockParent) {
+  if (!aPoint.Offset()) {
+    if (aPoint.Container() == aBlockParent) {
       
       return nullptr;
     }
 
     
-    return GetPreviousWSNodeInner(aPoint.node, aBlockParent);
+    return GetPreviousWSNodeInner(aPoint.Container(), aBlockParent);
   }
 
-  nsCOMPtr<nsIContent> startContent = do_QueryInterface(aPoint.node);
-  NS_ENSURE_TRUE(startContent, nullptr);
-  nsCOMPtr<nsIContent> priorNode = startContent->GetChildAt(aPoint.offset - 1);
-  NS_ENSURE_TRUE(priorNode, nullptr);
+  if (NS_WARN_IF(!aPoint.Container()->IsContent())) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIContent> priorNode = aPoint.GetPreviousSiblingOfChildAtOffset();
+  if (NS_WARN_IF(!priorNode)) {
+    return nullptr;
+  }
+
   
   if (IsBlockNode(priorNode)) {
     return priorNode;
@@ -1117,33 +1122,34 @@ WSRunObject::GetNextWSNodeInner(nsINode* aStartNode,
 }
 
 nsIContent*
-WSRunObject::GetNextWSNode(EditorDOMPoint aPoint,
+WSRunObject::GetNextWSNode(const EditorDOMPoint& aPoint,
                            nsINode* aBlockParent)
 {
   
   
   
-  MOZ_ASSERT(aPoint.node && aBlockParent);
+  MOZ_ASSERT(aPoint.IsSet() && aBlockParent);
 
-  if (aPoint.node->NodeType() == nsIDOMNode::TEXT_NODE) {
-    return GetNextWSNodeInner(aPoint.node, aBlockParent);
+  if (aPoint.Container()->NodeType() == nsIDOMNode::TEXT_NODE) {
+    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.node)) {
-    return GetNextWSNodeInner(aPoint.node, aBlockParent);
+  if (!mHTMLEditor->IsContainer(aPoint.Container())) {
+    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
   }
 
-  nsCOMPtr<nsIContent> startContent = do_QueryInterface(aPoint.node);
-  NS_ENSURE_TRUE(startContent, nullptr);
+  if (NS_WARN_IF(!aPoint.Container()->IsContent())) {
+    return nullptr;
+  }
 
-  nsCOMPtr<nsIContent> nextNode = startContent->GetChildAt(aPoint.offset);
+  nsCOMPtr<nsIContent> nextNode = aPoint.GetChildAtOffset();
   if (!nextNode) {
-    if (aPoint.node == aBlockParent) {
+    if (aPoint.Container() == aBlockParent) {
       
       return nullptr;
     }
 
     
-    return GetNextWSNodeInner(aPoint.node, aBlockParent);
+    return GetNextWSNodeInner(aPoint.Container(), aBlockParent);
   }
 
   

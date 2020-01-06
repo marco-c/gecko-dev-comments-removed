@@ -7,9 +7,11 @@
 #define mozilla_EditorBase_h
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/EditorDOMPoint.h"     
 #include "mozilla/Maybe.h"              
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/PresShell.h"          
+#include "mozilla/RangeBoundary.h"      
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"         
 #include "mozilla/WeakPtr.h"            
@@ -123,7 +125,6 @@ class RemoveStyleSheetTransaction;
 class SplitNodeTransaction;
 class TextComposition;
 class TextEditor;
-struct EditorDOMPoint;
 
 namespace dom {
 class DataTransfer;
@@ -886,8 +887,17 @@ public:
     return aNode->NodeType() == nsIDOMNode::TEXT_NODE;
   }
 
-  static nsIContent* GetNodeAtRangeOffsetPoint(nsINode* aParentOrNode,
-                                               int32_t aOffset);
+  
+
+
+
+
+  static nsIContent* GetNodeAtRangeOffsetPoint(nsINode* aContainer,
+                                               int32_t aOffset)
+  {
+    return GetNodeAtRangeOffsetPoint(RawRangeBoundary(aContainer, aOffset));
+  }
+  static nsIContent* GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint);
 
   static nsresult GetStartNodeAndOffset(Selection* aSelection,
                                         nsIDOMNode** outStartNode,
