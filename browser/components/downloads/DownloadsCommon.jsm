@@ -661,22 +661,28 @@ function DownloadsDataCtor(aPrivate) {
 
   
   
-  this._views = [];
+  
+  this._promiseList = (async () => {
+    await new Promise(resolve => this.initializeDataLink = resolve);
+
+    let list = await Downloads.getList(this._isPrivate ? Downloads.PRIVATE
+                                                       : Downloads.PUBLIC);
+    await list.addView(this);
+    return list;
+  })();
 }
 
 DownloadsDataCtor.prototype = {
   
 
 
-  initializeDataLink() {
-    if (!this._dataLinkInitialized) {
-      let promiseList = Downloads.getList(this._isPrivate ? Downloads.PRIVATE
-                                                          : Downloads.PUBLIC);
-      promiseList.then(list => list.addView(this)).catch(Cu.reportError);
-      this._dataLinkInitialized = true;
-    }
-  },
-  _dataLinkInitialized: false,
+  initializeDataLink() {},
+
+  
+
+
+
+  _promiseList: null,
 
   
 
@@ -702,11 +708,9 @@ DownloadsDataCtor.prototype = {
   
 
 
+
   removeFinished() {
-    let promiseList = Downloads.getList(this._isPrivate ? Downloads.PRIVATE
-                                                        : Downloads.PUBLIC);
-    promiseList.then(list => list.removeFinished())
-               .catch(Cu.reportError);
+    this._promiseList.then(list => list.removeFinished()).catch(Cu.reportError);
     let indicatorData = this._isPrivate ? PrivateDownloadsIndicatorData
                                         : DownloadsIndicatorData;
     indicatorData.attention = DownloadsCommon.ATTENTION_NONE;
@@ -723,10 +727,6 @@ DownloadsDataCtor.prototype = {
 
     this.oldDownloadStates.set(download,
                                DownloadsCommon.stateOfDownload(download));
-
-    for (let view of this._views) {
-      view.onDownloadAdded(download);
-    }
   },
 
   onDownloadChanged(download) {
@@ -780,18 +780,10 @@ DownloadsDataCtor.prototype = {
       download.newDownloadNotified = true;
       this._notifyDownloadEvent("start");
     }
-
-    for (let view of this._views) {
-      view.onDownloadChanged(download);
-    }
   },
 
   onDownloadRemoved(download) {
     this.oldDownloadStates.delete(download);
-
-    for (let view of this._views) {
-      view.onDownloadRemoved(download);
-    }
   },
 
   
@@ -805,8 +797,8 @@ DownloadsDataCtor.prototype = {
 
 
   addView(aView) {
-    this._views.push(aView);
-    this._updateView(aView);
+    this._promiseList.then(list => list.addView(aView))
+                     .catch(Cu.reportError);
   },
 
   
@@ -816,29 +808,8 @@ DownloadsDataCtor.prototype = {
 
 
   removeView(aView) {
-    let index = this._views.indexOf(aView);
-    if (index != -1) {
-      this._views.splice(index, 1);
-    }
-  },
-
-  
-
-
-
-
-
-  _updateView(aView) {
-    
-    aView.onDataLoadStarting();
-
-    
-    for (let download of this.downloads) {
-      aView.onDownloadAdded(download);
-    }
-
-    
-    aView.onDataLoadCompleted();
+    this._promiseList.then(list => list.removeView(aView))
+                     .catch(Cu.reportError);
   },
 
   
@@ -995,14 +966,14 @@ const DownloadsViewPrototype = {
   
 
 
-  onDataLoadStarting() {
+  onDownloadBatchStarting() {
     this._loading = true;
   },
 
   
 
 
-  onDataLoadCompleted() {
+  onDownloadBatchEnded() {
     this._loading = false;
   },
 

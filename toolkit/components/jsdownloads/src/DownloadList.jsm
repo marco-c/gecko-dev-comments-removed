@@ -156,10 +156,17 @@ this.DownloadList.prototype = {
 
 
 
+
+
+
+
+
+
   addView: function DL_addView(aView) {
     this._views.add(aView);
 
     if ("onDownloadAdded" in aView) {
+      this._notifyAllViews("onDownloadBatchStarting");
       for (let download of this._downloads) {
         try {
           aView.onDownloadAdded(download);
@@ -167,6 +174,7 @@ this.DownloadList.prototype = {
           Cu.reportError(ex);
         }
       }
+      this._notifyAllViews("onDownloadBatchEnded");
     }
 
     return Promise.resolve();
