@@ -172,7 +172,7 @@ var gEditItemOverlay = {
     }
   },
 
-  async _initLoadInSidebar() {
+  _initLoadInSidebar() {
     if (!this._paneInfo.isBookmark)
       throw new Error("_initLoadInSidebar called unexpectedly");
 
@@ -262,9 +262,9 @@ var gEditItemOverlay = {
 
     
     if (showOrCollapse("tagsRow", isURI || bulkTagging, "tags"))
-      this._initTagsField().catch(Components.utils.reportError);
+      this._initTagsField();
     else if (!this._element("tagsSelectorRow").collapsed)
-      this.toggleTagsSelector().catch(Components.utils.reportError);
+      this.toggleTagsSelector();
 
     
     if (showOrCollapse("loadInSidebarCheckbox", isBookmark, "loadInSidebar")) {
@@ -536,7 +536,7 @@ var gEditItemOverlay = {
   },
 
   
-  async _setTagsFromTagsInputField(aCurrentTags, aURIs) {
+  _setTagsFromTagsInputField(aCurrentTags, aURIs) {
     let { removedTags, newTags } = this._getTagsChanges(aCurrentTags);
     if (removedTags.length + newTags.length == 0)
       return false;
@@ -582,7 +582,7 @@ var gEditItemOverlay = {
     let currentTags = this._paneInfo.bulkTagging ?
                         await this._getCommonTags() :
                         PlacesUtils.tagging.getTagsForURI(uris[0]);
-    let anyChanges = await this._setTagsFromTagsInputField(currentTags, uris);
+    let anyChanges = this._setTagsFromTagsInputField(currentTags, uris);
     if (!anyChanges)
       return false;
 
@@ -928,7 +928,7 @@ var gEditItemOverlay = {
              value: aLastUsed ? new Date().getTime() : null };
   },
 
-  async _rebuildTagsSelectorList() {
+  _rebuildTagsSelectorList() {
     let tagsSelector = this._element("tagsSelector");
     let tagsSelectorRow = this._element("tagsSelectorRow");
     if (tagsSelectorRow.collapsed)
@@ -971,7 +971,7 @@ var gEditItemOverlay = {
     }
   },
 
-  async toggleTagsSelector() {
+  toggleTagsSelector() {
     var tagsSelector = this._element("tagsSelector");
     var tagsSelectorRow = this._element("tagsSelectorRow");
     var expander = this._element("tagsSelectorExpander");
@@ -980,7 +980,7 @@ var gEditItemOverlay = {
       expander.setAttribute("tooltiptext",
                             expander.getAttribute("tooltiptextup"));
       tagsSelectorRow.collapsed = false;
-      await this._rebuildTagsSelectorList();
+      this._rebuildTagsSelectorList();
 
       
       tagsSelector.addEventListener("CheckboxStateChange", this);
@@ -1060,7 +1060,7 @@ var gEditItemOverlay = {
     }
   },
 
-  async _initTagsField() {
+  _initTagsField() {
     let tags;
     if (this._paneInfo.isURI)
       tags = PlacesUtils.tagging.getTagsForURI(this._paneInfo.uri);
@@ -1099,10 +1099,10 @@ var gEditItemOverlay = {
     }
 
     if (updateTagsField) {
-      await this._initTagsField();
+      this._initTagsField();
       
       if (this._element("tagsSelector")) {
-        await this._rebuildTagsSelectorList();
+        this._rebuildTagsSelectorList();
       }
     }
   },
