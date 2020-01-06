@@ -261,7 +261,8 @@ public:
     const ParentLayerPoint& aVelocity);
 
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
-                                const AsyncDragMetrics& aDragMetrics);
+                                const AsyncDragMetrics& aDragMetrics,
+                                CSSCoord aInitialThumbPos);
 
   
 
