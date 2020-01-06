@@ -300,6 +300,7 @@ def target_tasks_mozilla_release(full_task_graph, parameters):
             filter_beta_release_tasks(t, parameters)]
 
 
+@_target_task('maple_desktop_promotion')
 @_target_task('mozilla_beta_desktop_promotion')
 def target_tasks_mozilla_beta_desktop_promotion(full_task_graph, parameters):
     """Select the superset of tasks required to promote a beta or release build
@@ -331,7 +332,44 @@ def target_tasks_mozilla_beta_desktop_promotion(full_task_graph, parameters):
         if task.label in beta_tasks:
             return True
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
     return [l for l, t in full_task_graph.tasks.iteritems() if filter(t)]
+
+
+@_target_task('publish_firefox')
+def target_tasks_publish_firefox(full_task_graph, parameters):
+    """Select the set of tasks required to publish a candidates build of firefox.
+    Previous build deps will be optimized out via action task."""
+    filtered_for_candidates = target_tasks_mozilla_beta_desktop_promotion(
+        full_task_graph, parameters
+    )
+
+    def filter(task):
+        
+        if task.label in filtered_for_candidates:
+            return True
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+    return [l for l, t in full_task_graph.iteritems() if filter(t)]
 
 
 @_target_task('candidates_fennec')
@@ -346,10 +384,36 @@ def target_tasks_candidates_fennec(full_task_graph, parameters):
         
         if attr("locale") or attr("chunk_locales"):
             return False
-        if task.kind not in ['balrog']:
-            return task.attributes.get('nightly', False)
+        if task.label in filtered_for_project:
+            if task.kind not in ('balrog', 'push-apk', 'push-apk-breakpoint'):
+                if task.attributes.get('nightly'):
+                    return True
+        if task.task['payload'].get('properties', {}).get('product') == 'fennec':
+            if task.kind in ('release-bouncer-sub', ):
+                return True
 
-    return [l for l in filtered_for_project if filter(full_task_graph[l])]
+    return [l for l, t in full_task_graph.tasks.iteritems() if filter(full_task_graph[l])]
+
+
+@_target_task('publish_fennec')
+def target_tasks_publish_fennec(full_task_graph, parameters):
+    """Select the set of tasks required to publish a candidates build of fennec.
+    Previous build deps will be optimized out via action task."""
+    filtered_for_candidates = target_tasks_candidates_fennec(full_task_graph, parameters)
+
+    def filter(task):
+        
+        if task.label in filtered_for_candidates:
+            return True
+        
+        
+        
+        
+        
+        if task.kind in ('push-apk', 'push-apk-breakpoint'):
+            return True
+
+    return [l for l, t in full_task_graph.tasks.iteritems() if filter(full_task_graph[l])]
 
 
 @_target_task('pine_tasks')
