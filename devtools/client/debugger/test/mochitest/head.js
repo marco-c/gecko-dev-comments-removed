@@ -52,8 +52,12 @@ registerCleanupFunction(function* () {
   DebuggerServer.destroy();
 
   
-  info("Forcing GC after debugger test.");
-  Cu.forceGC();
+  info("Forcing GC/CC after debugger test.");
+  yield new Promise(resolve => {
+    Cu.forceGC();
+    Cu.forceCC();
+    Cu.schedulePreciseGC(resolve);
+  });
 });
 
 
