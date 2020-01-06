@@ -113,7 +113,7 @@ var PermissionsHelper = {
           permissions: permissions
         });
         break;
- 
+
       case "Permissions:Clear":
         
         let permissionsToClear = data.permissions;

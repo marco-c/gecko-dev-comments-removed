@@ -68,7 +68,7 @@ var Logins = {
       let logins = [];
       try {
         logins = Services.logins.getAllLogins();
-      } catch(e) {
+      } catch (e) {
         
         
         throw new Error("Possible Master Password permissions error: " + e.toString());
@@ -487,7 +487,7 @@ var Logins = {
   },
 
   observe: function (subject, topic, data) {
-    switch(topic) {
+    switch (topic) {
       case "passwordmgr-storage-changed": {
         this._reloadList();
         break;

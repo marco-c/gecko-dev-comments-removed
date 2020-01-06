@@ -391,18 +391,18 @@ InternalPrompt.prototype = {
 
   
 
-  nsIAuthPrompt_prompt : function (title, text, passwordRealm, savePassword, defaultText, result) {
+  nsIAuthPrompt_prompt: function (title, text, passwordRealm, savePassword, defaultText, result) {
     
     if (defaultText)
       result.value = defaultText;
     return this.nsIPrompt_prompt(title, text, result, null, {});
   },
 
-  nsIAuthPrompt_promptUsernameAndPassword : function(aTitle, aText, aPasswordRealm, aSavePassword, aUser, aPass) {
+  nsIAuthPrompt_promptUsernameAndPassword: function(aTitle, aText, aPasswordRealm, aSavePassword, aUser, aPass) {
     return this.nsIAuthPrompt_loginPrompt(aTitle, aText, aPasswordRealm, aSavePassword, aUser, aPass);
   },
 
-  nsIAuthPrompt_promptPassword : function(aTitle, aText, aPasswordRealm, aSavePassword, aPass) {
+  nsIAuthPrompt_promptPassword: function(aTitle, aText, aPasswordRealm, aSavePassword, aPass) {
     return this.nsIAuthPrompt_loginPrompt(aTitle, aText, aPasswordRealm, aSavePassword, null, aPass);
   },
 
@@ -473,7 +473,7 @@ InternalPrompt.prototype = {
   _asyncPrompts: {},
   _asyncPromptInProgress: false,
 
-  _doAsyncPrompt : function() {
+  _doAsyncPrompt: function() {
     if (this._asyncPromptInProgress)
       return;
 
@@ -563,7 +563,7 @@ InternalPrompt.prototype = {
         channel: aChannel,
         authInfo: aAuthInfo,
         level: aLevel,
-        inProgress : false,
+        inProgress: false,
         prompter: this
       }
 
@@ -762,7 +762,7 @@ var PromptUtils = {
     return res;
   },
 
-  getAuthTarget : function pu_getAuthTarget(aChannel, aAuthInfo) {
+  getAuthTarget: function pu_getAuthTarget(aChannel, aAuthInfo) {
     let hostname, realm;
     
     
@@ -796,7 +796,7 @@ var PromptUtils = {
     return [hostname, realm];
   },
 
-  getAuthInfo : function pu_getAuthInfo(aAuthInfo) {
+  getAuthInfo: function pu_getAuthInfo(aAuthInfo) {
     let flags = aAuthInfo.flags;
     let username = {value: ""};
     let password = {value: ""};
@@ -811,7 +811,7 @@ var PromptUtils = {
     return [username, password];
   },
 
-  setAuthInfo : function (aAuthInfo, username, password) {
+  setAuthInfo: function (aAuthInfo, username, password) {
     var flags = aAuthInfo.flags;
     if (flags & Ci.nsIAuthInformation.NEED_DOMAIN) {
       
@@ -831,7 +831,7 @@ var PromptUtils = {
   
 
 
-  getFormattedHostname : function pu_getFormattedHostname(uri) {
+  getFormattedHostname: function pu_getFormattedHostname(uri) {
     return uri.scheme + "://" + uri.hostPort;
   },
 
@@ -845,7 +845,7 @@ var PromptUtils = {
       let winUtils = aDomWin.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIDOMWindowUtils);
       winUtils.dispatchEventToChromeOnly(aDomWin, event);
-    } catch(ex) {
+    } catch (ex) {
     }
   }
 };

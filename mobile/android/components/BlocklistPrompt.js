@@ -28,14 +28,14 @@ BlocklistPrompt.prototype = {
         
         var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
         Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
-  
+
         
         if (cancelQuit.data == false) {
           let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
           appStartup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
         }
       };
-      
+
       let buttons = [{accessKey: null,
                       label: bundle.GetStringFromName("notificationRestart.button"),
                       callback: restartCallback}];

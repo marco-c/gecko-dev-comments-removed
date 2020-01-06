@@ -120,7 +120,7 @@ var PluginHelper = {
   },
 
   
-  isTooSmall : function (plugin, overlay) {
+  isTooSmall: function (plugin, overlay) {
     
     let pluginRect = plugin.getBoundingClientRect();
     

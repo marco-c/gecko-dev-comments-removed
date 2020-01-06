@@ -66,7 +66,7 @@ this.browsingData = class extends ExtensionAPI {
           for (let item of PREF_LIST) {
             
             
-            switch(item){
+            switch (item){
               case "formdata":
                 name = "formData";
                 break;

@@ -260,7 +260,7 @@ var ActionBarHandler = {
     let actionCountUnchanged = this._actionBarActions &&
       actions.length === this._actionBarActions.length;
     let actionsMatch = actionCountUnchanged &&
-      this._actionBarActions.every((e,i) => {
+      this._actionBarActions.every((e, i) => {
         return e.id === actions[i].id;
       });
 
@@ -535,7 +535,7 @@ var ActionBarHandler = {
 
       selector: {
         matches: function(element, win) {
-          if(!(element instanceof HTMLInputElement)) {
+          if (!(element instanceof HTMLInputElement)) {
             return false;
           }
           let form = element.form;

@@ -267,7 +267,7 @@ function getDatabaseConnection() {
       }
 
       yield db.setSchemaVersion(SCHEMA_VERSION);
-    } catch(e) {
+    } catch (e) {
       
       yield db.close();
       throw e;

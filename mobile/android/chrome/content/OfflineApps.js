@@ -20,7 +20,7 @@ var OfflineApps = {
         
         return;
       }
-    } catch(e) {
+    } catch (e) {
       
     }
 

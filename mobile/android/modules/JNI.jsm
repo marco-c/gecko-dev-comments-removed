@@ -6,7 +6,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["JNI","android_log"];
+var EXPORTED_SYMBOLS = ["JNI", "android_log"];
 
 Components.utils.import("resource://gre/modules/ctypes.jsm")
 
@@ -902,7 +902,7 @@ function JNIClassSig(jenv, jcls) {
   name = name.replace(/\./g, '/');
   
   if (name.charAt(0)==='[') return name;
-  switch(name) {
+  switch (name) {
   case 'void': return 'V';
   case 'boolean': return 'Z';
   case 'byte': return 'B';
