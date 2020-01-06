@@ -363,19 +363,6 @@ public:
   
 
 
-
-
-
-
-
-  NS_IMETHOD GetOptionIndex(nsIDOMHTMLOptionElement* aOption,
-                            int32_t aStartIndex,
-                            bool aForward,
-                            int32_t* aIndex);
-
-  
-
-
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                                nsIContent* aBindingParent,
                                bool aCompileEventHandlers) override;
