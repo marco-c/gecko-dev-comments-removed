@@ -145,11 +145,6 @@ public:
                 wr::BuiltDisplayList& aOutDisplayList);
 
   void PushStackingContext(const WrRect& aBounds, 
-                           const float aOpacity,
-                           const gfx::Matrix4x4& aTransform,
-                           const WrMixBlendMode& aMixBlendMode);
-
-  void PushStackingContext(const WrRect& aBounds, 
                            const uint64_t& aAnimationId,
                            const float* aOpacity,
                            const gfx::Matrix4x4* aTransform,
