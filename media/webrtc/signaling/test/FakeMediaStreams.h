@@ -63,7 +63,9 @@ public:
     OFFLINE_THREAD_DRIVER
   };
   static MediaStreamGraph* GetInstance(GraphDriverType aDriverType,
-                                       uint32_t aType) {
+                                       uint32_t aType,
+                                       nsPIDOMWindowInner* aWindow) {
+    
     if (gGraph) {
       return gGraph;
     }
