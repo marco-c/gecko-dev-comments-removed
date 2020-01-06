@@ -316,7 +316,7 @@ class Nursery
     unsigned maxNurseryChunks_;
 
     
-    float previousPromotionRate_;
+    double previousPromotionRate_;
 
     
     mozilla::TimeDuration profileThreshold_;
@@ -355,19 +355,9 @@ class Nursery
 
     struct {
         JS::gcreason::Reason reason;
-        size_t nurseryCapacity;
-        size_t nurseryUsedBytes;
-        size_t tenuredBytes;
+        uint64_t nurseryUsedBytes;
+        uint64_t tenuredBytes;
     } previousGC;
-
-    
-
-
-
-
-
-    float
-    calcPromotionRate(bool *validForTenuring) const;
 
     
 
@@ -448,7 +438,7 @@ class Nursery
     
     void* allocate(size_t size);
 
-    void doCollection(JS::gcreason::Reason reason,
+    double doCollection(JS::gcreason::Reason reason,
                         gc::TenureCountCache& tenureCounts);
 
     
@@ -476,7 +466,7 @@ class Nursery
     void sweepDictionaryModeObjects();
 
     
-    void maybeResizeNursery(JS::gcreason::Reason reason);
+    void maybeResizeNursery(JS::gcreason::Reason reason, double promotionRate);
     void growAllocableSpace();
     void shrinkAllocableSpace(unsigned removeNumChunks);
     void minimizeAllocableSpace();
