@@ -34,12 +34,6 @@
 
 
 
-
-
-static const uint32_t kMaximumNativeHangStacks = 300;
-
-
-
 static const size_t kMaxThreadHangStackDepth = 30;
 
 
@@ -341,7 +335,7 @@ BackgroundHangManager::RunMonitorThread()
         if (MOZ_UNLIKELY(hangTime >= currentThread->mTimeout)) {
           
 #ifdef NIGHTLY_BUILD
-          if (currentThread->mStats.mNativeStackCnt < kMaximumNativeHangStacks) {
+          if (currentThread->mStats.mNativeStackCnt < Telemetry::kMaximumNativeHangStacks) {
             
             
             currentThread->mStats.mNativeStackCnt += 1;
@@ -498,7 +492,7 @@ BackgroundHangThread::ReportPermaHang()
   Telemetry::NativeHangStack& stack = hang.GetNativeStack();
   if (stack.empty()) {
     mStats.mNativeStackCnt += 1;
-    if (mStats.mNativeStackCnt <= kMaximumNativeHangStacks) {
+    if (mStats.mNativeStackCnt <= Telemetry::kMaximumNativeHangStacks) {
       mStackHelper.GetNativeStack(stack);
     }
   }

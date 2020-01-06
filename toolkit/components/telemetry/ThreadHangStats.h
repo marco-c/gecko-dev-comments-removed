@@ -20,6 +20,12 @@
 namespace mozilla {
 namespace Telemetry {
 
+
+
+
+
+static const uint32_t kMaximumNativeHangStacks = 300;
+
 static const size_t kTimeHistogramBuckets = 8 * sizeof(PRIntervalTime);
 
 

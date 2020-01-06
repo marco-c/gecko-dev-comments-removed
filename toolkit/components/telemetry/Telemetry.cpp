@@ -109,7 +109,11 @@ const size_t kMaxChromeStackDepth = 50;
 
 class CombinedStacks {
 public:
-  CombinedStacks() : mNextIndex(0) {}
+  explicit CombinedStacks(size_t aMaxStacksCount = kMaxChromeStacksKept)
+    : mNextIndex(0)
+    , mMaxStacksCount(aMaxStacksCount)
+  {}
+
   typedef std::vector<Telemetry::ProcessedStack::Frame> Stack;
   const Telemetry::ProcessedStack::Module& GetModule(unsigned aIndex) const;
   size_t GetModuleCount() const;
@@ -128,6 +132,8 @@ private:
   std::vector<Stack> mStacks;
   
   size_t mNextIndex;
+  
+  size_t mMaxStacksCount;
 };
 
 static JSObject *
@@ -146,9 +152,9 @@ CombinedStacks::GetModule(unsigned aIndex) const {
 size_t
 CombinedStacks::AddStack(const Telemetry::ProcessedStack& aStack) {
   
-  size_t index = mNextIndex++ % kMaxChromeStacksKept;
+  size_t index = mNextIndex++ % mMaxStacksCount;
   
-  if (mStacks.size() < kMaxChromeStacksKept) {
+  if (mStacks.size() < mMaxStacksCount) {
     mStacks.resize(mStacks.size() + 1);
   }
   
@@ -2043,21 +2049,6 @@ CreateJSHangHistogram(JSContext* cx, const Telemetry::HangHistogram& hang)
     return nullptr;
   }
 
-  if (!hang.GetNativeStack().empty()) {
-    const Telemetry::NativeHangStack& stack = hang.GetNativeStack();
-    Telemetry::ProcessedStack processed = Telemetry::GetStackAndModules(stack);
-
-    CombinedStacks singleStack;
-    singleStack.AddStack(processed);
-    JS::RootedObject fullReportObj(cx, CreateJSStackObject(cx, singleStack));
-    if (!fullReportObj) {
-      return nullptr;
-    }
-
-    if (!JS_DefineProperty(cx, ret, "nativeStack", fullReportObj, JSPROP_ENUMERATE)) {
-      return nullptr;
-    }
-  }
   return ret;
 }
 
@@ -2080,17 +2071,48 @@ CreateJSThreadHangStats(JSContext* cx, const Telemetry::ThreadHangStats& thread)
     return nullptr;
   }
 
+  
+  
+  
+  CombinedStacks combinedStacks(Telemetry::kMaximumNativeHangStacks);
+
+  
   JS::RootedObject hangs(cx, JS_NewArrayObject(cx, 0));
   if (!hangs) {
     return nullptr;
   }
   for (size_t i = 0; i < thread.mHangs.length(); i++) {
     JS::RootedObject obj(cx, CreateJSHangHistogram(cx, thread.mHangs[i]));
+    if (!ret) {
+      return nullptr;
+    }
+
+    
+    
+    const Telemetry::NativeHangStack& stack = thread.mHangs[i].GetNativeStack();
+    if (!stack.empty() &&
+        combinedStacks.GetStackCount() < Telemetry::kMaximumNativeHangStacks) {
+      Telemetry::ProcessedStack processed = Telemetry::GetStackAndModules(stack);
+      uint32_t index = combinedStacks.AddStack(processed);
+      if (!JS_DefineProperty(cx, obj, "nativeStack", index, JSPROP_ENUMERATE)) {
+        return nullptr;
+      }
+    }
+
     if (!JS_DefineElement(cx, hangs, i, obj, JSPROP_ENUMERATE)) {
       return nullptr;
     }
   }
   if (!JS_DefineProperty(cx, ret, "hangs", hangs, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  JS::RootedObject fullReportObj(cx, CreateJSStackObject(cx, combinedStacks));
+  if (!fullReportObj) {
+    return nullptr;
+  }
+
+  if (!JS_DefineProperty(cx, ret, "nativeStacks", fullReportObj, JSPROP_ENUMERATE)) {
     return nullptr;
   }
 
