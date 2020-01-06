@@ -716,7 +716,7 @@ public:
     return sWindowsById;
   }
 
-  void AddSizeOfIncludingThis(nsWindowSizes* aWindowSizes) const;
+  void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
 
   
   void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);

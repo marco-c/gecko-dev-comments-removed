@@ -983,7 +983,7 @@ public:
   
   void MaybeActiveMediaComponents();
 
-  virtual void DocAddSizeOfExcludingThis(nsWindowSizes* aWindowSizes) const override;
+  virtual void DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const override;
   
 
   virtual nsIDOMNode* AsDOMNode() override { return this; }
