@@ -72,7 +72,7 @@ public:
                              nsIChannel* aChannel,
                              imgCacheEntry* aCacheEntry,
                              nsISupports* aCX,
-                             nsIPrincipal* aLoadingPrincipal,
+                             nsIPrincipal* aTriggeringPrincipal,
                              int32_t aCORSMode,
                              ReferrerPolicy aReferrerPolicy);
 
@@ -127,9 +127,9 @@ public:
 
   
   
-  already_AddRefed<nsIPrincipal> GetLoadingPrincipal() const
+  already_AddRefed<nsIPrincipal> GetTriggeringPrincipal() const
   {
-    nsCOMPtr<nsIPrincipal> principal = mLoadingPrincipal;
+    nsCOMPtr<nsIPrincipal> principal = mTriggeringPrincipal;
     return principal.forget();
   }
 
@@ -240,7 +240,8 @@ private:
   nsCOMPtr<nsIURI> mCurrentURI;
   
   
-  nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
+  
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIProperties> mProperties;
