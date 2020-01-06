@@ -115,6 +115,9 @@ var FormAssistant = {
         if (this._showValidationMessage(currentElement) ||
             this._isAutoComplete(currentElement)) {
           this._currentFocusedElement = Cu.getWeakReference(currentElement);
+          
+          currentElement.ownerGlobal.addEventListener(
+              "resize", this, {capture: true, mozSystemGroup: true, once: true});
         }
         break;
       }
@@ -174,6 +177,18 @@ var FormAssistant = {
         };
 
         this._showAutoCompleteSuggestions(currentElement, checkResultsInput);
+        break;
+      }
+
+      case "resize": {
+        let focused = this.focusedElement;
+        if (focused && focused.ownerGlobal == aEvent.target) {
+          
+          this.observe(null, "PanZoom:StateChange", "NOTHING");
+          
+          focused.ownerGlobal.addEventListener(
+              "resize", this, {capture: true, mozSystemGroup: true, once: true});
+        }
         break;
       }
     }
