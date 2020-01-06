@@ -473,6 +473,8 @@ import org.mozilla.gecko.gfx.GeckoSurface;
         }
         try {
             mCallbacks.onError(error == Error.FATAL);
+        } catch (NullPointerException ne) {
+            
         } catch (RemoteException re) {
             re.printStackTrace();
         }
