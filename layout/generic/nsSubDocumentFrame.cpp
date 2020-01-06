@@ -404,7 +404,8 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                           &copyOfDirty,
                            true);
 
-      if (!gfxPrefs::LayoutUseContainersForRootFrames()) {
+      if (!gfxPrefs::LayoutUseContainersForRootFrames() ||
+          !aBuilder->IsPaintingToWindow()) {
         haveDisplayPort = false;
       }
 
