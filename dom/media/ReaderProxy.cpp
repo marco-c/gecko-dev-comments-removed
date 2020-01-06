@@ -82,6 +82,11 @@ ReaderProxy::OnAudioDataRequestFailed(const MediaResult& aError)
   mLoopingOffset = mLastAudioEndTime;
 
   
+  if (!mAudioDuration.IsValid()) {
+    mAudioDuration = mLastAudioEndTime;
+  }
+
+  
   
   
   
@@ -160,6 +165,7 @@ ReaderProxy::Seek(const SeekTarget& aTarget)
   
   mLoopingOffset = media::TimeUnit::Zero();
   mLastAudioEndTime = media::TimeUnit::Zero();
+  mAudioDuration = media::TimeUnit::Invalid();
   return SeekInternal(aTarget);
 }
 
@@ -288,6 +294,17 @@ ReaderProxy::SetSeamlessLoopingEnabled(bool aEnabled)
 {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   mSeamlessLoopingEnabled = aEnabled;
+}
+
+void
+ReaderProxy::AdjustByLooping(media::TimeUnit& aTime)
+{
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  MOZ_ASSERT(!mShutdown);
+  MOZ_ASSERT(!mSeamlessLoopingEnabled || !mSeamlessLoopingBlocked);
+  if (mAudioDuration.IsValid() && mAudioDuration.IsPositive()) {
+    aTime = aTime % mAudioDuration.ToMicroseconds();
+  }
 }
 
 } 

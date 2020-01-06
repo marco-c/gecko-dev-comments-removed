@@ -1940,6 +1940,8 @@ public:
     if (!mSentPlaybackEndedEvent) {
       auto clockTime =
         std::max(mMaster->AudioEndTime(), mMaster->VideoEndTime());
+      
+      Reader()->AdjustByLooping(clockTime);
       if (mMaster->mDuration.Ref()->IsInfinite()) {
         
         mMaster->mDuration = Some(clockTime);
@@ -3473,7 +3475,13 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
   
   if (VideoEndTime() > TimeUnit::Zero() || AudioEndTime() > TimeUnit::Zero()) {
 
-    const auto clockTime = GetClock();
+    auto clockTime = GetClock();
+
+    
+    
+    mReader->AdjustByLooping(clockTime);
+    bool loopback = clockTime < GetMediaTime();
+
     
     
     
@@ -3485,7 +3493,7 @@ MediaDecoderStateMachine::UpdatePlaybackPositionPeriodically()
     auto t = std::min(clockTime, maxEndTime);
     
     
-    if (t > GetMediaTime()) {
+    if (loopback || t > GetMediaTime()) {
       UpdatePlaybackPosition(t);
     }
   }
