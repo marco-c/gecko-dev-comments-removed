@@ -376,7 +376,7 @@ var Scheduler = this.Scheduler = {
     
     this.queue = promise.catch(() => undefined);
     
-    return promise.catch(null);
+    return promise.then();
   },
 
   
