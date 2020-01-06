@@ -32,3 +32,14 @@ exports.uninstallAddon = async function (addonID) {
 exports.isTemporaryID = function (addonID) {
   return AddonManagerPrivate.isTemporaryInstallID(addonID);
 };
+
+exports.parseFileUri = function (url) {
+  
+  
+  
+  const windowsRegex = /^file:\/\/\/([a-zA-Z]:\/.*)/;
+  if (windowsRegex.test(url)) {
+    return windowsRegex.exec(url)[1];
+  }
+  return url.slice("file://".length);
+};
