@@ -93,7 +93,7 @@ protected:
 
   VRDisplayInfo mDisplayInfo;
 
-  nsTArray<RefPtr<VRLayerParent>> mLayers;
+  nsTArray<VRLayerParent *> mLayers;
   
   
 
