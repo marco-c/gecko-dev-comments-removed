@@ -934,6 +934,9 @@ pref("accessibility.AOM.enabled", false);
 
 pref("accessibility.delay_plugins", false);
 pref("accessibility.delay_plugin_time", 10000);
+
+
+pref("accessibility.handler.enabled", true);
 #endif
 
 pref("focusmanager.testmode", false);
