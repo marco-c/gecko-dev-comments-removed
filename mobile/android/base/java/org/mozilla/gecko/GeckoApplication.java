@@ -80,6 +80,19 @@ public class GeckoApplication extends Application
         return sSessionUUID;
     }
 
+    public static String addDefaultGeckoArgs(String args) {
+        if (!AppConstants.MOZILLA_OFFICIAL) {
+            
+            
+            
+            
+            Log.w(LOG_TAG, "STARTUP PERFORMANCE WARNING: un-official build: purging the " +
+                           "startup (JavaScript) caches.");
+            args = (args != null) ? (args + " -purgecaches") : "-purgecaches";
+        }
+        return args;
+    }
+
     public static void shutdown(final Intent restartIntent) {
         ThreadUtils.assertOnUiThread();
 

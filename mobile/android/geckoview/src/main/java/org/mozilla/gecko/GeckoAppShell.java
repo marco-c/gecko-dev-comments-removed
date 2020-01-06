@@ -1734,13 +1734,6 @@ public class GeckoAppShell
 
 
         String getDefaultChromeURI();
-
-        
-
-
-
-
-        boolean isOfficial();
     };
 
     private static GeckoInterface sGeckoInterface;
