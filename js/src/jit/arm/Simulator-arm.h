@@ -38,6 +38,7 @@
 #include "jit/IonTypes.h"
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
+#include "wasm/WasmCode.h"
 
 namespace js {
 
@@ -425,6 +426,7 @@ class Simulator
 
     
     bool wasm_interrupt_;
+    wasm::SharedCode wasm_code_;
 
     
     char* lastDebuggerInput_;

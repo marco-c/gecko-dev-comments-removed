@@ -193,7 +193,7 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 
 
 Instance*
-LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp);
+LookupFaultingInstance(const Code& code, void* pc, void* fp);
 
 
 
