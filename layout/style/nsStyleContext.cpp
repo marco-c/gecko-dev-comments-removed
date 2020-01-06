@@ -1169,9 +1169,6 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
     
     
     
-    
-    
-    
     MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
 
     
@@ -1252,9 +1249,6 @@ public:
   }
 
   nsStyleContext* GetStyleIfVisited() {
-    
-    
-    
     
     
     return nullptr;

@@ -104,18 +104,14 @@ public:
 
   static mozilla::EventStates GetContentState(
                                 mozilla::dom::Element* aElement,
-                                bool aUsingPrivateBrowsing);
-  static mozilla::EventStates GetContentState(
-                                mozilla::dom::Element* aElement,
                                 const TreeMatchContext& aTreeMatchContext);
-  static mozilla::EventStates GetContentState(
-                                mozilla::dom::Element* aElement);
 
   
 
 
   static mozilla::EventStates GetContentStateForVisitedHandling(
              mozilla::dom::Element* aElement,
+             const TreeMatchContext& aTreeMatchContext,
              nsRuleWalker::VisitedHandlingType aVisitedHandling,
              bool aIsRelevantLink);
 
