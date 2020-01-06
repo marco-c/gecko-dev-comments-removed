@@ -124,6 +124,20 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext()
     return nullptr;
   }
 
+  if (mCurrentSample == 0 && mIndex->mMoofParser) {
+    const nsTArray<Moof>& moofs = mIndex->mMoofParser->Moofs();
+    MOZ_ASSERT(mCurrentMoof < moofs.Length());
+    const Moof* currentMoof = &moofs[mCurrentMoof];
+    if (!currentMoof->mPsshes.IsEmpty()) {
+      
+      
+      
+      writer->mCrypto.mValid = true;
+      writer->mCrypto.mInitDatas.AppendElements(currentMoof->mPsshes);
+      writer->mCrypto.mInitDataType = NS_LITERAL_STRING("cenc");
+    }
+  }
+
   if (!s->mCencRange.IsEmpty()) {
     MoofParser* parser = mIndex->mMoofParser.get();
 
