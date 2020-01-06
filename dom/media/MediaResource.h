@@ -205,6 +205,11 @@ public:
   
   
   
+  virtual bool ShouldCacheReads() = 0;
+  
+  
+  
+  
   virtual already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount)
   {
     RefPtr<MediaByteBuffer> bytes = new MediaByteBuffer();
@@ -578,6 +583,8 @@ public:
   void     SetPlaybackRate(uint32_t aBytesPerSecond) override;
   nsresult ReadAt(int64_t offset, char* aBuffer,
                   uint32_t aCount, uint32_t* aBytes) override;
+  
+  bool ShouldCacheReads() override { return true; }
   already_AddRefed<MediaByteBuffer> MediaReadAt(int64_t aOffset, uint32_t aCount) override;
   int64_t Tell() override;
 
