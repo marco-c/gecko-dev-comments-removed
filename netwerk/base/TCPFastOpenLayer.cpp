@@ -400,8 +400,8 @@ TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
     
     
     PRInt32 rv = (tfoFd->lower->methods->sendto)(tfoFd->lower,
-                                                 nullptr,
-                                                 0,
+                                                 secret->mFirstPacketBuf,
+                                                 secret->mFirstPacketBufLen,
                                                  0, 
                                                  &secret->mAddr,
                                                  PR_INTERVAL_NO_WAIT);
