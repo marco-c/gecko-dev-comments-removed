@@ -13,6 +13,11 @@
 namespace mozilla {
 namespace widget {
 
+#if defined(MOZ_WIDGET_GTK)
+
+
+
+
 class HeadlessLookAndFeel: public nsXPLookAndFeel {
 public:
   HeadlessLookAndFeel();
@@ -30,6 +35,15 @@ public:
   virtual char16_t GetPasswordCharacterImpl();
   virtual bool GetEchoPasswordImpl();
 };
+
+#else
+
+
+
+
+typedef nsLookAndFeel HeadlessLookAndFeel;
+
+#endif
 
 } 
 } 
