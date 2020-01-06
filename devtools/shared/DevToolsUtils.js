@@ -211,16 +211,44 @@ exports.getProperty = function (object, key) {
 
 
 
+
+exports.unwrap = function unwrap(obj) {
+  
+  if (obj.class === "Opaque") {
+    return obj;
+  }
+
+  
+  let unwrapped;
+  try {
+    unwrapped = obj.unwrap();
+  } catch (err) {
+    unwrapped = null;
+  }
+
+  
+  if (!unwrapped || unwrapped === obj) {
+    return unwrapped;
+  }
+
+  
+  return unwrap(unwrapped);
+};
+
+
+
+
+
+
+
+
+
 exports.hasSafeGetter = function (desc) {
   
   
-  try {
-    let fn = desc.get.unwrap();
-    return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
-  } catch (e) {
-    
-    return false;
-  }
+  let fn = desc.get;
+  fn = fn && exports.unwrap(fn);
+  return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
 };
 
 

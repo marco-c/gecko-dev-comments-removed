@@ -80,7 +80,7 @@ ObjectActor.prototype = {
 
     
     
-    let unwrapped = unwrap(this.obj);
+    let unwrapped = DevToolsUtils.unwrap(this.obj);
     if (!unwrapped) {
       if (DevToolsUtils.isCPOW(this.obj)) {
         g.class = "CPOW: " + g.class;
@@ -286,7 +286,7 @@ ObjectActor.prototype = {
     let ownSymbols = [];
 
     
-    let unwrapped = unwrap(this.obj);
+    let unwrapped = DevToolsUtils.unwrap(this.obj);
     if (!unwrapped || unwrapped.isProxy || this.obj.class == "DeadObject") {
       return { from: this.actorID,
                prototype: this.hooks.createValueGrip(null),
@@ -335,7 +335,7 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
-    let unwrapped = unwrap(obj);
+    let unwrapped = DevToolsUtils.unwrap(obj);
     if (!unwrapped || unwrapped.isProxy) {
       return safeGetterValues;
     }
@@ -351,7 +351,7 @@ ObjectActor.prototype = {
 
     while (obj) {
       
-      unwrapped = unwrap(obj);
+      unwrapped = DevToolsUtils.unwrap(obj);
       if (!unwrapped || unwrapped.isProxy) {
         break;
       }
@@ -2451,36 +2451,6 @@ function arrayBufferGrip(buffer, pool) {
   pool.addActor(actor);
   pool.arrayBufferActors.set(buffer, actor);
   return actor.grip();
-}
-
-
-
-
-
-
-
-
-function unwrap(obj) {
-  
-  if (obj.class === "Opaque") {
-    return obj;
-  }
-
-  
-  let unwrapped;
-  try {
-    unwrapped = obj.unwrap();
-  } catch (err) {
-    unwrapped = null;
-  }
-
-  
-  if (!unwrapped || unwrapped === obj) {
-    return unwrapped;
-  }
-
-  
-  return unwrap(unwrapped);
 }
 
 const TYPED_ARRAY_CLASSES = ["Uint8Array", "Uint8ClampedArray", "Uint16Array",

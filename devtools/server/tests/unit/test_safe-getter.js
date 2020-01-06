@@ -23,4 +23,17 @@ function run_test() {
   
   assert(!DevToolsUtils.hasSafeGetter(gw.getOwnPropertyDescriptor("bar")));
   assert(!DevToolsUtils.hasSafeGetter(gw.getOwnPropertyDescriptor("foo")));
+
+  
+  let obj = gw.makeDebuggeeValue(Cu.waiveXrays(Cu.Sandbox(null).eval(`
+    Object.defineProperty({}, "bar", {
+      get: function() { return "bar"; },
+      configurable: true,
+      enumerable: true
+    });
+  `)));
+
+  
+  
+  assert(!DevToolsUtils.hasSafeGetter(obj.getOwnPropertyDescriptor("bar")));
 }
