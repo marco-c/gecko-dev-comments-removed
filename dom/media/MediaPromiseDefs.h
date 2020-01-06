@@ -1,0 +1,19 @@
+
+
+
+
+
+#ifndef MediaPromiseDefs_h_
+#define MediaPromiseDefs_h_
+
+#include "MediaResult.h"
+#include "mozilla/MozPromise.h"
+
+namespace mozilla {
+
+using SetCDMPromise =
+  MozPromise<bool , MediaResult,  true>;
+
+} 
+
+#endif

@@ -1228,6 +1228,10 @@ MediaFormatReader::Shutdown()
   mMetadataPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mSeekPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mSkipRequest.DisconnectIfExists();
+  mSetCDMPromise.RejectIfExists(
+    MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                "MediaFormatReader is shutting down"),
+    __func__);
 
   if (mAudio.HasPromise()) {
     mAudio.RejectPromise(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
@@ -1319,22 +1323,66 @@ MediaFormatReader::Init()
 }
 
 void
+MediaFormatReader::ResolveSetCDMPromiseIfDone(TrackType aTrack)
+{
+  
+  
+  MOZ_ASSERT(OnTaskQueue());
+
+  if (mSetCDMForTracks.contains(aTrack)) {
+    MOZ_ASSERT(!mSetCDMPromise.IsEmpty());
+
+    mSetCDMForTracks -= aTrack;
+    if (mSetCDMForTracks.isEmpty()) {
+      mSetCDMPromise.Resolve( true, __func__);
+    }
+  }
+}
+
+RefPtr<SetCDMPromise>
 MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
 {
-  RefPtr<CDMProxy> proxy = aProxy;
-  RefPtr<MediaFormatReader> self = this;
-  nsCOMPtr<nsIRunnable> r =
-    NS_NewRunnableFunction("MediaFormatReader::SetCDMProxy", [=]() {
-      MOZ_ASSERT(self->OnTaskQueue());
-      self->mCDMProxy = proxy;
-      if (HasAudio()) {
-        self->ScheduleUpdate(TrackInfo::kAudioTrack);
-      }
-      if (HasVideo()) {
-        self->ScheduleUpdate(TrackInfo::kVideoTrack);
-      }
-    });
-  OwnerThread()->Dispatch(r.forget());
+  MOZ_ASSERT(OnTaskQueue());
+  LOGV("SetCDMProxy (%p)", aProxy);
+
+  if (mShutdown) {
+    return SetCDMPromise::CreateAndReject(
+      MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                  "MediaFormatReader is shutting down"),
+      __func__);
+  }
+
+  mSetCDMPromise.RejectIfExists(
+    MediaResult(NS_ERROR_DOM_INVALID_STATE_ERR,
+                "Another new CDM proxy is being set."),
+    __func__);
+
+  if (HasAudio()) {
+    mSetCDMForTracks += TrackInfo::kAudioTrack;
+    ScheduleUpdate(TrackInfo::kAudioTrack);
+  }
+  if (HasVideo()) {
+    mSetCDMForTracks += TrackInfo::kVideoTrack;
+    ScheduleUpdate(TrackInfo::kVideoTrack);
+  }
+
+  
+  
+  
+  if (!mSetCDMForTracks.isEmpty()) {
+    ReleaseResources();
+  }
+
+  mCDMProxy = aProxy;
+
+  if (!mInitDone || mSetCDMForTracks.isEmpty()) {
+    
+    
+    return SetCDMPromise::CreateAndResolve( true, __func__);
+  }
+
+  RefPtr<SetCDMPromise> p = mSetCDMPromise.Ensure(__func__);
+  return p;
 }
 
 bool
@@ -2242,6 +2290,8 @@ MediaFormatReader::Update(TrackType aTrack)
   bool needOutput = false;
   auto& decoder = GetDecoderData(aTrack);
   decoder.mUpdateScheduled = false;
+
+  ResolveSetCDMPromiseIfDone(aTrack);
 
   if (!mInitDone) {
     return;
