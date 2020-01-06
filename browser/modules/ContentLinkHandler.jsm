@@ -122,6 +122,13 @@ function setIconForLink(aIconInfo, aChromeGlobal) {
 
 
 
+function isICO(icon) {
+  return icon.type == "image/x-icon" || icon.type == "image/vnd.microsoft.icon";
+}
+
+
+
+
 
 
 
@@ -135,8 +142,10 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   if (!load)
     return;
 
-  
-  let preferredIcon;
+  let preferredIcon = {
+    type: null
+  };
+  let preferredWidth = 16 * Math.ceil(aChromeGlobal.content.devicePixelRatio);
   
   let defaultIcon;
   
@@ -144,11 +153,17 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   let largestRichIcon;
 
   for (let icon of load.iconInfos) {
-    if (icon.type === "image/svg+xml" ||
-      icon.type === "image/x-icon" ||
-      icon.type === "image/vnd.microsoft.icon") {
-      preferredIcon = icon;
-      continue;
+    if (!icon.isRichIcon) {
+      
+      
+      
+      if (icon.type == "image/svg+xml") {
+        preferredIcon = icon;
+      } else if (icon.width == preferredWidth && preferredIcon.type != "image/svg+xml") {
+        preferredIcon = icon;
+      } else if (isICO(icon) && (preferredIcon.type == null || isICO(preferredIcon))) {
+        preferredIcon = icon;
+      }
     }
 
     
@@ -170,7 +185,7 @@ function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
   if (largestRichIcon) {
     setIconForLink(largestRichIcon, aChromeGlobal);
   }
-  if (preferredIcon) {
+  if (preferredIcon.type) {
     setIconForLink(preferredIcon, aChromeGlobal);
   } else if (defaultIcon) {
     setIconForLink(defaultIcon, aChromeGlobal);
