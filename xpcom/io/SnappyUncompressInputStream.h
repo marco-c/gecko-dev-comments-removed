@@ -23,6 +23,9 @@ public:
   
   
   
+  
+  
+  
   explicit SnappyUncompressInputStream(nsIInputStream* aBaseStream);
 
 private:

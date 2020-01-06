@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include "nsIAsyncInputStream.h"
+#include "nsIStringStream.h"
 #include "nsStreamUtils.h"
 #include "snappy/snappy.h"
 
@@ -41,13 +42,18 @@ SnappyUncompressInputStream::SnappyUncompressInputStream(nsIInputStream* aBaseSt
   
   
   
+  
+  
 #ifdef DEBUG
   bool baseNonBlocking;
   nsresult rv = mBaseStream->IsNonBlocking(&baseNonBlocking);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
   if (baseNonBlocking) {
-    nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(mBaseStream);
-    MOZ_ASSERT(!async);
+    nsCOMPtr<nsIStringInputStream> stringStream = do_QueryInterface(mBaseStream);
+    if (!stringStream) {
+      nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(mBaseStream);
+      MOZ_ASSERT(!async);
+    }
   }
 #endif
 }

@@ -125,6 +125,29 @@ private:
 NS_IMPL_ISUPPORTS(NonSeekableStringStream, nsIInputStream, nsIAsyncInputStream)
 
 
+
+
+class NonAsyncStream final : public nsIInputStream
+{
+  nsCOMPtr<nsIInputStream> mStream;
+
+public:
+  explicit NonAsyncStream(const nsACString& aBuffer)
+  {
+    NS_NewCStringInputStream(getter_AddRefs(mStream), aBuffer);
+  }
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  NS_FORWARD_NSIINPUTSTREAM(mStream->)
+
+private:
+  ~NonAsyncStream() {}
+};
+
+NS_IMPL_ISUPPORTS(NonAsyncStream, nsIInputStream);
+
+
 SlicedInputStream*
 CreateSeekableStreams(uint32_t aSize, uint64_t aStart, uint64_t aLength,
                       nsCString& aBuffer)
@@ -151,6 +174,21 @@ CreateNonSeekableStreams(uint32_t aSize, uint64_t aStart, uint64_t aLength,
   }
 
   RefPtr<NonSeekableStringStream> stream = new NonSeekableStringStream(aBuffer);
+  return new SlicedInputStream(stream, aStart, aLength);
+}
+
+
+
+SlicedInputStream*
+CreateNonAsyncStreams(uint32_t aSize, uint64_t aStart, uint64_t aLength,
+		      nsCString& aBuffer)
+{
+  aBuffer.SetLength(aSize);
+  for (uint32_t i = 0; i < aSize; ++i) {
+    aBuffer.BeginWriting()[i] = i % 10;
+  }
+
+  nsCOMPtr<nsIInputStream> stream = new NonAsyncStream(aBuffer);
   return new SlicedInputStream(stream, aStart, aLength);
 }
 
@@ -443,7 +481,7 @@ TEST(TestSlicedInputStream, NoAsyncInputStream) {
 
   nsCString buf;
   nsCOMPtr<nsIInputStream> sis =
-    CreateSeekableStreams(kBufSize, 0, kBufSize, buf);
+    CreateNonAsyncStreams(kBufSize, 0, kBufSize, buf);
 
   
   nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(sis);
