@@ -127,4 +127,8 @@ class JSONWriter;
 }
 void AppendSharedLibraries(mozilla::JSONWriter& aWriter);
 
+
+uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
+                                      uint32_t aFeatureCount);
+
 #endif 
