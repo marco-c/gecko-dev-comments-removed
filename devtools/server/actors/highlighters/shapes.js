@@ -17,7 +17,7 @@ const {
 } = require("devtools/server/actors/utils/shapes-geometry-utils");
 const EventEmitter = require("devtools/shared/old-event-emitter");
 
-const BASE_MARKER_SIZE = 10;
+const BASE_MARKER_SIZE = 5;
 
 const LINE_CLICK_WIDTH = 5;
 const DOM_EVENTS = ["mousedown", "mousemove", "mouseup", "dblclick"];
@@ -120,6 +120,16 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       nodeType: "path",
       parent: mainSvg,
       attributes: {
+        "id": "markers-outline",
+        "class": "markers-outline",
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    createSVGNode(this.win, {
+      nodeType: "path",
+      parent: mainSvg,
+      attributes: {
         "id": "markers",
         "class": "markers",
       },
@@ -193,24 +203,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         } else if (this.shapeType === "inset") {
           this._handleInsetClick(pageX, pageY);
         }
-        
-        
-        
-        
-        if (this.property === "shape-outside" && this[_dragging]) {
-          let { width } = this.zoomAdjustedDimensions;
-          let origWidth = getDefinedShapeProperties(this.currentNode, "width");
-          this.currentNode.style.setProperty("width", `${width + 1}px`);
-          this[_dragging].origWidth = origWidth;
-        }
         event.stopPropagation();
         event.preventDefault();
         break;
       case "mouseup":
         if (this[_dragging]) {
-          if (this.property === "shape-outside") {
-            this.currentNode.style.setProperty("width", this[_dragging].origWidth);
-          }
           this[_dragging] = null;
         }
         break;
@@ -675,7 +672,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     let { width, height } = this.zoomAdjustedDimensions;
     let zoom = getCurrentZoom(this.win);
     let path = points.map(([x, y]) => {
-      return getCirclePath(x, y, width, height, zoom);
+      return getCirclePath(BASE_MARKER_SIZE, x, y, width, height, zoom);
     }).join(" ");
 
     let markerHover = this.getElement("marker-hover");
@@ -1274,6 +1271,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.getElement("polygon").setAttribute("hidden", true);
     this.getElement("rect").setAttribute("hidden", true);
     this.getElement("markers").setAttribute("d", "");
+    this.getElement("markers-outline").setAttribute("d", "");
   }
 
   
@@ -1402,10 +1400,14 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   _drawMarkers(coords, width, height, zoom) {
     let markers = coords.map(([x, y]) => {
-      return getCirclePath(x, y, width, height, zoom);
+      return getCirclePath(BASE_MARKER_SIZE, x, y, width, height, zoom);
+    }).join(" ");
+    let outline = coords.map(([x, y]) => {
+      return getCirclePath(BASE_MARKER_SIZE + 2, x, y, width, height, zoom);
     }).join(" ");
 
     this.getElement("markers").setAttribute("d", markers);
+    this.getElement("markers-outline").setAttribute("d", outline);
   }
 
   
@@ -1538,14 +1540,15 @@ exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
 
 
 
-const getCirclePath = (cx, cy, width, height, zoom) => {
+
+const getCirclePath = (size, cx, cy, width, height, zoom) => {
   
   
   
   
   
   
-  let radius = BASE_MARKER_SIZE * (100 / Math.max(width, height)) / zoom;
+  let radius = size * (100 / Math.max(width, height)) / zoom;
   let ratio = width / height;
   let rx = (ratio > 1) ? radius : radius / ratio;
   let ry = (ratio > 1) ? radius * ratio : radius;
