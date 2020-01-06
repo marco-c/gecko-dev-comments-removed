@@ -91,7 +91,10 @@ UTCToLocalStandardOffsetSeconds()
     } else {
         
         
-        local.tm_isdst = 0;
+        
+        
+        struct tm localNoDST = local;
+        localNoDST.tm_isdst = 0;
 
         
         
@@ -99,7 +102,7 @@ UTCToLocalStandardOffsetSeconds()
         
         
         
-        currentNoDST = mktime(&local);
+        currentNoDST = mktime(&localNoDST);
         if (currentNoDST == time_t(-1))
             return 0;
     }
@@ -177,6 +180,8 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
     if (!ComputeLocalTime(static_cast<time_t>(utcSeconds), &tm))
         return 0;
 
+    
+    
     int32_t dayoff = int32_t((utcSeconds + utcToLocalStandardOffsetSeconds) % SecondsPerDay);
     int32_t tmoff = tm.tm_sec + (tm.tm_min * SecondsPerMinute) + (tm.tm_hour * SecondsPerHour);
 
@@ -184,6 +189,8 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
 
     if (diff < 0)
         diff += SecondsPerDay;
+    else if (uint32_t(diff) >= SecondsPerDay)
+        diff -= SecondsPerDay;
 
     return diff * msPerSecond;
 }
