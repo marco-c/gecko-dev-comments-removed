@@ -650,9 +650,77 @@ enum class ServoPostTraversalFlags : uint32_t
   Empty = 0,
   
   ParentWasRestyled = 1 << 0,
+  
+  SkipA11yNotifications = 1 << 1,
+  
+  
+  SendA11yNotificationsIfShown = 1 << 2,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoPostTraversalFlags)
+
+
+
+static ServoPostTraversalFlags
+SendA11yNotifications(nsPresContext* aPresContext,
+                      Element* aElement,
+                      nsStyleContext* aOldStyleContext,
+                      nsStyleContext* aNewStyleContext,
+                      ServoPostTraversalFlags aFlags)
+{
+  using Flags = ServoPostTraversalFlags;
+  MOZ_ASSERT(!(aFlags & Flags::SkipA11yNotifications) ||
+             !(aFlags & Flags::SendA11yNotificationsIfShown),
+             "The two a11y flags should never be set together");
+
+#ifdef ACCESSIBILITY
+  nsAccessibilityService* accService = GetAccService();
+  if (!accService) {
+    
+    
+    return Flags::Empty;
+  }
+  if (aFlags & Flags::SkipA11yNotifications) {
+    
+    return Flags::SkipA11yNotifications;
+  }
+
+  bool needsNotify = false;
+  bool isVisible = aNewStyleContext->StyleVisibility()->IsVisible();
+  if (aFlags & Flags::SendA11yNotificationsIfShown) {
+    if (!isVisible) {
+      
+      return Flags::SendA11yNotificationsIfShown;
+    }
+    
+    
+    
+    needsNotify = true;
+  } else {
+    
+    
+    bool wasVisible = aOldStyleContext->StyleVisibility()->IsVisible();
+    needsNotify = wasVisible != isVisible;
+  }
+
+  if (needsNotify) {
+    nsIPresShell* presShell = aPresContext->PresShell();
+    if (isVisible) {
+      accService->ContentRangeInserted(presShell, aElement->GetParent(),
+                                       aElement, aElement->GetNextSibling());
+      
+      
+      return Flags::SkipA11yNotifications;
+    }
+    
+    
+    accService->ContentRemoved(presShell, aElement);
+    return Flags::SendA11yNotificationsIfShown;
+  }
+#endif
+
+  return Flags::Empty;
+}
 
 bool
 ServoRestyleManager::ProcessPostTraversal(
@@ -767,6 +835,10 @@ ServoRestyleManager::ProcessPostTraversal(
       ? aRestyleState.StyleSet().ResolveServoStyle(aElement)
       : oldStyleContext;
 
+  ServoPostTraversalFlags childrenFlags =
+    wasRestyled ? ServoPostTraversalFlags::ParentWasRestyled
+                : ServoPostTraversalFlags::Empty;
+
   if (wasRestyled && oldStyleContext) {
     MOZ_ASSERT(styleFrame || displayContentsStyle);
     MOZ_ASSERT(oldStyleContext->ComputedData() != upToDateContext->ComputedData());
@@ -820,6 +892,10 @@ ServoRestyleManager::ProcessPostTraversal(
     
     AddLayerChangesForAnimation(
       styleFrame, aElement, aRestyleState.ChangeList());
+
+    childrenFlags |= SendA11yNotifications(mPresContext, aElement,
+                                           oldStyleContext,
+                                           upToDateContext, aFlags);
   }
 
   const bool traverseElementChildren =
@@ -827,9 +903,6 @@ ServoRestyleManager::ProcessPostTraversal(
   const bool traverseTextChildren =
     wasRestyled || aElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
   bool recreatedAnyContext = wasRestyled;
-  ServoPostTraversalFlags childrenFlags =
-    wasRestyled ? ServoPostTraversalFlags::ParentWasRestyled
-                : ServoPostTraversalFlags::Empty;
   if (traverseElementChildren || traverseTextChildren) {
     StyleChildrenIterator it(aElement);
     TextPostTraversalState textState(*aElement,
