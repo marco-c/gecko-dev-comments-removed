@@ -46,6 +46,15 @@ public:
                              nsIStreamListener** aDocListener,
                              nsIContentViewer** aContentViewer);
 
+  
+
+
+
+
+  static nsresult CreateBlankDocument(nsILoadGroup* aLoadGroup,
+                                      nsIPrincipal* aPrincipal,
+                                      nsIDocument** aDocument);
+
 private:
   static nsresult EnsureUAStyleSheet();
   static bool IsImageContentType(const char* aContentType);
