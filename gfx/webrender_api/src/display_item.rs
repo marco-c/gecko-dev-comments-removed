@@ -689,6 +689,10 @@ pub enum ClipId {
 }
 
 impl ClipId {
+    pub fn root_scroll_node(pipeline_id: PipelineId) -> ClipId {
+        ClipId::Clip(0, pipeline_id)
+    }
+
     pub fn root_reference_frame(pipeline_id: PipelineId) -> ClipId {
         ClipId::DynamicallyAddedNode(0, pipeline_id)
     }
@@ -697,7 +701,7 @@ impl ClipId {
         
         
         if id == 0 {
-            return ClipId::root_reference_frame(pipeline_id);
+            return ClipId::root_scroll_node(pipeline_id);
         }
 
         ClipId::ClipExternalId(id, pipeline_id)
@@ -718,9 +722,9 @@ impl ClipId {
         }
     }
 
-    pub fn is_root(&self) -> bool {
+    pub fn is_root_scroll_node(&self) -> bool {
         match *self {
-            ClipId::DynamicallyAddedNode(0, _) => true,
+            ClipId::Clip(0, _) => true,
             _ => false,
         }
     }

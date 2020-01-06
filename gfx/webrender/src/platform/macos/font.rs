@@ -371,20 +371,16 @@ impl FontContext {
     fn gamma_correct_pixels(
         &self,
         pixels: &mut Vec<u8>,
-        width: usize,
-        height: usize,
         render_mode: FontRenderMode,
         color: ColorU,
     ) {
         
         match render_mode {
             FontRenderMode::Alpha => {
-                self.gamma_lut
-                    .preblend_grayscale_bgra(pixels, width, height, color);
+                self.gamma_lut.preblend_grayscale(pixels, color);
             }
             FontRenderMode::Subpixel => {
-                self.gamma_lut
-                    .preblend_bgra(pixels, width, height, color);
+                self.gamma_lut.preblend(pixels, color);
             }
             _ => {} 
         }
@@ -595,35 +591,28 @@ impl FontContext {
                 
                 
                 
-                self.gamma_lut.coregraphics_convert_to_linear_bgra(
+                self.gamma_lut.coregraphics_convert_to_linear(
                     &mut rasterized_pixels,
-                    metrics.rasterized_width as usize,
-                    metrics.rasterized_height as usize,
                 );
             }
 
-            for i in 0 .. metrics.rasterized_height {
-                let current_height = (i * metrics.rasterized_width * 4) as usize;
-                let end_row = current_height + (metrics.rasterized_width as usize * 4);
+            for pixel in rasterized_pixels.chunks_mut(4) {
+                if invert {
+                    pixel[0] = 255 - pixel[0];
+                    pixel[1] = 255 - pixel[1];
+                    pixel[2] = 255 - pixel[2];
+                }
 
-                for pixel in rasterized_pixels[current_height .. end_row].chunks_mut(4) {
-                    if invert {
-                        pixel[0] = 255 - pixel[0];
-                        pixel[1] = 255 - pixel[1];
-                        pixel[2] = 255 - pixel[2];
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    pixel[3] = pixel[1];
-                } 
-            } 
+                
+                
+                
+                
+                
+                
+                
+                
+                pixel[3] = pixel[1];
+            }
 
             if smooth {
                 
@@ -632,8 +621,6 @@ impl FontContext {
                 
                 self.gamma_correct_pixels(
                     &mut rasterized_pixels,
-                    metrics.rasterized_width as usize,
-                    metrics.rasterized_height as usize,
                     font.render_mode,
                     font.color,
                 );

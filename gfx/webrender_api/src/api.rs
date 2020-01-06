@@ -669,6 +669,11 @@ impl RenderApi {
     }
 
     
+    
+    
+    
+    
+    
     pub fn hit_test(&self,
                     document_id: DocumentId,
                     pipeline_id: Option<PipelineId>,
