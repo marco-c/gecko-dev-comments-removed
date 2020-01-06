@@ -83,6 +83,7 @@ class nsNameSpaceManager;
 class nsIObserver;
 class nsIParser;
 class nsIParserService;
+class nsIPluginTag;
 class nsIPresShell;
 class nsIPrincipal;
 class nsIRequest;
@@ -2911,6 +2912,17 @@ public:
 
 
 
+  static already_AddRefed<nsIPluginTag>
+    PluginTagForType(const nsCString& aMIMEType, bool aNoFakePlugin);
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -2919,6 +2931,7 @@ public:
 
   static uint32_t
   HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
+                                   bool aNoFakePlugin,
                                    nsIContent* aContent);
 
   static already_AddRefed<nsIEventTarget>

@@ -345,7 +345,7 @@ HTMLObjectElement::IsFocusableForTabIndex()
   }
 
   return IsEditableRoot() ||
-         (Type() == eType_Document &&
+         ((Type() == eType_Document || Type() == eType_FakePlugin) &&
           nsContentUtils::IsSubDocumentTabbable(this));
 }
 
@@ -369,7 +369,8 @@ HTMLObjectElement::IsHTMLFocusable(bool aWithMouse,
   
   
   if (Type() == eType_Plugin || IsEditableRoot() ||
-      (Type() == eType_Document && nsContentUtils::IsSubDocumentTabbable(this))) {
+      ((Type() == eType_Document || Type() == eType_FakePlugin) &&
+       nsContentUtils::IsSubDocumentTabbable(this))) {
     
     
     if (aTabIndex) {
@@ -400,7 +401,7 @@ HTMLObjectElement::GetDesiredIMEState()
   if (Type() == eType_Plugin) {
     return IMEState(IMEState::PLUGIN);
   }
-   
+
   return nsGenericHTMLFormElement::GetDesiredIMEState();
 }
 

@@ -65,11 +65,15 @@ class nsObjectLoadingContent : public nsImageLoadingContent
       
       eType_Plugin         = TYPE_PLUGIN,
       
+      
+      eType_FakePlugin     = TYPE_FAKE_PLUGIN,
+      
       eType_Document       = TYPE_DOCUMENT,
       
       
       eType_Null           = TYPE_NULL
     };
+
     enum FallbackType {
       
       eFallbackUnsupported = nsIObjectLoadingContent::PLUGIN_UNSUPPORTED,
@@ -192,7 +196,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     }
     uint32_t GetContentTypeForMIMEType(const nsAString& aMIMEType)
     {
-      return GetTypeOfContent(NS_ConvertUTF16toUTF8(aMIMEType));
+      return GetTypeOfContent(NS_ConvertUTF16toUTF8(aMIMEType), false);
     }
     void PlayPlugin(mozilla::dom::SystemCallerGuarantee,
                     mozilla::ErrorResult& aRv);
@@ -222,6 +226,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     bool HasRunningPlugin() const
     {
       return !!mInstanceOwner;
+    }
+    
+    void SkipFakePlugins(mozilla::ErrorResult& aRv)
+    {
+      aRv = SkipFakePlugins();
     }
     void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
                           mozilla::ErrorResult& aRv)
@@ -463,7 +472,8 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    bool ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentType);
+
+    bool ShouldPlay(FallbackType &aReason);
 
     
 
@@ -527,6 +537,14 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
+    already_AddRefed<nsIDocShell> SetupFrameLoader(nsIURI *aRecursionCheckURI);
+
+    
+
+
+
+
+
 
 
     void UnloadObject(bool aResetState = true);
@@ -553,7 +571,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    ObjectType GetTypeOfContent(const nsCString& aMIMEType);
+
+
+
+
+    ObjectType GetTypeOfContent(const nsCString& aMIMEType, bool aNoFakePlugin);
 
     
 
@@ -686,6 +708,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     
     bool                        mContentBlockingEnabled : 1;
+
+    
+    bool                        mSkipFakePlugins : 1;
 
     
     bool                        mIsStopping : 1;

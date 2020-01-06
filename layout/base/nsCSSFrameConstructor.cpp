@@ -3809,6 +3809,9 @@ nsCSSFrameConstructor::FindObjectData(Element* aElement,
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_IMAGE,
                       NS_NewImageFrame),
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_DOCUMENT,
+                      NS_NewSubDocumentFrame),
+    
+    SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_FAKE_PLUGIN,
                       NS_NewSubDocumentFrame)
     
   };
