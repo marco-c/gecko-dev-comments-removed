@@ -2725,14 +2725,10 @@ SearchService.prototype = {
     migrateRegionPrefs();
 
     
-    let cache = {};
     
     
     
-    cache = await this._asyncReadCacheFile();
-
-    if (!gInitialized && cache.metaData)
-      this._metaData = cache.metaData;
+    let cache = await this._asyncReadCacheFile();
 
     try {
       await checkForSyncCompletion(ensureKnownCountryCode(this));
@@ -2825,6 +2821,7 @@ SearchService.prototype = {
     let cache = {};
     let locale = getLocale();
     let buildID = Services.appinfo.platformBuildID;
+    let appVersion = Services.appinfo.version;
 
     
     cache.version = CACHE_VERSION;
@@ -2834,6 +2831,8 @@ SearchService.prototype = {
     
     
     cache.buildID = buildID;
+    
+    cache.appVersion = appVersion;
     cache.locale = locale;
 
     cache.visibleDefaultEngines = this._visibleDefaultEngines;
@@ -3108,10 +3107,7 @@ SearchService.prototype = {
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC,
                                      "uninit-complete");
 
-        let cache = {};
-        cache = await this._asyncReadCacheFile();
-        if (!gInitialized && cache.metaData)
-          this._metaData = cache.metaData;
+        let cache = await this._asyncReadCacheFile();
 
         await ensureKnownCountryCode(this);
         
@@ -3165,6 +3161,12 @@ SearchService.prototype = {
       let json = JSON.parse(new TextDecoder().decode(bytes));
       if (!json.engines || !json.engines.length)
         throw "no engine in the file";
+      
+      if (json.appVersion != Services.appinfo.version &&
+          geoSpecificDefaultsEnabled() &&
+          json.metaData) {
+        json.metaData.searchDefaultExpir = 0;
+      }
       return json;
     } catch (ex) {
       LOG("_readCacheFile: Error reading cache file: " + ex);
@@ -3183,7 +3185,7 @@ SearchService.prototype = {
         LOG("_readCacheFile: migrating metadata from search-metadata.json");
         let data = metadata["[global]"];
         json.metaData = {};
-        let fields = ["searchDefault", "searchDefaultHash", "searchDefaultExpir",
+        let fields = ["searchDefault", "searchDefaultHash",
                       "current", "hash",
                       "visibleDefaultEngines", "visibleDefaultEnginesHash"];
         for (let field of fields) {
@@ -3219,6 +3221,12 @@ SearchService.prototype = {
       json = JSON.parse(new TextDecoder().decode(bytes));
       if (!json.engines || !json.engines.length)
         throw "no engine in the file";
+      
+      if (json.appVersion != Services.appinfo.version &&
+          geoSpecificDefaultsEnabled() &&
+          json.metaData) {
+        json.metaData.searchDefaultExpir = 0;
+      }
       this._cacheFileJSON = json;
     } catch (ex) {
       LOG("_asyncReadCacheFile: Error reading cache file: " + ex);
@@ -3233,7 +3241,7 @@ SearchService.prototype = {
           LOG("_asyncReadCacheFile: migrating metadata from search-metadata.json");
           let data = metadata["[global]"];
           json.metaData = {};
-          let fields = ["searchDefault", "searchDefaultHash", "searchDefaultExpir",
+          let fields = ["searchDefault", "searchDefaultHash",
                         "current", "hash",
                         "visibleDefaultEngines", "visibleDefaultEnginesHash"];
           for (let field of fields) {
@@ -3246,6 +3254,9 @@ SearchService.prototype = {
         json._oldMetadata = metadata;
       } catch (ex) {}
     }
+    if (!gInitialized && json.metaData)
+      this._metaData = json.metaData;
+
     return json;
   },
 
