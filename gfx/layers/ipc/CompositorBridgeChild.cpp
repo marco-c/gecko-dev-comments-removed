@@ -568,12 +568,13 @@ CompositorBridgeChild::RecvReleaseSharedCompositorFrameMetrics(
     const ViewID& aId,
     const uint32_t& aAPZCId)
 {
-  SharedFrameMetricsData* data = mFrameMetricsTable.Get(aId);
-  
-  
-  
-  if (data && (data->GetAPZCId() == aAPZCId)) {
-    mFrameMetricsTable.Remove(aId);
+  if (auto entry = mFrameMetricsTable.Lookup(aId)) {
+    
+    
+    
+    if (entry.Data()->GetAPZCId() == aAPZCId) {
+      entry.Remove();
+    }
   }
   return IPC_OK();
 }
@@ -885,24 +886,18 @@ CompositorBridgeChild::HoldUntilCompositableRefReleasedIfNecessary(TextureClient
 void
 CompositorBridgeChild::NotifyNotUsed(uint64_t aTextureId, uint64_t aFwdTransactionId)
 {
-  RefPtr<TextureClient> client = mTexturesWaitingRecycled.Get(aTextureId);
-  if (!client) {
-    return;
+  if (auto entry = mTexturesWaitingRecycled.Lookup(aTextureId)) {
+    if (aFwdTransactionId < entry.Data()->GetLastFwdTransactionId()) {
+      
+      return;
+    }
+    entry.Remove();
   }
-  if (aFwdTransactionId < client->GetLastFwdTransactionId()) {
-    
-    return;
-  }
-  mTexturesWaitingRecycled.Remove(aTextureId);
 }
 
 void
 CompositorBridgeChild::CancelWaitForRecycle(uint64_t aTextureId)
 {
-  RefPtr<TextureClient> client = mTexturesWaitingRecycled.Get(aTextureId);
-  if (!client) {
-    return;
-  }
   mTexturesWaitingRecycled.Remove(aTextureId);
 }
 
