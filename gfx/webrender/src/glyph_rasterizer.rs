@@ -183,7 +183,7 @@ impl GlyphRasterizer {
         
         
         
-        self.workers.spawn_async(move || {
+        self.workers.spawn(move || {
             let jobs = glyphs.par_iter().map(|request: &GlyphRequest| {
                 profile_scope!("glyph-raster");
                 let mut context = font_contexts.lock_current_context();
@@ -275,7 +275,7 @@ impl GlyphRasterizer {
         if !self.fonts_to_remove.is_empty() {
             let font_contexts = Arc::clone(&self.font_contexts);
             let fonts_to_remove = mem::replace(&mut self.fonts_to_remove, Vec::new());
-            self.workers.spawn_async(move || {
+            self.workers.spawn(move || {
                 for font_key in &fonts_to_remove {
                     font_contexts.lock_shared_context().delete_font(font_key);
                 }
