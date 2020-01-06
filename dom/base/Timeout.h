@@ -35,7 +35,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Timeout)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Timeout)
 
-  enum class Reason
+  enum class Reason : uint8_t
   {
     eTimeoutOrInterval,
     eIdleCallbackTimeout,
@@ -50,8 +50,51 @@ public:
   
   const TimeDuration& TimeRemaining() const;
 
+private:
+  
+  
+  
+  
+  TimeStamp mWhen;
+
+  
+  TimeDuration mTimeRemaining;
+
+  ~Timeout() = default;
+
+public:
+  
+  
+  
+  
+
   
   RefPtr<nsGlobalWindow> mWindow;
+
+  
+  nsCOMPtr<nsITimeoutHandler> mScriptHandler;
+
+  
+  TimeDuration mInterval;
+
+  
+  uint32_t mTimeoutId;
+
+  
+  
+  uint32_t mFiringId;
+
+  
+  
+  PopupControlState mPopupState;
+
+  
+  
+  Reason mReason;
+
+  
+  
+  uint8_t mNestingLevel;
 
   
   bool mCleared;
@@ -64,43 +107,6 @@ public:
 
   
   bool mIsTracking;
-
-  
-  
-  Reason mReason;
-
-  
-  uint32_t mTimeoutId;
-
-  
-  TimeDuration mInterval;
-
-  
-  
-  uint32_t mFiringId;
-
-  
-  
-  uint8_t mNestingLevel;
-
-  
-  
-  PopupControlState mPopupState;
-
-  
-  nsCOMPtr<nsITimeoutHandler> mScriptHandler;
-
-private:
-  
-  
-  
-  
-  TimeStamp mWhen;
-
-  
-  TimeDuration mTimeRemaining;
-
-  ~Timeout() = default;
 };
 
 } 
