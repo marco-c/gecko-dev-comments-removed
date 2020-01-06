@@ -85,6 +85,10 @@ extern const int kSurrogateRangeCount;
 extern const int kLineTerminatorRanges[];
 extern const int kLineTerminatorRangeCount;
 
+
+extern const int kLineTerminatorAndSurrogateRanges[];
+extern const int kLineTerminatorAndSurrogateRangeCount;
+
 } } 
 
 #endif 

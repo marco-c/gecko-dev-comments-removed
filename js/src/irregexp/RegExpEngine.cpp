@@ -85,10 +85,10 @@ AddClass(const int* elmv, int elmc,
     }
 }
 
-static void
-AddClassNegated(const int* elmv,
-                int elmc,
-                CharacterRangeVector* ranges)
+void
+js::irregexp::AddClassNegated(const int* elmv,
+                              int elmc,
+                              CharacterRangeVector* ranges)
 {
     elmc--;
     MOZ_ASSERT(elmv[elmc] == 0x10000);
@@ -196,7 +196,7 @@ static const size_t kEcma262UnCanonicalizeMaxWidth = 4;
 
 
 
-static int
+static MOZ_ALWAYS_INLINE int
 GetCaseIndependentLetters(char16_t character,
                           bool latin1_subject,
                           bool unicode,
@@ -297,6 +297,10 @@ CharacterRange::AddCaseEquivalents(bool is_latin1, bool unicode, CharacterRangeV
             return;
         if (top > kMaxOneByteCharCode)
             top = kMaxOneByteCharCode;
+    } else {
+        
+        if (bottom >= unicode::LeadSurrogateMin && top <= unicode::TrailSurrogateMax)
+            return;
     }
 
     for (char16_t c = bottom;; c++) {
@@ -836,7 +840,17 @@ void TextNode::MakeCaseIndependent(bool is_latin1, bool unicode)
             if (cc->is_standard(alloc()))
                 continue;
 
+            
+            
+            
             CharacterRangeVector& ranges = cc->ranges(alloc());
+            if (CompareInverseRanges(ranges,
+                                     kLineTerminatorAndSurrogateRanges,
+                                     kLineTerminatorAndSurrogateRangeCount))
+            {
+                continue;
+            }
+
             int range_count = ranges.length();
             for (int j = 0; j < range_count; j++)
                 ranges[j].AddCaseEquivalents(is_latin1, unicode, &ranges);

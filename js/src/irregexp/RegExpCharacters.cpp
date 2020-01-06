@@ -133,3 +133,12 @@ const int js::irregexp::kLineTerminatorRanges[] = {
     0xFFFF + 1
 };
 const int js::irregexp::kLineTerminatorRangeCount = 7;
+
+const int js::irregexp::kLineTerminatorAndSurrogateRanges[] = {
+    0x000A, 0x000A + 1, 
+    0x000D, 0x000D + 1, 
+    0x2028, 0x2029 + 1, 
+    0xD800, 0xDFFF + 1, 
+    0xFFFF + 1
+};
+const int js::irregexp::kLineTerminatorAndSurrogateRangeCount = 9;
