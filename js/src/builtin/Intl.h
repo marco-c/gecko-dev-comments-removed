@@ -483,6 +483,15 @@ intl_defaultTimeZoneOffset(JSContext* cx, unsigned argc, Value* vp);
 
 
 
+extern MOZ_MUST_USE bool
+intl_isDefaultTimeZone(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
 
 
 extern MOZ_MUST_USE bool

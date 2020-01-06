@@ -657,13 +657,13 @@ function DefaultLocaleIgnoringAvailableLocales() {
 
 
 function DefaultLocale() {
-    const runtimeDefaultLocale = RuntimeDefaultLocale();
-    if (runtimeDefaultLocale === localeCache.runtimeDefaultLocale)
+    if (IsRuntimeDefaultLocale(localeCache.runtimeDefaultLocale))
         return localeCache.defaultLocale;
 
     
     
     
+    var runtimeDefaultLocale = RuntimeDefaultLocale();
     var candidate = DefaultLocaleIgnoringAvailableLocales();
     var locale;
     if (BestAvailableLocaleIgnoringDefault(callFunction(collatorInternalProperties.availableLocales,
@@ -761,11 +761,11 @@ function CanonicalizeTimeZoneName(timeZone) {
 
 
 function DefaultTimeZone() {
-    const icuDefaultTimeZone = intl_defaultTimeZone();
-    if (timeZoneCache.icuDefaultTimeZone === icuDefaultTimeZone)
+    if (intl_isDefaultTimeZone(timeZoneCache.icuDefaultTimeZone))
         return timeZoneCache.defaultTimeZone;
 
     
+    var icuDefaultTimeZone = intl_defaultTimeZone();
     var timeZone = intl_IsValidTimeZoneName(icuDefaultTimeZone);
     if (timeZone === null) {
         
