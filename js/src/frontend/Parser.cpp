@@ -2885,7 +2885,7 @@ Parser<ParseHandler, CharT>::matchOrInsertSemicolon()
 
         
         tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-        error(JSMSG_SEMI_BEFORE_STMNT);
+        error(JSMSG_UNEXPECTED_TOKEN_NO_EXPECT, TokenKindToDesc(tt));
         return false;
     }
     bool matched;
