@@ -2,6 +2,9 @@
 
 
 
+
+#![cfg_attr(feature = "unstable", feature(test))]
+
 #[macro_use] extern crate bitflags;
 #[macro_use] extern crate cssparser;
 #[macro_use] extern crate log;

@@ -47,7 +47,38 @@ pub struct StyleBloom<E: TElement> {
     filter: Box<BloomFilter>,
 
     
-    elements: Vec<SendElement<E>>,
+    
+    elements: SmallVec<[PushedElement<E>; 16]>,
+
+    
+    pushed_hashes: SmallVec<[u32; 64]>,
+}
+
+
+
+
+
+
+
+
+
+const MEMSET_CLEAR_THRESHOLD: usize = 25;
+
+struct PushedElement<E: TElement> {
+    
+    element: SendElement<E>,
+
+    
+    num_hashes: usize,
+}
+
+impl<E: TElement> PushedElement<E> {
+    fn new(el: E, num_hashes: usize) -> Self {
+        PushedElement {
+            element: unsafe { SendElement::new(el) },
+            num_hashes: num_hashes,
+        }
+    }
 }
 
 fn each_relevant_element_hash<E, F>(element: E, mut f: F)
@@ -75,7 +106,8 @@ impl<E: TElement> StyleBloom<E> {
     pub fn new() -> Self {
         StyleBloom {
             filter: Box::new(BloomFilter::new()),
-            elements: vec![],
+            elements: Default::default(),
+            pushed_hashes: Default::default(),
         }
     }
 
@@ -98,23 +130,36 @@ impl<E: TElement> StyleBloom<E> {
     
     
     fn push_internal(&mut self, element: E) {
+        let mut count = 0;
         each_relevant_element_hash(element, |hash| {
+            count += 1;
             self.filter.insert_hash(hash);
+            self.pushed_hashes.push(hash);
         });
-        self.elements.push(unsafe { SendElement::new(element) });
+        self.elements.push(PushedElement::new(element, count));
     }
 
     
+    #[inline]
     fn pop(&mut self) -> Option<E> {
-        let popped = self.elements.pop().map(|el| *el);
+        let (popped_element, num_hashes)  = match self.elements.pop() {
+            None => return None,
+            Some(x) => (*x.element, x.num_hashes),
+        };
 
-        if let Some(popped) = popped {
-            each_relevant_element_hash(popped, |hash| {
-                self.filter.remove_hash(hash);
-            })
+        
+        let mut expected_hashes = vec![];
+        if cfg!(debug_assertions) {
+            each_relevant_element_hash(popped_element, |hash| expected_hashes.push(hash));
         }
 
-        popped
+        for _ in 0..num_hashes {
+            let hash = self.pushed_hashes.pop().unwrap();
+            debug_assert_eq!(expected_hashes.pop().unwrap(), hash);
+            self.filter.remove_hash(hash);
+        }
+
+        Some(popped_element)
     }
 
     
@@ -131,21 +176,32 @@ impl<E: TElement> StyleBloom<E> {
 
     
     pub fn clear(&mut self) {
-        self.filter.clear();
         self.elements.clear();
+
+        if self.pushed_hashes.len() > MEMSET_CLEAR_THRESHOLD {
+            self.filter.clear();
+            self.pushed_hashes.clear();
+        } else {
+            for hash in self.pushed_hashes.drain() {
+                self.filter.remove_hash(hash);
+            }
+            debug_assert!(self.filter.is_zeroed());
+        }
     }
 
     
     pub fn rebuild(&mut self, mut element: E) {
         self.clear();
 
+        let mut parents_to_insert = SmallVec::<[E; 16]>::new();
         while let Some(parent) = element.traversal_parent() {
-            self.push_internal(parent);
+            parents_to_insert.push(parent);
             element = parent;
         }
 
-        
-        self.elements.reverse();
+        for parent in parents_to_insert.drain().rev() {
+            self.push(parent);
+        }
     }
 
     
@@ -156,7 +212,7 @@ impl<E: TElement> StyleBloom<E> {
         if cfg!(debug_assertions) {
             let mut checked = 0;
             while let Some(parent) = element.traversal_parent() {
-                assert_eq!(parent, *self.elements[self.elements.len() - 1 - checked]);
+                assert_eq!(parent, *(self.elements[self.elements.len() - 1 - checked].element));
                 element = parent;
                 checked += 1;
             }
@@ -169,7 +225,7 @@ impl<E: TElement> StyleBloom<E> {
     
     #[inline]
     pub fn current_parent(&self) -> Option<E> {
-        self.elements.last().map(|el| **el)
+        self.elements.last().map(|ref el| *el.element)
     }
 
     
@@ -238,7 +294,7 @@ impl<E: TElement> StyleBloom<E> {
 
         
         
-        let mut parents_to_insert = SmallVec::<[E; 8]>::new();
+        let mut parents_to_insert = SmallVec::<[E; 16]>::new();
 
         
         
@@ -266,7 +322,7 @@ impl<E: TElement> StyleBloom<E> {
         
         
         
-        while **self.elements.last().unwrap() != common_parent {
+        while *(self.elements.last().unwrap().element) != common_parent {
             parents_to_insert.push(common_parent);
             self.pop().unwrap();
             common_parent = match common_parent.traversal_parent() {
@@ -284,7 +340,7 @@ impl<E: TElement> StyleBloom<E> {
 
         
         
-        for parent in parents_to_insert.into_iter().rev() {
+        for parent in parents_to_insert.drain().rev() {
             self.push(parent);
         }
 
