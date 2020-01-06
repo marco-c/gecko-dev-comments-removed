@@ -12,6 +12,7 @@ import android.util.Log;
 import org.json.JSONObject;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.gcm.GcmTokenClient;
+import org.mozilla.gecko.mma.MmaDelegate;
 import org.mozilla.gecko.push.autopush.AutopushClientException;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -243,7 +244,7 @@ public class PushManager {
     }
 
     protected @NonNull PushRegistration advanceRegistration(final PushRegistration registration, final @NonNull String profileName, final long now) throws AutopushClientException, PushClient.LocalException, GcmTokenClient.NeedsGooglePlayServicesException, IOException {
-        final Fetched gcmToken = gcmClient.getToken(AppConstants.MOZ_ANDROID_GCM_SENDERID, registration.debug);
+        final Fetched gcmToken = gcmClient.getToken(MmaDelegate.getSenderIds(), registration.debug);
 
         final PushClient pushClient = pushClientFactory.getPushClient(registration.autopushEndpoint, registration.debug);
 
@@ -295,7 +296,7 @@ public class PushManager {
     public void startup(long now) {
         try {
             Log.i(LOG_TAG, "Startup: requesting GCM token.");
-            gcmClient.getToken(AppConstants.MOZ_ANDROID_GCM_SENDERID, false); 
+            gcmClient.getToken(MmaDelegate.getSenderIds(), false); 
         } catch (GcmTokenClient.NeedsGooglePlayServicesException e) {
             
             
