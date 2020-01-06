@@ -389,11 +389,13 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
 static bool
 HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
 
+#ifdef DEBUG
 static void
 MarkAsComputeValuesFailureKey(PropertyValuePair& aPair);
 
 static bool
 IsComputeValuesFailureKey(const PropertyValuePair& aPair);
+#endif
 
 static void
 BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
@@ -640,10 +642,15 @@ KeyframeUtils::GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
         nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
         if (!StyleAnimationValue::ComputeValues(pair.mProperty,
               CSSEnabledState::eForAllContent, aElement, aStyleContext,
-              tokenStream->mTokenStream,  false, values) ||
-            IsComputeValuesFailureKey(pair)) {
+              tokenStream->mTokenStream,  false, values)) {
           continue;
         }
+
+#ifdef DEBUG
+        if (IsComputeValuesFailureKey(pair)) {
+          continue;
+        }
+#endif
       } else if (pair.mValue.GetUnit() == eCSSUnit_Null) {
         
         
@@ -873,6 +880,7 @@ ConvertKeyframeSequence(JSContext* aCx,
         MakePropertyValuePair(pair.mProperty, pair.mValues[0], parser,
                               aDocument));
 
+#ifdef DEBUG
       
       
       
@@ -883,6 +891,7 @@ ConvertKeyframeSequence(JSContext* aCx,
           keyframeDict.mSimulateComputeValuesFailure) {
         MarkAsComputeValuesFailureKey(keyframe->mPropertyValues.LastElement());
       }
+#endif
     }
   }
 
@@ -1033,6 +1042,10 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
 
   result.mProperty = aProperty;
 
+#ifdef DEBUG
+  result.mSimulateComputeValuesFailure = false;
+#endif
+
   if (aDocument->GetStyleBackendType() == StyleBackendType::Servo) {
     RefPtr<RawServoDeclarationBlock> servoDeclarationBlock =
       KeyframeUtils::ParseProperty(aProperty, aStringValue, aDocument);
@@ -1105,6 +1118,7 @@ HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
   return true;
 }
 
+#ifdef DEBUG
 
 
 
@@ -1119,18 +1133,7 @@ MarkAsComputeValuesFailureKey(PropertyValuePair& aPair)
   MOZ_ASSERT(nsCSSProps::IsShorthand(aPair.mProperty),
              "Only shorthand property values can be marked as failure values");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCSSValueTokenStream* tokenStream = aPair.mValue.GetTokenStreamValue();
-  MOZ_ASSERT(tokenStream->mPropertyID == eCSSProperty_UNKNOWN,
-             "Shorthand value should initially have an unknown property ID");
-  tokenStream->mPropertyID = eCSSPropertyExtra_no_properties;
+  aPair.mSimulateComputeValuesFailure = true;
 }
 
 
@@ -1146,9 +1149,9 @@ static bool
 IsComputeValuesFailureKey(const PropertyValuePair& aPair)
 {
   return nsCSSProps::IsShorthand(aPair.mProperty) &&
-         aPair.mValue.GetTokenStreamValue()->mPropertyID ==
-           eCSSPropertyExtra_no_properties;
+         aPair.mSimulateComputeValuesFailure;
 }
+#endif
 
 static void
 AppendInitialSegment(AnimationProperty* aAnimationProperty,
