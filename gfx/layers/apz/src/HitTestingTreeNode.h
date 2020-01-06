@@ -95,7 +95,8 @@ public:
                         const ScrollThumbData& aThumbData,
                         bool aIsScrollContainer);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
-  bool IsScrollbarNode() const;
+  bool IsScrollbarNode() const;  
+  bool IsScrollThumbNode() const;  
   FrameMetrics::ViewID GetScrollTargetId() const;
   const ScrollThumbData& GetScrollThumbData() const;
 
