@@ -106,6 +106,8 @@ impl<'a> Context<'a> {
     pub fn style(&self) -> &StyleBuilder { &self.style }
     
     pub fn mutate_style(&mut self) -> &mut StyleBuilder<'a> { &mut self.style }
+    
+    pub fn mutate_style_with_device(&mut self) -> (&mut StyleBuilder<'a>, &Device) { (&mut self.style, &self.device) }
 }
 
 
