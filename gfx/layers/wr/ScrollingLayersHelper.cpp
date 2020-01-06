@@ -226,7 +226,7 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
     
     return;
   }
-  if (!clipId) {
+  if (!clipId || aBuilder.HasMaskClip()) {
     
     
     LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
@@ -234,7 +234,9 @@ ScrollingLayersHelper::DefineAndPushChain(const DisplayItemClipChain* aChain,
     nsTArray<wr::WrComplexClipRegion> wrRoundedRects;
     aChain->mClip.ToWrComplexClipRegions(aAppUnitsPerDevPixel, aStackingContext, wrRoundedRects);
     clipId = Some(aBuilder.DefineClip(aStackingContext.ToRelativeLayoutRect(clip), &wrRoundedRects));
-    aCache[aChain] = clipId.value();
+    if (!aBuilder.HasMaskClip()) {
+      aCache[aChain] = clipId.value();
+    }
   }
   
   MOZ_ASSERT(clipId);

@@ -9155,13 +9155,13 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
     
     
     
-    aBuilder.PushClip(clipId,  false);
+    aBuilder.PushClip(clipId,  true);
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
 
   if (mask) {
-    aBuilder.PopClip( false);
+    aBuilder.PopClip( true);
   }
 
   return true;
