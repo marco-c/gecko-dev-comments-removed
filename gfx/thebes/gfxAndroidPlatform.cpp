@@ -246,7 +246,7 @@ gfxAndroidPlatform::CreatePlatformFontList()
 }
 
 bool
-gfxAndroidPlatform::IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags)
+gfxAndroidPlatform::IsFontFormatSupported(uint32_t aFormatFlags)
 {
     
     NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
