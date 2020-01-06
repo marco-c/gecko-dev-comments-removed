@@ -112,17 +112,12 @@ WebRenderBridgeChild::DPEnd(wr::DisplayListBuilder &aBuilder,
   aBuilder.Finalize(contentSize, dl);
   ByteBuffer dlData(Move(dl.dl));
 
-  TimeStamp fwdTime;
-#if defined(ENABLE_FRAME_LATENCY_LOG)
-  fwdTime = TimeStamp::Now();
-#endif
-
   if (aIsSync) {
     this->SendDPSyncEnd(aSize, mParentCommands, mDestroyedActors, GetFwdTransactionId(), aTransactionId,
-                        contentSize, dlData, dl.dl_desc, aScrollData, mIdNamespace,fwdTime);
+                        contentSize, dlData, dl.dl_desc, aScrollData, mIdNamespace);
   } else {
     this->SendDPEnd(aSize, mParentCommands, mDestroyedActors, GetFwdTransactionId(), aTransactionId,
-                    contentSize, dlData, dl.dl_desc, aScrollData, mIdNamespace, fwdTime);
+                    contentSize, dlData, dl.dl_desc, aScrollData, mIdNamespace);
   }
 
   mParentCommands.Clear();
@@ -212,7 +207,7 @@ WebRenderBridgeChild::PushGlyphs(wr::DisplayListBuilder& aBuilder, const nsTArra
   MOZ_ASSERT(!aGlyphs.IsEmpty());
 
   wr::WrFontKey key = GetFontKeyForScaledFont(aFont);
-  MOZ_ASSERT(key.mNamespace && key.mHandle);
+  MOZ_ASSERT(key.mNamespace.mHandle && key.mHandle);
 
   for (size_t i = 0; i < aGlyphs.Length(); i++) {
     GlyphArray glyph_array = aGlyphs[i];
@@ -249,7 +244,7 @@ WebRenderBridgeChild::GetFontKeyForScaledFont(gfx::ScaledFont* aScaledFont)
   RefPtr<gfx::UnscaledFont> unscaled = aScaledFont->GetUnscaledFont();
   MOZ_ASSERT(unscaled);
 
-  wr::FontKey key = {0, 0};
+  wr::FontKey key = { wr::IdNamespace { 0 }, 0};
   if (mFontKeys.Get(unscaled, &key)) {
     return key;
   }
@@ -260,7 +255,7 @@ WebRenderBridgeChild::GetFontKeyForScaledFont(gfx::ScaledFont* aScaledFont)
     return key;
   }
 
-  key.mNamespace = GetNamespace();
+  key.mNamespace.mHandle = GetNamespace();
   key.mHandle = GetNextResourceId();
 
   SendAddRawFont(key, data.mFontBuffer, data.mFontIndex);
