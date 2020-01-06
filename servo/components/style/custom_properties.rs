@@ -16,6 +16,7 @@ use servo_arc::Arc;
 use smallvec::SmallVec;
 use std::ascii::AsciiExt;
 use std::borrow::{Borrow, Cow};
+use std::cmp;
 use std::fmt;
 use std::hash::Hash;
 use style_traits::{ToCss, StyleParseErrorKind, ParseError};
@@ -165,6 +166,23 @@ where
         let result = self.values.remove(key);
         self.values.end_mutation();
         result
+    }
+
+    fn remove_set<S>(&mut self, set: &::hash::HashSet<K, S>)
+        where S: ::std::hash::BuildHasher,
+    {
+        if set.is_empty() {
+            return;
+        }
+        self.index.retain(|key| !set.contains(key));
+        self.values.begin_mutation();
+        
+        
+        for key in set.iter() {
+            self.values.remove(key);
+        }
+        self.values.end_mutation();
+        debug_assert_eq!(self.values.len(), self.index.len());
     }
 }
 
@@ -588,7 +606,6 @@ impl<'a> CustomPropertiesBuilder<'a> {
         };
 
         if self.may_have_cycles {
-            remove_cycles(&mut map);
             substitute_all(&mut map);
         }
         Some(Arc::new(map))
@@ -598,58 +615,6 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
 
 
-
-fn remove_cycles(map: &mut CustomPropertiesMap) {
-    let mut to_remove = PrecomputedHashSet::default();
-    {
-        type VisitedNamesStack<'a> = SmallVec<[&'a Name; 10]>;
-
-        let mut visited = PrecomputedHashSet::default();
-        let mut stack = VisitedNamesStack::new();
-        for (name, value) in map.iter() {
-            walk(map, name, value, &mut stack, &mut visited, &mut to_remove);
-
-            fn walk<'a>(
-                map: &'a CustomPropertiesMap,
-                name: &'a Name,
-                value: &'a Arc<VariableValue>,
-                stack: &mut VisitedNamesStack<'a>,
-                visited: &mut PrecomputedHashSet<&'a Name>,
-                to_remove: &mut PrecomputedHashSet<Name>,
-            ) {
-                if value.references.is_empty() {
-                    return;
-                }
-
-                let already_visited_before = !visited.insert(name);
-                if already_visited_before {
-                    return
-                }
-
-                stack.push(name);
-                for next in value.references.iter() {
-                    if let Some(position) = stack.iter().position(|x| *x == next) {
-                        
-                        for &in_cycle in &stack[position..] {
-                            to_remove.insert(in_cycle.clone());
-                        }
-                    } else {
-                        if let Some(value) = map.get(next) {
-                            walk(map, next, value, stack, visited, to_remove);
-                        }
-                    }
-                }
-                stack.pop();
-            }
-        }
-    }
-
-    for name in to_remove {
-        map.remove(&name);
-    }
-}
-
-
 fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
     
     
@@ -657,110 +622,216 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
     
     
     
-    let mut stash = PrecomputedHashMap::default();
-    let mut invalid = PrecomputedHashSet::default();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    for (name, value) in custom_properties_map.iter() {
-        if !value.references.is_empty() && !stash.contains_key(name) {
-            let _ = substitute_one(
-                name,
-                value,
-                custom_properties_map,
-                None,
-                &mut stash,
-                &mut invalid,
-            );
-        }
+    
+    struct VarInfo {
+        
+        
+        
+        
+        name: Option<Name>,
+        
+        
+        
+        
+        lowlink: usize,
+    }
+    
+    
+    struct Context<'a> {
+        
+        
+        count: usize,
+        
+        index_map: PrecomputedHashMap<Name, usize>,
+        
+        var_info: SmallVec<[VarInfo; 5]>,
+        
+        
+        stack: SmallVec<[usize; 5]>,
+        map: &'a mut CustomPropertiesMap,
+        
+        invalid: &'a mut PrecomputedHashSet<Name>,
     }
 
-    for (name, value) in stash.drain() {
-        custom_properties_map.insert(name, value);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn traverse<'a>(name: Name, context: &mut Context<'a>) -> Option<usize> {
+        use hash::map::Entry;
 
-    for name in invalid.drain() {
-        custom_properties_map.remove(&name);
-    }
-
-    debug_assert!(custom_properties_map.iter().all(|(_, v)| v.references.is_empty()));
-}
-
-
-
-
-
-
-
-
-
-fn substitute_one(
-    name: &Name,
-    specified_value: &Arc<VariableValue>,
-    custom_properties: &CustomPropertiesMap,
-    partial_computed_value: Option<&mut VariableValue>,
-    stash: &mut PrecomputedHashMap<Name, Arc<VariableValue>>,
-    invalid: &mut PrecomputedHashSet<Name>,
-) -> Result<TokenSerializationType, ()> {
-    debug_assert!(!specified_value.references.is_empty());
-    debug_assert!(!stash.contains_key(name));
-
-    if invalid.contains(name) {
-        return Err(());
-    }
-
-    let mut computed_value = ComputedValue::empty();
-    let mut input = ParserInput::new(&specified_value.css);
-    let mut input = Parser::new(&mut input);
-    let mut position = (input.position(), specified_value.first_token_type);
-
-    let result = substitute_block(
-        &mut input,
-        &mut position,
-        &mut computed_value,
-        &mut |name, partial_computed_value| {
-            if let Some(already_computed) = stash.get(name) {
-                partial_computed_value.push_variable(already_computed);
-                return Ok(already_computed.last_token_type);
+        
+        let (name, value) = if let Some(value) = context.map.get(&name) {
+            
+            if value.references.is_empty()  || context.invalid.contains(&name) {
+                return None;
             }
+            
+            let key;
+            match context.index_map.entry(name) {
+                Entry::Occupied(entry) => { return Some(*entry.get()); }
+                Entry::Vacant(entry) => {
+                    key = entry.key().clone();
+                    entry.insert(context.count);
+                }
+            }
+            
+            
+            (key, value.clone())
+        } else {
+            
+            return None;
+        };
 
-            let other_specified_value = match custom_properties.get(name) {
-                Some(v) => v,
-                None => return Err(()),
+        
+        let index = context.count;
+        context.count += 1;
+        debug_assert!(index == context.var_info.len());
+        context.var_info.push(VarInfo {
+            name: Some(name),
+            lowlink: index,
+        });
+        context.stack.push(index);
+
+        let mut self_ref = false;
+        let mut lowlink = index;
+        for next in value.references.iter() {
+            let next_index = match traverse(next.clone(), context) {
+                Some(index) => index,
+                
+                
+                None => { continue; }
             };
-
-            if other_specified_value.references.is_empty() {
-                partial_computed_value.push_variable(other_specified_value);
-                return Ok(other_specified_value.last_token_type);
+            let next_info = &context.var_info[next_index];
+            if next_index > index {
+                
+                
+                
+                lowlink = cmp::min(lowlink, next_info.lowlink);
+            } else if next_index == index {
+                self_ref = true;
+            } else if next_info.name.is_some() {
+                
+                
+                lowlink = cmp::min(lowlink, next_index);
             }
-
-            substitute_one(
-                name,
-                other_specified_value,
-                custom_properties,
-                Some(partial_computed_value),
-                stash,
-                invalid
-            )
         }
-    );
 
-    match result {
-        Ok(last_token_type) => {
+        context.var_info[index].lowlink = lowlink;
+        if lowlink != index {
+            
+            
+            
+            
+            
+            
+            return Some(index);
+        }
+
+        
+        let mut in_loop = self_ref;
+        let name;
+        loop {
+            let var_index = context.stack.pop()
+                .expect("The current variable should still be in stack");
+            let var_info = &mut context.var_info[var_index];
+            
+            
+            
+            let var_name = var_info.name.take()
+                .expect("Variable should not be poped from stack twice");
+            if var_index == index {
+                name = var_name;
+                break;
+            }
+            
+            
+            
+            
+            context.invalid.insert(var_name);
+            in_loop = true;
+        }
+        if in_loop {
+            
+            context.invalid.insert(name);
+            return None;
+        }
+
+        
+        
+        
+        let mut computed_value = ComputedValue::empty();
+        let mut input = ParserInput::new(&value.css);
+        let mut input = Parser::new(&mut input);
+        let mut position = (input.position(), value.first_token_type);
+        let result = substitute_block(
+            &mut input,
+            &mut position,
+            &mut computed_value,
+            &mut |name, partial_computed_value| {
+                if let Some(value) = context.map.get(name) {
+                    if !context.invalid.contains(name) {
+                        partial_computed_value.push_variable(value);
+                        return Ok(value.last_token_type);
+                    }
+                }
+                Err(())
+            }
+        );
+        if let Ok(last_token_type) = result {
             computed_value.push_from(position, &input, last_token_type);
+            context.map.insert(name, Arc::new(computed_value));
+        } else {
+            context.invalid.insert(name);
         }
-        Err(..) => {
-            invalid.insert(name.clone());
-            return Err(())
-        }
+
+        
+        None
     }
 
-    if let Some(partial_computed_value) = partial_computed_value {
-        partial_computed_value.push_variable(&computed_value)
+    
+    
+    let names = custom_properties_map.index.clone();
+    let mut invalid = PrecomputedHashSet::default();
+    for name in names.into_iter() {
+        let mut context = Context {
+            count: 0,
+            index_map: PrecomputedHashMap::default(),
+            stack: SmallVec::new(),
+            var_info: SmallVec::new(),
+            map: custom_properties_map,
+            invalid: &mut invalid,
+        };
+        traverse(name, &mut context);
     }
 
-    let last_token_type = computed_value.last_token_type;
-    stash.insert(name.clone(), Arc::new(computed_value));
-
-    Ok(last_token_type)
+    custom_properties_map.remove_set(&invalid);
 }
 
 
