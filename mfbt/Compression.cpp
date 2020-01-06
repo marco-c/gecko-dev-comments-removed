@@ -12,26 +12,9 @@
 
 #include <string>
 
-
-
-
-
-
-#ifdef _MSC_VER
-#include <intrin.h>
-#endif
+#include "lz4.h"
 
 using namespace mozilla::Compression;
-
-namespace {
-
-extern "C" {
-
-#include "lz4.c"
-
-}
-
-}
 
 
 
