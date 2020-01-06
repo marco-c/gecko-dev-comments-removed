@@ -29,7 +29,6 @@
 #include "mozilla/mozalloc.h"           
 #include "mozilla/UniquePtr.h"          
 #include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsPoint.h"                    
 #include "nsRect.h"                     

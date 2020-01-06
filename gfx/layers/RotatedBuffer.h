@@ -16,7 +16,6 @@
 #include "mozilla/layers/TextureClient.h" 
 #include "mozilla/mozalloc.h"           
 #include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRegion.h"                   
 #include "LayersTypes.h"

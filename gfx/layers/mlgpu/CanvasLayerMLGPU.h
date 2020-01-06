@@ -13,7 +13,6 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/layers/LayerManagerMLGPU.h"  
 #include "mozilla/layers/LayersTypes.h"  
-#include "nsDebug.h"                    
 #include "nsRect.h"                     
 #include "nscore.h"                     
 

@@ -252,15 +252,6 @@ inline void MOZ_PretendNoReturn()
 
 
 
-#define NS_RUNTIMEABORT(msg)                                    \
-  NS_DebugBreak(NS_DEBUG_ABORT, msg, nullptr, __FILE__, __LINE__)
-
-
-
-
-
-
-
 
 #define NS_ENSURE_TRUE(x, ret)                                \
   do {                                                        \

@@ -8,13 +8,11 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
-#include "nsDebug.h"                    
 #include "nsTArray.h"                   
 #include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {
 namespace layers {
-
 
 void
 LayerTransactionChild::Destroy()

@@ -19,7 +19,6 @@
 #include "mozilla/layers/PImageBridgeChild.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "nsDebug.h"                    
 #include "nsIObserver.h"
 #include "nsRegion.h"                   
 #include "nsRefPtrHashtable.h"

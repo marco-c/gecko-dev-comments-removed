@@ -29,7 +29,6 @@
 #include "mozilla/mozalloc.h"           
 #include "mozilla/Unused.h"
 #include "nsCoord.h"                    
-#include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsLayoutUtils.h"              
 #include "nsMathUtils.h"                

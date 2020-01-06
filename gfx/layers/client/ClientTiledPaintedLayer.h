@@ -11,7 +11,6 @@
 #include "Layers.h"                     
 #include "mozilla/RefPtr.h"             
 #include "mozilla/layers/TiledContentClient.h"
-#include "nsDebug.h"                    
 #include "nsRegion.h"                   
 
 namespace mozilla {
