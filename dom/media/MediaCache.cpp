@@ -168,6 +168,10 @@ public:
 
   
   
+  static MediaCache* GetMediaCache();
+
+  
+  
   
   nsresult Init();
   
@@ -693,11 +697,13 @@ MediaCache::MaybeShutdown()
   gMediaCache = nullptr;
 }
 
-static void
-InitMediaCache()
+ MediaCache*
+MediaCache::GetMediaCache()
 {
-  if (gMediaCache)
-    return;
+  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  if (gMediaCache) {
+    return gMediaCache;
+  }
 
   gMediaCache = new MediaCache();
   nsresult rv = gMediaCache->Init();
@@ -705,6 +711,8 @@ InitMediaCache()
     delete gMediaCache;
     gMediaCache = nullptr;
   }
+
+  return gMediaCache;
 }
 
 nsresult
@@ -2483,9 +2491,10 @@ MediaCacheStream::Init()
   if (mInitialized)
     return NS_OK;
 
-  InitMediaCache();
-  if (!gMediaCache)
+  MediaCache::GetMediaCache();
+  if (!gMediaCache) {
     return NS_ERROR_FAILURE;
+  }
   gMediaCache->OpenStream(this);
   mInitialized = true;
   return NS_OK;
