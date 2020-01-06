@@ -15,7 +15,7 @@
 from __future__ import print_function
 from shared_telemetry_utils import ParserError
 
-import histogram_tools
+import parse_histograms
 import itertools
 import sys
 
@@ -46,7 +46,7 @@ def main(output, *filenames):
 
     
     try:
-        all_histograms = list(histogram_tools.from_files(filenames))
+        all_histograms = list(parse_histograms.from_files(filenames))
     except ParserError as ex:
         print("\nError processing histograms:\n" + str(ex) + "\n")
         sys.exit(1)
