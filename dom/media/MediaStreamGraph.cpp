@@ -1612,7 +1612,10 @@ public:
     
     
     
-    mGraph->mDriver = nullptr;
+    {
+      MonitorAutoLock mon(mGraph->mMonitor);
+      mGraph->SetCurrentDriver(nullptr);
+    }
 
     
     
