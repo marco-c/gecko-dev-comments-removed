@@ -1328,14 +1328,18 @@ PlacesController.prototype = {
           transactions = [...transactions, ...newTransactions];
         }
 
-        await PlacesUIUtils.batchUpdatesForNode(this._view.result, transactions.length, async () => {
-          await PlacesTransactions.batch(async () => {
-            for (let transaction of transactions) {
-              let guid = await transaction.transact();
-              itemsToSelect.push(await PlacesUtils.promiseItemId(guid));
-            }
+        
+        let resultForBatching = getResultForBatching(this._view);
+
+        await PlacesUIUtils.batchUpdatesForNode(resultForBatching,
+          transactions.length, async () => {
+            await PlacesTransactions.batch(async () => {
+              for (let transaction of transactions) {
+                let guid = await transaction.transact();
+                itemsToSelect.push(await PlacesUtils.promiseItemId(guid));
+              }
+            });
           });
-        });
       }
     } else {
       let transactions = [];
@@ -1612,7 +1616,6 @@ var PlacesControllerDragHelper = {
 
 
 
-
   async onDrop(insertionPoint, dt, view) {
     let doCopy = ["copy", "link"].includes(dt.dropEffect);
 
@@ -1723,9 +1726,11 @@ var PlacesControllerDragHelper = {
       return;
     }
     if (PlacesUIUtils.useAsyncTransactions) {
-      await PlacesUIUtils.batchUpdatesForNode(view && view.result, transactions.length, async () => {
-        await PlacesTransactions.batch(transactions);
-      });
+      let resultForBatching = getResultForBatching(view);
+      await PlacesUIUtils.batchUpdatesForNode(resultForBatching,
+        transactions.length, async () => {
+          await PlacesTransactions.batch(transactions);
+        });
     } else {
       let txn = new PlacesAggregatedTransaction("DropItems", transactions);
       PlacesUtils.transactionManager.doTransaction(txn);
@@ -1808,6 +1813,30 @@ function goDoPlacesCommand(aCommand) {
   let controller = doGetPlacesControllerForCommand(aCommand);
   if (controller && controller.isCommandEnabled(aCommand))
     controller.doCommand(aCommand);
+}
+
+
+
+
+
+
+
+
+
+
+
+function getResultForBatching(viewOrElement) {
+  if (viewOrElement && viewOrElement instanceof Ci.nsIDOMElement &&
+      viewOrElement.id === "placesList") {
+    
+    viewOrElement = document.getElementById("placeContent") || viewOrElement;
+  }
+
+  if (viewOrElement && viewOrElement.result) {
+    return viewOrElement.result;
+  }
+
+  return null;
 }
 
 
