@@ -464,6 +464,8 @@ public:
 
   void SetInactiveOnFinish();
 
+  TrackRate GraphRate();
+
   
 
 
