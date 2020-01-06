@@ -7,6 +7,7 @@
 const { addons, createClass, DOM: dom, PropTypes } =
   require("devtools/client/shared/vendor/react");
 
+const Services = require("Services");
 const Types = require("../types");
 const { getStr } = require("../utils/l10n");
 
@@ -14,8 +15,11 @@ const { getStr } = require("../utils/l10n");
 const GRID_HIGHLIGHTING_DEBOUNCE = 50;
 
 
-const MIN_CELL_HEIGHT = 5;
-const MIN_CELL_WIDTH = 5;
+
+const GRID_OUTLINE_MAX_ROWS_PREF =
+  Services.prefs.getIntPref("devtools.gridinspector.gridOutlineMaxRows");
+const GRID_OUTLINE_MAX_COLUMNS_PREF =
+  Services.prefs.getIntPref("devtools.gridinspector.gridOutlineMaxColumns");
 
 
 
@@ -57,8 +61,18 @@ module.exports = createClass({
     let { width, height } = selectedGrid
                             ? this.getTotalWidthAndHeight(selectedGrid)
                             : { width: 0, height: 0 };
+    let showOutline;
 
-    this.setState({ height, width, selectedGrid, showOutline: true });
+    if (selectedGrid) {
+      const { cols, rows } = selectedGrid.gridFragments[0];
+
+      
+      
+      showOutline = (cols.lines.length <= GRID_OUTLINE_MAX_COLUMNS_PREF) &&
+                    (rows.lines.length <= GRID_OUTLINE_MAX_ROWS_PREF);
+    }
+
+    this.setState({ height, width, selectedGrid, showOutline });
   },
 
   
@@ -219,14 +233,6 @@ module.exports = createClass({
 
       for (let columnNumber = 1; columnNumber <= numberOfColumns; columnNumber++) {
         width = GRID_CELL_SCALE_FACTOR * (cols.tracks[columnNumber - 1].breadth / 100);
-
-        
-        
-        if (width < MIN_CELL_WIDTH || height < MIN_CELL_HEIGHT) {
-          this.setState({ showOutline: false });
-
-          return [];
-        }
 
         const gridAreaName = this.getGridAreaName(columnNumber, rowNumber, areas);
         const gridCell = this.renderGridCell(id, gridFragmentIndex, x, y,
