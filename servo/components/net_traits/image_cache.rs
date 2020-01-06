@@ -25,7 +25,7 @@ pub enum CanRequestImages {
 
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum ImageOrMetadataAvailable {
-    ImageAvailable(Arc<Image>),
+    ImageAvailable(Arc<Image>, ServoUrl),
     MetadataAvailable(ImageMetadata),
 }
 
@@ -63,11 +63,11 @@ impl ImageResponder {
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum ImageResponse {
     
-    Loaded(Arc<Image>),
+    Loaded(Arc<Image>, ServoUrl),
     
     MetadataLoaded(ImageMetadata),
     
-    PlaceholderLoaded(Arc<Image>),
+    PlaceholderLoaded(Arc<Image>, ServoUrl),
     
     None,
 }
