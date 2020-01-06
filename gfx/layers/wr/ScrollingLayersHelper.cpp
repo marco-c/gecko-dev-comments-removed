@@ -38,34 +38,9 @@ ScrollingLayersHelper::EndBuild()
 }
 
 void
-ScrollingLayersHelper::BeginList()
-{
-  mItemClipStack.emplace_back(nullptr, nullptr);
-}
-
-void
-ScrollingLayersHelper::EndList()
-{
-  MOZ_ASSERT(!mItemClipStack.empty());
-  mItemClipStack.back().Unapply(mBuilder);
-  mItemClipStack.pop_back();
-}
-
-void
 ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
                                  const StackingContextHelper& aStackingContext)
 {
-  ItemClips clips(aItem->GetActiveScrolledRoot(), aItem->GetClipChain());
-  MOZ_ASSERT(!mItemClipStack.empty());
-  if (clips.HasSameInputs(mItemClipStack.back())) {
-    
-    
-    
-    return;
-  }
-  mItemClipStack.back().Unapply(mBuilder);
-  mItemClipStack.pop_back();
-
   int32_t auPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
 
   
@@ -103,6 +78,7 @@ ScrollingLayersHelper::BeginItem(nsDisplayItem* aItem,
   
   bool needClipAndScroll = (leafmostId != scrollId);
 
+  ItemClips clips;
   
   
   if (!needClipAndScroll && mBuilder->TopmostScrollId() != scrollId) {
@@ -400,18 +376,20 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
   return ids;
 }
 
+void
+ScrollingLayersHelper::EndItem(nsDisplayItem* aItem)
+{
+  MOZ_ASSERT(!mItemClipStack.empty());
+  ItemClips& clips = mItemClipStack.back();
+  clips.Unapply(mBuilder);
+  mItemClipStack.pop_back();
+}
+
 ScrollingLayersHelper::~ScrollingLayersHelper()
 {
   MOZ_ASSERT(!mBuilder);
   MOZ_ASSERT(mCache.empty());
   MOZ_ASSERT(mItemClipStack.empty());
-}
-
-ScrollingLayersHelper::ItemClips::ItemClips(const ActiveScrolledRoot* aAsr,
-                                            const DisplayItemClipChain* aChain)
-  : mAsr(aAsr)
-  , mChain(aChain)
-{
 }
 
 void
@@ -441,13 +419,6 @@ ScrollingLayersHelper::ItemClips::Unapply(wr::DisplayListBuilder* aBuilder)
   if (mScrollId) {
     aBuilder->PopScrollLayer();
   }
-}
-
-bool
-ScrollingLayersHelper::ItemClips::HasSameInputs(const ItemClips& aOther)
-{
-  return mAsr == aOther.mAsr &&
-         mChain == aOther.mChain;
 }
 
 } 
