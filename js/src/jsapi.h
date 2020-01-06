@@ -716,6 +716,9 @@ typedef void
 (* JSCompartmentNameCallback)(JSContext* cx, JSCompartment* compartment,
                               char* buf, size_t bufsize);
 
+typedef void
+(* JSRealmNameCallback)(JSContext* cx, JS::Handle<JS::Realm*> realm, char* buf, size_t bufsize);
+
 
 
 
@@ -1171,7 +1174,11 @@ class JS_PUBLIC_API(ContextOptions) {
         werror_(false),
         strictMode_(false),
         extraWarnings_(false),
+#ifdef NIGHTLY_BUILD
         forEachStatement_(false)
+#else
+        forEachStatement_(true)
+#endif
     {
     }
 
@@ -1374,6 +1381,9 @@ JS_SetSizeOfIncludingThisCompartmentCallback(JSContext* cx,
 
 extern JS_PUBLIC_API(void)
 JS_SetCompartmentNameCallback(JSContext* cx, JSCompartmentNameCallback callback);
+
+extern JS_PUBLIC_API(void)
+JS_SetRealmNameCallback(JSContext* cx, JSRealmNameCallback callback);
 
 extern JS_PUBLIC_API(void)
 JS_SetWrapObjectCallbacks(JSContext* cx, const JSWrapObjectCallbacks* callbacks);

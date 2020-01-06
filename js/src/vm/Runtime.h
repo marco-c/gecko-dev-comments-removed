@@ -502,6 +502,9 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::ActiveThreadData<JSCompartmentNameCallback> compartmentNameCallback;
 
     
+    js::ActiveThreadData<JSRealmNameCallback> realmNameCallback;
+
+    
     js::ActiveThreadData<JSExternalStringSizeofCallback> externalStringSizeofCallback;
 
     js::ActiveThreadData<mozilla::UniquePtr<js::SourceHook>> sourceHook;
