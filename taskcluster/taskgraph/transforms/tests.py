@@ -330,6 +330,11 @@ test_description_schema = Schema({
         Optional('files-changed'): [basestring],
     }),
 
+    Optional('worker-type'): optionally_keyed_by(
+        'test-platform',
+        Any(basestring, None),
+    ),
+
 }, required=True)
 
 
@@ -540,6 +545,7 @@ def handle_keyed_by(config, tests):
         'mozharness.config',
         'mozharness.extra-options',
         'mozharness.requires-signed-builds',
+        'worker-type',
     ]
     for test in tests:
         for field in fields:
@@ -773,7 +779,10 @@ def set_worker_type(config, tests):
         
         
         test_platform = test['test-platform']
-        if test_platform.startswith('macosx'):
+        if test.get('worker-type'):
+            
+            pass
+        elif test_platform.startswith('macosx'):
             
             test['worker-type'] = MACOSX_WORKER_TYPES['macosx64']
         elif test_platform.startswith('win'):
