@@ -142,7 +142,6 @@ BrowserCLH.prototype = {
                 event.target instanceof Ci.nsIDOMHTMLSelectElement ||
                 event.target instanceof Ci.nsIDOMHTMLButtonElement) {
               
-              this.FormAssistant.register(win);
               return this.FormAssistant;
             }
             return null;

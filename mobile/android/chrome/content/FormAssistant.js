@@ -11,35 +11,16 @@ var FormAssistant = {
   _currentFocusedElement: null,
 
   
-  
-  _currentInputElement: null,
-
-  
-  _currentInputValue: null,
-
-  
   _doingAutocomplete: false,
 
   init: function() {
     Services.obs.addObserver(this, "PanZoom:StateChange");
   },
 
-  register: function(aWindow) {
-    GeckoViewUtils.getDispatcherForWindow(aWindow).registerListener(this, [
-      "FormAssist:AutoComplete",
-      "FormAssist:Hidden",
-      "FormAssist:Remove",
-    ]);
-  },
-
-  onEvent: function(event, message, callback) {
-    switch (event) {
-      case "FormAssist:AutoComplete": {
-        if (!this._currentInputElement) {
-          break;
-        }
-        let editableElement = this._currentInputElement.QueryInterface(
-            Ci.nsIDOMNSEditableElement);
+  _onPopupResponse: function(currentElement, message) {
+    switch (message.action) {
+      case "autocomplete": {
+        let editableElement = currentElement.QueryInterface(Ci.nsIDOMNSEditableElement);
         this._doingAutocomplete = true;
 
         
@@ -51,29 +32,19 @@ var FormAssistant = {
         } catch (e) {}
 
         editableElement.setUserInput(message.value);
-        this._currentInputValue = message.value;
 
-        let event = this._currentInputElement.ownerDocument.createEvent("Events");
+        let event = currentElement.ownerDocument.createEvent("Events");
         event.initEvent("DOMAutoComplete", true, true);
-        this._currentInputElement.dispatchEvent(event);
+        currentElement.dispatchEvent(event);
 
         this._doingAutocomplete = false;
         break;
       }
 
-      case "FormAssist:Hidden": {
-        this._currentInputElement = null;
-        break;
-      }
-
-      case "FormAssist:Remove": {
-        if (!this._currentInputElement) {
-          break;
-        }
-
+      case "remove": {
         FormHistory.update({
           op: "remove",
-          fieldname: this._currentInputElement.name,
+          fieldname: currentElement.name,
           value: message.value,
         });
         break;
@@ -136,7 +107,6 @@ var FormAssistant = {
       }
 
       case "blur": {
-        this._currentInputValue = null;
         this._currentFocusedElement = null;
         break;
       }
@@ -168,13 +138,9 @@ var FormAssistant = {
         
         
         
-        if (currentElement !== focused ||
-            this._doingAutocomplete ||
-            currentElement.value === this._currentInputValue) {
+        if (currentElement !== focused || this._doingAutocomplete) {
           break;
         }
-
-        this._currentInputValue = currentElement.value;
 
         
         
@@ -295,11 +261,11 @@ var FormAssistant = {
         suggestions: suggestions,
         rect: this._getBoundingContentRect(aElement),
         isEmpty: isEmpty,
+      }, {
+        onSuccess: response => this._onPopupResponse(aElement, response),
+        onError: error => Cu.reportError(error),
       });
 
-      
-      
-      this._currentInputElement = aElement;
       aCallback(true);
     };
 

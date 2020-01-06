@@ -113,10 +113,10 @@ DispatcherDelegate.prototype = {
 
 
 
-  sendRequest: function(msg) {
+  sendRequest: function(msg, callback) {
     let type = msg.type;
     msg.type = undefined;
-    this.dispatch(type, msg);
+    this.dispatch(type, msg, callback);
   },
 
   
