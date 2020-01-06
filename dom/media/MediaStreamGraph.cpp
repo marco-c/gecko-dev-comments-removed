@@ -1219,9 +1219,11 @@ MediaStreamGraphImpl::PrepareUpdatesToMainThreadState(bool aFinalUpdate)
 
   
   
-  if (aFinalUpdate ||
-      !mUpdateRunnables.IsEmpty() ||
-      !mStreamUpdates.IsEmpty()) {
+  
+  if (!aFinalUpdate &&
+      
+      
+      !(mUpdateRunnables.IsEmpty() && mStreamUpdates.IsEmpty())) {
     EnsureStableStateEventPosted();
   }
 }
@@ -1461,11 +1463,6 @@ MediaStreamGraphImpl::UpdateMainThreadState()
   PrepareUpdatesToMainThreadState(finalUpdate);
   if (finalUpdate) {
     
-    
-    LOG(LogLevel::Debug,
-        ("MediaStreamGraph %p waiting for main thread cleanup", this));
-    
-    LifecycleStateRef() = LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
     
     
     return false;
@@ -1896,6 +1893,19 @@ MediaStreamGraphImpl::EnsureStableStateEventPosted()
   mPostedRunInStableStateEvent = true;
   nsCOMPtr<nsIRunnable> event = new MediaStreamGraphStableStateRunnable(this, true);
   mAbstractMainThread->Dispatch(event.forget());
+}
+
+void
+MediaStreamGraphImpl::SignalMainThreadCleanup()
+{
+  MOZ_ASSERT(mDriver->OnThread());
+
+  MonitorAutoLock lock(mMonitor);
+  LOG(LogLevel::Debug,
+      ("MediaStreamGraph %p waiting for main thread cleanup", this));
+  LifecycleStateRef() =
+    MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
+  EnsureStableStateEventPosted();
 }
 
 void

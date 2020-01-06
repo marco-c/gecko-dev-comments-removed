@@ -198,6 +198,14 @@ public:
 
   bool OneIteration(GraphTime aStateEnd);
 
+  
+
+
+
+
+
+  void SignalMainThreadCleanup();
+
   bool Running() const
   {
     return LifecycleStateRef() == LIFECYCLE_RUNNING;
@@ -724,6 +732,7 @@ public:
   };
 
   
+
 
 
 
