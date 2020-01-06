@@ -6471,6 +6471,8 @@ Selection::NotifySelectionListeners()
         fm->GetFocusedDescendant(window, false, getter_AddRefs(focusedWindow));
       nsCOMPtr<Element> focusedElement = do_QueryInterface(focusedContent);
       
+      
+      
       if (newEditingHost && newEditingHost != focusedElement) {
         MOZ_ASSERT(!newEditingHost->IsInNativeAnonymousSubtree());
         nsCOMPtr<nsIDOMElement> domElementToFocus =
@@ -6478,15 +6480,6 @@ Selection::NotifySelectionListeners()
         
         
         fm->SetFocus(domElementToFocus, nsIFocusManager::FLAG_NOSWITCHFRAME);
-      }
-      
-      
-      else if (!newEditingHost && focusedElement &&
-               focusedElement == focusedElement->GetEditingHost()) {
-        IgnoredErrorResult err;
-        focusedElement->Blur(err);
-        NS_WARNING_ASSERTION(!err.Failed(),
-                             "Failed to blur focused element");
       }
     }
   }
