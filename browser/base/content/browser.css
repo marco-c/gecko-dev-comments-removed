@@ -232,8 +232,8 @@ toolbar[customizing] > .overflow-button {
 
 
 
-#widget-overflow:not([hasdynamicitems]) #widget-overflow-fixed-separator,
-#widget-overflow-fixed-list:empty + #widget-overflow-fixed-separator {
+#widget-overflow-list:empty + #widget-overflow-fixed-separator,
+#widget-overflow:not([hasfixeditems]) #widget-overflow-fixed-separator {
   display: none;
 }
 
