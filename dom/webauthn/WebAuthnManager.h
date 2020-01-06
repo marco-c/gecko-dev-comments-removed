@@ -11,7 +11,6 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "nsIDOMEventListener.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
 
 
 
@@ -88,13 +87,11 @@ public:
   nsCString mClientData;
 };
 
-class WebAuthnManager final : public nsIIPCBackgroundChildCreateCallback,
-                              public nsIDOMEventListener
+class WebAuthnManager final : public nsIDOMEventListener
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
-  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
 
   static WebAuthnManager* GetOrCreate();
   static WebAuthnManager* Get();
@@ -136,16 +133,13 @@ private:
 
   typedef MozPromise<nsresult, nsresult, false> BackgroundActorPromise;
 
-  RefPtr<BackgroundActorPromise> GetOrCreateBackgroundActor();
+  void GetOrCreateBackgroundActor();
 
   
   RefPtr<WebAuthnTransactionChild> mChild;
 
   
   Maybe<WebAuthnTransaction> mTransaction;
-
-  
-  MozPromiseHolder<BackgroundActorPromise> mPBackgroundCreationPromise;
 };
 
 } 
