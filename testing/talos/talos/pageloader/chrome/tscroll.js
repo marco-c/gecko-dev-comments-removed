@@ -86,6 +86,7 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
           resolve();
         });
 
+        
         imported.src = "../../scripts/talos-debug.js?dummy=" + Date.now(); 
         document.head.appendChild(imported);
         return;
@@ -116,7 +117,7 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   function myNow() {
     return (win.performance && win.performance.now) ?
             win.performance.now() :
-            Date.now();
+            Date.now();  
   }
 
   var isWindow = target.self === target;
