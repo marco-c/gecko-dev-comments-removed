@@ -8,12 +8,15 @@
 #define MOZ_EMBEDDED_LIBPNG
 
 
+#define PNG_USER_LIMITS_SUPPORTED
 #ifndef MOZ_PNG_MAX_WIDTH
 #  define MOZ_PNG_MAX_WIDTH 0x7fffffffL /* Unlimited */
 #endif
 #ifndef MOZ_PNG_MAX_HEIGHT
 #  define MOZ_PNG_MAX_HEIGHT 0x7fffffffL /* Unlimited */
 #endif
+
+#define PNG_SET_USER_LIMITS_SUPPORTED
 
 #define PNG_API_RULE 0
 #define PNG_COST_SHIFT 3
