@@ -46,7 +46,7 @@ class nsIDOMRange;
 class nsRange;
 
 namespace mozilla {
-
+class AutoSelectionSetterAfterTableEdit;
 class HTMLEditorEventListener;
 class HTMLEditRules;
 class TextEditRules;
@@ -836,6 +836,30 @@ protected:
 
   void SetElementPosition(Element& aElement, int32_t aX, int32_t aY);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void SetSelectionAfterTableEdit(nsIDOMElement* aTable,
+                                  int32_t aRow, int32_t aCol,
+                                  int32_t aDirection, bool aSelected);
+
 protected:
   nsTArray<OwningNonNull<nsIContentFilter>> mContentFilters;
 
@@ -1022,6 +1046,7 @@ protected:
   ParagraphSeparator mDefaultParagraphSeparator;
 
 public:
+  friend class AutoSelectionSetterAfterTableEdit;
   friend class HTMLEditorEventListener;
   friend class HTMLEditRules;
   friend class TextEditRules;
