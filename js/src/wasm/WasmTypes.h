@@ -1629,6 +1629,10 @@ struct Frame
 
     
     
+    uint32_t encodedExitReason;
+
+    
+    
     TlsData* tls;
 
     
@@ -1679,13 +1683,6 @@ class DebugFrame
         };
         void* flagsWord_;
     };
-
-    
-#if JS_BITS_PER_WORD == 32
-  protected: 
-    void* padding_;
-  private:
-#endif
 
     
     Frame frame_;

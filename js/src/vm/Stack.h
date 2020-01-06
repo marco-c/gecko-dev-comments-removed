@@ -1741,7 +1741,6 @@ class InterpreterFrameIterator
 class WasmActivation : public Activation
 {
     wasm::Frame* exitFP_;
-    wasm::ExitReason exitReason_;
 
   public:
     explicit WasmActivation(JSContext* cx);
@@ -1756,11 +1755,7 @@ class WasmActivation : public Activation
     wasm::Frame* exitFP() const { return exitFP_; }
 
     
-    wasm::ExitReason exitReason() const { return exitReason_; }
-
-    
     static unsigned offsetOfExitFP() { return offsetof(WasmActivation, exitFP_); }
-    static unsigned offsetOfExitReason() { return offsetof(WasmActivation, exitReason_); }
 
     
     
