@@ -15,13 +15,6 @@ import org.mozilla.gecko.icons.IconResponse;
 
 
 public class ResizingProcessor implements Processor {
-    
-    
-    
-    
-    
-    public static final int MAX_SCALE_FACTOR = 3;
-
     @Override
     public void process(IconRequest request, IconResponse response) {
         if (response.isFromMemory()) {
@@ -47,7 +40,7 @@ public class ResizingProcessor implements Processor {
         } else {
             
             
-            final int largestSize = size * MAX_SCALE_FACTOR;
+            final int largestSize = size * 2;
 
             if (largestSize > targetSize) {
                 
