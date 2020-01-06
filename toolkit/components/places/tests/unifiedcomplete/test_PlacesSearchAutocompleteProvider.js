@@ -4,14 +4,16 @@
 
 Cu.import("resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
 
-function run_test() {
-  
-  
-  Services.prefs.setBoolPref("browser.search.isUS", true);
-  Services.prefs.setCharPref("browser.search.countryCode", "US");
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-  run_next_test();
-}
+add_task(async function() {
+    
+    
+   Services.prefs.setBoolPref("browser.search.isUS", true);
+   Services.prefs.setCharPref("browser.search.countryCode", "US");
+   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+
+   Services.search.restoreDefaultEngines();
+   Services.search.resetToOriginalDefaultEngine();
+});
 
 add_task(async function search_engine_match() {
   let engine = await promiseDefaultSearchEngine();
