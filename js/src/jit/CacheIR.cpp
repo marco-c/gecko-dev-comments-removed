@@ -9,6 +9,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
 
+#include "jit/BaselineCacheIRCompiler.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRSpewer.h"
 #include "jit/IonCaches.h"
@@ -3747,62 +3748,34 @@ GetIteratorIRGenerator::tryAttachNativeIterator(ObjOperandId objId, HandleObject
 }
 
 CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
-                                 ICState::Mode mode, uint32_t argc,
+                                 ICCall_Fallback* stub, ICState::Mode mode, uint32_t argc,
                                  HandleValue callee, HandleValue thisval, HandleValueArray args)
   : IRGenerator(cx, script, pc, CacheKind::Call, mode),
     argc_(argc),
     callee_(callee),
     thisval_(thisval),
     args_(args),
-    cachedStrategy_()
+    typeCheckInfo_(cx,  true),
+    cacheIRStubKind_(BaselineCacheIRStubKind::Regular)
 { }
-
-CallIRGenerator::OptStrategy
-CallIRGenerator::canOptimize()
-{
-    
-    if (!callee_.isObject() || !callee_.toObject().is<JSFunction>())
-        return OptStrategy::None;
-
-    RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
-
-    OptStrategy strategy;
-    if ((strategy = canOptimizeStringSplit(calleeFunc)) != OptStrategy::None) {
-        return strategy;
-    }
-
-    return OptStrategy::None;
-}
-
-CallIRGenerator::OptStrategy
-CallIRGenerator::canOptimizeStringSplit(HandleFunction calleeFunc)
-{
-    if (argc_ != 2 || !args_[0].isString() || !args_[1].isString())
-        return OptStrategy::None;
-
-    
-    
-    
-    if (args_[0].toString()->isAtom() && args_[1].toString()->isAtom())
-        return OptStrategy::None;
-
-    if (!calleeFunc->isNative())
-        return OptStrategy::None;
-
-    if (calleeFunc->native() != js::intrinsic_StringSplitString)
-        return OptStrategy::None;
-
-    return OptStrategy::StringSplit;
-}
 
 bool
 CallIRGenerator::tryAttachStringSplit()
 {
     
-    RootedObjectGroup group(cx_, ObjectGroupCompartment::getStringSplitStringGroup(cx_));
-    if (!group) {
+    if (argc_ != 2 || !args_[0].isString() || !args_[1].isString())
         return false;
-    }
+
+    
+    
+    
+    if (args_[0].toString()->isAtom() && args_[1].toString()->isAtom())
+        return false;
+
+    
+    RootedObjectGroup group(cx_, ObjectGroupCompartment::getStringSplitStringGroup(cx_));
+    if (!group)
+        return false;
 
     AutoAssertNoPendingException aanpe(cx_);
     Int32OperandId argcId(writer.setInputOperandId(0));
@@ -3817,7 +3790,6 @@ CallIRGenerator::tryAttachStringSplit()
     
     
 
-    
     
     ValOperandId calleeValId = writer.loadStackValue(3);
     ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
@@ -3835,40 +3807,162 @@ CallIRGenerator::tryAttachStringSplit()
     writer.callStringSplitResult(arg0StrId, arg1StrId, group);
     writer.typeMonitorResult();
 
+    cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+    trackAttached("StringSplitString");
+
+    TypeScript::Monitor(cx_, script_, pc_, TypeSet::ObjectType(group));
+
     return true;
 }
 
-CallIRGenerator::OptStrategy
-CallIRGenerator::getOptStrategy(bool* optimizeAfterCall)
+bool
+CallIRGenerator::tryAttachArrayPush()
 {
-    if (!cachedStrategy_) {
-        cachedStrategy_ = mozilla::Some(canOptimize());
-    }
-    if (optimizeAfterCall != nullptr) {
-        MOZ_ASSERT(cachedStrategy_.isSome());
-        switch (cachedStrategy_.value()) {
-          case OptStrategy::StringSplit:
-            *optimizeAfterCall = true;
-            break;
+    
+    if (argc_ != 1 || !thisval_.isObject())
+        return false;
 
-          default:
-            *optimizeAfterCall = false;
-        }
-    }
-    return cachedStrategy_.value();
+    
+    RootedObject thisobj(cx_, &thisval_.toObject());
+    if (!thisobj->is<ArrayObject>())
+        return false;
+
+    RootedArrayObject thisarray(cx_, &thisobj->as<ArrayObject>());
+
+    
+    if (thisobj->group()->maybePreliminaryObjects())
+        return false;
+
+    
+    if (!CanAttachAddElement(thisobj,  false))
+        return false;
+
+    
+    if (!thisarray->lengthIsWritable())
+        return false;
+
+    
+    if (!thisarray->nonProxyIsExtensible())
+        return false;
+
+    MOZ_ASSERT(!thisarray->getElementsHeader()->isFrozen(),
+               "Extensible arrays should not have frozen elements");
+    MOZ_ASSERT(thisarray->lengthIsWritable());
+
+    
+
+    
+    AutoAssertNoPendingException aanpe(cx_);
+    Int32OperandId argcId(writer.setInputOperandId(0));
+
+    
+    writer.guardSpecificInt32Immediate(argcId, 1);
+
+    
+    
+    
+    
+    
+
+    
+    ValOperandId calleeValId = writer.loadStackValue(2);
+    ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
+    writer.guardIsNativeFunction(calleeObjId, js::array_push);
+
+    
+    ValOperandId thisValId = writer.loadStackValue(1);
+    ObjOperandId thisObjId = writer.guardIsObject(thisValId);
+    writer.guardClass(thisObjId, GuardClassKind::Array);
+
+    
+    
+    
+    MOZ_ASSERT(typeCheckInfo_.needsTypeBarrier());
+
+    
+    if (typeCheckInfo_.needsTypeBarrier())
+        writer.guardGroup(thisObjId, thisobj->group());
+    writer.guardShape(thisObjId, thisarray->shape());
+
+    
+    ShapeGuardProtoChain(writer, thisobj, thisObjId);
+
+    
+    ValOperandId argId = writer.loadStackValue(0);
+    writer.arrayPush(thisObjId, argId);
+
+    writer.returnFromIC();
+
+    
+    typeCheckInfo_.set(thisobj->group(), JSID_VOID);
+
+    cacheIRStubKind_ = BaselineCacheIRStubKind::Updated;
+
+    trackAttached("ArrayPush");
+    return true;
 }
 
 bool
 CallIRGenerator::tryAttachStub()
 {
-    OptStrategy strategy = getOptStrategy();
+    
+    if (mode_ != ICState::Mode::Specialized)
+        return false;
 
-    if (strategy == OptStrategy::StringSplit) {
-        return tryAttachStringSplit();
+    
+    if (!callee_.isObject() || !callee_.toObject().is<JSFunction>())
+        return false;
+
+    RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
+
+    
+    if (calleeFunc->isNative()) {
+
+        if (calleeFunc->native() == js::intrinsic_StringSplitString) {
+            if (tryAttachStringSplit())
+                return true;
+        }
+
+        if (calleeFunc->native() == js::array_push) {
+            if (tryAttachArrayPush())
+                return true;
+        }
     }
 
-    MOZ_ASSERT(strategy == OptStrategy::None);
     return false;
+}
+
+void
+CallIRGenerator::trackAttached(const char* name)
+{
+#ifdef JS_CACHEIR_SPEW
+    CacheIRSpewer& sp = CacheIRSpewer::singleton();
+    if (sp.enabled()) {
+        LockGuard<Mutex> guard(sp.lock());
+        sp.beginCache(guard, *this);
+        sp.valueProperty(guard, "callee", callee_);
+        sp.valueProperty(guard, "thisval", thisval_);
+        sp.valueProperty(guard, "argc", Int32Value(argc_));
+        sp.attached(guard, name);
+        sp.endCache(guard);
+    }
+#endif
+}
+
+void
+CallIRGenerator::trackNotAttached()
+{
+#ifdef JS_CACHEIR_SPEW
+    CacheIRSpewer& sp = CacheIRSpewer::singleton();
+    if (sp.enabled()) {
+        LockGuard<Mutex> guard(sp.lock());
+        sp.beginCache(guard, *this);
+        sp.valueProperty(guard, "callee", callee_);
+        sp.valueProperty(guard, "thisval", thisval_);
+        sp.valueProperty(guard, "argc", Int32Value(argc_));
+        sp.endCache(guard);
+    }
+#endif
 }
 
 CompareIRGenerator::CompareIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,

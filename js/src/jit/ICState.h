@@ -66,7 +66,9 @@ class ICState
     size_t numOptimizedStubs() const { return numOptimizedStubs_; }
 
     MOZ_ALWAYS_INLINE bool canAttachStub() const {
-        MOZ_ASSERT(numOptimizedStubs_ <= MaxOptimizedStubs);
+        
+        
+        
         if (mode_ == Mode::Generic || JitOptions.disableCacheIR)
             return false;
         return true;
@@ -78,7 +80,9 @@ class ICState
     
     
     MOZ_MUST_USE MOZ_ALWAYS_INLINE bool maybeTransition() {
-        MOZ_ASSERT(numOptimizedStubs_ <= MaxOptimizedStubs);
+        
+        
+        
         if (mode_ == Mode::Generic)
             return false;
         if (numOptimizedStubs_ < MaxOptimizedStubs && numFailures_ < maxFailures())
