@@ -55,7 +55,7 @@ public:
   void ClearAllTimeouts();
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
 
-  int32_t DOMMinTimeoutValue(Timeout* aTimeout) const;
+  int32_t CalculateDelay(Timeout* aTimeout) const;
 
   
   
