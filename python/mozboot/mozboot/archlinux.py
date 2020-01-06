@@ -68,7 +68,7 @@ class ArchlinuxBootstrapper(StyloInstall, BaseBootstrapper):
     MOBILE_ANDROID_COMMON_PACKAGES = [
         
         
-        'jdk7-openjdk',
+        'jdk8-openjdk',
         
         'wget',
         
