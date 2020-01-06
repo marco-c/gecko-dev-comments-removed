@@ -15,6 +15,48 @@ namespace mozilla {
 
 
 
+class ChannelSuspendAgent
+{
+public:
+  explicit ChannelSuspendAgent(nsIChannel* aChannel)
+    : mChannel(aChannel)
+    , mIsChannelSuspended(false)
+  {
+  }
+
+  
+  bool IsSuspended();
+
+  
+  
+  bool Suspend();
+
+  
+  bool Resume();
+
+  
+  
+  void NotifyChannelOpened(nsIChannel* aChannel);
+
+  
+  void NotifyChannelClosing();
+
+  
+  void UpdateSuspendedStatusIfNeeded();
+
+private:
+  
+  void SuspendInternal();
+
+  nsIChannel* mChannel;
+  uint32_t mSuspendCount = 0;
+  bool mIsChannelSuspended;
+};
+
+
+
+
+
 
 
 
