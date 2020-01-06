@@ -1556,8 +1556,10 @@ private:
       mChannel->SaveTimeStamps();
 
       nsresult rv = mChannel->ResetInterception();
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Failed to resume intercepted network request");
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to resume intercepted network request");
+        mChannel->CancelInterception(rv);
+      }
       return rv;
     }
   };
@@ -1684,7 +1686,11 @@ ServiceWorkerPrivate::SendFetchEvent(nsIInterceptedChannel* aChannel,
   
   
   if (!registration) {
-    aChannel->ResetInterception();
+    nsresult rv = aChannel->ResetInterception();
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to resume intercepted network request");
+      aChannel->CancelInterception(rv);
+    }
     return NS_OK;
   }
 
@@ -1692,7 +1698,11 @@ ServiceWorkerPrivate::SendFetchEvent(nsIInterceptedChannel* aChannel,
   
   
   if (!mInfo->HandlesFetch()) {
-    aChannel->ResetInterception();
+    nsresult rv = aChannel->ResetInterception();
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to resume intercepted network request");
+      aChannel->CancelInterception(rv);
+    }
 
     
     registration->MaybeScheduleTimeCheckAndUpdate();
