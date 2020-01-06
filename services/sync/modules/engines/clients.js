@@ -650,15 +650,16 @@ ClientEngine.prototype = {
 
 
 
+
   _commands: {
-    resetAll:    { args: 0, desc: "Clear temporary local data for all engines" },
-    resetEngine: { args: 1, desc: "Clear temporary local data for engine" },
-    wipeAll:     { args: 0, desc: "Delete all client data for all engines" },
-    wipeEngine:  { args: 1, desc: "Delete all client data for engine" },
-    logout:      { args: 0, desc: "Log out client" },
-    displayURI:  { args: 3, desc: "Instruct a client to display a URI" },
-    repairRequest:  {args: 1, desc: "Instruct a client to initiate a repair"},
-    repairResponse: {args: 1, desc: "Instruct a client a repair request is complete"},
+    resetAll:    { args: 0, importance: 0, desc: "Clear temporary local data for all engines" },
+    resetEngine: { args: 1, importance: 0, desc: "Clear temporary local data for engine" },
+    wipeAll:     { args: 0, importance: 0, desc: "Delete all client data for all engines" },
+    wipeEngine:  { args: 1, importance: 0, desc: "Delete all client data for engine" },
+    logout:      { args: 0, importance: 0, desc: "Log out client" },
+    displayURI:  { args: 3, importance: 1, desc: "Instruct a client to display a URI" },
+    repairRequest:  { args: 1, importance: 2, desc: "Instruct a client to initiate a repair" },
+    repairResponse: { args: 1, importance: 2, desc: "Instruct a client a repair request is complete" },
   },
 
   
@@ -883,7 +884,7 @@ ClientEngine.prototype = {
 
 
   async sendURIToClientForDisplay(uri, clientId, title) {
-    this._log.info("Sending URI to client: " + uri + " -> " +
+    this._log.trace("Sending URI to client: " + uri + " -> " +
                    clientId + " (" + title + ")");
     await this.sendCommand("displayURI", [uri, this.localID, title], clientId);
 
@@ -997,7 +998,39 @@ ClientStore.prototype = {
         delete record.cleartext.stale;
       }
     }
-
+    if (record.commands) {
+      const maxPayloadSize = this.engine.service.getMemcacheMaxRecordPayloadSize();
+      let origOrder = new Map(record.commands.map((c, i) => [c, i]));
+      
+      
+      let commands = record.commands.slice().sort((a, b) => {
+        let infoA = this.engine._commands[a.command];
+        let infoB = this.engine._commands[b.command];
+        
+        
+        
+        let importA = infoA ? infoA.importance : 0;
+        let importB = infoB ? infoB.importance : 0;
+        
+        
+        let importDelta = importA - importB;
+        if (importDelta != 0) {
+          return importDelta;
+        }
+        let origIdxA = origOrder.get(a);
+        let origIdxB = origOrder.get(b);
+        
+        
+        return origIdxB - origIdxA;
+      });
+      let truncatedCommands = Utils.tryFitItems(commands, maxPayloadSize);
+      if (truncatedCommands.length != record.commands.length) {
+        this._log.warn(`Removing commands from client ${id} (from ${record.commands.length} to ${truncatedCommands.length})`);
+        
+        record.commands = truncatedCommands.sort((a, b) =>
+          origOrder.get(a) - origOrder.get(b));
+      }
+    }
     return record;
   },
 

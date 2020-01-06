@@ -616,6 +616,17 @@ Sync11Service.prototype = {
     return payloadMax;
   },
 
+  getMemcacheMaxRecordPayloadSize() {
+    
+    
+    
+    
+    
+    
+    
+    return Math.min(512 * 1024, this.getMaxRecordPayloadSize());
+  },
+
   async verifyLogin(allow40XRecovery = true) {
     if (!this.identity.username) {
       this._log.warn("No username in verifyLogin.");
