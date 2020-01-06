@@ -7,78 +7,48 @@ package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringDef;
 import android.support.annotation.VisibleForTesting;
+
+import org.mozilla.gecko.activitystream.ranking.RankingUtils.Func1;
+import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.activitystream.homepanel.model.Highlight;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import java.util.HashMap;
+import java.util.Map;
 
 
 
 
 
  class HighlightCandidate {
+     static final String FEATURE_AGE_IN_DAYS = "ageInDays";
+     static final String FEATURE_IMAGE_COUNT = "imageCount";
+     static final String FEATURE_DOMAIN_FREQUENCY = "domainFrequency";
+     static final String FEATURE_VISITS_COUNT = "visitsCount";
+     static final String FEATURE_BOOKMARK_AGE_IN_MILLISECONDS = "bookmarkageInDays";
+     static final String FEATURE_DESCRIPTION_LENGTH = "descriptionLength";
+     static final String FEATURE_PATH_LENGTH = "pathLength";
+     static final String FEATURE_QUERY_LENGTH = "queryLength";
+     static final String FEATURE_IMAGE_SIZE = "imageSize";
 
-    
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({FEATURE_AGE_IN_DAYS, FEATURE_BOOKMARK_AGE_IN_MILLISECONDS, FEATURE_DESCRIPTION_LENGTH,
-            FEATURE_DOMAIN_FREQUENCY, FEATURE_IMAGE_COUNT, FEATURE_IMAGE_SIZE, FEATURE_PATH_LENGTH,
-            FEATURE_QUERY_LENGTH, FEATURE_VISITS_COUNT})
-     @interface FeatureName {}
+    @StringDef({FEATURE_AGE_IN_DAYS, FEATURE_IMAGE_COUNT, FEATURE_DOMAIN_FREQUENCY, FEATURE_VISITS_COUNT,
+            FEATURE_BOOKMARK_AGE_IN_MILLISECONDS, FEATURE_DESCRIPTION_LENGTH, FEATURE_PATH_LENGTH,
+            FEATURE_QUERY_LENGTH, FEATURE_IMAGE_SIZE})
+    public @interface Feature {}
 
-    
-    
-    private static final int FEATURE_COUNT = 9; 
-     static final int FEATURE_AGE_IN_DAYS = 0;
-     static final int FEATURE_BOOKMARK_AGE_IN_MILLISECONDS = 1;
-     static final int FEATURE_DESCRIPTION_LENGTH = 2;
-     static final int FEATURE_DOMAIN_FREQUENCY = 3;
-     static final int FEATURE_IMAGE_COUNT = 4;
-     static final int FEATURE_IMAGE_SIZE = 5;
-     static final int FEATURE_PATH_LENGTH = 6;
-     static final int FEATURE_QUERY_LENGTH = 7;
-     static final int FEATURE_VISITS_COUNT = 8;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-     static class Features {
-        private final double[] values = new double[FEATURE_COUNT];
-
-        Features() {}
-
-         double get(final @FeatureName int featureName) {
-            return values[featureName];
-        }
-
-         void put(final @FeatureName int featureName, final double value) {
-            values[featureName] = value;
-        }
-    }
-
-    @VisibleForTesting final Features features = new Features();
+    @VisibleForTesting final Map<String, Double> features;
     private Highlight highlight;
     private @Nullable String imageUrl;
     private String host;
     private double score;
 
-    public static HighlightCandidate fromCursor(final Cursor cursor, final HighlightCandidateCursorIndices cursorIndices)
-            throws InvalidHighlightCandidateException {
+    public static HighlightCandidate fromCursor(Cursor cursor) throws InvalidHighlightCandidateException {
         final HighlightCandidate candidate = new HighlightCandidate();
 
-        extractHighlight(candidate, cursor, cursorIndices);
-        extractFeatures(candidate, cursor, cursorIndices);
+        extractHighlight(candidate, cursor);
+        extractFeatures(candidate, cursor);
 
         return candidate;
     }
@@ -86,24 +56,22 @@ import java.lang.annotation.RetentionPolicy;
     
 
 
-    private static void extractHighlight(final HighlightCandidate candidate, final Cursor cursor,
-            final HighlightCandidateCursorIndices cursorIndices) {
-        candidate.highlight = Highlight.fromCursor(cursor, cursorIndices);
+    private static void extractHighlight(HighlightCandidate candidate, Cursor cursor) {
+        candidate.highlight = Highlight.fromCursor(cursor);
     }
 
     
 
 
-    private static void extractFeatures(final HighlightCandidate candidate, final Cursor cursor,
-            final HighlightCandidateCursorIndices cursorIndices) throws InvalidHighlightCandidateException {
+    private static void extractFeatures(HighlightCandidate candidate, Cursor cursor) throws InvalidHighlightCandidateException {
         candidate.features.put(
                 FEATURE_AGE_IN_DAYS,
-                (System.currentTimeMillis() - cursor.getDouble(cursorIndices.historyDateLastVisitedColumnIndex))
+                (System.currentTimeMillis() - cursor.getDouble(cursor.getColumnIndexOrThrow(BrowserContract.History.DATE_LAST_VISITED)))
                         / (1000 * 3600 * 24));
 
         candidate.features.put(
                 FEATURE_VISITS_COUNT,
-                cursor.getDouble(cursorIndices.visitsColumnIndex));
+                cursor.getDouble(cursor.getColumnIndexOrThrow(BrowserContract.History.VISITS)));
 
         
         
@@ -115,7 +83,7 @@ import java.lang.annotation.RetentionPolicy;
                 FEATURE_DOMAIN_FREQUENCY,
                 Math.log(1 + domainCountSize / occurrences));
 
-        candidate.imageUrl = candidate.highlight.getFastImageURLForComparison();
+        candidate.imageUrl = candidate.highlight.getMetadata().getImageUrl();
 
         
         
@@ -124,13 +92,13 @@ import java.lang.annotation.RetentionPolicy;
         
         candidate.features.put(
                 FEATURE_IMAGE_COUNT,
-                candidate.highlight.hasFastImageURL() ? 1d : 0d);
+                candidate.highlight.getMetadata().hasImageUrl() ? 1d : 0d);
 
         
         
         candidate.features.put(
                 FEATURE_IMAGE_SIZE,
-                candidate.highlight.hasFastImageURL() ? 1d : 0d
+                candidate.highlight.getMetadata().hasImageUrl() ? 1d : 0d
         );
 
         
@@ -140,19 +108,20 @@ import java.lang.annotation.RetentionPolicy;
         
         
         
-        if (cursor.isNull(cursorIndices.bookmarkDateCreatedColumnIndex)) {
+        final int bookmarkDateColumnIndex = cursor.getColumnIndexOrThrow(BrowserContract.Bookmarks.DATE_CREATED);
+        if (cursor.isNull(bookmarkDateColumnIndex)) {
             candidate.features.put(
                     FEATURE_BOOKMARK_AGE_IN_MILLISECONDS,
                     0d);
         } else {
             candidate.features.put(
                     FEATURE_BOOKMARK_AGE_IN_MILLISECONDS,
-                    Math.max(1, System.currentTimeMillis() - cursor.getDouble(cursorIndices.bookmarkDateCreatedColumnIndex)));
+                    Math.max(1, System.currentTimeMillis() - cursor.getDouble(bookmarkDateColumnIndex)));
         }
 
         candidate.features.put(
                 FEATURE_DESCRIPTION_LENGTH,
-                (double) candidate.highlight.getFastDescriptionLength());
+                (double) candidate.highlight.getMetadata().getDescriptionLength());
 
         final Uri uri = Uri.parse(candidate.highlight.getUrl());
 
@@ -176,6 +145,7 @@ import java.lang.annotation.RetentionPolicy;
     }
 
     @VisibleForTesting HighlightCandidate() {
+        features = new HashMap<>();
     }
 
      double getScore() {
@@ -194,17 +164,37 @@ import java.lang.annotation.RetentionPolicy;
         return host;
     }
 
-    
-
-
-
     @Nullable
-     String getFastImageUrlForComparison() {
+     String getImageUrl() {
         return imageUrl;
     }
 
      Highlight getHighlight() {
         return highlight;
+    }
+
+     double getFeatureValue(@Feature String feature) {
+        if (!features.containsKey(feature)) {
+            throw new IllegalStateException("No value for feature " + feature);
+        }
+
+        return features.get(feature);
+    }
+
+     void setFeatureValue(@Feature String feature, double value) {
+        features.put(feature, value);
+    }
+
+     Map<String, Double> getFilteredFeatures(Func1<String, Boolean> filter) {
+        Map<String, Double> filteredFeatures = new HashMap<>();
+
+        for (Map.Entry<String, Double> entry : features.entrySet()) {
+            if (filter.call(entry.getKey())) {
+                filteredFeatures.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return filteredFeatures;
     }
 
      static class InvalidHighlightCandidateException extends Exception {
