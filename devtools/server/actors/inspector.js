@@ -159,6 +159,7 @@ loader.lazyGetter(this, "eventListenerService", function () {
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/css-logic", true);
 loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "getCssPath", "devtools/shared/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "getXPath", "devtools/shared/inspector/css-logic", true);
 
 
 
@@ -663,6 +664,18 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return "";
     }
     return getCssPath(this.rawNode);
+  },
+
+  
+
+
+
+
+  getXPath: function () {
+    if (Cu.isDeadWrapper(this.rawNode)) {
+      return "";
+    }
+    return getXPath(this.rawNode);
   },
 
   

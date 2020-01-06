@@ -153,6 +153,8 @@ RootActor.prototype = {
     
     getCssPath: true,
     
+    getXPath: true,
+    
     directorScripts: true,
     
     
