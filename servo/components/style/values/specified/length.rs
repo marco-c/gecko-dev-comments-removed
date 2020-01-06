@@ -21,6 +21,8 @@ use super::{AllowQuirks, Number, ToComputedValue};
 use values::{Auto, CSSFloat, Either, FONT_MEDIUM_PX, None_, Normal};
 use values::ExtremumLength;
 use values::computed::{self, Context};
+use values::generics::NonNegative;
+use values::specified::NonNegativeNumber;
 use values::specified::calc::CalcNode;
 
 pub use values::specified::calc::CalcLengthOrPercentage;
@@ -92,8 +94,8 @@ impl FontBaseSize {
     pub fn resolve(&self, context: &Context) -> Au {
         match *self {
             FontBaseSize::Custom(size) => size,
-            FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size(),
-            FontBaseSize::InheritedStyle => context.style().get_parent_font().clone_font_size(),
+            FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size().0,
+            FontBaseSize::InheritedStyle => context.style().get_parent_font().clone_font_size().0,
         }
     }
 }
@@ -704,6 +706,57 @@ impl<T: Parse> Either<Length, T> {
 }
 
 
+pub type NonNegativeLength = NonNegative<Length>;
+
+impl From<NoCalcLength> for NonNegativeLength {
+    #[inline]
+    fn from(len: NoCalcLength) -> Self {
+        NonNegative::<Length>(Length::NoCalc(len))
+    }
+}
+
+impl From<Length> for NonNegativeLength {
+    #[inline]
+    fn from(len: Length) -> Self {
+        NonNegative::<Length>(len)
+    }
+}
+
+impl<T: Parse> Parse for Either<NonNegativeLength, T> {
+    #[inline]
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        if let Ok(v) = input.try(|input| T::parse(context, input)) {
+            return Ok(Either::Second(v));
+        }
+        Length::parse_internal(context, input, AllowedLengthType::NonNegative, AllowQuirks::No)
+            .map(NonNegative::<Length>).map(Either::First)
+    }
+}
+
+impl NonNegativeLength {
+    
+    #[inline]
+    pub fn zero() -> Self {
+        Length::zero().into()
+    }
+
+    
+    #[inline]
+    pub fn from_px(px_value: CSSFloat) -> Self {
+        Length::from_px(px_value.max(0.)).into()
+    }
+}
+
+
+pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
+
+
+pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
+
+
+pub type NonNegativeLengthOrNumber = Either<NonNegativeLength, NonNegativeNumber>;
+
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Percentage {
@@ -1182,6 +1235,41 @@ impl Parse for LengthOrPercentageOrNone {
     #[inline]
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         Self::parse_internal(context, input, AllowedLengthType::All, AllowQuirks::No)
+    }
+}
+
+
+pub type NonNegativeLengthOrPercentage = NonNegative<LengthOrPercentage>;
+
+impl From<NoCalcLength> for NonNegativeLengthOrPercentage {
+    #[inline]
+    fn from(len: NoCalcLength) -> Self {
+        NonNegative::<LengthOrPercentage>(LengthOrPercentage::from(len))
+    }
+}
+
+impl Parse for NonNegativeLengthOrPercentage {
+    #[inline]
+    fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        LengthOrPercentage::parse_non_negative(context, input).map(NonNegative::<LengthOrPercentage>)
+    }
+}
+
+impl NonNegativeLengthOrPercentage {
+    #[inline]
+    
+    pub fn zero() -> Self {
+        NonNegative::<LengthOrPercentage>(LengthOrPercentage::zero())
+    }
+
+    
+    
+    #[inline]
+    pub fn parse_quirky<'i, 't>(context: &ParserContext,
+                                input: &mut Parser<'i, 't>,
+                                allow_quirks: AllowQuirks) -> Result<Self, ParseError<'i>> {
+        LengthOrPercentage::parse_non_negative_quirky(context, input, allow_quirks)
+            .map(NonNegative::<LengthOrPercentage>)
     }
 }
 

@@ -11,6 +11,8 @@ use style_traits::ToCss;
 use style_traits::values::specified::AllowedLengthType;
 use super::{Number, ToComputedValue, Context};
 use values::{Auto, CSSFloat, Either, ExtremumLength, None_, Normal, specified};
+use values::computed::{NonNegativeAu, NonNegativeNumber};
+use values::generics::NonNegative;
 use values::specified::length::{AbsoluteLength, FontBaseSize, FontRelativeLength};
 use values::specified::length::ViewportPercentageLength;
 
@@ -71,7 +73,7 @@ impl ToComputedValue for specified::NoCalcLength {
             specified::NoCalcLength::ViewportPercentage(length) =>
                 length.to_computed_value(context.viewport_size()),
             specified::NoCalcLength::ServoCharacterWidth(length) =>
-                length.to_computed_value(context.style().get_font().clone_font_size()),
+                length.to_computed_value(context.style().get_font().clone_font_size().0),
             #[cfg(feature = "gecko")]
             specified::NoCalcLength::Physical(length) =>
                 length.to_computed_value(context),
@@ -265,7 +267,7 @@ impl specified::CalcLengthOrPercentage {
 
     
     pub fn to_computed_value_zoomed(&self, context: &Context) -> CalcLengthOrPercentage {
-        self.to_computed_value_with_zoom(context, |abs| context.maybe_zoom_text(abs))
+        self.to_computed_value_with_zoom(context, |abs| context.maybe_zoom_text(abs.into()).0)
     }
 }
 
@@ -347,6 +349,20 @@ impl LengthOrPercentage {
             LengthOrPercentage::Calc(ref calc) => {
                 calc.to_used_value(Some(containing_length)).unwrap()
             },
+        }
+    }
+
+    
+    #[inline]
+    pub fn clamp_to_non_negative(self) -> Self {
+        match self {
+            LengthOrPercentage::Length(length) => {
+                LengthOrPercentage::Length(Au(::std::cmp::max(length.0, 0)))
+            },
+            LengthOrPercentage::Percentage(percentage) => {
+                LengthOrPercentage::Percentage(Percentage(percentage.0.max(0.)))
+            },
+            _ => self
         }
     }
 }
@@ -551,6 +567,43 @@ impl ToComputedValue for specified::LengthOrPercentageOrNone {
 }
 
 
+pub type NonNegativeLengthOrPercentage = NonNegative<LengthOrPercentage>;
+
+impl From<NonNegativeAu> for NonNegativeLengthOrPercentage {
+    #[inline]
+    fn from(length: NonNegativeAu) -> Self {
+        LengthOrPercentage::Length(length.0).into()
+    }
+}
+
+impl From<LengthOrPercentage> for NonNegativeLengthOrPercentage {
+    #[inline]
+    fn from(lop: LengthOrPercentage) -> Self {
+        NonNegative::<LengthOrPercentage>(lop)
+    }
+}
+
+impl NonNegativeLengthOrPercentage {
+    
+    #[inline]
+    pub fn zero() -> Self {
+        NonNegative::<LengthOrPercentage>(LengthOrPercentage::zero())
+    }
+
+    
+    #[inline]
+    pub fn is_definitely_zero(&self) -> bool {
+        self.0.is_definitely_zero()
+    }
+
+    
+    #[inline]
+    pub fn to_used_value(&self, containing_length: Au) -> Au {
+        self.0.to_used_value(containing_length)
+    }
+}
+
+
 pub type Length = Au;
 
 
@@ -572,6 +625,18 @@ impl LengthOrNumber {
 
 
 pub type LengthOrNormal = Either<Length, Normal>;
+
+
+pub type NonNegativeLength = NonNegativeAu;
+
+
+pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
+
+
+pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
+
+
+pub type NonNegativeLengthOrNumber = Either<NonNegativeLength, NonNegativeNumber>;
 
 
 
