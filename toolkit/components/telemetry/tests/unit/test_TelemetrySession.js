@@ -1870,10 +1870,9 @@ add_task(async function test_schedulerEnvironmentReschedules() {
     [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
   ]);
 
-  await TelemetryController.testReset();
-  await TelemetryController.testShutdown();
   await TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
+  await TelemetryController.testReset();
 
   
   let nowDate = fakeNow(2060, 10, 18, 0, 0, 0);
@@ -2031,7 +2030,7 @@ add_task(async function test_schedulerUserIdle() {
   Assert.equal(schedulerTimeout, SCHEDULER_TICK_IDLE_INTERVAL_MS);
 
   
-  await fakeIdleNotification("active");
+  fakeIdleNotification("active");
 
   
   Assert.equal(schedulerTimeout, SCHEDULER_TICK_INTERVAL_MS);
