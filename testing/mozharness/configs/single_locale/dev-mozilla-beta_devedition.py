@@ -4,7 +4,7 @@ config = {
     "update_channel": "aurora-dev",  
 
     
-    "hg_l10n_base": "https://hg.mozilla.org/releases/l10n/mozilla-beta",
+    "hg_l10n_base": "https://hg.mozilla.org/l10n-central",
 
     
     
