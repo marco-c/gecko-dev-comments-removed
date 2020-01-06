@@ -20,6 +20,16 @@ photonpanelmultiview .toolbaritem-combined-buttons > label {
   padding-inline-start: 42px; 
 }
 
+#appMenu-fxa-container[fxastatus="signedin"] > #appMenu-fxa-status > #appMenu-fxa-label {
+  
+  padding-inline-start: 34px;
+  margin-inline-start: -34px;
+}
+
+#appMenu-fxa-container[fxastatus="signedin"] > #appMenu-fxa-status > #appMenu-fxa-avatar {
+  margin-inline-start: 18px;
+}
+
 .subviewbutton[checked="true"] {
   background-position: top 7px left 4px;
 }
