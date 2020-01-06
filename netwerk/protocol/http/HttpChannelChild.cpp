@@ -3605,5 +3605,18 @@ HttpChannelChild::RecvSetPriority(const int16_t& aPriority)
   return IPC_OK();
 }
 
+void
+HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  if (aWhy != Deletion) {
+    CleanupBackgroundChannel();
+  }
+}
+
 } 
 } 

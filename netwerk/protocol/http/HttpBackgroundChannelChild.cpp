@@ -119,6 +119,9 @@ HttpBackgroundChannelChild::OnChannelClosed()
 
   
   mChannelChild = nullptr;
+
+  
+  mQueuedRunnables.Clear();
 }
 
 void
