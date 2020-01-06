@@ -74,13 +74,13 @@ GMPContentParent::ActorDestroy(ActorDestroyReason aWhy)
 void
 GMPContentParent::CheckThread()
 {
-  MOZ_ASSERT(mGMPThread == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 }
 
 void
 GMPContentParent::ChromiumCDMDestroyed(ChromiumCDMParent* aDecoder)
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   MOZ_ALWAYS_TRUE(mChromiumCDMs.RemoveElement(aDecoder));
   CloseIfUnused();
@@ -89,7 +89,7 @@ GMPContentParent::ChromiumCDMDestroyed(ChromiumCDMParent* aDecoder)
 void
 GMPContentParent::VideoDecoderDestroyed(GMPVideoDecoderParent* aDecoder)
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   
   Unused << NS_WARN_IF(!mVideoDecoders.RemoveElement(aDecoder));
@@ -99,7 +99,7 @@ GMPContentParent::VideoDecoderDestroyed(GMPVideoDecoderParent* aDecoder)
 void
 GMPContentParent::VideoEncoderDestroyed(GMPVideoEncoderParent* aEncoder)
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   
   Unused << NS_WARN_IF(!mVideoEncoders.RemoveElement(aEncoder));
@@ -109,7 +109,7 @@ GMPContentParent::VideoEncoderDestroyed(GMPVideoEncoderParent* aEncoder)
 void
 GMPContentParent::DecryptorDestroyed(GMPDecryptorParent* aSession)
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
 
   MOZ_ALWAYS_TRUE(mDecryptors.RemoveElement(aSession));
   CloseIfUnused();
@@ -118,14 +118,14 @@ GMPContentParent::DecryptorDestroyed(GMPDecryptorParent* aSession)
 void
 GMPContentParent::AddCloseBlocker()
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
   ++mCloseBlockerCount;
 }
 
 void
 GMPContentParent::RemoveCloseBlocker()
 {
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
+  MOZ_ASSERT(GMPEventTarget()->IsOnCurrentThread());
   --mCloseBlockerCount;
   CloseIfUnused();
 }
@@ -167,10 +167,10 @@ GMPContentParent::GetGMPDecryptor(GMPDecryptorParent** aGMPDP)
   return NS_OK;
 }
 
-nsCOMPtr<nsIThread>
-GMPContentParent::GMPThread()
+nsCOMPtr<nsISerialEventTarget>
+GMPContentParent::GMPEventTarget()
 {
-  if (!mGMPThread) {
+  if (!mGMPEventTarget) {
     nsCOMPtr<mozIGeckoMediaPluginService> mps = do_GetService("@mozilla.org/gecko-media-plugin-service;1");
     MOZ_ASSERT(mps);
     if (!mps) {
@@ -181,11 +181,14 @@ GMPContentParent::GMPThread()
     
     
     
-    mps->GetThread(getter_AddRefs(mGMPThread));
-    MOZ_ASSERT(mGMPThread);
+    nsCOMPtr<nsIThread> gmpThread;
+    mps->GetThread(getter_AddRefs(gmpThread));
+    MOZ_ASSERT(gmpThread);
+
+    mGMPEventTarget = gmpThread->SerialEventTarget();
   }
 
-  return mGMPThread;
+  return mGMPEventTarget;
 }
 
 already_AddRefed<ChromiumCDMParent>

@@ -4,6 +4,8 @@
 
 
 #include "mozilla/dom/TextTrackList.h"
+
+#include "mozilla/DebugOnly.h"
 #include "mozilla/dom/TextTrackListBinding.h"
 #include "mozilla/dom/TrackEvent.h"
 #include "nsThreadUtils.h"
@@ -200,9 +202,9 @@ void
 TextTrackList::CreateAndDispatchTrackEventRunner(TextTrack* aTrack,
                                                  const nsAString& aEventName)
 {
-  nsCOMPtr<nsIThread> thread;
-  nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
-  if (NS_FAILED(rv)) {
+  DebugOnly<nsresult> rv;
+  nsCOMPtr<nsIEventTarget> target = GetMainThreadEventTarget();
+  if (!target) {
     
     return;
   }
@@ -213,7 +215,7 @@ TextTrackList::CreateAndDispatchTrackEventRunner(TextTrack* aTrack,
     TrackEvent::Constructor(this, aEventName, eventInit);
 
   
-  rv = thread->Dispatch(do_AddRef(new TrackEventRunner(this, event)),
+  rv = target->Dispatch(do_AddRef(new TrackEventRunner(this, event)),
                         NS_DISPATCH_NORMAL);
 
   
