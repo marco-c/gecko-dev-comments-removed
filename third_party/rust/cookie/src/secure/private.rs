@@ -40,16 +40,15 @@ impl<'a> PrivateJar<'a> {
     
     
     
-    fn unseal(&self, name: &str, value: &str) -> Result<String, &'static str> {
+    fn unseal(&self, value: &str) -> Result<String, &'static str> {
         let mut data = base64::decode(value).map_err(|_| "bad base64 value")?;
         if data.len() <= NONCE_LEN {
             return Err("length of decoded data is <= NONCE_LEN");
         }
 
-        let ad = name.as_bytes();
         let key = OpeningKey::new(ALGO, &self.key).expect("opening key");
         let (nonce, sealed) = data.split_at_mut(NONCE_LEN);
-        let unsealed = open_in_place(&key, nonce, ad, 0, sealed)
+        let unsealed = open_in_place(&key, nonce, &[], 0, sealed)
             .map_err(|_| "invalid key/nonce/value: bad seal")?;
 
         ::std::str::from_utf8(unsealed)
@@ -78,7 +77,7 @@ impl<'a> PrivateJar<'a> {
     pub fn get(&self, name: &str) -> Option<Cookie<'static>> {
         if let Some(cookie_ref) = self.parent.get(name) {
             let mut cookie = cookie_ref.clone();
-            if let Ok(value) = self.unseal(name, cookie.value()) {
+            if let Ok(value) = self.unseal(cookie.value()) {
                 cookie.set_value(value);
                 return Some(cookie);
             }
@@ -120,10 +119,7 @@ impl<'a> PrivateJar<'a> {
             in_out[..cookie_val.len()].copy_from_slice(cookie_val);
 
             
-            let ad = cookie.name().as_bytes();
-
-            
-            seal_in_place(&key, nonce, ad, in_out, overhead).expect("in-place seal")
+            seal_in_place(&key, nonce, &[], in_out, overhead).expect("in-place seal")
         };
 
         
