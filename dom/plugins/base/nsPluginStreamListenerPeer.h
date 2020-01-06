@@ -64,28 +64,16 @@ public:
   NS_DECL_NSICHANNELEVENTSINK
 
   
-  void
-  MakeByteRangeString(NPByteRange* aRangeList, nsACString &string, int32_t *numRequests);
-
-  bool UseExistingPluginCacheFile(nsPluginStreamListenerPeer* psi);
-
-  
   
   nsresult Initialize(nsIURI *aURL,
                       nsNPAPIPluginInstance *aInstance,
                       nsNPAPIPluginStreamListener *aListener);
 
-  nsresult OnFileAvailable(nsIFile* aFile);
-
-  nsresult ServeStreamAsFile(nsIRequest *request, nsISupports *ctxt);
-
   nsNPAPIPluginInstance *GetPluginInstance() { return mPluginInstance; }
 
-  nsresult RequestRead(NPByteRange* rangeList);
   nsresult GetLength(uint32_t* result);
   nsresult GetURL(const char** result);
   nsresult GetLastModified(uint32_t* result);
-  nsresult IsSeekable(bool* result);
   nsresult GetContentType(char** result);
   nsresult GetStreamOffset(int32_t* result);
   nsresult SetStreamOffset(int32_t value);
@@ -128,16 +116,8 @@ public:
       requestsCopy[i]->Resume();
   }
 
-  
-  void OnStreamTypeSet(const int32_t aStreamType);
-
-  enum {
-    STREAM_TYPE_UNKNOWN = UINT16_MAX
-  };
-
 private:
   nsresult SetUpStreamListener(nsIRequest* request, nsIURI* aURL);
-  nsresult SetupPluginCacheFile(nsIChannel* channel);
   nsresult GetInterfaceGlobal(const nsIID& aIID, void** result);
 
   nsCOMPtr<nsIURI> mURL;
@@ -159,23 +139,15 @@ private:
   uint32_t                mLength;
   int32_t                 mStreamType;
 
-  
-  
-  RefPtr<CachedFileHolder> mLocalCachedFileHolder;
-  nsCOMPtr<nsIOutputStream> mFileCacheOutputStream;
-  nsDataHashtable<nsUint32HashKey, uint32_t>* mDataForwardToRequest;
-
   nsCString mContentType;
   bool mUseLocalCache;
   nsCOMPtr<nsIRequest> mRequest;
-  bool mSeekable;
   uint32_t mModified;
   RefPtr<nsNPAPIPluginInstance> mPluginInstance;
   int32_t mStreamOffset;
   bool mStreamComplete;
 
 public:
-  bool                    mAbort;
   int32_t                 mPendingRequests;
   nsWeakPtr               mWeakPtrChannelCallbacks;
   nsWeakPtr               mWeakPtrChannelLoadGroup;

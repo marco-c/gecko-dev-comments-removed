@@ -46,7 +46,6 @@ nsNPAPIPluginStreamListener::nsNPAPIPluginStreamListener(nsNPAPIPluginInstance* 
   , mInst(inst)
   , mStreamBufferSize(0)
   , mStreamBufferByteCount(0)
-  , mStreamType(NP_NORMAL)
   , mStreamState(eStreamStopped)
   , mStreamCleanedUp(false)
   , mCallNotify(notifyData ? true : false)
@@ -114,11 +113,6 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
     mHTTPRedirectCallback->OnRedirectVerifyCallback(NS_ERROR_FAILURE);
     mHTTPRedirectCallback = nullptr;
   }
-
-  
-  
-  if (NP_SEEK == mStreamType && mStreamState == eStreamTypeSet)
-    NS_RELEASE_THIS();
 
   if (mStreamListenerPeer) {
     mStreamListenerPeer->CancelRequests(NS_BINDING_ABORTED);
@@ -212,7 +206,6 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
   NPP npp;
   mInst->GetNPP(&npp);
 
-  bool seekable;
   char* contentType;
   uint16_t streamType = NP_NORMAL;
   NPError error;
@@ -220,7 +213,6 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
   streamPeer->GetURL(&mNPStreamWrapper->mNPStream.url);
   streamPeer->GetLength((uint32_t*)&(mNPStreamWrapper->mNPStream.end));
   streamPeer->GetLastModified((uint32_t*)&(mNPStreamWrapper->mNPStream.lastmodified));
-  streamPeer->IsSeekable(&seekable);
   streamPeer->GetContentType(&contentType);
 
   if (!mResponseHeaders.IsEmpty()) {
@@ -232,66 +224,23 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
 
   NPPAutoPusher nppPusher(npp);
 
-  NS_TRY_SAFE_CALL_RETURN(error, (*pluginFunctions->newstream)(npp, (char*)contentType, &mNPStreamWrapper->mNPStream, seekable, &streamType), mInst,
+  NS_TRY_SAFE_CALL_RETURN(error, (*pluginFunctions->newstream)(npp, (char*)contentType, &mNPStreamWrapper->mNPStream, false, &streamType), mInst,
                           NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
   NPP_PLUGIN_LOG(PLUGIN_LOG_NORMAL,
                  ("NPP NewStream called: this=%p, npp=%p, mime=%s, seek=%d, type=%d, return=%d, url=%s\n",
-                  this, npp, (char *)contentType, seekable, streamType, error, mNPStreamWrapper->mNPStream.url));
+                  this, npp, (char *)contentType, false, streamType, error, mNPStreamWrapper->mNPStream.url));
 
   if (error != NPERR_NO_ERROR)
     return NS_ERROR_FAILURE;
 
   mStreamState = eNewStreamCalled;
 
-  if (!SetStreamType(streamType, false)) {
+  if (streamType != NP_NORMAL) {
     return NS_ERROR_FAILURE;
   }
 
   return NS_OK;
-}
-
-bool
-nsNPAPIPluginStreamListener::SetStreamType(uint16_t aType, bool aNeedsResume)
-{
-  switch(aType)
-  {
-    case NP_NORMAL:
-      mStreamType = NP_NORMAL;
-      break;
-    case NP_ASFILEONLY:
-      mStreamType = NP_ASFILEONLY;
-      break;
-    case NP_ASFILE:
-      mStreamType = NP_ASFILE;
-      break;
-    case NP_SEEK:
-      mStreamType = NP_SEEK;
-      
-      
-      
-      
-      
-      NS_ADDREF_THIS();
-      break;
-    case nsPluginStreamListenerPeer::STREAM_TYPE_UNKNOWN:
-      MOZ_ASSERT(!aNeedsResume);
-      mStreamType = nsPluginStreamListenerPeer::STREAM_TYPE_UNKNOWN;
-      SuspendRequest();
-      mStreamStopMode = eDoDeferredStop;
-      
-      return true;
-    default:
-      return false;
-  }
-  mStreamState = eStreamTypeSet;
-  if (aNeedsResume) {
-    if (mStreamListenerPeer) {
-      mStreamListenerPeer->OnStreamTypeSet(mStreamType);
-    }
-    ResumeRequest();
-  }
-  return true;
 }
 
 void
@@ -709,25 +658,7 @@ nsNPAPIPluginStreamListener::OnStopBinding(nsPluginStreamListenerPeer* streamPee
 
   
   
-  
-  
-  
-  
-  
-  
-  if (mStreamType != NP_SEEK ||
-      (NP_SEEK == mStreamType && NS_BINDING_ABORTED == status)) {
-    return CleanUpStream(reason);
-  }
-
-  return NS_OK;
-}
-
-nsresult
-nsNPAPIPluginStreamListener::GetStreamType(int32_t *result)
-{
-  *result = mStreamType;
-  return NS_OK;
+  return CleanUpStream(reason);
 }
 
 bool
