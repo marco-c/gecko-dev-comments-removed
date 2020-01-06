@@ -55,15 +55,10 @@ struct SeekRejectValue
   MediaResult mError;
 };
 
-class MetadataHolder
+struct MetadataHolder
 {
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MetadataHolder)
-  MediaInfo mInfo;
-  nsAutoPtr<MetadataTags> mTags;
-
-private:
-  virtual ~MetadataHolder() { }
+  UniquePtr<MediaInfo> mInfo;
+  UniquePtr<MetadataTags> mTags;
 };
 
 
@@ -82,8 +77,7 @@ class MediaDecoderReader
 public:
   using TrackSet = EnumSet<TrackInfo::TrackType>;
 
-  using MetadataPromise =
-    MozPromise<RefPtr<MetadataHolder>, MediaResult, IsExclusive>;
+  using MetadataPromise = MozPromise<MetadataHolder, MediaResult, IsExclusive>;
 
   template <typename Type>
   using DataPromise = MozPromise<RefPtr<Type>, MediaResult, IsExclusive>;

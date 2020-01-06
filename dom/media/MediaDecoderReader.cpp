@@ -217,23 +217,26 @@ MediaDecoderReader::AsyncReadMetadata()
   DECODER_LOG("MediaDecoderReader::AsyncReadMetadata");
 
   
-  RefPtr<MetadataHolder> metadata = new MetadataHolder();
-  nsresult rv = ReadMetadata(&metadata->mInfo, getter_Transfers(metadata->mTags));
-  metadata->mInfo.AssertValid();
+  MetadataHolder metadata;
+  metadata.mInfo = MakeUnique<MediaInfo>();
+  MetadataTags* tags = nullptr;
+  nsresult rv = ReadMetadata(metadata.mInfo.get(), &tags);
+  metadata.mTags.reset(tags);
+  metadata.mInfo->AssertValid();
 
   
   UpdateBuffered();
 
   
   
-  if (NS_FAILED(rv) || !metadata->mInfo.HasValidMedia()) {
+  if (NS_FAILED(rv) || !metadata.mInfo->HasValidMedia()) {
     DECODER_WARN("ReadMetadata failed, rv=%" PRIx32 " HasValidMedia=%d",
-                 static_cast<uint32_t>(rv), metadata->mInfo.HasValidMedia());
+                 static_cast<uint32_t>(rv), metadata.mInfo->HasValidMedia());
     return MetadataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_METADATA_ERR, __func__);
   }
 
   
-  return MetadataPromise::CreateAndResolve(metadata, __func__);
+  return MetadataPromise::CreateAndResolve(Move(metadata), __func__);
 }
 
 class ReRequestVideoWithSkipTask : public Runnable
