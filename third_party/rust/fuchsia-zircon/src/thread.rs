@@ -1,0 +1,14 @@
+
+
+
+
+
+
+use {AsHandleRef, HandleBased, Handle, HandleRef};
+
+
+
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Thread(Handle);
+impl_handle_based!(Thread);

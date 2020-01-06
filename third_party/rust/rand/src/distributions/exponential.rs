@@ -34,7 +34,7 @@ use distributions::{ziggurat, ziggurat_tables, Sample, IndependentSample};
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Exp1(pub f64);
 
 
@@ -71,7 +71,7 @@ impl Rand for Exp1 {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Exp {
     
     lambda_inverse: f64

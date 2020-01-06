@@ -26,7 +26,7 @@ const CHACHA_ROUNDS: u32 = 20;
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct ChaChaRng {
     buffer:  [w32; STATE_WORDS], 
     state:   [w32; STATE_WORDS], 

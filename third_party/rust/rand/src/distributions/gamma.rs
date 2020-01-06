@@ -49,12 +49,12 @@ use super::{IndependentSample, Sample, Exp};
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Gamma {
     repr: GammaRepr,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum GammaRepr {
     Large(GammaLargeShape),
     One(Exp),
@@ -75,7 +75,7 @@ enum GammaRepr {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct GammaSmallShape {
     inv_shape: f64,
     large_shape: GammaLargeShape
@@ -85,7 +85,7 @@ struct GammaSmallShape {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct GammaLargeShape {
     scale: f64,
     c: f64,
@@ -102,10 +102,12 @@ impl Gamma {
         assert!(shape > 0.0, "Gamma::new called with shape <= 0");
         assert!(scale > 0.0, "Gamma::new called with scale <= 0");
 
-        let repr = match shape {
-            1.0         => One(Exp::new(1.0 / scale)),
-            0.0 ... 1.0 => Small(GammaSmallShape::new_raw(shape, scale)),
-            _           => Large(GammaLargeShape::new_raw(shape, scale))
+        let repr = if shape == 1.0 {
+            One(Exp::new(1.0 / scale))
+        } else if shape < 1.0 {
+            Small(GammaSmallShape::new_raw(shape, scale))
+        } else {
+            Large(GammaLargeShape::new_raw(shape, scale))
         };
         Gamma { repr: repr }
     }
@@ -195,12 +197,12 @@ impl IndependentSample<f64> for GammaLargeShape {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ChiSquared {
     repr: ChiSquaredRepr,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum ChiSquaredRepr {
     
     
@@ -253,7 +255,7 @@ impl IndependentSample<f64> for ChiSquared {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct FisherF {
     numer: ChiSquared,
     denom: ChiSquared,
@@ -297,7 +299,7 @@ impl IndependentSample<f64> for FisherF {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct StudentT {
     chi: ChiSquared,
     dof: f64

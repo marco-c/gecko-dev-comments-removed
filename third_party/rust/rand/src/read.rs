@@ -30,6 +30,7 @@ use Rng;
 
 
 
+#[derive(Debug)]
 pub struct ReadRng<R> {
     reader: R
 }

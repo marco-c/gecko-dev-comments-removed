@@ -53,6 +53,7 @@ pub trait IndependentSample<Support>: Sample<Support> {
 
 
 
+#[derive(Debug)]
 pub struct RandSample<Sup> {
     _marker: marker::PhantomData<fn() -> Sup>,
 }
@@ -79,8 +80,7 @@ impl<Sup> RandSample<Sup> {
 }
 
 
-#[derive(Copy)]
-#[derive(Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Weighted<T> {
     
     pub weight: u32,
@@ -113,6 +113,7 @@ pub struct Weighted<T> {
 
 
 
+#[derive(Debug)]
 pub struct WeightedChoice<'a, T:'a> {
     items: &'a mut [Weighted<T>],
     weight_range: Range<u32>

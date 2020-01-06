@@ -33,7 +33,7 @@ use distributions::{ziggurat, ziggurat_tables, Sample, IndependentSample};
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct StandardNormal(pub f64);
 
 impl Rand for StandardNormal {
@@ -88,7 +88,7 @@ impl Rand for StandardNormal {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Normal {
     mean: f64,
     std_dev: f64,
@@ -136,7 +136,7 @@ impl IndependentSample<f64> for Normal {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct LogNormal {
     norm: Normal
 }

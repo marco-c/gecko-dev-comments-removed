@@ -239,9 +239,14 @@
 
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://doc.rust-lang.org/rand/")]
+       html_root_url = "https://docs.rs/rand/0.3")]
+
+#![deny(missing_debug_implementations)]
+
+#![cfg_attr(feature = "i128_support", feature(i128_type))]
 
 #[cfg(test)] #[macro_use] extern crate log;
+
 
 use std::cell::RefCell;
 use std::marker;
@@ -275,6 +280,38 @@ pub mod read;
 type w64 = w<u64>;
 #[allow(bad_style)]
 type w32 = w<u32>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 pub trait Rand : Sized {
@@ -543,6 +580,9 @@ pub trait Rng {
     
     
     
+    
+    
+    
     fn shuffle<T>(&mut self, values: &mut [T]) where Self: Sized {
         let mut i = values.len();
         while i >= 2 {
@@ -604,6 +644,7 @@ impl<R: ?Sized> Rng for Box<R> where R: Rng {
 
 
 
+#[derive(Debug)]
 pub struct Generator<'a, T, R:'a> {
     rng: &'a mut R,
     _marker: marker::PhantomData<fn() -> T>,
@@ -623,6 +664,7 @@ impl<'a, T: Rand, R: Rng> Iterator for Generator<'a, T, R> {
 
 
 
+#[derive(Debug)]
 pub struct AsciiGenerator<'a, R:'a> {
     rng: &'a mut R,
 }
@@ -682,7 +724,7 @@ pub trait SeedableRng<Seed>: Rng {
 
 
 #[allow(missing_copy_implementations)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct XorShiftRng {
     x: w32,
     y: w32,
@@ -772,6 +814,7 @@ impl Rand for XorShiftRng {
 
 
 
+#[derive(Debug)]
 pub struct Open01<F>(pub F);
 
 
@@ -789,11 +832,12 @@ pub struct Open01<F>(pub F);
 
 
 
+#[derive(Debug)]
 pub struct Closed01<F>(pub F);
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct StdRng {
     rng: IsaacWordRng,
 }
@@ -856,6 +900,7 @@ pub fn weak_rng() -> XorShiftRng {
 }
 
 
+#[derive(Debug)]
 struct ThreadRngReseeder;
 
 impl reseeding::Reseeder<StdRng> for ThreadRngReseeder {
@@ -870,7 +915,7 @@ const THREAD_RNG_RESEED_THRESHOLD: u64 = 32_768;
 type ThreadRngInner = reseeding::ReseedingRng<StdRng, ThreadRngReseeder>;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ThreadRng {
     rng: Rc<RefCell<ThreadRngInner>>,
 }
@@ -963,6 +1008,7 @@ impl Rng for ThreadRng {
 pub fn random<T: Rand>() -> T {
     thread_rng().gen()
 }
+
 
 
 

@@ -21,6 +21,7 @@ const DEFAULT_GENERATION_THRESHOLD: u64 = 32 * 1024;
 
 
 
+#[derive(Debug)]
 pub struct ReseedingRng<R, Rsdr> {
     rng: R,
     generation_threshold: u64,
@@ -132,7 +133,7 @@ pub trait Reseeder<R> {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ReseedWithDefault;
 
 impl<R: Rng + Default> Reseeder<R> for ReseedWithDefault {
