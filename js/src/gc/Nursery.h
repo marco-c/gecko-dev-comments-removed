@@ -40,11 +40,11 @@
     _(ClearNewObjectCache,      "clrNOC")                                     \
     _(CollectToFP,              "collct")                                     \
     _(ObjectsTenuredCallback,   "tenCB")                                      \
-    _(SweepArrayBufferViewList, "swpABO")                                     \
+    _(Sweep,                    "sweep")                                      \
     _(UpdateJitActivations,     "updtIn")                                     \
     _(FreeMallocedBuffers,      "frSlts")                                     \
     _(ClearStoreBuffer,         "clrSB")                                      \
-    _(Sweep,                    "sweep")                                      \
+    _(ClearNursery,             "clear")                                      \
     _(Resize,                   "resize")                                     \
     _(Pretenure,                "pretnr")
 
@@ -477,7 +477,13 @@ class Nursery
 
 
 
-    void sweep();
+    void sweep(JSTracer* trc);
+
+    
+
+
+
+    void clear();
 
     void sweepDictionaryModeObjects();
 
