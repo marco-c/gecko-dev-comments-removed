@@ -7,6 +7,8 @@
 #ifndef mozilla_layout_printing_DrawEventRecorder_h
 #define mozilla_layout_printing_DrawEventRecorder_h
 
+#include <memory>
+
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/gfx/RecordingTypes.h"
 #include "prio.h"
@@ -15,18 +17,28 @@ namespace mozilla {
 namespace layout {
 
 class PRFileDescStream : public mozilla::gfx::EventStream {
+  
+  
+  
+  static const size_t kBufferSize = 1024;
 public:
-  PRFileDescStream() : mFd(nullptr), mGood(true) {}
+  PRFileDescStream() : mFd(nullptr), mBuffer(nullptr), mBufferPos(0),
+                       mGood(true) {}
 
   void OpenFD(PRFileDesc* aFd) {
     MOZ_ASSERT(!IsOpen());
     mFd = aFd;
     mGood = true;
+    mBuffer.reset(new uint8_t[kBufferSize]);
+    mBufferPos = 0;
   }
 
   void Close() {
+    Flush();
     PR_Close(mFd);
     mFd = nullptr;
+    mBuffer.reset();
+    mBufferPos = 0;
   }
 
   bool IsOpen() {
@@ -36,21 +48,44 @@ public:
   void Flush() {
     
     
+    if (IsOpen() && mBufferPos > 0) {
+      PR_Write(mFd, static_cast<const void*>(mBuffer.get()), mBufferPos);
+      mBufferPos = 0;
+    }
   }
 
   void Seek(PRInt32 aOffset, PRSeekWhence aWhence) {
+    Flush();
     PR_Seek(mFd, aOffset, aWhence);
   }
 
   void write(const char* aData, size_t aSize) {
     
-    
     if (IsOpen()) {
-      PR_Write(mFd, static_cast<const void*>(aData), aSize);
+      
+      
+      if (aSize > kBufferSize) {
+        Flush();
+        PR_Write(mFd, static_cast<const void*>(aData), aSize);
+      
+      
+      
+      } else if (aSize > AvailableBufferSpace()) {
+        size_t length = AvailableBufferSpace();
+        WriteToBuffer(aData, length);
+        Flush();
+
+        MOZ_ASSERT(aSize <= kBufferSize);
+        WriteToBuffer(aData + length, aSize - length);
+      
+      } else {
+        WriteToBuffer(aData, aSize);
+      }
     }
   }
 
   void read(char* aOut, size_t aSize) {
+    Flush();
     PRInt32 res = PR_Read(mFd, static_cast<void*>(aOut), aSize);
     mGood = res >= 0 && ((size_t)res == aSize);
   }
@@ -60,7 +95,19 @@ public:
   }
 
 private:
+  size_t AvailableBufferSpace() {
+    return kBufferSize - mBufferPos;
+  }
+
+  void WriteToBuffer(const char* aData, size_t aSize) {
+    MOZ_ASSERT(aSize <= AvailableBufferSpace());
+    memcpy(mBuffer.get() + mBufferPos, aData, aSize);
+    mBufferPos += aSize;
+  }
+
   PRFileDesc* mFd;
+  std::unique_ptr<uint8_t[]> mBuffer;
+  size_t mBufferPos;
   bool mGood;
 };
 
