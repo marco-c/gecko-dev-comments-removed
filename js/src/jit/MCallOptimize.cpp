@@ -878,7 +878,7 @@ IonBuilder::inlineArrayPush(CallInfo& callInfo)
 
         
         
-        callInfo.pushFormals(current);
+        MOZ_TRY(callInfo.pushFormals(this, current));
     }
 
     MInstruction* ins = nullptr;
