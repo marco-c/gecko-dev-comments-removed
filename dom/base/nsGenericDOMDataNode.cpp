@@ -877,6 +877,9 @@ nsGenericDOMDataNode::SplitData(uint32_t aOffset, nsIContent** aReturn,
   if (!newContent) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
+  
+  
+  
   newContent->SetText(cutText, true); 
 
   CharacterDataChangeInfo::Details details = {
