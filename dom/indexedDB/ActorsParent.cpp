@@ -7631,6 +7631,7 @@ protected:
   virtual nsresult
   DispatchToWorkThread() = 0;
 
+  
   virtual void
   SendResults() = 0;
 
@@ -21579,6 +21580,11 @@ FactoryOp::NoteDatabaseBlocked(Database* aDatabase)
 
 NS_IMPL_ISUPPORTS_INHERITED0(FactoryOp, DatabaseOperationBase)
 
+
+
+
+
+
 NS_IMETHODIMP
 FactoryOp::Run()
 {
@@ -21663,8 +21669,11 @@ FactoryOp::DirectoryLockAcquired(DirectoryLock* aLock)
       mResultCode = rv;
     }
 
+    
+    
+
     mState = State::SendingResults;
-    SendResults();
+    MOZ_ALWAYS_SUCCEEDS(Run());
 
     return;
   }
@@ -21682,8 +21691,11 @@ FactoryOp::DirectoryLockFailed()
     mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
   }
 
+  
+  
+
   mState = State::SendingResults;
-  SendResults();
+  MOZ_ALWAYS_SUCCEEDS(Run());
 }
 
 void
@@ -22475,12 +22487,18 @@ OpenDatabaseOp::NoteDatabaseClosed(Database* aDatabase)
     rv = NS_OK;
   }
 
+  
+  
+  RefPtr<OpenDatabaseOp> kungFuDeathGrip;
+
   if (mMaybeBlockedDatabases.RemoveElement(aDatabase) &&
       mMaybeBlockedDatabases.IsEmpty()) {
     if (actorDestroyed) {
       DatabaseActorInfo* info;
       MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(mDatabaseId, &info));
       MOZ_ASSERT(info->mWaitingFactoryOp == this);
+      kungFuDeathGrip =
+        static_cast<OpenDatabaseOp*>(info->mWaitingFactoryOp.get());
       info->mWaitingFactoryOp = nullptr;
     } else {
       WaitForTransactions();
@@ -22491,6 +22509,9 @@ OpenDatabaseOp::NoteDatabaseClosed(Database* aDatabase)
     if (NS_SUCCEEDED(mResultCode)) {
       mResultCode = rv;
     }
+
+    
+    
 
     mState = State::SendingResults;
     MOZ_ALWAYS_SUCCEEDS(Run());
@@ -22611,17 +22632,15 @@ OpenDatabaseOp::SendResults()
 
   mMaybeBlockedDatabases.Clear();
 
-  
-  
-  RefPtr<OpenDatabaseOp> kungFuDeathGrip;
-
   DatabaseActorInfo* info;
   if (gLiveDatabaseHashtable &&
       gLiveDatabaseHashtable->Get(mDatabaseId, &info) &&
       info->mWaitingFactoryOp) {
     MOZ_ASSERT(info->mWaitingFactoryOp == this);
-    kungFuDeathGrip =
-      static_cast<OpenDatabaseOp*>(info->mWaitingFactoryOp.get());
+    
+    
+    
+    
     info->mWaitingFactoryOp = nullptr;
   }
 
@@ -23295,12 +23314,18 @@ DeleteDatabaseOp::NoteDatabaseClosed(Database* aDatabase)
     rv = NS_OK;
   }
 
+  
+  
+  RefPtr<OpenDatabaseOp> kungFuDeathGrip;
+
   if (mMaybeBlockedDatabases.RemoveElement(aDatabase) &&
       mMaybeBlockedDatabases.IsEmpty()) {
     if (actorDestroyed) {
       DatabaseActorInfo* info;
       MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(mDatabaseId, &info));
       MOZ_ASSERT(info->mWaitingFactoryOp == this);
+      kungFuDeathGrip =
+        static_cast<OpenDatabaseOp*>(info->mWaitingFactoryOp.get());
       info->mWaitingFactoryOp = nullptr;
     } else {
       WaitForTransactions();
@@ -23311,6 +23336,9 @@ DeleteDatabaseOp::NoteDatabaseClosed(Database* aDatabase)
     if (NS_SUCCEEDED(mResultCode)) {
       mResultCode = rv;
     }
+
+    
+    
 
     mState = State::SendingResults;
     MOZ_ALWAYS_SUCCEEDS(Run());
@@ -23637,6 +23665,8 @@ VersionChangeOp::RunOnOwningThread()
     }
   }
 
+  
+
   deleteOp->mState = State::SendingResults;
   MOZ_ALWAYS_SUCCEEDS(deleteOp->Run());
 
@@ -23851,6 +23881,11 @@ TransactionDatabaseOperationBase::NoteContinueReceived()
 
   mInternalState = InternalState::SendingResults;
 
+  
+  
+  
+  RefPtr<TransactionDatabaseOperationBase> kungFuDeathGrip = this;
+
   Unused << this->Run();
 }
 
@@ -23896,11 +23931,6 @@ TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
              mInternalState == InternalState::SendingResults);
   MOZ_ASSERT(mTransaction);
 
-  
-  
-  
-  RefPtr<TransactionDatabaseOperationBase> kungFuDeathGrip;
-
   if (NS_WARN_IF(IsActorDestroyed())) {
     
     if (NS_SUCCEEDED(mResultCode)) {
@@ -23908,10 +23938,6 @@ TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
       mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
   } else {
-    if (!aSendPreprocessInfo) {
-      kungFuDeathGrip = this;
-    }
-
     if (mTransaction->IsInvalidated() || mTransaction->IsAborted()) {
       
       
