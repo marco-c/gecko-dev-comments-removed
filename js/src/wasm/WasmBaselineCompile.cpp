@@ -7652,7 +7652,7 @@ js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo
                                    const FuncCompileInputVector& inputs, CompiledCode* code,
                                    UniqueChars* error)
 {
-    MOZ_ASSERT(env.tier() == Tier::Baseline);
+    MOZ_ASSERT(env.tier == Tier::Baseline);
     MOZ_ASSERT(env.kind == ModuleKind::Wasm);
 
     
@@ -7680,7 +7680,7 @@ js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo
 
         
 
-        BaseCompiler f(env, d, func, locals, env.debugEnabled(), &alloc, &masm, env.mode());
+        BaseCompiler f(env, d, func, locals, env.debugEnabled(), &alloc, &masm, env.mode);
         if (!f.init())
             return false;
 

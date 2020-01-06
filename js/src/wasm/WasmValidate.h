@@ -49,11 +49,8 @@ struct ModuleEnvironment
     
     const DebugEnabled        debug;
     const ModuleKind          kind;
-
-    
-    
-    CompileMode               mode_;
-    Tier                      tier_;
+    const CompileMode         mode;
+    const Tier                tier;
 
     
     
@@ -77,35 +74,18 @@ struct ModuleEnvironment
     NameInBytecodeVector      funcNames;
     CustomSectionVector       customSections;
 
-    static const CompileMode UnknownMode = (CompileMode)-1;
-    static const Tier        UnknownTier = (Tier)-1;
-
     explicit ModuleEnvironment(CompileMode mode = CompileMode::Once,
                                Tier tier = Tier::Ion,
                                DebugEnabled debug = DebugEnabled::False,
                                ModuleKind kind = ModuleKind::Wasm)
       : debug(debug),
         kind(kind),
-        mode_(mode),
-        tier_(tier),
+        mode(mode),
+        tier(tier),
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0)
     {}
 
-    CompileMode mode() const {
-        MOZ_ASSERT(mode_ != UnknownMode);
-        return mode_;
-    }
-    Tier tier() const {
-        MOZ_ASSERT(tier_ != UnknownTier);
-        return tier_;
-    }
-    void setModeAndTier(CompileMode mode, Tier tier) {
-        MOZ_ASSERT(mode_ == UnknownMode);
-        MOZ_ASSERT(tier_ == UnknownTier);
-        mode_ = mode;
-        tier_ = tier;
-    }
     size_t numTables() const {
         return tables.length();
     }
@@ -565,6 +545,8 @@ class Decoder
 
     
 
+    MOZ_MUST_USE bool readSectionHeader(uint8_t* id, SectionRange* range);
+
     MOZ_MUST_USE bool startSection(SectionId id,
                                    ModuleEnvironment* env,
                                    MaybeSectionRange* range,
@@ -685,6 +667,16 @@ EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
 
 MOZ_MUST_USE bool
 DecodeLocalEntries(Decoder& d, ModuleKind kind, ValTypeVector* locals);
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool
+StartsCodeSection(const uint8_t* begin, const uint8_t* end, SectionRange* range);
 
 
 
