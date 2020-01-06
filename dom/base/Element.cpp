@@ -663,7 +663,7 @@ Element::GetStyledFrame()
 }
 
 nsIScrollableFrame*
-Element::GetScrollFrame(nsIFrame **aStyledFrame, bool aFlushLayout)
+Element::GetScrollFrame(nsIFrame **aStyledFrame, FlushType aFlushType)
 {
   
   if (IsSVGElement()) {
@@ -674,8 +674,7 @@ Element::GetScrollFrame(nsIFrame **aStyledFrame, bool aFlushLayout)
   }
 
   
-  nsIFrame* frame =
-    GetPrimaryFrame(aFlushLayout ? FlushType::Layout : FlushType::None);
+  nsIFrame* frame = GetPrimaryFrame(aFlushType);
   if (frame) {
     frame = nsLayoutUtils::GetStyleFrame(frame);
   }
@@ -895,7 +894,7 @@ Element::SetScrollLeft(int32_t aScrollLeft)
 bool
 Element::ScrollByNoFlush(int32_t aDx, int32_t aDy)
 {
-  nsIScrollableFrame* sf = GetScrollFrame(nullptr, false);
+  nsIScrollableFrame* sf = GetScrollFrame(nullptr, FlushType::None);
   if (!sf) {
     return false;
   }
@@ -917,7 +916,7 @@ Element::ScrollByNoFlush(int32_t aDx, int32_t aDy)
 void
 Element::MozScrollSnap()
 {
-  nsIScrollableFrame* sf = GetScrollFrame(nullptr, false);
+  nsIScrollableFrame* sf = GetScrollFrame(nullptr, FlushType::None);
   if (sf) {
     sf->ScrollSnap();
   }
