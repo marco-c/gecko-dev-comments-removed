@@ -4005,6 +4005,12 @@ pref("mousewheel.emulate_at_wm_scroll", false);
 
 
 
+
+
+pref("mousewheel.debug.make_window_under_cursor_foreground", false);
+
+
+
 pref("ui.trackpoint_hack.enabled", -1);
 
 

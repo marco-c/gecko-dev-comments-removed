@@ -448,6 +448,14 @@ MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindowBase* aWidget,
 
     
     
+    if (mUserPrefs.ShouldEmulateToMakeWindowUnderCursorForeground() &&
+        (aMessage == WM_MOUSEWHEEL || aMessage == WM_MOUSEHWHEEL) &&
+        ::GetForegroundWindow() != destWindow->GetWindowHandle()) {
+      ::SetForegroundWindow(destWindow->GetWindowHandle());
+    }
+
+    
+    
     
     
     
@@ -1121,6 +1129,9 @@ MouseScrollHandler::UserPrefs::Init()
   mForceEnableSystemSettingCache =
     Preferences::GetBool("mousewheel.system_settings_cache.force_enabled",
                          false);
+  mEmulateToMakeWindowUnderCursorForeground =
+    Preferences::GetBool("mousewheel.debug.make_window_under_cursor_foreground",
+                         false);
   mOverriddenVerticalScrollAmount =
     Preferences::GetInt("mousewheel.windows.vertical_amount_override", -1);
   mOverriddenHorizontalScrollAmount =
@@ -1134,12 +1145,14 @@ MouseScrollHandler::UserPrefs::Init()
        "mScrollMessageHandledAsWheelMessage=%s, "
        "mEnableSystemSettingCache=%s, "
        "mForceEnableSystemSettingCache=%s, "
+       "mEmulateToMakeWindowUnderCursorForeground=%s, "
        "mOverriddenVerticalScrollAmount=%d, "
        "mOverriddenHorizontalScrollAmount=%d, "
        "mMouseScrollTransactionTimeout=%d",
      GetBoolName(mScrollMessageHandledAsWheelMessage),
      GetBoolName(mEnableSystemSettingCache),
      GetBoolName(mForceEnableSystemSettingCache),
+     GetBoolName(mEmulateToMakeWindowUnderCursorForeground),
      mOverriddenVerticalScrollAmount, mOverriddenHorizontalScrollAmount,
      mMouseScrollTransactionTimeout));
 }
