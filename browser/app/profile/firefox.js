@@ -1695,10 +1695,12 @@ pref("browser.crashReports.unsubmittedCheck.chancesUntilSuppress", 4);
 pref("browser.crashReports.unsubmittedCheck.autoSubmit", false);
 
 
+
+
 #ifdef NIGHTLY_BUILD
-pref("extensions.formautofill.experimental", true);
+pref("extensions.formautofill.available", "on");
 #else
-pref("extensions.formautofill.experimental", false);
+pref("extensions.formautofill.available", "detect");
 #endif
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.firstTimeUse", true);
