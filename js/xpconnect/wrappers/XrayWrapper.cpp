@@ -1241,30 +1241,12 @@ XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
 }
 
 bool
-XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject src)
+XrayTraits::cloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcChain)
 {
     MOZ_ASSERT(js::IsObjectInContextCompartment(dst, cx));
     MOZ_ASSERT(getExpandoChain(dst) == nullptr);
 
-    RootedObject oldHead(cx, getExpandoChain(src));
-
-#ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    if (oldHead) {
-        nsISupports* identity = mozilla::dom::UnwrapDOMObjectToISupports(src);
-        if (identity) {
-            nsWrapperCache* cache = nullptr;
-            CallQueryInterface(identity, &cache);
-            MOZ_ASSERT_IF(cache, cache->PreservingWrapper());
-        }
-    }
-#endif
-
+    RootedObject oldHead(cx, srcChain);
     while (oldHead) {
         RootedObject exclusive(cx, JS_GetReservedSlot(oldHead,
                                                       JSSLOT_EXPANDO_EXCLUSIVE_GLOBAL)
@@ -1318,11 +1300,14 @@ XrayTraits::getExpandoClass(JSContext* cx, HandleObject target) const
 }
 
 namespace XrayUtils {
-bool CloneExpandoChain(JSContext* cx, JSObject* dstArg, JSObject* srcArg)
+JSObject* GetExpandoChain(HandleObject target)
 {
-    RootedObject dst(cx, dstArg);
-    RootedObject src(cx, srcArg);
-    return GetXrayTraits(src)->cloneExpandoChain(cx, dst, src);
+    return GetXrayTraits(target)->getExpandoChain(target);
+}
+
+bool CloneExpandoChain(JSContext* cx, HandleObject dst, HandleObject srcChain)
+{
+    return GetXrayTraits(dst)->cloneExpandoChain(cx, dst, srcChain);
 }
 } 
 

@@ -2261,17 +2261,8 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
 
   
   
-
   
-  
-  
-  
-  
-  
-  if (!xpc::XrayUtils::CloneExpandoChain(aCx, newobj, aObj)) {
-    aError.StealExceptionFromJSContext(aCx);
-    return;
-  }
+  JS::Rooted<JSObject*> expandoChain(aCx, xpc::XrayUtils::GetExpandoChain(aObj));
 
   
   
@@ -2285,6 +2276,14 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
 
   aObj = xpc::TransplantObject(aCx, aObj, newobj);
   if (!aObj) {
+    MOZ_CRASH();
+  }
+
+  
+  if (!xpc::XrayUtils::CloneExpandoChain(aCx, aObj, expandoChain)) {
+    
+    
+    
     MOZ_CRASH();
   }
 
