@@ -94,7 +94,7 @@ const uint32_t kMaximumStringValueLength = 50;
 
 
 
-const uint32_t kMaximumGroupNameLength = 40;
+const uint32_t kMaximumCategoryNameLength = 40;
 const uint32_t kMaximumScalarNameLength = 40;
 const uint32_t kScalarCount =
   static_cast<uint32_t>(mozilla::Telemetry::ScalarID::ScalarCount);
@@ -2280,16 +2280,16 @@ TelemetryScalar::CreateKeyedSnapshots(unsigned int aDataset, bool aClearScalars,
 }
 
 nsresult
-TelemetryScalar::RegisterScalars(const nsACString& aGroupName,
+TelemetryScalar::RegisterScalars(const nsACString& aCategoryName,
                                  JS::Handle<JS::Value> aScalarData,
                                  JSContext* cx)
 {
   MOZ_ASSERT(XRE_IsParentProcess(),
              "Dynamic scalars should only be created in the parent process.");
 
-  if (!IsValidIdentifierString(aGroupName, kMaximumGroupNameLength, true, false)) {
-    JS_ReportErrorASCII(cx, "Invalid group name %s.",
-                        PromiseFlatCString(aGroupName).get());
+  if (!IsValidIdentifierString(aCategoryName, kMaximumCategoryNameLength, true, false)) {
+    JS_ReportErrorASCII(cx, "Invalid category name %s.",
+                        PromiseFlatCString(aCategoryName).get());
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -2324,7 +2324,7 @@ TelemetryScalar::RegisterScalars(const nsACString& aGroupName,
 
     
     nsPrintfCString fullName("%s.%s",
-                             PromiseFlatCString(aGroupName).get(),
+                             PromiseFlatCString(aCategoryName).get(),
                              NS_ConvertUTF16toUTF8(scalarName).get());
 
     JS::RootedValue value(cx);
