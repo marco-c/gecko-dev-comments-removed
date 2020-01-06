@@ -595,14 +595,27 @@ impl<'a, 'b: 'a, E> TreeStyleInvalidator<'a, 'b, E>
                 matched = true;
 
                 if matches!(next_combinator, Combinator::PseudoElement) {
+                    
+                    
+                    
                     let pseudo_selector =
                         invalidation.selector
                             .iter_raw_parse_order_from(next_combinator_offset - 1)
+                            .skip_while(|c| matches!(**c, Component::NonTSPseudoClass(..)))
                             .next()
                             .unwrap();
+
                     let pseudo = match *pseudo_selector {
                         Component::PseudoElement(ref pseudo) => pseudo,
-                        _ => unreachable!("Someone seriously messed up selector parsing"),
+                        _ => {
+                            unreachable!(
+                                "Someone seriously messed up selector parsing: \
+                                {:?} at offset {:?}: {:?}",
+                                invalidation.selector,
+                                next_combinator_offset,
+                                pseudo_selector,
+                            )
+                        }
                     };
 
                     
