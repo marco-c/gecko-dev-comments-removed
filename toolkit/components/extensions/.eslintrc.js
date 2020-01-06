@@ -56,7 +56,7 @@ module.exports = {
     "curly": ["error", "all"],
 
     
-    "indent": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
+    "indent-legacy": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
 
     
     "new-parens": "error",

@@ -16,4 +16,13 @@ module.exports = {
   "settings": {
     "html/xml-extensions": [ ".xhtml" ]
   },
+
+  "overrides": [{
+    
+    
+    "files": "**/*.*html",
+    "rules": {
+      "eol-last": "off",
+    }
+  }]
 };

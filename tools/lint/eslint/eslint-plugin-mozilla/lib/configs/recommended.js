@@ -363,7 +363,11 @@ module.exports = {
     "space-before-blocks": "error",
 
     
-    "space-before-function-paren": ["error", "never"],
+    "space-before-function-paren": ["error", {
+      "anonymous": "never",
+      "asyncArrow": "always",
+      "named": "never"
+    }],
 
     
     
