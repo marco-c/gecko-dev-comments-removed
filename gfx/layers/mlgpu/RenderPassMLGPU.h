@@ -314,12 +314,13 @@ protected:
   
   
   
+  template <typename RegionType>
   bool AddItems(Txn& aTxn,
                 const Info& aInfo,
-                const nsIntRegion& aDrawRegion)
+                const RegionType& aDrawRegion)
   {
     for (auto iter = aDrawRegion.RectIter(); !iter.Done(); iter.Next()) {
-      gfx::Rect drawRect = gfx::Rect(iter.Get());
+      gfx::Rect drawRect = gfx::Rect(iter.Get().ToUnknownRect());
       if (!AddItem(aTxn, aInfo, drawRect)) {
         return false;
       }

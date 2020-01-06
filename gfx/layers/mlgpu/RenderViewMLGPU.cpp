@@ -135,7 +135,7 @@ RenderViewMLGPU::RenderAfterBackdropCopy()
   
   
   
-  mInvalidBounds = mContainer->GetShadowVisibleRegion().GetBounds().ToUnknownRect() -
+  mInvalidBounds = mContainer->GetRenderRegion().GetBounds().ToUnknownRect() -
                    GetTargetOffset();
 
   ExecuteRendering();
@@ -215,8 +215,8 @@ RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem)
     
     
     
-    LayerIntRegion region = Move(aItem.layer->GetShadowVisibleRegion());
-    aItem.layer->SetRegionToRender(Move(region));
+    LayerIntRegion region = aItem.layer->GetShadowVisibleRegion();
+    aItem.layer->SetRenderRegion(Move(region));
 
     AL_LOG("RenderView %p simple occlusion test, bounds=%s, translation?=%d\n",
       this,
@@ -238,7 +238,7 @@ RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem)
   IntRect clip = aItem.layer->GetComputedClipRect().ToUnknownRect();
   AL_LOG("  clip=%s\n", Stringify(translation).c_str());
 
-  LayerIntRegion region = Move(aItem.layer->GetShadowVisibleRegion());
+  LayerIntRegion region = aItem.layer->GetShadowVisibleRegion();
   region.MoveBy(translation);
   AL_LOG("  effective-visible=%s\n", Stringify(region).c_str());
 
@@ -253,14 +253,14 @@ RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem)
   region.MoveBy(-translation);
   AL_LOG("  new-local-visible=%s\n", Stringify(region).c_str());
 
-  aItem.layer->SetRegionToRender(Move(region));
+  aItem.layer->SetRenderRegion(Move(region));
 
   
   
   
   if (aItem.opaque) {
     mOccludedRegion.MoveBy(-translation);
-    mOccludedRegion.OrWith(aItem.layer->GetShadowVisibleRegion());
+    mOccludedRegion.OrWith(aItem.layer->GetRenderRegion());
     mOccludedRegion.MoveBy(translation);
     AL_LOG("  new-occluded=%s\n", Stringify(mOccludedRegion).c_str());
 
