@@ -1,9 +1,0 @@
-
-
-
-LINTER = {
-    'name': "BadTypeLinter",
-    'description': "Has an invalid type.",
-    'type': 'invalid',
-    'payload': 'foobar',
-}
