@@ -2983,7 +2983,6 @@ nsDisplayBackgroundImage::nsDisplayBackgroundImage(const InitData& aInitData)
   , mLayer(aInitData.layer)
   , mIsRasterImage(aInitData.isRasterImage)
   , mShouldFixToViewport(aInitData.shouldFixToViewport)
-  , mImageFlags(0)
 {
   MOZ_COUNT_CTOR(nsDisplayBackgroundImage);
 
@@ -3412,27 +3411,11 @@ nsDisplayBackgroundImage::ShouldCreateOwnLayer(nsDisplayListBuilder* aBuilder,
   return NO_LAYER_NEEDED;
 }
 
-static void CheckForBorderItem(nsDisplayItem *aItem, uint32_t& aFlags)
-{
-  nsDisplayItem* nextItem = aItem->GetAbove();
-  while (nextItem && nextItem->GetType() == nsDisplayItem::TYPE_BACKGROUND) {
-    nextItem = nextItem->GetAbove();
-  }
-  if (nextItem &&
-      nextItem->Frame() == aItem->Frame() &&
-      nextItem->GetType() == nsDisplayItem::TYPE_BORDER) {
-    aFlags |= nsCSSRendering::PAINTBG_WILL_PAINT_BORDER;
-  }
-}
-
 LayerState
 nsDisplayBackgroundImage::GetLayerState(nsDisplayListBuilder* aBuilder,
                                         LayerManager* aManager,
                                         const ContainerLayerParameters& aParameters)
 {
-  mImageFlags = aBuilder->GetBackgroundPaintFlags();
-  CheckForBorderItem(this, mImageFlags);
-
   if (ShouldUseAdvancedLayer(aManager, gfxPrefs::LayersAllowBackgroundImage) &&
       CanBuildWebRenderDisplayItems(aManager)) {
     return LAYER_ACTIVE;
@@ -3522,7 +3505,7 @@ nsDisplayBackgroundImage::CreateWebRenderCommands(wr::DisplayListBuilder& aBuild
   nsCSSRendering::PaintBGParams params =
     nsCSSRendering::PaintBGParams::ForSingleLayer(*StyleFrame()->PresContext(),
                                                   mVisibleRect, mBackgroundRect,
-                                                  StyleFrame(), mImageFlags, mLayer,
+                                                  StyleFrame(), 0, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = &mBounds;
 
@@ -3661,6 +3644,19 @@ nsDisplayBackgroundImage::RenderingMightDependOnPositioningAreaSizeChange()
   return false;
 }
 
+static void CheckForBorderItem(nsDisplayItem *aItem, uint32_t& aFlags)
+{
+  nsDisplayItem* nextItem = aItem->GetAbove();
+  while (nextItem && nextItem->GetType() == nsDisplayItem::TYPE_BACKGROUND) {
+    nextItem = nextItem->GetAbove();
+  }
+  if (nextItem &&
+      nextItem->Frame() == aItem->Frame() &&
+      nextItem->GetType() == nsDisplayItem::TYPE_BORDER) {
+    aFlags |= nsCSSRendering::PAINTBG_WILL_PAINT_BORDER;
+  }
+}
+
 void
 nsDisplayBackgroundImage::Paint(nsDisplayListBuilder* aBuilder,
                                 nsRenderingContext* aCtx) {
@@ -3671,6 +3667,9 @@ void
 nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
                                         nsRenderingContext* aCtx, const nsRect& aBounds,
                                         nsRect* aClipRect) {
+  uint32_t flags = aBuilder->GetBackgroundPaintFlags();
+  CheckForBorderItem(this, flags);
+
   gfxContext* ctx = aCtx->ThebesContext();
   StyleGeometryBox clip = mBackgroundStyle->mImage.mLayers[mLayer].mClip;
 
@@ -3683,7 +3682,7 @@ nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
   nsCSSRendering::PaintBGParams params =
     nsCSSRendering::PaintBGParams::ForSingleLayer(*StyleFrame()->PresContext(),
                                                   aBounds, mBackgroundRect,
-                                                  StyleFrame(), mImageFlags, mLayer,
+                                                  StyleFrame(), flags, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = aClipRect;
   DrawResult result = nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
@@ -4316,7 +4315,14 @@ nsDisplayOutline::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
                                           WebRenderDisplayItemLayer* aLayer)
 {
   MOZ_ASSERT(mBorderRenderer.isSome());
-  mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer);
+
+  gfx::Rect clip(0, 0, 0, 0);
+  if (GetClip().HasClip()) {
+    int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+    clip = LayoutDeviceRect::FromAppUnits(
+        GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
+  }
+  mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer, clip);
 }
 
 bool
@@ -4605,12 +4611,12 @@ nsDisplayCaret::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
 
   
   aBuilder.PushRect(caret,
-                    aBuilder.PushClipRegion(caret),
+                    aBuilder.BuildClipRegion(caret),
                     wr::ToWrColor(color));
 
   if (!devHookRect.IsEmpty()) {
     aBuilder.PushRect(hook,
-                      aBuilder.PushClipRegion(hook),
+                      aBuilder.BuildClipRegion(hook),
                       wr::ToWrColor(color));
   }
 }
@@ -4882,7 +4888,7 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
       }
 
       aBuilder.PushBorderImage(dest,
-                               aBuilder.PushClipRegion(clip),
+                               aBuilder.BuildClipRegion(clip),
                                wr::ToWrBorderWidths(widths[0], widths[1], widths[2], widths[3]),
                                key.value(),
                                wr::ToWrNinePatchDescriptor(
@@ -4915,7 +4921,7 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
         endPoint = endPoint + ViewAs<LayerPixel>(lineEnd, PixelCastJustification::WebRenderHasUnitResolution);
 
         aBuilder.PushBorderGradient(dest,
-                                    aBuilder.PushClipRegion(clip),
+                                    aBuilder.BuildClipRegion(clip),
                                     wr::ToWrBorderWidths(widths[0], widths[1], widths[2], widths[3]),
                                     wr::ToWrPoint(startPoint),
                                     wr::ToWrPoint(endPoint),
@@ -4924,7 +4930,7 @@ nsDisplayBorder::CreateBorderImageWebRenderCommands(mozilla::wr::DisplayListBuil
                                     wr::ToWrSideOffsets2Df32(outset[0], outset[1], outset[2], outset[3]));
       } else {
         aBuilder.PushBorderRadialGradient(dest,
-                                          aBuilder.PushClipRegion(clip),
+                                          aBuilder.BuildClipRegion(clip),
                                           wr::ToWrBorderWidths(widths[0], widths[1], widths[2], widths[3]),
                                           wr::ToWrPoint(lineStart),
                                           wr::ToWrSize(gradientRadius),
@@ -4950,7 +4956,14 @@ nsDisplayBorder::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
   if (mBorderImageRenderer) {
     CreateBorderImageWebRenderCommands(aBuilder, aSc, aParentCommands, aLayer);
   } else if (mBorderRenderer) {
-    mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer);
+    gfx::Rect clip(0, 0, 0, 0);
+    if (GetClip().HasClip()) {
+      int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+      clip = LayoutDeviceRect::FromAppUnits(
+          GetClip().GetClipRect(), appUnitsPerDevPixel).ToUnknownRect();
+    }
+
+    mBorderRenderer->CreateWebRenderCommands(aBuilder, aSc, aLayer, clip);
   }
 }
 
@@ -5272,17 +5285,17 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilde
           nsTArray<WrComplexClipRegion> clips;
           clips.AppendElement(roundedRect);
           aBuilder.PushRect(deviceBoxRect,
-                            aBuilder.PushClipRegion(deviceClipRect,
+                            aBuilder.BuildClipRegion(deviceClipRect,
                                                      clips),
                             wr::ToWrColor(shadowColor));
         } else {
           aBuilder.PushRect(deviceBoxRect,
-                            aBuilder.PushClipRegion(deviceClipRect),
+                            aBuilder.BuildClipRegion(deviceClipRect),
                             wr::ToWrColor(shadowColor));
         }
       } else {
         aBuilder.PushBoxShadow(deviceBoxRect,
-                              aBuilder.PushClipRegion(deviceClipRect),
+                              aBuilder.BuildClipRegion(deviceClipRect),
                               deviceBoxRect,
                               wr::ToWrPoint(shadowOffset),
                               wr::ToWrColor(shadowColor),
@@ -5453,7 +5466,7 @@ nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(mozilla::wr::Disp
       float spreadRadius = float(shadowItem->mSpread) / float(appUnitsPerDevPixel);
 
       aBuilder.PushBoxShadow(wr::ToWrRect(deviceBoxRect),
-                             aBuilder.PushClipRegion(deviceClipRect),
+                             aBuilder.BuildClipRegion(deviceClipRect),
                              wr::ToWrRect(deviceBoxRect),
                              wr::ToWrPoint(shadowOffset),
                              wr::ToWrColor(shadowColor),
@@ -7369,9 +7382,11 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
                        aFrame->PresContext()->DevPixelsToAppUnits(absoluteLimitY));
   nsSize maxSize = Min(relativeLimit, absoluteLimit);
   gfxSize scale = nsLayoutUtils::GetTransformToAncestorScale(aFrame);
-  nsSize frameSize = nsSize(overflow.Size().width * scale.width,
-                            overflow.Size().height * scale.height);
-  if (frameSize <= maxSize) {
+  nsSize frameSize(overflow.Size().width * scale.width,
+                   overflow.Size().height * scale.height);
+  uint64_t maxLimitArea = uint64_t(maxSize.width) * maxSize.height;
+  uint64_t frameArea = uint64_t(frameSize.width) * frameSize.height;
+  if (frameArea <= maxLimitArea && frameSize <= absoluteLimit) {
     *aDirtyRect = overflow;
     return FullPrerender;
   } else if (gfxPrefs::PartiallyPrerenderAnimatedContent()) {
@@ -7379,18 +7394,30 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
     return PartialPrerender;
   }
 
-  EffectCompositor::SetPerformanceWarning(
-    aFrame, eCSSProperty_transform,
-    AnimationPerformanceWarning(
-      AnimationPerformanceWarning::Type::ContentTooLarge,
-      {
-        nsPresContext::AppUnitsToIntCSSPixels(frameSize.width),
-        nsPresContext::AppUnitsToIntCSSPixels(frameSize.height),
-        nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.width),
-        nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.height),
-        nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.width),
-        nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.height),
-      }));
+  if (frameArea > maxLimitArea) {
+    EffectCompositor::SetPerformanceWarning(
+      aFrame, eCSSProperty_transform,
+      AnimationPerformanceWarning(
+        AnimationPerformanceWarning::Type::ContentTooLargeArea,
+        {
+          nsPresContext::AppUnitsToIntCSSPixels(frameArea),
+          nsPresContext::AppUnitsToIntCSSPixels(maxLimitArea),
+        }));
+  } else {
+    EffectCompositor::SetPerformanceWarning(
+      aFrame, eCSSProperty_transform,
+      AnimationPerformanceWarning(
+        AnimationPerformanceWarning::Type::ContentTooLarge,
+        {
+          nsPresContext::AppUnitsToIntCSSPixels(frameSize.width),
+          nsPresContext::AppUnitsToIntCSSPixels(frameSize.height),
+          nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.width),
+          nsPresContext::AppUnitsToIntCSSPixels(relativeLimit.height),
+          nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.width),
+          nsPresContext::AppUnitsToIntCSSPixels(absoluteLimit.height),
+        }));
+  }
+
   return NoPrerender;
 }
 
