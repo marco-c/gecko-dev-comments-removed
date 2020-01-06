@@ -4,8 +4,15 @@ const { Constructor: CC } = Components;
 
 Cu.import("resource://testing-common/httpd.js");
 
+const { Kinto } = Cu.import("resource://services-common/kinto-offline-client.js", {});
+const { FirefoxAdapter } = Cu.import("resource://services-common/kinto-storage-adapter.js", {});
+
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
+
+const PREF_BLOCKLIST_PINNING_COLLECTION = "services.blocklist.pinning.collection";
+const COLLECTION_NAME = "pins";
+const KINTO_STORAGE_PATH    = "kinto.sqlite";
 
 
 var id = "xpcshell@tests.mozilla.org";
@@ -25,8 +32,29 @@ updateAppInfo({
 let server;
 
 
+function do_get_kinto_collection(connection, collectionName) {
+  let config = {
+    
+    
+    
+    remote: "https://firefox.settings.services.mozilla.com/v1/",
+    
+    adapter: FirefoxAdapter,
+    adapterOptions: {sqliteHandle: connection},
+    bucket: "pinning"
+  };
+  let kintoClient = new Kinto(config);
+  return kintoClient.collection(collectionName);
+}
+
+
 
 add_task(async function test_something() {
+  
+  
+  Services.prefs.setCharPref(PREF_BLOCKLIST_PINNING_COLLECTION,
+                             COLLECTION_NAME);
+
   const { PinningPreloadClient } = Cu.import("resource://services-common/blocklist-clients.js", {});
 
   const configPath = "/v1/";
@@ -78,12 +106,13 @@ add_task(async function test_something() {
   
   await PinningPreloadClient.maybeSync(2000, Date.now());
 
+  let connection = await FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
+
   
   
-  await PinningPreloadClient.openCollection(async (collection) => {
-    const list = await collection.list();
-    do_check_eq(list.data.length, 1);
-  });
+  let collection = do_get_kinto_collection(connection, COLLECTION_NAME);
+  let list = await collection.list();
+  do_check_eq(list.data.length, 1);
 
   
   ok(sss.isSecureURI(sss.HEADER_HPKP,
@@ -94,10 +123,10 @@ add_task(async function test_something() {
 
   
   
-  await PinningPreloadClient.openCollection(async (collection) => {
-    const list = await collection.list();
-    do_check_eq(list.data.length, 5);
-  });
+  collection = do_get_kinto_collection(connection, COLLECTION_NAME);
+  list = await collection.list();
+  do_check_eq(list.data.length, 5);
+  await connection.close();
 
   
   ok(sss.isSecureURI(sss.HEADER_HPKP,
