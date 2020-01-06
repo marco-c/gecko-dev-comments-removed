@@ -349,6 +349,10 @@ CodeMirror.defineMode("coffeescript", function(conf, parserConf) {
   return external;
 });
 
+
+
+CodeMirror.defineMIME("application/vnd.coffeescript", "coffeescript");
+
 CodeMirror.defineMIME("text/x-coffeescript", "coffeescript");
 CodeMirror.defineMIME("text/coffeescript", "coffeescript");
 
