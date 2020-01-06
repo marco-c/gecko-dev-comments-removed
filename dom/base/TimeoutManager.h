@@ -58,15 +58,6 @@ public:
   
   
   
-  void MaybeApplyBackPressure();
-
-  
-  
-  void CancelOrUpdateBackPressure(nsGlobalWindow* aWindow);
-
-  
-  
-  
   nsresult ResetTimersForThrottleReduction();
 
   int32_t DOMMinTimeoutValue(bool aIsTracking) const;
@@ -235,8 +226,6 @@ private:
 
    
   uint32_t                    mIdleCallbackTimeoutCounter;
-
-  int32_t                     mBackPressureDelayMS;
 
   nsCOMPtr<nsITimer>          mThrottleTrackingTimeoutsTimer;
   bool                        mThrottleTrackingTimeouts;

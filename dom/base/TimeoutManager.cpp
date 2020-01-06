@@ -210,8 +210,6 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
 int32_t
 TimeoutManager::DOMMinTimeoutValue(bool aIsTracking) const {
   
-  int32_t value = std::max(mBackPressureDelayMS, 0);
-  
   
   
   bool isBackground = IsBackground();
@@ -220,7 +218,7 @@ TimeoutManager::DOMMinTimeoutValue(bool aIsTracking) const {
                                                    : gMinTrackingTimeoutValue)
                                    : (isBackground ? gMinBackgroundTimeoutValue
                                                    : gMinTimeoutValue);
-  return std::max(minValue, value);
+  return minValue;
 }
 
 #define TRACKING_SEPARATE_TIMEOUT_BUCKETING_STRATEGY 0 // Consider all timeouts coming from tracking scripts as tracking
@@ -251,53 +249,6 @@ namespace {
 #define DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS 4
 uint32_t gMaxConsecutiveCallbacksMilliseconds;
 
-
-
-#define DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE 5000
-static uint32_t gThrottledEventQueueBackPressure;
-
-
-
-
-
-#define DEFAULT_BACK_PRESSURE_DELAY_MS 250
-static uint32_t gBackPressureDelayMS;
-
-
-
-
-#define DEFAULT_BACK_PRESSURE_DELAY_REDUCTION_THRESHOLD_MS 1000
-static uint32_t gBackPressureDelayReductionThresholdMS;
-
-
-
-
-
-#define DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS 100
-static uint32_t gBackPressureDelayMinimumMS;
-
-
-
-int32_t
-CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
-{
-  double multiplier = static_cast<double>(aBacklogDepth) /
-                      static_cast<double>(gThrottledEventQueueBackPressure);
-  double value = static_cast<double>(gBackPressureDelayMS) * multiplier;
-  
-  if (value > INT32_MAX) {
-    value = INT32_MAX;
-  }
-
-  
-  
-  
-  else if (value < static_cast<double>(gBackPressureDelayMinimumMS)) {
-    value = 0;
-  }
-  return static_cast<int32_t>(value);
-}
-
 } 
 
 TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
@@ -307,7 +258,6 @@ TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
     mNextFiringId(InvalidFiringId + 1),
     mRunningTimeout(nullptr),
     mIdleCallbackTimeoutCounter(1),
-    mBackPressureDelayMS(0),
     mThrottleTrackingTimeouts(false)
 {
   MOZ_DIAGNOSTIC_ASSERT(aWindow.IsInnerWindow());
@@ -353,19 +303,6 @@ TimeoutManager::Initialize()
   Preferences::AddBoolVarCache(&gAnnotateTrackingChannels,
                                "privacy.trackingprotection.annotate_channels",
                                false);
-
-  Preferences::AddUintVarCache(&gThrottledEventQueueBackPressure,
-                               "dom.timeout.throttled_event_queue_back_pressure",
-                               DEFAULT_THROTTLED_EVENT_QUEUE_BACK_PRESSURE);
-  Preferences::AddUintVarCache(&gBackPressureDelayMS,
-                               "dom.timeout.back_pressure_delay_ms",
-                               DEFAULT_BACK_PRESSURE_DELAY_MS);
-  Preferences::AddUintVarCache(&gBackPressureDelayReductionThresholdMS,
-                               "dom.timeout.back_pressure_delay_reduction_threshold_ms",
-                               DEFAULT_BACK_PRESSURE_DELAY_REDUCTION_THRESHOLD_MS);
-  Preferences::AddUintVarCache(&gBackPressureDelayMinimumMS,
-                               "dom.timeout.back_pressure_delay_minimum_ms",
-                               DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS);
 
   Preferences::AddUintVarCache(&gMaxConsecutiveCallbacksMilliseconds,
                                "dom.timeout.max_consecutive_callbacks_ms",
@@ -461,7 +398,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   uint32_t nestingLevel = sNestingLevel + 1;
   uint32_t realInterval = interval;
   if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
-      mBackPressureDelayMS > 0 || mWindow.IsBackgroundInternal() ||
+      mWindow.IsBackgroundInternal() ||
       timeout->mIsTracking) {
     
     
@@ -886,119 +823,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
 
   mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
   mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
-
-  MaybeApplyBackPressure();
-}
-
-void
-TimeoutManager::MaybeApplyBackPressure()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (mBackPressureDelayMS > 0 || mWindow.IsSuspended()) {
-    return;
-  }
-
-  RefPtr<ThrottledEventQueue> queue =
-    do_QueryObject(mWindow.TabGroup()->EventTargetFor(TaskCategory::Timer));
-  if (!queue) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  if (queue->Length() < gThrottledEventQueueBackPressure) {
-    return;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIRunnable> r =
-    NewNonOwningRunnableMethod<StoreRefPtrPassByPtr<nsGlobalWindow>>(this,
-      &TimeoutManager::CancelOrUpdateBackPressure, &mWindow);
-  nsresult rv = queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  
-  
-  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
-
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Applying %dms of back pressure to TimeoutManager %p "
-           "because of a queue length of %u\n",
-           mBackPressureDelayMS, this,
-           queue->Length()));
-}
-
-void
-TimeoutManager::CancelOrUpdateBackPressure(nsGlobalWindow* aWindow)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aWindow == &mWindow);
-  MOZ_ASSERT(mBackPressureDelayMS > 0);
-
-  
-  RefPtr<ThrottledEventQueue> queue =
-    do_QueryObject(mWindow.TabGroup()->EventTargetFor(TaskCategory::Timer));
-  auto queueLength = queue ? queue->Length() : 0;
-  int32_t newBackPressureDelayMS = CalculateNewBackPressureDelayMS(queueLength);
-
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Updating back pressure from %d to %dms for TimeoutManager %p "
-           "because of a queue length of %u\n",
-           mBackPressureDelayMS, newBackPressureDelayMS,
-           this, queueLength));
-
-  
-  
-  
-  
-  if (newBackPressureDelayMS > mBackPressureDelayMS) {
-    mBackPressureDelayMS = newBackPressureDelayMS;
-  }
-
-  
-  
-  
-  
-  
-  
-  else if (newBackPressureDelayMS == 0 ||
-           (static_cast<uint32_t>(mBackPressureDelayMS) >
-           (newBackPressureDelayMS + gBackPressureDelayReductionThresholdMS))) {
-    int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
-    mBackPressureDelayMS = newBackPressureDelayMS;
-
-    
-    
-    
-    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
-  }
-
-  
-  
-  
-  if (!mBackPressureDelayMS) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> r =
-    NewNonOwningRunnableMethod<StoreRefPtrPassByPtr<nsGlobalWindow>>(this,
-      &TimeoutManager::CancelOrUpdateBackPressure, &mWindow);
-  MOZ_ALWAYS_SUCCEEDS(queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
 }
 
 bool
