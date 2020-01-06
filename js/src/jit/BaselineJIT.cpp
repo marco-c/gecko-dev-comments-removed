@@ -1079,8 +1079,9 @@ BaselineScript::purgeOptimizedStubs(Zone* zone)
                 
                 
                 ICTypeMonitor_Fallback* lastMonStub =
-                    lastStub->toMonitoredFallbackStub()->fallbackMonitorStub();
-                lastMonStub->resetMonitorStubChain(zone);
+                    lastStub->toMonitoredFallbackStub()->maybeFallbackMonitorStub();
+                if (lastMonStub)
+                    lastMonStub->resetMonitorStubChain(zone);
             }
         } else if (lastStub->isTypeMonitor_Fallback()) {
             lastStub->toTypeMonitor_Fallback()->resetMonitorStubChain(zone);

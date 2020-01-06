@@ -1027,7 +1027,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         op = JSOp(*pc);
     }
 
-    uint32_t pcOff = script->pcToOffset(pc);
+    const uint32_t pcOff = script->pcToOffset(pc);
     BaselineScript* baselineScript = script->baselineScript();
 
 #ifdef DEBUG
@@ -1107,8 +1107,13 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
             MOZ_ASSERT(fallbackStub->isMonitoredFallback());
             JitSpew(JitSpew_BaselineBailouts, "      [TYPE-MONITOR CHAIN]");
-            ICMonitoredFallbackStub* monFallbackStub = fallbackStub->toMonitoredFallbackStub();
-            ICStub* firstMonStub = monFallbackStub->fallbackMonitorStub()->firstMonitorStub();
+
+            ICTypeMonitor_Fallback* typeMonitorFallback =
+                fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(cx, script);
+            if (!typeMonitorFallback)
+                return false;
+
+            ICStub* firstMonStub = typeMonitorFallback->firstMonitorStub();
 
             
             JitSpew(JitSpew_BaselineBailouts, "      Popping top stack value into R0.");
@@ -1386,6 +1391,14 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     
     if (!builder.writeWord(baselineStubFrameDescr, "Descriptor"))
         return false;
+
+    
+    
+    if (CodeSpec[*pc].format & JOF_TYPESET) {
+        ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
+        if (!fallbackStub->toMonitoredFallbackStub()->getFallbackMonitorStub(cx, script))
+            return false;
+    }
 
     
     void* baselineCallReturnAddr = GetStubReturnAddress(cx, pc);
