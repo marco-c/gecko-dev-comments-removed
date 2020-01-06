@@ -474,7 +474,7 @@ protected:
 
 
     static nsresult
-    CreateTemplateBuilder(nsIContent* aElement);
+    CreateTemplateBuilder(Element* aElement);
 
     
 
@@ -566,10 +566,10 @@ protected:
     class TemplateBuilderHookup : public nsForwardReference
     {
     protected:
-        nsCOMPtr<nsIContent> mElement; 
+        nsCOMPtr<Element> mElement; 
 
     public:
-        explicit TemplateBuilderHookup(nsIContent* aElement)
+        explicit TemplateBuilderHookup(Element* aElement)
             : mElement(aElement) {}
 
         virtual Phase GetPhase() override { return eHookup; }
