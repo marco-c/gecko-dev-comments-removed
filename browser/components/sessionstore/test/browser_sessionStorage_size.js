@@ -10,24 +10,12 @@ const URL = "http://mochi.test:8888/browser/" +
 
 const OUTER_VALUE = "outer-value-" + RAND;
 
-function getEstimateChars() {
-  let snap;
-  if (gMultiProcessBrowser) {
-    snap = Services.telemetry.histogramSnapshots.content["FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS"];
-  } else {
-    snap = Services.telemetry.histogramSnapshots.parent["FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS"];
-  }
-  if (!snap) {
-    return 0;
-  }
-  return snap.counts[4];
-}
-
 
 add_task(async function test_telemetry() {
   Services.telemetry.canRecordExtended = true;
-
-  let prev = getEstimateChars()
+  let suffix = gMultiProcessBrowser ? "#content" : "";
+  let histogram = Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS" + suffix);
+  let snap1 = histogram.snapshot();
 
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
@@ -39,7 +27,7 @@ add_task(async function test_telemetry() {
   
   
   await BrowserTestUtils.waitForCondition(() => {
-    return getEstimateChars() > prev;
+    return histogram.snapshot().counts[4] > snap1.counts[4];
   });
 
   Assert.ok(true);

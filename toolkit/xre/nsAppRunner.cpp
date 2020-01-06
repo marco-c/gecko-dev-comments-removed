@@ -4623,6 +4623,15 @@ void XRE_GlibInit()
 #endif
 
 
+void
+XRE_CreateStatsObject()
+{
+  
+  
+  Telemetry::CreateStatisticsRecorder();
+}
+
+
 
 
 
@@ -4633,6 +4642,16 @@ XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig)
   ScopedLogging log;
 
   mozilla::LogModule::Init();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  XRE_CreateStatsObject();
 
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(ANDROID)
   SandboxInfo::ThreadingCheck();
