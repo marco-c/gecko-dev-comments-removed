@@ -2899,7 +2899,7 @@ js::str_replace_string_raw(JSContext* cx, HandleString string, HandleString patt
 }
 
 
-static JSObject*
+static ArrayObject*
 SplitHelper(JSContext* cx, HandleLinearString str, uint32_t limit, HandleLinearString sep,
             HandleObjectGroup group)
 {
@@ -2996,7 +2996,7 @@ SplitHelper(JSContext* cx, HandleLinearString str, uint32_t limit, HandleLinearS
 }
 
 
-static JSObject*
+static ArrayObject*
 CharSplitHelper(JSContext* cx, HandleLinearString str, uint32_t limit, HandleObjectGroup group)
 {
     size_t strLength = str->length();
@@ -3021,7 +3021,7 @@ CharSplitHelper(JSContext* cx, HandleLinearString str, uint32_t limit, HandleObj
 }
 
 template <typename TextChar>
-static MOZ_ALWAYS_INLINE JSObject*
+static MOZ_ALWAYS_INLINE ArrayObject*
 SplitSingleCharHelper(JSContext* cx, HandleLinearString str, const TextChar* text,
                       uint32_t textLen, char16_t patCh, HandleObjectGroup group)
 {
@@ -3064,7 +3064,7 @@ SplitSingleCharHelper(JSContext* cx, HandleLinearString str, const TextChar* tex
 }
 
 
-static JSObject*
+static ArrayObject*
 SplitSingleCharHelper(JSContext* cx, HandleLinearString str, char16_t ch, HandleObjectGroup group) {
 
     
@@ -3074,15 +3074,14 @@ SplitSingleCharHelper(JSContext* cx, HandleLinearString str, char16_t ch, Handle
     if (!linearChars.init(cx, str))
         return nullptr;
 
-    if (linearChars.isLatin1()) {
+    if (linearChars.isLatin1())
         return SplitSingleCharHelper(cx, str, linearChars.latin1Chars(), strLength, ch, group);
-    } else {
-        return SplitSingleCharHelper(cx, str, linearChars.twoByteChars(), strLength, ch, group);
-    }
+
+    return SplitSingleCharHelper(cx, str, linearChars.twoByteChars(), strLength, ch, group);
 }
 
 
-JSObject*
+ArrayObject*
 js::str_split_string(JSContext* cx, HandleObjectGroup group, HandleString str, HandleString sep, uint32_t limit)
 
 {

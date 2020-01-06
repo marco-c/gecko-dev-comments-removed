@@ -518,9 +518,9 @@ class ObjectGroup : public gc::TenuredCell
 
     
     
-    static JSObject* newArrayObject(JSContext* cx, const Value* vp, size_t length,
-                                    NewObjectKind newKind,
-                                    NewArrayKind arrayKind = NewArrayKind::Normal);
+    static ArrayObject* newArrayObject(JSContext* cx, const Value* vp, size_t length,
+                                       NewObjectKind newKind,
+                                       NewArrayKind arrayKind = NewArrayKind::Normal);
 
     
     

@@ -793,7 +793,7 @@ GetValueTypeForTable(const Value& v)
     return type;
 }
 
- JSObject*
+ ArrayObject*
 ObjectGroup::newArrayObject(JSContext* cx,
                             const Value* vp, size_t length,
                             NewObjectKind newKind, NewArrayKind arrayKind)
@@ -876,8 +876,6 @@ ObjectGroup::newArrayObject(JSContext* cx,
     
     
     ShouldUpdateTypes updateTypes = ShouldUpdateTypes::DontUpdate;
-    if (!MaybeAnalyzeBeforeCreatingLargeArray(cx, group, vp, length))
-        return nullptr;
     if (group->maybePreliminaryObjects())
         group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
 
