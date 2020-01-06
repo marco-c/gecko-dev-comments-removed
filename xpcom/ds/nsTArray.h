@@ -879,7 +879,12 @@ public:
   
   
 
-  ~nsTArray_Impl() { Clear(); }
+  ~nsTArray_Impl()
+  {
+    if (!base_type::IsEmpty()) {
+      Clear();
+    }
+  }
 
   
   
