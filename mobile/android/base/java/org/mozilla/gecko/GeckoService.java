@@ -71,10 +71,22 @@ public class GeckoService extends Service {
 
     private static final EventListener EVENT_LISTENER = new EventListener();
 
+    private static RuntimeException bug1401737Diag;
+
     public static void register() {
         if (DEBUG) {
             Log.d(LOGTAG, "Registered listener");
         }
+
+        
+        
+        if (bug1401737Diag == null) {
+            bug1401737Diag = new IllegalStateException("Bug 1401737 diagnostic crash");
+        } else {
+            Log.e(LOGTAG, "register() is called a second time", new Exception());
+            throw bug1401737Diag;
+        }
+
         EventDispatcher.getInstance().registerGeckoThreadListener(EVENT_LISTENER,
                 "Gecko:ScheduleRun");
     }
