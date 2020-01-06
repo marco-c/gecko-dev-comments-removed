@@ -1416,6 +1416,22 @@ Accessible::ARIATransformRole(role aRole)
 {
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aRole == roles::REGION) {
+    nsAutoString name;
+    Name(name);
+    return name.IsEmpty() ? NativeRole() : aRole;
+  }
+
+  
+  
   if (aRole == roles::PUSHBUTTON) {
     if (nsAccUtils::HasDefinedARIAToken(mContent, nsGkAtoms::aria_pressed)) {
       
