@@ -275,7 +275,9 @@ FindFirstLetterFrameForElement(const Element* aElement)
 }
 
 static void
-UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
+UpdateBackdropIfNeeded(nsIFrame* aFrame,
+                       ServoStyleSet& aStyleSet,
+                       nsStyleChangeList& aChangeList)
 {
   const nsStyleDisplay* display = aFrame->StyleContext()->StyleDisplay();
   if (display->mTopLayer != NS_STYLE_TOP_LAYER_TOP) {
@@ -300,14 +302,16 @@ UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoRestyleState& aRestyleState)
              CSSPseudoElementType::backdrop);
 
   RefPtr<nsStyleContext> newContext =
-    aRestyleState.StyleSet().ResolvePseudoElementStyle(
-      aFrame->GetContent()->AsElement(),
-      CSSPseudoElementType::backdrop,
-      aFrame->StyleContext(),
-       nullptr);
+    aStyleSet.ResolvePseudoElementStyle(aFrame->GetContent()->AsElement(),
+                                        CSSPseudoElementType::backdrop,
+                                        aFrame->StyleContext(),
+                                         nullptr);
 
-  aFrame->UpdateStyleOfOwnedChildFrame(
-    backdropFrame, newContext, aRestyleState);
+  
+  
+  MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame());
+  ServoRestyleState state(aStyleSet, aChangeList);
+  aFrame->UpdateStyleOfOwnedChildFrame(backdropFrame, newContext, state);
 }
 
 static void
@@ -318,7 +322,8 @@ UpdateFramePseudoElementStyles(nsIFrame* aFrame,
     static_cast<nsBlockFrame*>(aFrame)->UpdatePseudoElementStyles(aRestyleState);
   }
 
-  UpdateBackdropIfNeeded(aFrame, aRestyleState);
+  UpdateBackdropIfNeeded(
+    aFrame, aRestyleState.StyleSet(), aRestyleState.ChangeList());
 }
 
 bool
