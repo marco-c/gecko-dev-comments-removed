@@ -38,6 +38,7 @@ class nsSMILTimeValueSpec
 {
 public:
   typedef mozilla::dom::Element Element;
+  typedef mozilla::dom::IDTracker IDTracker;
 
   nsSMILTimeValueSpec(nsSMILTimedElement& aOwner, bool aIsBegin);
   ~nsSMILTimeValueSpec();
@@ -86,10 +87,22 @@ protected:
                                           
   nsSMILTimeValueSpecParams     mParams;
 
-  class TimeReferenceElement : public mozilla::dom::IDTracker
+  
+
+
+
+
+
+
+
+
+
+  class TimeReferenceTracker final : public IDTracker
   {
   public:
-    explicit TimeReferenceElement(nsSMILTimeValueSpec* aOwner) : mSpec(aOwner) { }
+    explicit TimeReferenceTracker(nsSMILTimeValueSpec* aOwner)
+      : mSpec(aOwner)
+    {}
     void ResetWithElement(Element* aTo) {
       RefPtr<Element> from = get();
       Unlink();
@@ -107,7 +120,7 @@ protected:
     nsSMILTimeValueSpec* mSpec;
   };
 
-  TimeReferenceElement mReferencedElement;
+  TimeReferenceTracker mReferencedElement;
 
   class EventListener final : public nsIDOMEventListener
   {
