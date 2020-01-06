@@ -95,6 +95,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -129,6 +132,9 @@ XPCOMUtils.defineLazyGetter(this, "REGION_NAMES", function() {
   }
   return regionNames;
 });
+
+const CryptoHash = Components.Constructor("@mozilla.org/security/hash;1",
+                                          "nsICryptoHash", "initWithString");
 
 const PROFILE_JSON_FILE_NAME = "autofill-profiles.json";
 
@@ -193,6 +199,17 @@ const INTERNAL_FIELDS = [
   "timesUsed",
 ];
 
+function sha512(string) {
+  if (string == null) {
+    return null;
+  }
+  let encoder = new TextEncoder("utf-8");
+  let bytes = encoder.encode(string);
+  let hash = new CryptoHash("sha512");
+  hash.update(bytes, bytes.length);
+  return hash.finish( true);
+}
+
 
 
 
@@ -242,6 +259,16 @@ class AutofillRecords {
   }
 
   
+  
+  
+  _ensureMatchingVersion(record) {
+    if (record.version != this.version) {
+      throw new Error(`Got unknown record version ${
+        record.version}; want ${this.version}`);
+    }
+  }
+
+  
 
 
 
@@ -268,16 +295,12 @@ class AutofillRecords {
           throw new Error(`Record ${record.guid} already exists`);
         }
       }
-      let recordToSave = Object.assign({}, record, {
-        
-        timeLastUsed: 0,
-        timesUsed: 0,
-      });
+      let recordToSave = this._clone(record);
       return this._saveRecord(recordToSave, {sourceSync});
     }
 
     if (record.deleted) {
-      return this._saveRecord(record, {sourceSync});
+      return this._saveRecord(record);
     }
 
     let recordToSave = this._clone(record);
@@ -312,6 +335,7 @@ class AutofillRecords {
         deleted: true,
       };
     } else {
+      this._ensureMatchingVersion(record);
       recordToSave = record;
     }
 
@@ -357,12 +381,18 @@ class AutofillRecords {
 
     let recordToUpdate = this._clone(record);
     this._normalizeRecord(recordToUpdate);
+
     for (let field of this.VALID_FIELDS) {
-      if (recordToUpdate[field] !== undefined) {
-        recordFound[field] = recordToUpdate[field];
+      let oldValue = recordFound[field];
+      let newValue = recordToUpdate[field];
+
+      if (newValue != null) {
+        recordFound[field] = newValue;
       } else {
         delete recordFound[field];
       }
+
+      this._maybeStoreLastSyncedField(recordFound, field, oldValue);
     }
 
     recordFound.timeLastModified = Date.now();
@@ -379,6 +409,7 @@ class AutofillRecords {
   }
 
   
+
 
 
 
@@ -458,6 +489,7 @@ class AutofillRecords {
 
   get(guid, {rawData = false} = {}) {
     this.log.debug("get:", guid, rawData);
+
     let recordFound = this._findByGUID(guid);
     if (!recordFound) {
       return null;
@@ -529,6 +561,267 @@ class AutofillRecords {
   
 
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _maybeStoreLastSyncedField(record, field, lastSyncedValue) {
+    let sync = this._getSyncMetaData(record);
+    if (!sync) {
+      
+      
+      return;
+    }
+    let alreadyChanged = field in sync.lastSyncedFields;
+    if (alreadyChanged) {
+      
+      return;
+    }
+    let newValue = record[field];
+    if (lastSyncedValue != newValue) {
+      sync.lastSyncedFields[field] = sha512(lastSyncedValue);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _mergeSyncedRecords(localRecord, remoteRecord) {
+    let sync = this._getSyncMetaData(localRecord, true);
+
+    
+    
+    let mergedRecord = {};
+    for (let field of INTERNAL_FIELDS) {
+      if (remoteRecord[field] != null) {
+        mergedRecord[field] = remoteRecord[field];
+      }
+    }
+
+    for (let field of this.VALID_FIELDS) {
+      let isLocalSame = false;
+      let isRemoteSame = false;
+      if (field in sync.lastSyncedFields) {
+        
+        
+        
+        let lastSyncedValue = sync.lastSyncedFields[field];
+        isLocalSame = lastSyncedValue == sha512(localRecord[field]);
+        isRemoteSame = lastSyncedValue == sha512(remoteRecord[field]);
+      } else {
+        
+        
+        isLocalSame = true;
+        isRemoteSame = localRecord[field] == remoteRecord[field];
+      }
+
+      let value;
+      if (isLocalSame && isRemoteSame) {
+        
+        value = localRecord[field];
+      } else if (isLocalSame && !isRemoteSame) {
+        value = remoteRecord[field];
+      } else if (!isLocalSame && isRemoteSame) {
+        
+        
+        
+        value = localRecord[field];
+      } else if (localRecord[field] == remoteRecord[field]) {
+        
+        
+        value = localRecord[field];
+      } else {
+        
+        
+        return null;
+      }
+
+      if (value != null) {
+        mergedRecord[field] = value;
+      }
+    }
+
+    return mergedRecord;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _replaceRecordAt(index, remoteRecord, {keepSyncMetadata = false} = {}) {
+    let localRecord = this._store.data[this._collectionName][index];
+    let newRecord = this._clone(remoteRecord);
+
+    this._stripComputedFields(newRecord);
+
+    this._store.data[this._collectionName][index] = newRecord;
+
+    if (keepSyncMetadata) {
+      
+      
+      
+      newRecord._sync = localRecord._sync;
+    } else {
+      
+      
+      
+      let sync = this._getSyncMetaData(newRecord, true);
+      sync.changeCounter = 0;
+    }
+
+    if (!newRecord.timeCreated ||
+        localRecord.timeCreated < newRecord.timeCreated) {
+      newRecord.timeCreated = localRecord.timeCreated;
+    }
+
+    if (!newRecord.timeLastModified ||
+        localRecord.timeLastModified > newRecord.timeLastModified) {
+      newRecord.timeLastModified = localRecord.timeLastModified;
+    }
+
+    
+    for (let field of ["timeLastUsed", "timesUsed"]) {
+      if (localRecord[field] != null) {
+        newRecord[field] = localRecord[field];
+      }
+    }
+
+    this._computeFields(newRecord);
+  }
+
+  
+
+
+
+
+
+
+
+
+  _forkLocalRecord(localRecord) {
+    let forkedLocalRecord = this._clone(localRecord);
+
+    this._stripComputedFields(forkedLocalRecord);
+
+    forkedLocalRecord.guid = this._generateGUID();
+    this._store.data[this._collectionName].push(forkedLocalRecord);
+
+    
+    
+    
+    
+    this._getSyncMetaData(forkedLocalRecord, true);
+
+    this._computeFields(forkedLocalRecord);
+
+    return forkedLocalRecord;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  reconcile(remoteRecord) {
+    this._ensureMatchingVersion(remoteRecord);
+    if (remoteRecord.deleted) {
+      throw new Error(`Can't reconcile tombstone ${remoteRecord.guid}`);
+    }
+
+    let localIndex = this._findIndexByGUID(remoteRecord.guid);
+    if (localIndex < 0) {
+      throw new Error(`Record ${remoteRecord.guid} not found`);
+    }
+
+    let localRecord = this._store.data[this._collectionName][localIndex];
+    let sync = this._getSyncMetaData(localRecord, true);
+
+    let forkedGUID = null;
+
+    if (sync.changeCounter === 0) {
+      
+      this._replaceRecordAt(localIndex, remoteRecord, {
+        keepSyncMetadata: false,
+      });
+    } else {
+      let mergedRecord = this._mergeSyncedRecords(localRecord, remoteRecord);
+      if (mergedRecord) {
+        
+        
+        this._replaceRecordAt(localIndex, mergedRecord, {
+          keepSyncMetadata: true,
+        });
+      } else {
+        
+        
+        let forkedLocalRecord = this._forkLocalRecord(localRecord);
+        forkedGUID = forkedLocalRecord.guid;
+        this._replaceRecordAt(localIndex, remoteRecord, {
+          keepSyncMetadata: false,
+        });
+      }
+    }
+
+    this._store.saveSoon();
+    Services.obs.notifyObservers({wrappedJSObject: {
+      sourceSync: true,
+    }}, "formautofill-storage-changed", "reconcile");
+
+    return {forkedGUID};
+  }
 
   _removeSyncedRecord(guid) {
     let index = this._findIndexByGUID(guid, {includeDeleted: true});
@@ -628,6 +921,11 @@ class AutofillRecords {
       }
       let sync = this._getSyncMetaData(recordFound, true);
       sync.changeCounter = Math.max(0, sync.changeCounter - counter);
+      if (sync.changeCounter === 0) {
+        
+        
+        sync.lastSyncedFields = {};
+      }
     }
     this._store.saveSoon();
   }
@@ -690,6 +988,7 @@ class AutofillRecords {
       
       record._sync = {
         changeCounter: 1,
+        lastSyncedFields: {},
       };
       this._store.saveSoon();
     }
@@ -712,6 +1011,7 @@ class AutofillRecords {
     if (!record.guid) {
       throw new Error("Record missing GUID");
     }
+    this._ensureMatchingVersion(record);
     if (record.deleted) {
       
       
