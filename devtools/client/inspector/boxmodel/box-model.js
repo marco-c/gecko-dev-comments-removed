@@ -351,7 +351,6 @@ BoxModel.prototype = {
 
 
 
-
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
       this.untrackReflows();
