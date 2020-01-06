@@ -456,7 +456,8 @@ public:
 
 
 
-  bool MightHaveAttributeDependency(nsIAtom* aAttribute);
+  bool MightHaveAttributeDependency(const dom::Element& aElement,
+                                    nsIAtom* aAttribute);
 
   
 
@@ -466,7 +467,7 @@ public:
 
 
 
-  bool HasStateDependency(EventStates aState);
+  bool HasStateDependency(const dom::Element& aElement, EventStates aState);
 
 private:
   
