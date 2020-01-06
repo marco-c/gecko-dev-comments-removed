@@ -216,13 +216,16 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
     uint8_t* bump_;
     
     const uint8_t* capacity_;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     
     const uintptr_t magic_;
+    static constexpr uintptr_t magicNumber =
+        sizeof(uintptr_t) == 4 ? uintptr_t(0x4c69666f) : uintptr_t(0x4c69666f42756d70);
+#endif
 
     
     static constexpr int undefinedChunkMemory = 0xcd;
-    static constexpr uintptr_t magicNumber =
-        sizeof(uintptr_t) == 4 ? uintptr_t(0x4c69666f) : uintptr_t(0x4c69666f42756d70);
 
     void assertInvariants() {
         MOZ_DIAGNOSTIC_ASSERT(magic_ == magicNumber);
@@ -235,8 +238,10 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk>
 
     explicit BumpChunk(uintptr_t capacity)
       : bump_(begin()),
-        capacity_(base() + capacity),
-        magic_(magicNumber)
+        capacity_(base() + capacity)
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      , magic_(magicNumber)
+#endif
     {
         
         
