@@ -215,9 +215,9 @@ void nsNotifyAddrListener::checkLink(void)
     
     
 
-    for (ifa = list; ifa != NULL; ifa = ifa->ifa_next) {
+    for (ifa = list; ifa != nullptr; ifa = ifa->ifa_next) {
         int family;
-        if (ifa->ifa_addr == NULL)
+        if (ifa->ifa_addr == nullptr)
             continue;
 
         family = ifa->ifa_addr->sa_family;

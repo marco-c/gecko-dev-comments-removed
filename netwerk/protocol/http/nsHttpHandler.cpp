@@ -1337,7 +1337,7 @@ nsHttpHandler::PrefsChanged(nsIPrefBranch *prefs, const char *pref)
                                 getter_Copies(sval));
         if (NS_SUCCEEDED(rv)) {
             if (sval.IsEmpty())
-                mDefaultSocketType.Adopt(0);
+                mDefaultSocketType.Adopt(nullptr);
             else {
                 
                 nsCOMPtr<nsISocketProviderService> sps(
@@ -1899,13 +1899,13 @@ PrepareAcceptLanguages(const char *i_AcceptLanguages, nsACString &o_AcceptLangua
     count_n = 0;
     p2 = q_Accept;
     for (token = nsCRT::strtok(o_Accept, ",", &p);
-         token != (char *) 0;
+         token != nullptr;
          token = nsCRT::strtok(p, ",", &p))
     {
         token = net_FindCharNotInSet(token, HTTP_LWS);
         char* trim;
         trim = net_FindCharInSet(token, ";" HTTP_LWS);
-        if (trim != (char*)0)  
+        if (trim != nullptr)  
             *trim = '\0';
 
         if (*token != '\0') {

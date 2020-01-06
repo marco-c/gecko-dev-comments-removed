@@ -186,7 +186,7 @@ class Continuation {
     }
     Continuation() {
       
-      value = 0L;
+      value = nullptr;
       length = 0;
       needsPercentDecoding = false;
       wasQuotedString = false;
@@ -971,7 +971,7 @@ nsMIMEHeaderParamImpl::DecodeParameter(const nsACString& aParamValue,
 
 char *DecodeQ(const char *in, uint32_t length)
 {
-  char *out, *dest = 0;
+  char *out, *dest = nullptr;
 
   out = dest = (char *)PR_Calloc(length + 1, sizeof(char));
   if (dest == nullptr)
@@ -1186,7 +1186,7 @@ nsresult DecodeRFC2047Str(const char *aHeader, const char *aDefaultCharset,
   
   aResult.SetCapacity(3 * strlen(aHeader));
 
-  while ((p = PL_strstr(begin, "=?")) != 0) {
+  while ((p = PL_strstr(begin, "=?")) != nullptr) {
     if (isLastEncodedWord) {
       
       for (q = begin; q < p; ++q) {
@@ -1214,7 +1214,7 @@ nsresult DecodeRFC2047Str(const char *aHeader, const char *aDefaultCharset,
 
     
     charsetStart = p;
-    charsetEnd = 0;
+    charsetEnd = nullptr;
     for (q = p; *q != '?'; q++) {
       if (*q <= ' ' || PL_strchr(especials, *q)) {
         goto badsyntax;
