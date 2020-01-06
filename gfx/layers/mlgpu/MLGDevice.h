@@ -419,6 +419,12 @@ protected:
   virtual void SetPrimitiveTopology(MLGPrimitiveTopology aTopology) = 0;
 
   
+  
+  virtual bool VerifyConstantBufferOffsetting() {
+    return true;
+  }
+
+  
   bool Fail(const nsCString& aFailureId, const nsCString* aMessage);
 
   

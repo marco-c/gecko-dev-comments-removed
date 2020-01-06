@@ -91,6 +91,9 @@ MLGDevice::Initialize()
   if (!gfxPrefs::AdvancedLayersEnableBufferSharing()) {
     mCanUseConstantBufferOffsetBinding = false;
   }
+  if (mCanUseConstantBufferOffsetBinding) {
+    mCanUseConstantBufferOffsetBinding = VerifyConstantBufferOffsetting();
+  }
 
   
   
