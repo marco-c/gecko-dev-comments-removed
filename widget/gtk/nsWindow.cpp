@@ -3601,7 +3601,7 @@ nsWindow::Create(nsIWidget* aParent,
     GtkWindow      *topLevelParent = nullptr;
     nsWindow       *parentnsWindow = nullptr;
     GtkWidget      *eventWidget = nullptr;
-    bool            shellHasCSD = false;
+    bool            drawToContainer = false;
 
     if (aParent) {
         parentnsWindow = static_cast<nsWindow*>(aParent);
@@ -3778,19 +3778,27 @@ nsWindow::Create(nsIWidget* aParent,
         gtk_widget_realize(mShell);
 
         
-        
+
+
+
+
+
+
+
+
         GtkStyleContext* style = gtk_widget_get_style_context(mShell);
-        shellHasCSD = gtk_style_context_has_class(style, "csd");
+        drawToContainer = gtk_style_context_has_class(style, "csd");
 #endif
-        if (!shellHasCSD) {
-            
-            gtk_widget_set_has_window(container, FALSE);
-            
-            gtk_widget_set_app_paintable(mShell, TRUE);
-        }
-        
-        eventWidget = shellHasCSD ? container : mShell;
+        eventWidget = (drawToContainer) ? container : mShell;
+
         gtk_widget_add_events(eventWidget, kEvents);
+
+        
+        gtk_widget_set_app_paintable(eventWidget, TRUE);
+
+        
+        
+        gtk_widget_set_has_window(container, drawToContainer);
 
         gtk_container_add(GTK_CONTAINER(mShell), container);
         gtk_widget_realize(container);
@@ -3960,7 +3968,7 @@ nsWindow::Create(nsIWidget* aParent,
                          G_CALLBACK(drag_data_received_event_cb), nullptr);
 
         GtkWidget *widgets[] = { GTK_WIDGET(mContainer),
-                                 !shellHasCSD ? mShell : nullptr };
+                                 !drawToContainer ? mShell : nullptr };
         for (size_t i = 0; i < ArrayLength(widgets) && widgets[i]; ++i) {
             
             
