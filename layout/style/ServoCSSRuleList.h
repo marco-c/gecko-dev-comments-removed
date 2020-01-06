@@ -25,7 +25,12 @@ class Rule;
 class ServoCSSRuleList final : public dom::CSSRuleList
 {
 public:
-  explicit ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules);
+  
+  
+  
+  
+  ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules,
+                   ServoStyleSheet* aDirectOwnerStyleSheet);
   css::GroupRule* GetParentRule() const { return mParentRule; }
   void SetParentRule(css::GroupRule* aParentRule);
   void SetStyleSheet(StyleSheet* aSheet);
