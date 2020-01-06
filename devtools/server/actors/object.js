@@ -86,10 +86,9 @@ ObjectActor.prototype = {
 
     
     
-    if (this.obj.isProxy) {
+    
+    if (isProxy(this.obj)) {
       g.class = "Proxy";
-      g.proxyTarget = this.hooks.createValueGrip(this.obj.proxyTarget);
-      g.proxyHandler = this.hooks.createValueGrip(this.obj.proxyHandler);
     } else {
       try {
         g.class = this.obj.class;
@@ -320,7 +319,7 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
-    if (obj.isProxy) {
+    if (isProxy(obj)) {
       return safeGetterValues;
     }
 
@@ -335,7 +334,7 @@ ObjectActor.prototype = {
     }
 
     
-    while (obj && !obj.isProxy) {
+    while (obj && !isProxy(obj)) {
       let getters = this._findSafeGetters(obj);
       for (let name of getters) {
         
@@ -1389,18 +1388,28 @@ DebuggerServer.ObjectActorPreviewers = {
   }],
 
   Proxy: [function ({obj, hooks}, grip, rawObj) {
+    
+    
+    let hasTargetAndHandler = obj.isProxy;
+    if (hasTargetAndHandler) {
+      grip.proxyTarget = hooks.createValueGrip(obj.proxyTarget);
+      grip.proxyHandler = hooks.createValueGrip(obj.proxyHandler);
+    }
+
     grip.preview = {
       kind: "Object",
       ownProperties: Object.create(null),
-      ownPropertiesLength: 2
+      ownPropertiesLength: 2 * hasTargetAndHandler
     };
 
     if (hooks.getGripDepth() > 1) {
       return true;
     }
 
-    grip.preview.ownProperties["<target>"] = {value: grip.proxyTarget};
-    grip.preview.ownProperties["<handler>"] = {value: grip.proxyHandler};
+    if (hasTargetAndHandler) {
+      grip.preview.ownProperties["<target>"] = {value: grip.proxyTarget};
+      grip.preview.ownProperties["<handler>"] = {value: grip.proxyHandler};
+    }
 
     return true;
   }],
@@ -2368,6 +2377,41 @@ function arrayBufferGrip(buffer, pool) {
   pool.addActor(actor);
   pool.arrayBufferActors.set(buffer, actor);
   return actor.grip();
+}
+
+
+
+
+
+
+
+
+function isProxy(obj) {
+  
+  if (obj.isProxy) {
+    return true;
+  }
+
+  
+  if (obj.class === "Opaque") {
+    return false;
+  }
+
+  
+  
+  let unwrapped;
+  try {
+    unwrapped = obj.unwrap();
+  } catch (err) {
+    return false;
+  }
+
+  if (!unwrapped || unwrapped === obj) {
+    return false;
+  }
+
+  
+  return isProxy(unwrapped);
 }
 
 exports.ObjectActor = ObjectActor;

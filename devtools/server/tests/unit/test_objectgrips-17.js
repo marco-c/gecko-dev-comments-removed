@@ -4,10 +4,12 @@
 
 "use strict";
 
+var gServer;
 var gDebuggee;
 var gClient;
 var gThreadClient;
-var gCallback;
+var gGlobal;
+var gHasXrays;
 
 function run_test() {
   run_test_with_server(DebuggerServer, function () {
@@ -16,80 +18,178 @@ function run_test() {
   do_test_pending();
 }
 
-function addTestNullPrincipalGlobal(name, server = DebuggerServer) {
+async function run_test_with_server(server, callback) {
+  gServer = server;
+  initTestDebuggerServer(server);
+
   
+  await run_tests_in_principal(systemPrincipal, "test-grips-system-principal");
+
   
-  let global = Cu.Sandbox(null);
-  global.__name = name;
-  server.addTestGlobal(global);
-  return global;
+  await run_tests_in_principal(null, "test-grips-null-principal");
+
+  callback();
 }
 
-async function run_test_with_server(server, callback) {
-  gCallback = callback;
-  initTestDebuggerServer(server);
-  gDebuggee = addTestNullPrincipalGlobal("test-grips", server);
+async function run_tests_in_principal(principal, title) {
+  
+  gDebuggee = Cu.Sandbox(principal);
+  gDebuggee.__name = title;
+  gServer.addTestGlobal(gDebuggee);
   gDebuggee.eval(function stopMe(arg1, arg2) {
     debugger;
   }.toString());
-
-  gClient = new DebuggerClient(server.connectPipe());
+  gClient = new DebuggerClient(gServer.connectPipe());
   await gClient.connect();
-  const [,, threadClient] = await attachTestTabAndResume(gClient, "test-grips");
+  const [,, threadClient] = await attachTestTabAndResume(gClient, title);
   gThreadClient = threadClient;
-  test_proxy_grip();
+
+  
+  if (principal === null) {
+    
+    await testPrincipal(undefined, false);
+  }
+
+  
+  if (false) {
+    
+    await testPrincipal(systemPrincipal, true);
+
+    
+    await testPrincipal(systemPrincipal, false);
+  }
+
+  
+  await testPrincipal(null, true);
+
+  
+  await testPrincipal(null, false);
+
+  
+  await gClient.close();
 }
 
-async function test_proxy_grip() {
-  gThreadClient.addOneTimeListener("paused", async function (event, packet) {
-    let [proxyGrip, inheritsProxyGrip] = packet.frame.arguments;
+function testPrincipal(principal, wantXrays = true) {
+  
+  
+  if (principal !== undefined) {
+    gGlobal = Cu.Sandbox(principal, {wantXrays});
+    gHasXrays = wantXrays;
+  } else {
+    gGlobal = gDebuggee;
+    gHasXrays = false;
+  }
+
+  return new Promise(function (resolve) {
+    gThreadClient.addOneTimeListener("paused", async function (event, packet) {
+      
+      let [proxyGrip, inheritsProxyGrip] = packet.frame.arguments;
+
+      
+      check_proxy_grip(proxyGrip);
+
+      
+      
+      let objClient = gThreadClient.pauseGrip(inheritsProxyGrip);
+      let response = await objClient.getPrototypeAndProperties();
+      check_properties(response.ownProperties);
+      check_prototype(response.prototype);
+
+      
+      strictEqual(gGlobal.trapDidRun, false, "No proxy trap did run.");
+
+      
+      await gThreadClient.resume();
+      resolve();
+    });
 
     
-    check_proxy_grip(proxyGrip);
-
     
     
-    let objClient = gThreadClient.pauseGrip(inheritsProxyGrip);
-    let response = await objClient.getPrototypeAndProperties();
-    check_prototype_and_properties(response);
-
     
-    let trapDidRun = gDebuggee.eval("trapDidRun");
-    strictEqual(trapDidRun, false, "No proxy trap did run.");
-
-    await gThreadClient.resume();
-    await gClient.close();
-    gCallback();
+    
+    gGlobal.eval(`
+      var trapDidRun = false;
+      var proxy = new Proxy({}, new Proxy({}, {get: (_, trap) => {
+        return function(_, arg) {
+          if (trap === "has" && arg === "__exposedProps__") {
+            // Tolerate this case until bug 1392026 is fixed.
+            return false;
+          }
+          trapDidRun = true;
+          throw new Error("proxy trap '" + trap + "' was called.");
+        }
+      }}));
+      var inheritsProxy = Object.create(proxy, {x:{value:1}});
+    `);
+    let data = Cu.createObjectIn(gDebuggee, {defineAs: "data"});
+    data.proxy = gGlobal.proxy;
+    data.inheritsProxy = gGlobal.inheritsProxy;
+    gDebuggee.eval("stopMe(data.proxy, data.inheritsProxy);");
   });
+}
 
-  gDebuggee.eval(`{
-    var trapDidRun = false;
-    var proxy = new Proxy({}, new Proxy({}, {get: (_, trap) => {
-      trapDidRun = true;
-      throw new Error("proxy " + trap + " trap was called.");
-    }}));
-    var inheritsProxy = Object.create(proxy, {x:{value:1}});
-    stopMe(proxy, inheritsProxy);
-  }`);
+function isSystemPrincipal(obj) {
+  return Cu.getObjectPrincipal(obj) === systemPrincipal;
 }
 
 function check_proxy_grip(grip) {
-  strictEqual(grip.class, "Proxy", "The grip has a Proxy class.");
-  ok(grip.proxyTarget, "There is a [[ProxyTarget]] grip.");
-  ok(grip.proxyHandler, "There is a [[ProxyHandler]] grip.");
-
   const {preview} = grip;
-  strictEqual(preview.ownPropertiesLength, 2, "The preview has 2 properties.");
-  let target = preview.ownProperties["<target>"].value;
-  strictEqual(target, grip.proxyTarget, "<target> contains the [[ProxyTarget]].");
-  let handler = preview.ownProperties["<handler>"].value;
-  strictEqual(handler, grip.proxyHandler, "<handler> contains the [[ProxyHandler]].");
+
+  if (gGlobal === gDebuggee) {
+    
+    strictEqual(grip.class, "Proxy", "The grip has a Proxy class.");
+    ok(grip.proxyTarget, "There is a [[ProxyTarget]] grip.");
+    ok(grip.proxyHandler, "There is a [[ProxyHandler]] grip.");
+    strictEqual(preview.ownPropertiesLength, 2, "The preview has 2 properties.");
+    let target = preview.ownProperties["<target>"].value;
+    strictEqual(target, grip.proxyTarget, "<target> contains the [[ProxyTarget]].");
+    let handler = preview.ownProperties["<handler>"].value;
+    strictEqual(handler, grip.proxyHandler, "<handler> contains the [[ProxyHandler]].");
+  } else if (!isSystemPrincipal(gDebuggee)) {
+    
+    strictEqual(grip.class, "Object", "The grip has an Object class.");
+    ok(!("ownPropertyLength" in grip), "The grip doesn't know the number of properties.");
+  } else if (!gHasXrays || isSystemPrincipal(gGlobal)) {
+    
+    strictEqual(grip.class, "Proxy", "The grip has a Proxy class.");
+    ok(!("proxyTarget" in grip), "There is no [[ProxyTarget]] grip.");
+    ok(!("proxyHandler" in grip), "There is no [[ProxyHandler]] grip.");
+    strictEqual(preview.ownPropertiesLength, 0, "The preview has no properties.");
+    ok(!("<target>" in preview), "The preview has no <target> property.");
+    ok(!("<handler>" in preview), "The preview has no <handler> property.");
+  } else {
+    
+    strictEqual(grip.class, "Opaque", "The grip has an Opaque class.");
+    strictEqual(grip.ownPropertyLength, 0, "The grip has no properties.");
+  }
 }
 
-function check_prototype_and_properties(response) {
-  let ownPropertiesLength = Reflect.ownKeys(response.ownProperties).length;
-  strictEqual(ownPropertiesLength, 1, "1 own property was retrieved.");
-  strictEqual(response.ownProperties.x.value, 1, "The property has the right value.");
-  check_proxy_grip(response.prototype);
+function check_properties(props) {
+  let ownPropertiesLength = Reflect.ownKeys(props).length;
+
+  if (!isSystemPrincipal(gDebuggee) && gDebuggee !== gGlobal) {
+    
+    strictEqual(ownPropertiesLength, 0, "No own property could be retrieved.");
+  } else {
+    
+    strictEqual(ownPropertiesLength, 1, "1 own property was retrieved.");
+    strictEqual(props.x.value, 1, "The property has the right value.");
+  }
+}
+
+function check_prototype(proto) {
+  if (!isSystemPrincipal(gDebuggee) && gDebuggee !== gGlobal) {
+    
+    strictEqual(proto.type, "null", "The prototype is null.");
+  } else if (!gHasXrays || isSystemPrincipal(gGlobal)) {
+    
+    
+    check_proxy_grip(proto);
+  } else {
+    
+    
+    strictEqual(proto.class, "Object", "The prototype has a Object class.");
+  }
 }
 
