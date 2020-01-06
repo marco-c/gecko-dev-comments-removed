@@ -6,14 +6,15 @@
 
 "use strict";
 
+const Services = require("Services");
 const { Task } = require("devtools/shared/task");
 const flags = require("devtools/shared/flags");
-const { getToplevelWindow } = require("../utils/window");
 const { DOM: dom, createClass, addons, PropTypes } =
   require("devtools/client/shared/vendor/react");
 
 const e10s = require("../utils/e10s");
 const message = require("../utils/message");
+const { getToplevelWindow } = require("../utils/window");
 
 const FRAME_SCRIPT = "resource://devtools/client/responsive.html/browser/content.js";
 
@@ -39,6 +40,27 @@ module.exports = createClass({
 
 
 
+
+
+
+  componentWillMount() {
+    this.browserShown = new Promise(resolve => {
+      let handler = frameLoader => {
+        let browser = this.refs.browserContainer.querySelector("iframe.browser");
+        if (frameLoader.ownerElement != browser) {
+          return;
+        }
+        Services.obs.removeObserver(handler, "remote-browser-shown");
+        resolve();
+      };
+      Services.obs.addObserver(handler, "remote-browser-shown");
+    });
+  },
+
+  
+
+
+
   componentDidMount: Task.async(function* () {
     
     
@@ -48,6 +70,7 @@ module.exports = createClass({
 
     
     
+    yield this.browserShown;
     this.props.onBrowserMounted();
 
     
@@ -101,9 +124,9 @@ module.exports = createClass({
 
   stopFrameScript: Task.async(function* () {
     let { onContentResize } = this;
-
     let browser = this.refs.browserContainer.querySelector("iframe.browser");
     let mm = browser.frameLoader.messageManager;
+
     e10s.off(mm, "OnContentResize", onContentResize);
     yield e10s.request(mm, "Stop");
     message.post(window, "stop-frame-script:done");
