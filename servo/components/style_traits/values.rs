@@ -5,8 +5,11 @@
 
 
 use app_units::Au;
-use cssparser::UnicodeRange;
+use cssparser::{UnicodeRange, serialize_string};
 use std::fmt;
+
+
+
 
 
 
@@ -38,6 +41,20 @@ impl<'a, T> ToCss for &'a T where T: ToCss + ?Sized {
     }
 }
 
+impl ToCss for str {
+    #[inline]
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        serialize_string(self, dest)
+    }
+}
+
+impl ToCss for String {
+    #[inline]
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        serialize_string(self, dest)
+    }
+}
+
 
 pub trait OneOrMoreCommaSeparated {}
 
@@ -55,7 +72,7 @@ impl<T> ToCss for Vec<T> where T: ToCss + OneOrMoreCommaSeparated {
     }
 }
 
-impl<T: ToCss> ToCss for Box<T> {
+impl<T> ToCss for Box<T> where T: ?Sized + ToCss {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result
         where W: fmt::Write,
     {
