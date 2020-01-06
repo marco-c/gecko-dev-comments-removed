@@ -289,6 +289,13 @@ nsFTPDirListingConv::DigestBufferLines(char *aBuffer, nsCString &aString) {
 
         
         char buffer[256] = "";
+
+        
+        
+        result.fe_time.tm_params.tp_gmt_offset = 0;
+        result.fe_time.tm_params.tp_dst_offset = 0;
+        PR_NormalizeTime(&result.fe_time, PR_GMTParameters);
+
         
         
         
