@@ -376,7 +376,7 @@ CodeGeneratorShared::verifyHeapAccessDisassembly(uint32_t begin, uint32_t end, b
             
             
             unsigned shift = 32 - TypedArrayElemSize(type) * 8;
-            i = i << shift >> shift;
+            i = int32_t(uint32_t(i) << shift) >> shift;
             op = OtherOperand(i);
         }
         break;
