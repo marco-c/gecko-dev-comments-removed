@@ -323,8 +323,6 @@ PRMJ_FormatTime(char* buf, int buflen, const char* fmt, PRMJTime* prtm)
 
 
 
-
-
 #define FAKE_YEAR_BASE 9900
     if (prtm->tm_year < 1900 || prtm->tm_year > 9999) {
         fake_tm_year = FAKE_YEAR_BASE + prtm->tm_year % 100;
