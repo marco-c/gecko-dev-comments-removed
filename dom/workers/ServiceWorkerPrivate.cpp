@@ -1282,7 +1282,8 @@ ServiceWorkerPrivate::SendNotificationEvent(const nsAString& aEventName,
   WakeUpReason why;
   if (aEventName.EqualsLiteral(NOTIFICATION_CLICK_EVENT_NAME)) {
     why = NotificationClickEvent;
-    gDOMDisableOpenClickDelay = Preferences::GetInt("dom.disable_open_click_delay");
+    gDOMDisableOpenClickDelay =
+      Preferences::GetInt("dom.serviceWorkers.disable_open_click_delay");
   } else if (aEventName.EqualsLiteral(NOTIFICATION_CLOSE_EVENT_NAME)) {
     why = NotificationCloseEvent;
   } else {

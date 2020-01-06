@@ -862,6 +862,10 @@ pref("dom.serviceWorkers.enabled", true);
 pref("dom.serviceWorkers.interception.enabled", true);
 pref("dom.serviceWorkers.openWindow.enabled", true);
 
+
+
+pref("dom.serviceWorkers.disable_open_click_delay", 5000);
+
 pref("dom.push.debug", false);
 
 
