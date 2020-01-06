@@ -438,6 +438,12 @@ public:
 
 
 
+  already_AddRefed<nsIContent> GetSelectedContentForScrolling() const;
+
+  
+
+
+
 
 
   enum ScrollDirection { eHorizontal, eVertical, eEither };
@@ -1441,6 +1447,11 @@ public:
 
 
   virtual already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow() = 0;
+
+  
+
+
+  already_AddRefed<nsIContent> GetFocusedContentInOurWindow() const;
 
   
 

@@ -942,6 +942,12 @@ public:
 
 
 
+  virtual nsIContent* GetUnfocusedKeyEventTarget();
+
+  
+
+
+
 
 
 

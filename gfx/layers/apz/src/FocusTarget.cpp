@@ -94,8 +94,9 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
 
   
   nsCOMPtr<nsIPresShell> presShell = GetRetargetEventPresShell(aRootPresShell);
+  nsCOMPtr<nsIDocument> document = presShell->GetDocument();
 
-  if (!presShell) {
+  if (!presShell || !document) {
     FT_LOG("Creating nil target with seq=%" PRIu64 " (can't find retargeted presshell)\n",
            aFocusSequenceNumber);
 
@@ -105,14 +106,29 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
 
   
   
-  nsCOMPtr<nsIContent> scrollTarget = presShell->GetContentForScrolling();
+  
+  nsCOMPtr<nsIContent> focusedContent = presShell->GetFocusedContentInOurWindow();
 
   
   
-  mFocusHasKeyEventListeners = HasListenersForKeyEvents(scrollTarget);
+  mFocusHasKeyEventListeners =
+    HasListenersForKeyEvents(focusedContent ? focusedContent.get()
+                                            : document->GetUnfocusedKeyEventTarget());
 
   
-  if (TabParent* browserParent = TabParent::GetFrom(scrollTarget)) {
+  
+  if (IsEditableNode(focusedContent) ||
+      IsEditableNode(document)) {
+    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for editable node)\n",
+           aFocusSequenceNumber,
+           static_cast<int>(mFocusHasKeyEventListeners));
+
+    mType = FocusTarget::eNone;
+    return;
+  }
+
+  
+  if (TabParent* browserParent = TabParent::GetFrom(focusedContent)) {
     RenderFrameParent* rfp = browserParent->GetRenderFrame();
 
     
@@ -136,23 +152,28 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   }
 
   
-  if (IsEditableNode(scrollTarget) ||
-      IsEditableNode(presShell->GetDocument())) {
-    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for editable node)\n",
-           aFocusSequenceNumber,
-           mFocusHasKeyEventListeners);
+  
+  
+  
+  
+  if (focusedContent) {
+    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for focusing an element)\n",
+           mFocusHasKeyEventListeners,
+           aFocusSequenceNumber);
 
     mType = FocusTarget::eNone;
     return;
   }
 
+  nsCOMPtr<nsIContent> selectedContent = presShell->GetSelectedContentForScrolling();
+
   
   
   nsIScrollableFrame* horizontal =
-    presShell->GetScrollableFrameToScrollForContent(scrollTarget.get(),
+    presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
                                                     nsIPresShell::eHorizontal);
   nsIScrollableFrame* vertical =
-    presShell->GetScrollableFrameToScrollForContent(scrollTarget.get(),
+    presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
                                                     nsIPresShell::eVertical);
 
   
