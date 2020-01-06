@@ -238,6 +238,10 @@ private:
 
   
   
+  std::unordered_map<FrameMetrics::ViewID, ScrollMetadata> mScrollMetadata;
+
+  
+  
   
   void AddMutatedLayer(Layer* aLayer);
   void ClearMutatedLayers();
