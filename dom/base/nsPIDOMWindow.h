@@ -668,7 +668,6 @@ protected:
   bool                   mMayHavePaintEventListener;
   bool                   mMayHaveTouchEventListener;
   bool                   mMayHaveMouseEnterLeaveEventListener;
-  bool                   mMayHaveMouseMoveEventListener;
   bool                   mMayHavePointerEnterLeaveEventListener;
 
   
@@ -812,24 +811,6 @@ public:
     }
 
     mMutationBits |= aType;
-  }
-
-  
-
-
-
-  bool HasMouseMoveEventListeners()
-  {
-    return mMayHaveMouseMoveEventListener;
-  }
-
-  
-
-
-
-  void SetHasMouseMoveEventListeners()
-  {
-    mMayHaveMouseMoveEventListener = true;
   }
 
   
