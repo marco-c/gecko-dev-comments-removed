@@ -321,9 +321,10 @@ pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             false);
 pref("browser.urlbar.userMadeSearchSuggestionsChoice", false);
 
-
 pref("browser.urlbar.daysBeforeHidingSuggestionsPrompt", 4);
 pref("browser.urlbar.lastSuggestionsPromptDate", 20160601);
+
+pref("browser.urlbar.timesBeforeHidingSuggestionsHint", 4);
 
 
 
