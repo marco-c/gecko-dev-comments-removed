@@ -341,6 +341,14 @@ public:
   }
 
   
+
+
+
+  V unwrapOr(V aValue) const {
+    return isOk() ? mImpl.unwrap() : aValue;
+  }
+
+  
   E unwrapErr() const {
     MOZ_ASSERT(isErr());
     return mImpl.unwrapErr();
