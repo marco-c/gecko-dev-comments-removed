@@ -116,8 +116,16 @@ nsPresArena::Allocate(uint32_t aCode, size_t aSize)
   void* result;
   if (len > 0) {
     
+    
+    
+    
+    
     result = list->mEntries.ElementAt(len - 1);
-    list->mEntries.RemoveElementAt(len - 1);
+    if (list->mEntries.Capacity() > 500) {
+      list->mEntries.RemoveElementAt(len - 1);
+    } else {
+      list->mEntries.SetLengthAndRetainStorage(len - 1);
+    }
 #if defined(DEBUG)
     {
       MOZ_MAKE_MEM_DEFINED(result, list->mEntrySize);
