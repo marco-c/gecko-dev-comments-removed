@@ -9,8 +9,9 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/SelectionState.h"     
-#include "mozilla/StyleSheet.h"   
+#include "mozilla/StyleSheet.h"         
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WeakPtr.h"            
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
@@ -116,6 +117,7 @@ class HTMLEditor;
 class InsertNodeTransaction;
 class InsertTextTransaction;
 class JoinNodeTransaction;
+class PlaceholderTransaction;
 class RemoveStyleSheetTransaction;
 class SetTextTransaction;
 class SplitNodeTransaction;
@@ -1008,11 +1010,11 @@ protected:
   
   nsWeakPtr mSelConWeak;
   
-  nsWeakPtr mPlaceHolderTxn;
+  WeakPtr<PlaceholderTransaction> mPlaceholderTransactionWeak;
   
   nsWeakPtr mDocWeak;
   
-  nsIAtom* mPlaceHolderName;
+  nsIAtom* mPlaceholderName;
   
   mozilla::UniquePtr<SelectionState> mSelState;
   
@@ -1045,7 +1047,7 @@ protected:
   int32_t mUpdateCount;
 
   
-  int32_t mPlaceHolderBatch;
+  int32_t mPlaceholderBatch;
   
   EditAction mAction;
 

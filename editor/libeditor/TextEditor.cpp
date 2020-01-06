@@ -872,7 +872,7 @@ TextEditor::UpdateIMEComposition(WidgetCompositionEvent* aCompsitionChangeEvent)
   
   
   
-  MOZ_ASSERT(!mPlaceHolderBatch,
+  MOZ_ASSERT(!mPlaceholderBatch,
     "UpdateIMEComposition() must be called without place holder batch");
   TextComposition::CompositionChangeEventHandlingMarker
     compositionChangeEventHandlingMarker(mComposition, aCompsitionChangeEvent);

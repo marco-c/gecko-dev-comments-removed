@@ -126,12 +126,12 @@ using namespace widget;
 
 
 EditorBase::EditorBase()
-  : mPlaceHolderName(nullptr)
+  : mPlaceholderName(nullptr)
   , mSelState(nullptr)
   , mModCount(0)
   , mFlags(0)
   , mUpdateCount(0)
-  , mPlaceHolderBatch(0)
+  , mPlaceholderBatch(0)
   , mAction(EditAction::none)
   , mIMETextOffset(0)
   , mIMETextLength(0)
@@ -680,29 +680,29 @@ EditorBase::GetSelection(SelectionType aSelectionType)
 NS_IMETHODIMP
 EditorBase::DoTransaction(nsITransaction* aTxn)
 {
-  if (mPlaceHolderBatch && !mPlaceHolderTxn) {
-    nsCOMPtr<nsIAbsorbingTransaction> placeholderTransaction =
-      new PlaceholderTransaction(*this, mPlaceHolderName, Move(mSelState));
+  if (mPlaceholderBatch && !mPlaceholderTransactionWeak) {
+    RefPtr<PlaceholderTransaction> placeholderTransaction =
+      new PlaceholderTransaction(*this, mPlaceholderName, Move(mSelState));
 
     
-    mPlaceHolderTxn = do_GetWeakReference(placeholderTransaction);
+    mPlaceholderTransactionWeak = placeholderTransaction;
 
     
-    nsCOMPtr<nsITransaction> transaction =
-      do_QueryInterface(placeholderTransaction);
-    
-    DoTransaction(transaction);
+    DoTransaction(placeholderTransaction);
 
     if (mTxnMgr) {
-      nsCOMPtr<nsITransaction> topTxn = mTxnMgr->PeekUndoStack();
-      if (topTxn) {
-        placeholderTransaction = do_QueryInterface(topTxn);
-        if (placeholderTransaction) {
+      nsCOMPtr<nsITransaction> topTransaction = mTxnMgr->PeekUndoStack();
+      nsCOMPtr<nsIAbsorbingTransaction> topAbsorbingTransaction =
+        do_QueryInterface(topTransaction);
+      if (topAbsorbingTransaction) {
+        RefPtr<PlaceholderTransaction> topPlaceholderTransaction =
+          topAbsorbingTransaction->AsPlaceholderTransaction();
+        if (topPlaceholderTransaction) {
           
           
           
           
-          mPlaceHolderTxn = do_GetWeakReference(placeholderTransaction);
+          mPlaceholderTransactionWeak = topPlaceholderTransaction;
         }
       }
     }
@@ -916,13 +916,13 @@ EditorBase::EndTransaction()
 NS_IMETHODIMP
 EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
 {
-  NS_PRECONDITION(mPlaceHolderBatch >= 0, "negative placeholder batch count!");
-  if (!mPlaceHolderBatch) {
+  MOZ_ASSERT(mPlaceholderBatch >= 0, "negative placeholder batch count!");
+  if (!mPlaceholderBatch) {
     NotifyEditorObservers(eNotifyEditorObserversOfBefore);
     
     BeginUpdateViewBatch();
-    mPlaceHolderTxn = nullptr;
-    mPlaceHolderName = aName;
+    mPlaceholderTransactionWeak = nullptr;
+    mPlaceholderName = aName;
     RefPtr<Selection> selection = GetSelection();
     if (selection) {
       mSelState = MakeUnique<SelectionState>();
@@ -932,12 +932,12 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
       
       
       
-      if (mPlaceHolderName == nsGkAtoms::IMETxnName) {
+      if (mPlaceholderName == nsGkAtoms::IMETxnName) {
         mRangeUpdater.RegisterSelectionState(*mSelState);
       }
     }
   }
-  mPlaceHolderBatch++;
+  mPlaceholderBatch++;
 
   return NS_OK;
 }
@@ -945,8 +945,9 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
 NS_IMETHODIMP
 EditorBase::EndPlaceHolderTransaction()
 {
-  NS_PRECONDITION(mPlaceHolderBatch > 0, "zero or negative placeholder batch count when ending batch!");
-  if (mPlaceHolderBatch == 1) {
+  MOZ_ASSERT(mPlaceholderBatch > 0,
+             "zero or negative placeholder batch count when ending batch!");
+  if (mPlaceholderBatch == 1) {
     RefPtr<Selection> selection = GetSelection();
 
     
@@ -986,21 +987,16 @@ EditorBase::EndPlaceHolderTransaction()
     if (mSelState) {
       
       
-      if (mPlaceHolderName == nsGkAtoms::IMETxnName) {
+      if (mPlaceholderName == nsGkAtoms::IMETxnName) {
         mRangeUpdater.DropSelectionState(*mSelState);
       }
       mSelState = nullptr;
     }
     
-    if (mPlaceHolderTxn) {
-      nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryReferent(mPlaceHolderTxn);
-      if (plcTxn) {
-        plcTxn->EndPlaceHolderBatch();
-      } else {
-        
-        
-        
-      }
+    if (mPlaceholderTransactionWeak) {
+      RefPtr<PlaceholderTransaction> placeholderTransaction =
+        mPlaceholderTransactionWeak.get();
+      placeholderTransaction->EndPlaceHolderBatch();
       
       
       if (!mComposition) {
@@ -1010,7 +1006,7 @@ EditorBase::EndPlaceHolderTransaction()
       NotifyEditorObservers(eNotifyEditorObserversOfCancel);
     }
   }
-  mPlaceHolderBatch--;
+  mPlaceholderBatch--;
 
   return NS_OK;
 }
@@ -5091,11 +5087,8 @@ EditorBase::GetFocusedContent()
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, nullptr);
 
-  nsIContent* content = fm->GetFocusedContent();
-  MOZ_ASSERT((content == piTarget) == SameCOMIdentity(content, piTarget));
-
-  return (content == piTarget) ?
-    piTarget.forget().downcast<nsIContent>() : nullptr;
+  nsCOMPtr<nsIContent> content = fm->GetFocusedContent();
+  return SameCOMIdentity(content, piTarget) ? content.forget() : nullptr;
 }
 
 already_AddRefed<nsIContent>
