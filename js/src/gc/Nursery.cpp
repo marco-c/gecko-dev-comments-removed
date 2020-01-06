@@ -313,7 +313,6 @@ js::Nursery::allocate(size_t size)
     }
 #endif
 
-    MemProfiler::SampleNursery(reinterpret_cast<void*>(thing), size);
     return thing;
 }
 
@@ -887,7 +886,6 @@ js::Nursery::sweep()
 
     
     setStartPosition();
-    MemProfiler::SweepNursery(runtime());
 }
 
 size_t
