@@ -31,6 +31,15 @@
 #endif
 
 inline bool
+js::jit::AtomicOperations::hasAtomic8()
+{
+    
+    
+    
+    return HasLDSTREXBHD();
+}
+
+inline bool
 js::jit::AtomicOperations::isLockfree8()
 {
     
@@ -47,10 +56,7 @@ js::jit::AtomicOperations::isLockfree8()
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int16_t), 0));
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int32_t), 0));
 
-    
-    
-    
-    return HasLDSTREXBHD() && __atomic_always_lock_free(sizeof(int64_t), 0);
+    return hasAtomic8() && __atomic_always_lock_free(sizeof(int64_t), 0);
 }
 
 inline void

@@ -160,10 +160,15 @@ class AtomicOperations
     
     
     
+    
     static inline bool isLockfreeJS(int32_t n);
 
     
     
+    
+    
+    static inline bool hasAtomic8();
+
     
     
     

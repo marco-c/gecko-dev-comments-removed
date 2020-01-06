@@ -35,6 +35,12 @@
 
 
 inline bool
+js::jit::AtomicOperations::hasAtomic8()
+{
+    return true;
+}
+
+inline bool
 js::jit::AtomicOperations::isLockfree8()
 {
     
