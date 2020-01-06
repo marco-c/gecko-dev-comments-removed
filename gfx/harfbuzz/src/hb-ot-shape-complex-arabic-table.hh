@@ -72,7 +72,10 @@ static const uint8_t joining_table[] =
   
 
    R,D,D,D,D,D,R,R,D,R,D,D,D,D,D,D,D,D,D,D,R,D,U,U,U,X,X,X,X,X,X,X,
-   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+
+  
+
+   D,U,D,D,D,D,U,R,D,R,R,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
    X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
 
   

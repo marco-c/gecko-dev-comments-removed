@@ -208,7 +208,21 @@ set_indic_properties (hb_glyph_info_t &info)
     cat = OT_M;
     pos = POS_ABOVE_C;
   }
+  else if (unlikely (u == 0x0A51u))
+  {
+    
+    cat = OT_M;
+    pos = POS_BELOW_C;
+  }
 
+  
+
+  else if (unlikely (u == 0x11303u)) cat = OT_SM;
+  else if (unlikely (u == 0x1133cu)) cat = OT_N;
+
+  else if (unlikely (u == 0x0AFBu)) cat = OT_N; 
+
+  else if (unlikely (u == 0x0980u)) cat = OT_PLACEHOLDER; 
   else if (unlikely (u == 0x17C6u)) cat = OT_N; 
   else if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x2010u, 0x2011u)))
 				    cat = OT_PLACEHOLDER;
@@ -677,6 +691,21 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
   const indic_shape_plan_t *indic_plan = (const indic_shape_plan_t *) plan->data;
   hb_glyph_info_t *info = buffer->info;
 
+  
+
+
+
+  if (buffer->props.script == HB_SCRIPT_KANNADA &&
+      start + 3 <= end &&
+      is_one_of (info[start  ], FLAG (OT_Ra)) &&
+      is_one_of (info[start+1], FLAG (OT_H)) &&
+      is_one_of (info[start+2], FLAG (OT_ZWJ)))
+  {
+    buffer->merge_clusters (start+1, start+3);
+    hb_glyph_info_t tmp = info[start+1];
+    info[start+1] = info[start+2];
+    info[start+2] = tmp;
+  }
 
   
 
@@ -1825,6 +1854,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_indic =
   decompose_indic,
   compose_indic,
   setup_masks_indic,
+  NULL, 
   NULL, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, 

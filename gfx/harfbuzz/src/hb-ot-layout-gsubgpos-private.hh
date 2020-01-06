@@ -374,6 +374,13 @@ struct hb_apply_context_t :
 
     inline void reject (void) { num_items++; match_glyph_data--; }
 
+    inline matcher_t::may_skip_t
+    may_skip (const hb_apply_context_t *c,
+	      const hb_glyph_info_t    &info) const
+    {
+      return matcher.may_skip (c, info);
+    }
+
     inline bool next (void)
     {
       assert (num_items > 0);
@@ -743,6 +750,12 @@ static inline bool match_input (hb_apply_context_t *c,
 
 
 
+
+
+
+
+
+
   bool is_mark_ligature = _hb_glyph_info_is_mark (&buffer->cur());
 
   unsigned int total_component_count = 0;
@@ -750,6 +763,12 @@ static inline bool match_input (hb_apply_context_t *c,
 
   unsigned int first_lig_id = _hb_glyph_info_get_lig_id (&buffer->cur());
   unsigned int first_lig_comp = _hb_glyph_info_get_lig_comp (&buffer->cur());
+
+  enum {
+    LIGBASE_NOT_CHECKED,
+    LIGBASE_MAY_NOT_SKIP,
+    LIGBASE_MAY_SKIP
+  } ligbase = LIGBASE_NOT_CHECKED;
 
   match_positions[0] = buffer->idx;
   for (unsigned int i = 1; i < count; i++)
@@ -761,13 +780,43 @@ static inline bool match_input (hb_apply_context_t *c,
     unsigned int this_lig_id = _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx]);
     unsigned int this_lig_comp = _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]);
 
-    if (first_lig_id && first_lig_comp) {
+    if (first_lig_id && first_lig_comp)
+    {
       
 
 
       if (first_lig_id != this_lig_id || first_lig_comp != this_lig_comp)
-	return_trace (false);
-    } else {
+      {
+        
+
+        if (ligbase == LIGBASE_NOT_CHECKED)
+	{
+	  bool found = false;
+	  const hb_glyph_info_t *out = buffer->out_info;
+	  unsigned int j = buffer->out_len;
+	  while (j && _hb_glyph_info_get_lig_id (&out[j - 1]) == first_lig_id)
+	  {
+	    if (_hb_glyph_info_get_lig_comp (&out[j - 1]) == 0)
+	    {
+	      j--;
+	      found = true;
+	      break;
+	    }
+	    j--;
+	  }
+
+	  if (found && skippy_iter.may_skip (c, out[j]) == hb_apply_context_t::matcher_t::SKIP_YES)
+	    ligbase = LIGBASE_MAY_SKIP;
+	  else
+	    ligbase = LIGBASE_MAY_NOT_SKIP;
+	}
+
+        if (ligbase == LIGBASE_MAY_NOT_SKIP)
+	  return_trace (false);
+      }
+    }
+    else
+    {
       
 
 

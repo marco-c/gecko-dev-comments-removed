@@ -18,49 +18,50 @@
 
 
 #define ISC_A	INDIC_SYLLABIC_CATEGORY_AVAGRAHA		/*  15 chars; Avagraha */
-#define ISC_Bi	INDIC_SYLLABIC_CATEGORY_BINDU			/*  67 chars; Bindu */
+#define ISC_Bi	INDIC_SYLLABIC_CATEGORY_BINDU			/*  80 chars; Bindu */
 #define ISC_BJN	INDIC_SYLLABIC_CATEGORY_BRAHMI_JOINING_NUMBER	/*  20 chars; Brahmi_Joining_Number */
-#define ISC_Ca	INDIC_SYLLABIC_CATEGORY_CANTILLATION_MARK	/*  53 chars; Cantillation_Mark */
-#define ISC_C	INDIC_SYLLABIC_CATEGORY_CONSONANT		/* 1907 chars; Consonant */
+#define ISC_Ca	INDIC_SYLLABIC_CATEGORY_CANTILLATION_MARK	/*  57 chars; Cantillation_Mark */
+#define ISC_C	INDIC_SYLLABIC_CATEGORY_CONSONANT		/* 2024 chars; Consonant */
 #define ISC_CD	INDIC_SYLLABIC_CATEGORY_CONSONANT_DEAD		/*  10 chars; Consonant_Dead */
-#define ISC_CF	INDIC_SYLLABIC_CATEGORY_CONSONANT_FINAL		/*  62 chars; Consonant_Final */
+#define ISC_CF	INDIC_SYLLABIC_CATEGORY_CONSONANT_FINAL		/*  68 chars; Consonant_Final */
 #define ISC_CHL	INDIC_SYLLABIC_CATEGORY_CONSONANT_HEAD_LETTER	/*   5 chars; Consonant_Head_Letter */
 #define ISC_CK	INDIC_SYLLABIC_CATEGORY_CONSONANT_KILLER	/*   2 chars; Consonant_Killer */
-#define ISC_CM	INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL	/*  22 chars; Consonant_Medial */
-#define ISC_CP	INDIC_SYLLABIC_CATEGORY_CONSONANT_PLACEHOLDER	/*  16 chars; Consonant_Placeholder */
-#define ISC_CPR	INDIC_SYLLABIC_CATEGORY_CONSONANT_PRECEDING_REPHA	/*   1 chars; Consonant_Preceding_Repha */
-#define ISC_CPrf	INDIC_SYLLABIC_CATEGORY_CONSONANT_PREFIXED	/*   2 chars; Consonant_Prefixed */
-#define ISC_CS	INDIC_SYLLABIC_CATEGORY_CONSONANT_SUBJOINED	/*  90 chars; Consonant_Subjoined */
-#define ISC_CSR	INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA	/*   4 chars; Consonant_Succeeding_Repha */
+#define ISC_CM	INDIC_SYLLABIC_CATEGORY_CONSONANT_MEDIAL	/*  27 chars; Consonant_Medial */
+#define ISC_CP	INDIC_SYLLABIC_CATEGORY_CONSONANT_PLACEHOLDER	/*  18 chars; Consonant_Placeholder */
+#define ISC_CPR	INDIC_SYLLABIC_CATEGORY_CONSONANT_PRECEDING_REPHA	/*   2 chars; Consonant_Preceding_Repha */
+#define ISC_CPrf	INDIC_SYLLABIC_CATEGORY_CONSONANT_PREFIXED	/*   7 chars; Consonant_Prefixed */
+#define ISC_CS	INDIC_SYLLABIC_CATEGORY_CONSONANT_SUBJOINED	/*  95 chars; Consonant_Subjoined */
+#define ISC_CSR	INDIC_SYLLABIC_CATEGORY_CONSONANT_SUCCEEDING_REPHA	/*   5 chars; Consonant_Succeeding_Repha */
 #define ISC_CWS	INDIC_SYLLABIC_CATEGORY_CONSONANT_WITH_STACKER	/*   4 chars; Consonant_With_Stacker */
-#define ISC_GM	INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK		/*   2 chars; Gemination_Mark */
-#define ISC_IS	INDIC_SYLLABIC_CATEGORY_INVISIBLE_STACKER	/*   7 chars; Invisible_Stacker */
+#define ISC_GM	INDIC_SYLLABIC_CATEGORY_GEMINATION_MARK		/*   3 chars; Gemination_Mark */
+#define ISC_IS	INDIC_SYLLABIC_CATEGORY_INVISIBLE_STACKER	/*  10 chars; Invisible_Stacker */
 #define ISC_ZWJ	INDIC_SYLLABIC_CATEGORY_JOINER			/*   1 chars; Joiner */
 #define ISC_ML	INDIC_SYLLABIC_CATEGORY_MODIFYING_LETTER	/*   1 chars; Modifying_Letter */
 #define ISC_ZWNJ	INDIC_SYLLABIC_CATEGORY_NON_JOINER		/*   1 chars; Non_Joiner */
-#define ISC_N	INDIC_SYLLABIC_CATEGORY_NUKTA			/*  24 chars; Nukta */
-#define ISC_Nd	INDIC_SYLLABIC_CATEGORY_NUMBER			/* 459 chars; Number */
+#define ISC_N	INDIC_SYLLABIC_CATEGORY_NUKTA			/*  28 chars; Nukta */
+#define ISC_Nd	INDIC_SYLLABIC_CATEGORY_NUMBER			/* 469 chars; Number */
 #define ISC_NJ	INDIC_SYLLABIC_CATEGORY_NUMBER_JOINER		/*   1 chars; Number_Joiner */
 #define ISC_x	INDIC_SYLLABIC_CATEGORY_OTHER			/*   1 chars; Other */
-#define ISC_PK	INDIC_SYLLABIC_CATEGORY_PURE_KILLER		/*  16 chars; Pure_Killer */
+#define ISC_PK	INDIC_SYLLABIC_CATEGORY_PURE_KILLER		/*  21 chars; Pure_Killer */
 #define ISC_RS	INDIC_SYLLABIC_CATEGORY_REGISTER_SHIFTER	/*   2 chars; Register_Shifter */
 #define ISC_SM	INDIC_SYLLABIC_CATEGORY_SYLLABLE_MODIFIER	/*  22 chars; Syllable_Modifier */
 #define ISC_TL	INDIC_SYLLABIC_CATEGORY_TONE_LETTER		/*   7 chars; Tone_Letter */
 #define ISC_TM	INDIC_SYLLABIC_CATEGORY_TONE_MARK		/*  42 chars; Tone_Mark */
 #define ISC_V	INDIC_SYLLABIC_CATEGORY_VIRAMA			/*  24 chars; Virama */
-#define ISC_Vs	INDIC_SYLLABIC_CATEGORY_VISARGA			/*  31 chars; Visarga */
+#define ISC_Vs	INDIC_SYLLABIC_CATEGORY_VISARGA			/*  34 chars; Visarga */
 #define ISC_Vo	INDIC_SYLLABIC_CATEGORY_VOWEL			/*  30 chars; Vowel */
-#define ISC_M	INDIC_SYLLABIC_CATEGORY_VOWEL_DEPENDENT		/* 602 chars; Vowel_Dependent */
-#define ISC_VI	INDIC_SYLLABIC_CATEGORY_VOWEL_INDEPENDENT	/* 431 chars; Vowel_Independent */
+#define ISC_M	INDIC_SYLLABIC_CATEGORY_VOWEL_DEPENDENT		/* 633 chars; Vowel_Dependent */
+#define ISC_VI	INDIC_SYLLABIC_CATEGORY_VOWEL_INDEPENDENT	/* 443 chars; Vowel_Independent */
 
-#define IMC_B	INDIC_MATRA_CATEGORY_BOTTOM			/* 300 chars; Bottom */
+#define IMC_B	INDIC_MATRA_CATEGORY_BOTTOM			/* 330 chars; Bottom */
+#define IMC_BL	INDIC_MATRA_CATEGORY_BOTTOM_AND_LEFT		/*   1 chars; Bottom_And_Left */
 #define IMC_BR	INDIC_MATRA_CATEGORY_BOTTOM_AND_RIGHT		/*   2 chars; Bottom_And_Right */
 #define IMC_L	INDIC_MATRA_CATEGORY_LEFT			/*  57 chars; Left */
 #define IMC_LR	INDIC_MATRA_CATEGORY_LEFT_AND_RIGHT		/*  21 chars; Left_And_Right */
 #define IMC_x	INDIC_MATRA_CATEGORY_NOT_APPLICABLE		/*   1 chars; Not_Applicable */
 #define IMC_O	INDIC_MATRA_CATEGORY_OVERSTRUCK			/*  10 chars; Overstruck */
-#define IMC_R	INDIC_MATRA_CATEGORY_RIGHT			/* 258 chars; Right */
-#define IMC_T	INDIC_MATRA_CATEGORY_TOP			/* 342 chars; Top */
+#define IMC_R	INDIC_MATRA_CATEGORY_RIGHT			/* 262 chars; Right */
+#define IMC_T	INDIC_MATRA_CATEGORY_TOP			/* 380 chars; Top */
 #define IMC_TB	INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM		/*  10 chars; Top_And_Bottom */
 #define IMC_TBR	INDIC_MATRA_CATEGORY_TOP_AND_BOTTOM_AND_RIGHT	/*   1 chars; Top_And_Bottom_And_Right */
 #define IMC_TL	INDIC_MATRA_CATEGORY_TOP_AND_LEFT		/*   6 chars; Top_And_Left */
@@ -133,7 +134,7 @@ static const INDIC_TABLE_ELEMENT_TYPE indic_table[] = {
    _(VI,x), _(VI,x),  _(M,B),  _(M,B),  _(x,x),  _(x,x), _(Nd,x), _(Nd,x),
    _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x),
     _(C,x),  _(C,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
-    _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
+    _(x,x),  _(x,x),  _(x,x),  _(x,x), _(Bi,x),  _(x,x),  _(x,x),  _(x,x),
 
   
 
@@ -171,7 +172,7 @@ static const INDIC_TABLE_ELEMENT_TYPE indic_table[] = {
    _(VI,x), _(VI,x),  _(M,B),  _(M,B),  _(x,x),  _(x,x), _(Nd,x), _(Nd,x),
    _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x), _(Nd,x),
     _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
-    _(x,x),  _(C,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
+    _(x,x),  _(C,x), _(Ca,T), _(Ca,T), _(Ca,T),  _(N,T),  _(N,T),  _(N,T),
 
   
 
@@ -251,14 +252,14 @@ static const INDIC_TABLE_ELEMENT_TYPE indic_table[] = {
 
   
 
-    _(x,x), _(Bi,T), _(Bi,R), _(Vs,R),  _(x,x), _(VI,x), _(VI,x), _(VI,x),
+   _(Bi,T), _(Bi,T), _(Bi,R), _(Vs,R),  _(x,x), _(VI,x), _(VI,x), _(VI,x),
    _(VI,x), _(VI,x), _(VI,x), _(VI,x), _(VI,x),  _(x,x), _(VI,x), _(VI,x),
    _(VI,x),  _(x,x), _(VI,x), _(VI,x), _(VI,x),  _(C,x),  _(C,x),  _(C,x),
     _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),
     _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),
     _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),
     _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),  _(C,x),
-    _(C,x),  _(C,x),  _(C,x),  _(x,x),  _(x,x),  _(A,x),  _(M,R),  _(M,R),
+    _(C,x),  _(C,x),  _(C,x), _(PK,T), _(PK,T),  _(A,x),  _(M,R),  _(M,R),
     _(M,R),  _(M,R),  _(M,R),  _(M,B),  _(M,B),  _(x,x),  _(M,L),  _(M,L),
     _(M,L),  _(x,x), _(M,LR), _(M,LR), _(M,LR),  _(V,T),_(CPR,x),  _(x,x),
     _(x,x),  _(x,x),  _(x,x),  _(x,x), _(CD,x), _(CD,x), _(CD,x),  _(M,R),
@@ -341,7 +342,7 @@ static const INDIC_TABLE_ELEMENT_TYPE indic_table[] = {
    _(Ca,B), _(Ca,B), _(Ca,T), _(Ca,T), _(Ca,B), _(Ca,B), _(Ca,B), _(Ca,B),
    _(Ca,T), _(Ca,R),  _(x,O),  _(x,O),  _(x,O),  _(x,O),  _(x,O),  _(x,O),
     _(x,O),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,B),  _(x,x),  _(x,x),
-    _(x,x),  _(x,x), _(Vs,x), _(Vs,x), _(Ca,T),  _(x,x),  _(x,x),  _(x,x),
+    _(x,x),  _(x,x), _(Vs,x), _(Vs,x), _(Ca,T),  _(x,x),  _(x,x), _(Ca,R),
    _(Ca,x), _(Ca,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
 
 #define indic_offset_0x2008u 1656
@@ -368,7 +369,7 @@ static const INDIC_TABLE_ELEMENT_TYPE indic_table[] = {
 
    _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T),
    _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T), _(Ca,T),
-   _(Ca,T), _(Ca,T),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
+   _(Ca,T), _(Ca,T), _(Bi,x), _(Bi,x),  _(x,x),  _(x,x),  _(x,x),  _(x,x),
 
 #define indic_offset_0xa9e0u 1720
 
@@ -422,13 +423,6 @@ hb_indic_get_categories (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0xAA60u, 0xAA7Fu)) return indic_table[u - 0xAA60u + indic_offset_0xaa60u];
       break;
 
-    case 0x11u:
-      
-      
-      if (unlikely (u == 0x11303)) return _(Vs,R);
-      if (unlikely (u == 0x1133c)) return _(N,B);
-      break;
-
     default:
       break;
   }
@@ -474,6 +468,7 @@ hb_indic_get_categories (hb_codepoint_t u)
 #undef ISC_VI
 
 #undef IMC_B
+#undef IMC_BL
 #undef IMC_BR
 #undef IMC_L
 #undef IMC_LR

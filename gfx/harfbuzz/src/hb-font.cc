@@ -1157,8 +1157,20 @@ hb_font_create_sub_font (hb_font_t *parent)
   font->y_scale = parent->y_scale;
   font->x_ppem = parent->x_ppem;
   font->y_ppem = parent->y_ppem;
+  font->ptem = parent->ptem;
 
-  
+  font->num_coords = parent->num_coords;
+  if (!font->num_coords)
+    font->coords = NULL;
+  else
+  {
+    unsigned int size = parent->num_coords * sizeof (parent->coords[0]);
+    font->coords = (int *) malloc (size);
+    if (unlikely (!font->coords))
+      font->num_coords = 0;
+    else
+      memcpy (font->coords, parent->coords, size);
+  }
 
   return font;
 }
@@ -1188,6 +1200,7 @@ hb_font_get_empty (void)
 
     0, 
     0, 
+    0, 
 
     0, 
     NULL, 
@@ -1195,8 +1208,6 @@ hb_font_get_empty (void)
     const_cast<hb_font_funcs_t *> (&_hb_font_funcs_nil), 
     NULL, 
     NULL, 
-
-    hb_font_t::DIRTY_NOTHING, 
 
     {
 #define HB_SHAPER_IMPLEMENT(shaper) HB_SHAPER_DATA_INVALID,
@@ -1350,11 +1361,6 @@ hb_font_set_parent (hb_font_t *font,
   if (!parent)
     parent = hb_font_get_empty ();
 
-  if (parent == font->parent)
-    return;
-
-  font->dirty |= font->DIRTY_PARENT;
-
   hb_font_t *old = font->parent;
 
   font->parent = hb_font_reference (parent);
@@ -1396,11 +1402,6 @@ hb_font_set_face (hb_font_t *font,
 
   if (unlikely (!face))
     face = hb_face_get_empty ();
-
-  if (font->face == face)
-    return;
-
-  font->dirty |= font->DIRTY_FACE;
 
   hb_face_t *old = font->face;
 
@@ -1454,8 +1455,6 @@ hb_font_set_funcs (hb_font_t         *font,
 
   if (!klass)
     klass = hb_font_funcs_get_empty ();
-
-  font->dirty |= font->DIRTY_FUNCS;
 
   hb_font_funcs_reference (klass);
   hb_font_funcs_destroy (font->klass);
@@ -1512,11 +1511,6 @@ hb_font_set_scale (hb_font_t *font,
   if (font->immutable)
     return;
 
-  if (font->x_scale == x_scale && font->y_scale == y_scale)
-    return;
-
-  font->dirty |= font->DIRTY_SCALE;
-
   font->x_scale = x_scale;
   font->y_scale = y_scale;
 }
@@ -1558,11 +1552,6 @@ hb_font_set_ppem (hb_font_t *font,
   if (font->immutable)
     return;
 
-  if (font->x_ppem == x_ppem && font->y_ppem == y_ppem)
-    return;
-
-  font->dirty |= font->DIRTY_PPEM;
-
   font->x_ppem = x_ppem;
   font->y_ppem = y_ppem;
 }
@@ -1590,21 +1579,45 @@ hb_font_get_ppem (hb_font_t *font,
 
 
 
+
+
+
+
+
+void
+hb_font_set_ptem (hb_font_t *font, float ptem)
+{
+  if (font->immutable)
+    return;
+
+  font->ptem = ptem;
+}
+
+
+
+
+
+
+
+
+
+
+
+float
+hb_font_get_ptem (hb_font_t *font)
+{
+  return font->ptem;
+}
+
+
+
+
+
 static void
 _hb_font_adopt_var_coords_normalized (hb_font_t *font,
 				      int *coords, 
 				      unsigned int coords_length)
 {
-  if (font->num_coords == coords_length &&
-      (coords_length == 0 ||
-       0 == memcmp (font->coords, coords, coords_length * sizeof (coords[0]))))
-  {
-    free (coords);
-    return;
-  }
-
-  font->dirty |= font->DIRTY_VARIATIONS;
-
   free (font->coords);
 
   font->coords = coords;

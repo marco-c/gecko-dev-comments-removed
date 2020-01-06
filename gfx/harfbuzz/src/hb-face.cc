@@ -51,8 +51,6 @@ const hb_face_t _hb_face_nil = {
   1000, 
   0,    
 
-  hb_face_t::DIRTY_NOTHING, 
-
   {
 #define HB_SHAPER_IMPLEMENT(shaper) HB_SHAPER_DATA_INVALID,
 #include "hb-shaper-list.hh"
@@ -120,8 +118,10 @@ _hb_face_for_data_closure_create (hb_blob_t *blob, unsigned int index)
 }
 
 static void
-_hb_face_for_data_closure_destroy (hb_face_for_data_closure_t *closure)
+_hb_face_for_data_closure_destroy (void *data)
 {
+  hb_face_for_data_closure_t *closure = (hb_face_for_data_closure_t *) data;
+
   hb_blob_destroy (closure->blob);
   free (closure);
 }
@@ -171,7 +171,7 @@ hb_face_create (hb_blob_t    *blob,
 
   face = hb_face_create_for_tables (_hb_face_for_data_reference_table,
 				    closure,
-				    (hb_destroy_func_t) _hb_face_for_data_closure_destroy);
+				    _hb_face_for_data_closure_destroy);
 
   face->index = index;
 
@@ -367,11 +367,6 @@ hb_face_set_index (hb_face_t    *face,
   if (face->immutable)
     return;
 
-  if (face->index == index)
-    return;
-
-  face->dirty |= face->DIRTY_INDEX;
-
   face->index = index;
 }
 
@@ -406,11 +401,6 @@ hb_face_set_upem (hb_face_t    *face,
 {
   if (face->immutable)
     return;
-
-  if (face->upem == upem)
-    return;
-
-  face->dirty |= face->DIRTY_UPEM;
 
   face->upem = upem;
 }
@@ -456,11 +446,6 @@ hb_face_set_glyph_count (hb_face_t    *face,
   if (face->immutable)
     return;
 
-  if (face->num_glyphs == glyph_count)
-    return;
-
-  face->dirty |= face->DIRTY_NUM_GLYPHS;
-
   face->num_glyphs = glyph_count;
 }
 
@@ -490,3 +475,32 @@ hb_face_t::load_num_glyphs (void) const
 }
 
 
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_face_get_table_tags (hb_face_t    *face,
+			unsigned int  start_offset,
+			unsigned int *table_count, 
+			hb_tag_t     *table_tags )
+{
+  if (face->destroy != _hb_face_for_data_closure_destroy)
+  {
+    if (table_count)
+      *table_count = 0;
+    return 0;
+  }
+
+  hb_face_for_data_closure_t *data = (hb_face_for_data_closure_t *) face->user_data;
+
+  const OT::OpenTypeFontFile &ot_file = *OT::Sanitizer<OT::OpenTypeFontFile>::lock_instance (data->blob);
+  const OT::OpenTypeFontFace &ot_face = ot_file.get_face (data->index);
+
+  return ot_face.get_table_tags (start_offset, table_count, table_tags);
+}

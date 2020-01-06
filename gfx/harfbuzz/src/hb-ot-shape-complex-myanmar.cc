@@ -130,8 +130,7 @@ enum syllable_type_t {
 
 
 enum myanmar_category_t {
-  OT_As  = 18, 
-  OT_D   = 19, 
+  OT_As  = 18,  
   OT_D0  = 20, 
   OT_DB  = OT_N, 
   OT_GB  = OT_PLACEHOLDER,
@@ -145,7 +144,8 @@ enum myanmar_category_t {
   OT_VPre = 28,
   OT_VPst = 29,
   OT_VS   = 30, 
-  OT_P    = 31  
+  OT_P    = 31, 
+  OT_D    = 32, 
 };
 
 
@@ -524,6 +524,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
   NULL, 
   NULL, 
   NULL, 
+  NULL, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 
 };
@@ -541,6 +542,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
   NULL, 
   NULL, 
   setup_masks_myanmar,
+  NULL, 
   NULL, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
   false, 

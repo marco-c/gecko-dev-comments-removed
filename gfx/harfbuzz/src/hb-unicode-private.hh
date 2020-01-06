@@ -106,10 +106,6 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
   modified_combining_class (hb_codepoint_t unicode)
   {
     
-
-    if (unlikely (unicode == 0x0654u)) unicode = 0x0651u;
-
-    
     if (unlikely (unicode == 0x1037u)) unicode = 0x103Au;
 
     
@@ -171,6 +167,7 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
 
 
 
+
   static inline hb_bool_t
   is_default_ignorable (hb_codepoint_t ch)
   {
@@ -197,8 +194,7 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
     {
       
       switch (plane) {
-	case 0x01: return hb_in_ranges<hb_codepoint_t> (ch, 0x1BCA0u, 0x1BCA3u,
-					    0x1D173u, 0x1D17Au);
+	case 0x01: return hb_in_range<hb_codepoint_t> (ch, 0x1D173u, 0x1D17Au);
 	case 0x0E: return hb_in_range<hb_codepoint_t> (ch, 0xE0000u, 0xE0FFFu);
 	default: return false;
       }

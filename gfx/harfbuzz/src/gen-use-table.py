@@ -117,6 +117,7 @@ property_names = [
 	'Top_And_Right',
 	'Top_And_Left',
 	'Top_And_Left_And_Right',
+	'Bottom_And_Left',
 	'Bottom_And_Right',
 	'Top_And_Bottom_And_Right',
 	'Overstruck',
@@ -153,7 +154,7 @@ def is_BASE(U, UISC, UGC):
 def is_BASE_IND(U, UISC, UGC):
 	
 	return (UISC in [Consonant_Dead, Modifying_Letter] or
-		(UGC == Po and not U in [0x104E, 0x2022]) or
+		(UGC == Po and not U in [0x104E, 0x2022, 0x11A3F, 0x11A45]) or
 		False 
 		)
 def is_BASE_NUM(U, UISC, UGC):
@@ -177,6 +178,8 @@ def is_CONS_MOD(U, UISC, UGC):
 def is_CONS_SUB(U, UISC, UGC):
 	
 	return UISC == Consonant_Subjoined and UGC != Lo
+def is_CONS_WITH_STACKER(U, UISC, UGC):
+	return UISC == Consonant_With_Stacker
 def is_HALANT(U, UISC, UGC):
 	return UISC in [Virama, Invisible_Stacker]
 def is_HALANT_NUM(U, UISC, UGC):
@@ -198,9 +201,7 @@ def is_OTHER(U, UISC, UGC):
 def is_Reserved(U, UISC, UGC):
 	return UGC == 'Cn'
 def is_REPHA(U, UISC, UGC):
-	
-	
-	return UISC in [Consonant_Preceding_Repha, Consonant_With_Stacker, Consonant_Prefixed]
+	return UISC in [Consonant_Preceding_Repha, Consonant_Prefixed]
 def is_SYM(U, UISC, UGC):
 	if U == 0x25CC: return False 
 	
@@ -229,6 +230,7 @@ use_mapping = {
 	'M':	is_CONS_MED,
 	'CM':	is_CONS_MOD,
 	'SUB':	is_CONS_SUB,
+	'CS':	is_CONS_WITH_STACKER,
 	'H':	is_HALANT,
 	'HN':	is_HALANT_NUM,
 	'ZWNJ':	is_ZWNJ,
@@ -252,7 +254,7 @@ use_positions = {
 	},
 	'M': {
 		'Abv': [Top],
-		'Blw': [Bottom],
+		'Blw': [Bottom, Bottom_And_Left],
 		'Pst': [Right],
 		'Pre': [Left],
 	},
@@ -298,8 +300,10 @@ def map_to_use(data):
 		
 		if U == 0x1CED: UISC = Tone_Mark
 
-		evals = [(k, v(U,UISC,UGC)) for k,v in items]
-		values = [k for k,v in evals if v]
+		
+		if U == 0x1A7F: UISC = Consonant_Final; UIPC = Bottom
+
+		values = [k for k,v in items if v(U,UISC,UGC)]
 		assert len(values) == 1, "%s %s %s %s" % (hex(U), UISC, UGC, values)
 		USE = values[0]
 

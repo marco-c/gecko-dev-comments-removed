@@ -346,12 +346,16 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
         break;
 
     
-    if (end - i > 10) {
+
+    if (end - i < 2 || end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
       i = end;
       continue;
     }
 
     buffer->sort (i, end, compare_combining_class);
+
+    if (plan->shaper->reorder_marks)
+      plan->shaper->reorder_marks (plan, buffer, i, end);
 
     i = end;
   }
@@ -369,46 +373,58 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
   buffer->clear_output ();
   count = buffer->len;
   unsigned int starter = 0;
+  bool combine = true;
   buffer->next_glyph ();
   while (buffer->idx < count && !buffer->in_error)
   {
     hb_codepoint_t composed, glyph;
-    if (
-
-
-
-	HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->cur())) &&
+    if (combine &&
 	
 
-	(starter == buffer->out_len - 1 ||
-	 _hb_glyph_info_get_modified_combining_class (&buffer->prev()) < _hb_glyph_info_get_modified_combining_class (&buffer->cur())) &&
-	
-	c.compose (&c,
-		   buffer->out_info[starter].codepoint,
-		   buffer->cur().codepoint,
-		   &composed) &&
-	
-	font->get_nominal_glyph (composed, &glyph))
+
+
+	HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->cur())))
     {
-      
-      buffer->next_glyph (); 
-      if (unlikely (buffer->in_error))
-        return;
-      buffer->merge_out_clusters (starter, buffer->out_len);
-      buffer->out_len--; 
-      
-      buffer->out_info[starter].codepoint = composed;
-      buffer->out_info[starter].glyph_index() = glyph;
-      _hb_glyph_info_set_unicode_props (&buffer->out_info[starter], buffer);
+      if (
 
-      continue;
+	  (starter == buffer->out_len - 1 ||
+	   info_cc (buffer->prev()) < info_cc (buffer->cur())) &&
+	  
+	  c.compose (&c,
+		     buffer->out_info[starter].codepoint,
+		     buffer->cur().codepoint,
+		     &composed) &&
+	  
+	  font->get_nominal_glyph (composed, &glyph))
+      {
+	
+	buffer->next_glyph (); 
+	if (unlikely (buffer->in_error))
+	  return;
+	buffer->merge_out_clusters (starter, buffer->out_len);
+	buffer->out_len--; 
+	
+	buffer->out_info[starter].codepoint = composed;
+	buffer->out_info[starter].glyph_index() = glyph;
+	_hb_glyph_info_set_unicode_props (&buffer->out_info[starter], buffer);
+
+	continue;
+      }
+      else if (
+
+	       starter < buffer->out_len - 1 &&
+	       info_cc (buffer->prev()) > info_cc (buffer->cur()))
+        combine = false;
     }
 
     
     buffer->next_glyph ();
 
-    if (_hb_glyph_info_get_modified_combining_class (&buffer->prev()) == 0)
+    if (info_cc (buffer->prev()) == 0)
+    {
       starter = buffer->out_len - 1;
+      combine = true;
+    }
   }
   buffer->swap_buffers ();
 

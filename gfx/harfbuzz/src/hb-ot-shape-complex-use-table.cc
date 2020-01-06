@@ -19,6 +19,7 @@
 
 #define B	USE_B	/* BASE */
 #define CGJ	USE_CGJ	/* CGJ */
+#define CS	USE_CS	/* CONS_WITH_STACKER */
 #define FM	USE_FM	/* CONS_FINAL_MOD */
 #define GB	USE_GB	/* BASE_OTHER */
 #define H	USE_H	/* HALANT */
@@ -97,7 +98,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
     VPst,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,  VPre,  VPre,     O,     O,  VPre,  VPre,     H,   IND,     O,
        O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     B,     B,     O,     B,
        B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     B,     O,     O,     O,
 
   
 
@@ -119,7 +120,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
     VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,     O,  VAbv,  VAbv,  VAbv,     O,  VPst,  VPst,     H,     O,     O,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     B,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     B, VMAbv, VMAbv, VMAbv, CMAbv, CMAbv, CMAbv,
 
   
 
@@ -163,14 +164,14 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
     VAbv,  VPst,  VPst,  VPst,  VPst,     O,  VAbv,  VAbv,  VAbv,     O,  VAbv,  VAbv,  VAbv,     H,     O,     O,
        O,     O,     O,     O,     O,  VPst,  VPst,     O,     O,     O,     O,     O,     O,     O,     B,     O,
        B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     R,     R,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,    CS,    CS,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
 
   
 
-       O, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
+   VMAbv, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
        B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,  VPst,  VPst,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,     B,  VPst,  VPst,
     VPst,  VPst,  VPst,  VBlw,  VBlw,     O,  VPre,  VPre,  VPre,     O,  VPre,  VPre,  VPre,     H,     R,     O,
        O,     O,     O,     O,   IND,   IND,   IND,  VPst,     O,     O,     O,     O,     O,     O,     O,     B,
        B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
@@ -274,9 +275,9 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,  MPre,  MBlw,  FPst,  FAbv,  FAbv,  FAbv,  FBlw,  FBlw,  FBlw,  FBlw,     O,
+       B,     B,     B,     B,     B,  MPre,  MBlw,   SUB,  FAbv,  FAbv,  FAbv,   SUB,   SUB,   SUB,   SUB,     O,
        H,  VPst,  VAbv,  VPst,  VPst,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VAbv,  VBlw,  VPst,  VPre,  VPre,
-    VPre,  VPre,  VPre,  VAbv,  VAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,    FM,    FM,    FM,     O,     O,    FM,
+    VPre,  VPre,  VPre,  VAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,  VAbv,    FM,    FM,     O,     O,  FBlw,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
 
@@ -323,7 +324,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
 
    VMAbv, VMAbv, VMAbv,     O, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMAbv, VMAbv, VMBlw, VMBlw, VMBlw, VMBlw,
    VMAbv, VMPst, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw,     O,     O,     O,     O, VMBlw,     O,     O,
-       O,     O, VMPst, VMPst, VMAbv,     O,     O,     O, VMAbv, VMAbv,     O,     O,     O,     O,     O,     O,
+       O,     O, VMPst, VMPst, VMAbv,     O,     O, VMPst, VMAbv, VMAbv,     O,     O,     O,     O,     O,     O,
 
 #define use_offset_0x1df8u 2552
 
@@ -376,7 +377,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
   
 
    VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,
-   VMAbv, VMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+   VMAbv, VMAbv,     B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
 
   
 
@@ -397,7 +398,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
    VMAbv, VMAbv,  FAbv, VMPst,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B, CMAbv,  VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VPre,  VAbv,   SUB,  MPst,  MPst,
+       B,     B,     B, CMAbv,  VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VPre,  VAbv,   SUB,  MPst,  MBlw,
        H,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
 
@@ -467,7 +468,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
 
   
 
-   VMPst, VMAbv, VMPst,     R,     R,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+   VMPst, VMAbv, VMPst,    CS,    CS,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,
@@ -545,7 +546,7 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
        B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VPst,  VPst,
     VAbv,  VPst,  VPst,  VPst,  VPst,     O,     O,  VPre,  VPre,     O,     O,  VPre,  VPre,     H,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     B,     B,
        B,     B,  VPst,  VPst,     O,     O, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,
    VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,
 
@@ -615,7 +616,26 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
     VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VAbv,  VBlw,  VAbv,  VAbv,  VAbv,     O,     O,     O,     O,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,
 
-#define use_offset_0x11c00u 4960
+#define use_offset_0x11a00u 4960
+
+
+  
+
+       B,  VAbv,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,    FM,  VBlw, VMAbv, VMAbv, VMAbv, VMAbv, VMPst,     R,  MBlw,  MBlw,  MBlw,  MBlw,    GB,
+       O,     O,     O,     O,     O,    GB,     O,     H,     O,     O,     O,     O,     O,     O,     O,     O,
+
+  
+
+       B,  VAbv,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VPst,  VPst,  VBlw,  VBlw,  VBlw,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     O,     O,     R,     R,     R,     R,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw,
+    FBlw,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw, VMAbv, VMPst, CMAbv,     H,     O,     O,     O,     O,     O,     O,
+
+#define use_offset_0x11c00u 5120
 
 
   
@@ -635,6 +655,18 @@ static const USE_TABLE_ELEMENT_TYPE use_table[] = {
        O,     O,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
      SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,     O,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
     VBlw,  VPre,  VBlw,  VAbv,  VPst, VMAbv, VMAbv,     O,
+
+#define use_offset_0x11d00u 5304
+
+
+  
+
+       B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     O,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,  VAbv,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,     O,     O,     O,  VAbv,     O,  VAbv,  VAbv,     O,  VAbv,
+   VMAbv, VMAbv, CMBlw,  VAbv,  VBlw,     H,     R,  MBlw,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
 
 }; 
 
@@ -684,7 +716,9 @@ hb_use_get_categories (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x11280u, 0x11377u)) return use_table[u - 0x11280u + use_offset_0x11280u];
       if (hb_in_range<hb_codepoint_t> (u, 0x11400u, 0x114DFu)) return use_table[u - 0x11400u + use_offset_0x11400u];
       if (hb_in_range<hb_codepoint_t> (u, 0x11580u, 0x1173Fu)) return use_table[u - 0x11580u + use_offset_0x11580u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x11A00u, 0x11A9Fu)) return use_table[u - 0x11A00u + use_offset_0x11a00u];
       if (hb_in_range<hb_codepoint_t> (u, 0x11C00u, 0x11CB7u)) return use_table[u - 0x11C00u + use_offset_0x11c00u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x11D00u, 0x11D5Fu)) return use_table[u - 0x11D00u + use_offset_0x11d00u];
       if (unlikely (u == 0x1107Fu)) return HN;
       break;
 
@@ -696,6 +730,7 @@ hb_use_get_categories (hb_codepoint_t u)
 
 #undef B
 #undef CGJ
+#undef CS
 #undef FM
 #undef GB
 #undef H
