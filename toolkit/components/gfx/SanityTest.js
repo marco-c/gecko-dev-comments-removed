@@ -12,8 +12,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const FRAME_SCRIPT_URL = "chrome://gfxsanity/content/gfxFrameScript.js";
 
-const PAGE_WIDTH = 92;
-const PAGE_HEIGHT = 166;
+const PAGE_WIDTH = 160;
+const PAGE_HEIGHT = 234;
 const DRIVER_PREF = "sanity-test.driver-version";
 const DEVICE_PREF = "sanity-test.device-id";
 const VERSION_PREF = "sanity-test.version";
@@ -111,10 +111,10 @@ function takeWindowSnapshot(win, ctx) {
 
 
 function verifyVideoRendering(ctx) {
-  return testPixel(ctx, 18, 82, 255, 255, 255, 255, 64) &&
-    testPixel(ctx, 50, 82, 0, 255, 0, 255, 64) &&
-    testPixel(ctx, 18, 114, 0, 0, 255, 255, 64) &&
-    testPixel(ctx, 50, 114, 255, 0, 0, 255, 64);
+  return testPixel(ctx, 41, 105, 255, 255, 255, 255, 64) &&
+    testPixel(ctx, 107, 105, 0, 255, 0, 255, 64) &&
+    testPixel(ctx, 41, 171, 0, 0, 255, 255, 64) &&
+    testPixel(ctx, 107, 171, 255, 0, 0, 255, 64);
 }
 
 
