@@ -3985,13 +3985,9 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
             MOZ_ASSERT(NS_IsMainThread(), "Should be called on the main thread");
             mCacheAsyncOpenCalled = true;
             if (mNetworkTriggered) {
-                mRaceCacheWithNetwork = sRCWNEnabled;
+                mRaceCacheWithNetwork = true;
             }
             rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, this);
-            if (NS_FAILED(rv)) {
-                
-                mCacheAsyncOpenCalled = false;
-            }
         } else {
             
             
@@ -4001,10 +3997,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
                 if (self->mNetworkTriggered) {
                     self->mRaceCacheWithNetwork = true;
                 }
-                nsresult rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
-                if (NS_FAILED(rv)) {
-                    self->mCacheAsyncOpenCalled = false;
-                }
+                cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
             };
 
             mCacheOpenTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
@@ -5879,9 +5872,7 @@ NS_IMETHODIMP nsHttpChannel::OnAuthAvailable()
     mAuthRetryPending = true;
     mProxyAuthPending = false;
     LOG(("Resuming the transaction, we got credentials from user"));
-    if (mTransactionPump) {
-        mTransactionPump->Resume();
-    }
+    mTransactionPump->Resume();
 
     return NS_OK;
 }
@@ -9405,7 +9396,7 @@ nsHttpChannel::TriggerNetwork()
     }
 
     if (mCacheAsyncOpenCalled && !mOnCacheAvailableCalled) {
-        mRaceCacheWithNetwork = sRCWNEnabled;
+        mRaceCacheWithNetwork = true;
     }
 
     LOG(("  triggering network\n"));
