@@ -159,7 +159,7 @@ public:
         kTextSizeSystemFontFamily = 2, 
         kDisplaySizeSystemFontFamily = 3 
     };
-    void GetSystemFontList(
+    void ReadSystemFontList(
         InfallibleTArray<mozilla::dom::SystemFontListEntry>* aList);
 
 protected:
