@@ -3134,21 +3134,4 @@ public:
   nsCOMPtr<nsIAtom> mAttrName;
 };
 
-
-
-template<typename T>
-class MOZ_RAII SetAndNullOnExit
-{
-public:
-  SetAndNullOnExit(T* &aVariable, T* aValue) {
-    aVariable = aValue;
-    mVariable = &aVariable;
-  }
-  ~SetAndNullOnExit() {
-    *mVariable = nullptr;
-  }
-private:
-  T** mVariable;
-};
-
 #endif 
