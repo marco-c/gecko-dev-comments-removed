@@ -28,26 +28,27 @@ ImageTracker::Add(imgIRequest* aImage)
 {
   MOZ_ASSERT(aImage);
 
-  
-  uint32_t oldCount = 0;
-  mImages.Get(aImage, &oldCount);
-
-  
-  mImages.Put(aImage, oldCount + 1);
-
   nsresult rv = NS_OK;
+  auto entry = mImages.LookupForAdd(aImage);
+  if (entry) {
+    
+    uint32_t oldCount = entry.Data();
+    MOZ_ASSERT(oldCount > 0, "Entry in the image tracker with count 0!");
+    entry.Data() = oldCount + 1;
+  } else {
+    
+    entry.OrInsert([]() { return 1; });
 
-  
-  
-  if (oldCount == 0 && mLocking) {
-    rv = aImage->LockImage();
-  }
+    
+    if (mLocking) {
+      rv = aImage->LockImage();
+    }
 
-  
-  
-  if (oldCount == 0 && mAnimating) {
-    nsresult rv2 = aImage->IncrementAnimationConsumers();
-    rv = NS_SUCCEEDED(rv) ? rv2 : rv;
+    
+    if (mAnimating) {
+      nsresult rv2 = aImage->IncrementAnimationConsumers();
+      rv = NS_SUCCEEDED(rv) ? rv2 : rv;
+    }
   }
 
   return rv;
@@ -59,22 +60,22 @@ ImageTracker::Remove(imgIRequest* aImage, uint32_t aFlags)
   NS_ENSURE_ARG_POINTER(aImage);
 
   
-  uint32_t count = 0;
-  DebugOnly<bool> found = mImages.Get(aImage, &count);
+  DebugOnly<bool> found = false;
+  bool remove = false;
+  mImages.LookupRemoveIf(aImage,
+    [&found, &remove] (uint32_t& aCount) {
+      found = true;
+      MOZ_ASSERT(aCount > 0, "Entry in the image tracker with count 0!");
+      --aCount;
+      
+      remove = aCount == 0;
+      return remove;
+    });
+
   MOZ_ASSERT(found, "Removing image that wasn't in the tracker!");
-  MOZ_ASSERT(count > 0, "Entry in the cache tracker with count 0!");
-
-  
-  count--;
-
-  
-  
-  if (count != 0) {
-    mImages.Put(aImage, count);
+  if (!remove) {
     return NS_OK;
   }
-
-  mImages.Remove(aImage);
 
   nsresult rv = NS_OK;
 
