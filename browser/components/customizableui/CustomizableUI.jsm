@@ -250,13 +250,6 @@ var CustomizableUIInternal = {
       defaultCollapsed: true,
     }, true);
 
-    this.registerArea(CustomizableUI.AREA_ADDONBAR, {
-      type: CustomizableUI.TYPE_TOOLBAR,
-      legacy: true,
-      defaultPlacements: ["addonbar-closebutton", "status-bar"],
-      defaultCollapsed: false,
-    }, true);
-
     SearchWidgetTracker.init();
   },
 
@@ -265,7 +258,6 @@ var CustomizableUIInternal = {
       CustomizableUI.AREA_NAVBAR,
       CustomizableUI.AREA_BOOKMARKS,
       CustomizableUI.AREA_TABSTRIP,
-      CustomizableUI.AREA_ADDONBAR,
     ]);
     if (AppConstants.platform != "macosx") {
       toolbars.add(CustomizableUI.AREA_MENUBAR);
@@ -2875,12 +2867,6 @@ this.CustomizableUI = {
 
 
   AREA_BOOKMARKS: "PersonalToolbar",
-  
-
-
-
-
-  AREA_ADDONBAR: "addon-bar",
   
 
 
