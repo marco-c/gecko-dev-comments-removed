@@ -10366,6 +10366,12 @@ void
 nsIFrame::SetParent(nsContainerFrame* aParent)
 {
   
+  
+  
+  MOZ_ASSERT_IF(ParentIsWrapperAnonBox(),
+                aParent->StyleContext()->IsInheritingAnonBox());
+
+  
   mParent = aParent;
   if (::IsXULBoxWrapped(this)) {
     ::InitBoxMetrics(this, true);
