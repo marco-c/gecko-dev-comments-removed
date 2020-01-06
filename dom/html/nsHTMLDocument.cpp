@@ -1700,6 +1700,11 @@ nsHTMLDocument::Open(JSContext* cx,
 #endif
 
     
+    
+    
+    SetReadyStateInternal(READYSTATE_UNINITIALIZED);
+
+    
     rv = window->SetNewDocument(this, nullptr,
                                  false);
     if (rv.Failed()) {
