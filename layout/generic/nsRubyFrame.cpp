@@ -115,7 +115,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   }
 
   
-  MoveOverflowToChildList();
+  MoveOverflowToChildList(aReflowInput.mLineLayout->LineContainerFrame());
 
   
   mLeadings.Reset();
@@ -228,7 +228,7 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
       aStatus.Reset();
       aStatus.SetInlineLineBreakAfter();
       aStatus.SetIncomplete();
-      PushChildren(aBaseContainer, aBaseContainer->GetPrevSibling());
+      PushChildrenToOverflow(aBaseContainer, aBaseContainer->GetPrevSibling());
       aReflowInput.mLineLayout->SetDirtyNextLine();
     }
     
@@ -274,7 +274,7 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
       
       
       
-      PushChildren(lastChild->GetNextSibling(), lastChild);
+      PushChildrenToOverflow(lastChild->GetNextSibling(), lastChild);
       aReflowInput.mLineLayout->SetDirtyNextLine();
     }
   } else {

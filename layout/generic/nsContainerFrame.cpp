@@ -1516,7 +1516,7 @@ nsContainerFrame::PushChildren(nsIFrame* aFromChild,
 }
 
 bool
-nsContainerFrame::MoveOverflowToChildList()
+nsContainerFrame::MoveOverflowToChildList(nsIFrame* aLineContainer)
 {
   bool result = false;
 
@@ -1528,7 +1528,21 @@ nsContainerFrame::MoveOverflowToChildList()
     if (prevOverflowFrames) {
       
       
-      NS_ASSERTION(mFrames.IsEmpty() || IsTableFrame(), "bad overflow list");
+      
+      
+      
+      
+      
+      
+      NS_ASSERTION(mFrames.IsEmpty() || IsTableFrame() || aLineContainer,
+                   "bad overflow list");
+      
+      
+      if (aLineContainer && aLineContainer->GetPrevContinuation()) {
+        ReparentFloatsForInlineChild(aLineContainer,
+                                     prevOverflowFrames->FirstChild(),
+                                     true);
+      }
       
       
       nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames,

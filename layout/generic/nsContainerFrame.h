@@ -631,7 +631,10 @@ protected:
 
 
 
-  bool MoveOverflowToChildList();
+
+
+
+  bool MoveOverflowToChildList(nsIFrame* aLineContainer = nullptr);
 
   
 
