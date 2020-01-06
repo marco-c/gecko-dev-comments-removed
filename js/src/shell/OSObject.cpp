@@ -123,7 +123,7 @@ ResolvePath(JSContext* cx, HandleString filenameStr, PathResolutionMode resolveM
             resolveMode = RootRelative;
     }
 
-    static char buffer[PATH_MAX+1];
+    char buffer[PATH_MAX+1];
     if (resolveMode == ScriptRelative) {
 #ifdef XP_WIN
         
@@ -232,7 +232,7 @@ FileAsTypedArray(JSContext* cx, JS::HandleString pathnameStr)
 UniqueChars
 GetCWD()
 {
-    static char buffer[PATH_MAX + 1];
+    char buffer[PATH_MAX + 1];
     const char* cwd = getcwd(buffer, PATH_MAX);
     if (!cwd)
         return UniqueChars();
