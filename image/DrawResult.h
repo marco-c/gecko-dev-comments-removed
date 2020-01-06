@@ -84,22 +84,6 @@ operator&=(DrawResult& aLeft, const DrawResult aRight)
   return aLeft;
 }
 
-
-
-
-
-
-
-struct imgDrawingParams {
-  explicit imgDrawingParams(uint32_t aImageFlags = 0)
-    : imageFlags(aImageFlags), result(DrawResult::SUCCESS)
-  {}
-
-  const uint32_t imageFlags; 
-                             
-  DrawResult result;         
-};
-
 } 
 } 
 
