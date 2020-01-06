@@ -83,12 +83,22 @@ public:
   virtual bool ObservesReflow() { return true; }
 
 protected:
-  
   void StartObserving();
   void StopObserving();
 
   
-  virtual void DoUpdate() = 0; 
+
+
+
+
+
+
+
+
+
+
+
+  virtual void OnRenderingChange() = 0;
 
   
   
@@ -122,8 +132,7 @@ public:
 protected:
   Element* GetTarget() override { return mObservedElementTracker.get(); }
 
-  
-  virtual void DoUpdate() override;
+  void OnRenderingChange() override;
 
   
 
@@ -141,7 +150,7 @@ protected:
       mOwningObserver->StopObserving(); 
       IDTracker::ElementChanged(aFrom, aTo);
       mOwningObserver->StartObserving(); 
-      mOwningObserver->DoUpdate();
+      mOwningObserver->OnRenderingChange();
     }
     
 
@@ -195,7 +204,7 @@ public:
 protected:
   virtual ~nsSVGRenderingObserverProperty() {}
 
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 
   nsSVGFrameReferenceFromProperty mFrameReference;
 };
@@ -238,13 +247,13 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsSVGFilterReference, nsSVGIDRenderingObserver)
 
   
-  virtual void Invalidate() override { DoUpdate(); };
+  virtual void Invalidate() override { OnRenderingChange(); };
 
 protected:
   virtual ~nsSVGFilterReference() {}
 
   
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 
 private:
   nsSVGFilterChainObserver* mFilterChainObserver;
@@ -269,7 +278,7 @@ public:
 
   bool ReferencesValidResources();
   bool IsInObserverLists() const;
-  void Invalidate() { DoUpdate(); }
+  void Invalidate() { OnRenderingChange(); }
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -278,7 +287,7 @@ public:
 protected:
   virtual ~nsSVGFilterChainObserver();
 
-  virtual void DoUpdate() = 0;
+  virtual void OnRenderingChange() = 0;
 
 private:
 
@@ -305,7 +314,7 @@ public:
   void DetachFromFrame() { mFrameReference.Detach(); }
 
 protected:
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 
   nsSVGFrameReferenceFromProperty mFrameReference;
 };
@@ -317,7 +326,7 @@ public:
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
 
 protected:
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 };
 
 class nsSVGTextPathProperty final : public nsSVGRenderingObserverProperty
@@ -330,7 +339,7 @@ public:
   virtual bool ObservesReflow() override { return false; }
 
 protected:
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 
 private:
   
@@ -348,7 +357,7 @@ public:
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
 
 protected:
-  virtual void DoUpdate() override;
+  virtual void OnRenderingChange() override;
 };
 
 class nsSVGMaskProperty final : public nsISupports
