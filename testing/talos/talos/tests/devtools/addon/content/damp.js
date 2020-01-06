@@ -394,6 +394,54 @@ async _consoleOpenWithCachedMessagesTest() {
     await this.testTeardown();
   },
 
+  
+
+
+  async _inspectorLayoutTest() {
+    let tab = await this.testSetup(SIMPLE_URL);
+    let messageManager = tab.linkedBrowser.messageManager;
+
+    
+    let sidebarTab = Services.prefs.getCharPref("devtools.inspector.activeSidebar");
+
+    
+    Services.prefs.setCharPref("devtools.inspector.activeSidebar", "layoutview");
+
+    
+    
+    await new Promise(resolve => {
+      messageManager.addMessageListener("setup-test-done", resolve);
+
+      const NODES = 5000;
+      const GRID_NODES = 10;
+      messageManager.loadFrameScript("data:,(" + encodeURIComponent(
+        `function () {
+          let div = content.document.createElement("div");
+          div.innerHTML =
+            new Array(${NODES}).join("<div></div>") +
+            new Array(${GRID_NODES}).join("<div style='display:grid'></div>");
+          content.document.body.appendChild(div);
+          sendSyncMessage("setup-test-done");
+        }`
+      ) + ")()", false);
+    });
+
+    
+    let start = performance.now();
+    await this.openToolbox("inspector");
+    this._results.push({
+      name: "inspector.layout.open",
+      value: performance.now() - start
+    });
+
+    await this.closeToolbox(null);
+
+    
+    Services.prefs.setCharPref("devtools.inspector.activeSidebar", sidebarTab);
+
+    await this.testTeardown();
+  },
+
   takeCensus(label) {
     let start = performance.now();
 
@@ -796,6 +844,7 @@ async _consoleOpenWithCachedMessagesTest() {
     tests["console.objectexpand"] = this._consoleObjectExpansionTest;
     tests["console.openwithcache"] = this._consoleOpenWithCachedMessagesTest;
     tests["inspector.mutations"] = this._inspectorMutationsTest;
+    tests["inspector.layout"] = this._inspectorLayoutTest;
 
     
     let filter = Services.prefs.getCharPref("talos.subtests", "");
