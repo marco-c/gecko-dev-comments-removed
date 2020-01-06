@@ -3343,7 +3343,7 @@ pref("dom.ipc.useNativeEventProcessing.content", false);
 
 
 pref("dom.ipc.scheduler", false);
-pref("dom.ipc.scheduler.useMultipleQueues", false);
+pref("dom.ipc.scheduler.useMultipleQueues", true);
 pref("dom.ipc.scheduler.preemption", false);
 pref("dom.ipc.scheduler.threadCount", 2);
 pref("dom.ipc.scheduler.chaoticScheduling", false);
