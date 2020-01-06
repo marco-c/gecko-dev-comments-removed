@@ -186,12 +186,24 @@ TextEditRules::BeforeEdit(EditAction action,
   mActionNesting++;
 
   
-  NS_ENSURE_STATE(mTextEditor);
-  RefPtr<Selection> selection = mTextEditor->GetSelection();
+  if (NS_WARN_IF(!mTextEditor)) {
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<TextEditor> textEditor = mTextEditor;
+  RefPtr<Selection> selection = textEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
-  mCachedSelectionNode = selection->GetAnchorNode();
-  selection->GetAnchorOffset(&mCachedSelectionOffset);
+  if (action == EditAction::setText) {
+    
+    
+    
+    
+    mCachedSelectionNode = textEditor->GetRoot();
+    mCachedSelectionOffset = 0;
+  } else {
+    mCachedSelectionNode = selection->GetAnchorNode();
+    selection->GetAnchorOffset(&mCachedSelectionOffset);
+  }
 
   return NS_OK;
 }
@@ -219,6 +231,9 @@ TextEditRules::AfterEdit(EditAction action,
                                           mCachedSelectionOffset,
                                           nullptr, 0, nullptr, 0);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    mCachedSelectionNode = nullptr;
 
     
     rv = RemoveRedundantTrailingBR();
