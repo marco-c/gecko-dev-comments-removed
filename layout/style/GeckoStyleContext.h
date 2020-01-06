@@ -27,6 +27,18 @@ public:
 
   void AddChild(GeckoStyleContext* aChild);
   void RemoveChild(GeckoStyleContext* aChild);
+
+  void* GetUniqueStyleData(const nsStyleStructID& aSID);
+  void* CreateEmptyStyleData(const nsStyleStructID& aSID);
+
+
+  
+
+
+
+
+  void SetIneligibleForSharing();
+  void LogChildStyleContextTree(uint32_t aStructs) const;
   
 
 
@@ -46,15 +58,20 @@ public:
                      bool aRelevantLinkVisited);
 
 #ifdef DEBUG
+  void AssertChildStructsNotUsedElsewhere(nsStyleContext* aDestroyingContext,
+                                          int32_t aLevels) const;
   void ListDescendants(FILE* out, int32_t aIndent);
 #endif
+
+  
+  void ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup);
+
+  bool HasNoChildren() const;
 
 private:
   
   void DoClearCachedInheritedStyleDataOnDescendants(uint32_t aStructs);
 
-
-public:
   
   
   

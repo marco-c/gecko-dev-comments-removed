@@ -447,14 +447,6 @@ public:
 
   void SwapStyleData(nsStyleContext* aNewContext, uint32_t aStructs);
 
-
-  
-
-
-
-
-  void SetIneligibleForSharing();
-
 #ifdef DEBUG
   void List(FILE* out, int32_t aIndent, bool aListDescendants = true);
   static const char* StructName(nsStyleStructID aSID);
@@ -508,13 +500,7 @@ public:
   void AddChild(nsStyleContext* aChild);
   void RemoveChild(nsStyleContext* aChild);
 
-  void* GetUniqueStyleData(const nsStyleStructID& aSID);
-  void* CreateEmptyStyleData(const nsStyleStructID& aSID);
-
   void SetStyleBits();
-
-  
-  void ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup);
 
   const void* StyleStructFromServoComputedValues(nsStyleStructID aSID) {
     switch (aSID) {
