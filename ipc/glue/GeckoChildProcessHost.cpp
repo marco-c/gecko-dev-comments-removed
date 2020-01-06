@@ -535,6 +535,8 @@ GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogN
 bool
 GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, base::ProcessArchitecture arch)
 {
+  AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
+
   
   const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
   const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
