@@ -6,17 +6,18 @@
 
 #include "TimeoutBudgetManager.h"
 
+#include "mozilla/dom/Timeout.h"
+
 namespace mozilla {
 namespace dom {
 
 
 const uint32_t kTelemetryPeriodMS = 1000;
 
-static TimeoutBudgetManager gTimeoutBudgetManager;
-
  TimeoutBudgetManager&
 TimeoutBudgetManager::Get()
 {
+  static TimeoutBudgetManager gTimeoutBudgetManager;
   return gTimeoutBudgetManager;
 }
 
@@ -32,34 +33,32 @@ TimeoutBudgetManager::StopRecording()
   mStart = TimeStamp();
 }
 
-TimeDuration
+void
 TimeoutBudgetManager::RecordExecution(const TimeStamp& aNow,
-                                      bool aIsTracking,
+                                      const Timeout* aTimeout,
                                       bool aIsBackground)
 {
   if (!mStart) {
     
     
-    return TimeDuration();
+    return;
   }
 
   TimeDuration duration = aNow - mStart;
 
   if (aIsBackground) {
-    if (aIsTracking) {
+    if (aTimeout->mIsTracking) {
       mTelemetryData.mBackgroundTracking += duration;
     } else {
       mTelemetryData.mBackgroundNonTracking += duration;
     }
   } else {
-    if (aIsTracking) {
+    if (aTimeout->mIsTracking) {
       mTelemetryData.mForegroundTracking += duration;
     } else {
       mTelemetryData.mForegroundNonTracking += duration;
     }
   }
-
-  return duration;
 }
 
 void
