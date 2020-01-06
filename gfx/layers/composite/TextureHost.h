@@ -447,6 +447,14 @@ public:
   
 
 
+
+  virtual bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) {
+    return false;
+  }
+
+  
+
+
   virtual void UnbindTextureSource();
 
   
@@ -695,6 +703,7 @@ public:
   virtual void PrepareTextureSource(CompositableTextureSourceRef& aTexture) override;
 
   virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
+  virtual bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) override;
 
   virtual void UnbindTextureSource() override;
 
@@ -740,7 +749,8 @@ public:
 
 protected:
   bool Upload(nsIntRegion *aRegion = nullptr);
-  bool MaybeUpload(nsIntRegion *aRegion = nullptr);
+  bool UploadIfNeeded();
+  bool MaybeUpload(nsIntRegion *aRegion);
   bool EnsureWrappingTextureSource();
 
   virtual void UpdatedInternal(const nsIntRegion* aRegion = nullptr) override;
