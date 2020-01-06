@@ -71,12 +71,13 @@ XPCOMUtils.defineLazyGetter(this, "WeaveCrypto", function() {
 });
 
 const {
+  DefaultMap,
   runSafeSyncWithoutClone,
 } = ExtensionUtils;
 
 
 
-const extensionContexts = new Map();
+const extensionContexts = new DefaultMap(() => new Set());
 
 const log = Log.repository.getLogger("Sync.Engine.Extension-Storage");
 
@@ -664,9 +665,6 @@ global.CollectionKeyEncryptionRemoteTransformer = CollectionKeyEncryptionRemoteT
 
 function cleanUpForContext(extension, context) {
   const contexts = extensionContexts.get(extension);
-  if (!contexts) {
-    Cu.reportError(new Error(`Internal error: cannot find any contexts for extension ${extension.id}`));
-  }
   contexts.delete(context);
   if (contexts.size === 0) {
     
@@ -1085,6 +1083,19 @@ class ExtensionStorageSync {
     }
   }
 
+  registerInUse(extension, context) {
+    
+    const contexts = extensionContexts.get(extension);
+    if (!contexts.has(context)) {
+      
+      
+      contexts.add(context);
+      context.callOnClose({
+        close: () => cleanUpForContext(extension, context),
+      });
+    }
+  }
+
   
 
 
@@ -1101,20 +1112,7 @@ class ExtensionStorageSync {
     if (prefPermitsStorageSync !== true) {
       return Promise.reject({message: `Please set ${STORAGE_SYNC_ENABLED_PREF} to true in about:config`});
     }
-    
-    if (!extensionContexts.has(extension)) {
-      extensionContexts.set(extension, new Set());
-    }
-    const contexts = extensionContexts.get(extension);
-    if (!contexts.has(context)) {
-      
-      
-      contexts.add(context);
-      context.callOnClose({
-        close: () => cleanUpForContext(extension, context),
-      });
-    }
-
+    this.registerInUse(extension, context);
     return openCollection(this.cryptoCollection, extension, context);
   }
 
@@ -1223,18 +1221,7 @@ class ExtensionStorageSync {
     listeners.add(listener);
     this.listeners.set(extension, listeners);
 
-    
-    
-    return this.getCollection(extension, context)
-      .catch((e) => {
-        
-        
-        
-        
-        if (!(/Kinto storage adapter connection closing/.test(e.message))) {
-          throw e;
-        }
-      });
+    this.registerInUse(extension, context);
   }
 
   removeOnChangedListener(extension, listener) {
