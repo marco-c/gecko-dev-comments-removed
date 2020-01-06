@@ -107,6 +107,12 @@ var gPlayedTests = [
   { name:"bug495794.ogg", type:"audio/ogg", duration:0.3 },
 ];
 
+if (manifestNavigator().userAgent.includes("Windows") &&
+    manifestVideo().canPlayType('video/mp4; codecs="avc1.42E01E"')) {
+  gPlayedTests = gPlayedTests.concat({name: "red-46x48.mp4", type:"video/mp4", duration:1.00},
+                                     {name: "red-48x46.mp4", type:"video/mp4", duration:1.00});
+}
+
 
 
 var cloneKey = Math.floor(Math.random()*100000000);
@@ -555,14 +561,6 @@ var gErrorTests = [
   { name:"bug604067.webm", type:"video/webm" },
   { name:"bogus.duh", type:"bogus/duh" }
 ];
-
-
-
-if (manifestNavigator().userAgent.includes("Windows") &&
-    manifestVideo().canPlayType('video/mp4; codecs="avc1.42E01E"')) {
-  gErrorTests = gErrorTests.concat({name: "red-46x48.mp4", type:"video/mp4"},
-                                   {name: "red-48x46.mp4", type:"video/mp4"});
-}
 
 
 
