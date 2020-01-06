@@ -163,7 +163,7 @@ public class BrowserContract {
 
         
         
-        String PARAM_INSERT_FROM_SYNC_AS_MODIFIED = "insertFromSyncAsModified";
+        String PARAM_INSERT_FROM_SYNC_AS_MODIFIED = "modifiedBySync";
     }
 
     @RobocopTarget

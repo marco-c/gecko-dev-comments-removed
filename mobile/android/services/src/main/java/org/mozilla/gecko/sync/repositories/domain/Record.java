@@ -77,7 +77,7 @@ public abstract class Record {
   
   @Nullable public Integer localVersion;
   @Nullable public Integer syncVersion;
-  public boolean insertFromSyncAsModified = false;
+  public boolean modifiedBySync = false;
 
   
 

@@ -292,7 +292,7 @@ import java.util.concurrent.ConcurrentHashMap;
         if (((BookmarkRecord) toProcess).dateAdded == null) {
             ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
             toProcess.lastModified = RepositorySession.now();
-            toProcess.insertFromSyncAsModified = true;
+            toProcess.modifiedBySync = true;
             return toProcess;
         }
 
@@ -301,7 +301,7 @@ import java.util.concurrent.ConcurrentHashMap;
         if (toProcess.lastModified < ((BookmarkRecord) toProcess).dateAdded) {
             ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
             toProcess.lastModified = RepositorySession.now();
-            toProcess.insertFromSyncAsModified = true;
+            toProcess.modifiedBySync = true;
             return toProcess;
         }
 
@@ -437,7 +437,8 @@ import java.util.concurrent.ConcurrentHashMap;
         
         
         
-        boolean shouldIncrementLocalVersion = existingRecord.localVersion > existingRecord.syncVersion;
+        
+        boolean shouldIncrementLocalVersion = toStore.modifiedBySync || (existingRecord.localVersion > existingRecord.syncVersion);
         Record replaced = replaceWithAssertion(
                 toStore,
                 existingRecord,
@@ -514,10 +515,12 @@ import java.util.concurrent.ConcurrentHashMap;
         final long releaseOfNCSAMosaicMillis = 727747200000L;
 
         if (local.dateAdded != null && local.dateAdded < lowest && local.dateAdded > releaseOfNCSAMosaicMillis) {
+            reconciled.modifiedBySync = true;
             lowest = local.dateAdded;
         }
 
         if (remote.dateAdded != null && remote.dateAdded < lowest && remote.dateAdded > releaseOfNCSAMosaicMillis) {
+            reconciled.modifiedBySync = true;
             lowest = remote.dateAdded;
         }
 

@@ -344,7 +344,7 @@ public class BookmarksDataAccessor extends DataAccessor {
     
     
     
-    if (rec.insertFromSyncAsModified) {
+    if (rec.modifiedBySync) {
       cv.put(BrowserContract.Bookmarks.PARAM_INSERT_FROM_SYNC_AS_MODIFIED, true);
     }
 
