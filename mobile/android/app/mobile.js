@@ -848,9 +848,11 @@ pref("consoleservice.logcat", false);
 pref("consoleservice.logcat", true);
 #endif
 
-#ifndef RELEASE_OR_BETA
+#ifdef MOZ_ANDROID_GOOGLE_VR
 
 pref("dom.vr.enabled", true);
+#else
+pref("dom.vr.enabled", false);
 #endif
 
 pref("browser.tabs.showAudioPlayingIcon", true);
