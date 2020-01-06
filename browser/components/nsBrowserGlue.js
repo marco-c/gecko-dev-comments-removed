@@ -237,6 +237,8 @@ const BOOKMARKS_BACKUP_MAX_INTERVAL_DAYS = 3;
 
 const MEDIA_TELEMETRY_IDLE_TIME_SEC = 20;
 
+const LATE_TASKS_IDLE_TIME_SEC = 20;
+
 
 const BrowserGlueServiceFactory = {
   _instance: null,
@@ -575,6 +577,10 @@ BrowserGlue.prototype = {
     if (this._bookmarksBackupIdleTime) {
       this._idleService.removeIdleObserver(this, this._bookmarksBackupIdleTime);
       delete this._bookmarksBackupIdleTime;
+    }
+    if (this._lateTasksIdleObserver) {
+      this._idleService.removeIdleObserver(this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
+      delete this._lateTasksIdleObserver;
     }
     if (this._mediaTelemetryIdleObserver) {
       this._idleService.removeIdleObserver(this._mediaTelemetryIdleObserver, MEDIA_TELEMETRY_IDLE_TIME_SEC);
@@ -1191,6 +1197,58 @@ BrowserGlue.prototype = {
 
     this._sanitizer.onStartup();
     E10SAccessibilityCheck.onWindowsRestored();
+
+    this._scheduleStartupIdleTasks();
+
+    this._lateTasksIdleObserver = (idleService, topic, data) => {
+      if (topic == "idle") {
+        idleService.removeIdleObserver(this._lateTasksIdleObserver,
+                                       LATE_TASKS_IDLE_TIME_SEC);
+        delete this._lateTasksIdleObserver;
+        this._scheduleArbitrarilyLateIdleTasks();
+      }
+    };
+    this._idleService.addIdleObserver(
+      this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _scheduleStartupIdleTasks() {
+    
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _scheduleArbitrarilyLateIdleTasks() {
+    
   },
 
   _createExtraDefaultProfile() {
