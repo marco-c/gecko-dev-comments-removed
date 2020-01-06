@@ -2423,6 +2423,10 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && !ActivePS::Exists(aLock));
 
+#if defined(GP_PLAT_amd64_windows)
+  InitializeWin64ProfilerHooks();
+#endif
+
   
   int entries = aEntries > 0 ? aEntries : PROFILER_DEFAULT_ENTRIES;
   double interval = aInterval > 0 ? aInterval : PROFILER_DEFAULT_INTERVAL;

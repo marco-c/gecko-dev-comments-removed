@@ -32,6 +32,10 @@
 #include <mmsystem.h>
 #include <process.h>
 
+#include "nsWindowsDllInterceptor.h"
+#include "mozilla/StackWalk_windows.h"
+#include "mozilla/WindowsVersion.h"
+
  Thread::tid_t
 Thread::GetCurrentId()
 {
@@ -281,4 +285,59 @@ Registers::SyncPopulate()
   PopulateRegsFromContext(*this, &context);
 }
 #endif
+
+#if defined(GP_PLAT_amd64_windows)
+static WindowsDllInterceptor NtDllIntercept;
+
+typedef NTSTATUS (NTAPI *LdrUnloadDll_func)(HMODULE module);
+static LdrUnloadDll_func stub_LdrUnloadDll;
+
+static NTSTATUS NTAPI
+patched_LdrUnloadDll(HMODULE module)
+{
+  
+  
+  AutoSuppressStackWalking suppress;
+  return stub_LdrUnloadDll(module);
+}
+
+
+typedef PVOID (WINAPI *LdrResolveDelayLoadedAPI_func)(PVOID ParentModuleBase,
+  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
+  PVOID ThunkAddress, ULONG Flags);
+static LdrResolveDelayLoadedAPI_func stub_LdrResolveDelayLoadedAPI;
+
+static PVOID WINAPI
+patched_LdrResolveDelayLoadedAPI(PVOID ParentModuleBase,
+  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
+  PVOID ThunkAddress, ULONG Flags)
+{
+  
+  
+  AutoSuppressStackWalking suppress;
+  return stub_LdrResolveDelayLoadedAPI(ParentModuleBase, DelayloadDescriptor,
+                                       FailureDllHook, FailureSystemHook,
+                                       ThunkAddress, Flags);
+}
+
+void
+InitializeWin64ProfilerHooks()
+{
+  static bool initialized = false;
+  if (initialized) {
+    return;
+  }
+  initialized = true;
+
+  NtDllIntercept.Init("ntdll.dll");
+  NtDllIntercept.AddHook("LdrUnloadDll",
+                         reinterpret_cast<intptr_t>(patched_LdrUnloadDll),
+                         (void**)&stub_LdrUnloadDll);
+  if (IsWin8OrLater()) { 
+    NtDllIntercept.AddHook("LdrResolveDelayLoadedAPI",
+                           reinterpret_cast<intptr_t>(patched_LdrResolveDelayLoadedAPI),
+                           (void**)&stub_LdrResolveDelayLoadedAPI);
+  }
+}
+#endif 
 
