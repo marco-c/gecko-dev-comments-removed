@@ -865,6 +865,8 @@ var TPS = {
         this.waitForEvent("weave:service:ready");
       }
 
+      await Weave.Service.promiseInitialized;
+
       
       this.shouldValidateBookmarks = false;
 
