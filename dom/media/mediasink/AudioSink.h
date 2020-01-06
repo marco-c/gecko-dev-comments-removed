@@ -63,6 +63,8 @@ public:
     return mAudibleEvent;
   }
 
+  nsCString GetDebugInfo();
+
 private:
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
