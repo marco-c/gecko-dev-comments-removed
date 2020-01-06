@@ -122,11 +122,6 @@ enum BailoutKind
     Bailout_BadDerivedConstructorReturn,
 
     
-    
-    
-    Bailout_NotPure,
-
-    
     Bailout_FirstExecution,
 
     
@@ -228,8 +223,6 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_UninitializedThis";
       case Bailout_BadDerivedConstructorReturn:
         return "Bailout_BadDerivedConstructorReturn";
-      case Bailout_NotPure:
-        return "Bailout_NotPure";
       case Bailout_FirstExecution:
         return "Bailout_FirstExecution";
 
