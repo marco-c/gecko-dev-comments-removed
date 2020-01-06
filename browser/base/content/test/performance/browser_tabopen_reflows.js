@@ -18,16 +18,6 @@ const EXPECTED_REFLOWS = [
   [
     "select@chrome://global/content/bindings/textbox.xml",
   ],
-
-  
-  
-  [
-    "select@chrome://global/content/bindings/textbox.xml",
-  ],
-
-  [
-    "select@chrome://global/content/bindings/textbox.xml",
-  ],
 ];
 
 
