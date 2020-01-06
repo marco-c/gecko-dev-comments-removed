@@ -19,6 +19,7 @@
 #include "nsIChannel.h"
 #include "nsContentUtils.h"
 #include "nsCRT.h"
+#include "nsIObserverService.h"
 
 #include "mozilla/Logging.h"
 #include "prtime.h"
@@ -26,6 +27,7 @@
 
 #include "nsNativeCharsetUtils.h"
 #include "nsThreadUtils.h"
+#include "mozilla/ClearOnShutdown.h"
 
 using mozilla::LogLevel;
 
@@ -33,69 +35,72 @@ static mozilla::LazyLogModule gWin32SoundLog("nsSound");
 
 class nsSoundPlayer: public mozilla::Runnable {
 public:
-  nsSoundPlayer(nsSound *aSound, const wchar_t* aSoundName) :
-    mSoundName(aSoundName), mSound(aSound)
+  explicit nsSoundPlayer(const nsAString& aSoundName)
+    : mSoundName(aSoundName)
+    , mSoundData(nullptr)
   {
-    Init();
   }
 
-  nsSoundPlayer(nsSound *aSound, const nsAString& aSoundName) :
-    mSoundName(aSoundName), mSound(aSound)
+  nsSoundPlayer(const uint8_t *aData, size_t aSize)
+    : mSoundName(EmptyString())
   {
-    Init();
+    MOZ_ASSERT(aSize > 0, "Size should not be zero");
+    MOZ_ASSERT(aData, "Data shoud not be null");
+
+    
+    mSoundData = new uint8_t[aSize];
+    memcpy(mSoundData, aData, aSize);
   }
 
   NS_DECL_NSIRUNNABLE
 
 protected:
+  ~nsSoundPlayer();
+
   nsString mSoundName;
-  nsSound *mSound; 
-  nsCOMPtr<nsIThread> mThread;
-
-  void Init()
-  {
-    NS_GetCurrentThread(getter_AddRefs(mThread));
-    NS_ASSERTION(mThread, "failed to get current thread");
-    NS_IF_ADDREF(mSound);
-  }
-
-  class SoundReleaser: public mozilla::Runnable {
-  public:
-    explicit SoundReleaser(nsSound* aSound) :
-      mSound(aSound)
-    {
-    }
-
-    NS_DECL_NSIRUNNABLE
-
-  protected:
-    nsSound *mSound;
-  };
+  uint8_t* mSoundData;
 };
 
 NS_IMETHODIMP
 nsSoundPlayer::Run()
 {
-  NS_SetCurrentThreadName("Play Sound");
+  MOZ_ASSERT(!mSoundName.IsEmpty() || mSoundData,
+    "Sound name or sound data should be specified");
+  DWORD flags = SND_NODEFAULT | SND_ASYNC;
 
-  NS_PRECONDITION(!mSoundName.IsEmpty(), "Sound name should not be empty");
-  ::PlaySoundW(mSoundName.get(), nullptr,
-               SND_NODEFAULT | SND_ALIAS | SND_ASYNC);
-  nsCOMPtr<nsIRunnable> releaser = new SoundReleaser(mSound);
-  
-  
-  mThread->Dispatch(releaser, NS_DISPATCH_NORMAL);
+  if (mSoundData) {
+    flags |= SND_MEMORY;
+    ::PlaySoundW(reinterpret_cast<LPCWSTR>(mSoundData), nullptr, flags);
+  } else {
+    flags |= SND_ALIAS;
+    ::PlaySoundW(mSoundName.get(), nullptr, flags);
+  }
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsSoundPlayer::SoundReleaser::Run()
+nsSoundPlayer::~nsSoundPlayer()
 {
-  mSound->ShutdownOldPlayerThread();
-  NS_IF_RELEASE(mSound);
-  return NS_OK;
+  delete [] mSoundData;
 }
 
+mozilla::StaticRefPtr<nsISound> nsSound::sInstance;
+
+ already_AddRefed<nsISound>
+nsSound::GetInstance()
+{
+  if (!sInstance) {
+    RefPtr<nsSound> sound = new nsSound();
+    nsresult rv = sound->CreatePlayerThread();
+    if(NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+    sInstance = sound.forget();
+    ClearOnShutdown(&sInstance);
+  }
+
+  RefPtr<nsISound> service = sInstance;
+  return service.forget();
+}
 
 #ifndef SND_PURGE
 
@@ -107,32 +112,21 @@ NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIStreamLoaderObserver)
 
 
 nsSound::nsSound()
+  : mInited(false)
 {
-    mLastSound = nullptr;
 }
 
 nsSound::~nsSound()
 {
-  NS_ASSERTION(!mPlayerThread, "player thread is not null but should be");
-  PurgeLastSound();
 }
 
-void nsSound::ShutdownOldPlayerThread()
+void nsSound::PurgeLastSound()
 {
-  nsCOMPtr<nsIThread> playerThread(mPlayerThread.forget());
-  if (playerThread)
-    playerThread->Shutdown();
-}
-
-void nsSound::PurgeLastSound() 
-{
-  if (mLastSound) {
-    
-    ::PlaySound(nullptr, nullptr, SND_PURGE);
-
-    
-    free(mLastSound);
-    mLastSound = nullptr;
+  
+  if (mPlayerThread) {
+    mPlayerThread->Dispatch(NS_NewRunnableFunction([]() {
+      ::PlaySound(nullptr, nullptr, SND_PURGE);
+    }), NS_DISPATCH_NORMAL);
   }
 }
 
@@ -149,6 +143,7 @@ NS_IMETHODIMP nsSound::OnStreamComplete(nsIStreamLoader *aLoader,
                                         uint32_t dataLen,
                                         const uint8_t *data)
 {
+  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
   
   if (NS_FAILED(aStatus)) {
 #ifdef DEBUG
@@ -173,19 +168,16 @@ NS_IMETHODIMP nsSound::OnStreamComplete(nsIStreamLoader *aLoader,
     return aStatus;
   }
 
-  ShutdownOldPlayerThread();
   PurgeLastSound();
 
   if (data && dataLen > 0) {
-    DWORD flags = SND_MEMORY | SND_NODEFAULT;
-    
-    mLastSound = (uint8_t *) malloc(dataLen);
-    if (mLastSound) {
-      memcpy(mLastSound, data, dataLen);
-      data = mLastSound;
-      flags |= SND_ASYNC;
+    RefPtr<nsSoundPlayer> player = new nsSoundPlayer(data, dataLen);
+    MOZ_ASSERT(player, "Could not create player");
+
+    nsresult rv = mPlayerThread->Dispatch(player, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(FAILED(rv))) {
+      return rv;
     }
-    ::PlaySoundW(reinterpret_cast<LPCWSTR>(data), 0, flags);
   }
 
   return NS_OK;
@@ -212,34 +204,81 @@ NS_IMETHODIMP nsSound::Play(nsIURL *aURL)
   return rv;
 }
 
-
-NS_IMETHODIMP nsSound::Init()
+nsresult
+nsSound::CreatePlayerThread()
 {
+  if (mPlayerThread) {
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(
+        NS_NewNamedThread("PlayEventSound", getter_AddRefs(mPlayerThread))))) {
+    return NS_ERROR_FAILURE;
+  }
+
   
-  
-  
-  
-  
-  ::PlaySound(nullptr, nullptr, SND_PURGE);
+  nsCOMPtr<nsIObserverService> observerService =
+    mozilla::services::GetObserverService();
+  if (!observerService) {
+    return NS_ERROR_FAILURE;
+  }
+
+  observerService->AddObserver(this, "xpcom-shutdown-threads", false);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSound::Observe(nsISupports *aSubject, const char *aTopic,
+                 const char16_t *aData)
+{
+  if (!strcmp(aTopic, "xpcom-shutdown-threads")) {
+    PurgeLastSound();
+
+    if (mPlayerThread) {
+      mPlayerThread->Shutdown();
+      mPlayerThread = nullptr;
+    }
+  }
 
   return NS_OK;
 }
 
+NS_IMETHODIMP nsSound::Init()
+{
+  if (mInited) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
+  
+  
+  
+  
+  
+  
+  
+  mPlayerThread->Dispatch(NS_NewRunnableFunction([]() {
+    ::PlaySound(nullptr, nullptr, SND_PURGE);
+  }), NS_DISPATCH_NORMAL);
+
+  mInited = true;
+
+  return NS_OK;
+}
 
 NS_IMETHODIMP nsSound::PlaySystemSound(const nsAString &aSoundAlias)
 {
-  ShutdownOldPlayerThread();
+  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
   PurgeLastSound();
 
   if (!NS_IsMozAliasSound(aSoundAlias)) {
     if (aSoundAlias.IsEmpty())
       return NS_OK;
-    nsCOMPtr<nsIRunnable> player = new nsSoundPlayer(this, aSoundAlias);
-    NS_ENSURE_TRUE(player, NS_ERROR_OUT_OF_MEMORY);
-    nsresult rv =
-      NS_NewNamedThread("PlaySystemSound", getter_AddRefs(mPlayerThread),
-                        player);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIRunnable> player = new nsSoundPlayer(aSoundAlias);
+    MOZ_ASSERT(player, "Could not create player");
+    nsresult rv = mPlayerThread->Dispatch(player, NS_DISPATCH_NORMAL);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
 
@@ -264,7 +303,7 @@ NS_IMETHODIMP nsSound::PlaySystemSound(const nsAString &aSoundAlias)
 
 NS_IMETHODIMP nsSound::PlayEventSound(uint32_t aEventId)
 {
-  ShutdownOldPlayerThread();
+  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
   PurgeLastSound();
 
   const wchar_t *sound = nullptr;
@@ -294,10 +333,11 @@ NS_IMETHODIMP nsSound::PlayEventSound(uint32_t aEventId)
   }
   NS_ASSERTION(sound, "sound is null");
 
-  nsCOMPtr<nsIRunnable> player = new nsSoundPlayer(this, sound);
-  NS_ENSURE_TRUE(player, NS_ERROR_OUT_OF_MEMORY);
-  nsresult rv =
-    NS_NewNamedThread("PlayEventSound", getter_AddRefs(mPlayerThread), player);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIRunnable> player = new nsSoundPlayer(nsDependentString(sound));
+  MOZ_ASSERT(player, "Could not create player");
+  nsresult rv = mPlayerThread->Dispatch(player, NS_DISPATCH_NORMAL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
   return NS_OK;
 }

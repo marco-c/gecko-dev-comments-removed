@@ -111,6 +111,7 @@ nsTypeAheadFind::Init(nsIDocShell* aDocShell)
     mDidAddObservers = true;
     
     nsresult rv = prefInternal->AddObserver("accessibility.browsewithcaret", this, true);
+    rv = prefInternal->AddObserver("accessibility.typeaheadfind", this, true);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -121,6 +122,18 @@ nsTypeAheadFind::Init(nsIDocShell* aDocShell)
       os->AddObserver(this, DOM_WINDOW_DESTROYED_TOPIC, true);
     }
   }
+
+  if (!mIsSoundInitialized && !mNotFoundSoundURL.IsEmpty()) {
+    
+    
+    
+    mIsSoundInitialized = true;
+    mSoundInterface = do_CreateInstance("@mozilla.org/sound;1");
+    if (mSoundInterface && !mNotFoundSoundURL.EqualsLiteral("beep")) {
+      mSoundInterface->Init();
+    }
+  }
+
   return NS_OK;
 }
 
@@ -141,6 +154,18 @@ nsTypeAheadFind::PrefsReset()
     prefBranch->GetCharPref("accessibility.typeaheadfind.soundURL", getter_Copies(soundStr));
 
   mNotFoundSoundURL = soundStr;
+
+  if (!mNotFoundSoundURL.IsEmpty() && !mNotFoundSoundURL.EqualsLiteral("beep")) {
+    if (!mSoundInterface) {
+      mSoundInterface = do_CreateInstance("@mozilla.org/sound;1");
+    }
+
+    
+    if (mSoundInterface) {
+      mIsSoundInitialized = true;
+      mSoundInterface->Init();
+    }
+  }
 
   prefBranch->GetBoolPref("accessibility.browsewithcaret",
                           &mCaretBrowsingOn);
@@ -1024,24 +1049,6 @@ nsTypeAheadFind::Find(const nsAString& aSearchString, bool aLinksOnly,
     if (!atEnd)
       mStartFindRange = nullptr;
   }
-
-  if (!mIsSoundInitialized && !mNotFoundSoundURL.IsEmpty()) {
-    
-    
-    
-    mIsSoundInitialized = true;
-    mSoundInterface = do_CreateInstance("@mozilla.org/sound;1");
-    if (mSoundInterface && !mNotFoundSoundURL.EqualsLiteral("beep")) {
-      mSoundInterface->Init();
-    }
-  }
-
-#ifdef XP_WIN
-  
-  
-  
-  mSoundInterface = nullptr;
-#endif
 
   int32_t bufferLength = mTypeAheadBuffer.Length();
 
