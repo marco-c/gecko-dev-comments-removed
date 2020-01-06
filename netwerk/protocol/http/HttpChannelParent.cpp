@@ -1121,12 +1121,14 @@ HttpChannelParent::ContinueRedirect2Verify(const nsresult& aResult)
 }
 
 mozilla::ipc::IPCResult
-HttpChannelParent::RecvDocumentChannelCleanup()
+HttpChannelParent::RecvDocumentChannelCleanup(const bool& clearCacheEntry)
 {
   
   CleanupBackgroundChannel(); 
   mChannel = nullptr;          
-  mCacheEntry = nullptr;  
+  if (clearCacheEntry) {
+    mCacheEntry = nullptr;  
+  }
   return IPC_OK();
 }
 

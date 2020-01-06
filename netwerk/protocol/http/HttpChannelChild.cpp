@@ -1098,8 +1098,10 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
 
   
   
+  
   if (!mPreferredCachedAltDataType.IsEmpty()) {
     mKeptAlive = true;
+    SendDocumentChannelCleanup(false); 
     return;
   }
 
@@ -1108,7 +1110,7 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
     
     if (mIPCOpen) {
       mKeptAlive = true;
-      SendDocumentChannelCleanup();
+      SendDocumentChannelCleanup(true);
     }
   } else {
     
