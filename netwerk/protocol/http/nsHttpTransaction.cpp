@@ -583,16 +583,25 @@ nsHttpTransaction::OnTransportStatus(nsITransport* transport,
         } else if (status == NS_NET_STATUS_CONNECTING_TO) {
             SetConnectStart(TimeStamp::Now());
         } else if (status == NS_NET_STATUS_CONNECTED_TO) {
-            SetConnectEnd(TimeStamp::Now(), true);
-        } else if (status == NS_NET_STATUS_TLS_HANDSHAKE_ENDED) {
+            TimeStamp tnow = TimeStamp::Now();
+            SetConnectEnd(tnow, true);
             {
-                
                 MutexAutoLock lock(mLock);
-                if (mTimings.secureConnectionStart.IsNull() &&
-                    !mTimings.connectEnd.IsNull()) {
-                    mTimings.secureConnectionStart = mTimings.connectEnd;
+                mTimings.tcpConnectEnd = tnow;
+                
+                
+                
+                if ((mFastOpenStatus != TFO_DATA_SENT) && 
+                    !mTimings.secureConnectionStart.IsNull()) {
+                    mTimings.secureConnectionStart = tnow;
                 }
             }
+        } else if (status == NS_NET_STATUS_TLS_HANDSHAKE_STARTING) {
+            {
+                MutexAutoLock lock(mLock);
+                mTimings.secureConnectionStart = TimeStamp::Now();
+            }
+        } else if (status == NS_NET_STATUS_TLS_HANDSHAKE_ENDED) {
             SetConnectEnd(TimeStamp::Now(), false);
         } else if (status == NS_NET_STATUS_SENDING_TO) {
             
@@ -2079,6 +2088,13 @@ nsHttpTransaction::GetConnectStart()
 }
 
 mozilla::TimeStamp
+nsHttpTransaction::GetTcpConnectEnd()
+{
+    mozilla::MutexAutoLock lock(mLock);
+    return mTimings.tcpConnectEnd;
+}
+
+mozilla::TimeStamp
 nsHttpTransaction::GetSecureConnectionStart()
 {
     mozilla::MutexAutoLock lock(mLock);
@@ -2338,6 +2354,7 @@ nsHttpTransaction::RestartOnFastOpenError()
     mEarlyDataDisposition = EARLY_NONE;
     m0RTTInProgress = false;
     mFastOpenStatus = TFO_FAILED;
+    mTimings = TimingStruct();
     return NS_OK;
 }
 

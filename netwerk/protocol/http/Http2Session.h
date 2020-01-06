@@ -558,6 +558,11 @@ private:
     nsHttpRequestHead mRequestHead;
   };
 
+  
+  
+  
+  RefPtr<nsHttpTransaction> mFirstHttpTransaction;
+  bool mTlsHandshakeFinished;
 private:
 
   void DispatchOnTunnel(nsAHttpTransaction *, nsIInterfaceRequestor *);

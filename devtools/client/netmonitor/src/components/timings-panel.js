@@ -24,14 +24,12 @@ function TimingsPanel({ request }) {
     return null;
   }
 
-  const { timings, totalTime } = request.eventTimings;
+  const { timings, totalTime, offsets } = request.eventTimings;
   const timelines = types.map((type, idx) => {
     
     
-    const offset = types
-      .slice(0, idx)
-      .reduce((acc, cur) => (acc + timings[cur] || 0), 0);
-    const offsetScale = offset / totalTime || 0;
+
+    const offsetScale = offsets[type] / totalTime || 0;
     const timelineScale = timings[type] / totalTime || 0;
 
     return div({

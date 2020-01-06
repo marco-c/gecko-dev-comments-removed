@@ -4758,12 +4758,11 @@ nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus(nsITransport *trans,
 
     MOZ_ASSERT((trans == mSocketTransport) || (trans == mBackupTransport));
     MOZ_ASSERT(mEnt);
-
     if (mTransaction) {
-        RefPtr<PendingTransactionInfo> info = FindTransactionHelper(false);
         if ((trans == mSocketTransport) ||
             ((trans == mBackupTransport) && (status == NS_NET_STATUS_CONNECTED_TO) &&
-            info)) {
+             mSocketTransport)) {
+            
             
             
             

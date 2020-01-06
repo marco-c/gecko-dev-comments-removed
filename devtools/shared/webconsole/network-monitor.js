@@ -913,7 +913,8 @@ NetworkMonitor.prototype = {
       
       
       let timings = this._setupHarTimings(httpActivity, true);
-      httpActivity.owner.addEventTimings(timings.total, timings.timings);
+      httpActivity.owner.addEventTimings(timings.total, timings.timings,
+                                         timings.offsets);
     }
   },
 
@@ -1363,7 +1364,8 @@ NetworkMonitor.prototype = {
 
   _onTransactionClose: function (httpActivity) {
     let result = this._setupHarTimings(httpActivity);
-    httpActivity.owner.addEventTimings(result.total, result.timings);
+    httpActivity.owner.addEventTimings(result.total, result.timings,
+                                       result.offsets);
     this.openRequests.delete(httpActivity.channel);
   },
 
@@ -1397,12 +1399,31 @@ NetworkMonitor.prototype = {
           send: 0,
           wait: 0,
           receive: 0
+        },
+        offsets: {
+          blocked: 0,
+          dns: 0,
+          ssl: 0,
+          connect: 0,
+          send: 0,
+          wait: 0,
+          receive: 0
         }
       };
     }
 
     let timings = httpActivity.timings;
     let harTimings = {};
+    
+    
+    
+    
+    
+    
+    let secureConnectionStartTime = 0;
+    let secureConnectionStartTimeRelative = false;
+    let startSendingTime = 0;
+    let startSendingTimeRelative = false;
 
     if (timings.STATUS_RESOLVING && timings.STATUS_CONNECTING_TO) {
       harTimings.blocked = timings.STATUS_RESOLVING.first -
@@ -1430,6 +1451,13 @@ NetworkMonitor.prototype = {
     if (timings.STATUS_TLS_STARTING && timings.STATUS_TLS_ENDING) {
       harTimings.ssl = timings.STATUS_TLS_ENDING.last -
                            timings.STATUS_TLS_STARTING.first;
+      if (timings.STATUS_CONNECTING_TO) {
+        secureConnectionStartTime = timings.STATUS_TLS_STARTING.first - timings.STATUS_CONNECTING_TO.first;
+      }
+      if (secureConnectionStartTime < 0) {
+        secureConnectionStartTime = 0;
+      }
+      secureConnectionStartTimeRelative = true;
     } else {
       harTimings.ssl = -1;
     }
@@ -1439,26 +1467,91 @@ NetworkMonitor.prototype = {
     
     let timedChannel = httpActivity.channel.QueryInterface(Ci.nsITimedChannel);
 
-    if ((harTimings.connect <= 0) && timedChannel) {
-      if (timedChannel.secureConnectionStartTime > timedChannel.connectStartTime) {
-        harTimings.connect =
-          timedChannel.secureConnectionStartTime - timedChannel.connectStartTime;
-        harTimings.ssl =
-          timedChannel.connectEndTime - timedChannel.secureConnectionStartTime;
-      } else {
-        harTimings.connect =
-          timedChannel.connectEndTime - timedChannel.connectStartTime;
-        harTimings.ssl = -1;
+    let tcTcpConnectEndTime = 0;
+    let tcConnectStartTime = 0;
+    let tcConnectEndTime = 0;
+    let tcSecureConnectionStartTime = 0;
+    let tcDomainLookupEndTime = 0;
+    let tcDomainLookupStartTime = 0;
+
+    if (timedChannel) {
+      tcTcpConnectEndTime = timedChannel.tcpConnectEndTime;
+      tcConnectStartTime = timedChannel.connectStartTime;
+      tcConnectEndTime = timedChannel.connectEndTime;
+      tcSecureConnectionStartTime = timedChannel.secureConnectionStartTime;
+      tcDomainLookupEndTime = timedChannel.domainLookupEndTime;
+      tcDomainLookupStartTime = timedChannel.domainLookupStartTime;
+    }
+
+    
+    if (timedChannel && timedChannel.asyncOpenTime) {
+      if ((tcTcpConnectEndTime != 0) &&
+          (tcTcpConnectEndTime < timedChannel.asyncOpenTime)) {
+        tcTcpConnectEndTime = 0;
+      }
+      if ((tcConnectStartTime != 0) &&
+          (tcConnectStartTime < timedChannel.asyncOpenTime)) {
+        tcConnectStartTime = 0;
+      }
+      if ((tcConnectEndTime != 0) &&
+          (tcConnectEndTime < timedChannel.asyncOpenTime)) {
+        tcConnectEndTime = 0;
+      }
+      if ((tcSecureConnectionStartTime != 0) &&
+          (tcSecureConnectionStartTime < timedChannel.asyncOpenTime)) {
+        tcSecureConnectionStartTime = 0;
+      }
+      if ((tcDomainLookupEndTime != 0) &&
+          (tcDomainLookupEndTime < timedChannel.asyncOpenTime)) {
+        tcDomainLookupEndTime = 0;
+      }
+      if ((tcDomainLookupStartTime != 0) &&
+          (tcDomainLookupStartTime < timedChannel.asyncOpenTime)) {
+        tcDomainLookupStartTime = 0;
       }
     }
 
-    if ((harTimings.dns <= 0) && timedChannel) {
-      harTimings.dns =
-        timedChannel.domainLookupEndTime - timedChannel.domainLookupStartTime;
+    if ((harTimings.connect <= 0) && timedChannel &&
+        (tcTcpConnectEndTime !=0) && (tcConnectStartTime !=0)) {
+      harTimings.connect = tcTcpConnectEndTime - tcConnectStartTime;
+      if (tcSecureConnectionStartTime != 0) {
+        harTimings.ssl = tcConnectEndTime - tcSecureConnectionStartTime;
+        secureConnectionStartTime =
+          tcSecureConnectionStartTime - tcConnectStartTime;
+        secureConnectionStartTimeRelative = true;
+      } else {
+        harTimings.ssl = -1;
+      }
+    } else if (timedChannel && timings.STATUS_TLS_STARTING &&
+               (tcSecureConnectionStartTime != 0)) {
+      
+      
+      
+      if (tcSecureConnectionStartTime > timings.STATUS_TLS_STARTING.first) {
+        
+        harTimings.ssl =
+          tcConnectEndTime - tcSecureConnectionStartTime;
+        secureConnectionStartTimeRelative = false;
+      }
+    }
+
+    if ((harTimings.dns <= 0) && timedChannel &&
+        (tcDomainLookupEndTime != 0) && (tcDomainLookupStartTime != 0)) {
+      harTimings.dns = tcDomainLookupEndTime - tcDomainLookupStartTime;
     }
 
     if (timings.STATUS_SENDING_TO) {
       harTimings.send = timings.STATUS_SENDING_TO.last - timings.STATUS_SENDING_TO.first;
+      if (timings.STATUS_CONNECTING_TO) {
+        startSendingTime = timings.STATUS_SENDING_TO.first - timings.STATUS_CONNECTING_TO.first;
+        startSendingTimeRelative = true;
+      } else if (tcConnectStartTime != 0) {
+        startSendingTime = timings.STATUS_SENDING_TO.first - tcConnectStartTime;
+        startSendingTimeRelative = true;
+      }
+      if (startSendingTime < 0 ) {
+        startSendingTime = 0;
+      }
     } else if (timings.REQUEST_HEADER && timings.REQUEST_BODY_SENT) {
       harTimings.send = timings.REQUEST_BODY_SENT.last - timings.REQUEST_HEADER.first;
     } else {
@@ -1480,18 +1573,56 @@ NetworkMonitor.prototype = {
       harTimings.receive = -1;
     }
 
+    if (secureConnectionStartTimeRelative) {
+      let time = Math.max(Math.round(secureConnectionStartTime / 1000), -1);
+      secureConnectionStartTime = time;
+    }
+    if (startSendingTimeRelative) {
+      let time = Math.max(Math.round(startSendingTime / 1000), -1);
+      startSendingTime = time;
+    }
+
     let totalTime = 0;
     for (let timing in harTimings) {
       let time = Math.max(Math.round(harTimings[timing] / 1000), -1);
       harTimings[timing] = time;
-      if (time > -1) {
+      if ((time > -1) && (timing != "connect") && (timing != "ssl")) {
         totalTime += time;
       }
     }
 
+    
+    if (startSendingTimeRelative) {
+      totalTime += startSendingTime;
+    } else if (secureConnectionStartTimeRelative) {
+      totalTime += secureConnectionStartTime;
+      totalTime += harTimings.ssl;
+    }
+
+    let offsets = {};
+    offsets.blocked = 0;
+    offsets.dns = harTimings.blocked;
+    offsets.connect = offsets.dns + harTimings.dns;
+    if (secureConnectionStartTimeRelative) {
+      offsets.ssl = offsets.connect + secureConnectionStartTime;
+    } else {
+      offsets.ssl = offsets.connect + harTimings.connect;
+    }
+    if (startSendingTimeRelative) {
+      offsets.send = offsets.connect + startSendingTime;
+      if (!secureConnectionStartTimeRelative) {
+        offsets.ssl = offsets.send - harTimings.ssl;
+      }
+    } else {
+      offsets.send = offsets.ssl + harTimings.ssl;
+    }
+    offsets.wait = offsets.send + harTimings.send;
+    offsets.receive = offsets.wait + harTimings.wait;
+
     return {
       total: totalTime,
       timings: harTimings,
+      offsets: offsets
     };
   },
 

@@ -235,6 +235,8 @@ public:
 
     void SetFastOpenStatus(uint8_t tfoStatus);
 
+    void SetEvent(nsresult aStatus);
+
 private:
     
     enum TCPKeepaliveConfig {
