@@ -2857,12 +2857,6 @@ pref("layout.css.prefixes.webkit", true);
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
 
-
-
-
-pref("layout.css.scoped-style.enabled", false);
-
-
 pref("layout.css.scope-pseudo.enabled", true);
 
 
@@ -5720,6 +5714,14 @@ pref("dom.payments.request.enabled", false);
 
 #ifdef FUZZING
 pref("fuzzing.enabled", false);
+#endif
+
+#if defined(XP_WIN)
+pref("layers.mlgpu.dev-enabled", false);
+
+
+
+pref("layers.mlgpu.enable-on-windows7", false);
 #endif
 
 
