@@ -255,14 +255,15 @@
 #TabsToolbar:not([collapsed="true"]) + #nav-bar {
   
   position: relative;
+  z-index: 1;
 }
 
 #nav-bar {
-  box-shadow: 0 calc(-1 * var(--tab-toolbar-navbar-overlap)) 0 var(--tabs-border);
+  border-top: 1px solid var(--tabs-border) !important;
 }
 @media (-moz-windows-compositor: 0) {
   #TabsToolbar[collapsed="true"] + #nav-bar {
-    box-shadow: none;
+    border-top-style: none !important;
   }
 }
 
@@ -776,6 +777,7 @@ html|span.ac-emphasize-text-url {
 #TabsToolbar {
   min-height: 0;
   padding: 0;
+  margin-bottom: calc(-1 * var(--tab-toolbar-navbar-overlap)); 
 }
 
 %include ../shared/tabs.inc.css
