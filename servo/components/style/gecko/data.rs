@@ -123,6 +123,11 @@ impl PerDocumentStyleData {
     
     pub fn new(pres_context: RawGeckoPresContextOwned) -> Self {
         let device = Device::new(pres_context);
+
+        
+        
+        
+        
         let quirks_mode = unsafe {
             (*device.pres_context().mDocument.raw::<nsIDocument>()).mCompatMode
         };
