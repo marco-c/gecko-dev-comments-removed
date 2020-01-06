@@ -275,7 +275,7 @@ FormAutofillParent.prototype = {
       
     } else {
       
-      profileStorage.addresses.add(address.record);
+      
     }
   },
 };
