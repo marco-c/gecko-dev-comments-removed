@@ -22,7 +22,11 @@ self.onmessage = function (event) {
           leaveEventLoop();
         });
       };
-      postMessage("paused");
+      
+      
+      Promise.resolve().then(() => {
+        postMessage("paused");
+      });
       enterEventLoop();
     };
     postMessage("resolved");
