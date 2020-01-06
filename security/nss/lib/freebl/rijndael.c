@@ -1017,16 +1017,7 @@ rijndael_decryptCBC(AESContext *cx, unsigned char *output,
 AESContext *
 AES_AllocateContext(void)
 {
-    
-    AESContext *ctx, *ctxmem;
-    ctxmem = PORT_ZAlloc(sizeof(AESContext) + 15);
-    if (ctxmem == NULL) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return NULL;
-    }
-    ctx = (AESContext *)(((uintptr_t)ctxmem + 15) & ~(uintptr_t)0x0F);
-    ctx->mem = ctxmem;
-    return ctx;
+    return PORT_ZNewAligned(AESContext, 16, mem);
 }
 
 
