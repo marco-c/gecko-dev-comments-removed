@@ -20,3 +20,7 @@ sticky_pref("devtools.theme", "light");
 
 
 pref("devtools.toolbar.visible", false);
+
+
+
+pref("devtools.onboarding.experiment", false);

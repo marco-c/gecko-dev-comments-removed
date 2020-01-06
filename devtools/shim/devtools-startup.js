@@ -452,6 +452,12 @@ DevToolsStartup.prototype = {
       return;
     }
 
+    if (!Services.prefs.getBoolPref("devtools.onboarding.experiment")) {
+      
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+      return;
+    }
+
     let hasToolbarPref = Services.prefs.getBoolPref(TOOLBAR_VISIBLE_PREF, false);
 
     if (hasDevToolsFlag || hasToolbarPref || this.isDevToolsUser()) {
