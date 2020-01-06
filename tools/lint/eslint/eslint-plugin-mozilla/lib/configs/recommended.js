@@ -85,7 +85,7 @@ module.exports = {
     "comma-spacing": ["error", {"after": true, "before": false}],
 
     
-    
+    "comma-style": "error",
 
     
     

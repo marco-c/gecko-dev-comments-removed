@@ -33,9 +33,6 @@ module.exports = {
     "space-in-parens": ["error", "never"],
 
     
-    "comma-style": "error",
-
-    
     "curly": ["error", "all"],
 
     

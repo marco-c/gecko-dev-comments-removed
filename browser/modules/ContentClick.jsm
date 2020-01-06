@@ -47,14 +47,14 @@ var ContentClick = {
       
       
       
-      PlacesUIUtils.showBookmarkDialog({ action: "add"
-                                       , type: "bookmark"
-                                       , uri: Services.io.newURI(json.href)
-                                       , title: json.title
-                                       , loadBookmarkInSidebar: true
-                                       , hiddenRows: [ "description"
-                                                     , "location"
-                                                     , "keyword" ]
+      PlacesUIUtils.showBookmarkDialog({ action: "add",
+                                         type: "bookmark",
+                                         uri: Services.io.newURI(json.href),
+                                         title: json.title,
+                                         loadBookmarkInSidebar: true,
+                                         hiddenRows: [ "description",
+                                                        "location",
+                                                        "keyword" ]
                                        }, window);
       return;
     }

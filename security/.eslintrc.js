@@ -9,9 +9,6 @@ module.exports = {
     "arrow-body-style": ["error", "as-needed"],
 
     
-    "comma-style": "error",
-
-    
     "constructor-super": "error",
 
     

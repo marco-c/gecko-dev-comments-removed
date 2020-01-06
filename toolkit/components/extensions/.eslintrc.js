@@ -51,9 +51,6 @@ module.exports = {
     "space-in-parens": ["error", "never"],
 
     
-    "comma-style": "error",
-
-    
     "consistent-return": "off",
 
     
