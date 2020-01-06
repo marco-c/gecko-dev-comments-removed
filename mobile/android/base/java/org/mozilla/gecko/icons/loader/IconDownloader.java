@@ -12,7 +12,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
-import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.icons.decoders.FaviconDecoder;
 import org.mozilla.gecko.icons.decoders.LoadFaviconResult;
 import org.mozilla.gecko.icons.IconRequest;
@@ -186,7 +186,7 @@ public class IconDownloader implements IconLoader {
         final HttpURLConnection connection = (HttpURLConnection) ProxySelector.openConnectionWithProxy(
                 new URI(uri));
 
-        connection.setRequestProperty("User-Agent", GeckoAppShell.getGeckoInterface().getDefaultUAString());
+        connection.setRequestProperty("User-Agent", GeckoApplication.getDefaultUAString());
 
         
         
