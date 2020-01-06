@@ -110,7 +110,6 @@ let SyncedTabsInternal = {
 
     let engine = Weave.Service.engineManager.get("tabs");
 
-    let seenURLs = new Set();
     let ntabs = 0;
 
     for (let client of Object.values(engine.getAllClients())) {
@@ -123,24 +122,14 @@ let SyncedTabsInternal = {
       for (let tab of client.tabs) {
         let url = tab.urlHistory[0];
         log.debug("remote tab", url);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!url || seenURLs.has(url)) {
+
+        if (!url) {
           continue;
         }
         let tabRepr = await this._makeTab(client, tab, url, showRemoteIcons);
         if (filter && !this._tabMatchesFilter(tabRepr, filter)) {
           continue;
         }
-        seenURLs.add(url);
         clientRepr.tabs.push(tabRepr);
       }
       
