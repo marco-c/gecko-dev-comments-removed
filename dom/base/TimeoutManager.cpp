@@ -696,10 +696,24 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       }
       runIter.UpdateIterator();
 
+      
+      
       if (timeout->mFiringId != firingId) {
         
         
-        continue;
+        
+        if (IsValidFiringId(timeout->mFiringId)) {
+          continue;
+        }
+
+        
+        
+        
+        
+        
+        else {
+          break;
+        }
       }
 
       MOZ_ASSERT_IF(mWindow.IsFrozen(), mWindow.IsSuspended());
