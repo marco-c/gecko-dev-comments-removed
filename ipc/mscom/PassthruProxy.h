@@ -11,6 +11,9 @@
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Ptr.h"
 #include "mozilla/NotNull.h"
+#if defined(MOZ_CONTENT_SANDBOX)
+#include "mozilla/SandboxSettings.h"
+#endif 
 
 #include <objbase.h>
 
@@ -40,6 +43,12 @@ public:
   {
     static_assert(detail::VTableSizer<Iface>::Size >= 3, "VTable too small");
 
+#if defined(MOZ_CONTENT_SANDBOX)
+    if (mozilla::GetEffectiveContentSandboxLevel() < 3) {
+      
+      return aIn.get();
+    }
+
     typename detail::EnvironmentSelector<Iface>::Type env;
 
     RefPtr<PassthruProxy> passthru(new PassthruProxy(&env, __uuidof(Iface),
@@ -52,6 +61,10 @@ public:
     }
 
     return result;
+#else
+    
+    return aIn.get();
+#endif 
   }
 
   static HRESULT Register();
