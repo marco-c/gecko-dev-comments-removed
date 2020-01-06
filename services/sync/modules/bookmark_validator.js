@@ -254,6 +254,13 @@ class BookmarkValidator {
         continue;
       }
       let params = new URLSearchParams(entry.bmkUri.slice(QUERY_PROTOCOL.length));
+      
+      
+      let excludeQueries = params.get("excludeQueries");
+      if (excludeQueries === "1" || excludeQueries === "true") {
+        
+        continue;
+      }
       entry.concreteItems = [];
       let queryIds = params.getAll("folder");
       for (let queryId of queryIds) {
