@@ -97,6 +97,10 @@ class SandboxBroker final
     void AddDynamic(int aPerms, const char* aPath);
     
     
+    
+    void AddAncestors(const char* aPath, int aPerms = MAY_ACCESS);
+    
+    
     void AddPath(int aPerms, const char* aPath) {
       AddPath(aPerms, aPath,
               (aPerms & MAY_CREATE) ? AddAlways : AddIfExistsNow);
