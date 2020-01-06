@@ -97,7 +97,7 @@ Assert.prototype = {
       }
       a = pSlice.call(a);
       b = pSlice.call(b);
-      return _deepEqual(a, b);
+      return this._deepEqual(a, b);
     }
     try {
       var ka = Object.keys(a),
@@ -396,7 +396,8 @@ Assert.prototype = {
     
     
     
-    let pattern = flags = "";
+    let pattern = "";
+    let flags = "";
     try {
       let matches = aRegex.toString().match(/\/(.*)\/(.*)/);
 

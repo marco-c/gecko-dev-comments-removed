@@ -91,7 +91,7 @@
        
        
        
-       var filenameURI = ios.newURI(options.filename,
+       var filenameURI = ios.newURI(filename,
                                     null,
                                     baseURI);
        if (filenameURI.scheme == 'chrome' &&

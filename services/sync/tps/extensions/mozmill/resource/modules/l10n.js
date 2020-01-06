@@ -24,7 +24,7 @@ function getEntity(aDTDs, aEntityId) {
 
   
   var references = "";
-  for (i = 0; i < aDTDs.length; i++) {
+  for (let i = 0; i < aDTDs.length; i++) {
     var id = 'dtd' + i;
     references += '<!ENTITY % ' + id + ' SYSTEM "' + aDTDs[i] + '">%' + id + ';';
   }
