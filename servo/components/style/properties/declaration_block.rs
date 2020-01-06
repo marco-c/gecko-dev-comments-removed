@@ -11,12 +11,27 @@ use cssparser::{DeclarationListParser, parse_important};
 use cssparser::{Parser, AtRuleParser, DeclarationParser, Delimiter};
 use error_reporting::ParseErrorReporter;
 use parser::{PARSING_MODE_DEFAULT, ParsingMode, ParserContext, log_css_error};
+use shared_lock::Locked;
 use std::fmt;
 use std::slice::Iter;
 use style_traits::ToCss;
 use stylesheets::{CssRuleType, Origin, UrlExtraData};
 use super::*;
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValueMap;
+
+
+
+
+
+pub struct AnimationRules<'a>(pub Option<&'a Arc<Locked<PropertyDeclarationBlock>>>,
+                              pub Option<&'a Arc<Locked<PropertyDeclarationBlock>>>);
+
+impl<'a> AnimationRules<'a> {
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none() && self.1.is_none()
+    }
+}
 
 
 

@@ -102,6 +102,15 @@ impl PseudoElement {
     pub fn is_precomputed(&self) -> bool {
         self.is_anon_box()
     }
+
+    
+    
+    pub fn canonical(&self) -> PseudoElement {
+        match *self {
+            PseudoElement::MozPlaceholder => PseudoElement::Placeholder,
+            _ => self.clone(),
+        }
+    }
 }
 
 impl ToCss for PseudoElement {

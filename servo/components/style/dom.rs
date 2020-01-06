@@ -275,20 +275,6 @@ pub trait PresentationalHintsSynthesizer {
 }
 
 
-
-
-
-pub struct AnimationRules(pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
-                          pub Option<Arc<Locked<PropertyDeclarationBlock>>>);
-
-impl AnimationRules {
-    
-    pub fn is_empty(&self) -> bool {
-        self.0.is_none() && self.1.is_none()
-    }
-}
-
-
 pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
                      ElementExt + PresentationalHintsSynthesizer {
     
@@ -346,11 +332,6 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     fn get_smil_override(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>> {
         None
-    }
-
-    
-    fn get_animation_rules(&self) -> AnimationRules {
-        AnimationRules(None, None)
     }
 
     
@@ -524,6 +505,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
 
     
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
+
+    
+    
+    
+    fn may_have_animations(&self) -> bool { false }
 
     
     #[cfg(feature = "gecko")]

@@ -152,6 +152,12 @@ impl PseudoElement {
             PseudoElement::ServoInlineAbsolute => PseudoElementCascadeType::Precomputed,
         }
     }
+
+    
+    
+    pub fn canonical(&self) -> PseudoElement {
+        self.clone()
+    }
 }
 
 
