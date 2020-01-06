@@ -2153,7 +2153,7 @@ public class BrowserApp extends GeckoApp
                 }
 
                 if (AppConstants.MOZ_UPDATER) {
-                    Tabs.getInstance().loadUrlInTab(AboutPages.FIREFOX);
+                    Tabs.getInstance().loadUrlInTab(AboutPages.UPDATER);
                     break;
                 }
 
@@ -4147,7 +4147,7 @@ public class BrowserApp extends GeckoApp
         if (AppConstants.MOZ_ANDROID_BEAM && NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             final GeckoBundle data = new GeckoBundle(2);
             data.putString("uri", intent.getDataString());
-            data.putInt("flags", LOAD_NEW_TAB);
+            data.putString("flags", "OPEN_NEWTAB");
             getAppEventDispatcher().dispatch("Tab:OpenUri", data);
         }
 
