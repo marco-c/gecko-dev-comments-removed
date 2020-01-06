@@ -51,6 +51,7 @@
 #if defined(MOZ_SANDBOX)
 #include "mozilla/Preferences.h"
 #include "mozilla/sandboxing/sandboxLogging.h"
+#include "WinUtils.h"
 #endif
 #endif
 
@@ -510,7 +511,17 @@ GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogN
   
   char absPath[MAX_PATH + 2];
   if (_fullpath(absPath, origLogName, sizeof(absPath))) {
-    buffer.Append(absPath);
+#ifdef MOZ_SANDBOX
+    
+    
+    std::wstring resolvedPath(NS_ConvertUTF8toUTF16(absPath).get());
+    if (widget::WinUtils::ResolveJunctionPointsAndSymLinks(resolvedPath)) {
+      AppendUTF16toUTF8(resolvedPath.c_str(), buffer);
+    } else
+#endif
+    {
+      buffer.Append(absPath);
+    }
   } else
 #endif
   {
