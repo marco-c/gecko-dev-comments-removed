@@ -1000,11 +1000,11 @@ struct JSCompartment
     
     
     
-    bool getTemplateLiteralObject(JSContext* cx, js::HandleObject rawStrings,
+    bool getTemplateLiteralObject(JSContext* cx, js::HandleArrayObject rawStrings,
                                   js::MutableHandleObject templateObj);
 
     
-    JSObject* getExistingTemplateLiteralObject(JSObject* rawStrings);
+    JSObject* getExistingTemplateLiteralObject(js::ArrayObject* rawStrings);
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
