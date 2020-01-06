@@ -26,11 +26,6 @@ public class Experiments {
     public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
 
     
-    public static final String CONTENT_NOTIFICATIONS_12HRS = "content-notifications-12hrs";
-    public static final String CONTENT_NOTIFICATIONS_8AM = "content-notifications-8am";
-    public static final String CONTENT_NOTIFICATIONS_5PM = "content-notifications-5pm";
-
-    
     
     public static final String ONBOARDING3_A = "onboarding3-a"; 
     public static final String ONBOARDING3_B = "onboarding3-b"; 
