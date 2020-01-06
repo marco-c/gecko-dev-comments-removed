@@ -172,11 +172,6 @@ DeviceManagerDx::ImportDeviceInfo(const D3D11DeviceStatus& aDeviceStatus)
 void
 DeviceManagerDx::ExportDeviceInfo(D3D11DeviceStatus* aOut)
 {
-  
-  
-  
-  MOZ_ASSERT(XRE_IsParentProcess() || XRE_GetProcessType() == GeckoProcessType_GPU);
-
   if (mDeviceStatus) {
     *aOut = mDeviceStatus.value();
   }
@@ -320,6 +315,20 @@ DeviceManagerDx::CreateCompositorDeviceHelper(
   return true;
 }
 
+
+
+
+
+
+static inline int32_t
+GetNextDeviceCounter()
+{
+  static int32_t sDeviceCounter = 0;
+  return XRE_IsGPUProcess()
+         ? --sDeviceCounter
+         : ++sDeviceCounter;
+}
+
 void
 DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11)
 {
@@ -377,15 +386,18 @@ DeviceManagerDx::CreateCompositorDevice(FeatureState& d3d11)
     D3D11Checks::WarnOnAdapterMismatch(device);
   }
 
-  int featureLevel = device->GetFeatureLevel();
+  uint32_t featureLevel = device->GetFeatureLevel();
   {
     MutexAutoLock lock(mDeviceLock);
     mCompositorDevice = device;
+
+    int32_t sequenceNumber = GetNextDeviceCounter();
     mDeviceStatus = Some(D3D11DeviceStatus(
       false,
       textureSharingWorks,
       featureLevel,
-      DxgiAdapterDesc::From(desc)));
+      DxgiAdapterDesc::From(desc),
+      sequenceNumber));
   }
   mCompositorDevice->SetExceptionMode(0);
 }
@@ -473,11 +485,14 @@ DeviceManagerDx::CreateWARPCompositorDevice()
   {
     MutexAutoLock lock(mDeviceLock);
     mCompositorDevice = device;
+
+    int32_t sequenceNumber = GetNextDeviceCounter();
     mDeviceStatus = Some(D3D11DeviceStatus(
       true,
       textureSharingWorks,
       featureLevel,
-      nullAdapter));
+      nullAdapter,
+      sequenceNumber));
   }
   mCompositorDevice->SetExceptionMode(0);
 
