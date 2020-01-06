@@ -19,7 +19,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-public class ThemedEditText extends android.widget.EditText
+public class ThemedListView extends android.widget.ListView
                                      implements LightweightTheme.OnChangeListener {
     private LightweightTheme theme;
 
@@ -38,12 +38,12 @@ public class ThemedEditText extends android.widget.EditText
 
     private ColorStateList drawableColors;
 
-    public ThemedEditText(Context context, AttributeSet attrs) {
+    public ThemedListView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialize(context, attrs, 0);
     }
 
-    public ThemedEditText(Context context, AttributeSet attrs, int defStyle) {
+    public ThemedListView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initialize(context, attrs, defStyle);
     }
