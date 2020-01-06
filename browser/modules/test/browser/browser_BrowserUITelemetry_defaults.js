@@ -23,13 +23,8 @@ function test() {
     Assert.deepEqual(result.defaultMoved, []);
   }
   Assert.deepEqual(result.nondefaultAdded, []);
-  
-  
-  
-  
-  
-  
-  Assert.deepEqual(result.defaultRemoved, ["social-share-button"]);
+
+  Assert.deepEqual(result.defaultRemoved, []);
 
   
   
