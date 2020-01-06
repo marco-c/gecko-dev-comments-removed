@@ -2470,8 +2470,7 @@ SeekingState::SeekCompleted()
 {
   const auto newCurrentTime = CalculateNewCurrentTime();
 
-  bool isLiveStream = Resource()->IsLiveStream();
-  if (newCurrentTime == mMaster->Duration() && !isLiveStream) {
+  if (newCurrentTime == mMaster->Duration() && !mMaster->mIsLiveStream) {
     
     
     

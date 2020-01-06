@@ -219,6 +219,17 @@ public:
     OwnerThread()->DispatchStateChange(r.forget());
   }
 
+  void DispatchIsLiveStream(bool aIsLiveStream)
+  {
+    RefPtr<MediaDecoderStateMachine> self = this;
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "MediaDecoderStateMachine::DispatchIsLiveStream",
+      [self, aIsLiveStream]() {
+        self->mIsLiveStream = aIsLiveStream;
+      });
+    OwnerThread()->DispatchStateChange(r.forget());
+  }
+
   
   void BreakCycles() {
     MOZ_ASSERT(NS_IsMainThread());
@@ -583,6 +594,8 @@ private:
   void CancelSuspendTimer();
 
   bool mCanPlayThrough = false;
+
+  bool mIsLiveStream = false;
 
   
   
