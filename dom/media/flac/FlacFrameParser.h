@@ -8,6 +8,7 @@
 #define FLAC_FRAME_PARSER_H_
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "nsAutoPtr.h"
 #include "MediaDecoder.h" 
 #include "MediaInfo.h"
@@ -36,12 +37,12 @@ public:
   FlacFrameParser();
   ~FlacFrameParser();
 
-  bool IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const;
+  Result<bool, nsresult> IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const;
   
   
   
   uint32_t HeaderBlockLength(const uint8_t* aPacket) const;
-  bool DecodeHeaderBlock(const uint8_t* aPacket, size_t aLength);
+  Result<Ok, nsresult> DecodeHeaderBlock(const uint8_t* aPacket, size_t aLength);
   bool HasFullMetadata() const { return mFullMetadata; }
   
   
