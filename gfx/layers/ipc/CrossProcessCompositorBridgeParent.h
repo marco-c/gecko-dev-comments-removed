@@ -107,6 +107,12 @@ public:
   virtual AsyncCompositionManager* GetCompositionManager(LayerTransactionParent* aParent) override;
   virtual mozilla::ipc::IPCResult RecvRemotePluginsReady()  override { return IPC_FAIL_NO_REASON(this); }
 
+  
+  
+  
+  void DidCompositeLocked(uint64_t aId,
+                                  TimeStamp& aCompositeStart,
+                                  TimeStamp& aCompositeEnd);
   virtual void DidComposite(uint64_t aId,
                             TimeStamp& aCompositeStart,
                             TimeStamp& aCompositeEnd) override;
