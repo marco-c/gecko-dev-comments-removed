@@ -876,7 +876,7 @@ Http2Session::SendHello()
   
   
   static const uint32_t maxSettings = 5;
-  static const uint32_t prioritySize = 5 * (kFrameHeaderBytes + 5);
+  static const uint32_t prioritySize = kPriorityGroupCount * (kFrameHeaderBytes + 5);
   static const uint32_t maxDataLen = 24 + kFrameHeaderBytes + maxSettings * 6 + 13 + prioritySize;
   char *packet = EnsureOutputBuffer(maxDataLen);
   memcpy(packet, kMagicHello, 24);

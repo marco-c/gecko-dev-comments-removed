@@ -180,7 +180,9 @@ public:
     
     
     
+    
   };
+  const static uint8_t kPriorityGroupCount = 6;
 
   static nsresult RecvHeaders(Http2Session *);
   static nsresult RecvPriority(Http2Session *);
