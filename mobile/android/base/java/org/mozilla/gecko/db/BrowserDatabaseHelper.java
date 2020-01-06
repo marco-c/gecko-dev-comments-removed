@@ -61,7 +61,7 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
     
     
-    public static final int DATABASE_VERSION = 37; 
+    public static final int DATABASE_VERSION = 38; 
     public static final String DATABASE_NAME = "browser.db";
 
     final protected Context mContext;
@@ -670,6 +670,118 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
                 " ON " + Combined.FAVICON_ID + " = " + qualifyColumn(TABLE_FAVICONS, Favicons._ID));
     }
 
+    private void createCombinedViewOn38(final SQLiteDatabase db) {
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        db.execSQL("CREATE VIEW IF NOT EXISTS " + VIEW_COMBINED + " AS" +
+
+                
+                " SELECT " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks._ID) + " AS " + Combined.BOOKMARK_ID + "," +
+                "-1 AS " + Combined.HISTORY_ID + "," +
+                "0 AS " + Combined._ID + "," +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.URL) + " AS " + Combined.URL + ", " +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.TITLE) + " AS " + Combined.TITLE + ", " +
+                "-1 AS " + Combined.VISITS + ", " +
+                "-1 AS " + Combined.DATE_LAST_VISITED + "," +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.FAVICON_ID) + " AS " + Combined.FAVICON_ID + "," +
+                "0 AS " + Combined.LOCAL_DATE_LAST_VISITED + ", " +
+                "0 AS " + Combined.REMOTE_DATE_LAST_VISITED + ", " +
+                "0 AS " + Combined.LOCAL_VISITS_COUNT + ", " +
+                "0 AS " + Combined.REMOTE_VISITS_COUNT + ", " +
+                "NULL AS " + Combined.HISTORY_GUID +
+                " FROM " + TABLE_BOOKMARKS +
+                " WHERE " +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.TYPE)  + " = " + Bookmarks.TYPE_BOOKMARK + " AND " +
+                
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.PARENT)  + " <> " + Bookmarks.FIXED_PINNED_LIST_ID + " AND " +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.IS_DELETED)  + " = 0 AND " +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.URL) +
+                " NOT IN (SELECT " + History.URL + " FROM " + TABLE_HISTORY + ")" +
+                " UNION ALL" +
+
+                
+                " SELECT " +
+                "CASE " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.IS_DELETED) +
+
+                
+                
+                " WHEN 0 THEN " +
+                "CASE " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.PARENT) +
+                " WHEN " + Bookmarks.FIXED_PINNED_LIST_ID + " THEN " +
+                "NULL " +
+                "ELSE " +
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks._ID) +
+                " END " +
+                "ELSE " +
+                "NULL " +
+                "END AS " + Combined.BOOKMARK_ID + "," +
+                qualifyColumn(TABLE_HISTORY, History._ID) + " AS " + Combined.HISTORY_ID + "," +
+                "0 AS " + Combined._ID + "," +
+                qualifyColumn(TABLE_HISTORY, History.URL) + " AS " + Combined.URL + "," +
+
+                
+                
+                "COALESCE(" + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.TITLE) + ", " +
+                qualifyColumn(TABLE_HISTORY, History.TITLE) +
+                ") AS " + Combined.TITLE + "," +
+                qualifyColumn(TABLE_HISTORY, History.VISITS) + " AS " + Combined.VISITS + "," +
+                qualifyColumn(TABLE_HISTORY, History.DATE_LAST_VISITED) + " AS " + Combined.DATE_LAST_VISITED + "," +
+                qualifyColumn(TABLE_HISTORY, History.FAVICON_ID) + " AS " + Combined.FAVICON_ID + "," +
+
+                qualifyColumn(TABLE_HISTORY, History.LOCAL_DATE_LAST_VISITED) + " AS " + Combined.LOCAL_DATE_LAST_VISITED + "," +
+                qualifyColumn(TABLE_HISTORY, History.REMOTE_DATE_LAST_VISITED) + " AS " + Combined.REMOTE_DATE_LAST_VISITED + "," +
+                qualifyColumn(TABLE_HISTORY, History.LOCAL_VISITS) + " AS " + Combined.LOCAL_VISITS_COUNT + "," +
+                qualifyColumn(TABLE_HISTORY, History.REMOTE_VISITS) + " AS " + Combined.REMOTE_VISITS_COUNT + "," +
+                qualifyColumn(TABLE_HISTORY, History.GUID) + " AS " + Combined.HISTORY_GUID +
+
+                
+                " FROM " + TABLE_HISTORY + " " +
+
+                
+                "LEFT OUTER JOIN " + TABLE_BOOKMARKS +
+                " ON " + qualifyColumn(TABLE_BOOKMARKS, Bookmarks.URL) + " = " + qualifyColumn(TABLE_HISTORY, History.URL) +
+                " WHERE " +
+                qualifyColumn(TABLE_HISTORY, History.IS_DELETED) + " = 0 AND " +
+                "(" +
+                
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.TYPE) + " IS NULL OR " +
+
+                
+                
+                qualifyColumn(TABLE_BOOKMARKS, Bookmarks.TYPE) + " = " + Bookmarks.TYPE_BOOKMARK + ")"
+        );
+
+        debug("Creating " + VIEW_COMBINED_WITH_FAVICONS + " view");
+
+        db.execSQL("CREATE VIEW IF NOT EXISTS " + VIEW_COMBINED_WITH_FAVICONS + " AS" +
+                " SELECT " + qualifyColumn(VIEW_COMBINED, "*") + ", " +
+                qualifyColumn(TABLE_FAVICONS, Favicons.URL) + " AS " + Combined.FAVICON_URL + ", " +
+                qualifyColumn(TABLE_FAVICONS, Favicons.DATA) + " AS " + Combined.FAVICON +
+                " FROM " + VIEW_COMBINED + " LEFT OUTER JOIN " + TABLE_FAVICONS +
+                " ON " + Combined.FAVICON_ID + " = " + qualifyColumn(TABLE_FAVICONS, Favicons._ID));
+
+    }
+
     private void createLoginsTable(SQLiteDatabase db, final String tableName) {
         debug("Creating logins.db: " + db.getPath());
         debug("Creating " + tableName + " table");
@@ -763,7 +875,7 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         createBookmarksWithAnnotationsView(db);
 
         createVisitsTable(db);
-        createCombinedViewOn34(db);
+        createCombinedViewOn38(db);
 
         createActivityStreamBlocklistTable(db);
 
@@ -2003,6 +2115,10 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         createRemoteDevicesTable(db);
     }
 
+    private void upgradeDatabaseFrom37to38(final SQLiteDatabase db) {
+        createV38CombinedView(db);
+    }
+
     private void createV33CombinedView(final SQLiteDatabase db) {
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED);
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED_WITH_FAVICONS);
@@ -2015,6 +2131,13 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED_WITH_FAVICONS);
 
         createCombinedViewOn34(db);
+    }
+
+    private void createV38CombinedView(final SQLiteDatabase db) {
+        db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED);
+        db.execSQL("DROP VIEW IF EXISTS " + VIEW_COMBINED_WITH_FAVICONS);
+
+        createCombinedViewOn38(db);
     }
 
     private void createV19CombinedView(SQLiteDatabase db) {
@@ -2141,6 +2264,10 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
                 case 37:
                     upgradeDatabaseFrom36to37(db);
+                    break;
+
+                case 38:
+                    upgradeDatabaseFrom37to38(db);
                     break;
             }
         }
