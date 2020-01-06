@@ -6,6 +6,8 @@
 #ifndef ScriptPreloader_h
 #define ScriptPreloader_h
 
+#include "mozilla/CheckedInt.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Maybe.h"
@@ -27,6 +29,12 @@
 namespace mozilla {
 namespace loader {
     class InputBuffer;
+
+    enum class ProcessType : uint8_t {
+        Parent,
+        Web,
+        Extension,
+    };
 }
 
 using namespace mozilla::loader;
@@ -45,6 +53,8 @@ public:
 
     static ScriptPreloader& GetSingleton();
 
+    static ProcessType GetChildProcessType(const nsAString& remoteType);
+
     
     
     JSScript* GetCachedScript(JSContext* cx, const nsCString& name);
@@ -58,6 +68,11 @@ public:
     Result<Ok, nsresult> InitCache();
 
     void Trace(JSTracer* trc);
+
+    static ProcessType CurrentProcessType()
+    {
+        return sProcessType;
+    }
 
 protected:
     virtual ~ScriptPreloader() = default;
@@ -126,6 +141,7 @@ private:
             buffer.codeString(mCachePath);
             buffer.codeUint32(mOffset);
             buffer.codeUint32(mSize);
+            buffer.codeUint8(mProcessTypes);
         }
 
         
@@ -179,6 +195,9 @@ private:
         
         
         void* mToken = nullptr;
+
+        
+        EnumSet<ProcessType> mProcessTypes{};
 
         
         
@@ -276,6 +295,9 @@ private:
     bool mCacheInitialized = false;
     bool mSaveComplete = false;
     bool mDataPrepared = false;
+
+    
+    static ProcessType sProcessType;
 
     nsCOMPtr<nsIFile> mProfD;
     nsCOMPtr<nsIThread> mSaveThread;
