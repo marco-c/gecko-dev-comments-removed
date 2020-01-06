@@ -91,6 +91,7 @@ private:
   RefPtr<MetadataPromise> OnMetadataRead(MetadataHolder&& aMetadata);
   RefPtr<MetadataPromise> OnMetadataNotRead(const MediaResult& aError);
   void UpdateDuration();
+  RefPtr<SeekPromise> SeekInternal(const SeekTarget& aTarget);
 
   RefPtr<ReaderProxy::AudioDataPromise> OnAudioDataRequestCompleted(
     RefPtr<AudioData> aAudio);
@@ -108,6 +109,11 @@ private:
 
   
   Mirror<media::NullableTimeUnit> mDuration;
+
+  
+  media::TimeUnit mLoopingOffset = media::TimeUnit::Zero();
+  
+  media::TimeUnit mLastAudioEndTime = media::TimeUnit::Zero();
 
   
   bool mSeamlessLoopingBlocked;

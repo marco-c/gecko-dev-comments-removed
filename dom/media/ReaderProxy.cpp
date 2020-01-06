@@ -58,8 +58,11 @@ ReaderProxy::OnAudioDataRequestCompleted(RefPtr<AudioData> aAudio)
 {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
-  int64_t startTime = StartTime().ToMicroseconds();
-  aAudio->AdjustForStartTime(startTime);
+  
+  int64_t offset =
+    StartTime().ToMicroseconds() - mLoopingOffset.ToMicroseconds();
+  aAudio->AdjustForStartTime(offset);
+  mLastAudioEndTime = aAudio->mTime;
   return AudioDataPromise::CreateAndResolve(aAudio.forget(), __func__);
 }
 
@@ -76,11 +79,16 @@ ReaderProxy::OnAudioDataRequestFailed(const MediaResult& aError)
   
   
   
+  mLoopingOffset = mLastAudioEndTime;
+
+  
+  
+  
   
   RefPtr<ReaderProxy> self = this;
   RefPtr<MediaFormatReader> reader = mReader;
   ResetDecode(TrackInfo::kAudioTrack);
-  return Seek(SeekTarget(media::TimeUnit::Zero(), SeekTarget::Accurate))
+  return SeekInternal(SeekTarget(media::TimeUnit::Zero(), SeekTarget::Accurate))
     ->Then(mReader->OwnerThread(),
            __func__,
            [reader]() { return reader->RequestAudioData(); },
@@ -149,6 +157,16 @@ ReaderProxy::Seek(const SeekTarget& aTarget)
 {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   mSeamlessLoopingBlocked = true;
+  
+  mLoopingOffset = media::TimeUnit::Zero();
+  mLastAudioEndTime = media::TimeUnit::Zero();
+  return SeekInternal(aTarget);
+}
+
+RefPtr<ReaderProxy::SeekPromise>
+ReaderProxy::SeekInternal(const SeekTarget& aTarget)
+{
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   SeekTarget adjustedTarget = aTarget;
   adjustedTarget.SetTime(adjustedTarget.GetTime() + StartTime());
   return InvokeAsync(mReader->OwnerThread(),
