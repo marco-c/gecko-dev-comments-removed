@@ -109,7 +109,7 @@ public:
 
 
 
-  ThreadSharedFloatArrayBufferList* GetThreadSharedChannelsForRate(JSContext* aContext);
+  const AudioChunk& GetThreadSharedChannelsForRate(JSContext* aContext);
 
 protected:
   AudioBuffer(nsPIDOMWindowInner* aWindow, uint32_t aNumberOfChannels,
