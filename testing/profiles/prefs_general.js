@@ -327,10 +327,6 @@ user_pref("browser.search.geoSpecificDefaults", false);
 
 user_pref("extensions.shield-recipe-client.api_url", "");
 
-
-user_pref("browser.ping-centre.staging.endpoint", "");
-user_pref("browser.ping-centre.production.endpoint", "");
-
 user_pref("media.eme.enabled", true);
 
 
