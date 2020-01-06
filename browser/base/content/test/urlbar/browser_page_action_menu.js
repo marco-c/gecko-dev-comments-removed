@@ -123,11 +123,11 @@ add_task(async function sendToDevice_nonSendable() {
     
     
     Assert.equal(
-      window.getComputedStyle(BrowserPageActions.mainButtonNode).visibility,
-      "collapse",
+      window.getComputedStyle(BrowserPageActions.mainButtonNode).display,
+      "none",
       "Main button should be hidden on about:home"
     );
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
+    BrowserPageActions.mainButtonNode.style.display = "-moz-box";
     await promiseSyncReady();
     
     await promisePageActionPanelOpen();
@@ -138,7 +138,7 @@ add_task(async function sendToDevice_nonSendable() {
     BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
     
-    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+    BrowserPageActions.mainButtonNode.style.removeProperty("display");
   });
 });
 
