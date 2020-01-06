@@ -159,8 +159,6 @@ pub enum Msg {
     ShutdownComplete,
 
     
-    ScrollFragmentPoint(webrender_api::ClipId, Point2D<f32>, bool),
-    
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     SetFrameTree(SendableFrameTree),
@@ -195,6 +193,7 @@ pub enum Msg {
     PendingPaintMetric(PipelineId, Epoch),
     
     LoadComplete(TopLevelBrowsingContextId),
+
 }
 
 impl Debug for Msg {
@@ -202,7 +201,6 @@ impl Debug for Msg {
         match *self {
             Msg::Exit => write!(f, "Exit"),
             Msg::ShutdownComplete => write!(f, "ShutdownComplete"),
-            Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
             Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),

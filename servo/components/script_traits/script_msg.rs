@@ -27,7 +27,6 @@ use servo_url::ServoUrl;
 use style_traits::CSSPixel;
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
-use webrender_api::ClipId;
 
 
 #[derive(Deserialize, Serialize)]
@@ -134,8 +133,6 @@ pub enum ScriptMsg {
     SetFinalUrl(ServoUrl),
     
     Alert(String, IpcSender<bool>),
-    
-    ScrollFragmentPoint(ClipId, Point2D<f32>, bool),
     
     
     SetTitle(Option<String>),

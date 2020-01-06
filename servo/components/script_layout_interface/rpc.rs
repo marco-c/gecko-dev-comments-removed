@@ -30,16 +30,14 @@ pub trait LayoutRPC {
     
     fn node_scroll_root_id(&self) -> NodeScrollRootIdResponse;
     
-    fn hit_test(&self) -> HitTestResponse;
-    
     fn resolved_style(&self) -> ResolvedStyleResponse;
     fn offset_parent(&self) -> OffsetParentResponse;
     
     fn margin_style(&self) -> MarginStyleResponse;
+    fn text_index(&self) -> TextIndexResponse;
     
     fn nodes_from_point_response(&self) -> Vec<UntrustedNodeAddress>;
 
-    fn text_index(&self) -> TextIndexResponse;
 }
 
 pub struct ContentBoxResponse(pub Option<Rect<Au>>);
@@ -53,10 +51,6 @@ pub struct NodeGeometryResponse {
 pub struct NodeOverflowResponse(pub Option<Point2D<overflow_x::computed_value::T>>);
 
 pub struct NodeScrollRootIdResponse(pub ClipId);
-
-pub struct HitTestResponse {
-    pub node_address: Option<UntrustedNodeAddress>,
-}
 
 pub struct ResolvedStyleResponse(pub String);
 

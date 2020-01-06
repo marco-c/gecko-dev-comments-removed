@@ -68,6 +68,7 @@ use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, RecvTimeoutError};
 use style_traits::CSSPixel;
 use style_traits::SpeculativePainter;
+use style_traits::cursor::Cursor;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 use webrender_api::{ClipId, DevicePixel, DocumentId, ImageKey};
 use webvr_traits::{WebVREvent, WebVRMsg};
@@ -435,13 +436,13 @@ pub enum CompositorEvent {
     
     ResizeEvent(WindowSizeData, WindowSizeType),
     
-    MouseButtonEvent(MouseEventType, MouseButton, Point2D<f32>),
+    MouseButtonEvent(MouseEventType, MouseButton, Point2D<f32>, Option<UntrustedNodeAddress>),
     
-    MouseMoveEvent(Option<Point2D<f32>>),
+    MouseMoveEvent(Option<Point2D<f32>>, Option<UntrustedNodeAddress>),
     
-    TouchEvent(TouchEventType, TouchId, Point2D<f32>),
+    TouchEvent(TouchEventType, TouchId, Point2D<f32>, Option<UntrustedNodeAddress>),
     
-    TouchpadPressureEvent(Point2D<f32>, f32, TouchpadPressurePhase),
+    TouchpadPressureEvent(Point2D<f32>, f32, TouchpadPressurePhase, Option<UntrustedNodeAddress>),
     
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
 }
@@ -799,6 +800,10 @@ pub enum ConstellationMsg {
     CloseBrowser(TopLevelBrowsingContextId),
     
     SelectBrowser(TopLevelBrowsingContextId),
+    
+    ForwardEvent(PipelineId, CompositorEvent),
+    
+    SetCursor(Cursor),
 }
 
 
