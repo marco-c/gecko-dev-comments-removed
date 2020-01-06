@@ -35,9 +35,6 @@ public:
   void Flush() {
     
     
-    if (IsOpen()) {
-      PR_Sync(mFd);
-    }
   }
 
   void Seek(PRInt32 aOffset, PRSeekWhence aWhence) {
@@ -45,6 +42,7 @@ public:
   }
 
   void write(const char* aData, size_t aSize) {
+    
     
     if (IsOpen()) {
       PR_Write(mFd, static_cast<const void*>(aData), aSize);
