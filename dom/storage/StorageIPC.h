@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_StorageIPC_h
 #define mozilla_dom_StorageIPC_h
 
-#include "mozilla/dom/PStorageChild.h"
-#include "mozilla/dom/PStorageParent.h"
+#include "mozilla/dom/PBackgroundStorageChild.h"
+#include "mozilla/dom/PBackgroundStorageParent.h"
 #include "StorageDBThread.h"
 #include "LocalStorageCache.h"
 #include "StorageObserver.h"
@@ -22,13 +22,14 @@ class OriginAttributesPattern;
 namespace dom {
 
 class LocalStorageManager;
+class PBackgroundStorageParent;
 
 
 
 
 
 class StorageDBChild final : public StorageDBBridge
-                           , public PStorageChild
+                           , public PBackgroundStorageChild
 {
   virtual ~StorageDBChild();
 
@@ -123,7 +124,7 @@ private:
 
 
 
-class StorageDBParent final : public PStorageParent
+class StorageDBParent final : public PBackgroundStorageParent
                             , public StorageObserverSink
 {
   virtual ~StorageDBParent();
@@ -235,6 +236,15 @@ private:
   
   bool mIPCOpen;
 };
+
+PBackgroundStorageParent*
+AllocPBackgroundStorageParent();
+
+mozilla::ipc::IPCResult
+RecvPBackgroundStorageConstructor(PBackgroundStorageParent* aActor);
+
+bool
+DeallocPBackgroundStorageParent(PBackgroundStorageParent* aActor);
 
 } 
 } 

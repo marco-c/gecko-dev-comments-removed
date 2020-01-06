@@ -10,6 +10,9 @@
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/Unused.h"
 #include "nsIDiskSpaceWatcher.h"
 #include "nsThreadUtils.h"
@@ -80,9 +83,15 @@ StorageDBChild::OriginsHavingData()
 nsresult
 StorageDBChild::Init()
 {
-  ContentChild* child = ContentChild::GetSingleton();
+  PBackgroundChild* actor = BackgroundChild::GetOrCreateForCurrentThread();
+  if (NS_WARN_IF(!actor)) {
+    return NS_ERROR_FAILURE;
+  }
+
   AddIPDLReference();
-  child->SendPStorageConstructor(this);
+
+  actor->SendPBackgroundStorageConstructor(this);
+
   return NS_OK;
 }
 
@@ -334,6 +343,8 @@ private:
     }
 
     
+#if 0
+    
     
     nsCOMPtr<nsIDiskSpaceWatcher> diskSpaceWatcher =
       do_GetService("@mozilla.org/toolkit/disk-space-watcher;1");
@@ -348,6 +359,7 @@ private:
       mozilla::Unused << mParent->SendObserve(
         nsDependentCString("low-disk-space"), EmptyString(), EmptyCString());
     }
+#endif
 
     return NS_OK;
   }
@@ -785,6 +797,38 @@ StorageDBParent::UsageParentBridge::LoadUsage(const int64_t aUsage)
 {
   RefPtr<UsageRunnable> r = new UsageRunnable(mParent, mOriginScope, aUsage);
   NS_DispatchToMainThread(r);
+}
+
+
+
+
+
+PBackgroundStorageParent*
+AllocPBackgroundStorageParent()
+{
+  AssertIsOnBackgroundThread();
+
+  return new StorageDBParent();
+}
+
+mozilla::ipc::IPCResult
+RecvPBackgroundStorageConstructor(PBackgroundStorageParent* aActor)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(aActor);
+
+  return IPC_OK();
+}
+
+bool
+DeallocPBackgroundStorageParent(PBackgroundStorageParent* aActor)
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(aActor);
+
+  StorageDBParent* actor = static_cast<StorageDBParent*>(aActor);
+  actor->ReleaseIPDLReference();
+  return true;
 }
 
 } 

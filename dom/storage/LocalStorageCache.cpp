@@ -685,14 +685,8 @@ LocalStorageCache::StartDatabase()
   }
 
   if (XRE_IsParentProcess()) {
-    nsAutoPtr<StorageDBThread> db(new StorageDBThread());
-
-    nsresult rv = db->Init();
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-
-    sDatabase = db.forget();
+    
+    return nullptr;
   } else {
     
     
