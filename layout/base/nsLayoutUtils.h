@@ -2567,6 +2567,20 @@ public:
 
 
   static bool IsInStyloBlocklist(nsIPrincipal* aPrincipal);
+
+  
+
+
+
+
+  static void AddToStyloBlocklist(const nsACString& aBlockedDomain);
+
+  
+
+
+
+
+  static void RemoveFromStyloBlocklist(const nsACString& aBlockedDomain);
 #endif
 
   
