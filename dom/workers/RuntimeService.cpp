@@ -596,7 +596,7 @@ InterruptCallback(JSContext* aCx)
   MOZ_ASSERT(worker);
 
   
-  profiler_js_interrupt_callback();
+  PROFILER_JS_INTERRUPT_CALLBACK();
 
   return worker->InterruptCallback(aCx);
 }
@@ -2765,8 +2765,6 @@ WorkerThreadPrimaryRunnable::Run()
 {
   using mozilla::ipc::BackgroundChild;
 
-  char stackBaseGuess;
-
   NS_SetCurrentThreadName("DOM Worker");
 
   nsAutoCString threadName;
@@ -2774,7 +2772,7 @@ WorkerThreadPrimaryRunnable::Run()
   threadName.Append(NS_LossyConvertUTF16toASCII(mWorkerPrivate->ScriptURL()));
   threadName.Append('\'');
 
-  profiler_register_thread(threadName.get(), &stackBaseGuess);
+  AUTO_PROFILER_REGISTER_THREAD(threadName.get());
 
   
   
@@ -2839,7 +2837,7 @@ WorkerThreadPrimaryRunnable::Run()
     }
 
     {
-      profiler_set_js_context(cx);
+      PROFILER_SET_JS_CONTEXT(cx);
 
       {
         JSAutoRequest ar(cx);
@@ -2853,7 +2851,7 @@ WorkerThreadPrimaryRunnable::Run()
 
       BackgroundChild::CloseForCurrentThread();
 
-      profiler_clear_js_context();
+      PROFILER_CLEAR_JS_CONTEXT();
     }
 
     
@@ -2893,7 +2891,6 @@ WorkerThreadPrimaryRunnable::Run()
   MOZ_ALWAYS_SUCCEEDS(mainTarget->Dispatch(finishedRunnable,
                                            NS_DISPATCH_NORMAL));
 
-  profiler_unregister_thread();
   return NS_OK;
 }
 

@@ -34,8 +34,8 @@ public:
   size_t SizeOfExcludingThis() const;
 
 #if defined(MOZ_GECKO_PROFILER)
-    
-    void Clear();
+  
+  void Clear();
 #endif
 
 private:

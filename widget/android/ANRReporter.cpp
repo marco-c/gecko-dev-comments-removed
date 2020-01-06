@@ -13,6 +13,7 @@ namespace mozilla {
 bool
 ANRReporter::RequestNativeStack(bool aUnwind)
 {
+#ifdef MOZ_GECKO_PROFILER
     if (profiler_is_active()) {
         
         return false;
@@ -33,12 +34,14 @@ ANRReporter::RequestNativeStack(bool aUnwind)
     profiler_start( 100,  10000, features,
                    NATIVE_STACK_THREADS,
                    sizeof(NATIVE_STACK_THREADS) / sizeof(char*));
+#endif
     return true;
 }
 
 jni::String::LocalRef
 ANRReporter::GetNativeStack()
 {
+#ifdef MOZ_GECKO_PROFILER
     
     const PRIntervalTime timeout = PR_SecondsToInterval(5);
     const PRIntervalTime startTime = PR_IntervalNow();
@@ -46,7 +49,6 @@ ANRReporter::GetNativeStack()
     
     typedef mozilla::UniquePtr<char[]> ProfilePtr;
 
-    
     
     ProfilePtr profile(profiler_get_profile());
     if (!profile) {
@@ -65,17 +67,20 @@ ANRReporter::GetNativeStack()
     if (profile) {
         return jni::String::Param(profile.get());
     }
+#endif
     return nullptr;
 }
 
 void
 ANRReporter::ReleaseNativeStack()
 {
+#ifdef MOZ_GECKO_PROFILER
     if (!profiler_is_active()) {
         
         return;
     }
     profiler_stop();
+#endif
 }
 
 } 

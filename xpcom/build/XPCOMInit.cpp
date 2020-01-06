@@ -984,7 +984,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
 #endif
   nsCycleCollector_shutdown(shutdownCollect);
 
-  profiler_add_marker("Shutdown xpcom");
+  PROFILER_ADD_MARKER("Shutdown xpcom");
   
   if (gShutdownChecks != SCM_NOTHING) {
 #ifdef XP_MACOSX
@@ -1016,7 +1016,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   
-  profiler_clear_js_context();
+  PROFILER_CLEAR_JS_CONTEXT();
 
   if (sInitializedJS) {
     

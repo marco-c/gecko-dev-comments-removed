@@ -865,10 +865,10 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
   
   if (gfxPrefs::LayersDump()) {
     this->Dump(true);
-  } else if (profiler_feature_active(ProfilerFeature::LayersDump)) {
+  } else if (PROFILER_FEATURE_ACTIVE(ProfilerFeature::LayersDump)) {
     std::stringstream ss;
     Dump(ss);
-    profiler_tracing("log", ss.str().c_str(), TRACING_EVENT);
+    PROFILER_TRACING("log", ss.str().c_str(), TRACING_EVENT);
   }
 
   

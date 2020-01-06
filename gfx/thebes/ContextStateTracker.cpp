@@ -6,13 +6,17 @@
 #include "ContextStateTracker.h"
 #include "GLContext.h"
 #include "GeckoProfiler.h"
+
+#ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkerPayload.h"
+#endif
 
 namespace mozilla {
 
 void
 ContextStateTrackerOGL::PushOGLSection(GLContext* aGL, const char* aSectionName)
 {
+#ifdef MOZ_GECKO_PROFILER
   if (!profiler_feature_active(ProfilerFeature::GPU)) {
     return;
   }
@@ -38,6 +42,7 @@ ContextStateTrackerOGL::PushOGLSection(GLContext* aGL, const char* aSectionName)
   aGL->fBeginQuery(LOCAL_GL_TIME_ELAPSED_EXT, queryObject);
 
   mSectionStack.AppendElement(newSection);
+#endif
 }
 
 void
@@ -109,6 +114,7 @@ ContextStateTrackerOGL::Flush(GLContext* aGL)
 
     aGL->fDeleteQueries(1, &handle);
 
+#ifdef MOZ_GECKO_PROFILER
     if (profiler_is_active()) {
       profiler_add_marker(
         "gpu_timer_query",
@@ -116,6 +122,7 @@ ContextStateTrackerOGL::Flush(GLContext* aGL)
                                      mCompletedSections[0].mCpuTimeEnd,
                                      0, gpuTime));
     }
+#endif
 
     mCompletedSections.RemoveElementAt(0);
   }

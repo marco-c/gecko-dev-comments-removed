@@ -35,7 +35,10 @@
 #include "TextRenderer.h"               
 #include <vector>
 #include "GeckoProfiler.h"              
+
+#ifdef MOZ_GECKO_PROFILER
 #include "ProfilerMarkerPayload.h"      
+#endif
 
 #define CULLING_LOG(...)
 
@@ -81,6 +84,7 @@ DrawLayerInfo(const RenderTargetIntRect& aClipRect,
 static void
 PrintUniformityInfo(Layer* aLayer)
 {
+#if defined(MOZ_GECKO_PROFILER)
   if (!profiler_is_active()) {
     return;
   }
@@ -101,6 +105,7 @@ PrintUniformityInfo(Layer* aLayer)
     "LayerTranslation",
     MakeUnique<LayerTranslationMarkerPayload>(aLayer, translation,
                                               TimeStamp::Now()));
+#endif
 }
 
 static Maybe<gfx::Polygon>

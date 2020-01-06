@@ -30,7 +30,6 @@
 
 #include "EventListenerService.h"
 #include "GeckoProfiler.h"
-#include "ProfilerMarkerPayload.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -52,6 +51,10 @@
 #include "xpcpublic.h"
 #include "nsIFrame.h"
 #include "nsDisplayList.h"
+
+#ifdef MOZ_GECKO_PROFILER
+#include "ProfilerMarkerPayload.h"
+#endif
 
 namespace mozilla {
 
@@ -240,7 +243,7 @@ void
 EventListenerManager::AddEventListenerInternal(
                         EventListenerHolder aListenerHolder,
                         EventMessage aEventMessage,
-                        nsAtom* aTypeAtom,
+                        nsIAtom* aTypeAtom,
                         const nsAString& aTypeString,
                         const EventListenerFlags& aFlags,
                         bool aHandler,
@@ -586,7 +589,7 @@ EventListenerManager::DisableDevice(EventMessage aEventMessage)
 }
 
 void
-EventListenerManager::NotifyEventListenerRemoved(nsAtom* aUserType,
+EventListenerManager::NotifyEventListenerRemoved(nsIAtom* aUserType,
                                                  const nsAString& aTypeString)
 {
   
@@ -610,7 +613,7 @@ void
 EventListenerManager::RemoveEventListenerInternal(
                         EventListenerHolder aListenerHolder,
                         EventMessage aEventMessage,
-                        nsAtom* aUserType,
+                        nsIAtom* aUserType,
                         const nsAString& aTypeString,
                         const EventListenerFlags& aFlags,
                         bool aAllEvents)
@@ -690,7 +693,7 @@ EventListenerManager::AddEventListenerByType(
                         const nsAString& aType,
                         const EventListenerFlags& aFlags)
 {
-  RefPtr<nsAtom> atom;
+  RefPtr<nsIAtom> atom;
   EventMessage message = mIsMainThreadELM ?
     nsContentUtils::GetEventMessageAndAtomForListener(aType,
                                                       getter_AddRefs(atom)) :
@@ -705,7 +708,7 @@ EventListenerManager::RemoveEventListenerByType(
                         const nsAString& aType,
                         const EventListenerFlags& aFlags)
 {
-  RefPtr<nsAtom> atom;
+  RefPtr<nsIAtom> atom;
   EventMessage message = mIsMainThreadELM ?
     nsContentUtils::GetEventMessageAndAtomForListener(aType,
                                                       getter_AddRefs(atom)) :
@@ -716,7 +719,7 @@ EventListenerManager::RemoveEventListenerByType(
 
 EventListenerManager::Listener*
 EventListenerManager::FindEventHandler(EventMessage aEventMessage,
-                                       nsAtom* aTypeAtom,
+                                       nsIAtom* aTypeAtom,
                                        const nsAString& aTypeString)
 {
   
@@ -736,7 +739,7 @@ EventListenerManager::FindEventHandler(EventMessage aEventMessage,
 
 EventListenerManager::Listener*
 EventListenerManager::SetEventHandlerInternal(
-                        nsAtom* aName,
+                        nsIAtom* aName,
                         const nsAString& aTypeString,
                         const TypedEventHandler& aTypedHandler,
                         bool aPermitUntrustedEvents)
@@ -791,7 +794,7 @@ EventListenerManager::SetEventHandlerInternal(
 }
 
 nsresult
-EventListenerManager::SetEventHandler(nsAtom* aName,
+EventListenerManager::SetEventHandler(nsIAtom* aName,
                                       const nsAString& aBody,
                                       bool aDeferCompilation,
                                       bool aPermitUntrustedEvents,
@@ -888,7 +891,7 @@ EventListenerManager::SetEventHandler(nsAtom* aName,
 }
 
 void
-EventListenerManager::RemoveEventHandler(nsAtom* aName,
+EventListenerManager::RemoveEventHandler(nsIAtom* aName,
                                          const nsAString& aTypeString)
 {
   if (mClearingListeners) {
@@ -932,8 +935,8 @@ EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
   }
   JSContext* cx = jsapi.cx();
 
-  RefPtr<nsAtom> typeAtom = aListener->mTypeAtom;
-  nsAtom* attrName = typeAtom;
+  RefPtr<nsIAtom> typeAtom = aListener->mTypeAtom;
+  nsIAtom* attrName = typeAtom;
 
   
   
@@ -1262,6 +1265,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
             }
 
             nsresult rv = NS_OK;
+#ifdef MOZ_GECKO_PROFILER
             if (profiler_is_active()) {
               
               
@@ -1285,7 +1289,9 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                 MakeUnique<DOMEventMarkerPayload>(typeStr, phase,
                                                   aEvent->mTimeStamp,
                                                   startTime, endTime));
-            } else {
+            } else
+#endif
+            {
               rv = HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
             }
 
@@ -1504,7 +1510,7 @@ bool
 EventListenerManager::HasListenersFor(const nsAString& aEventName)
 {
   if (mIsMainThreadELM) {
-    RefPtr<nsAtom> atom = NS_Atomize(NS_LITERAL_STRING("on") + aEventName);
+    RefPtr<nsIAtom> atom = NS_Atomize(NS_LITERAL_STRING("on") + aEventName);
     return HasListenersFor(atom);
   }
 
@@ -1519,7 +1525,7 @@ EventListenerManager::HasListenersFor(const nsAString& aEventName)
 }
 
 bool
-EventListenerManager::HasListenersFor(nsAtom* aEventNameWithOn)
+EventListenerManager::HasListenersFor(nsIAtom* aEventNameWithOn)
 {
 #ifdef DEBUG
   nsAutoString name;
@@ -1600,7 +1606,7 @@ EventListenerManager::HasUnloadListeners()
 }
 
 void
-EventListenerManager::SetEventHandler(nsAtom* aEventName,
+EventListenerManager::SetEventHandler(nsIAtom* aEventName,
                                       const nsAString& aTypeString,
                                       EventHandlerNonNull* aHandler)
 {
@@ -1660,7 +1666,7 @@ EventListenerManager::SetEventHandler(
 }
 
 const TypedEventHandler*
-EventListenerManager::GetTypedEventHandler(nsAtom* aEventName,
+EventListenerManager::GetTypedEventHandler(nsIAtom* aEventName,
                                            const nsAString& aTypeString)
 {
   EventMessage eventMessage = nsContentUtils::GetEventMessage(aEventName);
@@ -1797,7 +1803,7 @@ EventListenerManager::IsApzAwareListener(Listener* aListener)
 }
 
 bool
-EventListenerManager::IsApzAwareEvent(nsAtom* aEvent)
+EventListenerManager::IsApzAwareEvent(nsIAtom* aEvent)
 {
   if (aEvent == nsGkAtoms::onwheel || aEvent == nsGkAtoms::onDOMMouseScroll ||
       aEvent == nsGkAtoms::onmousewheel ||

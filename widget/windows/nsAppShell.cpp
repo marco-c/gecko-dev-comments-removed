@@ -355,7 +355,7 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
       
       mozilla::HangMonitor::Suspend();
       {
-        AutoProfilerThreadSleep sleep;
+        AUTO_PROFILER_THREAD_SLEEP;
         WinUtils::WaitForMessage();
       }
     }

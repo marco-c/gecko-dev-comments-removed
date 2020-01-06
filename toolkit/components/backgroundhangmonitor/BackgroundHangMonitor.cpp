@@ -65,7 +65,7 @@ private:
   
   static void MonitorThread(void* aData)
   {
-    AutoProfilerRegisterThread registerThread("BgHangMonitor");
+    AUTO_PROFILER_REGISTER_THREAD("BgHangMonitor");
     NS_SetCurrentThreadName("BgHangManager");
 
     
@@ -192,8 +192,10 @@ public:
   bool mWaiting;
   
   BackgroundHangMonitor::ThreadType mThreadType;
+#ifdef MOZ_GECKO_PROFILER
   
   ThreadStackHelper mStackHelper;
+#endif
   
   HangStack mHangStack;
   
@@ -359,11 +361,13 @@ BackgroundHangManager::RunMonitorThread()
 
       if (MOZ_LIKELY(!currentThread->mHanging)) {
         if (MOZ_UNLIKELY(hangTime >= currentThread->mTimeout)) {
+#ifdef MOZ_GECKO_PROFILER
           
           currentThread->mStackHelper.GetStack(
             currentThread->mHangStack,
             currentThread->mRunnableName,
             true);
+#endif
 
           
           

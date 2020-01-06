@@ -16,6 +16,39 @@
 #ifndef GeckoProfiler_h
 #define GeckoProfiler_h
 
+#ifndef MOZ_GECKO_PROFILER
+
+
+
+
+
+
+#define AUTO_PROFILER_INIT
+
+#define PROFILER_REGISTER_THREAD(name)
+#define PROFILER_UNREGISTER_THREAD()
+#define AUTO_PROFILER_REGISTER_THREAD(name)
+
+#define AUTO_PROFILER_THREAD_SLEEP
+#define AUTO_PROFILER_THREAD_WAKE
+
+#define PROFILER_JS_INTERRUPT_CALLBACK()
+
+#define PROFILER_SET_JS_CONTEXT(cx)
+#define PROFILER_CLEAR_JS_CONTEXT()
+
+#define PROFILER_FEATURE_ACTIVE(feature) false
+
+#define AUTO_PROFILER_LABEL(label, category)
+#define AUTO_PROFILER_LABEL_DYNAMIC(label, category, dynamicStr)
+
+#define PROFILER_ADD_MARKER(markerName)
+
+#define PROFILER_TRACING(category, markerName, kind)
+#define AUTO_PROFILER_TRACING(category, markerName)
+
+#else 
+
 #include <functional>
 #include <signal.h>
 #include <stdarg.h>
@@ -48,17 +81,6 @@ class MallocAllocPolicy;
 template <class T, size_t MinInlineCapacity, class AllocPolicy> class Vector;
 class TimeStamp;
 } 
-
-
-
-
-#ifdef MOZ_GECKO_PROFILER
-# define PROFILER_FUNC(decl, rv)  decl;
-# define PROFILER_FUNC_VOID(decl) void decl;
-#else
-# define PROFILER_FUNC(decl, rv)  static inline decl { return rv; }
-# define PROFILER_FUNC_VOID(decl) static inline void decl {}
-#endif
 
 
 #define PROFILER_RAII_PASTE(id, line) id ## line
@@ -145,13 +167,15 @@ struct ProfilerFeature
 
 
 
-PROFILER_FUNC_VOID(profiler_init(void* stackTop))
+void profiler_init(void* stackTop);
 
+#define AUTO_PROFILER_INIT \
+  mozilla::AutoProfilerInit PROFILER_RAII
 
 
 
-PROFILER_FUNC_VOID(profiler_shutdown())
 
+void profiler_shutdown();
 
 
 
@@ -160,63 +184,73 @@ PROFILER_FUNC_VOID(profiler_shutdown())
 
 
 
-PROFILER_FUNC_VOID(profiler_start(int aEntries, double aInterval,
-                                  uint32_t aFeatures,
-                                  const char** aFilters, uint32_t aFilterCount))
 
+void profiler_start(int aEntries, double aInterval, uint32_t aFeatures,
+                    const char** aFilters, uint32_t aFilterCount);
 
 
-PROFILER_FUNC_VOID(profiler_stop())
 
+void profiler_stop();
 
 
 
 
 
-PROFILER_FUNC_VOID(profiler_ensure_started(int aEntries, double aInterval,
-                                           uint32_t aFeatures,
-                                           const char** aFilters,
-                                           uint32_t aFilterCount))
 
+void profiler_ensure_started(int aEntries, double aInterval,
+                             uint32_t aFeatures, const char** aFilters,
+                             uint32_t aFilterCount);
 
 
 
 
 
 
-PROFILER_FUNC_VOID(profiler_register_thread(const char* name,
-                                            void* guessStackTop))
-PROFILER_FUNC_VOID(profiler_unregister_thread())
 
+#define PROFILER_REGISTER_THREAD(name) \
+  do { char stackTop; profiler_register_thread(name, &stackTop); } while (0)
+#define PROFILER_UNREGISTER_THREAD() \
+  profiler_unregister_thread()
+void profiler_register_thread(const char* name, void* guessStackTop);
+void profiler_unregister_thread();
 
 
+#define AUTO_PROFILER_REGISTER_THREAD(name) \
+  mozilla::AutoProfilerRegisterThread PROFILER_RAII(name)
 
 
 
 
-PROFILER_FUNC_VOID(profiler_pause())
-PROFILER_FUNC_VOID(profiler_resume())
 
 
 
+void profiler_pause();
+void profiler_resume();
 
 
-PROFILER_FUNC_VOID(profiler_thread_sleep())
-PROFILER_FUNC_VOID(profiler_thread_wake())
 
 
 
+void profiler_thread_sleep();
+void profiler_thread_wake();
 
-PROFILER_FUNC_VOID(profiler_js_interrupt_callback())
 
+#define AUTO_PROFILER_THREAD_SLEEP \
+  mozilla::AutoProfilerThreadSleep PROFILER_RAII
+#define AUTO_PROFILER_THREAD_WAKE \
+  mozilla::AutoProfilerThreadWake PROFILER_RAII
 
-PROFILER_FUNC_VOID(profiler_set_js_context(JSContext* aCx))
-PROFILER_FUNC_VOID(profiler_clear_js_context())
 
 
 
+#define PROFILER_JS_INTERRUPT_CALLBACK() profiler_js_interrupt_callback()
+void profiler_js_interrupt_callback();
 
 
+#define PROFILER_SET_JS_CONTEXT(cx) profiler_set_js_context(cx)
+#define PROFILER_CLEAR_JS_CONTEXT() profiler_clear_js_context()
+void profiler_set_js_context(JSContext* aCx);
+void profiler_clear_js_context();
 
 
 
@@ -233,42 +267,47 @@ PROFILER_FUNC_VOID(profiler_clear_js_context())
 
 
 
-PROFILER_FUNC(bool profiler_is_active(), false)
 
 
-PROFILER_FUNC(bool profiler_is_paused(), false)
 
 
-PROFILER_FUNC(bool profiler_thread_is_sleeping(), false)
 
+bool profiler_is_active();
 
 
+bool profiler_is_paused();
 
-PROFILER_FUNC(uint32_t profiler_get_available_features(), 0)
 
+bool profiler_thread_is_sleeping();
 
 
 
 
-PROFILER_FUNC(bool profiler_feature_active(uint32_t aFeature), false)
+uint32_t profiler_get_available_features();
 
 
 
 
 
-PROFILER_FUNC_VOID(
-  profiler_get_start_params(int* aEntrySize, double* aInterval,
-                            uint32_t* aFeatures,
-                            mozilla::Vector<const char*, 0,
-                                            mozilla::MallocAllocPolicy>*
-                              aFilters))
+#define PROFILER_FEATURE_ACTIVE(feature) profiler_feature_active(feature)
+bool profiler_feature_active(uint32_t aFeature);
 
 
 
-PROFILER_FUNC(double profiler_time(), 0)
 
 
-PROFILER_FUNC(int profiler_current_thread_id(), 0)
+void profiler_get_start_params(int* aEntrySize, double* aInterval,
+                               uint32_t* aFeatures,
+                               mozilla::Vector<const char*, 0,
+                                               mozilla::MallocAllocPolicy>*
+                                 aFilters);
+
+
+
+double profiler_time();
+
+
+int profiler_current_thread_id();
 
 
 
@@ -302,19 +341,13 @@ public:
 
 
 
-PROFILER_FUNC_VOID(
-  profiler_suspend_and_sample_thread(int aThreadId,
-                                     uint32_t aFeatures,
-                                     ProfilerStackCollector& aCollector,
-                                     bool aSampleNative = true))
+void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
+                                        ProfilerStackCollector& aCollector,
+                                        bool aSampleNative = true);
 
 struct ProfilerBacktraceDestructor
 {
-#ifdef MOZ_GECKO_PROFILER
   void operator()(ProfilerBacktrace*);
-#else
-  void operator()(ProfilerBacktrace*) {}
-#endif
 };
 
 using UniqueProfilerBacktrace =
@@ -322,14 +355,14 @@ using UniqueProfilerBacktrace =
 
 
 
-PROFILER_FUNC(UniqueProfilerBacktrace profiler_get_backtrace(), nullptr)
+UniqueProfilerBacktrace profiler_get_backtrace();
 
 
 
 
-PROFILER_FUNC_VOID(profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
-                                                   uint32_t* aEntries,
-                                                   uint32_t* aGeneration))
+void profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
+                                     uint32_t* aEntries,
+                                     uint32_t* aGeneration);
 
 
 
@@ -350,7 +383,7 @@ static inline void profiler_get_buffer_info(uint32_t* aCurrentPosition,
 }
 
 
-PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
+PseudoStack* profiler_get_pseudo_stack();
 
 
 
@@ -397,10 +430,11 @@ PROFILER_FUNC(PseudoStack* profiler_get_pseudo_stack(), nullptr)
 
 
 
-PROFILER_FUNC_VOID(profiler_add_marker(const char* aMarkerName))
-PROFILER_FUNC_VOID(
-  profiler_add_marker(const char* aMarkerName,
-                      mozilla::UniquePtr<ProfilerMarkerPayload> aPayload))
+#define PROFILER_ADD_MARKER(markerName) \
+  profiler_add_marker(markerName)
+void profiler_add_marker(const char* aMarkerName);
+void profiler_add_marker(const char* aMarkerName,
+                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
 
 enum TracingKind {
   TRACING_EVENT,
@@ -410,36 +444,34 @@ enum TracingKind {
 
 
 
-
-PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory,
-                                    const char* aMarkerName,
-                                    TracingKind aKind))
-PROFILER_FUNC_VOID(profiler_tracing(const char* aCategory,
-                                    const char* aMarkerName,
-                                    TracingKind aKind,
-                                    UniqueProfilerBacktrace aCause))
+#define PROFILER_TRACING(category, markerName, kind) \
+  profiler_tracing(category, markerName, kind)
+void profiler_tracing(const char* aCategory, const char* aMarkerName,
+                      TracingKind aKind);
+void profiler_tracing(const char* aCategory, const char* aMarkerName,
+                      TracingKind aKind, UniqueProfilerBacktrace aCause);
 
 
-
-
+#define AUTO_PROFILER_TRACING(category, markerName) \
+  mozilla::AutoProfilerTracing PROFILER_RAII(category, markerName)
 
 
 
 
 
-PROFILER_FUNC(
-  mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
-                                                  bool aIsShuttingDown = false),
-  nullptr)
 
 
 
-PROFILER_FUNC(
-  bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
-                                             double aSinceTime = 0,
-                                             bool aIsShuttingDown = false,
-                                             mozilla::TimeStamp* aOutFirstSampleTime = nullptr),
-  false)
+
+mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
+                                                bool aIsShuttingDown = false);
+
+
+
+bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
+                                           double aSinceTime = 0,
+                                           bool aIsShuttingDown = false,
+                                           mozilla::TimeStamp* aOutFirstSampleTime = nullptr);
 
 
 
@@ -448,7 +480,7 @@ PROFILER_FUNC(
 
 
 extern "C" {
-PROFILER_FUNC_VOID(profiler_save_profile_to_file(const char* aFilename))
+void profiler_save_profile_to_file(const char* aFilename);
 }
 
 
@@ -478,7 +510,7 @@ class MOZ_RAII AutoProfilerRegisterThread final
 {
 public:
   explicit AutoProfilerRegisterThread(const char* aName
-                                MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+                                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_register_thread(aName, this);
@@ -550,30 +582,25 @@ public:
 
     
 
-#ifdef MOZ_GECKO_PROFILER
     mPseudoStack = sPseudoStack.get();
     if (mPseudoStack) {
       mPseudoStack->pushCppFrame(aLabel, aDynamicString, this, aLine,
                                  js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
     }
-#endif
   }
 
   ~AutoProfilerLabel()
   {
     
 
-#ifdef MOZ_GECKO_PROFILER
     if (mPseudoStack) {
       mPseudoStack->pop();
     }
-#endif
   }
 
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   PseudoStack* mPseudoStack;
@@ -581,7 +608,6 @@ private:
 public:
   
   static MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
-#endif
 };
 
 class MOZ_RAII AutoProfilerTracing
@@ -621,7 +647,6 @@ protected:
 
 
 
-#ifdef MOZ_GECKO_PROFILER
 class MOZ_RAII AutoSetProfilerEnvVarsForChildProcess
 {
 public:
@@ -635,12 +660,9 @@ private:
   char mSetFeaturesBitfield[64];
   char mSetFilters[1024];
 };
-#else
-class AutoSetProfilerEnvVarsForChildProcess
-{
-};
-#endif
 
 } 
+
+#endif 
 
 #endif  

@@ -7060,12 +7060,12 @@ FullscreenTransitionTask::Run()
     return NS_OK;
   }
   if (stage == eBeforeToggle) {
-    profiler_add_marker("Fullscreen transition start");
+    PROFILER_ADD_MARKER("Fullscreen transition start");
     mWidget->PerformFullscreenTransition(nsIWidget::eBeforeFullscreenToggle,
                                          mDuration.mFadeIn, mTransitionData,
                                          this);
   } else if (stage == eToggleFullscreen) {
-    profiler_add_marker("Fullscreen toggle start");
+    PROFILER_ADD_MARKER("Fullscreen toggle start");
     mFullscreenChangeStartTime = TimeStamp::Now();
     if (MOZ_UNLIKELY(mWindow->mFullScreen != mFullscreen)) {
       
@@ -7109,7 +7109,7 @@ FullscreenTransitionTask::Run()
                                          mDuration.mFadeOut, mTransitionData,
                                          this);
   } else if (stage == eEnd) {
-    profiler_add_marker("Fullscreen transition end");
+    PROFILER_ADD_MARKER("Fullscreen transition end");
   }
   return NS_OK;
 }
@@ -7130,7 +7130,7 @@ FullscreenTransitionTask::Observer::Observe(nsISupports* aSubject,
       
       mTask->mTimer->Cancel();
       shouldContinue = true;
-      profiler_add_marker("Fullscreen toggle end");
+      PROFILER_ADD_MARKER("Fullscreen toggle end");
     }
   } else {
 #ifdef DEBUG
@@ -7141,7 +7141,7 @@ FullscreenTransitionTask::Observer::Observe(nsISupports* aSubject,
                "Should only trigger this with the timer the task created");
 #endif
     shouldContinue = true;
-    profiler_add_marker("Fullscreen toggle timeout");
+    PROFILER_ADD_MARKER("Fullscreen toggle timeout");
   }
   if (shouldContinue) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -13551,7 +13551,7 @@ nsGlobalWindow::SetHasGamepadEventListener(bool aHasGamepad)
 
 
 void
-nsGlobalWindow::EventListenerAdded(nsAtom* aType)
+nsGlobalWindow::EventListenerAdded(nsIAtom* aType)
 {
   if (aType == nsGkAtoms::onvrdisplayactivate ||
       aType == nsGkAtoms::onvrdisplayconnect ||
@@ -13583,7 +13583,7 @@ nsGlobalWindow::EventListenerAdded(nsAtom* aType)
 }
 
 void
-nsGlobalWindow::EventListenerRemoved(nsAtom* aType)
+nsGlobalWindow::EventListenerRemoved(nsIAtom* aType)
 {
   if (aType == nsGkAtoms::onbeforeunload &&
       mTabChild &&

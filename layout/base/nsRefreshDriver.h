@@ -164,9 +164,11 @@ public:
     
     
     
+#ifdef MOZ_GECKO_PROFILER
     if (!mStyleCause) {
       mStyleCause = profiler_get_backtrace();
     }
+#endif
     bool appended = mStyleFlushObservers.AppendElement(aShell) != nullptr;
     EnsureTimerStarted();
 
@@ -178,6 +180,7 @@ public:
   bool AddLayoutFlushObserver(nsIPresShell* aShell) {
     NS_ASSERTION(!IsLayoutFlushObserver(aShell),
                  "Double-adding layout flush observer");
+#ifdef MOZ_GECKO_PROFILER
     
     
     
@@ -185,6 +188,7 @@ public:
     if (!mReflowCause) {
       mReflowCause = profiler_get_backtrace();
     }
+#endif
     bool appended = mLayoutFlushObservers.AppendElement(aShell) != nullptr;
     EnsureTimerStarted();
     return appended;
@@ -416,8 +420,10 @@ private:
   mozilla::RefreshDriverTimer* ChooseTimer() const;
   mozilla::RefreshDriverTimer* mActiveTimer;
 
+#ifdef MOZ_GECKO_PROFILER
   UniqueProfilerBacktrace mReflowCause;
   UniqueProfilerBacktrace mStyleCause;
+#endif
 
   
   mozilla::WeakPtr<nsPresContext> mPresContext;

@@ -1093,8 +1093,10 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     mozilla::LogModule::Init();
 
+#ifdef MOZ_GECKO_PROFILER
     char aLocal;
     profiler_init(&aLocal);
+#endif
 
     if (PR_GetEnv("MOZ_CHAOSMODE")) {
         ChaosFeature feature = ChaosFeature::Any;
@@ -1417,9 +1419,11 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
         CrashReporter::UnsetExceptionHandler();
 #endif
 
+#ifdef MOZ_GECKO_PROFILER
     
     
     profiler_shutdown();
+#endif
 
     NS_LogTerm();
 

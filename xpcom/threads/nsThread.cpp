@@ -383,8 +383,6 @@ nsThread::ThreadFunc(void* aArg)
 {
   using mozilla::ipc::BackgroundChild;
 
-  char stackTop;
-
   ThreadInitData* initData = static_cast<ThreadInitData*>(aArg);
   nsThread* self = initData->thread;  
 
@@ -406,7 +404,7 @@ nsThread::ThreadFunc(void* aArg)
   
   
   if (!initData->name.IsEmpty()) {
-    profiler_register_thread(initData->name.BeginReading(), &stackTop);
+    PROFILER_REGISTER_THREAD(initData->name.BeginReading());
   }
 
   
@@ -453,7 +451,7 @@ nsThread::ThreadFunc(void* aArg)
   
   nsThreadManager::get().UnregisterCurrentThread(*self);
 
-  profiler_unregister_thread();
+  PROFILER_UNREGISTER_THREAD();
 
   
   NotNull<nsThreadShutdownContext*> context =

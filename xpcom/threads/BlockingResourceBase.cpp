@@ -506,18 +506,14 @@ ReentrantMonitor::Wait(PRIntervalTime aInterval)
   mChainPrev = 0;
 
   nsresult rv;
-#if defined(MOZILLA_INTERNAL_API)
   {
-    AutoProfilerThreadSleep sleep;
+#if defined(MOZILLA_INTERNAL_API)
+    AUTO_PROFILER_THREAD_SLEEP;
 #endif
-
-
+    
     rv = PR_Wait(mReentrantMonitor, aInterval) == PR_SUCCESS ? NS_OK :
                                                                NS_ERROR_FAILURE;
-
-#if defined(MOZILLA_INTERNAL_API)
   }
-#endif 
 
   
   mEntryCount = savedEntryCount;

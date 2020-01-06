@@ -1825,7 +1825,7 @@ private:
 public:
   void InitSmoothScroll(TimeStamp aTime,
                         nsPoint aInitialPosition, nsPoint aDestination,
-                        nsAtom *aOrigin, const nsRect& aRange,
+                        nsIAtom *aOrigin, const nsRect& aRange,
                         const nsSize& aCurrentVelocity);
   void Init(const nsRect& aRange) {
     mAnimationPhysics = nullptr;
@@ -1850,13 +1850,13 @@ public:
   }
 
   
-  RefPtr<nsAtom> mOrigin;
+  RefPtr<nsIAtom> mOrigin;
 
   
   nsRect mRange;
 
 private:
-  void InitPreferences(TimeStamp aTime, nsAtom *aOrigin);
+  void InitPreferences(TimeStamp aTime, nsIAtom *aOrigin);
 
   UniquePtr<ScrollAnimationPhysics> mAnimationPhysics;
 
@@ -1913,7 +1913,7 @@ private:
 
 
 static ScrollAnimationBezierPhysicsSettings
-ComputeBezierAnimationSettingsForOrigin(nsAtom *aOrigin)
+ComputeBezierAnimationSettingsForOrigin(nsIAtom *aOrigin)
 {
   int32_t minMS = 0;
   int32_t maxMS = 0;
@@ -1956,7 +1956,7 @@ void
 ScrollFrameHelper::AsyncScroll::InitSmoothScroll(TimeStamp aTime,
                                                  nsPoint aInitialPosition,
                                                  nsPoint aDestination,
-                                                 nsAtom *aOrigin,
+                                                 nsIAtom *aOrigin,
                                                  const nsRect& aRange,
                                                  const nsSize& aCurrentVelocity)
 {
@@ -2171,7 +2171,7 @@ ScrollFrameHelper::AsyncScrollCallback(ScrollFrameHelper* aInstance,
 }
 
 void
-ScrollFrameHelper::CompleteAsyncScroll(const nsRect &aRange, nsAtom* aOrigin)
+ScrollFrameHelper::CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin)
 {
   
   mAsyncSmoothMSDScroll = nullptr;
@@ -2243,7 +2243,7 @@ ScrollFrameHelper::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
 
 void
 ScrollFrameHelper::ScrollToCSSPixelsApproximate(const CSSPoint& aScrollPosition,
-                                                nsAtom *aOrigin)
+                                                nsIAtom *aOrigin)
 {
   nsPoint pt = CSSPoint::ToAppUnits(aScrollPosition);
   nscoord halfRange = nsPresContext::CSSPixelsToAppUnits(1000);
@@ -2265,7 +2265,7 @@ ScrollFrameHelper::GetScrollPositionCSSPixels()
 void
 ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
                                           nsIScrollableFrame::ScrollMode aMode,
-                                          nsAtom *aOrigin,
+                                          nsIAtom *aOrigin,
                                           const nsRect* aRange,
                                           nsIScrollbarMediator::ScrollSnapMode aSnap)
 {
@@ -2767,7 +2767,7 @@ ScrollFrameHelper::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* 
 }
 
 void
-ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrigin)
+ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOrigin)
 {
   if (aOrigin == nullptr) {
     
@@ -3952,7 +3952,7 @@ ScrollFrameHelper::ScrollBy(nsIntPoint aDelta,
                             nsIScrollableFrame::ScrollUnit aUnit,
                             nsIScrollableFrame::ScrollMode aMode,
                             nsIntPoint* aOverflow,
-                            nsAtom *aOrigin,
+                            nsIAtom *aOrigin,
                             nsIScrollableFrame::ScrollMomentum aMomentum,
                             nsIScrollbarMediator::ScrollSnapMode aSnap)
 {
@@ -4755,7 +4755,7 @@ ScrollFrameHelper::ScrollEvent::Run()
 void
 ScrollFrameHelper::FireScrollEvent()
 {
-  AutoProfilerTracing tracing("Paint", "FireScrollEvent");
+  AUTO_PROFILER_TRACING("Paint", "FireScrollEvent");
   MOZ_ASSERT(mScrollEvent);
   mScrollEvent->Revoke();
   mScrollEvent = nullptr;
@@ -5737,7 +5737,7 @@ ScrollFrameHelper::SetScrollbarEnabled(nsIContent* aContent, nscoord aMaxPos)
 }
 
 void
-ScrollFrameHelper::SetCoordAttribute(nsIContent* aContent, nsAtom* aAtom,
+ScrollFrameHelper::SetCoordAttribute(nsIContent* aContent, nsIAtom* aAtom,
                                          nscoord aSize)
 {
   DebugOnly<nsWeakPtr> weakShell(
@@ -5970,7 +5970,7 @@ ScrollFrameHelper::SetScrollbarVisibility(nsIFrame* aScrollbar, bool aVisible)
 }
 
 nscoord
-ScrollFrameHelper::GetCoordAttribute(nsIFrame* aBox, nsAtom* aAtom,
+ScrollFrameHelper::GetCoordAttribute(nsIFrame* aBox, nsIAtom* aAtom,
                                          nscoord aDefaultValue,
                                          nscoord* aRangeStart,
                                          nscoord* aRangeLength)
