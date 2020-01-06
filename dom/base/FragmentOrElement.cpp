@@ -445,7 +445,7 @@ nsIContent::GetBaseURI(bool aTryUseXHRDocBaseURI) const
 }
 
 nsIURI*
-nsIContent::GetBaseURIWithoutXMLBase() const
+nsIContent::GetBaseURIForStyleAttr() const
 {
   if (IsInAnonymousSubtree() && IsAnonymousContentInSVGUseSubtree()) {
     nsIContent* bindingParent = GetBindingParent();
@@ -460,26 +460,6 @@ nsIContent::GetBaseURIWithoutXMLBase() const
   return OwnerDoc()->GetDocBaseURI();
 }
 
-already_AddRefed<nsIURI>
-nsIContent::GetBaseURIForStyleAttr() const
-{
-  nsIDocument* doc = OwnerDoc();
-  nsIURI* baseWithoutXMLBase = GetBaseURIWithoutXMLBase();
-  nsCOMPtr<nsIURI> base = GetBaseURI();
-  
-  
-  if (doc->HasWarnedAbout(nsIDocument::eXMLBaseAttribute) &&
-      !doc->HasWarnedAbout(nsIDocument::eXMLBaseAttributeForStyleAttr)) {
-    bool isEqual = false;
-    base->Equals(baseWithoutXMLBase, &isEqual);
-    if (!isEqual) {
-      doc->WarnOnceAbout(nsIDocument::eXMLBaseAttributeForStyleAttr);
-    }
-  }
-  return nsLayoutUtils::StyleAttrWithXMLBaseDisabled()
-    ? do_AddRef(baseWithoutXMLBase) : base.forget();
-}
-
 URLExtraData*
 nsIContent::GetURLDataForStyleAttr() const
 {
@@ -491,9 +471,6 @@ nsIContent::GetURLDataForStyleAttr() const
       return data;
     }
   }
-  
-  
-  MOZ_ASSERT(nsLayoutUtils::StyleAttrWithXMLBaseDisabled());
   
   
   return OwnerDoc()->DefaultStyleAttrURLData();
@@ -816,6 +793,14 @@ FragmentOrElement::nsDOMSlots::Traverse(nsCycleCollectionTraversalCallback &cb)
     }
   }
 
+  for (auto iter = mExtendedSlots->mRegisteredIntersectionObservers.Iter();
+       !iter.Done(); iter.Next()) {
+    DOMIntersectionObserver* observer = iter.Key();
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
+                                       "mExtendedSlots->mRegisteredIntersectionObservers[i]");
+    cb.NoteXPCOMChild(observer);
+  }
+
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mExtendedSlots->mFrameLoaderOrOpener");
   cb.NoteXPCOMChild(mExtendedSlots->mFrameLoaderOrOpener);
 }
@@ -848,6 +833,7 @@ FragmentOrElement::nsDOMSlots::Unlink()
     }
     mExtendedSlots->mCustomElementData = nullptr;
   }
+  mExtendedSlots->mRegisteredIntersectionObservers.Clear();
   nsCOMPtr<nsIFrameLoader> frameLoader =
     do_QueryInterface(mExtendedSlots->mFrameLoaderOrOpener);
   if (frameLoader) {
@@ -1554,11 +1540,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   
 
   if (tmp->HasProperties()) {
-    if (tmp->IsElement()) {
-      Element* elem = tmp->AsElement();
-      elem->UnlinkIntersectionObservers();
-    }
-
     if (tmp->IsHTMLElement() || tmp->IsSVGElement()) {
       nsIAtom*** props = Element::HTMLSVGPropertiesToTraverseAndUnlink();
       for (uint32_t i = 0; props[i]; ++i) {
@@ -1613,6 +1594,14 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   {
     nsDOMSlots *slots = tmp->GetExistingDOMSlots();
     if (slots) {
+      if (slots->mExtendedSlots && tmp->IsElement()) {
+        Element* elem = tmp->AsElement();
+        for (auto iter = slots->mExtendedSlots->mRegisteredIntersectionObservers.Iter();
+             !iter.Done(); iter.Next()) {
+          DOMIntersectionObserver* observer = iter.Key();
+          observer->UnlinkTarget(*elem);
+        }
+      }
       slots->Unlink();
     }
   }
@@ -2133,19 +2122,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
 #endif
 
   if (tmp->HasProperties()) {
-    if (tmp->IsElement()) {
-      Element* elem = tmp->AsElement();
-      IntersectionObserverList* observers =
-        static_cast<IntersectionObserverList*>(
-          elem->GetProperty(nsGkAtoms::intersectionobserverlist)
-        );
-      if (observers) {
-        for (auto iter = observers->Iter(); !iter.Done(); iter.Next()) {
-          DOMIntersectionObserver* observer = iter.Key();
-          cb.NoteXPCOMChild(observer);
-        }
-      }
-    }
     if (tmp->IsHTMLElement() || tmp->IsSVGElement()) {
       nsIAtom*** props = Element::HTMLSVGPropertiesToTraverseAndUnlink();
       for (uint32_t i = 0; props[i]; ++i) {

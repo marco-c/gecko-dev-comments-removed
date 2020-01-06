@@ -2979,7 +2979,7 @@ pref("layout.css.float-logical-values.enabled", true);
 pref("layout.css.image-orientation.enabled", true);
 
 
-pref("layout.css.font-display.enabled", true);
+pref("layout.css.font-display.enabled", false);
 
 
 pref("layout.css.font-variations.enabled", false);
@@ -3099,9 +3099,6 @@ pref("layout.css.control-characters.visible", true);
 
 
 pref("layout.css.column-span.enabled", false);
-
-
-pref("layout.css.style-attr-with-xml-base.disabled", true);
 
 
 pref("layout.css.ruby.intercharacter.enabled", false);
