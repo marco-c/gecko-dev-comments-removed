@@ -41,6 +41,15 @@ function* selectAndHighlightNode(selectorOrNodeFront, inspector) {
 
 
 
+function isNodeVisible(node) {
+  return !!node.getClientRects().length;
+}
+
+
+
+
+
+
 
 
 function openBoxModelView() {
