@@ -20,7 +20,7 @@ var expected_telemetry = {
 };
 
 
-add_task(function*() {
+add_task(async function() {
   
   Observer.add_observers(Services);
   registerCleanupFunction(do_cleanup);
@@ -31,12 +31,12 @@ add_task(function*() {
   clear_hists(expected_telemetry);
 
   for (let server of Object.keys(test_servers)) {
-    yield execute_test(server, test_settings[which].mimetype);
+    await execute_test(server, test_settings[which].mimetype);
   }
 
   
   for (let server of Object.keys(test_servers)) {
-    yield execute_test(server, test_settings[which].mimetype);
+    await execute_test(server, test_settings[which].mimetype);
   }
 
   test_telemetry(expected_telemetry);

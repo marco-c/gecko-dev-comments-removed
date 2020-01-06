@@ -181,7 +181,7 @@ add_test(function fetchAndCacheProfile_sendsETag() {
 
 
 
-add_task(function* fetchAndCacheProfileOnce() {
+add_task(async function fetchAndCacheProfileOnce() {
   
   
   let resolveProfile;
@@ -217,9 +217,9 @@ add_task(function* fetchAndCacheProfileOnce() {
   resolveProfile({ body: { avatar: "myimg"} });
 
   
-  let got1 = yield request1;
+  let got1 = await request1;
   do_check_eq(got1.avatar, "myimg");
-  let got2 = yield request1;
+  let got2 = await request1;
   do_check_eq(got2.avatar, "myimg");
 
   
@@ -228,7 +228,7 @@ add_task(function* fetchAndCacheProfileOnce() {
 
 
 
-add_task(function* fetchAndCacheProfileOnce() {
+add_task(async function fetchAndCacheProfileOnce() {
   
   
   let rejectProfile;
@@ -265,7 +265,7 @@ add_task(function* fetchAndCacheProfileOnce() {
 
   
   try {
-    yield request1;
+    await request1;
     throw new Error("should have rejected");
   } catch (ex) {
     if (ex != "oh noes") {
@@ -273,7 +273,7 @@ add_task(function* fetchAndCacheProfileOnce() {
     }
   }
   try {
-    yield request2;
+    await request2;
     throw new Error("should have rejected");
   } catch (ex) {
     if (ex != "oh noes") {
@@ -286,7 +286,7 @@ add_task(function* fetchAndCacheProfileOnce() {
     return Promise.resolve({body: { avatar: "myimg"}});
   };
 
-  let got = yield profile._fetchAndCacheProfile();
+  let got = await profile._fetchAndCacheProfile();
   do_check_eq(got.avatar, "myimg");
 });
 
@@ -315,7 +315,7 @@ add_test(function fetchAndCacheProfile_alreadyCached() {
 
 
 
-add_task(function* fetchAndCacheProfileAfterThreshold() {
+add_task(async function fetchAndCacheProfileAfterThreshold() {
   let numFetches = 0;
   let client = mockClient(mockFxa());
   client.fetchProfile = function() {
@@ -325,24 +325,24 @@ add_task(function* fetchAndCacheProfileAfterThreshold() {
   let profile = CreateFxAccountsProfile(null, client);
   profile.PROFILE_FRESHNESS_THRESHOLD = 1000;
 
-  yield profile.getProfile();
+  await profile.getProfile();
   do_check_eq(numFetches, 1);
 
-  yield profile.getProfile();
+  await profile.getProfile();
   do_check_eq(numFetches, 1);
 
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     do_timeout(1000, resolve);
   });
 
-  yield profile.getProfile();
+  await profile.getProfile();
   do_check_eq(numFetches, 2);
 });
 
 
 
 
-add_task(function* fetchAndCacheProfileBeforeThresholdOnNotification() {
+add_task(async function fetchAndCacheProfileBeforeThresholdOnNotification() {
   let numFetches = 0;
   let client = mockClient(mockFxa());
   client.fetchProfile = function() {
@@ -352,12 +352,12 @@ add_task(function* fetchAndCacheProfileBeforeThresholdOnNotification() {
   let profile = CreateFxAccountsProfile(null, client);
   profile.PROFILE_FRESHNESS_THRESHOLD = 1000;
 
-  yield profile.getProfile();
+  await profile.getProfile();
   do_check_eq(numFetches, 1);
 
   Services.obs.notifyObservers(null, ON_PROFILE_CHANGE_NOTIFICATION);
 
-  yield profile.getProfile();
+  await profile.getProfile();
   do_check_eq(numFetches, 2);
 });
 

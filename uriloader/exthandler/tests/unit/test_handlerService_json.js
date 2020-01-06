@@ -17,17 +17,17 @@ Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
 
 
 
-add_task(function* test_store_keeps_unknown_properties() {
+add_task(async function test_store_keeps_unknown_properties() {
   
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
   let handlerInfo =
       HandlerServiceTestUtils.getHandlerInfo("example/type.handleinternally");
 
-  yield copyTestDataToHandlerStore();
+  await copyTestDataToHandlerStore();
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
-  let data = JSON.parse(new TextDecoder().decode(yield OS.File.read(jsonPath)));
+  await unloadHandlerStore();
+  let data = JSON.parse(new TextDecoder().decode(await OS.File.read(jsonPath)));
   do_check_eq(data.mimeTypes["example/type.handleinternally"].unknownProperty,
               "preserved");
 });
@@ -35,34 +35,34 @@ add_task(function* test_store_keeps_unknown_properties() {
 
 
 
-add_task(function* test_migration_rdf_present() {
+add_task(async function test_migration_rdf_present() {
   
-  yield deleteHandlerStore();
-  yield copyTestDataToHandlerStoreRDF();
+  await deleteHandlerStore();
+  await copyTestDataToHandlerStoreRDF();
   Services.prefs.setBoolPref("gecko.handlerService.migrated", false);
-  yield assertAllHandlerInfosMatchTestData();
+  await assertAllHandlerInfosMatchTestData();
   do_check_true(Services.prefs.getBoolPref("gecko.handlerService.migrated"));
 
   
-  yield unloadHandlerStore();
-  yield unloadHandlerStoreRDF();
+  await unloadHandlerStore();
+  await unloadHandlerStoreRDF();
   Services.prefs.setBoolPref("gecko.handlerService.migrated", false);
-  yield assertAllHandlerInfosMatchTestData();
+  await assertAllHandlerInfosMatchTestData();
   do_check_true(Services.prefs.getBoolPref("gecko.handlerService.migrated"));
 });
 
 
 
 
-add_task(function* test_migration_rdf_present_keeps_new_data() {
-  yield deleteHandlerStore();
+add_task(async function test_migration_rdf_present_keeps_new_data() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   gHandlerService.store(handlerInfo);
 
   
-  yield unloadHandlerStore();
-  yield copyTestDataToHandlerStoreRDF();
+  await unloadHandlerStore();
+  await copyTestDataToHandlerStoreRDF();
   Services.prefs.setBoolPref("gecko.handlerService.migrated", false);
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
@@ -78,23 +78,23 @@ add_task(function* test_migration_rdf_present_keeps_new_data() {
 
 
 
-add_task(function* test_migration_rdf_absent() {
+add_task(async function test_migration_rdf_absent() {
   if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
     do_print("This platform or locale does not have default handlers.");
     return;
   }
 
   
-  yield deleteHandlerStore();
-  yield deleteHandlerStoreRDF();
+  await deleteHandlerStore();
+  await deleteHandlerStoreRDF();
   Services.prefs.setBoolPref("gecko.handlerService.migrated", false);
-  yield assertAllHandlerInfosMatchDefaultHandlers();
+  await assertAllHandlerInfosMatchDefaultHandlers();
   do_check_true(Services.prefs.getBoolPref("gecko.handlerService.migrated"));
 
   
-  yield unloadHandlerStore();
-  yield unloadHandlerStoreRDF();
+  await unloadHandlerStore();
+  await unloadHandlerStoreRDF();
   Services.prefs.setBoolPref("gecko.handlerService.migrated", false);
-  yield assertAllHandlerInfosMatchDefaultHandlers();
+  await assertAllHandlerInfosMatchDefaultHandlers();
   do_check_true(Services.prefs.getBoolPref("gecko.handlerService.migrated"));
 });

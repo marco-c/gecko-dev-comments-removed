@@ -35,7 +35,7 @@ function StubPolicy(id) {
   });
 }
 
-add_task(function*() {
+add_task(async function() {
   let policy = StubPolicy("foo");
   policy.active = true;
 
@@ -62,7 +62,7 @@ add_task(function*() {
   webnavB.close();
 
   
-  yield TestUtils.topicObserved("inner-window-nuked");
+  await TestUtils.topicObserved("inner-window-nuked");
 
   
   let result = getThing();

@@ -32,9 +32,9 @@ function openEditCertTrustDialog() {
   });
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  gCert = yield readCertificate("ca.pem", "CT,,");
+  gCert = await readCertificate("ca.pem", "CT,,");
   Assert.ok(gCertDB.isCertTrusted(gCert, Ci.nsIX509Cert.CA_CERT,
                                   Ci.nsIX509CertDB.TRUSTED_SSL),
             "Sanity check: ca.pem should be trusted for SSL");
@@ -50,8 +50,8 @@ add_task(function* setup() {
 
 
 
-add_task(function* testAcceptDialog() {
-  let win = yield openEditCertTrustDialog();
+add_task(async function testAcceptDialog() {
+  let win = await openEditCertTrustDialog();
 
   let sslCheckbox = win.document.getElementById("trustSSL");
   let emailCheckbox = win.document.getElementById("trustEmail");
@@ -68,7 +68,7 @@ add_task(function* testAcceptDialog() {
 
   info("Accepting dialog");
   win.document.getElementById("editCaCert").acceptDialog();
-  yield BrowserTestUtils.windowClosed(win);
+  await BrowserTestUtils.windowClosed(win);
 
   Assert.ok(!gCertDB.isCertTrusted(gCert, Ci.nsIX509Cert.CA_CERT,
                                    Ci.nsIX509CertDB.TRUSTED_SSL),
@@ -85,8 +85,8 @@ add_task(function* testAcceptDialog() {
 
 
 
-add_task(function* testCancelDialog() {
-  let win = yield openEditCertTrustDialog();
+add_task(async function testCancelDialog() {
+  let win = await openEditCertTrustDialog();
 
   let sslCheckbox = win.document.getElementById("trustSSL");
   let emailCheckbox = win.document.getElementById("trustEmail");
@@ -104,7 +104,7 @@ add_task(function* testCancelDialog() {
 
   info("Canceling dialog");
   win.document.getElementById("editCaCert").cancelDialog();
-  yield BrowserTestUtils.windowClosed(win);
+  await BrowserTestUtils.windowClosed(win);
 
   Assert.ok(!gCertDB.isCertTrusted(gCert, Ci.nsIX509Cert.CA_CERT,
                                   Ci.nsIX509CertDB.TRUSTED_SSL),

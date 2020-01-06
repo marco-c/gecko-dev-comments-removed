@@ -1,9 +1,9 @@
-add_task(function*() {
+add_task(async function() {
   
   let launcher = createMockedObjects(true);
 
   
-  let dlg = yield* openHelperAppDialog(launcher);
+  let dlg = await openHelperAppDialog(launcher);
 
   let doc = dlg.document;
 
@@ -22,7 +22,7 @@ add_task(function*() {
   
   doc.documentElement.getButton("accept").disabled = false;
   doc.documentElement.acceptDialog();
-  yield dialogClosedPromise;
+  await dialogClosedPromise;
 
   
   ok(gHandlerSvc.exists(launcher.MIMEInfo), "Should be in nsIHandlerService.");

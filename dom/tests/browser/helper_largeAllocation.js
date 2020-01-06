@@ -52,14 +52,14 @@ function getInLAProc(aBrowser) {
   });
 }
 
-function* largeAllocSuccessTests() {
+async function largeAllocSuccessTests() {
   
   requestLongerTimeout(2);
 
   
   let isWin32 = /Windows/.test(navigator.userAgent) && !/x64/.test(navigator.userAgent);
 
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [
       
       ["dom.largeAllocationHeader.enabled", true],
@@ -73,36 +73,36 @@ function* largeAllocSuccessTests() {
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 0");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
     
-    yield epc;
+    await epc;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "The pids should be different between the initial load and the new load");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
   });
 
   
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 1");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.body.innerHTML = `<iframe src='${TEST_URI}'></iframe>`;
 
       return new Promise(resolve => {
@@ -113,19 +113,19 @@ function* largeAllocSuccessTests() {
       });
     });
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });
 
   
-  yield BrowserTestUtils.withNewTab("http://example.com", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("http://example.com", async function(aBrowser) {
     info("Starting test 2");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
@@ -145,143 +145,143 @@ function* largeAllocSuccessTests() {
       });
     });
 
-    yield BrowserTestUtils.synthesizeMouseAtCenter("button", {}, aBrowser);
+    await BrowserTestUtils.synthesizeMouseAtCenter("button", {}, aBrowser);
 
-    yield loaded;
+    await loaded;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 3");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield epc;
+    await epc;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2);
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    yield ContentTask.spawn(aBrowser, null, () => content.document.location = "about:blank");
+    await ContentTask.spawn(aBrowser, null, () => content.document.location = "about:blank");
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    let pid3 = yield getPID(aBrowser);
+    let pid3 = await getPID(aBrowser);
 
     
     
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     epc = expectProcessCreated();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield epc;
+    await epc;
 
-    let pid4 = yield getPID(aBrowser);
+    let pid4 = await getPID(aBrowser);
 
     isnot(pid1, pid4);
     isnot(pid2, pid4);
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 4");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield epc;
+    await epc;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
     
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       content.document.location = "about:blank";
     });
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    let pid3 = yield getPID(aBrowser);
+    let pid3 = await getPID(aBrowser);
 
     
     
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     epc = expectProcessCreated();
 
     
     
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.window.history.back();
     });
 
-    yield epc;
+    await epc;
 
-    let pid4 = yield getPID(aBrowser);
+    let pid4 = await getPID(aBrowser);
 
     isnot(pid1, pid4, "PID 4 shouldn't match PID 1");
     isnot(pid2, pid4, "PID 4 shouldn't match PID 2");
     isnot(pid3, pid4, "PID 4 shouldn't match PID 3");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 5");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
     let epc = expectProcessCreated();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI_2, TEST_URI_2 => {
+    await ContentTask.spawn(aBrowser, TEST_URI_2, TEST_URI_2 => {
       content.document.location = TEST_URI_2;
     });
 
-    yield epc;
+    await epc;
 
     
     
@@ -290,57 +290,57 @@ function* largeAllocSuccessTests() {
     
     
     epc = expectProcessCreated();
-    if (!(yield getInLAProc(aBrowser))) {
-      yield epc;
+    if (!(await getInLAProc(aBrowser))) {
+      await epc;
     } else {
       epc.catch(() => {});
       epc.kill();
     }
 
-    let pid3 = yield getPID(aBrowser);
+    let pid3 = await getPID(aBrowser);
 
     isnot(pid1, pid3, "PIDs 1 and 3 should not match");
     isnot(pid2, pid3, "PIDs 2 and 3 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 6");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
     let stopExpectNoProcess = expectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       this.__newWindow = content.window.open("about:blank");
       content.document.location = "about:blank";
     });
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    let pid3 = yield getPID(aBrowser);
+    let pid3 = await getPID(aBrowser);
 
     is(pid3, pid2, "PIDs 2 and 3 should match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       ok(this.__newWindow, "The window should have been stored");
       this.__newWindow.close();
     });
@@ -348,50 +348,50 @@ function* largeAllocSuccessTests() {
 
   
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 6a");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
     let stopExpectNoProcess = expectNoProcess();
 
     let firstTab = gBrowser.selectedTab;
     let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, "about:blank");
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       this.__newWindow = content.window.open("about:blank");
     });
-    yield promiseTabOpened;
+    await promiseTabOpened;
 
     if (firstTab != gBrowser.selectedTab) {
-      firstTab = yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+      firstTab = await BrowserTestUtils.switchTab(gBrowser, firstTab);
       aBrowser = firstTab.linkedBrowser;
     }
     let promiseLoad = BrowserTestUtils.browserLoaded(aBrowser);
     document.getElementById("reload-button").doCommand();
-    yield promiseLoad;
+    await promiseLoad;
 
-    let pid3 = yield getPID(aBrowser);
+    let pid3 = await getPID(aBrowser);
 
     is(pid3, pid2, "PIDs 2 and 3 should match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       ok(this.__newWindow, "The window should have been stored");
       this.__newWindow.close();
     });
@@ -399,186 +399,186 @@ function* largeAllocSuccessTests() {
 
   
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 7");
 
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    let newWindow = yield BrowserTestUtils.openNewBrowserWindow();
+    let newWindow = await BrowserTestUtils.openNewBrowserWindow();
 
     newWindow.gBrowser.adoptTab(gBrowser.getTabForBrowser(aBrowser), 0);
     let newTab = newWindow.gBrowser.tabs[0];
 
     is(newTab.linkedBrowser.currentURI.spec, TEST_URI);
     is(newTab.linkedBrowser.remoteType, "webLargeAllocation");
-    let pid3 = yield getPID(newTab.linkedBrowser);
+    let pid3 = await getPID(newTab.linkedBrowser);
 
     is(pid2, pid3, "PIDs 2 and 3 should match");
-    is(true, yield getInLAProc(newTab.linkedBrowser));
+    is(true, await getInLAProc(newTab.linkedBrowser));
 
-    yield BrowserTestUtils.closeWindow(newWindow);
+    await BrowserTestUtils.closeWindow(newWindow);
   });
 
   
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 8");
-    yield SpecialPowers.pushPrefEnv({
+    await SpecialPowers.pushPrefEnv({
       set: [
         ["dom.ipc.processCount.webLargeAllocation", 1]
       ],
     });
 
     
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
       
       
-      is(false, yield getInLAProc(aBrowser));
+      is(false, await getInLAProc(aBrowser));
 
       let ready = Promise.all([BrowserTestUtils.browserLoaded(aBrowser)]);
-      yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
         content.document.location = TEST_URI;
       });
-      yield ready;
+      await ready;
 
-      is(false, yield getInLAProc(aBrowser));
+      is(false, await getInLAProc(aBrowser));
     });
   });
 
   
   
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount.webLargeAllocation", 20]],
   });
 
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 9");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, null, () => {
+    await ContentTask.spawn(aBrowser, null, () => {
       content.document.location = "view-source:http://example.com";
     });
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });
 
   
   
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 10");
-    yield SpecialPowers.pushPrefEnv({
+    await SpecialPowers.pushPrefEnv({
       set: [
         ["dom.ipc.processCount.webLargeAllocation", 1]
       ],
     });
 
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    let newWindow = yield BrowserTestUtils.openNewBrowserWindow();
+    let newWindow = await BrowserTestUtils.openNewBrowserWindow();
 
     newWindow.gBrowser.adoptTab(gBrowser.getTabForBrowser(aBrowser), 0);
     let newTab = newWindow.gBrowser.tabs[0];
 
     is(newTab.linkedBrowser.currentURI.spec, TEST_URI);
     is(newTab.linkedBrowser.remoteType, "webLargeAllocation");
-    let pid3 = yield getPID(newTab.linkedBrowser);
+    let pid3 = await getPID(newTab.linkedBrowser);
 
     is(pid2, pid3, "PIDs 2 and 3 should match");
-    is(true, yield getInLAProc(newTab.linkedBrowser));
+    is(true, await getInLAProc(newTab.linkedBrowser));
 
-    yield BrowserTestUtils.closeWindow(newWindow);
+    await BrowserTestUtils.closeWindow(newWindow);
   });
 
   
   
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount.webLargeAllocation", 20]],
   });
 
-  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+  await BrowserTestUtils.withNewTab("about:blank", async function(aBrowser) {
     info("Starting test 11");
 
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     let ready = Promise.all([expectProcessCreated(),
                              BrowserTestUtils.browserLoaded(aBrowser)]);
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield ready;
+    await ready;
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
-    is(true, yield getInLAProc(aBrowser));
+    is(true, await getInLAProc(aBrowser));
 
-    yield Promise.all([
+    await Promise.all([
       ContentTask.spawn(aBrowser, null, () => {
         content.document.querySelector("#submit").click();
       }),
       BrowserTestUtils.browserLoaded(aBrowser)
     ]);
 
-    let innerText = yield ContentTask.spawn(aBrowser, null, () => {
+    let innerText = await ContentTask.spawn(aBrowser, null, () => {
       return content.document.body.innerText;
     });
     isnot(innerText, "FAIL", "We should not have sent a get request!");
@@ -590,25 +590,25 @@ function* largeAllocSuccessTests() {
   
 }
 
-function* largeAllocFailTests() {
-  yield BrowserTestUtils.withNewTab("http://example.com", function*(aBrowser) {
+async function largeAllocFailTests() {
+  await BrowserTestUtils.withNewTab("http://example.com", async function(aBrowser) {
     info("Starting test 1");
-    let pid1 = yield getPID(aBrowser);
-    is(false, yield getInLAProc(aBrowser));
+    let pid1 = await getPID(aBrowser);
+    is(false, await getInLAProc(aBrowser));
 
     
     let stopExpectNoProcess = expectNoProcess();
 
-    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    yield BrowserTestUtils.browserLoaded(aBrowser);
+    await BrowserTestUtils.browserLoaded(aBrowser);
 
-    let pid2 = yield getPID(aBrowser);
+    let pid2 = await getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
-    is(false, yield getInLAProc(aBrowser));
+    is(false, await getInLAProc(aBrowser));
 
     stopExpectNoProcess();
   });

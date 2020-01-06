@@ -238,8 +238,8 @@ function testURL(source, target, canLoad, canLoadWithoutInherit, canCreate, flag
      (inheritDisallowed ? " without" : " with") + " principal inheritance.");
 }
 
-add_task(function* () {
-  yield kAboutPagesRegistered;
+add_task(async function() {
+  await kAboutPagesRegistered;
   let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
   for (let [sourceString, targetsAndExpectations] of URLs) {
     let source;
@@ -256,11 +256,11 @@ add_task(function* () {
   }
 
   
-  yield BrowserTestUtils.withNewTab("http://www.example.com/", function* (browser) {
-    yield ContentTask.spawn(
+  await BrowserTestUtils.withNewTab("http://www.example.com/", async function(browser) {
+    await ContentTask.spawn(
       browser,
       testURL.toString(),
-      function* (testURLFn) {
+      async function(testURLFn) {
         
         let testURL = eval("(" + testURLFn + ")");
         

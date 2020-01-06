@@ -1,19 +1,19 @@
-add_task(function*() {
+add_task(async function() {
   
   let launcher = createMockedObjects(false);
   
-  let dlg = yield* openHelperAppDialog(launcher);
+  let dlg = await openHelperAppDialog(launcher);
   let doc = dlg.document;
   let location = doc.getElementById("source");
   let expectedValue = launcher.source.prePath;
   if (location.value != expectedValue) {
     info("Waiting for dialog to be populated.");
-    yield BrowserTestUtils.waitForAttribute("value", location, expectedValue);
+    await BrowserTestUtils.waitForAttribute("value", location, expectedValue);
   }
   is(doc.getElementById("mode").selectedItem.id, "open", "Should be opening the file.");
   ok(!dlg.document.getElementById("openHandler").selectedItem.hidden,
      "Should not have selected a hidden item.");
   let helperAppDialogHiddenPromise = BrowserTestUtils.windowClosed(dlg);
   doc.documentElement.cancelDialog();
-  yield helperAppDialogHiddenPromise;
+  await helperAppDialogHiddenPromise;
 });

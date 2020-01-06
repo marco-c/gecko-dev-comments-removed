@@ -10,7 +10,7 @@ const TEST_URI = "http://example.com/" +
 
 const BASE_GEO_URL = "http://mochi.test:8888/tests/dom/tests/mochitest/geolocation/network_geolocation.sjs";
 
-add_task(function* () {
+add_task(async function() {
   Services.prefs.setBoolPref("geo.prompt.testing", true);
   Services.prefs.setBoolPref("geo.prompt.testing.allow", true);
 
@@ -21,10 +21,10 @@ add_task(function* () {
   
   
   
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_URI
-  }, function* (browser) {  });
+  }, function(browser) {  });
 
   ok(true, "Need to do something in this test");
 });

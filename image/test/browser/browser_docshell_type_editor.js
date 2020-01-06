@@ -22,18 +22,18 @@ function getManifestDir() {
 
 
 
-add_task(function* () {
+add_task(async function() {
   info("docshell of appType APP_TYPE_EDITOR can access privileged images.");
 
   
   let manifestDir = getManifestDir();
   Components.manager.addBootstrappedManifestLocation(manifestDir);
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: SIMPLE_HTML
-  }, function* (browser) {
-    yield ContentTask.spawn(browser, null, function* () {
+  }, async function(browser) {
+    await ContentTask.spawn(browser, null, async function() {
       let rootDocShell = docShell.QueryInterface(Ci.nsIDocShellTreeItem)
                                  .rootTreeItem
                                  .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -70,18 +70,18 @@ add_task(function* () {
   Components.manager.removeBootstrappedManifestLocation(manifestDir);
 });
 
-add_task(function* () {
+add_task(async function() {
   info("docshell of appType APP_TYPE_UNKNOWN can *not* access privileged images.");
 
   
   let manifestDir = getManifestDir();
   Components.manager.addBootstrappedManifestLocation(manifestDir);
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: SIMPLE_HTML
-  }, function* (browser) {
-    yield ContentTask.spawn(browser, null, function* () {
+  }, async function(browser) {
+    await ContentTask.spawn(browser, null, async function() {
       let rootDocShell = docShell.QueryInterface(Ci.nsIDocShellTreeItem)
                                  .rootTreeItem
                                  .QueryInterface(Ci.nsIInterfaceRequestor)

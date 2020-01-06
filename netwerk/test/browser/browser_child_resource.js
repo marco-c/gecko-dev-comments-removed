@@ -66,67 +66,67 @@ function remoteResolveURI(uri) {
   });
 }
 
-var loadTestTab = Task.async(function*() {
+var loadTestTab = async function() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, TEST_URL);
   let browser = gBrowser.selectedBrowser;
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   browser.messageManager.loadFrameScript("data:,(" + frameScript.toString() + ")();", true);
   return browser;
-});
+};
 
 
-var restart = Task.async(function*() {
+var restart = async function() {
   let browser = gBrowser.selectedBrowser;
   
   if (browser.getAttribute("remote") != "true")
     return browser;
 
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   browser.reload();
 
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   is(browser.getAttribute("remote"), expectedRemote, "Browser should be in the right process");
   browser.messageManager.loadFrameScript("data:,(" + frameScript.toString() + ")();", true);
   return browser;
-});
+};
 
 
-add_task(function*() {
-  let browser = yield loadTestTab();
+add_task(async function() {
+  let browser = await loadTestTab();
 
   
   is(browser.getAttribute("remote"), expectedRemote, "Browser should be in the right process");
 
   let local = resolveURI("resource://gre/modules/Services.jsm");
-  let remote = yield remoteResolveURI("resource://gre/modules/Services.jsm");
+  let remote = await remoteResolveURI("resource://gre/modules/Services.jsm");
   is(local, remote, "Services.jsm should resolve in both processes");
 
   gBrowser.removeCurrentTab();
 });
 
 
-add_task(function*() {
-  let browser = yield loadTestTab();
+add_task(async function() {
+  let browser = await loadTestTab();
 
   info("Set");
   resProtocol.setSubstitution("testing", Services.io.newURI("chrome://global/content"));
   let local = resolveURI("resource://testing/test.js");
-  let remote = yield remoteResolveURI("resource://testing/test.js");
+  let remote = await remoteResolveURI("resource://testing/test.js");
   is(local, "chrome://global/content/test.js", "Should resolve in main process");
   is(remote, "chrome://global/content/test.js", "Should resolve in child process");
 
   info("Change");
   resProtocol.setSubstitution("testing", Services.io.newURI("chrome://global/skin"));
   local = resolveURI("resource://testing/test.js");
-  remote = yield remoteResolveURI("resource://testing/test.js");
+  remote = await remoteResolveURI("resource://testing/test.js");
   is(local, "chrome://global/skin/test.js", "Should resolve in main process");
   is(remote, "chrome://global/skin/test.js", "Should resolve in child process");
 
   info("Clear");
   resProtocol.setSubstitution("testing", null);
   local = resolveURI("resource://testing/test.js");
-  remote = yield remoteResolveURI("resource://testing/test.js");
+  remote = await remoteResolveURI("resource://testing/test.js");
   is(local, null, "Shouldn't resolve in main process");
   is(remote, null, "Shouldn't resolve in child process");
 
@@ -134,40 +134,40 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
-  let browser = yield loadTestTab();
+add_task(async function() {
+  let browser = await loadTestTab();
 
   info("Set");
   resProtocol.setSubstitution("testing", Services.io.newURI("chrome://global/content"));
   let local = resolveURI("resource://testing/test.js");
-  let remote = yield remoteResolveURI("resource://testing/test.js");
+  let remote = await remoteResolveURI("resource://testing/test.js");
   is(local, "chrome://global/content/test.js", "Should resolve in main process");
   is(remote, "chrome://global/content/test.js", "Should resolve in child process");
 
-  yield restart();
+  await restart();
 
   local = resolveURI("resource://testing/test.js");
-  remote = yield remoteResolveURI("resource://testing/test.js");
+  remote = await remoteResolveURI("resource://testing/test.js");
   is(local, "chrome://global/content/test.js", "Should resolve in main process");
   is(remote, "chrome://global/content/test.js", "Should resolve in child process");
 
   info("Change");
   resProtocol.setSubstitution("testing", Services.io.newURI("chrome://global/skin"));
 
-  yield restart();
+  await restart();
 
   local = resolveURI("resource://testing/test.js");
-  remote = yield remoteResolveURI("resource://testing/test.js");
+  remote = await remoteResolveURI("resource://testing/test.js");
   is(local, "chrome://global/skin/test.js", "Should resolve in main process");
   is(remote, "chrome://global/skin/test.js", "Should resolve in child process");
 
   info("Clear");
   resProtocol.setSubstitution("testing", null);
 
-  yield restart();
+  await restart();
 
   local = resolveURI("resource://testing/test.js");
-  remote = yield remoteResolveURI("resource://testing/test.js");
+  remote = await remoteResolveURI("resource://testing/test.js");
   is(local, null, "Shouldn't resolve in main process");
   is(remote, null, "Shouldn't resolve in child process");
 
@@ -175,27 +175,27 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
-  let browser = yield loadTestTab();
+add_task(async function() {
+  let browser = await loadTestTab();
 
   info("Set");
   resProtocol.setSubstitution("testing", Services.io.newURI("chrome://global/content"));
   resProtocol.setSubstitution("testing2", Services.io.newURI("resource://testing"));
   let local = resolveURI("resource://testing2/test.js");
-  let remote = yield remoteResolveURI("resource://testing2/test.js");
+  let remote = await remoteResolveURI("resource://testing2/test.js");
   is(local, "chrome://global/content/test.js", "Should resolve in main process");
   is(remote, "chrome://global/content/test.js", "Should resolve in child process");
 
   info("Clear");
   resProtocol.setSubstitution("testing", null);
   local = resolveURI("resource://testing2/test.js");
-  remote = yield remoteResolveURI("resource://testing2/test.js");
+  remote = await remoteResolveURI("resource://testing2/test.js");
   is(local, "chrome://global/content/test.js", "Should resolve in main process");
   is(remote, "chrome://global/content/test.js", "Should resolve in child process");
 
   resProtocol.setSubstitution("testing2", null);
   local = resolveURI("resource://testing2/test.js");
-  remote = yield remoteResolveURI("resource://testing2/test.js");
+  remote = await remoteResolveURI("resource://testing2/test.js");
   is(local, null, "Shouldn't resolve in main process");
   is(remote, null, "Shouldn't resolve in child process");
 

@@ -31,7 +31,7 @@ const tests = [
 ];
 
 
-add_task(function* () {
+add_task(async function() {
   
   const testPromises = tests.map((test) => {
     const tabOptions = {
@@ -41,12 +41,12 @@ add_task(function* () {
     };
     return BrowserTestUtils.withNewTab(tabOptions, (browser) => testObtainingManifest(browser, test));
   });
-  yield Promise.all(testPromises);
+  await Promise.all(testPromises);
 });
 
-function* testObtainingManifest(aBrowser, aTest) {
+async function testObtainingManifest(aBrowser, aTest) {
   try {
-    yield ManifestObtainer.browserObtainManifest(aBrowser);
+    await ManifestObtainer.browserObtainManifest(aBrowser);
   } catch (e) {
     aTest.run(e);
   }

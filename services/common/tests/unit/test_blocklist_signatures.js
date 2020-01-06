@@ -59,14 +59,14 @@ function getCertChain() {
   return chain.join("\n");
 }
 
-function* checkRecordCount(count) {
+async function checkRecordCount(count) {
   
   const base = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
   const bucket = Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET);
   const collectionName =
       Services.prefs.getCharPref(PREF_BLOCKLIST_ONECRL_COLLECTION);
 
-  const sqliteHandle = yield FirefoxAdapter.openConnection({path: kintoFilename});
+  const sqliteHandle = await FirefoxAdapter.openConnection({path: kintoFilename});
   const config = {
     remote: base,
     bucket,
@@ -78,16 +78,16 @@ function* checkRecordCount(count) {
   const collection = db.collection(collectionName);
 
   
-  let records = yield collection.list();
+  let records = await collection.list();
   do_check_eq(count, records.data.length);
 
   
-  yield sqliteHandle.close();
+  await sqliteHandle.close();
 }
 
 
 
-add_task(function* test_check_signatures() {
+add_task(async function test_check_signatures() {
   const port = server.identity.primaryPort;
 
   
@@ -310,7 +310,7 @@ add_task(function* test_check_signatures() {
   
   
   
-  yield OneCRLBlocklistClient.maybeSync(1000, startTime, {loadDump: false});
+  await OneCRLBlocklistClient.maybeSync(1000, startTime, {loadDump: false});
 
   let endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -347,7 +347,7 @@ add_task(function* test_check_signatures() {
       [RESPONSE_META_TWO_ITEMS_SIG]
   };
   registerHandlers(twoItemsResponses);
-  yield OneCRLBlocklistClient.maybeSync(3000, startTime);
+  await OneCRLBlocklistClient.maybeSync(3000, startTime);
 
   
   
@@ -378,7 +378,7 @@ add_task(function* test_check_signatures() {
       [RESPONSE_META_THREE_ITEMS_SIG]
   };
   registerHandlers(oneAddedOneRemovedResponses);
-  yield OneCRLBlocklistClient.maybeSync(4000, startTime);
+  await OneCRLBlocklistClient.maybeSync(4000, startTime);
 
   
 
@@ -400,7 +400,7 @@ add_task(function* test_check_signatures() {
       [RESPONSE_META_THREE_ITEMS_SIG]
   };
   registerHandlers(noOpResponses);
-  yield OneCRLBlocklistClient.maybeSync(4100, startTime);
+  await OneCRLBlocklistClient.maybeSync(4100, startTime);
 
   
 
@@ -457,7 +457,7 @@ add_task(function* test_check_signatures() {
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
-  yield OneCRLBlocklistClient.maybeSync(5000, startTime);
+  await OneCRLBlocklistClient.maybeSync(5000, startTime);
 
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -486,10 +486,10 @@ add_task(function* test_check_signatures() {
   };
 
   
-  yield checkRecordCount(2);
+  await checkRecordCount(2);
 
   registerHandlers(badSigGoodOldResponses);
-  yield OneCRLBlocklistClient.maybeSync(5000, startTime);
+  await OneCRLBlocklistClient.maybeSync(5000, startTime);
 
   const allBadSigResponses = {
     
@@ -509,10 +509,10 @@ add_task(function* test_check_signatures() {
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(allBadSigResponses);
   try {
-    yield OneCRLBlocklistClient.maybeSync(6000, startTime);
+    await OneCRLBlocklistClient.maybeSync(6000, startTime);
     do_throw("Sync should fail (the signature is intentionally bad)");
   } catch (e) {
-    yield checkRecordCount(2);
+    await checkRecordCount(2);
   }
 
   

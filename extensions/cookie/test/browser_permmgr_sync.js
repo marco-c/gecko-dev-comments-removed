@@ -7,7 +7,7 @@ function hasPerm(aURI, aName) {
     == Services.perms.ALLOW_ACTION;
 }
 
-add_task(function* () {
+add_task(async function() {
   
   
   
@@ -26,7 +26,7 @@ add_task(function* () {
   let safeProcessCount = keepAliveCount + 2;
   info("dom.ipc.keepProcessesAlive.web is " + keepAliveCount + ", boosting " +
        "process count temporarily to " + safeProcessCount);
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.ipc.processCount", safeProcessCount],
       ["dom.ipc.processCount.web", safeProcessCount]
@@ -40,8 +40,8 @@ add_task(function* () {
   
   addPerm("https://somerandomwebsite.com", "document");
 
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (aBrowser) {
-    yield ContentTask.spawn(aBrowser, null, function* () {
+  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(aBrowser) {
+    await ContentTask.spawn(aBrowser, null, async function() {
       
       is(Services.perms.testPermission(Services.io.newURI("http://example.com"),
                                        "perm1"),
@@ -60,7 +60,7 @@ add_task(function* () {
          Services.perms.ALLOW_ACTION, "document-1");
 
       
-      yield new Promise(resolve => {
+      await new Promise(resolve => {
         let iframe = content.document.createElement('iframe');
         iframe.setAttribute('src', 'http://example.com');
         iframe.onload = resolve;
@@ -91,7 +91,7 @@ add_task(function* () {
     addPerm("https://example.com", "newperm4");
     addPerm("https://someotherrandomwebsite.com", "document");
 
-    yield ContentTask.spawn(aBrowser, null, function* () {
+    await ContentTask.spawn(aBrowser, null, async function() {
       
       
       is(Services.perms.testPermission(Services.io.newURI("http://example.com"),
@@ -126,7 +126,7 @@ add_task(function* () {
          Services.perms.ALLOW_ACTION, "otherdocument-3");
 
       
-      yield new Promise(resolve => {
+      await new Promise(resolve => {
         let iframe = content.document.createElement('iframe');
         iframe.setAttribute('src', 'https://sub1.test1.example.com');
         iframe.onload = resolve;

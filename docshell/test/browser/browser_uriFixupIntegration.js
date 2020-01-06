@@ -6,7 +6,7 @@
 const kSearchEngineID = "browser_urifixup_search_engine";
 const kSearchEngineURL = "http://example.com/?search={searchTerms}";
 
-add_task(function* setup() {
+add_task(async function setup() {
   
   Services.search.addEngineWithDetails(kSearchEngineID, "", "", "", "get",
                                        kSearchEngineURL);
@@ -27,17 +27,17 @@ add_task(function* setup() {
   });
 });
 
-add_task(function* test() {
+add_task(async function test() {
   for (let searchParams of ["foo bar", "brokenprotocol:somethingelse"]) {
     
     gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
-    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     
     gURLBar.value = searchParams;
     gURLBar.focus();
     EventUtils.synthesizeKey("VK_RETURN", {});
-    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     
     let escapedParams = encodeURIComponent(searchParams).replace("%20", "+");

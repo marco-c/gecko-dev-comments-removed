@@ -19,7 +19,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* do_test() {
+add_task(async function do_test() {
   
   do_get_profile();
 
@@ -85,7 +85,7 @@ add_task(function* do_test() {
   do_check_eq(Ci.nsIPermissionManager.ALLOW_ACTION, findCapabilityViaEnum(TEST_ORIGIN_3));
 
   
-  yield checkCapabilityViaDB(null);
+  await checkCapabilityViaDB(null);
 
   
   pm.removeAll();
@@ -117,7 +117,7 @@ add_task(function* do_test() {
   do_check_eq(Ci.nsIPermissionManager.UNKNOWN_ACTION,
               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
   
-  yield checkCapabilityViaDB(Ci.nsIPermissionManager.UNKNOWN_ACTION);
+  await checkCapabilityViaDB(Ci.nsIPermissionManager.UNKNOWN_ACTION);
   
   do_check_eq(null, findCapabilityViaEnum());
 
@@ -150,7 +150,7 @@ add_task(function* do_test() {
   do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
   do_check_eq(Ci.nsIPermissionManager.DENY_ACTION, findCapabilityViaEnum());
-  yield checkCapabilityViaDB(Ci.nsIPermissionManager.DENY_ACTION);
+  await checkCapabilityViaDB(Ci.nsIPermissionManager.DENY_ACTION);
 
   
   
@@ -167,7 +167,7 @@ add_task(function* do_test() {
   do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION,
               pm.testPermissionFromPrincipal(principal8, TEST_PERMISSION));
   do_check_eq(Ci.nsIPermissionManager.PROMPT_ACTION, findCapabilityViaEnum());
-  yield checkCapabilityViaDB(Ci.nsIPermissionManager.PROMPT_ACTION);
+  await checkCapabilityViaDB(Ci.nsIPermissionManager.PROMPT_ACTION);
 
   
   
@@ -184,10 +184,10 @@ add_task(function* do_test() {
   pm.addFromPrincipal(principal2, TEST_PERMISSION, Ci.nsIPermissionManager.DENY_ACTION);
   do_check_eq(Ci.nsIPermissionManager.DENY_ACTION,
               pm.testPermissionFromPrincipal(principal2, TEST_PERMISSION));
-  yield promiseTimeout(20);
+  await promiseTimeout(20);
 
   let since = Number(Date.now());
-  yield promiseTimeout(20);
+  await promiseTimeout(20);
 
   
   

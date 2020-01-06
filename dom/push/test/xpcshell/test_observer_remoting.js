@@ -3,11 +3,11 @@
 const pushNotifier = Cc['@mozilla.org/push/Notifier;1']
                        .getService(Ci.nsIPushNotifier);
 
-add_task(function* test_observer_remoting() {
+add_task(async function test_observer_remoting() {
   if (isParent) {
-    yield testInParent();
+    await testInParent();
   } else {
-    yield testInChild();
+    await testInChild();
   }
 });
 
@@ -21,7 +21,7 @@ const parentTests = [{
   principal: Services.scriptSecurityManager.getSystemPrincipal(),
 }];
 
-function* testInParent() {
+async function testInParent() {
   
   
   let promiseNotifications = childTests.reduce(
@@ -29,26 +29,26 @@ function* testInParent() {
     Promise.resolve()
   );
   let promiseFinished = run_test_in_child('./test_observer_remoting.js');
-  yield promiseNotifications;
+  await promiseNotifications;
 
   
-  yield do_await_remote_message('push_test_observer_remoting_child_ready');
+  await do_await_remote_message('push_test_observer_remoting_child_ready');
 
   
   
-  yield parentTests.reduce(
+  await parentTests.reduce(
     (p, test) => p.then(_ => waitForNotifierObservers(test,  true)),
     Promise.resolve()
   );
 
   
-  yield promiseFinished;
+  await promiseFinished;
 }
 
-function* testInChild() {
+async function testInChild() {
   
   
-  yield childTests.reduce(
+  await childTests.reduce(
     (p, test) => p.then(_ => waitForNotifierObservers(test,  true)),
     Promise.resolve()
   );
@@ -60,10 +60,10 @@ function* testInChild() {
     Promise.resolve()
   );
   do_send_remote_message('push_test_observer_remoting_child_ready');
-  yield promiseNotifierObservers;
+  await promiseNotifierObservers;
 }
 
-var waitForNotifierObservers = Task.async(function* ({ text, principal }, shouldNotify = false) {
+var waitForNotifierObservers = async function({ text, principal }, shouldNotify = false) {
   let notifyPromise = promiseObserverNotification(
     PushServiceComponent.pushTopic);
   let subChangePromise = promiseObserverNotification(
@@ -83,7 +83,7 @@ var waitForNotifierObservers = Task.async(function* ({ text, principal }, should
   let {
     data: notifyScope,
     subject: notifySubject,
-  } = yield notifyPromise;
+  } = await notifyPromise;
   equal(notifyScope, scope,
     'Should fire push notifications with the correct scope');
   let message = notifySubject.QueryInterface(Ci.nsIPushMessage);
@@ -94,7 +94,7 @@ var waitForNotifierObservers = Task.async(function* ({ text, principal }, should
   let {
     data: subChangeScope,
     subject: subChangePrincipal,
-  } = yield subChangePromise;
+  } = await subChangePromise;
   equal(subChangeScope, scope,
     'Should fire subscription change notifications with the correct scope');
   equal(subChangePrincipal, principal,
@@ -103,9 +103,9 @@ var waitForNotifierObservers = Task.async(function* ({ text, principal }, should
   let {
     data: subModifiedScope,
     subject: subModifiedPrincipal,
-  } = yield subModifiedPromise;
+  } = await subModifiedPromise;
   equal(subModifiedScope, scope,
     'Should fire subscription modified notifications with the correct scope');
   equal(subModifiedPrincipal, principal,
     'Should pass the principal as the subject of a modified notification');
-});
+};

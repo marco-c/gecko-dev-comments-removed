@@ -180,17 +180,17 @@ function startClient(port, beConservative, expectSuccess) {
   return deferred.promise;
 }
 
-add_task(function*() {
+add_task(async function() {
   Services.prefs.setIntPref("security.tls.version.max", 4);
   Services.prefs.setCharPref("network.dns.localDomains", hostname);
-  let cert = yield getCert();
+  let cert = await getCert();
 
   
   
   let server = startServer(cert, Ci.nsITLSClientStatus.TLS_VERSION_1_2,
                            Ci.nsITLSClientStatus.TLS_VERSION_1_3);
   storeCertOverride(server.port, cert);
-  yield startClient(server.port, true ,
+  await startClient(server.port, true ,
                     true );
   server.close();
 
@@ -199,11 +199,11 @@ add_task(function*() {
   server = startServer(cert, Ci.nsITLSClientStatus.TLS_VERSION_1_3,
                        Ci.nsITLSClientStatus.TLS_VERSION_1_3);
   storeCertOverride(server.port, cert);
-  yield startClient(server.port, true ,
+  await startClient(server.port, true ,
                     false );
 
   
-  yield startClient(server.port, false ,
+  await startClient(server.port, false ,
                     true );
   server.close();
 });

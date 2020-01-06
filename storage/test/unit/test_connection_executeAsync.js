@@ -16,7 +16,7 @@ const TEXT = "this is test text";
 const REAL = 3.23;
 const BLOB = [1, 2];
 
-add_task(function* test_first_create_and_add() {
+add_task(async function test_first_create_and_add() {
   
   
   let db = getOpenedDatabase();
@@ -49,7 +49,7 @@ add_task(function* test_first_create_and_add() {
   stmts[1].bindBlobByIndex(3, BLOB, BLOB.length);
 
   
-  let execResult = yield executeMultipleStatementsAsync(
+  let execResult = await executeMultipleStatementsAsync(
     db,
     stmts,
     function(aResultSet) {
@@ -93,7 +93,7 @@ add_task(function* test_first_create_and_add() {
   stmts[1].finalize();
 });
 
-add_task(function* test_last_multiple_bindings_on_statements() {
+add_task(async function test_last_multiple_bindings_on_statements() {
   
   
   const AMOUNT_TO_ADD = 5;
@@ -137,7 +137,7 @@ add_task(function* test_last_multiple_bindings_on_statements() {
   }
 
   
-  let execResult = yield executeMultipleStatementsAsync(
+  let execResult = await executeMultipleStatementsAsync(
     db,
     stmts,
     function(aResultSet) {
@@ -159,7 +159,7 @@ add_task(function* test_last_multiple_bindings_on_statements() {
 
   
   
-  yield asyncClose(db);
+  await asyncClose(db);
   gDBConn = null;
 });
 

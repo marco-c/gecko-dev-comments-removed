@@ -44,11 +44,11 @@ function removeCert(nickname) {
   });
 }
 
-add_task(function* () {
+add_task(async function() {
   
   ok(!certService.loginPromptRequired);
 
-  let certA = yield getOrCreateCert(gNickname);
+  let certA = await getOrCreateCert(gNickname);
   
   
   
@@ -56,7 +56,7 @@ add_task(function* () {
   equal(certA.displayName, gNickname);
 
   
-  let certB = yield getOrCreateCert(gNickname);
+  let certB = await getOrCreateCert(gNickname);
   equal(certB.displayName, gNickname);
 
   
@@ -67,12 +67,12 @@ add_task(function* () {
   equal(certA.certType, Ci.nsIX509Cert.USER_CERT);
 
   
-  let diffNameCert = yield getOrCreateCert("cool-stuff");
+  let diffNameCert = await getOrCreateCert("cool-stuff");
   ok(!diffNameCert.equals(certA));
 
   
-  yield removeCert(gNickname);
-  let newCert = yield getOrCreateCert(gNickname);
+  await removeCert(gNickname);
+  let newCert = await getOrCreateCert(gNickname);
   ok(!newCert.equals(certA));
 
   
@@ -82,6 +82,6 @@ add_task(function* () {
   Cu.forceCC();
 
   
-  let certAfterGC = yield getOrCreateCert(gNickname);
+  let certAfterGC = await getOrCreateCert(gNickname);
   equal(certAfterGC.serialNumber, serial);
 });

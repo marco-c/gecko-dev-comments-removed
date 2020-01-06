@@ -9,42 +9,42 @@ const WORKER_URL = EXAMPLE_URL + "bug1047663_worker.sjs";
 function test() {
   waitForExplicitFinish();
 
-  Task.spawn(function* () {
-    let tab = yield addTab(TAB_URL);
+  (async function() {
+    let tab = await addTab(TAB_URL);
 
     
     
     
     
-    yield createWorkerInTab(tab, WORKER_URL);
-    let message = yield postMessageToWorkerInTab(tab, WORKER_URL, "ping");
+    await createWorkerInTab(tab, WORKER_URL);
+    let message = await postMessageToWorkerInTab(tab, WORKER_URL, "ping");
     is(message, "one");
-    yield terminateWorkerInTab(tab, WORKER_URL);
+    await terminateWorkerInTab(tab, WORKER_URL);
 
     
     
     
     
-    yield createWorkerInTab(tab, WORKER_URL);
-    message = yield postMessageToWorkerInTab(tab, WORKER_URL, "ping");
+    await createWorkerInTab(tab, WORKER_URL);
+    message = await postMessageToWorkerInTab(tab, WORKER_URL, "ping");
     is(message, "one");
-    yield terminateWorkerInTab(tab, WORKER_URL);
+    await terminateWorkerInTab(tab, WORKER_URL);
 
     
     
-    yield disableCacheInTab(tab);
+    await disableCacheInTab(tab);
 
     
     
     
     
-    yield createWorkerInTab(tab, WORKER_URL);
-    message = yield postMessageToWorkerInTab(tab, WORKER_URL, "ping");
+    await createWorkerInTab(tab, WORKER_URL);
+    message = await postMessageToWorkerInTab(tab, WORKER_URL, "ping");
     is(message, "two");
-    yield terminateWorkerInTab(tab, WORKER_URL);
+    await terminateWorkerInTab(tab, WORKER_URL);
 
     removeTab(tab);
 
     finish();
-  });
+  })();
 }

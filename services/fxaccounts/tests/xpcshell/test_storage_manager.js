@@ -75,29 +75,29 @@ MockedSecureStorage.prototype = {
 }
 
 function add_storage_task(testFunction) {
-  add_task(function* () {
+  add_task(async function() {
     print("Starting test with secure storage manager");
-    yield testFunction(new FxAccountsStorageManager());
+    await testFunction(new FxAccountsStorageManager());
   });
-  add_task(function* () {
+  add_task(async function() {
     print("Starting test with simple storage manager");
-    yield testFunction(new FxAccountsStorageManager({useSecure: false}));
+    await testFunction(new FxAccountsStorageManager({useSecure: false}));
   });
 }
 
 
-add_storage_task(function* checkInitializedEmpty(sm) {
+add_storage_task(async function checkInitializedEmpty(sm) {
   if (sm.secureStorage) {
     sm.secureStorage = new MockedSecureStorage(null);
   }
-  yield sm.initialize();
-  Assert.strictEqual((yield sm.getAccountData()), null);
+  await sm.initialize();
+  Assert.strictEqual((await sm.getAccountData()), null);
   Assert.rejects(sm.updateAccountData({kA: "kA"}), "No user is logged in")
 });
 
 
 
-add_storage_task(function* checkNewUser(sm) {
+add_storage_task(async function checkNewUser(sm) {
   let initialAccountData = {
     uid: "uid",
     email: "someone@somewhere.com",
@@ -108,8 +108,8 @@ add_storage_task(function* checkNewUser(sm) {
   if (sm.secureStorage) {
     sm.secureStorage = new MockedSecureStorage(null);
   }
-  yield sm.initialize(initialAccountData);
-  let accountData = yield sm.getAccountData();
+  await sm.initialize(initialAccountData);
+  let accountData = await sm.getAccountData();
   Assert.equal(accountData.uid, initialAccountData.uid);
   Assert.equal(accountData.email, initialAccountData.email);
   Assert.equal(accountData.kA, initialAccountData.kA);
@@ -128,7 +128,7 @@ add_storage_task(function* checkNewUser(sm) {
 });
 
 
-add_storage_task(function* checkEverythingRead(sm) {
+add_storage_task(async function checkEverythingRead(sm) {
   sm.plainStorage = new MockedPlainStorage({
     uid: "uid",
     email: "someone@somewhere.com",
@@ -138,8 +138,8 @@ add_storage_task(function* checkEverythingRead(sm) {
   if (sm.secureStorage) {
     sm.secureStorage = new MockedSecureStorage(null);
   }
-  yield sm.initialize();
-  let accountData = yield sm.getAccountData();
+  await sm.initialize();
+  let accountData = await sm.getAccountData();
   Assert.ok(accountData, "read account data");
   Assert.equal(accountData.uid, "uid");
   Assert.equal(accountData.email, "someone@somewhere.com");
@@ -147,19 +147,19 @@ add_storage_task(function* checkEverythingRead(sm) {
   Assert.equal(accountData.deviceRegistrationVersion, null);
   
   
-  yield sm.updateAccountData({
+  await sm.updateAccountData({
     verified: true,
     kA: "kA",
     kB: "kB",
     deviceRegistrationVersion: DEVICE_REGISTRATION_VERSION
   });
-  accountData = yield sm.getAccountData();
+  accountData = await sm.getAccountData();
   Assert.equal(accountData.kB, "kB");
   Assert.equal(accountData.kA, "kA");
   Assert.equal(accountData.deviceId, "wibble");
   Assert.equal(accountData.deviceRegistrationVersion, DEVICE_REGISTRATION_VERSION);
   
-  yield sm._promiseStorageComplete; 
+  await sm._promiseStorageComplete; 
   
   Assert.equal(sm.plainStorage.data.accountData.verified, true);
   Assert.equal(sm.plainStorage.data.accountData.deviceId, "wibble");
@@ -174,7 +174,7 @@ add_storage_task(function* checkEverythingRead(sm) {
   }
 });
 
-add_storage_task(function* checkInvalidUpdates(sm) {
+add_storage_task(function checkInvalidUpdates(sm) {
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   if (sm.secureStorage) {
     sm.secureStorage = new MockedSecureStorage(null);
@@ -183,7 +183,7 @@ add_storage_task(function* checkInvalidUpdates(sm) {
   Assert.rejects(sm.updateAccountData({email: "someoneelse"}), "Can't change");
 });
 
-add_storage_task(function* checkNullUpdatesRemovedUnlocked(sm) {
+add_storage_task(async function checkNullUpdatesRemovedUnlocked(sm) {
   if (sm.secureStorage) {
     sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
     sm.secureStorage = new MockedSecureStorage({kA: "kA", kB: "kB"});
@@ -191,15 +191,15 @@ add_storage_task(function* checkNullUpdatesRemovedUnlocked(sm) {
     sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com",
                                               kA: "kA", kB: "kB"});
   }
-  yield sm.initialize();
+  await sm.initialize();
 
-  yield sm.updateAccountData({kA: null});
-  let accountData = yield sm.getAccountData();
+  await sm.updateAccountData({kA: null});
+  let accountData = await sm.getAccountData();
   Assert.ok(!accountData.kA);
   Assert.equal(accountData.kB, "kB");
 });
 
-add_storage_task(function* checkDelete(sm) {
+add_storage_task(async function checkDelete(sm) {
   if (sm.secureStorage) {
     sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
     sm.secureStorage = new MockedSecureStorage({kA: "kA", kB: "kB"});
@@ -207,35 +207,35 @@ add_storage_task(function* checkDelete(sm) {
     sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com",
                                               kA: "kA", kB: "kB"});
   }
-  yield sm.initialize();
+  await sm.initialize();
 
-  yield sm.deleteAccountData();
+  await sm.deleteAccountData();
   
   Assert.equal(sm.plainStorage.data, null);
   if (sm.secureStorage) {
     Assert.equal(sm.secureStorage.data, null);
   }
   
-  Assert.equal((yield sm.getAccountData()), null);
+  Assert.equal((await sm.getAccountData()), null);
 });
 
 
-add_task(function* checkNullUpdatesRemovedLocked() {
+add_task(async function checkNullUpdatesRemovedLocked() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA", kB: "kB"});
   sm.secureStorage.locked = true;
-  yield sm.initialize();
+  await sm.initialize();
 
-  yield sm.updateAccountData({kA: null});
-  let accountData = yield sm.getAccountData();
+  await sm.updateAccountData({kA: null});
+  let accountData = await sm.getAccountData();
   Assert.ok(!accountData.kA);
   
   Assert.ok(!accountData.kB);
 
   
   sm.secureStorage.locked = false;
-  accountData = yield sm.getAccountData();
+  accountData = await sm.getAccountData();
   Assert.ok(!accountData.kA);
   Assert.equal(accountData.kB, "kB");
   
@@ -244,43 +244,43 @@ add_task(function* checkNullUpdatesRemovedLocked() {
   Assert.strictEqual(sm.secureStorage.data.accountData.kB, "kB");
 });
 
-add_task(function* checkEverythingReadSecure() {
+add_task(async function checkEverythingReadSecure() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA"});
-  yield sm.initialize();
+  await sm.initialize();
 
-  let accountData = yield sm.getAccountData();
+  let accountData = await sm.getAccountData();
   Assert.ok(accountData, "read account data");
   Assert.equal(accountData.uid, "uid");
   Assert.equal(accountData.email, "someone@somewhere.com");
   Assert.equal(accountData.kA, "kA");
 });
 
-add_task(function* checkMemoryFieldsNotReturnedByDefault() {
+add_task(async function checkMemoryFieldsNotReturnedByDefault() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA"});
-  yield sm.initialize();
+  await sm.initialize();
 
   
-  yield sm.updateAccountData({keyPair: "the keypair value"});
-  let accountData = yield sm.getAccountData();
+  await sm.updateAccountData({keyPair: "the keypair value"});
+  let accountData = await sm.getAccountData();
 
   
   Assert.strictEqual(accountData.keyPair, undefined);
   
-  accountData = yield sm.getAccountData("keyPair");
+  accountData = await sm.getAccountData("keyPair");
   Assert.strictEqual(accountData.keyPair, "the keypair value");
 });
 
-add_task(function* checkExplicitGet() {
+add_task(async function checkExplicitGet() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA"});
-  yield sm.initialize();
+  await sm.initialize();
 
-  let accountData = yield sm.getAccountData(["uid", "kA"]);
+  let accountData = await sm.getAccountData(["uid", "kA"]);
   Assert.ok(accountData, "read account data");
   Assert.equal(accountData.uid, "uid");
   Assert.equal(accountData.kA, "kA");
@@ -288,15 +288,15 @@ add_task(function* checkExplicitGet() {
   Assert.strictEqual(accountData.email, undefined);
 });
 
-add_task(function* checkExplicitGetNoSecureRead() {
+add_task(async function checkExplicitGetNoSecureRead() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "kA"});
-  yield sm.initialize();
+  await sm.initialize();
 
   Assert.equal(sm.secureStorage.fetchCount, 0);
   
-  let accountData = yield sm.getAccountData(["email", "uid"]);
+  let accountData = await sm.getAccountData(["email", "uid"]);
   Assert.ok(accountData, "read account data");
   Assert.equal(accountData.uid, "uid");
   Assert.equal(accountData.email, "someone@somewhere.com");
@@ -304,24 +304,24 @@ add_task(function* checkExplicitGetNoSecureRead() {
   Assert.equal(sm.secureStorage.fetchCount, 1);
 });
 
-add_task(function* checkLockedUpdates() {
+add_task(async function checkLockedUpdates() {
   let sm = new FxAccountsStorageManager();
   sm.plainStorage = new MockedPlainStorage({uid: "uid", email: "someone@somewhere.com"})
   sm.secureStorage = new MockedSecureStorage({kA: "old-kA", kB: "kB"});
   sm.secureStorage.locked = true;
-  yield sm.initialize();
+  await sm.initialize();
 
-  let accountData = yield sm.getAccountData();
+  let accountData = await sm.getAccountData();
   
   Assert.ok(!accountData.kA);
   Assert.ok(!accountData.kB);
   
   sm.updateAccountData({kA: "new-kA"});
-  accountData = yield sm.getAccountData();
+  accountData = await sm.getAccountData();
   Assert.equal(accountData.kA, "new-kA");
   
   sm.secureStorage.locked = false;
-  accountData = yield sm.getAccountData();
+  accountData = await sm.getAccountData();
   
   Assert.equal(accountData.kA, "new-kA");
   Assert.equal(accountData.kB, "kB");
@@ -353,8 +353,8 @@ async function setupStorageManagerForQueueTest() {
 }
 
 
-add_task(function* checkQueueSemantics() {
-  let { sm, resolveBlocked } = yield setupStorageManagerForQueueTest();
+add_task(async function checkQueueSemantics() {
+  let { sm, resolveBlocked } = await setupStorageManagerForQueueTest();
 
   
   let resolveSubsequent;
@@ -376,14 +376,14 @@ add_task(function* checkQueueSemantics() {
   resolveBlocked();
 
   
-  yield subsequentPromise;
+  await subsequentPromise;
   Assert.ok(subsequentCalled);
-  yield sm.finalize();
+  await sm.finalize();
 });
 
 
-add_task(function* checkQueueSemanticsOnError() {
-  let { sm, blockedPromise, rejectBlocked } = yield setupStorageManagerForQueueTest();
+add_task(async function checkQueueSemanticsOnError() {
+  let { sm, blockedPromise, rejectBlocked } = await setupStorageManagerForQueueTest();
 
   let resolveSubsequent;
   let subsequentPromise = new Promise(resolve => {
@@ -405,23 +405,23 @@ add_task(function* checkQueueSemanticsOnError() {
   rejectBlocked("oh no");
 
   
-  yield subsequentPromise;
+  await subsequentPromise;
   Assert.ok(subsequentCalled);
 
   
   try {
-    yield blockedPromise;
+    await blockedPromise;
     Assert.ok(false, "expected this promise to reject");
   } catch (ex) {
     Assert.equal(ex, "oh no");
   }
-  yield sm.finalize();
+  await sm.finalize();
 });
 
 
 
-add_task(function* checkQueuedReadAndUpdate() {
-  let { sm, resolveBlocked } = yield setupStorageManagerForQueueTest();
+add_task(async function checkQueuedReadAndUpdate() {
+  let { sm, resolveBlocked } = await setupStorageManagerForQueueTest();
   
   
   let _doReadCalled = false;
@@ -434,13 +434,13 @@ add_task(function* checkQueuedReadAndUpdate() {
   Assert.ok(!_doReadCalled);
 
   resolveBlocked();
-  yield resultPromise;
+  await resultPromise;
   Assert.ok(_doReadCalled);
-  yield sm.finalize();
+  await sm.finalize();
 });
 
-add_task(function* checkQueuedWrite() {
-  let { sm, resolveBlocked } = yield setupStorageManagerForQueueTest();
+add_task(async function checkQueuedWrite() {
+  let { sm, resolveBlocked } = await setupStorageManagerForQueueTest();
   
   let __writeCalled = false;
   sm.__write = () => {
@@ -452,13 +452,13 @@ add_task(function* checkQueuedWrite() {
   Assert.ok(!__writeCalled);
 
   resolveBlocked();
-  yield writePromise;
+  await writePromise;
   Assert.ok(__writeCalled);
-  yield sm.finalize();
+  await sm.finalize();
 });
 
-add_task(function* checkQueuedDelete() {
-  let { sm, resolveBlocked } = yield setupStorageManagerForQueueTest();
+add_task(async function checkQueuedDelete() {
+  let { sm, resolveBlocked } = await setupStorageManagerForQueueTest();
   
   let _deleteCalled = false;
   sm._deleteAccountData = () => {
@@ -470,9 +470,9 @@ add_task(function* checkQueuedDelete() {
   Assert.ok(!_deleteCalled);
 
   resolveBlocked();
-  yield resultPromise;
+  await resultPromise;
   Assert.ok(_deleteCalled);
-  yield sm.finalize();
+  await sm.finalize();
 });
 
 function run_test() {

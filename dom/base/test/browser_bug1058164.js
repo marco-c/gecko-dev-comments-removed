@@ -57,23 +57,23 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
 
 
 
-add_task(function* test_swap_frameloader_pagevisibility_events() {
+add_task(async function test_swap_frameloader_pagevisibility_events() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, PAGE);
   gBrowser.selectedTab = tab;
   let firstBrowser = tab.linkedBrowser;
-  yield BrowserTestUtils.browserLoaded(firstBrowser);
+  await BrowserTestUtils.browserLoaded(firstBrowser);
 
   
   let newWindow = gBrowser.replaceTabWithWindow(tab);
 
   
   
-  yield BrowserTestUtils.waitForEvent(newWindow, "load");
+  await BrowserTestUtils.waitForEvent(newWindow, "load");
   let newWindowBrowser = newWindow.gBrowser.selectedBrowser;
 
   
-  yield prepareForVisibilityEvents(newWindowBrowser, ["pagehide", "pageshow"]);
+  await prepareForVisibilityEvents(newWindowBrowser, ["pagehide", "pageshow"]);
 
   
 
@@ -89,7 +89,7 @@ add_task(function* test_swap_frameloader_pagevisibility_events() {
   
   
   
-  yield new Promise((resolve) => {
+  await new Promise((resolve) => {
     emptyBrowser.addEventListener("pageshow", function() {
       resolve();
     }, {once: true});
@@ -102,7 +102,7 @@ add_task(function* test_swap_frameloader_pagevisibility_events() {
 
   gBrowser.swapBrowsersAndCloseOther(newTab, newWindow.gBrowser.selectedTab);
 
-  yield emptyBrowserPromise;
+  await emptyBrowserPromise;
 
   gBrowser.removeTab(gBrowser.selectedTab);
 });

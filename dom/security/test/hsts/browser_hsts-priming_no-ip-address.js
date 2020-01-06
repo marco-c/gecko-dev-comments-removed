@@ -16,7 +16,7 @@ var expected_telemetry = {
 };
 
 
-add_task(function*() {
+add_task(async function() {
   
   Observer.add_observers(Services);
   registerCleanupFunction(do_cleanup);
@@ -34,7 +34,7 @@ add_task(function*() {
   SetupPrefTestEnvironment(which);
   clear_hists(expected_telemetry);
 
-  yield execute_test("localhost-ip", test_settings[which].mimetype);
+  await execute_test("localhost-ip", test_settings[which].mimetype);
 
   test_telemetry(expected_telemetry);
 

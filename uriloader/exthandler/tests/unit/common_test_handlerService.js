@@ -50,7 +50,7 @@ function getKnownHandlerInfo(type) {
 
 
 
-function* assertAllHandlerInfosMatchTestData() {
+function assertAllHandlerInfosMatchTestData() {
   let handlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
 
   
@@ -156,17 +156,17 @@ function* assertAllHandlerInfosMatchTestData() {
 
 
 
-add_task(function* test_store_fillHandlerInfo_predefined() {
+add_task(async function test_store_fillHandlerInfo_predefined() {
   
-  yield copyTestDataToHandlerStore();
-  yield assertAllHandlerInfosMatchTestData();
+  await copyTestDataToHandlerStore();
+  await assertAllHandlerInfosMatchTestData();
 
   
   
   
   
   let testHandlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
   for (let handlerInfo of HandlerServiceTestUtils.getAllHandlerInfos()) {
     gHandlerService.remove(handlerInfo);
   }
@@ -175,20 +175,20 @@ add_task(function* test_store_fillHandlerInfo_predefined() {
   }
 
   
-  yield unloadHandlerStore();
-  yield assertAllHandlerInfosMatchTestData();
+  await unloadHandlerStore();
+  await assertAllHandlerInfosMatchTestData();
 });
 
 
 
 
 
-add_task(function* test_store_remove_exists() {
+add_task(async function test_store_remove_exists() {
   
   for (let type of ["example/type.usehelperapp",
                     "examplescheme.usehelperapp"]) {
     
-    yield deleteHandlerStore();
+    await deleteHandlerStore();
     let handlerInfoPresent = HandlerServiceTestUtils.getHandlerInfo(type);
     let handlerInfoAbsent = HandlerServiceTestUtils.getHandlerInfo(type + "2");
 
@@ -196,7 +196,7 @@ add_task(function* test_store_remove_exists() {
     handlerInfoAbsent.preferredAction = Ci.nsIHandlerInfo.saveToDisk;
     handlerInfoAbsent.alwaysAskBeforeHandling = false;
 
-    yield copyTestDataToHandlerStore();
+    await copyTestDataToHandlerStore();
 
     do_check_true(gHandlerService.exists(handlerInfoPresent));
     do_check_false(gHandlerService.exists(handlerInfoAbsent));
@@ -204,7 +204,7 @@ add_task(function* test_store_remove_exists() {
     gHandlerService.store(handlerInfoAbsent);
     gHandlerService.remove(handlerInfoPresent);
 
-    yield unloadHandlerStore();
+    await unloadHandlerStore();
 
     do_check_false(gHandlerService.exists(handlerInfoPresent));
     do_check_true(gHandlerService.exists(handlerInfoAbsent));
@@ -227,8 +227,8 @@ add_task(function* test_store_remove_exists() {
 
 
 
-add_task(function* test_store_preferredAction() {
-  yield deleteHandlerStore();
+add_task(async function test_store_preferredAction() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
 
@@ -245,7 +245,7 @@ add_task(function* test_store_preferredAction() {
 
 
 
-add_task(function* test_store_localHandlerApp_missing() {
+add_task(async function test_store_localHandlerApp_missing() {
   if (!("@mozilla.org/uriloader/dbus-handler-app;1" in Cc)) {
     do_print("Skipping test because it does not apply to this platform.");
     return;
@@ -256,7 +256,7 @@ add_task(function* test_store_localHandlerApp_missing() {
   missingHandlerApp.name = "Non-existing Handler";
   missingHandlerApp.executable = FileUtils.getFile("TmpD", ["nonexisting"]);
 
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.preferredApplicationHandler = missingHandlerApp;
@@ -264,7 +264,7 @@ add_task(function* test_store_localHandlerApp_missing() {
   handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -278,7 +278,7 @@ add_task(function* test_store_localHandlerApp_missing() {
 
 
 
-add_task(function* test_store_dBusHandlerApp() {
+add_task(async function test_store_dBusHandlerApp() {
   if (!("@mozilla.org/uriloader/dbus-handler-app;1" in Cc)) {
     do_print("Skipping test because it does not apply to this platform.");
     return;
@@ -300,14 +300,14 @@ add_task(function* test_store_dBusHandlerApp() {
     objectPath: dBusHandlerApp.objectPath,
   };
 
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.preferredApplicationHandler = dBusHandlerApp;
   handlerInfo.possibleApplicationHandlers.appendElement(dBusHandlerApp);
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -324,14 +324,14 @@ add_task(function* test_store_dBusHandlerApp() {
 
 
 
-add_task(function* test_store_possibleApplicationHandlers_includes_preferred() {
-  yield deleteHandlerStore();
+add_task(async function test_store_possibleApplicationHandlers_includes_preferred() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.preferredApplicationHandler = localHandlerApp;
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -349,8 +349,8 @@ add_task(function* test_store_possibleApplicationHandlers_includes_preferred() {
 
 
 
-add_task(function* test_store_possibleApplicationHandlers_preferred_first() {
-  yield deleteHandlerStore();
+add_task(async function test_store_possibleApplicationHandlers_preferred_first() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.preferredApplicationHandler = webHandlerApp;
@@ -359,7 +359,7 @@ add_task(function* test_store_possibleApplicationHandlers_preferred_first() {
   handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -378,15 +378,15 @@ add_task(function* test_store_possibleApplicationHandlers_preferred_first() {
 
 
 
-add_task(function* test_store_fileExtensions_lowercase() {
-  yield deleteHandlerStore();
+add_task(async function test_store_fileExtensions_lowercase() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.appendExtension("extension_test1");
   handlerInfo.appendExtension("EXTENSION_test2");
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -404,8 +404,8 @@ add_task(function* test_store_fileExtensions_lowercase() {
 
 
 
-add_task(function* test_store_no_duplicates() {
-  yield deleteHandlerStore();
+add_task(async function test_store_no_duplicates() {
+  await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
   handlerInfo.preferredApplicationHandler = webHandlerApp;
@@ -419,7 +419,7 @@ add_task(function* test_store_no_duplicates() {
   handlerInfo.appendExtension("EXTENSION_test1");
   gHandlerService.store(handlerInfo);
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -444,8 +444,8 @@ add_task(function* test_store_no_duplicates() {
 
 
 
-add_task(function* test_store_deletes_properties_except_extensions() {
-  yield deleteHandlerStore();
+add_task(async function test_store_deletes_properties_except_extensions() {
+  await deleteHandlerStore();
 
   
   
@@ -457,11 +457,11 @@ add_task(function* test_store_deletes_properties_except_extensions() {
 
   
   
-  yield copyTestDataToHandlerStore();
+  await copyTestDataToHandlerStore();
   gHandlerService.store(handlerInfo);
 
   
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
   let actualHandlerInfo =
       HandlerServiceTestUtils.getHandlerInfo("example/type.savetodisk");
   HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
@@ -478,17 +478,17 @@ add_task(function* test_store_deletes_properties_except_extensions() {
 
 
 
-add_task(function* test_fillHandlerInfo_overrideType() {
+add_task(async function test_fillHandlerInfo_overrideType() {
   
   for (let type of ["example/type.usesystemdefault",
                     "examplescheme.usesystemdefault"]) {
-    yield deleteHandlerStore();
+    await deleteHandlerStore();
 
     
     let handlerInfoAbsent = HandlerServiceTestUtils.getHandlerInfo(type + "2");
 
     
-    yield copyTestDataToHandlerStore();
+    await copyTestDataToHandlerStore();
     gHandlerService.fillHandlerInfo(handlerInfoAbsent, type);
     HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfoAbsent, {
       
@@ -506,8 +506,8 @@ add_task(function* test_fillHandlerInfo_overrideType() {
 
 
 
-add_task(function* test_getTypeFromExtension() {
-  yield copyTestDataToHandlerStore();
+add_task(async function test_getTypeFromExtension() {
+  await copyTestDataToHandlerStore();
 
   do_check_eq(gHandlerService.getTypeFromExtension(""), "");
   do_check_eq(gHandlerService.getTypeFromExtension("example_unknown"), "");
@@ -521,7 +521,7 @@ add_task(function* test_getTypeFromExtension() {
 
 
 
-function* assertAllHandlerInfosMatchDefaultHandlers() {
+function assertAllHandlerInfosMatchDefaultHandlers() {
   let handlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
 
   for (let type of ["irc", "ircs"]) {
@@ -562,30 +562,30 @@ function* assertAllHandlerInfosMatchDefaultHandlers() {
 
 
 
-add_task(function* test_default_protocol_handlers() {
+add_task(async function test_default_protocol_handlers() {
   if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
     do_print("This platform or locale does not have default handlers.");
     return;
   }
 
   
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
 
-  yield assertAllHandlerInfosMatchDefaultHandlers();
+  await assertAllHandlerInfosMatchDefaultHandlers();
 });
 
 
 
 
 
-add_task(function* test_default_protocol_handlers_no_duplicates() {
+add_task(async function test_default_protocol_handlers_no_duplicates() {
   if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
     do_print("This platform or locale does not have default handlers.");
     return;
   }
 
   
-  yield deleteHandlerStore();
+  await deleteHandlerStore();
 
   
   let ircHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("irc");
@@ -598,13 +598,13 @@ add_task(function* test_default_protocol_handlers_no_duplicates() {
   Services.prefs.setStringPref("gecko.handlerService.defaultHandlersVersion",
                                "999");
 
-  yield unloadHandlerStore();
+  await unloadHandlerStore();
 
   
   do_check_true(gHandlerService.exists(ircHandlerInfo));
 
   
-  yield assertAllHandlerInfosMatchDefaultHandlers();
+  await assertAllHandlerInfosMatchDefaultHandlers();
 
   Services.prefs.setStringPref("gecko.handlerService.defaultHandlersVersion",
                                originalDefaultHandlersVersion);

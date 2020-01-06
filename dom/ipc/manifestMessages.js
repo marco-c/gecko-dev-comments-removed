@@ -17,7 +17,6 @@ const {
   utils: Cu,
 } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "ManifestObtainer",
 				  "resource://gre/modules/ManifestObtainer.jsm");
@@ -64,16 +63,16 @@ const MessageHandler = {
 
 
 
-  obtainManifest: Task.async(function* ({data: {id}}) {
+  async obtainManifest({data: {id}}) {
     const response = makeMsgResponse(id);
     try {
-      response.result = yield ManifestObtainer.contentObtainManifest(content);
+      response.result = await ManifestObtainer.contentObtainManifest(content);
       response.success = true;
     } catch (err) {
       response.result = serializeError(err);
     }
     sendAsyncMessage("DOM:ManifestObtainer:Obtain", response);
-  }),
+  },
 
   fireAppInstalledEvent({data: {id}}){
     const ev = new Event("appinstalled");
@@ -92,17 +91,17 @@ const MessageHandler = {
 
 
 
-  fetchIcon: Task.async(function* ({data: {id, manifest, iconSize}}) {
+  async fetchIcon({data: {id, manifest, iconSize}}) {
     const response = makeMsgResponse(id);
     try {
       response.result =
-        yield ManifestIcons.contentFetchIcon(content, manifest, iconSize);
+        await ManifestIcons.contentFetchIcon(content, manifest, iconSize);
       response.success = true;
     } catch (err) {
       response.result = serializeError(err);
     }
     sendAsyncMessage("DOM:WebManifest:fetchIcon", response);
-  }),
+  },
 
 };
 

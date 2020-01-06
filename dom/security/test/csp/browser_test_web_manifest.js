@@ -177,7 +177,7 @@ const tests = [
 ];
 
 
-add_task(function* () {
+add_task(async function() {
   
   const testPromises = tests.map((test) => {
     const tabOptions = {
@@ -187,21 +187,21 @@ add_task(function* () {
     };
     return BrowserTestUtils.withNewTab(tabOptions, (browser) => testObtainingManifest(browser, test));
   });
-  yield Promise.all(testPromises);
+  await Promise.all(testPromises);
 });
 
-function* testObtainingManifest(aBrowser, aTest) {
+async function testObtainingManifest(aBrowser, aTest) {
   const waitForObserver = waitForNetObserver(aTest);
   
   
   try {
-    const manifest = yield ManifestObtainer.browserObtainManifest(aBrowser);
+    const manifest = await ManifestObtainer.browserObtainManifest(aBrowser);
     aTest.run(manifest);
   } catch (e) {
     const wasBlocked = e.message.includes("NetworkError when attempting to fetch resource");
     ok(wasBlocked, `Expected promise rejection obtaining ${aTest.tabURL}: ${e.message}`);
   } finally {
-    yield waitForObserver;
+    await waitForObserver;
   }
 }
 

@@ -31,7 +31,7 @@
 
 
 
-add_task(function* test_asyncClose_does_not_complete_before_statements() {
+add_task(async function test_asyncClose_does_not_complete_before_statements() {
   let db = getService().openDatabase(getTestDB());
   let stmt = db.createStatement("SELECT * FROM sqlite_master");
   
@@ -40,8 +40,8 @@ add_task(function* test_asyncClose_does_not_complete_before_statements() {
 
   
   
-  yield asyncClose(db);
-  equal((yield asyncStatementPromise),
+  await asyncClose(db);
+  equal((await asyncStatementPromise),
         Ci.mozIStorageStatementCallback.REASON_FINISHED);
 });
 
@@ -54,13 +54,13 @@ add_task(function* test_asyncClose_does_not_complete_before_statements() {
 
 
 if (!AppConstants.DEBUG) {
-  add_task(function* test_double_asyncClose_throws() {
-    let db = yield openAsyncDatabase(getTestDB());
+  add_task(async function test_double_asyncClose_throws() {
+    let db = await openAsyncDatabase(getTestDB());
 
     
     
     
-    let realClosePromise = yield asyncClose(db);
+    let realClosePromise = await asyncClose(db);
     try {
       
       db.asyncClose();
@@ -69,7 +69,7 @@ if (!AppConstants.DEBUG) {
       equal(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
     }
 
-    yield realClosePromise;
+    await realClosePromise;
   });
 }
 
@@ -80,11 +80,11 @@ if (!AppConstants.DEBUG) {
 
 
 
-add_task(function* test_asyncClose_on_sync_db() {
+add_task(async function test_asyncClose_on_sync_db() {
   let db = getService().openDatabase(getTestDB());
 
   
-  yield asyncClose(db);
+  await asyncClose(db);
   ok(true, "closed sync connection asynchronously");
 });
 
@@ -96,10 +96,10 @@ add_task(function* test_asyncClose_on_sync_db() {
 
 
 
-add_task(function* test_asyncClose_failed_open() {
+add_task(async function test_asyncClose_failed_open() {
   
   let openPromise = openAsyncDatabase(getFakeDB());
-  yield openPromise.then(
+  await openPromise.then(
     () => {
       ok(false, "we should have failed to open the db; this test is broken!");
     },
@@ -117,8 +117,8 @@ add_task(function* test_asyncClose_failed_open() {
 
 
 
-add_task(function* test_asyncClose_does_not_throw_without_callback() {
-  let db = yield openAsyncDatabase(getTestDB());
+add_task(async function test_asyncClose_does_not_throw_without_callback() {
+  let db = await openAsyncDatabase(getTestDB());
   
   db.asyncClose();
   ok(true, "if we shutdown cleanly and do not crash, then we succeeded");

@@ -9,24 +9,24 @@ browserElementTestHelpers.setEnabledPref(true);
 
 
 
-var test1 = async(function* () {
-  var manifest = yield requestManifest('file_empty.html');
+var test1 = async(async function() {
+  var manifest = await requestManifest('file_empty.html');
   is(manifest, null, 'it should be null.');
 });
 
 
 
-var test2 = async(function* () {
-  var manifest = yield requestManifest('file_web_manifest.html');
+var test2 = async(async function() {
+  var manifest = await requestManifest('file_web_manifest.html');
   is(manifest && manifest.name, 'pass', 'it should return a manifest with name pass.');
 });
 
 
 
-var test3 = async(function* () {
+var test3 = async(async function() {
   var gotError = false;
   try {
-    yield requestManifest('file_illegal_web_manifest.html');
+    await requestManifest('file_illegal_web_manifest.html');
   } catch (err) {
     gotError = true;
   }

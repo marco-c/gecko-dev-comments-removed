@@ -32,7 +32,7 @@ function do_get_kinto_collection(collectionName) {
 
 
 
-add_task(function* test_something() {
+add_task(async function test_something() {
   const configPath = "/v1/";
   const recordsPath = "/v1/buckets/blocklists/collections/certificates/records";
 
@@ -65,13 +65,13 @@ add_task(function* test_something() {
   server.registerPathHandler(recordsPath, handleResponse);
 
   
-  yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  sqliteHandle = yield FirefoxAdapter.openConnection({path: KINTO_FILENAME});
+  sqliteHandle = await FirefoxAdapter.openConnection({path: KINTO_FILENAME});
   const collection = do_get_kinto_collection("certificates");
 
   
-  let list = yield collection.list();
+  let list = await collection.list();
   
   
   do_check_true(list.data.length >= 363);
@@ -80,7 +80,7 @@ add_task(function* test_something() {
   Services.prefs.clearUserPref("services.settings.server");
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
   
-  yield OneCRLBlocklistClient.maybeSync(123456, Date.now());
+  await OneCRLBlocklistClient.maybeSync(123456, Date.now());
   
   do_check_neq(0, Services.prefs.getIntPref("services.blocklist.onecrl.checked"));
 
@@ -88,38 +88,38 @@ add_task(function* test_something() {
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
   
   
-  yield collection.clear();
+  await collection.clear();
   
   
-  yield collection.db.saveLastModified(1000);
-  yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
+  await collection.db.saveLastModified(1000);
+  await OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
   
   
-  list = yield collection.list();
+  list = await collection.list();
   do_check_eq(list.data.length, 1);
 
   
-  yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
   
   
-  list = yield collection.list();
+  list = await collection.list();
   do_check_eq(list.data.length, 3);
 
   
   
   
   Services.prefs.clearUserPref("services.settings.server");
-  yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
   
-  yield OneCRLBlocklistClient.maybeSync(3000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(3000, Date.now());
 
   
   
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
-  yield OneCRLBlocklistClient.maybeSync(3000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(3000, Date.now());
   let newValue = Services.prefs.getIntPref("services.blocklist.onecrl.checked");
   do_check_neq(newValue, 0);
 
@@ -127,7 +127,7 @@ add_task(function* test_something() {
   
   
   Services.prefs.setCharPref("services.settings.server", dummyServerURL);
-  yield OneCRLBlocklistClient.maybeSync(5000, Date.now());
+  await OneCRLBlocklistClient.maybeSync(5000, Date.now());
 });
 
 function run_test() {

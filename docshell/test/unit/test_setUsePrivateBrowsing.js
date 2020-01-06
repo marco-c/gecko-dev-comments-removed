@@ -5,7 +5,7 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-add_task(function*() {
+add_task(async function() {
   let webNav = Services.appShell.createWindowlessBrowser(false);
 
   let loadContext = webNav.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -40,7 +40,7 @@ add_task(function*() {
   webNav.loadURI("data:text/html,", webNav.LOAD_FLAGS_NONE, null, null, null);
 
   
-  yield new Promise(do_execute_soon);
+  await new Promise(do_execute_soon);
 
   
   

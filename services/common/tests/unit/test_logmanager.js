@@ -24,7 +24,7 @@ function getAppenders(log) {
 }
 
 
-add_task(function* test_noPrefs() {
+add_task(async function test_noPrefs() {
   
   let lm = new LogManager("no-such-branch.", ["TestLog"], "test");
 
@@ -40,7 +40,7 @@ add_task(function* test_noPrefs() {
 });
 
 
-add_task(function* test_PrefChanges() {
+add_task(async function test_PrefChanges() {
   Services.prefs.setCharPref("log-manager.test.log.appender.console", "Trace");
   Services.prefs.setCharPref("log-manager.test.log.appender.dump", "Trace");
   Services.prefs.setCharPref("log-manager.test.log.appender.file.level", "Trace");
@@ -69,7 +69,7 @@ add_task(function* test_PrefChanges() {
 });
 
 
-add_task(function* test_SharedLogs() {
+add_task(async function test_SharedLogs() {
   
   Services.prefs.setCharPref("log-manager-1.test.log.appender.console", "Trace");
   Services.prefs.setCharPref("log-manager-1.test.log.appender.dump", "Trace");
@@ -123,12 +123,12 @@ function checkLogFile(prefix) {
 }
 
 
-add_task(function* test_logFileErrorDefault() {
+add_task(async function test_logFileErrorDefault() {
   let lm = new LogManager("log-manager.test.", ["TestLog2"], "test");
 
   let log = Log.repository.getLogger("TestLog2");
   log.error("an error message");
-  yield lm.resetFileLog(lm.REASON_ERROR);
+  await lm.resetFileLog(lm.REASON_ERROR);
   
   checkLogFile("error");
 
@@ -136,7 +136,7 @@ add_task(function* test_logFileErrorDefault() {
 });
 
 
-add_task(function* test_logFileSuccess() {
+add_task(async function test_logFileSuccess() {
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", false);
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
 
@@ -144,40 +144,40 @@ add_task(function* test_logFileSuccess() {
 
   let log = Log.repository.getLogger("TestLog2");
   log.info("an info message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
   
   checkLogFile(null);
 
   
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", true);
   log.info("an info message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
 
   checkLogFile("success");
 
   
   log.info("an info message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
   
   checkLogFile("success");
 
   
   log.error("an error message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
   
   checkLogFile(null);
 
   
   
   log.info("an info message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
   checkLogFile("success");
 
   lm.finalize();
 });
 
 
-add_task(function* test_logFileError() {
+add_task(async function test_logFileError() {
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", false);
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
 
@@ -185,7 +185,7 @@ add_task(function* test_logFileError() {
 
   let log = Log.repository.getLogger("TestLog2");
   log.info("an info message");
-  let reason = yield lm.resetFileLog();
+  let reason = await lm.resetFileLog();
   Assert.equal(reason, null, "null returned when no file created.");
   
   checkLogFile(null);
@@ -193,7 +193,7 @@ add_task(function* test_logFileError() {
   
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", true);
   log.info("an info message");
-  reason = yield lm.resetFileLog();
+  reason = await lm.resetFileLog();
   Assert.equal(reason, lm.SUCCESS_LOG_WRITTEN);
   checkLogFile("success");
 
@@ -201,20 +201,20 @@ add_task(function* test_logFileError() {
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
   Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", true);
   log.error("an error message");
-  reason = yield lm.resetFileLog();
+  reason = await lm.resetFileLog();
   Assert.equal(reason, lm.ERROR_LOG_WRITTEN);
   checkLogFile("error");
 
   
   log.info("an info message");
-  reason = yield lm.resetFileLog();
+  reason = await lm.resetFileLog();
   
   Assert.equal(reason, null);
   checkLogFile(null);
 
   
   log.error("an error message");
-  reason = yield lm.resetFileLog();
+  reason = await lm.resetFileLog();
   
   Assert.equal(reason, lm.ERROR_LOG_WRITTEN);
   checkLogFile("error");
@@ -222,7 +222,7 @@ add_task(function* test_logFileError() {
   
   
   log.info("an info message");
-  yield lm.resetFileLog();
+  await lm.resetFileLog();
   checkLogFile(null);
 
   lm.finalize();

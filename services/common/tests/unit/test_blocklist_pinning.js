@@ -49,7 +49,7 @@ function do_get_kinto_collection(connection, collectionName) {
 
 
 
-add_task(function* test_something() {
+add_task(async function test_something() {
   
   
   Services.prefs.setCharPref(PREF_BLOCKLIST_PINNING_COLLECTION,
@@ -104,14 +104,14 @@ add_task(function* test_something() {
                       Services.io.newURI("https://five.example.com"), 0));
 
   
-  yield PinningPreloadClient.maybeSync(2000, Date.now());
+  await PinningPreloadClient.maybeSync(2000, Date.now());
 
-  let connection = yield FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
+  let connection = await FirefoxAdapter.openConnection({path: KINTO_STORAGE_PATH});
 
   
   
   let collection = do_get_kinto_collection(connection, COLLECTION_NAME);
-  let list = yield collection.list();
+  let list = await collection.list();
   do_check_eq(list.data.length, 1);
 
   
@@ -119,14 +119,14 @@ add_task(function* test_something() {
                      Services.io.newURI("https://one.example.com"), 0));
 
   
-  yield PinningPreloadClient.maybeSync(4000, Date.now());
+  await PinningPreloadClient.maybeSync(4000, Date.now());
 
   
   
   collection = do_get_kinto_collection(connection, COLLECTION_NAME);
-  list = yield collection.list();
+  list = await collection.list();
   do_check_eq(list.data.length, 5);
-  yield connection.close();
+  await connection.close();
 
   
   ok(sss.isSecureURI(sss.HEADER_HPKP,
@@ -143,15 +143,15 @@ add_task(function* test_something() {
   
   
   Services.prefs.clearUserPref("services.settings.server");
-  yield PinningPreloadClient.maybeSync(4000, Date.now());
+  await PinningPreloadClient.maybeSync(4000, Date.now());
 
   
-  yield PinningPreloadClient.maybeSync(3000, Date.now());
+  await PinningPreloadClient.maybeSync(3000, Date.now());
 
   
   
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
-  yield PinningPreloadClient.maybeSync(3000, Date.now());
+  await PinningPreloadClient.maybeSync(3000, Date.now());
   let newValue = Services.prefs.getIntPref("services.blocklist.pinning.checked");
   do_check_neq(newValue, 0);
 
@@ -168,7 +168,7 @@ add_task(function* test_something() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
-  yield PinningPreloadClient.maybeSync(5000, Date.now());
+  await PinningPreloadClient.maybeSync(5000, Date.now());
 
   
   

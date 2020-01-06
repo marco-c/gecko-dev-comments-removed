@@ -23,7 +23,7 @@ function test_cert_for_usages(certChainNicks, expected_usages) {
   return asyncTestCertificateUsages(certdb, cert, expected_usages);
 }
 
-add_task(function* () {
+add_task(async function() {
   let ee_usages = [ certificateUsageSSLClient, certificateUsageSSLServer,
                     certificateUsageEmailSigner, certificateUsageEmailRecipient,
                     certificateUsageObjectSigner ];
@@ -33,79 +33,79 @@ add_task(function* () {
   
   let ca_name = "ca";
   load_cert(ca_name, "CTu,CTu,CTu");
-  yield test_cert_for_usages([ca_name], ca_usages);
+  await test_cert_for_usages([ca_name], ca_usages);
 
   
-  yield test_cert_for_usages(["int-no-extensions"], ee_usages);
-
-  
-  
-  yield test_cert_for_usages(["ee-int-no-extensions", "int-no-extensions"], []);
-
-  
-  yield test_cert_for_usages(["int-not-a-ca"], ee_usages);
-
-  
-  yield test_cert_for_usages(["ee-int-not-a-ca", "int-not-a-ca"], []);
+  await test_cert_for_usages(["int-no-extensions"], ee_usages);
 
   
   
-  yield test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usages);
-  yield test_cert_for_usages(["ee-int-cA-FALSE-asserts-keyCertSign",
+  await test_cert_for_usages(["ee-int-no-extensions", "int-no-extensions"], []);
+
+  
+  await test_cert_for_usages(["int-not-a-ca"], ee_usages);
+
+  
+  await test_cert_for_usages(["ee-int-not-a-ca", "int-not-a-ca"], []);
+
+  
+  
+  await test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usages);
+  await test_cert_for_usages(["ee-int-cA-FALSE-asserts-keyCertSign",
                               "int-cA-FALSE-asserts-keyCertSign"], []);
 
 
   
-  yield test_cert_for_usages(["int-limited-depth"], ca_usages);
+  await test_cert_for_usages(["int-limited-depth"], ca_usages);
 
   
   
-  yield test_cert_for_usages(["ee-int-limited-depth", "int-limited-depth"],
+  await test_cert_for_usages(["ee-int-limited-depth", "int-limited-depth"],
                              ee_usages);
 
   
   
   
   
-  yield test_cert_for_usages(["int-limited-depth-invalid", "int-limited-depth"],
+  await test_cert_for_usages(["int-limited-depth-invalid", "int-limited-depth"],
                              []);
-  yield test_cert_for_usages(["ee-int-limited-depth-invalid",
+  await test_cert_for_usages(["ee-int-limited-depth-invalid",
                               "int-limited-depth-invalid", "int-limited-depth"],
                              []);
 
   
-  yield test_cert_for_usages(["int-valid-ku-no-eku"], ca_usages);
-  yield test_cert_for_usages(["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
+  await test_cert_for_usages(["int-valid-ku-no-eku"], ca_usages);
+  await test_cert_for_usages(["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
                              ee_usages);
 
   
   
   
   
-  yield test_cert_for_usages(["int-bad-ku-no-eku"], []);
-  yield test_cert_for_usages(["ee-int-bad-ku-no-eku", "int-bad-ku-no-eku"], []);
+  await test_cert_for_usages(["int-bad-ku-no-eku"], []);
+  await test_cert_for_usages(["ee-int-bad-ku-no-eku", "int-bad-ku-no-eku"], []);
 
   
   
-  yield test_cert_for_usages(["int-no-ku-no-eku"], ca_usages);
-  yield test_cert_for_usages(["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
+  await test_cert_for_usages(["int-no-ku-no-eku"], ca_usages);
+  await test_cert_for_usages(["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
                              ee_usages);
 
   
   
-  yield test_cert_for_usages(["int-valid-ku-server-eku"], ca_usages);
-  yield test_cert_for_usages(["ee-int-valid-ku-server-eku",
+  await test_cert_for_usages(["int-valid-ku-server-eku"], ca_usages);
+  await test_cert_for_usages(["ee-int-valid-ku-server-eku",
                               "int-valid-ku-server-eku"], eku_usages);
 
   
   
-  yield test_cert_for_usages(["int-bad-ku-server-eku"], []);
-  yield test_cert_for_usages(["ee-int-bad-ku-server-eku",
+  await test_cert_for_usages(["int-bad-ku-server-eku"], []);
+  await test_cert_for_usages(["ee-int-bad-ku-server-eku",
                               "int-bad-ku-server-eku"], []);
 
   
   
-  yield test_cert_for_usages(["int-no-ku-server-eku"], ca_usages);
-  yield test_cert_for_usages(["ee-int-no-ku-server-eku",
+  await test_cert_for_usages(["int-no-ku-server-eku"], ca_usages);
+  await test_cert_for_usages(["ee-int-no-ku-server-eku",
                               "int-no-ku-server-eku"], eku_usages);
 });

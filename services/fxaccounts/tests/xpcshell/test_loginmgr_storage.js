@@ -60,7 +60,7 @@ function createFxAccounts() {
   });
 }
 
-add_task(function* test_simple() {
+add_task(async function test_simple() {
   let fxa = createFxAccounts();
 
   let creds = {
@@ -71,12 +71,12 @@ add_task(function* test_simple() {
     kB: "the kB value",
     verified: true
   };
-  yield fxa.setSignedInUser(creds);
+  await fxa.setSignedInUser(creds);
 
   
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, "signedInUser.json");
-  let data = yield CommonUtils.readJSON(path);
+  let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(data.accountData.email, creds.email, "correct email in the clear text");
   Assert.strictEqual(data.accountData.sessionToken, creds.sessionToken, "correct sessionToken in the clear text");
@@ -96,11 +96,11 @@ add_task(function* test_simple() {
   Assert.ok(!("sessionToken" in loginData), "sessionToken not stored in the login mgr json");
   Assert.ok(!("verified" in loginData), "verified not stored in the login mgr json");
 
-  yield fxa.signOut( true);
+  await fxa.signOut( true);
   Assert.strictEqual(getLoginMgrData(), null, "login mgr data deleted on logout");
 });
 
-add_task(function* test_MPLocked() {
+add_task(async function test_MPLocked() {
   let fxa = createFxAccounts();
 
   let creds = {
@@ -115,12 +115,12 @@ add_task(function* test_MPLocked() {
   Assert.strictEqual(getLoginMgrData(), null, "no login mgr at the start");
   
   setLoginMgrLoggedInState(false);
-  yield fxa.setSignedInUser(creds);
+  await fxa.setSignedInUser(creds);
 
   
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, "signedInUser.json");
-  let data = yield CommonUtils.readJSON(path);
+  let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(data.accountData.email, creds.email, "correct email in the clear text");
   Assert.strictEqual(data.accountData.sessionToken, creds.sessionToken, "correct sessionToken in the clear text");
@@ -130,11 +130,11 @@ add_task(function* test_MPLocked() {
   Assert.ok(!("kB" in data.accountData), "kB not stored in clear text");
 
   Assert.strictEqual(getLoginMgrData(), null, "login mgr data doesn't exist");
-  yield fxa.signOut( true)
+  await fxa.signOut( true)
 });
 
 
-add_task(function* test_consistentWithMPEdgeCases() {
+add_task(async function test_consistentWithMPEdgeCases() {
   setLoginMgrLoggedInState(true);
 
   let fxa = createFxAccounts();
@@ -158,14 +158,14 @@ add_task(function* test_consistentWithMPEdgeCases() {
   };
 
   
-  yield fxa.setSignedInUser(creds1);
+  await fxa.setSignedInUser(creds1);
 
   
   
   setLoginMgrLoggedInState(false);
 
   
-  yield fxa.setSignedInUser(creds2);
+  await fxa.setSignedInUser(creds2);
 
   
   let login = getLoginMgrData();
@@ -179,16 +179,16 @@ add_task(function* test_consistentWithMPEdgeCases() {
   setLoginMgrLoggedInState(true);
   fxa = createFxAccounts();
 
-  let accountData = yield fxa.getSignedInUser();
+  let accountData = await fxa.getSignedInUser();
   Assert.strictEqual(accountData.email, creds2.email);
   
   Assert.strictEqual(accountData.kA, undefined, "stale kA wasn't used");
-  yield fxa.signOut( true)
+  await fxa.signOut( true)
 });
 
 
 
-add_task(function* test_uidMigration() {
+add_task(async function test_uidMigration() {
   setLoginMgrLoggedInState(true);
   Assert.strictEqual(getLoginMgrData(), null, "expect no logins at the start");
 
@@ -208,6 +208,6 @@ add_task(function* test_uidMigration() {
 
   
   let storage = new LoginManagerStorage();
-  let got = yield storage.get("uid", "foo@bar.com");
+  let got = await storage.get("uid", "foo@bar.com");
   Assert.deepEqual(got, contents);
 });

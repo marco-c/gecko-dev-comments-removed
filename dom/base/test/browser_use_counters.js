@@ -12,7 +12,7 @@ const gHttpTestRoot = "http://example.com/browser/dom/base/test/";
 
 var gOldContentCanRecord = false;
 var gOldParentCanRecord = false;
-add_task(function* test_initialize() {
+add_task(async function test_initialize() {
   let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
   gOldParentCanRecord = Telemetry.canRecordExtended
   Telemetry.canRecordExtended = true;
@@ -20,9 +20,9 @@ add_task(function* test_initialize() {
   
   
   
-  yield SpecialPowers.pushPrefEnv({ set: [[ "dom.ipc.processCount", 1 ]] });
+  await SpecialPowers.pushPrefEnv({ set: [[ "dom.ipc.processCount", 1 ]] });
 
-  gOldContentCanRecord = yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
+  gOldContentCanRecord = await ContentTask.spawn(gBrowser.selectedBrowser, {}, function () {
     let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
     let old = telemetry.canRecordExtended;
     telemetry.canRecordExtended = true;
@@ -31,55 +31,55 @@ add_task(function* test_initialize() {
   info("canRecord for content: " + gOldContentCanRecord);
 });
 
-add_task(function* () {
+add_task(async function() {
   
-  yield check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
+  await check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
                                  "SVGSVGELEMENT_GETELEMENTBYID");
-  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
                                  "SVGSVGELEMENT_CURRENTSCALE_getter");
-  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
                                  "SVGSVGELEMENT_CURRENTSCALE_setter");
 
   
   
   
   
-  yield check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
+  await check_use_counter_iframe("file_use_counter_svg_getElementById.svg",
                                  "SVGSVGELEMENT_GETELEMENTBYID", false);
-  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
                                  "SVGSVGELEMENT_CURRENTSCALE_getter", false);
-  yield check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
+  await check_use_counter_iframe("file_use_counter_svg_currentScale.svg",
                                  "SVGSVGELEMENT_CURRENTSCALE_setter", false);
 
   
   
   
-  yield check_use_counter_img("file_use_counter_svg_getElementById.svg",
+  await check_use_counter_img("file_use_counter_svg_getElementById.svg",
                               "PROPERTY_FILL");
-  yield check_use_counter_img("file_use_counter_svg_currentScale.svg",
+  await check_use_counter_img("file_use_counter_svg_currentScale.svg",
                               "PROPERTY_FILL");
 
   
   
-  yield check_use_counter_direct("file_use_counter_svg_fill_pattern.svg",
+  await check_use_counter_direct("file_use_counter_svg_fill_pattern.svg",
                                  "PROPERTY_FILLOPACITY", true);
 
   
   
-  yield check_use_counter_direct("file_use_counter_svg_fill_pattern_internal.svg",
+  await check_use_counter_direct("file_use_counter_svg_fill_pattern_internal.svg",
                                  "PROPERTY_FILLOPACITY");
   
   
   
 });
 
-add_task(function* () {
+add_task(async function() {
   let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
   Telemetry.canRecordExtended = gOldParentCanRecord;
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, { oldCanRecord: gOldContentCanRecord }, function* (arg) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, { oldCanRecord: gOldContentCanRecord }, async function(arg) {
     Cu.import("resource://gre/modules/PromiseUtils.jsm");
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
       telemetry.canRecordExtended = arg.oldCanRecord;
       resolve();
@@ -95,9 +95,9 @@ function waitForDestroyedDocuments() {
 }
 
 function waitForPageLoad(browser) {
-  return ContentTask.spawn(browser, null, function*() {
+  return ContentTask.spawn(browser, null, async function() {
     Cu.import("resource://gre/modules/PromiseUtils.jsm");
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       let listener = () => {
         removeEventListener("load", listener, true);
         resolve();
@@ -202,7 +202,7 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
   await waitForPageLoad(gBrowser.selectedBrowser);
 
   
-  await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, function*(opts) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, async function(opts) {
     Cu.import("resource://gre/modules/PromiseUtils.jsm");
     let deferred = PromiseUtils.defer();
 
@@ -265,9 +265,9 @@ var check_use_counter_direct = async function(file, use_counter_middlefix, xfail
       await grabHistogramsFromContent(use_counter_middlefix);
 
   gBrowser.selectedBrowser.loadURI(gHttpTestRoot + file);
-  await ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     Cu.import("resource://gre/modules/PromiseUtils.jsm");
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       let listener = () => {
         removeEventListener("load", listener, true);
 

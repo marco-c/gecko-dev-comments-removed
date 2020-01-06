@@ -104,7 +104,7 @@ function MockFxAccounts(device = {}) {
   });
 }
 
-function* createMockFxA() {
+async function createMockFxA() {
   let fxa = new MockFxAccounts();
   let credentials = {
     email: "foo@example.com",
@@ -115,7 +115,7 @@ function* createMockFxA() {
     kB: "cafe",
     verified: true
   };
-  yield fxa.setSignedInUser(credentials);
+  await fxa.setSignedInUser(credentials);
   return fxa;
 }
 
@@ -124,8 +124,8 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* testCacheStorage() {
-  let fxa = yield createMockFxA();
+add_task(async function testCacheStorage() {
+  let fxa = await createMockFxA();
 
   
   let cas = fxa.internal.currentAccountState;
@@ -144,20 +144,20 @@ add_task(function* testCacheStorage() {
 
   deepEqual(cas.oauthTokens, {"bar|foo": tokenData});
   
-  yield promiseWritten;
+  await promiseWritten;
 
   
   deepEqual(cas.storageManager.accountData.oauthTokens, {"bar|foo": tokenData});
 
   
   promiseWritten = promiseNotification("testhelper-fxa-cache-persist-done");
-  yield cas.removeCachedToken("token1");
+  await cas.removeCachedToken("token1");
   deepEqual(cas.oauthTokens, {});
-  yield promiseWritten;
+  await promiseWritten;
   deepEqual(cas.storageManager.accountData.oauthTokens, {});
 
   
   let storageManager = cas.storageManager; 
-  yield fxa.signOut(  true);
+  await fxa.signOut(  true);
   deepEqual(storageManager.accountData, null);
 });

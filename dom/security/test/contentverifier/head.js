@@ -72,14 +72,14 @@ function pushPrefs(...aPrefs) {
 
 
 
-function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
+async function doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
   
   if (aNewTabPref) {
     aboutNewTabService.newTabURL = aNewTabPref;
   }
 
   
-  yield pushPrefs(
+  await pushPrefs(
       ["browser.newtabpage.remote.content-signing-test", true],
       ["browser.newtabpage.remote", true],
       ["security.content.signature.root_hash",
@@ -87,18 +87,18 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
 
   if (aNewTabPref === URI_BAD_CSP) {
     
-    yield pushPrefs(["security.signed_content.CSP.default", "script-src 'self'; style-src 'self'"]);
+    await pushPrefs(["security.signed_content.CSP.default", "script-src 'self'; style-src 'self'"]);
   } else {
     
-    yield pushPrefs(["security.signed_content.CSP.default", "script-src 'self' 'unsafe-inline'; style-src 'self'"]);
+    await pushPrefs(["security.signed_content.CSP.default", "script-src 'self' 'unsafe-inline'; style-src 'self'"]);
   }
 
   
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
       gBrowser,
       url: aUrl,
     },
-    function * (browser) {
+    async function(browser) {
       
       ok(Services.prefs.getBoolPref(
           "browser.newtabpage.remote.content-signing-test"),
@@ -122,8 +122,8 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
            "Valid remote newtab page must have built-in CSP.");
       }
 
-      yield ContentTask.spawn(
-          browser, aExpectedStrings, function * (aExpectedStrings) {
+      await ContentTask.spawn(
+          browser, aExpectedStrings, async function(aExpectedStrings) {
             for (let expectedString of aExpectedStrings) {
               ok(content.document.documentElement.innerHTML.includes(expectedString),
                  "Expect the following value in the result\n" + expectedString +
@@ -134,12 +134,12 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
       
       
       if (reload) {
-        yield BrowserTestUtils.withNewTab({
+        await BrowserTestUtils.withNewTab({
             gBrowser,
             url: INVALIDATE_FILE,
           },
-          function * (browser2) {
-            yield ContentTask.spawn(browser2, null, function * () {
+          async function(browser2) {
+            await ContentTask.spawn(browser2, null, async function() {
               ok(content.document.documentElement.innerHTML.includes("Done"),
                  "Expect the following value in the result\n" + "Done" +
                  "\nand got " + content.document.documentElement.innerHTML);
@@ -148,7 +148,7 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
         );
 
         browser.reload();
-        yield BrowserTestUtils.browserLoaded(browser);
+        await BrowserTestUtils.browserLoaded(browser);
 
         let expectedStrings = [ABOUT_BLANK];
         if (aNewTabPref == URI_SRI) {
@@ -159,8 +159,8 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
             SCRIPT_WITH_SRI_BLOCKED
           ];
         }
-        yield ContentTask.spawn(browser, expectedStrings,
-          function * (expectedStrings) {
+        await ContentTask.spawn(browser, expectedStrings,
+          async function(expectedStrings) {
             for (let expectedString of expectedStrings) {
               ok(content.document.documentElement.innerHTML.includes(expectedString),
                  "Expect the following value in the result\n" + expectedString +
@@ -169,12 +169,12 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
           }
         );
 
-        yield BrowserTestUtils.withNewTab({
+        await BrowserTestUtils.withNewTab({
             gBrowser,
             url: VALIDATE_FILE,
           },
-          function * (browser2) {
-            yield ContentTask.spawn(browser2, null, function * () {
+          async function(browser2) {
+            await ContentTask.spawn(browser2, null, async function() {
               ok(content.document.documentElement.innerHTML.includes("Done"),
                  "Expect the following value in the result\n" + "Done" +
                  "\nand got " + content.document.documentElement.innerHTML);
@@ -186,7 +186,7 @@ function* doTest(aExpectedStrings, reload, aUrl, aNewTabPref) {
   );
 }
 
-function* runTests() {
+async function runTests() {
   
   for (let i = 0; i < TESTS.length; i++) {
     let testCase = TESTS[i];
@@ -203,6 +203,6 @@ function* runTests() {
       url = testCase.url;
     }
 
-    yield* doTest(aExpectedStrings, reload, url, aNewTabPref);
+    await doTest(aExpectedStrings, reload, url, aNewTabPref);
   }
 }

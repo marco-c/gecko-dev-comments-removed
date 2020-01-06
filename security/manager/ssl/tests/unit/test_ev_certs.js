@@ -175,70 +175,70 @@ function ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(testcase) {
 }
 
 
-add_task(function* plainExpectSuccessEVTests() {
-  yield ensureVerifiesAsEV("anyPolicy-int-path");
-  yield ensureVerifiesAsEV("test-oid-path");
-  yield ensureVerifiesAsEV("cabforum-oid-path");
-  yield ensureVerifiesAsEV("cabforum-and-test-oid-ee-path");
-  yield ensureVerifiesAsEV("test-and-cabforum-oid-ee-path");
-  yield ensureVerifiesAsEV("reverse-order-oids-path");
+add_task(async function plainExpectSuccessEVTests() {
+  await ensureVerifiesAsEV("anyPolicy-int-path");
+  await ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEV("cabforum-oid-path");
+  await ensureVerifiesAsEV("cabforum-and-test-oid-ee-path");
+  await ensureVerifiesAsEV("test-and-cabforum-oid-ee-path");
+  await ensureVerifiesAsEV("reverse-order-oids-path");
   
   
   
   
-  yield ensureVerifiesAsEV("cabforum-and-test-oid-ee-cabforum-oid-int-path");
+  await ensureVerifiesAsEV("cabforum-and-test-oid-ee-cabforum-oid-int-path");
 });
 
 
 
-add_task(function* expectDVFallbackTests() {
-  yield ensureVerifiesAsDV("anyPolicy-ee-path");
-  yield ensureVerifiesAsDV("non-ev-root-path");
-  yield ensureVerifiesAsDV("no-ocsp-ee-path",
+add_task(async function expectDVFallbackTests() {
+  await ensureVerifiesAsDV("anyPolicy-ee-path");
+  await ensureVerifiesAsDV("non-ev-root-path");
+  await ensureVerifiesAsDV("no-ocsp-ee-path",
                            gEVExpected ? [ "no-ocsp-ee-path-int" ] : []);
-  yield ensureVerifiesAsDV("no-ocsp-int-path");
+  await ensureVerifiesAsDV("no-ocsp-int-path");
   
   
   
-  yield ensureVerifiesAsDV("test-oid-ee-cabforum-oid-int-path");
+  await ensureVerifiesAsDV("test-oid-ee-cabforum-oid-int-path");
   
   
   
   
-  yield ensureVerifiesAsDV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
+  await ensureVerifiesAsDV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
 });
 
 
 
 
-add_task(function* evRootTrustTests() {
+add_task(async function evRootTrustTests() {
   clearOCSPCache();
   do_print("untrusting evroot");
   certdb.setCertTrust(evroot, Ci.nsIX509Cert.CA_CERT,
                       Ci.nsIX509CertDB.UNTRUSTED);
-  yield ensureVerificationFails("test-oid-path", SEC_ERROR_UNKNOWN_ISSUER);
+  await ensureVerificationFails("test-oid-path", SEC_ERROR_UNKNOWN_ISSUER);
   do_print("re-trusting evroot");
   certdb.setCertTrust(evroot, Ci.nsIX509Cert.CA_CERT,
                       Ci.nsIX509CertDB.TRUSTED_SSL);
-  yield ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEV("test-oid-path");
 });
 
 
 
-add_task(function* localOnlyMustBeEVTests() {
+add_task(async function localOnlyMustBeEVTests() {
   clearOCSPCache();
-  yield ensureNoOCSPMeansNoEV("anyPolicy-ee-path");
-  yield ensureNoOCSPMeansNoEV("anyPolicy-int-path");
-  yield ensureNoOCSPMeansNoEV("non-ev-root-path");
-  yield ensureNoOCSPMeansNoEV("no-ocsp-ee-path");
-  yield ensureNoOCSPMeansNoEV("no-ocsp-int-path");
-  yield ensureNoOCSPMeansNoEV("test-oid-path");
+  await ensureNoOCSPMeansNoEV("anyPolicy-ee-path");
+  await ensureNoOCSPMeansNoEV("anyPolicy-int-path");
+  await ensureNoOCSPMeansNoEV("non-ev-root-path");
+  await ensureNoOCSPMeansNoEV("no-ocsp-ee-path");
+  await ensureNoOCSPMeansNoEV("no-ocsp-int-path");
+  await ensureNoOCSPMeansNoEV("test-oid-path");
 });
 
 
 
 
-add_task(function* oneCRLTests() {
+add_task(async function oneCRLTests() {
   clearOCSPCache();
 
   
@@ -251,18 +251,18 @@ add_task(function* oneCRLTests() {
     "app.update.lastUpdateTime.blocklist-background-update-timer",
     Math.floor(Date.now() / 1000) - 1);
 
-  yield ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
-  yield ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
-  yield ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
 
   clearOCSPCache();
   
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 0);
-  yield ensureVerifiesAsEV("anyPolicy-int-path");
+  await ensureVerifiesAsEV("anyPolicy-int-path");
   
   
-  yield ensureVerifiesAsDV("no-ocsp-int-path");
-  yield ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsDV("no-ocsp-int-path");
+  await ensureVerifiesAsEV("test-oid-path");
 
   clearOCSPCache();
   
@@ -274,9 +274,9 @@ add_task(function* oneCRLTests() {
   Services.prefs.setIntPref(
     "app.update.lastUpdateTime.blocklist-background-update-timer",
     Math.floor(Date.now() / 1000) - 108080);
-  yield ensureVerifiesAsEV("anyPolicy-int-path");
-  yield ensureVerifiesAsDV("no-ocsp-int-path");
-  yield ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEV("anyPolicy-int-path");
+  await ensureVerifiesAsDV("no-ocsp-int-path");
+  await ensureVerifiesAsEV("test-oid-path");
 
   clearOCSPCache();
   
@@ -292,9 +292,9 @@ add_task(function* oneCRLTests() {
     "app.update.lastUpdateTime.blocklist-background-update-timer",
     Math.floor(Date.now() / 1000) - 1);
 
-  yield ensureVerifiesAsEV("anyPolicy-int-path");
-  yield ensureVerifiesAsDV("no-ocsp-int-path");
-  yield ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEV("anyPolicy-int-path");
+  await ensureVerifiesAsDV("no-ocsp-int-path");
+  await ensureVerifiesAsEV("test-oid-path");
 
   clearOCSPCache();
   
@@ -306,9 +306,9 @@ add_task(function* oneCRLTests() {
   
   Services.prefs.setIntPref("services.blocklist.onecrl.checked",
                             Math.floor(Date.now() / 1000) - 1);
-  yield ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
-  yield ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
-  yield ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
+  await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
 
   Services.prefs.clearUserPref("security.onecrl.via.amo");
   Services.prefs.clearUserPref("security.onecrl.maximum_staleness_in_seconds");
@@ -321,34 +321,34 @@ add_task(function* oneCRLTests() {
 
 
 
-add_task(function* ocspCachingTests() {
+add_task(async function ocspCachingTests() {
   clearOCSPCache();
 
-  yield ensureVerifiesAsEV("anyPolicy-int-path");
-  yield ensureVerifiesAsEV("test-oid-path");
+  await ensureVerifiesAsEV("anyPolicy-int-path");
+  await ensureVerifiesAsEV("test-oid-path");
 
-  yield ensureVerifiesAsEVWithNoOCSPRequests("anyPolicy-int-path");
-  yield ensureVerifiesAsEVWithNoOCSPRequests("test-oid-path");
+  await ensureVerifiesAsEVWithNoOCSPRequests("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithNoOCSPRequests("test-oid-path");
 
-  yield ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("anyPolicy-int-path");
-  yield ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("test-oid-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithFLAG_LOCAL_ONLY("test-oid-path");
 });
 
 
 
 
-add_task(function* oldOCSPResponseTests() {
+add_task(async function oldOCSPResponseTests() {
   clearOCSPCache();
 
-  yield ensureVerifiesAsEVWithOldIntermediateOCSPResponse("anyPolicy-int-path");
-  yield ensureVerifiesAsEVWithOldIntermediateOCSPResponse("test-oid-path");
+  await ensureVerifiesAsEVWithOldIntermediateOCSPResponse("anyPolicy-int-path");
+  await ensureVerifiesAsEVWithOldIntermediateOCSPResponse("test-oid-path");
 
   clearOCSPCache();
-  yield ensureVerifiesAsDVWithOldEndEntityOCSPResponse("anyPolicy-int-path");
-  yield ensureVerifiesAsDVWithOldEndEntityOCSPResponse("test-oid-path");
+  await ensureVerifiesAsDVWithOldEndEntityOCSPResponse("anyPolicy-int-path");
+  await ensureVerifiesAsDVWithOldEndEntityOCSPResponse("test-oid-path");
 
   clearOCSPCache();
-  yield ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(
+  await ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse(
     "anyPolicy-int-path");
-  yield ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse("test-oid-path");
+  await ensureVerifiesAsDVWithVeryOldEndEntityOCSPResponse("test-oid-path");
 });

@@ -145,7 +145,7 @@ function minHomeReadSandboxLevel(level) {
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   if (!gMultiProcessBrowser) {
     ok(false, "e10s is enabled");
@@ -195,11 +195,11 @@ add_task(function* () {
 });
 
 
-function* createFileInHome() {
+async function createFileInHome() {
   let browser = gBrowser.selectedBrowser;
   let homeFile = fileInHomeDir();
   let path = homeFile.path;
-  let fileCreated = yield ContentTask.spawn(browser, path, createFile);
+  let fileCreated = await ContentTask.spawn(browser, path, createFile);
   ok(fileCreated == false, "creating a file in home dir is not permitted");
   if (fileCreated == true) {
     
@@ -208,18 +208,18 @@ function* createFileInHome() {
 }
 
 
-function* createTempFile() {
+async function createTempFile() {
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
-  let fileCreated = yield ContentTask.spawn(browser, path, createFile);
+  let fileCreated = await ContentTask.spawn(browser, path, createFile);
   ok(fileCreated == true, "creating a file in content temp is permitted");
   
-  let fileDeleted = yield ContentTask.spawn(browser, path, deleteFile);
+  let fileDeleted = await ContentTask.spawn(browser, path, deleteFile);
   ok(fileDeleted == true, "deleting a file in content temp is permitted");
 }
 
 
-function* testFileAccess() {
+async function testFileAccess() {
   
   let webBrowser = gBrowser.selectedBrowser;
 
@@ -443,7 +443,7 @@ function* testFileAccess() {
     let okString = test.ok ? "allowed" : "blocked";
     let processType = test.browser === webBrowser ? "web" : "file";
 
-    let result = yield ContentTask.spawn(test.browser, test.file.path,
+    let result = await ContentTask.spawn(test.browser, test.file.path,
         testFunc);
 
     ok(result.ok == test.ok,

@@ -6,18 +6,18 @@
 
 
 
-add_task(function* test() {
-  yield BrowserTestUtils.withNewTab({ gBrowser,
+add_task(async function test() {
+  await BrowserTestUtils.withNewTab({ gBrowser,
                                       url: "chrome://global/content/mozilla.xhtml" },
-                                     function* (newBrowser) {
+                                     async function(newBrowser) {
     
-    yield testXFOFrameInChrome(newBrowser);
+    await testXFOFrameInChrome(newBrowser);
 
     
-    yield BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
-    yield BrowserTestUtils.browserLoaded(newBrowser);
+    await BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
+    await BrowserTestUtils.browserLoaded(newBrowser);
 
-    yield ContentTask.spawn(newBrowser, null, testXFOFrameInContent);
+    await ContentTask.spawn(newBrowser, null, testXFOFrameInContent);
   });
 });
 
