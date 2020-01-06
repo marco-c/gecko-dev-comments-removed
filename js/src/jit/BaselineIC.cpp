@@ -2531,7 +2531,7 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
     
     
     if (canAttachStub) {
-        CallIRGenerator gen(cx, script, pc, stub, stub->state().mode(), argc,
+        CallIRGenerator gen(cx, script, pc, op, stub, stub->state().mode(), argc,
                             callee, callArgs.thisv(),
                             HandleValueArray::fromMarkedLocation(argc, vp+2));
         if (gen.tryAttachStub()) {
