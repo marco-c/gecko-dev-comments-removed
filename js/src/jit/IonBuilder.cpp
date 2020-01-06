@@ -530,27 +530,32 @@ IonBuilder::analyzeNewLoopTypes(const CFGBlock* loopEntryBlock)
     
     
     
+    bool foundEntry = false;
     for (size_t i = 0; i < loopHeaders_.length(); i++) {
         if (loopHeaders_[i].pc == cfgBlock->startPc()) {
             MBasicBlock* oldEntry = loopHeaders_[i].header;
 
             
             
-            if (!oldEntry->isDead()) {
-                MResumePoint* oldEntryRp = oldEntry->entryResumePoint();
-                size_t stackDepth = oldEntryRp->stackDepth();
-                for (size_t slot = 0; slot < stackDepth; slot++) {
-                    MDefinition* oldDef = oldEntryRp->getOperand(slot);
-                    if (!oldDef->isPhi()) {
-                        MOZ_ASSERT(oldDef->block()->id() < oldEntry->id());
-                        MOZ_ASSERT(oldDef == entry->getSlot(slot));
-                        continue;
-                    }
-                    MPhi* oldPhi = oldDef->toPhi();
-                    MPhi* newPhi = entry->getSlot(slot)->toPhi();
-                    if (!newPhi->addBackedgeType(alloc(), oldPhi->type(), oldPhi->resultTypeSet()))
-                        return abort(AbortReason::Alloc);
+            if (oldEntry->isDead()) {
+                loopHeaders_[i].header = entry;
+                foundEntry = true;
+                break;
+            }
+
+            MResumePoint* oldEntryRp = oldEntry->entryResumePoint();
+            size_t stackDepth = oldEntryRp->stackDepth();
+            for (size_t slot = 0; slot < stackDepth; slot++) {
+                MDefinition* oldDef = oldEntryRp->getOperand(slot);
+                if (!oldDef->isPhi()) {
+                    MOZ_ASSERT(oldDef->block()->id() < oldEntry->id());
+                    MOZ_ASSERT(oldDef == entry->getSlot(slot));
+                    continue;
                 }
+                MPhi* oldPhi = oldDef->toPhi();
+                MPhi* newPhi = entry->getSlot(slot)->toPhi();
+                if (!newPhi->addBackedgeType(alloc(), oldPhi->type(), oldPhi->resultTypeSet()))
+                    return abort(AbortReason::Alloc);
             }
 
             
@@ -560,8 +565,10 @@ IonBuilder::analyzeNewLoopTypes(const CFGBlock* loopEntryBlock)
             return Ok();
         }
     }
-    if (!loopHeaders_.append(LoopHeader(cfgBlock->startPc(), entry)))
-        return abort(AbortReason::Alloc);
+    if (!foundEntry) {
+        if (!loopHeaders_.append(LoopHeader(cfgBlock->startPc(), entry)))
+            return abort(AbortReason::Alloc);
+    }
 
     
     jsbytecode* start = loopEntryBlock->stopPc();
