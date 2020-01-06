@@ -92,7 +92,7 @@ FinishStringFlat(JSContext* cx, StringBuffer& sb, Buffer& cb)
 
 
 
-    str->zone()->updateMallocCounter(sizeof(CharT) * len);
+    cx->updateMallocCounter(sizeof(CharT) * len);
 
     buf.forget();
     return str;
