@@ -1129,6 +1129,8 @@ PT.NewFolder.prototype = Object.seal({
     let folderGuid;
     let info = {
       children: [{
+        
+        guid: PlacesUtils.history.makeGuid(),
         title,
         type: PlacesUtils.bookmarks.TYPE_FOLDER,
       }],
@@ -1138,7 +1140,11 @@ PT.NewFolder.prototype = Object.seal({
     };
 
     if (children && children.length > 0) {
-      info.children[0].children = children;
+      
+      info.children[0].children = children.map(c => {
+        c.guid = PlacesUtils.history.makeGuid();
+        return c;
+      });
     }
 
     async function createItem() {

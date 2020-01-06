@@ -542,6 +542,8 @@ this.PlacesUtils = {
 
 
 
+
+
   validateItemProperties(name, validators, props, behavior = {}) {
     if (!props)
       throw new Error(`${name}: Input should be a valid object`);
@@ -559,7 +561,11 @@ this.PlacesUtils = {
       }
       if (behavior[prop].hasOwnProperty("validIf") && input[prop] !== undefined &&
           !behavior[prop].validIf(input)) {
-        throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
+        if (behavior[prop].hasOwnProperty("fixup")) {
+          behavior[prop].fixup(input);
+        } else {
+          throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
+        }
       }
       if (behavior[prop].hasOwnProperty("defaultValue") && input[prop] === undefined) {
         input[prop] = behavior[prop].defaultValue;
@@ -580,7 +586,12 @@ this.PlacesUtils = {
         try {
           normalizedInput[prop] = validators[prop](input[prop], input);
         } catch (ex) {
-          throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
+          if (behavior.hasOwnProperty(prop) && behavior[prop].hasOwnProperty("fixup")) {
+            behavior[prop].fixup(input);
+            normalizedInput[prop] = input[prop];
+          } else {
+            throw new Error(`${name}: Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
+          }
         }
       }
     }
