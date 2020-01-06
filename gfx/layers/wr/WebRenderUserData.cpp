@@ -135,7 +135,8 @@ WebRenderImageData::CreateAsyncImageWebRenderCommands(mozilla::wr::DisplayListBu
                                                       const gfx::Matrix4x4& aSCTransform,
                                                       const gfx::MaybeIntSize& aScaleToSize,
                                                       const wr::ImageRendering& aFilter,
-                                                      const wr::MixBlendMode& aMixBlendMode)
+                                                      const wr::MixBlendMode& aMixBlendMode,
+                                                      bool aIsBackfaceVisible)
 {
   MOZ_ASSERT(aContainer->IsAsync());
   if (!mPipelineId) {
@@ -156,7 +157,7 @@ WebRenderImageData::CreateAsyncImageWebRenderCommands(mozilla::wr::DisplayListBu
   
   
   wr::LayoutRect r = aSc.ToRelativeLayoutRect(aBounds);
-  aBuilder.PushIFrame(r, mPipelineId.ref());
+  aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref());
 
   WrBridge()->AddWebRenderParentCommand(OpUpdateAsyncImagePipeline(mPipelineId.value(),
                                                                    aSCBounds,

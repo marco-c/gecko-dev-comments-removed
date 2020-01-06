@@ -761,11 +761,13 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
 
   uint8_t borderStyles[4];
   nscolor borderColors[4];
+  nsBorderColors* compositeColors[4];
 
   
   NS_FOR_CSS_SIDES (i) {
     borderStyles[i] = aStyleBorder.GetBorderStyle(i);
     borderColors[i] = ourColor->CalcComplexColor(aStyleBorder.mBorderColor[i]);
+    aStyleBorder.GetCompositeColors(i, &compositeColors[i]);
   }
 
   PrintAsFormatString(" borderStyles: %d %d %d %d\n", borderStyles[0], borderStyles[1], borderStyles[2], borderStyles[3]);
@@ -785,8 +787,9 @@ ConstructBorderRenderer(nsPresContext* aPresContext,
                              borderWidths,
                              bgRadii,
                              borderColors,
-                             aStyleBorder.mBorderColors.get(),
-                             bgColor);
+                             compositeColors,
+                             bgColor,
+                             !aForFrame->BackfaceIsHidden());
 }
 
 
@@ -1065,7 +1068,8 @@ nsCSSRendering::CreateBorderRendererForOutline(nsPresContext* aPresContext,
                          outlineRadii,
                          outlineColors,
                          nullptr,
-                         bgColor);
+                         bgColor,
+                         !aForFrame->BackfaceIsHidden());
 
   return Some(br);
 }
@@ -1127,6 +1131,9 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
   nsCSSBorderRenderer br(aPresContext,
                          nullptr,
                          aDrawTarget,
@@ -1137,7 +1144,8 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
                          focusRadii,
                          focusColors,
                          nullptr,
-                         NS_RGB(255, 0, 0));
+                         NS_RGB(255, 0, 0),
+                         true);
   br.DrawBorders();
 
   PrintAsStringNewline();
