@@ -1767,6 +1767,20 @@ private:
 void
 NS_SetMainThread();
 
+
+
+
+
+
+
+
+
+
+
+
+extern mozilla::TimeStamp
+NS_GetTimerDeadlineHintOnCurrentThread(mozilla::TimeStamp aDefault);
+
 namespace mozilla {
 
 

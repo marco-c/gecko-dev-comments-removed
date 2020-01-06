@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "nsRefreshDriver.h"
+#include "nsThreadUtils.h"
 
 #define DEFAULT_LONG_IDLE_PERIOD 50.0f
 #define DEFAULT_MIN_IDLE_PERIOD 3.0f
@@ -26,15 +27,18 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline)
     now + TimeDuration::FromMilliseconds(GetLongIdlePeriod());
 
   currentGuess = nsRefreshDriver::GetIdleDeadlineHint(currentGuess);
+  currentGuess = NS_GetTimerDeadlineHintOnCurrentThread(currentGuess);
+
   
   
   TimeDuration minIdlePeriod =
     TimeDuration::FromMilliseconds(GetMinIdlePeriod());
   bool busySoon = currentGuess.IsNull() ||
                   (now >= (currentGuess - minIdlePeriod)) ||
+                  currentGuess < mLastIdleDeadline;
 
   if (!busySoon) {
-    *aIdleDeadline = currentGuess;
+    *aIdleDeadline = mLastIdleDeadline = currentGuess;
   }
 
   return NS_OK;
