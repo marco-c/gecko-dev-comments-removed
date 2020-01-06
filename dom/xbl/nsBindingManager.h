@@ -135,7 +135,8 @@ public:
 
 
 
-  bool MediumFeaturesChanged(nsPresContext* aPresContext);
+  nsresult MediumFeaturesChanged(nsPresContext* aPresContext,
+                                 bool* aRulesChanged);
 
   void AppendAllSheets(nsTArray<mozilla::StyleSheet*>& aArray);
 
