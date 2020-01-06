@@ -165,17 +165,16 @@ ApplicationAccessible::Init()
   
   
 
-  nsGlobalWindow::WindowByIdTable* windowsById =
-    nsGlobalWindow::GetWindowsTable();
+  nsGlobalWindowOuter::OuterWindowByIdTable* windowsById =
+    nsGlobalWindowOuter::GetWindowsTable();
 
   if (!windowsById) {
     return;
   }
 
   for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
-    nsGlobalWindow* window = iter.Data();
-    if (window->GetDocShell() && window->IsOuterWindow() &&
-        window->IsRootOuterWindow()) {
+    nsGlobalWindowOuter* window = iter.Data();
+    if (window->GetDocShell() && window->IsRootOuterWindow()) {
       nsCOMPtr<nsIDocument> docNode = window->GetExtantDoc();
 
       if (docNode) {
