@@ -18,11 +18,14 @@
 #include "nsRegion.h"                   
 #include "nscore.h"                     
 
+namespace mozilla {
+
+namespace wr {
 struct WrColor;
 struct WrRect;
 struct WrSize;
+} 
 
-namespace mozilla {
 namespace gfx {
 template <class units, class F> struct RectTyped;
 } 
@@ -92,15 +95,15 @@ AppendToString(std::stringstream& aStream, const mozilla::gfx::IntRectTyped<T>& 
 }
 
 void
-AppendToString(std::stringstream& aStream, const WrColor& c,
+AppendToString(std::stringstream& aStream, const wr::WrColor& c,
                const char* pfx="", const char* sfx="");
 
 void
-AppendToString(std::stringstream& aStream, const WrRect& r,
+AppendToString(std::stringstream& aStream, const wr::WrRect& r,
                const char* pfx="", const char* sfx="");
 
 void
-AppendToString(std::stringstream& aStream, const WrSize& s,
+AppendToString(std::stringstream& aStream, const wr::WrSize& s,
                const char* pfx="", const char* sfx="");
 
 void

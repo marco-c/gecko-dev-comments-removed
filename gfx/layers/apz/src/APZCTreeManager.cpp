@@ -447,7 +447,7 @@ APZCTreeManager::UpdateHitTestingTree(uint64_t aRootLayerTreeId,
 bool
 APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
                                const TimeStamp& aSampleTime,
-                               nsTArray<WrTransformProperty>& aTransformArray)
+                               nsTArray<wr::WrTransformProperty>& aTransformArray)
 {
   APZThreadUtils::AssertOnCompositorThread();
   MOZ_ASSERT(aWrApi);
@@ -463,7 +463,7 @@ APZCTreeManager::PushStateToWR(wr::WebRenderAPI* aWrApi,
 
   bool activeAnimations = false;
   uint64_t lastLayersId = -1;
-  WrPipelineId lastPipelineId;
+  wr::WrPipelineId lastPipelineId;
 
   
   
@@ -583,7 +583,7 @@ APZCTreeManager::PrintAPZCInfo(const ScrollNode& aLayer,
   mApzcTreeLog << "APZC " << apzc->GetGuid()
                << "\tcb=" << metrics.GetCompositionBounds()
                << "\tsr=" << metrics.GetScrollableRect()
-               << (metrics.IsScrollInfoLayer() ? "\tscrollinfo" : "")
+               << (aLayer.IsScrollInfoLayer() ? "\tscrollinfo" : "")
                << (apzc->HasScrollgrab() ? "\tscrollgrab" : "") << "\t"
                << aLayer.Metadata().GetContentDescription().get();
 }
@@ -607,7 +607,7 @@ APZCTreeManager::AttachNodeToTree(HitTestingTreeNode* aNode,
 template<class ScrollNode> static EventRegions
 GetEventRegions(const ScrollNode& aLayer)
 {
-  if (aLayer.Metrics().IsScrollInfoLayer()) {
+  if (aLayer.IsScrollInfoLayer()) {
     ParentLayerIntRect compositionBounds(RoundedToInt(aLayer.Metrics().GetCompositionBounds()));
     nsIntRegion hitRegion(compositionBounds.ToUnknownRect());
     EventRegions eventRegions(hitRegion);

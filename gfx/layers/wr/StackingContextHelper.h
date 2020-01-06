@@ -32,7 +32,7 @@ public:
                         wr::DisplayListBuilder& aBuilder,
                         WebRenderLayer* aLayer,
                         const Maybe<gfx::Matrix4x4>& aTransform = Nothing(),
-                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
+                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>());
   
   
   StackingContextHelper(const StackingContextHelper& aParentSC,
@@ -41,7 +41,7 @@ public:
                         uint64_t aAnimationsId,
                         float* aOpacityPtr,
                         gfx::Matrix4x4* aTransformPtr,
-                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
+                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>());
   
   StackingContextHelper(const StackingContextHelper& aParentSC,
                         wr::DisplayListBuilder& aBuilder,
@@ -50,7 +50,7 @@ public:
                         uint64_t aAnimationsId,
                         float* aOpacityPtr,
                         gfx::Matrix4x4* aTransformPtr,
-                        const nsTArray<WrFilterOp>& aFilters = nsTArray<WrFilterOp>());
+                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>());
   
   
   
@@ -68,12 +68,12 @@ public:
   
   
   
-  WrRect ToRelativeWrRect(const LayerRect& aRect) const;
-  WrRect ToRelativeWrRect(const LayoutDeviceRect& aRect) const;
+  wr::WrRect ToRelativeWrRect(const LayerRect& aRect) const;
+  wr::WrRect ToRelativeWrRect(const LayoutDeviceRect& aRect) const;
   
-  WrPoint ToRelativeWrPoint(const LayerPoint& aPoint) const;
+  wr::WrPoint ToRelativeWrPoint(const LayerPoint& aPoint) const;
   
-  WrRect ToRelativeWrRectRounded(const LayoutDeviceRect& aRect) const;
+  wr::WrRect ToRelativeWrRectRounded(const LayoutDeviceRect& aRect) const;
 
 private:
   wr::DisplayListBuilder* mBuilder;

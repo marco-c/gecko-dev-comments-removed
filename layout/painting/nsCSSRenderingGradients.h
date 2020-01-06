@@ -65,8 +65,8 @@ public:
 
 
   void BuildWebRenderParameters(float aOpacity,
-                                WrGradientExtendMode& aMode,
-                                nsTArray<WrGradientStop>& aStops,
+                                wr::WrGradientExtendMode& aMode,
+                                nsTArray<wr::WrGradientStop>& aStops,
                                 LayoutDevicePoint& aLineStart,
                                 LayoutDevicePoint& aLineEnd,
                                 LayoutDeviceSize& aGradientRadius);

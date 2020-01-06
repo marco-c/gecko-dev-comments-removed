@@ -26,7 +26,7 @@ public:
   virtual Layer* GetLayer() = 0;
   virtual void RenderLayer(wr::DisplayListBuilder& aBuilder,
                            const StackingContextHelper& aSc) = 0;
-  virtual Maybe<WrImageMask> RenderMaskLayer(const StackingContextHelper& aSc,
+  virtual Maybe<wr::WrImageMask> RenderMaskLayer(const StackingContextHelper& aSc,
                                              const gfx::Matrix4x4& aTransform)
   {
     MOZ_ASSERT(false);
@@ -47,7 +47,7 @@ public:
 
   WebRenderLayerManager* WrManager();
   WebRenderBridgeChild* WrBridge();
-  WrImageKey GetImageKey();
+  wr::WrImageKey GetImageKey();
 
   LayerRect Bounds();
   LayerRect BoundsForStackingContext();
@@ -57,7 +57,7 @@ public:
   
   
   
-  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo);
+  Maybe<wr::WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo);
 
 protected:
   BoundsTransformMatrix BoundsTransform();

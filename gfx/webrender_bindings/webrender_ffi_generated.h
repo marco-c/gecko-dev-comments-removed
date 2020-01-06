@@ -16,6 +16,9 @@
 
 extern "C" {
 
+namespace mozilla {
+namespace wr {
+
 enum class WrBorderStyle : uint32_t {
   None = 0,
   Solid = 1,
@@ -954,6 +957,9 @@ bool wr_window_new(WrWindowId aWindowId,
                    WrAPI **aOutApi,
                    WrRenderer **aOutRenderer)
 WR_FUNC;
+
+} 
+} 
 
 } 
 

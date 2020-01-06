@@ -34,7 +34,7 @@ WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
   ScrollingLayersHelper scroller(this, aBuilder, aSc);
 
   if (mItem) {
-    WrSize contentSize; 
+    wr::WrSize contentSize; 
     wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
     
     mParentCommands.Clear();
