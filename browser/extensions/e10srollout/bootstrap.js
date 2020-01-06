@@ -141,8 +141,8 @@ function defineCohort() {
     
     setCohort("optedOut");
   } else if (userOptedIn.e10s) {
-    setCohort("optedIn");
     eligibleForMulti = true;
+    setCohort("optedIn");
   } else if (temporaryDisqualification != "") {
     
     
@@ -152,25 +152,25 @@ function defineCohort() {
     
     
     
-    setCohort(`temp-disqualified-${temporaryDisqualification}`);
     Services.prefs.clearUserPref(PREF_TOGGLE_E10S);
     Services.prefs.clearUserPref(PREF_E10S_PROCESSCOUNT + ".web");
+    setCohort(`temp-disqualified-${temporaryDisqualification}`);
   } else if (!disqualified && testThreshold < 1.0 &&
              temporaryQualification != "") {
     
     
     
+    Services.prefs.setBoolPref.set(PREF_TOGGLE_E10S, true);
+    eligibleForMulti = true;
     setCohort(`temp-qualified-${temporaryQualification}`);
-    Services.prefs.setBoolPref(PREF_TOGGLE_E10S, true);
-    eligibleForMulti = true;
   } else if (testGroup) {
-    setCohort(`${cohortPrefix}test`);
     Services.prefs.setBoolPref(PREF_TOGGLE_E10S, true);
     eligibleForMulti = true;
+    setCohort(`${cohortPrefix}test`);
   } else {
-    setCohort(`${cohortPrefix}control`);
     Services.prefs.clearUserPref(PREF_TOGGLE_E10S);
     Services.prefs.clearUserPref(PREF_E10S_PROCESSCOUNT + ".web");
+    setCohort(`${cohortPrefix}control`);
   }
 
   
@@ -207,10 +207,9 @@ function defineCohort() {
   let multiUserSample = getUserSample(true);
   for (let sampleName of Object.getOwnPropertyNames(buckets)) {
     if (multiUserSample < buckets[sampleName]) {
-      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
-
       
       Services.prefs.setIntPref(PREF_E10S_PROCESSCOUNT + ".web", +sampleName);
+      setCohort(`${cohortPrefix}multiBucket${sampleName}`);
       break;
     }
   }
