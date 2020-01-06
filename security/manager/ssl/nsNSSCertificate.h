@@ -69,6 +69,9 @@ SECStatus ConstructCERTCertListFromReversedDERArray(
 
 } 
 
+typedef const std::function<nsresult(nsCOMPtr<nsIX509Cert>& aCert,
+                bool aHasMore,  bool& aContinue)> ForEachCertOperation;
+
 class nsNSSCertList: public nsIX509CertList,
                      public nsISerializable,
                      public nsNSSShutDownObject
@@ -87,6 +90,26 @@ public:
   static mozilla::UniqueCERTCertList DupCertList(
     const mozilla::UniqueCERTCertList& certList,
     const nsNSSShutDownPreventionLock& proofOfLock);
+
+  
+  
+  
+  
+  
+  nsresult ForEachCertificateInChain(ForEachCertOperation& aOperation);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult SegmentCertificateChain( nsCOMPtr<nsIX509Cert>& aRoot,
+                            nsCOMPtr<nsIX509CertList>& aIntermediates,
+                            nsCOMPtr<nsIX509Cert>& aEndEntity);
 
 private:
    virtual ~nsNSSCertList();
