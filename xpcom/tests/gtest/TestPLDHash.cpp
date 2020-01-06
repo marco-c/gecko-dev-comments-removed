@@ -6,6 +6,7 @@
 
 #include "PLDHashTable.h"
 #include "nsCOMPtr.h"
+#include "nsICrashReporter.h"
 #include "nsServiceManagerUtils.h"
 #include "gtest/gtest.h"
 
@@ -19,10 +20,6 @@
 
 
 extern unsigned int _gdb_sleep_duration;
-#endif
-
-#ifdef MOZ_CRASHREPORTER
-#include "nsICrashReporter.h"
 #endif
 
 
@@ -49,13 +46,11 @@ TestCrashyOperation(void (*aCrashyOperation)())
     
     
     
-#ifdef MOZ_CRASHREPORTER
     nsCOMPtr<nsICrashReporter> crashreporter =
       do_GetService("@mozilla.org/toolkit/crash-reporter;1");
     if (crashreporter) {
       crashreporter->SetEnabled(false);
     }
-#endif
 
     
     fprintf(stderr, "TestCrashyOperation: The following crash is expected. Do not panic.\n");
