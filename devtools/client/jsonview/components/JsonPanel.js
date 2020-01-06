@@ -83,7 +83,8 @@ define(function (require, exports, module) {
       
       return Rep(Object.assign({}, props, {
         cropLimit: 50,
-        noGrip: true
+        noGrip: true,
+        omitLinkHref: false,
       }));
     },
 
