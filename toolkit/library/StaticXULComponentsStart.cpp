@@ -1,3 +1,6 @@
 #include "mozilla/Module.h"
 
-NSMODULE_DEFN(start_kPStaticModules) = nullptr;
+
+
+
+NSMODULE_DEFN(start_kPStaticModules) = (mozilla::Module*)&NSMODULE_NAME(start_kPStaticModules);

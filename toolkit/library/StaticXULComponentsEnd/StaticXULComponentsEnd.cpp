@@ -10,4 +10,7 @@
 #  undef NSMODULE_SECTION
 #  define NSMODULE_SECTION __declspec(allocate(".kPStaticModules$Z"), dllexport)
 #endif
-NSMODULE_DEFN(end_kPStaticModules) = nullptr;
+
+
+
+NSMODULE_DEFN(end_kPStaticModules) = (mozilla::Module*)&NSMODULE_NAME(end_kPStaticModules);
