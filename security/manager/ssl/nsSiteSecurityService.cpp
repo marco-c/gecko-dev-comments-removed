@@ -1143,7 +1143,6 @@ nsSiteSecurityService::ProcessPKPHeader(
                                         now, nullptr, 
                                         host, 
                                         certList,
-                                        nullptr, 
                                         false, 
                                         flags,
                                         aOriginAttributes)

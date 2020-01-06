@@ -511,7 +511,6 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
                                       nullptr, 
                                       hostname,
                                       unusedBuiltChain,
-                                      nullptr, 
                                       false, 
                                       flags);
   if (result != mozilla::pkix::Success) {

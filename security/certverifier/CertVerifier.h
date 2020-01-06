@@ -118,11 +118,6 @@ public:
 
   
   
-  
-  
-  
-  
-  
   mozilla::pkix::Result VerifyCert(
                     CERTCertificate* cert,
                     SECCertificateUsage usage,
@@ -130,8 +125,7 @@ public:
                     void* pinArg,
                     const char* hostname,
              UniqueCERTCertList& builtChain,
-     UniqueCERTCertList* peerCertChain = nullptr,
-     Flags flags = 0,
+                    Flags flags = 0,
      const SECItem* stapledOCSPResponse = nullptr,
      const SECItem* sctsFromTLS = nullptr,
      const OriginAttributes& originAttributes =
@@ -151,7 +145,6 @@ public:
         void* pinarg,
                     const nsACString& hostname,
              UniqueCERTCertList& builtChain,
-        UniqueCERTCertList* peerCertChain = nullptr,
         bool saveIntermediatesInPermanentDatabase = false,
         Flags flags = 0,
         const OriginAttributes& originAttributes =
