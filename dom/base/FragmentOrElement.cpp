@@ -1048,22 +1048,9 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   nsTArray<nsIContent*>* destPoints = GetExistingDestInsertionPoints();
   if (destPoints && !destPoints->IsEmpty()) {
     
-    
-    bool didPushNonShadowInsertionPoint = false;
     for (uint32_t i = 0; i < destPoints->Length(); i++) {
       nsIContent* point = destPoints->ElementAt(i);
-      if (!ShadowRoot::IsShadowInsertionPoint(point)) {
-        aVisitor.mDestInsertionPoints.AppendElement(point);
-        didPushNonShadowInsertionPoint = true;
-      }
-    }
-
-    
-    
-    if (didPushNonShadowInsertionPoint) {
-      parent = aVisitor.mDestInsertionPoints.LastElement();
-      aVisitor.mDestInsertionPoints.SetLength(
-        aVisitor.mDestInsertionPoints.Length() - 1);
+      aVisitor.mDestInsertionPoints.AppendElement(point);
     }
   }
 
@@ -1087,10 +1074,7 @@ nsIContent::GetEventTargetParent(EventChainPreVisitor& aVisitor)
       aVisitor.mDestInsertionPoints.SetLength(
         aVisitor.mDestInsertionPoints.Length() - 1);
     } else {
-      
-      
-      
-      parent = thisShadowRoot->GetPoolHost();
+      parent = thisShadowRoot->GetHost();
     }
   }
 
@@ -2619,8 +2603,7 @@ FragmentOrElement::SetIsElementInStyleScopeFlagOnShadowTree(bool aInStyleScope)
   NS_ASSERTION(IsElement(), "calling SetIsElementInStyleScopeFlagOnShadowTree "
                             "on a non-Element is useless");
   ShadowRoot* shadowRoot = GetShadowRoot();
-  while (shadowRoot) {
+  if (shadowRoot) {
     shadowRoot->SetIsElementInStyleScopeFlagOnSubtree(aInStyleScope);
-    shadowRoot = shadowRoot->GetOlderShadowRoot();
   }
 }

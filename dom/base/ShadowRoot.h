@@ -25,7 +25,6 @@ namespace dom {
 
 class Element;
 class HTMLContentElement;
-class HTMLShadowElement;
 class ShadowRootStyleSheetList;
 
 class ShadowRoot final : public DocumentFragment,
@@ -42,7 +41,8 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
-  ShadowRoot(Element* aElement, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  ShadowRoot(Element* aElement,
+             already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
              nsXBLPrototypeBinding* aProtoBinding);
 
   void AddToIdTable(Element* aElement, nsIAtom* aId);
@@ -52,24 +52,6 @@ public:
   bool ApplyAuthorStyles();
   void SetApplyAuthorStyles(bool aApplyAuthorStyles);
   StyleSheetList* StyleSheets();
-  HTMLShadowElement* GetShadowElement() { return mShadowElement; }
-
-  
-
-
-
-  void SetShadowElement(HTMLShadowElement* aShadowElement);
-
-  
-
-
-
-
-
-
-
-
-  void ChangePoolHost(nsIContent* aNewHost);
 
   
 
@@ -92,23 +74,15 @@ public:
   void AddInsertionPoint(HTMLContentElement* aInsertionPoint);
   void RemoveInsertionPoint(HTMLContentElement* aInsertionPoint);
 
-  void SetYoungerShadow(ShadowRoot* aYoungerShadow);
-  ShadowRoot* GetYoungerShadowRoot() { return mYoungerShadow; }
   void SetInsertionPointChanged() { mInsertionPointChanged = true; }
 
   void SetAssociatedBinding(nsXBLBinding* aBinding) { mAssociatedBinding = aBinding; }
-
-  nsISupports* GetParentObject() const { return mPoolHost; }
-
-  nsIContent* GetPoolHost() { return mPoolHost; }
-  nsTArray<HTMLShadowElement*>& ShadowDescendants() { return mShadowDescendants; }
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   static bool IsPooledNode(nsIContent* aChild, nsIContent* aContainer,
                            nsIContent* aHost);
   static ShadowRoot* FromNode(nsINode* aNode);
-  static bool IsShadowInsertionPoint(nsIContent* aContent);
 
   static void RemoveDestInsertionPoint(nsIContent* aInsertionPoint,
                                        nsTArray<nsIContent*>& aDestInsertionPoints);
@@ -125,7 +99,6 @@ public:
   void GetInnerHTML(nsAString& aInnerHTML);
   void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);
   Element* Host();
-  ShadowRoot* GetOlderShadowRoot() { return mOlderShadow; }
   void StyleSheetChanged();
 
   bool IsComposedDocParticipant() { return mIsComposedDocParticipant; }
@@ -134,13 +107,8 @@ public:
     mIsComposedDocParticipant = aIsComposedDocParticipant;
   }
 
-  virtual void DestroyContent() override;
 protected:
   virtual ~ShadowRoot();
-
-  
-  
-  nsCOMPtr<nsIContent> mPoolHost;
 
   
   
@@ -148,10 +116,6 @@ protected:
   
   
   nsTArray<HTMLContentElement*> mInsertionPoints;
-
-  
-  
-  nsTArray<HTMLShadowElement*> mShadowDescendants;
 
   nsTHashtable<nsIdentifierMapEntry> mIdentifierMap;
   nsXBLPrototypeBinding* mProtoBinding;
@@ -162,17 +126,6 @@ protected:
   RefPtr<nsXBLBinding> mAssociatedBinding;
 
   RefPtr<ShadowRootStyleSheetList> mStyleSheetList;
-
-  
-  HTMLShadowElement* mShadowElement;
-
-  
-  
-  RefPtr<ShadowRoot> mOlderShadow;
-
-  
-  
-  RefPtr<ShadowRoot> mYoungerShadow;
 
   
   

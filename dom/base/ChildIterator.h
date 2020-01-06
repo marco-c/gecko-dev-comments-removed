@@ -48,16 +48,12 @@ public:
   ExplicitChildIterator(const ExplicitChildIterator& aOther)
     : mParent(aOther.mParent), mChild(aOther.mChild),
       mDefaultChild(aOther.mDefaultChild),
-      mShadowIterator(aOther.mShadowIterator ?
-                      new ExplicitChildIterator(*aOther.mShadowIterator) :
-                      nullptr),
       mIsFirst(aOther.mIsFirst),
       mIndexInInserted(aOther.mIndexInInserted) {}
 
   ExplicitChildIterator(ExplicitChildIterator&& aOther)
     : mParent(aOther.mParent), mChild(aOther.mChild),
       mDefaultChild(aOther.mDefaultChild),
-      mShadowIterator(Move(aOther.mShadowIterator)),
       mIsFirst(aOther.mIsFirst),
       mIndexInInserted(aOther.mIndexInInserted) {}
 
@@ -115,11 +111,6 @@ protected:
   
   
   nsIContent* mDefaultChild;
-
-  
-  
-  
-  nsAutoPtr<ExplicitChildIterator> mShadowIterator;
 
   
   bool mIsFirst;

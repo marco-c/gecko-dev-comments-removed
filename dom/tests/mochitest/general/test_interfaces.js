@@ -514,8 +514,6 @@ var interfaceNamesInGlobalScope =
 
     "HTMLSelectElement",
 
-    {name: "HTMLShadowElement", stylo: false},
-
     "HTMLSourceElement",
 
     "HTMLSpanElement",
@@ -735,8 +733,6 @@ var interfaceNamesInGlobalScope =
     "PerformanceMeasure",
 
     "PerformanceNavigation",
-
-    "PerformanceNavigationTiming",
 
     "PerformanceObserver",
 
