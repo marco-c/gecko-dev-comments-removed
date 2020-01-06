@@ -254,16 +254,6 @@ SmprintfPolicyPointer<AllocPolicy> VsmprintfAppend(SmprintfPolicyPointer<AllocPo
     return ss.release();
 }
 
-
-
-
-template<typename AllocPolicy = mozilla::MallocAllocPolicy>
-void SmprintfFree(char* mem)
-{
-    AllocPolicy allocator;
-    allocator.free_(mem);
-}
-
 } 
 
 #endif 
