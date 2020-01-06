@@ -225,11 +225,6 @@ var gSearchResultsPane = {
     this.removeAllSearchTooltips();
     this.removeAllSearchMenuitemIndicators();
 
-    
-    if (this.telemetryTimer) {
-      clearTimeout(this.telemetryTimer);
-    }
-
     let srHeader = document.getElementById("header-searchResults");
 
     if (this.query) {
@@ -279,13 +274,6 @@ var gSearchResultsPane = {
       } else {
         
         this.listSearchTooltips.forEach((anchorNode) => this.createSearchTooltip(anchorNode, this.query));
-
-        
-        if (this.query.length >= 2) {
-          this.telemetryTimer = setTimeout(() => {
-            Services.telemetry.keyedScalarAdd("preferences.search_query", this.query, 1);
-          }, 1000);
-        }
       }
     } else {
       document.getElementById("sorry-message").textContent = "";
