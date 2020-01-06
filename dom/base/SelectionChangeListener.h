@@ -33,7 +33,7 @@ public:
     
     
     
-    nsCOMPtr<nsINode> mStartParent;
+    nsCOMPtr<nsINode> mStartContainer;
     nsCOMPtr<nsINode> mEndParent;
 
     
