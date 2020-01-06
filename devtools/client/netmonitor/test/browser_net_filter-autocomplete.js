@@ -109,7 +109,11 @@ add_task(async function () {
 
   
   EventUtils.synthesizeKey(" mime-type:text", {});
-  testAutocompleteContents(["mime-type:text/css", "mime-type:text/html", "mime-type:text/plain"], document);
+  testAutocompleteContents([
+    "mime-type:text/css",
+    "mime-type:text/html",
+    "mime-type:text/plain"
+  ], document);
 
   
   EventUtils.synthesizeKey(" -", {});
