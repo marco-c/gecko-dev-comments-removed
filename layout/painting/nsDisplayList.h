@@ -878,11 +878,6 @@ public:
       mBuilder->mCurrentReferenceFrame = aFrame;
       mBuilder->mCurrentOffsetToReferenceFrame = aOffset;
     }
-    
-    
-    const nsIFrame* GetPrevAnimatedGeometryRoot() const {
-      return mPrevAnimatedGeometryRoot;
-    }
     bool IsAnimatedGeometryRoot() const {
       return mCurrentAGRState == AGR_YES;
     }
@@ -908,7 +903,6 @@ public:
     AGRState              mCurrentAGRState;
     const nsIFrame*       mPrevFrame;
     const nsIFrame*       mPrevReferenceFrame;
-    nsIFrame*             mPrevAnimatedGeometryRoot;
     nsDisplayLayerEventRegions* mPrevLayerEventRegions;
     nsPoint               mPrevOffset;
     nsRect                mPrevDirtyRect;
