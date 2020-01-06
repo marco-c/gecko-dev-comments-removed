@@ -95,7 +95,6 @@
 #include "nsBidi.h"
 
 #include "mozilla/dom/URL.h"
-#include "mozilla/ServoCSSParser.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -147,29 +146,17 @@ private:
 nscolor
 nsPresContext::MakeColorPref(const nsString& aColor)
 {
-  bool ok;
-  nscolor result;
-
-  ServoStyleSet* servoStyleSet = mShell && mShell->StyleSet()
-    ? mShell->StyleSet()->GetAsServo()
-    : nullptr;
-
-  if (servoStyleSet) {
-    ok = ServoCSSParser::ComputeColor(servoStyleSet, NS_RGB(0, 0, 0), aColor,
-                                      &result);
-  } else {
-    nsCSSParser parser;
-    nsCSSValue value;
-    ok = parser.ParseColorString(aColor, nullptr, 0, value) &&
-         nsRuleNode::ComputeColor(value, this, nullptr, result);
-  }
-
-  if (!ok) {
+  nsCSSParser parser;
+  nsCSSValue value;
+  if (!parser.ParseColorString(aColor, nullptr, 0, value)) {
     
-    result = NS_RGB(0, 0, 0);
+    return NS_RGB(0, 0, 0);
   }
 
-  return result;
+  nscolor color;
+  return nsRuleNode::ComputeColor(value, this, nullptr, color)
+    ? color
+    : NS_RGB(0, 0, 0);
 }
 
 bool
@@ -1369,10 +1356,7 @@ nsPresContext::UpdateEffectiveTextZoom()
 
   mEffectiveTextZoom = newZoom;
 
-  
-  
-  
-  if (mDocument->IsStyledByServo() || HasCachedStyleData()) {
+  if (HasCachedStyleData()) {
     
     
     MediaFeatureValuesChanged(eRestyle_ForceDescendants,
@@ -2798,18 +2782,13 @@ nsPresContext::CreateTimer(nsTimerCallbackFunc aCallback,
                            const char* aName,
                            uint32_t aDelay)
 {
-  nsCOMPtr<nsITimer> timer = do_CreateInstance("@mozilla.org/timer;1");
-  timer->SetTarget(Document()->EventTargetFor(TaskCategory::Other));
-  if (timer) {
-    nsresult rv = timer->InitWithNamedFuncCallback(aCallback, this, aDelay,
-                                                   nsITimer::TYPE_ONE_SHOT,
-                                                   aName);
-    if (NS_SUCCEEDED(rv)) {
-      return timer.forget();
-    }
-  }
-
-  return nullptr;
+  nsCOMPtr<nsITimer> timer;
+  NS_NewTimerWithFuncCallback(getter_AddRefs(timer),
+                              aCallback, this, aDelay,
+                              nsITimer::TYPE_ONE_SHOT,
+                              aName,
+                              Document()->EventTargetFor(TaskCategory::Other));
+  return timer.forget();
 }
 
 static bool sGotInterruptEnv = false;
@@ -3446,21 +3425,20 @@ nsRootPresContext::EnsureEventualDidPaintEvent(uint64_t aTransactionId)
     }
   }
 
-  nsCOMPtr<nsITimer> timer = do_CreateInstance("@mozilla.org/timer;1");
-  timer->SetTarget(Document()->EventTargetFor(TaskCategory::Other));
-  if (timer) {
-    RefPtr<nsRootPresContext> self = this;
-    nsresult rv = timer->InitWithCallback(
-      NewNamedTimerCallback([self, aTransactionId](){
-        nsAutoScriptBlocker blockScripts;
-        self->NotifyDidPaintForSubtree(aTransactionId);
-    }, "NotifyDidPaintForSubtree"), 100, nsITimer::TYPE_ONE_SHOT);
+  nsCOMPtr<nsITimer> timer;
+  RefPtr<nsRootPresContext> self = this;
+  nsresult rv = NS_NewTimerWithCallback(
+    getter_AddRefs(timer),
+    NewNamedTimerCallback([self, aTransactionId](){
+      nsAutoScriptBlocker blockScripts;
+      self->NotifyDidPaintForSubtree(aTransactionId);
+     }, "NotifyDidPaintForSubtree"), 100, nsITimer::TYPE_ONE_SHOT,
+    Document()->EventTargetFor(TaskCategory::Other));
 
-    if (NS_SUCCEEDED(rv)) {
-      NotifyDidPaintTimer* t = mNotifyDidPaintTimers.AppendElement();
-      t->mTransactionId = aTransactionId;
-      t->mTimer = timer;
-    }
+  if (NS_SUCCEEDED(rv)) {
+    NotifyDidPaintTimer* t = mNotifyDidPaintTimers.AppendElement();
+    t->mTransactionId = aTransactionId;
+    t->mTimer = timer;
   }
 }
 
