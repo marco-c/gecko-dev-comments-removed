@@ -17,11 +17,14 @@ use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
 use servo_arc::Arc;
 use shared_lock::StylesheetGuards;
 use std::fmt;
+use std::mem;
 use std::ops::{Deref, DerefMut};
+use style_resolver::{PrimaryStyle, ResolvedElementStyles, ResolvedStyle};
 
 bitflags! {
+    /// Various flags stored on ElementData.
     #[derive(Default)]
-    flags ElementDataFlags: u8 {
+    pub flags ElementDataFlags: u8 {
         /// Whether the styles changed for this restyle.
         const WAS_RESTYLED = 1 << 0,
         /// Whether the last traversal of this element did not do
@@ -35,6 +38,13 @@ bitflags! {
         const TRAVERSED_WITHOUT_STYLING = 1 << 1,
         /// Whether we reframed/reconstructed any ancestor or self.
         const ANCESTOR_WAS_RECONSTRUCTED = 1 << 2,
+        /// Whether the primary style of this element data was reused from another
+        /// element via a rule node comparison. This allows us to differentiate
+        /// between elements that shared styles because they met all the criteria
+        /// of the style sharing cache, compared to elements that reused style
+        /// structs via rule node identity. The former gives us stronger transitive
+        /// guarantees that allows us to apply the style sharing cache to cousins.
+        const PRIMARY_STYLE_REUSED_VIA_RULE_NODE = 1 << 3,
     }
 }
 
@@ -200,7 +210,7 @@ pub struct ElementData {
     pub hint: RestyleHint,
 
     
-    flags: ElementDataFlags,
+    pub flags: ElementDataFlags,
 }
 
 
@@ -262,6 +272,30 @@ impl ElementData {
     #[inline]
     pub fn has_styles(&self) -> bool {
         self.styles.primary.is_some()
+    }
+
+    
+    pub fn share_styles(&self) -> ResolvedElementStyles {
+        ResolvedElementStyles {
+            primary: self.share_primary_style(),
+            pseudos: self.styles.pseudos.clone(),
+        }
+    }
+
+    
+    pub fn share_primary_style(&self) -> PrimaryStyle {
+        let primary_is_reused = self.flags.contains(PRIMARY_STYLE_REUSED_VIA_RULE_NODE);
+        PrimaryStyle(ResolvedStyle::new(self.styles.primary().clone(), primary_is_reused))
+    }
+
+    
+    pub fn set_styles(&mut self, new_styles: ResolvedElementStyles) -> ElementStyles {
+        if new_styles.primary.0.reused_via_rule_node {
+            self.flags.insert(PRIMARY_STYLE_REUSED_VIA_RULE_NODE);
+        } else {
+            self.flags.remove(PRIMARY_STYLE_REUSED_VIA_RULE_NODE);
+        }
+        mem::replace(&mut self.styles, new_styles.into())
     }
 
     
@@ -421,6 +455,28 @@ impl ElementData {
     
     #[cfg(feature = "servo")]
     pub fn skip_applying_damage(&self) -> bool { false }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn safe_for_cousin_sharing(&self) -> bool {
+        !self.flags.intersects(TRAVERSED_WITHOUT_STYLING | PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
+    }
 
     
     #[cfg(feature = "gecko")]

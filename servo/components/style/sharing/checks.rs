@@ -10,44 +10,47 @@ use Atom;
 use bloom::StyleBloom;
 use context::{SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
-use servo_arc::Arc;
 use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
-
-
-
-pub fn can_share_style_across_parents<E>(first: Option<E>, second: Option<E>) -> bool
+pub fn parents_allow_sharing<E>(
+    target: &mut StyleSharingTarget<E>,
+    candidate: &mut StyleSharingCandidate<E>
+) -> bool
     where E: TElement,
 {
-    let (first, second) = match (first, second) {
-        (Some(f), Some(s)) => (f, s),
-        _ => return false,
-    };
-
-    debug_assert_ne!(first, second);
-
-    let first_data = first.borrow_data().unwrap();
-    let second_data = second.borrow_data().unwrap();
-
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    if first_data.traversed_without_styling() || second_data.traversed_without_styling() {
+    if target.parent_style_identity() != candidate.parent_style_identity() {
         return false;
     }
 
-    let same_computed_values =
-        Arc::ptr_eq(first_data.styles.primary(), second_data.styles.primary());
+    
+    let parent = target.inheritance_parent().unwrap();
+    let candidate_parent = candidate.element.inheritance_parent().unwrap();
+    if parent == candidate_parent {
+        return true;
+    }
 
-    same_computed_values
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let parent_data = parent.borrow_data().unwrap();
+    let candidate_parent_data = candidate_parent.borrow_data().unwrap();
+    if !parent_data.safe_for_cousin_sharing() || !candidate_parent_data.safe_for_cousin_sharing() {
+        return false;
+    }
+
+    true
 }
 
 

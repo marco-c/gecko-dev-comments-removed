@@ -70,13 +70,13 @@ use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use bloom::StyleBloom;
 use cache::LRUCache;
 use context::{SelectorFlagsMap, SharedStyleContext, StyleContext};
-use data::ElementStyles;
 use dom::{TElement, SendElement};
 use matching::MatchMethods;
 use owning_ref::OwningHandle;
 use properties::ComputedValues;
+use rule_tree::StrongRuleNode;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
-use servo_arc::Arc;
+use servo_arc::{Arc, NonZeroPtrMut};
 use smallbitvec::SmallBitVec;
 use smallvec::SmallVec;
 use std::marker::PhantomData;
@@ -109,6 +109,18 @@ pub enum StyleSharingBehavior {
 }
 
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OpaqueComputedValues(NonZeroPtrMut<()>);
+impl OpaqueComputedValues {
+    fn from(cv: &ComputedValues) -> Self {
+        let p = NonZeroPtrMut::new(cv as *const ComputedValues as *const () as *mut ());
+        OpaqueComputedValues(p)
+    }
+
+    fn eq(&self, cv: &ComputedValues) -> bool { Self::from(cv) == *self }
+}
+
+
 
 #[derive(Debug, Default)]
 pub struct ValidationData {
@@ -120,6 +132,9 @@ pub struct ValidationData {
 
     
     pres_hints: Option<SmallVec<[ApplicableDeclarationBlock; 5]>>,
+
+    
+    parent_style_identity: Option<OpaqueComputedValues>,
 
     
     
@@ -165,6 +180,18 @@ impl ValidationData {
             self.class_list = Some(class_list);
         }
         &*self.class_list.as_ref().unwrap()
+    }
+
+    
+    pub fn parent_style_identity<E>(&mut self, el: E) -> OpaqueComputedValues
+        where E: TElement,
+    {
+        if self.parent_style_identity.is_none() {
+            let parent = el.inheritance_parent().unwrap();
+            self.parent_style_identity =
+                Some(OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary()));
+        }
+        self.parent_style_identity.as_ref().unwrap().clone()
     }
 
     
@@ -251,6 +278,11 @@ impl<E: TElement> StyleSharingCandidate<E> {
     }
 
     
+    fn parent_style_identity(&mut self) -> OpaqueComputedValues {
+        self.validation_data.parent_style_identity(self.element)
+    }
+
+    
     
     fn revalidation_match_results(
         &mut self,
@@ -304,6 +336,11 @@ impl<E: TElement> StyleSharingTarget<E> {
         self.validation_data.pres_hints(self.element)
     }
 
+    
+    fn parent_style_identity(&mut self) -> OpaqueComputedValues {
+        self.validation_data.parent_style_identity(self.element)
+    }
+
     fn revalidation_match_results(
         &mut self,
         stylist: &Stylist,
@@ -342,7 +379,7 @@ impl<E: TElement> StyleSharingTarget<E> {
     pub fn share_style_if_possible(
         &mut self,
         context: &mut StyleContext<E>,
-    ) -> Option<ElementStyles> {
+    ) -> Option<E> {
         let cache = &mut context.thread_local.sharing_cache;
         let shared_context = &context.shared;
         let selector_flags_map = &mut context.thread_local.selector_flags;
@@ -393,14 +430,19 @@ impl<Candidate> SharingCacheBase<Candidate> {
 }
 
 impl<E: TElement> SharingCache<E> {
-    fn insert(&mut self, el: E, validation_data_holder: &mut StyleSharingTarget<E>) {
-        self.entries.insert(StyleSharingCandidate {
-            element: el,
-            validation_data: validation_data_holder.take_validation_data(),
-        });
+    fn insert(
+        &mut self,
+        element: E,
+        validation_data_holder: Option<&mut StyleSharingTarget<E>>,
+    ) {
+        let validation_data = match validation_data_holder {
+            Some(v) => v.take_validation_data(),
+            None => ValidationData::default(),
+        };
+        self.entries.insert(StyleSharingCandidate { element, validation_data });
     }
 
-    fn lookup<F>(&mut self, mut is_match: F) -> Option<ElementStyles>
+    fn lookup<F>(&mut self, mut is_match: F) -> Option<E>
     where
         F: FnMut(&mut StyleSharingCandidate<E>) -> bool
     {
@@ -418,7 +460,7 @@ impl<E: TElement> SharingCache<E> {
                 self.entries.touch(i);
                 let front = self.entries.front_mut().unwrap();
                 debug_assert!(is_match(front));
-                Some(front.element.borrow_data().unwrap().styles.clone())
+                Some(front.element)
             }
         }
     }
@@ -507,7 +549,7 @@ impl<E: TElement> StyleSharingCache<E> {
     pub fn insert_if_possible(&mut self,
                               element: &E,
                               style: &ComputedValues,
-                              validation_data_holder: &mut StyleSharingTarget<E>,
+                              validation_data_holder: Option<&mut StyleSharingTarget<E>>,
                               dom_depth: usize) {
         let parent = match element.traversal_parent() {
             Some(element) => element,
@@ -575,14 +617,14 @@ impl<E: TElement> StyleSharingCache<E> {
         selector_flags_map: &mut SelectorFlagsMap<E>,
         bloom_filter: &StyleBloom<E>,
         target: &mut StyleSharingTarget<E>,
-    ) -> Option<ElementStyles> {
+    ) -> Option<E> {
         if shared_context.options.disable_style_sharing_cache {
             debug!("{:?} Cannot share style: style sharing cache disabled",
                    target.element);
             return None;
         }
 
-        if target.traversal_parent().is_none() {
+        if target.inheritance_parent().is_none() {
             debug!("{:?} Cannot share style: element has no parent",
                    target.element);
             return None;
@@ -615,10 +657,7 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
-        let parent = target.traversal_parent();
-        let candidate_parent = candidate.element.traversal_parent();
-        if parent != candidate_parent &&
-           !checks::can_share_style_across_parents(parent, candidate_parent) {
+        if !checks::parents_allow_sharing(target, candidate) {
             trace!("Miss: Parent");
             return false;
         }
@@ -698,5 +737,45 @@ impl<E: TElement> StyleSharingCache<E> {
         debug!("Sharing allowed between {:?} and {:?}", target.element, candidate.element);
 
         true
+    }
+
+    
+    pub fn lookup_by_rules(
+        &mut self,
+        inherited: &ComputedValues,
+        rules: &StrongRuleNode,
+        visited_rules: Option<&StrongRuleNode>,
+        target: E,
+    ) -> Option<E> {
+        self.cache_mut().lookup(|candidate| {
+            if !candidate.parent_style_identity().eq(inherited) {
+                return false;
+            }
+            let data = candidate.element.borrow_data().unwrap();
+            let style = data.styles.primary();
+            if style.rules.as_ref() != Some(&rules) {
+                return false;
+            }
+            if style.visited_rules() != visited_rules {
+                return false;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if target.is_visited_link() != candidate.element.is_visited_link() {
+                return false;
+            }
+
+            true
+        })
     }
 }
