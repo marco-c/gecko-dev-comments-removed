@@ -270,6 +270,8 @@ this.tabs = class extends ExtensionAPI {
           
           options.disallowInheritPrincipal = true;
 
+          options.parentId = BrowserApp.selectedTab.id;
+
           tabListener.initTabReady();
           let nativeTab = BrowserApp.addTab(url, options);
 
