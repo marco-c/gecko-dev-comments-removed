@@ -26,6 +26,20 @@ class RenderTextureHost;
 class RenderThread;
 
 
+class WebRenderThreadPool {
+public:
+  WebRenderThreadPool();
+
+  ~WebRenderThreadPool();
+
+  WrThreadPool* Raw() { return mThreadPool; }
+
+protected:
+  WrThreadPool* mThreadPool;
+};
+
+
+
 
 
 
@@ -121,6 +135,9 @@ public:
   
   void DecPendingFrameCount(wr::WindowId aWindowId);
 
+  
+  WebRenderThreadPool& ThreadPool() { return mThreadPool; }
+
 private:
   explicit RenderThread(base::Thread* aThread);
 
@@ -129,6 +146,8 @@ private:
   ~RenderThread();
 
   base::Thread* const mThread;
+
+  WebRenderThreadPool mThreadPool;
 
   std::map<wr::WindowId, UniquePtr<RendererOGL>> mRenderers;
 
