@@ -406,12 +406,6 @@ public:
 
 
 
-  virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const;
-
-  
-
-
-
   already_AddRefed<nsIContent> GetContentForScrolling() const;
 
   
