@@ -1724,8 +1724,12 @@ nsHttpChannel::CallOnStartRequest()
         
         
         
-        if (!mCachedContentIsPartial && !mConcurrentCacheAccess)
+        
+        
+        if (!mCachedContentIsPartial && !mConcurrentCacheAccess &&
+            !(mRaceCacheWithNetwork && mFirstResponseSource == RESPONSE_FROM_CACHE)) {
             CloseCacheEntry(false);
+        }
     }
 
     if (!mCanceled) {
