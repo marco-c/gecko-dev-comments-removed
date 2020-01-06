@@ -37,6 +37,7 @@ add_task(async function() {
 
   
   ss.setBrowserState(state);
+  await promiseWindowRestored(window);
 
   
   enumerator = Services.cookies.enumerator;

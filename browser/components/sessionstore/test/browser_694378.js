@@ -24,9 +24,12 @@ function test() {
     info(ex);
   }
 
-  ok(!gotError, "ss.setWindowState did not throw an error");
+  promiseWindowRestored(window).then(() => {
+    ok(!gotError, "ss.setWindowState did not throw an error");
 
-  
-  let blankState = { windows: [{ tabs: [{ entries: [{ url: "about:blank", triggeringPrincipal_base64 }] }]}]};
-  waitForBrowserState(blankState, finish);
+    
+    let blankState = { windows: [{ tabs: [{ entries: [{ url: "about:blank", triggeringPrincipal_base64 }] }]}]};
+    waitForBrowserState(blankState, finish);
+  });
 }
+

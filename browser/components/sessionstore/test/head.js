@@ -186,6 +186,10 @@ function promiseTabState(tab, state) {
   return promise;
 }
 
+function promiseWindowRestored(win) {
+  return new Promise(resolve => win.addEventListener("SSWindowRestored", resolve, {once: true}));
+}
+
 
 
 
