@@ -678,8 +678,8 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
                                            &inputSample);
   NS_ENSURE_TRUE(SUCCEEDED(hr) && inputSample != nullptr, hr);
 
-  mLastDuration = aSample->mDuration.ToMicroseconds();
-  mLastTime = aSample->mTime.ToMicroseconds();
+  mLastDuration = aSample->mDuration;
+  mLastTime = aSample->mTime;
   mSamplesCount++;
 
   
@@ -736,7 +736,7 @@ WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType)
 
   
   
-  float framerate = 1000000.0 / mLastDuration;
+  float framerate = 1000000.0 / mLastDuration.ToMicroseconds();
 
   
   
@@ -1005,8 +1005,8 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
         
         
         
-        pts = TimeUnit::FromMicroseconds(mLastTime);
-        duration = TimeUnit::FromMicroseconds(mLastDuration);
+        pts = mLastTime;
+        duration = mLastDuration;
       }
       if (mSeekTargetThreshold.isSome()) {
         if ((pts + duration) < mSeekTargetThreshold.ref()) {
