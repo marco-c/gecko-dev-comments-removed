@@ -105,6 +105,29 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  static MFBT_API MOZ_MUST_USE bool
+  decompressPartial(const char* aSource, size_t aInputSize, char* aDest,
+                    size_t aMaxOutputSize, size_t* aOutputSize);
+
+  
+
+
+
+
+
+
+
+
   static inline size_t maxCompressedSize(size_t aInputSize)
   {
     size_t max = (aInputSize + (aInputSize / 255) + 16);
