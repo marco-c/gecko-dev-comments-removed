@@ -54,6 +54,7 @@
 #include "nsSandboxFlags.h"
 #include "nsContentTypeParser.h"
 #include "nsINetworkPredictor.h"
+#include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/ConsoleReportCollector.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
@@ -329,18 +330,11 @@ ScriptLoader::WaitForModuleFetch(ModuleLoadRequest* aRequest)
 {
   MOZ_ASSERT(ModuleMapContainsModule(aRequest));
 
-  RefPtr<GenericPromise::Private> promise;
-  mFetchingModules.LookupRemoveIf(aRequest->mURI,
-    [&promise] (RefPtr<GenericPromise::Private>& aValue) {
-      if (!aValue) {
-        aValue = new GenericPromise::Private(__func__);
-      }
-      promise = aValue;
-      return false; 
-    });
-
-  if (promise) {
-    return promise;
+  if (auto entry = mFetchingModules.Lookup(aRequest->mURI)) {
+    if (!entry.Data()) {
+      entry.Data() = new GenericPromise::Private(__func__);
+    }
+    return entry.Data();
   }
 
   RefPtr<ModuleScript> ms;

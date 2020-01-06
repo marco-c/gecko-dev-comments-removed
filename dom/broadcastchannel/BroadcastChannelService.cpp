@@ -79,14 +79,15 @@ BroadcastChannelService::UnregisterActor(BroadcastChannelParent* aParent,
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aParent);
 
-  DebugOnly<bool> found = false;
-  mAgents.LookupRemoveIf(aOriginChannelKey,
-    [&found, aParent] (nsTArray<BroadcastChannelParent*>* aValue) {
-      found = true;
-      aValue->RemoveElement(aParent);
-      return aValue->IsEmpty();  
-    });
-  MOZ_ASSERT(found, "Invalid state");
+  if (auto entry = mAgents.Lookup(aOriginChannelKey)) {
+    entry.Data()->RemoveElement(aParent);
+    
+    if (entry.Data()->IsEmpty()) {
+      entry.Remove();
+    }
+  } else {
+    MOZ_CRASH("Invalid state");
+  }
 }
 
 void

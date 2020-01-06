@@ -118,11 +118,10 @@ void
 nsDOMAttributeMap::DropAttribute(int32_t aNamespaceID, nsIAtom* aLocalName)
 {
   nsAttrKey attr(aNamespaceID, aLocalName);
-  mAttributeCache.LookupRemoveIf(attr,
-    [] (Attr* aNode) {
-      aNode->SetMap(nullptr); 
-      return true; 
-    });
+  if (auto entry = mAttributeCache.Lookup(attr)) {
+    entry.Data()->SetMap(nullptr); 
+    entry.Remove();
+  }
 }
 
 Attr*
