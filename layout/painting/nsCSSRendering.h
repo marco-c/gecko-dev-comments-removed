@@ -287,6 +287,8 @@ struct nsCSSRendering {
 
   static bool FindBackground(nsIFrame* aForFrame,
                              nsStyleContext** aBackgroundSC);
+  static bool FindBackgroundFrame(nsIFrame* aForFrame,
+                                  nsIFrame** aBackgroundFrame);
 
   
 
@@ -306,17 +308,24 @@ struct nsCSSRendering {
 
 
 
-  static nsStyleContext*
-  FindCanvasBackground(nsIFrame* aForFrame, nsIFrame* aRootElementFrame)
+
+  static nsIFrame*
+  FindCanvasBackgroundFrame(nsIFrame* aForFrame, nsIFrame* aRootElementFrame)
   {
     MOZ_ASSERT(IsCanvasFrame(aForFrame), "not a canvas frame");
     if (aRootElementFrame)
-      return FindRootFrameBackground(aRootElementFrame);
+      return FindBackgroundStyleFrame(aRootElementFrame);
 
     
     
     
-    return aForFrame->StyleContext();
+    return aForFrame;
+  }
+
+  static nsStyleContext*
+  FindCanvasBackground(nsIFrame* aForFrame, nsIFrame* aRootElementFrame)
+  {
+    return FindCanvasBackgroundFrame(aForFrame, aRootElementFrame)->StyleContext();
   }
 
   
