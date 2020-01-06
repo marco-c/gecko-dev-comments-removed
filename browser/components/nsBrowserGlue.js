@@ -1687,7 +1687,7 @@ BrowserGlue.prototype = {
 
   
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 55;
+    const UI_VERSION = 56;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2017,14 +2017,6 @@ BrowserGlue.prototype = {
       }
     }
 
-    if (currentUIVersion < 48) {
-      
-      
-      
-      
-      xulStore.removeValue(BROWSER_DOCURL, "sidebar-box", "checked");
-    }
-
     if (currentUIVersion < 49) {
       
       Services.prefs.setIntPref("browser.onboarding.seen-tourset-version", 0);
@@ -2089,6 +2081,17 @@ BrowserGlue.prototype = {
 
     if (currentUIVersion < 55) {
       Services.prefs.clearUserPref("browser.customizemode.tip0.shown");
+    }
+
+    if (currentUIVersion < 56) {
+      
+      
+      
+      
+      
+      if (xulStore.getValue(BROWSER_DOCURL, "sidebar-box", "sidebarcommand")) {
+        xulStore.setValue(BROWSER_DOCURL, "sidebar-box", "checked", "true");
+      }
     }
 
     
