@@ -2178,17 +2178,6 @@ PromiseObject::unforgeableResolve(JSContext* cx, HandleValue value)
 
 
 
-static bool
-Promise_static_species(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    args.rval().set(args.thisv());
-    return true;
-}
-
-
 
 static PromiseReactionRecord*
 NewReactionRecord(JSContext* cx, HandleObject resultPromise, HandleValue onFulfilled,
@@ -2218,12 +2207,6 @@ NewReactionRecord(JSContext* cx, HandleObject resultPromise, HandleValue onFulfi
     return reaction;
 }
 
-static bool
-IsPromiseSpecies(JSContext* cx, JSFunction* species)
-{
-    return species->maybeNative() == Promise_static_species;
-}
-
 
 MOZ_MUST_USE bool
 js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
@@ -2242,9 +2225,10 @@ js::OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
 
     if (createDependent) {
         
-        RootedObject C(cx, SpeciesConstructor(cx, promiseObj, JSProto_Promise, IsPromiseSpecies));
-        if (!C)
+        RootedValue ctorVal(cx);
+        if (!SpeciesConstructor(cx, promiseObj, JSProto_Promise, &ctorVal))
             return false;
+        RootedObject C(cx, &ctorVal.toObject());
 
         
         if (!NewPromiseCapability(cx, C, &resultPromise, &resolve, &reject, true))
@@ -2889,10 +2873,11 @@ BlockOnPromise(JSContext* cx, HandleValue promiseVal, HandleObject blockedPromis
         RootedObject PromiseCtor(cx);
         if (!GetBuiltinConstructor(cx, JSProto_Promise, &PromiseCtor))
             return false;
-
-        RootedObject C(cx, SpeciesConstructor(cx, PromiseCtor, JSProto_Promise, IsPromiseSpecies));
-        if (!C)
+        RootedValue PromiseCtorVal(cx, ObjectValue(*PromiseCtor));
+        RootedValue CVal(cx);
+        if (!SpeciesConstructor(cx, promiseObj, PromiseCtorVal, &CVal))
             return false;
+        RootedObject C(cx, &CVal.toObject());
 
         RootedObject resultPromise(cx, blockedPromise_);
         RootedObject resolveFun(cx);
@@ -3484,7 +3469,7 @@ static const JSFunctionSpec promise_static_methods[] = {
 };
 
 static const JSPropertySpec promise_static_properties[] = {
-    JS_SYM_GET(species, Promise_static_species, 0),
+    JS_SELF_HOSTED_SYM_GET(species, "Promise_static_get_species", 0),
     JS_PS_END
 };
 

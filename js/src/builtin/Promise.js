@@ -3,6 +3,13 @@
 
 
 
+function Promise_static_get_species() {
+    
+    return this;
+}
+_SetCanonicalName(Promise_static_get_species, "get [Symbol.species]");
+
+
 function Promise_catch(onRejected) {
     
     return callContentFunction(this.then, this, undefined, onRejected);
