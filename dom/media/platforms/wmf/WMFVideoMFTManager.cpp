@@ -549,6 +549,12 @@ WMFVideoMFTManager::LoadAMDVP9Decoder()
   MOZ_ASSERT(mStreamType == VP9);
 
   RefPtr<MFTDecoder> decoder = new MFTDecoder();
+
+  HRESULT hr = decoder->Create(CLSID_AMDWebmMfVp9Dec);
+  if (SUCCEEDED(hr)) {
+    return decoder.forget();
+  }
+
   
   nsString path = GetProgramW6432Path();
   path.Append(kAMDVPXDecoderDLLPath);
@@ -558,7 +564,7 @@ WMFVideoMFTManager::LoadAMDVP9Decoder()
   if (!decoderDLL) {
     return nullptr;
   }
-  HRESULT hr = decoder->Create(decoderDLL, CLSID_AMDWebmMfVp9Dec);
+  hr = decoder->Create(decoderDLL, CLSID_AMDWebmMfVp9Dec);
   NS_ENSURE_TRUE(SUCCEEDED(hr), nullptr);
   return decoder.forget();
 }
