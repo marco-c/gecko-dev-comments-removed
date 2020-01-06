@@ -464,9 +464,6 @@ protected:
   
   already_AddRefed<nsILoadInfo> CloneLoadInfoForRedirect(nsIURI *newURI, uint32_t redirectFlags);
 
-  static void CallTypeSniffers(void *aClosure, const uint8_t *aData,
-                               uint32_t aCount);
-
   friend class PrivateBrowsingChannel<HttpBaseChannel>;
   friend class InterceptFailedOnStop;
 

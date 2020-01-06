@@ -1322,6 +1322,20 @@ nsHttpChannel::SetupTransaction()
 
 
 
+static void
+CallTypeSniffers(void *aClosure, const uint8_t *aData, uint32_t aCount)
+{
+  nsIChannel *chan = static_cast<nsIChannel*>(aClosure);
+
+  nsAutoCString newType;
+  NS_SniffContent(NS_CONTENT_SNIFFER_CATEGORY, chan, aData, aCount, newType);
+  if (!newType.IsEmpty()) {
+    chan->SetContentType(newType);
+  }
+}
+
+
+
 void
 ReportTypeBlocking(nsIURI* aURI,
                    nsILoadInfo* aLoadInfo,
