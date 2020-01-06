@@ -195,9 +195,10 @@ PlatformInit(PSLockRef aLock)
 }
 
 void
-TickSample::PopulateContext()
+TickSample::PopulateContext(void* aContext)
 {
   MOZ_ASSERT(mIsSynchronous);
+  MOZ_ASSERT(!aContext);
 
   asm (
       
