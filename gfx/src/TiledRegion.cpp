@@ -140,7 +140,10 @@ public:
     MOZ_ASSERT(total > 0);
     
     
-    return ((uint64_t)total > (uint64_t)SIZE_MAX) ? SIZE_MAX : (size_t)total;
+    return static_cast<uint64_t>(total) >=
+               static_cast<uint64_t>(std::numeric_limits<size_t>::max())
+             ? std::numeric_limits<size_t>::max()
+             : static_cast<size_t>(total);
   }
 
   
