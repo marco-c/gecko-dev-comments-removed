@@ -154,11 +154,8 @@ add_task(async function test_settings_store() {
   }
 
   
-  await Assert.rejects(
-    ExtensionSettingsStore.removeSetting(
-      extensions[0], "myType", "unset_key"),
-    /Cannot alter the setting for myType:unset_key as it does not exist/,
-    "removeSetting rejects with an unset key.");
+  let removeResult = await ExtensionSettingsStore.removeSetting(extensions[0], "myType", "unset_key");
+  equal(removeResult, null, "Removing a setting that was not previously set returns null.");
 
   
   await Assert.rejects(
@@ -367,12 +364,8 @@ add_task(async function test_settings_store() {
       "getLevelOfControl returns correct levelOfControl after all are removed.");
 
     
-    let expectedMessage = new RegExp(`Cannot alter the setting for ${TEST_TYPE}:${key} as it does not exist`);
-    await Assert.rejects(
-      ExtensionSettingsStore.removeSetting(
-        extensions[1], TEST_TYPE, key),
-      expectedMessage,
-      "removeSetting rejects with an key that has all records removed.");
+    removeResult = await ExtensionSettingsStore.removeSetting(extensions[1], TEST_TYPE, key);
+    equal(removeResult, null, "Removing a setting that has had all extensions removed returns null.");
   }
 
   
