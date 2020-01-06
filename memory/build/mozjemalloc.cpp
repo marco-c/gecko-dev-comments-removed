@@ -107,18 +107,44 @@
 
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
+#include "mozjemalloc_types.h"
+
+#include <cstring>
+#include <cerrno>
+#ifdef XP_WIN
+#include <io.h>
+#include <windows.h>
+#else
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+#ifdef XP_DARWIN
+#include <libkern/OSAtomic.h>
+#include <mach/mach_init.h>
+#include <mach/vm_map.h>
+#endif
+
 #include "mozilla/Atomics.h"
 #include "mozilla/Alignment.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Sprintf.h"
+
+
+#include "mozilla/TaggedAnonymousMemory.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/fallible.h"
+#include "rb.h"
 #include "Utils.h"
+
+using namespace mozilla;
 
 
 
@@ -144,23 +170,7 @@
 #define MALLOC_DOUBLE_PURGE
 #endif
 
-#include <sys/types.h>
-
-#include <errno.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <algorithm>
-
-using namespace mozilla;
-
 #ifdef XP_WIN
-
-#include <io.h>
-#include <windows.h>
-#include <intrin.h>
 
 #define STDERR_FILENO 2
 
@@ -184,48 +194,14 @@ getenv(const char* name)
 #endif
 
 #ifndef XP_WIN
-#ifndef XP_SOLARIS
-#include <sys/cdefs.h>
-#endif
-#include <sys/mman.h>
 #ifndef MADV_FREE
 #define MADV_FREE MADV_DONTNEED
 #endif
 #ifndef MAP_NOSYNC
 #define MAP_NOSYNC 0
 #endif
-#include <sys/param.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#if !defined(XP_SOLARIS) && !defined(ANDROID)
-#include <sys/sysctl.h>
-#endif
-#include <sys/uio.h>
-
-#include <errno.h>
-#include <limits.h>
-#include <pthread.h>
-#include <sched.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#ifdef XP_DARWIN
-#include <libkern/OSAtomic.h>
-#include <mach/mach_error.h>
-#include <mach/mach_init.h>
-#include <mach/vm_map.h>
-#include <malloc/malloc.h>
 #endif
 
-#endif
-
-#include "mozilla/ThreadLocal.h"
-#include "mozjemalloc_types.h"
 
 
 
@@ -280,8 +256,6 @@ _mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 
 
 #define QUANTUM_2POW_MIN 4
-
-#include "rb.h"
 
 
 #ifndef SIZEOF_INT_2POW
@@ -1278,12 +1252,6 @@ _malloc_message(const char* p, Args... args)
   _malloc_message(p);
   _malloc_message(args...);
 }
-
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/TaggedAnonymousMemory.h"
-  
-  
 
 #ifdef ANDROID
 
