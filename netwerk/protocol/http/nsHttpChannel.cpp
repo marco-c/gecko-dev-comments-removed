@@ -485,6 +485,14 @@ nsHttpChannel::Connect()
         
     }
 
+    
+    
+    
+    
+    if (sRCWNEnabled && mCachedContentIsValid && mNetworkTriggered) {
+        Unused << ReadFromCache(true);
+    }
+
     return TriggerNetwork(0);
 }
 
