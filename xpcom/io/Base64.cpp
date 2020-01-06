@@ -244,7 +244,9 @@ EncodeInputStream(nsIInputStream* aInputStream,
 
 
 
+
 static const uint8_t kBase64DecodeTable[] = {
+
     255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 255, 255,
    255, 255, 255, 255, 255, 255, 255, 255,
@@ -267,6 +269,7 @@ static const uint8_t kBase64DecodeTable[] = {
    41, 42, 43, 44, 45, 46, 47, 48,
    49, 50, 51, 255, 255, 255, 255, 255,
 };
+
 
 template<typename T>
 MOZ_MUST_USE bool
@@ -291,6 +294,7 @@ static const char kBase64URLAlphabet[] =
 
 
 static const uint8_t kBase64URLDecodeTable[] = {
+
   255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255,
@@ -310,6 +314,7 @@ static const uint8_t kBase64URLDecodeTable[] = {
   42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 
   255, 255, 255, 255,
 };
+
 
 bool
 Base64URLCharToValue(char aChar, uint8_t* aValue) {
