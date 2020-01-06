@@ -15,6 +15,7 @@
 #include "FilterNodeD2D1.h"
 #include "ExtendInputEffectD2D1.h"
 #include "Tools.h"
+#include "nsAppRunner.h"
 
 using namespace std;
 
@@ -119,7 +120,10 @@ DrawTargetD2D1::EnsureLuminanceEffect()
 already_AddRefed<SourceSurface>
 DrawTargetD2D1::IntoLuminanceSource(LuminanceType aLuminanceType, float aOpacity)
 {
-  if (aLuminanceType != LuminanceType::LUMINANCE) {
+  if ((aLuminanceType != LuminanceType::LUMINANCE) ||
+      
+      
+      XRE_IsParentProcess()) {
     return DrawTarget::IntoLuminanceSource(aLuminanceType, aOpacity);
   }
 
