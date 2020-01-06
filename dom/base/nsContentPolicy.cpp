@@ -46,7 +46,6 @@ NS_NewContentPolicy(nsIContentPolicy **aResult)
 
 nsContentPolicy::nsContentPolicy()
     : mPolicies(NS_CONTENTPOLICY_CATEGORY)
-    , mSimplePolicies(NS_SIMPLECONTENTPOLICY_CATEGORY)
     , mMixedContentBlocker(do_GetService(NS_MIXEDCONTENTBLOCKER_CONTRACTID))
     , mCSPService(do_GetService(CSPSERVICE_CONTRACTID))
 {
@@ -76,7 +75,6 @@ nsContentPolicy::~nsContentPolicy()
 
 inline nsresult
 nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
-                             SCPMethod         simplePolicyMethod,
                              nsContentPolicyType contentType,
                              nsIURI           *contentLocation,
                              nsIURI           *requestingLocation,
@@ -173,58 +171,6 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
         }
     }
 
-    nsCOMPtr<nsIDOMElement> topFrameElement;
-    bool isTopLevel = true;
-
-    if (window) {
-        nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
-        nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
-        if (loadContext) {
-          loadContext->GetTopFrameElement(getter_AddRefs(topFrameElement));
-        }
-
-        MOZ_ASSERT(window->IsOuterWindow());
-
-        if (topFrameElement) {
-            nsCOMPtr<nsPIDOMWindowOuter> topWindow = window->GetScriptableTop();
-            isTopLevel = topWindow == window;
-        } else {
-            
-            
-            
-            
-            topFrameElement = do_QueryInterface(requestingContext);
-            isTopLevel = true;
-        }
-    }
-
-    const nsCOMArray<nsISimpleContentPolicy>& simpleEntries =
-        mSimplePolicies.GetCachedEntries();
-    count = simpleEntries.Count();
-    for (int32_t i = 0; i < count; i++) {
-        
-        rv = (simpleEntries[i]->*simplePolicyMethod)(externalType, contentLocation,
-                                                     requestingLocation,
-                                                     topFrameElement, isTopLevel,
-                                                     mimeType, extra, requestPrincipal,
-                                                     decision);
-
-        if (NS_SUCCEEDED(rv) && NS_CP_REJECTED(*decision)) {
-            
-            
-            if (externalType == nsIContentPolicy::TYPE_IMAGE ||
-                externalType == nsIContentPolicy::TYPE_IMAGESET) {
-              nsCOMPtr<nsIImageLoadingContent> img =
-                do_QueryInterface(requestingContext);
-              if (img) {
-                img->SetBlockedRequest(*decision);
-              }
-            }
-            
-            return NS_OK;
-        }
-    }
-
     
     *decision = nsIContentPolicy::ACCEPT;
     return NS_OK;
@@ -266,7 +212,6 @@ nsContentPolicy::ShouldLoad(uint32_t          contentType,
     
     NS_PRECONDITION(contentLocation, "Must provide request location");
     nsresult rv = CheckPolicy(&nsIContentPolicy::ShouldLoad,
-                              &nsISimpleContentPolicy::ShouldLoad,
                               contentType,
                               contentLocation, requestingLocation,
                               requestingContext, mimeType, extra,
@@ -287,7 +232,6 @@ nsContentPolicy::ShouldProcess(uint32_t          contentType,
                                int16_t          *decision)
 {
     nsresult rv = CheckPolicy(&nsIContentPolicy::ShouldProcess,
-                              &nsISimpleContentPolicy::ShouldProcess,
                               contentType,
                               contentLocation, requestingLocation,
                               requestingContext, mimeType, extra,

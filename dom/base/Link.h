@@ -14,7 +14,7 @@
 #include "mozilla/IHistory.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsIContent.h" 
-#include "nsIContentPolicyBase.h"
+#include "nsIContentPolicy.h"
 
 namespace mozilla {
 

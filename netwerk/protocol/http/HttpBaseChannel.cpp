@@ -3950,7 +3950,7 @@ HttpBaseChannel::GetPerformance()
   }
 
   
-  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicyBase::TYPE_DOCUMENT) {
+  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
     return nullptr;
   }
 

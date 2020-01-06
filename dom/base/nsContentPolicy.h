@@ -8,7 +8,6 @@
 #define __nsContentPolicy_h__
 
 #include "nsIContentPolicy.h"
-#include "nsISimpleContentPolicy.h"
 #include "nsCategoryCache.h"
 
 
@@ -29,18 +28,16 @@ class nsContentPolicy : public nsIContentPolicy
  private:
     
     nsCategoryCache<nsIContentPolicy> mPolicies;
-    nsCategoryCache<nsISimpleContentPolicy> mSimplePolicies;
 
     nsCOMPtr<nsIContentPolicy> mMixedContentBlocker;
     nsCOMPtr<nsIContentPolicy> mCSPService;
 
     
     typedef decltype(&nsIContentPolicy::ShouldProcess) CPMethod;
-    typedef decltype(&nsISimpleContentPolicy::ShouldProcess) SCPMethod;
 
     
     
-    nsresult CheckPolicy(CPMethod policyMethod, SCPMethod simplePolicyMethod,
+    nsresult CheckPolicy(CPMethod policyMethod,
                          nsContentPolicyType contentType,
                          nsIURI *aURI, nsIURI *origURI,
                          nsISupports *requestingContext,
