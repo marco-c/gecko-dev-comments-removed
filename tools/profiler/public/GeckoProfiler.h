@@ -98,7 +98,8 @@ using UniqueProfilerBacktrace =
 
 
 
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) do {} while (0)
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
+  do {} while (0)
 
 
 
@@ -128,20 +129,20 @@ using UniqueProfilerBacktrace =
 #define PROFILER_LABEL(name_space, info, category) \
   PROFILER_PLATFORM_TRACING(name_space "::" info) \
   mozilla::ProfilerStackFrameRAII \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, category, \
-                                             __LINE__)
+  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, nullptr, \
+                                             __LINE__, category)
 
 #define PROFILER_LABEL_FUNC(category) \
   PROFILER_PLATFORM_TRACING(PROFILER_FUNCTION_NAME) \
   mozilla::ProfilerStackFrameRAII \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(PROFILER_FUNCTION_NAME, category, \
-                                             __LINE__)
+  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(PROFILER_FUNCTION_NAME, nullptr, \
+                                             __LINE__, category)
 
-#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) \
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, dynamicStr) \
   PROFILER_PLATFORM_TRACING(name_space "::" info) \
-  mozilla::ProfilerStackFrameDynamicRAII \
-  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, category, \
-                                             __LINE__, str)
+  mozilla::ProfilerStackFrameRAII \
+  PROFILER_APPEND_LINE_NUMBER(profiler_raii)(name_space "::" info, dynamicStr, \
+                                             __LINE__, category)
 
 #define PROFILER_MARKER(marker_name) profiler_add_marker(marker_name)
 #define PROFILER_MARKER_PAYLOAD(marker_name, payload) \
@@ -411,47 +412,6 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) sPseudoStack;
 
 
 
-
-
-
-
-
-
-
-inline void*
-profiler_call_enter(const char* aLabel, js::ProfileEntry::Category aCategory,
-                    void* aFrameAddress, uint32_t aLine,
-                    const char* aDynamicString = nullptr)
-{
-  
-
-  PseudoStack* pseudoStack = sPseudoStack.get();
-  if (!pseudoStack) {
-    return pseudoStack;
-  }
-  pseudoStack->pushCppFrame(aLabel, aDynamicString, aFrameAddress, aLine,
-                            js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
-
-  
-  
-  return pseudoStack;
-}
-
-inline void
-profiler_call_exit(void* aHandle)
-{
-  
-
-  if (!aHandle) {
-    return;
-  }
-
-  PseudoStack* pseudoStack = static_cast<PseudoStack*>(aHandle);
-  pseudoStack->pop();
-}
-
-
-
 void profiler_add_marker(const char* aMarkerName,
                          ProfilerMarkerPayload* aPayload = nullptr);
 
@@ -507,41 +467,41 @@ void profiler_add_marker(const char* aMarkerName,
 
 namespace mozilla {
 
+
+
+
+
 class MOZ_RAII ProfilerStackFrameRAII {
 public:
-  
-  
-  ProfilerStackFrameRAII(const char* aLabel,
-    js::ProfileEntry::Category aCategory, uint32_t aLine
-    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  ProfilerStackFrameRAII(const char* aLabel, const char* aDynamicString,
+                         uint32_t aLine, js::ProfileEntry::Category aCategory
+                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    mHandle = profiler_call_enter(aLabel, aCategory, this, aLine);
+
+    
+
+    mPseudoStack = sPseudoStack.get();
+    if (mPseudoStack) {
+      mPseudoStack->pushCppFrame(aLabel, aDynamicString, this, aLine,
+                                js::ProfileEntry::Kind::CPP_NORMAL, aCategory);
+    }
   }
-  ~ProfilerStackFrameRAII() {
-    profiler_call_exit(mHandle);
+
+  ~ProfilerStackFrameRAII()
+  {
+    
+
+    if (mPseudoStack) {
+      mPseudoStack->pop();
+    }
   }
+
 private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  void* mHandle;
-};
-
-class MOZ_RAII ProfilerStackFrameDynamicRAII {
-public:
-  ProfilerStackFrameDynamicRAII(const char* aLabel,
-    js::ProfileEntry::Category aCategory, uint32_t aLine,
-    const char* aDynamicString)
-  {
-    mHandle = profiler_call_enter(aLabel, aCategory, this, aLine,
-                                  aDynamicString);
-  }
-
-  ~ProfilerStackFrameDynamicRAII() {
-    profiler_call_exit(mHandle);
-  }
-
-private:
-  void* mHandle;
+  
+  
+  PseudoStack* mPseudoStack;
 };
 
 } 
