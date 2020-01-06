@@ -405,8 +405,6 @@ PROFILER_FUNC_VOID(profiler_js_interrupt_callback())
 
 PROFILER_FUNC(double profiler_time(), 0)
 
-PROFILER_FUNC_VOID(profiler_log(const char* aStr))
-
 PROFILER_FUNC(int profiler_current_thread_id(), 0)
 
 

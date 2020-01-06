@@ -376,8 +376,6 @@ TEST(GeckoProfiler, Markers)
 
   {
     AutoProfilerTracing tracing("C", "A");
-
-    profiler_log("X");  
   }
 
   profiler_add_marker("M1");
