@@ -64,7 +64,6 @@ var SidebarUI = {
     if (!enumerator.hasMoreElements()) {
       document.persist("sidebar-box", "sidebarcommand");
       document.persist("sidebar-box", "width");
-      document.persist("sidebar-box", "src");
       document.persist("sidebar-title", "value");
     }
   },
@@ -169,27 +168,16 @@ var SidebarUI = {
     }
 
     let commandID = sourceUI._box.getAttribute("sidebarcommand");
-    let commandElem = document.getElementById(commandID);
 
     
     
-    if (!commandElem) {
+    if (!document.getElementById(commandID)) {
       return true;
     }
 
-    this._title.setAttribute("value",
-                             sourceUI._title.getAttribute("value"));
     this._box.setAttribute("width", sourceUI._box.boxObject.width);
+    this._show(commandID);
 
-    this._box.setAttribute("sidebarcommand", commandID);
-    
-    
-    
-    this._box.setAttribute("src", sourceUI.browser.getAttribute("src"));
-
-    this._setVisibility(true);
-    commandElem.setAttribute("checked", "true");
-    this.browser.setAttribute("src", this._box.getAttribute("src"));
     return true;
   },
 
@@ -222,11 +210,8 @@ var SidebarUI = {
       return;
     }
 
-    let command = document.getElementById(commandID);
-    if (command) {
-      this._setVisibility(true);
-      command.setAttribute("checked", "true");
-      this.browser.setAttribute("src", this._box.getAttribute("src"));
+    if (document.getElementById(commandID)) {
+      this._show(commandID);
     } else {
       
       
@@ -307,7 +292,21 @@ var SidebarUI = {
 
 
 
+
+
   show(commandID) {
+    return this._show(commandID).then(() => {
+      BrowserUITelemetry.countSidebarEvent(commandID, "show");
+    });
+  },
+
+  
+
+
+
+
+
+  _show(commandID) {
     return new Promise((resolve, reject) => {
       let sidebarBroadcaster = document.getElementById(commandID);
       if (!sidebarBroadcaster || sidebarBroadcaster.localName != "broadcaster") {
@@ -341,21 +340,18 @@ var SidebarUI = {
       this._box.setAttribute("sidebarcommand", sidebarBroadcaster.id);
       this.lastOpenedId = sidebarBroadcaster.id;
 
-      let title = sidebarBroadcaster.getAttribute("sidebartitle");
-      if (!title) {
-        title = sidebarBroadcaster.getAttribute("label");
+      let title = sidebarBroadcaster.getAttribute("sidebartitle") ||
+                  sidebarBroadcaster.getAttribute("label");
+
+      
+      
+      
+      if (title) {
+        this._title.value = title;
       }
-      this._title.value = title;
 
       let url = sidebarBroadcaster.getAttribute("sidebarurl");
       this.browser.setAttribute("src", url); 
-
-      
-      
-      
-      
-      
-      this._box.setAttribute("src", url);
 
       if (this.browser.contentDocument.location.href != url) {
         this.browser.addEventListener("load", event => {
@@ -380,7 +376,6 @@ var SidebarUI = {
       selBrowser.messageManager.sendAsyncMessage("Sidebar:VisibilityChange",
         {commandID, isOpen: true}
       );
-      BrowserUITelemetry.countSidebarEvent(commandID, "show");
     });
   },
 
