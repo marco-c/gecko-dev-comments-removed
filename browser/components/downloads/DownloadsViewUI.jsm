@@ -407,6 +407,7 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
 
         
         return this.download.target.exists;
+      case "downloadsCmd_delete":
       case "cmd_delete":
         
         return this.download.stopped;
@@ -466,6 +467,13 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     let targetPath = this.download.target.path ?
                      OS.Path.basename(this.download.target.path) : null;
     window.DownloadURL(this.download.source.url, targetPath, document);
+  },
+
+  downloadsCmd_delete() {
+    
+    
+    
+    this.cmd_delete();
   },
 
   cmd_delete() {
