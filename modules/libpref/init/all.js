@@ -313,6 +313,18 @@ pref("media.cache_resume_threshold", 30);
 pref("media.cache_readahead_limit", 60);
 
 
+
+
+
+
+pref("media.throttle-factor", 2);
+
+
+
+
+pref("media.throttle-regardless-of-download-rate", false);
+
+
 pref("media.volume_scale", "1.0");
 
 

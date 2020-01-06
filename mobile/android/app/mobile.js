@@ -600,6 +600,9 @@ pref("media.cache_resume_threshold", 10);
 pref("media.cache_readahead_limit", 30);
 
 
+pref("media.throttle-regardless-of-download-rate", true);
+
+
 
 
 

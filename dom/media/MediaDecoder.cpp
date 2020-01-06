@@ -1052,6 +1052,29 @@ MediaDecoder::NotifySuspendedStatusChanged()
   }
 }
 
+bool
+MediaDecoder::ShouldThrottleDownload()
+{
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_TRUE(mDecoderStateMachine, false);
+
+  if (Preferences::GetBool("media.throttle-regardless-of-download-rate",
+                           false)) {
+    return true;
+  }
+
+  MediaStatistics stats = GetStatistics();
+  if (!stats.mDownloadRateReliable || !stats.mPlaybackRateReliable) {
+    return false;
+  }
+  uint32_t factor =
+    std::max(2u, Preferences::GetUint("media.throttle-factor", 2));
+  return stats.mDownloadRate > factor * stats.mPlaybackRate;
+}
+
 void
 MediaDecoder::NotifyBytesDownloaded()
 {
@@ -1059,7 +1082,7 @@ MediaDecoder::NotifyBytesDownloaded()
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   UpdatePlaybackRate();
   GetOwner()->DownloadProgressed();
-  mResource->ThrottleReadahead(CanPlayThrough());
+  mResource->ThrottleReadahead(ShouldThrottleDownload());
 }
 
 void

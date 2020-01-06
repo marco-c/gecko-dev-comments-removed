@@ -642,6 +642,8 @@ protected:
 
   void OnMetadataUpdate(TimedMetadata&& aMetadata);
 
+  bool ShouldThrottleDownload();
+
   
   
   
