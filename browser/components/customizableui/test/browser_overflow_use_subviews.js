@@ -3,9 +3,10 @@
 const kOverflowPanel = document.getElementById("widget-overflow");
 
 var gOriginalWidth;
-registerCleanupFunction(function*() {
+registerCleanupFunction(async function() {
   kOverflowPanel.removeAttribute("animate");
   window.resizeTo(gOriginalWidth, window.outerHeight);
+  await waitForCondition(() => !document.getElementById("nav-bar").hasAttribute("overflowing"));
   CustomizableUI.reset();
 });
 
@@ -14,7 +15,7 @@ registerCleanupFunction(function*() {
 
 
 
-add_task(async function check_character_encoding_subview_in_overflow() {
+add_task(async function check_developer_subview_in_overflow() {
   kOverflowPanel.setAttribute("animate", "false");
   gOriginalWidth = window.outerWidth;
 
@@ -39,8 +40,6 @@ add_task(async function check_character_encoding_subview_in_overflow() {
   is(developerView.closest("panel"), kOverflowPanel, "Should be inside the panel");
   kOverflowPanel.hidePopup();
   await Promise.resolve(); 
-
-  CustomizableUI.reset();
 });
 
 
