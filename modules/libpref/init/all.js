@@ -181,6 +181,9 @@ pref("dom.performance.enable_notify_performance_timing", false);
 pref("dom.permissions.revoke.enable", false);
 
 
+pref("dom.performance.time_to_non_blank_paint.enabled", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("dom.enable_performance_observer", true);
 #else
@@ -695,7 +698,6 @@ pref("apz.fling_friction", "0.002");
 pref("apz.fling_min_velocity_threshold", "0.5");
 pref("apz.fling_stop_on_tap_threshold", "0.05");
 pref("apz.fling_stopped_threshold", "0.01");
-pref("apz.frame_delay.enabled", false);
 pref("apz.highlight_checkerboarded_areas", false);
 pref("apz.keyboard.enabled", false);
 pref("apz.max_velocity_inches_per_ms", "-1.0");
@@ -703,7 +705,6 @@ pref("apz.max_velocity_queue_size", 5);
 pref("apz.min_skate_speed", "1.0");
 pref("apz.minimap.enabled", false);
 pref("apz.minimap.visibility.enabled", false);
-pref("apz.one_touch_pinch.enabled", true);
 pref("apz.overscroll.enabled", false);
 pref("apz.overscroll.min_pan_distance_ratio", "1.0");
 pref("apz.overscroll.spring_friction", "0.015");
