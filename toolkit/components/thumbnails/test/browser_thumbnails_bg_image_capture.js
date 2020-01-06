@@ -9,6 +9,15 @@ const BASE_URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/"
 
 
 function* runTests() {
+  
+  
+  const emptyUrl = "data:text/plain,";
+  yield bgCapture(emptyUrl, {isImage: true, onDone: (url, reason) => {
+    
+    is(reason, 6, "Should have the right failure reason");
+    next();
+  }});
+
   for (const {url, color, width, height} of [{
     url: BASE_URL + "test/sample_image_red_1920x1080.jpg",
     color: [255, 0, 0],

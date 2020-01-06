@@ -119,18 +119,16 @@ this.PageThumbUtils = {
 
 
 
-  async createImageThumbnailCanvas(window, url, targetWidth = 448) {
+  async createImageThumbnailCanvas(window, url, targetWidth = 448, backgroundColor = this.THUMBNAIL_BG_COLOR) {
     
     const doc = (window || Services.appShell.hiddenDOMWindow).document;
 
     let image = doc.querySelector("img");
-    if (!image || image.src !== url) {
+    if (!image) {
       image = doc.createElementNS(this.HTML_NAMESPACE, "img");
-    }
-    if (!image.complete) {
-      await new Promise(resolve => {
+      await new Promise((resolve, reject) => {
         image.onload = () => resolve();
-        image.onerror = () => { throw new Error("Image failed to load"); }
+        image.onerror = () => reject(new Error("LOAD_FAILED"));
         image.src = url;
       });
     }
@@ -139,7 +137,7 @@ this.PageThumbUtils = {
     const imageWidth = image.naturalWidth || image.width;
     const imageHeight = image.naturalHeight || image.height;
     if (imageWidth === 0 || imageHeight === 0) {
-      throw new Error("Image has zero dimension");
+      throw new Error("IMAGE_ZERO_DIMENSION");
     }
     const width = Math.min(targetWidth, imageWidth);
     const height = imageHeight * width / imageWidth;
@@ -150,8 +148,12 @@ this.PageThumbUtils = {
     
     
     
-    const canvas = this.createCanvas(window, width, Math.min(height, width));
-    canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+    const canvasHeight = Math.min(height, width);
+    const canvas = this.createCanvas(window, width, canvasHeight);
+    const context = canvas.getContext("2d");
+    context.fillStyle = backgroundColor;
+    context.fillRect(0, 0, width, canvasHeight);
+    context.drawImage(image, 0, 0, width, height);
     return canvas;
   },
 

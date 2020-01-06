@@ -29,12 +29,16 @@ const TEL_CAPTURE_DONE_TIMEOUT = 1;
 
 const TEL_CAPTURE_DONE_CRASHED = 4;
 const TEL_CAPTURE_DONE_BAD_URI = 5;
+const TEL_CAPTURE_DONE_LOAD_FAILED = 6;
+const TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION = 7;
 
 
 XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_OK", TEL_CAPTURE_DONE_OK);
 XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_TIMEOUT", TEL_CAPTURE_DONE_TIMEOUT);
 XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_CRASHED", TEL_CAPTURE_DONE_CRASHED);
 XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_BAD_URI", TEL_CAPTURE_DONE_BAD_URI);
+XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_LOAD_FAILED", TEL_CAPTURE_DONE_LOAD_FAILED);
+XPCOMUtils.defineConstant(this, "TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION", TEL_CAPTURE_DONE_IMAGE_ZERO_DIMENSION);
 
 XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
                                   "resource://gre/modules/ContextualIdentityService.jsm");
@@ -43,6 +47,8 @@ const global = this;
 const BackgroundPageThumbs = {
 
   
+
+
 
 
 
@@ -406,8 +412,13 @@ Capture.prototype = {
 
     
     this._msgMan = messageManager;
-    this._msgMan.sendAsyncMessage("BackgroundPageThumbs:capture",
-                                  { id: this.id, url: this.url, isImage: this.options.isImage });
+    this._msgMan.sendAsyncMessage("BackgroundPageThumbs:capture", {
+      id: this.id,
+      url: this.url,
+      isImage: this.options.isImage,
+      targetWidth: this.options.targetWidth,
+      backgroundColor: this.options.backgroundColor
+    });
     this._msgMan.addMessageListener("BackgroundPageThumbs:didCapture", this);
   },
 
@@ -480,7 +491,7 @@ Capture.prototype = {
       captureCallback(this);
       for (let callback of doneCallbacks) {
         try {
-          callback.call(options, this.url);
+          callback.call(options, this.url, this.doneReason);
         } catch (err) {
           Cu.reportError(err);
         }
