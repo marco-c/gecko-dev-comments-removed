@@ -7,7 +7,6 @@
 this.EXPORTED_SYMBOLS = ["ContentRestore"];
 
 const Cu = Components.utils;
-const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
@@ -25,33 +24,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "SessionStorage",
   "resource:///modules/sessionstore/SessionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
-
-const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
-              .getService(Ci.nsISessionStoreUtils);
-
-
-
-
-
-
-function restoreFrameTreeData(frame, data, cb) {
-  
-  
-  if (cb(frame, data) === false) {
-    return;
-  }
-
-  if (!data.hasOwnProperty("children")) {
-    return;
-  }
-
-  
-  ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
-    if (data.children[index]) {
-      restoreFrameTreeData(subframe, data.children[index], cb);
-    }
-  });
-}
 
 
 
@@ -322,20 +294,8 @@ ContentRestoreInternal.prototype = {
     let window = this.docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                .getInterface(Ci.nsIDOMWindow);
 
-    
-    restoreFrameTreeData(window, formdata, (frame, data) => {
-      
-      
-      
-      return FormData.restore(frame, data);
-    });
-
-    
-    restoreFrameTreeData(window, scrollPositions, (frame, data) => {
-      if (data.scroll) {
-        ScrollPosition.restore(frame, data.scroll);
-      }
-    });
+    FormData.restoreTree(window, formdata);
+    ScrollPosition.restoreTree(window, scrollPositions);
   },
 
   

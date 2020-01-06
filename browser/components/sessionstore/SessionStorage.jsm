@@ -7,7 +7,6 @@
 this.EXPORTED_SYMBOLS = ["SessionStorage"];
 
 const Cu = Components.utils;
-const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 Cu.import("resource://gre/modules/Services.jsm");
@@ -15,9 +14,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "console",
   "resource://gre/modules/Console.jsm");
-
-const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
-              .createInstance(Ci.nsISessionStoreUtils);
 
 
 const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
@@ -58,19 +54,6 @@ this.SessionStorage = Object.freeze({
   },
 });
 
-
-
-
-function forEachNonDynamicChildFrame(frame, cb) {
-  
-  cb(frame);
-
-  
-  ssu.forEachNonDynamicChildFrame(frame, subframe => {
-    return forEachNonDynamicChildFrame(subframe, cb);
-  });
-}
-
 var SessionStorageInternal = {
   
 
@@ -80,14 +63,13 @@ var SessionStorageInternal = {
 
 
 
-  collect(content) {
+
+
+  collect(docShell, frameTree) {
     let data = {};
     let visitedOrigins = new Set();
-    let docShell = content.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIWebNavigation)
-                          .QueryInterface(Ci.nsIDocShell);
 
-    forEachNonDynamicChildFrame(content, frame => {
+    frameTree.forEach(frame => {
       let principal = getPrincipalForFrame(docShell, frame);
       if (!principal) {
         return;
