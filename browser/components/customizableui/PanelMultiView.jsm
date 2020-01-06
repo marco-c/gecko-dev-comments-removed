@@ -1032,35 +1032,6 @@ this.PanelMultiView = class {
         const EXTRA_MARGIN_PX = 20;
         maxHeight -= EXTRA_MARGIN_PX;
         this._viewStack.style.maxHeight = maxHeight + "px";
-
-        
-        
-        
-        
-        
-        
-        let mainView = this._mainView;
-        if (mainView && mainView.hasAttribute("blockinboxworkaround")) {
-          let blockInBoxWorkaround = () => {
-            let mainViewHeight =
-                this._dwu.getBoundsWithoutFlushing(mainView).height;
-            if (mainViewHeight > maxHeight) {
-              mainView.style.height = maxHeight + "px";
-              mainView.setAttribute("exceeding", "true");
-            }
-          };
-          
-          
-          
-          if (AppConstants.platform == "win") {
-            
-            
-            this._panel.addEventListener("popupshown", blockInBoxWorkaround,
-                                         { once: true });
-          } else {
-            blockInBoxWorkaround();
-          }
-        }
         break;
       }
       case "popupshown":
@@ -1097,13 +1068,6 @@ this.PanelMultiView = class {
           this._viewContainer.style.removeProperty("max-width");
         }
 
-        
-        
-        let mainView = this._mainView;
-        if (mainView && mainView.hasAttribute("blockinboxworkaround")) {
-          mainView.style.removeProperty("height");
-          mainView.removeAttribute("exceeding");
-        }
         this._dispatchViewEvent(this.node, "PanelMultiViewHidden");
         break;
       }
