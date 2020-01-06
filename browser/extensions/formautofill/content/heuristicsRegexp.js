@@ -202,5 +202,65 @@ var HeuristicsRegExp = {
       "|\\b성(?:[^명]|\\b)",                  
       "iu"
     ),
+
+    
+    "cc-name": new RegExp(
+      "card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
+      "|(?:card|cc).?name|cc.?full.?name" +
+      "|karteninhaber" +                  
+      "|nombre.*tarjeta" +                
+      "|nom.*carte" +                     
+      "|nome.*cart" +                     
+      "|名前" +                           
+      "|Имя.*карты" +                     
+      "|信用卡开户名|开户名|持卡人姓名" + 
+      "|持卡人姓名",                      
+      "iu"
+    ),
+    "cc-number": new RegExp(
+      "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
+      "|nummer" +                
+      "|credito|numero|número" + 
+      "|numéro" +                
+      "|カード番号" +            
+      "|Номер.*карты" +          
+      "|信用卡号|信用卡号码" +   
+      "|信用卡卡號" +            
+      "|카드",                   
+      "iu"
+    ),
+    "cc-exp-month": new RegExp(
+      "expir|exp.*mo|exp.*date|ccmonth|cardmonth|addmonth" +
+      "|gueltig|gültig|monat" + 
+      "|fecha" +                
+      "|date.*exp" +            
+      "|scadenza" +             
+      "|有効期限" +             
+      "|validade" +             
+      "|Срок действия карты" +  
+      "|月",                    
+      "iu"
+    ),
+    "cc-exp-year": new RegExp(
+      "exp|^/|(add)?year" +
+      "|ablaufdatum|gueltig|gültig|jahr" + 
+      "|fecha" +                           
+      "|scadenza" +                        
+      "|有効期限" +                        
+      "|validade" +                        
+      "|Срок действия карты" +             
+      "|年|有效期",                        
+      "iu"
+    ),
+    "cc-exp": new RegExp(
+      "expir|exp.*date|^expfield$" +
+      "|gueltig|gültig" +     
+      "|fecha" +              
+      "|date.*exp" +          
+      "|scadenza" +           
+      "|有効期限" +           
+      "|validade" +           
+      "|Срок действия карты", 
+    ),
   },
 };
