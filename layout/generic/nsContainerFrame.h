@@ -650,6 +650,16 @@ protected:
   void PushChildren(nsIFrame* aFromChild, nsIFrame* aPrevSibling);
 
   
+
+
+
+
+
+  static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,
+                                           nsIFrame* aFrame,
+                                           bool aReparentSiblings);
+
+  
   
 
 

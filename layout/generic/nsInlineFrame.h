@@ -158,15 +158,6 @@ protected:
                          nsIFrame* aFrame,
                          nsReflowStatus& aStatus);
 
-  
-
-
-
-
-
-  void ReparentFloatsForInlineChild(nsIFrame* aOurBlock, nsIFrame* aFrame,
-                                    bool aReparentSiblings);
-
   virtual nsIFrame* PullOneFrame(nsPresContext* aPresContext,
                                  InlineReflowInput& rs,
                                  bool* aIsComplete);
