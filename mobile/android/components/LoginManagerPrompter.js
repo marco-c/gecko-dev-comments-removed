@@ -8,7 +8,11 @@ const Cr = Components.results;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  DoorHanger: "resource://gre/modules/Prompt.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 
 
@@ -39,22 +43,6 @@ LoginManagerPrompter.prototype = {
   _factory: null,
   _window: null,
   _debug: false, 
-
-  __pwmgr: null, 
-  get _pwmgr() {
-    if (!this.__pwmgr)
-      this.__pwmgr = Cc["@mozilla.org/login-manager;1"].
-                     getService(Ci.nsILoginManager);
-    return this.__pwmgr;
-  },
-
-  __promptService: null, 
-  get _promptService() {
-    if (!this.__promptService)
-      this.__promptService = Cc["@mozilla.org/embedcomp/prompt-service;1"].
-                             getService(Ci.nsIPromptService2);
-    return this.__promptService;
-  },
 
   __strBundle: null, 
   get _strBundle() {
@@ -105,7 +93,7 @@ LoginManagerPrompter.prototype = {
 
 
   init: function(aWindow, aFactory) {
-    this._chromeWindow = this._getChromeWindow(aWindow).wrappedJSObject;
+    this._window = aWindow;
     this._factory = aFactory || null;
     this._browser = null;
 
@@ -146,8 +134,6 @@ LoginManagerPrompter.prototype = {
 
 
   _showLoginNotification: function(aBody, aButtons, aUsername, aPassword) {
-    let tabID = this._chromeWindow.BrowserApp.getTabForBrowser(this._browser).id;
-
     let actionText = {
       text: aUsername,
       type: "EDIT",
@@ -168,9 +154,8 @@ LoginManagerPrompter.prototype = {
       actionText: actionText
     }
 
-    var nativeWindow = this._getNativeWindow();
-    if (nativeWindow)
-      nativeWindow.doorhanger.show(aBody, "password", aButtons, tabID, options, "LOGIN");
+    let win = (this._browser && this._browser.contentWindow) || this._window;
+    DoorHanger.show(win, aBody, "password", aButtons, options, "LOGIN");
   },
 
   
@@ -190,7 +175,7 @@ LoginManagerPrompter.prototype = {
     
     
     
-    var pwmgr = this._pwmgr;
+    var pwmgr = Services.logins;
     let promptHistogram = Services.telemetry.getHistogramById("PWMGR_PROMPT_REMEMBER_ACTION");
 
     var buttons = [
@@ -248,9 +233,6 @@ LoginManagerPrompter.prototype = {
       notificationText  = this._getLocalizedString("updatePasswordNoUser");
     }
 
-    
-    
-    
     var self = this;
     let promptHistogram = Services.telemetry.getHistogramById("PWMGR_PROMPT_UPDATE_ACTION");
 
@@ -300,7 +282,7 @@ LoginManagerPrompter.prototype = {
 
     
     
-    var ok = this._promptService.select(null,
+    var ok = Services.prompt.select(null,
       dialogTitle, dialogText,
       usernames.length, usernames,
       selectedIndex);
@@ -330,45 +312,7 @@ LoginManagerPrompter.prototype = {
     }
     propBag.setProperty("timeLastUsed", now);
     propBag.setProperty("timesUsedIncrement", 1);
-    this._pwmgr.modifyLogin(login, propBag);
-  },
-
-  
-
-
-
-
-  _getChromeWindow: function(aWindow) {
-    if (aWindow instanceof Ci.nsIDOMChromeWindow)
-      return aWindow;
-    var chromeWin = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebNavigation)
-      .QueryInterface(Ci.nsIDocShell)
-      .chromeEventHandler.ownerGlobal;
-    return chromeWin;
-  },
-
-  
-
-
-
-
-
-  _getNativeWindow: function() {
-    let nativeWindow = null;
-    try {
-      let chromeWin = this._chromeWindow;
-      if (chromeWin.NativeWindow) {
-        nativeWindow = chromeWin.NativeWindow;
-      } else {
-        Cu.reportError("NativeWindow not available on window");
-      }
-
-    } catch (e) {
-      
-      Cu.reportError("No NativeWindow available: " + e);
-    }
-    return nativeWindow;
+    Services.logins.modifyLogin(login, propBag);
   },
 
   
