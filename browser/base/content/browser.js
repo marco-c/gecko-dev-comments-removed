@@ -1498,9 +1498,6 @@ var gBrowserInit = {
       }
     }
 
-    
-    setTimeout(function() { SafeBrowsing.init(); }, 2000);
-
     Services.obs.addObserver(gIdentityHandler, "perm-changed");
     Services.obs.addObserver(gRemoteControl, "remote-active");
     Services.obs.addObserver(gSessionHistoryObserver, "browser:purge-session-history");
@@ -4991,6 +4988,16 @@ var CombinedStopReload = {
     });
   },
 
+  
+
+
+  setAnimationImageHeightRelativeToToolbarButtonHeight() {
+    let dwu = window.getInterface(Ci.nsIDOMWindowUtils);
+    let toolbarItem = this.stopReloadContainer.closest(".customization-target > toolbaritem");
+    let bounds = dwu.getBoundsWithoutFlushing(toolbarItem);
+    toolbarItem.style.setProperty("--toolbarbutton-height", bounds.height + "px");
+  },
+
   switchToStop(aRequest, aWebProgress) {
     if (!this._initialized || !this._shouldSwitch(aRequest))
       return;
@@ -5002,10 +5009,12 @@ var CombinedStopReload = {
                         this.animate;
 
     this._cancelTransition();
-    if (shouldAnimate)
+    if (shouldAnimate) {
+      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
       this.stopReloadContainer.setAttribute("animate", "true");
-    else
+    } else {
       this.stopReloadContainer.removeAttribute("animate");
+    }
     this.reload.setAttribute("displaystop", "true");
   },
 
@@ -5020,10 +5029,12 @@ var CombinedStopReload = {
                         !aWebProgress.isLoadingDocument &&
                         this.animate;
 
-    if (shouldAnimate)
+    if (shouldAnimate) {
+      this.setAnimationImageHeightRelativeToToolbarButtonHeight();
       this.stopReloadContainer.setAttribute("animate", "true");
-    else
+    } else {
       this.stopReloadContainer.removeAttribute("animate");
+    }
 
     this.reload.removeAttribute("displaystop");
 
