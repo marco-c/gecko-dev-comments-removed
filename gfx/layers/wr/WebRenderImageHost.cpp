@@ -28,6 +28,7 @@ WebRenderImageHost::WebRenderImageHost(const TextureInfo& aTextureInfo)
   : CompositableHost(aTextureInfo)
   , ImageComposite()
   , mWrBridge(nullptr)
+  , mWrBridgeBindings(0)
 {}
 
 WebRenderImageHost::~WebRenderImageHost()
@@ -279,8 +280,25 @@ WebRenderImageHost::GetImageSize() const
 void
 WebRenderImageHost::SetWrBridge(WebRenderBridgeParent* aWrBridge)
 {
-  SetCurrentTextureHost(nullptr);
+  
+  
+  
+  
+  MOZ_ASSERT(aWrBridge);
+  MOZ_ASSERT(!mWrBridge || mWrBridge == aWrBridge);
   mWrBridge = aWrBridge;
+  ++mWrBridgeBindings;
+}
+
+void
+WebRenderImageHost::ClearWrBridge()
+{
+  MOZ_ASSERT(mWrBridgeBindings > 0);
+  --mWrBridgeBindings;
+  if (mWrBridgeBindings == 0) {
+    SetCurrentTextureHost(nullptr);
+    mWrBridge = nullptr;
+  }
 }
 
 } 
