@@ -162,8 +162,16 @@
 
 
 
-#define CREATE_UPDATEHOSTS_TEMP NS_LITERAL_CSTRING( \
-  "CREATE TEMP TABLE moz_updatehosts_temp (" \
+#define CREATE_UPDATEHOSTSDELETE_TEMP NS_LITERAL_CSTRING( \
+  "CREATE TEMP TABLE moz_updatehostsdelete_temp (" \
+    "  host TEXT PRIMARY KEY " \
+  ") WITHOUT ROWID " \
+)
+
+
+
+#define CREATE_UPDATEHOSTSINSERT_TEMP NS_LITERAL_CSTRING( \
+  "CREATE TEMP TABLE moz_updatehostsinsert_temp (" \
     "  host TEXT PRIMARY KEY " \
   ") WITHOUT ROWID " \
 )

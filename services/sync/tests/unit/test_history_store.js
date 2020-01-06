@@ -168,6 +168,9 @@ add_task(async function test_invalid_records() {
       + "VALUES ('invalid-uri', hash('invalid-uri'), 'Invalid URI', '.', 1, " + TIMESTAMP3 + ")"
     );
     
+    
+    await db.execute("DELETE FROM moz_updatehostsinsert_temp");
+    
     await db.execute(
       "INSERT INTO moz_historyvisits "
       + "(place_id, visit_date, visit_type, session) "
