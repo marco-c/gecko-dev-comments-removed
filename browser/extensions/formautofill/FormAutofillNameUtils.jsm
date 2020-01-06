@@ -13,6 +13,8 @@ const NAME_REFERENCES = "chrome://formautofill/content/nameReferences.js";
 
 this.EXPORTED_SYMBOLS = ["FormAutofillNameUtils"];
 
+Cu.import("resource://formautofill/FormAutofillUtils.jsm");
+
 
 
 var FormAutofillNameUtils = {
@@ -204,10 +206,7 @@ var FormAutofillNameUtils = {
     if (this._dataLoaded) {
       return;
     }
-    let sandbox = {};
-    let scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
-                         .getService(Ci.mozIJSSubScriptLoader);
-    scriptLoader.loadSubScript(NAME_REFERENCES, sandbox, "utf-8");
+    let sandbox = FormAutofillUtils.loadDataFromScript(NAME_REFERENCES);
     Object.assign(this, sandbox.nameReferences);
     this._dataLoaded = true;
 

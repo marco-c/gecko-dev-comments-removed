@@ -128,20 +128,19 @@ FormAutofillHandler.prototype = {
         }
         this.changeFieldState(fieldDetail, "AUTO_FILLED");
       } else if (element instanceof Ci.nsIDOMHTMLSelectElement) {
-        for (let option of element.options) {
-          if (value === option.textContent || value === option.value) {
-            
-            
-            if (option.selected) {
-              break;
-            }
-            option.selected = true;
-            element.dispatchEvent(new element.ownerGlobal.UIEvent("input", {bubbles: true}));
-            element.dispatchEvent(new element.ownerGlobal.Event("change", {bubbles: true}));
-            this.changeFieldState(fieldDetail, "AUTO_FILLED");
-            break;
-          }
+        let option = FormAutofillUtils.findSelectOption(element, profile, fieldDetail.fieldName);
+        if (!option) {
+          continue;
         }
+        
+        
+        if (!option.selected) {
+          option.selected = true;
+          element.dispatchEvent(new element.ownerGlobal.UIEvent("input", {bubbles: true}));
+          element.dispatchEvent(new element.ownerGlobal.Event("change", {bubbles: true}));
+        }
+        
+        this.changeFieldState(fieldDetail, "AUTO_FILLED");
       }
 
       
@@ -211,12 +210,24 @@ FormAutofillHandler.prototype = {
       let value = profile[fieldDetail.fieldName] || "";
 
       
-      if (!element || element.value) {
+      if (!element) {
         continue;
       }
 
-      element.previewValue = value;
-      this.changeFieldState(fieldDetail, value ? "PREVIEW" : "NORMAL");
+      if (element instanceof Ci.nsIDOMHTMLSelectElement) {
+        
+        
+        let option = FormAutofillUtils.findSelectOption(element, profile, fieldDetail.fieldName);
+        element.previewValue = option ? option.text : "";
+        this.changeFieldState(fieldDetail, option ? "PREVIEW" : "NORMAL");
+      } else {
+        
+        if (element.value) {
+          continue;
+        }
+        element.previewValue = value;
+        this.changeFieldState(fieldDetail, value ? "PREVIEW" : "NORMAL");
+      }
     }
   },
 
