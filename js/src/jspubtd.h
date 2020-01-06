@@ -210,11 +210,90 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEnterCycleCollection)
 
 class RootingContext;
 
+
+
+template <>
+struct MapTypeToRootKind<void*> {
+    static const RootKind kind = RootKind::Traceable;
+};
+
+using RootedListHeads = mozilla::EnumeratedArray<RootKind, RootKind::Limit,
+                                                 Rooted<void*>*>;
+
+
+
+
+
+
+enum StackKind
+{
+    StackForSystemCode,      
+    StackForTrustedScript,   
+    StackForUntrustedScript, 
+    StackKindCount
+};
+
+class JS_PUBLIC_API(AutoGCRooter);
+
+
+
+class RootingContext
+{
+    
+    RootedListHeads stackRoots_;
+    template <typename T> friend class JS::Rooted;
+
+    
+    JS::AutoGCRooter* autoGCRooters_;
+    friend class JS::AutoGCRooter;
+
+  public:
+    RootingContext();
+
+    void traceStackRoots(JSTracer* trc);
+    void checkNoGCRooters();
+
+  protected:
+    
+    
+    
+
+    
+    JSCompartment*      compartment_;
+
+    
+    JS::Zone*           zone_;
+
+  public:
+    
+    uintptr_t nativeStackLimit[StackKindCount];
+
+    static const RootingContext* get(const JSContext* cx) {
+        return reinterpret_cast<const RootingContext*>(cx);
+    }
+
+    static RootingContext* get(JSContext* cx) {
+        return reinterpret_cast<RootingContext*>(cx);
+    }
+
+    friend JSCompartment* js::GetContextCompartment(const JSContext* cx);
+    friend JS::Zone* js::GetContextZone(const JSContext* cx);
+};
+
 class JS_PUBLIC_API(AutoGCRooter)
 {
   public:
-    AutoGCRooter(JSContext* cx, ptrdiff_t tag);
-    AutoGCRooter(RootingContext* cx, ptrdiff_t tag);
+    AutoGCRooter(JSContext* cx, ptrdiff_t tag)
+      : AutoGCRooter(JS::RootingContext::get(cx), tag)
+    {}
+    AutoGCRooter(JS::RootingContext* cx, ptrdiff_t tag)
+      : down(cx->autoGCRooters_),
+        tag_(tag),
+        stackTop(&cx->autoGCRooters_)
+    {
+        MOZ_ASSERT(this != *stackTop);
+        *stackTop = this;
+    }
 
     ~AutoGCRooter() {
         MOZ_ASSERT(this == *stackTop);
@@ -260,74 +339,6 @@ class JS_PUBLIC_API(AutoGCRooter)
     
     AutoGCRooter(AutoGCRooter& ida) = delete;
     void operator=(AutoGCRooter& ida) = delete;
-};
-
-
-
-template <>
-struct MapTypeToRootKind<void*> {
-    static const RootKind kind = RootKind::Traceable;
-};
-
-using RootedListHeads = mozilla::EnumeratedArray<RootKind, RootKind::Limit,
-                                                 Rooted<void*>*>;
-
-
-
-
-
-
-enum StackKind
-{
-    StackForSystemCode,      
-    StackForTrustedScript,   
-    StackForUntrustedScript, 
-    StackKindCount
-};
-
-
-
-class RootingContext
-{
-    
-    RootedListHeads stackRoots_;
-    template <typename T> friend class JS::Rooted;
-
-    
-    JS::AutoGCRooter* autoGCRooters_;
-    friend class JS::AutoGCRooter;
-
-  public:
-    RootingContext();
-
-    void traceStackRoots(JSTracer* trc);
-    void checkNoGCRooters();
-
-  protected:
-    
-    
-    
-
-    
-    JSCompartment*      compartment_;
-
-    
-    JS::Zone*           zone_;
-
-  public:
-    
-    uintptr_t nativeStackLimit[StackKindCount];
-
-    static const RootingContext* get(const JSContext* cx) {
-        return reinterpret_cast<const RootingContext*>(cx);
-    }
-
-    static RootingContext* get(JSContext* cx) {
-        return reinterpret_cast<RootingContext*>(cx);
-    }
-
-    friend JSCompartment* js::GetContextCompartment(const JSContext* cx);
-    friend JS::Zone* js::GetContextZone(const JSContext* cx);
 };
 
 } 
