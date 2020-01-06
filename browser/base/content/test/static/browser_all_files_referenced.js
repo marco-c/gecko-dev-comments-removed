@@ -130,8 +130,6 @@ var whitelist = [
 
   
   
-  {file: "chrome://branding/content/icon128.png"},
-  
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
