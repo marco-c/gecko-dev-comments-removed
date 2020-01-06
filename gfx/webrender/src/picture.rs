@@ -2,14 +2,16 @@
 
 
 
-use api::{BorderRadiusKind, ColorF, ClipAndScrollInfo};
-use api::{device_length, DeviceIntSize};
+use api::{BorderRadiusKind, ColorF, ClipAndScrollInfo, FilterOp, MixBlendMode};
+use api::{device_length, DeviceIntRect, DeviceIntSize, PipelineId};
 use api::{BoxShadowClipMode, LayerPoint, LayerRect, LayerSize, LayerVector2D, Shadow};
+use api::{ClipId, PremultipliedColorF};
 use box_shadow::BLUR_SAMPLE_SCALE;
 use frame_builder::PrimitiveContext;
 use gpu_cache::GpuDataRequest;
-use prim_store::{PrimitiveIndex, PrimitiveRun};
+use prim_store::{PrimitiveIndex, PrimitiveRun, PrimitiveRunLocalRect};
 use render_task::{ClearMode, RenderTask, RenderTaskId, RenderTaskTree};
+use scene::{FilterOpHelpers, SceneProperties};
 use tiling::RenderTargetKind;
 
 
@@ -22,12 +24,26 @@ use tiling::RenderTargetKind;
 
 
 
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PictureCompositeMode {
+    
+    MixBlend(MixBlendMode),
+    
+    Filter(FilterOp),
+    
+    
+    Blit,
+}
+
 #[derive(Debug)]
 pub enum PictureKind {
     TextShadow {
         offset: LayerVector2D,
         color: ColorF,
         blur_radius: f32,
+        content_rect: LayerRect,
     },
     BoxShadow {
         blur_radius: f32,
@@ -35,15 +51,49 @@ pub enum PictureKind {
         blur_regions: Vec<LayerRect>,
         clip_mode: BoxShadowClipMode,
         radii_kind: BorderRadiusKind,
+        content_rect: LayerRect,
+    },
+    Image {
+        
+        
+        
+        readback_render_task_id: Option<RenderTaskId>,
+        
+        
+        composite_mode: Option<PictureCompositeMode>,
+        
+        is_in_3d_context: bool,
+        
+        
+        
+        frame_output_pipeline_id: Option<PipelineId>,
+        
+        
+        
+        reference_frame_id: ClipId,
+        real_local_rect: LayerRect,
     },
 }
 
 #[derive(Debug)]
 pub struct PicturePrimitive {
-    pub prim_runs: Vec<PrimitiveRun>,
+    
+    
     pub render_task_id: Option<RenderTaskId>,
+
+    
     pub kind: PictureKind,
-    pub content_rect: LayerRect,
+
+    
+    pub runs: Vec<PrimitiveRun>,
+
+    
+    pub pipeline_id: PipelineId,
+
+    
+    
+    
+    pub cull_children: bool,
 
     
     
@@ -51,16 +101,39 @@ pub struct PicturePrimitive {
 }
 
 impl PicturePrimitive {
-    pub fn new_text_shadow(shadow: Shadow) -> Self {
+    pub fn new_text_shadow(shadow: Shadow, pipeline_id: PipelineId) -> Self {
         PicturePrimitive {
-            prim_runs: Vec::new(),
+            runs: Vec::new(),
             render_task_id: None,
-            content_rect: LayerRect::zero(),
             kind: PictureKind::TextShadow {
                 offset: shadow.offset,
                 color: shadow.color,
                 blur_radius: shadow.blur_radius,
+                content_rect: LayerRect::zero(),
             },
+            pipeline_id,
+            cull_children: false,
+        }
+    }
+
+    pub fn resolve_scene_properties(&mut self, properties: &SceneProperties) -> bool {
+        match self.kind {
+            PictureKind::Image { ref mut composite_mode, .. } => {
+                match composite_mode {
+                    &mut Some(PictureCompositeMode::Filter(ref mut filter)) => {
+                        match filter {
+                            &mut FilterOp::Opacity(ref binding, ref mut value) => {
+                                *value = properties.resolve_float(binding, *value);
+                            }
+                            _ => {}
+                        }
+
+                        filter.is_visible()
+                    }
+                    _ => true,
+                }
+            }
+            _ => true
         }
     }
 
@@ -70,38 +143,53 @@ impl PicturePrimitive {
         blur_regions: Vec<LayerRect>,
         clip_mode: BoxShadowClipMode,
         radii_kind: BorderRadiusKind,
+        pipeline_id: PipelineId,
     ) -> Self {
         PicturePrimitive {
-            prim_runs: Vec::new(),
+            runs: Vec::new(),
             render_task_id: None,
-            content_rect: LayerRect::zero(),
             kind: PictureKind::BoxShadow {
                 blur_radius,
                 color,
                 blur_regions,
                 clip_mode,
                 radii_kind,
+                content_rect: LayerRect::zero(),
             },
+            pipeline_id,
+            cull_children: false,
+        }
+    }
+
+    pub fn new_image(
+        composite_mode: Option<PictureCompositeMode>,
+        is_in_3d_context: bool,
+        pipeline_id: PipelineId,
+        reference_frame_id: ClipId,
+        frame_output_pipeline_id: Option<PipelineId>,
+    ) -> PicturePrimitive {
+        PicturePrimitive {
+            runs: Vec::new(),
+            render_task_id: None,
+            kind: PictureKind::Image {
+                readback_render_task_id: None,
+                composite_mode,
+                is_in_3d_context,
+                frame_output_pipeline_id,
+                reference_frame_id,
+                real_local_rect: LayerRect::zero(),
+            },
+            pipeline_id,
+            cull_children: true,
         }
     }
 
     pub fn add_primitive(
         &mut self,
         prim_index: PrimitiveIndex,
-        local_rect: &LayerRect,
         clip_and_scroll: ClipAndScrollInfo
     ) {
-        
-        
-        
-        
-        
-        
-        
-        
-        self.content_rect = self.content_rect.union(local_rect);
-
-        if let Some(ref mut run) = self.prim_runs.last_mut() {
+        if let Some(ref mut run) = self.runs.last_mut() {
             if run.clip_and_scroll == clip_and_scroll &&
                run.base_prim_index.0 + run.count == prim_index.0 {
                 run.count += 1;
@@ -109,26 +197,44 @@ impl PicturePrimitive {
             }
         }
 
-        self.prim_runs.push(PrimitiveRun {
+        self.runs.push(PrimitiveRun {
             base_prim_index: prim_index,
             count: 1,
             clip_and_scroll,
         });
     }
 
-    pub fn build(&mut self) -> LayerRect {
+    pub fn update_local_rect(&mut self,
+        prim_local_rect: LayerRect,
+        prim_run_rect: PrimitiveRunLocalRect,
+    ) -> LayerRect {
+        let local_content_rect = prim_run_rect.local_rect_in_actual_parent_space;
+
         match self.kind {
-            PictureKind::TextShadow { offset, blur_radius, .. } => {
+            PictureKind::Image { composite_mode, ref mut real_local_rect, .. } => {
+                *real_local_rect = prim_run_rect.local_rect_in_original_parent_space;
+
+                match composite_mode {
+                    Some(PictureCompositeMode::Filter(FilterOp::Blur(blur_radius))) => {
+                        let inflate_size = blur_radius * BLUR_SAMPLE_SCALE;
+                        local_content_rect.inflate(inflate_size, inflate_size)
+                    }
+                    _ => {
+                        local_content_rect
+                    }
+                }
+            }
+            PictureKind::TextShadow { offset, blur_radius, ref mut content_rect, .. } => {
                 let blur_offset = blur_radius * BLUR_SAMPLE_SCALE;
 
-                self.content_rect = self.content_rect.inflate(
+                *content_rect = local_content_rect.inflate(
                     blur_offset,
                     blur_offset,
                 );
 
-                self.content_rect.translate(&offset)
+                content_rect.translate(&offset)
             }
-            PictureKind::BoxShadow { blur_radius, clip_mode, radii_kind, .. } => {
+            PictureKind::BoxShadow { blur_radius, clip_mode, radii_kind, ref mut content_rect, .. } => {
                 
                 match clip_mode {
                     BoxShadowClipMode::Outset => {
@@ -141,29 +247,31 @@ impl PicturePrimitive {
                         match radii_kind {
                             BorderRadiusKind::Uniform => {
                                 let origin = LayerPoint::new(
-                                    self.content_rect.origin.x - blur_offset,
-                                    self.content_rect.origin.y - blur_offset,
+                                    local_content_rect.origin.x - blur_offset,
+                                    local_content_rect.origin.y - blur_offset,
                                 );
                                 let size = LayerSize::new(
-                                    self.content_rect.size.width + blur_offset,
-                                    self.content_rect.size.height + blur_offset,
+                                    local_content_rect.size.width + blur_offset,
+                                    local_content_rect.size.height + blur_offset,
                                 );
-                                self.content_rect = LayerRect::new(origin, size);
+                                *content_rect = LayerRect::new(origin, size);
                             }
                             BorderRadiusKind::NonUniform => {
                                 
                                 
-                                self.content_rect = self.content_rect.inflate(
+                                *content_rect = local_content_rect.inflate(
                                     blur_offset,
                                     blur_offset,
                                 );
                             }
                         }
                     }
-                    BoxShadowClipMode::Inset => {}
+                    BoxShadowClipMode::Inset => {
+                        *content_rect = local_content_rect;
+                    }
                 }
 
-                self.content_rect
+                prim_local_rect
             }
         }
     }
@@ -173,26 +281,92 @@ impl PicturePrimitive {
         prim_index: PrimitiveIndex,
         prim_context: &PrimitiveContext,
         render_tasks: &mut RenderTaskTree,
+        screen_rect: &DeviceIntRect,
+        child_tasks: Vec<RenderTaskId>,
+        parent_tasks: &mut Vec<RenderTaskId>,
     ) {
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        let cache_width =
-            (self.content_rect.size.width * prim_context.device_pixel_ratio).round() as i32;
-        let cache_height =
-            (self.content_rect.size.height * prim_context.device_pixel_ratio).round() as i32;
-        let cache_size = DeviceIntSize::new(cache_width, cache_height);
-
         match self.kind {
-            PictureKind::TextShadow { blur_radius, color, .. } => {
+            PictureKind::Image {
+                ref mut readback_render_task_id,
+                composite_mode,
+                frame_output_pipeline_id,
+                ..
+            } => {
+                match composite_mode {
+                    Some(PictureCompositeMode::Filter(FilterOp::Blur(blur_radius))) => {
+                        let picture_task = RenderTask::new_dynamic_alpha_batch(
+                            screen_rect,
+                            prim_index,
+                            None,
+                            child_tasks,
+                        );
+
+                        let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
+                        let blur_std_deviation = blur_radius.0 as f32;
+                        let picture_task_id = render_tasks.add(picture_task);
+
+                        let blur_render_task = RenderTask::new_blur(
+                            blur_std_deviation,
+                            picture_task_id,
+                            render_tasks,
+                            RenderTargetKind::Color,
+                            &[],
+                            ClearMode::Transparent,
+                            PremultipliedColorF::TRANSPARENT,
+                        );
+
+                        let blur_render_task_id = render_tasks.add(blur_render_task);
+                        self.render_task_id = Some(blur_render_task_id);
+                    }
+                    Some(PictureCompositeMode::MixBlend(..)) => {
+                        let picture_task = RenderTask::new_dynamic_alpha_batch(
+                            screen_rect,
+                            prim_index,
+                            None,
+                            child_tasks,
+                        );
+
+                        let readback_task_id = render_tasks.add(RenderTask::new_readback(*screen_rect));
+
+                        *readback_render_task_id = Some(readback_task_id);
+                        parent_tasks.push(readback_task_id);
+
+                        self.render_task_id = Some(render_tasks.add(picture_task));
+                    }
+                    Some(PictureCompositeMode::Filter(..)) | Some(PictureCompositeMode::Blit) => {
+                        let picture_task = RenderTask::new_dynamic_alpha_batch(
+                            screen_rect,
+                            prim_index,
+                            frame_output_pipeline_id,
+                            child_tasks,
+                        );
+
+                        self.render_task_id = Some(render_tasks.add(picture_task));
+                    }
+                    None => {
+                        parent_tasks.extend(child_tasks);
+                        self.render_task_id = None;
+                    }
+                }
+            }
+            PictureKind::TextShadow { blur_radius, color, content_rect, .. } => {
+                
+                
+                
+                
+
                 let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
+
+                
+                
+                
+                
+                
+                let cache_width =
+                    (content_rect.size.width * prim_context.device_pixel_ratio).round() as i32;
+                let cache_height =
+                    (content_rect.size.height * prim_context.device_pixel_ratio).round() as i32;
+                let cache_size = DeviceIntSize::new(cache_width, cache_height);
 
                 
                 
@@ -203,7 +377,7 @@ impl PicturePrimitive {
                     cache_size,
                     prim_index,
                     RenderTargetKind::Color,
-                    self.content_rect.origin,
+                    content_rect.origin,
                     color.premultiplied(),
                     ClearMode::Transparent,
                 );
@@ -222,8 +396,19 @@ impl PicturePrimitive {
 
                 self.render_task_id = Some(render_tasks.add(render_task));
             }
-            PictureKind::BoxShadow { blur_radius, clip_mode, ref blur_regions, color, .. } => {
+            PictureKind::BoxShadow { blur_radius, clip_mode, ref blur_regions, color, content_rect, .. } => {
                 let blur_radius = device_length(blur_radius, prim_context.device_pixel_ratio);
+
+                
+                
+                
+                
+                
+                let cache_width =
+                    (content_rect.size.width * prim_context.device_pixel_ratio).round() as i32;
+                let cache_height =
+                    (content_rect.size.height * prim_context.device_pixel_ratio).round() as i32;
+                let cache_size = DeviceIntSize::new(cache_width, cache_height);
 
                 
                 
@@ -243,7 +428,7 @@ impl PicturePrimitive {
                     cache_size,
                     prim_index,
                     RenderTargetKind::Alpha,
-                    self.content_rect.origin,
+                    content_rect.origin,
                     color.premultiplied(),
                     ClearMode::Zero,
                 );
@@ -263,6 +448,10 @@ impl PicturePrimitive {
                 self.render_task_id = Some(render_tasks.add(render_task));
             }
         }
+
+        if let Some(render_task_id) = self.render_task_id {
+            parent_tasks.push(render_task_id);
+        }
     }
 
     pub fn write_gpu_blocks(&self, mut _request: GpuDataRequest) {
@@ -275,6 +464,7 @@ impl PicturePrimitive {
         match self.kind {
             PictureKind::TextShadow { .. } => RenderTargetKind::Color,
             PictureKind::BoxShadow { .. } => RenderTargetKind::Alpha,
+            PictureKind::Image { .. } => RenderTargetKind::Color,
         }
     }
 }

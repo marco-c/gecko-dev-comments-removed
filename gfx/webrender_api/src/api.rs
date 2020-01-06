@@ -252,6 +252,10 @@ pub enum DebugCommand {
     
     EnableAlphaRectsDebug(bool),
     
+    EnableGpuTimeQueries(bool),
+    
+    EnableGpuSampleQueries(bool),
+    
     FetchDocuments,
     
     FetchPasses,

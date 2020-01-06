@@ -3,43 +3,41 @@
 
 
 use api::{BorderDetails, BorderDisplayItem, BuiltDisplayList};
-use api::{ClipAndScrollInfo, ClipId, ColorF, PremultipliedColorF};
+use api::{ClipAndScrollInfo, ClipId, ColorF, PropertyBinding};
 use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceUintRect, DeviceUintSize};
-use api::{ExtendMode, FilterOp, FontRenderMode};
+use api::{ExtendMode, FontRenderMode, LayoutTransform};
 use api::{GlyphInstance, GlyphOptions, GradientStop, HitTestFlags, HitTestItem, HitTestResult};
 use api::{ImageKey, ImageRendering, ItemRange, ItemTag, LayerPoint, LayerPrimitiveInfo, LayerRect};
-use api::{LayerPixel, LayerSize, LayerToScrollTransform, LayerVector2D, LayoutVector2D, LineOrientation};
+use api::{LayerSize, LayerToScrollTransform, LayerVector2D, LayoutVector2D, LineOrientation};
 use api::{LineStyle, LocalClip, PipelineId, RepeatMode};
 use api::{ScrollSensitivity, Shadow, TileOffset, TransformStyle};
-use api::{WorldPixel, WorldPoint, YuvColorSpace, YuvData, device_length};
+use api::{WorldPoint, YuvColorSpace, YuvData};
 use app_units::Au;
 use border::ImageBorderSegment;
-use clip::{ClipRegion, ClipSource, ClipSources, ClipStore, Contains};
+use clip::{ClipRegion, ClipSource, ClipSources, ClipStore, Contains, MAX_CLIP};
 use clip_scroll_node::{ClipScrollNode, NodeType};
 use clip_scroll_tree::ClipScrollTree;
-use euclid::{SideOffsets2D, TypedTransform3D, vec2, vec3};
+use euclid::{SideOffsets2D, vec2};
 use frame::FrameId;
 use glyph_rasterizer::FontInstance;
 use gpu_cache::GpuCache;
-use internal_types::{FastHashMap, FastHashSet, HardwareCompositeOp};
-use picture::{PictureKind, PicturePrimitive};
-use plane_split::{BspSplitter, Polygon, Splitter};
+use internal_types::{FastHashMap, FastHashSet};
+use picture::{PictureCompositeMode, PictureKind, PicturePrimitive};
 use prim_store::{TexelRect, YuvImagePrimitiveCpu};
 use prim_store::{GradientPrimitiveCpu, ImagePrimitiveCpu, LinePrimitive, PrimitiveKind};
-use prim_store::{PrimitiveContainer, PrimitiveIndex, PrimitiveRun};
+use prim_store::{PrimitiveContainer, PrimitiveIndex};
 use prim_store::{PrimitiveStore, RadialGradientPrimitiveCpu};
 use prim_store::{RectangleContent, RectanglePrimitive, TextRunPrimitiveCpu};
 use profiler::{FrameProfileCounters, GpuCacheProfileCounters, TextureCacheProfileCounters};
-use render_task::{AlphaRenderItem, ClearMode, RenderTask, RenderTaskId, RenderTaskLocation};
+use render_task::{RenderTask, RenderTaskLocation};
 use render_task::RenderTaskTree;
 use resource_cache::ResourceCache;
-use scene::ScenePipeline;
+use scene::{ScenePipeline, SceneProperties};
 use std::{mem, usize, f32, i32};
-use tiling::{CompositeOps, ContextIsolation, Frame, PrimitiveRunCmd, RenderPass};
-use tiling::{RenderTargetContext, RenderTargetKind, ScrollbarPrimitive, StackingContext};
-use tiling::StackingContextIndex;
+use tiling::{CompositeOps, Frame};
+use tiling::{RenderPass};
+use tiling::{RenderTargetContext, ScrollbarPrimitive};
 use util::{self, pack_as_float, RectHelpers, recycle_vec};
-use box_shadow::BLUR_SAMPLE_SCALE;
 
 #[derive(Debug)]
 pub struct ScrollbarInfo(pub ClipId, pub LayerRect);
@@ -47,36 +45,27 @@ pub struct ScrollbarInfo(pub ClipId, pub LayerRect);
 
 
 
-fn make_polygon(
-    stacking_context: &StackingContext,
-    node: &ClipScrollNode,
-    anchor: usize,
-) -> Polygon<f64, WorldPixel> {
+struct StackingContext {
+    
+    pipeline_id: PipelineId,
+
+    
+    composite_ops: CompositeOps,
+
+    
+    is_backface_visible: bool,
+
     
     
     
+    allow_subpixel_aa: bool,
+
+    
+    transform_style: TransformStyle,
+
     
     
-    let size = stacking_context.isolated_items_bounds.bottom_right();
-    let bounds = LayerRect::new(LayerPoint::zero(), LayerSize::new(size.x, size.y));
-    let mat = TypedTransform3D::row_major(
-        node.world_content_transform.m11 as f64,
-        node.world_content_transform.m12 as f64,
-        node.world_content_transform.m13 as f64,
-        node.world_content_transform.m14 as f64,
-        node.world_content_transform.m21 as f64,
-        node.world_content_transform.m22 as f64,
-        node.world_content_transform.m23 as f64,
-        node.world_content_transform.m24 as f64,
-        node.world_content_transform.m31 as f64,
-        node.world_content_transform.m32 as f64,
-        node.world_content_transform.m33 as f64,
-        node.world_content_transform.m34 as f64,
-        node.world_content_transform.m41 as f64,
-        node.world_content_transform.m42 as f64,
-        node.world_content_transform.m43 as f64,
-        node.world_content_transform.m44 as f64);
-    Polygon::from_transformed_rect(bounds.cast().unwrap(), mat, anchor)
+    pic_prim_index: PrimitiveIndex,
 }
 
 #[derive(Clone, Copy)]
@@ -111,11 +100,8 @@ pub struct FrameBuilder {
     background_color: Option<ColorF>,
     prim_store: PrimitiveStore,
     pub clip_store: ClipStore,
-    cmds: Vec<PrimitiveRunCmd>,
     hit_testing_runs: Vec<HitTestingRun>,
     pub config: FrameBuilderConfig,
-
-    stacking_context_store: Vec<StackingContext>,
 
     
     
@@ -131,11 +117,11 @@ pub struct FrameBuilder {
     reference_frame_stack: Vec<ClipId>,
 
     
-    
-    stacking_context_stack: Vec<StackingContextIndex>,
+    pub picture_stack: Vec<PrimitiveIndex>,
 
     
-    has_root_stacking_context: bool,
+    
+    sc_stack: Vec<StackingContext>,
 }
 
 pub struct PrimitiveContext<'a> {
@@ -146,7 +132,7 @@ pub struct PrimitiveContext<'a> {
 }
 
 impl<'a> PrimitiveContext<'a> {
-    fn new(
+    pub fn new(
         device_pixel_ratio: f32,
         display_list: &'a BuiltDisplayList,
         clip_node: &'a ClipScrollNode,
@@ -170,36 +156,32 @@ impl FrameBuilder {
     ) -> Self {
         match previous {
             Some(prev) => FrameBuilder {
-                stacking_context_store: recycle_vec(prev.stacking_context_store),
-                cmds: recycle_vec(prev.cmds),
                 hit_testing_runs: recycle_vec(prev.hit_testing_runs),
                 shadow_prim_stack: recycle_vec(prev.shadow_prim_stack),
                 pending_shadow_contents: recycle_vec(prev.pending_shadow_contents),
                 scrollbar_prims: recycle_vec(prev.scrollbar_prims),
                 reference_frame_stack: recycle_vec(prev.reference_frame_stack),
-                stacking_context_stack: recycle_vec(prev.stacking_context_stack),
+                picture_stack: recycle_vec(prev.picture_stack),
+                sc_stack: recycle_vec(prev.sc_stack),
                 prim_store: prev.prim_store.recycle(),
                 clip_store: prev.clip_store.recycle(),
                 screen_size,
                 background_color,
                 config,
-                has_root_stacking_context: false,
             },
             None => FrameBuilder {
-                stacking_context_store: Vec::new(),
-                cmds: Vec::new(),
                 hit_testing_runs: Vec::new(),
                 shadow_prim_stack: Vec::new(),
                 pending_shadow_contents: Vec::new(),
                 scrollbar_prims: Vec::new(),
                 reference_frame_stack: Vec::new(),
-                stacking_context_stack: Vec::new(),
+                picture_stack: Vec::new(),
+                sc_stack: Vec::new(),
                 prim_store: PrimitiveStore::new(),
                 clip_store: ClipStore::new(),
                 screen_size,
                 background_color,
                 config,
-                has_root_stacking_context: false,
             },
         }
     }
@@ -222,11 +204,13 @@ impl FrameBuilder {
             ));
         }
 
+        let stacking_context = self.sc_stack.last().expect("bug: no stacking context!");
+
         let clip_sources = self.clip_store.insert(ClipSources::new(clip_sources));
         let prim_index = self.prim_store.add_primitive(
             &info.rect,
             &info.local_clip.clip_rect(),
-            info.is_backface_visible,
+            info.is_backface_visible && stacking_context.is_backface_visible,
             clip_sources,
             info.tag,
             container,
@@ -264,26 +248,16 @@ impl FrameBuilder {
         prim_index: PrimitiveIndex,
         clip_and_scroll: ClipAndScrollInfo,
     ) {
-        match self.cmds.last_mut().unwrap() {
-            &mut PrimitiveRunCmd::PrimitiveRun(
-                ref mut run,
-            ) => if run.clip_and_scroll == clip_and_scroll &&
-                run.base_prim_index.0 + run.count == prim_index.0
-            {
-                run.count += 1;
-                return;
-            },
-            &mut PrimitiveRunCmd::PushStackingContext(..) |
-            &mut PrimitiveRunCmd::PopStackingContext => {}
-        }
-
-        let run = PrimitiveRun {
-            base_prim_index: prim_index,
-            count: 1,
-            clip_and_scroll,
-        };
-
-        self.cmds.push(PrimitiveRunCmd::PrimitiveRun(run));
+        
+        
+        
+        let pic_prim_index = self.picture_stack.last().unwrap();
+        let metadata = &self.prim_store.cpu_metadata[pic_prim_index.0];
+        let pic = &mut self.prim_store.cpu_pictures[metadata.cpu_prim_index.0];
+        pic.add_primitive(
+            prim_index,
+            clip_and_scroll
+        );
     }
 
     
@@ -302,59 +276,278 @@ impl FrameBuilder {
         prim_index
     }
 
-    pub fn notify_waiting_for_root_stacking_context(&mut self) {
-        self.has_root_stacking_context = false;
-    }
-
     pub fn push_stacking_context(
         &mut self,
-        reference_frame_offset: &LayerVector2D,
         pipeline_id: PipelineId,
         composite_ops: CompositeOps,
         transform_style: TransformStyle,
         is_backface_visible: bool,
         is_pipeline_root: bool,
+        clip_and_scroll: ClipAndScrollInfo,
+        output_pipelines: &FastHashSet<PipelineId>,
     ) {
-        if let Some(parent_index) = self.stacking_context_stack.last() {
-            let parent_is_root = self.stacking_context_store[parent_index.0].is_page_root;
+        
+        
+        let current_reference_frame_id = self.current_reference_frame_id();
 
-            if composite_ops.mix_blend_mode.is_some() && !parent_is_root {
-                
-                
-                
-                let isolation = &mut self.stacking_context_store[parent_index.0].isolation;
-                if *isolation != ContextIsolation::None {
-                    error!(
-                        "Isolation conflict detected on {:?}: {:?}",
-                        parent_index,
-                        *isolation
-                    );
+        
+        
+        
+        
+        
+        
+        let max_clip = LayerRect::new(
+            LayerPoint::new(-MAX_CLIP, -MAX_CLIP),
+            LayerSize::new(2.0 * MAX_CLIP, 2.0 * MAX_CLIP),
+        );
+
+        
+        if self.sc_stack.is_empty() {
+            
+            debug_assert!(self.prim_store.cpu_pictures.is_empty());
+            debug_assert_eq!(transform_style, TransformStyle::Flat);
+
+            
+            
+            let pic = PicturePrimitive::new_image(
+                None,
+                false,
+                pipeline_id,
+                current_reference_frame_id,
+                None,
+            );
+
+            
+            let clip_sources = self.clip_store.insert(ClipSources::new(Vec::new()));
+
+            
+            
+            
+            
+            let prim_index = self.prim_store.add_primitive(
+                &LayerRect::zero(),
+                &max_clip,
+                true,
+                clip_sources,
+                None,
+                PrimitiveContainer::Picture(pic),
+            );
+
+            self.picture_stack.push(prim_index);
+        } else if composite_ops.mix_blend_mode.is_some() && self.sc_stack.len() > 2 {
+            
+            
+            
+            
+            
+            
+            let current_pic_prim_index = self.picture_stack.last().unwrap();
+            let pic_cpu_prim_index = self.prim_store.cpu_metadata[current_pic_prim_index.0].cpu_prim_index;
+            let parent_pic = &mut self.prim_store.cpu_pictures[pic_cpu_prim_index.0];
+
+            match parent_pic.kind {
+                PictureKind::Image { ref mut composite_mode, .. } => {
+                    
+                    
+                    if composite_mode.is_none() {
+                        *composite_mode = Some(PictureCompositeMode::Blit);
+                    }
                 }
-                *isolation = ContextIsolation::Full;
+                PictureKind::TextShadow { .. } |
+                PictureKind::BoxShadow { .. } => {
+                    panic!("bug: text/box pictures invalid here");
+                }
             }
         }
 
-        let stacking_context_index = StackingContextIndex(self.stacking_context_store.len());
-        let reference_frame_id = self.current_reference_frame_id();
-        self.stacking_context_store.push(StackingContext::new(
+        
+        
+        
+        let parent_transform_style = match self.sc_stack.last() {
+            Some(sc) => sc.transform_style,
+            None => TransformStyle::Flat,
+        };
+
+        
+        
+        let is_in_3d_context = composite_ops.count() == 0 &&
+                               (parent_transform_style == TransformStyle::Preserve3D ||
+                                transform_style == TransformStyle::Preserve3D);
+
+        
+        
+        
+        
+        
+        let mut parent_pic_prim_index = if is_in_3d_context {
+            
+            
+            
+            
+            
+            self.sc_stack
+                .iter()
+                .rev()
+                .find(|sc| sc.transform_style == TransformStyle::Flat)
+                .map(|sc| sc.pic_prim_index)
+                .unwrap()
+        } else {
+            *self.picture_stack.last().unwrap()
+        };
+
+        
+        for filter in &composite_ops.filters {
+            let src_prim = PicturePrimitive::new_image(
+                Some(PictureCompositeMode::Filter(*filter)),
+                false,
+                pipeline_id,
+                current_reference_frame_id,
+                None,
+            );
+            let src_clip_sources = self.clip_store.insert(ClipSources::new(Vec::new()));
+
+            let src_prim_index = self.prim_store.add_primitive(
+                &LayerRect::zero(),
+                &max_clip,
+                is_backface_visible,
+                src_clip_sources,
+                None,
+                PrimitiveContainer::Picture(src_prim),
+            );
+
+            let pic_prim_index = self.prim_store.cpu_metadata[parent_pic_prim_index.0].cpu_prim_index;
+            parent_pic_prim_index = src_prim_index;
+            let pic = &mut self.prim_store.cpu_pictures[pic_prim_index.0];
+            pic.add_primitive(
+                src_prim_index,
+                clip_and_scroll,
+            );
+
+            self.picture_stack.push(src_prim_index);
+        }
+
+        
+        if let Some(mix_blend_mode) = composite_ops.mix_blend_mode {
+            let src_prim = PicturePrimitive::new_image(
+                Some(PictureCompositeMode::MixBlend(mix_blend_mode)),
+                false,
+                pipeline_id,
+                current_reference_frame_id,
+                None,
+            );
+            let src_clip_sources = self.clip_store.insert(ClipSources::new(Vec::new()));
+
+            let src_prim_index = self.prim_store.add_primitive(
+                &LayerRect::zero(),
+                &max_clip,
+                is_backface_visible,
+                src_clip_sources,
+                None,
+                PrimitiveContainer::Picture(src_prim),
+            );
+
+            let pic_prim_index = self.prim_store.cpu_metadata[parent_pic_prim_index.0].cpu_prim_index;
+            parent_pic_prim_index = src_prim_index;
+            let pic = &mut self.prim_store.cpu_pictures[pic_prim_index.0];
+            pic.add_primitive(
+                src_prim_index,
+                clip_and_scroll,
+            );
+
+            self.picture_stack.push(src_prim_index);
+        }
+
+        
+        
+        let mut composite_mode = None;
+        let mut frame_output_pipeline_id = None;
+
+        
+        
+        if is_pipeline_root && output_pipelines.contains(&pipeline_id) {
+            composite_mode = Some(PictureCompositeMode::Blit);
+            frame_output_pipeline_id = Some(pipeline_id);
+        }
+
+        if is_in_3d_context {
+            
+            
+            
+            
+            
+            
+            
+            composite_mode = Some(PictureCompositeMode::Blit);
+        }
+
+        
+        let sc_prim = PicturePrimitive::new_image(
+            composite_mode,
+            is_in_3d_context,
             pipeline_id,
-            *reference_frame_offset,
-            !self.has_root_stacking_context,
-            is_pipeline_root,
-            reference_frame_id,
-            transform_style,
+            current_reference_frame_id,
+            frame_output_pipeline_id,
+        );
+
+        let sc_clip_sources = self.clip_store.insert(ClipSources::new(Vec::new()));
+        let sc_prim_index = self.prim_store.add_primitive(
+            &LayerRect::zero(),
+            &max_clip,
+            is_backface_visible,
+            sc_clip_sources,
+            None,
+            PrimitiveContainer::Picture(sc_prim),
+        );
+
+        let pic_prim_index = self.prim_store.cpu_metadata[parent_pic_prim_index.0].cpu_prim_index;
+        let sc_pic = &mut self.prim_store.cpu_pictures[pic_prim_index.0];
+        sc_pic.add_primitive(
+            sc_prim_index,
+            clip_and_scroll,
+        );
+
+        
+        self.picture_stack.push(sc_prim_index);
+
+        
+        
+        let allow_subpixel_aa = composite_ops.count() == 0 &&
+                                transform_style == TransformStyle::Flat;
+
+        
+        
+        let sc = StackingContext {
             composite_ops,
             is_backface_visible,
-        ));
-        self.has_root_stacking_context = true;
-        self.cmds
-            .push(PrimitiveRunCmd::PushStackingContext(stacking_context_index));
-        self.stacking_context_stack.push(stacking_context_index);
+            pipeline_id,
+            allow_subpixel_aa,
+            transform_style,
+            
+            
+            pic_prim_index: sc_prim_index,
+        };
+
+        self.sc_stack.push(sc);
     }
 
     pub fn pop_stacking_context(&mut self) {
-        self.cmds.push(PrimitiveRunCmd::PopStackingContext);
-        self.stacking_context_stack.pop();
+        let sc = self.sc_stack.pop().unwrap();
+
+        
+        self.picture_stack.pop().expect("bug");
+
+        
+        for _ in 0 .. sc.composite_ops.count() {
+            self.picture_stack.pop().expect("bug: mismatched picture stack");
+        }
+
+        
+        
+        if self.sc_stack.is_empty() {
+            self.picture_stack.pop().expect("bug: picture stack invalid");
+            debug_assert!(self.picture_stack.is_empty());
+        }
+
         assert!(
             self.shadow_prim_stack.is_empty(),
             "Found unpopped text shadows when popping stacking context!"
@@ -366,14 +559,16 @@ impl FrameBuilder {
         parent_id: Option<ClipId>,
         pipeline_id: PipelineId,
         rect: &LayerRect,
-        transform: &LayerToScrollTransform,
+        source_transform: Option<PropertyBinding<LayoutTransform>>,
+        source_perspective: Option<LayoutTransform>,
         origin_in_parent_reference_frame: LayerVector2D,
         root_for_pipeline: bool,
         clip_scroll_tree: &mut ClipScrollTree,
     ) -> ClipId {
         let new_id = clip_scroll_tree.add_reference_frame(
             rect,
-            transform,
+            source_transform,
+            source_perspective,
             origin_in_parent_reference_frame,
             pipeline_id,
             parent_id,
@@ -417,7 +612,7 @@ impl FrameBuilder {
         let root_id = clip_scroll_tree.root_reference_frame_id();
         if let Some(root_node) = clip_scroll_tree.nodes.get_mut(&root_id) {
             if let NodeType::ReferenceFrame(ref mut info) = root_node.node_type {
-                info.transform = LayerToScrollTransform::create_translation(
+                info.resolved_transform = LayerToScrollTransform::create_translation(
                     viewport_offset.x,
                     viewport_offset.y,
                     0.0,
@@ -440,12 +635,12 @@ impl FrameBuilder {
         clip_scroll_tree: &mut ClipScrollTree,
     ) -> ClipId {
         let viewport_rect = LayerRect::new(LayerPoint::zero(), *viewport_size);
-        let identity = &LayerToScrollTransform::identity();
         self.push_reference_frame(
             None,
             pipeline_id,
             &viewport_rect,
-            identity,
+            None,
+            None,
             LayerVector2D::zero(),
             true,
             clip_scroll_tree,
@@ -516,7 +711,8 @@ impl FrameBuilder {
         clip_and_scroll: ClipAndScrollInfo,
         info: &LayerPrimitiveInfo,
     ) {
-        let prim = PicturePrimitive::new_text_shadow(shadow);
+        let pipeline_id = self.sc_stack.last().unwrap().pipeline_id;
+        let prim = PicturePrimitive::new_text_shadow(shadow, pipeline_id);
 
         
         
@@ -537,17 +733,7 @@ impl FrameBuilder {
 
         
         let mut shadows = mem::replace(&mut self.shadow_prim_stack, Vec::new());
-        for (prim_index, pending_primitives) in shadows.drain(..) {
-            {
-                
-                
-                
-                
-                let metadata = &mut self.prim_store.cpu_metadata[prim_index.0];
-                let prim = &mut self.prim_store.cpu_pictures[metadata.cpu_prim_index.0];
-                metadata.local_rect = prim.build();
-            }
-
+        for (_, pending_primitives) in shadows.drain(..) {
             
             for (prim_index, clip_and_scroll) in pending_primitives {
                 self.add_primitive_to_draw_list(prim_index, clip_and_scroll);
@@ -621,7 +807,7 @@ impl FrameBuilder {
             let shadow_metadata = &self.prim_store.cpu_metadata[shadow_prim_index.0];
             let picture = &self.prim_store.cpu_pictures[shadow_metadata.cpu_prim_index.0];
             match picture.kind {
-                PictureKind::TextShadow { offset, color, blur_radius } if blur_radius == 0.0 => {
+                PictureKind::TextShadow { offset, color, blur_radius, .. } if blur_radius == 0.0 => {
                     fast_shadow_prims.push((idx, offset, color));
                 }
                 _ => {}
@@ -667,7 +853,6 @@ impl FrameBuilder {
                 PictureKind::TextShadow { blur_radius, .. } if blur_radius > 0.0 => {
                     picture.add_primitive(
                         prim_index,
-                        &info.rect,
                         clip_and_scroll,
                     );
                 }
@@ -1053,7 +1238,6 @@ impl FrameBuilder {
         glyph_count: usize,
         glyph_options: Option<GlyphOptions>,
     ) {
-        let original_rect = info.rect;
         
         if font.size.0 <= 0 {
             return;
@@ -1087,8 +1271,7 @@ impl FrameBuilder {
             
             
             
-            if let Some(sc_index) = self.stacking_context_stack.last() {
-                let stacking_context = &self.stacking_context_store[sc_index.0];
+            if let Some(ref stacking_context) = self.sc_stack.last() {
                 if !stacking_context.allow_subpixel_aa {
                     render_mode = FontRenderMode::Alpha;
                 }
@@ -1128,7 +1311,7 @@ impl FrameBuilder {
             let shadow_metadata = &self.prim_store.cpu_metadata[shadow_prim_index.0];
             let picture_prim = &self.prim_store.cpu_pictures[shadow_metadata.cpu_prim_index.0];
             match picture_prim.kind {
-                PictureKind::TextShadow { offset, color, blur_radius } if blur_radius == 0.0 => {
+                PictureKind::TextShadow { offset, color, blur_radius, .. } if blur_radius == 0.0 => {
                     let mut text_prim = prim.clone();
                     text_prim.font.color = color.into();
                     text_prim.offset += offset;
@@ -1186,7 +1369,6 @@ impl FrameBuilder {
                 PictureKind::TextShadow { blur_radius, .. } if blur_radius > 0.0 => {
                     picture.add_primitive(
                         prim_index,
-                        &original_rect,
                         clip_and_scroll,
                     );
                 }
@@ -1208,11 +1390,21 @@ impl FrameBuilder {
     ) {
         let sub_rect_block = sub_rect.unwrap_or(TexelRect::invalid()).into();
 
+        
+        
+        
+        
+        let tile_spacing = if *tile_spacing == info.rect.size {
+            LayerSize::zero()
+        } else {
+            *tile_spacing
+        };
+
         let prim_cpu = ImagePrimitiveCpu {
             image_key,
             image_rendering,
             tile_offset: tile,
-            tile_spacing: *tile_spacing,
+            tile_spacing,
             gpu_blocks: [
                 [
                     stretch_size.width,
@@ -1261,20 +1453,6 @@ impl FrameBuilder {
             Vec::new(),
             PrimitiveContainer::YuvImage(prim_cpu),
         );
-    }
-
-    fn handle_push_stacking_context(&mut self, stacking_context_index: StackingContextIndex) {
-        self.stacking_context_stack.push(stacking_context_index);
-
-        
-        
-        
-        
-        
-        let stacking_context =
-            &mut self.stacking_context_store[stacking_context_index.0];
-        stacking_context.screen_bounds = DeviceIntRect::zero();
-        stacking_context.isolated_items_bounds = LayerRect::zero();
     }
 
     pub fn hit_test(
@@ -1346,145 +1524,10 @@ impl FrameBuilder {
         return result;
     }
 
-
-    fn handle_primitive_run(
-        &mut self,
-        run: &PrimitiveRun,
-        render_tasks: &mut RenderTaskTree,
-        gpu_cache: &mut GpuCache,
-        resource_cache: &mut ResourceCache,
-        pipelines: &FastHashMap<PipelineId, ScenePipeline>,
-        clip_scroll_tree: &ClipScrollTree,
-        device_pixel_ratio: f32,
-        profile_counters: &mut FrameProfileCounters,
-    ) {
-        let stacking_context_index = *self.stacking_context_stack.last().unwrap();
-        let scroll_node = &clip_scroll_tree.nodes[&run.clip_and_scroll.scroll_node_id];
-        let clip_node = &clip_scroll_tree.nodes[&run.clip_and_scroll.clip_node_id()];
-
-        if !clip_node.is_visible() {
-            debug!("{:?} of clipped out {:?}", run.base_prim_index, stacking_context_index);
-            return;
-        }
-
-        let stacking_context = &mut self.stacking_context_store[stacking_context_index.0];
-        let pipeline_id = {
-            if !stacking_context.can_contribute_to_scene() {
-                return;
-            }
-
-            
-            
-            stacking_context.is_visible = true;
-            stacking_context.pipeline_id
-        };
-
-        debug!(
-            "\t{:?} of {:?}",
-            run.base_prim_index,
-            stacking_context_index,
-        );
-
-        let display_list = &pipelines
-            .get(&pipeline_id)
-            .expect("No display list?")
-            .display_list;
-
-        if !stacking_context.is_backface_visible && scroll_node.world_content_transform.is_backface_visible() {
-            return;
-        }
-
-        let prim_context = PrimitiveContext::new(
-            device_pixel_ratio,
-            display_list,
-            clip_node,
-            scroll_node,
-        );
-
-        let result = self.prim_store.prepare_prim_run(
-            run,
-            &prim_context,
-            gpu_cache,
-            resource_cache,
-            render_tasks,
-            &mut self.clip_store,
-        );
-
-        if result.visible_primitives > 0 {
-            stacking_context.screen_bounds = stacking_context
-                .screen_bounds
-                .union(&result.device_rect);
-            stacking_context.isolated_items_bounds = stacking_context
-                .isolated_items_bounds
-                .union(&result.local_rect);
-            stacking_context.has_any_primitive = true;
-
-            profile_counters.visible_primitives.add(result.visible_primitives);
-        }
-    }
-
-    fn handle_pop_stacking_context(
-        &mut self,
-        screen_rect: &DeviceIntRect,
-        clip_scroll_tree: &ClipScrollTree) {
-        let stacking_context_index = self.stacking_context_stack.pop().unwrap();
-
-        let (bounding_rect, is_visible, is_preserve_3d, reference_id, reference_bounds) = {
-            let stacking_context =
-                &mut self.stacking_context_store[stacking_context_index.0];
-            if !stacking_context.has_any_primitive {
-                stacking_context.isolated_items_bounds = stacking_context.children_sc_bounds;
-            } else if stacking_context.isolation != ContextIsolation::Items {
-                stacking_context.isolated_items_bounds = stacking_context
-                    .isolated_items_bounds
-                    .union(&stacking_context.children_sc_bounds);
-            }
-            stacking_context.screen_bounds = stacking_context
-                .screen_bounds
-                .intersection(screen_rect)
-                .unwrap_or(DeviceIntRect::zero());
-            (
-                stacking_context.screen_bounds.clone(),
-                stacking_context.is_visible,
-                stacking_context.isolation == ContextIsolation::Items,
-                stacking_context.reference_frame_id,
-                stacking_context
-                    .isolated_items_bounds
-                    .translate(&stacking_context.reference_frame_offset),
-            )
-        };
-
-        if let Some(ref mut parent_index) = self.stacking_context_stack.last_mut() {
-            let parent = &mut self.stacking_context_store[parent_index.0];
-            parent.screen_bounds = parent.screen_bounds.union(&bounding_rect);
-            let child_bounds = reference_bounds.translate(&-parent.reference_frame_offset);
-            let frame_node = clip_scroll_tree
-                .nodes
-                .get(&reference_id)
-                .unwrap();
-            let local_transform = match frame_node.node_type {
-                NodeType::ReferenceFrame(ref info) => info.transform,
-                _ => LayerToScrollTransform::identity(),
-            };
-            let transformed_bounds = local_transform
-                .with_destination::<LayerPixel>()
-                .transform_rect(&child_bounds);
-            parent.children_sc_bounds = parent.children_sc_bounds.union(&transformed_bounds);
-            
-            if !is_preserve_3d && parent.reference_frame_id == reference_id {
-                parent.isolated_items_bounds = parent.isolated_items_bounds.union(&child_bounds);
-            }
-            
-            
-            parent.is_visible = parent.is_visible || is_visible;
-        }
-    }
-
     
     
     fn build_layer_screen_rects_and_cull_layers(
         &mut self,
-        screen_rect: &DeviceIntRect,
         clip_scroll_tree: &mut ClipScrollTree,
         pipelines: &FastHashMap<PipelineId, ScenePipeline>,
         resource_cache: &mut ResourceCache,
@@ -1492,35 +1535,59 @@ impl FrameBuilder {
         render_tasks: &mut RenderTaskTree,
         profile_counters: &mut FrameProfileCounters,
         device_pixel_ratio: f32,
+        scene_properties: &SceneProperties,
     ) {
         profile_scope!("cull");
 
-        debug!("processing commands...");
-        let commands = mem::replace(&mut self.cmds, Vec::new());
-        for cmd in &commands {
-            match *cmd {
-                PrimitiveRunCmd::PushStackingContext(stacking_context_index) => {
-                    self.handle_push_stacking_context(stacking_context_index)
-                }
-                PrimitiveRunCmd::PrimitiveRun(ref run) => {
-                    self.handle_primitive_run(
-                        run,
-                        render_tasks,
-                        gpu_cache,
-                        resource_cache,
-                        pipelines,
-                        clip_scroll_tree,
-                        device_pixel_ratio,
-                        profile_counters,
-                    );
-                }
-                PrimitiveRunCmd::PopStackingContext => {
-                    self.handle_pop_stacking_context(screen_rect, clip_scroll_tree);
-                }
-            }
-        }
+        
+        let prim_run_cmds = mem::replace(&mut self.prim_store.cpu_pictures[0].runs, Vec::new());
+        let root_clip_scroll_node = &clip_scroll_tree.nodes[&clip_scroll_tree.root_reference_frame_id()];
 
-        mem::replace(&mut self.cmds, commands);
+        let display_list = &pipelines
+            .get(&root_clip_scroll_node.pipeline_id)
+            .expect("No display list?")
+            .display_list;
+
+        let root_prim_context = PrimitiveContext::new(
+            device_pixel_ratio,
+            display_list,
+            root_clip_scroll_node,
+            root_clip_scroll_node,
+        );
+
+        let mut child_tasks = Vec::new();
+
+        self.prim_store.reset_prim_visibility();
+
+        self.prim_store.prepare_prim_runs(
+            &prim_run_cmds,
+            root_clip_scroll_node.pipeline_id,
+            gpu_cache,
+            resource_cache,
+            render_tasks,
+            &mut self.clip_store,
+            clip_scroll_tree,
+            pipelines,
+            &root_prim_context,
+            true,
+            &mut child_tasks,
+            profile_counters,
+            None,
+            scene_properties,
+        );
+
+        let pic = &mut self.prim_store.cpu_pictures[0];
+        pic.runs = prim_run_cmds;
+
+        let root_render_task = RenderTask::new_alpha_batch(
+            DeviceIntPoint::zero(),
+            RenderTaskLocation::Fixed,
+            PrimitiveIndex(0),
+            None,
+            child_tasks,
+        );
+
+        pic.render_task_id = Some(render_tasks.add(root_render_task));
     }
 
     fn update_scroll_bars(&mut self, clip_scroll_tree: &ClipScrollTree, gpu_cache: &mut GpuCache) {
@@ -1552,324 +1619,6 @@ impl FrameBuilder {
         }
     }
 
-    fn build_render_task(
-        &mut self,
-        clip_scroll_tree: &ClipScrollTree,
-        gpu_cache: &mut GpuCache,
-        render_tasks: &mut RenderTaskTree,
-        output_pipelines: &FastHashSet<PipelineId>,
-        device_pixel_ratio: f32,
-    ) -> RenderTaskId {
-        profile_scope!("build_render_task");
-
-        let mut next_z = 0;
-        let mut sc_stack: Vec<StackingContextIndex> = Vec::new();
-        let mut current_task =
-            RenderTask::new_alpha_batch(DeviceIntPoint::zero(), RenderTaskLocation::Fixed, None);
-        
-        
-        let mut alpha_task_stack = Vec::new();
-        
-        
-        
-        
-        
-        let mut preserve_3d_map_stack: Vec<FastHashMap<StackingContextIndex, RenderTaskId>> =
-            Vec::new();
-        
-        let mut splitter_stack = Vec::new();
-
-        debug!("build_render_task()");
-
-        for cmd in &self.cmds {
-            match *cmd {
-                PrimitiveRunCmd::PushStackingContext(stacking_context_index) => {
-                    let parent_isolation = sc_stack
-                        .last()
-                        .map(|index| self.stacking_context_store[index.0].isolation);
-                    let stacking_context = &self.stacking_context_store[stacking_context_index.0];
-                    sc_stack.push(stacking_context_index);
-
-                    if !stacking_context.is_visible {
-                        continue;
-                    }
-
-                    debug!(
-                        "\tpush {:?} {:?}",
-                        stacking_context_index,
-                        stacking_context.isolation
-                    );
-
-                    let stacking_context_rect = &stacking_context.screen_bounds;
-                    let composite_count = stacking_context.composite_ops.count();
-
-                    
-                    
-                    if stacking_context.is_pipeline_root &&
-                        output_pipelines.contains(&stacking_context.pipeline_id)
-                    {
-                        alpha_task_stack.push(current_task);
-                        current_task = RenderTask::new_dynamic_alpha_batch(
-                            stacking_context_rect,
-                            Some(stacking_context.pipeline_id),
-                        );
-                    }
-
-                    if stacking_context.isolation == ContextIsolation::Full && composite_count == 0
-                    {
-                        alpha_task_stack.push(current_task);
-                        current_task =
-                            RenderTask::new_dynamic_alpha_batch(stacking_context_rect, None);
-                    }
-
-                    if parent_isolation == Some(ContextIsolation::Items) ||
-                        stacking_context.isolation == ContextIsolation::Items
-                    {
-                        if parent_isolation != Some(ContextIsolation::Items) {
-                            splitter_stack.push(BspSplitter::new());
-                            preserve_3d_map_stack.push(FastHashMap::default());
-                        }
-                        alpha_task_stack.push(current_task);
-                        current_task =
-                            RenderTask::new_dynamic_alpha_batch(stacking_context_rect, None);
-                        
-                        
-                        
-                        
-                        
-                        let frame_node = clip_scroll_tree
-                            .nodes
-                            .get(&stacking_context.reference_frame_id)
-                            .unwrap();
-                        let sc_polygon =
-                            make_polygon(stacking_context, frame_node, stacking_context_index.0);
-                        debug!(
-                            "\tsplitter[{}]: add {:?} -> {:?} with bounds {:?}",
-                            splitter_stack.len(),
-                            stacking_context_index,
-                            sc_polygon,
-                            stacking_context.isolated_items_bounds
-                        );
-                        splitter_stack.last_mut().unwrap().add(sc_polygon);
-                    }
-
-                    for _ in 0 .. composite_count {
-                        alpha_task_stack.push(current_task);
-                        current_task =
-                            RenderTask::new_dynamic_alpha_batch(stacking_context_rect, None);
-                    }
-                }
-                PrimitiveRunCmd::PopStackingContext => {
-                    let stacking_context_index = sc_stack.pop().unwrap();
-                    let stacking_context = &self.stacking_context_store[stacking_context_index.0];
-                    let composite_count = stacking_context.composite_ops.count();
-
-                    if !stacking_context.is_visible {
-                        continue;
-                    }
-
-                    debug!("\tpop {:?}", stacking_context_index);
-                    let parent_isolation = sc_stack
-                        .last()
-                        .map(|index| self.stacking_context_store[index.0].isolation);
-
-                    if stacking_context.isolation == ContextIsolation::Full && composite_count == 0
-                    {
-                        let mut prev_task = alpha_task_stack.pop().unwrap();
-                        let screen_origin = current_task.as_alpha_batch().screen_origin;
-                        let current_task_size = current_task.get_dynamic_size();
-                        let current_task_id = render_tasks.add(current_task);
-                        let item = AlphaRenderItem::HardwareComposite(
-                            stacking_context_index,
-                            current_task_id,
-                            HardwareCompositeOp::PremultipliedAlpha,
-                            screen_origin,
-                            next_z,
-                            current_task_size,
-                        );
-                        next_z += 1;
-                        prev_task.as_alpha_batch_mut().items.push(item);
-                        prev_task.children.push(current_task_id);
-                        current_task = prev_task;
-                    }
-
-                    for filter in &stacking_context.composite_ops.filters {
-                        let mut prev_task = alpha_task_stack.pop().unwrap();
-                        let screen_origin = current_task.as_alpha_batch().screen_origin;
-                        let current_task_id = render_tasks.add(current_task);
-                        match *filter {
-                            FilterOp::Blur(blur_radius) => {
-                                let blur_radius = device_length(blur_radius, device_pixel_ratio);
-                                let blur_std_deviation = blur_radius.0 as f32;
-                                let inflate_size = blur_std_deviation * BLUR_SAMPLE_SCALE;
-                                render_tasks.get_mut(current_task_id)
-                                            .inflate(inflate_size as i32);
-                                let blur_render_task = RenderTask::new_blur(
-                                    blur_std_deviation,
-                                    current_task_id,
-                                    render_tasks,
-                                    RenderTargetKind::Color,
-                                    &[],
-                                    ClearMode::Transparent,
-                                    PremultipliedColorF::TRANSPARENT,
-                                );
-                                let blur_render_task_id = render_tasks.add(blur_render_task);
-                                let item = AlphaRenderItem::HardwareComposite(
-                                    stacking_context_index,
-                                    blur_render_task_id,
-                                    HardwareCompositeOp::PremultipliedAlpha,
-                                    DeviceIntPoint::new(
-                                        screen_origin.x - inflate_size as i32,
-                                        screen_origin.y - inflate_size as i32,
-                                    ),
-                                    next_z,
-                                    render_tasks.get(current_task_id).get_dynamic_size(),
-                                );
-                                prev_task.as_alpha_batch_mut().items.push(item);
-                                prev_task.children.push(blur_render_task_id);
-                                current_task = prev_task;
-                            }
-                            _ => {
-                                let item = AlphaRenderItem::Blend(
-                                    stacking_context_index,
-                                    current_task_id,
-                                    *filter,
-                                    next_z,
-                                );
-                                prev_task.as_alpha_batch_mut().items.push(item);
-                                prev_task.children.push(current_task_id);
-                                current_task = prev_task;
-                            }
-                        }
-                        next_z += 1;
-                    }
-
-                    if let Some(mix_blend_mode) = stacking_context.composite_ops.mix_blend_mode {
-                        let backdrop_task =
-                            RenderTask::new_readback(stacking_context.screen_bounds);
-                        let source_task_id = render_tasks.add(current_task);
-                        let backdrop_task_id = render_tasks.add(backdrop_task);
-
-                        let mut prev_task = alpha_task_stack.pop().unwrap();
-                        let item = AlphaRenderItem::Composite(
-                            stacking_context_index,
-                            source_task_id,
-                            backdrop_task_id,
-                            mix_blend_mode,
-                            next_z,
-                        );
-                        next_z += 1;
-                        prev_task.as_alpha_batch_mut().items.push(item);
-                        prev_task.children.push(source_task_id);
-                        prev_task.children.push(backdrop_task_id);
-                        current_task = prev_task;
-                    }
-
-                    if parent_isolation == Some(ContextIsolation::Items) ||
-                        stacking_context.isolation == ContextIsolation::Items
-                    {
-                        
-                        
-                        
-                        let current_task_id = render_tasks.add(current_task);
-                        preserve_3d_map_stack
-                            .last_mut()
-                            .unwrap()
-                            .insert(stacking_context_index, current_task_id);
-                        current_task = alpha_task_stack.pop().unwrap();
-                    }
-
-                    if parent_isolation != Some(ContextIsolation::Items) &&
-                        stacking_context.isolation == ContextIsolation::Items
-                    {
-                        debug!("\tsplitter[{}]: flush", splitter_stack.len());
-                        let mut splitter = splitter_stack.pop().unwrap();
-                        
-                        
-                        current_task
-                            .children
-                            .extend(preserve_3d_map_stack.last().unwrap().values().cloned());
-                        
-                        for poly in splitter.sort(vec3(0.0, 0.0, 1.0)) {
-                            let sc_index = StackingContextIndex(poly.anchor);
-                            let task_id = preserve_3d_map_stack.last().unwrap()[&sc_index];
-                            debug!("\t\tproduce {:?} -> {:?} for {:?}", sc_index, poly, task_id);
-                            let pp = &poly.points;
-                            let gpu_blocks = [
-                                [pp[0].x as f32, pp[0].y as f32, pp[0].z as f32, pp[1].x as f32].into(),
-                                [pp[1].y as f32, pp[1].z as f32, pp[2].x as f32, pp[2].y as f32].into(),
-                                [pp[2].z as f32, pp[3].x as f32, pp[3].y as f32, pp[3].z as f32].into(),
-                            ];
-                            let handle = gpu_cache.push_per_frame_blocks(&gpu_blocks);
-                            let item =
-                                AlphaRenderItem::SplitComposite(sc_index, task_id, handle, next_z);
-                            current_task.as_alpha_batch_mut().items.push(item);
-                        }
-                        preserve_3d_map_stack.pop();
-                        next_z += 1;
-                    }
-
-                    if stacking_context.is_pipeline_root &&
-                        output_pipelines.contains(&stacking_context.pipeline_id)
-                    {
-                        let mut prev_task = alpha_task_stack.pop().unwrap();
-                        let screen_origin = current_task.as_alpha_batch().screen_origin;
-                        let current_task_size = current_task.get_dynamic_size();
-                        let current_task_id = render_tasks.add(current_task);
-                        let item = AlphaRenderItem::HardwareComposite(
-                            stacking_context_index,
-                            current_task_id,
-                            HardwareCompositeOp::PremultipliedAlpha,
-                            screen_origin,
-                            next_z,
-                            current_task_size,
-                        );
-                        next_z += 1;
-                        prev_task.as_alpha_batch_mut().items.push(item);
-                        prev_task.children.push(current_task_id);
-                        current_task = prev_task;
-                    }
-                }
-                PrimitiveRunCmd::PrimitiveRun(ref run) => {
-                    let stacking_context_index = *sc_stack.last().unwrap();
-                    if !self.stacking_context_store[stacking_context_index.0].is_visible {
-                        continue;
-                    }
-
-                    debug!("\trun of {} items", run.count);
-
-                    let clip_node = &clip_scroll_tree.nodes[&run.clip_and_scroll.clip_node_id()];
-                    if !clip_node.is_visible() {
-                        continue;
-                    }
-                    let scroll_node = &clip_scroll_tree.nodes[&run.clip_and_scroll.scroll_node_id];
-
-                    for i in 0 .. run.count {
-                        let prim_index = PrimitiveIndex(run.base_prim_index.0 + i);
-
-                        if self.prim_store.cpu_metadata[prim_index.0].screen_rect.is_some() {
-                            self.prim_store
-                                .add_render_tasks_for_prim(prim_index, &mut current_task);
-                            let item =
-                                AlphaRenderItem::Primitive(
-                                    clip_node.node_data_index,
-                                    scroll_node.node_data_index,
-                                    prim_index,
-                                    next_z
-                                );
-                            current_task.as_alpha_batch_mut().items.push(item);
-                            next_z += 1;
-                        }
-                    }
-                }
-            }
-        }
-
-        debug_assert!(alpha_task_stack.is_empty());
-        debug_assert!(preserve_3d_map_stack.is_empty());
-        render_tasks.add(current_task)
-    }
-
     pub fn build(
         &mut self,
         resource_cache: &mut ResourceCache,
@@ -1879,9 +1628,9 @@ impl FrameBuilder {
         pipelines: &FastHashMap<PipelineId, ScenePipeline>,
         device_pixel_ratio: f32,
         pan: LayerPoint,
-        output_pipelines: &FastHashSet<PipelineId>,
         texture_cache_profile: &mut TextureCacheProfileCounters,
         gpu_cache_profile: &mut GpuCacheProfileCounters,
+        scene_properties: &SceneProperties,
     ) -> Frame {
         profile_scope!("build");
 
@@ -1911,6 +1660,7 @@ impl FrameBuilder {
             gpu_cache,
             pan,
             &mut node_data,
+            scene_properties,
         );
 
         self.update_scroll_bars(clip_scroll_tree, gpu_cache);
@@ -1918,7 +1668,6 @@ impl FrameBuilder {
         let mut render_tasks = RenderTaskTree::new();
 
         self.build_layer_screen_rects_and_cull_layers(
-            &screen_rect,
             clip_scroll_tree,
             pipelines,
             resource_cache,
@@ -1926,15 +1675,13 @@ impl FrameBuilder {
             &mut render_tasks,
             &mut profile_counters,
             device_pixel_ratio,
+            scene_properties,
         );
 
-        let main_render_task_id = self.build_render_task(
-            clip_scroll_tree,
-            gpu_cache,
-            &mut render_tasks,
-            output_pipelines,
-            device_pixel_ratio,
-        );
+        let main_render_task_id = self.prim_store
+                                      .cpu_pictures[0]
+                                      .render_task_id
+                                      .expect("bug: no root render task!");
 
         let mut required_pass_count = 0;
         render_tasks.max_depth(main_render_task_id, 0, &mut required_pass_count);
@@ -1948,7 +1695,10 @@ impl FrameBuilder {
         
         
         for index in 0 .. required_pass_count {
-            passes.push(RenderPass::new(index == required_pass_count - 1));
+            passes.push(RenderPass::new(
+                index == required_pass_count - 1,
+                screen_rect.size,
+            ));
         }
 
         render_tasks.assign_to_passes(main_render_task_id, passes.len() - 1, &mut passes);
@@ -1956,10 +1706,10 @@ impl FrameBuilder {
         for pass in &mut passes {
             let ctx = RenderTargetContext {
                 device_pixel_ratio,
-                stacking_context_store: &self.stacking_context_store,
                 prim_store: &self.prim_store,
                 resource_cache,
                 node_data: &node_data,
+                clip_scroll_tree,
             };
 
             pass.build(
