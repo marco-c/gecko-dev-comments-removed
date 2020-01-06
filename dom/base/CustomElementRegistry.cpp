@@ -55,6 +55,10 @@ CustomElementCallback::Call()
         mArgs.name, mArgs.oldValue, mArgs.newValue, rv);
       break;
   }
+
+  
+  
+  rv.SuppressException();
 }
 
 void
