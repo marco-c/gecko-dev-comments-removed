@@ -1800,10 +1800,11 @@ var Impl = {
 
       
       
-      
-      
+      const sendOnThisSession =
+        Preferences.get(Utils.Preferences.ShutdownPingSenderFirstSession, false) ||
+        !TelemetryReportingPolicy.isFirstRun();
       let sendWithPingsender = Preferences.get(TelemetryUtils.Preferences.ShutdownPingSender, false) &&
-                               !TelemetryReportingPolicy.isFirstRun();
+                               sendOnThisSession;
 
       let options = {
         addClientId: true,

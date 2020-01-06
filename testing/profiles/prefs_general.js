@@ -7,7 +7,7 @@ user_pref("browser.firstrun.show.uidiscovery", false);
 user_pref("browser.startup.page", 0); 
 user_pref("browser.search.suggest.timeout", 10000); 
 user_pref("browser.ui.layout.tablet", 0); 
-user_pref("browser.urlbar.speculativeConnect.enabled", false);
+user_pref("browser.urlbar.speculativeConnection.enabled", false);
 user_pref("dom.allow_scripts_to_close_windows", true);
 user_pref("dom.disable_open_during_load", false);
 user_pref("dom.experimental_forms", true); 
@@ -257,6 +257,12 @@ user_pref("toolkit.telemetry.newProfilePing.enabled", false);
 
 
 
+
+
+user_pref("toolkit.telemetry.shutdownPingSender.enabledFirstSession", false);
+
+
+
 user_pref("toolkit.telemetry.test.pref1", true);
 user_pref("toolkit.telemetry.test.pref2", false);
 
@@ -298,7 +304,6 @@ user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
 
 user_pref("browser.newtabpage.activity-stream.default.sites", "");
 user_pref("browser.newtabpage.activity-stream.telemetry", false);
-user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 
 
 user_pref("browser.newtabpage.directory.source", 'data:application/json,{"testing":1}');

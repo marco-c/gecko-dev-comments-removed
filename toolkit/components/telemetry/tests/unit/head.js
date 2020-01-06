@@ -314,6 +314,7 @@ if (runningInParent) {
   
   
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.ShutdownPingSender, false);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false);
   Services.prefs.setBoolPref("toolkit.telemetry.newProfilePing.enabled", false);
   
   

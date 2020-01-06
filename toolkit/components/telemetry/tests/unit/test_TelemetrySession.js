@@ -1408,7 +1408,7 @@ add_task(async function test_sendShutdownPing() {
   
   let nextPing = PingServer.promiseNextPing();
   await TelemetryController.testShutdown();
-  const ping = await nextPing;
+  let ping = await nextPing;
 
   
   checkPingFormat(ping, ping.type, true, true);
@@ -1471,7 +1471,29 @@ add_task(async function test_sendShutdownPing() {
   await TelemetryController.testShutdown();
 
   
+  await TelemetryStorage.testClearPendingPings();
+  PingServer.clearRequests();
+  PingServer.resetPingHandler();
+
+  
+  
+  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, true);
+  Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
+  TelemetryReportingPolicy.testUpdateFirstRun();
+
+  
+  await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
+  ping = await PingServer.promiseNextPing();
+
+  
+  checkPingFormat(ping, ping.type, true, true);
+  Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
+  Assert.equal(ping.clientId, gClientID);
+
+  
   Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, false);
+  Preferences.set(TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false);
   Preferences.reset(TelemetryUtils.Preferences.FirstRun);
   PingServer.resetPingHandler();
 });
