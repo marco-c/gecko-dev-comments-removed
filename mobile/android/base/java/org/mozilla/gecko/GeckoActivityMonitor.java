@@ -53,14 +53,6 @@ public class GeckoActivityMonitor implements Application.ActivityLifecycleCallba
         currentActivity = activity;
     }
 
-    
-
-
-
-    public void setCurrentActivity(Activity activity) {
-        currentActivity = activity;
-    }
-
     @Override
     public void onActivityPaused(Activity activity) {
         releaseIfCurrentActivity(activity);

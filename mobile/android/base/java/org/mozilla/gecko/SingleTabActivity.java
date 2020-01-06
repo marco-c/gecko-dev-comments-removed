@@ -20,9 +20,6 @@ public abstract class SingleTabActivity extends GeckoApp {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         final Intent externalIntent = getIntent();
-        
-        
-        GeckoActivityMonitor.getInstance().setCurrentActivity(this);
 
         decideTabAction(new SafeIntent(externalIntent), savedInstanceState);
 
@@ -35,9 +32,6 @@ public abstract class SingleTabActivity extends GeckoApp {
     @Override
     protected void onNewIntent(Intent externalIntent) {
         final SafeIntent intent = new SafeIntent(externalIntent);
-        
-        
-        GeckoActivityMonitor.getInstance().setCurrentActivity(this);
 
         if (decideTabAction(intent, null)) {
             
