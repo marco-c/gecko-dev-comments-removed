@@ -48,6 +48,29 @@ ToChar(bool aBool)
   return aBool ? "true" : "false";
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static nsIContent*
+PointBefore(nsINode* aContainer, nsIContent* aContent)
+{
+  if (aContent) {
+    return aContent->GetPreviousSibling();
+  }
+  return aContainer->GetLastChild();
+}
+
 class WritingModeToString final : public nsAutoCString
 {
 public:
@@ -174,9 +197,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(IMEContentObserver)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(IMEContentObserver)
 
 IMEContentObserver::IMEContentObserver()
-  : mFirstAddedNodeOffset(0)
-  , mLastAddedNodeOffset(0)
-  , mESM(nullptr)
+  : mESM(nullptr)
   , mIMENotificationRequests(nullptr)
   , mSuppressNotifications(0)
   , mPreCharacterDataChangeLength(-1)
@@ -1001,12 +1022,15 @@ IMEContentObserver::CharacterDataChanged(nsIDocument* aDocument,
 
 void
 IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
-                                       int32_t aStartIndex,
-                                       int32_t aEndIndex)
+                                       nsIContent* aFirstContent,
+                                       nsIContent* aLastContent)
 {
   if (!NeedsTextChangeNotification()) {
     return;
   }
+
+  MOZ_ASSERT_IF(aFirstContent, aFirstContent->GetParentNode() == aContainer);
+  MOZ_ASSERT_IF(aLastContent, aLastContent->GetParentNode() == aContainer);
 
   mStartOfRemovingTextRangeCache.Clear();
 
@@ -1019,9 +1043,9 @@ IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
     
     mEndOfAddedTextCache.Clear();
     if (!HasAddedNodesDuringDocumentChange()) {
-      mFirstAddedNodeContainer = mLastAddedNodeContainer = aContainer;
-      mFirstAddedNodeOffset = aStartIndex;
-      mLastAddedNodeOffset = aEndIndex;
+      mFirstAddedContainer = mLastAddedContainer = aContainer;
+      mFirstAddedContent = aFirstContent;
+      mLastAddedContent = aLastContent;
       MOZ_LOG(sIMECOLog, LogLevel::Debug,
         ("0x%p IMEContentObserver::NotifyContentAdded(), starts to store "
          "consecutive added nodes", this));
@@ -1030,17 +1054,17 @@ IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
     
     
     
-    if (NS_WARN_IF(!IsNextNodeOfLastAddedNode(aContainer, aStartIndex))) {
+    if (NS_WARN_IF(!IsNextNodeOfLastAddedNode(aContainer, aFirstContent))) {
       
       MaybeNotifyIMEOfAddedTextDuringDocumentChange();
-      mFirstAddedNodeContainer = aContainer;
-      mFirstAddedNodeOffset = aStartIndex;
+      mFirstAddedContainer = aContainer;
+      mFirstAddedContent = aFirstContent;
       MOZ_LOG(sIMECOLog, LogLevel::Debug,
         ("0x%p IMEContentObserver::NotifyContentAdded(), starts to store "
          "consecutive added nodes", this));
     }
-    mLastAddedNodeContainer = aContainer;
-    mLastAddedNodeOffset = aEndIndex;
+    mLastAddedContainer = aContainer;
+    mLastAddedContent = aLastContent;
     return;
   }
   MOZ_ASSERT(!HasAddedNodesDuringDocumentChange(),
@@ -1048,11 +1072,14 @@ IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
 
   uint32_t offset = 0;
   nsresult rv = NS_OK;
-  if (!mEndOfAddedTextCache.Match(aContainer, aStartIndex)) {
+  if (!mEndOfAddedTextCache.Match(aContainer,
+                                  aFirstContent->GetPreviousSibling())) {
     mEndOfAddedTextCache.Clear();
     rv = ContentEventHandler::GetFlatTextLengthInRange(
                                 NodePosition(mRootContent, 0),
-                                NodePositionBefore(aContainer, aStartIndex),
+                                NodePositionBefore(aContainer,
+                                                   PointBefore(aContainer,
+                                                               aFirstContent)),
                                 mRootContent, &offset, LINE_BREAK_TYPE_NATIVE);
     if (NS_WARN_IF(NS_FAILED((rv)))) {
       return;
@@ -1064,8 +1091,10 @@ IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
   
   uint32_t addingLength = 0;
   rv = ContentEventHandler::GetFlatTextLengthInRange(
-                              NodePositionBefore(aContainer, aStartIndex),
-                              NodePosition(aContainer, aEndIndex),
+                              NodePositionBefore(aContainer,
+                                                 PointBefore(aContainer,
+                                                             aFirstContent)),
+                              NodePosition(aContainer, aLastContent),
                               mRootContent, &addingLength,
                               LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED((rv)))) {
@@ -1077,7 +1106,7 @@ IMEContentObserver::NotifyContentAdded(nsINode* aContainer,
   
   
   
-  mEndOfAddedTextCache.Cache(aContainer, aEndIndex, offset + addingLength);
+  mEndOfAddedTextCache.Cache(aContainer, aLastContent, offset + addingLength);
 
   if (!addingLength) {
     return;
@@ -1093,27 +1122,27 @@ void
 IMEContentObserver::ContentAppended(nsIDocument* aDocument,
                                     nsIContent* aContainer,
                                     nsIContent* aFirstNewContent,
-                                    int32_t aNewIndexInContainer)
+                                    int32_t )
 {
-  NotifyContentAdded(aContainer, aNewIndexInContainer,
-                     aContainer->GetChildCount());
+  NotifyContentAdded(NODE_FROM(aContainer, aDocument),
+                     aFirstNewContent, aContainer->GetLastChild());
 }
 
 void
 IMEContentObserver::ContentInserted(nsIDocument* aDocument,
                                     nsIContent* aContainer,
                                     nsIContent* aChild,
-                                    int32_t aIndexInContainer)
+                                    int32_t )
 {
   NotifyContentAdded(NODE_FROM(aContainer, aDocument),
-                     aIndexInContainer, aIndexInContainer + 1);
+                     aChild, aChild);
 }
 
 void
 IMEContentObserver::ContentRemoved(nsIDocument* aDocument,
                                    nsIContent* aContainer,
                                    nsIContent* aChild,
-                                   int32_t aIndexInContainer,
+                                   int32_t ,
                                    nsIContent* aPreviousSibling)
 {
   if (!NeedsTextChangeNotification()) {
@@ -1127,18 +1156,19 @@ IMEContentObserver::ContentRemoved(nsIDocument* aDocument,
 
   uint32_t offset = 0;
   nsresult rv = NS_OK;
-  if (!mStartOfRemovingTextRangeCache.Match(containerNode, aIndexInContainer)) {
+  if (!mStartOfRemovingTextRangeCache.Match(containerNode, aPreviousSibling)) {
     
     
+
     rv = ContentEventHandler::GetFlatTextLengthInRange(
                                 NodePosition(mRootContent, 0),
-                                NodePosition(containerNode, aIndexInContainer),
+                                NodePosition(containerNode, aPreviousSibling),
                                 mRootContent, &offset, LINE_BREAK_TYPE_NATIVE);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       mStartOfRemovingTextRangeCache.Clear();
       return;
     }
-    mStartOfRemovingTextRangeCache.Cache(containerNode, aIndexInContainer,
+    mStartOfRemovingTextRangeCache.Cache(containerNode, aPreviousSibling,
                                          offset);
   } else {
     offset = mStartOfRemovingTextRangeCache.mFlatTextLength;
@@ -1230,8 +1260,8 @@ IMEContentObserver::AttributeChanged(nsIDocument* aDocument,
 void
 IMEContentObserver::ClearAddedNodesDuringDocumentChange()
 {
-  mFirstAddedNodeContainer = mLastAddedNodeContainer = nullptr;
-  mFirstAddedNodeOffset = mLastAddedNodeOffset = 0;
+  mFirstAddedContainer = mLastAddedContainer = nullptr;
+  mFirstAddedContent = mLastAddedContent = nullptr;
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::ClearAddedNodesDuringDocumentChange()"
      ", finished storing consecutive nodes", this));
@@ -1256,17 +1286,17 @@ IMEContentObserver::GetChildNode(nsINode* aParent, int32_t aOffset)
 
 bool
 IMEContentObserver::IsNextNodeOfLastAddedNode(nsINode* aParent,
-                                              int32_t aOffset) const
+                                              nsIContent* aChild) const
 {
   MOZ_ASSERT(aParent);
-  MOZ_ASSERT(aOffset >= 0 &&
-             aOffset <= static_cast<int32_t>(aParent->Length()));
+  MOZ_ASSERT(aChild && aChild->GetParentNode() == aParent);
   MOZ_ASSERT(mRootContent);
   MOZ_ASSERT(HasAddedNodesDuringDocumentChange());
 
   
-  if (aParent == mLastAddedNodeContainer) {
-    if (NS_WARN_IF(mLastAddedNodeOffset != aOffset)) {
+  
+  if (aParent == mLastAddedContainer) {
+    if (NS_WARN_IF(mLastAddedContent->GetNextSibling() != aChild)) {
       return false;
     }
     return true;
@@ -1274,48 +1304,28 @@ IMEContentObserver::IsNextNodeOfLastAddedNode(nsINode* aParent,
 
   
   
-  if (NS_WARN_IF(mLastAddedNodeOffset !=
-                   static_cast<int32_t>(mLastAddedNodeContainer->Length()))) {
+  if (NS_WARN_IF(mLastAddedContent->GetNextSibling())) {
     return false;
   }
 
   
   
-  if (mLastAddedNodeContainer == aParent->GetParent()) {
-    if (NS_WARN_IF(aOffset)) {
+  if (mLastAddedContainer == aParent->GetParent()) {
+    if (NS_WARN_IF(aChild->GetPreviousSibling())) {
       return false;
     }
     return true;
   }
 
   
-  nsIContent* lastAddedContent =
-    GetChildNode(mLastAddedNodeContainer, mLastAddedNodeOffset - 1);
-  if (NS_WARN_IF(!lastAddedContent)) {
-    return false;
-  }
-
   nsIContent* nextContentOfLastAddedContent =
-    lastAddedContent->GetNextNode(mRootContent->GetParentNode());
+    mLastAddedContent->GetNextNode(mRootContent->GetParentNode());
   if (NS_WARN_IF(!nextContentOfLastAddedContent)) {
     return false;
   }
-
-  nsIContent* startContent = GetChildNode(aParent, aOffset);
-  if (NS_WARN_IF(!startContent) ||
-      NS_WARN_IF(nextContentOfLastAddedContent != startContent)) {
+  if (NS_WARN_IF(nextContentOfLastAddedContent != aChild)) {
     return false;
   }
-#ifdef DEBUG
-  NS_WARNING_ASSERTION(
-    !aOffset || aOffset == static_cast<int32_t>(aParent->Length() - 1),
-    "Used slow path for aParent");
-  NS_WARNING_ASSERTION(
-    !(mLastAddedNodeOffset - 1) ||
-    mLastAddedNodeOffset ==
-      static_cast<int32_t>(mLastAddedNodeContainer->Length()),
-    "Used slow path for mLastAddedNodeContainer");
-#endif 
   return true;
 }
 
@@ -1338,8 +1348,9 @@ IMEContentObserver::MaybeNotifyIMEOfAddedTextDuringDocumentChange()
   nsresult rv =
     ContentEventHandler::GetFlatTextLengthInRange(
                             NodePosition(mRootContent, 0),
-                            NodePosition(mFirstAddedNodeContainer,
-                                         mFirstAddedNodeOffset),
+                            NodePosition(mFirstAddedContainer,
+                                         PointBefore(mFirstAddedContainer,
+                                                     mFirstAddedContent)),
                             mRootContent, &offset, LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ClearAddedNodesDuringDocumentChange();
@@ -1350,10 +1361,10 @@ IMEContentObserver::MaybeNotifyIMEOfAddedTextDuringDocumentChange()
   uint32_t length;
   rv =
     ContentEventHandler::GetFlatTextLengthInRange(
-                           NodePosition(mFirstAddedNodeContainer,
-                                        mFirstAddedNodeOffset),
-                           NodePosition(mLastAddedNodeContainer,
-                                        mLastAddedNodeOffset),
+                           NodePosition(mFirstAddedContainer,
+                                        PointBefore(mFirstAddedContainer,
+                                                    mFirstAddedContent)),
+                           NodePosition(mLastAddedContainer, mLastAddedContent),
                            mRootContent, &length, LINE_BREAK_TYPE_NATIVE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ClearAddedNodesDuringDocumentChange();

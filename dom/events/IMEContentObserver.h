@@ -232,15 +232,14 @@ private:
 
   bool HasAddedNodesDuringDocumentChange() const
   {
-    return mFirstAddedNodeContainer && mLastAddedNodeContainer;
+    return mFirstAddedContainer && mLastAddedContainer;
   }
 
   
 
 
 
-
-  bool IsNextNodeOfLastAddedNode(nsINode* aParent, int32_t aOffset) const;
+  bool IsNextNodeOfLastAddedNode(nsINode* aParent, nsIContent* aChild) const;
 
   void PostFocusSetNotification();
   void MaybeNotifyIMEOfFocusSet();
@@ -256,7 +255,9 @@ private:
   void CancelNotifyingIMEOfPositionChange();
   void PostCompositionEventHandledNotification();
 
-  void NotifyContentAdded(nsINode* aContainer, int32_t aStart, int32_t aEnd);
+  void NotifyContentAdded(nsINode* aContainer,
+                          nsIContent* aFirstContent,
+                          nsIContent* aLastContent);
   void ObserveEditableNode();
   
 
@@ -434,39 +435,40 @@ private:
     
     
     nsCOMPtr<nsINode> mContainerNode;
-    int32_t mNodeOffset;
+    
+    
+    
+    nsCOMPtr<nsINode> mNode;
     
     
     uint32_t mFlatTextLength;
 
     FlatTextCache()
-      : mNodeOffset(0)
-      , mFlatTextLength(0)
+      : mFlatTextLength(0)
     {
     }
 
     void Clear()
     {
       mContainerNode = nullptr;
-      mNodeOffset = 0;
+      mNode = nullptr;
       mFlatTextLength = 0;
     }
 
-    void Cache(nsINode* aContainer, int32_t aNodeOffset,
+    void Cache(nsINode* aContainer, nsINode* aNode,
                uint32_t aFlatTextLength)
     {
       MOZ_ASSERT(aContainer, "aContainer must not be null");
-      MOZ_ASSERT(
-        aNodeOffset <= static_cast<int32_t>(aContainer->GetChildCount()),
-        "aNodeOffset must be same as or less than the count of children");
+      MOZ_ASSERT(!aNode || aNode->GetParentNode() == aContainer,
+                 "aNode must be either null or a child of aContainer");
       mContainerNode = aContainer;
-      mNodeOffset = aNodeOffset;
+      mNode = aNode;
       mFlatTextLength = aFlatTextLength;
     }
 
-    bool Match(nsINode* aContainer, int32_t aNodeOffset) const
+    bool Match(nsINode* aContainer, nsINode* aNode) const
     {
-      return aContainer == mContainerNode && aNodeOffset == mNodeOffset;
+      return aContainer == mContainerNode && aNode == mNode;
     }
   };
   
@@ -485,20 +487,19 @@ private:
   
   
   
-  nsCOMPtr<nsINode> mFirstAddedNodeContainer;
+  nsCOMPtr<nsINode> mFirstAddedContainer;
   
   
   
   
   
   
-  nsCOMPtr<nsINode> mLastAddedNodeContainer;
+  nsCOMPtr<nsINode> mLastAddedContainer;
+
   
+  nsCOMPtr<nsIContent> mFirstAddedContent;
   
-  int32_t mFirstAddedNodeOffset;
-  
-  
-  int32_t mLastAddedNodeOffset;
+  nsCOMPtr<nsIContent> mLastAddedContent;
 
   TextChangeData mTextChangeData;
 
