@@ -20,6 +20,7 @@ public class PermissionBlock {
     private Context context;
     private String[] permissions;
     private boolean onUIThread;
+    private boolean onBackgroundThread;
     private Runnable onPermissionsGranted;
     private Runnable onPermissionsDenied;
     private boolean doNotPrompt;
@@ -46,6 +47,16 @@ public class PermissionBlock {
     }
 
     
+
+
+    public PermissionBlock onBackgroundThread() {
+        this.onBackgroundThread = true;
+        return this;
+    }
+
+    
+
+
 
 
     public PermissionBlock doNotPrompt() {
@@ -116,8 +127,14 @@ public class PermissionBlock {
             return;
         }
 
-        if (onUIThread) {
+        if (onUIThread && onBackgroundThread) {
+            throw new IllegalStateException("Cannot run callback on more than one thread");
+        }
+
+        if (onUIThread && !ThreadUtils.isOnUiThread()) {
             ThreadUtils.postToUiThread(runnable);
+        } else if (onBackgroundThread && !ThreadUtils.isOnBackgroundThread()) {
+            ThreadUtils.postToBackgroundThread(runnable);
         } else {
             runnable.run();
         }
