@@ -54,6 +54,12 @@ use errors::*;
 const SHM_AREA_SIZE: usize = 2 * 1024 * 1024;
 
 
+const SERVER_CONN_CHUNK_SIZE: usize = 16;
+
+
+const STREAM_CONN_CHUNK_SIZE: usize = 64;
+
+
 struct Callback {
     
     input_frame_size: u16,
@@ -163,7 +169,7 @@ impl ServerConn {
             io: io,
             token: None,
             
-            streams: StreamSlab::with_capacity(64),
+            streams: StreamSlab::with_capacity(STREAM_CONN_CHUNK_SIZE),
             decoder: Decoder::new(),
             recv_buffer: BytesMut::with_capacity(4096),
             send_buffer: BytesMut::with_capacity(4096),
@@ -435,6 +441,14 @@ impl ServerConn {
             }
         ) {
             Ok(stream) => {
+                if !self.streams.has_available() {
+                    trace!(
+                        "server connection ran out of stream slots. reserving {} more.",
+                        STREAM_CONN_CHUNK_SIZE
+                    );
+                    self.streams.reserve_exact(STREAM_CONN_CHUNK_SIZE);
+                }
+
                 let stm_tok = match self.streams.vacant_entry() {
                     Some(entry) => {
                         debug!(
@@ -582,7 +596,7 @@ impl Server {
         Server {
             socket: socket,
             context: None,
-            conns: Slab::with_capacity(16)
+            conns: Slab::with_capacity(SERVER_CONN_CHUNK_SIZE)
         }
     }
 
@@ -597,6 +611,15 @@ impl Server {
             Ok(None) => panic!("accept returned EAGAIN unexpectedly"),
             Ok(Some((socket, _))) => socket,
         };
+
+        if !self.conns.has_available() {
+            trace!(
+                "server ran out of connection slots. reserving {} more.",
+                SERVER_CONN_CHUNK_SIZE
+            );
+            self.conns.reserve_exact(SERVER_CONN_CHUNK_SIZE);
+        }
+
         let token = match self.conns.vacant_entry() {
             Some(entry) => {
                 debug!("registering {:?}", entry.index());
