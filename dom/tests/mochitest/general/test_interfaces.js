@@ -102,9 +102,9 @@ var legacyMozPrefixedInterfaces =
 var interfaceNamesInGlobalScope =
   [
 
-    {name: "AbortController", nightly: true},
+    "AbortController",
 
-    {name: "AbortSignal", nightly: true},
+    "AbortSignal",
 
     "AnalyserNode",
 
