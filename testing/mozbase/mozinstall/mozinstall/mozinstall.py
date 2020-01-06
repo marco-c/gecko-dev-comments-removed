@@ -281,6 +281,7 @@ def _install_dmg(src, dest):
     dest -- the path to extract to
 
     """
+    appDir = None
     try:
         
         
@@ -309,8 +310,9 @@ def _install_dmg(src, dest):
         shutil.copytree(mounted_path, dest, False)
 
     finally:
-        subprocess.call('hdiutil detach %s -quiet' % appDir,
-                        shell=True)
+        if appDir:
+            subprocess.call('hdiutil detach %s -quiet' % appDir,
+                            shell=True)
 
     return dest
 
