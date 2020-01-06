@@ -9,13 +9,7 @@ function f(v, global)
     return v;
 }
 
-
-
-var AssertEq = typeof reportCompare === "function"
-             ? (act, exp, msg) => reportCompare(exp, act, msg)
-             : assertEq;
-
-AssertEq(f("argument-v", this), "argument-v",
+assertEq(f("argument-v", this), "argument-v",
          "let-var shouldn't appear in global for |with| purposes");
 
 if (typeof reportCompare === "function")
