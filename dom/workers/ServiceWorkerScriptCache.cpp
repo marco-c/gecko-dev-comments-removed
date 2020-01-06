@@ -156,6 +156,12 @@ public:
     return Move(mPrincipalInfo);
   }
 
+  bool
+  Succeeded() const
+  {
+    return NS_SUCCEEDED(mNetworkResult);
+  }
+
 private:
   ~CompareNetwork()
   {
@@ -559,6 +565,11 @@ private:
     MOZ_ASSERT(aCN);
     MOZ_ASSERT(mState == WaitingForOpen);
 
+    
+    if (!aCN->Succeeded()) {
+      return NS_OK;
+    }
+
     ErrorResult result;
     nsCOMPtr<nsIInputStream> body;
     result = NS_NewCStringInputStream(getter_AddRefs(body),
@@ -739,7 +750,11 @@ CompareNetwork::Finish()
   
   
   if (NS_FAILED(mNetworkResult)) {
-    rv = mNetworkResult;
+    
+    
+    
+    rv = mIsMainScript ? mNetworkResult : NS_OK;
+    same = true;
   } else if (mCC && NS_FAILED(mCacheResult)) {
     rv = mCacheResult;
   } else { 
