@@ -436,6 +436,8 @@ class ExtensionPageContextParent extends ProxyContextParent {
 
     this.viewType = params.viewType;
 
+    this.extension.views.add(this);
+
     extension.emit("extension-proxy-context-load", this);
   }
 
@@ -477,6 +479,7 @@ class ExtensionPageContextParent extends ProxyContextParent {
 
   shutdown() {
     apiManager.emit("page-shutdown", this);
+    this.extension.views.delete(this);
     super.shutdown();
   }
 }
@@ -845,7 +848,10 @@ class HiddenXULWindow {
 
 
 
-  async createBrowserElement(xulAttributes) {
+
+
+
+  async createBrowserElement(xulAttributes, groupFrameLoader = null) {
     if (!xulAttributes || Object.keys(xulAttributes).length === 0) {
       throw new Error("missing mandatory xulAttributes parameter");
     }
@@ -857,6 +863,7 @@ class HiddenXULWindow {
     const browser = chromeDoc.createElement("browser");
     browser.setAttribute("type", "content");
     browser.setAttribute("disableglobalhistory", "true");
+    browser.sameProcessAsFrameLoader = groupFrameLoader;
 
     for (const [name, value] of Object.entries(xulAttributes)) {
       if (value != null) {
@@ -936,7 +943,7 @@ class HiddenExtensionPage extends HiddenXULWindow {
       "remote": this.extension.remote ? "true" : null,
       "remoteType": this.extension.remote ?
         E10SUtils.EXTENSION_REMOTE_TYPE : null,
-    });
+    }, this.extension.groupFrameLoader);
 
     return this.browser;
   }
@@ -1015,7 +1022,7 @@ const DebugUtils = {
         "remote": extension.remote ? "true" : null,
         "remoteType": extension.remote ?
           E10SUtils.EXTENSION_REMOTE_TYPE : null,
-      });
+      }, extension.groupFrameLoader);
     };
 
     let browserPromise = this.debugBrowserPromises.get(extensionId);
@@ -1024,7 +1031,11 @@ const DebugUtils = {
     if (!browserPromise) {
       browserPromise = createBrowser();
       this.debugBrowserPromises.set(extensionId, browserPromise);
-      browserPromise.catch(() => {
+      browserPromise.then(browser => {
+        browserPromise.browser = browser;
+      });
+      browserPromise.catch(e => {
+        Cu.reportError(e);
         this.debugBrowserPromises.delete(extensionId);
       });
     }
@@ -1034,6 +1045,10 @@ const DebugUtils = {
     return browserPromise;
   },
 
+  getFrameLoader(extensionId) {
+    let promise = this.debugBrowserPromises.get(extensionId);
+    return promise && promise.browser && promise.browser.frameLoader;
+  },
 
   
 
