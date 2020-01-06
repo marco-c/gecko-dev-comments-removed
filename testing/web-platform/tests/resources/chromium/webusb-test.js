@@ -457,9 +457,9 @@ class USBTest {
     this.onrequestdevice = undefined;
   }
 
-  initialize() {
+  async initialize() {
     if (internal.initialized)
-      return Promise.resolve();
+      return;
 
     internal.deviceManager = new FakeDeviceManager();
     internal.deviceManagerInterceptor =
@@ -479,11 +479,13 @@ class USBTest {
     internal.chooserCrossFrameProxy = new CrossFrameHandleProxy(
         handle => internal.chooser.addBinding(handle));
 
+    
+    
+    await navigator.usb.getDevices();
     internal.initialized = true;
-    return Promise.resolve();
   }
 
-  attachToWindow(otherWindow) {
+  async attachToWindow(otherWindow) {
     if (!internal.initialized)
       throw new Error('Call initialize() before attachToWindow().');
 
@@ -500,7 +502,10 @@ class USBTest {
     otherWindow.chooserInterceptor.oninterfacerequest =
         e => internal.chooserCrossFrameProxy.forwardHandle(e.handle);
     otherWindow.chooserInterceptor.start();
-    return Promise.resolve();
+
+    
+    
+    await otherWindow.navigator.usb.getDevices();
   }
 
   addFakeDevice(deviceInit) {

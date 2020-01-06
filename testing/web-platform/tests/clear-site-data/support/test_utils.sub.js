@@ -15,6 +15,8 @@ var TestUtils = (function() {
 
 
 
+
+
   var Datatype;
 
   var TestUtils = {};
@@ -23,9 +25,152 @@ var TestUtils = (function() {
 
 
 
+  TestUtils.STORAGE = [
+    {
+      "name": "local storage",
+      "supported": function() { !!window.localStorage; },
+      "add": function() {
+        return new Promise(function(resolve, reject) {
+          localStorage.setItem(randomString(), randomString());
+          resolve();
+        });
+      },
+      "isEmpty": function() {
+        return new Promise(function(resolve, reject) {
+          resolve(!localStorage.length);
+        });
+      }
+    },
+    {
+      "name": "Indexed DB",
+      "supported": function() { return !!window.indexedDB; },
+      "add": function() {
+        return new Promise(function(resolve, reject) {
+          var request = window.indexedDB.open("database");
+          request.onupgradeneeded = function() {
+            request.result.createObjectStore("store");
+          };
+          request.onsuccess = function() {
+            request.result.close();
+            resolve();
+          }
+        });
+      },
+      "isEmpty": function() {
+        return new Promise(function(resolve, reject) {
+          var request = window.indexedDB.open("database");
+          request.onsuccess = function() {
+            var database = request.result;
+            try {
+              var transaction = database.transaction(["store"]);
+              resolve(false);
+            } catch(error) {
+              
+              
+              
+              
+              var deletion = window.indexedDB.deleteDatabase("database");
+              deletion.onsuccess = resolve.bind(this, true);
+            } finally {
+              database.close();
+            }
+          };
+        });
+      }
+    },
+    {
+      
+      
+      "name": "filesystems",
+      "supported": function() {
+        return window.requestFileSystem || window.webkitRequestFileSystem;
+      },
+      "add": function() {
+        return new Promise(function(resolve, reject) {
+          var onSuccess = function(fileSystem) {
+            fileSystem.root.getFile('file', {"create": true}, resolve, resolve);
+          }
+          var onFailure = resolve;
+
+          var requestFileSystem =
+              window.requestFileSystem || window.webkitRequestFileSystem;
+          requestFileSystem(window.TEMPORARY, 1 ,
+                            onSuccess, onFailure);
+        });
+      },
+      "isEmpty": function() {
+        return new Promise(function(resolve, reject) {
+          var onSuccess = function(fileSystem) {
+            fileSystem.root.getFile(
+                'file', {},
+                resolve.bind(this, false) ,
+                resolve.bind(this, true) );
+          }
+          var onFailure = resolve.bind(this, true);
+
+          var requestFileSystem =
+              window.requestFileSystem || window.webkitRequestFileSystem;
+          requestFileSystem(window.TEMPORARY, 1 ,
+                            onSuccess, onFailure);
+        });
+      }
+    },
+    {
+      "name": "service workers",
+      "supported": function() { return !!navigator.serviceWorker; },
+      "add": function() {
+        return navigator.serviceWorker.register(
+            "support/service_worker.js",
+            { scope: "support/scope-that-does-not-contain-this-test/"});
+      },
+      "isEmpty": function() {
+        return new Promise(function(resolve, reject) {
+          navigator.serviceWorker.getRegistrations()
+              .then(function(registrations) {
+                resolve(!registrations.length);
+              });
+        });
+      }
+    },
+    {
+      "name": "WebSQL",
+      "supported": function() { return !!window.openDatabase; },
+      "add": function() {
+        return new Promise(function(resolve, reject) {
+          var database = window.openDatabase(
+              "database", "1.0", "database", 1024 );
+          database.transaction(function(context) {
+            context.executeSql("CREATE TABLE IF NOT EXISTS data (column)");
+            context.executeSql(
+                "INSERT INTO data (column) VALUES (1)", [], resolve);
+          });
+        });
+      },
+      "isEmpty": function() {
+        return new Promise(function(resolve, reject) {
+          var database = window.openDatabase(
+              "database", "1.0", "database", 1024 );
+          database.transaction(function(context) {
+            context.executeSql("CREATE TABLE IF NOT EXISTS data (column)");
+            context.executeSql(
+                "SELECT * FROM data", [],
+                function(transaction, result) {
+                  resolve(!result.rows.length);
+                });
+          });
+        });
+      }
+    }
+  ].filter(function(backend) { return backend.supported(); });
+
+  
+
+
+
   TestUtils.DATATYPES = [
     {
       "name": "cookies",
+      "supported": function() { return typeof document.cookie == "string"; },
       "add": function() {
         return new Promise(function(resolve, reject) {
           document.cookie = randomString() + "=" + randomString();
@@ -40,19 +185,11 @@ var TestUtils = (function() {
     },
     {
       "name": "storage",
-      "add": function() {
-        return new Promise(function(resolve, reject) {
-          localStorage.setItem(randomString(), randomString());
-          resolve();
-        });
-      },
-      "isEmpty": function() {
-        return new Promise(function(resolve, reject) {
-          resolve(!localStorage.length);
-        });
-      }
+      "supported": TestUtils.STORAGE[0].supported,
+      "add": TestUtils.STORAGE[0].add,
+      "isEmpty": TestUtils.STORAGE[0].isEmpty,
     }
-  ];
+  ].filter(function(datatype) { return datatype.supported(); });
 
   
 
@@ -78,8 +215,10 @@ var TestUtils = (function() {
 
 
 
-  TestUtils.populateDatatypes = function() {
-    return Promise.all(TestUtils.DATATYPES.map(function(datatype) {
+
+
+  function populate(datatypes) {
+    return Promise.all(datatypes.map(function(datatype) {
       return new Promise(function(resolve, reject) {
         datatype.add().then(function() {
           datatype.isEmpty().then(function(isEmpty) {
@@ -93,6 +232,18 @@ var TestUtils = (function() {
       });
     }));
   };
+
+  
+
+
+
+  TestUtils.populateDatatypes = populate.bind(this, TestUtils.DATATYPES);
+
+  
+
+
+
+  TestUtils.populateStorage = populate.bind(this, TestUtils.STORAGE);
 
   
 
