@@ -8642,7 +8642,15 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     
     
     
-    if (newOverrideElement && newOverrideElement->GetParent() &&
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aContainer && newOverrideElement && newOverrideElement->GetParent() &&
         newOverrideElement != aChild) {
       LAYOUT_PHASE_TEMP_EXIT();
       RecreateFramesForContent(newOverrideElement, InsertionKind::Async);
