@@ -551,7 +551,7 @@ Editor.prototype = {
   setText: function (value) {
     let cm = editors.get(this);
 
-    if (typeof value !== "string") {  
+    if (typeof value !== "string" && "binary" in value) {  
       
       let binary = value.binary;
       let data = new Uint8Array(binary.length);
