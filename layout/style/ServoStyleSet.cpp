@@ -167,13 +167,11 @@ nsRestyleHint
 ServoStyleSet::MediumFeaturesChanged(bool aViewportChanged)
 {
   bool viewportUnitsUsed = false;
-  const bool rulesChanged =
+  const OriginFlags rulesChanged =
     Servo_StyleSet_MediumFeaturesChanged(mRawSet.get(), &viewportUnitsUsed);
 
-  if (rulesChanged) {
-    
-    
-    MarkOriginsDirty(OriginFlags::All);
+  if (rulesChanged != OriginFlags(0)) {
+    MarkOriginsDirty(rulesChanged);
     return eRestyle_Subtree;
   }
 
