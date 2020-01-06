@@ -4,50 +4,67 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSettingsStore",
+                                  "resource://gre/modules/ExtensionSettingsStore.jsm");
+
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
 
-
-
-
-
-
-let overrides = {
-  
-  newtab: [],
-};
+const STORE_TYPE = "url_overrides";
+const NEW_TAB_SETTING_NAME = "newTabURL";
 
 this.urlOverrides = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
+  processNewTabSetting(action) {
     let {extension} = this;
-    let {manifest} = extension;
-
-    if (manifest.chrome_url_overrides.newtab) {
-      let newtab = manifest.chrome_url_overrides.newtab;
-      let url = extension.baseURI.resolve(newtab);
-
-      
-      if (!overrides.newtab.length) {
-        aboutNewTabService.newTabURL = url;
-      }
-
-      overrides.newtab.push({id: extension.id, url});
+    let item = ExtensionSettingsStore[action](extension, STORE_TYPE, NEW_TAB_SETTING_NAME);
+    if (item) {
+      aboutNewTabService.newTabURL = item.value || item.initialValue;
     }
   }
 
-  onShutdown(reason) {
+  async onStartup() {
     let {extension} = this;
+    let {manifest} = extension;
 
-    let i = overrides.newtab.findIndex(o => o.id === extension.id);
-    if (i !== -1) {
-      overrides.newtab.splice(i, 1);
+    
+    if (manifest.chrome_url_overrides && manifest.chrome_url_overrides.newtab) {
+      let url = extension.baseURI.resolve(manifest.chrome_url_overrides.newtab);
 
-      if (overrides.newtab.length) {
-        aboutNewTabService.newTabURL = overrides.newtab[0].url;
-      } else {
-        aboutNewTabService.resetNewTabURL();
+      let item = await ExtensionSettingsStore.addSetting(
+        extension, STORE_TYPE, NEW_TAB_SETTING_NAME, url,
+        () => aboutNewTabService.newTabURL);
+
+      
+      
+      if (["ADDON_ENABLE", "ADDON_UPGRADE", "ADDON_DOWNGRADE"]
+          .includes(extension.startupReason)) {
+        item = ExtensionSettingsStore.enable(extension, STORE_TYPE, NEW_TAB_SETTING_NAME);
       }
+
+      
+      if (item) {
+        aboutNewTabService.newTabURL = item.value || item.initialValue;
+      }
+    
+    
+    } else if (ExtensionSettingsStore.hasSetting(
+               extension, STORE_TYPE, NEW_TAB_SETTING_NAME)) {
+      this.processNewTabSetting("removeSetting");
+    }
+  }
+
+  onShutdown(shutdownReason) {
+    switch (shutdownReason) {
+      case "ADDON_DISABLE":
+      case "ADDON_DOWNGRADE":
+      case "ADDON_UPGRADE":
+        this.processNewTabSetting("disable");
+        break;
+
+      case "ADDON_UNINSTALL":
+        this.processNewTabSetting("removeSetting");
+        break;
     }
   }
 };
