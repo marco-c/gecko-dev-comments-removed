@@ -228,6 +228,19 @@ ScrollingLayersHelper::RecurseAndDefineAsr(nsDisplayItem* aItem,
         ids.second = mBuilder->GetCacheOverride(aChain);
       } else {
         auto it = aCache.find(aChain);
+        if (it == aCache.end()) {
+          
+          
+          
+          
+          
+          
+          for (it = aCache.begin(); it != aCache.end(); it++) {
+            if (DisplayItemClipChain::Equal(aChain, it->first)) {
+              break;
+            }
+          }
+        }
         MOZ_ASSERT(it != aCache.end());
         ids.second = Some(it->second);
       }
