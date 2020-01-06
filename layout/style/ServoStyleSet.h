@@ -48,19 +48,15 @@ namespace mozilla {
 
 
 
+
+
 enum class StylistState : uint8_t {
   
   NotDirty = 0,
 
   
-  StyleSheetsDirty = 1 << 0,
-
-  
-  
-  XBLStyleSheetsDirty = 1 << 1,
+  StyleSheetsDirty,
 };
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StylistState)
 
 
 enum class OriginFlags : uint8_t {
@@ -136,9 +132,6 @@ public:
   }
 
   nsRestyleHint MediumFeaturesChanged(bool aViewportChanged);
-
-  
-  bool MediumFeaturesChangedRules(bool* aViewportUnitsUsed);
 
   void InvalidateStyleForCSSRuleChanges();
 
@@ -441,11 +434,6 @@ public:
   }
 
   
-  bool IsPresContextChanged(nsPresContext* aPresContext) const {
-    return aPresContext != mPresContextInitXBLStyleSet;
-  }
-
-  
 
 
 
@@ -537,12 +525,7 @@ private:
 
   void SetStylistStyleSheetsDirty()
   {
-    mStylistState |= StylistState::StyleSheetsDirty;
-  }
-
-  void SetStylistXBLStyleSheetsDirty()
-  {
-    mStylistState |= StylistState::XBLStyleSheetsDirty;
+    mStylistState = StylistState::StyleSheetsDirty;
   }
 
   bool StylistNeedsUpdate() const
@@ -582,15 +565,7 @@ private:
                          ServoStyleSheet* aSheet);
 
   const Kind mKind;
-
-  
-  nsPresContext* MOZ_NON_OWNING_REF mPresContext = nullptr;
-
-  
-  
-  
-  void* MOZ_NON_OWNING_REF mPresContextInitXBLStyleSet = nullptr;
-
+  nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
