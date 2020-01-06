@@ -54,7 +54,7 @@ var DEBUG = false;
 
 var DEBUG_TIMESTAMP = false; 
 
-var gGlobalObject = this;
+var gGlobalObject = Cu.getGlobalForObject(this);
 
 
 
