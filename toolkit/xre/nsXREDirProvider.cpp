@@ -38,6 +38,7 @@
 
 #include "mozilla/dom/ScriptSettings.h"
 
+#include "mozilla/AutoRestore.h"
 #include "mozilla/Services.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Preferences.h"
@@ -988,6 +989,22 @@ nsXREDirProvider::GetDirectory(nsIFile* *aResult)
   return mProfileDir->Clone(aResult);
 }
 
+void
+nsXREDirProvider::InitializeUserPrefs()
+{
+  if (!mPrefsInitialized) {
+    
+    
+    
+    
+    AutoRestore<bool> ar(mProfileNotified);
+    mProfileNotified = true;
+
+    mozilla::Preferences::InitializeUserPrefs();
+    mPrefsInitialized = true;
+  }
+}
+
 NS_IMETHODIMP
 nsXREDirProvider::DoStartup()
 {
@@ -1005,7 +1022,7 @@ nsXREDirProvider::DoStartup()
 
 
 
-    mozilla::Preferences::InitializeUserPrefs();
+    MOZ_ASSERT(mPrefsInitialized);
 
     bool safeModeNecessary = false;
     nsCOMPtr<nsIAppStartup> appStartup (do_GetService(NS_APPSTARTUP_CONTRACTID));
