@@ -96,19 +96,6 @@ abstract class MediaPlaybackTest extends BaseTest {
     
 
 
-    protected final void waitUntilTabMediaStarted(final Tab tab) {
-        if (tab.isMediaPlaying()) {
-            return;
-        }
-        
-        
-        
-        Actions.EventExpecter contentEventExpecter =
-                mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:MediaPlaybackChange");
-        contentEventExpecter.blockForEvent();
-        contentEventExpecter.unregisterListener();
-    }
-
     private final void waitUntilTabAudioPlayingStateChanged(final Tab tab,
                                                             final boolean isTabPlaying) {
         if (tab.isAudioPlaying() == isTabPlaying) {

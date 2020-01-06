@@ -101,7 +101,7 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        waitUntilTabMediaStarted(tab);
+        checkTabMediaPlayingState(tab, true );
 
         info("- wait tab becomes audible -");
         checkTabAudioPlayingState(tab, true );
@@ -133,7 +133,7 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        waitUntilTabMediaStarted(tab);
+        checkTabMediaPlayingState(tab, true );
 
         info("- wait tab becomes audible -");
         checkTabAudioPlayingState(tab, true );
@@ -166,7 +166,7 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        waitUntilTabMediaStarted(tab);
+        checkTabMediaPlayingState(tab, true );
 
         info("- wait tab becomes audible -");
         checkTabAudioPlayingState(tab, true );
@@ -217,7 +217,7 @@ public class testAudioFocus extends MediaPlaybackTest {
 
         info("- wait until media starts playing -");
         final Tab tab = Tabs.getInstance().getSelectedTab();
-        waitUntilTabMediaStarted(tab);
+        checkTabMediaPlayingState(tab, true );
 
         info("- tab should be non-audible and should not request audio focus -");
         checkTabAudioPlayingState(tab, false );
