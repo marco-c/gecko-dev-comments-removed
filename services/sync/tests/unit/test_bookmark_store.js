@@ -1,6 +1,7 @@
 
 
 
+Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/engines/bookmarks.js");
 Cu.import("resource://services-sync/service.js");
@@ -12,8 +13,8 @@ let engine;
 let store;
 let tracker;
 
-const fxuri = Utils.makeURI("http://getfirefox.com/");
-const tburi = Utils.makeURI("http://getthunderbird.com/");
+const fxuri = CommonUtils.makeURI("http://getfirefox.com/");
+const tburi = CommonUtils.makeURI("http://getthunderbird.com/");
 
 add_task(async function setup() {
   await Service.engineManager.register(BookmarksEngine);

@@ -1,6 +1,7 @@
 
 
 
+Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://services-sync/engines.js");
@@ -12,8 +13,8 @@ const kDBName = "places.sqlite";
 const storageSvc = Cc["@mozilla.org/storage/service;1"]
                      .getService(Ci.mozIStorageService);
 
-const fxuri = Utils.makeURI("http://getfirefox.com/");
-const tburi = Utils.makeURI("http://getthunderbird.com/");
+const fxuri = CommonUtils.makeURI("http://getfirefox.com/");
+const tburi = CommonUtils.makeURI("http://getthunderbird.com/");
 
 function setPlacesDatabase(aFileName) {
   removePlacesDatabase();

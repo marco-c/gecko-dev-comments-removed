@@ -45,20 +45,6 @@ class HMACMismatch extends Error {
 
 this.Utils = {
   
-  
-  nextTick: CommonUtils.nextTick,
-  namedTimer: CommonUtils.namedTimer,
-  makeURI: CommonUtils.makeURI,
-  encodeUTF8: CommonUtils.encodeUTF8,
-  decodeUTF8: CommonUtils.decodeUTF8,
-  safeAtoB: CommonUtils.safeAtoB,
-  byteArrayToString: CommonUtils.byteArrayToString,
-  bytesAsHex: CommonUtils.bytesAsHex,
-  hexToBytes: CommonUtils.hexToBytes,
-  encodeBase32: CommonUtils.encodeBase32,
-  decodeBase32: CommonUtils.decodeBase32,
-
-  
   generateRandomBytes: CryptoUtils.generateRandomBytes,
   computeHTTPMACSHA1: CryptoUtils.computeHTTPMACSHA1,
   digestUTF8: CryptoUtils.digestUTF8,
@@ -297,12 +283,12 @@ this.Utils = {
   
   encodeKeyBase32: function encodeKeyBase32(keyData) {
     return Utils.base32ToFriendly(
-             Utils.encodeBase32(keyData))
+             CommonUtils.encodeBase32(keyData))
            .slice(0, SYNC_KEY_ENCODED_LENGTH);
   },
 
   decodeKeyBase32: function decodeKeyBase32(encoded) {
-    return Utils.decodeBase32(
+    return CommonUtils.decodeBase32(
              Utils.base32FromFriendly(
                Utils.normalizePassphrase(encoded)))
            .slice(0, SYNC_KEY_DECODED_LENGTH);
