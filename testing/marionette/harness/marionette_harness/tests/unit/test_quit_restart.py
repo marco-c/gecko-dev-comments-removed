@@ -4,7 +4,7 @@
 
 from marionette_driver import errors
 
-from marionette_harness import MarionetteTestCase
+from marionette_harness import MarionetteTestCase, skip
 
 
 class TestServerQuitApplication(MarionetteTestCase):
@@ -72,18 +72,31 @@ class TestQuitRestart(MarionetteTestCase):
         self.pid = self.marionette.process_id
         self.session_id = self.marionette.session_id
 
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
-        self.marionette.set_pref("browser.startup.page", 3)
+        
+        
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
+        self.marionette.set_pref("startup.homepage_welcome_url", "about:")
 
     def tearDown(self):
         
         if self.marionette.session is None:
             self.marionette.start_session()
 
-        self.marionette.clear_pref("browser.startup.page")
+        self.marionette.clear_pref("startup.homepage_welcome_url")
 
         MarionetteTestCase.tearDown(self)
+
+    def shutdown(self, restart=False):
+        self.marionette.set_context("chrome")
+        self.marionette.execute_script("""
+            Components.utils.import("resource://gre/modules/Services.jsm");
+            let flags = Ci.nsIAppStartup.eAttemptQuit;
+            if (arguments[0]) {
+              flags |= Ci.nsIAppStartup.eRestart;
+            }
+            Services.startup.quit(flags);
+        """, script_args=(restart,))
 
     def test_force_restart(self):
         self.marionette.restart()
@@ -91,10 +104,8 @@ class TestQuitRestart(MarionetteTestCase):
 
         
         self.assertNotEqual(self.marionette.process_id, self.pid)
-
-        
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
     def test_force_quit(self):
         self.marionette.quit()
@@ -105,17 +116,19 @@ class TestQuitRestart(MarionetteTestCase):
 
         self.marionette.start_session()
         self.assertNotEqual(self.marionette.session_id, self.session_id)
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_in_app_clean_restart(self):
+        
         with self.assertRaises(ValueError):
             self.marionette.restart(in_app=True, clean=True)
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_in_app_restart(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         self.marionette.restart(in_app=True)
         self.assertEqual(self.marionette.session_id, self.session_id)
@@ -126,14 +139,13 @@ class TestQuitRestart(MarionetteTestCase):
         else:
             self.assertNotEqual(self.marionette.process_id, self.pid)
 
-        
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_in_app_restart_with_callback(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         self.marionette.restart(in_app=True,
                                 callback=lambda: self.shutdown(restart=True))
@@ -146,11 +158,14 @@ class TestQuitRestart(MarionetteTestCase):
         else:
             self.assertNotEqual(self.marionette.process_id, self.pid)
 
-        
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_in_app_quit(self):
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
+
         self.marionette.quit(in_app=True)
 
         self.assertEqual(self.marionette.session, None)
@@ -159,10 +174,14 @@ class TestQuitRestart(MarionetteTestCase):
 
         self.marionette.start_session()
         self.assertNotEqual(self.marionette.session_id, self.session_id)
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_in_app_quit_with_callback(self):
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
+
         self.marionette.quit(in_app=True, callback=self.shutdown)
         self.assertEqual(self.marionette.session, None)
         with self.assertRaisesRegexp(errors.MarionetteException, "Please start a session"):
@@ -170,13 +189,13 @@ class TestQuitRestart(MarionetteTestCase):
 
         self.marionette.start_session()
         self.assertNotEqual(self.marionette.session_id, self.session_id)
-        self.assertNotEqual(
-            self.marionette.get_pref("browser.startup.page"), 3)
+        self.assertNotEqual(self.marionette.get_pref("startup.homepage_welcome_url"),
+                            "about:")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_reset_context_after_quit_by_set_context(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         
         
@@ -190,10 +209,10 @@ class TestQuitRestart(MarionetteTestCase):
         self.assertNotIn("chrome://", self.marionette.get_url(),
                          "Not in content context after quit with using_context")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_reset_context_after_quit_by_using_context(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         
         
@@ -207,10 +226,10 @@ class TestQuitRestart(MarionetteTestCase):
             self.assertNotIn("chrome://", self.marionette.get_url(),
                              "Not in content context after quit with using_context")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_keep_context_after_restart_by_set_context(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         
         
@@ -230,10 +249,10 @@ class TestQuitRestart(MarionetteTestCase):
         self.assertIn("chrome://", self.marionette.get_url(),
                       "Not in chrome context after a restart with set_context")
 
+    @skip("Bug 1363368 - Wrong window handles after in_app restarts")
     def test_keep_context_after_restart_by_using_context(self):
-        
-        if self.marionette.session_capabilities["platformName"] == "darwin":
-            return
+        if self.marionette.session_capabilities["platformName"] != "windows_nt":
+            skip("Bug 1363368 - Wrong window handles after in_app restarts")
 
         
         
@@ -252,14 +271,3 @@ class TestQuitRestart(MarionetteTestCase):
 
             self.assertIn("chrome://", self.marionette.get_url(),
                           "Not in chrome context after a restart with using_context")
-
-    def shutdown(self, restart=False):
-        self.marionette.set_context("chrome")
-        self.marionette.execute_script("""
-            Components.utils.import("resource://gre/modules/Services.jsm");
-            let flags = Ci.nsIAppStartup.eAttemptQuit;
-            if (arguments[0]) {
-              flags |= Ci.nsIAppStartup.eRestart;
-            }
-            Services.startup.quit(flags);
-        """, script_args=(restart,))
