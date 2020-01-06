@@ -763,14 +763,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
     }
   }
 
-  
-  
-  
-  
-  
-  
-  bool isPrimaryFrame = (mContent && mContent->GetPrimaryFrame() == this);
-  if (isPrimaryFrame) {
+  if (IsPrimaryFrame()) {
     
     ActiveLayerTracker::TransferActivityToContent(this, mContent);
 
@@ -825,7 +818,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
   }
 
   
-  if (isPrimaryFrame) {
+  if (IsPrimaryFrame()) {
     mContent->SetPrimaryFrame(nullptr);
 
     
