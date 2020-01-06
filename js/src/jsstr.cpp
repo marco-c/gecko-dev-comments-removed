@@ -6,7 +6,6 @@
 
 #include "jsstr.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
@@ -389,13 +388,37 @@ static bool
 Unescape(StringBuffer& sb, const mozilla::Range<const CharT> chars)
 {
     
-    uint32_t length = chars.length();
+
+
+
+    static_assert(JSString::MAX_LENGTH <= INT_MAX, "String length must fit in a signed integer");
+    int length = AssertedCast<int>(chars.length());
 
     
 
 
 
+
+    
+    int k = 0;
     bool building = false;
+
+    
+    while (k < length) {
+        
+        char16_t c = chars[k];
+
+        
+        if (c != '%')
+            goto step_18;
+
+        
+        if (k > length - 6)
+            goto step_14;
+
+        
+        if (chars[k + 1] != 'u')
+            goto step_14;
 
 #define ENSURE_BUILDING                                      \
         do {                                                 \
@@ -407,34 +430,25 @@ Unescape(StringBuffer& sb, const mozilla::Range<const CharT> chars)
             }                                                \
         } while(false);
 
-    
-    uint32_t k = 0;
-
-    
-    while (k < length) {
         
-        char16_t c = chars[k];
-
-        
-        if (c == '%') {
-            static_assert(JSString::MAX_LENGTH < UINT32_MAX - 6,
-                          "String length is not near UINT32_MAX");
-
-            
-            if (k + 6 <= length && chars[k + 1] == 'u') {
-                if (Unhex4(chars.begin() + k + 2, &c)) {
-                    ENSURE_BUILDING
-                    k += 5;
-                }
-            } else if (k + 3 <= length) {
-                if (Unhex2(chars.begin() + k + 1, &c)) {
-                    ENSURE_BUILDING
-                    k += 2;
-                }
-            }
+        if (Unhex4(chars.begin() + k + 2, &c)) {
+            ENSURE_BUILDING;
+            k += 5;
+            goto step_18;
         }
 
+      step_14:
         
+        if (k > length - 3)
+            goto step_18;
+
+        
+        if (Unhex2(chars.begin() + k + 1, &c)) {
+            ENSURE_BUILDING;
+            k += 2;
+        }
+
+      step_18:
         if (building && !sb.append(c))
             return false;
 
@@ -445,7 +459,6 @@ Unescape(StringBuffer& sb, const mozilla::Range<const CharT> chars)
     return true;
 #undef ENSURE_BUILDING
 }
-
 
 
 static bool
@@ -463,7 +476,6 @@ str_unescape(JSContext* cx, unsigned argc, Value* vp)
     if (str->hasTwoByteChars() && !sb.ensureTwoByteChars())
         return false;
 
-    
     if (str->hasLatin1Chars()) {
         AutoCheckCannotGC nogc;
         if (!Unescape(sb, str->latin1Range(nogc)))
@@ -474,7 +486,6 @@ str_unescape(JSContext* cx, unsigned argc, Value* vp)
             return false;
     }
 
-    
     JSLinearString* result;
     if (!sb.empty()) {
         result = sb.finishString();
@@ -3289,7 +3300,7 @@ CodeUnitToString(JSContext* cx, uint16_t ucode, MutableHandleValue rval)
     }
 
     char16_t c = char16_t(ucode);
-    JSString* str = NewStringCopyNDontDeflate<CanGC>(cx, &c, 1);
+    JSString* str = NewStringCopyN<CanGC>(cx, &c, 1);
     if (!str)
         return false;
 
@@ -3319,7 +3330,7 @@ ToCodePoint(JSContext* cx, HandleValue code, uint32_t* codePoint)
     
     if (JS::ToInteger(nextCP) != nextCP || nextCP < 0 || nextCP > unicode::NonBMPMax) {
         ToCStringBuf cbuf;
-        if (const char* numStr = NumberToCString(cx, &cbuf, nextCP))
+        if (char* numStr = NumberToCString(cx, &cbuf, nextCP))
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_A_CODEPOINT, numStr);
         return false;
     }
@@ -3404,7 +3415,7 @@ js::str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
     
 
     
-    static_assert(ARGS_LENGTH_MAX < std::numeric_limits<decltype(args.length())>::max() / 2,
+    static_assert(ARGS_LENGTH_MAX < std::numeric_limits<size_t>::max() / 2,
                   "|args.length() * 2 + 1| does not overflow");
     char16_t* elements = cx->pod_malloc<char16_t>(args.length() * 2 + 1);
     if (!elements)
@@ -3638,9 +3649,10 @@ js::ValueToSource(JSContext* cx, HandleValue v)
     if (v.isPrimitive()) {
         
         if (v.isDouble() && IsNegativeZero(v.toDouble())) {
-            static const Latin1Char negativeZero[] = {'-', '0'};
+            
+            static const char16_t js_negzero_ucNstr[] = {'-', '0'};
 
-            return NewStringCopyN<CanGC>(cx, negativeZero, mozilla::ArrayLength(negativeZero));
+            return NewStringCopyN<CanGC>(cx, js_negzero_ucNstr, 2);
         }
         return ToString<CanGC>(cx, v);
     }
