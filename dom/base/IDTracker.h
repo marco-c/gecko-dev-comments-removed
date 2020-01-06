@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_IDTracker_h_
-#define mozilla_dom_IDTracker_h_
+#ifndef NSREFERENCEDELEMENT_H_
+#define NSREFERENCEDELEMENT_H_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"
@@ -15,8 +15,6 @@
 
 class nsIURI;
 
-namespace mozilla {
-namespace dom {
 
 
 
@@ -34,15 +32,14 @@ namespace dom {
 
 
 
-
-class IDTracker {
+class nsReferencedElement {
 public:
   typedef mozilla::dom::Element Element;
 
-  IDTracker()
+  nsReferencedElement()
     : mReferencingImage(false)
   {}
-  ~IDTracker() {
+  ~nsReferencedElement() {
     Unlink();
   }
 
@@ -119,22 +116,22 @@ private:
     virtual void Clear() { mTarget = nullptr; }
     virtual ~Notification() {}
   protected:
-    explicit Notification(IDTracker* aTarget)
+    explicit Notification(nsReferencedElement* aTarget)
       : mTarget(aTarget)
     {
       NS_PRECONDITION(aTarget, "Must have a target");
     }
-    IDTracker* mTarget;
+    nsReferencedElement* mTarget;
   };
 
   class ChangeNotification : public mozilla::Runnable,
                              public Notification
   {
   public:
-    ChangeNotification(IDTracker* aTarget,
+    ChangeNotification(nsReferencedElement* aTarget,
                        Element* aFrom,
                        Element* aTo)
-      : mozilla::Runnable("IDTracker::ChangeNotification")
+      : mozilla::Runnable("nsReferencedElement::ChangeNotification")
       , Notification(aTarget)
       , mFrom(aFrom)
       , mTo(aTo)
@@ -165,7 +162,7 @@ private:
                                    public nsIObserver
   {
   public:
-    DocumentLoadNotification(IDTracker* aTarget,
+    DocumentLoadNotification(nsReferencedElement* aTarget,
                              const nsString& aRef) :
       Notification(aTarget)
     {
@@ -193,21 +190,18 @@ private:
 };
 
 inline void
-ImplCycleCollectionUnlink(IDTracker& aField)
+ImplCycleCollectionUnlink(nsReferencedElement& aField)
 {
   aField.Unlink();
 }
 
 inline void
 ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            IDTracker& aField,
+                            nsReferencedElement& aField,
                             const char* aName,
                             uint32_t aFlags = 0)
 {
   aField.Traverse(&aCallback);
 }
-
-} 
-} 
 
 #endif 
