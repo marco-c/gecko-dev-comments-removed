@@ -451,8 +451,33 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
 
+        switch (action.mType) {
+            case Action.TYPE_EVENT:
+            case Action.TYPE_SET_HANDLER:
+                break;
+
+            case Action.TYPE_SET_SPAN:
+                mText.shadowSetSpan(action.mSpanObject, action.mStart,
+                                    action.mEnd, action.mSpanFlags);
+                break;
+
+            case Action.TYPE_REMOVE_SPAN:
+                action.mSpanFlags = mText.getShadowText().getSpanFlags(action.mSpanObject);
+                mText.shadowRemoveSpan(action.mSpanObject);
+                break;
+
+            case Action.TYPE_REPLACE_TEXT:
+                mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
+                break;
+
+            default:
+                throw new IllegalStateException("Action not processed");
+        }
+
+        
+        
+        
         if (mFocusedChild == null || mListener == null) {
-            
             return;
         }
 
@@ -480,8 +505,6 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                                         action.mSpanObject == Selection.SELECTION_START ||
                                         action.mSpanObject == Selection.SELECTION_END);
 
-            mText.shadowSetSpan(action.mSpanObject, action.mStart,
-                                action.mEnd, action.mSpanFlags);
             action.mSequence = TextUtils.substring(
                     mText.getShadowText(), action.mStart, action.mEnd);
 
@@ -495,10 +518,8 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             break;
         }
         case Action.TYPE_REMOVE_SPAN: {
-            final int flags = mText.getShadowText().getSpanFlags(action.mSpanObject);
-            final boolean needUpdate = (flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                                       (flags & Spanned.SPAN_COMPOSING) != 0;
-            mText.shadowRemoveSpan(action.mSpanObject);
+            final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                                       (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
 
             mNeedUpdateComposition |= needUpdate;
             if (needUpdate) {
@@ -521,7 +542,6 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                 
                 sendCharKeyEvents(action);
             }
-            mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
             mFocusedChild.onImeReplaceText(
                     action.mStart, action.mEnd, action.mSequence.toString());
             break;
