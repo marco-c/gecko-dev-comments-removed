@@ -8,10 +8,6 @@ Cu.import("resource://services-common/logmanager.js");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
 
-function run_test() {
-  run_next_test();
-}
-
 
 
 function getAppenders(log) {

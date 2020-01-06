@@ -97,7 +97,3 @@ add_task(async function finish_with_a_reset() {
   
    OS.File.resetWorker();
 });
-
-function run_test() {
-  run_next_test();
-}

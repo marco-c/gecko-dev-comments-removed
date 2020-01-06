@@ -5,10 +5,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 const BREAKDOWN = {
   by: "coarseType",
   objects: {

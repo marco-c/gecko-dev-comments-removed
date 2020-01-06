@@ -6,10 +6,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(function () {
   let { CATEGORIES, CATEGORY_MAPPINGS } = require("devtools/client/performance/modules/categories");
   let { L10N } = require("devtools/client/performance/modules/global");

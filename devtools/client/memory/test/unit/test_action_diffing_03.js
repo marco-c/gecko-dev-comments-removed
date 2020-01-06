@@ -13,10 +13,6 @@ const {
 const { takeSnapshot } = require("devtools/client/memory/actions/snapshot");
 const { changeView } = require("devtools/client/memory/actions/view");
 
-function run_test() {
-  run_next_test();
-}
-
 
 
 

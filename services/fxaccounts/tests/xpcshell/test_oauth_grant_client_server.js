@@ -67,7 +67,3 @@ add_task(async function getAndRevokeToken() {
 });
 
 
-
-function run_test() {
-  run_next_test();
-}

@@ -4,10 +4,6 @@
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 const COUNT = { by: "count", count: true, bytes: true };
 
 const CENSUS_BREAKDOWN = {

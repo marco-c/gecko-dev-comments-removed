@@ -42,6 +42,3 @@ var setupPlacesDatabase = async function(aFileName) {
 };
 
 
-function run_test() {
-  run_next_test();
-}

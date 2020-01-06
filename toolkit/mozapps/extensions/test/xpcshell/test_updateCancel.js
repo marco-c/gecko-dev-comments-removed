@@ -19,12 +19,6 @@ const profileDir = gProfD.clone();
 profileDir.append("extensions");
 
 
-function run_test() {
-  
-  run_next_test();
-}
-
-
 
 
 

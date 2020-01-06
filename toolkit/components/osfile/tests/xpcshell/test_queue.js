@@ -2,10 +2,6 @@
 
 Components.utils.import("resource://gre/modules/osfile.jsm");
 
-function run_test() {
-  run_next_test();
-}
-
 
 add_task(async function check_init() {
   await OS.File.queue;

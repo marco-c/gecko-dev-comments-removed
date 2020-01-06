@@ -12,11 +12,6 @@ const DB_SCHEMA = XPIScope.DB_SCHEMA;
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
-function run_test() {
-  
-  run_next_test();
-}
-
 
 function checkPending() {
   try {

@@ -61,10 +61,6 @@ function registerTableUpdate(aTable, aFilename) {
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(function test_setup() {
   
   do_timeout(10 * 60 * 1000, function() {

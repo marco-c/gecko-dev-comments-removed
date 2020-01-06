@@ -97,10 +97,6 @@ add_task(async function test_client_stretch_kdf() {
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 
 function h(hexStr) {
   return hexStr.replace(/\s+/g, "");

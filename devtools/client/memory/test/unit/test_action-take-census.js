@@ -11,10 +11,6 @@ var { snapshotState: states, censusDisplays, censusState, viewState } = require(
 var actions = require("devtools/client/memory/actions/snapshot");
 var { changeView } = require("devtools/client/memory/actions/view");
 
-function run_test() {
-  run_next_test();
-}
-
 
 
 EXPECTED_DTU_ASSERT_FAILURE_COUNT = 1;
