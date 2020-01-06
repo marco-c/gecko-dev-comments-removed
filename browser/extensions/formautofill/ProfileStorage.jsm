@@ -193,38 +193,24 @@ class AutofillRecords {
 
   add(record) {
     this.log.debug("add:", record);
-    let recordToSave;
-    if (record.deleted) {
-      if (!record.guid) {
-        throw new Error("you must specify the GUID when creating a tombstone");
-      }
-      if (this._findByGUID(record.guid, {includeDeleted: true})) {
-        throw new Error("a record with this GUID already exists");
-      }
-      recordToSave = {
-        guid: record.guid,
-        timeLastModified: record.timeLastModified || Date.now(),
-        deleted: true,
-      };
-    } else {
-      recordToSave = this._clone(record);
-      this._normalizeRecord(recordToSave);
 
-      let guid;
-      while (!guid || this._findByGUID(guid)) {
-        guid = gUUIDGenerator.generateUUID().toString()
-                             .replace(/[{}-]/g, "").substring(0, 12);
-      }
-      recordToSave.guid = guid;
-      recordToSave.version = this.version;
+    let recordToSave = this._clone(record);
+    this._normalizeRecord(recordToSave);
 
-      
-      let now = Date.now();
-      recordToSave.timeCreated = now;
-      recordToSave.timeLastModified = now;
-      recordToSave.timeLastUsed = 0;
-      recordToSave.timesUsed = 0;
+    let guid;
+    while (!guid || this._findByGUID(guid)) {
+      guid = gUUIDGenerator.generateUUID().toString()
+                           .replace(/[{}-]/g, "").substring(0, 12);
     }
+    recordToSave.guid = guid;
+    recordToSave.version = this.version;
+
+    
+    let now = Date.now();
+    recordToSave.timeCreated = now;
+    recordToSave.timeLastModified = now;
+    recordToSave.timeLastUsed = 0;
+    recordToSave.timesUsed = 0;
 
     this._store.data[this._collectionName].push(recordToSave);
     this._store.saveSoon();
@@ -297,17 +283,8 @@ class AutofillRecords {
   remove(guid) {
     this.log.debug("remove:", guid);
 
-    let index = this._findIndexByGUID(guid);
-    if (index == -1) {
-      this.log.warn("attempting to remove non-existing entry", guid);
-      return;
-    }
-    
-    this._store.data[this._collectionName][index] = {
-      guid,
-      timeLastModified: Date.now(),
-      deleted: true,
-    };
+    this._store.data[this._collectionName] =
+      this._store.data[this._collectionName].filter(record => record.guid != guid);
     this._store.saveSoon();
 
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "remove");
@@ -345,13 +322,12 @@ class AutofillRecords {
 
 
 
-  getAll({noComputedFields = false, includeDeleted = false} = {}) {
-    this.log.debug("getAll", noComputedFields, includeDeleted);
+  getAll(config = {}) {
+    this.log.debug("getAll", config);
 
-    let records = this._store.data[this._collectionName].filter(r => !r.deleted || includeDeleted);
     
-    let clonedRecords = records.map(this._clone);
-    clonedRecords.forEach(record => this._recordReadProcessor(record, {noComputedFields}));
+    let clonedRecords = this._store.data[this._collectionName].map(this._clone);
+    clonedRecords.forEach(record => this._recordReadProcessor(record, config));
     return clonedRecords;
   }
 
@@ -386,15 +362,13 @@ class AutofillRecords {
     return Object.assign({}, record);
   }
 
-  _findByGUID(guid, {includeDeleted = false} = {}) {
-    let found = this._findIndexByGUID(guid, {includeDeleted});
+  _findByGUID(guid) {
+    let found = this._findIndexByGUID(guid);
     return found < 0 ? undefined : this._store.data[this._collectionName][found];
   }
 
-  _findIndexByGUID(guid, {includeDeleted = false} = {}) {
-    return this._store.data[this._collectionName].findIndex(record => {
-      return record.guid == guid && (!record.deleted || includeDeleted);
-    });
+  _findIndexByGUID(guid) {
+    return this._store.data[this._collectionName].findIndex(record => record.guid == guid);
   }
 
   _normalizeRecord(record) {
@@ -412,7 +386,7 @@ class AutofillRecords {
   }
 
   
-  _recordReadProcessor(record, {noComputedFields = false} = {}) {}
+  _recordReadProcessor(record, config) {}
 
   
   _recordWriteProcessor(record) {}
