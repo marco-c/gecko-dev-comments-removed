@@ -385,10 +385,6 @@ struct RespondWithClosure
 {
   nsMainThreadPtrHandle<nsIInterceptedChannel> mInterceptedChannel;
   nsMainThreadPtrHandle<ServiceWorkerRegistrationInfo> mRegistration;
-  RefPtr<InternalResponse> mInternalResponse;
-  ChannelInfo mWorkerChannelInfo;
-  const nsCString mScriptSpec;
-  const nsCString mResponseURLSpec;
   const nsString mRequestURL;
   const nsCString mRespondWithScriptSpec;
   const uint32_t mRespondWithLineNumber;
@@ -396,20 +392,12 @@ struct RespondWithClosure
 
   RespondWithClosure(nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
                      nsMainThreadPtrHandle<ServiceWorkerRegistrationInfo>& aRegistration,
-                     InternalResponse* aInternalResponse,
-                     const ChannelInfo& aWorkerChannelInfo,
-                     const nsCString& aScriptSpec,
-                     const nsACString& aResponseURLSpec,
                      const nsAString& aRequestURL,
                      const nsACString& aRespondWithScriptSpec,
                      uint32_t aRespondWithLineNumber,
                      uint32_t aRespondWithColumnNumber)
     : mInterceptedChannel(aChannel)
     , mRegistration(aRegistration)
-    , mInternalResponse(aInternalResponse)
-    , mWorkerChannelInfo(aWorkerChannelInfo)
-    , mScriptSpec(aScriptSpec)
-    , mResponseURLSpec(aResponseURLSpec)
     , mRequestURL(aRequestURL)
     , mRespondWithScriptSpec(aRespondWithScriptSpec)
     , mRespondWithLineNumber(aRespondWithLineNumber)
@@ -431,18 +419,6 @@ void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
                                       data->mRegistration,
                                       NS_ERROR_INTERCEPTION_FAILED);
   } else {
-    event = new StartResponse(data->mInterceptedChannel,
-                              data->mInternalResponse,
-                              data->mWorkerChannelInfo,
-                              data->mScriptSpec,
-                              data->mResponseURLSpec);
-    WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
-    if (worker) {
-      MOZ_ALWAYS_SUCCEEDS(worker->DispatchToMainThread(event.forget()));
-    } else {
-      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(event.forget()));
-    }
-
     event = new FinishResponse(data->mInterceptedChannel);
   }
 
@@ -668,11 +644,15 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
       return;
     }
   }
+
+  nsCOMPtr<nsIRunnable> startRunnable = new StartResponse(mInterceptedChannel,
+                                                          ir,
+                                                          worker->GetChannelInfo(),
+                                                          mScriptSpec,
+                                                          responseURL);
+
   nsAutoPtr<RespondWithClosure> closure(new RespondWithClosure(mInterceptedChannel,
-                                                               mRegistration, ir,
-                                                               worker->GetChannelInfo(),
-                                                               mScriptSpec,
-                                                               responseURL,
+                                                               mRegistration,
                                                                mRequestURL,
                                                                mRespondWithScriptSpec,
                                                                mRespondWithLineNumber,
@@ -720,12 +700,22 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
 
     
     
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other,
+                                              startRunnable.forget()));
+
+    
+    
     rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_WRITESEGMENTS,
                       kCopySegmentSize, RespondWithCopyComplete, closure.forget());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
   } else {
+    MOZ_ALWAYS_SUCCEEDS(SystemGroup::Dispatch(TaskCategory::Other,
+                                              startRunnable.forget()));
     RespondWithCopyComplete(closure.forget(), NS_OK);
   }
 
