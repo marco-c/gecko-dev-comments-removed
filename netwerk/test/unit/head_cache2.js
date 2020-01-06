@@ -3,16 +3,6 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
 
-function newCacheBackEndUsed()
-{
-  var cache1srv = Components.classes["@mozilla.org/network/cache-service;1"]
-                            .getService(Components.interfaces.nsICacheService);
-  var cache2srv = Components.classes["@mozilla.org/netwerk/cache-storage-service;1"]
-                            .getService(Components.interfaces.nsICacheStorageService);
-
-  return cache1srv.cacheIOTarget != cache2srv.ioTarget;
-}
-
 var callbacks = new Array();
 
 
@@ -133,17 +123,15 @@ OpenCallback.prototype =
 
     if (this.behavior & COMPLETE) {
       LOG_C2(this, "onCacheEntryCheck DONE, return RECHECK_AFTER_WRITE_FINISHED");
-      if (newCacheBackEndUsed()) {
-        
-        
-        
-        
-        
-        
-        this.onCheckPassed = false;
-        
-        this.behavior &= ~COMPLETE;
-      }
+      
+      
+      
+      
+      
+      
+      this.onCheckPassed = false;
+      
+      this.behavior &= ~COMPLETE;
       return Ci.nsICacheEntryOpenCallback.RECHECK_AFTER_WRITE_FINISHED;
     }
 
@@ -310,10 +298,7 @@ VisitCallback.prototype =
   {
     LOG_C2(this, "onCacheStorageInfo: num=" + num + ", size=" + consumption);
     do_check_eq(this.num, num);
-    if (newCacheBackEndUsed()) {
-      
-      do_check_eq(this.consumption, consumption);
-    }
+    do_check_eq(this.consumption, consumption);
     if (!this.entries)
       this.notify();
   },

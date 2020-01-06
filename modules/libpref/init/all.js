@@ -36,14 +36,6 @@ pref("general.warnOnAboutConfig", true);
 
 pref("browser.bookmarks.max_backups",       5);
 
-
-pref("browser.cache.auto_delete_cache_version", 0);
-
-
-
-pref("browser.cache.use_new_backend",       0);
-pref("browser.cache.use_new_backend_temp",  true);
-
 pref("browser.cache.disk.enable",           true);
 
 pref("browser.cache.disk.smart_size.first_run", true);
@@ -4979,8 +4971,6 @@ pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
-
-
 pref("extensions.webextensions.protocol.remote", true);
 
 
@@ -5357,8 +5347,8 @@ pref("urlclassifier.phishTable", "googpub-phish-shavar,test-phish-simple");
 #endif
 
 
-pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-digest256");
-pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
+pref("urlclassifier.downloadAllowTable", "goog-downloadwhite-proto");
+pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 
 
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");

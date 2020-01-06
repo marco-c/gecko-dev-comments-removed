@@ -105,16 +105,14 @@ nsAboutCache::Channel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo)
         "<label><input id='anon' type='checkbox'/> Anonymous</label>\n"
     );
 
-    if (CacheObserver::UseNewCache()) {
-        
-        
-        
-        
-        mBuffer.AppendLiteral(
-            "<label><input id='appid' type='text' size='6'/> AppID</label>\n"
-            "<label><input id='inbrowser' type='checkbox'/> In Browser Element</label>\n"
-        );
-    }
+    
+    
+    
+    
+    mBuffer.AppendLiteral(
+        "<label><input id='appid' type='text' size='6'/> AppID</label>\n"
+        "<label><input id='inbrowser' type='checkbox'/> In Browser Element</label>\n"
+    );
 
     mBuffer.AppendLiteral(
         "<label><input id='submit' type='button' value='Update' onclick='navigate()'/></label>\n"

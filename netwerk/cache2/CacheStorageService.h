@@ -86,7 +86,7 @@ public:
 
   
   
-  static void CleaupCacheDirectories(uint32_t aVersion, uint32_t aActive);
+  static void CleaupCacheDirectories();
 
   static CacheStorageService* Self() { return sSelf; }
   static nsISupports* SelfISupports() { return static_cast<nsICacheStorageService*>(Self()); }

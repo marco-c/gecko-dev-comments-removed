@@ -188,14 +188,6 @@ nsAboutCacheEntry::Channel::OpenCacheEntry(nsIURI *uri)
                        mEnhanceId, getter_AddRefs(mCacheURI));
     if (NS_FAILED(rv)) return rv;
 
-    if (!CacheObserver::UseNewCache() &&
-        mLoadInfo->IsPrivate() &&
-        mStorageName.EqualsLiteral("disk")) {
-        
-        
-        mStorageName = NS_LITERAL_CSTRING("memory");
-    }
-
     return OpenCacheEntry();
 }
 
@@ -307,20 +299,6 @@ nsAboutCacheEntry::Channel::OnCacheEntryAvailable(nsICacheEntry *entry,
     mWaitingForData = false;
     if (entry) {
         rv = WriteCacheEntryDescription(entry);
-    } else if (!CacheObserver::UseNewCache() &&
-               !mLoadInfo->IsPrivate() &&
-               mStorageName.EqualsLiteral("memory")) {
-        
-        
-        
-        
-        
-        
-        mStorageName = NS_LITERAL_CSTRING("disk");
-        rv = OpenCacheEntry();
-        if (NS_SUCCEEDED(rv)) {
-            return NS_OK;
-        }
     } else {
         rv = WriteCacheEntryUnavailable();
     }
