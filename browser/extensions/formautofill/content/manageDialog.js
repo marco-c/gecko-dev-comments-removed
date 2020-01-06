@@ -2,35 +2,54 @@
 
 
 
+
+
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 const EDIT_ADDRESS_URL = "chrome://formautofill/content/editAddress.xhtml";
+const EDIT_CREDIT_CARD_URL = "chrome://formautofill/content/editCreditCard.xhtml";
 const AUTOFILL_BUNDLE_URI = "chrome://formautofill/locale/formautofill.properties";
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "profileStorage",
+                                  "resource://formautofill/ProfileStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MasterPassword",
+                                  "resource://formautofill/MasterPassword.jsm");
+
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, "manageAddresses");
 
-function ManageAddressDialog() {
-  this.prefWin = window.opener;
-  window.addEventListener("DOMContentLoaded", this, {once: true});
-}
+class ManageRecords {
+  constructor(subStorageName, elements) {
+    this._storageInitPromise = profileStorage.initialize();
+    this._subStorageName = subStorageName;
+    this._elements = elements;
+    this._records = [];
+    this.prefWin = window.opener;
+    this.localizeDocument();
+    window.addEventListener("DOMContentLoaded", this, {once: true});
+  }
 
-ManageAddressDialog.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports, Ci.nsIObserver]),
+  async init() {
+    await this.loadRecords();
+    this.attachEventListeners();
+    
+    window.dispatchEvent(new CustomEvent("FormReady"));
+  }
 
-  _elements: {},
+  uninit() {
+    log.debug("uninit");
+    this.detachEventListeners();
+    this._elements = null;
+  }
 
-  
-
-
-
-
-  _pendingChangeCount: 0,
+  localizeDocument() {
+    FormAutofillUtils.localizeMarkup(AUTOFILL_BUNDLE_URI, document);
+  }
 
   
 
@@ -38,44 +57,31 @@ ManageAddressDialog.prototype = {
 
 
   get _selectedOptions() {
-    return Array.from(this._elements.addresses.selectedOptions);
-  },
-
-  init() {
-    this._elements = {
-      addresses: document.getElementById("addresses"),
-      controlsContainer: document.getElementById("controls-container"),
-      remove: document.getElementById("remove"),
-      add: document.getElementById("add"),
-      edit: document.getElementById("edit"),
-    };
-    this.attachEventListeners();
-  },
-
-  uninit() {
-    log.debug("uninit");
-    this.detachEventListeners();
-    this._elements = null;
-  },
-
-  localizeDocument() {
-    FormAutofillUtils.localizeMarkup(AUTOFILL_BUNDLE_URI, document);
-  },
+    return Array.from(this._elements.records.selectedOptions);
+  }
 
   
 
 
 
+  async getStorage() {
+    await this._storageInitPromise;
+    return profileStorage[this._subStorageName];
+  }
 
-  loadAddresses() {
-    return this.getRecords({collectionName: "addresses"}).then(addresses => {
-      log.debug("addresses:", addresses);
-      
-      addresses.sort((a, b) => b.timeLastModified - a.timeLastModified);
-      this.renderAddressElements(addresses);
-      this.updateButtonsStates(this._selectedOptions.length);
-    });
-  },
+  
+
+
+  async loadRecords() {
+    let storage = await this.getStorage();
+    let records = storage.getAll();
+    
+    records.sort((a, b) => b.timeLastModified - a.timeLastModified);
+    await this.renderRecordElements(records);
+    this.updateButtonsStates(this._selectedOptions.length);
+    
+    this._elements.records.dispatchEvent(new CustomEvent("RecordsLoaded"));
+  }
 
   
 
@@ -83,53 +89,173 @@ ManageAddressDialog.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-  getRecords(data) {
-    return new Promise(resolve => {
-      Services.cpmm.addMessageListener("FormAutofill:Records", function getResult(result) {
-        Services.cpmm.removeMessageListener("FormAutofill:Records", getResult);
-        resolve(result.data);
-      });
-      Services.cpmm.sendAsyncMessage("FormAutofill:GetRecords", data);
-    });
-  },
-
-  
-
-
-
-
-
-  renderAddressElements(addresses) {
+  async renderRecordElements(records) {
     let selectedGuids = this._selectedOptions.map(option => option.value);
-    this.clearAddressElements();
-    for (let address of addresses) {
-      let option = new Option(this.getAddressLabel(address),
-                              address.guid,
+    this.clearRecordElements();
+    for (let record of records) {
+      let option = new Option(await this.getLabel(record),
+                              record.guid,
                               false,
-                              selectedGuids.includes(address.guid));
-      option.address = address;
-      this._elements.addresses.appendChild(option);
+                              selectedGuids.includes(record.guid));
+      option.record = record;
+      this._elements.records.appendChild(option);
     }
-  },
+  }
 
   
 
 
-  clearAddressElements() {
-    let parent = this._elements.addresses;
+  clearRecordElements() {
+    let parent = this._elements.records;
     while (parent.lastChild) {
       parent.removeChild(parent.lastChild);
     }
-  },
+  }
+
+  
+
+
+
+
+  async removeRecords(options) {
+    let storage = await this.getStorage();
+    
+    
+    Services.obs.removeObserver(this, "formautofill-storage-changed");
+
+    for (let option of options) {
+      storage.remove(option.value);
+      option.remove();
+    }
+
+    
+    Services.obs.addObserver(this, "formautofill-storage-changed");
+    
+    this._elements.records.dispatchEvent(new CustomEvent("RecordsRemoved"));
+  }
+
+  
+
+
+
+
+
+  updateButtonsStates(selectedCount) {
+    log.debug("updateButtonsStates:", selectedCount);
+    if (selectedCount == 0) {
+      this._elements.edit.setAttribute("disabled", "disabled");
+      this._elements.remove.setAttribute("disabled", "disabled");
+    } else if (selectedCount == 1) {
+      this._elements.edit.removeAttribute("disabled");
+      this._elements.remove.removeAttribute("disabled");
+    } else if (selectedCount > 1) {
+      this._elements.edit.setAttribute("disabled", "disabled");
+      this._elements.remove.removeAttribute("disabled");
+    }
+  }
+
+  
+
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMContentLoaded": {
+        this.init();
+        break;
+      }
+      case "click": {
+        this.handleClick(event);
+        break;
+      }
+      case "change": {
+        this.updateButtonsStates(this._selectedOptions.length);
+        break;
+      }
+      case "unload": {
+        this.uninit();
+        break;
+      }
+      case "keypress": {
+        this.handleKeyPress(event);
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+  handleClick(event) {
+    if (event.target == this._elements.remove) {
+      this.removeRecords(this._selectedOptions);
+    } else if (event.target == this._elements.add) {
+      this.openEditDialog();
+    } else if (event.target == this._elements.edit ||
+               event.target.parentNode == this._elements.records && event.detail > 1) {
+      this.openEditDialog(this._selectedOptions[0].record);
+    }
+  }
+
+  
+
+
+
+
+  handleKeyPress(event) {
+    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+      window.close();
+    }
+  }
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "formautofill-storage-changed": {
+        this.loadRecords();
+      }
+    }
+  }
+
+  
+
+
+  attachEventListeners() {
+    window.addEventListener("unload", this, {once: true});
+    window.addEventListener("keypress", this);
+    this._elements.records.addEventListener("change", this);
+    this._elements.records.addEventListener("click", this);
+    this._elements.controlsContainer.addEventListener("click", this);
+    Services.obs.addObserver(this, "formautofill-storage-changed");
+  }
+
+  
+
+
+  detachEventListeners() {
+    window.removeEventListener("keypress", this);
+    this._elements.records.removeEventListener("change", this);
+    this._elements.records.removeEventListener("click", this);
+    this._elements.controlsContainer.removeEventListener("click", this);
+    Services.obs.removeObserver(this, "formautofill-storage-changed");
+  }
+}
+
+class ManageAddresses extends ManageRecords {
+  constructor(elements) {
+    super("addresses", elements);
+  }
+
+  
+
+
+
+
+  openEditDialog(address) {
+    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, address);
+  }
 
   
 
@@ -138,19 +264,7 @@ ManageAddressDialog.prototype = {
 
 
 
-  removeAddresses(guids) {
-    this._pendingChangeCount += guids.length - 1;
-    Services.cpmm.sendAsyncMessage("FormAutofill:RemoveAddresses", {guids});
-  },
-
-  
-
-
-
-
-
-
-  getAddressLabel(address) {
+  getLabel(address) {
     
     
     
@@ -182,129 +296,70 @@ ManageAddressDialog.prototype = {
       }
     }
     return parts.join(", ");
-  },
+  }
+}
 
-  
-
-
-
-
-  openEditDialog(address) {
-    this.prefWin.gSubDialog.open(EDIT_ADDRESS_URL, null, address);
-  },
-
-  
-
-
-
-
-
-  updateButtonsStates(selectedCount) {
-    log.debug("updateButtonsStates:", selectedCount);
-    if (selectedCount == 0) {
-      this._elements.edit.setAttribute("disabled", "disabled");
-      this._elements.remove.setAttribute("disabled", "disabled");
-    } else if (selectedCount == 1) {
-      this._elements.edit.removeAttribute("disabled");
-      this._elements.remove.removeAttribute("disabled");
-    } else if (selectedCount > 1) {
-      this._elements.edit.setAttribute("disabled", "disabled");
-      this._elements.remove.removeAttribute("disabled");
+class ManageCreditCards extends ManageRecords {
+  constructor(elements) {
+    super("creditCards", elements);
+    this.hasMasterPassword = MasterPassword.isEnabled;
+    if (this.hasMasterPassword) {
+      elements.showCreditCards.setAttribute("hidden", true);
     }
-  },
+  }
 
   
 
 
 
 
-  handleEvent(event) {
-    switch (event.type) {
-      case "DOMContentLoaded": {
-        this.init();
-        this.loadAddresses();
-        break;
-      }
-      case "click": {
-        this.handleClick(event);
-        break;
-      }
-      case "change": {
-        this.updateButtonsStates(this._selectedOptions.length);
-        break;
-      }
-      case "unload": {
-        this.uninit();
-        break;
-      }
-      case "keypress": {
-        this.handleKeyPress(event);
-        break;
-      }
+  async openEditDialog(creditCard) {
+    
+    
+    if (!this.hasMasterPassword || !creditCard || await MasterPassword.prompt()) {
+      this.prefWin.gSubDialog.open(EDIT_CREDIT_CARD_URL, null, creditCard);
     }
-  },
+  }
 
   
 
 
 
+
+
+
+
+
+  async getLabel(creditCard, showCreditCards = false) {
+    let parts = [];
+    if (creditCard["cc-number"]) {
+      let ccLabel;
+      if (showCreditCards) {
+        ccLabel = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
+      } else {
+        let {affix, label} = FormAutofillUtils.fmtMaskedCreditCardLabel(creditCard["cc-number"]);
+        ccLabel = `${affix} ${label}`;
+      }
+      parts.push(ccLabel);
+    }
+    if (creditCard["cc-name"]) {
+      parts.push(creditCard["cc-name"]);
+    }
+    return parts.join(", ");
+  }
+
+  async decryptOptions(options) {
+    for (let option of options) {
+      option.text = await this.getLabel(option.record, true);
+    }
+    
+    this._elements.records.dispatchEvent(new CustomEvent("OptionsDecrypted"));
+  }
 
   handleClick(event) {
-    if (event.target == this._elements.remove) {
-      this.removeAddresses(this._selectedOptions.map(option => option.value));
-    } else if (event.target == this._elements.add) {
-      this.openEditDialog();
-    } else if (event.target == this._elements.edit ||
-               event.target.parentNode == this._elements.addresses && event.detail > 1) {
-      this.openEditDialog(this._selectedOptions[0].address);
+    if (event.target == this._elements.showCreditCards) {
+      this.decryptOptions(this._elements.records.options);
     }
-  },
-
-  
-
-
-
-
-  handleKeyPress(event) {
-    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
-      window.close();
-    }
-  },
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "formautofill-storage-changed": {
-        if (this._pendingChangeCount) {
-          this._pendingChangeCount -= 1;
-          return;
-        }
-        this.loadAddresses();
-      }
-    }
-  },
-
-  
-
-
-  attachEventListeners() {
-    window.addEventListener("unload", this, {once: true});
-    window.addEventListener("keypress", this);
-    this._elements.addresses.addEventListener("change", this);
-    this._elements.addresses.addEventListener("click", this);
-    this._elements.controlsContainer.addEventListener("click", this);
-    Services.obs.addObserver(this, "formautofill-storage-changed");
-  },
-
-  
-
-
-  detachEventListeners() {
-    window.removeEventListener("keypress", this);
-    this._elements.addresses.removeEventListener("change", this);
-    this._elements.addresses.removeEventListener("click", this);
-    this._elements.controlsContainer.removeEventListener("click", this);
-    Services.obs.removeObserver(this, "formautofill-storage-changed");
-  },
-};
-
-window.dialog = new ManageAddressDialog();
+    super.handleClick(event);
+  }
+}
