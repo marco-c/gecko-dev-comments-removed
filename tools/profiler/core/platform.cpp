@@ -815,6 +815,15 @@ struct NativeStack
   {}
 };
 
+class TickController
+{
+public:
+  
+  
+  virtual void Tick(PSLockRef aLock,
+                    const TickSample& aSample) = 0;
+};
+
 Atomic<bool> WALKING_JS_STACK(false);
 
 struct AutoWalkJSStack
@@ -1045,24 +1054,22 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 }
 
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
-  NativeStack nativeStack;
+  
+  
+  
+  
+  StackWalkCallback( 0, aSample.mPC, aSample.mSP, &aNativeStack);
 
-  
-  
-  
-  
-  StackWalkCallback( 0, aSample.mPC, aSample.mSP, &nativeStack);
-
-  uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - nativeStack.mCount);
+  uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount);
 
 #if defined(GP_OS_darwin) || (defined(GP_PLAT_x86_windows))
   void* stackEnd = aSample.mStackTop;
   if (aSample.mFP >= aSample.mSP && aSample.mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
-                          &nativeStack, reinterpret_cast<void**>(aSample.mFP),
+                          &aNativeStack, reinterpret_cast<void**>(aSample.mFP),
                           stackEnd);
   }
 #else
@@ -1070,21 +1077,17 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
   
   uintptr_t thread = GetThreadHandle(aSample.mPlatformData);
   MOZ_ASSERT(thread);
-  MozStackWalk(StackWalkCallback,  0, maxFrames, &nativeStack,
+  MozStackWalk(StackWalkCallback,  0, maxFrames, &aNativeStack,
                thread,  nullptr);
 #endif
-
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 }
 #endif
 
 #ifdef USE_EHABI_STACKWALK
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
-  NativeStack nativeStack;
-
   const mcontext_t* mcontext = &aSample.mContext->uc_mcontext;
   mcontext_t savedContext;
   NotNull<RacyThreadInfo*> racyInfo = aSample.mRacyInfo;
@@ -1104,11 +1107,11 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
       
       uint32_t* vSP = reinterpret_cast<uint32_t*>(entry.stackAddress());
 
-      nativeStack.mCount +=
+      aNativeStack.mCount +=
         EHABIStackWalk(*mcontext,  vSP,
-                       nativeStack.mSPs + nativeStack.mCount,
-                       nativeStack.mPCs + nativeStack.mCount,
-                       MAX_NATIVE_FRAMES - nativeStack.mCount);
+                       aNativeStack.mSPs + aNativeStack.mCount,
+                       aNativeStack.mPCs + aNativeStack.mCount,
+                       MAX_NATIVE_FRAMES - aNativeStack.mCount);
 
       memset(&savedContext, 0, sizeof(savedContext));
 
@@ -1130,13 +1133,11 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
 
   
   
-  nativeStack.mCount +=
+  aNativeStack.mCount +=
     EHABIStackWalk(*mcontext, aSample.mStackTop,
-                   nativeStack.mSPs + nativeStack.mCount,
-                   nativeStack.mPCs + nativeStack.mCount,
-                   MAX_NATIVE_FRAMES - nativeStack.mCount);
-
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+                   aNativeStack.mSPs + aNativeStack.mCount,
+                   aNativeStack.mPCs + aNativeStack.mCount,
+                   MAX_NATIVE_FRAMES - aNativeStack.mCount);
 }
 #endif
 
@@ -1161,7 +1162,7 @@ ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
 #endif
 
 static void
-DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
+DoNativeBacktrace(PSLockRef aLock, NativeStack& aNativeStack,
                   const TickSample& aSample)
 {
   const mcontext_t* mc = &aSample.mContext->uc_mcontext;
@@ -1266,25 +1267,21 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
     }
   }
 
-  NativeStack nativeStack;
-
   size_t scannedFramesAllowed = 0;
 
   size_t scannedFramesAcquired = 0, framePointerFramesAcquired = 0;
   lul::LUL* lul = CorePS::Lul(aLock);
-  lul->Unwind(reinterpret_cast<uintptr_t*>(nativeStack.mPCs),
-              reinterpret_cast<uintptr_t*>(nativeStack.mSPs),
-              &nativeStack.mCount, &framePointerFramesAcquired,
+  lul->Unwind(reinterpret_cast<uintptr_t*>(aNativeStack.mPCs),
+              reinterpret_cast<uintptr_t*>(aNativeStack.mSPs),
+              &aNativeStack.mCount, &framePointerFramesAcquired,
               &scannedFramesAcquired,
               MAX_NATIVE_FRAMES, scannedFramesAllowed,
               &startRegs, &stackImg);
 
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
-
   
   
   lul->mStats.mContext += 1;
-  lul->mStats.mCFI     += nativeStack.mCount - 1 - framePointerFramesAcquired -
+  lul->mStats.mCFI     += aNativeStack.mCount - 1 - framePointerFramesAcquired -
                           scannedFramesAcquired;
   lul->mStats.mFP      += framePointerFramesAcquired;
   lul->mStats.mScanned += scannedFramesAcquired;
@@ -1306,23 +1303,50 @@ DoSampleStackTrace(PSLockRef aLock, ProfileBuffer* aBuffer,
   }
 }
 
-
-
-static void
-Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
+class ProfilerTickController : public TickController
 {
-  aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
+public:
+  explicit ProfilerTickController(PSLockRef aLock, ProfileBuffer* aBuffer = nullptr)
+    : mBuffer(aBuffer ? aBuffer : ActivePS::Buffer(aLock))
+  {
+  }
+
+  
+  
+  void Tick(PSLockRef aLock, const TickSample& aSample) override;
+
+private:
+  ProfileBuffer* mBuffer;
+};
+
+void
+ProfilerTickController::Tick(PSLockRef aLock, const TickSample& aSample)
+{
+  MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
+
+  mBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
 
   TimeDuration delta = aSample.mTimeStamp - CorePS::ProcessStartTime();
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock)) {
-    DoNativeBacktrace(aLock, aBuffer, aSample);
+    void* pc_array[1000];
+    void* sp_array[1000];
+    NativeStack nativeStack = {
+      pc_array,
+      sp_array,
+      mozilla::ArrayLength(pc_array),
+      0
+    };
+
+    DoNativeBacktrace(aLock, nativeStack, aSample);
+
+    MergeStacksIntoProfile(aLock, mBuffer, aSample, nativeStack);
   } else
 #endif
   {
-    DoSampleStackTrace(aLock, aBuffer, aSample);
+    DoSampleStackTrace(aLock, mBuffer, aSample);
   }
 
   
@@ -1332,27 +1356,27 @@ Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
       aSample.mRacyInfo->GetPendingMarkers();
     while (pendingMarkersList && pendingMarkersList->peek()) {
       ProfilerMarker* marker = pendingMarkersList->popHead();
-      aBuffer->addStoredMarker(marker);
-      aBuffer->addTag(ProfileBufferEntry::Marker(marker));
+      mBuffer->addStoredMarker(marker);
+      mBuffer->addTag(ProfileBufferEntry::Marker(marker));
     }
   }
 
   if (aSample.mResponsiveness && aSample.mResponsiveness->HasData()) {
     TimeDuration delta =
       aSample.mResponsiveness->GetUnresponsiveDuration(aSample.mTimeStamp);
-    aBuffer->addTag(ProfileBufferEntry::Responsiveness(delta.ToMilliseconds()));
+    mBuffer->addTag(ProfileBufferEntry::Responsiveness(delta.ToMilliseconds()));
   }
 
   
   if (aSample.mRSSMemory != 0) {
     double rssMemory = static_cast<double>(aSample.mRSSMemory);
-    aBuffer->addTag(ProfileBufferEntry::ResidentMemory(rssMemory));
+    mBuffer->addTag(ProfileBufferEntry::ResidentMemory(rssMemory));
   }
 
   
   if (aSample.mUSSMemory != 0) {
     double ussMemory = static_cast<double>(aSample.mUSSMemory);
-    aBuffer->addTag(ProfileBufferEntry::UnsharedMemory(ussMemory));
+    mBuffer->addTag(ProfileBufferEntry::UnsharedMemory(ussMemory));
   }
 }
 
@@ -1737,17 +1761,68 @@ struct SigHandlerCoordinator;
 
 
 
-class SamplerThread
+
+
+
+
+
+
+
+
+
+class Sampler
+{
+public:
+  
+  explicit Sampler(PSLockRef aLock);
+
+  
+  
+  void Disable(PSLockRef aLock);
+
+  
+  void SuspendAndSampleAndResumeThread(PSLockRef aLock,
+                                       TickController& aController,
+                                       TickSample& aSample);
+
+private:
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+  
+  struct sigaction mOldSigprofHandler;
+
+  
+  
+  int mMyPid;
+
+  
+  
+  int mSamplerTid;
+
+public:
+  
+  
+  
+  static struct SigHandlerCoordinator* sSigHandlerCoordinator;
+#endif
+};
+
+
+
+
+
+
+
+
+
+
+
+class SamplerThread : public Sampler
 {
 public:
   
   SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                 double aIntervalMilliseconds);
   ~SamplerThread();
-
-  
-  
-  void SuspendAndSampleAndResumeThread(PSLockRef aLock, TickSample& aSample);
 
   
   void Run();
@@ -1773,26 +1848,6 @@ private:
   pthread_t mThread;
 #endif
 
-#if defined(GP_OS_linux) || defined(GP_OS_android)
-  
-  struct sigaction mOldSigprofHandler;
-
-  
-  
-  int mMyPid;
-
-public:
-  
-  
-  int mSamplerTid;
-
-  
-  
-  
-  static struct SigHandlerCoordinator* sSigHandlerCoordinator;
-#endif
-
-private:
   SamplerThread(const SamplerThread&) = delete;
   void operator=(const SamplerThread&) = delete;
 };
@@ -1875,8 +1930,9 @@ SamplerThread::Run()
           }
 
           TickSample sample(info, rssMemory, ussMemory);
+          ProfilerTickController controller(lock);
 
-          SuspendAndSampleAndResumeThread(lock, sample);
+          SuspendAndSampleAndResumeThread(lock, controller, sample);
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2829,7 +2885,8 @@ profiler_get_backtrace()
 #endif
 #endif
 
-  Tick(lock, buffer, sample);
+  ProfilerTickController controller(lock, buffer);
+  controller.Tick(lock, sample);
 
   return UniqueProfilerBacktrace(
     new ProfilerBacktrace("SyncProfile", tid, buffer));
@@ -3041,6 +3098,75 @@ profiler_get_stack_top()
     return threadInfo->StackTop();
   }
   return nullptr;
+}
+
+int
+profiler_current_thread_id()
+{
+  return Thread::GetCurrentId();
+}
+
+class SimpleTickController : public TickController
+{
+public:
+  explicit SimpleTickController(const std::function<void(void**, size_t)>& aCallback,
+                                bool aSampleNative)
+    : mCallback(aCallback)
+    , mSampleNative(aSampleNative)
+  {
+  }
+
+  void Tick(PSLockRef aLock, const TickSample& aSample) override {
+    void* pc_array[1000];
+    void* sp_array[1000];
+    NativeStack nativeStack = {
+      pc_array,
+      sp_array,
+      mozilla::ArrayLength(pc_array),
+      0
+    };
+
+#if defined(HAVE_NATIVE_UNWIND)
+    if (mSampleNative) {
+      DoNativeBacktrace(aLock, nativeStack, aSample);
+    }
+#endif
+
+    mCallback(nativeStack.pc_array, nativeStack.count);
+  }
+
+private:
+  const std::function<void(void**, size_t)>& mCallback;
+  bool mSampleNative;
+};
+
+
+
+
+void
+profiler_suspend_and_sample_thread(int aThreadId,
+                                   const std::function<void(void**, size_t)>& aCallback,
+                                   bool aSampleNative )
+{
+  PSAutoLock lock(gPSMutex);
+
+  const CorePS::ThreadVector& liveThreads = CorePS::LiveThreads(lock);
+  for (uint32_t i = 0; i < liveThreads.size(); i++) {
+    ThreadInfo* info = liveThreads.at(i);
+
+    if (info->ThreadId() == aThreadId) {
+      
+      Sampler sampler(lock);
+      TickSample sample(info, 0, 0);
+      SimpleTickController controller(aCallback, aSampleNative);
+      sampler.SuspendAndSampleAndResumeThread(lock, controller, sample);
+
+      
+      
+      sampler.Disable(lock);
+      break;
+    }
+  }
 }
 
 
