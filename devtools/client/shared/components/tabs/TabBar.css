@@ -3,11 +3,6 @@
 
 
 
-
-div[hidetabs=true] .tabs .tabs-navigation {
-  display: none;
-}
-
 .tabs .tabs-navigation {
   line-height: 15px;
 }
