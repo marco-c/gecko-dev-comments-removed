@@ -64,22 +64,24 @@ function messages(state = new MessageState(), action) {
         }
       }
 
-      let parentGroups = getParentGroups(currentGroup, groupsById);
-      newMessage = newMessage.withMutations(function (message) {
-        message.set("groupId", currentGroup);
-        message.set("indent", parentGroups.length);
-      });
-
       return state.withMutations(function (record) {
         
-        record.set("messagesById", messagesById.push(newMessage));
+        record.set(
+          "messagesById",
+          messagesById.push(newMessage.set("groupId", currentGroup))
+        );
 
         if (newMessage.type === "trace") {
           
           record.set("messagesUiById", messagesUiById.push(newMessage.id));
         } else if (isGroupType(newMessage.type)) {
           record.set("currentGroup", newMessage.id);
-          record.set("groupsById", groupsById.set(newMessage.id, parentGroups));
+          record.set("groupsById",
+            groupsById.set(
+              newMessage.id,
+              getParentGroups(currentGroup, groupsById)
+            )
+          );
 
           if (newMessage.type === constants.MESSAGE_TYPE.START_GROUP) {
             
