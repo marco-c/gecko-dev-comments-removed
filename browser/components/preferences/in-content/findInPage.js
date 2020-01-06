@@ -6,6 +6,7 @@
 
 var gSearchResultsPane = {
   findSelection: null,
+  listSearchTooltips: [],
   searchResultsCategory: null,
   searchInput: null,
 
@@ -192,6 +193,14 @@ var gSearchResultsPane = {
     let query = event.target.value.trim().toLowerCase();
     this.findSelection.removeAllRanges();
 
+    
+    let searchTooltips = Array.from(document.querySelectorAll(".search-tooltip"));
+    for (let searchTooltip of searchTooltips) {
+      searchTooltip.parentElement.classList.remove("search-tooltip-parent");
+      searchTooltip.remove();
+    }
+    this.listSearchTooltips = [];
+
     let srHeader = document.getElementById("header-searchResults");
 
     if (query) {
@@ -235,6 +244,11 @@ var gSearchResultsPane = {
         let brandName = document.getElementById("bundleBrand").getString("brandShortName");
         document.getElementById("need-help").innerHTML =
           strings.getFormattedString("searchResults.needHelp", [brandName]);
+      } else {
+        
+        for (let node of this.listSearchTooltips) {
+          this.createSearchTooltip(node, query);
+        }
       }
     } else {
       this.searchResultsCategory.hidden = true;
@@ -287,12 +301,22 @@ var gSearchResultsPane = {
       }
 
       
+      if (labelResult && nodeObject.tagName === "button") {
+        this.listSearchTooltips.push(nodeObject);
+      }
+
+      
       if (nodeObject.getAttribute("value")) {
         valueResult = this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase);
       }
 
       if (nodeObject.tagName == "button" && (labelResult || valueResult)) {
         nodeObject.setAttribute("highlightable", "true");
+      }
+
+      
+      if (valueResult && nodeObject.tagName === "button") {
+        this.listSearchTooltips.push(nodeObject);
       }
 
       matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult;
@@ -302,9 +326,44 @@ var gSearchResultsPane = {
       
       if (!nodeObject.childNodes[i].hidden && nodeObject.getAttribute("data-hidden-from-search") !== "true") {
         let result = this.searchWithinNode(nodeObject.childNodes[i], searchPhrase);
+        
+        if (result && nodeObject.tagName === "menulist") {
+          this.listSearchTooltips.push(nodeObject);
+        }
         matchesFound = matchesFound || result;
       }
     }
     return matchesFound;
+  },
+
+  
+
+
+
+
+
+
+
+
+  createSearchTooltip(currentNode, query) {
+    let searchTooltip = document.createElement("span");
+    searchTooltip.setAttribute("class", "search-tooltip");
+    searchTooltip.textContent = query;
+
+    currentNode.parentElement.classList.add("search-tooltip-parent");
+    currentNode.parentElement.appendChild(searchTooltip);
+
+    
+    
+    
+    let anchorRect = currentNode.getBoundingClientRect();
+    let tooltipRect = searchTooltip.getBoundingClientRect();
+    let parentRect = currentNode.parentElement.getBoundingClientRect();
+
+    let offSet = (anchorRect.width / 2) - (tooltipRect.width / 2);
+    let relativeOffset = anchorRect.left - parentRect.left;
+    offSet += relativeOffset > 0 ? relativeOffset : 0;
+
+    searchTooltip.style.setProperty("left", `${offSet}px`);
   }
 }
