@@ -1052,6 +1052,9 @@ MOZ_ALWAYS_INLINE bool
 CheckRecursionLimit(JSContext* cx, uintptr_t limit)
 {
     int stackDummy;
+
+    JS_STACK_OOM_POSSIBLY_FAIL_REPORT();
+
     if (!JS_CHECK_STACK_SIZE(limit, &stackDummy)) {
         ReportOverRecursed(cx);
         return false;
@@ -1063,12 +1066,17 @@ MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitDontReport(JSContext* cx, uintptr_t limit)
 {
     int stackDummy;
+
+    JS_STACK_OOM_POSSIBLY_FAIL();
+
     return JS_CHECK_STACK_SIZE(limit, &stackDummy);
 }
 
 MOZ_ALWAYS_INLINE bool
 CheckRecursionLimit(JSContext* cx)
 {
+    JS_STACK_OOM_POSSIBLY_FAIL_REPORT();
+
     
     
     
@@ -1088,12 +1096,16 @@ CheckRecursionLimitDontReport(JSContext* cx)
 MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitWithStackPointerDontReport(JSContext* cx, void* sp)
 {
+    JS_STACK_OOM_POSSIBLY_FAIL();
+
     return JS_CHECK_STACK_SIZE(GetNativeStackLimit(cx), sp);
 }
 
 MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitWithStackPointer(JSContext* cx, void* sp)
 {
+    JS_STACK_OOM_POSSIBLY_FAIL_REPORT();
+
     if (!JS_CHECK_STACK_SIZE(GetNativeStackLimit(cx), sp)) {
         ReportOverRecursed(cx);
         return false;
