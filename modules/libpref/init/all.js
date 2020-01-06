@@ -1313,7 +1313,7 @@ pref("dom.timeout.foreground_throttling_max_budget", -1);
 
 pref("dom.timeout.budget_throttling_max_delay", 15000);
 
-pref("dom.timeout.enable_budget_timer_throttling", false);
+pref("dom.timeout.enable_budget_timer_throttling", true);
 
 
 pref("dom.experimental_forms", false);
@@ -5796,8 +5796,6 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 
 #ifdef MOZ_STYLO
-pref("layout.css.stylo-blocklist.enabled", true);
-pref("layout.css.stylo-blocklist.blocked_domains", "");
 #ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
 #else
