@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -13,7 +14,10 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
   this);
 
-const { EVENTS } = require("devtools/client/netmonitor/src/constants");
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/netmonitor/test/shared-head.js",
+  this);
+
 const {
   getFormattedIPAndPort,
   getFormattedTime,
@@ -281,6 +285,12 @@ function teardown(monitor) {
   return Task.spawn(function* () {
     let tab = monitor.toolbox.target.tab;
 
+    
+    
+    info("Wait for completion of all pending RDP requests...");
+    yield waitForExistingRequests(monitor);
+    info("All pending requests finished.");
+
     let onDestroyed = monitor.once("destroyed");
     yield removeTab(tab);
     yield onDestroyed;
@@ -306,13 +316,14 @@ function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
       ["RECEIVED_RESPONSE_HEADERS", onGenericEvent],
       ["UPDATING_RESPONSE_COOKIES", onGenericEvent],
       ["RECEIVED_RESPONSE_COOKIES", onGenericEvent],
-      ["STARTED_RECEIVING_RESPONSE", onGenericEvent],
-      ["UPDATING_RESPONSE_CONTENT", onGenericEvent],
-      ["RECEIVED_RESPONSE_CONTENT", onGenericEvent],
       ["UPDATING_EVENT_TIMINGS", onGenericEvent],
       ["RECEIVED_EVENT_TIMINGS", onGenericEvent],
       ["PAYLOAD_READY", onPayloadReady]
     ];
+    let expectedGenericEvents = awaitedEventsToListeners
+      .filter(([, listener]) => listener == onGenericEvent).length;
+    let expectedPostEvents = awaitedEventsToListeners
+      .filter(([, listener]) => listener == onPostEvent).length;
 
     function initProgressForURL(url) {
       if (progress[url]) {
@@ -365,8 +376,10 @@ function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
 
     function maybeResolve(event, actor, networkInfo) {
       info("> Network events progress: " +
-        genericEvents + "/" + ((getRequests + postRequests) * 13) + ", " +
-        postEvents + "/" + (postRequests * 2) + ", " +
+        "Payload: " + payloadReady + "/" + (getRequests + postRequests) + ", " +
+        "Generic: " + genericEvents + "/" +
+          ((getRequests + postRequests) * expectedGenericEvents) + ", " +
+        "Post: " + postEvents + "/" + (postRequests * expectedPostEvents) + ", " +
         "got " + event + " for " + actor);
 
       let url = networkInfo.request.url;
@@ -379,8 +392,8 @@ function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
       
       
       if (payloadReady >= (getRequests + postRequests) &&
-        genericEvents >= (getRequests + postRequests) * 13 &&
-        postEvents >= postRequests * 2) {
+        genericEvents >= (getRequests + postRequests) * expectedGenericEvents &&
+        postEvents >= postRequests * expectedPostEvents) {
         awaitedEventsToListeners.forEach(([e, l]) => panel.off(EVENTS[e], l));
         executeSoon(resolve);
       }
@@ -683,4 +696,26 @@ function waitForContentMessage(name) {
       resolve(msg);
     });
   });
+}
+
+
+
+
+
+
+async function selectIndexAndWaitForSourceEditor(monitor, index) {
+  let document = monitor.panelWin.document;
+  let onResponseContent = monitor.panelWin.once(EVENTS.RECEIVED_RESPONSE_CONTENT);
+  
+  
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.querySelectorAll(".request-list-item")[index]);
+  
+  let editor = document.querySelector("#response-panel .CodeMirror-code");
+  if (!editor) {
+    let waitDOM = waitForDOM(document, "#response-panel .CodeMirror-code");
+    document.querySelector("#response-tab").click();
+    await waitDOM;
+  }
+  await onResponseContent;
 }
