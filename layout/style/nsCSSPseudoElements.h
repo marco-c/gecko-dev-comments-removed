@@ -41,6 +41,9 @@
 
 #define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC           (1<<5)
 
+
+#define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM        (1<<6)
+
 namespace mozilla {
 
 
@@ -110,6 +113,12 @@ public:
   static bool PseudoElementIsJSCreatedNAC(Type aType)
   {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC);
+  }
+
+  static bool PseudoElementIsFlexOrGridItem(const Type aType)
+  {
+    return PseudoElementHasFlags(aType,
+                                 CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM);
   }
 
   static bool IsEnabled(Type aType, EnabledState aEnabledState)

@@ -1699,6 +1699,23 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
   return ruleWalker.CurrentNode();
 }
 
+static bool
+SkipsParentDisplayBasedStyleFixup(nsStyleContext* aStyleContext)
+{
+  CSSPseudoElementType type = aStyleContext->GetPseudoType();
+  switch (type) {
+    case CSSPseudoElementType::InheritingAnonBox:
+       return nsCSSAnonBoxes::AnonBoxSkipsParentDisplayBasedStyleFixup(
+                aStyleContext->GetPseudo());
+    case CSSPseudoElementType::NonInheritingAnonBox:
+       return true;
+    case CSSPseudoElementType::NotPseudo:
+       return false;
+    default:
+       return !nsCSSPseudoElements::PseudoElementIsFlexOrGridItem(type);
+  }
+}
+
 already_AddRefed<nsStyleContext>
 nsStyleSet::ResolveStyleWithReplacement(Element* aElement,
                                         Element* aPseudoElement,
@@ -1769,7 +1786,9 @@ nsStyleSet::ResolveStyleWithReplacement(Element* aElement,
 #endif
   }
 
-  if (aElement && aElement->IsRootOfAnonymousSubtree()) {
+  if ((aElement && aElement->IsRootOfAnonymousSubtree()) ||
+      SkipsParentDisplayBasedStyleFixup(aOldStyleContext)) {
+    
     
     
     
@@ -1945,9 +1964,9 @@ nsStyleSet::ResolvePseudoElementStyleInternal(
     if (aAnimationFlag == eWithAnimation) {
       flags |= eDoAnimation;
     }
-  } else {
-    
-    
+  }
+
+  if (!nsCSSPseudoElements::PseudoElementIsFlexOrGridItem(aType)) {
     
     
     flags |= eSkipParentDisplayBasedStyleFixup;
@@ -2043,9 +2062,9 @@ nsStyleSet::ProbePseudoElementStyle(Element* aParentElement,
   if (aType == CSSPseudoElementType::before ||
       aType == CSSPseudoElementType::after) {
     flags |= eDoAnimation;
-  } else {
-    
-    
+  }
+
+  if (!nsCSSPseudoElements::PseudoElementIsFlexOrGridItem(aType)) {
     
     
     flags |= eSkipParentDisplayBasedStyleFixup;
@@ -2502,9 +2521,8 @@ nsStyleSet::ReparentStyleContext(nsStyleContext* aStyleContext,
   }
 
   if ((aElement && aElement->IsRootOfAnonymousSubtree()) ||
-      (aStyleContext->IsAnonBox() &&
-       nsCSSAnonBoxes::AnonBoxSkipsParentDisplayBasedStyleFixup(
-         aStyleContext->GetPseudo()))) {
+      SkipsParentDisplayBasedStyleFixup(aStyleContext)) {
+    
     
     
     
