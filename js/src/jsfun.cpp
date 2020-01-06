@@ -120,23 +120,25 @@ ThrowTypeErrorBehavior(JSContext* cx)
 }
 
 static bool
-IsFunctionInStrictMode(JSFunction* fun)
+IsSloppyNormalFunction(JSFunction* fun)
 {
     
-    if (fun->isInterpreted() && fun->strict())
-        return true;
+    if (fun->kind() == JSFunction::NormalFunction) {
+        if (fun->isBuiltin() || fun->isBoundFunction())
+            return false;
+
+        if (fun->isStarGenerator() || fun->isLegacyGenerator() || fun->isAsync())
+            return false;
+
+        MOZ_ASSERT(fun->isInterpreted());
+        return !fun->strict();
+    }
 
     
-    return IsAsmJSStrictModeModuleOrFunction(fun);
-}
+    if (fun->kind() == JSFunction::AsmJS)
+        return !IsAsmJSStrictModeModuleOrFunction(fun);
 
-static bool
-IsNewerTypeFunction(JSFunction* fun) {
-    return fun->isArrow() ||
-           fun->isStarGenerator() ||
-           fun->isLegacyGenerator() ||
-           fun->isAsync() ||
-           fun->isMethod();
+    return false;
 }
 
 
@@ -151,10 +153,7 @@ ArgumentsRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    
-    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) ||
-        fun->isBoundFunction() || IsNewerTypeFunction(fun))
-    {
+    if (!IsSloppyNormalFunction(fun)) {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
@@ -240,10 +239,7 @@ CallerRestrictions(JSContext* cx, HandleFunction fun)
     
     
     
-    
-    if (fun->isBuiltin() || IsFunctionInStrictMode(fun) ||
-        fun->isBoundFunction() || IsNewerTypeFunction(fun))
-    {
+    if (!IsSloppyNormalFunction(fun)) {
         ThrowTypeErrorBehavior(cx);
         return false;
     }
