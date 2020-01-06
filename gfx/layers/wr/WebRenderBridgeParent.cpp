@@ -275,7 +275,7 @@ WebRenderBridgeParent::RecvDeleteCompositorAnimations(InfallibleTArray<uint64_t>
     return IPC_OK();
   }
 
-  uint64_t storageId = mWidget ? 0 : mPipelineId.mHandle;
+  uint64_t storageId = mWidget ? 0 : wr::AsUint64(mPipelineId);
   CompositorAnimationStorage* storage =
     mCompositorBridge->GetAnimationStorage(storageId);
   MOZ_ASSERT(storage);
@@ -373,7 +373,7 @@ WebRenderBridgeParent::UpdateAPZ()
 }
 
 bool
-WebRenderBridgeParent::PushAPZStateToWR(nsTArray<WrTransformProperty>& aTransformArray)
+WebRenderBridgeParent::PushAPZStateToWR()
 {
   CompositorBridgeParent* cbp = GetRootCompositorBridgeParent();
   if (!cbp) {
@@ -387,7 +387,7 @@ WebRenderBridgeParent::PushAPZStateToWR(nsTArray<WrTransformProperty>& aTransfor
     if (frameInterval != TimeDuration::Forever()) {
       animationTime += frameInterval;
     }
-    return apzc->PushStateToWR(mApi, animationTime, aTransformArray);
+    return apzc->PushStateToWR(mApi, animationTime);
   }
   return false;
 }
@@ -776,36 +776,28 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
     return;
   }
 
-  bool scheduleComposite = false;
-  nsTArray<WrOpacityProperty> opacityArray;
-  nsTArray<WrTransformProperty> transformArray;
+  if (PushAPZStateToWR()) {
+    ScheduleComposition();
+  }
 
   if (gfxPrefs::WebRenderOMTAEnabled()) {
+    nsTArray<WrOpacityProperty> opacityArray;
+    nsTArray<WrTransformProperty> transformArray;
     SampleAnimations(opacityArray, transformArray);
 
     if (!transformArray.IsEmpty() || !opacityArray.IsEmpty()) {
-      scheduleComposite = true;
+      mApi->GenerateFrame(opacityArray, transformArray);
+      ScheduleComposition();
+      return;
     }
   }
 
-  if (PushAPZStateToWR(transformArray)) {
-    scheduleComposite = true;
-  }
-
-  if (!transformArray.IsEmpty() || !opacityArray.IsEmpty()) {
-    mApi->GenerateFrame(opacityArray, transformArray);
-  } else {
-    mApi->GenerateFrame();
-  }
+  mApi->GenerateFrame();
 
   
   
   
   
-
-  if (scheduleComposite) {
-    ScheduleComposition();
-  }
 }
 
 void
