@@ -81,14 +81,18 @@ pub enum ChildCascadeRequirement {
     
     
     
-    MustCascade,
+    MustCascadeChildren,
+    
+    
+    
+    MustCascadeDescendants,
 }
 
 impl From<StyleChange> for ChildCascadeRequirement {
     fn from(change: StyleChange) -> ChildCascadeRequirement {
         match change {
             StyleChange::Unchanged => ChildCascadeRequirement::CanSkipCascade,
-            StyleChange::Changed => ChildCascadeRequirement::MustCascade,
+            StyleChange::Changed => ChildCascadeRequirement::MustCascadeChildren,
         }
     }
 }
@@ -447,6 +451,22 @@ trait PrivateMatchMethods: TElement {
                                        old_values.as_ref().map(|v| v.as_ref()),
                                        &new_values,
                                        None);
+
+            
+            if self.is_root() && !self.is_native_anonymous() {
+                
+                
+                let device = context.shared.stylist.device();
+                let new_font_size = new_values.get_font().clone_font_size();
+
+                
+                
+                
+                if old_values.map_or(false, |v| v.get_font().clone_font_size() != new_font_size) &&
+                   device.used_root_font_size() {
+                    child_cascade_requirement = ChildCascadeRequirement::MustCascadeDescendants;
+                }
+            }
         }
 
         
@@ -664,7 +684,7 @@ trait PrivateMatchMethods: TElement {
                              -> ChildCascadeRequirement {
         
         if shared_context.traversal_flags.for_reconstruct() {
-            return ChildCascadeRequirement::MustCascade;
+            return ChildCascadeRequirement::MustCascadeChildren;
         }
 
         
@@ -1220,12 +1240,12 @@ pub trait MatchMethods : TElement {
                          -> ChildCascadeRequirement {
         let restyle = match restyle {
             Some(r) => r,
-            None => return ChildCascadeRequirement::MustCascade,
+            None => return ChildCascadeRequirement::MustCascadeChildren,
         };
 
         let old_values = match old_values {
             Some(v) => v,
-            None => return ChildCascadeRequirement::MustCascade,
+            None => return ChildCascadeRequirement::MustCascadeChildren,
         };
 
         

@@ -447,6 +447,12 @@ impl RestyleHint {
     }
 
     
+    #[inline]
+    pub fn insert_cascade_hint(&mut self, cascade_hint: CascadeHint) {
+        self.recascade.insert(cascade_hint);
+    }
+
+    
     
     #[inline]
     pub fn contains(&self, other: &Self) -> bool {
