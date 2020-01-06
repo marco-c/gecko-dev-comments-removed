@@ -45,9 +45,9 @@ BEGIN_TEST(testDefinePropertyIgnoredAttributes)
     
     
     
-    CHECK(JS_DefineProperty(cx, obj, "foo", defineValue,
-                            JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_PERMANENT | JSPROP_SHARED,
-                            Getter));
+    CHECK(JS_DefineProperty(cx, obj, "foo",
+                            Getter, nullptr,
+                            JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_PERMANENT | JSPROP_SHARED));
 
     CHECK(JS_GetOwnPropertyDescriptor(cx, obj, "foo", &desc));
 
@@ -55,17 +55,17 @@ BEGIN_TEST(testDefinePropertyIgnoredAttributes)
     CHECK(CheckDescriptor(desc, AccessorDescriptor, false, true, false));
 
     
-    CHECK(JS_DefineProperty(cx, obj, "bar", defineValue,
-                            JSPROP_IGNORE_ENUMERATE | JSPROP_SHARED,
-                            Getter));
+    CHECK(JS_DefineProperty(cx, obj, "bar",
+                            Getter, nullptr,
+                            JSPROP_IGNORE_ENUMERATE | JSPROP_SHARED));
     CHECK(JS_GetOwnPropertyDescriptor(cx, obj, "bar", &desc));
     CHECK(CheckDescriptor(desc, AccessorDescriptor, false, true, true));
 
     
     
-    CHECK(JS_DefineProperty(cx, obj, "bar", defineValue,
-                            JSPROP_IGNORE_PERMANENT | JSPROP_ENUMERATE | JSPROP_SHARED,
-                            Getter));
+    CHECK(JS_DefineProperty(cx, obj, "bar",
+                            Getter, nullptr,
+                            JSPROP_IGNORE_PERMANENT | JSPROP_ENUMERATE | JSPROP_SHARED));
     CHECK(JS_GetOwnPropertyDescriptor(cx, obj, "bar", &desc));
     CHECK(CheckDescriptor(desc, AccessorDescriptor, true, true, true));
 

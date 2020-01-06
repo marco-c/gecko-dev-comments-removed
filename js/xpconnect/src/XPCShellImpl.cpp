@@ -1370,10 +1370,9 @@ XRE_XPCShellMain(int argc, char** argv, char** envp,
             if (GetCurrentWorkingDirectory(workingDirectory))
                 gWorkingDirectory = &workingDirectory;
 
-            JS_DefineProperty(cx, glob, "__LOCATION__", JS::UndefinedHandleValue,
-                              JSPROP_SHARED,
-                              GetLocationProperty,
-                              nullptr);
+            JS_DefineProperty(cx, glob, "__LOCATION__",
+                              GetLocationProperty, nullptr,
+                              JSPROP_SHARED);
 
             {
                 
