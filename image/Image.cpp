@@ -75,6 +75,12 @@ ImageResource::AddCurrentImage(ImageContainer* aContainer,
   
   
   RefPtr<layers::Image> image = new layers::SourceSurfaceImage(surface);
+
+  
+  
+  
+  
+  
   AutoTArray<ImageContainer::NonOwningImage, 1> imageList;
   imageList.AppendElement(ImageContainer::NonOwningImage(image, TimeStamp(),
                                                          mLastFrameID++,
@@ -109,10 +115,23 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
     SendOnUnlockedDraw(aFlags);
   }
 
-  RefPtr<layers::ImageContainer> container = mImageContainer.get();
+  RefPtr<layers::ImageContainer> container;
+  ImageContainerEntry* entry = nullptr;
+  int i = mImageContainers.Length() - 1;
+  for (; i >= 0; --i) {
+    entry = &mImageContainers[i];
+    container = entry->mContainer.get();
+    if (aSize == entry->mSize) {
+      
+      break;
+    } else if (!container) {
+      
+      mImageContainers.RemoveElementAt(i);
+    }
+  }
 
-  if (container) {
-    switch (mLastImageContainerDrawResult) {
+  if (i >= 0 && container) {
+    switch (entry->mLastDrawResult) {
       case DrawResult::SUCCESS:
       case DrawResult::BAD_IMAGE:
       case DrawResult::BAD_ARGS:
@@ -131,37 +150,47 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
   } else {
     
     container = LayerManager::CreateImageContainer();
+
+    if (i >= 0) {
+      entry->mContainer = container;
+    } else {
+      entry = mImageContainers.AppendElement(
+        ImageContainerEntry(aSize, container.get()));
+    }
   }
 
 #ifdef DEBUG
   NotifyDrawingObservers();
 #endif
 
-  mLastImageContainerDrawResult =
+  entry->mLastDrawResult =
     AddCurrentImage(container, aSize, aFlags, true);
-  mImageContainer = container;
   return container.forget();
 }
 
 void
-ImageResource::UpdateImageContainer(const IntSize& aSize)
+ImageResource::UpdateImageContainer(const IntSize&)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<layers::ImageContainer> container = mImageContainer.get();
-  if (!container) {
-    return;
+  for (int i = mImageContainers.Length() - 1; i >= 0; --i) {
+    ImageContainerEntry& entry = mImageContainers[i];
+    RefPtr<ImageContainer> container = entry.mContainer.get();
+    if (container) {
+      entry.mLastDrawResult =
+        AddCurrentImage(container, entry.mSize, FLAG_NONE, false);
+    } else {
+      
+      mImageContainers.RemoveElementAt(i);
+    }
   }
-
-  mLastImageContainerDrawResult =
-    AddCurrentImage(container, aSize, FLAG_NONE, false);
 }
 
 void
 ImageResource::ReleaseImageContainer()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  mImageContainer = nullptr;
+  mImageContainers.Clear();
 }
 
 
@@ -174,8 +203,7 @@ ImageResource::ImageResource(ImageURL* aURI) :
   mAnimating(false),
   mError(false),
   mImageProducerID(ImageContainer::AllocateProducerID()),
-  mLastFrameID(0),
-  mLastImageContainerDrawResult(DrawResult::NOT_READY)
+  mLastFrameID(0)
 { }
 
 ImageResource::~ImageResource()

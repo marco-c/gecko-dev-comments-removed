@@ -359,16 +359,26 @@ private:
                              uint32_t aFlags,
                              bool aInTransaction);
 
-  
-  
-  WeakPtr<layers::ImageContainer> mImageContainer;
+  struct ImageContainerEntry {
+    ImageContainerEntry(const gfx::IntSize& aSize,
+                        layers::ImageContainer* aContainer)
+      : mSize(aSize)
+      , mContainer(aContainer)
+      , mLastDrawResult(DrawResult::NOT_READY)
+    { }
 
+    gfx::IntSize                        mSize;
+    
+    
+    WeakPtr<layers::ImageContainer>     mContainer;
+    
+    
+    DrawResult                          mLastDrawResult;
+  };
+
+  AutoTArray<ImageContainerEntry, 1> mImageContainers;
   layers::ImageContainer::ProducerID mImageProducerID;
   layers::ImageContainer::FrameID mLastFrameID;
-
-  
-  
-  DrawResult mLastImageContainerDrawResult;
 };
 
 } 
