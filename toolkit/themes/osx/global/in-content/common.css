@@ -14,6 +14,13 @@ xul|tab[visuallyselected] {
   text-shadow: none;
 }
 
+xul|button,
+html|button {
+  
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
 xul|button[dlgtype="help"] {
   -moz-appearance: none;
   width: auto;
