@@ -28,6 +28,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 
 import org.mozilla.gecko.ActivityHandlerHelper;
 import org.mozilla.gecko.EventDispatcher;
@@ -61,6 +62,7 @@ public class CustomTabsActivity extends AppCompatActivity
     private GeckoPopupMenu popupMenu;
     private View doorhangerOverlay;
     private ActionBarPresenter actionBarPresenter;
+    private ProgressBar mProgressView;
     
     private boolean usingCustomAnimation = false;
 
@@ -86,6 +88,8 @@ public class CustomTabsActivity extends AppCompatActivity
 
         doorhangerOverlay = findViewById(R.id.custom_tabs_doorhanger_overlay);
 
+        mProgressView = (ProgressBar) findViewById(R.id.page_progress);
+        updateProgress(10);
         final Toolbar toolbar = (Toolbar) findViewById(R.id.actionbar);
         setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
@@ -225,7 +229,7 @@ public class CustomTabsActivity extends AppCompatActivity
         popupMenu = createCustomPopupMenu();
 
         @SuppressWarnings("deprecation")
-        Drawable icon = getResources().getDrawable(R.drawable.ic_overflow);
+        Drawable icon = getResources().getDrawable(R.drawable.ab_menu);
         actionBarPresenter.addActionButton(menu, icon, true)
                 .setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -391,6 +395,19 @@ public class CustomTabsActivity extends AppCompatActivity
     
 
 
+
+    private void updateProgress(final int progress) {
+        if (mCanStop) {
+            mProgressView.setVisibility(View.VISIBLE);
+            mProgressView.setProgress(progress);
+        } else {
+            mProgressView.setVisibility(View.GONE);
+        }
+    }
+
+    
+
+
     private void updateCanStop() {
         if (menuItemControl != null) {
             Drawable icon = menuItemControl.getIcon();
@@ -498,6 +515,7 @@ public class CustomTabsActivity extends AppCompatActivity
     public void onLocationChange(GeckoView view, String url) {
         mCurrentUrl = url;
         updateActionBar();
+        updateProgress(60);
     }
 
     @Override
@@ -518,12 +536,14 @@ public class CustomTabsActivity extends AppCompatActivity
         mCanStop = true;
         updateActionBar();
         updateCanStop();
+        updateProgress(20);
     }
 
     @Override
     public void onPageStop(GeckoView view, boolean success) {
         mCanStop = false;
         updateCanStop();
+        updateProgress(100);
     }
 
     @Override
