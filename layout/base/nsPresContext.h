@@ -1549,6 +1549,23 @@ public:
 
 
 
+  void EnsureEventualDidPaintEvent(uint64_t aTransactionId);
+
+  
+
+
+
+  void CancelDidPaintTimers(uint64_t aTransactionId);
+
+  
+
+
+  void CancelAllDidPaintTimers();
+
+  
+
+
+
 
 
   void RegisterPluginForGeometryUpdates(nsIContent* aPlugin);
@@ -1652,6 +1669,7 @@ protected:
     uint64_t mTransactionId;
     nsCOMPtr<nsITimer> mTimer;
   };
+  AutoTArray<NotifyDidPaintTimer, 4> mNotifyDidPaintTimers;
 
   nsCOMPtr<nsITimer> mApplyPluginGeometryTimer;
   nsTHashtable<nsRefPtrHashKey<nsIContent> > mRegisteredPlugins;
