@@ -919,9 +919,17 @@ fill_input_buffer (j_decompress_ptr jd)
   }
 
   
-  memmove(decoder->mBackBuffer + decoder->mBackBufferLen,
-          src->next_input_byte,
-          src->bytes_in_buffer);
+  
+  if (decoder->mBackBuffer) {
+    
+    memmove(decoder->mBackBuffer + decoder->mBackBufferLen,
+            src->next_input_byte,
+            src->bytes_in_buffer);
+  } else {
+    MOZ_ASSERT(src->bytes_in_buffer == 0);
+    MOZ_ASSERT(decoder->mBackBufferLen == 0);
+    MOZ_ASSERT(decoder->mBackBufferUnreadLen == 0);
+  }
 
   
   src->next_input_byte = decoder->mBackBuffer + decoder->mBackBufferLen -
