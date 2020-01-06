@@ -35,10 +35,6 @@ pre {
   margin: 8px;
 }
 
-#headers {
-  display: none;
-}
-
 
 
 
@@ -49,4 +45,11 @@ body.theme-dark {
 
 .theme-dark pre {
   background-color: var(--theme-body-background);
+}
+
+
+
+
+table {
+  font: inherit;
 }
