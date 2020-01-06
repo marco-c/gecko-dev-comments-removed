@@ -18,6 +18,7 @@ namespace mozilla {
 namespace dom {
 
 class OrderedTimeoutIterator;
+class TimeoutExecutor;
 
 
 class TimeoutManager final
@@ -47,7 +48,7 @@ public:
                     mozilla::dom::Timeout::Reason aReason);
 
   
-  void RunTimeout(const TimeStamp& aTargetDeadline);
+  void RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline);
   
   bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now);
 
@@ -155,8 +156,7 @@ private:
     void Insert(mozilla::dom::Timeout* aTimeout, SortBy aSortBy);
     nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
                                              const TimeoutManager& aTimeoutManager,
-                                             SortBy aSortBy,
-                                             nsIEventTarget* aQueue);
+                                             SortBy aSortBy);
 
     const Timeout* GetFirst() const { return mTimeoutList.getFirst(); }
     Timeout* GetFirst() { return mTimeoutList.getFirst(); }
@@ -220,6 +220,10 @@ private:
   
   
   nsGlobalWindow&             mWindow;
+  
+  
+  
+  RefPtr<TimeoutExecutor>     mExecutor;
   
   Timeouts                    mNormalTimeouts;
   

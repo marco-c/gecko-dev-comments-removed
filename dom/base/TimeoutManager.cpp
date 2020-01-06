@@ -13,6 +13,7 @@
 #include "nsITimeoutHandler.h"
 #include "mozilla/dom/TabGroup.h"
 #include "OrderedTimeoutIterator.h"
+#include "TimeoutExecutor.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -301,6 +302,7 @@ CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
 
 TimeoutManager::TimeoutManager(nsGlobalWindow& aWindow)
   : mWindow(aWindow),
+    mExecutor(new TimeoutExecutor(this)),
     mTimeoutIdCounter(1),
     mNextFiringId(InvalidFiringId + 1),
     mRunningTimeout(nullptr),
@@ -319,6 +321,8 @@ TimeoutManager::~TimeoutManager()
 {
   MOZ_DIAGNOSTIC_ASSERT(mWindow.AsInner()->InnerObjectsFreed());
   MOZ_DIAGNOSTIC_ASSERT(!mThrottleTrackingTimeoutsTimer);
+
+  mExecutor->Shutdown();
 
   MOZ_LOG(gLog, LogLevel::Debug,
           ("TimeoutManager %p destroyed\n", this));
@@ -474,14 +478,7 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   if (!mWindow.IsSuspended()) {
     MOZ_ASSERT(!timeout->When().IsNull());
 
-    nsresult rv;
-    timeout->mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    rv = timeout->InitTimer(mWindow.EventTargetFor(TaskCategory::Timer),
-                            realInterval);
+    nsresult rv = mExecutor->MaybeSchedule(timeout->When());
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -545,6 +542,8 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 {
   uint32_t timerId = (uint32_t)aTimerId;
 
+  bool firstTimeout = true;
+
   ForEachUnorderedTimeoutAbortable([&](Timeout* aTimeout) {
     MOZ_LOG(gLog, LogLevel::Debug,
             ("Clear%s(TimeoutManager=%p, timeout=%p, aTimerId=%u, ID=%u, tracking=%d)\n", aTimeout->mIsInterval ? "Interval" : "Timeout",
@@ -560,18 +559,38 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
       }
       else {
         
-        aTimeout->MaybeCancelTimer();
         aTimeout->remove();
       }
       return true; 
     }
+
+    firstTimeout = false;
+
     return false;
   });
+
+  if (!firstTimeout) {
+    return;
+  }
+
+  
+  
+  mExecutor->Cancel();
+
+  OrderedTimeoutIterator iter(mNormalTimeouts,
+                              mTrackingTimeouts,
+                              nullptr,
+                              nullptr);
+  Timeout* nextTimeout = iter.Next();
+  if (nextTimeout) {
+    MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextTimeout->When()));
+  }
 }
 
 void
-TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
+TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline)
 {
+  MOZ_DIAGNOSTIC_ASSERT(!aNow.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(!aTargetDeadline.IsNull());
 
   if (mWindow.IsSuspended()) {
@@ -595,7 +614,8 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 
   
   
-  TimeStamp start = TimeStamp::Now();
+  TimeStamp now(aNow);
+  TimeStamp start = now;
 
   Timeout* last_expired_normal_timeout = nullptr;
   Timeout* last_expired_tracking_timeout = nullptr;
@@ -618,7 +638,6 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 
   
   
-  TimeStamp now = TimeStamp::Now();
   TimeStamp deadline;
 
   if (aTargetDeadline > now) {
@@ -631,6 +650,8 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
   } else {
     deadline = now;
   }
+
+  TimeStamp nextDeadline;
 
   
   
@@ -651,6 +672,9 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
     while (true) {
       Timeout* timeout = expiredIter.Next();
       if (!timeout || timeout->When() > deadline) {
+        if (timeout) {
+          nextDeadline = timeout->When();
+        }
         break;
       }
 
@@ -669,8 +693,10 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 
         
         if (numTimersToRun % kNumTimersPerInitialElapsedCheck == 0) {
-          TimeDuration elapsed(TimeStamp::Now() - start);
+          now = TimeStamp::Now();
+          TimeDuration elapsed(now - start);
           if (elapsed >= initalTimeLimit) {
+            nextDeadline = timeout->When();
             break;
           }
         }
@@ -678,6 +704,17 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 
       expiredIter.UpdateIterator();
     }
+  }
+
+  now = TimeStamp::Now();
+
+  
+  
+  
+  
+  
+  if (!nextDeadline.IsNull()) {
+    MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextDeadline));
   }
 
   
@@ -798,6 +835,8 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
         return;
       }
 
+      now = TimeStamp::Now();
+
       
       
       bool needsReinsertion = RescheduleTimeout(timeout, now);
@@ -824,8 +863,14 @@ TimeoutManager::RunTimeout(const TimeStamp& aTargetDeadline)
 
       
       
-      TimeDuration elapsed = TimeStamp::Now() - start;
+      TimeDuration elapsed = now - start;
       if (elapsed >= totalTimeLimit) {
+        
+        
+        RefPtr<Timeout> timeout = runIter.Next();
+        if (timeout) {
+          MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(timeout->When()));
+        }
         break;
       }
     }
@@ -960,10 +1005,6 @@ bool
 TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
 {
   if (!aTimeout->mIsInterval) {
-    
-    
-    
-    aTimeout->MaybeCancelTimer();
     return false;
   }
 
@@ -988,29 +1029,12 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now)
 
   aTimeout->SetWhenOrTimeRemaining(currentNow, delay);
 
-  if (!aTimeout->mTimer) {
-    MOZ_DIAGNOSTIC_ASSERT(mWindow.IsFrozen() || mWindow.IsSuspended());
+  if (mWindow.IsSuspended()) {
     return true;
   }
 
-  
-  
-  nsresult rv = aTimeout->InitTimer(mWindow.EventTargetFor(TaskCategory::Timer),
-                                    delay.ToMilliseconds());
-
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Error initializing timer for DOM timeout!");
-
-    
-    
-    
-    
-    
-    
-    aTimeout->MaybeCancelTimer();
-
-    return false;
-  }
+  nsresult rv = mExecutor->MaybeSchedule(aTimeout->When());
+  NS_ENSURE_SUCCESS(rv, false);
 
   return true;
 }
@@ -1033,17 +1057,24 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
   Timeouts::SortBy sortBy = mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
                                                : Timeouts::SortBy::TimeWhen;
 
-  nsCOMPtr<nsIEventTarget> queue = mWindow.EventTargetFor(TaskCategory::Timer);
   nsresult rv = mNormalTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
                                                                 *this,
-                                                                sortBy,
-                                                                queue);
+                                                                sortBy);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mTrackingTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
                                                          *this,
-                                                         sortBy,
-                                                         queue);
+                                                         sortBy);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  OrderedTimeoutIterator iter(mNormalTimeouts,
+                              mTrackingTimeouts,
+                              nullptr,
+                              nullptr);
+  Timeout* firstTimeout = iter.Next();
+  if (firstTimeout) {
+    rv = mExecutor->MaybeSchedule(firstTimeout->When());
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return NS_OK;
 }
@@ -1051,8 +1082,7 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
 nsresult
 TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
                                                           const TimeoutManager& aTimeoutManager,
-                                                          SortBy aSortBy,
-                                                          nsIEventTarget* aQueue)
+                                                          SortBy aSortBy)
 {
   TimeStamp now = TimeStamp::Now();
 
@@ -1131,13 +1161,6 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
         timeout->mFiringId = firingId;
       }
 
-      nsresult rv = timeout->InitTimer(aQueue, delay.ToMilliseconds());
-
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Error resetting non background timer for DOM timeout!");
-        return rv;
-      }
-
       timeout = nextTimeout;
     } else {
       timeout = timeout->getNext();
@@ -1160,6 +1183,8 @@ TimeoutManager::ClearAllTimeouts()
     mThrottleTrackingTimeoutsTimer = nullptr;
   }
 
+  mExecutor->Cancel();
+
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
 
@@ -1169,8 +1194,6 @@ TimeoutManager::ClearAllTimeouts()
     if (mRunningTimeout == aTimeout) {
       seenRunningTimeout = true;
     }
-
-    aTimeout->MaybeCancelTimer();
 
     
     
@@ -1279,14 +1302,7 @@ TimeoutManager::Suspend()
     mThrottleTrackingTimeoutsTimer = nullptr;
   }
 
-  ForEachUnorderedTimeout([](Timeout* aTimeout) {
-    
-    
-    
-
-    
-    aTimeout->MaybeCancelTimer();
-  });
+  mExecutor->Cancel();
 }
 
 void
@@ -1305,6 +1321,8 @@ TimeoutManager::Resume()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
+  TimeStamp nextWakeUp;
+
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
     
@@ -1315,10 +1333,6 @@ TimeoutManager::Resume()
       return;
     }
 
-    MOZ_ASSERT(!aTimeout->mTimer);
-
-    
-    
     
     
     
@@ -1328,21 +1342,16 @@ TimeoutManager::Resume()
       remaining = static_cast<int32_t>((aTimeout->When() - now).ToMilliseconds());
     }
     uint32_t delay = std::max(remaining, DOMMinTimeoutValue(aTimeout->mIsTracking));
+    aTimeout->SetWhenOrTimeRemaining(now, TimeDuration::FromMilliseconds(delay));
 
-    aTimeout->mTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (!aTimeout->mTimer) {
-      aTimeout->remove();
-      return;
-    }
-
-    nsresult rv = aTimeout->InitTimer(mWindow.EventTargetFor(TaskCategory::Timer),
-                                      delay);
-    if (NS_FAILED(rv)) {
-      aTimeout->mTimer = nullptr;
-      aTimeout->remove();
-      return;
+    if (nextWakeUp.IsNull() || aTimeout->When() < nextWakeUp) {
+      nextWakeUp = aTimeout->When();
     }
   });
+
+  if (!nextWakeUp.IsNull()) {
+    MOZ_ALWAYS_SUCCEEDS(mExecutor->MaybeSchedule(nextWakeUp));
+  }
 }
 
 void
@@ -1371,10 +1380,6 @@ TimeoutManager::Freeze()
     }
     aTimeout->SetWhenOrTimeRemaining(now, delta);
     MOZ_DIAGNOSTIC_ASSERT(aTimeout->TimeRemaining() == delta);
-
-    
-    
-    MOZ_ASSERT(!aTimeout->mTimer);
   });
 }
 
@@ -1400,8 +1405,6 @@ TimeoutManager::Thaw()
     
     aTimeout->SetWhenOrTimeRemaining(now, aTimeout->TimeRemaining());
     MOZ_DIAGNOSTIC_ASSERT(!aTimeout->When().IsNull());
-
-    MOZ_ASSERT(!aTimeout->mTimer);
   });
 }
 
