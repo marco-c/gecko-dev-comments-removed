@@ -177,9 +177,6 @@ private:
   enum DrainFlags {
     eDontReparentFrames = 1, 
     eInFirstLine = 2, 
-    eForDestroy = 4, 
-                     
-                     
   };
   
 

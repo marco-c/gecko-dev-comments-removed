@@ -193,8 +193,7 @@ nsInlineFrame::DestroyFrom(nsIFrame* aDestructRoot)
     
     
     
-    nsIFrame* lineContainer = nsLayoutUtils::FindNearestBlockAncestor(this);
-    DrainSelfOverflowListInternal(eForDestroy, lineContainer);
+    overflowFrames->ApplySetParent(this);
   }
   nsContainerFrame::DestroyFrom(aDestructRoot);
 }
@@ -460,8 +459,7 @@ nsInlineFrame::DrainSelfOverflowListInternal(DrainFlags aFlags,
       if (aLineContainer && aLineContainer->GetPrevContinuation()) {
         ReparentFloatsForInlineChild(aLineContainer, firstChild, true);
       }
-      const bool doReparentSC =
-        (aFlags & eInFirstLine) && !(aFlags & eForDestroy);
+      const bool doReparentSC = (aFlags & eInFirstLine);
       RestyleManager* restyleManager = PresContext()->RestyleManager();
       for (nsIFrame* f = firstChild; f; f = f->GetNextSibling()) {
         f->SetParent(this);
