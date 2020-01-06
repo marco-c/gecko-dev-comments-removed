@@ -312,10 +312,6 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 static pthread_key_t tlsIndex;
 #endif
 
-#if defined(MOZ_MEMORY_SOLARIS) && defined(MAP_ALIGN) && !defined(JEMALLOC_NEVER_USES_MAP_ALIGN)
-#define JEMALLOC_USES_MAP_ALIGN
-#endif
-
 #ifdef MOZ_MEMORY_WINDOWS
    
 #  define RB_NO_C99_VARARRAYS
@@ -1761,27 +1757,6 @@ pages_unmap(void *addr, size_t size)
 	}
 }
 #else
-#ifdef JEMALLOC_USES_MAP_ALIGN
-static void *
-pages_map_align(size_t size, size_t alignment)
-{
-	void *ret;
-
-	
-
-
-
-	ret = mmap((void *)alignment, size, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_NOSYNC | MAP_ALIGN | MAP_ANON, -1, 0);
-	MOZ_ASSERT(ret != NULL);
-
-	if (ret == MAP_FAILED)
-		ret = NULL;
-	else
-		MozTagAnonymousMemory(ret, size, "jemalloc");
-	return (ret);
-}
-#endif
 
 static void *
 pages_map(void *addr, size_t size)
@@ -2125,9 +2100,6 @@ chunk_alloc_mmap_slow(size_t size, size_t alignment)
 static void *
 chunk_alloc_mmap(size_t size, size_t alignment)
 {
-#ifdef JEMALLOC_USES_MAP_ALIGN
-        return pages_map_align(size, alignment);
-#else
         void *ret;
         size_t offset;
 
@@ -2155,7 +2127,6 @@ chunk_alloc_mmap(size_t size, size_t alignment)
 
         MOZ_ASSERT(ret != NULL);
         return (ret);
-#endif
 }
 
 bool
@@ -4829,15 +4800,6 @@ MALLOC_OUT:
 #endif
 
 	recycled_size = 0;
-
-#ifdef JEMALLOC_USES_MAP_ALIGN
-	
-
-
-
-	MOZ_ASSERT((chunksize % pagesize) == 0);
-	MOZ_ASSERT((1 << (ffs(chunksize / pagesize) - 1)) == (chunksize/pagesize));
-#endif
 
 	
 	MOZ_ASSERT(quantum >= sizeof(void *));
