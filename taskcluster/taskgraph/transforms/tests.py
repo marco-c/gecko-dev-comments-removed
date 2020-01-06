@@ -134,6 +134,9 @@ test_description_schema = Schema({
         Any(bool, 'both')),
 
     
+    Optional('webrender', default=False): bool,
+
+    
     Required('instance-size', default='default'): optionally_keyed_by(
         'test-platform',
         Any('default', 'large', 'xlarge', 'legacy')),
@@ -332,6 +335,15 @@ def set_defaults(config, tests):
             test.setdefault('allow-software-gl-layers', True)
         else:
             test['allow-software-gl-layers'] = False
+
+        
+        
+        
+        
+        if test['test-platform'].startswith('linux64-qr'):
+            test['webrender'] = True
+        else:
+            test.setdefault('webrender', False)
 
         test.setdefault('os-groups', [])
         test.setdefault('chunks', 1)
@@ -584,6 +596,20 @@ def allow_software_gl_layers(config, tests):
             
             test['mozharness'].setdefault('extra-options', [])\
                               .append("--allow-software-gl-layers")
+
+        yield test
+
+
+@transforms.add
+def enable_webrender(config, tests):
+    """
+    Handle the "webrender" property by passing a flag to mozharness if it is
+    enabled.
+    """
+    for test in tests:
+        if test.get('webrender'):
+            test['mozharness'].setdefault('extra-options', [])\
+                              .append("--enable-webrender")
 
         yield test
 
