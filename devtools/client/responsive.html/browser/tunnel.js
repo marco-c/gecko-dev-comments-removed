@@ -48,6 +48,23 @@ const SWAPPED_BROWSER_STATE = [
 
 
 
+const PROPERTIES_FROM_BROWSER_WINDOW = [
+  
+  "PopupNotifications",
+  
+  
+  "whereToOpenLink",
+];
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -202,25 +219,15 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      Object.defineProperty(inner.ownerGlobal, "PopupNotifications", {
-        get() {
-          return outer.ownerGlobal.PopupNotifications;
-        },
-        configurable: true,
-        enumerable: true,
-      });
-
-      
-      
-      
-      
-      Object.defineProperty(inner.ownerGlobal, "whereToOpenLink", {
-        get() {
-          return outer.ownerGlobal.whereToOpenLink;
-        },
-        configurable: true,
-        enumerable: true,
-      });
+      for (let property of PROPERTIES_FROM_BROWSER_WINDOW) {
+        Object.defineProperty(inner.ownerGlobal, property, {
+          get() {
+            return outer.ownerGlobal[property];
+          },
+          configurable: true,
+          enumerable: true,
+        });
+      }
 
       
       inner.addEventListener("mozbrowseropenwindow", this);
@@ -277,8 +284,9 @@ function tunnelToInnerBrowser(outer, inner) {
       outer.removeAttribute("remoteType");
 
       
-      delete inner.ownerGlobal.PopupNotifications;
-      delete inner.ownerGlobal.whereToOpenLink;
+      for (let property of PROPERTIES_FROM_BROWSER_WINDOW) {
+        delete inner.ownerGlobal[property];
+      }
 
       
       inner.removeEventListener("mozbrowseropenwindow", this);
