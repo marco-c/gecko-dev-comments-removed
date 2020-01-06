@@ -4,6 +4,10 @@
 
 
 
+#ifndef nsTLiteralString_h
+#define nsTLiteralString_h
+
+#include "nsTStringRepr.h"
 
 
 
@@ -15,11 +19,18 @@
 
 
 
-class nsTLiteralString_CharT : public mozilla::detail::nsTStringRepr_CharT
+
+template<typename T>
+class nsTLiteralString : public mozilla::detail::nsTStringRepr<T>
 {
 public:
 
-  typedef nsTLiteralString_CharT self_type;
+  typedef nsTLiteralString<T> self_type;
+  typedef typename mozilla::detail::nsTStringRepr<T>::base_string_type base_string_type;
+  typedef typename base_string_type::char_type char_type;
+  typedef typename base_string_type::size_type size_type;
+  typedef typename base_string_type::DataFlags DataFlags;
+  typedef typename base_string_type::ClassFlags ClassFlags;
 
 public:
 
@@ -28,7 +39,7 @@ public:
 
 
   template<size_type N>
-  explicit constexpr nsTLiteralString_CharT(const char_type (&aStr)[N])
+  explicit constexpr nsTLiteralString(const char_type (&aStr)[N])
     : base_string_type(const_cast<char_type*>(aStr), N - 1,
                        DataFlags::TERMINATED | DataFlags::LITERAL,
                        ClassFlags::NULL_TERMINATED)
@@ -40,40 +51,42 @@ public:
 
 
 
-  const nsTString_CharT& AsString() const
+  const nsTString<T>& AsString() const
   {
-    return *reinterpret_cast<const nsTString_CharT*>(this);
+    return *reinterpret_cast<const nsTString<T>*>(this);
   }
 
-  operator const nsTString_CharT&() const
+  operator const nsTString<T>&() const
   {
     return AsString();
   }
+
+  template<typename N> struct raw_type { typedef N* type; };
+
+#ifdef MOZ_USE_CHAR16_WRAPPER
+  template<> struct raw_type<char16_t> { typedef char16ptr_t type; };
+#endif
 
   
 
 
 
-#if defined(CharT_is_PRUnichar) && defined(MOZ_USE_CHAR16_WRAPPER)
-  char16ptr_t get() const && = delete;
-  char16ptr_t get() const &
-#else
-  const char_type* get() const && = delete;
-  const char_type* get() const &
-#endif
+  const typename raw_type<T>::type get() const && = delete;
+  const typename raw_type<T>::type get() const &
   {
-    return mData;
+    return this->mData;
   }
 
 private:
 
   
   template<size_type N>
-  nsTLiteralString_CharT(char_type (&aStr)[N]) = delete;
+  nsTLiteralString(char_type (&aStr)[N]) = delete;
 
   self_type& operator=(const self_type&) = delete;
 };
 
-static_assert(sizeof(nsTLiteralString_CharT) == sizeof(nsTString_CharT),
-              "nsTLiteralString_CharT can masquerade as nsTString_CharT, "
-              "so they must have identical layout");
+extern template class nsTLiteralString<char>;
+extern template class nsTLiteralString<char16_t>;
+
+#endif

@@ -1025,8 +1025,8 @@ nsLocalFile::ResolveAndStat()
   mResolvedPath.Assign(mWorkingPath);
 
   
-  nsAutoString nsprPath(mWorkingPath.get());
-  if (mWorkingPath.Length() == 2 && mWorkingPath.CharAt(1) == L':') {
+  nsAutoString nsprPath(mWorkingPath);
+  if (mWorkingPath.Length() == 2 && mWorkingPath.CharAt(1) == u':') {
     nsprPath.Append('\\');
   }
 
@@ -1269,7 +1269,7 @@ nsLocalFile::CleanupCmdHandlerPath(nsAString& aCommandHandler)
 
   
   uint32_t bufLength = ::ExpandEnvironmentStringsW(handlerCommand.get(),
-                                                   L"", 0);
+                                                   nullptr, 0);
   if (bufLength == 0) 
     return false;
 
