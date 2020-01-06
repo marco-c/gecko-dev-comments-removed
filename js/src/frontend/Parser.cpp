@@ -123,6 +123,7 @@ DeclarationKindString(DeclarationKind kind)
       case DeclarationKind::BodyLevelFunction:
       case DeclarationKind::ModuleBodyLevelFunction:
       case DeclarationKind::LexicalFunction:
+      case DeclarationKind::SloppyLexicalFunction:
         return "function";
       case DeclarationKind::VarForAnnexBLexicalFunction:
         return "annex b var";
@@ -1326,7 +1327,7 @@ ParseContext::tryDeclareVarHelper(HandlePropertyName name, DeclarationKind kind,
                                          kind != DeclarationKind::ForOfVar;
 
                 
-                bool annexB33Allowance = declaredKind == DeclarationKind::LexicalFunction &&
+                bool annexB33Allowance = declaredKind == DeclarationKind::SloppyLexicalFunction &&
                                          kind == DeclarationKind::VarForAnnexBLexicalFunction &&
                                          scope == innermostScope();
 
@@ -1487,6 +1488,19 @@ Parser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, Declarati
       }
 
       case DeclarationKind::LexicalFunction: {
+        ParseContext::Scope* scope = pc->innermostScope();
+        if (AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name)) {
+            reportRedeclaration(name, p->value()->kind(), pos, p->value()->pos());
+            return false;
+        } else {
+            if (!scope->addDeclaredName(pc, p, name, kind, pos.begin))
+                return false;
+        }
+
+        break;
+      }
+
+      case DeclarationKind::SloppyLexicalFunction: {
         
         
         
@@ -1499,7 +1513,7 @@ Parser<ParseHandler, CharT>::noteDeclaredName(HandlePropertyName name, Declarati
             
             
             
-            if (pc->sc()->strict() || p->value()->kind() != DeclarationKind::LexicalFunction) {
+            if (p->value()->kind() != DeclarationKind::SloppyLexicalFunction) {
                 reportRedeclaration(name, p->value()->kind(), pos, p->value()->pos());
                 return false;
             }
@@ -3857,36 +3871,35 @@ Parser<ParseHandler, CharT>::functionStmt(uint32_t toStringStart, YieldHandling 
     }
 
     
-    bool tryAnnexB = false;
+    DeclarationKind kind;
     if (declaredInStmt) {
         MOZ_ASSERT(declaredInStmt->kind() != StatementKind::Label);
         MOZ_ASSERT(StatementKindIsBraced(declaredInStmt->kind()));
 
-        if (!pc->sc()->strict() && generatorKind == NotGenerator && asyncKind == SyncFunction) {
-            
-            
-            
-            
-            
-            
-            
-            
-            tryAnnexB = true;
-        }
-
-        if (!noteDeclaredName(name, DeclarationKind::LexicalFunction, pos()))
-            return null();
+        kind = !pc->sc()->strict() && generatorKind == NotGenerator && asyncKind == SyncFunction
+               ? DeclarationKind::SloppyLexicalFunction
+               : DeclarationKind::LexicalFunction;
     } else {
-        DeclarationKind kind = pc->atModuleLevel()
-                               ? DeclarationKind::ModuleBodyLevelFunction
-                               : DeclarationKind::BodyLevelFunction;
-        if (!noteDeclaredName(name, kind, pos()))
-            return null();
+        kind = pc->atModuleLevel()
+               ? DeclarationKind::ModuleBodyLevelFunction
+               : DeclarationKind::BodyLevelFunction;
     }
+
+    if (!noteDeclaredName(name, kind, pos()))
+        return null();
 
     Node pn = handler.newFunctionStatement(pos());
     if (!pn)
         return null();
+
+    
+    
+    
+    
+    
+    
+    
+    bool tryAnnexB = kind == DeclarationKind::SloppyLexicalFunction;
 
     YieldHandling newYieldHandling = GetYieldHandling(generatorKind);
     return functionDefinition(pn, toStringStart, InAllowed, newYieldHandling, name, Statement,
