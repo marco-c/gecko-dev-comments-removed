@@ -1214,7 +1214,7 @@ Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
 
 
 
-  if (GetShadowRoot()) {
+  if (GetShadowRoot() || GetXBLBinding()) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
