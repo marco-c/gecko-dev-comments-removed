@@ -1835,7 +1835,7 @@ gfxFontGroup::BuildFontList()
     gfxPlatformFontList *pfl = gfxPlatformFontList::PlatformFontList();
 
     
-    for (const FontFamilyName& name : mFamilyList.GetFontlist()) {
+    for (const FontFamilyName& name : mFamilyList.GetFontlist()->mNames) {
         if (name.IsNamed()) {
             AddPlatformFont(name.mName, fonts);
         } else {

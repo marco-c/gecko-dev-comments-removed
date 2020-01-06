@@ -4376,7 +4376,7 @@ nsRuleNode::ComputeFontData(void* aStartStruct,
   
   const nsCSSValue* familyValue = aRuleData->ValueForFontFamily();
   if (eCSSUnit_FontFamilyList == familyValue->GetUnit()) {
-    const SharedFontList* fontlist = familyValue->GetFontFamilyListValue();
+    NotNull<SharedFontList*> fontlist = familyValue->GetFontFamilyListValue();
     font->mFont.fontlist = FontFamilyList(fontlist);
 
     
