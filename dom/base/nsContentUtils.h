@@ -3040,6 +3040,11 @@ public:
 
   
   
+  
+  static bool ShowInputPlaceholderOnFocus() { return sShowInputPlaceholderOnFocus; }
+
+  
+  
   static bool IsBytecodeCacheEnabled() { return sIsBytecodeCacheEnabled; }
 
   
@@ -3197,6 +3202,7 @@ private:
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
   static bool sLowerNetworkPriority;
+  static bool sShowInputPlaceholderOnFocus;
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
