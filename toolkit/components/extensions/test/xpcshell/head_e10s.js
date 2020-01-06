@@ -1,5 +1,0 @@
-"use strict";
-
-
-
-ExtensionTestUtils.remoteContentScripts = true;
