@@ -1952,6 +1952,7 @@ Debugger::slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> w
 Debugger::onTrap(JSContext* cx, MutableHandleValue vp)
 {
     FrameIter iter(cx);
+    JS::AutoSaveExceptionState saveExc(cx);
     Rooted<GlobalObject*> global(cx);
     BreakpointSite* site;
     bool isJS; 
@@ -2049,13 +2050,7 @@ Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp)
 
 
 
-    RootedValue exception(cx, UndefinedValue());
-    bool exceptionPending = cx->isExceptionPending();
-    if (exceptionPending) {
-        if (!cx->getPendingException(&exception))
-            return JSTRAP_ERROR;
-        cx->clearPendingException();
-    }
+    JS::AutoSaveExceptionState saveExc(cx);
 
     
 
@@ -2121,8 +2116,6 @@ Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp)
     }
 
     vp.setUndefined();
-    if (exceptionPending)
-        cx->setPendingException(exception);
     return JSTRAP_CONTINUE;
 }
 
