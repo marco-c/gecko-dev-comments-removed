@@ -183,6 +183,12 @@ class TypedArrayObject : public NativeObject
     Value getElement(uint32_t index);
     static void setElement(TypedArrayObject& obj, uint32_t index, double d);
 
+    
+
+
+
+    void getElements(Value* vp);
+
     void notifyBufferDetached(JSContext* cx, void* newData);
 
     static bool
