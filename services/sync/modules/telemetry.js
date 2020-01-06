@@ -60,7 +60,8 @@ const EMPTY_UID = "0".repeat(32);
 
 
 const ENGINES = new Set(["addons", "bookmarks", "clients", "forms", "history",
-                         "passwords", "prefs", "tabs", "extension-storage"]);
+                         "passwords", "prefs", "tabs", "extension-storage",
+                         "addresses", "creditcards"]);
 
 
 

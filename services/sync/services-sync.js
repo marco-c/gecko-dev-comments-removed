@@ -17,13 +17,24 @@ pref("services.sync.scheduler.fxa.singleDeviceInterval", 3600);
 
 pref("services.sync.errorhandler.networkFailureReportTimeout", 1209600); 
 
+
+
+
+
+
 pref("services.sync.engine.addons", true);
+pref("services.sync.engine.addresses", false);
 pref("services.sync.engine.bookmarks", true);
+pref("services.sync.engine.creditcards", false);
 pref("services.sync.engine.history", true);
 pref("services.sync.engine.passwords", true);
 pref("services.sync.engine.prefs", true);
 pref("services.sync.engine.tabs", true);
 pref("services.sync.engine.tabs.filteredUrls", "^(about:.*|resource:.*|chrome:.*|wyciwyg:.*|file:.*|blob:.*)$");
+
+
+pref("services.sync.engine.addresses.available", false);
+pref("services.sync.engine.creditcards.available", false);
 
 
 
@@ -58,6 +69,8 @@ pref("services.sync.log.logger.engine.passwords", "Debug");
 pref("services.sync.log.logger.engine.prefs", "Debug");
 pref("services.sync.log.logger.engine.tabs", "Debug");
 pref("services.sync.log.logger.engine.addons", "Debug");
+pref("services.sync.log.logger.engine.addresses", "Debug");
+pref("services.sync.log.logger.engine.creditcards", "Debug");
 pref("services.sync.log.logger.engine.extension-storage", "Debug");
 pref("services.sync.log.logger.engine.apps", "Debug");
 pref("services.sync.log.logger.identity", "Debug");
