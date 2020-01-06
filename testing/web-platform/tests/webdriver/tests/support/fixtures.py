@@ -188,8 +188,6 @@ def new_session(configuration, request):
         _session = webdriver.Session(configuration["host"],
                                      configuration["port"],
                                      capabilities=None)
-        
-        
         value = _session.send_command("POST", "session", body=body)
         
         _current_session = _session
@@ -201,6 +199,16 @@ def new_session(configuration, request):
     request.addfinalizer(end)
 
     return create_session
+
+
+def add_browser_capabilites(configuration):
+    def update_capabilities(capabilities):
+        
+        assert not set(configuration["capabilities"]).intersection(set(capabilities))
+        result = dict(configuration["capabilities"])
+        result.update(capabilities)
+        return result
+    return update_capabilities
 
 
 def url(server_config):

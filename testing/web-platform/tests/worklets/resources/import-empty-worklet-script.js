@@ -1,0 +1,3 @@
+
+
+import './empty-worklet-script.js?pipe=header(Access-Control-Allow-Origin, *)';

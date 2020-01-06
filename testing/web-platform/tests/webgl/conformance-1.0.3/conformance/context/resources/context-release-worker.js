@@ -1,4 +1,0 @@
-
-
-postMessage("Hello World");
-close();

@@ -167,11 +167,11 @@ self.IdlArray = function()
 };
 
 
-IdlArray.prototype.add_idls = function(raw_idls)
+IdlArray.prototype.add_idls = function(raw_idls, options)
 
 {
     
-    this.internal_add_idls(WebIDL2.parse(raw_idls));
+    this.internal_add_idls(WebIDL2.parse(raw_idls), options);
 };
 
 
@@ -195,7 +195,7 @@ IdlArray.prototype.add_untested_idls = function(raw_idls)
 };
 
 
-IdlArray.prototype.internal_add_idls = function(parsed_idls)
+IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
 
 {
     
@@ -206,16 +206,49 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls)
 
 
 
+
+
+
+
+
+
+
+    if (options && options.only && options.except)
+    {
+        throw "The only and except options can't be used together."
+    }
+
+    function should_skip(name)
+    {
+        if (options && options.only && options.only.indexOf(name) == -1)
+        {
+            return true;
+        }
+        if (options && options.except && options.except.indexOf(name) != -1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     parsed_idls.forEach(function(parsed_idl)
     {
         if (parsed_idl.type == "interface" && parsed_idl.partial)
         {
+            if (should_skip(parsed_idl.name))
+            {
+                return;
+            }
             this.partials.push(parsed_idl);
             return;
         }
 
         if (parsed_idl.type == "implements")
         {
+            if (should_skip(parsed_idl.target))
+            {
+                return;
+            }
             if (!(parsed_idl.target in this["implements"]))
             {
                 this["implements"][parsed_idl.target] = [];
@@ -228,6 +261,10 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls)
         if (parsed_idl.name in this.members)
         {
             throw "Duplicate identifier " + parsed_idl.name;
+        }
+        if (should_skip(parsed_idl.name))
+        {
+            return;
         }
         switch(parsed_idl.type)
         {

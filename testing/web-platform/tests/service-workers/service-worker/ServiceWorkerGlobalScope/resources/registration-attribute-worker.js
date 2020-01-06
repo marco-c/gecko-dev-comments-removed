@@ -1,7 +1,14 @@
 importScripts('../../resources/test-helpers.sub.js');
 importScripts('../../resources/worker-testharness.js');
 
+
+
+
 var events_seen = [];
+
+
+
+
 
 assert_equals(
   self.registration.scope,

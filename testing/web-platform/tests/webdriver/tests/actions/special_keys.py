@@ -1,6 +1,7 @@
 
 
 import pytest
+import time
 from tests.actions.support.keys import ALL_EVENTS, Keys
 from tests.actions.support.refine import filter_dict, get_keys, get_events
 
@@ -17,19 +18,24 @@ def test_webdriver_special_key_sends_keydown(session,
         
         session.execute_script("""
             document.body.addEventListener("keydown",
-                    (e) => e.preventDefault());
+                    function(e) { e.preventDefault() });
         """)
     key_chain.key_down(getattr(Keys, name)).perform()
+
     
     first_event = get_events(session)[0]
     
     expected = dict(expected)
 
     del expected["value"]
+
     
     assert first_event["type"] == "keydown"
     assert first_event["repeat"] == False
     first_event = filter_dict(first_event, expected)
+    if first_event["code"] == None:
+        del first_event["code"]
+        del expected["code"]
     assert first_event == expected
     
     entered_keys = get_keys(key_reporter)
