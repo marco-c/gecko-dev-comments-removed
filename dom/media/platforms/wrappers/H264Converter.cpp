@@ -132,14 +132,47 @@ RefPtr<MediaDataDecoder::FlushPromise>
 H264Converter::Flush()
 {
   mDecodePromiseRequest.DisconnectIfExists();
-  mFlushRequest.DisconnectIfExists();
-  mShutdownRequest.DisconnectIfExists();
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mNeedKeyframe = true;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if (mFlushPromise) {
+    
+    mFlushRequest.Disconnect();
+    return mFlushPromise.forget();
+  }
   if (mDecoder) {
     return mDecoder->Flush();
   }
-  return FlushPromise::CreateAndResolve(true, __func__);
+  if (!mShutdownPromise) {
+    return FlushPromise::CreateAndResolve(true, __func__);
+  }
+
+  mShutdownRequest.Disconnect();
+  
+  RefPtr<ShutdownPromise> shutdownPromise = mShutdownPromise.forget();
+  return shutdownPromise->Then(
+    AbstractThread::GetCurrent()->AsTaskQueue(),
+    __func__,
+    [](bool) { return FlushPromise::CreateAndResolve(true, __func__); },
+    [](bool) {
+      MOZ_ASSERT_UNREACHABLE("Shutdown promises are always resolved");
+      return FlushPromise::CreateAndResolve(true, __func__);
+    });
 }
 
 RefPtr<MediaDataDecoder::DecodePromise>
@@ -158,8 +191,11 @@ H264Converter::Shutdown()
   mInitPromiseRequest.DisconnectIfExists();
   mDecodePromiseRequest.DisconnectIfExists();
   mFlushRequest.DisconnectIfExists();
+  mFlushPromise = nullptr;
   mShutdownRequest.DisconnectIfExists();
   mPendingSample = nullptr;
+  mNeedAVCC.reset();
+
   if (mShutdownPromise) {
     
     
@@ -347,6 +383,8 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
     }
     
     
+    
+    
     if (mp4_demuxer::AnnexB::HasSPS(aSample->mExtraData) &&
         !mp4_demuxer::AnnexB::CompareExtraData(aSample->mExtraData,
                                                mOriginalExtraData)) {
@@ -373,7 +411,8 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
   
   
   RefPtr<H264Converter> self = this;
-  mDecoder->Flush()
+  mFlushPromise = mDecoder->Flush();
+  mFlushPromise
     ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
            __func__,
            [self, sample, this]() {
@@ -385,7 +424,6 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
                       [self, sample, this]() {
                         mShutdownRequest.Complete();
                         mShutdownPromise = nullptr;
-                        mNeedAVCC.reset();
                         nsresult rv = CreateDecoderAndInit(sample);
                         if (rv == NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER) {
                           
@@ -400,6 +438,7 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
            },
            [self, this](const MediaResult& aError) {
              mFlushRequest.Complete();
+             mFlushPromise = nullptr;
              mDecodePromise.Reject(aError, __func__);
            })
     ->Track(mFlushRequest);
