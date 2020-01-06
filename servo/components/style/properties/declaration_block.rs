@@ -240,6 +240,11 @@ impl PropertyDeclarationBlock {
     }
 
     
+    pub fn contains(&self, id: LonghandId) -> bool {
+        self.longhands.contains(id)
+    }
+
+    
     
     
     pub fn get(&self, property: PropertyDeclarationId) -> Option<(&PropertyDeclaration, Importance)> {
