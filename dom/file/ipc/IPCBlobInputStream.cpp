@@ -381,12 +381,14 @@ IPCBlobInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
 }
 
 void
-IPCBlobInputStream::StreamReady(nsIInputStream* aInputStream)
+IPCBlobInputStream::StreamReady(already_AddRefed<nsIInputStream> aInputStream)
 {
+  nsCOMPtr<nsIInputStream> inputStream = Move(aInputStream);
+
   
   if (mState == eClosed) {
-    if (aInputStream) {
-      aInputStream->Close();
+    if (inputStream) {
+      inputStream->Close();
     }
     return;
   }
@@ -395,16 +397,17 @@ IPCBlobInputStream::StreamReady(nsIInputStream* aInputStream)
   
   
 
-  if (!aInputStream) {
+  if (!inputStream) {
     return;
   }
 
   
   if (mStart > 0 || mLength < mActor->Size()) {
-    aInputStream = new SlicedInputStream(aInputStream, mStart, mLength);
+    inputStream =
+      new SlicedInputStream(inputStream.forget(), mStart, mLength);
   }
 
-  mRemoteStream = aInputStream;
+  mRemoteStream = inputStream;
 
   MOZ_ASSERT(mState == ePending);
   mState = eRunning;
@@ -475,7 +478,8 @@ IPCBlobInputStream::InitWithExistingRange(uint64_t aStart, uint64_t aLength)
   
   if (mState == eRunning && mRemoteStream && XRE_IsParentProcess() &&
       (mStart > 0 || mLength < mActor->Size())) {
-    mRemoteStream = new SlicedInputStream(mRemoteStream, mStart, mLength);
+    mRemoteStream =
+      new SlicedInputStream(mRemoteStream.forget(), mStart, mLength);
   }
 }
 
