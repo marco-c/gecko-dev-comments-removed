@@ -3,7 +3,7 @@
 
 
 
-@import url("resource://content-accessible/viewsource.css");
+@import url("resource://gre-resources/viewsource.css");
 
 #header {
   background-color: #ccc;
