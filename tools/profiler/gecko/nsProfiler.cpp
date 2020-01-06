@@ -570,6 +570,7 @@ nsProfiler::StartGathering(double aSinceTime)
   
   mWriter->Start(SpliceableJSONWriter::SingleLineStyle);
   if (!profiler_stream_json_for_this_process(*mWriter, aSinceTime,
+                                              true,
                                              &thisProcessFirstSampleTime)) {
     
     
