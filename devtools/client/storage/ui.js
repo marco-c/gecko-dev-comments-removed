@@ -24,9 +24,6 @@ loader.lazyRequireGetter(this, "TableWidget",
                          "devtools/client/shared/widgets/TableWidget", true);
 loader.lazyRequireGetter(this, "ViewHelpers",
                          "devtools/client/shared/widgets/view-helpers");
-loader.lazyRequireGetter(this, "validator",
-                         "devtools/client/shared/vendor/stringvalidator/validator");
-
 loader.lazyImporter(this, "VariablesView",
   "resource://devtools/client/shared/widgets/VariablesView.jsm");
 
@@ -766,33 +763,35 @@ StorageUI.prototype = {
     let value = (decodedValue && decodedValue !== originalValue)
       ? decodedValue : originalValue;
 
-    if (!this._shouldParse(value)) {
-      return;
-    }
-
-    let obj = null;
+    let json = null;
     try {
-      obj = JSOL.parse(value);
+      json = JSOL.parse(value);
     } catch (ex) {
-      obj = null;
+      json = null;
     }
 
-    if (!obj && value) {
-      obj = this._extractKeyValPairs(value);
+    if (!json && value) {
+      json = this._extractKeyValPairs(value);
     }
 
     
-    if (!obj || obj === value || typeof obj === "string") {
+    if (!json || json == value || typeof json == "string") {
+      return;
+    }
+
+    
+    if ((json.length == 2 || Object.keys(json).length == 1) &&
+        ((json[0] || Object.keys(json)[0]) + "").match(/^(http|file|ftp)/)) {
       return;
     }
 
     let jsonObject = Object.create(null);
     let view = this.view;
-    jsonObject[name] = obj;
+    jsonObject[name] = json;
     let valueScope = view.getScopeAtIndex(1) ||
                      view.addScope(L10N.getStr("storage.parsedValue.label"));
     valueScope.expanded = true;
-    let jsonVar = valueScope.addItem(undefined, Object.create(null), {relaxed: true});
+    let jsonVar = valueScope.addItem("", Object.create(null), {relaxed: true});
     jsonVar.expanded = true;
     jsonVar.twisty = true;
     jsonVar.populate(jsonObject, {expanded: true});
@@ -836,58 +835,16 @@ StorageUI.prototype = {
         }
       }
     }
-
     
     for (let p of separators) {
       let word = `[^${p}]*`;
       let wordList = `(${word}${p})+${word}`;
       let regex = new RegExp(`^${wordList}$`);
-
-      if (regex.test(value)) {
-        let pNoBackslash = p.replace(/\\*/g, "");
-        return value.split(pNoBackslash);
+      if (value.match && value.match(regex)) {
+        return value.split(p.replace(/\\*/g, ""));
       }
     }
     return null;
-  },
-
-  
-
-
-
-
-
-
-  _shouldParse: function (value) {
-    let validators = [
-      "isBase64",
-      "isBoolean",
-      "isCurrency",
-      "isDataURI",
-      "isEmail",
-      "isFQDN",
-      "isHexColor",
-      "isIP",
-      "isISO8601",
-      "isMACAddress",
-      "isSemVer",
-      "isURL"
-    ];
-
-    
-    if (validator.whitelist(value, "0-9-")) {
-      return false;
-    }
-
-    
-    for (let test of validators) {
-      if (validator[test](value)) {
-        return false;
-      }
-    }
-
-    
-    return true;
   },
 
   
