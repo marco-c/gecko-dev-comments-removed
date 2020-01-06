@@ -721,7 +721,7 @@ var BrowserPageActionFeedback = {
     
     
     setTimeout(() => {
-      this.panelNode.hidePopup();
+      this.panelNode.hidePopup(true);
     }, Services.prefs.getIntPref("browser.pageActions.feedbackTimeoutMS", 1120));
   },
 };
