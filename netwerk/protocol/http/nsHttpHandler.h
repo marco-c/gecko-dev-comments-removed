@@ -319,6 +319,12 @@ public:
     }
 
     
+    void OnBeforeConnect(nsIHttpChannel *chan)
+    {
+        NotifyObservers(chan, NS_HTTP_ON_BEFORE_CONNECT_TOPIC);
+    }
+
+    
     void OnExamineResponse(nsIHttpChannel *chan)
     {
         NotifyObservers(chan, NS_HTTP_ON_EXAMINE_RESPONSE_TOPIC);
