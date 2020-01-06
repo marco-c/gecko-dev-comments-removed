@@ -347,3 +347,21 @@ function addSVGElement(target, tag, attrs) {
   target.appendChild(element);
   return element;
 }
+
+
+
+
+
+
+
+
+
+
+
+function getDistance(target, prop, v1, v2) {
+  if (!target) {
+    return 0.0;
+  }
+  return SpecialPowers.DOMWindowUtils
+           .computeAnimationDistance(target, prop, v1, v2);
+}
