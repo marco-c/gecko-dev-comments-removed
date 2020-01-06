@@ -29,6 +29,12 @@
 
   --toolbarbutton-inner-padding: 3px;
 %endif
+%ifdef MOZ_PHOTON_ANIMATIONS
+  
+
+
+  --toolbarbutton-height: 0;
+%endif
 }
 
 
