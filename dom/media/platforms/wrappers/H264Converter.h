@@ -59,7 +59,7 @@ public:
     
     return ConversionRequired::kNeedAVCC;
   }
-  MediaResult GetLastError() const { return mLastError; }
+  nsresult GetLastError() const { return mLastError; }
 
 private:
   
@@ -99,7 +99,7 @@ private:
 
   RefPtr<GMPCrashHelper> mGMPCrashHelper;
   Maybe<bool> mNeedAVCC;
-  MediaResult mLastError;
+  nsresult mLastError;
   bool mNeedKeyframe = true;
   const TrackInfo::TrackType mType;
   MediaEventProducer<TrackInfo::TrackType>* const mOnWaitingForKeyEvent;
