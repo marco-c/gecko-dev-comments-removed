@@ -49,18 +49,18 @@ private:
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
   void AbortTransaction(const nsresult& aError);
   void ClearTransaction();
-  void MaybeAbortTransaction(uint64_t aTransactionId,
-                             const nsresult& aError);
   void MaybeConfirmRegister(uint64_t aTransactionId,
                             U2FRegisterResult& aResult);
+  void MaybeAbortRegister(uint64_t aTransactionId, const nsresult& aError);
   void MaybeConfirmSign(uint64_t aTransactionId, U2FSignResult& aResult);
+  void MaybeAbortSign(uint64_t aTransactionId, const nsresult& aError);
   
   
   
   WebAuthnTransactionParent* mTransactionParent;
   RefPtr<U2FTokenTransport> mTokenManagerImpl;
-  RefPtr<U2FRegisterPromise> mRegisterPromise;
-  RefPtr<U2FSignPromise> mSignPromise;
+  MozPromiseRequestHolder<U2FRegisterPromise> mRegisterPromise;
+  MozPromiseRequestHolder<U2FSignPromise> mSignPromise;
   
   
   
