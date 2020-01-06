@@ -3,12 +3,11 @@
 
 
 
-#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
 #include "mozilla/webrender/RenderThread.h"
-#include "mozilla/layers/PaintThread.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -695,7 +694,6 @@ gfxPlatform::Init()
 #endif
     gPlatform->InitAcceleration();
     gPlatform->InitWebRenderConfig();
-    gPlatform->InitOMTPConfig();
 
     if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       GPUProcessManager* gpu = GPUProcessManager::Get();
@@ -944,22 +942,18 @@ gfxPlatform::Shutdown()
  void
 gfxPlatform::InitLayersIPC()
 {
-  if (sLayersIPCIsUp) {
-    return;
-  }
-  sLayersIPCIsUp = true;
-
-  if (XRE_IsContentProcess()) {
-    if (gfxVars::UseOMTP()) {
-      layers::PaintThread::Start();
+    if (sLayersIPCIsUp) {
+      return;
     }
-  } else if (XRE_IsParentProcess()) {
-    if (gfxVars::UseWebRender()) {
-      wr::RenderThread::Start();
-    }
+    sLayersIPCIsUp = true;
 
-    layers::CompositorThreadHolder::Start();
-  }
+    if (XRE_IsParentProcess())
+    {
+        if (gfxVars::UseWebRender()) {
+            wr::RenderThread::Start();
+        }
+        layers::CompositorThreadHolder::Start();
+    }
 }
 
  void
@@ -974,23 +968,18 @@ gfxPlatform::ShutdownLayersIPC()
         gfx::VRManagerChild::ShutDown();
         
         if (gfxPrefs::ChildProcessShutdown()) {
-          layers::CompositorBridgeChild::ShutDown();
+          layers::CompositorManagerChild::Shutdown();
           layers::ImageBridgeChild::ShutDown();
-        }
-
-        if (gfxVars::UseOMTP()) {
-          layers::PaintThread::Shutdown();
         }
     } else if (XRE_IsParentProcess()) {
         gfx::VRManagerChild::ShutDown();
-        layers::CompositorBridgeChild::ShutDown();
+        layers::CompositorManagerChild::Shutdown();
         layers::ImageBridgeChild::ShutDown();
         
         layers::CompositorThreadHolder::Shutdown();
         if (gfxVars::UseWebRender()) {
-          wr::RenderThread::ShutDown();
+            wr::RenderThread::ShutDown();
         }
-
     } else {
       
       
@@ -2404,48 +2393,6 @@ gfxPlatform::InitWebRenderConfig()
   
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxVars::SetUseWebRender(true);
-    reporter.SetSuccessful();
-  }
-}
-
-void
-gfxPlatform::InitOMTPConfig()
-{
-  bool prefEnabled = Preferences::GetBool("layers.omtp.enabled", false);
-
-  
-  if (!prefEnabled) {
-    return;
-  }
-
-  ScopedGfxFeatureReporter reporter("OMTP", prefEnabled);
-
-  if (!XRE_IsParentProcess()) {
-    
-    
-    
-    if (gfxVars::UseOMTP()) {
-      reporter.SetSuccessful();
-    }
-    return;
-  }
-
-  FeatureState& featureOMTP = gfxConfig::GetFeature(Feature::OMTP);
-
-  featureOMTP.DisableByDefault(
-      FeatureStatus::OptIn,
-      "OMTP is an opt-in feature",
-      NS_LITERAL_CSTRING("FEATURE_FAILURE_DEFAULT_OFF"));
-
-  featureOMTP.UserEnable("Enabled by pref");
-
-  if (InSafeMode()) {
-    featureOMTP.ForceDisable(FeatureStatus::Blocked, "OMTP blocked by safe-mode",
-                         NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_SAFEMODE"));
-  }
-
-  if (gfxConfig::IsEnabled(Feature::OMTP)) {
-    gfxVars::SetUseOMTP(true);
     reporter.SetSuccessful();
   }
 }
