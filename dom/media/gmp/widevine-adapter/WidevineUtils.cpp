@@ -4,21 +4,13 @@
 
 
 #include "WidevineUtils.h"
-
+#include "GMPLog.h"
 #include "gmp-api/gmp-errors.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <inttypes.h>
 
 namespace mozilla {
-
-namespace detail {
-LogModule* GetCDMLog()
-{
-  static LazyLogModule sLog("CDM");
-  return sLog;
-}
-} 
 
 GMPErr
 ToGMPErr(cdm::Status aStatus)
@@ -63,13 +55,13 @@ void InitInputBuffer(const GMPEncryptedBufferMetadata* aCrypto,
 
 WidevineBuffer::WidevineBuffer(size_t aSize)
 {
-  CDM_LOG("WidevineBuffer(size=%zu) created", aSize);
+  GMP_LOG("WidevineBuffer(size=%zu) created", aSize);
   mBuffer.SetLength(aSize);
 }
 
 WidevineBuffer::~WidevineBuffer()
 {
-  CDM_LOG("WidevineBuffer(size=%" PRIu32 ") destroyed", Size());
+  GMP_LOG("WidevineBuffer(size=%" PRIu32 ") destroyed", Size());
 }
 
 void
