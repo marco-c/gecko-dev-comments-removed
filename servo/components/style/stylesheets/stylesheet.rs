@@ -6,6 +6,7 @@ use {Prefix, Namespace};
 use context::QuirksMode;
 use cssparser::{Parser, RuleListParser, ParserInput};
 use error_reporting::{ParseErrorReporter, ContextualParseError};
+use fallible::FallibleVec;
 use fnv::FnvHashMap;
 use invalidation::media_queries::{MediaListKey, ToMediaListKey};
 use media_queries::{MediaList, Device};
@@ -382,7 +383,14 @@ impl Stylesheet {
 
             while let Some(result) = iter.next() {
                 match result {
-                    Ok(rule) => rules.push(rule),
+                    Ok(rule) => {
+                        
+                        
+                        
+                        if rules.try_push(rule).is_err() {
+                            break;
+                        }
+                    },
                     Err(err) => {
                         let error = ContextualParseError::InvalidRule(err.slice, err.error);
                         iter.parser.context.log_css_error(&iter.parser.error_context,

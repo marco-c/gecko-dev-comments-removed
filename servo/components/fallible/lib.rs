@@ -2,14 +2,15 @@
 
 
 
+extern crate hashglobe;
 extern crate smallvec;
 
+use hashglobe::FailedAllocationError;
 use smallvec::Array;
 use smallvec::SmallVec;
-use std::mem;
-use std::ptr::copy_nonoverlapping;
 use std::vec::Vec;
 
+#[cfg(feature = "known_system_malloc")]
 extern "C" {
     fn realloc(ptr: *mut u8, bytes: usize) -> *mut u8;
     fn malloc(bytes: usize) -> *mut u8;
@@ -18,7 +19,7 @@ extern "C" {
 pub trait FallibleVec<T> {
     
     
-    fn try_push(&mut self, value: T) -> Result<(), ()>;
+    fn try_push(&mut self, value: T) -> Result<(), FailedAllocationError>;
 }
 
 
@@ -27,10 +28,13 @@ pub trait FallibleVec<T> {
 
 impl<T> FallibleVec<T> for Vec<T> {
     #[inline]
-    fn try_push(&mut self, val: T) -> Result<(), ()> {
-        if self.capacity() == self.len() {
-            try_double_vec(self)?;
-            debug_assert!(self.capacity() > self.len());
+    fn try_push(&mut self, val: T) -> Result<(), FailedAllocationError> {
+        #[cfg(feature = "known_system_malloc")]
+        {
+            if self.capacity() == self.len() {
+                try_double_vec(self)?;
+                debug_assert!(self.capacity() > self.len());
+            }
         }
         self.push(val);
         Ok(())
@@ -39,18 +43,27 @@ impl<T> FallibleVec<T> for Vec<T> {
 
 
 
+#[cfg(feature = "known_system_malloc")]
 #[inline(never)]
 #[cold]
-fn try_double_vec<T>(vec: &mut Vec<T>) -> Result<(), ()> {
+fn try_double_vec<T>(vec: &mut Vec<T>) -> Result<(), FailedAllocationError> {
+    use std::mem;
+
     let old_ptr = vec.as_mut_ptr();
     let old_len = vec.len();
 
     let old_cap: usize = vec.capacity();
-    let new_cap: usize =
-        if old_cap == 0 { 4 } else { old_cap.checked_mul(2).ok_or(()) ? };
+    let new_cap: usize = if old_cap == 0 {
+        4
+    } else {
+        old_cap.checked_mul(2).ok_or(FailedAllocationError::new(
+            "capacity overflow for Vec",
+        ))?
+    };
 
-    let new_size_bytes =
-        new_cap.checked_mul(mem::size_of::<T>()).ok_or(()) ? ;
+    let new_size_bytes = new_cap.checked_mul(mem::size_of::<T>()).ok_or(
+        FailedAllocationError::new("capacity overflow for Vec"),
+    )?;
 
     let new_ptr = unsafe {
         if old_cap == 0 {
@@ -61,7 +74,9 @@ fn try_double_vec<T>(vec: &mut Vec<T>) -> Result<(), ()> {
     };
 
     if new_ptr.is_null() {
-        return Err(());
+        return Err(FailedAllocationError::new(
+            "out of memory when allocating Vec",
+        ));
     }
 
     let new_vec = unsafe {
@@ -78,10 +93,13 @@ fn try_double_vec<T>(vec: &mut Vec<T>) -> Result<(), ()> {
 
 impl<T: Array> FallibleVec<T::Item> for SmallVec<T> {
     #[inline]
-    fn try_push(&mut self, val: T::Item) -> Result<(), ()> {
-        if self.capacity() == self.len() {
-            try_double_small_vec(self)?;
-            debug_assert!(self.capacity() > self.len());
+    fn try_push(&mut self, val: T::Item) -> Result<(), FailedAllocationError> {
+        #[cfg(feature = "known_system_malloc")]
+        {
+            if self.capacity() == self.len() {
+                try_double_small_vec(self)?;
+                debug_assert!(self.capacity() > self.len());
+            }
         }
         self.push(val);
         Ok(())
@@ -90,26 +108,38 @@ impl<T: Array> FallibleVec<T::Item> for SmallVec<T> {
 
 
 
+#[cfg(feature = "known_system_malloc")]
 #[inline(never)]
 #[cold]
-fn try_double_small_vec<T>(svec: &mut SmallVec<T>) -> Result<(), ()>
+fn try_double_small_vec<T>(svec: &mut SmallVec<T>)
+-> Result<(), FailedAllocationError>
 where
     T: Array,
 {
+    use std::mem;
+    use std::ptr::copy_nonoverlapping;
+
     let old_ptr = svec.as_mut_ptr();
     let old_len = svec.len();
 
     let old_cap: usize = svec.capacity();
-    let new_cap: usize =
-        if old_cap == 0 { 4 } else { old_cap.checked_mul(2).ok_or(()) ? };
+    let new_cap: usize = if old_cap == 0 {
+        4
+    } else {
+        old_cap.checked_mul(2).ok_or(FailedAllocationError::new(
+            "capacity overflow for SmallVec",
+        ))?
+    };
 
     
     
-    let old_size_bytes =
-        old_cap.checked_mul(mem::size_of::<T>()).ok_or(()) ? ;
+    let old_size_bytes = old_cap.checked_mul(mem::size_of::<T>()).ok_or(
+        FailedAllocationError::new("capacity overflow for SmallVec"),
+    )?;
 
-    let new_size_bytes =
-        new_cap.checked_mul(mem::size_of::<T>()).ok_or(()) ? ;
+    let new_size_bytes = new_cap.checked_mul(mem::size_of::<T>()).ok_or(
+        FailedAllocationError::new("capacity overflow for SmallVec"),
+    )?;
 
     let new_ptr;
     if svec.spilled() {
@@ -130,7 +160,9 @@ where
     }
 
     if new_ptr.is_null() {
-        return Err(());
+        return Err(FailedAllocationError::new(
+            "out of memory when allocating SmallVec",
+        ));
     }
 
     let new_vec = unsafe {
