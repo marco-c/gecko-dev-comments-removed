@@ -91,6 +91,17 @@ public:
     return retSize;
   }
 
+  
+
+
+
+
+  MatrixRect TransformRect(const MatrixRect& aRect) const
+  {
+    return MatrixRect(TransformPoint(aRect.TopLeft()),
+                      TransformSize(aRect.Size()));
+  }
+
   GFX2D_API MatrixRect TransformBounds(const MatrixRect& aRect) const
   {
     int i;

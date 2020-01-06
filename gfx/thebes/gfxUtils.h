@@ -21,6 +21,7 @@
 
 class gfxASurface;
 class gfxDrawable;
+struct gfxQuad;
 class nsIInputStream;
 class nsIGfxInfo;
 class nsIPresShell;
@@ -130,6 +131,18 @@ public:
 
 
     static bool GfxRectToIntRect(const gfxRect& aIn, mozilla::gfx::IntRect* aOut);
+
+    
+
+
+
+    static void ConditionRect(gfxRect& aRect);
+
+    
+
+
+    static gfxQuad TransformToQuad(const gfxRect& aRect,
+                                   const mozilla::gfx::Matrix4x4& aMatrix);
 
     
 
