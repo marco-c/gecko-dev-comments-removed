@@ -5,6 +5,7 @@
 
 
 #include "LocalStorageManager.h"
+#include "StorageUtils.h"
 
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageBindingParams.h"
@@ -21,8 +22,7 @@
 namespace mozilla {
 namespace dom {
 
-extern void
-ReverseString(const nsCSubstring& aSource, nsCSubstring& aResult);
+using namespace StorageUtils;
 
 namespace {
 

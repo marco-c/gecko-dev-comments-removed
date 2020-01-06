@@ -32,19 +32,23 @@ class LocalStorageManager final : public nsIDOMStorageManager
   NS_DECL_NSIDOMSTORAGEMANAGER
 
 public:
+  LocalStorageManager();
+
   
   static uint32_t GetQuota();
+
   
   StorageCache* GetCache(const nsACString& aOriginSuffix,
                          const nsACString& aOriginNoSuffix);
+
   
-  already_AddRefed<StorageUsage> GetOriginUsage(const nsACString& aOriginNoSuffix);
+  already_AddRefed<StorageUsage>
+  GetOriginUsage(const nsACString& aOriginNoSuffix);
 
   static nsCString CreateOrigin(const nsACString& aOriginSuffix,
                                 const nsACString& aOriginNoSuffix);
 
 private:
-  LocalStorageManager();
   ~LocalStorageManager();
 
   
