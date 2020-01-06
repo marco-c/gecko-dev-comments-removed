@@ -107,8 +107,6 @@ using namespace dom;
 
 
 
-#define NS_USER_INTERACTION_INTERVAL 5000 // ms
-
 static const LayoutDeviceIntPoint kInvalidRefPoint = LayoutDeviceIntPoint(-1,-1);
 
 static uint32_t gMouseOrKeyboardEventCounter = 0;

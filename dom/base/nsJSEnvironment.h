@@ -21,6 +21,7 @@
 
 class nsICycleCollectorListener;
 class nsScriptNameSpaceManager;
+class nsIDocShell;
 
 namespace JS {
 class AutoValueVector;
@@ -101,7 +102,14 @@ public:
   static uint32_t GetMaxCCSliceTimeSinceClear();
   static void ClearMaxCCSliceTime();
 
-  static void RunNextCollectorTimer();
+  
+  static void RunNextCollectorTimer(JS::gcreason::Reason aReason,
+                                    mozilla::TimeStamp aDeadline = mozilla::TimeStamp());
+  
+  
+  
+  static void MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
+                                         JS::gcreason::Reason aReason);
 
   
   static void PokeGC(JS::gcreason::Reason aReason, JSObject* aObj, int aDelay = 0);

@@ -222,6 +222,7 @@
 #include "mozilla/dom/PerformanceNavigation.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/Encoding.h"
+#include "nsJSEnvironment.h"
 #include "IUrlClassifierUITelemetry.h"
 
 #ifdef MOZ_TOOLKIT_SEARCH
@@ -11703,6 +11704,11 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   }
   rv = aURILoader->OpenURI(aChannel, openFlags, this);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  nsJSContext::MaybeRunNextCollectorSlice(this, JS::gcreason::DOCSHELL);
 
   return NS_OK;
 }
