@@ -477,6 +477,13 @@ mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
   const nsTimingFunction* timingFunction);
 
 
+
+
+mozilla::PropertyValuePair* Gecko_AppendPropertyValuePair(
+  RawGeckoPropertyValuePairListBorrowedMut aProperties,
+  nsCSSPropertyID aProperty);
+
+
 void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
 
 
