@@ -21,7 +21,7 @@ using mozilla::UniquePtr;
 
 nsresult
 ReadCachedScript(StartupCache* cache, nsACString& uri, JSContext* cx,
-                 nsIPrincipal* systemPrincipal, MutableHandleScript scriptp)
+                 MutableHandleScript scriptp)
 {
     UniquePtr<char[]> buf;
     uint32_t len;
