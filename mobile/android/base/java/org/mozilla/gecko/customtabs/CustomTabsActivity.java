@@ -414,8 +414,7 @@ public class CustomTabsActivity extends AppCompatActivity
 
     private void onLoadingControlClicked() {
         if (mCanStop) {
-            
-            
+            mGeckoView.stop();
         } else {
             mGeckoView.reload();
         }
