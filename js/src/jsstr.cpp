@@ -3932,73 +3932,6 @@ js::DeflateStringToBuffer(JSContext* maybecx, const char16_t* src, size_t srclen
 
 
 
-const bool js_isidstart[] = {
-
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, true, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, ____, ____, ____, ____, true, ____, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, ____, ____, ____, ____, ____
-};
-
-
-
-
-
-
-
-
-
-const bool js_isident[] = {
-
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, true, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, true, true,
- true, true, true, true, true, true, true, true, ____, ____,
- ____, ____, ____, ____, ____, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, ____, ____, ____, ____, true, ____, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, true, true, true, true, true, true, true,
- true, true, true, ____, ____, ____, ____, ____
-};
-
-
-const bool js_isspace[] = {
-
- ____, ____, ____, ____, ____, ____, ____, ____, ____, true,
- true, true, true, true, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, true, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
- ____, ____, ____, ____, ____, ____, ____, ____
-};
-
-
-
-
-
-
-
-
 
 
 
@@ -4056,8 +3989,6 @@ static const bool js_isUriUnescaped[] = {
 };
 
 #undef ____
-
-#define URI_CHUNK 64U
 
 static inline bool
 TransferBufferToString(StringBuffer& sb, MutableHandleValue rval)

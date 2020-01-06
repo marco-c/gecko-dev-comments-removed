@@ -3226,3 +3226,74 @@ js::unicode::AppendUpperCaseSpecialCasing(char16_t ch, char16_t* elements, size_
 
     MOZ_ASSERT_UNREACHABLE("Bad character input.");
 }
+
+#define ____ false
+
+
+
+
+
+
+
+
+const bool unicode::js_isidstart[] = {
+
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, true, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, ____, ____, ____, ____, true, ____, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, ____, ____, ____, ____, ____,
+};
+
+
+
+
+
+
+
+
+
+const bool unicode::js_isident[] = {
+
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, true, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, true, true,
+ true, true, true, true, true, true, true, true, ____, ____,
+ ____, ____, ____, ____, ____, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, ____, ____, ____, ____, true, ____, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, true, true, true, true, true, true, true,
+ true, true, true, ____, ____, ____, ____, ____,
+};
+
+
+const bool unicode::js_isspace[] = {
+
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, true,
+ true, true, true, true, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, true, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
+ ____, ____, ____, ____, ____, ____, ____, ____,
+};
+
+#undef ____
