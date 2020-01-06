@@ -86,7 +86,9 @@ impl<T: WeakReferenceable> WeakRef<T> {
 
     
     pub fn root(&self) -> Option<DomRoot<T>> {
-        unsafe { &*self.ptr.get() }.value.get().map(DomRoot::new)
+        unsafe { &*self.ptr.get() }.value.get().map(|ptr| unsafe {
+            DomRoot::from_ref(&*ptr.get())
+        })
     }
 
     

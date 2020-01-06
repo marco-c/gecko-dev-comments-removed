@@ -558,10 +558,11 @@ pub unsafe fn trace_roots(tracer: *mut JSTracer) {
 
 
 
+#[allow(unrooted_must_root)]
 #[allow_unrooted_interior]
 pub struct DomRoot<T: DomObject> {
     
-    ptr: NonZero<*const T>,
+    ptr: Dom<T>,
     
     root_list: *const RootCollection,
 }
@@ -591,11 +592,12 @@ impl<T: DomObject> DomRoot<T> {
     
     
     
-    pub fn new(unrooted: NonZero<*const T>) -> DomRoot<T> {
+    #[allow(unrooted_must_root)]
+    unsafe fn new(unrooted: Dom<T>) -> DomRoot<T> {
         debug_assert!(thread_state::get().is_script());
         STACK_ROOTS.with(|ref collection| {
             let RootCollectionPtr(collection) = collection.get().unwrap();
-            unsafe { (*collection).root(&*(*unrooted.get()).reflector()) }
+            (*collection).root(unrooted.reflector());
             DomRoot {
                 ptr: unrooted,
                 root_list: collection,
@@ -605,7 +607,7 @@ impl<T: DomObject> DomRoot<T> {
 
     
     pub fn from_ref(unrooted: &T) -> DomRoot<T> {
-        DomRoot::new(unsafe { NonZero::new_unchecked(unrooted) })
+        unsafe { DomRoot::new(Dom::from_ref(unrooted)) }
     }
 }
 
@@ -620,7 +622,7 @@ impl<T: DomObject> Deref for DomRoot<T> {
     type Target = T;
     fn deref(&self) -> &T {
         debug_assert!(thread_state::get().is_script());
-        unsafe { &*self.ptr.get() }
+        &self.ptr
     }
 }
 
