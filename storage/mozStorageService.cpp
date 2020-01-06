@@ -309,15 +309,8 @@ Service::unregisterConnection(Connection *aConnection)
         
         
         
-        
-        
-        
-        
-        
-        
         NS_ProxyRelease(
-          "storage::Service::mConnections", thread, mConnections[i].forget(),
-          true);
+          "storage::Service::mConnections", thread, mConnections[i].forget());
 
         mConnections.RemoveElementAt(i);
         return;
