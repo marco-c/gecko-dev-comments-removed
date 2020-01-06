@@ -536,6 +536,14 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
                  printData->mPrintObject);
   }
 
+  
+  
+  
+  
+  if (mIsDestroying || (aIsPrintPreview && !GetIsCreatingPrintPreview())) {
+    return NS_ERROR_FAILURE;
+  }
+
   if (!aIsPrintPreview) {
     SetIsPrinting(true);
   }
@@ -3602,6 +3610,13 @@ nsPrintEngine::FinishPrintPreview()
 
   rv = DocumentReadyForPrinting();
 
+  
+  
+  
+  
+  
+  
+  
   SetIsCreatingPrintPreview(false);
 
   
