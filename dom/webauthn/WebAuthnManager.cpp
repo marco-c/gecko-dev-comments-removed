@@ -32,6 +32,8 @@ namespace dom {
 
 const uint8_t FLAG_TUP = 0x01; 
 const uint8_t FLAG_AT = 0x40; 
+const uint8_t FLAG_UV = 0x04; 
+                              
 
 
 
