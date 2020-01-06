@@ -7,7 +7,6 @@ const ADDON_ID = "screenshots@mozilla.org";
 const TELEMETRY_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 const PREF_BRANCH = "extensions.screenshots.";
 const USER_DISABLE_PREF = "extensions.screenshots.disabled";
-const SYSTEM_DISABLE_PREF = "extensions.screenshots.system-disabled";
 
 const { interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -45,7 +44,7 @@ const prefObserver = {
   observe(aSubject, aTopic, aData) {
     
     
-    if (aData == USER_DISABLE_PREF || aData == SYSTEM_DISABLE_PREF) {
+    if (aData == USER_DISABLE_PREF) {
       
       appStartupPromise = appStartupPromise.then(handleStartup);
     }
@@ -163,7 +162,7 @@ function getBoolPref(pref) {
 }
 
 function shouldDisable() {
-  return getBoolPref(USER_DISABLE_PREF) || getBoolPref(SYSTEM_DISABLE_PREF);
+  return getBoolPref(USER_DISABLE_PREF);
 }
 
 function handleStartup() {
