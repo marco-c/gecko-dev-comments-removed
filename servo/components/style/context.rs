@@ -118,6 +118,9 @@ pub struct SharedStyleContext<'a> {
     pub stylist: &'a Stylist,
 
     
+    pub visited_styles_enabled: bool,
+
+    
     pub options: StyleSystemOptions,
 
     
