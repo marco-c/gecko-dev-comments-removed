@@ -248,7 +248,8 @@ NSPR_API(PRStatus) PR_NT_CancelIo(PRFileDesc *fd);
 
 
 
-NSPR_API(PRStatus) PR_FileDesc2PlatformOverlappedIOHandle(PRFileDesc *fd, void **ol);
+
+NSPR_API(PRStatus) PR_EXPERIMENTAL_ONLY_IN_4_17_GetOverlappedIOHandle(PRFileDesc *fd, void **ol);
 
 PR_END_EXTERN_C
 
