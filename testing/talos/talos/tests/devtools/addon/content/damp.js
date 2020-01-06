@@ -26,6 +26,7 @@ const webserver = Services.prefs.getCharPref("addon.test.damp.webserver");
 
 const SIMPLE_URL = webserver + "/tests/devtools/addon/content/pages/simple.html";
 const COMPLICATED_URL = webserver + "/tests/tp5n/bild.de/www.bild.de/index.html";
+const CUSTOM_URL = webserver + "/tests/devtools/addon/content/pages/custom/$TOOL.html";
 
 function getMostRecentBrowserWindow() {
   return Services.wm.getMostRecentWindow("navigator:browser");
@@ -477,19 +478,32 @@ async _consoleOpenWithCachedMessagesTest() {
     await this.testTeardown();
   },
 
+  async reloadInspectorAndLog(label, toolbox) {
+    let onReload = async function() {
+      let inspector = toolbox.getPanel("inspector");
+      
+      await inspector.once("new-root");
+      
+      await inspector.once("inspector-updated");
+    };
+    await this.reloadPageAndLog(label + ".inspector", onReload);
+  },
+
+  async customInspector() {
+    let url = CUSTOM_URL.replace(/\$TOOL/, "inspector");
+    await this.testSetup(url);
+    let toolbox = await this.openToolboxAndLog("custom.inspector", "inspector");
+    await this.reloadInspectorAndLog("custom", toolbox);
+    await this.closeToolboxAndLog("custom.inspector");
+    await this.testTeardown();
+  },
+
   _getToolLoadingTests(url, label, { expectedMessages, expectedSources }) {
     let tests = {
       async inspector() {
         await this.testSetup(url);
         let toolbox = await this.openToolboxAndLog(label + ".inspector", "inspector");
-        let onReload = async function() {
-          let inspector = toolbox.getPanel("inspector");
-          
-          await inspector.once("new-root");
-          
-          await inspector.once("inspector-updated");
-        };
-        await this.reloadPageAndLog(label + ".inspector", onReload);
+        await this.reloadInspectorAndLog(label, toolbox);
         await this.closeToolboxAndLog(label + ".inspector");
         await this.testTeardown();
       },
@@ -761,16 +775,22 @@ async _consoleOpenWithCachedMessagesTest() {
 
     tests["panelsInBackground.reload"] = this._panelsInBackgroundReload;
 
+    
     Object.assign(tests, this._getToolLoadingTests(SIMPLE_URL, "simple", {
       expectedMessages: 1,
       expectedSources: 1,
     }));
 
+    
     Object.assign(tests, this._getToolLoadingTests(COMPLICATED_URL, "complicated", {
       expectedMessages: 7,
       expectedSources: 14,
     }));
 
+    
+    tests["custom.inspector"] = this.customInspector;
+
+    
     tests["console.bulklog"] = this._consoleBulkLoggingTest;
     tests["console.streamlog"] = this._consoleStreamLoggingTest;
     tests["console.objectexpand"] = this._consoleObjectExpansionTest;
