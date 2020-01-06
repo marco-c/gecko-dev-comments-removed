@@ -636,79 +636,29 @@ bitflags! {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 
 pub enum VariantAlternates {
     
+    #[css(function)]
     Stylistic(CustomIdent),
     
+    #[css(comma, function, iterable)]
     Styleset(Box<[CustomIdent]>),
     
+    #[css(comma, function, iterable)]
     CharacterVariant(Box<[CustomIdent]>),
     
+    #[css(function)]
     Swash(CustomIdent),
     
+    #[css(function)]
     Ornaments(CustomIdent),
     
+    #[css(function)]
     Annotation(CustomIdent),
     
     HistoricalForms,
-}
-
-impl ToCss for VariantAlternates {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        match *self {
-            VariantAlternates::Swash(ref atom) => {
-                dest.write_str("swash")?;
-                dest.write_str("(")?;
-                atom.to_css(dest)?;
-                dest.write_str(")")
-            },
-            VariantAlternates::Stylistic(ref atom) => {
-                dest.write_str("stylistic")?;
-                dest.write_str("(")?;
-                atom.to_css(dest)?;
-                dest.write_str(")")
-            },
-            VariantAlternates::Ornaments(ref atom) => {
-                dest.write_str("ornaments")?;
-                dest.write_str("(")?;
-                atom.to_css(dest)?;
-                dest.write_str(")")
-            },
-            VariantAlternates::Annotation(ref atom) => {
-                dest.write_str("annotation")?;
-                dest.write_str("(")?;
-                atom.to_css(dest)?;
-                dest.write_str(")")
-            },
-            VariantAlternates::Styleset(ref vec) => {
-                dest.write_str("styleset")?;
-                dest.write_str("(")?;
-                let mut iter = vec.iter();
-                iter.next().unwrap().to_css(dest)?;
-                for c in iter {
-                    dest.write_str(", ")?;
-                    c.to_css(dest)?;
-                }
-                dest.write_str(")")
-            },
-            VariantAlternates::CharacterVariant(ref vec) => {
-                dest.write_str("character-variant")?;
-                dest.write_str("(")?;
-                let mut iter = vec.iter();
-                iter.next().unwrap().to_css(dest)?;
-                for c in iter {
-                    dest.write_str(", ")?;
-                    c.to_css(dest)?;
-                }
-                dest.write_str(")")
-            },
-            VariantAlternates::HistoricalForms => {
-                dest.write_str("historical-forms")
-            },
-        }
-    }
 }
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
@@ -1027,7 +977,7 @@ impl Parse for MozScriptMinSize {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, ToCss)]
 
 
 
@@ -1037,21 +987,14 @@ pub enum MozScriptLevel {
     
     Relative(i32),
     
-    Absolute(i32),
+    
+    
+    
+    
+    #[css(function)]
+    MozAbsolute(i32),
     
     Auto
-}
-
-impl ToCss for MozScriptLevel {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        match *self {
-            MozScriptLevel::Auto => dest.write_str("auto"),
-            MozScriptLevel::Relative(rel) => rel.to_css(dest),
-            
-            
-            MozScriptLevel::Absolute(_) => Ok(()),
-        }
-    }
 }
 
 impl Parse for MozScriptLevel {

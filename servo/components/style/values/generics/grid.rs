@@ -9,7 +9,7 @@ use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use std::{fmt, mem, usize};
 use style_traits::{ToCss, ParseError, StyleParseErrorKind};
-use values::{CSSFloat, CustomIdent, serialize_dimension};
+use values::{CSSFloat, CustomIdent};
 use values::computed::{Context, ToComputedValue};
 use values::specified;
 use values::specified::grid::parse_line_names;
@@ -143,12 +143,13 @@ add_impls_for_keyword_enum!(TrackKeyword);
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
 pub enum TrackBreadth<L> {
     
     Breadth(L),
     
-    Flex(CSSFloat),
+    #[css(dimension)]
+    Fr(CSSFloat),
     
     Keyword(TrackKeyword),
 }
@@ -162,16 +163,6 @@ impl<L> TrackBreadth<L> {
         match *self {
             TrackBreadth::Breadth(ref _lop) => true,
             _ => false,
-        }
-    }
-}
-
-impl<L: ToCss> ToCss for TrackBreadth<L> {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        match *self {
-            TrackBreadth::Breadth(ref lop) => lop.to_css(dest),
-            TrackBreadth::Flex(ref value) => serialize_dimension(*value, "fr", dest),
-            TrackBreadth::Keyword(ref k) => k.to_css(dest),
         }
     }
 }
@@ -212,7 +203,7 @@ impl<L> TrackSize<L> {
                 }
 
                 match *breadth_1 {
-                    TrackBreadth::Flex(_) => false,     
+                    TrackBreadth::Fr(_) => false,     
                     _ => breadth_2.is_fixed(),
                 }
             },
@@ -242,7 +233,7 @@ impl<L: ToCss> ToCss for TrackSize<L> {
                 
                 
                 if let TrackBreadth::Keyword(TrackKeyword::Auto) = *min {
-                    if let TrackBreadth::Flex(_) = *max {
+                    if let TrackBreadth::Fr(_) = *max {
                         return max.to_css(dest);
                     }
                 }
@@ -268,7 +259,7 @@ impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            TrackSize::Breadth(TrackBreadth::Flex(ref f)) => {
+            TrackSize::Breadth(TrackBreadth::Fr(ref f)) => {
                 
                 
                 
@@ -276,7 +267,7 @@ impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
                 
                 TrackSize::Minmax(
                     TrackBreadth::Keyword(TrackKeyword::Auto),
-                    TrackBreadth::Flex(f.to_computed_value(context)),
+                    TrackBreadth::Fr(f.to_computed_value(context)),
                 )
             },
             TrackSize::Breadth(ref b) => {

@@ -5,9 +5,8 @@
 
 
 use euclid::Radians;
-use std::{f32, f64, fmt};
+use std::{f32, f64};
 use std::f64::consts::PI;
-use style_traits::ToCss;
 use values::CSSFloat;
 use values::animated::{Animate, Procedure};
 use values::distance::{ComputeSquaredDistance, SquaredDistance};
@@ -15,23 +14,27 @@ use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 #[animate(fallback = "Self::animate_fallback")]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Animate, Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
 #[derive(PartialOrd, ToAnimatedZero)]
 pub enum Angle {
     
-    Degree(CSSFloat),
+    #[css(dimension)]
+    Deg(CSSFloat),
     
-    Gradian(CSSFloat),
+    #[css(dimension)]
+    Grad(CSSFloat),
     
-    Radian(CSSFloat),
+    #[css(dimension)]
+    Rad(CSSFloat),
     
+    #[css(dimension)]
     Turn(CSSFloat),
 }
 
 impl Angle {
     
     pub fn from_radians(radians: CSSFloat) -> Self {
-        Angle::Radian(radians)
+        Angle::Rad(radians)
     }
 
     
@@ -53,17 +56,17 @@ impl Angle {
         const RAD_PER_TURN: f64 = PI * 2.0;
 
         let radians = match *self {
-            Angle::Degree(val) => val as f64 * RAD_PER_DEG,
-            Angle::Gradian(val) => val as f64 * RAD_PER_GRAD,
+            Angle::Deg(val) => val as f64 * RAD_PER_DEG,
+            Angle::Grad(val) => val as f64 * RAD_PER_GRAD,
             Angle::Turn(val) => val as f64 * RAD_PER_TURN,
-            Angle::Radian(val) => val as f64,
+            Angle::Rad(val) => val as f64,
         };
         radians.min(f64::MAX).max(f64::MIN)
     }
 
     
     pub fn zero() -> Self {
-        Angle::Radian(0.0)
+        Self::from_radians(0.0)
     }
 
     
@@ -79,25 +82,6 @@ impl ComputeSquaredDistance for Angle {
         
         
         self.radians64().compute_squared_distance(&other.radians64())
-    }
-}
-
-impl ToCss for Angle {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-    where
-        W: fmt::Write,
-    {
-        let mut write = |value: CSSFloat, unit: &str| {
-            value.to_css(dest)?;
-            dest.write_str(unit)
-        };
-
-        match *self {
-            Angle::Degree(val) => write(val, "deg"),
-            Angle::Gradian(val) => write(val, "grad"),
-            Angle::Radian(val) => write(val, "rad"),
-            Angle::Turn(val) => write(val, "turn"),
-        }
     }
 }
 
