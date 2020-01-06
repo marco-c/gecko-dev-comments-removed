@@ -29,6 +29,8 @@ class ManageRecords {
     this._subStorageName = subStorageName;
     this._elements = elements;
     this._records = [];
+    this._newRequest = false;
+    this._isLoadingRecords = false;
     this.prefWin = window.opener;
     this.localizeDocument();
     window.addEventListener("DOMContentLoaded", this, {once: true});
@@ -72,15 +74,38 @@ class ManageRecords {
   
 
 
+
   async loadRecords() {
+    
+    
+    if (this._isLoadingRecords) {
+      this._newRequest = true;
+      return;
+    }
+    this._isLoadingRecords = true;
+
+    await this._loadRecords();
+
+    
+    
+    
+    while (this._newRequest) {
+      this._newRequest = false;
+      await this._loadRecords();
+    }
+    this._isLoadingRecords = false;
+
+    
+    this._elements.records.dispatchEvent(new CustomEvent("RecordsLoaded"));
+  }
+
+  async _loadRecords() {
     let storage = await this.getStorage();
     let records = storage.getAll();
     
     records.sort((a, b) => b.timeLastModified - a.timeLastModified);
     await this.renderRecordElements(records);
     this.updateButtonsStates(this._selectedOptions.length);
-    
-    this._elements.records.dispatchEvent(new CustomEvent("RecordsLoaded"));
   }
 
   
