@@ -595,6 +595,10 @@ var BrowserPageActions = {
   onContextMenu(event) {
     let node = event.originalTarget;
     this._contextAction = this.actionForNode(node);
+    
+    if (!this._contextAction) {
+      event.preventDefault();
+    }
   },
 
   
