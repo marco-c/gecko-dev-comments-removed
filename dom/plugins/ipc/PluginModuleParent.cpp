@@ -1205,7 +1205,7 @@ PluginModuleChromeParent::TakeFullMinidump(base::ProcessId aContentPid,
         
         
         reportsReady = mCrashReporter->GenerateMinidumpAndPair(
-          this,
+          Process(),
           browserDumpFile,
           NS_LITERAL_CSTRING("browser"));
 
@@ -1221,7 +1221,7 @@ PluginModuleChromeParent::TakeFullMinidump(base::ProcessId aContentPid,
     
     if (!reportsReady) {
         reportsReady = mCrashReporter->GenerateMinidumpAndPair(
-          this,
+          Process(),
           nullptr, 
           NS_LITERAL_CSTRING("browser"));
     }

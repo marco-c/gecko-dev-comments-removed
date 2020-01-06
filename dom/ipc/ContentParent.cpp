@@ -2977,7 +2977,7 @@ ContentParent::KillHard(const char* aReason)
       reason);
 
     
-    if (mCrashReporter->GenerateMinidumpAndPair(this,
+    if (mCrashReporter->GenerateMinidumpAndPair(Process(),
                                                 nullptr,
                                                 NS_LITERAL_CSTRING("browser")))
     {
