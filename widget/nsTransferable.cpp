@@ -139,9 +139,9 @@ DataStruct::WriteCache(nsISupports* aData, uint32_t aDataLen)
   if (cacheFile) {
     
     if (!mCacheFileName) {
-      nsCString fName;
+      nsXPIDLCString fName;
       cacheFile->GetNativeLeafName(fName);
-      mCacheFileName = strdup(fName.get());
+      mCacheFileName = strdup(fName);
     }
 
     

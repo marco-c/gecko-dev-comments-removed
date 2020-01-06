@@ -685,7 +685,7 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
 
     
     
-    nsCString loc;
+    nsXPIDLCString loc;
     aIndex->GetLocation(getter_Copies(loc));
 
     
@@ -715,7 +715,7 @@ nsIndexedToHTML::OnIndexAvailable(nsIRequest *aRequest,
             break;
     }
     nsCString escaped;
-    escaped.Adopt(nsEscapeHTML(loc.get()));
+    escaped.Adopt(nsEscapeHTML(loc));
     pushBuffer.Append(escaped);
 
     pushBuffer.AppendLiteral("\"><table class=\"ellipsis\"><tbody><tr><td><a class=\"");

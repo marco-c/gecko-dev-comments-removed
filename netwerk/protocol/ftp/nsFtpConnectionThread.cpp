@@ -784,7 +784,7 @@ nsFtpState::S_pass() {
             
             AppendUTF16toUTF8(mPassword, passwordStr);
         } else {
-            nsCString anonPassword;
+            nsXPIDLCString anonPassword;
             bool useRealEmail = false;
             nsCOMPtr<nsIPrefBranch> prefs =
                     do_GetService(NS_PREFSERVICE_CONTRACTID);
@@ -796,7 +796,7 @@ nsFtpState::S_pass() {
                 }
             }
             if (!anonPassword.IsEmpty()) {
-                passwordStr.AppendASCII(anonPassword.get());
+                passwordStr.AppendASCII(anonPassword);
             } else {
                 
                 

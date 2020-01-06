@@ -173,12 +173,12 @@ nsClipboard::SetData(nsITransferable *aTransferable,
         nsCOMPtr<nsISupportsCString> flavor = do_QueryElementAt(flavors, i);
 
         if (flavor) {
-            nsCString flavorStr;
+            nsXPIDLCString flavorStr;
             flavor->ToString(getter_Copies(flavorStr));
 
             
             
-            if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+            if (!strcmp(flavorStr, kUnicodeMime)) {
                 gtk_target_list_add(list, gdk_atom_intern("UTF8_STRING", FALSE), 0, 0);
                 gtk_target_list_add(list, gdk_atom_intern("COMPOUND_TEXT", FALSE), 0, 0);
                 gtk_target_list_add(list, gdk_atom_intern("TEXT", FALSE), 0, 0);
@@ -201,7 +201,7 @@ nsClipboard::SetData(nsITransferable *aTransferable,
             }
 
             
-            GdkAtom atom = gdk_atom_intern(flavorStr.get(), FALSE);
+            GdkAtom atom = gdk_atom_intern(flavorStr, FALSE);
             gtk_target_list_add(list, atom, 0, 0);
         }
     }
@@ -270,12 +270,12 @@ nsClipboard::GetData(nsITransferable *aTransferable, int32_t aWhichClipboard)
         currentFlavor = do_QueryElementAt(flavors, i);
 
         if (currentFlavor) {
-            nsCString flavorStr;
+            nsXPIDLCString flavorStr;
             currentFlavor->ToString(getter_Copies(flavorStr));
 
             
             
-            if (flavorStr.EqualsLiteral(kUnicodeMime)) {
+            if (!strcmp(flavorStr, kUnicodeMime)) {
                 gchar* new_text = wait_for_text(clipboard);
                 if (new_text) {
                     
@@ -295,16 +295,16 @@ nsClipboard::GetData(nsITransferable *aTransferable, int32_t aWhichClipboard)
 
             
             
-            if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
-                flavorStr.EqualsLiteral(kJPGImageMime) ||
-                flavorStr.EqualsLiteral(kPNGImageMime) ||
-                flavorStr.EqualsLiteral(kGIFImageMime)) {
+            if (!strcmp(flavorStr, kJPEGImageMime) ||
+                !strcmp(flavorStr, kJPGImageMime) ||
+                !strcmp(flavorStr, kPNGImageMime) ||
+                !strcmp(flavorStr, kGIFImageMime)) {
                 
-                if (flavorStr.EqualsLiteral(kJPGImageMime)) {
+                if (!strcmp(flavorStr, kJPGImageMime)) {
                     flavorStr.Assign(kJPEGImageMime);
                 }
 
-                GdkAtom atom = gdk_atom_intern(flavorStr.get(), FALSE);
+                GdkAtom atom = gdk_atom_intern(flavorStr, FALSE);
 
                 GtkSelectionData *selectionData = wait_for_contents(clipboard, atom);
                 if (!selectionData)
@@ -315,21 +315,21 @@ nsClipboard::GetData(nsITransferable *aTransferable, int32_t aWhichClipboard)
                                       (const char*)gtk_selection_data_get_data(selectionData),
                                       gtk_selection_data_get_length(selectionData), 
                                       NS_ASSIGNMENT_COPY);
-                aTransferable->SetTransferData(flavorStr.get(), byteStream, sizeof(nsIInputStream*));
+                aTransferable->SetTransferData(flavorStr, byteStream, sizeof(nsIInputStream*));
                 gtk_selection_data_free(selectionData);
                 return NS_OK;
             }
 
             
             
-            GdkAtom atom = gdk_atom_intern(flavorStr.get(), FALSE);
+            GdkAtom atom = gdk_atom_intern(flavorStr, FALSE);
             GtkSelectionData *selectionData;
             selectionData = wait_for_contents(clipboard, atom);
             if (selectionData) {
                 const guchar *clipboardData = gtk_selection_data_get_data(selectionData);
                 length = gtk_selection_data_get_length(selectionData);
                 
-                if (flavorStr.EqualsLiteral(kHTMLMime)) {
+                if (!strcmp(flavorStr, kHTMLMime)) {
                     char16_t* htmlBody= nullptr;
                     int32_t htmlBodyLen = 0;
                     

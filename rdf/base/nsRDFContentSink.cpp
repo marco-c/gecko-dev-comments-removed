@@ -315,10 +315,10 @@ RDFContentSinkImpl::~RDFContentSinkImpl()
             
             
             if (resource && MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
-                nsCString uri;
+                nsXPIDLCString uri;
                 resource->GetValue(getter_Copies(uri));
                 MOZ_LOG(gLog, LogLevel::Debug,
-                       ("rdfxml:   uri=%s", uri.get()));
+                       ("rdfxml:   uri=%s", (const char*) uri));
             }
 
             NS_IF_RELEASE(resource);
