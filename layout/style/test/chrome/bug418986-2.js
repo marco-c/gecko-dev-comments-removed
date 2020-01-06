@@ -36,6 +36,8 @@ var expected_values = [
 
 
 
+
+
 var suppressed_toggles = [
   "-moz-mac-graphite-theme",
   
@@ -49,6 +51,11 @@ var suppressed_toggles = [
   "-moz-windows-compositor",
   "-moz-windows-default-theme",
   "-moz-windows-glass",
+];
+
+
+const toggles_enabled_in_content = [
+  "-moz-touch-enabled",
 ];
 
 
@@ -104,7 +111,7 @@ var testToggles = function (resisting) {
   suppressed_toggles.forEach(
     function (key) {
       var exists = keyValMatches(key, 0) || keyValMatches(key, 1);
-      if (resisting) {
+      if (resisting || toggles_enabled_in_content.indexOf(key) === -1) {
          ok(!exists, key + " should not exist.");
       } else {
          ok(exists, key + " should exist.");
@@ -200,7 +207,8 @@ var generateCSSLines = function (resisting) {
   lines += ".suppress { background-color: " + (resisting ? "green" : "red") + ";}\n";
   suppressed_toggles.forEach(
     function (key) {
-      lines += suppressedMediaQueryCSSLine(key, resisting ? "red" : "green");
+      let color = resisting ? "red" : "green";
+      lines += suppressedMediaQueryCSSLine(key, color);
     });
   if (OS === "WINNT") {
     lines += ".windows { background-color: " + (resisting ? "green" : "red") + ";}\n";

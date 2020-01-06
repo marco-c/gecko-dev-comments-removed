@@ -57,7 +57,9 @@ struct nsMediaFeature
     
     
     
-    eWebkitDevicePixelRatioPrefEnabled = 1 << 1
+    eWebkitDevicePixelRatioPrefEnabled = 1 << 1,
+    
+    eUserAgentAndChromeOnly = 1 << 2,
   };
   uint8_t mReqFlags;
 
