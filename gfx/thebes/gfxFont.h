@@ -279,10 +279,9 @@ public:
 
     
     
-    already_AddRefed<gfxFont>
-    Lookup(const gfxFontEntry* aFontEntry,
-           const gfxFontStyle* aStyle,
-           const gfxCharacterMap* aUnicodeRangeMap);
+    gfxFont* Lookup(const gfxFontEntry* aFontEntry,
+                    const gfxFontStyle* aStyle,
+                    const gfxCharacterMap* aUnicodeRangeMap);
 
     
     
@@ -1888,8 +1887,8 @@ public:
     }
 
     
-    already_AddRefed<gfxFont>
-    GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
+    
+    gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
 
     
 
@@ -1929,7 +1928,8 @@ protected:
 
     
     
-    already_AddRefed<gfxFont> GetSmallCapsFont();
+    
+    gfxFont* GetSmallCapsFont();
 
     
     

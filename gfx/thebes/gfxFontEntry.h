@@ -249,10 +249,15 @@ public:
         AutoTable& operator=(const AutoTable&) = delete;
     };
 
-    already_AddRefed<gfxFont>
-    FindOrMakeFont(const gfxFontStyle *aStyle,
-                   bool aNeedsBold,
-                   gfxCharacterMap* aUnicodeRangeMap = nullptr);
+    
+    
+    
+    
+    
+    
+    gfxFont* FindOrMakeFont(const gfxFontStyle *aStyle,
+                            bool aNeedsBold,
+                            gfxCharacterMap* aUnicodeRangeMap = nullptr);
 
     
     
