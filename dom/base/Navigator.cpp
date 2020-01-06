@@ -618,7 +618,7 @@ Navigator::CookieEnabled()
 
   
   nsCookieAccess access;
-  nsresult rv = permMgr->CanAccess(codebaseURI, nullptr, &access);
+  nsresult rv = permMgr->CanAccess(doc->NodePrincipal(), &access);
   NS_ENSURE_SUCCESS(rv, cookieEnabled);
 
   if (access != nsICookiePermission::ACCESS_DEFAULT) {

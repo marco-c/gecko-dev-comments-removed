@@ -2150,7 +2150,7 @@ nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
   CountCookiesFromHost(hostFromURI, &priorCookieCount);
   CookieStatus cookieStatus = CheckPrefs(mPermissionService, mCookieBehavior,
                                          mThirdPartySession, aHostURI, aIsForeign,
-                                         aCookieHeader.get(), priorCookieCount);
+                                         aCookieHeader.get(), priorCookieCount, aOriginAttrs);
 
   
   
@@ -3308,7 +3308,7 @@ nsCookieService::GetCookiesForURI(nsIURI *aHostURI,
   CountCookiesFromHost(hostFromURI, &priorCookieCount);
   CookieStatus cookieStatus = CheckPrefs(mPermissionService, mCookieBehavior,
                                          mThirdPartySession, aHostURI, aIsForeign,
-                                         nullptr, priorCookieCount);
+                                         nullptr, priorCookieCount, aOriginAttrs);
 
   
   switch (cookieStatus) {
@@ -4207,13 +4207,14 @@ static inline bool IsSubdomainOf(const nsCString &a, const nsCString &b)
 }
 
 CookieStatus
-nsCookieService::CheckPrefs(nsICookiePermission *aPermissionService,
-                            uint8_t              aCookieBehavior,
-                            bool                 aThirdPartySession,
-                            nsIURI              *aHostURI,
-                            bool                 aIsForeign,
-                            const char          *aCookieHeader,
-                            const int            aNumOfCookies)
+nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
+                            uint8_t                 aCookieBehavior,
+                            bool                    aThirdPartySession,
+                            nsIURI                 *aHostURI,
+                            bool                    aIsForeign,
+                            const char             *aCookieHeader,
+                            const int               aNumOfCookies,
+                            const OriginAttributes &aOriginAttrs)
 {
   nsresult rv;
 
@@ -4224,13 +4225,21 @@ nsCookieService::CheckPrefs(nsICookiePermission *aPermissionService,
     return STATUS_REJECTED_WITH_ERROR;
   }
 
+  nsCOMPtr<nsIPrincipal> principal =
+      BasePrincipal::CreateCodebasePrincipal(aHostURI, aOriginAttrs);
+
+  if (!principal) {
+    COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "non-codebase principals cannot get/set cookies");
+    return STATUS_REJECTED_WITH_ERROR;
+  }
+
   
   
   if (aPermissionService) {
     nsCookieAccess access;
     
     
-    rv = aPermissionService->CanAccess(aHostURI, nullptr, &access);
+    rv = aPermissionService->CanAccess(principal, &access);
 
     
     if (NS_SUCCEEDED(rv)) {
