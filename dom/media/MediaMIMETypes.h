@@ -56,7 +56,7 @@ public:
   }
 
   
-  const nsACString& AsString() const { return mMIMEType; }
+  const nsCString& AsString() const { return mMIMEType; }
 
   
   
@@ -118,7 +118,7 @@ public:
   }
 
   bool IsEmpty() const { return mCodecs.IsEmpty(); }
-  const nsAString& AsString() const { return mCodecs; }
+  const nsString& AsString() const { return mCodecs; }
 
   using RangeType =
     const StringListRange<nsString, StringListRangeEmptyItems::ProcessEmptyItems>;
@@ -180,7 +180,7 @@ public:
 
   
   
-  const nsACString& OriginalString() const { return mOriginalString; }
+  const nsCString& OriginalString() const { return mOriginalString; }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

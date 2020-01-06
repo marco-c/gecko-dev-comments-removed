@@ -37,7 +37,7 @@ public:
 
   
   
-  const nsACString& OriginalString() const { return mExtendedMIMEType.OriginalString(); }
+  const nsCString& OriginalString() const { return mExtendedMIMEType.OriginalString(); }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
