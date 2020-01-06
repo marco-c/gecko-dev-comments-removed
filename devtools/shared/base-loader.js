@@ -2,26 +2,9 @@
 
 
 
-;((factory) => { 
-  if (typeof(require) === 'function') { 
-    require("chrome").Cu.import(module.uri, exports);
-  }
-  else if (~String(this).indexOf('BackstagePass')) { 
-    let module = { uri: __URI__, id: "toolkit/loader", exports: Object.create(null) }
-    factory(module);
-    Object.assign(this, module.exports);
-    this.EXPORTED_SYMBOLS = Object.getOwnPropertyNames(module.exports);
-  }
-  else {
-    throw Error("Loading environment is not supported");
-  }
-})(module => {
-
 'use strict';
 
-module.metadata = {
-  "stability": "unstable"
-};
+this.EXPORTED_SYMBOLS = ["Loader", "resolveURI", "Module", "Require"]
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
@@ -131,7 +114,6 @@ const descriptor = iced(function descriptor(object) {
     value[name] = getOwnPropertyDescriptor(object, name)
   return value;
 });
-Loader.descriptor = descriptor;
 
 
 
@@ -168,15 +150,12 @@ const override = iced(function override(target, source) {
 
   return Object.defineProperties({}, properties);
 });
-Loader.override = override;
 
 function sourceURI(uri) { return String(uri).split(" -> ").pop(); }
-Loader.sourceURI = iced(sourceURI);
 
-function isntLoaderFrame(frame) { return frame.fileName !== module.uri }
+function isntLoaderFrame(frame) { return frame.fileName !== __URI__ }
 
 function parseURI(uri) { return String(uri).split(" -> ").pop(); }
-Loader.parseURI = parseURI;
 
 function parseStack(stack) {
   let lines = String(stack).split("\n");
@@ -199,7 +178,6 @@ function parseStack(stack) {
     return frames;
   }, []);
 }
-Loader.parseStack = parseStack;
 
 function serializeStack(frames) {
   return frames.reduce(function(stack, frame) {
@@ -210,7 +188,6 @@ function serializeStack(frames) {
            stack;
   }, "");
 }
-Loader.serializeStack = serializeStack;
 
 class DefaultMap extends Map {
   constructor(createItem, items = undefined) {
@@ -393,7 +370,6 @@ function join(base, ...paths) {
 
   return normalize([base, ...paths].join("/"));
 }
-Loader.join = join;
 
 
 
@@ -446,7 +422,6 @@ const Sandbox = iced(function Sandbox(options) {
 
   return sandbox;
 });
-Loader.Sandbox = Sandbox;
 
 
 
@@ -466,7 +441,6 @@ const evaluate = iced(function evaluate(sandbox, uri, options) {
   return source ? Cu.evalInSandbox(source, sandbox, version, uri, line)
                 : loadSubScript(uri, sandbox, encoding);
 });
-Loader.evaluate = evaluate;
 
 
 
@@ -594,7 +568,6 @@ const load = iced(function load(loader, module) {
 
   return module;
 });
-Loader.load = load;
 
 
 function normalizeExt(uri) {
@@ -626,7 +599,6 @@ const resolve = iced(function resolve(id, base) {
 
   return resolved;
 });
-Loader.resolve = resolve;
 
 
 
@@ -698,7 +670,7 @@ function* getNodeModulePaths(rootURI, start) {
 
 const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
   
-  id = Loader.resolve(id, requirer);
+  id = resolve(id, requirer);
 
   
   if (isAbsoluteURI(id)) {
@@ -732,8 +704,6 @@ const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
   
   return null;
 });
-
-Loader.nodeResolve = nodeResolve;
 
 function addTrailingSlash(path) {
   return path.replace(/\/*$/, "/");
@@ -791,7 +761,6 @@ const resolveURI = iced(function resolveURI(id, mapping) {
 
   return normalizeExt(mapping(id))
 });
-Loader.resolveURI = resolveURI;
 
 
 
@@ -858,7 +827,7 @@ const Require = iced(function Require(loader, requirer) {
     
     
     isNative = false;
-    loaderResolve = Loader.resolve;
+    loaderResolve = resolve;
   }
 
   function require(id) {
@@ -982,7 +951,7 @@ const Require = iced(function Require(loader, requirer) {
       
       
       if (!requirement) {
-        requirement = isRelative(id) ? Loader.resolve(id, requirer.id) : id;
+        requirement = isRelative(id) ? resolve(id, requirer.id) : id;
       }
     }
     else if (modules[id]) {
@@ -1033,7 +1002,6 @@ const Require = iced(function Require(loader, requirer) {
   require.main = loader.main === requirer ? requirer : undefined;
   return iced(require);
 });
-Loader.Require = Require;
 
 const main = iced(function main(loader, id) {
   
@@ -1044,7 +1012,6 @@ const main = iced(function main(loader, id) {
   let module = loader.main = loader.modules[uri] = Module(id, uri);
   return loader.load(loader, module).exports;
 });
-Loader.main = main;
 
 
 
@@ -1056,7 +1023,6 @@ const Module = iced(function Module(id, uri) {
     uri: { value: uri }
   });
 });
-Loader.Module = Module;
 
 
 
@@ -1071,7 +1037,6 @@ const unload = iced(function unload(loader, reason) {
   let subject = { wrappedJSObject: loader.destructor };
   notifyObservers(subject, 'sdk:loader:destroy', reason);
 });
-Loader.unload = unload;
 
 
 
@@ -1114,8 +1079,8 @@ function Loader(options) {
     checkCompatibility: false,
     resolve: options.isNative ?
       
-      (id, requirer) => Loader.nodeResolve(id, requirer, { rootURI: normalizeRootURI(rootURI) }) :
-      Loader.resolve,
+      (id, requirer) => nodeResolve(id, requirer, { rootURI: normalizeRootURI(rootURI) }) :
+      resolve,
     sharedGlobalBlocklist: ["sdk/indexed-db"],
     waiveIntereposition: false
   }, options);
@@ -1250,7 +1215,6 @@ function Loader(options) {
 
   return freeze(Object.create(null, returnObj));
 };
-Loader.Loader = Loader;
 
 var isSystemURI = uri => /^resource:\/\/(gre|devtools|testing-common)\//.test(uri);
 
@@ -1266,6 +1230,3 @@ function getManifestMain(manifest) {
   let main = manifest.main || './index.js';
   return isRelative(main) ? main : './' + main;
 }
-
-module.exports = iced(Loader);
-});
