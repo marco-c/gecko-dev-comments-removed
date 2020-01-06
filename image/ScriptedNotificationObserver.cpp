@@ -7,6 +7,7 @@
 #include "ScriptedNotificationObserver.h"
 #include "imgIScriptedNotificationObserver.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsContentUtils.h"                     
 
 namespace mozilla {
 namespace image {
@@ -31,6 +32,13 @@ ScriptedNotificationObserver::Notify(imgIRequest* aRequest,
                                      int32_t aType,
                                      const nsIntRect* )
 {
+  
+  
+  
+  
+  
+  nsAutoScriptBlocker scriptBlocker;
+
   if (aType == imgINotificationObserver::SIZE_AVAILABLE) {
     return mInner->SizeAvailable(aRequest);
   }
