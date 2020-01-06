@@ -344,7 +344,7 @@ nsContentIterator::Init(nsINode* aStartContainer, uint32_t aStartOffset,
 
 
 nsresult
-nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
+nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t aStartOffset,
                                 nsINode* aEndContainer, uint32_t endIndx)
 {
   
@@ -365,7 +365,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
     
     
 
-    if (!startIsData && startIndx == endIndx) {
+    if (!startIsData && aStartOffset == endIndx) {
       MakeEmpty();
       return NS_OK;
     }
@@ -388,8 +388,8 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
 
   
   
-  if (!startIsData && uint32_t(startIndx) < aStartContainer->GetChildCount()) {
-    cChild = aStartContainer->GetChildAt(startIndx);
+  if (!startIsData && aStartOffset < aStartContainer->GetChildCount()) {
+    cChild = aStartContainer->GetChildAt(aStartOffset);
     NS_WARNING_ASSERTION(cChild, "GetChildAt returned null");
   }
 
@@ -412,7 +412,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
           ps->IsContainer(ps->HTMLAtomTagToId(name), startIsContainer);
         }
       }
-      if (!startIsData && (startIsContainer || startIndx)) {
+      if (!startIsData && (startIsContainer || aStartOffset)) {
         mFirst = GetNextSibling(aStartContainer);
         NS_WARNING_ASSERTION(mFirst, "GetNextSibling returned null");
 
@@ -420,7 +420,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
         
         if (mFirst &&
             NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre,
-                                               aStartContainer, startIndx,
+                                               aStartContainer, aStartOffset,
                                                aEndContainer, endIndx))) {
           mFirst = nullptr;
         }
@@ -448,7 +448,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
       
 
       if (mFirst &&
-          !NodeIsInTraversalRange(mFirst, mPre, aStartContainer, startIndx,
+          !NodeIsInTraversalRange(mFirst, mPre, aStartContainer, aStartOffset,
                                   aEndContainer, endIndx)) {
         mFirst = nullptr;
       }
@@ -500,7 +500,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
         NS_WARNING_ASSERTION(mLast, "GetPrevSibling returned null");
 
         if (!NodeIsInTraversalRange(mLast, mPre,
-                                    aStartContainer, startIndx,
+                                    aStartContainer, aStartOffset,
                                     aEndContainer, endIndx)) {
           mLast = nullptr;
         }
@@ -524,7 +524,7 @@ nsContentIterator::InitInternal(nsINode* aStartContainer, uint32_t startIndx,
       NS_WARNING_ASSERTION(mLast, "GetDeepLastChild returned null");
 
       if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                             aStartContainer, startIndx,
+                                             aStartContainer, aStartOffset,
                                              aEndContainer, endIndx))) {
         mLast = nullptr;
       }
