@@ -339,15 +339,17 @@ SchedulerGroup::Runnable::Runnable(already_AddRefed<nsIRunnable>&& aRunnable,
 NS_IMETHODIMP
 SchedulerGroup::Runnable::GetName(nsACString& aName)
 {
-  
-  nsCOMPtr<nsINamed> named = do_QueryInterface(mRunnable);
-  if (named) {
-    named->GetName(aName);
-  }
+  mozilla::Runnable::GetName(aName);
   if (aName.IsEmpty()) {
-    aName.AssignLiteral("anonymous");
+    
+    nsCOMPtr<nsINamed> named = do_QueryInterface(mRunnable);
+    if (named) {
+      named->GetName(aName);
+    }
+    if (aName.IsEmpty()) {
+      aName.AssignLiteral("anonymous");
+    }
   }
-
   aName.AppendASCII("(labeled)");
   return NS_OK;
 }
