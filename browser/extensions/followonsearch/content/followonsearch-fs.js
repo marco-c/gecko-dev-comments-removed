@@ -145,12 +145,19 @@ let gLastSearch = null;
 
 
 
+let gOriginalWindow = null;
+
+
+
 
 
 var webProgressListener = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
   onLocationChange(aWebProgress, aRequest, aLocation, aFlags)
   {
+    if (aWebProgress.DOMWindow && (aWebProgress.DOMWindow != gOriginalWindow)) {
+      return;
+    }
     try {
       if (!aWebProgress.isTopLevel ||
           
@@ -231,9 +238,9 @@ function onPageLoad(event) {
       uri.spec == gLastSearch) {
     return;
   }
-  var queries = new URLSearchParams(doc.location.search);
+  var queries = new URLSearchParams(doc.location.search.toLowerCase());
   
-  if (queries.get("form") != "QBRE") {
+  if (queries.get("form") != "qbre") {
     return;
   }
   if (parseCookies(doc.cookie).SRCHS == "PC=MOZI") {
@@ -262,6 +269,8 @@ function sendSaveTelemetryMsg(code, sap, type) {
 addEventListener("DOMContentLoaded", onPageLoad, false);
 docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebProgress)
         .addProgressListener(webProgressListener, Ci.nsIWebProgress.NOTIFY_LOCATION);
+
+gOriginalWindow = content;
 
 let gDisabled = false;
 
