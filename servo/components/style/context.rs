@@ -138,9 +138,6 @@ pub struct SharedStyleContext<'a> {
     pub timer: Timer,
 
     
-    pub quirks_mode: QuirksMode,
-
-    
     pub traversal_flags: TraversalFlags,
 
     
@@ -173,6 +170,11 @@ impl<'a> SharedStyleContext<'a> {
     
     pub fn device_pixel_ratio(&self) -> ScaleFactor<f32, CSSPixel, DevicePixel> {
         self.stylist.device().device_pixel_ratio()
+    }
+
+    
+    pub fn quirks_mode(&self) -> QuirksMode {
+        self.stylist.quirks_mode()
     }
 }
 
