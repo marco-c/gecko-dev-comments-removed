@@ -34,6 +34,7 @@ struct HTMLElement
 
 
 static const HTMLElement gHTMLElements[] = {
+  
   ELEM(unknown,     ____, ____)
   ELEM(a,           ____, true)
   ELEM(abbr,        ____, true)
@@ -180,6 +181,7 @@ static const HTMLElement gHTMLElements[] = {
   ELEM(markupDecl,  ____, true)
   ELEM(instruction, ____, true)
   ELEM(userdefined, ____, true)
+  
 };
 
 #undef ELEM
