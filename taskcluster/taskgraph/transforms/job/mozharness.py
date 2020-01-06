@@ -110,7 +110,10 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
                                   "'use-magic-mh-args' on docker-workers")
 
     
-    taskdesc['worker']['docker-image'] = {"in-tree": "desktop-build"}
+    
+    
+    if not taskdesc['worker']['docker-image']:
+        taskdesc['worker']['docker-image'] = {"in-tree": "desktop-build"}
 
     worker['relengapi-proxy'] = False  
     worker['taskcluster-proxy'] = run.get('taskcluster-proxy')
