@@ -2175,6 +2175,15 @@ ThreadClient.prototype = {
 
 
 
+  getEnvironment: function (frameId) {
+    return this.request({ to: frameId, type: "getEnvironment" });
+  },
+
+  
+
+
+
+
 
 
 
