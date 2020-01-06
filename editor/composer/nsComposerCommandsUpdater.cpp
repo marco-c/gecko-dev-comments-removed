@@ -5,6 +5,7 @@
 
 
 #include "mozilla/mozalloc.h"           
+#include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"    
 #include "nsComposerCommandsUpdater.h"
@@ -341,9 +342,7 @@ nsComposerCommandsUpdater::SelectionIsCollapsed()
     return false;
   }
 
-  bool selectionCollapsed = false;
-  domSelection->GetIsCollapsed(&selectionCollapsed);
-  return selectionCollapsed;
+  return domSelection->AsSelection()->IsCollapsed();
 }
 
 already_AddRefed<nsPICommandUpdater>
