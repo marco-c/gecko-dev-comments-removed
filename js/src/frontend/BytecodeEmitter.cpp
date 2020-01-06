@@ -9790,8 +9790,6 @@ BytecodeEmitter::emitIncOrDec(ParseNode* pn)
       default:
         return emitNameIncDec(pn);
     }
-
-    return true;
 }
 
 
