@@ -203,9 +203,6 @@ static PRTime sFirstCollectionTime;
 static bool sIsInitialized;
 static bool sDidShutdown;
 static bool sShuttingDown;
-static int32_t sContextCount;
-
-static nsIScriptSecurityManager *sSecurityManager;
 
 
 
@@ -770,8 +767,6 @@ nsJSContext::nsJSContext(bool aGCOnDestruction,
 {
   EnsureStatics();
 
-  ++sContextCount;
-
   mIsInitialized = false;
   mProcessingScriptTag = false;
   HoldJSObjects(this);
@@ -782,15 +777,6 @@ nsJSContext::~nsJSContext()
   mGlobalObjectRef = nullptr;
 
   Destroy();
-
-  --sContextCount;
-
-  if (!sContextCount && sDidShutdown) {
-    
-    
-
-    NS_IF_RELEASE(sSecurityManager);
-  }
 }
 
 void
@@ -2579,8 +2565,6 @@ mozilla::dom::StartupJSEnvironment()
   sIsInitialized = false;
   sDidShutdown = false;
   sShuttingDown = false;
-  sContextCount = 0;
-  sSecurityManager = nullptr;
   gCCStats.Init();
   sExpensiveCollectorPokes = 0;
 }
@@ -2775,12 +2759,6 @@ nsJSContext::EnsureStatics()
     return;
   }
 
-  nsresult rv = CallGetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID,
-                               &sSecurityManager);
-  if (NS_FAILED(rv)) {
-    MOZ_CRASH();
-  }
-
   
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -2928,12 +2906,6 @@ mozilla::dom::ShutdownJSEnvironment()
   KillTimers();
 
   NS_IF_RELEASE(gNameSpaceManager);
-
-  if (!sContextCount) {
-    
-    
-    NS_IF_RELEASE(sSecurityManager);
-  }
 
   sShuttingDown = true;
   sDidShutdown = true;
