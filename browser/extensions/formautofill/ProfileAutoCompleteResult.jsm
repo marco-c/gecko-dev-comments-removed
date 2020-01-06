@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ProfileAutoCompleteResult"];
+this.EXPORTED_SYMBOLS = ["AddressResult", "CreditCardResult"]; 
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
@@ -47,14 +47,6 @@ class ProfileAutoCompleteResult {
     this._popupLabels = this._generateLabels(this._focusedFieldName,
                                              this._allFieldNames,
                                              this._matchingProfiles);
-    
-    
-    this._popupLabels.push({
-      primary: "",
-      secondary: "",
-      categories: FormAutofillUtils.getCategoriesFromFieldNames(allFieldNames),
-      focusedCategory: FormAutofillUtils.getCategoryFromFieldName(focusedFieldName),
-    });
   }
 
   
@@ -77,6 +69,96 @@ class ProfileAutoCompleteResult {
 
 
 
+
+  _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
+    return "";
+  }
+
+  _generateLabels(focusedFieldName, allFieldNames, profiles) {}
+
+  
+
+
+
+
+  getValueAt(index) {
+    this._checkIndexBounds(index);
+    return this._popupLabels[index].primary;
+  }
+
+  getLabelAt(index) {
+    this._checkIndexBounds(index);
+    return JSON.stringify(this._popupLabels[index]);
+  }
+
+  
+
+
+
+
+  getCommentAt(index) {
+    this._checkIndexBounds(index);
+    return JSON.stringify(this._matchingProfiles[index]);
+  }
+
+  
+
+
+
+
+  getStyleAt(index) {
+    this._checkIndexBounds(index);
+    if (index == this.matchCount - 1) {
+      return "autofill-footer";
+    }
+    return "autofill-profile";
+  }
+
+  
+
+
+
+
+  getImageAt(index) {
+    this._checkIndexBounds(index);
+    return "";
+  }
+
+  
+
+
+
+
+  getFinalCompleteValueAt(index) {
+    return this.getValueAt(index);
+  }
+
+  
+
+
+
+
+
+  removeValueAt(index, removeFromDatabase) {
+    
+  }
+}
+
+class AddressResult extends ProfileAutoCompleteResult {
+  constructor(...args) {
+    super(...args);
+
+    
+    
+    
+    
+    this._popupLabels.push({
+      primary: "",
+      secondary: "",
+      categories: FormAutofillUtils.getCategoriesFromFieldNames(this._allFieldNames),
+      focusedCategory: FormAutofillUtils.getCategoryFromFieldName(this._focusedFieldName),
+    });
+  }
 
   _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
     
@@ -160,70 +242,80 @@ class ProfileAutoCompleteResult {
   }
 
 
+}
+
+class CreditCardResult extends ProfileAutoCompleteResult {
+  constructor(...args) {
+    super(...args);
+
+    
+    this._popupLabels.push({primary: "", secondary: ""});
+  }
+
+  _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
+    const GROUP_FIELDS = {
+      "cc-name": [
+        "cc-name",
+        "cc-given-name",
+        "cc-additional-name",
+        "cc-family-name",
+      ],
+      "cc-exp": [
+        "cc-exp",
+        "cc-exp-month",
+        "cc-exp-year",
+      ],
+    };
+
+    const secondaryLabelOrder = [
+      "cc-number",       
+      "cc-name",         
+      "cc-exp",          
+    ];
+
+    for (let field in GROUP_FIELDS) {
+      if (GROUP_FIELDS[field].includes(focusedFieldName)) {
+        focusedFieldName = field;
+        break;
+      }
+    }
+
+    for (const currentFieldName of secondaryLabelOrder) {
+      if (focusedFieldName == currentFieldName || !profile[currentFieldName]) {
+        continue;
+      }
+
+      let matching = GROUP_FIELDS[currentFieldName] ?
+        allFieldNames.some(fieldName => GROUP_FIELDS[currentFieldName].includes(fieldName)) :
+        allFieldNames.includes(currentFieldName);
+
+      if (matching) {
+        return profile[currentFieldName];
+      }
+    }
+
+    return ""; 
+  }
+
+  _generateLabels(focusedFieldName, allFieldNames, profiles) {
+    
+    return profiles.filter(profile => {
+      return !!profile[focusedFieldName];
+    }).map(profile => {
+      return {
+        primary: profile[focusedFieldName],
+        secondary: this._getSecondaryLabel(focusedFieldName,
+                                           allFieldNames,
+                                           profile),
+      };
+    });
+  }
+
   
-
-
-
-
+  
+  
   getValueAt(index) {
     this._checkIndexBounds(index);
-    return this._popupLabels[index].primary;
-  }
-
-  getLabelAt(index) {
-    this._checkIndexBounds(index);
-    return JSON.stringify(this._popupLabels[index]);
-  }
-
-  
-
-
-
-
-  getCommentAt(index) {
-    this._checkIndexBounds(index);
-    return JSON.stringify(this._matchingProfiles[index]);
-  }
-
-  
-
-
-
-
-  getStyleAt(index) {
-    this._checkIndexBounds(index);
-    if (index == this.matchCount - 1) {
-      return "autofill-footer";
-    }
-    return "autofill-profile";
-  }
-
-  
-
-
-
-
-  getImageAt(index) {
-    this._checkIndexBounds(index);
     return "";
-  }
-
-  
-
-
-
-
-  getFinalCompleteValueAt(index) {
-    return this.getValueAt(index);
-  }
-
-  
-
-
-
-
-
-  removeValueAt(index, removeFromDatabase) {
-    
   }
 }
