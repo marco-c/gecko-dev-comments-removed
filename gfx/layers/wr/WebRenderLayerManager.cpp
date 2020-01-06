@@ -174,13 +174,8 @@ WebRenderLayerManager::BeginTransaction()
 bool
 WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
 {
-  
-  
-  
-  
-  
-  
-  WrBridge()->SendSetFocusTarget(mFocusTarget);
+  LayoutDeviceIntSize size = mWidget->GetClientSize();
+  WrBridge()->BeginTransaction();
 
   
   
@@ -188,11 +183,26 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
   
   
   
-  
 
-  if (!(aFlags & EndTransactionFlags::END_NO_COMPOSITE)) {
-    ScheduleComposite();
+  mWebRenderCommandBuilder.EmptyTransaction();
+
+  WrBridge()->ClearReadLocks();
+
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId( true);
+  TimeStamp transactionStart = mTransactionIdAllocator->GetTransactionStart();
+
+  
+  
+  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
+    if (WrBridge()->GetSyncObject() &&
+        WrBridge()->GetSyncObject()->IsSyncObjectValid()) {
+      WrBridge()->GetSyncObject()->Synchronize();
+    }
   }
+
+  WrBridge()->EndEmptyTransaction(mFocusTarget, mLatestTransactionId, transactionStart);
+
+  MakeSnapshotIfRequired(size);
   return true;
 }
 
