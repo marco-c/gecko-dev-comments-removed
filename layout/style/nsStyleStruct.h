@@ -984,6 +984,38 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding
   }
 };
 
+struct nsBorderColors
+{
+  nsBorderColors* mNext;
+  nscolor mColor;
+
+  nsBorderColors() : mNext(nullptr), mColor(NS_RGB(0,0,0)) {}
+  explicit nsBorderColors(const nscolor& aColor) : mNext(nullptr), mColor(aColor) {}
+  ~nsBorderColors();
+
+  nsBorderColors* Clone() const { return Clone(true); }
+
+  static bool Equal(const nsBorderColors* c1,
+                      const nsBorderColors* c2) {
+    if (c1 == c2) {
+      return true;
+    }
+    while (c1 && c2) {
+      if (c1->mColor != c2->mColor) {
+        return false;
+      }
+      c1 = c1->mNext;
+      c2 = c2->mNext;
+    }
+    
+    
+    return !c1 && !c2;
+  }
+
+private:
+  nsBorderColors* Clone(bool aDeep) const;
+};
+
 struct nsCSSShadowItem
 {
   nscoord mXOffset;
@@ -1110,26 +1142,6 @@ static bool IsVisibleBorderStyle(uint8_t aStyle)
           aStyle != NS_STYLE_BORDER_STYLE_HIDDEN);
 }
 
-struct nsBorderColors
-{
-  nsBorderColors() = default;
-
-  
-  
-  
-  nsBorderColors(const nsBorderColors& aOther) {
-    NS_FOR_CSS_SIDES(side) {
-      mColors[side] = aOther.mColors[side];
-    }
-  }
-
-  const nsTArray<nscolor>& operator[](mozilla::Side aSide) const {
-    return mColors[aSide];
-  }
-
-  nsTArray<nscolor> mColors[4];
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 {
   explicit nsStyleBorder(const nsPresContext* aContext);
@@ -1153,13 +1165,27 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 
   void EnsureBorderColors() {
     if (!mBorderColors) {
-      mBorderColors.reset(new nsBorderColors);
+      mBorderColors = new nsBorderColors*[4];
+      if (mBorderColors) {
+        for (int32_t i = 0; i < 4; i++) {
+          mBorderColors[i] = nullptr;
+        }
+      }
     }
   }
 
   void ClearBorderColors(mozilla::Side aSide) {
-    if (mBorderColors) {
-      mBorderColors->mColors[aSide].Clear();
+    if (mBorderColors && mBorderColors[aSide]) {
+      delete mBorderColors[aSide];
+      mBorderColors[aSide] = nullptr;
+    }
+  }
+
+  void CopyBorderColorsFrom(const nsBorderColors* aSrcBorderColors, mozilla::Side aSide) {
+    if (aSrcBorderColors) {
+      EnsureBorderColors();
+      ClearBorderColors(aSide);
+      mBorderColors[aSide] = aSrcBorderColors->Clone();
     }
   }
 
@@ -1234,6 +1260,30 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 
   nsMargin GetImageOutset() const;
 
+  void GetCompositeColors(int32_t aIndex, nsBorderColors** aColors) const
+  {
+    if (!mBorderColors) {
+      *aColors = nullptr;
+    } else {
+      *aColors = mBorderColors[aIndex];
+    }
+  }
+
+  void AppendBorderColor(int32_t aIndex, nscolor aColor)
+  {
+    NS_ASSERTION(aIndex >= 0 && aIndex <= 3, "bad side for composite border color");
+    nsBorderColors* colorEntry = new nsBorderColors(aColor);
+    if (!mBorderColors[aIndex]) {
+      mBorderColors[aIndex] = colorEntry;
+    } else {
+      nsBorderColors* last = mBorderColors[aIndex];
+      while (last->mNext) {
+        last = last->mNext;
+      }
+      last->mNext = colorEntry;
+    }
+  }
+
   imgIRequest* GetBorderImageRequest() const
   {
     if (mBorderImageSource.GetType() == eStyleImageType_Image) {
@@ -1243,8 +1293,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   }
 
 public:
-  
-  mozilla::UniquePtr<nsBorderColors> mBorderColors;
+  nsBorderColors** mBorderColors;     
   nsStyleCorners mBorderRadius;       
   nsStyleImage   mBorderImageSource;  
   nsStyleSides   mBorderImageSlice;   
