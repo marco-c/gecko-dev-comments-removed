@@ -31,6 +31,19 @@ use stylesheets::{Stylesheet, Origin};
 use values::computed::{Context, ToComputedValue};
 use values::specified::{NoCalcLength, LengthOrPercentageOrAuto, ViewportPercentageLength};
 
+
+#[cfg(feature = "servo")]
+pub fn enabled() -> bool {
+    use servo_config::prefs::PREFS;
+    PREFS.get("layout.viewport.enabled").as_boolean().unwrap_or(false)
+}
+
+
+#[cfg(not(feature = "servo"))]
+pub fn enabled() -> bool {
+    false 
+}
+
 macro_rules! declare_viewport_descriptor {
     ( $( $variant_name: expr => $variant: ident($data: ident), )+ ) => {
          declare_viewport_descriptor_inner!([] [ $( $variant_name => $variant($data), )+ ] 0);

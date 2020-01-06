@@ -368,14 +368,30 @@ impl Stylist {
 
         self.num_rebuilds += 1;
 
-        let cascaded_rule = ViewportRule {
-            declarations: viewport_rule::Cascade::from_stylesheets(
-                doc_stylesheets.clone(), guards.author, &self.device
-            ).finish(),
-        };
+        self.viewport_constraints = None;
 
-        self.viewport_constraints =
-            ViewportConstraints::maybe_new(&self.device, &cascaded_rule, self.quirks_mode);
+        if viewport_rule::enabled() {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let cascaded_rule = ViewportRule {
+                declarations: viewport_rule::Cascade::from_stylesheets(
+                    doc_stylesheets.clone(), guards.author, &self.device
+                ).finish()
+            };
+
+            self.viewport_constraints =
+                ViewportConstraints::maybe_new(&self.device,
+                                               &cascaded_rule,
+                                               self.quirks_mode)
+        }
 
         if let Some(ref constraints) = self.viewport_constraints {
             self.device.account_for_viewport_rule(constraints);
