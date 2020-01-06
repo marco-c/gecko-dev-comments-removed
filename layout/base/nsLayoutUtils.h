@@ -3051,6 +3051,10 @@ public:
   static nsPoint ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
                                           nsIFrame* aFrame);
 
+  
+  
+  static uint8_t ControlCharVisibilityDefault();
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
