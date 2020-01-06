@@ -1424,11 +1424,18 @@ ServoRestyleManager::TakeSnapshotForAttributeChange(Element* aElement,
 
 
 
+
+
 static inline bool
 AttributeChangeRequiresSubtreeRestyle(const Element& aElement, nsAtom* aAttr)
 {
   if (aAttr == nsGkAtoms::cellpadding) {
     return aElement.IsHTMLElement(nsGkAtoms::table);
+  }
+  if (aAttr == nsGkAtoms::lwtheme ||
+      aAttr == nsGkAtoms::lwthemetextcolor) {
+    return aElement.GetNameSpaceID() == kNameSpaceID_XUL &&
+      &aElement == aElement.OwnerDoc()->GetRootElement();
   }
 
   return aAttr == nsGkAtoms::lang;
