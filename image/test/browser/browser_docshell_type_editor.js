@@ -109,7 +109,9 @@ add_task(async function() {
           resolve();
         }
         doc.body.appendChild(image);
-        image.src = "chrome://test1/skin/privileged.png";
+        
+        
+        image.wrappedJSObject.src = "chrome://test1/skin/privileged.png";
       });
     });
   });

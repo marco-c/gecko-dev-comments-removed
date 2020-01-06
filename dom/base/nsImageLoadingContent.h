@@ -104,8 +104,11 @@ protected:
 
 
 
+
+
   nsresult LoadImage(const nsAString& aNewURI, bool aForce,
-                     bool aNotify, ImageLoadType aImageLoadType);
+                     bool aNotify, ImageLoadType aImageLoadType,
+                     nsIPrincipal* aTriggeringPrincipal = nullptr);
 
   
 
@@ -136,10 +139,22 @@ protected:
 
 
 
+
+
   nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
                      ImageLoadType aImageLoadType, bool aLoadStart = true,
                      nsIDocument* aDocument = nullptr,
-                     nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
+                     nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL,
+                     nsIPrincipal* aTriggeringPrincipal = nullptr);
+
+  nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
+                     ImageLoadType aImageLoadType,
+                     nsIPrincipal* aTriggeringPrincipal)
+  {
+    return LoadImage(aNewURI, aForce, aNotify, aImageLoadType,
+                     true, nullptr, nsIRequest::LOAD_NORMAL,
+                     aTriggeringPrincipal);
+  }
 
   
 

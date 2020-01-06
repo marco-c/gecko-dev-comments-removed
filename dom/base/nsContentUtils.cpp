@@ -202,6 +202,7 @@
 #include "nsTextNode.h"
 #include "nsThreadUtils.h"
 #include "nsUnicodeProperties.h"
+#include "nsURLHelper.h"
 #include "nsViewManager.h"
 #include "nsViewportInfo.h"
 #include "nsWidgetsCID.h"
@@ -2331,6 +2332,54 @@ bool
 nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAtom* aPerm)
 {
   return PrincipalHasPermission(SubjectPrincipal(aCx), aPerm);
+}
+
+
+nsIPrincipal*
+nsContentUtils::GetAttrTriggeringPrincipal(nsIContent* aContent, const nsAString& aAttrValue,
+                                           nsIPrincipal* aSubjectPrincipal)
+{
+  nsIPrincipal* contentPrin = aContent ? aContent->NodePrincipal() : nullptr;
+
+  
+  
+  
+  if (contentPrin == aSubjectPrincipal || !aSubjectPrincipal) {
+    return contentPrin;
+  }
+
+  
+  
+  if (!aAttrValue.IsEmpty() &&
+      IsAbsoluteURL(NS_ConvertUTF16toUTF8(aAttrValue))) {
+    return aSubjectPrincipal;
+  }
+
+  return contentPrin;
+}
+
+
+bool
+nsContentUtils::IsAbsoluteURL(const nsACString& aURL)
+{
+  nsAutoCString scheme;
+  if (NS_FAILED(net_ExtractURLScheme(aURL, scheme))) {
+    
+    return false;
+  }
+
+  
+  
+  if (net_IsAbsoluteURL(aURL)) {
+    return true;
+  }
+
+  uint32_t flags;
+  if (NS_SUCCEEDED(sIOService->GetProtocolFlags(scheme.get(), &flags))) {
+    return flags & nsIProtocolHandler::URI_NORELATIVE;
+  }
+
+  return false;
 }
 
 
@@ -10408,13 +10457,17 @@ nsContentUtils::AppendNativeAnonymousChildren(
 
  bool
 nsContentUtils::GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
+                                              nsIPrincipal* aDefaultPrincipal,
                                               nsIPrincipal** aLoadingPrincipal)
 {
   MOZ_ASSERT(aLoadingNode);
   MOZ_ASSERT(aLoadingPrincipal);
 
   bool result = false;
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadingNode->NodePrincipal();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aDefaultPrincipal;
+  if (!loadingPrincipal) {
+    loadingPrincipal = aLoadingNode->NodePrincipal();
+  }
   nsAutoString loadingStr;
   aLoadingNode->GetAttr(kNameSpaceID_None, nsGkAtoms::loadingprincipal,
                         loadingStr);

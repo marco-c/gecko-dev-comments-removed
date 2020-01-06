@@ -610,6 +610,40 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+  static nsIPrincipal* GetAttrTriggeringPrincipal(nsIContent* aContent,
+                                                  const nsAString& aAttrValue,
+                                                  nsIPrincipal* aSubjectPrincipal);
+
+  
+
+
+
+
+
+
+
+
+
+  static bool IsAbsoluteURL(const nsACString& aURL);
+
+  
+
+
+
+
+
+
+
+
+
   static nsIDocument* GetDocumentFromCaller();
 
   
@@ -3059,7 +3093,15 @@ public:
 
   static bool
   GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
-                                nsIPrincipal** aLoadingPrincipal);
+                                nsIPrincipal* aDefaultPrincipal,
+                                nsIPrincipal** aTriggeringPrincipal);
+
+  static bool
+  GetLoadingPrincipalForXULNode(nsIContent* aLoadingNode,
+                                nsIPrincipal** aTriggeringPrincipal)
+  {
+    return GetLoadingPrincipalForXULNode(aLoadingNode, nullptr, aTriggeringPrincipal);
+  }
 
   
 

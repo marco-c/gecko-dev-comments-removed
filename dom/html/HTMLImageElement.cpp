@@ -420,6 +420,9 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
     
     mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
+    mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
+        this, aValue.String(), aMaybeScriptedPrincipal);
+
     if (InResponsiveMode()) {
       if (mResponsiveSelector &&
           mResponsiveSelector->Content() == this) {
@@ -445,7 +448,8 @@ HTMLImageElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
       
       
       
-      LoadImage(aValue.String(), true, aNotify, eImageLoadType_Normal);
+      LoadImage(aValue.String(), true, aNotify, eImageLoadType_Normal,
+                mSrcTriggeringPrincipal);
 
       mNewRequestsWillNeedAnimationReset = false;
     }
@@ -1004,7 +1008,8 @@ HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad)
       
       rv = LoadImage(src, aForce, aNotify,
                      HaveSrcsetOrInPicture() ? eImageLoadType_Imageset
-                                             : eImageLoadType_Normal);
+                                             : eImageLoadType_Normal,
+                     mSrcTriggeringPrincipal);
     }
   }
   mLastSelectedSource = selectedSource;
