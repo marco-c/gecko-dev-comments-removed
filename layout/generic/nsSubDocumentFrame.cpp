@@ -930,7 +930,16 @@ public:
     
     
     
-    if (!mPresShell->IsDestroying()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mPresShell->IsDestroying() && mFrameElement->IsInComposedDoc()) {
       mPresShell->FlushPendingNotifications(FlushType::Frames);
     }
 
