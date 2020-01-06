@@ -47,20 +47,20 @@ const DRAIN_ALLOCATIONS_TIMEOUT = 2000;
 
 
 
-exports.PerformanceRecorder = Class({
-  extends: EventEmitter,
+function PerformanceRecorder(conn, tabActor) {
+  EventEmitter.decorate(this);
 
-  initialize: function (conn, tabActor) {
-    this.conn = conn;
-    this.tabActor = tabActor;
+  this.conn = conn;
+  this.tabActor = tabActor;
 
-    this._pendingConsoleRecordings = [];
-    this._recordings = [];
+  this._pendingConsoleRecordings = [];
+  this._recordings = [];
 
-    this._onTimelineData = this._onTimelineData.bind(this);
-    this._onProfilerEvent = this._onProfilerEvent.bind(this);
-  },
+  this._onTimelineData = this._onTimelineData.bind(this);
+  this._onProfilerEvent = this._onProfilerEvent.bind(this);
+}
 
+PerformanceRecorder.prototype = {
   
 
 
@@ -479,7 +479,7 @@ exports.PerformanceRecorder = Class({
   },
 
   toString: () => "[object PerformanceRecorder]"
-});
+};
 
 
 
@@ -498,3 +498,5 @@ function getPerformanceRecordingPrefs() {
       Services.prefs.getIntPref("devtools.performance.memory.max-log-length")
   };
 }
+
+exports.PerformanceRecorder = PerformanceRecorder;

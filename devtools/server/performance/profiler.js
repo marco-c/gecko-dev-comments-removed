@@ -5,7 +5,7 @@
 
 const { Cc, Ci, Cu } = require("chrome");
 const Services = require("Services");
-const { Class } = require("sdk/core/heritage");
+
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "DevToolsUtils", "devtools/shared/DevToolsUtils");
 loader.lazyRequireGetter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm", true);
@@ -406,82 +406,83 @@ const ProfilerManager = (function () {
 
 
 
-var Profiler = exports.Profiler = Class({
-  extends: EventEmitter,
+class Profiler {
+  constructor() {
+    EventEmitter.decorate(this);
 
-  initialize: function () {
     this.subscribedEvents = new Set();
     ProfilerManager.addInstance(this);
-  },
+  }
 
-  destroy: function () {
+  destroy() {
     this.unregisterEventNotifications({ events: Array.from(this.subscribedEvents) });
     this.subscribedEvents = null;
+
     ProfilerManager.removeInstance(this);
-  },
+  }
 
   
 
 
-  start: function (options) {
+  start(options) {
     return ProfilerManager.start(options);
-  },
+  }
 
   
 
 
-  stop: function () {
+  stop() {
     return ProfilerManager.stop();
-  },
+  }
 
   
 
 
-  getProfile: function (request = {}) {
+  getProfile(request = {}) {
     return ProfilerManager.getProfile(request);
-  },
+  }
 
   
 
 
-  getFeatures: function () {
+  getFeatures() {
     return ProfilerManager.getFeatures();
-  },
+  }
 
   
 
 
-  getBufferInfo: function () {
+  getBufferInfo() {
     return ProfilerManager.getBufferInfo();
-  },
+  }
 
   
 
 
-  getStartOptions: function () {
+  getStartOptions() {
     return ProfilerManager.getStartOptions();
-  },
+  }
 
   
 
 
-  isActive: function () {
+  isActive() {
     return ProfilerManager.isActive();
-  },
+  }
 
   
 
 
-  sharedLibraries: function () {
+  sharedLibraries() {
     return ProfilerManager.sharedLibraries;
-  },
+  }
 
   
 
 
-  setProfilerStatusInterval: function (interval) {
+  setProfilerStatusInterval(interval) {
     return ProfilerManager.setProfilerStatusInterval(interval);
-  },
+  }
 
   
 
@@ -494,7 +495,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  registerEventNotifications: function (data = {}) {
+  registerEventNotifications(data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (!this.subscribedEvents.has(e)) {
@@ -506,7 +507,7 @@ var Profiler = exports.Profiler = Class({
       }
     });
     return { registered: response };
-  },
+  }
 
   
 
@@ -515,7 +516,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  unregisterEventNotifications: function (data = {}) {
+  unregisterEventNotifications(data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (this.subscribedEvents.has(e)) {
@@ -527,16 +528,16 @@ var Profiler = exports.Profiler = Class({
       }
     });
     return { registered: response };
-  },
-});
+  }
+
+  
 
 
 
-
-
-Profiler.canProfile = function () {
-  return nsIProfilerModule.CanProfile();
-};
+  static canProfile() {
+    return nsIProfilerModule.CanProfile();
+  }
+}
 
 
 
@@ -572,3 +573,5 @@ function sanitizeHandler(handler, identifier) {
     return handler.call(this, subject, topic, data);
   }, identifier);
 }
+
+exports.Profiler = Profiler;

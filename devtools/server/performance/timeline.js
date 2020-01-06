@@ -21,7 +21,7 @@
 
 
 const { Ci, Cu } = require("chrome");
-const { Class } = require("sdk/core/heritage");
+
 
 
 loader.lazyRequireGetter(this, "Task", "devtools/shared/task", true);
@@ -38,25 +38,23 @@ const DEFAULT_TIMELINE_DATA_PULL_TIMEOUT = 200;
 
 
 
-exports.Timeline = Class({
-  extends: EventEmitter,
+function Timeline(tabActor) {
+  EventEmitter.decorate(this);
+
+  this.tabActor = tabActor;
+
+  this._isRecording = false;
+  this._stackFrames = null;
+  this._memory = null;
+  this._framerate = null;
+
   
+  this._onWindowReady = this._onWindowReady.bind(this);
+  this._onGarbageCollection = this._onGarbageCollection.bind(this);
+  EventEmitter.on(this.tabActor, "window-ready", this._onWindowReady);
+}
 
-
-  initialize: function (tabActor) {
-    this.tabActor = tabActor;
-
-    this._isRecording = false;
-    this._stackFrames = null;
-    this._memory = null;
-    this._framerate = null;
-
-    
-    this._onWindowReady = this._onWindowReady.bind(this);
-    this._onGarbageCollection = this._onGarbageCollection.bind(this);
-    EventEmitter.on(this.tabActor, "window-ready", this._onWindowReady);
-  },
-
+Timeline.prototype = {
   
 
 
@@ -357,4 +355,6 @@ exports.Timeline = Class({
       };
     }), endTime);
   },
-});
+};
+
+exports.Timeline = Timeline;

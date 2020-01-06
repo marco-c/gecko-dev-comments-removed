@@ -6,8 +6,8 @@
 
 const { Cc, Ci, Cu } = require("chrome");
 const { reportException } = require("devtools/shared/DevToolsUtils");
-const { Class } = require("sdk/core/heritage");
 const { expectState } = require("devtools/server/actors/common");
+
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm", true);
@@ -31,27 +31,24 @@ loader.lazyRequireGetter(this, "ChildProcessActor",
 
 
 
-exports.Memory = Class({
-  extends: EventEmitter,
+function Memory(parent, frameCache = new StackFrameCache()) {
+  EventEmitter.decorate(this);
 
-  
+  this.parent = parent;
+  this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
+                .getService(Ci.nsIMemoryReporterManager);
+  this.state = "detached";
+  this._dbg = null;
+  this._frameCache = frameCache;
 
+  this._onGarbageCollection = this._onGarbageCollection.bind(this);
+  this._emitAllocations = this._emitAllocations.bind(this);
+  this._onWindowReady = this._onWindowReady.bind(this);
 
-  initialize: function (parent, frameCache = new StackFrameCache()) {
-    this.parent = parent;
-    this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"]
-                  .getService(Ci.nsIMemoryReporterManager);
-    this.state = "detached";
-    this._dbg = null;
-    this._frameCache = frameCache;
+  EventEmitter.on(this.parent, "window-ready", this._onWindowReady);
+}
 
-    this._onGarbageCollection = this._onGarbageCollection.bind(this);
-    this._emitAllocations = this._emitAllocations.bind(this);
-    this._onWindowReady = this._onWindowReady.bind(this);
-
-    EventEmitter.on(this.parent, "window-ready", this._onWindowReady);
-  },
-
+Memory.prototype = {
   destroy: function () {
     EventEmitter.off(this.parent, "window-ready", this._onWindowReady);
 
@@ -426,5 +423,6 @@ exports.Memory = Class({
     return (this.parent.isRootActor ? this.parent.docShell :
                                       this.parent.originalDocShell).now();
   },
+};
 
-});
+exports.Memory = Memory;
