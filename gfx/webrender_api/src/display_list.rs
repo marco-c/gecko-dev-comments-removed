@@ -17,9 +17,10 @@ use YuvImageDisplayItem;
 use bincode;
 use serde::{Deserialize, Serialize, Serializer};
 use serde::ser::{SerializeMap, SerializeSeq};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::{io, ptr};
 use std::marker::PhantomData;
+use std::slice;
 use time::precise_time_ns;
 
 
@@ -171,6 +172,7 @@ fn skip_slice<T: for<'de> Deserialize<'de>>(
     (range, count)
 }
 
+
 impl<'a> BuiltDisplayListIter<'a> {
     pub fn new(list: &'a BuiltDisplayList) -> Self {
         Self::new_with_list_and_data(list, list.item_slice())
@@ -221,7 +223,7 @@ impl<'a> BuiltDisplayListIter<'a> {
                 return None;
             }
 
-            self.cur_item = bincode::deserialize_from(&mut self.data, bincode::Infinite)
+            self.cur_item = bincode::deserialize_from(&mut UnsafeReader::new(&mut self.data), bincode::Infinite)
                 .expect("MEH: malicious process?");
 
             match self.cur_item.item {
@@ -363,7 +365,7 @@ impl<'de, 'a, T: Deserialize<'de>> AuxIter<'a, T> {
         let size: usize = if data.len() == 0 {
             0 
         } else {
-            bincode::deserialize_from(&mut data, bincode::Infinite).expect("MEH: malicious input?")
+            bincode::deserialize_from(&mut UnsafeReader::new(&mut data), bincode::Infinite).expect("MEH: malicious input?")
         };
 
         AuxIter {
@@ -383,7 +385,7 @@ impl<'a, T: for<'de> Deserialize<'de>> Iterator for AuxIter<'a, T> {
         } else {
             self.size -= 1;
             Some(
-                bincode::deserialize_from(&mut self.data, bincode::Infinite)
+                bincode::deserialize_from(&mut UnsafeReader::new(&mut self.data), bincode::Infinite)
                     .expect("MEH: malicious input?"),
             )
         }
@@ -525,6 +527,73 @@ fn serialize_fast<T: Serialize>(vec: &mut Vec<u8>, e: &T) {
     debug_assert!(((w.0 as usize) - (vec.as_ptr() as usize)) == vec.len());
 }
 
+
+
+
+
+struct UnsafeReader<'a: 'b, 'b> {
+    start: *const u8,
+    end: *const u8,
+    slice: &'b mut &'a [u8],
+}
+
+impl<'a, 'b> UnsafeReader<'a, 'b> {
+    #[inline(always)]
+    fn new(buf: &'b mut &'a [u8]) -> UnsafeReader<'a, 'b> {
+        unsafe {
+            let end = buf.as_ptr().offset(buf.len() as isize);
+            let start = buf.as_ptr();
+            UnsafeReader { start: start, end, slice: buf }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn read_internal(&mut self, buf: &mut [u8]) {
+        
+        unsafe {
+            assert!(self.start.offset(buf.len() as isize) <= self.end, "UnsafeReader: read past end of target");
+            ptr::copy_nonoverlapping(self.start, buf.as_mut_ptr(), buf.len());
+            self.start = self.start.offset(buf.len() as isize);
+        }
+    }
+}
+
+impl<'a, 'b> Drop for UnsafeReader<'a, 'b> {
+    
+    #[inline(always)]
+    fn drop(&mut self) {
+        
+        unsafe {
+            *self.slice = slice::from_raw_parts(self.start, (self.end as usize) - (self.start as usize));
+        }
+    }
+}
+
+impl<'a, 'b> Read for UnsafeReader<'a, 'b> {
+    
+    
+    #[inline(always)]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.read_internal(buf);
+        Ok(buf.len())
+    }
+    #[inline(always)]
+    fn read_exact(&mut self, buf: &mut [u8]) -> io::Result<()> {
+        self.read_internal(buf);
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SaveState {
     dl_len: usize,
@@ -625,6 +694,22 @@ impl DisplayListBuilder {
             &DisplayItem {
                 item,
                 clip_and_scroll: *self.clip_stack.last().unwrap(),
+                info: *info,
+            },
+        )
+    }
+
+    fn push_item_with_clip_scroll_info(
+        &mut self,
+        item: SpecificDisplayItem,
+        info: &LayoutPrimitiveInfo,
+        scrollinfo: ClipAndScrollInfo
+    ) {
+        serialize_fast(
+            &mut self.data,
+            &DisplayItem {
+                item,
+                clip_and_scroll: scrollinfo,
                 info: *info,
             },
         )
@@ -1043,10 +1128,10 @@ impl DisplayListBuilder {
         I: IntoIterator<Item = ComplexClipRegion>,
         I::IntoIter: ExactSizeIterator,
     {
-        let parent_id = self.clip_stack.last().unwrap().scroll_node_id;
+        let parent = self.clip_stack.last().unwrap().scroll_node_id;
         self.define_scroll_frame_with_parent(
             id,
-            parent_id,
+            parent,
             content_rect,
             clip_rect,
             complex_clips,
@@ -1057,7 +1142,7 @@ impl DisplayListBuilder {
     pub fn define_scroll_frame_with_parent<I>(
         &mut self,
         id: Option<ClipId>,
-        parent_id: ClipId,
+        parent: ClipId,
         content_rect: LayoutRect,
         clip_rect: LayoutRect,
         complex_clips: I,
@@ -1071,7 +1156,6 @@ impl DisplayListBuilder {
         let id = self.generate_clip_id(id);
         let item = SpecificDisplayItem::ScrollFrame(ScrollFrameDisplayItem {
             id: id,
-            parent_id: parent_id,
             image_mask: image_mask,
             scroll_sensitivity,
         });
@@ -1083,7 +1167,8 @@ impl DisplayListBuilder {
             tag: None,
         };
 
-        self.push_item(item, &info);
+        let scrollinfo = ClipAndScrollInfo::simple(parent);
+        self.push_item_with_clip_scroll_info(item, &info, scrollinfo);
         self.push_iter(complex_clips);
         id
     }
@@ -1099,10 +1184,10 @@ impl DisplayListBuilder {
         I: IntoIterator<Item = ComplexClipRegion>,
         I::IntoIter: ExactSizeIterator,
     {
-        let parent_id = self.clip_stack.last().unwrap().scroll_node_id;
+        let parent = self.clip_stack.last().unwrap().scroll_node_id;
         self.define_clip_with_parent(
             id,
-            parent_id,
+            parent,
             clip_rect,
             complex_clips,
             image_mask)
@@ -1111,7 +1196,7 @@ impl DisplayListBuilder {
     pub fn define_clip_with_parent<I>(
         &mut self,
         id: Option<ClipId>,
-        parent_id: ClipId,
+        parent: ClipId,
         clip_rect: LayoutRect,
         complex_clips: I,
         image_mask: Option<ImageMask>,
@@ -1123,13 +1208,13 @@ impl DisplayListBuilder {
         let id = self.generate_clip_id(id);
         let item = SpecificDisplayItem::Clip(ClipDisplayItem {
             id,
-            parent_id: parent_id,
             image_mask: image_mask,
         });
 
         let info = LayoutPrimitiveInfo::new(clip_rect);
 
-        self.push_item(item, &info);
+        let scrollinfo = ClipAndScrollInfo::simple(parent);
+        self.push_item_with_clip_scroll_info(item, &info, scrollinfo);
         self.push_iter(complex_clips);
         id
     }
@@ -1179,8 +1264,8 @@ impl DisplayListBuilder {
         self.push_item(SpecificDisplayItem::PushShadow(shadow), info);
     }
 
-    pub fn pop_shadow(&mut self) {
-        self.push_new_empty_item(SpecificDisplayItem::PopShadow);
+    pub fn pop_all_shadows(&mut self) {
+        self.push_new_empty_item(SpecificDisplayItem::PopAllShadows);
     }
 
     pub fn finalize(self) -> (PipelineId, LayoutSize, BuiltDisplayList) {

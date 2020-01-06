@@ -55,7 +55,7 @@ impl AlphaBatchHelpers for PrimitiveStore {
             PrimitiveKind::TextRun => {
                 let text_run_cpu = &self.cpu_text_runs[metadata.cpu_prim_index.0];
                 match text_run_cpu.font.render_mode {
-                    FontRenderMode::Subpixel => BlendMode::Subpixel(text_run_cpu.font.color),
+                    FontRenderMode::Subpixel => BlendMode::Subpixel,
                     FontRenderMode::Alpha |
                     FontRenderMode::Mono |
                     FontRenderMode::Bitmap => BlendMode::PremultipliedAlpha,
@@ -129,26 +129,49 @@ impl AlphaBatchList {
     ) -> &mut Vec<PrimitiveInstance> {
         let mut selected_batch_index = None;
 
-        
-        
-        
-        
         match key.kind {
-            BatchKind::Composite { .. } => {}
-            _ => 'outer: for (batch_index, batch) in self.batches.iter().enumerate().rev().take(10)
-            {
-                if batch.key.is_compatible_with(&key) {
-                    selected_batch_index = Some(batch_index);
-                    break;
-                }
-
+            BatchKind::Composite { .. } => {
                 
-                for item_rect in &batch.item_rects {
-                    if item_rect.intersects(item_bounding_rect) {
-                        break 'outer;
+                
+                
+                
+            }
+            BatchKind::Transformable(_, TransformBatchKind::TextRun) => {
+                'outer_text: for (batch_index, batch) in self.batches.iter().enumerate().rev().take(10) {
+                    
+                    
+                    
+                    for item_rect in &batch.item_rects {
+                        if item_rect.intersects(item_bounding_rect) {
+                            break 'outer_text;
+                        }
+                    }
+
+                    if batch.key.is_compatible_with(&key) {
+                        selected_batch_index = Some(batch_index);
+                        break;
                     }
                 }
-            },
+            }
+            _ => {
+                'outer_default: for (batch_index, batch) in self.batches.iter().enumerate().rev().take(10) {
+                    
+                    
+                    
+                    
+                    if batch.key.is_compatible_with(&key) {
+                        selected_batch_index = Some(batch_index);
+                        break;
+                    }
+
+                    
+                    for item_rect in &batch.item_rects {
+                        if item_rect.intersects(item_bounding_rect) {
+                            break 'outer_default;
+                        }
+                    }
+                }
+            }
         }
 
         if selected_batch_index.is_none() {
@@ -229,7 +252,7 @@ impl BatchList {
     ) -> &mut Vec<PrimitiveInstance> {
         match key.blend_mode {
             BlendMode::None => self.opaque_batch_list.get_suitable_batch(key),
-            BlendMode::Alpha | BlendMode::PremultipliedAlpha | BlendMode::Subpixel(..) => {
+            BlendMode::Alpha | BlendMode::PremultipliedAlpha | BlendMode::Subpixel => {
                 self.alpha_batch_list
                     .get_suitable_batch(key, item_bounding_rect)
             }
@@ -1601,6 +1624,17 @@ pub struct StackingContext {
 
     
     pub is_backface_visible: bool,
+
+    
+    
+    
+    pub allow_subpixel_aa: bool,
+
+    
+    pub has_any_primitive: bool,
+
+    
+    pub children_sc_bounds: LayerRect,
 }
 
 impl StackingContext {
@@ -1618,6 +1652,8 @@ impl StackingContext {
             TransformStyle::Flat => ContextIsolation::None,
             TransformStyle::Preserve3D => ContextIsolation::Items,
         };
+        let allow_subpixel_aa = composite_ops.count() == 0 &&
+                                isolation == ContextIsolation::None;
         StackingContext {
             pipeline_id,
             reference_frame_offset,
@@ -1630,6 +1666,9 @@ impl StackingContext {
             is_pipeline_root,
             is_visible: false,
             is_backface_visible,
+            allow_subpixel_aa,
+            has_any_primitive: false,
+            children_sc_bounds: LayerRect::zero(),
         }
     }
 

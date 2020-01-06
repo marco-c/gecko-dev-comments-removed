@@ -2,6 +2,7 @@
 
 
 
+
 use api::{BuiltDisplayListIter, ClipAndScrollInfo, ClipId, ColorF, ComplexClipRegion};
 use api::{DeviceUintRect, DeviceUintSize, DisplayItemRef, Epoch, FilterOp, HitTestFlags};
 use api::{HitTestResult, ImageDisplayItem, ItemRange, LayerPoint, LayerPrimitiveInfo, LayerRect};
@@ -687,8 +688,8 @@ impl Frame {
                     .builder
                     .push_shadow(shadow, clip_and_scroll, &prim_info);
             }
-            SpecificDisplayItem::PopShadow => {
-                context.builder.pop_shadow();
+            SpecificDisplayItem::PopAllShadows => {
+                context.builder.pop_all_shadows();
             }
         }
         None
