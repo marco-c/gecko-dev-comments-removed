@@ -175,6 +175,29 @@ XrayAwareCalleeGlobalForSpecializedGetters(JSContext* cx,
 void
 TraceXPCGlobal(JSTracer* trc, JSObject* obj);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult
+InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
+                                nsISupports* aCOMObj,
+                                nsIPrincipal* aPrincipal,
+                                uint32_t aFlags,
+                                JS::CompartmentOptions& aOptions,
+                                JS::MutableHandleObject aNewGlobal);
+
 } 
 
 namespace JS {

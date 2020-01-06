@@ -560,19 +560,16 @@ InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal, uint32_t 
     return true;
 }
 
-} 
-
-NS_IMETHODIMP
-nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
-                                             nsISupports* aCOMObj,
-                                             nsIPrincipal * aPrincipal,
-                                             uint32_t aFlags,
-                                             JS::CompartmentOptions& aOptions,
-                                             nsIXPConnectJSObjectHolder** _retval)
+nsresult
+InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
+                                nsISupports* aCOMObj,
+                                nsIPrincipal* aPrincipal,
+                                uint32_t aFlags,
+                                JS::CompartmentOptions& aOptions,
+                                MutableHandleObject aNewGlobal)
 {
     MOZ_ASSERT(aJSContext, "bad param");
     MOZ_ASSERT(aCOMObj, "bad param");
-    MOZ_ASSERT(_retval, "bad param");
 
     
     
@@ -598,9 +595,11 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     if (!InitGlobalObject(aJSContext, global, aFlags))
         return UnexpectedFailure(NS_ERROR_FAILURE);
 
-    wrappedGlobal.forget(_retval);
+    aNewGlobal.set(global);
     return NS_OK;
 }
+
+} 
 
 static nsresult
 NativeInterface2JSObject(HandleObject aScope,
