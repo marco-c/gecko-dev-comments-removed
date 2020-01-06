@@ -176,6 +176,22 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
     
     
+    #[cfg(feature = "gecko")]
+    fn adjust_for_mathvariant(&mut self) {
+        use properties::longhands::_moz_math_variant::computed_value::T as moz_math_variant;
+        use properties::longhands::font_style::computed_value::T as font_style;
+        use properties::longhands::font_weight::computed_value::T as font_weight;
+        if self.style.get_font().clone__moz_math_variant() != moz_math_variant::none {
+            let mut font_style = self.style.mutate_font();
+            
+            
+            font_style.set_font_weight(font_weight::Weight400);
+            font_style.set_font_style(font_style::normal);
+        }
+    }
+
+    
+    
     
     
     #[cfg(feature = "servo")]
@@ -299,6 +315,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         {
             self.adjust_for_table_text_align();
             self.adjust_for_contain();
+            self.adjust_for_mathvariant();
         }
         #[cfg(feature = "servo")]
         {
