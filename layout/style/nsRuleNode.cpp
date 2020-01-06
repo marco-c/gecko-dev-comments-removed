@@ -3716,6 +3716,17 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, GeckoStyleContext* aContext,
       aFont->mFont.fontlist = aParentFont->mFont.fontlist;
       aFont->mFont.systemFont = aParentFont->mFont.systemFont;
       aFont->mGenericID = aParentFont->mGenericID;
+      MOZ_FALLTHROUGH;  
+    case eCSSUnit_Null:
+      
+      
+      
+      
+      
+      if (aRuleData->ValueForLang()->GetUnit() != eCSSUnit_Null) {
+        FixupNoneGeneric(&aFont->mFont, aPresContext, aGenericFontID,
+                         defaultVariableFont);
+      }
       break;
     case eCSSUnit_Initial:
       aFont->mFont.fontlist = defaultVariableFont->fontlist;
