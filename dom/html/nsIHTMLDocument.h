@@ -53,11 +53,6 @@ public:
   
 
 
-  virtual nsContentList* GetForms() = 0;
-
-  
-
-
 
 
 
