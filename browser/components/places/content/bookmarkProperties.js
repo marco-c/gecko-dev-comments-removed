@@ -150,7 +150,7 @@ var BookmarkPropertiesPanel = {
   
 
 
-  _determineItemInfo() {
+  async _determineItemInfo() {
     let dialogInfo = window.arguments[0];
     this._action = dialogInfo.action == "add" ? ACTION_ADD : ACTION_EDIT;
     this._hiddenRows = dialogInfo.hiddenRows ? dialogInfo.hiddenRows : [];
@@ -178,7 +178,7 @@ var BookmarkPropertiesPanel = {
                       "uri property should be a uri object");
             this._uri = dialogInfo.uri;
             if (typeof(this._title) != "string") {
-              this._title = this._getURITitleFromHistory(this._uri) ||
+              this._title = await PlacesUtils.history.fetch(this._uri) ||
                             this._uri.spec;
             }
           } else {
@@ -221,7 +221,7 @@ var BookmarkPropertiesPanel = {
 
           if (!this._title) {
             if (this._feedURI) {
-              this._title = this._getURITitleFromHistory(this._feedURI) ||
+              this._title = await PlacesUtils.history.fetch(this._feedURI) ||
                             this._feedURI.spec;
             } else
               this._title = this._strings.getString("newLivemarkDefault");
@@ -244,26 +244,8 @@ var BookmarkPropertiesPanel = {
 
 
 
-
-
-
-
-
-
-
-  _getURITitleFromHistory: function BPP__getURITitleFromHistory(aURI) {
-    NS_ASSERT(aURI instanceof Ci.nsIURI);
-
-    
-    return PlacesUtils.history.getPageTitle(aURI);
-  },
-
-  
-
-
-
-  onDialogLoad() {
-    this._determineItemInfo();
+  async onDialogLoad() {
+    await this._determineItemInfo();
 
     document.title = this._getDialogTitle();
 
