@@ -14,7 +14,7 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/PLayerTransactionParent.h"
-#include "nsDataHashtable.h"
+#include "nsRefPtrHashtable.h"
 #include "nsTArrayForwardDeclare.h"     
 
 namespace mozilla {
@@ -180,7 +180,7 @@ private:
   RefPtr<Layer> mRoot;
 
   
-  nsDataHashtable<nsUint64HashKey, RefPtr<Layer>> mLayerMap;
+  nsRefPtrHashtable<nsUint64HashKey, Layer> mLayerMap;
 
   
   
