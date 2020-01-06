@@ -63,13 +63,12 @@ async function testNetworkMessage(messageNode) {
 
   
   
-  
-  
-
-
-
-
-
+  responseTab.click();
+  await waitForSourceEditor(messageNode);
+  let responseContent = messageNode.querySelector(
+    "#response-panel .editor-row-container .CodeMirror");
+  ok(responseContent, "Response content is available");
+  ok(responseContent.textContent, "Response text is available");
 
   
   timingsTab.click();
@@ -92,9 +91,9 @@ async function waitForNetworkUpdates(toolbox) {
   });
 }
 
-
-
-
-
-
-
+async function waitForSourceEditor(messageNode) {
+  return waitUntil(() => {
+    return !!messageNode.querySelector(
+      "#response-panel .editor-row-container .CodeMirror");
+  });
+}
