@@ -160,6 +160,11 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function () {
 function DevToolsStartup() {}
 
 DevToolsStartup.prototype = {
+  
+
+
+  developerToggleCreated: false,
+
   handle: function (cmdLine) {
     let consoleFlag = cmdLine.handleFlag("jsconsole", false);
     let debuggerFlag = cmdLine.handleFlag("jsdebugger", false);
@@ -206,15 +211,19 @@ DevToolsStartup.prototype = {
 
 
   hookWindow(window) {
+    
     this.hookKeyShortcuts(window);
 
-    
-    if (this.initialized) {
-      return;
+    if (!this.developerToggleCreated) {
+      this.hookDeveloperToggle();
+      this.developerToggleCreated = true;
     }
 
-    this.hookWebDeveloperMenu(window);
-    this.hookDeveloperToggle(window);
+    
+    
+    if (!this.initialized) {
+      this.hookWebDeveloperMenu(window);
+    }
   },
 
   
@@ -233,7 +242,7 @@ DevToolsStartup.prototype = {
 
 
 
-  hookDeveloperToggle(window) {
+  hookDeveloperToggle() {
     let id = "developer-button";
     let widget = CustomizableUI.getWidget(id);
     if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
