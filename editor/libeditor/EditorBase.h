@@ -351,6 +351,12 @@ public:
   
 
 
+  static already_AddRefed<nsTextNode> CreateTextNode(nsIDocument& aDocument,
+                                                     const nsAString& aData);
+
+  
+
+
   virtual nsresult BeginIMEComposition(WidgetCompositionEvent* aEvent);
   virtual nsresult UpdateIMEComposition(
                      WidgetCompositionEvent* aCompositionChangeEvet) = 0;

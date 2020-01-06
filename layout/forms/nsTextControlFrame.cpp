@@ -1171,6 +1171,7 @@ nsTextControlFrame::UpdateValueDisplay(bool aNotify,
     
     RefPtr<nsTextNode> textNode =
       new nsTextNode(mContent->NodeInfo()->NodeInfoManager());
+    textNode->MarkAsMaybeModifiedFrequently();
 
     NS_ASSERTION(textNode, "Must have textcontent!\n");
 

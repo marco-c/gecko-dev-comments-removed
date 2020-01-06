@@ -196,7 +196,8 @@ FirstNon8Bit(const char16_t *str, const char16_t *end)
 }
 
 bool
-nsTextFragment::SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi)
+nsTextFragment::SetTo(const char16_t* aBuffer, int32_t aLength,
+                      bool aUpdateBidi, bool aForce2b)
 {
   ReleaseText();
 
@@ -205,7 +206,7 @@ nsTextFragment::SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi
   }
 
   char16_t firstChar = *aBuffer;
-  if (aLength == 1 && firstChar < 256) {
+  if (!aForce2b && aLength == 1 && firstChar < 256) {
     m1b = sSingleCharSharedString + firstChar;
     mState.mInHeap = false;
     mState.mIs2b = false;
@@ -218,7 +219,8 @@ nsTextFragment::SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi
   const char16_t *uend = aBuffer + aLength;
 
   
-  if (aLength <= 1 + TEXTFRAG_WHITE_AFTER_NEWLINE + TEXTFRAG_MAX_NEWLINES &&
+  if (!aForce2b &&
+      aLength <= 1 + TEXTFRAG_WHITE_AFTER_NEWLINE + TEXTFRAG_MAX_NEWLINES &&
      (firstChar == ' ' || firstChar == '\n' || firstChar == '\t')) {
     if (firstChar == ' ') {
       ++ucp;
@@ -255,7 +257,7 @@ nsTextFragment::SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi
   }
 
   
-  int32_t first16bit = FirstNon8Bit(ucp, uend);
+  int32_t first16bit = aForce2b ? 0 : FirstNon8Bit(ucp, uend);
 
   if (first16bit != -1) { 
     
@@ -324,12 +326,13 @@ nsTextFragment::CopyTo(char16_t *aDest, int32_t aOffset, int32_t aCount)
 }
 
 bool
-nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBidi)
+nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength,
+                       bool aUpdateBidi, bool aForce2b)
 {
   
   
   if (mState.mLength == 0) {
-    return SetTo(aBuffer, aLength, aUpdateBidi);
+    return SetTo(aBuffer, aLength, aUpdateBidi, aForce2b);
   }
 
   
@@ -365,7 +368,7 @@ nsTextFragment::Append(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBi
   }
 
   
-  int32_t first16bit = FirstNon8Bit(aBuffer, aBuffer + aLength);
+  int32_t first16bit = aForce2b ? 0 : FirstNon8Bit(aBuffer, aBuffer + aLength);
 
   if (first16bit != -1) { 
     length *= sizeof(char16_t);

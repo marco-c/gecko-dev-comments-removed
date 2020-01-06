@@ -113,14 +113,22 @@ public:
 
 
 
-  bool SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi);
+
+
+
+  bool SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi,
+             bool aForce2b);
 
   
 
 
 
 
-  bool Append(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBidi);
+
+
+
+  bool Append(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBidi,
+              bool aForce2b);
 
   
 

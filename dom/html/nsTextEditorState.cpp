@@ -2359,6 +2359,7 @@ nsTextEditorState::CreateEmptyDivNode()
 
   
   RefPtr<nsTextNode> textNode = new nsTextNode(pNodeInfoManager);
+  textNode->MarkAsMaybeModifiedFrequently();
 
   element->AppendChildTo(textNode, false);
 
