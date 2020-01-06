@@ -2001,8 +2001,9 @@ var AddonManagerInternal = {
     
     
     if (install.state == AddonManager.STATE_DOWNLOADED && install.addon.appDisabled) {
-          this.installNotifyObservers("addon-install-failed", browser, url, install);
-          return;
+      install.cancel();
+      this.installNotifyObservers("addon-install-failed", browser, url, install);
+      return;
     }
 
     let self = this;
