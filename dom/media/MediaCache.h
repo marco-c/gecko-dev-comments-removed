@@ -436,9 +436,6 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
   
-  bool                   mHasHadUpdate;
-  
-  
   bool                   mClosed;
   
   bool                   mDidNotifyDataEnded;
