@@ -784,12 +784,6 @@ H264::ExtractExtraData(const mozilla::MediaRawData* aSample)
 }
 
  bool
-H264::HasSPS(const mozilla::MediaRawData* aSample)
-{
-  return HasSPS(aSample->mExtraData);
-}
-
- bool
 H264::HasSPS(const mozilla::MediaByteBuffer* aExtraData)
 {
   if (!aExtraData) {
