@@ -828,11 +828,11 @@ impl From<RecvTimeoutError> for PaintWorkletError {
 }
 
 
-pub trait PaintWorkletExecutor: Sync + Send {
+pub trait Painter: Sync + Send {
     
     fn draw_a_paint_image(&self,
-                          name: Atom,
                           concrete_object_size: Size2D<Au>,
+                          properties: Vec<(Atom, String)>,
                           sender: IpcSender<CanvasData>);
 }
 

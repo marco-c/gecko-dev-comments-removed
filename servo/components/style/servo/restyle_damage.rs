@@ -64,16 +64,7 @@ impl ServoRestyleDamage {
                                     new: &ServoComputedValues)
                                     -> StyleDifference {
         let damage = compute_damage(old, new);
-        
-        
-        
-        
-        let variable_values_changed = old.get_custom_properties() != new.get_custom_properties();
-        let change = if damage.is_empty() && !variable_values_changed {
-            StyleChange::Unchanged
-        } else {
-            StyleChange::Changed
-        };
+        let change = if damage.is_empty() { StyleChange::Unchanged } else { StyleChange::Changed };
         StyleDifference::new(damage, change)
     }
 
@@ -284,6 +275,13 @@ fn compute_damage(old: &ServoComputedValues, new: &ServoComputedValues) -> Servo
         // Note: May require REFLOW et al. if `visibility: collapse` is implemented.
         get_inheritedbox.visibility
     ]);
+
+
+    
+    
+    if old.get_custom_properties() != new.get_custom_properties() {
+        damage.insert(REPAINT);
+    }
 
     
     
