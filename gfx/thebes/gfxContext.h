@@ -381,7 +381,7 @@ public:
 
 
 
-    gfxRect GetClipExtents();
+    gfxRect GetClipExtents() const;
 
     
 
@@ -519,7 +519,7 @@ private:
   void FillAzure(const Pattern& aPattern, mozilla::gfx::Float aOpacity);
   CompositionOp GetOp();
   void ChangeTransform(const mozilla::gfx::Matrix &aNewMatrix, bool aUpdatePatternTransform = true);
-  Rect GetAzureDeviceSpaceClipBounds();
+  Rect GetAzureDeviceSpaceClipBounds() const;
   Matrix GetDeviceTransform() const;
   Matrix GetDTTransform() const;
 
