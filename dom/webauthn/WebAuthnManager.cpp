@@ -90,7 +90,7 @@ AssembleClientData(const nsAString& aOrigin, const CryptoBuffer& aChallenge,
   CollectedClientData clientDataObject;
   clientDataObject.mChallenge.Assign(challengeBase64);
   clientDataObject.mOrigin.Assign(aOrigin);
-  clientDataObject.mHashAlg.AssignLiteral(u"SHA-256");
+  clientDataObject.mHashAlgorithm.AssignLiteral(u"SHA-256");
 
   nsAutoString temp;
   if (NS_WARN_IF(!clientDataObject.ToJSON(temp))) {
@@ -365,14 +365,14 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   
   
   nsTArray<PublicKeyCredentialParameters> normalizedParams;
-  for (size_t a = 0; a < aOptions.mParameters.Length(); ++a) {
+  for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
     
     
 
     
     
     
-    if (aOptions.mParameters[a].mType != PublicKeyCredentialType::Public_key) {
+    if (aOptions.mPubKeyCredParams[a].mType != PublicKeyCredentialType::Public_key) {
       continue;
     }
 
@@ -383,7 +383,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
     
 
     nsString algName;
-    if (NS_FAILED(GetAlgorithmName(aOptions.mParameters[a].mAlg,
+    if (NS_FAILED(GetAlgorithmName(aOptions.mPubKeyCredParams[a].mAlg,
                                    algName))) {
       continue;
     }
@@ -392,7 +392,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
     
     
     PublicKeyCredentialParameters normalizedObj;
-    normalizedObj.mType = aOptions.mParameters[a].mType;
+    normalizedObj.mType = aOptions.mPubKeyCredParams[a].mType;
     normalizedObj.mAlg.SetAsString().Assign(algName);
 
     if (!normalizedParams.AppendElement(normalizedObj, mozilla::fallible)){
@@ -404,7 +404,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   
   
   
-  if (normalizedParams.IsEmpty() && !aOptions.mParameters.IsEmpty()) {
+  if (normalizedParams.IsEmpty() && !aOptions.mPubKeyCredParams.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return promise.forget();
   }
@@ -476,7 +476,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
   }
 
   nsTArray<WebAuthnScopedCredentialDescriptor> excludeList;
-  for (const auto& s: aOptions.mExcludeList) {
+  for (const auto& s: aOptions.mExcludeCredentials) {
     WebAuthnScopedCredentialDescriptor c;
     CryptoBuffer cb;
     cb.Assign(s.mId);
@@ -636,13 +636,13 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
 
   
   
-  if (aOptions.mAllowList.Length() < 1) {
+  if (aOptions.mAllowCredentials.Length() < 1) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
     return promise.forget();
   }
 
   nsTArray<WebAuthnScopedCredentialDescriptor> allowList;
-  for (const auto& s: aOptions.mAllowList) {
+  for (const auto& s: aOptions.mAllowCredentials) {
     WebAuthnScopedCredentialDescriptor c;
     CryptoBuffer cb;
     cb.Assign(s.mId);
