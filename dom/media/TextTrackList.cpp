@@ -43,9 +43,12 @@ TextTrackList::~TextTrackList()
 void
 TextTrackList::GetShowingCues(nsTArray<RefPtr<TextTrackCue> >& aCues)
 {
+  
   nsTArray< RefPtr<TextTrackCue> > cues;
   for (uint32_t i = 0; i < Length(); i++) {
-    if (mTextTracks[i]->Mode() == TextTrackMode::Showing) {
+    if (mTextTracks[i]->Mode() == TextTrackMode::Showing &&
+        (mTextTracks[i]->Kind() == TextTrackKind::Subtitles ||
+         mTextTracks[i]->Kind() == TextTrackKind::Captions)) {
       mTextTracks[i]->GetActiveCueArray(cues);
       aCues.AppendElements(cues);
     }
