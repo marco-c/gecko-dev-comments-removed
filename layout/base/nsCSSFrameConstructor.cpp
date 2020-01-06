@@ -7230,7 +7230,6 @@ nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(nsIContent* aParent)
   
   
   
-  
   bool noPrimaryFrame = false;
   bool needsFrameBitSet = false;
   nsIContent* content = aParent;
@@ -7275,11 +7274,8 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
                                             nsIContent* aContainer,
                                             nsIContent* aChild)
 {
-  
-  
   if (mPresShell->GetPresContext()->IsChrome() || !aContainer ||
-      aContainer->IsInNativeAnonymousSubtree() || aContainer->IsXULElement() ||
-      GetDisplayContentsStyleFor(aContainer)) {
+      aContainer->IsInNativeAnonymousSubtree() || aContainer->IsXULElement()) {
     return false;
   }
 
