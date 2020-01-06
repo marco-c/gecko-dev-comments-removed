@@ -353,6 +353,12 @@ photonpanelmultiview panelview[title] {
   padding-top: 0;
 }
 
+photonpanelmultiview .panel-subview-body {
+  
+
+  -moz-box-flex: unset;
+}
+
 
 
 .cui-widget-panel.cui-widget-panelWithFooter > .panel-arrowcontainer > .panel-arrowcontent {
