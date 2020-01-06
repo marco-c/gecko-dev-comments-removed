@@ -57,32 +57,6 @@ class nsIParserService : public nsISupports {
 
   virtual int32_t HTMLStringTagToId(const nsAString& aTag) const = 0;
 
-  
-
-
-
-
-
-
-
-
-
-
-  virtual const char16_t *HTMLIdToStringTag(int32_t aId) const = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-  virtual nsIAtom *HTMLIdToAtomTag(int32_t aId) const = 0;
-
   NS_IMETHOD IsContainer(int32_t aId, bool& aIsContainer) const = 0;
   NS_IMETHOD IsBlock(int32_t aId, bool& aIsBlock) const = 0;
 };
