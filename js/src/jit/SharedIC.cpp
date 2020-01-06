@@ -2555,22 +2555,33 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
     if (val.isUndefined() && CanHaveEmptyPropertyTypesForOwnProperty(obj))
         AddTypePropertyId(cx, obj, id, val);
 
-    HeapTypeSet* types = nullptr;
-    if (!obj->group()->unknownProperties()) {
-        types = obj->group()->maybeGetProperty(id);
-        MOZ_ASSERT(types);
+    bool unknown = false, unknownObject = false;
+    if (obj->group()->unknownProperties()) {
+        unknown = unknownObject = true;
+    } else {
+        if (HeapTypeSet* types = obj->group()->maybeGetProperty(id)) {
+            unknown = types->unknown();
+            unknownObject = types->unknownObject();
+        } else {
+            
+            
+            
+            MOZ_ASSERT(obj->is<TypedObject>());
+            MOZ_ASSERT(val.isNullOrUndefined());
+        }
     }
+    MOZ_ASSERT_IF(unknown, unknownObject);
 
     
     
     if (numOptimizedStubs_ >= MAX_OPTIMIZED_STUBS &&
         val.isObject() &&
-        (types && !types->unknownObject()))
+        !unknownObject)
     {
         return true;
     }
 
-    if (!types || types->unknown()) {
+    if (unknown) {
         
         
         MOZ_ASSERT(!hasTypeUpdateStub(TypeUpdate_AnyValue));
@@ -2586,7 +2597,7 @@ ICUpdatedStub::addUpdateStubForValue(JSContext* cx, HandleScript outerScript, Ha
         JitSpew(JitSpew_BaselineIC, "  Added TypeUpdate stub %p for any value", stub);
         addOptimizedUpdateStub(stub);
 
-    } else if (val.isPrimitive() || types->unknownObject()) {
+    } else if (val.isPrimitive() || unknownObject) {
         JSValueType type = val.isDouble() ? JSVAL_TYPE_DOUBLE : val.extractNonDoubleType();
 
         
