@@ -4,8 +4,23 @@
 
 
 
+use values::computed::Number;
 use values::computed::length::LengthOrPercentage;
+use values::generics::box_::AnimationIterationCount as GenericAnimationIterationCount;
 use values::generics::box_::VerticalAlign as GenericVerticalAlign;
+
+pub use values::specified::box_::AnimationName;
 
 
 pub type VerticalAlign = GenericVerticalAlign<LengthOrPercentage>;
+
+
+pub type AnimationIterationCount = GenericAnimationIterationCount<Number>;
+
+impl AnimationIterationCount {
+    
+    #[inline]
+    pub fn one() -> Self {
+        GenericAnimationIterationCount::Number(1.0)
+    }
+}

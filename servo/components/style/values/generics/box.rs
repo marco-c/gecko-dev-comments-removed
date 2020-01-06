@@ -46,3 +46,12 @@ impl<L> ToAnimatedZero for VerticalAlign<L> {
         Err(())
     }
 }
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss)]
+pub enum AnimationIterationCount<Number> {
+    
+    Number(Number),
+    
+    Infinite,
+}
