@@ -368,7 +368,7 @@ impl RestyleHint {
     
     
     #[inline]
-    pub fn contains(&mut self, other: &Self) -> bool {
+    pub fn contains(&self, other: &Self) -> bool {
         self.match_under_self.contains(other.match_under_self) &&
         (self.match_later_siblings & other.match_later_siblings) == other.match_later_siblings &&
         self.replacements.contains(other.replacements)

@@ -389,6 +389,11 @@ impl StoredRestyleHint {
     }
 
     
+    pub fn contains_subtree(&self) -> bool {
+        self.0.contains(&RestyleHint::subtree())
+    }
+
+    
     pub fn insert_from(&mut self, other: &Self) {
         self.0.insert_from(&other.0)
     }

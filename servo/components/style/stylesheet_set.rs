@@ -4,9 +4,13 @@
 
 
 
+use dom::TElement;
+use invalidation::StylesheetInvalidationSet;
+use shared_lock::SharedRwLockReadGuard;
 use std::slice;
 use stylearc::Arc;
 use stylesheets::Stylesheet;
+use stylist::Stylist;
 
 
 
@@ -40,6 +44,9 @@ pub struct StylesheetSet {
 
     
     author_style_disabled: bool,
+
+    
+    invalidations: StylesheetInvalidationSet,
 }
 
 impl StylesheetSet {
@@ -49,6 +56,7 @@ impl StylesheetSet {
             entries: vec![],
             dirty: false,
             author_style_disabled: false,
+            invalidations: StylesheetInvalidationSet::new(),
         }
     }
 
@@ -63,32 +71,57 @@ impl StylesheetSet {
     }
 
     
-    pub fn append_stylesheet(&mut self, sheet: &Arc<Stylesheet>,
-                             unique_id: u64) {
+    pub fn append_stylesheet(
+        &mut self,
+        stylist: &Stylist,
+        sheet: &Arc<Stylesheet>,
+        unique_id: u64,
+        guard: &SharedRwLockReadGuard)
+    {
+        debug!("StylesheetSet::append_stylesheet");
         self.remove_stylesheet_if_present(unique_id);
         self.entries.push(StylesheetSetEntry {
             unique_id: unique_id,
             sheet: sheet.clone(),
         });
         self.dirty = true;
+        self.invalidations.collect_invalidations_for(
+            stylist,
+            sheet,
+            guard)
     }
 
     
-    pub fn prepend_stylesheet(&mut self, sheet: &Arc<Stylesheet>,
-                              unique_id: u64) {
+    pub fn prepend_stylesheet(
+        &mut self,
+        stylist: &Stylist,
+        sheet: &Arc<Stylesheet>,
+        unique_id: u64,
+        guard: &SharedRwLockReadGuard)
+    {
+        debug!("StylesheetSet::prepend_stylesheet");
         self.remove_stylesheet_if_present(unique_id);
         self.entries.insert(0, StylesheetSetEntry {
             unique_id: unique_id,
             sheet: sheet.clone(),
         });
         self.dirty = true;
+        self.invalidations.collect_invalidations_for(
+            stylist,
+            sheet,
+            guard)
     }
 
     
-    pub fn insert_stylesheet_before(&mut self,
-                                    sheet: &Arc<Stylesheet>,
-                                    unique_id: u64,
-                                    before_unique_id: u64) {
+    pub fn insert_stylesheet_before(
+        &mut self,
+        stylist: &Stylist,
+        sheet: &Arc<Stylesheet>,
+        unique_id: u64,
+        before_unique_id: u64,
+        guard: &SharedRwLockReadGuard)
+    {
+        debug!("StylesheetSet::insert_stylesheet_before");
         self.remove_stylesheet_if_present(unique_id);
         let index = self.entries.iter().position(|x| {
             x.unique_id == before_unique_id
@@ -98,21 +131,30 @@ impl StylesheetSet {
             sheet: sheet.clone(),
         });
         self.dirty = true;
+        self.invalidations.collect_invalidations_for(
+            stylist,
+            sheet,
+            guard)
     }
 
     
     pub fn remove_stylesheet(&mut self, unique_id: u64) {
+        debug!("StylesheetSet::remove_stylesheet");
         self.remove_stylesheet_if_present(unique_id);
         self.dirty = true;
+        
+        self.invalidations.invalidate_fully();
     }
 
     
     pub fn set_author_style_disabled(&mut self, disabled: bool) {
+        debug!("StylesheetSet::set_author_style_disabled");
         if self.author_style_disabled == disabled {
             return;
         }
         self.author_style_disabled = disabled;
         self.dirty = true;
+        self.invalidations.invalidate_fully();
     }
 
     
@@ -122,8 +164,17 @@ impl StylesheetSet {
 
     
     
-    pub fn flush(&mut self) -> StylesheetIterator {
+    pub fn flush<E>(&mut self,
+                    document_element: Option<E>)
+                    -> StylesheetIterator
+        where E: TElement,
+    {
+        debug!("StylesheetSet::flush");
+        debug_assert!(self.dirty);
+
         self.dirty = false;
+        self.invalidations.flush(document_element);
+
         StylesheetIterator(self.entries.iter())
     }
 
@@ -133,5 +184,6 @@ impl StylesheetSet {
     
     pub fn force_dirty(&mut self) {
         self.dirty = true;
+        self.invalidations.invalidate_fully();
     }
 }
