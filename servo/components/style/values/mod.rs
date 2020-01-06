@@ -147,6 +147,17 @@ impl KeyframesName {
     }
 
     
+    #[cfg(feature = "gecko")]
+    pub fn from_atom(atom: Atom) -> Self {
+        debug_assert_ne!(atom, atom!(""));
+
+        
+        
+        
+        KeyframesName::Ident(CustomIdent(atom))
+    }
+
+    
     pub fn as_atom(&self) -> &Atom {
         match *self {
             KeyframesName::Ident(ref ident) => &ident.0,
