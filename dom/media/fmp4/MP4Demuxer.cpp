@@ -520,7 +520,8 @@ MP4TrackDemuxer::GetSamples(int32_t aNumSamples)
   }
   for (const auto& sample : samples->mSamples) {
     
-    if (mNeedSPSForTelemetry) {
+    if (mNeedSPSForTelemetry && mIsH264 &&
+        mp4_demuxer::AnnexB::IsAVCC(sample)) {
       RefPtr<MediaByteBuffer> extradata =
         mp4_demuxer::H264::ExtractExtraData(sample);
       if (mp4_demuxer::H264::HasSPS(extradata)) {
