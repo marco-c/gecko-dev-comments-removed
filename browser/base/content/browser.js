@@ -482,13 +482,6 @@ const gStoragePressureObserver = {
       return;
     }
 
-    const NOTIFICATION_VALUE = "storage-pressure-notification";
-    let notificationBox = document.getElementById("high-priority-global-notificationbox");
-    if (notificationBox.getNotificationWithValue(NOTIFICATION_VALUE)) {
-      
-      return;
-    }
-
     
     
     
@@ -510,6 +503,7 @@ const gStoragePressureObserver = {
     let usage = subject.QueryInterface(Ci.nsISupportsPRUint64).data
     let prefStrBundle = document.getElementById("bundle_preferences");
     let brandShortName = document.getElementById("bundle_brand").getString("brandShortName");
+    let notificationBox = document.getElementById("high-priority-global-notificationbox");
     buttons.push({
       label: prefStrBundle.getString("spaceAlert.learnMoreButton.label"),
       accessKey: prefStrBundle.getString("spaceAlert.learnMoreButton.accesskey"),
@@ -558,7 +552,7 @@ const gStoragePressureObserver = {
     }
 
     notificationBox.appendNotification(
-      msg, NOTIFICATION_VALUE, null, notificationBox.PRIORITY_WARNING_HIGH, buttons, null);
+      msg, "storage-pressure-notification", null, notificationBox.PRIORITY_WARNING_HIGH, buttons, null);
   }
 };
 
@@ -2908,10 +2902,6 @@ const TLS_ERROR_REPORT_TELEMETRY_AUTO_SEND      = 5;
 
 const PREF_SSL_IMPACT_ROOTS = ["security.tls.version.", "security.ssl3."];
 
-const PREF_SSL_IMPACT = PREF_SSL_IMPACT_ROOTS.reduce((prefs, root) => {
-  return prefs.concat(Services.prefs.getChildList(root));
-}, []);
-
 
 
 
@@ -2988,7 +2978,10 @@ var BrowserOnClick = {
                               msg.data.securityInfo);
       break;
       case "Browser:ResetSSLPreferences":
-        for (let prefName of PREF_SSL_IMPACT) {
+        let prefSSLImpact = PREF_SSL_IMPACT_ROOTS.reduce((prefs, root) => {
+                return prefs.concat(Services.prefs.getChildList(root));
+        }, []);
+        for (let prefName of prefSSLImpact) {
           Services.prefs.clearUserPref(prefName);
         }
         msg.target.reload();
