@@ -1210,6 +1210,9 @@ class DwarfCFIToModule: public CallFrameInfo::Handler {
 
     
     static unsigned int ARM();
+
+    
+    static unsigned int MIPS();
   };
 
   

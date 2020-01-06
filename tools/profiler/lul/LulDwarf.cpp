@@ -1856,6 +1856,21 @@ unsigned int DwarfCFIToModule::RegisterNames::ARM() {
   return 13 * 8;
 }
 
+unsigned int DwarfCFIToModule::RegisterNames::MIPS() {
+  
+
+
+
+
+
+
+
+
+
+
+  return 8 + 8 + 8 + 8 + 9 + 8 + 7 + 7 + 6;
+}
+
 
 int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
                        string expr, bool debug,
