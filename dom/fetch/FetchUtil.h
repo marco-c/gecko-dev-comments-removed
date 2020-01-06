@@ -17,6 +17,10 @@ namespace dom {
 
 class InternalRequest;
 
+namespace workers {
+class WorkerPrivate;
+}
+
 class FetchUtil final
 {
 private:
@@ -48,6 +52,18 @@ public:
                      nsIHttpChannel* aChannel,
                      InternalRequest* aRequest);
 
+  
+
+
+
+
+
+  static bool
+  StreamResponseToJS(JSContext* aCx,
+                     JS::HandleObject aObj,
+                     JS::MimeType aMimeType,
+                     JS::StreamConsumer* aConsumer,
+                     workers::WorkerPrivate* aMaybeWorker);
 };
 
 } 

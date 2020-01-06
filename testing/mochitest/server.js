@@ -222,6 +222,7 @@ function createMochitestServer(serverBasePath)
   server.registerContentType("dat", "text/plain; charset=utf-8");
   server.registerContentType("frag", "text/plain"); 
   server.registerContentType("vert", "text/plain"); 
+  server.registerContentType("wasm", "application/wasm");
   server.setIndexHandler(defaultDirHandler);
 
   var serverRoot =
