@@ -318,6 +318,11 @@ protected:
 
   void SendOnUnlockedDraw(uint32_t aFlags);
 
+#ifdef DEBUG
+  
+  void NotifyDrawingObservers();
+#endif
+
   
   RefPtr<ProgressTracker>     mProgressTracker;
   RefPtr<ImageURL>            mURI;

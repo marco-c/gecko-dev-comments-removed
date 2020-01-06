@@ -317,11 +317,6 @@ private:
 
   void UpdateImageContainer();
 
-#ifdef DEBUG
-  
-  void NotifyDrawingObservers();
-#endif
-
   
   
   
