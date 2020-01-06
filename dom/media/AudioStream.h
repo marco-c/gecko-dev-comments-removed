@@ -17,6 +17,10 @@
 #include "CubebUtils.h"
 #include "soundtouch/SoundTouchFactory.h"
 
+#if defined(XP_WIN)
+#include "mozilla/audio/AudioNotificationReceiver.h"
+#endif
+
 namespace mozilla {
 
 struct CubebDestroyPolicy
@@ -150,6 +154,9 @@ public:
 
 
 class AudioStream final
+#if defined(XP_WIN)
+  : public audio::DeviceChangeListener
+#endif
 {
   virtual ~AudioStream();
 
@@ -210,8 +217,10 @@ public:
   
   void Resume();
 
+#if defined(XP_WIN)
   
-  void ResetDefaultDevice();
+  void ResetDefaultDevice() override;
+#endif
 
   
   
