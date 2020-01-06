@@ -2269,8 +2269,16 @@
 
  \
     macro(JSOP_BUILTINPROTO, 221, "builtinproto", NULL, 2,  0,  1,  JOF_UINT8) \
-    macro(JSOP_UNUSED222,     222,"unused222",     NULL,  1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED223,     223,"unused223",     NULL,  1,  0,  0,  JOF_BYTE) \
+    \
+    
+
+
+
+
+
+ \
+    macro(JSOP_ITERNEXT,      222, "iternext",   NULL,  1,  1,  1,  JOF_BYTE) \
+    macro(JSOP_UNUSED223,     223, "unused223",  NULL,  1,  0,  0,  JOF_BYTE) \
     \
     
 
