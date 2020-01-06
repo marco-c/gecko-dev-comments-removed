@@ -320,7 +320,7 @@ JSObject::makeLazyGroup(JSContext* cx, HandleObject obj)
     if (obj->isIteratedSingleton())
         initialFlags |= OBJECT_FLAG_ITERATED;
 
-    if (obj->isIndexed())
+    if (obj->isNative() && obj->as<NativeObject>().isIndexed())
         initialFlags |= OBJECT_FLAG_SPARSE_INDEXES;
 
     if (obj->is<ArrayObject>() && obj->as<ArrayObject>().length() > INT32_MAX)
@@ -497,7 +497,7 @@ ObjectGroup::defaultNewGroup(JSContext* cx, const Class* clasp,
 
             
             
-            if (associated && associated->wasNewScriptCleared())
+            if (associated && associated->as<JSFunction>().wasNewScriptCleared())
                 associated = nullptr;
 
         } else {

@@ -1680,7 +1680,7 @@ CanAttachDenseElementHole(JSObject* obj, bool ownProp)
     
     do {
         
-        if (obj->isIndexed())
+        if (obj->isNative() && obj->as<NativeObject>().isIndexed())
             return false;
 
         if (ClassCanHaveExtraProperties(obj->getClass()))
@@ -3149,7 +3149,7 @@ CanAttachAddElement(JSObject* obj, bool isInit)
     
     do {
         
-        if (obj->isIndexed())
+        if (obj->isNative() && obj->as<NativeObject>().isIndexed())
             return false;
 
         const Class* clasp = obj->getClass();

@@ -3044,7 +3044,7 @@ ObjectGroup::clearNewScript(JSContext* cx, ObjectGroup* replacement )
         
         
         RootedFunction fun(cx, newScript->function());
-        if (!JSObject::setNewScriptCleared(cx, fun))
+        if (!NativeObject::setNewScriptCleared(cx, fun))
             cx->recoverFromOutOfMemory();
     }
 

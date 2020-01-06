@@ -239,21 +239,6 @@ class JSObject : public js::gc::Cell
 
 
 
-    inline bool hadElementsAccess() const;
-    static bool setHadElementsAccess(JSContext* cx, JS::HandleObject obj) {
-        return setFlags(cx, obj, js::BaseShape::HAD_ELEMENTS_ACCESS);
-    }
-
-    
-
-
-
-    inline bool isIndexed() const;
-
-    
-
-
-
 
     MOZ_ALWAYS_INLINE bool maybeHasInterestingSymbolProperty() const;
 
@@ -412,12 +397,6 @@ class JSObject : public js::gc::Cell
 
     inline bool isNewGroupUnknown() const;
     static bool setNewGroupUnknown(JSContext* cx, const js::Class* clasp, JS::HandleObject obj);
-
-    
-    inline bool wasNewScriptCleared() const;
-    static bool setNewScriptCleared(JSContext* cx, JS::HandleObject obj) {
-        return setFlags(cx, obj, js::BaseShape::NEW_SCRIPT_CLEARED);
-    }
 
     
     static bool splicePrototype(JSContext* cx, js::HandleObject obj, const js::Class* clasp,
