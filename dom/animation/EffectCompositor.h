@@ -197,8 +197,14 @@ public:
   
   
   
+  
+  
+  
+  
+  
   static void
-  MaybeUpdateCascadeResults(dom::Element* aElement,
+  MaybeUpdateCascadeResults(StyleBackendType aBackendType,
+                            dom::Element* aElement,
                             CSSPseudoElementType aPseudoType,
                             nsStyleContext* aStyleContext);
 
@@ -258,10 +264,21 @@ private:
   
   
   
-  static void
-  GetOverriddenProperties(nsStyleContext* aStyleContext,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsCSSPropertyIDSet
+  GetOverriddenProperties(StyleBackendType aBackendType,
                           EffectSet& aEffectSet,
-                          nsCSSPropertyIDSet& aPropertiesOverridden);
+                          dom::Element* aElement,
+                          CSSPseudoElementType aPseudoType,
+                          nsStyleContext* aStyleContext);
 
   
   
@@ -269,8 +286,13 @@ private:
   
   
   
+  
+  
+  
+  
   static void
-  UpdateCascadeResults(EffectSet& aEffectSet,
+  UpdateCascadeResults(StyleBackendType aBackendType,
+                       EffectSet& aEffectSet,
                        dom::Element* aElement,
                        CSSPseudoElementType aPseudoType,
                        nsStyleContext* aStyleContext);
