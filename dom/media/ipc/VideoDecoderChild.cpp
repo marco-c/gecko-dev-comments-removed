@@ -152,12 +152,21 @@ VideoDecoderChild::InitIPDL(const VideoInfo& aVideoInfo,
 {
   RefPtr<VideoDecoderManagerChild> manager =
     VideoDecoderManagerChild::GetSingleton();
+
+  
+  
+  
+  if (!manager) {
+    return false;
+  }
+
   
   
   
   
   
-  if (!manager || !manager->CanSend()) {
+  
+  if (!manager->CanSend()) {
     return true;
   }
 
