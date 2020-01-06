@@ -90,7 +90,7 @@ public:
 
 
   void ResetLinkState(bool aNotify, bool aHasHref);
-  
+
   
   Element* GetElement() const { return mElement; }
 
@@ -98,7 +98,7 @@ public:
 
 
   virtual void OnDNSPrefetchDeferred() {  }
-  
+
   
 
 
