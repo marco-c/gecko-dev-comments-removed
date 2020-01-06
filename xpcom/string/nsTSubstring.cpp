@@ -952,52 +952,19 @@ nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip)
     AllocFailed(mLength);
   }
 
-  
-  
-  
-  
-  
-  
-  static const size_t UNROLL_FACTOR = 2;
-  size_t iterations = mLength / UNROLL_FACTOR;
-  const size_t left = mLength % UNROLL_FACTOR;
-
   char_type* to   = mData;
   char_type* from = mData;
+  char_type* end  = mData + mLength;
 
-  
-  
-  while (iterations--) {
-    uint32_t firstChar = (uint32_t)*from++;
-    uint32_t secondChar = (uint32_t)*from++;
+  while (from < end) {
+    uint32_t theChar = (uint32_t)*from++;
     
     
-    if (!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar)) {
+    if (!mozilla::ASCIIMask::IsMasked(aToStrip, theChar)) {
       
-      *to++ = (char_type)firstChar;
-    }
-    if (!mozilla::ASCIIMask::IsMasked(aToStrip, secondChar)) {
-      *to++ = (char_type)secondChar;
+      *to++ = (char_type)theChar;
     }
   }
-
-
-  
-  switch (left) {
-  case 1:
-    {
-      uint32_t firstChar = (uint32_t)*from++;
-      if (!mozilla::ASCIIMask::IsMasked(aToStrip, firstChar)) {
-        *to++ = (char_type)firstChar;
-      }
-    }
-    MOZ_FALLTHROUGH;
-  case 0:
-  default:
-    
-    break;
-  }
-
   *to = char_type(0); 
   mLength = to - mData;
 }
