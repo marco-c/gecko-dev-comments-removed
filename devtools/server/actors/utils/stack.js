@@ -4,28 +4,26 @@
 
 "use strict";
 
-var {Class} = require("sdk/core/heritage");
 
 
 
 
 
 
-
-var StackFrameCache = Class({
+class StackFrameCache {
   
 
 
-  initialize: function () {
+  constructor() {
     this._framesToIndices = null;
     this._framesToForms = null;
     this._lastEventSize = 0;
-  },
+  }
 
   
 
 
-  initFrames: function () {
+  initFrames() {
     if (this._framesToIndices) {
       
       return;
@@ -34,28 +32,28 @@ var StackFrameCache = Class({
     this._framesToIndices = new Map();
     this._framesToForms = new Map();
     this._lastEventSize = 0;
-  },
+  }
 
   
 
 
-  clearFrames: function () {
+  clearFrames() {
     this._framesToIndices.clear();
     this._framesToIndices = null;
     this._framesToForms.clear();
     this._framesToForms = null;
     this._lastEventSize = 0;
-  },
+  }
 
   
 
 
 
-  addFrame: function (frame) {
+  addFrame(frame) {
     this._assignFrameIndices(frame);
     this._createFrameForms(frame);
     return this._framesToIndices.get(frame);
-  },
+  }
 
   
 
@@ -68,7 +66,7 @@ var StackFrameCache = Class({
 
 
 
-  updateFramePacket: function (packet) {
+  updateFramePacket(packet) {
     
     
     
@@ -81,7 +79,7 @@ var StackFrameCache = Class({
     }
 
     return packet;
-  },
+  }
 
   
 
@@ -113,7 +111,7 @@ var StackFrameCache = Class({
 
 
 
-  makeEvent: function () {
+  makeEvent() {
     const size = this._framesToForms.size;
     if (!size || size <= this._lastEventSize) {
       return null;
@@ -129,7 +127,7 @@ var StackFrameCache = Class({
     this._lastEventSize = size;
 
     return packet;
-  },
+  }
 
   
 
@@ -138,7 +136,7 @@ var StackFrameCache = Class({
 
 
 
-  _assignFrameIndices: function (frame) {
+  _assignFrameIndices(frame) {
     if (this._framesToIndices.has(frame)) {
       return;
     }
@@ -150,7 +148,7 @@ var StackFrameCache = Class({
 
     const index = this._framesToIndices.size;
     this._framesToIndices.set(frame, index);
-  },
+  }
 
   
 
@@ -158,7 +156,7 @@ var StackFrameCache = Class({
 
 
 
-  _createFrameForms: function (frame) {
+  _createFrameForms(frame) {
     if (this._framesToForms.has(frame)) {
       return;
     }
@@ -179,7 +177,7 @@ var StackFrameCache = Class({
     }
 
     this._framesToForms.set(frame, form);
-  },
-});
+  }
+}
 
 exports.StackFrameCache = StackFrameCache;
