@@ -86,12 +86,10 @@ ObjectActor.prototype = {
 
     
     
-    
-    let proxy = unwrapProxy(this.obj);
-    if (proxy) {
+    if (this.obj.isProxy) {
       g.class = "Proxy";
-      g.proxyTarget = this.hooks.createValueGrip(proxy.proxyTarget);
-      g.proxyHandler = this.hooks.createValueGrip(proxy.proxyHandler);
+      g.proxyTarget = this.hooks.createValueGrip(this.obj.proxyTarget);
+      g.proxyHandler = this.hooks.createValueGrip(this.obj.proxyHandler);
     } else {
       try {
         g.class = this.obj.class;
@@ -322,7 +320,7 @@ ObjectActor.prototype = {
     let level = 0, i = 0;
 
     
-    if (unwrapProxy(obj)) {
+    if (obj.isProxy) {
       return safeGetterValues;
     }
 
@@ -337,7 +335,7 @@ ObjectActor.prototype = {
     }
 
     
-    while (obj && !unwrapProxy(obj)) {
+    while (obj && !obj.isProxy) {
       let getters = this._findSafeGetters(obj);
       for (let name of getters) {
         
@@ -2370,26 +2368,6 @@ function arrayBufferGrip(buffer, pool) {
   pool.addActor(actor);
   pool.arrayBufferActors.set(buffer, actor);
   return actor.grip();
-}
-
-
-
-
-
-
-
-
-
-
-function unwrapProxy(obj) {
-  if (obj.isProxy) {
-    return obj;
-  } else if (obj.class !== "Opaque") {
-    let unwrapped = obj.unwrap();
-    if (unwrapped && unwrapped !== obj) {
-      return unwrapProxy(unwrapped);
-    }
-  }
 }
 
 exports.ObjectActor = ObjectActor;
