@@ -1400,8 +1400,9 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
             break;
           case "BADCUE": 
             
-            if (!line) {
-              self.state = "ID";
+            self.state = "ID";
+            if (line) { 
+              continue;
             }
             break;
           }
