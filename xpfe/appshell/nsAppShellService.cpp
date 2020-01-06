@@ -732,13 +732,6 @@ nsAppShellService::JustCreateTopWindow(nsIXULWindow *aParent,
 
   widgetInitData.mRTL = LocaleService::GetInstance()->IsAppLocaleRTL();
 
-#ifdef MOZ_WIDGET_GONK
-  
-  
-  
-  widgetInitData.mScreenId = mScreenId;
-#endif
-
   nsresult rv = window->Initialize(parent, center ? aParent : nullptr,
                                    aUrl, aInitialWidth, aInitialHeight,
                                    aIsHiddenWindow, aOpeningTab,
