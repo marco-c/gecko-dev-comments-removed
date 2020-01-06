@@ -289,6 +289,20 @@ class TabTracker extends TabTrackerBase {
 
 
 
+
+
+  setOpener(tab, openerTab) {
+    if (tab.ownerDocument !== openerTab.ownerDocument) {
+      throw new Error("Tab must be in the same window as its opener");
+    }
+    tab.openerTab = openerTab;
+  }
+
+  
+
+
+
+
   handleEvent(event) {
     let nativeTab = event.target;
 
@@ -563,6 +577,14 @@ class Tab extends TabBase {
 
   get cookieStoreId() {
     return getCookieStoreIdForTab(this, this.nativeTab);
+  }
+
+  get openerTabId() {
+    let opener = this.nativeTab.openerTab;
+    if (opener && opener.parentNode && opener.ownerDocument == this.nativeTab.ownerDocument) {
+      return tabTracker.getId(opener);
+    }
+    return null;
   }
 
   get height() {

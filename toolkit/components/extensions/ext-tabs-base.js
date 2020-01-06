@@ -313,6 +313,15 @@ class TabBase {
 
 
 
+  get openerTabId() {
+    return null;
+  }
+
+  
+
+
+
+
 
   get height() {
     throw new Error("Not implemented");
@@ -444,9 +453,9 @@ class TabBase {
 
 
   matches(queryInfo) {
-    const PROPS = ["active", "audible", "cookieStoreId", "highlighted", "index", "pinned", "status", "title"];
+    const PROPS = ["active", "audible", "cookieStoreId", "highlighted", "index", "openerTabId", "pinned", "status", "title"];
 
-    if (PROPS.some(prop => queryInfo[prop] !== null && queryInfo[prop] !== this[prop])) {
+    if (PROPS.some(prop => queryInfo[prop] != null && queryInfo[prop] !== this[prop])) {
       return false;
     }
 
@@ -495,6 +504,11 @@ class TabBase {
     if (fallbackTab && (!result.width || !result.height)) {
       result.width = fallbackTab.width;
       result.height = fallbackTab.height;
+    }
+
+    let opener = this.openerTabId;
+    if (opener) {
+      result.openerTabId = opener;
     }
 
     if (this.extension.hasPermission("cookies")) {
