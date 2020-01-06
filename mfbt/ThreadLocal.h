@@ -85,7 +85,16 @@ struct Helper<S *>
   typedef S *Type;
 };
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
+
+
+
+
+
+
+
+
+#if defined(TLS_OUT_OF_INDEXES)
 
 
 template<typename T>
@@ -117,6 +126,7 @@ public:
 private:
   unsigned long mKey;
 };
+#endif
 #else
 template<typename T>
 class ThreadLocalKeyStorage
