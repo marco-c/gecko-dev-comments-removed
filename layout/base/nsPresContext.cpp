@@ -1413,10 +1413,15 @@ nsPresContext::SetFullZoom(float aZoom)
 void
 nsPresContext::SetOverrideDPPX(float aDPPX)
 {
-  mOverrideDPPX = aDPPX;
+  
+  
+  
+  if (aDPPX != mOverrideDPPX) {
+    mOverrideDPPX = aDPPX;
 
-  if (HasCachedStyleData()) {
-    MediaFeatureValuesChanged(nsRestyleHint(0), nsChangeHint(0));
+    if (HasCachedStyleData()) {
+      MediaFeatureValuesChanged(nsRestyleHint(0), nsChangeHint(0));
+    }
   }
 }
 
