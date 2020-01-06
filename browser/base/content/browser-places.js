@@ -1900,6 +1900,19 @@ var BookmarkingUI = {
         case "panelMenu_viewBookmarksSidebar":
           button.setAttribute("checked", SidebarUI.currentID == "viewBookmarksSidebar");
           break;
+        case "panelMenu_viewBookmarksToolbar":
+          let toolbar = document.getElementById("PersonalToolbar");
+          
+          
+          
+          
+          
+          if (toolbar.getAttribute("collapsed") != "true") {
+            button.setAttribute("checked", "true");
+          } else {
+            button.removeAttribute("checked");
+          }
+          break;
         default:
           update = false;
           break;
