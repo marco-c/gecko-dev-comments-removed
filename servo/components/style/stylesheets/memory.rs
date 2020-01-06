@@ -4,6 +4,12 @@
 
 
 
+#[cfg(feature = "gecko")]
+use gecko_bindings::bindings::Gecko_HaveSeenPtr;
+#[cfg(feature = "gecko")]
+use gecko_bindings::structs::SeenPtrs;
+#[cfg(feature = "gecko")]
+use servo_arc::Arc;
 use shared_lock::SharedRwLockReadGuard;
 use std::os::raw::c_void;
 
@@ -15,10 +21,23 @@ use std::os::raw::c_void;
 pub type MallocSizeOfFn = unsafe extern "C" fn(ptr: *const c_void) -> usize;
 
 
-pub unsafe fn do_malloc_size_of<T>(malloc_size_of: MallocSizeOfFn, ptr: *const T) -> usize {
-    use std::mem::align_of;
 
-    if ptr as usize <= align_of::<T>() {
+#[cfg(feature = "gecko")]
+pub struct SizeOfState {
+    
+    pub malloc_size_of: MallocSizeOfFn,
+    
+    pub seen_ptrs: *mut SeenPtrs,
+}
+
+
+pub unsafe fn is_empty<T>(ptr: *const T) -> bool {
+    return ptr as usize <= ::std::mem::align_of::<T>();
+}
+
+
+pub unsafe fn do_malloc_size_of<T>(malloc_size_of: MallocSizeOfFn, ptr: *const T) -> usize {
+    if is_empty(ptr) {
         0
     } else {
         malloc_size_of(ptr as *const c_void)
@@ -30,6 +49,15 @@ pub trait MallocSizeOf {
     
     
     fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn) -> usize;
+}
+
+
+
+#[cfg(feature = "gecko")]
+pub trait MallocSizeOfWithRepeats {
+    
+    
+    fn malloc_size_of_children(&self, state: &mut SizeOfState) -> usize;
 }
 
 
@@ -55,6 +83,19 @@ impl<T: MallocSizeOf> MallocSizeOf for Vec<T> {
         self.iter().fold(
             unsafe { do_malloc_size_of(malloc_size_of, self.as_ptr()) },
             |n, elem| n + elem.malloc_size_of_children(malloc_size_of))
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl<T: MallocSizeOfWithRepeats> MallocSizeOfWithRepeats for Arc<T> {
+    fn malloc_size_of_children(&self, state: &mut SizeOfState) -> usize {
+        let mut n = 0;
+        let heap_ptr = self.heap_ptr();
+        if unsafe { !is_empty(heap_ptr) && !Gecko_HaveSeenPtr(state.seen_ptrs, heap_ptr) } {
+            n += unsafe { (state.malloc_size_of)(heap_ptr) };
+            n += (**self).malloc_size_of_children(state);
+        }
+        n
     }
 }
 

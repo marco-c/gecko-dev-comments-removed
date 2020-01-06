@@ -41,6 +41,7 @@ use std::hash::{Hash, Hasher};
 use std::iter::{ExactSizeIterator, Iterator};
 use std::mem;
 use std::ops::{Deref, DerefMut};
+use std::os::raw::c_void;
 use std::process;
 use std::ptr;
 use std::slice;
@@ -200,6 +201,7 @@ impl<T> Arc<T> {
     pub fn borrow_arc<'a>(&'a self) -> ArcBorrow<'a, T> {
         ArcBorrow(&**self)
     }
+
     
     
     #[inline(always)]
@@ -217,6 +219,12 @@ impl<T> Arc<T> {
 
         
         result
+    }
+
+    
+    
+    pub fn heap_ptr(&self) -> *const c_void {
+        self.p.ptr() as *const ArcInner<T> as *const c_void
     }
 }
 
