@@ -16,13 +16,16 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StylePrefs.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
 #include "FontFaceSet.h"
 #include "nsPresContext.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIHttpChannel.h"
 #include "nsIContentPolicy.h"
+#include "nsIThreadRetargetableRequest.h"
 #include "nsContentPolicyUtils.h"
+#include "nsNetCID.h"
 
 #include "mozilla/gfx/2D.h"
 
@@ -195,7 +198,10 @@ nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure)
   }
 }
 
-NS_IMPL_ISUPPORTS(nsFontFaceLoader, nsIStreamLoaderObserver)
+NS_IMPL_ISUPPORTS(nsFontFaceLoader,
+                  nsIStreamLoaderObserver,
+                  nsIRequestObserver)
+
 
 NS_IMETHODIMP
 nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
@@ -204,6 +210,8 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
                                    uint32_t aStringLen,
                                    const uint8_t* aString)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!mFontFaceSet) {
     
     return aStatus;
@@ -289,6 +297,31 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
   }
 
   return NS_SUCCESS_ADOPTED_DATA;
+}
+
+
+NS_IMETHODIMP
+nsFontFaceLoader::OnStartRequest(nsIRequest* aRequest,
+                                 nsISupports* aContext)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIThreadRetargetableRequest> req = do_QueryInterface(aRequest);
+  if (req) {
+    nsCOMPtr<nsIEventTarget> sts =
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+    Unused << NS_WARN_IF(NS_FAILED(req->RetargetDeliveryTo(sts)));
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFontFaceLoader::OnStopRequest(nsIRequest* aRequest,
+                                nsISupports* aContext,
+                                nsresult aStatusCode)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return NS_OK;
 }
 
 void
