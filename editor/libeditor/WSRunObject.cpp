@@ -202,7 +202,8 @@ WSRunObject::InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
       WSPoint thePoint = GetCharAfter(*aInOutParent, *aInOutOffset);
       if (thePoint.mTextNode && nsCRT::IsAsciiSpace(thePoint.mChar)) {
         WSPoint prevPoint = GetCharBefore(thePoint);
-        if (prevPoint.mTextNode && !nsCRT::IsAsciiSpace(prevPoint.mChar)) {
+        if (!prevPoint.mTextNode ||
+            (prevPoint.mTextNode && !nsCRT::IsAsciiSpace(prevPoint.mChar))) {
           
           nsresult rv = ConvertToNBSP(thePoint);
           NS_ENSURE_SUCCESS(rv, nullptr);
