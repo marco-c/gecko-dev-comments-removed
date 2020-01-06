@@ -101,6 +101,11 @@ add_task(async function test_panelui_customize_to_toolbar() {
   
   updateEditUIVisibility();
 
+  
+  
+  
+  gURLBar.blur();
+
   let overridePromise = expectCommandUpdate(1);
   gURLBar.select();
   gURLBar.focus();
