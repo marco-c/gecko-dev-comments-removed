@@ -33,7 +33,7 @@ use selectors::parser::{SelectorMethods, LocalName as LocalNameSelector};
 use selectors::visitor::SelectorVisitor;
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use sink::Push;
-use smallvec::VecLike;
+use smallvec::{SmallVec, VecLike};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -48,6 +48,15 @@ use thread_state;
 use viewport::{self, MaybeNew, ViewportRule};
 
 pub use ::fnv::FnvHashMap;
+
+
+
+
+
+
+
+
+pub type ApplicableDeclarationList = SmallVec<[ApplicableDeclarationBlock; 16]>;
 
 
 
@@ -678,7 +687,7 @@ impl Stylist {
         };
 
 
-        let mut declarations = vec![];
+        let mut declarations = ApplicableDeclarationList::new();
         self.push_applicable_declarations(element,
                                           None,
                                           None,
