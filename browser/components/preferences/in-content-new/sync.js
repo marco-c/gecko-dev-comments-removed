@@ -130,11 +130,6 @@ var gSyncPane = {
     });
 
     this.updateWeavePrefs();
-
-    
-    Components.classes["@mozilla.org/observer-service;1"]
-              .getService(Components.interfaces.nsIObserverService)
-              .notifyObservers(window, "sync-pane-loaded");
   },
 
   _toggleComputerNameControls(editMode) {
