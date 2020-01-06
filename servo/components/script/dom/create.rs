@@ -5,8 +5,9 @@
 use dom::bindings::error::{report_pending_exception, throw_dom_exception};
 use dom::bindings::js::Root;
 use dom::bindings::reflector::DomObject;
+use dom::customelementregistry::{is_valid_custom_element_name, upgrade_element};
 use dom::document::Document;
-use dom::element::{CustomElementCreationMode, Element, ElementCreator};
+use dom::element::{CustomElementCreationMode, CustomElementState, Element, ElementCreator};
 use dom::globalscope::GlobalScope;
 use dom::htmlanchorelement::HTMLAnchorElement;
 use dom::htmlappletelement::HTMLAppletElement;
@@ -80,6 +81,7 @@ use dom::htmlvideoelement::HTMLVideoElement;
 use dom::svgsvgelement::SVGSVGElement;
 use html5ever::{LocalName, Prefix, QualName};
 use js::jsapi::JSAutoCompartment;
+use script_thread::ScriptThread;
 use servo_config::prefs::PREFS;
 
 fn create_svg_element(name: QualName,
@@ -121,13 +123,18 @@ fn create_html_element(name: QualName,
     assert!(name.ns == ns!(html));
 
     
-    let definition = document.lookup_custom_element_definition(name.local.clone(), is);
+    let definition = document.lookup_custom_element_definition(&name.ns, &name.local, is.as_ref());
 
     if let Some(definition) = definition {
         if definition.is_autonomous() {
             match mode {
-                
-                CustomElementCreationMode::Asynchronous => {},
+                CustomElementCreationMode::Asynchronous => {
+                    let result = Root::upcast::<Element>(
+                        HTMLElement::new(name.local.clone(), prefix.clone(), document));
+                    result.set_custom_element_state(CustomElementState::Undefined);
+                    ScriptThread::enqueue_upgrade_reaction(&*result, definition);
+                    return result;
+                },
                 CustomElementCreationMode::Synchronous => {
                     let local_name = name.local.clone();
                     return match definition.create_element(document, prefix.clone()) {
@@ -148,20 +155,40 @@ fn create_html_element(name: QualName,
                             }
 
                             
-                            Root::upcast(HTMLUnknownElement::new(local_name, prefix, document))
+                            let element = Root::upcast::<Element>(
+                                HTMLUnknownElement::new(local_name, prefix, document));
+                            element.set_custom_element_state(CustomElementState::Failed);
+                            element
                         },
                     };
                 },
             }
         } else {
+            
             let element = create_native_html_element(name, prefix, document, creator);
             element.set_is(definition.name.clone());
-            
+            element.set_custom_element_state(CustomElementState::Undefined);
+            match mode {
+                
+                CustomElementCreationMode::Synchronous =>
+                    upgrade_element(definition, &*element),
+                
+                CustomElementCreationMode::Asynchronous =>
+                    ScriptThread::enqueue_upgrade_reaction(&*element, definition),
+            }
             return element;
         }
     }
 
-    create_native_html_element(name, prefix, document, creator)
+    
+    let result = create_native_html_element(name.clone(), prefix, document, creator);
+
+    
+    if is_valid_custom_element_name(&*name.local) || is.is_some() {
+        result.set_custom_element_state(CustomElementState::Undefined);
+    }
+
+    result
 }
 
 pub fn create_native_html_element(name: QualName,
@@ -182,6 +209,7 @@ pub fn create_native_html_element(name: QualName,
         })
     );
 
+    
     
     
     match name.local {
@@ -326,7 +354,8 @@ pub fn create_native_html_element(name: QualName,
         local_name!("video")      => make!(HTMLVideoElement),
         local_name!("wbr")        => make!(HTMLElement),
         local_name!("xmp")        => make!(HTMLPreElement),
-        _                   => make!(HTMLUnknownElement),
+        _ if is_valid_custom_element_name(&*name.local) => make!(HTMLElement),
+        _                         => make!(HTMLUnknownElement),
     }
 }
 

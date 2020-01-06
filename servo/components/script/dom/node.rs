@@ -30,7 +30,7 @@ use dom::bindings::str::{DOMString, USVString};
 use dom::bindings::xmlname::namespace_from_domstring;
 use dom::characterdata::{CharacterData, LayoutCharacterDataHelpers};
 use dom::cssstylesheet::CSSStyleSheet;
-use dom::customelementregistry::CallbackReaction;
+use dom::customelementregistry::{CallbackReaction, try_upgrade_element};
 use dom::document::{Document, DocumentSource, HasBrowsingContext, IsHTMLDocument};
 use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
@@ -317,7 +317,7 @@ impl Node {
             node.style_and_layout_data.get().map(|d| node.dispose(d));
             
             if let Some(element) = node.as_custom_element() {
-                ScriptThread::enqueue_callback_reaction(&*element, CallbackReaction::Disconnected);
+                ScriptThread::enqueue_callback_reaction(&*element, CallbackReaction::Disconnected, None);
             }
         }
 
@@ -1425,7 +1425,7 @@ impl Node {
             for descendant in node.traverse_preorder().filter_map(|d| d.as_custom_element()) {
                 
                 ScriptThread::enqueue_callback_reaction(&*descendant,
-                    CallbackReaction::Adopted(old_doc.clone(), Root::from_ref(document)));
+                    CallbackReaction::Adopted(old_doc.clone(), Root::from_ref(document)), None);
             }
             for descendant in node.traverse_preorder() {
                 
@@ -1639,12 +1639,13 @@ impl Node {
             for descendant in kid.traverse_preorder().filter_map(Root::downcast::<Element>) {
                 
                 if descendant.is_connected() {
-                    
                     if descendant.get_custom_element_definition().is_some() {
-                        ScriptThread::enqueue_callback_reaction(&*descendant, CallbackReaction::Connected);
+                        
+                        ScriptThread::enqueue_callback_reaction(&*descendant, CallbackReaction::Connected, None);
+                    } else {
+                        
+                        try_upgrade_element(&*descendant);
                     }
-                    
-                    
                 }
             }
         }
