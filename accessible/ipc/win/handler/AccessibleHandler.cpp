@@ -29,7 +29,11 @@
 #include "Accessible2_i.c"
 #include "Accessible2_2_i.c"
 #include "Accessible2_3_i.c"
+#include "AccessibleAction_i.c"
 #include "AccessibleHyperlink_i.c"
+#include "AccessibleTable_i.c"
+#include "AccessibleTable2_i.c"
+#include "AccessibleTableCell_i.c"
 
 namespace mozilla {
 namespace a11y {
@@ -210,6 +214,32 @@ AccessibleHandler::QueryHandlerInterface(IUnknown* aProxyUnknown, REFIID aIid,
     return S_OK;
   }
 
+  if (HasPayload()) {
+    
+    
+    
+    
+    if ((aIid == IID_IEnumVARIANT &&
+         !mCachedData.mStaticData.mIEnumVARIANT) ||
+        ((aIid == IID_IAccessibleText || aIid == IID_IAccessibleHypertext ||
+          aIid == IID_IAccessibleHypertext2) &&
+         !mCachedData.mStaticData.mIAHypertext) ||
+        ((aIid == IID_IAccessibleAction || aIid == IID_IAccessibleHyperlink) &&
+         !mCachedData.mStaticData.mIAHyperlink) ||
+        (aIid == IID_IAccessibleTable &&
+         !mCachedData.mStaticData.mIATable) ||
+        (aIid == IID_IAccessibleTable2 &&
+         !mCachedData.mStaticData.mIATable2) ||
+        (aIid == IID_IAccessibleTableCell &&
+         !mCachedData.mStaticData.mIATableCell)) {
+      
+      
+      
+      
+      return S_FALSE;
+    }
+  }
+
   if (aIid == IID_IAccessibleText || aIid == IID_IAccessibleHypertext ||
       aIid == IID_IAccessibleHypertext2) {
     RefPtr<IAccessibleHypertext2> textTearoff(new AccessibleTextTearoff(this));
@@ -241,10 +271,21 @@ AccessibleHandler::ReadHandlerPayload(IStream* aStream, REFIID aIid)
     return S_FALSE;
   }
 
-  if (!deserializer.Read(&mCachedData, &IA2Payload_Decode)) {
+  
+  
+  
+  
+  
+  
+  IA2Payload newData{};
+  if (!deserializer.Read(&newData, &IA2Payload_Decode)) {
     return E_FAIL;
   }
+  mCachedData = newData;
 
+  
+  
+  
   
   
   
