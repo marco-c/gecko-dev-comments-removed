@@ -328,7 +328,7 @@ DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame, ICUpdatedStub* stub, H
         AddTypePropertyId(cx, group, maybeSingleton, id, value);
     }
 
-    if (MOZ_UNLIKELY(!stub->addUpdateStubForValue(cx, script, obj, id, value))) {
+    if (MOZ_UNLIKELY(!stub->addUpdateStubForValue(cx, script, obj, group, id, value))) {
         
         
         
