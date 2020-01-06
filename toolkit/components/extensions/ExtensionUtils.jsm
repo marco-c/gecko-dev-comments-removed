@@ -248,13 +248,26 @@ class EventEmitter {
 
 
   emit(event, ...args) {
-    let listeners = this[LISTENERS].get(event) || new Set();
+    let listeners = this[LISTENERS].get(event);
 
-    let promises = Array.from(listeners, listener => {
-      return runSafeSyncWithoutClone(listener, event, ...args);
-    });
+    if (listeners) {
+      let promises = [];
 
-    return Promise.all(promises);
+      for (let listener of listeners) {
+        try {
+          let result = listener(event, ...args);
+          if (result !== undefined) {
+            promises.push(result);
+          }
+        } catch (e) {
+          Cu.reportError(e);
+        }
+      }
+
+      if (promises.length) {
+        return Promise.all(promises);
+      }
+    }
   }
 }
 
