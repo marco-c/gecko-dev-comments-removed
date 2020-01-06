@@ -5,8 +5,7 @@
 
 
 #include <dbus/dbus.h>
-#include "mozilla/ipc/DBusConnectionDelete.h"
-#include "mozilla/ipc/DBusMessageRefPtr.h"
+#include "mozilla/DBusHelpers.h"
 #include "nsDBusHandlerApp.h"
 #include "nsIURI.h"
 #include "nsIClassInfoImpl.h"

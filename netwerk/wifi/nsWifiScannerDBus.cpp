@@ -3,7 +3,7 @@
 
 
 #include "nsWifiScannerDBus.h"
-#include "mozilla/ipc/DBusMessageRefPtr.h"
+#include "mozilla/DBusHelpers.h"
 #include "nsWifiAccessPoint.h"
 
 namespace mozilla {
