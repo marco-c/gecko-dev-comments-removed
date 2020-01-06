@@ -769,6 +769,16 @@ protected:
   
   Canonical<int64_t> mDecoderPosition;
 
+  
+  
+  
+  class BackgroundVideoDecodingPermissionObserver;
+  RefPtr<BackgroundVideoDecodingPermissionObserver> mVideoDecodingOberver;
+
+  
+  
+  bool mIsBackgroundVideoDecodingAllowed;
+
 public:
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
   AbstractCanonical<bool>* CanonicalPreservesPitch()
