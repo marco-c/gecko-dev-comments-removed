@@ -97,6 +97,10 @@ HistoryStore.prototype = {
   __proto__: Store.prototype,
 
   __asyncHistory: null,
+
+  
+  MAX_VISITS_PER_INSERT: 500,
+
   get _asyncHistory() {
     if (!this.__asyncHistory) {
       this.__asyncHistory = Cc["@mozilla.org/browser/history;1"]
@@ -212,10 +216,45 @@ HistoryStore.prototype = {
     records.length = k; 
 
     if (records.length) {
-      await PlacesUtils.history.insertMany(records);
+      for (let chunk of this._generateChunks(records)) {
+        await PlacesUtils.history.insertMany(chunk);
+      }
     }
 
     return failed;
+  },
+
+  
+
+
+
+  * _generateChunks(records) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let curIndex = 0;
+    this._log.debug(`adding ${records.length} records to history`);
+    while (curIndex < records.length) {
+      Async.checkAppReady(); 
+      let toAdd = []; 
+      let count = 0; 
+      do {
+        let record = records[curIndex];
+        curIndex += 1;
+        toAdd.push(record);
+        count += record.visits.length;
+      } while (curIndex < records.length &&
+               count + records[curIndex].visits.length <= this.MAX_VISITS_PER_INSERT);
+      this._log.trace(`adding ${toAdd.length} items in this chunk`);
+      yield toAdd;
+    }
   },
 
   
