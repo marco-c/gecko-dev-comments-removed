@@ -56,7 +56,7 @@
 #include "nsIDocument.h"
 #include "nsINamed.h"
 
-#include "nsISelectionController.h"
+#include "nsISelectionController.h" 
 #include "nsAutoCopyListener.h"
 #include "SelectionChangeListener.h"
 #include "nsCopySupport.h"

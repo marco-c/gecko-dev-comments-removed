@@ -11,7 +11,7 @@
 #include "ClientLayerManager.h"         
 #include "Layers.h"                     
 #include "mozilla/Attributes.h"         
-#include "mozilla/layers/CanvasClient.h"
+#include "mozilla/layers/CanvasClient.h" 
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    

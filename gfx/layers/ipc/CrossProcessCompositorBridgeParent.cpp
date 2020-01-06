@@ -11,7 +11,7 @@
 #include "base/task.h"                  
 #include "base/thread.h"                
 #ifdef XP_WIN
-#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/DeviceManagerDx.h" 
 #endif
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/AnimationHelper.h" 
