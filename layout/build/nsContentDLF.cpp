@@ -3,11 +3,8 @@
 
 
 
-#include "nsContentDLF.h"
-
-#include "mozilla/Encoding.h"
-
 #include "nsCOMPtr.h"
+#include "nsContentDLF.h"
 #include "nsDocShell.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
@@ -330,7 +327,7 @@ nsContentDLF::CreateBlankDocument(nsILoadGroup *aLoadGroup,
   
   if (NS_SUCCEEDED(rv)) {
     blankDoc->SetDocumentCharacterSetSource(kCharsetFromDocTypeDefault);
-    blankDoc->SetDocumentCharacterSet(UTF_8_ENCODING);
+    blankDoc->SetDocumentCharacterSet(NS_LITERAL_CSTRING("UTF-8"));
     
     blankDoc.forget(aDocument);
   }

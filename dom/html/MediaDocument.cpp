@@ -171,16 +171,17 @@ MediaDocument::StartDocumentLoad(const char*         aCommand,
   
   NS_ENSURE_TRUE(docShell, NS_OK); 
 
-  const Encoding* encoding;
+  nsAutoCString charset;
   int32_t source;
   nsCOMPtr<nsIPrincipal> principal;
   
-  docShell->GetParentCharset(encoding, &source, getter_AddRefs(principal));
+  docShell->GetParentCharset(charset, &source, getter_AddRefs(principal));
 
-  if (encoding && encoding != UTF_8_ENCODING &&
+  if (!charset.IsEmpty() &&
+      !charset.EqualsLiteral("UTF-8") &&
       NodePrincipal()->Equals(principal)) {
     SetDocumentCharacterSetSource(source);
-    SetDocumentCharacterSet(WrapNotNull(encoding));
+    SetDocumentCharacterSet(charset);
   }
 
   return NS_OK;
@@ -298,14 +299,11 @@ MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel)
   
   
   if (mCharacterSetSource != kCharsetUninitialized) {  
-    mCharacterSet->Name(docCharset);
+    docCharset = mCharacterSet;
   } else {  
     
     url->GetOriginCharset(docCharset);
-    auto encoding = Encoding::ForLabelNoReplacement(docCharset);
-    if (encoding) {
-      SetDocumentCharacterSet(WrapNotNull(encoding));
-    }
+    SetDocumentCharacterSet(docCharset);
   }
 
   nsresult rv;

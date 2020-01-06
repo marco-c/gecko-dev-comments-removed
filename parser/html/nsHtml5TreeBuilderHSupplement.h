@@ -3,10 +3,8 @@
 
 
 #define NS_HTML5_TREE_BUILDER_HANDLE_ARRAY_LENGTH 512
-  private:
-    using Encoding = mozilla::Encoding;
-    template <typename T> using NotNull = mozilla::NotNull<T>;
 
+  private:
     nsHtml5OplessBuilder*                  mBuilder;
     
     
@@ -106,12 +104,11 @@
     
     void FlushLoads();
 
-    void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                            int32_t aCharsetSource);
+    void SetDocumentCharset(nsACString& aCharset, int32_t aCharsetSource);
 
     void StreamEnded();
 
-    void NeedsCharsetSwitchTo(NotNull<const Encoding*> aEncoding,
+    void NeedsCharsetSwitchTo(const nsACString& aEncoding,
                               int32_t aSource,
                               int32_t aLineNumber);
 

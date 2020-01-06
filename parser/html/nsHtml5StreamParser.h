@@ -101,9 +101,7 @@ enum eHtml5StreamState {
   STREAM_ENDED = 2
 };
 
-class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
-  template <typename T> using NotNull = mozilla::NotNull<T>;
-  using Encoding = mozilla::Encoding;
+class nsHtml5StreamParser : public nsICharsetDetectionObserver {
 
   friend class nsHtml5RequestStopper;
   friend class nsHtml5DataAvailable;
@@ -158,12 +156,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
-    inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                   int32_t aSource) {
+    inline void SetDocumentCharset(const nsACString& aCharset, int32_t aSource) {
       NS_PRECONDITION(mStreamState == STREAM_NOT_STARTED,
                       "SetDocumentCharset called too late.");
       NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-      mEncoding = aEncoding;
+      mCharset = aCharset;
       mCharsetSource = aSource;
     }
     
@@ -342,7 +339,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
-    nsresult SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
+    nsresult SetupDecodingFromBom(const char* aDecoderCharsetName);
 
     
 
@@ -352,7 +349,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
 
-    const Encoding* PreferredForInternalEncodingDecl(const nsACString& aEncoding);
+    bool PreferredForInternalEncodingDecl(nsACString& aEncoding);
 
     
 
@@ -426,7 +423,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
     
 
 
-    NotNull<const Encoding*>      mEncoding;
+    nsCString                     mCharset;
 
     
 

@@ -34,7 +34,6 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
@@ -105,7 +104,6 @@ struct nsCSSSelectorList;
 namespace mozilla {
 class AbstractThread;
 class CSSStyleSheet;
-class Encoding;
 class ErrorResult;
 class EventStates;
 class PendingAnimationTracker;
@@ -212,10 +210,6 @@ class nsIDocument : public nsINode,
                     public mozilla::dom::DispatcherTrait
 {
   typedef mozilla::dom::GlobalObject GlobalObject;
-
-protected:
-  using Encoding = mozilla::Encoding;
-  template <typename T> using NotNull = mozilla::NotNull<T>;
 
 public:
   typedef mozilla::net::ReferrerPolicy ReferrerPolicyEnum;
@@ -510,7 +504,7 @@ public:
   
 
 
-  NotNull<const Encoding*> GetDocumentCharacterSet() const
+  const nsCString& GetDocumentCharacterSet() const
   {
     return mCharacterSet;
   }
@@ -518,7 +512,8 @@ public:
   
 
 
-  virtual void SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding) = 0;
+
+  virtual void SetDocumentCharacterSet(const nsACString& aCharSetID) = 0;
 
   int32_t GetDocumentCharacterSetSource() const
   {
@@ -3064,7 +3059,7 @@ protected:
 
   mozilla::WeakPtr<nsDocShell> mDocumentContainer;
 
-  NotNull<const Encoding*> mCharacterSet;
+  nsCString mCharacterSet;
   int32_t mCharacterSetSource;
 
   
