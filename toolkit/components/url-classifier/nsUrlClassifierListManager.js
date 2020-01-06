@@ -101,7 +101,7 @@ PROT_ListManager.prototype.registerTable = function(tableName,
     
     this.requestBackoffs_[updateUrl] = new RequestBackoffV4(
                                             4 ,
-                                   60*60*1000 );
+                               60 * 60 * 1000 );
   }
   this.needsUpdate_[updateUrl][tableName] = false;
 
@@ -260,11 +260,7 @@ PROT_ListManager.prototype.kickoffUpdate_ = function(onDiskTableData) {
       let updateDelay = initialUpdateDelay;
       let nextUpdatePref = "browser.safebrowsing.provider." + provider +
                            ".nextupdatetime";
-      let nextUpdate;
-      try {
-        nextUpdate = Services.prefs.getCharPref(nextUpdatePref);
-      } catch (ex) {
-      }
+      let nextUpdate = Services.prefs.getCharPref(nextUpdatePref, "");
 
       if (nextUpdate) {
         updateDelay = Math.min(maxDelayMs, Math.max(0, nextUpdate - Date.now()));
@@ -639,6 +635,7 @@ function Init() {
   
   var jslib = Cc["@mozilla.org/url-classifier/jslib;1"]
               .getService().wrappedJSObject;
+  
   modScope.BindToObject = jslib.BindToObject;
   modScope.RequestBackoffV4 = jslib.RequestBackoffV4;
 

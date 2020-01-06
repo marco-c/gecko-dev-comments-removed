@@ -1,6 +1,8 @@
 
 
 
+
+
 const { classes: Cc, interfaces: Ci, results: Cr } = Components;
 
 var dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
@@ -32,9 +34,6 @@ function doUpdate(update) {
       sendAsyncMessage("updateSuccess");
     }
   };
-
-  let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"]
-                  .getService(Ci.nsIUrlClassifierDBService);
 
   try {
     dbService.beginUpdate(listener, "test-malware-simple,test-unwanted-simple", "");

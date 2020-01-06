@@ -1,3 +1,5 @@
+
+
 onmessage = function() {
   try {
     importScripts("evilWorker.js");

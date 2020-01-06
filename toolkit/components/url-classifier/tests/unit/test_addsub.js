@@ -197,7 +197,6 @@ function testDuplicateAdds() {
 
 
 function testSubPartiallyMatches() {
-  var subUrls = ["foo.com/a"];
   var addUrls = ["1:foo.com/a", "2:foo.com/b"];
 
   var addUpdate = buildPhishingUpdate(

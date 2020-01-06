@@ -44,6 +44,7 @@ function log(...stuff) {
 
 
 
+
 function httpStatusToBucket(httpStatus) {
   var statusBucket;
   switch (httpStatus) {
@@ -547,7 +548,8 @@ HashCompleterRequest.prototype = {
     }
 
     if (this.isV4) {
-      return this.handleResponseV4();
+      this.handleResponseV4();
+      return;
     }
 
     let start = 0;
@@ -797,7 +799,7 @@ HashCompleterRequest.prototype = {
       this._shuttingDown = true;
       if (this._channel) {
         this._channel.cancel(Cr.NS_ERROR_ABORT);
-        telemetryClockStart = 0;
+        this.telemetryClockStart = 0;
       }
 
       Services.obs.removeObserver(this, "quit-application");
