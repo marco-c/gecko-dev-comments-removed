@@ -719,7 +719,7 @@ function toggleShowHidden(event) {
 
 
 function processPath(path) {
-  var fileArray = new Array();
+  var fileArray = [];
   var strLength = path.length;
 
   if (path[0] == '"' && filePickerMode == nsIFilePicker.modeOpenMultiple &&

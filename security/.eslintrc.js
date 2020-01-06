@@ -33,9 +33,6 @@ module.exports = {
     "no-alert": "error",
 
     
-    "no-array-constructor": "error",
-
-    
     "no-caller": "error",
 
     

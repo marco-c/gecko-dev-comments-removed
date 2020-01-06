@@ -141,7 +141,7 @@ module.exports = {
     
 
     
-    
+    "no-array-constructor": "error",
 
     
     "no-cond-assign": "error",

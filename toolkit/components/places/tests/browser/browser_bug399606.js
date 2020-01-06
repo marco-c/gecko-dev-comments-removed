@@ -20,7 +20,7 @@ function test() {
 
   
   var historyObserver = {
-    visitCount: Array(),
+    visitCount: [],
     onBeginUpdateBatch() {},
     onEndUpdateBatch() {},
     onVisit(aURI, aVisitID, aTime, aSessionID, aReferringID,

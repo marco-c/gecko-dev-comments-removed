@@ -374,7 +374,7 @@ function testTableSelection(aIdentifier, aCellsArray, aMsg)
   var colsCount = aCellsArray[0].length;
 
   
-  var selCols = new Array();
+  var selCols = [];
 
   
   for (var colIdx = 0; colIdx < colsCount; colIdx++) {
@@ -414,7 +414,7 @@ function testTableSelection(aIdentifier, aCellsArray, aMsg)
   }
 
   
-  var selRows = new Array();
+  var selRows = [];
 
   
   for (var rowIdx = 0; rowIdx < rowCount; rowIdx++) {
@@ -454,7 +454,7 @@ function testTableSelection(aIdentifier, aCellsArray, aMsg)
   }
 
   
-  var selCells = new Array();
+  var selCells = [];
 
   
   for (var rowIdx = 0; rowIdx < rowCount; rowIdx++) {

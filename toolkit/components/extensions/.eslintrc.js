@@ -85,9 +85,6 @@ module.exports = {
     "new-parens": "error",
 
     
-    "no-array-constructor": "error",
-
-    
     
     
     

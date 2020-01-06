@@ -31,7 +31,7 @@
     // Returns an object for the callback method that would normally be created by Prompt.java's
     // addListResult(..) method.
     function createCallBackDummyData(select){
-      var dummyList = new Array();
+      var dummyList = [];
       let listElements = SelectHelper.getListForElement(select);
       for (var i = 0; i < listElements.length; i++) {
         dummyList.push(i);

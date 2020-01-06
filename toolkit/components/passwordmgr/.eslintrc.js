@@ -8,7 +8,6 @@ module.exports = {
     
     "complexity": ["error", 43],
 
-    "no-array-constructor": "error",
     "no-unused-vars": ["error", {"args": "none", "vars": "local", "varsIgnorePattern": "^(ids|ignored|unused)$"}],
     "semi": ["error", "always"],
   }

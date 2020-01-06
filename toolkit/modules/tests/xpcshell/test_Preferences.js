@@ -108,7 +108,7 @@ add_test(function test_set_undefined_pref() {
 
 add_test(function test_set_unsupported_pref() {
   try {
-    Preferences.set("test_set_unsupported_pref", new Array());
+    Preferences.set("test_set_unsupported_pref", []);
     
     do_check_true(false);
   } catch (ex) {}
