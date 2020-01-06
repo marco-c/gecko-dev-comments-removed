@@ -74,14 +74,6 @@ public:
   
   already_AddRefed<nsILoadInfo> CloneForNewRequest() const;
 
-  
-  
-  
-  
-  
-  
-  void SynthesizeServiceWorkerTainting(LoadTainting aTainting);
-
   void SetIsPreflight();
   void SetUpgradeInsecureRequests();
 
