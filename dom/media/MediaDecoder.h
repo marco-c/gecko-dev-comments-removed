@@ -31,7 +31,6 @@
 #include "nsISupports.h"
 #include "nsITimer.h"
 
-class nsIStreamListener;
 class nsIPrincipal;
 
 namespace mozilla {
@@ -121,14 +120,6 @@ public:
   
   
   void NotifyXPCOMShutdown();
-
-  
-  
-  
-  virtual nsresult Load(nsIStreamListener** aListener);
-
-  
-  nsresult OpenResource(nsIStreamListener** aStreamListener);
 
   
   void NetworkError();
