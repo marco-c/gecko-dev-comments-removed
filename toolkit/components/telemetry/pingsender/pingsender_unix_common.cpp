@@ -81,25 +81,11 @@ bool
 CurlWrapper::Init()
 {
   const char* libcurlPaths[] = {
-    "/usr/lib",
-#ifdef XP_LINUX
-    "/usr/lib32",
-    "/usr/lib64",
-    "/usr/lib/i386-linux-gnu", 
-    "/usr/lib/x86_64-linux-gnu", 
-#endif 
-#if !defined(XP_MACOSX) && !defined(XP_LINUX) 
-    "/usr/local/lib", 
-    "/usr/pkg/lib", 
-#endif 
-  };
-
-  const char* libcurlNames[] = {
 #if defined(XP_MACOSX)
     
-    "libcurl.dylib",
-    "libcurl.4.dylib",
-    "libcurl.3.dylib",
+    "/usr/lib/libcurl.dylib",
+    "/usr/lib/libcurl.4.dylib",
+    "/usr/lib/libcurl.3.dylib",
 #else 
     "libcurl.so",
     "libcurl.so.4",
@@ -113,16 +99,9 @@ CurlWrapper::Init()
   };
 
   
-
-  for (const char* libpath : libcurlPaths) {
-    for (const char* libname : libcurlNames) {
-      string fullpath = string(libpath) + "/" + libname;
-      mLib = dlopen(fullpath.c_str(), RTLD_NOW);
-
-      if (mLib) {
-        break;
-      }
-    }
+  
+  for (const char* libname : libcurlPaths) {
+    mLib = dlopen(libname, RTLD_NOW);
 
     if (mLib) {
       break;
