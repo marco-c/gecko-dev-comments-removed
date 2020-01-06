@@ -1194,6 +1194,34 @@ CompositorBridgeChild::FlushAsyncPaints()
 }
 
 void
+CompositorBridgeChild::NotifyBeginAsyncPrepareBuffer(CapturedBufferState* aState)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(mPaintLock);
+
+  
+  
+  
+  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
+
+  mOutstandingAsyncPaints++;
+
+  
+  
+  aState->GetTextureClients(mTextureClientsForAsyncPaint);
+}
+
+void
+CompositorBridgeChild::NotifyFinishedAsyncPrepareBuffer(CapturedBufferState* aState)
+{
+  MOZ_ASSERT(PaintThread::IsOnPaintThread());
+
+  MonitorAutoLock lock(mPaintLock);
+  mOutstandingAsyncPaints--;
+}
+
+void
 CompositorBridgeChild::NotifyBeginAsyncPaint(CapturedPaintState* aState)
 {
   MOZ_ASSERT(NS_IsMainThread());
