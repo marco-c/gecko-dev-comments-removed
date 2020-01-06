@@ -40,7 +40,7 @@ namespace css {
 
 
 
-enum SheetParsingMode {
+enum SheetParsingMode : uint8_t {
   eAuthorSheetFeatures = 0,
   eUserSheetFeatures,
   eAgentSheetFeatures,
