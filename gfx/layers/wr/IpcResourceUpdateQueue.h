@@ -65,7 +65,7 @@ public:
   
   
   
-  explicit IpcResourceUpdateQueue(ipc::IShmemAllocator* aAllocator, size_t aChunkSize = 32768);
+  explicit IpcResourceUpdateQueue(ipc::IShmemAllocator* aAllocator, size_t aChunkSize = 57344);
 
   void AddImage(wr::ImageKey aKey,
                 const ImageDescriptor& aDescriptor,
