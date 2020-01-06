@@ -26,6 +26,15 @@ function getOwnPropertyDescriptors(...objects) {
 
 
 
+function extend(prototype, properties) {
+  return Object.create(prototype,
+                       getOwnPropertyDescriptors(properties));
+}
+
+
+
+
+
 
 
 
@@ -145,6 +154,7 @@ function truncateString(str, maxLength) {
 }
 
 module.exports = {
+  extend,
   flashElementOn,
   flashElementOff,
   getAutocompleteMaxWidth,
