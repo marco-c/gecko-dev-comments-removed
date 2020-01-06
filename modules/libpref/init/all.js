@@ -3125,9 +3125,6 @@ pref("dom.max_ext_content_script_run_time", 5);
 pref("dom.global_stop_script", true);
 
 
-pref("dom.idle_period.throttled_length", 10000);
-
-
 pref("input_event_queue.supported", true);
 
 

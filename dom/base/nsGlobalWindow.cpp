@@ -310,11 +310,6 @@ int32_t gTimeoutCnt                                    = 0;
 #define MEMORY_PRESSURE_OBSERVER_TOPIC "memory-pressure"
 
 
-static uint32_t gThrottledIdlePeriodLength;
-
-#define DEFAULT_THROTTLED_IDLE_PERIOD_LENGTH 10000
-
-
 static NS_DEFINE_CID(kXULControllersCID, NS_XULCONTROLLERS_CID);
 
 #define NETWORK_UPLOAD_EVENT_NAME     NS_LITERAL_STRING("moznetworkupload")
@@ -800,10 +795,6 @@ EnsurePrefCaches()
     Preferences::AddBoolVarCache(&gIdleObserversAPIFuzzTimeDisabled,
                                  "dom.idle-observers-api.fuzz_time.disabled",
                                  false);
-
-    Preferences::AddUintVarCache(&gThrottledIdlePeriodLength,
-                                 "dom.idle_period.throttled_length",
-                                 DEFAULT_THROTTLED_IDLE_PERIOD_LENGTH);
     sFirstTime = false;
   }
 }
