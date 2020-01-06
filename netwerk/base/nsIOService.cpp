@@ -1144,10 +1144,6 @@ nsIOService::SetOffline(bool offline)
             mOffline = false;    
                                     
 
-            
-            if (mProxyService)
-                mProxyService->ReloadPAC();
-
             mLastOfflineStateChange = PR_IntervalNow();
             
             
@@ -1512,8 +1508,6 @@ nsIOService::Observe(nsISupports *subject,
             mCaptivePortalService = nullptr;
         }
 
-        
-        mProxyService = nullptr;
     } else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
         OnNetworkLinkEvent(NS_ConvertUTF16toUTF8(data).get());
     } else if (!strcmp(topic, NS_WIDGET_WAKE_OBSERVER_TOPIC)) {
