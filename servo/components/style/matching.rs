@@ -1576,14 +1576,18 @@ pub trait MatchMethods : TElement {
         }
 
         if pseudo.map_or(false, |p| p.is_before_or_after()) {
-            if (old_style_is_display_none ||
-                old_values.ineffective_content_property()) &&
-               (new_style_is_display_none ||
-                new_values.ineffective_content_property()) {
-                
-                
-                return StyleDifference::new(RestyleDamage::empty(), StyleChange::Unchanged)
+            let old_style_generates_no_pseudo =
+                old_style_is_display_none ||
+                old_values.ineffective_content_property();
+
+            let new_style_generates_no_pseudo =
+                new_style_is_display_none ||
+                new_values.ineffective_content_property();
+
+            if old_style_generates_no_pseudo != new_style_generates_no_pseudo {
+                return StyleDifference::new(RestyleDamage::reconstruct(), StyleChange::Changed)
             }
+
             
             
             
@@ -1592,7 +1596,10 @@ pub trait MatchMethods : TElement {
             
             
             
-            return StyleDifference::new(RestyleDamage::reconstruct(), StyleChange::Changed)
+            
+            
+            
+            return StyleDifference::new(RestyleDamage::empty(), StyleChange::Unchanged)
         }
 
         if pseudo.map_or(false, |p| p.is_first_letter()) {
