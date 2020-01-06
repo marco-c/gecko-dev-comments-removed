@@ -90,7 +90,9 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
     for (uint32_t i = aTrackInfo->mStartFragmentTrack;
          i < aTrackInfo->mEndFragmentTrack + 1;
          i++) {
-      uint32_t line1Index = i + 1;
+      
+      
+      const uint32_t line1Index = i + 1;
 
       startOfNextTrack = (i < aTrackInfo->mEndFragmentTrack) ?
                          aTrackInfo->mPositions[i] :
@@ -139,23 +141,30 @@ GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
 
       RefPtr<GridLine> line = new GridLine(this);
       mLines.AppendElement(line);
+      MOZ_ASSERT(line1Index > 0, "line1Index must be positive.");
+      bool isBeforeFirstExplicit =
+        (line1Index <= aTrackInfo->mNumLeadingImplicitTracks);
+      
+      
+      
+      
+      
+      
+      uint32_t lineNumber = isBeforeFirstExplicit ? 0 :
+        (line1Index - aTrackInfo->mNumLeadingImplicitTracks + numAddedLines);
+      GridDeclaration lineType =
+        (isBeforeFirstExplicit ||
+         line1Index > (aTrackInfo->mNumLeadingImplicitTracks +
+                       aTrackInfo->mNumExplicitTracks + 1))
+         ? GridDeclaration::Implicit
+         : GridDeclaration::Explicit;
       line->SetLineValues(
         lineNames,
         nsPresContext::AppUnitsToDoubleCSSPixels(lastTrackEdge),
         nsPresContext::AppUnitsToDoubleCSSPixels(startOfNextTrack -
                                                  lastTrackEdge),
-        line1Index + numAddedLines,
-        (
-          
-          
-          
-          (aTrackInfo->mNumExplicitTracks == 0) ||
-          (i < aTrackInfo->mNumLeadingImplicitTracks) ||
-          (i > aTrackInfo->mNumLeadingImplicitTracks +
-               aTrackInfo->mNumExplicitTracks) ?
-            GridDeclaration::Implicit :
-            GridDeclaration::Explicit
-        )
+        lineNumber,
+        lineType
       );
 
       if (i < aTrackInfo->mEndFragmentTrack) {
@@ -215,11 +224,16 @@ GridLines::AppendRemovedAutoFits(const ComputedGridTrackInfo* aTrackInfo,
 
     RefPtr<GridLine> line = new GridLine(this);
     mLines.AppendElement(line);
+    MOZ_ASSERT(aTrackInfo->mRepeatFirstTrack >=
+               aTrackInfo->mNumLeadingImplicitTracks,
+      "We shouldn't have a repeat track within the implicit tracks.");
+    uint32_t lineNumber = aTrackInfo->mRepeatFirstTrack -
+      aTrackInfo->mNumLeadingImplicitTracks + aRepeatIndex + 1;
     line->SetLineValues(
       aLineNames,
       nsPresContext::AppUnitsToDoubleCSSPixels(aLastTrackEdge),
       nsPresContext::AppUnitsToDoubleCSSPixels(0),
-      aTrackInfo->mRepeatFirstTrack + aRepeatIndex + 1,
+      lineNumber,
       GridDeclaration::Explicit
     );
 
