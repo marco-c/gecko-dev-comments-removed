@@ -21,8 +21,13 @@ const { Services } = jsmScope;
 
 const { PromiseDebugging, ChromeUtils, ThreadSafeChromeUtils, HeapSnapshot,
         atob, btoa, TextEncoder, TextDecoder } = jsmScope;
-const { URL } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
-                           {wantGlobalProperties: ["URL"]});
+
+
+
+const { CSS, FileReader, indexedDB, URL } =
+    Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(), {
+      wantGlobalProperties: ["CSS", "FileReader", "indexedDB", "URL"]
+    });
 
 
 
@@ -173,6 +178,7 @@ exports.modules = {
   ChromeUtils,
   ThreadSafeChromeUtils,
   HeapSnapshot,
+  FileReader,
 };
 
 defineLazyGetter(exports.modules, "Debugger", () => {
@@ -201,13 +207,6 @@ defineLazyGetter(exports.modules, "xpcInspector", () => {
   return Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspector);
 });
 
-defineLazyGetter(exports.modules, "FileReader", () => {
-  let sandbox
-    = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
-                 {wantGlobalProperties: ["FileReader"]});
-  return sandbox.FileReader;
-});
-
 
 
 exports.globals = {
@@ -218,6 +217,7 @@ exports.globals = {
   TextEncoder: TextEncoder,
   TextDecoder: TextDecoder,
   URL,
+  CSS,
   loader: {
     lazyGetter: defineLazyGetter,
     lazyImporter: defineLazyModuleGetter,
@@ -292,17 +292,9 @@ lazyGlobal("CSSRule", () => Ci.nsIDOMCSSRule);
 lazyGlobal("DOMParser", () => {
   return CC("@mozilla.org/xmlextras/domparser;1", "nsIDOMParser");
 });
-lazyGlobal("CSS", () => {
-  let sandbox
-    = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
-                 {wantGlobalProperties: ["CSS"]});
-  return sandbox.CSS;
-});
 lazyGlobal("WebSocket", () => {
   return Services.appShell.hiddenDOMWindow.WebSocket;
 });
 lazyGlobal("indexedDB", () => {
-  let { indexedDB } = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
-                 {wantGlobalProperties: ["indexedDB"]});
   return require("devtools/shared/indexed-db").createDevToolsIndexedDB(indexedDB);
 });
