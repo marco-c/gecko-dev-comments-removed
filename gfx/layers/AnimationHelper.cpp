@@ -9,6 +9,7 @@
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
 #include "mozilla/dom/KeyframeEffectBinding.h" 
 #include "mozilla/dom/KeyframeEffectReadOnly.h" 
+#include "mozilla/gfx/gfxVars.h"        
 #include "mozilla/layers/CompositorThread.h" 
 #include "mozilla/layers/LayerAnimationUtils.h" 
 #include "mozilla/StyleAnimationValue.h" 
@@ -276,9 +277,7 @@ AnimationHelper::SampleAnimationForEachNode(
       static_cast<dom::CompositeOperation>(segment->endComposite());
 
     
-    bool isServo = animSegment.mFromValue.mServo ||
-                   animSegment.mToValue.mServo;
-    if (isServo) {
+    if (USE_STYLO_ON_COMPOSITOR) {
       dom::IterationCompositeOperation iterCompositeOperation =
           static_cast<dom::IterationCompositeOperation>(
             animation.iterationComposite());
@@ -478,6 +477,9 @@ CreateCSSValueList(const InfallibleTArray<TransformFunction>& aFunctions)
 static AnimationValue
 ToAnimationValue(const Animatable& aAnimatable)
 {
+  StyleBackendType backend = USE_STYLO_ON_COMPOSITOR
+                             ? StyleBackendType::Servo
+                             : StyleBackendType::Gecko;
   AnimationValue result;
 
   switch (aAnimatable.type()) {
@@ -488,12 +490,11 @@ ToAnimationValue(const Animatable& aAnimatable)
           aAnimatable.get_ArrayOfTransformFunction();
         RefPtr<nsCSSValueSharedList> list(CreateCSSValueList(transforms));
         MOZ_ASSERT(list, "Transform list should be non null");
-        result = AnimationValue::Transform(StyleBackendType::Gecko, *list);
+        result = AnimationValue::Transform(backend, *list);
       }
       break;
     case Animatable::Tfloat:
-      result = AnimationValue::Opacity(StyleBackendType::Gecko,
-                                       aAnimatable.get_float());
+      result = AnimationValue::Opacity(backend, aAnimatable.get_float());
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported type");

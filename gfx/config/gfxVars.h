@@ -47,6 +47,15 @@ class gfxVarReceiver;
 
 
 
+#if defined(ANDROID)
+  #define USE_STYLO_ON_COMPOSITOR false
+#else
+  #define USE_STYLO_ON_COMPOSITOR true
+#endif
+
+
+
+
 
 
 
