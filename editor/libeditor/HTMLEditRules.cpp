@@ -5317,25 +5317,29 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
     return NS_OK;
   }
 
+  if (NS_WARN_IF(!mHTMLEditor)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  RefPtr<HTMLEditor> htmlEditor = mHTMLEditor;
+
   RefPtr<nsRange> range = inSelection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsIDOMNode> startNode, endNode;
-  uint32_t startOffset, endOffset;
-  nsCOMPtr<nsIDOMNode> newStartNode, newEndNode;
 
-  nsresult rv = range->GetStartContainer(getter_AddRefs(startNode));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = range->GetStartOffset(&startOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = range->GetEndContainer(getter_AddRefs(endNode));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = range->GetEndOffset(&endOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsINode> startNode = range->GetStartContainer();
+  if (NS_WARN_IF(!startNode)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsINode> endNode = range->GetEndContainer();
+  if (NS_WARN_IF(!endNode)) {
+    return NS_ERROR_FAILURE;
+  }
+  uint32_t startOffset = range->StartOffset();
+  uint32_t endOffset = range->EndOffset();
 
   
-  newStartNode = startNode;
+  nsCOMPtr<nsINode> newStartNode = startNode;
   uint32_t newStartOffset = startOffset;
-  newEndNode = endNode;
+  nsCOMPtr<nsINode> newEndNode = endNode;
   uint32_t newEndOffset = endOffset;
 
   
@@ -5344,20 +5348,18 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
   WSType wsType;
 
   
-  WSRunObject wsEndObj(mHTMLEditor, endNode, static_cast<int32_t>(endOffset));
+  WSRunObject wsEndObj(htmlEditor, endNode, static_cast<int32_t>(endOffset));
   
   
-  nsCOMPtr<nsINode> endNode_(do_QueryInterface(endNode));
-  wsEndObj.PriorVisibleNode(endNode_, static_cast<int32_t>(endOffset),
+  wsEndObj.PriorVisibleNode(endNode, static_cast<int32_t>(endOffset),
                             address_of(unused), &offset, &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
     if (wsEndObj.mStartReason == WSType::otherBlock) {
       
-      nsCOMPtr<nsIDOMNode> child =
-        GetAsDOMNode(mHTMLEditor->GetRightmostChild(wsEndObj.mStartReasonNode,
-                                                    true));
+      nsINode* child =
+        htmlEditor->GetRightmostChild(wsEndObj.mStartReasonNode, true);
       if (child) {
         int32_t offset = -1;
         newEndNode = EditorBase::GetNodeLocation(child, &offset);
@@ -5367,10 +5369,8 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
       
     } else if (wsEndObj.mStartReason == WSType::thisBlock) {
       
-      nsCOMPtr<nsIDOMNode> child;
-      NS_ENSURE_STATE(mHTMLEditor);
-      mHTMLEditor->GetPriorHTMLNode(endNode, static_cast<int32_t>(endOffset),
-                                    address_of(child));
+      nsINode* child =
+        htmlEditor->GetPriorHTMLNode(endNode, static_cast<int32_t>(endOffset));
       if (child) {
         int32_t offset = -1;
         newEndNode = EditorBase::GetNodeLocation(child, &offset);
@@ -5382,29 +5382,26 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
       
       int32_t offset = -1;
       newEndNode =
-        EditorBase::GetNodeLocation(GetAsDOMNode(wsEndObj.mStartReasonNode),
-                                    &offset);
+        EditorBase::GetNodeLocation(wsEndObj.mStartReasonNode, &offset);
       newEndOffset = static_cast<uint32_t>(offset);;
     }
   }
 
 
   
-  WSRunObject wsStartObj(mHTMLEditor, startNode,
+  WSRunObject wsStartObj(htmlEditor, startNode,
                          static_cast<int32_t>(startOffset));
   
   
-  nsCOMPtr<nsINode> startNode_(do_QueryInterface(startNode));
-  wsStartObj.NextVisibleNode(startNode_, static_cast<int32_t>(startOffset),
+  wsStartObj.NextVisibleNode(startNode, static_cast<int32_t>(startOffset),
                              address_of(unused), &offset, &wsType);
   if (wsType != WSType::text && wsType != WSType::normalWS) {
     
     
     if (wsStartObj.mEndReason == WSType::otherBlock) {
       
-      nsCOMPtr<nsIDOMNode> child =
-        GetAsDOMNode(mHTMLEditor->GetLeftmostChild(wsStartObj.mEndReasonNode,
-                                                   true));
+      nsINode* child =
+        htmlEditor->GetLeftmostChild(wsStartObj.mEndReasonNode, true);
       if (child) {
         int32_t offset = -1;
         newStartNode = EditorBase::GetNodeLocation(child, &offset);
@@ -5413,10 +5410,9 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
       
     } else if (wsStartObj.mEndReason == WSType::thisBlock) {
       
-      nsCOMPtr<nsIDOMNode> child;
-      NS_ENSURE_STATE(mHTMLEditor);
-      mHTMLEditor->GetNextHTMLNode(startNode, static_cast<int32_t>(startOffset),
-                                   address_of(child));
+      nsINode* child =
+        htmlEditor->GetNextHTMLNode(startNode,
+                                    static_cast<int32_t>(startOffset));
       if (child) {
         int32_t offset = -1;
         newStartNode = EditorBase::GetNodeLocation(child, &offset);
@@ -5427,8 +5423,7 @@ HTMLEditRules::NormalizeSelection(Selection* inSelection)
       
       int32_t offset = -1;
       newStartNode =
-        EditorBase::GetNodeLocation(GetAsDOMNode(wsStartObj.mEndReasonNode),
-                                    &offset);
+        EditorBase::GetNodeLocation(wsStartObj.mEndReasonNode, &offset);
       
       newStartOffset = static_cast<uint32_t>(offset + 1);
     }
