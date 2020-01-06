@@ -19,6 +19,7 @@
 #include "mozilla/dom/PContent.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/Omnijar.h"
@@ -124,9 +125,8 @@ static const uint32_t MAX_PREF_LENGTH = 1 * 1024 * 1024;
 
 static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
-enum class PrefType
+enum class PrefType : uint8_t
 {
-  Invalid = 0,
   String = 1,
   Int = 2,
   Bool = 3,
@@ -156,7 +156,6 @@ union PrefValue {
       case PrefType::Bool:
         return mBoolVal == aValue.mBoolVal;
 
-      case PrefType::Invalid:
       default:
         MOZ_CRASH("Unhandled enum value");
     }
@@ -168,8 +167,6 @@ const char*
 PrefTypeToString(PrefType aType)
 {
   switch (aType) {
-    case PrefType::Invalid:
-      return "INVALID";
     case PrefType::String:
       return "string";
     case PrefType::Int:
@@ -1076,22 +1073,22 @@ struct PrefParseState
   PrefReader mReader;
   PrefParseErrorReporter mReporter;
   void* mClosure;
-  int mState;            
-  int mNextState;        
-  const char* mStrMatch; 
-  int mStrIndex;         
-                         
-  char16_t mUtf16[2];    
-  int mEscLen;           
-  char mEscTmp[6];       
-  char mQuoteChar;       
-  char* mLb;             
-  char* mLbCur;          
-  char* mLbEnd;          
-  char* mVb;             
-  PrefType mVtype;       
-  bool mIsDefault;       
-  bool mIsSticky;        
+  int mState;             
+  int mNextState;         
+  const char* mStrMatch;  
+  int mStrIndex;          
+                          
+  char16_t mUtf16[2];     
+  int mEscLen;            
+  char mEscTmp[6];        
+  char mQuoteChar;        
+  char* mLb;              
+  char* mLbCur;           
+  char* mLbEnd;           
+  char* mVb;              
+  Maybe<PrefType> mVtype; 
+  bool mIsDefault;        
+  bool mIsSticky;         
 };
 
 
@@ -1265,7 +1262,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         if (aPS->mLbCur != aPS->mLb) { 
           aPS->mLbCur = aPS->mLb;
           aPS->mVb = nullptr;
-          aPS->mVtype = PrefType::Invalid;
+          aPS->mVtype = Nothing();
           aPS->mIsDefault = false;
           aPS->mIsSticky = false;
         }
@@ -1368,19 +1365,19 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
         
         
         if (c == '\"' || c == '\'') {
-          aPS->mVtype = PrefType::String;
+          aPS->mVtype = Some(PrefType::String);
           aPS->mQuoteChar = c;
           aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_QUOTED_STRING;
         } else if (c == 't' || c == 'f') {
           aPS->mVb = (char*)(c == 't' ? kTrue : kFalse);
-          aPS->mVtype = PrefType::Bool;
+          aPS->mVtype = Some(PrefType::Bool);
           aPS->mStrMatch = aPS->mVb;
           aPS->mStrIndex = 1;
           aPS->mNextState = PREF_PARSE_UNTIL_CLOSE_PAREN;
           state = PREF_PARSE_MATCH_STRING;
         } else if (isdigit(c) || (c == '-') || (c == '+')) {
-          aPS->mVtype = PrefType::Int;
+          aPS->mVtype = Some(PrefType::Int);
           
           if (aPS->mLbCur == aPS->mLbEnd && !pref_GrowBuf(aPS)) {
             return false; 
@@ -1632,7 +1629,7 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
 
           PrefValue value;
 
-          switch (aPS->mVtype) {
+          switch (*aPS->mVtype) {
             case PrefType::String:
               value.mStringVal = aPS->mVb;
               break;
@@ -1652,14 +1649,14 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
               break;
 
             default:
-              break;
+              MOZ_CRASH();
           }
 
           
           aPS->mReader(aPS->mClosure,
                        aPS->mLb,
                        value,
-                       aPS->mVtype,
+                       *aPS->mVtype,
                        aPS->mIsDefault,
                        aPS->mIsSticky);
 
@@ -2026,31 +2023,26 @@ nsPrefBranch::GetPrefType(const char* aPrefName, int32_t* aRetVal)
   NS_ENSURE_ARG(aPrefName);
 
   const PrefName& prefName = GetPrefName(aPrefName);
-  PrefType type = PrefType::Invalid;
-  if (gHashTable) {
-    PrefHashEntry* pref = pref_HashTableLookup(prefName.get());
-    if (pref) {
-      type = pref->Type();
+  PrefHashEntry* pref;
+  if (gHashTable && (pref = pref_HashTableLookup(prefName.get()))) {
+    switch (pref->Type()) {
+      case PrefType::String:
+        *aRetVal = PREF_STRING;
+        break;
+
+      case PrefType::Int:
+        *aRetVal = PREF_INT;
+        break;
+
+      case PrefType::Bool:
+        *aRetVal = PREF_BOOL;
+        break;
+
+      default:
+        MOZ_CRASH();
     }
-  }
-
-  switch (type) {
-    case PrefType::String:
-      *aRetVal = PREF_STRING;
-      break;
-
-    case PrefType::Int:
-      *aRetVal = PREF_INT;
-      break;
-
-    case PrefType::Bool:
-      *aRetVal = PREF_BOOL;
-      break;
-
-    case PrefType::Invalid:
-    default:
-      *aRetVal = PREF_INVALID;
-      break;
+  } else {
+    *aRetVal = PREF_INVALID;
   }
   return NS_OK;
 }
