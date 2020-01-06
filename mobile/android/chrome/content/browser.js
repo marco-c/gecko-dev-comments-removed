@@ -1400,6 +1400,45 @@ var BrowserApp = {
   },
 
   
+
+
+
+
+
+  openAddonManager: function openAddonManager({addonId}) {
+    if (addonId) {
+      let emWindow;
+
+      function receivePong(subject, topic, data) {
+        emWindow = subject;
+      };
+
+      Services.obs.addObserver(receivePong, "EM-pong");
+      Services.obs.notifyObservers(null, "EM-ping");
+      Services.obs.removeObserver(receivePong, "EM-pong");
+
+      if (emWindow) {
+        
+        emWindow.showAddonDetails(addonId);
+      } else {
+        
+        function waitAboutAddons(subject, topic, data) {
+          Services.obs.removeObserver(waitAboutAddons, "EM-loaded");
+          emWindow = subject;
+
+          emWindow.showAddonDetails(addonId);
+        }
+        Services.obs.addObserver(waitAboutAddons, "EM-loaded");
+      }
+    }
+
+    BrowserApp.selectOrAddTab("about:addons", {
+      selected: true,
+      parentId: BrowserApp.selectedTab.id,
+    });
+  },
+
+  
   
   _handleTabSelected: function _handleTabSelected(aTab) {
     if (this.fullscreenTransitionTab) {
