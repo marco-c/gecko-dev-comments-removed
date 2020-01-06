@@ -170,6 +170,8 @@ class MachCommands(MachCommandBase):
             arch = self.substs['OS_ARCH']
             for k, v in env_vars[arch].iteritems():
                 os.environ[k] = v
+            if 'DMD' not in os.environ:
+                os.environ['DMD'] = '1'
 
             
             if bin_dir not in sys.path:

@@ -136,6 +136,7 @@ function run_test() {
   
   
 
+  gEnv.set('DMD', '1');
   gEnv.set(gEnv.get("DMD_PRELOAD_VAR"), gEnv.get("DMD_PRELOAD_VALUE"));
 
   runProcess(gDmdTestFile, []);

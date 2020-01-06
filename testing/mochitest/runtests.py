@@ -1634,6 +1634,9 @@ toolbar#nav-bar {
         if options.headless:
             browserEnv["MOZ_HEADLESS"] = '1'
 
+        if options.dmd:
+            browserEnv["DMD"] = os.environ.get('DMD', '1')
+
         
         
         browserEnv["XPCOM_DEBUG_BREAK"] = "stack"

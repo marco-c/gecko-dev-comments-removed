@@ -1256,7 +1256,7 @@ FreeCallback(void* aPtr, Thread* aT, DeadBlock* aDeadBlock)
 
 
 
-static void Init(malloc_table_t* aMallocTable);
+static bool Init(malloc_table_t* aMallocTable);
 
 } 
 } 
@@ -1368,11 +1368,12 @@ replace_free(void* aPtr)
 void
 replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge)
 {
-  mozilla::dmd::Init(aMallocTable);
+  if (mozilla::dmd::Init(aMallocTable)) {
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
 #define MALLOC_DECL(name, ...) aMallocTable->name = replace_ ## name;
 #include "malloc_decls.h"
-  *aBridge = mozilla::dmd::gDMDBridge;
+    *aBridge = mozilla::dmd::gDMDBridge;
+  }
 }
 
 namespace mozilla {
@@ -1439,9 +1440,6 @@ Options::Options(const char* aDMDEnvVar)
   , mStacks(Stacks::Partial)
   , mShowDumpStats(false)
 {
-  
-  
-  
   char* e = mDMDEnvVar;
   if (e && strcmp(e, "1") != 0) {
     bool isEnd = false;
@@ -1551,10 +1549,21 @@ postfork()
 
 
 
-static void
+static bool
 Init(malloc_table_t* aMallocTable)
 {
+  
+  const char* e = getenv("DMD");
+
+  if (!e) {
+    return false;
+  }
+  
+  
   gMallocTable = *aMallocTable;
+
+  StatusMsg("$DMD = '%s'\n", e);
+
   gDMDBridge = InfallibleAllocPolicy::new_<DMDBridge>();
 
 #ifndef XP_WIN
@@ -1566,16 +1575,6 @@ Init(malloc_table_t* aMallocTable)
   
   pthread_atfork(prefork, postfork, postfork);
 #endif
-
-  
-  const char* e = getenv("DMD");
-
-  if (e) {
-    StatusMsg("$DMD = '%s'\n", e);
-  } else {
-    StatusMsg("$DMD is undefined\n");
-  }
-
   
   gOptions = InfallibleAllocPolicy::new_<Options>(e);
 
@@ -1604,6 +1603,7 @@ Init(malloc_table_t* aMallocTable)
     MOZ_ALWAYS_TRUE(gDeadBlockTable->init(tableSize));
   }
 
+  return true;
 }
 
 
