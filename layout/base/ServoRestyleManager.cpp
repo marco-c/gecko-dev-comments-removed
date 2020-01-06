@@ -524,7 +524,7 @@ ServoRestyleManager::ProcessPostTraversal(Element* aElement,
     newContext = aRestyleState.StyleSet().GetContext(
       computedValues.forget(), aParentContext, pseudoTag, pseudo, aElement);
 
-    newContext->EnsureSameStructsCached(oldStyleContext);
+    newContext->ResolveSameStructsAs(PresContext(), oldStyleContext);
 
     
     
