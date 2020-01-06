@@ -6094,12 +6094,12 @@ private:
 NS_IMPL_ISUPPORTS(InitLocalBlockListXpcCallback, nsIURIClassifierCallback)
 
  nsresult
-InitLocalBlockListXpcCallback::OnClassifyComplete(nsresult ,
-                                               const nsACString& aLists, 
+InitLocalBlockListXpcCallback::OnClassifyComplete(nsresult aErrorCode, 
+                                               const nsACString& ,
                                                const nsACString& ,
                                                const nsACString& )
 {
-    bool localBlockList = !aLists.IsEmpty();
+    bool localBlockList = aErrorCode == NS_ERROR_TRACKING_URI;
     mCallback(localBlockList);
     return NS_OK;
 }
@@ -6129,34 +6129,17 @@ nsHttpChannel::InitLocalBlockList(const InitLocalBlockListCallback& aCallback)
     }
 
     
-    nsCOMPtr<nsIURIClassifier> classifier(services::GetURIClassifier());
     RefPtr<nsChannelClassifier> channelClassifier =
         GetOrCreateChannelClassifier();
-    bool tpEnabled = false;
-    channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
-    if (!classifier || !tpEnabled) {
-        return false;
-    }
 
     
     
     
     
     
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv = GetURI(getter_AddRefs(uri));
-    if (NS_FAILED(rv) || !uri) {
-        return false;
-    }
-
-    nsAutoCString tables;
-    Preferences::GetCString("urlclassifier.trackingTable", &tables);
-    nsTArray<nsCString> results;
-
     RefPtr<InitLocalBlockListXpcCallback> xpcCallback
         = new InitLocalBlockListXpcCallback(aCallback);
-    rv = classifier->AsyncClassifyLocalWithTables(uri, tables, xpcCallback);
-    if (NS_FAILED(rv)) {
+    if (NS_FAILED(channelClassifier->CheckIsTrackerWithLocalTable(xpcCallback))) {
         return false;
     }
 
