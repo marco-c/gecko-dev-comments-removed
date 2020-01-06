@@ -118,6 +118,10 @@ public:
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
                               nsresult aStatus) final;
 
+  
+  
+  ServoCSSRuleList* GetCssRulesInternal();
+
 protected:
   virtual ~ServoStyleSheet();
 
@@ -127,7 +131,6 @@ protected:
   }
 
   
-  dom::CSSRuleList* GetCssRulesInternal();
   uint32_t InsertRuleInternal(const nsAString& aRule,
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
