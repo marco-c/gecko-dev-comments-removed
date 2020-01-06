@@ -397,11 +397,7 @@ var Addons = {
         
         optionsBox.classList.remove("inner");
 
-        
-        
-        
-        detailItem.setAttribute("optionsURL", addon.optionsURL);
-        this.createWebExtensionOptions(optionsBox, addon.optionsURL, addon.optionsBrowserStyle);
+        this.createWebExtensionOptions(optionsBox, addon);
         break;
       case AddonManager.OPTIONS_TYPE_TAB:
         
@@ -441,44 +437,58 @@ var Addons = {
     }
 
     button.onclick = async () => {
+      if (addon.isWebExtension) {
+        
+        
+        await addon.startupPromise;
+      }
+
       const {optionsURL} = addon;
       openOptionsInTab(optionsURL);
     };
   },
 
-  createWebExtensionOptions: async function(destination, optionsURL, browserStyle) {
-    let originalHeight;
-    let frame = document.createElement("iframe");
-    frame.setAttribute("id", "addon-options");
-    frame.setAttribute("mozbrowser", "true");
-    frame.setAttribute("style", "width: 100%; overflow: hidden;");
-
+  createWebExtensionOptions: async function(destination, addon) {
     
     
-    frame.onload = (evt) => {
-      if (evt.target !== frame) {
-        return;
-      }
+    await addon.startupPromise;
 
-      const {document} = frame.contentWindow;
-      const bodyScrollHeight = document.body && document.body.scrollHeight;
-      const documentScrollHeight = document.documentElement.scrollHeight;
+    const {optionsURL, optionsBrowserStyle} = addon;
+    let frame = destination.querySelector("iframe#addon-options");
+
+    if (!frame) {
+      let originalHeight;
+      frame = document.createElement("iframe");
+      frame.setAttribute("id", "addon-options");
+      frame.setAttribute("mozbrowser", "true");
+      frame.setAttribute("style", "width: 100%; overflow: hidden;");
 
       
       
-      frame.style.height = Math.max(bodyScrollHeight, documentScrollHeight) + "px";
+      frame.onload = (evt) => {
+        if (evt.target !== frame) {
+          return;
+        }
 
-      
-      
-      
-      frame.contentWindow.addEventListener("unload", () => {
-        frame.style.height = originalHeight + "px";
-      }, {once: true});
-    };
+        const {document} = frame.contentWindow;
+        const bodyScrollHeight = document.body && document.body.scrollHeight;
+        const documentScrollHeight = document.documentElement.scrollHeight;
 
-    destination.appendChild(frame);
+        
+        
+        frame.style.height = Math.max(bodyScrollHeight, documentScrollHeight) + "px";
 
-    originalHeight = frame.getBoundingClientRect().height;
+        
+        
+        
+        frame.contentWindow.addEventListener("unload", () => {
+          frame.style.height = originalHeight + "px";
+        }, {once: true});
+      };
+
+      destination.appendChild(frame);
+      originalHeight = frame.getBoundingClientRect().height;
+    }
 
     
     
@@ -585,6 +595,14 @@ var Addons = {
         detailItem.setAttribute("opType", opType);
       else
         detailItem.removeAttribute("opType");
+
+      
+      if (!aValue) {
+        const addonOptionsIframe = document.querySelector("#addon-options");
+        if (addonOptionsIframe) {
+          addonOptionsIframe.remove();
+        }
+      }
     }
 
     
