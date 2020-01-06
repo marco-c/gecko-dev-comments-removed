@@ -164,7 +164,11 @@ public:
       return mTCPKeepaliveLongLivedIdleTimeS;
     }
 
-    bool UseFastOpen() { return mUseFastOpen && mFastOpenSupported; }
+    bool UseFastOpen()
+    {
+        return mUseFastOpen && mFastOpenSupported &&
+               mFastOpenConsecutiveFailureCounter < mFastOpenConsecutiveFailureLimit;
+    }
     
     
     
