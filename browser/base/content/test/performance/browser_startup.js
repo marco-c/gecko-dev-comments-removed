@@ -49,9 +49,6 @@ const startupPhases = {
 
   
   "before opening first browser window": {blacklist: {
-    components: new Set([
-      "nsAsyncShutdown.js",
-    ]),
     modules: new Set([
       "resource://gre/modules/PlacesBackups.jsm",
       "resource://gre/modules/PlacesUtils.jsm",
