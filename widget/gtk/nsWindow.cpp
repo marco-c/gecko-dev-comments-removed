@@ -6192,12 +6192,6 @@ nsWindow::DispatchRestoreEventAccessible(void)
 
 #endif 
 
-
-
-nsChildWindow::nsChildWindow() = default;
-
-nsChildWindow::~nsChildWindow() = default;
-
 void
 nsWindow::SetInputContext(const InputContext& aContext,
                           const InputContextAction& aAction)

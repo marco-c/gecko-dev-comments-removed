@@ -41,7 +41,7 @@ namespace mozilla {
     } 
 }
 
-class nsWindow : public nsBaseWidget
+class nsWindow final : public nsBaseWidget
 {
 private:
     virtual ~nsWindow();
