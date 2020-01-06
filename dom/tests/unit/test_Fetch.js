@@ -1,7 +1,7 @@
 
 
 
-const {utils: Cu} = Components;
+const {utils: Cu, results: Cr} = Components;
 
 Cu.importGlobalProperties(['fetch']);
 Cu.import("resource://testing-common/httpd.js");
@@ -207,6 +207,18 @@ add_test(function test_getTestFailedConnect() {
     do_throw("Request should not succeed");
   }).catch(err => {
     do_check_eq(true, err instanceof TypeError);
+    do_test_finished();
+    run_next_test();
+  });
+});
+
+add_test(function test_mozError() {
+  do_test_pending();
+  
+  fetch("http://localhost:4/should/fail", { mozErrors: true }).then(response => {
+    do_throw("Request should not succeed");
+  }).catch(err => {
+    do_check_eq(err.result, Cr.NS_ERROR_CONNECTION_REFUSED);
     do_test_finished();
     run_next_test();
   });
