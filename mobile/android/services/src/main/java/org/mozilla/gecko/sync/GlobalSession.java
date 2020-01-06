@@ -295,6 +295,10 @@ public class GlobalSession implements HttpResponseObserver {
 
     
     String collectorName = currentState.getRepositoryName();
+    
+    if (collectorName == null) {
+      collectorName = currentState.name();
+    }
     final TelemetryStageCollector stageCollector = telemetryCollector.collectorFor(collectorName);
     
     stageCollector.started = SystemClock.elapsedRealtime();
@@ -659,12 +663,13 @@ public class GlobalSession implements HttpResponseObserver {
   
 
 
-  public void processMetaGlobal(MetaGlobal global) {
+  public void processMetaGlobal(MetaGlobal global, TelemetryStageCollector stageCollector) {
     config.metaGlobal = global;
 
     Long storageVersion = global.getStorageVersion();
     if (storageVersion == null) {
       Logger.warn(LOG_TAG, "Malformed remote meta/global: could not retrieve remote storage version.");
+      stageCollector.error = new TelemetryCollector.StageErrorBuilder("metaglobal", "noversion").build();
       freshStart();
       return;
     }
@@ -685,6 +690,7 @@ public class GlobalSession implements HttpResponseObserver {
     String remoteSyncID = global.getSyncID();
     if (remoteSyncID == null) {
       Logger.warn(LOG_TAG, "Malformed remote meta/global: could not retrieve remote syncID.");
+      stageCollector.error = new TelemetryCollector.StageErrorBuilder("metaglobal", "nosyncid").build();
       freshStart();
       return;
     }
@@ -1131,7 +1137,7 @@ public class GlobalSession implements HttpResponseObserver {
   public void requiresUpgrade() {
     Logger.info(LOG_TAG, "Client outdated storage version; requires update.");
     
-    this.abort(null, "Requires upgrade");
+    this.abort(null, "Requires upgrade from " + STORAGE_VERSION);
   }
 
   
