@@ -84,8 +84,10 @@ typedef enum {
   BROTLI_ERROR_CODE(_ERROR_FORMAT_, PADDING_1, -14) SEPARATOR              \
   BROTLI_ERROR_CODE(_ERROR_FORMAT_, PADDING_2, -15) SEPARATOR              \
                                                                            \
-  /* -16..-19 codes are reserved */                                        \
+  /* -16..-17 codes are reserved */                                        \
                                                                            \
+  BROTLI_ERROR_CODE(_ERROR_, COMPOUND_DICTIONARY, -18) SEPARATOR           \
+  BROTLI_ERROR_CODE(_ERROR_, DICTIONARY_NOT_SET, -19) SEPARATOR            \
   BROTLI_ERROR_CODE(_ERROR_, INVALID_ARGUMENTS, -20) SEPARATOR             \
                                                                            \
   /* Memory allocation problems */                                         \
@@ -124,6 +126,29 @@ typedef enum {
 
 
 #define BROTLI_LAST_ERROR_CODE BROTLI_DECODER_ERROR_UNREACHABLE
+
+
+typedef enum BrotliDecoderParameter {
+  
+
+
+
+
+
+  BROTLI_DECODER_PARAM_DISABLE_RING_BUFFER_REALLOCATION = 0
+} BrotliDecoderParameter;
+
+
+
+
+
+
+
+
+
+
+BROTLI_DEC_API BROTLI_BOOL BrotliDecoderSetParameter(
+    BrotliDecoderState* state, BrotliDecoderParameter param, uint32_t value);
 
 
 
@@ -224,31 +249,6 @@ BROTLI_DEC_API BrotliDecoderResult BrotliDecoderDecompressStream(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BROTLI_DEC_API void BrotliDecoderSetCustomDictionary(
-    BrotliDecoderState* state, size_t size,
-    const uint8_t dict[BROTLI_ARRAY_PARAM(size)]);
-
-
-
-
-
-
-
-
 BROTLI_DEC_API BROTLI_BOOL BrotliDecoderHasMoreOutput(
     const BrotliDecoderState* state);
 
@@ -303,7 +303,8 @@ BROTLI_DEC_API BROTLI_BOOL BrotliDecoderIsUsed(const BrotliDecoderState* state);
 
 
 
-BROTLI_BOOL BrotliDecoderIsFinished(const BrotliDecoderState* state);
+BROTLI_DEC_API BROTLI_BOOL BrotliDecoderIsFinished(
+    const BrotliDecoderState* state);
 
 
 
@@ -316,7 +317,7 @@ BROTLI_BOOL BrotliDecoderIsFinished(const BrotliDecoderState* state);
 
 
 
-BrotliDecoderErrorCode BrotliDecoderGetErrorCode(
+BROTLI_DEC_API BrotliDecoderErrorCode BrotliDecoderGetErrorCode(
     const BrotliDecoderState* state);
 
 

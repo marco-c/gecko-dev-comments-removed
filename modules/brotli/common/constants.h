@@ -39,6 +39,8 @@
                                      (BROTLI_MAX_DISTANCE_BITS <<      \
                                       (BROTLI_MAX_NPOSTFIX + 1)))
 
+#define BROTLI_MAX_DISTANCE 0x3FFFFFC
+
 
 
 #define BROTLI_LITERAL_CONTEXT_BITS 6

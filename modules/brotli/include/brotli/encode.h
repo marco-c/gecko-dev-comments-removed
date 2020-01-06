@@ -36,11 +36,6 @@ extern "C" {
 
 #define BROTLI_MAX_QUALITY 11
 
-BROTLI_DEPRECATED static const int kBrotliMinWindowBits =
-    BROTLI_MIN_WINDOW_BITS;
-BROTLI_DEPRECATED static const int kBrotliMaxWindowBits =
-    BROTLI_MAX_WINDOW_BITS;
-
 
 typedef enum BrotliEncoderMode {
   
@@ -85,8 +80,12 @@ typedef enum BrotliEncoderOperation {
 
 
 
+
+
   BROTLI_OPERATION_FLUSH = 1,
   
+
+
 
 
 
@@ -227,43 +226,6 @@ BROTLI_ENC_API BrotliEncoderState* BrotliEncoderCreateInstance(
 
 
 BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
-
-
-BROTLI_DEPRECATED BROTLI_ENC_API size_t BrotliEncoderInputBlockSize(
-    BrotliEncoderState* state);
-
-
-BROTLI_DEPRECATED BROTLI_ENC_API void BrotliEncoderCopyInputToRingBuffer(
-    BrotliEncoderState* state, const size_t input_size,
-    const uint8_t* input_buffer);
-
-
-BROTLI_DEPRECATED BROTLI_ENC_API BROTLI_BOOL BrotliEncoderWriteData(
-    BrotliEncoderState* state, const BROTLI_BOOL is_last,
-    const BROTLI_BOOL force_flush, size_t* out_size, uint8_t** output);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BROTLI_ENC_API void BrotliEncoderSetCustomDictionary(
-    BrotliEncoderState* state, size_t size,
-    const uint8_t dict[BROTLI_ARRAY_PARAM(size)]);
 
 
 

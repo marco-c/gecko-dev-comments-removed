@@ -14,6 +14,6 @@
 
 
 
-#define BROTLI_VERSION 0x0006000
+#define BROTLI_VERSION 0x1000001
 
 #endif  

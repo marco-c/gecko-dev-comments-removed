@@ -31,31 +31,32 @@
 
 #ifdef __BYTE_ORDER
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define IS_LITTLE_ENDIAN
+#define BROTLI_LITTLE_ENDIAN
 #endif
 
 #else
 
 #if defined(__LITTLE_ENDIAN__)
-#define IS_LITTLE_ENDIAN
+#define BROTLI_LITTLE_ENDIAN
 #endif
 #endif  
 
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#define IS_LITTLE_ENDIAN
+#define BROTLI_LITTLE_ENDIAN
 #endif
 
 
 #if (defined(_WIN32) || defined(_WIN64)) && defined(_M_X64)
-#define IS_LITTLE_ENDIAN
+#define BROTLI_LITTLE_ENDIAN
 #endif
 
 
 
 
 
-#if defined(ARCH_PIII) || \
-  defined(ARCH_ATHLON) || defined(ARCH_K8) || defined(_ARCH_PPC)
+#if defined(BROTLI_LITTLE_ENDIAN) && (\
+    defined(ARCH_PIII) || defined(ARCH_ATHLON) || \
+    defined(ARCH_K8) || defined(_ARCH_PPC))
 
 
 
@@ -63,14 +64,12 @@
 
 
 #define BROTLI_UNALIGNED_LOAD32(_p) (*(const uint32_t *)(_p))
-#define BROTLI_UNALIGNED_LOAD64(_p) (*(const uint64_t *)(_p))
+#define BROTLI_UNALIGNED_LOAD64LE(_p) (*(const uint64_t *)(_p))
 
-#define BROTLI_UNALIGNED_STORE32(_p, _val) \
-  (*(uint32_t *)(_p) = (_val))
-#define BROTLI_UNALIGNED_STORE64(_p, _val) \
+#define BROTLI_UNALIGNED_STORE64LE(_p, _val) \
   (*(uint64_t *)(_p) = (_val))
 
-#elif defined(__arm__) && \
+#elif defined(BROTLI_LITTLE_ENDIAN) && defined(__arm__) && \
   !defined(__ARM_ARCH_5__) && \
   !defined(__ARM_ARCH_5T__) && \
   !defined(__ARM_ARCH_5TE__) && \
@@ -88,16 +87,14 @@
 
 
 #define BROTLI_UNALIGNED_LOAD32(_p) (*(const uint32_t *)(_p))
-#define BROTLI_UNALIGNED_STORE32(_p, _val) \
-  (*(uint32_t *)(_p) = (_val))
 
-static BROTLI_INLINE uint64_t BROTLI_UNALIGNED_LOAD64(const void *p) {
+static BROTLI_INLINE uint64_t BROTLI_UNALIGNED_LOAD64LE(const void *p) {
   uint64_t t;
   memcpy(&t, p, sizeof t);
   return t;
 }
 
-static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64(void *p, uint64_t v) {
+static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64LE(void *p, uint64_t v) {
   memcpy(p, &v, sizeof v);
 }
 
@@ -112,19 +109,46 @@ static BROTLI_INLINE uint32_t BROTLI_UNALIGNED_LOAD32(const void *p) {
   return t;
 }
 
-static BROTLI_INLINE uint64_t BROTLI_UNALIGNED_LOAD64(const void *p) {
+#if defined(BROTLI_LITTLE_ENDIAN)
+
+static BROTLI_INLINE uint64_t BROTLI_UNALIGNED_LOAD64LE(const void *p) {
   uint64_t t;
   memcpy(&t, p, sizeof t);
   return t;
 }
 
-static BROTLI_INLINE void BROTLI_UNALIGNED_STORE32(void *p, uint32_t v) {
+static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64LE(void *p, uint64_t v) {
   memcpy(p, &v, sizeof v);
 }
 
-static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64(void *p, uint64_t v) {
-  memcpy(p, &v, sizeof v);
+#else  
+
+static BROTLI_INLINE uint64_t BROTLI_UNALIGNED_LOAD64LE(const void *p) {
+  const uint8_t* in = (const uint8_t*)p;
+  uint64_t value = (uint64_t)(in[0]);
+  value |= (uint64_t)(in[1]) << 8;
+  value |= (uint64_t)(in[2]) << 16;
+  value |= (uint64_t)(in[3]) << 24;
+  value |= (uint64_t)(in[4]) << 32;
+  value |= (uint64_t)(in[5]) << 40;
+  value |= (uint64_t)(in[6]) << 48;
+  value |= (uint64_t)(in[7]) << 56;
+  return value;
 }
+
+static BROTLI_INLINE void BROTLI_UNALIGNED_STORE64LE(void *p, uint64_t v) {
+  uint8_t* out = (uint8_t*)p;
+  out[0] = (uint8_t)v;
+  out[1] = (uint8_t)(v >> 8);
+  out[2] = (uint8_t)(v >> 16);
+  out[3] = (uint8_t)(v >> 24);
+  out[4] = (uint8_t)(v >> 32);
+  out[5] = (uint8_t)(v >> 40);
+  out[6] = (uint8_t)(v >> 48);
+  out[7] = (uint8_t)(v >> 56);
+}
+
+#endif  
 
 #endif
 

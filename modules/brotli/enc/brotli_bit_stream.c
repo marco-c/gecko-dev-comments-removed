@@ -1325,17 +1325,6 @@ void BrotliStoreUncompressedMetaBlock(BROTLI_BOOL is_final_block,
   }
 }
 
-void BrotliStoreSyncMetaBlock(size_t* BROTLI_RESTRICT storage_ix,
-                              uint8_t* BROTLI_RESTRICT storage) {
-  
-
-
-
-
-  BrotliWriteBits(6, 6, storage_ix, storage);
-  JumpToByteBoundary(storage_ix, storage);
-}
-
 #if defined(__cplusplus) || defined(c_plusplus)
 }  
 #endif
