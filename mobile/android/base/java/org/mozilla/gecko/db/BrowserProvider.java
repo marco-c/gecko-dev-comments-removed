@@ -1218,6 +1218,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                             DBUtils.qualifyColumn(TABLE_TOPSITES, Combined.HISTORY_GUID) + " = " +
                             DBUtils.qualifyColumn(TABLE_PAGE_METADATA, PageMetadata.HISTORY_GUID) +
 
+                    " GROUP BY " + DBUtils.qualifyColumn(TABLE_TOPSITES, Bookmarks.URL) + 
+
                     
                     
                     " ORDER BY " + Bookmarks.POSITION + ", " + Bookmarks.URL,
