@@ -2091,8 +2091,7 @@ this.XPIProvider = {
       this.installs = new Set();
       this.installLocations = [];
       this.installLocationsByName = {};
-      
-      this._shutdownError = null;
+
       
       this._telemetryDetails = {};
       
@@ -2379,11 +2378,7 @@ this.XPIProvider = {
     this.extensionsActive = false;
     this._addonFileMap.clear();
 
-    try {
-      await XPIDatabase.shutdown();
-    } catch (err) {
-      this._shutdownError = err;
-    }
+    await XPIDatabase.shutdown();
   },
 
   cleanupTemporaryAddons() {
