@@ -120,8 +120,7 @@ function NetworkEventMessage({
 
   
   
-  const attachment = open && dom.div({
-    className: "network-info network-monitor devtools-monospace"},
+  const attachment = open && dom.div({className: "network-info devtools-monospace"},
     TabboxPanel({
       connector,
       activeTabId: networkMessageActiveTabId,
