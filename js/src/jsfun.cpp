@@ -1026,8 +1026,6 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
         }
     }
 
-    bool funIsNonArrowLambda = fun->isLambda() && !fun->isArrow();
-
     
     
     
@@ -1037,10 +1035,7 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
 
     
     
-    if (haveSource && !prettyPrint && funIsNonArrowLambda) {
-        if (!out.append('('))
-            return nullptr;
-    }
+    bool addParentheses = haveSource && !prettyPrint && (fun->isLambda() && !fun->isArrow());
 
     if (haveSource && !script->scriptSource()->hasSourceData() &&
         !JSScript::loadSource(cx, script->scriptSource(), &haveSource))
@@ -1048,68 +1043,69 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
         return nullptr;
     }
 
-    auto AppendPrelude = [cx, &out, &fun]() {
+    if (addParentheses) {
+        if (!out.append('('))
+            return nullptr;
+    }
+
+    if (haveSource) {
+        if (!script->appendSourceDataForToString(cx, out))
+            return nullptr;
+    } else {
         if (fun->isAsync()) {
             if (!out.append("async "))
-                return false;
+                return nullptr;
         }
 
         if (!fun->isArrow()) {
             if (!out.append("function"))
-                return false;
+                return nullptr;
 
             if (fun->isStarGenerator()) {
                 if (!out.append('*'))
-                    return false;
+                    return nullptr;
             }
         }
 
         if (fun->explicitName()) {
             if (!out.append(' '))
-                return false;
+                return nullptr;
             if (fun->isBoundFunction() && !fun->hasBoundFunctionNamePrefix()) {
                 if (!out.append(cx->names().boundWithSpace))
-                    return false;
+                    return nullptr;
             }
             if (!out.append(fun->explicitName()))
-                return false;
-        }
-        return true;
-    };
-
-    if (haveSource) {
-        if (!script->appendSourceDataForToString(cx, out))
-            return nullptr;
-
-        if (!prettyPrint && funIsNonArrowLambda) {
-            if (!out.append(')'))
                 return nullptr;
         }
-    } else if (fun->isInterpreted() &&
-               (!fun->isSelfHostedBuiltin() ||
-                fun->infallibleIsDefaultClassConstructor(cx)))
-    {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT_IF(fun->infallibleIsDefaultClassConstructor(cx),
-                      !cx->runtime()->sourceHook.ref() ||
-                      !script->scriptSource()->sourceRetrievable() ||
-                      fun->compartment()->behaviors().discardSource());
 
-        if (!AppendPrelude() ||
-            !out.append("() {\n    [sourceless code]\n}"))
+        if (fun->isInterpreted() &&
+            (!fun->isSelfHostedBuiltin() ||
+             fun->infallibleIsDefaultClassConstructor(cx)))
         {
-            return nullptr;
+            
+            
+            
+            
+            
+            
+            MOZ_ASSERT_IF(fun->infallibleIsDefaultClassConstructor(cx),
+                          !cx->runtime()->sourceHook.ref() ||
+                          !script->scriptSource()->sourceRetrievable() ||
+                          fun->compartment()->behaviors().discardSource());
+
+            if (!out.append("() {\n    [sourceless code]\n}"))
+                return nullptr;
+        } else {
+            if (!out.append("() {\n    [native code]\n}"))
+                return nullptr;
         }
-    } else {
-        if (!AppendPrelude() ||
-            !out.append("() {\n    [native code]\n}"))
+    }
+
+    if (addParentheses) {
+        if (!out.append(')'))
             return nullptr;
     }
+
     return out.finishString();
 }
 
