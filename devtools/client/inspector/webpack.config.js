@@ -43,39 +43,39 @@ module.exports = envConfig => {
         {
           test: /event-emitter/,
           exclude: /node_modules/,
-          loaders: [path.join(__dirname, "./webpack/rewrite-event-emitter")],
+          loaders: ["rewrite-event-emitter"],
         }, {
           test: /client(\/|\\)inspector(\/|\\).*\.js$/,
           loaders: [
             
-            path.join(__dirname, "./webpack/rewrite-browser-require"),
+            "rewrite-browser-require",
             
-            path.join(__dirname, "./webpack/rewrite-lazy-require"),
+            "rewrite-lazy-require",
           ],
         }, {
           test: /shared(\/|\\)inspector(\/|\\)css-logic\.js$/,
           loaders: [
             
             
-            path.join(__dirname, "./webpack/rewrite-css-logic-importer"),
+            "rewrite-css-logic-importer",
           ],
         }, {
           test: /react-redux\.js$/,
           loaders: [
             
-            path.join(__dirname, "./webpack/rewrite-react-redux"),
+            "rewrite-react-redux",
           ],
         }, {
           
           test: /sdk(\/|\\).*\.js$/,
-          loaders: [path.join(__dirname, "./webpack/rewrite-sdk-lazy-require")],
+          loaders: ["rewrite-sdk-lazy-require"],
         }
       ]
     },
     resolveLoader: {
       root: [
         path.resolve("./node_modules"),
-        path.resolve("./webpack"),
+        path.resolve("../shared/webpack"),
       ]
     },
     resolve: {

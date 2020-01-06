@@ -32,9 +32,18 @@ let webpackConfig = {
 
 
 
-        test: /\.js/,
+        test: /\.js$/,
         loader: "rewrite-raw",
       },
+      {
+        test: /\.js$/,
+        loaders: [
+          
+          "rewrite-browser-require",
+          
+          "rewrite-lazy-require",
+        ],
+      }
     ]
   },
 
