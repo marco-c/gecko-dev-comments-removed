@@ -47,6 +47,9 @@ using namespace mozilla::gfx;
 static const int32_t kMinBidiIndicatorPixels = 2;
 
 
+static const uint32_t kDefaultCaretBlinkRate = 500;
+
+
 
 
 
@@ -120,6 +123,7 @@ IsBidiUI()
 nsCaret::nsCaret()
 : mOverrideOffset(0)
 , mBlinkCount(-1)
+, mBlinkRate(0)
 , mHideCount(0)
 , mIsBlinkOn(false)
 , mVisible(false)
@@ -636,6 +640,15 @@ void nsCaret::ResetBlinking()
     return;
   }
 
+  uint32_t blinkRate = static_cast<uint32_t>(
+    LookAndFeel::GetInt(LookAndFeel::eIntID_CaretBlinkTime,
+                        kDefaultCaretBlinkRate));
+  if (mBlinkRate == blinkRate) {
+    
+    return;
+  }
+  mBlinkRate = blinkRate;
+
   if (mBlinkTimer) {
     mBlinkTimer->Cancel();
   } else {
@@ -645,8 +658,6 @@ void nsCaret::ResetBlinking()
       return;
   }
 
-  uint32_t blinkRate = static_cast<uint32_t>(
-    LookAndFeel::GetInt(LookAndFeel::eIntID_CaretBlinkTime, 500));
   if (blinkRate > 0) {
     mBlinkCount = Preferences::GetInt("ui.caretBlinkCount", -1);
     mBlinkTimer->InitWithNamedFuncCallback(CaretBlinkCallback, this, blinkRate,

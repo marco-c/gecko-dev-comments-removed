@@ -235,6 +235,12 @@ protected:
 
 
 
+
+    uint32_t              mBlinkRate;
+    
+
+
+
     uint32_t              mHideCount;
 
     
