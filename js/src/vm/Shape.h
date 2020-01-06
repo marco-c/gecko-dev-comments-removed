@@ -1559,44 +1559,14 @@ Shape::Shape(const StackShape& other, uint32_t nfixed)
 
 
 
-class ShapeGetterSetterRef : public gc::BufferableRef
+class NurseryShapesRef : public gc::BufferableRef
 {
-    AccessorShape* shape_;
+    Zone* zone_;
 
   public:
-    explicit ShapeGetterSetterRef(AccessorShape* shape) : shape_(shape) {}
-    void trace(JSTracer* trc) override { shape_->fixupGetterSetterForBarrier(trc); }
+    explicit NurseryShapesRef(Zone* zone) : zone_(zone) {}
+    void trace(JSTracer* trc) override;
 };
-
-static inline void
-GetterSetterWriteBarrierPost(AccessorShape* shape)
-{
-    MOZ_ASSERT(shape);
-    if (shape->hasGetterObject()) {
-        gc::StoreBuffer* sb = reinterpret_cast<gc::Cell*>(shape->getterObject())->storeBuffer();
-        if (sb) {
-            sb->putGeneric(ShapeGetterSetterRef(shape));
-            return;
-        }
-    }
-    if (shape->hasSetterObject()) {
-        gc::StoreBuffer* sb = reinterpret_cast<gc::Cell*>(shape->setterObject())->storeBuffer();
-        if (sb) {
-            sb->putGeneric(ShapeGetterSetterRef(shape));
-            return;
-        }
-    }
-}
-
-inline
-AccessorShape::AccessorShape(const StackShape& other, uint32_t nfixed)
-  : Shape(other, nfixed),
-    rawGetter(other.rawGetter),
-    rawSetter(other.rawSetter)
-{
-    MOZ_ASSERT(getAllocKind() == gc::AllocKind::ACCESSOR_SHAPE);
-    GetterSetterWriteBarrierPost(this);
-}
 
 inline
 Shape::Shape(UnownedBaseShape* base, uint32_t nfixed)
@@ -1635,20 +1605,6 @@ Shape::setterObject() const
 {
     MOZ_ASSERT(hasSetterValue());
     return asAccessorShape().setterObj;
-}
-
-inline void
-Shape::initDictionaryShape(const StackShape& child, uint32_t nfixed, GCPtrShape* dictp)
-{
-    if (child.isAccessorShape())
-        new (this) AccessorShape(child, nfixed);
-    else
-        new (this) Shape(child, nfixed);
-    this->flags |= IN_DICTIONARY;
-
-    this->listp = nullptr;
-    if (dictp)
-        insertIntoDictionary(dictp);
 }
 
 inline Shape*
