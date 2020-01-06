@@ -5,6 +5,13 @@
 
 
 
+
+
+
+
+
+
+
 "use strict";
 
 
@@ -263,23 +270,6 @@ function waitForInitialAddonList(document) {
     result = waitForMutation(addonListContainer, { childList: true });
   }
   return result;
-}
-
-function waitForInstallMessages(target) {
-  return new Promise(resolve => {
-    let observer = new MutationObserver((mutations) => {
-      const messageAdded = mutations.some((mutation) => {
-        return [...mutation.addedNodes].some((node) => {
-          return node.classList.contains("addon-target-messages");
-        });
-      });
-      if (messageAdded) {
-        observer.disconnect();
-        resolve();
-      }
-    });
-    observer.observe(target, { childList: true });
-  });
 }
 
 
