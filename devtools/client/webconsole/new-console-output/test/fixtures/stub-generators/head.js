@@ -86,19 +86,24 @@ function getCleanedPacket(key, packet) {
       }
 
       if (Array.isArray(res.message.arguments)) {
-        res.message.arguments.forEach((argument, i) => {
+        res.message.arguments = res.message.arguments.map((argument, i) => {
+          if (!argument || typeof argument !== "object") {
+            return argument;
+          }
+
+          let newArgument = Object.assign({}, argument);
           let existingArgument = existingPacket.message.arguments[i];
-
           
-          if (argument && argument.actor) {
-            argument.actor = existingArgument.actor;
+          if (newArgument.actor) {
+            newArgument.actor = existingArgument.actor;
           }
 
           
           
-          if (argument && argument.class === "Window") {
-            argument.ownPropertyLength = existingArgument.ownPropertyLength;
+          if (newArgument.class === "Window") {
+            newArgument.ownPropertyLength = existingArgument.ownPropertyLength;
           }
+          return newArgument;
         });
       }
     }
@@ -303,20 +308,6 @@ function* generateConsoleApiStubs() {
         stubs.preparedMessages.push(formatStub(callKey, res));
         if (++i === keys.length) {
           toolbox.target.client.removeListener("consoleAPICall", listener);
-
-          
-          
-          if (callKey === "console.dir({C, M, Y, K})") {
-            const dirMsg = await waitForMessage(hud, `cyan: "C"`);
-            const oi = dirMsg.querySelector(".tree");
-            
-            
-            if (oi.querySelectorAll(".node").length === 1) {
-              await waitForNodeMutation(oi, {
-                childList: true
-              });
-            }
-          }
           resolve();
         }
       };
@@ -521,45 +512,4 @@ function* generatePageErrorStubs() {
 
   yield closeTabAndToolbox();
   return formatFile(stubs, "ConsoleMessage");
-}
-
-
-
-
-
-
-
-function waitForMessage(hud, messageText) {
-  return new Promise(resolve => {
-    hud.ui.on("new-messages",
-      function messagesReceived(e, newMessages) {
-        for (let newMessage of newMessages) {
-          let messageBody = newMessage.node.querySelector(".message-body");
-          if (messageBody.textContent.includes(messageText)) {
-            info("Matched a message with text: " + messageText);
-            hud.ui.off("new-messages", messagesReceived);
-            resolve(newMessage.node);
-            break;
-          }
-        }
-      });
-  });
-}
-
-
-
-
-
-
-
-
-
-function waitForNodeMutation(node, observeConfig = {}) {
-  return new Promise(resolve => {
-    const observer = new MutationObserver(mutations => {
-      resolve(mutations);
-      observer.disconnect();
-    });
-    observer.observe(node, observeConfig);
-  });
 }
