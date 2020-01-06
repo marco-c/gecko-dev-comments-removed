@@ -225,14 +225,17 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     
     
-    if (target.ownerDocument !== this.currentNode.ownerDocument) {
+    let nodeDocument = this.currentNode.ownerDocument;
+    if (target !== nodeDocument && target.ownerDocument !== nodeDocument) {
       let [xOffset, yOffset] = getFrameOffsets(target.ownerGlobal, this.currentNode);
       
       
       let viewportLeft = pageX - event.clientX;
       let viewportTop = pageY - event.clientY;
-      pageX -= viewportLeft + xOffset;
-      pageY -= viewportTop + yOffset;
+      
+      let { scrollTop, scrollLeft } = nodeDocument.documentElement;
+      pageX -= viewportLeft + xOffset - scrollLeft;
+      pageY -= viewportTop + yOffset - scrollTop;
     }
 
     switch (type) {
@@ -1130,7 +1133,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   convertPageCoordsToPercent(pageX, pageY) {
     
-    let dims = (this.highlighterEnv.window.document === this.currentNode.ownerDocument) ?
+    let dims = this.highlighterEnv.window.document === this.currentNode.ownerDocument ?
                this.zoomAdjustedDimensions : this.frameDimensions;
     let { top, left, width, height } = dims;
     pageX -= left;
@@ -1151,7 +1154,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   convertPercentToPageCoords(x, y) {
-    let { top, left, width, height } = this.zoomAdjustedDimensions;
+    let dims = this.highlighterEnv.window.document === this.currentNode.ownerDocument ?
+               this.zoomAdjustedDimensions : this.frameDimensions;
+    let { top, left, width, height } = dims;
     x = x * width / 100;
     y = y * height / 100;
     x += left;
