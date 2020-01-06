@@ -109,21 +109,6 @@ public:
 
 
 
-class ImageHandle
-{
-public:
-  explicit ImageHandle(layers::Image* image) : mImage(image) {}
-
-  const RefPtr<layers::Image>& GetImage() const { return mImage; }
-
-private:
-  RefPtr<layers::Image> mImage;
-};
-
-
-
-
-
 
 
 
@@ -157,14 +142,9 @@ public:
 
 
 
-
-
-
-
   virtual void RenderVideoFrame(const webrtc::VideoFrameBuffer& buffer,
                                 uint32_t time_stamp,
-                                int64_t render_time,
-                                const ImageHandle& handle) = 0;
+                                int64_t render_time) = 0;
   virtual void RenderVideoFrame(const uint8_t* buffer_y,
                                 uint32_t y_stride,
                                 const uint8_t* buffer_u,
@@ -172,8 +152,7 @@ public:
                                 const uint8_t* buffer_v,
                                 uint32_t v_stride,
                                 uint32_t time_stamp,
-                                int64_t render_time,
-                                const ImageHandle& handle) = 0;
+                                int64_t render_time) = 0;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoRenderer)
 };
