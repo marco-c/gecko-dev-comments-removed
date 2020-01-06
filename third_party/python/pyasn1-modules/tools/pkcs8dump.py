@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 from pyasn1.codec.der import decoder, encoder
 from pyasn1_modules import rfc5208, pem
 import sys
@@ -11,11 +16,15 @@ if len(sys.argv) != 1:
     print("""Usage:
 $ cat pkcs8key.pem | %s""" % sys.argv[0])
     sys.exit(-1)
-    
+
 cnt = 0
 
-while 1:
-    idx, substrate = pem.readPemBlocksFromFile(sys.stdin, ('-----BEGIN PRIVATE KEY-----', '-----END PRIVATE KEY-----'), ('-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----') )
+while True:
+    idx, substrate = pem.readPemBlocksFromFile(
+        sys.stdin,
+        ('-----BEGIN PRIVATE KEY-----', '-----END PRIVATE KEY-----'),
+        ('-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----')
+    )
     if not substrate:
         break
 
@@ -28,14 +37,13 @@ while 1:
 
     key, rest = decoder.decode(substrate, asn1Spec=asn1Spec)
 
-    if rest: substrate = substrate[:-len(rest)]
-        
+    if rest:
+        substrate = substrate[:-len(rest)]
+
     print(key.prettyPrint())
 
-    assert encoder.encode(key, defMode=False) == substrate or \
-           encoder.encode(key, defMode=True) == substrate, \
-           'pkcs8 recode fails'
-        
-    cnt = cnt + 1
-    
+    assert encoder.encode(key) == substrate, 'pkcs8 recode fails'
+
+    cnt += 1
+
 print('*** %s PKCS#8 key(s) de/serialized' % cnt)

@@ -2,9 +2,15 @@
 
 
 
+
+
+
+
+
 from pyasn1.codec.ber import encoder, decoder
 from pyasn1_modules import rfc1157
-import sys, socket
+import sys
+import socket
 
 if len(sys.argv) != 4:
     print("""Usage:
@@ -31,6 +37,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.sendto(encoder.encode(msg), (sys.argv[2], 161))
 
 substrate, _ = sock.recvfrom(2048)
+
 
 rMsg, _ = decoder.decode(substrate, asn1Spec=msg)
 
