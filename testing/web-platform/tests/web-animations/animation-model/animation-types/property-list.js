@@ -1231,7 +1231,10 @@ var gCSSProperties = {
   },
   'stroke-dasharray': {
     
-    types: [ 'dasharray' ]
+    types: [
+      'dasharray',
+      { type: 'discrete', options: [ [ 'none', '10, 20' ] ] }
+    ]
   },
   'stroke-dashoffset': {
     
