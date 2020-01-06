@@ -1996,6 +1996,10 @@ pref("network.standard-url.max-length", 1048576);
 pref("network.standard-url.enable-rust", false);
 
 
+
+pref("network.standard-url.punycode-host", true);
+
+
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
