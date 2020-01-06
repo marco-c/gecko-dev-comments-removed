@@ -715,21 +715,20 @@ pub enum WindowSizeType {
 #[derive(Deserialize, Serialize)]
 pub enum WebDriverCommandMsg {
     
-    GetWindowSize(PipelineId, IpcSender<WindowSizeData>),
+    GetWindowSize(TopLevelBrowsingContextId, IpcSender<WindowSizeData>),
     
-    LoadUrl(PipelineId, LoadData, IpcSender<LoadStatus>),
+    LoadUrl(TopLevelBrowsingContextId, LoadData, IpcSender<LoadStatus>),
     
-    Refresh(PipelineId, IpcSender<LoadStatus>),
-    
-    
-    ScriptCommand(PipelineId, WebDriverScriptCommand),
-    
-    SendKeys(PipelineId, Vec<(Key, KeyModifiers, KeyState)>),
-    
-    SetWindowSize(PipelineId, Size2D<u32>, IpcSender<WindowSizeData>),
+    Refresh(TopLevelBrowsingContextId, IpcSender<LoadStatus>),
     
     
-    TakeScreenshot(PipelineId, IpcSender<Option<Image>>),
+    ScriptCommand(BrowsingContextId, WebDriverScriptCommand),
+    
+    SendKeys(BrowsingContextId, Vec<(Key, KeyModifiers, KeyState)>),
+    
+    SetWindowSize(TopLevelBrowsingContextId, Size2D<u32>, IpcSender<WindowSizeData>),
+    
+    TakeScreenshot(TopLevelBrowsingContextId, IpcSender<Option<Image>>),
 }
 
 
@@ -742,8 +741,10 @@ pub enum ConstellationMsg {
     GetBrowsingContext(PipelineId, IpcSender<Option<BrowsingContextId>>),
     
     
+    GetPipeline(BrowsingContextId, IpcSender<Option<PipelineId>>),
     
-    GetPipeline(Option<BrowsingContextId>, IpcSender<Option<PipelineId>>),
+    
+    GetFocusTopLevelBrowsingContext(IpcSender<Option<TopLevelBrowsingContextId>>),
     
     
     GetPipelineTitle(PipelineId),
@@ -756,15 +757,15 @@ pub enum ConstellationMsg {
     
     LoadUrl(PipelineId, LoadData),
     
-    TraverseHistory(Option<PipelineId>, TraversalDirection),
+    TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
     
-    WindowSize(WindowSizeData, WindowSizeType),
+    WindowSize(TopLevelBrowsingContextId, WindowSizeData, WindowSizeType),
     
     TickAnimation(PipelineId, AnimationTickType),
     
     WebDriverCommand(WebDriverCommandMsg),
     
-    Reload,
+    Reload(TopLevelBrowsingContextId),
     
     LogEntry(Option<TopLevelBrowsingContextId>, Option<String>, LogEntry),
     

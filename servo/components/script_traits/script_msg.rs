@@ -104,9 +104,9 @@ pub enum ScriptMsg {
     
     MozBrowserEvent(PipelineId, PipelineId, MozBrowserEvent),
     
-    TraverseHistory(Option<PipelineId>, TraversalDirection),
+    TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
     
-    JointSessionHistoryLength(PipelineId, IpcSender<u32>),
+    JointSessionHistoryLength(TopLevelBrowsingContextId, IpcSender<u32>),
     
     NewFavicon(ServoUrl),
     
