@@ -4,7 +4,7 @@
 
 using namespace cdm;
 
-ClearKeyCDM::ClearKeyCDM(Host_8* aHost)
+ClearKeyCDM::ClearKeyCDM(Host_9* aHost)
 {
   mHost = aHost;
   mSessionManager = new ClearKeySessionManager(mHost);
@@ -18,6 +18,15 @@ ClearKeyCDM::Initialize(bool aAllowDistinctiveIdentifier,
                         aAllowPersistentState);
 }
 
+void
+ClearKeyCDM::GetStatusForPolicy(uint32_t aPromiseId,
+                                const Policy& aPolicy)
+{
+  
+  
+  
+  assert(false);
+}
 void
 ClearKeyCDM::SetServerCertificate(uint32_t aPromiseId,
                                   const uint8_t* aServerCertificateData,
@@ -178,6 +187,15 @@ void
 ClearKeyCDM::OnQueryOutputProtectionStatus(QueryResult aResult,
                                            uint32_t aLinkMask,
                                            uint32_t aOutputProtectionMask)
+{
+  
+  assert(false);
+}
+
+void
+ClearKeyCDM::OnStorageId(uint32_t aVersion,
+                         const uint8_t* aStorageId,
+                         uint32_t aStorageIdSize)
 {
   
   assert(false);
