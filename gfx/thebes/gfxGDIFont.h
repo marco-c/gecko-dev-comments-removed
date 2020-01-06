@@ -28,8 +28,7 @@ public:
 
     HFONT GetHFONT() { return mFont; }
 
-    cairo_font_face_t   *CairoFontFace() { return mFontFace; }
-    cairo_scaled_font_t *CairoScaledFont() { return mScaledFont; }
+    cairo_font_face_t* CairoFontFace() { return mFontFace; }
 
     
     virtual uint32_t GetSpaceGlyph() override;

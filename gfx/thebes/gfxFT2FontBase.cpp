@@ -45,7 +45,7 @@ gfxFT2FontBase::GetGlyph(uint32_t aCharCode)
     
 
     cairo_font_face_t *face =
-        cairo_scaled_font_get_font_face(CairoScaledFont());
+        cairo_scaled_font_get_font_face(GetCairoScaledFont());
 
     if (cairo_font_face_status(face) != CAIRO_STATUS_SUCCESS)
         return 0;
@@ -113,7 +113,7 @@ gfxFT2FontBase::GetGlyphExtents(uint32_t aGlyph, cairo_text_extents_t* aExtents)
     
     
     
-    cairo_scaled_font_glyph_extents(CairoScaledFont(), glyphs, 1, aExtents);
+    cairo_scaled_font_glyph_extents(GetCairoScaledFont(), glyphs, 1, aExtents);
 }
 
 
@@ -486,7 +486,7 @@ gfxFT2FontBase::SetupCairoFont(DrawTarget* aDrawTarget)
     
     
     
-    cairo_scaled_font_t *cairoFont = CairoScaledFont();
+    cairo_scaled_font_t *cairoFont = GetCairoScaledFont();
 
     if (cairo_scaled_font_status(cairoFont) != CAIRO_STATUS_SUCCESS) {
         
