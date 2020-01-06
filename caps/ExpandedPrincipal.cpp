@@ -181,13 +181,17 @@ ExpandedPrincipal::AddonHasPermission(const nsAtom* aPerm)
 }
 
 nsIPrincipal*
-ExpandedPrincipal::PrincipalToInherit(nsIURI* aRequestedURI,
-                                      bool aAllowIfInheritsPrincipal)
+ExpandedPrincipal::PrincipalToInherit(nsIURI* aRequestedURI)
 {
   if (aRequestedURI) {
+    
+    
+    
+    
+    
+    
     for (const auto& principal : mPrincipals) {
-      if (NS_SUCCEEDED(principal->CheckMayLoad(aRequestedURI, false,
-                                               aAllowIfInheritsPrincipal))) {
+      if (Cast(principal)->MayLoadInternal(aRequestedURI)) {
         return principal;
       }
     }

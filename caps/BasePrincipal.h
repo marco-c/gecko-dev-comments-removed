@@ -131,11 +131,7 @@ public:
   
   
   
-  
-  
-  
-  nsIPrincipal* PrincipalToInherit(nsIURI* aRequestedURI = nullptr,
-                                   bool aAllowIfInheritsPrincipal = true);
+  nsIPrincipal* PrincipalToInherit(nsIURI* aRequestedURI = nullptr);
 
   
 
