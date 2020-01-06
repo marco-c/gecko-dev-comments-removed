@@ -58,11 +58,12 @@ WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType)
         uint8_t bitDepth = 0;
         if (ExtractVPXCodecDetails(codec, profile, level, bitDepth)) {
           trackInfo->GetAsVideoInfo()->mBitDepth = bitDepth;
-        }
-        
-        RefPtr<PDMFactory> platform = new PDMFactory();
-        if (!platform->Supports(*trackInfo, nullptr)) {
-          return false;
+
+          
+          RefPtr<PDMFactory> platform = new PDMFactory();
+          if (!platform->Supports(*trackInfo, nullptr)) {
+            return false;
+          }
         }
         continue;
       }
