@@ -514,7 +514,7 @@ class TabTracker extends TabTrackerBase {
   }
 
   getBrowserData(browser) {
-    if (browser.ownerGlobal.location.href === "about:addons") {
+    if (browser.ownerDocument.documentURI === "about:addons") {
       
       
       browser = browser.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
