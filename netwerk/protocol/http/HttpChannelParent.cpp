@@ -113,7 +113,7 @@ HttpChannelParent::ActorDestroy(ActorDestroyReason why)
   
   
   if (mParentListener) {
-    mParentListener->ClearInterceptedChannel();
+    mParentListener->ClearInterceptedChannel(this);
   }
 
   CleanupBackgroundChannel();
@@ -1806,8 +1806,40 @@ HttpChannelParent::StartRedirect(uint32_t registrarId,
        "newChannel=%p callback=%p]\n", this, registrarId, newChannel,
        callback));
 
-  if (mIPCClosed)
+  if (mIPCClosed) {
     return NS_BINDING_ABORTED;
+  }
+
+  
+  
+  
+  
+  if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+    nsCOMPtr<nsIInterceptedChannel> newIntercepted = do_QueryInterface(newChannel);
+    if (newIntercepted) {
+#ifdef DEBUG
+      
+      
+      
+      nsCOMPtr<nsIInterceptedChannel> oldIntercepted =
+        do_QueryInterface(static_cast<nsIChannel*>(mChannel.get()));
+      MOZ_ASSERT(!oldIntercepted);
+#endif
+
+      
+      nsCOMPtr<nsIChannel> linkedChannel;
+      rv = NS_LinkRedirectChannels(registrarId, this, getter_AddRefs(linkedChannel));
+      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_ASSERT(linkedChannel == newChannel);
+
+      
+      
+      mChannel = do_QueryObject(newChannel);
+
+      callback->OnRedirectVerifyCallback(NS_OK);
+      return NS_OK;
+    }
+  }
 
   
   
@@ -1866,6 +1898,13 @@ HttpChannelParent::CompleteRedirect(bool succeeded)
 {
   LOG(("HttpChannelParent::CompleteRedirect [this=%p succeeded=%d]\n",
        this, succeeded));
+
+  
+  
+  
+  if (!mRedirectChannel) {
+    return NS_OK;
+  }
 
   if (succeeded && !mIPCClosed) {
     

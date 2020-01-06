@@ -29,6 +29,7 @@ HttpChannelParentListener::HttpChannelParentListener(HttpChannelParent* aInitial
   , mSuspendedForDiversion(false)
   , mShouldIntercept(false)
   , mShouldSuspendIntercept(false)
+  , mInterceptCanceled(false)
 {
   LOG(("HttpChannelParentListener::HttpChannelParentListener [this=%p, next=%p]",
        this, aInitialChannel));
@@ -248,13 +249,18 @@ HttpChannelParentListener::OnRedirectResult(bool succeeded)
 
   if (succeeded) {
     
-    nsCOMPtr<nsIParentChannel> parent;
-    parent = do_QueryInterface(mNextListener);
-    MOZ_ASSERT(parent);
-    parent->Delete();
-    mNextListener = do_QueryInterface(redirectChannel);
-    MOZ_ASSERT(mNextListener);
-    redirectChannel->SetParentListener(this);
+    
+    
+    if (!SameCOMIdentity(redirectChannel, mNextListener)) {
+      nsCOMPtr<nsIParentChannel> parent;
+      parent = do_QueryInterface(mNextListener);
+      MOZ_ASSERT(parent);
+      parent->Delete();
+      mInterceptCanceled = false;
+      mNextListener = do_QueryInterface(redirectChannel);
+      MOZ_ASSERT(mNextListener);
+      redirectChannel->SetParentListener(this);
+    }
   } else if (redirectChannel) {
     
     redirectChannel->Delete();
@@ -320,6 +326,23 @@ public:
 NS_IMETHODIMP
 HttpChannelParentListener::ChannelIntercepted(nsIInterceptedChannel* aChannel)
 {
+  
+  
+  
+  
+  
+  
+  if (mInterceptCanceled) {
+    nsCOMPtr<nsIRunnable> r =
+      NewRunnableMethod<nsresult>("HttpChannelParentListener::CancelInterception",
+                                  aChannel,
+                                  &nsIInterceptedChannel::CancelInterception,
+                                  NS_BINDING_ABORTED);
+    MOZ_ALWAYS_SUCCEEDS(
+      SystemGroup::Dispatch(TaskCategory::Other, r.forget()));
+    return NS_OK;
+  }
+
   if (mShouldSuspendIntercept) {
     mInterceptedChannel = aChannel;
     return NS_OK;
@@ -381,6 +404,11 @@ HttpChannelParentListener::DivertTo(nsIStreamListener* aListener)
   MOZ_ASSERT(aListener);
   MOZ_RELEASE_ASSERT(mSuspendedForDiversion, "Must already be suspended!");
 
+  
+  
+  
+  mInterceptCanceled = false;
+
   mNextListener = aListener;
 
   return ResumeForDiversion();
@@ -405,12 +433,21 @@ HttpChannelParentListener::SetupInterceptionAfterRedirect(bool aShouldIntercept)
 }
 
 void
-HttpChannelParentListener::ClearInterceptedChannel()
+HttpChannelParentListener::ClearInterceptedChannel(nsIStreamListener* aListener)
 {
+  
+  
+  
+  if (!SameCOMIdentity(mNextListener, aListener)) {
+    return;
+  }
   if (mInterceptedChannel) {
     mInterceptedChannel->CancelInterception(NS_ERROR_INTERCEPTION_FAILED);
     mInterceptedChannel = nullptr;
   }
+  
+  
+  mInterceptCanceled = true;
 }
 
 } 
