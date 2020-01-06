@@ -5,6 +5,8 @@
 "use strict";
 
 const { REQUESTS_WATERFALL } = require("./constants");
+const { getColor } = require("devtools/client/shared/theme");
+const { colorUtils } = require("devtools/shared/css/color");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const STATE_KEYS = [
@@ -109,17 +111,35 @@ WaterfallBackground.prototype = {
       drawPixelAt(delta, color);
     }
 
+    let { DOMCONTENTLOADED_TICKS_COLOR, LOAD_TICKS_COLOR } = REQUESTS_WATERFALL;
     drawTimestamp(state.timingMarkers.firstDocumentDOMContentLoadedTimestamp,
-                  REQUESTS_WATERFALL.DOMCONTENTLOADED_TICKS_COLOR_RGBA);
+                  this.getThemeColorAsRgba(DOMCONTENTLOADED_TICKS_COLOR, state.theme));
 
     drawTimestamp(state.timingMarkers.firstDocumentLoadTimestamp,
-                  REQUESTS_WATERFALL.LOAD_TICKS_COLOR_RGBA);
+                  this.getThemeColorAsRgba(LOAD_TICKS_COLOR, state.theme));
 
     
     pixelArray.set(view8bit);
     this.ctx.putImageData(imageData, 0, 0);
 
     setImageElement("waterfall-background", this.canvas);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getThemeColorAsRgba(colorName, theme) {
+    let colorStr = getColor(colorName, theme);
+    let color = new colorUtils.CssColor(colorStr);
+    let { r, g, b } = color.getRGBATuple();
+    return [r, g, b, REQUESTS_WATERFALL.TICKS_COLOR_OPACITY];
   },
 
   destroy() {
