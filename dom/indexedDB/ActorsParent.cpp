@@ -25251,6 +25251,7 @@ static const JSClassOps sNormalJSContextGlobalClassOps = {
    nullptr,
    nullptr,
    nullptr,
+   nullptr,
    JS_GlobalObjectTraceHook
 };
 

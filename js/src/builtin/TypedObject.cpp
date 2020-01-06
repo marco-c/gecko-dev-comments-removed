@@ -218,6 +218,7 @@ static const ClassOps ScalarTypeDescrClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     TypeDescr::finalize,
     ScalarTypeDescr::call
 };
@@ -318,6 +319,7 @@ ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
 
 
 static const ClassOps ReferenceTypeDescrClassOps = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -506,6 +508,7 @@ CreatePrototypeObjectForComplexTypeInstance(JSContext* cx, HandleObject ctorProt
 }
 
 static const ClassOps ArrayTypeDescrClassOps = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -743,6 +746,7 @@ js::IsTypedObjectArray(JSObject& obj)
 
 
 static const ClassOps StructTypeDescrClassOps = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -2027,8 +2031,8 @@ TypedObject::obj_deleteProperty(JSContext* cx, HandleObject obj, HandleId id, Ob
 }
 
 bool
-TypedObject::obj_enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
-                           bool enumerableOnly)
+TypedObject::obj_newEnumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
+                              bool enumerableOnly)
 {
     MOZ_ASSERT(obj->is<TypedObject>());
     Rooted<TypedObject*> typedObj(cx, &obj->as<TypedObject>());
@@ -2220,7 +2224,6 @@ const ObjectOps TypedObject::objectOps_ = {
     TypedObject::obj_deleteProperty,
     nullptr, nullptr, 
     nullptr,   
-    TypedObject::obj_enumerate,
     nullptr, 
 };
 
@@ -2231,6 +2234,7 @@ const ObjectOps TypedObject::objectOps_ = {
         nullptr,        /* getProperty */                \
         nullptr,        /* setProperty */                \
         nullptr,        /* enumerate   */                \
+        TypedObject::obj_newEnumerate,                   \
         nullptr,        /* resolve     */                \
         nullptr,        /* mayResolve  */                \
         nullptr,        /* finalize    */                \

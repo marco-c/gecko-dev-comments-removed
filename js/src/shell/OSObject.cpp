@@ -450,6 +450,7 @@ static const js::ClassOps FileObjectClassOps = {
     nullptr,               
     nullptr,               
     nullptr,               
+    nullptr,               
     FileObject::finalize,  
     nullptr,               
     nullptr,               

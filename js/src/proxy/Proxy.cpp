@@ -756,6 +756,7 @@ const ClassOps js::ProxyClassOps = {
     nullptr,                 
     nullptr,                 
     nullptr,                 
+    nullptr,                 
     proxy_Finalize,          
     nullptr,                 
     Proxy::hasInstance,      
@@ -777,7 +778,6 @@ const ObjectOps js::ProxyObjectOps = {
     proxy_DeleteProperty,
     Proxy::watch, Proxy::unwatch,
     Proxy::getElements,
-    nullptr,  
     Proxy::fun_toString
 };
 

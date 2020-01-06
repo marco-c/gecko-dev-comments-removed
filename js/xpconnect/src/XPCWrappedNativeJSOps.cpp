@@ -626,6 +626,7 @@ static const js::ClassOps XPC_WN_NoHelper_JSClassOps = {
     nullptr,                           
     nullptr,                           
     XPC_WN_Shared_Enumerate,           
+    nullptr,                           
     XPC_WN_NoHelper_Resolve,           
     nullptr,                           
     XPC_WN_NoHelper_Finalize,          
@@ -874,9 +875,9 @@ XPC_WN_Helper_Enumerate(JSContext* cx, HandleObject obj)
 
 
 
-static bool
-XPC_WN_JSOp_Enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
-                      bool enumerableOnly)
+bool
+XPC_WN_NewEnumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
+                    bool enumerableOnly)
 {
     XPCCallContext ccx(cx, obj);
     XPCWrappedNative* wrapper = ccx.GetWrapper();
@@ -895,23 +896,6 @@ XPC_WN_JSOp_Enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
         return Throw(rv, cx);
     return retval;
 }
-
-
-
-const js::ObjectOps XPC_WN_ObjectOpsWithEnumerate = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    XPC_WN_JSOp_Enumerate,
-    nullptr,  
-};
 
 
 
@@ -1113,6 +1097,7 @@ static const js::ClassOps XPC_WN_ModsAllowed_Proto_JSClassOps = {
     nullptr,                            
     nullptr,                            
     XPC_WN_Shared_Proto_Enumerate,      
+    nullptr,                            
     XPC_WN_ModsAllowed_Proto_Resolve,   
     nullptr,                            
     XPC_WN_Shared_Proto_Finalize,       
@@ -1193,6 +1178,7 @@ static const js::ClassOps XPC_WN_NoMods_Proto_JSClassOps = {
     nullptr,                                   
     nullptr,                                   
     XPC_WN_Shared_Proto_Enumerate,             
+    nullptr,                                   
     XPC_WN_NoMods_Proto_Resolve,               
     nullptr,                                   
     XPC_WN_Shared_Proto_Finalize,              
@@ -1289,6 +1275,7 @@ static const js::ClassOps XPC_WN_Tearoff_JSClassOps = {
     nullptr,                            
     nullptr,                            
     XPC_WN_TearOff_Enumerate,           
+    nullptr,                            
     XPC_WN_TearOff_Resolve,             
     nullptr,                            
     XPC_WN_TearOff_Finalize,            

@@ -1026,6 +1026,7 @@ const ClassOps CollatorObject::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     CollatorObject::finalize
 };
 
@@ -1586,6 +1587,7 @@ js::intl_isUpperCaseFirst(JSContext* cx, unsigned argc, Value* vp)
 
 
 const ClassOps NumberFormatObject::classOps_ = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -2479,6 +2481,7 @@ js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp)
 
 
 const ClassOps DateTimeFormatObject::classOps_ = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -3589,6 +3592,7 @@ js::intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp)
 
 
 const ClassOps PluralRulesObject::classOps_ = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

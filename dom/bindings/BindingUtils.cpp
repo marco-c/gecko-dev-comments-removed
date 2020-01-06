@@ -1987,6 +1987,7 @@ const js::ClassOps sBoringInterfaceObjectClassClassOps = {
     nullptr,               
     nullptr,               
     nullptr,               
+    nullptr,               
     ThrowingConstructor,   
     nullptr,               
     ThrowingConstructor,   
@@ -1994,7 +1995,6 @@ const js::ClassOps sBoringInterfaceObjectClassClassOps = {
 };
 
 const js::ObjectOps sInterfaceObjectClassObjectOps = {
-  nullptr, 
   nullptr, 
   nullptr, 
   nullptr, 

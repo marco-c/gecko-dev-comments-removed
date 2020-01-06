@@ -204,6 +204,7 @@ static const ClassOps RegExpObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     RegExpObject::trace,
 };
 

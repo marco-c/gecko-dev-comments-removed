@@ -213,6 +213,7 @@ JSObject* newDelegate()
         nullptr, 
         nullptr, 
         nullptr, 
+        nullptr, 
         JS_GlobalObjectTraceHook,
     };
 

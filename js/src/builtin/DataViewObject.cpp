@@ -940,6 +940,7 @@ static const ClassOps DataViewObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     ArrayBufferViewObject::trace
 };
 

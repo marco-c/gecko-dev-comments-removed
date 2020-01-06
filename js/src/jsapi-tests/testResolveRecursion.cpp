@@ -19,6 +19,7 @@ BEGIN_TEST(testResolveRecursion)
         nullptr, 
         nullptr, 
         nullptr, 
+        nullptr, 
         my_resolve
     };
 
@@ -155,6 +156,7 @@ BEGIN_TEST(testResolveRecursion_InitStandardClasses)
 
 const JSClass* getGlobalClass() override {
     static const JSClassOps myGlobalClassOps = {
+        nullptr, 
         nullptr, 
         nullptr, 
         nullptr, 

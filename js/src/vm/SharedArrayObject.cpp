@@ -401,6 +401,7 @@ static const ClassOps SharedArrayBufferObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     SharedArrayBufferObject::Finalize,
     nullptr, 
     nullptr, 

@@ -925,8 +925,8 @@ UnboxedPlainObject::obj_watch(JSContext* cx, HandleObject obj, HandleId id, Hand
 }
 
  bool
-UnboxedPlainObject::obj_enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
-                                  bool enumerableOnly)
+UnboxedPlainObject::newEnumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
+                                 bool enumerableOnly)
 {
     
     
@@ -951,6 +951,7 @@ static const ClassOps UnboxedPlainObjectClassOps = {
     nullptr,        
     nullptr,        
     nullptr,        
+    UnboxedPlainObject::newEnumerate,
     nullptr,        
     nullptr,        
     nullptr,        
@@ -971,7 +972,6 @@ static const ObjectOps UnboxedPlainObjectObjectOps = {
     UnboxedPlainObject::obj_watch,
     nullptr,   
     nullptr,   
-    UnboxedPlainObject::obj_enumerate,
     nullptr    
 };
 
@@ -1627,8 +1627,8 @@ UnboxedArrayObject::obj_watch(JSContext* cx, HandleObject obj, HandleId id, Hand
 }
 
  bool
-UnboxedArrayObject::obj_enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
-                                  bool enumerableOnly)
+UnboxedArrayObject::newEnumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
+                                 bool enumerableOnly)
 {
     for (size_t i = 0; i < obj->as<UnboxedArrayObject>().initializedLength(); i++) {
         if (!properties.append(INT_TO_JSID(i)))
@@ -1647,6 +1647,7 @@ static const ClassOps UnboxedArrayObjectClassOps = {
     nullptr,        
     nullptr,        
     nullptr,        
+    UnboxedArrayObject::newEnumerate,
     nullptr,        
     nullptr,        
     UnboxedArrayObject::finalize,
@@ -1672,7 +1673,6 @@ static const ObjectOps UnboxedArrayObjectObjectOps = {
     UnboxedArrayObject::obj_watch,
     nullptr,   
     nullptr,   
-    UnboxedArrayObject::obj_enumerate,
     nullptr    
 };
 

@@ -312,6 +312,7 @@ static const ClassOps SavedFrameClassOps = {
     nullptr,                    
     nullptr,                    
     nullptr,                    
+    nullptr,                    
     SavedFrame::finalize,       
     nullptr,                    
     nullptr,                    

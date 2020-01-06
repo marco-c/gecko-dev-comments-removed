@@ -437,6 +437,7 @@ static const ClassOps StringObjectClassOps = {
     nullptr, 
     nullptr, 
     str_enumerate,
+    nullptr, 
     str_resolve,
     str_mayResolve
 };

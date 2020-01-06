@@ -962,6 +962,7 @@ static const ClassOps JSFunctionClassOps = {
     nullptr,                 
     nullptr,                 
     fun_enumerate,
+    nullptr,                 
     fun_resolve,
     fun_mayResolve,
     nullptr,                 

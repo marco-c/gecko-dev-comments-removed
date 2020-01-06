@@ -125,6 +125,7 @@ static const JSClassOps sWitnessClassOps = {
   nullptr ,
   nullptr ,
   nullptr ,
+  nullptr ,
   Finalize 
 };
 

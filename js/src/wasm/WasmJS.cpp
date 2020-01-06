@@ -485,6 +485,7 @@ const ClassOps WasmModuleObject::classOps_ =
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     WasmModuleObject::finalize
 };
 
@@ -930,6 +931,7 @@ const ClassOps WasmInstanceObject::classOps_ =
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     WasmInstanceObject::finalize,
     nullptr, 
     nullptr, 
@@ -1290,6 +1292,7 @@ const ClassOps WasmMemoryObject::classOps_ =
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     WasmMemoryObject::finalize
 };
 
@@ -1540,6 +1543,7 @@ WasmMemoryObject::grow(HandleWasmMemoryObject memory, uint32_t delta, JSContext*
 
 const ClassOps WasmTableObject::classOps_ =
 {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

@@ -134,6 +134,7 @@ static const ClassOps MapIteratorObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     MapIteratorObject::finalize
 };
 
@@ -285,6 +286,7 @@ CreateMapPrototype(JSContext* cx, JSProtoKey key)
 }
 
 const ClassOps MapObject::classOps_ = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -872,6 +874,7 @@ static const ClassOps SetIteratorObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
+    nullptr, 
     SetIteratorObject::finalize
 };
 
@@ -1010,6 +1013,7 @@ CreateSetPrototype(JSContext* cx, JSProtoKey key)
 }
 
 const ClassOps SetObject::classOps_ = {
+    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
