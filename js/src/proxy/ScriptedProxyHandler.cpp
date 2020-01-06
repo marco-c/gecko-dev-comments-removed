@@ -714,6 +714,7 @@ CreateFilteredListFromArrayLike(JSContext* cx, HandleValue v, AutoIdVector& prop
 
 
 
+
 bool
 ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdVector& props) const
 {
@@ -749,6 +750,22 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
         return false;
 
     
+    Rooted<GCHashSet<jsid>> uncheckedResultKeys(cx, GCHashSet<jsid>(cx));
+    if (!uncheckedResultKeys.init(trapResult.length()))
+        return false;
+
+    for (size_t i = 0, len = trapResult.length(); i < len; i++) {
+        MOZ_ASSERT(!JSID_IS_VOID(trapResult[i]));
+
+        auto ptr = uncheckedResultKeys.lookupForAdd(trapResult[i]);
+        if (ptr)
+            return js::Throw(cx, trapResult[i], JSMSG_OWNKEYS_DUPLICATE);
+
+        if (!uncheckedResultKeys.add(ptr, trapResult[i]))
+            return false;
+    }
+
+    
     bool extensibleTarget;
     if (!IsExtensible(cx, target, &extensibleTarget))
         return false;
@@ -782,20 +799,6 @@ ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy, AutoIdV
     
     if (extensibleTarget && targetNonconfigurableKeys.empty())
         return props.appendAll(trapResult);
-
-    
-    
-    
-    Rooted<GCHashSet<jsid>> uncheckedResultKeys(cx, GCHashSet<jsid>(cx));
-    if (!uncheckedResultKeys.init(trapResult.length()))
-        return false;
-
-    for (size_t i = 0, len = trapResult.length(); i < len; i++) {
-        MOZ_ASSERT(!JSID_IS_VOID(trapResult[i]));
-
-        if (!uncheckedResultKeys.put(trapResult[i]))
-            return false;
-    }
 
     
     for (size_t i = 0; i < targetNonconfigurableKeys.length(); ++i) {
