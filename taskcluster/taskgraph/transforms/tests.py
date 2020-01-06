@@ -22,6 +22,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 from taskgraph.util.treeherder import split_symbol, join_symbol
+from taskgraph.util.platforms import platform_family
 from taskgraph.util.schema import (
     validate_schema,
     optionally_keyed_by,
@@ -935,12 +936,16 @@ def make_job_description(config, tests):
             'platform': test.get('treeherder-machine-platform', test['build-platform']),
         }
 
-        
-        if config.params['project'] == 'try':
-            jobdesc['when'] = test.get('when', {})
+        if test.get('when'):
+            jobdesc['when'] = test['when']
         else:
-            
-            jobdesc['optimization'] = {'seta': None}
+            schedules = [platform_family(test['build-platform'])]
+            if config.params['project'] != 'try':
+                
+                jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
+            else:
+                
+                jobdesc['optimization'] = {'skip-unless-schedules': schedules}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
