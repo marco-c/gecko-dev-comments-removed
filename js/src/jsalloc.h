@@ -51,6 +51,8 @@ class SystemAllocPolicy
     }
 };
 
+void ReportOutOfMemory(JSContext* cx);
+
 
 
 
@@ -129,7 +131,7 @@ class TempAllocPolicy
 
     bool checkSimulatedOOM() const {
         if (js::oom::ShouldFailWithOOM()) {
-            JS_ReportOutOfMemory(cx_);
+            ReportOutOfMemory(cx_);
             return false;
         }
 
