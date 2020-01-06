@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+function startup(data) {
+}
+
+function shutdown(data, reason) {
+}
+
+function install() {}
+function uninstall() {}
