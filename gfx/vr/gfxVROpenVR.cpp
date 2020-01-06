@@ -205,9 +205,10 @@ VRDisplayOpenVR::GetSensorState()
 {
   PollEvents();
 
-  ::vr::TrackedDevicePose_t poses[::vr::k_unMaxTrackedDeviceCount];
+  const uint32_t posesSize = ::vr::k_unTrackedDeviceIndex_Hmd + 1;
+  ::vr::TrackedDevicePose_t poses[posesSize];
   
-  mVRCompositor->WaitGetPoses(poses, ::vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+  mVRCompositor->WaitGetPoses(nullptr, 0, poses, posesSize);
 
   VRHMDSensorState result;
 
