@@ -402,6 +402,22 @@ class TelemetryRecord {
   }
 }
 
+function cleanErrorMessage(error) {
+  
+  
+  error = error.replace(reProfileDir, "[profileDir]");
+  
+  
+  if (error.endsWith("is not a valid URL.")) {
+    error = "<URL> is not a valid URL.";
+  }
+  
+  
+  
+  error = error.replace(/\S+:\S+/g, "<URL>");
+  return error;
+}
+
 class SyncTelemetryImpl {
   constructor(allowedEngines) {
     log.level = Log.Level[Svc.Prefs.get("log.logger.telemetry", "Trace")];
@@ -666,9 +682,7 @@ class SyncTelemetryImpl {
         
         return { name: "othererror", error };
       }
-      
-      
-      error = error.replace(reProfileDir, "[profileDir]");
+      error = cleanErrorMessage(error);
       return { name: "unexpectederror", error };
     }
 
@@ -698,9 +712,8 @@ class SyncTelemetryImpl {
 
     return {
       name: "unexpectederror",
-      
-      error: String(error).replace(reProfileDir, "[profileDir]")
-    }
+      error: cleanErrorMessage(String(error))
+    };
   }
 
 }
