@@ -193,25 +193,6 @@ const Sandbox = function Sandbox(options) {
 
 
 
-
-
-
-
-
-const evaluate = function evaluate(sandbox, uri, options) {
-  let { source, line, version, encoding } = override({
-    encoding: 'UTF-8',
-    line: 1,
-    version: '1.8',
-    source: null
-  }, options);
-
-  return source ? Cu.evalInSandbox(source, sandbox, version, uri, line)
-                : loadSubScript(uri, sandbox, encoding);
-};
-
-
-
 const load = function load(loader, module) {
   let { sandboxes, globals, loadModuleHook } = loader;
   let require = Require(loader, module);
@@ -277,7 +258,7 @@ const load = function load(loader, module) {
 
   let originalExports = module.exports;
   try {
-    evaluate(sandbox, module.uri);
+    loadSubScript(module.uri, sandbox, 'UTF-8');
   }
   catch (error) {
     let { message, fileName, lineNumber } = error;
