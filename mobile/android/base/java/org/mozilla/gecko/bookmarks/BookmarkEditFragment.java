@@ -496,7 +496,7 @@ public class BookmarkEditFragment extends DialogFragment implements SelectFolder
     
 
 
-    private class BookmarkTextWatcher implements TextWatcher {
+    private static final class BookmarkTextWatcher implements TextWatcher {
         
         private final WeakReference<MenuItem> doneItemWeakReference;
 

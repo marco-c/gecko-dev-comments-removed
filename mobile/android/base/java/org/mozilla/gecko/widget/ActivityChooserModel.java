@@ -976,7 +976,7 @@ public class ActivityChooserModel extends DataSetObservable {
     
 
 
-    public final class ActivityResolveInfo implements Comparable<ActivityResolveInfo> {
+    public static final class ActivityResolveInfo implements Comparable<ActivityResolveInfo> {
 
         
 
@@ -1039,7 +1039,7 @@ public class ActivityChooserModel extends DataSetObservable {
     
 
 
-    private final class DefaultSorter implements ActivitySorter {
+    private static final class DefaultSorter implements ActivitySorter {
         private static final float WEIGHT_DECAY_COEFFICIENT = 0.95f;
 
         private final Map<String, ActivityResolveInfo> mPackageNameToActivityMap =

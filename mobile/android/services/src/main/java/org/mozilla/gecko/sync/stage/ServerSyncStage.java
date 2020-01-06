@@ -282,7 +282,7 @@ public abstract class ServerSyncStage extends AbstractSessionManagingSyncStage i
   }
 
   
-  private class WipeWaiter {
+  private static final class WipeWaiter {
     public boolean sessionSucceeded = true;
     public boolean wipeSucceeded = true;
     public Exception error;

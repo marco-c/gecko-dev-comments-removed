@@ -3165,7 +3165,7 @@ public class BrowserApp extends GeckoApp
     
 
 
-    private class HideOnTouchListener implements TouchEventInterceptor {
+    private static final class HideOnTouchListener implements TouchEventInterceptor {
         @Override
         public boolean onInterceptTouchEvent(View view, MotionEvent event) {
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {

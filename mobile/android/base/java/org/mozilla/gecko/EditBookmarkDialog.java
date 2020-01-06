@@ -39,7 +39,7 @@ public class EditBookmarkDialog {
     
 
 
-    private class Bookmark {
+    private static final class Bookmark {
         final int id;
         final String title;
         final String url;
@@ -61,7 +61,7 @@ public class EditBookmarkDialog {
 
 
 
-    private class EditBookmarkTextWatcher implements TextWatcher {
+    private static class EditBookmarkTextWatcher implements TextWatcher {
         
         protected AlertDialog mDialog;
 
@@ -101,7 +101,7 @@ public class EditBookmarkDialog {
 
 
 
-    private class LocationTextWatcher extends EditBookmarkTextWatcher {
+    private static final class LocationTextWatcher extends EditBookmarkTextWatcher {
         public LocationTextWatcher(AlertDialog aDialog) {
             super(aDialog);
         }
@@ -118,7 +118,7 @@ public class EditBookmarkDialog {
 
 
 
-    private class KeywordTextWatcher extends EditBookmarkTextWatcher {
+    private static final class KeywordTextWatcher extends EditBookmarkTextWatcher {
         public KeywordTextWatcher(AlertDialog aDialog) {
             super(aDialog);
         }
