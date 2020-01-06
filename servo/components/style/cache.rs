@@ -4,31 +4,43 @@
 
 
 
-#![deny(missing_docs)]
-
-extern crate arraydeque;
-use self::arraydeque::Array;
-use self::arraydeque::ArrayDeque;
+use arrayvec::{Array, ArrayVec};
 
 
 
 
-pub struct LRUCache <K: Array>{
-    entries: ArrayDeque<K>,
+
+
+pub struct LRUCache<T, A: Array<Item=Entry<T>>> {
+    entries: ArrayVec<A>,
+    
+    head: u16,
+    
+    tail: u16,
 }
 
 
-pub type LRUCacheIterator<'a, K> = arraydeque::Iter<'a, K>;
+pub struct CacheIndex(u16);
 
 
-pub type LRUCacheMutIterator<'a, K> = arraydeque::IterMut<'a, K>;
+pub struct Entry<T> {
+    val: T,
+    
+    prev: u16,
+    
+    next: u16,
+}
 
-impl<K: Array> LRUCache<K> {
+impl<T, A: Array<Item=Entry<T>>> LRUCache<T, A> {
     
     pub fn new() -> Self {
-        LRUCache {
-          entries: ArrayDeque::new(),
-        }
+        let cache = LRUCache {
+            entries: ArrayVec::new(),
+            head: 0,
+            tail: 0,
+        };
+        assert!(cache.entries.capacity() < u16::max_value() as usize, "Capacity overflow");
+        cache
     }
 
     
@@ -38,45 +50,161 @@ impl<K: Array> LRUCache<K> {
 
     #[inline]
     
-    pub fn touch(&mut self, pos: usize) {
-        if pos != 0 {
-            let entry = self.entries.remove(pos).unwrap();
-            self.entries.push_front(entry);
+    pub fn touch(&mut self, idx: CacheIndex) {
+        if idx.0 != self.head {
+            self.remove(idx.0);
+            self.push_front(idx.0);
         }
     }
 
     
-    pub fn front(&self) -> Option<&K::Item> {
-        self.entries.get(0)
+    pub fn front(&self) -> Option<&T> {
+        self.entries.get(self.head as usize).map(|e| &e.val)
     }
 
     
-    pub fn front_mut(&mut self) -> Option<&mut K::Item> {
-        self.entries.get_mut(0)
+    pub fn front_mut(&mut self) -> Option<&mut T> {
+        self.entries.get_mut(self.head as usize).map(|e| &mut e.val)
     }
 
     
     
-    pub fn iter(&self) -> arraydeque::Iter<K::Item> {
-        self.entries.iter()
-    }
-
-    
-    pub fn iter_mut(&mut self) -> arraydeque::IterMut<K::Item> {
-        self.entries.iter_mut()
-    }
-
-    
-    pub fn insert(&mut self, key: K::Item) {
-        if self.entries.len() == self.entries.capacity() {
-            self.entries.pop_back();
+    pub fn iter(&self) -> LRUCacheIterator<T, A> {
+        LRUCacheIterator {
+            pos: self.head,
+            done: self.entries.len() == 0,
+            cache: self,
         }
-        self.entries.push_front(key);
-        debug_assert!(self.entries.len() <= self.entries.capacity());
+    }
+
+    
+    pub fn iter_mut(&mut self) -> LRUCacheMutIterator<T, A> {
+        LRUCacheMutIterator {
+            pos: self.head,
+            done: self.entries.len() == 0,
+            cache: self,
+        }
+    }
+
+    
+    pub fn insert(&mut self, val: T) {
+        let entry = Entry { val, prev: 0, next: 0 };
+
+        
+        let new_head = if self.entries.len() == self.entries.capacity() {
+            let i = self.pop_back();
+            self.entries[i as usize] = entry;
+            i
+        } else {
+            self.entries.push(entry);
+            self.entries.len() as u16 - 1
+        };
+
+        self.push_front(new_head);
+    }
+
+    
+    
+    
+    fn remove(&mut self, i: u16) {
+        let prev = self.entries[i as usize].prev;
+        let next = self.entries[i as usize].next;
+
+        if i == self.head {
+            self.head = next;
+        } else {
+            self.entries[prev as usize].next = next;
+        }
+
+        if i == self.tail {
+            self.tail = prev;
+        } else {
+            self.entries[next as usize].prev = prev;
+        }
+    }
+
+    
+    fn push_front(&mut self, i: u16) {
+        if self.entries.len() == 1 {
+            self.tail = i;
+        } else {
+            self.entries[i as usize].next = self.head;
+            self.entries[self.head as usize].prev = i;
+        }
+        self.head = i;
+    }
+
+    
+    
+    
+    fn pop_back(&mut self) -> u16 {
+        let old_tail = self.tail;
+        let new_tail = self.entries[old_tail as usize].prev;
+        self.tail = new_tail;
+        old_tail
     }
 
     
     pub fn evict_all(&mut self) {
         self.entries.clear();
+    }
+}
+
+
+pub struct LRUCacheIterator<'a, T: 'a, A: 'a + Array<Item=Entry<T>>> {
+    cache: &'a LRUCache<T, A>,
+    pos: u16,
+    done: bool,
+}
+
+impl<'a, T, A> Iterator for LRUCacheIterator<'a, T, A>
+where T: 'a,
+      A: 'a + Array<Item=Entry<T>>
+{
+    type Item = (CacheIndex, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done { return None }
+
+        let entry = &self.cache.entries[self.pos as usize];
+
+        let index = CacheIndex(self.pos);
+        if self.pos == self.cache.tail {
+            self.done = true;
+        }
+        self.pos = entry.next;
+
+        Some((index, &entry.val))
+    }
+}
+
+
+pub struct LRUCacheMutIterator<'a, T: 'a, A: 'a + Array<Item=Entry<T>>> {
+    cache: &'a mut LRUCache<T, A>,
+    pos: u16,
+    done: bool,
+}
+
+impl<'a, T, A> Iterator for LRUCacheMutIterator<'a, T, A>
+where T: 'a,
+      A: 'a + Array<Item=Entry<T>>
+{
+    type Item = (CacheIndex, &'a mut T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done { return None }
+
+        
+        let entry = unsafe {
+            &mut *(&mut self.cache.entries[self.pos as usize] as *mut Entry<T>)
+        };
+
+        let index = CacheIndex(self.pos);
+        if self.pos == self.cache.tail {
+            self.done = true;
+        }
+        self.pos = entry.next;
+
+        Some((index, &mut entry.val))
     }
 }
