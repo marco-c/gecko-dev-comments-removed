@@ -247,6 +247,11 @@ namespace {
 
 
 
+#define DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS 4
+uint32_t gMaxConsecutiveCallbacksMilliseconds;
+
+
+
 #define DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS 5
 uint32_t gTargetMaxConsecutiveCallbacks;
 
@@ -366,6 +371,10 @@ TimeoutManager::Initialize()
   Preferences::AddUintVarCache(&gTargetMaxConsecutiveCallbacks,
                                "dom.timeout.max_consecutive_callbacks",
                                DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS);
+
+  Preferences::AddUintVarCache(&gMaxConsecutiveCallbacksMilliseconds,
+                               "dom.timeout.max_consecutive_callbacks_ms",
+                               DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS);
 }
 
 uint32_t
@@ -589,6 +598,23 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
   NS_ASSERTION(!mWindow.IsFrozen(), "Timeout running on a window in the bfcache!");
 
+  
+  uint32_t totalTimeLimitMS = std::max(1u, gMaxConsecutiveCallbacksMilliseconds);
+  const TimeDuration totalTimeLimit = TimeDuration::FromMilliseconds(totalTimeLimitMS);
+
+  
+  
+  const TimeDuration initalTimeLimit =
+    TimeDuration::FromMilliseconds(totalTimeLimit.ToMilliseconds() / 4);
+
+  
+  
+  const uint32_t kNumTimersPerInitialElapsedCheck = 100;
+
+  
+  
+  TimeStamp start = TimeStamp::Now();
+
   Timeout* last_expired_normal_timeout = nullptr;
   Timeout* last_expired_tracking_timeout = nullptr;
   bool     last_expired_timeout_is_normal = false;
@@ -677,10 +703,22 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         
         
         
-        if (targetTimerSeen &&
-            numTimersToRun >= gTargetMaxConsecutiveCallbacks &&
-            !mWindow.IsChromeWindow()) {
-          break;
+        
+        
+        
+        
+        
+        if (targetTimerSeen) {
+          if (numTimersToRun >= gTargetMaxConsecutiveCallbacks &&
+              !mWindow.IsChromeWindow()) {
+            break;
+          }
+          if (numTimersToRun % kNumTimersPerInitialElapsedCheck == 0) {
+            TimeDuration elapsed(TimeStamp::Now() - start);
+            if (elapsed >= initalTimeLimit) {
+              break;
+            }
+          }
         }
       }
 
@@ -733,6 +771,8 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
     
     mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
   }
+
+  bool targetTimeoutSeen = false;
 
   
   
@@ -787,6 +827,10 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         timeout->remove();
         timeout->Release();
         continue;
+      }
+
+      if (timeout == aTimeout) {
+        targetTimeoutSeen = true;
       }
 
       
@@ -854,6 +898,18 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
       
       timeout->Release();
+
+      
+      
+      
+      
+      
+      if (targetTimeoutSeen) {
+        TimeDuration elapsed = TimeStamp::Now() - start;
+        if (elapsed >= totalTimeLimit) {
+          break;
+        }
+      }
     }
   }
 
