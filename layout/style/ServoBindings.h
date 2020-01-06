@@ -393,6 +393,23 @@ mozilla::Keyframe* Gecko_GetOrCreateKeyframeAtStart(
   const nsTimingFunction* timingFunction);
 
 
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateInitialKeyframe(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  const nsTimingFunction* timingFunction);
+
+
+
+
+
+mozilla::Keyframe* Gecko_GetOrCreateFinalKeyframe(
+  RawGeckoKeyframeListBorrowedMut keyframes,
+  const nsTimingFunction* timingFunction);
+
+
 void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
 
 
