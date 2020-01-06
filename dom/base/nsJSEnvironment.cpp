@@ -2213,7 +2213,7 @@ DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress, const JS::GCDescrip
 
       
       nsJSContext::KillInterSliceGCTimer();
-      if (!sShuttingDown) {
+      if (!sShuttingDown && !aDesc.isComplete_) {
         CallCreateInstance("@mozilla.org/timer;1", &sInterSliceGCTimer);
         sInterSliceGCTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::GarbageCollection));
         sInterSliceGCTimer->InitWithNamedFuncCallback(InterSliceGCTimerFired,
