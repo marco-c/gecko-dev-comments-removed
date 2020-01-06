@@ -6,11 +6,11 @@
 
 const { CanvasFrameAnonymousContentHelper,
         createSVGNode, createNode, getComputedStyle } = require("./utils/markup");
-const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
+const { setIgnoreLayoutChanges, getCurrentZoom } = require("devtools/shared/layout/utils");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 
 
-const MARKER_SIZE = 10;
+const BASE_MARKER_SIZE = 10;
 
 
 
@@ -22,6 +22,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     super(highlighterEnv);
 
     this.ID_CLASS_PREFIX = "shapes-";
+
+    this.referenceBox = "border";
+    this.useStrokeBox = false;
 
     this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
     this._buildMarkup.bind(this));
@@ -52,18 +55,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         "class": "shape-container",
         "viewBox": "0 0 100 100",
         "preserveAspectRatio": "none"
-      },
-      prefix: this.ID_CLASS_PREFIX
-    });
-
-    
-    
-    createNode(this.win, {
-      nodeType: "div",
-      parent: rootWrapper,
-      attributes: {
-        "id": "markers-container",
-        "class": "markers-container"
       },
       prefix: this.ID_CLASS_PREFIX
     });
@@ -104,14 +95,33 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       prefix: this.ID_CLASS_PREFIX
     });
 
+    
+    createSVGNode(this.win, {
+      nodeType: "path",
+      parent: mainSvg,
+      attributes: {
+        "id": "markers",
+        "class": "markers",
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
     return container;
   }
 
   get currentDimensions() {
-    return {
-      width: this.currentQuads.border[0].bounds.width,
-      height: this.currentQuads.border[0].bounds.height
-    };
+    let { top, left, width, height } = this.currentQuads[this.referenceBox][0].bounds;
+
+    
+    
+    
+    
+    
+    if (this.currentNode.getBBox &&
+        getComputedStyle(this.currentNode).stroke !== "none" && !this.useStrokeBox) {
+      return getObjectBoundingBox(top, left, width, height, this.currentNode);
+    }
+    return { top, left, width, height };
   }
 
   
@@ -124,7 +134,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
   _parseCSSShapeValue(definition) {
-    const types = [{
+    const shapeTypes = [{
       name: "polygon",
       prefix: "polygon(",
       coordParser: this.polygonPoints.bind(this)
@@ -141,10 +151,23 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       prefix: "inset(",
       coordParser: this.insetPoints.bind(this)
     }];
+    const geometryTypes = ["margin", "border", "padding", "content"];
 
-    for (let { name, prefix, coordParser } of types) {
+    
+    let referenceBox = "border";
+    for (let geometry of geometryTypes) {
+      if (definition.includes(geometry)) {
+        referenceBox = geometry;
+      }
+    }
+    this.referenceBox = referenceBox;
+
+    this.useStrokeBox = definition.includes("stroke-box");
+
+    for (let { name, prefix, coordParser } of shapeTypes) {
       if (definition.includes(prefix)) {
-        definition = definition.substring(prefix.length, definition.length - 1);
+        
+        definition = definition.substring(prefix.length, definition.lastIndexOf(")"));
         return {
           shapeType: name,
           coordinates: coordParser(definition)
@@ -180,8 +203,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     
     let values = definition.split(" at ");
     let radius = values[0];
-    let elemWidth = this.currentDimensions.width;
-    let elemHeight = this.currentDimensions.height;
+    let zoom = getCurrentZoom(this.win);
+    let elemWidth = this.currentDimensions.width / zoom;
+    let elemHeight = this.currentDimensions.height / zoom;
     let center = splitCoords(values[1]).map(this.convertCoordsToPercent.bind(this));
 
     if (radius === "closest-side") {
@@ -219,8 +243,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   ellipsePoints(definition) {
     let values = definition.split(" at ");
-    let elemWidth = this.currentDimensions.width;
-    let elemHeight = this.currentDimensions.height;
+    let zoom = getCurrentZoom(this.win);
+    let elemWidth = this.currentDimensions.width / zoom;
+    let elemHeight = this.currentDimensions.height / zoom;
     let center = splitCoords(values[1]).map(this.convertCoordsToPercent.bind(this));
 
     let radii = values[0].trim().split(" ").map((radius, i) => {
@@ -280,8 +305,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   convertCoordsToPercent(coord, i) {
-    let elemWidth = this.currentDimensions.width;
-    let elemHeight = this.currentDimensions.height;
+    let zoom = getCurrentZoom(this.win);
+    let elemWidth = this.currentDimensions.width / zoom;
+    let elemHeight = this.currentDimensions.height / zoom;
     let size = i % 2 === 0 ? elemWidth : elemHeight;
     if (coord.includes("calc(")) {
       return evalCalcExpression(coord.substring(5, coord.length - 1), size);
@@ -350,6 +376,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.getElement("ellipse").setAttribute("hidden", true);
     this.getElement("polygon").setAttribute("hidden", true);
     this.getElement("rect").setAttribute("hidden", true);
+    this.getElement("markers").setAttribute("d", "");
   }
 
   
@@ -360,23 +387,28 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   _update() {
     setIgnoreLayoutChanges(true);
 
-    let { top, left, width, height } = this.currentQuads.border[0].bounds;
+    let { top, left, width, height } = this.currentDimensions;
+    let zoom = getCurrentZoom(this.win);
+
+    top /= zoom;
+    left /= zoom;
+    width /= zoom;
+    height /= zoom;
 
     
     this.getElement("shape-container").setAttribute("style",
       `top:${top}px;left:${left}px;width:${width}px;height:${height}px;`);
 
     this._hideShapes();
-    this.getElement("markers-container").setAttribute("style", "");
 
     if (this.shapeType === "polygon") {
-      this._updatePolygonShape(top, left, width, height);
+      this._updatePolygonShape(width, height, zoom);
     } else if (this.shapeType === "circle") {
-      this._updateCircleShape(top, left, width, height);
+      this._updateCircleShape(width, height, zoom);
     } else if (this.shapeType === "ellipse") {
-      this._updateEllipseShape(top, left, width, height);
+      this._updateEllipseShape(width, height, zoom);
     } else if (this.shapeType === "inset") {
-      this._updateInsetShape(top, left, width, height);
+      this._updateInsetShape();
     }
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
@@ -390,8 +422,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
-
-  _updatePolygonShape(top, left, width, height) {
+  _updatePolygonShape(width, height, zoom) {
     
     let points = this.coordinates.map(point => point.join(",")).join(" ");
 
@@ -399,13 +430,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     polygonEl.setAttribute("points", points);
     polygonEl.removeAttribute("hidden");
 
-    
-    let shadows = this.coordinates.map(([x, y]) => {
-      return `${MARKER_SIZE + x * width / 100}px ${MARKER_SIZE + y * height / 100}px 0 0`;
-    }).join(", ");
-
-    this.getElement("markers-container").setAttribute("style",
-      `top:${top - MARKER_SIZE}px;left:${left - MARKER_SIZE}px;box-shadow:${shadows};`);
+    this._drawMarkers(this.coordinates, width, height, zoom);
   }
 
   
@@ -414,8 +439,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
-
-  _updateCircleShape(top, left, width, height) {
+  _updateCircleShape(width, height, zoom) {
     let { rx, ry, cx, cy } = this.coordinates;
     let ellipseEl = this.getElement("ellipse");
     ellipseEl.setAttribute("rx", rx);
@@ -424,11 +448,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     ellipseEl.setAttribute("cy", cy);
     ellipseEl.removeAttribute("hidden");
 
-    let shadows = `${MARKER_SIZE + cx * width / 100}px
-      ${MARKER_SIZE + cy * height / 100}px 0 0`;
-
-    this.getElement("markers-container").setAttribute("style",
-      `top:${top - MARKER_SIZE}px;left:${left - MARKER_SIZE}px;box-shadow:${shadows};`);
+    this._drawMarkers([[cx, cy]], width, height, zoom);
   }
 
   
@@ -437,8 +457,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
-
-  _updateEllipseShape(top, left, width, height) {
+  _updateEllipseShape(width, height, zoom) {
     let { rx, ry, cx, cy } = this.coordinates;
     let ellipseEl = this.getElement("ellipse");
     ellipseEl.setAttribute("rx", rx);
@@ -447,34 +466,35 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     ellipseEl.setAttribute("cy", cy);
     ellipseEl.removeAttribute("hidden");
 
-    let shadows = `${MARKER_SIZE + cx * width / 100}px
-      ${MARKER_SIZE + cy * height / 100}px 0 0,
-      ${MARKER_SIZE + (cx + rx) * height / 100}px
-      ${MARKER_SIZE + cy * height / 100}px 0 0,
-      ${MARKER_SIZE + cx * height / 100}px
-      ${MARKER_SIZE + (cy + ry) * height / 100}px 0 0`;
-
-    this.getElement("markers-container").setAttribute("style",
-      `top:${top - MARKER_SIZE}px;left:${left - MARKER_SIZE}px;box-shadow:${shadows};`);
+    let markerCoords = [ [cx, cy], [cx + rx, cy], [cx, cy + ry] ];
+    this._drawMarkers(markerCoords, width, height, zoom);
   }
 
   
 
 
-
-
-
-
-  _updateInsetShape(top, left, width, height) {
+  _updateInsetShape() {
     let rectEl = this.getElement("rect");
     rectEl.setAttribute("x", this.coordinates.x);
     rectEl.setAttribute("y", this.coordinates.y);
     rectEl.setAttribute("width", this.coordinates.width);
     rectEl.setAttribute("height", this.coordinates.height);
     rectEl.removeAttribute("hidden");
+  }
 
-    this.getElement("markers-container").setAttribute("style",
-      `top:${top - MARKER_SIZE}px;left:${left - MARKER_SIZE}px;box-shadow:none;`);
+  
+
+
+
+
+
+
+  _drawMarkers(coords, width, height, zoom) {
+    let markers = coords.map(([x, y]) => {
+      return getCirclePath(x, y, width, height, zoom);
+    }).join(" ");
+
+    this.getElement("markers").setAttribute("d", markers);
   }
 
   
@@ -484,7 +504,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     setIgnoreLayoutChanges(true);
 
     this._hideShapes();
-    this.getElement("markers-container").setAttribute("style", "");
+    this.getElement("markers").setAttribute("d", "");
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
   }
@@ -552,6 +572,70 @@ const shapeModeToCssPropertyName = mode => {
   return property.substring(0, 1).toLowerCase() + property.substring(1);
 };
 
+
+
+
+
+
+
+
+
+
+const getCirclePath = (cx, cy, width, height, zoom) => {
+  
+  
+  
+  
+  
+  
+  let radius = BASE_MARKER_SIZE * (100 / Math.max(width, height)) / zoom;
+  let ratio = width / height;
+  let rx = (ratio > 1) ? radius : radius / ratio;
+  let ry = (ratio > 1) ? radius * ratio : radius;
+  
+  return `M${cx - rx},${cy}a${rx},${ry} 0 1,0 ${rx * 2},0` +
+         `a${rx},${ry} 0 1,0 ${rx * -2},0`;
+};
+
+
+
+
+
+
+
+
+
+
+
+const getObjectBoundingBox = (top, left, width, height, node) => {
+  
+  
+  let strokeWidth = parseFloat(getComputedStyle(node).strokeWidth);
+  let delta = strokeWidth / 2;
+  let tagName = node.tagName;
+
+  if (tagName !== "rect" && tagName !== "ellipse"
+      && tagName !== "circle" && tagName !== "image") {
+    if (getComputedStyle(node).strokeLinejoin === "miter") {
+      let miter = getComputedStyle(node).strokeMiterlimit;
+      if (miter < Math.SQRT2) {
+        delta *= Math.SQRT2;
+      } else {
+        delta *= miter;
+      }
+    } else {
+      delta *= Math.SQRT2;
+    }
+  }
+
+  return {
+    top: top + delta,
+    left: left + delta,
+    width: width - 2 * delta,
+    height: height - 2 * delta
+  };
+};
+
 exports.ShapesHighlighter = ShapesHighlighter;
 
 
@@ -559,3 +643,4 @@ exports.splitCoords = splitCoords;
 exports.coordToPercent = coordToPercent;
 exports.evalCalcExpression = evalCalcExpression;
 exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
+exports.getCirclePath = getCirclePath;
