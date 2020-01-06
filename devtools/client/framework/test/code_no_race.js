@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+"use strict";
+
+function f() {
+  console.log("anything will do");
+}
+
+f();
