@@ -35,6 +35,20 @@ using namespace gfx;
 
 namespace layers {
 
+void
+BorrowDrawTarget::ReturnDrawTarget(gfx::DrawTarget*& aReturned)
+{
+  MOZ_ASSERT(mLoanedDrawTarget);
+  MOZ_ASSERT(aReturned == mLoanedDrawTarget);
+  if (mLoanedDrawTarget) {
+    if (mSetTransform) {
+      mLoanedDrawTarget->SetTransform(mLoanedTransform);
+    }
+    mLoanedDrawTarget = nullptr;
+  }
+  aReturned = nullptr;
+}
+
 IntRect
 RotatedBuffer::GetQuadrantRectangle(XSide aXSide, YSide aYSide) const
 {
@@ -182,6 +196,124 @@ RotatedBuffer::DrawBufferWithRotation(gfx::DrawTarget *aTarget, ContextSource aS
   DrawBufferQuadrant(aTarget, RIGHT, BOTTOM, aSource, aOpacity, aOperator,aMask, aMaskTransform);
 }
 
+bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion)
+{
+  
+  
+  return !aTarget->GetTransform().HasNonIntegerTranslation() &&
+         aRegion.GetNumRects() <= 1;
+}
+
+void
+RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
+                                     const nsIntRegion& aUpdateRegion)
+{
+  DrawIterator iter;
+  while (DrawTarget* destDT =
+    BorrowDrawTargetForQuadrantUpdate(aUpdateRegion.GetBounds(), BUFFER_BLACK, &iter)) {
+    bool isClippingCheap = IsClippingCheap(destDT, iter.mDrawRegion);
+    if (isClippingCheap) {
+      gfxUtils::ClipToRegion(destDT, iter.mDrawRegion);
+    }
+
+    aSource.DrawBufferWithRotation(destDT, BUFFER_BLACK, 1.0, CompositionOp::OP_SOURCE);
+    if (isClippingCheap) {
+      destDT->PopClip();
+    }
+    
+    destDT->Flush();
+    ReturnDrawTarget(destDT);
+  }
+
+  if (aSource.HaveBufferOnWhite()) {
+    MOZ_ASSERT(HaveBufferOnWhite());
+    DrawIterator whiteIter;
+    while (DrawTarget* destDT =
+      BorrowDrawTargetForQuadrantUpdate(aUpdateRegion.GetBounds(), BUFFER_WHITE, &whiteIter)) {
+      bool isClippingCheap = IsClippingCheap(destDT, whiteIter.mDrawRegion);
+      if (isClippingCheap) {
+        gfxUtils::ClipToRegion(destDT, whiteIter.mDrawRegion);
+      }
+
+      aSource.DrawBufferWithRotation(destDT, BUFFER_WHITE, 1.0, CompositionOp::OP_SOURCE);
+      if (isClippingCheap) {
+        destDT->PopClip();
+      }
+      
+      destDT->Flush();
+      ReturnDrawTarget(destDT);
+    }
+  }
+}
+
+DrawTarget*
+RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
+                                                 ContextSource aSource,
+                                                 DrawIterator* aIter,
+                                                 bool aSetTransform,
+                                                 Matrix* aOutMatrix)
+{
+  IntRect bounds = aBounds;
+  if (aIter) {
+    
+    
+    
+    
+    
+    aIter->mDrawRegion.SetEmpty();
+    while (aIter->mCount < 4) {
+      IntRect quadrant = GetQuadrantRectangle((aIter->mCount & 1) ? LEFT : RIGHT,
+        (aIter->mCount & 2) ? TOP : BOTTOM);
+      aIter->mDrawRegion.And(aBounds, quadrant);
+      aIter->mCount++;
+      if (!aIter->mDrawRegion.IsEmpty()) {
+        break;
+      }
+    }
+    if (aIter->mDrawRegion.IsEmpty()) {
+      return nullptr;
+    }
+    bounds = aIter->mDrawRegion.GetBounds();
+  }
+
+  gfx::DrawTarget* dtBuffer = GetDTBuffer();
+  gfx::DrawTarget* dtBufferOnWhite = GetDTBufferOnWhite();
+
+  MOZ_ASSERT(!mLoanedDrawTarget, "draw target has been borrowed and not returned");
+  if (aSource == BUFFER_BOTH && HaveBufferOnWhite()) {
+    MOZ_ASSERT(dtBuffer && dtBuffer->IsValid() && dtBufferOnWhite && dtBufferOnWhite->IsValid());
+    mLoanedDrawTarget = Factory::CreateDualDrawTarget(dtBuffer, dtBufferOnWhite);
+  } else if (aSource == BUFFER_WHITE) {
+    mLoanedDrawTarget = dtBufferOnWhite;
+  } else {
+    
+    mLoanedDrawTarget = dtBuffer;
+  }
+
+  
+  int32_t xBoundary = mBufferRect.XMost() - mBufferRotation.x;
+  int32_t yBoundary = mBufferRect.YMost() - mBufferRotation.y;
+  XSide sideX = bounds.XMost() <= xBoundary ? RIGHT : LEFT;
+  YSide sideY = bounds.YMost() <= yBoundary ? BOTTOM : TOP;
+  IntRect quadrantRect = GetQuadrantRectangle(sideX, sideY);
+  NS_ASSERTION(quadrantRect.Contains(bounds), "Messed up quadrants");
+
+  if (aSetTransform) {
+    mLoanedTransform = mLoanedDrawTarget->GetTransform();
+    Matrix transform = Matrix(mLoanedTransform)
+                            .PreTranslate(-quadrantRect.x,
+                                          -quadrantRect.y);
+    mLoanedDrawTarget->SetTransform(transform);
+    mSetTransform = true;
+  } else {
+    MOZ_ASSERT(aOutMatrix);
+    *aOutMatrix = Matrix::Translation(-quadrantRect.x, -quadrantRect.y);
+    mSetTransform = false;
+  }
+
+  return mLoanedDrawTarget;
+}
+
 already_AddRefed<SourceSurface>
 SourceRotatedBuffer::GetSourceSurface(ContextSource aSource) const
 {
@@ -195,15 +327,6 @@ SourceRotatedBuffer::GetSourceSurface(ContextSource aSource) const
 
   MOZ_ASSERT(surf);
   return surf.forget();
-}
-
- bool
-RotatedContentBuffer::IsClippingCheap(DrawTarget* aTarget, const nsIntRegion& aRegion)
-{
-  
-  
-  return !aTarget->GetTransform().HasNonIntegerTranslation() &&
-         aRegion.GetNumRects() <= 1;
 }
 
 void
@@ -241,95 +364,6 @@ RotatedContentBuffer::DrawTo(PaintedLayer* aLayer,
   if (clipped) {
     aTarget->PopClip();
   }
-}
-
-DrawTarget*
-RotatedContentBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
-                                                        ContextSource aSource,
-                                                        DrawIterator* aIter,
-                                                        bool aSetTransform,
-                                                        Matrix* aOutMatrix)
-{
-  IntRect bounds = aBounds;
-  if (aIter) {
-    
-    
-    
-    
-    
-    aIter->mDrawRegion.SetEmpty();
-    while (aIter->mCount < 4) {
-      IntRect quadrant = GetQuadrantRectangle((aIter->mCount & 1) ? LEFT : RIGHT,
-        (aIter->mCount & 2) ? TOP : BOTTOM);
-      aIter->mDrawRegion.And(aBounds, quadrant);
-      aIter->mCount++;
-      if (!aIter->mDrawRegion.IsEmpty()) {
-        break;
-      }
-    }
-    if (aIter->mDrawRegion.IsEmpty()) {
-      return nullptr;
-    }
-    bounds = aIter->mDrawRegion.GetBounds();
-  }
-
-  if (!EnsureBuffer()) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(!mLoanedDrawTarget, "draw target has been borrowed and not returned");
-  if (aSource == BUFFER_BOTH && HaveBufferOnWhite()) {
-    if (!EnsureBufferOnWhite()) {
-      return nullptr;
-    }
-    MOZ_ASSERT(mDTBuffer && mDTBuffer->IsValid() && mDTBufferOnWhite && mDTBufferOnWhite->IsValid());
-    mLoanedDrawTarget = Factory::CreateDualDrawTarget(mDTBuffer, mDTBufferOnWhite);
-  } else if (aSource == BUFFER_WHITE) {
-    if (!EnsureBufferOnWhite()) {
-      return nullptr;
-    }
-    mLoanedDrawTarget = mDTBufferOnWhite;
-  } else {
-    
-    mLoanedDrawTarget = mDTBuffer;
-  }
-
-  
-  int32_t xBoundary = mBufferRect.XMost() - mBufferRotation.x;
-  int32_t yBoundary = mBufferRect.YMost() - mBufferRotation.y;
-  XSide sideX = bounds.XMost() <= xBoundary ? RIGHT : LEFT;
-  YSide sideY = bounds.YMost() <= yBoundary ? BOTTOM : TOP;
-  IntRect quadrantRect = GetQuadrantRectangle(sideX, sideY);
-  NS_ASSERTION(quadrantRect.Contains(bounds), "Messed up quadrants");
-
-  if (aSetTransform) {
-    mLoanedTransform = mLoanedDrawTarget->GetTransform();
-    Matrix transform = Matrix(mLoanedTransform)
-                            .PreTranslate(-quadrantRect.x,
-                                          -quadrantRect.y);
-    mLoanedDrawTarget->SetTransform(transform);
-    mSetTransform = true;
-  } else {
-    MOZ_ASSERT(aOutMatrix);
-    *aOutMatrix = Matrix::Translation(-quadrantRect.x, -quadrantRect.y);
-    mSetTransform = false;
-  }
-
-  return mLoanedDrawTarget;
-}
-
-void
-BorrowDrawTarget::ReturnDrawTarget(gfx::DrawTarget*& aReturned)
-{
-  MOZ_ASSERT(mLoanedDrawTarget);
-  MOZ_ASSERT(aReturned == mLoanedDrawTarget);
-  if (mLoanedDrawTarget) {
-    if (mSetTransform) {
-      mLoanedDrawTarget->SetTransform(mLoanedTransform);
-    }
-    mLoanedDrawTarget = nullptr;
-  }
-  aReturned = nullptr;
 }
 
 gfxContentType
@@ -748,7 +782,9 @@ RotatedContentBuffer::BorrowDrawTargetForRecording(PaintState& aPaintState,
                                                    DrawIterator* aIter,
                                                    bool aSetTransform)
 {
-  if (aPaintState.mMode == SurfaceMode::SURFACE_NONE) {
+  if (aPaintState.mMode == SurfaceMode::SURFACE_NONE ||
+      !EnsureBuffer() ||
+      (HaveBufferOnWhite() && !EnsureBufferOnWhite())) {
     return nullptr;
   }
 
