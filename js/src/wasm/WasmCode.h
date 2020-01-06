@@ -59,11 +59,21 @@ typedef UniquePtr<const CodeSegment> UniqueConstCodeSegment;
 class CodeSegment
 {
     
+    struct FreeCode {
+        uint32_t codeLength;
+        FreeCode() : codeLength(0) {}
+        explicit FreeCode(uint32_t codeLength) : codeLength(codeLength) {}
+        void operator()(uint8_t* codeBytes);
+    };
+    typedef UniquePtr<uint8_t, FreeCode> UniqueCodeBytes;
+    static UniqueCodeBytes AllocateCodeBytes(uint32_t codeLength);
+
     
     
-    uint8_t* bytes_;
-    uint32_t functionLength_;
-    uint32_t length_;
+    
+    UniqueCodeBytes bytes_;
+    uint32_t        functionLength_;
+    uint32_t        length_;
 
     
     
@@ -71,13 +81,13 @@ class CodeSegment
     uint8_t* outOfBoundsCode_;
     uint8_t* unalignedAccessCode_;
 
-    
-    bool initialize(uint8_t* codeBase, uint32_t codeLength, const ShareableBytes& bytecode,
-                    const LinkData& linkData, const Metadata& metadata);
+    bool initialize(UniqueCodeBytes bytes,
+                    uint32_t codeLength,
+                    const ShareableBytes& bytecode,
+                    const LinkData& linkData,
+                    const Metadata& metadata);
 
-    
-    
-    static UniqueConstCodeSegment create(uint8_t* codeBytes,
+    static UniqueConstCodeSegment create(UniqueCodeBytes bytes,
                                          uint32_t codeLength,
                                          const ShareableBytes& bytecode,
                                          const LinkData& linkData,
@@ -87,8 +97,7 @@ class CodeSegment
     void operator=(const CodeSegment&) = delete;
 
     CodeSegment()
-      : bytes_(nullptr),
-        functionLength_(0),
+      : functionLength_(0),
         length_(0),
         interruptCode_(nullptr),
         outOfBoundsCode_(nullptr),
@@ -100,14 +109,12 @@ class CodeSegment
                                          const LinkData& linkData,
                                          const Metadata& metadata);
 
-    static UniqueConstCodeSegment create(const Bytes& codeBytes,
+    static UniqueConstCodeSegment create(const Bytes& unlinkedBytes,
                                          const ShareableBytes& bytecode,
                                          const LinkData& linkData,
                                          const Metadata& metadata);
 
-    ~CodeSegment();
-
-    uint8_t* base() const { return bytes_; }
+    uint8_t* base() const { return bytes_.get(); }
     uint32_t length() const { return length_; }
 
     uint8_t* interruptCode() const { return interruptCode_; }
@@ -128,6 +135,8 @@ class CodeSegment
     }
 
     UniqueConstBytes unlinkedBytesForDebugging(const LinkData& linkData) const;
+
+    
 
     size_t serializedSize() const;
     uint8_t* serialize(uint8_t* cursor, const LinkData& linkData) const;
