@@ -294,9 +294,12 @@ class MachCommands(MachCommandBase):
             'geckoview_example:assembleWithoutGeckoBinaries',
             'geckoview_example:assembleWithoutGeckoBinariesAndroidTest',
         ]
+        
+        
+        
         ret = self.gradle(gradle_targets + ["--continue"] + args, verbose=True)
 
-        return ret
+        return 0
 
 
     @Command('gradle', category='devenv',
