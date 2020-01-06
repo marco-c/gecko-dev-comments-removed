@@ -114,7 +114,7 @@ var normalize = function(path) {
   }
   path.split("/").forEach(function(v) {
     switch (v) {
-    case "":  case ".":
+    case "": case ".":
       break;
     case "..":
       if (stack.length == 0) {
@@ -123,13 +123,11 @@ var normalize = function(path) {
         } else {
           stack.push("..");
         }
-      } else {
-        if (stack[stack.length - 1] == "..") {
+      } else if (stack[stack.length - 1] == "..") {
           stack.push("..");
         } else {
           stack.pop();
         }
-      }
       break;
     default:
       stack.push(v);
@@ -163,10 +161,10 @@ exports.split = split;
 
 
 
-var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
+var toFileURIExtraEncodings = {";": "%3b", "?": "%3F", "#": "%23"};
 var toFileURI = function toFileURI(path) {
   
-  let dontNeedEscaping = {'%5B': '[', '%5D': ']'};
+  let dontNeedEscaping = {"%5B": "[", "%5D": "]"};
   let uri = encodeURI(this.normalize(path)).replace(/%(5B|5D)/gi,
     match => dontNeedEscaping[match]);
 
@@ -184,7 +182,7 @@ exports.toFileURI = toFileURI;
 
 var fromFileURI = function fromFileURI(uri) {
   let url = new URL(uri);
-  if (url.protocol != 'file:') {
+  if (url.protocol != "file:") {
     throw new Error("fromFileURI expects a file URI");
   }
   let path = this.normalize(decodeURIComponent(url.pathname));

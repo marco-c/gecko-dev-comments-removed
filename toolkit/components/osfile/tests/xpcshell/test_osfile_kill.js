@@ -59,10 +59,10 @@ add_task(async function test_kill_race() {
   
   
   
-  await OS.File.exists('foo.foo');
+  await OS.File.exists("foo.foo");
 
-  do_print('issuing first request');
-  let firstRequest = OS.File.exists('foo.bar');
+  do_print("issuing first request");
+  let firstRequest = OS.File.exists("foo.bar");
   let secondRequest;
   let secondResolved = false;
 
@@ -72,14 +72,14 @@ add_task(async function test_kill_race() {
   
   
   Scheduler.queue.then(function() {
-    do_print('issuing second request');
-    secondRequest = OS.File.exists('foo.baz');
+    do_print("issuing second request");
+    secondRequest = OS.File.exists("foo.baz");
     secondRequest.then(function() {
       secondResolved = true;
     });
   });
 
-  do_print('issuing kill request');
+  do_print("issuing kill request");
   let killRequest = Scheduler.kill({ reset: true, shutdown: false });
 
   
@@ -89,10 +89,10 @@ add_task(async function test_kill_race() {
   
   
   
-  await OS.File.exists('foo.goz');
+  await OS.File.exists("foo.goz");
 
   ok(secondResolved,
-     'The second request was resolved so we avoided the bug. Victory!');
+     "The second request was resolved so we avoided the bug. Victory!");
 });
 
 function run_test() {

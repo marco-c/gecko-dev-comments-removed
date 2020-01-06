@@ -51,13 +51,9 @@ var Scope = {};
 
 libc.declareLazy(Scope, "FormatMessage",
                  "FormatMessageW", ctypes.winapi_abi,
-                  ctypes.uint32_t,
-                   ctypes.uint32_t,
-                  ctypes.voidptr_t,
-                   ctypes.uint32_t,
-                  ctypes.uint32_t,
-                     ctypes.char16_t.ptr,
-                    ctypes.uint32_t,
+                  ctypes.uint32_t, ctypes.uint32_t,
+                  ctypes.voidptr_t, ctypes.uint32_t,
+                  ctypes.uint32_t, ctypes.char16_t.ptr, ctypes.uint32_t,
                  ctypes.voidptr_t);
 
 
@@ -99,10 +95,8 @@ OSError.prototype.toString = function toString() {
     Const.FORMAT_MESSAGE_IGNORE_INSERTS,
     null,
      this.winLastError,
-     0,
-         buf,
-     1024,
-           null
+     0, buf,
+     1024, null
   );
   if (!result) {
     buf = "additional error " +
@@ -110,7 +104,7 @@ OSError.prototype.toString = function toString() {
       " while fetching system error message";
   }
   return "Win error " + this.winLastError + " during operation "
-    + this.operation + (this.path? " on file " + this.path : "") +
+    + this.operation + (this.path ? " on file " + this.path : "") +
     " (" + buf.readString() + ")";
 };
 OSError.prototype.toMsg = function toMsg() {

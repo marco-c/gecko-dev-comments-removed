@@ -6,4 +6,4 @@
 
 
 var {Cu} = require("chrome");
-Cu.import('resource://gre/modules/osfile.jsm');
+Cu.import("resource://gre/modules/osfile.jsm");
