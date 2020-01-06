@@ -2028,6 +2028,11 @@ public:
   
 
 
+  static nsIFrame* GetViewportFrame(nsIFrame* aFrame);
+
+  
+
+
 
 
 
