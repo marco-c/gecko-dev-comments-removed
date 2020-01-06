@@ -50,8 +50,8 @@ function testToObject() {
     
     
     
-    if (typeof objectEmulatingUndefined === "function") {
-        var falsyObject = objectEmulatingUndefined();
+    if (typeof createIsHTMLDDA === "function") {
+        var falsyObject = createIsHTMLDDA();
         falsyObject.foo = 7;
 
         var obj = Object.assign({}, falsyObject);

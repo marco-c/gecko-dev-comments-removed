@@ -5,8 +5,8 @@
 
 
 
-if (typeof objectEmulatingUndefined === "function") {
-  let nf = new Intl.NumberFormat('en-US', objectEmulatingUndefined());
+if (typeof createIsHTMLDDA === "function") {
+  let nf = new Intl.NumberFormat('en-US', createIsHTMLDDA());
 }
 
 if (typeof reportCompare === "function")
