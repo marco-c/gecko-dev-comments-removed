@@ -554,7 +554,7 @@ class Marionette(object):
     CONTEXT_CHROME = "chrome"  
     CONTEXT_CONTENT = "content"  
     DEFAULT_STARTUP_TIMEOUT = 120
-    DEFAULT_SHUTDOWN_TIMEOUT = 65  
+    DEFAULT_SHUTDOWN_TIMEOUT = 120  
 
     
     
