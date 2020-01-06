@@ -1044,61 +1044,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         
         if (apzDragEnabled && startsDrag && hitScrollbarNode &&
             hitScrollbarNode->IsScrollThumbNode() &&
-            hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable &&
-            mInputQueue->GetCurrentDragBlock()) {
-          DragBlockState* dragBlock = mInputQueue->GetCurrentDragBlock();
-          const ScrollThumbData& thumbData = hitScrollbarNode->GetScrollThumbData();
-
-          
-          
-          
-          dragBlock->SetInitialThumbPos(thumbData.mThumbStart);
-
-          
-          
-          if (gfxPrefs::APZDragInitiationEnabled() &&
-              
-              hitScrollbarNode->GetScrollTargetId() == apzc->GetGuid().mScrollId &&
-              !apzc->IsScrollInfoLayer()) {
-            uint64_t dragBlockId = dragBlock->GetBlockId();
-            
-            
-            
-            mouseInput.TransformToLocal(apzc->GetTransformToThis());
-            CSSCoord dragStart = apzc->ConvertScrollbarPoint(
-                mouseInput.mLocalOrigin, thumbData);
-            
-            
-            
-            
-            
-            
-            LayerToParentLayerMatrix4x4 thumbTransform;
-            {
-              MutexAutoLock lock(mTreeLock);
-              thumbTransform = ComputeTransformForNode(hitScrollbarNode);
-            }
-            
-            
-            CSSCoord thumbStart = thumbData.mThumbStart
-                                + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
-                                   ? thumbTransform._41 : thumbTransform._42);
-            dragStart -= thumbStart;
-
-            
-            
-            
-            
-            dragBlock->SetContentResponse(false);
-
-            mInputQueue->ConfirmDragBlock(
-                dragBlockId, apzc,
-                AsyncDragMetrics(apzc->GetGuid().mScrollId,
-                                 apzc->GetGuid().mPresShellId,
-                                 dragBlockId,
-                                 dragStart,
-                                 thumbData.mDirection));
-          }
+            hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable) {
+          SetupScrollbarDrag(mouseInput, hitScrollbarNode.get(), apzc.get());
         }
 
         if (result == nsEventStatus_eConsumeDoDefault) {
@@ -1543,6 +1490,70 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
   }
 
   return result;
+}
+
+void
+APZCTreeManager::SetupScrollbarDrag(MouseInput& aMouseInput,
+                                    const HitTestingTreeNode* aScrollThumbNode,
+                                    AsyncPanZoomController* aApzc)
+{
+  DragBlockState* dragBlock = mInputQueue->GetCurrentDragBlock();
+  if (!dragBlock) {
+    return;
+  }
+
+  const ScrollThumbData& thumbData = aScrollThumbNode->GetScrollThumbData();
+
+  
+  
+  
+  dragBlock->SetInitialThumbPos(thumbData.mThumbStart);
+
+  
+  
+  if (gfxPrefs::APZDragInitiationEnabled() &&
+      
+      aScrollThumbNode->GetScrollTargetId() == aApzc->GetGuid().mScrollId &&
+      !aApzc->IsScrollInfoLayer()) {
+    uint64_t dragBlockId = dragBlock->GetBlockId();
+    
+    
+    
+    aMouseInput.TransformToLocal(aApzc->GetTransformToThis());
+    CSSCoord dragStart = aApzc->ConvertScrollbarPoint(
+        aMouseInput.mLocalOrigin, thumbData);
+    
+    
+    
+    
+    
+    
+    LayerToParentLayerMatrix4x4 thumbTransform;
+    {
+      MutexAutoLock lock(mTreeLock);
+      thumbTransform = ComputeTransformForNode(aScrollThumbNode);
+    }
+    
+    
+    CSSCoord thumbStart = thumbData.mThumbStart
+                        + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
+                           ? thumbTransform._41 : thumbTransform._42);
+    dragStart -= thumbStart;
+
+    
+    
+    
+    
+    dragBlock->SetContentResponse(false);
+
+    mInputQueue->ConfirmDragBlock(
+        dragBlockId, aApzc,
+        AsyncDragMetrics(aApzc->GetGuid().mScrollId,
+                         aApzc->GetGuid().mPresShellId,
+                         dragBlockId,
+                         dragStart,
+                         thumbData.mDirection));
+  }
 }
 
 void
