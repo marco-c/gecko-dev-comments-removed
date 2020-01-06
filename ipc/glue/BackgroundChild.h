@@ -47,10 +47,6 @@ class PBackgroundChild;
 
 
 
-
-
-
-
 class BackgroundChild final
 {
   friend class mozilla::dom::ContentChild;
