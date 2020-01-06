@@ -145,14 +145,6 @@ public:
   } while (0)
 
 
-#define rb_new(a_type, a_field, a_tree)                                        \
-  do {                                                                         \
-    (a_tree)->rbt_root = &(a_tree)->rbt_nil;                                   \
-    rbp_node_new(a_type, a_field, a_tree, &(a_tree)->rbt_nil);                 \
-    rb_node_field(&(a_tree)->rbt_nil, a_field).SetColor(NodeColor::Black);     \
-  } while (0)
-
-
 #define rbp_first(a_type, a_field, a_tree, a_root, r_node)                     \
   do {                                                                         \
     for ((r_node) = (a_root);                                                  \
@@ -220,38 +212,6 @@ public:
         }                                                                      \
         MOZ_ASSERT(rbp_p_t != &(a_tree)->rbt_nil);                             \
       }                                                                        \
-    }                                                                          \
-  } while (0)
-
-#define rb_first(a_type, a_field, a_tree, r_node)                              \
-  do {                                                                         \
-    rbp_first(a_type, a_field, a_tree, (a_tree)->rbt_root, (r_node));          \
-    if ((r_node) == &(a_tree)->rbt_nil) {                                      \
-      (r_node) = nullptr;                                                      \
-    }                                                                          \
-  } while (0)
-
-#define rb_last(a_type, a_field, a_tree, r_node)                               \
-  do {                                                                         \
-    rbp_last(a_type, a_field, a_tree, (a_tree)->rbt_root, r_node);             \
-    if ((r_node) == &(a_tree)->rbt_nil) {                                      \
-      (r_node) = nullptr;                                                      \
-    }                                                                          \
-  } while (0)
-
-#define rb_next(a_type, a_field, a_cmp, a_tree, a_node, r_node)                \
-  do {                                                                         \
-    rbp_next(a_type, a_field, a_cmp, a_tree, (a_node), (r_node));              \
-    if ((r_node) == &(a_tree)->rbt_nil) {                                      \
-      (r_node) = nullptr;                                                      \
-    }                                                                          \
-  } while (0)
-
-#define rb_prev(a_type, a_field, a_cmp, a_tree, a_node, r_node)                \
-  do {                                                                         \
-    rbp_prev(a_type, a_field, a_cmp, a_tree, (a_node), (r_node));              \
-    if ((r_node) == &(a_tree)->rbt_nil) {                                      \
-      (r_node) = nullptr;                                                      \
     }                                                                          \
   } while (0)
 
@@ -673,35 +633,37 @@ struct RedBlackTree
 
   void Init()
   {
-    rb_new(T, Trait::GetTreeNode, this);
+    rbt_root = &rbt_nil;
+    rbp_node_new(T, Trait::GetTreeNode, this, &rbt_nil);
+    rb_node_field(&rbt_nil, Trait::GetTreeNode).SetColor(NodeColor::Black);
   }
 
   T* First()
   {
     T* ret;
-    rb_first(T, Trait::GetTreeNode, this, ret);
-    return ret;
+    rbp_first(T, Trait::GetTreeNode, this, rbt_root, (ret));
+    return (ret == &rbt_nil) ? nullptr : ret;
   }
 
   T* Last()
   {
     T* ret;
-    rb_last(T, Trait::GetTreeNode, this, ret);
-    return ret;
+    rbp_last(T, Trait::GetTreeNode, this, rbt_root, ret);
+    return (ret == &rbt_nil) ? nullptr : ret;
   }
 
   T* Next(T* aNode)
   {
     T* ret;
-    rb_next(T, Trait::GetTreeNode, Trait::Compare, this, aNode, ret);
-    return ret;
+    rbp_next(T, Trait::GetTreeNode, Trait::Compare, this, (aNode), (ret));
+    return (ret == &rbt_nil) ? nullptr : ret;
   }
 
   T* Prev(T* aNode)
   {
     T* ret;
-    rb_prev(T, Trait::GetTreeNode, Trait::Compare, this, aNode, ret);
-    return ret;
+    rbp_prev(T, Trait::GetTreeNode, Trait::Compare, this, (aNode), (ret));
+    return (ret == &rbt_nil) ? nullptr : ret;
   }
 
   T* Search(T* aKey)
