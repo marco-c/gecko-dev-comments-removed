@@ -188,6 +188,7 @@ public:
                                     nsRestyleHint aRestyleHint);
   void ProcessPendingRestyles();
   void ProcessAllPendingAttributeAndStateInvalidations();
+  bool HasPendingRestyleAncestor(dom::Element* aElement) const;
 
   
 
