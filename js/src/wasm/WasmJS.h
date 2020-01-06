@@ -34,25 +34,6 @@ namespace wasm {
 
 
 
-template<typename T>
-JSObject*
-CreateCustomNaNObject(JSContext* cx, T* addr);
-
-
-
-
-bool
-ReadCustomFloat32NaNObject(JSContext* cx, HandleValue v, uint32_t* ret);
-
-
-
-
-bool
-ReadCustomDoubleNaNObject(JSContext* cx, HandleValue v, uint64_t* ret);
-
-
-
-
 JSObject*
 CreateI64Object(JSContext* cx, int64_t i64);
 
