@@ -207,7 +207,9 @@ MediaEngineRemoteVideoSource::Stop(mozilla::SourceMediaStream* aSource,
 
     
     
+    
     mImage = nullptr;
+    mImageContainer = nullptr;
 
     size_t i = mSources.IndexOf(aSource);
     if (i == mSources.NoIndex) {

@@ -64,15 +64,8 @@ public:
   void Shutdown() override
   {
     MonitorAutoLock lock(mMonitor);
-    
-    
-    
-    
-    
-
-    Unused << NS_WARN_IF(mImage);
-
-    mImage = nullptr;
+    MOZ_ASSERT(!mImage);
+    MOZ_ASSERT(!mImageContainer);
   }
 
 protected:
