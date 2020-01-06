@@ -2,52 +2,76 @@
 
 
 
-'use strict';
 
-this.EXPORTED_SYMBOLS = ["Loader", "resolveURI", "Module", "Require"]
+
+
+"use strict";
+
+this.EXPORTED_SYMBOLS = ["Loader", "resolveURI", "Module", "Require", "unload"];
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu,
         results: Cr, manager: Cm } = Components;
-const systemPrincipal = CC('@mozilla.org/systemprincipal;1', 'nsIPrincipal')();
-const { loadSubScript } = Cc['@mozilla.org/moz/jssubscript-loader;1'].
-                     getService(Ci.mozIJSSubScriptLoader);
-const { addObserver, notifyObservers } = Cc['@mozilla.org/observer-service;1'].
-                        getService(Ci.nsIObserverService);
+const systemPrincipal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
+const { loadSubScript } = Cc["@mozilla.org/moz/jssubscript-loader;1"]
+  .getService(Ci.mozIJSSubScriptLoader);
+const { notifyObservers } = Cc["@mozilla.org/observer-service;1"]
+  .getService(Ci.nsIObserverService);
 const { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
-const { normalize, dirname } = Cu.import("resource://gre/modules/osfile/ospath_unix.jsm");
+const { normalize, dirname } = Cu.import("resource://gre/modules/osfile/ospath_unix.jsm", {});
 
 XPCOMUtils.defineLazyServiceGetter(this, "resProto",
                                    "@mozilla.org/network/protocol;1?name=resource",
                                    "nsIResProtocolHandler");
+XPCOMUtils.defineLazyModuleGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 
 const { defineLazyGetter } = XPCOMUtils;
 
 
 const bind = Function.call.bind(Function.bind);
-const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-const prototypeOf = Object.getPrototypeOf;
 function* getOwnIdentifiers(x) {
   yield* Object.getOwnPropertyNames(x);
   yield* Object.getOwnPropertySymbols(x);
 }
 
-function sourceURI(uri) { return String(uri).split(" -> ").pop(); }
+function isJSONURI(uri) {
+  return uri.endsWith(".json");
+}
+function isJSMURI(uri) {
+  return uri.endsWith(".jsm");
+}
+function isJSURI(uri) {
+  return uri.endsWith(".js");
+}
+const AbsoluteRegExp = /^(resource|chrome|file|jar):/;
+function isAbsoluteURI(uri) {
+  return AbsoluteRegExp.test(uri);
+}
+function isRelative(id) {
+  return id.startsWith(".");
+}
 
-function isntLoaderFrame(frame) { return frame.fileName !== __URI__ }
+function sourceURI(uri) {
+  return String(uri).split(" -> ").pop();
+}
 
-function parseURI(uri) { return String(uri).split(" -> ").pop(); }
+function isntLoaderFrame(frame) {
+  return frame.fileName !== __URI__;
+}
+
+function parseURI(uri) {
+  return String(uri).split(" -> ").pop();
+}
 
 function parseStack(stack) {
   let lines = String(stack).split("\n");
-  return lines.reduce(function(frames, line) {
+  return lines.reduce(function (frames, line) {
     if (line) {
       let atIndex = line.indexOf("@");
       let columnIndex = line.lastIndexOf(":");
       let lineIndex = line.lastIndexOf(":", columnIndex - 1);
       let fileName = parseURI(line.slice(atIndex + 1, lineIndex));
-      let lineNumber = parseInt(line.slice(lineIndex + 1, columnIndex));
-      let columnNumber = parseInt(line.slice(columnIndex + 1));
+      let lineNumber = parseInt(line.slice(lineIndex + 1, columnIndex), 10);
+      let columnNumber = parseInt(line.slice(columnIndex + 1), 10);
       let name = line.slice(0, atIndex).split("(").shift();
       frames.unshift({
         fileName: fileName,
@@ -61,7 +85,7 @@ function parseStack(stack) {
 }
 
 function serializeStack(frames) {
-  return frames.reduce(function(stack, frame) {
+  return frames.reduce(function (stack, frame) {
     return frame.name + "@" +
            frame.fileName + ":" +
            frame.lineNumber + ":" +
@@ -79,12 +103,12 @@ function readURI(uri) {
   }
 
   let stream = NetUtil.newChannel({
-    uri: NetUtil.newURI(uri, 'UTF-8'),
+    uri: NetUtil.newURI(uri, "UTF-8"),
     loadUsingSystemPrincipal: true}
   ).open2();
   let count = stream.available();
   let data = NetUtil.readInputStreamToString(stream, count, {
-    charset: 'UTF-8'
+    charset: "UTF-8"
   });
 
   stream.close();
@@ -114,13 +138,6 @@ function join(base, ...paths) {
 
 
 
-
-
-
-
-
-
-
 function Sandbox(options) {
   
   options = {
@@ -128,28 +145,15 @@ function Sandbox(options) {
     
     wantComponents: false,
     sandboxName: options.name,
-    principal: 'principal' in options ? options.principal : systemPrincipal,
-    wantXrays: 'wantXrays' in options ? options.wantXrays : true,
-    sandboxPrototype: 'prototype' in options ? options.prototype : {},
-    invisibleToDebugger: 'invisibleToDebugger' in options ?
+    sandboxPrototype: "prototype" in options ? options.prototype : {},
+    invisibleToDebugger: "invisibleToDebugger" in options ?
                          options.invisibleToDebugger : false,
-    metadata: 'metadata' in options ? options.metadata : {},
-    waiveIntereposition: !!options.waiveIntereposition
+    waiveInterposition: false
   };
 
-  if (options.metadata && options.metadata.addonID) {
-    options.addonId = options.metadata.addonID;
-  }
+  let sandbox = Cu.Sandbox(systemPrincipal, options);
 
-  let sandbox = Cu.Sandbox(options.principal, options);
-
-  
-  
-  
-  delete sandbox.Iterator;
   delete sandbox.Components;
-  delete sandbox.importFunction;
-  delete sandbox.debug;
 
   return sandbox;
 }
@@ -157,7 +161,7 @@ function Sandbox(options) {
 
 
 function load(loader, module) {
-  let { sandboxes, globals, loadModuleHook } = loader;
+  let { sandboxes, globals } = loader;
   let require = Require(loader, module);
 
   
@@ -185,7 +189,7 @@ function load(loader, module) {
   };
 
   let sandbox;
-  if (loader.useSharedGlobalSandbox || isSystemURI(module.uri)) {
+  if (loader.useSharedGlobalSandbox) {
     
     
     sandbox = new loader.sharedGlobalSandbox.Object();
@@ -207,31 +211,26 @@ function load(loader, module) {
       };
     }
     let define = Object.getOwnPropertyDescriptor(globals, "define");
-    if (define && define.value)
+    if (define && define.value) {
       descriptors.define = define;
-    if ("DOMParser" in globals)
+    }
+    if ("DOMParser" in globals) {
       descriptors.DOMParser = Object.getOwnPropertyDescriptor(globals, "DOMParser");
+    }
     Object.defineProperties(sandbox, descriptors);
-  }
-  else {
+  } else {
     sandbox = Sandbox({
       name: module.uri,
       prototype: Object.create(globals, descriptors),
-      wantXrays: false,
-      invisibleToDebugger: loader.invisibleToDebugger,
-      metadata: {
-        addonID: loader.id,
-        URI: module.uri
-      }
+      invisibleToDebugger: loader.invisibleToDebugger
     });
   }
   sandboxes[module.uri] = sandbox;
 
   let originalExports = module.exports;
   try {
-    loadSubScript(module.uri, sandbox, 'UTF-8');
-  }
-  catch (error) {
+    loadSubScript(module.uri, sandbox, "UTF-8");
+  } catch (error) {
     let { message, fileName, lineNumber } = error;
     let stack = error.stack || Error().stack;
     let frames = parseStack(stack).filter(isntLoaderFrame);
@@ -248,16 +247,15 @@ function load(loader, module) {
       lineNumber = caller.lineNumber;
       message = "Module `" + module.id + "` is not found at " + module.uri;
       toString = message;
-    }
-    
-    
-    
-    
-    else if (frames[frames.length - 1].fileName !== file) {
+    } else if (frames[frames.length - 1].fileName !== file) {
+      
+      
+      
+      
       frames.push({ fileName: file, lineNumber: lineNumber, name: "" });
     }
 
-    let prototype = typeof(error) === "object" ? error.constructor.prototype :
+    let prototype = typeof (error) === "object" ? error.constructor.prototype :
                     Error.prototype;
 
     throw Object.create(prototype, {
@@ -269,52 +267,48 @@ function load(loader, module) {
     });
   }
 
-  if (loadModuleHook) {
-    module = loadModuleHook(module, require);
-  }
-
   
   
   
-  if (module.exports === originalExports)
+  if (module.exports === originalExports) {
     Object.freeze(module.exports);
+  }
 
   return module;
 }
 
 
 function normalizeExt(uri) {
-  return isJSURI(uri) ? uri :
-         isJSONURI(uri) ? uri :
-         isJSMURI(uri) ? uri :
-         uri + '.js';
+  if (isJSURI(uri) || isJSONURI(uri) || isJSMURI(uri)) {
+    return uri;
+  }
+  return uri + ".js";
 }
 
 
 
 
 function resolve(id, base) {
-  if (!isRelative(id))
+  if (!isRelative(id)) {
     return id;
+  }
 
   let baseDir = dirname(base);
 
   let resolved;
-  if (baseDir.includes(":"))
+  if (baseDir.includes(":")) {
     resolved = join(baseDir, id);
-  else
+  } else {
     resolved = normalize(`${baseDir}/${id}`);
+  }
 
   
   
-  if (base.startsWith('./'))
-    resolved = './' + resolved;
+  if (base.startsWith("./")) {
+    resolved = "./" + resolved;
+  }
 
   return resolved;
-}
-
-function addTrailingSlash(path) {
-  return path.replace(/\/*$/, "/");
 }
 
 function compileMapping(paths) {
@@ -324,7 +318,7 @@ function compileMapping(paths) {
                       .map(path => [path, paths[path]]);
 
   const PATTERN = /([.\\?+*(){}[\]^$])/g;
-  const escapeMeta = str => str.replace(PATTERN, '\\$1')
+  const escapeMeta = str => str.replace(PATTERN, "\\$1");
 
   let patterns = [];
   paths = {};
@@ -347,13 +341,14 @@ function compileMapping(paths) {
     
     
     
-    if (path == "")
+    if (path == "") {
       patterns.push("");
-    else
+    } else {
       patterns.push(`${escapeMeta(path)}(?=$|/)`);
+    }
   }
 
-  let pattern = new RegExp(`^(${patterns.join('|')})`);
+  let pattern = new RegExp(`^(${patterns.join("|")})`);
 
   
   
@@ -364,10 +359,11 @@ function compileMapping(paths) {
 
 function resolveURI(id, mapping) {
   
-  if (isAbsoluteURI(id))
+  if (isAbsoluteURI(id)) {
     return normalizeExt(id);
+  }
 
-  return normalizeExt(mapping(id))
+  return normalizeExt(mapping(id));
 }
 
 
@@ -390,17 +386,20 @@ function resolveURI(id, mapping) {
 function lazyRequire(obj, moduleId, ...args) {
   let module;
   let getModule = () => {
-    if (!module)
+    if (!module) {
       module = this.require(moduleId);
+    }
     return module;
   };
 
   for (let props of args) {
-    if (typeof props !== "object")
+    if (typeof props !== "object") {
       props = {[props]: props};
+    }
 
-    for (let [fromName, toName] of Object.entries(props))
+    for (let [fromName, toName] of Object.entries(props)) {
       defineLazyGetter(obj, toName, () => getModule()[fromName]);
+    }
   }
 }
 
@@ -423,17 +422,17 @@ function lazyRequireModule(obj, moduleId, prop = moduleId) {
 
 
 
-
 function Require(loader, requirer) {
   let {
-    modules, mapping, mappingCache,
-    manifest, rootURI, isNative, requireHook
+    modules, mapping, mappingCache, requireHook
   } = loader;
 
   function require(id) {
-    if (!id) 
-      throw Error('You must provide a module name when calling require() from '
+    if (!id) {
+      
+      throw Error("You must provide a module name when calling require() from "
                   + requirer.id, requirer.uri);
+    }
 
     if (requireHook) {
       return requireHook(id, _require);
@@ -449,12 +448,10 @@ function Require(loader, requirer) {
     
     if (uri in modules) {
       module = modules[uri];
-    }
-    else if (isJSMURI(uri)) {
+    } else if (isJSMURI(uri)) {
       module = modules[uri] = Module(requirement, uri);
       module.exports = Cu.import(uri, {});
-    }
-    else if (isJSONURI(uri)) {
+    } else if (isJSONURI(uri)) {
       let data;
 
       
@@ -465,13 +462,13 @@ function Require(loader, requirer) {
         data = JSON.parse(readURI(uri));
         module = modules[uri] = Module(requirement, uri);
         module.exports = data;
-      }
-      catch (err) {
+      } catch (err) {
         
         
-        if (err && /JSON\.parse/.test(err.message))
+        if (err && /JSON\.parse/.test(err.message)) {
           throw err;
-        uri = uri + '.js';
+        }
+        uri = uri + ".js";
       }
     }
 
@@ -485,8 +482,7 @@ function Require(loader, requirer) {
       module = modules[uri] = Module(requirement, uri);
       try {
         Object.freeze(load(loader, module));
-      }
-      catch (e) {
+      } catch (e) {
         
         delete modules[uri];
         
@@ -502,20 +498,20 @@ function Require(loader, requirer) {
   
   
   function getRequirements(id) {
-    if (!id) 
-      throw Error('you must provide a module name when calling require() from '
+    if (!id) {
+      
+      throw Error("you must provide a module name when calling require() from "
                   + requirer.id, requirer.uri);
+    }
 
     let requirement, uri;
 
     if (modules[id]) {
       uri = requirement = id;
-    }
-    else if (requirer) {
+    } else if (requirer) {
       
       requirement = resolve(id, requirer.id);
-    }
-    else {
+    } else {
       requirement = id;
     }
 
@@ -531,18 +527,18 @@ function Require(loader, requirer) {
 
     
     if (!uri) {
-      throw Error('Module: Can not resolve "' + id + '" module required by ' +
-                  requirer.id + ' located at ' + requirer.uri, requirer.uri);
+      throw Error("Module: Can not resolve '" + id + "' module required by " +
+                  requirer.id + " located at " + requirer.uri, requirer.uri);
     }
 
     return { uri: uri, requirement: requirement };
   }
 
   
-  require.resolve = _require.resolve = function resolve(id) {
+  require.resolve = _require.resolve = function (id) {
     let { uri } = getRequirements(id);
     return uri;
-  }
+  };
 
   
   
@@ -577,8 +573,13 @@ function unload(loader, reason) {
   
   
   let subject = { wrappedJSObject: loader.destructor };
-  notifyObservers(subject, 'sdk:loader:destroy', reason);
-};
+  notifyObservers(subject, "sdk:loader:destroy", reason);
+}
+
+
+
+
+
 
 
 
@@ -594,10 +595,6 @@ function unload(loader, reason) {
 
 
 function Loader(options) {
-  function normalizeRootURI(uri) {
-    return addTrailingSlash(join(uri));
-  }
-
   let { paths, sharedGlobal, globals } = options;
   if (!globals) {
     globals = {};
@@ -614,13 +611,11 @@ function Loader(options) {
 
   
   let modules = {
-    '@loader/unload': destructor,
-    '@loader/options': options,
-    'chrome': { Cc: Cc, Ci: Ci, Cu: Cu, Cr: Cr, Cm: Cm,
+    "@loader/unload": destructor,
+    "@loader/options": options,
+    "chrome": { Cc, Ci, Cu, Cr, Cm,
                 CC: bind(CC, Components), components: Components,
-                
-                
-                ChromeWorker: ChromeWorker
+                ChromeWorker
     }
   };
 
@@ -635,7 +630,7 @@ function Loader(options) {
     
     Object.defineProperty(module, "exports", {
       enumerable: true,
-      get: function() {
+      get: function () {
         return builtinModuleExports[id];
       }
     });
@@ -648,13 +643,8 @@ function Loader(options) {
   
   
   let sharedGlobalSandbox = Sandbox({
-    name: options.sandboxName || "Addon-SDK",
-    wantXrays: false,
+    name: options.sandboxName || "DevTools",
     invisibleToDebugger: options.invisibleToDebugger || false,
-    metadata: {
-      addonID: options.noSandboxAddonId ? undefined : options.id,
-      URI: options.sandboxName || "Addon-SDK"
-    },
     prototype: options.sandboxPrototype || globals,
   });
 
@@ -662,9 +652,10 @@ function Loader(options) {
     
     
     
-    for (let name of getOwnIdentifiers(globals))
+    for (let name of getOwnIdentifiers(globals)) {
       Object.defineProperty(sharedGlobalSandbox, name,
-                            getOwnPropertyDescriptor(globals, name));
+                            Object.getOwnPropertyDescriptor(globals, name));
+    }
   }
 
   
@@ -682,23 +673,10 @@ function Loader(options) {
     
     sandboxes: { enumerable: false, value: {} },
     
-    id: { enumerable: false, value: options.id },
-    
     invisibleToDebugger: { enumerable: false,
                            value: options.invisibleToDebugger || false },
     requireHook: { enumerable: false, value: options.requireHook },
-    loadModuleHook: { enumerable: false, value: options.loadModuleHook },
   };
 
   return Object.create(null, returnObj);
-};
-
-var SystemRegExp = /^resource:\/\/(gre|devtools|testing-common)\//;
-var isSystemURI = uri => SystemRegExp.test(uri);
-
-var isJSONURI = uri => uri.endsWith('.json');
-var isJSMURI = uri => uri.endsWith('.jsm');
-var isJSURI = uri => uri.endsWith('.js');
-var AbsoluteRegExp = /^(resource|chrome|file|jar):/;
-var isAbsoluteURI = uri => AbsoluteRegExp.test(uri);
-var isRelative = id => id.startsWith(".");
+}
