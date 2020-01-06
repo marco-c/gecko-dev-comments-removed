@@ -138,6 +138,12 @@ BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
             MOZ_ASSERT(afterTry > endOfTry);
 
             
+            
+            uint32_t afterTryOffset = script_->pcToOffset(afterTry);
+            infos_[afterTryOffset].init(stackDepth);
+            infos_[afterTryOffset].jumpTarget = true;
+
+            
             while (!catchFinallyRanges.empty() && catchFinallyRanges.back().end <= offset)
                 catchFinallyRanges.popBack();
 
