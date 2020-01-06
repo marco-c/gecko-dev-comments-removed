@@ -11,26 +11,6 @@ registerManifests(manifests);
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Components.utils.import("resource://testing-common/AppInfo.jsm", this);
-var XULAppInfo = newAppInfo({
-  name: "XPCShell",
-  ID: "{39885e5f-f6b4-4e2a-87e5-6259ecf79011}",
-  version: "5",
-  platformVersion: "1.9",
-});
-
-var XULAppInfoFactory = {
-  
-  CID: Components.ID("{c763b610-9d49-455a-bbd2-ede71682a1ac}"),
-  scheme: "XULAppInfo",
-  contractID: "@mozilla.org/xre/app-info;1",
-  createInstance: function (outer, iid) {
-    if (outer != null)
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    return XULAppInfo.QueryInterface(iid);
-  }
-};
-
 function ProtocolHandler(aScheme, aFlags)
 {
   this.scheme = aScheme;
@@ -90,6 +70,30 @@ var testProtocols = [
 ];
 function run_test()
 {
+  Components.utils.import("resource://testing-common/AppInfo.jsm", this);
+  let XULAppInfo = newAppInfo({
+    name: "XPCShell",
+    ID: "{39885e5f-f6b4-4e2a-87e5-6259ecf79011}",
+    version: "5",
+    platformVersion: "1.9",
+  });
+
+  const uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+
+  let XULAppInfoFactory = {
+    
+    CID: uuidGenerator.generateUUID(),
+    scheme: "XULAppInfo",
+    contractID: "@mozilla.org/xre/app-info;1",
+    createInstance: function (outer, iid) {
+      if (outer != null)
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      return XULAppInfo.QueryInterface(iid);
+    }
+  };
+
+  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+
   
   let factories = [];
   for (let i = 0; i < testProtocols.length; i++) {
@@ -107,15 +111,36 @@ function run_test()
       }
     };
   }
-  
-  factories.push(XULAppInfoFactory);
 
   
   for (let i = 0; i < factories.length; i++) {
     let factory = factories[i];
-    Components.manager.QueryInterface(Ci.nsIComponentRegistrar)
-              .registerFactory(factory.CID, "test-" + factory.scheme,
+    registrar.registerFactory(factory.CID, "test-" + factory.scheme,
                                factory.contractID, factory);
+  }
+
+  
+  
+  let old_factory = {CID: "", factory: null};
+  if (!registrar.isCIDRegistered(XULAppInfoFactory.CID)) {
+
+    
+    
+    
+    if (registrar.isContractIDRegistered(XULAppInfoFactory.contractID)) {
+      dump(XULAppInfoFactory.scheme + " is already registered. Storing currently registered object for restoration later.")
+      old_factory.CID = registrar.contractIDToCID(XULAppInfoFactory.contractID);
+      old_factory.factory = Components.manager.getClassObject(Cc[XULAppInfoFactory.contractID], Ci.nsIFactory);
+      registrar.unregisterFactory(old_factory.CID, old_factory.factory);
+    }
+    else {
+      dump(XULAppInfoFactory.scheme + " has never been registered. Registering...")
+    }
+
+    registrar.registerFactory(XULAppInfoFactory.CID, "test-" + XULAppInfoFactory.scheme, XULAppInfoFactory.contractID, XULAppInfoFactory);
+  }
+  else {
+    do_throw("CID " + XULAppInfoFactory.CID +  " has already been registered!");
   }
 
   
@@ -196,7 +221,12 @@ function run_test()
   
   for (let i = 0; i < factories.length; i++) {
     let factory = factories[i];
-    Components.manager.QueryInterface(Ci.nsIComponentRegistrar)
-              .unregisterFactory(factory.CID, factory);
+    registrar.unregisterFactory(factory.CID, factory);
+  }
+
+  
+  registrar.unregisterFactory(XULAppInfoFactory.CID, XULAppInfoFactory);
+  if (old_factory.factory != null) {
+    registrar.registerFactory(old_factory.CID, "", XULAppInfoFactory.contractID, old_factory.factory);
   }
 }
