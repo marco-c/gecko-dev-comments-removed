@@ -1824,6 +1824,28 @@ GetCurrentPhysicalThread();
 PRThread*
 GetCurrentVirtualThread();
 
+
+
+
+
+
+
+nsIEventTarget*
+GetCurrentThreadEventTarget();
+
+nsIEventTarget*
+GetMainThreadEventTarget();
+
+
+
+
+
+nsISerialEventTarget*
+GetCurrentThreadSerialEventTarget();
+
+nsISerialEventTarget*
+GetMainThreadSerialEventTarget();
+
 } 
 
 #endif  
