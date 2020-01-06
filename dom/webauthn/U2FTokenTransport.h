@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_U2FTokenTransport_h
 #define mozilla_dom_U2FTokenTransport_h
 
+#include "mozilla/dom/PWebAuthnTransaction.h"
+
 
 
 
@@ -21,14 +23,19 @@ class U2FTokenTransport
 public:
   NS_INLINE_DECL_REFCOUNTING(U2FTokenTransport);
   U2FTokenTransport() {}
-  virtual nsresult Register(const nsTArray<uint8_t>& aApplication,
+
+  virtual nsresult Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+                            const nsTArray<uint8_t>& aApplication,
                             const nsTArray<uint8_t>& aChallenge,
                              nsTArray<uint8_t>& aRegistration,
                              nsTArray<uint8_t>& aSignature) = 0;
-  virtual nsresult Sign(const nsTArray<uint8_t>& aApplication,
+
+  virtual nsresult Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+                        const nsTArray<uint8_t>& aApplication,
                         const nsTArray<uint8_t>& aChallenge,
-                        const nsTArray<uint8_t>& aKeyHandle,
+                         nsTArray<uint8_t>& aKeyHandle,
                          nsTArray<uint8_t>& aSignature) = 0;
+
 protected:
   virtual ~U2FTokenTransport() = default;
 };

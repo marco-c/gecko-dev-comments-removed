@@ -633,7 +633,8 @@ U2FSoftTokenManager::IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
 
 
 nsresult
-U2FSoftTokenManager::Register(const nsTArray<uint8_t>& aApplication,
+U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+                              const nsTArray<uint8_t>& aApplication,
                               const nsTArray<uint8_t>& aChallenge,
                                nsTArray<uint8_t>& aRegistration,
                                nsTArray<uint8_t>& aSignature)
@@ -647,6 +648,18 @@ U2FSoftTokenManager::Register(const nsTArray<uint8_t>& aApplication,
     nsresult rv = Init();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
+    }
+  }
+
+  
+  for (auto desc: aDescriptors) {
+    bool isRegistered = false;
+    nsresult rv = IsRegistered(desc.id(), aApplication, isRegistered);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (isRegistered) {
+      return NS_ERROR_DOM_NOT_ALLOWED_ERR;
     }
   }
 
@@ -745,9 +758,10 @@ U2FSoftTokenManager::Register(const nsTArray<uint8_t>& aApplication,
 
 
 nsresult
-U2FSoftTokenManager::Sign(const nsTArray<uint8_t>& aApplication,
+U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+                          const nsTArray<uint8_t>& aApplication,
                           const nsTArray<uint8_t>& aChallenge,
-                          const nsTArray<uint8_t>& aKeyHandle,
+                          nsTArray<uint8_t>& aKeyHandle,
                           nsTArray<uint8_t>& aSignature)
 {
   nsNSSShutDownPreventionLock locker;
@@ -755,12 +769,18 @@ U2FSoftTokenManager::Sign(const nsTArray<uint8_t>& aApplication,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  MOZ_ASSERT(mInitialized);
-  if (NS_WARN_IF(!mInitialized)) {
-    nsresult rv = Init();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+  for (auto desc: aDescriptors) {
+    bool isRegistered = false;
+    nsresult rv = IsRegistered(desc.id(), aApplication, isRegistered);
+    if (NS_SUCCEEDED(rv) && isRegistered) {
+      aKeyHandle.Assign(desc.id());
+      break;
     }
+  }
+
+  
+  if (aKeyHandle.IsEmpty()) {
+    return NS_ERROR_DOM_NOT_ALLOWED_ERR;
   }
 
   MOZ_ASSERT(mWrappingKey);

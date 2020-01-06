@@ -57,7 +57,7 @@ private:
   
   
   WebAuthnTransactionParent* mTransactionParent;
-  RefPtr<U2FSoftTokenManager> mSoftTokenManager;
+  RefPtr<U2FTokenTransport> mTokenManagerImpl;
 };
 
 } 
