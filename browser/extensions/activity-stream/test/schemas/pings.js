@@ -1,4 +1,5 @@
 const Joi = require("joi-browser");
+const {MAIN_MESSAGE_TYPE, CONTENT_MESSAGE_TYPE} = require("common/Actions.jsm");
 
 const baseKeys = {
   client_id: Joi.string().required(),
@@ -21,6 +22,29 @@ const UserEventPing = Joi.object().keys(Object.assign({}, baseKeys, {
   recommender_type: Joi.string()
 }));
 
+
+const UserEventAction = Joi.object().keys({
+  type: Joi.string().required(),
+  data: Joi.object().keys({
+    event: Joi.valid([
+      "CLICK",
+      "SEARCH",
+      "BLOCK",
+      "DELETE",
+      "OPEN_NEW_WINDOW",
+      "OPEN_PRIVATE_WINDOW",
+      "BOOKMARK_DELETE",
+      "BOOKMARK_ADD"
+    ]).required(),
+    source: Joi.valid(["TOP_SITES"]),
+    action_position: Joi.number().integer()
+  }).required(),
+  meta: Joi.object().keys({
+    to: Joi.valid(MAIN_MESSAGE_TYPE).required(),
+    from: Joi.valid(CONTENT_MESSAGE_TYPE).required()
+  }).required()
+});
+
 const UndesiredPing = Joi.object().keys(Object.assign({}, baseKeys, {
   source: Joi.string().required(),
   event: Joi.string().required(),
@@ -42,8 +66,39 @@ const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
   action: Joi.valid("activity_stream_session").required()
 }));
 
-function assertMatchesSchema(ping, schema) {
-  assert.isNull(Joi.validate(ping, schema).error);
+function chaiAssertions(_chai, utils) {
+  const {Assertion} = _chai;
+
+  Assertion.addMethod("validate", function(schema, schemaName) {
+    const {error} = Joi.validate(this._obj, schema);
+    this.assert(
+      !error,
+      `Expected to be ${schemaName ? `a valid ${schemaName}` : "valid"} but there were errors: ${error}`
+    );
+  });
+
+  const assertions = {
+    
+
+
+
+
+
+    validate(actual, schema, schemaName) {
+      new Assertion(actual).validate(schema, schemaName);
+    },
+
+    
+
+
+
+
+    isUserEventAction(actual) {
+      new Assertion(actual).validate(UserEventAction, "UserEventAction");
+    }
+  };
+
+  Object.assign(_chai.assert, assertions);
 }
 
 module.exports = {
@@ -51,7 +106,8 @@ module.exports = {
   BasePing,
   UndesiredPing,
   UserEventPing,
+  UserEventAction,
   PerfPing,
   SessionPing,
-  assertMatchesSchema
+  chaiAssertions
 };

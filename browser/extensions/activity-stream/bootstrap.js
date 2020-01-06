@@ -1,27 +1,52 @@
 
 
 
-
 "use strict";
 
-const {utils: Cu} = Components;
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+Cu.importGlobalProperties(["fetch"]);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
-  "resource://activity-stream/lib/ActivityStream.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+  "resource://gre/modules/Preferences.jsm");
 
-const BROWSER_READY_NOTIFICATION = "browser-ui-startup-complete";
+XPCOMUtils.defineLazyModuleGetter(this, "Services",
+  "resource://gre/modules/Services.jsm");
+
 const ACTIVITY_STREAM_ENABLED_PREF = "browser.newtabpage.activity-stream.enabled";
-const REASON_STARTUP_ON_PREF_CHANGE = "PREF_ON";
+const BROWSER_READY_NOTIFICATION = "browser-ui-startup-complete";
 const REASON_SHUTDOWN_ON_PREF_CHANGE = "PREF_OFF";
+const REASON_STARTUP_ON_PREF_CHANGE = "PREF_ON";
+const RESOURCE_BASE = "resource://activity-stream";
 
 const ACTIVITY_STREAM_OPTIONS = {newTabURL: "about:newtab"};
 
 let activityStream;
+let modulesToUnload = new Set();
 let startupData;
 let startupReason;
+let waitingForBrowserReady = true;
+
+
+XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
+  "resource://activity-stream/lib/ActivityStream.jsm", null, null, () => {
+    
+    const processListing = async(uri, cb) => (await (await fetch(uri)).text())
+      .split("\n").slice(2).forEach(line => cb(line.split(" ").slice(1)));
+
+    
+    processListing(RESOURCE_BASE, ([directory, , , type]) => {
+      if (type === "DIRECTORY") {
+        
+        const subDir = `${RESOURCE_BASE}/${directory}`;
+        processListing(subDir, ([name]) => {
+          if (name && name.search(/\.jsm$/) !== -1) {
+            modulesToUnload.add(`${subDir}/${name}`);
+          }
+        });
+      }
+    });
+  });
 
 
 
@@ -50,7 +75,6 @@ function init(reason) {
 function uninit(reason) {
   if (activityStream) {
     activityStream.uninit(reason);
-    activityStream = null;
   }
 }
 
@@ -67,16 +91,29 @@ function onPrefChanged(isEnabled) {
   }
 }
 
+
+
+
+function onBrowserReady() {
+  waitingForBrowserReady = false;
+
+  
+  Preferences.observe(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
+
+  
+  if (Preferences.get(ACTIVITY_STREAM_ENABLED_PREF)) {
+    init(startupReason);
+  }
+}
+
+
+
+
 function observe(subject, topic, data) {
   switch (topic) {
     case BROWSER_READY_NOTIFICATION:
-      
-      Preferences.observe(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
-      
-      if (Preferences.get(ACTIVITY_STREAM_ENABLED_PREF)) {
-        init(startupReason);
-        Services.obs.removeObserver(this, BROWSER_READY_NOTIFICATION);
-      }
+      Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
+      onBrowserReady();
       break;
   }
 }
@@ -87,12 +124,17 @@ this.install = function install(data, reason) {};
 
 this.startup = function startup(data, reason) {
   
-  Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
-
-  
   
   startupData = data;
   startupReason = reason;
+
+  
+  if (Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup).startingUp) {
+    Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
+  } else {
+    
+    onBrowserReady();
+  }
 };
 
 this.shutdown = function shutdown(data, reason) {
@@ -102,7 +144,20 @@ this.shutdown = function shutdown(data, reason) {
   uninit(reason);
 
   
-  Preferences.ignore(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
+  if (waitingForBrowserReady) {
+    Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
+  } else {
+    
+    Preferences.ignore(ACTIVITY_STREAM_ENABLED_PREF, onPrefChanged);
+  }
+
+  
+  modulesToUnload.forEach(Cu.unload);
 };
 
-this.uninstall = function uninstall(data, reason) {};
+this.uninstall = function uninstall(data, reason) {
+  if (activityStream) {
+    activityStream.uninstall(reason);
+    activityStream = null;
+  }
+};

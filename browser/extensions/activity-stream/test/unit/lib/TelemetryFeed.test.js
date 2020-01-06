@@ -6,8 +6,7 @@ const {
   UndesiredPing,
   UserEventPing,
   PerfPing,
-  SessionPing,
-  assertMatchesSchema
+  SessionPing
 } = require("test/schemas/pings");
 
 const FAKE_TELEMETRY_ID = "foo123";
@@ -103,7 +102,7 @@ describe("TelemetryFeed", () => {
     describe("#createPing", () => {
       it("should create a valid base ping without a session if no portID is supplied", () => {
         const ping = instance.createPing();
-        assertMatchesSchema(ping, BasePing);
+        assert.validate(ping, BasePing);
         assert.notProperty(ping, "session_id");
       });
       it("should create a valid base ping with session info if a portID is supplied", () => {
@@ -114,7 +113,7 @@ describe("TelemetryFeed", () => {
 
         
         const ping = instance.createPing(portID);
-        assertMatchesSchema(ping, BasePing);
+        assert.validate(ping, BasePing);
 
         
         assert.propertyVal(ping, "session_id", sessionID);
@@ -130,7 +129,7 @@ describe("TelemetryFeed", () => {
         const ping = instance.createUserEvent(action);
 
         
-        assertMatchesSchema(ping, UserEventPing);
+        assert.validate(ping, UserEventPing);
         
         assert.propertyVal(ping, "session_id", session.session_id);
       });
@@ -141,7 +140,7 @@ describe("TelemetryFeed", () => {
         const ping = instance.createUndesiredEvent(action);
 
         
-        assertMatchesSchema(ping, UndesiredPing);
+        assert.validate(ping, UndesiredPing);
         
         assert.propertyVal(ping, "value", 10);
       });
@@ -153,7 +152,7 @@ describe("TelemetryFeed", () => {
         const ping = instance.createUndesiredEvent(action);
 
         
-        assertMatchesSchema(ping, UndesiredPing);
+        assert.validate(ping, UndesiredPing);
         
         assert.propertyVal(ping, "session_id", session.session_id);
         
@@ -166,7 +165,7 @@ describe("TelemetryFeed", () => {
         const ping = instance.createPerformanceEvent(action);
 
         
-        assertMatchesSchema(ping, PerfPing);
+        assert.validate(ping, PerfPing);
         
         assert.propertyVal(ping, "value", 100);
       });
@@ -178,7 +177,7 @@ describe("TelemetryFeed", () => {
         const ping = instance.createPerformanceEvent(action);
 
         
-        assertMatchesSchema(ping, PerfPing);
+        assert.validate(ping, PerfPing);
         
         assert.propertyVal(ping, "session_id", session.session_id);
         
@@ -193,7 +192,7 @@ describe("TelemetryFeed", () => {
           session_duration: 12345
         });
         
-        assertMatchesSchema(ping, SessionPing);
+        assert.validate(ping, SessionPing);
         assert.propertyVal(ping, "session_id", FAKE_UUID);
         assert.propertyVal(ping, "page", "about:newtab");
         assert.propertyVal(ping, "session_duration", 12345);

@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const {utils: Cu} = Components;
@@ -9,9 +8,10 @@ const {utils: Cu} = Components;
 const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
 const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {ActivityStreamMessageChannel} = Cu.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const PREF_PREFIX = "browser.newtabpage.activity-stream.";
-Cu.import("resource://gre/modules/Preferences.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Prefs",
+  "resource://activity-stream/lib/ActivityStreamPrefs.jsm");
 
 
 
@@ -37,6 +37,7 @@ this.Store = class Store {
     });
     this.feeds = new Map();
     this._feedFactories = null;
+    this._prefs = new Prefs();
     this._prefHandlers = new Map();
     this._messageChannel = new ActivityStreamMessageChannel({dispatch: this.dispatch});
     this._store = redux.createStore(
@@ -94,24 +95,17 @@ this.Store = class Store {
 
 
 
-  maybeStartFeedAndListenForPrefChanges(name) {
-    const prefName = PREF_PREFIX + name;
-
-    
-    if (!Preferences.has(prefName)) {
-      Preferences.set(prefName, true);
-    }
-
+  maybeStartFeedAndListenForPrefChanges(prefName) {
     
     
-    const onPrefChanged = isEnabled => (isEnabled ? this.initFeed(name) : this.uninitFeed(name));
+    const onPrefChanged = isEnabled => (isEnabled ? this.initFeed(prefName) : this.uninitFeed(prefName));
     this._prefHandlers.set(prefName, onPrefChanged);
-    Preferences.observe(prefName, onPrefChanged);
+    this._prefs.observe(prefName, onPrefChanged);
 
     
     
-    if (Preferences.get(prefName)) {
-      this.initFeed(name);
+    if (this._prefs.get(prefName)) {
+      this.initFeed(prefName);
     }
   }
 
@@ -120,11 +114,13 @@ this.Store = class Store {
 
 
 
+
+
   init(feedConstructors) {
     if (feedConstructors) {
       this._feedFactories = feedConstructors;
-      for (const name of Object.keys(feedConstructors)) {
-        this.maybeStartFeedAndListenForPrefChanges(name);
+      for (const pref of Object.keys(feedConstructors)) {
+        this.maybeStartFeedAndListenForPrefChanges(pref);
       }
     }
     this._messageChannel.createChannel();
@@ -138,7 +134,7 @@ this.Store = class Store {
 
   uninit() {
     this.feeds.forEach(feed => this.uninitFeed(feed));
-    this._prefHandlers.forEach((handler, pref) => Preferences.ignore(pref, handler));
+    this._prefHandlers.forEach((handler, pref) => this._prefs.ignore(pref, handler));
     this._prefHandlers.clear();
     this._feedFactories = null;
     this.feeds.clear();
@@ -146,5 +142,4 @@ this.Store = class Store {
   }
 };
 
-this.PREF_PREFIX = PREF_PREFIX;
-this.EXPORTED_SYMBOLS = ["Store", "PREF_PREFIX"];
+this.EXPORTED_SYMBOLS = ["Store"];

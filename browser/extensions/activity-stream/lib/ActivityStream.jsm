@@ -1,13 +1,17 @@
 
 
 
-
 "use strict";
 
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Store} = Cu.import("resource://activity-stream/lib/Store.jsm", {});
 const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
+
+const REASON_ADDON_UNINSTALL = 6;
+
+XPCOMUtils.defineLazyModuleGetter(this, "DefaultPrefs",
+  "resource://activity-stream/lib/ActivityStreamPrefs.jsm");
 
 
 XPCOMUtils.defineLazyModuleGetter(this, "LocalizationFeed",
@@ -19,30 +23,73 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabInit",
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesFeed",
   "resource://activity-stream/lib/PlacesFeed.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "SearchFeed",
-  "resource://activity-stream/lib/SearchFeed.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryFeed",
   "resource://activity-stream/lib/TelemetryFeed.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "TopSitesFeed",
   "resource://activity-stream/lib/TopSitesFeed.jsm");
 
-const feeds = {
+const PREFS_CONFIG = [
   
   
   
   
   
+  {
+    name: "feeds.localization",
+    title: "Initialize strings and detect locale for Activity Stream",
+    value: true,
+    init: () => new LocalizationFeed()
+  },
+  {
+    name: "feeds.newtabinit",
+    title: "Sends a copy of the state to each new tab that is opened",
+    value: true,
+    init: () => new NewTabInit()
+  },
+  {
+    name: "feeds.places",
+    title: "Listens for and relays various Places-related events",
+    value: true,
+    init: () => new PlacesFeed()
+  },
+  {
+    name: "feeds.telemetry",
+    title: "Relays telemetry-related actions to TelemetrySender",
+    value: true,
+    init: () => new TelemetryFeed()
+  },
+  {
+    name: "feeds.topsites",
+    title: "Queries places and gets metadata for Top Sites section",
+    value: true,
+    init: () => new TopSitesFeed()
+  },
   
-  
-  "feeds.localization": () => new LocalizationFeed(),
-  "feeds.newtabinit": () => new NewTabInit(),
-  "feeds.places": () => new PlacesFeed(),
-  "feeds.search": () => new SearchFeed(),
-  "feeds.telemetry": () => new TelemetryFeed(),
-  "feeds.topsites": () => new TopSitesFeed()
-};
+
+  {
+    name: "telemetry",
+    title: "Enable system error and usage data collection",
+    value: false
+  },
+  {
+    name: "telemetry.log",
+    title: "Log telemetry events in the console",
+    value: false
+  },
+  {
+    name: "telemetry.ping.endpoint",
+    title: "Telemetry server endpoint",
+    value: "https://tiles.services.mozilla.com/v3/links/activity-stream"
+  }
+];
+
+const feeds = {};
+for (const pref of PREFS_CONFIG) {
+  if (pref.name.match(/^feeds\./)) {
+    feeds[pref.name] = pref.init;
+  }
+}
 
 this.ActivityStream = class ActivityStream {
 
@@ -59,9 +106,11 @@ this.ActivityStream = class ActivityStream {
     this.options = options;
     this.store = new Store();
     this.feeds = feeds;
+    this._defaultPrefs = new DefaultPrefs(PREFS_CONFIG);
   }
   init() {
     this.initialized = true;
+    this._defaultPrefs.init();
     this.store.init(this.feeds);
     this.store.dispatch({
       type: at.INIT,
@@ -71,7 +120,16 @@ this.ActivityStream = class ActivityStream {
   uninit() {
     this.store.dispatch({type: at.UNINIT});
     this.store.uninit();
+
     this.initialized = false;
+  }
+  uninstall(reason) {
+    if (reason === REASON_ADDON_UNINSTALL) {
+      
+      
+      
+      this._defaultPrefs.reset();
+    }
   }
 };
 
