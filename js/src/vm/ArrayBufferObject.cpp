@@ -644,7 +644,6 @@ ArrayBufferObject::changeContents(JSContext* cx, BufferContents newContents,
 
 
 
-
 class js::WasmArrayRawBuffer
 {
     Maybe<uint32_t> maxSize_;
