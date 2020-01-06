@@ -156,6 +156,7 @@ using namespace mozilla::gfx;
 #define WEBKIT_PREFIXES_ENABLED_PREF_NAME "layout.css.prefixes.webkit"
 #define TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME "layout.css.text-align-unsafe-value.enabled"
 #define FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME "layout.css.float-logical-values.enabled"
+#define INTERCHARACTER_RUBY_ENABLED_PREF_NAME "layout.css.ruby.intercharacter.enabled"
 
 
 
@@ -740,6 +741,22 @@ nsLayoutUtils::IsTextAlignUnsafeValueEnabled()
   }
 
   return sTextAlignUnsafeValueEnabled;
+}
+
+bool
+nsLayoutUtils::IsInterCharacterRubyEnabled()
+{
+  static bool sInterCharacterRubyEnabled;
+  static bool sInterCharacterRubyEnabledPrefCached = false;
+
+  if (!sInterCharacterRubyEnabledPrefCached) {
+    sInterCharacterRubyEnabledPrefCached = true;
+    Preferences::AddBoolVarCache(&sInterCharacterRubyEnabled,
+                                 INTERCHARACTER_RUBY_ENABLED_PREF_NAME,
+                                 false);
+  }
+
+  return sInterCharacterRubyEnabled;
 }
 
 void

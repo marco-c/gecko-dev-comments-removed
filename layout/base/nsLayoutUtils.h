@@ -2361,6 +2361,11 @@ public:
 
   static bool IsTextAlignUnsafeValueEnabled();
 
+  
+
+
+  static bool IsInterCharacterRubyEnabled();
+
   static bool InterruptibleReflowEnabled()
   {
     return sInterruptibleReflowEnabled;
