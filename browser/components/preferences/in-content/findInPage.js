@@ -239,8 +239,10 @@ var gSearchResultsPane = {
         noResultsEl.hidden = false;
 
         let strings = this.strings;
-        document.getElementById("sorry-message").textContent =
-          strings.getFormattedString("searchResults.sorryMessage2", [query]);
+
+        document.getElementById("sorry-message").textContent = AppConstants.platform == "win" ?
+          strings.getFormattedString("searchResults.sorryMessageWin", [query]) :
+          strings.getFormattedString("searchResults.sorryMessageUnix", [query]);
         let brandName = document.getElementById("bundleBrand").getString("brandShortName");
         document.getElementById("need-help").innerHTML =
           strings.getFormattedString("searchResults.needHelp", [brandName]);
@@ -270,7 +272,7 @@ var gSearchResultsPane = {
 
   searchWithinNode(nodeObject, searchPhrase) {
     let matchesFound = false;
-    if (nodeObject.childElementCount == 0) {
+    if (nodeObject.childElementCount == 0 || nodeObject.tagName == "menulist") {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
 
       for (let node of simpleTextNodes) {
