@@ -436,6 +436,12 @@ ClientLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
     return;
   }
 
+  if (mTransactionIncomplete) {
+    
+    
+    GetCompositorBridgeChild()->FlushAsyncPaints();
+  }
+
   if (mWidget) {
     mWidget->PrepareWindowEffects();
   }
