@@ -3255,7 +3255,6 @@ var SessionStoreInternal = {
     }
 
     let tabbrowser = aWindow.gBrowser;
-    let tabsToRemove = overwriteTabs ? tabbrowser.browsers.length : 0;
     let newTabCount = winData.tabs.length;
     var tabs = [];
 
@@ -3266,9 +3265,18 @@ var SessionStoreInternal = {
 
     
     
-    let initialTabs = [];
+    let initialTabs;
     if (!overwriteTabs && firstWindow) {
       initialTabs = Array.slice(tabbrowser.tabs);
+    }
+
+    
+    if (overwriteTabs) {
+      for (let i = tabbrowser.browsers.length - 1; i >= 0; i--) {
+        if (!tabbrowser.tabs[i].selected) {
+          tabbrowser.removeTab(tabbrowser.tabs[i]);
+        }
+      }
     }
 
     let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") &&
@@ -3279,61 +3287,67 @@ var SessionStoreInternal = {
 
       let userContextId = tabData.userContextId;
       let select = t == selectTab - 1;
-      let createLazyBrowser = restoreTabsLazily && !select && !tabData.pinned;
+      let tab;
 
-      let url = "about:blank";
-      if (createLazyBrowser && tabData.entries && tabData.entries.length) {
-        
-        
-        let activeIndex = (tabData.index || tabData.entries.length) - 1;
-        
-        activeIndex = Math.min(activeIndex, tabData.entries.length - 1);
-        activeIndex = Math.max(activeIndex, 0);
-        url = tabData.entries[activeIndex].url;
+      
+      
+      if (select &&
+          tabbrowser.selectedTab.userContextId == userContextId) {
+        tab = tabbrowser.selectedTab;
+        if (!tabData.pinned) {
+          tabbrowser.unpinTab(tab);
+        }
+        tabbrowser.moveTabToEnd();
+        if (aWindow.gMultiProcessBrowser && !tab.linkedBrowser.isRemoteBrowser) {
+          tabbrowser.updateBrowserRemoteness(tab.linkedBrowser, true);
+        }
       }
 
       
-      
-      
-      let tab = tabbrowser.addTab(url,
-                                  { createLazyBrowser,
-                                    skipAnimation: true,
-                                    noInitialLabel: true,
-                                    userContextId,
-                                    skipBackgroundNotify: true });
+      if (!tab) {
+        let createLazyBrowser = restoreTabsLazily && !select && !tabData.pinned;
 
-      if (select) {
-        
-        
-        tabbrowser.selectedTab = tab;
-
-        
-        for (let i = 0; i < tabsToRemove; i++) {
-          tabbrowser.removeTab(tabbrowser.tabs[0]);
+        let url = "about:blank";
+        if (createLazyBrowser && tabData.entries && tabData.entries.length) {
+          
+          
+          let activeIndex = (tabData.index || tabData.entries.length) - 1;
+          
+          activeIndex = Math.min(activeIndex, tabData.entries.length - 1);
+          activeIndex = Math.max(activeIndex, 0);
+          url = tabData.entries[activeIndex].url;
         }
-        tabsToRemove = 0;
+
+        
+        
+        
+        tab = tabbrowser.addTab(url,
+                                { createLazyBrowser,
+                                  skipAnimation: true,
+                                  noInitialLabel: true,
+                                  userContextId,
+                                  skipBackgroundNotify: true });
+
+        if (select) {
+          let leftoverTab = tabbrowser.selectedTab;
+          tabbrowser.selectedTab = tab;
+          tabbrowser.removeTab(leftoverTab);
+        }
       }
 
       tabs.push(tab);
 
       if (tabData.hidden) {
-        tabbrowser.hideTab(tabs[t]);
+        tabbrowser.hideTab(tab);
+      }
+
+      if (tabData.pinned) {
+        tabbrowser.pinTab(tab);
       }
     }
 
-    for (let i = 0; i < newTabCount; ++i) {
-      if (winData.tabs[i].pinned) {
-        tabbrowser.pinTab(tabs[i]);
-      } else {
-        
-        
-        
-        break;
-      }
-    }
-
-    if (!overwriteTabs && firstWindow) {
-      
+    
+    if (initialTabs) {
       let endPosition = tabbrowser.tabs.length - 1;
       for (let i = 0; i < initialTabs.length; i++) {
         tabbrowser.unpinTab(initialTabs[i]);
