@@ -17,6 +17,8 @@ INCLUSIVE_COMPONENTS = [
     'yaml-lint',
     
     'jittest',
+    
+    'jsreftest',
 ]
 INCLUSIVE_COMPONENTS = sorted(INCLUSIVE_COMPONENTS)
 
