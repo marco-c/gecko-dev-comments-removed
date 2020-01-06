@@ -138,7 +138,8 @@ impl ServoParser {
                                      DocumentSource::FromParser,
                                      loader,
                                      None,
-                                     None);
+                                     None,
+                                     Default::default());
 
         
         document.set_quirks_mode(context_document.quirks_mode());

@@ -41,7 +41,7 @@ impl NetworkListener {
         }
     }
 
-    pub fn initiate_fetch(&self) {
+    pub fn initiate_fetch(&self, cancel_chan: Option<ipc::IpcReceiver<()>>) {
         let (ipc_sender, ipc_receiver) = ipc::channel().expect("Failed to create IPC channel!");
 
         let mut listener = NetworkListener {
@@ -64,7 +64,7 @@ impl NetworkListener {
 
                 CoreResourceMsg::Fetch(
                 listener.req_init.clone(),
-                FetchChannels::ResponseMsg(ipc_sender, None))
+                FetchChannels::ResponseMsg(ipc_sender, cancel_chan))
             }
         };
 
@@ -108,7 +108,11 @@ impl NetworkListener {
                             referrer: metadata.referrer.clone(),
                         });
 
-                        self.initiate_fetch();
+                        
+                        
+                        
+                        
+                        self.initiate_fetch(None);
                     },
                     _ => {
                         
