@@ -397,7 +397,7 @@ RequestContext::CancelTailedRequest(nsIRequestTailUnblockCallback * aRequest)
     }
 
     
-    mUntailAt = TimeStamp();
+    mTimerScheduledAt = TimeStamp();
   }
 
   return NS_OK;
