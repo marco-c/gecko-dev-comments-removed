@@ -2402,16 +2402,12 @@ nsXPCComponents_Utils::EvalInSandbox(const nsAString& source,
         if (!bytes)
             return NS_ERROR_INVALID_ARG;
 
-        jsVersion = JS_StringToVersion(bytes.ptr());
         
-        
-        if (jsVersion == JSVERSION_UNKNOWN &&
-            !strcmp(bytes.ptr(), "latest"))
+        if (JS_StringToVersion(bytes.ptr()) == JSVERSION_UNKNOWN &&
+            strcmp(bytes.ptr(), "latest"))
         {
-            jsVersion = JSVERSION_LATEST;
-        }
-        if (jsVersion == JSVERSION_UNKNOWN)
             return NS_ERROR_INVALID_ARG;
+        }
     }
 
     
