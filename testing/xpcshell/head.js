@@ -529,12 +529,6 @@ function _execute_test() {
     this[func] = Assert[func].bind(Assert);
   }
 
-  if (_gTestHasOnly) {
-    _gTests = _gTests.filter(([props, ]) => {
-      return ("_only" in props) && props._only;
-    });
-  }
-
   try {
     do_test_pending("MAIN run_test");
     
@@ -1366,50 +1360,6 @@ function do_send_remote_message(name) {
 
 
 
-function _add_only(addFunc, funcOrProperties, func) {
-  _gTestHasOnly = true;
-  if (typeof funcOrProperties == "function") {
-    func = funcOrProperties;
-    funcOrProperties = {};
-  }
-
-  if (typeof funcOrProperties == "object") {
-    funcOrProperties._only = true;
-  }
-  return addFunc(funcOrProperties, func);
-}
-
-
-
-
-
-
-
-
-
-
-
-function _add_skip(addFunc, funcOrProperties, func) {
-  if (typeof funcOrProperties == "function") {
-    func = funcOrProperties;
-    funcOrProperties = {};
-  }
-
-  if (typeof funcOrProperties == "object") {
-    funcOrProperties.skip_if = () => true;
-  }
-  return addFunc(funcOrProperties, func);
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1419,19 +1369,21 @@ function _add_skip(addFunc, funcOrProperties, func) {
 
 
 var _gTests = [];
-function add_test(funcOrProperties, func) {
-  if (typeof funcOrProperties == "function") {
-    _gTests.push([{ _isTask: false }, funcOrProperties]);
-  } else if (typeof funcOrProperties == "object") {
-    funcOrProperties._isTask = false;
-    _gTests.push([funcOrProperties, func]);
+var _gRunOnlyThisTest = null;
+function add_test(properties, func = properties, isTask = false) {
+  if (typeof properties == "function") {
+    properties = { isTask };
+    _gTests.push([properties, func]);
+  } else if (typeof properties == "object") {
+    properties.isTask = isTask;
+    _gTests.push([properties, func]);
   } else {
     do_throw("add_test() should take a function or an object and a function");
   }
+  func.skip = () => properties.skip_if = () => true;
+  func.only = () => _gRunOnlyThisTest = func;
   return func;
 }
-add_test.only = _add_only.bind(undefined, add_test);
-add_test.skip = _add_skip.bind(undefined, add_test);
 
 
 
@@ -1486,23 +1438,11 @@ add_test.skip = _add_skip.bind(undefined, add_test);
 
 
 
-
-
-function add_task(funcOrProperties, func) {
-  if (typeof funcOrProperties == "function") {
-    _gTests.push([{ _isTask: true }, funcOrProperties]);
-  } else if (typeof funcOrProperties == "object") {
-    funcOrProperties._isTask = true;
-    _gTests.push([funcOrProperties, func]);
-  } else {
-    do_throw("add_task() should take a function or an object and a function");
-  }
+function add_task(properties, func = properties) {
+  return add_test(properties, func, true);
 }
-add_task.only = _add_only.bind(undefined, add_task);
-add_task.skip = _add_skip.bind(undefined, add_task);
 
 _Task.Debugging.maintainStack = true;
-
 
 
 
@@ -1510,7 +1450,6 @@ _Task.Debugging.maintainStack = true;
 var _gRunningTest = null;
 var _gTestIndex = 0; 
 var _gTaskRunning = false;
-var _gTestHasOnly = false;
 function run_next_test() {
   if (_gTaskRunning) {
     throw new Error("run_next_test() called from an add_task() test function. " +
@@ -1524,8 +1463,12 @@ function run_next_test() {
       _PromiseTestUtils.assertNoUncaughtRejections();
       let _properties;
       [_properties, _gRunningTest, ] = _gTests[_gTestIndex++];
-      if (typeof(_properties.skip_if) == "function" && _properties.skip_if()) {
-        let _condition = _properties.skip_if.toSource().replace(/\(\)\s*=>\s*/, "");
+      if ((typeof(_properties.skip_if) == "function" && _properties.skip_if()) ||
+          (_gRunOnlyThisTest && _gRunningTest != _gRunOnlyThisTest)) {
+        let _condition = _gRunOnlyThisTest ? "only one task may run." :
+          _properties.skip_if.toSource().replace(/\(\)\s*=>\s*/, "");
+        if (_condition == "true")
+          _condition = "explicitly skipped."
         let _message = _gRunningTest.name
           + " skipped because the following conditions were"
           + " met: (" + _condition + ")";
@@ -1540,7 +1483,7 @@ function run_next_test() {
       _testLogger.info(_TEST_NAME + " | Starting " + _gRunningTest.name);
       do_test_pending(_gRunningTest.name);
 
-      if (_properties._isTask) {
+      if (_properties.isTask) {
         _gTaskRunning = true;
         _Task.spawn(_gRunningTest).then(() => {
           _gTaskRunning = false;
