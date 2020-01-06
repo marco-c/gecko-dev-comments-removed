@@ -30,7 +30,7 @@ pub struct TextRun {
     pub font_template: Arc<FontTemplateData>,
     pub actual_pt_size: Au,
     pub font_metrics: FontMetrics,
-    pub font_key: webrender_api::FontKey,
+    pub font_key: webrender_api::FontInstanceKey,
     
     pub glyphs: Arc<Vec<GlyphRun>>,
     pub bidi_level: bidi::Level,
