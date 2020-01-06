@@ -732,11 +732,12 @@ function* assertShowPreviewTooltip(view, target) {
 
 
 function* assertTooltipHiddenOnMouseOut(tooltip, target) {
-  let mouseEvent = new target.ownerDocument.defaultView.MouseEvent("mouseout", {
+  
+  let mouseEvent = new target.ownerDocument.defaultView.MouseEvent("mousemove", {
     bubbles: true,
     relatedTarget: target
   });
-  target.dispatchEvent(mouseEvent);
+  target.parentNode.dispatchEvent(mouseEvent);
 
   yield tooltip.once("hidden");
 
