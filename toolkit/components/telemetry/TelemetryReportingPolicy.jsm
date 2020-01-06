@@ -386,21 +386,31 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-
-  _showInfobar() {
+  _shouldNotify() {
     if (!this.dataSubmissionEnabled) {
-      this._log.trace("_showInfobar - Data submission disabled by the policy.");
-      return;
+      this._log.trace("_shouldNotify - Data submission disabled by the policy.");
+      return false;
     }
 
     const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, false);
     if (this.isUserNotifiedOfCurrentPolicy || bypassNotification) {
-      this._log.trace("_showInfobar - User already notified or bypassing the policy.");
-      return;
+      this._log.trace("_shouldNotify - User already notified or bypassing the policy.");
+      return false;
     }
 
     if (this._notificationInProgress) {
-      this._log.trace("_showInfobar - User not notified, notification already in progress.");
+      this._log.trace("_shouldNotify - User not notified, notification already in progress.");
+      return false;
+    }
+
+    return true;
+  },
+
+  
+
+
+  _showInfobar() {
+    if (!this._shouldNotify()) {
       return;
     }
 
@@ -435,6 +445,10 @@ var TelemetryReportingPolicyImpl = {
 
 
   _openFirstRunPage() {
+    if (!this._shouldNotify()) {
+      return false;
+    }
+
     let firstRunPolicyURL = Preferences.get(PREF_FIRST_RUN_URL, "");
     if (!firstRunPolicyURL) {
       return false;

@@ -354,6 +354,8 @@ class FirefoxProfile(Profile):
         
         'datareporting.healthreport.documentServerURI': 'http://%(server)s/healthreport/',
         
+        'datareporting.policy.dataSubmissionPolicyBypassNotification': True,
+        
         
         
         'extensions.enabledScopes': 5,

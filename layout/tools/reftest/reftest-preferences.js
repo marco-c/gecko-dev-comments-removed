@@ -79,6 +79,9 @@ user_pref("dom.allow_XUL_XBL_for_file", true);
 user_pref("security.view-source.reachable-from-inner-protocol", true);
 
 
+user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+
+
 
 user_pref("toolkit.telemetry.enabled", false);
 user_pref("toolkit.telemetry.unified", false);
