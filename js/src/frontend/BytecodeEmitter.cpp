@@ -10780,14 +10780,8 @@ BytecodeEmitter::emitClass(ParseNode* pn)
         
         
         
-        
-        
-        
-        
-        ptrdiff_t classStart = ptrdiff_t(pn->pn_pos.begin) -
-                               tokenStream().options().sourceStartColumn;
-        ptrdiff_t classEnd = ptrdiff_t(pn->pn_pos.end) -
-                             tokenStream().options().sourceStartColumn;
+        ptrdiff_t classStart = ptrdiff_t(pn->pn_pos.begin);
+        ptrdiff_t classEnd = ptrdiff_t(pn->pn_pos.end);
         if (!newSrcNote3(SRC_CLASS_SPAN, classStart, classEnd))
             return false;
 

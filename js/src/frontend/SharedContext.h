@@ -561,17 +561,8 @@ class FunctionBox : public ObjectBox, public SharedContext
     }
 
     void setStart(const TokenStream& tokenStream) {
-        
-        
-        
-        
         uint32_t offset = tokenStream.currentToken().pos.begin;
-        uint32_t sourceStartColumn = tokenStream.options().sourceStartColumn;
-
-        MOZ_ASSERT(offset >= sourceStartColumn);
-        MOZ_ASSERT(toStringStart >= sourceStartColumn);
-        toStringStart -= sourceStartColumn;
-        bufStart = offset - sourceStartColumn;
+        bufStart = offset;
         tokenStream.srcCoords.lineNumAndColumnIndex(offset, &startLine, &startColumn);
     }
 
@@ -579,14 +570,9 @@ class FunctionBox : public ObjectBox, public SharedContext
         
         
         
-        
-        
         uint32_t offset = tokenStream.currentToken().pos.end;
-        uint32_t sourceStartColumn = tokenStream.options().sourceStartColumn;
-
-        MOZ_ASSERT(offset >= sourceStartColumn);
-        bufEnd = offset - sourceStartColumn;
-        toStringEnd = bufEnd;
+        bufEnd = offset;
+        toStringEnd = offset;
     }
 
     void trace(JSTracer* trc) override;

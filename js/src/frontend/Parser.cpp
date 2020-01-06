@@ -3054,6 +3054,8 @@ Parser<ParseHandler, CharT>::functionArguments(YieldHandling yieldHandling,
             argModifier = firstTokenModifier;
         }
     }
+
+    TokenPos firstTokenPos;
     if (!parenFreeArrow) {
         TokenKind tt;
         if (!tokenStream.getToken(&tt, firstTokenModifier))
@@ -3063,12 +3065,19 @@ Parser<ParseHandler, CharT>::functionArguments(YieldHandling yieldHandling,
             return false;
         }
 
+        firstTokenPos = pos();
+
         
         
         funbox->setStart(tokenStream);
+    } else {
+        
+        
+        if (!tokenStream.peekTokenPos(&firstTokenPos, firstTokenModifier))
+            return false;
     }
 
-    Node argsbody = handler.newList(PNK_PARAMSBODY, pos());
+    Node argsbody = handler.newList(PNK_PARAMSBODY, firstTokenPos);
     if (!argsbody)
         return false;
     handler.setFunctionFormalParametersAndBody(funcpn, argsbody);
@@ -3295,13 +3304,7 @@ Parser<FullParseHandler, char16_t>::skipLazyInnerFunction(ParseNode* pn, uint32_
 
     PropagateTransitiveParseFlags(lazy, pc->sc());
 
-    
-    
-    
-    
-    Rooted<LazyScript*> lazyOuter(context, handler.lazyOuterFunction());
-    uint32_t userbufBase = lazyOuter->begin() - lazyOuter->column();
-    if (!tokenStream.advance(fun->lazyScript()->end() - userbufBase))
+    if (!tokenStream.advance(fun->lazyScript()->end()))
         return false;
 
 #if JS_HAS_EXPR_CLOSURES

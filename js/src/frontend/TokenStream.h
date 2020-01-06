@@ -495,8 +495,10 @@ class TokenStreamAnyChars
         
         
         
+        
         Vector<uint32_t, 128> lineStartOffsets_;
         uint32_t            initialLineNum_;
+        uint32_t            initialColumn_;
 
         
         
@@ -508,9 +510,17 @@ class TokenStreamAnyChars
 
         uint32_t lineIndexToNum(uint32_t lineIndex) const { return lineIndex + initialLineNum_; }
         uint32_t lineNumToIndex(uint32_t lineNum)   const { return lineNum   - initialLineNum_; }
+        uint32_t lineIndexAndOffsetToColumn(uint32_t lineIndex, uint32_t offset) const {
+            uint32_t lineStartOffset = lineStartOffsets_[lineIndex];
+            MOZ_RELEASE_ASSERT(offset >= lineStartOffset);
+            uint32_t column = offset - lineStartOffset;
+            if (lineIndex == 0)
+                return column + initialColumn_;
+            return column;
+        }
 
       public:
-        SourceCoords(JSContext* cx, uint32_t ln);
+        SourceCoords(JSContext* cx, uint32_t ln, uint32_t col, uint32_t initialLineOffset);
 
         MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
         MOZ_MUST_USE bool fill(const SourceCoords& other);
@@ -526,7 +536,7 @@ class TokenStreamAnyChars
 
         uint32_t lineNum(uint32_t offset) const;
         uint32_t columnIndex(uint32_t offset) const;
-        void lineNumAndColumnIndex(uint32_t offset, uint32_t* lineNum, uint32_t* columnIndex) const;
+        void lineNumAndColumnIndex(uint32_t offset, uint32_t* lineNum, uint32_t* column) const;
     };
 
     SourceCoords srcCoords;
