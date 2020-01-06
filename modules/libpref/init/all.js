@@ -286,15 +286,12 @@ pref("browser.display.focus_ring_on_anything", false);
 
 pref("browser.display.focus_ring_style", 1);
 
-pref("browser.helperApps.alwaysAsk.force",  false);
 pref("browser.helperApps.neverAsk.saveToDisk", "");
 pref("browser.helperApps.neverAsk.openFile", "");
 pref("browser.helperApps.deleteTempFileOnExit", false);
 
 
 pref("browser.chrome.toolbar_tips",         true);
-
-pref("browser.chrome.toolbar_style",        2);
 
 
 pref("browser.chrome.image_icons.max_size", 1024);
@@ -400,23 +397,12 @@ pref("media.ffmpeg.low-latency.enabled", false);
 pref("media.gmp.decoder.enabled", false);
 pref("media.gmp.decoder.aac", 0);
 pref("media.gmp.decoder.h264", 0);
-#ifdef MOZ_RAW
-pref("media.raw.enabled", true);
-#endif
 pref("media.ogg.enabled", true);
 pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
 pref("media.eme.chromium-api.video-shmems", 6);
-
-#ifdef MOZ_APPLEMEDIA
-#ifdef MOZ_WIDGET_UIKIT
-pref("media.mp3.enabled", true);
-#endif
-pref("media.apple.mp3.enabled", true);
-pref("media.apple.mp4.enabled", true);
-#endif
 
 
 
@@ -453,12 +439,6 @@ pref("media.resume-bkgnd-video-on-tabhover", true);;
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
 pref("media.navigator.video.enabled", true);
-pref("media.navigator.load_adapt", true);
-pref("media.navigator.load_adapt.encoder_only", true);
-pref("media.navigator.load_adapt.measure_interval",1000);
-pref("media.navigator.load_adapt.avg_seconds",3);
-pref("media.navigator.load_adapt.high_load","0.90");
-pref("media.navigator.load_adapt.low_load","0.40");
 pref("media.navigator.video.default_fps",30);
 pref("media.navigator.video.use_remb", true);
 pref("media.navigator.video.use_tmmbr", false);
@@ -481,7 +461,6 @@ pref("media.navigator.video.max_fr", 60);
 pref("media.navigator.video.h264.level", 31); 
 pref("media.navigator.video.h264.max_br", 0);
 pref("media.navigator.video.h264.max_mbps", 0);
-pref("media.peerconnection.video.h264_enabled", false);
 pref("media.peerconnection.video.vp9_enabled", true);
 pref("media.peerconnection.video.vp9_preferred", false);
 pref("media.getusermedia.aec", 1);
@@ -526,7 +505,6 @@ pref("media.getusermedia.aec_enabled", true);
 pref("media.getusermedia.noise_enabled", true);
 #endif
 pref("media.getusermedia.aec_extended_filter", true);
-pref("media.getusermedia.aec_delay_agnostic", true);
 pref("media.getusermedia.noise", 1);
 pref("media.getusermedia.agc_enabled", false);
 pref("media.getusermedia.agc", 1);
@@ -839,7 +817,6 @@ pref("gfx.font_rendering.wordcache.maxentries", 10000);
 pref("gfx.font_rendering.graphite.enabled", true);
 
 #ifdef XP_WIN
-pref("gfx.font_rendering.directwrite.force-enabled", false);
 pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
@@ -962,7 +939,6 @@ pref("accessibility.handler.enabled", true);
 pref("focusmanager.testmode", false);
 
 pref("accessibility.usetexttospeech", "");
-pref("accessibility.usebrailledisplay", "");
 pref("accessibility.accesskeycausesactivation", true);
 pref("accessibility.mouse_focuses_formcontrol", false);
 
@@ -1087,10 +1063,6 @@ pref("devtools.discovery.log", false);
 
 pref("devtools.remote.wifi.scan", true);
 
-
-
-pref("devtools.remote.wifi.visible", true);
-
 pref("devtools.remote.tls-handshake-timeout", 10000);
 
 
@@ -1114,12 +1086,6 @@ pref("devtools.gcli.imgurUploadURL", "https://api.imgur.com/3/image");
 
 
 pref("devtools.commands.dir", "");
-
-
-pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
-
-
-pref("devtools.migration.warnings", true);
 
 
 pref("view_source.syntax_highlight", true);
@@ -1158,9 +1124,6 @@ pref("layout.framevisibility.numscrollportheights", 1);
 
 
 pref("slider.snapMultiplier", 0);
-
-
-pref("application.use_ns_plugin_finder", false);
 
 
 pref("browser.fixup.alternate.enabled", true);
@@ -1203,9 +1166,6 @@ pref("print.use_global_printsettings", true);
 
 
 pref("print.save_print_settings", true);
-
-
-pref("print.always_cache_old_pres", false);
 
 
 
@@ -1361,12 +1321,6 @@ pref("dom.input.dirpicker", false);
 
 
 pref("dom.input.skip_cursor_move_for_same_value_set", true);
-
-
-pref("dom.sysmsg.enabled", false);
-
-
-pref("dom.webapps.useCurrentProfile", false);
 
 pref("dom.cycle_collector.incremental", true);
 
@@ -2556,12 +2510,9 @@ pref("font.name-list.monospace.x-math", "monospace");
 
 pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
 
-pref("images.dither", "auto");
 pref("security.directory",              "");
 
 pref("signed.applets.codebase_principal_support", false);
-pref("security.checkloaduri", true);
-pref("security.xpconnect.plugin.unrestricted", true);
 
 pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
@@ -2663,14 +2614,12 @@ pref("ui.key.chromeAccess", 4);
 pref("ui.key.contentAccess", 5);
 
 pref("ui.key.menuAccessKeyFocuses", false); 
-pref("ui.key.saveLink.shift", true); 
 
 
 pref("ui.use_activity_cursor", false);
 
 
 pref("middlemouse.paste", false);
-pref("middlemouse.openNewWindow", true);
 pref("middlemouse.contentLoadURL", false);
 pref("middlemouse.scrollbarPosition", false);
 
@@ -2815,26 +2764,8 @@ pref("general.smoothScroll.msdPhysics.slowdownMinDeltaRatio", "1.3");
 pref("general.smoothScroll.msdPhysics.slowdownSpringConstant", 2000);
 pref("general.smoothScroll.msdPhysics.regularSpringConstant", 1000);
 
-pref("profile.confirm_automigration",true);
-
-
-
-
-pref("profile.migration_behavior",0);
-pref("profile.migration_directory", "");
-
-
-
-
-
-
-
-
-pref("profile.seconds_until_defunct", -1);
 
 pref("profile.manage_only_at_launch", false);
-
-pref("prefs.converted-to-utf8",false);
 
 
 
@@ -3174,18 +3105,7 @@ pref("layout.animation.prerender.absolute-limit-x", 4096);
 pref("layout.animation.prerender.absolute-limit-y", 4096);
 
 
-pref("capability.policy.default.SOAPCall.invokeVerifySourceHeader", "allAccess");
-
-
 pref("plugin.override_internal_types", false);
-
-
-
-pref("browser.popups.showPopupBlocker", true);
-
-
-
-pref("viewmanager.do_doublebuffering", true);
 
 
 pref("gestures.enable_single_finger_input", true);
@@ -3870,10 +3790,6 @@ pref("layout.word_select.eat_space_to_next_word", true);
 pref("slider.snapMultiplier", 6);
 
 
-
-pref("print.print_extra_margin", 90); 
-
-
 pref("print.extend_native_print_dialog", true);
 
 
@@ -4228,10 +4144,6 @@ pref("ui.key.chromeAccess", 2);
 pref("ui.key.contentAccess", 6);
 
 
-
-pref("print.print_extra_margin", 90); 
-
-
 pref("ui.panel.default_level_parent", false);
 
 pref("ui.plugin.cancel_composition_at_input_source_changed", false);
@@ -4262,10 +4174,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-pref("autocomplete.grab_during_popup", true);
-pref("autocomplete.ungrab_during_mode_switch", true);
-
-
 
 pref("ui.allow_platform_file_picker", true);
 
@@ -4275,13 +4183,7 @@ pref("helpers.private_mime_types_file", "~/.mime.types");
 pref("helpers.private_mailcap_file", "~/.mailcap");
 pref("print.printer_list", ""); 
 pref("print.print_reversed", false);
-pref("print.print_color", true);
-pref("print.print_landscape", false);
-pref("print.print_paper_size", 0);
-
-
-
-pref("print.print_extra_margin", 0); 
+pref("print.print_in_color", true);
 
 
 
@@ -4327,10 +4229,6 @@ pref("browser.urlbar.clickSelectsAll", false);
 
 
 
-pref("autocomplete.grab_during_popup", true);
-pref("autocomplete.ungrab_during_mode_switch", true);
-
-
 
 pref("ui.allow_platform_file_picker", true);
 
@@ -4340,13 +4238,7 @@ pref("helpers.private_mime_types_file", "~/.mime.types");
 pref("helpers.private_mailcap_file", "~/.mailcap");
 pref("print.printer_list", ""); 
 pref("print.print_reversed", false);
-pref("print.print_color", true);
-pref("print.print_landscape", false);
-pref("print.print_paper_size", 0);
-
-
-
-pref("print.print_extra_margin", 0); 
+pref("print.print_in_color", true);
 
 
 
@@ -4782,10 +4674,6 @@ pref("webgl.dxgl.needs-finish", false);
 pref("gfx.offscreencanvas.enabled", false);
 
 
-pref("stagefright.force-enabled", false);
-pref("stagefright.disabled", false);
-
-
 
 
 
@@ -4949,10 +4837,6 @@ pref("layers.shared-buffer-provider.enabled", false);
 pref("layers.force-active", false);
 
 
-
-pref("layers.gralloc.disable", false);
-
-
 pref("geo.enabled", true);
 
 
@@ -5062,9 +4946,6 @@ pref("full-screen-api.warning.delay", 500);
 
 
 pref("pointer-lock-api.warning.timeout", 3000);
-
-
-pref("dom.idle-observers-api.enabled", true);
 
 
 
@@ -5529,10 +5410,6 @@ pref("dom.wakelock.enabled", false);
 pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
 pref("beacon.enabled", true);
-
-
-pref("camera.control.face_detection.enabled", true);
-
 
 
 pref("dom.caches.enabled", true);
