@@ -97,6 +97,7 @@ const ERR_BACKUP_DISCARD = "backup_discard: unable to remove";
 const ERR_MOVE_DESTDIR_7 = "Moving destDir to tmpDir failed, err: 7";
 const ERR_BACKUP_CREATE_7 = "backup_create failed: 7";
 const ERR_LOADSOURCEFILE_FAILED = "LoadSourceFile failed";
+const ERR_PARENT_PID_PERSISTS = "The parent process didn't exit! Continuing with update.";
 
 const LOG_SVC_SUCCESSFUL_LAUNCH = "Process was started... waiting on result.";
 
@@ -158,6 +159,8 @@ var gHandle;
 var gGREDirOrig;
 var gGREBinDirOrig;
 var gAppDirOrig;
+
+var gPIDPersistProcess;
 
 
 
@@ -1684,6 +1687,12 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
     }
   }
 
+  let pid = 0;
+  if (gPIDPersistProcess) {
+    pid = gPIDPersistProcess.pid;
+    gEnv.set("MOZ_TEST_SHORTER_WAIT_PID", "1");
+  }
+
   
   let updateBin = copyTestUpdaterForRunUsingUpdater();
   Assert.ok(updateBin.exists(),
@@ -1702,10 +1711,10 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
   let args = [updatesDirPath, installDirPath];
   if (aSwitchApp) {
     args[2] = stageDirPath;
-    args[3] = "0/replace";
+    args[3] = pid + "/replace";
   } else {
     args[2] = applyToDirPath;
-    args[3] = "0";
+    args[3] = pid;
   }
 
   let launchBin = IS_SERVICE_TEST && isInvalidArgTest ? callbackApp : updateBin;
@@ -1734,6 +1743,10 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
   process.run(true, args, args.length);
 
   resetEnvironment();
+
+  if (gPIDPersistProcess) {
+    gEnv.set("MOZ_TEST_SHORTER_WAIT_PID", "");
+  }
 
   let status = readStatusFile();
   if ((!IS_SERVICE_TEST && process.exitValue != aExpectedExitValue) ||
@@ -2448,13 +2461,18 @@ function lockDirectory(aDirPath) {
 
 
 
+
+
+
 function runHelperFileInUse(aRelPath, aCopyTestHelper) {
-  logTestInfo("aRelPath: " + aRelPath);
+  debugDump("aRelPath: " + aRelPath);
   
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
   let fileInUseBin = getApplyDirFile(aRelPath);
   if (aCopyTestHelper) {
-    fileInUseBin.remove(false);
+    if (fileInUseBin.exists()) {
+      fileInUseBin.remove(false);
+    }
     helperBin.copyTo(fileInUseBin.parent, fileInUseBin.leafName);
   }
   fileInUseBin.permissions = PERMS_DIRECTORY;
@@ -2464,6 +2482,38 @@ function runHelperFileInUse(aRelPath, aCopyTestHelper) {
                          createInstance(Ci.nsIProcess);
   fileInUseProcess.init(fileInUseBin);
   fileInUseProcess.run(false, args, args.length);
+
+  do_execute_soon(waitForHelperSleep);
+}
+
+
+
+
+
+
+
+
+
+
+
+function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
+  debugDump("aRelPath: " + aRelPath);
+  
+  let helperBin = getTestDirFile(FILE_HELPER_BIN);
+  let pidPersistsBin = getApplyDirFile(aRelPath);
+  if (aCopyTestHelper) {
+    if (pidPersistsBin.exists()) {
+      pidPersistsBin.remove(false);
+    }
+    helperBin.copyTo(pidPersistsBin.parent, pidPersistsBin.leafName);
+  }
+  pidPersistsBin.permissions = PERMS_DIRECTORY;
+  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
+              HELPER_SLEEP_TIMEOUT];
+  gPIDPersistProcess = Cc["@mozilla.org/process/util;1"].
+                       createInstance(Ci.nsIProcess);
+  gPIDPersistProcess.init(pidPersistsBin);
+  gPIDPersistProcess.run(false, args, args.length);
 
   do_execute_soon(waitForHelperSleep);
 }
@@ -3738,6 +3788,17 @@ function adjustGeneralPaths() {
       }
       gProcess = null;
       debugDump("finish - kill process");
+    }
+
+    if (gPIDPersistProcess && gPIDPersistProcess.isRunning) {
+      debugDump("start - kill pid persist process");
+      try {
+        gPIDPersistProcess.kill();
+      } catch (e) {
+        debugDump("kill pid persist process failed. Exception: " + e);
+      }
+      gPIDPersistProcess = null;
+      debugDump("finish - kill pid persist process");
     }
 
     if (gHandle) {

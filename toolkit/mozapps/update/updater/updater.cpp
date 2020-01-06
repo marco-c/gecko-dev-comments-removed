@@ -70,9 +70,7 @@
 
 
 
-
-
-#define PARENT_WAIT 70000
+#define PARENT_WAIT 30000
 
 #if defined(XP_MACOSX)
 
@@ -2098,13 +2096,12 @@ static void
 LaunchCallbackApp(const NS_tchar *workingDir,
                   int argc,
                   NS_tchar **argv,
-                  bool usingService)
+                  bool usingService,
+                  NS_tpid pid)
 {
   putenv(const_cast<char*>("NO_EM_RESTART="));
   putenv(const_cast<char*>("MOZ_LAUNCHED_CHILD=1"));
 
-  
-  
   
   if (NS_tchdir(workingDir) != 0) {
     LOG(("Warning: chdir failed"));
@@ -2118,6 +2115,15 @@ LaunchCallbackApp(const NS_tchar *workingDir,
   
   
   if (!usingService) {
+    
+    
+    if (pid > 0) {
+      HANDLE parent = OpenProcess(SYNCHRONIZE, false, (DWORD) pid);
+      if (parent) {
+        CloseHandle(parent);
+        return;
+      }
+    }
     WinLaunchChild(argv[0], argc, argv, nullptr);
   }
 #else
@@ -2651,7 +2657,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
 #elif XP_MACOSX
                                      , bool isElevated
 #endif
-                                     )
+                                     , NS_tpid pid)
 {
   if (argc > callbackIndex) {
 #if defined(XP_WIN)
@@ -2682,7 +2688,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
     LaunchCallbackApp(argv[5],
                       argc - callbackIndex,
                       argv + callbackIndex,
-                      sUsingService);
+                      sUsingService, pid);
 #ifdef XP_MACOSX
     } 
 #endif 
@@ -2853,17 +2859,9 @@ int NS_main(int argc, NS_tchar **argv)
 #endif
 
   
-#ifdef XP_WIN
-  __int64 pid = 0;
-#else
-  int pid = 0;
-#endif
+  NS_tpid pid = 0;
   if (argc > 4) {
-#ifdef XP_WIN
-    pid = _wtoi64(argv[4]);
-#else
-    pid = atoi(argv[4]);
-#endif
+    pid = NS_tatoi(argv[4]);
     if (pid == -1) {
       
       
@@ -2947,7 +2945,7 @@ int NS_main(int argc, NS_tchar **argv)
     }
     t1.Join();
 
-    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false);
+    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false, pid);
     return gSucceeded ? 0 : 1;
   }
 #endif
@@ -3016,10 +3014,19 @@ int NS_main(int argc, NS_tchar **argv)
     
     if (parent) {
       DWORD waitTime = PARENT_WAIT;
+#ifdef TEST_UPDATER
+      if (EnvHasValue("MOZ_TEST_SHORTER_WAIT_PID")) {
+        
+        waitTime = 100;
+      }
+#endif
       DWORD result = WaitForSingleObject(parent, waitTime);
       CloseHandle(parent);
       if (result != WAIT_OBJECT_0) {
-        return 1;
+        
+        
+        
+        LOG(("The parent process didn't exit! Continuing with update."));
       }
     }
   }
@@ -3309,7 +3316,7 @@ int NS_main(int argc, NS_tchar **argv)
 
       if (argc > callbackIndex) {
         LaunchCallbackApp(argv[5], argc - callbackIndex,
-                          argv + callbackIndex, sUsingService);
+                          argv + callbackIndex, sUsingService, pid);
       }
 
       CloseHandle(elevatedFileHandle);
@@ -3394,7 +3401,7 @@ int NS_main(int argc, NS_tchar **argv)
     EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
     if (argc > callbackIndex) {
       LaunchCallbackApp(argv[5], argc - callbackIndex,
-                        argv + callbackIndex, sUsingService);
+                        argv + callbackIndex, sUsingService, pid);
     }
     return 1;
   }
@@ -3449,7 +3456,7 @@ int NS_main(int argc, NS_tchar **argv)
         LaunchCallbackApp(argv[5],
                           argc - callbackIndex,
                           argv + callbackIndex,
-                          sUsingService);
+                          sUsingService, pid);
       }
       return 1;
     }
@@ -3513,7 +3520,7 @@ int NS_main(int argc, NS_tchar **argv)
         LaunchCallbackApp(argv[callbackIndex],
                           argc - callbackIndex,
                           argv + callbackIndex,
-                          sUsingService);
+                          sUsingService, pid);
         return 1;
       }
 
@@ -3562,7 +3569,7 @@ int NS_main(int argc, NS_tchar **argv)
           LaunchCallbackApp(argv[5],
                             argc - callbackIndex,
                             argv + callbackIndex,
-                            sUsingService);
+                            sUsingService, pid);
           return 1;
         }
         LOG(("NS_main: callback app file in use, continuing without " \
@@ -3701,7 +3708,7 @@ int NS_main(int argc, NS_tchar **argv)
 #elif XP_MACOSX
                                                 , isElevated
 #endif
-                                               );
+                                                , pid);
 
   return retVal ? retVal : (gSucceeded ? 0 : 1);
 }
