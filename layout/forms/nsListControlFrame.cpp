@@ -1465,13 +1465,14 @@ nsListControlFrame::AboutToDropDown()
   
   
   nsIFrame* comboboxFrame = do_QueryFrame(mComboboxFrame);
-  nsStyleContext* context = comboboxFrame->StyleContext()->GetParent();
+  nsIFrame* ancestor = comboboxFrame->GetParent();
   mLastDropdownBackstopColor = NS_RGBA(0,0,0,0);
-  while (NS_GET_A(mLastDropdownBackstopColor) < 255 && context) {
+  while (NS_GET_A(mLastDropdownBackstopColor) < 255 && ancestor) {
+    nsStyleContext* context = ancestor->StyleContext();
     mLastDropdownBackstopColor =
       NS_ComposeColors(context->StyleBackground()->BackgroundColor(context),
                        mLastDropdownBackstopColor);
-    context = context->GetParent();
+    ancestor = ancestor->GetParent();
   }
   mLastDropdownBackstopColor =
     NS_ComposeColors(PresContext()->DefaultBackgroundColor(),
