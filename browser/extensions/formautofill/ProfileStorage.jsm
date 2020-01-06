@@ -45,6 +45,31 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 
@@ -84,6 +109,14 @@ const VALID_PROFILE_FIELDS = [
   "country",
   "tel",
   "email",
+];
+
+const VALID_CREDIT_CARD_FIELDS = [
+  "cc-name",
+  "cc-number-encrypted",
+  "cc-number-masked",
+  "cc-exp-month",
+  "cc-exp-year",
 ];
 
 const INTERNAL_FIELDS = [
@@ -411,6 +444,93 @@ class Addresses extends AutofillRecords {
   }
 }
 
+class CreditCards extends AutofillRecords {
+  constructor(store) {
+    super(store, "creditCards", VALID_CREDIT_CARD_FIELDS);
+  }
+
+  _recordReadProcessor(creditCard, {noComputedFields} = {}) {
+    if (noComputedFields) {
+      return;
+    }
+
+    
+    if (creditCard["cc-name"]) {
+      let nameParts = FormAutofillNameUtils.splitName(creditCard["cc-name"]);
+      if (nameParts.given) {
+        creditCard["cc-given-name"] = nameParts.given;
+      }
+      if (nameParts.middle) {
+        creditCard["cc-additional-name"] = nameParts.middle;
+      }
+      if (nameParts.family) {
+        creditCard["cc-family-name"] = nameParts.family;
+      }
+    }
+  }
+
+  _recordWriteProcessor(creditCard) {
+    
+    delete creditCard["cc-number-encrypted"];
+    delete creditCard["cc-number-masked"];
+
+    
+    if (creditCard["cc-number"]) {
+      let ccNumber = creditCard["cc-number"].replace(/\s/g, "");
+      delete creditCard["cc-number"];
+
+      if (!/^\d+$/.test(ccNumber)) {
+        throw new Error("Credit card number contains invalid characters.");
+      }
+
+      
+      
+
+      if (ccNumber.length > 4) {
+        creditCard["cc-number-masked"] = "*".repeat(ccNumber.length - 4) + ccNumber.substr(-4);
+      } else {
+        creditCard["cc-number-masked"] = ccNumber;
+      }
+    }
+
+    
+    if (creditCard["cc-given-name"] || creditCard["cc-additional-name"] || creditCard["cc-family-name"]) {
+      if (!creditCard["cc-name"]) {
+        creditCard["cc-name"] = FormAutofillNameUtils.joinNameParts({
+          given: creditCard["cc-given-name"],
+          middle: creditCard["cc-additional-name"],
+          family: creditCard["cc-family-name"],
+        });
+      }
+
+      delete creditCard["cc-given-name"];
+      delete creditCard["cc-additional-name"];
+      delete creditCard["cc-family-name"];
+    }
+
+    
+    if (creditCard["cc-exp-month"]) {
+      let expMonth = parseInt(creditCard["cc-exp-month"], 10);
+      if (isNaN(expMonth) || expMonth < 1 || expMonth > 12) {
+        delete creditCard["cc-exp-month"];
+      } else {
+        creditCard["cc-exp-month"] = expMonth;
+      }
+    }
+    if (creditCard["cc-exp-year"]) {
+      let expYear = parseInt(creditCard["cc-exp-year"], 10);
+      if (isNaN(expYear) || expYear < 0) {
+        delete creditCard["cc-exp-year"];
+      } else if (expYear < 100) {
+        
+        creditCard["cc-exp-year"] = expYear + 2000;
+      } else {
+        creditCard["cc-exp-year"] = expYear;
+      }
+    }
+  }
+}
+
 function ProfileStorage(path) {
   this._path = path;
   this._initializePromise = null;
@@ -424,6 +544,14 @@ ProfileStorage.prototype = {
       this._addresses = new Addresses(this._store);
     }
     return this._addresses;
+  },
+
+  get creditCards() {
+    if (!this._creditCards) {
+      this._store.ensureDataReady();
+      this._creditCards = new CreditCards(this._store);
+    }
+    return this._creditCards;
   },
 
   
@@ -448,6 +576,9 @@ ProfileStorage.prototype = {
     data.version = SCHEMA_VERSION;
     if (!data.addresses) {
       data.addresses = [];
+    }
+    if (!data.creditCards) {
+      data.creditCards = [];
     }
     return data;
   },
