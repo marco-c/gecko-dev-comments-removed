@@ -151,6 +151,11 @@ public:
   
 
 
+  virtual bool IsNull() const = 0;
+
+  
+
+
   virtual MediaSegment* CreateEmptyClone() const = 0;
   
 
@@ -229,6 +234,15 @@ protected:
 
 template <class C, class Chunk> class MediaSegmentBase : public MediaSegment {
 public:
+  bool IsNull() const override
+  {
+    for (typename C::ConstChunkIterator iter(*this); !iter.IsEnded(); iter.Next()) {
+      if (!iter->IsNull()) {
+        return false;
+      }
+    }
+    return true;
+  }
   MediaSegment* CreateEmptyClone() const override
   {
     return new C();
