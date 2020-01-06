@@ -9452,13 +9452,6 @@ CSSParserImpl::ParseGrid()
   }
 
   
-  
-  
-  value.SetFloatValue(0.0f, eCSSUnit_Pixel);
-  AppendValue(eCSSProperty_grid_row_gap, value);
-  AppendValue(eCSSProperty_grid_column_gap, value);
-
-  
   auto res = ParseGridShorthandAutoProps(NS_STYLE_GRID_AUTO_FLOW_ROW);
   if (res == CSSParseResult::Error) {
     return false;
