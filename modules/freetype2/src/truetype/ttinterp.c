@@ -402,7 +402,7 @@
       exec->IDefs      = size->instruction_defs;
       exec->pointSize  = size->point_size;
       exec->tt_metrics = size->ttmetrics;
-      exec->metrics    = size->metrics;
+      exec->metrics    = *size->metrics;
 
       exec->maxFunc    = size->max_func;
       exec->maxIns     = size->max_ins;
@@ -1684,7 +1684,7 @@
       
       
       
-      if ( SUBPIXEL_HINTING_MINIMAL && !exc->backwards_compatibility )
+      if ( SUBPIXEL_HINTING_MINIMAL && !exc->backward_compatibility )
         zone->cur[point].x += FT_MulDiv( distance, v, exc->F_dot_P );
       else
 #endif
@@ -1700,10 +1700,10 @@
     if ( v != 0 )
     {
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-      if ( !( SUBPIXEL_HINTING_MINIMAL     &&
-              exc->backwards_compatibility &&
-              exc->iupx_called             &&
-              exc->iupy_called             ) )
+      if ( !( SUBPIXEL_HINTING_MINIMAL    &&
+              exc->backward_compatibility &&
+              exc->iupx_called            &&
+              exc->iupy_called            ) )
 #endif
         zone->cur[point].y += FT_MulDiv( distance, v, exc->F_dot_P );
 
@@ -1774,7 +1774,7 @@
 #endif 
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-    if ( SUBPIXEL_HINTING_MINIMAL && !exc->backwards_compatibility )
+    if ( SUBPIXEL_HINTING_MINIMAL && !exc->backward_compatibility )
       zone->cur[point].x += distance;
     else
 #endif
@@ -1796,7 +1796,7 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     if ( !( SUBPIXEL_HINTING_MINIMAL             &&
-            exc->backwards_compatibility         &&
+            exc->backward_compatibility          &&
             exc->iupx_called && exc->iupy_called ) )
 #endif
       zone->cur[point].y += distance;
@@ -3565,6 +3565,13 @@
 
 
     
+    if ( exc->curRange == tt_coderange_glyph )
+    {
+      exc->error = FT_THROW( DEF_In_Glyf_Bytecode );
+      return;
+    }
+
+    
     
 
     rec   = exc->FDefs;
@@ -3989,6 +3996,13 @@
     TT_DefRecord*  def;
     TT_DefRecord*  limit;
 
+
+    
+    if ( exc->curRange == tt_coderange_glyph )
+    {
+      exc->error = FT_THROW( DEF_In_Glyf_Bytecode );
+      return;
+    }
 
     
 
@@ -5116,7 +5130,7 @@
       
       
       if ( SUBPIXEL_HINTING_MINIMAL )
-        exc->backwards_compatibility = !FT_BOOL( L == 4 );
+        exc->backward_compatibility = !FT_BOOL( L == 4 );
 #endif
     }
   }
@@ -5205,10 +5219,10 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     
-    if ( SUBPIXEL_HINTING_MINIMAL     &&
-         exc->backwards_compatibility &&
-         exc->iupx_called             &&
-         exc->iupy_called             )
+    if ( SUBPIXEL_HINTING_MINIMAL    &&
+         exc->backward_compatibility &&
+         exc->iupx_called            &&
+         exc->iupy_called            )
       goto Fail;
 #endif
 
@@ -5260,10 +5274,10 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     
-    if ( SUBPIXEL_HINTING_MINIMAL     &&
-         exc->backwards_compatibility &&
-         exc->iupx_called             &&
-         exc->iupy_called             )
+    if ( SUBPIXEL_HINTING_MINIMAL    &&
+         exc->backward_compatibility &&
+         exc->iupx_called            &&
+         exc->iupy_called            )
       return;
 #endif
 
@@ -5298,10 +5312,10 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     
-    if ( SUBPIXEL_HINTING_MINIMAL     &&
-         exc->backwards_compatibility &&
-         exc->iupx_called             &&
-         exc->iupy_called             )
+    if ( SUBPIXEL_HINTING_MINIMAL    &&
+         exc->backward_compatibility &&
+         exc->iupx_called            &&
+         exc->iupy_called            )
       return;
 #endif
 
@@ -5375,8 +5389,8 @@
     if ( exc->GS.freeVector.x != 0 )
     {
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-      if ( !( SUBPIXEL_HINTING_MINIMAL     &&
-              exc->backwards_compatibility ) )
+      if ( !( SUBPIXEL_HINTING_MINIMAL    &&
+              exc->backward_compatibility ) )
 #endif
         exc->zp2.cur[point].x += dx;
 
@@ -5387,10 +5401,10 @@
     if ( exc->GS.freeVector.y != 0 )
     {
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-      if ( !( SUBPIXEL_HINTING_MINIMAL     &&
-              exc->backwards_compatibility &&
-              exc->iupx_called             &&
-              exc->iupy_called             ) )
+      if ( !( SUBPIXEL_HINTING_MINIMAL    &&
+              exc->backward_compatibility &&
+              exc->iupx_called            &&
+              exc->iupy_called            ) )
 #endif
         exc->zp2.cur[point].y += dy;
 
@@ -5687,8 +5701,8 @@
       else
 #endif
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-      if ( SUBPIXEL_HINTING_MINIMAL     &&
-           exc->backwards_compatibility )
+      if ( SUBPIXEL_HINTING_MINIMAL    &&
+           exc->backward_compatibility )
       {
         
         
@@ -6855,8 +6869,8 @@
     
     
     
-    if ( SUBPIXEL_HINTING_MINIMAL     &&
-         exc->backwards_compatibility )
+    if ( SUBPIXEL_HINTING_MINIMAL    &&
+         exc->backward_compatibility )
     {
       if ( exc->iupx_called && exc->iupy_called )
         return;
@@ -7100,8 +7114,8 @@
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
             
             
-            if ( SUBPIXEL_HINTING_MINIMAL     &&
-                 exc->backwards_compatibility )
+            if ( SUBPIXEL_HINTING_MINIMAL    &&
+                 exc->backward_compatibility )
             {
               if ( !( exc->iupx_called && exc->iupy_called )              &&
                    ( ( exc->is_composite && exc->GS.freeVector.y != 0 ) ||
@@ -7581,9 +7595,9 @@
     
     if ( SUBPIXEL_HINTING_MINIMAL          &&
          !FT_IS_TRICKY( &exc->face->root ) )
-      exc->backwards_compatibility = !( exc->GS.instruct_control & 4 );
+      exc->backward_compatibility = !( exc->GS.instruct_control & 4 );
     else
-      exc->backwards_compatibility = FALSE;
+      exc->backward_compatibility = FALSE;
 
     exc->iupx_called = FALSE;
     exc->iupy_called = FALSE;
@@ -7613,13 +7627,27 @@
     
     
     
+    
+    
     exc->loopcall_counter = 0;
     exc->neg_jump_counter = 0;
 
     
-    exc->loopcall_counter_max = FT_MAX( 100,
-                                        10 * ( exc->pts.n_points +
-                                               exc->cvtSize ) );
+    if ( exc->pts.n_points )
+      exc->loopcall_counter_max = FT_MAX( 50,
+                                          10 * exc->pts.n_points ) +
+                                  FT_MAX( 50,
+                                          exc->cvtSize / 10 );
+    else
+      exc->loopcall_counter_max = FT_MAX( 100,
+                                          10 * exc->cvtSize );
+
+    
+    
+    if ( exc->loopcall_counter_max >
+         100 * (FT_ULong)exc->face->root.num_glyphs )
+      exc->loopcall_counter_max = 100 * (FT_ULong)exc->face->root.num_glyphs;
+
     FT_TRACE5(( "TT_RunIns: Limiting total number of loops in LOOPCALL"
                 " to %d\n", exc->loopcall_counter_max ));
 
@@ -8394,21 +8422,16 @@
     exc->error = FT_THROW( Code_Overflow );
 
   LErrorLabel_:
-    
-    
-    
-    if ( exc->error                          &&
-         !exc->instruction_trap              &&
-         exc->curRange == tt_coderange_glyph )
-    {
+    if ( exc->error && !exc->instruction_trap )
       FT_TRACE1(( "  The interpreter returned error 0x%x\n", exc->error ));
-      exc->size->bytecode_ready = -1;
-      exc->size->cvt_ready      = -1;
-    }
 
     return exc->error;
   }
 
+#else 
+
+  
+  typedef int  _tt_interp_dummy;
 
 #endif 
 

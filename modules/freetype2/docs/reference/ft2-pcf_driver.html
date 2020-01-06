@@ -102,45 +102,47 @@
 <table class="index-toc-link"><tr><td class="left">[<a href="ft2-index.html">Index</a>]</td><td class="right">[<a href="ft2-toc.html">TOC</a>]</td></tr></table>
 <h1>FreeType-2.8 API Reference</h1>
 
-<h1 id="lzw">LZW Streams</h1>
+<h1 id="pcf_driver">The PCF driver</h1>
 <h2>Synopsis</h2>
 <table class="synopsis">
-<tr><td><a href="#FT_Stream_OpenLZW">FT_Stream_OpenLZW</a></td><td></td><td></td><td></td></tr>
+<tr><td><a href="#no-long-family-names">no-long-family-names</a></td><td></td><td></td></tr>
 </table>
 
 
-<p>This section contains the declaration of LZW-specific functions.</p>
+<p>While FreeType's PCF driver doesn't expose API functions by itself, it is possible to control its behaviour with <a href="ft2-module_management.html#FT_Property_Set">FT_Property_Set</a> and <a href="ft2-module_management.html#FT_Property_Get">FT_Property_Get</a>. Right now, there is a single property &lsquo;no-long-family-names&rsquo; available if FreeType is compiled with PCF_CONFIG_OPTION_LONG_FAMILY_NAMES.</p>
+<p>The PCF driver's module name is &lsquo;pcf&rsquo;.</p>
 
 <div class="section">
-<h3 id="FT_Stream_OpenLZW">FT_Stream_OpenLZW</h3>
-<p>Defined in FT_LZW_H (freetype/ftlzw.h).</p>
+<h3 id="no-long-family-names">no-long-family-names</h3>
+<p>Defined in FT_PCF_DRIVER_H (freetype/ftpcfdrv.h).</p>
 <pre>
-  FT_EXPORT( <a href="ft2-basic_types.html#FT_Error">FT_Error</a> )
-  <b>FT_Stream_OpenLZW</b>( <a href="ft2-system_interface.html#FT_Stream">FT_Stream</a>  stream,
-                     <a href="ft2-system_interface.html#FT_Stream">FT_Stream</a>  source );
+FT_END_HEADER
+
+
+#endif /* FTPCFDRV_H_ */
+
+
+/* END */
 </pre>
 
-<p>Open a new stream to parse LZW-compressed font files. This is mainly used to support the compressed &lsquo;*.pcf.Z&rsquo; fonts that come with XFree86.</p>
+<p>If PCF_CONFIG_OPTION_LONG_FAMILY_NAMES is active while compiling FreeType, the PCF driver constructs long family names.</p>
+<p>There are many PCF fonts just called &lsquo;Fixed&rsquo; which look completely different, and which have nothing to do with each other. When selecting &lsquo;Fixed&rsquo; in KDE or Gnome one gets results that appear rather random, the style changes often if one changes the size and one cannot select some fonts at all. The improve this situation, the PCF module prepends the foundry name (plus a space) to the family name. It also checks whether there are &lsquo;wide&rsquo; characters; all put together, family names like &lsquo;Sony Fixed&rsquo; or &lsquo;Misc Fixed Wide&rsquo; are constructed.</p>
+<p>If &lsquo;no-long-family-names&rsquo; is set, this feature gets switched off.</p>
+<pre class="colored">
+  FT_Library  library;
+  FT_Bool     no_long_family_names = TRUE;
 
-<h4>input</h4>
-<table class="fields">
-<tr><td class="val" id="stream">stream</td><td class="desc">
-<p>The target embedding stream.</p>
-</td></tr>
-<tr><td class="val" id="source">source</td><td class="desc">
-<p>The source stream.</p>
-</td></tr>
-</table>
 
-<h4>return</h4>
-<p>FreeType error code. 0&nbsp;means success.</p>
+  FT_Init_FreeType( &amp;library );
+
+  FT_Property_Set( library, "pcf",
+                            "no-long-family-names",
+                            &amp;no_long_family_names );
+</pre>
 
 <h4>note</h4>
-<p>The source stream must be opened <i>before</i> calling this function.</p>
-<p>Calling the internal function &lsquo;FT_Stream_Close&rsquo; on the new stream will <b>not</b> call &lsquo;FT_Stream_Close&rsquo; on the source stream. None of the stream objects will be released to the heap.</p>
-<p>The stream implementation is very basic and resets the decompression process each time seeking backwards is needed within the stream</p>
-<p>In certain builds of the library, LZW compression recognition is automatically handled when calling <a href="ft2-base_interface.html#FT_New_Face">FT_New_Face</a> or <a href="ft2-base_interface.html#FT_Open_Face">FT_Open_Face</a>. This means that if no font driver is capable of handling the raw compressed file, the library will try to open a LZW stream from it and re-open the face with it.</p>
-<p>This function may return &lsquo;FT_Err_Unimplemented_Feature&rsquo; if your build of FreeType was not compiled with LZW support.</p>
+<p>This property can be used with <a href="ft2-module_management.html#FT_Property_Get">FT_Property_Get</a> also.</p>
+<p>This property can be set via the &lsquo;FREETYPE_PROPERTIES&rsquo; environment variable (using values 1 and 0 for &lsquo;on&rsquo; and &lsquo;off&rsquo;, respectively).</p>
 
 <hr>
 <table class="index-toc-link"><tr><td class="left">[<a href="ft2-index.html">Index</a>]</td><td class="middle">[<a href="#">Top</a>]</td><td class="right">[<a href="ft2-toc.html">TOC</a>]</td></tr></table></div>

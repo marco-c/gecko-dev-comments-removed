@@ -4135,6 +4135,7 @@
   ;
 
 
+#ifdef  DEFINE_PS_TABLES
   
 
 
@@ -4229,6 +4230,7 @@
   NotFound:
     return 0;
   }
+#endif 
 
 #endif
 

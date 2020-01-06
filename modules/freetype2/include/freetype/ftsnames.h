@@ -95,6 +95,13 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
   typedef struct  FT_SfntName_
   {
     FT_UShort  platform_id;
@@ -154,6 +161,9 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Get_Sfnt_Name( FT_Face       face,
                     FT_UInt       idx,
@@ -161,18 +171,68 @@ FT_BEGIN_HEADER
 
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef struct  FT_SfntLangTag_
+  {
+    FT_Byte*  string;      
+    FT_UInt   string_len;  
+
+  } FT_SfntLangTag;
 
 
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_IGNORE_PREFERRED_FAMILY  FT_MAKE_TAG( 'i', 'g', 'p', 'f' )
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FT_EXPORT( FT_Error )
+  FT_Get_Sfnt_LangTag( FT_Face          face,
+                       FT_UInt          langID,
+                       FT_SfntLangTag  *alangTag );
 
 
   
@@ -187,7 +247,34 @@ FT_BEGIN_HEADER
 
 
 
-#define FT_PARAM_TAG_IGNORE_PREFERRED_SUBFAMILY  FT_MAKE_TAG( 'i', 'g', 'p', 's' )
+#define FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_FAMILY \
+          FT_MAKE_TAG( 'i', 'g', 'p', 'f' )
+
+
+  
+#define FT_PARAM_TAG_IGNORE_PREFERRED_FAMILY \
+          FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_FAMILY
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+#define FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_SUBFAMILY \
+          FT_MAKE_TAG( 'i', 'g', 'p', 's' )
+
+
+  
+#define FT_PARAM_TAG_IGNORE_PREFERRED_SUBFAMILY \
+          FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_SUBFAMILY
 
   
 

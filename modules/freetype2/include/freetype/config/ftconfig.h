@@ -333,6 +333,15 @@ FT_BEGIN_HEADER
 #endif
 
 
+#ifdef _WIN64
+  
+  
+#define FT_UINT_TO_POINTER( x ) (void*)(unsigned __int64)(x)
+#else
+#define FT_UINT_TO_POINTER( x ) (void*)(unsigned long)(x)
+#endif
+
+
   
   
   

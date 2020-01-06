@@ -31,8 +31,16 @@ FT_BEGIN_HEADER
   
   
 #define CFF_MAX_STACK_DEPTH  96
+
+  
+
+
+
+
+
+
 #define CFF2_MAX_STACK      513
-#define CFF2_DEFAULT_STACK  193
+#define CFF2_DEFAULT_STACK  513
 
 #define CFF_CODE_TOPDICT    0x1000
 #define CFF_CODE_PRIVATE    0x2000

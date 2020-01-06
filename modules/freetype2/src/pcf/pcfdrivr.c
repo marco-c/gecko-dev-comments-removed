@@ -49,6 +49,8 @@
 
 #include FT_SERVICE_BDF_H
 #include FT_SERVICE_FONT_FORMAT_H
+#include FT_SERVICE_PROPERTIES_H
+#include FT_PCF_DRIVER_H
 
 
   
@@ -286,6 +288,7 @@
 
 
         
+        FT_TRACE2(( "  ... try gzip stream\n" ));
         error2 = FT_Stream_OpenGzip( &face->comp_stream, stream );
         if ( FT_ERR_EQ( error2, Unimplemented_Feature ) )
           goto Fail;
@@ -301,6 +304,7 @@
 
 
         
+        FT_TRACE2(( "  ... try LZW stream\n" ));
         error3 = FT_Stream_OpenLZW( &face->comp_stream, stream );
         if ( FT_ERR_EQ( error3, Unimplemented_Feature ) )
           goto Fail;
@@ -316,6 +320,7 @@
 
 
         
+        FT_TRACE2(( "  ... try Bzip2 stream\n" ));
         error4 = FT_Stream_OpenBzip2( &face->comp_stream, stream );
         if ( FT_ERR_EQ( error4, Unimplemented_Feature ) )
           goto Fail;
@@ -521,11 +526,6 @@
     bitmap->num_grays  = 1;
     bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
 
-    FT_TRACE6(( "BIT_ORDER %d ; BYTE_ORDER %d ; GLYPH_PAD %d\n",
-                  PCF_BIT_ORDER( face->bitmapsFormat ),
-                  PCF_BYTE_ORDER( face->bitmapsFormat ),
-                  PCF_GLYPH_PAD( face->bitmapsFormat ) ));
-
     switch ( PCF_GLYPH_PAD( face->bitmapsFormat ) )
     {
     case 1:
@@ -627,19 +627,23 @@
       }
       else
       {
-        if ( prop->value.l > 0x7FFFFFFFL || prop->value.l < ( -1 - 0x7FFFFFFFL ) )
+        if ( prop->value.l > 0x7FFFFFFFL          ||
+             prop->value.l < ( -1 - 0x7FFFFFFFL ) )
         {
-          FT_TRACE1(( "pcf_get_bdf_property: " ));
-          FT_TRACE1(( "too large integer 0x%x is truncated\n" ));
+          FT_TRACE1(( "pcf_get_bdf_property:" ));
+          FT_TRACE1(( " too large integer 0x%x is truncated\n" ));
         }
+
         
+
 
 
 
         aproperty->type      = BDF_PROPERTY_TYPE_INTEGER;
         aproperty->u.integer = (FT_Int32)prop->value.l;
       }
-      return 0;
+
+      return FT_Err_Ok;
     }
 
     return FT_THROW( Invalid_Argument );
@@ -654,7 +658,7 @@
     *acharset_encoding = face->charset_encoding;
     *acharset_registry = face->charset_registry;
 
-    return 0;
+    return FT_Err_Ok;
   }
 
 
@@ -663,6 +667,116 @@
     (FT_BDF_GetCharsetIdFunc)pcf_get_charset_id,     
     (FT_BDF_GetPropertyFunc) pcf_get_bdf_property    
   };
+
+
+  
+
+
+
+  static FT_Error
+  pcf_property_set( FT_Module    module,         
+                    const char*  property_name,
+                    const void*  value,
+                    FT_Bool      value_is_string )
+  {
+#ifdef PCF_CONFIG_OPTION_LONG_FAMILY_NAMES
+
+    FT_Error    error  = FT_Err_Ok;
+    PCF_Driver  driver = (PCF_Driver)module;
+
+#ifndef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+    FT_UNUSED( value_is_string );
+#endif
+
+
+    if ( !ft_strcmp( property_name, "no-long-family-names" ) )
+    {
+#ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+      if ( value_is_string )
+      {
+        const char*  s   = (const char*)value;
+        long         lfn = ft_strtol( s, NULL, 10 );
+
+
+        if ( lfn == 0 )
+          driver->no_long_family_names = 0;
+        else if ( lfn == 1 )
+          driver->no_long_family_names = 1;
+        else
+          return FT_THROW( Invalid_Argument );
+      }
+      else
+#endif
+      {
+        FT_Bool*  no_long_family_names = (FT_Bool*)value;
+
+
+        driver->no_long_family_names = *no_long_family_names;
+      }
+
+      return error;
+    }
+
+#else 
+
+    FT_UNUSED( module );
+    FT_UNUSED( value );
+    FT_UNUSED( value_is_string );
+#ifndef FT_DEBUG_LEVEL_TRACE
+    FT_UNUSED( property_name );
+#endif
+
+#endif 
+
+    FT_TRACE0(( "pcf_property_set: missing property `%s'\n",
+                property_name ));
+    return FT_THROW( Missing_Property );
+  }
+
+
+  static FT_Error
+  pcf_property_get( FT_Module    module,         
+                    const char*  property_name,
+                    const void*  value )
+  {
+#ifdef PCF_CONFIG_OPTION_LONG_FAMILY_NAMES
+
+    FT_Error    error  = FT_Err_Ok;
+    PCF_Driver  driver = (PCF_Driver)module;
+
+
+    if ( !ft_strcmp( property_name, "no-long-family-names" ) )
+    {
+      FT_Bool   no_long_family_names = driver->no_long_family_names;
+      FT_Bool*  val                  = (FT_Bool*)value;
+
+
+      *val = no_long_family_names;
+
+      return error;
+    }
+
+#else 
+
+    FT_UNUSED( module );
+    FT_UNUSED( value );
+#ifndef FT_DEBUG_LEVEL_TRACE
+    FT_UNUSED( property_name );
+#endif
+
+#endif 
+
+    FT_TRACE0(( "pcf_property_get: missing property `%s'\n",
+                property_name ));
+    return FT_THROW( Missing_Property );
+  }
+
+
+  FT_DEFINE_SERVICE_PROPERTIESREC(
+    pcf_service_properties,
+
+    (FT_Properties_SetFunc)pcf_property_set,      
+    (FT_Properties_GetFunc)pcf_property_get )     
 
 
  
@@ -675,6 +789,7 @@
   {
     { FT_SERVICE_ID_BDF,         &pcf_service_bdf },
     { FT_SERVICE_ID_FONT_FORMAT, FT_FONT_FORMAT_PCF },
+    { FT_SERVICE_ID_PROPERTIES,  &pcf_service_properties },
     { NULL, NULL }
   };
 
@@ -689,22 +804,45 @@
   }
 
 
+  FT_CALLBACK_DEF( FT_Error )
+  pcf_driver_init( FT_Module  module )      
+  {
+#ifdef PCF_CONFIG_OPTION_LONG_FAMILY_NAMES
+    PCF_Driver  driver = (PCF_Driver)module;
+
+
+    driver->no_long_family_names = 0;
+#else
+    FT_UNUSED( module );
+#endif
+
+    return FT_Err_Ok;
+  }
+
+
+  FT_CALLBACK_DEF( void )
+  pcf_driver_done( FT_Module  module )      
+  {
+    FT_UNUSED( module );
+  }
+
+
   FT_CALLBACK_TABLE_DEF
   const FT_Driver_ClassRec  pcf_driver_class =
   {
     {
       FT_MODULE_FONT_DRIVER        |
       FT_MODULE_DRIVER_NO_OUTLINES,
-      sizeof ( FT_DriverRec ),
 
+      sizeof ( PCF_DriverRec ),
       "pcf",
       0x10000L,
       0x20000L,
 
-      NULL,    
+      NULL,   
 
-      NULL,                     
-      NULL,                     
+      pcf_driver_init,          
+      pcf_driver_done,          
       pcf_driver_requester      
     },
 

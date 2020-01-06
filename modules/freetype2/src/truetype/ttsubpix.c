@@ -27,7 +27,8 @@
 #include "ttsubpix.h"
 
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
+#if defined( TT_USE_BYTECODE_INTERPRETER )            && \
+    defined( TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY )
 
   
   
@@ -905,7 +906,7 @@
   {
     TT_Face     face   = loader->face;
     FT_String*  family = face->root.family_name;
-    FT_UInt     ppem   = loader->size->metrics.x_ppem;
+    FT_UInt     ppem   = loader->size->metrics->x_ppem;
     FT_String*  style  = face->root.style_name;
 
 
@@ -1001,11 +1002,13 @@
   }
 
 #else 
+      
 
   
   typedef int  _tt_subpix_dummy;
 
 #endif 
+       
 
 
 

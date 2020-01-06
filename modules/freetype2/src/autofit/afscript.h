@@ -30,6 +30,12 @@
   
   
 
+  SCRIPT( adlm, ADLM,
+          "Adlam",
+          HB_SCRIPT_ADLAM,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x9E\xA4\x8C \xF0\x9E\xA4\xAE" ) 
+
   SCRIPT( arab, ARAB,
           "Arabic",
           HB_SCRIPT_ARABIC,
@@ -42,6 +48,18 @@
           HINTING_BOTTOM_TO_TOP,
           "\xD5\xBD \xD5\x8D" ) 
 
+  SCRIPT( avst, AVST,
+          "Avestan",
+          HB_SCRIPT_AVESTAN,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\xAC\x9A" ) 
+
+  SCRIPT( bamu, BAMU,
+          "Bamum",
+          HB_SCRIPT_BAMUM,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\x9B\x81 \xEA\x9B\xAF" ) 
+
   
   SCRIPT( beng, BENG,
           "Bengali",
@@ -49,11 +67,47 @@
           HINTING_TOP_TO_BOTTOM,
           "\xE0\xA7\xA6 \xE0\xA7\xAA" ) 
 
+  SCRIPT( buhd, BUHD,
+          "Buhid",
+          HB_SCRIPT_BUHID,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE1\x9D\x8B \xE1\x9D\x8F" ) 
+
+  SCRIPT( cakm, CAKM,
+          "Chakma",
+          HB_SCRIPT_CHAKMA,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x91\x84\xA4 \xF0\x91\x84\x89 \xF0\x91\x84\x9B" ) 
+
+  SCRIPT( cans, CANS,
+          "Canadian Syllabics",
+          HB_SCRIPT_CANADIAN_SYLLABICS,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE1\x91\x8C \xE1\x93\x9A" ) 
+
+  SCRIPT( cari, CARI,
+          "Carian",
+          HB_SCRIPT_CARIAN,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\x8A\xAB \xF0\x90\x8B\x89" ) 
+
   SCRIPT( cher, CHER,
           "Cherokee",
           HB_SCRIPT_CHEROKEE,
           HINTING_BOTTOM_TO_TOP,
           "\xE1\x8E\xA4 \xE1\x8F\x85 \xEA\xAE\x95" ) 
+
+  SCRIPT( copt, COPT,
+          "Coptic",
+          HB_SCRIPT_COPTIC,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE2\xB2\x9E \xE2\xB2\x9F" ) 
+
+  SCRIPT( cprt, CPRT,
+          "Cypriot",
+          HB_SCRIPT_CYPRIOT,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\xA0\x85 \xF0\x90\xA0\xA3" ) 
 
   SCRIPT( cyrl, CYRL,
           "Cyrillic",
@@ -66,6 +120,12 @@
           HB_SCRIPT_DEVANAGARI,
           HINTING_TOP_TO_BOTTOM,
           "\xE0\xA4\xA0 \xE0\xA4\xB5 \xE0\xA4\x9F" ) 
+
+  SCRIPT( dsrt, DSRT,
+          "Deseret",
+          HB_SCRIPT_DESERET,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\x90\x84 \xF0\x90\x90\xAC" ) 
 
   SCRIPT( ethi, ETHI,
           "Ethiopic",
@@ -84,6 +144,18 @@
           HB_SCRIPT_INVALID,
           HINTING_BOTTOM_TO_TOP,
           "\xE1\x82\xB6 \xE1\x82\xB1 \xE2\xB4\x99" ) 
+
+  SCRIPT( glag, GLAG,
+          "Glagolitic",
+          HB_SCRIPT_GLAGOLITIC,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE2\xB0\x95 \xE2\xB1\x85" ) 
+
+  SCRIPT( goth, GOTH,
+          "Gothic",
+          HB_SCRIPT_GOTHIC,
+          HINTING_TOP_TO_BOTTOM,
+          "\xF0\x90\x8C\xB4 \xF0\x90\x8C\xBE \xF0\x90\x8D\x83" ) 
 
   SCRIPT( grek, GREK,
           "Greek",
@@ -108,6 +180,12 @@
           HB_SCRIPT_HEBREW,
           HINTING_BOTTOM_TO_TOP,
           "\xD7\x9D" ) 
+
+  SCRIPT( kali, KALI,
+          "Kayah Li",
+          HB_SCRIPT_KAYAH_LI,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\xA4\x8D \xEA\xA4\x80" ) 
 
   SCRIPT( knda, KNDA,
           "Kannada",
@@ -153,6 +231,12 @@
           HINTING_BOTTOM_TO_TOP,
           "\xE1\xB5\x92 \xE1\xB4\xBC \xE2\x81\xB0" ) 
 
+  SCRIPT( lisu, LISU,
+          "Lisu",
+          HB_SCRIPT_LISU,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\x93\xB3" ) 
+
   SCRIPT( mlym, MLYM,
           "Malayalam",
           HB_SCRIPT_MALAYALAM,
@@ -165,11 +249,53 @@
           HINTING_BOTTOM_TO_TOP,
           "\xE1\x80\x9D \xE1\x80\x84 \xE1\x80\x82" ) 
 
+  SCRIPT( nkoo, NKOO,
+          "N'Ko",
+          HB_SCRIPT_NKO,
+          HINTING_BOTTOM_TO_TOP,
+          "\xDF\x8B \xDF\x80" ) 
+
   SCRIPT( none, NONE,
           "no script",
           HB_SCRIPT_INVALID,
           HINTING_BOTTOM_TO_TOP,
           "" )
+
+  SCRIPT( olck, OLCK,
+          "Ol Chiki",
+          HB_SCRIPT_OL_CHIKI,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE1\xB1\x9B" ) 
+
+  SCRIPT( orkh, ORKH,
+          "Old Turkic",
+          HB_SCRIPT_OLD_TURKIC,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\xB0\x97" ) 
+
+  SCRIPT( osge, OSGE,
+          "Osage",
+          HB_SCRIPT_OSAGE,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\x93\x82 \xF0\x90\x93\xAA" ) 
+
+  SCRIPT( osma, OSMA,
+          "Osmanya",
+          HB_SCRIPT_OSMANYA,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\x92\x86 \xF0\x90\x92\xA0" ) 
+
+  SCRIPT( saur, SAUR,
+          "Saurashtra",
+          HB_SCRIPT_SAURASHTRA,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\xA2\x9D \xEA\xA3\x90" ) 
+
+  SCRIPT( shaw, SHAW,
+          "Shavian",
+          HB_SCRIPT_SHAVIAN,
+          HINTING_BOTTOM_TO_TOP,
+          "\xF0\x90\x91\xB4" ) 
 
   SCRIPT( sinh, SINH,
           "Sinhala",
@@ -178,11 +304,24 @@
           "\xE0\xB6\xA7" ) 
 
   
+  SCRIPT( sund, SUND,
+          "Sundanese",
+          HB_SCRIPT_SUNDANESE,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE1\xAE\xB0" ) 
+
+  
   SCRIPT( taml, TAML,
           "Tamil",
           HB_SCRIPT_TAMIL,
           HINTING_BOTTOM_TO_TOP,
           "\xE0\xAF\xA6" ) 
+
+  SCRIPT( tavt, TAVT,
+          "Tai Viet",
+          HB_SCRIPT_TAI_VIET,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\xAA\x92 \xEA\xAA\xAB" ) 
 
   
   SCRIPT( telu, TELU,
@@ -197,6 +336,18 @@
           HINTING_BOTTOM_TO_TOP,
           "\xE0\xB8\xB2 \xE0\xB9\x85 \xE0\xB9\x90" ) 
 
+  SCRIPT( tfng, TFNG,
+          "Tifinagh",
+          HB_SCRIPT_TIFINAGH,
+          HINTING_BOTTOM_TO_TOP,
+          "\xE2\xB5\x94" ) 
+
+  SCRIPT( vaii, VAII,
+          "Vai",
+          HB_SCRIPT_VAI,
+          HINTING_BOTTOM_TO_TOP,
+          "\xEA\x98\x93 \xEA\x96\x9C \xEA\x96\xB4" ) 
+
 #ifdef AF_CONFIG_OPTION_INDIC
 
   SCRIPT( limb, LIMB,
@@ -208,12 +359,6 @@
   SCRIPT( orya, ORYA,
           "Oriya",
           HB_SCRIPT_ORIYA,
-          HINTING_BOTTOM_TO_TOP,
-          "o" ) 
-
-  SCRIPT( sund, SUND,
-          "Sundanese",
-          HB_SCRIPT_SUNDANESE,
           HINTING_BOTTOM_TO_TOP,
           "o" ) 
 
