@@ -54,7 +54,6 @@ public:
   }
 
   NPError NPN_RequestRead(NPByteRange* aRangeList);
-  void NPN_DestroyStream(NPReason reason);
 
   void NotifyPending() {
     NS_ASSERTION(!mNotifyPending, "Pending twice?");
@@ -85,7 +84,6 @@ public:
 
 private:
   friend class StreamNotifyChild;
-  using PBrowserStreamChild::SendNPN_DestroyStream;
 
   
 
