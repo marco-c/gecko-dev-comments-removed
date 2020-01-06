@@ -142,7 +142,7 @@ CSP_LogMessage(const nsAString& aMessage,
 
   
   nsString cspMsg;
-  cspMsg.Append(NS_LITERAL_STRING("Content Security Policy: "));
+  cspMsg.AppendLiteral(u"Content Security Policy: ");
   cspMsg.Append(aMessage);
 
   
@@ -152,9 +152,9 @@ CSP_LogMessage(const nsAString& aMessage,
   
   
   if (!aSourceLine.IsEmpty()) {
-    cspMsg.Append(NS_LITERAL_STRING(" Source: "));
+    cspMsg.AppendLiteral(" Source: ");
     cspMsg.Append(aSourceLine);
-    cspMsg.Append(NS_LITERAL_STRING("."));
+    cspMsg.AppendLiteral(u".");
   }
 
   nsresult rv;
