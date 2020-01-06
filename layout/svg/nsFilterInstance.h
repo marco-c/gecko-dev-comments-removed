@@ -233,7 +233,7 @@ private:
 
 
 
-  void BuildSourceImage(imgDrawingParams& aImgParams);
+  void BuildSourceImage(DrawTarget *aDest, imgDrawingParams& aImgParams);
 
   
 
