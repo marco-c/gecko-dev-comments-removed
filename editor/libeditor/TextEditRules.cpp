@@ -902,6 +902,9 @@ TextEditRules::WillSetText(Selection& aSelection,
   }
 
   
+  AutoTransactionsConserveSelection dontSpazMySelection(textEditor);
+
+  
   
   nsresult rv = textEditor->SetTextImpl(aSelection, tString,
                                         *curNode->GetAsText());
