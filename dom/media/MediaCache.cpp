@@ -427,6 +427,8 @@ protected:
   
   void Truncate();
 
+  void FlushInternal(AutoLock&);
+
   
   
   
@@ -695,13 +697,10 @@ MediaCacheStream::BlockList::NotifyBlockSwapped(int32_t aBlockIndex1,
 }
 
 void
-MediaCache::Flush()
+MediaCache::FlushInternal(AutoLock& aLock)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-  AutoLock lock(mMonitor);
-
   for (uint32_t blockIndex = 0; blockIndex < mIndex.Length(); ++blockIndex) {
-    FreeBlock(lock, blockIndex);
+    FreeBlock(aLock, blockIndex);
   }
 
   
@@ -709,6 +708,18 @@ MediaCache::Flush()
   NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
   
   mBlockCache->Flush();
+}
+
+void
+MediaCache::Flush()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaCache::Flush", [self = RefPtr<MediaCache>(this)]() {
+      AutoLock lock(self->mMonitor);
+      self->FlushInternal(lock);
+    });
+  sThread->Dispatch(r.forget());
 }
 
 void
