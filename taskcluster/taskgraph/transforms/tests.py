@@ -364,13 +364,11 @@ test_description_schema = Schema({
     
     Optional('product'): basestring,
 
-    
-    Optional('when'): Any({
-        Optional('files-changed'): [basestring],
-
+    Optional('when'): {
+        
         
         Optional('schedules'): [basestring],
-    }),
+    },
 
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
@@ -939,19 +937,16 @@ def make_job_description(config, tests):
             'platform': test.get('treeherder-machine-platform', test['build-platform']),
         }
 
+        schedules = [suite, platform_family(test['build-platform'])]
         when = test.get('when')
-        if when and 'files-changed' in when:
-            jobdesc['when'] = when
+        if when and 'schedules' in when:
+            schedules.extend(when['schedules'])
+        if config.params['project'] != 'try':
+            
+            jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
         else:
-            schedules = [suite, platform_family(test['build-platform'])]
-            if when and 'schedules' in when:
-                schedules.extend(when['schedules'])
-            if config.params['project'] != 'try':
-                
-                jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
-            else:
-                
-                jobdesc['optimization'] = {'skip-unless-schedules': schedules}
+            
+            jobdesc['optimization'] = {'skip-unless-schedules': schedules}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
