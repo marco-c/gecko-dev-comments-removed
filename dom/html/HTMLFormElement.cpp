@@ -1434,25 +1434,24 @@ HTMLFormElement::RemoveElementFromTableInternal(
   nsInterfaceHashtable<nsStringHashKey,nsISupports>& aTable,
   nsIContent* aChild, const nsAString& aName)
 {
-  nsCOMPtr<nsISupports> supports;
-
-  if (!aTable.Get(aName, getter_AddRefs(supports)))
+  auto entry = aTable.Lookup(aName);
+  if (!entry) {
     return NS_OK;
-
+  }
   
   
-  if (supports == aChild) {
-    aTable.Remove(aName);
+  if (entry.Data() == aChild) {
+    entry.Remove();
     ++mExpandoAndGeneration.generation;
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContent> content(do_QueryInterface(supports));
+  nsCOMPtr<nsIContent> content(do_QueryInterface(entry.Data()));
   if (content) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDOMNodeList> nodeList(do_QueryInterface(supports));
+  nsCOMPtr<nsIDOMNodeList> nodeList(do_QueryInterface(entry.Data().get()));
   NS_ENSURE_TRUE(nodeList, NS_ERROR_FAILURE);
 
   
@@ -1466,14 +1465,14 @@ HTMLFormElement::RemoveElementFromTableInternal(
   if (!length) {
     
     
-    aTable.Remove(aName);
+    entry.Remove();
     ++mExpandoAndGeneration.generation;
   } else if (length == 1) {
     
     
     nsIContent* node = list->Item(0);
     if (node) {
-      aTable.Put(aName, node);
+      entry.Data() = node;
     }
   }
 
@@ -2291,8 +2290,12 @@ HTMLFormElement::AddToRadioGroup(const nsAString& aName,
   NS_ASSERTION(element, "radio controls have to be content elements!");
 
   if (element->HasAttr(kNameSpaceID_None, nsGkAtoms::required)) {
-    mRequiredRadioButtonCounts.Put(aName,
-                                   mRequiredRadioButtonCounts.Get(aName)+1);
+    auto entry = mRequiredRadioButtonCounts.LookupForAdd(aName);
+    if (!entry) {
+      entry.OrInsert([]() { return 1; });
+    } else {
+      ++entry.Data();
+    }
   }
 }
 
@@ -2304,14 +2307,17 @@ HTMLFormElement::RemoveFromRadioGroup(const nsAString& aName,
   NS_ASSERTION(element, "radio controls have to be content elements!");
 
   if (element->HasAttr(kNameSpaceID_None, nsGkAtoms::required)) {
-    uint32_t requiredNb = mRequiredRadioButtonCounts.Get(aName);
-    NS_ASSERTION(requiredNb >= 1,
-                 "At least one radio button has to be required!");
-
-    if (requiredNb == 1) {
-      mRequiredRadioButtonCounts.Remove(aName);
+    auto entry = mRequiredRadioButtonCounts.Lookup(aName);
+    if (!entry) {
+      MOZ_ASSERT_UNREACHABLE("At least one radio button has to be required!");
     } else {
-      mRequiredRadioButtonCounts.Put(aName, requiredNb-1);
+      MOZ_ASSERT(entry.Data() >= 1,
+                 "At least one radio button has to be required!");
+      if (entry.Data() <= 1) {
+        entry.Remove();
+      } else {
+        --entry.Data();
+      }
     }
   }
 }
@@ -2412,16 +2418,14 @@ HTMLFormElement::AddElementToTableInternal(
   nsInterfaceHashtable<nsStringHashKey,nsISupports>& aTable,
   nsIContent* aChild, const nsAString& aName)
 {
-  nsCOMPtr<nsISupports> supports;
-  aTable.Get(aName, getter_AddRefs(supports));
-
-  if (!supports) {
+  auto entry = aTable.LookupForAdd(aName);
+  if (!entry) {
     
-    aTable.Put(aName, aChild);
+    entry.OrInsert([&aChild]() { return aChild; });
     ++mExpandoAndGeneration.generation;
   } else {
     
-    nsCOMPtr<nsIContent> content = do_QueryInterface(supports);
+    nsCOMPtr<nsIContent> content = do_QueryInterface(entry.Data());
 
     if (content) {
       
@@ -2451,10 +2455,10 @@ HTMLFormElement::AddElementToTableInternal(
       nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
 
       
-      aTable.Put(aName, listSupports);
+      entry.Data() = listSupports;
     } else {
       
-      nsCOMPtr<nsIDOMNodeList> nodeList = do_QueryInterface(supports);
+      nsCOMPtr<nsIDOMNodeList> nodeList = do_QueryInterface(entry.Data());
       NS_ENSURE_TRUE(nodeList, NS_ERROR_FAILURE);
 
       
