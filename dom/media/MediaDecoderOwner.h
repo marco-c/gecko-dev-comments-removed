@@ -119,12 +119,6 @@ public:
   };
 
   
-  virtual bool IsActive() const = 0;
-
-  
-  virtual bool IsHidden() const = 0;
-
-  
   virtual void SetAudibleState(bool aAudible) = 0;
 
   

@@ -221,9 +221,9 @@ public:
   
   virtual void NotifySuspendedByCache(bool aSuspendedByCache) final override;
 
-  virtual bool IsActive() const final override;
+  bool IsActive() const;
 
-  virtual bool IsHidden() const final override;
+  bool IsHidden() const;
 
   
   
