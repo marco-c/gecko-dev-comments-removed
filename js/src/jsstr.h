@@ -68,24 +68,6 @@ CompareChars(const char16_t* s1, size_t len1, JSLinearString* s2);
 
 }  
 
-struct JSSubString {
-    JSLinearString* base;
-    size_t          offset;
-    size_t          length;
-
-    JSSubString() { mozilla::PodZero(this); }
-
-    void initEmpty(JSLinearString* base) {
-        this->base = base;
-        offset = length = 0;
-    }
-    void init(JSLinearString* base, size_t offset, size_t length) {
-        this->base = base;
-        this->offset = offset;
-        this->length = length;
-    }
-};
-
 
 
 
