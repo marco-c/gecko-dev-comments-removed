@@ -368,6 +368,11 @@ impl StoredRestyleHint {
     }
 
     
+    pub fn recascade_self() -> Self {
+        StoredRestyleHint(RestyleHint::recascade_self())
+    }
+
+    
     pub fn has_self_invalidations(&self) -> bool {
         self.0.affects_self()
     }
@@ -402,6 +407,12 @@ impl StoredRestyleHint {
     pub fn has_animation_hint(&self) -> bool {
         self.0.has_animation_hint()
     }
+
+    
+    
+    pub fn has_recascade_self(&self) -> bool {
+        self.0.has_recascade_self()
+    }
 }
 
 impl Default for StoredRestyleHint {
@@ -427,10 +438,6 @@ pub struct RestyleData {
 
     
     
-    pub recascade: bool,
-
-    
-    
     pub damage: RestyleDamage,
 
     
@@ -447,7 +454,7 @@ pub struct RestyleData {
 impl RestyleData {
     
     pub fn has_invalidations(&self) -> bool {
-        self.hint.has_self_invalidations() || self.recascade
+        self.hint.has_self_invalidations()
     }
 
     
@@ -598,12 +605,11 @@ impl ElementData {
             return RestyleKind::MatchAndCascade;
         }
 
-        if !hint.is_empty() {
+        if hint.has_replacements() {
             return RestyleKind::CascadeWithReplacements(hint.replacements);
         }
 
-        debug_assert!(restyle_data.recascade,
-                      "We definitely need to do something!");
+        debug_assert!(hint.has_recascade_self(), "We definitely need to do something!");
         return RestyleKind::CascadeOnly;
     }
 

@@ -351,7 +351,8 @@ pub trait DomTraversal<E: TElement> : Sync {
                 None => return false,
             };
             return data.get_restyle()
-                       .map_or(false, |r| r.hint.has_animation_hint() || r.recascade);
+                       .map_or(false, |r| r.hint.has_animation_hint() ||
+                                          r.hint.has_recascade_self());
         }
 
         
@@ -381,7 +382,7 @@ pub trait DomTraversal<E: TElement> : Sync {
             
             
             
-            if !r.hint.is_empty() || r.recascade {
+            if !r.hint.is_empty() {
                 return true;
             }
         }
@@ -696,17 +697,23 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
     
     
-    let propagated_hint = match data.get_restyle_mut() {
+    let mut propagated_hint = match data.get_restyle_mut() {
         None => StoredRestyleHint::empty(),
         Some(r) => {
             debug_assert!(context.shared.traversal_flags.for_animation_only() ||
                           !r.hint.has_animation_hint(),
                           "animation restyle hint should be handled during \
                            animation-only restyles");
-            r.recascade = false;
             r.hint.propagate(&context.shared.traversal_flags)
         },
     };
+
+    if inherited_style_changed {
+        
+        
+        propagated_hint.insert(StoredRestyleHint::recascade_self());
+    }
+
     trace!("propagated_hint={:?}, inherited_style_changed={:?}, \
             is_display_none={:?}, implementing_pseudo={:?}",
            propagated_hint, inherited_style_changed,
@@ -730,8 +737,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
                                           &data,
                                           DontLog) &&
         (has_dirty_descendants_for_this_restyle ||
-         !propagated_hint.is_empty() ||
-         inherited_style_changed) {
+         !propagated_hint.is_empty()) {
         let damage_handled = data.get_restyle().map_or(RestyleDamage::empty(), |r| {
             r.damage_handled() | r.damage.handled_for_descendants()
         });
@@ -740,8 +746,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
                                     traversal_data,
                                     element,
                                     propagated_hint,
-                                    damage_handled,
-                                    inherited_style_changed);
+                                    damage_handled);
     }
 
     
@@ -844,8 +849,7 @@ fn preprocess_children<E, D>(context: &mut StyleContext<E>,
                              parent_traversal_data: &PerLevelTraversalData,
                              element: E,
                              mut propagated_hint: StoredRestyleHint,
-                             damage_handled: RestyleDamage,
-                             parent_inherited_style_changed: bool)
+                             damage_handled: RestyleDamage)
     where E: TElement,
           D: DomTraversal<E>,
 {
@@ -888,17 +892,14 @@ fn preprocess_children<E, D>(context: &mut StyleContext<E>,
         
         
         
-        if propagated_hint.is_empty() && !parent_inherited_style_changed &&
-           damage_handled.is_empty() && !child_data.has_restyle() {
+        if propagated_hint.is_empty() && damage_handled.is_empty() && !child_data.has_restyle() {
             continue;
         }
 
         let mut restyle_data = child_data.ensure_restyle();
 
         
-        if !propagated_hint.is_empty() {
-            restyle_data.hint.insert_from(&propagated_hint);
-        }
+        restyle_data.hint.insert_from(&propagated_hint);
 
         if later_siblings {
             propagated_hint.insert(RestyleHint::subtree().into());
@@ -906,15 +907,6 @@ fn preprocess_children<E, D>(context: &mut StyleContext<E>,
 
         
         restyle_data.set_damage_handled(damage_handled);
-
-        
-        
-        
-        
-        
-        if parent_inherited_style_changed {
-            restyle_data.recascade = true;
-        }
     }
 }
 
