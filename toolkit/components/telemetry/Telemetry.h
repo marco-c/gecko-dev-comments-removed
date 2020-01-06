@@ -120,6 +120,23 @@ void AccumulateCategorical(E enumValue) {
 
 
 
+template<class E>
+void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
+  static_assert(IsCategoricalLabelEnum<E>::value,
+                "Only categorical label enum types are supported.");
+  Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value),
+             key,
+             static_cast<uint32_t>(enumValue));
+};
+
+
+
+
+
+
+
+
+
 
 void AccumulateCategorical(HistogramID id, const nsCString& label);
 
