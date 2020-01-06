@@ -202,7 +202,8 @@ nsDOMCSSAttributeDeclaration::GetParentObject()
 
 NS_IMETHODIMP
 nsDOMCSSAttributeDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
-                                               const nsAString& aValue)
+                                               const nsAString& aValue,
+                                               nsIPrincipal* aSubjectPrincipal)
 {
   
   
@@ -220,5 +221,5 @@ nsDOMCSSAttributeDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
       ActiveLayerTracker::NotifyInlineStyleRuleModified(frame, aPropID, aValue, this);
     }
   }
-  return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue);
+  return nsDOMCSSDeclaration::SetPropertyValue(aPropID, aValue, aSubjectPrincipal);
 }
