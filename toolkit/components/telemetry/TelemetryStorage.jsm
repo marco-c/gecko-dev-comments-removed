@@ -48,6 +48,8 @@ XPCOMUtils.defineLazyGetter(this, "gDeletionPingFilePath", function() {
 });
 XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
                                   "resource://services-common/utils.js");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryHealthPing",
+                                  "resource://gre/modules/TelemetryHealthPing.jsm");
 
 const MAX_ARCHIVED_PINGS_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;  
 
@@ -1365,6 +1367,10 @@ var TelemetryStorageImpl = {
                .add(Math.floor(fileSize / 1024 / 1024));
       Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").add();
       TelemetryStopwatch.cancel("TELEMETRY_PENDING_LOAD_MS");
+
+      
+      
+      TelemetryHealthPing.recordDiscardedPing("<unknown>");
       throw new Error("loadPendingPing - exceeded the maximum ping size: " + fileSize);
     }
 
@@ -1598,6 +1604,10 @@ var TelemetryStorageImpl = {
             Telemetry.getHistogramById("TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB")
                      .add(Math.floor(info.size / 1024 / 1024));
             Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").add();
+
+            
+            
+            TelemetryHealthPing.recordDiscardedPing("<unknown>");
           }
           continue;
         }
@@ -1889,7 +1899,7 @@ function getPingDirectory() {
 function getArchivedPingPath(aPingId, aDate, aType) {
   
   
-  let month = String(aDate.getMonth() + 1);
+  let month = new String(aDate.getMonth() + 1);
   let archivedPingDir = OS.Path.join(gPingsArchivePath,
     aDate.getFullYear() + "-" + month.padStart(2, "0"));
   
