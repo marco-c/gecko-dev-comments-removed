@@ -234,10 +234,7 @@ add_task(async function test_preload_crash() {
   });
 
   
-  let preloaded = gBrowser._getPreloadedBrowser();
-  if (preloaded) {
-    preloaded.remove();
-  }
+  gBrowser.removePreloadedBrowser();
 
   
   gBrowser._createPreloadBrowser();
