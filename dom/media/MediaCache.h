@@ -216,13 +216,6 @@ public:
   
   
   
-  
-  
-  
-  
-  void SetTransportSeekable(bool aIsTransportSeekable);
-  
-  
   void Close();
   
   
@@ -259,7 +252,13 @@ public:
   
   
   
-  void NotifyDataStarted(uint32_t aLoadID, int64_t aOffset);
+  
+  
+  
+  
+  
+  
+  void NotifyDataStarted(uint32_t aLoadID, int64_t aOffset, bool aSeekable);
   
   
   

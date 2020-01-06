@@ -290,8 +290,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   
   UpdatePrincipal();
 
-  mCacheStream.NotifyDataStarted(mLoadID, startOffset);
-  mCacheStream.SetTransportSeekable(seekable);
+  mCacheStream.NotifyDataStarted(mLoadID, startOffset, seekable);
   mChannelStatistics.Start();
   mReopenOnError = false;
 
