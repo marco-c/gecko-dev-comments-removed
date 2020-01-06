@@ -189,6 +189,37 @@ public:
 
   
 
+  static bool MatchEntry(const PLDHashEntryHdr* aEntry, const void* aKey)
+  {
+    auto pref = static_cast<const PrefHashEntry*>(aEntry);
+
+    if (pref->mKey == aKey) {
+      return true;
+    }
+
+    if (!pref->mKey || !aKey) {
+      return false;
+    }
+
+    auto otherKey = static_cast<const char*>(aKey);
+    return (strcmp(pref->mKey, otherKey) == 0);
+  }
+
+  static void ClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
+  {
+    auto pref = static_cast<PrefHashEntry*>(aEntry);
+
+    if (pref->IsTypeString()) {
+      free(const_cast<char*>(pref->mDefaultValue.mStringVal));
+      free(const_cast<char*>(pref->mUserValue.mStringVal));
+    }
+
+    
+    
+    pref->mKey = nullptr;
+    memset(aEntry, 0, aTable->EntrySize());
+  }
+
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf)
   {
     
@@ -220,38 +251,6 @@ public:
   PrefValue mUserValue;
 };
 
-static void
-ClearPrefEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry)
-{
-  auto pref = static_cast<PrefHashEntry*>(aEntry);
-  if (pref->IsTypeString()) {
-    free(const_cast<char*>(pref->mDefaultValue.mStringVal));
-    free(const_cast<char*>(pref->mUserValue.mStringVal));
-  }
-
-  
-  
-  pref->mKey = nullptr;
-  memset(aEntry, 0, aTable->EntrySize());
-}
-
-static bool
-MatchPrefEntry(const PLDHashEntryHdr* aEntry, const void* aKey)
-{
-  auto pref = static_cast<const PrefHashEntry*>(aEntry);
-
-  if (pref->mKey == aKey) {
-    return true;
-  }
-
-  if (!pref->mKey || !aKey) {
-    return false;
-  }
-
-  auto otherKey = static_cast<const char*>(aKey);
-  return (strcmp(pref->mKey, otherKey) == 0);
-}
-
 struct CallbackNode
 {
   const char* mDomain;
@@ -282,9 +281,9 @@ static bool gShouldCleanupDeadNodes = false;
 
 static PLDHashTableOps pref_HashTableOps = {
   PLDHashTable::HashStringKey,
-  MatchPrefEntry,
+  PrefHashEntry::MatchEntry,
   PLDHashTable::MoveEntryStub,
-  ClearPrefEntry,
+  PrefHashEntry::ClearEntry,
   nullptr,
 };
 
