@@ -283,6 +283,9 @@ private:
   nsresult DoAutoScroll(nsIFrame *aFrame, nsPoint& aPoint);
 
   
+  bool HasSameRoot(nsINode& aNode);
+
+  
   
   friend class ::nsCopySupport;
   friend class ::nsHTMLCopyEncoder;
