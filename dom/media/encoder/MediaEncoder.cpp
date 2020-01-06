@@ -539,7 +539,13 @@ MediaEncoder::ConnectMediaStreamTrack(MediaStreamTrack* aTrack)
     }
 
     mAudioTrack = audio;
-    audio->AddDirectListener(mAudioListener);
+    
+    
+    const bool enableDirectListener =
+      !Preferences::GetBool("media.navigator.audio.full_duplex", false);
+    if (enableDirectListener) {
+      audio->AddDirectListener(mAudioListener);
+    }
     audio->AddListener(mAudioListener);
   } else if (VideoStreamTrack* video = aTrack->AsVideoStreamTrack()) {
     if(!mVideoEncoder) {
