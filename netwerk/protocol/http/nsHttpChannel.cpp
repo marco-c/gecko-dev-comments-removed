@@ -483,11 +483,6 @@ nsresult
 nsHttpChannel::TryHSTSPriming()
 {
     if (mLoadInfo) {
-        if (mLoadInfo->GetIsHSTSPriming()) {
-            
-            return ContinueConnect();
-        }
-
         
         bool requireHSTSPriming =
             mLoadInfo->GetForceHSTSPriming();
@@ -503,38 +498,18 @@ nsHttpChannel::TryHSTSPriming()
 
                 if (NS_FAILED(rv)) {
                     CloseCacheEntry(false);
-                    Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                                      HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_ERROR);
                     return rv;
                 }
 
                 return NS_OK;
             }
 
-            if (!mLoadInfo->GetIsHSTSPrimingUpgrade()) {
-                
-                
-                LOG(("HSTS Priming: request already upgraded"));
-                Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
-                              HSTSPrimingResult::eHSTS_PRIMING_ALREADY_UPGRADED);
-
-                
-                Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                              HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_ALREADY_UPGRADED);
-            }
-
-            mLoadInfo->ClearHSTSPriming();
-            return ContinueConnect();
-        }
-
-        if (!mLoadInfo->GetIsHSTSPrimingUpgrade()) {
             
-            Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                                  HSTSPrimingRequest::eHSTS_PRIMING_NO_REQUEST);
+            
+            Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
+                    HSTSPrimingResult::eHSTS_PRIMING_ALREADY_UPGRADED);
+            mLoadInfo->ClearHSTSPriming();
         }
-    } else {
-        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_REQUESTS,
-                          HSTSPrimingRequest::eHSTS_PRIMING_REQUEST_NO_LOAD_INFO);
     }
 
     return ContinueConnect();
@@ -779,6 +754,13 @@ nsHttpChannel::DoNotifyListenerCleanup()
 {
     
     CleanRedirectCacheChainIfNecessary();
+}
+
+void
+nsHttpChannel::ReleaseListeners()
+{
+    HttpBaseChannel::ReleaseListeners();
+    mChannelClassifier = nullptr;
 }
 
 void
@@ -6124,6 +6106,19 @@ InitLocalBlockListXpcCallback::OnClassifyComplete(nsresult ,
 
 } 
 
+already_AddRefed<nsChannelClassifier>
+nsHttpChannel::GetOrCreateChannelClassifier()
+{
+    if (!mChannelClassifier) {
+        mChannelClassifier = new nsChannelClassifier(this);
+        LOG(("nsHttpChannel [%p] created nsChannelClassifier [%p]\n",
+             this, mChannelClassifier.get()));
+    }
+
+    RefPtr<nsChannelClassifier> classifier = mChannelClassifier;
+    return classifier.forget();
+}
+
 bool
 nsHttpChannel::InitLocalBlockList(const InitLocalBlockListCallback& aCallback)
 {
@@ -6135,7 +6130,8 @@ nsHttpChannel::InitLocalBlockList(const InitLocalBlockListCallback& aCallback)
 
     
     nsCOMPtr<nsIURIClassifier> classifier(services::GetURIClassifier());
-    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
+    RefPtr<nsChannelClassifier> channelClassifier =
+        GetOrCreateChannelClassifier();
     bool tpEnabled = false;
     channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
     if (!classifier || !tpEnabled) {
@@ -6501,7 +6497,8 @@ nsHttpChannel::BeginConnectActual()
     
     
     
-    RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier(this);
+    RefPtr<nsChannelClassifier> channelClassifier =
+        GetOrCreateChannelClassifier();
     LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
          channelClassifier.get(), this));
     channelClassifier->Start();
@@ -8630,14 +8627,6 @@ nsHttpChannel::OnPreflightFailed(nsresult aError)
 nsresult
 nsHttpChannel::OnHSTSPrimingSucceeded(bool aCached)
 {
-    
-    
-    
-    bool wouldBlock = mLoadInfo->GetMixedContentWouldBlock();
-    
-    
-    mLoadInfo->ClearHSTSPriming();
-
     if (nsMixedContentBlocker::sUseHSTS) {
         
         
@@ -8645,11 +8634,13 @@ nsHttpChannel::OnHSTSPrimingSucceeded(bool aCached)
         Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
                 (aCached) ? HSTSPrimingResult::eHSTS_PRIMING_CACHED_DO_UPGRADE :
                             HSTSPrimingResult::eHSTS_PRIMING_SUCCEEDED);
-        
-        Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 3);
-        mLoadInfo->SetIsHSTSPrimingUpgrade(true);
         return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
     }
+
+    
+    
+    
+    bool wouldBlock = mLoadInfo->GetMixedContentWouldBlock();
 
     
     if (wouldBlock) {
@@ -8664,9 +8655,6 @@ nsHttpChannel::OnHSTSPrimingSucceeded(bool aCached)
     LOG(("HSTS Priming succeeded, loading insecure: [this=%p]", this));
     Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING_RESULT,
                           HSTSPrimingResult::eHSTS_PRIMING_SUCCEEDED_HTTP);
-
-    
-    Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
 
     nsresult rv = ContinueConnect();
     if (NS_FAILED(rv)) {
@@ -8685,9 +8673,6 @@ nsresult
 nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
 {
     bool wouldBlock = mLoadInfo->GetMixedContentWouldBlock();
-    
-    
-    mLoadInfo->ClearHSTSPriming();
 
     LOG(("HSTS Priming Failed [this=%p], %s the load", this,
                 (wouldBlock) ? "blocking" : "allowing"));
@@ -8728,9 +8713,6 @@ nsHttpChannel::OnHSTSPrimingFailed(nsresult aError, bool aCached)
         CloseCacheEntry(false);
         return AsyncAbort(aError);
     }
-
-    
-    Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
 
     
     rv = ContinueConnect();
