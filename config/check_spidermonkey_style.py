@@ -64,8 +64,6 @@ included_inclnames_to_ignore = set([
     'double-conversion.h',      
     'javascript-trace.h',       
     'frontend/ReservedWordsGenerated.h', 
-    'gc/StatsPhasesGenerated.h',         
-    'gc/StatsPhasesGenerated.cpp',       
     'jscustomallocator.h',      
     'js-config.h',              
     'fdlibm.h',                 
@@ -106,8 +104,6 @@ included_inclnames_to_ignore = set([
 oddly_ordered_inclnames = set([
     'ctypes/typedefs.h',        
     'frontend/ReservedWordsGenerated.h', 
-    'gc/StatsPhasesGenerated.h',         
-    'gc/StatsPhasesGenerated.cpp',       
     'jswin.h',                  
     'machine/endian.h',         
     'winbase.h',                
