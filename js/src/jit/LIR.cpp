@@ -6,6 +6,8 @@
 
 #include "jit/LIR.h"
 
+#include "mozilla/ScopeExit.h"
+
 #include <ctype.h>
 
 #include "jsprf.h"
@@ -235,10 +237,18 @@ LRecoverInfo::appendDefinition(MDefinition* def)
 {
     MOZ_ASSERT(def->isRecoveredOnBailout());
     def->setInWorklist();
+    auto clearWorklistFlagOnFailure = mozilla::MakeScopeExit([&] {
+        def->setNotInWorklist();
+    });
 
     if (!appendOperands(def))
         return false;
-    return instructions_.append(def);
+
+    if (!instructions_.append(def))
+        return false;
+
+    clearWorklistFlagOnFailure.release();
+    return true;
 }
 
 bool
@@ -264,18 +274,20 @@ LRecoverInfo::init(MResumePoint* rp)
 {
     
     
+    auto clearWorklistFlags = mozilla::MakeScopeExit([&] {
+        for (MNode** it = begin(); it != end(); it++) {
+            if (!(*it)->isDefinition())
+                continue;
+            (*it)->toDefinition()->setNotInWorklist();
+        }
+    });
+
+    
+    
     
     
     if (!appendResumePoint(rp))
         return false;
-
-    
-    for (MNode** it = begin(); it != end(); it++) {
-        if (!(*it)->isDefinition())
-            continue;
-
-        (*it)->toDefinition()->setNotInWorklist();
-    }
 
     MOZ_ASSERT(mir() == rp);
     return true;
