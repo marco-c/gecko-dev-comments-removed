@@ -67,6 +67,10 @@ public:
   static void Start();
   static void Shutdown();
   static PaintThread* Get();
+
+  
+  static bool IsOnPaintThread();
+
   void PaintContents(CapturedPaintState* aState,
                      PrepDrawTargetForPaintingCallback aCallback);
 
@@ -90,13 +94,11 @@ public:
   void Release();
   void AddRef();
 
-  
-  static bool IsOnPaintThread();
-
 private:
   bool Init();
   void ShutdownOnPaintThread();
   void InitOnPaintThread();
+
   void AsyncPaintContents(CompositorBridgeChild* aBridge,
                           CapturedPaintState* aState,
                           PrepDrawTargetForPaintingCallback aCallback);

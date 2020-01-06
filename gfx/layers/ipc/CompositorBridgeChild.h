@@ -224,17 +224,12 @@ public:
 
   
   
-  void NotifyBeginAsyncPaint(CapturedPaintState* aState);
-
-  
-  
-  
-  void PostponeMessagesIfAsyncPainting();
-
-  
-  
   
   void FlushAsyncPaints();
+
+  
+  
+  void NotifyBeginAsyncPaint(CapturedPaintState* aState);
 
   
   
@@ -250,6 +245,11 @@ public:
   
   
   void NotifyFinishedAsyncEndLayerTransaction();
+
+  
+  
+  
+  void PostponeMessagesIfAsyncPainting();
 
 private:
   

@@ -1135,6 +1135,20 @@ CompositorBridgeChild::GetNextPipelineId()
 }
 
 void
+CompositorBridgeChild::FlushAsyncPaints()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(mPaintLock);
+  while (mIsWaitingForPaint) {
+    lock.Wait();
+  }
+
+  
+  mTextureClientsForAsyncPaint.Clear();
+}
+
+void
 CompositorBridgeChild::NotifyBeginAsyncPaint(CapturedPaintState* aState)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1225,23 +1239,6 @@ CompositorBridgeChild::NotifyFinishedAsyncEndLayerTransaction()
 }
 
 void
-CompositorBridgeChild::PostponeMessagesIfAsyncPainting()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MonitorAutoLock lock(mPaintLock);
-
-  MOZ_ASSERT(!mIsWaitingForPaint);
-
-  
-  
-  if (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
-    mIsWaitingForPaint = true;
-    GetIPCChannel()->BeginPostponingSends();
-  }
-}
-
-void
 CompositorBridgeChild::ResumeIPCAfterAsyncPaint()
 {
   
@@ -1261,17 +1258,20 @@ CompositorBridgeChild::ResumeIPCAfterAsyncPaint()
 }
 
 void
-CompositorBridgeChild::FlushAsyncPaints()
+CompositorBridgeChild::PostponeMessagesIfAsyncPainting()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   MonitorAutoLock lock(mPaintLock);
-  while (mIsWaitingForPaint) {
-    lock.Wait();
-  }
+
+  MOZ_ASSERT(!mIsWaitingForPaint);
 
   
-  mTextureClientsForAsyncPaint.Clear();
+  
+  if (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
+    mIsWaitingForPaint = true;
+    GetIPCChannel()->BeginPostponingSends();
+  }
 }
 
 } 
