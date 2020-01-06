@@ -1103,6 +1103,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                        Bookmarks._ID + ", " +
                        Combined.BOOKMARK_ID + ", " +
                        Combined.HISTORY_ID + ", " +
+                       Combined.HISTORY_GUID + ", " +
                        Bookmarks.URL + ", " +
                        Bookmarks.TITLE + ", " +
                        Combined.HISTORY_ID + ", " +
@@ -1123,6 +1124,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                            Bookmarks._ID + ", " +
                            " NULL " + " AS " + Combined.BOOKMARK_ID + ", " +
                            " -1 AS " + Combined.HISTORY_ID + ", " +
+                           " NULL AS " + Combined.HISTORY_GUID + ", " +
                            Bookmarks.URL + ", " +
                            Bookmarks.TITLE + ", " +
                            "NULL AS " + Combined.HISTORY_ID + ", " +
@@ -1146,6 +1148,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                            Bookmarks._ID + ", " +
                            Bookmarks._ID + " AS " + Combined.BOOKMARK_ID + ", " +
                            " -1 AS " + Combined.HISTORY_ID + ", " +
+                           " NULL AS " + Combined.HISTORY_GUID + ", " +
                            Bookmarks.URL + ", " +
                            Bookmarks.TITLE + ", " +
                            "NULL AS " + Combined.HISTORY_ID + ", " +
@@ -1162,42 +1165,64 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             
             
             
+            final String selectTopSites =
+                    "SELECT " +
+                    Bookmarks._ID + ", " +
+                    TopSites.BOOKMARK_ID + ", " +
+                    TopSites.HISTORY_ID + ", " +
+                    Combined.HISTORY_GUID + ", " +
+                    Bookmarks.URL + ", " +
+                    Bookmarks.TITLE + ", " +
+                    "COALESCE(" + Bookmarks.POSITION + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, "rowid") + " + " + suggestedGridLimit +
+                    ")" + " AS " + Bookmarks.POSITION + ", " +
+                    Combined.HISTORY_ID + ", " +
+                    TopSites.TYPE +
+                    " FROM " + TABLE_TOPSITES +
+                    " LEFT OUTER JOIN " + 
+                    "(" + freeIDSubquery + ") AS id_results" +
+                    " ON " + DBUtils.qualifyColumn(TABLE_TOPSITES, "rowid") +
+                    " = " + DBUtils.qualifyColumn("id_results", "rowid") +
+
+                    " UNION ALL " +
+
+                    "SELECT " +
+                    Bookmarks._ID + ", " +
+                    Bookmarks._ID + " AS " + TopSites.BOOKMARK_ID + ", " +
+                    " -1 AS " + TopSites.HISTORY_ID + ", " +
+                    " NULL AS " + Combined.HISTORY_GUID + ", " +
+                    Bookmarks.URL + ", " +
+                    Bookmarks.TITLE + ", " +
+                    Bookmarks.POSITION + ", " +
+                    "NULL AS " + Combined.HISTORY_ID + ", " +
+                    TopSites.TYPE_PINNED + " as " + TopSites.TYPE +
+                    " " + pinnedSitesFromClause;
+
+            
+            
             final SQLiteCursor c = (SQLiteCursor) db.rawQuery(
-                        "SELECT " +
-                        Bookmarks._ID + ", " +
-                        TopSites.BOOKMARK_ID + ", " +
-                        TopSites.HISTORY_ID + ", " +
-                        Bookmarks.URL + ", " +
-                        Bookmarks.TITLE + ", " +
-                        "COALESCE(" + Bookmarks.POSITION + ", " +
-                            DBUtils.qualifyColumn(TABLE_TOPSITES, "rowid") + " + " + suggestedGridLimit +
-                        ")" + " AS " + Bookmarks.POSITION + ", " +
-                        Combined.HISTORY_ID + ", " +
-                        TopSites.TYPE +
-                        " FROM " + TABLE_TOPSITES +
-                        " LEFT OUTER JOIN " + 
-                        "(" + freeIDSubquery + ") AS id_results" +
-                        " ON " + DBUtils.qualifyColumn(TABLE_TOPSITES, "rowid") +
-                        " = " + DBUtils.qualifyColumn("id_results", "rowid") +
+                    
+                    "SELECT " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, Bookmarks._ID) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, TopSites.BOOKMARK_ID) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, TopSites.HISTORY_ID) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, Bookmarks.URL) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, Bookmarks.TITLE) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, Bookmarks.POSITION) + ", " +
+                    DBUtils.qualifyColumn(TABLE_TOPSITES, TopSites.TYPE) + ", " +
+                    PageMetadata.JSON + " AS " + TopSites.PAGE_METADATA_JSON +
 
-                        " UNION ALL " +
+                    " FROM (" + selectTopSites + ") AS " + TABLE_TOPSITES +
 
-                        "SELECT " +
-                        Bookmarks._ID + ", " +
-                        Bookmarks._ID + " AS " + TopSites.BOOKMARK_ID + ", " +
-                        " -1 AS " + TopSites.HISTORY_ID + ", " +
-                        Bookmarks.URL + ", " +
-                        Bookmarks.TITLE + ", " +
-                        Bookmarks.POSITION + ", " +
-                        "NULL AS " + Combined.HISTORY_ID + ", " +
-                        TopSites.TYPE_PINNED + " as " + TopSites.TYPE +
-                        " " + pinnedSitesFromClause +
+                    " LEFT OUTER JOIN " + TABLE_PAGE_METADATA + " ON " +
+                            DBUtils.qualifyColumn(TABLE_TOPSITES, Combined.HISTORY_GUID) + " = " +
+                            DBUtils.qualifyColumn(TABLE_PAGE_METADATA, PageMetadata.HISTORY_GUID) +
 
-                        
-                        
-                        " ORDER BY " + Bookmarks.POSITION + ", " + Bookmarks.URL,
+                    
+                    
+                    " ORDER BY " + Bookmarks.POSITION + ", " + Bookmarks.URL,
 
-                        null);
+                    null);
 
             c.setNotificationUri(getContext().getContentResolver(),
                                  BrowserContract.AUTHORITY_URI);
