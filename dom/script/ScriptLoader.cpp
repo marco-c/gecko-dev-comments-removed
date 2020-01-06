@@ -2161,7 +2161,7 @@ ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest)
           TimeStamp start;
           if (Telemetry::CanRecordExtended()) {
             
-            if (aRequest->mCacheInfo && aRequest->mScriptText.length() < 1024) {
+            if (aRequest->mCacheInfo && aRequest->mScriptText.length() >= 1024) {
               start = TimeStamp::Now();
             }
           }
