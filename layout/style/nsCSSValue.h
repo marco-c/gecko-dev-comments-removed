@@ -199,6 +199,11 @@ private:
   mutable bool mUsingRustString;
 
 protected:
+  
+  
+  
+  bool mLoadedImage = false;
+
   virtual ~URLValueData();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -266,9 +271,6 @@ struct ImageValue final : public URLValueData
 
 protected:
   ~ImageValue();
-
-private:
-  bool mLoadedImage = false;
 
 public:
   
