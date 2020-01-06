@@ -61,6 +61,7 @@ class CompositorBridgeChild;
 class LayerManager;
 class LayerManagerComposite;
 class PLayerTransactionChild;
+class WebRenderBridgeChild;
 struct ScrollableLayerGuid;
 } 
 namespace gfx {
@@ -72,6 +73,9 @@ class TextEventDispatcher;
 class TextEventDispatcherListener;
 class CompositorWidget;
 class CompositorWidgetInitData;
+} 
+namespace wr {
+class DisplayListBuilder;
 } 
 } 
 
@@ -1278,6 +1282,18 @@ class nsIWidget : public nsISupports
 
 
     virtual void PrepareWindowEffects() = 0;
+
+    
+
+
+    virtual void AddWindowOverlayWebRenderCommands(mozilla::layers::WebRenderBridgeChild* aWrBridge,
+                                                   mozilla::wr::DisplayListBuilder& aBuilder) {}
+
+    
+
+
+
+    virtual void CleanupWebRenderWindowOverlay(mozilla::layers::WebRenderBridgeChild* aWrBridge) {}
 
     
 

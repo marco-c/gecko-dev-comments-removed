@@ -121,14 +121,11 @@ RendererOGL::Render()
     return false;
   }
   
-  
-  mWidget->DrawWindowUnderlay(&widgetContext, LayoutDeviceIntRect());
 
   auto size = mWidget->GetClientSize();
   wr_renderer_render(mWrRenderer, size.width, size.height);
 
   mGL->SwapBuffers();
-  mWidget->DrawWindowOverlay(&widgetContext, LayoutDeviceIntRect());
   mWidget->PostRender(&widgetContext);
 
   
