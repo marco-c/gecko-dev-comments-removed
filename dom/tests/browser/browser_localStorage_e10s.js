@@ -31,10 +31,19 @@ class KnownTabs {
 
 
 
+
+
+
+
+
+
+
+
 function* openTestTabInOwnProcess(name, knownTabs) {
-  let opening = HELPER_PAGE_URL + '?' + encodeURIComponent(name);
+  let realUrl = HELPER_PAGE_URL + '?' + encodeURIComponent(name);
+  
   let tab = yield BrowserTestUtils.openNewForegroundTab({
-    gBrowser, opening, forceNewProcess: true
+    gBrowser, opening: 'about:blank', forceNewProcess: true
   });
   let pid = tab.linkedBrowser.frameLoader.tabParent.osPid;
   ok(!knownTabs.byName.has(name), "tab needs its own name: " + name);
@@ -43,6 +52,11 @@ function* openTestTabInOwnProcess(name, knownTabs) {
   let knownTab = new KnownTab(name, tab);
   knownTabs.byPid.set(pid, knownTab);
   knownTabs.byName.set(name, knownTab);
+
+  
+  tab.linkedBrowser.loadURI(realUrl);
+  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  is(tab.linkedBrowser.frameLoader.tabParent.osPid, pid, "still same pid");
   return knownTab;
 }
 
@@ -55,6 +69,45 @@ function* cleanupTabs(knownTabs) {
     knownTab.cleanup();
   }
   knownTabs.cleanup();
+}
+
+
+
+
+
+
+
+
+function waitForLocalStorageFlush() {
+  return new Promise(function(resolve) {
+    let observer = {
+      observe: function() {
+        SpecialPowers.removeObserver(observer, "domstorage-test-flushed");
+        resolve();
+      }
+    };
+    SpecialPowers.addObserver(observer, "domstorage-test-flushed");
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+function triggerAndWaitForLocalStorageFlush() {
+  SpecialPowers.notifyObservers(null, "domstorage-test-flush-force");
+  
+  return waitForLocalStorageFlush().then(function() {
+    
+    SpecialPowers.notifyObservers(null, "domstorage-test-flush-force");
+    return waitForLocalStorageFlush();
+  })
 }
 
 
@@ -79,9 +132,10 @@ function clearOriginStorageEnsuringNoPreload() {
   
   let storage = Services.domStorageManager.createStorage(null, principal, "");
   storage.clear();
+
   
   
-  
+  return triggerAndWaitForLocalStorageFlush();
 }
 
 function* verifyTabPreload(knownTab, expectStorageExists) {
@@ -236,13 +290,19 @@ add_task(function*() {
       
       
       ["dom.ipc.processPrelaunch.enabled", false],
+      
+      
+      ["dom.storage.testing", true],
     ]
   });
 
   
   
   
-  clearOriginStorageEnsuringNoPreload();
+  yield clearOriginStorageEnsuringNoPreload();
+
+  
+  yield triggerAndWaitForLocalStorageFlush();
 
   
   const knownTabs = new KnownTabs();
@@ -330,6 +390,14 @@ add_task(function*() {
   yield* verifyTabStorageState(readerTab, lastWriteState);
   yield* verifyTabStorageEvents(lateWriteThenListenTab, lastWriteMutations);
   yield* verifyTabStorageState(lateWriteThenListenTab, lastWriteState);
+
+  
+  
+  
+  
+  
+  
+  yield triggerAndWaitForLocalStorageFlush();
 
   
   const lateOpenSeesPreload =
