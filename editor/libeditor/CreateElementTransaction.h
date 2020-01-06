@@ -41,7 +41,8 @@ public:
   CreateElementTransaction(EditorBase& aEditorBase,
                            nsAtom& aTag,
                            nsINode& aParent,
-                           int32_t aOffsetInParent);
+                           int32_t aOffsetInParent,
+                           nsIContent* aChildAtOffset);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CreateElementTransaction,
@@ -71,6 +72,7 @@ protected:
   
   nsCOMPtr<dom::Element> mNewNode;
 
+  
   
   nsCOMPtr<nsIContent> mRefNode;
 };
