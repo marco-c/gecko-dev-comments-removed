@@ -892,7 +892,21 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
               mouseInput.mLocalOrigin, thumbData);
           
           
-          dragStart -= thumbData.mThumbStart;
+          
+          
+          
+          
+          LayerToParentLayerMatrix4x4 thumbTransform;
+          {
+            MutexAutoLock lock(mTreeLock);
+            thumbTransform = ComputeTransformForNode(hitScrollbarNode);
+          }
+          
+          
+          CSSCoord thumbStart = thumbData.mThumbStart
+                              + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
+                                 ? thumbTransform._41 : thumbTransform._42);
+          dragStart -= thumbStart;
           mInputQueue->ConfirmDragBlock(
               dragBlockId, apzc,
               AsyncDragMetrics(apzc->GetGuid().mScrollId,
@@ -1719,7 +1733,7 @@ APZCTreeManager::GetTargetAPZC(const ScrollableLayerGuid& aGuid)
 
 already_AddRefed<HitTestingTreeNode>
 APZCTreeManager::GetTargetNode(const ScrollableLayerGuid& aGuid,
-                               GuidComparator aComparator)
+                               GuidComparator aComparator) const
 {
   mTreeLock.AssertCurrentThreadOwns();
   RefPtr<HitTestingTreeNode> target = DepthFirstSearchPostOrder<ReverseIterator>(mRootNode.get(),
@@ -1891,12 +1905,15 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
   
   HitTestingTreeNode* resultNode;
   HitTestingTreeNode* root = aNode;
-  std::stack<ParentLayerPoint> hitTestPoints;
-  hitTestPoints.push(aHitTestPoint);
+  std::stack<LayerPoint> hitTestPoints;
+  hitTestPoints.push(ViewAs<LayerPixel>(aHitTestPoint,
+      PixelCastJustification::MovingDownToChildren));
 
   ForEachNode<ReverseIterator>(root,
-      [&hitTestPoints](HitTestingTreeNode* aNode) {
-        if (aNode->IsOutsideClip(hitTestPoints.top())) {
+      [&hitTestPoints, this](HitTestingTreeNode* aNode) {
+        ParentLayerPoint hitTestPointForParent = ViewAs<ParentLayerPixel>(hitTestPoints.top(),
+            PixelCastJustification::MovingDownToChildren);
+        if (aNode->IsOutsideClip(hitTestPointForParent)) {
           
           
           
@@ -1906,21 +1923,21 @@ APZCTreeManager::GetAPZCAtPoint(HitTestingTreeNode* aNode,
         }
         
         
-        Maybe<LayerPoint> hitTestPointForChildLayers = aNode->Untransform(hitTestPoints.top());
+        Maybe<LayerPoint> hitTestPoint = aNode->Untransform(
+            hitTestPointForParent, ComputeTransformForNode(aNode));
         APZCTM_LOG("Transformed ParentLayer point %s to layer %s\n",
-                Stringify(hitTestPoints.top()).c_str(),
-                hitTestPointForChildLayers ? Stringify(hitTestPointForChildLayers.ref()).c_str() : "nil");
-        if (!hitTestPointForChildLayers) {
+                Stringify(hitTestPointForParent).c_str(),
+                hitTestPoint ? Stringify(hitTestPoint.ref()).c_str() : "nil");
+        if (!hitTestPoint) {
           return TraversalFlag::Skip;
         }
-        hitTestPoints.push(ViewAs<ParentLayerPixel>(hitTestPointForChildLayers.ref(),
-            PixelCastJustification::MovingDownToChildren));
+        hitTestPoints.push(hitTestPoint.ref());
         return TraversalFlag::Continue;
       },
       [&resultNode, &hitTestPoints, &aOutHitResult](HitTestingTreeNode* aNode) {
-        hitTestPoints.pop();
         HitTestResult hitResult = aNode->HitTest(hitTestPoints.top());
-        APZCTM_LOG("Testing ParentLayer point %s against node %p\n",
+        hitTestPoints.pop();
+        APZCTM_LOG("Testing Layer point %s against node %p\n",
                 Stringify(hitTestPoints.top()).c_str(), aNode);
         if (hitResult != HitTestResult::HitNothing) {
           resultNode = aNode;
@@ -2255,6 +2272,40 @@ APZCTreeManager::CommonAncestor(AsyncPanZoomController* aApzc1, AsyncPanZoomCont
     aApzc2 = aApzc2->GetParent();
   }
   return ancestor.forget();
+}
+
+LayerToParentLayerMatrix4x4
+APZCTreeManager::ComputeTransformForNode(const HitTestingTreeNode* aNode) const
+{
+  if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
+    
+    
+    return aNode->GetTransform() *
+        CompleteAsyncTransform(
+          apzc->GetCurrentAsyncTransformWithOverscroll(AsyncPanZoomController::NORMAL));
+  } else if (aNode->IsScrollThumbNode()) {
+    
+    
+    
+    ScrollableLayerGuid guid{aNode->GetLayersId(), 0, aNode->GetScrollTargetId()};
+    if (RefPtr<HitTestingTreeNode> scrollTargetNode = GetTargetNode(guid, &GuidComparatorIgnoringPresShell)) {
+      AsyncPanZoomController* scrollTargetApzc = scrollTargetNode->GetApzc();
+      MOZ_ASSERT(scrollTargetApzc);
+      return scrollTargetApzc->CallWithLastContentPaintMetrics(
+        [&](const FrameMetrics& aMetrics) {
+          return AsyncCompositionManager::ComputeTransformForScrollThumb(
+              aNode->GetTransform() * AsyncTransformMatrix(),
+              scrollTargetNode->GetTransform().ToUnknownMatrix(),
+              scrollTargetApzc,
+              aMetrics,
+              aNode->GetScrollThumbData(),
+              scrollTargetNode->IsAncestorOf(aNode),
+              nullptr);
+        });
+    }
+  }
+  
+  return aNode->GetTransform() * AsyncTransformMatrix();
 }
 
 #if defined(MOZ_WIDGET_ANDROID)
