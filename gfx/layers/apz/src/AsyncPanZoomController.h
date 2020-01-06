@@ -346,6 +346,11 @@ public:
   
 
 
+  bool IsScrollInfoLayer() const;
+
+  
+
+
 
   bool IsFlingingFast() const;
 
