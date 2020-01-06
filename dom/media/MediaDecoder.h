@@ -532,7 +532,7 @@ private:
   void ConnectMirrors(MediaDecoderStateMachine* aObject);
   void DisconnectMirrors();
 
-  virtual bool CanPlayThroughImpl();
+  virtual bool CanPlayThroughImpl() = 0;
 
   
   

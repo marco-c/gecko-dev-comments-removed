@@ -91,6 +91,8 @@ private:
 
   void SeekingChanged();
 
+  bool CanPlayThroughImpl() override final;
+
   WatchManager<ChannelMediaDecoder> mWatchManager;
 
   

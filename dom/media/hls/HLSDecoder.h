@@ -42,6 +42,13 @@ public:
   void Pause() override;
 
 private:
+  bool CanPlayThroughImpl() override final
+  {
+    
+    
+    return true;
+  }
+
   RefPtr<HLSResource> mResource;
 };
 
