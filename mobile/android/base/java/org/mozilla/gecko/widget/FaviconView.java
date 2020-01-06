@@ -6,6 +6,7 @@
 package org.mozilla.gecko.widget;
 
 import android.graphics.Color;
+import android.support.v7.widget.AppCompatImageView;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.icons.IconCallback;
 import org.mozilla.gecko.icons.IconResponse;
@@ -31,7 +32,7 @@ import java.lang.ref.WeakReference;
 
 
 
-public class FaviconView extends ImageView {
+public class FaviconView extends AppCompatImageView {
 
     
     private static final int DEFAULT_CORNER_RADIUS_DP = 2;
