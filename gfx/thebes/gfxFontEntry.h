@@ -207,13 +207,6 @@ public:
                                 nsTArray<uint16_t>& layerGlyphs,
                                 nsTArray<mozilla::gfx::Color>& layerColors);
 
-    virtual bool MatchesGenericFamily(const nsACString& aGeneric) const {
-        return true;
-    }
-    virtual bool SupportsLangGroup(nsIAtom *aLangGroup) const {
-        return true;
-    }
-
     
     
     
@@ -762,6 +755,14 @@ public:
 
     void SetSkipSpaceFeatureCheck(bool aSkipCheck) {
         mSkipDefaultFeatureSpaceCheck = aSkipCheck;
+    }
+
+    virtual bool MatchesGenericFamily(const nsACString& aGeneric) const {
+        return true;
+    }
+
+    virtual bool SupportsLangGroup(nsIAtom *aLangGroup) const {
+        return true;
     }
 
 protected:
