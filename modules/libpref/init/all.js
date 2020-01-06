@@ -884,6 +884,7 @@ pref("gfx.webrender.blob-images", false);
 
 pref("gfx.webrender.debug.texture-cache", false);
 pref("gfx.webrender.debug.render-targets", false);
+pref("gfx.webrender.debug.alpha-primitives", false);
 pref("gfx.webrender.debug.profiler", false);
 
 
@@ -5078,12 +5079,6 @@ pref("dom.battery.enabled", true);
 
 
 pref("dom.streams.enabled", false);
-
-
-pref("dom.abortController.enabled", true);
-
-
-pref("dom.abortController.fetch.enabled", true);
 
 
 
