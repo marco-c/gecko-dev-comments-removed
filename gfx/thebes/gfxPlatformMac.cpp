@@ -457,7 +457,8 @@ public:
         
         
         uint32_t delay = 100;
-        mTimer->InitWithFuncCallback(RetryEnableVsync, this, delay, nsITimer::TYPE_ONE_SHOT);
+        mTimer->InitWithNamedFuncCallback(RetryEnableVsync, this, delay, nsITimer::TYPE_ONE_SHOT,
+                                          "RetryEnableVsync");
         return;
       }
 

@@ -3634,10 +3634,11 @@ QuotaManager::Shutdown()
 
   
   MOZ_ALWAYS_SUCCEEDS(
-    mShutdownTimer->InitWithFuncCallback(&ShutdownTimerCallback,
-                                         this,
-                                         DEFAULT_SHUTDOWN_TIMER_MS,
-                                         nsITimer::TYPE_ONE_SHOT));
+    mShutdownTimer->InitWithNamedFuncCallback(&ShutdownTimerCallback,
+                                              this,
+                                              DEFAULT_SHUTDOWN_TIMER_MS,
+                                              nsITimer::TYPE_ONE_SHOT,
+                                              "QuotaManager::ShutdownTimerCallback"));
 
   
   

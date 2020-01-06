@@ -301,8 +301,9 @@ public:
 
     if (mTimer) {
       mTimer->SetTarget(mTarget);
-      mTimer->InitWithFuncCallback(TimedOut, this, aDelay,
-                                   nsITimer::TYPE_ONE_SHOT);
+      mTimer->InitWithNamedFuncCallback(TimedOut, this, aDelay,
+                                        nsITimer::TYPE_ONE_SHOT,
+                                        "CollectorRunner");
       mTimerActive = true;
     }
   }
@@ -360,8 +361,9 @@ public:
 
         
         
-        mScheduleTimer->InitWithFuncCallback(ScheduleTimedOut, this, 16,
-                                             nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY);
+        mScheduleTimer->InitWithNamedFuncCallback(ScheduleTimedOut, this, 16,
+                                                  nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+                                                  "CollectorRunner");
       }
     }
   }
@@ -1501,8 +1503,8 @@ struct CycleCollectorStats
   constexpr CycleCollectorStats() :
     mMaxGCDuration(0), mRanSyncForgetSkippable(false), mSuspected(0),
     mMaxSkippableDuration(0), mMaxSliceTime(0), mMaxSliceTimeSinceClear(0),
-    mTotalSliceTime(0), mAnyLockedOut(false), mFile(nullptr)
-  {}
+    mTotalSliceTime(0), mAnyLockedOut(false), mExtraForgetSkippableCalls(0),
+    mFile(nullptr) {}
 
   void Init()
   {
@@ -1542,9 +1544,11 @@ struct CycleCollectorStats
     mMaxSliceTime = 0;
     mTotalSliceTime = 0;
     mAnyLockedOut = false;
+    mExtraForgetSkippableCalls = 0;
   }
 
-  void PrepareForCycleCollectionSlice(TimeStamp aDeadline = TimeStamp());
+  void PrepareForCycleCollectionSlice(TimeStamp aDeadline = TimeStamp(),
+                                      int32_t aExtraForgetSkippableCalls = 0);
 
   void FinishCycleCollectionSlice()
   {
@@ -1578,6 +1582,7 @@ struct CycleCollectorStats
     mMaxSliceTimeSinceClear = std::max(mMaxSliceTimeSinceClear, sliceTime);
     mTotalSliceTime += sliceTime;
     mBeginSliceTime = TimeStamp();
+    MOZ_ASSERT(mExtraForgetSkippableCalls == 0, "Forget to reset extra forget skippable calls?");
   }
 
   void RunForgetSkippable();
@@ -1616,6 +1621,8 @@ struct CycleCollectorStats
   
   bool mAnyLockedOut;
 
+  int32_t mExtraForgetSkippableCalls;
+
   
   FILE* mFile;
 
@@ -1627,7 +1634,8 @@ struct CycleCollectorStats
 CycleCollectorStats gCCStats;
 
 void
-CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline)
+CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline,
+                                                    int32_t aExtraForgetSkippableCalls)
 {
   mBeginSliceTime = TimeStamp::Now();
   mIdleDeadline = aDeadline;
@@ -1639,6 +1647,8 @@ CycleCollectorStats::PrepareForCycleCollectionSlice(TimeStamp aDeadline)
     uint32_t gcTime = TimeBetween(mBeginSliceTime, TimeStamp::Now());
     mMaxGCDuration = std::max(mMaxGCDuration, gcTime);
   }
+
+  mExtraForgetSkippableCalls = aExtraForgetSkippableCalls;
 }
 
 void
@@ -1646,23 +1656,33 @@ CycleCollectorStats::RunForgetSkippable()
 {
   
   
-  TimeStamp beginForgetSkippable = TimeStamp::Now();
-  bool ranSyncForgetSkippable = false;
-  while (sCleanupsSinceLastGC < NS_MAJOR_FORGET_SKIPPABLE_CALLS) {
-    FireForgetSkippable(nsCycleCollector_suspectedCount(), false, TimeStamp());
-    ranSyncForgetSkippable = true;
-  }
+  if (mExtraForgetSkippableCalls >= 0) {
+    TimeStamp beginForgetSkippable = TimeStamp::Now();
+    bool ranSyncForgetSkippable = false;
+    while (sCleanupsSinceLastGC < NS_MAJOR_FORGET_SKIPPABLE_CALLS) {
+      FireForgetSkippable(nsCycleCollector_suspectedCount(), false, TimeStamp());
+      ranSyncForgetSkippable = true;
+    }
 
-  if (ranSyncForgetSkippable) {
-    mMaxSkippableDuration =
-      std::max(mMaxSkippableDuration, TimeUntilNow(beginForgetSkippable));
-    mRanSyncForgetSkippable = true;
+    for (int32_t i = 0; i < mExtraForgetSkippableCalls; ++i) {
+      FireForgetSkippable(nsCycleCollector_suspectedCount(), false, TimeStamp());
+      ranSyncForgetSkippable = true;
+    }
+
+    if (ranSyncForgetSkippable) {
+      mMaxSkippableDuration =
+        std::max(mMaxSkippableDuration, TimeUntilNow(beginForgetSkippable));
+      mRanSyncForgetSkippable = true;
+    }
+
   }
+  mExtraForgetSkippableCalls = 0;
 }
 
 
 void
-nsJSContext::CycleCollectNow(nsICycleCollectorListener *aListener)
+nsJSContext::CycleCollectNow(nsICycleCollectorListener *aListener,
+                             int32_t aExtraForgetSkippableCalls)
 {
   if (!NS_IsMainThread()) {
     return;
@@ -1670,7 +1690,8 @@ nsJSContext::CycleCollectNow(nsICycleCollectorListener *aListener)
 
   AUTO_PROFILER_LABEL("nsJSContext::CycleCollectNow", CC);
 
-  gCCStats.PrepareForCycleCollectionSlice(TimeStamp());
+  gCCStats.PrepareForCycleCollectionSlice(TimeStamp(),
+                                          aExtraForgetSkippableCalls);
   nsCycleCollector_collect(aListener);
   gCCStats.FinishCycleCollectionSlice();
 }
