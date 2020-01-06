@@ -401,7 +401,10 @@ protected:
 
     MOZ_ASSERT(!wp->GetWindow());
 
-    AutoSafeJSContext cx;
+    AutoJSAPI jsapi;
+    jsapi.Init();
+
+    JSContext* cx = jsapi.cx();
 
     JS::Rooted<JSObject*> global(cx, mConsole->GetOrCreateSandbox(cx, wp->GetPrincipal()));
     if (NS_WARN_IF(!global)) {
