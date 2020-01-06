@@ -5160,40 +5160,6 @@ pref("dom.vr.puppet.submitframe", 0);
 
 pref("dom.vr.test.enabled", false);
 
-pref("wap.UAProf.url", "");
-pref("wap.UAProf.tagname", "x-wap-profile");
-
-
-
-
-pref("dom.mms.version", 19);
-
-pref("dom.mms.requestStatusReport", true);
-
-
-
-
-
-
-pref("dom.mms.retrieval_mode", "manual");
-
-pref("dom.mms.sendRetryCount", 3);
-pref("dom.mms.sendRetryInterval", "10000,60000,180000");
-
-pref("dom.mms.retrievalRetryCount", 4);
-pref("dom.mms.retrievalRetryIntervals", "60000,300000,600000,1800000");
-
-
-pref("dom.mms.defaultServiceId", 0);
-
-pref("mms.debugging.enabled", false);
-
-
-pref("dom.mms.requestReadReport", true);
-
-
-pref("ril.numRadioInterfaces", 0);
-
 
 
 
