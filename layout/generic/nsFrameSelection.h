@@ -237,7 +237,7 @@ public:
 
 
   
-  void HandleDrag(nsIFrame *aFrame, nsPoint aPoint);
+  void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
 
@@ -320,8 +320,8 @@ public:
 
 
   
-  nsresult StartAutoScrollTimer(nsIFrame *aFrame,
-                                nsPoint aPoint,
+  nsresult StartAutoScrollTimer(nsIFrame* aFrame,
+                                const nsPoint& aPoint,
                                 uint32_t aDelay);
 
   

@@ -441,7 +441,7 @@ public:
 
   
   
-  virtual ContentOffsets CalcContentOffsetsFromFramePoint(nsPoint aPoint);
+  virtual ContentOffsets CalcContentOffsetsFromFramePoint(const nsPoint& aPoint);
 
   
   nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) override;

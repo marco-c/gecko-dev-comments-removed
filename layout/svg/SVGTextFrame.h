@@ -243,8 +243,8 @@ public:
   
 
 
-  virtual void FindCloserFrameForSelection(nsPoint aPoint,
-                                          FrameWithDistance* aCurrentBestFrame) override;
+  virtual void FindCloserFrameForSelection(const nsPoint& aPoint,
+                                           FrameWithDistance* aCurrentBestFrame) override;
 
 
 

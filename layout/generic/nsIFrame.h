@@ -1966,10 +1966,10 @@ public:
 
 
 
-  ContentOffsets GetContentOffsetsFromPoint(nsPoint aPoint,
+  ContentOffsets GetContentOffsetsFromPoint(const nsPoint& aPoint,
                                             uint32_t aFlags = 0);
 
-  virtual ContentOffsets GetContentOffsetsFromPointExternal(nsPoint aPoint,
+  virtual ContentOffsets GetContentOffsetsFromPointExternal(const nsPoint& aPoint,
                                                             uint32_t aFlags = 0)
   { return GetContentOffsetsFromPoint(aPoint, aFlags); }
 
@@ -3906,7 +3906,7 @@ public:
 
 
 
-  virtual void FindCloserFrameForSelection(nsPoint aPoint,
+  virtual void FindCloserFrameForSelection(const nsPoint& aPoint,
                                            FrameWithDistance* aCurrentBestFrame);
 
   
