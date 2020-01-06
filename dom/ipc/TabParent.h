@@ -538,7 +538,11 @@ public:
 
   bool IsDestroyed() const { return mIsDestroyed; }
 
+  
   already_AddRefed<nsIWidget> GetWidget() const;
+
+  
+  already_AddRefed<nsIWidget> GetDocWidget() const;
 
   const TabId GetTabId() const
   {
@@ -546,6 +550,13 @@ public:
   }
 
   LayoutDeviceIntPoint GetChildProcessOffset();
+
+  
+  
+  
+  
+  LayoutDeviceIntPoint GetClientOffset();
+
   LayoutDevicePoint AdjustTapToChildWidget(const LayoutDevicePoint& aPoint);
 
   
