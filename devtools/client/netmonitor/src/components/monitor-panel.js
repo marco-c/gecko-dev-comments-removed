@@ -14,6 +14,7 @@ const {
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");
 const Actions = require("../actions/index");
+const { getLongString } = require("../connector/index");
 const { getFormDataSections } = require("../utils/request-utils");
 const { getSelectedRequest } = require("../selectors/index");
 
@@ -33,11 +34,11 @@ const MonitorPanel = createClass({
   displayName: "MonitorPanel",
 
   propTypes: {
-    connector: PropTypes.object.isRequired,
     isEmpty: PropTypes.bool.isRequired,
     networkDetailsOpen: PropTypes.bool.isRequired,
     openNetworkDetails: PropTypes.func.isRequired,
     request: PropTypes.object,
+    
     sourceMapService: PropTypes.object,
     openLink: PropTypes.func,
     updateRequest: PropTypes.func.isRequired,
@@ -71,7 +72,7 @@ const MonitorPanel = createClass({
         requestHeaders,
         requestHeadersFromUploadStream,
         requestPostData,
-        this.props.connector.getLongString,
+        getLongString,
       ).then((newFormDataSections) => {
         updateRequest(
           request.id,
@@ -105,7 +106,6 @@ const MonitorPanel = createClass({
 
   render() {
     let {
-      connector,
       isEmpty,
       networkDetailsOpen,
       sourceMapService,
@@ -126,10 +126,9 @@ const MonitorPanel = createClass({
           minSize: "50px",
           maxSize: "80%",
           splitterSize: "1px",
-          startPanel: RequestList({ isEmpty, connector }),
+          startPanel: RequestList({ isEmpty }),
           endPanel: networkDetailsOpen && NetworkDetailsPanel({
             ref: "endPanel",
-            connector,
             sourceMapService,
             openLink,
           }),

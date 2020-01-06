@@ -9,18 +9,14 @@ const {
   DOM,
   PropTypes,
 } = require("devtools/client/shared/vendor/react");
+const { viewSourceInDebugger } = require("../connector/index");
 
 const { div } = DOM;
 
 
 const StackTrace = createFactory(require("devtools/client/shared/components/StackTrace"));
 
-
-
-
-
 function StackTracePanel({
-  connector,
   openLink,
   request,
   sourceMapService,
@@ -31,9 +27,7 @@ function StackTracePanel({
     div({ className: "panel-container" },
       StackTrace({
         stacktrace,
-        onViewSourceInDebugger: ({ url, line }) => {
-          return connector.viewSourceInDebugger(url, line);
-        },
+        onViewSourceInDebugger: ({ url, line }) => viewSourceInDebugger(url, line),
         sourceMapService,
         openLink,
       }),
@@ -44,8 +38,8 @@ function StackTracePanel({
 StackTracePanel.displayName = "StackTracePanel";
 
 StackTracePanel.propTypes = {
-  connector: PropTypes.object.isRequired,
   request: PropTypes.object.isRequired,
+  
   sourceMapService: PropTypes.object,
   openLink: PropTypes.func,
 };
