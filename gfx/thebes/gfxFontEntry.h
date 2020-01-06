@@ -646,6 +646,8 @@ public:
         }
         aFontEntry->mSkipDefaultFeatureSpaceCheck = mSkipDefaultFeatureSpaceCheck;
         mAvailableFonts.AppendElement(aFontEntry);
+        mIsSimpleFamily = false; 
+                                 
     }
 
     
