@@ -741,7 +741,7 @@
          throw File.Error.noSuchFile("DirectoryIterator.prototype.next", this._path);
        }
        if (this._closed) {
-         throw StopIteration;
+         return {value: undefined, done: true};
        }
        for (let entry = UnixFile.readdir(this._dir);
             entry != null && !entry.isNull();
@@ -764,10 +764,13 @@
            isSymLink = contents.d_type == Const.DT_LNK;
          }
 
-         return new File.DirectoryIterator.Entry(isDir, isSymLink, name, this._path);
+         return {
+           value: new File.DirectoryIterator.Entry(isDir, isSymLink, name, this._path),
+           done: false
+         };
        }
        this.close();
-       throw StopIteration;
+       return {value: undefined, done: true};
      };
 
      

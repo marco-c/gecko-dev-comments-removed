@@ -824,9 +824,12 @@
            if (name == "." || name == "..") {
              continue;
            }
-           return new File.DirectoryIterator.Entry(entry, this._path);
+           return {
+             value: new File.DirectoryIterator.Entry(entry, this._path),
+             done: false
+           };
          }
-         throw StopIteration;
+         return {value: undefined, done: true};
      };
 
      File.DirectoryIterator.prototype.close = function close() {
