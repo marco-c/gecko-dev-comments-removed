@@ -166,9 +166,46 @@ public:
 
 
 
+
+
+
+
+
+  MOZ_MUST_USE
+  bool EnsureInserted(KeyType aKey, EntryType** aEntry = nullptr)
+  {
+    auto oldCount = Count();
+    EntryType* entry = PutEntry(aKey);
+    if (aEntry) {
+      *aEntry = entry;
+    }
+    return oldCount != Count();
+  }
+
+  
+
+
+
   void RemoveEntry(KeyType aKey)
   {
     mTable.Remove(EntryType::KeyToPointer(aKey));
+  }
+
+  
+
+
+
+
+
+
+  bool EnsureRemoved(KeyType aKey)
+  {
+    auto* entry = GetEntry(aKey);
+    if (entry) {
+      RemoveEntry(entry);
+      return true;
+    }
+    return false;
   }
 
   
@@ -493,7 +530,6 @@ public:
 
   nsTHashtable(nsTHashtable&&) = default;
 
-  
   using Base::GetGeneration;
   using Base::Count;
   using Base::IsEmpty;
@@ -506,6 +542,7 @@ public:
   using Base::MarkImmutable;
 #endif
 
+  
   EntryType* GetEntry(T* aKey) const
   {
     return reinterpret_cast<EntryType*>(Base::GetEntry(aKey));
@@ -528,9 +565,20 @@ public:
       Base::PutEntry(aKey, mozilla::fallible));
   }
 
+  MOZ_MUST_USE
+  bool EnsureInserted(T* aKey, EntryType** aEntry = nullptr)
+  {
+    return Base::EnsureInserted(aKey, reinterpret_cast<::detail::VoidPtrHashKey**>(aEntry));
+  }
+
   void RemoveEntry(T* aKey)
   {
     Base::RemoveEntry(aKey);
+  }
+
+  bool EnsureRemoved(T* aKey)
+  {
+    return Base::EnsureRemoved(aKey);
   }
 
   void RemoveEntry(EntryType* aEntry)
