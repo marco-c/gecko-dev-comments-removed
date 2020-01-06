@@ -574,6 +574,15 @@ public:
 
 
 
+
+  static gfxSize GetPaintedLayerScaleForFrame(nsIFrame* aFrame);
+
+  
+
+
+
+
+
   void StoreOptimizedLayerForFrame(nsDisplayItem* aItem, Layer* aLayer);
 
   static void RemoveFrameFromLayerManager(const nsIFrame* aFrame,
