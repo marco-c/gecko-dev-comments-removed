@@ -393,6 +393,10 @@ public:
     
     void ResumeReading();
 
+    
+    
+    bool EligibleForThrottling();
+
 private:
     bool mSubmittedRatePacing;
     bool mPassedRatePacing;
