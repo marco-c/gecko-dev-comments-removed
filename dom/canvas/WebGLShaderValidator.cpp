@@ -44,8 +44,8 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
     options |= SH_CLAMP_INDIRECT_ARRAY_BOUNDS;
 #endif
 
-#ifdef XP_MACOSX
     if (gl->WorkAroundDriverBugs()) {
+#ifdef XP_MACOSX
         
         
         options |= SH_UNFOLD_SHORT_CIRCUIT;
@@ -53,9 +53,14 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
         
         options |= SH_REGENERATE_STRUCT_NAMES;
         options |= SH_INIT_OUTPUT_VARIABLES;
-
-        }
 #endif
+
+        if (!gl->IsANGLE() && gl->Vendor() == gl::GLVendor::Intel) {
+            
+            
+            options |= SH_SCALARIZE_VEC_AND_MAT_CONSTRUCTOR_ARGS;
+        }
+    }
 
     if (gfxPrefs::WebGLAllANGLEOptions()) {
         options = -1;
