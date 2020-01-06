@@ -105,8 +105,18 @@ fn get_abi(cc: CXCallingConv) -> Option<abi::Abi> {
         CXCallingConv_X86FastCall => Some(abi::Abi::Fastcall),
         CXCallingConv_AAPCS => Some(abi::Abi::Aapcs),
         CXCallingConv_X86_64Win64 => Some(abi::Abi::Win64),
-        CXCallingConv_Invalid => None,
-        other => panic!("unsupported calling convention: {:?}", other),
+        _ => None,
+    }
+}
+
+
+
+
+
+
+fn macos_mangling(symbol: &mut String) {
+    if cfg!(target_os = "macos") && symbol.starts_with("_") {
+        symbol.remove(0);
     }
 }
 
@@ -127,7 +137,8 @@ pub fn cursor_mangling(ctx: &BindgenContext,
     }
 
     if let Ok(mut manglings) = cursor.cxx_manglings() {
-        if let Some(m) = manglings.pop() {
+        if let Some(mut m) = manglings.pop() {
+            macos_mangling(&mut m);
             return Some(m);
         }
     }
@@ -137,13 +148,7 @@ pub fn cursor_mangling(ctx: &BindgenContext,
         return None;
     }
 
-    
-    
-    
-    
-    if cfg!(target_os = "macos") {
-        mangling.remove(0);
-    }
+    macos_mangling(&mut mangling);
 
     if cursor.kind() == clang_sys::CXCursor_Destructor {
         
@@ -291,12 +296,11 @@ impl FunctionSig {
             try!(ty.ret_type().ok_or(ParseError::Continue))
         };
         let ret = Item::from_ty_or_ref(ty_ret_type, cursor, None, ctx);
-        let abi = get_abi(ty.call_conv());
+        let call_conv = ty.call_conv();
+        let abi = get_abi(call_conv);
 
         if abi.is_none() {
-            assert!(cursor.kind() == CXCursor_ObjCInstanceMethodDecl ||
-                    cursor.kind() == CXCursor_ObjCClassMethodDecl,
-                       "Invalid ABI for function signature")
+            warn!("Unknown calling convention: {:?}", call_conv);
         }
 
         Ok(Self::new(ret, args, ty.is_variadic(), abi))
