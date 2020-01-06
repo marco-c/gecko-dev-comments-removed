@@ -2751,47 +2751,21 @@ js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args, CompletionKind co
     return true;
 }
 
+enum class ResumeNextKind {
+    Enqueue, Reject, Resolve
+};
+
 static MOZ_MUST_USE bool
-AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj);
+AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                         ResumeNextKind kind, HandleValue valueOrException = UndefinedHandleValue,
+                         bool done = false);
 
 
 MOZ_MUST_USE bool
 js::AsyncGeneratorResolve(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                           HandleValue value, bool done)
 {
-    
-
-    
-    MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
-
-    
-    Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj));
-    if (!request)
-        return false;
-
-    
-    RootedObject resultPromise(cx, request->promise());
-
-    asyncGenObj->cacheRequest(request);
-
-    
-    RootedObject resultObj(cx, CreateIterResultObject(cx, value, done));
-    if (!resultObj)
-        return false;
-
-    RootedValue resultValue(cx, ObjectValue(*resultObj));
-
-    
-    if (!ResolvePromiseInternal(cx, resultPromise, resultValue))
-        return false;
-
-    
-    if (!AsyncGeneratorResumeNext(cx, asyncGenObj))
-        return false;
-
-    
-    return true;
+    return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve, value, done);
 }
 
 
@@ -2799,38 +2773,83 @@ MOZ_MUST_USE bool
 js::AsyncGeneratorReject(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                          HandleValue exception)
 {
-    
-
-    
-    MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
-
-    
-    Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj));
-    if (!request)
-        return false;
-
-    
-    RootedObject resultPromise(cx, request->promise());
-
-    asyncGenObj->cacheRequest(request);
-
-    
-    if (!RejectMaybeWrappedPromise(cx, resultPromise, exception))
-        return false;
-
-    
-    if (!AsyncGeneratorResumeNext(cx, asyncGenObj))
-        return false;
-
-    
-    return true;
+    return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject, exception);
 }
 
 
 static MOZ_MUST_USE bool
-AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
+AsyncGeneratorResumeNext(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+                         ResumeNextKind kind,
+                         HandleValue valueOrException ,
+                         bool done )
 {
+    switch (kind) {
+      case ResumeNextKind::Enqueue:
+        
+        break;
+      case ResumeNextKind::Reject: {
+        
+        HandleValue& exception = valueOrException;
+
+        
+
+        
+        MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
+
+        
+        Rooted<AsyncGeneratorRequest*> request(
+            cx, AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj));
+        if (!request)
+            return false;
+
+        
+        RootedObject resultPromise(cx, request->promise());
+
+        asyncGenObj->cacheRequest(request);
+
+        
+        if (!RejectMaybeWrappedPromise(cx, resultPromise, exception))
+            return false;
+
+        
+        break;
+      }
+      case ResumeNextKind::Resolve: {
+        
+        HandleValue& value = valueOrException;
+
+        
+
+        
+        MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
+
+        
+        Rooted<AsyncGeneratorRequest*> request(
+            cx, AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj));
+        if (!request)
+            return false;
+
+        
+        RootedObject resultPromise(cx, request->promise());
+
+        asyncGenObj->cacheRequest(request);
+
+        
+        RootedObject resultObj(cx, CreateIterResultObject(cx, value, done));
+        if (!resultObj)
+            return false;
+
+        RootedValue resultValue(cx, ObjectValue(*resultObj));
+
+        
+        if (!ResolvePromiseInternal(cx, resultPromise, resultValue))
+            return false;
+
+        
+        break;
+      }
+    }
+
     
 
     
@@ -2964,7 +2983,7 @@ js::AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal,
     
     if (!asyncGenObj->isExecuting()) {
         
-        if (!AsyncGeneratorResumeNext(cx, asyncGenObj))
+        if (!AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Enqueue))
             return false;
     }
 
