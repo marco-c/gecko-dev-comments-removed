@@ -1,66 +1,66 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef GFX_PREFS_H
 #define GFX_PREFS_H
 
-#include <cmath>                 // for M_PI
+#include <cmath>                 
 #include <stdint.h>
 #include <string>
 #include "mozilla/Assertions.h"
 #include "mozilla/gfx/LoggingConstants.h"
 #include "nsTArray.h"
 
-// First time gfxPrefs::GetSingleton() needs to be called on the main thread,
-// before any of the methods accessing the values are used, but after
-// the Preferences system has been initialized.
 
-// The static methods to access the preference value are safe to call
-// from any thread after that first call.
 
-// To register a preference, you need to add a line in this file using
-// the DECL_GFX_PREF macro.
-//
-// Update argument controls whether we read the preference value and save it
-// or connect with a callback.  See UpdatePolicy enum below.
-// Pref is the string with the preference name.
-// Name argument is the name of the static function to create.
-// Type is the type of the preference - bool, int32_t, uint32_t.
-// Default is the default value for the preference.
-//
-// For example this line in the .h:
-//   DECL_GFX_PREF(Once,"layers.dump",LayersDump,bool,false);
-// means that you can call
-//   bool var = gfxPrefs::LayersDump();
-// from any thread, but that you will only get the preference value of
-// "layers.dump" as it was set at the start of the session (subject to
-// note 2 below). If the value was not set, the default would be false.
-//
-// In another example, this line in the .h:
-//   DECL_GFX_PREF(Live,"gl.msaa-level",MSAALevel,uint32_t,2);
-// means that every time you call
-//   uint32_t var = gfxPrefs::MSAALevel();
-// from any thread, you will get the most up to date preference value of
-// "gl.msaa-level".  If the value is not set, the default would be 2.
 
-// Note 1: Changing a preference from Live to Once is now as simple
-// as changing the Update argument.  If your code worked before, it will
-// keep working, and behave as if the user never changes the preference.
-// Things are a bit more complicated and perhaps even dangerous when
-// going from Once to Live, or indeed setting a preference to be Live
-// in the first place, so be careful.  You need to be ready for the
-// values changing mid execution, and if you're using those preferences
-// in any setup and initialization, you may need to do extra work.
 
-// Note 2: Prefs can be set by using the corresponding Set method. For
-// example, if the accessor is Foo() then calling SetFoo(...) will update
-// the preference and also change the return value of subsequent Foo() calls.
-// This is true even for 'Once' prefs which otherwise do not change if the
-// pref is updated after initialization. Changing gfxPrefs values in content
-// processes will not affect the result in other processes. Changing gfxPrefs
-// values in the GPU process is not supported at all.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define DECL_GFX_PREF(Update, Prefname, Name, Type, Default)                  \
 public:                                                                       \
@@ -75,17 +75,17 @@ static void Set##Name##ChangeCallback(Pref::ChangeCallback aCallback) {       \
 private:                                                                      \
 PrefTemplate<UpdatePolicy::Update, Type, Get##Name##PrefDefault, Get##Name##PrefName> mPref##Name
 
-// This declares an "override" pref, which is exposed as a "bool" pref by the API,
-// but is internally stored as a tri-state int pref with three possible values:
-// - A value of 0 means that it has been force-disabled, and is exposed as a
-//   false-valued bool.
-// - A value of 1 means that it has been force-enabled, and is exposed as a
-//   true-valued bool.
-// - A value of 2 (the default) means that it returns the provided BaseValue
-//   as a boolean. The BaseValue may be a constant expression or a function.
-// If the prefs defined with this macro are listed in prefs files (e.g. all.js),
-// then they must be listed with an int value (default to 2, but you can use 0
-// or 1 if you want to force it on or off).
+
+
+
+
+
+
+
+
+
+
+
 #define DECL_OVERRIDE_PREF(Update, Prefname, Name, BaseValue)                 \
 public:                                                                       \
 static bool Name() { MOZ_ASSERT(SingletonExists());                           \
@@ -103,9 +103,9 @@ PrefTemplate<UpdatePolicy::Update, int32_t, Get##Name##PrefDefault, Get##Name##P
 
 namespace mozilla {
 namespace gfx {
-class GfxPrefValue;   // defined in PGPU.ipdl
-} // namespace gfx
-} // namespace mozilla
+class GfxPrefValue;   
+} 
+} 
 
 class gfxPrefs;
 class gfxPrefs final
@@ -113,11 +113,11 @@ class gfxPrefs final
   typedef mozilla::gfx::GfxPrefValue GfxPrefValue;
 
 private:
-  // Enums for the update policy.
+  
   enum class UpdatePolicy {
-    Skip, // Set the value to default, skip any Preferences calls
-    Once, // Evaluate the preference once, unchanged during the session
-    Live  // Evaluate the preference and set callback so it stays current/live
+    Skip, 
+    Once, 
+    Live  
   };
 
 public:
@@ -138,16 +138,16 @@ public:
 
     virtual const char* Name() const = 0;
 
-    // Returns true if the value is default, false if changed.
+    
     virtual bool HasDefaultValue() const = 0;
 
-    // Returns the pref value as a discriminated union.
+    
     virtual void GetLiveValue(GfxPrefValue* aOutValue) const = 0;
 
-    // Returns the pref value as a discriminated union.
+    
     virtual void GetCachedValue(GfxPrefValue* aOutValue) const = 0;
 
-    // Change the cached value. GfxPrefValue must be a compatible type.
+    
     virtual void SetCachedValue(const GfxPrefValue& aOutValue) = 0;
 
   protected:
@@ -163,8 +163,8 @@ public:
   }
 
 private:
-  // We split out a base class to reduce the number of virtual function
-  // instantiations that we do, which saves code size.
+  
+  
   template<class T>
   class TypedPref : public Pref
   {
@@ -177,7 +177,7 @@ private:
       CopyPrefValue(&mValue, aOutValue);
     }
     void SetCachedValue(const GfxPrefValue& aOutValue) override {
-      // This is only used in non-XPCOM processes.
+      
       MOZ_ASSERT(!IsPrefsServiceAvailable());
 
       T newValue;
@@ -201,7 +201,7 @@ private:
     T mValue;
   };
 
-  // Since we cannot use const char*, use a function that returns it.
+  
   template <UpdatePolicy Update, class T, T Default(void), const char* Prefname(void)>
   class PrefTemplate final : public TypedPref<T>
   {
@@ -210,13 +210,13 @@ private:
     PrefTemplate()
       : BaseClass(Default())
     {
-      // If not using the Preferences service, values are synced over IPC, so
-      // there's no need to register us as a Preferences observer.
+      
+      
       if (IsPrefsServiceAvailable()) {
         Register(Update, Prefname());
       }
-      // By default we only watch changes in the parent process, to communicate
-      // changes to the GPU process.
+      
+      
       if (IsParentProcess() && Update == UpdatePolicy::Live) {
         WatchChanges(Prefname(), this);
       }
@@ -264,9 +264,9 @@ private:
       T value = GetLiveValue();
       CopyPrefValue(&value, aOutValue);
     }
-    // When using the Preferences service, the change callback can be triggered
-    // *before* our cached value is updated, so we expose a method to grab the
-    // true live value.
+    
+    
+    
     T GetLiveValue() const {
       return BaseClass::GetLiveValueByName(Prefname());
     }
@@ -275,20 +275,20 @@ private:
     }
   };
 
-  // This is where DECL_GFX_PREF for each of the preferences should go.
-  // We will keep these in an alphabetical order to make it easier to see if
-  // a method accessing a pref already exists. Just add yours in the list.
+  
+  
+  
 
   DECL_GFX_PREF(Live, "accessibility.browsewithcaret", AccessibilityBrowseWithCaret, bool, false);
 
-  // The apz prefs are explained in AsyncPanZoomController.cpp
+  
   DECL_GFX_PREF(Live, "apz.allow_checkerboarding",             APZAllowCheckerboarding, bool, true);
   DECL_GFX_PREF(Live, "apz.allow_immediate_handoff",           APZAllowImmediateHandoff, bool, true);
   DECL_GFX_PREF(Live, "apz.allow_zooming",                     APZAllowZooming, bool, false);
   DECL_GFX_PREF(Live, "apz.axis_lock.breakout_angle",          APZAxisBreakoutAngle, float, float(M_PI / 8.0) /* 22.5 degrees */);
   DECL_GFX_PREF(Live, "apz.axis_lock.breakout_threshold",      APZAxisBreakoutThreshold, float, 1.0f / 32.0f);
-  DECL_GFX_PREF(Live, "apz.axis_lock.direct_pan_angle",        APZAllowedDirectPanAngle, float, float(M_PI / 3.0) /* 60 degrees */);
-  DECL_GFX_PREF(Live, "apz.axis_lock.lock_angle",              APZAxisLockAngle, float, float(M_PI / 6.0) /* 30 degrees */);
+  DECL_GFX_PREF(Live, "apz.axis_lock.direct_pan_angle",        APZAllowedDirectPanAngle, float, float(M_PI / 3.0) );
+  DECL_GFX_PREF(Live, "apz.axis_lock.lock_angle",              APZAxisLockAngle, float, float(M_PI / 6.0) );
   DECL_GFX_PREF(Live, "apz.axis_lock.mode",                    APZAxisLockMode, int32_t, 0);
   DECL_GFX_PREF(Live, "apz.content_response_timeout",          APZContentResponseTimeout, int32_t, 400);
   DECL_GFX_PREF(Live, "apz.danger_zone_x",                     APZDangerZoneX, int32_t, 50);
@@ -405,7 +405,7 @@ private:
   DECL_GFX_PREF(Once, "gfx.apitrace.enabled",                  UseApitrace, bool, false);
 #endif
 #if defined(RELEASE_OR_BETA)
-  // "Skip" means this is locked to the default value in beta and release.
+  
   DECL_GFX_PREF(Skip, "gfx.blocklist.all",                     BlocklistAll, int32_t, 0);
 #else
   DECL_GFX_PREF(Once, "gfx.blocklist.all",                     BlocklistAll, int32_t, 0);
@@ -415,7 +415,7 @@ private:
   DECL_GFX_PREF(Live, "gfx.canvas.auto_accelerate.min_seconds", CanvasAutoAccelerateMinSeconds, float, 5.0f);
   DECL_GFX_PREF(Live, "gfx.canvas.azure.accelerated",          CanvasAzureAccelerated, bool, false);
   DECL_GFX_PREF(Once, "gfx.canvas.azure.accelerated.limit",    CanvasAzureAcceleratedLimit, int32_t, 0);
-  // 0x7fff is the maximum supported xlib surface size and is more than enough for canvases.
+  
   DECL_GFX_PREF(Live, "gfx.canvas.max-size",                   MaxCanvasSize, int32_t, 0x7fff);
   DECL_GFX_PREF(Once, "gfx.canvas.skiagl.cache-items",         CanvasSkiaGLCacheItems, int32_t, 256);
   DECL_GFX_PREF(Once, "gfx.canvas.skiagl.cache-size",          CanvasSkiaGLCacheSize, int32_t, 96);
@@ -423,10 +423,10 @@ private:
 
   DECL_GFX_PREF(Live, "gfx.color_management.enablev4",         CMSEnableV4, bool, false);
   DECL_GFX_PREF(Live, "gfx.color_management.mode",             CMSMode, int32_t,-1);
-  // The zero default here should match QCMS_INTENT_DEFAULT from qcms.h
+  
   DECL_GFX_PREF(Live, "gfx.color_management.rendering_intent", CMSRenderingIntent, int32_t, 0);
   DECL_GFX_PREF(Live, "gfx.content.always-paint",              AlwaysPaint, bool, false);
-  // Size in megabytes
+  
   DECL_GFX_PREF(Once, "gfx.content.skia-font-cache-size",      SkiaContentFontCacheSize, int32_t, 10);
 
   DECL_GFX_PREF(Once, "gfx.device-reset.limit",                DeviceResetLimitCount, int32_t, 10);
@@ -445,16 +445,16 @@ private:
   DECL_GFX_PREF(Once, "gfx.e10s.hide-plugins-for-scroll",      HidePluginsForScroll, bool, true);
   DECL_GFX_PREF(Live, "gfx.layerscope.enabled",                LayerScopeEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.layerscope.port",                   LayerScopePort, int32_t, 23456);
-  // Note that        "gfx.logging.level" is defined in Logging.h.
+  
   DECL_GFX_PREF(Live, "gfx.logging.level",                     GfxLoggingLevel, int32_t, mozilla::gfx::LOG_DEFAULT);
   DECL_GFX_PREF(Once, "gfx.logging.crash.length",              GfxLoggingCrashLength, uint32_t, 16);
   DECL_GFX_PREF(Live, "gfx.logging.painted-pixel-count.enabled",GfxLoggingPaintedPixelCountEnabled, bool, false);
-  // The maximums here are quite conservative, we can tighten them if problems show up.
+  
   DECL_GFX_PREF(Once, "gfx.logging.texture-usage.enabled",     GfxLoggingTextureUsageEnabled, bool, false);
   DECL_GFX_PREF(Once, "gfx.logging.peak-texture-usage.enabled",GfxLoggingPeakTextureUsageEnabled, bool, false);
-  // Use gfxPlatform::MaxAllocSize instead of the pref directly
+  
   DECL_GFX_PREF(Once, "gfx.max-alloc-size",                    MaxAllocSizeDoNotUseDirectly, int32_t, (int32_t)500000000);
-  // Use gfxPlatform::MaxTextureSize instead of the pref directly
+  
   DECL_GFX_PREF(Once, "gfx.max-texture-size",                  MaxTextureSizeDoNotUseDirectly, int32_t, (int32_t)32767);
   DECL_GFX_PREF(Live, "gfx.partialpresent.force",              PartialPresent, int32_t, 0);
   DECL_GFX_PREF(Live, "gfx.perf-warnings.enabled",             PerfWarnings, bool, false);
@@ -464,13 +464,13 @@ private:
   DECL_GFX_PREF(Once, "gfx.text.disable-aa",                   DisableAllTextAA, bool, false);
   DECL_GFX_PREF(Live, "gfx.ycbcr.accurate-conversion",         YCbCrAccurateConversion, bool, false);
 
-  // Disable surface sharing due to issues with compatible FBConfigs on
-  // NVIDIA drivers as described in bug 1193015.
+  
+  
   DECL_GFX_PREF(Live, "gfx.use-glx-texture-from-pixmap",       UseGLXTextureFromPixmap, bool, false);
 
   DECL_GFX_PREF(Once, "gfx.use-iosurface-textures",            UseIOSurfaceTextures, bool, false);
 
-  // These times should be in milliseconds
+  
   DECL_GFX_PREF(Once, "gfx.touch.resample.delay-threshold",    TouchResampleVsyncDelayThreshold, int32_t, 20);
   DECL_GFX_PREF(Once, "gfx.touch.resample.max-predict",        TouchResampleMaxPredict, int32_t, 8);
   DECL_GFX_PREF(Once, "gfx.touch.resample.min-delta",          TouchResampleMinDelta, int32_t, 2);
@@ -483,7 +483,7 @@ private:
   DECL_GFX_PREF(Live, "gfx.webrender.profiler.enabled",        WebRenderProfilerEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.webrender.layers-free",             WebRenderLayersFree, bool, false);
   DECL_GFX_PREF(Live, "gfx.webrendest.enabled",                WebRendestEnabled, bool, false);
-  // Use vsync events generated by hardware
+  
   DECL_GFX_PREF(Once, "gfx.work-around-driver-bugs",           WorkAroundDriverBugs, bool, true);
   DECL_GFX_PREF(Once, "gfx.screen-mirroring.enabled",          ScreenMirroringEnabled, bool, false);
 
@@ -518,7 +518,7 @@ private:
   DECL_OVERRIDE_PREF(Live, "layers.advanced.background-color",        LayersAllowBackgroundColorLayers, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.background-image",        LayersAllowBackgroundImage, gfxPrefs::OverrideBase_WebRendest());
   DECL_GFX_PREF(Live, "layers.advanced.basic-layer.enabled",          LayersAdvancedBasicLayerEnabled, bool, false);
-  DECL_OVERRIDE_PREF(Live, "layers.advanced.border-layers",           LayersAllowBorderLayers, gfxPrefs::OverrideBase_WebRendest());
+  DECL_OVERRIDE_PREF(Live, "layers.advanced.border-layers",           LayersAllowBorderLayers, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.boxshadow-inset-layers",  LayersAllowInsetBoxShadow, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.boxshadow-outer-layers",  LayersAllowOuterBoxShadow, gfxPrefs::OverrideBase_WebRender());
   DECL_OVERRIDE_PREF(Live, "layers.advanced.bullet-layers",           LayersAllowBulletLayers, gfxPrefs::OverrideBase_WebRender());
@@ -540,12 +540,12 @@ private:
   DECL_GFX_PREF(Once, "layers.bufferrotation.enabled",         BufferRotationEnabled, bool, true);
   DECL_GFX_PREF(Live, "layers.child-process-shutdown",         ChildProcessShutdown, bool, true);
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
-  // If MOZ_GFX_OPTIMIZE_MOBILE is defined, we force component alpha off
-  // and ignore the preference.
+  
+  
   DECL_GFX_PREF(Skip, "layers.componentalpha.enabled",         ComponentAlphaEnabled, bool, false);
 #else
-  // If MOZ_GFX_OPTIMIZE_MOBILE is not defined, we actually take the
-  // preference value, defaulting to true.
+  
+  
   DECL_GFX_PREF(Once, "layers.componentalpha.enabled",         ComponentAlphaEnabled, bool, true);
 #endif
   DECL_GFX_PREF(Live, "layers.composer2d.enabled",             Composer2DCompositionEnabled, bool, false);
@@ -563,8 +563,8 @@ private:
   DECL_GFX_PREF(Live, "layers.dump-host-layers",               DumpHostLayers, bool, false);
 #endif
 
-  // 0 is "no change" for contrast, positive values increase it, negative values
-  // decrease it until we hit mid gray at -1 contrast, after that it gets weird.
+  
+  
   DECL_GFX_PREF(Live, "layers.effect.contrast",                LayersEffectContrast, float, 0.0f);
   DECL_GFX_PREF(Live, "layers.effect.grayscale",               LayersEffectGrayscale, bool, false);
   DECL_GFX_PREF(Live, "layers.effect.invert",                  LayersEffectInvert, bool, false);
@@ -576,7 +576,7 @@ private:
   DECL_GFX_PREF(Once, "layers.gpu-process.force-enabled",      GPUProcessForceEnabled, bool, false);
   DECL_GFX_PREF(Once, "layers.gpu-process.ipc_reply_timeout_ms", GPUProcessIPCReplyTimeoutMs, int32_t, 10000);
   DECL_GFX_PREF(Live, "layers.gpu-process.max_restarts",       GPUProcessMaxRestarts, int32_t, 1);
-  // Note: This pref will only be used if it is less than layers.gpu-process.max_restarts.
+  
   DECL_GFX_PREF(Live, "layers.gpu-process.max_restarts_with_decoder", GPUProcessMaxRestartsWithDecoder, int32_t, 0);
   DECL_GFX_PREF(Once, "layers.gpu-process.startup_timeout_ms", GPUProcessTimeoutMs, int32_t, 5000);
   DECL_GFX_PREF(Live, "layers.low-precision-buffer",           UseLowPrecisionBuffer, bool, false);
@@ -603,9 +603,9 @@ private:
   DECL_GFX_PREF(Once, "layers.stereo-video.enabled",           StereoVideoEnabled, bool, false);
   DECL_GFX_PREF(Live, "layers.force-synchronous-resize",       LayersForceSynchronousResize, bool, false);
 
-  // We allow for configurable and rectangular tile size to avoid wasting memory on devices whose
-  // screen size does not align nicely to the default tile size. Although layers can be any size,
-  // they are often the same size as the screen, especially for width.
+  
+  
+  
   DECL_GFX_PREF(Once, "layers.tile-width",                     LayersTileWidth, int32_t, 256);
   DECL_GFX_PREF(Once, "layers.tile-height",                    LayersTileHeight, int32_t, 256);
   DECL_GFX_PREF(Once, "layers.tile-initial-pool-size",         LayersTileInitialPoolSize, uint32_t, (uint32_t)50);
@@ -645,9 +645,9 @@ private:
   DECL_GFX_PREF(Live, "layout.min-active-layer-size",          LayoutMinActiveLayerSize, int, 64);
   DECL_GFX_PREF(Once, "layout.paint_rects_separately",         LayoutPaintRectsSeparately, bool, true);
 
-  // This and code dependent on it should be removed once containerless scrolling looks stable.
+  
   DECL_GFX_PREF(Once, "layout.scroll.root-frame-containers",   LayoutUseContainersForRootFrames, bool, true);
-  // This pref is to be set by test code only.
+  
   DECL_GFX_PREF(Live, "layout.scrollbars.always-layerize-track", AlwaysLayerizeScrollbarTrackTestOnly, bool, false);
   DECL_GFX_PREF(Live, "layout.smaller-painted-layers",         LayoutSmallerPaintedLayers, bool, false);
 
@@ -662,11 +662,11 @@ private:
   DECL_GFX_PREF(Live, "media.wmf.skip-blacklist", PDMWMFSkipBlacklist, bool, false);
 #endif
 
-  // These affect how line scrolls from wheel events will be accelerated.
+  
   DECL_GFX_PREF(Live, "mousewheel.acceleration.factor",        MouseWheelAccelerationFactor, int32_t, -1);
   DECL_GFX_PREF(Live, "mousewheel.acceleration.start",         MouseWheelAccelerationStart, int32_t, -1);
 
-  // This affects whether events will be routed through APZ or not.
+  
   DECL_GFX_PREF(Live, "mousewheel.system_scroll_override_on_root_content.enabled",
                                                                MouseWheelHasRootScrollDeltaOverride, bool, false);
   DECL_GFX_PREF(Live, "mousewheel.system_scroll_override_on_root_content.horizontal.factor",
@@ -688,7 +688,7 @@ private:
 
   DECL_GFX_PREF(Live, "ui.click_hold_context_menus.delay",     UiClickHoldContextMenusDelay, int32_t, 500);
 
-  // WebGL (for pref access from Worker threads)
+  
   DECL_GFX_PREF(Live, "webgl.all-angle-options",               WebGLAllANGLEOptions, bool, false);
   DECL_GFX_PREF(Live, "webgl.angle.force-d3d11",               WebGLANGLEForceD3D11, bool, false);
   DECL_GFX_PREF(Live, "webgl.angle.try-d3d11",                 WebGLANGLETryD3D11, bool, false);
@@ -734,12 +734,12 @@ private:
 
   DECL_GFX_PREF(Live, "widget.window-transforms.disabled",     WindowTransformsDisabled, bool, false);
 
-  // WARNING:
-  // Please make sure that you've added your new preference to the list above in alphabetical order.
-  // Please do not just append it to the end of the list.
+  
+  
+  
 
 public:
-  // Manage the singleton:
+  
   static gfxPrefs& GetSingleton()
   {
     MOZ_ASSERT(!sInstanceHasBeenDestroyed, "Should never recreate a gfxPrefs instance!");
@@ -760,14 +760,14 @@ private:
   static nsTArray<Pref*>* sGfxPrefList;
 
 private:
-  // The constructor cannot access GetSingleton(), since sInstance (necessarily)
-  // has not been assigned yet. Follow-up initialization that needs GetSingleton()
-  // must be added to Init().
+  
+  
+  
   void Init();
 
   static bool IsPrefsServiceAvailable();
   static bool IsParentProcess();
-  // Creating these to avoid having to include Preferences.h in the .h
+  
   static void PrefAddVarCache(bool*, const char*, bool);
   static void PrefAddVarCache(int32_t*, const char*, int32_t);
   static void PrefAddVarCache(uint32_t*, const char*, uint32_t);
@@ -785,7 +785,7 @@ private:
   static void PrefSet(const char* aPref, std::string aValue);
   static void WatchChanges(const char* aPrefname, Pref* aPref);
   static void UnwatchChanges(const char* aPrefname, Pref* aPref);
-  // Creating these to avoid having to include PGPU.h in the .h
+  
   static void CopyPrefValue(const bool* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const int32_t* aValue, GfxPrefValue* aOutValue);
   static void CopyPrefValue(const uint32_t* aValue, GfxPrefValue* aOutValue);
@@ -799,9 +799,9 @@ private:
 
   static void AssertMainThread();
 
-  // Some wrapper functions for the DECL_OVERRIDE_PREF prefs' base values, so
-  // that we don't to include all sorts of header files into this gfxPrefs.h
-  // file.
+  
+  
+  
   static bool OverrideBase_WebRender();
   static bool OverrideBase_WebRendest();
 
@@ -813,4 +813,4 @@ private:
 
 #undef DECL_GFX_PREF /* Don't need it outside of this file */
 
-#endif /* GFX_PREFS_H */
+#endif 
