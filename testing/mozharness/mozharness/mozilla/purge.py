@@ -10,7 +10,6 @@
 
 
 import os
-import sys
 import mozharness
 external_tools_path = os.path.join(
     os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__))),
@@ -48,7 +47,7 @@ class PurgeMixin(object):
         cmd = []
         if self._is_windows():
             
-            cmd.append(sys.executable))
+            cmd.append(self.query_exe('python'))
         
         cmd.extend([self.clobber_tool])
         
