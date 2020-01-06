@@ -237,8 +237,12 @@ public:
 
 
 
+
+
+
   nsresult LoadInlineStyle(nsIContent* aElement,
                            const nsAString& aBuffer,
+                           nsIPrincipal* aTriggeringPrincipal,
                            uint32_t aLineNumber,
                            const nsAString& aTitle,
                            const nsAString& aMedia,
