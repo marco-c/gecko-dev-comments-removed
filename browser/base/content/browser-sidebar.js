@@ -20,11 +20,23 @@
 
 
 var SidebarUI = {
-  browser: null,
+  
+  
+  get browser() {
+    if (this._browser)
+      return this._browser;
+    return this._browser = document.getElementById("sidebar");
+  },
   POSITION_START_PREF: "sidebar.position_start",
 
   _box: null,
-  _title: null,
+  
+  
+  get _title() {
+    if (this.__title)
+      return this.__title;
+    return this.__title = document.getElementById("sidebar-title");
+  },
   _splitter: null,
   _icon: null,
   _reversePositionButton: null,
@@ -34,8 +46,6 @@ var SidebarUI = {
 
   init() {
     this._box = document.getElementById("sidebar-box");
-    this.browser = document.getElementById("sidebar");
-    this._title = document.getElementById("sidebar-title");
     this._splitter = document.getElementById("sidebar-splitter");
     this._icon = document.getElementById("sidebar-icon");
     this._reversePositionButton = document.getElementById("sidebar-reverse-position");
