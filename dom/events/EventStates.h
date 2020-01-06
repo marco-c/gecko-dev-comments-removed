@@ -289,27 +289,6 @@ private:
 
 #define NS_EVENT_STATE_RTL NS_DEFINE_EVENT_STATE_MACRO(45)
 
-
-
-
-
-
-
-
-
-
-#define NS_EVENT_STATE_HAS_DIR_ATTR NS_DEFINE_EVENT_STATE_MACRO(46)
-
-
-#define NS_EVENT_STATE_DIR_ATTR_LTR NS_DEFINE_EVENT_STATE_MACRO(47)
-
-
-#define NS_EVENT_STATE_DIR_ATTR_RTL NS_DEFINE_EVENT_STATE_MACRO(48)
-
-
-
-#define NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO NS_DEFINE_EVENT_STATE_MACRO(49)
-
 #define NS_EVENT_STATE_AUTOFILL NS_DEFINE_EVENT_STATE_MACRO(50)
 
 #define NS_EVENT_STATE_AUTOFILL_PREVIEW NS_DEFINE_EVENT_STATE_MACRO(51)
@@ -322,11 +301,6 @@ private:
 
 
 #define DIRECTION_STATES (NS_EVENT_STATE_LTR | NS_EVENT_STATE_RTL)
-
-#define DIR_ATTR_STATES (NS_EVENT_STATE_HAS_DIR_ATTR |          \
-                         NS_EVENT_STATE_DIR_ATTR_LTR |          \
-                         NS_EVENT_STATE_DIR_ATTR_RTL |          \
-                         NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO)
 
 
 
@@ -346,7 +320,6 @@ private:
 
 #define EXTERNALLY_MANAGED_STATES (           \
   MANUALLY_MANAGED_STATES |                   \
-  DIR_ATTR_STATES |                           \
   NS_EVENT_STATE_ACTIVE |                     \
   NS_EVENT_STATE_DRAGOVER |                   \
   NS_EVENT_STATE_FOCUS |                      \

@@ -1531,10 +1531,9 @@ private:
     
     ElementHasAnimations,
     
-    
-    
-    
     NodeHasValidDirAttribute,
+    
+    NodeHasFixedDir,
     
     
     NodeHasDirAutoSet,
@@ -1542,6 +1541,8 @@ private:
     
     
     NodeHasTextNodeDirectionalityMap,
+    
+    NodeHasDirAuto,
     
     NodeAncestorHasDirAuto,
     
@@ -1636,6 +1637,17 @@ public:
   void SetHasValidDir() { SetBoolFlag(NodeHasValidDirAttribute); }
   void ClearHasValidDir() { ClearBoolFlag(NodeHasValidDirAttribute); }
   bool HasValidDir() const { return GetBoolFlag(NodeHasValidDirAttribute); }
+  void SetHasFixedDir() {
+    MOZ_ASSERT(NodeType() != nsIDOMNode::TEXT_NODE,
+               "SetHasFixedDir on text node");
+    SetBoolFlag(NodeHasFixedDir);
+  }
+  void ClearHasFixedDir() {
+    MOZ_ASSERT(NodeType() != nsIDOMNode::TEXT_NODE,
+               "ClearHasFixedDir on text node");
+    ClearBoolFlag(NodeHasFixedDir);
+  }
+  bool HasFixedDir() const { return GetBoolFlag(NodeHasFixedDir); }
   void SetHasDirAutoSet() {
     MOZ_ASSERT(NodeType() != nsIDOMNode::TEXT_NODE,
                "SetHasDirAutoSet on text node");
@@ -1664,12 +1676,16 @@ public:
     return GetBoolFlag(NodeHasTextNodeDirectionalityMap);
   }
 
+  void SetHasDirAuto() { SetBoolFlag(NodeHasDirAuto); }
+  void ClearHasDirAuto() { ClearBoolFlag(NodeHasDirAuto); }
+  bool HasDirAuto() const { return GetBoolFlag(NodeHasDirAuto); }
+
   void SetAncestorHasDirAuto() { SetBoolFlag(NodeAncestorHasDirAuto); }
   void ClearAncestorHasDirAuto() { ClearBoolFlag(NodeAncestorHasDirAuto); }
   bool AncestorHasDirAuto() const { return GetBoolFlag(NodeAncestorHasDirAuto); }
 
-  
-  inline bool NodeOrAncestorHasDirAuto() const;
+  bool NodeOrAncestorHasDirAuto() const
+    { return HasDirAuto() || AncestorHasDirAuto(); }
 
   void SetIsElementInStyleScope(bool aValue) {
     MOZ_ASSERT(IsElement(), "SetIsInStyleScope on a non-Element node");

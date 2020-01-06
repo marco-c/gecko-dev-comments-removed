@@ -1139,7 +1139,7 @@ protected:
 
   nsresult SetDefaultValueAsValue();
 
-  void SetDirectionFromValue(bool aNotify);
+  virtual void SetDirectionIfAuto(bool aAuto, bool aNotify);
 
   
 

@@ -9,6 +9,6 @@ pre {
 }
 
 
-html:not(:-moz-has-dir-attr) pre {
+html:not([dir]) pre {
   unicode-bidi: plaintext;
 }

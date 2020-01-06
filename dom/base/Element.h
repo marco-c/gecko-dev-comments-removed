@@ -307,23 +307,6 @@ public:
   
 
 
-  bool HasDirAuto() const
-  {
-    return State().HasState(NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO);
-  }
-
-  
-
-
-  bool HasFixedDir() const
-  {
-    return State().HasAtLeastOneOfStates(NS_EVENT_STATE_DIR_ATTR_LTR |
-                                         NS_EVENT_STATE_DIR_ATTR_RTL);
-  }
-
-  
-
-
   DeclarationBlock* GetInlineStyleDeclaration() const;
 
   
@@ -464,6 +447,15 @@ public:
 
   bool GetBindingURL(nsIDocument* aDocument, css::URLValue **aResult);
 
+  
+  
+  
+  
+  inline bool HasDirAuto() const {
+    return (!HasFixedDir() &&
+            (HasValidDir() || IsHTMLElement(nsGkAtoms::bdi)));
+  }
+
   Directionality GetComputedDirectionality() const;
 
   inline Element* GetFlattenedTreeParentElement() const;
@@ -590,16 +582,6 @@ protected:
     RemoveStatesSilently(aStates);
     NotifyStateChange(aStates);
   }
-  virtual void ToggleStates(EventStates aStates, bool aNotify)
-  {
-    NS_PRECONDITION(!aStates.HasAtLeastOneOfStates(INTRINSIC_STATES),
-                    "Should only be removing externally-managed states here");
-    mState ^= aStates;
-    if (aNotify) {
-      NotifyStateChange(aStates);
-    }
-  }
-
 public:
   
   void AddManuallyManagedStates(EventStates aStates)
