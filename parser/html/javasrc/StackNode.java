@@ -28,24 +28,29 @@ import nu.validator.htmlparser.annotation.Local;
 import nu.validator.htmlparser.annotation.NsUri;
 
 final class StackNode<T> {
-    final int flags;
+    
+    
+    
+    final int idxInTreeBuilder;
 
-    final @Local String name;
+    int flags;
 
-    final @Local String popName;
+    @Local String name;
 
-    final @NsUri String ns;
+    @Local String popName;
 
-    final T node;
+    @NsUri String ns;
+
+    T node;
 
     
     HtmlAttributes attributes;
 
-    private int refcount = 1;
+    private int refcount = 0;
 
     
 
-    private final TaintableLocatorImpl locator;
+    private TaintableLocatorImpl locator;
 
     public TaintableLocatorImpl getLocator() {
         return locator;
@@ -85,6 +90,11 @@ final class StackNode<T> {
 
     
 
+    StackNode(int idxInTreeBuilder) {
+        this.idxInTreeBuilder = idxInTreeBuilder;
+        this.refcount = 0;
+    }
+
     
 
 
@@ -97,12 +107,13 @@ final class StackNode<T> {
 
 
 
-    StackNode(int flags, @NsUri String ns, @Local String name, T node,
+    void setValues(int flags, @NsUri String ns, @Local String name, T node,
             @Local String popName, HtmlAttributes attributes
             
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = flags;
         this.name = name;
         this.popName = popName;
@@ -121,11 +132,12 @@ final class StackNode<T> {
 
 
 
-    StackNode(ElementName elementName, T node
-    
+    void setValues(ElementName elementName, T node
+            
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = elementName.getFlags();
         this.name = elementName.getName();
         this.popName = elementName.getName();
@@ -146,11 +158,12 @@ final class StackNode<T> {
 
 
 
-    StackNode(ElementName elementName, T node, HtmlAttributes attributes
-    
+    void setValues(ElementName elementName, T node, HtmlAttributes attributes
+            
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = elementName.getFlags();
         this.name = elementName.getName();
         this.popName = elementName.getName();
@@ -171,11 +184,12 @@ final class StackNode<T> {
 
 
 
-    StackNode(ElementName elementName, T node, @Local String popName
-    
+    void setValues(ElementName elementName, T node, @Local String popName
+            
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = elementName.getFlags();
         this.name = elementName.getName();
         this.popName = popName;
@@ -198,11 +212,12 @@ final class StackNode<T> {
 
 
 
-    StackNode(ElementName elementName, @Local String popName, T node
-    
+    void setValues(ElementName elementName, @Local String popName, T node
+            
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = prepareSvgFlags(elementName.getFlags());
         this.name = elementName.getName();
         this.popName = popName;
@@ -223,12 +238,13 @@ final class StackNode<T> {
 
 
 
-    StackNode(ElementName elementName, T node, @Local String popName,
+    void setValues(ElementName elementName, T node, @Local String popName,
             boolean markAsIntegrationPoint
             
             , TaintableLocatorImpl locator
-    
+            
     ) {
+        assert isUnused();
         this.flags = prepareMathFlags(elementName.getFlags(),
                 markAsIntegrationPoint);
         this.name = elementName.getName();
@@ -265,7 +281,7 @@ final class StackNode<T> {
     }
 
     @SuppressWarnings("unused") private void destructor() {
-        Portability.delete(attributes);
+        
     }
 
     public void dropAttributes() {
@@ -286,10 +302,21 @@ final class StackNode<T> {
         refcount++;
     }
 
-    public void release() {
+    public void release(TreeBuilder<T> owningTreeBuilder) {
         refcount--;
+        assert refcount >= 0;
         if (refcount == 0) {
-            Portability.delete(this);
+            Portability.delete(attributes);
+            if (idxInTreeBuilder >= 0) {
+                owningTreeBuilder.notifyUnusedStackNode(idxInTreeBuilder);
+            } else {
+                assert owningTreeBuilder == null;
+                Portability.delete(this);
+            }
         }
+    }
+
+    boolean isUnused() {
+        return refcount == 0;
     }
 }
