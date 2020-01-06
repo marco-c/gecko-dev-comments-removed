@@ -353,7 +353,7 @@
   
   function startTest() {
     if (global.BUGNUMBER)
-      global.print("BUGNUMBER: " + global.BUGNUMBER);
+      print("BUGNUMBER: " + global.BUGNUMBER);
   }
   global.startTest = startTest;
 
@@ -407,14 +407,6 @@
     return callStack[callStack.length - 1];
   }
   global.currentFunc = currentFunc;
-
-  
-  
-  var writeFormattedResult =
-    function writeFormattedResult(expect, actual, string, passed) {
-      print((passed ? PASSED : FAILED) + string + ' expected: ' + expect);
-    };
-  global.writeFormattedResult = writeFormattedResult;
 
   
 
@@ -689,7 +681,7 @@
     var passed = getTestCaseResult(expect, actual);
     
     if (!isReftest) {
-      writeFormattedResult(expect, actual, string, passed);
+      print((passed ? PASSED : FAILED) + string + ' expected: ' + expect);
     }
     return passed;
   }

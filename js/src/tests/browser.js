@@ -219,7 +219,6 @@
   var NodePrototypeAppendChild = global.Node.prototype.appendChild;
   var NodePrototypeTextContentSetter =
     ObjectGetOwnPropertyDescriptor(global.Node.prototype, "textContent").set;
-  var HTMLElementPrototypeSetAttribute = global.Element.prototype.setAttribute;
 
   
   
@@ -239,10 +238,6 @@
 
   function CreateElement(name) {
     return ReflectApply(DocumentCreateElement, document, [name]);
-  }
-
-  function HTMLSetAttribute(element, name, value) {
-    ReflectApply(HTMLElementPrototypeSetAttribute, element, [name, value]);
   }
 
   function SetTextContent(element, text) {
@@ -276,36 +271,6 @@
     AppendChild(printOutputContainer, h2);
   }
   global.writeHeaderToLog = writeHeaderToLog;
-
-  
-  
-  
-  function writeFormattedResult(expect, actual, string, passed) {
-    
-    string = String(string);
-
-    dump(string + "\n");
-
-    var font = CreateElement("font");
-    if (passed) {
-      HTMLSetAttribute(font, "color", "#009900");
-      SetTextContent(font, " \u00A0" + global.PASSED);
-    } else {
-      HTMLSetAttribute(font, "color", "#aa0000");
-      SetTextContent(font, "\u00A0" + global.FAILED + expect);
-    }
-
-    var b = CreateElement("b");
-    AppendChild(b, font);
-
-    var tt = CreateElement("tt");
-    SetTextContent(tt, string);
-    AppendChild(tt, b);
-
-    AppendChild(printOutputContainer, tt);
-    AppendChild(printOutputContainer, CreateElement("br"));
-  }
-  global.writeFormattedResult = writeFormattedResult;
 })(this);
 
 
