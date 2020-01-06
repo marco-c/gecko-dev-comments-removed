@@ -125,8 +125,6 @@ public:
   
   virtual void Stop() = 0;
   
-  virtual void Resume() = 0;
-  
   virtual void Revive() = 0;
   
   virtual void RemoveCallback() = 0;
@@ -275,7 +273,6 @@ public:
   virtual ~ThreadedDriver();
   void Start() override;
   void Stop() override;
-  void Resume() override;
   void Revive() override;
   void RemoveCallback() override;
   
@@ -397,7 +394,6 @@ public:
   void Destroy() override;
   void Start() override;
   void Stop() override;
-  void Resume() override;
   void Revive() override;
   void RemoveCallback() override;
   void WaitForNextIteration() override;
