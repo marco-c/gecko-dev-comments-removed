@@ -142,7 +142,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   simulateMessagesForExistingTabs() {
     
     for (const target of this.channel.messagePorts) {
-      const simulatedMsg = {target: Object.assign({simulated: true}, target)};
+      const simulatedMsg = {target};
       this.onNewTabInit(simulatedMsg);
       if (target.loaded) {
         this.onNewTabLoad(simulatedMsg);

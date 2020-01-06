@@ -25,10 +25,9 @@ function handleIDNHost(hostname) {
 
 
 
-
-function getETLD(host) {
+function getETLD(url) {
   try {
-    return Services.eTLD.getPublicSuffixFromHost(host);
+    return Services.eTLD.getPublicSuffix(Services.io.newURI(url));
   } catch (err) {
     return "";
   }
@@ -36,6 +35,7 @@ function getETLD(host) {
 
 this.getETLD = getETLD;
 
+  
 
 
 
@@ -44,30 +44,19 @@ this.getETLD = getETLD;
 
 
 
-this.shortURL = function shortURL({url}) {
-  if (!url) {
+this.shortURL = function shortURL(link) {
+  if (!link.url) {
     return "";
   }
 
   
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch (ex) {
-    
-    return url;
-  }
-
-  
-  const hostname = parsed.hostname.replace(/^www\./i, "");
-
-  
-  const eTLD = getETLD(hostname);
+  const eTLD = getETLD(link.url);
   const eTLDExtra = eTLD.length > 0 ? -(eTLD.length + 1) : Infinity;
 
   
-  return handleIDNHost(hostname.slice(0, eTLDExtra) || hostname) ||
-    parsed.pathname || parsed.href;
+  const hostname = (new URL(link.url).hostname).replace(/^www\./i, "");
+  return handleIDNHost(hostname.slice(0, eTLDExtra).toLowerCase()) ||
+    link.title || link.url;
 };
 
 this.EXPORTED_SYMBOLS = ["shortURL", "getETLD"];

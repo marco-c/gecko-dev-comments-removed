@@ -74,9 +74,8 @@ this.Screenshots = {
 
   async maybeCacheScreenshot(link, url, property, onScreenshot) {
     
-    
     const cache = link.__sharedCache;
-    if (cache.fetchingScreenshot || link[property] !== undefined) {
+    if (cache.fetchingScreenshot) {
       return;
     }
 
@@ -88,7 +87,9 @@ this.Screenshots = {
     delete cache.fetchingScreenshot;
 
     
-    cache.updateLink(property, screenshot);
-    onScreenshot(screenshot);
+    if (screenshot) {
+      cache.updateLink(property, screenshot);
+      onScreenshot(screenshot);
+    }
   }
 };

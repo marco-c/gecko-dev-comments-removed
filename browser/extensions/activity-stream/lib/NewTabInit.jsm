@@ -13,44 +13,37 @@ const {actionCreators: ac, actionTypes: at} = Cu.import("resource://activity-str
 
 this.NewTabInit = class NewTabInit {
   constructor() {
-    this._repliedEarlyTabs = new Map();
+    this._queue = new Set();
   }
   reply(target) {
-    
-    if (this._repliedEarlyTabs.get(target)) {
-      return;
-    }
-
     const action = {type: at.NEW_TAB_INITIAL_STATE, data: this.store.getState()};
     this.store.dispatch(ac.SendToContent(action, target));
-
-    
-    
-    if (this._repliedEarlyTabs.has(target)) {
-      this._repliedEarlyTabs.set(target, true);
-    }
   }
   onAction(action) {
     switch (action.type) {
       case at.NEW_TAB_STATE_REQUEST:
+        
+        if (!this.store.getState().App.strings) {
+          this._queue.add(action.meta.fromTarget);
+          return;
+        }
         this.reply(action.meta.fromTarget);
         break;
-      case at.NEW_TAB_INIT:
+      case at.LOCALE_UPDATED:
         
-        if (action.data.simulated) {
-          this._repliedEarlyTabs.set(action.data.portID, false);
+        
+        if (this._queue.size > 0 && this.store.getState().App.strings) {
+          this._queue.forEach(target => this.reply(target));
+          this._queue.clear();
         }
-
+        break;
+      case at.NEW_TAB_INIT:
         if (action.data.url === "about:home") {
           const prefs = this.store.getState().Prefs.values;
           if (prefs["aboutHome.autoFocus"] && prefs.showSearch) {
             action.data.browser.focus();
           }
         }
-        break;
-      case at.NEW_TAB_UNLOAD:
-        
-        this._repliedEarlyTabs.delete(action.meta.fromTarget);
         break;
     }
   }

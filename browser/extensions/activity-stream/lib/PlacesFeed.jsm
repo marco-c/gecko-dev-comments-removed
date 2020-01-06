@@ -101,20 +101,12 @@ class BookmarksObserver extends Observer {
 
 
 
-
-
-
   onItemAdded(...args) {
     const type = args[3];
-    const source = args[9];
-    const uri = args[4];
-    
-    
-    if (type !== PlacesUtils.bookmarks.TYPE_BOOKMARK ||
-        source === PlacesUtils.bookmarks.SOURCES.IMPORT_REPLACE ||
-        (uri.scheme !== "http" && uri.scheme !== "https")) {
+    if (type !== PlacesUtils.bookmarks.TYPE_BOOKMARK) {
       return;
     }
+    const uri = args[4];
     const bookmarkTitle = args[5];
     const dateAdded = args[6];
     const bookmarkGuid = args[7];
