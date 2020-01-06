@@ -57,6 +57,10 @@ const ConsoleOutput = createClass({
   componentWillUpdate(nextProps, nextState) {
     const outputNode = this.outputNode;
     if (!outputNode || !outputNode.lastChild) {
+      
+      
+      
+      this.shouldScrollBottom = true;
       return;
     }
 
