@@ -6,7 +6,10 @@
 
 #include "MemoryBlockCache.h"
 
+#include "MediaPrefs.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
+#include "prsystem.h"
 
 namespace mozilla {
 
@@ -14,6 +17,12 @@ namespace mozilla {
 LazyLogModule gMemoryBlockCacheLog("MemoryBlockCache");
 #define LOG(x, ...)                                                            \
   MOZ_LOG(gMemoryBlockCacheLog, LogLevel::Debug, ("%p " x, this, ##__VA_ARGS__))
+
+
+
+
+
+static Atomic<size_t> mCombinedSizes;
 
 enum MemoryBlockCacheTelemetryErrors
 {
@@ -46,6 +55,11 @@ MemoryBlockCache::MemoryBlockCache(int64_t aContentLength)
 
 MemoryBlockCache::~MemoryBlockCache()
 {
+  size_t sizes = static_cast<size_t>(mCombinedSizes -= mBuffer.Length());
+  LOG("~MemoryBlockCache() - destroying buffer of size %zu; combined sizes now "
+      "%zu",
+      mBuffer.Length(),
+      sizes);
 }
 
 bool
@@ -55,16 +69,59 @@ MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength)
   if (aContentLength == 0) {
     return true;
   }
-  size_t desiredLength = ((aContentLength - 1) / BLOCK_SIZE + 1) * BLOCK_SIZE;
-  if (mBuffer.Length() >= desiredLength) {
+  const size_t initialLength = mBuffer.Length();
+  const size_t desiredLength =
+    ((aContentLength - 1) / BLOCK_SIZE + 1) * BLOCK_SIZE;
+  if (initialLength >= desiredLength) {
     
     return true;
   }
   
-  if (!mBuffer.SetLength(desiredLength, mozilla::fallible)) {
+  const size_t extra = desiredLength - initialLength;
+  
+  
+  
+  
+  
+  
+  
+  
+  static const size_t sysmem =
+    std::max<size_t>(PR_GetPhysicalMemorySize(), 32 * 1024 * 1024);
+  const size_t limit = std::min(
+    size_t(MediaPrefs::MediaMemoryCachesCombinedLimitKb()) * 1024,
+    sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100);
+  const size_t currentSizes = static_cast<size_t>(mCombinedSizes);
+  if (currentSizes + extra > limit) {
+    LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu;"
+        " combined sizes %zu + %zu > limit %zu",
+        aContentLength,
+        initialLength,
+        extra,
+        desiredLength,
+        currentSizes,
+        extra,
+        limit);
     return false;
   }
-  mHasGrown = false;
+  if (!mBuffer.SetLength(desiredLength, mozilla::fallible)) {
+    LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu, "
+        "allocation failed",
+        aContentLength,
+        initialLength,
+        extra,
+        desiredLength);
+    return false;
+  }
+  size_t newSizes = static_cast<size_t>(mCombinedSizes += extra);
+  LOG("EnsureBufferCanContain(%zu) - buffer size %zu + %zu = %zu; combined "
+      "sizes %zu",
+      aContentLength,
+      initialLength,
+      extra,
+      mBuffer.Length(),
+      newSizes);
+  mHasGrown = true;
   return true;
 }
 

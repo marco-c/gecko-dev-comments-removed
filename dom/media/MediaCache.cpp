@@ -23,7 +23,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
-#include "prsystem.h"
 #include <algorithm>
 
 namespace mozilla {
@@ -271,23 +270,9 @@ protected:
   {
     NS_ASSERTION(NS_IsMainThread(), "Only destroy MediaCache on main thread");
     if (this == gMediaCache) {
+      LOG("~MediaCache(Global file-backed MediaCache)");
       
       gMediaCache = nullptr;
-    }
-    if (mContentLength > 0) {
-      
-      gMediaMemoryCachesCombinedSize -= mContentLength;
-      LOG("~MediaCache(Memory-backed MediaCache %p) -> combined size now %" PRIi64,
-          this,
-          gMediaMemoryCachesCombinedSize);
-    } else {
-      LOG("~MediaCache(Global file-backed MediaCache)");
-    }
-    MediaCacheFlusher::UnregisterMediaCache(this);
-    NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
-    Truncate();
-    NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
-    if (mContentLength <= 0) {
       
       LOG("MediaCache::~MediaCache(this=%p) MEDIACACHE_WATERMARK_KB=%u",
           this,
@@ -302,7 +287,13 @@ protected:
       Telemetry::Accumulate(
         Telemetry::HistogramID::MEDIACACHE_BLOCKOWNERS_WATERMARK,
         mBlockOwnersWatermark);
+    } else {
+      LOG("~MediaCache(Memory-backed MediaCache %p)", this);
     }
+    MediaCacheFlusher::UnregisterMediaCache(this);
+    NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
+    Truncate();
+    NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
 
     MOZ_COUNT_DTOR(MediaCache);
   }
@@ -403,9 +394,6 @@ protected:
   static MediaCache* gMediaCache;
 
   
-  static int64_t gMediaMemoryCachesCombinedSize;
-
-  
   
   
   const int64_t mContentLength;
@@ -442,8 +430,6 @@ protected:
 
 
  MediaCache* MediaCache::gMediaCache;
-
- int64_t MediaCache::gMediaMemoryCachesCombinedSize;
 
 NS_IMETHODIMP
 MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t const *aData)
@@ -703,26 +689,16 @@ MediaCache::CloseStreamsForPrivateBrowsing()
 MediaCache::GetMediaCache(int64_t aContentLength)
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
-  static const size_t sysmem = std::max<size_t>(PR_GetPhysicalMemorySize(), 32*1024*1024);
   if (aContentLength > 0 &&
-      aContentLength <=
-        int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024 &&
-      size_t(gMediaMemoryCachesCombinedSize + aContentLength) <=
-        std::min(
-        size_t(MediaPrefs::MediaMemoryCachesCombinedLimitKb()) * 1024,
-        sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100)) {
-    
+      aContentLength <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
     
     RefPtr<MediaBlockCacheBase> bc = new MemoryBlockCache(aContentLength);
     nsresult rv = bc->Init();
     if (NS_SUCCEEDED(rv)) {
       RefPtr<MediaCache> mc = new MediaCache(aContentLength, bc);
-      gMediaMemoryCachesCombinedSize += aContentLength;
-      LOG("GetMediaCache(%" PRIi64
-          ") -> Memory MediaCache %p, combined size %" PRIi64,
+      LOG("GetMediaCache(%" PRIi64 ") -> Memory MediaCache %p",
           aContentLength,
-          mc.get(),
-          gMediaMemoryCachesCombinedSize);
+          mc.get());
       return mc;
     }
     
