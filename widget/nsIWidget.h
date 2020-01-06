@@ -76,6 +76,7 @@ class CompositorWidgetInitData;
 } 
 namespace wr {
 class DisplayListBuilder;
+class IpcResourceUpdateQueue;
 } 
 } 
 
@@ -1294,13 +1295,15 @@ class nsIWidget : public nsISupports
 
 
     virtual void AddWindowOverlayWebRenderCommands(mozilla::layers::WebRenderBridgeChild* aWrBridge,
-                                                   mozilla::wr::DisplayListBuilder& aBuilder) {}
+                                                   mozilla::wr::DisplayListBuilder& aBuilder,
+                                                   mozilla::wr::IpcResourceUpdateQueue& aResources) {}
 
     
 
 
 
-    virtual void CleanupWebRenderWindowOverlay(mozilla::layers::WebRenderBridgeChild* aWrBridge) {}
+    virtual void CleanupWebRenderWindowOverlay(mozilla::layers::WebRenderBridgeChild* aWrBridge,
+                                               mozilla::wr::IpcResourceUpdateQueue& aResources) {}
 
     
 
