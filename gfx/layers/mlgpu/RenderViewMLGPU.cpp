@@ -62,6 +62,8 @@ RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder,
     this,
     aContainer->GetLayer(),
     Stringify(mInvalidBounds).c_str());
+
+  mContainer->SetRenderView(this);
 }
 
 RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder, RenderViewMLGPU* aParent)
@@ -72,6 +74,7 @@ RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder, RenderViewMLGPU* aParen
    mFinishedBuilding(false),
    mCurrentLayerBufferIndex(kInvalidResourceIndex),
    mCurrentMaskRectBufferIndex(kInvalidResourceIndex),
+   mCurrentDepthMode(MLGDepthTestMode::Disabled),
    mNextSortIndex(1),
    mUseDepthBuffer(gfxPrefs::AdvancedLayersEnableDepthBuffer()),
    mDepthBufferNeedsClear(false)
@@ -116,6 +119,18 @@ RenderViewMLGPU::Render()
     child->Render();
   }
 
+  
+  
+  if (mContainer && mContainer->NeedsSurfaceCopy()) {
+    return;
+  }
+  ExecuteRendering();
+}
+
+void
+RenderViewMLGPU::RenderAfterBackdropCopy()
+{
+  MOZ_ASSERT(mContainer && mContainer->NeedsSurfaceCopy());
   ExecuteRendering();
 }
 
@@ -385,26 +400,19 @@ RenderViewMLGPU::ExecuteRendering()
   if (!mTarget) {
     return;
   }
-
-  
-  
-  mDevice->UnsetPSTexture(0);
-  mDevice->SetRenderTarget(mTarget);
-  mDevice->SetViewport(IntRect(IntPoint(0, 0), mTarget->GetSize()));
-  mDevice->SetScissorRect(Some(mInvalidBounds));
-
   if (!mWorldConstants.IsValid()) {
     gfxWarning() << "Failed to allocate constant buffer for world transform";
     return;
   }
-  mDevice->SetVSConstantBuffer(kWorldConstantBufferSlot, &mWorldConstants);
+
+  SetDeviceState();
 
   
   if (mUseDepthBuffer) {
     if (mDepthBufferNeedsClear) {
       mDevice->ClearDepthBuffer(mTarget);
     }
-    mDevice->SetDepthTestMode(MLGDepthTestMode::Write);
+    SetDepthTestMode(MLGDepthTestMode::Write);
   }
 
   
@@ -415,7 +423,7 @@ RenderViewMLGPU::ExecuteRendering()
   if (mUseDepthBuffer) {
     
     
-    mDevice->SetDepthTestMode(MLGDepthTestMode::ReadOnly);
+    SetDepthTestMode(MLGDepthTestMode::ReadOnly);
   }
 
   
@@ -466,12 +474,35 @@ RenderViewMLGPU::ExecutePass(RenderPassMLGPU* aPass)
     mDevice->SetVSConstantBuffer(kMaskBufferSlot, &section);
   }
 
-  
-  if (Maybe<MLGBlendState> blendState = aPass->GetBlendState()) {
-    mDevice->SetBlendState(blendState.value());
-  }
-
   aPass->ExecuteRendering();
+}
+
+void
+RenderViewMLGPU::SetDeviceState()
+{
+  
+  
+  mDevice->UnsetPSTexture(0);
+  mDevice->SetRenderTarget(mTarget);
+  mDevice->SetViewport(IntRect(IntPoint(0, 0), mTarget->GetSize()));
+  mDevice->SetScissorRect(Some(mInvalidBounds));
+  mDevice->SetVSConstantBuffer(kWorldConstantBufferSlot, &mWorldConstants);
+}
+
+void
+RenderViewMLGPU::SetDepthTestMode(MLGDepthTestMode aMode)
+{
+  mDevice->SetDepthTestMode(aMode);
+  mCurrentDepthMode = aMode;
+}
+
+void
+RenderViewMLGPU::RestoreDeviceState()
+{
+  SetDeviceState();
+  mDevice->SetDepthTestMode(mCurrentDepthMode);
+  mCurrentLayerBufferIndex = kInvalidResourceIndex;
+  mCurrentMaskRectBufferIndex = kInvalidResourceIndex;
 }
 
 int32_t
@@ -514,6 +545,11 @@ RenderViewMLGPU::PrepareDepthBuffer()
 void
 RenderViewMLGPU::PrepareClears()
 {
+  
+  if (mContainer && mContainer->NeedsSurfaceCopy()) {
+    return;
+  }
+
   
   
   

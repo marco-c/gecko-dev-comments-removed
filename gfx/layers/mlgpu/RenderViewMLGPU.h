@@ -54,6 +54,11 @@ public:
 
   
   
+  void RenderAfterBackdropCopy();
+  void RestoreDeviceState();
+
+  
+  
   
   MLGRenderTarget* GetRenderTarget() const;
   gfx::IntSize GetSize() const;
@@ -72,6 +77,8 @@ private:
   void AddItemBackToFront(LayerMLGPU* aLayer, ItemInfo& aItem);
 
   void PrepareClears();
+  void SetDeviceState();
+  void SetDepthTestMode(MLGDepthTestMode aMode);
 
   void ExecutePass(RenderPassMLGPU* aPass);
 
@@ -123,6 +130,9 @@ private:
   
   size_t mCurrentLayerBufferIndex;
   size_t mCurrentMaskRectBufferIndex;
+
+  
+  MLGDepthTestMode mCurrentDepthMode;
 
   
   int32_t mNextSortIndex;

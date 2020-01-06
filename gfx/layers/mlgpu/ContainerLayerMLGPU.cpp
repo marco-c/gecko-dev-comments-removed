@@ -21,7 +21,8 @@ using namespace gfx;
 ContainerLayerMLGPU::ContainerLayerMLGPU(LayerManagerMLGPU* aManager)
  : ContainerLayer(aManager, nullptr),
    LayerMLGPU(aManager),
-   mInvalidateEntireSurface(false)
+   mInvalidateEntireSurface(false),
+   mSurfaceCopyNeeded(false)
 {
 }
 
@@ -35,6 +36,8 @@ ContainerLayerMLGPU::~ContainerLayerMLGPU()
 bool
 ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
 {
+  mView = nullptr;
+
   if (!UseIntermediateSurface()) {
     
     
@@ -66,6 +69,19 @@ ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder)
   if (mRenderTarget && mRenderTarget->GetSize() != mTargetSize) {
     mRenderTarget = nullptr;
   }
+
+  
+  
+  
+  
+  bool surfaceCopyNeeded = false;
+  DefaultComputeSupportsComponentAlphaChildren(&surfaceCopyNeeded);
+  if (surfaceCopyNeeded != mSurfaceCopyNeeded ||
+      surfaceCopyNeeded)
+  {
+    mInvalidateEntireSurface = true;
+  }
+  mSurfaceCopyNeeded = surfaceCopyNeeded;
 
   gfx::IntRect viewport(gfx::IntPoint(0, 0), mTargetSize);
   if (!mRenderTarget ||
