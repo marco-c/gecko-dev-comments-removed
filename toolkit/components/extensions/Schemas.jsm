@@ -2718,25 +2718,16 @@ this.Schemas = {
   },
 
   receiveMessage(msg) {
-    let {data} = msg;
     switch (msg.name) {
       case "Schema:Add":
-        
-        
-        
-        if (typeof data.get === "function") {
-          
-          [this.schemaJSON, data] = [new Map(data), this.schemaJSON];
-        }
-
-        for (let [url, schema] of data) {
+        for (let [url, schema] of msg.data) {
           this.schemaJSON.set(url, schema);
         }
         this.flushSchemas();
         break;
 
       case "Schema:Delete":
-        this.schemaJSON.delete(data.url);
+        this.schemaJSON.delete(msg.data.url);
         this.flushSchemas();
         break;
     }

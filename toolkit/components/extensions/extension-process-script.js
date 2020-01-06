@@ -380,16 +380,6 @@ ExtensionManager = {
       }
 
       case "Schema:Add": {
-        
-        
-        
-        if (typeof data.get === "function") {
-          [this.schemaJSON, data] = [data, this.schemaJSON];
-
-          Services.cpmm.initialProcessData["Extension:Schemas"] =
-            this.schemaJSON;
-        }
-
         for (let [url, schema] of data) {
           this.schemaJSON.set(url, schema);
         }
