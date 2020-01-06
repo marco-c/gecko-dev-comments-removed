@@ -116,6 +116,25 @@ protected:
 };
 
 
+
+
+class ContentClientRemote : public ContentClient
+{
+public:
+  explicit ContentClientRemote(CompositableForwarder* aForwarder)
+    : ContentClient(aForwarder)
+  {}
+
+  virtual void Updated(const nsIntRegion& aRegionToDraw,
+                       const nsIntRegion& aVisibleRegion,
+                       bool aDidSelfCopy) = 0;
+
+  ContentClientRemote* AsContentClientRemote() override {
+    return this;
+  }
+};
+
+
 class ContentClientBasic final : public ContentClient
                                , protected RotatedContentBuffer
 {
@@ -183,14 +202,14 @@ private:
 
 
 
-class ContentClientRemoteBuffer : public ContentClient
+class ContentClientRemoteBuffer : public ContentClientRemote
                                 , protected RotatedContentBuffer
 {
   using RotatedContentBuffer::BufferRect;
   using RotatedContentBuffer::BufferRotation;
 public:
   explicit ContentClientRemoteBuffer(CompositableForwarder* aForwarder)
-    : ContentClient(aForwarder)
+    : ContentClientRemote(aForwarder)
     , RotatedContentBuffer(ContainsVisibleBounds)
     , mIsNewBuffer(false)
     , mFrontAndBackBufferDiffer(false)
@@ -244,7 +263,7 @@ public:
 
   virtual void Updated(const nsIntRegion& aRegionToDraw,
                        const nsIntRegion& aVisibleRegion,
-                       bool aDidSelfCopy);
+                       bool aDidSelfCopy) override;
 
   virtual void SwapBuffers(const nsIntRegion& aFrontUpdatedRegion) override;
 

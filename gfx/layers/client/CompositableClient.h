@@ -26,7 +26,7 @@ class ImageContainer;
 class CompositableForwarder;
 class CompositableChild;
 class TextureClientRecycleAllocator;
-class ContentClientRemoteBuffer;
+class ContentClientRemote;
 
 
 
@@ -164,6 +164,8 @@ public:
 
 
   virtual void RemoveTexture(TextureClient* aTexture);
+
+  virtual ContentClientRemote* AsContentClientRemote() { return nullptr; }
 
   void InitIPDL(const CompositableHandle& aHandle);
 
