@@ -163,13 +163,6 @@ function initialize(event) {
     gDragDrop.onDrop(event);
   });
   addonPage.addEventListener("keypress", function(event) {
-    
-    
-    
-    
-    if (event.target.classList.contains("inline-options-browser")) {
-      return;
-    }
     gHeader.onKeyPress(event);
   });
 
@@ -3770,6 +3763,13 @@ var gDetailView = {
     browser.setAttribute("class", "inline-options-browser");
     browser.setAttribute("forcemessagemanager", "true");
     browser.setAttribute("selectmenulist", "ContentSelectDropdown");
+
+    
+    
+    
+    browser.addEventListener("keypress", event => {
+      event.stopPropagation();
+    });
 
     let {optionsURL} = this._addon;
     let remote = !E10SUtils.canLoadURIInProcess(optionsURL, Services.appinfo.PROCESS_TYPE_DEFAULT);
