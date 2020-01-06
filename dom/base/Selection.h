@@ -171,6 +171,8 @@ public:
   nsINode*     GetFocusNode();
   uint32_t     FocusOffset();
 
+  nsIContent*  GetChildAtAnchorOffset();
+
   
 
 
