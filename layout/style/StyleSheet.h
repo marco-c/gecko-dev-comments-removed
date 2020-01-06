@@ -120,6 +120,8 @@ public:
 
   bool IsModified() const { return mDirty; }
 
+  virtual void EnsureUniqueInner();
+
   
   enum DocumentAssociationMode {
     
@@ -213,8 +215,8 @@ public:
   
   
   
-  inline void WillDirty();
-  inline void DidDirty();
+  void WillDirty();
+  virtual void DidDirty() {}
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
   nsresult InsertRuleIntoGroup(const nsAString& aRule,
