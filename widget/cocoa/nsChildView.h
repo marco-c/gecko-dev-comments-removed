@@ -224,8 +224,6 @@ class WidgetRenderingContext;
 
 - (void)delayedTearDown;
 
-- (void)sendFocusEvent:(mozilla::EventMessage)eventMessage;
-
 - (void)handleMouseMoved:(NSEvent*)aEvent;
 
 - (void)sendMouseEnterOrExitEvent:(NSEvent*)aEvent
