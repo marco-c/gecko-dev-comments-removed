@@ -663,7 +663,7 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     if (LoadingEnabled() &&
         OwnerDoc()->IsCurrentActiveDocument()) {
       nsContentUtils::AddScriptRunner(
-          NewRunnableMethod(this, &HTMLImageElement::MaybeLoadImage));
+        NewRunnableMethod<bool>(this, &HTMLImageElement::MaybeLoadImage, false));
     }
   }
 
@@ -689,8 +689,6 @@ HTMLImageElement::UnbindFromTree(bool aDeep, bool aNullParent)
       mInDocResponsiveContent = false;
     }
   }
-
-  mLastSelectedSource = nullptr;
 
   nsImageLoadingContent::UnbindFromTree(aDeep, aNullParent);
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
@@ -724,7 +722,7 @@ HTMLImageElement::UpdateFormOwner()
 }
 
 void
-HTMLImageElement::MaybeLoadImage()
+HTMLImageElement::MaybeLoadImage(bool aAlwaysForceLoad)
 {
   
   
@@ -732,7 +730,7 @@ HTMLImageElement::MaybeLoadImage()
 
   
 
-  LoadSelectedImage(false, true, false);
+  LoadSelectedImage(aAlwaysForceLoad,  true, aAlwaysForceLoad);
 
   if (!LoadingEnabled()) {
     CancelImageRequests(true);
@@ -751,7 +749,17 @@ HTMLImageElement::NodeInfoChanged(nsIDocument* aOldDoc)
 {
   nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
   
-  mLastSelectedSource = nullptr;
+  
+  
+  if (LoadingEnabled()) {
+    
+    
+    nsContentUtils::AddScriptRunner(
+      (InResponsiveMode())
+        ? NewRunnableMethod<bool>(this, &HTMLImageElement::QueueImageLoadTask, true)
+        : NewRunnableMethod<bool>(this, &HTMLImageElement::MaybeLoadImage, true)
+    );
+  }
 }
 
 
@@ -873,7 +881,7 @@ HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
       nsContentUtils::AddScriptRunner(
-        NewRunnableMethod(dest, &HTMLImageElement::MaybeLoadImage));
+        NewRunnableMethod<bool>(dest, &HTMLImageElement::MaybeLoadImage, false));
     }
   }
 
