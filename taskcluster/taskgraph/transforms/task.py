@@ -306,7 +306,7 @@ task_description_schema = Schema({
         },
         Required('properties'): {
             'product': basestring,
-            Extra: basestring,  
+            Extra: taskref_or_string,  
         },
     }, {
         Required('implementation'): 'native-engine',
