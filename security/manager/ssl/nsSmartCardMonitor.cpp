@@ -33,9 +33,12 @@ using namespace mozilla;
 
 
 
+#define kSmartcardInsert "smartcard-insert"
+#define kSmartcardRemove "smartcard-remove"
+
 class nsTokenEventRunnable : public nsIRunnable {
 public:
-  nsTokenEventRunnable(const nsAString& aType, const nsAString& aTokenName)
+  nsTokenEventRunnable(const char* aType, const nsAString& aTokenName)
     : mType(aType)
     , mTokenName(aTokenName)
   {
@@ -47,7 +50,7 @@ public:
 private:
   virtual ~nsTokenEventRunnable() {}
 
-  nsString mType;
+  const char* mType;
   nsString mTokenName;
 };
 
@@ -63,11 +66,7 @@ nsTokenEventRunnable::Run()
   if (!observerService) {
     return NS_ERROR_FAILURE;
   }
-  
-  
-  NS_ConvertUTF16toUTF8 eventTypeUTF8(mType);
-  return observerService->NotifyObservers(nullptr, eventTypeUTF8.get(),
-                                          mTokenName.get());
+  return observerService->NotifyObservers(nullptr, mType, mTokenName.get());
 }
 
 
@@ -299,7 +298,7 @@ SmartCardMonitoringThread::GetTokenSeries(CK_SLOT_ID slotid)
 
 
 void
-SmartCardMonitoringThread::SendEvent(const nsAString& eventType,
+SmartCardMonitoringThread::SendEvent(const char* eventType,
                                      const char* tokenName)
 {
   
@@ -360,12 +359,12 @@ void SmartCardMonitoringThread::Execute()
         
         tokenName = GetTokenName(slotID);
         if (tokenName) {
-          SendEvent(NS_LITERAL_STRING("smartcard-remove"), tokenName);
+          SendEvent(kSmartcardRemove, tokenName);
         }
         tokenName = PK11_GetTokenName(slot.get());
         
         SetTokenName(slotID, tokenName, series);
-        SendEvent(NS_LITERAL_STRING("smartcard-insert"), tokenName);
+        SendEvent(kSmartcardInsert, tokenName);
       }
     } else {
       
@@ -374,7 +373,7 @@ void SmartCardMonitoringThread::Execute()
       
       
       if (tokenName) {
-        SendEvent(NS_LITERAL_STRING("smartcard-remove"), tokenName);
+        SendEvent(kSmartcardRemove, tokenName);
         
         SetTokenName(slotID, nullptr, 0);
       }
