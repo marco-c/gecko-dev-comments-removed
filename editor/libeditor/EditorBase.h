@@ -783,6 +783,14 @@ public:
   
 
 
+
+
+
+  bool IsSelectionEditable();
+
+  
+
+
   bool IsMozEditorBogusNode(nsINode* aNode)
   {
     return aNode && aNode->IsElement() &&

@@ -543,17 +543,43 @@ NS_IMETHODIMP
 EditorBase::GetIsSelectionEditable(bool* aIsSelectionEditable)
 {
   NS_ENSURE_ARG_POINTER(aIsSelectionEditable);
+  *aIsSelectionEditable = IsSelectionEditable();
+  return NS_OK;
+}
 
+bool
+EditorBase::IsSelectionEditable()
+{
   
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return false;
+  }
+
+  if (!mIsHTMLEditorClass) {
+    
+    
+    nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
+    return anchorNode && IsEditable(anchorNode);
+  }
 
   
   
-  nsCOMPtr<nsINode> anchorNode = selection->GetAnchorNode();
-  *aIsSelectionEditable = anchorNode && IsEditable(anchorNode);
+  
+  bool isSelectionEditable = selection->RangeCount() &&
+                             selection->GetAnchorNode()->IsEditable() &&
+                             selection->GetFocusNode()->IsEditable();
+  if (!isSelectionEditable) {
+    return false;
+  }
 
-  return NS_OK;
+  nsINode* commonAncestor =
+    selection->GetAnchorFocusRange()->GetCommonAncestor();
+  while (commonAncestor && !commonAncestor->IsEditable()) {
+    commonAncestor = commonAncestor->GetParentNode();
+  }
+  
+  return !!commonAncestor;
 }
 
 NS_IMETHODIMP

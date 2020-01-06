@@ -3355,36 +3355,6 @@ HTMLEditor::IsModifiableNode(nsINode* aNode)
   return !aNode || aNode->IsEditable();
 }
 
-NS_IMETHODIMP
-HTMLEditor::GetIsSelectionEditable(bool* aIsSelectionEditable)
-{
-  MOZ_ASSERT(aIsSelectionEditable);
-
-  RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-
-  
-  
-  
-  *aIsSelectionEditable = selection->RangeCount() &&
-                          selection->GetAnchorNode()->IsEditable() &&
-                          selection->GetFocusNode()->IsEditable();
-
-  if (*aIsSelectionEditable) {
-    nsINode* commonAncestor =
-      selection->GetAnchorFocusRange()->GetCommonAncestor();
-    while (commonAncestor && !commonAncestor->IsEditable()) {
-      commonAncestor = commonAncestor->GetParentNode();
-    }
-    if (!commonAncestor) {
-      
-      *aIsSelectionEditable = false;
-    }
-  }
-
-  return NS_OK;
-}
-
 static nsresult
 SetSelectionAroundHeadChildren(Selection* aSelection,
                                nsCOMPtr<nsIDocument>& aDocument)
