@@ -184,7 +184,6 @@ nsNavBookmarks::~nsNavBookmarks()
 NS_IMPL_ISUPPORTS(nsNavBookmarks
 , nsINavBookmarksService
 , nsINavHistoryObserver
-, nsIAnnotationObserver
 , nsIObserver
 , nsISupportsWeakReference
 )
@@ -209,16 +208,10 @@ nsNavBookmarks::Init()
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
-    (void)os->AddObserver(this, TOPIC_PLACES_SHUTDOWN, true);
     (void)os->AddObserver(this, TOPIC_PLACES_CONNECTION_CLOSED, true);
   }
 
   mCanNotify = true;
-
-  
-  nsAnnotationService* annosvc = nsAnnotationService::GetAnnotationService();
-  NS_ENSURE_TRUE(annosvc, NS_ERROR_OUT_OF_MEMORY);
-  annosvc->AddObserver(this);
 
   
   
@@ -688,12 +681,14 @@ nsNavBookmarks::RemoveItem(int64_t aItemId, uint16_t aSource)
   mozStorageTransaction transaction(mDB->MainConn(), false);
 
   
+  
+  
   int64_t tagsRootId = TagsRootId();
   bool isUntagging = bookmark.grandParentId == tagsRootId;
   if (bookmark.parentId != tagsRootId && !isUntagging) {
     nsAnnotationService* annosvc = nsAnnotationService::GetAnnotationService();
     NS_ENSURE_TRUE(annosvc, NS_ERROR_OUT_OF_MEMORY);
-    rv = annosvc->RemoveItemAnnotations(bookmark.id, aSource);
+    rv = annosvc->RemoveItemAnnotationsWithoutNotifying(bookmark.id);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -3092,23 +3087,28 @@ nsNavBookmarks::NotifyItemChanged(const ItemChangeData& aData)
 {
   
   MOZ_ASSERT(!aData.bookmark.guid.IsEmpty());
+
+  PRTime lastModified = aData.bookmark.lastModified;
+  if (aData.updateLastModified) {
+    lastModified = RoundedPRNow();
+    MOZ_ALWAYS_SUCCEEDS(SetItemDateInternal(
+      LAST_MODIFIED, DetermineSyncChangeDelta(aData.source),
+      aData.bookmark.id, lastModified));
+  }
+
   NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
                    nsINavBookmarkObserver,
                    OnItemChanged(aData.bookmark.id,
                                  aData.property,
                                  aData.isAnnotation,
                                  aData.newValue,
-                                 aData.bookmark.lastModified,
+                                 lastModified,
                                  aData.bookmark.type,
                                  aData.bookmark.parentId,
                                  aData.bookmark.guid,
                                  aData.bookmark.parentGuid,
                                  aData.oldValue,
-                                 
-                                 
-                                 
-                                 
-                                 SOURCE_DEFAULT));
+                                 aData.source));
 }
 
 
@@ -3120,14 +3120,7 @@ nsNavBookmarks::Observe(nsISupports *aSubject, const char *aTopic,
 {
   NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
 
-  if (strcmp(aTopic, TOPIC_PLACES_SHUTDOWN) == 0) {
-    
-    nsAnnotationService* annosvc = nsAnnotationService::GetAnnotationService();
-    if (annosvc) {
-      annosvc->RemoveObserver(this);
-    }
-  }
-  else if (strcmp(aTopic, TOPIC_PLACES_CONNECTION_CLOSED) == 0) {
+  if (strcmp(aTopic, TOPIC_PLACES_CONNECTION_CLOSED) == 0) {
     
     
     mCanNotify = false;
@@ -3304,65 +3297,5 @@ nsNavBookmarks::OnDeleteVisits(nsIURI* aURI, PRTime aVisitTime,
       new AsyncGetBookmarksForURI<ItemChangeMethod, ItemChangeData>(this, &nsNavBookmarks::NotifyItemChanged, changeData);
     notifier->Init();
   }
-  return NS_OK;
-}
-
-
-
-
-NS_IMETHODIMP
-nsNavBookmarks::OnPageAnnotationSet(nsIURI* aPage, const nsACString& aName)
-{
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsNavBookmarks::OnItemAnnotationSet(int64_t aItemId, const nsACString& aName,
-                                    uint16_t aSource, bool aDontUpdateLastModified)
-{
-  BookmarkData bookmark;
-  nsresult rv = FetchItemInfo(aItemId, bookmark);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (!aDontUpdateLastModified) {
-    bookmark.lastModified = RoundedPRNow();
-    rv = SetItemDateInternal(LAST_MODIFIED, DetermineSyncChangeDelta(aSource),
-                             bookmark.id, bookmark.lastModified);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  NOTIFY_OBSERVERS(mCanNotify, mCacheObservers, mObservers,
-                   nsINavBookmarkObserver,
-                   OnItemChanged(bookmark.id,
-                                 aName,
-                                 true,
-                                 EmptyCString(),
-                                 bookmark.lastModified,
-                                 bookmark.type,
-                                 bookmark.parentId,
-                                 bookmark.guid,
-                                 bookmark.parentGuid,
-                                 EmptyCString(),
-                                 aSource));
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsNavBookmarks::OnPageAnnotationRemoved(nsIURI* aPage, const nsACString& aName)
-{
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsNavBookmarks::OnItemAnnotationRemoved(int64_t aItemId, const nsACString& aName,
-                                        uint16_t aSource)
-{
-  
-  
-  nsresult rv = OnItemAnnotationSet(aItemId, aName, aSource, false);
-  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
