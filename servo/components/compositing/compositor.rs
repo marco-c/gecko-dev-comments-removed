@@ -158,11 +158,6 @@ pub struct IOCompositor<Window: WindowMethods> {
     zoom_time: f64,
 
     
-    
-    
-    got_load_complete_message: bool,
-
-    
     frame_tree_id: FrameTreeId,
 
     
@@ -385,7 +380,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             max_viewport_zoom: None,
             zoom_action: false,
             zoom_time: 0f64,
-            got_load_complete_message: false,
             frame_tree_id: FrameTreeId(0),
             constellation_chan: state.constellation_chan,
             time_profiler_chan: state.time_profiler_chan,
@@ -516,8 +510,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }
 
             (Msg::LoadComplete, ShutdownState::NotShuttingDown) => {
-                self.got_load_complete_message = true;
-
                 
                 if opts::get().output_file.is_some() || opts::get().exit_after_load {
                     self.composite_if_necessary(CompositingReason::Headless);
@@ -901,7 +893,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
     fn on_load_url_window_event(&mut self, url_string: String) {
         debug!("osmain: loading URL `{}`", url_string);
-        self.got_load_complete_message = false;
         match ServoUrl::parse(&url_string) {
             Ok(url) => {
                 let msg = match self.root_pipeline {
