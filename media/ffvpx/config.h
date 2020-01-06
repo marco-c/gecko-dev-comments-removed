@@ -7,8 +7,12 @@
 #ifndef MOZ_FFVPX_CONFIG_H
 #define MOZ_FFVPX_CONFIG_H
 #if defined(MOZ_FFVPX_FLACONLY)
-#include "config_flac.h"
+#if defined(MOZ_WIDGET_ANDROID)
+#include "config_android32.h"
 #else
+#include "config_flac.h"
+#endif
+#else 
 #if defined(XP_WIN)
 
 #if !defined(_MSC_VER)
