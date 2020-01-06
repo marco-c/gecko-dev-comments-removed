@@ -88,7 +88,8 @@ pub enum ScriptThreadEventCategory {
     ServiceWorkerEvent,
     EnterFullscreen,
     ExitFullscreen,
-    WebVREvent
+    WebVREvent,
+    PerformanceTimelineTask,
 }
 
 
