@@ -75,15 +75,9 @@ using mozilla::ipc::GeckoChildProcessHost;
 #include "mozilla/jni/Utils.h"
 #endif
 
-static const bool kLowRightsSubprocesses =
-  
-  
-#ifdef MOZ_WIDGET_GONK
-  true
-#else
-  false
-#endif
-  ;
+
+
+static const bool kLowRightsSubprocesses = false;
 
 static bool
 ShouldHaveDirectoryService()
@@ -755,12 +749,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
-
-#ifdef MOZ_WIDGET_GONK
-  if (const char *ldPreloadPath = getenv("LD_PRELOAD")) {
-    newEnvVars["LD_PRELOAD"] = ldPreloadPath;
-  }
-#endif 
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
