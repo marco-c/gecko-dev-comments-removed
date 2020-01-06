@@ -960,16 +960,17 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 void
 nsComputedDOMStyle::ClearCurrentStyleSources()
 {
+  
+  
+  
+  
+  if (!mResolvedStyleContext || mOuterFrame) {
+    ClearStyleContext();
+  }
+
   mOuterFrame = nullptr;
   mInnerFrame = nullptr;
   mPresShell = nullptr;
-
-  
-  
-  
-  if (!mResolvedStyleContext) {
-    mStyleContext = nullptr;
-  }
 }
 
 already_AddRefed<CSSValue>
