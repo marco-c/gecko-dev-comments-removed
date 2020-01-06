@@ -241,13 +241,18 @@ function tunnelToInnerBrowser(outer, inner) {
       let { detail } = event;
       event.preventDefault();
       let uri = Services.io.newURI(detail.url);
+      let sourceNode = event.dataTransfer.mozSourceNode;
+      let triggeringPrincipal = sourceNode
+        ? sourceNode.nodePrincipal
+        : Services.scriptSecurityManager.getSystemPrincipal();
       
       
       
       
       browserWindow.browserDOMWindow
         .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
-                 Ci.nsIBrowserDOMWindow.OPEN_NEW);
+                 Ci.nsIBrowserDOMWindow.OPEN_NEW,
+                 triggeringPrincipal);
     },
 
     stop() {

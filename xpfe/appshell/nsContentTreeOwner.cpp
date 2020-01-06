@@ -35,6 +35,7 @@
 #include "nsIMIMEInfo.h"
 #include "nsIWidget.h"
 #include "nsWindowWatcher.h"
+#include "NullPrincipal.h"
 #include "mozilla/BrowserElementParent.h"
 
 #include "nsIDOMDocument.h"
@@ -927,9 +928,11 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
     
     
     
-    return browserDOMWin->OpenURI(nullptr, aParent,
-                                  openLocation,
-                                  flags, aReturn);
+    
+    
+    RefPtr<NullPrincipal> nullPrincipal = NullPrincipal::Create();
+    return browserDOMWin->OpenURI(nullptr, aParent, openLocation,
+                                  flags, nullPrincipal, aReturn);
   }
 }
 
