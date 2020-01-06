@@ -835,7 +835,7 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
                                const uint32_t aLineNumber)
 {
   bool isJavaScript = true;
-  uint32_t version = JSVERSION_LATEST;
+  uint32_t version = JSVERSION_DEFAULT;
   nsresult rv;
 
   
@@ -861,14 +861,14 @@ XULContentSinkImpl::OpenScript(const char16_t** aAttributes,
 
           if (nsContentUtils::IsJavascriptMIMEType(mimeType)) {
               isJavaScript = true;
-              version = JSVERSION_LATEST;
+              version = JSVERSION_DEFAULT;
 
               
               nsAutoString versionName;
               rv = parser.GetParameter("version", versionName);
 
               if (NS_SUCCEEDED(rv)) {
-                  version = nsContentUtils::ParseJavascriptVersion(versionName);
+                  version = JSVERSION_UNKNOWN;
               } else if (rv != NS_ERROR_INVALID_ARG) {
                   return rv;
               }
