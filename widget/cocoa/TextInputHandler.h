@@ -813,6 +813,7 @@ public:
   virtual void OnFocusChangeInGecko(bool aFocus);
 
   void OnSelectionChange(const IMENotification& aIMENotification);
+  void OnLayoutChange();
 
   
 
