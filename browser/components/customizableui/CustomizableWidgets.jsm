@@ -358,10 +358,17 @@ const CustomizableWidgets = [
     _showTabs(paginationInfo) {
       this._showTabsPromise = this._showTabsPromise.then(() => {
         return this.__showTabs(paginationInfo);
+      }, e => {
+        Cu.reportError(e);
       });
     },
     
     __showTabs(paginationInfo) {
+      if (!this._tabsList) {
+        
+        
+        return undefined;
+      }
       let doc = this._tabsList.ownerDocument;
       return SyncedTabs.getTabClients().then(clients => {
         
