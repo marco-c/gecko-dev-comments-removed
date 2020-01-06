@@ -9367,13 +9367,15 @@ nsDocShell::NewContentViewerObj(const nsACString& aContentType,
 
   
   
-  nsresult rv = docLoaderFactory->CreateInstance("view",
-                                                 aOpenedChannel,
-                                                 aLoadGroup, aContentType,
-                                                 this,
-                                                 nullptr,
-                                                 aContentHandler,
-                                                 aViewer);
+  nsresult rv =
+    docLoaderFactory->CreateInstance("view",
+                                     aOpenedChannel,
+                                     aLoadGroup, aContentType,
+                                     this,
+                                     nullptr,
+                                     nsIDocumentLoaderFactory::STYLE_BACKEND_TYPE_NONE,
+                                     aContentHandler,
+                                     aViewer);
   NS_ENSURE_SUCCESS(rv, rv);
 
   (*aViewer)->SetContainer(this);
@@ -10290,11 +10292,8 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     }
   }
 
-  bool loadFromExternal = false;
-
   
   if (aLoadType == LOAD_NORMAL_EXTERNAL) {
-    loadFromExternal = true;
     
     bool isChrome = false;
     if (NS_SUCCEEDED(aURI->SchemeIs("chrome", &isChrome)) && isChrome) {
@@ -10797,8 +10796,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                         nsINetworkPredictor::PREDICT_LOAD, attrs, nullptr);
 
   nsCOMPtr<nsIRequest> req;
-  rv = DoURILoad(aURI, aOriginalURI, aResultPrincipalURI, aLoadReplace,
-                 loadFromExternal, aReferrer,
+  rv = DoURILoad(aURI, aOriginalURI, aResultPrincipalURI, aLoadReplace, aReferrer,
                  !(aFlags & INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER),
                  aReferrerPolicy,
                  aTriggeringPrincipal, principalToInherit, aTypeHint,
@@ -10879,7 +10877,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                       nsIURI* aOriginalURI,
                       Maybe<nsCOMPtr<nsIURI>> const& aResultPrincipalURI,
                       bool aLoadReplace,
-                      bool aLoadFromExternal,
                       nsIURI* aReferrerURI,
                       bool aSendReferrer,
                       uint32_t aReferrerPolicy,
@@ -11032,34 +11029,25 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       new LoadInfo(loadingPrincipal, aTriggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);
 
-  if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT &&
-      nsIOService::BlockToplevelDataUriNavigations()) {
-    bool isDataURI =
-      (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
-    
-    
-    
-    
-    
-    
-    
-    
-    if (isDataURI && (aLoadFromExternal || 
-        !nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal))) {
-      NS_ConvertUTF8toUTF16 specUTF16(aURI->GetSpecOrDefault());
-      if (specUTF16.Length() > 50) {
-        specUTF16.Truncate(50);
-        specUTF16.AppendLiteral("...");
+  if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+    enum TopLevelDataState {
+      DATA_NAVIGATED = 0,
+      DATA_TYPED = 1,
+      NO_DATA = 2,
+    };
+    bool isDataURI = (NS_SUCCEEDED(aURI->SchemeIs("data", &isDataURI)) && isDataURI);
+    if (isDataURI) {
+      
+      
+      
+      
+      if (aTriggeringPrincipal->GetIsCodebasePrincipal()) {
+        Telemetry::Accumulate(Telemetry::DOCUMENT_DATA_URI_LOADS, DATA_NAVIGATED);
+      } else {
+        Telemetry::Accumulate(Telemetry::DOCUMENT_DATA_URI_LOADS, DATA_TYPED);
       }
-      const char16_t* params[] = { specUTF16.get() };
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DATA_URI_BLOCKED"),
-                                      
-                                      nullptr,
-                                      nsContentUtils::eSECURITY_PROPERTIES,
-                                      "BlockTopLevelDataURINavigation",
-                                      params, ArrayLength(params));
-      return NS_OK;
+    } else {
+      Telemetry::Accumulate(Telemetry::DOCUMENT_DATA_URI_LOADS, NO_DATA);
     }
   }
 
