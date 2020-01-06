@@ -1263,7 +1263,7 @@ WebGLProgram::ValidateAfterTentativeLink(nsCString* const out_linkLog) const
     
     
     
-    if (mNextLink_TransformFeedbackVaryings.size()) {
+    if (!mNextLink_TransformFeedbackVaryings.empty()) {
         GLuint maxComponentsPerIndex = 0;
         switch (mNextLink_TransformFeedbackBufferMode) {
         case LOCAL_GL_INTERLEAVED_ATTRIBS:
@@ -1283,7 +1283,7 @@ WebGLProgram::ValidateAfterTentativeLink(nsCString* const out_linkLog) const
         std::vector<size_t> componentsPerVert;
         std::set<const WebGLActiveInfo*> alreadyUsed;
         for (const auto& wideUserName : mNextLink_TransformFeedbackVaryings) {
-            if (!componentsPerVert.size() ||
+            if (componentsPerVert.empty() ||
                 mNextLink_TransformFeedbackBufferMode == LOCAL_GL_SEPARATE_ATTRIBS)
             {
                 componentsPerVert.push_back(0);
@@ -1608,7 +1608,7 @@ webgl::LinkedProgramInfo::MapFragDataName(const nsCString& userName,
 {
     
 
-    if (!fragDataMap.size()) {
+    if (fragDataMap.empty()) {
         
         *out_mappedName = userName;
         return true;
