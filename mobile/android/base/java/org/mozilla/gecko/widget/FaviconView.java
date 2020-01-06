@@ -36,6 +36,23 @@ public class FaviconView extends ImageView {
     
     private static final int DEFAULT_CORNER_RADIUS_DP = 2;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private boolean mShouldShowImage = false;
+
     private Bitmap mIconBitmap;
 
     
@@ -110,7 +127,7 @@ public class FaviconView extends ImageView {
 
     @Override
     public void onDraw(Canvas canvas) {
-        if (isDominantBorderEnabled) {
+        if (mShouldShowImage && isDominantBorderEnabled) {
             sBackgroundPaint.setColor(mDominantColor);
 
             if (areRoundCornersEnabled) {
@@ -120,6 +137,7 @@ public class FaviconView extends ImageView {
             }
         }
 
+        
         super.onDraw(canvas);
     }
 
@@ -130,10 +148,13 @@ public class FaviconView extends ImageView {
 
     private void formatImage() {
         
-        if (mIconBitmap == null || getWidth() == 0 || getHeight() == 0) {
+        final boolean canImageBeShown = (mIconBitmap != null && getWidth() != 0 && getHeight() != 0);
+        if (!canImageBeShown) {
             showNoImage();
             return;
         }
+
+        mShouldShowImage = true;
 
         if (mScalingExpected && getWidth() != mIconBitmap.getWidth()) {
             scaleBitmap();
@@ -205,8 +226,8 @@ public class FaviconView extends ImageView {
     }
 
     private void showNoImage() {
+        mShouldShowImage = false;
         setImageDrawable(null);
-        mDominantColor = Color.TRANSPARENT;
     }
 
     
