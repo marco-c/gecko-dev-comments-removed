@@ -52,7 +52,6 @@ public:
     NS_DECL_NSIRUNNABLE
 
     static ScriptPreloader& GetSingleton();
-    static ScriptPreloader& GetChildSingleton();
 
     static ProcessType GetChildProcessType(const nsAString& remoteType);
 
@@ -66,7 +65,7 @@ public:
     void NoteScript(const nsCString& url, const nsCString& cachePath, JS::HandleScript script);
 
     
-    Result<Ok, nsresult> InitCache(const nsAString& = NS_LITERAL_STRING("scriptCache"));
+    Result<Ok, nsresult> InitCache();
 
     void Trace(JSTracer* trc);
 
@@ -108,23 +107,23 @@ private:
     public:
         CachedScript(CachedScript&&) = default;
 
-        CachedScript(ScriptPreloader& cache, const nsCString& url, const nsCString& cachePath, JSScript* script)
-            : mCache(cache)
-            , mURL(url)
+        CachedScript(const nsCString& url, const nsCString& cachePath, JSScript* script)
+            : mURL(url)
             , mCachePath(cachePath)
             , mScript(script)
             , mReadyToExecute(true)
         {}
 
-        inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
+        explicit inline CachedScript(InputBuffer& buf);
 
         ~CachedScript()
         {
+            auto& cache = GetSingleton();
 #ifdef DEBUG
-            auto hashValue = mCache->mScripts.Get(mCachePath);
+            auto hashValue = cache.mScripts.Get(mCachePath);
             MOZ_ASSERT_IF(hashValue, hashValue == this);
 #endif
-            mCache->mScripts.Remove(mCachePath);
+            cache.mScripts.Remove(mCachePath);
         }
 
         void Cancel();
@@ -172,8 +171,6 @@ private:
             }
             return size;
         }
-
-        ScriptPreloader& mCache;
 
         
         nsCString mURL;
@@ -250,7 +247,7 @@ private:
     
     
     Result<nsCOMPtr<nsIFile>, nsresult>
-    GetCacheFile(const nsAString& suffix);
+    GetCacheFile(const char* leafName);
 
     static CachedScript* FindScript(LinkedList<CachedScript>& scripts, const nsCString& cachePath);
 
@@ -301,10 +298,6 @@ private:
 
     
     static ProcessType sProcessType;
-
-    RefPtr<ScriptPreloader> mChildCache;
-
-    nsString mBaseName;
 
     nsCOMPtr<nsIFile> mProfD;
     nsCOMPtr<nsIThread> mSaveThread;
