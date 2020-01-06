@@ -169,6 +169,8 @@ struct ServoComputedValueFlags {
 #undef STYLE_STRUCT
 #undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
 
+} 
+
 
 /**
  * We want C++ to be abe to read the style struct fields of ComputedValues
@@ -180,27 +182,25 @@ struct ServoComputedValueFlags {
  *
  * <div rustbindgen nocopy></div>
  */
-struct ServoComputedValues2 {
-#define STYLE_STRUCT(name_, checkdata_cb_) ServoRawOffsetArc<Gecko##name_> name_;
+struct ServoComputedValues {
+#define STYLE_STRUCT(name_, checkdata_cb_) mozilla::ServoRawOffsetArc<mozilla::Gecko##name_> name_;
   #define STYLE_STRUCT_LIST_IGNORE_VARIABLES
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
   #undef STYLE_STRUCT_LIST_IGNORE_VARIABLES
-  ServoCustomPropertiesMap custom_properties;
-  ServoWritingMode writing_mode;
-  ServoFontComputationData font_computation_data;
+  mozilla::ServoCustomPropertiesMap custom_properties;
+  mozilla::ServoWritingMode writing_mode;
+  mozilla::ServoFontComputationData font_computation_data;
   
   
   
-  ServoRuleNode rules;
+  mozilla::ServoRuleNode rules;
   
   
   
-  ServoVisitedStyle visited_style;
-  ServoComputedValueFlags flags;
-  ~ServoComputedValues2() {} 
+  mozilla::ServoVisitedStyle visited_style;
+  mozilla::ServoComputedValueFlags flags;
+  ~ServoComputedValues() {} 
 };
-
-} 
 
 #endif 

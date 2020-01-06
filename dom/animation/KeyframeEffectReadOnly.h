@@ -46,6 +46,7 @@ struct AnimationRule;
 struct TimingParams;
 class EffectSet;
 class ServoStyleContext;
+class GeckoStyleContext;
 
 namespace dom {
 class ElementOrCSSPseudoElement;
@@ -165,9 +166,9 @@ public:
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    nsStyleContext* aStyleContext);
+                    GeckoStyleContext* aStyleContext);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ServoComputedValues* aComputedValues);
+                    const ServoStyleContext* aComputedValues);
 
   
   
@@ -196,7 +197,7 @@ public:
   
   void UpdateProperties(nsStyleContext* aStyleContext);
   
-  void UpdateProperties(const ServoComputedValues* aComputedValues);
+  void UpdateProperties(const ServoStyleContext* aComputedValues);
 
   
   
@@ -259,7 +260,7 @@ public:
   
   
   void CalculateCumulativeChangeHint(nsStyleContext* aStyleContext);
-  void CalculateCumulativeChangeHint(const ServoComputedValues* aComputedValues)
+  void CalculateCumulativeChangeHint(const ServoStyleContext* aComputedValues)
   {
   }
 
@@ -367,9 +368,9 @@ protected:
     const RefPtr<AnimValuesStyleRule>& aAnimationRule);
 
   
-  void EnsureBaseStyles(nsStyleContext* aStyleContext,
+  void EnsureBaseStyles(GeckoStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
-  void EnsureBaseStyles(const ServoComputedValues* aComputedValues,
+  void EnsureBaseStyles(const ServoStyleContext* aComputedValues,
                         const nsTArray<AnimationProperty>& aProperties);
 
   
@@ -378,14 +379,14 @@ protected:
   
   
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
-                       nsStyleContext* aStyleContext,
+                       GeckoStyleContext* aStyleContext,
                        RefPtr<nsStyleContext>& aCachedBaseStyleContext);
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
                        CSSPseudoElementType aPseudoType,
                        nsPresContext* aPresContext,
-                       const ServoComputedValues* aComputedValues,
+                       const ServoStyleContext* aComputedValues,
                        RefPtr<mozilla::ServoStyleContext>& aBaseComputedValues);
 
   Maybe<OwningAnimationTarget> mTarget;

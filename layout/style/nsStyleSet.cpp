@@ -962,10 +962,10 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
     if (PresContext()->IsDynamic() &&
         aElementForAnimation->IsInComposedDoc()) {
       
-      PresContext()->AnimationManager()->UpdateAnimations(result,
+      PresContext()->AnimationManager()->UpdateAnimations(result->AsGecko(),
                                                           aElementForAnimation);
       PresContext()->EffectCompositor()->UpdateEffectProperties(
-        result.get(), aElementForAnimation, result->GetPseudoType());
+        result->AsGecko(), aElementForAnimation, result->GetPseudoType());
 
       animRule = PresContext()->EffectCompositor()->
                    GetAnimationRule(aElementForAnimation,

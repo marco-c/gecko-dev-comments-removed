@@ -1925,11 +1925,11 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   
   
   
-  bool isServo = pseudoStyleContext->IsServo();
   bool hasServoAnimations = false;
-  if (isServo) {
-    ServoComputedValues* servoStyle = pseudoStyleContext->ComputedValues();
-    hasServoAnimations = Servo_ComputedValues_SpecifiesAnimationsOrTransitions(servoStyle);
+  ServoStyleContext* servoStyle = pseudoStyleContext->GetAsServo();
+  if (servoStyle) {
+    hasServoAnimations =
+      Servo_ComputedValues_SpecifiesAnimationsOrTransitions(servoStyle->ComputedValues());
     if (!hasServoAnimations) {
       Servo_SetExplicitStyle(container, servoStyle);
     }
@@ -1971,7 +1971,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   }
 
   
-  if (isServo) {
+  if (servoStyle) {
     if (hasServoAnimations) {
       
       
@@ -5886,8 +5886,10 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
           
           
           styleSet->StyleNewChildren(element);
+
           styleContext =
-            styleSet->ResolveStyleFor(element, nullptr, LazyComputeBehavior::Assert);
+            styleSet->ResolveStyleFor(element, styleContext->GetParentAllowServo()->AsServo(),
+                                      LazyComputeBehavior::Assert);
         } else {
           styleContext =
             ResolveStyleContext(styleContext->GetParent(), aContent, &aState);
