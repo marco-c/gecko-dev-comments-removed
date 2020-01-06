@@ -720,46 +720,52 @@ AddPseudoEntry(uint32_t aFeatures, NotNull<RacyThreadInfo*> aRacyInfo,
   MOZ_ASSERT(entry.kind() == js::ProfileEntry::Kind::CPP_NORMAL ||
              entry.kind() == js::ProfileEntry::Kind::JS_NORMAL);
 
+  const char* label = entry.label();
   const char* dynamicString = entry.dynamicString();
+  bool isChromeJSEntry = false;
   int lineno = -1;
 
-  
-  
+  if (entry.isJs()) {
+    
+    
+    
+    
+    
+    
+    if (label[0] == '\0') {
+      MOZ_ASSERT(dynamicString);
 
-  if (dynamicString) {
-    bool isChromeJSEntry = false;
-    if (entry.isJs()) {
       
       
       if (entry.script()) {
         isChromeJSEntry = IsChromeJSScript(entry.script());
-        if (!entry.pc()) {
+        if (entry.pc()) {
+          lineno = JS_PCToLineNumber(entry.script(), entry.pc());
+        } else {
           
           MOZ_ASSERT(&entry == &aRacyInfo->entries[aRacyInfo->stackSize() - 1]);
-        } else {
-          lineno = JS_PCToLineNumber(entry.script(), entry.pc());
         }
       }
+
     } else {
-      lineno = entry.line();
+      MOZ_ASSERT(strcmp(label, "js::RunScript") == 0 && !dynamicString);
     }
 
+  } else {
+    MOZ_ASSERT(entry.isCpp());
+    lineno = entry.line();
+  }
+
+  if (dynamicString) {
     
     if (ProfilerFeature::HasPrivacy(aFeatures) && !isChromeJSEntry) {
       dynamicString = "(private)";
     } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
       dynamicString = "(too long)";
     }
-
-  } else {
-    
-    
-    if (entry.isCpp()) {
-      lineno = entry.line();
-    }
   }
 
-  aCollector.CollectCodeLocation(entry.label(), dynamicString, lineno,
+  aCollector.CollectCodeLocation(label, dynamicString, lineno,
                                  Some(entry.category()));
 }
 
