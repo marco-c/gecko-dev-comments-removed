@@ -689,10 +689,6 @@ AutoEntryScript::AutoEntryScript(JSObject* aObject,
 
 AutoEntryScript::~AutoEntryScript()
 {
-  
-  
-  
-  JS_MaybeGC(cx());
 }
 
 AutoEntryScript::DocshellEntryMonitor::DocshellEntryMonitor(JSContext* aCx,
