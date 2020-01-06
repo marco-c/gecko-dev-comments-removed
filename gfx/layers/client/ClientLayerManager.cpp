@@ -507,6 +507,12 @@ ClientLayerManager::DidComposite(uint64_t aTransactionId,
 
   
   
+  
+  
+  RefPtr<ClientLayerManager> selfRef = this;
+
+  
+  
   if (aTransactionId) {
     nsIWidgetListener *listener = mWidget->GetWidgetListener();
     if (listener) {
