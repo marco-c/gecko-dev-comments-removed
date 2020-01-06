@@ -41,17 +41,25 @@ nsStyleChangeList::AppendChange(nsIFrame* aFrame, nsIContent* aContent, nsChange
              (aHint & nsChangeHint_NeedReflow),
              "Reflow hint bits set without actually asking for a reflow");
 
-  
-  
-  if (IsServo()) {
-    for (size_t i = 0; i < Length(); ++i) {
-      MOZ_ASSERT(!aContent || !((aHint | (*this)[i].mHint) & nsChangeHint_ReconstructFrame) ||
-                 (*this)[i].mContent != aContent);
-    }
-  } else {
+  if (aContent && (aHint & nsChangeHint_ReconstructFrame)) {
     
     
-    if (aContent && (aHint & nsChangeHint_ReconstructFrame)) {
+    if (IsServo()) {
+      
+      
+      
+      
+      
+      for (size_t i = 0; i < Length(); ++i) {
+        MOZ_ASSERT(aContent != (*this)[i].mContent ||
+                   !((*this)[i].mHint & nsChangeHint_ReconstructFrame),
+                   "Should not append a non-ReconstructFrame hint after \
+                   appending a ReconstructFrame hint for the same \
+                   content.");
+      }
+    } else {
+      
+      
       
       
       RemoveElementsBy([&](const nsStyleChangeData& aData) {
