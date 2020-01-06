@@ -28,7 +28,8 @@ public:
                            wr::IpcResourceUpdateQueue& aResources,
                            const StackingContextHelper& aSc) = 0;
   virtual Maybe<wr::WrImageMask> RenderMaskLayer(const StackingContextHelper& aSc,
-                                             const gfx::Matrix4x4& aTransform)
+                                                 const gfx::Matrix4x4& aTransform,
+                                                 wr::IpcResourceUpdateQueue& aResources)
   {
     MOZ_ASSERT(false);
     return Nothing();
@@ -40,11 +41,6 @@ public:
   {
     return static_cast<WebRenderLayer*>(aLayer->ImplData());
   }
-
-  Maybe<wr::ImageKey> UpdateImageKey(ImageClientSingle* aImageClient,
-                                     ImageContainer* aContainer,
-                                     Maybe<wr::ImageKey>& aOldKey,
-                                     wr::ExternalImageId& aExternalImageId);
 
   WebRenderLayerManager* WrManager();
   WebRenderBridgeChild* WrBridge();
@@ -58,7 +54,8 @@ public:
   
   
   
-  Maybe<wr::WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo);
+  Maybe<wr::WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo,
+                                          wr::IpcResourceUpdateQueue& aResources);
 
 protected:
   BoundsTransformMatrix BoundsTransform();
