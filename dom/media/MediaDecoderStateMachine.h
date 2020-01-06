@@ -520,15 +520,7 @@ private:
   }
 
   
-  void RecomputeDuration();
-
-
-  
   FrameID mCurrentFrameID;
-
-  
-  
-  Watchable<media::TimeUnit> mObservedDuration;
 
   
   media::TimeUnit mFragmentEndTime = media::TimeUnit::Invalid();
@@ -669,9 +661,6 @@ private:
 private:
   
   Mirror<media::TimeIntervals> mBuffered;
-
-  
-  Mirror<Maybe<double>> mExplicitDuration;
 
   
   Mirror<MediaDecoder::PlayState> mPlayState;
