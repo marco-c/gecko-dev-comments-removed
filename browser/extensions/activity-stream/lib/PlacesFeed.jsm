@@ -42,24 +42,11 @@ class HistoryObserver extends Observer {
 
 
 
-  async onDeleteURI(uri) {
-    
-    const {spec} = uri;
-    if (this._deletedLinks) {
-      this._deletedLinks.push(spec);
-    } else {
-      
-      this._deletedLinks = [spec];
-
-      
-      await Promise.resolve().then(() => {
-        this.dispatch({
-          type: at.PLACES_LINKS_DELETED,
-          data: this._deletedLinks
-        });
-        delete this._deletedLinks;
-      });
-    }
+  onDeleteURI(uri) {
+    this.dispatch({
+      type: at.PLACES_LINK_DELETED,
+      data: {url: uri.spec}
+    });
   }
 
   

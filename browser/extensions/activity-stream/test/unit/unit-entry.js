@@ -27,8 +27,6 @@ overrider.set({
   ContentSearchUIController: function() {}, 
   dump() {},
   fetch() {},
-  
-  Image: function() {}, 
   Preferences: FakePrefs,
   Services: {
     locale: {
