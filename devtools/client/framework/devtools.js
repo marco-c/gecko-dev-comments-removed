@@ -7,6 +7,8 @@
 const {Cu} = require("chrome");
 const Services = require("Services");
 
+const {DevToolsShim} = Cu.import("chrome://devtools-shim/content/DevToolsShim.jsm", {});
+
 
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
@@ -45,6 +47,11 @@ function DevTools() {
   
   
   this.registerDefaults();
+
+  
+  
+  
+  DevToolsShim.register(this);
 }
 
 DevTools.prototype = {
@@ -507,6 +514,10 @@ DevTools.prototype = {
     JsonView.destroy();
 
     gDevTools.unregisterDefaults();
+
+    
+    
+    DevToolsShim.unregister();
 
     
     
