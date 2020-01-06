@@ -691,8 +691,9 @@ XPC_WN_MaybeResolvingDeletePropertyStub(JSContext* cx, HandleObject obj, HandleI
 }
 
 
-#define PRE_HELPER_STUB                                                       \
-    JSObject* unwrapped = js::CheckedUnwrap(obj, false);                      \
+#define PRE_HELPER_STUB
+             \
+    RootedObject unwrapped(cx, js::CheckedUnwrap(obj, false));                \
     if (!unwrapped) {                                                         \
         JS_ReportErrorASCII(cx, "Permission denied to operate on object.");   \
         return false;                                                         \
