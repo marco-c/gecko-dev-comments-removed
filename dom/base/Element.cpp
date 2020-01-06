@@ -1621,13 +1621,12 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
 
   nsIDocument* composedDoc = GetComposedDoc();
-  if (composedDoc) {
+  if (CustomElementRegistry::IsCustomElementEnabled() && composedDoc) {
     
     
-    if (GetCustomElementData() && composedDoc->GetDocShell()) {
-      
+    if (GetCustomElementData()) {
       nsContentUtils::EnqueueLifecycleCallback(
-        composedDoc, nsIDocument::eAttached, this);
+        composedDoc, nsIDocument::eConnected, this);
     }
   }
 
@@ -2625,7 +2624,7 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
     }
   }
 
-  if (nsContentUtils::IsWebComponentsEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
     if (CustomElementData* data = GetCustomElementData()) {
       if (CustomElementDefinition* definition =
             nsContentUtils::GetElementDefinitionIfObservingAttr(this,
@@ -2929,7 +2928,7 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     }
   }
 
-  if (nsContentUtils::IsWebComponentsEnabled()) {
+  if (CustomElementRegistry::IsCustomElementEnabled()) {
     if (CustomElementData* data = GetCustomElementData()) {
       if (CustomElementDefinition* definition =
             nsContentUtils::GetElementDefinitionIfObservingAttr(this,
