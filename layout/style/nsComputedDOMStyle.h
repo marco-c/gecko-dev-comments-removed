@@ -693,7 +693,8 @@ private:
   bool GetFrameBorderRectHeight(nscoord& aHeight);
 
   
-  void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord);
+  void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord,
+                         bool aClampNegativeCalc);
   already_AddRefed<CSSValue> CreatePrimitiveValueForStyleFilter(
     const nsStyleFilter& aStyleFilter);
 
