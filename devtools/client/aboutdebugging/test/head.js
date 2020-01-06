@@ -213,7 +213,8 @@ function* installAddon({document, path, name, isWebExtension}) {
 
 function* uninstallAddon({document, id, name}) {
   let addonList = getAddonListWithAddon(document, id);
-  let addonListMutation = waitForMutation(addonList, { childList: true });
+  let addonListMutation = waitForMutation(addonList.parentNode,
+                                          { childList: true, subtree: true });
 
   
   yield new Promise(done => {
@@ -233,13 +234,18 @@ function* uninstallAddon({document, id, name}) {
     });
   });
 
-  
   yield addonListMutation;
-  let names = [...addonList.querySelectorAll(".target-name")];
-  names = names.map(element => element.textContent);
-  ok(!names.includes(name),
-    "After uninstall, the addon name disappears from the list of addons: "
-    + names);
+
+  
+  
+  if (addonList.parentNode !== null) {
+    
+    let names = [...addonList.querySelectorAll(".target-name")];
+    names = names.map(element => element.textContent);
+    ok(!names.includes(name),
+      "After uninstall, the addon name disappears from the list of addons: "
+      + names);
+  }
 }
 
 
