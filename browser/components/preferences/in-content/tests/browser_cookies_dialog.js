@@ -40,6 +40,7 @@ add_task(async function testDeleteCookie() {
 
   await waitForCondition(() => tree.view.rowCount == 0);
 
+  
   is_element_visible(content.gSubDialog._dialogs[0]._box,
     "Subdialog is visible after deleting an element");
 

@@ -39,6 +39,7 @@ function test() {
       tab.linkedBrowser.removeEventListener("load", load, true);
 
       
+      
       let doc = gBrowser.contentDocumentAsCPOW;
       gMutationObserver = new MutationObserver(function(mutations) {
         for (let mutation of mutations) {

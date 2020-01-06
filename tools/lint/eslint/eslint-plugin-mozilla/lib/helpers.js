@@ -385,11 +385,28 @@ module.exports = {
 
 
 
+  getIsFunctionNode(node) {
+    switch (node.type) {
+      case "ArrowFunctionExpression":
+      case "FunctionDeclaration":
+      case "FunctionExpression":
+        return true;
+    }
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
   getIsGlobalScope(ancestors) {
     for (let parent of ancestors) {
-      if (parent.type == "FunctionExpression" ||
-          parent.type == "FunctionDeclaration" ||
-          parent.type == "ArrowFunctionExpression") {
+      if (this.getIsFunctionNode(parent)) {
         return false;
       }
     }

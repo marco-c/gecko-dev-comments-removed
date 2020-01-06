@@ -14,15 +14,19 @@
 
 var helpers = require("../helpers");
 
-
-
 var cpows = [
-  /^gBrowser\.contentWindow$/,
-  /^gBrowser\.contentDocument$/,
-  /^gBrowser\.selectedBrowser\.contentWindow$/,
-  /^browser\.contentDocument$/,
-  /^window\.content$/
+  /^gBrowser\.contentWindow/,
+  /^gBrowser\.contentDocument/,
+  /^gBrowser\.selectedBrowser\.contentWindow/,
+  /^browser\.contentDocument/,
+  /^window\.content/
 ];
+
+
+
+var lastErrorStart;
+
+
 
 var isInContentTask = false;
 
@@ -36,11 +40,43 @@ module.exports = function(context) {
       return;
     }
 
+    
+    if (node.start === lastErrorStart) {
+      return;
+    }
+    lastErrorStart = node.start;
+
     context.report({
       node,
       message: identifier +
                " is a possible Cross Process Object Wrapper (CPOW)."
     });
+  }
+
+  function hasLocalContentVariable(node) {
+    
+    let parent = node;
+    do {
+      parent = parent.parent;
+
+      
+      if (helpers.getIsFunctionNode(parent) &&
+          context.getDeclaredVariables(parent).some(variable => variable.name === "content")) {
+        return true;
+      } else if (parent.type === "BlockStatement" || parent.type === "Program") {
+        
+        for (let item of parent.body) {
+          if (item.type === "VariableDeclaration" && item.declarations.length) {
+            for (let declaration of item.declarations) {
+              if (declaration.id && declaration.id.name === "content") {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } while (parent.parent);
+    return false;
   }
 
   function isContentTask(node) {
@@ -69,6 +105,10 @@ module.exports = function(context) {
       }
     },
 
+    Program() {
+      lastErrorStart = undefined;
+    },
+
     MemberExpression(node) {
       if (helpers.getTestType(context) != "browser") {
         return;
@@ -85,10 +125,27 @@ module.exports = function(context) {
         }
         return false;
       });
-      if (!someCpowFound && helpers.getIsGlobalScope(context.getAncestors())) {
-        if (/^content\./.test(expression)) {
-          showError(node, expression);
+
+      
+      if (!someCpowFound && /^content\./.test(expression)) {
+        
+        
+        
+        
+        
+        
+        const scopes = context.getAncestors().filter(helpers.getIsFunctionNode);
+        if (scopes.length > 1 || scopes.length === 1 &&
+            (!scopes[0].parent.callee || scopes[0].parent.callee.name !== "add_task")) {
+          return;
         }
+
+        
+        if (hasLocalContentVariable(node)) {
+          return;
+        }
+
+        showError(node, expression);
       }
     },
 
@@ -113,27 +170,9 @@ module.exports = function(context) {
       }
 
       
-      let parent = node;
-      do {
-        parent = parent.parent;
-
-        
-        if (parent.type === "FunctionDeclaration" &&
-            context.getDeclaredVariables(parent).some(variable => variable.name === "content")) {
-          return;
-        } else if (parent.type === "BlockStatement" || parent.type === "Program") {
-          
-          for (let item of parent.body) {
-            if (item.type === "VariableDeclaration" && item.declarations.length) {
-              for (let declaration of item.declarations) {
-                if (declaration.id && declaration.id.name === "content") {
-                  return;
-                }
-              }
-            }
-          }
-        }
-      } while (parent.parent);
+      if (hasLocalContentVariable(node)) {
+        return;
+      }
 
       var expression = context.getSource(node);
       showError(node, expression);

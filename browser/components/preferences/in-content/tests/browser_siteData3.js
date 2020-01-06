@@ -137,6 +137,7 @@ add_task(async function() {
   await updatePromise;
   await openSiteDataSettingsDialog();
 
+  
   let dialog = content.gSubDialog._topDialog;
   let dialogFrame = dialog._frame;
   let frameDoc = dialogFrame.contentDocument;
