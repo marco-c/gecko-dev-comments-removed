@@ -880,6 +880,10 @@ pref("dom.push.enabled", true);
 #endif
 
 
+
+pref("dom.timeout.max_consecutive_callbacks", 3);
+
+
 pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com");
 
 

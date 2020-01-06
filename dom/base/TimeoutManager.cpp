@@ -186,8 +186,8 @@ namespace {
 
 
 
-#define DEFAULT_MAX_CONSECUTIVE_CALLBACK_MILLISECONDS 4
-uint32_t gMaxConsecutiveCallbackMilliseconds;
+#define DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS 5
+uint32_t gTargetMaxConsecutiveCallbacks;
 
 
 
@@ -301,9 +301,9 @@ TimeoutManager::Initialize()
                                "dom.timeout.back_pressure_delay_minimum_ms",
                                DEFAULT_BACK_PRESSURE_DELAY_MINIMUM_MS);
 
-  Preferences::AddUintVarCache(&gMaxConsecutiveCallbackMilliseconds,
-                               "dom.timeout.max_consecutive_callback_ms",
-                               DEFAULT_MAX_CONSECUTIVE_CALLBACK_MILLISECONDS);
+  Preferences::AddUintVarCache(&gTargetMaxConsecutiveCallbacks,
+                               "dom.timeout.max_consecutive_callbacks",
+                               DEFAULT_TARGET_MAX_CONSECUTIVE_CALLBACKS);
 }
 
 uint32_t
@@ -567,6 +567,9 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
                                        nullptr,
                                        nullptr);
 
+    uint32_t numTimersToRun = 0;
+    bool targetTimerSeen = false;
+
     while (true) {
       Timeout* timeout = expiredIter.Next();
       if (!timeout || timeout->When() > deadline) {
@@ -582,6 +585,30 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
           last_expired_normal_timeout = timeout;
         } else {
           last_expired_tracking_timeout = timeout;
+        }
+
+        numTimersToRun += 1;
+
+        
+        
+        if (timeout == aTimeout) {
+          targetTimerSeen = true;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (targetTimerSeen &&
+            numTimersToRun >= gTargetMaxConsecutiveCallbacks &&
+            !mWindow.IsChromeWindow()) {
+          break;
         }
       }
 
@@ -635,13 +662,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
     mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
   }
 
-  uint32_t timeLimitMS = std::max(1u, gMaxConsecutiveCallbackMilliseconds);
-  const TimeDuration timeLimit = TimeDuration::FromMilliseconds(timeLimitMS);
-  TimeStamp start = TimeStamp::Now();
-
-  bool targetTimeoutSeen = false;
-  bool timeBudgetExhausted = false;
-
   
   
   
@@ -659,7 +679,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
                                    last_expired_tracking_timeout ?
                                      last_expired_tracking_timeout->getNext() :
                                      nullptr);
-    while (true) {
+    while (!mWindow.IsFrozen()) {
       Timeout* timeout = runIter.Next();
       MOZ_ASSERT(timeout != dummy_normal_timeout &&
                  timeout != dummy_tracking_timeout,
@@ -676,7 +696,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
         continue;
       }
 
-      MOZ_ASSERT_IF(mWindow.IsFrozen(), mWindow.IsSuspended());
       if (mWindow.IsSuspended()) {
         
         
@@ -694,38 +713,7 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
       if (!scx) {
         
         
-        
-        timeout->remove();
-        timeout->Release();
         continue;
-      }
-
-      
-      
-      
-      
-      
-      
-      if (targetTimeoutSeen) {
-
-        
-        
-        if (timeBudgetExhausted) {
-          timeout->mFiringDepth = 0;
-          continue;
-        }
-
-        
-        TimeDuration elapsed = TimeStamp::Now() - start;
-        if (elapsed >= timeLimit) {
-          timeBudgetExhausted = true;
-          timeout->mFiringDepth = 0;
-          continue;
-        }
-      }
-
-      if (timeout == aTimeout) {
-        targetTimeoutSeen = true;
       }
 
       
@@ -760,9 +748,6 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
         mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
         mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
-
-        
-        MOZ_DIAGNOSTIC_ASSERT(!HasTimeouts());
 
         return;
       }
