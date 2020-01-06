@@ -2117,16 +2117,7 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   if (!mDocument->MediaQueryLists().isEmpty()) {
     
     
-
-    
-    
-    nsTArray<RefPtr<mozilla::dom::MediaQueryList>> localMediaQueryLists;
-    for (auto* mql : mDocument->MediaQueryLists()) {
-      localMediaQueryLists.AppendElement(mql);
-    }
-
-    
-    for (auto mql : localMediaQueryLists) {
+    for (auto mql : mDocument->MediaQueryLists()) {
       nsAutoMicroTask mt;
       mql->MaybeNotify();
     }
