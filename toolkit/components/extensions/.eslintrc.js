@@ -204,9 +204,6 @@ module.exports = {
     "no-div-regex": "off",
 
     
-    "no-eval": "error",
-
-    
     "no-extend-native": "error",
 
     
@@ -329,9 +326,6 @@ module.exports = {
 
     
     "yoda": "error",
-
-    
-    "no-implied-eval": "error",
 
     
     "no-inner-declarations": "error",

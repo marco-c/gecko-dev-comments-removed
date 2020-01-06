@@ -61,9 +61,6 @@ module.exports = {
     "no-dupe-class-members": "error",
 
     
-    "no-eval": "error",
-
-    
     "no-extend-native": "error",
 
     

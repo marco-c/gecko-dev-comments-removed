@@ -7,9 +7,6 @@ module.exports = {
     
     "complexity": ["error", {"max": 60}],
 
-    
-    "no-undef": "error",
-
     "no-unused-vars": ["error", {"args": "none", "varsIgnorePattern": "^(Cc|Ci|Cr|Cu|EXPORTED_SYMBOLS)$"}],
   }
 };

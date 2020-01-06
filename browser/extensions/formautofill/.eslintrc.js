@@ -30,7 +30,7 @@ module.exports = {
       "requireReturn": false,
       "requireReturnDescription": false,
     }],
-   
+
     
     "array-bracket-spacing": ["error", "never"],
 
@@ -39,7 +39,7 @@ module.exports = {
 
     
     "space-in-parens": ["error", "never"],
-   
+
     
     "comma-style": "error",
 
@@ -57,7 +57,7 @@ module.exports = {
 
     
     "no-array-constructor": "error",
-   
+
     
     "no-unused-expressions": "error",
 
@@ -105,9 +105,6 @@ module.exports = {
     "no-control-regex": "error",
 
     
-    "no-eval": "error",
-
-    
     "no-fallthrough": "error",
 
     
@@ -144,9 +141,6 @@ module.exports = {
 
     
     "yoda": "error",
-
-    
-    "no-implied-eval": "error",
 
     
     "no-inner-declarations": "error",
