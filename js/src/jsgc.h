@@ -307,12 +307,6 @@ GetGCKindBytes(AllocKind thingKind)
 
 
 
-class AutoMaybeStartBackgroundAllocation;
-
-
-
-
-
 struct SortedArenaListSegment
 {
     Arena* head;
@@ -812,8 +806,7 @@ class ArenaLists
     inline void mergeSweptArenas(AllocKind thingKind);
 
     TenuredCell* allocateFromArena(JS::Zone* zone, AllocKind thingKind,
-                                   ShouldCheckThresholds checkThresholds,
-                                   AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc);
+                                   ShouldCheckThresholds checkThresholds);
     inline TenuredCell* allocateFromArenaInner(JS::Zone* zone, Arena* arena, AllocKind kind);
 
     friend class GCRuntime;

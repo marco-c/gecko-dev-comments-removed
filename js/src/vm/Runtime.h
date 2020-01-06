@@ -1168,12 +1168,15 @@ FreeOp::appendJitPoisonRange(const jit::JitPoisonRange& range)
 
 
 
+
+
 class MOZ_RAII AutoLockGC
 {
   public:
     explicit AutoLockGC(JSRuntime* rt
                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : runtime_(rt)
+      , startBgAlloc(false)
     {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
         lock();
@@ -1181,6 +1184,13 @@ class MOZ_RAII AutoLockGC
 
     ~AutoLockGC() {
         unlock();
+        
+
+
+
+
+        if (startBgAlloc)
+            runtime_->gc.startBackgroundAllocTaskIfIdle();
     }
 
     void lock() {
@@ -1193,6 +1203,16 @@ class MOZ_RAII AutoLockGC
         lockGuard_.reset();
     }
 
+    
+
+
+
+
+
+    void tryToStartBackgroundAllocation() {
+        startBgAlloc = true;
+    }
+
     js::LockGuard<js::Mutex>& guard() {
         return lockGuard_.ref();
     }
@@ -1201,6 +1221,10 @@ class MOZ_RAII AutoLockGC
     JSRuntime* runtime_;
     mozilla::Maybe<js::LockGuard<js::Mutex>> lockGuard_;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+    
+    
+    bool startBgAlloc;
 
     AutoLockGC(const AutoLockGC&) = delete;
     AutoLockGC& operator=(const AutoLockGC&) = delete;
