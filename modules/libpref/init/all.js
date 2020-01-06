@@ -335,10 +335,6 @@ pref("media.memory_caches_combined_limit_pc_sysmem", 5);
 
 
 
-pref("media.cache.resource-index", 8192);
-
-
-
 
 
 
@@ -368,7 +364,6 @@ pref("media.mp4.enabled", true);
 pref("media.use-blank-decoder", false);
 #ifdef MOZ_WMF
 pref("media.wmf.enabled", true);
-pref("media.wmf.decoder.thread-count", -1);
 pref("media.wmf.dxva.enabled", true);
 pref("media.wmf.dxva.d3d11.enabled", true);
 pref("media.wmf.dxva.max-videos", 8);

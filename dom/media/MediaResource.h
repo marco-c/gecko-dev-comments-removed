@@ -266,9 +266,6 @@ private:
                          uint32_t* aBytes);
 
   
-  static uint32_t SelectCacheSize(uint32_t aHint);
-
-  
   uint32_t IndexInCache(int64_t aOffsetInFile) const;
 
   

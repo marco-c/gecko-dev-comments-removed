@@ -197,9 +197,23 @@ private:
   GlobalAllocPolicy& mPolicy; 
 };
 
+static int32_t
+MediaDecoderLimitDefault()
+{
+#ifdef MOZ_WIDGET_ANDROID
+  if (jni::GetAPIVersion() < 18) {
+    
+    
+    return 1;
+  }
+#endif
+  
+  return -1;
+}
+
 GlobalAllocPolicy::GlobalAllocPolicy()
   : mMonitor("DecoderAllocPolicy::mMonitor")
-  , mDecoderLimit(MediaPrefs::MediaDecoderLimit())
+  , mDecoderLimit(MediaDecoderLimitDefault())
 {
   SystemGroup::Dispatch(
     TaskCategory::Other,
