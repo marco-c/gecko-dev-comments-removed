@@ -35,6 +35,11 @@ const TEST_PROFILE_1 = {
   email: "timbl@w3.org",
 };
 
+const TEST_PROFILE_2 = {
+  "street-address": "Some Address",
+  country: "US",
+};
+
 function expectLocalProfiles(expected) {
   let profiles = profileStorage.addresses.getAll({
     rawData: true,
@@ -42,15 +47,6 @@ function expectLocalProfiles(expected) {
   });
   expected.sort((a, b) => a.guid.localeCompare(b.guid));
   profiles.sort((a, b) => a.guid.localeCompare(b.guid));
-  let doCheckObject = (a, b) => {
-    for (let key of Object.keys(a)) {
-      if (typeof a[key] == "object") {
-        doCheckObject(a[key], b[key]);
-      } else {
-        equal(a[key], b[key]);
-      }
-    }
-  };
   try {
     deepEqual(profiles.map(p => p.guid), expected.map(p => p.guid));
     for (let i = 0; i < expected.length; i++) {
@@ -58,7 +54,7 @@ function expectLocalProfiles(expected) {
       let thisGot = profiles[i];
       
       equal(thisExpected.deleted, thisGot.deleted);
-      doCheckObject(thisExpected, thisGot);
+      ok(objectMatches(thisGot, thisExpected));
     }
   } catch (ex) {
     do_print("Comparing expected profiles:");
@@ -150,6 +146,7 @@ add_task(async function test_outgoing() {
     
     equal(engine._tracker.score, SCORE_INCREMENT_XLARGE * 2);
 
+    engine.lastSync = 0;
     await engine.sync();
 
     Assert.equal(collection.count(), 2);
@@ -191,6 +188,7 @@ add_task(async function test_incoming_new() {
     
     equal(engine._tracker.score, 0);
 
+    engine.lastSync = 0;
     await engine.sync();
 
     expectLocalProfiles([
@@ -218,6 +216,7 @@ add_task(async function test_tombstones() {
   try {
     let existingGUID = profileStorage.addresses.add(TEST_PROFILE_1);
 
+    engine.lastSync = 0;
     await engine.sync();
 
     Assert.equal(collection.count(), 1);
@@ -252,6 +251,7 @@ add_task(async function test_reconcile_both_modified_identical() {
       entry: TEST_PROFILE_1,
     }), Date.now() / 1000));
 
+    engine.lastSync = 0;
     await engine.sync();
 
     expectLocalProfiles([{guid}]);
@@ -260,7 +260,51 @@ add_task(async function test_reconcile_both_modified_identical() {
   }
 });
 
-add_task(async function test_dedupe_identical() {
+add_task(async function test_incoming_dupes() {
+  let {server, engine} = await setup();
+  try {
+    
+    
+    let guid1 = profileStorage.addresses.add(TEST_PROFILE_1);
+
+    engine.lastSync = 0;
+    await engine.sync();
+
+    
+    profileStorage.addresses.add(TEST_PROFILE_2);
+
+    
+    
+    let guid1_dupe = Utils.makeGUID();
+    server.insertWBO("foo", "addresses", new ServerWBO(guid1_dupe, encryptPayload({
+      id: guid1_dupe,
+      entry: TEST_PROFILE_1,
+    }), engine.lastSync + 10));
+    let guid2_dupe = Utils.makeGUID();
+    server.insertWBO("foo", "addresses", new ServerWBO(guid2_dupe, encryptPayload({
+      id: guid2_dupe,
+      entry: TEST_PROFILE_2,
+    }), engine.lastSync + 10));
+
+    
+    
+    await engine.sync();
+
+    expectLocalProfiles([
+      
+      
+      Object.assign({}, TEST_PROFILE_1, {guid: guid1}),
+      Object.assign({}, TEST_PROFILE_1, {guid: guid1_dupe}),
+      
+      
+      Object.assign({}, TEST_PROFILE_2, {guid: guid2_dupe}),
+    ]);
+  } finally {
+    await cleanup(server);
+  }
+});
+
+add_task(async function test_dedupe_identical_unsynced() {
   let {server, engine} = await setup();
   try {
     
@@ -274,13 +318,44 @@ add_task(async function test_dedupe_identical() {
       entry: TEST_PROFILE_1,
     }), Date.now() / 1000));
 
+    engine.lastSync = 0;
     await engine.sync();
 
+    
     
     expectLocalProfiles([
       {
         guid: remoteGuid,
       },
+    ]);
+  } finally {
+    await cleanup(server);
+  }
+});
+
+add_task(async function test_dedupe_identical_synced() {
+  let {server, engine} = await setup();
+  try {
+    
+    let localGuid = profileStorage.addresses.add(TEST_PROFILE_1);
+
+    
+    engine.lastSync = 0;
+    await engine.sync();
+
+    
+    let remoteGuid = Utils.makeGUID();
+    server.insertWBO("foo", "addresses", new ServerWBO(remoteGuid, encryptPayload({
+      id: remoteGuid,
+      entry: TEST_PROFILE_1,
+    }), engine.lastSync + 10));
+
+    await engine.sync();
+
+    
+    expectLocalProfiles([
+      {guid: localGuid},
+      {guid: remoteGuid},
     ]);
   } finally {
     await cleanup(server);
@@ -297,29 +372,32 @@ add_task(async function test_dedupe_multiple_candidates() {
     
     
 
-    let aRecord = {
+    let localRecord = {
       "given-name": "Mark",
       "family-name": "Hammond",
       "organization": "Mozilla",
       "country": "AU",
       "tel": "+12345678910",
     };
-    
-    let aGuid = profileStorage.addresses.add(aRecord);
+    let serverRecord = Object.assign({
+      "version": 1,
+    }, localRecord);
 
-    let bRecord = Cu.cloneInto(aRecord, {});
-    let bGuid = profileStorage.addresses.add(bRecord);
+    
+    let aGuid = profileStorage.addresses.add(localRecord);
+    let bGuid = profileStorage.addresses.add(localRecord);
 
     
     server.insertWBO("foo", "addresses", new ServerWBO(bGuid, encryptPayload({
       id: bGuid,
-      entry: bRecord,
+      entry: serverRecord,
     }), Date.now() / 1000));
     server.insertWBO("foo", "addresses", new ServerWBO(aGuid, encryptPayload({
       id: aGuid,
-      entry: aRecord,
+      entry: serverRecord,
     }), Date.now() / 1000));
 
+    engine.lastSync = 0;
     await engine.sync();
 
     expectLocalProfiles([

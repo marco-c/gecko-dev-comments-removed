@@ -20,42 +20,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "profileStorage",
                                   "resource://formautofill/ProfileStorage.jsm");
 
 
-
-
-function findDuplicateGUID(record) {
-  for (let profile of profileStorage.addresses.getAll()) {
-    let keys = new Set(Object.keys(record));
-    for (let key of Object.keys(profile)) {
-      keys.add(key);
-    }
-    let same = true;
-    for (let key of keys) {
-      if (!same) {
-        break;
-      }
-      if (profile.hasOwnProperty(key) && record.hasOwnProperty(key)) {
-        same = profile[key] == record[key];
-      }
-      
-    }
-    if (same) {
-      return profile.guid;
-    }
-  }
-  return null;
-}
-
-
 function sanitizeStorageObject(ob) {
-  
-  const whitelist = [
-    "guid",
-    "version",
-    "timeCreated",
-    "timeLastUsed",
-    "timeLastModified",
-    "timesUsed",
-  ];
+  if (!ob) {
+    return null;
+  }
+  const whitelist = ["timeCreated", "timeLastUsed", "timeLastModified"];
   let result = {};
   for (let key of Object.keys(ob)) {
     let origVal = ob[key];
@@ -78,14 +47,25 @@ function AutofillRecord(collection, id) {
 AutofillRecord.prototype = {
   __proto__: CryptoWrapper.prototype,
 
+  toEntry() {
+    return Object.assign({
+      guid: this.id,
+    }, this.entry);
+  },
+
+  fromEntry(entry) {
+    this.id = entry.guid;
+    this.entry = entry;
+    
+    
+    
+    delete this.entry.guid;
+  },
+
   cleartextToString() {
     
     let record = this.cleartext;
-    let result = {entry: {}};
-    if (record.entry) {
-      result.entry = sanitizeStorageObject(record.entry);
-    }
-    return JSON.stringify(result);
+    return JSON.stringify({entry: sanitizeStorageObject(record.entry)});
   },
 };
 
@@ -141,7 +121,7 @@ FormAutofillStore.prototype = {
     }
 
     
-    let localDupeID = findDuplicateGUID(remoteRecord.entry);
+    let localDupeID = this.storage.findDuplicateGUID(remoteRecord.toEntry());
     if (localDupeID) {
       this._log.trace(`Deduping local record ${localDupeID} to remote`, remoteRecord);
       
@@ -155,25 +135,22 @@ FormAutofillStore.prototype = {
     
     
     this._log.trace("Add record", remoteRecord);
-    remoteRecord.entry.guid = remoteRecord.id;
-    this.storage.add(remoteRecord.entry, {sourceSync: true});
+    let entry = remoteRecord.toEntry();
+    this.storage.add(entry, {sourceSync: true});
   },
 
   async createRecord(id, collection) {
     this._log.trace("Create record", id);
     let record = new AutofillRecord(collection, id);
-    record.entry = this.storage.get(id, {
+    let entry = this.storage.get(id, {
       noComputedFields: true,
     });
-    if (!record.entry) {
+    if (entry) {
+      record.fromEntry(entry);
+    } else {
       
       this._log.debug(`Failed to get autofill record with id "${id}", assuming deleted`);
       record.deleted = true;
-    } else {
-      
-      
-      
-      delete record.entry.guid;
     }
     return record;
   },
