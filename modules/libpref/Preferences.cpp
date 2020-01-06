@@ -1506,49 +1506,6 @@ pref_ReportParseProblem(PrefParseState& aPS,
 
 
 
-static bool
-pref_DoCallback(PrefParseState* aPS)
-{
-  PrefValue value;
-
-  switch (aPS->mVtype) {
-    case PrefType::String:
-      value.mStringVal = aPS->mVb;
-      break;
-
-    case PrefType::Int:
-      if ((aPS->mVb[0] == '-' || aPS->mVb[0] == '+') && aPS->mVb[1] == '\0') {
-        pref_ReportParseProblem(*aPS, "invalid integer value", 0, true);
-        NS_WARNING("malformed integer value");
-        return false;
-      }
-      value.mIntVal = atoi(aPS->mVb);
-      break;
-
-    case PrefType::Bool:
-      value.mBoolVal = (aPS->mVb == kTrue);
-      break;
-
-    default:
-      break;
-  }
-
-  (*aPS->mReader)(aPS->mClosure,
-                  aPS->mLb,
-                  value,
-                  aPS->mVtype,
-                  aPS->mIsDefault,
-                  aPS->mIsStickyDefault);
-  return true;
-}
-
-
-
-
-
-
-
-
 
 
 static void
@@ -1986,9 +1943,40 @@ PREF_ParseBuf(PrefParseState* aPS, const char* aBuf, int aBufLen)
       case PREF_PARSE_UNTIL_SEMICOLON:
         
         if (c == ';') {
-          if (!pref_DoCallback(aPS)) {
-            return false;
+
+          PrefValue value;
+
+          switch (aPS->mVtype) {
+            case PrefType::String:
+              value.mStringVal = aPS->mVb;
+              break;
+
+            case PrefType::Int:
+              if ((aPS->mVb[0] == '-' || aPS->mVb[0] == '+') &&
+                  aPS->mVb[1] == '\0') {
+                pref_ReportParseProblem(*aPS, "invalid integer value", 0, true);
+                NS_WARNING("malformed integer value");
+                return false;
+              }
+              value.mIntVal = atoi(aPS->mVb);
+              break;
+
+            case PrefType::Bool:
+              value.mBoolVal = (aPS->mVb == kTrue);
+              break;
+
+            default:
+              break;
           }
+
+          
+          aPS->mReader(aPS->mClosure,
+                       aPS->mLb,
+                       value,
+                       aPS->mVtype,
+                       aPS->mIsDefault,
+                       aPS->mIsStickyDefault);
+
           state = PREF_PARSE_INIT;
         } else if (c == '/') {
           aPS->mNextState = state; 
