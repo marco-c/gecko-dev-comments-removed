@@ -21,11 +21,11 @@ namespace mozilla {
 enum AudioSampleFormat
 {
   
+  AUDIO_FORMAT_SILENCE,
+  
   AUDIO_FORMAT_S16,
   
   AUDIO_FORMAT_FLOAT32,
-  
-  AUDIO_FORMAT_SILENCE,
   
 #ifdef MOZ_SAMPLE_TYPE_S16
   AUDIO_OUTPUT_FORMAT = AUDIO_FORMAT_S16
@@ -246,11 +246,11 @@ inline const void*
 AddAudioSampleOffset(const void* aBase, AudioSampleFormat aFormat,
                      int32_t aOffset)
 {
-  static_assert(AUDIO_FORMAT_S16 == 0, "Bad constant");
-  static_assert(AUDIO_FORMAT_FLOAT32 == 1, "Bad constant");
+  static_assert(AUDIO_FORMAT_S16 == 1, "Bad constant");
+  static_assert(AUDIO_FORMAT_FLOAT32 == 2, "Bad constant");
   MOZ_ASSERT(aFormat == AUDIO_FORMAT_S16 || aFormat == AUDIO_FORMAT_FLOAT32);
 
-  return static_cast<const uint8_t*>(aBase) + (aFormat + 1)*2*aOffset;
+  return static_cast<const uint8_t*>(aBase) + aFormat*2*aOffset;
 }
 
 } 
