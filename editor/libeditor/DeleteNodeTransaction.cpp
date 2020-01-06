@@ -66,7 +66,7 @@ DeleteNodeTransaction::DoTransaction()
   
   
   if (mRangeUpdater) {
-    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete->AsDOMNode());
+    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete);
   }
 
   ErrorResult error;
@@ -96,7 +96,7 @@ DeleteNodeTransaction::RedoTransaction()
   }
 
   if (mRangeUpdater) {
-    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete->AsDOMNode());
+    mRangeUpdater->SelAdjDeleteNode(mNodeToDelete);
   }
 
   ErrorResult error;
