@@ -20,6 +20,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
 const kStateActive = 0x00000001; 
 const kStateHover = 0x00000004; 
 
+const SUPPORTED_PROPERTIES = [
+  "color",
+  "background-color",
+  "text-shadow",
+];
+
 
 
 
@@ -359,7 +365,9 @@ this.SelectContentHelper.prototype = {
         }
         break;
       case "transitionend":
-        this._update();
+        if (SUPPORTED_PROPERTIES.indexOf(event.propertyName) != -1) {
+          this._updateTimer.arm();
+        }
         break;
     }
   }
@@ -390,6 +398,10 @@ function buildOptionListForChildren(node) {
 
       let cs = getComputedStyles(child);
 
+      
+      
+      
+      
       let info = {
         index: child.index,
         tagName,
