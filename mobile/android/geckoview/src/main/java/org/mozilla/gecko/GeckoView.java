@@ -113,7 +113,7 @@ public class GeckoView extends LayerView {
                                            message.getInt("screenX"),
                                            message.getInt("screenY"),
                                            message.getString("uri"),
-                                           message.getString("imageSrc"));
+                                           message.getString("elementSrc"));
                 } else if ("GeckoView:DOMTitleChanged".equals(event)) {
                     listener.onTitleChange(GeckoView.this,
                                            message.getString("title"));
@@ -1310,7 +1310,7 @@ public class GeckoView extends LayerView {
 
 
         void onContextMenu(GeckoView view, int screenX, int screenY,
-                           String uri, String imageSrc);
+                           String uri, String elementSrc);
     }
 
     public interface NavigationListener {
