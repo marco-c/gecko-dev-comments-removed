@@ -284,12 +284,6 @@ MOZ_BEGIN_EXTERN_C
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
 #include "malloc_decls.h"
 
-
-
-#if defined(_WIN32)
-void malloc_init_hard(void);
-#endif
-
 #ifdef ANDROID
 
 
@@ -474,10 +468,6 @@ main()
   size_t first_pid = 0;
   FdReader reader(0);
   Replay replay;
-
-#if defined(_WIN32)
-  malloc_init_hard();
-#endif
 
   
 
