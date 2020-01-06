@@ -139,7 +139,7 @@ protected:
 
   void DidAddContent()
   {
-    if (IsTimeToNotify()) {
+    if (!mXSLTProcessor && IsTimeToNotify()) {
       FlushTags();
     }
   }
@@ -190,6 +190,12 @@ protected:
   nsTArray<StackNode>              mContentStack;
 
   nsCOMPtr<nsIDocumentTransformer> mXSLTProcessor;
+
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<nsIContent>> mDocumentChildren;
 
   static const int NS_ACCUMULATION_BUFFER_SIZE = 4096;
   

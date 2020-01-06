@@ -811,7 +811,7 @@ txMozillaXMLOutput::createResultDocument(const nsAString& aName, int32_t aNsID,
     mNodeInfoManager = mDocument->NodeInfoManager();
 
     
-    URIUtils::ResetWithSource(mDocument, aSourceDocument);
+    URIUtils::ResetWithSource(mDocument, source);
 
     
     
