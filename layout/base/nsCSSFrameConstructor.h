@@ -2060,18 +2060,6 @@ private:
 
 
 
-  void CheckForFirstLineInsertion(nsIFrame* aParentFrame,
-                                  nsFrameItems& aFrameItems);
-
-  
-
-
-
-
-
-
-
-
 
 
 
