@@ -199,7 +199,8 @@ public:
   void ParseMediaList(const nsAString& aBuffer,
                       nsIURI* aURL, 
                       uint32_t aLineNumber, 
-                      nsMediaList* aMediaList);
+                      nsMediaList* aMediaList,
+                      mozilla::dom::CallerType aCallerType);
 
   bool ParseSourceSizeList(const nsAString& aBuffer,
                            nsIURI* aURI, 
@@ -495,7 +496,8 @@ protected:
   void InitScanner(nsCSSScanner& aScanner,
                    css::ErrorReporter& aReporter,
                    nsIURI* aSheetURI, nsIURI* aBaseURI,
-                   nsIPrincipal* aSheetPrincipal);
+                   nsIPrincipal* aSheetPrincipal,
+                   dom::CallerType aCallerType = dom::CallerType::NonSystem);
   void ReleaseScanner(void);
 
   
@@ -1328,6 +1330,9 @@ protected:
   nsXMLNameSpaceMap *mNameSpaceMap;  
 
   
+  dom::CallerType mDomCallerType = dom::CallerType::NonSystem;
+
+  
   
   bool mHavePushBack : 1;
 
@@ -1547,7 +1552,8 @@ void
 CSSParserImpl::InitScanner(nsCSSScanner& aScanner,
                            css::ErrorReporter& aReporter,
                            nsIURI* aSheetURI, nsIURI* aBaseURI,
-                           nsIPrincipal* aSheetPrincipal)
+                           nsIPrincipal* aSheetPrincipal,
+                           dom::CallerType aCallerType)
 {
   NS_PRECONDITION(!mParsingCompoundProperty, "Bad initial state");
   NS_PRECONDITION(!mScanner, "already have scanner");
@@ -1560,6 +1566,7 @@ CSSParserImpl::InitScanner(nsCSSScanner& aScanner,
   mSheetURI = aSheetURI;
   mSheetPrincipal = aSheetPrincipal;
   mHavePushBack = false;
+  mDomCallerType = aCallerType;
 }
 
 void
@@ -1570,6 +1577,7 @@ CSSParserImpl::ReleaseScanner()
   mBaseURI = nullptr;
   mSheetURI = nullptr;
   mSheetPrincipal = nullptr;
+  mDomCallerType = dom::CallerType::NonSystem;
 }
 
 nsresult
@@ -1996,7 +2004,8 @@ void
 CSSParserImpl::ParseMediaList(const nsAString& aBuffer,
                               nsIURI* aURI, 
                               uint32_t aLineNumber, 
-                              nsMediaList* aMediaList)
+                              nsMediaList* aMediaList,
+                              dom::CallerType aCallerType)
 {
   
   
@@ -2006,7 +2015,7 @@ CSSParserImpl::ParseMediaList(const nsAString& aBuffer,
   
   nsCSSScanner scanner(aBuffer, aLineNumber);
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aURI);
-  InitScanner(scanner, reporter, aURI, aURI, nullptr);
+  InitScanner(scanner, reporter, aURI, aURI, nullptr, aCallerType);
 
   DebugOnly<bool> parsedOK = GatherMedia(aMediaList, false);
   NS_ASSERTION(parsedOK, "GatherMedia returned false; we probably want to avoid "
@@ -18009,10 +18018,11 @@ void
 nsCSSParser::ParseMediaList(const nsAString& aBuffer,
                             nsIURI*            aURI,
                             uint32_t           aLineNumber,
-                            nsMediaList*       aMediaList)
+                            nsMediaList*       aMediaList,
+                            dom::CallerType aCallerType)
 {
   static_cast<CSSParserImpl*>(mImpl)->
-    ParseMediaList(aBuffer, aURI, aLineNumber, aMediaList);
+    ParseMediaList(aBuffer, aURI, aLineNumber, aMediaList, aCallerType);
 }
 
 bool

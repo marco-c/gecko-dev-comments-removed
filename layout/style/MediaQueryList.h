@@ -32,8 +32,9 @@ class MediaQueryList final : public DOMEventTargetHelper,
 public:
   
   
-  MediaQueryList(nsIDocument *aDocument,
-                 const nsAString &aMediaQueryList);
+  MediaQueryList(nsIDocument* aDocument,
+                 const nsAString& aMediaQueryList,
+                 mozilla::dom::CallerType aCallerType);
 private:
   ~MediaQueryList();
 
