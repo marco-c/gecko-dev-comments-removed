@@ -53,25 +53,18 @@
 
 
 
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/cookie/0.9")]
+#![doc(html_root_url = "https://docs.rs/cookie/0.6")]
+#![allow(deprecated)]
 #![deny(missing_docs)]
+#![cfg_attr(test, deny(warnings))]
 
-#[cfg(feature = "percent-encode")] extern crate url;
+#[cfg(feature = "percent-encode")]
+extern crate url;
 extern crate time;
 
 mod builder;
-mod parse;
 mod jar;
-mod delta;
-mod draft;
-
-#[cfg(feature = "secure")] #[macro_use] mod secure;
-#[cfg(feature = "secure")] pub use secure::*;
+mod parse;
 
 use std::borrow::Cow;
 use std::ascii::AsciiExt;
@@ -84,9 +77,9 @@ use time::{Tm, Duration};
 
 use parse::parse_cookie;
 pub use parse::ParseError;
+
 pub use builder::CookieBuilder;
-pub use jar::{CookieJar, Delta, Iter};
-pub use draft::*;
+pub use jar::CookieJar;
 
 #[derive(Debug, Clone)]
 enum CookieStr {
@@ -98,6 +91,14 @@ enum CookieStr {
 
 impl CookieStr {
     
+    fn is_indexed(&self) -> bool {
+        match *self {
+            CookieStr::Indexed(..) => true,
+            CookieStr::Concrete(..) => false,
+        }
+    }
+
+    
     
     
     
@@ -105,25 +106,13 @@ impl CookieStr {
     
     
     fn to_str<'s>(&'s self, string: Option<&'s Cow<str>>) -> &'s str {
-        match *self {
-            CookieStr::Indexed(i, j) => {
-                let s = string.expect("`Some` base string must exist when \
-                    converting indexed str to str! (This is a module invariant.)");
-                &s[i..j]
-            },
-            CookieStr::Concrete(ref cstr) => &*cstr,
+        if self.is_indexed() && string.is_none() {
+            panic!("Cannot convert indexed str to str without base string!")
         }
-    }
 
-    fn to_raw_str<'s, 'c: 's>(&'s self, string: &'s Cow<'c, str>) -> Option<&'c str> {
         match *self {
-            CookieStr::Indexed(i, j) => {
-                match *string {
-                    Cow::Borrowed(s) => Some(&s[i..j]),
-                    Cow::Owned(_) => None,
-                }
-            },
-            CookieStr::Concrete(_) => None,
+            CookieStr::Indexed(i, j) => &string.unwrap()[i..j],
+            CookieStr::Concrete(ref cstr) => &*cstr,
         }
     }
 }
@@ -176,8 +165,6 @@ pub struct Cookie<'c> {
     secure: bool,
     
     http_only: bool,
-    
-    same_site: Option<SameSite>,
 }
 
 impl Cookie<'static> {
@@ -205,25 +192,7 @@ impl Cookie<'static> {
             path: None,
             secure: false,
             http_only: false,
-            same_site: None,
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn named<N>(name: N) -> Cookie<'static>
-        where N: Into<Cow<'static, str>>
-    {
-        Cookie::new(name, "")
     }
 
     
@@ -330,7 +299,6 @@ impl<'c> Cookie<'c> {
             path: self.path,
             secure: self.secure,
             http_only: self.http_only,
-            same_site: self.same_site,
         }
     }
 
@@ -407,21 +375,6 @@ impl<'c> Cookie<'c> {
     #[inline]
     pub fn secure(&self) -> bool {
         self.secure
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn same_site(&self) -> Option<SameSite> {
-        self.same_site
     }
 
     
@@ -590,24 +543,6 @@ impl<'c> Cookie<'c> {
     
     
     
-    #[inline]
-    pub fn set_same_site(&mut self, value: SameSite) {
-        self.same_site = Some(value);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -679,34 +614,6 @@ impl<'c> Cookie<'c> {
         self.expires = Some(time);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn make_permanent(&mut self) {
-        let twenty_years = Duration::days(365 * 20);
-        self.set_max_age(twenty_years);
-        self.set_expires(time::now() + twenty_years);
-    }
-
     fn fmt_parameters(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.http_only() {
             write!(f, "; HttpOnly")?;
@@ -714,10 +621,6 @@ impl<'c> Cookie<'c> {
 
         if self.secure() {
             write!(f, "; Secure")?;
-        }
-
-        if let Some(same_site) = self.same_site() {
-            write!(f, "; SameSite={}", same_site)?;
         }
 
         if let Some(path) = self.path() {
@@ -737,133 +640,6 @@ impl<'c> Cookie<'c> {
         }
 
         Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn name_raw(&self) -> Option<&'c str> {
-        self.cookie_string.as_ref()
-            .and_then(|s| self.name.to_raw_str(s))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn value_raw(&self) -> Option<&'c str> {
-        self.cookie_string.as_ref()
-            .and_then(|s| self.value.to_raw_str(s))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn path_raw(&self) -> Option<&'c str> {
-        match (self.path.as_ref(), self.cookie_string.as_ref()) {
-            (Some(path), Some(string)) => path.to_raw_str(string),
-            _ => None,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn domain_raw(&self) -> Option<&'c str> {
-        match (self.domain.as_ref(), self.cookie_string.as_ref()) {
-            (Some(domain), Some(string)) => domain.to_raw_str(string),
-            _ => None,
-        }
     }
 }
 
@@ -902,19 +678,6 @@ impl<'a, 'c: 'a> fmt::Display for EncodedCookie<'a, 'c> {
 }
 
 impl<'c> fmt::Display for Cookie<'c> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}={}", self.name(), self.value())?;
         self.fmt_parameters(f)
@@ -960,7 +723,7 @@ impl<'a, 'b> PartialEq<Cookie<'b>> for Cookie<'a> {
 
 #[cfg(test)]
 mod tests {
-    use ::{Cookie, SameSite};
+    use ::Cookie;
     use ::time::{strptime, Duration};
 
     #[test]
@@ -994,60 +757,6 @@ mod tests {
             .expires(expires).finish();
         assert_eq!(&cookie.to_string(),
                    "foo=bar; Expires=Wed, 21 Oct 2015 07:28:00 GMT");
-
-        let cookie = Cookie::build("foo", "bar")
-            .same_site(SameSite::Strict).finish();
-        assert_eq!(&cookie.to_string(), "foo=bar; SameSite=Strict");
-
-        let cookie = Cookie::build("foo", "bar")
-            .same_site(SameSite::Lax).finish();
-        assert_eq!(&cookie.to_string(), "foo=bar; SameSite=Lax");
-    }
-
-    #[test]
-    fn cookie_string_long_lifetimes() {
-        let cookie_string = "bar=baz; Path=/subdir; HttpOnly; Domain=crates.io".to_owned();
-        let (name, value, path, domain) = {
-            
-            let c = Cookie::parse(cookie_string.as_str()).unwrap();
-            (c.name_raw(), c.value_raw(), c.path_raw(), c.domain_raw())
-        };
-
-        assert_eq!(name, Some("bar"));
-        assert_eq!(value, Some("baz"));
-        assert_eq!(path, Some("/subdir"));
-        assert_eq!(domain, Some("crates.io"));
-    }
-
-    #[test]
-    fn owned_cookie_string() {
-        let cookie_string = "bar=baz; Path=/subdir; HttpOnly; Domain=crates.io".to_owned();
-        let (name, value, path, domain) = {
-            
-            let c = Cookie::parse(cookie_string).unwrap();
-            (c.name_raw(), c.value_raw(), c.path_raw(), c.domain_raw())
-        };
-
-        assert_eq!(name, None);
-        assert_eq!(value, None);
-        assert_eq!(path, None);
-        assert_eq!(domain, None);
-    }
-
-    #[test]
-    fn owned_cookie_struct() {
-        let cookie_string = "bar=baz; Path=/subdir; HttpOnly; Domain=crates.io";
-        let (name, value, path, domain) = {
-            
-            let c = Cookie::parse(cookie_string).unwrap().into_owned();
-
-            (c.name_raw(), c.value_raw(), c.path_raw(), c.domain_raw())
-        };
-
-        assert_eq!(name, None);
-        assert_eq!(value, None);
-        assert_eq!(path, None);
-        assert_eq!(domain, None);
     }
 
     #[test]
