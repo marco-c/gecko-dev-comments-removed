@@ -87,12 +87,6 @@ public:
     Async,
   };
 
-  enum class LazyConstructionAllowed
-  {
-    No = 0,
-    Yes,
-  };
-
   mozilla::RestyleManager* RestyleManager() const
     { return mPresShell->GetPresContext()->RestyleManager(); }
 
@@ -133,7 +127,7 @@ private:
   void IssueSingleInsertNofications(nsIContent* aContainer,
                                     nsIContent* aStartChild,
                                     nsIContent* aEndChild,
-                                    LazyConstructionAllowed,
+                                    InsertionKind,
                                     bool aForReconstruction);
 
   
@@ -177,7 +171,7 @@ private:
   InsertionPoint GetRangeInsertionPoint(nsIContent* aContainer,
                                         nsIContent* aStartChild,
                                         nsIContent* aEndChild,
-                                        LazyConstructionAllowed,
+                                        InsertionKind,
                                         bool aForReconstruction);
 
   
@@ -260,10 +254,10 @@ public:
   
   void ContentAppended(nsIContent* aContainer,
                        nsIContent* aFirstNewContent,
-                       LazyConstructionAllowed aLazyConstructionAllowed,
+                       InsertionKind aInsertionKind,
                        TreeMatchContext* aProvidedTreeMatchContext = nullptr)
   {
-    ContentAppended(aContainer, aFirstNewContent, aLazyConstructionAllowed, false,
+    ContentAppended(aContainer, aFirstNewContent, aInsertionKind, false,
                     aProvidedTreeMatchContext);
   }
 
@@ -272,7 +266,7 @@ public:
   void ContentInserted(nsIContent* aContainer,
                        nsIContent* aChild,
                        nsILayoutHistoryState* aFrameState,
-                       LazyConstructionAllowed aLazyConstructionAllowed);
+                       InsertionKind aInsertionKind);
 
   
   
@@ -289,11 +283,11 @@ public:
                             nsIContent* aStartChild,
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
-                            LazyConstructionAllowed aLazyConstructionAllowed,
+                            InsertionKind aInsertionKind,
                             TreeMatchContext* aProvidedTreeMatchContext = nullptr)
   {
     ContentRangeInserted(aContainer, aStartChild, aEndChild, aFrameState,
-                         aLazyConstructionAllowed, false,
+                         aInsertionKind, false,
                          aProvidedTreeMatchContext);
   }
 
@@ -308,14 +302,14 @@ private:
   
   void ContentAppended(nsIContent* aContainer,
                        nsIContent* aFirstNewContent,
-                       LazyConstructionAllowed aLazyConstructionAllowed,
+                       InsertionKind aInsertionKind,
                        bool aForReconstruction,
                        TreeMatchContext* aProvidedTreeMatchContext);
   void ContentRangeInserted(nsIContent* aContainer,
                             nsIContent* aStartChild,
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
-                            LazyConstructionAllowed aLazyConstructionAllowed,
+                            InsertionKind aInsertionKind,
                             bool aForReconstruction,
                             TreeMatchContext* aProvidedTreeMatchContext);
 

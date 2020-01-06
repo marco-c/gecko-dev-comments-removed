@@ -1815,7 +1815,7 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
       
       
       mFrameConstructor->ContentInserted(
-          nullptr, root, nullptr, nsCSSFrameConstructor::LazyConstructionAllowed::No);
+          nullptr, root, nullptr, nsCSSFrameConstructor::InsertionKind::Sync);
       VERIFY_STYLE_TREE;
 
       
@@ -4429,7 +4429,7 @@ PresShell::ContentAppended(nsIDocument *aDocument,
   mFrameConstructor->ContentAppended(
       aContainer,
       aFirstNewContent,
-      nsCSSFrameConstructor::LazyConstructionAllowed::Yes);
+      nsCSSFrameConstructor::InsertionKind::Async);
 
   VERIFY_STYLE_TREE;
 }
@@ -4459,7 +4459,7 @@ PresShell::ContentInserted(nsIDocument* aDocument,
       aMaybeContainer,
       aChild,
       nullptr,
-      nsCSSFrameConstructor::LazyConstructionAllowed::Yes);
+      nsCSSFrameConstructor::InsertionKind::Async);
 
   if (aChild->NodeType() == nsIDOMNode::DOCUMENT_TYPE_NODE) {
     MOZ_ASSERT(container == aDocument);
