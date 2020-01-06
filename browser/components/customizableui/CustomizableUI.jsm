@@ -1236,9 +1236,15 @@ var CustomizableUIInternal = {
 
     while (++nodeIndex < placements.length) {
       let nextNodeId = placements[nodeIndex];
-      let nextNode = container.getElementsByAttribute("id", nextNodeId).item(0);
-
-      if (nextNode) {
+      let nextNode = aNode.ownerDocument.getElementById(nextNodeId);
+      
+      
+      
+      
+      
+      if (nextNode && (nextNode.parentNode == container ||
+                       (nextNode.parentNode.localName == "toolbarpaletteitem" &&
+                        nextNode.parentNode.parentNode == container))) {
         return [container, nextNode];
       }
     }
@@ -4563,20 +4569,36 @@ OverflowableToolbar.prototype = {
     let nodeBeforeNewNodeIsOverflown = false;
 
     let loopIndex = -1;
+    
+    
+    
+    
+    
+    
+    
+    
     while (++loopIndex < placements.length) {
       let nextNodeId = placements[loopIndex];
       if (loopIndex > nodeIndex) {
-        if (newNodeCanOverflow && this._collapsed.has(nextNodeId)) {
-          let nextNode = this._list.getElementsByAttribute("id", nextNodeId).item(0);
-          if (nextNode) {
-            return [this._list, nextNode];
-          }
+        let nextNode = aNode.ownerDocument.getElementById(nextNodeId);
+        
+        
+        
+        if (newNodeCanOverflow && this._collapsed.has(nextNodeId) &&
+            nextNode && nextNode.parentNode == this._list) {
+          return [this._list, nextNode];
         }
-        if (!nodeBeforeNewNodeIsOverflown || !newNodeCanOverflow) {
-          let nextNode = this._target.getElementsByAttribute("id", nextNodeId).item(0);
-          if (nextNode) {
-            return [this._target, nextNode];
-          }
+        
+        
+        
+        if ((!nodeBeforeNewNodeIsOverflown || !newNodeCanOverflow) && nextNode &&
+            (nextNode.parentNode == this._target ||
+             
+             
+             
+             (nextNode.parentNode.localName == "toolbarpaletteitem" &&
+              nextNode.parentNode.parentNode == this._target))) {
+          return [this._target, nextNode];
         }
       } else if (loopIndex < nodeIndex && this._collapsed.has(nextNodeId)) {
         nodeBeforeNewNodeIsOverflown = true;
