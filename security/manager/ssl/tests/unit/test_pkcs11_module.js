@@ -123,6 +123,6 @@ function run_test() {
   checkTestModuleNotPresent();
 
   
-  ok(gModuleDB.canToggleFIPS, "It should be possible to toggle FIPS");
+  ok(!gModuleDB.canToggleFIPS, "It should NOT be possible to toggle FIPS");
   ok(!gModuleDB.isFIPSEnabled, "FIPS should not be enabled");
 }
