@@ -411,6 +411,7 @@ struct MOZ_STACK_CLASS EditorDOMPoint final
 class EditorUtils final
 {
 public:
+  
   static bool IsDescendantOf(nsINode* aNode, nsINode* aParent,
                              nsIContent** aChild);
   static bool IsDescendantOf(nsINode* aNode, nsINode* aParent,
