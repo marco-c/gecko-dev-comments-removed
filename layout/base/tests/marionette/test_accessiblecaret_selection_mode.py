@@ -28,6 +28,7 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
     
     _input_id = 'input'
     _input_padding_id = 'input-padding'
+    _input_size_id = 'input-size'
     _textarea_id = 'textarea'
     _textarea2_id = 'textarea2'
     _textarea_one_line_id = 'textarea-one-line'
@@ -570,15 +571,10 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
 
     def test_long_press_to_select_when_partial_visible_word_is_selected(self):
         self.open_test_html(self._selection_html)
-        el = self.marionette.find_element(By.ID, self._input_id)
+        el = self.marionette.find_element(By.ID, self._input_size_id)
         sel = SelectionManager(el)
 
-        
-        
-        
-        original_content = 'aaaaaaaa          bbbbbbbb'
-        el.clear()
-        el.send_keys(original_content)
+        original_content = sel.content
         words = original_content.split()
 
         
@@ -586,14 +582,12 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         
         word0_x, word0_y = self.word_location(el, 0)
-        word1_x, word1_y = self.word_location(el, 1)
 
-        self.long_press_on_location(el, word0_x, word0_y)
-        self.assertEqual(words[0], sel.selected_content)
-
-        self.long_press_on_location(el, word1_x, word1_y)
+        
+        self.long_press_on_word(el, 1)
         self.assertEqual(words[1], sel.selected_content)
 
+        
         self.long_press_on_location(el, word0_x, word0_y)
         self.assertEqual(words[0], sel.selected_content)
 
