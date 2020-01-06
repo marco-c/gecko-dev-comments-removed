@@ -20,6 +20,7 @@ use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
+use net_traits::request::RequestInit;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use servo_url::ImmutableOrigin;
@@ -67,6 +68,9 @@ pub enum LogEntry {
 
 #[derive(Deserialize, Serialize)]
 pub enum ScriptMsg {
+    
+    
+    InitiateNavigateRequest(RequestInit, PipelineId),
     
     
     BroadcastStorageEvent(PipelineId, StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),

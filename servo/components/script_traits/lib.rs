@@ -55,7 +55,7 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
-use net_traits::{ReferrerPolicy, ResourceThreads};
+use net_traits::{FetchResponseMsg, ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
 use net_traits::image_cache::ImageCache;
 use net_traits::response::HttpsState;
@@ -233,6 +233,9 @@ pub enum UpdatePipelineIdReason {
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
+    
+    NavigationResponse(PipelineId, FetchResponseMsg),
+    
     AttachLayout(NewLayoutInfo),
     
     Resize(PipelineId, WindowSizeData, WindowSizeType),
@@ -304,6 +307,7 @@ impl fmt::Debug for ConstellationControlMsg {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use self::ConstellationControlMsg::*;
         let variant = match *self {
+            NavigationResponse(..) => "NavigationResponse",
             AttachLayout(..) => "AttachLayout",
             Resize(..) => "Resize",
             ResizeInactive(..) => "ResizeInactive",

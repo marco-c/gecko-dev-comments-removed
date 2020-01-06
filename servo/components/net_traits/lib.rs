@@ -42,7 +42,7 @@ use ipc_channel::Error as IpcError;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use ipc_channel::router::ROUTER;
 use request::{Request, RequestInit};
-use response::{HttpsState, Response};
+use response::{HttpsState, Response, ResponseInit};
 use servo_url::ServoUrl;
 use std::error::Error;
 use storage_thread::StorageThreadMsg;
@@ -370,6 +370,8 @@ pub struct WebSocketConnectData {
 pub enum CoreResourceMsg {
     Fetch(RequestInit, IpcSender<FetchResponseMsg>),
     
+    FetchRedirect(RequestInit, ResponseInit, IpcSender<FetchResponseMsg>),
+    
     WebsocketConnect(WebSocketCommunicate, WebSocketConnectData),
     
     SetCookieForUrl(ServoUrl, Serde<Cookie<'static>>, CookieSource),
@@ -435,6 +437,9 @@ pub struct Metadata {
 
     /// Referrer Url
     pub referrer: Option<ServoUrl>,
+
+    /// Referrer Policy of the Request used to obtain Response
+    pub referrer_policy: Option<ReferrerPolicy>,
 }
 
 impl Metadata {
@@ -449,6 +454,7 @@ impl Metadata {
             status: Some((200, b"OK".to_vec())),
             https_state: HttpsState::None,
             referrer: None,
+            referrer_policy: None,
         }
     }
 
