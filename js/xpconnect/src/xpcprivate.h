@@ -2120,8 +2120,7 @@ public:
 
 
 
-    static bool NativeInterface2JSObject(JS::MutableHandleValue d,
-                                         nsIXPConnectJSObjectHolder** dest,
+    static bool NativeInterface2JSObject(JS::MutableHandleValue dest,
                                          xpcObjectHelper& aHelper,
                                          const nsID* iid,
                                          bool allowNativeWrapper,
