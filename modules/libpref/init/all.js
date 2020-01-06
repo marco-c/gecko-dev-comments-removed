@@ -1224,7 +1224,6 @@ pref("dom.disable_window_open_feature.menubar",     false);
 pref("dom.disable_window_open_feature.resizable",   true);
 pref("dom.disable_window_open_feature.minimizable", false);
 pref("dom.disable_window_open_feature.status",      true);
-pref("dom.disable_window_showModalDialog",          true);
 
 pref("dom.allow_scripts_to_close_windows",          false);
 
@@ -4624,8 +4623,8 @@ pref("webgl.disable-DOM-blit-uploads", false);
 pref("webgl.allow-fb-invalidation", false);
 pref("webgl.webgl2-compat-mode", false);
 
-pref("webgl.max-perf-warnings", 0);
-pref("webgl.max-acceptable-fb-status-invals", 0);
+pref("webgl.perf.max-warnings", 0);
+pref("webgl.perf.max-acceptable-fb-status-invals", 0);
 
 pref("webgl.enable-webgl2", true);
 
@@ -5642,7 +5641,7 @@ pref("layout.css.servo.enabled", false);
 
 
 
-#ifdef RELEASE
+#ifdef RELEASE_OR_BETA
 
 
 pref("security.mixed_content.send_hsts_priming", false);
@@ -5657,7 +5656,7 @@ pref("security.mixed_content.use_hsts", true);
 pref("security.mixed_content.hsts_priming_cache_timeout", 604800);
 
 
-pref("security.mixed_content.hsts_priming_request_timeout", 2000);
+pref("security.mixed_content.hsts_priming_request_timeout", 3000);
 
 
 
