@@ -91,8 +91,6 @@ struct ProxyTraps {
     bool (*isConstructor)(JSObject *obj);
 
     
-    
-    
 
     
     

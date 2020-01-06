@@ -55,7 +55,6 @@ BEGIN_TEST(testGCGrayMarking)
         TestMarking() &&
         TestWeakMaps() &&
         TestUnassociatedWeakMaps() &&
-        TestWatchpoints() &&
         TestCCWs() &&
         TestGrayUnmarking();
 
@@ -423,63 +422,6 @@ TestUnassociatedWeakMaps()
     JS_GC(cx);
     CHECK(IsMarkedGray(key));
     CHECK(IsMarkedGray(value));
-
-    blackRoot = nullptr;
-    grayRoots.grayRoot1 = nullptr;
-    grayRoots.grayRoot2 = nullptr;
-
-    return true;
-}
-
-bool
-TestWatchpoints()
-{
-    JSObject* watched = AllocPlainObject();
-    CHECK(watched);
-
-    JSObject* closure = AllocPlainObject();
-    CHECK(closure);
-
-    {
-        RootedObject obj(cx, watched);
-        RootedObject callable(cx, closure);
-        RootedId id(cx, INT_TO_JSID(0));
-        CHECK(JS_DefinePropertyById(cx, obj, id, JS::TrueHandleValue, 0));
-        CHECK(js::WatchGuts(cx, obj, id, callable));
-    }
-
-    
-    
-
-    RootedObject blackRoot(cx, watched);
-    grayRoots.grayRoot1 = nullptr;
-    JS_GC(cx);
-    CHECK(IsMarkedBlack(watched));
-    CHECK(IsMarkedBlack(closure));
-
-    
-    
-
-    blackRoot = nullptr;
-    grayRoots.grayRoot1 = watched;
-    JS_GC(cx);
-    CHECK(IsMarkedGray(watched));
-    CHECK(IsMarkedGray(closure));
-
-    
-    
-
-    CHECK(IsMarkedGray(watched));
-    CHECK(IsMarkedGray(closure));
-    JS::ExposeObjectToActiveJS(watched);
-    CHECK(IsMarkedBlack(watched));
-    CHECK(IsMarkedGray(closure));
-
-    {
-        RootedObject obj(cx, watched);
-        RootedId id(cx, INT_TO_JSID(0));
-        CHECK(js::UnwatchGuts(cx, obj, id));
-    }
 
     blackRoot = nullptr;
     grayRoots.grayRoot1 = nullptr;

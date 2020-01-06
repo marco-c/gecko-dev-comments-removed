@@ -326,7 +326,7 @@ NativeObject::extendDenseElements(JSContext* cx,
 
 
 
-    if (!nonProxyIsExtensible() || watched()) {
+    if (!nonProxyIsExtensible()) {
         MOZ_ASSERT(getDenseCapacity() == 0);
         return DenseElementResult::Incomplete;
     }

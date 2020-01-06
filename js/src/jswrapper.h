@@ -321,10 +321,6 @@ class JS_FRIEND_API(SecurityWrapper) : public Base
     
     
 
-    virtual bool watch(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
-                       JS::HandleObject callable) const override;
-    virtual bool unwatch(JSContext* cx, JS::HandleObject proxy, JS::HandleId id) const override;
-
     
 
 

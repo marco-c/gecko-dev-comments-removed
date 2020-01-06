@@ -10,8 +10,6 @@
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 
-#include "jswatchpoint.h"
-
 #include "gc/Marking.h"
 #include "js/Value.h"
 #include "vm/Debugger.h"
@@ -595,7 +593,7 @@ NativeObject::maybeDensifySparseElements(JSContext* cx, HandleNativeObject obj)
         return DenseElementResult::Incomplete;
 
     
-    if (!obj->nonProxyIsExtensible() || obj->watched())
+    if (!obj->nonProxyIsExtensible())
         return DenseElementResult::Incomplete;
 
     
@@ -2737,17 +2735,9 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
 
 template <QualifiedBool IsQualified>
 bool
-js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue value,
+js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v,
                       HandleValue receiver, ObjectOpResult& result)
 {
-    
-    RootedValue v(cx, value);
-    if (MOZ_UNLIKELY(obj->watched())) {
-        WatchpointMap* wpmap = cx->compartment()->watchpointMap;
-        if (wpmap && !wpmap->triggerWatchpoint(cx, obj, id, &v))
-            return false;
-    }
-
     
     
     

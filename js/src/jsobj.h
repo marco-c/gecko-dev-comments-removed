@@ -185,11 +185,6 @@ class JSObject : public js::gc::Cell
     inline bool isBoundFunction() const;
     inline bool hasSpecialEquality() const;
 
-    inline bool watched() const;
-    static bool setWatched(JSContext* cx, JS::HandleObject obj) {
-        return setFlags(cx, obj, js::BaseShape::WATCHED, GENERATE_SHAPE);
-    }
-
     
     
     
@@ -990,21 +985,6 @@ enum DefineAsIntrinsic {
 extern bool
 DefineFunctions(JSContext* cx, HandleObject obj, const JSFunctionSpec* fs,
                 DefineAsIntrinsic intrinsic);
-
-
-
-
-
-
-
-
-
-extern bool
-WatchProperty(JSContext* cx, HandleObject obj, HandleId id, HandleObject callable);
-
-
-extern bool
-UnwatchProperty(JSContext* cx, HandleObject obj, HandleId id);
 
 
 extern bool

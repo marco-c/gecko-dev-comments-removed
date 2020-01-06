@@ -3371,7 +3371,6 @@ FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(INSTANTIATE_ALL_VALID_HEAP_TRACE_FUNCTION
 
 
 
-
 #ifdef DEBUG
 struct AssertNonGrayTracer : public JS::CallbackTracer {
     explicit AssertNonGrayTracer(JSRuntime* rt) : JS::CallbackTracer(rt) {}
