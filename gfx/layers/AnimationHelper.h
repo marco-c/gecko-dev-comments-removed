@@ -13,15 +13,15 @@
 
 
 namespace mozilla {
-class StyleAnimationValue;
+struct AnimationValue;
 namespace layers {
 class Animation;
 
 typedef InfallibleTArray<layers::Animation> AnimationArray;
 
 struct AnimData {
-  InfallibleTArray<mozilla::StyleAnimationValue> mStartValues;
-  InfallibleTArray<mozilla::StyleAnimationValue> mEndValues;
+  InfallibleTArray<mozilla::AnimationValue> mStartValues;
+  InfallibleTArray<mozilla::AnimationValue> mEndValues;
   InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
 };
 
@@ -203,7 +203,7 @@ public:
   SampleAnimationForEachNode(TimeStamp aTime,
                              AnimationArray& aAnimations,
                              InfallibleTArray<AnimData>& aAnimationData,
-                             StyleAnimationValue& aAnimationValue,
+                             AnimationValue& aAnimationValue,
                              bool& aHasInEffectAnimations);
   
 
@@ -212,7 +212,7 @@ public:
   static void
   SetAnimations(AnimationArray& aAnimations,
                 InfallibleTArray<AnimData>& aAnimData,
-                StyleAnimationValue& aBaseAnimationStyle);
+                AnimationValue& aBaseAnimationStyle);
 
   
 
