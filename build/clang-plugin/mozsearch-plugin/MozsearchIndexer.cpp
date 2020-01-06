@@ -1042,6 +1042,16 @@ public:
 
   bool VisitNamedDecl(NamedDecl *D) {
     SourceLocation Loc = D->getLocation();
+
+    if (isa<EnumConstantDecl>(D) && SM.isMacroBodyExpansion(Loc)) {
+      
+      
+      
+      
+      
+      Loc = SM.getFileLoc(Loc);
+    }
+
     normalizeLocation(&Loc);
     if (!isInterestingLocation(Loc)) {
       return true;
