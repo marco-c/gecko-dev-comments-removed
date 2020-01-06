@@ -138,7 +138,6 @@ public:
   
   
   
-  
   MediaResource* GetResource() const final override
   {
     return mResource;

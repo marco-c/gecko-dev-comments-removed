@@ -33,6 +33,11 @@ public:
   
   static bool IsSupportedType(const MediaContainerType& aContainerType);
 
+  nsresult Load(nsIChannel* aChannel,
+                bool aIsPrivateBrowsing,
+                nsIStreamListener**) override;
+  nsresult Load(MediaResource*) override;
+
 private:
   RefPtr<MediaFormatReader> mReader;
 };
