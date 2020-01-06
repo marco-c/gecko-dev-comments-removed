@@ -176,6 +176,19 @@ CSSTransition::PlayStateFromJS() const
   return Animation::PlayStateFromJS();
 }
 
+bool
+CSSTransition::PendingFromJS() const
+{
+  
+  
+  
+  
+  if (Pending()) {
+    FlushStyle();
+  }
+  return Animation::PendingFromJS();
+}
+
 void
 CSSTransition::PlayFromJS(ErrorResult& aRv)
 {

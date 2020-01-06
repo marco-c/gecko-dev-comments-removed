@@ -386,21 +386,23 @@ Animation::SetPlaybackRate(double aPlaybackRate)
 AnimationPlayState
 Animation::PlayState() const
 {
-  if (mPendingState != PendingState::NotPending) {
+  if (!nsContentUtils::AnimationsAPIPendingMemberEnabled() && Pending()) {
     return AnimationPlayState::Pending;
   }
 
   Nullable<TimeDuration> currentTime = GetCurrentTime();
-  if (currentTime.IsNull()) {
+  if (currentTime.IsNull() && !Pending()) {
     return AnimationPlayState::Idle;
   }
 
-  if (mStartTime.IsNull()) {
+  if (mPendingState == PendingState::PausePending ||
+      (mStartTime.IsNull() && !Pending())) {
     return AnimationPlayState::Paused;
   }
 
-  if ((mPlaybackRate > 0.0 && currentTime.Value() >= EffectEnd()) ||
-      (mPlaybackRate < 0.0 && currentTime.Value() <= TimeDuration()))  {
+  if (!currentTime.IsNull() &&
+      ((mPlaybackRate > 0.0 && currentTime.Value() >= EffectEnd()) ||
+       (mPlaybackRate < 0.0 && currentTime.Value() <= TimeDuration())))  {
     return AnimationPlayState::Finished;
   }
 
@@ -418,7 +420,7 @@ Animation::GetReady(ErrorResult& aRv)
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
-  if (PlayState() != AnimationPlayState::Pending) {
+  if (!Pending()) {
     mReady->MaybeResolve(this);
   }
   return mReady;
@@ -638,7 +640,7 @@ Animation::TriggerOnNextTick(const Nullable<TimeDuration>& aReadyTime)
   
   
   
-  if (PlayState() != AnimationPlayState::Pending) {
+  if (!Pending()) {
     return;
   }
 
@@ -654,7 +656,7 @@ Animation::TriggerNow()
   
   
   
-  if (PlayState() != AnimationPlayState::Pending) {
+  if (!Pending()) {
     return;
   }
 
@@ -994,13 +996,11 @@ Animation::ComposeStyle(ComposeAnimationResult&& aComposeResult,
   
   
   
-  AnimationPlayState playState = PlayState();
+  bool pending = Pending();
   {
     AutoRestore<Nullable<TimeDuration>> restoreHoldTime(mHoldTime);
 
-    if (playState == AnimationPlayState::Pending &&
-        mHoldTime.IsNull() &&
-        !mStartTime.IsNull()) {
+    if (pending && mHoldTime.IsNull() && !mStartTime.IsNull()) {
       Nullable<TimeDuration> timeToUse = mPendingReadyTime;
       if (timeToUse.IsNull() &&
           mTimeline &&
@@ -1020,8 +1020,8 @@ Animation::ComposeStyle(ComposeAnimationResult&& aComposeResult,
     }
   }
 
-  MOZ_ASSERT(playState == PlayState(),
-             "Play state should not change during the course of compositing");
+  MOZ_ASSERT(pending == Pending(),
+             "Pending state should not change during the course of compositing");
 }
 
 void

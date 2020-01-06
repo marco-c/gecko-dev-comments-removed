@@ -89,6 +89,15 @@ CSSAnimation::PlayStateFromJS() const
   return Animation::PlayStateFromJS();
 }
 
+bool
+CSSAnimation::PendingFromJS() const
+{
+  
+  
+  FlushStyle();
+  return Animation::PendingFromJS();
+}
+
 void
 CSSAnimation::PlayFromJS(ErrorResult& aRv)
 {
