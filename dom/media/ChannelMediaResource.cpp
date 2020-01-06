@@ -796,9 +796,6 @@ ChannelMediaResource::RecreateChannel()
     cos->AddClassFlags(nsIClassOfService::DontThrottle);
   }
 
-  
-  mCacheStream.NotifyChannelRecreated();
-
   return rv;
 }
 

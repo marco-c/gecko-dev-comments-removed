@@ -280,10 +280,6 @@ public:
 
   
   
-  void NotifyChannelRecreated();
-
-  
-  
   void NotifyClientSuspended(bool aSuspended);
 
   
