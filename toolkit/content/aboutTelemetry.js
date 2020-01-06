@@ -397,7 +397,10 @@ var PingPicker = {
     
     let archivedPingList = await TelemetryArchive.promiseArchivedPingList();
     let sourceArchived = document.getElementById("ping-source-archive");
-    sourceArchived.disabled = (archivedPingList.length == 0);
+    let sourceArchivedContainer = document.getElementById("ping-source-archive-container");
+    let archivedDisabled = (archivedPingList.length == 0);
+    sourceArchived.disabled = archivedDisabled;
+    sourceArchivedContainer.classList.toggle("disabled", archivedDisabled);
 
     if (currentChanged) {
       if (this.viewCurrentPingData) {
