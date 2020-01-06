@@ -4219,11 +4219,6 @@ function OpenBrowserWindow(options) {
 }
 
 
-function BrowserCustomizeToolbar() {
-  gCustomizeMode.enter();
-}
-
-
 
 
 
