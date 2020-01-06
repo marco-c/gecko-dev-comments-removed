@@ -3,6 +3,7 @@
 
 
 
+#include "mozilla/ResultExtensions.h"
 #include "nsAutoConfig.h"
 #include "nsIURI.h"
 #include "nsIHttpChannel.h"
@@ -335,13 +336,8 @@ nsresult nsAutoConfig::downloadAutoConfig()
         if (NS_SUCCEEDED(rv) && minutes > 0) {
             
             
-            mTimer = do_CreateInstance("@mozilla.org/timer;1",&rv);
-            if (NS_FAILED(rv))
-                return rv;
-            rv = mTimer->InitWithCallback(this, minutes * 60 * 1000,
-                             nsITimer::TYPE_REPEATING_SLACK);
-            if (NS_FAILED(rv))
-                return rv;
+            MOZ_TRY_VAR(mTimer, NS_NewTimerWithCallback(this, minutes * 60 * 1000,
+                                                        nsITimer::TYPE_REPEATING_SLACK));
         }
     } 
 
