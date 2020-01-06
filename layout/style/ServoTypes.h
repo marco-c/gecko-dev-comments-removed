@@ -71,6 +71,9 @@ enum class ServoTraversalFlags : uint32_t {
   ClearDirtyDescendants = 1 << 5,
   
   ClearAnimationOnlyDirtyDescendants = 1 << 6,
+  
+  
+  ParallelTraversal = 1 << 7,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoTraversalFlags)

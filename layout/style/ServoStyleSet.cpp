@@ -879,6 +879,13 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
     auto flags = aBaseFlags;
 
     
+    
+    
+    if (!root->IsInNativeAnonymousSubtree()) {
+      flags |= ServoTraversalFlags::ParallelTraversal;
+    }
+
+    
     bool required = Servo_TraverseSubtree(root, mRawSet.get(), &snapshots, flags);
     MOZ_ASSERT_IF(isInitial, !required);
     postTraversalRequired |= required;
@@ -982,10 +989,19 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
   bool hadDirtyDescendants = aParent->HasDirtyDescendantsForServo();
   aParent->SetHasDirtyDescendantsForServo();
 
+  auto flags = ServoTraversalFlags::UnstyledOnly;
+
+  
+  
+  
+  
+  if (aParent == aParent->OwnerDoc()->GetRootElement()) {
+    flags |= ServoTraversalFlags::ParallelTraversal;
+  }
+
   
   const SnapshotTable& snapshots = Snapshots();
-  Servo_TraverseSubtree(aParent, mRawSet.get(), &snapshots,
-                        ServoTraversalFlags::UnstyledOnly);
+  Servo_TraverseSubtree(aParent, mRawSet.get(), &snapshots, flags);
 
   
   if (!hadDirtyDescendants) {
