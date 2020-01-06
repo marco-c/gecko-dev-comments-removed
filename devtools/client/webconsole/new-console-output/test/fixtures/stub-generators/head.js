@@ -289,18 +289,34 @@ function* generateConsoleApiStubs() {
   };
 
   let toolbox = yield openNewTabAndToolbox(TEST_URI, "webconsole");
-  let {ui} = toolbox.getCurrentPanel().hud;
+  const hud = toolbox.getCurrentPanel().hud;
+  let {ui} = hud;
   ok(ui.jsterm, "jsterm exists");
   ok(ui.newConsoleOutput, "newConsoleOutput exists");
 
   for (let [key, {keys, code}] of consoleApi) {
     let received = new Promise(resolve => {
       let i = 0;
-      let listener = (type, res) => {
-        stubs.packets.push(formatPacket(keys[i], res));
-        stubs.preparedMessages.push(formatStub(keys[i], res));
+      let listener = async (type, res) => {
+        const callKey = keys[i];
+        stubs.packets.push(formatPacket(callKey, res));
+        stubs.preparedMessages.push(formatStub(callKey, res));
         if (++i === keys.length) {
           toolbox.target.client.removeListener("consoleAPICall", listener);
+
+          
+          
+          if (callKey === "console.dir({C, M, Y, K})") {
+            const dirMsg = await waitForMessage(hud, `cyan: "C"`);
+            const oi = dirMsg.querySelector(".tree");
+            
+            
+            if (oi.querySelectorAll(".node").length === 1) {
+              await waitForNodeMutation(oi, {
+                childList: true
+              });
+            }
+          }
           resolve();
         }
       };
@@ -505,4 +521,45 @@ function* generatePageErrorStubs() {
 
   yield closeTabAndToolbox();
   return formatFile(stubs, "ConsoleMessage");
+}
+
+
+
+
+
+
+
+function waitForMessage(hud, messageText) {
+  return new Promise(resolve => {
+    hud.ui.on("new-messages",
+      function messagesReceived(e, newMessages) {
+        for (let newMessage of newMessages) {
+          let messageBody = newMessage.node.querySelector(".message-body");
+          if (messageBody.textContent.includes(messageText)) {
+            info("Matched a message with text: " + messageText);
+            hud.ui.off("new-messages", messagesReceived);
+            resolve(newMessage.node);
+            break;
+          }
+        }
+      });
+  });
+}
+
+
+
+
+
+
+
+
+
+function waitForNodeMutation(node, observeConfig = {}) {
+  return new Promise(resolve => {
+    const observer = new MutationObserver(mutations => {
+      resolve(mutations);
+      observer.disconnect();
+    });
+    observer.observe(node, observeConfig);
+  });
 }
