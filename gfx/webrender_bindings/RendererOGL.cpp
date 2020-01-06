@@ -71,6 +71,29 @@ RendererOGL::RendererOGL(RefPtr<RenderThread>&& aThread,
   MOZ_ASSERT(mRenderer);
   MOZ_ASSERT(mBridge);
   MOZ_COUNT_CTOR(RendererOGL);
+
+#ifdef XP_WIN
+  if (aGL->IsANGLE()) {
+    gl::GLLibraryEGL* egl = &gl::sEGLLibrary;
+
+    
+    EGLDeviceEXT eglDevice = nullptr;
+    egl->fQueryDisplayAttribEXT(egl->Display(), LOCAL_EGL_DEVICE_EXT, (EGLAttrib*)&eglDevice);
+    MOZ_ASSERT(eglDevice);
+    ID3D11Device* device = nullptr;
+    egl->fQueryDeviceAttribEXT(eglDevice, LOCAL_EGL_D3D11_DEVICE_ANGLE, (EGLAttrib*)&device);
+    MOZ_ASSERT(device);
+
+    mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(device);
+    if (mSyncObject) {
+      if (!mSyncObject->Init()) {
+        
+        
+        mSyncObject = nullptr;
+      }
+    }
+  }
+#endif
 }
 
 RendererOGL::~RendererOGL()
@@ -127,6 +150,12 @@ RendererOGL::Render()
   
 
   auto size = mWidget->GetClientSize();
+
+  if (mSyncObject) {
+    
+    mSyncObject->Synchronize();
+  }
+
   wr_renderer_render(mRenderer, size.width, size.height);
 
   mGL->SwapBuffers();
