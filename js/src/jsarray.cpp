@@ -685,24 +685,6 @@ MaybeInIteration(HandleObject obj, JSContext* cx)
     return false;
 }
 
-bool
-js::CanonicalizeArrayLengthValue(JSContext* cx, HandleValue v, uint32_t* newLen)
-{
-    double d;
-
-    if (!ToUint32(cx, v, newLen))
-        return false;
-
-    if (!ToNumber(cx, v, &d))
-        return false;
-
-    if (d == *newLen)
-        return true;
-
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
-    return false;
-}
-
 
 bool
 js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
@@ -727,8 +709,19 @@ js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
         
 
         
-        if (!CanonicalizeArrayLengthValue(cx, value, &newLen))
+        if (!ToUint32(cx, value, &newLen))
             return false;
+
+        
+        double d;
+        if (!ToNumber(cx, value, &d))
+            return false;
+
+        
+        if (d != newLen) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
+            return false;
+        }
 
         
     }
