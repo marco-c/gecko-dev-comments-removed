@@ -17,32 +17,6 @@ function WebRequestEventManager(context, eventName) {
   let name = `webRequest.${eventName}`;
   let register = (fire, filter, info) => {
     let listener = data => {
-      
-      
-      
-      let isProxyAuth = data.isProxy && context.extension.hasPermission("proxy");
-
-      
-      
-      
-      
-      
-      if (data.isSystemPrincipal && !isProxyAuth) {
-        return;
-      }
-
-      
-      const hosts = context.extension.whiteListedHosts;
-      if (!hosts.matches(data.URI)) {
-        return;
-      }
-      
-      const origin = data.documentUrl;
-      const own = origin && origin.startsWith(context.extension.getURL());
-      if (origin && !own && !isProxyAuth && !hosts.matches(data.documentURI)) {
-        return;
-      }
-
       let browserData = {tabId: -1, windowId: -1};
       if (data.browser) {
         browserData = tabTracker.getBrowserData(data.browser);
@@ -97,6 +71,7 @@ function WebRequestEventManager(context, eventName) {
 
     let listenerDetails = {
       addonId: context.extension.id,
+      extension: context.extension.policy,
       blockingAllowed,
       tabParent: context.xulBrowser.frameLoader.tabParent,
     };
