@@ -627,6 +627,7 @@ public:
     , mForceDescendIntoIfVisible(false)
     , mBuiltDisplayList(false)
     , mFrameIsModified(false)
+    , mMayHaveWillChangeBudget(false)
     , mIsPrimaryFrame(false)
   {
     mozilla::PodZero(&mOverflow);
@@ -4106,6 +4107,9 @@ public:
   bool IsFrameModified() { return mFrameIsModified; }
   void SetFrameIsModified(bool aFrameIsModified) { mFrameIsModified = aFrameIsModified; }
 
+  bool MayHaveWillChangeBudget() { return mMayHaveWillChangeBudget; }
+  void SetMayHaveWillChangeBudget(bool aHasBudget) { mMayHaveWillChangeBudget = aHasBudget; }
+
 protected:
 
   
@@ -4283,6 +4287,12 @@ protected:
   bool mBuiltDisplayList : 1;
 
   bool mFrameIsModified : 1;
+
+  
+
+
+
+  bool mMayHaveWillChangeBudget : 1;
 
 private:
   

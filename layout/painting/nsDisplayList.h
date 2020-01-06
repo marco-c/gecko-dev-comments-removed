@@ -1529,6 +1529,8 @@ public:
 
   bool IsInWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
 
+  void ClearWillChangeBudget(nsIFrame* aFrame);
+
   void EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
 
@@ -1671,6 +1673,16 @@ private:
     uint32_t mBudget;
   };
 
+  struct FrameWillChangeBudget {
+    FrameWillChangeBudget(nsIFrame* aFrame, uint32_t aUsage)
+      : mFrame(aFrame)
+      , mUsage(aUsage)
+    {}
+
+    nsIFrame* mFrame;
+    uint32_t mUsage;
+  };
+
   nsIFrame* const                mReferenceFrame;
   nsIFrame*                      mIgnoreScrollFrame;
   nsDisplayLayerEventRegions*    mLayerEventRegions;
@@ -1704,7 +1716,7 @@ private:
 
   
   
-  nsTHashtable<nsPtrHashKey<nsIFrame> > mWillChangeBudgetSet;
+  nsDataHashtable<nsPtrHashKey<nsIFrame>, uint32_t> mWillChangeBudgetSet;
 
   
   uint32_t mUsedAGRBudget;
