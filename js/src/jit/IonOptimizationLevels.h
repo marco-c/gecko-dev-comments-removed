@@ -132,14 +132,14 @@ class OptimizationInfo
     uint32_t compilerWarmUpThreshold_;
 
     
-    static const uint32_t CompilerWarmupThreshold = 1000;
+    static const uint32_t CompilerWarmupThreshold;
 
     
     
     uint32_t compilerSmallFunctionWarmUpThreshold_;
 
     
-    static const uint32_t CompilerSmallFunctionWarmupThreshold = CompilerWarmupThreshold;
+    static const uint32_t CompilerSmallFunctionWarmupThreshold;
 
     
     
@@ -227,9 +227,8 @@ class OptimizationInfo
     }
 
     IonRegisterAllocator registerAllocator() const {
-        if (JitOptions.forcedRegisterAllocator.isSome())
-            return JitOptions.forcedRegisterAllocator.ref();
-        return registerAllocator_;
+        return JitOptions.forcedRegisterAllocator
+            .valueOr(registerAllocator_);
     }
 
     bool scalarReplacementEnabled() const {
@@ -265,9 +264,8 @@ class OptimizationInfo
     }
 
     uint32_t inliningWarmUpThreshold() const {
-        uint32_t compilerWarmUpThreshold = compilerWarmUpThreshold_;
-        if (JitOptions.forcedDefaultIonWarmUpThreshold.isSome())
-            compilerWarmUpThreshold = JitOptions.forcedDefaultIonWarmUpThreshold.ref();
+        uint32_t compilerWarmUpThreshold = JitOptions.forcedDefaultIonWarmUpThreshold
+            .valueOr(compilerWarmUpThreshold_);
         return compilerWarmUpThreshold * inliningWarmUpThresholdFactor_;
     }
 
