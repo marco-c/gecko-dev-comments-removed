@@ -34,16 +34,6 @@ DateTimeFormat::Initialize()
 
 
  nsresult
-DateTimeFormat::FormatTime(const nsDateFormatSelector aDateFormatSelector,
-                           const nsTimeFormatSelector aTimeFormatSelector,
-                           const time_t aTimetTime,
-                           nsAString& aStringOut)
-{
-  return FormatPRTime(aDateFormatSelector, aTimeFormatSelector, (aTimetTime * PR_USEC_PER_SEC), aStringOut);
-}
-
-
- nsresult
 DateTimeFormat::FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
                              const nsTimeFormatSelector aTimeFormatSelector,
                              const PRTime aPrTime,

@@ -39,12 +39,6 @@ enum nsTimeFormatSelector : long
 class DateTimeFormat {
 public:
   
-  static nsresult FormatTime(const nsDateFormatSelector aDateFormatSelector,
-                             const nsTimeFormatSelector aTimeFormatSelector,
-                             const time_t aTimetTime,
-                             nsAString& aStringOut);
-
-  
   static nsresult FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
                                const nsTimeFormatSelector aTimeFormatSelector,
                                const PRTime aPrTime,
