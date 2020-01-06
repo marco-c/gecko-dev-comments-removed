@@ -32,7 +32,8 @@ NS_IMPL_ISUPPORTS(HSTSPrimingListener, nsIStreamListener,
                   nsITimerCallback)
 
 
-uint32_t HSTSPrimingListener::sHSTSPrimingTimeout = 3000;
+
+uint32_t HSTSPrimingListener::sHSTSPrimingTimeout = 2000;
 
 
 HSTSPrimingListener::HSTSPrimingListener(nsIHstsPrimingCallback* aCallback)

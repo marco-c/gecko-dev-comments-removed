@@ -139,4 +139,4 @@ pref("security.mixed_content.use_hsts", true);
 pref ("security.mixed_content.hsts_priming_cache_timeout", 604800);
 
 
-pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
+pref ("security.mixed_content.hsts_priming_request_timeout", 2000);
