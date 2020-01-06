@@ -2007,7 +2007,7 @@ BuildTextRunsScanner::GetNextBreakBeforeFrame(uint32_t* aIndex)
 }
 
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_M_IX86)
 #pragma optimize("", off)
 #endif
 static gfxFontGroup*
@@ -2028,7 +2028,7 @@ GetFontGroupForFrame(const nsIFrame* aFrame, float aFontSizeInflation,
   
   return fontGroup;
 }
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(_M_IX86)
 #pragma optimize("", on)
 #endif
 
