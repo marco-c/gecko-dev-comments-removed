@@ -186,8 +186,19 @@ public:
   nsresult SetHTMLBackgroundColor(const nsAString& aColor);
 
   
-  static Element* GetBlockNodeParent(nsINode* aNode);
-  static Element* GetBlock(nsINode& aNode);
+
+
+
+
+  static Element* GetBlockNodeParent(nsINode* aNode,
+                                     nsINode* aAncestorLimiter = nullptr);
+  
+
+
+
+
+  static Element* GetBlock(nsINode& aNode,
+                           nsINode* aAncestorLimiter = nullptr);
 
   void IsNextCharInNodeWhitespace(nsIContent* aContent,
                                   int32_t aOffset,
