@@ -699,10 +699,6 @@ struct arena_t {
 #  define ARENA_MAGIC 0x947d3d24
 #endif
 
-  arena_id_t mId;
-  
-  rb_node(arena_t) mLink;
-
   
   malloc_spinlock_t mLock;
 
@@ -778,8 +774,6 @@ public:
 
   bool Init();
 
-  static inline arena_t* GetById(arena_id_t aArenaId);
-
 private:
   void InitChunk(arena_chunk_t* aChunk, bool aZeroed);
 
@@ -822,8 +816,6 @@ public:
 
   void HardPurge();
 };
-
-typedef rb_tree(arena_t) arena_tree_t;
 
 
 
@@ -1009,12 +1001,8 @@ static size_t		base_committed;
 
 
 
-static arena_t** arenas;
-
-
-
-static arena_tree_t gArenaTree;
-static unsigned narenas;
+static arena_t		**arenas;
+static unsigned		narenas;
 static malloc_spinlock_t arenas_lock; 
 
 #ifndef NO_TLS
@@ -2367,18 +2355,6 @@ choose_arena(size_t size)
   MOZ_DIAGNOSTIC_ASSERT(ret);
   return (ret);
 }
-
-static inline int
-arena_comp(arena_t *a, arena_t *b)
-{
-  MOZ_ASSERT(a);
-  MOZ_ASSERT(b);
-
-  return (a->mId > b->mId) - (a->mId < b->mId);
-}
-
-
-rb_wrap(static, arena_tree_, arena_tree_t, arena_t, mLink, arena_comp)
 
 static inline int
 arena_chunk_comp(arena_chunk_t *a, arena_chunk_t *b)
@@ -4061,9 +4037,6 @@ arena_t::Init()
   if (malloc_spin_init(&mLock))
     return true;
 
-  
-  mId = narenas;
-  memset(&mLink, 0, sizeof(mLink));
   memset(&mStats, 0, sizeof(arena_stats_t));
 
   
@@ -4147,53 +4120,52 @@ arenas_fallback()
 }
 
 
-static arena_t*
+static arena_t *
 arenas_extend()
 {
-  
+	
 
 
 
 
-  const size_t arenas_growth = 16;
-  arena_t* ret;
-
-  
-  ret = (arena_t *)base_alloc(sizeof(arena_t)
-      + (sizeof(arena_bin_t) * (ntbins + nqbins + nsbins - 1)));
-  if (!ret || ret->Init()) {
-    return arenas_fallback();
-  }
-
-  malloc_spin_lock(&arenas_lock);
-
-  arena_tree_insert(&gArenaTree, ret);
-
-  
-  if (narenas % arenas_growth == 0) {
-    size_t max_arenas = ((narenas + arenas_growth) / arenas_growth) * arenas_growth;
-    
+	const size_t arenas_growth = 16;
+	arena_t *ret;
 
 
+	
+	ret = (arena_t *)base_alloc(sizeof(arena_t)
+	    + (sizeof(arena_bin_t) * (ntbins + nqbins + nsbins - 1)));
+	if (!ret || ret->Init()) {
+		return arenas_fallback();
+        }
 
-    arena_t** new_arenas = (arena_t**)base_alloc(sizeof(arena_t*) * max_arenas);
-    if (!new_arenas) {
-      ret = arenas ? arenas_fallback() : nullptr;
-      malloc_spin_unlock(&arenas_lock);
-      return ret;
-    }
-    memcpy(new_arenas, arenas, narenas * sizeof(arena_t*));
-    
+	malloc_spin_lock(&arenas_lock);
+
+	
+	if (narenas % arenas_growth == 0) {
+		size_t max_arenas = ((narenas + arenas_growth) / arenas_growth) * arenas_growth;
+		
 
 
 
-    memset(new_arenas + narenas, 0, sizeof(arena_t*) * (max_arenas - narenas));
-    arenas = new_arenas;
-  }
-  arenas[narenas++] = ret;
+		arena_t** new_arenas = (arena_t **)base_alloc(sizeof(arena_t *) * max_arenas);
+		if (!new_arenas) {
+			ret = arenas ? arenas_fallback() : nullptr;
+			malloc_spin_unlock(&arenas_lock);
+			return (ret);
+		}
+		memcpy(new_arenas, arenas, narenas * sizeof(arena_t *));
+		
 
-  malloc_spin_unlock(&arenas_lock);
-  return ret;
+
+
+		memset(new_arenas + narenas, 0, sizeof(arena_t *) * (max_arenas - narenas));
+		arenas = new_arenas;
+	}
+	arenas[narenas++] = ret;
+
+	malloc_spin_unlock(&arenas_lock);
+	return (ret);
 }
 
 
@@ -4661,7 +4633,6 @@ MALLOC_OUT:
   
 
 
-  arena_tree_new(&gArenaTree);
   arenas_extend();
   if (!arenas || !arenas[0]) {
 #ifndef XP_WIN
@@ -5185,50 +5156,6 @@ MozJemalloc::jemalloc_free_dirty_pages(void)
   malloc_spin_unlock(&arenas_lock);
 }
 
-inline arena_t*
-arena_t::GetById(arena_id_t aArenaId)
-{
-  arena_t key;
-  key.mId = aArenaId;
-  malloc_spin_lock(&arenas_lock);
-  arena_t* result = arena_tree_search(&gArenaTree, &key);
-  malloc_spin_unlock(&arenas_lock);
-  MOZ_RELEASE_ASSERT(result);
-  return result;
-}
-
-#ifdef NIGHTLY_BUILD
-template<> inline arena_id_t
-MozJemalloc::moz_create_arena()
-{
-  arena_t* arena = arenas_extend();
-  return arena->mId;
-}
-
-template<> inline void
-MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
-{
-  arena_t* arena = arena_t::GetById(aArenaId);
-  malloc_spin_lock(&arenas_lock);
-  arena_tree_remove(&gArenaTree, arena);
-  
-  
-  
-  malloc_spin_unlock(&arenas_lock);
-}
-
-#define MALLOC_DECL(name, return_type, ...) \
-  template<> inline return_type \
-  MozJemalloc::moz_arena_ ## name(arena_id_t aArenaId, ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
-  { \
-    BaseAllocator allocator(arena_t::GetById(aArenaId)); \
-    return allocator.name(ARGS_HELPER(ARGS, ##__VA_ARGS__)); \
-  }
-#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
-#include "malloc_decls.h"
-
-#else
-
 #define MALLOC_DECL(name, return_type, ...) \
   template<> inline return_type \
   MozJemalloc::name(ARGS_HELPER(TYPED_ARGS, ##__VA_ARGS__)) \
@@ -5237,8 +5164,6 @@ MozJemalloc::moz_dispose_arena(arena_id_t aArenaId)
   }
 #define MALLOC_FUNCS MALLOC_FUNCS_ARENA
 #include "malloc_decls.h"
-
-#endif
 
 
 
