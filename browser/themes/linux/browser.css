@@ -587,11 +587,7 @@ html|span.ac-emphasize-text-url {
 }
 
 .sidebar-splitter {
-  -moz-appearance: none;
-  width: 6px;
-  background-color: -moz-dialog;
-  border: 1px ThreeDShadow;
-  border-style: none solid;
+  border-color: ThreeDShadow;
 }
 
 .browserContainer > findbar {
@@ -724,6 +720,12 @@ html|span.ac-emphasize-text-url {
 %include ../shared/customizableui/customizeMode.inc.css
 
 
+
+
+#main-window[privatebrowsingmode=temporary] #private-browsing-indicator {
+  background: url("chrome://browser/skin/privatebrowsing-mask.png") center no-repeat;
+  width: 40px;
+}
 
 %include ../shared/UITour.inc.css
 
