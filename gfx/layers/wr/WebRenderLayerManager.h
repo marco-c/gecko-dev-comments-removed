@@ -206,7 +206,7 @@ public:
     nsIFrame::WebRenderUserDataTable* userDataTable =
       frame->GetProperty(nsIFrame::WebRenderUserDataProperty());
     RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(aItem->GetPerFrameKey());
-    if (!data || (data->GetType() != T::Type()) || !data->IsDataValid(this)) {
+    if (!data || (data->GetType() != T::Type())) {
       data = new T(this);
       if (aOutIsRecycled) {
         *aOutIsRecycled = false;
@@ -272,6 +272,7 @@ private:
   
   
   std::vector<const ActiveScrolledRoot*> mAsrStack;
+  const ActiveScrolledRoot* mLastAsr;
 
 public:
   
