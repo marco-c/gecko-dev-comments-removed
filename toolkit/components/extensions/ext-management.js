@@ -166,7 +166,9 @@ this.management = class extends ExtensionAPI {
         async get(id) {
           let addon = await AddonManager.getAddonByID(id);
           if (!addon.isSystem) {
-            return getExtensionInfoForAddon(extension, addon);
+            
+            let ext = addon.isWebExtension && GlobalManager.extensionMap.get(addon.id);
+            return getExtensionInfoForAddon(ext, addon);
           }
         },
 
