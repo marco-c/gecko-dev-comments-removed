@@ -365,11 +365,6 @@ public:
 
     void ShutdownConnectionManager();
 
-    bool KeepEmptyResponseHeadersAsEmtpyString() const
-    {
-        return mKeepEmptyResponseHeadersAsEmtpyString;
-    }
-
     uint32_t DefaultHpackBuffer() const
     {
         return mDefaultHpackBuffer;
@@ -593,13 +588,6 @@ private:
     FrameCheckLevel mEnforceH1Framing;
 
     nsCOMPtr<nsIRequestContextService> mRequestContextService;
-
-    
-    
-    
-    
-    
-    bool mKeepEmptyResponseHeadersAsEmtpyString;
 
     
     uint32_t mDefaultHpackBuffer;

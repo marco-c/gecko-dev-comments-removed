@@ -158,18 +158,6 @@ nsHttpHeaderArray::SetHeaderFromNet(nsHttpAtom header,
     LookupEntry(header, &entry);
 
     if (!entry) {
-        if (value.IsEmpty()) {
-            if (!gHttpHandler->KeepEmptyResponseHeadersAsEmtpyString() &&
-                !TrackEmptyHeader(header)) {
-                LOG(("Ignoring Empty Header: %s\n", header.get()));
-                if (response) {
-                    
-                    return SetHeader_internal(header, headerNameOriginal, value,
-                                              eVarietyResponseNetOriginal);
-                }
-                return NS_OK; 
-            }
-        }
         HeaderVariety variety = eVarietyRequestOverride;
         if (response) {
             variety = eVarietyResponseNetOriginalAndResponse;

@@ -166,9 +166,6 @@ private:
     bool    IsSingletonHeader(nsHttpAtom header);
     
     bool    IsIgnoreMultipleHeader(nsHttpAtom header);
-    
-    
-    bool    TrackEmptyHeader(nsHttpAtom header);
 
     
     
@@ -253,14 +250,6 @@ inline bool nsHttpHeaderArray::IsIgnoreMultipleHeader(nsHttpAtom header)
     
     
     return header == nsHttp::Strict_Transport_Security;
-}
-
-inline bool
-nsHttpHeaderArray::TrackEmptyHeader(nsHttpAtom header)
-{
-    return header == nsHttp::Content_Length ||
-           header == nsHttp::Location ||
-           header == nsHttp::Access_Control_Allow_Origin;
 }
 
 inline MOZ_MUST_USE nsresult
