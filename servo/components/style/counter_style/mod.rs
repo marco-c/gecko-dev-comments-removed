@@ -342,7 +342,7 @@ impl ToCss for System {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub enum Symbol {
     
     String(String),
@@ -489,7 +489,7 @@ impl Parse for Fallback {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct Symbols(pub Vec<Symbol>);
 
 impl Parse for Symbols {

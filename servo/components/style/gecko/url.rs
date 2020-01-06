@@ -30,6 +30,7 @@ pub struct SpecifiedUrl {
     
     pub image_value: Option<RefPtr<ImageValue>>,
 }
+trivial_to_computed_value!(SpecifiedUrl);
 
 impl SpecifiedUrl {
     
