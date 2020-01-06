@@ -18,10 +18,12 @@
 #include "MediaCache.h"
 #include "MediaContainerType.h"
 #include "MediaData.h"
+#include "MediaPrefs.h"
 #include "MediaResourceCallback.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "nsThreadUtils.h"
 #include <algorithm>
 
@@ -760,8 +762,10 @@ public:
   explicit MediaResourceIndex(MediaResource* aResource)
     : mResource(aResource)
     , mOffset(0)
+    , mCacheBlockSize(SelectCacheSize(MediaPrefs::MediaResourceIndexCache()))
     , mCachedOffset(0)
     , mCachedBytes(0)
+    , mCachedBlock(MakeUnique<char[]>(mCacheBlockSize))
   {}
 
   
@@ -865,23 +869,41 @@ private:
                          uint32_t* aBytes);
 
   
+  static uint32_t SelectCacheSize(uint32_t aHint)
+  {
+    if (aHint == 0) {
+      return 0;
+    }
+    if (aHint <= 32) {
+      return 32;
+    }
+    if (aHint > 64*1024) {
+      return 128*1024;
+    }
+    
+    
+    aHint--;
+    aHint |= aHint >> 1;
+    aHint |= aHint >> 2;
+    aHint |= aHint >> 4;
+    aHint |= aHint >> 8;
+    aHint |= aHint >> 16;
+    aHint++;
+    return aHint;
+  }
+
+  
   uint32_t IndexInCache(int64_t aOffsetInFile) const
   {
-    static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0,
-                  "BLOCK_SIZE must be power of 2");
-    static_assert(BLOCK_SIZE <= int64_t(UINT32_MAX),
-                  "BLOCK_SIZE must fit in 32 bits");
-    const uint32_t index = uint32_t(aOffsetInFile & (BLOCK_SIZE - 1));
-    MOZ_ASSERT(index == aOffsetInFile % BLOCK_SIZE);
+    const uint32_t index = uint32_t(aOffsetInFile) & (mCacheBlockSize - 1);
+    MOZ_ASSERT(index == aOffsetInFile % mCacheBlockSize);
     return index;
   }
 
   
   int64_t CacheOffsetContaining(int64_t aOffsetInFile) const
   {
-    static_assert((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0,
-                  "BLOCK_SIZE must be power of 2");
-    const int64_t offset = aOffsetInFile & ~(BLOCK_SIZE - 1);
+    const int64_t offset = aOffsetInFile & ~(int64_t(mCacheBlockSize) - 1);
     MOZ_ASSERT(offset == aOffsetInFile - IndexInCache(aOffsetInFile));
     return offset;
   }
@@ -901,10 +923,10 @@ private:
   
   
   
-  static constexpr int64_t BLOCK_SIZE = MediaCacheStream::BLOCK_SIZE;
+  const uint32_t mCacheBlockSize;
   int64_t mCachedOffset;
   uint32_t mCachedBytes;
-  char mCachedBlock[BLOCK_SIZE];
+  UniquePtr<char[]> mCachedBlock;
 };
 
 } 
