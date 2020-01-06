@@ -64,8 +64,10 @@ DeleteRangeTransaction::DoTransaction()
 
   if (startContainer == endContainer) {
     
+    nsIContent* startChild = rangeToDelete->GetChildAtStartOffset();
     nsresult rv =
-      CreateTxnsToDeleteBetween(startContainer, startOffset, endOffset);
+      CreateTxnsToDeleteBetween(startContainer, startOffset,
+                                startChild, endOffset);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     
@@ -122,6 +124,7 @@ DeleteRangeTransaction::GetTxnDescription(nsAString& aString)
 nsresult
 DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
                                                   int32_t aStartOffset,
+                                                  nsIContent* aChildAtStartOffset,
                                                   int32_t aEndOffset)
 {
   if (NS_WARN_IF(!mEditorBase)) {
@@ -153,7 +156,7 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContent> child = aNode->GetChildAt(aStartOffset);
+  nsIContent* child = aChildAtStartOffset;
   for (int32_t i = aStartOffset; i < aEndOffset; ++i) {
     
     
