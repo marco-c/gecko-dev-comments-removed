@@ -45,7 +45,6 @@ public:
                   uint32_t aCount, uint32_t* aBytes) override;
   
   bool ShouldCacheReads() override { return true; }
-  int64_t  Tell() override;
 
   
   void    Pin() override {}

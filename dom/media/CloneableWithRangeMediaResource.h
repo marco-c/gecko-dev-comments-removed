@@ -22,7 +22,6 @@ public:
     : BaseMediaResource(aCallback, aChannel, aURI)
     , mStream(do_QueryInterface(aStream))
     , mSize(aSize)
-    , mCurrentPosition(0)
     , mInitialized(false)
   {
     MOZ_ASSERT(mStream);
@@ -49,7 +48,6 @@ public:
                   uint32_t aCount, uint32_t* aBytes) override;
   
   bool ShouldCacheReads() override { return true; }
-  int64_t  Tell() override;
 
   
   void    Pin() override {}
@@ -104,9 +102,6 @@ private:
 
   
   uint64_t mSize;
-
-  
-  uint64_t mCurrentPosition;
 
   bool mInitialized;
 };

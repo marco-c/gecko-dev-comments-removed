@@ -333,7 +333,6 @@ public:
   
   
   
-  int64_t Tell();
   
   
   

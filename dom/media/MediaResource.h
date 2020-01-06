@@ -72,12 +72,6 @@ public:
   
   
   
-  
-  virtual int64_t Tell() = 0;
-
-  
-  
-  
   virtual void Pin() = 0;
   virtual void Unpin() = 0;
   
