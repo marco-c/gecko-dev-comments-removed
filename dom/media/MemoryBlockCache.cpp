@@ -192,28 +192,33 @@ MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength)
   
   
   
-  
-  
-  
-  
-  
-  static const size_t sysmem =
-    std::max<size_t>(PR_GetPhysicalMemorySize(), 32 * 1024 * 1024);
-  const size_t limit = std::min(
-    size_t(MediaPrefs::MediaMemoryCachesCombinedLimitKb()) * 1024,
-    sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100);
-  const size_t currentSizes = static_cast<size_t>(gCombinedSizes);
-  if (currentSizes + extra > limit) {
-    LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu;"
-        " combined sizes %zu + %zu > limit %zu",
-        aContentLength,
-        initialLength,
-        extra,
-        desiredLength,
-        currentSizes,
-        extra,
-        limit);
-    return false;
+  if (initialLength == 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    static const size_t sysmem =
+      std::max<size_t>(PR_GetPhysicalMemorySize(), 32 * 1024 * 1024);
+    const size_t limit = std::min(
+      size_t(MediaPrefs::MediaMemoryCachesCombinedLimitKb()) * 1024,
+      sysmem * MediaPrefs::MediaMemoryCachesCombinedLimitPcSysmem() / 100);
+    const size_t currentSizes = static_cast<size_t>(gCombinedSizes);
+    if (currentSizes + extra > limit) {
+      LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu;"
+          " combined sizes %zu + %zu > limit %zu",
+          aContentLength,
+          initialLength,
+          extra,
+          desiredLength,
+          currentSizes,
+          extra,
+          limit);
+      return false;
+    }
   }
   if (!mBuffer.SetLength(desiredLength, mozilla::fallible)) {
     LOG("EnsureBufferCanContain(%zu) - buffer size %zu, wanted + %zu = %zu, "
