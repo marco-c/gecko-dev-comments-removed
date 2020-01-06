@@ -101,11 +101,7 @@ public:
     virtual nsIWidget *GetParent() override;
     virtual float      GetDPI() override;
     virtual double     GetDefaultScaleInternal() override;
-    
-    mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final
-    {
-        return mozilla::DesktopToLayoutDeviceScale(1.0);
-    }
+    mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
     virtual void       SetParent(nsIWidget* aNewParent) override;
     virtual void       SetModal(bool aModal) override;
     virtual bool       IsVisible() const override;
