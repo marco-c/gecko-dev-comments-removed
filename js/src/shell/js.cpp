@@ -150,7 +150,7 @@ static const size_t gMaxStackSize = 128 * sizeof(size_t) * 1024;
 
 
 
-static const TimeDuration MAX_TIMEOUT_INTERVAL = TimeDuration::FromSeconds(1800.0);
+static const double MAX_TIMEOUT_SECONDS = 1800.0;
 
 
 #define SHARED_MEMORY_DEFAULT 1
@@ -3852,6 +3852,7 @@ Sleep_fn(JSContext* cx, unsigned argc, Value* vp)
         }
 
         duration = TimeDuration::FromSeconds(Max(0.0, t_secs));
+        const TimeDuration MAX_TIMEOUT_INTERVAL = TimeDuration::FromSeconds(MAX_TIMEOUT_SECONDS);
         if (duration > MAX_TIMEOUT_INTERVAL) {
             JS_ReportErrorASCII(cx, "Excessive sleep interval");
             return false;
@@ -4019,6 +4020,7 @@ SetTimeoutValue(JSContext* cx, double t)
         JS_ReportErrorASCII(cx, "timeout is not a number");
         return false;
     }
+    const TimeDuration MAX_TIMEOUT_INTERVAL = TimeDuration::FromSeconds(MAX_TIMEOUT_SECONDS);
     if (TimeDuration::FromSeconds(t) > MAX_TIMEOUT_INTERVAL) {
         JS_ReportErrorASCII(cx, "Excessive timeout value");
         return false;
