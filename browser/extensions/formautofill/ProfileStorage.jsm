@@ -530,14 +530,14 @@ class Addresses extends AutofillRecords {
 
 
   mergeToStorage(targetAddress) {
-    let merged = false;
+    let mergedGUIDs = [];
     for (let address of this._store.data[this._collectionName]) {
       if (this.mergeIfPossible(address.guid, targetAddress)) {
-        merged = true;
+        mergedGUIDs.push(address.guid);
       }
     }
-    this.log.debug("Existing records matching and merging is", merged);
-    return merged;
+    this.log.debug("Existing records matching and merging count is", mergedGUIDs.length);
+    return mergedGUIDs;
   }
 }
 

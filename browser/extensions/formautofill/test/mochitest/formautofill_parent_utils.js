@@ -50,6 +50,12 @@ var ParentUtils = {
         return false;
       }
     }
+    
+    for (let field of profileStorage.INTERNAL_FIELDS) {
+      if (field in addressA && field in addressB && (addressA[field] !== addressB[field])) {
+        return false;
+      }
+    }
     return true;
   },
 
