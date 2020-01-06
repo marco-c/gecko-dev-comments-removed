@@ -304,18 +304,38 @@ this.ExtensionPreferencesManager = {
 
 
 
+  async getSetting(name) {
+    await ExtensionSettingsStore.initialize();
+    return ExtensionSettingsStore.getSetting(STORE_TYPE, name);
+  },
+
+  
 
 
 
 
 
-  async getLevelOfControl(extension, name) {
-    for (let prefName of settingsMap.get(name).prefNames) {
-      if (Preferences.locked(prefName)) {
-        return "not_controllable";
+
+
+
+
+
+
+
+
+
+
+  async getLevelOfControl(extension, name, storeType = STORE_TYPE) {
+    
+    
+    if (storeType === STORE_TYPE) {
+      for (let prefName of settingsMap.get(name).prefNames) {
+        if (Preferences.locked(prefName)) {
+          return "not_controllable";
+        }
       }
     }
     await ExtensionSettingsStore.initialize();
-    return ExtensionSettingsStore.getLevelOfControl(extension, STORE_TYPE, name);
+    return ExtensionSettingsStore.getLevelOfControl(extension, storeType, name);
   },
 };
