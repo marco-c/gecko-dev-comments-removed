@@ -24,7 +24,7 @@
 #include "nsIAtom.h"                    
 #include "nsID.h"
 #include "nsIDeviceContextSpec.h"       
-#include "nsILanguageAtomService.h"     
+#include "nsLanguageAtomService.h"      
 #include "nsIObserver.h"                
 #include "nsIObserverService.h"         
 #include "nsIScreen.h"                  
@@ -85,11 +85,7 @@ nsFontCache::Init(nsDeviceContext* aContext)
     if (obs)
         obs->AddObserver(this, "memory-pressure", false);
 
-    nsCOMPtr<nsILanguageAtomService> langService;
-    langService = do_GetService(NS_LANGUAGEATOMSERVICE_CONTRACTID);
-    if (langService) {
-        mLocaleLanguage = langService->GetLocaleLanguage();
-    }
+    mLocaleLanguage = nsLanguageAtomService::GetService()->GetLocaleLanguage();
     if (!mLocaleLanguage) {
         mLocaleLanguage = NS_Atomize("x-western");
     }

@@ -57,7 +57,6 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
   mRawSet.reset(Servo_StyleSet_Init(aPresContext));
 
   mPresContext->DeviceContext()->InitFontCache();
-  gfxPlatformFontList::PlatformFontList()->InitLangService();
 
   
   

@@ -3,42 +3,32 @@
 
 
 
+
+
+
+
+
+#ifndef nsLanguageAtomService_h_
+#define nsLanguageAtomService_h_
+
 #include "nsCOMPtr.h"
-#include "nsILanguageAtomService.h"
-#include "nsIStringBundle.h"
-#include "nsInterfaceHashtable.h"
 #include "nsIAtom.h"
-#include "nsUConvPropertySearch.h"
-#include "mozilla/Attributes.h"
+#include "nsInterfaceHashtable.h"
 
-#define NS_LANGUAGEATOMSERVICE_CID \
-  {0xB7C65853, 0x2996, 0x435E, {0x96, 0x54, 0xDC, 0xC1, 0x78, 0xAA, 0xB4, 0x8C}}
-
-class nsLanguageAtomService final : public nsILanguageAtomService
+class nsLanguageAtomService
 {
 public:
-  NS_DECL_ISUPPORTS
+  static nsLanguageAtomService* GetService();
 
-  
-  virtual nsIAtom*
-    LookupLanguage(const nsACString &aLanguage, nsresult *aError) override;
-
-  virtual already_AddRefed<nsIAtom>
-    LookupCharSet(const nsACString& aCharSet) override;
-
-  virtual nsIAtom* GetLocaleLanguage() override;
-
-  virtual nsIAtom* GetLanguageGroup(nsIAtom* aLanguage,
-                                    nsresult* aError) override;
-  virtual already_AddRefed<nsIAtom> GetUncachedLanguageGroup(nsIAtom* aLanguage,
-                                                             nsresult* aError) const final;
-
-  nsLanguageAtomService();
+  nsIAtom* LookupLanguage(const nsACString &aLanguage);
+  already_AddRefed<nsIAtom> LookupCharSet(const nsACString& aCharSet);
+  nsIAtom* GetLocaleLanguage();
+  nsIAtom* GetLanguageGroup(nsIAtom* aLanguage);
+  already_AddRefed<nsIAtom> GetUncachedLanguageGroup(nsIAtom* aLanguage) const;
 
 private:
-  ~nsLanguageAtomService() { }
-
-protected:
   nsInterfaceHashtable<nsISupportsHashKey, nsIAtom> mLangToGroup;
   nsCOMPtr<nsIAtom> mLocaleLanguage;
 };
+
+#endif
