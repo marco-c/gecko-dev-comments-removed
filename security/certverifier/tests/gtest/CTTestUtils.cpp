@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <iomanip>
 
+#include "BTInclusionProof.h"
 #include "CTSerialization.h"
 #include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
@@ -326,6 +327,104 @@ const char kTestEmbeddedWithIntermediatePreCaCertData[] =
   "041d31bda8e2dd6d39b3664de5ce0870f5fc7e6a00d6ed00528458d953d2"
   "37586d73";
 
+
+
+
+
+
+
+
+
+
+
+const char kTestInclusionProof[] =
+  "020100" 
+  "0000000000000004" 
+  "0000000000000002" 
+  "0042" 
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestNodeHash0[] =
+  "48c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729";
+
+const char kTestNodeHash1[] =
+  "a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a";
+
+const char kTestInclusionProofUnexpectedData[] = "12345678";
+
+const char kTestInclusionProofInvalidHashSize[] =
+  "020100" 
+  "0000000000000004" 
+  "0000000000000002" 
+  "0042" 
+  "3048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofInvalidHash[] =
+  "020100" 
+  "0000000000000004" 
+  "0000000000000002" 
+  "0042" 
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427"; 
+
+const char kTestInclusionProofMissingLogId[] =
+  "0000000000000004" 
+  "0000000000000002" 
+  "0042"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofNullPathLength[] =
+  "020100"
+  "0000000000000004" 
+  "0000000000000002" 
+  "0000"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofPathLengthTooSmall[] =
+  "020100"
+  "0000000000000004" 
+  "0000000000000002" 
+  "0036"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofPathLengthTooLarge[] =
+  "020100"
+  "0000000000000004" 
+  "0000000000000002" 
+  "0080"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofNullTreeSize[] =
+  "020100"
+  "0000000000000000" 
+  "0000000000000002" 
+  "0042"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofLeafIndexOutOfBounds[] =
+  "020100"
+  "0000000000000004" 
+  "0000000000000004" 
+  "0042"
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a"; 
+
+const char kTestInclusionProofExtraData[] =
+  "020100" 
+  "0000000000000004" 
+  "0000000000000002" 
+  "0042" 
+  "2048c90c8ae24688d6bef5d48a30c2cc8b6754335a8db21793cc0a8e3bed321729" 
+  "20a20bf9a7cc2dc8a08f5f415a71b19f6ac427bab54d24eec868b5d3103449953a" 
+  "123456"; 
+
 static uint8_t
 CharToByte(char c)
 {
@@ -404,6 +503,84 @@ Buffer
 GetTestSignedCertificateTimestamp()
 {
   return HexToBytes(kTestSignedCertificateTimestamp);
+}
+
+Buffer
+GetTestInclusionProof()
+{
+  return HexToBytes(kTestInclusionProof);
+}
+
+Buffer
+GetTestInclusionProofUnexpectedData()
+{
+  return HexToBytes(kTestInclusionProofUnexpectedData);
+}
+
+Buffer
+GetTestInclusionProofInvalidHashSize()
+{
+  return HexToBytes(kTestInclusionProofInvalidHashSize);
+}
+
+Buffer
+GetTestInclusionProofInvalidHash()
+{
+  return HexToBytes(kTestInclusionProofInvalidHash);
+}
+
+Buffer
+GetTestInclusionProofMissingLogId()
+{
+  return HexToBytes(kTestInclusionProofMissingLogId);
+}
+
+Buffer
+GetTestInclusionProofNullPathLength()
+{
+  return HexToBytes(kTestInclusionProofNullPathLength);
+}
+
+Buffer
+GetTestInclusionProofPathLengthTooSmall()
+{
+  return HexToBytes(kTestInclusionProofPathLengthTooSmall);
+}
+
+Buffer
+GetTestInclusionProofPathLengthTooLarge()
+{
+  return HexToBytes(kTestInclusionProofPathLengthTooLarge);
+}
+
+Buffer
+GetTestInclusionProofNullTreeSize()
+{
+  return HexToBytes(kTestInclusionProofNullTreeSize);
+}
+
+Buffer
+GetTestInclusionProofLeafIndexOutOfBounds()
+{
+  return HexToBytes(kTestInclusionProofLeafIndexOutOfBounds);
+}
+
+Buffer
+GetTestInclusionProofExtraData()
+{
+  return HexToBytes(kTestInclusionProofExtraData);
+}
+
+Buffer
+GetTestNodeHash0()
+{
+  return HexToBytes(kTestNodeHash0);
+}
+
+Buffer
+GetTestNodeHash1()
+{
+  return HexToBytes(kTestNodeHash1);
 }
 
 Buffer

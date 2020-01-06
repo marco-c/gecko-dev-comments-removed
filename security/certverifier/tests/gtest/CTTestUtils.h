@@ -41,6 +41,24 @@ Buffer GetTestDigitallySignedData();
 Buffer GetTestSignedCertificateTimestamp();
 
 
+Buffer GetTestInclusionProof();
+Buffer GetTestInclusionProofUnexpectedData();
+Buffer GetTestInclusionProofInvalidHashSize();
+Buffer GetTestInclusionProofInvalidHash();
+Buffer GetTestInclusionProofMissingLogId();
+Buffer GetTestInclusionProofNullPathLength();
+Buffer GetTestInclusionProofPathLengthTooSmall();
+Buffer GetTestInclusionProofPathLengthTooLarge();
+Buffer GetTestInclusionProofNullTreeSize();
+Buffer GetTestInclusionProofLeafIndexOutOfBounds();
+Buffer GetTestInclusionProofExtraData();
+
+
+
+Buffer GetTestNodeHash0();
+Buffer GetTestNodeHash1();
+
+
 Buffer GetTestPublicKey();
 
 
