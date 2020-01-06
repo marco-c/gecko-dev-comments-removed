@@ -36,12 +36,13 @@ GeckoStyleContext::GeckoStyleContext(GeckoStyleContext* aParent,
                                      CSSPseudoElementType aPseudoType,
                                      already_AddRefed<nsRuleNode> aRuleNode,
                                      bool aSkipParentDisplayBasedStyleFixup)
-  : nsStyleContext(aParent, aPseudoTag, aPseudoType)
+  : nsStyleContext(aPseudoTag, aPseudoType)
   , mCachedResetData(nullptr)
   , mRefCnt(0)
   , mChild(nullptr)
   , mEmptyChild(nullptr)
   , mRuleNode(Move(aRuleNode))
+  , mParent(aParent)
 #ifdef DEBUG
   , mComputingStruct(nsStyleStructID_None)
 #endif
@@ -631,15 +632,21 @@ ShouldSuppressLineBreak(const nsStyleContext* aContext,
   return false;
 }
 
+void
+GeckoStyleContext::FinishConstruction()
+{
+  MOZ_ASSERT(RuleNode());
+
+  if (mParent) {
+    mParent->AddChild(this);
+  }
+
+  SetStyleBits();
+}
 
 void
-nsStyleContext::SetStyleBits()
+GeckoStyleContext::SetStyleBits()
 {
-  
-  
-  
-  
-
   if ((mParent && mParent->HasPseudoElementData()) || IsPseudoElement()) {
     AddStyleBit(NS_STYLE_HAS_PSEUDO_ELEMENT_DATA);
   }

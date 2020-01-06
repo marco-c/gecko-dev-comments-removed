@@ -37,9 +37,7 @@ public:
   void AddChild(GeckoStyleContext* aChild);
   void RemoveChild(GeckoStyleContext* aChild);
 
-  GeckoStyleContext* GetParent() const {
-    return mParent ? mParent->AsGecko() : nullptr;
-  }
+  GeckoStyleContext* GetParent() const { return mParent; }
 
   bool IsLinkContext() const {
     return GetStyleIfVisited() &&
@@ -247,6 +245,8 @@ private:
   
   void DoClearCachedInheritedStyleDataOnDescendants(uint32_t aStructs);
   void Destroy();
+  void SetStyleBits();
+  void FinishConstruction();
 
   
   
@@ -259,6 +259,8 @@ private:
   GeckoStyleContext* mPrevSibling;
   GeckoStyleContext* mNextSibling;
   RefPtr<nsRuleNode> mRuleNode;
+
+  RefPtr<GeckoStyleContext> mParent;
 
   
   
@@ -286,7 +288,6 @@ public:
     {
       mStyleContext->mComputingStruct = mOuterSID;
     }
-
   };
 
 private:
