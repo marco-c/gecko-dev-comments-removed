@@ -622,22 +622,21 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
           sample->mTime = currentTime;
 
           
-          
-          
 
           UniqueStacks::Stack stack =
             aUniqueStacks.BeginStack(UniqueStacks::OnStackFrameKey("(root)"));
 
-          int framePos = (readPos + 1) % mEntrySize;
-          ProfileBufferEntry frame = mEntries[framePos];
-          while (framePos != mWritePos && !frame.isSample() && !frame.isThreadId()) {
+          int entryPos = (readPos + 1) % mEntrySize;
+          ProfileBufferEntry entry = mEntries[entryPos];
+          while (entryPos != mWritePos && !entry.isSample() &&
+                 !entry.isThreadId()) {
             int incBy = 1;
-            frame = mEntries[framePos];
+            entry = mEntries[entryPos];
 
             
             
-            const char* string = frame.u.mString;
-            int readAheadPos = (framePos + 1) % mEntrySize;
+            const char* string = entry.u.mString;
+            int readAheadPos = (entryPos + 1) % mEntrySize;
             
             
             strbuf[DYNAMIC_MAX_STRING-1] = '\0';
@@ -654,24 +653,24 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
             
             
             
-            if (frame.isNativeLeafAddr()) {
+            if (entry.isNativeLeafAddr()) {
               
               
               
               unsigned long long pc =
-                (unsigned long long)(uintptr_t)frame.u.mPtr;
+                (unsigned long long)(uintptr_t)entry.u.mPtr;
               snprintf(strbuf.get(), DYNAMIC_MAX_STRING, "%#llx", pc);
               stack.AppendFrame(UniqueStacks::OnStackFrameKey(strbuf.get()));
 
-            } else if (frame.isCodeLocation()) {
+            } else if (entry.isCodeLocation()) {
               UniqueStacks::OnStackFrameKey frameKey(string);
-              readAheadPos = (framePos + incBy) % mEntrySize;
+              readAheadPos = (entryPos + incBy) % mEntrySize;
               if (readAheadPos != mWritePos &&
                   mEntries[readAheadPos].isLineNumber()) {
                 frameKey.mLine = Some((unsigned) mEntries[readAheadPos].u.mInt);
                 incBy++;
               }
-              readAheadPos = (framePos + incBy) % mEntrySize;
+              readAheadPos = (entryPos + incBy) % mEntrySize;
               if (readAheadPos != mWritePos &&
                   mEntries[readAheadPos].isCategory()) {
                 frameKey.mCategory =
@@ -680,9 +679,9 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
               }
               stack.AppendFrame(frameKey);
 
-            } else if (frame.isJitReturnAddr()) {
+            } else if (entry.isJitReturnAddr()) {
               
-              void* pc = frame.u.mPtr;
+              void* pc = entry.u.mPtr;
               unsigned depth = aUniqueStacks.LookupJITFrameDepth(pc);
               if (depth == 0) {
                 StreamJSFramesOp framesOp(pc, stack);
@@ -696,7 +695,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
                 }
               }
             }
-            framePos = (framePos + incBy) % mEntrySize;
+            entryPos = (entryPos + incBy) % mEntrySize;
           }
 
           sample->mStack = stack.GetOrAddIndex();
