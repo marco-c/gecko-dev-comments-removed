@@ -267,19 +267,38 @@ ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex)
   if (type == nsIDOMCSSRule::IMPORT_RULE) {
     MOZ_ASSERT(!nested, "@import rule cannot be nested");
     ConstructImportRule(aIndex, [this](const RawServoStyleSheet* raw) {
+      
+      
+      
+      
+      
+      
+
+      
       StyleSheet* sheet = mStyleSheet->GetMostRecentlyAddedChildSheet();
-      MOZ_ASSERT(sheet, "Should have at least one "
-                 "child stylesheet after inserting @import rule");
-      ServoStyleSheet* servoSheet = sheet->AsServo();
-      
-      
-      
-      
-      if (servoSheet->RawSheet() != raw) {
-        NS_WARNING("New child sheet should always be prepended to the list");
-        return static_cast<ServoStyleSheet*>(nullptr);
+      if (sheet) {
+        ServoStyleSheet* firstChild = sheet->AsServo();
+
+        
+        if (firstChild->RawSheet() == raw) {
+          
+          return firstChild;
+        }
+#if DEBUG
+        
+        
+        mStyleSheet->EnumerateChildSheets([raw](StyleSheet* child) {
+          ServoStyleSheet* servoChild = child->AsServo();
+          MOZ_ASSERT(servoChild->RawSheet() != raw,
+            "New child sheet should either be first on the list or not present");
+        });
+#endif
       }
-      return servoSheet;
+
+      
+      
+      NS_WARNING("Import rule didn't create a ServoStyleSheet... bad URL?");
+      return static_cast<ServoStyleSheet*>(nullptr);
     });
   }
   return rv;
