@@ -5633,10 +5633,13 @@ pref("media.block-autoplay-until-in-foreground", true);
 #endif
 
 
+
+#ifdef MOZ_STYLO
 #ifdef MOZ_STYLO_ENABLE
 pref("layout.css.servo.enabled", true);
 #else
 pref("layout.css.servo.enabled", false);
+#endif
 #endif
 
 
