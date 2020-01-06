@@ -59,6 +59,7 @@ VARIANTS = [
     'pgo',
     'asan',
     'stylo',
+    'stylo disabled',
     'stylo-sequential',
     'qr',
     'ccov',
@@ -473,7 +474,7 @@ def mozharness_test_buildbot_bridge(config, job, taskdesc):
             variant = ''
 
         
-        if variant in ('qr', 'stylo', 'stylo-sequential', 'devedition'):
+        if variant in ('qr', 'stylo', 'stylo-sequential', 'devedition', 'stylo disabled'):
             name = '{prefix} {variant} {branch} talos {test_name}'
         elif variant:
             name = '{prefix} {branch} {variant} talos {test_name}'
