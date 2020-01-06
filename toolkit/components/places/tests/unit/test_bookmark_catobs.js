@@ -16,6 +16,11 @@ add_task(async function test_observers() {
     dummyReceivedOnItemAdded = true;
   }, "dummy-observer-item-added");
 
+  
+  
+  
+  await PlacesUtils.promiseItemId(PlacesUtils.bookmarks.unfiledGuid);
+
   let initialObservers = PlacesUtils.bookmarks.getObservers();
 
   
@@ -44,10 +49,11 @@ add_task(async function test_observers() {
   });
 
   
-  PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                       uri("http://typed.mozilla.org"),
-                                       PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                       "bookmark");
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    title: "bookmark",
+    url: "http://typed.mozilla.org",
+  });
 
   await notificationsPromised;
 });

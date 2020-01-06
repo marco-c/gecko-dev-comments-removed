@@ -68,7 +68,7 @@ AutoCompleteInput.prototype = {
 
 
 
-function ensure_results(expected, searchTerm) {
+function ensure_results(expected, searchTerm, callback) {
   let controller = Cc["@mozilla.org/autocomplete/controller;1"].
                    getService(Ci.nsIAutoCompleteController);
 
@@ -88,7 +88,7 @@ function ensure_results(expected, searchTerm) {
       do_check_eq(controller.getStyleAt(i), expected[i].style);
     }
 
-    deferEnsureResults.resolve();
+    callback();
   };
 
   controller.startSearch(searchTerm);
@@ -171,17 +171,24 @@ var s0 = "";
 var s1 = "si";
 var s2 = "site";
 
-var observer = {
-  results: null,
-  search: null,
-  runCount: -1,
-  observe(aSubject, aTopic, aData) {
-    if (--this.runCount > 0)
-      return;
-    ensure_results(this.results, this.search);
-  }
-};
-Services.obs.addObserver(observer, PlacesUtils.TOPIC_FEEDBACK_UPDATED);
+var observer;
+
+function promiseResultsCompleted() {
+  return new Promise(resolve => {
+    observer = {
+      results: null,
+      search: null,
+      runCount: -1,
+      observe(aSubject, aTopic, aData) {
+        if (--this.runCount > 0)
+          return;
+        ensure_results(this.results, this.search, resolve);
+        Services.obs.removeObserver(observer, PlacesUtils.TOPIC_FEEDBACK_UPDATED);
+      }
+    };
+    Services.obs.addObserver(observer, PlacesUtils.TOPIC_FEEDBACK_UPDATED);
+  });
+}
 
 
 
@@ -370,21 +377,13 @@ var tests = [
 
 
 
-
-var deferEnsureResults;
-
-
-
-
 add_task(async function test_adaptive() {
   
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
   do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));
   for (let test of tests) {
     
-    PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId);
-    PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.tagsFolderId);
-    observer.runCount = -1;
+    await PlacesUtils.bookmarks.eraseEverything();
 
     let types = ["history", "bookmark", "openpage"];
     for (let type of types) {
@@ -393,10 +392,8 @@ add_task(async function test_adaptive() {
 
     await PlacesTestUtils.clearHistory();
 
-    deferEnsureResults = PromiseUtils.defer();
+    let resultsCompletedPromise = promiseResultsCompleted();
     await test();
-    await deferEnsureResults.promise;
+    await resultsCompletedPromise;
   }
-
-  Services.obs.removeObserver(observer, PlacesUtils.TOPIC_FEEDBACK_UPDATED);
 });

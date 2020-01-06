@@ -9,26 +9,13 @@
 
 
 
-
-
 var ac = Cc["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"].
          getService(Ci.nsIAutoCompleteSearch);
 
-
-
-function test_stopSearch() {
+add_task(async function test_stopSearch() {
   try {
     ac.stopSearch();
   } catch (e) {
     do_throw("we should not have caught anything!");
   }
-}
-
-
-
-var tests = [
-  test_stopSearch,
-];
-function run_test() {
-  tests.forEach(test => test());
-}
+});
