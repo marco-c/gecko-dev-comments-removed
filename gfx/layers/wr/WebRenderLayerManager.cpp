@@ -673,6 +673,14 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   bool sync = mTarget != nullptr;
   mLatestTransactionId = mTransactionIdAllocator->GetTransactionId( true);
 
+  
+  
+  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
+    if (WrBridge()->GetSyncObject() &&
+        WrBridge()->GetSyncObject()->IsSyncObjectValid()) {
+      WrBridge()->GetSyncObject()->Synchronize();
+    }
+  }
   {
     AutoProfilerTracing
       tracing("Paint", sync ? "ForwardDPTransactionSync":"ForwardDPTransaction");
