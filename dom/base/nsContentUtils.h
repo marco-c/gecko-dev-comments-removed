@@ -1880,6 +1880,16 @@ public:
   static void RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable);
 
   
+
+
+
+
+
+
+
+  static nsISerialEventTarget* GetStableStateEventTarget();
+
+  
   
   static void EnterMicroTask();
   static void LeaveMicroTask();
@@ -3226,6 +3236,8 @@ private:
 
 
   static bool sFragmentParsingActive;
+
+  static nsISerialEventTarget* sStableStateEventTarget;
 
   static nsString* sShiftText;
   static nsString* sControlText;
