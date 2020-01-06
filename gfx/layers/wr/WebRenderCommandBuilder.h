@@ -3,8 +3,8 @@
 
 
 
-#ifndef GFX_WEBRENDERCOMMANDSBUILDER_H
-#define GFX_WEBRENDERCOMMANDSBUILDER_H
+#ifndef GFX_WEBRENDERCOMMANDBUILDER_H
+#define GFX_WEBRENDERCOMMANDBUILDER_H
 
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/layers/WebRenderMessages.h"
@@ -28,12 +28,12 @@ class WebRenderFallbackData;
 class WebRenderParentCommand;
 class WebRenderUserData;
 
-class WebRenderCommandsBuilder {
+class WebRenderCommandBuilder {
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderUserData>> WebRenderUserDataRefTable;
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
 
 public:
-  explicit WebRenderCommandsBuilder(WebRenderLayerManager* aManager)
+  explicit WebRenderCommandBuilder(WebRenderLayerManager* aManager)
   : mManager(aManager)
   , mLastAsr(nullptr)
   {}
@@ -48,33 +48,33 @@ public:
                               wr::LayoutSize& aContentSize);
 
   Maybe<wr::ImageKey> CreateImageKey(nsDisplayItem* aItem,
-                                            ImageContainer* aContainer,
-                                            mozilla::wr::DisplayListBuilder& aBuilder,
-                                            mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                            const StackingContextHelper& aSc,
-                                            gfx::IntSize& aSize);
+                                     ImageContainer* aContainer,
+                                     mozilla::wr::DisplayListBuilder& aBuilder,
+                                     mozilla::wr::IpcResourceUpdateQueue& aResources,
+                                     const StackingContextHelper& aSc,
+                                     gfx::IntSize& aSize);
 
   WebRenderUserDataRefTable* GetWebRenderUserDataTable() { return &mWebRenderUserDatas; }
 
   bool PushImage(nsDisplayItem* aItem,
-                        ImageContainer* aContainer,
-                        mozilla::wr::DisplayListBuilder& aBuilder,
-                        mozilla::wr::IpcResourceUpdateQueue& aResources,
-                        const StackingContextHelper& aSc,
-                        const LayerRect& aRect);
+                 ImageContainer* aContainer,
+                 mozilla::wr::DisplayListBuilder& aBuilder,
+                 mozilla::wr::IpcResourceUpdateQueue& aResources,
+                 const StackingContextHelper& aSc,
+                 const LayerRect& aRect);
 
   Maybe<wr::WrImageMask> BuildWrMaskImage(nsDisplayItem* aItem,
-                                                 wr::DisplayListBuilder& aBuilder,
-                                                 wr::IpcResourceUpdateQueue& aResources,
-                                                 const StackingContextHelper& aSc,
-                                                 nsDisplayListBuilder* aDisplayListBuilder,
-                                                 const LayerRect& aBounds);
+                                          wr::DisplayListBuilder& aBuilder,
+                                          wr::IpcResourceUpdateQueue& aResources,
+                                          const StackingContextHelper& aSc,
+                                          nsDisplayListBuilder* aDisplayListBuilder,
+                                          const LayerRect& aBounds);
 
   bool PushItemAsImage(nsDisplayItem* aItem,
-                              wr::DisplayListBuilder& aBuilder,
-                              wr::IpcResourceUpdateQueue& aResources,
-                              const StackingContextHelper& aSc,
-                              nsDisplayListBuilder* aDisplayListBuilder);
+                       wr::DisplayListBuilder& aBuilder,
+                       wr::IpcResourceUpdateQueue& aResources,
+                       const StackingContextHelper& aSc,
+                       nsDisplayListBuilder* aDisplayListBuilder);
 
   void CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
                                               nsDisplayListBuilder* aDisplayListBuilder,

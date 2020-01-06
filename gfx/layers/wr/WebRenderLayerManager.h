@@ -16,7 +16,7 @@
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
-#include "mozilla/layers/WebRenderCommandsBuilder.h"
+#include "mozilla/layers/WebRenderCommandBuilder.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
 #include "mozilla/webrender/WebRenderAPI.h"
@@ -150,8 +150,9 @@ public:
 
   bool SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
                                                 const ScrollUpdateInfo& aUpdateInfo) override;
-  WebRenderCommandsBuilder& CommandBuilder() { return mWebRenderCommandsBuilder; }
-  WebRenderUserDataRefTable* GetWebRenderUserDataTable() { return mWebRenderCommandsBuilder.GetWebRenderUserDataTable(); }
+
+  WebRenderCommandBuilder& CommandBuilder() { return mWebRenderCommandBuilder; }
+  WebRenderUserDataRefTable* GetWebRenderUserDataTable() { return mWebRenderCommandBuilder.GetWebRenderUserDataTable(); }
   WebRenderScrollData& GetScrollData() { return mScrollData; }
 
 private:
@@ -196,21 +197,21 @@ private:
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
 
- 
- 
- 
- 
- 
- 
- 
- RefPtr<gfxContext> mTarget;
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<gfxContext> mTarget;
 
   
   uint32_t mPaintSequenceNumber;
   
   APZTestData mApzTestData;
 
-  WebRenderCommandsBuilder mWebRenderCommandsBuilder;
+  WebRenderCommandBuilder mWebRenderCommandBuilder;
 };
 
 } 

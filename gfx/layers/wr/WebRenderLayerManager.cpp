@@ -33,7 +33,7 @@ WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   , mIsFirstPaint(false)
   , mTarget(nullptr)
   , mPaintSequenceNumber(0)
-  , mWebRenderCommandsBuilder(this)
+  , mWebRenderCommandBuilder(this)
 {
   MOZ_COUNT_CTOR(WebRenderLayerManager);
 }
@@ -106,7 +106,7 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
   
   mActiveCompositorAnimationIds.clear();
 
-  mWebRenderCommandsBuilder.Destroy();
+  mWebRenderCommandBuilder.Destroy();
 
   if (mTransactionIdAllocator) {
     
@@ -247,12 +247,12 @@ WebRenderLayerManager::EndTransactionWithoutLayer(nsDisplayList* aDisplayList,
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline(), contentSize);
   wr::IpcResourceUpdateQueue resourceUpdates(WrBridge()->GetShmemAllocator());
 
-  mWebRenderCommandsBuilder.BuildWebRenderCommands(builder,
-                                                   resourceUpdates,
-                                                   aDisplayList,
-                                                   aDisplayListBuilder,
-                                                   mScrollData,
-                                                   contentSize);
+  mWebRenderCommandBuilder.BuildWebRenderCommands(builder,
+                                                  resourceUpdates,
+                                                  aDisplayList,
+                                                  aDisplayListBuilder,
+                                                  mScrollData,
+                                                  contentSize);
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder, resourceUpdates);
   WrBridge()->ClearReadLocks();
