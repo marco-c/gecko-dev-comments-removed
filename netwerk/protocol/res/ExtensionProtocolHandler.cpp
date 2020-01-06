@@ -112,6 +112,7 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
     
     
     
+    
     explicit
       ExtensionStreamGetter(already_AddRefed<nsIJARChannel>&& aJarChannel)
       : mJarChannel(Move(aJarChannel))
@@ -119,8 +120,6 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter>
       , mIsCachedJar(true)
     {
       MOZ_ASSERT(mJarChannel);
-
-      SetupEventTarget();
     }
 
     ~ExtensionStreamGetter() {}
@@ -234,7 +233,7 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
                                 nsIChannel* aChannel)
 {
   MOZ_ASSERT(IsNeckoChild());
-  MOZ_ASSERT(mMainThreadEventTarget);
+  MOZ_ASSERT(mMainThreadEventTarget || mIsCachedJar);
 
   mListener = aListener;
   mChannel = aChannel;
@@ -243,7 +242,11 @@ ExtensionStreamGetter::GetAsync(nsIStreamListener* aListener,
   
   if (mIsCachedJar) {
     MOZ_ASSERT(mIsJarChannel);
-    mJarChannel->AsyncOpen2(mListener);
+    nsresult rv = mJarChannel->AsyncOpen2(mListener);
+    if (NS_FAILED(rv)) {
+      mChannel->Cancel(NS_BINDING_ABORTED);
+      return Result<Ok, nsresult>(rv);
+    }
     return Ok();
   }
 
