@@ -1018,7 +1018,7 @@ public:
     bool UseContentXBLScope() { return mUseContentXBLScope; }
     void ClearContentXBLScope() { mContentXBLScope = nullptr; }
 
-    bool IsAddonScope() { return mIsAddonScope; }
+    bool IsAddonScope() { return xpc::IsAddonCompartment(Compartment()); }
 
     inline bool HasInterposition() { return mInterposition; }
     nsCOMPtr<nsIAddonInterposition> GetInterposition();
@@ -1079,8 +1079,6 @@ private:
     nsCOMPtr<nsIAddonInterposition>  mInterposition;
 
     JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
-
-    bool mIsAddonScope;
 
     
     
@@ -3098,6 +3096,11 @@ public:
     
     
     bool isContentXBLCompartment;
+
+    
+    
+    
+    bool isAddonCompartment;
 
     
     
