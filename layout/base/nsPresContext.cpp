@@ -1369,7 +1369,10 @@ nsPresContext::UpdateEffectiveTextZoom()
 
   mEffectiveTextZoom = newZoom;
 
-  if (HasCachedStyleData()) {
+  
+  
+  
+  if (mDocument->IsStyledByServo() || HasCachedStyleData()) {
     
     
     MediaFeatureValuesChanged(eRestyle_ForceDescendants,
