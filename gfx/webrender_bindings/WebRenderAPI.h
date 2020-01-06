@@ -22,6 +22,8 @@
 
 namespace mozilla {
 
+struct DisplayItemClipChain;
+
 namespace widget {
 class CompositorWidget;
 }
@@ -234,8 +236,9 @@ public:
                           const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
                           const wr::WrImageMask* aMask = nullptr);
-  void PushClip(const wr::WrClipId& aClipId, bool aExtra = false);
-  void PopClip(bool aExtra = false);
+  void PushClip(const wr::WrClipId& aClipId, const DisplayItemClipChain* aParent = nullptr);
+  void PopClip(const DisplayItemClipChain* aParent = nullptr);
+  Maybe<wr::WrClipId> GetCacheOverride(const DisplayItemClipChain* aParent);
 
   wr::WrStickyId DefineStickyFrame(const wr::LayoutRect& aContentRect,
                                    const wr::StickySideConstraint* aTop,
@@ -407,7 +410,7 @@ public:
   wr::WrState* Raw() { return mWrState; }
 
   
-  bool HasExtraClip() { return mExtraClipCount > 0; }
+  bool HasExtraClip() { return !mCacheOverride.empty(); }
 
 protected:
   wr::WrState* mWrState;
@@ -423,7 +426,19 @@ protected:
   std::unordered_set<layers::FrameMetrics::ViewID> mScrollIdsDefined;
 
   
-  uint32_t mExtraClipCount;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unordered_map<const DisplayItemClipChain*, std::vector<wr::WrClipId>> mCacheOverride;
 
   friend class WebRenderAPI;
 };
