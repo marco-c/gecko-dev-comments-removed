@@ -130,9 +130,9 @@ var closeToolbox = Task.async(function* () {
 
 function waitForToolboxFrameFocus(toolbox) {
   info("Making sure that the toolbox's frame is focused");
-  let def = promise.defer();
-  waitForFocus(def.resolve, toolbox.win);
-  return def.promise;
+  return new Promise(resolve => {
+    waitForFocus(resolve, toolbox.win);
+  });
 }
 
 
@@ -210,27 +210,27 @@ var addTab = Task.async(function* (url) {
 
 
 function waitForDocLoadComplete(aBrowser = gBrowser) {
-  let deferred = promise.defer();
-  let progressListener = {
-    onStateChange: function (webProgress, req, flags, status) {
-      let docStop = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
-                    Ci.nsIWebProgressListener.STATE_STOP;
-      info(`Saw state ${flags.toString(16)} and status ${status.toString(16)}`);
+  return new Promise(resolve => {
+    let progressListener = {
+      onStateChange: function (webProgress, req, flags, status) {
+        let docStop = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
+                      Ci.nsIWebProgressListener.STATE_STOP;
+        info(`Saw state ${flags.toString(16)} and status ${status.toString(16)}`);
 
-      
-      
-      if ((flags & docStop) == docStop && status != Cr.NS_BINDING_ABORTED) {
-        aBrowser.removeProgressListener(progressListener);
-        info("Browser loaded");
-        deferred.resolve();
-      }
-    },
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+        
+        
+        if ((flags & docStop) == docStop && status != Cr.NS_BINDING_ABORTED) {
+          aBrowser.removeProgressListener(progressListener);
+          info("Browser loaded");
+          resolve();
+        }
+      },
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
                                            Ci.nsISupportsWeakReference])
-  };
-  aBrowser.addProgressListener(progressListener);
-  info("Waiting for browser load");
-  return deferred.promise;
+    };
+    aBrowser.addProgressListener(progressListener);
+    info("Waiting for browser load");
+  });
 }
 
 
