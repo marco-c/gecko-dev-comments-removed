@@ -1816,10 +1816,27 @@ protected:
   void RequestVideoData() override
   {
     MOZ_ASSERT(!mDoneVideoSeeking);
-    mMaster->RequestVideoData(GetSeekTarget());
+
+    const auto& clock = mMaster->mMediaSink->IsStarted()
+                        ? mMaster->GetClock()
+                        : mMaster->GetMediaTime();
+    const auto& nextKeyFrameTime = GetNextKeyFrameTime();
+
+    auto threshold = clock;
+
+    if (nextKeyFrameTime.IsValid() &&
+        clock >= (nextKeyFrameTime - sSkipToNextKeyFrameThreshold)) {
+      threshold = nextKeyFrameTime;
+    }
+
+    mMaster->RequestVideoData(threshold);
   }
 
 private:
+  
+  
+  static constexpr TimeUnit sSkipToNextKeyFrameThreshold = TimeUnit::FromMicroseconds(5000);
+
   
   media::TimeUnit GetSeekTarget() const override
   {
@@ -1827,7 +1844,25 @@ private:
            ? mMaster->GetClock()
            : mSeekJob.mTarget->GetTime();
   }
+
+  media::TimeUnit GetNextKeyFrameTime() const
+  {
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mDoneVideoSeeking);
+    MOZ_DIAGNOSTIC_ASSERT(mMaster->VideoQueue().GetSize() == 0);
+
+    if (mFirstVideoFrameAfterSeek) {
+      return mFirstVideoFrameAfterSeek->NextKeyFrameTime();
+    }
+
+    return TimeUnit::Invalid();
+  }
+
 };
+
+constexpr TimeUnit
+MediaDecoderStateMachine::VideoOnlySeekingState::sSkipToNextKeyFrameThreshold;
 
 RefPtr<MediaDecoder::SeekPromise>
 MediaDecoderStateMachine::DormantState::HandleSeek(SeekTarget aTarget)
