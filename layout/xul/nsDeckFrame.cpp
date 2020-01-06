@@ -110,6 +110,13 @@ nsDeckFrame::IndexChanged()
                                   currentBox, GetSelectedBox());
   }
 #endif
+
+  
+  
+  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+  if (pm && currentBox) {
+    pm->UpdatePopupPositions(currentBox->PresContext()->RefreshDriver());
+  }
 }
 
 int32_t
