@@ -334,6 +334,7 @@
 #  define MOZ_MAYBE_UNUSED
 #endif
 
+#ifdef __cplusplus
 
 
 
@@ -360,9 +361,15 @@
 
 
 
-#if defined(__clang__) && __cplusplus >= 201103L
-   
+
+#ifndef __has_cpp_attribute
+#  define __has_cpp_attribute(x) 0
+#endif
+
+#if __has_cpp_attribute(clang::fallthrough)
 #  define MOZ_FALLTHROUGH [[clang::fallthrough]]
+#elif __has_cpp_attribute(gnu::fallthrough)
+#  define MOZ_FALLTHROUGH [[gnu::fallthrough]]
 #elif defined(_MSC_VER)
    
 
@@ -373,8 +380,6 @@
 #else
 #  define MOZ_FALLTHROUGH
 #endif
-
-#ifdef __cplusplus
 
 
 
