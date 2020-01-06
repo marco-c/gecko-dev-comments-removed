@@ -93,6 +93,7 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "nsIPageSequenceFrame.h"
 #include "nsIURL.h"
 #include "nsIContentViewerEdit.h"
+#include "nsIContentViewerFile.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIDocShellTreeOwner.h"
@@ -101,7 +102,6 @@ static const char kPrintingPromptService[] = "@mozilla.org/embedcomp/printingpro
 #include "nsILayoutHistoryState.h"
 #include "nsFrameManager.h"
 #include "mozilla/ReflowInput.h"
-#include "nsIDOMHTMLLinkElement.h"
 #include "nsIDOMHTMLImageElement.h"
 #include "nsIContentViewerContainer.h"
 #include "nsIContentViewer.h"
@@ -210,6 +210,7 @@ nsPrintEngine::nsPrintEngine()
   , mProgressDialogIsShown(false)
   , mScreenDPI(115.0f)
   , mPagePrintTimer(nullptr)
+  , mDebugFile(nullptr)
   , mLoadCounter(0)
   , mDidLoadDataForPrinting(false)
   , mIsDestroying(false)
@@ -255,7 +256,8 @@ void nsPrintEngine::DestroyPrintingData()
 nsresult nsPrintEngine::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
                                    nsIDocShell*            aContainer,
                                    nsIDocument*            aDocument,
-                                   float                   aScreenDPI)
+                                   float                   aScreenDPI,
+                                   FILE*                   aDebugFile)
 {
   NS_ENSURE_ARG_POINTER(aDocViewerPrint);
   NS_ENSURE_ARG_POINTER(aContainer);
@@ -265,6 +267,8 @@ nsresult nsPrintEngine::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
   mContainer      = do_GetWeakReference(aContainer);
   mDocument       = aDocument;
   mScreenDPI      = aScreenDPI;
+
+  mDebugFile      = aDebugFile;      
 
   return NS_OK;
 }
@@ -586,6 +590,10 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
   
   
   if (!aIsPrintPreview || printingViaParent) {
+#ifdef DEBUG
+    printData->mDebugFilePtr = mDebugFile;
+#endif
+
     scriptSuppressor.Suppress();
     bool printSilently;
     printData->mPrintSettings->GetPrintSilent(&printSilently);
@@ -1199,15 +1207,18 @@ nsPrintEngine::BuildDocTree(nsIDocShell *      aParentNode,
       nsCOMPtr<nsIContentViewer>  viewer;
       childAsShell->GetContentViewer(getter_AddRefs(viewer));
       if (viewer) {
-        nsCOMPtr<nsIDOMDocument> doc = do_GetInterface(childAsShell);
-        auto po = MakeUnique<nsPrintObject>();
-        po->mParent = aPO.get();
-        nsresult rv = po->Init(childAsShell, doc, aPO->mPrintPreview);
-        if (NS_FAILED(rv))
-          NS_NOTREACHED("Init failed?");
-        aPO->mKids.AppendElement(Move(po));
-        aDocList->AppendElement(aPO->mKids.LastElement().get());
-        BuildDocTree(childAsShell, aDocList, aPO->mKids.LastElement());
+        nsCOMPtr<nsIContentViewerFile> viewerFile(do_QueryInterface(viewer));
+        if (viewerFile) {
+          nsCOMPtr<nsIDOMDocument> doc = do_GetInterface(childAsShell);
+          auto po = MakeUnique<nsPrintObject>();
+          po->mParent = aPO.get();
+          nsresult rv = po->Init(childAsShell, doc, aPO->mPrintPreview);
+          if (NS_FAILED(rv))
+            NS_NOTREACHED("Init failed?");
+          aPO->mKids.AppendElement(Move(po));
+          aDocList->AppendElement(aPO->mKids.LastElement().get());
+          BuildDocTree(childAsShell, aDocList, aPO->mKids.LastElement());
+        }
       }
     }
   }
@@ -1855,7 +1866,7 @@ nsPrintEngine::SetupToPrintContent()
   
   
   
-  if (mIsDoingPrinting) {
+  if (!printData->mDebugFilePtr && mIsDoingPrinting) {
     rv = printData->mPrintDC->BeginDocument(docTitleStr, fileNameStr, startPage,
                                             endPage);
   }
@@ -2567,111 +2578,123 @@ nsPrintEngine::DoPrint(const UniquePtr<nsPrintObject>& aPO)
     
     printData->mPreparingForPrint = false;
 
+    
+    
+    if (printData->mDebugFilePtr) {
+#ifdef DEBUG
+      
+      nsIFrame* root = poPresShell->FrameManager()->GetRootFrame();
+      root->DumpRegressionData(poPresContext, printData->mDebugFilePtr, 0);
+      fclose(printData->mDebugFilePtr);
+      SetIsPrinting(false);
+#endif
+    } else {
 #ifdef EXTENDED_DEBUG_PRINTING
-    nsIFrame* rootFrame = poPresShell->FrameManager()->GetRootFrame();
-    if (aPO->IsPrintable()) {
-      nsAutoCString docStr;
-      nsAutoCString urlStr;
-      GetDocTitleAndURL(aPO, docStr, urlStr);
-      DumpLayoutData(docStr.get(), urlStr.get(), poPresContext,
-                     printData->mPrintDocDC, rootFrame, docShell, nullptr);
-    }
+      nsIFrame* rootFrame = poPresShell->FrameManager()->GetRootFrame();
+      if (aPO->IsPrintable()) {
+        nsAutoCString docStr;
+        nsAutoCString urlStr;
+        GetDocTitleAndURL(aPO, docStr, urlStr);
+        DumpLayoutData(docStr.get(), urlStr.get(), poPresContext,
+                       printData->mPrintDocDC, rootFrame, docShell, nullptr);
+      }
 #endif
 
-    if (!printData->mPrintSettings) {
-      
-      SetIsPrinting(false);
-      return NS_ERROR_FAILURE;
-    }
+      if (!printData->mPrintSettings) {
+        
+        SetIsPrinting(false);
+        return NS_ERROR_FAILURE;
+      }
 
-    nsAutoString docTitleStr;
-    nsAutoString docURLStr;
-    GetDisplayTitleAndURL(aPO, docTitleStr, docURLStr, eDocTitleDefBlank);
+      nsAutoString docTitleStr;
+      nsAutoString docURLStr;
+      GetDisplayTitleAndURL(aPO, docTitleStr, docURLStr, eDocTitleDefBlank);
 
-    if (nsIPrintSettings::kRangeSelection == printRangeType) {
-      CloneSelection(aPO->mDocument->GetOriginalDocument(), aPO->mDocument);
+      if (nsIPrintSettings::kRangeSelection == printRangeType) {
+        CloneSelection(aPO->mDocument->GetOriginalDocument(), aPO->mDocument);
 
-      poPresContext->SetIsRenderingOnlySelection(true);
-      
-      
-      
+        poPresContext->SetIsRenderingOnlySelection(true);
+        
+        
+        
 
-      
-      
-      nsIFrame* startFrame;
-      nsIFrame* endFrame;
-      int32_t   startPageNum;
-      int32_t   endPageNum;
-      nsRect    startRect;
-      nsRect    endRect;
+        
+        
+        nsIFrame* startFrame;
+        nsIFrame* endFrame;
+        int32_t   startPageNum;
+        int32_t   endPageNum;
+        nsRect    startRect;
+        nsRect    endRect;
 
-      rv = GetPageRangeForSelection(pageSequence,
-                                    &startFrame, startPageNum, startRect,
-                                    &endFrame, endPageNum, endRect);
-      if (NS_SUCCEEDED(rv)) {
-        printData->mPrintSettings->SetStartPageRange(startPageNum);
-        printData->mPrintSettings->SetEndPageRange(endPageNum);
-        nsIntMargin marginTwips(0,0,0,0);
-        nsIntMargin unwrtMarginTwips(0,0,0,0);
-        printData->mPrintSettings->GetMarginInTwips(marginTwips);
-        printData->mPrintSettings->GetUnwriteableMarginInTwips(
-                                     unwrtMarginTwips);
-        nsMargin totalMargin = poPresContext->CSSTwipsToAppUnits(marginTwips +
-                                                                 unwrtMarginTwips);
-        if (startPageNum == endPageNum) {
-          startRect.y -= totalMargin.top;
-          endRect.y   -= totalMargin.top;
+        rv = GetPageRangeForSelection(pageSequence,
+                                      &startFrame, startPageNum, startRect,
+                                      &endFrame, endPageNum, endRect);
+        if (NS_SUCCEEDED(rv)) {
+          printData->mPrintSettings->SetStartPageRange(startPageNum);
+          printData->mPrintSettings->SetEndPageRange(endPageNum);
+          nsIntMargin marginTwips(0,0,0,0);
+          nsIntMargin unwrtMarginTwips(0,0,0,0);
+          printData->mPrintSettings->GetMarginInTwips(marginTwips);
+          printData->mPrintSettings->GetUnwriteableMarginInTwips(
+                                       unwrtMarginTwips);
+          nsMargin totalMargin = poPresContext->CSSTwipsToAppUnits(marginTwips +
+                                                                   unwrtMarginTwips);
+          if (startPageNum == endPageNum) {
+            startRect.y -= totalMargin.top;
+            endRect.y   -= totalMargin.top;
 
-          
-          if (startRect.y < 0) {
+            
+            if (startRect.y < 0) {
+              
+              
+              startRect.height = std::max(0, startRect.YMost());
+              startRect.y = 0;
+            }
+            if (endRect.y < 0) {
+              
+              
+              endRect.height = std::max(0, endRect.YMost());
+              endRect.y = 0;
+            }
+            NS_ASSERTION(endRect.y >= startRect.y,
+                         "Selection end point should be after start point");
+            NS_ASSERTION(startRect.height >= 0,
+                         "rect should have non-negative height.");
+            NS_ASSERTION(endRect.height >= 0,
+                         "rect should have non-negative height.");
+
+            nscoord selectionHgt = endRect.y + endRect.height - startRect.y;
+            
+            pageSequence->SetSelectionHeight(startRect.y * aPO->mZoomRatio,
+                                             selectionHgt * aPO->mZoomRatio);
+
             
             
-            startRect.height = std::max(0, startRect.YMost());
-            startRect.y = 0;
+            nscoord pageWidth, pageHeight;
+            printData->mPrintDC->GetDeviceSurfaceDimensions(pageWidth,
+                                                            pageHeight);
+            pageHeight -= totalMargin.top + totalMargin.bottom;
+            int32_t totalPages = NSToIntCeil(float(selectionHgt) * aPO->mZoomRatio / float(pageHeight));
+            pageSequence->SetTotalNumPages(totalPages);
           }
-          if (endRect.y < 0) {
-            
-            
-            endRect.height = std::max(0, endRect.YMost());
-            endRect.y = 0;
-          }
-          NS_ASSERTION(endRect.y >= startRect.y,
-                       "Selection end point should be after start point");
-          NS_ASSERTION(startRect.height >= 0,
-                       "rect should have non-negative height.");
-          NS_ASSERTION(endRect.height >= 0,
-                       "rect should have non-negative height.");
-
-          nscoord selectionHgt = endRect.y + endRect.height - startRect.y;
-          
-          pageSequence->SetSelectionHeight(startRect.y * aPO->mZoomRatio,
-                                           selectionHgt * aPO->mZoomRatio);
-
-          
-          
-          nscoord pageWidth, pageHeight;
-          printData->mPrintDC->GetDeviceSurfaceDimensions(pageWidth,
-                                                          pageHeight);
-          pageHeight -= totalMargin.top + totalMargin.bottom;
-          int32_t totalPages = NSToIntCeil(float(selectionHgt) * aPO->mZoomRatio / float(pageHeight));
-          pageSequence->SetTotalNumPages(totalPages);
         }
       }
+
+      nsIFrame * seqFrame = do_QueryFrame(pageSequence);
+      if (!seqFrame) {
+        SetIsPrinting(false);
+        return NS_ERROR_FAILURE;
+      }
+
+      mPageSeqFrame = seqFrame;
+      pageSequence->StartPrint(poPresContext, printData->mPrintSettings,
+                               docTitleStr, docURLStr);
+
+      
+      PR_PL(("Scheduling Print of PO: %p (%s) \n", aPO.get(), gFrameTypesStr[aPO->mFrameType]));
+      StartPagePrintTimer(aPO);
     }
-
-    nsIFrame * seqFrame = do_QueryFrame(pageSequence);
-    if (!seqFrame) {
-      SetIsPrinting(false);
-      return NS_ERROR_FAILURE;
-    }
-
-    mPageSeqFrame = seqFrame;
-    pageSequence->StartPrint(poPresContext, printData->mPrintSettings,
-                             docTitleStr, docURLStr);
-
-    
-    PR_PL(("Scheduling Print of PO: %p (%s) \n", aPO.get(), gFrameTypesStr[aPO->mFrameType]));
-    StartPagePrintTimer(aPO);
   }
 
   return NS_OK;

@@ -668,7 +668,7 @@ BrowserElementChild.prototype = {
     let isHTMLLink = node =>
         ((ChromeUtils.getClassName(node) === "HTMLAnchorElement" && node.href) ||
          (ChromeUtils.getClassName(node) === "HTMLAreaElement" && node.href) ||
-         node instanceof Ci.nsIDOMHTMLLinkElement);
+         ChromeUtils.getClassName(node) === "HTMLLinkElement");
 
     
     
