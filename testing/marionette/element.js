@@ -181,24 +181,11 @@ element.Store = class {
       delete this.els[uuid];
     }
 
-    
-    let wrappedFrame = new XPCNativeWrapper(container.frame);
-    let wrappedShadowRoot;
-    if (container.shadowRoot) {
-      wrappedShadowRoot = new XPCNativeWrapper(container.shadowRoot);
-    }
-    let wrappedEl = new XPCNativeWrapper(el);
-    let wrappedContainer = {
-      frame: wrappedFrame,
-      shadowRoot: wrappedShadowRoot,
-    };
-    if (!el ||
-        !(wrappedEl.ownerDocument == wrappedFrame.document) ||
-        element.isDisconnected(wrappedEl, wrappedContainer)) {
+    if (element.isStale(el, container.frame, container.shadowRoot)) {
       throw new StaleElementReferenceError(
-          error.pprint`The element reference of ${el} stale: ` +
+          error.pprint`The element reference of ${el} stale; ` +
               "either the element is no longer attached to the DOM " +
-              "or the page has been refreshed");
+              "or the document has been refreshed");
     }
 
     return el;
@@ -634,6 +621,47 @@ element.isWebElementReference = function(ref) {
 element.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.isStale = function(el, window, shadowRoot = undefined) {
+  if (typeof window == "undefined") {
+    throw new TypeError("Window global must be provided for staleness check");
+  }
+
+  
+  let wrappedElement, wrappedWindow, wrappedShadowRoot;
+
+  wrappedElement = new XPCNativeWrapper(el);
+  wrappedWindow = new XPCNativeWrapper(window);
+  if (shadowRoot) {
+    wrappedShadowRoot = new XPCNativeWrapper(shadowRoot);
+  }
+
+  const container = {
+    frame: wrappedWindow,
+    shadowRoot: wrappedShadowRoot,
+  };
+
+  let sameDoc = wrappedElement.ownerDocument === wrappedWindow.document;
+  let disconn = element.isDisconnected(wrappedElement, container);
+
+  return !el || !sameDoc || disconn;
 };
 
 
