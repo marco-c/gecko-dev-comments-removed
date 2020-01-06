@@ -2444,7 +2444,8 @@ js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
 
 
 
-    static_assert(offsetof(SharedScriptData, data_) % sizeof(GCPtrAtom) == 0);
+    static_assert(offsetof(SharedScriptData, data_) % sizeof(GCPtrAtom) == 0,
+                  "atoms must have GCPtrAtom alignment");
     GCPtrAtom* atoms = entry->atoms();
     for (unsigned i = 0; i < natoms; ++i)
         new (&atoms[i]) GCPtrAtom();
