@@ -837,7 +837,21 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
               mouseInput.mLocalOrigin, thumbData);
           
           
-          dragStart -= thumbData.mThumbStart;
+          
+          
+          
+          
+          LayerToParentLayerMatrix4x4 thumbTransform;
+          {
+            MutexAutoLock lock(mTreeLock);
+            thumbTransform = ComputeTransformForNode(hitScrollbarNode);
+          }
+          
+          
+          CSSCoord thumbStart = thumbData.mThumbStart
+                              + ((thumbData.mDirection == ScrollDirection::HORIZONTAL)
+                                 ? thumbTransform._41 : thumbTransform._42);
+          dragStart -= thumbStart;
           mInputQueue->ConfirmDragBlock(
               dragBlockId, apzc,
               AsyncDragMetrics(apzc->GetGuid().mScrollId,
