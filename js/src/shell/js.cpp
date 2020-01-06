@@ -132,8 +132,6 @@ enum JSShellExitCode {
     EXITCODE_TIMEOUT            = 6
 };
 
-static const size_t gStackChunkSize = 8192;
-
 
 
 
