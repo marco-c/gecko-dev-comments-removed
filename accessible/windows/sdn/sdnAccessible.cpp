@@ -38,7 +38,7 @@ sdnAccessible::QueryInterface(REFIID aREFIID, void** aInstancePtr)
     return S_OK;
   }
 
-  AccessibleWrap* accessible = static_cast<AccessibleWrap*>(GetAccessible());
+  AccessibleWrap* accessible = GetAccessible();
   if (accessible)
     return accessible->QueryInterface(aREFIID, aInstancePtr);
 
@@ -98,7 +98,7 @@ sdnAccessible::get_nodeInfo(BSTR __RPC_FAR* aNodeName,
   
   
   
-  Accessible* accessible = GetAccessible();
+  AccessibleWrap* accessible = GetAccessible();
   if (accessible) {
     *aUniqueID = AccessibleWrap::GetChildIDFor(accessible);
   } else {

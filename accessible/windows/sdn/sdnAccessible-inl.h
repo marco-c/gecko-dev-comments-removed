@@ -21,11 +21,23 @@ sdnAccessible::GetDocument() const
   return GetExistingDocAccessible(mNode->OwnerDoc());
 }
 
-inline Accessible*
-sdnAccessible::GetAccessible() const
+inline AccessibleWrap*
+sdnAccessible::GetAccessible()
 {
+  if (mWrap) {
+    return mWrap;
+  }
+
   DocAccessible* document = GetDocument();
-  return document ? document->GetAccessibleEvenIfNotInMap(mNode) : nullptr;
+  if (!document) {
+    return nullptr;
+  }
+
+  
+  
+  mWrap =
+    static_cast<AccessibleWrap*>(document->GetAccessibleEvenIfNotInMap(mNode));
+  return mWrap;
 }
 
 } 
