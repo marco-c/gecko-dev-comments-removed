@@ -10,11 +10,12 @@
 #include "nsCOMPtr.h"
 #endif
 
+#include "mozilla/HTMLEditor.h"
+#include "mozilla/RefPtr.h"
 #include "nsIHTMLDocument.h"
 
 class nsIDocShell;
 class nsIEditingSession;
-class nsIEditor;
 
 class nsDocShellEditorData
 {
@@ -26,8 +27,11 @@ public:
   bool GetEditable();
   nsresult CreateEditor();
   nsresult GetEditingSession(nsIEditingSession** aResult);
-  nsresult GetEditor(nsIEditor** aResult);
-  nsresult SetEditor(nsIEditor* aEditor);
+  mozilla::HTMLEditor* GetHTMLEditor() const
+  {
+    return mHTMLEditor;
+  }
+  nsresult SetHTMLEditor(mozilla::HTMLEditor* aHTMLEditor);
   void TearDownEditor();
   nsresult DetachFromWindow();
   nsresult ReattachToWindow(nsIDocShell* aDocShell);
@@ -43,10 +47,14 @@ protected:
   nsCOMPtr<nsIEditingSession> mEditingSession;
 
   
-  bool mMakeEditable;
+  RefPtr<mozilla::HTMLEditor> mHTMLEditor;
 
   
-  nsCOMPtr<nsIEditor> mEditor;
+  
+  nsIHTMLDocument::EditingState mDetachedEditingState;
+
+  
+  bool mMakeEditable;
 
   
   
@@ -54,10 +62,6 @@ protected:
 
   
   bool mDetachedMakeEditable;
-
-  
-  
-  nsIHTMLDocument::EditingState mDetachedEditingState;
 };
 
 #endif 
