@@ -1464,6 +1464,8 @@ pref("media.eme.vp9-in-mp4.enabled", true);
 pref("media.eme.vp9-in-mp4.enabled", false);
 #endif
 
+pref("media.eme.hdcp-policy-check.enabled", false);
+
 
 
 pref("media.gmp.trial-create.enabled", true);
