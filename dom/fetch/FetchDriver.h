@@ -68,6 +68,13 @@ public:
 
   virtual void FlushConsoleReport() = 0;
 
+  
+  
+  
+  virtual bool NeedOnDataAvailable() = 0;
+
+  
+  
   virtual void OnDataAvailable() = 0;
 
 protected:
@@ -131,6 +138,12 @@ private:
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
   SRIMetadata mSRIMetadata;
   nsCString mWorkerScript;
+
+  
+  
+  
+  bool mNeedToObserveOnDataAvailable;
+
   bool mIsTrackingFetch;
 
 #ifdef DEBUG
