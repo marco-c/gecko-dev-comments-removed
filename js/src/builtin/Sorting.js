@@ -7,38 +7,50 @@
 
 
 
-function CountingSort(array, len, signed) {
-    var buffer = new List();
-    var min = 0;
+function CountingSort(array, len, signed, comparefn) {
+    
+    if (len < 128) {
+        QuickSort(array, len, comparefn);
+        return array;
+    }
 
     
+    var min = 0;
     if (signed) {
         min = -128;
     }
 
-    for (var i = 0; i < 256; i++) {
-        buffer[i] = 0;
-    }
+    
+    
+    var buffer = [
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    ];
+    
 
     
     for (var i = 0; i < len; i++) {
         var val = array[i];
-        buffer[val - min]++
+        buffer[val - min]++;
     }
 
     
-    var val = 0;
-    for (var i = 0; i < len; i++) {
+    var val = -1;
+    for (var i = 0; i < len;) {
         
-        while (true) {
-            if (buffer[val] > 0) {
-                array[i] = val + min;
-                buffer[val]--;
-                break;
-            } else {
-                val++;
-            }
-        }
+        var j;
+        do {
+            j = buffer[++val];
+        } while (j === 0);
+
+        for (; j > 0; j--)
+            array[i++] = val + min;
     }
     return array;
 }
@@ -48,9 +60,8 @@ function ByteAtCol(x, pos) {
     return (x >> (pos * 8)) & 0xFF;
 }
 
-function SortByColumn(array, len, aux, col) {
+function SortByColumn(array, len, aux, col, counts) {
     const R = 256;
-    let counts = new List();
 
     
     
@@ -63,9 +74,13 @@ function SortByColumn(array, len, aux, col) {
     
     
     
+    assert(counts.length === R + 1, "counts has |R| + 1 entries");
+
+    
     for (let r = 0; r < R + 1; r++) {
         counts[r] = 0;
     }
+
     
     for (let i = 0; i < len; i++) {
         let val = array[i];
@@ -81,7 +96,7 @@ function SortByColumn(array, len, aux, col) {
     
     for (let i = 0; i < len; i++) {
         let val = array[i];
-        let b  = ByteAtCol(val, col);
+        let b = ByteAtCol(val, col);
         aux[counts[b]++] = val;
     }
 
@@ -94,17 +109,15 @@ function SortByColumn(array, len, aux, col) {
 
 
 function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
-
     
-    if (len < 128) {
+    if (len < 512) {
         QuickSort(array, len, comparefn);
         return array;
     }
 
-    let aux = new List();
-    for (let i = 0; i < len; i++) {
-        aux[i] = 0;
-    }
+    let aux = [];
+    for (let i = 0; i < len; i++)
+        _DefineDataProperty(aux, i, 0);
 
     let view = array;
     let signMask = 1 << nbytes * 8 - 1;
@@ -114,10 +127,9 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
         
         if (buffer === null) {
             buffer = callFunction(std_TypedArray_buffer, array);
-        }
 
-        
-        assert(buffer !== null, "Attached data buffer should be reified when array length is >= 128.");
+            assert(buffer !== null, "Attached data buffer should be reified");
+        }
 
         view = new Int32Array(buffer);
 
@@ -138,8 +150,23 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
     }
 
     
+    
+    let counts = [
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,
+    ];
+    
+
+    
     for (let col = 0; col < nbytes; col++) {
-        SortByColumn(view, len, aux, col);
+        SortByColumn(view, len, aux, col, counts);
     }
 
     

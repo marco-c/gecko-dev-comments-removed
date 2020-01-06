@@ -1192,11 +1192,10 @@ function TypedArraySort(comparefn) {
         return obj;
 
     if (comparefn === undefined) {
-        
         if (IsUint8TypedArray(obj)) {
-            return CountingSort(obj, len, false );
+            return CountingSort(obj, len, false , TypedArrayCompareInt);
         } else if (IsInt8TypedArray(obj)) {
-            return CountingSort(obj, len, true );
+            return CountingSort(obj, len, true , TypedArrayCompareInt);
         } else if (IsUint16TypedArray(obj)) {
             return RadixSort(obj, len, buffer, 2 , false , false , TypedArrayCompareInt);
         } else if (IsInt16TypedArray(obj)) {
