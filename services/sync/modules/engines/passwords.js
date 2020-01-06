@@ -14,6 +14,37 @@ Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://services-common/async.js");
 
+const SYNCABLE_LOGIN_FIELDS = [
+  
+  "hostname",
+  "formSubmitURL",
+  "httpRealm",
+  "username",
+  "password",
+  "usernameField",
+  "passwordField",
+
+  
+  "timeCreated",
+  "timePasswordChanged",
+];
+
+
+
+
+
+
+function isSyncableChange(oldLogin, newLogin) {
+  oldLogin.QueryInterface(Ci.nsILoginMetaInfo).QueryInterface(Ci.nsILoginInfo);
+  newLogin.QueryInterface(Ci.nsILoginMetaInfo).QueryInterface(Ci.nsILoginInfo);
+  for (let property of SYNCABLE_LOGIN_FIELDS) {
+    if (oldLogin[property] != newLogin[property]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 this.LoginRec = function LoginRec(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
@@ -315,27 +346,45 @@ PasswordTracker.prototype = {
     
     
     switch (data) {
-      case "modifyLogin":
-        subject = subject.QueryInterface(Ci.nsIArray).queryElementAt(1, Ci.nsILoginMetaInfo);
-        
-      case "addLogin":
-      case "removeLogin":
-        
-        subject.QueryInterface(Ci.nsILoginMetaInfo).QueryInterface(Ci.nsILoginInfo);
-        if (Utils.getSyncCredentialsHosts().has(subject.hostname)) {
+      case "modifyLogin": {
+        subject.QueryInterface(Ci.nsIArrayExtensions);
+        let oldLogin = subject.GetElementAt(0);
+        let newLogin = subject.GetElementAt(1);
+        if (!isSyncableChange(oldLogin, newLogin)) {
+          this._log.trace(`${data}: Ignoring change for ${newLogin.guid}`);
           break;
         }
+        if (this._trackLogin(newLogin)) {
+          this._log.trace(`${data}: Tracking change for ${newLogin.guid}`);
+        }
+        break;
+      }
 
-        if (this.addChangedID(subject.guid)) {
-          this.score += SCORE_INCREMENT_XLARGE;
+      case "addLogin":
+      case "removeLogin":
+        subject.QueryInterface(Ci.nsILoginMetaInfo).QueryInterface(Ci.nsILoginInfo);
+        if (this._trackLogin(subject)) {
           this._log.trace(data + ": " + subject.guid);
         }
         break;
+
       case "removeAllLogins":
         this._log.trace(data);
         this.score += SCORE_INCREMENT_XLARGE;
         break;
     }
+  },
+
+  _trackLogin(login) {
+    if (Utils.getSyncCredentialsHosts().has(login.hostname)) {
+      
+      return false;
+    }
+    if (!this.addChangedID(login.guid)) {
+      return false;
+    }
+    this.score += SCORE_INCREMENT_XLARGE;
+    return true;
   },
 };
 
