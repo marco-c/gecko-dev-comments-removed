@@ -174,30 +174,6 @@ private:
   nsSize mSize;
 };
 
-namespace {
-
-class NativeInputRunnable final : public PrioritizableRunnable
-{
-  explicit NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent);
-  ~NativeInputRunnable() {}
-public:
-  static already_AddRefed<nsIRunnable> Create(already_AddRefed<nsIRunnable>&& aEvent);
-};
-
-NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent)
-  : PrioritizableRunnable(Move(aEvent), nsIRunnablePriority::PRIORITY_INPUT)
-{
-}
-
- already_AddRefed<nsIRunnable>
-NativeInputRunnable::Create(already_AddRefed<nsIRunnable>&& aEvent)
-{
-  nsCOMPtr<nsIRunnable> event(new NativeInputRunnable(Move(aEvent)));
-  return event.forget();
-}
-
-} 
-
 LinkedList<OldWindowSize> OldWindowSize::sList;
 
 NS_INTERFACE_MAP_BEGIN(nsDOMWindowUtils)
@@ -1143,7 +1119,7 @@ nsDOMWindowUtils::SendNativeKeyEvent(int32_t aNativeKeyboardLayout,
   if (!widget)
     return NS_ERROR_FAILURE;
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
+  NS_DispatchToMainThread(
     NewRunnableMethod<int32_t,
                       int32_t,
                       uint32_t,
@@ -1157,7 +1133,7 @@ nsDOMWindowUtils::SendNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                     aModifiers,
                                     aCharacters,
                                     aUnmodifiedCharacters,
-                                    aObserver)));
+                                    aObserver));
   return NS_OK;
 }
 
@@ -1174,7 +1150,7 @@ nsDOMWindowUtils::SendNativeMouseEvent(int32_t aScreenX,
   if (!widget)
     return NS_ERROR_FAILURE;
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
+  NS_DispatchToMainThread(
     NewRunnableMethod<LayoutDeviceIntPoint, int32_t, int32_t, nsIObserver*>(
       "nsIWidget::SynthesizeNativeMouseEvent",
       widget,
@@ -1182,7 +1158,7 @@ nsDOMWindowUtils::SendNativeMouseEvent(int32_t aScreenX,
       LayoutDeviceIntPoint(aScreenX, aScreenY),
       aNativeMessage,
       aModifierFlags,
-      aObserver)));
+      aObserver));
   return NS_OK;
 }
 
@@ -1197,13 +1173,12 @@ nsDOMWindowUtils::SendNativeMouseMove(int32_t aScreenX,
   if (!widget)
     return NS_ERROR_FAILURE;
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
-    NewRunnableMethod<LayoutDeviceIntPoint, nsIObserver*>(
-      "nsIWidget::SynthesizeNativeMouseMove",
-      widget,
-      &nsIWidget::SynthesizeNativeMouseMove,
-      LayoutDeviceIntPoint(aScreenX, aScreenY),
-      aObserver)));
+  NS_DispatchToMainThread(NewRunnableMethod<LayoutDeviceIntPoint, nsIObserver*>(
+    "nsIWidget::SynthesizeNativeMouseMove",
+    widget,
+    &nsIWidget::SynthesizeNativeMouseMove,
+    LayoutDeviceIntPoint(aScreenX, aScreenY),
+    aObserver));
   return NS_OK;
 }
 
@@ -1225,26 +1200,25 @@ nsDOMWindowUtils::SendNativeMouseScrollEvent(int32_t aScreenX,
     return NS_ERROR_FAILURE;
   }
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
-    NewRunnableMethod<mozilla::LayoutDeviceIntPoint,
-                      uint32_t,
-                      double,
-                      double,
-                      double,
-                      uint32_t,
-                      uint32_t,
-                      nsIObserver*>(
-      "nsIWidget::SynthesizeNativeMouseScrollEvent",
-      widget,
-      &nsIWidget::SynthesizeNativeMouseScrollEvent,
-      LayoutDeviceIntPoint(aScreenX, aScreenY),
-      aNativeMessage,
-      aDeltaX,
-      aDeltaY,
-      aDeltaZ,
-      aModifierFlags,
-      aAdditionalFlags,
-      aObserver)));
+  NS_DispatchToMainThread(NewRunnableMethod<mozilla::LayoutDeviceIntPoint,
+                                            uint32_t,
+                                            double,
+                                            double,
+                                            double,
+                                            uint32_t,
+                                            uint32_t,
+                                            nsIObserver*>(
+    "nsIWidget::SynthesizeNativeMouseScrollEvent",
+    widget,
+    &nsIWidget::SynthesizeNativeMouseScrollEvent,
+    LayoutDeviceIntPoint(aScreenX, aScreenY),
+    aNativeMessage,
+    aDeltaX,
+    aDeltaY,
+    aDeltaZ,
+    aModifierFlags,
+    aAdditionalFlags,
+    aObserver));
   return NS_OK;
 }
 
@@ -1266,7 +1240,7 @@ nsDOMWindowUtils::SendNativeTouchPoint(uint32_t aPointerId,
     return NS_ERROR_INVALID_ARG;
   }
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
+  NS_DispatchToMainThread(
     NewRunnableMethod<uint32_t,
                       nsIWidget::TouchPointerState,
                       LayoutDeviceIntPoint,
@@ -1280,7 +1254,7 @@ nsDOMWindowUtils::SendNativeTouchPoint(uint32_t aPointerId,
                                     LayoutDeviceIntPoint(aScreenX, aScreenY),
                                     aPressure,
                                     aOrientation,
-                                    aObserver)));
+                                    aObserver));
   return NS_OK;
 }
 
@@ -1295,14 +1269,14 @@ nsDOMWindowUtils::SendNativeTouchTap(int32_t aScreenX,
     return NS_ERROR_FAILURE;
   }
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
+  NS_DispatchToMainThread(
     NewRunnableMethod<LayoutDeviceIntPoint, bool, nsIObserver*>(
       "nsIWidget::SynthesizeNativeTouchTap",
       widget,
       &nsIWidget::SynthesizeNativeTouchTap,
       LayoutDeviceIntPoint(aScreenX, aScreenY),
       aLongTap,
-      aObserver)));
+      aObserver));
   return NS_OK;
 }
 
@@ -1324,11 +1298,11 @@ nsDOMWindowUtils::ClearNativeTouchSequence(nsIObserver* aObserver)
     return NS_ERROR_FAILURE;
   }
 
-  NS_DispatchToMainThread(NativeInputRunnable::Create(
+  NS_DispatchToMainThread(
     NewRunnableMethod<nsIObserver*>("nsIWidget::ClearNativeTouchSequence",
                                     widget,
                                     &nsIWidget::ClearNativeTouchSequence,
-                                    aObserver)));
+                                    aObserver));
   return NS_OK;
 }
 
@@ -4464,6 +4438,26 @@ nsDOMWindowUtils::GetDirectionFromText(const nsAString& aString, int32_t* aRetva
       MOZ_ASSERT_UNREACHABLE("GetDirectionFromText should never return this value");
       return NS_ERROR_FAILURE;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::EnsureDirtyRootFrame()
+{
+  nsIDocument* doc = GetDocument();
+  nsIPresShell* presShell = doc ? doc->GetShell() : nullptr;
+
+  if (!presShell) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsIFrame* frame = presShell->GetRootFrame();
+  if (!frame) {
+    return NS_ERROR_FAILURE;
+  }
+
+  presShell->FrameNeedsReflow(frame, nsIPresShell::eStyleChange,
+                              NS_FRAME_IS_DIRTY);
   return NS_OK;
 }
 
