@@ -11,6 +11,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
+#include <functional>
+
 class nsIChannel;
 class nsIHttpChannelInternal;
 class nsIDocument;
@@ -50,7 +52,7 @@ public:
     
     
     
-    nsresult CheckIsTrackerWithLocalTable(nsIURIClassifierCallback* aCallback);
+    nsresult CheckIsTrackerWithLocalTable(std::function<void()>&& aCallback);
 
     
     already_AddRefed<nsIURI> CreateWhiteListURI() const;
