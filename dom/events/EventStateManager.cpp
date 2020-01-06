@@ -2840,6 +2840,18 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
     return;
   }
 
+  if (!dispatchedToContentProcess) {
+    
+    
+    
+    
+    aKeyboardEvent->mWidget->PostHandleKeyEvent(aKeyboardEvent);
+    if (aKeyboardEvent->DefaultPrevented()) {
+      aStatus = nsEventStatus_eConsumeNoDefault;
+      return;
+    }
+  }
+
   
   
   switch(aKeyboardEvent->mKeyCode) {

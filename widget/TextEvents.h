@@ -242,8 +242,6 @@ public:
   bool mAccessKeyForwardedToChild;
   
   
-  
-  
   uint32_t mUniqueId;
 
 #ifdef XP_MACOSX

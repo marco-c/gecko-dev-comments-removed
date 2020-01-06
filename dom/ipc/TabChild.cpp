@@ -1973,6 +1973,7 @@ TabChild::RecvRealKeyEvent(const WidgetKeyboardEvent& aEvent,
 
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;
+  localEvent.mUniqueId = aEvent.mUniqueId;
   nsEventStatus status = APZCCallbackHelper::DispatchWidgetEvent(localEvent);
 
   

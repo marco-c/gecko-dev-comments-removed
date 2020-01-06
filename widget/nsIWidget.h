@@ -1692,6 +1692,14 @@ public:
 
 
 
+    virtual void
+    PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent);
+
+    
+
+
+
+
 
 
 
