@@ -100,7 +100,6 @@ class GlobalObject : public NativeObject
         IMPORT_ENTRY_PROTO,
         EXPORT_ENTRY_PROTO,
         REGEXP_STATICS,
-        WARNED_ONCE_FLAGS,
         RUNTIME_CODEGEN_ENABLED,
         DEBUGGERS,
         INTRINSICS,
@@ -119,18 +118,6 @@ class GlobalObject : public NativeObject
 
     static_assert(JSCLASS_GLOBAL_SLOT_COUNT == RESERVED_SLOTS,
                   "global object slot counts are inconsistent");
-
-    enum WarnOnceFlag : int32_t {
-        WARN_WATCH_DEPRECATED                   = 1 << 0,
-    };
-
-    
-    
-    
-    
-    static bool
-    warnOnceAbout(JSContext* cx, HandleObject obj, WarnOnceFlag flag, unsigned errorNumber);
-
 
   public:
     LexicalEnvironmentObject& lexicalEnvironment() const;
@@ -750,15 +737,6 @@ class GlobalObject : public NativeObject
     }
 
     static bool isRuntimeCodeGenEnabled(JSContext* cx, Handle<GlobalObject*> global);
-
-    
-    
-    static bool warnOnceAboutWatch(JSContext* cx, HandleObject obj) {
-        
-        
-        
-        return true;
-    }
 
     static bool getOrCreateEval(JSContext* cx, Handle<GlobalObject*> global,
                                 MutableHandleObject eval);
