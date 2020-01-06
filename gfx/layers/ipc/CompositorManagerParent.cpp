@@ -9,14 +9,12 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CrossProcessCompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "nsAutoPtr.h"
 #include "VsyncSource.h"
 
 namespace mozilla {
 namespace layers {
 
 StaticRefPtr<CompositorManagerParent> CompositorManagerParent::sInstance;
-StaticAutoPtr<nsTArray<CompositorManagerParent*>> CompositorManagerParent::sActiveActors;
 StaticMutex CompositorManagerParent::sMutex;
 
  already_AddRefed<CompositorManagerParent>
@@ -44,11 +42,6 @@ CompositorManagerParent::CreateSameProcess()
   
   parent.get()->AddRef();
   sInstance = parent;
-
-  if (!sActiveActors) {
-    sActiveActors = new nsTArray<CompositorManagerParent*>();
-  }
-  sActiveActors->AppendElement(parent);
   return parent.forget();
 }
 
@@ -131,12 +124,6 @@ CompositorManagerParent::Bind(Endpoint<PCompositorManagerParent>&& aEndpoint)
   
   
   AddRef();
-
-  StaticMutexAutoLock lock(sMutex);
-  if (!sActiveActors) {
-    sActiveActors = new nsTArray<CompositorManagerParent*>();
-  }
-  sActiveActors->AppendElement(this);
 }
 
 void
@@ -156,10 +143,6 @@ CompositorManagerParent::DeallocPCompositorManagerParent()
                             this,
                             &CompositorManagerParent::DeferredDestroy));
 
-  StaticMutexAutoLock lock(sMutex);
-  if (sActiveActors) {
-    sActiveActors->RemoveElement(this);
-  }
   Release();
 }
 
@@ -167,36 +150,6 @@ void
 CompositorManagerParent::DeferredDestroy()
 {
   mCompositorThreadHolder = nullptr;
-}
-
- void
-CompositorManagerParent::ShutdownInternal()
-{
-  nsAutoPtr<nsTArray<CompositorManagerParent*>> actors;
-
-  
-  
-  {
-    StaticMutexAutoLock lock(sMutex);
-    actors = sActiveActors.forget();
-  }
-
-  if (actors) {
-    for (auto& actor : *actors) {
-      actor->Close();
-    }
-  }
-}
-
- void
-CompositorManagerParent::Shutdown()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  CompositorThreadHolder::Loop()->PostTask(
-      NS_NewRunnableFunction("layers::CompositorManagerParent::Shutdown", []() -> void {
-        CompositorManagerParent::ShutdownInternal();
-      }));
 }
 
 PCompositorBridgeParent*
