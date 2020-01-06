@@ -7,6 +7,7 @@
 const {
   ACTIVITY_TYPE,
   OPEN_NETWORK_DETAILS,
+  DISABLE_BROWSER_CACHE,
   OPEN_STATISTICS,
   RESET_COLUMNS,
   SELECT_DETAILS_PANEL_TAB,
@@ -24,6 +25,18 @@ function openNetworkDetails(open) {
   return {
     type: OPEN_NETWORK_DETAILS,
     open,
+  };
+}
+
+
+
+
+
+
+function disableBrowserCache(disabled) {
+  return {
+    type: DISABLE_BROWSER_CACHE,
+    disabled,
   };
 }
 
@@ -97,6 +110,14 @@ function toggleNetworkDetails() {
 
 
 
+function toggleBrowserCache() {
+  return (dispatch, getState) =>
+    dispatch(disableBrowserCache(!getState().ui.browserCacheDisabled));
+}
+
+
+
+
 function toggleStatistics() {
   return (dispatch, getState) =>
     dispatch(openStatistics(!getState().ui.statisticsOpen));
@@ -104,11 +125,13 @@ function toggleStatistics() {
 
 module.exports = {
   openNetworkDetails,
+  disableBrowserCache,
   openStatistics,
   resetColumns,
   resizeWaterfall,
   selectDetailsPanelTab,
   toggleColumn,
   toggleNetworkDetails,
+  toggleBrowserCache,
   toggleStatistics,
 };
