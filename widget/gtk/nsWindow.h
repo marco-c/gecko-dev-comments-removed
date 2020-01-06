@@ -351,6 +351,8 @@ public:
 #endif
     virtual void GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData) override;
 
+    void SetDrawsInTitlebar(bool aState) override;
+
     
     gint GdkScaleFactor();
 
@@ -367,6 +369,8 @@ public:
     LayoutDeviceIntRect GdkRectToDevicePixels(GdkRectangle rect);
 
     virtual bool WidgetTypeSupportsAcceleration() override;
+
+    bool DoDrawTitlebar() const;
 protected:
     virtual ~nsWindow();
 
@@ -471,6 +475,10 @@ private:
     
     unsigned int mPendingConfigures;
 
+    bool               mIsCSDAvailable;
+    
+    bool               mIsCSDEnabled;
+
 #ifdef ACCESSIBILITY
     RefPtr<mozilla::a11y::Accessible> mRootAccessible;
 
@@ -567,6 +575,17 @@ private:
     RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
     mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
+    typedef enum { CSD_SUPPORT_FULL,    
+                   CSD_SUPPORT_FLAT,    
+                   CSD_SUPPORT_NONE,    
+                   CSD_SUPPORT_UNKNOWN
+    } CSDSupportLevel;
+    
+
+
+
+    static CSDSupportLevel GetCSDSupportLevel();
+    static CSDSupportLevel sCSDSupportLevel;
 };
 
 #endif 
