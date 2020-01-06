@@ -12,13 +12,13 @@
 
 #include "sigslot.h"
 
-#include "MediaConduitInterface.h"
+#include "signaling/src/media-conduit/MediaConduitInterface.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Atomics.h"
 #include "SrtpFlow.h"
 #include "databuffer.h"
-#include "runnable_utils.h"
-#include "transportflow.h"
+#include "mtransport/runnable_utils.h"
+#include "mtransport/transportflow.h"
 #include "AudioPacketizer.h"
 #include "StreamTracks.h"
 #include "signaling/src/peerconnection/PacketDumper.h"
@@ -83,38 +83,22 @@ class MediaPipeline : public sigslot::has_slots<> {
                 Direction direction,
                 nsCOMPtr<nsIEventTarget> main_thread,
                 nsCOMPtr<nsIEventTarget> sts_thread,
-                const std::string& track_id,
-                int level,
-                RefPtr<MediaSessionConduit> conduit,
-                RefPtr<TransportFlow> rtp_transport,
-                RefPtr<TransportFlow> rtcp_transport,
-                nsAutoPtr<MediaPipelineFilter> filter);
+                RefPtr<MediaSessionConduit> conduit);
+
+  virtual void Start() = 0;
+  virtual void Stop() = 0;
+  virtual void DetachMedia() {}
+
+  void SetLevel(size_t level) { level_ = level; }
 
   
-  void DetachTransport_s();
+  void Shutdown_m();
 
-  
-  void ShutdownMedia_m()
-  {
-    ASSERT_ON_THREAD(main_thread_);
-
-    if (direction_ == RECEIVE) {
-      conduit_->StopReceiving();
-    } else {
-      conduit_->StopTransmitting();
-    }
-    DetachMedia();
-  }
-
-  virtual nsresult Init();
-
-  void UpdateTransport_m(int level,
-                         RefPtr<TransportFlow> rtp_transport,
+  void UpdateTransport_m(RefPtr<TransportFlow> rtp_transport,
                          RefPtr<TransportFlow> rtcp_transport,
                          nsAutoPtr<MediaPipelineFilter> filter);
 
-  void UpdateTransport_s(int level,
-                         RefPtr<TransportFlow> rtp_transport,
+  void UpdateTransport_s(RefPtr<TransportFlow> rtp_transport,
                          RefPtr<TransportFlow> rtcp_transport,
                          nsAutoPtr<MediaPipelineFilter> filter);
 
@@ -128,8 +112,7 @@ class MediaPipeline : public sigslot::has_slots<> {
   void AddRIDFilter_s(const std::string& rid);
 
   virtual Direction direction() const { return direction_; }
-  virtual const std::string& trackid() const { return track_id_; }
-  virtual int level() const { return level_; }
+  int level() const { return level_; }
   virtual bool IsVideo() const = 0;
 
   bool IsDoingRtcpMux() const {
@@ -213,17 +196,13 @@ class MediaPipeline : public sigslot::has_slots<> {
     nsresult SendRtpRtcpPacket_s(nsAutoPtr<DataBuffer> data,
                                  bool is_rtp);
 
-    MediaPipeline *pipeline_;  
+    
+    RefPtr<MediaPipeline> pipeline_;
     nsCOMPtr<nsIEventTarget> sts_thread_;
   };
 
-  RefPtr<PipelineTransport> GetPiplelineTransport() {
-    return transport_;
-  }
-
  protected:
   virtual ~MediaPipeline();
-  virtual void DetachMedia() {}
   nsresult AttachTransport_s();
   friend class PipelineTransport;
 
@@ -233,7 +212,6 @@ class MediaPipeline : public sigslot::has_slots<> {
         transport_(flow),
         state_(MP_CONNECTING),
         type_(type) {
-        MOZ_ASSERT(flow);
       }
 
       void Detach()
@@ -279,14 +257,7 @@ class MediaPipeline : public sigslot::has_slots<> {
                       size_t len);
 
   Direction direction_;
-  std::string track_id_;        
-                                
-                                
-                                
-  
-  
-  
-  Atomic<int> level_;
+  size_t level_;
   RefPtr<MediaSessionConduit> conduit_;  
                                          
 
@@ -299,7 +270,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   nsCOMPtr<nsIEventTarget> main_thread_;
   nsCOMPtr<nsIEventTarget> sts_thread_;
 
-  
   
   RefPtr<PipelineTransport> transport_;
 
@@ -328,9 +298,10 @@ class MediaPipeline : public sigslot::has_slots<> {
  private:
   
   static DOMHighResTimeStamp GetNow();
-  nsresult Init_s();
 
   bool IsRtp(const unsigned char *data, size_t len);
+  
+  void DetachTransport_s();
 };
 
 class ConduitDeleteEvent: public Runnable
@@ -354,18 +325,12 @@ public:
   MediaPipelineTransmit(const std::string& pc,
                         nsCOMPtr<nsIEventTarget> main_thread,
                         nsCOMPtr<nsIEventTarget> sts_thread,
+                        bool is_video,
                         dom::MediaStreamTrack* domtrack,
-                        const std::string& track_id,
-                        int level,
-                        RefPtr<MediaSessionConduit> conduit,
-                        RefPtr<TransportFlow> rtp_transport,
-                        RefPtr<TransportFlow> rtcp_transport,
-                        nsAutoPtr<MediaPipelineFilter> filter);
+                        RefPtr<MediaSessionConduit> conduit);
 
-  
-  nsresult Init() override;
-
-  virtual void AttachToTrack(const std::string& track_id);
+  void Start() override;
+  void Stop() override;
 
   
   bool IsVideo() const override;
@@ -387,7 +352,7 @@ public:
   
   
   
-  virtual nsresult ReplaceTrack(dom::MediaStreamTrack& domtrack);
+  virtual nsresult ReplaceTrack(RefPtr<dom::MediaStreamTrack>& domtrack);
 
   
   class PipelineListener;
@@ -396,12 +361,16 @@ public:
  protected:
   ~MediaPipelineTransmit();
 
+  void SetDescription();
+
  private:
   RefPtr<PipelineListener> listener_;
   RefPtr<AudioProxyThread> audio_processing_;
   RefPtr<VideoFrameFeeder> feeder_;
   RefPtr<VideoFrameConverter> converter_;
-  dom::MediaStreamTrack* domtrack_;
+  bool is_video_;
+  RefPtr<dom::MediaStreamTrack> domtrack_;
+  bool transmitting_;
 };
 
 
@@ -413,23 +382,17 @@ class MediaPipelineReceive : public MediaPipeline {
   MediaPipelineReceive(const std::string& pc,
                        nsCOMPtr<nsIEventTarget> main_thread,
                        nsCOMPtr<nsIEventTarget> sts_thread,
-                       SourceMediaStream *stream,
-                       const std::string& track_id,
-                       int level,
-                       RefPtr<MediaSessionConduit> conduit,
-                       RefPtr<TransportFlow> rtp_transport,
-                       RefPtr<TransportFlow> rtcp_transport,
-                       nsAutoPtr<MediaPipelineFilter> filter);
+                       RefPtr<MediaSessionConduit> conduit);
 
   int segments_added() const { return segments_added_; }
 
   
   
   virtual void SetPrincipalHandle_m(const PrincipalHandle& principal_handle) = 0;
+
  protected:
   ~MediaPipelineReceive();
 
-  RefPtr<SourceMediaStream> stream_;
   int segments_added_;
 
  private:
@@ -443,26 +406,17 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive {
   MediaPipelineReceiveAudio(const std::string& pc,
                             nsCOMPtr<nsIEventTarget> main_thread,
                             nsCOMPtr<nsIEventTarget> sts_thread,
-                            SourceMediaStream* stream,
-                            
-                            
-                            const std::string& media_stream_track_id,
-                            
-                            
-                            
-                            TrackID numeric_track_id,
-                            int level,
                             RefPtr<AudioSessionConduit> conduit,
-                            RefPtr<TransportFlow> rtp_transport,
-                            RefPtr<TransportFlow> rtcp_transport,
-                            nsAutoPtr<MediaPipelineFilter> filter);
+                            SourceMediaStream* aStream);
 
   void DetachMedia() override;
 
-  nsresult Init() override;
   bool IsVideo() const override { return false; }
 
   void SetPrincipalHandle_m(const PrincipalHandle& principal_handle) override;
+
+  void Start() override;
+  void Stop() override;
 
  private:
   
@@ -479,27 +433,18 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
   MediaPipelineReceiveVideo(const std::string& pc,
                             nsCOMPtr<nsIEventTarget> main_thread,
                             nsCOMPtr<nsIEventTarget> sts_thread,
-                            SourceMediaStream *stream,
-                            
-                            
-                            const std::string& media_stream_track_id,
-                            
-                            
-                            
-                            TrackID numeric_track_id,
-                            int level,
                             RefPtr<VideoSessionConduit> conduit,
-                            RefPtr<TransportFlow> rtp_transport,
-                            RefPtr<TransportFlow> rtcp_transport,
-                            nsAutoPtr<MediaPipelineFilter> filter);
+                            SourceMediaStream* aStream);
 
   
   void DetachMedia() override;
 
-  nsresult Init() override;
   bool IsVideo() const override { return true; }
 
   void SetPrincipalHandle_m(const PrincipalHandle& principal_handle) override;
+
+  void Start() override;
+  void Stop() override;
 
  private:
   class PipelineRenderer;
