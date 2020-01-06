@@ -482,11 +482,6 @@ pub trait MatchMethods : TElement {
             }
         }
 
-        
-        if context.shared.traversal_flags.for_reconstruct() {
-            return ChildCascadeRequirement::MustCascadeChildren;
-        }
-
         let new_primary_style = data.styles.primary.as_ref().unwrap();
 
         let mut cascade_requirement = ChildCascadeRequirement::CanSkipCascade;
@@ -504,6 +499,11 @@ pub trait MatchMethods : TElement {
                     cascade_requirement = ChildCascadeRequirement::MustCascadeDescendants;
                 }
             }
+        }
+
+        
+        if context.shared.traversal_flags.for_reconstruct() {
+            return ChildCascadeRequirement::MustCascadeChildren;
         }
 
         
