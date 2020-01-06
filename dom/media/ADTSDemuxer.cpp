@@ -236,48 +236,6 @@ private:
 
 
 
-
-static int8_t
-ProfileLevelIndication(const Frame& frame)
-{
-  const FrameHeader& header = frame.Header();
-  MOZ_ASSERT(header.IsValid());
-
-  if (!header.IsValid()) {
-    return 0;
-  }
-
-  const int channels = header.mChannels;
-  const int sampleRate = header.mSampleRate;
-
-  if (channels <= 2) {
-    if (sampleRate <= 24000) {
-      
-      return 0x28;
-    }
-    else if (sampleRate <= 48000) {
-      
-      return 0x29;
-    }
-  }
-  else if (channels <= 5) {
-    if (sampleRate <= 48000) {
-      
-      return 0x2A;
-    }
-    else if (sampleRate <= 96000) {
-      
-      return 0x2B;
-    }
-  }
-
-  
-  return 0;
-}
-
-
-
-
 static void
 InitAudioSpecificConfig(const Frame& frame,
                         MediaByteBuffer* aBuffer)
@@ -406,15 +364,10 @@ ADTSTrackDemuxer::Init()
   mInfo->mMimeType = "audio/mp4a-latm";
 
   
-
   
   
-  
-  
-  mInfo->mProfile = ProfileLevelIndication(mParser->FirstFrame());
-  
-  
-  mInfo->mExtendedProfile = mParser->FirstFrame().Header().mObjectType;
+  mInfo->mProfile = mInfo->mExtendedProfile =
+    mParser->FirstFrame().Header().mObjectType;
   InitAudioSpecificConfig(mParser->FirstFrame(), mInfo->mCodecSpecificConfig);
 
   ADTSLOG("Init mInfo={mRate=%u mChannels=%u mBitDepth=%u mDuration=%" PRId64
