@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 466747;
 var summary = 'TM: Do not assert: fp->slots + fp->script->nfixed + ' +
   'js_ReconstructStackDepth(cx, fp->script, fp->regs->pc) == fp->regs->sp';
@@ -20,15 +21,7 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
-  if (typeof window == 'undefined')
-  {
-    expect = actual = 'Test skipped: browser only';
-    reportCompare(expect, actual, summary);
-  }
-  else
-  {
-    gDelayTestDriverEnd = true;
-
+  gDelayTestDriverEnd = true;
 
     function newScriptWithLoop(m)
     {
@@ -51,6 +44,5 @@ function test()
       jsTestDriverEnd();
     }
 
-    window.addEventListener('load', boom, false);
-  }
+  window.addEventListener('load', boom, false);
 }

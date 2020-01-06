@@ -23,21 +23,11 @@ var testFuncTimerId;
 var maxTests = 5;
 var currTest = 0;
 
-if (typeof setTimeout == 'undefined')
-{
-  setTimeout = function() {};
-  clearTimeout = function() {};
-  actual = 'Normal Exit';
-  reportCompare(expect, actual, summary);
-}
-else
-{
-  
-  
-  gDelayTestDriverEnd = true;
 
-  setTimeout(testFuncWatcher, 1000);
-}
+
+gDelayTestDriverEnd = true;
+
+setTimeout(testFuncWatcher, 1000);
 
 function testFuncWatcher()
 {

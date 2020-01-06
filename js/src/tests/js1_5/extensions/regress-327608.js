@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 327608;
 var summary = 'Do not assume we will find the prototype property';
 var actual = 'No Crash';
@@ -34,15 +35,8 @@ function init()
   jsTestDriverEnd();
 }
 
-if (typeof window != 'undefined')
-{
-  
-  gDelayTestDriverEnd = true;
 
-  document.write('<input>');
-  window.addEventListener("load", init, false);
-}
-else
-{
-  reportCompare(expect, actual, summary);
-}
+gDelayTestDriverEnd = true;
+
+document.write('<input>');
+window.addEventListener("load", init, false);

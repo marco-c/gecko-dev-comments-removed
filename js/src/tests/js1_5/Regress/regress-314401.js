@@ -13,14 +13,8 @@ var expect = 'No Crash';
 printBugNumber(BUGNUMBER);
 printStatus (summary);
 
-if (typeof setTimeout == 'undefined')
-{
-  reportCompare(expect, actual, 'Test Skipped.');
-}
-else
-{
-  gDelayTestDriverEnd = true;
-  window.onerror = null;
+gDelayTestDriverEnd = true;
+window.onerror = null;
 
   try
   {
@@ -69,4 +63,3 @@ else
     reportCompare(expect, actual, 'setInterval(Script, 0, "", null)');
   }
   setTimeout('gDelayTestDriverEnd = false; jsTestDriverEnd();', 0);
-}

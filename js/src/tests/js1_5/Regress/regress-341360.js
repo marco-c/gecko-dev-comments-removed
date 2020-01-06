@@ -41,15 +41,6 @@ function yyy()
   jsTestDriverEnd();
 }
 
-if (typeof window == 'undefined')
-{
-  expect = actual = 'Not tested';
-  reportCompare(expect, actual, summary);
-}
-else
-{
-  print('Start...');
-  gDelayTestDriverEnd = true;
-  var t = window.setInterval(xxx, 1000);
-}
-
+print('Start...');
+gDelayTestDriverEnd = true;
+var t = window.setInterval(xxx, 1000);

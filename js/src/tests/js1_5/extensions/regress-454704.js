@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 454704;
 var summary = 'Do not crash with defineGetter and XPC wrapper';
 var actual = '';
@@ -19,14 +20,14 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
-  if (typeof XPCSafeJSObjectWrapper != 'undefined' && typeof document != 'undefined')
+  if (typeof XPCSafeJSObjectWrapper != 'undefined')
   {
     gDelayTestDriverEnd = true;
     document.addEventListener('load', boom, true);
   }
   else
   {
-    print(expect = actual = 'Test requires browser.');
+    print(expect = actual = 'Test requires XPCSafeJSObjectWrapper.');
     reportCompare(expect, actual, summary);
   }
 }

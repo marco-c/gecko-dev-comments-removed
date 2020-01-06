@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 233483;
 var summary = 'Don\'t crash with null properties - Browser only';
 var actual = 'Crash';
@@ -12,17 +13,9 @@ var expect = 'No Crash';
 printBugNumber(BUGNUMBER);
 printStatus (summary);
 
-if (typeof document != 'undefined')
-{ 
-  
-  gDelayTestDriverEnd = true;
-  window.onload = onLoad;
-}
-else
-{
-  actual = 'No Crash';
-  reportCompare(expect, actual, summary);
-}
+
+gDelayTestDriverEnd = true;
+window.onload = onLoad;
 
 function onLoad() {
   setform();

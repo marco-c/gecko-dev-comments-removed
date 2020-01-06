@@ -20,16 +20,8 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
-  if (typeof window == 'undefined')
-  {
-    expect = actual = 'Browser test only - skipped';
-    reportCompare(expect, actual, summary);
-  }
-  else
-  {
-    gDelayTestDriverEnd = true;
-    window.onload = boom;
-  }
+  gDelayTestDriverEnd = true;
+  window.onload = boom;
 }
 
 function boom()

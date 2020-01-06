@@ -4,22 +4,17 @@
 
 
 
+
 var BUGNUMBER = 453024;
 var summary = 'Do not assert: vp + 2 + argc <= (jsval *) cx->stackPool.current->avail';
 var actual = 'No Crash';
 var expect = 'No Crash';
 
-if (typeof window == 'undefined')
-{
-  reportCompare(true, true, summary + ': test requires browser.');
-}
-else
-{
-  gDelayTestDriverEnd = true;
-  var j = 0;
+gDelayTestDriverEnd = true;
+var j = 0;
 
-  function test()
-  {
+function test()
+{
     printBugNumber(BUGNUMBER);
     printStatus (summary);
  
@@ -35,8 +30,6 @@ else
     reportCompare(expect, actual, summary);
 
     jsTestDriverEnd();
-  }
-
-  window.addEventListener('load', test, false);
-
 }
+
+window.addEventListener('load', test, false);

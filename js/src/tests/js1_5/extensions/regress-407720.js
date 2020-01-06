@@ -16,17 +16,9 @@ printStatus (summary);
 
 var start = new Date();
 
-if (typeof document != 'undefined')
-{ 
-  
-  gDelayTestDriverEnd = true;
-  document.write('<iframe onload="onLoad()"><\/iframe>');
-}
-else
-{
-  actual = 'No Crash';
-  reportCompare(expect, actual, summary);
-}
+
+gDelayTestDriverEnd = true;
+document.write('<iframe onload="onLoad()"><\/iframe>');
 
 function onLoad() 
 {

@@ -66,15 +66,7 @@ function runtest()
   jsTestDriverEnd();
 }
 
-if (typeof window != 'undefined')
-{
-  
-  gDelayTestDriverEnd = true;
 
-  window.addEventListener("load", init, false);
-}
-else
-{
-  reportCompare(expect, actual, summary);
-}
+gDelayTestDriverEnd = true;
 
+window.addEventListener("load", init, false);

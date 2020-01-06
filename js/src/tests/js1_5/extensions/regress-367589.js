@@ -19,17 +19,10 @@ function test()
 {
   printBugNumber(BUGNUMBER);
   printStatus (summary);
- 
-  if (typeof window != 'undefined')
-  {
-    gDelayTestDriverEnd = true;
-    document.write('<button id="button" onclick="document.getElementsByTagName(\'button\')[0] = \'wtf\';">Crash</button>');
-    window.addEventListener('load', crash, false);
-  }
-  else
-  {
-    reportCompare(expect, actual, summary);
-  }
+
+  gDelayTestDriverEnd = true;
+  document.write('<button id="button" onclick="document.getElementsByTagName(\'button\')[0] = \'wtf\';">Crash</button>');
+  window.addEventListener('load', crash, false);
 }
 
 function crash()

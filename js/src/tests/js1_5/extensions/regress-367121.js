@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 367121;
 var summary = 'self modifying script detection';
 var actual = 'No Crash';
@@ -19,12 +20,7 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
  
-  if (typeof window == 'undefined')
-  {
-    actual = expect = 'Test skipped - Test must be run in the browser.';
-    reportCompare(expect, actual, summary);
-  }
-  else if (typeof Script == 'undefined')
+  if (typeof Script == 'undefined')
   {
     actual = expect = 'Test skipped - Test requires Script object..';
     reportCompare(expect, actual, summary);
@@ -55,7 +51,4 @@ function handleLoad()
   jsTestDriverEnd();
 }
 
-if (typeof window != 'undefined')
-{
-  window.onload = handleLoad;
-}
+window.onload = handleLoad;

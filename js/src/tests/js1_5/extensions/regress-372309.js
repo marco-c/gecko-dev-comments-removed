@@ -4,6 +4,7 @@
 
 
 
+
 var BUGNUMBER = 372309;
 var summary = 'Root new array objects';
 var actual = 'No Crash';
@@ -30,15 +31,7 @@ function test()
   jsTestDriverEnd();
 }
 
-if (typeof window != 'undefined')
-{
-  
-  gDelayTestDriverEnd = true;
 
-  window.addEventListener("load", test, false);
-}
-else
-{
-  reportCompare(expect, actual, summary);
-}
+gDelayTestDriverEnd = true;
 
+window.addEventListener("load", test, false);
