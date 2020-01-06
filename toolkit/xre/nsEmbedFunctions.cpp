@@ -80,8 +80,6 @@
 
 #include "GeckoProfiler.h"
 
-#include "mozilla/Telemetry.h"
-
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
 #include "mozilla/sandboxTarget.h"
 #include "mozilla/sandboxing/loggingCallbacks.h"
@@ -407,14 +405,6 @@ XRE_InitChildProcess(int aArgc,
   
   ScopedLogging logger;
 
-  
-  
-  
-  
-  
-  
-  Telemetry::CreateStatisticsRecorder();
-
   mozilla::LogModule::Init();
 
   char aLocal;
@@ -728,7 +718,6 @@ XRE_InitChildProcess(int aArgc,
   }
 #endif
 
-  Telemetry::DestroyStatisticsRecorder();
   return XRE_DeinitCommandLine();
 }
 
