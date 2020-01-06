@@ -271,6 +271,13 @@ this.TelemetrySend = {
   
 
 
+  testTooLateToSend(tooLate) {
+    TelemetrySendImpl._tooLateToSend = tooLate;
+  },
+
+  
+
+
   setTestModeEnabled(testing) {
     TelemetrySendImpl.setTestModeEnabled(testing);
   },
