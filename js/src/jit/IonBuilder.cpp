@@ -3023,8 +3023,7 @@ AbortReasonOr<Ok>
 IonBuilder::visitTry(CFGTry* try_)
 {
     
-    if (analysis().hasTryFinally())
-        return abort(AbortReason::Disable, "Has try-finally");
+    
 
     
     MOZ_ASSERT(!isInlineBuilder());
