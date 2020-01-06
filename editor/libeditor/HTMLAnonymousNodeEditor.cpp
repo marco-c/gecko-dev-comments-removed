@@ -236,6 +236,12 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
   }
   nac->AppendElement(newContent);
 
+  
+  
+  if (ServoStyleSet* styleSet = ps->StyleSet()->GetAsServo()) {
+    styleSet->StyleNewSubtree(newContent);
+  }
+
   ElementDeletionObserver* observer =
     new ElementDeletionObserver(newContent, parentContent);
   NS_ADDREF(observer); 
