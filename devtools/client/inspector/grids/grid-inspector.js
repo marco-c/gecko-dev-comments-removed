@@ -20,8 +20,6 @@ const {
   updateShowInfiniteLines,
 } = require("./actions/highlighter-settings");
 
-const CSS_GRID_COUNT_HISTOGRAM_ID = "DEVTOOLS_NUMBER_OF_CSS_GRIDS_IN_A_PAGE";
-
 const SHOW_GRID_AREAS = "devtools.gridinspector.showGridAreas";
 const SHOW_GRID_LINE_NUMBERS = "devtools.gridinspector.showGridLineNumbers";
 const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
@@ -45,7 +43,6 @@ function GridInspector(inspector, window) {
   this.highlighters = inspector.highlighters;
   this.inspector = inspector;
   this.store = inspector.store;
-  this.telemetry = inspector.telemetry;
   this.walker = this.inspector.walker;
 
   this.getSwatchColorPickerTooltip = this.getSwatchColorPickerTooltip.bind(this);
@@ -94,7 +91,6 @@ GridInspector.prototype = {
     this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
     this.inspector.sidebar.on("select", this.onSidebarSelect);
-    this.inspector.target.on("navigate", this.onGridLayoutChange);
 
     this.onSidebarSelect();
   }),
@@ -107,7 +103,7 @@ GridInspector.prototype = {
     this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
     this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
-    this.inspector.target.off("navigate", this.onGridLayoutChange);
+    this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
 
     this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
 
@@ -244,34 +240,31 @@ GridInspector.prototype = {
     this.lastHighlighterNode = node;
     this.lastHighlighterState = node !== this.highlighters.gridHighlighterShown;
 
-    this.highlighters.toggleGridHighlighter(node, settings, "grid");
+    this.highlighters.toggleGridHighlighter(node, settings);
   },
 
   
 
 
 
-  updateGridPanel: Task.async(function* () {
+
+
+
+  updateGridPanel: Task.async(function* (gridFronts) {
     
     if (!this.inspector || !this.store) {
       return;
     }
 
     
-    let gridFronts;
-    try {
-      gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
-    } catch (e) {
-      
-      
-      return;
-    }
-
-    
-    if (gridFronts.length > 0 &&
-        this.inspector.target.url != this.inspector.previousURL) {
-      this.telemetry.log(CSS_GRID_COUNT_HISTOGRAM_ID, gridFronts.length);
-      this.inspector.previousURL = this.inspector.target.url;
+    if (!gridFronts) {
+      try {
+        gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
+      } catch (e) {
+        
+        
+        return;
+      }
     }
 
     let grids = [];
@@ -305,9 +298,12 @@ GridInspector.prototype = {
   
 
 
-  onGridLayoutChange() {
+
+
+
+  onGridLayoutChange(grids) {
     if (this.isPanelVisible()) {
-      this.updateGridPanel();
+      this.updateGridPanel(grids);
     }
   },
 
@@ -469,8 +465,10 @@ GridInspector.prototype = {
 
 
 
+
   onSidebarSelect() {
     if (!this.isPanelVisible()) {
+      this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
       this.inspector.reflowTracker.untrackReflows(this, this.onReflow);
       return;
     }
@@ -479,6 +477,7 @@ GridInspector.prototype = {
     Services.prefs.setIntPref(PROMOTE_COUNT_PREF, 0);
 
     this.inspector.reflowTracker.trackReflows(this, this.onReflow);
+    this.layoutInspector.on("grid-layout-changed", this.onGridLayoutChange);
     this.updateGridPanel();
   },
 
@@ -510,10 +509,6 @@ GridInspector.prototype = {
     this.store.dispatch(updateShowGridAreas(enabled));
     Services.prefs.setBoolPref(SHOW_GRID_AREAS, enabled);
 
-    if (enabled) {
-      this.telemetry.toolOpened("gridInspectorShowGridAreasOverlayChecked");
-    }
-
     let { grids } = this.store.getState();
 
     for (let grid of grids) {
@@ -537,10 +532,6 @@ GridInspector.prototype = {
     this.store.dispatch(updateShowGridLineNumbers(enabled));
     Services.prefs.setBoolPref(SHOW_GRID_LINE_NUMBERS, enabled);
 
-    if (enabled) {
-      this.telemetry.toolOpened("gridInspectorShowGridLineNumbersChecked");
-    }
-
     let { grids } = this.store.getState();
 
     for (let grid of grids) {
@@ -563,10 +554,6 @@ GridInspector.prototype = {
   onToggleShowInfiniteLines(enabled) {
     this.store.dispatch(updateShowInfiniteLines(enabled));
     Services.prefs.setBoolPref(SHOW_INFINITE_LINES_PREF, enabled);
-
-    if (enabled) {
-      this.telemetry.toolOpened("gridInspectorShowInfiniteLinesChecked");
-    }
 
     let { grids } = this.store.getState();
 

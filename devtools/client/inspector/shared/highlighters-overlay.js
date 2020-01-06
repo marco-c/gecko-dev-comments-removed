@@ -6,7 +6,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { VIEW_NODE_VALUE_TYPE } = require("devtools/client/inspector/shared/node-types");
@@ -109,17 +108,13 @@ HighlightersOverlay.prototype = {
 
 
 
-
-
-
-
-  toggleGridHighlighter: Task.async(function* (node, options = {}, trigger) {
+  toggleGridHighlighter: Task.async(function* (node, options = {}) {
     if (node == this.gridHighlighterShown) {
       yield this.hideGridHighlighter(node);
       return;
     }
 
-    yield this.showGridHighlighter(node, options, trigger);
+    yield this.showGridHighlighter(node, options);
   }),
 
   
@@ -130,7 +125,7 @@ HighlightersOverlay.prototype = {
 
 
 
-  showGridHighlighter: Task.async(function* (node, options, trigger) {
+  showGridHighlighter: Task.async(function* (node, options) {
     let highlighter = yield this._getHighlighter("CssGridHighlighter");
     if (!highlighter) {
       return;
@@ -142,12 +137,6 @@ HighlightersOverlay.prototype = {
     }
 
     this._toggleRuleViewGridIcon(node, true);
-
-    if (trigger == "grid") {
-      Services.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
-    } else if (trigger == "rule") {
-      Services.telemetry.scalarAdd("devtools.rules.gridinspector.opened", 1);
-    }
 
     try {
       
@@ -402,8 +391,7 @@ HighlightersOverlay.prototype = {
 
     highlighterSettings.color = grid ? grid.color : DEFAULT_GRID_COLOR;
 
-    this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings,
-      "rule");
+    this.toggleGridHighlighter(this.inspector.selection.nodeFront, highlighterSettings);
   },
 
   onMouseMove: function (event) {
@@ -528,7 +516,6 @@ HighlightersOverlay.prototype = {
     this.highlighters = null;
     this.highlighterUtils = null;
     this.supportsHighlighters = null;
-    this.state = null;
 
     this.geometryEditorHighlighterShown = null;
     this.gridHighlighterShown = null;
