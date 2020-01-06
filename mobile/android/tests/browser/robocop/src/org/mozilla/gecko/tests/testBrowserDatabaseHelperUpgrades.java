@@ -58,9 +58,6 @@ import java.util.ArrayList;
 
 
 
-
-
-
 public class testBrowserDatabaseHelperUpgrades extends UITest {
     private static final int TEST_FROM_VERSION = 27; 
 
