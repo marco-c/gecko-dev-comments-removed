@@ -4084,12 +4084,11 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
     
     
 
-    bool didSplit = false;
-
+    
+    
     if ((aSplitAtEdges == SplitAtEdges::eAllowToCreateEmptyContainer &&
          !nodeToSplit->GetAsText()) ||
         (offset && offset != (int32_t)nodeToSplit->Length())) {
-      didSplit = true;
       ErrorResult error;
       int32_t offsetAtStartOfRightNode =
         std::min(std::max(offset, 0),
@@ -4102,15 +4101,20 @@ EditorBase::SplitNodeDeep(nsIContent& aNode,
         return -1;
       }
 
+      
+      offset = parent->IndexOf(nodeToSplit);
       rightNode = nodeToSplit;
       leftNode = newLeftNode;
     }
-
-    if (!didSplit && offset) {
-      
+    
+    
+    else if (offset) {
       offset = parent->IndexOf(nodeToSplit) + 1;
       leftNode = nodeToSplit;
-    } else {
+    }
+    
+    
+    else {
       offset = parent->IndexOf(nodeToSplit);
       rightNode = nodeToSplit;
     }
