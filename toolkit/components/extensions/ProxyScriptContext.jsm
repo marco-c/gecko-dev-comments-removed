@@ -43,7 +43,9 @@ const PROXY_TYPES = Object.freeze({
   DIRECT: "direct",
   HTTPS: "https",
   PROXY: "proxy",
-  SOCKS: "socks",
+  HTTP: "http", 
+  SOCKS: "socks",  
+  SOCKS4: "socks4",
 });
 
 class ProxyScriptContext extends BaseContext {
@@ -175,7 +177,10 @@ class ProxyScriptContext extends BaseContext {
 
     switch (parts[0]) {
       case PROXY_TYPES.PROXY:
+      case PROXY_TYPES.HTTP:
+      case PROXY_TYPES.HTTPS:
       case PROXY_TYPES.SOCKS:
+      case PROXY_TYPES.SOCKS4:
         if (!parts[1]) {
           this.extension.emit("proxy-error", {
             message: `FindProxyForURL: Missing argument for "${parts[0]}"`,
@@ -191,9 +196,10 @@ class ProxyScriptContext extends BaseContext {
           return null;
         }
 
-        let type = PROXY_TYPES.SOCKS;
+        let type = parts[0];
         if (parts[0] == PROXY_TYPES.PROXY) {
-          type = PROXY_TYPES.HTTPS;
+          
+          type = PROXY_TYPES.HTTP;
         }
 
         let failoverProxy = this.createProxyInfo(rules.slice(1));
