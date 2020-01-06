@@ -41,6 +41,8 @@ class SplitBox extends Component {
       vert: PropTypes.bool,
       
       style: PropTypes.object,
+      
+      onControlledPanelResized: PropTypes.func,
     };
   }
 
@@ -89,6 +91,13 @@ class SplitBox extends Component {
       nextProps.minSize != this.props.minSize ||
       nextProps.maxSize != this.props.maxSize ||
       nextProps.splitterSize != this.props.splitterSize;
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.props.onControlledPanelResized && (prevState.width !== this.state.width ||
+                                                prevState.height !== this.state.height)) {
+      this.props.onControlledPanelResized(this.state.width, this.state.height);
+    }
   }
 
   
