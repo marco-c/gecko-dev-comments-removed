@@ -482,28 +482,6 @@ FT_BEGIN_HEADER
 
 
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_STEM_DARKENING \
-          FT_MAKE_TAG( 'd', 'a', 'r', 'k' )
-
-
   
 
 

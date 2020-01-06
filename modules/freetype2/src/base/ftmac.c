@@ -71,9 +71,6 @@
 #include FT_INTERNAL_STREAM_H
 #include "ftbase.h"
 
-
-#ifdef FT_MACINTOSH
-
   
   
   
@@ -120,6 +117,8 @@
 #define PREFER_LWFN  1
 #endif
 
+
+#ifdef FT_MACINTOSH
 
   
   FT_EXPORT_DEF( FT_Error )
@@ -1076,11 +1075,6 @@
       return FT_New_Face_From_FSRef( library, &ref, face_index, aface );
 #endif
   }
-
-#else 
-
-  
-  typedef int  _ft_mac_dummy;
 
 #endif 
 

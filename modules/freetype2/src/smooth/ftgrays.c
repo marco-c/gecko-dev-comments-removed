@@ -342,7 +342,6 @@ typedef ptrdiff_t  FT_PtrDist;
   
   
   
-  
 #define FT_DIV_MOD( type, dividend, divisor, quotient, remainder ) \
   FT_BEGIN_STMNT                                                   \
     (quotient)  = (type)( (dividend) / (divisor) );                \
@@ -568,6 +567,9 @@ typedef ptrdiff_t  FT_PtrDist;
     
     
 
+    
+    
+
     if ( ex < ras.min_ex )
       ex = ras.min_ex - 1;
 
@@ -598,7 +600,7 @@ typedef ptrdiff_t  FT_PtrDist;
                                  TPos    x2,
                                  TCoord  y2 )
   {
-    TCoord  ex1, ex2, fx1, fx2, first, dy, delta, mod;
+    TCoord  ex1, ex2, fx1, fx2, first, delta, mod;
     TPos    p, dx;
     int     incr;
 
@@ -615,27 +617,31 @@ typedef ptrdiff_t  FT_PtrDist;
 
     fx1   = (TCoord)( x1 - SUBPIXELS( ex1 ) );
     fx2   = (TCoord)( x2 - SUBPIXELS( ex2 ) );
+    delta = y2 - y1;
 
     
     
     if ( ex1 == ex2 )
-      goto End;
+    {
+      ras.area  += (TArea)(( fx1 + fx2 ) * delta);
+      ras.cover += delta;
+      return;
+    }
 
     
     
     
     dx = x2 - x1;
-    dy = y2 - y1;
 
     if ( dx > 0 )
     {
-      p     = ( ONE_PIXEL - fx1 ) * dy;
+      p     = ( ONE_PIXEL - fx1 ) * delta;
       first = ONE_PIXEL;
       incr  = 1;
     }
     else
     {
-      p     = fx1 * dy;
+      p     = fx1 * delta;
       first = 0;
       incr  = -1;
       dx    = -dx;
@@ -643,31 +649,34 @@ typedef ptrdiff_t  FT_PtrDist;
 
     FT_DIV_MOD( TCoord, p, dx, delta, mod );
 
-    ras.area  += (TArea)( ( fx1 + first ) * delta );
+    ras.area  += (TArea)(( fx1 + first ) * delta);
     ras.cover += delta;
-    y1        += delta;
-    ex1       += incr;
+
+    ex1 += incr;
     gray_set_cell( RAS_VAR_ ex1, ey );
+    y1  += delta;
 
     if ( ex1 != ex2 )
     {
       TCoord  lift, rem;
 
 
-      p = ONE_PIXEL * dy;
+      p = ONE_PIXEL * ( y2 - y1 + delta );
       FT_DIV_MOD( TCoord, p, dx, lift, rem );
+
+      mod -= (int)dx;
 
       do
       {
         delta = lift;
         mod  += rem;
-        if ( mod >= (TCoord)dx )
+        if ( mod >= 0 )
         {
           mod -= (TCoord)dx;
           delta++;
         }
 
-        ras.area  += (TArea)( ONE_PIXEL * delta );
+        ras.area  += (TArea)(ONE_PIXEL * delta);
         ras.cover += delta;
         y1        += delta;
         ex1       += incr;
@@ -675,13 +684,9 @@ typedef ptrdiff_t  FT_PtrDist;
       } while ( ex1 != ex2 );
     }
 
-    fx1 = ONE_PIXEL - first;
-
-  End:
-    dy = y2 - y1;
-
-    ras.area  += (TArea)( ( fx1 + fx2 ) * dy );
-    ras.cover += dy;
+    delta      = y2 - y1;
+    ras.area  += (TArea)(( fx2 + ONE_PIXEL - first ) * delta);
+    ras.cover += delta;
   }
 
 
@@ -793,12 +798,13 @@ typedef ptrdiff_t  FT_PtrDist;
 
       p    = ONE_PIXEL * dx;
       FT_DIV_MOD( TCoord, p, dy, lift, rem );
+      mod -= (TCoord)dy;
 
       do
       {
         delta = lift;
         mod  += rem;
-        if ( mod >= (TCoord)dy )
+        if ( mod >= 0 )
         {
           mod -= (TCoord)dy;
           delta++;
@@ -1222,21 +1228,31 @@ typedef ptrdiff_t  FT_PtrDist;
   static void
   gray_hline( RAS_ARG_ TCoord  x,
                        TCoord  y,
-                       TArea   coverage,
+                       TArea   area,
                        TCoord  acount )
   {
-    
-    coverage >>= PIXEL_BITS * 2 + 1 - 8;
-    if ( coverage < 0 )
-      coverage = -coverage - 1;
+    int      coverage;
+    FT_Span  span;
+
 
     
+    
+    
+    
+    
+    coverage = (int)( area >> ( PIXEL_BITS * 2 + 1 - 8 ) );
+                                                    
+    if ( coverage < 0 )
+      coverage = -coverage;
+
     if ( ras.outline.flags & FT_OUTLINE_EVEN_ODD_FILL )
     {
       coverage &= 511;
 
-      if ( coverage >= 256 )
-        coverage = 511 - coverage;
+      if ( coverage > 256 )
+        coverage = 512 - coverage;
+      else if ( coverage == 256 )
+        coverage = 255;
     }
     else
     {
@@ -1247,9 +1263,6 @@ typedef ptrdiff_t  FT_PtrDist;
 
     if ( ras.render_span )  
     {
-      FT_Span  span;
-
-
       span.x        = (short)x;
       span.len      = (unsigned short)acount;
       span.coverage = (unsigned char)coverage;
@@ -1294,18 +1307,21 @@ typedef ptrdiff_t  FT_PtrDist;
     for ( y = ras.min_ey; y < ras.max_ey; y++ )
     {
       PCell   cell  = ras.ycells[y - ras.min_ey];
+      TCoord  cover = 0;
       TCoord  x     = ras.min_ex;
-      TArea   cover = 0;
-      TArea   area;
 
 
       for ( ; cell != NULL; cell = cell->next )
       {
-        if ( cover != 0 && cell->x > x )
-          gray_hline( RAS_VAR_ x, y, cover, cell->x - x );
+        TArea  area;
 
-        cover += (TArea)cell->cover * ( ONE_PIXEL * 2 );
-        area   = cover - cell->area;
+
+        if ( cover != 0 && cell->x > x )
+          gray_hline( RAS_VAR_ x, y, (TArea)cover * ( ONE_PIXEL * 2 ),
+                      cell->x - x );
+
+        cover += cell->cover;
+        area   = (TArea)cover * ( ONE_PIXEL * 2 ) - cell->area;
 
         if ( area != 0 && cell->x >= ras.min_ex )
           gray_hline( RAS_VAR_ cell->x, y, area, 1 );
@@ -1314,7 +1330,8 @@ typedef ptrdiff_t  FT_PtrDist;
       }
 
       if ( cover != 0 )
-        gray_hline( RAS_VAR_ x, y, cover, ras.max_ex - x );
+        gray_hline( RAS_VAR_ x, y, (TArea)cover * ( ONE_PIXEL * 2 ),
+                    ras.max_ex - x );
     }
 
     FT_TRACE7(( "gray_sweep: end\n" ));
@@ -1596,7 +1613,7 @@ typedef ptrdiff_t  FT_PtrDist;
     return 0;
 
   Exit:
-    FT_TRACE5(( "FT_Outline_Decompose: Error 0x%x\n", error ));
+    FT_TRACE5(( "FT_Outline_Decompose: Error %d\n", error ));
     return error;
 
   Invalid_Outline:

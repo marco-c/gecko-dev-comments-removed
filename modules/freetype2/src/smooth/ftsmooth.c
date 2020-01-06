@@ -122,60 +122,6 @@
     FT_Bool  have_outline_shifted = FALSE;
     FT_Bool  have_buffer          = FALSE;
 
-#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-
-    FT_Int                   lcd_extra          = 0;
-    FT_LcdFiveTapFilter      lcd_weights        = { 0 };
-    FT_Bool                  have_custom_weight = FALSE;
-    FT_Bitmap_LcdFilterFunc  lcd_filter_func    = NULL;
-
-
-    if ( slot->face )
-    {
-      FT_Char  i;
-
-
-      for ( i = 0; i < FT_LCD_FILTER_FIVE_TAPS; i++ )
-        if ( slot->face->internal->lcd_weights[i] != 0 )
-        {
-          have_custom_weight = TRUE;
-          break;
-        }
-    }
-
-    
-
-
-
-
-    if ( have_custom_weight )
-    {
-      
-
-
-
-      ft_memcpy( lcd_weights,
-                 slot->face->internal->lcd_weights,
-                 FT_LCD_FILTER_FIVE_TAPS );
-      lcd_filter_func = ft_lcd_filter_fir;
-      lcd_extra       = 2;
-    }
-    else
-    {
-      
-
-
-
-
-
-      ft_memcpy( lcd_weights,
-                 slot->library->lcd_weights,
-                 FT_LCD_FILTER_FIVE_TAPS );
-      lcd_filter_func = slot->library->lcd_filter_func;
-      lcd_extra       = slot->library->lcd_extra;
-    }
-
-#endif 
 
     
     if ( slot->format != render->glyph_format )
@@ -231,23 +177,28 @@
       height *= 3;
 
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
-    if ( lcd_filter_func )
+
+    if ( slot->library->lcd_filter_func )
     {
+      FT_Int  extra = slot->library->lcd_extra;
+
+
       if ( hmul )
       {
-        x_shift += 64 * ( lcd_extra >> 1 );
-        x_left  -= lcd_extra >> 1;
-        width   += 3 * lcd_extra;
+        x_shift += 64 * ( extra >> 1 );
+        x_left  -= extra >> 1;
+        width   += 3 * extra;
         pitch    = FT_PAD_CEIL( width, 4 );
       }
 
       if ( vmul )
       {
-        y_shift += 64 * ( lcd_extra >> 1 );
-        y_top   += lcd_extra >> 1;
-        height  += 3 * lcd_extra;
+        y_shift += 64 * ( extra >> 1 );
+        y_top   += extra >> 1;
+        height  += 3 * extra;
       }
     }
+
 #endif
 
     
@@ -348,8 +299,8 @@
     if ( error )
       goto Exit;
 
-    if ( lcd_filter_func )
-      lcd_filter_func( bitmap, mode, lcd_weights );
+    if ( slot->library->lcd_filter_func )
+      slot->library->lcd_filter_func( bitmap, mode, slot->library );
 
 #else 
 

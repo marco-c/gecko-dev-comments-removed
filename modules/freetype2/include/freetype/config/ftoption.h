@@ -675,15 +675,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
 #define TT_CONFIG_OPTION_SUBPIXEL_HINTING  2
 
 
@@ -855,36 +846,7 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
-
-  
-  
-  
-  
-  
-  
-  
-
-
-  
-  
-  
-  
-  
 #define AF_CONFIG_OPTION_CJK
-
-
 
 
 
@@ -917,26 +879,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-  
-
-
-  
-
-
-
-
-
-
   
 
 
@@ -944,14 +886,12 @@ FT_BEGIN_HEADER
 #ifdef TT_CONFIG_OPTION_BYTECODE_INTERPRETER
 #define  TT_USE_BYTECODE_INTERPRETER
 
-#ifdef TT_CONFIG_OPTION_SUBPIXEL_HINTING
 #if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 1
 #define  TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
 #endif
 
 #if TT_CONFIG_OPTION_SUBPIXEL_HINTING & 2
 #define  TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-#endif
 #endif
 #endif
 

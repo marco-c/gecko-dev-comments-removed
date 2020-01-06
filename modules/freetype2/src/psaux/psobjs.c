@@ -1551,7 +1551,7 @@
       builder->current = &loader->current.outline;
       FT_GlyphLoader_Rewind( loader );
 
-      builder->hints_globals = size->internal->module_data;
+      builder->hints_globals = size->internal;
       builder->hints_funcs   = NULL;
 
       if ( hinting )
@@ -1717,14 +1717,6 @@
 
     first = outline->n_contours <= 1
             ? 0 : outline->contours[outline->n_contours - 2] + 1;
-
-    
-    
-    if ( outline->n_contours && first == outline->n_points )
-    {
-      outline->n_contours--;
-      return;
-    }
 
     
     

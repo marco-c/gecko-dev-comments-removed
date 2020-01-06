@@ -49,9 +49,9 @@ FT_BEGIN_HEADER
   
   
   
-
-
   
+
+
   
   
   
@@ -79,7 +79,6 @@ FT_BEGIN_HEADER
   } FT_MM_Axis;
 
 
-  
   
   
   
@@ -138,14 +137,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   typedef struct  FT_Var_Axis_
   {
     FT_String*  name;
@@ -176,10 +167,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
   typedef struct  FT_Var_Named_Style_
   {
     FT_Fixed*  coords;
@@ -189,10 +176,6 @@ FT_BEGIN_HEADER
   } FT_Var_Named_Style;
 
 
-  
-  
-  
-  
   
   
   
@@ -263,7 +246,6 @@ FT_BEGIN_HEADER
   
   
   
-  
   FT_EXPORT( FT_Error )
   FT_Get_Multi_Master( FT_Face           face,
                        FT_Multi_Master  *amaster );
@@ -288,14 +270,11 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
   FT_EXPORT( FT_Error )
   FT_Get_MM_Var( FT_Face      face,
                  FT_MM_Var*  *amaster );
 
 
-  
   
   
   
@@ -350,15 +329,12 @@ FT_BEGIN_HEADER
   
   
   
-  
   FT_EXPORT( FT_Error )
   FT_Set_Var_Design_Coordinates( FT_Face    face,
                                  FT_UInt    num_coords,
                                  FT_Fixed*  coords );
 
 
-  
-  
   
   
   
@@ -412,17 +388,12 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
   FT_EXPORT( FT_Error )
   FT_Set_MM_Blend_Coordinates( FT_Face    face,
                                FT_UInt    num_coords,
                                FT_Fixed*  coords );
 
 
-  
-  
   
   
   

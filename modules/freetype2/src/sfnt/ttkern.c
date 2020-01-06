@@ -108,8 +108,8 @@
         p_next = p_limit;
 
       
-      if ( ( coverage & 3U ) != 0x0001 ||
-           p + 8 > p_next              )
+      if ( ( coverage & ~8U ) != 0x0001 ||
+           p + 8 > p_limit              )
         goto NextTable;
 
       num_pairs = FT_NEXT_USHORT( p );
@@ -214,7 +214,8 @@
       if ( ( face->kern_avail_bits & mask ) == 0 )
         goto NextTable;
 
-      FT_ASSERT( p + 8 <= next ); 
+      if ( p + 8 > next )
+        goto NextTable;
 
       num_pairs = FT_NEXT_USHORT( p );
       p        += 6;

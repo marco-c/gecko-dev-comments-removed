@@ -450,19 +450,7 @@
 
       
       
-      
-#if 0
-      return (FT_Short)(
-               ( ( ( (FT_UInt32)*( d[0] + 1 ) << 24 ) |
-                   ( (FT_UInt32)*( d[0] + 2 ) << 16 ) |
-                   ( (FT_UInt32)*( d[0] + 3 ) <<  8 ) |
-                     (FT_UInt32)*( d[0] + 4 )         ) + 0x8000U ) >> 16 );
-#else
-      return (FT_Short)(
-               ( ( ( (FT_UInt32)*( d[0] + 1 ) << 16 ) |
-                   ( (FT_UInt32)*( d[0] + 2 ) <<  8 ) |
-                     (FT_UInt32)*( d[0] + 3 )         ) + 0x80U ) >> 8 );
-#endif
+      return (FT_Long)( *( (FT_UInt32 *) ( d[0] + 1 ) ) + 0x8000U ) >> 16;
     }
 
     else
@@ -894,6 +882,8 @@
     FT_Error     error;
 
 
+    error = FT_ERR( Stack_Underflow );
+
     if ( !priv || !priv->subfont )
     {
       error = FT_THROW( Invalid_File_Format );
@@ -1123,8 +1113,6 @@
 #define CFF_FIELD_DELTA( code, name, max, id ) i++;
 #undef CFF_FIELD_CALLBACK
 #define CFF_FIELD_CALLBACK( code, name, id ) i++;
-#undef CFF_FIELD_BLEND
-#define CFF_FIELD_BLEND( code, id ) i++;
 
 #include "cfftoken.h"
 
@@ -1170,17 +1158,6 @@
           clazz[i].reader       = 0;                                \
           clazz[i].array_max    = max_;                             \
           clazz[i].count_offset = FT_FIELD_OFFSET( num_ ## name_ ); \
-          i++;
-
-#undef  CFF_FIELD_BLEND
-#define CFF_FIELD_BLEND( code_, id_ )              \
-          clazz[i].kind         = cff_kind_blend;  \
-          clazz[i].code         = code_ | CFFCODE; \
-          clazz[i].offset       = 0;               \
-          clazz[i].size         = 0;               \
-          clazz[i].reader       = cff_parse_blend; \
-          clazz[i].array_max    = 0;               \
-          clazz[i].count_offset = 0;               \
           i++;
 
 #include "cfftoken.h"
@@ -1231,18 +1208,6 @@
           clazz[i].array_max    = max_;                             \
           clazz[i].count_offset = FT_FIELD_OFFSET( num_ ## name_ ); \
           clazz[i].id           = id_;                              \
-          i++;
-
-#undef  CFF_FIELD_BLEND
-#define CFF_FIELD_BLEND( code_, id_ )              \
-          clazz[i].kind         = cff_kind_blend;  \
-          clazz[i].code         = code_ | CFFCODE; \
-          clazz[i].offset       = 0;               \
-          clazz[i].size         = 0;               \
-          clazz[i].reader       = cff_parse_blend; \
-          clazz[i].array_max    = 0;               \
-          clazz[i].count_offset = 0;               \
-          clazz[i].id           = id_;             \
           i++;
 
 #include "cfftoken.h"

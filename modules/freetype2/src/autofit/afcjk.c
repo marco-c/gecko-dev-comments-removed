@@ -29,13 +29,13 @@
 #include "afglobal.h"
 #include "afpic.h"
 #include "aflatin.h"
-#include "afcjk.h"
 
 
 #ifdef AF_CONFIG_OPTION_CJK
 
 #undef AF_CONFIG_OPTION_CJK_BLUE_HANI_VERT
 
+#include "afcjk.h"
 #include "aferrors.h"
 
 
@@ -563,7 +563,7 @@
                                FT_Face        face )
   {
     FT_Bool   started = 0, same_width = 1;
-    FT_Fixed  advance = 0, old_advance = 0;
+    FT_Fixed  advance, old_advance = 0;
 
     void*  shaper_buf;
 
@@ -1400,7 +1400,7 @@
     
 
 
-    if ( mode != FT_RENDER_MODE_LIGHT && mode != FT_RENDER_MODE_LCD )
+    if ( mode != FT_RENDER_MODE_LIGHT )
       other_flags |= AF_LATIN_HINTS_STEM_ADJUST;
 
     if ( mode == FT_RENDER_MODE_MONO )

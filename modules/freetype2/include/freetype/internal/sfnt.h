@@ -475,37 +475,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  typedef FT_Bool
-  (*TT_Get_Name_ID_Func)( TT_Face    face,
-                          FT_UShort  nameid,
-                          FT_Int    *win,
-                          FT_Int    *apple );
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   typedef FT_Error
   (*TT_Load_Table_Func)( TT_Face    face,
                          FT_Stream  stream );
@@ -619,7 +588,6 @@ FT_BEGIN_HEADER
     TT_Get_Metrics_Func          get_metrics;
 
     TT_Get_Name_Func             get_name;
-    TT_Get_Name_ID_Func          get_name_id;
 
   } SFNT_Interface;
 
@@ -660,8 +628,7 @@ FT_BEGIN_HEADER
           set_sbit_strike_,              \
           load_strike_metrics_,          \
           get_metrics_,                  \
-          get_name_,                     \
-          get_name_id_ )                 \
+          get_name_ )                    \
   static const SFNT_Interface  class_ =  \
   {                                      \
     goto_table_,                         \
@@ -694,7 +661,6 @@ FT_BEGIN_HEADER
     load_strike_metrics_,                \
     get_metrics_,                        \
     get_name_,                           \
-    get_name_id_                         \
   };
 
 #else 
@@ -733,8 +699,7 @@ FT_BEGIN_HEADER
           set_sbit_strike_,                             \
           load_strike_metrics_,                         \
           get_metrics_,                                 \
-          get_name_,                                    \
-          get_name_id_ )                                \
+          get_name_ )                                   \
   void                                                  \
   FT_Init_Class_ ## class_( FT_Library       library,   \
                             SFNT_Interface*  clazz )    \
@@ -771,7 +736,6 @@ FT_BEGIN_HEADER
     clazz->load_strike_metrics = load_strike_metrics_;  \
     clazz->get_metrics         = get_metrics_;          \
     clazz->get_name            = get_name_;             \
-    clazz->get_name_id         = get_name_id_;          \
   }
 
 #endif 

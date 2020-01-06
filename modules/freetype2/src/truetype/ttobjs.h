@@ -278,8 +278,7 @@ FT_BEGIN_HEADER
 
     
     
-    FT_Size_Metrics*   metrics;        
-    FT_Size_Metrics    hinted_metrics; 
+    FT_Size_Metrics    metrics;
 
     TT_Size_Metrics    ttmetrics;
 
@@ -390,8 +389,7 @@ FT_BEGIN_HEADER
 #endif 
 
   FT_LOCAL( FT_Error )
-  tt_size_reset( TT_Size  size,
-                 FT_Bool  only_height );
+  tt_size_reset( TT_Size  size );
 
 
   

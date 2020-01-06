@@ -19,7 +19,7 @@
   
 
 
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -27,7 +27,7 @@
 #endif
 #endif
   const char  ft_standard_glyph_names[3696]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
     '.','n','u','l','l', 0,
@@ -459,7 +459,7 @@
 
   
 
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -467,7 +467,7 @@
 #endif
 #endif
   const short  ft_mac_names[FT_NUM_MAC_NAMES]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
      253,   0,   6, 261, 267, 274, 283, 294, 301, 309, 758, 330, 340, 351,
@@ -498,7 +498,7 @@
 
   
 
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -506,7 +506,7 @@
 #endif
 #endif
   const short  ft_sid_names[FT_NUM_SID_NAMES]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
      253, 261, 267, 274, 283, 294, 301, 309, 319, 330, 340, 351, 360, 365,
@@ -543,7 +543,7 @@
 
 
   
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -551,7 +551,7 @@
 #endif
 #endif
   const unsigned short  t1_standard_encoding[256]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -576,7 +576,7 @@
 
 
   
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -584,7 +584,7 @@
 #endif
 #endif
   const unsigned short  t1_expert_encoding[256]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
       0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -619,7 +619,7 @@
 
 #ifdef FT_CONFIG_OPTION_ADOBE_GLYPH_LIST
 
-#ifndef  DEFINE_PS_TABLES_DATA
+#ifndef  DEFINE_PS_TABLES
 #ifdef  __cplusplus
   extern "C"
 #else
@@ -627,7 +627,7 @@
 #endif
 #endif
   const unsigned char  ft_adobe_glyph_list[55997L]
-#ifdef  DEFINE_PS_TABLES_DATA
+#ifdef  DEFINE_PS_TABLES
   =
   {
       0, 52,  0,106,  2,167,  3, 63,  4,220,  6,125,  9,143, 10, 23,
@@ -4135,7 +4135,6 @@
   ;
 
 
-#ifdef  DEFINE_PS_TABLES
   
 
 
@@ -4230,7 +4229,6 @@
   NotFound:
     return 0;
   }
-#endif 
 
 #endif
 

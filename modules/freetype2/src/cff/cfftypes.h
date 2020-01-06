@@ -321,8 +321,6 @@ FT_BEGIN_HEADER
     FT_Byte**     local_subrs; 
                                
 
-    FT_UInt32  random;
-
   } CFF_SubFontRec;
 
 
@@ -391,7 +389,6 @@ FT_BEGIN_HEADER
     
     FT_Generic       cf2_instance;
 
-    
     CFF_VStoreRec    vstore;        
 
   } CFF_FontRec;

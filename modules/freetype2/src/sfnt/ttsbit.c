@@ -24,10 +24,6 @@
 #include FT_INTERNAL_STREAM_H
 #include FT_TRUETYPE_TAGS_H
 #include FT_BITMAP_H
-
-
-#ifdef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
-
 #include "ttsbit.h"
 
 #include "sferrors.h"
@@ -1464,9 +1460,6 @@
     FT_Byte*  p;
 
     FT_UNUSED( map );
-#ifndef FT_CONFIG_OPTION_USE_PNG
-    FT_UNUSED( metrics_only );
-#endif
 
 
     strike_index = face->sbit_strike_map[strike_index];
@@ -1653,13 +1646,6 @@
 
     return error;
   }
-
-#else 
-
-  
-  typedef int  _tt_sbit_dummy;
-
-#endif 
 
 
 

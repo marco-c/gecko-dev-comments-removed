@@ -36,14 +36,6 @@
   
   
   
-
-
-  
-  
-  
-  
-  
-  
 #undef  FT_COMPONENT
 #define FT_COMPONENT  trace_ttmtx
 

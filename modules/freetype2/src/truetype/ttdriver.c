@@ -304,17 +304,15 @@
       
       FT_Select_Metrics( size->face, strike_index );
 
-      tt_size_reset( ttsize, 0 ); 
+      tt_size_reset( ttsize ); 
     }
     else
     {
-      SFNT_Service      sfnt         = (SFNT_Service)ttface->sfnt;
-      FT_Size_Metrics*  size_metrics = &size->metrics;
+      SFNT_Service      sfnt    = (SFNT_Service)ttface->sfnt;
+      FT_Size_Metrics*  metrics = &size->metrics;
 
 
-      error = sfnt->load_strike_metrics( ttface,
-                                         strike_index,
-                                         size_metrics );
+      error = sfnt->load_strike_metrics( ttface, strike_index, metrics );
       if ( error )
         ttsize->strike_index = 0xFFFFFFFFUL;
     }
@@ -356,16 +354,15 @@
 
     if ( FT_IS_SCALABLE( size->face ) )
     {
-      error = tt_size_reset( ttsize, 0 );
+      error = tt_size_reset( ttsize );
+      ttsize->root.metrics = ttsize->metrics;
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
       
-      if ( !error )
       {
-        FT_UInt  resolution =
-                   ttsize->metrics->x_ppem > ttsize->metrics->y_ppem
-                     ? req->horiResolution
-                     : req->vertResolution;
+        FT_UInt  resolution = ttsize->metrics.x_ppem > ttsize->metrics.y_ppem
+                                ? req->horiResolution
+                                : req->vertResolution;
 
 
         
@@ -460,11 +457,6 @@
     }
 
     
-    size->metrics = ( load_flags & FT_LOAD_NO_HINTING )
-                      ? &ttsize->metrics
-                      : &size->hinted_metrics;
-
-    
     error = TT_Load_Glyph( size, slot, glyph_index, load_flags );
 
     
@@ -510,12 +502,12 @@
     (FT_LSB_Adjust_Func)     NULL,                   
     (FT_RSB_Adjust_Func)     NULL,                   
 
-    (FT_VAdvance_Adjust_Func)tt_vadvance_adjust,     
+    (FT_VAdvance_Adjust_Func)NULL,                   
     (FT_TSB_Adjust_Func)     NULL,                   
     (FT_BSB_Adjust_Func)     NULL,                   
     (FT_VOrg_Adjust_Func)    NULL,                   
 
-    (FT_Metrics_Adjust_Func) tt_apply_mvar           
+    (FT_Metrics_Adjust_Func) NULL                    
   )
 
 #endif 

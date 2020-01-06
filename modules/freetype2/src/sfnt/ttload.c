@@ -808,6 +808,7 @@
     FT_Memory     memory = stream->memory;
     FT_ULong      table_pos, table_len;
     FT_ULong      storage_start, storage_limit;
+    FT_UInt       count;
     TT_NameTable  table;
 
     static const FT_Frame_Field  name_table_fields[] =
@@ -825,24 +826,13 @@
     static const FT_Frame_Field  name_record_fields[] =
     {
 #undef  FT_STRUCTURE
-#define FT_STRUCTURE  TT_NameRec
+#define FT_STRUCTURE  TT_NameEntryRec
 
       
         FT_FRAME_USHORT( platformID ),
         FT_FRAME_USHORT( encodingID ),
         FT_FRAME_USHORT( languageID ),
         FT_FRAME_USHORT( nameID ),
-        FT_FRAME_USHORT( stringLength ),
-        FT_FRAME_USHORT( stringOffset ),
-      FT_FRAME_END
-    };
-
-    static const FT_Frame_Field  langTag_record_fields[] =
-    {
-#undef  FT_STRUCTURE
-#define FT_STRUCTURE  TT_LangTagRec
-
-      
         FT_FRAME_USHORT( stringLength ),
         FT_FRAME_USHORT( stringOffset ),
       FT_FRAME_END
@@ -858,6 +848,7 @@
 
     table_pos = FT_STREAM_POS();
 
+
     if ( FT_STREAM_READ_FIELDS( name_table_fields, table ) )
       goto Exit;
 
@@ -868,7 +859,7 @@
     
     
     
-    storage_start = table_pos + 6 + 12 * table->numNameRecords;
+    storage_start = table_pos + 6 + 12*table->numNameRecords;
     storage_limit = table_pos + table_len;
 
     if ( storage_start > storage_limit )
@@ -879,55 +870,17 @@
     }
 
     
-    
-    if ( table->format == 1 )
-    {
-      if ( FT_STREAM_SEEK( storage_start )            ||
-           FT_READ_USHORT( table->numLangTagRecords ) )
-        goto Exit;
+    count                 = table->numNameRecords;
+    table->numNameRecords = 0;
 
-      storage_start += 2 + 4 * table->numLangTagRecords;
-
-      
-      if ( FT_NEW_ARRAY( table->langTags, table->numLangTagRecords ) ||
-           FT_FRAME_ENTER( table->numLangTagRecords * 4 )            )
-        goto Exit;
-
-      
-      {
-        TT_LangTag  entry = table->langTags;
-        TT_LangTag  limit = entry + table->numLangTagRecords;
-
-
-        for ( ; entry < limit; entry++ )
-        {
-          (void)FT_STREAM_READ_FIELDS( langTag_record_fields, entry );
-
-          
-          entry->stringOffset += table_pos + table->storageOffset;
-          if ( entry->stringOffset                       < storage_start ||
-               entry->stringOffset + entry->stringLength > storage_limit )
-          {
-            
-            entry->stringLength = 0;
-          }
-        }
-      }
-
-      FT_FRAME_EXIT();
-
-      (void)FT_STREAM_SEEK( table_pos + 6 );
-    }
-
-    
-    if ( FT_NEW_ARRAY( table->names, table->numNameRecords ) ||
-         FT_FRAME_ENTER( table->numNameRecords * 12 )        )
+    if ( FT_NEW_ARRAY( table->names, count ) ||
+         FT_FRAME_ENTER( count * 12 )        )
       goto Exit;
 
     
+    
     {
-      TT_Name  entry = table->names;
-      FT_UInt  count = table->numNameRecords;
+      TT_NameEntryRec*  entry = table->names;
 
 
       for ( ; count > 0; count-- )
@@ -945,36 +898,21 @@
              entry->stringOffset + entry->stringLength > storage_limit )
         {
           
+          entry->stringOffset = 0;
+          entry->stringLength = 0;
           continue;
-        }
-
-        
-        
-        if ( table->format == 1 && entry->languageID >= 0x8000U )
-        {
-          if ( entry->languageID - 0x8000U >= table->numLangTagRecords    ||
-               !table->langTags[entry->languageID - 0x8000U].stringLength )
-          {
-            
-            continue;
-          }
         }
 
         entry++;
       }
 
-      
-      count = (FT_UInt)( entry - table->names );
-      (void)FT_RENEW_ARRAY( table->names,
-                            table->numNameRecords,
-                            count );
-      table->numNameRecords = count;
+      table->numNameRecords = (FT_UInt)( entry - table->names );
     }
 
     FT_FRAME_EXIT();
 
     
-    face->num_names = (FT_UShort)table->numNameRecords;
+    face->num_names = (FT_UShort) table->numNameRecords;
 
   Exit:
     return error;
@@ -997,36 +935,25 @@
   {
     FT_Memory     memory = face->root.driver->root.memory;
     TT_NameTable  table  = &face->name_table;
+    TT_NameEntry  entry  = table->names;
+    FT_UInt       count  = table->numNameRecords;
 
 
     if ( table->names )
     {
-      TT_Name  entry = table->names;
-      TT_Name  limit = entry + table->numNameRecords;
-
-
-      for ( ; entry < limit; entry++ )
+      for ( ; count > 0; count--, entry++ )
+      {
         FT_FREE( entry->string );
+        entry->stringLength = 0;
+      }
 
+      
       FT_FREE( table->names );
     }
 
-    if ( table->langTags )
-    {
-      TT_LangTag  entry = table->langTags;
-      TT_LangTag  limit = entry + table->numLangTagRecords;
-
-
-      for ( ; entry < limit; entry++ )
-        FT_FREE( entry->string );
-
-      FT_FREE( table->langTags );
-    }
-
-    table->numNameRecords    = 0;
-    table->numLangTagRecords = 0;
-    table->format            = 0;
-    table->storageOffset     = 0;
+    table->numNameRecords = 0;
+    table->format         = 0;
+    table->storageOffset  = 0;
   }
 
 

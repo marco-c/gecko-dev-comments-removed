@@ -257,14 +257,8 @@ FT_BEGIN_HEADER
   
   
   
-  
 
 
-  
-  
-  
-  
-  
   
   
   
@@ -548,10 +542,10 @@ FT_BEGIN_HEADER
   
   
   
+  
   typedef struct FT_GlyphSlotRec_*  FT_GlyphSlot;
 
 
-  
   
   
   
@@ -758,6 +752,7 @@ FT_BEGIN_HEADER
   
   
   
+  
   typedef enum  FT_Encoding_
   {
     FT_ENC_TAG( FT_ENCODING_NONE, 0, 0, 0, 0 ),
@@ -766,15 +761,14 @@ FT_BEGIN_HEADER
     FT_ENC_TAG( FT_ENCODING_UNICODE,   'u', 'n', 'i', 'c' ),
 
     FT_ENC_TAG( FT_ENCODING_SJIS,    's', 'j', 'i', 's' ),
-    FT_ENC_TAG( FT_ENCODING_PRC,     'g', 'b', ' ', ' ' ),
+    FT_ENC_TAG( FT_ENCODING_GB2312,  'g', 'b', ' ', ' ' ),
     FT_ENC_TAG( FT_ENCODING_BIG5,    'b', 'i', 'g', '5' ),
     FT_ENC_TAG( FT_ENCODING_WANSUNG, 'w', 'a', 'n', 's' ),
     FT_ENC_TAG( FT_ENCODING_JOHAB,   'j', 'o', 'h', 'a' ),
 
     
-    FT_ENCODING_GB2312     = FT_ENCODING_PRC,
     FT_ENCODING_MS_SJIS    = FT_ENCODING_SJIS,
-    FT_ENCODING_MS_GB2312  = FT_ENCODING_PRC,
+    FT_ENCODING_MS_GB2312  = FT_ENCODING_GB2312,
     FT_ENCODING_MS_BIG5    = FT_ENCODING_BIG5,
     FT_ENCODING_MS_WANSUNG = FT_ENCODING_WANSUNG,
     FT_ENCODING_MS_JOHAB   = FT_ENCODING_JOHAB,
@@ -799,7 +793,7 @@ FT_BEGIN_HEADER
 #define ft_encoding_latin_1         FT_ENCODING_ADOBE_LATIN_1
 #define ft_encoding_latin_2         FT_ENCODING_OLD_LATIN_2
 #define ft_encoding_sjis            FT_ENCODING_SJIS
-#define ft_encoding_gb2312          FT_ENCODING_PRC
+#define ft_encoding_gb2312          FT_ENCODING_GB2312
 #define ft_encoding_big5            FT_ENCODING_BIG5
 #define ft_encoding_wansung         FT_ENCODING_WANSUNG
 #define ft_encoding_johab           FT_ENCODING_JOHAB
@@ -1040,17 +1034,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   typedef struct  FT_FaceRec_
   {
     FT_Long           num_faces;
@@ -1110,8 +1093,6 @@ FT_BEGIN_HEADER
   } FT_FaceRec;
 
 
-  
-  
   
   
   
@@ -1534,13 +1515,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
   typedef struct  FT_Size_Metrics_
   {
     FT_UShort  x_ppem;      
@@ -1790,29 +1764,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   typedef struct  FT_GlyphSlotRec_
   {
     FT_Library        library;
@@ -1859,12 +1810,6 @@ FT_BEGIN_HEADER
   
 
 
-  
-  
-  
-  
-  
-  
   
   
   
@@ -2039,7 +1984,6 @@ FT_BEGIN_HEADER
   
   
   
-  
   typedef struct  FT_Open_Args_
   {
     FT_UInt         flags;
@@ -2127,7 +2071,6 @@ FT_BEGIN_HEADER
                       FT_Face        *aface );
 
 
-  
   
   
   
@@ -2520,8 +2463,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
   typedef struct  FT_Size_RequestRec_
   {
     FT_Size_Request_Type  type;
@@ -2544,10 +2485,6 @@ FT_BEGIN_HEADER
   typedef struct FT_Size_RequestRec_  *FT_Size_Request;
 
 
-  
-  
-  
-  
   
   
   
@@ -2620,9 +2557,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
   FT_EXPORT( FT_Error )
   FT_Set_Char_Size( FT_Face     face,
                     FT_F26Dot6  char_width,
@@ -2657,12 +2591,14 @@ FT_BEGIN_HEADER
   
   
   
+  
   FT_EXPORT( FT_Error )
   FT_Set_Pixel_Sizes( FT_Face  face,
                       FT_UInt  pixel_width,
                       FT_UInt  pixel_height );
 
 
+  
   
   
   
@@ -2737,10 +2673,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
   FT_EXPORT( FT_Error )
   FT_Load_Char( FT_Face   face,
                 FT_ULong  char_code,
@@ -2748,6 +2680,9 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
 
 
 
@@ -3005,24 +2940,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define FT_LOAD_TARGET_( x )   ( (FT_Int32)( (x) & 15 ) << 16 )
 
 #define FT_LOAD_TARGET_NORMAL  FT_LOAD_TARGET_( FT_RENDER_MODE_NORMAL )
@@ -3072,12 +2989,14 @@ FT_BEGIN_HEADER
   
   
   
+  
   FT_EXPORT( void )
   FT_Set_Transform( FT_Face     face,
                     FT_Matrix*  matrix,
                     FT_Vector*  delta );
 
 
+  
   
   
   
@@ -3288,11 +3207,9 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
   typedef enum  FT_Kerning_Mode_
   {
-    FT_KERNING_DEFAULT = 0,
+    FT_KERNING_DEFAULT  = 0,
     FT_KERNING_UNFITTED,
     FT_KERNING_UNSCALED
 
@@ -3306,10 +3223,6 @@ FT_BEGIN_HEADER
 #define ft_kerning_unscaled  FT_KERNING_UNSCALED
 
 
-  
-  
-  
-  
   
   
   
@@ -3457,13 +3370,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
   FT_EXPORT( const char* )
   FT_Get_Postscript_Name( FT_Face  face );
 
@@ -3501,7 +3407,6 @@ FT_BEGIN_HEADER
                      FT_Encoding  encoding );
 
 
-  
   
   
   
@@ -3636,12 +3541,12 @@ FT_BEGIN_HEADER
   
   
   
+  
   FT_EXPORT( FT_ULong )
   FT_Get_First_Char( FT_Face   face,
                      FT_UInt  *agindex );
 
 
-  
   
   
   
@@ -3678,101 +3583,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  FT_EXPORT( FT_Error )
-  FT_Face_Properties( FT_Face        face,
-                      FT_UInt        num_properties,
-                      FT_Parameter*  properties );
-
-
   
   
   
@@ -3795,8 +3605,6 @@ FT_BEGIN_HEADER
 
 
   
-
-
 
 
 
@@ -3930,6 +3738,8 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
 #define FT_FSTYPE_INSTALLABLE_EMBEDDING         0x0000
 #define FT_FSTYPE_RESTRICTED_LICENSE_EMBEDDING  0x0002
 #define FT_FSTYPE_PREVIEW_AND_PRINT_EMBEDDING   0x0004
@@ -3964,18 +3774,6 @@ FT_BEGIN_HEADER
   FT_Get_FSType_Flags( FT_Face  face );
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -4249,7 +4047,6 @@ FT_BEGIN_HEADER
   
   
   
-  
   FT_EXPORT( FT_Long )
   FT_MulDiv( FT_Long  a,
              FT_Long  b,
@@ -4345,10 +4142,12 @@ FT_BEGIN_HEADER
   
   
   
+  
   FT_EXPORT( FT_Fixed )
   FT_CeilFix( FT_Fixed  a );
 
 
+  
   
   
   
@@ -4441,8 +4240,8 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  8
-#define FREETYPE_PATCH  0
+#define FREETYPE_MINOR  7
+#define FREETYPE_PATCH  1
 
 
   

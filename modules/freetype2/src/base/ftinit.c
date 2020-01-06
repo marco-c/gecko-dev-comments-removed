@@ -232,8 +232,29 @@
 
   
 
-  FT_EXPORT_DEF( void )
-  FT_Set_Default_Properties( FT_Library  library )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void
+  ft_set_default_properties( FT_Library  library )
   {
     const char*  env;
     const char*  p;
@@ -305,8 +326,8 @@
 
 #else
 
-  FT_EXPORT_DEF( void )
-  FT_Set_Default_Properties( FT_Library  library )
+  static void
+  ft_set_default_properties( FT_Library  library )
   {
     FT_UNUSED( library );
   }
@@ -344,7 +365,7 @@
     else
       FT_Add_Default_Modules( *alibrary );
 
-    FT_Set_Default_Properties( *alibrary );
+    ft_set_default_properties( *alibrary );
 
     return error;
   }

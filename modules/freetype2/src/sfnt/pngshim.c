@@ -24,8 +24,7 @@
 #include FT_CONFIG_STANDARD_LIBRARY_H
 
 
-#if defined( TT_CONFIG_OPTION_EMBEDDED_BITMAPS ) && \
-    defined( FT_CONFIG_OPTION_USE_PNG )
+#ifdef FT_CONFIG_OPTION_USE_PNG
 
   
 #define PNG_SKIP_SETJMP_CHECK 1
@@ -377,11 +376,6 @@
   Exit:
     return error;
   }
-
-#else 
-
-  
-  typedef int  _pngshim_dummy;
 
 #endif 
 

@@ -68,7 +68,6 @@ FT_BEGIN_HEADER
   
   
   
-  
 
 
   
@@ -109,6 +108,7 @@ FT_BEGIN_HEADER
   } TT_Header;
 
 
+  
   
   
   
@@ -318,6 +318,10 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
   typedef struct  TT_VertHeader_
   {
     FT_Fixed   Version;
@@ -361,22 +365,6 @@ FT_BEGIN_HEADER
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   typedef struct  TT_OS2_
   {
     FT_UShort  version;                
@@ -435,12 +423,6 @@ FT_BEGIN_HEADER
   } TT_OS2;
 
 
-  
-  
-  
-  
-  
-  
   
   
   
@@ -564,6 +546,8 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
   typedef struct  TT_MaxProfile_
   {
     FT_Fixed   version;
@@ -585,7 +569,6 @@ FT_BEGIN_HEADER
   } TT_MaxProfile;
 
 
-  
   
   
   
@@ -678,7 +661,7 @@ FT_BEGIN_HEADER
                      FT_Sfnt_Tag  tag );
 
 
-  
+ 
 
 
 
@@ -750,7 +733,7 @@ FT_BEGIN_HEADER
                       FT_ULong*  length );
 
 
-  
+ 
 
 
 

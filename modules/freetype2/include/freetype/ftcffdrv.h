@@ -117,7 +117,6 @@ FT_BEGIN_HEADER
 
 
 
-
   
 
 
@@ -208,8 +207,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
   
 
 
@@ -264,49 +261,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-#define FT_PARAM_TAG_RANDOM_SEED \
-          FT_MAKE_TAG( 's', 'e', 'e', 'd' )
 
 
   

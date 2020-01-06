@@ -29,10 +29,6 @@
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_STREAM_H
 #include FT_TRUETYPE_TAGS_H
-
-
-#ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
-
 #include "ttpost.h"
 
 #include "sferrors.h"
@@ -564,13 +560,6 @@
   End:
     return FT_Err_Ok;
   }
-
-#else 
-
-  
-  typedef int  _tt_post_dummy;
-
-#endif 
 
 
 
