@@ -1,0 +1,12 @@
+
+
+
+
+
+
+#ifndef nsExceptionHandlerUtils_h__
+#define nsExceptionHandlerUtils_h__
+
+bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength);
+
+#endif 

@@ -3,6 +3,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef nsExceptionHandler_h__
 #define nsExceptionHandler_h__
 
@@ -34,6 +40,19 @@ template<class KeyClass, class DataType> class nsDataHashtable;
 class nsCStringHashKey;
 
 namespace CrashReporter {
+
+
+
+
+static inline bool
+IsDummy() {
+#ifdef MOZ_CRASHREPORTER
+  return false;
+#else
+  return true;
+#endif
+}
+
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force=false);
 nsresult UnsetExceptionHandler();
 
@@ -248,7 +267,7 @@ void UnregisterInjectorCallback(DWORD processID);
 bool SetRemoteExceptionHandler(const nsACString& crashPipe);
 void InitChildProcessTmpDir(nsIFile* aDirOverride = nullptr);
 
-#  elif defined(XP_LINUX)
+#  elif defined(XP_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
 
 
 
