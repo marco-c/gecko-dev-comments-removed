@@ -430,7 +430,7 @@ RasterImage::WillDrawOpaqueNow()
   
   
   
-  if (IsUnlocked()) {
+  if (mLockCount == 0) {
     return false;
   }
 
@@ -639,7 +639,7 @@ RasterImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags)
     return nullptr;
   }
 
-  if (IsUnlocked()) {
+  if (mAnimationConsumers == 0) {
     SendOnUnlockedDraw(aFlags);
   }
 
@@ -1395,19 +1395,6 @@ RasterImage::DrawInternal(DrawableSurface&& aSurface,
   ImageRegion region(aRegion);
   bool frameIsFinished = aSurface->IsFinished();
 
-#ifdef DEBUG
-  
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-    if (NS_WARN_IF(obs)) {
-      nsCOMPtr<nsIURI> imageURI = mURI->ToIURI();
-      nsAutoCString spec;
-      imageURI->GetSpec(spec);
-      obs->NotifyObservers(nullptr, "image-drawing", NS_ConvertUTF8toUTF16(spec).get());
-    }
-  }
-#endif
-
   
   
   IntSize finalSize = aSurface->GetImageSize();
@@ -1464,7 +1451,7 @@ RasterImage::Draw(gfxContext* aContext,
     return DrawResult::BAD_ARGS;
   }
 
-  if (IsUnlocked()) {
+  if (mAnimationConsumers == 0) {
     SendOnUnlockedDraw(aFlags);
   }
 
