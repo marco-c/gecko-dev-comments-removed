@@ -85,8 +85,10 @@ public:
 
 
 
+
   virtual nsresult
-  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream) = 0;
+  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
+                       int64_t* aPostDataStreamLength) = 0;
 
   
 
@@ -165,7 +167,8 @@ public:
   AddNameDirectoryPair(const nsAString& aName, Directory* aDirectory) override;
 
   virtual nsresult
-  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream) override;
+  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
+                       int64_t* aPostDataStreamLength) override;
 
   void GetContentType(nsACString& aContentType)
   {
