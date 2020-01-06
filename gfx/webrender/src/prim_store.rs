@@ -299,7 +299,19 @@ pub struct RadialGradientPrimitiveCpu {
 }
 
 
-pub const GRADIENT_DATA_RESOLUTION: usize = 128;
+pub const GRADIENT_DATA_FIRST_STOP: usize = 0;
+
+pub const GRADIENT_DATA_LAST_STOP: usize = GRADIENT_DATA_SIZE - 1;
+
+
+pub const GRADIENT_DATA_TABLE_BEGIN: usize = GRADIENT_DATA_FIRST_STOP + 1;
+
+pub const GRADIENT_DATA_TABLE_END: usize = GRADIENT_DATA_LAST_STOP;
+
+pub const GRADIENT_DATA_TABLE_SIZE: usize = 128;
+
+
+pub const GRADIENT_DATA_SIZE: usize = GRADIENT_DATA_TABLE_SIZE + 2;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -317,9 +329,11 @@ pub struct GradientDataEntry {
 
 
 
+
+
 pub struct GradientData {
-    pub colors_high: [GradientDataEntry; GRADIENT_DATA_RESOLUTION],
-    pub colors_low: [GradientDataEntry; GRADIENT_DATA_RESOLUTION],
+    pub colors_high: [GradientDataEntry; GRADIENT_DATA_SIZE],
+    pub colors_low: [GradientDataEntry; GRADIENT_DATA_SIZE],
 }
 
 impl Default for GradientData {
@@ -341,6 +355,7 @@ impl Clone for GradientData {
 }
 
 impl GradientData {
+    
     
     fn fill_colors(&mut self, start_idx: usize, end_idx: usize, start_color: &ColorF, end_color: &ColorF) {
         
@@ -373,16 +388,16 @@ impl GradientData {
     }
 
     
+    
     #[inline]
     fn get_index(offset: f32) -> usize {
-        (offset.max(0.0).min(1.0) * GRADIENT_DATA_RESOLUTION as f32).round() as usize
+        (offset.max(0.0).min(1.0)
+            * GRADIENT_DATA_TABLE_SIZE as f32
+            + GRADIENT_DATA_TABLE_BEGIN as f32).round() as usize
     }
 
     
     fn build(&mut self, src_stops: AuxIter<GradientStop>, reverse_stops: bool) {
-
-        const MAX_IDX: usize = GRADIENT_DATA_RESOLUTION;
-        const MIN_IDX: usize = 0;
 
         
         
@@ -396,7 +411,12 @@ impl GradientData {
 
         if reverse_stops {
             
-            let mut cur_idx = MAX_IDX;
+            self.fill_colors(GRADIENT_DATA_LAST_STOP, GRADIENT_DATA_LAST_STOP + 1, &cur_color, &cur_color);
+
+            
+            
+            
+            let mut cur_idx = GRADIENT_DATA_TABLE_END;
             for next in src_stops {
                 let next_color = next.color.premultiplied();
                 let next_idx = Self::get_index(1.0 - next.offset);
@@ -409,9 +429,18 @@ impl GradientData {
 
                 cur_color = next_color;
             }
-            debug_assert_eq!(cur_idx, MIN_IDX);
+            debug_assert_eq!(cur_idx, GRADIENT_DATA_TABLE_BEGIN);
+
+            
+            self.fill_colors(GRADIENT_DATA_FIRST_STOP, GRADIENT_DATA_FIRST_STOP + 1, &cur_color, &cur_color);
         } else {
-            let mut cur_idx = MIN_IDX;
+            
+            self.fill_colors(GRADIENT_DATA_FIRST_STOP, GRADIENT_DATA_FIRST_STOP + 1, &cur_color, &cur_color);
+
+            
+            
+            
+            let mut cur_idx = GRADIENT_DATA_TABLE_BEGIN;
             for next in src_stops {
                 let next_color = next.color.premultiplied();
                 let next_idx = Self::get_index(next.offset);
@@ -424,7 +453,10 @@ impl GradientData {
 
                 cur_color = next_color;
             }
-            debug_assert_eq!(cur_idx, MAX_IDX);
+            debug_assert_eq!(cur_idx, GRADIENT_DATA_TABLE_END);
+
+            
+            self.fill_colors(GRADIENT_DATA_LAST_STOP, GRADIENT_DATA_LAST_STOP + 1, &cur_color, &cur_color);
         }
     }
 }

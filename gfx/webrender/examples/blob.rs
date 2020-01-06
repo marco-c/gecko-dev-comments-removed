@@ -8,11 +8,17 @@ extern crate gleam;
 extern crate glutin;
 extern crate webrender;
 extern crate webrender_traits;
+extern crate rayon;
 
 use gleam::gl;
+use rayon::ThreadPool;
+use rayon::Configuration as ThreadPoolConfig;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::sync::Arc;
+use std::sync::mpsc::{channel, Sender, Receiver};
 use webrender_traits::{BlobImageData, BlobImageDescriptor, BlobImageError, BlobImageRenderer, BlobImageRequest};
-use webrender_traits::{BlobImageResult, ImageStore, ColorF, ColorU, Epoch};
+use webrender_traits::{BlobImageResult, TileOffset, ImageStore, ColorF, ColorU, Epoch};
 use webrender_traits::{DeviceUintSize, DeviceUintRect, LayoutPoint, LayoutRect, LayoutSize};
 use webrender_traits::{ImageData, ImageDescriptor, ImageFormat, ImageRendering, ImageKey, TileSize};
 use webrender_traits::{PipelineId, RasterizedBlobImage, TransformStyle};
@@ -39,32 +45,109 @@ fn deserialize_blob(blob: &[u8]) -> Result<ImageRenderingCommands, ()> {
     }
 }
 
-struct CheckerboardRenderer {
-    
-    image_cmds: HashMap<ImageKey, ImageRenderingCommands>,
+
+
+fn render_blob(
+    commands: Arc<ImageRenderingCommands>,
+    descriptor: &BlobImageDescriptor,
+    tile: Option<TileOffset>,
+) -> BlobImageResult {
+    let color = *commands;
 
     
-    rendered_images: HashMap<BlobImageRequest, BlobImageResult>,
+    
+    let mut texels = Vec::with_capacity((descriptor.width * descriptor.height * 4) as usize);
+
+    
+    
+    let tile_checker = match tile {
+        Some(tile) => (tile.x % 2 == 0) != (tile.y % 2 == 0),
+        None => true,
+    };
+
+    for y in 0..descriptor.height {
+        for x in 0..descriptor.width {
+            
+            
+            let x2 = x + descriptor.offset.x as u32;
+            let y2 = y + descriptor.offset.y as u32;
+
+            
+            let checker = if (x2 % 20 >= 10) != (y2 % 20 >= 10) { 1 } else { 0 };
+            
+            let tc = if tile_checker { 0 } else { (1 - checker) * 40 };
+
+            match descriptor.format {
+                ImageFormat::RGBA8 => {
+                    texels.push(color.b * checker + tc);
+                    texels.push(color.g * checker + tc);
+                    texels.push(color.r * checker + tc);
+                    texels.push(color.a * checker + tc);
+                }
+                ImageFormat::A8 => {
+                    texels.push(color.a * checker + tc);
+                }
+                _ => {
+                    return Err(BlobImageError::Other(format!(
+                        "Usupported image format {:?}",
+                        descriptor.format
+                    )));
+                }
+            }
+        }
+    }
+
+    Ok(RasterizedBlobImage {
+        data: texels,
+        width: descriptor.width,
+        height: descriptor.height,
+    })
+}
+
+struct CheckerboardRenderer {
+    
+    
+    
+    
+    workers: Arc<ThreadPool>,
+
+    
+    tx: Sender<(BlobImageRequest, BlobImageResult)>,
+    rx: Receiver<(BlobImageRequest, BlobImageResult)>,
+
+    
+    
+    
+    
+    
+    image_cmds: HashMap<ImageKey, Arc<ImageRenderingCommands>>,
+
+    
+    rendered_images: HashMap<BlobImageRequest, Option<BlobImageResult>>,
 }
 
 impl CheckerboardRenderer {
-    fn new() -> Self {
+    fn new(workers: Arc<ThreadPool>) -> Self {
+        let (tx, rx) = channel();
         CheckerboardRenderer {
             image_cmds: HashMap::new(),
             rendered_images: HashMap::new(),
+            workers: workers,
+            tx: tx,
+            rx: rx,
         }
     }
 }
 
 impl BlobImageRenderer for CheckerboardRenderer {
     fn add(&mut self, key: ImageKey, cmds: BlobImageData, _: Option<TileSize>) {
-        self.image_cmds.insert(key, deserialize_blob(&cmds[..]).unwrap());
+        self.image_cmds.insert(key, Arc::new(deserialize_blob(&cmds[..]).unwrap()));
     }
 
     fn update(&mut self, key: ImageKey, cmds: BlobImageData) {
         
         
-        self.image_cmds.insert(key, deserialize_blob(&cmds[..]).unwrap());
+        self.image_cmds.insert(key, Arc::new(deserialize_blob(&cmds[..]).unwrap()));
     }
 
     fn delete(&mut self, key: ImageKey) {
@@ -76,63 +159,57 @@ impl BlobImageRenderer for CheckerboardRenderer {
                descriptor: &BlobImageDescriptor,
                _dirty_rect: Option<DeviceUintRect>,
                _images: &ImageStore) {
-        let color = self.image_cmds.get(&request.key).unwrap().clone();
+        
+        
+        
+
+        
+        let cmds = Arc::clone(&self.image_cmds.get(&request.key).unwrap());
+        let tx = self.tx.clone();
+        let descriptor = descriptor.clone();
+
+        self.workers.spawn_async(move || {
+            let result = render_blob(cmds, &descriptor, request.tile);
+            tx.send((request, result)).unwrap();
+        });
 
         
         
-        let mut texels = Vec::with_capacity((descriptor.width * descriptor.height * 4) as usize);
+        
+        
+        self.rendered_images.insert(request, None);
+    }
+
+    fn resolve(&mut self, request: BlobImageRequest) -> BlobImageResult {
+        
+        
 
         
         
-        let tile_checker = match request.tile {
-            Some(tile) => (tile.x % 2 == 0) != (tile.y % 2 == 0),
-            None => true,
-        };
-
-        for y in 0..descriptor.height {
-            for x in 0..descriptor.width {
+        match self.rendered_images.entry(request) {
+            Entry::Vacant(_) => {
+                return Err(BlobImageError::InvalidKey);
+            }
+            Entry::Occupied(entry) => {
                 
-                
-                let x2 = x + descriptor.offset.x as u32;
-                let y2 = y + descriptor.offset.y as u32;
-
-                
-                let checker = if (x2 % 20 >= 10) != (y2 % 20 >= 10) { 1 } else { 0 };
-                
-                let tc = if tile_checker { 0 } else { (1 - checker) * 40 };
-
-                match descriptor.format {
-                    ImageFormat::RGBA8 => {
-                        texels.push(color.b * checker + tc);
-                        texels.push(color.g * checker + tc);
-                        texels.push(color.r * checker + tc);
-                        texels.push(color.a * checker + tc);
-                    }
-                    ImageFormat::A8 => {
-                        texels.push(color.a * checker + tc);
-                    }
-                    _ => {
-                        self.rendered_images.insert(request,
-                            Err(BlobImageError::Other(format!(
-                                "Usupported image format {:?}",
-                                descriptor.format
-                            )))
-                        );
-                        return;
-                    }
+                if entry.get().is_some() {
+                    let result = entry.remove();
+                    return result.unwrap();
                 }
             }
         }
 
-        self.rendered_images.insert(request, Ok(RasterizedBlobImage {
-            data: texels,
-            width: descriptor.width,
-            height: descriptor.height,
-        }));
-    }
+        
+        while let Ok((req, result)) = self.rx.recv() {
+            if req == request {
+                
+                return result
+            }
+            self.rendered_images.insert(req, Some(result));
+        }
 
-    fn resolve(&mut self, request: BlobImageRequest) -> BlobImageResult {
-        self.rendered_images.remove(&request).unwrap_or(Err(BlobImageError::InvalidKey))
+        
+        Err(BlobImageError::Other("Channel closed".into()))
     }
 }
 
@@ -160,9 +237,18 @@ fn main() {
 
     let (width, height) = window.get_inner_size_pixels().unwrap();
 
+    let worker_config = ThreadPoolConfig::new().thread_name(|idx|{
+        format!("WebRender:Worker#{}", idx)
+    });
+
+    let workers = Arc::new(ThreadPool::new(worker_config).unwrap());
+
     let opts = webrender::RendererOptions {
         debug: true,
-        blob_image_renderer: Some(Box::new(CheckerboardRenderer::new())),
+        workers: Some(Arc::clone(&workers)),
+        
+        
+        blob_image_renderer: Some(Box::new(CheckerboardRenderer::new(Arc::clone(&workers)))),
         device_pixel_ratio: window.hidpi_factor(),
         .. Default::default()
     };
