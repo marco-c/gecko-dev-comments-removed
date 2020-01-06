@@ -30,6 +30,9 @@ const {
   getAllMessagesUiById,
 } = require("devtools/client/webconsole/new-console-output/selectors/messages");
 const DataProvider = require("devtools/client/netmonitor/src/connector/firefox-data-provider");
+const {
+  getAllNetworkMessagesUpdateById,
+} = require("devtools/client/webconsole/new-console-output/selectors/messages");
 
 
 
@@ -187,6 +190,23 @@ function enableNetProvider(hud) {
       if (type == MESSAGE_OPEN) {
         let message = getMessage(state, action.id);
         if (!message.openedOnce && message.source == "network") {
+          let updates = getAllNetworkMessagesUpdateById(newState);
+
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!updates[action.id]) {
+            newState = reducer(newState, {
+              type: NETWORK_MESSAGE_UPDATE,
+              message: message,
+            });
+          }
+
           dataProvider.onNetworkEvent(null, message);
           message.updates.forEach(updateType => {
             dataProvider.onNetworkEventUpdate(null, {
