@@ -237,6 +237,27 @@ LayerManagerComposite::BeginTransactionWithDrawTarget(DrawTarget* aTarget, const
   mTargetBounds = aRect;
 }
 
+void
+LayerManagerComposite::PostProcessLayers(nsIntRegion& aOpaqueRegion)
+{
+  LayerIntRegion visible;
+  PostProcessLayers(mRoot, aOpaqueRegion, visible, Nothing());
+}
+
+
+
+
+
+bool ShouldProcessLayer(Layer* aLayer)
+{
+  if (!aLayer->GetParent() ||
+      !aLayer->AsContainerLayer()) {
+    return true;
+  }
+
+  return aLayer->AsContainerLayer()->UseIntermediateSurface();
+}
+
 
 
 
@@ -258,20 +279,52 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
                                          LayerIntRegion& aVisibleRegion,
                                          const Maybe<ParentLayerIntRect>& aClipFromAncestors)
 {
+
+  
+  
+  LayerComposite* composite = static_cast<LayerComposite*>(aLayer->AsHostLayer());
+  Maybe<ParentLayerIntRect> layerClip = composite->GetShadowClipRect();
+  MOZ_ASSERT(!layerClip || !aLayer->Combines3DTransformWithAncestors(),
+             "The layer with a clip should not participate "
+             "a 3D rendering context");
+  Maybe<ParentLayerIntRect> outsideClip =
+    IntersectMaybeRects(layerClip, aClipFromAncestors);
+
+  Maybe<LayerIntRect> insideClip;
   if (aLayer->Extend3DContext()) {
     
     
+    insideClip = Some(ViewAs<LayerPixel>(*outsideClip, PixelCastJustification::MovingDownToChildren));
+  } else if (outsideClip) {
     
+    
+    
+    
+    Matrix4x4 localTransform = GetAccTransformIn3DContext(aLayer);
+    if (!localTransform.HasPerspectiveComponent() && localTransform.Invert()) {
+      LayerRect insideClipFloat =
+        UntransformBy(ViewAs<ParentLayerToLayerMatrix4x4>(localTransform),
+                      ParentLayerRect(*outsideClip),
+                      LayerRect::MaxIntRect()).valueOr(LayerRect());
+      insideClipFloat.RoundOut();
+      LayerIntRect insideClipInt;
+      if (insideClipFloat.ToIntRect(&insideClipInt)) {
+        insideClip = Some(insideClipInt);
+      }
+    }
+  }
 
-    
-    
-    Maybe<ParentLayerIntRect> layerClip =
-      aLayer->AsHostLayer()->GetShadowClipRect();
-    Maybe<ParentLayerIntRect> ancestorClipForChildren =
-      IntersectMaybeRects(layerClip, aClipFromAncestors);
-    MOZ_ASSERT(!layerClip || !aLayer->Combines3DTransformWithAncestors(),
-               "Only direct children of the establisher could have a clip");
+  Maybe<ParentLayerIntRect> ancestorClipForChildren;
+  if (insideClip) {
+    ancestorClipForChildren =
+      Some(ViewAs<ParentLayerPixel>(*insideClip, PixelCastJustification::MovingDownToChildren));
+  }
 
+  if (!ShouldProcessLayer(aLayer)) {
+    MOZ_ASSERT(!aLayer->AsContainerLayer() || !aLayer->AsContainerLayer()->UseIntermediateSurface());
+    
+    
+    
     for (Layer* child = aLayer->GetLastChild();
          child;
          child = child->GetPrevSibling()) {
@@ -284,7 +337,7 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   nsIntRegion localOpaque;
   
   
-  Matrix4x4 transform = GetAccTransformIn3DContext(aLayer);
+  Matrix4x4 transform = aLayer->GetEffectiveTransform();
   Matrix transform2d;
   Maybe<IntPoint> integerTranslation;
   
@@ -300,44 +353,6 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
 
   
   
-  LayerComposite* composite = static_cast<LayerComposite*>(aLayer->AsHostLayer());
-  Maybe<ParentLayerIntRect> layerClip = composite->GetShadowClipRect();
-  MOZ_ASSERT(!layerClip || !aLayer->Combines3DTransformWithAncestors(),
-             "The layer with a clip should not participate "
-             "a 3D rendering context");
-  Maybe<ParentLayerIntRect> outsideClip =
-    IntersectMaybeRects(layerClip, aClipFromAncestors);
-
-  
-  
-  
-  
-  Maybe<LayerIntRect> insideClip;
-  if (outsideClip && !transform.HasPerspectiveComponent()) {
-    Matrix4x4 inverse = transform;
-    if (inverse.Invert()) {
-      Maybe<LayerRect> insideClipFloat =
-        UntransformBy(ViewAs<ParentLayerToLayerMatrix4x4>(inverse),
-                      ParentLayerRect(*outsideClip),
-                      LayerRect::MaxIntRect());
-      if (insideClipFloat) {
-        insideClipFloat->RoundOut();
-        LayerIntRect insideClipInt;
-        if (insideClipFloat->ToIntRect(&insideClipInt)) {
-          insideClip = Some(insideClipInt);
-        }
-      }
-    }
-  }
-
-  Maybe<ParentLayerIntRect> ancestorClipForChildren;
-  if (insideClip) {
-    ancestorClipForChildren =
-      Some(ViewAs<ParentLayerPixel>(*insideClip, PixelCastJustification::MovingDownToChildren));
-  }
-
-  
-  
   nsIntRegion obscured = localOpaque;
 
   
@@ -345,6 +360,7 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   
   LayerIntRegion descendantsVisibleRegion;
+
   bool hasPreserve3DChild = false;
   for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
     PostProcessLayers(child, localOpaque, descendantsVisibleRegion, ancestorClipForChildren);
@@ -378,9 +394,6 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   ParentLayerIntRegion visibleParentSpace = TransformBy(
       ViewAs<LayerToParentLayerMatrix4x4>(transform), visible);
-  if (const Maybe<ParentLayerIntRect>& clipRect = composite->GetShadowClipRect()) {
-    visibleParentSpace.AndWith(*clipRect);
-  }
   aVisibleRegion.OrWith(ViewAs<LayerPixel>(visibleParentSpace,
       PixelCastJustification::MovingDownToChildren));
 
@@ -392,10 +405,10 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
     if (aLayer->IsOpaque()) {
       localOpaque.OrWith(composite->GetFullyRenderedRegion());
     }
-    localOpaque.MoveBy(*integerTranslation);
-    if (layerClip) {
-      localOpaque.AndWith(layerClip->ToUnknownRect());
+    if (insideClip) {
+      localOpaque.AndWith(insideClip->ToUnknownRect());
     }
+    localOpaque.MoveBy(*integerTranslation);
     aOpaqueRegion.OrWith(localOpaque);
   }
 }
@@ -449,17 +462,14 @@ void
 LayerManagerComposite::UpdateAndRender()
 {
   nsIntRegion invalid;
-  bool didEffectiveTransforms = false;
+  
+  
+  mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
 
   nsIntRegion opaque;
-  LayerIntRegion visible;
-  PostProcessLayers(mRoot, opaque, visible, Nothing());
+  PostProcessLayers(opaque);
 
   if (mClonedLayerTreeProperties) {
-    
-    mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
-    didEffectiveTransforms = true;
-
     
     
     
@@ -501,12 +511,6 @@ LayerManagerComposite::UpdateAndRender()
   
   
   InvalidateDebugOverlay(invalid, mRenderBounds);
-
-  if (!didEffectiveTransforms) {
-    
-    
-    mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
-  }
 
   Render(invalid, opaque);
 #if defined(MOZ_WIDGET_ANDROID)
@@ -1109,8 +1113,7 @@ LayerManagerComposite::RenderToPresentationSurface()
 
   mRoot->ComputeEffectiveTransforms(matrix);
   nsIntRegion opaque;
-  LayerIntRegion visible;
-  PostProcessLayers(mRoot, opaque, visible, Nothing());
+  PostProcessLayers(opaque);
 
   nsIntRegion invalid;
   IntRect bounds = IntRect::Truncate(0, 0, scale * pageWidth, actualHeight);

@@ -305,6 +305,7 @@ public:
 
 
 
+  void PostProcessLayers(nsIntRegion& aOpaqueRegion);
   void PostProcessLayers(Layer* aLayer,
                          nsIntRegion& aOpaqueRegion,
                          LayerIntRegion& aVisibleRegion,
