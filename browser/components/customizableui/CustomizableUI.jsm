@@ -1678,8 +1678,6 @@ var CustomizableUIInternal = {
     let inItem = false;
     
     let menuitemCloseMenu = "auto";
-    
-    let closemenu = "auto";
 
     
     
@@ -1705,11 +1703,6 @@ var CustomizableUIInternal = {
       inItem = tagName == "toolbaritem" || tagName == "toolbarbutton";
       let isMenuItem = tagName == "menuitem";
       inMenu = inMenu || isMenuItem;
-      if (inItem && target.hasAttribute("closemenu")) {
-        let closemenuVal = target.getAttribute("closemenu");
-        closemenu = (closemenuVal == "single" || closemenuVal == "none") ?
-                    closemenuVal : "auto";
-      }
 
       if (isMenuItem && target.hasAttribute("closemenu")) {
         let closemenuVal = target.getAttribute("closemenu");
@@ -1751,17 +1744,6 @@ var CustomizableUIInternal = {
     
     
     if (inItem && target.getAttribute("type") == "menu") {
-      return true;
-    }
-    
-    
-    if (inItem && target.getAttribute("type") == "menu-button") {
-      
-      if (target.getAttribute("anonid") == "button") {
-        return closemenu != "none";
-      }
-      
-      
       return true;
     }
     return inInput || !inItem;
