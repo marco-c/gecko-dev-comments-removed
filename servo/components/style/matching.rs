@@ -707,8 +707,7 @@ trait PrivateMatchMethods: TElement {
         
         
         let skip_applying_damage =
-            restyle.damage.contains(RestyleDamage::reconstruct()) ||
-            restyle.reconstructed_ancestor;
+            restyle.reconstructed_self_or_ancestor();
 
         let difference = self.compute_style_difference(&old_values,
                                                        &new_values,
@@ -1187,12 +1186,10 @@ pub trait MatchMethods : TElement {
             }
         });
 
-        if matches_different_pseudos {
-            if let Some(r) = data.get_restyle_mut() {
-                
-                
-                r.damage |= RestyleDamage::reconstruct();
-            }
+        if matches_different_pseudos && data.restyle.is_restyle() {
+            
+            
+            data.restyle.damage |= RestyleDamage::reconstruct();
         }
     }
 
@@ -1257,16 +1254,11 @@ pub trait MatchMethods : TElement {
     
     fn accumulate_damage(&self,
                          shared_context: &SharedStyleContext,
-                         restyle: Option<&mut RestyleData>,
+                         restyle: &mut RestyleData,
                          old_values: Option<&ComputedValues>,
                          new_values: &Arc<ComputedValues>,
                          pseudo: Option<&PseudoElement>)
                          -> ChildCascadeRequirement {
-        let restyle = match restyle {
-            Some(r) => r,
-            None => return ChildCascadeRequirement::MustCascadeChildren,
-        };
-
         let old_values = match old_values {
             Some(v) => v,
             None => return ChildCascadeRequirement::MustCascadeChildren,

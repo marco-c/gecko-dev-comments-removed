@@ -10,7 +10,6 @@ use data::{ElementData, ElementStyles};
 use dom::{DirtyDescendants, NodeInfo, OpaqueNode, TElement, TNode};
 use invalidation::element::restyle_hints::{RECASCADE_SELF, RECASCADE_DESCENDANTS, RestyleHint};
 use matching::{ChildCascadeRequirement, MatchMethods};
-use selector_parser::RestyleDamage;
 use sharing::{StyleSharingBehavior, StyleSharingTarget};
 #[cfg(feature = "servo")] use servo_config::opts;
 use smallvec::SmallVec;
@@ -296,10 +295,8 @@ pub trait DomTraversal<E: TElement> : Sync {
         if el.is_native_anonymous() {
             if let Some(parent) = el.traversal_parent() {
                 let parent_data = parent.borrow_data().unwrap();
-                let going_to_reframe = parent_data.get_restyle().map_or(false, |r| {
-                    r.reconstructed_ancestor ||
-                    r.damage.contains(RestyleDamage::reconstruct())
-                });
+                let going_to_reframe =
+                    parent_data.restyle.reconstructed_self_or_ancestor();
 
                 let mut is_before_or_after_pseudo = false;
                 if let Some(pseudo) = el.implemented_pseudo_element() {
@@ -337,9 +334,8 @@ pub trait DomTraversal<E: TElement> : Sync {
                 Some(d) => d,
                 None => return false,
             };
-            return data.get_restyle()
-                       .map_or(false, |r| r.hint.has_animation_hint() ||
-                                          r.hint.has_recascade_self());
+            return data.restyle.hint.has_animation_hint() ||
+                   data.restyle.hint.has_recascade_self();
         }
 
         
@@ -361,17 +357,14 @@ pub trait DomTraversal<E: TElement> : Sync {
         }
 
         
-        if let Some(r) = data.get_restyle() {
-            
-            
-            
-            
-            
-            
-            
-            if !r.hint.is_empty() {
-                return true;
-            }
+        
+        
+        
+        
+        
+        
+        if !data.restyle.hint.is_empty() {
+            return true;
         }
 
         
@@ -381,7 +374,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if (cfg!(feature = "servo") || traversal_flags.for_reconstruct()) &&
-           data.get_restyle().map_or(false, |r| !r.damage.is_empty()) {
+           !data.restyle.damage.is_empty() {
             return true;
         }
 
@@ -690,20 +683,17 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
     
     
-    let mut propagated_hint = match data.get_restyle_mut() {
-        None => RestyleHint::empty(),
-        Some(r) => {
-            debug_assert!(context.shared.traversal_flags.for_animation_only() ||
-                          !r.hint.has_animation_hint(),
-                          "animation restyle hint should be handled during \
-                           animation-only restyles");
-            r.hint.propagate(&context.shared.traversal_flags)
-        },
+    let mut propagated_hint = {
+        debug_assert!(context.shared.traversal_flags.for_animation_only() ||
+                      !data.restyle.hint.has_animation_hint(),
+                      "animation restyle hint should be handled during \
+                       animation-only restyles");
+        data.restyle.hint.propagate(&context.shared.traversal_flags)
     };
 
     
     
-    propagated_hint.insert(hint.into());
+    propagated_hint.insert(hint);
 
     trace!("propagated_hint={:?} \
             is_display_none={:?}, implementing_pseudo={:?}",
@@ -730,10 +720,9 @@ pub fn recalc_style_at<E, D>(traversal: &D,
                                           DontLog) &&
         (has_dirty_descendants_for_this_restyle ||
          !propagated_hint.is_empty()) {
-        let reconstructed_ancestor = data.get_restyle().map_or(false, |r| {
-            r.reconstructed_ancestor ||
-            r.damage.contains(RestyleDamage::reconstruct())
-        });
+        let reconstructed_ancestor =
+            data.restyle.reconstructed_self_or_ancestor();
+
         preprocess_children::<E, D>(
             context,
             element,
@@ -746,7 +735,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     
     if context.shared.traversal_flags.for_reconstruct() {
-        data.clear_restyle();
+        data.clear_restyle_state();
     }
 
     if context.shared.traversal_flags.for_animation_only() {
@@ -791,6 +780,10 @@ fn compute_style<E, D>(_traversal: &D,
     let kind = data.restyle_kind(context.shared);
 
     debug!("compute_style: {:?} (kind={:?})", element, kind);
+
+    if data.has_styles() {
+        data.restyle.set_restyled();
+    }
 
     match kind {
         MatchAndCascade => {
@@ -870,31 +863,24 @@ where
             continue;
         }
 
-        
-        
-        
-        
-        child_data.invalidate_style_if_needed(child, &context.shared);
-
         trace!(" > {:?} -> {:?} + {:?}, pseudo: {:?}",
                child,
-               child_data.get_restyle().map(|r| &r.hint),
+               child_data.restyle.hint,
                propagated_hint,
                child.implemented_pseudo_element());
 
         
         
-        
-        if !reconstructed_ancestor && propagated_hint.is_empty() && !child_data.has_restyle() {
-            continue;
+        if reconstructed_ancestor {
+            child_data.restyle.set_reconstructed_ancestor();
         }
-
-        let mut restyle_data = child_data.ensure_restyle();
+        child_data.restyle.hint.insert(propagated_hint);
 
         
         
-        restyle_data.reconstructed_ancestor = reconstructed_ancestor;
-        restyle_data.hint.insert(propagated_hint);
+        
+        
+        child_data.invalidate_style_if_needed(child, &context.shared);
     }
 }
 

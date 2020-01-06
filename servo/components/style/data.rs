@@ -348,17 +348,26 @@ impl ElementStyles {
     }
 }
 
+bitflags! {
+    flags RestyleFlags: u8 {
+        /// Whether the styles changed for this restyle.
+        const WAS_RESTYLED = 1 << 0,
+        /// Whether we reframed/reconstructed any ancestor or self.
+        const ANCESTOR_WAS_RECONSTRUCTED = 1 << 1,
+    }
+}
 
 
 
-#[derive(Debug, Default)]
+
+#[derive(Debug)]
 pub struct RestyleData {
     
     
     pub hint: RestyleHint,
 
     
-    pub reconstructed_ancestor: bool,
+    flags: RestyleFlags,
 
     
     
@@ -366,9 +375,53 @@ pub struct RestyleData {
 }
 
 impl RestyleData {
+    fn new() -> Self {
+        Self {
+            hint: RestyleHint::empty(),
+            flags: RestyleFlags::empty(),
+            damage: RestyleDamage::empty(),
+        }
+    }
+
     
-    pub fn has_invalidations(&self) -> bool {
-        self.hint.has_self_invalidations()
+    fn clear(&mut self) {
+        *self = Self::new();
+    }
+
+    
+    
+    pub fn reconstructed_self_or_ancestor(&self) -> bool {
+        self.reconstructed_ancestor() ||
+        self.damage.contains(RestyleDamage::reconstruct())
+    }
+
+    
+    fn reconstructed_ancestor(&self) -> bool {
+        self.flags.contains(ANCESTOR_WAS_RECONSTRUCTED)
+    }
+
+    
+    pub fn set_reconstructed_ancestor(&mut self) {
+        
+        
+        self.flags.insert(ANCESTOR_WAS_RECONSTRUCTED);
+    }
+
+    
+    
+    pub fn set_restyled(&mut self) {
+        self.flags.insert(WAS_RESTYLED);
+    }
+
+    
+    
+    pub fn is_restyle(&self) -> bool {
+        self.flags.contains(WAS_RESTYLED)
+    }
+
+    
+    pub fn contains_restyle_data(&self) -> bool {
+        self.is_restyle() || !self.hint.is_empty() || !self.damage.is_empty()
     }
 }
 
@@ -383,8 +436,7 @@ pub struct ElementData {
     styles: Option<ElementStyles>,
 
     
-    
-    restyle: Option<Box<RestyleData>>,
+    pub restyle: RestyleData,
 }
 
 
@@ -402,6 +454,14 @@ pub enum RestyleKind {
 }
 
 impl ElementData {
+    
+    pub fn styles_and_restyle_mut(
+        &mut self
+    ) -> (&mut ElementStyles, &mut RestyleData) {
+        (self.styles.as_mut().unwrap(),
+         &mut self.restyle)
+    }
+
     
     
     
@@ -437,7 +497,7 @@ impl ElementData {
     pub fn new(existing: Option<ElementStyles>) -> Self {
         ElementData {
             styles: existing,
-            restyle: None,
+            restyle: RestyleData::new(),
         }
     }
 
@@ -448,7 +508,7 @@ impl ElementData {
 
     
     pub fn has_invalidations(&self) -> bool {
-        self.restyle.as_ref().map_or(false, |r| r.has_invalidations())
+        self.restyle.hint.has_self_invalidations()
     }
 
     
@@ -465,10 +525,7 @@ impl ElementData {
             return RestyleKind::MatchAndCascade;
         }
 
-        debug_assert!(self.restyle.is_some());
-        let restyle_data = self.restyle.as_ref().unwrap();
-
-        let hint = restyle_data.hint;
+        let hint = self.restyle.hint;
         if shared_context.traversal_flags.for_animation_only() {
             
             
@@ -488,7 +545,8 @@ impl ElementData {
             return RestyleKind::CascadeWithReplacements(hint & RestyleHint::replacements());
         }
 
-        debug_assert!(hint.has_recascade_self(), "We definitely need to do something!");
+        debug_assert!(hint.has_recascade_self(),
+                      "We definitely need to do something!");
         return RestyleKind::CascadeOnly;
     }
 
@@ -511,13 +569,6 @@ impl ElementData {
     
     pub fn styles_mut(&mut self) -> &mut ElementStyles {
         self.styles.as_mut().expect("Calling styles_mut() on unstyled ElementData")
-    }
-
-    
-    pub fn styles_and_restyle_mut(&mut self) -> (&mut ElementStyles,
-                                                 Option<&mut RestyleData>) {
-        (self.styles.as_mut().unwrap(),
-         self.restyle.as_mut().map(|r| &mut **r))
     }
 
     
@@ -559,46 +610,8 @@ impl ElementData {
     }
 
     
-    pub fn has_restyle(&self) -> bool {
-        self.restyle.is_some()
-    }
-
-    
-    pub fn clear_restyle(&mut self) {
-        self.restyle = None;
-    }
-
-    
-    
-    
-    pub fn ensure_restyle(&mut self) -> &mut RestyleData {
-        debug_assert!(self.styles.is_some(), "restyling unstyled element");
-        if self.restyle.is_none() {
-            self.restyle = Some(Box::new(RestyleData::default()));
-        }
-        self.restyle.as_mut().unwrap()
-    }
-
-    
-    pub fn get_restyle(&self) -> Option<&RestyleData> {
-        self.restyle.as_ref().map(|r| &**r)
-    }
-
-    
-    
-    pub fn restyle(&self) -> &RestyleData {
-        self.get_restyle().expect("Calling restyle without RestyleData")
-    }
-
-    
-    pub fn get_restyle_mut(&mut self) -> Option<&mut RestyleData> {
-        self.restyle.as_mut().map(|r| &mut **r)
-    }
-
-    
-    
-    pub fn restyle_mut(&mut self) -> &mut RestyleData {
-        self.get_restyle_mut().expect("Calling restyle_mut without RestyleData")
+    pub fn clear_restyle_state(&mut self) {
+        self.restyle.clear();
     }
 
     

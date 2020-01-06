@@ -171,19 +171,14 @@ impl<T: ThreadSafeLayoutNode> ThreadSafeLayoutNodeHelpers for T {
 
         let damage = {
             let data = node.get_raw_data().unwrap();
-            if let Some(r) = data.style_data.element_data.borrow().get_restyle() {
-                
-                
-                r.damage
-            } else if !data.layout_data.borrow().flags.contains(::data::HAS_BEEN_TRAVERSED) {
+
+            if !data.layout_data.borrow().flags.contains(::data::HAS_BEEN_TRAVERSED) {
                 
                 
                 
                 RestyleDamage::rebuild_and_reflow()
             } else {
-                
-                
-                RestyleDamage::empty()
+                data.style_data.element_data.borrow().restyle.damage
             }
         };
 
