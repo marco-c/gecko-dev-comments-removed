@@ -94,7 +94,9 @@ class ImageTracker;
 
 #define NS_STYLE_IS_TEXT_COMBINED          0x800000000
 
-#define NS_STYLE_CONTEXT_TYPE_SHIFT        36
+#define NS_STYLE_CONTEXT_IS_GECKO          0x1000000000
+
+#define NS_STYLE_CONTEXT_TYPE_SHIFT        37
 
 
 #define NS_RULE_NODE_IS_ANIMATION_RULE      0x01000000

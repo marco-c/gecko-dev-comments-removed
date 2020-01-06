@@ -6,6 +6,7 @@
 
 
 #include "nsStyleContext.h"
+#include "nsStyleContextInlines.h"
 
 #include "CSSVariableImageTable.h"
 #include "mozilla/DebugOnly.h"
@@ -1327,29 +1328,21 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
 
 
 
-void*
-nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext)
-{
-  
-  return aPresContext->PresShell()->
-    AllocateByObjectID(eArenaObjectID_nsStyleContext, sz);
-}
-
-
-
 void
 nsStyleContext::Destroy()
 {
-  
-  RefPtr<nsPresContext> presContext = PresContext();
-
-  
-  this->~nsStyleContext();
-
-  
-  
-  presContext->PresShell()->
-    FreeByObjectID(eArenaObjectID_nsStyleContext, this);
+  if (IsGecko()) {
+    
+    RefPtr<nsPresContext> presContext = PresContext();
+    
+    this->AsGecko()->~GeckoStyleContext();
+    
+    
+    presContext->PresShell()->
+      FreeByObjectID(eArenaObjectID_nsStyleContext, this);
+    } else {
+      delete static_cast<ServoStyleContext*>(this);
+    }
 }
 
 already_AddRefed<nsStyleContext>
@@ -1375,7 +1368,7 @@ NS_NewStyleContext(nsStyleContext* aParentContext,
                    already_AddRefed<ServoComputedValues> aComputedValues)
 {
   RefPtr<nsStyleContext> context =
-    new (aPresContext)
+    new
     ServoStyleContext(aParentContext, aPresContext, aPseudoTag, aPseudoType,
                    Move(aComputedValues));
   return context.forget();
