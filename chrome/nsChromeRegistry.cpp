@@ -32,9 +32,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/Location.h"
 
-#ifdef ENABLE_INTL_API
 #include "unicode/uloc.h"
-#endif
 
 nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
@@ -638,7 +636,6 @@ nsChromeRegistry::MustLoadURLRemotely(nsIURI *aURI, bool *aResult)
 bool
 nsChromeRegistry::GetDirectionForLocale(const nsACString& aLocale)
 {
-#ifdef ENABLE_INTL_API
   int pref = mozilla::Preferences::GetInt("intl.uidirection", -1);
   if (pref >= 0) {
     return (pref > 0);
@@ -646,28 +643,6 @@ nsChromeRegistry::GetDirectionForLocale(const nsACString& aLocale)
   nsAutoCString locale(aLocale);
   SanitizeForBCP47(locale);
   return uloc_isRightToLeft(locale.get());
-#else
-  
-  
-  
-  nsAutoCString prefString = NS_LITERAL_CSTRING("intl.uidirection.") + aLocale;
-  nsCOMPtr<nsIPrefBranch> prefBranch (do_GetService(NS_PREFSERVICE_CONTRACTID));
-  if (!prefBranch) {
-    return false;
-  }
-
-  nsCString dir;
-  prefBranch->GetCharPref(prefString.get(), getter_Copies(dir));
-  if (dir.IsEmpty()) {
-    int32_t hyphen = prefString.FindChar('-');
-    if (hyphen >= 1) {
-      nsAutoCString shortPref(Substring(prefString, 0, hyphen));
-      prefBranch->GetCharPref(shortPref.get(), getter_Copies(dir));
-    }
-  }
-
-  return dir.EqualsLiteral("rtl");
-#endif
 }
 
 NS_IMETHODIMP_(bool)
@@ -715,7 +690,6 @@ nsChromeRegistry::GetSingleton()
 void
 nsChromeRegistry::SanitizeForBCP47(nsACString& aLocale)
 {
-#ifdef ENABLE_INTL_API
   
   
   
@@ -730,13 +704,4 @@ nsChromeRegistry::SanitizeForBCP47(nsACString& aLocale)
   if (U_SUCCESS(err) && len > 0) {
     aLocale.Assign(langTag, len);
   }
-#else
-  
-  
-  
-  
-  if (aLocale.EqualsLiteral("ja-JP-mac")) {
-    aLocale.AssignLiteral("ja-JP");
-  }
-#endif
 }
