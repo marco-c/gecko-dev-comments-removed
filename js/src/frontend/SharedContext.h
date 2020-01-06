@@ -62,76 +62,6 @@ StatementKindIsUnlabeledBreakTarget(StatementKind kind)
     return StatementKindIsLoop(kind) || kind == StatementKind::Switch;
 }
 
-class FunctionContextFlags
-{
-    
-    friend class FunctionBox;
-
-    
-    
-    
-    
-    
-    
-    
-    bool hasExtensibleScope:1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool argumentsHasLocalBinding:1;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool definitelyNeedsArgsObj:1;
-
-    bool needsHomeObject:1;
-    bool isDerivedClassConstructor:1;
-
-    
-    
-    bool hasThisBinding:1;
-
-    
-    bool hasInnerFunctions:1;
-
-  public:
-    FunctionContextFlags()
-     :  hasExtensibleScope(false),
-        argumentsHasLocalBinding(false),
-        definitelyNeedsArgsObj(false),
-        needsHomeObject(false),
-        isDerivedClassConstructor(false),
-        hasThisBinding(false),
-        hasInnerFunctions(false)
-    { }
-};
-
 
 class Directives
 {
@@ -414,7 +344,58 @@ class FunctionBox : public ObjectBox, public SharedContext
 
 
 
-    FunctionContextFlags funCxFlags;
+    
+    
+    
+    
+    
+    
+    
+    bool hasExtensibleScope_:1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool argumentsHasLocalBinding_:1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool definitelyNeedsArgsObj_:1;
+
+    bool needsHomeObject_:1;
+    bool isDerivedClassConstructor_:1;
+
+    
+    
+    bool hasThisBinding_:1;
+
+    
+    bool hasInnerFunctions_:1;
 
     FunctionBox(JSContext* cx, LifoAlloc& alloc, ObjectBox* traceListHead, JSFunction* fun,
                 uint32_t toStringStart, Directives directives, bool extraWarnings,
@@ -505,24 +486,24 @@ class FunctionBox : public ObjectBox, public SharedContext
         isExprBody_ = true;
     }
 
-    bool hasExtensibleScope()        const { return funCxFlags.hasExtensibleScope; }
-    bool hasThisBinding()            const { return funCxFlags.hasThisBinding; }
-    bool argumentsHasLocalBinding()  const { return funCxFlags.argumentsHasLocalBinding; }
-    bool definitelyNeedsArgsObj()    const { return funCxFlags.definitelyNeedsArgsObj; }
-    bool needsHomeObject()           const { return funCxFlags.needsHomeObject; }
-    bool isDerivedClassConstructor() const { return funCxFlags.isDerivedClassConstructor; }
-    bool hasInnerFunctions()         const { return funCxFlags.hasInnerFunctions; }
+    bool hasExtensibleScope()        const { return hasExtensibleScope_; }
+    bool hasThisBinding()            const { return hasThisBinding_; }
+    bool argumentsHasLocalBinding()  const { return argumentsHasLocalBinding_; }
+    bool definitelyNeedsArgsObj()    const { return definitelyNeedsArgsObj_; }
+    bool needsHomeObject()           const { return needsHomeObject_; }
+    bool isDerivedClassConstructor() const { return isDerivedClassConstructor_; }
+    bool hasInnerFunctions()         const { return hasInnerFunctions_; }
 
-    void setHasExtensibleScope()           { funCxFlags.hasExtensibleScope       = true; }
-    void setHasThisBinding()               { funCxFlags.hasThisBinding           = true; }
-    void setArgumentsHasLocalBinding()     { funCxFlags.argumentsHasLocalBinding = true; }
-    void setDefinitelyNeedsArgsObj()       { MOZ_ASSERT(funCxFlags.argumentsHasLocalBinding);
-                                             funCxFlags.definitelyNeedsArgsObj   = true; }
+    void setHasExtensibleScope()           { hasExtensibleScope_       = true; }
+    void setHasThisBinding()               { hasThisBinding_           = true; }
+    void setArgumentsHasLocalBinding()     { argumentsHasLocalBinding_ = true; }
+    void setDefinitelyNeedsArgsObj()       { MOZ_ASSERT(argumentsHasLocalBinding_);
+                                             definitelyNeedsArgsObj_   = true; }
     void setNeedsHomeObject()              { MOZ_ASSERT(function()->allowSuperProperty());
-                                             funCxFlags.needsHomeObject          = true; }
+                                             needsHomeObject_          = true; }
     void setDerivedClassConstructor()      { MOZ_ASSERT(function()->isClassConstructor());
-                                             funCxFlags.isDerivedClassConstructor = true; }
-    void setHasInnerFunctions()            { funCxFlags.hasInnerFunctions         = true; }
+                                             isDerivedClassConstructor_ = true; }
+    void setHasInnerFunctions()            { hasInnerFunctions_         = true; }
 
     bool hasSimpleParameterList() const {
         return !hasRest() && !hasParameterExprs && !hasDestructuringArgs;
