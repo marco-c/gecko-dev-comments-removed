@@ -216,6 +216,24 @@ function waitForFrame() {
 
 
 
+function waitForNextFrame() {
+  const timeAtStart = document.timeline.currentTime;
+  return new Promise(resolve => {
+    window.requestAnimationFrame(() => {
+      if (timeAtStart === document.timeline.currentTime) {
+        window.requestAnimationFrame(resolve);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+
+
+
+
+
 
 
 function waitForAnimationFrames(frameCount, onFrame) {
