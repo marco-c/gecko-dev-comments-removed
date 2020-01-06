@@ -4,37 +4,8 @@
 
 
 
-let gMinHangTime = 500; 
-let gMaxHangTime = 5 * 1000; 
-
-
-
-
-
-
-
-
-function makeDataURI(aHangMs = 0) {
-  return `data:text/html,
-    <html>
-      <head>
-        <meta charset="utf-8"/>
-        <title>Tab Spinner Test</title>
-        <script>
-          function hang() {
-            let hangDuration = ${aHangMs};
-            if (hangDuration > 0) {
-              let startTime = window.performance.now();
-              while(window.performance.now() - startTime < hangDuration) {}
-            }
-          }
-        </script>
-      </head>
-      <body>
-        <h1 id='header'>Tab Spinner Test</h1>
-      </body>
-    </html>`;
-}
+const MIN_HANG_TIME = 500; 
+const MAX_HANG_TIME = 5 * 1000; 
 
 
 
@@ -54,31 +25,59 @@ function sum(aArray) {
 
 
 
+
+
+
+
+
+
+function hangContentProcess(browser, aMs) {
+  return ContentTask.spawn(browser, aMs, function*(ms) {
+    let then = Date.now();
+    while (Date.now() - then < ms) {
+      
+    }
+  });
+}
+
+
+
+
+
+
+
+
 async function testProbe(aProbe) {
   info(`Testing probe: ${aProbe}`);
   let histogram = Services.telemetry.getHistogramById(aProbe);
   let buckets = histogram.snapshot().ranges.filter(function(value) {
-    return (value > gMinHangTime && value < gMaxHangTime);
+    return (value > MIN_HANG_TIME && value < MAX_HANG_TIME);
   });
   let delayTime = buckets[0]; 
 
   
   
   delayTime += gBrowser.selectedTab.linkedBrowser.getTabBrowser()._getSwitcher().TAB_SWITCH_TIMEOUT;
-  let dataURI1 = makeDataURI(delayTime);
-  let dataURI2 = makeDataURI();
 
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, dataURI1);
+  
+  let origTab = gBrowser.selectedTab;
+  let hangTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  let hangBrowser = hangTab.linkedBrowser;
+  ok(hangBrowser.isRemoteBrowser, "New tab should be remote.");
+  ok(hangBrowser.frameLoader.tabParent.hasPresented, "New tab has presented.");
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, origTab);
+
+  let tabHangPromise = hangContentProcess(hangBrowser, delayTime);
   histogram.clear();
+  let hangTabSwitch = BrowserTestUtils.switchTab(gBrowser, hangTab);
+  await tabHangPromise;
+  await hangTabSwitch;
+
   
-  
-  ContentTask.spawn(tab1.linkedBrowser, null, async function() {
-    content.wrappedJSObject.hang();
-  });
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, dataURI2);
   let snapshot = histogram.snapshot();
-  await BrowserTestUtils.removeTab(tab2);
-  await BrowserTestUtils.removeTab(tab1);
+  await BrowserTestUtils.removeTab(hangTab);
   ok(sum(snapshot.counts) > 0,
    `Spinner probe should now have a value in some bucket`);
 }
