@@ -101,6 +101,10 @@ private:
   nsresult OnFrameUpdate(imgIRequest* aRequest);
 
   
+  void RemoveRequestToFrameMapping(imgIRequest* aRequest, nsIFrame* aFrame);
+  void RemoveFrameToRequestMapping(imgIRequest* aRequest, nsIFrame* aFrame);
+
+  
   RequestToFrameMap mRequestToFrameMap;
 
   
