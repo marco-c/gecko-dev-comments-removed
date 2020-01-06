@@ -333,7 +333,6 @@ GetOBJREFSize(NotNull<IStream*> aStream)
       return 0;
     }
 
-    MOZ_ASSERT(clsid == CLSID_StdMarshal);
     if (clsid != CLSID_StdMarshal) {
       
       
