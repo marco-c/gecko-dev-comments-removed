@@ -303,6 +303,14 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
         
         
         
+        
+        
+        
+        if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
+          nativeKeyEvent->StopImmediatePropagation();
+          nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
+          return NS_OK;
+        }
         mMenuBarFrame->SetActiveByKeyboard();
         mMenuBarFrame->SetActive(true);
         result->OpenMenu(true);

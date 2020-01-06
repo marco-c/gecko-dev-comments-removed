@@ -533,14 +533,10 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
   WidgetKeyboardEvent* widgetEvent =
     aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
 
-  if (widgetEvent->IsCrossProcessForwardingStopped() ||
-      widgetEvent->mFlags.mOnlySystemGroupDispatchInContent) {
-    return;
-  }
-
-  nsCOMPtr<mozilla::dom::Element> originalTarget =
-    do_QueryInterface(aEvent->AsEvent()->WidgetEventPtr()->mOriginalTarget);
-  if (!EventStateManager::IsRemoteTarget(originalTarget)) {
+  
+  
+  if (widgetEvent->mFlags.mOnlySystemGroupDispatchInContent ||
+      !widgetEvent->WillBeSentToRemoteProcess()) {
     return;
   }
 
