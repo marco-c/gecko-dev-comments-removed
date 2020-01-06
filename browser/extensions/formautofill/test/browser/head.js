@@ -211,7 +211,6 @@ async function clickDoorhangerButton(button, index) {
     EventUtils.synthesizeMouseAtCenter(getNotification()[button], {});
   } else if (button == MENU_BUTTON) {
     
-    await BrowserTestUtils.waitForCondition(() => getNotification().menubutton);
     await sleep(); 
     let notification = getNotification();
     ok(notification.menubutton, "notification menupopup displayed");
