@@ -14,6 +14,7 @@
 #include "nsPrintfCString.h"
 #include "nsTArray.h"
 
+#include <dlfcn.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/ipc.h>
@@ -118,6 +119,17 @@ nsShmImage::InitExtension()
   }
 
   gShmInitialized = true;
+
+  
+  
+  
+  
+  
+  
+  if (!dlsym(RTLD_DEFAULT, "xcb_discard_reply64")) {
+    gShmAvailable = false;
+    return false;
+  }
 
   const xcb_query_extension_reply_t* extReply;
   extReply = xcb_get_extension_data(mConnection, &xcb_shm_id);
