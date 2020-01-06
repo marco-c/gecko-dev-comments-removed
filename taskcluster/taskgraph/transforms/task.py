@@ -76,7 +76,7 @@ task_description_schema = Schema({
     Optional('scopes'): [basestring],
 
     
-    Optional('tags'): {basestring: object},
+    Optional('tags'): {basestring: basestring},
 
     
     Optional('extra'): {basestring: object},
