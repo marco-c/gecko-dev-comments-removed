@@ -138,7 +138,7 @@ add_task(async function test_simpleQuery() {
 
   
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = (events.default || []).filter(e => e[1] == "navigation" && e[2] == "search");
+  events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "enter", {engine: "other-MozSearch"}]]);
 
   
@@ -197,7 +197,7 @@ add_task(async function test_searchAlias() {
 
   
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = (events.default || []).filter(e => e[1] == "navigation" && e[2] == "search");
+  events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "alias", {engine: "other-MozSearch"}]]);
 
   
@@ -261,7 +261,7 @@ add_task(async function test_oneOff_enter() {
 
   
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = (events.default || []).filter(e => e[1] == "navigation" && e[2] == "search");
+  events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "oneoff", {engine: "other-MozSearch"}]]);
 
   
@@ -408,7 +408,7 @@ add_task(async function test_suggestion_click() {
 
   
   let events = Services.telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
-  events = (events.default || []).filter(e => e[1] == "navigation" && e[2] == "search");
+  events = (events.parent || []).filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "urlbar", "suggestion", {engine: searchEngineId}]]);
 
   
