@@ -43,16 +43,17 @@ extern "C" {
 char* nsEscape(const char* aStr, size_t aLength, size_t* aOutputLen,
                nsEscapeMask aMask);
 
+
+
+
+
 char* nsUnescape(char* aStr);
 
 
 
 
+
 int32_t nsUnescapeCount(char* aStr);
-
-
-
-
 
 #ifdef __cplusplus
 }
