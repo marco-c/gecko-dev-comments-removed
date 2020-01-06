@@ -366,11 +366,10 @@ test_description_schema = Schema({
     
     Optional('product'): basestring,
 
-    Optional('when'): {
-        
-        
-        Optional('schedules'): [basestring],
-    },
+    
+    Optional('when'): Any({
+        Optional('files-changed'): [basestring],
+    }),
 
     Optional('worker-type'): optionally_keyed_by(
         'test-platform',
@@ -641,7 +640,7 @@ def handle_suite_category(config, tests):
 
         script = test['mozharness']['script']
         category_arg = None
-        if suite == 'test-verify':
+        if suite == 'test-verification':
             pass
         elif script == 'android_emulator_unittest.py':
             category_arg = '--test-suite'
@@ -976,16 +975,16 @@ def make_job_description(config, tests):
             'platform': test.get('treeherder-machine-platform', test['build-platform']),
         }
 
-        schedules = [attributes['unittest_suite'], platform_family(test['build-platform'])]
-        when = test.get('when')
-        if when and 'schedules' in when:
-            schedules.extend(when['schedules'])
-        if config.params['project'] != 'try':
-            
-            jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
+        if test.get('when'):
+            jobdesc['when'] = test['when']
         else:
-            
-            jobdesc['optimization'] = {'skip-unless-schedules': schedules}
+            schedules = [attributes['unittest_suite'], platform_family(test['build-platform'])]
+            if config.params['project'] != 'try':
+                
+                jobdesc['optimization'] = {'skip-unless-schedules-or-seta': schedules}
+            else:
+                
+                jobdesc['optimization'] = {'skip-unless-schedules': schedules}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
