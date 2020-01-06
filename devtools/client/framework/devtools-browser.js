@@ -32,13 +32,9 @@ loader.lazyImporter(this, "ScratchpadManager", "resource://devtools/client/scrat
 loader.lazyImporter(this, "CustomizableUI", "resource:///modules/CustomizableUI.jsm");
 loader.lazyImporter(this, "CustomizableWidgets", "resource:///modules/CustomizableWidgets.jsm");
 loader.lazyImporter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
-loader.lazyImporter(this, "LightweightThemeManager", "resource://gre/modules/LightweightThemeManager.jsm");
 
 const {LocalizationHelper} = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
-
-const COMPACT_LIGHT_ID = "firefox-compact-light@mozilla.org";
-const COMPACT_DARK_ID = "firefox-compact-dark@mozilla.org";
 
 const BROWSER_STYLESHEET_URL = "chrome://devtools/skin/devtools-browser.css";
 
@@ -163,24 +159,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
        .setAttribute("devtoolstheme", devtoolsTheme);
     win.document.getElementById("content")
        .setAttribute("devtoolstheme", devtoolsTheme);
-
-    
-    
-    
-    
-    
-    
-    
-    let currentTheme = LightweightThemeManager.currentTheme;
-    let currentThemeID = currentTheme && currentTheme.id;
-    if (currentThemeID == COMPACT_LIGHT_ID && devtoolsTheme == "dark") {
-      LightweightThemeManager.currentTheme =
-        LightweightThemeManager.getUsedTheme(COMPACT_DARK_ID);
-    }
-    if (currentThemeID == COMPACT_DARK_ID && devtoolsTheme == "light") {
-      LightweightThemeManager.currentTheme =
-        LightweightThemeManager.getUsedTheme(COMPACT_LIGHT_ID);
-    }
   },
 
   observe(subject, topic, prefName) {
@@ -208,20 +186,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         
         if (subject.wrappedJSObject == require("@loader/unload")) {
           gDevToolsBrowser.destroy({ shuttingDown: false });
-        }
-        break;
-      case "lightweight-theme-changed":
-        let currentTheme = LightweightThemeManager.currentTheme;
-        let currentThemeID = currentTheme && currentTheme.id;
-        let devtoolsTheme = Services.prefs.getCharPref("devtools.theme");
-
-        
-        
-        if (currentThemeID == COMPACT_LIGHT_ID && devtoolsTheme == "dark") {
-          Services.prefs.setCharPref("devtools.theme", "light");
-        }
-        if (currentThemeID == COMPACT_DARK_ID && devtoolsTheme == "light") {
-          Services.prefs.setCharPref("devtools.theme", "dark");
         }
         break;
     }
@@ -783,7 +747,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   destroy({ shuttingDown }) {
     Services.prefs.removeObserver("devtools.", gDevToolsBrowser);
-    Services.obs.removeObserver(gDevToolsBrowser, "lightweight-theme-changed");
     Services.obs.removeObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
     Services.obs.removeObserver(gDevToolsBrowser, "quit-application");
     Services.obs.removeObserver(gDevToolsBrowser, "sdk:loader:destroy");
@@ -823,7 +786,6 @@ Services.obs.addObserver(gDevToolsBrowser, "quit-application");
 Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
 
 Services.obs.addObserver(gDevToolsBrowser, "sdk:loader:destroy");
-Services.obs.addObserver(gDevToolsBrowser, "lightweight-theme-changed");
 
 
 
