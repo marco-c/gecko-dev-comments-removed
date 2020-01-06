@@ -271,9 +271,8 @@ SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t lengt
 
 
 
-
 extern char16_t*
-InflateString(JSContext* cx, const char* bytes, size_t* length);
+InflateString(JSContext* cx, const char* bytes, size_t length);
 
 
 
