@@ -409,6 +409,8 @@ protected:
   bool mInitializedForPrintPreview;
   bool mHidden;
   bool mPrintRelated; 
+  bool mPresShellDestroyed; 
+  bool mDestroyWasFull; 
 };
 
 namespace mozilla {
@@ -543,7 +545,9 @@ nsDocumentViewer::nsDocumentViewer()
     mIsPageMode(false),
     mInitializedForPrintPreview(false),
     mHidden(false),
-    mPrintRelated(false)
+    mPrintRelated(false),
+    mPresShellDestroyed(true),
+    mDestroyWasFull(false)
 {
   PrepareToStartLoad();
 }
@@ -580,15 +584,30 @@ nsDocumentViewer::~nsDocumentViewer()
     mDocument->Destroy();
   }
 
+  nsIFrame* vmRootFrame =
+    mViewManager && mViewManager->GetRootView()
+      ? mViewManager->GetRootView()->GetFrame()
+      : nullptr;
+  nsIFrame* psRootFrame = mPresShell ? mPresShell->GetRootFrame() : nullptr;
+  MOZ_RELEASE_ASSERT(vmRootFrame == psRootFrame);
+
   NS_ASSERTION(!mPresShell && !mPresContext,
                "User did not call nsIContentViewer::Destroy");
   if (mPresShell || mPresContext) {
     
     
     mSHEntry = nullptr;
-
+    mDestroyWasFull = false;
     Destroy();
+    MOZ_RELEASE_ASSERT(mDestroyWasFull);
   }
+
+  MOZ_RELEASE_ASSERT(mPresShellDestroyed);
+
+  MOZ_RELEASE_ASSERT(!mPresShell || !mPresShell->GetRootFrame());
+  MOZ_RELEASE_ASSERT(!mViewManager || !mViewManager->GetRootView() ||
+    (!mViewManager->GetRootView()->GetFrame() &&
+     !mViewManager->GetRootView()->GetFirstChild()));
 
   if (mSelectionListener) {
     mSelectionListener->Disconnect();
@@ -708,6 +727,7 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
     styleSet->Delete();
     return NS_ERROR_FAILURE;
   }
+  mPresShellDestroyed = false;
 
   
   styleSet->EndUpdate();
@@ -1795,6 +1815,8 @@ nsDocumentViewer::Destroy()
   mWindow = nullptr;
   mViewManager = nullptr;
   mContainer = WeakPtr<nsDocShell>();
+
+  mDestroyWasFull = true;
 
   return NS_OK;
 }
@@ -4657,6 +4679,13 @@ nsDocumentViewer::SetIsHidden(bool aHidden)
 void
 nsDocumentViewer::DestroyPresShell()
 {
+  nsIFrame* vmRootFrame =
+    mViewManager && mViewManager->GetRootView()
+      ? mViewManager->GetRootView()->GetFrame()
+      : nullptr;
+  nsIFrame* psRootFrame = mPresShell ? mPresShell->GetRootFrame() : nullptr;
+  MOZ_RELEASE_ASSERT(vmRootFrame == psRootFrame);
+
   
   mPresShell->EndObservingDocument();
 
@@ -4665,7 +4694,18 @@ nsDocumentViewer::DestroyPresShell()
     selection->RemoveSelectionListener(mSelectionListener);
 
   nsAutoScriptBlocker scriptBlocker;
+  bool hadRootFrame = !!mPresShell->GetRootFrame();
   mPresShell->Destroy();
+  mPresShellDestroyed = true;
+  MOZ_RELEASE_ASSERT(!mPresShell->GetRootFrame());
+  
+  if (hadRootFrame) {
+    MOZ_RELEASE_ASSERT(!mViewManager || !mViewManager->GetRootView());
+  }
+  MOZ_RELEASE_ASSERT(!mViewManager || !mViewManager->GetRootView() ||
+    (!mViewManager->GetRootView()->GetFrame() &&
+     !mViewManager->GetRootView()->GetFirstChild()));
+
   mPresShell = nullptr;
 }
 

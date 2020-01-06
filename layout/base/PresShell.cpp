@@ -1162,6 +1162,12 @@ PresShell::Destroy()
 {
   
   if (mHaveShutDown) {
+    
+    
+    MOZ_RELEASE_ASSERT(!mViewManager || !mViewManager->GetRootView() ||
+      (!mViewManager->GetRootView()->GetFrame() &&
+       !mViewManager->GetRootView()->GetFirstChild()));
+    MOZ_RELEASE_ASSERT(!mFrameConstructor || !mFrameConstructor->GetRootFrame());
     return;
   }
 
