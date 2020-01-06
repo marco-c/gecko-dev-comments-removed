@@ -16,6 +16,7 @@
 #include "nsNetCID.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIURI.h"
+#include "nsThreadUtils.h"
 #include "GeckoProfiler.h"
 #include "prnetdb.h"
 #include "ProxyUtils.h"
@@ -41,6 +42,9 @@ NS_IMPL_ISUPPORTS(nsWindowsSystemProxySettings, nsISystemProxySettings)
 NS_IMETHODIMP
 nsWindowsSystemProxySettings::GetMainThreadOnly(bool *aMainThreadOnly)
 {
+  
+  
+  
   *aMainThreadOnly = false;
   return NS_OK;
 }
@@ -69,6 +73,9 @@ static void SetProxyResultDirect(nsACString& aResult)
 static nsresult ReadInternetOption(uint32_t aOption, uint32_t& aFlags,
                                    nsAString& aValue)
 {
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+
     DWORD connFlags = 0;
     WCHAR connName[RAS_MaxEntryName + 1];
     MOZ_SEH_TRY {
