@@ -39,7 +39,7 @@ add_task(async function testEmailEndEntity() {
 add_task(async function testCodeSignEndEntity() {
   let cert = await readCertificate("code-ee.pem", ",,");
   let win = await displayCertificate(cert);
-  checkError(win, "Could not verify this certificate for unknown reasons.");
+  checkUsages(win, ["Object Signer"]);
   await BrowserTestUtils.closeWindow(win);
 });
 
@@ -110,7 +110,7 @@ add_task(async function testRevoked() {
   
   
   checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate",
-                    "SSL Client Certificate"]);
+                    "Object Signer", "SSL Client Certificate"]);
   await BrowserTestUtils.closeWindow(win);
 });
 

@@ -642,34 +642,6 @@ nsNSSCertificate::GetOrganizationalUnit(nsAString& aOrganizationalUnit)
   return NS_OK;
 }
 
-static nsresult
-UniqueCERTCertListToMutableArray( UniqueCERTCertList& nssChain,
-                                 nsIArray** x509CertArray)
-{
-  if (!x509CertArray) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  nsCOMPtr<nsIMutableArray> array = nsArrayBase::Create();
-  if (!array) {
-    return NS_ERROR_FAILURE;
-  }
-
-  CERTCertListNode* node;
-  for (node = CERT_LIST_HEAD(nssChain.get());
-       !CERT_LIST_END(node, nssChain.get());
-       node = CERT_LIST_NEXT(node)) {
-    nsCOMPtr<nsIX509Cert> cert = nsNSSCertificate::Create(node->cert);
-    nsresult rv = array->AppendElement(cert, false);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
-  array.forget(x509CertArray);
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 nsNSSCertificate::GetChain(nsIArray** _rvChain)
 {
@@ -687,32 +659,66 @@ nsNSSCertificate::GetChain(nsIArray** _rvChain)
   UniqueCERTCertList nssChain;
   
   
+  if (certVerifier->VerifyCert(mCert.get(), certificateUsageSSLServer, now,
+                               nullptr, 
+                               nullptr, 
+                               nssChain,
+                               CertVerifier::FLAG_LOCAL_ONLY)
+        != mozilla::pkix::Success) {
+    nssChain = nullptr;
+    
+  }
+
   
-  const int usagesToTest[] = { certificateUsageSSLServer,
-                               certificateUsageSSLClient,
-                               certificateUsageSSLCA,
-                               certificateUsageEmailSigner,
-                               certificateUsageEmailRecipient };
-  for (auto usage : usagesToTest) {
+  
+  const int otherUsagesToTest = certificateUsageSSLClient |
+                                certificateUsageSSLCA |
+                                certificateUsageEmailSigner |
+                                certificateUsageEmailRecipient |
+                                certificateUsageObjectSigner;
+  for (int usage = certificateUsageSSLClient;
+       usage < certificateUsageAnyCA && !nssChain;
+       usage = usage << 1) {
+    if ((usage & otherUsagesToTest) == 0) {
+      continue;
+    }
     if (certVerifier->VerifyCert(mCert.get(), usage, now,
                                  nullptr, 
                                  nullptr, 
                                  nssChain,
                                  CertVerifier::FLAG_LOCAL_ONLY)
-          == mozilla::pkix::Success) {
-      return UniqueCERTCertListToMutableArray(nssChain, _rvChain);
+          != mozilla::pkix::Success) {
+      nssChain = nullptr;
+      
     }
   }
 
-  
-  
-  
-  nssChain = UniqueCERTCertList(
-    CERT_GetCertChainFromCert(mCert.get(), PR_Now(), certUsageSSLClient));
+  if (!nssChain) {
+    
+    
+    
+    nssChain = UniqueCERTCertList(
+      CERT_GetCertChainFromCert(mCert.get(), PR_Now(), certUsageSSLClient));
+  }
   if (!nssChain) {
     return NS_ERROR_FAILURE;
   }
-  return UniqueCERTCertListToMutableArray(nssChain, _rvChain);
+
+  
+  nsCOMPtr<nsIMutableArray> array = nsArrayBase::Create();
+  if (!array) {
+    return NS_ERROR_FAILURE;
+  }
+  CERTCertListNode* node;
+  for (node = CERT_LIST_HEAD(nssChain.get());
+       !CERT_LIST_END(node, nssChain.get());
+       node = CERT_LIST_NEXT(node)) {
+    nsCOMPtr<nsIX509Cert> cert = nsNSSCertificate::Create(node->cert);
+    array->AppendElement(cert, false);
+  }
+  *_rvChain = array;
+  NS_IF_ADDREF(*_rvChain);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
