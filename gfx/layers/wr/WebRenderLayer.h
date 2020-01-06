@@ -26,7 +26,8 @@ public:
   virtual Layer* GetLayer() = 0;
   virtual void RenderLayer(wr::DisplayListBuilder& aBuilder,
                            const StackingContextHelper& aSc) = 0;
-  virtual Maybe<WrImageMask> RenderMaskLayer(const gfx::Matrix4x4& aTransform)
+  virtual Maybe<WrImageMask> RenderMaskLayer(const StackingContextHelper& aSc,
+                                             const gfx::Matrix4x4& aTransform)
   {
     MOZ_ASSERT(false);
     return Nothing();
@@ -56,7 +57,16 @@ public:
   
   
   
-  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper* aUnapplySc);
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper& aRelativeTo,
+                                      const StackingContextHelper* aUnapplySc);
 
 protected:
   BoundsTransformMatrix BoundsTransform();
