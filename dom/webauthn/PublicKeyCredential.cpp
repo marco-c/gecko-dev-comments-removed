@@ -84,7 +84,7 @@ PublicKeyCredential::SetResponse(RefPtr<AuthenticatorResponse> aResponse)
 }
 
  already_AddRefed<Promise>
-PublicKeyCredential::IsPlatformAuthenticatorAvailable(GlobalObject& aGlobal)
+PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(GlobalObject& aGlobal)
 {
   nsIGlobalObject* globalObject =
     xpc::NativeGlobal(JS::CurrentGlobalOrNull(aGlobal.Context()));
@@ -94,7 +94,7 @@ PublicKeyCredential::IsPlatformAuthenticatorAvailable(GlobalObject& aGlobal)
 
   ErrorResult rv;
   RefPtr<Promise> promise = Promise::Create(globalObject, rv);
-  if(rv.Failed()) {
+  if (rv.Failed()) {
     return nullptr;
   }
 
@@ -102,7 +102,16 @@ PublicKeyCredential::IsPlatformAuthenticatorAvailable(GlobalObject& aGlobal)
   
   
   
-  promise->MaybeResolve(true);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   return promise.forget();
 }
 
