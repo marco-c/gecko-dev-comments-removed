@@ -12,9 +12,7 @@ use restyle_hints::{HintComputationContext, RestyleReplacements, RestyleHint};
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
 use shared_lock::StylesheetGuards;
-#[cfg(feature = "servo")] use std::collections::HashMap;
 use std::fmt;
-#[cfg(feature = "servo")] use std::hash::BuildHasherDefault;
 use stylearc::Arc;
 use traversal::TraversalFlags;
 
@@ -147,22 +145,12 @@ impl EagerPseudoStyles {
 
 
 
-
-#[cfg(feature = "servo")]
-type PseudoElementCache = HashMap<PseudoElement, ComputedStyle, BuildHasherDefault<::fnv::FnvHasher>>;
-#[cfg(feature = "gecko")]
-type PseudoElementCache = ();
-
-
-
 #[derive(Clone, Debug)]
 pub struct ElementStyles {
     
     pub primary: ComputedStyle,
     
     pub pseudos: EagerPseudoStyles,
-    
-    pub cached_pseudos: PseudoElementCache,
 }
 
 impl ElementStyles {
@@ -171,7 +159,6 @@ impl ElementStyles {
         ElementStyles {
             primary: primary,
             pseudos: EagerPseudoStyles(None),
-            cached_pseudos: PseudoElementCache::default(),
         }
     }
 
