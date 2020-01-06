@@ -3820,6 +3820,9 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           
           
           aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+          
+          
+          aLine->MarkDirty();
         } else {
           
           
@@ -4711,6 +4714,8 @@ nsBlockFrame::PlaceLine(BlockReflowInput& aState,
       ShouldAvoidBreakInside(aState.mReflowInput)) {
     aLine->AppendFloats(aState.mCurrentLineFloats);
     aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+    
+    aLine->MarkDirty();
     return true;
   }
 
@@ -5623,46 +5628,6 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
 {
   mLine = aFrame->LinesBegin();
   *aFoundValidLine = FindValidLine();
-}
-
-void
-nsBlockFrame::UpdateFirstLetterStyle(nsIFrame* aLetterFrame,
-                                     ServoRestyleState& aRestyleState)
-{
-  
-  
-  nsIFrame* inFlowFrame = aLetterFrame;
-  if (inFlowFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
-    inFlowFrame = inFlowFrame->GetPlaceholderFrame();
-  }
-  nsIFrame* styleParent =
-    CorrectStyleParentFrame(inFlowFrame->GetParent(),
-                            nsCSSPseudoElements::firstLetter);
-  nsStyleContext* parentStyle = styleParent->StyleContext();
-  RefPtr<nsStyleContext> firstLetterStyle =
-    aRestyleState.StyleSet()
-                 .ResolvePseudoElementStyle(mContent->AsElement(),
-                                            CSSPseudoElementType::firstLetter,
-                                            parentStyle,
-                                            nullptr);
-  
-  
-  RefPtr<nsStyleContext> continuationStyle =
-    aRestyleState.StyleSet().ResolveStyleForFirstLetterContinuation(parentStyle);
-  UpdateStyleOfOwnedChildFrame(aLetterFrame, firstLetterStyle, aRestyleState,
-                               Some(continuationStyle.get()));
-
-  
-  
-  
-  nsIFrame* textFrame = aLetterFrame->PrincipalChildList().FirstChild();
-  RefPtr<nsStyleContext> firstTextStyle =
-    aRestyleState.StyleSet().ResolveStyleForText(textFrame->GetContent(),
-                                                 firstLetterStyle);
-  textFrame->SetStyleContext(firstTextStyle);
-
-  
-  
 }
 
 static nsIFrame*
@@ -7564,10 +7529,6 @@ nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState)
       ResolveBulletStyle(type, &aRestyleState.StyleSet());
     UpdateStyleOfOwnedChildFrame(bullet, newBulletStyle, aRestyleState);
   }
-
-  if (nsIFrame* firstLetter = GetFirstLetter()) {
-    UpdateFirstLetterStyle(firstLetter, aRestyleState);
-  }
 }
 
 already_AddRefed<nsStyleContext>
@@ -7581,17 +7542,6 @@ nsBlockFrame::ResolveBulletStyle(CSSPseudoElementType aType,
 
   return aStyleSet->ResolvePseudoElementStyle(mContent->AsElement(), aType,
                                               parentStyle, nullptr);
-}
-
-nsIFrame*
-nsBlockFrame::GetFirstLetter() const
-{
-  if (!(GetStateBits() & NS_BLOCK_HAS_FIRST_LETTER_STYLE)) {
-    
-    return nullptr;
-  }
-
-  return GetProperty(FirstLetterProperty());
 }
 
 #ifdef DEBUG
