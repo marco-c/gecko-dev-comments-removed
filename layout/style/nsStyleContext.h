@@ -102,6 +102,14 @@ public:
     return GetPseudoType() == mozilla::CSSPseudoElementType::NonInheritingAnonBox;
   }
 
+  
+  
+  
+  
+  bool IsWrapperAnonBox() const {
+    return nsCSSAnonBoxes::IsWrapperAnonBox(GetPseudo());
+  }
+
   bool IsAnonBox() const {
     return IsInheritingAnonBox() || IsNonInheritingAnonBox();
   }

@@ -31,12 +31,23 @@
 
 
 
+
+
+
 #ifndef CSS_NON_INHERITING_ANON_BOX
 #  ifdef DEFINED_CSS_NON_INHERITING_ANON_BOX
 #    error "Recursive includes of nsCSSAnonBoxList.h?"
 #  endif 
 #  define CSS_NON_INHERITING_ANON_BOX(name_, value_) CSS_ANON_BOX(name_, value_)
 #  define DEFINED_CSS_NON_INHERITING_ANON_BOX
+#endif 
+
+#ifndef CSS_WRAPPER_ANON_BOX
+#  ifdef DEFINED_CSS_WRAPPER_ANON_BOX
+#    error "Recursive includes of nsCSSAnonBoxList.h?"
+#  endif 
+#  define CSS_WRAPPER_ANON_BOX(name_, value_) CSS_ANON_BOX(name_, value_)
+#  define DEFINED_CSS_WRAPPER_ANON_BOX
 #endif 
 
 
@@ -50,7 +61,7 @@ CSS_NON_INHERITING_ANON_BOX(oofPlaceholder, ":-moz-oof-placeholder")
 CSS_ANON_BOX(firstLetterContinuation, ":-moz-first-letter-continuation")
 
 CSS_ANON_BOX(mozBlockInsideInlineWrapper, ":-moz-block-inside-inline-wrapper")
-CSS_ANON_BOX(mozMathMLAnonymousBlock, ":-moz-mathml-anonymous-block")
+CSS_WRAPPER_ANON_BOX(mozMathMLAnonymousBlock, ":-moz-mathml-anonymous-block")
 CSS_ANON_BOX(mozXULAnonymousBlock, ":-moz-xul-anonymous-block")
 
 
@@ -67,14 +78,14 @@ CSS_NON_INHERITING_ANON_BOX(framesetBlank, ":-moz-frameset-blank")
 CSS_ANON_BOX(mozDisplayComboboxControlFrame, ":-moz-display-comboboxcontrol-frame")
 CSS_ANON_BOX(htmlCanvasContent, ":-moz-html-canvas-content")
 
-CSS_ANON_BOX(inlineTable, ":-moz-inline-table")
-CSS_ANON_BOX(table, ":-moz-table")
-CSS_ANON_BOX(tableCell, ":-moz-table-cell")
-CSS_ANON_BOX(tableColGroup, ":-moz-table-column-group")
+CSS_WRAPPER_ANON_BOX(inlineTable, ":-moz-inline-table")
+CSS_WRAPPER_ANON_BOX(table, ":-moz-table")
+CSS_WRAPPER_ANON_BOX(tableCell, ":-moz-table-cell")
+CSS_WRAPPER_ANON_BOX(tableColGroup, ":-moz-table-column-group")
 CSS_ANON_BOX(tableCol, ":-moz-table-column")
 CSS_ANON_BOX(tableWrapper, ":-moz-table-wrapper")
-CSS_ANON_BOX(tableRowGroup, ":-moz-table-row-group")
-CSS_ANON_BOX(tableRow, ":-moz-table-row")
+CSS_WRAPPER_ANON_BOX(tableRowGroup, ":-moz-table-row-group")
+CSS_WRAPPER_ANON_BOX(tableRow, ":-moz-table-row")
 
 CSS_ANON_BOX(canvas, ":-moz-canvas")
 CSS_NON_INHERITING_ANON_BOX(pageBreak, ":-moz-pagebreak")
@@ -90,17 +101,17 @@ CSS_ANON_BOX(viewportScroll, ":-moz-viewport-scroll")
 
 
 
-CSS_ANON_BOX(anonymousFlexItem, ":-moz-anonymous-flex-item")
+CSS_WRAPPER_ANON_BOX(anonymousFlexItem, ":-moz-anonymous-flex-item")
 
 
 
-CSS_ANON_BOX(anonymousGridItem, ":-moz-anonymous-grid-item")
+CSS_WRAPPER_ANON_BOX(anonymousGridItem, ":-moz-anonymous-grid-item")
 
-CSS_ANON_BOX(ruby, ":-moz-ruby")
-CSS_ANON_BOX(rubyBase, ":-moz-ruby-base")
-CSS_ANON_BOX(rubyBaseContainer, ":-moz-ruby-base-container")
-CSS_ANON_BOX(rubyText, ":-moz-ruby-text")
-CSS_ANON_BOX(rubyTextContainer, ":-moz-ruby-text-container")
+CSS_WRAPPER_ANON_BOX(ruby, ":-moz-ruby")
+CSS_WRAPPER_ANON_BOX(rubyBase, ":-moz-ruby-base")
+CSS_WRAPPER_ANON_BOX(rubyBaseContainer, ":-moz-ruby-base-container")
+CSS_WRAPPER_ANON_BOX(rubyText, ":-moz-ruby-text")
+CSS_WRAPPER_ANON_BOX(rubyTextContainer, ":-moz-ruby-text-container")
 
 #ifdef MOZ_XUL
 CSS_ANON_BOX(mozTreeColumn, ":-moz-tree-column")
@@ -125,4 +136,9 @@ CSS_ANON_BOX(mozSVGText, ":-moz-svg-text")
 #ifdef DEFINED_CSS_NON_INHERITING_ANON_BOX
 #  undef DEFINED_CSS_NON_INHERITING_ANON_BOX
 #  undef CSS_NON_INHERITING_ANON_BOX
+#endif 
+
+#ifdef DEFINED_CSS_WRAPPER_ANON_BOX
+#  undef DEFINED_CSS_WRAPPER_ANON_BOX
+#  undef CSS_WRAPPER_ANON_BOX
 #endif 
