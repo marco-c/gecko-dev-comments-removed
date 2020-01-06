@@ -13,6 +13,7 @@ use properties::longhands::display::computed_value as display;
 use rule_tree::StrongRuleNode;
 use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
 use shared_lock::{Locked, StylesheetGuards};
+use std::ops::{Deref, DerefMut};
 use stylearc::Arc;
 
 bitflags! {
@@ -100,22 +101,39 @@ impl RestyleData {
 
 
 
-#[derive(Debug)]
-pub struct EagerPseudoStyles(pub Option<Box<[Option<Arc<ComputedValues>>; EAGER_PSEUDO_COUNT]>>);
 
 
 
-impl Clone for EagerPseudoStyles {
+
+#[derive(Clone, Debug)]
+pub struct EagerPseudoStyles(Option<Arc<EagerPseudoArray>>);
+
+#[derive(Debug, Default)]
+struct EagerPseudoArray(EagerPseudoArrayInner);
+type EagerPseudoArrayInner = [Option<Arc<ComputedValues>>; EAGER_PSEUDO_COUNT];
+
+impl Deref for EagerPseudoArray {
+    type Target = EagerPseudoArrayInner;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EagerPseudoArray {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+
+
+impl Clone for EagerPseudoArray {
     fn clone(&self) -> Self {
-        if self.0.is_none() {
-            return EagerPseudoStyles(None)
-        }
-        let self_values = self.0.as_ref().unwrap();
-        let mut values: [Option<Arc<ComputedValues>>; EAGER_PSEUDO_COUNT] = Default::default();
+        let mut clone = Self::default();
         for i in 0..EAGER_PSEUDO_COUNT {
-            values[i] = self_values[i].clone();
+            clone[i] = self.0[i].clone();
         }
-        EagerPseudoStyles(Some(Box::new(values)))
+        clone
     }
 }
 
@@ -123,6 +141,14 @@ impl EagerPseudoStyles {
     
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
+    }
+
+    
+    pub fn as_array(&self) -> Option<&EagerPseudoArrayInner> {
+        match self.0 {
+            None => None,
+            Some(ref x) => Some(&x.0),
+        }
     }
 
     
@@ -134,7 +160,10 @@ impl EagerPseudoStyles {
     
     pub fn get_mut(&mut self, pseudo: &PseudoElement) -> Option<&mut Arc<ComputedValues>> {
         debug_assert!(pseudo.is_eager());
-        self.0.as_mut().and_then(|p| p[pseudo.eager_index()].as_mut())
+        match self.0 {
+            None => return None,
+            Some(ref mut arc) => Arc::make_mut(arc)[pseudo.eager_index()].as_mut(),
+        }
     }
 
     
@@ -145,9 +174,10 @@ impl EagerPseudoStyles {
     
     pub fn set(&mut self, pseudo: &PseudoElement, value: Arc<ComputedValues>) {
         if self.0.is_none() {
-            self.0 = Some(Box::new(Default::default()));
+            self.0 = Some(Arc::new(Default::default()));
         }
-        self.0.as_mut().unwrap()[pseudo.eager_index()] = Some(value);
+        let arr = Arc::make_mut(self.0.as_mut().unwrap());
+        arr[pseudo.eager_index()] = Some(value);
     }
 
     
@@ -158,9 +188,9 @@ impl EagerPseudoStyles {
 
     
     pub fn take(&mut self, pseudo: &PseudoElement) -> Option<Arc<ComputedValues>> {
-        let result = match self.0.as_mut() {
+        let result = match self.0 {
             None => return None,
-            Some(arr) => arr[pseudo.eager_index()].take(),
+            Some(ref mut arc) => Arc::make_mut(arc)[pseudo.eager_index()].take(),
         };
         let empty = self.0.as_ref().unwrap().iter().all(|x| x.is_none());
         if empty {
