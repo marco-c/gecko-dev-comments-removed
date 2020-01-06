@@ -409,7 +409,8 @@ class BaseWindow(BaseLib):
             if kwargs[modifier] is True:
                 keys.append(keymap[modifier])
 
-        keys.append(command_key)
+        
+        keys.append(command_key.lower())
 
         self.switch_to()
 
