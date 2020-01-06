@@ -39,10 +39,8 @@ mozharness_run_schema = Schema({
     Required('config'): [basestring],
 
     
-    
     Optional('actions'): [basestring],
 
-    
     
     Optional('options'): [basestring],
 
