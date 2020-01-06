@@ -443,11 +443,6 @@ public:
 
   nsGlobalWindowOuter *GetOuterWindowInternal() const;
 
-  bool IsCreatingInnerWindow() const
-  {
-    return mCreatingInnerWindow;
-  }
-
   bool IsChromeWindow() const
   {
     return mIsChrome;
@@ -507,10 +502,7 @@ public:
   virtual void DisableTimeChangeNotifications() override;
 
   bool IsClosedOrClosing() {
-    return (mIsClosed ||
-            mInClose ||
-            mHavePendingClose ||
-            mCleanedUp);
+    return mCleanedUp;
   }
 
   bool
@@ -534,11 +526,6 @@ public:
   nsresult HandleIdleActiveEvent();
   bool ContainsIdleObserver(nsIIdleObserver* aIdleObserver, uint32_t timeInS);
   void HandleIdleObserverCallback();
-
-  void AllowScriptsToClose()
-  {
-    mAllowScriptsToClose = true;
-  }
 
   enum SlowScriptResponse {
     ContinueSlowScript = 0,
@@ -1100,7 +1087,6 @@ protected:
   
   virtual ~nsGlobalWindowInner();
   void CleanUp();
-  void ClearControllers();
 
   void FreeInnerObjects();
   nsGlobalWindowInner *CallerInnerWindow();
@@ -1285,23 +1271,7 @@ public:
   void RemoveIdleCallback(mozilla::dom::IdleRequest* aRequest);
 
 protected:
-  
-  
-  bool                          mFullScreen : 1;
-  bool                          mFullscreenMode : 1;
-  bool                          mIsClosed : 1;
-  bool                          mInClose : 1;
-  
-  
-  
-  bool                          mHavePendingClose : 1;
-  bool                          mHadOriginalOpener : 1;
-  bool                          mOriginalOpenerWasSecureContext : 1;
   bool                          mIsSecureContextIfOpenerIgnored : 1;
-  bool                          mIsPopupSpam : 1;
-
-  
-  bool                          mBlockScriptedClosingFlag : 1;
 
   
   bool                          mWasOffline : 1;
@@ -1314,10 +1284,6 @@ protected:
   
   bool                          mNotifyIdleObserversIdleOnThaw : 1;
   bool                          mNotifyIdleObserversActiveOnThaw : 1;
-
-  
-  
-  bool                          mCreatingInnerWindow : 1;
 
   
   bool                          mIsChrome : 1;
@@ -1341,52 +1307,28 @@ protected:
   bool                   mFocusByKeyOccurred : 1;
 
   
-  
   bool                   mHasGamepad : 1;
 
   
-  
   bool                   mHasVREvents : 1;
 
-  
   
   bool                   mHasVRDisplayActivateEvents : 1;
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsUint32HashKey, mozilla::dom::Gamepad> mGamepads;
   bool mHasSeenGamepadInput;
 
-  
-  bool                   mNotifiedIDDestroyed : 1;
-  
-  
-  bool                   mAllowScriptsToClose : 1;
-
-  bool mTopLevelOuterContentWindow : 1;
-
-  nsCOMPtr<nsIScriptContext>    mContext;
-  nsWeakPtr                     mOpener;
-  nsCOMPtr<nsIControllers>      mControllers;
-
-  
-  nsCOMPtr<nsIArray>            mArguments;
-
-  
-  RefPtr<DialogValueHolder> mReturnValue;
-
   RefPtr<mozilla::dom::Navigator> mNavigator;
   RefPtr<nsScreen>            mScreen;
-  RefPtr<nsDOMWindowList>     mFrames;
-  
+
   RefPtr<mozilla::dom::BarProp> mMenubar;
   RefPtr<mozilla::dom::BarProp> mToolbar;
   RefPtr<mozilla::dom::BarProp> mLocationbar;
   RefPtr<mozilla::dom::BarProp> mPersonalbar;
   RefPtr<mozilla::dom::BarProp> mStatusbar;
   RefPtr<mozilla::dom::BarProp> mScrollbars;
-  RefPtr<nsDOMWindowUtils>      mWindowUtils;
-  nsString                      mStatus;
-  nsString                      mDefaultStatus;
-  RefPtr<nsGlobalWindowObserver> mObserver; 
+
+  RefPtr<nsGlobalWindowObserver> mObserver;
   RefPtr<mozilla::dom::Crypto>  mCrypto;
   RefPtr<mozilla::dom::U2F> mU2F;
   RefPtr<mozilla::dom::cache::CacheStorage> mCacheStorage;
@@ -1404,13 +1346,11 @@ protected:
   RefPtr<mozilla::dom::Storage> mLocalStorage;
   RefPtr<mozilla::dom::Storage> mSessionStorage;
 
-  
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::Location> mLocation;
   RefPtr<nsHistory>           mHistory;
   RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
 
-  
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   
   nsCOMPtr<nsITabChild>  mTabChild;
@@ -1429,7 +1369,6 @@ protected:
   RefPtr<IdleRequestExecutor> mIdleRequestExecutor;
 
 #ifdef DEBUG
-  bool mSetOpenerWindowCalled;
   nsCOMPtr<nsIURI> mLastOpenedURI;
 #endif
 
@@ -1439,14 +1378,6 @@ protected:
 
   using XBLPrototypeHandlerTable = nsJSThingHashtable<nsPtrHashKey<nsXBLPrototypeHandler>, JSObject*>;
   mozilla::UniquePtr<XBLPrototypeHandlerTable> mCachedXBLPrototypeHandlers;
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIDocument> mSuspendedDoc;
 
   RefPtr<mozilla::dom::IDBFactory> mIndexedDB;
 
@@ -1475,14 +1406,7 @@ protected:
 #endif
 
 #ifdef MOZ_WEBSPEECH
-  
   RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
-#endif
-
-#ifdef DEBUG
-  
-  
-  bool mIsValidatingTabGroup;
 #endif
 
   
@@ -1493,11 +1417,7 @@ protected:
 
   RefPtr<mozilla::dom::VREventObserver> mVREventObserver;
 
-  
-  
-  
-  uint32_t mAutoActivateVRDisplayID; 
-  int64_t mBeforeUnloadListenerCount; 
+  int64_t mBeforeUnloadListenerCount;
 
   RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
 
@@ -1512,14 +1432,8 @@ protected:
       : mGroupMessageManagers(1)
     {}
 
-    nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
     nsCOMPtr<nsIMessageBroadcaster> mMessageManager;
     nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
-    
-    
-    
-    nsWeakPtr mFullscreenPresShell;
-    nsCOMPtr<mozIDOMWindowProxy> mOpenerForInitialContentBrowser;
   } mChromeFields;
 
   friend class nsDOMScriptableHelper;
@@ -1577,7 +1491,7 @@ nsGlobalWindowInner::GetContextInternal()
     return GetOuterWindowInternal()->mContext;
   }
 
-  return mContext;
+  return nullptr;
 }
 
 inline nsGlobalWindowOuter*
