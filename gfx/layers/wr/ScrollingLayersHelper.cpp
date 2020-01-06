@@ -67,7 +67,9 @@ ScrollingLayersHelper::ScrollingLayersHelper(WebRenderLayer* aLayer,
     
     
     
-    contentRect.MoveBy(clipBounds.TopLeft());
+    
+    
+    contentRect.MoveTo(clipBounds.TopLeft());
     mBuilder->PushScrollLayer(fm.GetScrollId(),
         aStackingContext.ToRelativeWrRect(contentRect),
         aStackingContext.ToRelativeWrRect(clipBounds));
