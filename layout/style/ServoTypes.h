@@ -74,7 +74,7 @@ enum class UpdateAnimationsTasks : uint8_t {
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
 
 
-enum class LengthParsingMode {
+enum class ParsingMode {
   
   
   
@@ -82,7 +82,7 @@ enum class LengthParsingMode {
   
   
   
-  SVG,
+  AllowUnitlessLength,
 };
 
 

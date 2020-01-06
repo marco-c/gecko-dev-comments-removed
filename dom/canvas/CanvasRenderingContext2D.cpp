@@ -2811,7 +2811,7 @@ CreateDeclarationForServo(nsCSSPropertyID aProperty,
     Servo_ParseProperty(aProperty,
                         &value,
                         data,
-                        LengthParsingMode::Default).Consume();
+                        ParsingMode::Default).Consume();
 
   if (!servoDeclarations) {
     
@@ -2827,7 +2827,7 @@ CreateDeclarationForServo(nsCSSPropertyID aProperty,
                                            &normalString,
                                            false,
                                            data,
-                                           LengthParsingMode::Default);
+                                           ParsingMode::Default);
   }
 
   return servoDeclarations.forget();
