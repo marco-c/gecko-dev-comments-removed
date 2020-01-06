@@ -106,6 +106,10 @@ public class BrowserLocaleManager implements LocaleManager {
                 systemLocaleDidChange = true;
 
                 Log.d(LOG_TAG, "System locale changed from " + current + " to " + systemLocale);
+
+                
+                final SharedPreferences prefs = GeckoSharedPrefs.forProfile(context);
+                BrowserLocaleManager.storeAndNotifyOSLocale(prefs, systemLocale);
             }
         };
         context.registerReceiver(receiver, new IntentFilter(Intent.ACTION_LOCALE_CHANGED));
@@ -208,6 +212,7 @@ public class BrowserLocaleManager implements LocaleManager {
         final String osLocaleString = osLocale.toString();
 
         if (osLocaleString.equals(lastOSLocale)) {
+            Log.d(LOG_TAG, "Previous locale " + lastOSLocale + " same as new. Doing nothing.");
             return;
         }
 
@@ -218,6 +223,7 @@ public class BrowserLocaleManager implements LocaleManager {
         
         final GeckoBundle data = new GeckoBundle(1);
         data.putString("languageTag", Locales.getLanguageTag(osLocale));
+
         EventDispatcher.getInstance().dispatch("Locale:OS", data);
     }
 
@@ -304,6 +310,10 @@ public class BrowserLocaleManager implements LocaleManager {
     }
 
     private SharedPreferences getSharedPreferences(Context context) {
+        
+        
+        
+        
         return GeckoSharedPrefs.forApp(context);
     }
 

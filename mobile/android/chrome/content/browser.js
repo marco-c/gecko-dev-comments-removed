@@ -1742,6 +1742,9 @@ var BrowserApp = {
         let appLocale = this.getUALocalePref();
 
         this.computeAcceptLanguages(languageTag, appLocale);
+
+        
+        Strings.flush();
         break;
       }
 
@@ -1751,6 +1754,11 @@ var BrowserApp = {
         } else {
           Services.locale.setRequestedLocales([]);
         }
+
+        console.log("Gecko display locale: " + this.getUALocalePref());
+
+        
+        Strings.flush();
 
         
         let osLocale;
