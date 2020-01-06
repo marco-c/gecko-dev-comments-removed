@@ -30,6 +30,10 @@ var gExceptionPaths = [
 
   
   "resource://pdf.js/web/images/",
+
+  
+  
+  "resource://formautofill/addressmetadata/",
 ];
 
 
