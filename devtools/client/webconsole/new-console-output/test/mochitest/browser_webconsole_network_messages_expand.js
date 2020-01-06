@@ -30,17 +30,18 @@ add_task(async function task() {
   await loadDocument(documentUrl);
   info("Document loaded.");
 
-  await testNetworkMessage(hud, documentUrl);
-  await waitForNetworkUpdates(toolbox);
-});
-
-async function testNetworkMessage(hud, url) {
-  let messageNode = await waitFor(() => findMessage(hud, url));
+  let messageNode = await waitFor(() => findMessage(hud, documentUrl));
   let urlNode = messageNode.querySelector(".url");
   info("Network message found.");
 
-  EventUtils.sendMouseEvent({ type: "click" }, urlNode);
+  
+  urlNode.click();
 
+  await waitForNetworkUpdates(toolbox);
+  await testNetworkMessage(messageNode);
+});
+
+async function testNetworkMessage(messageNode) {
   let headersTab = messageNode.querySelector("#headers-tab");
   let cookiesTab = messageNode.querySelector("#cookies-tab");
   let paramsTab = messageNode.querySelector("#params-tab");
@@ -52,6 +53,28 @@ async function testNetworkMessage(hud, url) {
   ok(paramsTab, "Params tab is available");
   ok(responseTab, "Response tab is available");
   ok(timingsTab, "Timings tab is available");
+
+  
+  let headersContent = messageNode.querySelector(
+    "#headers-panel .headers-overview");
+  ok(headersContent, "Headers content is available");
+
+  
+  
+  
+  
+
+
+
+
+
+
+  
+  timingsTab.click();
+  let timingsContent = messageNode.querySelector(
+    "#timings-panel .timings-container .timings-label");
+  ok(timingsContent, "Timings content is available");
+  ok(timingsContent.textContent, "Timings text is available");
 }
 
 async function waitForNetworkUpdates(toolbox) {
@@ -61,7 +84,15 @@ async function waitForNetworkUpdates(toolbox) {
 
   return new Promise(resolve => {
     ui.jsterm.hud.on("network-request-payload-ready", () => {
+      info("network-request-payload-ready received");
       resolve();
     });
   });
 }
+
+
+
+
+
+
+
