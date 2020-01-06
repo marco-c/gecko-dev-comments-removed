@@ -68,22 +68,6 @@ this.FxAccountsConfig = {
     }
     
     EnsureFxAccountsWebChannel();
-    if (!Services.prefs.prefHasUserValue("webchannel.allowObject.urlWhitelist")) {
-      return;
-    }
-    let whitelistValue = Services.prefs.getCharPref("webchannel.allowObject.urlWhitelist");
-    if (whitelistValue.startsWith(autoconfigURL + " ")) {
-      whitelistValue = whitelistValue.slice(autoconfigURL.length + 1);
-      
-      
-      let defaultWhitelist = Services.prefs.getDefaultBranch("webchannel.allowObject.").getCharPref("urlWhitelist", "");
-
-      if (defaultWhitelist === whitelistValue) {
-        Services.prefs.clearUserPref("webchannel.allowObject.urlWhitelist");
-      } else {
-        Services.prefs.setCharPref("webchannel.allowObject.urlWhitelist", whitelistValue);
-      }
-    }
   },
 
   getAutoConfigURL() {
@@ -163,11 +147,6 @@ this.FxAccountsConfig = {
       Services.prefs.setCharPref("identity.fxaccounts.remote.email.uri", rootURL + "/?service=sync&context=" + contextParam + "&action=email");
       Services.prefs.setCharPref("identity.fxaccounts.remote.force_auth.uri", rootURL + "/force_auth?service=sync&context=" + contextParam);
 
-      let whitelistValue = Services.prefs.getCharPref("webchannel.allowObject.urlWhitelist");
-      if (!whitelistValue.includes(rootURL)) {
-        whitelistValue = `${rootURL} ${whitelistValue}`;
-        Services.prefs.setCharPref("webchannel.allowObject.urlWhitelist", whitelistValue);
-      }
       
       EnsureFxAccountsWebChannel();
     } catch (e) {
