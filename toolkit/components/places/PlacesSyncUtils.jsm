@@ -24,27 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 
 
-var PlacesSyncUtils = {
-  
-
-
-
-
-
-
-
-
-  * chunkArray(array, chunkLength) {
-    if (!array.length || chunkLength <= 0) {
-      return;
-    }
-    let startIndex = 0;
-    while (startIndex < array.length) {
-      yield array.slice(startIndex, startIndex + chunkLength);
-      startIndex += chunkLength;
-    }
-  },
-};
+var PlacesSyncUtils = {};
 
 const { SOURCE_SYNC } = Ci.nsINavBookmarksService;
 
@@ -79,6 +59,20 @@ XPCOMUtils.defineLazyGetter(this, "ROOT_GUID_TO_SYNC_ID", () => ({
 XPCOMUtils.defineLazyGetter(this, "ROOTS", () =>
   Object.keys(ROOT_SYNC_ID_TO_GUID)
 );
+
+
+
+
+
+
+
+
+function* chunkArray(array, chunkLength) {
+  let startIndex = 0;
+  while (startIndex < array.length) {
+    yield array.slice(startIndex, startIndex += chunkLength);
+  }
+}
 
 const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
   
@@ -135,7 +129,7 @@ const HistorySyncUtils = PlacesSyncUtils.history = Object.freeze({
     
     let db = await PlacesUtils.promiseDBConnection();
     let nonSyncableGuids = [];
-    for (let chunk of PlacesSyncUtils.chunkArray(guids, SQLITE_MAX_VARIABLE_NUMBER)) {
+    for (let chunk of chunkArray(guids, SQLITE_MAX_VARIABLE_NUMBER)) {
       let rows = await db.execute(`
         SELECT DISTINCT p.guid FROM moz_places p
         JOIN moz_historyvisits v ON p.id = v.place_id
