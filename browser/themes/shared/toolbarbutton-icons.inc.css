@@ -468,7 +468,8 @@ toolbar[brighttext] .toolbarbutton-1 {
   
 
 
-  top: calc(var(--library-button-y) + var(--library-button-height) / 2 - 27px);
+
+  top: calc(var(--library-button-y) + var(--library-button-height) / 2 - 27px - var(--toolbox-y));
   
 
 
