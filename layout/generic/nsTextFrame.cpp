@@ -5122,19 +5122,6 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder, nsTextFrame* aFrame
   mBounds = mFrame->GetVisualOverflowRectRelativeToSelf() + ToReferenceFrame();
     
   mBounds.Inflate(mFrame->PresContext()->AppUnitsPerDevPixel());
-
-  if (gfxPrefs::LayersAllowTextLayers() &&
-      CanUseAdvancedLayer(aBuilder->GetWidgetLayerManager())) {
-    mTextDrawer = new TextDrawTarget();
-    RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(mTextDrawer);
-
-    
-    RenderToContext(captureCtx, mTextDrawer, aBuilder, true);
-
-    if (!mTextDrawer->CanSerializeFonts()) {
-      mTextDrawer = nullptr;
-    }
-  }
 }
 
 LayerState
@@ -5142,8 +5129,24 @@ nsDisplayText::GetLayerState(nsDisplayListBuilder* aBuilder,
                              LayerManager* aManager,
                              const ContainerLayerParameters& aParameters)
 {
+
+  
+  if (!(gfxPrefs::LayersAllowTextLayers() &&
+      CanUseAdvancedLayer(aBuilder->GetWidgetLayerManager()))) {
+    return mozilla::LAYER_NONE;
+  }
+
+  
   
   if (!mTextDrawer) {
+    mTextDrawer = new TextDrawTarget();
+    RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(mTextDrawer);
+
+    
+    RenderToContext(captureCtx, mTextDrawer, aBuilder, true);
+  }
+
+  if (!mTextDrawer->CanSerializeFonts()) {
     return mozilla::LAYER_NONE;
   }
 
@@ -5228,14 +5231,8 @@ nsDisplayText::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
     }
 
     for (const mozilla::layout::TextRunFragment& text : part.text) {
-      
-      
-      
-      auto color = text.color;
-      color.a *= mOpacity;
-
       aManager->WrBridge()->PushGlyphs(aBuilder, text.glyphs, text.font,
-                                       color, aSc, boundsRect, clipRect,
+                                       text.color, aSc, boundsRect, clipRect,
                                        backfaceVisible);
     }
 
@@ -5289,11 +5286,7 @@ nsDisplayText::BuildLayer(nsDisplayListBuilder* aBuilder,
 
       GlyphArray* glyphs = allGlyphs.AppendElement();
       glyphs->glyphs() = text.glyphs;
-
-      
-      auto color = text.color;
-      color.a *= mOpacity;
-      glyphs->color() = color;
+      glyphs->color() = text.color;
     }
   }
 
