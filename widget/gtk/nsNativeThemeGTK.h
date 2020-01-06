@@ -11,6 +11,7 @@
 #include "nsIAtom.h"
 #include "nsIObserver.h"
 #include "nsNativeTheme.h"
+#include "nsThemeConstants.h"
 
 #include <gtk/gtk.h>
 #include "gtkdrawing.h"
@@ -85,8 +86,8 @@ private:
   void RefreshWidgetWindow(nsIFrame* aFrame);
   WidgetNodeType NativeThemeToGtkTheme(uint8_t aWidgetType, nsIFrame* aFrame);
 
-  uint8_t mDisabledWidgetTypes[32];
-  uint8_t mSafeWidgetStates[1024];    
+  uint8_t mDisabledWidgetTypes[(ThemeWidgetType_COUNT + 7) / 8];
+  uint8_t mSafeWidgetStates[ThemeWidgetType_COUNT * 4]; 
   static const char* sDisabledEngines[];
 
   
