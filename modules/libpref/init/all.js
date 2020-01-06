@@ -314,10 +314,6 @@ pref("media.cache_readahead_limit", 60);
 
 
 
-pref("media.cache.resource-index", 8192);
-
-
-
 
 
 
@@ -1252,7 +1248,11 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.forms.datetime", true);
+#else
 pref("dom.forms.datetime", false);
+#endif
 
 
 
