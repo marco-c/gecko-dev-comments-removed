@@ -156,11 +156,8 @@ impl Device {
 
     
     pub fn au_viewport_size(&self) -> Size2D<Au> {
-        unsafe {
-            
-            let area = &self.pres_context().mVisibleArea;
-            Size2D::new(Au(area.width), Au(area.height))
-        }
+        let area = &self.pres_context().mVisibleArea;
+        Size2D::new(Au(area.width), Au(area.height))
     }
 
     
