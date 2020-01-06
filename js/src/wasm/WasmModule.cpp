@@ -41,34 +41,6 @@ using namespace js::wasm;
 
 using mozilla::IsNaN;
 
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-
-
-LinkDataTier::InternalLink::InternalLink(Kind kind)
-{
-    MOZ_ASSERT(kind == CodeLabel || kind == InstructionImmediate);
-}
-
-bool
-LinkDataTier::InternalLink::isRawPointerPatch()
-{
-    return false;
-}
-#else
-
-
-LinkDataTier::InternalLink::InternalLink(Kind kind)
-{
-    MOZ_ASSERT(kind == CodeLabel || kind == RawPointer);
-}
-
-bool
-LinkDataTier::InternalLink::isRawPointerPatch()
-{
-    return true;
-}
-#endif
-
 size_t
 LinkDataTier::SymbolicLinkArray::serializedSize() const
 {
