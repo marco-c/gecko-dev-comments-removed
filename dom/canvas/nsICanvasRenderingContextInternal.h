@@ -139,11 +139,9 @@ public:
   
   virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* builder,
                                                  Layer *oldLayer,
-                                                 LayerManager *manager,
-                                                 bool aMirror = false) = 0;
+                                                 LayerManager *manager) = 0;
   virtual bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
-                                        CanvasRenderer* aRenderer,
-                                        bool aMirror = false) { return true; }
+                                        CanvasRenderer* aRenderer) { return true; }
 
   
   

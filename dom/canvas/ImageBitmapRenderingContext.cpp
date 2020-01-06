@@ -226,14 +226,8 @@ ImageBitmapRenderingContext::Reset()
 already_AddRefed<Layer>
 ImageBitmapRenderingContext::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
                                             Layer* aOldLayer,
-                                            LayerManager* aManager,
-                                            bool aMirror )
+                                            LayerManager* aManager)
 {
-  if (aMirror) {
-    
-    return nullptr;
-  }
-
   if (!mImage) {
     
     
