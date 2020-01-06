@@ -9408,7 +9408,7 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                                                                             aSc, aDisplayListBuilder,
                                                                             bounds);
   if (mask) {
-    wr::WrClipId clipId = aBuilder.DefineClip(
+    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(), Nothing(),
         aSc.ToRelativeLayoutRect(bounds), nullptr, mask.ptr());
     
     
