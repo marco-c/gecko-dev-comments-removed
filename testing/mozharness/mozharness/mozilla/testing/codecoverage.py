@@ -180,6 +180,9 @@ class CodeCoverageMixin(object):
                 os.path.join(self.grcov_dir, 'target.code-coverage-gcno.zip'), file_path_gcda
             ]
 
+            if mozinfo.os == 'win':
+                grcov_command += ['--llvm']
+
             
             
             grcov_output, _ = self.get_output_from_command(
