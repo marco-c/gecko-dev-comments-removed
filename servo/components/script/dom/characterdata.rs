@@ -70,6 +70,16 @@ impl CharacterData {
     fn content_changed(&self) {
         let node = self.upcast::<Node>();
         node.dirty(NodeDamage::OtherNodeDamage);
+
+        
+        
+        
+        if self.is::<Text>() {
+            if let Some(parent_node) = node.GetParentNode() {
+                let mutation = ChildrenMutation::ChangeText;
+                vtable_for(&parent_node).children_changed(&mutation);
+            }
+        }
     }
 }
 
@@ -87,16 +97,6 @@ impl CharacterDataMethods for CharacterData {
         self.content_changed();
         let node = self.upcast::<Node>();
         node.ranges().replace_code_units(node, 0, old_length, new_length);
-
-        
-        
-        
-        if self.is::<Text>() {
-            if let Some(parent_node) = node.GetParentNode() {
-                let mutation = ChildrenMutation::ChangeText;
-                vtable_for(&parent_node).children_changed(&mutation);
-            }
-        }
     }
 
     
