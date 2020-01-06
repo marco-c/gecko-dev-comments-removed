@@ -971,6 +971,11 @@ Preferences::ReadAndOwnUserPrefFile(nsIFile *aFile)
 nsresult
 Preferences::SavePrefFileInternal(nsIFile *aFile)
 {
+  
+  
+  
+  
+
   if (nullptr == aFile) {
     
     
@@ -980,9 +985,14 @@ Preferences::SavePrefFileInternal(nsIFile *aFile)
 
     
     nsresult rv = NS_OK;
-    if (mCurrentFile)
+    if (mCurrentFile) {
       rv = WritePrefFile(mCurrentFile);
+    }
 
+    
+    if (NS_SUCCEEDED(rv)) {
+      mDirty = false;
+    }
     return rv;
   } else {
     return WritePrefFile(aFile);
@@ -1045,8 +1055,6 @@ Preferences::WritePrefFile(nsIFile* aFile)
       return rv;
     }
   }
-
-  mDirty = false;
   return NS_OK;
 }
 
