@@ -663,8 +663,10 @@ static void tonality_analysis(TonalityAnalysisState *tonal, const CELTMode *celt
     }
     
 
-    {
+    if (tonal->Fs == 48000) {
+       float ratio;
        float E = hp_ener*(1.f/(240*240));
+       ratio = tonal->prev_bandwidth==20 ? 0.03f : 0.07f;
 #ifdef FIXED_POINT
        
        E *= 256.f*(1.f/Q15ONE)*(1.f/Q15ONE);
@@ -674,7 +676,10 @@ static void tonality_analysis(TonalityAnalysisState *tonal, const CELTMode *celt
        E = MAX32(E, tonal->meanE[b]);
        
        bandwidth_mask = MAX32(.05f*bandwidth_mask, E);
-       if (E>.1*bandwidth_mask && E*1e9f > maxE && E > noise_floor*160)
+       if (E>ratio*bandwidth_mask && E*1e9f > maxE && E > noise_floor*160)
+          bandwidth = 20;
+       
+       if (bandwidth >= 17)
           bandwidth = 20;
     }
     if (tonal->count<=2)
@@ -896,6 +901,7 @@ static void tonality_analysis(TonalityAnalysisState *tonal, const CELTMode *celt
 #endif
 
     info->bandwidth = bandwidth;
+    tonal->prev_bandwidth = bandwidth;
     
     info->noisiness = frame_noisiness;
     info->valid = 1;
