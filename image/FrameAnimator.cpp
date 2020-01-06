@@ -7,6 +7,7 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
+#include "mozilla/CheckedInt.h"
 #include "imgIContainer.h"
 #include "LookupResult.h"
 #include "MainThreadUtils.h"
@@ -14,6 +15,7 @@
 #include "gfxPrefs.h"
 
 #include "pixman.h"
+#include <algorithm>
 
 namespace mozilla {
 
@@ -337,16 +339,31 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   
   
   
+  
+  
   FrameTimeout loopTime = aState.LoopLength();
-  if (loopTime != FrameTimeout::Forever()) {
+  if (loopTime != FrameTimeout::Forever() &&
+      (aState.LoopCount() < 0 || aState.mLoopRemainingCount >= 0)) {
     TimeDuration delay = aTime - aState.mCurrentAnimationFrameTime;
     if (delay.ToMilliseconds() > loopTime.AsMilliseconds()) {
       
       
       uint64_t loops = static_cast<uint64_t>(delay.ToMilliseconds())
                      / loopTime.AsMilliseconds();
+
+      
+      if (aState.mLoopRemainingCount >= 0) {
+        MOZ_ASSERT(aState.LoopCount() >= 0);
+        loops = std::min(loops, CheckedUint64(aState.mLoopRemainingCount).value());
+      }
+
       aState.mCurrentAnimationFrameTime +=
         TimeDuration::FromMilliseconds(loops * loopTime.AsMilliseconds());
+
+      if (aState.mLoopRemainingCount >= 0) {
+        MOZ_ASSERT(loops <= CheckedUint64(aState.mLoopRemainingCount).value());
+        aState.mLoopRemainingCount -= CheckedInt32(loops).value();
+      }
     }
   }
 
