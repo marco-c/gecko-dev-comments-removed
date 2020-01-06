@@ -7121,7 +7121,6 @@ var gIdentityHandler = {
 
 
 
-
   _uriHasHost: false,
 
   
@@ -7568,9 +7567,17 @@ var gIdentityHandler = {
         tooltip = gNavigatorBundle.getFormattedString("identity.identified.verifier",
                                                       [this.getIdentityData().caOrg]);
       }
-    } else {
+    } else if (!this._uriHasHost) {
       this._identityBox.className = "unknownIdentity";
+    } else if (gBrowser.selectedBrowser.documentURI &&
+               (gBrowser.selectedBrowser.documentURI.scheme == "about" ||
+               gBrowser.selectedBrowser.documentURI.scheme == "chrome")) {
+        
+      this._identityBox.className = "unknownIdentity";
+    } else {
       if (this._isBroken) {
+        this._identityBox.className = "unknownIdentity";
+
         if (this._isMixedActiveContentLoaded) {
           this._identityBox.classList.add("mixedActiveContent");
         } else if (this._isMixedActiveContentBlocked) {
@@ -7580,6 +7587,13 @@ var gIdentityHandler = {
         } else {
           this._identityBox.classList.add("weakCipher");
         }
+      } else {
+        let warnOnInsecure = Services.prefs.getBoolPref("security.insecure_connection_icon.enabled") ||
+                             (Services.prefs.getBoolPref("security.insecure_connection_icon.pbmode.enabled") &&
+                             PrivateBrowsingUtils.isWindowPrivate(window));
+        let className = warnOnInsecure ? "notSecure" : "unknownIdentity";
+
+        this._identityBox.className = className;
       }
       if (this._hasInsecureLoginForms) {
         
@@ -7801,8 +7815,8 @@ var gIdentityHandler = {
     this._uri = uri;
 
     try {
-      this._uri.host;
-      this._uriHasHost = true;
+      
+      this._uriHasHost = !!this._uri.host;
     } catch (ex) {
       this._uriHasHost = false;
     }

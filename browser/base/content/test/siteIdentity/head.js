@@ -157,10 +157,17 @@ async function assertMixedContentBlockingState(tabbrowser, states = {}) {
   is(passiveLoaded, !!statePassiveLoaded, "Expected state for passiveLoaded matches UI state");
 
   if (stateInsecure) {
-    
-    
-    ok(classList.contains("unknownIdentity"), "unknownIdentity on HTTP page");
-    ok(is_hidden(connectionIcon), "connection icon should be hidden");
+    const insecureConnectionIcon = Services.prefs.getBoolPref("security.insecure_connection_icon.enabled");
+    if (!insecureConnectionIcon) {
+      
+      
+      ok(classList.contains("unknownIdentity"), "unknownIdentity on HTTP page");
+      ok(is_hidden(connectionIcon), "connection icon should be hidden");
+    } else {
+      
+      ok(classList.contains("notSecure"), "notSecure on HTTP page");
+      ok(!is_hidden(connectionIcon), "connection icon should be visible");
+    }
 
     ok(!classList.contains("mixedActiveContent"), "No MCB icon on HTTP page");
     ok(!classList.contains("mixedActiveBlocked"), "No MCB icon on HTTP page");

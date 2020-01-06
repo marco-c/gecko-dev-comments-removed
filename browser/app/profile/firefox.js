@@ -1332,6 +1332,10 @@ pref("security.insecure_password.ui.enabled", true);
 pref("security.insecure_field_warning.contextual.enabled", true);
 
 
+pref("security.insecure_connection_icon.enabled", false);
+pref("security.insecure_connection_icon.pbmode.enabled", false);
+
+
 pref("security.cert_pinning.enforcement_level", 1);
 
 
