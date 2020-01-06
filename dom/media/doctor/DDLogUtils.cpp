@@ -1,0 +1,11 @@
+
+
+
+
+
+
+#include "DDLogUtils.h"
+
+mozilla::LazyLogModule sDecoderDoctorLoggerLog("DDLogger");
+
+mozilla::LazyLogModule sDecoderDoctorLoggerEndLog("DDLoggerEnd");

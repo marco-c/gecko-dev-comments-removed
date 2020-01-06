@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#ifndef DDTimeStamp_h_
+#define DDTimeStamp_h_
+
+#include "mozilla/TimeStamp.h"
+
+namespace mozilla {
+
+
+using DDTimeStamp = TimeStamp;
+
+inline DDTimeStamp
+DDNow()
+{
+  return TimeStamp::Now();
+}
+
+
+double
+ToSeconds(const DDTimeStamp& aTimeStamp);
+
+} 
+
+#endif 
