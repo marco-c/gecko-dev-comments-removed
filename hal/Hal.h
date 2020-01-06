@@ -434,6 +434,12 @@ void NotifySwitchStateFromInputDevice(hal::SwitchDevice aDevice,
 
 
 
+bool SetProcessPrioritySupported();
+
+
+
+
+
 
 
 
