@@ -839,6 +839,18 @@ struct arena_run_t
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   uint32_t magic;
 #define ARENA_RUN_MAGIC 0x384adf93
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  unsigned nfree;
 #endif
 
   
@@ -847,8 +859,10 @@ struct arena_run_t
   
   unsigned regs_minelm;
 
+#if !defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   
   unsigned nfree;
+#endif
 
   
   unsigned regs_mask[1]; 
