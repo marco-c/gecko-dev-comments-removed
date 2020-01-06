@@ -2067,9 +2067,6 @@ GK_ATOM(ondevicelight, "ondevicelight")
 GK_ATOM(ondevicechange, "ondevicechange")
 
 
-GK_ATOM(mozinputrangeignorepreventdefault, "mozinputrangeignorepreventdefault")
-
-
 GK_ATOM(moz_extension, "moz-extension")
 GK_ATOM(all_urlsPermission, "<all_urls>")
 GK_ATOM(clipboardRead, "clipboardRead")
