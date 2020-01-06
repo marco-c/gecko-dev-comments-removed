@@ -1957,12 +1957,15 @@ public:
 
   void Enter()
   {
+    
+    
+#ifndef MOZ_WIDGET_ANDROID
     if (!mMaster->mLooping) {
       
       
       Reader()->ReleaseResources();
     }
-
+#endif
     bool hasNextFrame = (!mMaster->HasAudio() || !mMaster->mAudioCompleted)
                         && (!mMaster->HasVideo() || !mMaster->mVideoCompleted);
 
