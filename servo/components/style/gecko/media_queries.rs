@@ -373,8 +373,18 @@ impl MediaExpressionValue {
                 Some(MediaExpressionValue::BoolInteger(i == 1))
             }
             nsMediaFeature_ValueType::eResolution => {
-                debug_assert!(css_value.mUnit == nsCSSUnit::eCSSUnit_Inch);
-                Some(MediaExpressionValue::Resolution(Resolution::Dpi(css_value.float_unchecked())))
+                
+                
+                
+                
+                
+                
+                let res = match css_value.mUnit {
+                    nsCSSUnit::eCSSUnit_Pixel => Resolution::Dppx(css_value.float_unchecked()),
+                    nsCSSUnit::eCSSUnit_Inch  => Resolution::Dpi(css_value.float_unchecked()),
+                    _                         => unreachable!(),
+                };
+                Some(MediaExpressionValue::Resolution(res))
             }
             nsMediaFeature_ValueType::eEnumerated => {
                 let value = css_value.integer_unchecked() as i16;
