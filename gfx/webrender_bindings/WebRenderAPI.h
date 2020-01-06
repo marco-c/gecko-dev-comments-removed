@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/layers/SyncObject.h"
@@ -401,10 +402,6 @@ public:
   Maybe<wr::WrClipId> TopmostClipId();
   
   layers::FrameMetrics::ViewID TopmostScrollId();
-  
-  
-  
-  Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
 
   
   wr::WrState* Raw() { return mWrState; }
@@ -425,7 +422,7 @@ protected:
   
   
   
-  std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
+  std::unordered_set<layers::FrameMetrics::ViewID> mScrollIdsDefined;
 
   
   uint32_t mExtraClipCount;
