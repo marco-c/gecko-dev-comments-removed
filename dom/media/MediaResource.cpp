@@ -412,15 +412,19 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
   
   
   
-  if (mReopenOnError &&
-      aStatus != NS_ERROR_PARSED_DATA_CACHED && aStatus != NS_BINDING_ABORTED &&
-      (mOffset == 0 || mCacheStream.IsTransportSeekable())) {
+  if (mReopenOnError && aStatus != NS_ERROR_PARSED_DATA_CACHED &&
+      aStatus != NS_BINDING_ABORTED &&
+      (mOffset == 0 || (GetLength() > 0 && mOffset != GetLength() &&
+                        mCacheStream.IsTransportSeekable()))) {
+    
+    
     
     
     
     nsresult rv = CacheClientSeek(mOffset, false);
-    if (NS_SUCCEEDED(rv))
+    if (NS_SUCCEEDED(rv)) {
       return rv;
+    }
     
     
   }
