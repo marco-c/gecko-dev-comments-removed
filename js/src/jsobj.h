@@ -278,6 +278,13 @@ class JSObject : public js::gc::Cell
 
 
 
+
+    MOZ_ALWAYS_INLINE bool maybeHasInterestingSymbolProperty() const;
+
+    
+
+
+
     static bool constructorDisplayAtom(JSContext* cx, js::HandleObject obj,
                                        js::MutableHandleAtom name);
 
@@ -896,6 +903,18 @@ GetElementNoGC(JSContext* cx, JSObject* obj, const Value& receiver, uint32_t ind
 
 inline bool
 GetElementNoGC(JSContext* cx, JSObject* obj, JSObject* receiver, uint32_t index, Value* vp);
+
+
+
+
+MOZ_ALWAYS_INLINE bool
+MaybeHasInterestingSymbolProperty(JSContext* cx, JSObject* obj, Symbol* symbol,
+                                  JSObject** holder = nullptr);
+
+
+
+MOZ_ALWAYS_INLINE bool
+GetInterestingSymbolProperty(JSContext* cx, HandleObject obj, Symbol* sym, MutableHandleValue vp);
 
 
 

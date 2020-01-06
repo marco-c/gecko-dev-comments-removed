@@ -507,8 +507,7 @@ js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
 
     
     RootedValue tag(cx);
-    RootedId toStringTagId(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().toStringTag));
-    if (!GetProperty(cx, obj, obj, toStringTagId, &tag))
+    if (!GetInterestingSymbolProperty(cx, obj, cx->wellKnownSymbols().toStringTag, &tag))
         return false;
 
     

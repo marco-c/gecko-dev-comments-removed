@@ -68,6 +68,15 @@ class Symbol : public js::gc::TenuredCell
 
     bool isWellKnownSymbol() const { return uint32_t(code_) < WellKnownSymbolLimit; }
 
+    
+    
+    
+    
+    
+    bool isInterestingSymbol() const {
+        return code_ == SymbolCode::toStringTag || code_ == SymbolCode::toPrimitive;
+    }
+
     static const JS::TraceKind TraceKind = JS::TraceKind::Symbol;
     inline void traceChildren(JSTracer* trc) {
         if (description_)
