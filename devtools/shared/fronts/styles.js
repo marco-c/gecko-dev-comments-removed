@@ -16,7 +16,6 @@ const {
 } = require("devtools/shared/specs/styles");
 const promise = require("promise");
 const { Task } = require("devtools/shared/task");
-const { Class } = require("sdk/core/heritage");
 const { RuleRewriter } = require("devtools/shared/css/parsing-utils");
 
 
@@ -295,15 +294,15 @@ exports.StyleRuleFront = StyleRuleFront;
 
 
 
-var RuleModificationList = Class({
+class RuleModificationList {
   
 
 
 
-  initialize: function (rule) {
+  constructor(rule) {
     this.rule = rule;
     this.modifications = [];
-  },
+  }
 
   
 
@@ -311,9 +310,9 @@ var RuleModificationList = Class({
 
 
 
-  apply: function () {
+  apply() {
     return this.rule.modifyProperties(this.modifications);
-  },
+  }
 
   
 
@@ -328,14 +327,14 @@ var RuleModificationList = Class({
 
 
 
-  setProperty: function (index, name, value, priority) {
+  setProperty(index, name, value, priority) {
     this.modifications.push({
       type: "set",
       name: name,
       value: value,
       priority: priority
     });
-  },
+  }
 
   
 
@@ -347,12 +346,12 @@ var RuleModificationList = Class({
 
 
 
-  removeProperty: function (index, name) {
+  removeProperty(index, name) {
     this.modifications.push({
       type: "remove",
       name: name
     });
-  },
+  }
 
   
 
@@ -370,9 +369,9 @@ var RuleModificationList = Class({
 
 
 
-  renameProperty: function (index, name) {
+  renameProperty(index, name) {
     this.removeProperty(index, name);
-  },
+  }
 
   
 
@@ -388,11 +387,11 @@ var RuleModificationList = Class({
 
 
 
-  setPropertyEnabled: function (index, name, isEnabled) {
+  setPropertyEnabled(index, name, isEnabled) {
     if (!isEnabled) {
       this.removeProperty(index, name);
     }
-  },
+  }
 
   
 
@@ -415,7 +414,7 @@ var RuleModificationList = Class({
 
 
 
-  createProperty: function () {
+  createProperty() {
     
-  },
-});
+  }
+}
