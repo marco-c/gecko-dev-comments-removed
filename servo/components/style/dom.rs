@@ -245,24 +245,6 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
 
 
 
-pub struct ShowData<N: TNode>(pub N);
-impl<N: TNode> Debug for ShowData<N> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt_with_data(f, self.0)
-    }
-}
-
-
-
-pub struct ShowDataAndPrimaryValues<N: TNode>(pub N);
-impl<N: TNode> Debug for ShowDataAndPrimaryValues<N> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt_with_data_and_primary_values(f, self.0)
-    }
-}
-
-
-
 pub struct ShowSubtree<N: TNode>(pub N);
 impl<N: TNode> Debug for ShowSubtree<N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -283,7 +265,9 @@ impl<N: TNode> Debug for ShowSubtreeData<N> {
 
 
 
+#[cfg(feature = "servo")]
 pub struct ShowSubtreeDataAndPrimaryValues<N: TNode>(pub N);
+#[cfg(feature = "servo")]
 impl<N: TNode> Debug for ShowSubtreeDataAndPrimaryValues<N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "DOM Subtree:")?;
@@ -305,6 +289,7 @@ fn fmt_with_data<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
     }
 }
 
+#[cfg(feature = "servo")]
 fn fmt_with_data_and_primary_values<N: TNode>(f: &mut fmt::Formatter, n: N) -> fmt::Result {
     if let Some(el) = n.as_element() {
         let dd = el.has_dirty_descendants();
