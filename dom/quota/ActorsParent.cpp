@@ -125,10 +125,29 @@ namespace {
 const uint32_t kSQLitePageSizeOverride = 512;
 
 
-const uint32_t kMajorStorageVersion = 3;
+const uint32_t kHackyDowngradeMajorStorageVersion = 2;
+const uint32_t kHackyDowngradeMinorStorageVersion = 1;
 
 
-const uint32_t kMinorStorageVersion = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const uint32_t kMajorStorageVersion = 2;
+
+
+const uint32_t kMinorStorageVersion = 1;
 
 
 
@@ -140,6 +159,10 @@ static_assert(kMinorStorageVersion <= 0xFFFF,
 
 const int32_t kStorageVersion =
   int32_t((kMajorStorageVersion << 16) + kMinorStorageVersion);
+
+
+const int32_t kHackyPreDowngradeStorageVersion = int32_t((3 << 16) + 0);
+const int32_t kHackyPostDowngradeStorageVersion = int32_t((2 << 16) + 1);
 
 static_assert(
   static_cast<uint32_t>(StorageType::Persistent) ==
@@ -1817,11 +1840,11 @@ private:
 
 
 
-class UpgradeStorageFrom2_0To3_0Helper final
+class UpgradeStorageFrom2_0To2_1Helper final
   : public StorageDirectoryHelper
 {
 public:
-  UpgradeStorageFrom2_0To3_0Helper(nsIFile* aDirectory,
+  UpgradeStorageFrom2_0To2_1Helper(nsIFile* aDirectory,
                                    bool aPersistent)
     : StorageDirectoryHelper(aDirectory, aPersistent)
   { }
@@ -4813,7 +4836,7 @@ QuotaManager::UpgradeStorageFrom1_0To2_0(mozIStorageConnection* aConnection)
 }
 
 nsresult
-QuotaManager::UpgradeStorageFrom2_0To3_0(mozIStorageConnection* aConnection)
+QuotaManager::UpgradeStorageFrom2_0To2_1(mozIStorageConnection* aConnection)
 {
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
@@ -4846,8 +4869,8 @@ QuotaManager::UpgradeStorageFrom2_0To3_0(mozIStorageConnection* aConnection)
     }
 
     bool persistent = persistenceType == PERSISTENCE_TYPE_PERSISTENT;
-    RefPtr<UpgradeStorageFrom2_0To3_0Helper> helper =
-      new UpgradeStorageFrom2_0To3_0Helper(directory, persistent);
+    RefPtr<UpgradeStorageFrom2_0To2_1Helper> helper =
+      new UpgradeStorageFrom2_0To2_1Helper(directory, persistent);
 
     rv = helper->DoUpgrade();
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4867,7 +4890,7 @@ QuotaManager::UpgradeStorageFrom2_0To3_0(mozIStorageConnection* aConnection)
   }
 #endif
 
-  rv = aConnection->SetSchemaVersion(MakeStorageVersion(3, 0));
+  rv = aConnection->SetSchemaVersion(MakeStorageVersion(2, 1));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4950,6 +4973,17 @@ QuotaManager::EnsureStorageIsInitialized()
     return rv;
   }
 
+  
+  
+  if (storageVersion == kHackyPreDowngradeStorageVersion) {
+    storageVersion = kHackyPostDowngradeStorageVersion;
+    rv = connection->SetSchemaVersion(storageVersion);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      MOZ_ASSERT(false, "Downgrade didn't take.");
+      return rv;
+    }
+  }
+
   if (GetMajorStorageVersion(storageVersion) > kMajorStorageVersion) {
     NS_WARNING("Unable to initialize storage, version is too high!");
     return NS_ERROR_FAILURE;
@@ -5023,7 +5057,7 @@ QuotaManager::EnsureStorageIsInitialized()
       MOZ_ASSERT(storageVersion == kStorageVersion);
     } else {
       
-      static_assert(kStorageVersion == int32_t((3 << 16) + 0),
+      static_assert(kStorageVersion == int32_t((2 << 16) + 1),
                     "Upgrade function needed due to storage version increase.");
 
       while (storageVersion != kStorageVersion) {
@@ -5032,7 +5066,7 @@ QuotaManager::EnsureStorageIsInitialized()
         } else if (storageVersion == MakeStorageVersion(1, 0)) {
           rv = UpgradeStorageFrom1_0To2_0(connection);
         } else if (storageVersion == MakeStorageVersion(2, 0)) {
-          rv = UpgradeStorageFrom2_0To3_0(connection);
+          rv = UpgradeStorageFrom2_0To2_1(connection);
         } else {
           NS_WARNING("Unable to initialize storage, no upgrade path is "
                      "available!");
@@ -9396,7 +9430,7 @@ UpgradeStorageFrom1_0To2_0Helper::ProcessOriginDirectory(
 }
 
 nsresult
-UpgradeStorageFrom2_0To3_0Helper::DoUpgrade()
+UpgradeStorageFrom2_0To2_1Helper::DoUpgrade()
 {
   AssertIsOnIOThread();
 
@@ -9499,7 +9533,7 @@ UpgradeStorageFrom2_0To3_0Helper::DoUpgrade()
 }
 
 nsresult
-UpgradeStorageFrom2_0To3_0Helper::MaybeUpgradeClients(
+UpgradeStorageFrom2_0To2_1Helper::MaybeUpgradeClients(
                                                 const OriginProps& aOriginProps)
 {
   AssertIsOnIOThread();
@@ -9559,7 +9593,7 @@ UpgradeStorageFrom2_0To3_0Helper::MaybeUpgradeClients(
     Client* client = quotaManager->GetClient(clientType);
     MOZ_ASSERT(client);
 
-    rv = client->UpgradeStorageFrom2_0To3_0(file);
+    rv = client->UpgradeStorageFrom2_0To2_1(file);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -9572,7 +9606,7 @@ UpgradeStorageFrom2_0To3_0Helper::MaybeUpgradeClients(
 }
 
 nsresult
-UpgradeStorageFrom2_0To3_0Helper::ProcessOriginDirectory(
+UpgradeStorageFrom2_0To2_1Helper::ProcessOriginDirectory(
                                                 const OriginProps& aOriginProps)
 {
   AssertIsOnIOThread();
