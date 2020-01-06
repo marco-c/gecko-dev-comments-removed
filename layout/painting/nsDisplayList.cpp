@@ -1129,15 +1129,14 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
     if (ps->IsScrollPositionClampingScrollPortSizeSet()) {
       dirtyRectRelativeToDirtyFrame =
         nsRect(nsPoint(0, 0), ps->GetScrollPositionClampingScrollPortSize());
+      visible = dirtyRectRelativeToDirtyFrame;
 #ifdef MOZ_WIDGET_ANDROID
     } else {
       dirtyRectRelativeToDirtyFrame =
         nsRect(nsPoint(0, 0), aDirtyFrame->GetSize());
+      visible = dirtyRectRelativeToDirtyFrame;
 #endif
     }
-    
-    
-    visible = dirtyRectRelativeToDirtyFrame;
   }
   nsPoint offset = aFrame->GetOffsetTo(aDirtyFrame);
   visible -= offset;
@@ -4731,7 +4730,7 @@ nsDisplayOutline::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuil
     return false;
   }
 
-  mBorderRenderer->CreateWebRenderCommands(this, aBuilder, aResources, aSc);
+  mBorderRenderer->CreateWebRenderCommands(aBuilder, aResources, aSc);
   return true;
 }
 
@@ -5630,6 +5629,7 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
                                                      borderRect,
                                                      mFrame,
                                                      borderRadii);
+    MOZ_ASSERT(borderRadii.AreRadiiSame());
   }
 
   
@@ -5662,17 +5662,9 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
       wr::LayoutRect deviceBoxRect = aSc.ToRelativeLayoutRect(deviceBox);
       wr::LayoutRect deviceClipRect = aSc.ToRelativeLayoutRect(clipRect);
 
-      LayoutDeviceSize zeroSize;
-      wr::BorderRadius borderRadius = wr::ToBorderRadius(zeroSize, zeroSize,
-                                                         zeroSize, zeroSize);
-      if (hasBorderRadius) {
-        borderRadius = wr::ToBorderRadius(
-          LayoutDeviceSize::FromUnknownSize(borderRadii.TopLeft()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.TopRight()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.BottomLeft()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.BottomRight()));
-      }
-
+      
+      float borderRadius = hasBorderRadius ? borderRadii.TopLeft().width
+                                           : 0.0;
       float spreadRadius = float(shadow->mSpread) / float(appUnitsPerDevPixel);
 
       aBuilder.PushBoxShadow(deviceBoxRect,
@@ -5842,12 +5834,8 @@ nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(mozilla::wr::Disp
           appUnitsPerDevPixel);
 
       float blurRadius = float(shadowItem->mRadius) / float(appUnitsPerDevPixel);
-
-      wr::BorderRadius borderRadius = wr::ToBorderRadius(
-        LayoutDeviceSize::FromUnknownSize(innerRadii.TopLeft()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.TopRight()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.BottomLeft()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.BottomRight()));
+      
+      float borderRadius = innerRadii.TopLeft().width;
       
       float spreadRadius = float(shadowItem->mSpread) / float(appUnitsPerDevPixel);
 
@@ -7355,7 +7343,7 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
     wr::WrStickyId id = aBuilder.DefineStickyFrame(aSc.ToRelativeLayoutRect(bounds),
         top.ptrOr(nullptr), right.ptrOr(nullptr), bottom.ptrOr(nullptr), left.ptrOr(nullptr));
 
-    aBuilder.PushStickyFrame(id, GetClipChain());
+    aBuilder.PushStickyFrame(id);
   }
 
   
@@ -7367,11 +7355,16 @@ nsDisplayStickyPosition::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder
   StackingContextHelper sc(aSc, aBuilder);
   sc.AdjustOrigin(scTranslation);
 
+  
+  
+  
+  
+  
   nsDisplayOwnLayer::CreateWebRenderCommands(aBuilder, aResources, sc,
       aManager, aDisplayListBuilder);
 
   if (stickyScrollContainer) {
-    aBuilder.PopStickyFrame(GetClipChain());
+    aBuilder.PopStickyFrame();
   }
 
   return true;
@@ -9403,18 +9396,18 @@ nsDisplayMask::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder
                                                                             aSc, aDisplayListBuilder,
                                                                             bounds);
   if (mask) {
-    wr::WrClipId clipId = aBuilder.DefineClip(Nothing(), Nothing(),
+    wr::WrClipId clipId = aBuilder.DefineClip(
         aSc.ToRelativeLayoutRect(bounds), nullptr, mask.ptr());
     
     
     
-    aBuilder.PushClip(clipId, GetClipChain());
+    aBuilder.PushClip(clipId,  true);
   }
 
   nsDisplaySVGEffects::CreateWebRenderCommands(aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
 
   if (mask) {
-    aBuilder.PopClip(GetClipChain());
+    aBuilder.PopClip( true);
   }
 
   return true;
@@ -9576,13 +9569,6 @@ nsDisplayFilter::PaintAsLayer(nsDisplayListBuilder* aBuilder,
   nsDisplayFilterGeometry::UpdateDrawResult(this, imgParams.result);
 }
 
-static float
-ClampStdDeviation(float aStdDeviation)
-{
-  
-  return std::min(std::max(0.0f, aStdDeviation), 100.0f);
-}
-
 bool
 nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                          mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -9609,18 +9595,6 @@ nsDisplayFilter::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuild
         mozilla::wr::WrFilterOp filterOp = {
           wr::ToWrFilterOpType(filter.GetType()),
           filter.GetFilterParameter().GetFactorOrPercentValue(),
-        };
-        wrFilters.AppendElement(filterOp);
-        break;
-      }
-      case NS_STYLE_FILTER_BLUR: {
-        float appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-        mozilla::wr::WrFilterOp filterOp = {
-          wr::ToWrFilterOpType(filter.GetType()),
-          ClampStdDeviation(
-            NSAppUnitsToFloatPixels(
-              filter.GetFilterParameter().GetCoordValue(),
-              appUnitsPerDevPixel)),
         };
         wrFilters.AppendElement(filterOp);
         break;
