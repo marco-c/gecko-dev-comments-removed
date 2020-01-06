@@ -415,6 +415,35 @@ ViewportFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
   return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
+void
+ViewportFrame::UpdateStyle(ServoStyleSet& aStyleSet,
+                           nsStyleChangeList& aChangeList)
+{
+  nsStyleContext* oldContext = StyleContext();
+  nsIAtom* pseudo = oldContext->GetPseudo();
+  RefPtr<nsStyleContext> newContext =
+    aStyleSet.ResolveInheritingAnonymousBoxStyle(pseudo, nullptr);
+
+  
+  
+  
+  
+  newContext->EnsureSameStructsCached(oldContext);
+
+  MOZ_ASSERT(!GetNextContinuation(), "Viewport has continuations?");
+  SetStyleContext(newContext);
+
+  UpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, nsChangeHint_Empty);
+}
+
+void
+ViewportFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
+{
+  if (mFrames.NotEmpty()) {
+    aResult.AppendElement(mFrames.FirstChild());
+  }
+}
+
 #ifdef DEBUG_FRAME_DUMP
 nsresult
 ViewportFrame::GetFrameName(nsAString& aResult) const
