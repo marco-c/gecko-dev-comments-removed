@@ -1529,8 +1529,10 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       
       
       
-      frameConstructor->RecreateFramesForContent(content, false,
-        nsCSSFrameConstructor::REMOVE_FOR_RECONSTRUCTION, nullptr);
+      frameConstructor->RecreateFramesForContent(
+        content,
+        nsCSSFrameConstructor::InsertionKind::Sync,
+        nsCSSFrameConstructor::REMOVE_FOR_RECONSTRUCTION);
     } else {
       NS_ASSERTION(frame, "This shouldn't happen");
 

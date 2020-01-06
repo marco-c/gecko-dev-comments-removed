@@ -125,37 +125,10 @@ public:
     
     
     
-    nsIContent* destroyedFramesFor = nullptr;
-    nsIPresShell* shell = doc->GetShell();
-    if (shell) {
-      shell->DestroyFramesFor(mBoundElement, &destroyedFramesFor);
+    if (nsIPresShell* shell = doc->GetShell()) {
+      shell->DestroyFramesFor(mBoundElement->AsElement());
     }
     MOZ_ASSERT(!mBoundElement->GetPrimaryFrame());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(shell == doc->GetShell());
-    if (shell) {
-      nsIFrame* childFrame = mBoundElement->GetPrimaryFrame();
-      if (!childFrame) {
-        
-        nsFrameManager* fm = shell->FrameManager();
-        nsStyleContext* sc = fm->GetDisplayNoneStyleFor(mBoundElement);
-        if (!sc) {
-          sc = fm->GetDisplayContentsStyleFor(mBoundElement);
-        }
-        if (!sc) {
-          shell->CreateFramesFor(destroyedFramesFor);
-        }
-      }
-    }
   }
 
   nsXBLBindingRequest(nsIURI* aURI, nsIContent* aBoundElement)

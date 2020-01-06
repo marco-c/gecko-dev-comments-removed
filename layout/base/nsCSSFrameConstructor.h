@@ -99,8 +99,8 @@ private:
   
   
   bool MaybeConstructLazily(Operation aOperation,
-                              nsIContent* aContainer,
-                              nsIContent* aChild);
+                            nsIContent* aContainer,
+                            nsIContent* aChild);
 
 #ifdef DEBUG
   void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
@@ -162,8 +162,8 @@ private:
 
   
   bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,
-                                  nsIContent* aStartChild,
-                                  nsIContent* aEndChild);
+                                nsIContent* aStartChild,
+                                nsIContent* aEndChild);
 
   
 
@@ -306,6 +306,10 @@ private:
                             TreeMatchContext* aProvidedTreeMatchContext);
 
 public:
+  
+  
+  
+  
   enum RemoveFlags {
     REMOVE_CONTENT, REMOVE_FOR_RECONSTRUCTION, REMOVE_DESTROY_FRAMES };
   
@@ -324,12 +328,11 @@ public:
 
 
 
-  void ContentRemoved(nsIContent*  aContainer,
-                      nsIContent*  aChild,
-                      nsIContent*  aOldNextSibling,
-                      RemoveFlags  aFlags,
-                      bool*        aDidReconstruct,
-                      nsIContent** aDestroyedFramesFor = nullptr);
+  void ContentRemoved(nsIContent* aContainer,
+                      nsIContent* aChild,
+                      nsIContent* aOldNextSibling,
+                      RemoveFlags aFlags,
+                      bool*       aDidReconstruct);
 
   void CharacterDataChanged(nsIContent* aContent,
                             CharacterDataChangeInfo* aInfo);
@@ -364,11 +367,7 @@ public:
 
 
 
-
-
-
-  void DestroyFramesFor(nsIContent*  aContent,
-                        nsIContent** aDestroyedFramesFor);
+  void DestroyFramesFor(nsIContent* aContent, bool* aDidReconstruct);
 
   
   nsIFrame* CreateContinuingFrame(nsPresContext*    aPresContext,
@@ -402,15 +401,6 @@ public:
   
   nsContainerFrame* GetDocElementContainingBlock()
     { return mDocElementContainingBlock; }
-
-  
-
-
-
-  nsILayoutHistoryState* GetLastCapturedLayoutHistoryState()
-  {
-    return mTempFrameTreeState;
-  }
 
 private:
   struct FrameConstructionItem;
@@ -1805,27 +1795,30 @@ private:
 
 
 
-
-
-  void
-  RecreateFramesForContent(nsIContent*  aContent,
-                           bool         aAsyncInsert,
-                           RemoveFlags  aFlags,
-                           nsIContent** aDestroyedFramesFor);
+  enum class InsertionKind
+  {
+    Sync,
+    Async,
+  };
 
   
+
+
+
+
+  void RecreateFramesForContent(nsIContent*   aContent,
+                                InsertionKind aInsertionKind,
+                                RemoveFlags   aFlags);
+
   
   
   
   
   
   
-  
-  
-  
-  bool MaybeRecreateContainerForFrameRemoval(nsIFrame*    aFrame,
-                                             RemoveFlags  aFlags,
-                                             nsIContent** aDestroyedFramesFor);
+  bool MaybeRecreateContainerForFrameRemoval(nsIFrame*     aFrame,
+                                             InsertionKind aInsertionKind,
+                                             RemoveFlags   aFlags);
 
   nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell*     aPresShell,
                                             nsPresContext*    aPresContext,
@@ -1949,9 +1942,9 @@ private:
                              bool                     aIsAppend,
                              nsIFrame*                aPrevSibling);
 
-  void ReframeContainingBlock(nsIFrame*    aFrame,
-                              RemoveFlags  aFlags,
-                              nsIContent** aReframeContent);
+  void ReframeContainingBlock(nsIFrame*     aFrame,
+                              InsertionKind aInsertionKind,
+                              RemoveFlags   aFlags);
 
   
 
