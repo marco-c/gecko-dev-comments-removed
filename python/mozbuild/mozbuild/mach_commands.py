@@ -127,46 +127,28 @@ class TerminalLoggingHandler(logging.Handler):
             self.release()
 
 
-class BuildProgressFooter(object):
-    """Handles display of a build progress indicator in a terminal.
+class Footer(object):
+    """Handles display of a footer in a terminal.
 
-    When mach builds inside a blessings-supported terminal, it will render
-    progress information collected from a BuildMonitor. This class converts the
-    state of BuildMonitor into terminal output.
+    This class implements the functionality common to all mach commands
+    that render a footer.
     """
 
-    def __init__(self, terminal, monitor):
+    def __init__(self, terminal):
         
         self._t = terminal
         self._fh = sys.stdout
-        self.tiers = monitor.tiers.tier_status.viewitems()
 
     def clear(self):
         """Removes the footer from the current terminal."""
         self._fh.write(self._t.move_x(0))
         self._fh.write(self._t.clear_eol())
 
-    def draw(self):
-        """Draws this footer in the terminal."""
+    def write(self, parts):
+        """Write some output in the footer, accounting for terminal width.
 
-        if not self.tiers:
-            return
-
-        
-        
-
-        
-        
-        
-        parts = [('bold', 'TIER:')]
-        append = parts.append
-        for tier, status in self.tiers:
-            if status is None:
-                append(tier)
-            elif status == 'finished':
-                append(('green', tier))
-            else:
-                append(('underline_yellow', tier))
+        parts is a list of 2-tuples of (encoding_function, input).
+        None means no encoding."""
 
         
         
@@ -199,15 +181,47 @@ class BuildProgressFooter(object):
             self._fh.write(' '.join(write_pieces))
 
 
-class BuildOutputManager(LoggingMixin):
-    """Handles writing build output to a terminal, to logs, etc."""
+class BuildProgressFooter(Footer):
+    """Handles display of a build progress indicator in a terminal.
 
-    def __init__(self, log_manager, monitor):
+    When mach builds inside a blessings-supported terminal, it will render
+    progress information collected from a BuildMonitor. This class converts the
+    state of BuildMonitor into terminal output.
+    """
+
+    def __init__(self, terminal, monitor):
+        Footer.__init__(self, terminal)
+        self.tiers = monitor.tiers.tier_status.viewitems()
+
+    def draw(self):
+        """Draws this footer in the terminal."""
+
+        if not self.tiers:
+            return
+
+        
+        
+
+        parts = [('bold', 'TIER:')]
+        append = parts.append
+        for tier, status in self.tiers:
+            if status is None:
+                append(tier)
+            elif status == 'finished':
+                append(('green', tier))
+            else:
+                append(('underline_yellow', tier))
+
+        self.write(parts)
+
+
+class OutputManager(LoggingMixin):
+    """Handles writing job output to a terminal or log."""
+
+    def __init__(self, log_manager, footer):
         self.populate_logger()
 
-        self.monitor = monitor
         self.footer = None
-
         terminal = log_manager.terminal
 
         
@@ -217,7 +231,7 @@ class BuildOutputManager(LoggingMixin):
             return
 
         self.t = terminal
-        self.footer = BuildProgressFooter(terminal, monitor)
+        self.footer = footer
 
         self._handler = TerminalLoggingHandler()
         self._handler.setFormatter(log_manager.terminal_formatter)
@@ -235,11 +249,6 @@ class BuildOutputManager(LoggingMixin):
             
             self._handler.footer = None
 
-        
-        
-        
-        self.monitor.stop_resource_recording()
-
     def write_line(self, line):
         if self.footer:
             self.footer.clear()
@@ -255,6 +264,22 @@ class BuildOutputManager(LoggingMixin):
 
         self.footer.clear()
         self.footer.draw()
+
+class BuildOutputManager(OutputManager):
+    """Handles writing build output to a terminal, to logs, etc."""
+
+    def __init__(self, log_manager, monitor, footer):
+        self.monitor = monitor
+        OutputManager.__init__(self, log_manager, footer)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        OutputManager.__exit__(self, exc_type, exc_value, traceback)
+
+        
+        
+        
+        self.monitor.stop_resource_recording()
+
 
     def on_line(self, line):
         warning, state_changed, relevant = self.monitor.on_line(line)
@@ -331,12 +356,13 @@ class Build(MachCommandBase):
         monitor = self._spawn(BuildMonitor)
         monitor.init(warnings_path)
         ccache_start = monitor.ccache_stats()
+        footer = BuildProgressFooter(self.log_manager.terminal, monitor)
 
         
         
         mkdir(self.topobjdir, not_indexed=True)
 
-        with BuildOutputManager(self.log_manager, monitor) as output:
+        with BuildOutputManager(self.log_manager, monitor, footer) as output:
             monitor.start()
 
             if directory is not None and not what:
