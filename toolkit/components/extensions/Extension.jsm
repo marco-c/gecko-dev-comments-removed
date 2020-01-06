@@ -982,6 +982,23 @@ this.Extension = class extends ExtensionData {
   }
 
   async _startup() {
+    
+    
+    this.policy = new WebExtensionPolicy({
+      id: this.id,
+      mozExtensionHostname: this.uuid,
+      baseURL: this.baseURI.spec,
+      allowedOrigins: new MatchPatternSet([]),
+      localizeCallback() {},
+    });
+    if (!WebExtensionPolicy.getByID(this.id)) {
+      
+      
+      
+      
+      this.policy.active = true;
+    }
+
     TelemetryStopwatch.start("WEBEXT_EXTENSION_STARTUP_MS", this);
     try {
       let [, perms] = await Promise.all([this.loadManifest(), ExtensionPermissions.get(this)]);
@@ -1018,6 +1035,7 @@ this.Extension = class extends ExtensionData {
       this.webAccessibleResources = resources.map(res => new MatchGlob(res));
 
 
+      this.policy.active = false;
       this.policy = processScript.initExtension(this.serialize(), this);
 
       

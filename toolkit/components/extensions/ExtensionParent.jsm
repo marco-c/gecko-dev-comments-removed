@@ -68,7 +68,9 @@ const XUL_URL = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeUR
 
 let schemaURLs = new Set();
 
-schemaURLs.add("chrome://extensions/content/schemas/experiments.json");
+if (!AppConstants.RELEASE_OR_BETA) {
+  schemaURLs.add("chrome://extensions/content/schemas/experiments.json");
+}
 
 let GlobalManager;
 let ParentAPIManager;
@@ -1075,6 +1077,7 @@ const ExtensionParent = {
   GlobalManager,
   HiddenExtensionPage,
   ParentAPIManager,
+  WebExtensionPolicy,
   apiManager,
   get baseManifestProperties() {
     if (gBaseManifestProperties) {

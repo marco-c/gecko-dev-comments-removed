@@ -11,6 +11,8 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ["XPIProvider", "XPIInternal"];
 
+
+
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
@@ -26,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ChromeManifestParser",
                                   "resource://gre/modules/ChromeManifestParser.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionManagement",
-                                  "resource://gre/modules/ExtensionManagement.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -242,6 +242,20 @@ const BOOTSTRAP_REASONS = {
   ADDON_UPGRADE: 7,
   ADDON_DOWNGRADE: 8
 };
+
+
+
+
+const TYPES = {
+  extension: 2,
+  theme: 4,
+  locale: 8,
+  dictionary: 64,
+  experiment: 128,
+};
+
+if (!AppConstants.RELEASE_OR_BETA)
+  TYPES.apiextension = 256;
 
 
 
@@ -5218,10 +5232,11 @@ AddonWrapper.prototype = {
         
         
         
-        let base = ExtensionManagement.getURLForExtension(addon.id);
-        if (!base) {
+        let policy = WebExtensionPolicy.getByID(addon.id);
+        if (!policy) {
           return null;
         }
+        let base = policy.getURL();
         return new URL(addon.optionsURL, base).href;
       }
       return addon.optionsURL;
