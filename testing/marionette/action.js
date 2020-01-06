@@ -967,15 +967,14 @@ action.Mouse = class {
 
 
 
-
-action.dispatch = function(chain, seenEls, container) {
+action.dispatch = function(chain, seenEls, window) {
   let chainEvents = (async () => {
     for (let tickActions of chain) {
       await action.dispatchTickActions(
           tickActions,
           action.computeTickDuration(tickActions),
           seenEls,
-          container);
+          window);
     }
   })();
   return chainEvents;
@@ -1004,13 +1003,12 @@ action.dispatch = function(chain, seenEls, container) {
 
 
 
-
 action.dispatchTickActions = function(
-    tickActions, tickDuration, seenEls, container) {
+    tickActions, tickDuration, seenEls, window) {
   let pendingEvents = tickActions.map(
-      toEvents(tickDuration, seenEls, container));
+      toEvents(tickDuration, seenEls, window));
   return Promise.all(pendingEvents).then(
-      () => interaction.flushEventLoop(container.frame));
+      () => interaction.flushEventLoop(window));
 };
 
 
@@ -1083,26 +1081,26 @@ action.computePointerDestination = function(
 
 
 
-
-function toEvents(tickDuration, seenEls, container) {
+function toEvents(tickDuration, seenEls, window) {
   return a => {
     let inputState = action.inputStateMap.get(a.id);
+
     switch (a.subtype) {
       case action.KeyUp:
-        return dispatchKeyUp(a, inputState, container.frame);
+        return dispatchKeyUp(a, inputState, window);
 
       case action.KeyDown:
-        return dispatchKeyDown(a, inputState, container.frame);
+        return dispatchKeyDown(a, inputState, window);
 
       case action.PointerDown:
-        return dispatchPointerDown(a, inputState, container.frame);
+        return dispatchPointerDown(a, inputState, window);
 
       case action.PointerUp:
-        return dispatchPointerUp(a, inputState, container.frame);
+        return dispatchPointerUp(a, inputState, window);
 
       case action.PointerMove:
         return dispatchPointerMove(
-            a, inputState, tickDuration, seenEls, container);
+            a, inputState, tickDuration, seenEls, window);
 
       case action.PointerCancel:
         throw new UnsupportedOperationError();
@@ -1110,6 +1108,7 @@ function toEvents(tickDuration, seenEls, container) {
       case action.Pause:
         return dispatchPause(a, tickDuration);
     }
+
     return undefined;
   };
 }
@@ -1294,29 +1293,30 @@ function dispatchPointerUp(a, inputState, win) {
 
 
 
-
-function dispatchPointerMove(
-    a, inputState, tickDuration, seenEls, container) {
+function dispatchPointerMove(a, inputState, tickDuration, seenEls, window) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   
   const fps60 = 17;
+
   return new Promise(resolve => {
     const start = Date.now();
     const [startX, startY] = [inputState.x, inputState.y];
+
     let target = action.computePointerDestination(a, inputState,
-        getElementCenter(a.origin, seenEls, container));
+        getElementCenter(a.origin, seenEls, window));
     const [targetX, targetY] = [target.x, target.y];
-    if (!inViewPort(targetX, targetY, container.frame)) {
+
+    if (!inViewPort(targetX, targetY, window)) {
       throw new MoveTargetOutOfBoundsError(
           `(${targetX}, ${targetY}) is out of bounds of viewport ` +
-          `width (${container.frame.innerWidth}) ` +
-          `and height (${container.frame.innerHeight})`);
+          `width (${window.innerWidth}) ` +
+          `and height (${window.innerHeight})`);
     }
 
     const duration = typeof a.duration == "undefined" ? tickDuration : a.duration;
     if (duration === 0) {
       
-      performOnePointerMove(inputState, targetX, targetY, container.frame);
+      performOnePointerMove(inputState, targetX, targetY, window);
       resolve();
       return;
     }
@@ -1328,22 +1328,25 @@ function dispatchPointerMove(
       
       await new Promise(resolveTimer =>
           timer.initWithCallback(resolveTimer, fps60, ONE_SHOT));
+
       let durationRatio = Math.floor(Date.now() - start) / duration;
       const epsilon = fps60 / duration / 10;
       while ((1 - durationRatio) > epsilon) {
         let x = Math.floor(durationRatio * distanceX + startX);
         let y = Math.floor(durationRatio * distanceY + startY);
-        performOnePointerMove(inputState, x, y, container.frame);
+        performOnePointerMove(inputState, x, y, window);
         
         await new Promise(resolveTimer =>
             timer.initWithCallback(resolveTimer, fps60, ONE_SHOT));
+
         durationRatio = Math.floor(Date.now() - start) / duration;
       }
     })();
+
     
     
     intermediatePointerEvents.then(() => {
-      performOnePointerMove(inputState, targetX, targetY, container.frame);
+      performOnePointerMove(inputState, targetX, targetY, window);
       resolve();
     });
 
@@ -1409,11 +1412,11 @@ function inViewPort(x, y, win) {
   return !(x < 0 || y < 0 || x > win.innerWidth || y > win.innerHeight);
 }
 
-function getElementCenter(elementReference, seenEls, container) {
+function getElementCenter(elementReference, seenEls, window) {
   if (element.isWebElementReference(elementReference)) {
     let uuid = elementReference[element.Key] ||
         elementReference[element.LegacyKey];
-    let el = seenEls.get(uuid, container);
+    let el = seenEls.get(uuid, {frame: window});
     return element.coordinates(el);
   }
   return {};
