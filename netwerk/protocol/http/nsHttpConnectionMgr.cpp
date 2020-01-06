@@ -4259,7 +4259,12 @@ nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
         mStreamOut = nullptr;
         mStreamIn = nullptr;
 
-        Abandon();
+        
+        
+        if (mBackupTransport) {
+            mEnt->mHalfOpens.AppendElement(this);
+            gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+        }
     }
 
     mFastOpenInProgress = false;
