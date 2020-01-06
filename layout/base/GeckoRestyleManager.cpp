@@ -1025,15 +1025,12 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 
   if (!newParentContext && !oldContext->GetParent()) {
     
-#ifdef DEBUG
     
-    nsIFrame::ChildListIterator lists(aFrame);
-    for (; !lists.IsDone(); lists.Next()) {
-      MOZ_ASSERT(lists.CurrentList().IsEmpty(),
-                 "Failing to reparent style context for child of "
-                 "non-inheriting anon box");
-    }
-#endif 
+    
+    
+    MOZ_ASSERT(aFrame->StyleContext()->IsNonInheritingAnonBox(),
+               "Why did this frame not end up with a parent context?");
+    ReparentFrameDescendants(aFrame, providerChild);
     return NS_OK;
   }
 
@@ -1091,26 +1088,7 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 
       aFrame->SetStyleContext(newContext);
 
-      nsIFrame::ChildListIterator lists(aFrame);
-      for (; !lists.IsDone(); lists.Next()) {
-        for (nsIFrame* child : lists.CurrentList()) {
-          
-          if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
-              child != providerChild) {
-#ifdef DEBUG
-            if (child->IsPlaceholderFrame()) {
-              nsIFrame* outOfFlowFrame =
-                nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
-              NS_ASSERTION(outOfFlowFrame, "no out-of-flow frame");
-
-              NS_ASSERTION(outOfFlowFrame != providerChild,
-                           "Out of flow provider?");
-            }
-#endif
-            ReparentStyleContext(child);
-          }
-        }
-      }
+      ReparentFrameDescendants(aFrame, providerChild);
 
       
       
@@ -1152,6 +1130,32 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
   }
 
   return NS_OK;
+}
+
+void
+GeckoRestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
+                                              nsIFrame* aProviderChild)
+{
+  nsIFrame::ChildListIterator lists(aFrame);
+  for (; !lists.IsDone(); lists.Next()) {
+    for (nsIFrame* child : lists.CurrentList()) {
+      
+      if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
+          child != aProviderChild) {
+#ifdef DEBUG
+        if (child->IsPlaceholderFrame()) {
+          nsIFrame* outOfFlowFrame =
+            nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
+          NS_ASSERTION(outOfFlowFrame, "no out-of-flow frame");
+
+          NS_ASSERTION(outOfFlowFrame != aProviderChild,
+                       "Out of flow provider?");
+        }
+#endif
+        ReparentStyleContext(child);
+      }
+    }
+  }
 }
 
 ElementRestyler::ElementRestyler(nsPresContext* aPresContext,

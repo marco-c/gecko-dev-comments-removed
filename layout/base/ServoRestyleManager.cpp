@@ -1488,20 +1488,6 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
   nsIFrame* providerFrame;
   nsStyleContext* newParentContext =
     aFrame->GetParentStyleContext(&providerFrame);
-  if (!newParentContext) {
-    
-#ifdef DEBUG
-    
-    nsIFrame::ChildListIterator lists(aFrame);
-    for (; !lists.IsDone(); lists.Next()) {
-      MOZ_ASSERT(lists.CurrentList().IsEmpty(),
-                 "Failing to reparent style context for child of "
-                 "non-inheriting anon box");
-    }
-#endif 
-    return;
-  }
-
   
   
   bool isChild = providerFrame && providerFrame->GetParent() == aFrame;
@@ -1514,6 +1500,17 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
     providerChild = providerFrame;
     MOZ_ASSERT(!providerFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Out of flow provider?");
+  }
+
+  if (!newParentContext) {
+    
+    
+    
+    
+    MOZ_ASSERT(aFrame->StyleContext()->IsNonInheritingAnonBox(),
+               "Why did this frame not end up with a parent context?");
+    ReparentFrameDescendants(aFrame, providerChild, aStyleSet);
+    return;
   }
 
   bool isElement = aFrame->GetContent()->IsElement();
@@ -1605,19 +1602,27 @@ ServoRestyleManager::DoReparentStyleContext(nsIFrame* aFrame,
   
   
 
+  ReparentFrameDescendants(aFrame, providerChild, aStyleSet);
+
+  
+  
+}
+
+void
+ServoRestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
+                                              nsIFrame* aProviderChild,
+                                              ServoStyleSet& aStyleSet)
+{
   nsIFrame::ChildListIterator lists(aFrame);
   for (; !lists.IsDone(); lists.Next()) {
     for (nsIFrame* child : lists.CurrentList()) {
       
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
-          child != providerChild) {
+          child != aProviderChild) {
         DoReparentStyleContext(child, aStyleSet);
       }
     }
   }
-
-  
-  
 }
 
 } 

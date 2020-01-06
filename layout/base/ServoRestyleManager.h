@@ -221,6 +221,17 @@ public:
   
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
+private:
+  
+
+
+
+
+
+  void ReparentFrameDescendants(nsIFrame* aFrame, nsIFrame* aProviderChild,
+                                ServoStyleSet& aStyleSet);
+
+public:
   
 
 

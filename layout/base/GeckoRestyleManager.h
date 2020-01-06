@@ -88,6 +88,16 @@ public:
 
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
+private:
+  
+
+
+
+
+
+  void ReparentFrameDescendants(nsIFrame* aFrame, nsIFrame* aProviderChild);
+
+public:
   void ClearSelectors() {
     mPendingRestyles.ClearSelectors();
   }
