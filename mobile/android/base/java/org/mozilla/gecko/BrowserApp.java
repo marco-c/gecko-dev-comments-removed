@@ -1116,6 +1116,10 @@ public class BrowserApp extends GeckoApp
         
         checkFirstrun(this, intent);
 
+        if (Versions.preJB) {
+           conditionallyNotifyEOL();
+        }
+
         if (!IntentUtils.getIsInAutomationFromEnvironment(intent)) {
             DawnHelper.conditionallyNotifyDawn(this);
         }
