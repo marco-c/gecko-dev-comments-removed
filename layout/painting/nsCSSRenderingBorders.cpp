@@ -3379,14 +3379,60 @@ nsCSSBorderRenderer::DrawBorders()
     
 
     
-
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     NS_FOR_CSS_FULL_CORNERS(corner) {
       const mozilla::Side sides[2] = { mozilla::Side(corner), PREV_SIDE(corner) };
 
@@ -3394,10 +3440,11 @@ nsCSSBorderRenderer::DrawBorders()
         continue;
 
       if (mBorderWidths[sides[0]] == 1.0 && mBorderWidths[sides[1]] == 1.0) {
-        if (corner == eCornerTopLeft || corner == eCornerTopRight)
+        if (mOuterRect.Width() > mOuterRect.Height()) {
           mBorderCornerDimensions[corner].width = 0.0;
-        else
+        } else {
           mBorderCornerDimensions[corner].height = 0.0;
+        }
       }
     }
 
