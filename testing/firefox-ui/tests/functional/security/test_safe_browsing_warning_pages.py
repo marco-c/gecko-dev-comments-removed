@@ -60,7 +60,7 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
                 self.marionette.navigate(unsafe_page)
                 
                 time.sleep(1)
-                self.check_report_button(unsafe_page)
+                self.check_report_link(unsafe_page)
 
                 
                 self.marionette.navigate(unsafe_page)
@@ -69,13 +69,13 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
                 self.check_ignore_warning_button(unsafe_page)
 
     def check_get_me_out_of_here_button(self, unsafe_page):
-        button = self.marionette.find_element(By.ID, "getMeOutButton")
+        button = self.marionette.find_element(By.ID, "goBackButton")
         button.click()
 
         Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             lambda mn: self.browser.default_homepage in mn.get_url())
 
-    def check_report_button(self, unsafe_page):
+    def check_report_link(self, unsafe_page):
         
         with self.marionette.using_context('chrome'):
             url = self.marionette.execute_script("""
@@ -84,8 +84,10 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
                                                          + "phishing-malware";
             """)
 
-        button = self.marionette.find_element(By.ID, "reportButton")
+        button = self.marionette.find_element(By.ID, 'seeDetailsButton')
         button.click()
+        link = self.marionette.find_element(By.ID, "firefox_support")
+        link.click()
 
         
         
@@ -104,8 +106,10 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
         self.assertEquals(topic.text, "phishing-malware")
 
     def check_ignore_warning_button(self, unsafe_page):
-        button = self.marionette.find_element(By.ID, 'ignoreWarningButton')
+        button = self.marionette.find_element(By.ID, 'seeDetailsButton')
         button.click()
+        link = self.marionette.find_element(By.ID, 'ignore_warning_link')
+        link.click()
 
         Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             expected.element_present(By.ID, 'main-feature'))
