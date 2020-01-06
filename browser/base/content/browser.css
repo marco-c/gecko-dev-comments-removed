@@ -1057,12 +1057,6 @@ notification[value="translation"] {
 
 
 
-#downloads-button {
-  -moz-binding: url("chrome://browser/content/downloads/download.xml#download-toolbarbutton");
-}
-
-
-
 
 
 
