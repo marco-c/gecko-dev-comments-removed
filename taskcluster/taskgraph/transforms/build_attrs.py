@@ -17,11 +17,7 @@ def set_build_attributes(config, jobs):
     appropriately for that purpose.
     """
     for job in jobs:
-        if '/' in job['name']:
-            build_platform, build_type = job['name'].split('/')
-        else:
-            build_platform = job['name']
-            build_type = 'opt'
+        build_platform, build_type = job['name'].split('/')
 
         
         if build_type == 'pgo':
