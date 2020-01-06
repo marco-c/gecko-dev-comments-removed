@@ -143,3 +143,6 @@ user_pref("media.openUnsupportedTypeWithExternalApp", false);
 
 
 user_pref("marionette.prefs.recommended", false);
+
+
+user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
