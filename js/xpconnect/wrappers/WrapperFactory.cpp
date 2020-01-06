@@ -682,6 +682,28 @@ TransplantObject(JSContext* cx, JS::HandleObject origobj, JS::HandleObject targe
     return newIdentity;
 }
 
+JSObject*
+TransplantObjectRetainingXrayExpandos(JSContext* cx, JS::HandleObject origobj,
+                                      JS::HandleObject target)
+{
+    
+    
+    
+    RootedObject expandoChain(cx, GetXrayTraits(origobj)->getExpandoChain(origobj));
+
+    RootedObject newIdentity(cx, TransplantObject(cx, origobj, target));
+
+    
+    if (!GetXrayTraits(newIdentity)->cloneExpandoChain(cx, newIdentity, expandoChain)) {
+        
+        
+        
+        MOZ_CRASH();
+    }
+
+    return newIdentity;
+}
+
 nsIGlobalObject*
 NativeGlobal(JSObject* obj)
 {

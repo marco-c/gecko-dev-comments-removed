@@ -2262,11 +2262,6 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
   
   
   
-  JS::Rooted<JSObject*> expandoChain(aCx, xpc::XrayUtils::GetExpandoChain(aObj));
-
-  
-  
-  
   
   
   
@@ -2274,16 +2269,8 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
                       js::GetReservedSlot(aObj, DOM_OBJECT_SLOT));
   js::SetReservedSlot(aObj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
 
-  aObj = xpc::TransplantObject(aCx, aObj, newobj);
+  aObj = xpc::TransplantObjectRetainingXrayExpandos(aCx, aObj, newobj);
   if (!aObj) {
-    MOZ_CRASH();
-  }
-
-  
-  if (!xpc::XrayUtils::CloneExpandoChain(aCx, aObj, expandoChain)) {
-    
-    
-    
     MOZ_CRASH();
   }
 
