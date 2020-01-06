@@ -41,15 +41,6 @@ class BrowserAction {
 
 
 
-  get activeName() {
-    let tab = tabTracker.activeTab;
-    return this.tabContext.get(tab.id).name || this.defaults.name;
-  }
-
-  
-
-
-
   onClicked() {
     this.emit("click", tabTracker.activeTab);
   }
@@ -58,8 +49,8 @@ class BrowserAction {
 
 
 
-  onTabSelected(tab) {
-    let name = this.tabContext.get(tab.id).name || this.defaults.name;
+  onTabSelected(tabId) {
+    let name = this.tabContext.get(tabId).name || this.defaults.name;
     BrowserActions.update(this.uuid, {name});
   }
 
@@ -67,8 +58,8 @@ class BrowserAction {
 
 
 
-  onTabClosed(tab) {
-    this.tabContext.clear(tab.id);
+  onTabClosed(tabId) {
+    this.tabContext.clear(tabId);
   }
 
   
@@ -93,7 +84,7 @@ class BrowserAction {
       }
     }
 
-    if (tab && tab.selected) {
+    if (!tab || tab.selected) {
       BrowserActions.update(this.uuid, {[prop]: value});
     }
   }
