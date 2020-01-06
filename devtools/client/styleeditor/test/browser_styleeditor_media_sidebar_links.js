@@ -105,12 +105,20 @@ function waitForResizeTo(rdmUI, type, value) {
       if (data[type] != value) {
         return;
       }
-      rdmUI.off("content-resize", onResize);
+      ResponsiveUIManager.off("content-resize", onResize);
+      if (rdmUI.off) {
+        rdmUI.off("content-resize", onResize);
+      }
       info(`Got content-resize to a ${type} of ${value}`);
       resolve();
     };
     info(`Waiting for content-resize to a ${type} of ${value}`);
-    rdmUI.on("content-resize", onResize);
+    
+    ResponsiveUIManager.on("content-resize", onResize);
+    
+    if (rdmUI.on) {
+      rdmUI.on("content-resize", onResize);
+    }
   });
 }
 
