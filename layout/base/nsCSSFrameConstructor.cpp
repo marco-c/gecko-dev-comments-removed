@@ -7743,9 +7743,38 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   
   nsIFrame* parentAfterFrame;
+  nsContainerFrame* preAdjustedParentFrame = parentFrame;
   parentFrame =
     ::AdjustAppendParentForAfterContent(this, insertion.mContainer, parentFrame,
                                         aFirstNewContent, &parentAfterFrame);
+
+  
+  bool haveFirstLetterStyle = false, haveFirstLineStyle = false;
+  nsContainerFrame* containingBlock = GetFloatContainingBlock(parentFrame);
+  if (containingBlock) {
+    haveFirstLetterStyle = HasFirstLetterStyle(containingBlock);
+    haveFirstLineStyle =
+      ShouldHaveFirstLineStyle(containingBlock->GetContent(),
+                               containingBlock->StyleContext());
+  }
+
+  if (haveFirstLetterStyle) {
+    AutoWeakFrame wf(parentAfterFrame);
+    
+    RemoveLetterFrames(mPresShell, containingBlock);
+
+    if (parentAfterFrame && !wf) {
+      
+      
+      parentFrame =
+        ::AdjustAppendParentForAfterContent(this, insertion.mContainer,
+                                            preAdjustedParentFrame,
+                                            aFirstNewContent, &parentAfterFrame);
+      if (parentFrame != preAdjustedParentFrame) {
+        containingBlock = GetFloatContainingBlock(parentFrame);
+      }
+    }
+  }
 
   
   
@@ -7760,22 +7789,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                 matchContext.ptrOr(aProvidedTreeMatchContext),
                                 GetAbsoluteContainingBlock(parentFrame, FIXED_POS),
                                 GetAbsoluteContainingBlock(parentFrame, ABS_POS),
-                                GetFloatContainingBlock(parentFrame));
-
-  
-  bool haveFirstLetterStyle = false, haveFirstLineStyle = false;
-  nsContainerFrame* containingBlock = state.mFloatedItems.containingBlock;
-  if (containingBlock) {
-    haveFirstLetterStyle = HasFirstLetterStyle(containingBlock);
-    haveFirstLineStyle =
-      ShouldHaveFirstLineStyle(containingBlock->GetContent(),
-                               containingBlock->StyleContext());
-  }
-
-  if (haveFirstLetterStyle) {
-    
-    RemoveLetterFrames(state.mPresShell, containingBlock);
-  }
+                                containingBlock);
 
   LayoutFrameType frameType = parentFrame->Type();
 
