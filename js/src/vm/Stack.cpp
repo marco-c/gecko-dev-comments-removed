@@ -1519,32 +1519,25 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, jit::CalleeToken e
 
 
 
-jit::JitActivation::JitActivation(JSContext* cx, bool active)
+jit::JitActivation::JitActivation(JSContext* cx)
   : Activation(cx, Jit),
     packedExitFP_(nullptr),
     prevJitActivation_(cx->jitActivation),
-    active_(active),
     rematerializedFrames_(nullptr),
     ionRecovery_(cx),
     bailoutData_(nullptr),
     lastProfilingFrame_(nullptr),
     lastProfilingCallSite_(nullptr)
 {
-    if (active) {
-        cx->jitActivation = this;
-        registerProfiling();
-    }
+    cx->jitActivation = this;
+    registerProfiling();
 }
 
 jit::JitActivation::~JitActivation()
 {
-    if (active_) {
-        if (isProfiling())
-            unregisterProfiling();
-        cx_->jitActivation = prevJitActivation_;
-    } else {
-        MOZ_ASSERT(cx_->jitActivation == prevJitActivation_);
-    }
+    if (isProfiling())
+        unregisterProfiling();
+    cx_->jitActivation = prevJitActivation_;
 
     
     MOZ_ASSERT(ionRecovery_.empty());
@@ -1571,31 +1564,6 @@ jit::JitActivation::cleanBailoutData()
 {
     MOZ_ASSERT(bailoutData_);
     bailoutData_ = nullptr;
-}
-
-
-
-
-void
-jit::JitActivation::setActive(JSContext* cx, bool active)
-{
-    
-    
-    MOZ_ASSERT(cx->activation_ == this);
-    MOZ_ASSERT(active != active_);
-
-    if (active) {
-        *((volatile bool*) active_) = true;
-        MOZ_ASSERT(prevJitActivation_ == cx->jitActivation);
-        cx->jitActivation = this;
-
-        registerProfiling();
-    } else {
-        unregisterProfiling();
-
-        cx->jitActivation = prevJitActivation_;
-        *((volatile bool*) active_) = false;
-    }
 }
 
 void
@@ -1843,20 +1811,13 @@ Activation::unregisterProfiling()
 {
     MOZ_ASSERT(isProfiling());
     MOZ_ASSERT(cx_->profilingActivation_ == this);
-
-    
-    Activation* prevProfiling = prevProfiling_;
-    while (prevProfiling && prevProfiling->isJit() && !prevProfiling->asJit()->isActive())
-        prevProfiling = prevProfiling->prevProfiling_;
-
-    cx_->profilingActivation_ = prevProfiling;
+    cx_->profilingActivation_ = prevProfiling_;
 }
 
 ActivationIterator::ActivationIterator(JSContext* cx)
   : activation_(cx->activation_)
 {
     MOZ_ASSERT(cx == TlsContext.get());
-    settle();
 }
 
 ActivationIterator::ActivationIterator(JSContext* cx, const CooperatingContext& target)
@@ -1873,8 +1834,6 @@ ActivationIterator::ActivationIterator(JSContext* cx, const CooperatingContext& 
     
     
     activation_ = target.context() ? target.context()->activation_.ref() : nullptr;
-
-    settle();
 }
 
 ActivationIterator&
@@ -1882,16 +1841,7 @@ ActivationIterator::operator++()
 {
     MOZ_ASSERT(activation_);
     activation_ = activation_->prev();
-    settle();
     return *this;
-}
-
-void
-ActivationIterator::settle()
-{
-    
-    while (!done() && activation_->isJit() && !activation_->asJit()->isActive())
-        activation_ = activation_->prev();
 }
 
 JS::ProfilingFrameIterator::ProfilingFrameIterator(JSContext* cx, const RegisterState& state,
@@ -1965,11 +1915,6 @@ JS::ProfilingFrameIterator::settle()
     while (iteratorDone()) {
         iteratorDestroy();
         activation_ = activation_->prevProfiling();
-
-        
-        while (activation_ && activation_->isJit() && !activation_->asJit()->isActive())
-            activation_ = activation_->prevProfiling();
-
         if (!activation_)
             return;
         iteratorConstruct();
@@ -1984,7 +1929,6 @@ JS::ProfilingFrameIterator::iteratorConstruct(const RegisterState& state)
     MOZ_ASSERT(activation_->isJit());
 
     jit::JitActivation* activation = activation_->asJit();
-    MOZ_ASSERT(activation->isActive());
 
     
     
@@ -2010,7 +1954,6 @@ JS::ProfilingFrameIterator::iteratorConstruct()
     MOZ_ASSERT(activation_->isJit());
 
     jit::JitActivation* activation = activation_->asJit();
-    MOZ_ASSERT(activation->isActive());
 
     
     
