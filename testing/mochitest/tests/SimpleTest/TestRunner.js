@@ -449,10 +449,7 @@ TestRunner.runNextTest = function() {
         {
             
             
-            TestRunner.structuredLogger.testEnd('SimpleTest/TestRunner.js',
-                                                "ERROR",
-                                                "OK",
-                                                "No checks actually run");
+            TestRunner.structuredLogger.error("SimpleTest/TestRunner.js | No checks actually run");
             
             $("fail-count").innerHTML = 1;
             
@@ -513,6 +510,11 @@ TestRunner.expectChildProcessCrash = function() {
 TestRunner.testFinished = function(tests) {
     
     
+    var extraTests = [];
+    var result = "OK";
+
+    
+    
     if (TestRunner._currentTest == TestRunner._lastTestFinished &&
         !TestRunner._loopIsRestarting) {
         TestRunner.structuredLogger.testEnd(TestRunner.currentTestURL,
@@ -540,23 +542,31 @@ TestRunner.testFinished = function(tests) {
 
     function cleanUpCrashDumpFiles() {
         if (!SpecialPowers.removeExpectedCrashDumpFiles(TestRunner._expectingProcessCrash)) {
-            TestRunner.structuredLogger.testEnd(TestRunner.currentTestURL,
-                                                "ERROR",
-                                                "OK",
-                                                "This test did not leave any crash dumps behind, but we were expecting some!");
-            tests.push({ result: false });
+            var subtest = "expected-crash-dump-missing";
+            TestRunner.structuredLogger.testStatus(TestRunner.currentTestURL,
+                                                   subtest,
+                                                   "ERROR",
+                                                   "PASS",
+                                                   "This test did not leave any crash dumps behind, but we were expecting some!");
+            extraTests.push({ name: subtest, result: false });
+            result = "ERROR";
         }
+
         var unexpectedCrashDumpFiles =
             SpecialPowers.findUnexpectedCrashDumpFiles();
         TestRunner._expectingProcessCrash = false;
         if (unexpectedCrashDumpFiles.length) {
-            TestRunner.structuredLogger.testEnd(TestRunner.currentTestURL,
-                                                "ERROR",
-                                                "OK",
-                                                "This test left crash dumps behind, but we " +
-                                                "weren't expecting it to!",
-                                                {unexpected_crashdump_files: unexpectedCrashDumpFiles});
-            tests.push({ result: false });
+            var subtest = "unexpected-crash-dump-found";
+            TestRunner.structuredLogger.testStatus(TestRunner.currentTestURL,
+                                                   subtest,
+                                                   "ERROR",
+                                                   "PASS",
+                                                   "This test left crash dumps behind, but we " +
+                                                   "weren't expecting it to!",
+                                                   null,
+                                                   {unexpected_crashdump_files: unexpectedCrashDumpFiles});
+            extraTests.push({ name: subtest, result: false });
+            result = "CRASH";
             unexpectedCrashDumpFiles.sort().forEach(function(aFilename) {
                 TestRunner.structuredLogger.info("Found unexpected crash dump file " +
                                                  aFilename + ".");
@@ -570,6 +580,33 @@ TestRunner.testFinished = function(tests) {
         }
     }
 
+    function checkForAssertions() {
+        
+        
+        
+        if (SpecialPowers.isDebugBuild) {
+            var newAssertionCount = SpecialPowers.assertionCount();
+            var numAsserts = newAssertionCount - TestRunner._lastAssertionCount;
+            TestRunner._lastAssertionCount = newAssertionCount;
+
+            var max = TestRunner._expectedMaxAsserts;
+            var min = TestRunner._expectedMinAsserts;
+            if (Array.isArray(TestRunner.expected)) {
+                
+                let additionalAsserts = TestRunner.expected.reduce((acc, [pat, count]) => {
+                    return pat == "ASSERTION" ? acc + count : acc;
+                }, 0);
+                min += additionalAsserts;
+                max += additionalAsserts;
+            }
+            TestRunner.structuredLogger.assertionCount(TestRunner.currentTestURL, numAsserts, min, max);
+
+            var expected = min <= numAsserts && numAsserts <= max;
+            extraTests.push({ name: "assertion-check", result: expected });
+            result = !expected && result == "OK" ? "ASSERT": result;
+        }
+    }
+
     function runNextTest() {
         if (TestRunner.currentTestURL != TestRunner.getLoadedTestURL()) {
             TestRunner.structuredLogger.testStatus(TestRunner.currentTestURL,
@@ -579,14 +616,15 @@ TestRunner.testFinished = function(tests) {
                                                    "finished in a non-clean fashion, probably" +
                                                    " because it didn't call SimpleTest.finish()",
                                                    {loaded_test_url: TestRunner.getLoadedTestURL()});
-            tests.push({ result: false });
+            extraTests.push({ name: "clean-finish", result: false });
+            result = result != "CRASH" ? "ERROR": result
         }
 
         var runtime = new Date().valueOf() - TestRunner._currentTestStartTime;
 
         TestRunner.structuredLogger.testEnd(TestRunner.currentTestURL,
+                                            result,
                                             "OK",
-                                            undefined,
                                             "Finished in " + runtime + "ms",
                                             {runtime: runtime}
         );
@@ -596,7 +634,7 @@ TestRunner.testFinished = function(tests) {
           TestRunner.slowestTestURL = TestRunner.currentTestURL;
         }
 
-        TestRunner.updateUI(tests);
+        TestRunner.updateUI(tests.concat(extraTests));
 
         
         if (TestRunner._urls.length == 1 && TestRunner.repeat <= 1) {
@@ -618,7 +656,7 @@ TestRunner.testFinished = function(tests) {
              var wrongtestname = '';
              for (var i = 0; i < wrongtestlength; i++) {
                wrongtestname = testwin.SimpleTest._tests[testwin.SimpleTest.testsLength + i].name;
-               TestRunner.structuredLogger.testStatus(TestRunner.currentTestURL, wrongtestname, 'FAIL', 'PASS', "Result logged after SimpleTest.finish()");
+               TestRunner.structuredLogger.error(TestRunner.currentTestURL + " logged result after SimpleTest.finish(): " + wrongtestname);
              }
              TestRunner.updateUI([{ result: false }]);
            }
@@ -628,55 +666,12 @@ TestRunner.testFinished = function(tests) {
 
     SpecialPowers.executeAfterFlushingMessageQueue(function() {
         cleanUpCrashDumpFiles();
+        checkForAssertions();
         SpecialPowers.flushPermissions(function () { SpecialPowers.flushPrefEnv(runNextTest); });
     });
 };
 
 TestRunner.testUnloaded = function() {
-    
-    
-    
-    if (SpecialPowers.isDebugBuild) {
-        var newAssertionCount = SpecialPowers.assertionCount();
-        var numAsserts = newAssertionCount - TestRunner._lastAssertionCount;
-        TestRunner._lastAssertionCount = newAssertionCount;
-
-        var url = TestRunner.getNextUrl();
-        var max = TestRunner._expectedMaxAsserts;
-        var min = TestRunner._expectedMinAsserts;
-        if (Array.isArray(TestRunner.expected)) {
-            
-            let additionalAsserts = TestRunner.expected.reduce((acc, [pat, count]) => {
-                return pat == "ASSERTION" ? acc + count : acc;
-            }, 0);
-            min += additionalAsserts;
-            max += additionalAsserts;
-        }
-        if (numAsserts > max) {
-            TestRunner.structuredLogger.testEnd(url,
-                                                "ERROR",
-                                                "OK",
-                                                "Assertion count " + numAsserts + " is greater than expected range " +
-                                                min + "-" + max + " assertions.",
-                                                {assertions: numAsserts, min_asserts: min, max_asserts: max});
-            TestRunner.updateUI([{ result: false }]);
-        } else if (numAsserts < min) {
-            TestRunner.structuredLogger.testEnd(url,
-                                                "OK",
-                                                "ERROR",
-                                                "Assertion count " + numAsserts + " is less than expected range " +
-                                                min + "-" + max + " assertions.",
-                                                {assertions: numAsserts, min_asserts: min, max_asserts: max});
-            TestRunner.updateUI([{ result: false }]);
-        } else if (numAsserts > 0) {
-            TestRunner.structuredLogger.testEnd(url,
-                                                "ERROR",
-                                                "ERROR",
-                                                "Assertion count " + numAsserts + " within expected range " +
-                                                min + "-" + max + " assertions.",
-                                                {assertions: numAsserts, min_asserts: min, max_asserts: max});
-        }
-    }
     TestRunner._currentTest++;
     if (TestRunner.runSlower) {
         setTimeout(TestRunner.runNextTest, 1000);
