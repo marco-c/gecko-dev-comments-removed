@@ -21,9 +21,19 @@ extern crate euclid;
 #[cfg(feature = "servo")] #[macro_use] extern crate heapsize_derive;
 extern crate selectors;
 #[cfg(feature = "servo")] #[macro_use] extern crate serde;
+#[cfg(feature = "servo")] extern crate webrender_api;
+
+#[cfg(feature = "servo")] pub use webrender_api::DevicePixel;
 
 use cssparser::{CowRcStr, Token};
 use selectors::parser::SelectorParseError;
+
+
+
+
+#[cfg(not(feature = "servo"))]
+#[derive(Copy, Clone, Debug)]
+pub enum DevicePixel {}
 
 
 
@@ -58,12 +68,6 @@ impl PinchZoomFactor {
 
 #[derive(Clone, Copy, Debug)]
 pub enum CSSPixel {}
-
-
-
-
-#[derive(Copy, Clone, Debug)]
-pub enum DevicePixel {}
 
 
 
