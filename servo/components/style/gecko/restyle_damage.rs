@@ -48,14 +48,14 @@ impl GeckoRestyleDamage {
     
     pub fn compute_style_difference(
         source: &nsStyleContext,
-        old_style: &ComputedValues,
-        new_style: &Arc<ComputedValues>,
+        new_style: &Arc<ComputedValues>
     ) -> StyleDifference {
+        
+        let context = source as *const nsStyleContext as *mut nsStyleContext;
         let mut any_style_changed: bool = false;
         let hint = unsafe {
-            bindings::Gecko_CalcStyleDifference(old_style.as_style_context(),
-                                                new_style.as_style_context(),
-                                                source.mBits,
+            bindings::Gecko_CalcStyleDifference(context,
+                                                &new_style,
                                                 &mut any_style_changed)
         };
         let change = if any_style_changed { StyleChange::Changed } else { StyleChange::Unchanged };
