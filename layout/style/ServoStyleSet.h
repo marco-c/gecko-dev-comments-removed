@@ -481,6 +481,12 @@ public:
 
 
 
+  bool HasDocumentStateDependency(EventStates aState) const;
+
+  
+
+
+
 
 
 
