@@ -332,9 +332,11 @@ CustomizeMode.prototype = {
         this.visiblePalette.hidden = true;
         this.visiblePalette.removeAttribute("showing");
 
-        
-        
-        window.PanelUI.contents.setAttribute("customize-transitioning", "true");
+        if (!AppConstants.MOZ_PHOTON_THEME) {
+          
+          
+          window.PanelUI.contents.setAttribute("customize-transitioning", "true");
+        }
 
         
         
@@ -636,6 +638,17 @@ CustomizeMode.prototype = {
 
 
   _doTransition(aEntering) {
+    if (AppConstants.MOZ_PHOTON_THEME) {
+      let docEl = this.document.documentElement;
+      if (aEntering) {
+        docEl.setAttribute("customizing", true);
+        docEl.setAttribute("customize-entered", true);
+      } else {
+        docEl.removeAttribute("customizing");
+        docEl.removeAttribute("customize-entered");
+      }
+      return Promise.resolve();
+    }
     let deck = this.document.getElementById("content-deck");
     let customizeTransitionEndPromise = new Promise(resolve => {
       let customizeTransitionEnd = (aEvent) => {
