@@ -63,7 +63,6 @@ class IDBFactory final
   
   
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  nsCOMPtr<nsPIDOMWindowInner> mTopWindow;
   JS::Heap<JSObject*> mOwningObject;
 
   
@@ -129,20 +128,6 @@ public:
 
     mBackgroundActor = nullptr;
   }
-
-  
-  
-  
-  
-  void
-  UpdateActiveTransactionCount(int32_t aDelta);
-
-  
-  
-  
-  
-  void
-  UpdateActiveDatabaseCount(int32_t aDelta);
 
   void
   IncrementParentLoggingRequestSerialNumber();

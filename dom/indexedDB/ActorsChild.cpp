@@ -2227,7 +2227,17 @@ BackgroundDatabaseChild::RecvPBackgroundIDBVersionChangeTransactionConstructor(
                                         request,
                                         aNextObjectStoreId,
                                         aNextIndexId);
-  MOZ_ASSERT(transaction);
+  if (NS_WARN_IF(!transaction)) {
+    
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+
+    
+    IDB_REPORT_INTERNAL_ERR();
+
+    MOZ_ALWAYS_TRUE(aActor->SendDeleteMe());
+    return IPC_OK();
+  }
 
   transaction->AssertIsOnOwningThread();
 

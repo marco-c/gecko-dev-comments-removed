@@ -86,7 +86,6 @@ class IDBDatabase final
   bool mClosed;
   bool mInvalidated;
   bool mQuotaExceeded;
-  bool mIncreasedActiveDatabaseCount;
 
 public:
   static already_AddRefed<IDBDatabase>
@@ -193,10 +192,7 @@ public:
   NoteFinishedFileActor(indexedDB::PBackgroundIDBDatabaseFileChild* aFileActor);
 
   void
-  NoteActiveTransaction();
-
-  void
-  NoteInactiveTransaction();
+  DelayedMaybeExpireFileActors();
 
   
   
@@ -271,10 +267,6 @@ public:
   {
     AssertIsOnOwningThread();
 
-    
-    
-    MaybeDecreaseActiveDatabaseCount();
-
     mBackgroundActor = nullptr;
   }
 
@@ -330,9 +322,6 @@ private:
   InvalidateMutableFiles();
 
   void
-  NoteInactiveTransactionDelayed();
-
-  void
   LogWarning(const char* aMessageName,
              const nsAString& aFilename,
              uint32_t aLineNumber,
@@ -345,12 +334,6 @@ private:
   
   nsresult
   RenameIndex(int64_t aObjectStoreId, int64_t aIndexId, const nsAString& aName);
-
-  void
-  IncreaseActiveDatabaseCount();
-
-  void
-  MaybeDecreaseActiveDatabaseCount();
 };
 
 } 
