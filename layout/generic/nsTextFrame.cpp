@@ -7271,6 +7271,38 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     };
 
     
+    
+    
+
+    
+    
+    
+    
+    bool skipClipping = aRange.Length() == mTextRun->GetLength() ||
+                        verticalDec != verticalRun;
+
+    gfxRect clipRect;
+    if (!skipClipping) {
+      
+      gfxFloat clipLength = mTextRun->GetAdvanceWidth(aRange, aParams.provider);
+
+      clipRect.width = verticalDec ? frameSize.width : clipLength / app;
+      clipRect.height = verticalDec ? clipLength / app : frameSize.height;
+
+      const bool isInlineReversed = mTextRun->IsInlineReversed();
+      if (verticalDec) {
+        clipRect.y = (isInlineReversed ? aTextBaselinePt.y - clipLength
+                                       : aTextBaselinePt.y) / app;
+      } else {
+        clipRect.x = (isInlineReversed ? aTextBaselinePt.x - clipLength
+                                       : aTextBaselinePt.x) / app;
+      }
+
+      clipRect.Round();
+      params.context->Clip(clipRect);
+    }
+
+    
     params.decoration = NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE;
     for (const LineDecoration& dec : Reversed(aDecorations.mUnderlines)) {
       paintDecorationLine(dec, &Metrics::underlineSize,
@@ -7281,6 +7313,12 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
     params.decoration = NS_STYLE_TEXT_DECORATION_LINE_OVERLINE;
     for (const LineDecoration& dec : Reversed(aDecorations.mOverlines)) {
       paintDecorationLine(dec, &Metrics::underlineSize, &Metrics::maxAscent);
+    }
+
+    
+    
+    if (!skipClipping) {
+      params.context->PopClip();
     }
 
     {
@@ -7301,10 +7339,19 @@ nsTextFrame::DrawTextRunAndDecorations(Range aRange,
                       aParams.decorationOverrideColor, aParams.provider);
 
     
+    if (!skipClipping) {
+      params.context->Clip(clipRect);
+    }
+
+    
     params.decoration = NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH;
     for (const LineDecoration& dec : Reversed(aDecorations.mStrikes)) {
       paintDecorationLine(dec, &Metrics::strikeoutSize,
                           &Metrics::strikeoutOffset);
+    }
+
+    if (!skipClipping) {
+      params.context->PopClip();
     }
 }
 
