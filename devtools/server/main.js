@@ -262,14 +262,7 @@ var DebuggerServer = {
 
 
 
-
-
-
-  registerActors({ root, browser, tab, windowType }) {
-    if (windowType) {
-      this.chromeWindowType = windowType;
-    }
-
+  registerActors({ root, browser, tab }) {
     if (browser) {
       this._addBrowserActors();
     }
