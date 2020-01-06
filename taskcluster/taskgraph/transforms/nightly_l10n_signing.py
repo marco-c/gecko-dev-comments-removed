@@ -76,8 +76,4 @@ def make_signing_description(config, jobs):
             'symbol': join_symbol(group, symbol),
         }
 
-        
-        
-        job['use-funsize-route'] = True
-
         yield job
