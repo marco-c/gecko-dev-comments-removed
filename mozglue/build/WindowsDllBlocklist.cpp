@@ -867,16 +867,19 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 #endif
 
 #ifdef _M_IX86 
-  if(!Kernel32Intercept.AddDetour("BaseThreadInitThunk",
+
+  
+  
+  if (!GetModuleHandleW(L"WRusr.dll")) {
+    if(!Kernel32Intercept.AddDetour("BaseThreadInitThunk",
                                     reinterpret_cast<intptr_t>(patched_BaseThreadInitThunk),
                                     (void**) &stub_BaseThreadInitThunk)) {
 #ifdef DEBUG
-    printf_stderr("BaseThreadInitThunk hook failed\n");
+      printf_stderr("BaseThreadInitThunk hook failed\n");
 #endif
+    }
   }
 #endif 
-
-
 }
 
 MFBT_API void
