@@ -591,7 +591,36 @@ class UrlFinder(object):
              url = url.split(' -> ')[1].rstrip()
 
         url_obj = urlparse.urlparse(url)
-        if url_obj.scheme == 'file' and os.path.isabs(url_obj.path):
+        if url_obj.scheme == 'jar':
+            app_name = buildconfig.substs.get('MOZ_APP_NAME')
+            omnijar_name = buildconfig.substs.get('OMNIJAR_NAME')
+
+            if app_name in url:
+                if omnijar_name in url:
+                    
+                    parts = url_obj.path.split(omnijar_name + '!', 1)
+                elif '.xpi!' in url:
+                    
+                    parts = url_obj.path.split('.xpi!', 1)
+                else:
+                    
+                    
+                    return url_obj.path, None, False
+
+                dir_parts = parts[0].rsplit(app_name + '/', 1)
+                url = os.path.join(self.topobjdir, 'dist', 'bin', dir_parts[1].lstrip('/'), parts[1].lstrip('/'))
+            elif '.xpi!' in url:
+                
+                
+                
+                parts = url_obj.path.split('.xpi!', 1)
+                addon_name = os.path.basename(parts[0])
+                if '-test@mozilla.org' in addon_name:
+                    addon_name = addon_name[:-len('-test@mozilla.org')]
+                elif addon_name.endswith('@mozilla.org'):
+                    addon_name = addon_name[:-len('@mozilla.org')]
+                url = os.path.join(self.topobjdir, 'dist', 'xpi-stage', addon_name, parts[1].lstrip('/'))
+        elif url_obj.scheme == 'file' and os.path.isabs(url_obj.path):
             path = url_obj.path
             if not os.path.isfile(path):
                 
@@ -600,7 +629,7 @@ class UrlFinder(object):
             if not path.startswith(self.topobjdir):
                 return path, None, False
             url = url_obj.path
-        if url_obj.scheme in ('http', 'https', 'javascript', 'data', 'about'):
+        elif url_obj.scheme in ('http', 'https', 'javascript', 'data', 'about'):
             return None
 
         result = self.find_files(url)
