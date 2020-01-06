@@ -681,6 +681,17 @@ public:
                     nsTArray<PluginTag>&& aPluginTags,
                     nsTArray<FakePluginTag>&& aFakePluginTags) override;
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  uint32_t
+  GetPendingInputEvents()
+  {
+    return mPendingInputEvents;
+  }
+#endif
+
 private:
   static void ForceKillTimerCallback(nsITimer* aTimer, void* aClosure);
   void StartForceKillTimer();
@@ -694,6 +705,17 @@ private:
 
   virtual already_AddRefed<nsIEventTarget>
   GetSpecificMessageEventTarget(const Message& aMsg) override;
+
+#ifdef NIGHTLY_BUILD
+  virtual void
+  OnChannelReceivedMessage(const Message& aMsg) override;
+
+  virtual PContentChild::Result
+  OnMessageReceived(const Message& aMsg) override;
+
+  virtual PContentChild::Result
+  OnMessageReceived(const Message& aMsg, Message*& aReply) override;
+#endif
 
   InfallibleTArray<nsAutoPtr<AlertObserver> > mAlertObservers;
   RefPtr<ConsoleListener> mConsoleListener;
@@ -764,6 +786,11 @@ private:
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback> mPendingAnonymousTemporaryFiles;
 
   mozilla::Atomic<bool> mShuttingDown;
+
+#ifdef NIGHTLY_BUILD
+  
+  mozilla::Atomic<uint32_t> mPendingInputEvents;
+#endif
 
   DISALLOW_EVIL_CONSTRUCTORS(ContentChild);
 };

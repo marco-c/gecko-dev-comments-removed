@@ -3126,6 +3126,13 @@ public:
 
   static bool GetSourceMapURL(nsIHttpChannel* aChannel, nsACString& aResult);
 
+  
+
+
+
+
+  static bool IsMessageInputEvent(const IPC::Message& aMsg);
+
 private:
   static bool InitializeEventTable();
 
