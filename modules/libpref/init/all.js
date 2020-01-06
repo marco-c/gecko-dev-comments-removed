@@ -1064,10 +1064,6 @@ pref("devtools.discovery.log", false);
 
 pref("devtools.remote.wifi.scan", true);
 
-
-
-pref("devtools.remote.wifi.visible", true);
-
 pref("devtools.remote.tls-handshake-timeout", 10000);
 
 
@@ -1091,12 +1087,6 @@ pref("devtools.gcli.imgurUploadURL", "https://api.imgur.com/3/image");
 
 
 pref("devtools.commands.dir", "");
-
-
-pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
-
-
-pref("devtools.migration.warnings", true);
 
 
 pref("view_source.syntax_highlight", true);
