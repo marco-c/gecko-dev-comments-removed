@@ -55,9 +55,12 @@ public:
   virtual Layer* AsLayer() override { return this; }
   virtual void InvalidateRegion(const nsIntRegion& aRegion) override {
     mInvalidRegion.Add(aRegion);
-    nsIntRegion invalidRegion = mInvalidRegion.GetRegion();
-    mValidRegion.Sub(mValidRegion, invalidRegion);
-    mLowPrecisionValidRegion.Sub(mLowPrecisionValidRegion, invalidRegion);
+    UpdateValidRegionAfterInvalidRegionChanged();
+    if (!mLowPrecisionValidRegion.IsEmpty()) {
+      
+      
+      mLowPrecisionValidRegion.SubOut(mInvalidRegion.GetRegion());
+    }
   }
 
   

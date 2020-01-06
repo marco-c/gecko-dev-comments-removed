@@ -37,7 +37,7 @@ WebRenderPaintedLayerBlob::RenderLayer(wr::DisplayListBuilder& aBuilder,
   }
 
   nsIntRegion regionToPaint;
-  regionToPaint.Sub(mVisibleRegion.ToUnknownRegion(), mValidRegion);
+  regionToPaint.Sub(mVisibleRegion.ToUnknownRegion(), GetValidRegion());
 
   
   
