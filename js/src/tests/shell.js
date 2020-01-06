@@ -393,7 +393,6 @@
 
     return callStack[callStack.length - 1];
   }
-  global.currentFunc = currentFunc;
 
   
 
