@@ -7,6 +7,7 @@
 #define GMPServiceChild_h_
 
 #include "GMPService.h"
+#include "MediaResult.h"
 #include "base/process.h"
 #include "mozilla/ipc/Transport.h"
 #include "mozilla/gmp/PGMPServiceChild.h"
@@ -65,7 +66,8 @@ protected:
 private:
   friend class OpenPGMPServiceChild;
 
-  typedef MozPromise<GMPServiceChild*, nsresult,  true> GetServiceChildPromise;
+  typedef MozPromise<GMPServiceChild*, MediaResult,  true>
+    GetServiceChildPromise;
   RefPtr<GetServiceChildPromise> GetServiceChild();
 
   nsTArray<MozPromiseHolder<GetServiceChildPromise>> mGetServiceChildPromises;
