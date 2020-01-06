@@ -131,6 +131,14 @@ class TupOnly(CommonBackend, PartialBackend):
         self._backend_files = {}
         self._cmd = MozbuildObject.from_environment()
         self._manifest_entries = OrderedDefaultDict(set)
+        self._compile_env_gen_files = (
+            '*.c',
+            '*.cpp',
+            '*.h',
+            '*.inc',
+            '*.py',
+            '*.rs',
+        )
 
         
         
@@ -174,9 +182,13 @@ class TupOnly(CommonBackend, PartialBackend):
                 'buildid.h',
                 'source-repo.h',
             )
-            if any(f in skip_files for f in obj.outputs):
-                
-                return False
+
+            if self.environment.is_artifact_build:
+                skip_files = skip_files + self._compile_env_gen_files
+
+            for f in obj.outputs:
+                if any(mozpath.match(f, p) for p in skip_files):
+                    return False
 
             if 'application.ini.h' in obj.outputs:
                 
@@ -344,6 +356,12 @@ class TupOnly(CommonBackend, PartialBackend):
                     else:
                         backend_file.symlink_rule(f.full_path, output=f.target_basename, output_group=self._installed_files)
                 else:
+                    if (self.environment.is_artifact_build and
+                        any(mozpath.match(f.target_basename, p) for p in self._compile_env_gen_files)):
+                        
+                        
+                        continue
+
                     
                     
                     if f.context.relobjdir not in ('layout/style/test',
