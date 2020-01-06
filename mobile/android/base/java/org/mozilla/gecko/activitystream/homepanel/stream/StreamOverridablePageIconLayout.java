@@ -64,26 +64,13 @@ public class StreamOverridablePageIconLayout extends FrameLayout implements Icon
 
 
 
-    private final @NonNull Set<String> nonFaviconFailedRequestURLs;
-
-    
 
 
 
-    public static Set<String> newFailedRequestCache() {
-        
-        return Collections.synchronizedSet(new HashSet<String>());
-    }
+    private final static Set<String> nonFaviconFailedRequestURLs = Collections.synchronizedSet(new HashSet<String>());
 
-    
-
-
-    public StreamOverridablePageIconLayout(final Context context, final AttributeSet attrs,
-            @NonNull final Set<String> nonFaviconFailedRequestCache) {
+    public StreamOverridablePageIconLayout(final Context context, final AttributeSet attrs) {
         super(context, attrs);
-        if (nonFaviconFailedRequestCache == null) { throw new IllegalArgumentException("Expected non-null request cache"); }
-        this.nonFaviconFailedRequestURLs = nonFaviconFailedRequestCache;
-
         LayoutInflater.from(context).inflate(R.layout.activity_stream_overridable_page_icon_layout, this, true);
         initViews();
     }
