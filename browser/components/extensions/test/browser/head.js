@@ -38,11 +38,11 @@ const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {})
 
 
 
-if (gTestPath.includes("test-oop-extensions")) {
-  SpecialPowers.pushPrefEnv({set: [
-    ["extensions.webextensions.remote", true],
-    ["layers.popups.compositing.enabled", true],
-  ]});
+let remote = gTestPath.includes("test-oop-extensions");
+SpecialPowers.pushPrefEnv({set: [
+  ["extensions.webextensions.remote", remote],
+]});
+if (remote) {
   
   
   SpecialPowers.setIntPref("dom.ipc.keepProcessesAlive.extension", 1);
