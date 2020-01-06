@@ -14,6 +14,7 @@
 #include "nsICSSLoaderObserver.h"
 
 struct gfxFontFaceSrc;
+class gfxFontSrcPrincipal;
 class gfxUserFontEntry;
 class nsFontFaceLoader;
 class nsIPrincipal;
@@ -63,10 +64,10 @@ public:
 
     FontFaceSet* GetFontFaceSet() { return mFontFaceSet; }
 
-    nsIPrincipal* GetStandardFontLoadPrincipal() override;
+    gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() override;
 
     virtual nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
-                                   nsIPrincipal** aPrincipal,
+                                   gfxFontSrcPrincipal** aPrincipal,
                                    bool* aBypassCache) override;
 
     virtual bool IsFontLoadAllowed(nsIURI* aFontLocation,
@@ -166,6 +167,15 @@ public:
     return set ? set->GetPresContext() : nullptr;
   }
 
+  void UpdateStandardFontLoadPrincipal();
+
+  bool HasStandardFontLoadPrincipalChanged()
+  {
+    bool changed = mHasStandardFontLoadPrincipalChanged;
+    mHasStandardFontLoadPrincipalChanged = false;
+    return changed;
+  }
+
   nsIDocument* Document() const { return mDocument; }
 
   
@@ -263,9 +273,9 @@ private:
 
   nsresult StartLoad(gfxUserFontEntry* aUserFontEntry,
                      const gfxFontFaceSrc* aFontFaceSrc);
-  nsIPrincipal* GetStandardFontLoadPrincipal();
+  gfxFontSrcPrincipal* GetStandardFontLoadPrincipal();
   nsresult CheckFontLoad(const gfxFontFaceSrc* aFontFaceSrc,
-                         nsIPrincipal** aPrincipal,
+                         gfxFontSrcPrincipal** aPrincipal,
                          bool* aBypassCache);
   bool IsFontLoadAllowed(nsIURI* aFontLocation, nsIPrincipal* aPrincipal);
   nsresult SyncLoadFontData(gfxUserFontEntry* aFontToLoad,
@@ -324,6 +334,20 @@ private:
   
   
   
+  
+  
+  
+  
+  
+  RefPtr<gfxFontSrcPrincipal> mStandardFontLoadPrincipal;
+
+  
+  
+  
+  
+  
+  
+  
   RefPtr<mozilla::dom::Promise> mReady;
   
   bool mResolveLazilyCreatedReadyPromise;
@@ -365,6 +389,10 @@ private:
   
   
   bool mPrivateBrowsing;
+
+  
+  
+  bool mHasStandardFontLoadPrincipalChanged;
 };
 
 } 
