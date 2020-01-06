@@ -7,11 +7,10 @@
 
 
 define(function (require, exports, module) {
-  const { Component, createFactory } = require("devtools/client/shared/vendor/react");
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-  const dom = require("devtools/client/shared/vendor/react-dom-factories");
+  const React = require("devtools/client/shared/vendor/react");
+  const { Component, createFactory, PropTypes } = React;
   const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");
-  const { tr } = dom;
+  const { tr } = React.DOM;
 
   
   const TreeCell = createFactory(require("./TreeCell"));

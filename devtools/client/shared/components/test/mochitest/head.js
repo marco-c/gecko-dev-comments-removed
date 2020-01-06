@@ -28,9 +28,8 @@ var { require: browserRequire } = BrowserLoader({
   window
 });
 
-let React = browserRequire("devtools/client/shared/vendor/react");
 let ReactDOM = browserRequire("devtools/client/shared/vendor/react-dom");
-let dom = browserRequire("devtools/client/shared/vendor/react-dom-factories");
+let React = browserRequire("devtools/client/shared/vendor/react");
 var TestUtils = React.addons.TestUtils;
 
 var EXAMPLE_URL = "http://example.com/browser/browser/devtools/shared/test/";
@@ -201,7 +200,7 @@ function renderComponent(component, props) {
   
   
   
-  const wrappedEl = dom.span({}, [el]);
+  const wrappedEl = React.DOM.span({}, [el]);
   const renderedComponent = TestUtils.renderIntoDocument(wrappedEl);
   return ReactDOM.findDOMNode(renderedComponent).children[0];
 }

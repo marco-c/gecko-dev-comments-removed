@@ -7,10 +7,9 @@
 
 
 define(function (require, exports, module) {
-  const { Component } = require("devtools/client/shared/vendor/react");
-  const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-  const dom = require("devtools/client/shared/vendor/react-dom-factories");
-  const { thead, tr, td, div } = dom;
+  const React = require("devtools/client/shared/vendor/react");
+  const { Component, PropTypes } = React;
+  const { thead, tr, td, div } = React.DOM;
 
   
 
