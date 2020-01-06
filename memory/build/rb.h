@@ -67,7 +67,6 @@
 #ifndef RB_H_
 #define RB_H_
 
-#include "mozilla/Alignment.h"
 #include "Utils.h"
 
 enum NodeColor
@@ -178,6 +177,7 @@ public:
     return Remove(reinterpret_cast<TreeNode*>(aNode));
   }
 
+private:
   
 
   struct TreeNode : public T
@@ -223,7 +223,6 @@ public:
     }
   };
 
-private:
   TreeNode* mRoot;
 
   TreeNode* First(TreeNode* aStart)
@@ -328,16 +327,14 @@ private:
 
   void Insert(TreeNode* aNode)
   {
-    
-    
-    mozilla::AlignedStorage2<TreeNode> rbp_i_s;
+    TreeNode rbp_i_s;
     TreeNode *rbp_i_g, *rbp_i_p, *rbp_i_c, *rbp_i_t, *rbp_i_u;
     int rbp_i_cmp = 0;
     rbp_i_g = nullptr;
-    rbp_i_p = rbp_i_s.addr();
-    rbp_i_p->SetLeft(mRoot);
-    rbp_i_p->SetRight(nullptr);
-    rbp_i_p->SetColor(NodeColor::Black);
+    rbp_i_s.SetLeft(mRoot);
+    rbp_i_s.SetRight(nullptr);
+    rbp_i_s.SetColor(NodeColor::Black);
+    rbp_i_p = &rbp_i_s;
     rbp_i_c = mRoot;
     
 
@@ -408,21 +405,19 @@ private:
       rbp_i_p->SetLeft(aNode);
     }
     
-    mRoot = rbp_i_s.addr()->Left();
+    mRoot = rbp_i_s.Left();
     mRoot->SetColor(NodeColor::Black);
   }
 
   void Remove(TreeNode* aNode)
   {
-    
-    
-    mozilla::AlignedStorage2<TreeNode> rbp_r_s;
+    TreeNode rbp_r_s;
     TreeNode *rbp_r_p, *rbp_r_c, *rbp_r_xp, *rbp_r_t, *rbp_r_u;
     int rbp_r_cmp;
-    rbp_r_p = rbp_r_s.addr();
-    rbp_r_p->SetLeft(mRoot);
-    rbp_r_p->SetRight(nullptr);
-    rbp_r_p->SetColor(NodeColor::Black);
+    rbp_r_s.SetLeft(mRoot);
+    rbp_r_s.SetRight(nullptr);
+    rbp_r_s.SetColor(NodeColor::Black);
+    rbp_r_p = &rbp_r_s;
     rbp_r_c = mRoot;
     rbp_r_xp = nullptr;
     
@@ -582,7 +577,7 @@ private:
       }
     }
     
-    mRoot = rbp_r_s.addr()->Left();
+    mRoot = rbp_r_s.Left();
   }
 
   TreeNode* RotateLeft(TreeNode* aNode)
@@ -733,7 +728,6 @@ public:
       }
     }
 
-    template<typename Iterator>
     class Item
     {
       Iterator* mIterator;
@@ -759,14 +753,14 @@ public:
       }
     };
 
-    Item<Iterator> begin()
+    Item begin()
     {
-      return Item<Iterator>(this, mDepth > 0 ? mPath[mDepth - 1] : nullptr);
+      return Item(this, mDepth > 0 ? mPath[mDepth - 1] : nullptr);
     }
 
-    Item<Iterator> end()
+    Item end()
     {
-      return Item<Iterator>(this, nullptr);
+      return Item(this, nullptr);
     }
 
     TreeNode* Next()
