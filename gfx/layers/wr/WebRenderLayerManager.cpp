@@ -238,38 +238,28 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
     savedItems.AppendToTop(item);
 
     if (apzEnabled) {
-      const ActiveScrolledRoot* asr = item->GetActiveScrolledRoot();
+      bool forceNewLayerData = false;
+
       
       
       
-      if (asr && asr != lastAsr) {
-        lastAsr = asr;
-        FrameMetrics::ViewID id = nsLayoutUtils::ViewIDForASR(asr);
-        if (mScrollMetadata.find(id) == mScrollMetadata.end()) {
-          
-          
-          
-          Maybe<ScrollMetadata> metadata = asr->mScrollableFrame->ComputeScrollMetadata(
-              nullptr, item->ReferenceFrame(),
-              ContainerLayerParameters(), nullptr);
-          MOZ_ASSERT(metadata);
-          mScrollMetadata[id] = *metadata;
-        }
+      switch (itemType) {
+      case nsDisplayItem::TYPE_SCROLL_INFO_LAYER:
+        forceNewLayerData = true;
+        break;
+      default:
+        break;
       }
-      if (itemType == nsDisplayItem::TYPE_SCROLL_INFO_LAYER) {
-        
-        
-        
-        
-        nsDisplayScrollInfoLayer* info = static_cast<nsDisplayScrollInfoLayer*>(item);
-        UniquePtr<ScrollMetadata> metadata = info->ComputeScrollMetadata(
-            nullptr, ContainerLayerParameters());
-        MOZ_ASSERT(metadata);
-        MOZ_ASSERT(metadata->GetMetrics().IsScrollInfoLayer());
-        FrameMetrics::ViewID id = metadata->GetMetrics().GetScrollId();
-        if (mScrollMetadata.find(id) == mScrollMetadata.end()) {
-          mScrollMetadata[id] = *metadata;
-        }
+
+      
+      
+      
+      
+      const ActiveScrolledRoot* asr = item->GetActiveScrolledRoot();
+      if (forceNewLayerData || asr != lastAsr) {
+        lastAsr = asr;
+        mLayerScrollData.emplace_back();
+        mLayerScrollData.back().Initialize(mScrollData, item);
       }
     }
 
@@ -537,20 +527,35 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
     if (aDisplayList && aDisplayListBuilder) {
       StackingContextHelper sc;
       mParentCommands.Clear();
-      mScrollMetadata.clear();
+      mScrollData = WebRenderScrollData();
+      MOZ_ASSERT(mLayerScrollData.empty());
 
       CreateWebRenderCommandsFromDisplayList(aDisplayList, aDisplayListBuilder, sc, builder);
 
       builder.Finalize(contentSize, mBuiltDisplayList);
+
+      
+      
+      
+      for (auto i = mLayerScrollData.crbegin(); i != mLayerScrollData.crend(); i++) {
+        mScrollData.AddLayerData(*i);
+      }
+      mLayerScrollData.clear();
     }
 
     builder.PushBuiltDisplayList(mBuiltDisplayList);
     WrBridge()->AddWebRenderParentCommands(mParentCommands);
   } else {
+    mScrollData = WebRenderScrollData();
+
     mRoot->StartPendingAnimations(mAnimationReadyTime);
     StackingContextHelper sc;
 
     WebRenderLayer::ToWebRenderLayer(mRoot)->RenderLayer(builder, sc);
+
+    
+    
+    PopulateScrollData(mScrollData, mRoot.get());
   }
 
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder);
@@ -565,19 +570,15 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
     return false;
   }
 
-  WebRenderScrollData scrollData;
   if (AsyncPanZoomEnabled()) {
-    scrollData.SetFocusTarget(mFocusTarget);
+    mScrollData.SetFocusTarget(mFocusTarget);
     mFocusTarget = FocusTarget();
 
     if (mIsFirstPaint) {
-      scrollData.SetIsFirstPaint();
+      mScrollData.SetIsFirstPaint();
       mIsFirstPaint = false;
     }
-    scrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
-    if (mRoot) {
-      PopulateScrollData(scrollData, mRoot.get());
-    }
+    mScrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
   }
 
   bool sync = mTarget != nullptr;
@@ -586,7 +587,7 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   {
     AutoProfilerTracing
       tracing("Paint", sync ? "ForwardDPTransactionSync":"ForwardDPTransaction");
-    WrBridge()->DPEnd(builder, size.ToUnknownSize(), sync, mLatestTransactionId, scrollData);
+    WrBridge()->DPEnd(builder, size.ToUnknownSize(), sync, mLatestTransactionId, mScrollData);
   }
 
   MakeSnapshotIfRequired(size);

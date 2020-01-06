@@ -41,6 +41,8 @@ public:
   void Initialize(WebRenderScrollData& aOwner,
                   Layer* aLayer,
                   int32_t aDescendantCount);
+  void Initialize(WebRenderScrollData& aOwner,
+                  nsDisplayItem* aItem);
 
   int32_t GetDescendantCount() const;
   size_t GetScrollMetadataCount() const;
@@ -112,6 +114,9 @@ public:
   
   
   size_t AddNewLayerData();
+  
+  
+  size_t AddLayerData(const WebRenderLayerScrollData& aData);
 
   size_t GetLayerCount() const;
 

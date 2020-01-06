@@ -6,6 +6,8 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
+#include <vector>
+
 #include "gfxPrefs.h"
 #include "Layers.h"
 #include "mozilla/MozPromise.h"
@@ -13,6 +15,7 @@
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TransactionIdAllocator.h"
+#include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
@@ -238,7 +241,10 @@ private:
 
   
   
-  std::unordered_map<FrameMetrics::ViewID, ScrollMetadata> mScrollMetadata;
+  WebRenderScrollData mScrollData;
+  
+  
+  std::vector<WebRenderLayerScrollData> mLayerScrollData;
 
   
   
