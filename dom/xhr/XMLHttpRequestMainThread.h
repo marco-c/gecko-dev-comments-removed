@@ -189,6 +189,7 @@ public:
     eUnreachable,
     eChannelOpen,
     eRedirect,
+    eTerminated,
     ENUM_MAX
   };
 
@@ -763,6 +764,8 @@ protected:
 
 
   void CloseRequest();
+
+  void TerminateOngoingFetch();
 
   
 

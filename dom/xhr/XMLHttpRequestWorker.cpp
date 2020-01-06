@@ -2169,6 +2169,17 @@ XMLHttpRequestWorker::Abort(ErrorResult& aRv)
     return;
   }
 
+  
+  
+  
+  if ((mStateData.mReadyState == nsIXMLHttpRequest::OPENED && mStateData.mFlagSend) ||
+      mStateData.mReadyState == nsIXMLHttpRequest::HEADERS_RECEIVED ||
+      mStateData.mReadyState == nsIXMLHttpRequest::LOADING ||
+      mStateData.mReadyState == nsIXMLHttpRequest::DONE) {
+    mStateData.mStatus = 0;
+    mStateData.mStatusText.Truncate();
+  }
+
   MaybeDispatchPrematureAbortEvents(aRv);
   if (aRv.Failed()) {
     return;

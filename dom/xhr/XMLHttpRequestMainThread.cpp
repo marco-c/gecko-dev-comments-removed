@@ -984,9 +984,18 @@ XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
 }
 
 void
+XMLHttpRequestMainThread::TerminateOngoingFetch() {
+  if ((mState == State::opened && mFlagSend) ||
+      mState == State::headers_received || mState == State::loading) {
+    CloseRequest();
+  }
+}
+
+void
 XMLHttpRequestMainThread::CloseRequest()
 {
   mWaitingForOnStopRequest = false;
+  mErrorLoad = ErrorType::eTerminated;
   if (mChannel) {
     mChannel->Cancel(NS_BINDING_ABORTED);
   }
@@ -1087,7 +1096,7 @@ XMLHttpRequestMainThread::Abort(ErrorResult& aRv)
   mFlagAborted = true;
 
   
-  CloseRequest();
+  TerminateOngoingFetch();
 
   
   if ((mState == State::opened && mFlagSend) ||
@@ -1329,6 +1338,7 @@ XMLHttpRequestMainThread::GetLoadGroup() const
 nsresult
 XMLHttpRequestMainThread::FireReadystatechangeEvent()
 {
+  MOZ_ASSERT(mState != State::unsent);
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   event->InitEvent(kLiteralString_readystatechange, false, false);
   
@@ -1584,7 +1594,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   }
 
   
-  CloseRequest();
+  TerminateOngoingFetch();
 
   
   
@@ -1881,7 +1891,7 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest *request,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (mState != State::loading) {
+  if (mState == State::headers_received) {
     ChangeState(State::loading);
     if (!mFlagSynchronous) {
       DispatchProgressEvent(this, ProgressEventType::progress,
