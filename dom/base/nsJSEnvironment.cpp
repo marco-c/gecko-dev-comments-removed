@@ -1788,7 +1788,7 @@ InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData)
   
   
   int64_t budget = aDeadline.IsNull() ?
-    int64_t(sActiveIntersliceGCBudget) :
+    int64_t(sActiveIntersliceGCBudget * 2) :
     int64_t((aDeadline - TimeStamp::Now()).ToMilliseconds());
   if (sCCLockedOut && sCCLockedOutTime) {
     int64_t lockedTime = PR_Now() - sCCLockedOutTime;
