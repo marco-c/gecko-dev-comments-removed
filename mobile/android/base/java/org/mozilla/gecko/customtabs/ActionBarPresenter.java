@@ -30,6 +30,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.mozilla.gecko.GeckoView;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.SiteIdentity;
 import org.mozilla.gecko.Tab;
@@ -108,7 +109,7 @@ public class ActionBarPresenter {
 
 
     public void displayUrlOnly(@NonNull final String url) {
-        updateCustomView(null, null, url);
+        updateCustomView(null, url, GeckoView.ProgressListener.STATE_IS_INSECURE);
     }
 
     
@@ -116,17 +117,16 @@ public class ActionBarPresenter {
 
 
 
-    public void update(@NonNull final Tab tab) {
-        final String title = tab.getTitle();
-        final String url = tab.getBaseDomain();
 
+
+    public void update(final String title, final String url, final int securityStatus) {
         
         
         mHandler.removeCallbacks(mUpdateAction);
         mUpdateAction = new Runnable() {
             @Override
             public void run() {
-                updateCustomView(tab.getSiteIdentity(), title, url);
+                updateCustomView(title, url, securityStatus);
             }
         };
         mHandler.postDelayed(mUpdateAction, CUSTOM_VIEW_UPDATE_DELAY);
@@ -220,25 +220,15 @@ public class ActionBarPresenter {
 
 
     @UiThread
-    private void updateCustomView(@Nullable SiteIdentity identity,
-                                  @Nullable String title,
-                                  @NonNull String url) {
-        
-        if (identity == null) {
-            mIconView.setVisibility(View.INVISIBLE);
-        } else {
-            final SecurityModeUtil.Mode mode = SecurityModeUtil.resolve(identity);
+    private void updateCustomView(final String title, final String url, final int securityStatus) {
+        if (securityStatus == GeckoView.ProgressListener.STATE_IS_SECURE) {
             mIconView.setVisibility(View.VISIBLE);
-            mIconView.setImageLevel(mode.ordinal());
-            mIdentityPopup.setSiteIdentity(identity);
-
-            if (mode == SecurityModeUtil.Mode.LOCK_SECURE) {
-                
-                DrawableCompat.setTintList(mIconView.getDrawable(), null);
-            } else {
-                
-                DrawableCompat.setTint(mIconView.getDrawable(), mTextPrimaryColor);
-            }
+            mIconView.setImageLevel(SecurityModeUtil.Mode.LOCK_SECURE.ordinal());
+            
+            DrawableCompat.setTintList(mIconView.getDrawable(), null);
+        } else {
+            mIconView.setVisibility(View.INVISIBLE);
+            DrawableCompat.setTint(mIconView.getDrawable(), mTextPrimaryColor);
         }
 
         
