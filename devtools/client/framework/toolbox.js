@@ -538,12 +538,7 @@ Toolbox.prototype = {
   
 
 
-
-
-  get sourceMapService() {
-    if (!Services.prefs.getBoolPref("devtools.source-map.client-service.enabled")) {
-      return null;
-    }
+  _createSourceMapService: function () {
     if (this._sourceMapService) {
       return this._sourceMapService;
     }
@@ -559,16 +554,25 @@ Toolbox.prototype = {
 
 
 
+  get sourceMapService() {
+    if (!Services.prefs.getBoolPref("devtools.source-map.client-service.enabled")) {
+      return null;
+    }
+    return this._createSourceMapService();
+  },
+
+  
+
+
+
+
 
 
   get sourceMapURLService() {
     if (this._sourceMapURLService) {
       return this._sourceMapURLService;
     }
-    let sourceMaps = this.sourceMapService;
-    if (!sourceMaps) {
-      return null;
-    }
+    let sourceMaps = this._createSourceMapService();
     this._sourceMapURLService = new SourceMapURLService(this._target, this.threadClient,
                                                         sourceMaps);
     return this._sourceMapURLService;

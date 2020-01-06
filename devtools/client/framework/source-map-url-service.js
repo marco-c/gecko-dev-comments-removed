@@ -3,6 +3,9 @@
 
 "use strict";
 
+const Services = require("Services");
+const SOURCE_MAP_PREF = "devtools.source-map.client-service.enabled";
+
 
 
 
@@ -20,12 +23,17 @@ function SourceMapURLService(target, threadClient, sourceMapService) {
   this._target = target;
   this._sourceMapService = sourceMapService;
   this._urls = new Map();
+  this._subscriptions = new Map();
 
   this._onSourceUpdated = this._onSourceUpdated.bind(this);
   this.reset = this.reset.bind(this);
+  this._prefValue = Services.prefs.getBoolPref(SOURCE_MAP_PREF);
+  this._onPrefChanged = this._onPrefChanged.bind(this);
 
   target.on("source-updated", this._onSourceUpdated);
   target.on("will-navigate", this.reset);
+
+  Services.prefs.addObserver(SOURCE_MAP_PREF, this._onPrefChanged);
 
   
   this._loadingPromise = new Promise(resolve => {
@@ -42,6 +50,7 @@ function SourceMapURLService(target, threadClient, sourceMapService) {
 SourceMapURLService.prototype.reset = function () {
   this._sourceMapService.clearSourceMaps();
   this._urls.clear();
+  this._subscriptions.clear();
 };
 
 
@@ -53,7 +62,8 @@ SourceMapURLService.prototype.destroy = function () {
   this.reset();
   this._target.off("source-updated", this._onSourceUpdated);
   this._target.off("will-navigate", this.reset);
-  this._target = this._urls = null;
+  Services.prefs.removeObserver(SOURCE_MAP_PREF, this._onPrefChanged);
+  this._target = this._urls = this._subscriptions = null;
 };
 
 
@@ -109,6 +119,131 @@ SourceMapURLService.prototype.originalPositionFor = async function (url, line, c
     return null;
   }
   return resolvedLocation;
+};
+
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype._callOneCallback = async function (subscriptionEntry,
+                                                                 callback) {
+  
+  if (!this._prefValue) {
+    callback(false);
+    return;
+  }
+
+  if (!subscriptionEntry.promise) {
+    const {url, line, column} = subscriptionEntry;
+    subscriptionEntry.promise = this.originalPositionFor(url, line, column);
+  }
+
+  let resolvedLocation = await subscriptionEntry.promise;
+  if (resolvedLocation) {
+    const {line, column, sourceUrl} = resolvedLocation;
+    
+    
+    callback(this._prefValue, sourceUrl, line, column);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype.subscribe = function (url, line, column, callback) {
+  if (!this._subscriptions) {
+    return;
+  }
+
+  let key = JSON.stringify([url, line, column]);
+  let subscriptionEntry = this._subscriptions.get(key);
+  if (!subscriptionEntry) {
+    subscriptionEntry = {
+      url,
+      line,
+      column,
+      promise: null,
+      callbacks: [],
+    };
+    this._subscriptions.set(key, subscriptionEntry);
+  }
+  subscriptionEntry.callbacks.push(callback);
+
+  
+  if (this._prefValue) {
+    this._callOneCallback(subscriptionEntry, callback);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype.unsubscribe = function (url, line, column, callback) {
+  if (!this._subscriptions) {
+    return;
+  }
+  let key = JSON.stringify([url, line, column]);
+  let subscriptionEntry = this._subscriptions.get(key);
+  if (subscriptionEntry) {
+    let index = subscriptionEntry.callbacks.indexOf(callback);
+    if (index !== -1) {
+      subscriptionEntry.callbacks.splice(index, 1);
+      
+      if (subscriptionEntry.callbacks.length === 0) {
+        this._subscriptions.delete(key);
+      }
+    }
+  }
+};
+
+
+
+
+
+SourceMapURLService.prototype._onPrefChanged = function () {
+  if (!this._subscriptions) {
+    return;
+  }
+
+  this._prefValue = Services.prefs.getBoolPref(SOURCE_MAP_PREF);
+  for (let [, subscriptionEntry] of this._subscriptions) {
+    for (let callback of subscriptionEntry.callbacks) {
+      this._callOneCallback(subscriptionEntry, callback);
+    }
+  }
 };
 
 exports.SourceMapURLService = SourceMapURLService;
