@@ -2564,20 +2564,14 @@ TabChild::InternalSetDocShellIsActive(bool aIsActive, bool aPreserveLayers)
   });
 
   if (mCompositorOptions) {
-    
-    
-    
-    
     MOZ_ASSERT(mPuppetWidget);
-    MOZ_ASSERT(mPuppetWidget->GetLayerManager());
-    MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-            || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR
-            || (gfxPlatform::IsHeadless() && mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC));
+    RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
+    MOZ_ASSERT(lm);
 
     
     
     
-    mPuppetWidget->GetLayerManager()->SetLayerObserverEpoch(mLayerObserverEpoch);
+    lm->SetLayerObserverEpoch(mLayerObserverEpoch);
   }
 
   
@@ -3073,12 +3067,10 @@ TabChild::DidComposite(uint64_t aTransactionId,
                        const TimeStamp& aCompositeEnd)
 {
   MOZ_ASSERT(mPuppetWidget);
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager());
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-             || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR
-             || (gfxPlatform::IsHeadless() && mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC));
+  RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
+  MOZ_ASSERT(lm);
 
-  mPuppetWidget->GetLayerManager()->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
+  lm->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
 }
 
 void
@@ -3111,24 +3103,19 @@ void
 TabChild::ClearCachedResources()
 {
   MOZ_ASSERT(mPuppetWidget);
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager());
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-             || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR
-             || (gfxPlatform::IsHeadless() && mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC));
+  RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
+  MOZ_ASSERT(lm);
 
-  mPuppetWidget->GetLayerManager()->ClearCachedResources();
+  lm->ClearCachedResources();
 }
 
 void
 TabChild::InvalidateLayers()
 {
   MOZ_ASSERT(mPuppetWidget);
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager());
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-             || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR
-             || (gfxPlatform::IsHeadless() && mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC));
-
   RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
+  MOZ_ASSERT(lm);
+
   FrameLayerBuilder::InvalidateAllLayers(lm);
 }
 
@@ -3224,10 +3211,6 @@ void
 TabChild::CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier,
                             uint64_t aDeviceResetSeqNo)
 {
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-             || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR
-             || (gfxPlatform::IsHeadless() && mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC));
-
   RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
 
   mTextureFactoryIdentifier = aNewIdentifier;
