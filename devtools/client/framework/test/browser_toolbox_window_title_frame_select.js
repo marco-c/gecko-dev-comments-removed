@@ -16,6 +16,8 @@
 var {Toolbox} = require("devtools/client/framework/toolbox");
 const URL = URL_ROOT + "browser_toolbox_window_title_frame_select_page.html";
 const IFRAME_URL = URL_ROOT + "browser_toolbox_window_title_changes_page.html";
+const {LocalizationHelper} = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 
 add_task(function* () {
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
@@ -41,9 +43,12 @@ add_task(function* () {
   
   yield waitForTick();
 
-  
-  
   let btn = toolbox.doc.getElementById("command-button-frames");
+
+  yield testShortcutToOpenFrames(btn, toolbox);
+
+  
+  
   ok(!btn.classList.contains("checked"), "The checked class must not be present");
   let menu = toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
@@ -91,4 +96,26 @@ add_task(function* () {
 
 function getTitle() {
   return Services.wm.getMostRecentWindow("devtools:toolbox").document.title;
+}
+
+function* testShortcutToOpenFrames(btn, toolbox) {
+  info("Tests if shortcut Alt+Down opens the frames");
+  
+  btn.focus();
+  
+  let shortcut = L10N.getStr("toolbox.showFrames.key");
+  synthesizeKeyShortcut(shortcut, toolbox.win);
+
+  
+  yield wait(200);
+
+  
+  ok(btn.classList.contains("checked"), "The checked class must be set");
+
+  
+  synthesizeKeyShortcut("Esc", toolbox.win);
+  yield wait(200);
+
+  
+  ok(!btn.classList.contains("checked"), "The checked class must not be set");
 }
