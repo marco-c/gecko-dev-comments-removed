@@ -65,7 +65,11 @@ namespace CharFlag {
 
 constexpr char16_t NO_BREAK_SPACE = 0x00A0;
 constexpr char16_t MICRO_SIGN = 0x00B5;
+constexpr char16_t LATIN_CAPITAL_LETTER_A_WITH_GRAVE = 0x00C0;
+constexpr char16_t MULTIPLICATION_SIGN = 0x00D7;
 constexpr char16_t LATIN_SMALL_LETTER_SHARP_S = 0x00DF;
+constexpr char16_t LATIN_SMALL_LETTER_A_WITH_GRAVE = 0x00E0;
+constexpr char16_t DIVISION_SIGN = 0x00F7;
 constexpr char16_t LATIN_SMALL_LETTER_Y_WITH_DIAERESIS = 0x00FF;
 constexpr char16_t LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE = 0x0130;
 constexpr char16_t COMBINING_DOT_ABOVE = 0x0307;
@@ -296,11 +300,39 @@ CanUpperCase(char16_t ch)
 
 
 inline bool
+CanUpperCase(JS::Latin1Char ch)
+{
+    if (MOZ_LIKELY(ch < 128))
+        return ch >= 'a' && ch <= 'z';
+
+    
+    bool canUpper = ch == MICRO_SIGN ||
+                    (((ch & ~0x1F) == LATIN_SMALL_LETTER_A_WITH_GRAVE) && ch != DIVISION_SIGN);
+    MOZ_ASSERT(canUpper == CanUpperCase(char16_t(ch)));
+    return canUpper;
+}
+
+
+inline bool
 CanLowerCase(char16_t ch)
 {
     if (ch < 128)
         return ch >= 'A' && ch <= 'Z';
     return CharInfo(ch).lowerCase != 0;
+}
+
+
+inline bool
+CanLowerCase(JS::Latin1Char ch)
+{
+    if (MOZ_LIKELY(ch < 128))
+        return ch >= 'A' && ch <= 'Z';
+
+    
+    bool canLower = ((ch & ~0x1F) == LATIN_CAPITAL_LETTER_A_WITH_GRAVE) &&
+                    ((ch & MULTIPLICATION_SIGN) != MULTIPLICATION_SIGN);
+    MOZ_ASSERT(canLower == CanLowerCase(char16_t(ch)));
+    return canLower;
 }
 
 #define CHECK_RANGE(FROM, TO, LEAD, TRAIL_FROM, TRAIL_TO, DIFF) \
