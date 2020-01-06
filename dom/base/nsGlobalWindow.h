@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#ifndef nsGlobalWindow_h___
+#define nsGlobalWindow_h___
+
+
+
+
+
+#include "nsGlobalWindowInner.h"
+#include "nsGlobalWindowOuter.h"
+
+#endif 
