@@ -7,11 +7,6 @@ module.exports = {
 
   globals: {
     
-    "assert": false,
-    "controller": false,
-    "findElement": false,
-    "mozmill": false,
-    
     "Addons": false,
     "Bookmarks": false,
     "EnableEngines": false,
@@ -22,7 +17,6 @@ module.exports = {
     "Passwords": false,
     "Phase": false,
     "Prefs": false,
-    "RunMozmillTest": false,
     "STATE_DISABLED": false,
     "STATE_ENABLED": false,
     "Sync": false,

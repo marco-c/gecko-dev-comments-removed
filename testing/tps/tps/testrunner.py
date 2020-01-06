@@ -446,7 +446,6 @@ class TPSTestRunner(object):
         
         self.extensions = []
         self.extensions.append(os.path.join(self.extensionDir, 'tps'))
-        self.extensions.append(os.path.join(self.extensionDir, "mozmill"))
 
         
         try:
