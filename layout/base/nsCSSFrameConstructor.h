@@ -83,6 +83,11 @@ public:
 
 
 
+
+
+
+
+
   enum class InsertionKind
   {
     Sync,
@@ -177,8 +182,7 @@ private:
   
   bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,
                                 nsIContent* aStartChild,
-                                nsIContent* aEndChild,
-                                InsertionKind);
+                                nsIContent* aEndChild);
 
   
 
@@ -303,11 +307,9 @@ public:
 
 
 
-
   bool ContentRemoved(nsIContent* aContainer,
                       nsIContent* aChild,
                       nsIContent* aOldNextSibling,
-                      InsertionKind aInsertionKind,
                       RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
@@ -1875,8 +1877,7 @@ private:
   
   
   
-  bool MaybeRecreateContainerForFrameRemoval(nsIFrame*     aFrame,
-                                             InsertionKind aInsertionKind);
+  bool MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame);
 
   nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell*     aPresShell,
                                             nsPresContext*    aPresContext,
@@ -1998,10 +1999,9 @@ private:
                            nsIFrame* aFrame,
                            FrameConstructionItemList& aItems,
                            bool aIsAppend,
-                           nsIFrame* aPrevSibling,
-                           InsertionKind);
+                           nsIFrame* aPrevSibling);
 
-  void ReframeContainingBlock(nsIFrame* aFrame, InsertionKind aInsertionKind);
+  void ReframeContainingBlock(nsIFrame* aFrame);
 
   
 
