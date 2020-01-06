@@ -217,7 +217,7 @@ PlacesViewBase.prototype = {
       }
     }
 
-    if (PlacesControllerDragHelper.disallowInsertion(container))
+    if (PlacesControllerDragHelper.disallowInsertion(container, this))
       return null;
 
     return new InsertionPoint({
@@ -1499,7 +1499,7 @@ PlacesToolbar.prototype = {
       let eltRect = elt.getBoundingClientRect();
       let eltIndex = Array.prototype.indexOf.call(this._rootElt.childNodes, elt);
       if (PlacesUtils.nodeIsFolder(elt._placesNode) &&
-          !PlacesUIUtils.isContentsReadOnly(elt._placesNode)) {
+          !PlacesUIUtils.isFolderReadOnly(elt._placesNode, this)) {
         
         
         

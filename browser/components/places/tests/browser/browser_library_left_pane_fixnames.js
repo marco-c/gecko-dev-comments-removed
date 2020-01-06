@@ -81,7 +81,7 @@ function test() {
       PlacesUtils.bookmarks.setItemTitle(query.concreteId, "badName");
   }
 
-  PlacesUIUtils.__defineGetter__("leftPaneFolderId", cachedLeftPaneFolderIdGetter);
+  restoreLeftPaneGetters();
 
   
   openLibrary(onLibraryReady);
