@@ -509,6 +509,13 @@ public class GeckoApplication extends Application
         mLightweightTheme = new LightweightTheme(this);
     }
 
+    public static void createShortcut() {
+        final Tab selectedTab = Tabs.getInstance().getSelectedTab();
+        if (selectedTab != null) {
+            createShortcut(selectedTab.getTitle(), selectedTab.getURL());
+        }
+    }
+
     
     
     @WrapForJNI(calledFrom = "gecko")
