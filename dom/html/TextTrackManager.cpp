@@ -827,6 +827,10 @@ TextTrackManager::NotifyCueUpdated(TextTrackCue *aCue)
   
   WEBVTT_LOG("NotifyCueUpdated");
   DispatchTimeMarchesOn();
+  
+  
+  
+  DispatchUpdateCueDisplay();
 }
 
 void
