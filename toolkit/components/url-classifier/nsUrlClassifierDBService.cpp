@@ -812,6 +812,12 @@ nsUrlClassifierDBServiceWorker::CloseDb()
     mClassifier = nullptr;
   }
 
+  
+  
+  if (mLastResults) {
+    mLastResults->Clear();
+  }
+
   LOG(("urlclassifier db closed\n"));
 
   return NS_OK;
