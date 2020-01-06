@@ -916,6 +916,7 @@ pref("dom.presentation.receiver.enabled", true);
 
 pref("dom.audiochannel.audioCompeting", true);
 pref("dom.audiochannel.mediaControl", true);
+pref("media.block-autoplay-until-in-foreground", false);
 
 
 
