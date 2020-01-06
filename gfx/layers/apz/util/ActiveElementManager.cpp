@@ -123,7 +123,12 @@ ActiveElementManager::HandleTouchEndEvent(bool aWasClick)
   
   CancelTask();
   if (aWasClick) {
-    SetActive(mTarget);
+    
+    
+    
+    if (!(mTarget && mTarget->IsXULElement(nsGkAtoms::thumb))) {
+      SetActive(mTarget);
+    }
   } else {
     
     
