@@ -552,6 +552,7 @@ var BookmarkPropertiesPanel = {
     for (let uri of this._URIs) {
       
       
+      
       let [_uri, _title] = uri instanceof Ci.nsIURI ?
         [uri, this._getURITitleFromHistory(uri)] : [uri.uri, uri.title];
 
@@ -664,10 +665,12 @@ var BookmarkPropertiesPanel = {
       itemGuid = await PlacesTransactions.NewLivemark(info).transact();
     } else if (this._itemType == BOOKMARK_FOLDER) {
       itemGuid = await PlacesTransactions.NewFolder(info).transact();
-      for (let uri of this._URIs) {
-        let placeInfo = await PlacesUtils.history.fetch(uri);
-        let title = placeInfo ? placeInfo.title : "";
-        await PlacesTransactions.transact({ parentGuid: itemGuid, uri, title });
+      
+      
+      
+      for (let { uri: url, title } of this._URIs) {
+        await PlacesTransactions.NewBookmark({ parentGuid: itemGuid, url, title })
+                                .transact();
       }
     } else {
       throw new Error(`unexpected value for _itemType:  ${this._itemType}`);
