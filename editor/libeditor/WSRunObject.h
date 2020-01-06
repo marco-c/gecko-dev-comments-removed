@@ -215,9 +215,11 @@ public:
   
   
   
-  already_AddRefed<dom::Element> InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
-                                             int32_t* aInOutOffset,
-                                             nsIEditor::EDirection aSelect);
+  already_AddRefed<dom::Element>
+    InsertBreak(nsCOMPtr<nsINode>* aInOutParent,
+                int32_t* aInOutOffset,
+                nsIEditor::EDirection aSelect,
+                nsCOMPtr<nsIContent>* aInOutChildAtOffset = nullptr);
 
   
   
