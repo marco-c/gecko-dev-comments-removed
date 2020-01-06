@@ -713,9 +713,7 @@ nsImageMap::GetBoundsForAreaContent(nsIContent *aContent,
 void
 nsImageMap::FreeAreas()
 {
-  uint32_t i, n = mAreas.Length();
-  for (i = 0; i < n; i++) {
-    Area* area = mAreas.ElementAt(i);
+  for (auto* area : mAreas) {
     if (area->mArea->IsInUncomposedDoc()) {
       NS_ASSERTION(area->mArea->GetPrimaryFrame() == mImageFrame,
                    "Unexpected primary frame");
@@ -729,31 +727,28 @@ nsImageMap::FreeAreas()
                                            false);
     delete area;
   }
+
   mAreas.Clear();
 }
 
-nsresult
+void
 nsImageMap::Init(nsImageFrame* aImageFrame, nsIContent* aMap)
 {
-  NS_PRECONDITION(aMap, "null ptr");
-  if (!aMap) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  mImageFrame = aImageFrame;
+  MOZ_ASSERT(aMap);
+  MOZ_ASSERT(aImageFrame);
 
+  mImageFrame = aImageFrame;
   mMap = aMap;
   mMap->AddMutationObserver(this);
 
   
-  return UpdateAreas();
+  UpdateAreas();
 }
 
-
-nsresult
+void
 nsImageMap::SearchForAreas(nsIContent* aParent, bool& aFoundArea,
                            bool& aFoundAnchor)
 {
-  nsresult rv = NS_OK;
   uint32_t i, n = aParent->GetChildCount();
 
   
@@ -764,8 +759,7 @@ nsImageMap::SearchForAreas(nsIContent* aParent, bool& aFoundArea,
     
     if (!aFoundAnchor && child->IsHTMLElement(nsGkAtoms::area)) {
       aFoundArea = true;
-      rv = AddArea(child);
-      NS_ENSURE_SUCCESS(rv, rv);
+      AddArea(child);
 
       
       
@@ -778,21 +772,17 @@ nsImageMap::SearchForAreas(nsIContent* aParent, bool& aFoundArea,
     
     if (!aFoundArea && child->IsHTMLElement(nsGkAtoms::a)) {
       aFoundAnchor = true;
-      rv = AddArea(child);
-      NS_ENSURE_SUCCESS(rv, rv);
+      AddArea(child);
     }
 
     if (child->IsElement()) {
       mContainsBlockContents = true;
-      rv = SearchForAreas(child, aFoundArea, aFoundAnchor);
-      NS_ENSURE_SUCCESS(rv, rv);
+      SearchForAreas(child, aFoundArea, aFoundAnchor);
     }
   }
-
-  return NS_OK;
 }
 
-nsresult
+void
 nsImageMap::UpdateAreas()
 {
   
@@ -802,19 +792,15 @@ nsImageMap::UpdateAreas()
   bool foundAnchor = false;
   mContainsBlockContents = false;
 
-  nsresult rv = SearchForAreas(mMap, foundArea, foundAnchor);
+  SearchForAreas(mMap, foundArea, foundAnchor);
 #ifdef ACCESSIBILITY
-  if (NS_SUCCEEDED(rv)) {
-    nsAccessibilityService* accService = GetAccService();
-    if (accService) {
-      accService->UpdateImageMap(mImageFrame);
-    }
+  if (nsAccessibilityService* accService = GetAccService()) {
+    accService->UpdateImageMap(mImageFrame);
   }
 #endif
-  return rv;
 }
 
-nsresult
+void
 nsImageMap::AddArea(nsIContent* aArea)
 {
   static nsIContent::AttrValuesArray strings[] =
@@ -846,17 +832,13 @@ nsImageMap::AddArea(nsIContent* aArea)
     break;
   default:
     area = nullptr;
-    NS_NOTREACHED("FindAttrValueIn returned an unexpected value.");
+    MOZ_ASSERT_UNREACHABLE("FindAttrValueIn returned an unexpected value.");
     break;
   }
-  if (!area)
-    return NS_ERROR_OUT_OF_MEMORY;
 
   
-  aArea->AddSystemEventListener(NS_LITERAL_STRING("focus"), this, false,
-                                false);
-  aArea->AddSystemEventListener(NS_LITERAL_STRING("blur"), this, false,
-                                false);
+  aArea->AddSystemEventListener(NS_LITERAL_STRING("focus"), this, false, false);
+  aArea->AddSystemEventListener(NS_LITERAL_STRING("blur"), this, false, false);
 
   
   
@@ -869,16 +851,13 @@ nsImageMap::AddArea(nsIContent* aArea)
   aArea->GetAttr(kNameSpaceID_None, nsGkAtoms::coords, coords);
   area->ParseCoords(coords);
   mAreas.AppendElement(area);
-  return NS_OK;
 }
 
 nsIContent*
 nsImageMap::GetArea(nscoord aX, nscoord aY) const
 {
   NS_ASSERTION(mMap, "Not initialized");
-  uint32_t i, n = mAreas.Length();
-  for (i = 0; i < n; i++) {
-    Area* area = mAreas.ElementAt(i);
+  for (auto* area : mAreas) {
     if (area->IsInside(aX, aY)) {
       return area->mArea;
     }
@@ -1012,7 +991,7 @@ nsImageMap::HandleEvent(nsIDOMEvent* aEvent)
 }
 
 void
-nsImageMap::Destroy(void)
+nsImageMap::Destroy()
 {
   FreeAreas();
   mImageFrame = nullptr;
