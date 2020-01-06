@@ -185,6 +185,11 @@ defined(PNG_READ_BACKGROUND_SUPPORTED)
    png_byte phys_unit_type; 
 #endif
 
+#ifdef PNG_eXIf_SUPPORTED
+   int num_exif;
+   png_bytep exif;
+#endif
+
 #ifdef PNG_hIST_SUPPORTED
    
 

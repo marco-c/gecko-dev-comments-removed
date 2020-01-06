@@ -2014,6 +2014,44 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 }
 #endif
 
+#ifdef PNG_READ_eXIf_SUPPORTED
+void 
+png_handle_eXIf(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
+{
+   unsigned int i;
+   png_bytep eXIf_buf;
+
+   png_debug(1, "in png_handle_eXIf");
+
+   if ((png_ptr->mode & PNG_HAVE_IHDR) == 0)
+      png_chunk_error(png_ptr, "missing IHDR");
+
+   else if (info_ptr != NULL && (info_ptr->valid & PNG_INFO_eXIf) != 0)
+   {
+      png_crc_finish(png_ptr, length);
+      png_chunk_benign_error(png_ptr, "duplicate");
+      return;
+   }
+
+   eXIf_buf = png_voidcast(png_bytep,
+             png_malloc_warn(png_ptr, length));
+
+   for (i = 0; i < length; i++)
+   {
+      png_byte buf[1];
+      png_crc_read(png_ptr, buf, 1);
+      eXIf_buf[i] = buf[0];
+   }
+
+   if (png_crc_finish(png_ptr, 0) != 0)
+      return;
+
+   info_ptr->num_exif = length;
+
+   png_set_eXIf(png_ptr, info_ptr, eXIf_buf);
+}
+#endif
+
 #ifdef PNG_READ_hIST_SUPPORTED
 void 
 png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
@@ -2541,6 +2579,9 @@ png_handle_zTXt(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if ((png_ptr->mode & PNG_HAVE_IDAT) != 0)
       png_ptr->mode |= PNG_AFTER_IDAT;
+
+   
+
 
    buffer = png_read_buffer(png_ptr, length, 2);
 
@@ -3556,7 +3597,7 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
 
                do
                {
-                  dp[0] = sp[0], dp[1] = sp[1];
+                  dp[0] = sp[0]; dp[1] = sp[1];
 
                   if (row_width <= bytes_to_jump)
                      return;
@@ -3577,7 +3618,7 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
 
                for (;;)
                {
-                  dp[0] = sp[0], dp[1] = sp[1], dp[2] = sp[2];
+                  dp[0] = sp[0]; dp[1] = sp[1]; dp[2] = sp[2];
 
                   if (row_width <= bytes_to_jump)
                      return;
@@ -4066,7 +4107,10 @@ png_read_filter_row_paeth_1byte_pixel(png_row_infop row_info, png_bytep row,
       
 
 
-      if (pb < pa) pa = pb, a = b;
+      if (pb < pa)
+      {
+         pa = pb; a = b;
+      }
       if (pc < pa) a = c;
 
       
@@ -4118,7 +4162,10 @@ png_read_filter_row_paeth_multibyte_pixel(png_row_infop row_info, png_bytep row,
       pc = (p + pc) < 0 ? -(p + pc) : p + pc;
 #endif
 
-      if (pb < pa) pa = pb, a = b;
+      if (pb < pa)
+      {
+         pa = pb; a = b;
+      }
       if (pc < pa) a = c;
 
       a += *row;

@@ -500,5 +500,8 @@ struct png_struct_def
    png_colorspace   colorspace;
 #endif
 #endif
+
+
+   int num_exif;
 };
 #endif 

@@ -514,11 +514,15 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
          if (at_start != 0) 
             ++sp;
          else          
-            sp += 2, ++dp;
+         {
+            sp += 2; ++dp;
+         }
 
          
          while (sp < ep)
-            *dp++ = *sp, sp += 2;
+         {
+            *dp++ = *sp; sp += 2;
+         }
 
          row_info->pixel_depth = 8;
       }
@@ -528,10 +532,14 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
          if (at_start != 0) 
             sp += 2;
          else          
-            sp += 4, dp += 2;
+         {
+            sp += 4; dp += 2;
+         }
 
          while (sp < ep)
-            *dp++ = *sp++, *dp++ = *sp, sp += 3;
+         {
+            *dp++ = *sp++; *dp++ = *sp; sp += 3;
+         }
 
          row_info->pixel_depth = 16;
       }
@@ -554,11 +562,15 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
          if (at_start != 0) 
             ++sp;
          else          
-            sp += 4, dp += 3;
+         {
+            sp += 4; dp += 3;
+         }
 
          
          while (sp < ep)
-            *dp++ = *sp++, *dp++ = *sp++, *dp++ = *sp, sp += 2;
+         {
+            *dp++ = *sp++; *dp++ = *sp++; *dp++ = *sp; sp += 2;
+         }
 
          row_info->pixel_depth = 24;
       }
@@ -568,14 +580,16 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
          if (at_start != 0) 
             sp += 2;
          else          
-            sp += 8, dp += 6;
+         {
+            sp += 8; dp += 6;
+         }
 
          while (sp < ep)
          {
             
-            *dp++ = *sp++, *dp++ = *sp++;
-            *dp++ = *sp++, *dp++ = *sp++;
-            *dp++ = *sp++, *dp++ = *sp, sp += 3;
+            *dp++ = *sp++; *dp++ = *sp++;
+            *dp++ = *sp++; *dp++ = *sp++;
+            *dp++ = *sp++; *dp++ = *sp; sp += 3;
          }
 
          row_info->pixel_depth = 48;

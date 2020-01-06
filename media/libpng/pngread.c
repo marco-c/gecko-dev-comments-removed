@@ -2014,6 +2014,7 @@ png_create_colormap_entry(png_image_read_control *display,
          {
             case 4:
                entry[afirst ? 0 : 3] = (png_byte)alpha;
+               
             case 3:
                entry[afirst + (2 ^ bgr)] = (png_byte)blue;
                entry[afirst + 1] = (png_byte)green;
@@ -2022,6 +2023,7 @@ png_create_colormap_entry(png_image_read_control *display,
 
             case 2:
                entry[1 ^ afirst] = (png_byte)alpha;
+               
             case 1:
                entry[afirst] = (png_byte)green;
                break;
@@ -3259,8 +3261,7 @@ png_image_read_colormapped(png_voidp argument)
             image->colormap_entries == 244 )
             break;
 
-         
-         
+         goto bad_output;
 
       default:
       bad_output:

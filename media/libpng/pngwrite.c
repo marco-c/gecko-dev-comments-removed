@@ -1016,8 +1016,8 @@ png_set_filter(png_structrp png_ptr, int method, int filters)
          case 5:
          case 6:
          case 7: png_app_error(png_ptr, "Unknown row filter for method 0");
-            
 #endif 
+            
          case PNG_FILTER_VALUE_NONE:
             png_ptr->do_filter = PNG_FILTER_NONE; break;
 

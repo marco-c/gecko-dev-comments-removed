@@ -35,7 +35,9 @@
 
 
 
-#define _POSIX_SOURCE 1 /* Just the POSIX 1003.1 and C89 APIs */
+#ifndef _POSIX_SOURCE
+# define _POSIX_SOURCE 1 /* Just the POSIX 1003.1 and C89 APIs */
+#endif
 
 #ifndef PNG_VERSION_INFO_ONLY
 
@@ -456,6 +458,21 @@
 
 
 
+#ifdef PNG_FIXED_POINT_SUPPORTED
+#  define PNGFAPI PNGAPI
+#else
+#  define PNGFAPI
+#endif
+
+#ifndef PNG_VERSION_INFO_ONLY
+
+
+
+
+
+
+
+
 
 #ifdef __cplusplus
 #  define png_voidcast(type, value) static_cast<type>(value)
@@ -466,24 +483,19 @@
    static_cast<type>(static_cast<const void*>(value))
 #else
 #  define png_voidcast(type, value) (value)
-#  define png_constcast(type, value) ((type)(value))
+#  ifdef _WIN64
+#     ifdef __GNUC__
+         typedef unsigned long long png_ptruint;
+#     else
+         typedef unsigned __int64 png_ptruint;
+#     endif
+#  else
+      typedef unsigned long png_ptruint;
+#  endif
+#  define png_constcast(type, value) ((type)(png_ptruint)(const void*)(value))
 #  define png_aligncast(type, value) ((void*)(value))
 #  define png_aligncastconst(type, value) ((const void*)(value))
 #endif 
-
-
-
-
-
-#ifdef PNG_FIXED_POINT_SUPPORTED
-#  define PNGFAPI PNGAPI
-#else
-#  define PNGFAPI
-#endif
-
-#ifndef PNG_VERSION_INFO_ONLY
-
-
 
 #if defined(PNG_FLOATING_POINT_SUPPORTED) ||\
     defined(PNG_FLOATING_ARITHMETIC_SUPPORTED)
@@ -834,6 +846,7 @@
 #define png_PLTE PNG_U32( 80,  76,  84,  69)
 #define png_bKGD PNG_U32( 98,  75,  71,  68)
 #define png_cHRM PNG_U32( 99,  72,  82,  77)
+#define png_eXIf PNG_U32(101,  88,  73, 102) /* registered July 2017 */
 #define png_fRAc PNG_U32(102,  82,  65,  99) /* registered, not defined */
 #define png_gAMA PNG_U32(103,  65,  77,  65)
 #define png_gIFg PNG_U32(103,  73,  70, 103)
@@ -1440,6 +1453,11 @@ PNG_INTERNAL_FUNCTION(void,png_handle_bKGD,(png_structrp png_ptr,
 
 #ifdef PNG_READ_cHRM_SUPPORTED
 PNG_INTERNAL_FUNCTION(void,png_handle_cHRM,(png_structrp png_ptr,
+    png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
+#endif
+
+#ifdef PNG_READ_eXIf_SUPPORTED
+PNG_INTERNAL_FUNCTION(void,png_handle_eXIf,(png_structrp png_ptr,
     png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
 #endif
 

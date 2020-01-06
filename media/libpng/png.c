@@ -14,7 +14,27 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_29 Your_png_h_is_not_version_1_6_29;
+typedef png_libpng_version_1_6_31 Your_png_h_is_not_version_1_6_31;
+
+#ifdef __GNUC__
+
+
+
+
+
+
+
+
+
+
+
+#if __GNUC__ == 7 && __GNUC_MINOR__ == 1
+#define GCC_STRICT_OVERFLOW 1
+#endif 
+#endif 
+#ifndef GCC_STRICT_OVERFLOW
+#define GCC_STRICT_OVERFLOW 0
+#endif
 
 
 
@@ -595,6 +615,16 @@ png_free_data(png_const_structrp png_ptr, png_inforp info_ptr, png_uint_32 mask,
    }
 #endif
 
+#ifdef PNG_eXIf_SUPPORTED
+   
+   if (((mask & PNG_FREE_EXIF) & info_ptr->free_me) != 0)
+   {
+      png_free(png_ptr, info_ptr->exif);
+      info_ptr->exif = NULL;
+      info_ptr->valid &= ~PNG_INFO_eXIf;
+   }
+#endif
+
 #ifdef PNG_hIST_SUPPORTED
    
    if (((mask & PNG_FREE_HIST) & info_ptr->free_me) != 0)
@@ -776,7 +806,7 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.29+apng - March 16, 2017" PNG_STRING_NEWLINE \
+      "libpng version 1.6.31+apng - July 27, 2017" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -785,7 +815,7 @@ png_get_copyright(png_const_structrp png_ptr)
       "Portions Copyright (c) 2006-2007 Andrew Smith" PNG_STRING_NEWLINE \
       "Portions Copyright (c) 2008-2017 Max Stepin" PNG_STRING_NEWLINE ;
 #  else
-   return "libpng version 1.6.29+apng - March 16, 2017\
+   return "libpng version 1.6.31+apng - July 27, 2017\
       Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
       Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\
@@ -2836,7 +2866,7 @@ png_pow10(int power)
    if (power < 0)
    {
       if (power < DBL_MIN_10_EXP) return 0;
-      recip = 1, power = -power;
+      recip = 1; power = -power;
    }
 
    if (power > 0)
@@ -2861,6 +2891,14 @@ png_pow10(int power)
 
 
 
+#if GCC_STRICT_OVERFLOW
+#pragma GCC diagnostic push
+
+
+
+
+#pragma GCC diagnostic warning "-Wstrict-overflow=2"
+#endif 
 void 
 png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
     double fp, unsigned int precision)
@@ -2914,7 +2952,9 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
             double test = png_pow10(exp_b10+1);
 
             if (test <= DBL_MAX)
-               ++exp_b10, base = test;
+            {
+               ++exp_b10; base = test;
+            }
 
             else
                break;
@@ -2928,7 +2968,10 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
 
          fp /= base;
-         while (fp >= 1) fp /= 10, ++exp_b10;
+         while (fp >= 1)
+         {
+            fp /= 10; ++exp_b10;
+         }
 
          
 
@@ -2945,7 +2988,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
             if (exp_b10 < 0 && exp_b10 > -3) 
             {
-               czero = (unsigned int)(-exp_b10); 
+               czero = 0U-exp_b10; 
                exp_b10 = 0;      
             }
             else
@@ -2979,7 +3022,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
                      
                      if (czero > 0)
                      {
-                        --czero, d = 1;
+                        --czero; d = 1;
                         if (cdigits == 0) --clead;
                      }
                      else
@@ -2993,7 +3036,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
                            else if (ch == 46)
                            {
-                              ch = *--ascii, ++size;
+                              ch = *--ascii; ++size;
                               
 
 
@@ -3020,7 +3063,9 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
                               int ch = *--ascii;
 
                               if (ch == 46)
-                                 ++size, exp_b10 = 1;
+                              {
+                                 ++size; exp_b10 = 1;
+                              }
 
                               
 
@@ -3056,21 +3101,26 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
                      if (exp_b10 != (-1))
                      {
-                        if (exp_b10 == 0) *ascii++ = 46, --size;
+                        if (exp_b10 == 0)
+                        {
+                           *ascii++ = 46; --size;
+                        }
                         
                         --exp_b10;
                      }
-                     *ascii++ = 48, --czero;
+                     *ascii++ = 48; --czero;
                   }
 
                   if (exp_b10 != (-1))
                   {
                      if (exp_b10 == 0)
-                        *ascii++ = 46, --size; 
+                     {
+                        *ascii++ = 46; --size; 
+                     }
 
                      --exp_b10;
                   }
-                  *ascii++ = (char)(48 + (int)d), ++cdigits;
+                  *ascii++ = (char)(48 + (int)d); ++cdigits;
                }
             }
             while (cdigits+czero < precision+clead && fp > DBL_MIN);
@@ -3093,7 +3143,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
 
 
-               while (--exp_b10 >= 0) *ascii++ = 48;
+               while (exp_b10-- > 0) *ascii++ = 48;
 
                *ascii = 0;
 
@@ -3111,7 +3161,7 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
             size -= cdigits;
 
-            *ascii++ = 69, --size;    
+            *ascii++ = 69; --size;    
 
             
 
@@ -3122,12 +3172,12 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
 
                if (exp_b10 < 0)
                {
-                  *ascii++ = 45, --size; 
-                  uexp_b10 = (unsigned int)(-exp_b10);
+                  *ascii++ = 45; --size; 
+                  uexp_b10 = 0U-exp_b10;
                }
 
                else
-                  uexp_b10 = (unsigned int)exp_b10;
+                  uexp_b10 = 0U+exp_b10;
 
                cdigits = 0;
 
@@ -3170,6 +3220,9 @@ png_ascii_from_fp(png_const_structrp png_ptr, png_charp ascii, png_size_t size,
    
    png_error(png_ptr, "ASCII conversion buffer too small");
 }
+#if GCC_STRICT_OVERFLOW
+#pragma GCC diagnostic pop
+#endif 
 
 #  endif 
 
@@ -3189,7 +3242,9 @@ png_ascii_from_fixed(png_const_structrp png_ptr, png_charp ascii,
 
       
       if (fp < 0)
-         *ascii++ = 45, num = (png_uint_32)(-fp);
+      {
+         *ascii++ = 45; num = (png_uint_32)(-fp);
+      }
       else
          num = (png_uint_32)fp;
 
@@ -3227,7 +3282,10 @@ png_ascii_from_fixed(png_const_structrp png_ptr, png_charp ascii,
 
 
                i = 5;
-               while (ndigits < i) *ascii++ = 48, --i;
+               while (ndigits < i)
+               {
+                  *ascii++ = 48; --i;
+               }
                while (ndigits >= first) *ascii++ = digits[--ndigits];
                
             }
@@ -3278,6 +3336,15 @@ png_fixed(png_const_structrp png_ptr, double fp, png_const_charp text)
 
 
 
+#if GCC_STRICT_OVERFLOW 
+
+
+
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wstrict-overflow=2"
+#endif 
 int
 png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
     png_int_32 divisor)
@@ -3392,6 +3459,9 @@ png_muldiv(png_fixed_point_p res, png_fixed_point a, png_int_32 times,
 
    return 0;
 }
+#if GCC_STRICT_OVERFLOW
+#pragma GCC diagnostic pop
+#endif 
 #endif 
 
 #if defined(PNG_READ_GAMMA_SUPPORTED) || defined(PNG_INCH_CONVERSIONS_SUPPORTED)

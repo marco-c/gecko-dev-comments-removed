@@ -49,6 +49,7 @@ png_set_crc_action(png_structrp png_ptr, int crit_action, int ancil_action)
       case PNG_CRC_WARN_DISCARD:    
          png_warning(png_ptr,
              "Can't discard critical data on CRC error");
+         
       case PNG_CRC_ERROR_QUIT:                                
 
       case PNG_CRC_DEFAULT:
@@ -1253,7 +1254,7 @@ png_init_rgb_transformations(png_structrp png_ptr)
             default:
 
             case 8:
-               
+                
 
             case 16:
                
@@ -4601,7 +4602,9 @@ png_do_expand_16(png_row_infop row_info, png_bytep row)
       png_byte *sp = row + row_info->rowbytes; 
       png_byte *dp = sp + row_info->rowbytes;  
       while (dp > sp)
-         dp[-2] = dp[-1] = *--sp, dp -= 2;
+      {
+         dp[-2] = dp[-1] = *--sp; dp -= 2;
+      }
 
       row_info->rowbytes *= 2;
       row_info->bit_depth = 16;

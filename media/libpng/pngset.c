@@ -134,6 +134,39 @@ png_set_cHRM_XYZ(png_const_structrp png_ptr, png_inforp info_ptr, double red_X,
 
 #endif 
 
+#ifdef PNG_eXIf_SUPPORTED
+void PNGAPI
+png_set_eXIf(png_const_structrp png_ptr, png_inforp info_ptr,
+    const png_bytep eXIf_buf)
+{
+   int i;
+
+   png_debug1(1, "in %s storage function", "eXIf");
+
+   if (png_ptr == NULL || info_ptr == NULL)
+      return;
+
+   png_free_data(png_ptr, info_ptr, PNG_FREE_EXIF, 0);
+
+   info_ptr->exif = png_voidcast(png_bytep, png_malloc_warn(png_ptr,
+       info_ptr->num_exif));
+
+   if (info_ptr->exif == NULL)
+   {
+      png_warning(png_ptr, "Insufficient memory for eXIf chunk data");
+
+      return;
+   }
+
+   info_ptr->free_me |= PNG_FREE_EXIF;
+
+   for (i = 0; i < info_ptr->num_exif; i++)
+      info_ptr->exif[i] = eXIf_buf[i];
+
+   info_ptr->valid |= PNG_INFO_eXIf;
+}
+#endif 
+
 #ifdef PNG_gAMA_SUPPORTED
 void PNGFAPI
 png_set_gAMA_fixed(png_const_structrp png_ptr, png_inforp info_ptr,
@@ -1107,8 +1140,9 @@ png_set_sPLT(png_const_structrp png_ptr,
       info_ptr->valid |= PNG_INFO_sPLT;
       ++(info_ptr->splt_palettes_num);
       ++np;
+      ++entries;
    }
-   while (++entries, --nentries);
+   while (--nentries);
 
    if (nentries > 0)
       png_chunk_report(png_ptr, "sPLT out of memory", PNG_CHUNK_WRITE_ERROR);
@@ -1841,14 +1875,16 @@ png_check_keyword(png_structrp png_ptr, png_const_charp key, png_bytep new_key)
       png_byte ch = (png_byte)*key++;
 
       if ((ch > 32 && ch <= 126) || (ch >= 161 ))
-         *new_key++ = ch, ++key_len, space = 0;
+      {
+         *new_key++ = ch; ++key_len; space = 0;
+      }
 
       else if (space == 0)
       {
          
 
 
-         *new_key++ = 32, ++key_len, space = 1;
+         *new_key++ = 32; ++key_len; space = 1;
 
          
          if (ch != 32)
@@ -1861,7 +1897,7 @@ png_check_keyword(png_structrp png_ptr, png_const_charp key, png_bytep new_key)
 
    if (key_len > 0 && space != 0) 
    {
-      --key_len, --new_key;
+      --key_len; --new_key;
       if (bad_character == 0)
          bad_character = 32;
    }
