@@ -16,6 +16,8 @@ const GENERATED_LINE = 86;
 const ORIGINAL_LINE = 13;
 
 add_task(function* () {
+  yield pushPref("devtools.debugger.new-debugger-frontend", true);
+
   
   
   const toolbox = yield openNewTabAndToolbox(INITIAL_URL, "webconsole");
