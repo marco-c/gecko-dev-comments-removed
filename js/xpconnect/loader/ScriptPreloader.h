@@ -137,7 +137,7 @@ private:
     
     
     
-    class CachedScript
+    class CachedScript : public LinkedListElement<CachedScript>
     {
     public:
         CachedScript(CachedScript&&) = default;
@@ -164,24 +164,15 @@ private:
         
         
         
-        
-        
-        
-        
-        
         struct Comparator
         {
             bool Equals(const CachedScript* a, const CachedScript* b) const
             {
-              return (a->AsyncDecodable() == b->AsyncDecodable() &&
-                      a->mLoadTime == b->mLoadTime);
+              return a->mLoadTime == b->mLoadTime;
             }
 
             bool LessThan(const CachedScript* a, const CachedScript* b) const
             {
-              if (a->AsyncDecodable() != b->AsyncDecodable()) {
-                return a->AsyncDecodable();
-              }
               return a->mLoadTime < b->mLoadTime;
             }
         };
@@ -197,8 +188,6 @@ private:
 
             const ScriptStatus mStatus;
         };
-
-        void Cancel();
 
         void FreeData()
         {
@@ -216,8 +205,6 @@ private:
             mLoadTime = loadTime;
           }
         }
-
-        bool AsyncDecodable() const { return mSize > MIN_OFFTHREAD_SIZE; }
 
         
         
@@ -307,10 +294,6 @@ private:
         bool mReadyToExecute = false;
 
         
-        
-        void* mToken = nullptr;
-
-        
         EnumSet<ProcessType> mProcessTypes{};
 
         
@@ -342,7 +325,23 @@ private:
     
     
     
-    static constexpr int MIN_OFFTHREAD_SIZE = 20 * 1024;
+    
+    
+    
+    
+    static constexpr int OFF_THREAD_FIRST_CHUNK_SIZE = 128 * 1024;
+    static constexpr int OFF_THREAD_CHUNK_SIZE = 512 * 1024;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr int SMALL_SCRIPT_CHUNK_THRESHOLD = 128 * 1024;
 
     
     
@@ -377,11 +376,11 @@ private:
     
     JSScript* WaitForCachedScript(JSContext* cx, CachedScript* script);
 
-    
-    void DecodeScriptOffThread(JSContext* cx, CachedScript* script);
+    void DecodeNextBatch(size_t chunkSize);
 
     static void OffThreadDecodeCallback(void* token, void* context);
-    void CancelOffThreadParse(void* token);
+    void FinishOffThreadDecode();
+    void DoFinishOffThreadDecode();
 
     size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
     {
@@ -411,6 +410,22 @@ private:
     bool mSaveComplete = false;
     bool mDataPrepared = false;
     bool mCacheInvalidated = false;
+
+    
+    
+    LinkedList<CachedScript> mPendingScripts;
+
+    
+    
+    JS::TranscodeSources mParsingSources;
+    Vector<CachedScript*> mParsingScripts;
+
+    
+    void* mToken = nullptr;
+
+    
+    
+    bool mFinishDecodeRunnablePending = false;
 
     
     static ProcessType sProcessType;

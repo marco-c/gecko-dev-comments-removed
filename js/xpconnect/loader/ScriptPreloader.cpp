@@ -269,19 +269,16 @@ ScriptPreloader::Cleanup()
 void
 ScriptPreloader::InvalidateCache()
 {
+    mMonitor.AssertNotCurrentThreadOwns();
     MonitorAutoLock mal(mMonitor);
 
     mCacheInvalidated = true;
 
-    for (auto& script : IterHash(mScripts)) {
-        
-        
-        
-        if (script->mReadyToExecute) {
-            script->Cancel();
-            script.Remove();
-        }
-    }
+    mParsingScripts.clearAndFree();
+    while (auto script = mPendingScripts.getFirst())
+        script->remove();
+    for (auto& script : IterHash(mScripts))
+        script.Remove();
 
     
     
@@ -437,12 +434,12 @@ ScriptPreloader::InitCacheInternal()
         return Err(NS_ERROR_UNEXPECTED);
     }
 
-    AutoTArray<CachedScript*, 256> scripts;
-
     {
         auto cleanup = MakeScopeExit([&] () {
             mScripts.Clear();
         });
+
+        LinkedList<CachedScript> scripts;
 
         Range<uint8_t> header(data, data + headerSize);
         data += headerSize;
@@ -468,7 +465,14 @@ ScriptPreloader::InitCacheInternal()
 
             script->mXDRRange.emplace(scriptData, scriptData + script->mSize);
 
-            scripts.AppendElement(script.get());
+            
+            
+            if (script->mOriginalProcessTypes.contains(CurrentProcessType())) {
+                scripts.insertBack(script.get());
+            } else {
+                script->mReadyToExecute = true;
+            }
+
             mScripts.Put(script->mCachePath, script.get());
             Unused << script.release();
         }
@@ -477,32 +481,11 @@ ScriptPreloader::InitCacheInternal()
             return Err(NS_ERROR_UNEXPECTED);
         }
 
+        mPendingScripts = Move(scripts);
         cleanup.release();
     }
 
-    AutoJSAPI jsapi;
-    MOZ_RELEASE_ASSERT(jsapi.Init(xpc::CompilationScope()));
-    JSContext* cx = jsapi.cx();
-
-    auto start = TimeStamp::Now();
-    LOG(Info, "Off-thread decoding scripts...\n");
-
-    JS::CompileOptions options(cx, JSVERSION_LATEST);
-
-    for (auto& script : scripts) {
-        
-        if (script->mProcessTypes.contains(CurrentProcessType()) &&
-            script->AsyncDecodable() &&
-            JS::CanCompileOffThread(cx, options, script->mSize)) {
-            DecodeScriptOffThread(cx, script);
-        } else {
-            script->mReadyToExecute = true;
-        }
-    }
-
-    LOG(Info, "Initialized decoding in %fms\n",
-        (TimeStamp::Now() - start).ToMilliseconds());
-
+    DecodeNextBatch(OFF_THREAD_FIRST_CHUNK_SIZE);
     return Ok();
 }
 
@@ -760,11 +743,24 @@ ScriptPreloader::GetCachedScript(JSContext* cx, const nsCString& path)
 JSScript*
 ScriptPreloader::WaitForCachedScript(JSContext* cx, CachedScript* script)
 {
+    
+    
+    
+    
+    
+    FinishOffThreadDecode();
+
     if (!script->mReadyToExecute) {
         LOG(Info, "Must wait for async script load: %s\n", script->mURL.get());
         auto start = TimeStamp::Now();
 
+        mMonitor.AssertNotCurrentThreadOwns();
         MonitorAutoLock mal(mMonitor);
+
+        
+        
+        
+        FinishOffThreadDecode();
 
         if (!script->mReadyToExecute && script->mSize < MAX_MAINTHREAD_DECODE_SIZE) {
             LOG(Info, "Script is small enough to recompile on main thread\n");
@@ -773,62 +769,167 @@ ScriptPreloader::WaitForCachedScript(JSContext* cx, CachedScript* script)
         } else {
             while (!script->mReadyToExecute) {
                 mal.Wait();
+
+                MonitorAutoUnlock mau(mMonitor);
+                FinishOffThreadDecode();
             }
         }
 
-        LOG(Info, "Waited %fms\n", (TimeStamp::Now() - start).ToMilliseconds());
+        LOG(Debug, "Waited %fms\n", (TimeStamp::Now() - start).ToMilliseconds());
     }
 
     return script->GetJSScript(cx);
 }
 
 
-void
-ScriptPreloader::DecodeScriptOffThread(JSContext* cx, CachedScript* script)
+
+ void
+ScriptPreloader::OffThreadDecodeCallback(void* token, void* context)
 {
-    JS::CompileOptions options(cx, JSVERSION_LATEST);
+    auto cache = static_cast<ScriptPreloader*>(context);
 
-    options.setNoScriptRval(true)
-           .setFileAndLine(script->mURL.get(), 1);
+    cache->mMonitor.AssertNotCurrentThreadOwns();
+    MonitorAutoLock mal(cache->mMonitor);
 
-    if (!JS::DecodeOffThreadScript(cx, options, script->Range(),
-                                   OffThreadDecodeCallback,
-                                   static_cast<void*>(script))) {
+    
+    
+    cache->mToken = token;
+    mal.NotifyAll();
+
+    
+    
+    
+    if (cache->mToken && !cache->mFinishDecodeRunnablePending) {
+        cache->mFinishDecodeRunnablePending = true;
+        NS_DispatchToMainThread(
+            NewRunnableMethod(cache, &ScriptPreloader::DoFinishOffThreadDecode));
+    }
+}
+
+void
+ScriptPreloader::DoFinishOffThreadDecode()
+{
+    mFinishDecodeRunnablePending = false;
+    FinishOffThreadDecode();
+}
+
+void
+ScriptPreloader::FinishOffThreadDecode()
+{
+    if (!mToken) {
+        return;
+    }
+
+    auto cleanup = MakeScopeExit([&] () {
+        mToken = nullptr;
+        mParsingSources.clear();
+        mParsingScripts.clear();
+
+        DecodeNextBatch(OFF_THREAD_CHUNK_SIZE);
+    });
+
+    AutoJSAPI jsapi;
+    MOZ_RELEASE_ASSERT(jsapi.Init(xpc::CompilationScope()));
+
+    JSContext* cx = jsapi.cx();
+    JS::Rooted<JS::ScriptVector> jsScripts(cx, JS::ScriptVector(cx));
+
+    
+    
+    
+    
+    
+    
+    
+    Unused << JS::FinishMultiOffThreadScriptsDecoder(cx, mToken, &jsScripts);
+
+    unsigned i = 0;
+    for (auto script : mParsingScripts) {
+        LOG(Debug, "Finished off-thread decode of %s\n", script->mURL.get());
+        if (i < jsScripts.length())
+            script->mScript = jsScripts[i++];
         script->mReadyToExecute = true;
     }
 }
 
 void
-ScriptPreloader::CancelOffThreadParse(void* token)
+ScriptPreloader::DecodeNextBatch(size_t chunkSize)
 {
-    AutoSafeJSAPI jsapi;
-    JS::CancelOffThreadScriptDecoder(jsapi.cx(), token);
-}
+    MOZ_ASSERT(mParsingSources.length() == 0);
+    MOZ_ASSERT(mParsingScripts.length() == 0);
 
- void
-ScriptPreloader::OffThreadDecodeCallback(void* token, void* context)
-{
-    auto script = static_cast<CachedScript*>(context);
+    auto cleanup = MakeScopeExit([&] () {
+        mParsingScripts.clearAndFree();
+        mParsingSources.clearAndFree();
+    });
 
-    MonitorAutoLock mal(script->mCache.mMonitor);
+    auto start = TimeStamp::Now();
+    LOG(Debug, "Off-thread decoding scripts...\n");
 
-    if (script->mReadyToExecute) {
+    size_t size = 0;
+    for (CachedScript* next = mPendingScripts.getFirst(); next;) {
+        auto script = next;
+        next = script->getNext();
+
         
         
+        if (script->mReadyToExecute) {
+            script->remove();
+            continue;
+        }
         
         
-        NS_DispatchToMainThread(
-            NewRunnableMethod<void*>(&script->mCache,
-                                     &ScriptPreloader::CancelOffThreadParse,
-                                     token));
+        if (size > SMALL_SCRIPT_CHUNK_THRESHOLD &&
+            size + script->mSize > chunkSize) {
+            break;
+        }
+        if (!mParsingScripts.append(script) ||
+            !mParsingSources.emplaceBack(script->Range(), script->mURL.get(), 0)) {
+            break;
+        }
+
+        LOG(Debug, "Beginning off-thread decode of script %s (%u bytes)\n",
+            script->mURL.get(), script->mSize);
+
+        script->remove();
+        size += script->mSize;
+    }
+
+    if (size == 0 && mPendingScripts.isEmpty()) {
         return;
     }
 
-    script->mToken = token;
-    script->mReadyToExecute = true;
+    AutoJSAPI jsapi;
+    MOZ_RELEASE_ASSERT(jsapi.Init(xpc::CompilationScope()));
+    JSContext* cx = jsapi.cx();
 
-    mal.NotifyAll();
+    JS::CompileOptions options(cx, JSVERSION_LATEST);
+    options.setNoScriptRval(true);
+
+    if (!JS::CanCompileOffThread(cx, options, size) ||
+        !JS::DecodeMultiOffThreadScripts(cx, options, mParsingSources,
+                                         OffThreadDecodeCallback,
+                                         static_cast<void*>(this))) {
+        
+        
+        MOZ_ASSERT(mPendingScripts.isEmpty());
+        for (auto script : mPendingScripts) {
+            script->mReadyToExecute = true;
+        }
+
+        LOG(Info, "Can't decode %lu bytes of scripts off-thread", (unsigned long)size);
+        for (auto script : mParsingScripts) {
+            script->mReadyToExecute = true;
+        }
+        return;
+    }
+
+    cleanup.release();
+
+    LOG(Debug, "Initialized decoding of %u scripts (%u bytes) in %fms\n",
+        (unsigned)mParsingSources.length(), (unsigned)size, (TimeStamp::Now() - start).ToMilliseconds());
 }
+
 
 ScriptPreloader::CachedScript::CachedScript(ScriptPreloader& cache, InputBuffer& buf)
     : mCache(cache)
@@ -859,20 +960,6 @@ ScriptPreloader::CachedScript::XDREncode(JSContext* cx)
     return false;
 }
 
-void
-ScriptPreloader::CachedScript::Cancel()
-{
-    if (mToken) {
-        mCache.mMonitor.AssertCurrentThreadOwns();
-
-        AutoSafeJSAPI jsapi;
-        JS::CancelOffThreadScriptDecoder(jsapi.cx(), mToken);
-
-        mReadyToExecute = true;
-        mToken = nullptr;
-    }
-}
-
 JSScript*
 ScriptPreloader::CachedScript::GetJSScript(JSContext* cx)
 {
@@ -886,30 +973,22 @@ ScriptPreloader::CachedScript::GetJSScript(JSContext* cx)
     
     
     
-    if (!mToken) {
-        MOZ_ASSERT(HasRange());
+    MOZ_ASSERT(HasRange());
 
-        JS::RootedScript script(cx);
-        if (JS::DecodeScript(cx, Range(), &script)) {
-            mScript = script;
+    auto start = TimeStamp::Now();
+    LOG(Info, "Decoding script %s on main thread...\n", mURL.get());
 
-            if (mCache.mSaveComplete) {
-                FreeData();
-            }
+    JS::RootedScript script(cx);
+    if (JS::DecodeScript(cx, Range(), &script)) {
+        mScript = script;
+
+        if (mCache.mSaveComplete) {
+            FreeData();
         }
-
-        return mScript;
     }
 
-    Maybe<JSAutoCompartment> ac;
-    if (JS::CompartmentCreationOptionsRef(cx).addonIdOrNull()) {
-        
-        
-        ac.emplace(cx, xpc::CompilationScope());
-    }
+    LOG(Debug, "Finished decoding in %fms", (TimeStamp::Now() - start).ToMilliseconds());
 
-    mScript = JS::FinishOffThreadScriptDecoder(cx, mToken);
-    mToken = nullptr;
     return mScript;
 }
 
