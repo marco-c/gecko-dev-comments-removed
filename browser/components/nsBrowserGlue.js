@@ -962,6 +962,9 @@ BrowserGlue.prototype = {
 
     this._firstWindowTelemetry(aWindow);
     this._firstWindowLoaded();
+
+    
+    PlacesUtils.favicons.setDefaultIconURIPreferredSize(16 * aWindow.devicePixelRatio);
   },
 
   _sendMediaTelemetry() {

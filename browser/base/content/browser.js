@@ -4076,8 +4076,7 @@ function FillHistoryMenu(aParent) {
       if (j != index) {
         
         
-        item.style.listStyleImage =
-          "url(" + PlacesUtils.urlWithSizeRef(window, "page-icon:" + uri, 16) + ")";
+        item.style.listStyleImage = `url(page-icon:${uri})`;
       }
 
       if (j < index) {

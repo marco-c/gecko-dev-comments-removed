@@ -71,4 +71,10 @@ add_task(async function() {
   await compareFavicons(PlacesUtils.urlWithSizeRef(win, PAGE_ICON_URL, 32),
                         PlacesUtils.favicons.getFaviconLinkForIcon(NetUtil.newURI(ICON32_URL)),
                         "Size=32 with HIDPI should return the 32px icon");
+
+  
+  PlacesUtils.favicons.setDefaultIconURIPreferredSize(16);
+  await compareFavicons(PAGE_ICON_URL,
+    PlacesUtils.favicons.getFaviconLinkForIcon(NetUtil.newURI(ICON16_URL)),
+    "Not specifying a ref should return the set default size icon");
 });
