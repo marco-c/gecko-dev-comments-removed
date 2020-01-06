@@ -4627,15 +4627,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode, nsIPrintSettings* aP
   mViewManager  = nullptr;
   mWindow       = nullptr;
 
-  
-  
-#ifdef MOZ_STYLO
-  Element* root = mDocument->GetRootElement();
-  if (root && root->IsStyledByServo()) {
-    ServoRestyleManager::ClearServoDataFromSubtree(root);
-  }
-#endif
-
   NS_ENSURE_STATE(mDocument);
   if (aPageMode)
   {    
