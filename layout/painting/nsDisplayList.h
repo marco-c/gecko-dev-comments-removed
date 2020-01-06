@@ -830,6 +830,7 @@ public:
   void MarkFrameForDisplay(nsIFrame* aFrame, nsIFrame* aStopAtFrame = nullptr);
   void MarkFrameForDisplayIfVisible(nsIFrame* aFrame, nsIFrame* aStopAtFrame = nullptr);
 
+  void ClearFixedBackgroundDisplayData();
   
 
 

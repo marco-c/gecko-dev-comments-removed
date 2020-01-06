@@ -2630,6 +2630,14 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       hasOverrideDirtyRect = true;
     }
   }
+  
+  
+  
+  if (aBuilder->IsRetainingDisplayList() && BuiltBlendContainer()) {
+    dirtyRect = visibleRect;
+    aBuilder->MarkFrameModifiedDuringBuilding(this);
+  }
+
   bool usingFilter = StyleEffects()->HasFilters();
   bool usingMask = nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
   bool usingSVGEffects = usingFilter || usingMask;
@@ -2749,7 +2757,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       aBuilder->MarkPreserve3DFramesForDisplayList(this);
     }
 
-    MarkAbsoluteFramesForDisplayList(aBuilder);
+    aBuilder->AdjustWindowDraggingRegion(this);
 
     nsDisplayLayerEventRegions* eventRegions = nullptr;
     if (aBuilder->IsBuildingLayerEventRegions()) {
@@ -2757,8 +2765,57 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       eventRegions->AddFrame(aBuilder, this);
       aBuilder->SetLayerEventRegions(eventRegions);
     }
-    aBuilder->AdjustWindowDraggingRegion(this);
+
+    MarkAbsoluteFramesForDisplayList(aBuilder);
     BuildDisplayList(aBuilder, set);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    if (aBuilder->ContainsBlendMode() != BuiltBlendContainer() &&
+        aBuilder->IsRetainingDisplayList()) {
+      SetBuiltBlendContainer(aBuilder->ContainsBlendMode());
+      aBuilder->MarkFrameModifiedDuringBuilding(this);
+
+      
+      
+      if (!aBuilder->GetDirtyRect().Contains(aBuilder->GetVisibleRect())) {
+        aBuilder->SetDirtyRect(aBuilder->GetVisibleRect());
+        set.DeleteAll(aBuilder);
+
+        if (eventRegions) {
+          eventRegions->Destroy(aBuilder);
+          eventRegions = new (aBuilder) nsDisplayLayerEventRegions(aBuilder, this);
+          eventRegions->AddFrame(aBuilder, this);
+          aBuilder->SetLayerEventRegions(eventRegions);
+        }
+
+        
+        
+        
+        if (!GetParent()) {
+          aBuilder->ClearFixedBackgroundDisplayData();
+        }
+
+        MarkAbsoluteFramesForDisplayList(aBuilder);
+        BuildDisplayList(aBuilder, set);
+      }
+    }
+
     if (eventRegions) {
       
       
