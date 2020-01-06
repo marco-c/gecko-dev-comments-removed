@@ -21,8 +21,6 @@ use selectors::matching::{matches_selector, MatchingContext, ElementSelectorFlag
 use selectors::parser::{Component, Combinator, SelectorIter};
 use smallvec::{SmallVec, VecLike};
 use std::hash::{BuildHasherDefault, Hash, Hasher};
-#[cfg(feature = "gecko")]
-use stylesheets::{MallocEnclosingSizeOfFn, MallocSizeOfFn, MallocSizeOfHash, MallocSizeOfVec};
 use stylist::Rule;
 
 
@@ -96,6 +94,7 @@ pub trait SelectorMapEntry : Sized + Clone {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct SelectorMap<T: 'static> {
     
@@ -147,37 +146,6 @@ impl<T: 'static> SelectorMap<T> {
     
     pub fn len(&self) -> usize {
         self.count
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn,
-                                   malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
-                                   -> usize {
-        
-        
-        
-
-        let mut n = 0;
-
-        n += self.id_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        for (_, val) in self.id_hash.iter() {
-            n += val.malloc_shallow_size_of_vec(malloc_size_of);
-        }
-
-        n += self.class_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        for (_, val) in self.class_hash.iter() {
-            n += val.malloc_shallow_size_of_vec(malloc_size_of);
-        }
-
-        n += self.local_name_hash.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        for (_, val) in self.local_name_hash.iter() {
-            n += val.malloc_shallow_size_of_vec(malloc_size_of);
-        }
-
-        n += self.other.malloc_shallow_size_of_vec(malloc_size_of);
-
-        n
     }
 }
 
@@ -493,6 +461,7 @@ fn find_bucket<'a>(mut iter: SelectorIter<'a, SelectorImpl>) -> Bucket<'a> {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(PrecomputedHashMap<K, V>);
 
@@ -542,16 +511,6 @@ impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
         } else {
             self.0.get(key)
         }
-    }
-}
-
-#[cfg(feature = "gecko")]
-impl<K, V> MallocSizeOfHash for MaybeCaseInsensitiveHashMap<K, V>
-    where K: PrecomputedHash + Eq + Hash
-{
-    fn malloc_shallow_size_of_hash(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
-                                   -> usize {
-        self.0.malloc_shallow_size_of_hash(malloc_enclosing_size_of)
     }
 }
 

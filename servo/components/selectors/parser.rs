@@ -218,7 +218,7 @@ impl<Impl: SelectorImpl> SelectorList<Impl> {
 
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
 pub struct AncestorHashes {
     pub packed_hashes: [u32; 3],
 }

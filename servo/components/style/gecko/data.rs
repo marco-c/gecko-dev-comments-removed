@@ -12,12 +12,12 @@ use gecko_bindings::structs::{StyleSheetInfo, ServoStyleSheetInner};
 use gecko_bindings::structs::nsIDocument;
 use gecko_bindings::sugar::ownership::{HasArcFFI, HasBoxFFI, HasFFI, HasSimpleFFI};
 use invalidation::media_queries::{MediaListKey, ToMediaListKey};
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use media_queries::{Device, MediaList};
 use properties::ComputedValues;
 use servo_arc::Arc;
 use shared_lock::{Locked, StylesheetGuards, SharedRwLockReadGuard};
-use stylesheets::{MallocEnclosingSizeOfFn, MallocSizeOfFn, PerOrigin, StylesheetContents};
-use stylesheets::StylesheetInDocument;
+use stylesheets::{PerOrigin, StylesheetContents, StylesheetInDocument};
 use stylist::{ExtraStyleData, Stylist};
 
 
@@ -187,18 +187,9 @@ impl PerDocumentStyleDataImpl {
     }
 
     
-    pub fn malloc_add_size_of_children(&self, malloc_size_of: MallocSizeOfFn,
-                                       malloc_enclosing_size_of: MallocEnclosingSizeOfFn,
-                                       sizes: &mut ServoStyleSetSizes) {
-        self.stylist.malloc_add_size_of_children(malloc_size_of, malloc_enclosing_size_of, sizes);
-
-        let data = &self.extra_style_data;
-        sizes.mStylistOther +=
-            data.user_agent.malloc_size_of_children(malloc_size_of, malloc_enclosing_size_of);
-        sizes.mStylistOther +=
-            data.user.malloc_size_of_children(malloc_size_of, malloc_enclosing_size_of);
-        sizes.mStylistOther +=
-            data.author.malloc_size_of_children(malloc_size_of, malloc_enclosing_size_of);
+    pub fn add_size_of_children(&self, ops: &mut MallocSizeOfOps, sizes: &mut ServoStyleSetSizes) {
+        self.stylist.add_size_of_children(ops, sizes);
+        sizes.mStylistOther += self.extra_style_data.size_of(ops);
     }
 }
 

@@ -103,6 +103,7 @@ impl Iterator for OriginSetIterator {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Debug, Default)]
 pub struct PerOrigin<T> {

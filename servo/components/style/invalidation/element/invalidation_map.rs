@@ -16,8 +16,6 @@ use selectors::parser::{Combinator, Component};
 use selectors::parser::{Selector, SelectorIter, SelectorMethods};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
-#[cfg(feature = "gecko")]
-use stylesheets::{MallocEnclosingSizeOfFn, MallocSizeOfFn, MallocSizeOfHash, MallocSizeOfVec};
 
 #[cfg(feature = "gecko")]
 
@@ -58,11 +56,15 @@ pub fn dir_selector_to_state(s: &[u16]) -> ElementState {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Dependency {
     
+    #[cfg_attr(feature = "gecko",
+               ignore_malloc_size_of = "CssRules have primary refs, we measure there")]
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     pub selector: Selector<SelectorImpl>,
+
     
     pub selector_offset: usize,
 }
@@ -114,6 +116,7 @@ impl SelectorMapEntry for Dependency {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct StateDependency {
     
@@ -137,6 +140,7 @@ impl SelectorMapEntry for StateDependency {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct InvalidationMap {
     
@@ -294,34 +298,6 @@ impl InvalidationMap {
         }
 
         Ok(())
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn malloc_size_of_children(&self, malloc_size_of: MallocSizeOfFn,
-                                   malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
-                                   -> usize {
-        
-        
-        let mut n = 0;
-
-        n += self.class_to_selector.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        for (_, val) in self.class_to_selector.iter() {
-            n += val.malloc_shallow_size_of_vec(malloc_size_of);
-        }
-
-        n += self.id_to_selector.malloc_shallow_size_of_hash(malloc_enclosing_size_of);
-        for (_, val) in self.id_to_selector.iter() {
-            n += val.malloc_shallow_size_of_vec(malloc_size_of);
-        }
-
-        n += self.state_affecting_selectors.malloc_size_of_children(malloc_size_of,
-                                                                    malloc_enclosing_size_of);
-
-        n += self.other_attribute_affecting_selectors.malloc_size_of_children(
-            malloc_size_of, malloc_enclosing_size_of);
-
-        n
     }
 }
 

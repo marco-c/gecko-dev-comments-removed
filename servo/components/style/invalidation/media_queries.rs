@@ -8,7 +8,7 @@ use context::QuirksMode;
 use fnv::FnvHashSet;
 use media_queries::Device;
 use shared_lock::SharedRwLockReadGuard;
-use stylesheets::{DocumentRule, ImportRule, MallocEnclosingSizeOfFn, MallocSizeOfHash, MediaRule};
+use stylesheets::{DocumentRule, ImportRule, MediaRule};
 use stylesheets::{NestedRuleIterationCondition, Stylesheet, SupportsRule};
 
 
@@ -24,6 +24,7 @@ use stylesheets::{NestedRuleIterationCondition, Stylesheet, SupportsRule};
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct MediaListKey(usize);
 
@@ -53,6 +54,7 @@ impl ToMediaListKey for MediaRule {}
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct EffectiveMediaQueryResults {
     
@@ -87,12 +89,6 @@ impl EffectiveMediaQueryResults {
         
         
         self.set.insert(item.to_media_list_key());
-    }
-
-    
-    pub fn malloc_size_of_children(&self, malloc_enclosing_size_of: MallocEnclosingSizeOfFn)
-                                   -> usize {
-        self.set.malloc_shallow_size_of_hash(malloc_enclosing_size_of)
     }
 }
 
