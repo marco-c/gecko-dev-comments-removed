@@ -114,7 +114,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
-  this._onWillNavigate = this._onWillNavigate.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
   this._toggleNoAutohide = this._toggleNoAutohide.bind(this);
   this.showFramesMenu = this.showFramesMenu.bind(this);
@@ -164,7 +163,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   EventEmitter.decorate(this);
 
-  this._target.on("will-navigate", this._onWillNavigate);
   this._target.on("navigate", this._refreshHostTitle);
   this._target.on("frame-update", this._updateFrames);
   this._target.on("inspect-object", this._onInspectObject);
@@ -1987,30 +1985,6 @@ Toolbox.prototype = {
   
 
 
-  async _onWillNavigate() {
-    let toolId = this.currentToolId;
-    
-    if (toolId != "inspector") {
-      return;
-    }
-
-    let start = this.win.performance.now();
-    let panel = this.getPanel(toolId);
-    
-    if (!panel) {
-      return;
-    }
-    await panel.once("reloaded");
-    let delay = this.win.performance.now() - start;
-
-    let telemetryKey = "DEVTOOLS_TOOLBOX_PAGE_RELOAD_DELAY_MS";
-    let histogram = Services.telemetry.getKeyedHistogramById(telemetryKey);
-    histogram.add(toolId, delay);
-  },
-
-  
-
-
   _refreshHostTitle: function () {
     let title;
     if (this.target.name && this.target.name != this.target.url) {
@@ -2581,7 +2555,6 @@ Toolbox.prototype = {
     this.emit("destroy");
 
     this._target.off("inspect-object", this._onInspectObject);
-    this._target.off("will-navigate", this._onWillNavigate);
     this._target.off("navigate", this._refreshHostTitle);
     this._target.off("frame-update", this._updateFrames);
     this.off("select", this._refreshHostTitle);
