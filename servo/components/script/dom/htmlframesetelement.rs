@@ -2,7 +2,6 @@
 
 
 
-use dom::bindings::codegen::Bindings::EventHandlerBinding::{EventHandlerNonNull, OnBeforeUnloadEventHandlerNonNull};
 use dom::bindings::codegen::Bindings::HTMLFrameSetElementBinding;
 use dom::bindings::codegen::Bindings::HTMLFrameSetElementBinding::HTMLFrameSetElementMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
