@@ -1260,12 +1260,14 @@ public:
       nsDataHashtable<nsStringHashKey, SelectorList> mTable;
   };
 
-  SelectorCache& GetSelectorCache() {
-    if (!mSelectorCache) {
-      mSelectorCache =
-        new SelectorCache(EventTargetFor(mozilla::TaskCategory::Other));
+  SelectorCache& GetSelectorCache(mozilla::StyleBackendType aBackendType) {
+    mozilla::UniquePtr<SelectorCache>& cache =
+      aBackendType == mozilla::StyleBackendType::Servo
+        ? mServoSelectorCache : mGeckoSelectorCache;
+    if (!cache) {
+      cache.reset(new SelectorCache(EventTargetFor(mozilla::TaskCategory::Other)));
     }
-    return *mSelectorCache;
+    return *cache;
   }
   
   
@@ -3203,8 +3205,13 @@ protected:
 private:
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
+
   
-  nsAutoPtr<SelectorCache> mSelectorCache;
+  
+  
+  
+  mozilla::UniquePtr<SelectorCache> mServoSelectorCache;
+  mozilla::UniquePtr<SelectorCache> mGeckoSelectorCache;
 
 protected:
   ~nsIDocument();
