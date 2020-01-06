@@ -43,21 +43,6 @@ public:
 
 
 
-  DataType* GetValue(KeyType aKey)
-  {
-    if (EntryType* ent = this->GetEntry(aKey)) {
-      return &ent->mData;
-    }
-    return nullptr;
-  }
-
-  
-
-
-
-
-
-
 
   mozilla::Maybe<DataType> GetAndRemove(KeyType aKey)
   {
