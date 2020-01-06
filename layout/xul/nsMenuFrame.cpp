@@ -1532,14 +1532,3 @@ nsMenuTimerMediator::GetName(nsACString& aName)
   aName.AssignLiteral("nsMenuTimerMediator");
   return NS_OK;
 }
-
-
-
-
-
-NS_IMETHODIMP
-nsMenuTimerMediator::SetName(const char* aName)
-{
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
