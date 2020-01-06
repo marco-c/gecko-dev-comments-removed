@@ -1307,9 +1307,11 @@ nsAccessibilityService::Init()
       
       contentChild->SendGetA11yContentId();
     }
-#endif 
 
+    gApplicationAccessible = new ApplicationAccessibleWrap();
+#else
     gApplicationAccessible = new ApplicationAccessible();
+#endif 
   }
 
   NS_ADDREF(gApplicationAccessible); 
