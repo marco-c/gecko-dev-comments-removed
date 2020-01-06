@@ -776,10 +776,20 @@ add_task(async function test_checkSubsessionHistograms() {
   
   
   
+  const possibleAnomalyPrefixes = [
+    "CYCLE_COLLECTOR_WORKER", 
+  ];
+
+  
+  
+  
   
   
   let checkHistograms = (classic, subsession, message) => {
     for (let id of Object.keys(subsession)) {
+      if (possibleAnomalyPrefixes.some(prefix => id.startsWith(prefix))) {
+        continue;
+      }
       Assert.ok(id in classic, message + ` (${id})`);
       if (stableHistograms.has(id)) {
         Assert.deepEqual(classic[id],
