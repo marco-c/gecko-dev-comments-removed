@@ -837,6 +837,18 @@ WebRenderBridgeParent::RecvClearCachedResources()
     return IPC_OK();
   }
   mCompositorBridge->ObserveLayerUpdate(GetLayersId(), GetChildLayerObserverEpoch(), false);
+
+  
+  
+  ++mWrEpoch; 
+  mApi->ClearRootDisplayList(wr::NewEpoch(mWrEpoch), mPipelineId);
+  
+  mCompositorScheduler->ScheduleComposition();
+  
+  for (std::unordered_set<uint64_t>::iterator iter = mActiveAnimations.begin(); iter != mActiveAnimations.end(); iter++) {
+    mAnimStorage->ClearById(*iter);
+  }
+  mActiveAnimations.clear();
   return IPC_OK();
 }
 
