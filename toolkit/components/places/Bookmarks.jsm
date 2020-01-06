@@ -701,19 +701,28 @@ var Bookmarks = Object.freeze({
     const folderGuids = [this.toolbarGuid, this.menuGuid, this.unfiledGuid,
                           this.mobileGuid];
     return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: eraseEverything",
-      db => db.executeTransaction(async function() {
-        await removeFoldersContents(db, folderGuids, options);
-        const time = PlacesUtils.toPRTime(new Date());
-        const syncChangeDelta =
-          PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
-        for (let folderGuid of folderGuids) {
-          await db.executeCached(
-            `UPDATE moz_bookmarks SET lastModified = :time,
-                                      syncChangeCounter = syncChangeCounter + :syncChangeDelta
-             WHERE id IN (SELECT id FROM moz_bookmarks WHERE guid = :folderGuid )
-            `, { folderGuid, time, syncChangeDelta });
+      async function(db) {
+        let urls;
+
+        await db.executeTransaction(async function() {
+          urls = await removeFoldersContents(db, folderGuids, options);
+          const time = PlacesUtils.toPRTime(new Date());
+          const syncChangeDelta =
+            PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
+          for (let folderGuid of folderGuids) {
+            await db.executeCached(
+              `UPDATE moz_bookmarks SET lastModified = :time,
+                                        syncChangeCounter = syncChangeCounter + :syncChangeDelta
+               WHERE id IN (SELECT id FROM moz_bookmarks WHERE guid = :folderGuid )
+              `, { folderGuid, time, syncChangeDelta });
+          }
+        });
+
+        
+        if (urls && urls.length) {
+          updateFrecency(db, urls, true).then(null, Cu.reportError);
         }
-      })
+      }
     );
   },
 
@@ -1541,6 +1550,7 @@ function fetchBookmarksByParent(info) {
 function removeBookmark(item, options) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: removeBookmark",
     async function(db) {
+    let urls;
     let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
 
     await db.executeTransaction(async function transaction() {
@@ -1549,7 +1559,7 @@ function removeBookmark(item, options) {
         if (options.preventRemovalOfNonEmptyFolders && item._childCount > 0) {
           throw new Error("Cannot remove a non-empty folder.");
         }
-        await removeFoldersContents(db, [item.guid], options);
+        urls = await removeFoldersContents(db, [item.guid], options);
       }
 
       
@@ -1594,6 +1604,10 @@ function removeBookmark(item, options) {
     if (item.type == Bookmarks.TYPE_BOOKMARK && !isUntagging) {
       
       updateFrecency(db, [item.url]).catch(Cu.reportError);
+    }
+
+    if (urls && urls.length && item.type == Bookmarks.TYPE_FOLDER) {
+      updateFrecency(db, urls, true).catch(Cu.reportError);
     }
 
     return item;
@@ -1955,6 +1969,11 @@ var setAncestorsLastModified = async function(db, folderGuid, time, syncChangeDe
 
 
 
+
+
+
+
+
 var removeFoldersContents =
 async function(db, folderGuids, options) {
   let syncChangeDelta =
@@ -2008,9 +2027,6 @@ async function(db, folderGuids, options) {
 
   
 
-  let urls = itemsRemoved.filter(item => "url" in item).map(item => item.url);
-  updateFrecency(db, urls, true).then(null, Cu.reportError);
-
   
   
   
@@ -2040,6 +2056,7 @@ async function(db, folderGuids, options) {
       }
     }
   }
+  return itemsRemoved.filter(item => "url" in item).map(item => item.url);
 };
 
 
