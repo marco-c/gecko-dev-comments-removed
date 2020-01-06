@@ -115,6 +115,7 @@ const char *gInaccessibleProperties[] = {
     "-moz-math-display", 
     "-moz-top-layer", 
     "-moz-min-font-size-ratio", 
+    "-moz-font-smoothing-background-color", 
     "-moz-window-opacity", 
     "-moz-window-transform", 
     "-moz-window-transform-origin", 
