@@ -333,6 +333,15 @@ nsHttpHandler::SetFastOpenOSSupport()
     }
 #endif
 
+#ifdef XP_WIN
+  if (mFastOpenSupported) {
+    
+    if (GetModuleHandleW(L"pmls64.dll") || GetModuleHandleW(L"rlls64.dll")) {
+      mFastOpenSupported = false;
+    }
+  }
+#endif
+
     LOG(("nsHttpHandler::SetFastOpenOSSupport %s supported.\n",
          mFastOpenSupported ? "" : "not"));
 }
