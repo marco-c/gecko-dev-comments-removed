@@ -197,7 +197,8 @@ evaluate.sandbox = function(sb, script, args = [],
 
 
 
-evaluate.fromJSON = function(obj, seenEls, window) {
+
+evaluate.fromJSON = function(obj, seenEls = undefined, window = undefined) {
   switch (typeof obj) {
     case "boolean":
     case "number":
