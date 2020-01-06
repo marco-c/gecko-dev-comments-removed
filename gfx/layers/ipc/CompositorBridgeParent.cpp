@@ -1647,6 +1647,9 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
     NotifyChildCreated(child);
     if (sIndirectLayerTrees[child].mLayerTree) {
       sIndirectLayerTrees[child].mLayerTree->SetLayerManager(mLayerManager);
+      
+      
+      ScheduleComposition();
     }
     parent = sIndirectLayerTrees[child].mApzcTreeManagerParent;
   }
