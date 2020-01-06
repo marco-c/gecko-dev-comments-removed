@@ -224,19 +224,9 @@ function* testFileAccess() {
   let webBrowser = gBrowser.selectedBrowser;
 
   
-  
-  
-  
-  
-  
-  
   let fileContentProcessEnabled =
     prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess");
-  if (isNightly()) {
-    ok(fileContentProcessEnabled, "separate file content process is enabled");
-  } else {
-    todo(fileContentProcessEnabled, "separate file content process is enabled");
-  }
+  ok(fileContentProcessEnabled, "separate file content process is enabled");
 
   
   let fileBrowser = undefined;
