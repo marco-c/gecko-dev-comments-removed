@@ -5,110 +5,174 @@
 
 package org.mozilla.gecko.toolbar;
 
-import org.mozilla.gecko.AppConstants.Versions;
-import org.mozilla.gecko.R;
-import org.mozilla.gecko.animation.Rotate3DAnimation;
-import org.mozilla.gecko.widget.themed.ThemedTextSwitcher;
-
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.res.TypedArray;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.View;
-import android.view.accessibility.AccessibilityNodeInfo;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.AnimationSet;
-import android.widget.ViewSwitcher;
 
-public class TabCounter extends ThemedTextSwitcher
-                        implements ViewSwitcher.ViewFactory {
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.widget.themed.ThemedFrameLayout;
+import org.mozilla.gecko.widget.themed.ThemedRelativeLayout;
+import org.mozilla.gecko.widget.themed.ThemedTextView;
 
-    private static final float CENTER_X = 0.5f;
-    private static final float CENTER_Y = 1.25f;
-    private static final int DURATION = 500;
-    private static final float Z_DISTANCE = 200;
+public class TabCounter extends ThemedRelativeLayout {
 
-    private final AnimationSet mFlipInForward;
-    private final AnimationSet mFlipInBackward;
-    private final AnimationSet mFlipOutForward;
-    private final AnimationSet mFlipOutBackward;
-    private final LayoutInflater mInflater;
-    private final int mLayoutId;
+    private final ThemedFrameLayout box;
+    private final ThemedFrameLayout bar;
+    private final ThemedTextView text;
 
-    private int mCount;
+    private final AnimatorSet animationSet;
+    private int count;
+
     public static final int MAX_VISIBLE_TABS = 99;
     public static final String SO_MANY_TABS_OPEN = "∞";
 
-    private enum FadeMode {
-        FADE_IN,
-        FADE_OUT
+    public TabCounter(Context context) {
+        this(context, null);
     }
 
     public TabCounter(Context context, AttributeSet attrs) {
-        super(context, attrs);
-
-        final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TabCounter);
-        mLayoutId = a.getResourceId(R.styleable.TabCounter_android_layout, R.layout.tabs_counter);
-        a.recycle();
-
-        mInflater = LayoutInflater.from(context);
-
-        mFlipInForward = createAnimation(-90, 0, FadeMode.FADE_IN, -1 * Z_DISTANCE, false);
-        mFlipInBackward = createAnimation(90, 0, FadeMode.FADE_IN, Z_DISTANCE, false);
-        mFlipOutForward = createAnimation(0, -90, FadeMode.FADE_OUT, -1 * Z_DISTANCE, true);
-        mFlipOutBackward = createAnimation(0, 90, FadeMode.FADE_OUT, Z_DISTANCE, true);
-
-        removeAllViews();
-        setFactory(this);
-
-        if (Versions.feature16Plus) {
-            
-            
-            
-            
-            
-            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-            setAccessibilityDelegate(new View.AccessibilityDelegate() {
-                    @Override
-                    public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {}
-                });
-        }
+        this(context, attrs, 0);
     }
 
-    void setCountWithAnimation(int count) {
+    public TabCounter(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+
+        final LayoutInflater inflater = LayoutInflater.from(context);
+        inflater.inflate(R.layout.tabs_counter, this);
+
+        box = (ThemedFrameLayout) findViewById(R.id.counter_box);
+        bar = (ThemedFrameLayout) findViewById(R.id.counter_bar);
+        text = (ThemedTextView) findViewById(R.id.counter_text);
+
+        animationSet = createAnimatorSet();
+    }
+
+    private AnimatorSet createAnimatorSet() {
+        final AnimatorSet animatorSet = new AnimatorSet();
+        createBoxAnimatorSet(animatorSet);
+        createBarAnimatorSet(animatorSet);
+        createTextAnimatorSet(animatorSet);
+        return animatorSet;
+    }
+
+    private void createBoxAnimatorSet(@NonNull AnimatorSet animatorSet) {
         
-        if (mCount == 0) {
+        final ObjectAnimator fadeOut = ObjectAnimator.ofFloat(box, "alpha", 1.0f, 0.0f).setDuration(33);
+
+        
+        final ObjectAnimator moveUp1 = ObjectAnimator.ofFloat(box, "translationY", 0.0f, -5.3f).setDuration(50);
+
+        
+        final ObjectAnimator moveDown2 = ObjectAnimator.ofFloat(box, "translationY", -5.3f, -1.0f).setDuration(116);
+
+        
+        final ObjectAnimator fadeIn = ObjectAnimator.ofFloat(box, "alpha", 0.01f, 1.0f).setDuration(66);
+
+        
+        final ObjectAnimator moveDown3 = ObjectAnimator.ofFloat(box, "translationY", -1.0f, 2.7f).setDuration(116);
+
+        
+        final ObjectAnimator moveUp4 = ObjectAnimator.ofFloat(box, "translationY", 2.7f, 0.0f).setDuration(133);
+
+        
+        final ObjectAnimator scaleUp1 = ObjectAnimator.ofFloat(box, "scaleY", 0.02f, 1.05f).setDuration(100);
+        scaleUp1.setStartDelay(16); 
+
+        
+        final ObjectAnimator scaleDown2 = ObjectAnimator.ofFloat(box, "scaleY", 1.05f, 0.99f).setDuration(116);
+
+        
+        final ObjectAnimator scaleUp3 = ObjectAnimator.ofFloat(box, "scaleY", 0.99f, 1.00f).setDuration(133);
+
+        animatorSet.play(fadeOut).with(moveUp1);
+        animatorSet.play(moveUp1).before(moveDown2);
+        animatorSet.play(moveDown2).with(fadeIn);
+        animatorSet.play(moveDown2).before(moveDown3);
+        animatorSet.play(moveDown3).before(moveUp4);
+
+        animatorSet.play(moveUp1).before(scaleUp1);
+        animatorSet.play(scaleUp1).before(scaleDown2);
+        animatorSet.play(scaleDown2).before(scaleUp3);
+    }
+
+    private void createBarAnimatorSet(@NonNull AnimatorSet animatorSet) {
+        final Animator firstAnimator = animatorSet.getChildAnimations().get(0);
+
+        
+        final ObjectAnimator moveUp1 = ObjectAnimator.ofFloat(bar, "translationY", 0.0f, -7.0f).setDuration(100);
+
+        
+        final ObjectAnimator fadeOut = ObjectAnimator.ofFloat(bar, "alpha", 1.0f, 0.0f).setDuration(66);
+        fadeOut.setStartDelay(16 * 3); 
+
+        
+        final ObjectAnimator moveDown2 = ObjectAnimator.ofFloat(bar, "translationY", -7.0f, 0.0f).setDuration(16);
+
+        
+        final ObjectAnimator scaleUp1 = ObjectAnimator.ofFloat(bar, "scaleX", 0.31f, 1.0f).setDuration(166);
+        scaleUp1.setStartDelay(16 * 11); 
+
+        
+        final ObjectAnimator fadeIn = ObjectAnimator.ofFloat(bar, "alpha", 0.0f, 1.0f).setDuration(166);
+        fadeIn.setStartDelay(16 * 11); 
+
+        animatorSet.play(firstAnimator).with(moveUp1);
+        animatorSet.play(firstAnimator).before(fadeOut);
+        animatorSet.play(fadeOut).before(moveDown2);
+
+        animatorSet.play(moveDown2).before(scaleUp1);
+        animatorSet.play(scaleUp1).with(fadeIn);
+    }
+
+    private void createTextAnimatorSet(@NonNull AnimatorSet animatorSet) {
+        final Animator firstAnimator = animatorSet.getChildAnimations().get(0);
+
+        
+        final ObjectAnimator fadeOut = ObjectAnimator.ofFloat(text, "alpha", 1.0f, 0.0f).setDuration(33);
+
+        
+        final ObjectAnimator fadeIn = ObjectAnimator.ofFloat(text, "alpha", 0.0f, 1.0f).setDuration(66);
+        fadeIn.setStartDelay(16 * 6); 
+
+        
+        final ObjectAnimator moveDown = ObjectAnimator.ofFloat(text, "translationY", 0.0f, 4.4f).setDuration(66);
+        moveDown.setStartDelay(16 * 6); 
+
+        
+        final ObjectAnimator moveUp = ObjectAnimator.ofFloat(text, "translationY", 4.4f, 0.0f).setDuration(66);
+
+        animatorSet.play(firstAnimator).with(fadeOut);
+        animatorSet.play(fadeOut).before(fadeIn);
+        animatorSet.play(fadeIn).with(moveDown);
+        animatorSet.play(moveDown).before(moveUp);
+    }
+
+    void setCountWithAnimation(final int count) {
+        
+        if (this.count == 0) {
             setCount(count);
             return;
         }
 
-        if (mCount == count) {
+        if (this.count == count) {
             return;
         }
 
         
-        if (mCount > MAX_VISIBLE_TABS && count > MAX_VISIBLE_TABS) {
-            mCount = count;
+        if (this.count > MAX_VISIBLE_TABS && count > MAX_VISIBLE_TABS) {
+            this.count = count;
             return;
         }
 
-        if (count < mCount) {
-            setInAnimation(mFlipInBackward);
-            setOutAnimation(mFlipOutForward);
-        } else {
-            setInAnimation(mFlipInForward);
-            setOutAnimation(mFlipOutBackward);
-        }
+        text.setText(formatForDisplay(count));
+        this.count = count;
 
         
-        
-        setDisplayedChild(0);
-
-        
-        setCurrentText(formatForDisplay(mCount));
-        setText(formatForDisplay(count));
-
-        mCount = count;
+        animationSet.start();
     }
 
     private String formatForDisplay(int count) {
@@ -119,36 +183,16 @@ public class TabCounter extends ThemedTextSwitcher
     }
 
     void setCount(int count) {
-        setCurrentText(formatForDisplay(count));
-        mCount = count;
-    }
-
-    
-    
-    
-    void onEnterEditingMode() {
-        final int childCount = getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            getChildAt(i).clearAnimation();
-        }
-    }
-
-    private AnimationSet createAnimation(float startAngle, float endAngle,
-                                         FadeMode fadeMode,
-                                         float zEnd, boolean reverse) {
-        final Context context = getContext();
-        AnimationSet set = new AnimationSet(context, null);
-        set.addAnimation(new Rotate3DAnimation(startAngle, endAngle, CENTER_X, CENTER_Y, zEnd, reverse));
-        set.addAnimation(fadeMode == FadeMode.FADE_IN ? new AlphaAnimation(0.0f, 1.0f) :
-                                                        new AlphaAnimation(1.0f, 0.0f));
-        set.setDuration(DURATION);
-        set.setInterpolator(context, android.R.anim.accelerate_interpolator);
-        return set;
+        text.setText(formatForDisplay(count));
+        this.count = count;
     }
 
     @Override
-    public View makeView() {
-        return mInflater.inflate(mLayoutId, null);
-    }
+    public void setPrivateMode(boolean isPrivate) {
+        super.setPrivateMode(isPrivate);
 
+        box.setPrivateMode(isPrivate);
+        bar.setPrivateMode(isPrivate);
+        text.setPrivateMode(isPrivate);
+    }
 }
