@@ -56,6 +56,8 @@ js::RegExpAlloc(JSContext* cx, HandleObject proto )
 {
     
     
+    
+    
     Rooted<RegExpObject*> regexp(cx);
 
     regexp = NewObjectWithClassProto<RegExpObject>(cx, proto, TenuredObject);
@@ -1343,9 +1345,8 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
     Rooted<RegExpObject*> regex(cx, &obj_->as<RegExpObject>());
 
     
-    
     RootedObjectGroup group(cx, regex->group());
-    Rooted<RegExpObject*> clone(cx, NewObjectWithGroup<RegExpObject>(cx, group, TenuredObject));
+    Rooted<RegExpObject*> clone(cx, NewObjectWithGroup<RegExpObject>(cx, group, GenericObject));
     if (!clone)
         return nullptr;
     clone->initPrivate(nullptr);
