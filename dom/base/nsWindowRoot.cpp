@@ -324,9 +324,8 @@ nsWindowRoot::GetEnabledDisabledCommandsForControllers(nsIControllers* aControll
           
           
           
-          if (!aCommandsHandled.Contains(commands[e])) {
-            aCommandsHandled.PutEntry(commands[e]);
-
+          if (aCommandsHandled.EnsureInserted(commands[e])) {
+            
             bool enabled = false;
             controller->IsCommandEnabled(commands[e], &enabled);
 
