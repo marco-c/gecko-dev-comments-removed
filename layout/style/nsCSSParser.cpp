@@ -6956,34 +6956,29 @@ CSSParserImpl::ParseColorComponent(float& aComponent, const Maybe<char>& aSepara
 bool
 CSSParserImpl::ParseHue(float& aAngle)
 {
-  if (!GetToken(true)) {
-    REPORT_UNEXPECTED_EOF(PEColorHueEOF);
+  nsCSSValue value;
+  
+  
+  if (!ParseSingleTokenVariant(value,
+                               VARIANT_NUMBER | VARIANT_ANGLE,
+                               nullptr)) {
+    REPORT_UNEXPECTED_TOKEN(PEExpectedNumberOrAngle);
     return false;
   }
 
-  
-  if (mToken.mType == eCSSToken_Number) {
-    aAngle = mToken.mNumber;
-    return true;
-  }
-  UngetToken();
-
-  
-  nsCSSValue angleValue;
-  
-  
-  if (ParseSingleTokenVariant(angleValue, VARIANT_ANGLE, nullptr)) {
+  float unclampedResult;
+  if (value.GetUnit() == eCSSUnit_Number) {
+    unclampedResult = value.GetFloatValue();
+  } else {
     
-    aAngle = angleValue.GetAngleValueInDegrees();
-    
-    aAngle = mozilla::clamped(aAngle,
-                              -std::numeric_limits<float>::max(),
-                               std::numeric_limits<float>::max());
-    return true;
+    unclampedResult = value.GetAngleValueInDegrees();
   }
 
-  REPORT_UNEXPECTED_TOKEN(PEExpectedNumberOrAngle);
-  return false;
+  
+  aAngle = mozilla::clamped(unclampedResult,
+                            -std::numeric_limits<float>::max(),
+                             std::numeric_limits<float>::max());
+  return true;
 }
 
 bool

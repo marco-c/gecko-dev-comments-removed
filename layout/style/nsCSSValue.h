@@ -1823,7 +1823,16 @@ public:
     , mComponent2(aComponent2)
     , mComponent3(aComponent3)
     , mAlpha(aAlpha)
-  {}
+  {
+    
+    
+    
+    MOZ_ASSERT(mozilla::IsFinite(aComponent1) &&
+               mozilla::IsFinite(aComponent2) &&
+               mozilla::IsFinite(aComponent3) &&
+               mozilla::IsFinite(aAlpha),
+               "Caller must ensure color components are finite");
+  }
 
 private:
   
