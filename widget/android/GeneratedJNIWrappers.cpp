@@ -227,14 +227,6 @@ auto GeckoAppShell::EnableSensor(int32_t a0) -> void
     return mozilla::jni::Method<EnableSensor_t>::Call(GeckoAppShell::Context(), nullptr, a0);
 }
 
-constexpr char GeckoAppShell::GetAppNotes_t::name[];
-constexpr char GeckoAppShell::GetAppNotes_t::signature[];
-
-auto GeckoAppShell::GetAppNotes() -> mozilla::jni::String::LocalRef
-{
-    return mozilla::jni::Method<GetAppNotes_t>::Call(GeckoAppShell::Context(), nullptr);
-}
-
 constexpr char GeckoAppShell::GetApplicationContext_t::name[];
 constexpr char GeckoAppShell::GetApplicationContext_t::signature[];
 
@@ -1822,6 +1814,14 @@ constexpr char CodecProxy::IsAdaptivePlaybackSupported_t::signature[];
 auto CodecProxy::IsAdaptivePlaybackSupported() const -> bool
 {
     return mozilla::jni::Method<IsAdaptivePlaybackSupported_t>::Call(CodecProxy::mCtx, nullptr);
+}
+
+constexpr char CodecProxy::IsTunneledPlaybackSupported_t::name[];
+constexpr char CodecProxy::IsTunneledPlaybackSupported_t::signature[];
+
+auto CodecProxy::IsTunneledPlaybackSupported() const -> bool
+{
+    return mozilla::jni::Method<IsTunneledPlaybackSupported_t>::Call(CodecProxy::mCtx, nullptr);
 }
 
 constexpr char CodecProxy::Release_t::name[];
