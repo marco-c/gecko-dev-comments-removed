@@ -84,6 +84,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
     
     nsPrintfCString shmPath("%s/dconf/", userDir);
     policy->AddPrefix(rdwrcr, shmPath.get());
+    policy->AddAncestors(Move(shmPath));
   }
 #endif
 
