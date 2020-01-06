@@ -743,7 +743,7 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   
   if (mTextureSyncOnPaintThread) {
     MOZ_ASSERT(PaintThread::Get());
-    PaintThread::Get()->FinishedLayerTransaction(syncObject);
+    PaintThread::Get()->EndLayerTransaction(syncObject);
   } else if (syncObject) {
     syncObject->Synchronize();
   }

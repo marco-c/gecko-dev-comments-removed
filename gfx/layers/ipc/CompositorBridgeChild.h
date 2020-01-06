@@ -244,12 +244,12 @@ public:
   
   
   
-  void NotifyBeginAsyncPaintEndTransaction();
+  void NotifyBeginAsyncEndLayerTransaction();
 
   
   
   
-  void NotifyFinishedAsyncPaintEndTransaction();
+  void NotifyFinishedAsyncEndLayerTransaction();
 
 private:
   

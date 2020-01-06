@@ -73,7 +73,7 @@ public:
   
   
   
-  void FinishedLayerBatch();
+  void EndLayer();
 
   
   
@@ -81,7 +81,7 @@ public:
   
   
   
-  void FinishedLayerTransaction(SyncObjectClient* aSyncObject);
+  void EndLayerTransaction(SyncObjectClient* aSyncObject);
 
   
   
@@ -97,11 +97,11 @@ private:
   bool Init();
   void ShutdownOnPaintThread();
   void InitOnPaintThread();
-  void PaintContentsAsync(CompositorBridgeChild* aBridge,
+  void AsyncPaintContents(CompositorBridgeChild* aBridge,
                           CapturedPaintState* aState,
                           PrepDrawTargetForPaintingCallback aCallback);
-  void EndAsyncPaintingLayer();
-  void EndAsyncLayerTransaction(CompositorBridgeChild* aBridge,
+  void AsyncEndLayer();
+  void AsyncEndLayerTransaction(CompositorBridgeChild* aBridge,
                                 SyncObjectClient* aSyncObject);
 
   static StaticAutoPtr<PaintThread> sSingleton;
