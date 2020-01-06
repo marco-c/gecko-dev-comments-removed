@@ -664,7 +664,11 @@ GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags)
             FlushIMEText(FLUSH_FLAG_RECOVER);
         } else {
             
+#ifdef RELEASE_OR_BETA
+            env->ExceptionClear();
+#else
             MOZ_CATCH_JNI_EXCEPTION(env);
+#endif
         }
         return true;
     };
