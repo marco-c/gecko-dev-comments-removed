@@ -6,7 +6,7 @@
 
 
 
-use app_units::{Au, MAX_AU, MIN_AU};
+use app_units::Au;
 use cssparser::{Parser, Token, BasicParseError};
 use euclid::Size2D;
 use font_metrics::FontMetricsQueryResult;
@@ -237,11 +237,15 @@ impl CharacterWidth {
 }
 
 
+const ABSOLUTE_LENGTH_MAX: i32 = (1 << 30);
+const ABSOLUTE_LENGTH_MIN: i32 = - (1 << 30);
+
+
 fn to_au_round(length: CSSFloat, au_per_unit: CSSFloat) -> Au {
     Au(
-        ((length * au_per_unit) as f64)
-        .min(MAX_AU.0 as f64)
-        .max(MIN_AU.0 as f64)
+        (length * au_per_unit)
+        .min(ABSOLUTE_LENGTH_MAX as f32)
+        .max(ABSOLUTE_LENGTH_MIN as f32)
         .round() as i32
     )
 }
