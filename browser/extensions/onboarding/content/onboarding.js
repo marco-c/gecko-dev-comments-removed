@@ -604,6 +604,9 @@ class Onboarding {
 
 
 
+
+
+
   wrapMoveFocus(current, back) {
     let elms = [...this._dialog.querySelectorAll(
       `button, input[type="checkbox"], input[type="email"], [tabindex="0"]`)];
