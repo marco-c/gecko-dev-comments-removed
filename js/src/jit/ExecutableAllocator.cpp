@@ -128,7 +128,8 @@ ExecutableAllocator::~ExecutableAllocator()
         m_smallPools[i]->release(true);
 
     
-    MOZ_ASSERT_IF(m_pools.initialized(), m_pools.empty());
+    MOZ_ASSERT_IF(m_pools.initialized() && rt_->gc.shutdownCollectedEverything(),
+                  m_pools.empty());
 }
 
 ExecutablePool*
