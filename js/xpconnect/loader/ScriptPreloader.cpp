@@ -757,6 +757,15 @@ ScriptPreloader::NoteScript(const nsCString& url, const nsCString& cachePath,
                             ProcessType processType, nsTArray<uint8_t>&& xdrData,
                             TimeStamp loadTime)
 {
+    
+    
+    
+    
+    
+    if (mDataPrepared) {
+        return;
+    }
+
     auto script = mScripts.LookupOrAdd(cachePath, *this, url, cachePath, nullptr);
 
     if (!script->HasRange()) {
