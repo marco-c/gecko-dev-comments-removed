@@ -39,9 +39,8 @@ public:
   NS_DECL_NSIOBSERVER
 
   
-  void AllocateAfterDelay();
-  void AllocateOnIdle();
-  void AllocateNow();
+  void AddBlocker(ContentParent* aParent);
+  void RemoveBlocker(ContentParent* aParent);
   already_AddRefed<ContentParent> Take();
   bool Provide(ContentParent* aParent);
 
@@ -54,6 +53,11 @@ private:
 
   void Init();
 
+  bool CanAllocate();
+  void AllocateAfterDelay();
+  void AllocateOnIdle();
+  void AllocateNow();
+
   void RereadPrefs();
   void Enable();
   void Disable();
@@ -64,6 +68,7 @@ private:
   bool mEnabled;
   bool mShutdown;
   RefPtr<ContentParent> mPreallocatedProcess;
+  nsTHashtable<nsUint64HashKey> mBlockers;
 };
 
  StaticRefPtr<PreallocatedProcessManagerImpl>
@@ -78,15 +83,6 @@ PreallocatedProcessManagerImpl::Singleton()
     sSingleton->Init();
     ClearOnShutdown(&sSingleton);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  sSingleton->RereadPrefs();
 
   return sSingleton;
 }
@@ -168,6 +164,11 @@ PreallocatedProcessManagerImpl::Take()
     return nullptr;
   }
 
+  if (mPreallocatedProcess) {
+    
+    AllocateOnIdle();
+  }
+
   return mPreallocatedProcess.forget();
 }
 
@@ -196,19 +197,45 @@ PreallocatedProcessManagerImpl::Enable()
 }
 
 void
+PreallocatedProcessManagerImpl::AddBlocker(ContentParent* aParent)
+{
+  uint64_t childID = aParent->ChildID();
+  MOZ_ASSERT(!mBlockers.Contains(childID));
+  mBlockers.PutEntry(childID);
+}
+
+void
+PreallocatedProcessManagerImpl::RemoveBlocker(ContentParent* aParent)
+{
+  uint64_t childID = aParent->ChildID();
+  MOZ_ASSERT(mBlockers.Contains(childID));
+  mBlockers.RemoveEntry(childID);
+  if (!mPreallocatedProcess && mBlockers.IsEmpty()) {
+    AllocateAfterDelay();
+  }
+}
+
+bool
+PreallocatedProcessManagerImpl::CanAllocate()
+{
+  return mEnabled &&
+         mBlockers.IsEmpty() &&
+         !mPreallocatedProcess &&
+         !mShutdown &&
+         !ContentParent::IsMaxProcessCountReached(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+}
+
+void
 PreallocatedProcessManagerImpl::AllocateAfterDelay()
 {
-  if (!mEnabled || mPreallocatedProcess || mShutdown) {
+  if (!mEnabled) {
     return;
   }
 
-  
-  
-  
   NS_DelayedDispatchToCurrentThread(
-    NewRunnableMethod("PreallocatedProcessManagerImpl::AllocateNow",
+    NewRunnableMethod("PreallocatedProcessManagerImpl::AllocateOnIdle",
                       this,
-                      &PreallocatedProcessManagerImpl::AllocateNow),
+                      &PreallocatedProcessManagerImpl::AllocateOnIdle),
     Preferences::GetUint("dom.ipc.processPrelaunch.delayMs",
                          DEFAULT_ALLOCATE_DELAY));
 }
@@ -216,7 +243,7 @@ PreallocatedProcessManagerImpl::AllocateAfterDelay()
 void
 PreallocatedProcessManagerImpl::AllocateOnIdle()
 {
-  if (!mEnabled || mPreallocatedProcess || mShutdown) {
+  if (!mEnabled) {
     return;
   }
 
@@ -229,8 +256,11 @@ PreallocatedProcessManagerImpl::AllocateOnIdle()
 void
 PreallocatedProcessManagerImpl::AllocateNow()
 {
-  if (!mEnabled || mPreallocatedProcess || mShutdown ||
-      ContentParent::IsMaxProcessCountReached(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE))) {
+  if (!CanAllocate()) {
+    if (mEnabled && !mPreallocatedProcess && !mBlockers.IsEmpty()) {
+      
+      AllocateAfterDelay();
+    }
     return;
   }
 
@@ -260,10 +290,6 @@ PreallocatedProcessManagerImpl::CloseProcess()
 void
 PreallocatedProcessManagerImpl::ObserveProcessShutdown(nsISupports* aSubject)
 {
-  if (!mPreallocatedProcess) {
-    return;
-  }
-
   nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
   NS_ENSURE_TRUE_VOID(props);
 
@@ -271,9 +297,11 @@ PreallocatedProcessManagerImpl::ObserveProcessShutdown(nsISupports* aSubject)
   props->GetPropertyAsUint64(NS_LITERAL_STRING("childID"), &childID);
   NS_ENSURE_TRUE_VOID(childID != CONTENT_PROCESS_ID_UNKNOWN);
 
-  if (childID == mPreallocatedProcess->ChildID()) {
+  if (mPreallocatedProcess && childID == mPreallocatedProcess->ChildID()) {
     mPreallocatedProcess = nullptr;
   }
+
+  mBlockers.RemoveEntry(childID);
 }
 
 inline PreallocatedProcessManagerImpl* GetPPMImpl()
@@ -282,21 +310,15 @@ inline PreallocatedProcessManagerImpl* GetPPMImpl()
 }
 
  void
-PreallocatedProcessManager::AllocateAfterDelay()
+PreallocatedProcessManager::AddBlocker(ContentParent* aParent)
 {
-  GetPPMImpl()->AllocateAfterDelay();
+  GetPPMImpl()->AddBlocker(aParent);
 }
 
  void
-PreallocatedProcessManager::AllocateOnIdle()
+PreallocatedProcessManager::RemoveBlocker(ContentParent* aParent)
 {
-  GetPPMImpl()->AllocateOnIdle();
-}
-
- void
-PreallocatedProcessManager::AllocateNow()
-{
-  GetPPMImpl()->AllocateNow();
+  GetPPMImpl()->RemoveBlocker(aParent);
 }
 
  already_AddRefed<ContentParent>

@@ -603,6 +603,8 @@ ContentParent::PreallocateProcess()
     new ContentParent( nullptr,
                       NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
 
+  PreallocatedProcessManager::AddBlocker(process);
+
   if (!process->LaunchSubprocess(PROCESS_PRIORITY_PREALLOC)) {
     return nullptr;
   }
@@ -879,6 +881,9 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
 
   
   RefPtr<ContentParent> p = new ContentParent(aOpener, aRemoteType);
+
+  
+  PreallocatedProcessManager::AddBlocker(p);
 
   if (!p->LaunchSubprocess(aPriority)) {
     return nullptr;
@@ -2729,8 +2734,7 @@ ContentParent::RecvFirstIdle()
   
   
   
-  
-  PreallocatedProcessManager::AllocateAfterDelay();
+  PreallocatedProcessManager::RemoveBlocker(this);
   return IPC_OK();
 }
 
