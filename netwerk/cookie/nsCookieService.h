@@ -29,13 +29,9 @@
 #include "mozIStorageFunction.h"
 #include "nsIVariant.h"
 #include "nsIFile.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/UniquePtr.h"
-
 
 using mozilla::OriginAttributes;
 
@@ -47,7 +43,6 @@ class nsIObserverService;
 class nsIURI;
 class nsIChannel;
 class nsIArray;
-class nsIThread;
 class mozIStorageService;
 class mozIThirdPartyUtil;
 class ReadCookieDBListener;
@@ -94,51 +89,12 @@ class nsCookieEntry : public nsCookieKey
 };
 
 
-struct ConstCookie
-{
-  ConstCookie(const nsCString& aName,
-              const nsCString& aValue,
-              const nsCString& aHost,
-              const nsCString& aPath,
-              int64_t aExpiry,
-              int64_t aLastAccessed,
-              int64_t aCreationTime,
-              bool aIsSecure,
-              bool aIsHttpOnly,
-              const OriginAttributes &aOriginAttributes,
-              int32_t aSameSite)
-    : name(aName)
-    , value(aValue)
-    , host(aHost)
-    , path(aPath)
-    , expiry(aExpiry)
-    , lastAccessed(aLastAccessed)
-    , creationTime(aCreationTime)
-    , isSecure(aIsSecure)
-    , isHttpOnly(aIsHttpOnly)
-    , originAttributes(aOriginAttributes)
-    , sameSite(aSameSite)
-  {
-  }
-
-  const nsCString name;
-  const nsCString value;
-  const nsCString host;
-  const nsCString path;
-  const int64_t expiry;
-  const int64_t lastAccessed;
-  const int64_t creationTime;
-  const bool isSecure;
-  const bool isHttpOnly;
-  const OriginAttributes originAttributes;
-  const int32_t sameSite;
-};
-
-
 struct CookieDomainTuple
 {
   nsCookieKey key;
-  mozilla::UniquePtr<ConstCookie> cookie;
+  RefPtr<nsCookie> cookie;
+
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 };
 
 
@@ -181,9 +137,17 @@ public:
   
   nsCOMPtr<mozIStorageConnection>       syncConn;
   nsCOMPtr<mozIStorageStatement>        stmtReadDomain;
+  nsCOMPtr<mozIStoragePendingStatement> pendingRead;
   
   
   ReadCookieDBListener*                 readListener;
+  
+  
+  nsTArray<CookieDomainTuple>           hostArray;
+  
+  
+  
+  nsTHashtable<nsCookieKey>        readSet;
 
   
   nsCOMPtr<mozIStorageStatementCallback>  insertListener;
@@ -278,8 +242,6 @@ class nsCookieService final : public nsICookieService
     void                          PrefChanged(nsIPrefBranch *aPrefBranch);
     void                          InitDBStates();
     OpenDBResult                  TryInitDB(bool aDeleteExistingDB);
-    void                          InitDBConn();
-    nsresult                      InitDBConnInternal();
     nsresult                      CreateTableWorker(const char* aName);
     nsresult                      CreateIndex();
     nsresult                      CreateTable();
@@ -292,8 +254,11 @@ class nsCookieService final : public nsICookieService
     void                          HandleCorruptDB(DBState* aDBState);
     void                          RebuildCorruptDB(DBState* aDBState);
     OpenDBResult                  Read();
-    mozilla::UniquePtr<ConstCookie> GetCookieFromRow(mozIStorageStatement *aRow, const OriginAttributes &aOriginAttributes);
-    void                          EnsureReadComplete(bool aInitDBConn);
+    template<class T> nsCookie*   GetCookieFromRow(T &aRow, const OriginAttributes& aOriginAttributes);
+    void                          AsyncReadComplete();
+    void                          CancelAsyncRead(bool aPurgeReadSet);
+    void                          EnsureReadDomain(const nsCookieKey &aKey);
+    void                          EnsureReadComplete();
     nsresult                      NormalizeHost(nsCString &aHost);
     nsresult                      GetCookieStringCommon(nsIURI *aHostURI, nsIChannel *aChannel, bool aHttpBound, char** aCookie);
     void                          GetCookieStringInternal(nsIURI *aHostURI, bool aIsForeign, bool aHttpBound, const OriginAttributes& aOriginAttrs, nsCString &aCookie);
@@ -360,14 +325,6 @@ class nsCookieService final : public nsICookieService
     uint16_t                      mMaxNumberOfCookies;
     uint16_t                      mMaxCookiesPerHost;
     int64_t                       mCookiePurgeAge;
-
-    
-    nsCOMPtr<nsIThread>           mThread;
-    mozilla::Monitor              mMonitor;
-    mozilla::Atomic<bool>         mInitializedDBStates;
-    mozilla::Atomic<bool>         mInitializedDBConn;
-    bool                          mAccumulatedWaitTelemetry;
-    nsTArray<CookieDomainTuple>   mReadArray;
 
     
     friend class DBListenerErrorHandler;

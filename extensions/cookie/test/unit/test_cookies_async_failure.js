@@ -233,8 +233,19 @@ function* run_test_2(generator)
   do_check_false(do_get_backup_file(profile).exists());
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  do_check_eq(do_count_cookies(), 0);
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+
+  
+  
+  new _observer(sub_generator, "cookie-db-rebuilding");
+  yield;
+  do_execute_soon(function() { do_run_generator(sub_generator); });
+  yield;
+
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  do_check_eq(do_count_cookies(), 1);
 
   
   do_close_profile(sub_generator);
@@ -244,11 +255,13 @@ function* run_test_2(generator)
   do_check_true(do_get_backup_file(profile).exists());
   do_check_eq(do_get_backup_file(profile).fileSize, size);
   let db = Services.storage.openDatabase(do_get_cookie_file(profile));
+  do_check_eq(do_count_cookies_in_db(db, "0.com"), 1);
   db.close();
 
+  
   do_load_profile();
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  do_check_eq(do_count_cookies(), 0);
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  do_check_eq(do_count_cookies(), 1);
 
   
   do_close_profile(sub_generator);
@@ -298,15 +311,24 @@ function* run_test_3(generator)
   do_check_false(do_get_backup_file(profile).exists());
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("hither.com"), 0);
+  
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("hither.com"), 10);
   do_check_eq(Services.cookiemgr.countCookiesFromHost("haithur.com"), 0);
+
+  
+  do_check_false(do_get_backup_file(profile).exists());
+  new _observer(sub_generator, "cookie-db-rebuilding");
+  yield;
+  do_execute_soon(function() { do_run_generator(sub_generator); });
+  yield;
 
   
   do_close_profile(sub_generator);
   yield;
   let db = Services.storage.openDatabase(do_get_cookie_file(profile));
-  do_check_eq(do_count_cookies_in_db(db, "hither.com"), 0);
-  do_check_eq(do_count_cookies_in_db(db), 0);
+  do_check_eq(do_count_cookies_in_db(db, "hither.com"), 10);
+  do_check_eq(do_count_cookies_in_db(db), 10);
   db.close();
 
   
@@ -323,6 +345,13 @@ function* run_test_3(generator)
 
   
   do_check_eq(do_count_cookies(), 0);
+
+  
+  do_check_false(do_get_backup_file(profile).exists());
+  new _observer(sub_generator, "cookie-db-rebuilding");
+  yield;
+  do_execute_soon(function() { do_run_generator(sub_generator); });
+  yield;
 
   
   do_close_profile(sub_generator);
@@ -369,7 +398,8 @@ function* run_test_4(generator)
   do_check_false(do_get_backup_file(profile).exists());
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
 
   
   
@@ -377,8 +407,16 @@ function* run_test_4(generator)
   Services.cookies.setCookieString(uri, null, "oh2=hai; max-age=1000", null);
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
-  do_check_eq(do_count_cookies(), 1);
+  
+  
+  new _observer(sub_generator, "cookie-db-rebuilding");
+  yield;
+  do_execute_soon(function() { do_run_generator(sub_generator); });
+  yield;
+
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 2);
+  do_check_eq(do_count_cookies(), 2);
 
   
   do_close_profile(sub_generator);
@@ -387,11 +425,14 @@ function* run_test_4(generator)
   
   do_check_true(do_get_backup_file(profile).exists());
   do_check_eq(do_get_backup_file(profile).fileSize, size);
+  let db = Services.storage.openDatabase(do_get_cookie_file(profile));
+  do_check_eq(do_count_cookies_in_db(db, "0.com"), 2);
+  db.close();
 
   
   do_load_profile();
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
-  do_check_eq(do_count_cookies(), 1);
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 2);
+  do_check_eq(do_count_cookies(), 2);
 
   
   do_close_profile(sub_generator);
@@ -434,9 +475,21 @@ function* run_test_5(generator)
   do_check_false(do_get_backup_file(profile).exists());
 
   
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  do_check_eq(do_count_cookies(), 0);
+  
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 1);
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+
+  
+  
+  new _observer(sub_generator, "cookie-db-rebuilding");
+  yield;
+
+  
+  
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 1);
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  do_check_eq(do_count_cookies(), 2);
   do_check_true(do_get_backup_file(profile).exists());
   do_check_eq(do_get_backup_file(profile).fileSize, size);
   do_check_false(do_get_rebuild_backup_file(profile).exists());
@@ -450,23 +503,38 @@ function* run_test_5(generator)
   db.close();
 
   
-  do_check_true(do_get_backup_file(profile).exists());
-  do_check_eq(do_get_backup_file(profile).fileSize, size);
-
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
-  do_check_eq(do_count_cookies(), 0);
-
-  
-  
-  do_close_profile(sub_generator);
+  new _observer(sub_generator, "cookie-db-closed");
   yield;
 
   
-  do_get_cookie_file(profile).remove(false);
+  do_check_true(do_get_rebuild_backup_file(profile).exists());
+  do_check_true(do_get_backup_file(profile).exists());
+  do_check_eq(do_get_backup_file(profile).fileSize, size);
+  do_check_false(do_get_cookie_file(profile).exists());
+
+  
+  
+  db = new CookieDatabaseConnection(do_get_rebuild_backup_file(profile), 4);
+  do_check_eq(do_count_cookies_in_db(db.db, "bar.com"), 1);
+  let count = do_count_cookies_in_db(db.db);
+  do_check_true(count == 1 ||
+    count == 2 && do_count_cookies_in_db(db.db, "0.com") == 1);
+  db.close();
+
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("bar.com"), 1);
+  do_check_eq(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  do_check_eq(do_count_cookies(), 2);
+
+  
+  
+  do_close_profile();
+
+  
   do_get_backup_file(profile).remove(false);
+  do_get_rebuild_backup_file(profile).remove(false);
   do_check_false(do_get_cookie_file(profile).exists());
   do_check_false(do_get_backup_file(profile).exists());
+  do_check_false(do_get_rebuild_backup_file(profile).exists());
   do_run_generator(generator);
 }
 

@@ -34,7 +34,6 @@
 #include "nsILineInputStream.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIIDNService.h"
-#include "nsIThread.h"
 #include "mozIThirdPartyUtil.h"
 
 #include "nsTArray.h"
@@ -55,7 +54,6 @@
 #include "mozilla/storage.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/FileUtils.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
 #include "nsIConsoleService.h"
 #include "nsVariant.h"
@@ -83,6 +81,7 @@ static StaticRefPtr<nsCookieService> gCookieService;
 
 #define COOKIES_FILE "cookies.sqlite"
 #define COOKIES_SCHEMA_VERSION 9
+
 
 
 #define IDX_NAME 0
@@ -462,6 +461,92 @@ NS_IMPL_ISUPPORTS(RemoveCookieDBListener, mozIStorageStatementCallback)
 
 
 
+class ReadCookieDBListener final : public DBListenerErrorHandler
+{
+private:
+  const char *GetOpType() override { return "READ"; }
+  bool mCanceled;
+
+  ~ReadCookieDBListener() = default;
+
+public:
+  NS_DECL_ISUPPORTS
+
+  explicit ReadCookieDBListener(DBState* dbState)
+    : DBListenerErrorHandler(dbState)
+    , mCanceled(false)
+  {
+  }
+
+  void Cancel() { mCanceled = true; }
+
+  NS_IMETHOD HandleResult(mozIStorageResultSet *aResult) override
+  {
+    nsCOMPtr<mozIStorageRow> row;
+
+    while (true) {
+      DebugOnly<nsresult> rv = aResult->GetNextRow(getter_AddRefs(row));
+      NS_ASSERT_SUCCESS(rv);
+
+      if (!row)
+        break;
+
+      CookieDomainTuple *tuple = mDBState->hostArray.AppendElement();
+      row->GetUTF8String(IDX_BASE_DOMAIN, tuple->key.mBaseDomain);
+
+      nsAutoCString suffix;
+      row->GetUTF8String(IDX_ORIGIN_ATTRIBUTES, suffix);
+      DebugOnly<bool> success = tuple->key.mOriginAttributes.PopulateFromSuffix(suffix);
+      MOZ_ASSERT(success);
+
+      tuple->cookie =
+        gCookieService->GetCookieFromRow(row, tuple->key.mOriginAttributes);
+    }
+
+    return NS_OK;
+  }
+  NS_IMETHOD HandleCompletion(uint16_t aReason) override
+  {
+    
+    
+    
+    
+    
+    
+
+    if (mCanceled) {
+      
+      
+      aReason = mozIStorageStatementCallback::REASON_CANCELED;
+    }
+
+    switch (aReason) {
+    case mozIStorageStatementCallback::REASON_FINISHED:
+      gCookieService->AsyncReadComplete();
+      break;
+    case mozIStorageStatementCallback::REASON_CANCELED:
+      
+      
+      COOKIE_LOGSTRING(LogLevel::Debug, ("Read canceled"));
+      break;
+    case mozIStorageStatementCallback::REASON_ERROR:
+      
+      
+      COOKIE_LOGSTRING(LogLevel::Debug, ("Read error"));
+      break;
+    default:
+      NS_NOTREACHED("invalid reason");
+    }
+    return NS_OK;
+  }
+};
+
+NS_IMPL_ISUPPORTS(ReadCookieDBListener, mozIStorageStatementCallback)
+
+
+
+
+
 
 class CloseCookieDBListener final :  public mozIStorageCompletionCallback
 {
@@ -524,12 +609,28 @@ nsCookieEntry::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 }
 
 size_t
+CookieDomainTuple::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t amount = 0;
+
+  amount += key.SizeOfExcludingThis(aMallocSizeOf);
+  amount += cookie->SizeOfIncludingThis(aMallocSizeOf);
+
+  return amount;
+}
+
+size_t
 DBState::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t amount = 0;
 
   amount += aMallocSizeOf(this);
   amount += hostTable.SizeOfExcludingThis(aMallocSizeOf);
+  amount += hostArray.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (uint32_t i = 0; i < hostArray.Length(); ++i) {
+    amount += hostArray[i].SizeOfExcludingThis(aMallocSizeOf);
+  }
+  amount += readSet.SizeOfExcludingThis(aMallocSizeOf);
 
   return amount;
 }
@@ -605,11 +706,6 @@ nsCookieService::nsCookieService()
  , mMaxNumberOfCookies(kMaxNumberOfCookies)
  , mMaxCookiesPerHost(kMaxCookiesPerHost)
  , mCookiePurgeAge(kCookiePurgeAge)
- , mThread(nullptr)
- , mMonitor("CookieThread")
- , mInitializedDBStates(false)
- , mInitializedDBConn(false)
- , mAccumulatedWaitTelemetry(false)
 {
 }
 
@@ -641,9 +737,6 @@ nsCookieService::Init()
   mStorageService = do_GetService("@mozilla.org/storage/service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = NS_NewNamedThread("Cookie", getter_AddRefs(mThread));
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   InitDBStates();
 
@@ -670,7 +763,6 @@ nsCookieService::InitDBStates()
   NS_ASSERTION(!mDBState, "already have a DBState");
   NS_ASSERTION(!mDefaultDBState, "already have a default DBState");
   NS_ASSERTION(!mPrivateDBState, "already have a private DBState");
-  NS_ASSERTION(!mInitializedDBStates, "already initialized");
 
   
   mDefaultDBState = new DBState();
@@ -685,61 +777,35 @@ nsCookieService::InitDBStates()
     
     COOKIE_LOGSTRING(LogLevel::Warning,
       ("InitDBStates(): couldn't get cookie file"));
-
-    mInitializedDBConn = true;
-    mInitializedDBStates = true;
     return;
   }
   mDefaultDBState->cookieFile->AppendNative(NS_LITERAL_CSTRING(COOKIES_FILE));
 
-  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction("InitDBStates.TryInitDB", [] {
-    NS_ENSURE_TRUE_VOID(gCookieService &&
-                        gCookieService->mDBState &&
-                        gCookieService->mDefaultDBState);
-
-    MonitorAutoLock lock(gCookieService->mMonitor);
-
+  
+  
+  OpenDBResult result = TryInitDB(false);
+  if (result == RESULT_RETRY) {
     
     
-    OpenDBResult result = gCookieService->TryInitDB(false);
+    COOKIE_LOGSTRING(LogLevel::Warning, ("InitDBStates(): retrying TryInitDB()"));
+    CleanupCachedStatements();
+    CleanupDefaultDBConnection();
+    result = TryInitDB(true);
     if (result == RESULT_RETRY) {
       
-      
-      COOKIE_LOGSTRING(LogLevel::Warning, ("InitDBStates(): retrying TryInitDB()"));
-      gCookieService->CleanupCachedStatements();
-      gCookieService->CleanupDefaultDBConnection();
-      result = gCookieService->TryInitDB(true);
-      if (result == RESULT_RETRY) {
-        
-        result = RESULT_FAILURE;
-      }
+      result = RESULT_FAILURE;
     }
+  }
 
-    if (result == RESULT_FAILURE) {
-      COOKIE_LOGSTRING(LogLevel::Warning,
-        ("InitDBStates(): TryInitDB() failed, closing connection"));
+  if (result == RESULT_FAILURE) {
+    COOKIE_LOGSTRING(LogLevel::Warning,
+      ("InitDBStates(): TryInitDB() failed, closing connection"));
 
-      
-      
-      gCookieService->CleanupCachedStatements();
-      gCookieService->CleanupDefaultDBConnection();
-
-      
-      gCookieService->mInitializedDBConn = true;
-    }
-
-    gCookieService->mInitializedDBStates = true;
-
-    NS_DispatchToMainThread(
-      NS_NewRunnableFunction("TryInitDB.InitDBConn", [] {
-        NS_ENSURE_TRUE_VOID(gCookieService);
-        gCookieService->InitDBConn();
-      })
-    );
-    gCookieService->mMonitor.Notify();
-  });
-
-  mThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+    
+    
+    CleanupCachedStatements();
+    CleanupDefaultDBConnection();
+  }
 }
 
 namespace {
@@ -864,7 +930,6 @@ nsCookieService::TryInitDB(bool aRecreateDB)
   NS_ASSERTION(!mDefaultDBState->stmtInsert, "nonnull stmtInsert");
   NS_ASSERTION(!mDefaultDBState->insertListener, "nonnull insertListener");
   NS_ASSERTION(!mDefaultDBState->syncConn, "nonnull syncConn");
-  NS_ASSERTION(NS_GetCurrentThread() == mThread, "non cookie thread");
 
   
   
@@ -888,16 +953,21 @@ nsCookieService::TryInitDB(bool aRecreateDB)
     
     
     rv = mStorageService->OpenUnsharedDatabase(mDefaultDBState->cookieFile,
-      getter_AddRefs(mDefaultDBState->syncConn));
+      getter_AddRefs(mDefaultDBState->dbConn));
     NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
   }
 
-  auto guard = MakeScopeExit([&] {
-    mDefaultDBState->syncConn = nullptr;
-  });
+  
+  mDefaultDBState->insertListener = new InsertCookieDBListener(mDefaultDBState);
+  mDefaultDBState->updateListener = new UpdateCookieDBListener(mDefaultDBState);
+  mDefaultDBState->removeListener = new RemoveCookieDBListener(mDefaultDBState);
+  mDefaultDBState->closeListener = new CloseCookieDBListener(mDefaultDBState);
+
+  
+  mDefaultDBState->dbConn->SetGrowthIncrement(512 * 1024, EmptyCString());
 
   bool tableExists = false;
-  mDefaultDBState->syncConn->TableExists(NS_LITERAL_CSTRING("moz_cookies"),
+  mDefaultDBState->dbConn->TableExists(NS_LITERAL_CSTRING("moz_cookies"),
     &tableExists);
   if (!tableExists) {
     rv = CreateTable();
@@ -906,11 +976,11 @@ nsCookieService::TryInitDB(bool aRecreateDB)
   } else {
     
     int32_t dbSchemaVersion;
-    rv = mDefaultDBState->syncConn->GetSchemaVersion(&dbSchemaVersion);
+    rv = mDefaultDBState->dbConn->GetSchemaVersion(&dbSchemaVersion);
     NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
     
-    mozStorageTransaction transaction(mDefaultDBState->syncConn, true);
+    mozStorageTransaction transaction(mDefaultDBState->dbConn, true);
 
     switch (dbSchemaVersion) {
     
@@ -922,7 +992,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
     case 1:
       {
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies ADD lastAccessed INTEGER"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
@@ -932,7 +1002,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
     case 2:
       {
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies ADD baseDomain TEXT"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -942,12 +1012,12 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         const int64_t SCHEMA2_IDX_ID  =  0;
         const int64_t SCHEMA2_IDX_HOST = 1;
         nsCOMPtr<mozIStorageStatement> select;
-        rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "SELECT id, host FROM moz_cookies"), getter_AddRefs(select));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         nsCOMPtr<mozIStorageStatement> update;
-        rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "UPDATE moz_cookies SET baseDomain = :baseDomain WHERE id = :id"),
           getter_AddRefs(update));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
@@ -981,7 +1051,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         }
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain)"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
@@ -1006,14 +1076,14 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         const int64_t SCHEMA3_IDX_HOST = 2;
         const int64_t SCHEMA3_IDX_PATH = 3;
         nsCOMPtr<mozIStorageStatement> select;
-        rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "SELECT id, name, host, path FROM moz_cookies "
             "ORDER BY name ASC, host ASC, path ASC, expiry ASC"),
           getter_AddRefs(select));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         nsCOMPtr<mozIStorageStatement> deleteExpired;
-        rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "DELETE FROM moz_cookies WHERE id = :id"),
           getter_AddRefs(deleteExpired));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
@@ -1066,18 +1136,18 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         }
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies ADD creationTime INTEGER"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "UPDATE moz_cookies SET creationTime = "
             "(SELECT id WHERE id = moz_cookies.id)"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "CREATE UNIQUE INDEX moz_uniqueid "
           "ON moz_cookies (name, host, path)"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
@@ -1099,12 +1169,12 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies RENAME TO moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "DROP INDEX moz_basedomain"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1113,7 +1183,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "INSERT INTO moz_cookies "
           "(baseDomain, appId, inBrowserElement, name, value, host, path, expiry,"
           " lastAccessed, creationTime, isSecure, isHttpOnly) "
@@ -1123,7 +1193,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "DROP TABLE moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1149,12 +1219,12 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
              "ALTER TABLE moz_cookies RENAME TO moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
              "DROP INDEX moz_basedomain"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1171,11 +1241,11 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_NAMED_LITERAL_CSTRING(convertToOriginAttrsName,
                                  "CONVERT_TO_ORIGIN_ATTRIBUTES");
 
-        rv = mDefaultDBState->syncConn->CreateFunction(convertToOriginAttrsName,
+        rv = mDefaultDBState->dbConn->CreateFunction(convertToOriginAttrsName,
                                                      2, convertToOriginAttrs);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "INSERT INTO moz_cookies "
           "(baseDomain, originAttributes, name, value, host, path, expiry,"
           " lastAccessed, creationTime, isSecure, isHttpOnly) "
@@ -1186,11 +1256,11 @@ nsCookieService::TryInitDB(bool aRecreateDB)
           "FROM moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->RemoveFunction(convertToOriginAttrsName);
+        rv = mDefaultDBState->dbConn->RemoveFunction(convertToOriginAttrsName);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
              "DROP TABLE moz_cookies_old"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1209,11 +1279,11 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         
         
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies ADD appId INTEGER DEFAULT 0;"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE moz_cookies ADD inBrowserElement INTEGER DEFAULT 0;"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1225,7 +1295,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
 
         NS_NAMED_LITERAL_CSTRING(setAppIdName, "SET_APP_ID");
 
-        rv = mDefaultDBState->syncConn->CreateFunction(setAppIdName, 1, setAppId);
+        rv = mDefaultDBState->dbConn->CreateFunction(setAppIdName, 1, setAppId);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         nsCOMPtr<mozIStorageFunction>
@@ -1234,20 +1304,20 @@ nsCookieService::TryInitDB(bool aRecreateDB)
 
         NS_NAMED_LITERAL_CSTRING(setInBrowserName, "SET_IN_BROWSER");
 
-        rv = mDefaultDBState->syncConn->CreateFunction(setInBrowserName, 1,
+        rv = mDefaultDBState->dbConn->CreateFunction(setInBrowserName, 1,
                                                      setInBrowser);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "UPDATE moz_cookies SET appId = SET_APP_ID(originAttributes), "
           "inBrowserElement = SET_IN_BROWSER(originAttributes);"
         ));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->RemoveFunction(setAppIdName);
+        rv = mDefaultDBState->dbConn->RemoveFunction(setAppIdName);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
-        rv = mDefaultDBState->syncConn->RemoveFunction(setInBrowserName);
+        rv = mDefaultDBState->dbConn->RemoveFunction(setInBrowserName);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         COOKIE_LOGSTRING(LogLevel::Debug,
@@ -1264,7 +1334,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
              "DROP INDEX moz_basedomain"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1273,7 +1343,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "INSERT INTO new_moz_cookies ("
               "id, "
               "baseDomain, "
@@ -1306,12 +1376,12 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "DROP TABLE moz_cookies;"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE new_moz_cookies RENAME TO moz_cookies;"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1327,14 +1397,14 @@ nsCookieService::TryInitDB(bool aRecreateDB)
     case 8:
       {
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(
           NS_LITERAL_CSTRING("ALTER TABLE moz_cookies ADD sameSite INTEGER"));
         COOKIE_LOGSTRING(LogLevel::Debug,
           ("Upgraded database to schema version 9"));
       }
 
       
-      rv = mDefaultDBState->syncConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
+      rv = mDefaultDBState->dbConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
       NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       MOZ_FALLTHROUGH;
 
@@ -1350,7 +1420,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         
         
         
-        rv = mDefaultDBState->syncConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
+        rv = mDefaultDBState->dbConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
       }
       
@@ -1366,7 +1436,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
       {
         
         nsCOMPtr<mozIStorageStatement> stmt;
-        rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "SELECT "
             "id, "
             "baseDomain, "
@@ -1386,7 +1456,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
           break;
 
         
-        rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "DROP TABLE moz_cookies"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
@@ -1396,118 +1466,6 @@ nsCookieService::TryInitDB(bool aRecreateDB)
       break;
     }
   }
-
-  
-  if (aRecreateDB) {
-    return RESULT_OK;
-  }
-
-  
-  if (tableExists) {
-    return Read();
-  }
-
-  nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableFunction("TryInitDB.ImportCookies", [] {
-      NS_ENSURE_TRUE_VOID(gCookieService);
-      NS_ENSURE_TRUE_VOID(gCookieService->mDefaultDBState);
-      nsCOMPtr<nsIFile> oldCookieFile;
-      nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-        getter_AddRefs(oldCookieFile));
-      if (NS_FAILED(rv)) {
-        return;
-      }
-
-      
-      
-      
-      DBState* initialState = gCookieService->mDBState;
-      gCookieService->mDBState = gCookieService->mDefaultDBState;
-      oldCookieFile->AppendNative(NS_LITERAL_CSTRING(OLD_COOKIE_FILE_NAME));
-      gCookieService->ImportCookies(oldCookieFile);
-      oldCookieFile->Remove(false);
-      gCookieService->mDBState = initialState;
-    });
-
-  NS_DispatchToMainThread(runnable);
-
-  return RESULT_OK;
-}
-
-void
-nsCookieService::InitDBConn()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (!mInitializedDBStates || mInitializedDBConn || !mDefaultDBState) {
-    return;
-  }
-
-  if (!mAccumulatedWaitTelemetry) {
-    mAccumulatedWaitTelemetry = true;
-    Telemetry::Accumulate(Telemetry::MOZ_SQLITE_COOKIES_BLOCK_MAIN_THREAD_MS, 0);
-  }
-  for (uint32_t i = 0; i < mReadArray.Length(); ++i) {
-    CookieDomainTuple& tuple = mReadArray[i];
-    RefPtr<nsCookie> cookie = nsCookie::Create(tuple.cookie->name,
-                                               tuple.cookie->value,
-                                               tuple.cookie->host,
-                                               tuple.cookie->path,
-                                               tuple.cookie->expiry,
-                                               tuple.cookie->lastAccessed,
-                                               tuple.cookie->creationTime,
-                                               false,
-                                               tuple.cookie->isSecure,
-                                               tuple.cookie->isHttpOnly,
-                                               tuple.cookie->originAttributes,
-                                               tuple.cookie->sameSite);
-
-    AddCookieToList(tuple.key, cookie, mDefaultDBState, nullptr, false);
-  }
-
-  if (NS_FAILED(InitDBConnInternal())) {
-    COOKIE_LOGSTRING(LogLevel::Warning, ("InitDBConn(): retrying InitDBConnInternal()"));
-    CleanupCachedStatements();
-    CleanupDefaultDBConnection();
-    if (NS_FAILED(InitDBConnInternal())) {
-      COOKIE_LOGSTRING(LogLevel::Warning,
-        ("InitDBConn(): InitDBConnInternal() failed, closing connection"));
-
-      
-      CleanupCachedStatements();
-      CleanupDefaultDBConnection();
-    }
-  }
-  mInitializedDBConn = true;
-
-  COOKIE_LOGSTRING(LogLevel::Debug, ("InitDBConn(): mInitializedDBConn = true"));
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os && !mReadArray.IsEmpty()) {
-    os->NotifyObservers(nullptr, "cookie-db-read", nullptr);
-    mReadArray.Clear();
-  }
-}
-
-nsresult
-nsCookieService::InitDBConnInternal()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsresult rv = mStorageService->OpenUnsharedDatabase(mDefaultDBState->cookieFile,
-    getter_AddRefs(mDefaultDBState->dbConn));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  mDefaultDBState->insertListener = new InsertCookieDBListener(mDefaultDBState);
-  mDefaultDBState->updateListener = new UpdateCookieDBListener(mDefaultDBState);
-  mDefaultDBState->removeListener = new RemoveCookieDBListener(mDefaultDBState);
-  mDefaultDBState->closeListener = new CloseCookieDBListener(mDefaultDBState);
-
-  
-  mDefaultDBState->dbConn->SetGrowthIncrement(512 * 1024, EmptyCString());
 
   
   mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
@@ -1550,19 +1508,44 @@ nsCookieService::InitDBConnInternal()
       ":sameSite"
     ")"),
     getter_AddRefs(mDefaultDBState->stmtInsert));
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
   rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
     "DELETE FROM moz_cookies "
     "WHERE name = :name AND host = :host AND path = :path AND originAttributes = :originAttributes"),
     getter_AddRefs(mDefaultDBState->stmtDelete));
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
   rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
     "UPDATE moz_cookies SET lastAccessed = :lastAccessed "
     "WHERE name = :name AND host = :host AND path = :path AND originAttributes = :originAttributes"),
     getter_AddRefs(mDefaultDBState->stmtUpdate));
-  return rv;
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+  
+  if (aRecreateDB)
+    return RESULT_OK;
+
+  
+  if (tableExists)
+    return Read();
+
+  nsCOMPtr<nsIFile> oldCookieFile;
+  rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+    getter_AddRefs(oldCookieFile));
+  if (NS_FAILED(rv)) return RESULT_OK;
+
+  
+  
+  
+  DBState* initialState = mDBState;
+  mDBState = mDefaultDBState;
+  oldCookieFile->AppendNative(NS_LITERAL_CSTRING(OLD_COOKIE_FILE_NAME));
+  ImportCookies(oldCookieFile);
+  oldCookieFile->Remove(false);
+  mDBState = initialState;
+
+  return RESULT_OK;
 }
 
 
@@ -1592,7 +1575,7 @@ nsCookieService::CreateTableWorker(const char* aName)
       "sameSite INTEGER DEFAULT 0, "
       "CONSTRAINT moz_uniqueid UNIQUE (name, host, path, originAttributes)"
     ")");
-  return mDefaultDBState->syncConn->ExecuteSimpleSQL(command);
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(command);
 }
 
 
@@ -1600,7 +1583,7 @@ nsresult
 nsCookieService::CreateTable()
 {
   
-  nsresult rv = mDefaultDBState->syncConn->SetSchemaVersion(
+  nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(
     COOKIES_SCHEMA_VERSION);
   if (NS_FAILED(rv)) return rv;
 
@@ -1614,7 +1597,7 @@ nsresult
 nsCookieService::CreateIndex()
 {
   
-  return mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain, "
                                                 "originAttributes)"));
 }
@@ -1624,14 +1607,14 @@ nsresult
 nsCookieService::CreateTableForSchemaVersion6()
 {
   
-  nsresult rv = mDefaultDBState->syncConn->SetSchemaVersion(6);
+  nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(6);
   if (NS_FAILED(rv)) return rv;
 
   
   
   
   
-  rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE TABLE moz_cookies ("
       "id INTEGER PRIMARY KEY, "
       "baseDomain TEXT, "
@@ -1650,7 +1633,7 @@ nsCookieService::CreateTableForSchemaVersion6()
   if (NS_FAILED(rv)) return rv;
 
   
-  return mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain, "
                                                 "originAttributes)"));
 }
@@ -1660,13 +1643,13 @@ nsresult
 nsCookieService::CreateTableForSchemaVersion5()
 {
   
-  nsresult rv = mDefaultDBState->syncConn->SetSchemaVersion(5);
+  nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(5);
   if (NS_FAILED(rv)) return rv;
 
   
   
   
-  rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE TABLE moz_cookies ("
       "id INTEGER PRIMARY KEY, "
       "baseDomain TEXT, "
@@ -1686,7 +1669,7 @@ nsCookieService::CreateTableForSchemaVersion5()
   if (NS_FAILED(rv)) return rv;
 
   
-  return mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
     "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain, "
                                                 "appId, "
                                                 "inBrowserElement)"));
@@ -1695,13 +1678,6 @@ nsCookieService::CreateTableForSchemaVersion5()
 void
 nsCookieService::CloseDBStates()
 {
-  
-  if (!mDBState) {
-    return;
-  }
-
-  EnsureReadComplete(false);
-
   
   mPrivateDBState = nullptr;
   mDBState = nullptr;
@@ -1715,13 +1691,18 @@ nsCookieService::CloseDBStates()
 
   if (mDefaultDBState->dbConn) {
     
+    
+    if (mDefaultDBState->pendingRead) {
+      CancelAsyncRead(true);
+    }
+
+    
     mDefaultDBState->dbConn->AsyncClose(mDefaultDBState->closeListener);
   }
 
   CleanupDefaultDBConnection();
 
   mDefaultDBState = nullptr;
-  mInitializedDBStates = false;
 }
 
 
@@ -1749,16 +1730,16 @@ nsCookieService::CleanupDefaultDBConnection()
   
   
   mDefaultDBState->dbConn = nullptr;
+  mDefaultDBState->syncConn = nullptr;
 
   
   
   
+  mDefaultDBState->readListener = nullptr;
   mDefaultDBState->insertListener = nullptr;
   mDefaultDBState->updateListener = nullptr;
   mDefaultDBState->removeListener = nullptr;
   mDefaultDBState->closeListener = nullptr;
-
-  mInitializedDBConn = false;
 }
 
 void
@@ -1826,6 +1807,16 @@ nsCookieService::HandleCorruptDB(DBState* aDBState)
     
     mDefaultDBState->corruptFlag = DBState::CLOSING_FOR_REBUILD;
 
+    
+    
+    
+    
+    mDefaultDBState->readSet.Clear();
+    if (mDefaultDBState->pendingRead) {
+      CancelAsyncRead(true);
+      mDefaultDBState->syncConn = nullptr;
+    }
+
     CleanupCachedStatements();
     mDefaultDBState->dbConn->AsyncClose(mDefaultDBState->closeListener);
     CleanupDefaultDBConnection();
@@ -1876,80 +1867,61 @@ nsCookieService::RebuildCorruptDB(DBState* aDBState)
   COOKIE_LOGSTRING(LogLevel::Debug,
     ("RebuildCorruptDB(): creating new database"));
 
-  nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableFunction("RebuildCorruptDB.TryInitDB", [] {
-      NS_ENSURE_TRUE_VOID(gCookieService && gCookieService->mDefaultDBState);
+  
+  
+  OpenDBResult result = TryInitDB(true);
+  if (result != RESULT_OK) {
+    
+    
+    COOKIE_LOGSTRING(LogLevel::Warning,
+      ("RebuildCorruptDB(): TryInitDB() failed with result %u", result));
+    CleanupCachedStatements();
+    CleanupDefaultDBConnection();
+    mDefaultDBState->corruptFlag = DBState::OK;
+    if (os) {
+      os->NotifyObservers(nullptr, "cookie-db-closed", nullptr);
+    }
+    return;
+  }
 
-      
-      
-      OpenDBResult result = gCookieService->TryInitDB(true);
+  
+  if (os) {
+    os->NotifyObservers(nullptr, "cookie-db-rebuilding", nullptr);
+  }
 
-      nsCOMPtr<nsIRunnable> innerRunnable =
-        NS_NewRunnableFunction("RebuildCorruptDB.TryInitDBComplete", [result] {
-          NS_ENSURE_TRUE_VOID(gCookieService && gCookieService->mDefaultDBState);
+  
+  mozIStorageAsyncStatement* stmt = aDBState->stmtInsert;
+  nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
+  stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
+  for (auto iter = aDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    nsCookieEntry* entry = iter.Get();
 
-          nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-          if (result != RESULT_OK) {
-            
-            
-            COOKIE_LOGSTRING(LogLevel::Warning,
-              ("RebuildCorruptDB(): TryInitDB() failed with result %u", result));
-            gCookieService->CleanupCachedStatements();
-            gCookieService->CleanupDefaultDBConnection();
-            gCookieService->mDefaultDBState->corruptFlag = DBState::OK;
-            if (os) {
-              os->NotifyObservers(nullptr, "cookie-db-closed", nullptr);
-            }
-            return;
-          }
+    const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
+    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      nsCookie* cookie = cookies[i];
 
-          
-          if (os) {
-            os->NotifyObservers(nullptr, "cookie-db-rebuilding", nullptr);
-          }
+      if (!cookie->IsSession()) {
+        bindCookieParameters(paramsArray, nsCookieKey(entry), cookie);
+      }
+    }
+  }
 
-          gCookieService->InitDBConn();
+  
+  uint32_t length;
+  paramsArray->GetLength(&length);
+  if (length == 0) {
+    COOKIE_LOGSTRING(LogLevel::Debug,
+      ("RebuildCorruptDB(): nothing to write, rebuild complete"));
+    mDefaultDBState->corruptFlag = DBState::OK;
+    return;
+  }
 
-          
-          mozIStorageAsyncStatement* stmt = gCookieService->mDefaultDBState->stmtInsert;
-          nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
-          stmt->NewBindingParamsArray(getter_AddRefs(paramsArray));
-          for (auto iter = gCookieService->mDefaultDBState->hostTable.Iter();
-               !iter.Done();
-               iter.Next()) {
-            nsCookieEntry* entry = iter.Get();
-
-            const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-            for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
-              nsCookie* cookie = cookies[i];
-
-              if (!cookie->IsSession()) {
-                bindCookieParameters(paramsArray, nsCookieKey(entry), cookie);
-              }
-            }
-          }
-
-          
-          uint32_t length;
-          paramsArray->GetLength(&length);
-          if (length == 0) {
-            COOKIE_LOGSTRING(LogLevel::Debug,
-              ("RebuildCorruptDB(): nothing to write, rebuild complete"));
-            gCookieService->mDefaultDBState->corruptFlag = DBState::OK;
-            return;
-          }
-
-          
-          DebugOnly<nsresult> rv = stmt->BindParameters(paramsArray);
-          NS_ASSERT_SUCCESS(rv);
-          nsCOMPtr<mozIStoragePendingStatement> handle;
-          rv = stmt->ExecuteAsync(gCookieService->mDefaultDBState->insertListener,
-                                  getter_AddRefs(handle));
-          NS_ASSERT_SUCCESS(rv);
-        });
-      NS_DispatchToMainThread(innerRunnable);
-    });
-  mThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  
+  DebugOnly<nsresult> rv = stmt->BindParameters(paramsArray);
+  NS_ASSERT_SUCCESS(rv);
+  nsCOMPtr<mozIStoragePendingStatement> handle;
+  rv = stmt->ExecuteAsync(aDBState->insertListener, getter_AddRefs(handle));
+  NS_ASSERT_SUCCESS(rv);
 }
 
 nsCookieService::~nsCookieService()
@@ -1959,9 +1931,6 @@ nsCookieService::~nsCookieService()
   UnregisterWeakMemoryReporter(this);
 
   gCookieService = nullptr;
-  if (mThread) {
-    mThread->Shutdown();
-  }
 }
 
 NS_IMETHODIMP
@@ -2155,8 +2124,6 @@ nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
     return;
   }
 
-  EnsureReadComplete(true);
-
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aOriginAttrs.mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
 
@@ -2341,13 +2308,6 @@ NS_IMETHODIMP
 nsCookieService::RunInTransaction(nsICookieTransactionCallback* aCallback)
 {
   NS_ENSURE_ARG(aCallback);
-  if (!mDBState) {
-    NS_WARNING("No DBState! Profile already closed?");
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  EnsureReadComplete(true);
-
   if (NS_WARN_IF(!mDefaultDBState->dbConn)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -2404,13 +2364,17 @@ nsCookieService::RemoveAll()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   RemoveAllFromMemory();
 
   
   if (mDBState->dbConn) {
     NS_ASSERTION(mDBState == mDefaultDBState, "not in default DB state");
+
+    
+    
+    if (mDefaultDBState->pendingRead) {
+      CancelAsyncRead(true);
+    }
 
     nsCOMPtr<mozIStorageAsyncStatement> stmt;
     nsresult rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
@@ -2440,7 +2404,7 @@ nsCookieService::GetEnumerator(nsISimpleEnumerator **aEnumerator)
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
+  EnsureReadComplete();
 
   nsCOMArray<nsICookie> cookieList(mDBState->cookieCount);
   for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
@@ -2461,7 +2425,7 @@ nsCookieService::GetSessionEnumerator(nsISimpleEnumerator **aEnumerator)
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
+  EnsureReadComplete();
 
   nsCOMArray<nsICookie> cookieList(mDBState->cookieCount);
   for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
@@ -2567,8 +2531,6 @@ nsCookieService::AddNative(const nsACString &aHost,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aOriginAttributes->mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
 
@@ -2614,8 +2576,6 @@ nsCookieService::Remove(const nsACString& aHost, const OriginAttributes& aAttrs,
     NS_WARNING("No DBState! Profile already closed?");
     return NS_ERROR_NOT_AVAILABLE;
   }
-
-  EnsureReadComplete(true);
 
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aAttrs.mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
@@ -2711,9 +2671,69 @@ nsCookieService::RemoveNative(const nsACString &aHost,
 
 
 
-mozilla::UniquePtr<ConstCookie>
-nsCookieService::GetCookieFromRow(mozIStorageStatement *aRow,
-                                  const OriginAttributes &aOriginAttributes)
+OpenDBResult
+nsCookieService::Read()
+{
+  
+  
+  nsCOMPtr<mozIStorageAsyncStatement> stmtRead;
+  nsresult rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "SELECT "
+      "name, "
+      "value, "
+      "host, "
+      "path, "
+      "expiry, "
+      "lastAccessed, "
+      "creationTime, "
+      "isSecure, "
+      "isHttpOnly, "
+      "baseDomain, "
+      "originAttributes, "
+      "sameSite "
+    "FROM moz_cookies "
+    "WHERE baseDomain NOTNULL"), getter_AddRefs(stmtRead));
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+  
+  
+  
+  
+  nsCOMPtr<mozIStorageAsyncStatement> stmtDeleteNull;
+  rv = mDefaultDBState->dbConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_cookies WHERE baseDomain ISNULL"),
+    getter_AddRefs(stmtDeleteNull));
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+  
+  
+  
+  rv = mStorageService->OpenUnsharedDatabase(mDefaultDBState->cookieFile,
+    getter_AddRefs(mDefaultDBState->syncConn));
+  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+  
+  
+  
+  mDefaultDBState->hostArray.SetCapacity(kMaxNumberOfCookies);
+
+  mDefaultDBState->readListener = new ReadCookieDBListener(mDefaultDBState);
+  rv = stmtRead->ExecuteAsync(mDefaultDBState->readListener,
+    getter_AddRefs(mDefaultDBState->pendingRead));
+  NS_ASSERT_SUCCESS(rv);
+
+  nsCOMPtr<mozIStoragePendingStatement> handle;
+  rv = stmtDeleteNull->ExecuteAsync(mDefaultDBState->removeListener,
+    getter_AddRefs(handle));
+  NS_ASSERT_SUCCESS(rv);
+
+  return RESULT_OK;
+}
+
+
+
+template<class T> nsCookie*
+nsCookieService::GetCookieFromRow(T &aRow, const OriginAttributes& aOriginAttributes)
 {
   
   nsCString name, value, host, path;
@@ -2734,57 +2754,212 @@ nsCookieService::GetCookieFromRow(mozIStorageStatement *aRow,
   int32_t sameSite = aRow->AsInt32(IDX_SAME_SITE);
 
   
-  return mozilla::MakeUnique<ConstCookie>(name,
-                                          value,
-                                          host,
-                                          path,
-                                          expiry,
-                                          lastAccessed,
-                                          creationTime,
-                                          isSecure,
-                                          isHttpOnly,
-                                          aOriginAttributes,
-                                          sameSite);
+  return nsCookie::Create(name, value, host, path,
+                          expiry,
+                          lastAccessed,
+                          creationTime,
+                          false,
+                          isSecure,
+                          isHttpOnly,
+                          aOriginAttributes,
+                          sameSite);
 }
 
 void
-nsCookieService::EnsureReadComplete(bool aInitDBConn)
+nsCookieService::AsyncReadComplete()
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  
+  NS_ASSERTION(mDefaultDBState, "no default DBState");
+  NS_ASSERTION(mDefaultDBState->pendingRead, "no pending read");
+  NS_ASSERTION(mDefaultDBState->readListener, "no read listener");
 
-  if (!mInitializedDBStates) {
-    TimeStamp startBlockTime = TimeStamp::Now();
-    MonitorAutoLock lock(mMonitor);
+  mozStorageTransaction transaction(mDefaultDBState->dbConn, false);
+  
+  
+  
+  for (uint32_t i = 0; i < mDefaultDBState->hostArray.Length(); ++i) {
+    const CookieDomainTuple &tuple = mDefaultDBState->hostArray[i];
 
-    while (!mInitializedDBStates) {
-      mMonitor.Wait();
-    }
-    Telemetry::AccumulateTimeDelta(Telemetry::MOZ_SQLITE_COOKIES_BLOCK_MAIN_THREAD_MS,
-                                   startBlockTime);
-    mAccumulatedWaitTelemetry = true;
+    
+    
+    
+    if (mDefaultDBState->readSet.GetEntry(tuple.key))
+      continue;
+
+    AddCookieToList(tuple.key, tuple.cookie, mDefaultDBState, nullptr, false);
   }
-  if (!mInitializedDBConn && aInitDBConn && mDefaultDBState) {
-    InitDBConn();
+  DebugOnly<nsresult> rv = transaction.Commit();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  mDefaultDBState->stmtReadDomain = nullptr;
+  mDefaultDBState->pendingRead = nullptr;
+  mDefaultDBState->readListener = nullptr;
+
+  
+  
+  if (mDefaultDBState->syncConn) {
+    mDefaultDBState->syncConn->AsyncClose(nullptr);
+    mDefaultDBState->syncConn = nullptr;
+  }
+  mDefaultDBState->hostArray.Clear();
+  mDefaultDBState->readSet.Clear();
+
+  COOKIE_LOGSTRING(LogLevel::Debug, ("Read(): %" PRIu32 " cookies read",
+                                  mDefaultDBState->cookieCount));
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (os) {
+    os->NotifyObservers(nullptr, "cookie-db-read", nullptr);
   }
 }
 
-OpenDBResult
-nsCookieService::Read()
+void
+nsCookieService::CancelAsyncRead(bool aPurgeReadSet)
 {
-  MOZ_ASSERT(NS_GetCurrentThread() == mThread);
+  
+  
+  
+  NS_ASSERTION(mDefaultDBState, "no default DBState");
+  NS_ASSERTION(mDefaultDBState->pendingRead, "no pending read");
+  NS_ASSERTION(mDefaultDBState->readListener, "no read listener");
 
   
   
+  mDefaultDBState->readListener->Cancel();
+  DebugOnly<nsresult> rv = mDefaultDBState->pendingRead->Cancel();
+  NS_ASSERT_SUCCESS(rv);
+
+  mDefaultDBState->stmtReadDomain = nullptr;
+  mDefaultDBState->pendingRead = nullptr;
+  mDefaultDBState->readListener = nullptr;
+  mDefaultDBState->hostArray.Clear();
+
   
   
-  nsresult rv = mDefaultDBState->syncConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-                  "DELETE FROM moz_cookies WHERE baseDomain ISNULL"));
-  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+  if (aPurgeReadSet)
+    mDefaultDBState->readSet.Clear();
+}
+
+void
+nsCookieService::EnsureReadDomain(const nsCookieKey &aKey)
+{
+  NS_ASSERTION(!mDBState->dbConn || mDBState == mDefaultDBState,
+    "not in default db state");
+
+  
+  if (MOZ_LIKELY(!mDBState->dbConn || !mDefaultDBState->pendingRead))
+    return;
+
+  
+  if (MOZ_LIKELY(mDefaultDBState->readSet.GetEntry(aKey)))
+    return;
+
+  
+  
+  nsresult rv;
+  if (!mDefaultDBState->stmtReadDomain) {
+    
+    rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+      "SELECT "
+        "name, "
+        "value, "
+        "host, "
+        "path, "
+        "expiry, "
+        "lastAccessed, "
+        "creationTime, "
+        "isSecure, "
+        "isHttpOnly, "
+        "baseDomain, "
+        "originAttributes, "
+        "sameSite "
+      "FROM moz_cookies "
+      "WHERE baseDomain = :baseDomain "
+      "  AND originAttributes = :originAttributes"),
+      getter_AddRefs(mDefaultDBState->stmtReadDomain));
+
+    if (NS_FAILED(rv)) {
+      
+      COOKIE_LOGSTRING(LogLevel::Debug,
+        ("EnsureReadDomain(): corruption detected when creating statement "
+         "with rv 0x%" PRIx32, static_cast<uint32_t>(rv)));
+      HandleCorruptDB(mDefaultDBState);
+      return;
+    }
+  }
+
+  NS_ASSERTION(mDefaultDBState->syncConn, "should have a sync db connection");
+
+  mozStorageStatementScoper scoper(mDefaultDBState->stmtReadDomain);
+
+  rv = mDefaultDBState->stmtReadDomain->BindUTF8StringByName(
+    NS_LITERAL_CSTRING("baseDomain"), aKey.mBaseDomain);
+  NS_ASSERT_SUCCESS(rv);
+
+  nsAutoCString suffix;
+  aKey.mOriginAttributes.CreateSuffix(suffix);
+  rv = mDefaultDBState->stmtReadDomain->BindUTF8StringByName(
+    NS_LITERAL_CSTRING("originAttributes"), suffix);
+  NS_ASSERT_SUCCESS(rv);
+
+  bool hasResult;
+  nsCString name, value, host, path;
+  AutoTArray<RefPtr<nsCookie>, kMaxCookiesPerHost> array;
+  while (true) {
+    rv = mDefaultDBState->stmtReadDomain->ExecuteStep(&hasResult);
+    if (NS_FAILED(rv)) {
+      
+      COOKIE_LOGSTRING(LogLevel::Debug,
+        ("EnsureReadDomain(): corruption detected when reading result "
+         "with rv 0x%" PRIx32, static_cast<uint32_t>(rv)));
+      HandleCorruptDB(mDefaultDBState);
+      return;
+    }
+
+    if (!hasResult)
+      break;
+
+    array.AppendElement(GetCookieFromRow(mDefaultDBState->stmtReadDomain,
+                                         aKey.mOriginAttributes));
+  }
+
+  mozStorageTransaction transaction(mDefaultDBState->dbConn, false);
+  
+  
+  for (uint32_t i = 0; i < array.Length(); ++i) {
+    AddCookieToList(aKey, array[i], mDefaultDBState, nullptr, false);
+  }
+  rv = transaction.Commit();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  
+  mDefaultDBState->readSet.PutEntry(aKey);
+
+  COOKIE_LOGSTRING(LogLevel::Debug,
+    ("EnsureReadDomain(): %zu cookies read for base domain %s, "
+     " originAttributes = %s", array.Length(), aKey.mBaseDomain.get(),
+     suffix.get()));
+}
+
+void
+nsCookieService::EnsureReadComplete()
+{
+  NS_ASSERTION(!mDBState->dbConn || mDBState == mDefaultDBState,
+    "not in default db state");
+
+  
+  if (MOZ_LIKELY(!mDBState->dbConn || !mDefaultDBState->pendingRead))
+    return;
+
+  
+  CancelAsyncRead(false);
 
   
   
   nsCOMPtr<mozIStorageStatement> stmt;
-  rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
+  nsresult rv = mDefaultDBState->syncConn->CreateStatement(NS_LITERAL_CSTRING(
     "SELECT "
       "name, "
       "value, "
@@ -2801,20 +2976,27 @@ nsCookieService::Read()
     "FROM moz_cookies "
     "WHERE baseDomain NOTNULL"), getter_AddRefs(stmt));
 
-  NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
-
-  if (NS_WARN_IF(!mReadArray.IsEmpty())) {
-    mReadArray.Clear();
+  if (NS_FAILED(rv)) {
+    
+    COOKIE_LOGSTRING(LogLevel::Debug,
+      ("EnsureReadComplete(): corruption detected when creating statement "
+       "with rv 0x%" PRIx32, static_cast<uint32_t>(rv)));
+    HandleCorruptDB(mDefaultDBState);
+    return;
   }
-  mReadArray.SetCapacity(kMaxNumberOfCookies);
 
   nsCString baseDomain, name, value, host, path;
   bool hasResult;
+  nsTArray<CookieDomainTuple> array(kMaxNumberOfCookies);
   while (true) {
     rv = stmt->ExecuteStep(&hasResult);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      mReadArray.Clear();
-      return RESULT_RETRY;
+    if (NS_FAILED(rv)) {
+      
+      COOKIE_LOGSTRING(LogLevel::Debug,
+        ("EnsureReadComplete(): corruption detected when reading result "
+         "with rv 0x%" PRIx32, static_cast<uint32_t>(rv)));
+      HandleCorruptDB(mDefaultDBState);
+      return;
     }
 
     if (!hasResult)
@@ -2831,14 +3013,30 @@ nsCookieService::Read()
     Unused << attrs.PopulateFromSuffix(suffix);
 
     nsCookieKey key(baseDomain, attrs);
-    CookieDomainTuple* tuple = mReadArray.AppendElement();
+    if (mDefaultDBState->readSet.GetEntry(key))
+      continue;
+
+    CookieDomainTuple* tuple = array.AppendElement();
     tuple->key = key;
     tuple->cookie = GetCookieFromRow(stmt, attrs);
   }
 
-  COOKIE_LOGSTRING(LogLevel::Debug, ("Read(): %zu cookies read", mReadArray.Length()));
+  mozStorageTransaction transaction(mDefaultDBState->dbConn, false);
+  
+  
+  for (uint32_t i = 0; i < array.Length(); ++i) {
+    CookieDomainTuple& tuple = array[i];
+    AddCookieToList(tuple.key, tuple.cookie, mDefaultDBState, nullptr,
+      false);
+  }
+  rv = transaction.Commit();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  return RESULT_OK;
+  mDefaultDBState->syncConn = nullptr;
+  mDefaultDBState->readSet.Clear();
+
+  COOKIE_LOGSTRING(LogLevel::Debug,
+    ("EnsureReadComplete(): %zu cookies read", array.Length()));
 }
 
 NS_IMETHODIMP
@@ -2848,8 +3046,6 @@ nsCookieService::ImportCookies(nsIFile *aCookieFile)
     NS_WARNING("No DBState! Profile already closed?");
     return NS_ERROR_NOT_AVAILABLE;
   }
-
-  EnsureReadComplete(true);
 
   
   
@@ -2865,6 +3061,9 @@ nsCookieService::ImportCookies(nsIFile *aCookieFile)
 
   nsCOMPtr<nsILineInputStream> lineInputStream = do_QueryInterface(fileInputStream, &rv);
   if (NS_FAILED(rv)) return rv;
+
+  
+  EnsureReadComplete();
 
   static const char kTrue[] = "TRUE";
 
@@ -3084,8 +3283,6 @@ nsCookieService::GetCookiesForURI(nsIURI *aHostURI,
     return;
   }
 
-  EnsureReadComplete(true);
-
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aOriginAttrs.mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
 
@@ -3141,6 +3338,7 @@ nsCookieService::GetCookiesForURI(nsIURI *aHostURI,
   bool stale = false;
 
   nsCookieKey key(baseDomain, aOriginAttrs);
+  EnsureReadDomain(key);
 
   
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(key);
@@ -3475,9 +3673,6 @@ nsCookieService::AddInternal(const nsCookieKey &aKey,
                              const char        *aCookieHeader,
                              bool               aFromHttp)
 {
-  MOZ_ASSERT(mInitializedDBStates);
-  MOZ_ASSERT(mInitializedDBConn);
-
   int64_t currentTime = aCurrentTimeInUsec / PR_USEC_PER_SEC;
 
   nsListIter exactIter;
@@ -4381,6 +4576,7 @@ already_AddRefed<nsIArray>
 nsCookieService::PurgeCookies(int64_t aCurrentTimeInUsec)
 {
   NS_ASSERTION(mDBState->hostTable.Count() > 0, "table is empty");
+  EnsureReadComplete();
 
   uint32_t initialCookieCount = mDBState->cookieCount;
   COOKIE_LOGSTRING(LogLevel::Debug,
@@ -4530,8 +4726,6 @@ nsCookieService::CookieExistsNative(nsICookie2* aCookie,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aOriginAttributes->mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
 
@@ -4673,8 +4867,6 @@ nsCookieService::CountCookiesFromHost(const nsACString &aHost,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
@@ -4685,6 +4877,7 @@ nsCookieService::CountCookiesFromHost(const nsACString &aHost,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCookieKey key = DEFAULT_APP_KEY(baseDomain);
+  EnsureReadDomain(key);
 
   
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(key);
@@ -4708,8 +4901,6 @@ nsCookieService::GetCookiesFromHost(const nsACString     &aHost,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
@@ -4732,6 +4923,7 @@ nsCookieService::GetCookiesFromHost(const nsACString     &aHost,
   mDBState = (attrs.mPrivateBrowsingId > 0) ? mPrivateDBState : mDefaultDBState;
 
   nsCookieKey key = nsCookieKey(baseDomain, attrs);
+  EnsureReadDomain(key);
 
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(key);
   if (!entry)
@@ -4777,7 +4969,6 @@ nsCookieService::GetCookiesWithOriginAttributes(
     NS_WARNING("No DBState! Profile already closed?");
     return NS_ERROR_NOT_AVAILABLE;
   }
-  EnsureReadComplete(true);
 
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aPattern.mPrivateBrowsingId.WasPassed() &&
@@ -4837,8 +5028,6 @@ nsCookieService::RemoveCookiesWithOriginAttributes(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  EnsureReadComplete(true);
-
   AutoRestore<DBState*> savePrevDBState(mDBState);
   mDBState = (aPattern.mPrivateBrowsingId.WasPassed() &&
       aPattern.mPrivateBrowsingId.Value() > 0) ? mPrivateDBState : mDefaultDBState;
@@ -4887,6 +5076,8 @@ bool
 nsCookieService::FindSecureCookie(const nsCookieKey &aKey,
                                   nsCookie          *aCookie)
 {
+  EnsureReadDomain(aKey);
+
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(aKey);
   if (!entry)
     return false;
@@ -4922,9 +5113,7 @@ nsCookieService::FindCookie(const nsCookieKey    &aKey,
                             const nsCString& aPath,
                             nsListIter           &aIter)
 {
-  
-  MOZ_ASSERT(mInitializedDBStates);
-  MOZ_ASSERT(mInitializedDBConn);
+  EnsureReadDomain(aKey);
 
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(aKey);
   if (!entry)
