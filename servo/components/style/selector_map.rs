@@ -12,7 +12,6 @@ use dom::TElement;
 use fallible::FallibleVec;
 use hash::{HashMap, HashSet, DiagnosticHashMap};
 use hashglobe::FailedAllocationError;
-use pdqsort::sort_by;
 use precomputed_hash::PrecomputedHash;
 use rule_tree::CascadeLevel;
 use selector_parser::SelectorImpl;
@@ -109,11 +108,6 @@ pub struct SelectorMap<T: 'static> {
     pub other: SmallVec<[T; 1]>,
     
     pub count: usize,
-}
-
-#[inline]
-fn sort_by_key<T, F: Fn(&T) -> K, K: Ord>(v: &mut [T], f: F) {
-    sort_by(v, |a, b| f(a).cmp(&f(b)))
 }
 
 
@@ -227,8 +221,7 @@ impl SelectorMap<Rule> {
                                         cascade_level);
 
         
-        sort_by_key(&mut matching_rules_list[init_len..],
-                    |block| (block.specificity, block.source_order()));
+        matching_rules_list[init_len..].sort_unstable_by_key(|block| (block.specificity, block.source_order()));
     }
 
     
@@ -523,4 +516,3 @@ impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
         self.0.end_mutation();
     }
 }
-
