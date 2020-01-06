@@ -427,6 +427,17 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
                ~(nsChangeHint_ClearDescendantIntrinsics | \
                  nsChangeHint_NeedDirtyReflow))
 
+
+
+
+
+
+
+#define nsChangeHint_ReflowHintsForFloatAreaChange            \
+  nsChangeHint(nsChangeHint_AllReflowHints &              \
+               ~(nsChangeHint_ClearDescendantIntrinsics | \
+                 nsChangeHint_NeedDirtyReflow))
+
 #define NS_STYLE_HINT_REFLOW \
   nsChangeHint(NS_STYLE_HINT_VISUAL | nsChangeHint_AllReflowHints)
 

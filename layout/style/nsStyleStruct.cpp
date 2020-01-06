@@ -3528,9 +3528,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
 
   if (mFloat != aNewData.mFloat) {
     
-    hint |= nsChangeHint_AllReflowHints &
-            ~(nsChangeHint_ClearDescendantIntrinsics |
-              nsChangeHint_NeedDirtyReflow);
+    hint |= nsChangeHint_ReflowHintsForFloatAreaChange;
   }
 
   if (mVerticalAlign != aNewData.mVerticalAlign) {
