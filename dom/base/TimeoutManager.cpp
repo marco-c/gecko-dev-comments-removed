@@ -205,7 +205,8 @@ TimeoutManager::MinSchedulingDelay() const
   TimeDuration unthrottled =
     isBackground ? TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)
                  : TimeDuration();
-  if (BudgetThrottlingEnabled() && mExecutionBudget < TimeDuration()) {
+  if (BudgetThrottlingEnabled(isBackground) &&
+      mExecutionBudget < TimeDuration()) {
     
     double factor = 1.0 / GetRegenerationFactor(mWindow.IsBackgroundInternal());
     return TimeDuration::Min(
@@ -332,8 +333,8 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
   
   
   
-  if (BudgetThrottlingEnabled()) {
-    bool isBackground = mWindow.IsBackgroundInternal();
+  bool isBackground = mWindow.IsBackgroundInternal();
+  if (BudgetThrottlingEnabled(isBackground)) {
     double factor = GetRegenerationFactor(isBackground);
     TimeDuration regenerated = (aNow - mLastBudgetUpdate).MultDouble(factor);
     
@@ -1143,6 +1144,8 @@ TimeoutManager::Thaw()
 void
 TimeoutManager::UpdateBackgroundState()
 {
+  mExecutionBudget = GetMaxBudget(mWindow.IsBackgroundInternal());
+
   
   
   
@@ -1208,7 +1211,7 @@ ThrottleTimeoutsCallback::Notify(nsITimer* aTimer)
 }
 
 bool
-TimeoutManager::BudgetThrottlingEnabled() const
+TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
 {
   
   
@@ -1216,10 +1219,14 @@ TimeoutManager::BudgetThrottlingEnabled() const
   
   
   
+
   
   
   
-  
+  if ((aIsBackground ? gBackgroundThrottlingMaxBudget
+       : gForegroundThrottlingMaxBudget) < 0) {
+    return false;
+  }
 
   if (!mBudgetThrottleTimeouts || IsActive()) {
     return false;
