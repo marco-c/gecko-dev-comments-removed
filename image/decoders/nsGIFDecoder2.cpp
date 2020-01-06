@@ -799,8 +799,8 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
   
   frameRect.x = LittleEndian::readUint16(aData + 0);
   frameRect.y = LittleEndian::readUint16(aData + 2);
-  frameRect.width = LittleEndian::readUint16(aData + 4);
-  frameRect.height = LittleEndian::readUint16(aData + 6);
+  frameRect.SetWidth(LittleEndian::readUint16(aData + 4));
+  frameRect.SetHeight(LittleEndian::readUint16(aData + 6));
 
   if (!mGIFStruct.images_decoded) {
     
@@ -808,11 +808,11 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
     
     
     
-    if (mGIFStruct.screen_height < frameRect.height ||
-        mGIFStruct.screen_width < frameRect.width ||
+    if (mGIFStruct.screen_height < frameRect.Height() ||
+        mGIFStruct.screen_width < frameRect.Width() ||
         mGIFStruct.version == 87) {
-      mGIFStruct.screen_height = frameRect.height;
-      mGIFStruct.screen_width = frameRect.width;
+      mGIFStruct.screen_height = frameRect.Height();
+      mGIFStruct.screen_width = frameRect.Width();
       frameRect.MoveTo(0, 0);
     }
 
@@ -833,12 +833,12 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
 
   
   
-  if (frameRect.height == 0 || frameRect.width == 0) {
-    frameRect.height = mGIFStruct.screen_height;
-    frameRect.width = mGIFStruct.screen_width;
+  if (frameRect.Height() == 0 || frameRect.Width() == 0) {
+    frameRect.SetHeight(mGIFStruct.screen_height);
+    frameRect.SetWidth(mGIFStruct.screen_width);
 
     
-    if (frameRect.height == 0 || frameRect.width == 0) {
+    if (frameRect.Height() == 0 || frameRect.Width() == 0) {
       return Transition::TerminateFailure();
     }
   }
@@ -880,7 +880,7 @@ nsGIFDecoder2::FinishImageDescriptor(const char* aData)
   }
 
   
-  mGIFStruct.pixels_remaining = frameRect.width * frameRect.height;
+  mGIFStruct.pixels_remaining = frameRect.Width() * frameRect.Height();
 
   if (haveLocalColorTable) {
     

@@ -376,7 +376,7 @@ public:
     gfx::IntSize outputSize = mNext.InputSize();
 
     
-    if (aConfig.mFrameRect.width < 0 || aConfig.mFrameRect.height < 0) {
+    if (aConfig.mFrameRect.Width() < 0 || aConfig.mFrameRect.Height() < 0) {
       return NS_ERROR_INVALID_ARG;
     }
 
@@ -395,14 +395,14 @@ public:
     
     
     
-    if (mFrameRect.width < mUnclampedFrameRect.width) {
-      mBuffer.reset(new (fallible) uint8_t[mUnclampedFrameRect.width *
+    if (mFrameRect.Width() < mUnclampedFrameRect.Width()) {
+      mBuffer.reset(new (fallible) uint8_t[mUnclampedFrameRect.Width() *
                                            sizeof(uint32_t)]);
       if (MOZ_UNLIKELY(!mBuffer)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
-      memset(mBuffer.get(), 0, mUnclampedFrameRect.width * sizeof(uint32_t));
+      memset(mBuffer.get(), 0, mUnclampedFrameRect.Width() * sizeof(uint32_t));
     }
 
     ConfigureFilter(mUnclampedFrameRect.Size(), sizeof(uint32_t));
@@ -480,7 +480,7 @@ protected:
       
       
       
-      WriteState state = mNext.WriteBuffer(source, mFrameRect.x, mFrameRect.width);
+      WriteState state = mNext.WriteBuffer(source, mFrameRect.x, mFrameRect.Width());
 
       rowPtr = state == WriteState::NEED_MORE_DATA ? mBuffer.get()
                                                    : nullptr;

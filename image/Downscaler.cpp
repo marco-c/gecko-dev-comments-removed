@@ -79,7 +79,7 @@ Downscaler::BeginFrame(const nsIntSize& aOriginalSize,
 
   mFrameRect = aFrameRect.valueOr(nsIntRect(nsIntPoint(), aOriginalSize));
   MOZ_ASSERT(mFrameRect.x >= 0 && mFrameRect.y >= 0 &&
-             mFrameRect.width >= 0 && mFrameRect.height >= 0,
+             mFrameRect.Width() >= 0 && mFrameRect.Height() >= 0,
              "Frame rect must have non-negative components");
   MOZ_ASSERT(nsIntRect(0, 0, aOriginalSize.width, aOriginalSize.height)
                .Contains(mFrameRect),
@@ -219,7 +219,7 @@ Downscaler::CommitRow()
 
   
   
-  if (mCurrentInLine == (mFrameRect.y + mFrameRect.height)) {
+  if (mCurrentInLine == (mFrameRect.y + mFrameRect.Height())) {
     SkipToRow(mOriginalSize.height - 1);
   }
 }
