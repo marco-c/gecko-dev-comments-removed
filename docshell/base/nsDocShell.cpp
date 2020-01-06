@@ -135,7 +135,6 @@
 #include "nsStreamUtils.h"
 #include "nsIController.h"
 #include "nsPICommandUpdater.h"
-#include "nsIDOMHTMLAnchorElement.h"
 #include "nsIWebBrowserChrome3.h"
 #include "nsITabChild.h"
 #include "nsISiteSecurityService.h"
@@ -1390,15 +1389,7 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
       
       
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsISHEntry> currentChildEntry;
-      GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
-      if (!mCurrentURI || (NS_IsAboutBlank(mCurrentURI) && !currentChildEntry)) {
+      if (!mCurrentURI) {
         
         
         if (shEntry && (parentLoadType == LOAD_NORMAL ||
@@ -1445,10 +1436,6 @@ nsDocShell::LoadURI(nsIURI* aURI,
           loadType = parentLoadType;
         }
       } else {
-        
-        
-        
-        
         
         
         
@@ -14435,7 +14422,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
 
   
   nsAutoString typeHint;
-  nsCOMPtr<nsIDOMHTMLAnchorElement> anchor(do_QueryInterface(aContent));
+  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromContent(aContent);
   if (anchor) {
     anchor->GetType(typeHint);
     NS_ConvertUTF16toUTF8 utf8Hint(typeHint);
