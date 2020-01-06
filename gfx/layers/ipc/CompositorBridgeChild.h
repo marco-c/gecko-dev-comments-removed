@@ -387,7 +387,7 @@ private:
   
   
   
-  bool mIsWaitingForPaint;
+  bool mIsDelayingForAsyncPaints;
 
   uintptr_t mSlowFlushCount;
   uintptr_t mTotalFlushCount;

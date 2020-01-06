@@ -94,7 +94,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild *aManager)
   , mPaintLock("CompositorBridgeChild.mPaintLock")
   , mOutstandingAsyncPaints(0)
   , mOutstandingAsyncEndTransaction(false)
-  , mIsWaitingForPaint(false)
+  , mIsDelayingForAsyncPaints(false)
   , mSlowFlushCount(0)
   , mTotalFlushCount(0)
 {
@@ -1164,7 +1164,7 @@ CompositorBridgeChild::FlushAsyncPaints()
 
   {
     MonitorAutoLock lock(mPaintLock);
-    while (mIsWaitingForPaint) {
+    while (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
       lock.Wait();
     }
 
@@ -1198,7 +1198,7 @@ CompositorBridgeChild::NotifyBeginAsyncPaint(CapturedPaintState* aState)
   
   
   
-  MOZ_ASSERT(!mIsWaitingForPaint);
+  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
 
   mOutstandingAsyncPaints++;
 
@@ -1269,13 +1269,13 @@ CompositorBridgeChild::NotifyFinishedAsyncEndLayerTransaction()
   
   
   
-  if (mIsWaitingForPaint) {
+  if (mIsDelayingForAsyncPaints) {
     ResumeIPCAfterAsyncPaint();
-
-    
-    
-    lock.Notify();
   }
+
+  
+  
+  lock.Notify();
 }
 
 void
@@ -1285,9 +1285,10 @@ CompositorBridgeChild::ResumeIPCAfterAsyncPaint()
   mPaintLock.AssertCurrentThreadOwns();
   MOZ_ASSERT(PaintThread::IsOnPaintThread());
   MOZ_ASSERT(mOutstandingAsyncPaints == 0);
-  MOZ_ASSERT(mIsWaitingForPaint);
+  MOZ_ASSERT(!mOutstandingAsyncEndTransaction);
+  MOZ_ASSERT(mIsDelayingForAsyncPaints);
 
-  mIsWaitingForPaint = false;
+  mIsDelayingForAsyncPaints = false;
 
   
   if (!mCanSend || mActorDestroyed) {
@@ -1304,12 +1305,12 @@ CompositorBridgeChild::PostponeMessagesIfAsyncPainting()
 
   MonitorAutoLock lock(mPaintLock);
 
-  MOZ_ASSERT(!mIsWaitingForPaint);
+  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
 
   
   
   if (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
-    mIsWaitingForPaint = true;
+    mIsDelayingForAsyncPaints = true;
     GetIPCChannel()->BeginPostponingSends();
   }
 }
