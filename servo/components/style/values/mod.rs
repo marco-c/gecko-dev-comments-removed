@@ -67,6 +67,7 @@ impl Parse for Impossible {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy)]
 #[derive(PartialEq, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
@@ -99,6 +100,7 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct CustomIdent(pub Atom);
 
@@ -128,6 +130,7 @@ impl ToCss for CustomIdent {
 
 
 #[derive(Clone, Debug, ToComputedValue)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesName {
     

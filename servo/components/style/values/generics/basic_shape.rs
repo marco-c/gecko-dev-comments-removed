@@ -18,6 +18,7 @@ pub type ClippingShape<BasicShape, Url> = ShapeSource<BasicShape, GeometryBox, U
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum GeometryBox {
@@ -41,6 +42,7 @@ add_impls_for_keyword_enum!(ShapeBox);
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum ShapeSource<BasicShape, ReferenceBox, Url> {
@@ -58,6 +60,7 @@ pub enum ShapeSource<BasicShape, ReferenceBox, Url> {
 }
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq)]
 #[derive(ToComputedValue, ToCss)]
@@ -70,6 +73,7 @@ pub enum BasicShape<H, V, LengthOrPercentage> {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Debug, PartialEq, ToComputedValue)]
 pub struct InsetRect<LengthOrPercentage> {
@@ -79,6 +83,7 @@ pub struct InsetRect<LengthOrPercentage> {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, PartialEq, ToComputedValue)]
 pub struct Circle<H, V, LengthOrPercentage> {
@@ -88,6 +93,7 @@ pub struct Circle<H, V, LengthOrPercentage> {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, PartialEq, ToComputedValue)]
 pub struct Ellipse<H, V, LengthOrPercentage> {
@@ -98,6 +104,7 @@ pub struct Ellipse<H, V, LengthOrPercentage> {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, PartialEq)]
 #[derive(ToComputedValue, ToCss)]
@@ -109,6 +116,7 @@ pub enum ShapeRadius<LengthOrPercentage> {
     FarthestSide,
 }
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToComputedValue)]
 

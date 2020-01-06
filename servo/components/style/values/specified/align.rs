@@ -18,6 +18,7 @@ bitflags! {
     /// Constants shared by multiple CSS Box Alignment properties
     ///
     /// These constants match Gecko's `NS_STYLE_ALIGN_*` constants.
+    #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
     #[derive(ToComputedValue)]
     pub flags AlignFlags: u8 {
         // Enumeration stored in the lower 5 bits:
@@ -115,6 +116,7 @@ const ALIGN_ALL_SHIFT: u32 = structs::NS_STYLE_ALIGN_ALL_SHIFT;
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
 pub struct AlignJustifyContent(u16);
 
@@ -206,6 +208,7 @@ impl Parse for AlignJustifyContent {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub struct AlignJustifySelf(pub AlignFlags);
 
@@ -243,6 +246,7 @@ impl Parse for AlignJustifySelf {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub struct AlignItems(pub AlignFlags);
 
@@ -280,6 +284,7 @@ impl Parse for AlignItems {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
 pub struct JustifyItems(pub AlignFlags);
 

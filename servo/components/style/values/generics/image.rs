@@ -15,6 +15,7 @@ use style_traits::ToCss;
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, PartialEq, ToComputedValue)]
 pub enum Image<Gradient, MozImageRect, ImageUrl> {
@@ -35,6 +36,7 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, Angle> {
@@ -51,6 +53,7 @@ pub struct Gradient<LineDirection, Length, LengthOrPercentage, Position, Color, 
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 pub enum CompatMode {
@@ -63,6 +66,7 @@ pub enum CompatMode {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
 pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle> {
@@ -74,6 +78,7 @@ pub enum GradientKind<LineDirection, Length, LengthOrPercentage, Position, Angle
 
 
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum EndingShape<Length, LengthOrPercentage> {
     
@@ -84,6 +89,7 @@ pub enum EndingShape<Length, LengthOrPercentage> {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Circle<Length> {
     
@@ -94,6 +100,7 @@ pub enum Circle<Length> {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Ellipse<LengthOrPercentage> {
     
@@ -115,6 +122,7 @@ add_impls_for_keyword_enum!(ShapeExtent);
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, ToComputedValue, ToCss)]
 pub enum GradientItem<Color, LengthOrPercentage> {
@@ -127,6 +135,7 @@ pub enum GradientItem<Color, LengthOrPercentage> {
 
 
 #[derive(Clone, Copy, PartialEq, ToComputedValue, ToCss)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct ColorStop<Color, LengthOrPercentage> {
     
@@ -165,6 +174,7 @@ impl ToCss for PaintWorklet {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[css(comma, function)]
 #[derive(Clone, Debug, PartialEq, ToComputedValue, ToCss)]

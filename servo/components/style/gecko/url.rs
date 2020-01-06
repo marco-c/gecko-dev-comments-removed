@@ -15,19 +15,22 @@ use std::fmt;
 use style_traits::{ToCss, ParseError};
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct SpecifiedUrl {
     
     
     
     
+    #[ignore_malloc_size_of = "XXX: do this once bug 1397971 lands"]
     serialization: Arc<String>,
 
     
+    #[ignore_malloc_size_of = "RefPtr is tricky, and there aren't many of these in practise"]
     pub extra_data: RefPtr<URLExtraData>,
 
     
     
+    #[ignore_malloc_size_of = "XXX: do this once bug 1397971 lands"]
     pub image_value: Option<RefPtr<ImageValue>>,
 }
 trivial_to_computed_value!(SpecifiedUrl);

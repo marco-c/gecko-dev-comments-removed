@@ -342,6 +342,7 @@ impl ToCss for System {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub enum Symbol {
     
@@ -489,6 +490,7 @@ impl Parse for Fallback {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct Symbols(pub Vec<Symbol>);
 

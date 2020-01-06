@@ -27,6 +27,7 @@ pub type HorizontalPosition = PositionComponent<X>;
 pub type VerticalPosition = PositionComponent<Y>;
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToCss)]
 pub enum PositionComponent<S> {

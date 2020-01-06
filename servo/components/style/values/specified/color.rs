@@ -19,6 +19,7 @@ use values::computed::{Color as ComputedColor, Context, ToComputedValue};
 
 
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Color {
     
@@ -301,6 +302,7 @@ impl ToComputedValue for Color {
 
 
 #[derive(Clone, Debug, PartialEq, ToCss)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct RGBAColor(pub Color);
 
@@ -332,6 +334,7 @@ impl From<Color> for RGBAColor {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToCss)]
 pub struct ColorPropertyValue(pub Color);
 

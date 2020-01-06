@@ -71,6 +71,7 @@ impl SymbolsType {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub enum CounterStyleOrNone {
     
@@ -129,6 +130,7 @@ impl Parse for CounterStyleOrNone {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct FontSettingTag<T> {
@@ -186,6 +188,7 @@ impl<T: Parse> Parse for FontSettingTag<T> {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub enum FontSettings<T> {
@@ -210,6 +213,7 @@ impl<T: Parse> Parse for FontSettings<T> {
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct FontSettingTagInt(pub u32);
@@ -218,7 +222,7 @@ pub struct FontSettingTagInt(pub u32);
 
 
 
-#[cfg_attr(feature = "gecko", derive(Animate, ComputeSquaredDistance))]
+#[cfg_attr(feature = "gecko", derive(Animate, ComputeSquaredDistance, MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToComputedValue)]
 pub struct FontSettingTagFloat(pub f32);
@@ -273,12 +277,14 @@ impl ToCss for FontSettingTagFloat {
 }
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
 #[derive(PartialEq, PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]
 pub struct NonNegative<T>(pub T);
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
 #[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug)]
 #[derive(PartialEq, PartialOrd, ToAnimatedZero, ToComputedValue, ToCss)]

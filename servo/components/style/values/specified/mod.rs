@@ -174,6 +174,7 @@ impl BorderStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
 pub struct Number {
@@ -281,6 +282,7 @@ impl Parse for GreaterThanOrEqualToOneNumber {
 
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, ToCss)]
 pub enum NumberOrPercentage {
@@ -316,6 +318,7 @@ impl Parse for NumberOrPercentage {
 }
 
 #[allow(missing_docs)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, ToCss)]
 pub struct Opacity(Number);
@@ -352,6 +355,7 @@ impl ToComputedValue for Opacity {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Integer {
     value: CSSInteger,
@@ -504,6 +508,7 @@ pub type LengthOrPercentageOrNumber = Either<Number, LengthOrPercentage>;
 pub type NonNegativeLengthOrPercentageOrNumber = Either<NonNegativeNumber, NonNegativeLengthOrPercentage>;
 
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
 pub struct ClipRect {
@@ -674,6 +679,7 @@ pub type NamespaceId = ();
 
 
 
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue)]
 pub struct Attr {

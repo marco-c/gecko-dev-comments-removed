@@ -15,10 +15,12 @@ use values::animated::color::{Color as AnimatedColor, RGBA as AnimatedRGBA};
 
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Color {
     
     pub color: RGBA,
+
     
     pub foreground_ratio: u8,
 }
