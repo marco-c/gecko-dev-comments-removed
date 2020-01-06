@@ -9,6 +9,8 @@ var prefs = Cc["@mozilla.org/preferences-service;1"]
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
     "security/sandbox/test/browser_content_sandbox_utils.js", this);
 
+const FONT_EXTENSIONS = [ "otf", "ttf", "ttc", "otc", "dfont" ];
+
 
 
 
@@ -21,14 +23,13 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
 function createFile(path) {
   Components.utils.import("resource://gre/modules/osfile.jsm");
   let encoder = new TextEncoder();
-  let array = encoder.encode("WRITING FROM CONTENT PROCESS");
+  let array = encoder.encode("TEST FILE DUMMY DATA");
   return OS.File.writeAtomic(path, array).then(function(value) {
     return true;
   }, function(reason) {
     return false;
   });
 }
-
 
 
 
@@ -247,6 +248,46 @@ async function createTempFile() {
 }
 
 
+
+
+function getFontTestPaths(baseDir) {
+  baseDir = baseDir + "/";
+
+  let basename = uuid();
+  let testPaths = [];
+
+  for (let ext of FONT_EXTENSIONS) {
+    
+    let lcFilename = baseDir + (basename + "lc." + ext).toLowerCase();
+    testPaths.push(lcFilename);
+    
+    let ucFilename = baseDir + (basename + "UC." + ext).toUpperCase();
+    testPaths.push(ucFilename);
+  }
+  return testPaths;
+}
+
+
+
+
+
+function getBadFontTestPaths(baseDir) {
+  baseDir = baseDir + "/";
+
+  let basename = uuid();
+  let testPaths = [];
+
+  for (let ext of FONT_EXTENSIONS) {
+    let filename = baseDir + basename + "." + ext + ".txt";
+    testPaths.push(filename);
+
+    filename = baseDir + basename + "." + ext + ext + ".txt";
+    testPaths.push(filename);
+  }
+  return testPaths;
+}
+
+
 async function testFileAccess() {
   
   let webBrowser = gBrowser.selectedBrowser;
@@ -275,6 +316,53 @@ async function testFileAccess() {
   
   
   let tests = [];
+
+  
+  
+  
+  if (isMac()) {
+    
+    
+    let fontTestDir = "/private/tmp";
+    let fontTestPaths = getFontTestPaths(fontTestDir);
+    let badFontTestPaths = getBadFontTestPaths(fontTestDir);
+
+    
+    
+    registerCleanupFunction(async function() {
+      for (let fontPath of fontTestPaths.concat(badFontTestPaths)) {
+        await OS.File.remove(fontPath, {ignoreAbsent: true});
+      }
+    });
+
+    
+    for (let fontPath of fontTestPaths) {
+      let result = await createFile(fontPath);
+      Assert.ok(result, `${fontPath} created`);
+
+      let fontFile = GetFile(fontPath);
+      tests.push({
+        desc:     "font file",                  
+        ok:       true,                         
+        browser:  webBrowser,                   
+        file:     fontFile,                     
+        minLevel: minHomeReadSandboxLevel(),    
+      });
+    }
+    for (let fontPath of badFontTestPaths) {
+      let result = await createFile(fontPath);
+      Assert.ok(result, `${fontPath} created`);
+
+      let fontFile = GetFile(fontPath);
+      tests.push({
+        desc:     "invalid font file",          
+        ok:       false,                        
+        browser:  webBrowser,                   
+        file:     fontFile,                     
+        minLevel: minHomeReadSandboxLevel(),    
+      });
+    }
+  }
 
   
   
