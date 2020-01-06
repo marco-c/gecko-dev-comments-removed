@@ -1402,6 +1402,23 @@ this.UITour = {
                                     widgetWrapper.anchor,
                                     placement.area);
       }).catch(log.error);
+    } else if (aMenuName == "urlbar") {
+      this.getTarget(aWindow, "urlbar").then(target => {
+        let urlbar = target.node;
+        urlbar.popup.addEventListener("popupshown", evt => {
+          aOpenCallback && aOpenCallback(evt);
+        }, {once: true});
+        urlbar.focus();
+        
+        
+        
+        
+        
+        const SEARCH_STRING = "Firefox";
+        urlbar.value = SEARCH_STRING;
+        urlbar.select();
+        urlbar.controller.startSearch(SEARCH_STRING);
+      }).catch(Cu.reportError);
     }
   },
 
