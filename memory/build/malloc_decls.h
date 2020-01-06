@@ -103,7 +103,8 @@ MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
 
 
 
-MALLOC_DECL(moz_create_arena, arena_id_t)
+
+MALLOC_DECL(moz_create_arena_with_params, arena_id_t, arena_params_t*)
 
 
 

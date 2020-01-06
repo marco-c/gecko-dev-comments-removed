@@ -56,6 +56,18 @@ typedef MALLOC_USABLE_SIZE_CONST_PTR void* usable_ptr_t;
 
 typedef size_t arena_id_t;
 
+typedef struct arena_params_s
+{
+  size_t mMaxDirty;
+
+#ifdef __cplusplus
+  arena_params_s()
+    : mMaxDirty(0)
+  {
+  }
+#endif
+} arena_params_t;
+
 
 
 
