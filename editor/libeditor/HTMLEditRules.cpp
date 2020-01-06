@@ -2735,15 +2735,15 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
   
   bool mergeLists = false;
   nsIAtom* existingList = nsGkAtoms::_empty;
-  int32_t offset;
+  nsIContent* childInBlock = nullptr;
   nsCOMPtr<Element> leftList, rightList;
   if (HTMLEditUtils::IsListItem(leftBlock) &&
       HTMLEditUtils::IsListItem(rightBlock)) {
     leftList = leftBlock->GetParentElement();
     rightList = rightBlock->GetParentElement();
     if (leftList && rightList && leftList != rightList &&
-        !EditorUtils::IsDescendantOf(leftList, rightBlock, &offset) &&
-        !EditorUtils::IsDescendantOf(rightList, leftBlock, &offset)) {
+        !EditorUtils::IsDescendantOf(leftList, rightBlock, &childInBlock) &&
+        !EditorUtils::IsDescendantOf(rightList, leftBlock, &childInBlock)) {
       
       
       
@@ -2801,7 +2801,7 @@ HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
     if (mergeLists) {
       
       
-      for (nsCOMPtr<nsIContent> child = rightList->GetChildAt(offset);
+      for (nsCOMPtr<nsIContent> child = childInBlock;
            child; child = rightList->GetChildAt(rightOffset)) {
         rv = htmlEditor->MoveNode(child, leftList, -1);
         if (NS_WARN_IF(NS_FAILED(rv))) {
