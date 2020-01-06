@@ -119,12 +119,6 @@ def run_tests(config, browser_config):
         browser_config['extra_args'] = '--no-remote'
 
     
-    if browser_config['develop'] or 'try' in str.lower(browser_config['branch_name']):
-        browser_config['preferences']['xpinstall.signatures.required'] = False
-
-    browser_config['preferences']['extensions.allow-non-mpc-extensions'] = True
-
-    
     if test.get('fnbpaint', False):
         LOG.info("Using firstNonBlankPaint, so turning on pref for it")
         browser_config['preferences']['dom.performance.time_to_non_blank_paint.enabled'] = True
