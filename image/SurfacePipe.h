@@ -514,44 +514,6 @@ private:
   uint8_t  mPixelSize;      
 };
 
-class NullSurfaceSink;
-
-
-struct NullSurfaceConfig
-{
-  using Filter = NullSurfaceSink;
-};
-
-
-
-
-
-
-
-
-
-
-class NullSurfaceSink final : public SurfaceFilter
-{
-public:
-  
-  static NullSurfaceSink* Singleton();
-
-  virtual ~NullSurfaceSink() { }
-
-  nsresult Configure(const NullSurfaceConfig& aConfig);
-
-  Maybe<SurfaceInvalidRect> TakeInvalidRect() override { return Nothing(); }
-
-protected:
-  uint8_t* DoResetToFirstRow() override { return nullptr; }
-  uint8_t* DoAdvanceRow() override { return nullptr; }
-
-private:
-  static UniquePtr<NullSurfaceSink> sSingleton;  
-};
-
-
 
 
 
@@ -559,11 +521,7 @@ private:
 class SurfacePipe
 {
 public:
-  
-  static void Initialize() { NullSurfaceSink::Singleton(); }
-
   SurfacePipe()
-    : mHead(NullSurfaceSink::Singleton())
   { }
 
   SurfacePipe(SurfacePipe&& aOther)
@@ -571,28 +529,21 @@ public:
   { }
 
   ~SurfacePipe()
-  {
-    
-    if (mHead.get() == NullSurfaceSink::Singleton()) {
-      Unused << mHead.release();
-    }
-  }
+  { }
 
   SurfacePipe& operator=(SurfacePipe&& aOther)
   {
     MOZ_ASSERT(this != &aOther);
-
-    
-    if (mHead.get() == NullSurfaceSink::Singleton()) {
-      Unused << mHead.release();
-    }
-
     mHead = Move(aOther.mHead);
     return *this;
   }
 
   
-  void ResetToFirstRow() { mHead->ResetToFirstRow(); }
+  void ResetToFirstRow()
+  {
+    MOZ_ASSERT(mHead, "Use before configured!");
+    mHead->ResetToFirstRow();
+  }
 
   
 
@@ -603,6 +554,7 @@ public:
   template <typename PixelType, typename Func>
   WriteState WritePixels(Func aFunc)
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixels<PixelType>(Forward<Func>(aFunc));
   }
 
@@ -616,6 +568,7 @@ public:
   template <typename PixelType, typename Func>
   WriteState WritePixelsToRow(Func aFunc)
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixelsToRow<PixelType>(Forward<Func>(aFunc));
   }
 
@@ -631,6 +584,7 @@ public:
   template <typename PixelType>
   WriteState WriteBuffer(const PixelType* aSource)
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteBuffer<PixelType>(aSource);
   }
 
@@ -649,6 +603,7 @@ public:
                          const size_t aStartColumn,
                          const size_t aLength)
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteBuffer<PixelType>(aSource, aStartColumn, aLength);
   }
 
@@ -660,6 +615,7 @@ public:
 
   WriteState WriteEmptyRow()
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteEmptyRow();
   }
 
@@ -669,6 +625,7 @@ public:
   
   Maybe<SurfaceInvalidRect> TakeInvalidRect() const
   {
+    MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->TakeInvalidRect();
   }
 

@@ -6,10 +6,8 @@
 
 #include "SurfacePipe.h"
 
-#include <utility>
+#include <algorithm>    
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/DebugOnly.h"
 #include "Decoder.h"
 
 namespace mozilla {
@@ -18,33 +16,6 @@ namespace image {
 using namespace gfx;
 
 using std::min;
-
- UniquePtr<NullSurfaceSink> NullSurfaceSink::sSingleton;
-
- NullSurfaceSink*
-NullSurfaceSink::Singleton()
-{
-  if (!sSingleton) {
-    MOZ_ASSERT(NS_IsMainThread());
-    sSingleton = MakeUnique<NullSurfaceSink>();
-    ClearOnShutdown(&sSingleton);
-
-    DebugOnly<nsresult> rv = sSingleton->Configure(NullSurfaceConfig { });
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Couldn't configure a NullSurfaceSink?");
-  }
-
-  return sSingleton.get();
-}
-
-nsresult
-NullSurfaceSink::Configure(const NullSurfaceConfig& aConfig)
-{
-  
-  
-  
-  ConfigureFilter(IntSize(), sizeof(uint32_t));
-  return NS_OK;
-}
 
 Maybe<SurfaceInvalidRect>
 AbstractSurfaceSink::TakeInvalidRect()
