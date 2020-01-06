@@ -337,7 +337,7 @@ impl<T: ?Sized> Arc<T> {
     }
 
     #[inline]
-    fn is_unique(&self) -> bool {
+    pub fn is_unique(&self) -> bool {
         
         
         

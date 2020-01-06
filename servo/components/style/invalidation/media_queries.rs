@@ -53,7 +53,7 @@ impl ToMediaListKey for MediaRule {}
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct EffectiveMediaQueryResults {
