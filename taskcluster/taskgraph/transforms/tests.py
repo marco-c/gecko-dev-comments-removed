@@ -41,7 +41,6 @@ import logging
 LINUX_WORKER_TYPES = {
     'large': 'aws-provisioner-v1/gecko-t-linux-large',
     'xlarge': 'aws-provisioner-v1/gecko-t-linux-xlarge',
-    'legacy': 'aws-provisioner-v1/gecko-t-linux-medium',
     'default': 'aws-provisioner-v1/gecko-t-linux-large',
 }
 
@@ -212,7 +211,7 @@ test_description_schema = Schema({
     
     Required('instance-size', default='default'): optionally_keyed_by(
         'test-platform',
-        Any('default', 'large', 'xlarge', 'legacy')),
+        Any('default', 'large', 'xlarge')),
 
     
     Required('virtualization', default='virtual'): optionally_keyed_by(
@@ -763,9 +762,6 @@ def allow_software_gl_layers(config, tests):
     """
     for test in tests:
         if test.get('allow-software-gl-layers'):
-            assert test['instance-size'] != 'legacy',\
-                'Software GL layers on a legacy instance is disallowed (bug 1296086).'
-
             
             test['mozharness'].setdefault('extra-options', [])\
                               .append("--allow-software-gl-layers")
