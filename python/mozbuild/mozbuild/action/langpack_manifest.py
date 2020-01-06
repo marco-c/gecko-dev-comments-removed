@@ -348,7 +348,6 @@ def parse_chrome_manifest(path, base_path, chrome_entries):
 
 
 
-
 def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
                        l10n_basedir, defines, chrome_entries):
     locales = map(lambda loc: loc.strip(), locstr.split(','))
@@ -356,7 +355,7 @@ def create_webmanifest(locstr, min_app_ver, max_app_ver, app_name,
 
     author = build_author_string(
         defines['MOZ_LANGPACK_CREATOR'],
-        defines['MOZ_LANGPACK_CONTRIBUTORS']
+        defines['MOZ_LANGPACK_CONTRIBUTORS'] if 'MOZ_LANGPACK_CONTRIBUTORS' in defines else ""
     )
 
     manifest = {
