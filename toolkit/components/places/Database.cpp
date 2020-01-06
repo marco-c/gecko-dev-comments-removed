@@ -781,43 +781,52 @@ Database::BackupAndReplaceDatabaseFile(nsCOMPtr<mozIStorageService>& aStorage)
   
   
   
+  {
+    enum eCorruptDBReplaceStage : int8_t {
+      stage_closing = 0,
+      stage_removing,
+      stage_reopening,
+      stage_replaced
+    };
+    eCorruptDBReplaceStage stage = stage_closing;
+    auto guard = MakeScopeExit([&]() {
+      if (stage != stage_replaced) {
+        
+        
+        
+        
+        
+        Preferences::SetBool(PREF_FORCE_DATABASE_REPLACEMENT, true);
+      }
+      
+      Telemetry::Accumulate(Telemetry::PLACES_DATABASE_CORRUPTION_HANDLING_STAGE,
+                            static_cast<int8_t>(stage));
+    });
 
-  
-  if (mMainConn) {
-    rv = mMainConn->SpinningSynchronousClose();
-    NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
-      NS_LITERAL_CSTRING("Unable to close the corrupt database.")));
+    
+    if (mMainConn) {
+      rv = mMainConn->SpinningSynchronousClose();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    stage = stage_removing;
+    rv = databaseFile->Remove(false);
+    if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+      return rv;
+    }
+
+    
+    
+    
+    stage = stage_reopening;
+    rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(mMainConn));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    stage = stage_replaced;
   }
-
-  
-  rv = databaseFile->Remove(false);
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    return ForceCrashAndReplaceDatabase(
-      NS_LITERAL_CSTRING("Unable to remove the corrupt database file."));
-  }
-
-  
-  
-  
-  rv = aStorage->OpenUnsharedDatabase(databaseFile, getter_AddRefs(mMainConn));
-  NS_ENSURE_SUCCESS(rv, ForceCrashAndReplaceDatabase(
-    NS_LITERAL_CSTRING("Unable to open a new database connection.")));
 
   return NS_OK;
-}
-
-nsresult
-Database::ForceCrashAndReplaceDatabase(const nsCString& aReason)
-{
-  Preferences::SetBool(PREF_FORCE_DATABASE_REPLACEMENT, true);
-  
-  nsIPrefService* prefService = Preferences::GetService();
-  if (prefService && NS_SUCCEEDED(static_cast<Preferences *>(prefService)->SavePrefFileBlocking())) {
-    
-    
-    MOZ_CRASH_UNSAFE_OOL(aReason.get());
-  }
-  return NS_ERROR_FAILURE;
 }
 
 nsresult
