@@ -464,11 +464,6 @@ public:
     return mDriver;
   }
 
-  bool RemoveMixerCallback(MixerCallbackReceiver* aReceiver)
-  {
-    return mMixer.RemoveCallback(aReceiver);
-  }
-
   
 
 
