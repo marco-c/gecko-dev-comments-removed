@@ -284,6 +284,9 @@ class MachCommands(CommandBase):
         
         self._rust_version = None
         self.set_use_stable_rust(False)
+
+        
+        self._cargo_build_id = None
         self.set_cargo_root()
 
         self.fetch()
