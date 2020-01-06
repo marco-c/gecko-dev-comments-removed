@@ -5207,7 +5207,8 @@ pref("memory.low_memory_notification_interval_ms", 10000);
 pref("memory.ghost_window_timeout_seconds", 60);
 
 
-pref("memory.free_dirty_pages", false);
+
+pref("memory.free_dirty_pages", true);
 
 
 #ifdef XP_LINUX
