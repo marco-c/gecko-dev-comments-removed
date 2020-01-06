@@ -780,7 +780,6 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
       if (illegalScriptCombo(script, savedScript)) {
         return false;
       }
-      lastScript = script;
     }
 
     
@@ -831,6 +830,10 @@ bool nsIDNService::isLabelSafe(const nsAString &label)
           }
         }
       }
+    }
+
+    if (script != Script::COMMON && script != Script::INHERITED) {
+      lastScript = script;
     }
 
     

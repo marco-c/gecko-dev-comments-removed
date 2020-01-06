@@ -300,6 +300,9 @@ const testcases = [
     ["goo\u0650gle", "xn--google-yri", false, false, false],
     
     ["العَرَبِي", "xn--mgbc0a5a6cxbzabt", false, true, true],
+
+    
+    ["goo\u05b4gle", "xn--google-rvh", false, false, false],
 ];
 
 const profiles = ["ASCII", "high", "moderate"];
