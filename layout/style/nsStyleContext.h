@@ -52,47 +52,9 @@ extern "C" {
 
 
 
-class nsStyleContext final
+class nsStyleContext
 {
 public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsStyleContext(nsStyleContext* aParent, nsIAtom* aPseudoTag,
-                 mozilla::CSSPseudoElementType aPseudoType,
-                 already_AddRefed<nsRuleNode> aRuleNode,
-                 bool aSkipParentDisplayBasedStyleFixup);
-
-  
-  
-  nsStyleContext(nsStyleContext* aParent,
-                 nsPresContext* aPresContext,
-                 nsIAtom* aPseudoTag,
-                 mozilla::CSSPseudoElementType aPseudoType,
-                 already_AddRefed<ServoComputedValues> aComputedValues);
-
-  void* operator new(size_t sz, nsPresContext* aPresContext);
   void Destroy();
 
   
@@ -541,7 +503,7 @@ public:
 
   mozilla::NonOwningStyleContextSource StyleSource() const { return mSource.AsRaw(); }
 
-private:
+protected:
   
   ~nsStyleContext();
 
