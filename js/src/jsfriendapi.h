@@ -2110,12 +2110,6 @@ JS_GetArrayBufferViewByteLength(JSObject* obj);
 
 
 
-extern JS_FRIEND_API(uint32_t)
-JS_GetArrayBufferViewByteOffset(JSObject* obj);
-
-
-
-
 
 
 
