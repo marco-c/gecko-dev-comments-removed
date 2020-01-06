@@ -736,9 +736,9 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceNavigation",
 
-    {name: "PerformanceObserver", nightly: true},
+    "PerformanceObserver",
 
-    {name: "PerformanceObserverEntryList", nightly: true},
+    "PerformanceObserverEntryList",
 
     "PerformanceResourceTiming",
 
