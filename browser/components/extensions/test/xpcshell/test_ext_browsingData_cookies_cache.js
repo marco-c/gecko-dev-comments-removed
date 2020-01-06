@@ -10,6 +10,16 @@ const COOKIE = {
   name: "test_cookie",
   path: "/",
 };
+const COOKIE_NET = {
+  host: "example.net",
+  name: "test_cookie",
+  path: "/",
+};
+const COOKIE_ORG = {
+  host: "example.org",
+  name: "test_cookie",
+  path: "/",
+};
 let since, oldCookie;
 
 function addCookie(cookie) {
@@ -18,6 +28,8 @@ function addCookie(cookie) {
 }
 
 async function setUpCookies() {
+  Services.cookies.removeAll();
+
   
   oldCookie = Object.assign({}, COOKIE, {name: Date.now()});
   addCookie(oldCookie);
@@ -27,6 +39,10 @@ async function setUpCookies() {
 
   
   addCookie(COOKIE);
+
+  
+  addCookie(COOKIE_NET);
+  addCookie(COOKIE_ORG);
 }
 
 add_task(async function testCache() {
@@ -161,12 +177,48 @@ add_task(async function testCacheAndCookies() {
   
   await setUpCookies();
   awaitNotification = TestUtils.topicObserved("cacheservice:empty-cache");
+  extension.sendMessage({hostnames: ["example.net", "example.org", "unknown.com"]});
+  await awaitNotification;
+  await extension.awaitMessage("cacheAndCookiesRemoved");
+
+  ok(Services.cookies.cookieExists(COOKIE), `Cookie ${COOKIE.name}  was not removed.`);
+  ok(!Services.cookies.cookieExists(COOKIE_NET), `Cookie ${COOKIE_NET.name}  was removed.`);
+  ok(!Services.cookies.cookieExists(COOKIE_ORG), `Cookie ${COOKIE_ORG.name}  was removed.`);
+
+  
+  await setUpCookies();
+  awaitNotification = TestUtils.topicObserved("cacheservice:empty-cache");
+  extension.sendMessage({hostnames: []});
+  await awaitNotification;
+  await extension.awaitMessage("cacheAndCookiesRemoved");
+
+  ok(Services.cookies.cookieExists(COOKIE), `Cookie ${COOKIE.name}  was not removed.`);
+  ok(Services.cookies.cookieExists(COOKIE_NET), `Cookie ${COOKIE_NET.name}  was not removed.`);
+  ok(Services.cookies.cookieExists(COOKIE_ORG), `Cookie ${COOKIE_ORG.name}  was not removed.`);
+
+  
+  await setUpCookies();
+  awaitNotification = TestUtils.topicObserved("cacheservice:empty-cache");
+  extension.sendMessage({hostnames: ["example.com"], since});
+  await awaitNotification;
+  await extension.awaitMessage("cacheAndCookiesRemoved");
+
+  ok(Services.cookies.cookieExists(oldCookie), "Old cookie was not removed.");
+  ok(!Services.cookies.cookieExists(COOKIE), "Recent cookie was removed.");
+  ok(Services.cookies.cookieExists(COOKIE_NET), "Cookie with different hostname was not removed");
+  ok(Services.cookies.cookieExists(COOKIE_ORG), "Cookie with different hostname was not removed");
+
+  
+  await setUpCookies();
+  awaitNotification = TestUtils.topicObserved("cacheservice:empty-cache");
   extension.sendMessage({});
   await awaitNotification;
   await extension.awaitMessage("cacheAndCookiesRemoved");
 
   ok(!Services.cookies.cookieExists(COOKIE), `Cookie ${COOKIE.name}  was removed.`);
   ok(!Services.cookies.cookieExists(oldCookie), `Cookie ${oldCookie.name}  was removed.`);
+  ok(!Services.cookies.cookieExists(COOKIE_NET), `Cookie ${COOKIE_NET.name}  was removed.`);
+  ok(!Services.cookies.cookieExists(COOKIE_ORG), `Cookie ${COOKIE_ORG.name}  was removed.`);
 
   await extension.unload();
 });

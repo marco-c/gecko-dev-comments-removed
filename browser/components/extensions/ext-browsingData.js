@@ -48,13 +48,14 @@ const clearCookies = async function(options) {
   
   let yieldCounter = 0;
 
-  if (options.since) {
+  if (options.since || options.hostnames) {
     
     let cookiesEnum = cookieMgr.enumerator;
     while (cookiesEnum.hasMoreElements()) {
       let cookie = cookiesEnum.getNext().QueryInterface(Ci.nsICookie2);
 
-      if (cookie.creationTime >= PlacesUtils.toPRTime(options.since)) {
+      if ((!options.since || cookie.creationTime >= PlacesUtils.toPRTime(options.since)) &&
+          (!options.hostnames || options.hostnames.includes(cookie.host.replace(/^\./, "")))) {
         
         cookieMgr.remove(cookie.host, cookie.name, cookie.path,
                          false, cookie.originAttributes);
