@@ -622,6 +622,16 @@ public:
 
 
 
+
+
+
+
+  static void NativeInit();
+
+  
+
+
+
   static nsTArray<LookAndFeelInt> GetIntCache();
   static void SetIntCache(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
 };
