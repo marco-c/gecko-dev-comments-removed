@@ -580,6 +580,10 @@ BrowserGlue.prototype = {
       this._idleService.removeIdleObserver(this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
       delete this._lateTasksIdleObserver;
     }
+    if (this._gmpInstallManager) {
+      this._gmpInstallManager.uninit();
+      delete this._gmpInstallManager;
+    }
     try {
       os.removeObserver(this, "places-init-complete");
     } catch (ex) {  }
@@ -1172,6 +1176,15 @@ BrowserGlue.prototype = {
       if (mpEnabled) {
         Services.telemetry.getHistogramById("MASTER_PASSWORD_ENABLED").add(mpEnabled);
       }
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      let obj = {};
+      Cu.import("resource://gre/modules/GMPInstallManager.jsm", obj);
+      this._gmpInstallManager = new obj.GMPInstallManager();
+      
+      
+      this._gmpInstallManager.simpleCheckAndInstall().catch(() => {});
     });
   },
 

@@ -61,7 +61,6 @@ XPCOMUtils.defineLazyGetter(this, "extensionNameFromURI", () => {
   ["E10SUtils", "resource:///modules/E10SUtils.jsm"],
   ["ExtensionsUI", "resource:///modules/ExtensionsUI.jsm"],
   ["FormValidationHandler", "resource:///modules/FormValidationHandler.jsm"],
-  ["GMPInstallManager", "resource://gre/modules/GMPInstallManager.jsm"],
   ["LightweightThemeManager", "resource://gre/modules/LightweightThemeManager.jsm"],
   ["Log", "resource://gre/modules/Log.jsm"],
   ["LoginManagerParent", "resource://gre/modules/LoginManagerParent.jsm"],
@@ -1727,14 +1726,6 @@ var gBrowserInit = {
       Cu.reportError("Could not end startup crash tracking: " + ex);
     }
 
-    
-    requestIdleCallback(() => {
-      this.gmpInstallManager = new GMPInstallManager();
-      
-      
-      this.gmpInstallManager.simpleCheckAndInstall().catch(() => {});
-    }, {timeout: 1000 * 60});
-
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
@@ -1910,10 +1901,6 @@ var gBrowserInit = {
         gPrefService.removeObserver(gHomeButton.prefDomain, gHomeButton);
       } catch (ex) {
         Cu.reportError(ex);
-      }
-
-      if (this.gmpInstallManager) {
-        this.gmpInstallManager.uninit();
       }
 
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
