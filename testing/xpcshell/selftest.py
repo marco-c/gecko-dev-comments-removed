@@ -4,8 +4,6 @@
 
 
 
-from __future__ import absolute_import
-
 import mozinfo
 import mozunit
 import os
@@ -1086,7 +1084,7 @@ add_test({
         try:
             
             self.assertTestResult(True)
-        except Exception as ex:
+        except Exception, ex:
             raised = True
             self.assertEquals(ex.message[0:9], "head file")
 

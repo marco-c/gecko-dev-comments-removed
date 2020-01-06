@@ -4,8 +4,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import logging
 import posixpath
 import sys, os
@@ -170,7 +168,7 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
             
             
             
-            print("Automation Error: No crash directory (%s) found on remote device" % self.remoteMinidumpDir)
+            print "Automation Error: No crash directory (%s) found on remote device" % self.remoteMinidumpDir
             
             return True
         with mozfile.TemporaryDirectory() as dumpDir:
@@ -377,7 +375,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
                 if packageName:
                     self.appRoot = self.device.getAppRoot(packageName.strip())
             except Exception as detail:
-                print("unable to determine app root: " + str(detail))
+                print "unable to determine app root: " + str(detail)
                 pass
         return None
 
@@ -496,7 +494,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
             self.device.pushDir(self.testingModulesDir, self.remoteModulesDir)
 
     def setupTestDir(self):
-        print('pushing %s' % self.xpcDir)
+        print 'pushing %s' % self.xpcDir
         try:
             
             
