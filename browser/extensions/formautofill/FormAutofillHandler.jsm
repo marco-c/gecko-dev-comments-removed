@@ -133,4 +133,27 @@ FormAutofillHandler.prototype = {
 
 
   },
+
+  
+
+
+
+
+
+  createProfile() {
+    let profile = {};
+
+    this.fieldDetails.forEach(detail => {
+      let element = detail.elementWeakRef.get();
+      
+      let value = element && element.value.trim();
+      if (!value) {
+        return;
+      }
+
+      profile[detail.fieldName] = value;
+    });
+
+    return profile;
+  },
 };

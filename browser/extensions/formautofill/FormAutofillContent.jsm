@@ -14,6 +14,7 @@ this.EXPORTED_SYMBOLS = ["FormAutofillContent"];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, manager: Cm} = Components;
 
+Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
@@ -319,19 +320,52 @@ var FormAutofillContent = {
       Services.cpmm.initialProcessData.autofillSavedFieldNames;
   },
 
-  _onFormSubmit(handler) {
-    
+  
+
+
+
+
+  _onFormSubmit(profile) {
+    Services.cpmm.sendAsyncMessage("FormAutofill:OnFormSubmit", profile);
   },
 
-  notify(formElement) {
-    this.log.debug("notified for form early submission");
+  
+
+
+
+
+
+
+
+
+
+  notify(formElement, domWin) {
+    this.log.debug("Notifying form early submission");
+
+    if (domWin && PrivateBrowsingUtils.isContentWindowPrivate(domWin)) {
+      this.log.debug("Ignoring submission in a private window");
+      return true;
+    }
 
     let handler = this._formsDetails.get(formElement);
     if (!handler) {
       this.log.debug("Form element could not map to an existing handler");
-    } else {
-      this._onFormSubmit(handler);
+      return true;
     }
+
+    let pendingAddress = handler.createProfile();
+    if (Object.keys(pendingAddress).length < AUTOFILL_FIELDS_THRESHOLD) {
+      this.log.debug(`Not saving since there are only ${Object.keys(pendingAddress).length} usable fields`);
+      return true;
+    }
+
+    this._onFormSubmit({
+      address: {
+        guid: handler.filledProfileGUID,
+        record: pendingAddress,
+      },
+      
+    });
 
     return true;
   },
