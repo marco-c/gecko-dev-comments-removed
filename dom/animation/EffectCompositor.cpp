@@ -960,6 +960,10 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
 
+  
+  
+  bool flushThrottledRestyles = aRoot && aRoot->HasDirtyDescendantsForServo();
+
   using ElementsToRestyleIterType =
     nsDataHashtable<PseudoElementHashEntry, bool>::Iterator;
   auto getNeededRestyleTarget = [&](const ElementsToRestyleIterType& aIter)
@@ -967,7 +971,9 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot)
     NonOwningAnimationTarget returnTarget;
 
     
-    if (!aIter.Data()) {
+    
+    
+    if (!flushThrottledRestyles && !aIter.Data()) {
       return returnTarget;
     }
 
@@ -1070,12 +1076,21 @@ EffectCompositor::PreTraverse(dom::Element* aElement,
 
   PseudoElementHashEntry::KeyType key = { aElement, aPseudoType };
 
+  
+  
+  Element* elementToRestyle = GetElementToRestyle(aElement, aPseudoType);
+  bool flushThrottledRestyles = elementToRestyle &&
+                                elementToRestyle->HasDirtyDescendantsForServo();
+
   for (size_t i = 0; i < kCascadeLevelCount; ++i) {
     CascadeLevel cascadeLevel = CascadeLevel(i);
     auto& elementSet = mElementsToRestyle[cascadeLevel];
 
-    if (!elementSet.Get(key)) {
-      
+    
+    
+    bool hasUnthrottledRestyle = false;
+    if (!elementSet.Get(key, &hasUnthrottledRestyle) ||
+        (!flushThrottledRestyles && !hasUnthrottledRestyle)) {
       continue;
     }
 
