@@ -2102,16 +2102,6 @@ class CallEntry extends Entry {
 
 FunctionEntry = class FunctionEntry extends CallEntry {
   static parseSchema(schema, path) {
-    
-    let returns = !!schema.returns;
-    if (DEBUG && "returns" in schema) {
-      returns = {
-        type: Schemas.parseSchema(schema.returns, path, ["optional", "name"]),
-        optional: schema.returns.optional || false,
-        name: "result",
-      };
-    }
-
     return new this(schema, path, schema.name,
                     Schemas.parseSchema(schema, path,
                       ["name", "unsupported", "returns",
@@ -2119,7 +2109,7 @@ FunctionEntry = class FunctionEntry extends CallEntry {
                        "allowAmbiguousOptionalArguments"]),
                     schema.unsupported || false,
                     schema.allowAmbiguousOptionalArguments || false,
-                    returns,
+                    schema.returns || null,
                     schema.permissions || null);
   }
 
@@ -2131,28 +2121,6 @@ FunctionEntry = class FunctionEntry extends CallEntry {
 
     this.isAsync = type.isAsync;
     this.hasAsyncCallback = type.hasAsyncCallback;
-  }
-
-  checkValue({type, optional, name}, value, context) {
-    if (optional && value == null) {
-      return;
-    }
-    if (type.reference === "ExtensionPanel" || type.reference === "Port") {
-      
-      
-      return;
-    }
-    const {error} = type.normalize(value, context);
-    if (error) {
-      this.throwError(context, `Type error for ${name} value (${error})`);
-    }
-  }
-
-  checkCallback(args, context) {
-    const callback = this.parameters[this.parameters.length - 1];
-    for (const [i, param] of callback.type.parameters.entries()) {
-      this.checkValue(param, args[i], context);
-    }
   }
 
   getDescriptor(path, context) {
@@ -2173,21 +2141,7 @@ FunctionEntry = class FunctionEntry extends CallEntry {
           
           callback = () => {};
         }
-        if (DEBUG && this.hasAsyncCallback && callback) {
-          let original = callback;
-          callback = (...args) => {
-            this.checkCallback(args, context);
-            original(...args);
-          };
-        }
-        let result = apiImpl.callAsyncFunction(actuals, callback);
-        if (DEBUG && this.hasAsyncCallback && !callback) {
-          return result.then(result => {
-            this.checkCallback([result], context);
-            return result;
-          });
-        }
-        return result;
+        return apiImpl.callAsyncFunction(actuals, callback);
       };
     } else if (!this.returns) {
       stub = (...args) => {
@@ -2199,11 +2153,7 @@ FunctionEntry = class FunctionEntry extends CallEntry {
       stub = (...args) => {
         this.checkDeprecated(context);
         let actuals = this.checkParameters(args, context);
-        let result = apiImpl.callFunction(actuals);
-        if (DEBUG && this.returns) {
-          this.checkValue(this.returns, result, context);
-        }
-        return result;
+        return apiImpl.callFunction(actuals);
       };
     }
 
@@ -2686,9 +2636,21 @@ this.Schemas = {
       value: new Namespace("", []),
     });
 
-    for (let blob of this.schemaJSON.values()) {
+    for (let [key, schema] of this.schemaJSON.entries()) {
       try {
-        this.loadSchema(blob.deserialize(global));
+        if (typeof schema.deserialize === "function") {
+          schema = schema.deserialize(global);
+
+          
+          
+          
+          
+          if (!isParentProcess) {
+            this.schemaJSON.set(key, schema);
+          }
+        }
+
+        this.loadSchema(schema);
       } catch (e) {
         Cu.reportError(e);
       }
