@@ -8,8 +8,6 @@
 
 
 
-pub use std::*;
-
 extern crate heapsize;
 
 mod alloc;
