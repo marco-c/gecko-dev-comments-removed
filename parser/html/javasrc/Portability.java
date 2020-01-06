@@ -35,8 +35,8 @@ public final class Portability {
 
 
 
-    public static @Local String newLocalNameFromBuffer(@NoLength char[] buf, int offset, int length, Interner interner) {
-        return new String(buf, offset, length).intern();
+    public static @Local String newLocalNameFromBuffer(@NoLength char[] buf, int length, Interner interner) {
+        return new String(buf, 0, length).intern();
     }
 
     public static String newStringFromBuffer(@NoLength char[] buf, int offset, int length
@@ -78,12 +78,12 @@ public final class Portability {
 
     
 
-    public static boolean localEqualsBuffer(@Local String local, @NoLength char[] buf, int offset, int length) {
+    public static boolean localEqualsBuffer(@Local String local, @NoLength char[] buf, int length) {
         if (local.length() != length) {
             return false;
         }
         for (int i = 0; i < length; i++) {
-            if (local.charAt(i) != buf[offset + i]) {
+            if (local.charAt(i) != buf[i]) {
                 return false;
             }
         }

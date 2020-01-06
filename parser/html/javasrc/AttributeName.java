@@ -291,9 +291,8 @@ public final class AttributeName
 
 
 
-    @Inline static AttributeName nameByBuffer(@NoLength char[] buf, int offset,
-            int length
-            , Interner interner) {
+    @Inline static AttributeName nameByBuffer(@NoLength char[] buf,
+            int length, Interner interner) {
         
         @Unsigned int hash = AttributeName.bufToHash(buf, length);
         int[] hashes;
@@ -304,7 +303,7 @@ public final class AttributeName
         }
         AttributeName attributeName = AttributeName.ATTRIBUTE_NAMES[index];
         @Local String name = attributeName.getLocal(0);
-        if (!Portability.localEqualsBuffer(name, buf, offset, length)) {
+        if (!Portability.localEqualsBuffer(name, buf, length)) {
             return null;
         }
         return attributeName;
