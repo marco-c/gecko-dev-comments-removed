@@ -1486,6 +1486,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLMediaElement, nsGenericHTM
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAudioTrackList)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVideoTrackList)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMediaKeys)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIncomingMediaKeys)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectedVideoStreamTrack)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingPlayPromises)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSeekDOMPromise)
@@ -1515,6 +1516,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement, nsGenericHTMLE
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAudioTrackList)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVideoTrackList)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mMediaKeys)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIncomingMediaKeys)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectedVideoStreamTrack)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingPlayPromises)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSeekDOMPromise)
@@ -3975,6 +3977,7 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mPlaybackRate(1.0),
     mPreservesPitch(true),
     mPlayed(new TimeRanges(ToSupports(OwnerDoc()))),
+    mAttachingMediaKey(false),
     mCurrentPlayRangeStart(-1.0),
     mLoadedDataFired(false),
     mAutoplaying(true),
@@ -7006,6 +7009,142 @@ HTMLMediaElement::ContainsRestrictedContent()
   return GetMediaKeys() != nullptr;
 }
 
+void
+HTMLMediaElement::RemoveMediaKeys()
+{
+  LOG(LogLevel::Debug, ("%s", __func__));
+  
+  
+  mMediaKeys->Unbind();
+  mMediaKeys = nullptr;
+}
+
+bool
+HTMLMediaElement::TryRemoveMediaKeysAssociation(DetailedPromise* aPromise)
+{
+  MOZ_ASSERT(mMediaKeys);
+  LOG(LogLevel::Debug, ("%s", __func__));
+  
+  
+  
+  
+  
+  
+  if (mDecoder) {
+    
+    
+    
+    aPromise->MaybeReject(
+      NS_ERROR_DOM_INVALID_STATE_ERR,
+      NS_LITERAL_CSTRING(
+        "Can't change MediaKeys on HTMLMediaElement after load has started"));
+    return false;
+  }
+  RemoveMediaKeys();
+
+  
+  
+  
+  return true;
+}
+
+bool
+HTMLMediaElement::DetachExistingMediaKeys(DetailedPromise* aPromise)
+{
+  LOG(LogLevel::Debug, ("%s", __func__));
+  
+  
+  
+  
+  
+  if (mIncomingMediaKeys && mIncomingMediaKeys->IsBoundToMediaElement()) {
+    aPromise->MaybeReject(
+      NS_ERROR_DOM_QUOTA_EXCEEDED_ERR,
+      NS_LITERAL_CSTRING(
+        "MediaKeys object is already bound to another HTMLMediaElement"));
+    return false;
+  }
+
+  
+  if (mMediaKeys) {
+    return TryRemoveMediaKeysAssociation(aPromise);
+  }
+  return true;
+}
+
+void
+HTMLMediaElement::MakeAssociationWithCDMResolved(DetailedPromise* aPromise)
+{
+  LOG(LogLevel::Debug, ("%s", __func__));
+
+  
+  mMediaKeys = mIncomingMediaKeys;
+  
+  ResetSetMediaKeysTempVariables();
+  
+  aPromise->MaybeResolveWithUndefined();
+}
+
+bool
+HTMLMediaElement::TryMakeAssociationWithCDM(CDMProxy* aProxy)
+{
+  MOZ_ASSERT(aProxy);
+  LOG(LogLevel::Debug, ("%s", __func__));
+  
+  
+  
+  if (mDecoder) {
+    mDecoder->SetCDMProxy(aProxy);
+  }
+  return true;
+}
+
+bool
+HTMLMediaElement::AttachNewMediaKeys(DetailedPromise* aPromise)
+{
+  LOG(LogLevel::Debug,
+      ("%s incoming MediaKeys(%p)", __func__, mIncomingMediaKeys.get()));
+
+  
+  if (mIncomingMediaKeys) {
+    auto cdmProxy = mIncomingMediaKeys->GetCDMProxy();
+    if (!cdmProxy) {
+      aPromise->MaybeReject(
+        NS_ERROR_DOM_INVALID_STATE_ERR,
+        NS_LITERAL_CSTRING(
+          "CDM crashed before binding MediaKeys object to HTMLMediaElement"));
+      return false;
+    }
+
+    
+    
+    if (NS_FAILED(mIncomingMediaKeys->Bind(this))) {
+      
+
+      
+      mMediaKeys = nullptr;
+      
+      ResetSetMediaKeysTempVariables();
+      
+      
+      aPromise->MaybeReject(
+        NS_ERROR_DOM_INVALID_STATE_ERR,
+        NS_LITERAL_CSTRING(
+          "Failed to bind MediaKeys object to HTMLMediaElement"));
+      return false;
+    }
+    return TryMakeAssociationWithCDM(cdmProxy);
+  }
+  return true;
+}
+
+void
+HTMLMediaElement::ResetSetMediaKeysTempVariables()
+{
+  mAttachingMediaKey = false;
+  mIncomingMediaKeys = nullptr;
+}
+
 already_AddRefed<Promise>
 HTMLMediaElement::SetMediaKeys(mozilla::dom::MediaKeys* aMediaKeys,
                                ErrorResult& aRv)
@@ -7041,85 +7180,34 @@ HTMLMediaElement::SetMediaKeys(mozilla::dom::MediaKeys* aMediaKeys,
 
   
   
-  
-  
-  
-
-  
-  
-  
-  
-  
-  if (aMediaKeys && aMediaKeys->IsBoundToMediaElement()) {
-    promise->MaybeReject(NS_ERROR_DOM_QUOTA_EXCEEDED_ERR,
-      NS_LITERAL_CSTRING("MediaKeys object is already bound to another HTMLMediaElement"));
+  if (mAttachingMediaKey) {
+    promise->MaybeReject(
+      NS_ERROR_DOM_INVALID_STATE_ERR,
+      NS_LITERAL_CSTRING("A MediaKeys object is in attaching operation."));
     return promise.forget();
   }
 
   
-  if (mMediaKeys) {
-    
-    
-    
+  mAttachingMediaKey = true;
+  mIncomingMediaKeys = aMediaKeys;
 
-    
-    
-    
-    if (mDecoder) {
-      
-      
-      
-      promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
-        NS_LITERAL_CSTRING("Can't change MediaKeys on HTMLMediaElement after load has started"));
-      return promise.forget();
-    }
+  
+  
 
-    
-    
-    mMediaKeys->Unbind();
-    mMediaKeys = nullptr;
-
-    
-    
-    
+  
+  if (!DetachExistingMediaKeys(promise)) {
+    ResetSetMediaKeysTempVariables();
+    return promise.forget();
   }
 
   
-  if (aMediaKeys) {
-    if (!aMediaKeys->GetCDMProxy()) {
-      promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
-        NS_LITERAL_CSTRING("CDM crashed before binding MediaKeys object to HTMLMediaElement"));
-      return promise.forget();
-    }
-
-    
-    
-    if (NS_FAILED(aMediaKeys->Bind(this))) {
-      
-      
-      mMediaKeys = nullptr;
-      
-      
-      
-      promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
-                           NS_LITERAL_CSTRING("Failed to bind MediaKeys object to HTMLMediaElement"));
-      return promise.forget();
-    }
-    
-    
-    
-    if (mDecoder) {
-      mDecoder->SetCDMProxy(aMediaKeys->GetCDMProxy());
-    }
+  if (!AttachNewMediaKeys(promise)) {
+    ResetSetMediaKeysTempVariables();
+    return promise.forget();
   }
 
   
-  mMediaKeys = aMediaKeys;
-
-  
-
-  
-  promise->MaybeResolveWithUndefined();
+  MakeAssociationWithCDMResolved(promise);
 
   
   return promise.forget();
