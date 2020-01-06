@@ -111,6 +111,8 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
     mVoiceEngine(nullptr),
     mAudioInput(nullptr),
     mFullDuplex(aPrefs.mFullDuplex),
+    mDelayAgnostic(aPrefs.mDelayAgnostic),
+    mExtendedFilter(aPrefs.mExtendedFilter),
     mHasTabVideoSource(false)
 {
   nsCOMPtr<nsIComponentRegistrar> compMgr;
@@ -367,7 +369,8 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
         audioinput = new mozilla::AudioInputCubeb(mVoiceEngine, i);
       }
       aSource = new MediaEngineWebRTCMicrophoneSource(mVoiceEngine, audioinput,
-                                                      i, deviceName, uniqueId);
+                                                      i, deviceName, uniqueId,
+                                                      mDelayAgnostic, mExtendedFilter);
       mAudioSources.Put(uuid, aSource); 
       aASources->AppendElement(aSource);
     }
