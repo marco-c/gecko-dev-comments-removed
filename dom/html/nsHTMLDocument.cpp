@@ -358,7 +358,11 @@ nsHTMLDocument::TryCacheCharset(nsICachingChannel* aCachingChannel,
     return;
   }
   
-  const Encoding* encoding = Encoding::ForLabelNoReplacement(cachedCharset);
+  if (cachedCharset.EqualsLiteral("replacement")) {
+    return;
+  }
+  
+  const Encoding* encoding = Encoding::ForLabel(cachedCharset);
   if (!encoding) {
     return;
   }
@@ -732,6 +736,9 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
       if (NS_SUCCEEDED(rv)) {
         if (cachedSource > charsetSource) {
           auto cachedEncoding = Encoding::ForLabel(cachedCharset);
+          if (!cachedEncoding && cachedCharset.EqualsLiteral("replacement")) {
+            cachedEncoding = REPLACEMENT_ENCODING;
+          }
           if (cachedEncoding) {
             charsetSource = cachedSource;
             encoding = WrapNotNull(cachedEncoding);
@@ -1341,6 +1348,11 @@ nsHTMLDocument::GetCookie(nsAString& aCookie, ErrorResult& rv)
   }
 
   
+  if (IsCookieAverse()) {
+    return;
+  }
+
+  
   nsCOMPtr<nsICookieService> service = do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (service) {
     
@@ -1390,6 +1402,11 @@ nsHTMLDocument::SetCookie(const nsAString& aCookie, ErrorResult& rv)
   
   if (mSandboxFlags & SANDBOXED_ORIGIN) {
     rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  
+  if (IsCookieAverse()) {
     return;
   }
 
