@@ -61,17 +61,23 @@ public:
     : mIsBackground(aRunnable->IsBackground())
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+
+#if 0
 #ifdef EARLY_BETA_OR_EARLIER
     aRunnable->GetName(mKey);
     mStart = TimeStamp::Now();
 #endif
+#endif
   }
   ~AutoCollectVsyncTelemetry()
   {
+
+#if 0
 #ifdef EARLY_BETA_OR_EARLIER
     if (Telemetry::CanRecordBase()) {
       CollectTelemetry();
     }
+#endif
 #endif
   }
 

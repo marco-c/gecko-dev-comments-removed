@@ -569,11 +569,14 @@ BackgroundChildImpl::DeallocPGamepadTestChannelChild(PGamepadTestChannelChild* a
 void
 BackgroundChildImpl::OnChannelReceivedMessage(const Message& aMsg)
 {
+
+#if 0
   if (aMsg.type() == layout::PVsync::MessageType::Msg_Notify__ID) {
     
     
     SchedulerGroup::MarkVsyncReceived();
   }
+#endif
 }
 #endif
 
