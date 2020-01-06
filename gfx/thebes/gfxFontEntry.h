@@ -205,7 +205,7 @@ public:
     bool TryGetSVGData(gfxFont* aFont);
     bool HasSVGGlyph(uint32_t aGlyphId);
     bool GetSVGGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphId,
-                            gfxRect *aResult);
+                            gfxFloat aSize, gfxRect* aResult);
     void RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId,
                         mozilla::SVGContextPaint* aContextPaint);
     
