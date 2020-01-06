@@ -696,6 +696,7 @@ static inline bool XULElementsRulesInMinimalXULSheet(nsIAtom* aTag)
          aTag == nsGkAtoms::thumb ||
          aTag == nsGkAtoms::scale ||
          
+         aTag == nsGkAtoms::datetimebox ||
          aTag == nsGkAtoms::resizer ||
          aTag == nsGkAtoms::label ||
          aTag == nsGkAtoms::videocontrols;
@@ -810,9 +811,7 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
       
       
       
-      NS_ASSERTION(IsInVideoControls(this) ||
-                   IsInFeedSubscribeLine(this) ||
-                   IsXULElement(nsGkAtoms::datetimebox),
+      NS_ASSERTION(IsInVideoControls(this) || IsInFeedSubscribeLine(this),
                    "Unexpected XUL element in non-XUL doc");
     }
   }
