@@ -220,6 +220,7 @@ var AddonTestUtils = {
   testUnpacked: false,
   useRealCertChecks: false,
   usePrivilegedSignatures: true,
+  overrideEntry: null,
 
   init(testScope) {
     this.testScope = testScope;
@@ -592,6 +593,10 @@ var AddonTestUtils = {
   promiseShutdownManager() {
     if (!this.addonIntegrationService)
       return Promise.resolve(false);
+
+    if (this.overrideEntry) {
+      this.overrideEntry.destruct();
+    }
 
     Services.obs.notifyObservers(null, "quit-application-granted");
     return MockAsyncShutdown.hook()
@@ -1273,6 +1278,29 @@ var AddonTestUtils = {
       });
     });
   },
+
+  
+
+
+
+
+
+  async overrideBuiltIns(data) {
+    
+    
+    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
+    aomStartup.initializeURLPreloader();
+
+    let file = FileUtils.getFile("TmpD", "override.txt");
+    let manifest = Services.io.newFileURI(file);
+    await OS.File.writeAtomic(file.path,
+      new TextEncoder().encode(JSON.stringify(data)));
+    this.overrideEntry = aomStartup.registerChrome(manifest, [
+      ["override", "chrome://browser/content/built_in_addons.json",
+       Services.io.newFileURI(file).spec],
+    ]);
+    Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, false);
+  }
 };
 
 for (let [key, val] of Object.entries(AddonTestUtils)) {
