@@ -382,7 +382,6 @@ protected:
   
   
   void EnsureBaseStyle(const AnimationProperty& aProperty,
-                       CSSPseudoElementType aPseudoType,
                        nsPresContext* aPresContext,
                        const ServoStyleContext* aComputedValues,
                        RefPtr<mozilla::ServoStyleContext>& aBaseComputedValues);
