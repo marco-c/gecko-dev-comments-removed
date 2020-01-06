@@ -35,14 +35,6 @@ class ChromeConnector {
     this.connector.disconnect();
   }
 
-  pause() {
-    this.disconnect();
-  }
-
-  resume() {
-    this.setup();
-  }
-
   
 
 
