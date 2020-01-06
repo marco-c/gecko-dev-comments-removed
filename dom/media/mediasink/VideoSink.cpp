@@ -307,10 +307,34 @@ void
 VideoSink::TryUpdateRenderedVideoFrames()
 {
   AssertOwnerThread();
-  if (!mUpdateScheduler.IsScheduled() && VideoQueue().GetSize() >= 1 &&
-      mAudioSink->IsPlaying()) {
-    UpdateRenderedVideoFrames();
+  if (mUpdateScheduler.IsScheduled() || !mAudioSink->IsPlaying()) {
+    return;
   }
+  RefPtr<VideoData> v = VideoQueue().PeekFront();
+  if (!v) {
+    
+    return;
+  }
+
+  TimeStamp nowTime;
+  const TimeUnit clockTime = mAudioSink->GetPosition(&nowTime);
+  if (clockTime >= v->mTime) {
+    
+    UpdateRenderedVideoFrames();
+    return;
+  }
+
+  
+  
+  
+  int64_t delta = (v->mTime - clockTime).ToMicroseconds() /
+                  mAudioSink->GetPlaybackParams().mPlaybackRate;
+  TimeStamp target = nowTime + TimeDuration::FromMicroseconds(delta);
+  RefPtr<VideoSink> self = this;
+  mUpdateScheduler.Ensure(
+    target,
+    [self]() { self->UpdateRenderedVideoFramesByTimer(); },
+    [self]() { self->UpdateRenderedVideoFramesByTimer(); });
 }
 
 void
