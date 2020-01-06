@@ -5047,7 +5047,7 @@ enum {
   kE10sEnabledByDefault = 1,
   kE10sDisabledByUser = 2,
   
-  kE10sDisabledForAccessibility = 4,
+  
   
   
   kE10sDisabledForAddons = 7,
@@ -5055,18 +5055,6 @@ enum {
   
   
 };
-
-const char* kAccessibilityLastRunDatePref = "accessibility.lastLoadDate";
-const char* kAccessibilityLoadedLastSessionPref = "accessibility.loadedInLastSession";
-
-#if defined(XP_WIN)
-static inline uint32_t
-PRTimeToSeconds(PRTime t_usec)
-{
-  PRTime usec_per_sec = PR_USEC_PER_SEC;
-  return uint32_t(t_usec /= usec_per_sec);
-}
-#endif
 
 const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
 const char* kForceDisableE10sPref = "browser.tabs.remote.force-disable";
@@ -5094,40 +5082,6 @@ MultiprocessBlockPolicy()
   if (addonsCanDisable && disabledByAddons) {
     return kE10sDisabledForAddons;
   }
-
-#if defined(XP_WIN) && defined(RELEASE_OR_BETA)
-  bool disabledForA11y = false;
-  
-
-
-
-
-
-
-
-
-
-
-  disabledForA11y = Preferences::GetBool(kAccessibilityLoadedLastSessionPref, false);
-  if (!disabledForA11y  &&
-      Preferences::HasUserValue(kAccessibilityLastRunDatePref)) {
-    const uint32_t oneWeekInSeconds = 60 * 60 * 24 * 7;
-    uint32_t a11yRunDate = Preferences::GetInt(kAccessibilityLastRunDatePref, 0);
-    MOZ_ASSERT(0 != a11yRunDate);
-    
-    uint32_t now = PRTimeToSeconds(PR_Now());
-    uint32_t difference = now - a11yRunDate;
-    if (difference > oneWeekInSeconds || !a11yRunDate) {
-      Preferences::ClearUser(kAccessibilityLastRunDatePref);
-    } else {
-      disabledForA11y = true;
-    }
-  }
-
-  if (disabledForA11y) {
-    return kE10sDisabledForAccessibility;
-  }
-#endif
 
   
 
