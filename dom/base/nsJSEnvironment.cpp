@@ -62,7 +62,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsAXPCNativeCallContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/SystemGroup.h"
 #include "nsRefreshDriver.h"
@@ -285,12 +284,24 @@ public:
 
   void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) override
   {
-    MOZ_ASSERT(NS_IsMainThread());
-    
-    
-    
-    
-    SetTimerInternal(aDelay);
+    if (mTimerActive) {
+      return;
+    }
+
+    mTarget = aTarget;
+    if (!mTimer) {
+      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+    } else {
+      mTimer->Cancel();
+    }
+
+    if (mTimer) {
+      mTimer->SetTarget(mTarget);
+      mTimer->InitWithNamedFuncCallback(TimedOut, this, aDelay,
+                                        nsITimer::TYPE_ONE_SHOT,
+                                        "CollectorRunner");
+      mTimerActive = true;
+    }
   }
 
   nsresult Cancel() override
@@ -327,20 +338,19 @@ public:
       
       nsRefreshDriver::DispatchIdleRunnableAfterTick(this, mDelay);
       
-      SetTimerInternal(mDelay);
+      SetTimer(mDelay, mTarget);
     } else {
       
       if (aAllowIdleDispatch) {
         nsCOMPtr<nsIRunnable> runnable = this;
-        SetTimerInternal(mDelay);
-        NS_IdleDispatchToCurrentThread(runnable.forget());
+        NS_IdleDispatchToCurrentThread(runnable.forget(), mDelay);
+        SetTimer(mDelay, mTarget);
       } else {
         if (!mScheduleTimer) {
           mScheduleTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
           if (!mScheduleTimer) {
             return;
           }
-          mScheduleTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::GarbageCollection));
         } else {
           mScheduleTimer->Cancel();
         }
@@ -381,29 +391,9 @@ private:
     mTimerActive = false;
   }
 
-  void SetTimerInternal(uint32_t aDelay)
-  {
-    if (mTimerActive) {
-      return;
-    }
-
-    if (!mTimer) {
-      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    } else {
-      mTimer->Cancel();
-    }
-
-    if (mTimer) {
-      mTimer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::GarbageCollection));
-      mTimer->InitWithNamedFuncCallback(TimedOut, this, aDelay,
-                                        nsITimer::TYPE_ONE_SHOT,
-                                        "CollectorRunner");
-      mTimerActive = true;
-    }
-  }
-
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsITimer> mScheduleTimer;
+  nsCOMPtr<nsIEventTarget> mTarget;
   CollectorRunnerCallback mCallback;
   uint32_t mDelay;
   TimeStamp mDeadline;
