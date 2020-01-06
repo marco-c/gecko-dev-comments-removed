@@ -11,6 +11,10 @@
 
 
 add_task(async function test() {
+  
+  await SpecialPowers.pushPrefEnv({
+    "set": [["security.data_uri.block_toplevel_data_uri_navigations", false]]
+  });
   let dataURIPref = Services.prefs.getBoolPref("security.data_uri.unique_opaque_origin");
   
   let testURL = "http://mochi.test:8888/browser/browser/components/sessionstore/test/browser_911547_sample.html";

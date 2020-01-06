@@ -203,6 +203,12 @@ add_task(async function testBadPermissions() {
 });
 
 add_task(async function testMatchDataURI() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    "set": [["security.data_uri.block_toplevel_data_uri_navigations", false]],
+  });
+
   const target = ExtensionTestUtils.loadExtension({
     files: {
       "page.html": `<!DOCTYPE html>
