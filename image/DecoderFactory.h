@@ -23,7 +23,6 @@ class IDecodingTask;
 class nsICODecoder;
 class RasterImage;
 class SourceBuffer;
-class SourceBufferIterator;
 
 
 
@@ -134,7 +133,7 @@ public:
 
   static already_AddRefed<Decoder>
   CreateDecoderForICOResource(DecoderType aType,
-                              SourceBufferIterator&& aIterator,
+                              NotNull<SourceBuffer*> aSourceBuffer,
                               NotNull<nsICODecoder*> aICODecoder,
                               const Maybe<gfx::IntSize>& aExpectedSize,
                               const Maybe<uint32_t>& aDataOffset = Nothing());
