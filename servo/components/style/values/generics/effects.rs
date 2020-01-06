@@ -11,7 +11,7 @@ use values::specified::url::SpecifiedUrl;
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue)]
 pub struct BoxShadow<Color, SizeLength, ShapeLength> {
     
     pub base: SimpleShadow<Color, SizeLength, ShapeLength>,
@@ -23,7 +23,7 @@ pub struct BoxShadow<Color, SizeLength, ShapeLength> {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, HeapSizeOf, Serialize))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue, ToComputedValue, ToCss)]
 pub enum Filter<Angle, Factor, Length, DropShadow> {
     
     #[css(function)]
@@ -65,7 +65,7 @@ pub enum Filter<Angle, Factor, Length, DropShadow> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToCss)]
+#[derive(Clone, Debug, HasViewportPercentage, PartialEq, ToAnimatedValue, ToCss)]
 pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub color: Color,

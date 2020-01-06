@@ -254,8 +254,8 @@ impl ToCss for FontSettingTagFloat {
 
 
 
-#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[derive(Clone, Debug, PartialEq, ToAnimatedValue)]
 pub struct SVGPaint<ColorType> {
     
     pub kind: SVGPaintKind<ColorType>,
@@ -269,7 +269,7 @@ pub struct SVGPaint<ColorType> {
 
 
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToCss)]
+#[derive(Clone, Debug, PartialEq, ToAnimatedValue, ToCss)]
 pub enum SVGPaintKind<ColorType> {
     
     None,
