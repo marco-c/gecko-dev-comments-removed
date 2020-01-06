@@ -831,10 +831,14 @@ class MochitestArguments(ArgumentContainer):
 
         options.leakThresholds = {
             "default": options.defaultLeakThreshold,
-            "tab": 3000,  
+            "tab": options.defaultLeakThreshold,
             
             "geckomediaplugin": 20000,
         }
+
+        
+        if mozinfo.isWin:
+            options.leakThresholds["tab"] = 1000
 
         
         
