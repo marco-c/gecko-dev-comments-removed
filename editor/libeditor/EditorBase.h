@@ -867,6 +867,8 @@ public:
   
 
 
+  uint32_t Flags() const { return mFlags; }
+
   bool IsPlaintextEditor() const
   {
     return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
@@ -880,6 +882,17 @@ public:
   bool IsPasswordEditor() const
   {
     return (mFlags & nsIPlaintextEditor::eEditorPasswordMask) != 0;
+  }
+
+  
+  
+  bool IsRightToLeft() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorRightToLeft) != 0;
+  }
+  bool IsLeftToRight() const
+  {
+    return (mFlags & nsIPlaintextEditor::eEditorLeftToRight) != 0;
   }
 
   bool IsReadonly() const
@@ -947,6 +960,27 @@ public:
   {
     return !IsReadonly();
   }
+
+  
+
+
+
+  bool IsInEditAction() const { return mIsInEditAction; }
+
+  
+
+
+
+  bool IsSuppressingDispatchingInputEvent() const
+  {
+    return !mDispatchInputEvent;
+  }
+
+  
+
+
+
+  already_AddRefed<nsITransactionManager> GetTransactionManager() const;
 
   
 

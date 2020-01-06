@@ -22,6 +22,7 @@
 #include "nsNodeUtils.h"                  
 #include "nsIHTMLCollection.h"
 #include "nsDataHashtable.h"
+#include "nsXBLBinding.h"
 
 class ContentUnbinder;
 class nsContentList;

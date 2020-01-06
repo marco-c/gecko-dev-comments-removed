@@ -13,7 +13,6 @@
 #include "nsEditorCID.h"
 #include "nsLayoutCID.h"
 #include "nsITextControlFrame.h" 
-#include "nsIPlaintextEditor.h"
 #include "nsIDOMCharacterData.h"
 #include "nsIDOMDocument.h"
 #include "nsContentCreatorFunctions.h"
@@ -33,7 +32,6 @@
 #include "nsISelectionPrivate.h"
 #include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIEditor.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/TextEditRules.h"
 #include "mozilla/EventListenerManager.h"
@@ -60,27 +58,26 @@ static NS_DEFINE_CID(kTextEditorCID, NS_TEXTEDITOR_CID);
 class MOZ_STACK_CLASS ValueSetter
 {
 public:
-  explicit ValueSetter(nsIEditor* aEditor)
-    : mEditor(aEditor)
+  explicit ValueSetter(TextEditor* aTextEditor)
+    : mTextEditor(aTextEditor)
+    
+    
+    
+    , mOuterTransaction(aTextEditor->IsSuppressingDispatchingInputEvent())
   {
-    MOZ_ASSERT(aEditor);
-  
-    
-    
-    
-    mEditor->GetSuppressDispatchingInputEvent(&mOuterTransaction);
+    MOZ_ASSERT(aTextEditor);
   }
   ~ValueSetter()
   {
-    mEditor->SetSuppressDispatchingInputEvent(mOuterTransaction);
+    mTextEditor->SetSuppressDispatchingInputEvent(mOuterTransaction);
   }
   void Init()
   {
-    mEditor->SetSuppressDispatchingInputEvent(true);
+    mTextEditor->SetSuppressDispatchingInputEvent(true);
   }
 
 private:
-  nsCOMPtr<nsIEditor> mEditor;
+  RefPtr<TextEditor> mTextEditor;
   bool mOuterTransaction;
 };
 
@@ -137,37 +134,32 @@ private:
 class MOZ_RAII AutoRestoreEditorState final
 {
 public:
-  explicit AutoRestoreEditorState(nsIEditor* aEditor,
-                                  nsIPlaintextEditor* aPlaintextEditor
+  explicit AutoRestoreEditorState(TextEditor* aTextEditor
                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mEditor(aEditor)
-    , mPlaintextEditor(aPlaintextEditor)
+    : mTextEditor(aTextEditor)
+    , mSavedFlags(mTextEditor->Flags())
+    , mSavedMaxLength(mTextEditor->MaxTextLength())
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    MOZ_ASSERT(mEditor);
-    MOZ_ASSERT(mPlaintextEditor);
+    MOZ_ASSERT(mTextEditor);
 
-    uint32_t flags;
-    mEditor->GetFlags(&mSavedFlags);
-    flags = mSavedFlags;
+    uint32_t flags = mSavedFlags;
     flags &= ~(nsIPlaintextEditor::eEditorDisabledMask);
     flags &= ~(nsIPlaintextEditor::eEditorReadonlyMask);
     flags |= nsIPlaintextEditor::eEditorDontEchoPassword;
-    mEditor->SetFlags(flags);
+    mTextEditor->SetFlags(flags);
 
-    mPlaintextEditor->GetMaxTextLength(&mSavedMaxLength);
-    mPlaintextEditor->SetMaxTextLength(-1);
+    mTextEditor->SetMaxTextLength(-1);
   }
 
   ~AutoRestoreEditorState()
   {
-     mPlaintextEditor->SetMaxTextLength(mSavedMaxLength);
-     mEditor->SetFlags(mSavedFlags);
+     mTextEditor->SetMaxTextLength(mSavedMaxLength);
+     mTextEditor->SetFlags(mSavedFlags);
   }
 
 private:
-  nsIEditor* mEditor;
-  nsIPlaintextEditor* mPlaintextEditor;
+  TextEditor* mTextEditor;
   uint32_t mSavedFlags;
   int32_t mSavedMaxLength;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -176,28 +168,28 @@ private:
 class MOZ_RAII AutoDisableUndo final
 {
 public:
-  explicit AutoDisableUndo(nsIEditor* aEditor
+  explicit AutoDisableUndo(TextEditor* aTextEditor
                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mEditor(aEditor)
+    : mTextEditor(aTextEditor)
     , mPreviousEnabled(true)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    MOZ_ASSERT(mEditor);
+    MOZ_ASSERT(mTextEditor);
 
     bool canUndo;
-    DebugOnly<nsresult> rv = mEditor->CanUndo(&mPreviousEnabled, &canUndo);
+    DebugOnly<nsresult> rv = mTextEditor->CanUndo(&mPreviousEnabled, &canUndo);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    mEditor->EnableUndo(false);
+    mTextEditor->EnableUndo(false);
   }
 
   ~AutoDisableUndo()
   {
-    mEditor->EnableUndo(mPreviousEnabled);
+    mTextEditor->EnableUndo(mPreviousEnabled);
   }
 
 private:
-  nsIEditor* mEditor;
+  TextEditor* mTextEditor;
   bool mPreviousEnabled;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
@@ -1193,7 +1185,7 @@ nsTextEditorState::Clear()
     
     
     UnbindFromFrame(mBoundFrame);
-    mEditor = nullptr;
+    mTextEditor = nullptr;
   } else {
     
     
@@ -1207,7 +1199,7 @@ void nsTextEditorState::Unlink()
   nsTextEditorState* tmp = this;
   tmp->Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelCon)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditor)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextEditor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderDiv)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviewDiv)
@@ -1217,7 +1209,7 @@ void nsTextEditorState::Traverse(nsCycleCollectionTraversalCallback& cb)
 {
   nsTextEditorState* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelCon)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditor)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderDiv)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreviewDiv)
@@ -1230,14 +1222,14 @@ nsTextEditorState::GetConstFrameSelection() {
   return nullptr;
 }
 
-nsIEditor*
-nsTextEditorState::GetEditor()
+TextEditor*
+nsTextEditorState::GetTextEditor()
 {
-  if (!mEditor) {
+  if (!mTextEditor) {
     nsresult rv = PrepareEditor();
     NS_ENSURE_SUCCESS(rv, nullptr);
   }
-  return mEditor;
+  return mTextEditor;
 }
 
 nsISelectionController*
@@ -1295,7 +1287,7 @@ nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame)
   
   
   nsAutoString currentValue;
-  if (mEditor) {
+  if (mTextEditor) {
     GetValue(currentValue, true);
   }
 
@@ -1342,17 +1334,14 @@ nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame)
   }
 
   
-  if (mEditor) {
+  if (mTextEditor) {
     nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
     NS_ENSURE_TRUE(content, NS_ERROR_FAILURE);
 
     
-    uint32_t flags;
-    nsresult rv = mEditor->GetFlags(&flags);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (flags & nsIPlaintextEditor::eEditorRightToLeft) {
+    if (mTextEditor->IsRightToLeft()) {
       rootNode->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("rtl"), false);
-    } else if (flags & nsIPlaintextEditor::eEditorLeftToRight) {
+    } else if (mTextEditor->IsLeftToRight()) {
       rootNode->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, NS_LITERAL_STRING("ltr"), false);
     } else {
       
@@ -1367,22 +1356,19 @@ nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame)
 
 struct PreDestroyer
 {
-  void Init(nsIEditor* aEditor)
-  {
-    mNewEditor = aEditor;
-  }
+  void Init(TextEditor* aTextEditor) { mTextEditor = aTextEditor; }
   ~PreDestroyer()
   {
-    if (mNewEditor) {
-      mNewEditor->PreDestroy(true);
+    if (mTextEditor) {
+      mTextEditor->PreDestroy(true);
     }
   }
-  void Swap(nsCOMPtr<nsIEditor>& aEditor)
+  void Swap(RefPtr<TextEditor>& aTextEditor)
   {
-    return mNewEditor.swap(aEditor);
+    return mTextEditor.swap(aTextEditor);
   }
 private:
-  nsCOMPtr<nsIEditor> mNewEditor;
+  RefPtr<TextEditor> mTextEditor;
 };
 
 nsresult
@@ -1431,16 +1417,15 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   editorFlags |= nsIPlaintextEditor::eEditorSkipSpellCheck;
 
   bool shouldInitializeEditor = false;
-  nsCOMPtr<nsIEditor> newEditor; 
+  RefPtr<TextEditor> newTextEditor; 
   nsresult rv = NS_OK;
   PreDestroyer preDestroyer;
-  if (!mEditor) {
+  if (!mTextEditor) {
     shouldInitializeEditor = true;
 
     
-    newEditor = do_CreateInstance(kTextEditorCID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    preDestroyer.Init(newEditor);
+    newTextEditor = new TextEditor();
+    preDestroyer.Init(newTextEditor);
 
     
     rv = mBoundFrame->UpdateValueDisplay(true, true);
@@ -1452,12 +1437,10 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    newEditor = mEditor; 
+    newTextEditor = mTextEditor; 
 
     
-    uint32_t originalFlags = 0;
-    newEditor->GetFlags(&originalFlags);
-    if (originalFlags & nsIPlaintextEditor::eEditorMailMask) {
+    if (newTextEditor->IsMailEditor()) {
       editorFlags |= nsIPlaintextEditor::eEditorMailMask;
     }
   }
@@ -1492,8 +1475,8 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     
     AutoNoJSAPI nojsapi;
 
-    rv = newEditor->Init(domdoc, GetRootNode(), mSelCon, editorFlags,
-                         defaultValue);
+    rv = newTextEditor->Init(domdoc, GetRootNode(), mSelCon, editorFlags,
+                             defaultValue);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1528,7 +1511,8 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
           nsCOMPtr<nsIControllerContext> editController =
             do_QueryInterface(controller);
           if (editController) {
-            editController->SetCommandContext(newEditor);
+            editController->SetCommandContext(
+              static_cast<nsIEditor*>(newTextEditor));
             found = true;
           }
         }
@@ -1539,21 +1523,17 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   }
 
   
-  nsCOMPtr<nsIPlaintextEditor> textEditor = do_QueryInterface(newEditor);
-  if (textEditor) {
-    if (shouldInitializeEditor) {
-      
-      textEditor->SetWrapColumn(GetWrapCols());
-    }
-
+  if (shouldInitializeEditor) {
     
-    textEditor->SetMaxTextLength(GetMaxLength());
+    newTextEditor->SetWrapColumn(GetWrapCols());
   }
+
+  
+  newTextEditor->SetMaxTextLength(GetMaxLength());
 
   nsCOMPtr<nsIContent> content = do_QueryInterface(mTextCtrlElement);
   if (content) {
-    rv = newEditor->GetFlags(&editorFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    editorFlags = newTextEditor->Flags();
 
     
     if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly))
@@ -1568,12 +1548,12 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     if (editorFlags & nsIPlaintextEditor::eEditorDisabledMask)
       mSelCon->SetDisplaySelection(nsISelectionController::SELECTION_OFF);
 
-    newEditor->SetFlags(editorFlags);
+    newTextEditor->SetFlags(editorFlags);
   }
 
   if (shouldInitializeEditor) {
     
-    preDestroyer.Swap(mEditor);
+    preDestroyer.Swap(mTextEditor);
   }
 
   
@@ -1582,7 +1562,7 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   
 
   if (!defaultValue.IsEmpty()) {
-    rv = newEditor->SetFlags(editorFlags);
+    rv = newTextEditor->SetFlags(editorFlags);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -1595,15 +1575,18 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     NS_ENSURE_TRUE(success, NS_ERROR_OUT_OF_MEMORY);
 
     
-    rv = newEditor->SetFlags(editorFlags);
+    rv = newTextEditor->SetFlags(editorFlags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  nsCOMPtr<nsITransactionManager> transMgr;
-  newEditor->GetTransactionManager(getter_AddRefs(transMgr));
-  NS_ENSURE_TRUE(transMgr, NS_ERROR_FAILURE);
+  nsCOMPtr<nsITransactionManager> transactionManager =
+    newTextEditor->GetTransactionManager();
+  if (NS_WARN_IF(!transactionManager)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  transMgr->SetMaxTransactionCount(nsITextControlElement::DEFAULT_UNDO_CAP);
+  transactionManager->SetMaxTransactionCount(
+                        nsITextControlElement::DEFAULT_UNDO_CAP);
 
   if (IsPasswordTextControl()) {
     
@@ -1611,17 +1594,18 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     
     
     
-    newEditor->EnableUndo(false);
+    newTextEditor->EnableUndo(false);
   }
 
   if (!mEditorInitialized) {
-    newEditor->PostCreate();
+    newTextEditor->PostCreate();
     mEverInited = true;
     mEditorInitialized = true;
   }
 
-  if (mTextListener)
-    newEditor->AddEditorObserver(mTextListener);
+  if (mTextListener) {
+    newTextEditor->AddEditorObserver(mTextListener);
+  }
 
   
   HTMLInputElement* number = GetParentNumberControl(mBoundFrame);
@@ -2090,10 +2074,10 @@ nsTextEditorState::DestroyEditor()
 {
   
   if (mEditorInitialized) {
-    if (mTextListener)
-      mEditor->RemoveEditorObserver(mTextListener);
-
-    mEditor->PreDestroy(true);
+    if (mTextListener) {
+      mTextEditor->RemoveEditorObserver(mTextListener);
+    }
+    mTextEditor->PreDestroy(true);
     mEditorInitialized = false;
   }
   ClearValueCache();
@@ -2111,10 +2095,8 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   
   
-  bool isInEditAction = false;
-  if (mTextListener && mEditor && mEditorInitialized &&
-      NS_SUCCEEDED(mEditor->GetIsInEditAction(&isInEditAction)) &&
-      isInEditAction) {
+  if (mTextListener && mTextEditor && mEditorInitialized &&
+      mTextEditor->IsInEditAction()) {
     mTextListener->EditAction();
   }
 
@@ -2431,7 +2413,8 @@ nsTextEditorState::GetValue(nsAString& aValue, bool aIgnoreWrap) const
     return;
   }
 
-  if (mEditor && mBoundFrame && (mEditorInitialized || !IsSingleLineTextControl())) {
+  if (mTextEditor && mBoundFrame &&
+      (mEditorInitialized || !IsSingleLineTextControl())) {
     bool canCache = aIgnoreWrap && !IsSingleLineTextControl();
     if (canCache && !mCachedValue.IsEmpty()) {
       aValue = mCachedValue;
@@ -2474,8 +2457,8 @@ nsTextEditorState::GetValue(nsAString& aValue, bool aIgnoreWrap) const
     { 
       AutoNoJSAPI nojsapi;
 
-      mEditor->OutputToString(NS_LITERAL_STRING("text/plain"), flags,
-                              aValue);
+      mTextEditor->OutputToString(NS_LITERAL_STRING("text/plain"), flags,
+                                  aValue);
     }
     if (canCache) {
       mCachedValue = aValue;
@@ -2563,7 +2546,8 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
         
         mValueBeingSet = aValue;
         mIsCommittingComposition = true;
-        nsresult rv = mEditor->ForceCompositionEnd();
+        RefPtr<TextEditor> textEditor = mTextEditor;
+        nsresult rv = textEditor->ForceCompositionEnd();
         if (!self.get()) {
           return true;
         }
@@ -2592,7 +2576,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
     return false;
   }
 
-  if (mEditor && mBoundFrame) {
+  if (mTextEditor && mBoundFrame) {
     
     
     
@@ -2621,14 +2605,12 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
     AutoWeakFrame weakFrame(mBoundFrame);
 
     
-    if (!currentValue.Equals(newValue))
-    {
-      ValueSetter valueSetter(mEditor);
+    if (!currentValue.Equals(newValue)) {
+      RefPtr<TextEditor> textEditor = mTextEditor;
+      ValueSetter valueSetter(textEditor);
 
-      nsCOMPtr<nsIDOMDocument> domDoc;
-      mEditor->GetDocument(getter_AddRefs(domDoc));
-      if (!domDoc) {
-        NS_WARNING("Why don't we have a document?");
+      nsCOMPtr<nsIDocument> document = textEditor->GetDocument();
+      if (NS_WARN_IF(!document)) {
         return true;
       }
 
@@ -2644,9 +2626,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
         SelectionBatcher selectionBatcher(domSel ? domSel->AsSelection() :
                                                    nullptr);
 
-        nsCOMPtr<nsIPlaintextEditor> plaintextEditor = do_QueryInterface(mEditor);
-        if (!plaintextEditor || !weakFrame.IsAlive()) {
-          NS_WARNING("Somehow not a plaintext editor?");
+        if (NS_WARN_IF(!weakFrame.IsAlive())) {
           return true;
         }
 
@@ -2655,7 +2635,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
         
         
         {
-          AutoRestoreEditorState restoreState(mEditor, plaintextEditor);
+          AutoRestoreEditorState restoreState(textEditor);
 
           mTextListener->SettingValue(true);
           bool notifyValueChanged = !!(aFlags & eSetValue_Notify);
@@ -2678,19 +2658,19 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
               StringTail(newValue, newlength - currentLength);
 
             if (insertValue.IsEmpty()) {
-              mEditor->DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
+              textEditor->DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
             } else {
-              plaintextEditor->InsertText(insertValue);
+              textEditor->InsertText(insertValue);
             }
           } else {
-            AutoDisableUndo disableUndo(mEditor);
+            AutoDisableUndo disableUndo(textEditor);
             if (domSel) {
               
               
               domSel->RemoveAllRanges();
             }
 
-            plaintextEditor->SetText(newValue);
+            textEditor->SetText(newValue);
           }
 
           mTextListener->SetValueChanged(true);
@@ -2777,10 +2757,10 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
 bool
 nsTextEditorState::HasNonEmptyValue()
 {
-  if (mEditor && mBoundFrame && mEditorInitialized &&
+  if (mTextEditor && mBoundFrame && mEditorInitialized &&
       !mIsCommittingComposition) {
     bool empty;
-    nsresult rv = mEditor->GetDocumentIsEmpty(&empty);
+    nsresult rv = mTextEditor->GetDocumentIsEmpty(&empty);
     if (NS_SUCCEEDED(rv)) {
       return !empty;
     }
@@ -2908,10 +2888,7 @@ nsTextEditorState::HideSelectionIfBlurred()
 bool
 nsTextEditorState::EditorHasComposition()
 {
-  bool isComposing = false;
-  return mEditor &&
-         NS_SUCCEEDED(mEditor->GetComposing(&isComposing)) &&
-         isComposing;
+  return mTextEditor && mTextEditor->IsIMEComposing();
 }
 
 NS_IMPL_ISUPPORTS(nsAnonDivObserver, nsIMutationObserver)
