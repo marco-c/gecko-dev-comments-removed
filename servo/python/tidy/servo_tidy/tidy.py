@@ -1072,34 +1072,6 @@ def run_lint_scripts(only_changed_files=False, progress=True, stylo=False):
             yield error
 
 
-def check_commits(path='.'):
-    """ Checks if the test is being run under Travis CI environment
-        This is necessary since, after travis clones the branch for a PR, it merges
-        the branch against master, creating a merge commit. Hence, as a workaround,
-        we have to check if the second last merge commit is done by the author of
-        the pull request.
-        """
-    is_travis = os.environ.get('TRAVIS') == 'true'
-    number_commits = '-n2' if is_travis else '-n1'
-
-    """Gets all commits since the last merge."""
-    args = ['git', 'log', number_commits, '--merges', '--format=%H:%an']
-    
-    last_merge_hash, last_merge_author = subprocess.check_output(args, cwd=path).strip().splitlines()[-1].split(':')
-    args = ['git', 'log', '{}..HEAD'.format(last_merge_hash), '--format=%s']
-    commits = subprocess.check_output(args, cwd=path).lower().splitlines()
-
-    for commit in commits:
-        
-        if 'wip' in commit.split():
-            yield (':', ':', 'no commits should contain WIP')
-
-    if last_merge_author != 'bors-servo':
-        yield (':', ':', 'no merge commits allowed, please rebase your commits over the upstream master branch')
-
-    raise StopIteration
-
-
 def scan(only_changed_files=False, progress=True, stylo=False):
     
     config_errors = check_config_file(CONFIG_FILE_PATH)
@@ -1116,10 +1088,8 @@ def scan(only_changed_files=False, progress=True, stylo=False):
     
     lint_errors = run_lint_scripts(only_changed_files, progress, stylo=stylo)
     
-    commit_errors = [] if stylo else check_commits()
-    
     errors = itertools.chain(config_errors, directory_errors, lint_errors,
-                             file_errors, dep_license_errors, commit_errors)
+                             file_errors, dep_license_errors)
 
     error = None
     for error in errors:
