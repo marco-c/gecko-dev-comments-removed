@@ -3389,7 +3389,9 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh)
         for (j = 0; j < numPrefs; j++) {
             
             gfxFontFamily *family = (*families)[j];
-            if (!family) continue;
+            if (!family) {
+                continue;
+            }
 
             
             
@@ -3401,8 +3403,12 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh)
 
             bool needsBold;
             gfxFontEntry *fe = family->FindFontForStyle(mStyle, needsBold);
+            if (!fe) {
+                continue;
+            }
+
             
-            if (fe && fe->HasCharacter(aCh)) {
+            if (fe->HasCharacter(aCh)) {
                 gfxFont* prefFont = fe->FindOrMakeFont(&mStyle, needsBold);
                 if (!prefFont) {
                     continue;
@@ -3414,6 +3420,21 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh)
                 return prefFont;
             }
 
+            
+            
+            if (!fe->IsNormalStyle()) {
+                
+                
+                
+                gfxFont* prefFont = FindFallbackFaceForChar(family, aCh);
+                if (prefFont) {
+                    mLastPrefFamily = family;
+                    mLastPrefFont = prefFont;
+                    mLastPrefLang = charLang;
+                    mLastPrefFirstFont = (i == 0 && j == 0);
+                    return prefFont;
+                }
+            }
         }
     }
 
