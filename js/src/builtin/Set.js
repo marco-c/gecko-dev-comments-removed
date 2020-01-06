@@ -20,19 +20,14 @@ function SetConstructorInit(iterable) {
 }
 
 
+
 function SetForEach(callbackfn, thisArg = undefined) {
     
     var S = this;
-    if (!IsObject(S))
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Set", "forEach", typeof S);
 
     
-    try {
-        callFunction(std_Set_has, S);
-    } catch (e) {
-        
-        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "Set", "forEach", typeof S);
-    }
+    if (!IsObject(S) || !IsSetObject(S))
+        return callFunction(CallSetMethodIfWrapped, S, callbackfn, thisArg, "SetForEach");
 
     
     if (!IsCallable(callbackfn))
