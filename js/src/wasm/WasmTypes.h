@@ -1650,12 +1650,7 @@ static const unsigned PageSize = 64 * 1024;
 
 static const unsigned MaxMemoryAccessSize = sizeof(Val);
 
-#ifdef JS_CODEGEN_X64
-
-
-
-
-# define WASM_HUGE_MEMORY
+#ifdef WASM_HUGE_MEMORY
 
 
 

@@ -30,6 +30,13 @@ using namespace js::wasm;
 
 using mozilla::IsPowerOfTwo;
 
+
+
+
+#if defined(WASM_HUGE_MEMORY) != defined(JS_CODEGEN_X64)
+#  error "Not an expected configuration"
+#endif
+
 void
 Val::writePayload(uint8_t* dst) const
 {
