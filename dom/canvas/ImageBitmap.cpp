@@ -13,6 +13,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
+#include "mozilla/Mutex.h"
 #include "ImageBitmapColorUtils.h"
 #include "ImageBitmapUtils.h"
 #include "ImageUtils.h"
@@ -1078,109 +1079,57 @@ AsyncFulfillImageBitmapPromise(Promise* aPromise, ImageBitmap* aImageBitmap)
   }
 }
 
-static already_AddRefed<SourceSurface>
-DecodeBlob(Blob& aBlob)
+class CreateImageBitmapFromBlobRunnable;
+class CreateImageBitmapFromBlobHolder;
+
+class CreateImageBitmapFromBlob final : public CancelableRunnable
+                                      , public imgIContainerCallback
 {
-  
-  nsCOMPtr<nsIInputStream> stream;
-  ErrorResult error;
-  aBlob.Impl()->CreateInputStream(getter_AddRefs(stream), error);
-  if (NS_WARN_IF(error.Failed())) {
-    error.SuppressException();
-    return nullptr;
+  friend class CreateImageBitmapFromBlobRunnable;
+
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_IMGICONTAINERCALLBACK
+
+  static already_AddRefed<CreateImageBitmapFromBlob>
+  Create(Promise* aPromise,
+         nsIGlobalObject* aGlobal,
+         Blob& aBlob,
+         const Maybe<IntRect>& aCropRect,
+         nsIEventTarget* aMainThreadEventTarget);
+
+  NS_IMETHOD Run() override
+  {
+    MOZ_ASSERT(IsCurrentThread());
+
+    nsresult rv = StartDecodeAndCropBlob();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      DecodeAndCropBlobCompletedMainThread(nullptr, rv);
+    }
+
+    return NS_OK;
   }
 
   
-  
-  nsAutoString mimeTypeUTF16;
-  aBlob.GetType(mimeTypeUTF16);
+  void WorkerShuttingDown();
 
-  
-  nsCOMPtr<imgITools> imgtool = do_GetService(NS_IMGTOOLS_CID);
-  if (NS_WARN_IF(!imgtool)) {
-    return nullptr;
-  }
-
-  
-  NS_ConvertUTF16toUTF8 mimeTypeUTF8(mimeTypeUTF16); 
-  nsCOMPtr<imgIContainer> imgContainer;
-  nsresult rv = imgtool->DecodeImage(stream, mimeTypeUTF8, getter_AddRefs(imgContainer));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  
-  uint32_t frameFlags = imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_WANT_DATA_SURFACE;
-  uint32_t whichFrame = imgIContainer::FRAME_FIRST;
-  RefPtr<SourceSurface> surface = imgContainer->GetFrame(whichFrame, frameFlags);
-
-  if (NS_WARN_IF(!surface)) {
-    return nullptr;
-  }
-
-  return surface.forget();
-}
-
-static already_AddRefed<layers::Image>
-DecodeAndCropBlob(Blob& aBlob, Maybe<IntRect>& aCropRect,
-                   IntSize& sourceSize)
-{
-  
-  RefPtr<SourceSurface> surface = DecodeBlob(aBlob);
-
-  if (NS_WARN_IF(!surface)) {
-    return nullptr;
-  }
-
-  
-  sourceSize = surface->GetSize();
-
-  
-  RefPtr<SourceSurface> croppedSurface = surface;
-
-  if (aCropRect.isSome()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
-    croppedSurface = CropAndCopyDataSourceSurface(dataSurface, aCropRect.ref());
-    aCropRect->MoveTo(0, 0);
-  }
-
-  if (NS_WARN_IF(!croppedSurface)) {
-    return nullptr;
-  }
-
-  
-  RefPtr<layers::Image> image = CreateImageFromSurface(croppedSurface);
-
-  if (NS_WARN_IF(!image)) {
-    return nullptr;
-  }
-
-  return image.forget();
-}
-
-class CreateImageBitmapFromBlob
-{
-protected:
+private:
   CreateImageBitmapFromBlob(Promise* aPromise,
                             nsIGlobalObject* aGlobal,
-                            Blob& aBlob,
-                            const Maybe<IntRect>& aCropRect)
-  : mPromise(aPromise),
-    mGlobalObject(aGlobal),
-    mBlob(&aBlob),
-    mCropRect(aCropRect)
+                            already_AddRefed<nsIInputStream> aInputStream,
+                            const nsACString& aMimeType,
+                            const Maybe<IntRect>& aCropRect,
+                            nsIEventTarget* aMainThreadEventTarget)
+    : CancelableRunnable("dom::CreateImageBitmapFromBlob")
+    , mMutex("dom::CreateImageBitmapFromBlob::mMutex")
+    , mPromise(aPromise)
+    , mGlobalObject(aGlobal)
+    , mInputStream(Move(aInputStream))
+    , mMimeType(aMimeType)
+    , mCropRect(aCropRect)
+    , mOriginalCropRect(aCropRect)
+    , mMainThreadEventTarget(aMainThreadEventTarget)
+    , mThread(GetCurrentVirtualThread())
   {
   }
 
@@ -1188,204 +1137,134 @@ protected:
   {
   }
 
-  
-  bool DoCreateImageBitmapFromBlob()
+  bool IsCurrentThread() const
   {
-    RefPtr<ImageBitmap> imageBitmap = CreateImageBitmap();
+    return mThread == GetCurrentVirtualThread();
+  }
 
-    
-    
-    
-    
-    
-    
-    if (!imageBitmap) {
-      return false;
-    }
+  
+  nsresult StartDecodeAndCropBlob();
 
-    if (imageBitmap && mCropRect.isSome()) {
-      ErrorResult rv;
-      imageBitmap->SetPictureRect(mCropRect.ref(), rv);
+  
+  
+  void DecodeAndCropBlobCompletedMainThread(layers::Image* aImage,
+                                            nsresult aStatus);
 
-      if (rv.Failed()) {
-        mPromise->MaybeReject(rv);
-        return false;
-      }
-    }
+  
+  
+  void DecodeAndCropBlobCompletedOwningThread(layers::Image* aImage,
+                                              nsresult aStatus);
 
-    imageBitmap->mAllocatedImageData = true;
+  
+  nsresult DecodeAndCropBlob();
 
-    mPromise->MaybeResolve(imageBitmap);
+  Mutex mMutex;
+
+  
+  
+  UniquePtr<CreateImageBitmapFromBlobHolder> mWorkerHolder;
+
+  
+  RefPtr<Promise> mPromise;
+
+  
+  nsCOMPtr<nsIGlobalObject> mGlobalObject;
+
+  nsCOMPtr<nsIInputStream> mInputStream;
+  nsCString mMimeType;
+  Maybe<IntRect> mCropRect;
+  Maybe<IntRect> mOriginalCropRect;
+  IntSize mSourceSize;
+
+  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
+  void* mThread;
+};
+
+NS_IMPL_ISUPPORTS_INHERITED(CreateImageBitmapFromBlob, CancelableRunnable,
+                            imgIContainerCallback)
+
+class CreateImageBitmapFromBlobRunnable : public WorkerRunnable
+{
+public:
+  explicit CreateImageBitmapFromBlobRunnable(WorkerPrivate* aWorkerPrivate,
+                                             CreateImageBitmapFromBlob* aTask,
+                                             layers::Image* aImage,
+                                             nsresult aStatus)
+    : WorkerRunnable(aWorkerPrivate)
+    , mTask(aTask)
+    , mImage(aImage)
+    , mStatus(aStatus)
+  {}
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    mTask->DecodeAndCropBlobCompletedOwningThread(mImage, mStatus);
     return true;
   }
 
-  
-  
-  virtual already_AddRefed<ImageBitmap> CreateImageBitmap() = 0;
-
-  RefPtr<Promise> mPromise;
-  nsCOMPtr<nsIGlobalObject> mGlobalObject;
-  RefPtr<mozilla::dom::Blob> mBlob;
-  Maybe<IntRect> mCropRect;
+private:
+  RefPtr<CreateImageBitmapFromBlob> mTask;
+  RefPtr<layers::Image> mImage;
+  nsresult mStatus;
 };
 
-class CreateImageBitmapFromBlobTask final : public Runnable,
-                                            public CreateImageBitmapFromBlob
+
+
+class CreateImageBitmapFromBlobHolder final : public WorkerHolder
 {
 public:
-  CreateImageBitmapFromBlobTask(Promise* aPromise,
-                                nsIGlobalObject* aGlobal,
-                                Blob& aBlob,
-                                const Maybe<IntRect>& aCropRect)
-    : Runnable("dom::CreateImageBitmapFromBlobTask")
-    , CreateImageBitmapFromBlob(aPromise, aGlobal, aBlob, aCropRect)
+  CreateImageBitmapFromBlobHolder(WorkerPrivate* aWorkerPrivate,
+                                  CreateImageBitmapFromBlob* aTask)
+    : WorkerHolder("CreateImageBitmapFromBlobHolder")
+    , mWorkerPrivate(aWorkerPrivate)
+    , mTask(aTask)
+    , mNotified(false)
+  {}
+
+  bool Notify(Status aStatus) override
   {
+    if (!mNotified) {
+      mNotified = true;
+      mTask->WorkerShuttingDown();
+    }
+    return true;
   }
 
-  NS_IMETHOD Run() override
+  WorkerPrivate* GetWorkerPrivate() const
   {
-    DoCreateImageBitmapFromBlob();
-    return NS_OK;
+    return mWorkerPrivate;
   }
 
 private:
-  already_AddRefed<ImageBitmap> CreateImageBitmap() override
-  {
-    
-    
-    IntSize sourceSize;
-
-    
-    
-    Maybe<IntRect> originalCropRect = mCropRect;
-
-    RefPtr<layers::Image> data = DecodeAndCropBlob(*mBlob, mCropRect, sourceSize);
-
-    if (NS_WARN_IF(!data)) {
-      mPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return nullptr;
-    }
-
-    
-    RefPtr<ImageBitmap> imageBitmap = new ImageBitmap(mGlobalObject, data);
-
-    
-    imageBitmap->SetIsCroppingAreaOutSideOfSourceImage(sourceSize, originalCropRect);
-
-    return imageBitmap.forget();
-  }
-};
-
-class CreateImageBitmapFromBlobWorkerTask final : public WorkerSameThreadRunnable,
-                                                  public CreateImageBitmapFromBlob
-{
-  
-  class DecodeBlobInMainThreadSyncTask final : public WorkerMainThreadRunnable
-  {
-  public:
-    DecodeBlobInMainThreadSyncTask(WorkerPrivate* aWorkerPrivate,
-                                   Blob& aBlob,
-                                   Maybe<IntRect>& aCropRect,
-                                   layers::Image** aImage,
-                                   IntSize& aSourceSize)
-    : WorkerMainThreadRunnable(aWorkerPrivate,
-                               NS_LITERAL_CSTRING("ImageBitmap :: Create Image from Blob"))
-    , mBlob(aBlob)
-    , mCropRect(aCropRect)
-    , mImage(aImage)
-    , mSourceSize(aSourceSize)
-    {
-    }
-
-    bool MainThreadRun() override
-    {
-      RefPtr<layers::Image> image = DecodeAndCropBlob(mBlob, mCropRect, mSourceSize);
-
-      if (NS_WARN_IF(!image)) {
-        return true;
-      }
-
-      image.forget(mImage);
-
-      return true;
-    }
-
-  private:
-    Blob& mBlob;
-    Maybe<IntRect>& mCropRect;
-    layers::Image** mImage;
-    IntSize mSourceSize;
-  };
-
-public:
-  CreateImageBitmapFromBlobWorkerTask(Promise* aPromise,
-                                  nsIGlobalObject* aGlobal,
-                                  mozilla::dom::Blob& aBlob,
-                                  const Maybe<IntRect>& aCropRect)
-  : WorkerSameThreadRunnable(GetCurrentThreadWorkerPrivate()),
-    CreateImageBitmapFromBlob(aPromise, aGlobal, aBlob, aCropRect)
-  {
-  }
-
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-  {
-    return DoCreateImageBitmapFromBlob();
-  }
-
-private:
-  already_AddRefed<ImageBitmap> CreateImageBitmap() override
-  {
-    
-    
-    IntSize sourceSize;
-
-    
-    
-    Maybe<IntRect> originalCropRect = mCropRect;
-
-    RefPtr<layers::Image> data;
-
-    ErrorResult rv;
-    RefPtr<DecodeBlobInMainThreadSyncTask> task =
-      new DecodeBlobInMainThreadSyncTask(mWorkerPrivate, *mBlob, mCropRect,
-                                         getter_AddRefs(data), sourceSize);
-    task->Dispatch(Terminating, rv); 
-
-    
-    if (NS_WARN_IF(rv.Failed())) {
-      mPromise->MaybeReject(rv);
-      return nullptr;
-    }
-
-    if (NS_WARN_IF(!data)) {
-      mPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return nullptr;
-    }
-
-    
-    RefPtr<ImageBitmap> imageBitmap = new ImageBitmap(mGlobalObject, data);
-
-    
-    imageBitmap->SetIsCroppingAreaOutSideOfSourceImage(sourceSize, originalCropRect);
-
-    return imageBitmap.forget();
-  }
-
+  WorkerPrivate* mWorkerPrivate;
+  RefPtr<CreateImageBitmapFromBlob> mTask;
+  bool mNotified;
 };
 
 static void
 AsyncCreateImageBitmapFromBlob(Promise* aPromise, nsIGlobalObject* aGlobal,
                                Blob& aBlob, const Maybe<IntRect>& aCropRect)
 {
+  
+  nsCOMPtr<nsIEventTarget> mainThreadEventTarget;
   if (NS_IsMainThread()) {
-    nsCOMPtr<nsIRunnable> task =
-      new CreateImageBitmapFromBlobTask(aPromise, aGlobal, aBlob, aCropRect);
-    NS_DispatchToCurrentThread(task); 
+     mainThreadEventTarget = aGlobal->EventTargetFor(TaskCategory::Other);
   } else {
-    RefPtr<CreateImageBitmapFromBlobWorkerTask> task =
-      new CreateImageBitmapFromBlobWorkerTask(aPromise, aGlobal, aBlob, aCropRect);
-    task->Dispatch(); 
+    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+    mainThreadEventTarget = workerPrivate->MainThreadEventTarget();
   }
+
+  RefPtr<CreateImageBitmapFromBlob> task =
+    CreateImageBitmapFromBlob::Create(aPromise, aGlobal, aBlob, aCropRect,
+                                      mainThreadEventTarget);
+  if (NS_WARN_IF(!task)) {
+    aPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  NS_DispatchToCurrentThread(task);
 }
 
  already_AddRefed<Promise>
@@ -2141,6 +2020,246 @@ size_t
 BindingJSObjectMallocBytes(ImageBitmap* aBitmap)
 {
   return aBitmap->GetAllocatedSize();
+}
+
+ already_AddRefed<CreateImageBitmapFromBlob>
+CreateImageBitmapFromBlob::Create(Promise* aPromise,
+                                  nsIGlobalObject* aGlobal,
+                                  Blob& aBlob,
+                                  const Maybe<IntRect>& aCropRect,
+                                  nsIEventTarget* aMainThreadEventTarget)
+{
+  
+  nsCOMPtr<nsIInputStream> stream;
+  ErrorResult error;
+  aBlob.Impl()->CreateInputStream(getter_AddRefs(stream), error);
+  if (NS_WARN_IF(error.Failed())) {
+    return nullptr;
+  }
+
+  
+  
+  nsAutoString mimeTypeUTF16;
+  aBlob.Impl()->GetType(mimeTypeUTF16);
+  NS_ConvertUTF16toUTF8 mimeType(mimeTypeUTF16);
+
+  RefPtr<CreateImageBitmapFromBlob> task =
+    new CreateImageBitmapFromBlob(aPromise, aGlobal, stream.forget(), mimeType,
+                                  aCropRect, aMainThreadEventTarget);
+
+  
+  if (NS_IsMainThread()) {
+    return task.forget();
+  }
+
+  
+  
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(workerPrivate);
+
+  UniquePtr<CreateImageBitmapFromBlobHolder> holder(
+    new CreateImageBitmapFromBlobHolder(workerPrivate, task));
+
+  if (!holder->HoldWorker(workerPrivate, Terminating)) {
+    return nullptr;
+  }
+
+  task->mWorkerHolder = Move(holder);
+  return task.forget();
+}
+
+nsresult
+CreateImageBitmapFromBlob::StartDecodeAndCropBlob()
+{
+  MOZ_ASSERT(IsCurrentThread());
+
+  
+  if (!NS_IsMainThread()) {
+    RefPtr<CreateImageBitmapFromBlob> self = this;
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "CreateImageBitmapFromBlob::DecodeAndCropBlob",
+      [self]() {
+        nsresult rv = self->DecodeAndCropBlob();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          self->DecodeAndCropBlobCompletedMainThread(nullptr, rv);
+        }
+      });
+
+    return mMainThreadEventTarget->Dispatch(r.forget());
+  }
+
+  
+  return DecodeAndCropBlob();
+}
+
+nsresult
+CreateImageBitmapFromBlob::DecodeAndCropBlob()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  nsCOMPtr<imgITools> imgtool = do_GetService(NS_IMGTOOLS_CID);
+  if (NS_WARN_IF(!imgtool)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  nsCOMPtr<imgIContainer> imgContainer;
+  nsresult rv = imgtool->DecodeImageAsync(mInputStream, mMimeType, this,
+                                          mMainThreadEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CreateImageBitmapFromBlob::OnImageReady(imgIContainer* aImgContainer,
+                                        nsresult aStatus)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (NS_FAILED(aStatus)) {
+    DecodeAndCropBlobCompletedMainThread(nullptr, aStatus);
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(aImgContainer);
+
+  
+  uint32_t frameFlags = imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_WANT_DATA_SURFACE;
+  uint32_t whichFrame = imgIContainer::FRAME_FIRST;
+  RefPtr<SourceSurface> surface = aImgContainer->GetFrame(whichFrame, frameFlags);
+
+  if (NS_WARN_IF(!surface)) {
+    DecodeAndCropBlobCompletedMainThread(nullptr, NS_ERROR_FAILURE);
+    return NS_OK;
+  }
+
+  
+  mSourceSize = surface->GetSize();
+
+  
+  RefPtr<SourceSurface> croppedSurface = surface;
+
+  if (mCropRect.isSome()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
+    croppedSurface = CropAndCopyDataSourceSurface(dataSurface, mCropRect.ref());
+    mCropRect->MoveTo(0, 0);
+  }
+
+  if (NS_WARN_IF(!croppedSurface)) {
+    DecodeAndCropBlobCompletedMainThread(nullptr, NS_ERROR_FAILURE);
+    return NS_OK;
+  }
+
+  
+  RefPtr<layers::Image> image = CreateImageFromSurface(croppedSurface);
+
+  if (NS_WARN_IF(!image)) {
+    DecodeAndCropBlobCompletedMainThread(nullptr, NS_ERROR_FAILURE);
+    return NS_OK;
+  }
+
+  DecodeAndCropBlobCompletedMainThread(image, NS_OK);
+  return NS_OK;
+}
+
+void
+CreateImageBitmapFromBlob::DecodeAndCropBlobCompletedMainThread(layers::Image* aImage,
+                                                                nsresult aStatus)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!IsCurrentThread()) {
+    MutexAutoLock lock(mMutex);
+
+    if (!mWorkerHolder) {
+      
+      return;
+    }
+
+    RefPtr<CreateImageBitmapFromBlobRunnable> r =
+      new CreateImageBitmapFromBlobRunnable(mWorkerHolder->GetWorkerPrivate(),
+                                            this, aImage, aStatus);
+    r->Dispatch();
+    return;
+  }
+
+  DecodeAndCropBlobCompletedOwningThread(aImage, aStatus);
+}
+
+void
+CreateImageBitmapFromBlob::DecodeAndCropBlobCompletedOwningThread(layers::Image* aImage,
+                                                                  nsresult aStatus)
+{
+  MOZ_ASSERT(IsCurrentThread());
+
+  if (!mPromise) {
+    
+    return;
+  }
+
+  
+  auto raii = MakeScopeExit([&] {
+    
+    mWorkerHolder = nullptr;
+
+    mPromise = nullptr;
+    mGlobalObject = nullptr;
+  });
+
+  if (NS_WARN_IF(NS_FAILED(aStatus))) {
+    mPromise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  RefPtr<ImageBitmap> imageBitmap = new ImageBitmap(mGlobalObject, aImage);
+
+  
+  imageBitmap->SetIsCroppingAreaOutSideOfSourceImage(mSourceSize,
+                                                     mOriginalCropRect);
+
+  if (mCropRect.isSome()) {
+    ErrorResult rv;
+    imageBitmap->SetPictureRect(mCropRect.ref(), rv);
+
+    if (rv.Failed()) {
+      mPromise->MaybeReject(rv);
+      return;
+    }
+  }
+
+  imageBitmap->mAllocatedImageData = true;
+
+  mPromise->MaybeResolve(imageBitmap);
+}
+
+void
+CreateImageBitmapFromBlob::WorkerShuttingDown()
+{
+  MOZ_ASSERT(IsCurrentThread());
+
+  MutexAutoLock lock(mMutex);
+
+  
+  mWorkerHolder = nullptr;
+  mPromise = nullptr;
+  mGlobalObject = nullptr;
 }
 
 } 
