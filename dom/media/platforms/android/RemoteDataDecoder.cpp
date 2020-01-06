@@ -133,7 +133,7 @@ public:
 
       if (size > 0) {
         RefPtr<layers::Image> img = new SurfaceTextureImage(
-          mDecoder->mSurfaceHandle, inputInfo.mImageSize,
+          mDecoder->mSurfaceHandle, inputInfo.mImageSize, false ,
           gl::OriginPos::BottomLeft);
 
         RefPtr<VideoData> v = VideoData::CreateFromImage(
