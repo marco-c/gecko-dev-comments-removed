@@ -34,9 +34,6 @@ class Element;
 class SVGSVGElement;
 } 
 
-namespace gfx {
-class Matrix;
-} 
 } 
 
 #define SVG_ZERO_LENGTH_PATH_FIX_FACTOR 512

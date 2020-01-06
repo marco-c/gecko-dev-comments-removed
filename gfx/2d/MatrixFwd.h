@@ -13,6 +13,12 @@
 namespace mozilla {
 namespace gfx {
 
+template<class T>
+class BaseMatrix;
+
+typedef float Float;
+typedef BaseMatrix<Float> Matrix;
+
 struct UnknownUnits;
 
 template<class SourceUnits, class TargetUnits>

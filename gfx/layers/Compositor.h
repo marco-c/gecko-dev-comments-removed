@@ -114,7 +114,6 @@ class nsIWidget;
 
 namespace mozilla {
 namespace gfx {
-class Matrix;
 class DrawTarget;
 class DataSourceSurface;
 } 
