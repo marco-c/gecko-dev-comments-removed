@@ -265,7 +265,7 @@ class ElementSpecific
         }
 
         
-#ifdef __arm__
+#if defined(__arm__) && defined(__GNUC__) && !defined(__clang__)
 #  define JS_VOLATILE_ARM volatile
 #else
 #  define JS_VOLATILE_ARM
