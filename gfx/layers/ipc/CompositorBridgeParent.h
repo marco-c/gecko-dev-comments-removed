@@ -447,6 +447,11 @@ public:
     return mOptions;
   }
 
+  TimeDuration GetVsyncInterval() const {
+    
+    return mVsyncRate;
+  }
+
   PWebRenderBridgeParent* AllocPWebRenderBridgeParent(const wr::PipelineId& aPipelineId,
                                                       const LayoutDeviceIntSize& aSize,
                                                       TextureFactoryIdentifier* aTextureFactoryIdentifier,

@@ -190,6 +190,10 @@ private:
 
   CompositorBridgeParent* GetRootCompositorBridgeParent() const;
 
+  
+  
+  bool PushAPZStateToWR();
+
 private:
   struct PendingTransactionId {
     PendingTransactionId(wr::Epoch aEpoch, uint64_t aId)
