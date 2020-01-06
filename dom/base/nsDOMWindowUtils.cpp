@@ -252,19 +252,6 @@ nsDOMWindowUtils::GetLayerTransaction()
          nullptr;
 }
 
-WebRenderBridgeChild*
-nsDOMWindowUtils::GetWebRenderBridge()
-{
-  if (nsIWidget* widget = GetWidget()) {
-    if (LayerManager* lm = widget->GetLayerManager()) {
-      if (WebRenderLayerManager* wrlm = lm->AsWebRenderLayerManager()) {
-        return wrlm->WrBridge();
-      }
-    }
-  }
-  return nullptr;
-}
-
 NS_IMETHODIMP
 nsDOMWindowUtils::GetImageAnimationMode(uint16_t *aMode)
 {
@@ -2521,8 +2508,6 @@ nsDOMWindowUtils::AdvanceTimeAndRefresh(int64_t aMilliseconds)
     RefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
     if (transaction && transaction->IPCOpen()) {
       transaction->SendSetTestSampleTime(driver->MostRecentRefresh());
-    } else if (WebRenderBridgeChild* wrbc = GetWebRenderBridge()) {
-      wrbc->SendSetTestSampleTime(driver->MostRecentRefresh());
     }
   }
 
@@ -2551,8 +2536,6 @@ nsDOMWindowUtils::RestoreNormalRefresh()
   RefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
   if (transaction && transaction->IPCOpen()) {
     transaction->SendLeaveTestMode();
-  } else if (WebRenderBridgeChild* wrbc = GetWebRenderBridge()) {
-    wrbc->SendLeaveTestMode();
   }
 
   if (nsPresContext* pc = GetPresContext()) {
@@ -2733,7 +2716,8 @@ nsDOMWindowUtils::ZoomToFocusedInput()
   while (currentFrame) {
     if (currentFrame == rootFrame) {
       break;
-    } else if (currentFrame == scrolledFrame) {
+    }
+    if (currentFrame == scrolledFrame) {
       
       isFixedPos = false;
       break;
@@ -3853,24 +3837,19 @@ nsDOMWindowUtils::GetOMTAStyle(nsIDOMElement* aElement,
         FrameLayerBuilder::GetDedicatedLayer(frame,
                                              nsDisplayItem::TYPE_OPACITY);
       if (layer) {
-        float value = 0;
-        bool hadAnimatedOpacity = false;
         ShadowLayerForwarder* forwarder = layer->Manager()->AsShadowForwarder();
         if (forwarder && forwarder->HasShadowManager()) {
+          float value;
+          bool hadAnimatedOpacity;
           forwarder->GetShadowManager()->
             SendGetAnimationOpacity(layer->GetCompositorAnimationsId(),
                                     &value,
                                     &hadAnimatedOpacity);
 
-        } else if (WebRenderLayerManager* wrlm = layer->Manager()->AsWebRenderLayerManager()) {
-          wrlm->WrBridge()->SendGetAnimationOpacity(
-              layer->GetCompositorAnimationsId(),
-              &value,
-              &hadAnimatedOpacity);
-        }
-        if (hadAnimatedOpacity) {
-          cssValue = new nsROCSSPrimitiveValue;
-          cssValue->SetNumber(value);
+          if (hadAnimatedOpacity) {
+            cssValue = new nsROCSSPrimitiveValue;
+            cssValue->SetNumber(value);
+          }
         }
       }
     } else if (aProperty.EqualsLiteral("transform")) {
@@ -3878,19 +3857,15 @@ nsDOMWindowUtils::GetOMTAStyle(nsIDOMElement* aElement,
         FrameLayerBuilder::GetDedicatedLayer(frame,
                                              nsDisplayItem::TYPE_TRANSFORM);
       if (layer) {
-        MaybeTransform transform;
         ShadowLayerForwarder* forwarder = layer->Manager()->AsShadowForwarder();
         if (forwarder && forwarder->HasShadowManager()) {
+          MaybeTransform transform;
           forwarder->GetShadowManager()->
             SendGetAnimationTransform(layer->GetCompositorAnimationsId(), &transform);
-        } else if (WebRenderLayerManager* wrlm = layer->Manager()->AsWebRenderLayerManager()) {
-          wrlm->WrBridge()->SendGetAnimationTransform(
-              layer->GetCompositorAnimationsId(),
-              &transform);
-        }
-        if (transform.type() == MaybeTransform::TMatrix4x4) {
-          Matrix4x4 matrix = transform.get_Matrix4x4();
-          cssValue = nsComputedDOMStyle::MatrixToCSSValue(matrix);
+          if (transform.type() == MaybeTransform::TMatrix4x4) {
+            Matrix4x4 matrix = transform.get_Matrix4x4();
+            cssValue = nsComputedDOMStyle::MatrixToCSSValue(matrix);
+          }
         }
       }
     }
