@@ -534,7 +534,15 @@ protected:
   
 
 
+
+
   void ScrollBy(const CSSPoint& aOffset);
+
+  
+
+
+
+  void ScrollByAndClamp(const CSSPoint& aOffset);
 
   
 
