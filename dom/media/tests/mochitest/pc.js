@@ -850,28 +850,8 @@ PeerConnectionWrapper.prototype = {
 
 
 
-
-  set localDescription(desc) {
-    this._pc.localDescription = desc;
-  },
-
-  
-
-
-
-
   get remoteDescription() {
     return this._pc.remoteDescription;
-  },
-
-  
-
-
-
-
-
-  set remoteDescription(desc) {
-    this._pc.remoteDescription = desc;
   },
 
   
