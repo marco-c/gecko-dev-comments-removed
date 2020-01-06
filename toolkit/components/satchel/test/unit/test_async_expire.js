@@ -51,8 +51,8 @@ function* tests() {
   Services.obs.addObserver(TestObserver, "satchel-storage-changed", true);
 
   
-  var testfile = do_get_file("asyncformhistory_expire.sqlite");
-  var profileDir = do_get_profile();
+  let testfile = do_get_file("asyncformhistory_expire.sqlite");
+  let profileDir = do_get_profile();
 
   
   dbFile = profileDir.clone();
@@ -80,7 +80,7 @@ function* tests() {
   yield countEntries("name-C", "value-C", checkExists);
 
   
-  var now = 1000 * Date.now();
+  let now = 1000 * Date.now();
   let updateLastUsed = function updateLastUsedFn(results, age) {
     let lastUsed = now - age * 24 * PR_HOURS;
 

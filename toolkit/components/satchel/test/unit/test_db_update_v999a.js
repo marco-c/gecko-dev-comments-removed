@@ -23,15 +23,15 @@ function next_test() {
 }
 
 function* tests() {
-  var testnum = 0;
+  let testnum = 0;
 
   try {
     
-    var testfile = do_get_file("formhistory_v999a.sqlite");
-    var profileDir = dirSvc.get("ProfD", Ci.nsIFile);
+    let testfile = do_get_file("formhistory_v999a.sqlite");
+    let profileDir = dirSvc.get("ProfD", Ci.nsIFile);
 
     
-    var destFile = profileDir.clone();
+    let destFile = profileDir.clone();
     destFile.append("formhistory.sqlite");
     if (destFile.exists()) {
       destFile.remove(false);

@@ -15,11 +15,11 @@ function run_test() {
 function* next_test() {
   try {
   
-    var testfile = do_get_file("formhistory_v3v4.sqlite");
-    var profileDir = dirSvc.get("ProfD", Ci.nsIFile);
+    let testfile = do_get_file("formhistory_v3v4.sqlite");
+    let profileDir = dirSvc.get("ProfD", Ci.nsIFile);
 
     
-    var destFile = profileDir.clone();
+    let destFile = profileDir.clone();
     destFile.append("formhistory.sqlite");
     if (destFile.exists()) {
       destFile.remove(false);

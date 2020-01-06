@@ -13,13 +13,13 @@ var gChromeScript;
 
 
 function $_(formNum, name) {
-  var form = document.getElementById("form" + formNum);
+  let form = document.getElementById("form" + formNum);
   if (!form) {
     ok(false, "$_ couldn't find requested form " + formNum);
     return null;
   }
 
-  var element = form.elements.namedItem(name);
+  let element = form.elements.namedItem(name);
   if (!element) {
     ok(false, "$_ couldn't find requested element " + name);
     return null;
@@ -40,8 +40,8 @@ function $_(formNum, name) {
 
 
 function doKey(aKey, modifier) {
-  var keyName = "DOM_VK_" + aKey.toUpperCase();
-  var key = SpecialPowers.Ci.nsIDOMKeyEvent[keyName];
+  let keyName = "DOM_VK_" + aKey.toUpperCase();
+  let key = SpecialPowers.Ci.nsIDOMKeyEvent[keyName];
 
   
   if (!modifier) {
@@ -49,7 +49,7 @@ function doKey(aKey, modifier) {
   }
 
   
-  var wutils = SpecialPowers.getDOMWindowUtils(window);
+  let wutils = SpecialPowers.getDOMWindowUtils(window);
 
   if (wutils.sendKeyEvent("keydown", key, 0, modifier)) {
     wutils.sendKeyEvent("keypress", key, 0, modifier);
@@ -70,14 +70,14 @@ function getMenuEntries() {
     throw new Error("no autocomplete results");
   }
 
-  var results = gLastAutoCompleteResults;
+  let results = gLastAutoCompleteResults;
   gLastAutoCompleteResults = null;
   return results;
 }
 
 function checkArrayValues(actualValues, expectedValues, msg) {
   is(actualValues.length, expectedValues.length, "Checking array values: " + msg);
-  for (var i = 0; i < expectedValues.length; i++) {
+  for (let i = 0; i < expectedValues.length; i++) {
     is(actualValues[i], expectedValues[i], msg + " Checking array entry #" + i);
   }
 }
@@ -118,13 +118,13 @@ var checkObserver = {
     
     
     
-    var expected = this.verifyStack.shift();
+    let expected = this.verifyStack.shift();
 
     countEntries(expected.name, expected.value,
                  function(num) {
                    ok(num > 0, expected.message);
                    if (checkObserver.verifyStack.length == 0) {
-                     var callback = checkObserver.callback;
+                     let callback = checkObserver.callback;
                      checkObserver.callback = null;
                      callback();
                    }
@@ -137,12 +137,12 @@ function checkForSave(name, value, message) {
 }
 
 function getFormSubmitButton(formNum) {
-  var form = $("form" + formNum); 
+  let form = $("form" + formNum); 
   ok(form != null, "getting form " + formNum);
 
   
   
-  var button = form.firstChild;
+  let button = form.firstChild;
   while (button && button.type != "submit") { button = button.nextSibling; }
   ok(button != null, "getting form submit button");
 
@@ -262,7 +262,7 @@ function promiseACShown() {
 }
 
 function satchelCommonSetup() {
-  var chromeURL = SimpleTest.getTestFileURL("parent_utils.js");
+  let chromeURL = SimpleTest.getTestFileURL("parent_utils.js");
   gChromeScript = SpecialPowers.loadChromeScript(chromeURL);
   gChromeScript.addMessageListener("onpopupshown", ({ results }) => {
     gLastAutoCompleteResults = results;

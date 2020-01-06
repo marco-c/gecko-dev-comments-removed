@@ -22,10 +22,10 @@ var formHistoryStartup = Cc["@mozilla.org/satchel/form-history-startup;1"]
 formHistoryStartup.observe(null, "profile-after-change", null);
 
 function getDBVersion(dbfile) {
-  var ss = Cc["@mozilla.org/storage/service;1"]
+  let ss = Cc["@mozilla.org/storage/service;1"]
              .getService(Ci.mozIStorageService);
-  var dbConnection = ss.openDatabase(dbfile);
-  var version = dbConnection.schemaVersion;
+  let dbConnection = ss.openDatabase(dbfile);
+  let version = dbConnection.schemaVersion;
   dbConnection.close();
 
   return version;
@@ -52,7 +52,7 @@ function searchEntries(terms, params, iter) {
 
 
 function countEntries(name, value, then) {
-  var obj = {};
+  let obj = {};
   if (name !== null) {
     obj.fieldname = name;
   }
@@ -76,7 +76,7 @@ function countEntries(name, value, then) {
 
 
 function updateEntry(op, name, value, then) {
-  var obj = { op };
+  let obj = { op };
   if (name !== null) {
     obj.fieldname = name;
   }
