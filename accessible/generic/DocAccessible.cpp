@@ -2103,12 +2103,12 @@ DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner)
     
     if (child->Parent() == aOwner &&
         child->IndexInParent() == static_cast<int32_t>(insertIdx)) {
-      NS_ASSERTION(child == children->ElementAt(arrayIdx), "Not in sync!");
+      MOZ_ASSERT(child == children->ElementAt(arrayIdx), "Not in sync!");
       insertIdx++; arrayIdx++;
       continue;
     }
 
-    NS_ASSERTION(children->SafeElementAt(arrayIdx) != child, "Already in place!");
+    MOZ_ASSERT(children->SafeElementAt(arrayIdx) != child, "Already in place!");
 
     nsTArray<RefPtr<Accessible> >::index_type idx = children->IndexOf(child);
     if (idx < arrayIdx) {
@@ -2206,7 +2206,9 @@ DocAccessible::MoveChild(Accessible* aChild, Accessible* aNewParent,
 #endif
 
   
+  
   if (aChild->IsRelocated()) {
+    aChild->SetRelocated(false);
     nsTArray<RefPtr<Accessible> >* owned = mARIAOwnsHash.Get(curParent);
     MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
     owned->RemoveElement(aChild);
@@ -2323,6 +2325,7 @@ DocAccessible::UncacheChildrenInSubtree(Accessible* aRoot)
       owned->RemoveElement(child);
       if (owned->Length() == 0) {
         mARIAOwnsHash.Remove(aRoot);
+        owned = nullptr;
       }
     }
 
