@@ -395,7 +395,7 @@ user_pref("extensions.formautofill.available", "on");
 user_pref("marionette.prefs.recommended", false);
 
 
-user_pref("extensions.screenshots.system-disabled", true);
+user_pref("extensions.screenshots.disabled", true);
 
 
 
