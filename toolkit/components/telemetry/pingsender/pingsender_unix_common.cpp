@@ -88,10 +88,19 @@ CurlWrapper::Init()
     "/usr/lib/i386-linux-gnu", 
     "/usr/lib/x86_64-linux-gnu", 
 #endif 
+#if !defined(XP_MACOSX) && !defined(XP_LINUX) 
+    "/usr/local/lib", 
+    "/usr/pkg/lib", 
+#endif 
   };
 
   const char* libcurlNames[] = {
-#ifdef XP_LINUX
+#if defined(XP_MACOSX)
+    
+    "libcurl.dylib",
+    "libcurl.4.dylib",
+    "libcurl.3.dylib",
+#else 
     "libcurl.so",
     "libcurl.so.4",
     
@@ -100,11 +109,6 @@ CurlWrapper::Init()
     
     "libcurl.so.3",
     "libcurl-gnutls.so.3", 
-#elif defined(XP_MACOSX)
-    
-    "libcurl.dylib",
-    "libcurl.4.dylib",
-    "libcurl.3.dylib",
 #endif
   };
 
