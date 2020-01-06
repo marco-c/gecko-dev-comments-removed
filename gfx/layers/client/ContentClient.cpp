@@ -172,44 +172,17 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
                          !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
                          !(aLayer->Manager()->AsWebRenderLayerManager());
   bool canDrawRotated = aFlags & PAINT_CAN_DRAW_ROTATED;
-
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
-  RefPtr<RotatedBuffer> newBuffer;
-  uint32_t bufferFlags = 0;
-  if (dest.mBufferMode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
-    bufferFlags |= BUFFER_COMPONENT_ALPHA;
-  }
-  if (dest.mCanReuseBuffer && mBuffer) {
+
+  if (dest.mCanReuseBuffer) {
+    MOZ_ASSERT(mBuffer);
+
     if (!mBuffer->AdjustTo(dest.mBufferRect,
                            drawBounds,
                            canHaveRotation,
                            canDrawRotated)) {
       dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
-      newBuffer = CreateBuffer(result.mContentType, dest.mBufferRect, bufferFlags);
-
-      if (!newBuffer) {
-        if (Factory::ReasonableSurfaceSize(IntSize(dest.mBufferRect.Width(), dest.mBufferRect.Height()))) {
-          gfxCriticalNote << "Failed 1 buffer for "
-                          << dest.mBufferRect.x << ", "
-                          << dest.mBufferRect.y << ", "
-                          << dest.mBufferRect.Width() << ", "
-                          << dest.mBufferRect.Height();
-        }
-        return result;
-      }
-    }
-  } else {
-    
-    newBuffer = CreateBuffer(result.mContentType, dest.mBufferRect, bufferFlags);
-    if (!newBuffer) {
-      if (Factory::ReasonableSurfaceSize(IntSize(dest.mBufferRect.Width(), dest.mBufferRect.Height()))) {
-        gfxCriticalNote << "Failed 2 buffer for "
-                        << dest.mBufferRect.x << ", "
-                        << dest.mBufferRect.y << ", "
-                        << dest.mBufferRect.Width() << ", "
-                        << dest.mBufferRect.Height();
-      }
-      return result;
+      dest.mCanReuseBuffer = false;
     }
   }
 
@@ -217,13 +190,36 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
                "If we're resampling, we need to validate the entire buffer");
 
   
-  if (newBuffer) {
+  
+  if (!dest.mCanReuseBuffer) {
+    uint32_t bufferFlags = 0;
+    if (dest.mBufferMode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
+      bufferFlags |= BUFFER_COMPONENT_ALPHA;
+    }
+
+    RefPtr<RotatedBuffer> newBuffer = CreateBuffer(result.mContentType,
+                                                   dest.mBufferRect,
+                                                   bufferFlags);
+
+    if (!newBuffer) {
+      if (Factory::ReasonableSurfaceSize(IntSize(dest.mBufferRect.Width(), dest.mBufferRect.Height()))) {
+        gfxCriticalNote << "Failed buffer for "
+                        << dest.mBufferRect.x << ", "
+                        << dest.mBufferRect.y << ", "
+                        << dest.mBufferRect.Width() << ", "
+                        << dest.mBufferRect.Height();
+      }
+      Clear();
+      return result;
+    }
+
     if (!newBuffer->Lock(lockMode)) {
       gfxCriticalNote << "Failed to lock new back buffer.";
       Clear();
       return result;
     }
 
+    
     if (mBuffer) {
       newBuffer->UpdateDestinationFrom(*mBuffer, newBuffer->BufferRect());
 
