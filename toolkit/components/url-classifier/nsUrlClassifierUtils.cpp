@@ -144,6 +144,21 @@ CreateClientInfo()
   return c;
 }
 
+static bool
+IsAllowedOnCurrentPlatform(uint32_t aThreatType)
+{
+  PlatformType platform = GetPlatformType();
+
+  switch (aThreatType) {
+  case POTENTIALLY_HARMFUL_APPLICATION:
+    
+    
+    return ANDROID_PLATFORM == platform;
+  default:
+    return true;
+  }
+}
+
 } 
 } 
 
@@ -345,6 +360,13 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(const char** aListNames,
     if (NS_FAILED(rv)) {
       continue; 
     }
+    if (!IsAllowedOnCurrentPlatform(threatType)) {
+      NS_WARNING(nsPrintfCString("Threat type %d (%s) is unsupported on current platform: %d",
+                                 threatType,
+                                 aListNames[i],
+                                 GetPlatformType()).get());
+      continue; 
+    }
     auto lur = r.mutable_list_update_requests()->Add();
     InitListUpdateRequest(static_cast<ThreatType>(threatType), aStatesBase64[i], lur);
   }
@@ -379,23 +401,30 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
   nsresult rv;
 
   
-  for (uint32_t i = 0; i < aListCount; i++) {
-    nsCString stateBinary;
-    rv = Base64Decode(nsDependentCString(aListStatesBase64[i]), stateBinary);
-    NS_ENSURE_SUCCESS(rv, rv);
-    r.add_client_states(stateBinary.get(), stateBinary.Length());
-  }
-
-  
   
   auto threatInfo = r.mutable_threat_info();
 
   
   for (uint32_t i = 0; i < aListCount; i++) {
+    
     uint32_t threatType;
     rv = ConvertListNameToThreatType(nsDependentCString(aListNames[i]), &threatType);
     NS_ENSURE_SUCCESS(rv, rv);
+    if (!IsAllowedOnCurrentPlatform(threatType)) {
+      NS_WARNING(nsPrintfCString("Threat type %d (%s) is unsupported on current platform: %d",
+                                 threatType,
+                                 aListNames[i],
+                                 GetPlatformType()).get());
+      continue;
+    }
     threatInfo->add_threat_types((ThreatType)threatType);
+
+    
+    
+    nsCString stateBinary;
+    rv = Base64Decode(nsDependentCString(aListStatesBase64[i]), stateBinary);
+    NS_ENSURE_SUCCESS(rv, rv);
+    r.add_client_states(stateBinary.get(), stateBinary.Length());
   }
 
   
