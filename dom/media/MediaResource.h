@@ -436,7 +436,7 @@ public:
   
   void CacheClientNotifyDataEnded(nsresult aStatus);
   
-  void CacheClientUpdatePrincipal();
+  void CacheClientNotifyPrincipalChanged();
   
   void CacheClientNotifySuspendedStatusChanged();
 
@@ -547,8 +547,6 @@ protected:
   nsresult SetupChannelHeaders();
   
   void CloseChannel();
-  
-  void UpdatePrincipal();
 
   
   
@@ -559,13 +557,14 @@ protected:
                                    int64_t& aRangeTotal);
 
   static nsresult CopySegmentToCache(nsIInputStream* aInStream,
-                                     void* aResource,
+                                     void* aClosure,
                                      const char* aFromSegment,
                                      uint32_t aToOffset,
                                      uint32_t aCount,
                                      uint32_t* aWriteCount);
 
-  nsresult CopySegmentToCache(const char* aFromSegment,
+  nsresult CopySegmentToCache(nsIPrincipal* aPrincipal,
+                              const char* aFromSegment,
                               uint32_t aCount,
                               uint32_t* aWriteCount);
 

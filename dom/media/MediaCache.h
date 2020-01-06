@@ -261,7 +261,8 @@ public:
   
   
   
-  void NotifyDataReceived(int64_t aSize, const char* aData);
+  void NotifyDataReceived(int64_t aSize, const char* aData,
+                          nsIPrincipal* aPrincipal);
   
   
   void FlushPartialBlock();
@@ -347,9 +348,6 @@ public:
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  
-  bool UpdatePrincipal(nsIPrincipal* aPrincipal);
-
 private:
   friend class MediaCache;
 
@@ -427,6 +425,8 @@ private:
   
   
   void FlushPartialBlockInternal(bool aNotify, ReentrantMonitorAutoEnter& aReentrantMonitor);
+  
+  bool UpdatePrincipal(nsIPrincipal* aPrincipal);
 
   
   RefPtr<MediaCache> mMediaCache;
