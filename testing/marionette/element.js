@@ -27,6 +27,11 @@ this.EXPORTED_SYMBOLS = [
   "WebElement",
 ];
 
+const {
+  FIRST_ORDERED_NODE_TYPE,
+  ORDERED_NODE_ITERATOR_TYPE,
+} = Ci.nsIDOMXPathResult;
+
 const SVGNS = "http://www.w3.org/2000/svg";
 const XBLNS = "http://www.mozilla.org/xbl";
 const XHTMLNS = "http://www.w3.org/1999/xhtml";
@@ -398,9 +403,9 @@ function find_(container, strategy, selector, searchFn,
 
 
 
-element.findByXPath = function(root, startNode, expr) {
-  let iter = root.evaluate(expr, startNode, null,
-      Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null);
+element.findByXPath = function(document, startNode, expression) {
+  let iter = document.evaluate(
+      expression, startNode, null, FIRST_ORDERED_NODE_TYPE, null);
   return iter.singleNodeValue;
 };
 
@@ -417,16 +422,14 @@ element.findByXPath = function(root, startNode, expr) {
 
 
 
-element.findByXPathAll = function(root, startNode, expr) {
-  let rv = [];
-  let iter = root.evaluate(expr, startNode, null,
-      Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+element.findByXPathAll = function* (document, startNode, expression) {
+  let iter = document.evaluate(
+      expression, startNode, null, ORDERED_NODE_ITERATOR_TYPE, null);
   let el = iter.iterateNext();
   while (el) {
-    rv.push(el);
+    yield el;
     el = iter.iterateNext();
   }
-  return rv;
 };
 
 
@@ -441,8 +444,8 @@ element.findByXPathAll = function(root, startNode, expr) {
 
 
 
-element.findByLinkText = function(node, s) {
-  return filterLinks(node, link => link.text.trim() === s);
+element.findByLinkText = function(startNode, linkText) {
+  return filterLinks(startNode, link => link.text.trim() === linkText);
 };
 
 
@@ -456,8 +459,25 @@ element.findByLinkText = function(node, s) {
 
 
 
-element.findAnonymousNodes = function* (rootNode, node) {
-  let anons = rootNode.getAnonymousNodes(node) || [];
+
+
+element.findByPartialLinkText = function(startNode, linkText) {
+  return filterLinks(startNode, link => link.text.includes(linkText));
+};
+
+
+
+
+
+
+
+
+
+
+
+
+element.findAnonymousNodes = function* (document, node) {
+  let anons = document.getAnonymousNodes(node) || [];
   for (let node of anons) {
     yield node;
   }
@@ -474,30 +494,14 @@ element.findAnonymousNodes = function* (rootNode, node) {
 
 
 
-element.findByPartialLinkText = function(node, s) {
-  return filterLinks(node, link => link.text.indexOf(s) != -1);
-};
 
 
-
-
-
-
-
-
-
-
-
-
-
-function filterLinks(node, predicate) {
-  let rv = [];
-  for (let link of node.getElementsByTagName("a")) {
+function* filterLinks(startNode, predicate) {
+  for (let link of startNode.getElementsByTagName("a")) {
     if (predicate(link)) {
-      rv.push(link);
+      yield link;
     }
   }
-  return rv;
 }
 
 
@@ -520,40 +524,38 @@ function filterLinks(node, predicate) {
 
 
 
-function findElement(using, value, rootNode, startNode) {
-  switch (using) {
+function findElement(strategy, selector, document, startNode = undefined) {
+  switch (strategy) {
     case element.Strategy.ID:
       {
         if (startNode.getElementById) {
-          return startNode.getElementById(value);
+          return startNode.getElementById(selector);
         }
-        let expr = `.//*[@id="${value}"]`;
-        return element.findByXPath( rootNode, startNode, expr);
+        let expr = `.//*[@id="${selector}"]`;
+        return element.findByXPath(document, startNode, expr);
       }
 
     case element.Strategy.Name:
       {
         if (startNode.getElementsByName) {
-          return startNode.getElementsByName(value)[0];
+          return startNode.getElementsByName(selector)[0];
         }
-        let expr = `.//*[@name="${value}"]`;
-        return element.findByXPath(rootNode, startNode, expr);
+        let expr = `.//*[@name="${selector}"]`;
+        return element.findByXPath(document, startNode, expr);
       }
 
     case element.Strategy.ClassName:
-      
-      return startNode.getElementsByClassName(value)[0];
+      return startNode.getElementsByClassName(selector)[0];
 
     case element.Strategy.TagName:
-      
-      return startNode.getElementsByTagName(value)[0];
+      return startNode.getElementsByTagName(selector)[0];
 
     case element.Strategy.XPath:
-      return element.findByXPath(rootNode, startNode, value);
+      return element.findByXPath(document, startNode, selector);
 
     case element.Strategy.LinkText:
       for (let link of startNode.getElementsByTagName("a")) {
-        if (link.text.trim() === value) {
+        if (link.text.trim() === selector) {
           return link;
         }
       }
@@ -561,7 +563,7 @@ function findElement(using, value, rootNode, startNode) {
 
     case element.Strategy.PartialLinkText:
       for (let link of startNode.getElementsByTagName("a")) {
-        if (link.text.indexOf(value) != -1) {
+        if (link.text.includes(selector)) {
           return link;
         }
       }
@@ -569,21 +571,21 @@ function findElement(using, value, rootNode, startNode) {
 
     case element.Strategy.Selector:
       try {
-        return startNode.querySelector(value);
+        return startNode.querySelector(selector);
       } catch (e) {
-        throw new InvalidSelectorError(`${e.message}: "${value}"`);
+        throw new InvalidSelectorError(`${e.message}: "${selector}"`);
       }
 
     case element.Strategy.Anon:
-      return element.findAnonymousNodes(rootNode, startNode).next().value;
+      return element.findAnonymousNodes(document, startNode).next().value;
 
     case element.Strategy.AnonAttribute:
-      let attr = Object.keys(value)[0];
-      return rootNode.getAnonymousElementByAttribute(
-          startNode, attr, value[attr]);
+      let attr = Object.keys(selector)[0];
+      return document.getAnonymousElementByAttribute(
+          startNode, attr, selector[attr]);
   }
 
-  throw new InvalidSelectorError(`No such strategy: ${using}`);
+  throw new InvalidSelectorError(`No such strategy: ${strategy}`);
 }
 
 
@@ -606,51 +608,51 @@ function findElement(using, value, rootNode, startNode) {
 
 
 
-function findElements(using, value, rootNode, startNode) {
-  switch (using) {
+function findElements(strategy, selector, document, startNode = undefined) {
+  switch (strategy) {
     case element.Strategy.ID:
-      value = `.//*[@id="${value}"]`;
+      selector = `.//*[@id="${selector}"]`;
 
     
     case element.Strategy.XPath:
-      return element.findByXPathAll(rootNode, startNode, value);
+      return [...element.findByXPathAll(document, startNode, selector)];
 
     case element.Strategy.Name:
       if (startNode.getElementsByName) {
-        return startNode.getElementsByName(value);
+        return startNode.getElementsByName(selector);
       }
-      return element.findByXPathAll(
-          rootNode, startNode, `.//*[@name="${value}"]`);
+      return [...element.findByXPathAll(
+          document, startNode, `.//*[@name="${selector}"]`)];
 
     case element.Strategy.ClassName:
-      return startNode.getElementsByClassName(value);
+      return startNode.getElementsByClassName(selector);
 
     case element.Strategy.TagName:
-      return startNode.getElementsByTagName(value);
+      return startNode.getElementsByTagName(selector);
 
     case element.Strategy.LinkText:
-      return element.findByLinkText(startNode, value);
+      return [...element.findByLinkText(startNode, selector)];
 
     case element.Strategy.PartialLinkText:
-      return element.findByPartialLinkText(startNode, value);
+      return [...element.findByPartialLinkText(startNode, selector)];
 
     case element.Strategy.Selector:
-      return startNode.querySelectorAll(value);
+      return startNode.querySelectorAll(selector);
 
     case element.Strategy.Anon:
-      return [...element.findAnonymousNodes(rootNode, startNode)];
+      return [...element.findAnonymousNodes(document, startNode)];
 
     case element.Strategy.AnonAttribute:
-      let attr = Object.keys(value)[0];
-      let el = rootNode.getAnonymousElementByAttribute(
-          startNode, attr, value[attr]);
+      let attr = Object.keys(selector)[0];
+      let el = document.getAnonymousElementByAttribute(
+          startNode, attr, selector[attr]);
       if (el) {
         return [el];
       }
       return [];
 
     default:
-      throw new InvalidSelectorError(`No such strategy: ${using}`);
+      throw new InvalidSelectorError(`No such strategy: ${strategy}`);
   }
 }
 
