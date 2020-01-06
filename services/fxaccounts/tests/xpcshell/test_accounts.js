@@ -1197,7 +1197,7 @@ add_test(function test_getOAuthToken() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
@@ -1229,7 +1229,7 @@ add_test(function test_getOAuthTokenScoped() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function(assertion, scopeString) {
@@ -1262,7 +1262,7 @@ add_task(async function test_getOAuthTokenCached() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
@@ -1295,7 +1295,7 @@ add_task(async function test_getOAuthTokenCachedScopeNormalization() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
@@ -1393,7 +1393,7 @@ add_test(function test_getOAuthToken_network_error() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
@@ -1422,7 +1422,7 @@ add_test(function test_getOAuthToken_auth_error() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
@@ -1451,7 +1451,7 @@ add_test(function test_getOAuthToken_unknown_error() {
 
   
   let client = new FxAccountsOAuthGrantClient({
-    serverURL: "http://example.com/v1",
+    serverURL: "https://example.com/v1",
     client_id: "abc123"
   });
   client.getTokenFromAssertion = function() {
