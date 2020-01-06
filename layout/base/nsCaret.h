@@ -77,7 +77,7 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    bool IsVisible();
+    bool IsVisible(nsISelection* aSelection = nullptr);
     
 
 
