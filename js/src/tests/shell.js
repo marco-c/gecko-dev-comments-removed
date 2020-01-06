@@ -452,6 +452,33 @@
   TestCase.prototype.testFailed = (function TestCase_testFailed() { return !this.passed; });
   TestCase.prototype.testDescription = (function TestCase_testDescription() { return this.description + ' ' + this.reason; });
 
+  function getTestCaseResult(expected, actual) {
+    if (typeof expected !== typeof actual)
+      return false;
+    if (typeof expected !== 'number')
+      
+      return actual == expected;
+
+    
+    
+    if (actual !== actual)
+      return expected !== expected;
+    if (expected !== expected)
+      return false;
+
+    
+    if (actual !== expected)
+      return MathAbs(actual - expected) <= 1E-10;
+
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+
   function getTestCases() {
     return testCasesArray;
   }
@@ -616,38 +643,10 @@
   }
   global.compareSource = compareSource;
 
-  function getTestCaseResult(expected, actual) {
-    if (typeof expected !== typeof actual)
-      return false;
-    if (typeof expected !== 'number')
-      
-      return actual == expected;
-
-    
-    
-    if (actual !== actual)
-      return expected !== expected;
-    if (expected !== expected)
-      return false;
-
-    
-    if (actual !== expected)
-      return MathAbs(actual - expected) <= 1E-10;
-
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
   function test() {
     var testCases = getTestCases();
     for (var i = 0; i < testCases.length; i++) {
       var testCase = testCases[i];
-      testCase.passed = getTestCaseResult(testCase.expect, testCase.actual);
       testCase.reason += testCase.passed ? "" : "wrong value ";
 
       
