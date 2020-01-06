@@ -106,6 +106,7 @@
 }
 
 .devtools-tab-label {
+  font-size: 12px;
   mask-image: linear-gradient(to left, transparent 0, black 6px);
   
   padding-inline-end: 10px;
