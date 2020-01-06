@@ -7360,21 +7360,38 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         
         
         RefPtr<nsAHttpConnection> conn;
-        LOG(("  authRetry=%d, sticky conn cap=%d", authRetry, mCaps & NS_HTTP_STICKY_CONNECTION));
+        LOG(("  mAuthRetryPending=%d, status=%" PRIx32 ", sticky conn cap=%d",
+             mAuthRetryPending, static_cast<uint32_t>(status),
+             mCaps & NS_HTTP_STICKY_CONNECTION));
         
         
         
         
-        if (authRetry && (mCaps & NS_HTTP_STICKY_CONNECTION ||
-                          mTransaction->Caps() & NS_HTTP_STICKY_CONNECTION)) {
+        if ((mAuthRetryPending || NS_FAILED(status)) &&
+            (mCaps & NS_HTTP_STICKY_CONNECTION ||
+             mTransaction->Caps() & NS_HTTP_STICKY_CONNECTION)) {
+
             conn = mTransaction->GetConnectionReference();
             LOG(("  transaction %p provides connection %p", mTransaction.get(), conn.get()));
-            
-            
-            
-            if (conn && !conn->IsPersistent()) {
-                LOG(("  connection is not persistent, not reusing it"));
-                conn = nullptr;
+
+            if (conn) {
+                if (NS_FAILED(status)) {
+                    
+                    
+                    
+                    
+                    if (!mAuthConnectionRestartable) {
+                        LOG(("  not reusing a half-authenticated sticky connection"));
+                        conn->DontReuse();
+                    }
+                    conn = nullptr;
+                } else if (!conn->IsPersistent()) {
+                    
+                    
+                    
+                    LOG(("  connection is not persistent, not reusing it"));
+                    conn = nullptr;
+                }
             }
         }
 
