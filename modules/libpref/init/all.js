@@ -5714,9 +5714,6 @@ pref("dom.moduleScripts.enabled", false);
 
 pref("dom.timeout.max_consecutive_callbacks_ms", 4);
 
-
-pref("dom.payments.request.enabled", false);
-
 #ifdef FUZZING
 pref("fuzzing.enabled", false);
 #endif
