@@ -89,9 +89,22 @@ async function withMerchantTab({browser = gBrowser, url = BLANK_PAGE_URL} = {
   });
 }
 
+
+
+
+
+
+
+
+
 function withNewDialogFrame(requestId, taskFn) {
   async function dialogTabTask(dialogBrowser) {
     let paymentRequestFrame = dialogBrowser.contentDocument.getElementById("paymentRequestFrame");
+    
+    await spawnPaymentDialogTask(paymentRequestFrame, async function ensureLoaded() {
+      await ContentTaskUtils.waitForCondition(() => content.document.readyState == "complete",
+                                              "Waiting for the unprivileged frame to load");
+    });
     await taskFn(paymentRequestFrame);
   }
 
@@ -102,11 +115,30 @@ function withNewDialogFrame(requestId, taskFn) {
   return BrowserTestUtils.withNewTab(args, dialogTabTask);
 }
 
+
+
+
+
+
+
+
+
 function spawnTaskInNewDialog(requestId, contentTaskFn, args = null) {
   return withNewDialogFrame(requestId, async function spawnTaskInNewDialog_tabTask(reqFrame) {
     await spawnPaymentDialogTask(reqFrame, contentTaskFn, args);
   });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 async function spawnInDialogForMerchantTask(merchantTaskFn, dialogTaskFn, taskArgs, {
   origin = "https://example.com",
@@ -116,7 +148,7 @@ async function spawnInDialogForMerchantTask(merchantTaskFn, dialogTaskFn, taskAr
   await withMerchantTab({
     url: origin + BLANK_PAGE_PATH,
   }, async merchBrowser => {
-    await ContentTask.spawn(merchBrowser, taskArgs, PTU.ContentTasks.createRequest);
+    await ContentTask.spawn(merchBrowser, taskArgs, merchantTaskFn);
 
     const requests = getPaymentRequests();
     is(requests.length, 1, "Should have one payment request");
