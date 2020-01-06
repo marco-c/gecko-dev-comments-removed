@@ -27,6 +27,7 @@
 #include "nsIURI.h"
 #include "nsTextFormatter.h"
 #include "OuterDocAccessible.h"
+#include "Platform.h"
 #include "Role.h"
 #ifdef MOZ_ACCESSIBILITY_ATK
 #include "RootAccessibleWrap.h"
@@ -94,15 +95,6 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 using namespace mozilla::dom;
-
-
-
-
-
-
-
-
-#define PREF_ACCESSIBILITY_FORCE_DISABLED "accessibility.force_disabled"
 
 
 
@@ -276,11 +268,6 @@ New_MaybeImageOrToolbarButtonAccessible(nsIContent* aContent,
   return new ImageAccessibleWrap(aContent, aContext->Document());
 }
 #endif
-
-
-
-
-static int32_t sPlatformDisabledState = 0;
 
 
 
@@ -1983,39 +1970,17 @@ XPCApplicationAcc()
 EPlatformDisabledState
 PlatformDisabledState()
 {
-  static bool platformDisabledStateCached = false;
-  if (platformDisabledStateCached) {
-    return static_cast<EPlatformDisabledState>(sPlatformDisabledState);
+  static int disabledState = 0xff;
+
+  if (disabledState == 0xff) {
+    disabledState = Preferences::GetInt("accessibility.force_disabled", 0);
+    if (disabledState < ePlatformIsForceEnabled)
+      disabledState = ePlatformIsForceEnabled;
+    else if (disabledState > ePlatformIsDisabled)
+      disabledState = ePlatformIsDisabled;
   }
 
-  platformDisabledStateCached = true;
-  Preferences::RegisterCallback(PrefChanged, PREF_ACCESSIBILITY_FORCE_DISABLED);
-  return ReadPlatformDisabledState();
-}
-
-EPlatformDisabledState
-ReadPlatformDisabledState()
-{
-  sPlatformDisabledState = Preferences::GetInt(PREF_ACCESSIBILITY_FORCE_DISABLED, 0);
-  if (sPlatformDisabledState < ePlatformIsForceEnabled) {
-    sPlatformDisabledState = ePlatformIsForceEnabled;
-  } else if (sPlatformDisabledState > ePlatformIsDisabled){
-    sPlatformDisabledState = ePlatformIsDisabled;
-  }
-
-  return static_cast<EPlatformDisabledState>(sPlatformDisabledState);
-}
-
-void
-PrefChanged(const char* aPref, void* aClosure)
-{
-  if (ReadPlatformDisabledState() == ePlatformIsDisabled) {
-    
-    nsAccessibilityService* accService = nsAccessibilityService::gAccessibilityService;
-    if (accService && !accService->IsShutdown()) {
-      accService->Shutdown();
-    }
-  }
+  return (EPlatformDisabledState)disabledState;
 }
 
 }
