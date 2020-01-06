@@ -1,4 +1,3 @@
-"use strict";
 
 
 
@@ -17,8 +16,6 @@ add_task(async function() {
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await SpecialPowers.popPrefEnv();
 });
-
-
 
 
 add_task(async function() {
