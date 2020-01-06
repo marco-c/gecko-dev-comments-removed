@@ -183,6 +183,9 @@ const RECOMMENDED_PREFS = new Map([
   ["dom.disable_open_during_load", false],
 
   
+  ["dom.file.createInChild", true],
+
+  
   ["dom.ipc.reportProcessHangs", false],
 
   
