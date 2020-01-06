@@ -617,6 +617,13 @@ class JSFunction : public js::NativeObject
     const js::Value& getBoundFunctionArgument(unsigned which) const;
     size_t getBoundFunctionArgumentCount() const;
 
+    
+
+
+
+    static bool finishBoundFunctionInit(JSContext* cx, js::HandleFunction bound,
+                                        js::HandleObject targetObj, int32_t argCount);
+
   private:
     js::GCPtrScript& mutableScript() {
         MOZ_ASSERT(hasScript());

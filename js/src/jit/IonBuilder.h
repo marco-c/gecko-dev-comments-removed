@@ -778,6 +778,7 @@ class IonBuilder
     InliningResult inlineIsConstructing(CallInfo& callInfo);
     InliningResult inlineSubstringKernel(CallInfo& callInfo);
     InliningResult inlineObjectHasPrototype(CallInfo& callInfo);
+    InliningResult inlineFinishBoundFunctionInit(CallInfo& callInfo);
 
     
     InliningResult inlineBailout(CallInfo& callInfo);
