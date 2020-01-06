@@ -151,6 +151,11 @@ StackWalkInitCriticalAddress()
   
   malloc_logger = old_malloc_logger;
 
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!gCriticalAddress.mAddr);
+
   MOZ_ASSERT(r == ETIMEDOUT);
   r = pthread_mutex_unlock(&mutex);
   MOZ_ASSERT(r == 0);
