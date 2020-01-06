@@ -5123,7 +5123,8 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     }
   } else if (NS_ERROR_PHISHING_URI == aError ||
              NS_ERROR_MALWARE_URI == aError ||
-             NS_ERROR_UNWANTED_URI == aError) {
+             NS_ERROR_UNWANTED_URI == aError ||
+             NS_ERROR_HARMFUL_URI == aError) {
     nsAutoCString host;
     aURI->GetHost(host);
     CopyUTF8toUTF16(host, formatStrs[0]);
@@ -5155,6 +5156,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       error = "unwantedBlocked";
       bucketId = IsFrame() ? nsISecurityUITelemetry::WARNING_UNWANTED_PAGE_FRAME
                            : nsISecurityUITelemetry::WARNING_UNWANTED_PAGE_TOP;
+    } else if (NS_ERROR_HARMFUL_URI == aError) {
+      error = "harmfulBlocked";
+      
     }
 
     if (sendTelemetry && errorPage.EqualsIgnoreCase("blocked")) {
@@ -5305,8 +5309,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     for (uint32_t i = 0; i < formatStrCount; i++) {
       strs[i] = formatStrs[i].get();
     }
-    nsAutoString str;
-    rv = stringBundle->FormatStringFromName(error, strs, formatStrCount, str);
+    nsXPIDLString str;
+    rv = stringBundle->FormatStringFromName(error, strs, formatStrCount,
+                                            getter_Copies(str));
     NS_ENSURE_SUCCESS(rv, rv);
     messageStr.Assign(str.get());
   }
@@ -8000,6 +8005,7 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                aStatus == NS_ERROR_MALWARE_URI ||
                aStatus == NS_ERROR_PHISHING_URI ||
                aStatus == NS_ERROR_UNWANTED_URI ||
+               aStatus == NS_ERROR_HARMFUL_URI ||
                aStatus == NS_ERROR_UNSAFE_CONTENT_TYPE ||
                aStatus == NS_ERROR_REMOTE_XUL ||
                aStatus == NS_ERROR_INTERCEPTION_FAILED ||
@@ -13371,12 +13377,14 @@ nsDocShell::ConfirmRepost(bool* aRepost)
   NS_ASSERTION(prompter && brandBundle && appBundle,
                "Unable to set up repost prompter.");
 
-  nsAutoString brandName;
-  rv = brandBundle->GetStringFromName("brandShortName", brandName);
+  nsXPIDLString brandName;
+  rv = brandBundle->GetStringFromName("brandShortName",
+                                      getter_Copies(brandName));
 
-  nsAutoString msgString, button0Title;
+  nsXPIDLString msgString, button0Title;
   if (NS_FAILED(rv)) { 
-    rv = appBundle->GetStringFromName("confirmRepostPrompt", msgString);
+    rv = appBundle->GetStringFromName("confirmRepostPrompt",
+                                      getter_Copies(msgString));
   } else {
     
     
@@ -13385,13 +13393,14 @@ nsDocShell::ConfirmRepost(bool* aRepost)
     rv = appBundle->FormatStringFromName("confirmRepostPrompt",
                                          formatStrings,
                                          ArrayLength(formatStrings),
-                                         msgString);
+                                         getter_Copies(msgString));
   }
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  rv = appBundle->GetStringFromName("resendButton.label", button0Title);
+  rv = appBundle->GetStringFromName("resendButton.label",
+                                    getter_Copies(button0Title));
   if (NS_FAILED(rv)) {
     return rv;
   }

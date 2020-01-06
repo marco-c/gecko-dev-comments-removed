@@ -227,10 +227,11 @@ static const struct {
   const char* mListName;
   uint32_t mThreatType;
 } THREAT_TYPE_CONV_TABLE[] = {
-  { "goog-malware-proto",  MALWARE_THREAT},            
-  { "googpub-phish-proto", SOCIAL_ENGINEERING_PUBLIC}, 
-  { "goog-unwanted-proto", UNWANTED_SOFTWARE},         
-  { "goog-phish-proto", SOCIAL_ENGINEERING},           
+  { "goog-malware-proto",  MALWARE_THREAT},                  
+  { "googpub-phish-proto", SOCIAL_ENGINEERING_PUBLIC},       
+  { "goog-unwanted-proto", UNWANTED_SOFTWARE},               
+  { "goog-harmful-proto",  POTENTIALLY_HARMFUL_APPLICATION}, 
+  { "goog-phish-proto",    SOCIAL_ENGINEERING},              
 
   
   { "goog-badbinurl-proto", MALICIOUS_BINARY},         
