@@ -58,9 +58,11 @@ class nsQueryFrame
 {
 public:
   enum FrameIID {
-#define FRAME_ID(classname) classname##_id,
+#define FRAME_ID(classname, ...) classname##_id,
+#define ABSTRACT_FRAME_ID(classname) classname##_id,
 #include "nsFrameIdList.h"
 #undef FRAME_ID
+#undef ABSTRACT_FRAME_ID
 
     
     
