@@ -257,6 +257,7 @@ class FirefoxUITests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
         
         if self.config.get('code_coverage'):
             env['GCOV_PREFIX'] = self.gcov_dir
+            env['JS_CODE_COVERAGE_OUTPUT_DIR'] = self.jsvm_dir
 
         if self.config['allow_software_gl_layers']:
             env['MOZ_LAYERS_ALLOW_SOFTWARE_GL'] = '1'
