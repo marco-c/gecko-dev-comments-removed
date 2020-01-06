@@ -62,16 +62,6 @@ function PlainTextConsole(print, innerID) {
     }
   });
 
-  
-  
-  
-  
-
-  console.__exposedProps__ = Object.keys(ConsoleAPI.prototype).reduce(function(exposed, prop) {
-    exposed[prop] = "r";
-    return exposed;
-  }, {});
-
   Object.freeze(console);
   return console;
 };

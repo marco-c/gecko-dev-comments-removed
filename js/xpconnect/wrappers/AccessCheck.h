@@ -106,8 +106,13 @@ struct CrossOriginAccessiblePropertiesOnly : public Policy {
 
 
 
+
+
+
 struct ExposedPropertiesOnly : public Policy {
-    static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id, js::Wrapper::Action act);
+    static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id, js::Wrapper::Action act) {
+        return false;
+    }
 
     static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
                      bool mayThrow);

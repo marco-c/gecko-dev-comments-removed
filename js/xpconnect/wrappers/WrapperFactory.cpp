@@ -561,7 +561,7 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
 
         
         
-        if (targetCompartmentPrivate->hasInterposition)
+        if (targetCompartmentPrivate->scope->HasInterposition())
             wrapper = SelectAddonWrapper(cx, obj, wrapper);
     }
 

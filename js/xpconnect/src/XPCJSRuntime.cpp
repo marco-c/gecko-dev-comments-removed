@@ -92,7 +92,6 @@ const char* const XPCJSRuntime::mStrings[] = {
     "createInstance",       
     "item",                 
     "__proto__",            
-    "__exposedProps__",     
     "eval",                 
     "controllers",          
     "Controllers",          
@@ -173,12 +172,9 @@ CompartmentPrivate::CompartmentPrivate(JSCompartment* c)
     , writeToGlobalPrototype(false)
     , skipWriteToGlobalPrototype(false)
     , isWebExtensionContentScript(false)
-    , hasInterposition(false)
     , waiveInterposition(false)
     , addonCallInterposition(false)
     , allowCPOWs(false)
-    , isContentXBLCompartment(false)
-    , isAddonCompartment(false)
     , universalXPConnectEnabled(false)
     , forcePermissiveCOWs(false)
     , wasNuked(false)
@@ -427,35 +423,25 @@ Scriptability::Get(JSObject* aScope)
 }
 
 bool
-IsContentXBLCompartment(JSCompartment* compartment)
+IsContentXBLScope(JSCompartment* compartment)
 {
     
     CompartmentPrivate* priv = CompartmentPrivate::Get(compartment);
-    return priv && priv->isContentXBLCompartment;
-}
-
-bool
-IsContentXBLScope(JS::Realm* realm)
-{
-    return IsContentXBLCompartment(JS::GetCompartmentForRealm(realm));
+    if (!priv || !priv->scope)
+        return false;
+    return priv->scope->IsContentXBLScope();
 }
 
 bool
 IsInContentXBLScope(JSObject* obj)
 {
-    return IsContentXBLCompartment(js::GetObjectCompartment(obj));
-}
-
-bool
-IsAddonCompartment(JSCompartment* compartment)
-{
-    return CompartmentPrivate::Get(compartment)->isAddonCompartment;
+    return IsContentXBLScope(js::GetObjectCompartment(obj));
 }
 
 bool
 IsInAddonScope(JSObject* obj)
 {
-    return IsAddonCompartment(js::GetObjectCompartment(obj));
+    return ObjectScope(obj)->IsAddonScope();
 }
 
 bool

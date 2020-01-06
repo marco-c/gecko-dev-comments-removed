@@ -104,15 +104,6 @@ ChromePowers.prototype.executeAfterFlushingMessageQueue = function(aCallback) {
   aCallback();
 };
 
-
-
-
-ChromePowers.prototype.__exposedProps__ = {};
-for (var i in ChromePowers.prototype) {
-  if (i.charAt(0) != "_")
-    ChromePowers.prototype.__exposedProps__[i] = "r";
-}
-
 if ((window.parent !== null) &&
     (window.parent !== undefined) &&
     (window.parent.wrappedJSObject.SpecialPowers) &&

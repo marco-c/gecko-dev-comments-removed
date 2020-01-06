@@ -458,7 +458,6 @@ public:
         IDX_CREATE_INSTANCE         ,
         IDX_ITEM                    ,
         IDX_PROTO                   ,
-        IDX_EXPOSEDPROPS            ,
         IDX_EVAL                    ,
         IDX_CONTROLLERS             ,
         IDX_CONTROLLERS_CLASS       ,
@@ -1011,16 +1010,14 @@ public:
 
     nsAutoPtr<JSObject2JSObjectMap> mWaiverWrapperMap;
 
-    JSCompartment* Compartment() const { return js::GetObjectCompartment(mGlobalJSObject); }
-
-    bool IsContentXBLScope() { return xpc::IsContentXBLCompartment(Compartment()); }
+    bool IsContentXBLScope() { return mIsContentXBLScope; }
     bool AllowContentXBLScope();
     bool UseContentXBLScope() { return mUseContentXBLScope; }
     void ClearContentXBLScope() { mContentXBLScope = nullptr; }
 
-    bool IsAddonScope() { return xpc::IsAddonCompartment(Compartment()); }
+    bool IsAddonScope() { return mIsAddonScope; }
 
-    inline bool HasInterposition() { return mInterposition; }
+    bool HasInterposition() { return mInterposition; }
     nsCOMPtr<nsIAddonInterposition> GetInterposition();
 
     static bool SetAddonInterposition(JSContext* cx,
@@ -1079,6 +1076,9 @@ private:
     nsCOMPtr<nsIAddonInterposition>  mInterposition;
 
     JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
+
+    bool mIsContentXBLScope;
+    bool mIsAddonScope;
 
     
     
@@ -2794,7 +2794,6 @@ public:
         , writeToGlobalPrototype(false)
         , sameZoneAs(cx)
         , freshZone(false)
-        , isContentXBLScope(false)
         , invisibleToDebugger(false)
         , discardSource(false)
         , metadata(cx)
@@ -2816,7 +2815,6 @@ public:
     bool writeToGlobalPrototype;
     JS::RootedObject sameZoneAs;
     bool freshZone;
-    bool isContentXBLScope;
     bool invisibleToDebugger;
     bool discardSource;
     GlobalProperties globalProperties;
@@ -3074,11 +3072,6 @@ public:
     
     
     
-    bool hasInterposition;
-
-    
-    
-    
     bool waiveInterposition;
 
     
@@ -3092,15 +3085,6 @@ public:
     
     
     bool allowCPOWs;
-
-    
-    
-    bool isContentXBLCompartment;
-
-    
-    
-    
-    bool isAddonCompartment;
 
     
     
