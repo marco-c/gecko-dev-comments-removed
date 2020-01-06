@@ -11,12 +11,11 @@
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsGlobalWindow.h"
+#include "nsITimeoutHandler.h"
 
-class nsGlobalWindow;
 class nsIEventTarget;
 class nsIPrincipal;
-class nsITimeoutHandler;
-class nsITimer;
 class nsIEventTarget;
 
 namespace mozilla {
@@ -35,13 +34,6 @@ public:
 
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Timeout)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Timeout)
-
-  
-  
-  
-  nsresult InitTimer(nsIEventTarget* aTarget, uint32_t aDelay);
-
-  void MaybeCancelTimer();
 
   enum class Reason
   {
@@ -65,9 +57,6 @@ public:
 
   
   RefPtr<nsGlobalWindow> mWindow;
-
-  
-  nsCOMPtr<nsITimer> mTimer;
 
   
   bool mCleared;
@@ -104,8 +93,6 @@ public:
   
   nsCOMPtr<nsITimeoutHandler> mScriptHandler;
 
-  RefPtr<Timeout> mClosureSelfRef;
-
 private:
   
   
@@ -120,7 +107,7 @@ private:
   
   TimeDuration mScheduledDelay;
 
-  ~Timeout();
+  ~Timeout() = default;
 };
 
 } 

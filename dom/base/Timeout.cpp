@@ -6,9 +6,6 @@
 
 #include "Timeout.h"
 
-#include "nsGlobalWindow.h"
-#include "nsITimeoutHandler.h"
-#include "nsITimer.h"
 #include "mozilla/dom/TimeoutManager.h"
 
 namespace mozilla {
@@ -28,14 +25,6 @@ Timeout::Timeout()
 {
 }
 
-Timeout::~Timeout()
-{
-  if (mTimer) {
-    mTimer->Cancel();
-    mTimer = nullptr;
-  }
-}
-
 NS_IMPL_CYCLE_COLLECTION_CLASS(Timeout)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Timeout)
@@ -51,82 +40,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(Timeout, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(Timeout, Release)
-
-namespace {
-
-void
-TimerCallback(nsITimer*, void* aClosure)
-{
-  RefPtr<Timeout> timeout = (Timeout*)aClosure;
-  timeout->mWindow->AsInner()->TimeoutManager().RunTimeout(TimeStamp::Now(), timeout->When());
-  timeout->mClosureSelfRef = nullptr;
-}
-
-void
-TimerNameCallback(nsITimer* aTimer, bool aAnonymize, void* aClosure,
-                  char* aBuf, size_t aLen)
-{
-  RefPtr<Timeout> timeout = (Timeout*)aClosure;
-
-  
-  
-  if (aAnonymize) {
-    if (timeout->mIsInterval) {
-      snprintf(aBuf, aLen, "setInterval");
-    } else {
-      snprintf(aBuf, aLen, "setTimeout");
-    }
-    return;
-  }
-
-  const char* filename;
-  uint32_t lineNum, column;
-  timeout->mScriptHandler->GetLocation(&filename, &lineNum, &column);
-  snprintf(aBuf, aLen, "[content] %s:%u:%u", filename, lineNum, column);
-}
-
-} 
-
-nsresult
-Timeout::InitTimer(nsIEventTarget* aTarget, uint32_t aDelay)
-{
-  
-  
-  
-  
-  nsCOMPtr<nsIEventTarget> currentTarget;
-  MOZ_ALWAYS_SUCCEEDS(mTimer->GetTarget(getter_AddRefs(currentTarget)));
-  if ((aTarget && currentTarget != aTarget) ||
-      (!aTarget && currentTarget != NS_GetCurrentThread())) {
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(mTimer->Cancel());
-    MOZ_ALWAYS_SUCCEEDS(mTimer->SetTarget(aTarget));
-  }
-
-  nsresult rv = mTimer->InitWithNameableFuncCallback(
-    TimerCallback, this, aDelay, nsITimer::TYPE_ONE_SHOT, TimerNameCallback);
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    mClosureSelfRef = this;
-  }
-
-  return rv;
-}
-
-void
-Timeout::MaybeCancelTimer()
-{
-  if (!mTimer) {
-    return;
-  }
-
-  mTimer->Cancel();
-  mTimer = nullptr;
-
-  mClosureSelfRef = nullptr;
-}
 
 void
 Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
