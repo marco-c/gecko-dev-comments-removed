@@ -322,6 +322,11 @@ public class WebAppActivity extends AppCompatActivity
             return false;
         }
 
+        if ("javascript".equals(uri.getScheme())) {
+            
+            return false;
+        }
+
         if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()) ||
             "data".equals(uri.getScheme()) || "blob".equals(uri.getScheme())) {
             final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder()
