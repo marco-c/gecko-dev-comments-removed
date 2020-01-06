@@ -94,13 +94,27 @@ nsColorControlFrame::UpdateColor()
   nsAutoString color;
   HTMLInputElement* elt = HTMLInputElement::FromContent(mContent);
   elt->GetValue(color, CallerType::System);
-  MOZ_ASSERT(!color.IsEmpty(),
-             "Content node's GetValue() should return a valid color string "
-             "(the default color, in case no valid color is set)");
+
+  if (color.IsEmpty()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
+               "Content node's GetValue() should return a valid color string "
+               "by the time we've been reflowed (the default color, in case "
+               "no valid color is set)");
+    return NS_OK;
+  }
 
   
   return mColorContent->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-      NS_LITERAL_STRING("background-color:") + color, true);
+                                NS_LITERAL_STRING("background-color:") + color,
+                                 true);
 }
 
 nsresult
