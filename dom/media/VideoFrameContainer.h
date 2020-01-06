@@ -105,6 +105,15 @@ protected:
   dom::HTMLMediaElement* mElement;
   RefPtr<ImageContainer> mImageContainer;
 
+  struct
+  {
+    
+    
+    
+    
+    bool mImageSizeChanged = false;
+  } mMainThreadState;
+
   
   Mutex mMutex;
   
@@ -128,11 +137,6 @@ protected:
   
   
   bool mIntrinsicSizeChanged;
-  
-  
-  
-  
-  bool mImageSizeChanged;
   
   PrincipalHandle mLastPrincipalHandle;
   
