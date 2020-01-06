@@ -74,5 +74,6 @@ class TestFilter(unittest.TestCase):
         
         del talos.filter.scalar_filters['foo']
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -12,7 +12,6 @@ import xtalos
 import subprocess
 import json
 import mozfile
-import shutil
 
 
 EVENTNAME_INDEX = 0
@@ -37,14 +36,6 @@ net_events = {
 gThreads = {}
 gConnectionIDs = {}
 gHeaders = {}
-
-
-def uploadFile(filename):
-    mud = os.environ.get('MOZ_UPLOAD_DIR', None)
-    if mud:
-        print("uploading raw file %s via blobber" % filename)
-        mud_filename = os.path.join(mud, filename)
-        shutil.copyfile(filename, "%s.log" % mud_filename)
 
 
 def filterOutHeader(data):
@@ -301,9 +292,8 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
         elif event.startswith("Microsoft-Windows-TCPIP"):
             trackThreadNetIO(row, io, stage)
 
-    if debug:
-        uploadFile(csvname)
-    else:
+    
+    if not debug:
         mozfile.remove(csvname)
 
     output = "thread, stage, counter, value\n"
@@ -313,9 +303,6 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
         fname = "%s_thread_stats%s" % os.path.splitext(outputFile)
         with open(fname, "w") as f:
             f.write(output)
-
-        if debug:
-            uploadFile(fname)
     else:
         print(output)
 
@@ -332,18 +319,9 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
                                 (all_stages and x[2] != stages[0] or
                                  not checkWhitelist(x[0], whitelist)),
                       files.iterkeys())
-    if debug:
-        
-        
-        outputData = filter(lambda x: (all_stages or x[2] in [stages[0], stages[1]]) and
-                                      (all_stages and x[2] not in [stages[0], stages[1]] or
-                                       not checkWhitelist(x[0], whitelist)),
-                            files.iterkeys())
-    else:
-        outputData = filekeys
 
     
-    for row in outputData:
+    for row in filekeys:
         output = "%s, %s, %s, %s, %s, %s, %s\n" % (
             row[0],
             row[1],
@@ -358,8 +336,6 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
     if outputFile:
         
         outFile.close()
-        if debug:
-            uploadFile(outputFile)
 
     
     
@@ -479,8 +455,12 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
             with open(error_filename, 'w') as errorFile:
                 errorFile.write('\n'.join(errors))
 
-        if debug:
-            uploadFile(etl_filename)
+
+
+
+
+
+
 
 
 def etlparser_from_config(config_file, **kwargs):
@@ -534,6 +514,7 @@ def main(args=sys.argv[1:]):
               args.configFile, args.outputFile, args.whitelist_file,
               args.error_filename, args.all_stages, args.all_threads,
               debug=args.debug_level >= xtalos.DEBUG_INFO)
+
 
 if __name__ == "__main__":
     main()

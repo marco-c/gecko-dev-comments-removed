@@ -82,6 +82,7 @@ class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(Structure):
 
 
 
+
 JobObjectAssociateCompletionPortInformation = 7
 JobObjectBasicAndIoAccountingInformation = 8
 JobObjectExtendedLimitInformation = 9

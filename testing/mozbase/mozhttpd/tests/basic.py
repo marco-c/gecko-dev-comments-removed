@@ -44,5 +44,6 @@ class TestBasic(unittest.TestCase):
         
         mozfile.rmtree(tempdir)
 
+
 if __name__ == '__main__':
     mozunit.main()

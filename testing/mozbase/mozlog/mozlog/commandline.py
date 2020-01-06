@@ -67,6 +67,7 @@ def default_formatter_options(log_type, overrides):
 
     return rv
 
+
 fmt_options = {
     
     

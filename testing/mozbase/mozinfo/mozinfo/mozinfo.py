@@ -29,6 +29,8 @@ class unknown(object):
 
     def __str__(self):
         return 'UNKNOWN'
+
+
 unknown = unknown()  
 
 
@@ -55,6 +57,7 @@ def get_windows_version():
         raise OSError
 
     return os_version.dwMajorVersion, os_version.dwMinorVersion, os_version.dwBuildNumber
+
 
 
 info = {'os': unknown,
@@ -244,6 +247,7 @@ def output_to_file(path):
     with open(path, 'w') as f:
         f.write(json.dumps(info))
 
+
 update({})
 
 
@@ -296,6 +300,7 @@ def main(args=None):
     
     for key, value in info.items():
         print '%s: %s' % (key, value)
+
 
 if __name__ == '__main__':
     main()
