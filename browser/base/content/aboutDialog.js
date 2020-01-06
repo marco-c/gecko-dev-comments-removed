@@ -66,6 +66,12 @@ function init(aEvent) {
   if (AppConstants.MOZ_UPDATER) {
     gAppUpdater = new appUpdater();
 
+    let button = gAppUpdater.updateDeck.selectedPanel.querySelector("button");
+    if (button && (!document.commandDispatcher.focusedElement || 
+                   document.commandDispatcher.focusedElement.localName == "button")) { 
+      button.focus();
+    }
+
     let channelLabel = document.getElementById("currentChannel");
     let currentChannelText = document.getElementById("currentChannelText");
     channelLabel.value = UpdateUtils.UpdateChannel;
