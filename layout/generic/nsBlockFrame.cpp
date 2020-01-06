@@ -6756,8 +6756,8 @@ nsBlockFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   aBuilder->MarkFramesForDisplayList(this, mFloats, aDirtyRect);
 
   
-  UniquePtr<TextOverflow> textOverflow(
-    TextOverflow::WillProcessLines(aBuilder, this));
+  UniquePtr<TextOverflow> textOverflow =
+    TextOverflow::WillProcessLines(aBuilder, this);
 
   
   nsDisplayListCollection linesDisplayListCollection;

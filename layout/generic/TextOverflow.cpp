@@ -335,7 +335,7 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
   
 }
 
- TextOverflow*
+ UniquePtr<TextOverflow>
 TextOverflow::WillProcessLines(nsDisplayListBuilder*   aBuilder,
                                nsIFrame*               aBlockFrame)
 {
@@ -350,7 +350,7 @@ TextOverflow::WillProcessLines(nsDisplayListBuilder*   aBuilder,
     
     return nullptr;
   }
-  return new TextOverflow(aBuilder, aBlockFrame);
+  return MakeUnique<TextOverflow>(aBuilder, aBlockFrame);
 }
 
 void
