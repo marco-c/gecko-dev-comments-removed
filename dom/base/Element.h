@@ -329,15 +329,15 @@ public:
 
 
 
-  virtual DeclarationBlock* GetSMILOverrideStyleDeclaration();
+  DeclarationBlock* GetSMILOverrideStyleDeclaration();
 
   
 
 
 
 
-  virtual nsresult SetSMILOverrideStyleDeclaration(
-    DeclarationBlock* aDeclaration, bool aNotify);
+  nsresult SetSMILOverrideStyleDeclaration(DeclarationBlock* aDeclaration,
+                                           bool aNotify);
 
   
 
