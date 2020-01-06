@@ -463,8 +463,12 @@ var RemotePageManagerInternal = {
 
   
   init() {
-    Services.ppmm.addMessageListener("RemotePage:InitListener", this.initListener.bind(this));
     Services.mm.addMessageListener("RemotePage:InitPort", this.initPort.bind(this));
+    this.updateProcessUrls();
+  },
+
+  updateProcessUrls() {
+    Services.ppmm.initialProcessData["RemotePageManager:urls"] = Array.from(this.pages.keys());
   },
 
   
@@ -479,6 +483,7 @@ var RemotePageManagerInternal = {
     }
 
     this.pages.set(url, callback);
+    this.updateProcessUrls();
 
     
     Services.ppmm.broadcastAsyncMessage("RemotePage:Register", { urls: [url] });
@@ -496,11 +501,7 @@ var RemotePageManagerInternal = {
     
     Services.ppmm.broadcastAsyncMessage("RemotePage:Unregister", { urls: [url] });
     this.pages.delete(url);
-  },
-
-  
-  initListener({ target: messageManager }) {
-    messageManager.sendAsyncMessage("RemotePage:Register", { urls: Array.from(this.pages.keys()) })
+    this.updateProcessUrls();
   },
 
   
@@ -526,7 +527,7 @@ this.RemotePageManager = {
 };
 
 
-var registeredURLs = new Set();
+var registeredURLs = new Set(Services.cpmm.initialProcessData["RemotePageManager:urls"]);
 
 var observer = (window) => {
   
@@ -557,5 +558,3 @@ Services.cpmm.addMessageListener("RemotePage:Unregister", ({ data }) => {
   for (let url of data.urls)
     registeredURLs.delete(url);
 });
-
-Services.cpmm.sendAsyncMessage("RemotePage:InitListener");
