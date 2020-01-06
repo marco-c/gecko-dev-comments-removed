@@ -320,22 +320,54 @@ var Manager = {
     
     const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdOuterWindowId);
 
+    if (!isSourceTab) {
+      if (pairedMessage) {
+        
+        Services.console.logStringMessage(
+          `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+          "unexpected pending data while receiving the created tab data"
+        );
+      }
+
+      
+      
+      const browserWeakRef = Cu.getWeakReference(browser);
+
+      this.createdNavigationTargetByOuterWindowId.set(createdOuterWindowId, {
+        browserWeakRef,
+        data,
+      });
+
+      return;
+    }
+
     if (!pairedMessage) {
-      this.createdNavigationTargetByOuterWindowId.set(createdOuterWindowId, {browser, data});
+      
+      
+      
+      
+      
+      
+      Services.console.logStringMessage(
+        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+        "received source tab data without any created tab data available"
+      );
+
       return;
     }
 
     this.createdNavigationTargetByOuterWindowId.delete(createdOuterWindowId);
 
-    let sourceTabBrowser;
-    let createdTabBrowser;
+    let sourceTabBrowser = browser;
+    let createdTabBrowser = pairedMessage.browserWeakRef.get();
 
-    if (isSourceTab) {
-      sourceTabBrowser = browser;
-      createdTabBrowser = pairedMessage.browser;
-    } else {
-      sourceTabBrowser = pairedMessage.browser;
-      createdTabBrowser = browser;
+    if (!createdTabBrowser) {
+      Services.console.logStringMessage(
+        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+        "the created tab has been already destroyed"
+      );
+
+      return;
     }
 
     this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {

@@ -58,6 +58,16 @@ async function runTestCase({extension, openNavTarget, expectedWebNavProps}) {
   is(completedNavMsg.url, url, "Got the expected webNavigation.onCompleted url property");
 }
 
+
+
+
+
+function assertNoPendingCreatedNavigationTargetData() {
+  const {Manager} = Cu.import("resource://gre/modules/WebNavigation.jsm", {});
+  Assert.equal(Manager.createdNavigationTargetByOuterWindowId.size, 0,
+               "There should be no pending createdNavigationTarget messages in WebNavigation");
+}
+
 add_task(async function test_window_open() {
   const tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, SOURCE_PAGE);
 
@@ -107,6 +117,8 @@ add_task(async function test_window_open() {
       url: `${OPENED_PAGE}#new-win-from-window-open`,
     },
   });
+
+  assertNoPendingCreatedNavigationTargetData();
 
   await BrowserTestUtils.removeTab(tab1);
 
@@ -162,6 +174,8 @@ add_task(async function test_window_open_from_subframe() {
       url: `${OPENED_PAGE}#new-win-from-window-open-subframe`,
     },
   });
+
+  assertNoPendingCreatedNavigationTargetData();
 
   await BrowserTestUtils.removeTab(tab1);
 
@@ -226,6 +240,8 @@ add_task(async function test_window_open_close_from_browserAction_popup() {
       url: `${OPENED_PAGE}#new-tab-from-window-open`,
     },
   });
+
+  assertNoPendingCreatedNavigationTargetData();
 
   await BrowserTestUtils.removeTab(tab1);
 
