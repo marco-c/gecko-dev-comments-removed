@@ -146,7 +146,7 @@ impl<T: ThreadSafeLayoutNode> ThreadSafeLayoutNodeHelpers for T {
                 
                 RestyleDamage::rebuild_and_reflow()
             } else {
-                data.style_data.element_data.borrow().restyle.damage
+                data.style_data.element_data.borrow().damage
             }
         };
 

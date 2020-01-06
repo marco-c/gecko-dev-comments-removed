@@ -20,7 +20,8 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 
 bitflags! {
-    flags RestyleFlags: u8 {
+    #[derive(Default)]
+    flags ElementDataFlags: u8 {
         /// Whether the styles changed for this restyle.
         const WAS_RESTYLED = 1 << 0,
         /// Whether the last traversal of this element did not do
@@ -34,119 +35,6 @@ bitflags! {
         const TRAVERSED_WITHOUT_STYLING = 1 << 1,
         /// Whether we reframed/reconstructed any ancestor or self.
         const ANCESTOR_WAS_RECONSTRUCTED = 1 << 2,
-    }
-}
-
-
-
-
-#[derive(Debug)]
-pub struct RestyleData {
-    
-    
-    pub hint: RestyleHint,
-
-    
-    flags: RestyleFlags,
-
-    
-    
-    pub damage: RestyleDamage,
-}
-
-impl Default for RestyleData {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RestyleData {
-    fn new() -> Self {
-        Self {
-            hint: RestyleHint::empty(),
-            flags: RestyleFlags::empty(),
-            damage: RestyleDamage::empty(),
-        }
-    }
-
-    
-    
-    
-    
-    #[inline]
-    fn clear_restyle_state(&mut self) {
-        self.clear_restyle_flags_and_damage();
-        self.hint = RestyleHint::empty();
-    }
-
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn clear_restyle_flags_and_damage(&mut self) {
-        self.damage = RestyleDamage::empty();
-        self.flags = self.flags & TRAVERSED_WITHOUT_STYLING;
-    }
-
-    
-    
-    pub fn reconstructed_self_or_ancestor(&self) -> bool {
-        self.reconstructed_ancestor() || self.reconstructed_self()
-    }
-
-    
-    pub fn reconstructed_self(&self) -> bool {
-        self.damage.contains(RestyleDamage::reconstruct())
-    }
-
-    
-    
-    fn reconstructed_ancestor(&self) -> bool {
-        self.flags.contains(ANCESTOR_WAS_RECONSTRUCTED)
-    }
-
-    
-    pub fn set_reconstructed_ancestor(&mut self, reconstructed: bool) {
-        if reconstructed {
-            
-            
-            self.flags.insert(ANCESTOR_WAS_RECONSTRUCTED);
-        } else {
-            self.flags.remove(ANCESTOR_WAS_RECONSTRUCTED);
-        }
-    }
-
-    
-    
-    pub fn set_restyled(&mut self) {
-        self.flags.insert(WAS_RESTYLED);
-        self.flags.remove(TRAVERSED_WITHOUT_STYLING);
-    }
-
-    
-    #[inline]
-    pub fn is_restyle(&self) -> bool {
-        self.flags.contains(WAS_RESTYLED)
-    }
-
-    
-    pub fn set_traversed_without_styling(&mut self) {
-        self.flags.insert(TRAVERSED_WITHOUT_STYLING);
-    }
-
-    
-    
-    pub fn traversed_without_styling(&self) -> bool {
-        self.flags.contains(TRAVERSED_WITHOUT_STYLING)
-    }
-
-    
-    #[inline]
-    pub fn contains_restyle_data(&self) -> bool {
-        self.is_restyle() || !self.hint.is_empty() || !self.damage.is_empty()
     }
 }
 
@@ -304,7 +192,15 @@ pub struct ElementData {
     pub styles: ElementStyles,
 
     
-    pub restyle: RestyleData,
+    
+    pub damage: RestyleDamage,
+
+    
+    
+    pub hint: RestyleHint,
+
+    
+    flags: ElementDataFlags,
 }
 
 
@@ -382,19 +278,18 @@ impl ElementData {
             return RestyleKind::MatchAndCascade;
         }
 
-        let hint = self.restyle.hint;
-        if hint.match_self() {
+        if self.hint.match_self() {
             return RestyleKind::MatchAndCascade;
         }
 
-        if hint.has_replacements() {
-            debug_assert!(!hint.has_animation_hint(),
+        if self.hint.has_replacements() {
+            debug_assert!(!self.hint.has_animation_hint(),
                           "Animation only restyle hint should have already processed");
-            return RestyleKind::CascadeWithReplacements(hint & RestyleHint::replacements());
+            return RestyleKind::CascadeWithReplacements(self.hint & RestyleHint::replacements());
         }
 
-        debug_assert!(hint.has_recascade_self(),
-                      "We definitely need to do something: {:?}!", hint);
+        debug_assert!(self.hint.has_recascade_self(),
+                      "We definitely need to do something: {:?}!", self.hint);
         return RestyleKind::CascadeOnly;
     }
 
@@ -411,9 +306,8 @@ impl ElementData {
         
         
         
-        let hint = self.restyle.hint;
-        if hint.has_animation_hint() {
-            return RestyleKind::CascadeWithReplacements(hint & RestyleHint::for_animations());
+        if self.hint.has_animation_hint() {
+            return RestyleKind::CascadeWithReplacements(self.hint & RestyleHint::for_animations());
         }
 
         return RestyleKind::CascadeOnly;
@@ -440,16 +334,93 @@ impl ElementData {
     }
 
     
+    
+    
+    
     #[inline]
     pub fn clear_restyle_state(&mut self) {
-        self.restyle.clear_restyle_state();
+        self.hint = RestyleHint::empty();
+        self.clear_restyle_flags_and_damage();
     }
 
     
     #[inline]
     pub fn clear_restyle_flags_and_damage(&mut self) {
-        self.restyle.clear_restyle_flags_and_damage();
+        self.damage = RestyleDamage::empty();
+        self.flags.remove(WAS_RESTYLED | ANCESTOR_WAS_RECONSTRUCTED)
     }
+
+    
+    
+    pub fn reconstructed_self_or_ancestor(&self) -> bool {
+        self.reconstructed_ancestor() || self.reconstructed_self()
+    }
+
+    
+    pub fn reconstructed_self(&self) -> bool {
+        self.damage.contains(RestyleDamage::reconstruct())
+    }
+
+    
+    
+    fn reconstructed_ancestor(&self) -> bool {
+        self.flags.contains(ANCESTOR_WAS_RECONSTRUCTED)
+    }
+
+    
+    pub fn set_reconstructed_ancestor(&mut self, reconstructed: bool) {
+        if reconstructed {
+            
+            
+            self.flags.insert(ANCESTOR_WAS_RECONSTRUCTED);
+        } else {
+            self.flags.remove(ANCESTOR_WAS_RECONSTRUCTED);
+        }
+    }
+
+    
+    
+    pub fn set_restyled(&mut self) {
+        self.flags.insert(WAS_RESTYLED);
+        self.flags.remove(TRAVERSED_WITHOUT_STYLING);
+    }
+
+    
+    #[inline]
+    pub fn is_restyle(&self) -> bool {
+        self.flags.contains(WAS_RESTYLED)
+    }
+
+    
+    pub fn set_traversed_without_styling(&mut self) {
+        self.flags.insert(TRAVERSED_WITHOUT_STYLING);
+    }
+
+    
+    
+    pub fn traversed_without_styling(&self) -> bool {
+        self.flags.contains(TRAVERSED_WITHOUT_STYLING)
+    }
+
+    
+    #[inline]
+    pub fn contains_restyle_data(&self) -> bool {
+        self.is_restyle() || !self.hint.is_empty() || !self.damage.is_empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "gecko")]
+    pub fn skip_applying_damage(&self) -> bool { self.reconstructed_self_or_ancestor() }
+
+    
+    #[cfg(feature = "servo")]
+    pub fn skip_applying_damage(&self) -> bool { false }
 
     
     #[cfg(feature = "gecko")]

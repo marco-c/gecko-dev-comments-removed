@@ -436,7 +436,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
             
             
             return data.has_styles() &&
-                   !data.restyle.hint.has_animation_hint_or_recascade();
+                   !data.hint.has_animation_hint_or_recascade();
         }
 
         if traversal_flags.contains(traversal_flags::UnstyledOnly) {
@@ -448,7 +448,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
             return false;
         }
 
-        data.has_styles() && !data.restyle.hint.has_non_animation_invalidations()
+        data.has_styles() && !data.hint.has_non_animation_invalidations()
     }
 
     
@@ -470,7 +470,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
         
         
         
-        !data.restyle.hint.has_non_animation_invalidations()
+        !data.hint.has_non_animation_invalidations()
     }
 
     
@@ -620,7 +620,7 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
             Some(d) => d,
             None => return false,
         };
-        return data.restyle.hint.has_animation_hint()
+        return data.hint.has_animation_hint()
     }
 
     
