@@ -722,6 +722,11 @@ impl DisplayListBuilder {
     }
 
     
+    pub fn content_size(&self) -> LayoutSize {
+        self.content_size
+    }
+
+    
     
     
     

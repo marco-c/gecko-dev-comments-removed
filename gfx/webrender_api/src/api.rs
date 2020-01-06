@@ -15,6 +15,8 @@ use std::marker::PhantomData;
 
 pub type TileSize = u16;
 
+pub type DocumentLayer = i8;
+
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ResourceUpdates {
@@ -278,7 +280,7 @@ pub enum ApiMsg {
     
     CloneApi(MsgSender<IdNamespace>),
     
-    AddDocument(DocumentId, DeviceUintSize),
+    AddDocument(DocumentId, DeviceUintSize, DocumentLayer),
     
     UpdateDocument(DocumentId, DocumentMsg),
     
@@ -420,11 +422,11 @@ impl RenderApi {
         RenderApiSender::new(self.api_sender.clone(), self.payload_sender.clone())
     }
 
-    pub fn add_document(&self, initial_size: DeviceUintSize) -> DocumentId {
+    pub fn add_document(&self, initial_size: DeviceUintSize, layer: DocumentLayer) -> DocumentId {
         let new_id = self.next_unique_id();
         let document_id = DocumentId(self.namespace_id, new_id);
 
-        let msg = ApiMsg::AddDocument(document_id, initial_size);
+        let msg = ApiMsg::AddDocument(document_id, initial_size, layer);
         self.api_sender.send(msg).unwrap();
 
         document_id
@@ -884,8 +886,8 @@ pub struct DynamicProperties {
 
 pub trait RenderNotifier: Send {
     fn clone(&self) -> Box<RenderNotifier>;
-    fn new_frame_ready(&self);
-    fn new_scroll_frame_ready(&self, composite_needed: bool);
+    fn wake_up(&self);
+    fn new_document_ready(&self, DocumentId, scrolled: bool, composite_needed: bool);
     fn external_event(&self, _evt: ExternalEvent) {
         unimplemented!()
     }

@@ -19,6 +19,10 @@ pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
 
 
 
+pub const MAX_BLUR_RADIUS : f32 = 300.;
+
+
+
 
 pub const MASK_CORNER_PADDING: f32 = 4.0;
 
@@ -30,7 +34,7 @@ impl FrameBuilder {
         prim_info: &LayerPrimitiveInfo,
         box_offset: &LayerVector2D,
         color: &ColorF,
-        blur_radius: f32,
+        mut blur_radius: f32,
         spread_radius: f32,
         border_radius: BorderRadius,
         clip_mode: BoxShadowClipMode,
@@ -48,6 +52,7 @@ impl FrameBuilder {
             }
         };
 
+        blur_radius = f32::min(blur_radius, MAX_BLUR_RADIUS);
         let shadow_radius = adjust_border_radius_for_box_shadow(
             border_radius,
             spread_amount,

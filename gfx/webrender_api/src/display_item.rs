@@ -60,7 +60,9 @@ bitflags! {
 
 
 
-pub type ItemTag = (u64, u8);
+
+
+pub type ItemTag = (u64, u16);
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DisplayItem {
