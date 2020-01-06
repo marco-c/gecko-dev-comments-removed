@@ -108,9 +108,11 @@ RequestContext::BeginLoad()
 
   LOG(("RequestContext::BeginLoad %p", this));
 
-  if (IsNeckoChild() && gNeckoChild) {
+  if (IsNeckoChild()) {
     
-    gNeckoChild->SendRequestContextLoadBegin(mID);
+    if (gNeckoChild) {
+      gNeckoChild->SendRequestContextLoadBegin(mID);
+    }
     return NS_OK;
   }
 
