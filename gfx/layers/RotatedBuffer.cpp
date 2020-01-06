@@ -255,8 +255,6 @@ RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
     if (isClippingCheap) {
       destDT->PopClip();
     }
-    
-    destDT->Flush();
     ReturnDrawTarget(destDT);
   }
 
@@ -273,8 +271,6 @@ RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
       if (isClippingCheap) {
         destDT->PopClip();
       }
-      
-      destDT->Flush();
       ReturnDrawTarget(destDT);
     }
   }
