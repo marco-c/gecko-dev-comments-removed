@@ -17,11 +17,11 @@ TEST(ThreadProfile, Initialization) {
 }
 
 
-TEST(ThreadProfile, InsertOneTag) {
+TEST(ThreadProfile, InsertOneEntry) {
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(10);
-  pb->addTag(ProfileBufferEntry::Time(123.1));
+  pb->addEntry(ProfileBufferEntry::Time(123.1));
   ASSERT_TRUE(pb->mEntries != nullptr);
   ASSERT_TRUE(pb->mEntries[pb->mReadPos].kind() ==
               ProfileBufferEntry::Kind::Time);
@@ -29,13 +29,13 @@ TEST(ThreadProfile, InsertOneTag) {
 }
 
 
-TEST(ThreadProfile, InsertTagsNoWrap) {
+TEST(ThreadProfile, InsertEntriesNoWrap) {
   Thread::tid_t tid = 1000;
   ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(100);
   int test_size = 50;
   for (int i = 0; i < test_size; i++) {
-    pb->addTag(ProfileBufferEntry::Time(i));
+    pb->addEntry(ProfileBufferEntry::Time(i));
   }
   ASSERT_TRUE(pb->mEntries != nullptr);
   int readPos = pb->mReadPos;
@@ -48,16 +48,16 @@ TEST(ThreadProfile, InsertTagsNoWrap) {
 }
 
 
-TEST(ThreadProfile, InsertTagsWrap) {
+TEST(ThreadProfile, InsertEntriesWrap) {
   Thread::tid_t tid = 1000;
   
-  int tags = 24;
-  int buffer_size = tags + 1;
+  int entries = 24;
+  int buffer_size = entries + 1;
   ThreadInfo info("testThread", tid, true, nullptr);
   auto pb = MakeUnique<ProfileBuffer>(buffer_size);
   int test_size = 43;
   for (int i = 0; i < test_size; i++) {
-    pb->addTag(ProfileBufferEntry::Time(i));
+    pb->addEntry(ProfileBufferEntry::Time(i));
   }
   ASSERT_TRUE(pb->mEntries != nullptr);
   int readPos = pb->mReadPos;
@@ -66,7 +66,7 @@ TEST(ThreadProfile, InsertTagsWrap) {
     ASSERT_TRUE(pb->mEntries[readPos].kind() ==
                 ProfileBufferEntry::Kind::Time);
     
-    ASSERT_TRUE(pb->mEntries[readPos].u.mDouble == ctr + (test_size - tags));
+    ASSERT_TRUE(pb->mEntries[readPos].u.mDouble == ctr + (test_size - entries));
     ctr++;
     readPos = (readPos + 1) % pb->mEntrySize;
   }

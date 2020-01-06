@@ -578,7 +578,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
   int readPos = mReadPos;
   int currentThreadID = -1;
   Maybe<double> currentTime;
-  UniquePtr<char[]> tagBuff = MakeUnique<char[]>(DYNAMIC_MAX_STRING);
+  UniquePtr<char[]> strbuf = MakeUnique<char[]>(DYNAMIC_MAX_STRING);
 
   while (readPos != mWritePos) {
     ProfileBufferEntry entry = mEntries[readPos];
@@ -640,10 +640,12 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
             int readAheadPos = (framePos + 1) % mEntrySize;
             
             
-            tagBuff[DYNAMIC_MAX_STRING-1] = '\0';
+            strbuf[DYNAMIC_MAX_STRING-1] = '\0';
 
-            if (readAheadPos != mWritePos && mEntries[readAheadPos].isEmbeddedString()) {
-              string = processDynamicTag(framePos, &incBy, tagBuff.get());
+            if (readAheadPos != mWritePos &&
+                mEntries[readAheadPos].isEmbeddedString()) {
+              string =
+                processEmbeddedString(readAheadPos, &incBy, strbuf.get());
             }
 
             
@@ -658,8 +660,9 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
               
               unsigned long long pc =
                 (unsigned long long)(uintptr_t)frame.u.mPtr;
-              snprintf(tagBuff.get(), DYNAMIC_MAX_STRING, "%#llx", pc);
-              stack.AppendFrame(UniqueStacks::OnStackFrameKey(tagBuff.get()));
+              snprintf(strbuf.get(), DYNAMIC_MAX_STRING, "%#llx", pc);
+              stack.AppendFrame(UniqueStacks::OnStackFrameKey(strbuf.get()));
+
             } else if (frame.isCodeLocation()) {
               UniqueStacks::OnStackFrameKey frameKey(string);
               readAheadPos = (framePos + incBy) % mEntrySize;
@@ -676,6 +679,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThre
                 incBy++;
               }
               stack.AppendFrame(frameKey);
+
             } else if (frame.isJitReturnAddr()) {
               
               void* pc = frame.u.mPtr;
@@ -776,7 +780,7 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
   MOZ_ASSERT(mEntries[lastSampleStartPos].isThreadId() &&
              mEntries[lastSampleStartPos].u.mInt == aThreadId);
 
-  addTagThreadId(aThreadId, &aLS);
+  addThreadIdEntry(aThreadId, &aLS);
 
   
   for (int readPos = (lastSampleStartPos + 1) % mEntrySize;
@@ -788,15 +792,15 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
         return true;
       case ProfileBufferEntry::Kind::Time:
         
-        addTag(ProfileBufferEntry::Time((TimeStamp::Now() -
-                                         aProcessStartTime).ToMilliseconds()));
+        addEntry(ProfileBufferEntry::Time(
+          (TimeStamp::Now() - aProcessStartTime).ToMilliseconds()));
         break;
       case ProfileBufferEntry::Kind::Marker:
         
         break;
       default:
         
-        addTag(mEntries[readPos]);
+        addEntry(mEntries[readPos]);
         break;
     }
   }

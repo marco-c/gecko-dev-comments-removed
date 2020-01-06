@@ -36,11 +36,11 @@ public:
   };
 
   
-  void addTag(const ProfileBufferEntry& aTag);
+  void addEntry(const ProfileBufferEntry& aEntry);
 
   
   
-  void addTagThreadId(int aThreadId, LastSample* aLS = nullptr);
+  void addThreadIdEntry(int aThreadId, LastSample* aLS = nullptr);
 
   void StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                            double aSinceTime, JSContext* cx,
@@ -65,7 +65,8 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 protected:
-  char* processDynamicTag(int readPos, int* tagsConsumed, char* tagBuff);
+  char* processEmbeddedString(int aReadaheadPos, int* aEntriesConsumed,
+                              char* aStrBuf);
   int FindLastSampleOfThread(int aThreadId, const LastSample& aLS);
 
 public:
