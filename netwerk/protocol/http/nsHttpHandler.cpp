@@ -458,6 +458,7 @@ nsHttpHandler::Init()
     
     
     
+    
     uint32_t spoofedVersion = mAppVersion.ToInteger(&rv);
     if (NS_SUCCEEDED(rv)) {
         spoofedVersion = spoofedVersion - (spoofedVersion % 10);
