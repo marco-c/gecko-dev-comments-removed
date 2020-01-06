@@ -3219,11 +3219,6 @@ MediaDecoderStateMachine::Seek(const SeekTarget& aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());
 
-  if (IsShutdown()) {
-    return MediaDecoder::SeekPromise::CreateAndReject( true,
-                                                      __func__);
-  }
-
   
   if (!mMediaSeekable && !mMediaSeekableOnlyInBufferedRanges) {
     LOGW("Seek() should not be called on a non-seekable media");
