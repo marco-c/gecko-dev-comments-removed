@@ -6,8 +6,8 @@ this.EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-const TABS_TTL = 1814400;          
-const TAB_ENTRIES_LIMIT = 5;      
+const TABS_TTL = 1814400; 
+const TAB_ENTRIES_LIMIT = 5; 
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -184,7 +184,7 @@ TabStore.prototype = {
 
         let urls = candidates.map((entry) => entry.url)
                              .filter(acceptable)
-                             .reverse();                       
+                             .reverse(); 
 
         
         if (urls.length > TAB_ENTRIES_LIMIT) {

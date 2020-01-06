@@ -30,13 +30,13 @@ function testMobileOnlyThreats() {
   (function testFullHashRequest() {
     let requestWithPHA =
       urlUtils.makeFindFullHashRequestV4(["goog-phish-proto", "goog-harmful-proto"],
-                                         ["", ""],       
+                                         ["", ""], 
                                          [btoa("0123")], 
                                          2, 1);
 
     let requestNoPHA =
       urlUtils.makeFindFullHashRequestV4(["goog-phish-proto"],
-                                         [""],           
+                                         [""], 
                                          [btoa("0123")], 
                                          1, 1);
 

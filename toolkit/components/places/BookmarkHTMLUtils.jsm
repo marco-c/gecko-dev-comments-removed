@@ -501,7 +501,7 @@ BookmarkImporter.prototype = {
 
     frame.previousFeed = null;
     frame.previousItem = null;
-    frame.previousText = "";  
+    frame.previousText = ""; 
 
     
     let href = this._safeTrim(aElt.getAttribute("href"));

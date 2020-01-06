@@ -53,7 +53,7 @@ add_task(async function redirector_ignores_override() {
           Services.scriptSecurityManager.getSystemPrincipal(),
           "nodePrincipal should match systemPrincipal");
       });
-    });  
+    }); 
   }
 });
 
@@ -75,7 +75,7 @@ add_task(async function override_loads_in_browser() {
     Assert.ok(aboutNewTabService.overridden, "url has been overridden");
 
     
-    BrowserOpenTab();  
+    BrowserOpenTab(); 
 
     let browser = gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser);
@@ -83,7 +83,7 @@ add_task(async function override_loads_in_browser() {
     await ContentTask.spawn(browser, {url: overrideURL}, async function(args) {
       Assert.equal(content.location.href, args.url.trim(), "Got right URL");
       Assert.equal(content.document.location.href, args.url.trim(), "Got right URL");
-    });  
+    }); 
     await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
@@ -107,7 +107,7 @@ add_task(async function override_blank_loads_in_browser() {
     Assert.ok(aboutNewTabService.overridden, "url has been overridden");
 
     
-    BrowserOpenTab();  
+    BrowserOpenTab(); 
 
     let browser = gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser);
@@ -115,13 +115,13 @@ add_task(async function override_blank_loads_in_browser() {
     await ContentTask.spawn(browser, {}, async function() {
       Assert.equal(content.location.href, "about:blank", "Got right URL");
       Assert.equal(content.document.location.href, "about:blank", "Got right URL");
-    });  
+    }); 
     await BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
 
 function nextChangeNotificationPromise(aNewURL, testMessage) {
-  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) {  
+  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) { 
       Assert.equal(aData, aNewURL, testMessage);
       return true;
   });

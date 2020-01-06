@@ -177,7 +177,7 @@ RequestBackoff.prototype.isErrorStatus = function(status) {
 
 function RequestBackoffV4(maxRequests, requestPeriod) {
   let rand = Math.random();
-  let retryInterval = Math.floor(15 * 60 * 1000 * (rand + 1));   
+  let retryInterval = Math.floor(15 * 60 * 1000 * (rand + 1)); 
   let backoffInterval = Math.floor(30 * 60 * 1000 * (rand + 1)); 
 
   return new RequestBackoff(2 ,

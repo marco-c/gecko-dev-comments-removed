@@ -572,7 +572,7 @@ add_task(function* format_errors() {
 
   
   try {
-    yield Promise.resolve();  
+    yield Promise.resolve(); 
     
     eval("javascript syntax error");
   } catch (e) {

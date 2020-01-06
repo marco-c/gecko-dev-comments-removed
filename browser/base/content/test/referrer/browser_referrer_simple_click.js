@@ -15,6 +15,6 @@ function startSimpleClickTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10);  
+  requestLongerTimeout(10); 
   startReferrerTest(startSimpleClickTestCase);
 }

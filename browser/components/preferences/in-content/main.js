@@ -1249,11 +1249,11 @@ var gMainPane = {
       var autoPref = document.getElementById("app.update.auto");
       var radiogroup = document.getElementById("updateRadioGroup");
 
-      if (!enabledPref.value)   
-        radiogroup.value = "manual";    
-      else if (autoPref.value)  
-        radiogroup.value = "auto";      
-      else                      
+      if (!enabledPref.value) 
+        radiogroup.value = "manual"; 
+      else if (autoPref.value) 
+        radiogroup.value = "auto"; 
+      else 
         radiogroup.value = "checkOnly"; 
 
       var canCheck = Components.classes["@mozilla.org/updates/update-service;1"].
@@ -1294,7 +1294,7 @@ var gMainPane = {
       var autoPref = document.getElementById("app.update.auto");
       var radiogroup = document.getElementById("updateRadioGroup");
       switch (radiogroup.value) {
-        case "auto":      
+        case "auto": 
           enabledPref.value = true;
           autoPref.value = true;
           break;
@@ -1302,7 +1302,7 @@ var gMainPane = {
           enabledPref.value = true;
           autoPref.value = false;
           break;
-        case "manual":    
+        case "manual": 
           enabledPref.value = false;
           autoPref.value = false;
       }

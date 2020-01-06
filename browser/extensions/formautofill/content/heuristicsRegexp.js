@@ -19,11 +19,11 @@ var HeuristicsRegExp = {
     
     "email": new RegExp(
       "e.?mail" +
-      "|courriel" +                                 
-      "|メールアドレス" +                           
-      "|Электронной.?Почты" +                       
-      "|邮件|邮箱" +                                
-      "|電郵地址" +                                 
+      "|courriel" + 
+      "|メールアドレス" + 
+      "|Электронной.?Почты" + 
+      "|邮件|邮箱" + 
+      "|電郵地址" + 
       "|(?:이메일|전자.?우편|[Ee]-?mail)(.?주소)?", 
       "iu"
     ),
@@ -31,18 +31,18 @@ var HeuristicsRegExp = {
     
     "tel-extension": new RegExp(
       "\\bext|ext\\b|extension" +
-      "|ramal",                     
+      "|ramal", 
       "iu"
     ),
     "tel": new RegExp(
       "phone|mobile|contact.?number" +
-      "|telefonnummer" +                             
-      "|telefono|teléfono" +                         
-      "|telfixe" +                                   
-      "|電話" +                                      
-      "|telefone|telemovel" +                        
-      "|телефон" +                                   
-      "|电话" +                                      
+      "|telefonnummer" + 
+      "|telefono|teléfono" + 
+      "|telfixe" + 
+      "|電話" + 
+      "|telefone|telemovel" + 
+      "|телефон" + 
+      "|电话" + 
       "|(?:전화|핸드폰|휴대폰|휴대전화)(?:.?번호)?", 
       "iu"
     ),
@@ -50,14 +50,14 @@ var HeuristicsRegExp = {
     
     "organization": new RegExp(
       "company|business|organization|organisation" +
-      "|firma|firmenname" +   
-      "|empresa" +            
-      "|societe|société" +    
-      "|ragione.?sociale" +   
-      "|会社" +               
+      "|firma|firmenname" + 
+      "|empresa" + 
+      "|societe|société" + 
+      "|ragione.?sociale" + 
+      "|会社" + 
       "|название.?компании" + 
-      "|单位|公司" +          
-      "|회사|직장",           
+      "|单位|公司" + 
+      "|회사|직장", 
       "iu"
     ),
     "street-address": new RegExp(
@@ -73,10 +73,10 @@ var HeuristicsRegExp = {
       "|adresse" + 
       "|indirizzo" + 
       "|^住所$|住所1" + 
-      "|morada|endereço" +  
+      "|morada|endereço" + 
       "|Адрес" + 
-      "|地址" +  
-      "|^주소.?$|주소.?1",  
+      "|地址" + 
+      "|^주소.?$|주소.?1", 
       "iu"
     ),
     "address-line2": new RegExp(
@@ -89,7 +89,7 @@ var HeuristicsRegExp = {
       "|complemento|addrcomplement" + 
       "|Улица" + 
       "|地址2" + 
-      "|주소.?2",  
+      "|주소.?2", 
       "iu"
     ),
     "address-line3": new RegExp(
@@ -102,7 +102,7 @@ var HeuristicsRegExp = {
       "|complemento|addrcomplement" + 
       "|Улица" + 
       "|地址3" + 
-      "|주소.?3",  
+      "|주소.?3", 
       "iu"
     ),
     "address-level2": new RegExp(
@@ -111,13 +111,13 @@ var HeuristicsRegExp = {
       "|suburb" + 
       "|ciudad|provincia|localidad|poblacion" + 
       "|ville|commune" + 
-      "|localita" +  
-      "|市区町村" +  
+      "|localita" + 
+      "|市区町村" + 
       "|cidade" + 
       "|Город" + 
       "|市" + 
       "|分區" + 
-      "|^시[^도·・]|시[·・]?군[·・]?구",  
+      "|^시[^도·・]|시[·・]?군[·・]?구", 
       "iu"
     ),
     "address-level1": new RegExp(
@@ -132,30 +132,30 @@ var HeuristicsRegExp = {
       "|область" + 
       "|省" + 
       "|地區" + 
-      "|^시[·・]?도",  
+      "|^시[·・]?도", 
       "iu"
     ),
     "postal-code": new RegExp(
       "zip|postal|post.*code|pcode" +
-      "|pin.?code" +               
-      "|postleitzahl" +            
-      "|\\bcp\\b" +                
-      "|\\bcdp\\b" +               
-      "|\\bcap\\b" +               
-      "|郵便番号" +                
+      "|pin.?code" + 
+      "|postleitzahl" + 
+      "|\\bcp\\b" + 
+      "|\\bcdp\\b" + 
+      "|\\bcap\\b" + 
+      "|郵便番号" + 
       "|codigo|codpos|\\bcep\\b" + 
-      "|Почтовый.?Индекс" +        
-      "|邮政编码|邮编" +           
-      "|郵遞區號" +                
-      "|우편.?번호",               
+      "|Почтовый.?Индекс" + 
+      "|邮政编码|邮编" + 
+      "|郵遞區號" + 
+      "|우편.?번호", 
       "iu"
     ),
     "country": new RegExp(
       "country|countries" +
       "|país|pais" + 
-      "|国" +        
-      "|国家" +      
-      "|국가|나라",  
+      "|国" + 
+      "|国家" + 
+      "|국가|나라", 
       "iu"
     ),
 
@@ -164,22 +164,22 @@ var HeuristicsRegExp = {
       "^name|full.?name|your.?name|customer.?name|bill.?name|ship.?name" +
       "|name.*first.*last|firstandlastname" +
       "|nombre.*y.*apellidos" + 
-      "|^nom" +                 
-      "|お名前|氏名" +          
-      "|^nome" +                
-      "|姓名" +                 
-      "|성명",                  
+      "|^nom" + 
+      "|お名前|氏名" + 
+      "|^nome" + 
+      "|姓名" + 
+      "|성명", 
       "iu"
     ),
     "given-name": new RegExp(
       "first.*name|initials|fname|first$|given.*name" +
-      "|vorname" +                
-      "|nombre" +                 
+      "|vorname" + 
+      "|nombre" + 
       "|forename|prénom|prenom" + 
-      "|名" +                     
-      "|nome" +                   
-      "|Имя" +                    
-      "|이름",                    
+      "|名" + 
+      "|nome" + 
+      "|Имя" + 
+      "|이름", 
       "iu"
     ),
     "additional-name": new RegExp(
@@ -192,14 +192,14 @@ var HeuristicsRegExp = {
     ),
     "family-name": new RegExp(
       "last.*name|lname|surname|last$|secondname|family.*name" +
-      "|nachname" +                           
-      "|apellido" +                           
-      "|famille|^nom" +                       
-      "|cognome" +                            
-      "|姓" +                                 
+      "|nachname" + 
+      "|apellido" + 
+      "|famille|^nom" + 
+      "|cognome" + 
+      "|姓" + 
       "|morada|apelidos|surename|sobrenome" + 
-      "|Фамилия" +                            
-      "|\\b성(?:[^명]|\\b)",                  
+      "|Фамилия" + 
+      "|\\b성(?:[^명]|\\b)", 
       "iu"
     ),
 
@@ -207,59 +207,59 @@ var HeuristicsRegExp = {
     "cc-name": new RegExp(
       "card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
       "|(?:card|cc).?name|cc.?full.?name" +
-      "|karteninhaber" +                  
-      "|nombre.*tarjeta" +                
-      "|nom.*carte" +                     
-      "|nome.*cart" +                     
-      "|名前" +                           
-      "|Имя.*карты" +                     
+      "|karteninhaber" + 
+      "|nombre.*tarjeta" + 
+      "|nom.*carte" + 
+      "|nome.*cart" + 
+      "|名前" + 
+      "|Имя.*карты" + 
       "|信用卡开户名|开户名|持卡人姓名" + 
-      "|持卡人姓名",                      
+      "|持卡人姓名", 
       "iu"
     ),
     "cc-number": new RegExp(
       "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
-      "|nummer" +                
+      "|nummer" + 
       "|credito|numero|número" + 
-      "|numéro" +                
-      "|カード番号" +            
-      "|Номер.*карты" +          
-      "|信用卡号|信用卡号码" +   
-      "|信用卡卡號" +            
-      "|카드",                   
+      "|numéro" + 
+      "|カード番号" + 
+      "|Номер.*карты" + 
+      "|信用卡号|信用卡号码" + 
+      "|信用卡卡號" + 
+      "|카드", 
       "iu"
     ),
     "cc-exp-month": new RegExp(
       "expir|exp.*mo|exp.*date|ccmonth|cardmonth|addmonth" +
       "|gueltig|gültig|monat" + 
-      "|fecha" +                
-      "|date.*exp" +            
-      "|scadenza" +             
-      "|有効期限" +             
-      "|validade" +             
-      "|Срок действия карты" +  
-      "|月",                    
+      "|fecha" + 
+      "|date.*exp" + 
+      "|scadenza" + 
+      "|有効期限" + 
+      "|validade" + 
+      "|Срок действия карты" + 
+      "|月", 
       "iu"
     ),
     "cc-exp-year": new RegExp(
       "exp|^/|(add)?year" +
       "|ablaufdatum|gueltig|gültig|jahr" + 
-      "|fecha" +                           
-      "|scadenza" +                        
-      "|有効期限" +                        
-      "|validade" +                        
-      "|Срок действия карты" +             
-      "|年|有效期",                        
+      "|fecha" + 
+      "|scadenza" + 
+      "|有効期限" + 
+      "|validade" + 
+      "|Срок действия карты" + 
+      "|年|有效期", 
       "iu"
     ),
     "cc-exp": new RegExp(
       "expir|exp.*date|^expfield$" +
-      "|gueltig|gültig" +     
-      "|fecha" +              
-      "|date.*exp" +          
-      "|scadenza" +           
-      "|有効期限" +           
-      "|validade" +           
+      "|gueltig|gültig" + 
+      "|fecha" + 
+      "|date.*exp" + 
+      "|scadenza" + 
+      "|有効期限" + 
+      "|validade" + 
       "|Срок действия карты", 
       "iu"
     ),

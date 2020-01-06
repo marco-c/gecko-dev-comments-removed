@@ -160,8 +160,8 @@ const OS_PARAM_START_PAGE   = "startPage";
 
 
 const OS_PARAM_COUNT_DEF        = "20"; 
-const OS_PARAM_START_INDEX_DEF  = "1";  
-const OS_PARAM_START_PAGE_DEF   = "1";  
+const OS_PARAM_START_INDEX_DEF  = "1"; 
+const OS_PARAM_START_PAGE_DEF   = "1"; 
 
 
 

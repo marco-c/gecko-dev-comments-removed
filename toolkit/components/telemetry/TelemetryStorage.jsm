@@ -51,7 +51,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryHealthPing",
                                   "resource://gre/modules/TelemetryHealthPing.jsm");
 
-const MAX_ARCHIVED_PINGS_RETENTION_MS = 60 * 24 * 60 * 60 * 1000;  
+const MAX_ARCHIVED_PINGS_RETENTION_MS = 60 * 24 * 60 * 60 * 1000; 
 
 
 const ARCHIVE_QUOTA_BYTES = 120 * 1024 * 1024; 

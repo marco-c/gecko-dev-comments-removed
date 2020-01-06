@@ -14,7 +14,7 @@ function run_test() {
     (function() {
       p.StopProfiler();
       let n = 10000;
-      while (--n);  
+      while (--n); 
       
       
     })();

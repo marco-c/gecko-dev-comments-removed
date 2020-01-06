@@ -97,7 +97,7 @@ function testInvalidUrlForward() {
   var update = buildPhishingUpdate(
     [{ "chunkNum": 1,
        "urls": add1Urls }]);
-  update += "u:asdf://blah/blah\n";  
+  update += "u:asdf://blah/blah\n"; 
 
   
   var assertions = {
@@ -115,7 +115,7 @@ function testErrorUrlForward() {
   var update = buildPhishingUpdate(
     [{ "chunkNum": 1,
        "urls": add1Urls }]);
-  update += "u:http://test.invalid/asdf/asdf\n";  
+  update += "u:http://test.invalid/asdf/asdf\n"; 
 
   
   var assertions = {

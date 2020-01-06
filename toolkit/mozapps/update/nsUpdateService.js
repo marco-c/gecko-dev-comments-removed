@@ -787,7 +787,7 @@ function isServiceInstalled() {
     wrk.close();
   } catch (e) {
   }
-  installed = installed == 1;  
+  installed = installed == 1; 
   LOG("isServiceInstalled - returning " + installed);
   return installed;
 }

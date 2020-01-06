@@ -5,7 +5,7 @@
 
 
 const LATIN1_AE = "\xc6"; 
-const LATIN1_ae = "\xe6";  
+const LATIN1_ae = "\xe6"; 
 
 add_task(async function setup() {
   getOpenedDatabase().createTable("test", "id INTEGER PRIMARY KEY, name TEXT");

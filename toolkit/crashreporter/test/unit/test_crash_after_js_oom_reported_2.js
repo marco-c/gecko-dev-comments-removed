@@ -9,7 +9,7 @@ function run_test() {
       crashType = CrashTestUtils.CRASH_MOZ_CRASH;
       crashReporter.annotateCrashReport("TestingOOMCrash", "Yes");
       Components.utils.getJSTestingFunctions().reportOutOfMemory();
-      Components.utils.forceGC();  
+      Components.utils.forceGC(); 
       Components.utils.getJSTestingFunctions().reportOutOfMemory();
     },
     function(mdump, extra) {

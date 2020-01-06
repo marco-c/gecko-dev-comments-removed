@@ -470,7 +470,7 @@ win32.createPipe = function(secAttr, readFlags = 0, writeFlags = 0, size = 0) {
     win32.PIPE_TYPE_BYTE | win32.PIPE_WAIT,
     1, 
     size, 
-    size,  
+    size, 
     0, 
     secAttr.address());
 

@@ -783,9 +783,9 @@ function processPathEntry(path, fileArray) {
 
   var tilde_file = file.clone();
   tilde_file.append("~");
-  if (path[0] == "~" &&                        
+  if (path[0] == "~" && 
       !(path == "~" && tilde_file.exists()) && 
-      (path.length == 1 || path[1] == "/"))    
+      (path.length == 1 || path[1] == "/")) 
     filePath = homeDir.path + path.substring(1);
   else
     filePath = path;
@@ -793,7 +793,7 @@ function processPathEntry(path, fileArray) {
   
   filePath = filePath.replace(/\\\"/g, "\"");
 
-  if (filePath[0] == "/")   
+  if (filePath[0] == "/") 
     file.initWithPath(filePath);
   else if ((filePath.indexOf("/../") > 0) ||
            (filePath.substr(-3) == "/..") ||

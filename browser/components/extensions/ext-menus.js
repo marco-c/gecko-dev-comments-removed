@@ -218,7 +218,7 @@ var gMenuBuilder = {
       element.setAttribute("disabled", "true");
     }
 
-    element.addEventListener("command", event => {  
+    element.addEventListener("command", event => { 
       if (event.target !== event.currentTarget) {
         return;
       }

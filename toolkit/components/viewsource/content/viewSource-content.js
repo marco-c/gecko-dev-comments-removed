@@ -754,8 +754,8 @@ var ViewSourceContent = {
     let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_UNSET;
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
     webNav.loadURIWithOptions(uri, loadFlags,
-                              null, referrerPolicy,  
-                              null, null,  
+                              null, referrerPolicy, 
+                              null, null, 
                               Services.io.newURI(baseURI));
   },
 

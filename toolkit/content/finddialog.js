@@ -10,8 +10,8 @@
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/FormHistory.jsm");
 
-var dialog;     
-var gFindInst;   
+var dialog; 
+var gFindInst; 
 var gFindInstData; 
 
 function initDialogObject() {

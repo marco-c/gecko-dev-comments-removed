@@ -3,7 +3,7 @@
 
 "use strict";
 
-do_get_profile();   
+do_get_profile(); 
 
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://services-common/utils.js");

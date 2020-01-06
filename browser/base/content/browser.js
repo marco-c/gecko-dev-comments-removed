@@ -2385,7 +2385,7 @@ function BrowserCloseTabOrWindow() {
 
 function BrowserTryToCloseWindow() {
   if (WindowIsClosing())
-    window.close();     
+    window.close(); 
 }
 
 function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
@@ -4627,7 +4627,7 @@ var XULBrowserWindow = {
 
     if (aWebProgress.isTopLevel) {
       if ((location == "about:blank" && checkEmptyPageOrigin()) ||
-          location == "") {  
+          location == "") { 
                              
         this.reloadCommand.setAttribute("disabled", "true");
       } else {
@@ -8807,7 +8807,7 @@ var ToolbarIconColor = {
 
   handleEvent(event) {
     switch (event.type) {
-      case "activate":  
+      case "activate": 
       case "deactivate":
         this.inferFromText(event.type);
         break;

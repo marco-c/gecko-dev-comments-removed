@@ -545,7 +545,7 @@ function projector(type, signed) {
     throw new TypeError("Argument is not a proper C type");
   }
   
-  if (type.size == 8           
+  if (type.size == 8 
       
       
       

@@ -240,7 +240,7 @@ Sync11Service.prototype = {
       if (keysChanged) {
         
         this._log.info("Suggesting retry.");
-        return true;              
+        return true; 
       }
 
       
@@ -255,7 +255,7 @@ Sync11Service.prototype = {
                        "Continuing sync; let's try again later.");
       }
 
-      return false;            
+      return false; 
 
     } catch (ex) {
       this._log.warn("Got exception fetching and handling crypto keys. " +
@@ -735,7 +735,7 @@ Sync11Service.prototype = {
       throw new Error("Unable to upload symmetric keys.");
     }
     this._log.info("Got status " + uploadRes.status + " uploading keys.");
-    let serverModified = uploadRes.obj;   
+    let serverModified = uploadRes.obj; 
     this._log.debug("Server reports crypto modified: " + serverModified);
 
     

@@ -115,7 +115,7 @@ function test_clicks(type, clicks) {
 }
 
 function test_TestEventListeners() {
-  let e = test_helper1;  
+  let e = test_helper1; 
 
   
   e("MozSwipeGestureStart", 0, -0.7, 0);

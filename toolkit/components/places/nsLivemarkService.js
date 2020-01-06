@@ -265,7 +265,7 @@ LivemarkService.prototype = {
     
     let notWorthRestarting =
       this._forceUpdate || 
-      !aForceUpdate;       
+      !aForceUpdate; 
     if (this._reloading && notWorthRestarting) {
       
       return;

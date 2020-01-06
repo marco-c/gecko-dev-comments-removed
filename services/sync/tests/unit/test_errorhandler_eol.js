@@ -69,7 +69,7 @@ add_task(async function test_200_hard() {
   let promiseObserved = promiseOneObserver("weave:eol");
 
   await Service._fetchInfo();
-  Service.scheduler.adjustSyncInterval();   
+  Service.scheduler.adjustSyncInterval(); 
 
   let { subject } = await promiseObserved;
   do_check_eq("hard-eol", subject.code);
@@ -89,7 +89,7 @@ add_task(async function test_513_hard() {
 
   try {
     await Service._fetchInfo();
-    Service.scheduler.adjustSyncInterval();   
+    Service.scheduler.adjustSyncInterval(); 
   } catch (ex) {
     
   }
@@ -111,7 +111,7 @@ add_task(async function test_200_soft() {
   let promiseObserved = promiseOneObserver("weave:eol");
 
   await Service._fetchInfo();
-  Service.scheduler.adjustSyncInterval();   
+  Service.scheduler.adjustSyncInterval(); 
   let { subject } = await promiseObserved;
   do_check_eq("soft-eol", subject.code);
   do_check_soft_eol(eh, start);

@@ -76,12 +76,12 @@ exports.ASSERTION_LIFETIME = 1000 * 3600 * 24 * 365 * 25;
 
 
 exports.ASSERTION_USE_PERIOD = 1000 * 60 * 5; 
-exports.CERT_LIFETIME      = 1000 * 3600 * 6;  
+exports.CERT_LIFETIME      = 1000 * 3600 * 6; 
 exports.KEY_LIFETIME       = 1000 * 3600 * 12; 
 
 
 
-exports.POLL_SESSION       = 1000 * 60 * 20;   
+exports.POLL_SESSION       = 1000 * 60 * 20; 
 
 
 exports.ONLOGIN_NOTIFICATION = "fxaccounts:onlogin";

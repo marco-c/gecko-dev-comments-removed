@@ -14,7 +14,7 @@ const TXT_LEN = 46;
 const HTML_FILE = "file_download.html";
 const HTML_URL = BASE + "/" + HTML_FILE;
 const HTML_LEN = 117;
-const BIG_LEN = 1000;  
+const BIG_LEN = 1000; 
 
 function backgroundScript() {
   let complete = new Map();

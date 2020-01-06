@@ -849,8 +849,8 @@ this.tabs = class extends ExtensionAPI {
                 
                 try {
                   let fstream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
-                  fstream.init(picker.file, 0x2A, 0x1B6, 0);  
-                  fstream.close();  
+                  fstream.init(picker.file, 0x2A, 0x1B6, 0); 
+                  fstream.close(); 
                 } catch (e) {
                   resolve(retval == 0 ? "not_saved" : "not_replaced");
                   return;

@@ -1865,7 +1865,7 @@ PlacesToolbar.prototype = {
 
 function PlacesMenu(aPopupShowingEvent, aPlace, aOptions) {
   this._rootElt = aPopupShowingEvent.target; 
-  this._viewElt = this._rootElt.parentNode;   
+  this._viewElt = this._rootElt.parentNode; 
   this._viewElt._placesView = this;
   this._addEventListeners(this._rootElt, ["popupshowing", "popuphidden"], true);
   this._addEventListeners(window, ["unload"], false);

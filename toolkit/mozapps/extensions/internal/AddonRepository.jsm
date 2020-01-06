@@ -44,7 +44,7 @@ const PREF_GETADDONS_DB_SCHEMA           = "extensions.getAddons.databaseSchema"
 
 const PREF_METADATA_LASTUPDATE           = "extensions.getAddons.cache.lastUpdate";
 const PREF_METADATA_UPDATETHRESHOLD_SEC  = "extensions.getAddons.cache.updateThreshold";
-const DEFAULT_METADATA_UPDATETHRESHOLD_SEC = 172800;  
+const DEFAULT_METADATA_UPDATETHRESHOLD_SEC = 172800; 
 
 const XMLURI_PARSE_ERROR  = "http://www.mozilla.org/newlayout/xml/parsererror.xml";
 

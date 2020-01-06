@@ -17,22 +17,20 @@
 
 
 
-const eCSSToken_Whitespace = "whitespace";     
+const eCSSToken_Whitespace = "whitespace"; 
 
-const eCSSToken_Comment = "comment";        
-
-
+const eCSSToken_Comment = "comment"; 
 
 
 
 
-const eCSSToken_Ident = "ident";          
-const eCSSToken_Function = "function";       
-const eCSSToken_AtKeyword = "at";      
-const eCSSToken_ID = "id";             
-const eCSSToken_Hash = "hash";           
 
 
+const eCSSToken_Ident = "ident"; 
+const eCSSToken_Function = "function"; 
+const eCSSToken_AtKeyword = "at"; 
+const eCSSToken_ID = "id"; 
+const eCSSToken_Hash = "hash"; 
 
 
 
@@ -42,42 +40,34 @@ const eCSSToken_Hash = "hash";
 
 
 
-const eCSSToken_Number = "number";         
-const eCSSToken_Dimension = "dimension";      
-const eCSSToken_Percentage = "percentage";     
+
+
+const eCSSToken_Number = "number"; 
+const eCSSToken_Dimension = "dimension"; 
+const eCSSToken_Percentage = "percentage"; 
 
 
 
 
 
 
-const eCSSToken_String = "string";         
-const eCSSToken_Bad_String = "bad_string";     
-const eCSSToken_URL = "url";            
-const eCSSToken_Bad_URL = "bad_url";        
+const eCSSToken_String = "string"; 
+const eCSSToken_Bad_String = "bad_string"; 
+const eCSSToken_URL = "url"; 
+const eCSSToken_Bad_URL = "bad_url"; 
 
 
-const eCSSToken_Symbol = "symbol";         
-
-
-
-
-
-const eCSSToken_Includes = "includes";       
-const eCSSToken_Dashmatch = "dashmatch";      
-const eCSSToken_Beginsmatch = "beginsmatch";    
-const eCSSToken_Endsmatch = "endsmatch";      
-const eCSSToken_Containsmatch = "containsmatch";  
+const eCSSToken_Symbol = "symbol"; 
 
 
 
 
 
-
-
-
-
-const eCSSToken_URange = "urange";         
+const eCSSToken_Includes = "includes"; 
+const eCSSToken_Dashmatch = "dashmatch"; 
+const eCSSToken_Beginsmatch = "beginsmatch"; 
+const eCSSToken_Endsmatch = "endsmatch"; 
+const eCSSToken_Containsmatch = "containsmatch"; 
 
 
 
@@ -85,7 +75,17 @@ const eCSSToken_URange = "urange";
 
 
 
-const eCSSToken_HTMLComment = "htmlcomment";    
+
+
+const eCSSToken_URange = "urange"; 
+
+
+
+
+
+
+
+const eCSSToken_HTMLComment = "htmlcomment"; 
 
 const eEOFCharacters_None = 0x0000;
 

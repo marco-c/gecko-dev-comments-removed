@@ -47,11 +47,11 @@ add_task(async function test_undoCloseById() {
 
   
   let win2 = await openWindow("about:mozilla");
-  await closeWindow(win2);  
+  await closeWindow(win2); 
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
 
   
-  await openAndCloseTab(win, "about:robots");  
+  await openAndCloseTab(win, "about:robots"); 
   is(SessionStore.lastClosedObjectType, "tab", "The last closed object is a tab");
 
   

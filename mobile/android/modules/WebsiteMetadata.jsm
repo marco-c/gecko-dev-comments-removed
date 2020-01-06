@@ -249,7 +249,7 @@ function getDefault(map, key, defaultMaker) {
 
 
 function ruleset(...rules) {
-    const rulesByInputFlavor = new Map();  
+    const rulesByInputFlavor = new Map(); 
 
     
     forEach(rule => getDefault(rulesByInputFlavor, rule.source.inputFlavor, () => []).push(rule),
@@ -266,7 +266,7 @@ function ruleset(...rules) {
 
             
             
-            const nonterminals = [[{tree}, "dom"]];  
+            const nonterminals = [[{tree}, "dom"]]; 
 
             
             
@@ -318,7 +318,7 @@ function ruleset(...rules) {
                         
                         if (!outNode.flavors.has(fact.flavor)) {
                             outNode.flavors.set(fact.flavor, fact.notes);
-                            kb.indexNodeByFlavor(outNode, fact.flavor);  
+                            kb.indexNodeByFlavor(outNode, fact.flavor); 
                             nonterminals.push([outNode, fact.flavor]);
                         }
                     }
@@ -334,7 +334,7 @@ function ruleset(...rules) {
 
 
 function knowledgebase() {
-    const nodesByFlavor = new Map();  
+    const nodesByFlavor = new Map(); 
                                       
                                       
                                       
@@ -395,7 +395,7 @@ function* resultsOfDomRule(rule, specialDomNode, kb) {
     
     const matches = specialDomNode.tree.querySelectorAll(rule.source.selector);
 
-    for (let i = 0; i < matches.length; i++) {  
+    for (let i = 0; i < matches.length; i++) { 
         const element = matches[i];
         const newFacts = explicitFacts(rule.ranker(kb.nodeForElement(element)));
         for (let fact of newFacts) {

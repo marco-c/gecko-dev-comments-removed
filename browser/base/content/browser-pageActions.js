@@ -887,7 +887,7 @@ BrowserPageActions.sendToDevice = {
       bodyNode.setAttribute("state", "notready");
       
       Services.tm.dispatchToMainThread(async () => {
-        await Weave.Service.sync([]);  
+        await Weave.Service.sync([]); 
         
         
         if (!window.closed && !gSync.syncConfiguredAndLoading) {

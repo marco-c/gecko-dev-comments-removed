@@ -249,7 +249,7 @@ function appendButton(aP, aTitle, aOnClick, aText, aId) {
 function appendHiddenFileInput(aP, aId, aChangeListener) {
   let input = appendElementWithText(aP, "input", "hidden", "");
   input.type = "file";
-  input.id = aId;      
+  input.id = aId; 
   input.addEventListener("change", aChangeListener);
   return input;
 }
@@ -325,7 +325,7 @@ function onLoad() {
   let label1 = appendElementWithText(labelDiv1, "label", "");
   gVerbose = appendElement(label1, "input", "");
   gVerbose.type = "checkbox";
-  gVerbose.id = "verbose";   
+  gVerbose.id = "verbose"; 
   appendTextNode(label1, "verbose");
 
   const kEllipsis = "\u2026";
@@ -859,7 +859,7 @@ function diffDReportMaps(aDReportMap1, aDReportMap2) {
       r2_amount = r2._amount;
       r2_nMerged = r2._nMerged;
       delete aDReportMap2[processPath];
-      presence = undefined;   
+      presence = undefined; 
     } else {
       r2_amount = 0;
       r2_nMerged = 0;
@@ -1400,7 +1400,7 @@ function appendWarningElements(aP, aHasKnownHeapAllocated,
     appendElementWithText(div, "p", "",
       "This indicates a defect in one or more memory reporters.  The " +
       "invalid values are highlighted.\n\n");
-    gUnsafePathsWithInvalidValuesForThisProcess = [];  
+    gUnsafePathsWithInvalidValuesForThisProcess = []; 
   }
 }
 
@@ -1475,7 +1475,7 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
       appendTreeElements(pre, t, aProcess, "");
       delete aTrees[treeName];
     }
-    appendTextNode(aP, "\n");  
+    appendTextNode(aP, "\n"); 
   }
 
   
@@ -1509,14 +1509,14 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
   for (let i = 0; i < otherTrees.length; i++) {
     let t = otherTrees[i];
     appendTreeElements(pre, t, aProcess, "");
-    appendTextNode(pre, "\n");  
+    appendTextNode(pre, "\n"); 
   }
   for (let i = 0; i < otherDegenerates.length; i++) {
     let t = otherDegenerates[i];
     let padText = pad("", maxStringLength - t.toString().length, " ");
     appendTreeElements(pre, t, aProcess, padText);
   }
-  appendTextNode(aP, "\n");  
+  appendTextNode(aP, "\n"); 
 
   
   
@@ -1539,8 +1539,8 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
 
 
 function hasNegativeSign(aN) {
-  if (aN === 0) {                   
-    return 1 / aN === -Infinity;    
+  if (aN === 0) { 
+    return 1 / aN === -Infinity; 
   }
   return aN < 0;
 }
@@ -1773,14 +1773,14 @@ function expandPathToThisElement(aElement) {
   if (aElement.classList.contains("kids")) {
     
     aElement.classList.remove("hidden");
-    expandPathToThisElement(aElement.previousSibling);  
+    expandPathToThisElement(aElement.previousSibling); 
 
   } else if (aElement.classList.contains("hasKids")) {
     
     let sepSpan = aElement.childNodes[2];
     assertClassListContains(sepSpan, "mrSep");
     sepSpan.textContent = kShowKidsSep;
-    expandPathToThisElement(aElement.parentNode);       
+    expandPathToThisElement(aElement.parentNode); 
 
   } else {
     assertClassListContains(aElement, "entries");

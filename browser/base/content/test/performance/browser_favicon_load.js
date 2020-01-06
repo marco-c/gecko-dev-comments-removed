@@ -27,7 +27,7 @@ function clearAllImageCaches() {
   var tools = Cc["@mozilla.org/image/tools;1"]
                 .getService(SpecialPowers.Ci.imgITools);
   var imageCache = tools.getImgCacheForDocument(window.document);
-  imageCache.clearCache(true);  
+  imageCache.clearCache(true); 
   imageCache.clearCache(false); 
 }
 

@@ -25,7 +25,7 @@ function test() {
   SpecialPowers.pushPrefEnv(
     {set: [["privacy.userContext.enabled", true]]},
     function() {
-      requestLongerTimeout(10);  
+      requestLongerTimeout(10); 
       startReferrerTest(startNewTabTestCase, { userContextId: 1 });
     });
 }

@@ -264,12 +264,14 @@ TouchSimulator.prototype = {
         }
       }
       let unwrapped = XPCNativeWrapper.unwrap(target);
+      
       unwrapped.sendTouchEvent(name, clone([0]),       
                                clone([evt.clientX]),   
                                clone([evt.clientY]),   
                                clone([1]), clone([1]), 
                                clone([0]), clone([0]), 
                                1);                     
+      
       return;
     }
     let document = target.ownerDocument;
@@ -344,9 +346,9 @@ TouchSimulator.prototype = {
     
     
     
-    if (!allowZoom.value ||                   
-        minZoom.value === maxZoom.value ||    
-        autoSize.value                        
+    if (!allowZoom.value || 
+        minZoom.value === maxZoom.value || 
+        autoSize.value 
     ) {
       return 0;
     }

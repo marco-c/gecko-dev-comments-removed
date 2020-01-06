@@ -9,7 +9,7 @@ Cu.import("resource://services-common/utils.js");
 
 _("Make sure querySpinningly will synchronously fetch rows for a query asyncly");
 
-const SQLITE_CONSTRAINT_VIOLATION = 19;  
+const SQLITE_CONSTRAINT_VIOLATION = 19; 
 
 
 

@@ -100,7 +100,7 @@ addEventListener("TalosPowers:ParentExec:QueryEvent", function(e) {
     throw new Error("TalosPowers:ParentExec may only be used with local content");
   }
   let uniqueMessageId = "TalosPowers:ParentExec:"
-                      + content.document.documentURI + Date.now() + Math.random();  
+                      + content.document.documentURI + Date.now() + Math.random(); 
 
   
   addMessageListener("TalosPowers:ParentExec:ReplyMsg", function done(reply) {
@@ -122,4 +122,4 @@ addEventListener("TalosPowers:ParentExec:QueryEvent", function(e) {
     command: e.detail.command,
     id: uniqueMessageId
   });
-}, false, true);  
+}, false, true); 

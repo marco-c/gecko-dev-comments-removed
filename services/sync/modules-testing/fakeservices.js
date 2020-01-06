@@ -87,7 +87,7 @@ this.FakeGUIDService = function FakeGUIDService() {
 this.FakeCryptoService = function FakeCryptoService() {
   this.counter = 0;
 
-  delete Weave.Crypto;  
+  delete Weave.Crypto; 
   Weave.Crypto = this;
 
   CryptoWrapper.prototype.ciphertextHMAC = function ciphertextHMAC(keyBundle) {

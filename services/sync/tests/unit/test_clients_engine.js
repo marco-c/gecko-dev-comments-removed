@@ -10,7 +10,7 @@ Cu.import("resource://services-sync/util.js");
 Cu.import("resource://testing-common/services/sync/utils.js");
 
 const MORE_THAN_CLIENTS_TTL_REFRESH = 691200; 
-const LESS_THAN_CLIENTS_TTL_REFRESH = 86400;  
+const LESS_THAN_CLIENTS_TTL_REFRESH = 86400; 
 
 let engine;
 
@@ -123,7 +123,7 @@ add_task(async function test_bad_hmac() {
     deletedItems       = [];
 
     _("Change our keys and our client ID, reupload keys.");
-    let oldLocalID  = engine.localID;     
+    let oldLocalID  = engine.localID; 
     engine.localID = Utils.makeGUID();
     await engine.resetClient();
     await generateNewKeys(Service.collectionKeys);
@@ -176,7 +176,7 @@ add_task(async function test_bad_hmac() {
     
     
     
-    oldLocalID  = engine.localID;         
+    oldLocalID  = engine.localID; 
     engine.localID = Utils.makeGUID();
     await engine.resetClient();
     await generateNewKeys(Service.collectionKeys);

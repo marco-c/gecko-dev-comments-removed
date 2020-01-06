@@ -247,8 +247,8 @@ var Agent = {
 
       
       let iterator;
-      let backups = [];  
-      let upgradeBackupPrefix = this.Paths.upgradeBackupPrefix;  
+      let backups = []; 
+      let upgradeBackupPrefix = this.Paths.upgradeBackupPrefix; 
 
       try {
         iterator = new File.DirectoryIterator(this.Paths.backups);

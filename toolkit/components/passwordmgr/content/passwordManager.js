@@ -462,7 +462,7 @@ function AskUserShowPasswords() {
   return prompter.confirmEx(window,
           null,
           kSignonBundle.getString("noMasterPasswordPrompt"), prompter.STD_YES_NO_BUTTONS,
-          null, null, null, null, dummy) == 0;    
+          null, null, null, null, dummy) == 0; 
 }
 
 function FinalizeSignonDeletions(syncNeeded) {
@@ -711,7 +711,7 @@ function masterPasswordLogin(noPasswordCallback) {
   
   try {
     
-    token.login(true);  
+    token.login(true); 
                         
   } catch (e) {
     

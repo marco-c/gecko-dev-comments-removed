@@ -17,6 +17,6 @@ function startNewWindowTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10);  
+  requestLongerTimeout(10); 
   startReferrerTest(startNewWindowTestCase);
 }

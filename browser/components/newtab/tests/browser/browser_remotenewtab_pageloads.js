@@ -26,7 +26,7 @@ add_task(async function open_newtab() {
 
 
 
-  BrowserOpenTab();  
+  BrowserOpenTab(); 
 
   let browser = gBrowser.selectedBrowser;
   await BrowserTestUtils.browserLoaded(browser);
@@ -43,7 +43,7 @@ add_task(async function open_newtab() {
 });
 
 function nextChangeNotificationPromise(aNewURL, testMessage) {
-  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) {  
+  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) { 
       Assert.equal(aData, aNewURL, testMessage);
       return true;
   });

@@ -2331,15 +2331,15 @@ function run_readstring_tests(library) {
 
   
   let invalid_string = ctypes.unsigned_char.array(27)();
-  invalid_string[0] = 0x80;  
-  invalid_string[1] = 0xD0;  
+  invalid_string[0] = 0x80; 
+  invalid_string[1] = 0xD0; 
   invalid_string[2] = 0x74;
-  invalid_string[3] = 0xE0;  
+  invalid_string[3] = 0xE0; 
   invalid_string[4] = 0x74;
-  invalid_string[5] = 0xE0;  
+  invalid_string[5] = 0xE0; 
   invalid_string[6] = 0xA0;
   invalid_string[7] = 0x74;
-  invalid_string[8] = 0xE0;  
+  invalid_string[8] = 0xE0; 
   invalid_string[9] = 0x80;
   invalid_string[10] = 0x74;
   invalid_string[11] = 0xF0; 
@@ -2359,14 +2359,14 @@ function run_readstring_tests(library) {
   invalid_string[25] = 0x74;
   invalid_string[26] = 0x00;
   let invalid_result = invalid_string.readStringReplaceMalformed();
-  do_check_eq(0xFFFD, invalid_result.charCodeAt(0));  
-  do_check_eq(0xFFFD, invalid_result.charCodeAt(1));  
+  do_check_eq(0xFFFD, invalid_result.charCodeAt(0)); 
+  do_check_eq(0xFFFD, invalid_result.charCodeAt(1)); 
   do_check_eq(0x74, invalid_result.charCodeAt(2));
-  do_check_eq(0xFFFD, invalid_result.charCodeAt(3));  
+  do_check_eq(0xFFFD, invalid_result.charCodeAt(3)); 
   do_check_eq(0x74, invalid_result.charCodeAt(4));
-  do_check_eq(0xFFFD, invalid_result.charCodeAt(5));  
+  do_check_eq(0xFFFD, invalid_result.charCodeAt(5)); 
   do_check_eq(0x74, invalid_result.charCodeAt(6));
-  do_check_eq(0xFFFD, invalid_result.charCodeAt(7));  
+  do_check_eq(0xFFFD, invalid_result.charCodeAt(7)); 
   do_check_eq(0xFFFD, invalid_result.charCodeAt(8));
   do_check_eq(0x74, invalid_result.charCodeAt(9));
   do_check_eq(0xFFFD, invalid_result.charCodeAt(10)); 
@@ -2384,11 +2384,11 @@ function run_readstring_tests(library) {
 
   
   let utf8_cesu8_string = ctypes.unsigned_char.array(10)();
-  utf8_cesu8_string[0] = 0xF0;  
+  utf8_cesu8_string[0] = 0xF0; 
   utf8_cesu8_string[1] = 0x90;
   utf8_cesu8_string[2] = 0x90;
   utf8_cesu8_string[3] = 0x80;
-  utf8_cesu8_string[4] = 0xED;  
+  utf8_cesu8_string[4] = 0xED; 
   utf8_cesu8_string[5] = 0xA0;
   utf8_cesu8_string[6] = 0x81;
   utf8_cesu8_string[7] = 0xED;

@@ -750,8 +750,8 @@ Sanitizer.getClearRange = function(ts) {
       startDate = endDate - 14400000000; 
       break;
     case Sanitizer.TIMESPAN_TODAY :
-      var d = new Date();  
-      d.setHours(0);      
+      var d = new Date(); 
+      d.setHours(0); 
       d.setMinutes(0);
       d.setSeconds(0);
       startDate = d.valueOf() * 1000; 

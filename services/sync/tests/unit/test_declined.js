@@ -110,9 +110,9 @@ add_task(async function testDeclinedMeta() {
   manager._engines.petrol.enabled = true;
   manager._engines.diesel.enabled = true;
   manager._engines.dummy.enabled = true;
-  manager._engines.actual.enabled = false;   
+  manager._engines.actual.enabled = false; 
 
-  manager.decline(["localdecline"]);            
+  manager.decline(["localdecline"]); 
 
   let declinedEngines = new DeclinedEngines(Service);
 

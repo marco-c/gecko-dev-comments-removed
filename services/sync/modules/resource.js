@@ -239,7 +239,7 @@ AsyncResource.prototype = {
 
     try {
       status  = channel.responseStatus;
-      success = channel.requestSucceeded;    
+      success = channel.requestSucceeded; 
 
       this._log.trace("Status: " + status);
       this._log.trace("Success: " + success);

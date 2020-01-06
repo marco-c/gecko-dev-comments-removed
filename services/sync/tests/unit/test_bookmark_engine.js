@@ -234,7 +234,7 @@ async function test_restoreOrImport(aReplace) {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  Svc.Obs.notify("weave:engine:start-tracking");   
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   try {
 
@@ -513,7 +513,7 @@ add_task(async function test_bookmark_guidMap_fail() {
   let itemPayload = itemRecord.cleartext;
   coll.insert(itemGUID, encryptPayload(itemPayload));
 
-  engine.lastSync = 1;   
+  engine.lastSync = 1; 
 
   
 
@@ -667,7 +667,7 @@ add_task(async function test_sync_dateAdded() {
   
   engine.lastSync = 1;
 
-  Svc.Obs.notify("weave:engine:start-tracking");   
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   
   let now = Date.now();
@@ -816,7 +816,7 @@ add_task(async function test_sync_imap_URLs() {
 
   let collection = server.user("foo").collection("bookmarks");
 
-  Svc.Obs.notify("weave:engine:start-tracking");   
+  Svc.Obs.notify("weave:engine:start-tracking"); 
 
   try {
     collection.insert("menu", encryptPayload({

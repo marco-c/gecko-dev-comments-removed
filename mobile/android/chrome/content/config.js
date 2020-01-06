@@ -6,12 +6,12 @@
 var {classes: Cc, interfaces: Ci, manager: Cm, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 
-const VKB_ENTER_KEY = 13;   
-const INITIAL_PAGE_DELAY = 500;   
-const PREFS_BUFFER_MAX = 30;   
-const PAGE_SCROLL_TRIGGER = 200;     
-const FILTER_CHANGE_TRIGGER = 200;     
-const INNERHTML_VALUE_DELAY = 100;    
+const VKB_ENTER_KEY = 13; 
+const INITIAL_PAGE_DELAY = 500; 
+const PREFS_BUFFER_MAX = 30; 
+const PAGE_SCROLL_TRIGGER = 200; 
+const FILTER_CHANGE_TRIGGER = 200; 
+const INNERHTML_VALUE_DELAY = 100; 
 
 var gStringBundle = Services.strings.createBundle("chrome://browser/locale/config.properties");
 var gClipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);

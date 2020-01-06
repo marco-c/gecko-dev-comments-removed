@@ -56,7 +56,7 @@ var pktApi = (function() {
 
 
     
-    var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api");    
+    var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api"); 
     var pocketSiteHost = Services.prefs.getCharPref("extensions.pocket.site"); 
     var baseAPIUrl = "https://" + pocketAPIhost + "/v3";
 

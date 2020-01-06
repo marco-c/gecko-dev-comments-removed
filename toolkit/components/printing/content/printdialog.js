@@ -255,11 +255,11 @@ function loadDialog() {
     dialog.printframeGroup.selectedItem = dialog.selectedframeRadio;
 
   } else if (print_howToEnableUI == gPrintSetInterface.kFrameEnableAsIsAndEach) {
-    dialog.aslaidoutRadio.removeAttribute("disabled");       
+    dialog.aslaidoutRadio.removeAttribute("disabled"); 
 
     dialog.selectedframeRadio.setAttribute("disabled", "true"); 
-    dialog.eachframesepRadio.removeAttribute("disabled");       
-    dialog.printframeGroupLabel.removeAttribute("disabled");    
+    dialog.eachframesepRadio.removeAttribute("disabled"); 
+    dialog.printframeGroupLabel.removeAttribute("disabled"); 
 
     
     dialog.printframeGroup.selectedItem = dialog.eachframesepRadio;

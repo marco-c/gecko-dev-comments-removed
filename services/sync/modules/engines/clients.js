@@ -972,9 +972,9 @@ ClientStore.prototype = {
       }
 
       
-      record.os = Services.appinfo.OS;             
+      record.os = Services.appinfo.OS; 
       record.appPackage = Services.appinfo.ID;
-      record.application = this.engine.brandName;   
+      record.application = this.engine.brandName; 
 
       
       

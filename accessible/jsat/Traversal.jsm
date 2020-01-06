@@ -13,13 +13,13 @@ this.EXPORTED_SYMBOLS = ["TraversalRules", "TraversalHelper"];
 
 Cu.import("resource://gre/modules/accessibility/Utils.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Roles",  
+XPCOMUtils.defineLazyModuleGetter(this, "Roles", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Filters",  
+XPCOMUtils.defineLazyModuleGetter(this, "Filters", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "States",  
+XPCOMUtils.defineLazyModuleGetter(this, "States", 
   "resource://gre/modules/accessibility/Constants.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Prefilters",  
+XPCOMUtils.defineLazyModuleGetter(this, "Prefilters", 
   "resource://gre/modules/accessibility/Constants.jsm");
 
 var gSkipEmptyImages = new PrefCache("accessibility.accessfu.skip_empty_images");

@@ -84,18 +84,18 @@ const IS_WIN = ("@mozilla.org/windows-registry-key;1" in Cc);
 
 
 
-const PAGEID_DUMMY            = "dummy";                 
-const PAGEID_CHECKING         = "checking";              
-const PAGEID_NO_UPDATES_FOUND = "noupdatesfound";        
-const PAGEID_MANUAL_UPDATE    = "manualUpdate";          
-const PAGEID_UNSUPPORTED      = "unsupported";           
-const PAGEID_FOUND_BASIC      = "updatesfoundbasic";     
-const PAGEID_DOWNLOADING      = "downloading";           
-const PAGEID_ERRORS           = "errors";                
-const PAGEID_ERROR_EXTRA      = "errorextra";            
-const PAGEID_ERROR_PATCHING   = "errorpatching";         
-const PAGEID_FINISHED         = "finished";              
-const PAGEID_FINISHED_BKGRD   = "finishedBackground";    
+const PAGEID_DUMMY            = "dummy";
+const PAGEID_CHECKING         = "checking";
+const PAGEID_NO_UPDATES_FOUND = "noupdatesfound";
+const PAGEID_MANUAL_UPDATE    = "manualUpdate";
+const PAGEID_UNSUPPORTED      = "unsupported";
+const PAGEID_FOUND_BASIC      = "updatesfoundbasic";
+const PAGEID_DOWNLOADING      = "downloading";
+const PAGEID_ERRORS           = "errors";
+const PAGEID_ERROR_EXTRA      = "errorextra";
+const PAGEID_ERROR_PATCHING   = "errorpatching";
+const PAGEID_FINISHED         = "finished";
+const PAGEID_FINISHED_BKGRD   = "finishedBackground";
 
 const UPDATE_WINDOW_NAME = "Update:Wizard";
 
@@ -129,10 +129,10 @@ var gCloseWindowTimeoutCounter = 0;
 
 
 
-var gAppUpdateEnabled;            
-var gAppUpdateServiceEnabled;     
-var gAppUpdateStagingEnabled;     
-var gAppUpdateURLDefault;         
+var gAppUpdateEnabled; 
+var gAppUpdateServiceEnabled; 
+var gAppUpdateStagingEnabled; 
+var gAppUpdateURLDefault; 
 
 var gTestCounter = -1;
 var gWin;

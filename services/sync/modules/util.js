@@ -68,11 +68,13 @@ this.Utils = {
   get userAgent() {
     if (!this._userAgent) {
       let hph = Cc["@mozilla.org/network/protocol;1?name=http"].getService(Ci.nsIHttpProtocolHandler);
+      
       this._userAgent =
         Services.appinfo.name + "/" + Services.appinfo.version +  
         " (" + hph.oscpu + ")" +                                  
         " FxSync/" + WEAVE_VERSION + "." +                        
         Services.appinfo.appBuildID + ".";                        
+      
     }
     return this._userAgent + Svc.Prefs.get("client.type", "desktop");
   },

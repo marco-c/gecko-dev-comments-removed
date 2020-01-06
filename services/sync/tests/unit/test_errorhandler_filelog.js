@@ -16,7 +16,7 @@ const logsdir            = FileUtils.getDir("ProfD", ["weave", "logs"], true);
 
 
 const CLEANUP_DELAY      = 2000;
-const DELAY_BUFFER       = 500;  
+const DELAY_BUFFER       = 500; 
 
 const PROLONGED_ERROR_DURATION =
   (Svc.Prefs.get("errorhandler.networkFailureReportTimeout") * 2) * 1000;

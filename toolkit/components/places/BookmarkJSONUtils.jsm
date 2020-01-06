@@ -274,7 +274,7 @@ BookmarkImporter.prototype = {
     
     for (let node of nodes) {
       if (!node.children || node.children.length == 0)
-        continue;  
+        continue; 
 
       
       node.source = this._source;

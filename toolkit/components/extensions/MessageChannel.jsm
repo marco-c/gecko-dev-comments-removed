@@ -828,7 +828,7 @@ this.MessageChannel = {
         Cu.reportError(e);
         return Promise.reject(e);
       }
-      return Promise.resolve();  
+      return Promise.resolve(); 
     }
 
     let broker = this.responseManagers.get(target);
