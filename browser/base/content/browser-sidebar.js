@@ -233,6 +233,15 @@ var SidebarUI = {
 
 
 
+  _fireShowEvent() {
+    let event = new CustomEvent("SidebarShown", {bubbles: true});
+    this._switcherTarget.dispatchEvent(event);
+  },
+
+  
+
+
+
 
 
   _fireFocusedEvent() {
@@ -372,11 +381,17 @@ var SidebarUI = {
           sidebarOnLoad(event);
 
           resolve();
+
+          
+          this._fireShowEvent();
         }, {capture: true, once: true});
       } else {
         
         this._fireFocusedEvent();
         resolve();
+
+        
+        this._fireShowEvent();
       }
 
       let selBrowser = gBrowser.selectedBrowser;
