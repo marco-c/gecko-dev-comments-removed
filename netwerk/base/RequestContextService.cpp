@@ -125,9 +125,11 @@ RequestContext::DOMContentLoaded()
 
   LOG(("RequestContext::DOMContentLoaded %p", this));
 
-  if (IsNeckoChild() && gNeckoChild) {
+  if (IsNeckoChild()) {
     
-    gNeckoChild->SendRequestContextAfterDOMContentLoaded(mID);
+    if (gNeckoChild) {
+      gNeckoChild->SendRequestContextAfterDOMContentLoaded(mID);
+    }
     return NS_OK;
   }
 
