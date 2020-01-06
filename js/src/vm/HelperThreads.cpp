@@ -1982,6 +1982,8 @@ HelperThread::handleParseWorkload(AutoLockHelperThreadState& locked)
         AutoCompartment ac(cx, task->parseGlobal);
 
         task->parse(cx);
+
+        cx->frontendCollectionPool().purge();
     }
 
     
