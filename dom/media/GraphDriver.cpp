@@ -1047,7 +1047,10 @@ void
 AudioCallbackDriver::StateCallback(cubeb_state aState)
 {
   LOG(LogLevel::Debug, ("AudioCallbackDriver State: %d", aState));
-  if (aState == CUBEB_STATE_ERROR) {
+  
+  
+  
+  if (aState == CUBEB_STATE_ERROR && mAudioStream) {
     
     
     MonitorAutoLock lock(GraphImpl()->GetMonitor());
