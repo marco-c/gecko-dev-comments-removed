@@ -22,6 +22,7 @@
 @namespace html url("http://www.w3.org/1999/xhtml"); 
 
 * {
+  appearance: auto; 
   -moz-user-focus: ignore;
   -moz-user-select: none;
   display: -moz-box;

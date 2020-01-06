@@ -6080,7 +6080,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            display->mAppearance, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mAppearance,
-           NS_THEME_AUTO);
+           NS_THEME_NONE);
 
   
   const nsCSSValue* bindingValue = aRuleData->ValueForBinding();

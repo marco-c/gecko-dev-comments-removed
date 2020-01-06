@@ -9,6 +9,7 @@
 
 input[type="number"] {
   -moz-appearance: number-input;
+  appearance: auto;
   
   -moz-binding: none;
   inline-size: 20ch; 
