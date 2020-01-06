@@ -588,8 +588,9 @@ class ReadBarriered : public ReadBarrieredBase<T>,
     }
 
     
+    
     explicit ReadBarriered(const ReadBarriered& v) : ReadBarrieredBase<T>(v) {
-        this->post(JS::GCPolicy<T>::initial(), v.get());
+        this->post(JS::GCPolicy<T>::initial(), v.unbarrieredGet());
     }
 
     

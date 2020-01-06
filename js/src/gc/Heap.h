@@ -1328,6 +1328,7 @@ TenuredCell::readBarrier(TenuredCell* thing)
 {
     MOZ_ASSERT(!CurrentThreadIsIonCompiling());
     MOZ_ASSERT(thing);
+    MOZ_ASSERT(CurrentThreadCanAccessZone(thing->zoneFromAnyThread()));
 
     
     
