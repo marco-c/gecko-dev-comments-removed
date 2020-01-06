@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 requestLongerTimeout(5);
 
 var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
@@ -324,7 +328,7 @@ function parseCodeFile(fileUri) {
     let baseUri;
     for (let line of data.split("\n")) {
       let urls =
-        line.match(/["']chrome:\/\/[a-zA-Z0-9 -]+\/(content|skin|locale)\/[^"' ]*["']/g);
+        line.match(/["'`]chrome:\/\/[a-zA-Z0-9 -]+\/(content|skin|locale)\/[^"'` ]*["'`]/g);
       if (!urls) {
         urls = line.match(/["']resource:\/\/[^"']+["']/g);
         if (urls && isDevtools &&
@@ -388,8 +392,14 @@ function parseCodeFile(fileUri) {
         
         url = url.slice(1, -1);
         
-        if (url.endsWith("?") || url.endsWith("\\"))
+        if (url.endsWith("\\")) {
           url = url.slice(0, -1);
+        }
+
+        let pos = url.indexOf("?");
+        if (pos != -1) {
+          url = url.slice(0, pos);
+        }
 
         
         
