@@ -351,6 +351,13 @@ class Messenger {
     this.sender = sender;
     this.filter = filter;
     this.optionalFilter = optionalFilter;
+
+    
+    this.sender.envType = context.envType;
+
+    
+    
+    this.excludeContentScriptSender = (this.context.envType === "devtools_child");
   }
 
   _sendMessage(messageManager, message, data, recipient) {
@@ -393,6 +400,12 @@ class Messenger {
         messageFilterStrict: this.filter,
 
         filterMessage: (sender, recipient) => {
+          
+          
+          if (this.excludeContentScriptSender && sender.envType === "content_child") {
+            return false;
+          }
+
           
           return (sender.contextId !== this.context.contextId &&
                   filter(sender, recipient));
@@ -488,6 +501,12 @@ class Messenger {
         messageFilterStrict: this.filter,
 
         filterMessage: (sender, recipient) => {
+          
+          
+          if (this.excludeContentScriptSender && sender.envType === "content_child") {
+            return false;
+          }
+
           
           return (sender.contextId !== this.context.contextId &&
                   filter(sender, recipient));
