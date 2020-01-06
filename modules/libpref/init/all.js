@@ -5665,14 +5665,17 @@ pref("security.mixed_content.send_hsts_priming", true);
 pref("security.mixed_content.use_hsts", true);
 #endif
 
-pref ("security.mixed_content.hsts_priming_cache_timeout", 604800);
+pref("security.mixed_content.hsts_priming_cache_timeout", 604800);
 
 
-pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
+pref("security.mixed_content.hsts_priming_request_timeout", 3000);
 
 
 
-pref ("security.data_uri.inherit_security_context", true);
+
+
+
+pref("security.data_uri.unique_opaque_origin", false);
 
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_ANDROID)

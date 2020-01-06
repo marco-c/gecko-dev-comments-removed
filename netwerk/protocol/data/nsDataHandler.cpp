@@ -58,7 +58,7 @@ nsDataHandler::GetProtocolFlags(uint32_t *result) {
 
     
     
-    if (nsIOService::IsInheritSecurityContextForDataURIEnabled()) {
+    if (!nsIOService::IsDataURIUniqueOpaqueOrigin()) {
         *result |= URI_INHERITS_SECURITY_CONTEXT;
     }
     return NS_OK;
