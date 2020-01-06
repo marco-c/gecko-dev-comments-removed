@@ -9,31 +9,6 @@ function check_webm(v, enabled) {
 
   var video = ['vp8', 'vp8.0', 'vp9', 'vp9.0'];
   var audio = ['vorbis', 'opus'];
-  
-  
-  
-  
-  
-  
-  if (navigator.userAgent.indexOf("Mobile") != -1 &&
-      navigator.userAgent.indexOf("Android") == -1) {
-    
-    
-    var androidSDKVer = SpecialPowers.Cc['@mozilla.org/system-info;1']
-                                     .getService(SpecialPowers.Ci.nsIPropertyBag2)
-                                     .getProperty('sdk_version');
-    info("android version:"+androidSDKVer);
-
-    
-    if (androidSDKVer > 18) {
-      video = ['vp8', 'vp8.0', 'vp9', 'vp9.0'];
-      audio = ['vorbis'];
-    } else if (androidSDKVer > 15) {
-      video = ['vp8', 'vp8.0'];
-      audio = ['vorbis'];
-    }
-
-  }
 
   audio.forEach(function(acodec) {
     check("audio/webm; codecs=" + acodec, "probably");

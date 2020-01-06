@@ -122,11 +122,6 @@
 #endif
 #include "mozilla/dom/PeerConnectionObserverEnumsBinding.h"
 
-#ifdef MOZ_WEBRTC_OMX
-#include "OMXVideoCodec.h"
-#include "OMXCodecWrapper.h"
-#endif
-
 #define ICE_PARSING "In RTCConfiguration passed to RTCPeerConnection constructor"
 
 using namespace mozilla;
@@ -850,34 +845,6 @@ class ConfigureCodec {
       mRedUlpfecEnabled(false),
       mDtmfEnabled(false)
     {
-#ifdef MOZ_WEBRTC_OMX
-      
-      
-
-      
-      
-      
-
-      
-      branch->GetBoolPref("media.peerconnection.video.h264_enabled",
-          &mHardwareH264Enabled);
-
-      if (mHardwareH264Enabled) {
-        
-        android::sp<android::OMXCodecReservation> encode = new android::OMXCodecReservation(true);
-        android::sp<android::OMXCodecReservation> decode = new android::OMXCodecReservation(false);
-
-        
-        
-        
-        if (encode->ReserveOMXCodec() && decode->ReserveOMXCodec()) {
-          CSFLogDebug( LOGTAG, "%s: H264 hardware codec available", __FUNCTION__);
-          mHardwareH264Supported = true;
-        }
-      }
-
-#endif 
-
       mSoftwareH264Enabled = PeerConnectionCtx::GetInstance()->gmpHasH264();
 
       mH264Enabled = mHardwareH264Supported || mSoftwareH264Enabled;
@@ -886,11 +853,6 @@ class ConfigureCodec {
       mH264Level &= 0xFF;
 
       branch->GetIntPref("media.navigator.video.h264.max_br", &mH264MaxBr);
-
-#ifdef MOZ_WEBRTC_OMX
-      
-      mH264MaxMbps = 11880;
-#endif
 
       branch->GetIntPref("media.navigator.video.h264.max_mbps", &mH264MaxMbps);
 
