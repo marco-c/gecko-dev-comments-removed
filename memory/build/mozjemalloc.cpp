@@ -388,8 +388,11 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 
 
 
+
+#ifndef MOZ_DEBUG
 #if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) && !defined(__aarch64__)
 #define MALLOC_STATIC_PAGESIZE 1
+#endif
 #endif
 
 
