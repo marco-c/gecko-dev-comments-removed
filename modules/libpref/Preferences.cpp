@@ -317,7 +317,7 @@ struct CallbackNode
 
 static PLDHashTable* gHashTable;
 
-static ArenaAllocator<8192, 4> gPrefNameArena;
+static ArenaAllocator<8192, 1> gPrefNameArena;
 
 
 
