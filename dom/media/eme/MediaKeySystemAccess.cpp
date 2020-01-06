@@ -50,9 +50,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MediaKeySystemAccess)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-static nsCString
-ToCString(const MediaKeySystemConfiguration& aConfig);
-
 MediaKeySystemAccess::MediaKeySystemAccess(nsPIDOMWindowInner* aParent,
                                            const nsAString& aKeySystem,
                                            const MediaKeySystemConfiguration& aConfig)
@@ -60,8 +57,6 @@ MediaKeySystemAccess::MediaKeySystemAccess(nsPIDOMWindowInner* aParent,
   , mKeySystem(aKeySystem)
   , mConfig(aConfig)
 {
-  EME_LOG("Created MediaKeySystemAccess for keysystem=%s config=%s",
-          NS_ConvertUTF16toUTF8(mKeySystem).get(), mozilla::dom::ToCString(mConfig).get());
 }
 
 MediaKeySystemAccess::~MediaKeySystemAccess()
@@ -826,8 +821,7 @@ static bool
 GetSupportedConfig(const KeySystemConfig& aKeySystem,
                    const MediaKeySystemConfiguration& aCandidate,
                    MediaKeySystemConfiguration& aOutConfig,
-                   DecoderDoctorDiagnostics* aDiagnostics,
-                   bool aInPrivateBrowsing)
+                   DecoderDoctorDiagnostics* aDiagnostics)
 {
   
   MediaKeySystemConfiguration config;
@@ -876,14 +870,6 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
                         config.mPersistentState)) {
     EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
             "persistentState requirement not satisfied.",
-            NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
-    return false;
-  }
-
-  if (config.mPersistentState == MediaKeysRequirement::Required &&
-      aInPrivateBrowsing) {
-    EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
-            "persistentState requested in Private Browsing window.",
             NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
     return false;
   }
@@ -940,13 +926,8 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
 
   
   
-  if (aCandidate.mAudioCapabilities.IsEmpty() &&
-      aCandidate.mVideoCapabilities.IsEmpty()) {
-    EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
-            "no supported audio or video capabilities specified",
-            NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
-    return false;
-  }
+  
+  
 
   
   if (!aCandidate.mVideoCapabilities.IsEmpty()) {
@@ -1058,12 +1039,10 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
 
 
 bool
-MediaKeySystemAccess::GetSupportedConfig(
-  const nsAString& aKeySystem,
-  const Sequence<MediaKeySystemConfiguration>& aConfigs,
-  MediaKeySystemConfiguration& aOutConfig,
-  DecoderDoctorDiagnostics* aDiagnostics,
-  bool aIsPrivateBrowsing)
+MediaKeySystemAccess::GetSupportedConfig(const nsAString& aKeySystem,
+                                         const Sequence<MediaKeySystemConfiguration>& aConfigs,
+                                         MediaKeySystemConfiguration& aOutConfig,
+                                         DecoderDoctorDiagnostics* aDiagnostics)
 {
   KeySystemConfig implementation;
   if (!GetKeySystemConfig(aKeySystem, implementation)) {
@@ -1073,8 +1052,7 @@ MediaKeySystemAccess::GetSupportedConfig(
     if (mozilla::dom::GetSupportedConfig(implementation,
                                          candidate,
                                          aOutConfig,
-                                         aDiagnostics,
-                                         aIsPrivateBrowsing)) {
+                                         aDiagnostics)) {
       return true;
     }
   }
@@ -1099,104 +1077,6 @@ MediaKeySystemAccess::NotifyObservers(nsPIDOMWindowInner* aWindow,
   if (obs) {
     obs->NotifyObservers(aWindow, "mediakeys-request", json.get());
   }
-}
-
-static nsCString
-ToCString(const nsString& aString)
-{
-  nsCString str("'");
-  str.Append(NS_ConvertUTF16toUTF8(aString));
-  str.AppendLiteral("'");
-  return str;
-}
-
-static nsCString
-ToCString(const MediaKeysRequirement aValue)
-{
-  nsCString str("'");
-  str.Append(nsDependentCString(
-    MediaKeysRequirementValues::strings[static_cast<uint32_t>(aValue)].value));
-  str.AppendLiteral("'");
-  return str;
-}
-
-static nsCString
-ToCString(const MediaKeySystemMediaCapability& aValue)
-{
-  nsCString str;
-  str.AppendLiteral("{contentType=");
-  str.Append(ToCString(aValue.mContentType));
-  str.AppendLiteral(", robustness=");
-  str.Append(ToCString(aValue.mRobustness));
-  str.AppendLiteral("}");
-  return str;
-}
-
-template<class Type>
-static nsCString
-ToCString(const Sequence<Type>& aSequence)
-{
-  nsCString str;
-  str.AppendLiteral("[");
-  for (size_t i = 0; i < aSequence.Length(); i++) {
-    if (i != 0) {
-      str.AppendLiteral(",");
-    }
-    str.Append(ToCString(aSequence[i]));
-  }
-  str.AppendLiteral("]");
-  return str;
-}
-
-template<class Type>
-static nsCString
-ToCString(const Optional<Sequence<Type>>& aOptional)
-{
-  nsCString str;
-  if (aOptional.WasPassed()) {
-    str.Append(ToCString(aOptional.Value()));
-  } else {
-    str.AppendLiteral("[]");
-  }
-  return str;
-}
-
-static nsCString
-ToCString(const MediaKeySystemConfiguration& aConfig)
-{
-  nsCString str;
-  str.AppendLiteral("{label=");
-  str.Append(ToCString(aConfig.mLabel));
-
-  str.AppendLiteral(", initDataTypes=");
-  str.Append(ToCString(aConfig.mInitDataTypes));
-
-  str.AppendLiteral(", audioCapabilities=");
-  str.Append(ToCString(aConfig.mAudioCapabilities));
-
-  str.AppendLiteral(", videoCapabilities=");
-  str.Append(ToCString(aConfig.mVideoCapabilities));
-
-  str.AppendLiteral(", distinctiveIdentifier=");
-  str.Append(ToCString(aConfig.mDistinctiveIdentifier));
-
-  str.AppendLiteral(", persistentState=");
-  str.Append(ToCString(aConfig.mPersistentState));
-
-  str.AppendLiteral(", sessionTypes=");
-  str.Append(ToCString(aConfig.mSessionTypes));
-
-  str.AppendLiteral("}");
-
-  return str;
-}
-
-
-nsCString
-MediaKeySystemAccess::ToCString(
-  const Sequence<MediaKeySystemConfiguration>& aConfig)
-{
-  return mozilla::dom::ToCString(aConfig);
 }
 
 } 
