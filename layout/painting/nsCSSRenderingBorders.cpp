@@ -211,6 +211,7 @@ nsCSSBorderRenderer::nsCSSBorderRenderer(nsPresContext* aPresContext,
   mOneUnitBorder = CheckFourFloatsEqual(mBorderWidths, 1.0);
   mNoBorderRadius = AllCornersZeroSize(mBorderRadii);
   mAllBordersSameStyle = AreBorderSideFinalStylesSame(eSideBitsAll);
+  mAllBordersSameWidth = AllBordersSameWidth();
   mAvoidStroke = false;
 }
 
@@ -3217,9 +3218,7 @@ nsCSSBorderRenderer::DrawBorders()
     return;
   }
 
-  bool allBordersSameWidth = AllBordersSameWidth();
-
-  if (allBordersSameWidth && mBorderWidths[0] == 0.0) {
+  if (mAllBordersSameWidth && mBorderWidths[0] == 0.0) {
     
     
     return;
@@ -3261,7 +3260,7 @@ nsCSSBorderRenderer::DrawBorders()
   
   if (mAllBordersSameStyle &&
       mCompositeColors[0] == nullptr &&
-      allBordersSameWidth &&
+      mAllBordersSameWidth &&
       mBorderStyles[0] == NS_STYLE_BORDER_STYLE_SOLID &&
       mNoBorderRadius &&
       !mAvoidStroke)
@@ -3310,7 +3309,7 @@ nsCSSBorderRenderer::DrawBorders()
   
   
   if (allBordersSolid &&
-      allBordersSameWidth &&
+      mAllBordersSameWidth &&
       mCompositeColors[0] == nullptr &&
       mBorderWidths[0] == 1 &&
       mNoBorderRadius &&
@@ -3328,7 +3327,7 @@ nsCSSBorderRenderer::DrawBorders()
   }
 
   if (allBordersSolid &&
-      allBordersSameWidth &&
+      mAllBordersSameWidth &&
       mNoBorderRadius &&
       !mAvoidStroke)
   {

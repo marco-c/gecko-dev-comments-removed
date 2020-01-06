@@ -157,6 +157,7 @@ private:
 
   
   bool mAllBordersSameStyle;
+  bool mAllBordersSameWidth;
   bool mOneUnitBorder;
   bool mNoBorderRadius;
   bool mAvoidStroke;
