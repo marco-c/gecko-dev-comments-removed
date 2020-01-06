@@ -591,11 +591,12 @@ WebrtcGmpVideoEncoder::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
         default:
           MOZ_CRASH("GMP_BufferType already handled in switch above");
       }
-      if (buffer+size > end) {
+      MOZ_ASSERT(size != 0 &&
+                 buffer+size <= end); 
+      if (size == 0 || buffer+size > end) {
         
         LOG(LogLevel::Error,
-            ("GMP plugin returned badly formatted encoded data: end is %td bytes past buffer end",
-             buffer+size - end));
+            ("GMP plugin returned badly formatted encoded data: buffer=%p, size=%d, end=%p", buffer, size, end));
         return;
       }
       
