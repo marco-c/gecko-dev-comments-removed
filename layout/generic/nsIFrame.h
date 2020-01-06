@@ -865,7 +865,7 @@ public:
 
 
 
-  inline nsIFrame* GetFlattenedTreeParentPrimaryFrame() const;
+  nsIFrame* GetFlattenedTreeParentPrimaryFrame() const;
 
   
 
