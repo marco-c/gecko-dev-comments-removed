@@ -760,6 +760,12 @@ class AutofillRecords {
     }
   }
 
+  
+  _nukeAllRecords() {
+    this._store.data[this._collectionName] = [];
+    
+  }
+
   _stripComputedFields(record) {
     this.VALID_COMPUTED_FIELDS.forEach(field => delete record[field]);
   }
