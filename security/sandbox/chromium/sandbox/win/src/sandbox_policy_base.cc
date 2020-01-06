@@ -110,10 +110,16 @@ SANDBOX_INTERCEPT IntegrityLevel g_shared_delayed_integrity_level;
 SANDBOX_INTERCEPT MitigationFlags g_shared_delayed_mitigations;
 
 
-HWINSTA PolicyBase::alternate_winstation_handle_ = NULL;
-HDESK PolicyBase::alternate_desktop_handle_ = NULL;
+
+
+HWINSTA PolicyBase::alternate_winstation_handle_ = nullptr;
+HDESK PolicyBase::alternate_desktop_handle_ = nullptr;
+HDESK PolicyBase::alternate_desktop_local_winstation_handle_ = nullptr;
 IntegrityLevel PolicyBase::alternate_desktop_integrity_level_label_ =
     INTEGRITY_LEVEL_SYSTEM;
+IntegrityLevel
+    PolicyBase::alternate_desktop_local_winstation_integrity_level_label_ =
+        INTEGRITY_LEVEL_SYSTEM;
 
 PolicyBase::PolicyBase()
     : ref_count(1),
@@ -220,27 +226,26 @@ base::string16 PolicyBase::GetAlternateDesktop() const {
     return base::string16();
   }
 
-  
-  
-  
-  if (use_alternate_desktop_ && !alternate_desktop_handle_) {
-    return base::string16();
+  if (use_alternate_winstation_) {
+    
+    
+    
+    if (!alternate_desktop_handle_ || !alternate_winstation_handle_) {
+      return base::string16();
+    }
+    return GetFullDesktopName(alternate_winstation_handle_,
+                              alternate_desktop_handle_);
+  } else {
+    if (!alternate_desktop_local_winstation_handle_) {
+      return base::string16();
+    }
+    return GetFullDesktopName(nullptr,
+                              alternate_desktop_local_winstation_handle_);
   }
-  if (use_alternate_winstation_ && (!alternate_desktop_handle_ ||
-                                    !alternate_winstation_handle_)) {
-    return base::string16();
-  }
-
-  return GetFullDesktopName(alternate_winstation_handle_,
-                            alternate_desktop_handle_);
 }
 
 ResultCode PolicyBase::CreateAlternateDesktop(bool alternate_winstation) {
   if (alternate_winstation) {
-    
-    if (!alternate_winstation_handle_ && alternate_desktop_handle_)
-      return SBOX_ERROR_UNSUPPORTED;
-
     
     if (alternate_winstation_handle_ && alternate_desktop_handle_)
       return SBOX_ALL_OK;
@@ -268,21 +273,18 @@ ResultCode PolicyBase::CreateAlternateDesktop(bool alternate_winstation) {
       return SBOX_ERROR_CANNOT_CREATE_DESKTOP;
   } else {
     
-    if (alternate_winstation_handle_)
-      return SBOX_ERROR_UNSUPPORTED;
-
-    
-    if (alternate_desktop_handle_)
+    if (alternate_desktop_local_winstation_handle_)
       return SBOX_ALL_OK;
 
     
-    ResultCode result = CreateAltDesktop(NULL, &alternate_desktop_handle_);
+    ResultCode result =
+        CreateAltDesktop(nullptr, &alternate_desktop_local_winstation_handle_);
     if (SBOX_ALL_OK != result)
       return result;
 
     
-    if (!alternate_desktop_handle_ ||
-        GetWindowObjectName(alternate_desktop_handle_).empty())
+    if (!alternate_desktop_local_winstation_handle_ ||
+        GetWindowObjectName(alternate_desktop_local_winstation_handle_).empty())
       return SBOX_ERROR_CANNOT_CREATE_DESKTOP;
   }
 
@@ -290,14 +292,21 @@ ResultCode PolicyBase::CreateAlternateDesktop(bool alternate_winstation) {
 }
 
 void PolicyBase::DestroyAlternateDesktop() {
-  if (alternate_desktop_handle_) {
-    ::CloseDesktop(alternate_desktop_handle_);
-    alternate_desktop_handle_ = NULL;
-  }
+  if (use_alternate_winstation_) {
+    if (alternate_desktop_handle_) {
+      ::CloseDesktop(alternate_desktop_handle_);
+      alternate_desktop_handle_ = nullptr;
+    }
 
-  if (alternate_winstation_handle_) {
-    ::CloseWindowStation(alternate_winstation_handle_);
-    alternate_winstation_handle_ = NULL;
+    if (alternate_winstation_handle_) {
+      ::CloseWindowStation(alternate_winstation_handle_);
+      alternate_winstation_handle_ = nullptr;
+    }
+  } else {
+    if (alternate_desktop_local_winstation_handle_) {
+      ::CloseDesktop(alternate_desktop_local_winstation_handle_);
+      alternate_desktop_local_winstation_handle_ = nullptr;
+    }
   }
 }
 
@@ -450,20 +459,35 @@ ResultCode PolicyBase::MakeTokens(base::win::ScopedHandle* initial,
   
   
   
-  if (alternate_desktop_handle_ && use_alternate_desktop_ &&
-      integrity_level_ != INTEGRITY_LEVEL_LAST &&
-      alternate_desktop_integrity_level_label_ < integrity_level_) {
+  if (use_alternate_desktop_ && integrity_level_ != INTEGRITY_LEVEL_LAST) {
     
     static_assert(INTEGRITY_LEVEL_SYSTEM < INTEGRITY_LEVEL_UNTRUSTED,
                   "Integrity level ordering reversed.");
-    result = SetObjectIntegrityLabel(alternate_desktop_handle_,
-                                     SE_WINDOW_OBJECT,
-                                     L"",
-                                     GetIntegrityLevelString(integrity_level_));
-    if (ERROR_SUCCESS != result)
-      return SBOX_ERROR_GENERIC;
+    HDESK desktop_handle = nullptr;
+    IntegrityLevel desktop_integrity_level_label;
+    if (use_alternate_winstation_) {
+      desktop_handle = alternate_desktop_handle_;
+      desktop_integrity_level_label = alternate_desktop_integrity_level_label_;
+    } else {
+      desktop_handle = alternate_desktop_local_winstation_handle_;
+      desktop_integrity_level_label =
+          alternate_desktop_local_winstation_integrity_level_label_;
+    }
+    
+    if (desktop_handle && desktop_integrity_level_label < integrity_level_) {
+      result =
+          SetObjectIntegrityLabel(desktop_handle, SE_WINDOW_OBJECT, L"",
+                                  GetIntegrityLevelString(integrity_level_));
+      if (ERROR_SUCCESS != result)
+        return SBOX_ERROR_GENERIC;
 
-    alternate_desktop_integrity_level_label_ = integrity_level_;
+      if (use_alternate_winstation_) {
+        alternate_desktop_integrity_level_label_ = integrity_level_;
+      } else {
+        alternate_desktop_local_winstation_integrity_level_label_ =
+            integrity_level_;
+      }
+    }
   }
 
   if (lowbox_sid_) {
