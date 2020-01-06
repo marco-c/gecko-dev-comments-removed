@@ -131,6 +131,31 @@ static const char* kPreloadPermissions[] = {
 
 
 
+static const char* kPermissionsWithDefaults[] = {
+  "camera",
+  "microphone",
+  "geo",
+  "desktop-notification"
+};
+
+
+
+bool
+HasDefaultPref(const char* aType)
+{
+  if (aType) {
+    for (const char* perm : kPermissionsWithDefaults) {
+      if (!strcmp(aType, perm)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
+
 bool
 IsPreloadPermission(const char* aType)
 {
@@ -932,6 +957,13 @@ nsPermissionManager::Init()
   
   
   mMemoryOnlyDB = mozilla::Preferences::GetBool("permissions.memory_only", false);
+
+  nsresult rv;
+  nsCOMPtr<nsIPrefService> prefService = do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = prefService->GetBranch("permissions.default.", getter_AddRefs(mDefaultPrefBranch));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   if (IsChildProcess()) {
     
@@ -2231,6 +2263,17 @@ nsPermissionManager::CommonTestPermissionInternal(nsIPrincipal* aPrincipal,
 
   
   *aPermission = nsIPermissionManager::UNKNOWN_ACTION;
+
+  
+  
+  
+  if (HasDefaultPref(aType)) {
+    int32_t defaultPermission = nsIPermissionManager::UNKNOWN_ACTION;
+    nsresult rv = mDefaultPrefBranch->GetIntPref(aType, &defaultPermission);
+    if (NS_SUCCEEDED(rv)) {
+      *aPermission = defaultPermission;
+    }
+  }
 
   
   

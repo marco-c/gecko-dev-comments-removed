@@ -424,6 +424,13 @@ pref("permissions.manager.defaultsUrl", "resource://app/defaults/permissions");
 
 
 
+pref("permissions.default.camera", 0);
+pref("permissions.default.microphone", 0);
+pref("permissions.default.geo", 0);
+pref("permissions.default.desktop-notification", 0);
+
+
+
 pref("browser.link.open_newwindow", 3);
 
 
