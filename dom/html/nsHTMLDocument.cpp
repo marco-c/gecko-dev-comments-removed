@@ -1535,6 +1535,13 @@ nsHTMLDocument::Open(JSContext* cx,
   }
 
   
+  
+  if (ShouldIgnoreOpens()) {
+    nsCOMPtr<nsIDocument> ret = this;
+    return ret.forget();
+  }
+
+  
   if (!mScriptGlobalObject) {
     nsCOMPtr<nsIDocument> ret = this;
     return ret.forget();
@@ -1944,6 +1951,12 @@ nsHTMLDocument::WriteCommon(JSContext *cx,
     
     
     
+    return NS_OK;
+  }
+
+  
+  
+  if (ShouldIgnoreOpens()) {
     return NS_OK;
   }
 
