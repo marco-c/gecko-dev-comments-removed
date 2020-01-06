@@ -367,3 +367,13 @@ function getDistance(target, prop, v1, v2) {
   return SpecialPowers.DOMWindowUtils
            .computeAnimationDistance(target, prop, v1, v2);
 }
+
+
+
+
+function waitForPaints() {
+  
+  
+  
+  return waitForAnimationFrames(2);
+}
