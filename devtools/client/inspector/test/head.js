@@ -299,16 +299,16 @@ var clickContainer = Task.async(function* (selector, inspector) {
 
 function mouseLeaveMarkupView(inspector) {
   info("Leaving the markup-view area");
-  let def = defer();
 
   
   let btn = inspector.toolbox.doc.querySelector("#toolbox-controls");
 
   EventUtils.synthesizeMouseAtCenter(btn, {type: "mousemove"},
     inspector.toolbox.win);
-  executeSoon(def.resolve);
 
-  return def.promise;
+  return new Promise(resolve => {
+    executeSoon(resolve);
+  });
 }
 
 
@@ -547,11 +547,11 @@ function* waitForMultipleChildrenUpdates(inspector) {
 
 function waitForChildrenUpdated({markup}) {
   info("Waiting for queued children updates to be handled");
-  let def = defer();
-  markup._waitForChildren().then(() => {
-    executeSoon(def.resolve);
+  return new Promise(resolve => {
+    markup._waitForChildren().then(() => {
+      executeSoon(resolve);
+    });
   });
-  return def.promise;
 }
 
 
@@ -566,43 +566,42 @@ function waitForChildrenUpdated({markup}) {
 
 
 function waitForStyleEditor(toolbox, href) {
-  let def = defer();
-
   info("Waiting for the toolbox to switch to the styleeditor");
-  toolbox.once("styleeditor-selected").then(() => {
-    let panel = toolbox.getCurrentPanel();
-    ok(panel && panel.UI, "Styleeditor panel switched to front");
 
-    
-    
-    let gotEditor = (event, editor) => {
-      let currentHref = editor.styleSheet.href;
-      if (!href || (href && currentHref.endsWith(href))) {
-        info("Stylesheet editor selected");
-        panel.UI.off("editor-selected", gotEditor);
+  return new Promise(resolve => {
+    toolbox.once("styleeditor-selected").then(() => {
+      let panel = toolbox.getCurrentPanel();
+      ok(panel && panel.UI, "Styleeditor panel switched to front");
 
-        editor.getSourceEditor().then(sourceEditor => {
-          info("Stylesheet editor fully loaded");
-          def.resolve(sourceEditor);
-        });
-
-        return true;
-      }
-
-      info("The editor was incorrect. Waiting for editor-selected event.");
-      return false;
-    };
-
-    
-    
-    
-    if (!gotEditor("styleeditor-selected", panel.UI.selectedEditor)) {
       
-      panel.UI.on("editor-selected", gotEditor);
-    }
-  });
+      
+      let gotEditor = (event, editor) => {
+        let currentHref = editor.styleSheet.href;
+        if (!href || (href && currentHref.endsWith(href))) {
+          info("Stylesheet editor selected");
+          panel.UI.off("editor-selected", gotEditor);
 
-  return def.promise;
+          editor.getSourceEditor().then(sourceEditor => {
+            info("Stylesheet editor fully loaded");
+            resolve(sourceEditor);
+          });
+
+          return true;
+        }
+
+        info("The editor was incorrect. Waiting for editor-selected event.");
+        return false;
+      };
+
+      
+      
+      
+      if (!gotEditor("styleeditor-selected", panel.UI.selectedEditor)) {
+        
+        panel.UI.on("editor-selected", gotEditor);
+      }
+    });
+  });
 }
 
 

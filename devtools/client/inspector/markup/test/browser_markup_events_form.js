@@ -36,8 +36,6 @@ add_task(function* () {
 });
 
 function registerTestActor(toolbox) {
-  let deferred = defer();
-
   let options = {
     prefix: "eventsFormActor",
     actorClass: "EventsFormActor",
@@ -46,16 +44,16 @@ function registerTestActor(toolbox) {
 
   
   let client = toolbox.target.client;
-  registerTabActor(client, options).then(({registrar, form}) => {
-    
-    let front = EventsFormFront(client, form);
-    front.attach().then(() => {
-      deferred.resolve({
-        front: front,
-        registrar: registrar,
+  return new Promise(resolve => {
+    registerTabActor(client, options).then(({registrar, form}) => {
+      
+      let front = EventsFormFront(client, form);
+      front.attach().then(() => {
+        resolve({
+          front: front,
+          registrar: registrar,
+        });
       });
     });
   });
-
-  return deferred.promise;
 }

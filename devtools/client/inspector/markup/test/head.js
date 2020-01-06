@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -126,11 +127,11 @@ function* getFirstChildNodeValue(selector, testActor) {
 
 function waitForChildrenUpdated({markup}) {
   info("Waiting for queued children updates to be handled");
-  let def = defer();
-  markup._waitForChildren().then(() => {
-    executeSoon(def.resolve);
+  return new Promise(resolve => {
+    markup._waitForChildren().then(() => {
+      executeSoon(resolve);
+    });
   });
-  return def.promise;
 }
 
 
@@ -353,9 +354,9 @@ function* (nodeFront, inspector, assert = true) {
 
 
 function promiseNextTick() {
-  let deferred = defer();
-  executeSoon(deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    executeSoon(resolve);
+  });
 }
 
 

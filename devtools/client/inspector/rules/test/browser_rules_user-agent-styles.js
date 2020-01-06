@@ -86,12 +86,17 @@ function* setUserAgentStylesPref(val) {
 
   
   
-  let oncePrefChanged = defer();
   let prefObserver = new PrefObserver("devtools.");
-  prefObserver.on(PREF_UA_STYLES, oncePrefChanged.resolve);
+  let oncePrefChanged = new Promise(resolve => {
+    prefObserver.on(PREF_UA_STYLES, onPrefChanged);
+
+    function onPrefChanged() {
+      prefObserver.off(PREF_UA_STYLES, onPrefChanged);
+      resolve();
+    }
+  });
   Services.prefs.setBoolPref(PREF_UA_STYLES, val);
-  yield oncePrefChanged.promise;
-  prefObserver.off(PREF_UA_STYLES, oncePrefChanged.resolve);
+  yield oncePrefChanged;
 }
 
 function* userAgentStylesVisible(inspector, view) {

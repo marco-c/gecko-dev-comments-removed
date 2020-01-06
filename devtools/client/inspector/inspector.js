@@ -10,7 +10,6 @@
 
 var Services = require("Services");
 var promise = require("promise");
-var defer = require("devtools/shared/defer");
 var EventEmitter = require("devtools/shared/event-emitter");
 const {executeSoon} = require("devtools/shared/DevToolsUtils");
 var KeyShortcuts = require("devtools/client/shared/key-shortcuts");
@@ -237,8 +236,6 @@ Inspector.prototype = {
   },
 
   _deferredOpen: function (defaultSelection) {
-    let deferred = defer();
-
     this.breadcrumbs = new HTMLBreadcrumbs(this);
 
     this.walker.on("new-root", this.onNewRoot);
@@ -278,26 +275,26 @@ Inspector.prototype = {
     this._initMarkup();
     this.isReady = false;
 
-    this.once("markuploaded", () => {
-      this.isReady = true;
+    return new Promise(resolve => {
+      this.once("markuploaded", () => {
+        this.isReady = true;
 
-      
-      if (defaultSelection) {
-        this.selection.setNodeFront(defaultSelection, "inspector-open");
-        this.markup.expandNode(this.selection.nodeFront);
-      }
+        
+        if (defaultSelection) {
+          this.selection.setNodeFront(defaultSelection, "inspector-open");
+          this.markup.expandNode(this.selection.nodeFront);
+        }
 
-      
-      this.setupToolbar();
+        
+        this.setupToolbar();
 
-      this.emit("ready");
-      deferred.resolve(this);
+        this.emit("ready");
+        resolve(this);
+      });
+
+      this.setupSearchBox();
+      this.setupSidebar();
     });
-
-    this.setupSearchBox();
-    this.setupSidebar();
-
-    return deferred.promise;
   },
 
   _onBeforeNavigate: function () {
