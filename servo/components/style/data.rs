@@ -16,7 +16,6 @@ use selectors::matching::VisitedHandlingMode;
 use shared_lock::{Locked, StylesheetGuards};
 use std::fmt;
 use stylearc::Arc;
-use traversal::TraversalFlags;
 
 
 
@@ -352,116 +351,18 @@ impl ElementStyles {
 
 
 
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct StoredRestyleHint(pub RestyleHint);
-
-impl StoredRestyleHint {
-    
-    pub fn propagate(&mut self, traversal_flags: &TraversalFlags) -> Self {
-        use std::mem;
-
-        
-        
-        if traversal_flags.for_animation_only() {
-            self.0.remove_animation_hints();
-            return Self::empty();
-        }
-
-        debug_assert!(!self.0.has_animation_hint(),
-                      "There should not be any animation restyle hints \
-                       during normal traversal");
-
-        
-        let new_hint = mem::replace(&mut self.0, RestyleHint::empty())
-                       .propagate_for_non_animation_restyle();
-        StoredRestyleHint(new_hint)
-    }
-
-    
-    pub fn empty() -> Self {
-        StoredRestyleHint(RestyleHint::empty())
-    }
-
-    
-    
-    pub fn subtree() -> Self {
-        StoredRestyleHint(RestyleHint::restyle_subtree())
-    }
-
-    
-    pub fn recascade_self() -> Self {
-        StoredRestyleHint(RestyleHint::recascade_self())
-    }
-
-    
-    pub fn has_self_invalidations(&self) -> bool {
-        self.0.affects_self()
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    
-    pub fn insert(&mut self, other: Self) {
-        self.0.insert(other.0)
-    }
-
-    
-    pub fn contains_subtree(&self) -> bool {
-        self.0.contains(RestyleHint::restyle_subtree())
-    }
-
-    
-    pub fn has_animation_hint(&self) -> bool {
-        self.0.has_animation_hint()
-    }
-
-    
-    
-    pub fn has_recascade_self(&self) -> bool {
-        self.0.has_recascade_self()
-    }
-}
-
-impl Default for StoredRestyleHint {
-    fn default() -> Self {
-        Self::empty()
-    }
-}
-
-impl From<RestyleHint> for StoredRestyleHint {
-    fn from(hint: RestyleHint) -> Self {
-        StoredRestyleHint(hint)
-    }
-}
-
-
-
-
 #[derive(Debug, Default)]
 pub struct RestyleData {
     
     
-    pub hint: StoredRestyleHint,
+    pub hint: RestyleHint,
+
+    
+    pub reconstructed_ancestor: bool,
 
     
     
     pub damage: RestyleDamage,
-
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    pub damage_handled: RestyleDamage,
 }
 
 impl RestyleData {
@@ -469,28 +370,6 @@ impl RestyleData {
     pub fn has_invalidations(&self) -> bool {
         self.hint.has_self_invalidations()
     }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn damage_handled(&self) -> RestyleDamage {
-        self.damage_handled
-    }
-
-    
-    #[cfg(feature = "servo")]
-    pub fn damage_handled(&self) -> RestyleDamage {
-        RestyleDamage::empty()
-    }
-
-    
-    #[cfg(feature = "gecko")]
-    pub fn set_damage_handled(&mut self, d: RestyleDamage) {
-        self.damage_handled = d;
-    }
-
-    
-    #[cfg(feature = "servo")]
-    pub fn set_damage_handled(&mut self, _: RestyleDamage) {}
 }
 
 
@@ -588,8 +467,8 @@ impl ElementData {
 
         debug_assert!(self.restyle.is_some());
         let restyle_data = self.restyle.as_ref().unwrap();
-        let hint = restyle_data.hint.0;
 
+        let hint = restyle_data.hint;
         if shared_context.traversal_flags.for_animation_only() {
             
             

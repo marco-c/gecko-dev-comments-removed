@@ -6,6 +6,7 @@
 
 #[cfg(feature = "gecko")]
 use gecko_bindings::structs::nsRestyleHint;
+use traversal::TraversalFlags;
 
 bitflags! {
     /// The kind of restyle we need to do for a given element.
@@ -59,7 +60,38 @@ impl RestyleHint {
 
     
     
-    pub fn propagate_for_non_animation_restyle(&self) -> Self {
+    pub fn contains_subtree(&self) -> bool {
+        self.contains(RESTYLE_SELF | RESTYLE_DESCENDANTS)
+    }
+
+    
+    pub fn has_self_invalidations(&self) -> bool {
+        self.intersects(RESTYLE_SELF | RECASCADE_SELF | Self::replacements())
+    }
+
+    
+    pub fn propagate(&mut self, traversal_flags: &TraversalFlags) -> Self {
+        use std::mem;
+
+        
+        
+        if traversal_flags.for_animation_only() {
+            self.remove_animation_hints();
+            return Self::empty();
+        }
+
+        debug_assert!(!self.has_animation_hint(),
+                      "There should not be any animation restyle hints \
+                       during normal traversal");
+
+        
+        mem::replace(self, Self::empty())
+            .propagate_for_non_animation_restyle()
+    }
+
+    
+    
+    fn propagate_for_non_animation_restyle(&self) -> Self {
         if self.contains(RESTYLE_DESCENDANTS) {
             return Self::restyle_subtree()
         }
@@ -84,13 +116,6 @@ impl RestyleHint {
     #[inline]
     pub fn for_animations() -> Self {
         RESTYLE_SMIL | RESTYLE_CSS_ANIMATIONS | RESTYLE_CSS_TRANSITIONS
-    }
-
-    
-    
-    #[inline]
-    pub fn affects_self(&self) -> bool {
-        self.intersects(RESTYLE_SELF | RECASCADE_SELF | Self::replacements())
     }
 
     
@@ -142,6 +167,12 @@ impl RestyleHint {
         
         
         self.remove(RECASCADE_SELF);
+    }
+}
+
+impl Default for RestyleHint {
+    fn default() -> Self {
+        Self::empty()
     }
 }
 
