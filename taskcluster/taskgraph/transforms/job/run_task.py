@@ -9,10 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.job import run_job_using
 from taskgraph.util.schema import Schema
-from taskgraph.transforms.job.common import (
-    add_build_dependency,
-    support_vcs_checkout,
-)
+from taskgraph.transforms.job.common import support_vcs_checkout
 from voluptuous import Required, Any
 
 run_task_schema = Schema({
@@ -29,12 +26,6 @@ run_task_schema = Schema({
     
     
     Required('command'): Any([basestring], basestring),
-
-    
-    
-    
-    
-    Required('requires-build', default=False): bool,
 })
 
 
@@ -42,9 +33,6 @@ def common_setup(config, job, taskdesc):
     run = job['run']
     if run['checkout']:
         support_vcs_checkout(config, job, taskdesc)
-
-    if run['requires-build']:
-        add_build_dependency(config, job, taskdesc)
 
 
 @run_job_using("docker-worker", "run-task", schema=run_task_schema)

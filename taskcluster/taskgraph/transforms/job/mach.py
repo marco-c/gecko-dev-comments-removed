@@ -20,12 +20,6 @@ mach_schema = Schema({
 
     
     Required('mach'): basestring,
-
-    
-    
-    
-    
-    Required('requires-build', default=False): bool,
 })
 
 
