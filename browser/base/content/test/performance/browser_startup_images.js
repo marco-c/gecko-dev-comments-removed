@@ -34,6 +34,8 @@ const whitelist = [
     file: "chrome://browser/skin/places/toolbarDropMarker.png",
     platforms: ["linux", "win", "macosx"],
   },
+
+  
   {
     file: "chrome://browser/skin/tracking-protection-16.svg#enabled",
     platforms: ["linux", "win", "macosx"],
@@ -70,6 +72,16 @@ const whitelist = [
   {
     file: "chrome://global/skin/icons/resizer.png",
     platforms: ["win"],
+  },
+
+  {
+    file: "chrome://browser/skin/window-controls/maximize.svg",
+    platforms: ["win"],
+    
+    
+    intermittentShown: ["win"],
+    
+    intermittentNotLoaded: ["win"],
   },
 ];
 
