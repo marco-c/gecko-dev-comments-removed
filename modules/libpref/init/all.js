@@ -1223,14 +1223,6 @@ pref("dom.min_timeout_value", 4);
 pref("dom.min_background_timeout_value", 1000);
 
 
-pref("dom.min_tracking_timeout_value", 4);
-
-
-pref("dom.min_tracking_background_timeout_value", 10000);
-
-pref("dom.timeout.tracking_throttling_delay", 30000);
-
-
 pref("dom.experimental_forms", false);
 
 
@@ -1309,6 +1301,14 @@ pref("privacy.trackingprotection.enabled",  false);
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
 pref("privacy.trackingprotection.annotate_channels",  true);
+
+pref("privacy.firstparty.isolate",                        false);
+
+
+
+pref("privacy.firstparty.isolate.restrict_opener_access", true);
+
+pref("privacy.resistFingerprinting", false);
 
 
 #ifdef NIGHTLY_BUILD
