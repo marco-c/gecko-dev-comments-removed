@@ -466,8 +466,9 @@ MutableBlobStorage::Append(const void* aData, uint32_t aLength)
 
   
   
-  if (mStorageState == eInMemory && ShouldBeTemporaryStorage(aLength)) {
-    MaybeCreateTemporaryFile();
+  if (mStorageState == eInMemory && ShouldBeTemporaryStorage(aLength) &&
+      !MaybeCreateTemporaryFile()) {
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -547,7 +548,7 @@ MutableBlobStorage::ShouldBeTemporaryStorage(uint64_t aSize) const
   return bufferSize.value() >= mMaxMemory;
 }
 
-void
+bool
 MutableBlobStorage::MaybeCreateTemporaryFile()
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -557,7 +558,7 @@ MutableBlobStorage::MaybeCreateTemporaryFile()
   mozilla::ipc::PBackgroundChild* actorChild =
     mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+    return false;
   }
 
   mActor = new TemporaryIPCBlobChild(this);
@@ -569,6 +570,8 @@ MutableBlobStorage::MaybeCreateTemporaryFile()
   mActor.get()->AddRef();
 
   
+
+  return true;
 }
 
 void
