@@ -109,7 +109,7 @@ public:
   void RecordShadowStyleChange(mozilla::dom::ShadowRoot* aShadowRoot) {
     
     
-    ForceAllStyleDirty();
+    MarkOriginsDirty(OriginFlags::All);
   }
 
   bool StyleSheetsHaveChanged() const
@@ -297,13 +297,6 @@ public:
 
 
   void StyleSubtreeForReconstruct(dom::Element* aRoot);
-
-  
-
-
-
-
-  void ForceAllStyleDirty();
 
   
 
@@ -502,6 +495,13 @@ private:
 
   
   void PreTraverseSync();
+
+  
+
+
+
+
+  void MarkOriginsDirty(OriginFlags aChangedOrigins);
 
   
 
