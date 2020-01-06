@@ -128,6 +128,7 @@ function doKey(aKey, modifier) {
 
 
 function commonInit(selfFilling) {
+  
   var pwmgr = SpecialPowers.Cc["@mozilla.org/login-manager;1"].
               getService(SpecialPowers.Ci.nsILoginManager);
   ok(pwmgr != null, "Access LoginManager");
