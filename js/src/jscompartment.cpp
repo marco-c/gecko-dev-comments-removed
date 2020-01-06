@@ -571,11 +571,8 @@ JSCompartment::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx, HandleOb
 
     
     
-    RootedObject key(cx, enclosing);
-    if (enclosing->is<WithEnvironmentObject>()) {
-        MOZ_ASSERT(!enclosing->as<WithEnvironmentObject>().isSyntactic());
-        key = &enclosing->as<WithEnvironmentObject>().object();
-    }
+    MOZ_ASSERT(!enclosing->as<WithEnvironmentObject>().isSyntactic());
+    RootedObject key(cx, &enclosing->as<WithEnvironmentObject>().object());
     RootedObject lexicalEnv(cx, nonSyntacticLexicalEnvironments_->lookup(key));
 
     if (!lexicalEnv) {
@@ -594,13 +591,9 @@ JSCompartment::getNonSyntacticLexicalEnvironment(JSObject* enclosing) const
 {
     if (!nonSyntacticLexicalEnvironments_)
         return nullptr;
-    
-    
-    JSObject* key = enclosing;
-    if (enclosing->is<WithEnvironmentObject>()) {
-        MOZ_ASSERT(!enclosing->as<WithEnvironmentObject>().isSyntactic());
-        key = &enclosing->as<WithEnvironmentObject>().object();
-    }
+    if (!enclosing->is<WithEnvironmentObject>())
+        return nullptr;
+    JSObject* key = &enclosing->as<WithEnvironmentObject>().object();
     JSObject* lexicalEnv = nonSyntacticLexicalEnvironments_->lookup(key);
     if (!lexicalEnv)
         return nullptr;
