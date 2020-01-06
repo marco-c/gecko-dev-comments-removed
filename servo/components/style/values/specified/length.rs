@@ -737,6 +737,12 @@ impl Percentage {
 
     
     #[inline]
+    pub fn zero() -> Self {
+        Percentage(0.)
+    }
+
+    
+    #[inline]
     pub fn hundred() -> Self {
         Percentage(1.)
     }
@@ -999,6 +1005,11 @@ impl LengthOrPercentageOrAuto {
     pub fn zero() -> Self {
         LengthOrPercentageOrAuto::Length(NoCalcLength::zero())
     }
+
+    
+    pub fn zero_percent() -> Self {
+        LengthOrPercentageOrAuto::Percentage(Percentage::zero())
+    }
 }
 
 impl Parse for LengthOrPercentageOrAuto {
@@ -1156,6 +1167,11 @@ impl LengthOrPercentageOrAutoOrContent {
     
     pub fn zero() -> Self {
         LengthOrPercentageOrAutoOrContent::Length(NoCalcLength::zero())
+    }
+
+    
+    pub fn zero_percent() -> Self {
+        LengthOrPercentageOrAutoOrContent::Percentage(Percentage::zero())
     }
 }
 
