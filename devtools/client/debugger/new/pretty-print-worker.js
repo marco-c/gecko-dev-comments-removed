@@ -5838,6 +5838,10 @@ return  (function(modules) {
  900:
  function(module, exports, __webpack_require__) {
 
+	
+
+
+
 	const networkRequest = __webpack_require__(901);
 	const workerUtils = __webpack_require__(902);
 
@@ -5851,6 +5855,10 @@ return  (function(modules) {
  901:
  function(module, exports) {
 
+	
+
+
+
 	function networkRequest(url, opts) {
 	  return new Promise((resolve, reject) => {
 	    const req = new XMLHttpRequest();
@@ -5860,7 +5868,7 @@ return  (function(modules) {
 	        if (req.status === 200) {
 	          resolve({ content: req.responseText });
 	        } else {
-	          resolve(req.statusText);
+	          reject(req.statusText);
 	        }
 	      }
 	    });
@@ -5891,7 +5899,9 @@ return  (function(modules) {
 	function WorkerDispatcher() {
 	  this.msgId = 1;
 	  this.worker = null;
-	}
+	} 
+
+
 
 	WorkerDispatcher.prototype = {
 	  start(url) {
@@ -5922,7 +5932,6 @@ return  (function(modules) {
 	          }
 
 	          this.worker.removeEventListener("message", listener);
-
 	          if (result.error) {
 	            reject(result.error);
 	          } else {

@@ -11,7 +11,7 @@ function isElementVisible(dbg, elementName) {
   return bpLine && isVisibleWithin(cm, bpLine);
 }
 
-add_task(function* () {
+add_task(function*() {
   
   
   
