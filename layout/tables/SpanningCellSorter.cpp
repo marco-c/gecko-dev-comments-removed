@@ -11,6 +11,7 @@
 #include "SpanningCellSorter.h"
 #include "nsQuickSort.h"
 #include "nsIPresShell.h"
+#include "mozilla/HashFunctions.h"
 
 
 
@@ -39,7 +40,7 @@ SpanningCellSorter::HashTableOps = {
  PLDHashNumber
 SpanningCellSorter::HashTableHashKey(const void *key)
 {
-    return NS_PTR_TO_INT32(key);
+    return HashGeneric(key);
 }
 
  bool
