@@ -10,6 +10,12 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 const ADDRESS_REFERENCES = "chrome://formautofill/content/addressReferences.js";
 
+
+
+const ALTERNATIVE_COUNTRY_NAMES = {
+  "US": ["US", "United States of America", "United States", "America", "U.S.", "USA", "U.S.A.", "U.S.A"],
+};
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
@@ -46,6 +52,8 @@ this.FormAutofillUtils = {
     "cc-exp-year": "creditCard",
   },
   _addressDataLoaded: false,
+  _collators: {},
+  _reAlternativeCountryNames: {},
 
   isAddressField(fieldName) {
     return !!this._fieldNameInfo[fieldName] && !this.isCreditCardField(fieldName);
@@ -222,58 +230,51 @@ this.FormAutofillUtils = {
 
 
 
+  getCollators(country) {
+    
+    
+    
+    
 
-
-
-
-
-
-  findSelectOption(selectEl, address, fieldName) {
-    let value = address[fieldName];
-    if (!value) {
-      return null;
+    if (!this._collators[country]) {
+      let dataset = this.getCountryAddressData(country);
+      let languages = dataset.languages ? dataset.languages.split("~") : [dataset.lang];
+      this._collators[country] = languages.map(lang => new Intl.Collator(lang, {sensitivity: "base", ignorePunctuation: true}));
     }
+    return this._collators[country];
+  },
 
-    let dataset = this.getCountryAddressData(address.country);
-    let collator = new Intl.Collator(dataset.lang, {sensitivity: "base", ignorePunctuation: true});
+  
 
-    for (let option of selectEl.options) {
-      if (this.strCompare(value, option.value, collator) ||
-          this.strCompare(value, option.text, collator)) {
-        return option;
-      }
-    }
 
-    if (fieldName === "address-level1") {
-      if (!Array.isArray(dataset.sub_keys)) {
-        dataset.sub_keys = dataset.sub_keys.split("~");
-      }
-      if (!Array.isArray(dataset.sub_names)) {
-        dataset.sub_names = dataset.sub_names.split("~");
-      }
-      let keys = dataset.sub_keys;
-      let names = dataset.sub_names;
-      let identifiedValue = this.identifyValue(keys, names, value, collator);
 
-      
-      if (identifiedValue === undefined) {
-        return null;
+
+
+
+
+  identifyCountryCode(countryName, countrySpecified) {
+    let countries = countrySpecified ? [countrySpecified] : Object.keys(ALTERNATIVE_COUNTRY_NAMES);
+
+    for (let country of countries) {
+      let collators = this.getCollators(country);
+
+      let alternativeCountryNames = ALTERNATIVE_COUNTRY_NAMES[country];
+      let reAlternativeCountryNames = this._reAlternativeCountryNames[country];
+      if (!reAlternativeCountryNames) {
+        reAlternativeCountryNames = this._reAlternativeCountryNames[country] = [];
       }
 
-      
-      
-      let pattern = new RegExp(`\\b${identifiedValue}\\b`, "i");
-      for (let option of selectEl.options) {
-        let optionValue = this.identifyValue(keys, names, option.value, collator);
-        let optionText = this.identifyValue(keys, names, option.text, collator);
-        if (identifiedValue === optionValue || identifiedValue === optionText || pattern.test(option.value)) {
-          return option;
+      for (let i = 0; i < alternativeCountryNames.length; i++) {
+        let name = alternativeCountryNames[i];
+        let reName = reAlternativeCountryNames[i];
+        if (!reName) {
+          reName = reAlternativeCountryNames[i] = new RegExp("\\b" + this.escapeRegExp(name) + "\\b", "i");
+        }
+
+        if (this.strCompare(name, countryName, collators) || reName.test(countryName)) {
+          return country;
         }
       }
-    }
-
-    if (fieldName === "country") {
-      
     }
 
     return null;
@@ -287,13 +288,85 @@ this.FormAutofillUtils = {
 
 
 
-  identifyValue(keys, names, value, collator) {
-    let resultKey = keys.find(key => this.strCompare(value, key, collator));
+
+
+
+  findSelectOption(selectEl, address, fieldName) {
+    let value = address[fieldName];
+    if (!value) {
+      return null;
+    }
+
+    let country = address.country || this.DEFAULT_COUNTRY_CODE;
+    let dataset = this.getCountryAddressData(country);
+    let collators = this.getCollators(country);
+
+    for (let option of selectEl.options) {
+      if (this.strCompare(value, option.value, collators) ||
+          this.strCompare(value, option.text, collators)) {
+        return option;
+      }
+    }
+
+    switch (fieldName) {
+      case "address-level1": {
+        if (!Array.isArray(dataset.sub_keys)) {
+          dataset.sub_keys = dataset.sub_keys.split("~");
+        }
+        if (!Array.isArray(dataset.sub_names)) {
+          dataset.sub_names = dataset.sub_names.split("~");
+        }
+        let keys = dataset.sub_keys;
+        let names = dataset.sub_names;
+        let identifiedValue = this.identifyValue(keys, names, value, collators);
+
+        
+        if (!identifiedValue) {
+          return null;
+        }
+
+        
+        
+        let pattern = new RegExp("\\b" + this.escapeRegExp(identifiedValue) + "\\b", "i");
+        for (let option of selectEl.options) {
+          let optionValue = this.identifyValue(keys, names, option.value, collators);
+          let optionText = this.identifyValue(keys, names, option.text, collators);
+          if (identifiedValue === optionValue || identifiedValue === optionText || pattern.test(option.value)) {
+            return option;
+          }
+        }
+        break;
+      }
+      case "country": {
+        if (ALTERNATIVE_COUNTRY_NAMES[value]) {
+          for (let option of selectEl.options) {
+            if (this.identifyCountryCode(option.text, value) || this.identifyCountryCode(option.value, value)) {
+              return option;
+            }
+          }
+        }
+        break;
+      }
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+
+  identifyValue(keys, names, value, collators) {
+    let resultKey = keys.find(key => this.strCompare(value, key, collators));
     if (resultKey) {
       return resultKey;
     }
 
-    let index = names.findIndex(name => this.strCompare(value, name, collator));
+    let index = names.findIndex(name => this.strCompare(value, name, collators));
     if (index !== -1) {
       return keys[index];
     }
@@ -308,8 +381,18 @@ this.FormAutofillUtils = {
 
 
 
-  strCompare(a = "", b = "", collator) {
-    return !collator.compare(a, b);
+  strCompare(a = "", b = "", collators) {
+    return collators.some(collator => !collator.compare(a, b));
+  },
+
+  
+
+
+
+
+
+  escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
   
@@ -343,6 +426,10 @@ this.FormAutofillUtils = {
     }
   },
 };
+
+XPCOMUtils.defineLazyGetter(this.FormAutofillUtils, "DEFAULT_COUNTRY_CODE", () => {
+  return Services.prefs.getCharPref("browser.search.countryCode", "US");
+});
 
 this.log = null;
 this.FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
