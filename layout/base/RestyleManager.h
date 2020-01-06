@@ -256,9 +256,9 @@ private:
   
   mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<const nsIFrame>>> mDestroyedFrames;
 
+protected:
   const StyleBackendType mType;
 
-protected:
   
   bool mInStyleRefresh;
 
