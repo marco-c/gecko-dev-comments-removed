@@ -472,16 +472,25 @@ function sync_engine_and_validate_telem(engine, allowErrorPings, onError) {
         resolve(ping.syncs[0]);
       }
     }
-    Svc.Obs.notify("weave:service:sync:start");
+    
+    
+    
+    let oldObserve = Service.scheduler.observe;
+    Service.scheduler.observe = () => {};
     try {
-      engine.sync();
-    } catch (e) {
-      caughtError = e;
-    }
-    if (caughtError) {
-      Svc.Obs.notify("weave:service:sync:error", caughtError);
-    } else {
-      Svc.Obs.notify("weave:service:sync:finish");
+      Svc.Obs.notify("weave:service:sync:start");
+      try {
+        engine.sync();
+      } catch (e) {
+        caughtError = e;
+      }
+      if (caughtError) {
+        Svc.Obs.notify("weave:service:sync:error", caughtError);
+      } else {
+        Svc.Obs.notify("weave:service:sync:finish");
+      }
+    } finally {
+      Service.scheduler.observe = oldObserve;
     }
   });
 }
