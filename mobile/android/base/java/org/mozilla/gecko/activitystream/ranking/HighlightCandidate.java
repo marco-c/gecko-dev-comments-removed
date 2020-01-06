@@ -7,6 +7,7 @@ package org.mozilla.gecko.activitystream.ranking;
 
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.annotation.CheckResult;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -73,13 +74,19 @@ import java.lang.annotation.RetentionPolicy;
     private String host;
     private double score;
 
-    public static HighlightCandidate fromCursor(final Cursor cursor, final HighlightCandidateCursorIndices cursorIndices)
-            throws InvalidHighlightCandidateException {
+    
+
+
+    @Nullable
+    public static HighlightCandidate fromCursor(final Cursor cursor, final HighlightCandidateCursorIndices cursorIndices) {
         final HighlightCandidate candidate = new HighlightCandidate();
 
         extractHighlight(candidate, cursor, cursorIndices);
-        extractFeatures(candidate, cursor, cursorIndices);
+        final boolean isSuccess = extractFeatures(candidate, cursor, cursorIndices);
 
+        if (!isSuccess) {
+            return null;
+        }
         return candidate;
     }
 
@@ -94,8 +101,22 @@ import java.lang.annotation.RetentionPolicy;
     
 
 
-    private static void extractFeatures(final HighlightCandidate candidate, final Cursor cursor,
-            final HighlightCandidateCursorIndices cursorIndices) throws InvalidHighlightCandidateException {
+
+
+    @CheckResult
+    private static boolean extractFeatures(final HighlightCandidate candidate, final Cursor cursor,
+            final HighlightCandidateCursorIndices cursorIndices) {
+        final Uri uri = Uri.parse(candidate.highlight.getUrl());
+
+        
+        
+        
+        if (!uri.isHierarchical() || uri.getHost() == null) {
+            
+            
+            return false;
+        }
+
         candidate.features.put(
                 FEATURE_AGE_IN_DAYS,
                 (System.currentTimeMillis() - cursor.getDouble(cursorIndices.historyDateLastVisitedColumnIndex))
@@ -154,15 +175,6 @@ import java.lang.annotation.RetentionPolicy;
                 FEATURE_DESCRIPTION_LENGTH,
                 (double) candidate.highlight.getFastDescriptionLength());
 
-        final Uri uri = Uri.parse(candidate.highlight.getUrl());
-
-        
-        
-        
-        if (!uri.isHierarchical() || uri.getHost() == null) {
-            throw new InvalidHighlightCandidateException();
-        }
-
         candidate.host = uri.getHost();
 
         candidate.features.put(
@@ -173,6 +185,8 @@ import java.lang.annotation.RetentionPolicy;
         candidate.features.put(
                 FEATURE_QUERY_LENGTH,
                 (double) uri.getQueryParameterNames().size());
+
+        return true;
     }
 
     @VisibleForTesting HighlightCandidate() {
@@ -205,9 +219,5 @@ import java.lang.annotation.RetentionPolicy;
 
      Highlight getHighlight() {
         return highlight;
-    }
-
-     static class InvalidHighlightCandidateException extends Exception {
-        private static final long serialVersionUID = 949263104621445850L;
     }
 }
