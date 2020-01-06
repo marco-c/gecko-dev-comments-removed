@@ -2,7 +2,6 @@
 
 
 
-import os
 import sys
 from mozbuild.base import MozbuildObject
 from mozbuild.backend.configenvironment import PartialConfigEnvironment
