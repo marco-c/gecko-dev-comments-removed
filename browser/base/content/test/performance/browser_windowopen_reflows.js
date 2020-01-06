@@ -3,115 +3,71 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
 const EXPECTED_REFLOWS = [
   
-  "handleEvent@chrome://browser/content/tabbrowser.xml|",
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "_delayedStartup@chrome://browser/content/browser.js",
+  ],
 
   
-  "loadTabs@chrome://browser/content/tabbrowser.xml|" +
-    "loadOneOrMoreURIs@chrome://browser/content/browser.js|" +
-    "_delayedStartup@chrome://browser/content/browser.js|",
-
-  
-  "select@chrome://global/content/bindings/textbox.xml|" +
-    "focusAndSelectUrlBar@chrome://browser/content/browser.js|" +
-    "_delayedStartup@chrome://browser/content/browser.js|",
-
-  
-  "_delayedStartup@chrome://browser/content/browser.js|",
+  [
+    "select@chrome://global/content/bindings/textbox.xml",
+    "focusAndSelectUrlBar@chrome://browser/content/browser.js",
+    "_delayedStartup@chrome://browser/content/browser.js",
+  ],
 ];
-
-if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
-  
-  
-  
-  EXPECTED_REFLOWS.push("rect@chrome://browser/content/browser-tabsintitlebar.js|" +
-                          "_update@chrome://browser/content/browser-tabsintitlebar.js|" +
-                          "updateAppearance@chrome://browser/content/browser-tabsintitlebar.js|" +
-                          "handleEvent@chrome://browser/content/tabbrowser.xml|");
-}
 
 if (Services.appinfo.OS == "Darwin") {
   
-  EXPECTED_REFLOWS.push("_onOverflow@resource:///modules/CustomizableUI.jsm|" +
-                        "init@resource:///modules/CustomizableUI.jsm|" +
-                        "observe@resource:///modules/CustomizableUI.jsm|" +
-                        "_delayedStartup@chrome://browser/content/browser.js|");
   
-  EXPECTED_REFLOWS.push("@resource://app/modules/CustomizableUI.jsm|" +
-                          "@resource://app/modules/CustomizableUI.jsm|" +
-                          "@resource://app/modules/CustomizableUI.jsm|" +
-                          "_delayedStartup@chrome://browser/content/browser.js|");
+  
+  EXPECTED_REFLOWS.push(
+    [
+      "rect@chrome://browser/content/browser-tabsintitlebar.js",
+      "_update@chrome://browser/content/browser-tabsintitlebar.js",
+      "updateAppearance@chrome://browser/content/browser-tabsintitlebar.js",
+      "handleEvent@chrome://browser/content/tabbrowser.xml",
+    ],
+  );
+}
+
+if (Services.appinfo.OS == "WINNT" || Services.appinfo.OS == "Darwin") {
+  EXPECTED_REFLOWS.push(
+    [
+      "handleEvent@chrome://browser/content/tabbrowser.xml",
+      "inferFromText@chrome://browser/content/browser.js",
+      "handleEvent@chrome://browser/content/browser.js",
+    ],
+  );
 }
 
 
 
 
 
-function test() {
-  waitForExplicitFinish();
-
-  
+add_task(async function() {
   let win = OpenBrowserWindow();
-  let docShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIWebNavigation)
-                    .QueryInterface(Ci.nsIDocShell);
-  docShell.addWeakReflowObserver(observer);
 
-  
-  waitForMozAfterPaint(win, function paintListener() {
-    
-    docShell.removeWeakReflowObserver(observer);
-    win.close();
+  await withReflowObserver(async function() {
+    let resizeEvent = BrowserTestUtils.waitForEvent(win, "resize");
+    let delayedStartup =
+      TestUtils.topicObserved("browser-delayed-startup-finished",
+                              subject => subject == win);
+    await resizeEvent;
+    await delayedStartup;
+  }, EXPECTED_REFLOWS, win);
 
-    finish();
-  });
-}
+  await BrowserTestUtils.closeWindow(win);
+});
 
-var observer = {
-  reflow(start, end) {
-    
-    let stack = new Error().stack;
-    let path = stack.split("\n").slice(1).map(line => {
-      return line.replace(/:\d+:\d+$/, "");
-    }).join("|");
-    let pathWithLineNumbers = (new Error().stack).split("\n").slice(1).join("|");
-
-    
-    if (path === "") {
-      return;
-    }
-
-    
-    for (let expectedStack of EXPECTED_REFLOWS) {
-      if (path.startsWith(expectedStack) ||
-          
-          path.startsWith(expectedStack.replace(/(^|\|)(gBrowserInit\._delayedStartup|TabsInTitlebar\._update)@/, "$1@"))) {
-        ok(true, "expected uninterruptible reflow '" + expectedStack + "'");
-        return;
-      }
-    }
-
-    ok(false, "unexpected uninterruptible reflow '" + pathWithLineNumbers + "'");
-  },
-
-  reflowInterruptible(start, end) {
-    
-  },
-
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIReflowObserver,
-                                         Ci.nsISupportsWeakReference])
-};
-
-function waitForMozAfterPaint(win, callback) {
-  let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindowUtils);
-  let lastTransactionId = dwu.lastTransactionId;
-
-  win.addEventListener("MozAfterPaint", function onEnd(event) {
-    if (event.target != win || event.transactionId <= lastTransactionId)
-      return;
-    win.removeEventListener("MozAfterPaint", onEnd);
-    executeSoon(callback);
-  });
-}
