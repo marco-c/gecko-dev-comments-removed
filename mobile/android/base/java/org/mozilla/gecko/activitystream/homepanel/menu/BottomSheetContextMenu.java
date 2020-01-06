@@ -146,6 +146,15 @@ import java.net.URISyntaxException;
             } else {
                 isSuccess = false;
             }
+
+            
+            
+            final View dialogView = window.findViewById(android.support.design.R.id.design_bottom_sheet);
+            if (dialogView != null) {
+                dialogView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            } else {
+                isSuccess = false;
+            }
         }
 
         if (!isSuccess) {
