@@ -72,6 +72,7 @@ T RandomFloatingPointRange(T min, T max)
 
 
 
+
 template <typename T>
 T RandomFloatingPoint()
 {
@@ -88,6 +89,12 @@ class FuzzingTraits
 public:
   static unsigned int Random(unsigned int aMax);
   static bool Sometimes(unsigned int aProbability);
+  
+
+
+
+
+  static size_t Frequency(const size_t aSize, const uint64_t aFactor);
 };
 
 } 

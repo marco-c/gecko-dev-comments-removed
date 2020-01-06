@@ -11,6 +11,10 @@
 
 #include "SharedMemory.h"
 
+#ifdef FUZZING
+#include "SharedMemoryFuzzer.h"
+#endif
+
 
 
 
@@ -34,7 +38,11 @@ public:
 
   virtual void* memory() const override
   {
+#ifdef FUZZING
+    return SharedMemoryFuzzer::MutateSharedMemory(mMemory, mAllocSize);
+#else
     return mMemory;
+#endif
   }
 
   virtual SharedMemoryType Type() const override
