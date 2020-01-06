@@ -490,20 +490,30 @@ AnyKidsNeedBlockParent(nsIFrame *aFrameList)
 static void
 ReparentFrame(RestyleManager* aRestyleManager,
               nsContainerFrame* aNewParentFrame,
-              nsIFrame* aFrame)
+              nsIFrame* aFrame,
+              bool aForceStyleReparent)
 {
   aFrame->SetParent(aNewParentFrame);
-  aRestyleManager->ReparentStyleContext(aFrame);
+  
+  
+  
+  
+  
+  
+  if (aForceStyleReparent || aRestyleManager->IsGecko()) {
+    aRestyleManager->ReparentStyleContext(aFrame);
+  }
 }
 
 static void
 ReparentFrames(nsCSSFrameConstructor* aFrameConstructor,
                nsContainerFrame* aNewParentFrame,
-               const nsFrameList& aFrameList)
+               const nsFrameList& aFrameList,
+               bool aForceStyleReparent)
 {
   RestyleManager* restyleManager = aFrameConstructor->RestyleManager();
-  for (nsFrameList::Enumerator e(aFrameList); !e.AtEnd(); e.Next()) {
-    ReparentFrame(restyleManager, aNewParentFrame, e.get());
+  for (nsIFrame* f : aFrameList) {
+    ReparentFrame(restyleManager, aNewParentFrame, f, aForceStyleReparent);
   }
 }
 
@@ -5156,7 +5166,6 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
                                            Element* aOriginatingElementOrNull)
 {
   StyleSetHandle styleSet = mPresShell->StyleSet();
-  aContent->OwnerDoc()->FlushPendingLinkUpdates();
 
   RefPtr<nsStyleContext> result;
   if (aContent->IsElement()) {
@@ -5258,7 +5267,7 @@ nsCSSFrameConstructor::FlushAccumulatedBlock(nsFrameConstructorState& aState,
   blockFrame->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
 
   InitAndRestoreFrame(aState, aContent, aParentFrame, blockFrame);
-  ReparentFrames(this, blockFrame, aBlockItems);
+  ReparentFrames(this, blockFrame, aBlockItems, false);
   
   
   blockFrame->SetInitialChildList(kPrincipalList, aBlockItems);
@@ -11361,7 +11370,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
     InitAndRestoreFrame(aState, aContent, aFrame, blockFrame, false);
 
     NS_ASSERTION(!blockFrame->HasView(), "need to do view reparenting");
-    ReparentFrames(this, blockFrame, aFrameItems);
+    ReparentFrames(this, blockFrame, aFrameItems, false);
 
     blockFrame->SetInitialChildList(kPrincipalList, aFrameItems);
     NS_ASSERTION(aFrameItems.IsEmpty(), "How did that happen?");
@@ -11431,7 +11440,7 @@ nsCSSFrameConstructor::WrapFramesInFirstLineFrame(
   }
 
   
-  ReparentFrames(this, aLineFrame, firstLineChildren);
+  ReparentFrames(this, aLineFrame, firstLineChildren, true);
   if (aLineFrame->PrincipalChildList().IsEmpty() &&
       (aLineFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
     aLineFrame->SetInitialChildList(kPrincipalList, firstLineChildren);
