@@ -35,9 +35,6 @@
 
 
 
-
-
-
 enum EStateMapEntryType {
   kMapDirectly,
   kMapOpposite,   
@@ -95,7 +92,7 @@ static const AtkStateMap gAtkStateMap[] = {
   { kNone,                                    kMapDirectly },   
   { ATK_STATE_INVALID_ENTRY,                  kMapDirectly },   
   { kNone,                                    kMapDirectly },   
-  { kNone,                                    kMapDirectly },   
+  { ATK_STATE_HAS_POPUP,                      kMapDirectly },   
   { ATK_STATE_SUPPORTS_AUTOCOMPLETION,        kMapDirectly },   
   { ATK_STATE_DEFUNCT,                        kMapDirectly },   
   { ATK_STATE_SELECTABLE_TEXT,                kMapDirectly },   
