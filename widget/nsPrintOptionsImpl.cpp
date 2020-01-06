@@ -497,7 +497,9 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
     
     
     
+#if defined(XP_WIN)
     bool saveSanitizedSizePrefs = false;
+#endif
     if (success) {
       success = (sizeUnit != nsIPrintSettings::kPaperSizeInches)
              || (width < 100.0)
