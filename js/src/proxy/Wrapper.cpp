@@ -341,7 +341,7 @@ Wrapper::wrappedObject(JSObject* wrapper)
     
     
     if (target) {
-        if (wrapper->isMarkedAny() && !wrapper->isMarkedGray())
+        if (wrapper->isMarkedBlack())
             MOZ_ASSERT(JS::ObjectIsNotGray(target));
         if (!wrapper->isMarkedGray())
             JS::ExposeObjectToActiveJS(target);
