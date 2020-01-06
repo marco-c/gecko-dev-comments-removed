@@ -16,7 +16,6 @@ const ServerSocket = CC(
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.import("chrome://marionette/content/assert.js");
@@ -493,8 +492,9 @@ server.TCPConnection = class {
 
     
     } else if (msg instanceof Command) {
-      this.lastID = msg.id;
-      this.execute(msg);
+      (async () => {
+        await this.execute(msg);
+      })();
     }
   }
 
@@ -513,38 +513,46 @@ server.TCPConnection = class {
 
 
 
-
-
-
-
-
-  execute(cmd) {
+  async execute(cmd) {
     let resp = this.createResponse(cmd.id);
     let sendResponse = () => resp.sendConditionally(resp => !resp.sent);
     let sendError = resp.sendError.bind(resp);
 
-    let req = Task.spawn(function* () {
-      let fn = this.driver.commands[cmd.name];
-      if (typeof fn == "undefined") {
-        throw new UnknownCommandError(cmd.name);
+    await this.despatch(cmd, resp)
+        .then(sendResponse, sendError).catch(error.report);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async despatch(cmd, resp) {
+    let fn = this.driver.commands[cmd.name];
+    if (typeof fn == "undefined") {
+      throw new UnknownCommandError(cmd.name);
+    }
+
+    if (!["newSession", "WebDriver:NewSession"].includes(cmd.name)) {
+      assert.session(this.driver);
+    }
+
+    let rv = await fn.bind(this.driver)(cmd, resp);
+
+    if (typeof rv != "undefined") {
+      if (typeof rv != "object") {
+        resp.body = {value: rv};
+      } else {
+        resp.body = rv;
       }
-
-      if (cmd.name !== "newSession") {
-        assert.session(this.driver);
-      }
-
-      let rv = yield fn.bind(this.driver)(cmd, resp);
-
-      if (typeof rv != "undefined") {
-        if (typeof rv != "object") {
-          resp.body = {value: rv};
-        } else {
-          resp.body = rv;
-        }
-      }
-    }.bind(this));
-
-    req.then(sendResponse, sendError).catch(error.report);
+    }
   }
 
   
