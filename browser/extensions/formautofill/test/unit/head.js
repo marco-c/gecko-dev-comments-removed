@@ -13,6 +13,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/FormLikeFactory.jsm");
 Cu.import("resource://testing-common/MockDocument.jsm");
 Cu.import("resource://testing-common/TestUtils.jsm");
 
@@ -24,24 +25,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
 do_get_profile();
 
 
-
-
 Cu.import("resource://gre/modules/Timer.jsm");
-const {Loader} = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
-const loader = new Loader.Loader({
-  paths: {
-    "": "resource://testing-common/",
-  },
-  globals: {
-    setTimeout,
-    setInterval,
-    clearTimeout,
-    clearInterval,
-  },
-});
-const require = Loader.Require(loader, {id: ""});
-const sinon = require("sinon-2.3.2");
-
+let self = {}; 
+var sinon;
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-1.16.1.js");
 
 
 const EXTENSION_ID = "formautofill@mozilla.org";
@@ -116,7 +103,6 @@ async function initProfileStorage(fileName, records) {
 }
 
 function runHeuristicsTest(patterns, fixturePathPrefix) {
-  Cu.import("resource://gre/modules/FormLikeFactory.jsm");
   Cu.import("resource://formautofill/FormAutofillHeuristics.jsm");
   Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
