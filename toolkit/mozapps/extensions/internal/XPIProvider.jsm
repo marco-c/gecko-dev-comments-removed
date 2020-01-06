@@ -27,8 +27,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ChromeManifestParser",
                                   "resource://gre/modules/ChromeManifestParser.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Locale",
-                                  "resource://gre/modules/Locale.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ZipUtils",
@@ -4811,8 +4809,49 @@ AddonInternal.prototype = {
   get selectedLocale() {
     if (this._selectedLocale)
       return this._selectedLocale;
-    let locale = Locale.findClosestLocale(this.locales);
-    this._selectedLocale = locale ? locale : this.defaultLocale;
+
+    
+
+
+
+
+
+    const locales = [].concat(...this.locales.map(loc => loc.locales));
+
+    let requestedLocales = Services.locale.getRequestedLocales();
+
+    
+
+
+    if (!requestedLocales[0].startsWith("en")) {
+      requestedLocales.push("en-US");
+    }
+
+    
+
+
+    let bestLocale = Services.locale.negotiateLanguages(
+      requestedLocales,
+      locales,
+      "und",
+      Services.locale.langNegStrategyLookup
+    )[0];
+
+    
+
+
+
+    if (bestLocale === "und") {
+      this._selectedLocale = this.defaultLocale;
+    } else {
+      
+
+
+
+      this._selectedLocale = this.locales.find(loc =>
+        loc.locales.includes(bestLocale));
+    }
+
     return this._selectedLocale;
   },
 
