@@ -109,6 +109,14 @@ public class IconRequestBuilder {
     
 
 
+    public IconRequestBuilder targetSize(final int targetSize) {
+        internal.targetSize = targetSize;
+        return this;
+    }
+
+    
+
+
     public IconRequestBuilder forActivityStream() {
         
         
@@ -139,6 +147,15 @@ public class IconRequestBuilder {
     
 
 
+
+    public IconRequestBuilder textSize(final float textSize) {
+        internal.textSize = textSize;
+        return this;
+    }
+
+    
+
+
     @CheckResult
     public IconRequest build() {
         if (TextUtils.isEmpty(internal.pageUrl)) {
@@ -156,6 +173,7 @@ public class IconRequestBuilder {
         request.targetSize = internal.targetSize;
         request.minimumSizePxAfterScaling = internal.minimumSizePxAfterScaling;
         request.prepareOnly = internal.prepareOnly;
+        request.textSize = internal.textSize;
         return request;
     }
 

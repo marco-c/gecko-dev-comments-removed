@@ -49,15 +49,22 @@ public class IconGenerator implements IconLoader {
             return null;
         }
 
-        return generate(request.getContext(), request.getPageUrl());
+        return generate(request.getContext(), request.getPageUrl(), request.getTargetSize(), request.getTextSize());
+    }
+
+    public static IconResponse generate(Context context, String pageURL) {
+        return generate(context, pageURL, 0, 0);
     }
 
     
 
 
-    public static IconResponse generate(Context context, String pageURL) {
+    public static IconResponse generate(final Context context, final String pageURL,
+                                        int widthAndHeight, float textSize) {
         final Resources resources = context.getResources();
-        final int widthAndHeight = resources.getDimensionPixelSize(R.dimen.favicon_bg);
+        if (widthAndHeight == 0) {
+            widthAndHeight = resources.getDimensionPixelSize(R.dimen.favicon_bg);
+        }
         final int roundedCorners = resources.getDimensionPixelOffset(R.dimen.favicon_corner_radius);
 
         final Bitmap favicon = Bitmap.createBitmap(widthAndHeight, widthAndHeight, Bitmap.Config.ARGB_8888);
@@ -74,9 +81,13 @@ public class IconGenerator implements IconLoader {
 
         final String character = getRepresentativeCharacter(pageURL);
 
-        
-        
-        final float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthAndHeight / 8, context.getResources().getDisplayMetrics());
+        if (textSize == 0) {
+            
+            
+            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                                                 widthAndHeight / 8,
+                                                 resources.getDisplayMetrics());
+        }
 
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(textSize);

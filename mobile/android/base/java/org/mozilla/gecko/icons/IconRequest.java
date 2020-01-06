@@ -31,6 +31,7 @@ public class IconRequest {
      int targetSize;
      int minimumSizePxAfterScaling;
      boolean prepareOnly;
+     float textSize;
     private IconCallback callback;
 
      IconRequest(Context context) {
@@ -45,6 +46,9 @@ public class IconRequest {
         this.targetSize = context.getResources().getDimensionPixelSize(R.dimen.favicon_bg);
         this.minimumSizePxAfterScaling = 0;
         this.prepareOnly = false;
+
+        
+        this.textSize = 0;
     }
 
     
@@ -143,6 +147,14 @@ public class IconRequest {
 
     public Iterator<IconDescriptor> getIconIterator() {
         return icons.iterator();
+    }
+
+    
+
+
+
+    public float getTextSize() {
+        return textSize;
     }
 
     
