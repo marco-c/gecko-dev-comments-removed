@@ -392,8 +392,6 @@ WebRenderBridgeParent::UpdateAPZ()
     return;
   }
   if (RefPtr<APZCTreeManager> apzc = cbp->GetAPZCTreeManager()) {
-    apzc->UpdateFocusState(rootLayersId, GetLayersId(),
-                           rootWrbp->GetScrollData().GetFocusTarget());
     apzc->UpdateHitTestingTree(rootLayersId, rootWrbp->GetScrollData(),
         mScrollData.IsFirstPaint(), GetLayersId(),
         mScrollData.GetPaintSequenceNumber());
@@ -408,7 +406,8 @@ WebRenderBridgeParent::PushAPZStateToWR(nsTArray<WrTransformProperty>& aTransfor
     return false;
   }
   if (RefPtr<APZCTreeManager> apzc = cbp->GetAPZCTreeManager()) {
-    TimeStamp animationTime = mCompositorScheduler->GetLastComposeTime();
+    TimeStamp animationTime = cbp->GetTestingTimeStamp().valueOr(
+        mCompositorScheduler->GetLastComposeTime());
     TimeDuration frameInterval = cbp->GetVsyncInterval();
     
     
@@ -841,12 +840,20 @@ WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 }
 
 void
+WebRenderBridgeParent::AdvanceAnimations()
+{
+  TimeStamp animTime = mCompositorScheduler->GetLastComposeTime();
+  if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
+    animTime = cbp->GetTestingTimeStamp().valueOr(animTime);
+  }
+  AnimationHelper::SampleAnimations(mAnimStorage, animTime);
+}
+
+void
 WebRenderBridgeParent::SampleAnimations(nsTArray<WrOpacityProperty>& aOpacityArray,
                                         nsTArray<WrTransformProperty>& aTransformArray)
 {
-  AnimationHelper::SampleAnimations(mAnimStorage,
-                                    mCompositorScheduler->
-                                      GetLastComposeTime());
+  AdvanceAnimations();
 
   
   if (mAnimStorage->AnimatedValueCount()) {
