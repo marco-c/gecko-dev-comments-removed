@@ -31,6 +31,7 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h" 
 #include "nsCSSPseudoElements.h" 
+#include "nsDocument.h" 
 #include "nsIFrame.h"
 #include "nsIPresShell.h"
 #include "nsIScriptError.h"
@@ -829,7 +830,7 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
   if (aOptions.IsUnrestrictedDouble() ||
       
       
-      !AnimationUtils::IsCoreAPIEnabledForCaller(aCallerType)) {
+      !nsDocument::IsWebAnimationsEnabled(aCallerType)) {
     return result;
   }
 

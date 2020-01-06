@@ -6,7 +6,6 @@
 
 #include "mozilla/KeyframeUtils.h"
 
-#include "mozilla/AnimationUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Move.h"
 #include "mozilla/RangedArray.h"
@@ -21,10 +20,12 @@
 #include "jsapi.h" 
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h" 
+                            
 #include "nsCSSParser.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h" 
+#include "nsDocument.h" 
 #include "nsIScriptError.h"
 #include "nsStyleContext.h"
 #include "nsTArray.h"
@@ -438,7 +439,7 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
     return keyframes;
   }
 
-  if (!AnimationUtils::IsCoreAPIEnabled() &&
+  if (!nsDocument::IsWebAnimationsEnabled(aCx, nullptr) &&
       RequiresAdditiveAnimation(keyframes, aDocument)) {
     keyframes.Clear();
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
@@ -1165,7 +1166,7 @@ HandleMissingInitialKeyframe(nsTArray<AnimationProperty>& aResult,
   
   
   
-  if (!AnimationUtils::IsCoreAPIEnabled()){
+  if (!nsContentUtils::AnimationsAPICoreEnabled()) {
     return nullptr;
   }
 
@@ -1188,7 +1189,7 @@ HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
   
   
   
-  if (!AnimationUtils::IsCoreAPIEnabled()){
+  if (!nsContentUtils::AnimationsAPICoreEnabled()) {
     
     
     if (aCurrentAnimationProperty) {
@@ -1432,8 +1433,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     
     
     
-    if ((!AnimationUtils::IsCoreAPIEnabled()) &&
-        count == 1) {
+    if (!nsContentUtils::AnimationsAPICoreEnabled() && count == 1) {
       aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
       return;
     }

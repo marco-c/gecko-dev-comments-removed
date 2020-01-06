@@ -71,18 +71,6 @@ public:
 
 
 
-  static bool IsCoreAPIEnabled();
-
-  
-
-
-
-  static bool IsCoreAPIEnabledForCaller(dom::CallerType aCallerType);
-
-  
-
-
-
   static bool EffectSetContainsAnimatedScale(EffectSet& aEffects,
                                              const nsIFrame* aFrame);
 };

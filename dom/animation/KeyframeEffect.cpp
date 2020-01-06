@@ -10,6 +10,7 @@
   
 #include "mozilla/dom/AnimationEffectTiming.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
+#include "nsDocument.h" 
 #include "nsDOMMutationObserver.h" 
 #include "nsStyleContext.h"
 
@@ -138,7 +139,7 @@ KeyframeEffect::SetIterationComposite(
 {
   
   
-  if (!AnimationUtils::IsCoreAPIEnabledForCaller(aCallerType)) {
+  if (!nsDocument::IsWebAnimationsEnabled(aCallerType)) {
     return;
   }
 

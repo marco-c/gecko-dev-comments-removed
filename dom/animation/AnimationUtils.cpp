@@ -65,27 +65,6 @@ AnimationUtils::IsOffscreenThrottlingEnabled()
 }
 
  bool
-AnimationUtils::IsCoreAPIEnabled()
-{
-  static bool sCoreAPIEnabled;
-  static bool sPrefCached = false;
-
-  if (!sPrefCached) {
-    sPrefCached = true;
-    Preferences::AddBoolVarCache(&sCoreAPIEnabled,
-                                 "dom.animations-api.core.enabled");
-  }
-
-  return sCoreAPIEnabled;
-}
-
- bool
-AnimationUtils::IsCoreAPIEnabledForCaller(dom::CallerType aCallerType)
-{
-  return IsCoreAPIEnabled() || aCallerType == dom::CallerType::System;
-}
-
- bool
 AnimationUtils::EffectSetContainsAnimatedScale(EffectSet& aEffects,
                                                const nsIFrame* aFrame)
 {
