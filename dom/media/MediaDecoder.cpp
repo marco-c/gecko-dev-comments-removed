@@ -1030,6 +1030,15 @@ MediaDecoder::ShouldThrottleDownload()
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_TRUE(mDecoderStateMachine, false);
 
+  int64_t length = mResource->GetLength();
+  if (length > 0 &&
+      length <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
+    
+    
+    
+    return false;
+  }
+
   if (Preferences::GetBool("media.throttle-regardless-of-download-rate",
                            false)) {
     return true;
