@@ -574,9 +574,6 @@ jit::LinkIonScript(JSContext* cx, HandleScript calleeScript)
             
             
             cx->clearPendingException();
-
-            
-            InvalidateCompilerOutputsForScript(cx, calleeScript);
         }
     }
 
