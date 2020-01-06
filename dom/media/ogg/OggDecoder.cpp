@@ -37,7 +37,7 @@ OggDecoder::IsSupportedType(const MediaContainerType& aContainerType)
   
   
   for (const auto& codec : codecs.Range()) {
-    if ((IsOpusEnabled() && codec.EqualsLiteral("opus")) ||
+    if ((MediaDecoder::IsOpusEnabled() && codec.EqualsLiteral("opus")) ||
         codec.EqualsLiteral("vorbis") ||
         (MediaPrefs::FlacInOgg() && codec.EqualsLiteral("flac"))) {
       continue;

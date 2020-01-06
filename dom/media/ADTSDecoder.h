@@ -13,22 +13,13 @@ namespace mozilla {
 
 class MediaContainerType;
 
-class ADTSDecoder : public ChannelMediaDecoder
+class ADTSDecoder
 {
 public:
-  
-  explicit ADTSDecoder(MediaDecoderInit& aInit)
-    : ChannelMediaDecoder(aInit)
-  {
-  }
-
   
   
   static bool IsEnabled();
   static bool IsSupportedType(const MediaContainerType& aContainerType);
-
-private:
-  ChannelMediaDecoder* CloneImpl(MediaDecoderInit& aInit) override;
 };
 
 } 
