@@ -191,19 +191,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter
         BytecodeVector code;        
         SrcNotesVector notes;       
         ptrdiff_t   lastNoteOffset; 
-
-        
-        
-        
-        
-        uint32_t    currentLine;
-
-        
-        
-        
-        
-        
-        uint32_t    lastColumn;
+        uint32_t    currentLine;    
+        uint32_t    lastColumn;     
 
         JumpTarget lastTarget;      
 
