@@ -4,7 +4,8 @@
 
 
 
-:root {
+#history-panel,
+#bookmarksPanel {
   -moz-appearance: none;
   background-color: transparent;
 }
