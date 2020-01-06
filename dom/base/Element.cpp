@@ -2690,8 +2690,8 @@ Element::SetAttrAndNotify(int32_t aNamespaceID,
           (ns.IsEmpty() ? VoidString() : ns)
         };
 
-        nsContentUtils::EnqueueLifecycleCallback(
-          nsIDocument::eAttributeChanged, this, &args, definition);
+        nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eAttributeChanged,
+          this, &args, nullptr, definition);
       }
     }
   }
@@ -2985,8 +2985,8 @@ Element::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aName,
           (ns.IsEmpty() ? VoidString() : ns)
         };
 
-        nsContentUtils::EnqueueLifecycleCallback(
-          nsIDocument::eAttributeChanged, this, &args, definition);
+        nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eAttributeChanged,
+          this, &args, nullptr, definition);
       }
     }
   }
@@ -4425,6 +4425,7 @@ NoteDirtyElement(Element* aElement, uint32_t aBits)
     
     
     if (parent->HasAllFlags(aBits)) {
+      MOZ_ASSERT(aElement->GetComposedDoc()->GetServoRestyleRoot());
       return;
     }
 

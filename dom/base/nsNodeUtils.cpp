@@ -527,6 +527,23 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
 
     nsIDocument* newDoc = aNode->OwnerDoc();
     if (newDoc) {
+      if (CustomElementRegistry::IsCustomElementEnabled()) {
+        
+        
+        Element* element = aNode->IsElement() ? aNode->AsElement() : nullptr;
+        if (element) {
+          RefPtr<CustomElementData> data = element->GetCustomElementData();
+          if (data && data->mState == CustomElementData::State::eCustom) {
+            LifecycleAdoptedCallbackArgs args = {
+              oldDoc,
+              newDoc
+            };
+            nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eAdopted,
+                                                     element, nullptr, &args);
+          }
+        }
+      }
+
       
       
       if (wasRegistered) {
