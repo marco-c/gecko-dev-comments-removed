@@ -1261,16 +1261,16 @@ pref("browser.newtabpage.enabled", true);
 sticky_pref("browser.newtabpage.enhanced", true);
 
 
-pref("browser.newtabpage.compact", true);
+pref("browser.newtabpage.compact", false);
 
 
 pref("browser.newtabpage.thumbnailPlaceholder", false);
 
 
-pref("browser.newtabpage.rows", 2);
+pref("browser.newtabpage.rows", 3);
 
 
-pref("browser.newtabpage.columns", 6);
+pref("browser.newtabpage.columns", 5);
 
 
 pref("browser.newtabpage.directory.source", "https://tiles.services.mozilla.com/v3/links/fetch/%LOCALE%/%CHANNEL%");
