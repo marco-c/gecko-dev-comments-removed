@@ -6,14 +6,19 @@
 "use strict";
 
 const Immutable = require("devtools/client/shared/vendor/immutable");
-const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
+
+const {
+  isGroupType,
+  l10n,
+} = require("devtools/client/webconsole/new-console-output/utils/messages");
 
 const constants = require("devtools/client/webconsole/new-console-output/constants");
-const {isGroupType} = require("devtools/client/webconsole/new-console-output/utils/messages");
 const {
+  DEFAULT_FILTERS,
+  FILTERS,
   MESSAGE_TYPE,
-  MESSAGE_SOURCE
-} = require("devtools/client/webconsole/new-console-output/constants");
+  MESSAGE_SOURCE,
+} = constants;
 const { getGripPreviewItems } = require("devtools/client/shared/components/reps/reps");
 const { getSourceNames } = require("devtools/client/shared/source-utils");
 
@@ -22,6 +27,8 @@ const MessageState = Immutable.Record({
   messagesById: Immutable.OrderedMap(),
   
   visibleMessages: [],
+  
+  filteredMessagesCount: getDefaultFiltersCounter(),
   
   messagesUiById: Immutable.List(),
   
@@ -65,6 +72,7 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
     currentGroup,
     repeatById,
     visibleMessages,
+    filteredMessagesCount,
   } = state;
 
   const {logLimit} = prefsState;
@@ -123,8 +131,18 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
           }
         }
 
-        if (shouldMessageBeVisible(addedMessage, record, filtersState)) {
+        const {
+          visible,
+          cause
+        } = getMessageVisibility(addedMessage, record, filtersState);
+
+        if (visible) {
           record.set("visibleMessages", [...visibleMessages, newMessage.id]);
+        } else if (DEFAULT_FILTERS.includes(cause)) {
+          record.set("filteredMessagesCount", Object.assign({}, filteredMessagesCount, {
+            global: filteredMessagesCount.global + 1,
+            [cause]: filteredMessagesCount[cause] + 1
+          }));
         }
 
         
@@ -155,14 +173,14 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
             if (
               !visibleMessages.includes(message.id)
               && getParentGroups(message.groupId, groupsById).includes(action.id)
-              && shouldMessageBeVisible(
+              && getMessageVisibility(
                 message,
                 record,
                 filtersState,
                 
                 
                 message.groupId !== action.id
-              )
+              ).visible
             ) {
               res.push(id);
             }
@@ -237,15 +255,27 @@ function messages(state = new MessageState(), action, filtersState, prefsState) 
 
     case constants.FILTER_TOGGLE:
     case constants.FILTER_TEXT_SET:
-      return state.set(
-        "visibleMessages",
-        [...messagesById].reduce((res, [messageId, message]) => {
-          if (shouldMessageBeVisible(message, state, filtersState)) {
-            res.push(messageId);
+    case constants.FILTERS_CLEAR:
+    case constants.DEFAULT_FILTERS_RESET:
+      return state.withMutations(function (record) {
+        const messagesToShow = [];
+        const filtered = getDefaultFiltersCounter();
+        messagesById.forEach((message, messageId) => {
+          const {
+            visible,
+            cause
+          } = getMessageVisibility(message, state, filtersState);
+          if (visible) {
+            messagesToShow.push(messageId);
+          } else if (DEFAULT_FILTERS.includes(cause)) {
+            filtered.global = filtered.global + 1;
+            filtered[cause] = filtered[cause] + 1;
           }
-          return res;
-        }, [])
-      );
+        });
+
+        record.set("visibleMessages", messagesToShow);
+        record.set("filteredMessagesCount", filtered);
+      });
   }
 
   return state;
@@ -434,54 +464,71 @@ function getToplevelMessageCount(record) {
 
 
 
-function shouldMessageBeVisible(message, messagesState, filtersState, checkGroup = true) {
+
+
+
+
+
+function getMessageVisibility(message, messagesState, filtersState, checkGroup = true) {
   
   if (
     checkGroup
     && !isInOpenedGroup(message, messagesState.groupsById, messagesState.messagesUiById)
   ) {
-    return false;
+    return {
+      visible: false,
+      cause: "closedGroup"
+    };
   }
 
   
   
   if (isUnfilterable(message)) {
-    return true;
+    return {
+      visible: true
+    };
   }
 
-  
-  if (!matchFilters(message, filtersState)) {
-    return false;
-  }
-
-  
-  
-  let text = (filtersState.text || "").trim();
-  if (text) {
-    return matchSearchFilters(message, text);
-  }
-
-  return true;
-}
-
-function matchFilters(message, filtersState) {
-  if (matchLevelFilters(message, filtersState)) {
-    return true;
+  if (!passSearchFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.TEXT
+    };
   }
 
   
   
-  if (matchCssFilters(message, filtersState)) {
-    return true;
+  if (!passLevelFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: message.level
+    };
   }
 
-  
-  
-  if (matchNetworkFilters(message, filtersState)) {
-    return true;
+  if (!passCssFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.CSS
+    };
   }
 
-  return false;
+  if (!passNetworkFilter(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.NET
+    };
+  }
+
+  if (!passXhrFilter(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.NETXHR
+    };
+  }
+
+  return {
+    visible: true
+  };
 }
 
 function isUnfilterable(message) {
@@ -509,30 +556,90 @@ function isGroupClosed(groupId, messagesUI) {
   return messagesUI.includes(groupId) === false;
 }
 
-function matchNetworkFilters(message, filters) {
+
+
+
+
+
+
+
+function passNetworkFilter(message, filters) {
+  
+  
+  
   return (
-    message.source === MESSAGE_SOURCE.NETWORK &&
-    (filters.get("net") === true && message.isXHR === false) ||
-    (filters.get("netxhr") === true && message.isXHR === true)
+    message.source !== MESSAGE_SOURCE.NETWORK ||
+    message.isXHR === true ||
+    filters.get(FILTERS.NET) === true
   );
 }
 
-function matchLevelFilters(message, filters) {
+
+
+
+
+
+
+
+function passXhrFilter(message, filters) {
+  
+  
+  
   return (
-    (message.source === MESSAGE_SOURCE.CONSOLE_API ||
-    message.source === MESSAGE_SOURCE.JAVASCRIPT) &&
+    message.source !== MESSAGE_SOURCE.NETWORK ||
+    message.isXHR === false ||
+    filters.get(FILTERS.NETXHR) === true
+  );
+}
+
+
+
+
+
+
+
+
+function passLevelFilters(message, filters) {
+  
+  
+  return (
+    (message.source !== MESSAGE_SOURCE.CONSOLE_API &&
+    message.source !== MESSAGE_SOURCE.JAVASCRIPT) ||
     filters.get(message.level) === true
   );
 }
 
-function matchCssFilters(message, filters) {
+
+
+
+
+
+
+
+function passCssFilters(message, filters) {
+  
+  
   return (
-    message.source === MESSAGE_SOURCE.CSS &&
+    message.source !== MESSAGE_SOURCE.CSS ||
     filters.get("css") === true
   );
 }
 
-function matchSearchFilters(message, text) {
+
+
+
+
+
+
+
+function passSearchFilters(message, filters) {
+  let text = (filters.get("text") || "").trim();
+
+  
+  if (!text) {
+    return true;
+  }
+
   return (
     
     isTextInParameters(text, message.parameters)
@@ -668,6 +775,15 @@ function getAllProps(grips) {
   );
 
   return [...new Set(result)];
+}
+
+function getDefaultFiltersCounter() {
+  const count = DEFAULT_FILTERS.reduce((res, filter) => {
+    res[filter] = 0;
+    return res;
+  }, {});
+  count.global = 0;
+  return count;
 }
 
 exports.messages = messages;
