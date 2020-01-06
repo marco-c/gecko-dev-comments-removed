@@ -19,16 +19,16 @@ add_task(function* () {
   
   
   store.subscribe(() => {
-    const messages = store.getState().messages.messagesById.toJS()
-      .map(message => {
-        return {
+    const messages = store.getState().messages.messagesById
+      .reduce(function (res, message) {
+        res.push({
           id: message.id,
           type: message.type,
           parameters: message.parameters,
           messageText: message.messageText
-        };
-      }
-    );
+        });
+        return res;
+      }, []);
     info("messages : " + JSON.stringify(messages));
   });
 
