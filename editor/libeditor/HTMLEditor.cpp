@@ -162,9 +162,6 @@ HTMLEditor::~HTMLEditor()
   mTypeInState = nullptr;
   mSelectionListenerP = nullptr;
 
-  
-  RemoveAllDefaultProperties();
-
   if (mLinkHandler && IsInitialized()) {
     nsCOMPtr<nsIPresShell> ps = GetPresShell();
 

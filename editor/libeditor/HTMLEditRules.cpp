@@ -4554,38 +4554,6 @@ HTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
   nsCOMPtr<nsINode> node = aSelection.GetRangeAt(0)->GetStartContainer();
   int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
 
-  
-  
-  
-  int32_t length = mHTMLEditor->mDefaultStyles.Length();
-  for (int32_t j = 0; j < length; j++) {
-    PropItem* propItem = mHTMLEditor->mDefaultStyles[j];
-    MOZ_ASSERT(propItem);
-    bool bFirst, bAny, bAll;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    nsAutoString curValue;
-    NS_ENSURE_STATE(mHTMLEditor);
-    nsresult rv =
-      mHTMLEditor->GetInlinePropertyBase(*propItem->tag, &propItem->attr,
-                                         nullptr, &bFirst, &bAny, &bAll,
-                                         &curValue, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!bAny) {
-      
-      mHTMLEditor->mTypeInState->SetProp(propItem->tag, propItem->attr,
-                                         propItem->value);
-    }
-  }
-
   nsCOMPtr<Element> rootElement = aDoc.GetRootElement();
   NS_ENSURE_STATE(rootElement);
 
@@ -7341,7 +7309,7 @@ HTMLEditRules::ReapplyCachedStyles()
                                              &(mCachedStyles[i].attr),
                                              &(mCachedStyles[i].value),
                                              &bFirst, &bAny, &bAll,
-                                             &curValue, false);
+                                             &curValue);
         NS_ENSURE_SUCCESS(rv, rv);
       }
       
