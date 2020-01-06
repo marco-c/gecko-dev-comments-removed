@@ -261,7 +261,7 @@ public class PasswordsRepositorySession extends
             
             
             
-            storeDelegate.onRecordStoreReconciled(record.guid, null);
+            storeDelegate.onRecordStoreReconciled(record.guid, null, null);
             storeRecordDeletion(remoteRecord);
             return;
           }
@@ -340,7 +340,7 @@ public class PasswordsRepositorySession extends
         
         Logger.debug(LOG_TAG, "Calling delegate callback with guid " + replaced.guid +
                               "(" + replaced.androidID + ")");
-        storeDelegate.onRecordStoreReconciled(record.guid, null);
+        storeDelegate.onRecordStoreReconciled(record.guid, existingRecord.guid, null);
         storeDelegate.onRecordStoreSucceeded(record.guid);
         return;
       }

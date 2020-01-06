@@ -454,7 +454,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
         
         
-        delegate.onRecordStoreReconciled(replaced.guid, replaced.localVersion);
+        delegate.onRecordStoreReconciled(replaced.guid, existingRecord.guid, replaced.localVersion);
         delegate.onRecordStoreSucceeded(replaced.guid);
         return true;
     }

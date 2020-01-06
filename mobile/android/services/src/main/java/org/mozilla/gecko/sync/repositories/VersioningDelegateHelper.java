@@ -175,12 +175,20 @@ public class VersioningDelegateHelper {
         }
 
         @Override
-        public void onRecordStoreReconciled(String guid, Integer newVersion) {
+        public void onRecordStoreReconciled(String guid, String oldGuid, Integer newVersion) {
             if (newVersion == null) {
                 throw new IllegalArgumentException("Received null localVersion after reconciling a versioned record.");
             }
+            
+            
+            
+            
+            
+            
+            
+            localVersionsOfGuids.remove(oldGuid);
             localVersionsOfGuids.put(guid, newVersion);
-            inner.onRecordStoreReconciled(guid, null);
+            inner.onRecordStoreReconciled(guid, oldGuid, newVersion);
         }
 
         @Override

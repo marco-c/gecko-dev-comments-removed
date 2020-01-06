@@ -19,7 +19,7 @@ public interface RepositorySessionStoreDelegate {
   
   
   
-  void onRecordStoreReconciled(String guid, Integer newVersion);
+  void onRecordStoreReconciled(String guid, String oldGuid, Integer newVersion);
 
   
   void onRecordStoreSucceeded(String guid);
