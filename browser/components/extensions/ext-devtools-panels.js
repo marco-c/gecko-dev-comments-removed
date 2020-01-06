@@ -62,12 +62,13 @@ class ParentDevToolsPanel {
 
     this.onToolboxPanelSelect = this.onToolboxPanelSelect.bind(this);
 
-    this.panelAdded = false;
-    this.addPanel();
-
+    this.unwatchExtensionProxyContextLoad = null;
     this.waitTopLevelContext = new Promise(resolve => {
       this._resolveTopLevelContext = resolve;
     });
+
+    this.panelAdded = false;
+    this.addPanel();
   }
 
   addPanel() {
@@ -88,7 +89,7 @@ class ParentDevToolsPanel {
           throw new Error("Unexpected toolbox received on addAdditionalTool build property");
         }
 
-        const destroy = this.buildPanel(window, toolbox);
+        const destroy = this.buildPanel(window);
 
         return {toolbox, destroy};
       },
@@ -97,7 +98,66 @@ class ParentDevToolsPanel {
     this.panelAdded = true;
   }
 
-  buildPanel(window, toolbox) {
+  buildPanel(window) {
+    const {toolbox} = this;
+
+    this.createBrowserElement(window);
+
+    toolbox.on("select", this.onToolboxPanelSelect);
+
+    
+    
+    
+    
+    
+    
+    return () => {
+      this.destroyBrowserElement();
+      toolbox.off("select", this.onToolboxPanelSelect);
+    };
+  }
+
+  async onToolboxPanelSelect(what, id) {
+    if (!this.waitTopLevelContext || !this.panelAdded) {
+      return;
+    }
+
+    
+    await this.waitTopLevelContext;
+
+    if (!this.visible && id === this.id) {
+      this.visible = true;
+    } else if (this.visible && id !== this.id) {
+      this.visible = false;
+    }
+
+    const extensionMessage = `Extension:DevToolsPanel${this.visible ? "Shown" : "Hidden"}`;
+    this.context.parentMessageManager.sendAsyncMessage(extensionMessage, {
+      toolboxPanelId: this.id,
+    });
+  }
+
+  close() {
+    const {toolbox} = this;
+
+    if (!toolbox) {
+      throw new Error("Unable to destroy a closed devtools panel");
+    }
+
+    
+    
+    if (this.panelAdded && toolbox.isToolRegistered(this.id)) {
+      toolbox.removeAdditionalTool(this.id);
+    }
+
+    this.context = null;
+    this.toolbox = null;
+    this.waitTopLevelContext = null;
+    this._resolveTopLevelContext = null;
+  }
+
+  createBrowserElement(window) {
+    const {toolbox} = this;
     const {url} = this.panelOptions;
     const {document} = window;
 
@@ -130,7 +190,7 @@ class ParentDevToolsPanel {
     let hasTopLevelContext = false;
 
     
-    const unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
+    this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
       
       
       context.devToolsToolbox = toolbox;
@@ -154,65 +214,26 @@ class ParentDevToolsPanel {
     });
 
     browser.loadURI(url);
+  }
 
-    toolbox.on("select", this.onToolboxPanelSelect);
-
-    
-    
-    
-    
-    
-    
-    return () => {
+  destroyBrowserElement() {
+    const {browser, unwatchExtensionProxyContextLoad} = this;
+    if (unwatchExtensionProxyContextLoad) {
+      this.unwatchExtensionProxyContextLoad = null;
       unwatchExtensionProxyContextLoad();
+    }
+
+    if (browser) {
       browser.remove();
-      toolbox.off("select", this.onToolboxPanelSelect);
-
-      
-      
-      this.waitTopLevelContext = new Promise(resolve => {
-        this._resolveTopLevelContext = resolve;
-      });
-    };
-  }
-
-  onToolboxPanelSelect(what, id) {
-    if (!this.waitTopLevelContext || !this.panelAdded) {
-      return;
-    }
-    if (!this.visible && id === this.id) {
-      
-      this.waitTopLevelContext.then(() => {
-        this.visible = true;
-        this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsPanelShown", {
-          toolboxPanelId: this.id,
-        });
-      });
-    } else if (this.visible && id !== this.id) {
-      this.visible = false;
-      this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsPanelHidden", {
-        toolboxPanelId: this.id,
-      });
-    }
-  }
-
-  close() {
-    const {toolbox} = this;
-
-    if (!toolbox) {
-      throw new Error("Unable to destroy a closed devtools panel");
+      this.browser = null;
     }
 
     
     
-    if (this.panelAdded && toolbox.isToolRegistered(this.id) && !toolbox._destroyer) {
-      toolbox.removeAdditionalTool(this.id);
-    }
-
-    this.context = null;
-    this.toolbox = null;
-    this.waitTopLevelContext = null;
-    this._resolveTopLevelContext = null;
+    
+    this.waitTopLevelContext = new Promise(resolve => {
+      this._resolveTopLevelContext = resolve;
+    });
   }
 }
 

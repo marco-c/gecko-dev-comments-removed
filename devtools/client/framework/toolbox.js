@@ -1547,6 +1547,11 @@ Toolbox.prototype = {
 
 
   removeAdditionalTool(toolId) {
+    
+    if (this._destroyer) {
+      return;
+    }
+
     if (!this.hasAdditionalTool(toolId)) {
       throw new Error("Tool definition not registered to this toolbox: " +
                       toolId);
