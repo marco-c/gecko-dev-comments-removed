@@ -2137,6 +2137,10 @@ pref("network.http.throttle.resume-for", 100);
 
 pref("network.http.throttle.resume-background-in", 1000);
 
+
+
+pref("network.http.on_click_priority", true);
+
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);
