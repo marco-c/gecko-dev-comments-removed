@@ -241,6 +241,7 @@ private:
   bool mReceivedReply;
   
   bool mReplySuccess;
+  const int mZero;
   int mReplyInteger;
   webrtc::VideoCaptureCapability mReplyCapability;
   nsCString mReplyDeviceName;
