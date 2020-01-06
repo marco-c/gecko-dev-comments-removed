@@ -383,6 +383,17 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
   
   
   
+  nsLoadFlags loadFlags;
+  DebugOnly<nsresult> rv = mChannel->GetLoadFlags(&loadFlags);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadFlags() failed!");
+
+  if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
+    ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
+  }
+
+  
+  
+  
   
   
   
@@ -404,17 +415,6 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
   }
 
   mCacheStream.NotifyDataEnded(aStatus);
-
-  
-  
-  
-  nsLoadFlags loadFlags;
-  DebugOnly<nsresult> rv = mChannel->GetLoadFlags(&loadFlags);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadFlags() failed!");
-
-  if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
-    ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
-  }
 
   return NS_OK;
 }
