@@ -1853,6 +1853,10 @@ HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
       
       nodeToExamine = nodeToExamine->GetParentNode();
     }
+    
+    if (!nodeToExamine) {
+      return NS_OK;
+    }
     do {
       
       if (NodeIsBlockStatic(nodeToExamine)) {
