@@ -24,6 +24,7 @@
 }
 
 #onboarding-overlay-button {
+  padding: 0;
   position: absolute;
   cursor: pointer;
   top: 30px;
@@ -311,18 +312,6 @@
   float: inline-end;
   margin-inline-end: 26px;
   margin-top: -32px;
-}
-
-
-.onboarding-tour-action-button::-moz-focus-inner {
-  border: 0;
-}
-
-
-.onboarding-tour-action-button:-moz-focusring {
-  outline: 2px solid rgba(0,149,221,0.5);
-  outline-offset: 1px;
-  -moz-outline-radius: 2px;
 }
 
 .onboarding-tour-action-button:hover:not([disabled]) ,
