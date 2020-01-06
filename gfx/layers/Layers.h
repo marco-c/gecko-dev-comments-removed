@@ -596,11 +596,6 @@ public:
 
   virtual void FlushRendering() { }
 
-  
-
-
-  virtual void WaitOnTransactionProcessed() { }
-
   virtual void SendInvalidRegion(const nsIntRegion& aRegion) {}
 
   
