@@ -7921,7 +7921,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   
   if (haveFirstLetterStyle) {
-    RecoverLetterFrames(containingBlock, haveFirstLineStyle);
+    RecoverLetterFrames(containingBlock);
   }
 
 #ifdef DEBUG
@@ -8354,8 +8354,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       
       if (!isSingleInsert && !isRangeInsertSafe) {
         
-        RecoverLetterFrames(state.mFloatedItems.containingBlock,
-                            haveFirstLineStyle);
+        RecoverLetterFrames(state.mFloatedItems.containingBlock);
 
         
         LAYOUT_PHASE_TEMP_EXIT();
@@ -8598,8 +8597,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   if (haveFirstLetterStyle) {
     
     
-    RecoverLetterFrames(state.mFloatedItems.containingBlock,
-                        haveFirstLineStyle);
+    RecoverLetterFrames(state.mFloatedItems.containingBlock);
   }
 
 #ifdef DEBUG
@@ -8892,9 +8890,7 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
     }
 
     if (haveFLS && mRootElementFrame) {
-      RecoverLetterFrames(containingBlock,
-                          ShouldHaveFirstLineStyle(containingBlock->GetContent(),
-                                                   containingBlock->StyleContext()));
+      RecoverLetterFrames(containingBlock);
     }
 
     
@@ -9071,9 +9067,7 @@ nsCSSFrameConstructor::CharacterDataChanged(nsIContent* aContent,
     frame->CharacterDataChanged(aInfo);
 
     if (haveFirstLetterStyle) {
-      RecoverLetterFrames(block,
-                          ShouldHaveFirstLineStyle(block->GetContent(),
-                                                   block->StyleContext()));
+      RecoverLetterFrames(block);
     }
   }
 }
@@ -12252,8 +12246,7 @@ nsCSSFrameConstructor::RemoveLetterFrames(nsIPresShell* aPresShell,
 
 
 void
-nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame,
-                                           bool aMayHaveFirstLine)
+nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame)
 {
   aBlockFrame =
     static_cast<nsContainerFrame*>(aBlockFrame->FirstContinuation());
@@ -12282,11 +12275,14 @@ nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame,
     
     RemoveFrame(kPrincipalList, textFrame);
 
+    
+    
+    
+    
+    
+    
     auto* restyleManager = RestyleManager();
-    if (aMayHaveFirstLine && restyleManager->IsServo()) {
-      
-      
-      
+    if (parentFrame->IsLineFrame() && restyleManager->IsServo()) {
       for (nsIFrame* f : letterFrames) {
         restyleManager->ReparentStyleContext(f);
       }
