@@ -253,7 +253,10 @@ class Nursery
     }
 
     
-    size_t spaceToEnd() const;
+    
+    
+    
+    size_t spaceToEnd(unsigned chunkCount) const;
 
     
     MOZ_ALWAYS_INLINE size_t freeSpace() const {
