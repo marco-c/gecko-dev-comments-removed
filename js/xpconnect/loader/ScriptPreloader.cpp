@@ -243,6 +243,10 @@ ScriptPreloader::ForceWriteCacheFile()
 
         
         
+        PrepareCacheWrite();
+
+        
+        
         mal.Notify();
     }
 }
@@ -252,6 +256,10 @@ ScriptPreloader::Cleanup()
 {
     if (mSaveThread) {
         MonitorAutoLock mal(mSaveMonitor);
+
+        
+        
+        MOZ_RELEASE_ASSERT(!mBlockedOnSyncDispatch);
 
         while (!mSaveComplete && mSaveThread) {
             mal.Wait();
@@ -287,6 +295,10 @@ ScriptPreloader::InvalidateCache()
     
     if (mSaveComplete && mChildCache) {
         mSaveComplete = false;
+
+        
+        
+        PrepareCacheWriteInternal();
 
         Unused << NS_NewNamedThread("SaveScripts",
                                     getter_AddRefs(mSaveThread), this);
@@ -499,9 +511,11 @@ Write(PRFileDesc* fd, const void* data, int32_t len)
 }
 
 void
-ScriptPreloader::PrepareCacheWrite()
+ScriptPreloader::PrepareCacheWriteInternal()
 {
     MOZ_ASSERT(NS_IsMainThread());
+
+    mMonitor.AssertCurrentThreadOwns();
 
     auto cleanup = MakeScopeExit([&] () {
         if (mChildCache) {
@@ -547,6 +561,14 @@ ScriptPreloader::PrepareCacheWrite()
     mDataPrepared = true;
 }
 
+void
+ScriptPreloader::PrepareCacheWrite()
+{
+    MonitorAutoLock mal(mMonitor);
+
+    PrepareCacheWriteInternal();
+}
+
 
 
 
@@ -568,6 +590,9 @@ ScriptPreloader::WriteCache()
     MOZ_ASSERT(!NS_IsMainThread());
 
     if (!mDataPrepared && !mSaveComplete) {
+        MOZ_ASSERT(!mBlockedOnSyncDispatch);
+        mBlockedOnSyncDispatch = true;
+
         MonitorAutoUnlock mau(mSaveMonitor);
 
         NS_DispatchToMainThread(
@@ -576,6 +601,8 @@ ScriptPreloader::WriteCache()
                             &ScriptPreloader::PrepareCacheWrite),
           NS_DISPATCH_SYNC);
     }
+
+    mBlockedOnSyncDispatch = false;
 
     if (mSaveComplete) {
         
@@ -643,7 +670,11 @@ ScriptPreloader::Run()
 
     
     
-    mal.Wait(10000);
+    
+    
+    if (!mCacheInvalidated) {
+        mal.Wait(10000);
+    }
 
     auto result = WriteCache();
     Unused << NS_WARN_IF(result.isErr());
