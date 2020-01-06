@@ -1559,12 +1559,9 @@ function getMajorMimeType(mimetype) {
 function removeNodeAndSource(n) {
   n.remove();
   
-  
-  
-  n.onerror = null;
-  
   n.srcObject = null;
-  n.src = "";
+  n.removeAttribute("src");
+  n.load();
   while (n.firstChild) {
     n.firstChild.remove();
   }
