@@ -204,13 +204,11 @@ AnimationEffectReadOnly::GetComputedTimingAt(
   
   
   
-  
-  if (result.mPhase == ComputedTiming::AnimationPhase::After &&
-      progress == 0.0 &&
-      result.mIterations != 0.0 &&
-      (result.mActiveTime != zeroDuration ||
-       result.mDuration == zeroDuration)) {
-    
+  if (progress == 0.0 &&
+      (result.mPhase == ComputedTiming::AnimationPhase::After ||
+       result.mPhase == ComputedTiming::AnimationPhase::Active) &&
+      result.mActiveTime == result.mActiveDuration &&
+      result.mIterations != 0.0) {
     
     
     
