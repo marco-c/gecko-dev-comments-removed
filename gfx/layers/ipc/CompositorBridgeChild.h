@@ -244,7 +244,12 @@ public:
   
   
   
-  void NotifyFinishedAsyncPaintTransaction();
+  void NotifyBeginAsyncPaintEndTransaction();
+
+  
+  
+  
+  void NotifyFinishedAsyncPaintEndTransaction();
 
 private:
   
@@ -372,6 +377,9 @@ private:
   
   
   size_t mOutstandingAsyncPaints;
+
+  
+  bool mOutstandingAsyncEndTransaction;
 
   
   

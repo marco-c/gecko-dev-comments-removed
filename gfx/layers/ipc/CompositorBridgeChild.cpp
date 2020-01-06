@@ -92,6 +92,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild *aManager)
   , mSectionAllocator(nullptr)
   , mPaintLock("CompositorBridgeChild.mPaintLock")
   , mOutstandingAsyncPaints(0)
+  , mOutstandingAsyncEndTransaction(false)
   , mIsWaitingForPaint(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1189,13 +1190,27 @@ CompositorBridgeChild::NotifyFinishedAsyncPaint(CapturedPaintState* aState)
 }
 
 void
-CompositorBridgeChild::NotifyFinishedAsyncPaintTransaction()
+CompositorBridgeChild::NotifyBeginAsyncPaintEndTransaction()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MonitorAutoLock lock(mPaintLock);
+
+  MOZ_ASSERT(!mOutstandingAsyncEndTransaction);
+  mOutstandingAsyncEndTransaction = true;
+}
+
+void
+CompositorBridgeChild::NotifyFinishedAsyncPaintEndTransaction()
 {
   MOZ_ASSERT(PaintThread::IsOnPaintThread());
   MonitorAutoLock lock(mPaintLock);
+
   
   
   MOZ_RELEASE_ASSERT(mOutstandingAsyncPaints == 0);
+  MOZ_ASSERT(mOutstandingAsyncEndTransaction);
+
+  mOutstandingAsyncEndTransaction = false;
 
   
   
@@ -1218,7 +1233,9 @@ CompositorBridgeChild::PostponeMessagesIfAsyncPainting()
 
   MOZ_ASSERT(!mIsWaitingForPaint);
 
-  if (mOutstandingAsyncPaints > 0) {
+  
+  
+  if (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
     mIsWaitingForPaint = true;
     GetIPCChannel()->BeginPostponingSends();
   }
