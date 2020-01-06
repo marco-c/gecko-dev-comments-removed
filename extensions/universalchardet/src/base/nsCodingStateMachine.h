@@ -9,11 +9,12 @@
 
 #include "nsPkgInt.h"
 
-typedef enum {
-   eStart = 0,
-   eError = 1,
-   eItsMe = 2
-} nsSMState;
+
+
+
+#define eStart 0
+#define eError 1
+#define eItsMe 2
 
 #define GETCLASS(c) GETFROMPCK(((unsigned char)(c)), mModel->classTable)
 
@@ -33,7 +34,7 @@ typedef struct
 class nsCodingStateMachine {
 public:
   explicit nsCodingStateMachine(const SMModel* sm) : mModel(sm) { mCurrentState = eStart; }
-  nsSMState NextState(char c){
+  uint32_t NextState(char c){
     
     uint32_t byteCls = GETCLASS(c);
     if (mCurrentState == eStart)
@@ -43,8 +44,8 @@ public:
       mCurrentCharLen = mModel->charLenTable[byteCls];
     }
     
-    mCurrentState=(nsSMState)GETFROMPCK(mCurrentState*(mModel->classFactor)+byteCls,
-                                       mModel->stateTable);
+    mCurrentState = GETFROMPCK(mCurrentState * mModel->classFactor + byteCls,
+                               mModel->stateTable);
     mCurrentBytePos++;
     return mCurrentState;
   }
@@ -53,7 +54,7 @@ public:
   const char * GetCodingStateMachine() {return mModel->name;}
 
 protected:
-  nsSMState mCurrentState;
+  uint32_t mCurrentState;
   uint32_t mCurrentCharLen;
   uint32_t mCurrentBytePos;
 
