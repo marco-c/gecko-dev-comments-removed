@@ -669,8 +669,12 @@ ReflectionTests.reflects = function(data, idlName, idlObj, domName, domObj) {
             }
 
             if (data.keywords[i].length > 1) {
-                domTests.push(data.keywords[i].slice(1));
-                idlTests.push(data.keywords[i].slice(1));
+                var sliced = data.keywords[i].slice(1);
+                
+                if (data.keywords.indexOf(sliced) == -1) {
+                    domTests.push(sliced);
+                    idlTests.push(sliced);
+                }
             }
 
             if (data.keywords[i] != data.keywords[i].toLowerCase()) {

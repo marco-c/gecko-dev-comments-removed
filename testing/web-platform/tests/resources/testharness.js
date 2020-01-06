@@ -2084,11 +2084,7 @@
         var message_port;
 
         if (is_service_worker(worker)) {
-            
-            
-            
-            var isMicrosoftEdgeBrowser = navigator.userAgent.includes("Edge");
-            if (window.MessageChannel && !isMicrosoftEdgeBrowser) {
+            if (window.MessageChannel) {
                 
                 
                 
