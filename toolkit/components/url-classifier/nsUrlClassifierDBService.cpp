@@ -54,7 +54,6 @@
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsProxyRelease.h"
-#include "SBTelemetryUtils.h"
 
 namespace mozilla {
 namespace safebrowsing {
@@ -1271,8 +1270,6 @@ nsUrlClassifierLookupCallback::HandleResults()
   nsCOMPtr<nsIUrlClassifierClassifyCallback> classifyCallback =
     do_QueryInterface(mCallback);
 
-  MatchResult matchResult = MatchResult::eTelemetryDisabled;
-
   nsTArray<nsCString> tables;
   
   for (uint32_t i = 0; i < mResults->Length(); i++) {
@@ -1287,22 +1284,7 @@ nsUrlClassifierLookupCallback::HandleResults()
       continue;
     }
 
-    bool confirmed = result.Confirmed();
-
-    
-    
-    if (result.mMatchResult != MatchResult::eTelemetryDisabled) {
-      matchResult &= ~(MatchResult::eTelemetryDisabled);
-      if (result.mProtocolV2) {
-        matchResult |=
-          confirmed ? MatchResult::eV2PreAndCom : MatchResult::eV2Prefix;
-      } else {
-        matchResult |=
-          confirmed ? MatchResult::eV4PreAndCom : MatchResult::eV4Prefix;
-      }
-    }
-
-    if (!confirmed) {
+    if (!result.Confirmed()) {
       LOG(("Skipping result %s from table %s (not confirmed)",
            result.PartialHashHex().get(), result.mTableName.get()));
       continue;
@@ -1328,57 +1310,6 @@ nsUrlClassifierLookupCallback::HandleResults()
       result.hash.fixedLengthPrefix.ToString(prefixString);
       classifyCallback->HandleResult(result.mTableName, prefixString);
     }
-  }
-
-  
-  if (matchResult == MatchResult::eAll && mCacheResults) {
-    MatchThreatType types = MatchThreatType::eIdentical;
-
-    
-    bool foundV2Result = false, foundV4Result = false;
-    for (uint32_t i = 0; i < mCacheResults->Length(); i++) {
-      CacheResult* c = mCacheResults->ElementAt(i).get();
-      bool isV2 = CacheResult::V2 == c->Ver();
-      if (isV2) {
-        foundV2Result = true;
-      } else {
-        foundV4Result = true;
-      }
-      for (LookupResult& l : *(mResults.get())) {
-        if (l.mProtocolV2 != isV2 || l.hash.fixedLengthPrefix != c->prefix) {
-          continue;
-        }
-
-        
-        if (l.Confirmed()) {
-          types |= TableNameToThreatType(CacheResult::V2 == c->Ver(), c->table);
-        }
-        break;
-      }
-    }
-
-    
-    
-    
-    if (foundV2Result && foundV4Result) {
-      auto fnIsMatchSameThreatType = [&](const MatchThreatType& aTypeMask) {
-        uint8_t val = static_cast<uint8_t>(types & aTypeMask);
-        return val == 0 || val == static_cast<uint8_t>(aTypeMask);
-      };
-      if (fnIsMatchSameThreatType(MatchThreatType::ePhishingMask) &&
-          fnIsMatchSameThreatType(MatchThreatType::eMalwareMask) &&
-          fnIsMatchSameThreatType(MatchThreatType::eUnwantedMask)) {
-        types = MatchThreatType::eIdentical;
-      }
-
-      Telemetry::Accumulate(Telemetry::URLCLASSIFIER_MATCH_THREAT_TYPE_RESULT,
-                            static_cast<uint8_t>(types));
-    }
-  }
-
-  if (matchResult != MatchResult::eTelemetryDisabled) {
-    Telemetry::Accumulate(Telemetry::URLCLASSIFIER_MATCH_RESULT,
-                          MatchResultToUint(matchResult));
   }
 
   

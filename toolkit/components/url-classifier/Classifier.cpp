@@ -468,18 +468,6 @@ Classifier::Check(const nsACString& aSpec,
   }
 
   
-  bool isV2Empty = true, isV4Empty = true;
-  bool shouldDoTelemetry = false;
-  for (auto&& cache : cacheArray) {
-    bool& ref = LookupCache::Cast<LookupCacheV2>(cache) ? isV2Empty : isV4Empty;
-    ref = ref ? cache->IsEmpty() : false;
-    if (!isV2Empty && !isV4Empty) {
-      shouldDoTelemetry = true;
-      break;
-    }
-  }
-
-  
   for (uint32_t i = 0; i < fragments.Length(); i++) {
     Completion lookupHash;
     lookupHash.FromPlaintext(fragments[i], mCryptoHash);
@@ -513,26 +501,8 @@ Classifier::Check(const nsACString& aSpec,
         result->mTableName.Assign(cache->TableName());
         result->mPartialHashLength = confirmed ? COMPLETE_SIZE : matchLength;
         result->mProtocolV2 = LookupCache::Cast<LookupCacheV2>(cache);
-
-        
-        
-        
-        if (!shouldDoTelemetry ||
-            !StringBeginsWith(result->mTableName, NS_LITERAL_CSTRING("goog"))) {
-          continue;
-        }
-
-        result->mMatchResult = result->mProtocolV2 ?
-                               MatchResult::eV2Prefix : MatchResult::eV4Prefix;
       }
     }
-  }
-
-  
-  
-  if (shouldDoTelemetry && aResults.Length() == 0) {
-    Telemetry::Accumulate(Telemetry::URLCLASSIFIER_MATCH_RESULT,
-                          static_cast<uint8_t>(MatchResult::eNoMatch));
   }
 
   return NS_OK;

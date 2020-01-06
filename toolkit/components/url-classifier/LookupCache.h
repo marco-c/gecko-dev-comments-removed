@@ -14,7 +14,6 @@
 #include "nsIFileStreams.h"
 #include "mozilla/RefPtr.h"
 #include "nsUrlClassifierPrefixSet.h"
-#include "SBTelemetryUtils.h"
 #include "VariableLengthPrefixSet.h"
 #include "mozilla/Logging.h"
 #include "mozilla/TypedEnumBits.h"
@@ -30,8 +29,7 @@ class LookupResult {
 public:
   LookupResult() : mNoise(false), mProtocolConfirmed(false),
                    mPartialHashLength(0), mConfirmed(false),
-                   mProtocolV2(true),
-                   mMatchResult(MatchResult::eTelemetryDisabled) {}
+                   mProtocolV2(true) {}
 
   
   union {
@@ -78,10 +76,8 @@ public:
   
   bool mConfirmed;
 
-  bool mProtocolV2;
-
   
-  MatchResult mMatchResult;
+  bool mProtocolV2;
 };
 
 typedef nsTArray<LookupResult> LookupResultArray;

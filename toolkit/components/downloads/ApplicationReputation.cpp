@@ -54,10 +54,8 @@
 #include "nsILoadInfo.h"
 #include "nsContentUtils.h"
 #include "nsWeakReference.h"
-#include "nsCharSeparatedTokenizer.h"
 #include "nsIRedirectHistoryEntry.h"
 
-using namespace mozilla::downloads;
 using mozilla::ArrayLength;
 using mozilla::BasePrincipal;
 using mozilla::OriginAttributes;
@@ -89,98 +87,6 @@ using safe_browsing::ClientDownloadRequest_SignatureInfo;
 mozilla::LazyLogModule ApplicationReputationService::prlog("ApplicationReputation");
 #define LOG(args) MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
-
-namespace mozilla {
-namespace downloads {
-
-enum class TelemetryMatchInfo : uint8_t
-{
-  eNoMatch   = 0x00,
-  eV2Match   = 0x01,
-  eV4Match   = 0x02,
-  eBothMatch = eV2Match | eV4Match,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TelemetryMatchInfo)
-
-
-
-bool
-LookupTablesInPrefs(const nsACString& tables, const char* aPref)
-{
-  nsAutoCString prefList;
-  Preferences::GetCString(aPref, &prefList);
-  if (prefList.IsEmpty()) {
-    return false;
-  }
-
-  
-  
-  
-  nsCCharSeparatedTokenizer prefTokens(prefList, ',');
-  nsCString prefToken;
-  bool isV4Enabled = false;
-  bool isV2Enabled = false;
-
-  while (prefTokens.hasMoreTokens()) {
-    prefToken = prefTokens.nextToken();
-    if (StringBeginsWith(prefToken, NS_LITERAL_CSTRING("goog"))) {
-      if (StringEndsWith(prefToken, NS_LITERAL_CSTRING("-proto"))) {
-        isV4Enabled = true;
-      } else {
-        isV2Enabled = true;
-      }
-    }
-  }
-
-  bool shouldRecordTelemetry = isV2Enabled && isV4Enabled;
-  TelemetryMatchInfo telemetryInfo = TelemetryMatchInfo::eNoMatch;
-
-  
-  
-  nsCCharSeparatedTokenizer tokens(tables, ',');
-  nsCString table;
-  bool found = false;
-
-  while (tokens.hasMoreTokens()) {
-    table = tokens.nextToken();
-    if (table.IsEmpty()) {
-      continue;
-    }
-
-    if (!FindInReadable(table, prefList)) {
-      continue;
-    }
-    found = true;
-
-    if (!shouldRecordTelemetry) {
-      return found;
-    }
-
-    
-    
-    if (StringBeginsWith(table, NS_LITERAL_CSTRING("goog"))) {
-      if (StringEndsWith(table, NS_LITERAL_CSTRING("-proto"))) {
-        telemetryInfo |= TelemetryMatchInfo::eV4Match;
-      } else {
-        telemetryInfo |= TelemetryMatchInfo::eV2Match;
-      }
-    }
-  }
-
-  
-  if (!strcmp(aPref, PREF_DOWNLOAD_BLOCK_TABLE)) {
-    Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_BLOCKLIST_MATCH,
-               static_cast<uint8_t>(telemetryInfo));
-  } else if (!strcmp(aPref, PREF_DOWNLOAD_ALLOW_TABLE)) {
-    Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_ALLOWLIST_MATCH,
-               static_cast<uint8_t>(telemetryInfo));
-  }
-
-  return found;
-}
-} 
-} 
 
 class PendingDBLookup;
 
@@ -443,7 +349,9 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
   
   
   
-  if (!mAllowlistOnly && LookupTablesInPrefs(tables, PREF_DOWNLOAD_BLOCK_TABLE)) {
+  nsAutoCString blockList;
+  Preferences::GetCString(PREF_DOWNLOAD_BLOCK_TABLE, &blockList);
+  if (!mAllowlistOnly && FindInReadable(blockList, tables)) {
     mPendingLookup->mBlocklistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, BLOCK_LIST);
     LOG(("Found principal %s on blocklist [this = %p]", mSpec.get(), this));
@@ -451,7 +359,9 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
       nsIApplicationReputationService::VERDICT_DANGEROUS);
   }
 
-  if (LookupTablesInPrefs(tables, PREF_DOWNLOAD_ALLOW_TABLE)) {
+  nsAutoCString allowList;
+  Preferences::GetCString(PREF_DOWNLOAD_ALLOW_TABLE, &allowList);
+  if (FindInReadable(allowList, tables)) {
     mPendingLookup->mAllowlistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, ALLOW_LIST);
     LOG(("Found principal %s on allowlist [this = %p]", mSpec.get(), this));
