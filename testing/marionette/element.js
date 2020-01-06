@@ -20,7 +20,7 @@ const {PollPromise} = Cu.import("chrome://marionette/content/sync.js", {});
 this.EXPORTED_SYMBOLS = ["element"];
 
 const XBLNS = "http://www.mozilla.org/xbl";
-const XMLNS = "http://www.w3.org/1999/xhtml";
+const XHTMLNS = "http://www.w3.org/1999/xhtml";
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
@@ -741,10 +741,7 @@ element.isSelected = function(el) {
       return el.selected;
     }
 
-  
-  } else if (typeof el == "object" &&
-      "nodeType" in el &&
-      el.nodeType == el.ELEMENT_NODE) {
+  } else if (element.isDOMElement(el)) {
     if (el.localName == "input" && ["checkbox", "radio"].includes(el.type)) {
       return el.checked;
     } else if (el.localName == "option") {
@@ -1060,6 +1057,22 @@ element.scrollIntoView = function(el) {
 
 
 
+element.isDOMElement = function(node) {
+  return typeof node == "object" &&
+      node !== null &&
+      node.nodeType === node.ELEMENT_NODE &&
+      node.namespaceURI === XHTMLNS;
+};
+
+
+
+
+
+
+
+
+
+
 
 element.isXULElement = function(node) {
   return typeof node == "object" &&
@@ -1111,7 +1124,7 @@ const boolEls = {
 
 
 element.isBooleanAttribute = function(el, attr) {
-  if (el.namespaceURI !== XMLNS) {
+  if (!element.isDOMElement(el)) {
     return false;
   }
 
