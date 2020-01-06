@@ -356,6 +356,9 @@ SummaryGraphHelper.prototype = {
     let frames = null;
     if (keyframes) {
       
+      
+      
+      
       frames = keyframes.map(keyframe => {
         return {
           opacity: keyframe.offset,
@@ -363,6 +366,10 @@ SummaryGraphHelper.prototype = {
           easing: keyframe.easing
         };
       });
+
+      
+      
+      this.targetEl.style.opacity = 0;
     }
     this.animation.effect.setKeyframes(frames);
     this.hasFrames = !!frames;

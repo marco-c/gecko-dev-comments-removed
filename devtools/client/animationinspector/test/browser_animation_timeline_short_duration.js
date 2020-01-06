@@ -83,8 +83,7 @@ function checkSummaryGraph(el, state, isDetail) {
       
       
       
-      const expectedY =
-        state.iterationCount && expectedIterationCount === index + 1 ? 1 : 0;
+      const expectedY = 0;
       is(secondLastPathSeg.y, expectedY,
          `The y of second last segment should be ${ expectedY }`);
 
