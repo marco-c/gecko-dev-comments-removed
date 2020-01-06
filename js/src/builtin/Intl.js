@@ -1395,7 +1395,8 @@ function initializeIntlObject(obj, type, lazyData) {
     assert((type === "Collator" && IsCollator(obj)) ||
            (type === "DateTimeFormat" && IsDateTimeFormat(obj)) ||
            (type === "NumberFormat" && IsNumberFormat(obj)) ||
-           (type === "PluralRules" && IsPluralRules(obj)),
+           (type === "PluralRules" && IsPluralRules(obj)) ||
+           (type === "RelativeTimeFormat" && IsRelativeTimeFormat(obj)),
            "type must match the object's class");
     assert(IsObject(lazyData), "non-object lazy data");
 
@@ -1462,7 +1463,9 @@ function maybeInternalProperties(internals) {
 
 function getIntlObjectInternals(obj) {
     assert(IsObject(obj), "getIntlObjectInternals called with non-Object");
-    assert(IsCollator(obj) || IsDateTimeFormat(obj) || IsNumberFormat(obj) || IsPluralRules(obj),
+    assert(IsCollator(obj) || IsDateTimeFormat(obj) ||
+           IsNumberFormat(obj) || IsPluralRules(obj) ||
+           IsRelativeTimeFormat(obj),
            "getIntlObjectInternals called with non-Intl object");
 
     var internals = UnsafeGetReservedSlot(obj, INTL_INTERNALS_OBJECT_SLOT);
@@ -1472,7 +1475,8 @@ function getIntlObjectInternals(obj) {
     assert((internals.type === "Collator" && IsCollator(obj)) ||
            (internals.type === "DateTimeFormat" && IsDateTimeFormat(obj)) ||
            (internals.type === "NumberFormat" && IsNumberFormat(obj)) ||
-           (internals.type === "PluralRules" && IsPluralRules(obj)),
+           (internals.type === "PluralRules" && IsPluralRules(obj)) ||
+           (internals.type === "RelativeTimeFormat" && IsRelativeTimeFormat(obj)),
            "type must match the object's class");
     assert(hasOwn("lazyData", internals), "missing lazyData");
     assert(hasOwn("internalProps", internals), "missing internalProps");
@@ -3471,6 +3475,223 @@ function Intl_PluralRules_resolvedOptions() {
         if (hasOwn(p, internals))
             _DefineDataProperty(result, p, internals[p]);
     }
+    return result;
+}
+
+
+
+
+
+
+
+
+
+var relativeTimeFormatInternalProperties = {
+    localeData: relativeTimeFormatLocaleData,
+    _availableLocales: null,
+    availableLocales: function() 
+    {
+        var locales = this._availableLocales;
+        if (locales)
+            return locales;
+
+        locales = intl_RelativeTimeFormat_availableLocales();
+        addSpecialMissingLanguageTags(locales);
+        return (this._availableLocales = locales);
+    },
+    relevantExtensionKeys: [],
+};
+
+function relativeTimeFormatLocaleData() {
+    
+    return {};
+}
+
+
+
+
+function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
+    assert(IsObject(lazyRelativeTimeFormatData), "lazy data not an object?");
+
+    var internalProps = std_Object_create(null);
+
+    var RelativeTimeFormat = relativeTimeFormatInternalProperties;
+
+    
+    const r = ResolveLocale(callFunction(RelativeTimeFormat.availableLocales, RelativeTimeFormat),
+                            lazyRelativeTimeFormatData.requestedLocales,
+                            lazyRelativeTimeFormatData.opt,
+                            RelativeTimeFormat.relevantExtensionKeys,
+                            RelativeTimeFormat.localeData);
+
+    
+    internalProps.locale = r.locale;
+    internalProps.style = lazyRelativeTimeFormatData.style;
+
+    return internalProps;
+}
+
+
+
+
+
+function getRelativeTimeFormatInternals(obj, methodName) {
+    assert(IsObject(obj), "getRelativeTimeFormatInternals called with non-object");
+    assert(IsRelativeTimeFormat(obj), "getRelativeTimeFormatInternals called with non-RelativeTimeFormat");
+
+    var internals = getIntlObjectInternals(obj);
+    assert(internals.type === "RelativeTimeFormat", "bad type escaped getIntlObjectInternals");
+
+    var internalProps = maybeInternalProperties(internals);
+    if (internalProps)
+        return internalProps;
+
+    internalProps = resolveRelativeTimeFormatInternals(internals.lazyData);
+    setInternalProperties(internals, internalProps);
+    return internalProps;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
+    assert(IsObject(relativeTimeFormat),
+           "InitializeRelativeimeFormat called with non-object");
+    assert(IsRelativeTimeFormat(relativeTimeFormat),
+           "InitializeRelativeTimeFormat called with non-RelativeTimeFormat");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const lazyRelativeTimeFormatData = std_Object_create(null);
+
+    
+    let requestedLocales = CanonicalizeLocaleList(locales);
+    lazyRelativeTimeFormatData.requestedLocales = requestedLocales;
+
+    
+    if (options === undefined)
+        options = {};
+    else
+        options = ToObject(options);
+
+    
+    let opt = new Record();
+
+    
+    let matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
+    opt.localeMatcher = matcher;
+
+    lazyRelativeTimeFormatData.opt = opt;
+
+    
+    const style = GetOption(options, "style", "string", ["long", "short", "narrow"], "long");
+    lazyRelativeTimeFormatData.style = style;
+
+    initializeIntlObject(relativeTimeFormat, "RelativeTimeFormat", lazyRelativeTimeFormatData)
+}
+
+
+
+
+
+
+
+
+function Intl_RelativeTimeFormat_supportedLocalesOf(locales ) {
+    var options = arguments.length > 1 ? arguments[1] : undefined;
+
+    
+    var availableLocales = callFunction(relativeTimeFormatInternalProperties.availableLocales,
+                                        relativeTimeFormatInternalProperties);
+    
+    let requestedLocales = CanonicalizeLocaleList(locales);
+
+    
+    return SupportedLocales(availableLocales, requestedLocales, options);
+}
+
+
+
+
+
+
+
+
+function Intl_RelativeTimeFormat_format(value, unit) {
+    
+    let relativeTimeFormat = this;
+
+    
+    if (!IsObject(relativeTimeFormat) || !IsRelativeTimeFormat(relativeTimeFormat))
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "RelativeTimeFormat", "format", "RelativeTimeFormat");
+
+    
+    getRelativeTimeFormatInternals(relativeTimeFormat);
+
+    
+    let t = ToNumber(value);
+
+    
+    let u = ToString(unit);
+
+    switch (u) {
+      case "second":
+      case "minute":
+      case "hour":
+      case "day":
+      case "week":
+      case "month":
+      case "quarter":
+      case "year":
+        break;
+      default:
+        ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, "unit", u);
+    }
+
+    
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u);
+}
+
+
+
+
+
+
+function Intl_RelativeTimeFormat_resolvedOptions() {
+    
+    if (!IsObject(this) || !IsRelativeTimeFormat(this)) {
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "RelativeTimeFormat", "resolvedOptions",
+                       "RelativeTimeFormat");
+    }
+
+    var internals = getRelativeTimeFormatInternals(this, "resolvedOptions");
+
+    var result = {
+        locale: internals.locale,
+        style: internals.style,
+    };
+
     return result;
 }
 
