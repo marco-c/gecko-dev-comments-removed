@@ -79,8 +79,7 @@ LazyLogModule ScriptLoader::gScriptLoaderLog("ScriptLoader");
 
 
 
-static NS_NAMED_LITERAL_CSTRING(
-  kBytecodeMimeType, "javascript/moz-bytecode-" NS_STRINGIFY(MOZ_BUILDID));
+
 static NS_NAMED_LITERAL_CSTRING(kNullMimeType, "javascript/null");
 
 
@@ -918,7 +917,7 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
       
       
       LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
-      cic->PreferAlternativeDataType(kBytecodeMimeType);
+      cic->PreferAlternativeDataType(nsContentUtils::JSBytecodeMimeType());
     } else {
       
       
@@ -2264,7 +2263,7 @@ ScriptLoader::EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest)
   
   
   nsCOMPtr<nsIOutputStream> output;
-  rv = aRequest->mCacheInfo->OpenAlternativeOutputStream(kBytecodeMimeType,
+  rv = aRequest->mCacheInfo->OpenAlternativeOutputStream(nsContentUtils::JSBytecodeMimeType(),
                                                          getter_AddRefs(output));
   if (NS_FAILED(rv)) {
     LOG(("ScriptLoadRequest (%p): Cannot open bytecode cache (rv = %X, output = %p)",

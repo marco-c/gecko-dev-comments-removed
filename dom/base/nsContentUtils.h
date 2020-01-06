@@ -2994,6 +2994,10 @@ public:
   static int32_t BytecodeCacheStrategy() { return sBytecodeCacheStrategy; }
 
   
+  
+  static nsCString& JSBytecodeMimeType() { return *sJSBytecodeMimeType; }
+
+  
 
 
 
@@ -3156,6 +3160,10 @@ private:
   static nsString* sOSText;
   static nsString* sAltText;
   static nsString* sModifierSeparator;
+
+  
+  
+  static nsCString* sJSBytecodeMimeType;
 
 #if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
   static bool sDOMWindowDumpEnabled;
