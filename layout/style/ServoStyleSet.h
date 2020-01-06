@@ -422,6 +422,11 @@ public:
   ServoStyleRuleMap* StyleRuleMap();
 
   
+  void ClearPresContext() {
+    mPresContext = nullptr;
+  }
+
+  
 
 
 

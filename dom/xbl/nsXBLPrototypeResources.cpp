@@ -179,6 +179,11 @@ nsXBLPrototypeResources::ComputeServoStyleSet(nsPresContext* aPresContext)
     mServoStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsServo());
   }
   mServoStyleSet->UpdateStylistIfNeeded();
+
+  
+  
+  
+  mServoStyleSet->ClearPresContext();
 }
 
 void
