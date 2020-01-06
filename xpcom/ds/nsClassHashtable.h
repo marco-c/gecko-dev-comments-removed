@@ -56,11 +56,6 @@ public:
 
 
   UserDataType Get(KeyType aKey) const;
-
-  
-  void RemoveAndForget(KeyType aKey, nsAutoPtr<T>& aOut) {
-    Remove(aKey, &aOut);
-  }
 };
 
 
