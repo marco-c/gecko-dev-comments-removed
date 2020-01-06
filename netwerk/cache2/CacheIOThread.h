@@ -69,8 +69,6 @@ public:
 
   uint32_t QueueSize(bool highPriority);
 
-  uint32_t EventCounter() const { return mEventCounter; }
-
   
 
 
@@ -138,8 +136,6 @@ private:
   
   
   Atomic<uint32_t, Relaxed> mIOCancelableEvents;
-  
-  Atomic<uint32_t, Relaxed> mEventCounter;
 #ifdef DEBUG
   bool mInsideLoop;
 #endif
