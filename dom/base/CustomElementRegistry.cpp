@@ -23,40 +23,6 @@ CustomElementCallback::Call()
 {
   IgnoredErrorResult rv;
   switch (mType) {
-    case nsIDocument::eCreated:
-    {
-      
-      
-      mOwnerData->mElementIsBeingCreated = true;
-
-      
-      
-      
-      mOwnerData->mCreatedCallbackInvoked = true;
-
-      
-      nsIDocument* document = mThisObject->GetComposedDoc();
-      if (document) {
-        NodeInfo* ni = mThisObject->NodeInfo();
-        nsDependentAtomString extType(mOwnerData->mType);
-
-        
-        
-        
-        
-        CustomElementDefinition* definition =
-          nsContentUtils::LookupCustomElementDefinition(document,
-            ni->LocalName(), ni->NamespaceID(),
-            extType.IsEmpty() ? nullptr : &extType);
-
-        nsContentUtils::EnqueueLifecycleCallback(
-          nsIDocument::eConnected, mThisObject, nullptr, nullptr, definition);
-      }
-
-      static_cast<LifecycleCreatedCallback *>(mCallback.get())->Call(mThisObject, rv);
-      mOwnerData->mElementIsBeingCreated = false;
-      break;
-    }
     case nsIDocument::eConnected:
       static_cast<LifecycleConnectedCallback *>(mCallback.get())->Call(mThisObject, rv);
       break;
@@ -86,12 +52,10 @@ CustomElementCallback::Traverse(nsCycleCollectionTraversalCallback& aCb) const
 
 CustomElementCallback::CustomElementCallback(Element* aThisObject,
                                              nsIDocument::ElementCallbackType aCallbackType,
-                                             mozilla::dom::CallbackFunction* aCallback,
-                                             CustomElementData* aOwnerData)
+                                             mozilla::dom::CallbackFunction* aCallback)
   : mThisObject(aThisObject),
     mCallback(aCallback),
-    mType(aCallbackType),
-    mOwnerData(aOwnerData)
+    mType(aCallbackType)
 {
 }
 
@@ -133,8 +97,6 @@ CustomElementData::CustomElementData(nsAtom* aType)
 
 CustomElementData::CustomElementData(nsAtom* aType, State aState)
   : mType(aType)
-  , mElementIsBeingCreated(false)
-  , mCreatedCallbackInvoked(true)
   , mState(aState)
 {
 }
@@ -358,12 +320,6 @@ CustomElementRegistry::SetupCustomElement(Element* aElement,
     
     return;
   }
-
-  
-  
-  
-  
-  SyncInvokeReactions(nsIDocument::eCreated, aElement, definition);
 }
 
  UniquePtr<CustomElementCallback>
@@ -381,12 +337,6 @@ CustomElementRegistry::CreateCustomElementCallback(
   
   CallbackFunction* func = nullptr;
   switch (aType) {
-    case nsIDocument::eCreated:
-      if (aDefinition->mCallbacks->mCreatedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mCreatedCallback.Value();
-      }
-      break;
-
     case nsIDocument::eConnected:
       if (aDefinition->mCallbacks->mConnectedCallback.WasPassed()) {
         func = aDefinition->mCallbacks->mConnectedCallback.Value();
@@ -417,17 +367,9 @@ CustomElementRegistry::CreateCustomElementCallback(
     return nullptr;
   }
 
-  if (aType == nsIDocument::eCreated) {
-    elementData->mCreatedCallbackInvoked = false;
-  } else if (!elementData->mCreatedCallbackInvoked) {
-    
-    
-    return nullptr;
-  }
-
   
   auto callback =
-    MakeUnique<CustomElementCallback>(aCustomElement, aType, func, elementData);
+    MakeUnique<CustomElementCallback>(aCustomElement, aType, func);
 
   if (aArgs) {
     callback->SetArgs(*aArgs);
@@ -437,26 +379,6 @@ CustomElementRegistry::CreateCustomElementCallback(
     callback->SetAdoptedCallbackArgs(*aAdoptedCallbackArgs);
   }
   return Move(callback);
-}
-
-void
-CustomElementRegistry::SyncInvokeReactions(nsIDocument::ElementCallbackType aType,
-                                           Element* aCustomElement,
-                                           CustomElementDefinition* aDefinition)
-{
-  auto callback = CreateCustomElementCallback(aType, aCustomElement, nullptr,
-                                              nullptr, aDefinition);
-  if (!callback) {
-    return;
-  }
-
-  UniquePtr<CustomElementReaction> reaction(Move(
-    MakeUnique<CustomElementCallbackReaction>(Move(callback))));
-
-  RefPtr<SyncInvokeReactionRunnable> runnable =
-    new SyncInvokeReactionRunnable(Move(reaction), aCustomElement);
-
-  nsContentUtils::AddScriptRunner(runnable);
 }
 
  void
@@ -556,9 +478,7 @@ static const char* kLifeCycleCallbackNames[] = {
   "connectedCallback",
   "disconnectedCallback",
   "adoptedCallback",
-  "attributeChangedCallback",
-  
-  "createdCallback"
+  "attributeChangedCallback"
 };
 
 static void
@@ -1031,11 +951,6 @@ CustomElementRegistry::Upgrade(Element* aElement,
 
   
   aElement->SetCustomElementDefinition(aDefinition);
-
-  
-  nsContentUtils::EnqueueLifecycleCallback(nsIDocument::eCreated,
-                                           aElement, nullptr,
-                                           nullptr, aDefinition);
 }
 
 
@@ -1205,11 +1120,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CustomElementDefinition)
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
       "mCallbacks->mAttributeChangedCallback");
     cb.NoteXPCOMChild(callbacks->mAttributeChangedCallback.Value());
-  }
-
-  if (callbacks->mCreatedCallback.WasPassed()) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mCallbacks->mCreatedCallback");
-    cb.NoteXPCOMChild(callbacks->mCreatedCallback.Value());
   }
 
   if (callbacks->mConnectedCallback.WasPassed()) {

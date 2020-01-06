@@ -51,8 +51,7 @@ class CustomElementCallback
 public:
   CustomElementCallback(Element* aThisObject,
                         nsIDocument::ElementCallbackType aCallbackType,
-                        CallbackFunction* aCallback,
-                        CustomElementData* aOwnerData);
+                        CallbackFunction* aCallback);
   void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
   void Call();
   void SetArgs(LifecycleCallbackArgs& aArgs)
@@ -79,9 +78,6 @@ private:
   
   LifecycleCallbackArgs mArgs;
   LifecycleAdoptedCallbackArgs mAdoptedCallbackArgs;
-  
-  
-  CustomElementData* mOwnerData;
 };
 
 class CustomElementConstructor final : public CallbackFunction
@@ -117,11 +113,6 @@ struct CustomElementData
   
   
   RefPtr<nsAtom> mType;
-  
-  bool mElementIsBeingCreated;
-  
-  
-  bool mCreatedCallbackInvoked;
   
   State mState;
   
@@ -390,10 +381,6 @@ public:
   void GetCustomPrototype(nsAtom* aAtom,
                           JS::MutableHandle<JSObject*> aPrototype);
 
-  void SyncInvokeReactions(nsIDocument::ElementCallbackType aType,
-                           Element* aCustomElement,
-                           CustomElementDefinition* aDefinition);
-
   
 
 
@@ -474,31 +461,6 @@ private:
 
     private:
       CustomElementRegistry* mRegistry;
-  };
-
-  class SyncInvokeReactionRunnable : public mozilla::Runnable {
-    public:
-      SyncInvokeReactionRunnable(
-        UniquePtr<CustomElementReaction> aReaction, Element* aCustomElement)
-        : Runnable(
-            "dom::CustomElementRegistry::SyncInvokeReactionRunnable")
-        , mReaction(Move(aReaction))
-        , mCustomElement(aCustomElement)
-      {
-      }
-
-      NS_IMETHOD Run() override
-      {
-        
-        
-        ErrorResult rv;
-        mReaction->Invoke(mCustomElement, rv);
-        return NS_OK;
-      }
-
-    private:
-      UniquePtr<CustomElementReaction> mReaction;
-      Element* mCustomElement;
   };
 
 public:

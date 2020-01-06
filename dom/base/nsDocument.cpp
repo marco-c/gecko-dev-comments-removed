@@ -6448,9 +6448,6 @@ nsDocument::CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* 
 
     element->SetCustomElementDefinition(definition);
 
-    
-    nsContentUtils::SyncInvokeReactions(nsIDocument::eCreated, element,
-                                        definition);
     NS_ENSURE_TRUE(element, false);
   }
 
