@@ -284,8 +284,8 @@ add_task(async function test_other_ignored() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let anonyNodes = document.getAnonymousNodes(notification)[0];
-  let closeButton = anonyNodes.querySelector(".close-icon");
+  let closeButton =
+    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
   closeButton.click();
   gNotificationBox.removeNotification(notification, true);
   await waitForIgnoredReports(toIgnore);
@@ -476,8 +476,8 @@ add_task(async function test_can_ignore() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let anonyNodes = document.getAnonymousNodes(notification)[0];
-  let closeButton = anonyNodes.querySelector(".close-icon");
+  let closeButton =
+    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
   closeButton.click();
   
   
@@ -550,8 +550,8 @@ add_task(async function test_shutdown_while_not_showing() {
   Assert.ok(notification, "There should be a notification");
 
   
-  let anonyNodes = document.getAnonymousNodes(notification)[0];
-  let closeButton = anonyNodes.querySelector(".close-icon");
+  let closeButton =
+    document.getAnonymousElementByAttribute(notification, "anonid", "close-button");
   closeButton.click();
   
   
