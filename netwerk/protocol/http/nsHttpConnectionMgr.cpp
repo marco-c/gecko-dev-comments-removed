@@ -70,7 +70,8 @@ TransactionComparator(nsHttpTransaction *t1, nsHttpTransaction *t2)
 
 void
 nsHttpConnectionMgr::InsertTransactionSorted(nsTArray<RefPtr<nsHttpConnectionMgr::PendingTransactionInfo> > &pendingQ,
-                                             nsHttpConnectionMgr::PendingTransactionInfo *pendingTransInfo)
+                                             nsHttpConnectionMgr::PendingTransactionInfo *pendingTransInfo,
+                                             bool aInsertAsFirstForTheSamePriority )
 {
     
     
@@ -84,15 +85,19 @@ nsHttpConnectionMgr::InsertTransactionSorted(nsTArray<RefPtr<nsHttpConnectionMgr
     for (int32_t i = pendingQ.Length() - 1; i >= 0; --i) {
         nsHttpTransaction *t = pendingQ[i]->mTransaction;
         if (TransactionComparator(trans, t)) {
-            if (ChaosMode::isActive(ChaosFeature::NetworkScheduling)) {
+            if (ChaosMode::isActive(ChaosFeature::NetworkScheduling) || aInsertAsFirstForTheSamePriority) {
                 int32_t samePriorityCount;
                 for (samePriorityCount = 0; i - samePriorityCount >= 0; ++samePriorityCount) {
                     if (pendingQ[i - samePriorityCount]->mTransaction->Priority() != trans->Priority()) {
                         break;
                     }
                 }
-                
-                i -= ChaosMode::randomUint32LessThan(samePriorityCount + 1);
+                if (aInsertAsFirstForTheSamePriority) {
+                    i -= samePriorityCount;
+                } else {
+                    
+                    i -= ChaosMode::randomUint32LessThan(samePriorityCount + 1);
+                }
             }
             pendingQ.InsertElementAt(i+1, pendingTransInfo);
             return;
@@ -793,18 +798,6 @@ nsHttpConnectionMgr::UpdateCoalescingForNewConn(nsHttpConnection *newConn,
         nsHalfOpenSocket *half = ent->mHalfOpens[index];
         LOG(("UpdateCoalescingForNewConn() forcing halfopen abandon %p\n",
              half));
-
-        RefPtr<nsHalfOpenSocket> deleteProtector;
-        if (half->IsFastOpenBackupHalfOpen()) {
-            LOG(("UpdateCoalescingForNewConn() halfOpen %p is in Fast Open "
-                 "state.\n", half));
-            
-            
-            
-            
-            deleteProtector = half;
-            half->CancelFastOpenConnection();
-        }
         ent->mHalfOpens[index]->Abandon();
     }
 
@@ -823,6 +816,13 @@ nsHttpConnectionMgr::UpdateCoalescingForNewConn(nsHttpConnection *newConn,
                 otherConn->DontReuse();
             }
         }
+    }
+
+    for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0; --index) {
+        LOG(("UpdateCoalescingForNewConn() shutting down connection in fast "
+             "open state (%p) because new spdy connection (%p) takes "
+             "precedence\n", ent->mHalfOpenFastOpenBackups[index].get(), newConn));
+        ent->mHalfOpenFastOpenBackups[index]->CancelFastOpenConnection();
     }
 }
 
@@ -2050,6 +2050,14 @@ nsHttpConnectionMgr::GetSpdyActiveConn(nsConnectionEntry *ent)
                 tmp->DontReuse();
             }
         }
+        for (int32_t index = ent->mHalfOpenFastOpenBackups.Length() - 1; index >= 0; --index) {
+             LOG(("GetSpdyActiveConn() shutting down connection in fast "
+                 "open state (%p) because we have an experienced spdy "
+                 "connection (%p).\n",
+                 ent->mHalfOpenFastOpenBackups[index].get(), experienced));
+             ent->mHalfOpenFastOpenBackups[index]->CancelFastOpenConnection();
+        }
+
         LOG(("GetSpdyActiveConn() request for ent %p %s "
              "found an active experienced connection %p in native connection entry\n",
              ent, ci->HashKey().get(), experienced));
@@ -2854,11 +2862,6 @@ nsHttpConnectionMgr::TimeoutTick()
                 index--;
 
                 nsHalfOpenSocket *half = ent->mHalfOpens[index];
-                if (half->IsFastOpenBackupHalfOpen()) {
-                    
-                    
-                    continue;
-                }
                 double delta = half->Duration(currentTime);
                 
                 
@@ -3061,7 +3064,7 @@ nsHalfOpenSocket::nsHalfOpenSocket(nsConnectionEntry *ent,
     , mBackupConnectedOK(false)
     , mFreeToUse(true)
     , mPrimaryStreamStatus(NS_OK)
-    , mUsingFastOpen(false)
+    , mFastOpenInProgress(false)
 {
     MOZ_ASSERT(ent && trans, "constructor with null arguments");
     LOG(("Creating nsHalfOpenSocket [this=%p trans=%p ent=%s key=%s]\n",
@@ -3284,12 +3287,12 @@ nsHttpConnectionMgr::nsHalfOpenSocket::SetupBackupTimer()
 {
     uint16_t timeout = gHttpHandler->GetIdleSynTimeout();
     MOZ_ASSERT(!mSynTimer, "timer already initd");
-    if (!timeout && mUsingFastOpen) {
+    if (!timeout && mFastOpenInProgress) {
         timeout = 250;
     }
     
     
-    if (mUsingFastOpen ||
+    if (mFastOpenInProgress ||
         (timeout && !mSpeculative)) {
         
         
@@ -3349,7 +3352,7 @@ nsHttpConnectionMgr::nsHalfOpenSocket::Abandon()
 
     
     if (mStreamOut) {
-        if (!mConnectionNegotiatingFastOpen) {
+        if (!mFastOpenInProgress) {
             
             
             gHttpHandler->ConnMgr()->RecvdConnect();
@@ -3442,12 +3445,15 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
 
     CancelBackupTimer();
 
-    if (mConnectionNegotiatingFastOpen && mUsingFastOpen) {
+    if (mFastOpenInProgress) {
+        LOG(("nsHalfOpenSocket::OnOutputStreamReady backup stream is ready, "
+             "close the fast open socket %p [this=%p ent=%s]\n",
+             mSocketTransport.get(), this, mEnt->mConnInfo->Origin()));
         
         
         
         
-        MOZ_ASSERT(out == mBackupStreamOut);
+        MOZ_ASSERT((out == mBackupStreamOut) && mConnectionNegotiatingFastOpen);
         
         
         
@@ -3458,30 +3464,34 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
         
         
         mSocketTransport->SetFastOpenCallback(nullptr);
+        mConnectionNegotiatingFastOpen->SetFastOpen(false);
+        mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
         RefPtr<nsAHttpTransaction> trans =
             mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(true);
-        mConnectionNegotiatingFastOpen = nullptr;
         mSocketTransport = nullptr;
         mStreamOut = nullptr;
         mStreamIn = nullptr;
 
         if (trans && trans->QueryHttpTransaction()) {
-            mTransaction = trans;
             RefPtr<PendingTransactionInfo> pendingTransInfo =
                 new PendingTransactionInfo(trans->QueryHttpTransaction());
             pendingTransInfo->mHalfOpen =
                 do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
             if (trans->Caps() & NS_HTTP_URGENT_START) {
                 gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
-                                                                 pendingTransInfo);
+                                                                 pendingTransInfo,
+                                                                 true);
             } else {
-                mEnt->InsertTransaction(pendingTransInfo);
+                mEnt->InsertTransaction(pendingTransInfo, true);
             }
         }
         if (mEnt->mUseFastOpen) {
             gHttpHandler->IncrementFastOpenConsecutiveFailureCounter();
             mEnt->mUseFastOpen = false;
         }
+
+        mFastOpenInProgress = false;
+        mConnectionNegotiatingFastOpen = nullptr;
     }
 
     return SetupConn(out, false);
@@ -3494,6 +3504,12 @@ nsHalfOpenSocket::FastOpenEnabled()
     LOG(("nsHalfOpenSocket::FastOpenEnabled [this=%p]\n", this));
 
     if (!mEnt) {
+        return false;
+    }
+
+    
+    
+    if (!mEnt->mHalfOpens.Contains(this)) {
         return false;
     }
 
@@ -3537,30 +3553,71 @@ nsHalfOpenSocket::StartFastOpen()
 {
     MOZ_ASSERT(mStreamOut);
     MOZ_ASSERT(mEnt && !mBackupTransport);
-    mUsingFastOpen = true;
-    
-    
-    
+
+    LOG(("nsHalfOpenSocket::StartFastOpen [this=%p]\n",
+         this));
+
     RefPtr<nsHalfOpenSocket> deleteProtector(this);
-    if (mEnt && !mBackupTransport && !mSynTimer) {
-        
-        
-        SetupBackupTimer();
-    }
-    mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
-    mSocketTransport->SetEventSink(nullptr, nullptr);
-    gHttpHandler->ConnMgr()->RecvdConnect();
-    nsresult rv = SetupConn(mStreamOut, true);
-    if (NS_FAILED(rv)) {
-        
-        
-        
-        mConnectionNegotiatingFastOpen->SetFastOpen(false);
-        mConnectionNegotiatingFastOpen = nullptr;
+
+    mFastOpenInProgress = true;
+    
+    
+    if (!mEnt->mHalfOpens.RemoveElement(this)) {
+        MOZ_ASSERT(false, "HalfOpen is not in mHalfOpens!");
+        mSocketTransport->SetFastOpenCallback(nullptr);
         CancelBackupTimer();
         mStreamOut = nullptr;
         mStreamIn = nullptr;
         mSocketTransport = nullptr;
+        mFastOpenInProgress = false;
+        return NS_ERROR_ABORT;
+    }
+    MOZ_ASSERT(gHttpHandler->ConnMgr()->mNumHalfOpenConns);
+    if (gHttpHandler->ConnMgr()->mNumHalfOpenConns) { 
+        gHttpHandler->ConnMgr()->mNumHalfOpenConns--;
+    }
+
+    
+    gHttpHandler->ConnMgr()->RecvdConnect();
+
+    
+    mSocketTransport->SetEventSink(nullptr, nullptr);
+    mSocketTransport->SetSecurityCallbacks(nullptr);
+    mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
+
+    nsresult rv = SetupConn(mStreamOut, true);
+    if (!mConnectionNegotiatingFastOpen) {
+        LOG(("nsHalfOpenSocket::StartFastOpen SetupConn failed "
+             "[this=%p rv=%x]\n", this, static_cast<uint32_t>(rv)));
+        if (NS_SUCCEEDED(rv)) {
+            rv = NS_ERROR_ABORT;
+        }
+        
+        
+        
+        mSocketTransport->SetFastOpenCallback(nullptr);
+        CancelBackupTimer();
+        mStreamOut = nullptr;
+        mStreamIn = nullptr;
+        mSocketTransport = nullptr;
+        mFastOpenInProgress = false;
+
+        
+        
+        Abandon();
+    } else {
+        LOG(("nsHalfOpenSocket::StartFastOpen [this=%p conn=%p]\n",
+             this, mConnectionNegotiatingFastOpen.get()));
+        mEnt->mHalfOpenFastOpenBackups.AppendElement(this);
+        
+        
+        
+        if (!mSynTimer) {
+            
+            
+            
+            SetupBackupTimer();
+        }
     }
     return rv;
 }
@@ -3569,7 +3626,33 @@ void
 nsHttpConnectionMgr::
 nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
 {
+    MOZ_ASSERT(mFastOpenInProgress);
+
+    LOG(("nsHalfOpenSocket::SetFastOpenConnected [this=%p conn=%p error=%x]\n",
+         this, mConnectionNegotiatingFastOpen.get(),
+         static_cast<uint32_t>(aError)));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mConnectionNegotiatingFastOpen) {
+        return;
+    }
+
     RefPtr<nsHalfOpenSocket> deleteProtector(this);
+
+    
+    mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
+    mSocketTransport->SetFastOpenCallback(nullptr);
+
+    mConnectionNegotiatingFastOpen->SetFastOpen(false);
 
     
     if (aWillRetry &&
@@ -3581,31 +3664,38 @@ nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
         }
         
         
-        MOZ_ASSERT(mConnectionNegotiatingFastOpen);
-        RefPtr<nsAHttpTransaction> trans = mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(false);
+
+        RefPtr<nsAHttpTransaction> trans =
+            mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(false);
         if (trans && trans->QueryHttpTransaction()) {
-            mTransaction = trans;
             RefPtr<PendingTransactionInfo> pendingTransInfo =
                 new PendingTransactionInfo(trans->QueryHttpTransaction());
             pendingTransInfo->mHalfOpen =
                 do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
             if (trans->Caps() & NS_HTTP_URGENT_START) {
                 gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
-                                                                 pendingTransInfo);
+                                                                 pendingTransInfo,
+                                                                 true);
             } else {
-                mEnt->InsertTransaction(pendingTransInfo);
+                mEnt->InsertTransaction(pendingTransInfo, true);
             }
         }
+        
+        
+        
+        
+        
+        
+        mEnt->mHalfOpens.AppendElement(this);
+        gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+        gHttpHandler->ConnMgr()->StartedConnect();
 
         
-        
-        
-        
-        
-        gHttpHandler->ConnMgr()->StartedConnect();
         mStreamOut->AsyncWait(this, 0, 0, nullptr);
         mSocketTransport->SetEventSink(this, nullptr);
-        mSocketTransport->SetFastOpenCallback(nullptr);
+        mSocketTransport->SetSecurityCallbacks(this);
+        mStreamOut->AsyncWait(this, 0, 0, nullptr);
+
     } else {
         
         
@@ -3620,14 +3710,16 @@ nsHalfOpenSocket::SetFastOpenConnected(nsresult aError, bool aWillRetry)
         mSocketTransport = nullptr;
         mStreamOut = nullptr;
         mStreamIn = nullptr;
+
+        
+        
+        if (mBackupTransport) {
+            mEnt->mHalfOpens.AppendElement(this);
+            gHttpHandler->ConnMgr()->mNumHalfOpenConns++;
+        }
     }
 
-#ifndef DEBUG
-    if (!mConnectionNegotiatingFastOpen) {
-        return;
-    }
-#endif
-    mConnectionNegotiatingFastOpen->SetFastOpen(false);
+    mFastOpenInProgress = false;
     mConnectionNegotiatingFastOpen = nullptr;
 }
 
@@ -3635,28 +3727,26 @@ void
 nsHttpConnectionMgr::
 nsHalfOpenSocket::SetFastOpenStatus(uint8_t tfoStatus)
 {
+    MOZ_ASSERT(mFastOpenInProgress);
     mConnectionNegotiatingFastOpen->SetFastOpenStatus(tfoStatus);
-    if (mConnectionNegotiatingFastOpen->Transaction()->QueryHttpTransaction()) {
-        mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
-    }
+    mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
 }
 
 void
 nsHttpConnectionMgr::
 nsHalfOpenSocket::CancelFastOpenConnection()
 {
-    
-    
-    if (!mConnectionNegotiatingFastOpen) {
-        return;
-    }
+    MOZ_ASSERT(mFastOpenInProgress);
 
-    
-    
+    LOG(("nsHalfOpenSocket::CancelFastOpenConnection [this=%p conn=%p]\n",
+         this, mConnectionNegotiatingFastOpen.get()));
+
+    RefPtr<nsHalfOpenSocket> deleteProtector(this);
+    mEnt->mHalfOpenFastOpenBackups.RemoveElement(this);
     mSocketTransport->SetFastOpenCallback(nullptr);
+    mConnectionNegotiatingFastOpen->SetFastOpen(false);
     RefPtr<nsAHttpTransaction> trans =
         mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(true);
-    mConnectionNegotiatingFastOpen = nullptr;
     mSocketTransport = nullptr;
     mStreamOut = nullptr;
     mStreamIn = nullptr;
@@ -3667,18 +3757,22 @@ nsHalfOpenSocket::CancelFastOpenConnection()
 
         if (trans->Caps() & NS_HTTP_URGENT_START) {
             gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
-                                                             pendingTransInfo);
+                                                             pendingTransInfo, true);
         } else {
-            mEnt->InsertTransaction(pendingTransInfo);
+            mEnt->InsertTransaction(pendingTransInfo, true);
         }
     }
+
+    mFastOpenInProgress = false;
+    mConnectionNegotiatingFastOpen = nullptr;
+    Abandon();
 }
 
 void
 nsHttpConnectionMgr::
 nsHalfOpenSocket::FastOpenNotSupported()
 {
-  MOZ_ASSERT(mUsingFastOpen);
+  MOZ_ASSERT(mFastOpenInProgress);
   gHttpHandler->SetFastOpenNotSupported();
 }
 
@@ -3722,7 +3816,6 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
             mSocketTransport = nullptr;
         } else {
             conn->SetFastOpen(true);
-            mConnectionNegotiatingFastOpen = conn;
         }
     } else if (out == mBackupStreamOut) {
         TimeDuration rtt = TimeStamp::Now() - mBackupSynStarted;
@@ -3839,6 +3932,19 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
                         DispatchAbstractTransaction(mEnt, trans, mCaps, conn, 0);
                 }
             }
+        }
+    }
+
+    
+    
+    if (aFastOpen) {
+        MOZ_ASSERT(mEnt);
+        MOZ_ASSERT(static_cast<int32_t>(mEnt->mIdleConns.IndexOf(conn)) == -1);
+        int32_t idx = mEnt->mActiveConns.IndexOf(conn);
+        if (NS_SUCCEEDED(rv) && (idx != -1)) {
+            mConnectionNegotiatingFastOpen = conn;
+        } else {
+            conn->SetFastOpen(false);
         }
     }
 
@@ -4179,6 +4285,8 @@ nsConnectionEntry::RemoveHalfOpen(nsHalfOpenSocket *halfOpen)
         if (gHttpHandler->ConnMgr()->mNumHalfOpenConns) { 
             gHttpHandler->ConnMgr()->mNumHalfOpenConns--;
         }
+    } else {
+        mHalfOpenFastOpenBackups.RemoveElement(halfOpen);
     }
 
     if (!UnconnectedHalfOpens()) {
@@ -4225,7 +4333,8 @@ nsHttpConnectionMgr::nsConnectionEntry::PendingQLength() const
 
 void
 nsHttpConnectionMgr::
-nsConnectionEntry::InsertTransaction(PendingTransactionInfo *info)
+nsConnectionEntry::InsertTransaction(PendingTransactionInfo *info,
+                                     bool aInsertAsFirstForTheSamePriority )
 {
   LOG(("nsHttpConnectionMgr::nsConnectionEntry::InsertTransaction"
        " trans=%p, windowId=%" PRIu64 "\n",
@@ -4239,7 +4348,8 @@ nsConnectionEntry::InsertTransaction(PendingTransactionInfo *info)
     mPendingTransactionTable.Put(windowId, infoArray);
   }
 
-  gHttpHandler->ConnMgr()->InsertTransactionSorted(*infoArray, info);
+  gHttpHandler->ConnMgr()->InsertTransactionSorted(*infoArray, info,
+                                                   aInsertAsFirstForTheSamePriority);
 }
 
 void

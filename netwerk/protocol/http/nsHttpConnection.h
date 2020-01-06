@@ -83,7 +83,7 @@ public:
     MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
                                    int32_t pri);
 
-    void SetFastOpen(bool aFastOpen) { mFastOpen = aFastOpen; }
+    void SetFastOpen(bool aFastOpen);
     
     
     

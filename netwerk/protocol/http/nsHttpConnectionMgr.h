@@ -243,6 +243,7 @@ private:
         nsTArray<RefPtr<nsHttpConnection> >  mActiveConns; 
         nsTArray<RefPtr<nsHttpConnection> >  mIdleConns;   
         nsTArray<nsHalfOpenSocket*>  mHalfOpens;   
+        nsTArray<RefPtr<nsHalfOpenSocket> >  mHalfOpenFastOpenBackups;   
 
         bool AvailableForDispatchNow();
 
@@ -291,7 +292,8 @@ private:
         
         
         
-        void InsertTransaction(PendingTransactionInfo *info);
+        void InsertTransaction(PendingTransactionInfo *info,
+                               bool aInsertAsFirstForTheSamePriority = false);
 
         
         
@@ -379,12 +381,6 @@ private:
         void SetFastOpenConnected(nsresult, bool aWillRetry) override;
         void FastOpenNotSupported() override;
         void SetFastOpenStatus(uint8_t tfoStatus) override;
-
-        bool IsFastOpenBackupHalfOpen()
-        {
-            return mConnectionNegotiatingFastOpen;
-        }
-
         void CancelFastOpenConnection();
     private:
         nsresult SetupConn(nsIAsyncOutputStream *out,
@@ -443,7 +439,7 @@ private:
         bool                           mFreeToUse;
         nsresult                       mPrimaryStreamStatus;
 
-        bool                           mUsingFastOpen;
+        bool                           mFastOpenInProgress;
         RefPtr<nsHttpConnection>       mConnectionNegotiatingFastOpen;
     };
     friend class nsHalfOpenSocket;
@@ -543,7 +539,8 @@ private:
                                PendingTransactionInfo * pendingTransInfo);
 
     void InsertTransactionSorted(nsTArray<RefPtr<PendingTransactionInfo> > &pendingQ,
-                                 PendingTransactionInfo *pendingTransInfo);
+                                 PendingTransactionInfo *pendingTransInfo,
+                                 bool aInsertAsFirstForTheSamePriority = false);
 
     nsConnectionEntry *GetOrCreateConnectionEntry(nsHttpConnectionInfo *,
                                                   bool allowWildCard);
