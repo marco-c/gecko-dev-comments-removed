@@ -1,7 +1,9 @@
 
 
 var gMSETestPrefs = [
-  [ "media.mediasource.enabled", true ]
+  [ "media.mediasource.enabled", true ],
+  ['media.audio-max-decode-error', 0],
+  ['media.video-max-decode-error', 0],
 ];
 
 

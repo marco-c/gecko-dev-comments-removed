@@ -1593,6 +1593,8 @@ var PARALLEL_TESTS = 2;
 
 var gTestPrefs = [
   ['media.recorder.max_memory', 1024],
+  ['media.audio-max-decode-error', 0],
+  ['media.video-max-decode-error', 0],
 ];
 
 
