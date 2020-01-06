@@ -11,15 +11,6 @@ const TEST_STORE_FILE_NAME = "test-profile.json";
 const ADDRESS_COMPUTE_TESTCASES = [
   
   {
-    description: "Empty address",
-    address: {
-    },
-    expectedResult: {
-    },
-  },
-
-  
-  {
     description: "Has split names",
     address: {
       "given-name": "Timothy",
@@ -200,15 +191,6 @@ const ADDRESS_COMPUTE_TESTCASES = [
 const ADDRESS_NORMALIZE_TESTCASES = [
   
   {
-    description: "Empty address",
-    address: {
-    },
-    expectedResult: {
-    },
-  },
-
-  
-  {
     description: "Has \"name\", and the split names are omitted",
     address: {
       "name": "Timothy John Berners-Lee",
@@ -305,6 +287,7 @@ const ADDRESS_NORMALIZE_TESTCASES = [
   {
     description: "Has unknown \"country\"",
     address: {
+      "given-name": "John", 
       "country": "AA",
     },
     expectedResult: {
@@ -344,6 +327,7 @@ const ADDRESS_NORMALIZE_TESTCASES = [
   {
     description: "Has \"country-name\" as part of a word",
     address: {
+      "given-name": "John", 
       "country-name": "TRUST",
     },
     expectedResult: {
@@ -354,6 +338,7 @@ const ADDRESS_NORMALIZE_TESTCASES = [
   {
     description: "Has unknown \"country-name\"",
     address: {
+      "given-name": "John", 
       "country-name": "unknown country name",
     },
     expectedResult: {
@@ -375,6 +360,7 @@ const ADDRESS_NORMALIZE_TESTCASES = [
   {
     description: "Has \"country-name\" and unknown \"country\"",
     address: {
+      "given-name": "John", 
       "country": "AA",
       "country-name": "united states",
     },
@@ -386,6 +372,7 @@ const ADDRESS_NORMALIZE_TESTCASES = [
   {
     description: "Has unsupported \"country\"",
     address: {
+      "given-name": "John", 
       "country": "CA",
     },
     expectedResult: {
@@ -498,20 +485,9 @@ const ADDRESS_NORMALIZE_TESTCASES = [
 const CREDIT_CARD_COMPUTE_TESTCASES = [
   
   {
-    description: "Empty credit card",
-    creditCard: {
-      "cc-number": "1234123412341234", 
-    },
-    expectedResult: {
-    },
-  },
-
-  
-  {
     description: "Has \"cc-name\"",
     creditCard: {
       "cc-name": "Timothy John Berners-Lee",
-      "cc-number": "1234123412341234", 
     },
     expectedResult: {
       "cc-name": "Timothy John Berners-Lee",
@@ -520,18 +496,54 @@ const CREDIT_CARD_COMPUTE_TESTCASES = [
       "cc-family-name": "Berners-Lee",
     },
   },
-];
 
-const CREDIT_CARD_NORMALIZE_TESTCASES = [
   
   {
-    description: "No normalizable field",
+    description: "Number should be encrypted and masked",
     creditCard: {
+      "cc-number": "1234123412341234",
     },
     expectedResult: {
+      "cc-number": "************1234",
     },
   },
 
+  
+  {
+    description: "Has \"cc-exp-year\" and \"cc-exp-month\"",
+    creditCard: {
+      "cc-exp-month": 12,
+      "cc-exp-year": 2022,
+    },
+    expectedResult: {
+      "cc-exp-month": 12,
+      "cc-exp-year": 2022,
+      "cc-exp": "2022-12",
+    },
+  },
+  {
+    description: "Has only \"cc-exp-month\"",
+    creditCard: {
+      "cc-exp-month": 12,
+    },
+    expectedResult: {
+      "cc-exp-month": 12,
+      "cc-exp": undefined,
+    },
+  },
+  {
+    description: "Has only \"cc-exp-year\"",
+    creditCard: {
+      "cc-exp-year": 2022,
+    },
+    expectedResult: {
+      "cc-exp-year": 2022,
+      "cc-exp": undefined,
+    },
+  },
+];
+
+const CREDIT_CARD_NORMALIZE_TESTCASES = [
   
   {
     description: "Has both \"cc-name\" and the split name fields",
@@ -709,6 +721,7 @@ const CREDIT_CARD_NORMALIZE_TESTCASES = [
   {
     description: "Has invalid \"cc-exp\"",
     creditCard: {
+      "cc-number": "1111222233334444", 
       "cc-exp": "99-9999",
     },
     expectedResult: {
@@ -750,17 +763,6 @@ const CREDIT_CARD_NORMALIZE_TESTCASES = [
       "cc-exp-year": 2022,
     },
   },
-
-  
-  {
-    description: "Number should be encrypted and masked",
-    creditCard: {
-      "cc-number": "1234123412341234",
-    },
-    expectedResult: {
-      "cc-number": "************1234",
-    },
-  },
 ];
 
 let do_check_record_matches = (expectedRecord, record) => {
@@ -775,18 +777,15 @@ add_task(async function test_computeAddressFields() {
   let profileStorage = new ProfileStorage(path);
   await profileStorage.initialize();
 
-  ADDRESS_COMPUTE_TESTCASES.forEach(testcase => profileStorage.addresses.add(testcase.address));
-  await profileStorage._saveImmediately();
+  ADDRESS_COMPUTE_TESTCASES.forEach(testcase => {
+    do_print("Verify testcase: " + testcase.description);
 
-  profileStorage = new ProfileStorage(path);
-  await profileStorage.initialize();
+    let guid = profileStorage.addresses.add(testcase.address);
+    let address = profileStorage.addresses.get(guid);
+    do_check_record_matches(testcase.expectedResult, address);
 
-  let addresses = profileStorage.addresses.getAll();
-
-  for (let i in addresses) {
-    do_print("Verify testcase: " + ADDRESS_COMPUTE_TESTCASES[i].description);
-    do_check_record_matches(ADDRESS_COMPUTE_TESTCASES[i].expectedResult, addresses[i]);
-  }
+    profileStorage.addresses.remove(guid);
+  });
 });
 
 add_task(async function test_normalizeAddressFields() {
@@ -795,18 +794,15 @@ add_task(async function test_normalizeAddressFields() {
   let profileStorage = new ProfileStorage(path);
   await profileStorage.initialize();
 
-  ADDRESS_NORMALIZE_TESTCASES.forEach(testcase => profileStorage.addresses.add(testcase.address));
-  await profileStorage._saveImmediately();
+  ADDRESS_NORMALIZE_TESTCASES.forEach(testcase => {
+    do_print("Verify testcase: " + testcase.description);
 
-  profileStorage = new ProfileStorage(path);
-  await profileStorage.initialize();
+    let guid = profileStorage.addresses.add(testcase.address);
+    let address = profileStorage.addresses.get(guid);
+    do_check_record_matches(testcase.expectedResult, address);
 
-  let addresses = profileStorage.addresses.getAll();
-
-  for (let i in addresses) {
-    do_print("Verify testcase: " + ADDRESS_NORMALIZE_TESTCASES[i].description);
-    do_check_record_matches(ADDRESS_NORMALIZE_TESTCASES[i].expectedResult, addresses[i]);
-  }
+    profileStorage.addresses.remove(guid);
+  });
 });
 
 add_task(async function test_computeCreditCardFields() {
@@ -815,20 +811,15 @@ add_task(async function test_computeCreditCardFields() {
   let profileStorage = new ProfileStorage(path);
   await profileStorage.initialize();
 
-  for (let testcase of CREDIT_CARD_COMPUTE_TESTCASES) {
-    profileStorage.creditCards.add(testcase.creditCard);
-  }
-  await profileStorage._saveImmediately();
+  CREDIT_CARD_COMPUTE_TESTCASES.forEach(testcase => {
+    do_print("Verify testcase: " + testcase.description);
 
-  profileStorage = new ProfileStorage(path);
-  await profileStorage.initialize();
+    let guid = profileStorage.creditCards.add(testcase.creditCard);
+    let creditCard = profileStorage.creditCards.get(guid);
+    do_check_record_matches(testcase.expectedResult, creditCard);
 
-  let creditCards = profileStorage.creditCards.getAll();
-
-  for (let i in creditCards) {
-    do_print("Verify testcase: " + CREDIT_CARD_COMPUTE_TESTCASES[i].description);
-    do_check_record_matches(CREDIT_CARD_COMPUTE_TESTCASES[i].expectedResult, creditCards[i]);
-  }
+    profileStorage.creditCards.remove(guid);
+  });
 });
 
 add_task(async function test_normalizeCreditCardFields() {
@@ -837,18 +828,13 @@ add_task(async function test_normalizeCreditCardFields() {
   let profileStorage = new ProfileStorage(path);
   await profileStorage.initialize();
 
-  for (let testcase of CREDIT_CARD_NORMALIZE_TESTCASES) {
-    profileStorage.creditCards.add(testcase.creditCard);
-  }
-  await profileStorage._saveImmediately();
+  CREDIT_CARD_NORMALIZE_TESTCASES.forEach(testcase => {
+    do_print("Verify testcase: " + testcase.description);
 
-  profileStorage = new ProfileStorage(path);
-  await profileStorage.initialize();
+    let guid = profileStorage.creditCards.add(testcase.creditCard);
+    let creditCard = profileStorage.creditCards.get(guid, {rawData: true});
+    do_check_record_matches(testcase.expectedResult, creditCard);
 
-  let creditCards = profileStorage.creditCards.getAll();
-
-  for (let i in creditCards) {
-    do_print("Verify testcase: " + CREDIT_CARD_NORMALIZE_TESTCASES[i].description);
-    do_check_record_matches(CREDIT_CARD_NORMALIZE_TESTCASES[i].expectedResult, creditCards[i]);
-  }
+    profileStorage.creditCards.remove(guid);
+  });
 });
