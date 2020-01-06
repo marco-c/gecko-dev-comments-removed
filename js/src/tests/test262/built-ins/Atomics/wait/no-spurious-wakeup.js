@@ -8,13 +8,14 @@
 
 
 
+
 $262.agent.start(
 `
 $262.agent.receiveBroadcast(function (sab, id) {
   var ia = new Int32Array(sab);
   var then = Date.now();
   Atomics.wait(ia, 0, 0);
-  var diff = Date.now() - then;        // Should be about 1000 ms
+  var diff = Date.now() - then;        // Should be about 1000 ms but can be more
   $262.agent.report(diff);
   $262.agent.leaving();
 })
@@ -24,10 +25,10 @@ var ia = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
 
 $262.agent.broadcast(ia.buffer);
 $262.agent.sleep(500);                
-Atomics.store(ia, 0, 1);        
+Atomics.store(ia, 0, 1);              
 $262.agent.sleep(500);                
-Atomics.wake(ia, 0);                
-assert.sameValue(Math.abs((getReport()|0) - 1000) < $ATOMICS_MAX_TIME_EPSILON, true);
+Atomics.wake(ia, 0);                  
+assert.sameValue((getReport()|0) >= 1000 - $ATOMICS_MAX_TIME_EPSILON, true);
 
 function getReport() {
     var r;
