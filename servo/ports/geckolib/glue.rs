@@ -2779,8 +2779,13 @@ pub extern "C" fn Servo_TakeChangeHint(element: RawGeckoElementBorrowed,
 
             let damage = data.restyle.damage;
             if restyle_behavior == structs::TraversalRestyleBehavior::ForThrottledAnimationFlush {
-                debug_assert!(data.restyle.is_restyle() || damage.is_empty(),
-                              "Restyle damage should be empty if the element was not restyled");
+                if !*was_restyled {
+                    
+                    
+                    debug!("Skip post traversal for throttled animation flush {:?} restyle={:?}",
+                           element, data.restyle);
+                    return nsChangeHint(0);
+                }
                 
                 
                 
