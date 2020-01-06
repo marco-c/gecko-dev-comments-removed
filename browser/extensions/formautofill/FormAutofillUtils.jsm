@@ -64,6 +64,13 @@ this.FormAutofillUtils = {
     return this._fieldNameInfo[fieldName] == "creditCard";
   },
 
+  isCCNumber(ccNumber) {
+    
+    
+    
+    return ccNumber ? ccNumber.replace(/\s/g, "").match(/^\d{12,}$/) : false;
+  },
+
   getCategoryFromFieldName(fieldName) {
     return this._fieldNameInfo[fieldName];
   },

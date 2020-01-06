@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
@@ -9,42 +11,179 @@ const AUTOFILL_BUNDLE_URI = "chrome://formautofill/locale/formautofill.propertie
 const REGIONS_BUNDLE_URI = "chrome://global/locale/regionNames.properties";
 
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://formautofill/FormAutofillUtils.jsm");
 
-function EditDialog() {
-  this._address = window.arguments && window.arguments[0];
-  window.addEventListener("DOMContentLoaded", this, {once: true});
-}
+XPCOMUtils.defineLazyModuleGetter(this, "profileStorage",
+                                  "resource://formautofill/ProfileStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MasterPassword",
+                                  "resource://formautofill/MasterPassword.jsm");
 
-EditDialog.prototype = {
-  get _elements() {
-    if (this._elementRefs) {
-      return this._elementRefs;
+class EditDialog {
+  constructor(subStorageName, elements, record) {
+    this._storageInitPromise = profileStorage.initialize();
+    this._subStorageName = subStorageName;
+    this._elements = elements;
+    this._record = record;
+    this.localizeDocument();
+    window.addEventListener("DOMContentLoaded", this, {once: true});
+  }
+
+  async init() {
+    if (this._record) {
+      await this.loadInitialValues(this._record);
     }
-    this._elementRefs = {
-      title: document.querySelector("title"),
-      addressLevel1Label: document.querySelector("#address-level1-container > span"),
-      postalCodeLabel: document.querySelector("#postal-code-container > span"),
-      country: document.getElementById("country"),
-      controlsContainer: document.getElementById("controls-container"),
-      cancel: document.getElementById("cancel"),
-      save: document.getElementById("save"),
-    };
-    return this._elementRefs;
-  },
-
-  set _elements(refs) {
-    this._elementRefs = refs;
-  },
-
-  init() {
     this.attachEventListeners();
-  },
+  }
 
   uninit() {
     this.detachEventListeners();
     this._elements = null;
-  },
+  }
+
+  
+
+
+
+  loadInitialValues(record) {
+    for (let field in record) {
+      let input = document.getElementById(field);
+      if (input) {
+        input.value = record[field];
+      }
+    }
+  }
+
+  
+
+
+
+  buildFormObject() {
+    return Array.from(document.forms[0].elements).reduce((obj, input) => {
+      if (input.value) {
+        obj[input.id] = input.value;
+      }
+      return obj;
+    }, {});
+  }
+
+  
+
+
+
+  async getStorage() {
+    await this._storageInitPromise;
+    return profileStorage[this._subStorageName];
+  }
+
+  
+
+
+
+
+  async saveRecord(record, guid) {
+    let storage = await this.getStorage();
+    if (guid) {
+      storage.update(guid, record);
+    } else {
+      storage.add(record);
+    }
+  }
+
+  
+
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMContentLoaded": {
+        this.init();
+        break;
+      }
+      case "unload": {
+        this.uninit();
+        break;
+      }
+      case "click": {
+        this.handleClick(event);
+        break;
+      }
+      case "input": {
+        this.handleInput(event);
+        break;
+      }
+      case "keypress": {
+        this.handleKeyPress(event);
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
+  handleClick(event) {
+    if (event.target == this._elements.cancel) {
+      window.close();
+    }
+    if (event.target == this._elements.save) {
+      this.handleSubmit();
+    }
+  }
+
+  
+
+
+
+
+  handleInput(event) {
+    
+    
+    if (Object.keys(this.buildFormObject()).length == 0) {
+      this._elements.save.setAttribute("disabled", true);
+    } else {
+      this._elements.save.removeAttribute("disabled");
+    }
+  }
+
+  
+
+
+
+
+  handleKeyPress(event) {
+    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
+      window.close();
+    }
+  }
+
+  
+
+
+  attachEventListeners() {
+    window.addEventListener("keypress", this);
+    this._elements.controlsContainer.addEventListener("click", this);
+    document.addEventListener("input", this);
+  }
+
+  
+
+
+  detachEventListeners() {
+    window.removeEventListener("keypress", this);
+    this._elements.controlsContainer.removeEventListener("click", this);
+    document.removeEventListener("input", this);
+  }
+}
+
+class EditAddress extends EditDialog {
+  constructor(elements, record) {
+    super("addresses", elements, record);
+    this.formatForm(record && record.country);
+  }
 
   
 
@@ -57,145 +196,82 @@ EditDialog.prototype = {
     this._elements.addressLevel1Label.dataset.localization = addressLevel1Label;
     this._elements.postalCodeLabel.dataset.localization = postalCodeLabel;
     FormAutofillUtils.localizeMarkup(AUTOFILL_BUNDLE_URI, document);
-  },
+  }
 
   localizeDocument() {
-    if (this._address) {
-      this._elements.title.dataset.localization = "editDialogTitle";
+    if (this._record) {
+      this._elements.title.dataset.localization = "editAddressTitle";
     }
     FormAutofillUtils.localizeMarkup(REGIONS_BUNDLE_URI, this._elements.country);
-    this.formatForm(this._address && this._address.country);
-  },
+  }
 
-  
+  async handleSubmit() {
+    await this.saveRecord(this.buildFormObject(), this._record ? this._record.guid : null);
+    window.close();
+  }
+}
 
+class EditCreditCard extends EditDialog {
+  constructor(elements, record) {
+    super("creditCards", elements, record);
+    this.generateYears();
+  }
 
+  generateYears() {
+    const count = 11;
+    const currentYear = new Date().getFullYear();
+    const ccExpYear = this._record && this._record["cc-exp-year"];
 
-
-
-
-
-  saveAddress(data) {
-    Services.cpmm.sendAsyncMessage("FormAutofill:SaveAddress", data);
-  },
-
-  
-
-
-
-  loadInitialValues(address) {
-    for (let field in address) {
-      let input = document.getElementById(field);
-      if (input) {
-        input.value = address[field];
-      }
+    if (ccExpYear && ccExpYear < currentYear) {
+      this._elements.year.appendChild(new Option(ccExpYear));
     }
-  },
 
-  
-
-
-
-  buildAddressObject() {
-    return Array.from(document.forms[0].elements).reduce((obj, input) => {
-      if (input.value) {
-        obj[input.id] = input.value;
-      }
-      return obj;
-    }, {});
-  },
-
-  
-
-
-
-
-  handleEvent(event) {
-    switch (event.type) {
-      case "DOMContentLoaded": {
-        this.init();
-        if (this._address) {
-          this.loadInitialValues(this._address);
-        }
-        break;
-      }
-      case "click": {
-        this.handleClick(event);
-        break;
-      }
-      case "input": {
-        
-        
-        if (Object.keys(this.buildAddressObject()).length == 0) {
-          this._elements.save.setAttribute("disabled", true);
-        } else {
-          this._elements.save.removeAttribute("disabled");
-        }
-        break;
-      }
-      case "unload": {
-        this.uninit();
-        break;
-      }
-      case "keypress": {
-        this.handleKeyPress(event);
-        break;
-      }
+    for (let i = 0; i < count; i++) {
+      let year = currentYear + i;
+      let option = new Option(year);
+      this._elements.year.appendChild(option);
     }
-  },
 
-  
-
-
-
-
-  handleClick(event) {
-    if (event.target == this._elements.cancel) {
-      window.close();
+    if (ccExpYear && ccExpYear > currentYear + count) {
+      this._elements.year.appendChild(new Option(ccExpYear));
     }
-    if (event.target == this._elements.save) {
-      if (this._address) {
-        this.saveAddress({
-          guid: this._address.guid,
-          address: this.buildAddressObject(),
-        });
-      } else {
-        this.saveAddress({
-          address: this.buildAddressObject(),
-        });
-      }
-      window.close();
+  }
+
+  localizeDocument() {
+    if (this._record) {
+      this._elements.title.dataset.localization = "editCreditCardTitle";
     }
-  },
+    FormAutofillUtils.localizeMarkup(AUTOFILL_BUNDLE_URI, document);
+  }
 
   
 
 
 
+  async loadInitialValues(creditCard) {
+    let decryptedCC = await MasterPassword.decrypt(creditCard["cc-number-encrypted"]);
+    super.loadInitialValues(Object.assign({}, creditCard, {"cc-number": decryptedCC}));
+  }
 
-  handleKeyPress(event) {
-    if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
-      window.close();
+  async handleSubmit() {
+    let creditCard = this.buildFormObject();
+    
+    if (!FormAutofillUtils.isCCNumber(creditCard["cc-number"])) {
+      this._elements.ccNumber.setCustomValidity(true);
+      return;
     }
-  },
+    let storage = await this.getStorage();
+    await storage.normalizeCCNumberFields(creditCard);
+    await this.saveRecord(creditCard, this._record ? this._record.guid : null);
+    window.close();
+  }
 
-  
-
-
-  attachEventListeners() {
-    window.addEventListener("keypress", this);
-    this._elements.controlsContainer.addEventListener("click", this);
-    document.addEventListener("input", this);
-  },
-
-  
-
-
-  detachEventListeners() {
-    window.removeEventListener("keypress", this);
-    this._elements.controlsContainer.removeEventListener("click", this);
-    document.removeEventListener("input", this);
-  },
-};
-
-window.dialog = new EditDialog();
+  handleInput(event) {
+    
+    if (event.target == this._elements.ccNumber &&
+        FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)) {
+      this._elements.ccNumber.setCustomValidity("");
+    }
+    super.handleInput(event);
+  }
+}
