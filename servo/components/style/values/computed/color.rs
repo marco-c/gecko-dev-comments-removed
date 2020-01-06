@@ -26,6 +26,9 @@ pub struct Color {
 
 pub type RGBAColor = RGBA;
 
+
+pub type ColorPropertyValue = RGBA;
+
 impl Color {
     
     pub fn rgba(rgba: RGBA) -> Color {
