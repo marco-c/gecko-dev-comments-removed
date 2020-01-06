@@ -2067,6 +2067,9 @@ toolbar#nav-bar {
         env = env.copy()
 
         
+        marionette_exception = None
+
+        
         try:
             
             tmpfd, processLog = tempfile.mkstemp(suffix='pidlog')
@@ -2150,25 +2153,34 @@ toolbar#nav-bar {
             self.log.process_start(gecko_id)
             self.message_logger.gecko_id = gecko_id
 
-            
-            marionette_args = marionette_args or {}
-            self.marionette = Marionette(**marionette_args)
-            self.marionette.start_session()
+            try:
+                
+                marionette_args = marionette_args or {}
+                self.marionette = Marionette(**marionette_args)
+                self.marionette.start_session()
 
-            
-            addons = Addons(self.marionette)
+                
+                addons = Addons(self.marionette)
 
-            addons.install(create_zip(
-                os.path.join(here, 'extensions', 'specialpowers')
-            ))
-            addons.install(create_zip(self.mochijar))
+                addons.install(create_zip(
+                    os.path.join(here, 'extensions', 'specialpowers')
+                ))
+                addons.install(create_zip(self.mochijar))
 
-            self.execute_start_script()
+                self.execute_start_script()
 
-            
-            
-            self.marionette.delete_session()
-            del self.marionette
+                
+                
+                self.marionette.delete_session()
+                del self.marionette
+
+            except IOError:
+                
+                
+                
+                
+                
+                marionette_exception = sys.exc_info()
 
             
             
@@ -2217,6 +2229,10 @@ toolbar#nav-bar {
             if os.path.exists(processLog):
                 os.remove(processLog)
             self.urlOpts = []
+
+        if marionette_exception is not None:
+            exc, value, tb = marionette_exception
+            raise exc, value, tb
 
         return status, self.lastTestSeen
 
