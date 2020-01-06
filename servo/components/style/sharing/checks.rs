@@ -11,20 +11,8 @@ use bloom::StyleBloom;
 use context::{SelectorFlagsMap, SharedStyleContext};
 use dom::TElement;
 use element_state::*;
-use selectors::matching::StyleRelations;
 use sharing::{StyleSharingCandidate, StyleSharingTarget};
 use stylearc::Arc;
-
-
-
-
-#[inline]
-pub fn relations_are_shareable(relations: &StyleRelations) -> bool {
-    use selectors::matching::*;
-    
-    
-    !relations.intersects(AFFECTED_BY_PSEUDO_ELEMENTS)
-}
 
 
 
