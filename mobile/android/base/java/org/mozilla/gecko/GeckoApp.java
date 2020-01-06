@@ -1546,7 +1546,7 @@ public abstract class GeckoApp extends GeckoActivity
                 final Locale osLocale = Locale.getDefault();
 
                 
-                final String osLocaleString = osLocale.toString();
+                final String osLocaleString = osLocale.getLanguage() + "_" + osLocale.getCountry();
                 String appLocaleString = localeManager.getAndApplyPersistedLocale(GeckoApp.this);
                 Log.d(LOGTAG, "OS locale is " + osLocaleString + ", app locale is " + appLocaleString);
 
