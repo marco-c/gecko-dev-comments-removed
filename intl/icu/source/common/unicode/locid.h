@@ -33,10 +33,8 @@
 
 #include "unicode/utypes.h"
 #include "unicode/uobject.h"
-#include "unicode/unistr.h"
 #include "unicode/putil.h"
 #include "unicode/uloc.h"
-#include "unicode/strenum.h"
 
 
 
@@ -47,6 +45,9 @@ U_NAMESPACE_BEGIN
 
 
 void U_CALLCONV locale_available_init(); 
+
+class StringEnumeration;
+class UnicodeString;
 
 
 

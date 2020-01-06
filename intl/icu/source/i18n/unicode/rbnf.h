@@ -866,6 +866,52 @@ public:
                                 FieldPosition& pos,
                                 UErrorCode& status) const;
 
+protected:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(const DigitList &number,
+                                  UnicodeString& appendTo,
+                                  FieldPositionIterator* posIter,
+                                  UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(const DigitList &number,
+                                  UnicodeString& appendTo,
+                                  FieldPosition& pos,
+                                  UErrorCode& status) const;
+public:
+
   using NumberFormat::parse;
 
   
@@ -1031,7 +1077,8 @@ private:
     NFRule * initializeDefaultNaNRule(UErrorCode &status);
     const NFRule * getDefaultNaNRule() const;
     PluralFormat *createPluralFormat(UPluralType pluralType, const UnicodeString &pattern, UErrorCode& status) const;
-    UnicodeString& adjustForCapitalizationContext(int32_t startPos, UnicodeString& currentResult) const;
+    UnicodeString& adjustForCapitalizationContext(int32_t startPos, UnicodeString& currentResult, UErrorCode& status) const;
+    UnicodeString& format(int64_t number, NFRuleSet *ruleSet, UnicodeString& toAppendTo, UErrorCode& status) const;
 
 private:
     NFRuleSet **ruleSets;

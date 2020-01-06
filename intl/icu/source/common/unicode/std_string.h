@@ -27,13 +27,11 @@
 
 #include "unicode/utypes.h"
 
-#if U_HAVE_STD_STRING
+
 
 #if defined(__GLIBCXX__)
-namespace std { class type_info; } 
+namespace std { class type_info; }
 #endif
 #include <string>
-
-#endif  
 
 #endif  

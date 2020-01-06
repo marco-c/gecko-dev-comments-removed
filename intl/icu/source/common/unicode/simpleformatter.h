@@ -19,8 +19,6 @@
 #include "unicode/utypes.h"
 #include "unicode/unistr.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 U_NAMESPACE_BEGIN
 
 
@@ -57,7 +55,7 @@ public:
 
 
 
-    SimpleFormatter() : compiledPattern((UChar)0) {}
+    SimpleFormatter() : compiledPattern((char16_t)0) {}
 
     
 
@@ -275,15 +273,15 @@ private:
 
     UnicodeString compiledPattern;
 
-    static inline int32_t getArgumentLimit(const UChar *compiledPattern,
+    static inline int32_t getArgumentLimit(const char16_t *compiledPattern,
                                               int32_t compiledPatternLength) {
         return compiledPatternLength == 0 ? 0 : compiledPattern[0];
     }
 
-    static UnicodeString getTextWithNoArguments(const UChar *compiledPattern, int32_t compiledPatternLength);
+    static UnicodeString getTextWithNoArguments(const char16_t *compiledPattern, int32_t compiledPatternLength);
 
     static UnicodeString &format(
-            const UChar *compiledPattern, int32_t compiledPatternLength,
+            const char16_t *compiledPattern, int32_t compiledPatternLength,
             const UnicodeString *const *values,
             UnicodeString &result, const UnicodeString *resultCopy, UBool forbidResultAsValue,
             int32_t *offsets, int32_t offsetsLength,
@@ -291,7 +289,5 @@ private:
 };
 
 U_NAMESPACE_END
-
-#endif 
 
 #endif  

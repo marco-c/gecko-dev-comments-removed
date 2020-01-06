@@ -543,6 +543,9 @@ uloc_getISO3Country(const char* localeID);
 
 
 
+
+
+
 U_STABLE uint32_t U_EXPORT2
 uloc_getLCID(const char* localeID);
 
@@ -859,11 +862,21 @@ uloc_openKeywords(const char* localeID,
 
 
 
+
+
 U_STABLE int32_t U_EXPORT2
 uloc_getKeywordValue(const char* localeID,
                      const char* keywordName,
                      char* buffer, int32_t bufferCapacity,
                      UErrorCode* status);
+
+
+
+
+
+
+
+
 
 
 

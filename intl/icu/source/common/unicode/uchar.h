@@ -399,7 +399,6 @@ typedef enum UProperty {
     UCHAR_CHANGES_WHEN_CASEMAPPED=55,
     
     UCHAR_CHANGES_WHEN_NFKC_CASEFOLDED=56,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -428,7 +427,6 @@ typedef enum UProperty {
 
 
     UCHAR_EMOJI_MODIFIER_BASE=60,
-#endif 
 #ifndef U_HIDE_DEPRECATED_API
     
 

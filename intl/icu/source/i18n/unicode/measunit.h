@@ -345,7 +345,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKarat(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -353,9 +352,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMilligramPerDeciliter(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -363,9 +360,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMillimolePerLiter(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -373,7 +368,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPartPerMillion(UErrorCode &status);
-#endif  
 
     
 
@@ -399,7 +393,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilePerGallon(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -407,47 +400,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMilePerGallonImperial(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
 
-    static MeasureUnit *createEast(UErrorCode &status);
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    static MeasureUnit *createNorth(UErrorCode &status);
-#endif  
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    static MeasureUnit *createSouth(UErrorCode &status);
-#endif  
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    static MeasureUnit *createWest(UErrorCode &status);
-#endif  
 
     
 
@@ -873,6 +833,16 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPicometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createPoint(UErrorCode &status);
+#endif  
+
     
 
 
@@ -1249,7 +1219,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGallon(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1257,7 +1226,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createGallonImperial(UErrorCode &status);
-#endif  
 
     
 

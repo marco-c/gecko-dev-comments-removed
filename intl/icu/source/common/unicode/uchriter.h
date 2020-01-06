@@ -43,7 +43,7 @@ public:
 
 
 
-  UCharCharacterIterator(const UChar* textPtr, int32_t length);
+  UCharCharacterIterator(ConstChar16Ptr textPtr, int32_t length);
 
   
 
@@ -58,7 +58,7 @@ public:
 
 
 
-  UCharCharacterIterator(const UChar* textPtr, int32_t length,
+  UCharCharacterIterator(ConstChar16Ptr textPtr, int32_t length,
                          int32_t position);
 
   
@@ -77,7 +77,7 @@ public:
 
 
 
-  UCharCharacterIterator(const UChar* textPtr, int32_t length,
+  UCharCharacterIterator(ConstChar16Ptr textPtr, int32_t length,
                          int32_t textBegin,
                          int32_t textEnd,
                          int32_t position);
@@ -141,7 +141,7 @@ public:
 
 
 
-  virtual UChar         first(void);
+  virtual char16_t         first(void);
 
   
 
@@ -151,7 +151,7 @@ public:
 
 
 
-  virtual UChar         firstPostInc(void);
+  virtual char16_t         firstPostInc(void);
 
   
 
@@ -181,7 +181,7 @@ public:
 
 
 
-  virtual UChar         last(void);
+  virtual char16_t         last(void);
 
   
 
@@ -200,7 +200,7 @@ public:
 
 
 
-  virtual UChar         setIndex(int32_t position);
+  virtual char16_t         setIndex(int32_t position);
 
   
 
@@ -220,7 +220,7 @@ public:
 
 
 
-  virtual UChar         current(void) const;
+  virtual char16_t         current(void) const;
 
   
 
@@ -236,7 +236,7 @@ public:
 
 
 
-  virtual UChar         next(void);
+  virtual char16_t         next(void);
 
   
 
@@ -246,7 +246,7 @@ public:
 
 
 
-  virtual UChar         nextPostInc(void);
+  virtual char16_t         nextPostInc(void);
 
   
 
@@ -288,7 +288,7 @@ public:
 
 
 
-  virtual UChar         previous(void);
+  virtual char16_t         previous(void);
 
   
 
@@ -334,13 +334,17 @@ public:
 
 
 
+#ifdef move32
+   
+#undef move32
+#endif
   virtual int32_t      move32(int32_t delta, EOrigin origin);
 
   
 
 
 
-  void setText(const UChar* newText, int32_t newTextLength);
+  void setText(ConstChar16Ptr newText, int32_t newTextLength);
 
   
 
@@ -375,7 +379,7 @@ protected:
 
 
 
-  const UChar*            text;
+  const char16_t*            text;
 
 };
 

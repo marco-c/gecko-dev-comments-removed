@@ -101,7 +101,7 @@ u_init(UErrorCode *status);
 U_STABLE void U_EXPORT2 
 u_cleanup(void);
 
-
+U_CDECL_BEGIN
 
 
 
@@ -148,10 +148,17 @@ typedef void  U_CALLCONV UMemFreeFn (const void *context, void *mem);
 
 
   
+#ifndef _MSC_VER
 U_STABLE void U_EXPORT2 
-u_setMemoryFunctions(const void *context, UMemAllocFn *a, UMemReallocFn *r, UMemFreeFn *f, 
+u_setMemoryFunctions(const void *context, UMemAllocFn * U_CALLCONV a, UMemReallocFn * U_CALLCONV r, UMemFreeFn * U_CALLCONV f, 
                     UErrorCode *status);
+#else
+U_STABLE void U_EXPORT2 
+u_setMemoryFunctions(const void *context, UMemAllocFn * a, UMemReallocFn * r, UMemFreeFn * f, 
+                    UErrorCode *status);
+#endif
 
+U_CDECL_END
 
 #ifndef U_HIDE_DEPRECATED_API
 
@@ -172,6 +179,7 @@ u_setMemoryFunctions(const void *context, UMemAllocFn *a, UMemReallocFn *r, UMem
 
 typedef void *UMTX;
 
+U_CDECL_BEGIN
 
 
 
@@ -201,7 +209,7 @@ typedef void U_CALLCONV UMtxInitFn (const void *context, UMTX  *mutex, UErrorCod
 
 
 typedef void U_CALLCONV UMtxFn   (const void *context, UMTX  *mutex);
-
+U_CDECL_END
 
 
 

@@ -939,7 +939,7 @@ private:
 
 
     static int32_t findKeyword( const UnicodeString& s,
-                                const UChar * const *list);
+                                const char16_t * const *list);
 
     
 

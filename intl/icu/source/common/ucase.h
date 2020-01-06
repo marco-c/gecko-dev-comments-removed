@@ -37,18 +37,8 @@ U_NAMESPACE_END
 
 
 
-U_CDECL_BEGIN
-
-struct UCaseProps;
-typedef struct UCaseProps UCaseProps;
-
-U_CDECL_END
-
-U_CAPI const UCaseProps * U_EXPORT2
-ucase_getSingleton(void);
-
 U_CFUNC void U_EXPORT2
-ucase_addPropertyStarts(const UCaseProps *csp, const USetAdder *sa, UErrorCode *pErrorCode);
+ucase_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode);
 
 
 
@@ -56,7 +46,7 @@ ucase_addPropertyStarts(const UCaseProps *csp, const USetAdder *sa, UErrorCode *
 
 
 U_CFUNC int32_t
-ucase_getCaseLocale(const char *locale, int32_t *locCache);
+ucase_getCaseLocale(const char *locale);
 
 
 enum {
@@ -87,16 +77,16 @@ enum {
 
 
 U_CAPI UChar32 U_EXPORT2
-ucase_tolower(const UCaseProps *csp, UChar32 c);
+ucase_tolower(UChar32 c);
 
 U_CAPI UChar32 U_EXPORT2
-ucase_toupper(const UCaseProps *csp, UChar32 c);
+ucase_toupper(UChar32 c);
 
 U_CAPI UChar32 U_EXPORT2
-ucase_totitle(const UCaseProps *csp, UChar32 c);
+ucase_totitle(UChar32 c);
 
 U_CAPI UChar32 U_EXPORT2
-ucase_fold(const UCaseProps *csp, UChar32 c, uint32_t options);
+ucase_fold(UChar32 c, uint32_t options);
 
 
 
@@ -108,7 +98,7 @@ ucase_fold(const UCaseProps *csp, UChar32 c, uint32_t options);
 
 
 U_CFUNC void U_EXPORT2
-ucase_addCaseClosure(const UCaseProps *csp, UChar32 c, const USetAdder *sa);
+ucase_addCaseClosure(UChar32 c, const USetAdder *sa);
 
 
 
@@ -123,7 +113,7 @@ ucase_addCaseClosure(const UCaseProps *csp, UChar32 c, const USetAdder *sa);
 
 
 U_CFUNC UBool U_EXPORT2
-ucase_addStringCaseClosure(const UCaseProps *csp, const UChar *s, int32_t length, const USetAdder *sa);
+ucase_addStringCaseClosure(const UChar *s, int32_t length, const USetAdder *sa);
 
 #ifdef __cplusplus
 U_NAMESPACE_BEGIN
@@ -157,17 +147,17 @@ U_NAMESPACE_END
 
 
 U_CAPI int32_t U_EXPORT2
-ucase_getType(const UCaseProps *csp, UChar32 c);
+ucase_getType(UChar32 c);
 
 
 U_CAPI int32_t U_EXPORT2
-ucase_getTypeOrIgnorable(const UCaseProps *csp, UChar32 c);
+ucase_getTypeOrIgnorable(UChar32 c);
 
 U_CAPI UBool U_EXPORT2
-ucase_isSoftDotted(const UCaseProps *csp, UChar32 c);
+ucase_isSoftDotted(UChar32 c);
 
 U_CAPI UBool U_EXPORT2
-ucase_isCaseSensitive(const UCaseProps *csp, UChar32 c);
+ucase_isCaseSensitive(UChar32 c);
 
 
 
@@ -247,29 +237,26 @@ enum {
 
 
 
-
-
-
 U_CAPI int32_t U_EXPORT2
-ucase_toFullLower(const UCaseProps *csp, UChar32 c,
+ucase_toFullLower(UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
-                  const char *locale, int32_t *locCache);
+                  int32_t caseLocale);
 
 U_CAPI int32_t U_EXPORT2
-ucase_toFullUpper(const UCaseProps *csp, UChar32 c,
+ucase_toFullUpper(UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
-                  const char *locale, int32_t *locCache);
+                  int32_t caseLocale);
 
 U_CAPI int32_t U_EXPORT2
-ucase_toFullTitle(const UCaseProps *csp, UChar32 c,
+ucase_toFullTitle(UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
-                  const char *locale, int32_t *locCache);
+                  int32_t caseLocale);
 
 U_CAPI int32_t U_EXPORT2
-ucase_toFullFolding(const UCaseProps *csp, UChar32 c,
+ucase_toFullFolding(UChar32 c,
                     const UChar **pString,
                     uint32_t options);
 
@@ -283,10 +270,10 @@ U_CDECL_BEGIN
 
 
 typedef int32_t U_CALLCONV
-UCaseMapFull(const UCaseProps *csp, UChar32 c,
+UCaseMapFull(UChar32 c,
              UCaseContextIterator *iter, void *context,
              const UChar **pString,
-             const char *locale, int32_t *locCache);
+             int32_t caseLocale);
 
 U_CDECL_END
 

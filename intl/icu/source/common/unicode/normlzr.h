@@ -168,7 +168,7 @@ public:
 
 
 
-  Normalizer(const UChar* str, int32_t length, UNormalizationMode mode);
+  Normalizer(ConstChar16Ptr str, int32_t length, UNormalizationMode mode);
 
   
 
@@ -704,7 +704,7 @@ public:
 
 
 
-  void setText(const UChar* newText,
+  void setText(ConstChar16Ptr newText,
                     int32_t length,
             UErrorCode &status);
   
@@ -796,8 +796,8 @@ Normalizer::compare(const UnicodeString &s1, const UnicodeString &s2,
                     uint32_t options,
                     UErrorCode &errorCode) {
   
-  return unorm_compare(s1.getBuffer(), s1.length(),
-                       s2.getBuffer(), s2.length(),
+  return unorm_compare(toUCharPtr(s1.getBuffer()), s1.length(),
+                       toUCharPtr(s2.getBuffer()), s2.length(),
                        options,
                        &errorCode);
 }

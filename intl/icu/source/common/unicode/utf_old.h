@@ -271,6 +271,25 @@ typedef int32_t UTextOffset;
 
 
 
+
+
+
+
+
+
+
+#ifdef U_UTF8_IMPL
+
+#elif defined(U_STATIC_IMPLEMENTATION) || defined(U_COMMON_IMPLEMENTATION)
+U_CFUNC const uint8_t utf8_countTrailBytes[];
+#else
+U_CFUNC U_IMPORT const uint8_t utf8_countTrailBytes[];     
+#endif
+
+
+
+
+
 #define UTF8_COUNT_TRAIL_BYTES(leadByte) (utf8_countTrailBytes[(uint8_t)leadByte])
 
 

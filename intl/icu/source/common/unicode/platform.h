@@ -150,7 +150,7 @@
 #   define U_PLATFORM U_PF_ANDROID
     
 #   include <android/api-level.h>
-#elif defined(__native_client__)
+#elif defined(__pnacl__) || defined(__native_client__)
 #   define U_PLATFORM U_PF_BROWSER_NATIVE_CLIENT
 #elif defined(linux) || defined(__linux__) || defined(__linux)
 #   define U_PLATFORM U_PF_LINUX
@@ -231,6 +231,18 @@
 #   define U_PLATFORM_HAS_WIN32_API 1
 #else
 #   define U_PLATFORM_HAS_WIN32_API 0
+#endif
+
+
+
+
+
+
+
+#ifdef U_PLATFORM_HAS_WINUWP_API
+    
+#else
+#   define U_PLATFORM_HAS_WINUWP_API 0
 #endif
 
 
@@ -341,17 +353,6 @@
 
 #ifndef U_IOSTREAM_SOURCE
 #define U_IOSTREAM_SOURCE 199711
-#endif
-
-
-
-
-
-
-#ifdef U_HAVE_STD_STRING
-    
-#else
-#   define U_HAVE_STD_STRING 1
 #endif
 
 
@@ -497,6 +498,13 @@
 #   define U_CPLUSPLUS_VERSION 1
 #endif
 
+#if (U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390) && defined(__cplusplus) &&(U_CPLUSPLUS_VERSION < 11)
+
+namespace std {
+  typedef decltype(nullptr) nullptr_t;
+};
+#endif
+
 
 
 
@@ -537,17 +545,22 @@
 
 
 
-#ifdef __cplusplus
+#ifndef __cplusplus
+    
+#elif defined(U_FALLTHROUGH)
+    
+#elif defined(__clang__)
+    
+    
 #   if __has_cpp_attribute(clang::fallthrough) || \
             (__has_feature(cxx_attributes) && __has_warning("-Wimplicit-fallthrough"))
 #       define U_FALLTHROUGH [[clang::fallthrough]]
-#   else
-#       define U_FALLTHROUGH
 #   endif
-#else
-#   define U_FALLTHROUGH
 #endif
 
+#ifndef U_FALLTHROUGH
+#   define U_FALLTHROUGH
+#endif
 
 
 
@@ -758,6 +771,7 @@
     
 #else
     
+
 
 
 

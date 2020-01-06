@@ -27,6 +27,7 @@ U_NAMESPACE_BEGIN
 
 
 
+class CharString;
 class Hashtable;
 class FormatParser;
 class DateTimeMatcher;
@@ -517,7 +518,7 @@ private:
     DateTimeMatcher *skipMatcher;
     Hashtable *fAvailableFormatKeyHash;
     UnicodeString emptyString;
-    UChar fDefaultHourFormatChar;
+    char16_t fDefaultHourFormatChar;
 
     int32_t fAllowedHourFormats[7];  
 

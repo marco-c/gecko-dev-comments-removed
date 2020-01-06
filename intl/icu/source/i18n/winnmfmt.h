@@ -155,6 +155,7 @@ private:
     FormatInfo *fFormatInfo;
     UBool fFractionDigitsSet;
 
+    UnicodeString* fWindowsLocaleName; 
 };
 
 U_NAMESPACE_END

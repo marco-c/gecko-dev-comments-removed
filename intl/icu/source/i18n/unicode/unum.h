@@ -328,7 +328,7 @@ enum UCurrencySpacing {
     UNUM_CURRENCY_INSERT,
 
     
-    
+
     
 
 
@@ -554,6 +554,59 @@ unum_formatDouble(    const    UNumberFormat*  fmt,
             UFieldPosition  *pos, 
             UErrorCode*     status);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+unum_formatDoubleForFields(const UNumberFormat* format,
+                           double number,
+                           UChar* result,
+                           int32_t resultLength,
+                           UFieldPositionIterator* fpositer,
+                           UErrorCode* status);
+
+#endif  
+
 
 
 
@@ -651,57 +704,6 @@ unum_formatUFormattable(const UNumberFormat* fmt,
                         int32_t resultLength,
                         UFieldPosition *pos,
                         UErrorCode *status);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_DRAFT int32_t U_EXPORT2
-unum_formatDoubleForFields(const UNumberFormat* format,
-                           double number,
-                           UChar* result,
-                           int32_t resultLength,
-                           UFieldPositionIterator* fpositer,
-                           UErrorCode* status);
-#define ICU_UNUM_HAS_FORMATDOUBLEFORFIELDS
 
 
 

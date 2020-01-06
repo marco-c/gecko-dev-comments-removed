@@ -87,7 +87,7 @@ typedef size_t uintptr_t;
 
 #ifdef U_HAVE_NL_LANGINFO_CODESET
     
-#elif U_PLATFORM_HAS_WIN32_API || U_PLATFORM == U_PF_ANDROID || U_PLATFORM == U_PF_QNX
+#elif U_PLATFORM_USES_ONLY_WIN32_API || U_PLATFORM == U_PF_ANDROID || U_PLATFORM == U_PF_QNX
 #   define U_HAVE_NL_LANGINFO_CODESET 0
 #else
 #   define U_HAVE_NL_LANGINFO_CODESET 1
@@ -106,7 +106,10 @@ typedef size_t uintptr_t;
 #ifdef U_TZSET
     
 #elif U_PLATFORM_USES_ONLY_WIN32_API
+    
+#if U_PLATFORM_HAS_WINUWP_API == 0
 #   define U_TZSET _tzset
+#endif
 #elif U_PLATFORM == U_PF_OS400
    
 #else
@@ -141,7 +144,10 @@ typedef size_t uintptr_t;
 #ifdef U_TZNAME
     
 #elif U_PLATFORM_USES_ONLY_WIN32_API
+    
+#if U_PLATFORM_HAS_WINUWP_API == 0
 #   define U_TZNAME _tzname
+#endif
 #elif U_PLATFORM == U_PF_OS400
    
 #else

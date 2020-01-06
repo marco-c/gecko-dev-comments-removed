@@ -44,7 +44,23 @@
 #include "uposixdefs.h"
 
 
-#include "unicode/utypes.h"
+#include "unicode/platform.h"
+
+#if U_PLATFORM == U_PF_MINGW && defined __STRICT_ANSI__
+
+#undef __STRICT_ANSI__
+#endif
+
+
+
+
+#include <time.h>
+
+#if !U_PLATFORM_USES_ONLY_WIN32_API
+#include <sys/time.h>
+#endif
+
+
 #include "unicode/putil.h"
 #include "unicode/ustring.h"
 #include "putilimp.h"
@@ -76,14 +92,29 @@
 
 
 
+#ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
+#endif
 #   define VC_EXTRALEAN
 #   define NOUSER
 #   define NOSERVICE
 #   define NOIME
 #   define NOMCX
 #   include <windows.h>
+#   include "unicode\uloc.h"
+#if U_PLATFORM_HAS_WINUWP_API == 0
 #   include "wintz.h"
+#else 
+typedef PVOID LPMSG; 
+#include <Windows.Globalization.h>
+#include <windows.system.userprofile.h>
+#include <wrl\wrappers\corewrappers.h>
+#include <wrl\client.h>
+
+using namespace ABI::Windows::Foundation;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
+#endif
 #elif U_PLATFORM == U_PF_OS400
 #   include <float.h>
 #   include <qusec.h>       
@@ -102,20 +133,6 @@
 #   endif
 #elif U_PLATFORM == U_PF_QNX
 #   include <sys/neutrino.h>
-#endif
-
-#if (U_PF_MINGW <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN) && defined(__STRICT_ANSI__)
-
-#undef __STRICT_ANSI__
-#endif
-
-
-
-
-#include <time.h>
-
-#if !U_PLATFORM_USES_ONLY_WIN32_API
-#include <sys/time.h>
 #endif
 
 
@@ -651,7 +668,7 @@ uprv_timezone()
 
 
 
-#if defined(U_TZNAME) && (U_PLATFORM == U_PF_IRIX || U_PLATFORM_IS_DARWIN_BASED || (U_PLATFORM == U_PF_CYGWIN && !U_PLATFORM_USES_ONLY_WIN32_API))
+#if defined(U_TZNAME) && (U_PLATFORM == U_PF_IRIX || U_PLATFORM_IS_DARWIN_BASED)
 
 extern U_IMPORT char *U_TZNAME[];
 #endif
@@ -1008,16 +1025,65 @@ uprv_tzname_clear_cache()
 #endif
 }
 
+
+#if U_PLATFORM_HAS_WINUWP_API
+U_CAPI const char* U_EXPORT2
+uprv_getWindowsTimeZone()
+{
+    
+    ComPtr<IInspectable> calendar;
+    HRESULT hr = RoActivateInstance(
+        HStringReference(RuntimeClass_Windows_Globalization_Calendar).Get(),
+        &calendar);
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<ABI::Windows::Globalization::ITimeZoneOnCalendar> timezone;
+        hr = calendar.As(&timezone);
+        if (SUCCEEDED(hr))
+        {
+            HString timezoneString;
+            hr = timezone->GetTimeZone(timezoneString.GetAddressOf());
+            if (SUCCEEDED(hr))
+            {
+                int32_t length = wcslen(timezoneString.GetRawBuffer(NULL));
+                char* asciiId = (char*)uprv_calloc(length + 1, sizeof(char));
+                if (asciiId != nullptr)
+                {
+                    u_UCharsToChars((UChar*)timezoneString.GetRawBuffer(NULL), asciiId, length);
+                    return asciiId;
+                }
+            }
+        }
+    }
+
+    
+    return nullptr;
+}
+#endif
+
 U_CAPI const char* U_EXPORT2
 uprv_tzname(int n)
 {
     const char *tzid = NULL;
 #if U_PLATFORM_USES_ONLY_WIN32_API
+#if U_PLATFORM_HAS_WINUWP_API > 0
+    tzid = uprv_getWindowsTimeZone();
+#else
     tzid = uprv_detectWindowsTimeZone();
+#endif
 
     if (tzid != NULL) {
         return tzid;
     }
+
+#ifndef U_TZNAME
+    
+    
+    
+    
+    return uprv_strdup("Etc/UTC");
+#endif 
+
 #else
 
 
@@ -1163,6 +1229,7 @@ static CharString *gTimeZoneFilesDirectory = NULL;
 
 #if U_POSIX_LOCALE || U_PLATFORM_USES_ONLY_WIN32_API
  static char *gCorrectedPOSIXLocale = NULL; 
+ static bool gCorrectedPOSIXLocaleHeapAllocated = false;
 #endif
 
 static UBool U_CALLCONV putil_cleanup(void)
@@ -1183,9 +1250,10 @@ static UBool U_CALLCONV putil_cleanup(void)
 #endif
 
 #if U_POSIX_LOCALE || U_PLATFORM_USES_ONLY_WIN32_API
-    if (gCorrectedPOSIXLocale) {
+    if (gCorrectedPOSIXLocale && gCorrectedPOSIXLocaleHeapAllocated) {
         uprv_free(gCorrectedPOSIXLocale);
         gCorrectedPOSIXLocale = NULL;
+        gCorrectedPOSIXLocaleHeapAllocated = false;
     }
 #endif
     return TRUE;
@@ -1297,7 +1365,9 @@ static void U_CALLCONV dataDirectoryInitFn() {
 
 #   if !defined(ICU_NO_USER_DATA_OVERRIDE) && !UCONFIG_NO_FILE_IO
     
-    path=getenv("ICU_DATA");
+#       if U_PLATFORM_HAS_WINUWP_API == 0  
+        path=getenv("ICU_DATA");
+#       endif
 #   endif
 
     
@@ -1326,9 +1396,35 @@ static void U_CALLCONV dataDirectoryInitFn() {
     }
 #endif
 
+#if defined(ICU_DATA_DIR_WINDOWS) && U_PLATFORM_HAS_WINUWP_API != 0
+    
+    
+    char datadir_path_buffer[MAX_PATH];
+    UINT length = GetWindowsDirectoryA(datadir_path_buffer, UPRV_LENGTHOF(datadir_path_buffer));
+    if (length > 0 && length < (UPRV_LENGTHOF(datadir_path_buffer) - sizeof(ICU_DATA_DIR_WINDOWS) - 1))
+    {
+        if (datadir_path_buffer[length - 1] != '\\')
+        {
+            datadir_path_buffer[length++] = '\\';
+            datadir_path_buffer[length] = '\0';
+        }
+
+        if ((length + 1 + sizeof(ICU_DATA_DIR_WINDOWS)) < UPRV_LENGTHOF(datadir_path_buffer))
+        {
+            uprv_strcat(datadir_path_buffer, ICU_DATA_DIR_WINDOWS);
+            path = datadir_path_buffer;
+        }
+    }
+#endif
+
     if(path==NULL) {
         
+#if U_PLATFORM_HAS_WIN32_API
+        
+        path = ".\\";
+#else
         path = "";
+#endif
     }
 
     u_setDataDirectory(path);
@@ -1366,7 +1462,12 @@ static void U_CALLCONV TimeZoneDataDirInitFn(UErrorCode &status) {
         status = U_MEMORY_ALLOCATION_ERROR;
         return;
     }
+#if U_PLATFORM_HAS_WINUWP_API == 0
     const char *dir = getenv("ICU_TIMEZONE_FILES_DIR");
+#else
+    
+    const char *dir = "";
+#endif 
 #if defined(U_TIMEZONE_FILES_DIR)
     if (dir == NULL) {
         dir = TO_STRING(U_TIMEZONE_FILES_DIR);
@@ -1603,6 +1704,7 @@ uprv_getDefaultLocaleID()
 
     if (gCorrectedPOSIXLocale == NULL) {
         gCorrectedPOSIXLocale = correctedPOSIXLocale;
+        gCorrectedPOSIXLocaleHeapAllocated = true;
         ucln_common_registerCleanup(UCLN_COMMON_PUTIL, putil_cleanup);
         correctedPOSIXLocale = NULL;
     }
@@ -1618,25 +1720,115 @@ uprv_getDefaultLocaleID()
     UErrorCode status = U_ZERO_ERROR;
     char *correctedPOSIXLocale = 0;
 
+    
     if (gCorrectedPOSIXLocale != NULL) {
         return gCorrectedPOSIXLocale;
     }
 
-    LCID id = GetThreadLocale();
-    correctedPOSIXLocale = static_cast<char *>(uprv_malloc(POSIX_LOCALE_CAPACITY + 1));
-    if (correctedPOSIXLocale) {
-        int32_t posixLen = uprv_convertToPosix(id, correctedPOSIXLocale, POSIX_LOCALE_CAPACITY, &status);
-        if (U_SUCCESS(status)) {
-            *(correctedPOSIXLocale + posixLen) = 0;
-            gCorrectedPOSIXLocale = correctedPOSIXLocale;
-            ucln_common_registerCleanup(UCLN_COMMON_PUTIL, putil_cleanup);
-        } else {
-            uprv_free(correctedPOSIXLocale);
+    
+    static WCHAR windowsLocale[LOCALE_NAME_MAX_LENGTH];
+#if U_PLATFORM_HAS_WINUWP_API == 0 
+    
+    
+    int length = GetUserDefaultLocaleName(windowsLocale, UPRV_LENGTHOF(windowsLocale));
+#else
+    
+    ComPtr<ABI::Windows::Foundation::Collections::IVectorView<HSTRING>> languageList;
+
+    ComPtr<ABI::Windows::Globalization::IApplicationLanguagesStatics> applicationLanguagesStatics;
+    HRESULT hr = GetActivationFactory(
+        HStringReference(RuntimeClass_Windows_Globalization_ApplicationLanguages).Get(),
+        &applicationLanguagesStatics);
+    if (SUCCEEDED(hr))
+    {
+        hr = applicationLanguagesStatics->get_Languages(&languageList);
+    }
+
+    if (FAILED(hr))
+    {
+        
+        ComPtr<ABI::Windows::System::UserProfile::IGlobalizationPreferencesStatics> globalizationPreferencesStatics;
+        hr = GetActivationFactory(
+            HStringReference(RuntimeClass_Windows_System_UserProfile_GlobalizationPreferences).Get(),
+            &globalizationPreferencesStatics);
+        if (SUCCEEDED(hr))
+        {
+            hr = globalizationPreferencesStatics->get_Languages(&languageList);
         }
     }
 
+    
+    HString topLanguage;
+    if (SUCCEEDED(hr))
+    {
+        hr = languageList->GetAt(0, topLanguage.GetAddressOf());
+    }
+
+    if (FAILED(hr))
+    {
+        
+        if (gCorrectedPOSIXLocale == NULL) {
+            gCorrectedPOSIXLocale = "en_US";
+        }
+
+        return gCorrectedPOSIXLocale;
+    }
+
+    
+    int length = ResolveLocaleName(topLanguage.GetRawBuffer(NULL), windowsLocale, UPRV_LENGTHOF(windowsLocale));
+#endif
+    
+    if (length > 0)
+    {
+        
+        char modifiedWindowsLocale[LOCALE_NAME_MAX_LENGTH];
+
+        int32_t i;
+        for (i = 0; i < UPRV_LENGTHOF(modifiedWindowsLocale); i++)
+        {
+            if (windowsLocale[i] == '_')
+            {
+                modifiedWindowsLocale[i] = '-';
+            }
+            else
+            {
+                modifiedWindowsLocale[i] = static_cast<char>(windowsLocale[i]);
+            }
+
+            if (modifiedWindowsLocale[i] == '\0')
+            {
+                break;
+            }
+        }
+
+        if (i >= UPRV_LENGTHOF(modifiedWindowsLocale))
+        {
+            
+            
+            modifiedWindowsLocale[UPRV_LENGTHOF(modifiedWindowsLocale) - 1] = '\0';
+        }
+
+        
+        if (correctedPOSIXLocale)
+        {
+            int32_t posixLen = uloc_canonicalize(modifiedWindowsLocale, correctedPOSIXLocale, POSIX_LOCALE_CAPACITY, &status);
+            if (U_SUCCESS(status))
+            {
+                *(correctedPOSIXLocale + posixLen) = 0;
+                gCorrectedPOSIXLocale = correctedPOSIXLocale;
+                gCorrectedPOSIXLocaleHeapAllocated = true;
+                ucln_common_registerCleanup(UCLN_COMMON_PUTIL, putil_cleanup);
+            }
+            else
+            {
+                uprv_free(correctedPOSIXLocale);
+            }
+        }
+    }
+
+    
     if (gCorrectedPOSIXLocale == NULL) {
-        return "en_US";
+        gCorrectedPOSIXLocale = "en_US";
     }
     return gCorrectedPOSIXLocale;
 
@@ -1923,8 +2115,34 @@ int_getDefaultCodepage()
 
 #elif U_PLATFORM_USES_ONLY_WIN32_API
     static char codepage[64];
-    sprintf(codepage, "windows-%d", GetACP());
-    return codepage;
+    DWORD codepageNumber = 0;
+
+#if U_PLATFORM_HAS_WINUWP_API > 0
+    
+    
+    
+    
+    GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
+        (LPWSTR)&codepageNumber, sizeof(codepageNumber) / sizeof(WCHAR));
+#else
+    
+    codepageNumber = GetACP();
+#endif
+    
+    if (codepageNumber == 65001)
+    { 
+        return "UTF-8";
+    }
+    
+    
+    
+    if (codepageNumber > 0 && codepageNumber < 20000)
+    {
+        sprintf(codepage, "windows-%ld", codepageNumber);
+        return codepage;
+    }
+    
+    return "UTF-8";
 
 #elif U_POSIX_LOCALE
     static char codesetName[100];

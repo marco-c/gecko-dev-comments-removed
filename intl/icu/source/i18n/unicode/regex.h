@@ -360,7 +360,7 @@ private:
 
 
 
-    RegexMatcher *matcher(const UChar *input,
+    RegexMatcher *matcher(const char16_t *input,
         UErrorCode          &status) const;
 public:
 
@@ -758,7 +758,7 @@ private:
 
 
 
-    RegexMatcher(const UnicodeString &regexp, const UChar *input,
+    RegexMatcher(const UnicodeString &regexp, const char16_t *input,
         uint32_t flags, UErrorCode &status);
 public:
 
@@ -1166,7 +1166,7 @@ private:
 
 
 
-    RegexMatcher &reset(const UChar *input);
+    RegexMatcher &reset(const char16_t *input);
 public:
 
    

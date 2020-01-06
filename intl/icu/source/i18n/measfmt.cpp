@@ -26,6 +26,7 @@
 #include "unicode/decimfmt.h"
 #include "uresimp.h"
 #include "unicode/ures.h"
+#include "unicode/ustring.h"
 #include "ureslocs.h"
 #include "cstring.h"
 #include "mutex.h"
@@ -41,7 +42,7 @@
 #include "standardplural.h"
 #include "unifiedcache.h"
 
-#define MEAS_UNIT_COUNT 138
+#define MEAS_UNIT_COUNT 135
 #define WIDTH_INDEX_COUNT (UMEASFMT_WIDTH_NARROW + 1)
 
 U_NAMESPACE_BEGIN
@@ -288,10 +289,8 @@ struct UnitDataSink : public ResourceSink {
             return;
         }
 
-        if (value.getType() == URES_STRING) {
-            
-            setFormatterIfAbsent(StandardPlural::OTHER, value, 0, errorCode);
-        } else if (value.getType() == URES_TABLE) {
+        
+        if (value.getType() == URES_TABLE) {
             
             ResourceTable patternTableTable = value.getTable(errorCode);
             if (U_FAILURE(errorCode)) { return; }
@@ -333,6 +332,8 @@ struct UnitDataSink : public ResourceSink {
                     consumeCompoundPattern(key, value, errorCode);
                 }
             }
+        } else if (uprv_strcmp(key, "coordinate") == 0) {
+            
         } else {
             type = key;
             ResourceTable subtypeTable = value.getTable(errorCode);

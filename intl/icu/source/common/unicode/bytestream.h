@@ -222,8 +222,6 @@ private:
   CheckedArrayByteSink &operator=(const CheckedArrayByteSink &); 
 };
 
-#if U_HAVE_STD_STRING
-
 
 
 
@@ -251,8 +249,6 @@ class StringByteSink : public ByteSink {
   StringByteSink(const StringByteSink &); 
   StringByteSink &operator=(const StringByteSink &); 
 };
-
-#endif
 
 U_NAMESPACE_END
 

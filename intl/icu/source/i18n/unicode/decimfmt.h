@@ -1961,14 +1961,14 @@ public:
 
 
 
-    virtual void setCurrency(const UChar* theCurrency, UErrorCode& ec);
+    virtual void setCurrency(const char16_t* theCurrency, UErrorCode& ec);
 
     
 
 
 
 
-    virtual void setCurrency(const UChar* theCurrency);
+    virtual void setCurrency(const char16_t* theCurrency);
 
     
 
@@ -2108,7 +2108,7 @@ private:
     void parse(const UnicodeString& text,
                Formattable& result,
                ParsePosition& pos,
-               UChar* currency) const;
+               char16_t* currency) const;
 
     enum {
         fgStatusInfinite,
@@ -2124,7 +2124,7 @@ private:
                    int8_t type,
                    ParsePosition& parsePosition,
                    DigitList& digits, UBool* status,
-                   UChar* currency) const;
+                   char16_t* currency) const;
 
     
     
@@ -2135,7 +2135,7 @@ private:
                            ParsePosition& parsePosition,
                            DigitList& digits,
                            UBool* status,
-                           UChar* currency) const;
+                           char16_t* currency) const;
 
     int32_t skipPadding(const UnicodeString& text, int32_t position) const;
 
@@ -2146,7 +2146,7 @@ private:
                          const UnicodeString* affixPat,
                          UBool complexCurrencyParsing,
                          int8_t type,
-                         UChar* currency) const;
+                         char16_t* currency) const;
 
     static UnicodeString& trimMarksFromAffix(const UnicodeString& affix, UnicodeString& trimmedAffix);
 
@@ -2169,7 +2169,7 @@ private:
                                 const UnicodeString& input,
                                 int32_t pos,
                                 int8_t type,
-                                UChar* currency) const;
+                                char16_t* currency) const;
 
     static int32_t match(const UnicodeString& text, int32_t pos, UChar32 ch);
 
@@ -2195,11 +2195,11 @@ private:
     void setupCurrencyAffixPatterns(UErrorCode& status);
 
     
-    double getCurrencyRounding(const UChar* currency,
+    double getCurrencyRounding(const char16_t* currency,
                                UErrorCode* ec) const;
 
     
-    int getCurrencyFractionDigits(const UChar* currency,
+    int getCurrencyFractionDigits(const char16_t* currency,
                                   UErrorCode* ec) const;
 
     
@@ -2271,7 +2271,7 @@ protected:
 
 
 
-    virtual void getEffectiveCurrency(UChar* result, UErrorCode& ec) const;
+    virtual void getEffectiveCurrency(char16_t* result, UErrorCode& ec) const;
 
   
 

@@ -93,7 +93,7 @@ public:
 
 
 
-    inline UChar charAt(int32_t offset) const;
+    inline char16_t charAt(int32_t offset) const;
 
     
 
@@ -230,7 +230,7 @@ protected:
 
 
 
-    virtual UChar getCharAt(int32_t offset) const = 0;
+    virtual char16_t getCharAt(int32_t offset) const = 0;
 
     
 
@@ -246,7 +246,7 @@ Replaceable::length() const {
     return getLength();
 }
 
-inline UChar
+inline char16_t
 Replaceable::charAt(int32_t offset) const {
     return getCharAt(offset);
 }

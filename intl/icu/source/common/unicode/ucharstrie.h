@@ -63,7 +63,7 @@ public:
 
 
 
-    UCharsTrie(const UChar *trieUChars)
+    UCharsTrie(ConstChar16Ptr trieUChars)
             : ownedArray_(NULL), uchars_(trieUChars),
               pos_(uchars_), remainingMatchLength_(-1) {}
 
@@ -109,8 +109,8 @@ public:
     private:
         friend class UCharsTrie;
 
-        const UChar *uchars;
-        const UChar *pos;
+        const char16_t *uchars;
+        const char16_t *pos;
         int32_t remainingMatchLength;
     };
 
@@ -208,7 +208,7 @@ public:
 
 
 
-    UStringTrieResult next(const UChar *s, int32_t length);
+    UStringTrieResult next(ConstChar16Ptr s, int32_t length);
 
     
 
@@ -220,7 +220,7 @@ public:
 
 
     inline int32_t getValue() const {
-        const UChar *pos=pos_;
+        const char16_t *pos=pos_;
         int32_t leadUnit=*pos++;
         
         return leadUnit&kValueIsFinal ?
@@ -237,7 +237,7 @@ public:
 
 
     inline UBool hasUniqueValue(int32_t &uniqueValue) const {
-        const UChar *pos=pos_;
+        const char16_t *pos=pos_;
         
         return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, FALSE, uniqueValue);
     }
@@ -268,7 +268,7 @@ public:
 
 
 
-        Iterator(const UChar *trieUChars, int32_t maxStringLength, UErrorCode &errorCode);
+        Iterator(ConstChar16Ptr trieUChars, int32_t maxStringLength, UErrorCode &errorCode);
 
         
 
@@ -336,11 +336,11 @@ public:
             return TRUE;
         }
 
-        const UChar *branchNext(const UChar *pos, int32_t length, UErrorCode &errorCode);
+        const char16_t *branchNext(const char16_t *pos, int32_t length, UErrorCode &errorCode);
 
-        const UChar *uchars_;
-        const UChar *pos_;
-        const UChar *initialPos_;
+        const char16_t *uchars_;
+        const char16_t *pos_;
+        const char16_t *initialPos_;
         int32_t remainingMatchLength_;
         int32_t initialRemainingMatchLength_;
         UBool skipValue_;  
@@ -368,7 +368,7 @@ private:
 
 
 
-    UCharsTrie(UChar *adoptUChars, const UChar *trieUChars)
+    UCharsTrie(char16_t *adoptUChars, const char16_t *trieUChars)
             : ownedArray_(adoptUChars), uchars_(trieUChars),
               pos_(uchars_), remainingMatchLength_(-1) {}
 
@@ -381,7 +381,7 @@ private:
 
     
     
-    static inline int32_t readValue(const UChar *pos, int32_t leadUnit) {
+    static inline int32_t readValue(const char16_t *pos, int32_t leadUnit) {
         int32_t value;
         if(leadUnit<kMinTwoUnitValueLead) {
             value=leadUnit;
@@ -392,7 +392,7 @@ private:
         }
         return value;
     }
-    static inline const UChar *skipValue(const UChar *pos, int32_t leadUnit) {
+    static inline const char16_t *skipValue(const char16_t *pos, int32_t leadUnit) {
         if(leadUnit>=kMinTwoUnitValueLead) {
             if(leadUnit<kThreeUnitValueLead) {
                 ++pos;
@@ -402,12 +402,12 @@ private:
         }
         return pos;
     }
-    static inline const UChar *skipValue(const UChar *pos) {
+    static inline const char16_t *skipValue(const char16_t *pos) {
         int32_t leadUnit=*pos++;
         return skipValue(pos, leadUnit&0x7fff);
     }
 
-    static inline int32_t readNodeValue(const UChar *pos, int32_t leadUnit) {
+    static inline int32_t readNodeValue(const char16_t *pos, int32_t leadUnit) {
         
         int32_t value;
         if(leadUnit<kMinTwoUnitNodeValueLead) {
@@ -419,7 +419,7 @@ private:
         }
         return value;
     }
-    static inline const UChar *skipNodeValue(const UChar *pos, int32_t leadUnit) {
+    static inline const char16_t *skipNodeValue(const char16_t *pos, int32_t leadUnit) {
         
         if(leadUnit>=kMinTwoUnitNodeValueLead) {
             if(leadUnit<kThreeUnitNodeValueLead) {
@@ -431,7 +431,7 @@ private:
         return pos;
     }
 
-    static inline const UChar *jumpByDelta(const UChar *pos) {
+    static inline const char16_t *jumpByDelta(const char16_t *pos) {
         int32_t delta=*pos++;
         if(delta>=kMinTwoUnitDeltaLead) {
             if(delta==kThreeUnitDeltaLead) {
@@ -444,7 +444,7 @@ private:
         return pos+delta;
     }
 
-    static const UChar *skipDelta(const UChar *pos) {
+    static const char16_t *skipDelta(const char16_t *pos) {
         int32_t delta=*pos++;
         if(delta>=kMinTwoUnitDeltaLead) {
             if(delta==kThreeUnitDeltaLead) {
@@ -461,23 +461,23 @@ private:
     }
 
     
-    UStringTrieResult branchNext(const UChar *pos, int32_t length, int32_t uchar);
+    UStringTrieResult branchNext(const char16_t *pos, int32_t length, int32_t uchar);
 
     
-    UStringTrieResult nextImpl(const UChar *pos, int32_t uchar);
+    UStringTrieResult nextImpl(const char16_t *pos, int32_t uchar);
 
     
     
     
-    static const UChar *findUniqueValueFromBranch(const UChar *pos, int32_t length,
+    static const char16_t *findUniqueValueFromBranch(const char16_t *pos, int32_t length,
                                                   UBool haveUniqueValue, int32_t &uniqueValue);
     
     
-    static UBool findUniqueValue(const UChar *pos, UBool haveUniqueValue, int32_t &uniqueValue);
+    static UBool findUniqueValue(const char16_t *pos, UBool haveUniqueValue, int32_t &uniqueValue);
 
     
     
-    static void getNextBranchUChars(const UChar *pos, int32_t length, Appendable &out);
+    static void getNextBranchUChars(const char16_t *pos, int32_t length, Appendable &out);
 
     
     
@@ -560,15 +560,15 @@ private:
 
     static const int32_t kMaxTwoUnitDelta=((kThreeUnitDeltaLead-kMinTwoUnitDeltaLead)<<16)-1;  
 
-    UChar *ownedArray_;
+    char16_t *ownedArray_;
 
     
-    const UChar *uchars_;
+    const char16_t *uchars_;
 
     
 
     
-    const UChar *pos_;
+    const char16_t *pos_;
     
     int32_t remainingMatchLength_;
 };

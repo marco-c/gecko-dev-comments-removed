@@ -15,6 +15,10 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/localpointer.h"
+#include "unicode/uenum.h"
+#ifndef U_HIDE_INTERNAL_API
+#include "unicode/unum.h"
+#endif  
 
 
 
@@ -83,7 +87,7 @@ typedef struct UPluralRules UPluralRules;
 
 
 
-U_STABLE UPluralRules* U_EXPORT2
+U_CAPI UPluralRules* U_EXPORT2
 uplrules_open(const char *locale, UErrorCode *status);
 
 
@@ -95,7 +99,7 @@ uplrules_open(const char *locale, UErrorCode *status);
 
 
 
-U_DRAFT UPluralRules* U_EXPORT2
+U_CAPI UPluralRules* U_EXPORT2
 uplrules_openForType(const char *locale, UPluralType type, UErrorCode *status);
 
 
@@ -103,7 +107,7 @@ uplrules_openForType(const char *locale, UPluralType type, UErrorCode *status);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplrules_close(UPluralRules *uplrules);
 
 
@@ -138,11 +142,54 @@ U_NAMESPACE_END
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uplrules_select(const UPluralRules *uplrules,
                double number,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
+
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_INTERNAL int32_t U_EXPORT2
+uplrules_selectWithFormat(const UPluralRules *uplrules,
+                          double number,
+                          const UNumberFormat *fmt,
+                          UChar *keyword, int32_t capacity,
+                          UErrorCode *status);
+
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+U_DRAFT UEnumeration* U_EXPORT2
+uplrules_getKeywords(const UPluralRules *uplrules,
+                     UErrorCode *status);
+#endif  
 
 #endif 
 

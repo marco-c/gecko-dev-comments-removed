@@ -996,7 +996,7 @@ private:
 
 
     
-    static const UChar fgCalendarFieldToPatternLetter[];
+    static const char16_t fgCalendarFieldToPatternLetter[];
 
 
     

@@ -230,6 +230,7 @@ typedef enum UDateDirection {
 
 U_NAMESPACE_BEGIN
 
+class BreakIterator;
 class RelativeDateTimeCacheData;
 class SharedNumberFormat;
 class SharedPluralRules;
@@ -414,7 +415,6 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -460,7 +460,6 @@ public:
             URelativeDateTimeUnit unit,
             UnicodeString& appendTo,
             UErrorCode& status) const;
-#endif  
 
     
 

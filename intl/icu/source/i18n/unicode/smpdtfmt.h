@@ -1170,7 +1170,7 @@ public:
 
 
 
-    const NumberFormat * getNumberFormatForField(UChar field) const;
+    const NumberFormat * getNumberFormatForField(char16_t field) const;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -1262,7 +1262,7 @@ private:
 
 
     void subFormat(UnicodeString &appendTo,
-                   UChar ch,
+                   char16_t ch,
                    int32_t count,
                    UDisplayContext capitalizationContext,
                    int32_t fieldNum,
@@ -1294,7 +1294,7 @@ private:
 
 
 
-    static UBool isNumeric(UChar formatChar, int32_t count);
+    static UBool isNumeric(char16_t formatChar, int32_t count);
 
     
 
@@ -1412,7 +1412,7 @@ private:
 
 
 
-    int32_t subParse(const UnicodeString& text, int32_t& start, UChar ch, int32_t count,
+    int32_t subParse(const UnicodeString& text, int32_t& start, char16_t ch, int32_t count,
                      UBool obeyCount, UBool allowNegative, UBool ambiguousYear[], int32_t& saveHebrewMonth, Calendar& cal,
                      int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType, SimpleDateFormatMutableNFs &mutableNFs,
                      int32_t *dayPeriod=NULL) const;
@@ -1523,12 +1523,12 @@ private:
     
 
 
-    static int32_t getLevelFromChar(UChar ch);
+    static int32_t getLevelFromChar(char16_t ch);
 
     
 
 
-    static UBool isSyntaxChar(UChar ch);
+    static UBool isSyntaxChar(char16_t ch);
 
     
 

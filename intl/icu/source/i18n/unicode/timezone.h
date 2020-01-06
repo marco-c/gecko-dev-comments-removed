@@ -866,7 +866,7 @@ private:
 
 
 
-    static const UChar* findID(const UnicodeString& id);
+    static const char16_t* findID(const UnicodeString& id);
 
     
 
@@ -876,7 +876,7 @@ private:
 
 
 
-    static const UChar* dereferOlsonLink(const UnicodeString& id);
+    static const char16_t* dereferOlsonLink(const UnicodeString& id);
 
     
 
@@ -884,7 +884,7 @@ private:
 
 
 
-    static const UChar* getRegion(const UnicodeString& id);
+    static const char16_t* getRegion(const UnicodeString& id);
 
   public:
 #ifndef U_HIDE_INTERNAL_API
@@ -896,7 +896,7 @@ private:
 
 
 
-    static const UChar* getRegion(const UnicodeString& id, UErrorCode& status);
+    static const char16_t* getRegion(const UnicodeString& id, UErrorCode& status);
 #endif  
 
   private:

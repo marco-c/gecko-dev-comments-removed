@@ -16,7 +16,7 @@
 
 #include "unicode/utypes.h"
 
-#if U_PLATFORM_HAS_WIN32_API
+#if U_PLATFORM_USES_ONLY_WIN32_API
 
 #if !UCONFIG_NO_FORMATTING
 
@@ -124,9 +124,10 @@ private:
     DateFormat::EStyle fTimeStyle;
     DateFormat::EStyle fDateStyle;
     Locale fLocale;
-    int32_t fLCID;
     UnicodeString fZoneID;
     TIME_ZONE_INFORMATION *fTZI;
+
+    UnicodeString* fWindowsLocaleName; 
 };
 
 U_NAMESPACE_END

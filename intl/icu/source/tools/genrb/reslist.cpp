@@ -271,7 +271,7 @@ StringBaseResource::StringBaseResource(SRBRoot *bundle, const char *tag, int8_t 
         return;
     }
 
-    fString.setTo(value, len);
+    fString.setTo(ConstChar16Ptr(value), len);
     fString.getTerminatedBuffer();  
     if (U_SUCCESS(errorCode) && fString.isBogus()) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
@@ -1031,7 +1031,7 @@ void SRBRoot::write(const char *outputDir, const char *outputPkg,
             if (f16BitUnits.length() <= 1) {
                 
             } else if (U_IS_BIG_ENDIAN) {
-                checksum = computeCRC((const char *)f16BitUnits.getBuffer(),
+                checksum = computeCRC(reinterpret_cast<const char *>(f16BitUnits.getBuffer()),
                                       (uint32_t)f16BitUnits.length() * 2, checksum);
             } else {
                 
@@ -1039,7 +1039,7 @@ void SRBRoot::write(const char *outputDir, const char *outputPkg,
                 UnicodeString s(f16BitUnits);
                 s.append((UChar)1);  
                 assert(!s.isBogus());
-                uint16_t *p = (uint16_t *)s.getBuffer();
+                uint16_t *p = const_cast<uint16_t *>(reinterpret_cast<const uint16_t *>(s.getBuffer()));
                 for (int32_t count = f16BitUnits.length(); count > 0; --count) {
                     uint16_t x = *p;
                     *p++ = (uint16_t)((x << 8) | (x >> 8));

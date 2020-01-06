@@ -25,6 +25,7 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/calendar.h"
+#include "unicode/strenum.h"
 #include "unicode/uobject.h"
 #include "unicode/locid.h"
 #include "unicode/udat.h"
@@ -426,13 +427,13 @@ public:
 
 
 
-    static const UChar DEFAULT_TIME_SEPARATOR = 0x003a;  
+    static const char16_t DEFAULT_TIME_SEPARATOR = 0x003a;  
 
     
 
 
 
-    static const UChar ALTERNATE_TIME_SEPARATOR = 0x002e;  
+    static const char16_t ALTERNATE_TIME_SEPARATOR = 0x002e;  
 
     
 
@@ -566,7 +567,7 @@ public:
 
 
 
-    static const UChar * U_EXPORT2 getPatternUChars(void);
+    static const char16_t * U_EXPORT2 getPatternUChars(void);
 
     
 
@@ -977,7 +978,7 @@ private:
 
 
 
-    static UDateFormatField U_EXPORT2 getPatternCharIndex(UChar c);
+    static UDateFormatField U_EXPORT2 getPatternCharIndex(char16_t c);
 
     
 
@@ -987,7 +988,7 @@ private:
     
 
 
-    static UBool U_EXPORT2 isNumericPatternChar(UChar c, int32_t count);
+    static UBool U_EXPORT2 isNumericPatternChar(char16_t c, int32_t count);
 public:
 #ifndef U_HIDE_INTERNAL_API
     

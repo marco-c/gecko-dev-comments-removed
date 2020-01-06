@@ -69,7 +69,6 @@ typedef enum UDateRelativeDateTimeFormatterStyle {
 #endif  
 } UDateRelativeDateTimeFormatterStyle;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -174,9 +173,6 @@ typedef enum URelativeDateTimeUnit {
     UDAT_REL_UNIT_COUNT
 #endif  
 } URelativeDateTimeUnit;
-#endif  
-
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -218,7 +214,7 @@ typedef struct URelativeDateTimeFormatter URelativeDateTimeFormatter;
 
 
 
-U_DRAFT URelativeDateTimeFormatter* U_EXPORT2
+U_STABLE URelativeDateTimeFormatter* U_EXPORT2
 ureldatefmt_open( const char*          locale,
                   UNumberFormat*       nfToAdopt,
                   UDateRelativeDateTimeFormatterStyle width,
@@ -231,7 +227,7 @@ ureldatefmt_open( const char*          locale,
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 ureldatefmt_close(URelativeDateTimeFormatter *reldatefmt);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -281,7 +277,7 @@ U_NAMESPACE_END
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ureldatefmt_formatNumeric( const URelativeDateTimeFormatter* reldatefmt,
                     double                offset,
                     URelativeDateTimeUnit unit,
@@ -317,7 +313,7 @@ ureldatefmt_formatNumeric( const URelativeDateTimeFormatter* reldatefmt,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ureldatefmt_format( const URelativeDateTimeFormatter* reldatefmt,
                     double                offset,
                     URelativeDateTimeUnit unit,
@@ -354,7 +350,7 @@ ureldatefmt_format( const URelativeDateTimeFormatter* reldatefmt,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ureldatefmt_combineDateAndTime( const URelativeDateTimeFormatter* reldatefmt,
                     const UChar *     relativeDateString,
                     int32_t           relativeDateStringLen,
@@ -363,8 +359,6 @@ ureldatefmt_combineDateAndTime( const URelativeDateTimeFormatter* reldatefmt,
                     UChar*            result,
                     int32_t           resultCapacity,
                     UErrorCode*       status );
-
-#endif  
 
 #endif 
 

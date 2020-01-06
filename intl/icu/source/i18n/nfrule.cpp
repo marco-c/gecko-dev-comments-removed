@@ -30,6 +30,7 @@
 #include "nfrlist.h"
 #include "nfsubs.h"
 #include "patternprops.h"
+#include "putilimp.h"
 
 U_NAMESPACE_BEGIN
 
@@ -715,6 +716,12 @@ NFRule::_appendRuleText(UnicodeString& result) const
     result.append(gSemicolon);
 }
 
+int64_t NFRule::getDivisor() const
+{
+    return util64_pow(radix, exponent);
+}
+
+
 
 
 
@@ -749,7 +756,7 @@ NFRule::doFormat(int64_t number, UnicodeString& toInsertInto, int32_t pos, int32
             toInsertInto.insert(pos, ruleText.tempSubString(pluralRuleEnd + 2));
         }
         toInsertInto.insert(pos,
-            rulePatternFormat->format((int32_t)(number/uprv_pow(radix, exponent)), status));
+            rulePatternFormat->format((int32_t)(number/util64_pow(radix, exponent)), status));
         if (pluralRuleStart > 0) {
             toInsertInto.insert(pos, ruleText.tempSubString(0, pluralRuleStart));
         }
@@ -798,10 +805,10 @@ NFRule::doFormat(double number, UnicodeString& toInsertInto, int32_t pos, int32_
         if (0 <= pluralVal && pluralVal < 1) {
             
             
-            pluralVal = uprv_round(pluralVal * uprv_pow(radix, exponent));
+            pluralVal = uprv_round(pluralVal * util64_pow(radix, exponent));
         }
         else {
-            pluralVal = pluralVal / uprv_pow(radix, exponent);
+            pluralVal = pluralVal / util64_pow(radix, exponent);
         }
         toInsertInto.insert(pos, rulePatternFormat->format((int32_t)(pluralVal), status));
         if (pluralRuleStart > 0) {
@@ -827,7 +834,7 @@ NFRule::doFormat(double number, UnicodeString& toInsertInto, int32_t pos, int32_
 
 
 UBool
-NFRule::shouldRollBack(double number) const
+NFRule::shouldRollBack(int64_t number) const
 {
     
     
@@ -847,7 +854,7 @@ NFRule::shouldRollBack(double number) const
     
     if ((sub1 != NULL && sub1->isModulusSubstitution()) || (sub2 != NULL && sub2->isModulusSubstitution())) {
         int64_t re = util64_pow(radix, exponent);
-        return uprv_fmod(number, (double)re) == 0 && (baseValue % re) != 0;
+        return (number % re) == 0 && (baseValue % re) != 0;
     }
     return FALSE;
 }

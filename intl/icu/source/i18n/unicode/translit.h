@@ -1319,7 +1319,7 @@ inline int32_t Transliterator::getMaximumContextLength(void) const {
 inline void Transliterator::setID(const UnicodeString& id) {
     ID = id;
     
-    ID.append((UChar)0);
+    ID.append((char16_t)0);
     ID.truncate(ID.length()-1);
 }
 

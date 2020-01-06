@@ -29,6 +29,9 @@
 
 #include "unicode/format.h"
 #include "unicode/upluralrules.h"
+#ifndef U_HIDE_INTERNAL_API
+#include "unicode/numfmt.h"
+#endif  
 
 
 
@@ -345,6 +348,22 @@ public:
     UnicodeString select(double number) const;
 
 #ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString select(const Formattable& obj, const NumberFormat& fmt, UErrorCode& status) const;
+
     
 
 

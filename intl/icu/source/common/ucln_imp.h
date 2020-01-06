@@ -121,7 +121,9 @@ U_CAPI void U_EXPORT2 UCLN_FINI ()
 
 
 
+#ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
+#endif
 #   define VC_EXTRALEAN
 #   define NOUSER
 #   define NOSERVICE

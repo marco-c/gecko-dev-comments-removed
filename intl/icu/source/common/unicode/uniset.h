@@ -294,7 +294,7 @@ class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
 
 
 
-    UChar *pat;
+    char16_t *pat;
     UVector* strings; 
     UnicodeSetStringSpan *stringSpan;
 
@@ -891,7 +891,7 @@ public:
 
 
 
-    int32_t span(const UChar *s, int32_t length, USetSpanCondition spanCondition) const;
+    int32_t span(const char16_t *s, int32_t length, USetSpanCondition spanCondition) const;
 
     
 
@@ -924,7 +924,7 @@ public:
 
 
 
-    int32_t spanBack(const UChar *s, int32_t length, USetSpanCondition spanCondition) const;
+    int32_t spanBack(const char16_t *s, int32_t length, USetSpanCondition spanCondition) const;
 
     
 

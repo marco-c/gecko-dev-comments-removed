@@ -51,29 +51,6 @@
 
 #include <stddef.h>
 
-#ifndef U_HIDE_INTERNAL_API
-
-
-
-
-
-
-
-#ifdef U_USE_CHAR16_T
-#ifdef UCHAR_TYPE
-#undef UCHAR_TYPE
-#endif
-#define UCHAR_TYPE char16_t
-
-
-
-
-#ifndef __cplusplus
-#include <uchar.h>
-#endif
-#endif
-#endif  
-
 
 
 
@@ -318,6 +295,13 @@ typedef int8_t UBool;
 
 
 
+#if (U_PLATFORM == U_PF_AIX) && defined(__cplusplus) &&(U_CPLUSPLUS_VERSION < 11)
+
+# include <uchar.h>
+# define U_CHAR16_IS_TYPEDEF 1
+#else
+# define U_CHAR16_IS_TYPEDEF 0
+#endif
 
 
 
@@ -325,16 +309,71 @@ typedef int8_t UBool;
 
 
 
-#if defined(UCHAR_TYPE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 1
+    
+    
+    
+    
+#elif !defined(UCHAR_TYPE)
+#   define UCHAR_TYPE uint16_t
+#endif
+
+#if defined(U_COMBINED_IMPLEMENTATION) || defined(U_COMMON_IMPLEMENTATION) || \
+        defined(U_I18N_IMPLEMENTATION) || defined(U_IO_IMPLEMENTATION)
+    
+    typedef char16_t UChar;
+#elif defined(UCHAR_TYPE)
     typedef UCHAR_TYPE UChar;
-
-
-#elif U_SIZEOF_WCHAR_T==2
-    typedef wchar_t UChar;
-#elif defined(__CHAR16_TYPE__)
-    typedef __CHAR16_TYPE__ UChar;
+#elif defined(__cplusplus)
+    typedef char16_t UChar;
 #else
     typedef uint16_t UChar;
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if U_SIZEOF_WCHAR_T==2
+    typedef wchar_t OldUChar;
+#elif defined(__CHAR16_TYPE__)
+    typedef __CHAR16_TYPE__ OldUChar;
+#else
+    typedef uint16_t OldUChar;
 #endif
 
 

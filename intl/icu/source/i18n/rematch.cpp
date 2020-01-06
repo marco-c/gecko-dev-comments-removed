@@ -3566,7 +3566,14 @@ GC_Done:
                         }
                     }
                     fp = StateSave(fp, fp->fPatIdx, status);
+                } else {
+                    
+                    fTickCounter--;
+                    if (fTickCounter <= 0) {
+                        IncrementTime(status);    
+                    }
                 }
+
                 fp->fPatIdx = opValue + 4;    
             }
             break;
@@ -3623,6 +3630,11 @@ GC_Done:
                     
                     
                     fp->fPatIdx = opValue + 4;    
+                    
+                    fTickCounter--;
+                    if (fTickCounter <= 0) {
+                        IncrementTime(status);    
+                    }
                 } else {
                     
 
@@ -5099,6 +5111,12 @@ GC_Done:
                         }
                     }
                     fp = StateSave(fp, fp->fPatIdx, status);
+                } else {
+                    
+                    fTickCounter--;
+                    if (fTickCounter <= 0) {
+                        IncrementTime(status);    
+                    }
                 }
                 fp->fPatIdx = opValue + 4;    
             }
@@ -5156,6 +5174,10 @@ GC_Done:
                     
                     
                     fp->fPatIdx = opValue + 4;    
+                    fTickCounter--;
+                    if (fTickCounter <= 0) {
+                        IncrementTime(status);    
+                    }
                 } else {
                     
 

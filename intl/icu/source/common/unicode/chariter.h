@@ -149,7 +149,7 @@ public:
 
 
 
-    virtual UChar         nextPostInc(void) = 0;
+    virtual char16_t         nextPostInc(void) = 0;
     
     
 
@@ -386,7 +386,7 @@ public:
 
 
 
-    virtual UChar         first(void) = 0;
+    virtual char16_t         first(void) = 0;
 
     
 
@@ -396,7 +396,7 @@ public:
 
 
 
-    virtual UChar         firstPostInc(void);
+    virtual char16_t         firstPostInc(void);
 
     
 
@@ -435,7 +435,7 @@ public:
 
 
 
-    virtual UChar         last(void) = 0;
+    virtual char16_t         last(void) = 0;
         
     
 
@@ -463,7 +463,7 @@ public:
 
 
 
-    virtual UChar         setIndex(int32_t position) = 0;
+    virtual char16_t         setIndex(int32_t position) = 0;
 
     
 
@@ -483,7 +483,7 @@ public:
 
 
 
-    virtual UChar         current(void) const = 0;
+    virtual char16_t         current(void) const = 0;
         
     
 
@@ -499,7 +499,7 @@ public:
 
 
 
-    virtual UChar         next(void) = 0;
+    virtual char16_t         next(void) = 0;
         
     
 
@@ -520,7 +520,7 @@ public:
 
 
 
-    virtual UChar         previous(void) = 0;
+    virtual char16_t         previous(void) = 0;
 
     
 
@@ -607,6 +607,10 @@ public:
 
 
 
+#ifdef move32
+     
+#undef move32
+#endif
     virtual int32_t      move32(int32_t delta, EOrigin origin) = 0;
 
     

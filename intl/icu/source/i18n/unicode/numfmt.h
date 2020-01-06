@@ -931,7 +931,7 @@ public:
 
 
 
-    virtual void setCurrency(const UChar* theCurrency, UErrorCode& ec);
+    virtual void setCurrency(const char16_t* theCurrency, UErrorCode& ec);
 
     
 
@@ -940,7 +940,7 @@ public:
 
 
 
-    const UChar* getCurrency() const;
+    const char16_t* getCurrency() const;
 	
     
 
@@ -1018,7 +1018,7 @@ protected:
 
 
 
-    virtual void getEffectiveCurrency(UChar* result, UErrorCode& ec) const;
+    virtual void getEffectiveCurrency(char16_t* result, UErrorCode& ec) const;
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -1065,7 +1065,7 @@ private:
     UBool      fLenient; 
 
     
-    UChar      fCurrency[4];
+    char16_t      fCurrency[4];
 
     UDisplayContext fCapitalizationContext;
 

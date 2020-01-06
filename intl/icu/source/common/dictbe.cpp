@@ -1385,12 +1385,25 @@ CjkBreakEngine::divideUpDictionaryRange( UText *inText,
     
     
     
+    int32_t prevCPPos = -1;
+    int32_t prevUTextPos = -1;
     for (int32_t i = numBreaks-1; i >= 0; i--) {
         int32_t cpPos = t_boundary.elementAti(i);
+        U_ASSERT(cpPos > prevCPPos);
         int32_t utextPos =  inputMap.isValid() ? inputMap->elementAti(cpPos) : cpPos + rangeStart;
-        
-        U_ASSERT(foundBreaks.size() == 0 ||foundBreaks.peeki() < utextPos);
-        foundBreaks.push(utextPos, status);
+        U_ASSERT(utextPos >= prevUTextPos);
+        if (utextPos > prevUTextPos) {
+            
+            U_ASSERT(foundBreaks.size() == 0 || foundBreaks.peeki() < utextPos);
+            foundBreaks.push(utextPos, status);
+        } else {
+            
+            
+            
+            --numBreaks;
+        }
+        prevCPPos = cpPos;
+        prevUTextPos = utextPos;
     }
 
     

@@ -187,7 +187,7 @@ private:
     UnicodeString *getEquivalents(const UnicodeString &segment, int32_t &result_len, UErrorCode &status); 
 
     
-    Hashtable *getEquivalents2(Hashtable *fillinResult, const UChar *segment, int32_t segLen, UErrorCode &status);
+    Hashtable *getEquivalents2(Hashtable *fillinResult, const char16_t *segment, int32_t segLen, UErrorCode &status);
     
 
     
@@ -196,7 +196,7 @@ private:
 
 
     
-    Hashtable *extract(Hashtable *fillinResult, UChar32 comp, const UChar *segment, int32_t segLen, int32_t segmentPos, UErrorCode &status);
+    Hashtable *extract(Hashtable *fillinResult, UChar32 comp, const char16_t *segment, int32_t segLen, int32_t segmentPos, UErrorCode &status);
     
 
     void cleanPieces();

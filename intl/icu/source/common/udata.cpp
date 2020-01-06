@@ -110,8 +110,12 @@ static u_atomic_int32_t gHaveTriedToLoadCommonData = ATOMIC_INT32_T_INITIALIZER(
 static UHashtable  *gCommonDataCache = NULL;  
 static icu::UInitOnce gCommonDataCacheInitOnce = U_INITONCE_INITIALIZER;
 
+#if U_PLATFORM_HAS_WINUWP_API == 0 
 static UDataFileAccess  gDataFileAccess = UDATA_DEFAULT_ACCESS;  
                                                                  
+#else
+static UDataFileAccess  gDataFileAccess = UDATA_NO_FILES;        
+#endif
 
 static UBool U_CALLCONV
 udata_cleanup(void)
@@ -624,7 +628,9 @@ U_NAMESPACE_END
 
 
 
+#if U_PLATFORM_HAS_WINUWP_API == 0 
 extern "C" const DataHeader U_DATA_API U_ICUDATA_ENTRY_POINT;
+#endif
 
 
 
@@ -672,6 +678,7 @@ openCommonData(const char *path,
             if(gCommonICUDataArray[commonDataIndex] != NULL) {
                 return gCommonICUDataArray[commonDataIndex];
             }
+#if U_PLATFORM_HAS_WINUWP_API == 0 
             int32_t i;
             for(i = 0; i < commonDataIndex; ++i) {
                 if(gCommonICUDataArray[i]->pHeader == &U_ICUDATA_ENTRY_POINT) {
@@ -679,6 +686,7 @@ openCommonData(const char *path,
                     return NULL;
                 }
             }
+#endif
         }
 
         
@@ -694,11 +702,13 @@ openCommonData(const char *path,
 
 
 
+#if U_PLATFORM_HAS_WINUWP_API == 0 
         setCommonICUDataPointer(&U_ICUDATA_ENTRY_POINT, FALSE, pErrorCode);
         {
             Mutex lock;
             return gCommonICUDataArray[commonDataIndex];
         }
+#endif
     }
 
 
@@ -1245,9 +1255,14 @@ doOpenChoice(const char *path, const char *type, const char *name,
     fprintf(stderr, " tocEntryPath = %s\n", tocEntryName.data());
 #endif
 
+#if U_PLATFORM_HAS_WINUWP_API == 0 
     if(path == NULL) {
         path = COMMON_DATA_NAME; 
     }
+#else
+    
+    path = COMMON_DATA_NAME; 
+#endif
 
     
 #ifdef UDATA_DEBUG

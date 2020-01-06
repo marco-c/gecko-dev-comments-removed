@@ -758,7 +758,9 @@ res_getTableItemByIndex(const ResourceData *pResData, Resource table,
                         int32_t indexR, const char **key) {
     uint32_t offset=RES_GET_OFFSET(table);
     int32_t length;
-    U_ASSERT(indexR>=0); 
+    if (indexR < 0) {
+        return RES_BOGUS;
+    }
     switch(RES_GET_TYPE(table)) {
     case URES_TABLE: {
         if (offset != 0) { 
@@ -836,7 +838,9 @@ UBool icu::ResourceTable::getKeyAndValue(int32_t i,
 U_CAPI Resource U_EXPORT2
 res_getArrayItem(const ResourceData *pResData, Resource array, int32_t indexR) {
     uint32_t offset=RES_GET_OFFSET(array);
-    U_ASSERT(indexR>=0); 
+    if (indexR < 0) {
+        return RES_BOGUS;
+    }
     switch(RES_GET_TYPE(array)) {
     case URES_ARRAY: {
         if (offset!=0) { 
@@ -923,14 +927,14 @@ res_findResource(const ResourceData *pResData, Resource r, char** path, const ch
       if(t2 == RES_BOGUS) { 
         
         indexR = uprv_strtol(pathP, &closeIndex, 10);
-        if(*closeIndex == 0) {
+        if(indexR >= 0 && *closeIndex == 0) {
           
           t2 = res_getTableItemByIndex(pResData, t1, indexR, key);
-        }
+        } 
       }
     } else if(URES_IS_ARRAY(type)) {
       indexR = uprv_strtol(pathP, &closeIndex, 10);
-      if(*closeIndex == 0) {
+      if(indexR >= 0 && *closeIndex == 0) {
         t2 = res_getArrayItem(pResData, t1, indexR);
       } else {
         t2 = RES_BOGUS; 

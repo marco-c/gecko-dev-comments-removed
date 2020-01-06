@@ -62,7 +62,7 @@ public:
 
 
 
-    virtual UBool appendCodeUnit(UChar c) = 0;
+    virtual UBool appendCodeUnit(char16_t c) = 0;
 
     
 
@@ -81,7 +81,7 @@ public:
 
 
 
-    virtual UBool appendString(const UChar *s, int32_t length);
+    virtual UBool appendString(const char16_t *s, int32_t length);
 
     
 
@@ -138,9 +138,9 @@ public:
 
 
 
-    virtual UChar *getAppendBuffer(int32_t minCapacity,
+    virtual char16_t *getAppendBuffer(int32_t minCapacity,
                                    int32_t desiredCapacityHint,
-                                   UChar *scratch, int32_t scratchCapacity,
+                                   char16_t *scratch, int32_t scratchCapacity,
                                    int32_t *resultCapacity);
 };
 
@@ -171,7 +171,7 @@ public:
 
 
 
-    virtual UBool appendCodeUnit(UChar c);
+    virtual UBool appendCodeUnit(char16_t c);
 
     
 
@@ -188,7 +188,7 @@ public:
 
 
 
-    virtual UBool appendString(const UChar *s, int32_t length);
+    virtual UBool appendString(const char16_t *s, int32_t length);
 
     
 
@@ -220,9 +220,9 @@ public:
 
 
 
-    virtual UChar *getAppendBuffer(int32_t minCapacity,
+    virtual char16_t *getAppendBuffer(int32_t minCapacity,
                                    int32_t desiredCapacityHint,
-                                   UChar *scratch, int32_t scratchCapacity,
+                                   char16_t *scratch, int32_t scratchCapacity,
                                    int32_t *resultCapacity);
 
 private:

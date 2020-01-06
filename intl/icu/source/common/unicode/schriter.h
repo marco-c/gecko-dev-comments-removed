@@ -175,7 +175,7 @@ protected:
 
 
 
-  void setText(const UChar* newText, int32_t newTextLength);
+  void setText(const char16_t* newText, int32_t newTextLength);
 
   
 

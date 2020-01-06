@@ -19,14 +19,17 @@
 
 
 #include "unicode/utypes.h"
+#include "unicode/casemap.h"
+#include "unicode/edits.h"
 #include "unicode/putil.h"
 #include "cstring.h"
 #include "cmemory.h"
 #include "unicode/ustring.h"
 #include "unicode/unistr.h"
 #include "unicode/uchar.h"
+#include "uassert.h"
+#include "ucasemap_imp.h"
 #include "uelement.h"
-#include "ustr_imp.h"
 
 U_NAMESPACE_BEGIN
 
@@ -87,56 +90,104 @@ UnicodeString::doCaseCompare(int32_t start,
 
 
 UnicodeString &
-UnicodeString::caseMap(const UCaseMap *csm,
+UnicodeString::caseMap(int32_t caseLocale, uint32_t options, UCASEMAP_BREAK_ITERATOR_PARAM
                        UStringCaseMapper *stringCaseMapper) {
   if(isEmpty() || !isWritable()) {
     
     return *this;
   }
 
-  
-  
-  
-  
-  UChar oldStackBuffer[US_STACKBUF_SIZE];
+  UChar oldBuffer[2 * US_STACKBUF_SIZE];
   UChar *oldArray;
-  int32_t oldLength;
+  int32_t oldLength = length();
+  int32_t newLength;
+  UBool writable = isBufferWritable();
+  UErrorCode errorCode = U_ZERO_ERROR;
 
-  if(fUnion.fFields.fLengthAndFlags&kUsingStackBuffer) {
+  
+  if (writable ? oldLength <= UPRV_LENGTHOF(oldBuffer) : oldLength < US_STACKBUF_SIZE) {
     
-    oldArray = oldStackBuffer;
-    oldLength = getShortLength();
-    u_memcpy(oldStackBuffer, fUnion.fStackFields.fBuffer, oldLength);
+    
+    UChar *buffer = getArrayStart();
+    int32_t capacity;
+    oldArray = oldBuffer;
+    u_memcpy(oldBuffer, buffer, oldLength);
+    if (writable) {
+      capacity = getCapacity();
+    } else {
+      
+      if (!cloneArrayIfNeeded(US_STACKBUF_SIZE, US_STACKBUF_SIZE,  FALSE)) {
+        return *this;
+      }
+      U_ASSERT(fUnion.fFields.fLengthAndFlags & kUsingStackBuffer);
+      buffer = fUnion.fStackFields.fBuffer;
+      capacity = US_STACKBUF_SIZE;
+    }
+    newLength = stringCaseMapper(caseLocale, options, UCASEMAP_BREAK_ITERATOR
+                                 buffer, capacity,
+                                 oldArray, oldLength, NULL, errorCode);
+    if (U_SUCCESS(errorCode)) {
+      setLength(newLength);
+      return *this;
+    } else if (errorCode == U_BUFFER_OVERFLOW_ERROR) {
+      
+    } else {
+      setToBogus();
+      return *this;
+    }
   } else {
+    
+    
+    
+    
     oldArray = getArrayStart();
-    oldLength = length();
+    Edits edits;
+    UChar replacementChars[200];
+    stringCaseMapper(caseLocale, options | UCASEMAP_OMIT_UNCHANGED_TEXT, UCASEMAP_BREAK_ITERATOR
+                     replacementChars, UPRV_LENGTHOF(replacementChars),
+                     oldArray, oldLength, &edits, errorCode);
+    if (U_SUCCESS(errorCode)) {
+      
+      newLength = oldLength + edits.lengthDelta();
+      if (newLength > oldLength && !cloneArrayIfNeeded(newLength, newLength)) {
+        return *this;
+      }
+      for (Edits::Iterator ei = edits.getCoarseChangesIterator(); ei.next(errorCode);) {
+        doReplace(ei.destinationIndex(), ei.oldLength(),
+                  replacementChars, ei.replacementIndex(), ei.newLength());
+      }
+      if (U_FAILURE(errorCode)) {
+        setToBogus();
+      }
+      return *this;
+    } else if (errorCode == U_BUFFER_OVERFLOW_ERROR) {
+      
+      newLength = oldLength + edits.lengthDelta();
+    } else {
+      setToBogus();
+      return *this;
+    }
   }
 
-  int32_t capacity;
-  if(oldLength <= US_STACKBUF_SIZE) {
-    capacity = US_STACKBUF_SIZE;
-  } else {
-    capacity = oldLength + 20;
-  }
+  
+  
+  
+  
+  
   int32_t *bufferToDelete = 0;
-  if(!cloneArrayIfNeeded(capacity, capacity, FALSE, &bufferToDelete, TRUE)) {
+  if (!cloneArrayIfNeeded(newLength, newLength, FALSE, &bufferToDelete, TRUE)) {
     return *this;
   }
-
-  
-  UErrorCode errorCode;
-  int32_t newLength;
-  do {
-    errorCode = U_ZERO_ERROR;
-    newLength = stringCaseMapper(csm, getArrayStart(), getCapacity(),
-                                 oldArray, oldLength, &errorCode);
-    setLength(newLength);
-  } while(errorCode==U_BUFFER_OVERFLOW_ERROR && cloneArrayIfNeeded(newLength, newLength, FALSE));
-
+  errorCode = U_ZERO_ERROR;
+  newLength = stringCaseMapper(caseLocale, options, UCASEMAP_BREAK_ITERATOR
+                               getArrayStart(), getCapacity(),
+                               oldArray, oldLength, NULL, errorCode);
   if (bufferToDelete) {
     uprv_free(bufferToDelete);
   }
-  if(U_FAILURE(errorCode)) {
+  if (U_SUCCESS(errorCode)) {
+    setLength(newLength);
+  } else {
     setToBogus();
   }
   return *this;
@@ -144,10 +195,7 @@ UnicodeString::caseMap(const UCaseMap *csm,
 
 UnicodeString &
 UnicodeString::foldCase(uint32_t options) {
-  UCaseMap csm=UCASEMAP_INITIALIZER;
-  csm.csp=ucase_getSingleton();
-  csm.options=options;
-  return caseMap(&csm, ustrcase_internalFold);
+  return caseMap(UCASE_LOC_ROOT, options, UCASEMAP_BREAK_ITERATOR_NULL ustrcase_internalFold);
 }
 
 U_NAMESPACE_END

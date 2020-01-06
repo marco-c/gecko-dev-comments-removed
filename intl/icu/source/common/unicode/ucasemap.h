@@ -22,8 +22,8 @@
 #define __UCASEMAP_H__
 
 #include "unicode/utypes.h"
-#include "unicode/ustring.h"
 #include "unicode/localpointer.h"
+#include "unicode/ustring.h"
 
 
 
@@ -185,6 +185,15 @@ ucasemap_setOptions(UCaseMap *csm, uint32_t options, UErrorCode *pErrorCode);
 
 #define U_TITLECASE_NO_BREAK_ADJUSTMENT 0x200
 
+
+
+
+
+
+
+
+#define UCASEMAP_OMIT_UNCHANGED_TEXT 0x4000
+
 #if !UCONFIG_NO_BREAK_ITERATION
 
 
@@ -272,7 +281,7 @@ ucasemap_toTitle(UCaseMap *csm,
                  const UChar *src, int32_t srcLength,
                  UErrorCode *pErrorCode);
 
-#endif
+#endif  
 
 
 

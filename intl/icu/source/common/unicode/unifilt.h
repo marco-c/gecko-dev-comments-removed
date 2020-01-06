@@ -30,7 +30,7 @@ U_NAMESPACE_BEGIN
 
 
 
-#define U_ETHER ((UChar)0xFFFF)
+#define U_ETHER ((char16_t)0xFFFF)
 
 
 

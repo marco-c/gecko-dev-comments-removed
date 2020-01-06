@@ -851,6 +851,12 @@ U_CDECL_END
 
 
 
+
+
+
+
+
+
 enum { UTF8_TEXT_CHUNK_SIZE=32 };
 
 
@@ -889,7 +895,7 @@ struct UTF8Buf {
                                                      
                                                      
                                                      
-    uint8_t   mapToUChars[UTF8_TEXT_CHUNK_SIZE*3+6]; 
+    uint8_t   mapToUChars[UTF8_TEXT_CHUNK_SIZE*6+6]; 
                                                      
     int32_t   align;
 };
@@ -1032,6 +1038,7 @@ utf8TextAccess(UText *ut, int64_t index, UBool forward) {
             
             u8b = (UTF8Buf *)ut->p;   
             mapIndex = ix - u8b->toUCharsMapStart;
+            U_ASSERT(mapIndex < (int32_t)sizeof(UTF8Buf::mapToUChars));
             ut->chunkOffset = u8b->mapToUChars[mapIndex] - u8b->bufStartIdx;
             return TRUE;
 
@@ -1298,6 +1305,10 @@ fillReverse:
         
         
         if (ix != ut->b) {
+            
+            
+            
+            
             U8_SET_CP_START(s8, 0, ix);
         }
 
@@ -1311,7 +1322,10 @@ fillReverse:
         UChar   *buf = u8b->buf;
         uint8_t *mapToNative = u8b->mapToNative;
         uint8_t *mapToUChars = u8b->mapToUChars;
-        int32_t  toUCharsMapStart = ix - (UTF8_TEXT_CHUNK_SIZE*3 + 1);
+        int32_t  toUCharsMapStart = ix - sizeof(UTF8Buf::mapToUChars) + 1;
+        
+        
+        
         int32_t  destIx = UTF8_TEXT_CHUNK_SIZE+2;   
                                                     
                                                     
@@ -1338,6 +1352,7 @@ fillReverse:
             if (c<0x80) {
                 
                 buf[destIx] = (UChar)c;
+                U_ASSERT(toUCharsMapStart <= srcIx);
                 mapToUChars[srcIx - toUCharsMapStart] = (uint8_t)destIx;
                 mapToNative[destIx] = (uint8_t)(srcIx - toUCharsMapStart);
             } else {
@@ -1367,6 +1382,7 @@ fillReverse:
                 do {
                     mapToUChars[sIx-- - toUCharsMapStart] = (uint8_t)destIx;
                 } while (sIx >= srcIx);
+                U_ASSERT(toUCharsMapStart <= (srcIx+1));
 
                 
                 
@@ -1541,6 +1557,7 @@ utf8TextMapIndexToUTF16(const UText *ut, int64_t index64) {
     U_ASSERT(index>=ut->chunkNativeStart+ut->nativeIndexingLimit);
     U_ASSERT(index<=ut->chunkNativeLimit);
     int32_t mapIndex = index - u8b->toUCharsMapStart;
+    U_ASSERT(mapIndex < (int32_t)sizeof(UTF8Buf::mapToUChars));
     int32_t offset = u8b->mapToUChars[mapIndex] - u8b->bufStartIdx;
     U_ASSERT(offset>=0 && offset<=ut->chunkLength);
     return offset;
@@ -2231,7 +2248,7 @@ unistrTextCopy(UText *ut,
         if(destIndex32<start32) {
             start32+=segLength;
         }
-        us->replace(start32, segLength, NULL, 0);
+        us->remove(start32, segLength);
     } else {
         
         us->copy(start32, limit32, destIndex32);

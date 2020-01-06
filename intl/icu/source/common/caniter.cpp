@@ -311,7 +311,7 @@ void U_EXPORT2 CanonicalIterator::permute(UnicodeString &source, UBool skipZeros
 
         
         
-        permute(subPermuteString.replace(i, U16_LENGTH(cp), NULL, 0), skipZeros, &subpermute, status);
+        permute(subPermuteString.remove(i, U16_LENGTH(cp)), skipZeros, &subpermute, status);
         
         if(U_FAILURE(status)) {
             return;

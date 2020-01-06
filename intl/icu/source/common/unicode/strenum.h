@@ -153,7 +153,7 @@ public:
 
 
 
-    virtual const UChar* unext(int32_t *resultLength, UErrorCode& status);
+    virtual const char16_t* unext(int32_t *resultLength, UErrorCode& status);
 
     
 

@@ -44,7 +44,7 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
-    CurrencyUnit(const UChar* isoCode, UErrorCode &ec);
+    CurrencyUnit(ConstChar16Ptr isoCode, UErrorCode &ec);
 
     
 
@@ -93,16 +93,16 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
-    inline const UChar* getISOCurrency() const;
+    inline const char16_t* getISOCurrency() const;
 
  private:
     
 
 
-    UChar isoCode[4];
+    char16_t isoCode[4];
 };
 
-inline const UChar* CurrencyUnit::getISOCurrency() const {
+inline const char16_t* CurrencyUnit::getISOCurrency() const {
     return isoCode;
 }
 

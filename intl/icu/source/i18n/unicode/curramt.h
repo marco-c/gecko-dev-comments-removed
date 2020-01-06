@@ -46,7 +46,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    CurrencyAmount(const Formattable& amount, const UChar* isoCode,
+    CurrencyAmount(const Formattable& amount, ConstChar16Ptr isoCode,
                    UErrorCode &ec);
 
     
@@ -59,7 +59,7 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    CurrencyAmount(double amount, const UChar* isoCode,
+    CurrencyAmount(double amount, ConstChar16Ptr isoCode,
                    UErrorCode &ec);
 
     
@@ -115,14 +115,14 @@ class U_I18N_API CurrencyAmount: public Measure {
 
 
 
-    inline const UChar* getISOCurrency() const;
+    inline const char16_t* getISOCurrency() const;
 };
 
 inline const CurrencyUnit& CurrencyAmount::getCurrency() const {
     return (const CurrencyUnit&) getUnit();
 }
 
-inline const UChar* CurrencyAmount::getISOCurrency() const {
+inline const char16_t* CurrencyAmount::getISOCurrency() const {
     return getCurrency().getISOCurrency();
 }
 

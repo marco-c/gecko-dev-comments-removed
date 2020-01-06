@@ -283,10 +283,14 @@ typedef enum UDateTimeScale {
 
     UDTS_UNIX_MICROSECONDS_TIME,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
+
     UDTS_MAX_SCALE
+#endif  
+
 } UDateTimeScale;
 
 
@@ -423,12 +427,15 @@ typedef enum UTimeScaleValue {
 
 #endif 
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
 
+
     UTSV_MAX_SCALE_VALUE=11
+#endif  
 
 } UTimeScaleValue;
 

@@ -27,12 +27,14 @@
 #include "unicode/udata.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/brkiter.h"
-#include "nfrs.h"
+#include "unicode/ucasemap.h"
 
 #include "cmemory.h"
 #include "cstring.h"
 #include "patternprops.h"
 #include "uresimp.h"
+#include "nfrs.h"
+#include "digitlst.h"
 
 
 
@@ -1079,17 +1081,76 @@ RuleBasedNumberFormat::findRuleSet(const UnicodeString& name, UErrorCode& status
 }
 
 UnicodeString&
+RuleBasedNumberFormat::format(const DigitList &number,
+                      UnicodeString &appendTo,
+                      FieldPositionIterator *posIter,
+                      UErrorCode &status) const {
+    if (U_FAILURE(status)) {
+        return appendTo;
+    }
+    DigitList copy(number);
+    if (copy.fitsIntoInt64(false)) {
+        format(((DigitList &)number).getInt64(), appendTo, posIter, status);
+    }
+    else {
+        copy.roundAtExponent(0);
+        if (copy.fitsIntoInt64(false)) {
+            format(number.getDouble(), appendTo, posIter, status);
+        }
+        else {
+            
+            
+
+            
+            NumberFormat *decimalFormat = NumberFormat::createInstance(locale, UNUM_DECIMAL, status);
+            Formattable f;
+            f.adoptDigitList(new DigitList(number));
+            decimalFormat->format(f, appendTo, posIter, status);
+            delete decimalFormat;
+        }
+    }
+    return appendTo;
+}
+
+
+UnicodeString&
+RuleBasedNumberFormat::format(const DigitList &number,
+                     UnicodeString& appendTo,
+                     FieldPosition& pos,
+                     UErrorCode &status) const {
+    if (U_FAILURE(status)) {
+        return appendTo;
+    }
+    DigitList copy(number);
+    if (copy.fitsIntoInt64(false)) {
+        format(((DigitList &)number).getInt64(), appendTo, pos, status);
+    }
+    else {
+        copy.roundAtExponent(0);
+        if (copy.fitsIntoInt64(false)) {
+            format(number.getDouble(), appendTo, pos, status);
+        }
+        else {
+            
+            
+
+            
+            NumberFormat *decimalFormat = NumberFormat::createInstance(locale, UNUM_DECIMAL, status);
+            Formattable f;
+            f.adoptDigitList(new DigitList(number));
+            decimalFormat->format(f, appendTo, pos, status);
+            delete decimalFormat;
+        }
+    }
+    return appendTo;
+}
+
+UnicodeString&
 RuleBasedNumberFormat::format(int32_t number,
                               UnicodeString& toAppendTo,
-                              FieldPosition& ) const
+                              FieldPosition& pos) const
 {
-    if (defaultRuleSet) {
-        UErrorCode status = U_ZERO_ERROR;
-        int32_t startPos = toAppendTo.length();
-        defaultRuleSet->format((int64_t)number, toAppendTo, toAppendTo.length(), 0, status);
-        adjustForCapitalizationContext(startPos, toAppendTo);
-    }
-    return toAppendTo;
+    return format((int64_t)number, toAppendTo, pos);
 }
 
 
@@ -1100,9 +1161,7 @@ RuleBasedNumberFormat::format(int64_t number,
 {
     if (defaultRuleSet) {
         UErrorCode status = U_ZERO_ERROR;
-        int32_t startPos = toAppendTo.length();
-        defaultRuleSet->format(number, toAppendTo, toAppendTo.length(), 0, status);
-        adjustForCapitalizationContext(startPos, toAppendTo);
+        format(number, defaultRuleSet, toAppendTo, status);
     }
     return toAppendTo;
 }
@@ -1114,11 +1173,11 @@ RuleBasedNumberFormat::format(double number,
                               FieldPosition& ) const
 {
     int32_t startPos = toAppendTo.length();
+    UErrorCode status = U_ZERO_ERROR;
     if (defaultRuleSet) {
-        UErrorCode status = U_ZERO_ERROR;
         defaultRuleSet->format(number, toAppendTo, toAppendTo.length(), 0, status);
     }
-    return adjustForCapitalizationContext(startPos, toAppendTo);
+    return adjustForCapitalizationContext(startPos, toAppendTo, status);
 }
 
 
@@ -1126,24 +1185,10 @@ UnicodeString&
 RuleBasedNumberFormat::format(int32_t number,
                               const UnicodeString& ruleSetName,
                               UnicodeString& toAppendTo,
-                              FieldPosition& ,
+                              FieldPosition& pos,
                               UErrorCode& status) const
 {
-    
-    if (U_SUCCESS(status)) {
-        if (ruleSetName.indexOf(gPercentPercent, 2, 0) == 0) {
-            
-            status = U_ILLEGAL_ARGUMENT_ERROR;
-        } else {
-            NFRuleSet *rs = findRuleSet(ruleSetName, status);
-            if (rs) {
-                int32_t startPos = toAppendTo.length();
-                rs->format((int64_t)number, toAppendTo, toAppendTo.length(), 0, status);
-                adjustForCapitalizationContext(startPos, toAppendTo);
-            }
-        }
-    }
-    return toAppendTo;
+    return format((int64_t)number, ruleSetName, toAppendTo, pos, status);
 }
 
 
@@ -1161,9 +1206,7 @@ RuleBasedNumberFormat::format(int64_t number,
         } else {
             NFRuleSet *rs = findRuleSet(ruleSetName, status);
             if (rs) {
-                int32_t startPos = toAppendTo.length();
-                rs->format(number, toAppendTo, toAppendTo.length(), 0, status);
-                adjustForCapitalizationContext(startPos, toAppendTo);
+                format(number, rs, toAppendTo, status);
             }
         }
     }
@@ -1187,8 +1230,53 @@ RuleBasedNumberFormat::format(double number,
             if (rs) {
                 int32_t startPos = toAppendTo.length();
                 rs->format(number, toAppendTo, toAppendTo.length(), 0, status);
-                adjustForCapitalizationContext(startPos, toAppendTo);
+                adjustForCapitalizationContext(startPos, toAppendTo, status);
             }
+        }
+    }
+    return toAppendTo;
+}
+
+
+
+
+
+
+
+
+
+UnicodeString&
+RuleBasedNumberFormat::format(int64_t number, NFRuleSet *ruleSet, UnicodeString& toAppendTo, UErrorCode& status) const
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (U_SUCCESS(status)) {
+        if (number == U_INT64_MIN) {
+            
+
+            
+            NumberFormat *decimalFormat = NumberFormat::createInstance(locale, UNUM_DECIMAL, status);
+            Formattable f;
+            FieldPosition pos(FieldPosition::DONT_CARE);
+            DigitList *digitList = new DigitList();
+            digitList->set(number);
+            f.adoptDigitList(digitList);
+            decimalFormat->format(f, toAppendTo, pos, status);
+            delete decimalFormat;
+        }
+        else {
+            int32_t startPos = toAppendTo.length();
+            ruleSet->format(number, toAppendTo, toAppendTo.length(), 0, status);
+            adjustForCapitalizationContext(startPos, toAppendTo, status);
         }
     }
     return toAppendTo;
@@ -1196,18 +1284,18 @@ RuleBasedNumberFormat::format(double number,
 
 UnicodeString&
 RuleBasedNumberFormat::adjustForCapitalizationContext(int32_t startPos,
-                                                      UnicodeString& currentResult) const
+                                                      UnicodeString& currentResult,
+                                                      UErrorCode& status) const
 {
 #if !UCONFIG_NO_BREAK_ITERATION
-    if (startPos==0 && currentResult.length() > 0) {
+    UDisplayContext capitalizationContext = getContext(UDISPCTX_TYPE_CAPITALIZATION, status);
+    if (capitalizationContext != UDISPCTX_CAPITALIZATION_NONE && startPos == 0 && currentResult.length() > 0) {
         
         UChar32 ch = currentResult.char32At(0);
-        UErrorCode status = U_ZERO_ERROR;
-        UDisplayContext capitalizationContext = getContext(UDISPCTX_TYPE_CAPITALIZATION, status);
-        if ( u_islower(ch) && U_SUCCESS(status) && capitalizationBrkIter!= NULL &&
-              ( capitalizationContext==UDISPCTX_CAPITALIZATION_FOR_BEGINNING_OF_SENTENCE ||
-                (capitalizationContext==UDISPCTX_CAPITALIZATION_FOR_UI_LIST_OR_MENU && capitalizationForUIListMenu) ||
-                (capitalizationContext==UDISPCTX_CAPITALIZATION_FOR_STANDALONE && capitalizationForStandAlone)) ) {
+        if (u_islower(ch) && U_SUCCESS(status) && capitalizationBrkIter != NULL &&
+              ( capitalizationContext == UDISPCTX_CAPITALIZATION_FOR_BEGINNING_OF_SENTENCE ||
+                (capitalizationContext == UDISPCTX_CAPITALIZATION_FOR_UI_LIST_OR_MENU && capitalizationForUIListMenu) ||
+                (capitalizationContext == UDISPCTX_CAPITALIZATION_FOR_STANDALONE && capitalizationForStandAlone)) ) {
             
             
             currentResult.toTitle(capitalizationBrkIter, locale, U_TITLECASE_NO_LOWERCASE | U_TITLECASE_NO_BREAK_ADJUSTMENT);

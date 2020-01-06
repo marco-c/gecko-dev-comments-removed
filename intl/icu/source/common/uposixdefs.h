@@ -54,7 +54,7 @@
 
 
 
-#if !defined(_XOPEN_SOURCE_EXTENDED)
+#if !defined(_XOPEN_SOURCE_EXTENDED) && defined(__TOS_MVS__)
 #   define _XOPEN_SOURCE_EXTENDED 1
 #endif
 
@@ -64,12 +64,8 @@
 
 
 
-
-
-#if (U_PLATFORM == U_PF_AIX && !defined(__GNUC__)) || (U_PLATFORM == U_PF_SOLARIS && defined(__GNUC__))
-#   if _XOPEN_SOURCE_EXTENDED && !defined(U_HAVE_STD_STRING)
-#   define U_HAVE_STD_STRING 0
-#   endif
+#if defined(__cplusplus) && (defined(sun) || defined(__sun)) && !defined (_STDC_C99)
+#   define _STDC_C99
 #endif
 
 #endif  

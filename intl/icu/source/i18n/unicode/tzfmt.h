@@ -942,7 +942,7 @@ private:
 
 
 
-    int32_t parseDefaultOffsetFields(const UnicodeString& text, int32_t start, UChar separator,
+    int32_t parseDefaultOffsetFields(const UnicodeString& text, int32_t start, char16_t separator,
         int32_t& parsedLen) const;
 
     
@@ -982,7 +982,7 @@ private:
 
 
 
-    static UnicodeString& formatOffsetWithAsciiDigits(int32_t offset, UChar sep,
+    static UnicodeString& formatOffsetWithAsciiDigits(int32_t offset, char16_t sep,
         OffsetFields minFields, OffsetFields maxFields, UnicodeString& result);
 
     
@@ -1012,7 +1012,7 @@ private:
 
 
 
-    static int32_t parseAsciiOffsetFields(const UnicodeString& text, ParsePosition& pos, UChar sep,
+    static int32_t parseAsciiOffsetFields(const UnicodeString& text, ParsePosition& pos, char16_t sep,
         OffsetFields minFields, OffsetFields maxFields);
 
     

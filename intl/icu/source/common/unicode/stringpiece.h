@@ -68,14 +68,12 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
   StringPiece(const char* str);
-#if U_HAVE_STD_STRING
   
 
 
 
   StringPiece(const std::string& str)
     : ptr_(str.data()), length_(static_cast<int32_t>(str.size())) { }
-#endif
   
 
 
