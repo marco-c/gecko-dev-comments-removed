@@ -927,6 +927,7 @@ public:
   static nsresult GetStartNodeAndOffset(Selection* aSelection,
                                         nsINode** aStartContainer,
                                         int32_t* aStartOffset);
+  static EditorRawDOMPoint GetStartPoint(Selection* aSelection);
   static nsresult GetEndNodeAndOffset(Selection* aSelection,
                                       nsIDOMNode** outEndNode,
                                       int32_t* outEndOffset);
@@ -1262,18 +1263,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-  void FindBetterInsertionPoint(nsCOMPtr<nsIDOMNode>& aNode,
-                                int32_t& aOffset);
-  void FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
-                                int32_t& aOffset,
-                                nsCOMPtr<nsIContent>* aSelChild);
+  EditorRawDOMPoint FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint);
 
   
 

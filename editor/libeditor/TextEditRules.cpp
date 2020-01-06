@@ -729,16 +729,16 @@ TextEditRules::WillInsertText(EditAction aAction,
 
   
   NS_ENSURE_STATE(aSelection->GetRangeAt(0));
-  nsCOMPtr<nsINode> selNode = aSelection->GetRangeAt(0)->GetStartContainer();
-  nsCOMPtr<nsIContent> selChild =
-    aSelection->GetRangeAt(0)->GetChildAtStartOffset();
-  int32_t selOffset = aSelection->GetRangeAt(0)->StartOffset();
-  NS_ENSURE_STATE(selNode);
+  EditorRawDOMPoint atStartOfSelection(aSelection->GetRangeAt(0)->StartRef());
+  if (NS_WARN_IF(!atStartOfSelection.IsSetAndValid())) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   NS_ENSURE_STATE(mTextEditor);
-  if (!EditorBase::IsTextNode(selNode) &&
-      !mTextEditor->CanContainTag(*selNode, *nsGkAtoms::textTagName)) {
+  if (!EditorBase::IsTextNode(atStartOfSelection.Container()) &&
+      !mTextEditor->CanContainTag(*atStartOfSelection.Container(),
+                                  *nsGkAtoms::textTagName)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -750,22 +750,28 @@ TextEditRules::WillInsertText(EditAction aAction,
   if (aAction == EditAction::insertIMEText) {
     NS_ENSURE_STATE(mTextEditor);
     
-    mTextEditor->FindBetterInsertionPoint(selNode, selOffset,
-                                          address_of(selChild));
+    EditorRawDOMPoint betterInsertionPoint =
+      mTextEditor->FindBetterInsertionPoint(atStartOfSelection);
     
     
     int32_t IMESelectionOffset =
-      mTextEditor->GetIMESelectionStartOffsetIn(selNode);
+      mTextEditor->GetIMESelectionStartOffsetIn(
+                     betterInsertionPoint.Container());
     if (IMESelectionOffset >= 0) {
-      selOffset = IMESelectionOffset;
+      betterInsertionPoint.Set(betterInsertionPoint.Container(),
+                               IMESelectionOffset);
     }
+    nsCOMPtr<nsINode> selNode = betterInsertionPoint.Container();
+    int32_t selOffset = betterInsertionPoint.Offset();
+    nsCOMPtr<nsIContent> selChild = betterInsertionPoint.GetChildAtOffset();
     rv = mTextEditor->InsertTextImpl(*outString, address_of(selNode),
                                      address_of(selChild), &selOffset, doc);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     
-    nsCOMPtr<nsINode> curNode = selNode;
-    int32_t curOffset = selOffset;
+    nsCOMPtr<nsINode> curNode = atStartOfSelection.Container();
+    int32_t curOffset = atStartOfSelection.Offset();
+    nsCOMPtr<nsIContent> selChild = atStartOfSelection.GetChildAtOffset();
 
     
     NS_ENSURE_STATE(mTextEditor);

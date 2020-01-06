@@ -2384,23 +2384,18 @@ EditorBase::ScrollSelectionIntoView(bool aScrollToAnchor)
   return NS_OK;
 }
 
-void
-EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsIDOMNode>& aNode,
-                                     int32_t& aOffset)
+EditorRawDOMPoint
+EditorBase::FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  FindBetterInsertionPoint(node, aOffset, nullptr);
-  aNode = do_QueryInterface(node);
-}
+  if (NS_WARN_IF(!aPoint.IsSet())) {
+    return aPoint;
+  }
 
-void
-EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
-                                     int32_t& aOffset,
-                                     nsCOMPtr<nsIContent>* aSelChild)
-{
-  if (aNode->IsNodeOfType(nsINode::eTEXT)) {
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
+  if (aPoint.Container()->IsNodeOfType(nsINode::eTEXT)) {
     
-    return;
+    return aPoint;
   }
 
   if (!IsPlaintextEditor()) {
@@ -2408,57 +2403,44 @@ EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
     
     
     
-    return;
+    return aPoint;
   }
 
-  nsCOMPtr<nsINode> node = aNode;
-  int32_t offset = aOffset;
-
   nsCOMPtr<nsINode> root = GetRoot();
-  if (aNode == root) {
+  if (aPoint.Container() == root) {
     
     
     
-    if (!offset && node->HasChildren() &&
-        node->GetFirstChild()->IsNodeOfType(nsINode::eTEXT)) {
-      aNode = node->GetFirstChild();
-      aOffset = 0;
-      if (aSelChild) {
-        *aSelChild = nullptr;
-      }
-      return;
+    if (aPoint.IsStartOfContainer() &&
+        aPoint.Container()->HasChildren() &&
+        aPoint.Container()->GetFirstChild()->IsNodeOfType(nsINode::eTEXT)) {
+      return EditorRawDOMPoint(aPoint.Container()->GetFirstChild(), 0);
     }
 
     
     
     
-    if (offset) {
+    if (!aPoint.IsStartOfContainer()) {
       if (AsHTMLEditor()) {
         
         
-        nsIContent* child = node->GetChildAt(offset - 1);
+        nsIContent* child = aPoint.GetPreviousSiblingOfChildAtOffset();
         if (child && child->IsNodeOfType(nsINode::eTEXT)) {
-          NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);
-          aNode = child;
-          aOffset = static_cast<int32_t>(aNode->Length());
-          if (aSelChild) {
-            *aSelChild = nullptr;
+          if (NS_WARN_IF(child->Length() > INT32_MAX)) {
+            return aPoint;
           }
-          return;
+          return EditorRawDOMPoint(child, child->Length());
         }
       } else {
         
         
-        nsIContent* child = node->GetLastChild();
+        nsIContent* child = aPoint.Container()->GetLastChild();
         while (child) {
           if (child->IsNodeOfType(nsINode::eTEXT)) {
-            NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);
-            aNode = child;
-            aOffset = static_cast<int32_t>(aNode->Length());
-            if (aSelChild) {
-              *aSelChild = nullptr;
+            if (NS_WARN_IF(child->Length() > INT32_MAX)) {
+              return aPoint;
             }
-            return;
+            return EditorRawDOMPoint(child, child->Length());
           }
           child = child->GetPreviousSibling();
         }
@@ -2469,27 +2451,24 @@ EditorBase::FindBetterInsertionPoint(nsCOMPtr<nsINode>& aNode,
   
   
   
-  if (TextEditUtils::IsMozBR(node) && !offset) {
-    if (node->GetPreviousSibling() &&
-        node->GetPreviousSibling()->IsNodeOfType(nsINode::eTEXT)) {
-      NS_ENSURE_TRUE_VOID(node->Length() <= INT32_MAX);
-      aNode = node->GetPreviousSibling();
-      aOffset = static_cast<int32_t>(aNode->Length());
-      if (aSelChild) {
-        *aSelChild = nullptr;
+  if (TextEditUtils::IsMozBR(aPoint.Container()) &&
+      aPoint.IsStartOfContainer()) {
+    nsIContent* previousSibling = aPoint.Container()->GetPreviousSibling();
+    if (previousSibling && previousSibling->IsNodeOfType(nsINode::eTEXT)) {
+      if (NS_WARN_IF(previousSibling->Length() > INT32_MAX)) {
+        return aPoint;
       }
-      return;
+      return EditorRawDOMPoint(previousSibling, previousSibling->Length());
     }
 
-    if (node->GetParentNode() && node->GetParentNode() == root) {
-      if (aSelChild) {
-        *aSelChild = node->AsContent();
-      }
-      aNode = node->GetParentNode();
-      aOffset = 0;
-      return;
+    nsINode* parentOfContainer = aPoint.Container()->GetParentNode();
+    if (parentOfContainer && parentOfContainer == root) {
+      return EditorRawDOMPoint(parentOfContainer,
+                               aPoint.Container()->AsContent(), 0);
     }
   }
+
+  return aPoint;
 }
 
 nsresult
@@ -2528,7 +2507,16 @@ EditorBase::InsertTextImpl(const nsAString& aStringToInsert,
   
   
   
-  FindBetterInsertionPoint(node, offset, address_of(child));
+  EditorRawDOMPoint insertionPoint;
+  if (child) {
+    insertionPoint.Set(child);
+  } else {
+    insertionPoint.Set(node, offset);
+  }
+  EditorRawDOMPoint betterPoint = FindBetterInsertionPoint(insertionPoint);
+  node = betterPoint.Container();
+  offset = betterPoint.Offset();
+  child = betterPoint.GetChildAtOffset();
 
   
   if (!node->IsNodeOfType(nsINode::eTEXT)) {
@@ -3824,18 +3812,33 @@ EditorBase::GetStartNodeAndOffset(Selection* aSelection,
   *aStartContainer = nullptr;
   *aStartOffset = 0;
 
-  if (!aSelection->RangeCount()) {
+  EditorRawDOMPoint point = EditorBase::GetStartPoint(aSelection);
+  if (!point.IsSet()) {
     return NS_ERROR_FAILURE;
   }
 
-  const nsRange* range = aSelection->GetRangeAt(0);
-  NS_ENSURE_TRUE(range, NS_ERROR_FAILURE);
-
-  NS_ENSURE_TRUE(range->IsPositioned(), NS_ERROR_FAILURE);
-
-  NS_IF_ADDREF(*aStartContainer = range->GetStartContainer());
-  *aStartOffset = range->StartOffset();
+  NS_ADDREF(*aStartContainer = point.Container());
+  *aStartOffset = point.Offset();
   return NS_OK;
+}
+
+
+EditorRawDOMPoint
+EditorBase::GetStartPoint(Selection* aSelection)
+{
+  MOZ_ASSERT(aSelection);
+
+  if (NS_WARN_IF(!aSelection->RangeCount())) {
+    return EditorRawDOMPoint();
+  }
+
+  const nsRange* range = aSelection->GetRangeAt(0);
+  if (NS_WARN_IF(!range) ||
+      NS_WARN_IF(!range->IsPositioned())) {
+    return EditorRawDOMPoint();
+  }
+
+  return EditorRawDOMPoint(range->StartRef());
 }
 
 
@@ -4978,10 +4981,10 @@ EditorBase::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
     
     nsRange* firstRange = selection->GetRangeAt(0);
     NS_ENSURE_TRUE(firstRange, NS_ERROR_FAILURE);
-    nsCOMPtr<nsINode> startNode = firstRange->GetStartContainer();
-    int32_t startOffset = firstRange->StartOffset();
-    FindBetterInsertionPoint(startNode, startOffset, nullptr);
-    Text* textNode = startNode->GetAsText();
+    EditorRawDOMPoint atStartOfFirstRange(firstRange->StartRef());
+    EditorRawDOMPoint betterInsertionPoint =
+      FindBetterInsertionPoint(atStartOfFirstRange);
+    Text* textNode = betterInsertionPoint.Container()->GetAsText();
     MOZ_ASSERT(textNode,
                "There must be text node if mIMETextLength is larger than 0");
     if (textNode) {
