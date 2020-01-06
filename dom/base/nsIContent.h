@@ -980,9 +980,6 @@ public:
 
   virtual bool OwnedOnlyByTheDOMTree() { return false; }
 
-  void NoteDirtyForServo();
-  void NoteAnimationOnlyDirtyForServo();
-
 protected:
   
 

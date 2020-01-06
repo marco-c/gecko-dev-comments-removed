@@ -7551,8 +7551,15 @@ nsCSSFrameConstructor::LazilyStyleNewChildRange(nsIContent* aStartChild,
 {
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    child->NoteDirtyForServo();
+    if (child->IsElement()) {
+      child->AsElement()->NoteDirtyForServo();
+    }
   }
+
+  
+  
+  
+  mPresShell->EnsureStyleFlush();
 }
 
 void

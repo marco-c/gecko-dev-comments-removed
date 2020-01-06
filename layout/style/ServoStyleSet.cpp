@@ -873,6 +873,10 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
 
     
     
+    postTraversalRequired |= root->HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
+
+    
+    
     
     if (!root->IsInNativeAnonymousSubtree()) {
       flags |= ServoTraversalFlags::ParallelTraversal;
