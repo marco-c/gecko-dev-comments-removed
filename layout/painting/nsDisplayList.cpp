@@ -5529,18 +5529,32 @@ nsDisplayBoxShadowInner::CanCreateWebRenderCommands(nsDisplayListBuilder* aBuild
                                                     nsIFrame* aFrame,
                                                     nsPoint aReferenceOffset)
 {
-  nsRect borderRect = nsRect(aReferenceOffset, aFrame->GetSize());
-  RectCornerRadii innerRadii;
-  bool hasBorderRadius =
-      nsCSSRendering::GetShadowInnerRadii(aFrame, borderRect, innerRadii);
-  if (hasBorderRadius) {
-    return false;
-  }
-
   nsCSSShadowArray *shadows = aFrame->StyleEffects()->mBoxShadow;
   if (!shadows) {
     
     return true;
+  }
+
+  bool hasBorderRadius;
+  bool nativeTheme =
+    nsCSSRendering::HasBoxShadowNativeTheme(aFrame, hasBorderRadius);
+
+  
+  
+  if (nativeTheme) {
+    return false;
+  }
+
+  nsRect borderRect = nsRect(aReferenceOffset, aFrame->GetSize());
+  RectCornerRadii innerRadii;
+
+  if (hasBorderRadius) {
+    hasBorderRadius =
+      nsCSSRendering::GetShadowInnerRadii(aFrame, borderRect, innerRadii);
+  }
+
+  if (hasBorderRadius && !innerRadii.AreRadiiSame()) {
+    return false;
   }
 
   return true;
