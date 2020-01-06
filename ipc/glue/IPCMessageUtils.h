@@ -230,6 +230,30 @@ struct ParamTraits<base::ChildPrivileges>
                                     base::PRIVILEGES_LAST>
 { };
 
+
+
+
+
+
+
+
+
+template <typename T>
+struct PlainOldDataSerializer
+{
+  
+  
+  typedef T paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam) {
+    aMsg->WriteBytes(&aParam, sizeof(aParam));
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult) {
+    return aMsg->ReadBytesInto(aIter, aResult, sizeof(paramType));
+  }
+};
+
 template<>
 struct ParamTraits<int8_t>
 {
