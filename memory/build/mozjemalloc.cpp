@@ -1117,9 +1117,7 @@ static malloc_spinlock_t arenas_lock;
 
 
 
-
-
-#if !defined(XP_WIN) && !defined(XP_DARWIN)
+#if !defined(XP_DARWIN)
 static MOZ_THREAD_LOCAL(arena_t*) thread_arena;
 #else
 static mozilla::detail::ThreadLocal<arena_t*, mozilla::detail::ThreadLocalKeyStorage> thread_arena;
