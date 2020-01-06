@@ -75,6 +75,7 @@ struct WebMBufferedParser
     , mSkipBytes(0)
     , mTimecodeScale(1000000)
     , mGotTimecodeScale(false)
+    , mGotClusterTimecode(false)
   {
     if (mStartOffset != 0) {
       mState = FIND_CLUSTER_SYNC;
@@ -260,6 +261,9 @@ private:
   
   
   bool mGotTimecodeScale;
+
+  
+  bool mGotClusterTimecode;
 };
 
 class WebMBufferedState final
