@@ -179,7 +179,7 @@ class ObjectBox;
 
 
 
-enum ParseNodeKind
+enum ParseNodeKind : uint16_t
 {
 #define EMIT_ENUM(name) PNK_##name,
     FOR_EACH_PARSE_NODE_KIND(EMIT_ENUM)
@@ -450,7 +450,11 @@ class PropertyAccess;
 
 class ParseNode
 {
-    uint16_t pn_type;   
+    ParseNodeKind pn_type;   
+    
+    
+    
+    
     uint8_t pn_op;      
     uint8_t pn_arity:4; 
     bool pn_parens:1;   
@@ -494,7 +498,7 @@ class ParseNode
 
     ParseNodeKind getKind() const {
         MOZ_ASSERT(pn_type < PNK_LIMIT);
-        return ParseNodeKind(pn_type);
+        return pn_type;
     }
     void setKind(ParseNodeKind kind) {
         MOZ_ASSERT(kind < PNK_LIMIT);
