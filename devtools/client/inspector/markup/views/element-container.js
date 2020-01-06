@@ -15,7 +15,7 @@ const {setImageTooltip, setBrokenImageTooltip} =
       require("devtools/client/shared/widgets/tooltip/ImageTooltipHelper");
 const MarkupContainer = require("devtools/client/inspector/markup/views/markup-container");
 const ElementEditor = require("devtools/client/inspector/markup/views/element-editor");
-const {extend} = require("devtools/client/inspector/markup/utils");
+const {extend} = require("devtools/shared/extend");
 
 
 loader.lazyRequireGetter(this, "setEventTooltip",
