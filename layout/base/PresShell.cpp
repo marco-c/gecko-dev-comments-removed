@@ -255,7 +255,7 @@ struct RangePaintInfo {
 
   ~RangePaintInfo()
   {
-    mList.DeleteAll(&mBuilder);
+    mList.DeleteAll();
     MOZ_COUNT_DTOR(RangePaintInfo);
   }
 };
@@ -4864,7 +4864,7 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
     }
     else {
       
-      i->Destroy(aBuilder);
+      i->~nsDisplayItem();
     }
   }
 
@@ -4942,8 +4942,8 @@ PresShell::CreateRangePaintInfo(nsIDOMRange* aRange,
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
     
     for (; frame; frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
-      info->mBuilder.SetDirtyRect(frame->GetVisualOverflowRect());
-      frame->BuildDisplayListForStackingContext(&info->mBuilder, &info->mList);
+      frame->BuildDisplayListForStackingContext(&info->mBuilder,
+               frame->GetVisualOverflowRect(), &info->mList);
     }
   };
   if (startContainer->NodeType() == nsIDOMNode::TEXT_NODE) {
@@ -5240,14 +5240,14 @@ AddCanvasBackgroundColor(const nsDisplayList& aList, nsIFrame* aCanvasFrame,
 {
   for (nsDisplayItem* i = aList.GetBottom(); i; i = i->GetAbove()) {
     if (i->Frame() == aCanvasFrame &&
-        i->GetType() == DisplayItemType::TYPE_CANVAS_BACKGROUND_COLOR) {
+        i->GetType() == nsDisplayItem::TYPE_CANVAS_BACKGROUND_COLOR) {
       nsDisplayCanvasBackgroundColor* bg = static_cast<nsDisplayCanvasBackgroundColor*>(i);
       bg->SetExtraBackgroundColor(aColor);
       return true;
     }
     nsDisplayList* sublist = i->GetSameCoordinateSystemChildren();
     if (sublist &&
-        !(i->GetType() == DisplayItemType::TYPE_BLEND_CONTAINER && !aCSSBackgroundColor) &&
+        !(i->GetType() == nsDisplayItem::TYPE_BLEND_CONTAINER && !aCSSBackgroundColor) &&
         AddCanvasBackgroundColor(*sublist, aCanvasFrame, aColor, aCSSBackgroundColor))
       return true;
   }
@@ -6131,7 +6131,7 @@ PresShell::DoUpdateApproximateFrameVisibility(bool aRemoveOnly)
 
   ClearApproximateFrameVisibilityVisited(rootFrame->GetView(), true);
 
-  list.DeleteAll(&builder);
+  list.DeleteAll();
 #endif
 }
 
@@ -7107,8 +7107,8 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       event.pointerId = touch->Identifier();
       event.mRefPoint = touch->mRefPoint;
       event.mModifiers = touchEvent->mModifiers;
-      event.mWidth = touch->RadiusX();
-      event.mHeight = touch->RadiusY();
+      event.mWidth = touch->RadiusX(CallerType::System);
+      event.mHeight = touch->RadiusY(CallerType::System);
       event.tiltX = touch->tiltX;
       event.tiltY = touch->tiltY;
       event.mTime = touchEvent->mTime;
