@@ -34,7 +34,7 @@ const datePart = String.raw `(?:${weekdays}) (?:${months}) \d{2}`;
 const timePart = String.raw `\d{4,6} \d{2}:\d{2}:\d{2} GMT[+-]\d{4}`;
 const dateTimeRE = new RegExp(String.raw `^(${datePart} ${timePart})(?: \((.+)\))?$`);
 
-function assertDateTime(date, expected) {
+function assertDateTime(date, expected, alternativeTimeZone = undefined) {
     let actual = date.toString();
     assertEq(dateTimeRE.test(expected), true, `${expected}`);
     assertEq(dateTimeRE.test(actual), true, `${actual}`);
@@ -47,6 +47,10 @@ function assertDateTime(date, expected) {
     
     
     if (expectedTimeZone !== undefined && actualTimeZone !== undefined) {
+        
+        if (actualTimeZone !== expectedTimeZone && alternativeTimeZone !== undefined) {
+            expectedTimeZone = alternativeTimeZone;
+        }
         assertEq(actualTimeZone, expectedTimeZone);
     }
 }
@@ -54,10 +58,10 @@ function assertDateTime(date, expected) {
 
 inTimeZone("Asia/Novosibirsk", () => {
     let dt1 = new Date(1984, Month.April, 1, -1);
-    assertDateTime(dt1, "Sat Mar 31 1984 23:00:00 GMT+0700 (NOVT)");
+    assertDateTime(dt1, "Sat Mar 31 1984 23:00:00 GMT+0700 (NOVT)", "+07");
 
     let dt2 = new Date(1984, Month.April, 1);
-    assertDateTime(dt2, "Sun Apr 01 1984 01:00:00 GMT+0800 (NOVST)");
+    assertDateTime(dt2, "Sun Apr 01 1984 01:00:00 GMT+0800 (NOVST)", "+08");
 });
 
 if (typeof reportCompare === "function")

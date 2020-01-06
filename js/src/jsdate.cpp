@@ -2665,7 +2665,7 @@ FormatDate(JSContext* cx, double utcTime, FormatSpec format, MutableHandleValue 
                 usetz = true;
                 for (size_t i = 0; i < tzlen; i++) {
                     char16_t c = tzbuf[i];
-                    if (c > 127 || !(isalnum(c) || c == ' ' || c == '(' || c == ')' || c == '.')) {
+                    if (c > 127 || !isprint(c)) {
                         usetz = false;
                         break;
                     }
