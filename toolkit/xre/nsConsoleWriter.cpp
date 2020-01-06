@@ -78,7 +78,7 @@ WriteConsoleLog()
   
   
 
-  nsXPIDLString msg;
+  nsString msg;
   nsAutoCString nativemsg;
 
   for (uint32_t i = 0; i < mcount; ++i) {

@@ -989,7 +989,7 @@ nsNativeAppSupportWin::HandleDDENotification( UINT uType,
                             break;
                         }
                         
-                        nsXPIDLString title;
+                        nsString title;
                         if(!baseWindow) {
                             break;
                         }

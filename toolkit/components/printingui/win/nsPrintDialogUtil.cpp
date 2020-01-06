@@ -464,8 +464,7 @@ static UINT CALLBACK PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM 
 
 
 static nsReturnRef<nsHGLOBAL>
-CreateGlobalDevModeAndInit(const nsXPIDLString& aPrintName,
-                           nsIPrintSettings* aPS)
+CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
 {
   nsHPRINTER hPrinter = nullptr;
   
@@ -532,7 +531,7 @@ CreateGlobalDevModeAndInit(const nsXPIDLString& aPrintName,
 
 
 
-static void GetDefaultPrinterNameFromGlobalPrinters(nsXPIDLString &printerName)
+static void GetDefaultPrinterNameFromGlobalPrinters(nsAString &printerName)
 {
   nsCOMPtr<nsIPrinterEnumerator> prtEnum = do_GetService("@mozilla.org/gfx/printerenumerator;1");
   if (prtEnum) {
@@ -570,7 +569,7 @@ ShowNativePrintDialog(HWND              aHWnd,
   gDialogWasExtended  = false;
 
   
-  nsXPIDLString printerName;
+  nsString printerName;
   aPrintSettings->GetPrinterName(getter_Copies(printerName));
 
   
@@ -606,7 +605,7 @@ ShowNativePrintDialog(HWND              aHWnd,
   pDevNames->wOutputOffset = sizeof(DEVNAMES)/sizeof(wchar_t)+len;
   pDevNames->wDefault      = 0;
 
-  memcpy(pDevNames+1, printerName, (len + 1) * sizeof(wchar_t));
+  memcpy(pDevNames+1, printerName.get(), (len + 1) * sizeof(wchar_t));
   ::GlobalUnlock(hDevNames);
 
   

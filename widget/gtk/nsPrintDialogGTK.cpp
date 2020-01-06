@@ -275,7 +275,7 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter *aParent,
 
   
   GtkWidget* header_footer_table = gtk_table_new(3, 3, FALSE); 
-  nsXPIDLString header_footer_str[3];
+  nsString header_footer_str[3];
 
   aSettings->GetHeaderStrLeft(getter_Copies(header_footer_str[0]));
   aSettings->GetHeaderStrCenter(getter_Copies(header_footer_str[1]));
@@ -582,9 +582,9 @@ nsPrintDialogServiceGTK::ShowPageSetup(nsPIDOMWindowOuter *aParent,
   
   nsCOMPtr<nsIPrintSettingsService> psService = do_GetService("@mozilla.org/gfx/printsettings-service;1");
   if (psService) {
-    nsXPIDLString printName;
+    nsString printName;
     aNSSettings->GetPrinterName(getter_Copies(printName));
-    if (!printName) {
+    if (printName.IsVoid()) {
       psService->GetDefaultPrinterName(getter_Copies(printName));
       aNSSettings->SetPrinterName(printName.get());
     }

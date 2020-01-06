@@ -801,7 +801,7 @@ PK11PasswordPromptRunnable::RunOnTargetThread()
     return;
   }
 
-  nsXPIDLString password;
+  nsString password;
   
   
   bool checkState = false;

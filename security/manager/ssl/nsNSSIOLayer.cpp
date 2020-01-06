@@ -680,7 +680,7 @@ nsHandleSSLError(nsNSSSocketInfo* socketInfo,
 
   
   socketInfo->SetCanceled(err, SSLErrorMessageType::Plain);
-  nsXPIDLString errorString;
+  nsAutoString errorString;
   socketInfo->GetErrorLogMessage(err, errtype, errorString);
 
   if (!errorString.IsEmpty()) {

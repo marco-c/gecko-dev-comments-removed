@@ -136,7 +136,7 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   rv = settings->SetPrintSilent(printSilently);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsXPIDLString printerName;
+  nsString printerName;
   settings->GetPrinterName(getter_Copies(printerName));
 #ifdef MOZ_X11
   
@@ -145,9 +145,9 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   
   if (printerName.IsEmpty()) {
     mPrintSettingsSvc->GetDefaultPrinterName(getter_Copies(printerName));
-    settings->SetPrinterName(printerName);
+    settings->SetPrinterName(printerName.get());
   }
-  mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
+  mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName.get(), settings);
 #endif
 
   
@@ -155,7 +155,8 @@ PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   if (isPrintPreview || printSilently ||
       Preferences::GetBool("print.always_print_silent", printSilently)) {
     settings->SetIsInitializedFromPrinter(false);
-    mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
+    mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName.get(),
+                                                    settings);
   } else {
     rv = pps->ShowPrintDialog(parentWin, wbp, settings);
     NS_ENSURE_SUCCESS(rv, rv);

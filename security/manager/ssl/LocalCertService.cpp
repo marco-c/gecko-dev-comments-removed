@@ -303,8 +303,8 @@ private:
     }
 
     
-    nsXPIDLString subjectName;
-    nsXPIDLString issuerName;
+    nsAutoString subjectName;
+    nsAutoString issuerName;
     mCert->GetSubjectName(subjectName);
     mCert->GetIssuerName(issuerName);
     if (!subjectName.Equals(issuerName)) {
