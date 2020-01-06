@@ -3319,18 +3319,14 @@ js::ToObjectSlow(JSContext* cx, JS::HandleValue val, bool reportScanStack)
 Value
 js::GetThisValue(JSObject* obj)
 {
+    
+    
     if (obj->is<GlobalObject>())
         return ObjectValue(*ToWindowProxyIfWindow(obj));
 
-    if (obj->is<LexicalEnvironmentObject>()) {
-        MOZ_ASSERT(!obj->as<LexicalEnvironmentObject>().isExtensible());
-        return UndefinedValue();
-    }
-
-    if (obj->is<ModuleEnvironmentObject>())
-        return UndefinedValue();
-
-    MOZ_ASSERT(!obj->is<WithEnvironmentObject>());
+    
+    
+    MOZ_ASSERT(obj->is<NonSyntacticVariablesObject>() || !obj->is<EnvironmentObject>());
 
     return ObjectValue(*obj);
 }
