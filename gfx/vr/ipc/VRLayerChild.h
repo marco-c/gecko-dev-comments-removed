@@ -32,22 +32,30 @@ class VRLayerChild : public PVRLayerChild {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRLayerChild)
 
 public:
-  VRLayerChild(uint32_t aVRDisplayID, VRManagerChild* aVRManagerChild);
+  static PVRLayerChild* CreateIPDLActor();
+  static bool DestroyIPDLActor(PVRLayerChild* actor);
+
   void Initialize(dom::HTMLCanvasElement* aCanvasElement);
   void SubmitFrame();
   bool IsIPCOpen();
 
-protected:
+private:
+  VRLayerChild();
   virtual ~VRLayerChild();
   void ClearSurfaces();
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  uint32_t mVRDisplayID;
 
   RefPtr<dom::HTMLCanvasElement> mCanvasElement;
   RefPtr<layers::SharedSurfaceTextureClient> mShSurfClient;
   RefPtr<layers::TextureClient> mFront;
   bool mIPCOpen;
+
+  
+  
+  
+  
+  void AddIPDLReference();
+  void ReleaseIPDLReference();
 };
 
 } 
