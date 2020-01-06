@@ -31,6 +31,10 @@ using mozilla::dom::quota::QuotaObject;
 
 namespace {
 
+
+
+const int64_t kRoundUpNumber = 20480;
+
 enum BodyFileType
 {
   BODY_FILE_FINAL,
@@ -42,7 +46,16 @@ BodyIdToFile(nsIFile* aBaseDir, const nsID& aId, BodyFileType aType,
              nsIFile** aBodyFileOut);
 
 int64_t
-BodyGeneratePadding(const int64_t aBodyFileSize);
+RoundUp(const int64_t aX, const int64_t aY);
+
+
+
+
+
+
+
+int64_t
+BodyGeneratePadding(const int64_t aBodyFileSize, const uint32_t aPaddingInfo);
 
 } 
 
@@ -254,7 +267,8 @@ BodyOpen(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir, const nsID& aId,
 
 nsresult
 BodyMaybeUpdatePaddingSize(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
-                           const nsID& aId, int64_t* aPaddingSizeOut)
+                           const nsID& aId, const uint32_t aPaddingInfo,
+                           int64_t* aPaddingSizeOut)
 {
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
   MOZ_DIAGNOSTIC_ASSERT(aPaddingSizeOut);
@@ -277,7 +291,7 @@ BodyMaybeUpdatePaddingSize(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
   MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
 
   if (*aPaddingSizeOut == InternalResponse::UNKNOWN_PADDING_SIZE) {
-    *aPaddingSizeOut = BodyGeneratePadding(fileSize);
+    *aPaddingSizeOut = BodyGeneratePadding(fileSize, aPaddingInfo);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(*aPaddingSizeOut >= 0);
@@ -354,10 +368,24 @@ BodyIdToFile(nsIFile* aBaseDir, const nsID& aId, BodyFileType aType,
 }
 
 int64_t
-BodyGeneratePadding(const int64_t aBodyFileSize)
+RoundUp(const int64_t aX, const int64_t aY)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aX >= 0);
+  MOZ_DIAGNOSTIC_ASSERT(aY > 0);
+
+  MOZ_DIAGNOSTIC_ASSERT(INT64_MAX - ((aX - 1) / aY) * aY >= aY);
+  return aY + ((aX - 1) / aY) * aY;
+}
+
+int64_t
+BodyGeneratePadding(const int64_t aBodyFileSize, const uint32_t aPaddingInfo)
 {
   
-  return 0;
+  int64_t randomSize = static_cast<int64_t>(aPaddingInfo);
+  MOZ_DIAGNOSTIC_ASSERT(INT64_MAX - aBodyFileSize >= randomSize);
+  randomSize += aBodyFileSize;
+
+  return RoundUp(randomSize, kRoundUpNumber) - aBodyFileSize;
 }
 
 } 
