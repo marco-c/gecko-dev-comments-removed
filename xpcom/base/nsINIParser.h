@@ -39,14 +39,6 @@ public:
 
 
 
-
-
-  nsresult Init(const char* aPath);
-
-  
-
-
-
   typedef bool (*INISectionCallback)(const char* aSection, void* aClosure);
 
   
