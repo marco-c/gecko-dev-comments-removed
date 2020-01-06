@@ -22,7 +22,7 @@ pub trait NsresultExt {
 
     
     
-    fn error_name(self) -> nsCString<'static>;
+    fn error_name(self) -> nsCString;
 }
 
 impl NsresultExt for nsresult {
@@ -42,7 +42,7 @@ impl NsresultExt for nsresult {
         }
     }
 
-    fn error_name(self) -> nsCString<'static> {
+    fn error_name(self) -> nsCString {
         let mut cstr = nsCString::new();
         unsafe {
             Gecko_GetErrorName(self, &mut *cstr);
