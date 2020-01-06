@@ -477,37 +477,19 @@ nsNodeUtils::CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
       return nullptr;
     }
 
-    if (CustomElementRegistry::IsCustomElementEnabled() && clone->IsElement()) {
+    if (clone->IsElement()) {
       
       
       Element* elem = clone->AsElement();
-      CustomElementDefinition* definition = nullptr;
-      RefPtr<nsIAtom> tagAtom = nodeInfo->NameAtom();
-      if (nsContentUtils::IsCustomElementName(tagAtom)) {
-        definition =
-          nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
-                                                        nodeInfo->LocalName(),
-                                                        nodeInfo->NamespaceID());
-        if (definition) {
-          elem->SetCustomElementData(new CustomElementData(tagAtom));
-          nsContentUtils::EnqueueUpgradeReaction(elem, definition);
-        }
+      if (nsContentUtils::IsCustomElementName(nodeInfo->NameAtom())) {
+        nsContentUtils::SetupCustomElement(elem);
       } else {
         
         
         nsAutoString extension;
         if (elem->GetAttr(kNameSpaceID_None, nsGkAtoms::is, extension) &&
             !extension.IsEmpty()) {
-          definition =
-            nsContentUtils::LookupCustomElementDefinition(nodeInfo->GetDocument(),
-                                                          nodeInfo->LocalName(),
-                                                          nodeInfo->NamespaceID(),
-                                                          &extension);
-          if (definition) {
-            RefPtr<nsIAtom> typeAtom = NS_Atomize(extension);
-            elem->SetCustomElementData(new CustomElementData(typeAtom));
-            nsContentUtils::EnqueueUpgradeReaction(elem, definition);
-          }
+          nsContentUtils::SetupCustomElement(elem, &extension);
         }
       }
     }
