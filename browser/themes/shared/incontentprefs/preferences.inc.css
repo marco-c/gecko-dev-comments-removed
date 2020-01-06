@@ -149,6 +149,11 @@ button > hbox > label {
   padding-top: 32px;
 }
 
+#browserNewTabExtensionContent {
+  
+  margin-inline-start: 34px;
+}
+
 #browserHomePage {
   margin-inline-start: 0;
   margin-inline-end: 0;
