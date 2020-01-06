@@ -44,6 +44,10 @@ public:
   
   nsresult GetHostname(nsACString& aHost);
   
+  
+  
+  nsresult GetHostPort(nsACString& aHostPort);
+  
   nsresult GetPort(int32_t* aPort);
   nsresult GetFilePath(nsACString& aPath);
   nsresult GetQuery(nsACString& aQuery);
@@ -84,6 +88,7 @@ public:
     Mutator& SetUsername(const nsACString& aUser);
     Mutator& SetPassword(const nsACString& aPassword);
     Mutator& SetHostname(const nsACString& aHost);
+    Mutator& SetHostPort(const nsACString& aHostPort);
     Mutator& SetFilePath(const nsACString& aPath);
     Mutator& SetQuery(const nsACString& aQuery);
     Mutator& SetRef(const nsACString& aRef);
