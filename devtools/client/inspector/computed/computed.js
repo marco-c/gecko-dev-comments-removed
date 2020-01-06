@@ -741,40 +741,8 @@ CssComputedView.prototype = {
     try {
       let win = this.styleWindow;
       let text = win.getSelection().toString().trim();
-      
-      
-      let isPropertyPresent = false;
-      
-      
-      let textArray = text.split(/[\r\n]+/);
-      let result = "";
 
-      
-      if (textArray.length > 1) {
-        for (let prop of textArray) {
-          if (CssComputedView.propertyNames.indexOf(prop) !== -1) {
-            
-            isPropertyPresent = true;
-            
-            result += prop;
-          } else if (isPropertyPresent === true) {
-            
-            
-            
-            result += ": " + prop + ";\n";
-            isPropertyPresent = false;
-          } else {
-            
-            
-            result += prop + "\n";
-          }
-        }
-      } else {
-        
-        result = textArray[0];
-      }
-
-      clipboardHelper.copyString(result);
+      clipboardHelper.copyString(text);
     } catch (e) {
       console.error(e);
     }
@@ -1007,7 +975,7 @@ PropertyView.prototype = {
     this.shortcuts.on("Return", (name, event) => this.onMatchedToggle(event));
     this.shortcuts.on("Space", (name, event) => this.onMatchedToggle(event));
 
-    let nameContainer = doc.createElementNS(HTML_NS, "div");
+    let nameContainer = doc.createElementNS(HTML_NS, "span");
     nameContainer.className = "property-name-container";
     this.element.appendChild(nameContainer);
 
@@ -1018,8 +986,8 @@ PropertyView.prototype = {
     nameContainer.appendChild(this.matchedExpander);
 
     
-    this.nameNode = doc.createElementNS(HTML_NS, "div");
-    this.nameNode.setAttribute("class", "property-name theme-fg-color5");
+    this.nameNode = doc.createElementNS(HTML_NS, "span");
+    this.nameNode.classList.add("property-name", "theme-fg-color5");
     
     
     this.nameNode.setAttribute("tabindex", "");
@@ -1030,22 +998,36 @@ PropertyView.prototype = {
     
     this.onFocus = () => this.element.focus();
     this.nameNode.addEventListener("click", this.onFocus);
+
+    
+    let nameSeparator = doc.createElementNS(HTML_NS, "span");
+    nameSeparator.classList.add("visually-hidden");
+    nameSeparator.textContent = ": ";
+    this.nameNode.appendChild(nameSeparator);
+
     nameContainer.appendChild(this.nameNode);
 
-    let valueContainer = doc.createElementNS(HTML_NS, "div");
+    let valueContainer = doc.createElementNS(HTML_NS, "span");
     valueContainer.className = "property-value-container";
     this.element.appendChild(valueContainer);
 
     
-    this.valueNode = doc.createElementNS(HTML_NS, "div");
-    this.valueNode.setAttribute("class", "property-value theme-fg-color1");
+    this.valueNode = doc.createElementNS(HTML_NS, "span");
+    this.valueNode.classList.add("property-value", "theme-fg-color1");
     
     
     this.valueNode.setAttribute("tabindex", "");
     this.valueNode.setAttribute("dir", "ltr");
     
     this.valueNode.addEventListener("click", this.onFocus);
+
+    
+    let valueSeparator = doc.createElementNS(HTML_NS, "span");
+    valueSeparator.classList.add("visually-hidden");
+    valueSeparator.textContent = ";";
+
     valueContainer.appendChild(this.valueNode);
+    valueContainer.appendChild(valueSeparator);
 
     return this.element;
   },
@@ -1055,7 +1037,7 @@ PropertyView.prototype = {
     let element = doc.createElementNS(HTML_NS, "div");
     element.setAttribute("class", this.propertyContentClassName);
     this.matchedSelectorsContainer = doc.createElementNS(HTML_NS, "div");
-    this.matchedSelectorsContainer.setAttribute("class", "matchedselectors");
+    this.matchedSelectorsContainer.classList.add("matchedselectors");
     element.appendChild(this.matchedSelectorsContainer);
 
     return element;
@@ -1165,13 +1147,18 @@ PropertyView.prototype = {
       let status = createChild(p, "span", {
         dir: "ltr",
         class: "rule-text theme-fg-color3 " + selector.statusClass,
-        title: selector.statusText,
+        title: selector.statusText
+      });
+
+      let keyDiv = createChild(status, "div", {
+        class: "fix-get-selection",
         textContent: selector.sourceText
       });
-      let valueSpan = createChild(status, "span", {
-        class: "other-property-value theme-fg-color1"
+
+      let valueDiv = createChild(status, "div", {
+        class: "fix-get-selection other-property-value theme-fg-color1"
       });
-      valueSpan.appendChild(selector.outputFragment);
+      valueDiv.appendChild(selector.outputFragment);
       promises.push(selector.ready);
     }
 

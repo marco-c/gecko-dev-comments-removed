@@ -134,6 +134,20 @@
 }
 
 
+
+
+
+
+
+.fix-get-selection {
+  display: inline;
+}
+
+.visually-hidden {
+  opacity: 0;
+}
+
+
 .expander {
   visibility: hidden;
 }
