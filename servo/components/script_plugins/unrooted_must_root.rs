@@ -206,13 +206,21 @@ impl<'a, 'b, 'tcx> visit::Visitor<'tcx> for FnDefVisitor<'a, 'b, 'tcx> {
     fn visit_pat(&mut self, pat: &'tcx hir::Pat) {
         let cx = self.cx;
 
-        if let hir::PatKind::Binding(hir::BindingMode::BindByValue(_), _, _, _) = pat.node {
-            let ty = cx.tables.pat_ty(pat);
-            if is_unrooted_ty(cx, ty, self.in_new_function) {
-                cx.span_lint(UNROOTED_MUST_ROOT,
-                            pat.span,
-                            &format!("Expression of type {:?} must be rooted", ty))
+        
+        
+        
+        
+        match pat.node {
+            hir::PatKind::Binding(hir::BindingAnnotation::Unannotated, _, _, _) |
+            hir::PatKind::Binding(hir::BindingAnnotation::Mutable, _, _, _) => {
+                let ty = cx.tables.pat_ty(pat);
+                if is_unrooted_ty(cx, ty, self.in_new_function) {
+                    cx.span_lint(UNROOTED_MUST_ROOT,
+                                pat.span,
+                                &format!("Expression of type {:?} must be rooted", ty))
+                }
             }
+            _ => {}
         }
 
         visit::walk_pat(self, pat);

@@ -63,7 +63,7 @@ impl MediaListMethods for MediaList {
     
     fn SetMediaText(&self, value: DOMString) {
         let mut guard = self.shared_lock().write();
-        let mut media_queries = self.media_queries.write_with(&mut guard);
+        let media_queries = self.media_queries.write_with(&mut guard);
         
         if value.is_empty() {
             
@@ -154,7 +154,7 @@ impl MediaListMethods for MediaList {
         
         let m_serialized = m.unwrap().to_css_string();
         let mut guard = self.shared_lock().write();
-        let mut media_list = self.media_queries.write_with(&mut guard);
+        let media_list = self.media_queries.write_with(&mut guard);
         let new_vec = media_list.media_queries.drain(..)
                                 .filter(|q| m_serialized != q.to_css_string())
                                 .collect();

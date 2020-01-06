@@ -100,7 +100,7 @@ impl CSSStyleRuleMethods for CSSStyleRule {
         if let Ok(mut s) = SelectorList::parse(&parser, &mut css_parser) {
             
             let mut guard = self.cssrule.shared_lock().write();
-            let mut stylerule = self.stylerule.write_with(&mut guard);
+            let stylerule = self.stylerule.write_with(&mut guard);
             mem::swap(&mut stylerule.selectors, &mut s);
             
             

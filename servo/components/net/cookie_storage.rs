@@ -103,7 +103,7 @@ impl CookieStorage {
 
         
         let domain = reg_host(&cookie.cookie.domain().as_ref().unwrap_or(&""));
-        let mut cookies = self.cookies_map.entry(domain).or_insert(vec![]);
+        let cookies = self.cookies_map.entry(domain).or_insert(vec![]);
 
         if cookies.len() == self.max_per_host {
             let old_len = cookies.len();
