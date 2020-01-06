@@ -633,7 +633,7 @@ U2FSoftTokenManager::IsRegistered(const nsTArray<uint8_t>& aKeyHandle,
 
 
 
-nsresult
+RefPtr<ResultPromise>
 U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
                               const nsTArray<uint8_t>& aApplication,
                               const nsTArray<uint8_t>& aChallenge,
@@ -642,13 +642,13 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
 {
   nsNSSShutDownPreventionLock locker;
   if (NS_WARN_IF(isAlreadyShutDown())) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return ResultPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
 
   if (!mInitialized) {
     nsresult rv = Init();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return ResultPromise::CreateAndReject(rv, __func__);
     }
   }
 
@@ -657,10 +657,10 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
     bool isRegistered = false;
     nsresult rv = IsRegistered(desc.id(), aApplication, isRegistered);
     if (NS_FAILED(rv)) {
-      return rv;
+      return ResultPromise::CreateAndReject(rv, __func__);
     }
     if (isRegistered) {
-      return NS_ERROR_DOM_NOT_ALLOWED_ERR;
+      return ResultPromise::CreateAndReject(NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
     }
   }
 
@@ -676,7 +676,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   nsresult rv = GetAttestationCertificate(slot, attestPrivKey, attestCert,
                                           locker);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
   MOZ_ASSERT(attestCert);
   MOZ_ASSERT(attestPrivKey);
@@ -686,7 +686,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   UniqueSECKEYPublicKey pubKey;
   rv = GenEcKeypair(slot, privKey, pubKey, locker);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
@@ -695,7 +695,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
                                                         aApplication.Length(),
                                                         privKey, locker);
   if (NS_WARN_IF(!keyHandleItem.get())) {
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
@@ -703,7 +703,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   if (NS_WARN_IF(!signedDataBuf.SetCapacity(1 + aApplication.Length() + aChallenge.Length() +
                                             keyHandleItem->len + kPublicKeyLen,
                                             mozilla::fallible))) {
-    return NS_ERROR_OUT_OF_MEMORY;
+    return ResultPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
 
   
@@ -721,7 +721,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   if (NS_WARN_IF(srv != SECSuccess)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
             ("Signature failure: %d", PORT_GetError()));
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
@@ -729,7 +729,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   if (NS_WARN_IF(!registrationBuf.SetCapacity(1 + kPublicKeyLen + 1 + keyHandleItem->len +
                                               attestCert.get()->derCert.len +
                                               signatureItem.len, mozilla::fallible))) {
-    return NS_ERROR_OUT_OF_MEMORY;
+    return ResultPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
   registrationBuf.AppendElement(0x05, mozilla::fallible);
   registrationBuf.AppendSECItem(pubKey->u.ec.publicValue);
@@ -739,7 +739,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
   registrationBuf.AppendSECItem(signatureItem);
   aRegistration = registrationBuf;
 
-  return NS_OK;
+  return ResultPromise::CreateAndResolve(NS_OK, __func__);
 }
 
 
@@ -758,7 +758,7 @@ U2FSoftTokenManager::Register(const nsTArray<WebAuthnScopedCredentialDescriptor>
 
 
 
-nsresult
+RefPtr<ResultPromise>
 U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
                           const nsTArray<uint8_t>& aApplication,
                           const nsTArray<uint8_t>& aChallenge,
@@ -767,7 +767,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
 {
   nsNSSShutDownPreventionLock locker;
   if (NS_WARN_IF(isAlreadyShutDown())) {
-    return NS_ERROR_NOT_AVAILABLE;
+    return ResultPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
 
   for (auto desc: aDescriptors) {
@@ -781,7 +781,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
 
   
   if (aKeyHandle.IsEmpty()) {
-    return NS_ERROR_DOM_NOT_ALLOWED_ERR;
+    return ResultPromise::CreateAndReject(NS_ERROR_DOM_NOT_ALLOWED_ERR, __func__);
   }
 
   MOZ_ASSERT(mWrappingKey);
@@ -794,7 +794,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
             ("Parameter lengths are wrong! challenge=%d app=%d expected=%d",
              (uint32_t)aChallenge.Length(), (uint32_t)aApplication.Length(), kParamLen));
 
-    return NS_ERROR_ILLEGAL_VALUE;
+    return ResultPromise::CreateAndReject(NS_ERROR_ILLEGAL_VALUE, __func__);
   }
 
   
@@ -806,7 +806,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
                                                            locker);
   if (NS_WARN_IF(!privKey.get())) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning, ("Couldn't get the priv key!"));
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
@@ -827,7 +827,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
   
   mozilla::dom::CryptoBuffer signedDataBuf;
   if (NS_WARN_IF(!signedDataBuf.SetCapacity(1 + 4 + (2 * kParamLen), mozilla::fallible))) {
-    return NS_ERROR_OUT_OF_MEMORY;
+    return ResultPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
 
   
@@ -844,7 +844,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
     nsresult rv = Base64URLEncode(signedDataBuf.Length(), signedDataBuf.Elements(),
                                   Base64URLEncodePaddingPolicy::Omit, base64);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_ERROR_FAILURE;
+      return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
     }
 
     MOZ_LOG(gNSSTokenLog, LogLevel::Debug,
@@ -858,14 +858,14 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
   if (NS_WARN_IF(srv != SECSuccess)) {
     MOZ_LOG(gNSSTokenLog, LogLevel::Warning,
             ("Signature failure: %d", PORT_GetError()));
-    return NS_ERROR_FAILURE;
+    return ResultPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
   mozilla::dom::CryptoBuffer signatureBuf;
   if (NS_WARN_IF(!signatureBuf.SetCapacity(1 + counterItem.len + signatureItem.len,
                                            mozilla::fallible))) {
-    return NS_ERROR_OUT_OF_MEMORY;
+    return ResultPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
 
   
@@ -875,7 +875,7 @@ U2FSoftTokenManager::Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aD
   signatureBuf.AppendSECItem(signatureItem);
 
   aSignature = signatureBuf;
-  return NS_OK;
+  return ResultPromise::CreateAndResolve(NS_OK, __func__);
 }
 
 void

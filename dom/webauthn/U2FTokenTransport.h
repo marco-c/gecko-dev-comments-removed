@@ -18,23 +18,27 @@
 namespace mozilla {
 namespace dom {
 
+typedef MozPromise<nsresult, nsresult, false> ResultPromise;
+
 class U2FTokenTransport
 {
 public:
   NS_INLINE_DECL_REFCOUNTING(U2FTokenTransport);
   U2FTokenTransport() {}
 
-  virtual nsresult Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
-                            const nsTArray<uint8_t>& aApplication,
-                            const nsTArray<uint8_t>& aChallenge,
-                             nsTArray<uint8_t>& aRegistration,
-                             nsTArray<uint8_t>& aSignature) = 0;
+  virtual RefPtr<ResultPromise>
+  Register(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+           const nsTArray<uint8_t>& aApplication,
+           const nsTArray<uint8_t>& aChallenge,
+            nsTArray<uint8_t>& aRegistration,
+            nsTArray<uint8_t>& aSignature) = 0;
 
-  virtual nsresult Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
-                        const nsTArray<uint8_t>& aApplication,
-                        const nsTArray<uint8_t>& aChallenge,
-                         nsTArray<uint8_t>& aKeyHandle,
-                         nsTArray<uint8_t>& aSignature) = 0;
+  virtual RefPtr<ResultPromise>
+  Sign(const nsTArray<WebAuthnScopedCredentialDescriptor>& aDescriptors,
+       const nsTArray<uint8_t>& aApplication,
+       const nsTArray<uint8_t>& aChallenge,
+        nsTArray<uint8_t>& aKeyHandle,
+        nsTArray<uint8_t>& aSignature) = 0;
 
   virtual void Cancel() = 0;
 
