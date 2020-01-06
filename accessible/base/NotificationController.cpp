@@ -809,7 +809,8 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
 
   
   for (uint32_t idx = 0; idx < mRelocations.Length(); idx++) {
-    if (mRelocations[idx]->IsInDocument()) {
+    
+    if (mRelocations[idx]->IsInDocument() && mRelocations[idx]->HasOwnContent()) {
       mDocument->DoARIAOwnsRelocation(mRelocations[idx]);
     }
   }
