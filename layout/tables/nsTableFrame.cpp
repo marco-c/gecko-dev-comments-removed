@@ -8031,6 +8031,27 @@ nsTableFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
              "What happened to our parent?");
   aResult.AppendElement(
     OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto colGroupFrame =
+    static_cast<nsTableColGroupFrame*>(mColGroups.LastChild());
+  if (colGroupFrame && colGroupFrame->GetColType() == eColGroupAnonymousCell) {
+    aResult.AppendElement(colGroupFrame);
+  }
 }
 
  void
