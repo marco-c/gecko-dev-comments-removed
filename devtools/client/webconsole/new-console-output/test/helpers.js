@@ -31,8 +31,8 @@ function setupActions() {
 
 
 
-function setupStore(input, hud) {
-  const store = configureStore(hud);
+function setupStore(input, hud, options) {
+  const store = configureStore(hud, options);
 
   
   input.forEach((cmd) => {

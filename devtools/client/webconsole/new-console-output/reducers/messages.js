@@ -17,9 +17,6 @@ const {
 const { getGripPreviewItems } = require("devtools/client/shared/components/reps/reps");
 const { getSourceNames } = require("devtools/client/shared/source-utils");
 
-const Services = require("Services");
-const logLimit = Math.max(Services.prefs.getIntPref("devtools.hud.loglimit"), 1);
-
 const MessageState = Immutable.Record({
   
   messagesById: Immutable.OrderedMap(),
@@ -40,7 +37,7 @@ const MessageState = Immutable.Record({
   removedMessages: [],
 });
 
-function messages(state = new MessageState(), action, filtersState) {
+function messages(state = new MessageState(), action, filtersState, prefsState) {
   const {
     messagesById,
     messagesUiById,
@@ -49,6 +46,8 @@ function messages(state = new MessageState(), action, filtersState) {
     currentGroup,
     visibleMessages,
   } = state;
+
+  const {logLimit} = prefsState;
 
   switch (action.type) {
     case constants.MESSAGE_ADD:
@@ -109,7 +108,7 @@ function messages(state = new MessageState(), action, filtersState) {
         
         
         if (record.messagesById.size > logLimit) {
-          limitTopLevelMessageCount(state, record);
+          limitTopLevelMessageCount(state, record, logLimit);
         }
       });
 
@@ -244,7 +243,7 @@ function getParentGroups(currentGroup, groupsById) {
 
 
 
-function limitTopLevelMessageCount(state, record) {
+function limitTopLevelMessageCount(state, record, logLimit) {
   let topLevelCount = record.groupsById.size === 0
     ? record.messagesById.size
     : getToplevelMessageCount(record);
