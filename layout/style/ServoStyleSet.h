@@ -349,8 +349,7 @@ public:
 
 
 
-  already_AddRefed<ServoStyleContext>
-  ResolveServoStyle(dom::Element* aElement, ServoTraversalFlags aFlags);
+  already_AddRefed<ServoStyleContext> ResolveServoStyle(dom::Element* aElement);
 
   bool GetKeyframesForName(const nsString& aName,
                            const nsTimingFunction& aTimingFunction,
