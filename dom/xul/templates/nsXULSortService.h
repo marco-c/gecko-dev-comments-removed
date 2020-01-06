@@ -7,19 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef nsXULTemplateResultSetRDF_h
 #define nsXULTemplateResultSetRDF_h
 

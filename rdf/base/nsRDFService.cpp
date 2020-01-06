@@ -17,20 +17,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "nsRDFService.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"

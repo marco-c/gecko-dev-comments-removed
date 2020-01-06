@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "nscore.h"
 #include "nsIPresShell.h"
 #include "nsStyleContext.h"

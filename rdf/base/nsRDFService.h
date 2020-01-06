@@ -4,19 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef nsRDFService_h__
 #define nsRDFService_h__
 

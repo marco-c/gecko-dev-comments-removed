@@ -6,18 +6,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #include "mozilla/PresShell.h"
 
 #include "mozilla/ArrayUtils.h"
