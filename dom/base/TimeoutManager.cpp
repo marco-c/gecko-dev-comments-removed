@@ -228,13 +228,25 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
   return !mFiringIdStack.Contains(aFiringId);
 }
 
+
+
+#define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5
+
 int32_t
 TimeoutManager::DOMMinTimeoutValue(Timeout* aTimeout) const {
   MOZ_DIAGNOSTIC_ASSERT(aTimeout);
-  bool throttleTracking = aTimeout->mIsTracking && mThrottleTrackingTimeouts;
-  auto minValue = throttleTracking ? gMinTrackingTimeoutValue
-                                   : gMinClampTimeoutValue;
-  return minValue;
+  int32_t result = 0;
+
+  if (aTimeout->mIsInterval ||
+      aTimeout->mNestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL) {
+    result = std::max(result, gMinClampTimeoutValue);
+  }
+
+  if (aTimeout->mIsTracking && mThrottleTrackingTimeouts) {
+    result = std::max(result, gMinTrackingTimeoutValue);
+  }
+
+  return result;
 }
 
 #define TRACKING_SEPARATE_TIMEOUT_BUCKETING_STRATEGY 0 // Consider all timeouts coming from tracking scripts as tracking
@@ -246,10 +258,6 @@ static int32_t gTimeoutBucketingStrategy = 0;
 
 #define DEFAULT_TRACKING_TIMEOUT_THROTTLING_DELAY  -1  // Only positive integers cause us to introduce a delay for tracking
                                                        
-
-
-
-#define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5
 
 
 
@@ -422,14 +430,8 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   
-  uint32_t realInterval = interval;
-  if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
-      timeout->mIsTracking) {
-    
-    
-    realInterval = std::max(realInterval,
-                            uint32_t(DOMMinTimeoutValue(timeout)));
-  }
+  uint32_t realInterval =
+    std::max(interval, DOMMinTimeoutValue(timeout));
 
   TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
   timeout->SetWhenOrTimeRemaining(TimeStamp::Now(), delta);
