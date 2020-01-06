@@ -8,8 +8,8 @@
 
 #include "./bit_reader.h"
 
+#include <brotli/types.h>
 #include "./port.h"
-#include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -20,7 +20,7 @@ void BrotliInitBitReader(BrotliBitReader* const br) {
   br->bit_pos_ = sizeof(br->val_) << 3;
 }
 
-int BrotliWarmupBitReader(BrotliBitReader* const br) {
+BROTLI_BOOL BrotliWarmupBitReader(BrotliBitReader* const br) {
   size_t aligned_read_mask = (sizeof(br->val_) >> 1) - 1;
   
 
@@ -30,17 +30,17 @@ int BrotliWarmupBitReader(BrotliBitReader* const br) {
   }
   if (BrotliGetAvailableBits(br) == 0) {
     if (!BrotliPullByte(br)) {
-      return 0;
+      return BROTLI_FALSE;
     }
   }
 
   while ((((size_t)br->next_in) & aligned_read_mask) != 0) {
     if (!BrotliPullByte(br)) {
       
-      return 1;
+      return BROTLI_TRUE;
     }
   }
-  return 1;
+  return BROTLI_TRUE;
 }
 
 #if defined(__cplusplus) || defined(c_plusplus)

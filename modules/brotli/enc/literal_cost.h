@@ -6,19 +6,25 @@
 
 
 
+
 #ifndef BROTLI_ENC_LITERAL_COST_H_
 #define BROTLI_ENC_LITERAL_COST_H_
 
-#include "./types.h"
+#include <brotli/types.h>
+#include "./port.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
 
 
 
-void EstimateBitCostsForLiterals(size_t pos, size_t len, size_t mask,
-                                 const uint8_t *data, float *cost);
+BROTLI_INTERNAL void BrotliEstimateBitCostsForLiterals(
+    size_t pos, size_t len, size_t mask, const uint8_t *data, float *cost);
 
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  

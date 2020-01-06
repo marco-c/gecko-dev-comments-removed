@@ -13,7 +13,7 @@
 #include "mozilla/Attributes.h"
 
 #ifdef MOZ_JAR_BROTLI
-struct BrotliStateStruct;
+struct BrotliDecoderStateStruct;
 #endif
 
 
@@ -58,7 +58,7 @@ class nsJARInputStream final : public nsIInputStream
     uint32_t               mOutCrc;     
     z_stream               mZs;         
 #ifdef MOZ_JAR_BROTLI
-    BrotliStateStruct*     mBrotliState; 
+    BrotliDecoderStateStruct* mBrotliState; 
 #endif
 
     

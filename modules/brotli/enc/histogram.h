@@ -9,86 +9,52 @@
 #ifndef BROTLI_ENC_HISTOGRAM_H_
 #define BROTLI_ENC_HISTOGRAM_H_
 
-#include <cstring>
-#include <limits>
-#include <vector>
-#include "./context.h"
+#include <string.h>  
+
+#include "../common/constants.h"
+#include <brotli/types.h>
+#include "./block_splitter.h"
 #include "./command.h"
-#include "./fast_log.h"
-#include "./prefix.h"
-#include "./types.h"
+#include "./context.h"
+#include "./port.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
-struct BlockSplit;
+#define FN(X) X ## Literal
+#define DATA_SIZE BROTLI_NUM_LITERAL_SYMBOLS
+#define DataType uint8_t
+#include "./histogram_inc.h"  
+#undef DataType
+#undef DATA_SIZE
+#undef FN
 
+#define FN(X) X ## Command
+#define DataType uint16_t
+#define DATA_SIZE BROTLI_NUM_COMMAND_SYMBOLS
+#include "./histogram_inc.h"  
+#undef DATA_SIZE
+#undef FN
 
-template<int kDataSize>
-struct Histogram {
-  Histogram(void) {
-    Clear();
-  }
-  void Clear(void) {
-    memset(data_, 0, sizeof(data_));
-    total_count_ = 0;
-    bit_cost_ = std::numeric_limits<double>::infinity();
-  }
-  void Add(size_t val) {
-    ++data_[val];
-    ++total_count_;
-  }
-  void Remove(size_t val) {
-    --data_[val];
-    --total_count_;
-  }
-  template<typename DataType>
-  void Add(const DataType *p, size_t n) {
-    total_count_ += n;
-    n += 1;
-    while(--n) ++data_[*p++];
-  }
-  void AddHistogram(const Histogram& v) {
-    total_count_ += v.total_count_;
-    for (size_t i = 0; i < kDataSize; ++i) {
-      data_[i] += v.data_[i];
-    }
-  }
+#define FN(X) X ## Distance
+#define DATA_SIZE BROTLI_NUM_DISTANCE_SYMBOLS
+#include "./histogram_inc.h"  
+#undef DataType
+#undef DATA_SIZE
+#undef FN
 
-  uint32_t data_[kDataSize];
-  size_t total_count_;
-  double bit_cost_;
-};
+BROTLI_INTERNAL void BrotliBuildHistogramsWithContext(
+    const Command* cmds, const size_t num_commands,
+    const BlockSplit* literal_split, const BlockSplit* insert_and_copy_split,
+    const BlockSplit* dist_split, const uint8_t* ringbuffer, size_t pos,
+    size_t mask, uint8_t prev_byte, uint8_t prev_byte2,
+    const ContextType* context_modes, HistogramLiteral* literal_histograms,
+    HistogramCommand* insert_and_copy_histograms,
+    HistogramDistance* copy_dist_histograms);
 
-
-typedef Histogram<256> HistogramLiteral;
-
-typedef Histogram<kNumCommandPrefixes> HistogramCommand;
-typedef Histogram<kNumDistancePrefixes> HistogramDistance;
-typedef Histogram<kNumBlockLenPrefixes> HistogramBlockLength;
-
-typedef Histogram<272> HistogramContextMap;
-
-typedef Histogram<258> HistogramBlockType;
-
-static const size_t kLiteralContextBits = 6;
-static const size_t kDistanceContextBits = 2;
-
-void BuildHistograms(
-    const Command* cmds,
-    const size_t num_commands,
-    const BlockSplit& literal_split,
-    const BlockSplit& insert_and_copy_split,
-    const BlockSplit& dist_split,
-    const uint8_t* ringbuffer,
-    size_t pos,
-    size_t mask,
-    uint8_t prev_byte,
-    uint8_t prev_byte2,
-    const std::vector<ContextType>& context_modes,
-    std::vector<HistogramLiteral>* literal_histograms,
-    std::vector<HistogramCommand>* insert_and_copy_histograms,
-    std::vector<HistogramDistance>* copy_dist_histograms);
-
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  

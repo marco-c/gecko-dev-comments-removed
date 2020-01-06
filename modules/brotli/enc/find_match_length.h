@@ -9,36 +9,37 @@
 #ifndef BROTLI_ENC_FIND_MATCH_LENGTH_H_
 #define BROTLI_ENC_FIND_MATCH_LENGTH_H_
 
-
+#include <brotli/types.h>
 #include "./port.h"
-#include "./types.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
 
 #if defined(__GNUC__) && defined(_LP64) && defined(IS_LITTLE_ENDIAN)
 
-static inline size_t FindMatchLengthWithLimit(const uint8_t* s1,
-                                              const uint8_t* s2,
-                                              size_t limit) {
+static BROTLI_INLINE size_t FindMatchLengthWithLimit(const uint8_t* s1,
+                                                     const uint8_t* s2,
+                                                     size_t limit) {
   size_t matched = 0;
   size_t limit2 = (limit >> 3) + 1;  
-  while (PREDICT_TRUE(--limit2)) {
-    if (PREDICT_FALSE(BROTLI_UNALIGNED_LOAD64(s2) ==
+  while (BROTLI_PREDICT_TRUE(--limit2)) {
+    if (BROTLI_PREDICT_FALSE(BROTLI_UNALIGNED_LOAD64(s2) ==
                       BROTLI_UNALIGNED_LOAD64(s1 + matched))) {
       s2 += 8;
       matched += 8;
     } else {
       uint64_t x =
           BROTLI_UNALIGNED_LOAD64(s2) ^ BROTLI_UNALIGNED_LOAD64(s1 + matched);
-      size_t matching_bits = static_cast<size_t>(__builtin_ctzll(x));
+      size_t matching_bits = (size_t)__builtin_ctzll(x);
       matched += matching_bits >> 3;
       return matched;
     }
   }
   limit = (limit & 7) + 1;  
   while (--limit) {
-    if (PREDICT_TRUE(s1[matched] == *s2)) {
+    if (BROTLI_PREDICT_TRUE(s1[matched] == *s2)) {
       ++s2;
       ++matched;
     } else {
@@ -48,16 +49,16 @@ static inline size_t FindMatchLengthWithLimit(const uint8_t* s1,
   return matched;
 }
 #else
-static inline size_t FindMatchLengthWithLimit(const uint8_t* s1,
-                                             const uint8_t* s2,
-                                             size_t limit) {
+static BROTLI_INLINE size_t FindMatchLengthWithLimit(const uint8_t* s1,
+                                                     const uint8_t* s2,
+                                                     size_t limit) {
   size_t matched = 0;
   const uint8_t* s2_limit = s2 + limit;
   const uint8_t* s2_ptr = s2;
   
-  
-  
-  
+
+
+
   while (s2_ptr <= s2_limit - 4 &&
          BROTLI_UNALIGNED_LOAD32(s2_ptr) ==
          BROTLI_UNALIGNED_LOAD32(s1 + matched)) {
@@ -72,6 +73,8 @@ static inline size_t FindMatchLengthWithLimit(const uint8_t* s1,
 }
 #endif
 
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  

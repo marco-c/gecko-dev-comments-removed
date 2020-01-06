@@ -9,7 +9,7 @@
 #ifndef BROTLI_DEC_HUFFMAN_H_
 #define BROTLI_DEC_HUFFMAN_H_
 
-#include "./types.h"
+#include <brotli/types.h>
 #include "./port.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -19,15 +19,15 @@ extern "C" {
 #define BROTLI_HUFFMAN_MAX_CODE_LENGTH 15
 
 
-#define BROTLI_HUFFMAN_MAX_CODE_LENGTHS_SIZE 704
-
-
 
 static const uint16_t kMaxHuffmanTableSize[] = {
   256, 402, 436, 468, 500, 534, 566, 598, 630, 662, 694, 726, 758, 790, 822,
   854, 886, 920, 952, 984, 1016, 1048, 1080};
+
 #define BROTLI_HUFFMAN_MAX_SIZE_26 396
+
 #define BROTLI_HUFFMAN_MAX_SIZE_258 632
+
 #define BROTLI_HUFFMAN_MAX_SIZE_272 646
 
 #define BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH 5

@@ -9,11 +9,15 @@
 #ifndef BROTLI_ENC_STATIC_DICT_H_
 #define BROTLI_ENC_STATIC_DICT_H_
 
-#include "./types.h"
+#include "../common/dictionary.h"
+#include <brotli/types.h>
+#include "./port.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
-static const size_t kMaxDictionaryMatchLen = 37;
+#define BROTLI_MAX_STATIC_DICTIONARY_MATCH_LEN 37
 static const uint32_t kInvalidMatch = 0xfffffff;
 
 
@@ -22,11 +26,14 @@ static const uint32_t kInvalidMatch = 0xfffffff;
 
 
 
-bool FindAllStaticDictionaryMatches(const uint8_t* data,
-                                    size_t min_length,
-                                    size_t max_length,
-                                    uint32_t* matches);
 
+BROTLI_INTERNAL BROTLI_BOOL BrotliFindAllStaticDictionaryMatches(
+    const BrotliDictionary* dictionary,
+    const uint8_t* data, size_t min_length, size_t max_length,
+    uint32_t* matches);
+
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  

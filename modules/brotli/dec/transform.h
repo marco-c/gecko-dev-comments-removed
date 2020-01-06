@@ -1,16 +1,16 @@
-/* Copyright 2013 Google Inc. All Rights Reserved.
 
-   Distributed under MIT license.
-   See file LICENSE for detail or copy at https://opensource.org/licenses/MIT
-*/
 
-/* Transformations on dictionary words. */
+
+
+
+
+
 
 #ifndef BROTLI_DEC_TRANSFORM_H_
 #define BROTLI_DEC_TRANSFORM_H_
 
+#include <brotli/types.h>
 #include "./port.h"
-#include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -53,15 +53,15 @@ static const char kPrefixSuffix[208] =
     " not \0er \0al \0ful \0ive \0less \0est \0ize \0\xc2\xa0\0ous ";
 
 enum {
-  /* EMPTY = ""
-     SP = " "
-     DQUOT = "\""
-     SQUOT = "'"
-     CLOSEBR = "]"
-     OPEN = "("
-     SLASH = "/"
-     NBSP = non-breaking space "\0xc2\xa0"
-  */
+  
+
+
+
+
+
+
+
+
   kPFix_EMPTY = 0,
   kPFix_SP = 1,
   kPFix_COMMASP = 3,
@@ -247,12 +247,12 @@ static int ToUpperCase(uint8_t* p) {
     }
     return 1;
   }
-  /* An overly simplified uppercasing model for utf-8. */
+  
   if (p[0] < 0xe0) {
     p[1] ^= 32;
     return 2;
   }
-  /* An arbitrary transform for three byte characters. */
+  
   p[2] ^= 5;
   return 3;
 }
@@ -294,7 +294,7 @@ static BROTLI_NOINLINE int TransformDictionaryWord(
 }
 
 #if defined(__cplusplus) || defined(c_plusplus)
-}  /* extern "C" */
+}  
 #endif
 
-#endif  /* BROTLI_DEC_TRANSFORM_H_ */
+#endif  

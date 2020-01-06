@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+#ifndef BROTLI_COMMON_VERSION_H_
+#define BROTLI_COMMON_VERSION_H_
+
+
+
+
+
+
+#define BROTLI_VERSION 0x0006000
+
+#endif  

@@ -10,36 +10,62 @@
 #ifndef BROTLI_ENC_HASH_H_
 #define BROTLI_ENC_HASH_H_
 
-#include <sys/types.h>
-#include <algorithm>
-#include <cstring>
-#include <limits>
+#include <string.h>  
 
-#include "./dictionary_hash.h"
+#include "../common/constants.h"
+#include "../common/dictionary.h"
+#include <brotli/types.h>
 #include "./fast_log.h"
 #include "./find_match_length.h"
+#include "./memory.h"
 #include "./port.h"
-#include "./prefix.h"
+#include "./quality.h"
 #include "./static_dict.h"
-#include "./transform.h"
-#include "./types.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
-static const size_t kMaxTreeSearchDepth = 64;
-static const size_t kMaxTreeCompLength = 128;
 
-static const uint32_t kDistanceCacheIndex[] = {
-  0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
-};
-static const int kDistanceCacheOffset[] = {
-  0, 0, 0, 0, -1, 1, -2, 2, -3, 3, -1, 1, -2, 2, -3, 3
-};
+
+
+
+
+
+
+
+
+
+typedef uint8_t* HasherHandle;
+
+typedef struct {
+  BrotliHasherParams params;
+
+  
+  BROTLI_BOOL is_prepared_;
+
+  size_t dict_num_lookups;
+  size_t dict_num_matches;
+} HasherCommon;
+
+static BROTLI_INLINE HasherCommon* GetHasherCommon(HasherHandle handle) {
+  return (HasherCommon*)handle;
+}
+
+#define score_t size_t
 
 static const uint32_t kCutoffTransformsCount = 10;
-static const uint8_t kCutoffTransforms[] = {
-  0, 12, 27, 23, 42, 63, 56, 48, 59, 64
-};
+
+
+static const uint64_t kCutoffTransforms =
+    BROTLI_MAKE_UINT64_T(0x071B520A, 0xDA2D3200);
+
+typedef struct HasherSearchResult {
+  size_t len;
+  size_t len_x_code; 
+  size_t distance;
+  score_t score;
+} HasherSearchResult;
 
 
 
@@ -48,927 +74,397 @@ static const uint8_t kCutoffTransforms[] = {
 
 
 static const uint32_t kHashMul32 = 0x1e35a7bd;
+static const uint64_t kHashMul64 = BROTLI_MAKE_UINT64_T(0x1e35a7bd, 0x1e35a7bd);
+static const uint64_t kHashMul64Long =
+    BROTLI_MAKE_UINT64_T(0x1fe35a7bU, 0xd3579bd3U);
 
-template<int kShiftBits>
-inline uint32_t Hash(const uint8_t *data) {
+static BROTLI_INLINE uint32_t Hash14(const uint8_t* data) {
   uint32_t h = BROTLI_UNALIGNED_LOAD32(data) * kHashMul32;
   
-  
-  return h >> (32 - kShiftBits);
+
+  return h >> (32 - 14);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline double BackwardReferenceScore(size_t copy_length,
-                                     size_t backward_reference_offset) {
-  return 5.4 * static_cast<double>(copy_length) -
-      1.20 * Log2FloorNonZero(backward_reference_offset);
+static BROTLI_INLINE void PrepareDistanceCache(
+    int* BROTLI_RESTRICT distance_cache, const int num_distances) {
+  if (num_distances > 4) {
+    int last_distance = distance_cache[0];
+    distance_cache[4] = last_distance - 1;
+    distance_cache[5] = last_distance + 1;
+    distance_cache[6] = last_distance - 2;
+    distance_cache[7] = last_distance + 2;
+    distance_cache[8] = last_distance - 3;
+    distance_cache[9] = last_distance + 3;
+    if (num_distances > 10) {
+      int next_last_distance = distance_cache[1];
+      distance_cache[10] = next_last_distance - 1;
+      distance_cache[11] = next_last_distance + 1;
+      distance_cache[12] = next_last_distance - 2;
+      distance_cache[13] = next_last_distance + 2;
+      distance_cache[14] = next_last_distance - 3;
+      distance_cache[15] = next_last_distance + 3;
+    }
+  }
 }
 
-inline double BackwardReferenceScoreUsingLastDistance(size_t copy_length,
+#define BROTLI_LITERAL_BYTE_SCORE 135
+#define BROTLI_DISTANCE_BIT_PENALTY 30
+
+#define BROTLI_SCORE_BASE (BROTLI_DISTANCE_BIT_PENALTY * 8 * sizeof(size_t))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static BROTLI_INLINE score_t BackwardReferenceScore(
+    size_t copy_length, size_t backward_reference_offset) {
+  return BROTLI_SCORE_BASE + BROTLI_LITERAL_BYTE_SCORE * (score_t)copy_length -
+      BROTLI_DISTANCE_BIT_PENALTY * Log2FloorNonZero(backward_reference_offset);
+}
+
+static BROTLI_INLINE score_t BackwardReferenceScoreUsingLastDistance(
+    size_t copy_length) {
+  return BROTLI_LITERAL_BYTE_SCORE * (score_t)copy_length +
+      BROTLI_SCORE_BASE + 15;
+}
+
+static BROTLI_INLINE score_t BackwardReferencePenaltyUsingLastDistance(
     size_t distance_short_code) {
-  static const double kDistanceShortCodeBitCost[16] = {
-    -0.6, 0.95, 1.17, 1.27,
-    0.93, 0.93, 0.96, 0.96, 0.99, 0.99,
-    1.05, 1.05, 1.15, 1.15, 1.25, 1.25
-  };
-  return 5.4 * static_cast<double>(copy_length) -
-      kDistanceShortCodeBitCost[distance_short_code];
+  return (score_t)39 + ((0x1CA10 >> (distance_short_code & 0xE)) & 0xE);
 }
 
-struct BackwardMatch {
-  BackwardMatch(void) : distance(0), length_and_code(0) {}
-
-  BackwardMatch(size_t dist, size_t len)
-      : distance(static_cast<uint32_t>(dist))
-      , length_and_code(static_cast<uint32_t>(len << 5)) {}
-
-  BackwardMatch(size_t dist, size_t len, size_t len_code)
-      : distance(static_cast<uint32_t>(dist))
-      , length_and_code(static_cast<uint32_t>(
-            (len << 5) | (len == len_code ? 0 : len_code))) {}
-
-  size_t length(void) const {
-    return length_and_code >> 5;
-  }
-  size_t length_code(void) const {
-    size_t code = length_and_code & 31;
-    return code ? code : length();
+static BROTLI_INLINE BROTLI_BOOL TestStaticDictionaryItem(
+    const BrotliDictionary* dictionary, size_t item, const uint8_t* data,
+    size_t max_length, size_t max_backward, HasherSearchResult* out) {
+  size_t len;
+  size_t dist;
+  size_t offset;
+  size_t matchlen;
+  size_t backward;
+  score_t score;
+  len = item & 0x1F;
+  dist = item >> 5;
+  offset = dictionary->offsets_by_length[len] + len * dist;
+  if (len > max_length) {
+    return BROTLI_FALSE;
   }
 
+  matchlen =
+      FindMatchLengthWithLimit(data, &dictionary->data[offset], len);
+  if (matchlen + kCutoffTransformsCount <= len || matchlen == 0) {
+    return BROTLI_FALSE;
+  }
+  {
+    size_t cut = len - matchlen;
+    size_t transform_id =
+        (cut << 2) + (size_t)((kCutoffTransforms >> (cut * 6)) & 0x3F);
+    backward = max_backward + dist + 1 +
+        (transform_id << dictionary->size_bits_by_length[len]);
+  }
+  score = BackwardReferenceScore(matchlen, backward);
+  if (score < out->score) {
+    return BROTLI_FALSE;
+  }
+  out->len = matchlen;
+  out->len_x_code = len ^ matchlen;
+  out->distance = backward;
+  out->score = score;
+  return BROTLI_TRUE;
+}
+
+static BROTLI_INLINE BROTLI_BOOL SearchInStaticDictionary(
+    const BrotliDictionary* dictionary, const uint16_t* dictionary_hash,
+    HasherHandle handle, const uint8_t* data, size_t max_length,
+    size_t max_backward, HasherSearchResult* out, BROTLI_BOOL shallow) {
+  size_t key;
+  size_t i;
+  BROTLI_BOOL is_match_found = BROTLI_FALSE;
+  HasherCommon* self = GetHasherCommon(handle);
+  if (self->dict_num_matches < (self->dict_num_lookups >> 7)) {
+    return BROTLI_FALSE;
+  }
+  key = Hash14(data) << 1;
+  for (i = 0; i < (shallow ? 1u : 2u); ++i, ++key) {
+    size_t item = dictionary_hash[key];
+    self->dict_num_lookups++;
+    if (item != 0) {
+      BROTLI_BOOL item_matches = TestStaticDictionaryItem(
+          dictionary, item, data, max_length, max_backward, out);
+      if (item_matches) {
+        self->dict_num_matches++;
+        is_match_found = BROTLI_TRUE;
+      }
+    }
+  }
+  return is_match_found;
+}
+
+typedef struct BackwardMatch {
   uint32_t distance;
   uint32_t length_and_code;
-};
+} BackwardMatch;
+
+static BROTLI_INLINE void InitBackwardMatch(BackwardMatch* self,
+    size_t dist, size_t len) {
+  self->distance = (uint32_t)dist;
+  self->length_and_code = (uint32_t)(len << 5);
+}
+
+static BROTLI_INLINE void InitDictionaryBackwardMatch(BackwardMatch* self,
+    size_t dist, size_t len, size_t len_code) {
+  self->distance = (uint32_t)dist;
+  self->length_and_code =
+      (uint32_t)((len << 5) | (len == len_code ? 0 : len_code));
+}
+
+static BROTLI_INLINE size_t BackwardMatchLength(const BackwardMatch* self) {
+  return self->length_and_code >> 5;
+}
+
+static BROTLI_INLINE size_t BackwardMatchLengthCode(const BackwardMatch* self) {
+  size_t code = self->length_and_code & 31;
+  return code ? code : BackwardMatchLength(self);
+}
+
+#define EXPAND_CAT(a, b) CAT(a, b)
+#define CAT(a, b) a ## b
+#define FN(X) EXPAND_CAT(X, HASHER())
+
+#define HASHER() H10
+#define BUCKET_BITS 17
+#define MAX_TREE_SEARCH_DEPTH 64
+#define MAX_TREE_COMP_LENGTH 128
+#include "./hash_to_binary_tree_inc.h"  
+#undef MAX_TREE_SEARCH_DEPTH
+#undef MAX_TREE_COMP_LENGTH
+#undef BUCKET_BITS
+#undef HASHER
+
+#define MAX_NUM_MATCHES_H10 128
 
 
 
 
 
+#define HASHER() H2
+#define BUCKET_BITS 16
+#define BUCKET_SWEEP 1
+#define HASH_LEN 5
+#define USE_DICTIONARY 1
+#include "./hash_longest_match_quickly_inc.h"  
+#undef BUCKET_SWEEP
+#undef USE_DICTIONARY
+#undef HASHER
 
-template <int kBucketBits, int kBucketSweep, bool kUseDictionary>
-class HashLongestMatchQuickly {
- public:
-  HashLongestMatchQuickly(void) {
-    Reset();
+#define HASHER() H3
+#define BUCKET_SWEEP 2
+#define USE_DICTIONARY 0
+#include "./hash_longest_match_quickly_inc.h"  
+#undef USE_DICTIONARY
+#undef BUCKET_SWEEP
+#undef BUCKET_BITS
+#undef HASHER
+
+#define HASHER() H4
+#define BUCKET_BITS 17
+#define BUCKET_SWEEP 4
+#define USE_DICTIONARY 1
+#include "./hash_longest_match_quickly_inc.h"  
+#undef USE_DICTIONARY
+#undef HASH_LEN
+#undef BUCKET_SWEEP
+#undef BUCKET_BITS
+#undef HASHER
+
+#define HASHER() H5
+#include "./hash_longest_match_inc.h"  
+#undef HASHER
+
+#define HASHER() H6
+#include "./hash_longest_match64_inc.h"  
+#undef HASHER
+
+#define BUCKET_BITS 15
+
+#define NUM_LAST_DISTANCES_TO_CHECK 4
+#define NUM_BANKS 1
+#define BANK_BITS 16
+#define HASHER() H40
+#include "./hash_forgetful_chain_inc.h"  
+#undef HASHER
+#undef NUM_LAST_DISTANCES_TO_CHECK
+
+#define NUM_LAST_DISTANCES_TO_CHECK 10
+#define HASHER() H41
+#include "./hash_forgetful_chain_inc.h"  
+#undef HASHER
+#undef NUM_LAST_DISTANCES_TO_CHECK
+#undef NUM_BANKS
+#undef BANK_BITS
+
+#define NUM_LAST_DISTANCES_TO_CHECK 16
+#define NUM_BANKS 512
+#define BANK_BITS 9
+#define HASHER() H42
+#include "./hash_forgetful_chain_inc.h"  
+#undef HASHER
+#undef NUM_LAST_DISTANCES_TO_CHECK
+#undef NUM_BANKS
+#undef BANK_BITS
+
+#undef BUCKET_BITS
+
+#define HASHER() H54
+#define BUCKET_BITS 20
+#define BUCKET_SWEEP 4
+#define HASH_LEN 7
+#define USE_DICTIONARY 0
+#include "./hash_longest_match_quickly_inc.h"  
+#undef USE_DICTIONARY
+#undef HASH_LEN
+#undef BUCKET_SWEEP
+#undef BUCKET_BITS
+#undef HASHER
+
+#undef FN
+#undef CAT
+#undef EXPAND_CAT
+
+#define FOR_GENERIC_HASHERS(H) H(2) H(3) H(4) H(5) H(6) H(40) H(41) H(42) H(54)
+#define FOR_ALL_HASHERS(H) FOR_GENERIC_HASHERS(H) H(10)
+
+static BROTLI_INLINE void DestroyHasher(
+    MemoryManager* m, HasherHandle* handle) {
+  if (*handle == NULL) return;
+  BROTLI_FREE(m, *handle);
+}
+
+static BROTLI_INLINE void HasherReset(HasherHandle handle) {
+  if (handle == NULL) return;
+  GetHasherCommon(handle)->is_prepared_ = BROTLI_FALSE;
+}
+
+static BROTLI_INLINE size_t HasherSize(const BrotliEncoderParams* params,
+    BROTLI_BOOL one_shot, const size_t input_size) {
+  size_t result = sizeof(HasherCommon);
+  switch (params->hasher.type) {
+#define SIZE_(N)                                                         \
+    case N:                                                              \
+      result += HashMemAllocInBytesH ## N(params, one_shot, input_size); \
+      break;
+    FOR_ALL_HASHERS(SIZE_)
+#undef SIZE_
+    default:
+      break;
   }
-  void Reset(void) {
-    need_init_ = true;
-    num_dict_lookups_ = 0;
-    num_dict_matches_ = 0;
-  }
-  void Init(void) {
-    if (need_init_) {
-      
-      
-      
-      
-      memset(&buckets_[0], 0, sizeof(buckets_));
-      need_init_ = false;
-    }
-  }
-  void InitForData(const uint8_t* data, size_t num) {
-    for (size_t i = 0; i < num; ++i) {
-      const uint32_t key = HashBytes(&data[i]);
-      memset(&buckets_[key], 0, kBucketSweep * sizeof(buckets_[0]));
-      need_init_ = false;
-    }
-  }
-  
-  
-  
-  inline void Store(const uint8_t *data, const uint32_t ix) {
-    const uint32_t key = HashBytes(data);
-    
-    const uint32_t off = (ix >> 3) % kBucketSweep;
-    buckets_[key + off] = ix;
-  }
+  return result;
+}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  inline bool FindLongestMatch(const uint8_t * __restrict ring_buffer,
-                               const size_t ring_buffer_mask,
-                               const int* __restrict distance_cache,
-                               const size_t cur_ix,
-                               const size_t max_length,
-                               const size_t max_backward,
-                               size_t * __restrict best_len_out,
-                               size_t * __restrict best_len_code_out,
-                               size_t * __restrict best_distance_out,
-                               double* __restrict best_score_out) {
-    const size_t best_len_in = *best_len_out;
-    const size_t cur_ix_masked = cur_ix & ring_buffer_mask;
-    const uint32_t key = HashBytes(&ring_buffer[cur_ix_masked]);
-    int compare_char = ring_buffer[cur_ix_masked + best_len_in];
-    double best_score = *best_score_out;
-    size_t best_len = best_len_in;
-    size_t cached_backward = static_cast<size_t>(distance_cache[0]);
-    size_t prev_ix = cur_ix - cached_backward;
-    bool match_found = false;
-    if (prev_ix < cur_ix) {
-      prev_ix &= static_cast<uint32_t>(ring_buffer_mask);
-      if (compare_char == ring_buffer[prev_ix + best_len]) {
-        size_t len = FindMatchLengthWithLimit(&ring_buffer[prev_ix],
-                                              &ring_buffer[cur_ix_masked],
-                                              max_length);
-        if (len >= 4) {
-          best_score = BackwardReferenceScoreUsingLastDistance(len, 0);
-          best_len = len;
-          *best_len_out = len;
-          *best_len_code_out = len;
-          *best_distance_out = cached_backward;
-          *best_score_out = best_score;
-          compare_char = ring_buffer[cur_ix_masked + best_len];
-          if (kBucketSweep == 1) {
-            buckets_[key] = static_cast<uint32_t>(cur_ix);
-            return true;
-          } else {
-            match_found = true;
-          }
-        }
-      }
-    }
-    if (kBucketSweep == 1) {
-      
-      prev_ix = buckets_[key];
-      buckets_[key] = static_cast<uint32_t>(cur_ix);
-      size_t backward = cur_ix - prev_ix;
-      prev_ix &= static_cast<uint32_t>(ring_buffer_mask);
-      if (compare_char != ring_buffer[prev_ix + best_len_in]) {
-        return false;
-      }
-      if (PREDICT_FALSE(backward == 0 || backward > max_backward)) {
-        return false;
-      }
-      const size_t len = FindMatchLengthWithLimit(&ring_buffer[prev_ix],
-                                                  &ring_buffer[cur_ix_masked],
-                                                  max_length);
-      if (len >= 4) {
-        *best_len_out = len;
-        *best_len_code_out = len;
-        *best_distance_out = backward;
-        *best_score_out = BackwardReferenceScore(len, backward);
-        return true;
-      }
-    } else {
-      uint32_t *bucket = buckets_ + key;
-      prev_ix = *bucket++;
-      for (int i = 0; i < kBucketSweep; ++i, prev_ix = *bucket++) {
-        const size_t backward = cur_ix - prev_ix;
-        prev_ix &= static_cast<uint32_t>(ring_buffer_mask);
-        if (compare_char != ring_buffer[prev_ix + best_len]) {
-          continue;
-        }
-        if (PREDICT_FALSE(backward == 0 || backward > max_backward)) {
-          continue;
-        }
-        const size_t len = FindMatchLengthWithLimit(&ring_buffer[prev_ix],
-                                                    &ring_buffer[cur_ix_masked],
-                                                    max_length);
-        if (len >= 4) {
-          const double score = BackwardReferenceScore(len, backward);
-          if (best_score < score) {
-            best_score = score;
-            best_len = len;
-            *best_len_out = best_len;
-            *best_len_code_out = best_len;
-            *best_distance_out = backward;
-            *best_score_out = score;
-            compare_char = ring_buffer[cur_ix_masked + best_len];
-            match_found = true;
-          }
-        }
-      }
-    }
-    if (kUseDictionary && !match_found &&
-        num_dict_matches_ >= (num_dict_lookups_ >> 7)) {
-      ++num_dict_lookups_;
-      const uint32_t dict_key = Hash<14>(&ring_buffer[cur_ix_masked]) << 1;
-      const uint16_t v = kStaticDictionaryHash[dict_key];
-      if (v > 0) {
-        const uint32_t len = v & 31;
-        const uint32_t dist = v >> 5;
-        const size_t offset =
-            kBrotliDictionaryOffsetsByLength[len] + len * dist;
-        if (len <= max_length) {
-          const size_t matchlen =
-              FindMatchLengthWithLimit(&ring_buffer[cur_ix_masked],
-                                       &kBrotliDictionary[offset], len);
-          if (matchlen + kCutoffTransformsCount > len && matchlen > 0) {
-            const size_t transform_id = kCutoffTransforms[len - matchlen];
-            const size_t word_id =
-                transform_id * (1u << kBrotliDictionarySizeBitsByLength[len]) +
-                dist;
-            const size_t backward = max_backward + word_id + 1;
-            const double score = BackwardReferenceScore(matchlen, backward);
-            if (best_score < score) {
-              ++num_dict_matches_;
-              best_score = score;
-              best_len = matchlen;
-              *best_len_out = best_len;
-              *best_len_code_out = len;
-              *best_distance_out = backward;
-              *best_score_out = best_score;
-              match_found = true;
-            }
-          }
-        }
-      }
-    }
-    const uint32_t off = (cur_ix >> 3) % kBucketSweep;
-    buckets_[key + off] = static_cast<uint32_t>(cur_ix);
-    return match_found;
-  }
-
-  enum { kHashLength = 5 };
-  enum { kHashTypeLength = 8 };
-  
-  
-  
-  static uint32_t HashBytes(const uint8_t *data) {
-    
-    
-    uint64_t h = (BROTLI_UNALIGNED_LOAD64(data) << 24) * kHashMul32;
-    
-    
-    return static_cast<uint32_t>(h >> (64 - kBucketBits));
-  }
-
-  enum { kHashMapSize = 4 << kBucketBits };
-
- private:
-  static const uint32_t kBucketSize = 1 << kBucketBits;
-  uint32_t buckets_[kBucketSize + kBucketSweep];
-  
-  bool need_init_;
-  size_t num_dict_lookups_;
-  size_t num_dict_matches_;
-};
-
-
-
-
-
-
-
-template <int kBucketBits,
-          int kBlockBits,
-          int kNumLastDistancesToCheck>
-class HashLongestMatch {
- public:
-  HashLongestMatch(void) {
-    Reset();
-  }
-
-  void Reset(void) {
-    need_init_ = true;
-    num_dict_lookups_ = 0;
-    num_dict_matches_ = 0;
-  }
-
-  void Init(void) {
-    if (need_init_) {
-      memset(&num_[0], 0, sizeof(num_));
-      need_init_ = false;
-    }
-  }
-
-  void InitForData(const uint8_t* data, size_t num) {
-    for (size_t i = 0; i < num; ++i) {
-      const uint32_t key = HashBytes(&data[i]);
-      num_[key] = 0;
-      need_init_ = false;
-    }
-  }
-
-  
-  
-  inline void Store(const uint8_t *data, const uint32_t ix) {
-    const uint32_t key = HashBytes(data);
-    const int minor_ix = num_[key] & kBlockMask;
-    buckets_[key][minor_ix] = ix;
-    ++num_[key];
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool FindLongestMatch(const uint8_t * __restrict data,
-                        const size_t ring_buffer_mask,
-                        const int* __restrict distance_cache,
-                        const size_t cur_ix,
-                        const size_t max_length,
-                        const size_t max_backward,
-                        size_t * __restrict best_len_out,
-                        size_t * __restrict best_len_code_out,
-                        size_t * __restrict best_distance_out,
-                        double * __restrict best_score_out) {
-    *best_len_code_out = 0;
-    const size_t cur_ix_masked = cur_ix & ring_buffer_mask;
-    bool match_found = false;
-    
-    double best_score = *best_score_out;
-    size_t best_len = *best_len_out;
-    *best_len_out = 0;
-    
-    for (size_t i = 0; i < kNumLastDistancesToCheck; ++i) {
-      const size_t idx = kDistanceCacheIndex[i];
-      const size_t backward =
-          static_cast<size_t>(distance_cache[idx] + kDistanceCacheOffset[i]);
-      size_t prev_ix = static_cast<size_t>(cur_ix - backward);
-      if (prev_ix >= cur_ix) {
-        continue;
-      }
-      if (PREDICT_FALSE(backward > max_backward)) {
-        continue;
-      }
-      prev_ix &= ring_buffer_mask;
-
-      if (cur_ix_masked + best_len > ring_buffer_mask ||
-          prev_ix + best_len > ring_buffer_mask ||
-          data[cur_ix_masked + best_len] != data[prev_ix + best_len]) {
-        continue;
-      }
-      const size_t len = FindMatchLengthWithLimit(&data[prev_ix],
-                                                  &data[cur_ix_masked],
-                                                  max_length);
-      if (len >= 3 || (len == 2 && i < 2)) {
-        
-        
-        
-        double score = BackwardReferenceScoreUsingLastDistance(len, i);
-        if (best_score < score) {
-          best_score = score;
-          best_len = len;
-          *best_len_out = best_len;
-          *best_len_code_out = best_len;
-          *best_distance_out = backward;
-          *best_score_out = best_score;
-          match_found = true;
-        }
-      }
-    }
-    const uint32_t key = HashBytes(&data[cur_ix_masked]);
-    const uint32_t * __restrict const bucket = &buckets_[key][0];
-    const size_t down = (num_[key] > kBlockSize) ? (num_[key] - kBlockSize) : 0;
-    for (size_t i = num_[key]; i > down;) {
-      --i;
-      size_t prev_ix = bucket[i & kBlockMask];
-      const size_t backward = cur_ix - prev_ix;
-      if (PREDICT_FALSE(backward == 0 || backward > max_backward)) {
+static BROTLI_INLINE void HasherSetup(MemoryManager* m, HasherHandle* handle,
+    BrotliEncoderParams* params, const uint8_t* data, size_t position,
+    size_t input_size, BROTLI_BOOL is_last) {
+  HasherHandle self = NULL;
+  HasherCommon* common = NULL;
+  BROTLI_BOOL one_shot = (position == 0 && is_last);
+  if (*handle == NULL) {
+    size_t alloc_size;
+    ChooseHasher(params, &params->hasher);
+    alloc_size = HasherSize(params, one_shot, input_size);
+    self = BROTLI_ALLOC(m, uint8_t, alloc_size);
+    if (BROTLI_IS_OOM(m)) return;
+    *handle = self;
+    common = GetHasherCommon(self);
+    common->params = params->hasher;
+    switch (common->params.type) {
+#define INITIALIZE_(N)                     \
+      case N:                              \
+        InitializeH ## N(*handle, params); \
         break;
-      }
-      prev_ix &= ring_buffer_mask;
-      if (cur_ix_masked + best_len > ring_buffer_mask ||
-          prev_ix + best_len > ring_buffer_mask ||
-          data[cur_ix_masked + best_len] != data[prev_ix + best_len]) {
-        continue;
-      }
-      const size_t len = FindMatchLengthWithLimit(&data[prev_ix],
-                                                  &data[cur_ix_masked],
-                                                  max_length);
-      if (len >= 4) {
-        
-        
-        
-        double score = BackwardReferenceScore(len, backward);
-        if (best_score < score) {
-          best_score = score;
-          best_len = len;
-          *best_len_out = best_len;
-          *best_len_code_out = best_len;
-          *best_distance_out = backward;
-          *best_score_out = best_score;
-          match_found = true;
-        }
-      }
-    }
-    buckets_[key][num_[key] & kBlockMask] = static_cast<uint32_t>(cur_ix);
-    ++num_[key];
-    if (!match_found && num_dict_matches_ >= (num_dict_lookups_ >> 7)) {
-      size_t dict_key = Hash<14>(&data[cur_ix_masked]) << 1;
-      for (int k = 0; k < 2; ++k, ++dict_key) {
-        ++num_dict_lookups_;
-        const uint16_t v = kStaticDictionaryHash[dict_key];
-        if (v > 0) {
-          const size_t len = v & 31;
-          const size_t dist = v >> 5;
-          const size_t offset =
-              kBrotliDictionaryOffsetsByLength[len] + len * dist;
-          if (len <= max_length) {
-            const size_t matchlen =
-                FindMatchLengthWithLimit(&data[cur_ix_masked],
-                                         &kBrotliDictionary[offset], len);
-            if (matchlen + kCutoffTransformsCount > len && matchlen > 0) {
-              const size_t transform_id = kCutoffTransforms[len - matchlen];
-              const size_t word_id =
-                  transform_id * (1 << kBrotliDictionarySizeBitsByLength[len]) +
-                  dist;
-              const size_t backward = max_backward + word_id + 1;
-              double score = BackwardReferenceScore(matchlen, backward);
-              if (best_score < score) {
-                ++num_dict_matches_;
-                best_score = score;
-                best_len = matchlen;
-                *best_len_out = best_len;
-                *best_len_code_out = len;
-                *best_distance_out = backward;
-                *best_score_out = best_score;
-                match_found = true;
-              }
-            }
-          }
-        }
-      }
-    }
-    return match_found;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  size_t FindAllMatches(const uint8_t* data,
-                        const size_t ring_buffer_mask,
-                        const size_t cur_ix,
-                        const size_t max_length,
-                        const size_t max_backward,
-                        BackwardMatch* matches) {
-    BackwardMatch* const orig_matches = matches;
-    const size_t cur_ix_masked = cur_ix & ring_buffer_mask;
-    size_t best_len = 1;
-    size_t stop = cur_ix - 64;
-    if (cur_ix < 64) { stop = 0; }
-    for (size_t i = cur_ix - 1; i > stop && best_len <= 2; --i) {
-      size_t prev_ix = i;
-      const size_t backward = cur_ix - prev_ix;
-      if (PREDICT_FALSE(backward > max_backward)) {
+      FOR_ALL_HASHERS(INITIALIZE_);
+#undef INITIALIZE_
+      default:
         break;
-      }
-      prev_ix &= ring_buffer_mask;
-      if (data[cur_ix_masked] != data[prev_ix] ||
-          data[cur_ix_masked + 1] != data[prev_ix + 1]) {
-        continue;
-      }
-      const size_t len =
-          FindMatchLengthWithLimit(&data[prev_ix], &data[cur_ix_masked],
-                                   max_length);
-      if (len > best_len) {
-        best_len = len;
-        *matches++ = BackwardMatch(backward, len);
-      }
     }
-    const uint32_t key = HashBytes(&data[cur_ix_masked]);
-    const uint32_t * __restrict const bucket = &buckets_[key][0];
-    const size_t down = (num_[key] > kBlockSize) ? (num_[key] - kBlockSize) : 0;
-    for (size_t i = num_[key]; i > down;) {
-      --i;
-      size_t prev_ix = bucket[i & kBlockMask];
-      const size_t backward = cur_ix - prev_ix;
-      if (PREDICT_FALSE(backward == 0 || backward > max_backward)) {
+    HasherReset(*handle);
+  }
+
+  self = *handle;
+  common = GetHasherCommon(self);
+  if (!common->is_prepared_) {
+    switch (common->params.type) {
+#define PREPARE_(N)                                      \
+      case N:                                            \
+        PrepareH ## N(self, one_shot, input_size, data); \
         break;
-      }
-      prev_ix &= ring_buffer_mask;
-      if (cur_ix_masked + best_len > ring_buffer_mask ||
-          prev_ix + best_len > ring_buffer_mask ||
-          data[cur_ix_masked + best_len] != data[prev_ix + best_len]) {
-        continue;
-      }
-      const size_t len =
-          FindMatchLengthWithLimit(&data[prev_ix], &data[cur_ix_masked],
-                                   max_length);
-      if (len > best_len) {
-        best_len = len;
-        *matches++ = BackwardMatch(backward, len);
-      }
-    }
-    buckets_[key][num_[key] & kBlockMask] = static_cast<uint32_t>(cur_ix);
-    ++num_[key];
-    uint32_t dict_matches[kMaxDictionaryMatchLen + 1];
-    for (size_t i = 0; i <= kMaxDictionaryMatchLen; ++i) {
-      dict_matches[i] = kInvalidMatch;
-    }
-    size_t minlen = std::max<size_t>(4, best_len + 1);
-    if (FindAllStaticDictionaryMatches(&data[cur_ix_masked], minlen, max_length,
-                                       &dict_matches[0])) {
-      size_t maxlen = std::min<size_t>(kMaxDictionaryMatchLen, max_length);
-      for (size_t l = minlen; l <= maxlen; ++l) {
-        uint32_t dict_id = dict_matches[l];
-        if (dict_id < kInvalidMatch) {
-          *matches++ = BackwardMatch(max_backward + (dict_id >> 5) + 1, l,
-                                     dict_id & 31);
-        }
-      }
-    }
-    return static_cast<size_t>(matches - orig_matches);
-  }
-
-  enum { kHashLength = 4 };
-  enum { kHashTypeLength = 4 };
-
-  
-  
-  
-  static uint32_t HashBytes(const uint8_t *data) {
-    uint32_t h = BROTLI_UNALIGNED_LOAD32(data) * kHashMul32;
-    
-    
-    return h >> (32 - kBucketBits);
-  }
-
-  enum { kHashMapSize = 2 << kBucketBits };
-
-  static const size_t kMaxNumMatches = 64 + (1 << kBlockBits);
-
- private:
-  
-  static const uint32_t kBucketSize = 1 << kBucketBits;
-
-  
-  
-  static const uint32_t kBlockSize = 1 << kBlockBits;
-
-  
-  static const uint32_t kBlockMask = (1 << kBlockBits) - 1;
-
-  
-  uint16_t num_[kBucketSize];
-
-  
-  uint32_t buckets_[kBucketSize][kBlockSize];
-
-  
-  bool need_init_;
-
-  size_t num_dict_lookups_;
-  size_t num_dict_matches_;
-};
-
-
-
-
-
-
-
-class HashToBinaryTree {
- public:
-  HashToBinaryTree() : forest_(NULL) {
-    Reset();
-  }
-
-  ~HashToBinaryTree() {
-    delete[] forest_;
-  }
-
-  void Reset() {
-    need_init_ = true;
-  }
-
-  void Init(int lgwin, size_t position, size_t bytes, bool is_last) {
-    if (need_init_) {
-      window_mask_ = (1u << lgwin) - 1u;
-      invalid_pos_ = static_cast<uint32_t>(-window_mask_);
-      for (uint32_t i = 0; i < kBucketSize; i++) {
-        buckets_[i] = invalid_pos_;
-      }
-      size_t num_nodes = (position == 0 && is_last) ? bytes : window_mask_ + 1;
-      forest_ = new uint32_t[2 * num_nodes];
-      need_init_ = false;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  size_t FindAllMatches(const uint8_t* data,
-                        const size_t ring_buffer_mask,
-                        const size_t cur_ix,
-                        const size_t max_length,
-                        const size_t max_backward,
-                        BackwardMatch* matches) {
-    BackwardMatch* const orig_matches = matches;
-    const size_t cur_ix_masked = cur_ix & ring_buffer_mask;
-    size_t best_len = 1;
-    size_t stop = cur_ix - 64;
-    if (cur_ix < 64) { stop = 0; }
-    for (size_t i = cur_ix - 1; i > stop && best_len <= 2; --i) {
-      size_t prev_ix = i;
-      const size_t backward = cur_ix - prev_ix;
-      if (PREDICT_FALSE(backward > max_backward)) {
-        break;
-      }
-      prev_ix &= ring_buffer_mask;
-      if (data[cur_ix_masked] != data[prev_ix] ||
-          data[cur_ix_masked + 1] != data[prev_ix + 1]) {
-        continue;
-      }
-      const size_t len =
-          FindMatchLengthWithLimit(&data[prev_ix], &data[cur_ix_masked],
-                                   max_length);
-      if (len > best_len) {
-        best_len = len;
-        *matches++ = BackwardMatch(backward, len);
-      }
-    }
-    if (best_len < max_length) {
-      matches = StoreAndFindMatches(data, cur_ix, ring_buffer_mask,
-                                    max_length, &best_len, matches);
-    }
-    uint32_t dict_matches[kMaxDictionaryMatchLen + 1];
-    for (size_t i = 0; i <= kMaxDictionaryMatchLen; ++i) {
-      dict_matches[i] = kInvalidMatch;
-    }
-    size_t minlen = std::max<size_t>(4, best_len + 1);
-    if (FindAllStaticDictionaryMatches(&data[cur_ix_masked], minlen, max_length,
-                                       &dict_matches[0])) {
-      size_t maxlen = std::min<size_t>(kMaxDictionaryMatchLen, max_length);
-      for (size_t l = minlen; l <= maxlen; ++l) {
-        uint32_t dict_id = dict_matches[l];
-        if (dict_id < kInvalidMatch) {
-          *matches++ = BackwardMatch(max_backward + (dict_id >> 5) + 1, l,
-                                     dict_id & 31);
-        }
-      }
-    }
-    return static_cast<size_t>(matches - orig_matches);
-  }
-
-  
-  
-  
-  void Store(const uint8_t* data,
-             const size_t ring_buffer_mask,
-             const size_t cur_ix) {
-    size_t best_len = 0;
-    StoreAndFindMatches(data, cur_ix, ring_buffer_mask, kMaxTreeCompLength,
-                        &best_len, NULL);
-  }
-
-  void StitchToPreviousBlock(size_t num_bytes,
-                             size_t position,
-                             const uint8_t* ringbuffer,
-                             size_t ringbuffer_mask) {
-    if (num_bytes >= 3 && position >= kMaxTreeCompLength) {
-      
-      
-      
-      const size_t i_start = position - kMaxTreeCompLength + 1;
-      const size_t i_end = std::min(position, i_start + num_bytes);
-      for (size_t i = i_start; i < i_end; ++i) {
-        
-        
-        
-        Store(ringbuffer, ringbuffer_mask, i);
-      }
-    }
-  }
-
-  static const size_t kMaxNumMatches = 64 + kMaxTreeSearchDepth;
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  BackwardMatch* StoreAndFindMatches(const uint8_t* const __restrict data,
-                                     const size_t cur_ix,
-                                     const size_t ring_buffer_mask,
-                                     const size_t max_length,
-                                     size_t* const __restrict best_len,
-                                     BackwardMatch* __restrict matches) {
-    const size_t cur_ix_masked = cur_ix & ring_buffer_mask;
-    const size_t max_backward = window_mask_ - 15;
-    const size_t max_comp_len = std::min(max_length, kMaxTreeCompLength);
-    const bool reroot_tree = max_length >= kMaxTreeCompLength;
-    const uint32_t key = HashBytes(&data[cur_ix_masked]);
-    size_t prev_ix = buckets_[key];
-    
-    
-    size_t node_left = LeftChildIndex(cur_ix);
-    
-    
-    size_t node_right = RightChildIndex(cur_ix);
-    
-    
-    size_t best_len_left = 0;
-    
-    
-    size_t best_len_right = 0;
-    if (reroot_tree) {
-      buckets_[key] = static_cast<uint32_t>(cur_ix);
-    }
-    for (size_t depth_remaining = kMaxTreeSearchDepth; ; --depth_remaining) {
-      const size_t backward = cur_ix - prev_ix;
-      const size_t prev_ix_masked = prev_ix & ring_buffer_mask;
-      if (backward == 0 || backward > max_backward || depth_remaining == 0) {
-        if (reroot_tree) {
-          forest_[node_left] = invalid_pos_;
-          forest_[node_right] = invalid_pos_;
-        }
-        break;
-      }
-      const size_t cur_len = std::min(best_len_left, best_len_right);
-      const size_t len = cur_len +
-          FindMatchLengthWithLimit(&data[cur_ix_masked + cur_len],
-                                   &data[prev_ix_masked + cur_len],
-                                   max_length - cur_len);
-      if (len > *best_len) {
-        *best_len = len;
-        if (matches) {
-          *matches++ = BackwardMatch(backward, len);
-        }
-        if (len >= max_comp_len) {
-          if (reroot_tree) {
-            forest_[node_left] = forest_[LeftChildIndex(prev_ix)];
-            forest_[node_right] = forest_[RightChildIndex(prev_ix)];
-          }
-          break;
-        }
-      }
-      if (data[cur_ix_masked + len] > data[prev_ix_masked + len]) {
-        best_len_left = len;
-        if (reroot_tree) {
-          forest_[node_left] = static_cast<uint32_t>(prev_ix);
-        }
-        node_left = RightChildIndex(prev_ix);
-        prev_ix = forest_[node_left];
-      } else {
-        best_len_right = len;
-        if (reroot_tree) {
-          forest_[node_right] = static_cast<uint32_t>(prev_ix);
-        }
-        node_right = LeftChildIndex(prev_ix);
-        prev_ix = forest_[node_right];
-      }
-    }
-    return matches;
-  }
-
-  inline size_t LeftChildIndex(const size_t pos) {
-    return 2 * (pos & window_mask_);
-  }
-
-  inline size_t RightChildIndex(const size_t pos) {
-    return 2 * (pos & window_mask_) + 1;
-  }
-
-  static uint32_t HashBytes(const uint8_t *data) {
-    uint32_t h = BROTLI_UNALIGNED_LOAD32(data) * kHashMul32;
-    
-    
-    return h >> (32 - kBucketBits);
-  }
-
-  static const int kBucketBits = 17;
-  static const size_t kBucketSize = 1 << kBucketBits;
-
-  
-  size_t window_mask_;
-
-  
-  
-  
-  uint32_t buckets_[kBucketSize];
-
-  
-  
-  
-  
-  uint32_t* forest_;
-
-  
-  
-  
-  uint32_t invalid_pos_;
-
-  bool need_init_;
-};
-
-struct Hashers {
-  
-  
-  
-  typedef HashLongestMatchQuickly<16, 1, true> H2;
-  typedef HashLongestMatchQuickly<16, 2, false> H3;
-  typedef HashLongestMatchQuickly<17, 4, true> H4;
-  typedef HashLongestMatch<14, 4, 4> H5;
-  typedef HashLongestMatch<14, 5, 4> H6;
-  typedef HashLongestMatch<15, 6, 10> H7;
-  typedef HashLongestMatch<15, 7, 10> H8;
-  typedef HashLongestMatch<15, 8, 16> H9;
-  typedef HashToBinaryTree H10;
-
-  Hashers(void) : hash_h2(0), hash_h3(0), hash_h4(0), hash_h5(0),
-                  hash_h6(0), hash_h7(0), hash_h8(0), hash_h9(0), hash_h10(0) {}
-
-  ~Hashers(void) {
-    delete hash_h2;
-    delete hash_h3;
-    delete hash_h4;
-    delete hash_h5;
-    delete hash_h6;
-    delete hash_h7;
-    delete hash_h8;
-    delete hash_h9;
-    delete hash_h10;
-  }
-
-  void Init(int type) {
-    switch (type) {
-      case 2: hash_h2 = new H2; break;
-      case 3: hash_h3 = new H3; break;
-      case 4: hash_h4 = new H4; break;
-      case 5: hash_h5 = new H5; break;
-      case 6: hash_h6 = new H6; break;
-      case 7: hash_h7 = new H7; break;
-      case 8: hash_h8 = new H8; break;
-      case 9: hash_h9 = new H9; break;
-      case 10: hash_h10 = new H10; break;
+      FOR_ALL_HASHERS(PREPARE_)
+#undef PREPARE_
       default: break;
     }
-  }
-
-  template<typename Hasher>
-  void WarmupHash(const size_t size, const uint8_t* dict, Hasher* hasher) {
-    hasher->Init();
-    for (size_t i = 0; i + Hasher::kHashTypeLength - 1 < size; i++) {
-      hasher->Store(&dict[i], static_cast<uint32_t>(i));
+    if (position == 0) {
+        common->dict_num_lookups = 0;
+        common->dict_num_matches = 0;
     }
+    common->is_prepared_ = BROTLI_TRUE;
   }
+}
 
-  
-  void PrependCustomDictionary(
-      int type, int lgwin, const size_t size, const uint8_t* dict) {
-    switch (type) {
-      case 2: WarmupHash(size, dict, hash_h2); break;
-      case 3: WarmupHash(size, dict, hash_h3); break;
-      case 4: WarmupHash(size, dict, hash_h4); break;
-      case 5: WarmupHash(size, dict, hash_h5); break;
-      case 6: WarmupHash(size, dict, hash_h6); break;
-      case 7: WarmupHash(size, dict, hash_h7); break;
-      case 8: WarmupHash(size, dict, hash_h8); break;
-      case 9: WarmupHash(size, dict, hash_h9); break;
-      case 10:
-        hash_h10->Init(lgwin, 0, size, false);
-        for (size_t i = 0; i + kMaxTreeCompLength - 1 < size; ++i) {
-          hash_h10->Store(dict, std::numeric_limits<size_t>::max(), i);
-        }
-        break;
-      default: break;
-    }
+
+static BROTLI_INLINE void HasherPrependCustomDictionary(
+    MemoryManager* m, HasherHandle* handle, BrotliEncoderParams* params,
+    const size_t size, const uint8_t* dict) {
+  size_t overlap;
+  size_t i;
+  HasherHandle self;
+  HasherSetup(m, handle, params, dict, 0, size, BROTLI_FALSE);
+  if (BROTLI_IS_OOM(m)) return;
+  self = *handle;
+  switch (GetHasherCommon(self)->params.type) {
+#define PREPEND_(N)                             \
+    case N:                                     \
+      overlap = (StoreLookaheadH ## N()) - 1;   \
+      for (i = 0; i + overlap < size; i++) {    \
+        StoreH ## N(self, dict, ~(size_t)0, i); \
+      }                                         \
+      break;
+    FOR_ALL_HASHERS(PREPEND_)
+#undef PREPEND_
+    default: break;
   }
+}
 
+static BROTLI_INLINE void InitOrStitchToPreviousBlock(
+    MemoryManager* m, HasherHandle* handle, const uint8_t* data, size_t mask,
+    BrotliEncoderParams* params, size_t position, size_t input_size,
+    BROTLI_BOOL is_last) {
+  HasherHandle self;
+  HasherSetup(m, handle, params, data, position, input_size, is_last);
+  if (BROTLI_IS_OOM(m)) return;
+  self = *handle;
+  switch (GetHasherCommon(self)->params.type) {
+#define INIT_(N)                                                           \
+    case N:                                                                \
+      StitchToPreviousBlockH ## N(self, input_size, position, data, mask); \
+    break;
+    FOR_ALL_HASHERS(INIT_)
+#undef INIT_
+    default: break;
+  }
+}
 
-  H2* hash_h2;
-  H3* hash_h3;
-  H4* hash_h4;
-  H5* hash_h5;
-  H6* hash_h6;
-  H7* hash_h7;
-  H8* hash_h8;
-  H9* hash_h9;
-  H10* hash_h10;
-};
-
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  

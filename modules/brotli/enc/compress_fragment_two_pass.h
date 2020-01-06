@@ -13,9 +13,13 @@
 #ifndef BROTLI_ENC_COMPRESS_FRAGMENT_TWO_PASS_H_
 #define BROTLI_ENC_COMPRESS_FRAGMENT_TWO_PASS_H_
 
-#include "./types.h"
+#include <brotli/types.h>
+#include "./memory.h"
+#include "./port.h"
 
-namespace brotli {
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
 
 static const size_t kCompressFragmentTwoPassBlockSize = 1 << 17;
 
@@ -29,12 +33,22 @@ static const size_t kCompressFragmentTwoPassBlockSize = 1 << 17;
 
 
 
-void BrotliCompressFragmentTwoPass(const uint8_t* input, size_t input_size,
-                                   bool is_last,
-                                   uint32_t* command_buf, uint8_t* literal_buf,
-                                   int* table, size_t table_size,
-                                   size_t* storage_ix, uint8_t* storage);
 
+
+
+BROTLI_INTERNAL void BrotliCompressFragmentTwoPass(MemoryManager* m,
+                                                   const uint8_t* input,
+                                                   size_t input_size,
+                                                   BROTLI_BOOL is_last,
+                                                   uint32_t* command_buf,
+                                                   uint8_t* literal_buf,
+                                                   int* table,
+                                                   size_t table_size,
+                                                   size_t* storage_ix,
+                                                   uint8_t* storage);
+
+#if defined(__cplusplus) || defined(c_plusplus)
 }  
+#endif
 
 #endif  
