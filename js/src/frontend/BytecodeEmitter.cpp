@@ -9516,15 +9516,6 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn, ValueUsage valueUsage )
         if (pn2->as<PropertyAccess>().isSuper()) {
             if (!emitSuperPropOp(pn2, JSOP_GETPROP_SUPER,  callop))
                 return false;
-        } else if ((pn->getOp() == JSOP_FUNCALL || pn->getOp() == JSOP_FUNAPPLY) &&
-                   pn2->expr()->getKind() == PNK_FUNCTION &&
-                   checkRunOnceContext()) {
-            
-            
-            emittingRunOnceLambda = true;
-            if (!emitPropOp(pn2, callop ? JSOP_CALLPROP : JSOP_GETPROP))
-                return false;
-            emittingRunOnceLambda = false;
         } else {
             if (!emitPropOp(pn2, callop ? JSOP_CALLPROP : JSOP_GETPROP))
                 return false;

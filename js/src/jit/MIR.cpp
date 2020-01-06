@@ -6197,18 +6197,9 @@ jit::PropertyReadNeedsTypeBarrier(JSContext* propertycx,
                 TypeSet::TypeList types;
                 if (!property.maybeTypes()->enumerateTypes(&types))
                     break;
-                
-                
-                
-                
-                
-                if (types.length() == 1 &&
-                    (!types[0].isPrimitive() ||
-                     types[0].primitive() != JSVAL_TYPE_MAGIC))
-                {
+                if (types.length() == 1) {
                     
                     observed->addType(types[0], GetJitContext()->temp->lifoAlloc());
-                    break;
                 }
                 break;
             }

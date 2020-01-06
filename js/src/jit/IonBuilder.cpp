@@ -7275,6 +7275,17 @@ IonBuilder::ensureDefiniteTypeSet(MDefinition* def, TemporaryTypeSet* types)
     return filter;
 }
 
+static size_t
+NumFixedSlots(JSObject* object)
+{
+    
+    
+    
+    
+    gc::AllocKind kind = object->asTenured().getAllocKind();
+    return gc::GetGCKindSlots(kind, object->getClass());
+}
+
 static bool
 IsUninitializedGlobalLexicalSlot(JSObject* obj, PropertyName* name)
 {
@@ -7296,48 +7307,32 @@ IonBuilder::getStaticName(bool* emitted, JSObject* staticObject, PropertyName* n
 
     bool isGlobalLexical = staticObject->is<LexicalEnvironmentObject>() &&
                            staticObject->as<LexicalEnvironmentObject>().isGlobal();
+    MOZ_ASSERT(isGlobalLexical ||
+               staticObject->is<GlobalObject>() ||
+               staticObject->is<CallObject>() ||
+               staticObject->is<ModuleEnvironmentObject>());
+    MOZ_ASSERT(staticObject->isSingleton());
 
     
     
     if (lexicalCheck)
         return Ok();
 
-    
-    if (!staticObject->isNative())
-        return Ok();
-
-    
-    Shape* propertyShape = staticObject->as<NativeObject>().lastProperty()->searchLinear(NameToId(name));
-    if (!propertyShape || !propertyShape->isDataDescriptor() || !propertyShape->hasSlot())
-        return Ok();
-    uint32_t slot = propertyShape->slot();
-
     TypeSet::ObjectKey* staticKey = TypeSet::ObjectKey::get(staticObject);
     if (analysisContext)
         staticKey->ensureTrackedProperty(analysisContext, NameToId(name));
 
-    
-    
-    
-    Maybe<HeapTypeSetKey> property;
-    if (!staticObject->is<CallObject>()) {
-        if (staticKey->unknownProperties())
-            return Ok();
+    if (staticKey->unknownProperties())
+        return Ok();
 
-        property.emplace(staticKey->property(id));
-
-        if (property.ref().nonData(constraints()) ||
-            !property.ref().maybeTypes() ||
-            !property.ref().maybeTypes()->definiteProperty())
-        {
-            
-            
-            MInstruction* obj = MConstant::NewConstraintlessObject(alloc(), staticObject);
-            current->add(obj);
-            addShapeGuard(obj, staticObject->as<NativeObject>().lastProperty(), Bailout_ShapeGuard);
-        } else {
-            MOZ_ASSERT(slot == property.ref().maybeTypes()->definiteSlot());
-        }
+    HeapTypeSetKey property = staticKey->property(id);
+    if (!property.maybeTypes() ||
+        !property.maybeTypes()->definiteProperty() ||
+        property.nonData(constraints()))
+    {
+        
+        
+        return Ok();
     }
 
     
@@ -7363,37 +7358,13 @@ IonBuilder::getStaticName(bool* emitted, JSObject* staticObject, PropertyName* n
 
         
         Value constantValue;
-        if (property.isSome() && property.ref().constant(constraints(), &constantValue)) {
+        if (property.constant(constraints(), &constantValue)) {
             pushConstant(constantValue);
             return Ok();
         }
     }
 
-    MOZ_TRY(loadStaticSlot(staticObject, barrier, types, slot));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!outermostBuilder()->script()->hadFrequentBailouts()) {
-        Value v = staticObject->as<NativeObject>().getSlot(slot);
-        if (v.isObject() &&
-            v.toObject().is<JSFunction>() &&
-            v.toObject().as<JSFunction>().isInterpreted())
-        {
-            JSObject* result = checkNurseryObject(&v.toObject().as<JSFunction>());
-            MDefinition* load = current->pop();
-            MInstruction* expected = MConstant::NewConstraintlessObject(alloc(), result);
-            expected->setResultTypeSet(MakeSingletonTypeSet(constraints(), result));
-            current->add(expected);
-            current->add(MGuardObjectIdentity::New(alloc(), load, expected, false, Bailout_LoadStaticObject));
-            current->push(expected);
-        }
-    }
+    MOZ_TRY(loadStaticSlot(staticObject, barrier, types, property.maybeTypes()->definiteSlot()));
 
     return Ok();
 }
@@ -7421,7 +7392,7 @@ IonBuilder::loadStaticSlot(JSObject* staticObject, BarrierKind barrier, Temporar
     if (barrier != BarrierKind::NoBarrier)
         rvalType = MIRType::Value;
 
-    return loadSlot(obj, slot, staticObject->as<NativeObject>().numFixedSlots(), rvalType, barrier, types);
+    return loadSlot(obj, slot, NumFixedSlots(staticObject), rvalType, barrier, types);
 }
 
 
@@ -7486,8 +7457,7 @@ IonBuilder::setStaticName(JSObject* staticObject, PropertyName* name)
         slotType = knownType;
 
     bool needsPreBarrier = property.needsBarrier(constraints());
-    return storeSlot(obj, property.maybeTypes()->definiteSlot(),
-                     staticObject->as<NativeObject>().numFixedSlots(),
+    return storeSlot(obj, property.maybeTypes()->definiteSlot(), NumFixedSlots(staticObject),
                      value, needsPreBarrier, slotType);
 }
 
@@ -10429,12 +10399,6 @@ IonBuilder::jsop_getprop(PropertyName* name)
             return Ok();
 
         
-        trackOptimizationAttempt(TrackedStrategy::GetProp_Static);
-        MOZ_TRY(getPropTryStaticAccess(&emitted, obj, name, barrier, types));
-        if (emitted)
-            return Ok();
-
-        
         trackOptimizationAttempt(TrackedStrategy::GetProp_InlineAccess);
         MOZ_TRY(getPropTryInlineAccess(&emitted, obj, name, barrier, types));
         if (emitted)
@@ -11231,17 +11195,6 @@ PropertyShapesHaveSameSlot(const BaselineInspector::ReceiverVector& receivers, j
     }
 
     return firstShape;
-}
-
-AbortReasonOr<Ok>
-IonBuilder::getPropTryStaticAccess(bool* emitted, MDefinition* obj, PropertyName* name,
-                                   BarrierKind barrier, TemporaryTypeSet* types)
-{
-    if (!obj->isConstant() || obj->type() != MIRType::Object)
-        return Ok();
-
-    obj->setImplicitlyUsedUnchecked();
-    return getStaticName(emitted, &obj->toConstant()->toObject(), name);
 }
 
 AbortReasonOr<Ok>
@@ -12677,49 +12630,11 @@ IonBuilder::walkEnvironmentChain(unsigned hops)
     return env;
 }
 
-static bool
-SearchEnvironmentChainForCallObject(JSObject* environment, JSScript* script, JSObject** pcall)
-{
-    while (environment && !environment->is<GlobalObject>()) {
-        if (environment->is<CallObject>() &&
-            environment->as<CallObject>().callee().nonLazyScript() == script)
-        {
-            *pcall = environment;
-            return true;
-        }
-        environment = environment->enclosingEnvironment();
-    }
-    return false;
-}
-
 bool
 IonBuilder::hasStaticEnvironmentObject(EnvironmentCoordinate ec, JSObject** pcall)
 {
     JSScript* outerScript = EnvironmentCoordinateFunctionScript(script(), pc);
-    if (!outerScript)
-        return false;
-
-    
-    
-    
-    if (*pc == JSOP_SETALIASEDVAR && !outerScript->treatAsRunOnce())
-        return false;
-
-    
-    
-    if (inlineCallInfo_) {
-        MDefinition* calleeDef = inlineCallInfo_->fun();
-        if (calleeDef->isConstant()) {
-            JSFunction* callee = &calleeDef->toConstant()->toObject().template as<JSFunction>();
-            JSObject* environment = callee->environment();
-            if (SearchEnvironmentChainForCallObject(environment, outerScript, pcall))
-                return true;
-        }
-    }
-
-    
-    
-    if (!outerScript->treatAsRunOnce())
+    if (!outerScript || !outerScript->treatAsRunOnce())
         return false;
 
     TypeSet::ObjectKey* funKey =
@@ -12740,8 +12655,16 @@ IonBuilder::hasStaticEnvironmentObject(EnvironmentCoordinate ec, JSObject** pcal
     envDef->setImplicitlyUsedUnchecked();
 
     JSObject* environment = script()->functionNonDelazifying()->environment();
-    if (SearchEnvironmentChainForCallObject(environment, outerScript, pcall))
-        return true;
+    while (environment && !environment->is<GlobalObject>()) {
+        if (environment->is<CallObject>() &&
+            environment->as<CallObject>().callee().nonLazyScript() == outerScript)
+        {
+            MOZ_ASSERT(environment->isSingleton());
+            *pcall = environment;
+            return true;
+        }
+        environment = environment->enclosingEnvironment();
+    }
 
     
     
@@ -12750,8 +12673,14 @@ IonBuilder::hasStaticEnvironmentObject(EnvironmentCoordinate ec, JSObject** pcal
 
     if (script() == outerScript && baselineFrame_ && info().osrPc()) {
         JSObject* singletonScope = baselineFrame_->singletonEnvChain;
-        if (SearchEnvironmentChainForCallObject(singletonScope, outerScript, pcall))
+        if (singletonScope &&
+            singletonScope->is<CallObject>() &&
+            singletonScope->as<CallObject>().callee().nonLazyScript() == outerScript)
+        {
+            MOZ_ASSERT(singletonScope->isSingleton());
+            *pcall = singletonScope;
             return true;
+        }
     }
 
     return true;

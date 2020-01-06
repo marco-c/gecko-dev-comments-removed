@@ -143,9 +143,6 @@ enum BailoutKind
     Bailout_DoubleOutput,
 
     
-    Bailout_LoadStaticObject,
-
-    
 
 
     
@@ -236,8 +233,6 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_NonStringInputInvalidate";
       case Bailout_DoubleOutput:
         return "Bailout_DoubleOutput";
-      case Bailout_LoadStaticObject:
-        return "Bailout_LoadStaticObject";
 
       
       case Bailout_ArgumentCheck:
