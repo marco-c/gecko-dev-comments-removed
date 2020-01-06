@@ -232,7 +232,9 @@ TestEndpointOpensOpenedChild::RecvHi()
   
   
   MessageLoop::current()->PostTask(
-    NewNonOwningRunnableMethod(this, &TestEndpointOpensOpenedChild::Close));
+    NewNonOwningRunnableMethod("ipc::IToplevelProtocol::Close",
+                               this,
+                               &TestEndpointOpensOpenedChild::Close));
   return IPC_OK();
 }
 
@@ -253,7 +255,9 @@ ShutdownTestEndpointOpensOpenedChild(TestEndpointOpensOpenedChild* child,
 
   
   gMainThread->PostTask(
-    NewNonOwningRunnableMethod(gOpensChild, &TestEndpointOpensChild::Close));
+    NewNonOwningRunnableMethod("ipc::IToplevelProtocol::Close",
+                               gOpensChild,
+                               &TestEndpointOpensChild::Close));
 }
 
 void

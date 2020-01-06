@@ -1371,6 +1371,10 @@ HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       }
     } else if (aNotify && aName == nsGkAtoms::disabled) {
       mDisabledChanged = true;
+    } else if (aName == nsGkAtoms::dir &&
+               AttrValueIs(kNameSpaceID_None, nsGkAtoms::dir,
+                           nsGkAtoms::_auto, eIgnoreCase)) {
+      SetDirectionIfAuto(false, aNotify);
     } else if (mType == NS_FORM_INPUT_RADIO && aName == nsGkAtoms::required) {
       nsCOMPtr<nsIRadioGroupContainer> container = GetRadioGroupContainer();
 
@@ -1498,7 +1502,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                  "HTML5 spec does not allow underflow for type=range");
     } else if (aName == nsGkAtoms::dir &&
                aValue && aValue->Equals(nsGkAtoms::_auto, eIgnoreCase)) {
-      SetDirectionFromValue(aNotify);
+      SetDirectionIfAuto(true, aNotify);
     } else if (aName == nsGkAtoms::lang) {
       if (mType == NS_FORM_INPUT_NUMBER) {
         
@@ -4872,7 +4876,9 @@ HTMLInputElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       ClearBrokenState();
       RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
       nsContentUtils::AddScriptRunner(
-        NewRunnableMethod(this, &HTMLInputElement::MaybeLoadImage));
+        NewRunnableMethod("dom::HTMLInputElement::MaybeLoadImage",
+                          this,
+                          &HTMLInputElement::MaybeLoadImage));
     }
   }
 
@@ -4883,9 +4889,7 @@ HTMLInputElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
 
   
-  if (HasDirAuto()) {
-    SetDirectionFromValue(false);
-  }
+  SetDirectionIfAuto(HasDirAuto(), false);
 
   
   
@@ -6323,12 +6327,17 @@ HTMLInputElement::SetDefaultValueAsValue()
 }
 
 void
-HTMLInputElement::SetDirectionFromValue(bool aNotify)
+HTMLInputElement::SetDirectionIfAuto(bool aAuto, bool aNotify)
 {
-  if (IsSingleLineTextControl(true)) {
-    nsAutoString value;
-    GetValue(value, CallerType::System);
-    SetDirectionalityFromValue(this, value, aNotify);
+  if (aAuto) {
+    SetHasDirAuto();
+    if (IsSingleLineTextControl(true)) {
+      nsAutoString value;
+      GetValue(value, CallerType::System);
+      SetDirectionalityFromValue(this, value, aNotify);
+    }
+  } else {
+    ClearHasDirAuto();
   }
 }
 
@@ -7768,7 +7777,7 @@ HTMLInputElement::OnValueChanged(bool aNotify, bool aWasInteractiveUserChange)
   UpdateAllValidityStates(aNotify);
 
   if (HasDirAuto()) {
-    SetDirectionFromValue(aNotify);
+    SetDirectionIfAuto(true, aNotify);
   }
 
   

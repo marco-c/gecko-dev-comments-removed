@@ -192,7 +192,7 @@ MediaDecoder::ResourceCallback::TimerCallback(nsITimer* aTimer, void* aClosure)
   MOZ_ASSERT(NS_IsMainThread());
   ResourceCallback* thiz = static_cast<ResourceCallback*>(aClosure);
   MOZ_ASSERT(thiz->mDecoder);
-  thiz->mDecoder->NotifyDataArrivedInternal();
+  thiz->mDecoder->NotifyDataArrived();
   thiz->mTimerArmed = false;
 }
 
@@ -204,7 +204,7 @@ MediaDecoder::ResourceCallback::NotifyDataArrived()
     return;
   }
 
-  mDecoder->DownloadProgressed();
+  mDecoder->NotifyDownloadProgressed();
 
   if (mTimerArmed) {
     return;
@@ -214,30 +214,36 @@ MediaDecoder::ResourceCallback::NotifyDataArrived()
   
   
   mTimerArmed = true;
-  mTimer->InitWithFuncCallback(
-    TimerCallback, this, sDelay, nsITimer::TYPE_ONE_SHOT);
+  mTimer->InitWithNamedFuncCallback(
+    TimerCallback,
+    this,
+    sDelay,
+    nsITimer::TYPE_ONE_SHOT,
+    "MediaDecoder::ResourceCallback::NotifyDataArrived");
 }
 
 void
 MediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (!self->mDecoder) {
-      return;
-    }
-    self->mDecoder->NotifyDownloadEnded(aStatus);
-    if (NS_SUCCEEDED(aStatus)) {
-      MediaDecoderOwner* owner = self->GetMediaOwner();
-      MOZ_ASSERT(owner);
-      owner->DownloadSuspended();
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaDecoder::ResourceCallback::NotifyDataEnded", [=]() {
+      if (!self->mDecoder) {
+        return;
+      }
+      self->mDecoder->NotifyDownloadEnded(aStatus);
+      if (NS_SUCCEEDED(aStatus)) {
+        MediaDecoderOwner* owner = self->GetMediaOwner();
+        MOZ_ASSERT(owner);
+        owner->DownloadSuspended();
 
-      
-      
-      
-      self->mDecoder->NotifySuspendedStatusChanged();
-    }
-  });
+        
+        
+        
+        
+        self->mDecoder->NotifySuspendedStatusChanged();
+      }
+    });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -264,11 +270,12 @@ MediaDecoder::ResourceCallback::NotifyBytesConsumed(int64_t aBytes,
                                                     int64_t aOffset)
 {
   RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    if (self->mDecoder) {
-      self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
-    }
-  });
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+    "MediaDecoder::ResourceCallback::NotifyBytesConsumed", [=]() {
+      if (self->mDecoder) {
+        self->mDecoder->NotifyBytesConsumed(aBytes, aOffset);
+      }
+    });
   mAbstractMainThread->Dispatch(r.forget());
 }
 
@@ -471,10 +478,11 @@ MediaDecoder::Shutdown()
     
     
     RefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
-      self->mVideoFrameContainer = nullptr;
-      MediaShutdownManager::Instance().Unregister(self);
-    });
+    nsCOMPtr<nsIRunnable> r =
+      NS_NewRunnableFunction("MediaDecoder::Shutdown", [self]() {
+        self->mVideoFrameContainer = nullptr;
+        MediaShutdownManager::Instance().Unregister(self);
+      });
     mAbstractMainThread->Dispatch(r.forget());
   }
 
@@ -1030,15 +1038,6 @@ MediaDecoder::ShouldThrottleDownload()
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_TRUE(mDecoderStateMachine, false);
 
-  int64_t length = mResource->GetLength();
-  if (length > 0 &&
-      length <= int64_t(MediaPrefs::MediaMemoryCacheMaxSize()) * 1024) {
-    
-    
-    
-    return false;
-  }
-
   if (Preferences::GetBool("media.throttle-regardless-of-download-rate",
                            false)) {
     return true;
@@ -1054,7 +1053,7 @@ MediaDecoder::ShouldThrottleDownload()
 }
 
 void
-MediaDecoder::DownloadProgressed()
+MediaDecoder::NotifyDownloadProgressed()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
@@ -1549,18 +1548,11 @@ void MediaDecoder::AddSizeOfResources(ResourceSizes* aSizes)
 }
 
 void
-MediaDecoder::NotifyDataArrivedInternal()
+MediaDecoder::NotifyDataArrived()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   mDataArrivedEvent.Notify();
-}
-
-void
-MediaDecoder::NotifyDataArrived()
-{
-  NotifyDataArrivedInternal();
-  DownloadProgressed();
 }
 
 

@@ -120,7 +120,11 @@ using namespace mozilla::dom;
 class nsAutoFocusEvent : public Runnable
 {
 public:
-  explicit nsAutoFocusEvent(nsGenericHTMLFormElement* aElement) : mElement(aElement) {}
+  explicit nsAutoFocusEvent(nsGenericHTMLFormElement* aElement)
+    : mozilla::Runnable("nsAutoFocusEvent")
+    , mElement(aElement)
+  {
+  }
 
   NS_IMETHOD Run() override {
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
@@ -198,16 +202,17 @@ nsGenericHTMLElement::CopyInnerTo(Element* aDst, bool aPreallocateChildren)
       
       
 
-      
-      
-      
-      nsAttrValue valueCopy(*value);
-      rv = aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
-                               name->GetPrefix(), valueCopy, false);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsAutoString valStr;
+      value->ToString(valStr);
 
-      DeclarationBlock* cssDeclaration = value->GetCSSDeclarationValue();
-      cssDeclaration->SetImmutable();
+      DeclarationBlock* decl = value->GetCSSDeclarationValue();
+      
+      
+      
+      RefPtr<DeclarationBlock> declClone = decl->Clone();
+
+      rv = aDst->SetInlineStyleDeclaration(declClone, &valStr, false);
+      NS_ENSURE_SUCCESS(rv, rv);
     } else if (reparse) {
       nsAutoString valStr;
       value->ToString(valStr);
@@ -725,48 +730,27 @@ nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
     }
     else if (aName == nsGkAtoms::dir) {
       Directionality dir = eDir_LTR;
-      
-      
-      
-      bool recomputeDirectionality = false;
-      
-      
-      
-      EventStates dirStates;
       if (aValue && aValue->Type() == nsAttrValue::eEnum) {
         SetHasValidDir();
-        dirStates |= NS_EVENT_STATE_HAS_DIR_ATTR;
         Directionality dirValue = (Directionality)aValue->GetEnumValue();
         if (dirValue == eDir_Auto) {
-          dirStates |= NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO;
+          SetHasDirAuto();
+          ClearHasFixedDir();
         } else {
           dir = dirValue;
           SetDirectionality(dir, aNotify);
-          if (dirValue == eDir_LTR) {
-            dirStates |= NS_EVENT_STATE_DIR_ATTR_LTR;
-          } else {
-            MOZ_ASSERT(dirValue == eDir_RTL);
-            dirStates |= NS_EVENT_STATE_DIR_ATTR_RTL;
-          }
+          ClearHasDirAuto();
+          SetHasFixedDir();
         }
       } else {
-        if (aValue) {
-          
-          dirStates |= NS_EVENT_STATE_HAS_DIR_ATTR;
-        }
         ClearHasValidDir();
+        ClearHasFixedDir();
         if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
-          dirStates |= NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO;
+          SetHasDirAuto();
         } else {
-          recomputeDirectionality = true;
+          ClearHasDirAuto();
+          dir = RecomputeDirectionality(this, aNotify);
         }
-      }
-      
-      EventStates oldDirStates = State() & DIR_ATTR_STATES;
-      EventStates changedStates = dirStates ^ oldDirStates;
-      ToggleStates(changedStates, aNotify);
-      if (recomputeDirectionality) {
-        dir = RecomputeDirectionality(this, aNotify);
       }
       SetDirectionalityOnDescendants(this, dir, aNotify);
     } else if (aName == nsGkAtoms::contenteditable) {

@@ -131,7 +131,9 @@ class PluginFocusSetter : public Runnable
 {
 public:
   PluginFocusSetter(nsIWidget* aWidget, Element* aElement)
-  : mWidget(aWidget), mElement(aElement)
+    : Runnable("PluginFocusSetter")
+    , mWidget(aWidget)
+    , mElement(aElement)
   {
   }
 
@@ -269,7 +271,8 @@ HTMLObjectElement::BindToTree(nsIDocument *aDocument,
   
   if (mIsDoneAddingChildren && !pluginDoc) {
     void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
-    nsContentUtils::AddScriptRunner(NewRunnableMethod(this, start));
+    nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("dom::HTMLObjectElement::BindToTree", this, start));
   }
 
   return NS_OK;

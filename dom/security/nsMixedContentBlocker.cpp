@@ -119,8 +119,13 @@ enum MixedContentHSTSPrimingState {
 class nsMixedContentEvent : public Runnable
 {
 public:
-  nsMixedContentEvent(nsISupports *aContext, MixedContentTypes aType, bool aRootHasSecureConnection)
-    : mContext(aContext), mType(aType), mRootHasSecureConnection(aRootHasSecureConnection)
+  nsMixedContentEvent(nsISupports* aContext,
+                      MixedContentTypes aType,
+                      bool aRootHasSecureConnection)
+    : mozilla::Runnable("nsMixedContentEvent")
+    , mContext(aContext)
+    , mType(aType)
+    , mRootHasSecureConnection(aRootHasSecureConnection)
   {}
 
   NS_IMETHOD Run() override
@@ -924,7 +929,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aContentLocation,
-        0, originAttributes, &cached, nullptr, &hsts);
+        0, originAttributes, &cached, &hsts);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (hsts && sUseHSTS) {
@@ -1150,7 +1155,7 @@ nsMixedContentBlocker::AccumulateMixedContentHSTS(
     return;
   }
   rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, 0,
-                        aOriginAttributes, nullptr, nullptr, &hsts);
+                        aOriginAttributes, nullptr, &hsts);
   if (NS_FAILED(rv)) {
     return;
   }

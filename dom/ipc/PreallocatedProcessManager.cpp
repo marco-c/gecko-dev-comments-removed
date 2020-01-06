@@ -206,7 +206,9 @@ PreallocatedProcessManagerImpl::AllocateAfterDelay()
   
   
   NS_DelayedDispatchToCurrentThread(
-    NewRunnableMethod(this, &PreallocatedProcessManagerImpl::AllocateNow),
+    NewRunnableMethod("PreallocatedProcessManagerImpl::AllocateNow",
+                      this,
+                      &PreallocatedProcessManagerImpl::AllocateNow),
     Preferences::GetUint("dom.ipc.processPrelaunch.delayMs",
                          DEFAULT_ALLOCATE_DELAY));
 }
@@ -218,7 +220,10 @@ PreallocatedProcessManagerImpl::AllocateOnIdle()
     return;
   }
 
-  NS_IdleDispatchToCurrentThread(NewRunnableMethod(this, &PreallocatedProcessManagerImpl::AllocateNow));
+  NS_IdleDispatchToCurrentThread(
+    NewRunnableMethod("PreallocatedProcessManagerImpl::AllocateNow",
+                      this,
+                      &PreallocatedProcessManagerImpl::AllocateNow));
 }
 
 void

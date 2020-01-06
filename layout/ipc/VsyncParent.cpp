@@ -50,7 +50,8 @@ VsyncParent::NotifyVsync(TimeStamp aTimeStamp)
   
   MOZ_ASSERT(!IsOnBackgroundThread());
   nsCOMPtr<nsIRunnable> vsyncEvent =
-    NewRunnableMethod<TimeStamp>(this,
+    NewRunnableMethod<TimeStamp>("layout::VsyncParent::DispatchVsyncEvent",
+                                 this,
                                  &VsyncParent::DispatchVsyncEvent,
                                  aTimeStamp);
   MOZ_ALWAYS_SUCCEEDS(mBackgroundThread->Dispatch(vsyncEvent, NS_DISPATCH_NORMAL));

@@ -157,7 +157,9 @@ PresentationDeviceManager::GetAvailableDevices(nsIArray* aPresentationUrls, nsIA
   
   
   NS_DispatchToMainThread(
-      NewRunnableMethod(this, &PresentationDeviceManager::ForceDiscovery));
+    NewRunnableMethod("dom::PresentationDeviceManager::ForceDiscovery",
+                      this,
+                      &PresentationDeviceManager::ForceDiscovery));
 
   nsTArray<nsString> presentationUrls;
   if (aPresentationUrls) {

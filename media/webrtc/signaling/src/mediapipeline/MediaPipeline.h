@@ -334,6 +334,7 @@ class ConduitDeleteEvent: public Runnable
 {
 public:
   explicit ConduitDeleteEvent(already_AddRefed<MediaSessionConduit> aConduit) :
+    Runnable("ConduitDeleteEvent"),
     mConduit(aConduit) {}
 
   

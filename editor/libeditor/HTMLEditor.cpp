@@ -164,7 +164,7 @@ HTMLEditor::~HTMLEditor()
   
   RemoveAllDefaultProperties();
 
-  if (mLinkHandler && IsInitialized()) {
+  if (mLinkHandler && mDocWeak) {
     nsCOMPtr<nsIPresShell> ps = GetPresShell();
 
     if (ps && ps->GetPresContext()) {
@@ -327,7 +327,7 @@ HTMLEditor::PreDestroy(bool aDestroyingFrames)
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
+  nsCOMPtr<nsINode> document = do_QueryReferent(mDocWeak);
   if (document) {
     document->RemoveMutationObserver(this);
   }
@@ -367,14 +367,11 @@ HTMLEditor::GetRootElement(nsIDOMElement** aRootElement)
   } else {
     
     
-    nsCOMPtr<nsIDOMDocument> domDocument = GetDOMDocument();
-    if (NS_WARN_IF(!domDocument)) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    rv = domDocument->GetDocumentElement(getter_AddRefs(rootElement));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    nsCOMPtr<nsIDOMDocument> doc = do_QueryReferent(mDocWeak);
+    NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
+
+    rv = doc->GetDocumentElement(getter_AddRefs(rootElement));
+    NS_ENSURE_SUCCESS(rv, rv);
     
     if (!rootElement) {
       return NS_ERROR_NOT_AVAILABLE;
@@ -443,9 +440,8 @@ HTMLEditor::CreateEventListeners()
 nsresult
 HTMLEditor::InstallEventListeners()
 {
-  if (NS_WARN_IF(!IsInitialized()) || NS_WARN_IF(!mEventListener)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
+  NS_ENSURE_TRUE(mDocWeak && mEventListener,
+                 NS_ERROR_NOT_INITIALIZED);
 
   
   
@@ -458,7 +454,7 @@ HTMLEditor::InstallEventListeners()
 void
 HTMLEditor::RemoveEventListeners()
 {
-  if (!IsInitialized()) {
+  if (!mDocWeak) {
     return;
   }
 
@@ -520,8 +516,7 @@ HTMLEditor::InitRules()
 NS_IMETHODIMP
 HTMLEditor::BeginningOfDocument()
 {
-  
-  if (!IsInitialized()) {
+  if (!mDocWeak) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -1200,13 +1195,11 @@ HTMLEditor::ReplaceHeadContentsWithHTML(const nsAString& aSourceToInsert)
 
   
   
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
 
   RefPtr<nsContentList> nodeList =
-    document->GetElementsByTagName(NS_LITERAL_STRING("head"));
+    doc->GetElementsByTagName(NS_LITERAL_STRING("head"));
   NS_ENSURE_TRUE(nodeList, NS_ERROR_NULL_POINTER);
 
   nsCOMPtr<nsIContent> headNode = nodeList->Item(0);
@@ -2720,7 +2713,7 @@ HTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
 nsresult
 HTMLEditor::SetHTMLBackgroundColor(const nsAString& aColor)
 {
-  MOZ_ASSERT(IsInitialized(), "The HTMLEditor hasn't been initialized yet");
+  NS_PRECONDITION(mDocWeak, "Missing Editor DOM Document");
 
   
   nsCOMPtr<nsIDOMElement> element;
@@ -2768,7 +2761,7 @@ HTMLEditor::SetBodyAttribute(const nsAString& aAttribute,
 {
   
 
-  MOZ_ASSERT(IsInitialized(), "The HTMLEditor hasn't been initialized yet");
+  NS_ASSERTION(mDocWeak, "Missing Editor DOM Document");
 
   
   nsCOMPtr<nsIDOMElement> bodyElement = do_QueryInterface(GetRoot());
@@ -2847,9 +2840,7 @@ HTMLEditor::ReplaceStyleSheet(const nsAString& aURL)
   }
 
   
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
+  NS_ENSURE_TRUE(mDocWeak, NS_ERROR_NOT_INITIALIZED);
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
@@ -2954,9 +2945,7 @@ HTMLEditor::RemoveOverrideStyleSheet(const nsAString& aURL)
 
   NS_ENSURE_TRUE(sheet, NS_OK); 
 
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
+  NS_ENSURE_TRUE(mDocWeak, NS_ERROR_NOT_INITIALIZED);
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
@@ -2975,8 +2964,8 @@ HTMLEditor::EnableStyleSheet(const nsAString& aURL,
   NS_ENSURE_TRUE(sheet, NS_OK); 
 
   
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  sheet->SetAssociatedDocument(document, StyleSheet::NotOwnedByDocument);
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  sheet->SetAssociatedDocument(doc, StyleSheet::NotOwnedByDocument);
 
   return sheet->SetDisabled(!aEnable);
 }
@@ -2992,8 +2981,8 @@ HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL)
   }
 
   
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  sheet->SetAssociatedDocument(document, StyleSheet::NotOwnedByDocument);
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  sheet->SetAssociatedDocument(doc, StyleSheet::NotOwnedByDocument);
 
   if (sheet->IsServo()) {
     
@@ -3268,8 +3257,10 @@ HTMLEditor::DoContentInserted(nsIDocument* aDocument,
   nsCOMPtr<nsIHTMLEditor> kungFuDeathGrip(this);
 
   if (ShouldReplaceRootElement()) {
-    nsContentUtils::AddScriptRunner(NewRunnableMethod(
-      this, &HTMLEditor::ResetRootElementAndEventTarget));
+    nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("HTMLEditor::ResetRootElementAndEventTarget",
+                        this,
+                        &HTMLEditor::ResetRootElementAndEventTarget));
   }
   
   else if (!mAction && (aContainer ? aContainer->IsEditable() : aDocument->IsEditable())) {
@@ -3316,8 +3307,10 @@ HTMLEditor::ContentRemoved(nsIDocument* aDocument,
   nsCOMPtr<nsIHTMLEditor> kungFuDeathGrip(this);
 
   if (SameCOMIdentity(aChild, mRootElement)) {
-    nsContentUtils::AddScriptRunner(NewRunnableMethod(
-      this, &HTMLEditor::ResetRootElementAndEventTarget));
+    nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("HTMLEditor::ResetRootElementAndEventTarget",
+                        this,
+                        &HTMLEditor::ResetRootElementAndEventTarget));
   }
   
   else if (!mAction && (aContainer ? aContainer->IsEditable() : aDocument->IsEditable())) {
@@ -3376,12 +3369,13 @@ HTMLEditor::GetIsSelectionEditable(bool* aIsSelectionEditable)
 
 static nsresult
 SetSelectionAroundHeadChildren(Selection* aSelection,
-                               nsCOMPtr<nsIDocument>& aDocument)
+                               nsIWeakReference* aDocWeak)
 {
-  MOZ_ASSERT(aDocument);
-
   
-  dom::Element* headNode = aDocument->GetHeadElement();
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(aDocWeak);
+  NS_ENSURE_TRUE(doc, NS_ERROR_NOT_INITIALIZED);
+
+  dom::Element* headNode = doc->GetHeadElement();
   NS_ENSURE_STATE(headNode);
 
   
@@ -3402,11 +3396,7 @@ HTMLEditor::GetHeadContentsAsHTML(nsAString& aOutputString)
   
   AutoSelectionRestorer selectionRestorer(selection, this);
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  nsresult rv = SetSelectionAroundHeadChildren(selection, document);
+  nsresult rv = SetSelectionAroundHeadChildren(selection, mDocWeak);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = OutputToString(NS_LITERAL_STRING("text/html"),
@@ -4262,11 +4252,10 @@ HTMLEditor::IsVisTextNode(nsIContent* aNode,
 
   uint32_t length = aNode->TextLength();
   if (aSafeToAskFrames) {
-    nsCOMPtr<nsISelectionController> selectionController =
-      GetSelectionController();
-    if (NS_WARN_IF(!selectionController)) {
-      return NS_ERROR_FAILURE;
-    }
+    nsCOMPtr<nsISelectionController> selCon;
+    nsresult rv = GetSelectionController(getter_AddRefs(selCon));
+    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
     bool isVisible = false;
     
     
@@ -4274,8 +4263,7 @@ HTMLEditor::IsVisTextNode(nsIContent* aNode,
     
     
     
-    nsresult rv = selectionController->CheckVisibilityContent(aNode, 0, length,
-                                                              &isVisible);
+    rv = selCon->CheckVisibilityContent(aNode, 0, length, &isVisible);
     NS_ENSURE_SUCCESS(rv, rv);
     if (isVisible) {
       *outIsEmptyNode = false;
@@ -4792,9 +4780,7 @@ HTMLEditor::GetElementOrigin(nsIDOMElement* aElement,
   aX = 0;
   aY = 0;
 
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
+  NS_ENSURE_TRUE(mDocWeak, NS_ERROR_NOT_INITIALIZED);
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, NS_ERROR_NOT_INITIALIZED);
 
@@ -4936,29 +4922,28 @@ HTMLEditor::GetReturnInParagraphCreatesNewParagraph(bool* aCreatesNewParagraph)
 already_AddRefed<nsIContent>
 HTMLEditor::GetFocusedContent()
 {
+  NS_ENSURE_TRUE(mDocWeak, nullptr);
+
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, nullptr);
 
   nsCOMPtr<nsIContent> focusedContent = fm->GetFocusedContent();
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return nullptr;
-  }
-  bool inDesignMode = document->HasFlag(NODE_IS_EDITABLE);
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  bool inDesignMode = doc->HasFlag(NODE_IS_EDITABLE);
   if (!focusedContent) {
     
     if (inDesignMode && OurWindowHasFocus()) {
-      nsCOMPtr<nsIContent> rootContent = document->GetRootElement();
-      return rootContent.forget();
+      nsCOMPtr<nsIContent> docRoot = doc->GetRootElement();
+      return docRoot.forget();
     }
     return nullptr;
   }
 
   if (inDesignMode) {
     return OurWindowHasFocus() &&
-      nsContentUtils::ContentIsDescendantOf(focusedContent, document) ?
-        focusedContent.forget() : nullptr;
+      nsContentUtils::ContentIsDescendantOf(focusedContent, doc) ?
+      focusedContent.forget() : nullptr;
   }
 
   
@@ -4981,32 +4966,28 @@ HTMLEditor::GetFocusedContentForIME()
     return nullptr;
   }
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return nullptr;
-  }
-  return document->HasFlag(NODE_IS_EDITABLE) ? nullptr :
-                                               focusedContent.forget();
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  NS_ENSURE_TRUE(doc, nullptr);
+  return doc->HasFlag(NODE_IS_EDITABLE) ? nullptr : focusedContent.forget();
 }
 
 bool
 HTMLEditor::IsActiveInDOMWindow()
 {
+  NS_ENSURE_TRUE(mDocWeak, false);
+
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, false);
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return false;
-  }
-  bool inDesignMode = document->HasFlag(NODE_IS_EDITABLE);
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  bool inDesignMode = doc->HasFlag(NODE_IS_EDITABLE);
 
   
   if (inDesignMode) {
     return true;
   }
 
-  nsPIDOMWindowOuter* ourWindow = document->GetWindow();
+  nsPIDOMWindowOuter* ourWindow = doc->GetWindow();
   nsCOMPtr<nsPIDOMWindowOuter> win;
   nsIContent* content =
     nsFocusManager::GetFocusedDescendant(ourWindow, false,
@@ -5029,12 +5010,12 @@ HTMLEditor::IsActiveInDOMWindow()
 Element*
 HTMLEditor::GetActiveEditingHost()
 {
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return nullptr;
-  }
-  if (document->HasFlag(NODE_IS_EDITABLE)) {
-    return document->GetBodyElement();
+  NS_ENSURE_TRUE(mDocWeak, nullptr);
+
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  NS_ENSURE_TRUE(doc, nullptr);
+  if (doc->HasFlag(NODE_IS_EDITABLE)) {
+    return doc->GetBodyElement();
   }
 
   
@@ -5063,8 +5044,8 @@ HTMLEditor::GetDOMEventTarget()
   
   
   
-  MOZ_ASSERT(IsInitialized(), "The HTMLEditor has not been initialized yet");
-  nsCOMPtr<mozilla::dom::EventTarget> target = GetDocument();
+  NS_PRECONDITION(mDocWeak, "This editor has not been initialized yet");
+  nsCOMPtr<mozilla::dom::EventTarget> target = do_QueryReferent(mDocWeak);
   return target.forget();
 }
 
@@ -5124,16 +5105,12 @@ HTMLEditor::ResetRootElementAndEventTarget()
 nsresult
 HTMLEditor::GetBodyElement(nsIDOMHTMLElement** aBody)
 {
-  MOZ_ASSERT(IsInitialized(), "The HTMLEditor hasn't been initialized yet");
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
+  NS_PRECONDITION(mDocWeak, "bad state, null mDocWeak");
+  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc = do_QueryReferent(mDocWeak);
+  if (!htmlDoc) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-  nsCOMPtr<nsIDOMHTMLDocument> domHTMLDocument = do_QueryInterface(document);
-  if (!domHTMLDocument) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  return domHTMLDocument->GetBody(aBody);
+  return htmlDoc->GetBody(aBody);
 }
 
 already_AddRefed<nsINode>
@@ -5153,13 +5130,14 @@ HTMLEditor::GetFocusedNode()
     return node.forget();
   }
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  return document.forget();
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  return doc.forget();
 }
 
 bool
 HTMLEditor::OurWindowHasFocus()
 {
+  NS_ENSURE_TRUE(mDocWeak, false);
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, false);
   nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
@@ -5167,11 +5145,8 @@ HTMLEditor::OurWindowHasFocus()
   if (!focusedWindow) {
     return false;
   }
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return false;
-  }
-  nsPIDOMWindowOuter* ourWindow = document->GetWindow();
+  nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
+  nsPIDOMWindowOuter* ourWindow = doc->GetWindow();
   return ourWindow == focusedWindow;
 }
 
@@ -5189,14 +5164,12 @@ HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
     return true;
   }
 
+  NS_ENSURE_TRUE(mDocWeak, false);
+
   nsCOMPtr<nsIDOMEventTarget> target = aGUIEvent->GetDOMEventTarget();
   NS_ENSURE_TRUE(target, false);
 
-  nsCOMPtr<nsIDocument> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return false;
-  }
-
+  nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocWeak);
   if (document->HasFlag(NODE_IS_EDITABLE)) {
     
     

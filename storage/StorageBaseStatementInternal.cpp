@@ -35,10 +35,11 @@ public:
 
 
 
-  AsyncStatementFinalizer(StorageBaseStatementInternal *aStatement,
-                          Connection *aConnection)
-  : mStatement(aStatement)
-  , mConnection(aConnection)
+  AsyncStatementFinalizer(StorageBaseStatementInternal* aStatement,
+                          Connection* aConnection)
+    : Runnable("storage::AsyncStatementFinalizer")
+    , mStatement(aStatement)
+    , mConnection(aConnection)
   {
   }
 
@@ -81,10 +82,11 @@ public:
 
 
 
-  LastDitchSqliteStatementFinalizer(RefPtr<Connection> &aConnection,
-                                    sqlite3_stmt *aStatement)
-  : mConnection(aConnection)
-  , mAsyncStatement(aStatement)
+  LastDitchSqliteStatementFinalizer(RefPtr<Connection>& aConnection,
+                                    sqlite3_stmt* aStatement)
+    : Runnable("storage::LastDitchSqliteStatementFinalizer")
+    , mConnection(aConnection)
+    , mAsyncStatement(aStatement)
   {
     NS_PRECONDITION(aConnection, "You must provide a Connection");
   }

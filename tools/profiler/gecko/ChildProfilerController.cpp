@@ -32,8 +32,11 @@ ChildProfilerController::Init(Endpoint<PProfilerChild>&& aEndpoint)
   if (NS_SUCCEEDED(NS_NewNamedThread("ProfilerChild", getter_AddRefs(mThread)))) {
     
     mThread->Dispatch(NewRunnableMethod<Endpoint<PProfilerChild>&&>(
-      this, &ChildProfilerController::SetupProfilerChild, Move(aEndpoint)),
-      NS_DISPATCH_NORMAL);
+                        "ChildProfilerController::SetupProfilerChild",
+                        this,
+                        &ChildProfilerController::SetupProfilerChild,
+                        Move(aEndpoint)),
+                      NS_DISPATCH_NORMAL);
   }
 }
 
@@ -56,8 +59,11 @@ ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(nsCString* aOu
 {
   if (mThread) {
     mThread->Dispatch(NewRunnableMethod<nsCString*>(
-      this, &ChildProfilerController::ShutdownProfilerChild, aOutShutdownProfile),
-      NS_DISPATCH_NORMAL);
+                        "ChildProfilerController::ShutdownProfilerChild",
+                        this,
+                        &ChildProfilerController::ShutdownProfilerChild,
+                        aOutShutdownProfile),
+                      NS_DISPATCH_NORMAL);
     
     
     mThread->Shutdown();

@@ -196,10 +196,12 @@ GMPDecryptorChild::Decrypted(GMPBuffer* aBuffer, GMPErr aResult)
   if (!ON_GMP_THREAD()) {
     
     
-    mPlugin->GMPMessageLoop()->PostTask(NewRunnableMethod
-                                        <GMPBuffer*, GMPErr>(this,
-                                                             &GMPDecryptorChild::Decrypted,
-                                                             aBuffer, aResult));
+    mPlugin->GMPMessageLoop()->PostTask(
+      NewRunnableMethod<GMPBuffer*, GMPErr>("gmp::GMPDecryptorChild::Decrypted",
+                                            this,
+                                            &GMPDecryptorChild::Decrypted,
+                                            aBuffer,
+                                            aResult));
     return;
   }
 

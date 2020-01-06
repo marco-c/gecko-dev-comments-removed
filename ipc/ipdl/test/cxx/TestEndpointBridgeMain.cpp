@@ -232,7 +232,9 @@ TestEndpointBridgeMainSubChild::RecvHi()
   
   
   MessageLoop::current()->PostTask(
-    NewNonOwningRunnableMethod(this, &TestEndpointBridgeMainSubChild::Close));
+    NewNonOwningRunnableMethod("ipc::IToplevelProtocol::Close",
+                               this,
+                               &TestEndpointBridgeMainSubChild::Close));
   return IPC_OK();
 }
 

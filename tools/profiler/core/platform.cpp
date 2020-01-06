@@ -337,9 +337,10 @@ private:
         IOInterposer::Register(IOInterposeObserver::OpAll, mInterposeObserver);
       } else {
         RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
-        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
-          IOInterposer::Register(IOInterposeObserver::OpAll, observer);
-        }));
+        NS_DispatchToMainThread(
+          NS_NewRunnableFunction("ActivePS::ActivePS", [=]() {
+            IOInterposer::Register(IOInterposeObserver::OpAll, observer);
+          }));
       }
     }
   }
@@ -353,9 +354,10 @@ private:
         IOInterposer::Unregister(IOInterposeObserver::OpAll, mInterposeObserver);
       } else {
         RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
-        NS_DispatchToMainThread(NS_NewRunnableFunction([=]() {
-          IOInterposer::Unregister(IOInterposeObserver::OpAll, observer);
-        }));
+        NS_DispatchToMainThread(
+          NS_NewRunnableFunction("ActivePS::~ActivePS", [=]() {
+            IOInterposer::Unregister(IOInterposeObserver::OpAll, observer);
+          }));
       }
     }
   }
@@ -2052,9 +2054,8 @@ NotifyObservers(const char* aTopic, nsISupports* aSubject = nullptr)
     
     
     nsCOMPtr<nsISupports> subject = aSubject;
-    NS_DispatchToMainThread(NS_NewRunnableFunction([=] {
-      NotifyObservers(aTopic, subject);
-    }));
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "NotifyObservers", [=] { NotifyObservers(aTopic, subject); }));
     return;
   }
 

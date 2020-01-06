@@ -68,6 +68,7 @@ ObserverToDestroyFeaturesAlreadyReported::Observe(nsISupports* aSubject,
 
 class RegisterObserverRunnable : public Runnable {
 public:
+  RegisterObserverRunnable() : Runnable("RegisterObserverRunnable") {}
   NS_IMETHOD Run() override {
     
     
@@ -87,7 +88,8 @@ public:
 class AppendAppNotesRunnable : public CancelableRunnable {
 public:
   explicit AppendAppNotesRunnable(const nsACString& aFeatureStr)
-    : mFeatureString(aFeatureStr)
+    : CancelableRunnable("AppendAppNotesRunnable")
+    , mFeatureString(aFeatureStr)
   {
   }
 

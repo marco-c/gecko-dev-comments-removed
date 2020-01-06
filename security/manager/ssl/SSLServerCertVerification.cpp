@@ -500,7 +500,6 @@ CertErrorRunnable::OverrideAllowedForHost( bool& overrideAllowed)
                         mProviderFlags,
                         mInfoObject->GetOriginAttributes(),
                         nullptr,
-                        nullptr,
                         &strictTransportSecurityEnabled);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -511,7 +510,6 @@ CertErrorRunnable::OverrideAllowedForHost( bool& overrideAllowed)
                         uri,
                         mProviderFlags,
                         mInfoObject->GetOriginAttributes(),
-                        nullptr,
                         nullptr,
                         &hasPinningInformation);
   if (NS_FAILED(rv)) {
@@ -736,7 +734,8 @@ class CertErrorRunnableRunnable : public Runnable
 {
 public:
   explicit CertErrorRunnableRunnable(CertErrorRunnable* certErrorRunnable)
-    : mCertErrorRunnable(certErrorRunnable)
+    : Runnable("psm::CertErrorRunnableRunnable")
+    , mCertErrorRunnable(certErrorRunnable)
   {
   }
 private:
@@ -796,12 +795,18 @@ private:
 };
 
 SSLServerCertVerificationJob::SSLServerCertVerificationJob(
-    const RefPtr<SharedCertVerifier>& certVerifier, const void* fdForLogging,
-    nsNSSSocketInfo* infoObject, const UniqueCERTCertificate& cert,
-    UniqueCERTCertList peerCertChain, const SECItem* stapledOCSPResponse,
-    const SECItem* sctsFromTLSExtension,
-    uint32_t providerFlags, Time time, PRTime prtime)
-  : mCertVerifier(certVerifier)
+  const RefPtr<SharedCertVerifier>& certVerifier,
+  const void* fdForLogging,
+  nsNSSSocketInfo* infoObject,
+  const UniqueCERTCertificate& cert,
+  UniqueCERTCertList peerCertChain,
+  const SECItem* stapledOCSPResponse,
+  const SECItem* sctsFromTLSExtension,
+  uint32_t providerFlags,
+  Time time,
+  PRTime prtime)
+  : Runnable("psm::SSLServerCertVerificationJob")
+  , mCertVerifier(certVerifier)
   , mFdForLogging(fdForLogging)
   , mInfoObject(infoObject)
   , mCert(CERT_DupCertificate(cert.get()))
@@ -1817,10 +1822,13 @@ AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig, PRBool isServer)
 }
 
 SSLServerCertVerificationResult::SSLServerCertVerificationResult(
-        nsNSSSocketInfo* infoObject, PRErrorCode errorCode,
-        Telemetry::HistogramID telemetryID, uint32_t telemetryValue,
-        SSLErrorMessageType errorMessageType)
-  : mInfoObject(infoObject)
+  nsNSSSocketInfo* infoObject,
+  PRErrorCode errorCode,
+  Telemetry::HistogramID telemetryID,
+  uint32_t telemetryValue,
+  SSLErrorMessageType errorMessageType)
+  : Runnable("psm::SSLServerCertVerificationResult")
+  , mInfoObject(infoObject)
   , mErrorCode(errorCode)
   , mErrorMessageType(errorMessageType)
   , mTelemetryID(telemetryID)

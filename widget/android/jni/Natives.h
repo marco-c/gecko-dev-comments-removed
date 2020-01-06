@@ -527,7 +527,7 @@ struct Dispatcher
         
         
         
-        NS_DispatchToMainThread(NS_NewRunnableFunction(ProxyNativeCall<
+        NS_DispatchToMainThread(NS_NewRunnableFunction("ProxyNativeCall", ProxyNativeCall<
                 Impl, typename Traits::Owner, IsStatic, HasThisArg,
                 Args...>(HasThisArg || !IsStatic ? thisArg : nullptr,
                           Forward<ProxyArgs>(args)...)));
