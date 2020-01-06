@@ -294,6 +294,17 @@ ClientEngine.prototype = {
     this._saveCommands(allCommands);
   },
 
+  updateKnownStaleClients() {
+    this._log.debug("Updating the known stale clients");
+    this._refreshKnownStaleClients();
+    for (let client of Object.values(this._store._remoteClients)) {
+      if (client.fxaDeviceId && this._knownStaleFxADeviceIds.includes(client.fxaDeviceId)) {
+        this._log.info(`Hiding stale client ${client.id} - in known stale clients list`);
+        client.stale = true;
+      }
+    }
+  },
+
   
   
   _refreshKnownStaleClients() {
@@ -328,6 +339,7 @@ ClientEngine.prototype = {
     this._incomingClients = {};
     try {
       SyncEngine.prototype._processIncoming.call(this);
+      
       
       if (!this._knownStaleFxADeviceIds) {
         this._refreshKnownStaleClients();
