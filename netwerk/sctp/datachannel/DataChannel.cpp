@@ -143,7 +143,7 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
   NS_IMETHODIMP
-  Notify(nsITimer* aTimer)
+  Notify(nsITimer* aTimer) override
   {
     
     RefPtr<DataChannelConnectionShutdown> grip(mConnection->mDelayedShutdown.forget());
