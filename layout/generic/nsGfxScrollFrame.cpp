@@ -3319,9 +3319,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   Unused << DecideScrollableLayer(aBuilder, &dirtyRect,
                !mIsRoot);
 
-  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-    nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
-
   if (aBuilder->IsForFrameVisibility()) {
     
     
@@ -3352,7 +3349,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     
-    bool addScrollBars = mIsRoot && usingDisplayPort && aBuilder->IsPaintingToWindow();
+    bool addScrollBars = mIsRoot && mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow();
 
     if (addScrollBars) {
       
@@ -3524,7 +3521,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       nsRect scrolledRectClip =
         GetUnsnappedScrolledRectInternal(mScrolledFrame->GetScrollableOverflowRect(),
                                          mScrollPort.Size()) + mScrolledFrame->GetPosition();
-      if (usingDisplayPort) {
+      if (mWillBuildScrollableLayer) {
         
         
         
