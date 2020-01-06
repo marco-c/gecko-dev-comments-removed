@@ -15,6 +15,15 @@ const PREF_WHITELIST = [
   "browser.onboarding.notification.lastPrompted"
 ];
 
+[
+  "onboarding-tour-private-browsing",
+  "onboarding-tour-addons",
+  "onboarding-tour-customize",
+  "onboarding-tour-search",
+  "onboarding-tour-default-browser",
+  "onboarding-tour-sync",
+].forEach(tourId => PREF_WHITELIST.push(`browser.onboarding.tour.${tourId}.completed`));
+
 
 
 
