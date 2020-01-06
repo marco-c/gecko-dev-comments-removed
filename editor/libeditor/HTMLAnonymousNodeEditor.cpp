@@ -327,10 +327,13 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
   
   auto nac = static_cast<mozilla::ManualNAC*>(
       parentContent->GetProperty(nsGkAtoms::manualNACProperty));
-  MOZ_ASSERT(nac);
-  nac->RemoveElement(aContent);
-  if (nac->IsEmpty()) {
-    parentContent->DeleteProperty(nsGkAtoms::manualNACProperty);
+  
+  
+  if (nac) {
+    nac->RemoveElement(aContent);
+    if (nac->IsEmpty()) {
+      parentContent->DeleteProperty(nsGkAtoms::manualNACProperty);
+    }
   }
 
   aContent->UnbindFromTree();
