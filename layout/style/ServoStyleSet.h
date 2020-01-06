@@ -481,6 +481,11 @@ public:
                        ServoStyleContext* aNewLayoutParent,
                        Element* aElement);
 
+  
+
+
+  void CorruptRuleHashAndCrash(unsigned long aIndex);
+
 private:
   friend class AutoSetInServoTraversal;
   friend class AutoPrepareTraversal;
