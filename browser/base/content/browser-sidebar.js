@@ -67,7 +67,6 @@ var SidebarUI = {
     
     
     let enumerator = Services.wm.getEnumerator("navigator:browser");
-    enumerator.getNext();
     if (!enumerator.hasMoreElements()) {
       document.persist("sidebar-box", "sidebarcommand");
 
