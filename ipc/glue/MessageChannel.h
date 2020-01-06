@@ -35,6 +35,8 @@
 #include <stack>
 #include <vector>
 
+class nsIEventTarget;
+
 namespace mozilla {
 namespace ipc {
 
@@ -146,7 +148,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     
     
-    bool Open(MessageChannel *aTargetChan, MessageLoop *aTargetLoop, Side aSide);
+    bool Open(MessageChannel *aTargetChan, nsIEventTarget *aEventTarget, Side aSide);
 
     
     void Close();
