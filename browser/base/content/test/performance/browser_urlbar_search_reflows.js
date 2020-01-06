@@ -60,6 +60,18 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
     times: 60, 
   },
 
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
+      "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
+      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openPopup@chrome://global/content/bindings/autocomplete.xml",
+      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    times: 6, 
+  },
+
   
   {
     stack: [
