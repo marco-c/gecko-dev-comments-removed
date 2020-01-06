@@ -97,15 +97,10 @@ function defineCohort() {
   if (updateChannel in ADDON_ROLLOUT_POLICY) {
     addonPolicy = ADDON_ROLLOUT_POLICY[updateChannel];
     Preferences.set(PREF_E10S_ADDON_POLICY, addonPolicy);
-    
-    
 
-    Preferences.set(PREF_E10S_ADDON_BLOCKLIST,
-                    
-                    "{dc572301-7619-498c-a57d-39143191b318};"
-                    
-                    + "firefox@mega.co.nz"
-                    );
+    
+    
+    Preferences.set(PREF_E10S_ADDON_BLOCKLIST, "");
   } else {
     Preferences.reset(PREF_E10S_ADDON_POLICY);
   }
