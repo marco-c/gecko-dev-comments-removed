@@ -818,14 +818,12 @@ protected:
 
   class WakeLockBoolWrapper {
   public:
-    explicit WakeLockBoolWrapper(bool val = false)
-      : mValue(val)
-      , mOuter(nullptr)
+    WakeLockBoolWrapper(bool aVal, HTMLMediaElement& aOuter)
+      : mValue(aVal)
+      , mOuter(aOuter)
     {}
 
     ~WakeLockBoolWrapper() {};
-
-    void SetOuter(HTMLMediaElement* outer) { mOuter = outer; }
 
     MOZ_IMPLICIT operator bool() const { return mValue; }
 
@@ -836,7 +834,7 @@ protected:
     void UpdateWakeLock();
   private:
     bool mValue;
-    HTMLMediaElement* mOuter;
+    HTMLMediaElement& mOuter;
   };
 
   
@@ -1450,6 +1448,18 @@ protected:
   
   double mVolume;
 
+  
+  bool mIsAudioTrackAudible;
+
+  enum MutedReasons {
+    MUTED_BY_CONTENT               = 0x01,
+    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
+    MUTED_BY_AUDIO_CHANNEL         = 0x04,
+    MUTED_BY_AUDIO_TRACK           = 0x08
+  };
+
+  uint32_t mMuted;
+
   UniquePtr<const MetadataTags> mTags;
 
   
@@ -1550,15 +1560,6 @@ protected:
   
   
   WakeLockBoolWrapper mPaused;
-
-  enum MutedReasons {
-    MUTED_BY_CONTENT               = 0x01,
-    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
-    MUTED_BY_AUDIO_CHANNEL         = 0x04,
-    MUTED_BY_AUDIO_TRACK           = 0x08
-  };
-
-  uint32_t mMuted;
 
   
   
@@ -1779,9 +1780,6 @@ private:
   
   
   double mDefaultPlaybackStartPosition;
-
-  
-  bool mIsAudioTrackAudible;
 
   
   
