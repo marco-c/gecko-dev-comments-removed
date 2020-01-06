@@ -20,7 +20,7 @@ struct LayerAnimationInfo {
   
   struct Record {
     nsCSSPropertyID mProperty;
-    nsDisplayItem::Type mLayerType;
+    DisplayItemType mLayerType;
     nsChangeHint mChangeHint;
   };
 

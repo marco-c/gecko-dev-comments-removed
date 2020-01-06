@@ -201,15 +201,15 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
   nsDisplayList savedItems;
   nsDisplayItem* item;
   while ((item = aDisplayList->RemoveBottom()) != nullptr) {
-    nsDisplayItem::Type itemType = item->GetType();
+    DisplayItemType itemType = item->GetType();
 
     
     
-    if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
+    if (itemType == DisplayItemType::TYPE_LAYER_EVENT_REGIONS) {
       nsDisplayLayerEventRegions* eventRegions =
         static_cast<nsDisplayLayerEventRegions*>(item);
       if (eventRegions->IsEmpty()) {
-        item->~nsDisplayItem();
+        item->Destroy(aDisplayListBuilder);
         continue;
       }
     }
@@ -220,7 +220,7 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
     while ((aboveItem = aDisplayList->GetBottom()) != nullptr) {
       if (aboveItem->TryMerge(item)) {
         aDisplayList->RemoveBottom();
-        item->~nsDisplayItem();
+        item->Destroy(aDisplayListBuilder);
         item = aboveItem;
         itemType = item->GetType();
       } else {
@@ -232,7 +232,7 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
       = item->GetSameCoordinateSystemChildren();
     if (item->ShouldFlattenAway(aDisplayListBuilder)) {
       aDisplayList->AppendToBottom(itemSameCoordinateSystemChildren);
-      item->~nsDisplayItem();
+      item->Destroy(aDisplayListBuilder);
       continue;
     }
 
@@ -264,15 +264,11 @@ WebRenderLayerManager::CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDi
       }
     }
 
-    { 
-      ScrollingLayersHelper clip(item, aBuilder, aSc, mClipIdCache);
-
-      
-      
-      if (!item->CreateWebRenderCommands(aBuilder, aSc, mParentCommands, this,
-                                         aDisplayListBuilder)) {
-        PushItemAsImage(item, aBuilder, aSc, aDisplayListBuilder);
-      }
+    
+    
+    if (!item->CreateWebRenderCommands(aBuilder, aSc, mParentCommands, this,
+                                       aDisplayListBuilder)) {
+      PushItemAsImage(item, aBuilder, aSc, aDisplayListBuilder);
     }
 
     if (apzEnabled && forceNewLayerData) {
@@ -388,7 +384,7 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
   RefPtr<gfxContext> context = gfxContext::CreateOrNull(aDT, aOffset.ToUnknownPoint());
   MOZ_ASSERT(context);
 
-  if (aItem->GetType() == nsDisplayItem::TYPE_MASK) {
+  if (aItem->GetType() == DisplayItemType::TYPE_MASK) {
     context->SetMatrix(gfxMatrix::Translation(-aOffset.x, -aOffset.y));
     static_cast<nsDisplayMask*>(aItem)->PaintMask(aDisplayListBuilder, context);
   } else {
@@ -464,7 +460,7 @@ WebRenderLayerManager::GenerateFallbackData(nsDisplayItem* aItem,
     }
   }
 
-  gfx::SurfaceFormat format = aItem->GetType() == nsDisplayItem::TYPE_MASK ?
+  gfx::SurfaceFormat format = aItem->GetType() == DisplayItemType::TYPE_MASK ?
                                                     gfx::SurfaceFormat::A8 : gfx::SurfaceFormat::B8G8R8A8;
   if (!geometry || !invalidRegion.IsEmpty() || fallbackData->IsInvalid()) {
     if (gfxPrefs::WebRenderBlobImages()) {
@@ -628,7 +624,6 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
         mScrollData.AddLayerData(*i);
       }
       mLayerScrollData.clear();
-      mClipIdCache.clear();
     } else {
       for (auto iter = mLastCanvasDatas.Iter(); !iter.Done(); iter.Next()) {
         RefPtr<WebRenderCanvasData> canvasData = iter.Get()->GetKey();
