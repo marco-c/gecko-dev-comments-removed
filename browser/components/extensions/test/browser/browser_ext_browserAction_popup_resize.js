@@ -148,11 +148,11 @@ async function testPopupSize(standardsMode, browserWin = window, arrowSide = "to
 
   
   let widget = getBrowserActionWidget(extension);
-  CustomizableUI.addWidgetToArea(widget.id, CustomizableUI.AREA_PANEL);
+  CustomizableUI.addWidgetToArea(widget.id, getCustomizableUIPanelID());
 
   let browser = await openPanel(extension, browserWin);
 
-  let {panel} = browserWin.PanelUI;
+  let panel = gPhotonStructure ? browserWin.PanelUI.overflowPanel : browserWin.PanelUI.panel;
   let origPanelRect = panel.getBoundingClientRect();
 
   
@@ -276,7 +276,7 @@ add_task(async function testBrowserActionMenuResizeQuirks() {
 
 add_task(async function testBrowserActionMenuResizeBottomArrow() {
   const WIDTH = 800;
-  const HEIGHT = 300;
+  const HEIGHT = 80;
 
   let left = screen.availLeft + screen.availWidth - WIDTH;
   let top = screen.availTop + screen.availHeight - HEIGHT;
