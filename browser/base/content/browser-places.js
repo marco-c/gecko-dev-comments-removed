@@ -1297,6 +1297,15 @@ var PlacesToolbarHelper = {
 var RecentBookmarksMenuUI = {
   RECENTLY_BOOKMARKED_PREF: "browser.bookmarks.showRecentlyBookmarked",
   MAX_RESULTS: 5,
+  
+  
+  
+  
+  
+  ITEM_REMOVED_TIMEOUT: 40,
+
+  _recentGuids: undefined,
+  _visible: undefined,
 
   QueryInterface: XPCOMUtils.generateQI([
     Ci.nsINavBookmarkObserver,
@@ -1304,25 +1313,55 @@ var RecentBookmarksMenuUI = {
     Ci.nsISupportsWeakReference
   ]),
 
-  showRecentlyBookmarked() {
-    Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, true);
+  get visible() {
+    return this._visible;
   },
 
-  hideRecentlyBookmarked() {
-    Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, false);
+  
+
+
+
+
+  set visible(visible) {
+    
+    
+    if (visible == this._visible) {
+      return;
+    }
+
+    this._visible = visible;
+    Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, visible);
+    this._clearExistingItems();
+
+    if (visible) {
+      this._insertRecentMenuItems();
+    }
   },
+
+  
+
 
   observe(subject, topic, data) {
     if (topic == "nsPref:changed" && data == this.RECENTLY_BOOKMARKED_PREF) {
-      this._populateRecentBookmarks();
+      this.visible = Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF, true);
     }
   },
+
+  
+
+
+
+
+
+
 
   init(aHeaderItem, aExtraCSSClass = "") {
     this.headerItem = aHeaderItem;
     this.extraCSSClass = aExtraCSSClass;
+    this._recentGuids = new Set();
 
-    this._populateRecentBookmarks();
+    
+    this.visible = Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF, true);
 
     
 
@@ -1341,20 +1380,30 @@ var RecentBookmarksMenuUI = {
     };
 
     let onBookmarksMenuHidden = event => {
-      if (event.target == event.currentTarget) {
-        this._updatePlacesContextMenu(true);
-
-        Services.prefs.removeObserver(this.RECENTLY_BOOKMARKED_PREF, this);
-        PlacesUtils.bookmarks.removeObserver(this);
-        this._recentlyBookmarkedObserver = null;
-        if (placesContextMenu) {
-          placesContextMenu.removeEventListener("popupshowing", onPlacesContextMenuShowing);
-        }
-        bookmarksMenu.removeEventListener("popuphidden", onBookmarksMenuHidden);
-
-        delete this.headerItem;
-        delete this.extraCSSClass;
+      
+      
+      if (event.target != event.currentTarget) {
+        return;
       }
+
+      
+      if (this._itemRemovedTimer) {
+        clearTimeout(this._itemRemovedTimer);
+      }
+
+      this._updatePlacesContextMenu(true);
+
+      Services.prefs.removeObserver(this.RECENTLY_BOOKMARKED_PREF, this);
+      PlacesUtils.bookmarks.removeObserver(this);
+      this._recentlyBookmarkedObserver = null;
+      if (placesContextMenu) {
+        placesContextMenu.removeEventListener("popupshowing", onPlacesContextMenuShowing);
+      }
+      bookmarksMenu.removeEventListener("popuphidden", onBookmarksMenuHidden);
+
+      this._visible = undefined;
+      delete this.headerItem;
+      delete this.extraCSSClass;
     };
 
     Services.prefs.addObserver(this.RECENTLY_BOOKMARKED_PREF, this, true);
@@ -1368,20 +1417,30 @@ var RecentBookmarksMenuUI = {
     bookmarksMenu.addEventListener("popuphidden", onBookmarksMenuHidden);
   },
 
-  _populateRecentBookmarks() {
+  
+
+
+
+  _clearExistingItems() {
+    this._recentGuids.clear();
+
     while (this.headerItem.nextSibling &&
            this.headerItem.nextSibling.localName == "menuitem") {
       this.headerItem.nextSibling.remove();
     }
 
-    let shouldShow = Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF);
     let separator = this.headerItem.previousSibling;
-    this.headerItem.hidden = !shouldShow;
-    separator.hidden = !shouldShow;
+    this.headerItem.hidden = !this.visible;
+    separator.hidden = !this.visible;
+  },
 
-    if (!shouldShow) {
-      return;
-    }
+  
+
+
+  _insertRecentMenuItems() {
+    let separator = this.headerItem.previousSibling;
+    this.headerItem.hidden = !this.visible;
+    separator.hidden = !this.visible;
 
     let options = PlacesUtils.history.getNewQueryOptions();
     options.excludeQueries = true;
@@ -1417,10 +1476,17 @@ var RecentBookmarksMenuUI = {
       }
       item._placesNode = node;
       fragment.appendChild(item);
+      this._recentGuids.add(node.bookmarkGuid);
     }
     root.containerOpen = false;
     this.headerItem.parentNode.insertBefore(fragment, this.headerItem.nextSibling);
   },
+
+  
+
+
+
+
 
   _updatePlacesContextMenu(shouldHidePrefUI = false) {
     let showItem = document.getElementById("placesContext_showRecentlyBookmarked");
@@ -1446,11 +1512,25 @@ var RecentBookmarksMenuUI = {
 
 
 
-  onItemRemoved() {
+  
+
+
+  onItemRemoved(itemId, parentId, index, itemType, uri, guid) {
     
     
     
-    this._populateRecentBookmarks();
+    if (this._recentGuids.size == 0 ||
+        (guid && this._recentGuids.has(guid))) {
+
+      if (this._itemRemovedTimer) {
+        clearTimeout(this._itemRemovedTimer);
+      }
+
+      this._itemRemovedTimer = setTimeout(() => {
+        this._clearExistingItems();
+        this._insertRecentMenuItems();
+      }, this.ITEM_REMOVED_TIMEOUT);
+    }
   },
 
   skipTags: true,
