@@ -115,6 +115,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   policy->AddPrefix(rdonly, "/sys/dev/char/226:");
 
   
+  policy->AddPath(rdonly, "/proc/modules");
+
+  
   
   mozilla::Array<const char*, 3> confDirs = {
     ".config",
