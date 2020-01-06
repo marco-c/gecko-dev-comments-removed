@@ -148,7 +148,7 @@ ErrorReporter::ErrorReporter(const nsCSSScanner& aScanner,
 {
 }
 
-ErrorReporter::ErrorReporter(const StyleSheet* aSheet,
+ErrorReporter::ErrorReporter(const ServoStyleSheet* aSheet,
                              const Loader* aLoader,
                              nsIURI* aURI)
   : mScanner(nullptr), mSheet(aSheet), mLoader(aLoader), mURI(aURI),
@@ -255,13 +255,23 @@ ErrorReporter::OutputError(uint32_t aLineNumber,
                            uint32_t aColNumber,
                            const nsACString& aSourceLine)
 {
-  mErrorLine.Truncate();
+  mErrorLineNumber = aLineNumber;
+  mErrorColNumber = aColNumber;
+
   
-  if (!AppendUTF8toUTF16(aSourceLine, mErrorLine, fallible)) {
+  
+  
+  if (mErrorLine.IsEmpty() || mErrorLineNumber != mPrevErrorLineNumber) {
     mErrorLine.Truncate();
+    
+    if (!AppendUTF8toUTF16(aSourceLine, mErrorLine, fallible)) {
+      mErrorLine.Truncate();
+    }
+
+    mPrevErrorLineNumber = aLineNumber;
   }
-  mPrevErrorLineNumber = aLineNumber;
-  OutputError(aLineNumber, aColNumber);
+
+  OutputError();
 }
 
 void
@@ -277,18 +287,22 @@ ErrorReporter::AddToError(const nsString &aErrorText)
 
   if (mError.IsEmpty()) {
     mError = aErrorText;
-    mErrorLineNumber = mScanner ? mScanner->GetLineNumber() : 0;
-    mErrorColNumber = mScanner ? mScanner->GetColumnNumber() : 0;
     
     
-    
-    if (mErrorLine.IsEmpty() || mErrorLineNumber != mPrevErrorLineNumber) {
+    if (!IsServo()) {
+      mErrorLineNumber = mScanner->GetLineNumber();
+      mErrorColNumber = mScanner->GetColumnNumber();
       
       
-      if (!mScanner || !mErrorLine.Assign(mScanner->GetCurrentLine(), fallible)) {
-        mErrorLine.Truncate();
+      
+      if (mErrorLine.IsEmpty() || mErrorLineNumber != mPrevErrorLineNumber) {
+        
+        
+        if (!mErrorLine.Assign(mScanner->GetCurrentLine(), fallible)) {
+          mErrorLine.Truncate();
+        }
+        mPrevErrorLineNumber = mErrorLineNumber;
       }
-      mPrevErrorLineNumber = mErrorLineNumber;
     }
   } else {
     mError.AppendLiteral("  ");
@@ -417,6 +431,12 @@ ErrorReporter::ReportUnexpectedEOF(char16_t aExpected)
                                       params, ArrayLength(params),
                                       getter_Copies(str));
   AddToError(str);
+}
+
+bool
+ErrorReporter::IsServo() const
+{
+  return !mScanner;
 }
 
 } 
