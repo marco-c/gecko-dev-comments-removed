@@ -863,9 +863,6 @@ private:
     void OnResumedCompositor()
     {
         MOZ_ASSERT(NS_IsMainThread());
-        if (!mWindow) {
-            return; 
-        }
 
         
         
@@ -987,7 +984,11 @@ public:
                 JNIEnv* const env = jni::GetGeckoThreadEnv();
                 LayerViewSupport* const lvs = GetNative(
                         LayerView::Compositor::LocalRef(env, mCompositor));
-                MOZ_CATCH_JNI_EXCEPTION(env);
+
+                if (!lvs || !lvs->mWindow) {
+                    env->ExceptionClear();
+                    return; 
+                }
 
                 lvs->OnResumedCompositor();
             }
