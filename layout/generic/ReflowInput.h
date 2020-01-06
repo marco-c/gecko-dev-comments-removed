@@ -14,12 +14,13 @@
 #include "mozilla/Assertions.h"
 #include <algorithm>
 
+class nsFloatManager;
+struct nsHypotheticalPosition;
+class nsIPercentBSizeObserver;
+class nsLineLayout;
+class nsPlaceholderFrame;
 class nsPresContext;
 class nsRenderingContext;
-class nsFloatManager;
-class nsLineLayout;
-class nsIPercentBSizeObserver;
-struct nsHypotheticalPosition;
 
 
 
@@ -992,7 +993,7 @@ protected:
   
   
   void CalculateHypotheticalPosition(nsPresContext* aPresContext,
-                                     nsIFrame* aPlaceholderFrame,
+                                     nsPlaceholderFrame* aPlaceholderFrame,
                                      const ReflowInput* cbrs,
                                      nsHypotheticalPosition& aHypotheticalPos,
                                      mozilla::LayoutFrameType aFrameType) const;
