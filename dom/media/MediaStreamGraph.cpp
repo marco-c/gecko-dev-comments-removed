@@ -4015,10 +4015,23 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
       
       
     } else if (!audioTrackPresent && switching) {
-      MOZ_ASSERT(nextDriver->AsAudioCallbackDriver());
-      nextDriver->AsAudioCallbackDriver()->
-        EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
-                                            aOperation);
+      MOZ_ASSERT(nextDriver->AsAudioCallbackDriver() ||
+                 nextDriver->AsSystemClockDriver()->IsFallback());
+      if (nextDriver->AsAudioCallbackDriver()) {
+        nextDriver->AsAudioCallbackDriver()->
+          EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
+                                              aOperation);
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        AudioContextOperationCompleted(aDestinationStream, aPromise, aOperation);
+      }
     } else {
       
       
