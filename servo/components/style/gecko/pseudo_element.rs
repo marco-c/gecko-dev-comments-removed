@@ -79,6 +79,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_first_letter(&self) -> bool {
+        *self == PseudoElement::FirstLetter
+    }
+
+    
+    #[inline]
     pub fn is_lazy(&self) -> bool {
         !self.is_eager() && !self.is_precomputed()
     }

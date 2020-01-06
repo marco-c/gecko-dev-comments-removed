@@ -426,9 +426,19 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     fn may_generate_pseudo(
         &self,
-        _pseudo: &PseudoElement,
+        pseudo: &PseudoElement,
         _primary_style: &ComputedValues,
     ) -> bool {
+        
+        
+
+        
+        
+        
+        
+        
+        debug_assert!(pseudo.is_eager(),
+                      "Someone called may_generate_pseudo with a non-eager pseudo.");
         true
     }
 

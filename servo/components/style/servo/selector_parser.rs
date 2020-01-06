@@ -39,6 +39,7 @@ pub enum PseudoElement {
     Before,
     Selection,
     
+    
     DetailsSummary,
     DetailsContent,
     ServoText,
@@ -108,6 +109,12 @@ impl PseudoElement {
     #[inline]
     pub fn is_before_or_after(&self) -> bool {
         matches!(*self, PseudoElement::After | PseudoElement::Before)
+    }
+
+    
+    #[inline]
+    pub fn is_first_letter(&self) -> bool {
+        false
     }
 
     
