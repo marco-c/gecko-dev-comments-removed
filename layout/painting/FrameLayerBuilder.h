@@ -133,7 +133,7 @@ private:
 
   void AddFrame(nsIFrame* aFrame);
   void RemoveFrame(nsIFrame* aFrame);
-  const nsTArray<nsIFrame*>& GetFrameListChanges();
+  const nsRegion& GetChangedFrameInvalidations();
 
   
 
@@ -175,7 +175,7 @@ private:
 
 
   nsDisplayItem* mItem;
-  AutoTArray<nsIFrame*, 1> mFrameListChanges;
+  nsRegion mChangedFrameInvalidations;
 
   
 
