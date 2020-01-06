@@ -14,9 +14,9 @@
 #include "mozilla/Attributes.h"           
 #include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h" 
+#include "nsStringFwd.h"
 #include "plhash.h"                       
 
-class nsAString;
 class nsBindingManager;
 class nsIAtom;
 class nsIDocument;

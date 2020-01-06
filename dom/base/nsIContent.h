@@ -10,9 +10,9 @@
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "nsCaseTreatment.h" 
 #include "nsINode.h"
+#include "nsStringFwd.h"
 
 
-class nsAString;
 class nsIAtom;
 class nsIURI;
 class nsRuleWalker;

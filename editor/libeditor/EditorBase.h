@@ -48,7 +48,6 @@ class nsISupports;
 class nsITransaction;
 class nsIWidget;
 class nsRange;
-class nsString;
 class nsTransactionManager;
 
 

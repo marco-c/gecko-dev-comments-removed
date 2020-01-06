@@ -8,12 +8,12 @@
 
 #include "nsIControllerCommand.h"
 #include "nsISupportsImpl.h"            
+#include "nsStringFwd.h"
 #include "nscore.h"                     
 
 class nsIAtom;
 class nsICommandParams;
 class nsISupports;
-class nsString;
 
 namespace mozilla {
 class HTMLEditor;

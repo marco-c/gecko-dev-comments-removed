@@ -10,12 +10,11 @@
 #include "base/message_pump.h"
 #include "base/time.h"
 #include "mozilla/UniquePtr.h"
+#include "nsStringFwd.h"
 
 
 struct event_base;
 struct event;
-
-class nsDependentCSubstring;
 
 namespace base {
 

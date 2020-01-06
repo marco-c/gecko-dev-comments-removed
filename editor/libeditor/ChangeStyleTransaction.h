@@ -11,7 +11,6 @@
 #include "nsCycleCollectionParticipant.h" 
 #include "nsString.h"                     
 
-class nsAString;
 class nsIAtom;
 
 namespace mozilla {

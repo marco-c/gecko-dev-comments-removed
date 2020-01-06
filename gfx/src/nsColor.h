@@ -10,9 +10,7 @@
 #include <stdint.h>                     
 #include "nscore.h"                     
 #include "nsCoord.h"                    
-
-class nsAString;
-class nsString;
+#include "nsStringFwd.h"
 
 
 

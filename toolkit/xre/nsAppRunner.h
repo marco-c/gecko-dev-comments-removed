@@ -24,6 +24,7 @@
 #endif
 #endif
 
+#include "nsStringFwd.h"
 #include "nsXULAppAPI.h"
 
 
@@ -38,7 +39,6 @@ class nsIFile;
 class nsIProfileLock;
 class nsIProfileUnlocker;
 class nsIFactory;
-class nsString;
 
 extern nsXREDirProvider* gDirServiceProvider;
 

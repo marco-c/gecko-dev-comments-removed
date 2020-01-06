@@ -20,8 +20,6 @@
 #include "nsReadableUtils.h"
 #include "nsISupportsImpl.h"
 
-class nsString;
-
 
 
 

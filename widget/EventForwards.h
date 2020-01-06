@@ -8,9 +8,8 @@
 
 #include <stdint.h>
 
+#include "nsStringFwd.h"
 #include "nsTArray.h"
-
-class nsCString;
 
 
 
