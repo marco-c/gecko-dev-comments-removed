@@ -379,25 +379,8 @@ class SyntaxParseHandler
         return node == NodeVarDeclaration || node == NodeLexicalDeclaration;
     }
 
-    Node singleBindingFromDeclaration(Node decl) {
-        MOZ_ASSERT(isDeclarationList(decl));
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return NodeName;
-    }
+    
+    Node singleBindingFromDeclaration(Node decl) = delete;
 
     Node newCatchList(const TokenPos& pos) {
         return NodeGeneric;
