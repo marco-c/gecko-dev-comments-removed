@@ -29,7 +29,7 @@ const brandBundle = Services.strings.createBundle(
   "chrome://branding/locale/brand.properties");
 
 
-const MAX_BAR_HEIGHT = 8;
+const MAX_BAR_HEIGHT = 18;
 const MAX_BAR_CHARS = 25;
 const PREF_TELEMETRY_SERVER_OWNER = "toolkit.telemetry.server_owner";
 const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
@@ -1321,12 +1321,11 @@ var Histogram = {
     let maxBarValue = aOptions.exponential ? this.getLogValue(aHgram.max) : aHgram.max;
 
     for (let [label, value] of aHgram.values) {
-      label = String(label);
       let barValue = aOptions.exponential ? this.getLogValue(value) : value;
 
       
       text += EOL
-              + " ".repeat(Math.max(0, labelPadTo - label.length)) + label 
+              + " ".repeat(Math.max(0, labelPadTo - String(label).length)) + label 
               + " |" + "#".repeat(Math.round(MAX_BAR_CHARS * barValue / maxBarValue)) 
               + "  " + value 
               + "  " + Math.round(100 * value / aHgram.sample_count) + "%"; 
@@ -1348,10 +1347,6 @@ var Histogram = {
       bar.style.height = belowEm + "em";
       barDiv.appendChild(bar);
 
-      
-      if (label.length > 3) {
-          bar.classList.add('long-label');
-      }
       
       barDiv.appendChild(document.createTextNode(label));
 
@@ -2362,6 +2357,8 @@ function displayRichPingData(ping, updatePayloadList) {
   if (payloadIndex > 0) {
     payload = ping.payload.childPayloads[payloadIndex - 1];
   }
+
+  console.log(payload);
 
   
   ChromeHangs.render(payload);
