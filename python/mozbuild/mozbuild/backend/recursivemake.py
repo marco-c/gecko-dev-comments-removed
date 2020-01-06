@@ -615,10 +615,6 @@ class RecursiveMakeBackend(CommonBackend):
             
             
 
-            
-            build_target = self._build_target_for_obj(obj)
-            self._compile_graph[build_target]
-
         elif isinstance(obj, SharedLibrary):
             self._process_shared_library(obj, backend_file)
             self._process_linked_libraries(obj, backend_file)
