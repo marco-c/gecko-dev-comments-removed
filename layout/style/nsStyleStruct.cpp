@@ -3927,6 +3927,10 @@ nsStyleContent::CalcDifference(const nsStyleContent& aNewData) const
   
   
   
+  
+  
+  
+  
   if (mContents != aNewData.mContents ||
       mIncrements != aNewData.mIncrements ||
       mResets != aNewData.mResets) {

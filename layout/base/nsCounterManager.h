@@ -96,11 +96,6 @@ struct nsCounterUseNode : public nsCounterNode {
     virtual bool InitTextFrame(nsGenConList* aList,
             nsIFrame* aPseudoFrame, nsIFrame* aTextFrame) override;
 
-    void SetCounterStyleDirty()
-    {
-        mCounterStyle = nullptr;
-    }
-
     
     
     void Calc(nsCounterList* aList);
@@ -224,7 +219,7 @@ public:
     void RecalcAll();
 
     
-    void SetAllCounterStylesDirty();
+    void SetAllDirty();
 
     
     
