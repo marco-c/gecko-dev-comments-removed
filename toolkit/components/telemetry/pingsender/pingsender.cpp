@@ -156,14 +156,14 @@ int main(int argc, char* argv[])
                    "Send the payload stored in PATH to the specified URL using "
                    "an HTTP POST message\n"
                    "then delete the file after a successful send.\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   string ping(ReadPing(pingPath));
 
   if (ping.empty()) {
     PINGSENDER_LOG("ERROR: Ping payload is empty\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   
@@ -174,18 +174,18 @@ int main(int argc, char* argv[])
   
   if (gzipPing.empty()) {
     PINGSENDER_LOG("ERROR: Ping compression failed\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   if (!Post(url, gzipPing)) {
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   
   if (!pingPath.empty() && std::remove(pingPath.c_str())) {
     
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
-  return EXIT_SUCCESS;
+  exit(EXIT_SUCCESS);
 }

@@ -70,14 +70,6 @@ class MachCommands(MachCommandBase):
             interpolation = { 'server': '%s:%d' % httpd.httpd.server_address,
                               'OOP': 'false'}
             prefs = json.loads(json.dumps(prefs) % interpolation)
-            
-            
-            
-            
-            
-            
-            
-            prefs['toolkit.telemetry.newProfilePing.enabled'] = False
             for pref in prefs:
                 prefs[pref] = Preferences.cast(prefs[pref])
 
