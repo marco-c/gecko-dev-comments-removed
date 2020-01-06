@@ -1290,7 +1290,7 @@ var gBrowserInit = {
     
     
     
-    DOMEventHandler.init();
+    DOMLinkHandler.init();
     gPageStyleMenu.init();
     LanguageDetectionListener.init();
     BrowserOnClick.init();
@@ -3701,13 +3701,13 @@ var newWindowButtonObserver = {
     }
   }
 }
-const DOMEventHandler = {
+
+const DOMLinkHandler = {
   init() {
     let mm = window.messageManager;
     mm.addMessageListener("Link:AddFeed", this);
     mm.addMessageListener("Link:SetIcon", this);
     mm.addMessageListener("Link:AddSearch", this);
-    mm.addMessageListener("Meta:SetPageInfo", this);
   },
 
   receiveMessage(aMsg) {
@@ -3724,17 +3724,7 @@ const DOMEventHandler = {
       case "Link:AddSearch":
         this.addSearch(aMsg.target, aMsg.data.engine, aMsg.data.url);
         break;
-
-      case "Meta:SetPageInfo":
-        this.setPageInfo(aMsg.data);
-        break;
     }
-  },
-
-  setPageInfo(aData) {
-    const {url, description, previewImageURL} = aData;
-    gBrowser.setPageInfo(url, description, previewImageURL);
-    return true;
   },
 
   setIcon(aBrowser, aURL, aLoadingPrincipal) {
@@ -3972,8 +3962,7 @@ const BrowserSearch = {
       return engine.identifier;
     }
 
-    if (!engine || (engine.name === undefined) ||
-        !Services.prefs.getBoolPref("toolkit.telemetry.enabled"))
+    if (!engine || (engine.name === undefined))
       return "other";
 
     return "other-" + engine.name;
@@ -5538,6 +5527,7 @@ function setToolbarVisibility(toolbar, isVisible, persist = true) {
   let event = new CustomEvent("toolbarvisibilitychange", eventParams);
   toolbar.dispatchEvent(event);
 
+  PlacesToolbarHelper.init();
   BookmarkingUI.onToolbarVisibilityChange();
 }
 
