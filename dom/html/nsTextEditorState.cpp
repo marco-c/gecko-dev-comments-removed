@@ -504,10 +504,11 @@ nsTextInputSelectionImpl::SetCaretReadOnly(bool aReadOnly)
   {
     RefPtr<nsCaret> caret = shell->GetCaret();
     if (caret) {
-      nsISelection* domSel =
+      Selection* selection =
         mFrameSelection->GetSelection(SelectionType::eNormal);
-      if (domSel)
+      if (selection) {
         caret->SetCaretReadOnly(aReadOnly);
+      }
       return NS_OK;
     }
   }
@@ -547,10 +548,11 @@ nsTextInputSelectionImpl::SetCaretVisibilityDuringSelection(bool aVisibility)
   {
     RefPtr<nsCaret> caret = shell->GetCaret();
     if (caret) {
-      nsISelection* domSel =
+      Selection* selection =
         mFrameSelection->GetSelection(SelectionType::eNormal);
-      if (domSel)
+      if (selection) {
         caret->SetVisibilityDuringSelection(aVisibility);
+      }
       return NS_OK;
     }
   }
@@ -1338,22 +1340,16 @@ nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame)
   mSelCon->SetDisplaySelection(nsISelectionController::SELECTION_ON);
 
   
-  RefPtr<nsISelection> domSelection;
-  if (NS_SUCCEEDED(mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                                         getter_AddRefs(domSelection))) &&
-      domSelection) {
-    nsCOMPtr<nsISelectionPrivate> selPriv(do_QueryInterface(domSelection));
+  
+  
+  
+  Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
+  if (selection) {
     RefPtr<nsCaret> caret = shell->GetCaret();
-    nsCOMPtr<nsISelectionListener> listener;
     if (caret) {
-      listener = do_QueryInterface(caret);
-      if (listener) {
-        selPriv->AddSelectionListener(listener);
-      }
+      selection->AddSelectionListener(caret);
     }
-
-    selPriv->AddSelectionListener(static_cast<nsISelectionListener*>
-                                             (mTextListener));
+    selection->AddSelectionListener(mTextListener);
   }
 
   
@@ -2208,14 +2204,13 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
 
   if (mSelCon) {
     if (mTextListener) {
-      RefPtr<nsISelection> domSelection;
-      if (NS_SUCCEEDED(mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                                             getter_AddRefs(domSelection))) &&
-          domSelection) {
-        nsCOMPtr<nsISelectionPrivate> selPriv(do_QueryInterface(domSelection));
-
-        selPriv->RemoveSelectionListener(static_cast<nsISelectionListener*>
-                                         (mTextListener));
+      
+      
+      
+      Selection* selection =
+        mSelCon->GetSelection(SelectionType::eNormal);
+      if (selection) {
+        selection->RemoveSelectionListener(mTextListener);
       }
     }
 
@@ -2647,11 +2642,11 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
       {
         AutoNoJSAPI nojsapi;
 
-        nsCOMPtr<nsISelection> domSel;
-        mSelCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                              getter_AddRefs(domSel));
-        SelectionBatcher selectionBatcher(domSel ? domSel->AsSelection() :
-                                                   nullptr);
+        
+        
+        Selection* selection =
+          mSelCon->GetSelection(SelectionType::eNormal);
+        SelectionBatcher selectionBatcher(selection);
 
         if (NS_WARN_IF(!weakFrame.IsAlive())) {
           return true;
@@ -2694,10 +2689,10 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
             }
           } else {
             AutoDisableUndo disableUndo(textEditor);
-            if (domSel) {
+            if (selection) {
               
               
-              domSel->RemoveAllRanges();
+              selection->RemoveAllRanges();
             }
 
             textEditor->SetText(newValue);
