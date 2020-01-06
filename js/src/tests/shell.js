@@ -329,13 +329,6 @@
   var PASSED = " PASSED! ";
   var FAILED = " FAILED! ";
 
-  
-  function startTest() {
-    if (global.BUGNUMBER)
-      print("BUGNUMBER: " + global.BUGNUMBER);
-  }
-  global.startTest = startTest;
-
   var callStack = [];
 
   
