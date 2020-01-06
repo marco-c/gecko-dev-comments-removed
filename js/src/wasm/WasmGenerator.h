@@ -82,9 +82,28 @@ typedef Vector<FuncCompileUnit, 8, SystemAllocPolicy> FuncCompileUnitVector;
 
 
 
+struct CompileTaskState
+{
+    ConditionVariable    failedOrFinished;
+    CompileTaskPtrVector finished;
+    uint32_t             numFailed;
+    UniqueChars          errorMessage;
+
+    CompileTaskState() : numFailed(0) {}
+    ~CompileTaskState() { MOZ_ASSERT(finished.empty()); MOZ_ASSERT(!numFailed); }
+};
+
+typedef ExclusiveData<CompileTaskState> ExclusiveCompileTaskState;
+
+
+
+
+
+
 class CompileTask
 {
     const ModuleEnvironment&   env_;
+    ExclusiveCompileTaskState& state_;
     LifoAlloc                  lifo_;
     Maybe<jit::TempAllocator>  alloc_;
     Maybe<jit::MacroAssembler> masm_;
@@ -99,8 +118,9 @@ class CompileTask
     }
 
   public:
-    CompileTask(const ModuleEnvironment& env, size_t defaultChunkSize)
+    CompileTask(const ModuleEnvironment& env, ExclusiveCompileTaskState& state, size_t defaultChunkSize)
       : env_(env),
+        state_(state),
         lifo_(defaultChunkSize)
     {
         init();
@@ -113,6 +133,9 @@ class CompileTask
     }
     const ModuleEnvironment& env() const {
         return env_;
+    }
+    const ExclusiveCompileTaskState& state() const {
+        return state_;
     }
     jit::MacroAssembler& masm() {
         return *masm_;
@@ -138,8 +161,6 @@ class CompileTask
         return true;
     }
 };
-
-struct Tier2GeneratorTask;
 
 
 
@@ -169,6 +190,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     UniqueJumpTable                 jumpTable_;
 
     
+    ExclusiveCompileTaskState       taskState_;
     uint32_t                        numSigs_;
     uint32_t                        numTables_;
     LifoAlloc                       lifo_;
