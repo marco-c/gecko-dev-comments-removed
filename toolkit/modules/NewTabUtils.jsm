@@ -926,50 +926,50 @@ var ActivityStreamProvider = {
 
 
 
-  _getIconData(aUri) {
-    
-    const preferredWidth = 0;
-    return new Promise(resolve => PlacesUtils.favicons.getFaviconDataForPage(
-      aUri,
+
+
+
+
+  async _addFavicons(aLinks) {
+    if (aLinks.length) {
       
-      (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
-        resolve(iconUri ? {favicon, faviconLength, faviconSize, mimeType} : null),
-      preferredWidth));
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _addFavicons(aLinks) {
-    
-    
-    
-    
-    return Promise.all(aLinks.map(link => new Promise(async resolve => {
-      let iconData;
-      try {
-        const linkUri = Services.io.newURI(link.url);
-        iconData = await this._getIconData(linkUri);
-
-        
-        if (!iconData) {
-          linkUri.scheme = linkUri.scheme === "https" ? "http" : "https";
-          iconData = await this._getIconData(linkUri);
-        }
-      } catch (e) {
-        
-      }
-
       
-      resolve(Object.assign(link, iconData || {}));
-    })));
+      
+      
+      await Promise.all(aLinks.map(link => new Promise(resolve => {
+        return PlacesUtils.favicons.getFaviconDataForPage(
+            Services.io.newURI(link.url),
+            (iconuri, len, data, mime, size) => {
+              
+              
+              
+              
+              
+              
+              if (!iconuri) {
+                link.favicon = null;
+                link.mimeType = null;
+                link.faviconSize = null;
+              } else {
+                link.favicon = data;
+                link.mimeType = mime;
+                link.faviconLength = len;
+                link.faviconSize = size;
+              }
+              return resolve(link);
+            },
+            0); 
+        }).catch(() => {
+          
+          
+          link.favicon = null;
+          link.mimeType = null;
+          link.faviconSize = null;
+          return link;
+        })
+      ));
+    }
+    return aLinks;
   },
 
   
