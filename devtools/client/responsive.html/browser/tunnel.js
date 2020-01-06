@@ -416,6 +416,8 @@ MessageManagerTunnel.prototype = {
     
     "InlineSpellChecker:",
     
+    "MessageChannel:",
+    
     "PageInfo:",
     
     "Printing:",
@@ -433,6 +435,8 @@ MessageManagerTunnel.prototype = {
     "Findbar:",
     
     "Finder:",
+    
+    "MessageChannel:",
     
     "PageInfo:",
     
