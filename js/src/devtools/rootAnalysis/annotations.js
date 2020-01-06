@@ -3,10 +3,6 @@
 "use strict";
 
 
-
-var GCSuppressionTypes = [];
-
-
 var ignoreIndirectCalls = {
     "mallocSizeOf" : true,
     "aMallocSizeOf" : true,
@@ -43,10 +39,19 @@ function indirectCallCannotGC(fullCaller, fullVariable)
         return true;
 
     
-    if (name == "op" && caller.indexOf("bool js::WeakMap<Key, Value, HashPolicy>::keyNeedsMark(JSObject*)") != -1)
+    if (name == "op" && caller.includes("bool js::WeakMap<Key, Value, HashPolicy>::keyNeedsMark(JSObject*)"))
     {
         return true;
     }
+
+    
+    
+    if (name == "callback" && caller.includes("js::ErrorToException"))
+        return true;
+
+    
+    if (name == "f" && caller.includes("js::MathCache::lookup"))
+        return true;
 
     return false;
 }
@@ -218,6 +223,8 @@ var ignoreFunctions = {
     "uint32 js::TenuringTracer::moveObjectToTenured(JSObject*, JSObject*, int32)" : true,
     "void js::Nursery::freeMallocedBuffers()" : true,
 
+    "void js::AutoEnterOOMUnsafeRegion::crash(uint64, int8*)" : true,
+
     
     
     
@@ -287,11 +294,11 @@ function ignoreGCFunction(mangled)
         return true;
 
     
-    if (fun.indexOf("void nsCOMPtr<T>::Assert_NoQueryNeeded()") >= 0)
+    if (fun.includes("void nsCOMPtr<T>::Assert_NoQueryNeeded()"))
         return true;
 
     
-    if (fun.indexOf("js::WeakMap<Key, Value, HashPolicy>::getDelegate(") >= 0)
+    if (fun.includes("js::WeakMap<Key, Value, HashPolicy>::getDelegate("))
         return true;
 
     
@@ -307,9 +314,27 @@ function stripUCSAndNamespace(name)
     return name;
 }
 
-function isRootedGCTypeName(name)
+function extraRootedGCThings()
 {
-    return (name == "JSAddonId");
+    return [ 'JSAddonId' ];
+}
+
+function extraRootedPointers()
+{
+    return [
+        'ModuleValidator',
+        'JSErrorResult',
+        'WrappableJSErrorResult',
+
+        
+        
+        'js::frontend::TokenStream',
+        'js::frontend::TokenStream::Position',
+
+        'mozilla::ErrorResult',
+        'mozilla::IgnoredErrorResult',
+        'mozilla::dom::binding_detail::FastErrorResult',
+    ];
 }
 
 function isRootedGCPointerTypeName(name)
@@ -319,24 +344,7 @@ function isRootedGCPointerTypeName(name)
     if (name.startsWith('MaybeRooted<'))
         return /\(js::AllowGC\)1u>::RootType/.test(name);
 
-    if (name == "ErrorResult" ||
-        name == "JSErrorResult" ||
-        name == "WrappableJSErrorResult" ||
-        name == "binding_detail::FastErrorResult" ||
-        name == "IgnoredErrorResult" ||
-        name == "frontend::TokenStream" ||
-        name == "frontend::TokenStream::Position" ||
-        name == "ModuleValidator")
-    {
-        return true;
-    }
-
     return name.startsWith('Rooted') || name.startsWith('PersistentRooted');
-}
-
-function isRootedTypeName(name)
-{
-    return isRootedGCTypeName(name) || isRootedGCPointerTypeName(name);
 }
 
 function isUnsafeStorage(typeName)
@@ -345,7 +353,7 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
-function isSuppressConstructor(edgeType, varName)
+function isSuppressConstructor(typeInfo, edgeType, varName)
 {
     
     if (edgeType.Kind != 'Function')
@@ -357,7 +365,7 @@ function isSuppressConstructor(edgeType, varName)
 
     
     var type = edgeType.TypeFunctionCSU.Type.Name;
-    if (GCSuppressionTypes.indexOf(type) == -1)
+    if (!(type in typeInfo.GCSuppressors))
         return false;
 
     
