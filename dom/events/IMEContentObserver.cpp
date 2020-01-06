@@ -31,6 +31,7 @@
 #include "nsISupports.h"
 #include "nsIWidget.h"
 #include "nsPresContext.h"
+#include "nsRefreshDriver.h"
 #include "nsWeakReference.h"
 #include "WritingModes.h"
 
@@ -1731,15 +1732,7 @@ IMEContentObserver::FlushMergeableNotifications()
   
   
   mQueuedSender = new IMENotificationSender(this);
-  nsIScriptGlobalObject* globalObject = mDocShell ?
-                                        mDocShell->GetScriptGlobalObject() :
-                                        nullptr;
-  if (globalObject) {
-    RefPtr<IMENotificationSender> queuedSender = mQueuedSender;
-    globalObject->Dispatch(nullptr, TaskCategory::Other, queuedSender.forget());
-  } else {
-    NS_DispatchToCurrentThread(mQueuedSender);
-  }
+  mQueuedSender->Dispatch(mDocShell);
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::FlushMergeableNotifications(), "
      "finished", this));
@@ -1748,7 +1741,8 @@ IMEContentObserver::FlushMergeableNotifications()
 void
 IMEContentObserver::TryToFlushPendingNotifications()
 {
-  if (!mQueuedSender || mSendingNotification != NOTIFY_IME_OF_NOTHING) {
+  if (!mQueuedSender || mSendingNotification != NOTIFY_IME_OF_NOTHING ||
+      XRE_IsContentProcess()) {
     return;
   }
 
@@ -1767,28 +1761,30 @@ bool
 IMEContentObserver::AChangeEvent::CanNotifyIME(
                                     ChangeEventType aChangeEventType) const
 {
-  if (NS_WARN_IF(!mIMEContentObserver)) {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (NS_WARN_IF(!observer)) {
     return false;
   }
+
   if (aChangeEventType == eChangeEventType_CompositionEventHandled) {
-    return mIMEContentObserver->mWidget != nullptr;
+    return observer->mWidget != nullptr;
   }
-  State state = mIMEContentObserver->GetState();
+  State state = observer->GetState();
   
   if (state == eState_NotObserving) {
     return false;
   }
   
   if (aChangeEventType == eChangeEventType_Focus) {
-    return !NS_WARN_IF(mIMEContentObserver->mIMEHasFocus);
+    return !NS_WARN_IF(observer->mIMEHasFocus);
   }
   
-  if (!mIMEContentObserver->mIMEHasFocus) {
+  if (!observer->mIMEHasFocus) {
     return false;
   }
 
   
-  MOZ_ASSERT(mIMEContentObserver->mWidget);
+  MOZ_ASSERT(observer->mWidget);
 
   return true;
 }
@@ -1800,17 +1796,23 @@ IMEContentObserver::AChangeEvent::IsSafeToNotifyIME(
   if (NS_WARN_IF(!nsContentUtils::IsSafeToRunScript())) {
     return false;
   }
+
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return false;
+  }
+
   
   
-  if (mIMEContentObserver->mSendingNotification != NOTIFY_IME_OF_NOTHING) {
+  if (observer->mSendingNotification != NOTIFY_IME_OF_NOTHING) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p   IMEContentObserver::AChangeEvent::IsSafeToNotifyIME(), "
        "putting off sending notification due to detecting recursive call, "
        "mIMEContentObserver={ mSendingNotification=%s }",
-       this, ToChar(mIMEContentObserver->mSendingNotification)));
+       this, ToChar(observer->mSendingNotification)));
     return false;
   }
-  State state = mIMEContentObserver->GetState();
+  State state = observer->GetState();
   if (aChangeEventType == eChangeEventType_Focus) {
     if (NS_WARN_IF(state != eState_Initializing && state != eState_Observing)) {
       return false;
@@ -1820,13 +1822,39 @@ IMEContentObserver::AChangeEvent::IsSafeToNotifyIME(
   } else if (state != eState_Observing) {
     return false;
   }
-  return mIMEContentObserver->IsSafeToNotifyIME();
+  return observer->IsSafeToNotifyIME();
 }
 
 
 
 
- 
+
+void
+IMEContentObserver::IMENotificationSender::Dispatch(nsIDocShell* aDocShell)
+{
+  if (XRE_IsContentProcess() && aDocShell) {
+    RefPtr<nsPresContext> presContext;
+    aDocShell->GetPresContext(getter_AddRefs(presContext));
+    if (presContext) {
+      nsRefreshDriver* refreshDriver = presContext->RefreshDriver();
+      if (refreshDriver) {
+        refreshDriver->AddEarlyRunner(this);
+        return;
+      }
+    }
+  }
+
+  nsIScriptGlobalObject* globalObject =
+    aDocShell ? aDocShell->GetScriptGlobalObject() : nullptr;
+  if (globalObject) {
+    RefPtr<IMENotificationSender> queuedSender = this;
+    globalObject->Dispatch(nullptr, TaskCategory::Other,
+                           queuedSender.forget());
+  } else {
+    NS_DispatchToCurrentThread(this);
+  }
+}
+
 NS_IMETHODIMP
 IMEContentObserver::IMENotificationSender::Run()
 {
@@ -1837,65 +1865,59 @@ IMEContentObserver::IMENotificationSender::Run()
     return NS_OK;
   }
 
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return NS_OK;
+  }
+
   AutoRestore<bool> running(mIsRunning);
   mIsRunning = true;
 
   
-  if (mIMEContentObserver->mQueuedSender != this) {
+  if (observer->mQueuedSender != this) {
     return NS_OK;
   }
 
   
   
 
-  if (mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet) {
-    mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet = false;
+  if (observer->mNeedsToNotifyIMEOfFocusSet) {
+    observer->mNeedsToNotifyIMEOfFocusSet = false;
     SendFocusSet();
-    mIMEContentObserver->mQueuedSender = nullptr;
+    observer->mQueuedSender = nullptr;
     
     
     
     
     
-    if (mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet) {
-      MOZ_ASSERT(!mIMEContentObserver->mIMEHasFocus);
+    if (observer->mNeedsToNotifyIMEOfFocusSet) {
+      MOZ_ASSERT(!observer->mIMEHasFocus);
       MOZ_LOG(sIMECOLog, LogLevel::Debug,
         ("0x%p IMEContentObserver::IMENotificationSender::Run(), "
          "posting IMENotificationSender to current thread", this));
-      mIMEContentObserver->mQueuedSender =
-        new IMENotificationSender(mIMEContentObserver);
-      nsIScriptGlobalObject* globalObject =
-        mIMEContentObserver->mDocShell ?
-        mIMEContentObserver->mDocShell->GetScriptGlobalObject() : nullptr;
-      if (globalObject) {
-        RefPtr<IMENotificationSender> queuedSender =
-          mIMEContentObserver->mQueuedSender;
-        globalObject->Dispatch(nullptr, TaskCategory::Other,
-                               queuedSender.forget());
-      } else {
-        NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
-      }
+      observer->mQueuedSender = new IMENotificationSender(observer);
+      observer->mQueuedSender->Dispatch(observer->mDocShell);
       return NS_OK;
     }
     
     
-    mIMEContentObserver->ClearPendingNotifications();
+    observer->ClearPendingNotifications();
     return NS_OK;
   }
 
-  if (mIMEContentObserver->mNeedsToNotifyIMEOfTextChange) {
-    mIMEContentObserver->mNeedsToNotifyIMEOfTextChange = false;
+  if (observer->mNeedsToNotifyIMEOfTextChange) {
+    observer->mNeedsToNotifyIMEOfTextChange = false;
     SendTextChange();
   }
 
   
   
-  if (!mIMEContentObserver->mNeedsToNotifyIMEOfTextChange) {
+  if (!observer->mNeedsToNotifyIMEOfTextChange) {
     
     
     
-    if (mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange) {
-      mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange = false;
+    if (observer->mNeedsToNotifyIMEOfSelectionChange) {
+      observer->mNeedsToNotifyIMEOfSelectionChange = false;
       SendSelectionChange();
     }
   }
@@ -1904,10 +1926,10 @@ IMEContentObserver::IMENotificationSender::Run()
   
   
   
-  if (!mIMEContentObserver->mNeedsToNotifyIMEOfTextChange &&
-      !mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange) {
-    if (mIMEContentObserver->mNeedsToNotifyIMEOfPositionChange) {
-      mIMEContentObserver->mNeedsToNotifyIMEOfPositionChange = false;
+  if (!observer->mNeedsToNotifyIMEOfTextChange &&
+      !observer->mNeedsToNotifyIMEOfSelectionChange) {
+    if (observer->mNeedsToNotifyIMEOfPositionChange) {
+      observer->mNeedsToNotifyIMEOfPositionChange = false;
       SendPositionChange();
     }
   }
@@ -1915,20 +1937,20 @@ IMEContentObserver::IMENotificationSender::Run()
   
   
   
-  if (!mIMEContentObserver->mNeedsToNotifyIMEOfTextChange &&
-      !mIMEContentObserver->mNeedsToNotifyIMEOfSelectionChange &&
-      !mIMEContentObserver->mNeedsToNotifyIMEOfPositionChange) {
-    if (mIMEContentObserver->mNeedsToNotifyIMEOfCompositionEventHandled) {
-      mIMEContentObserver->mNeedsToNotifyIMEOfCompositionEventHandled = false;
+  if (!observer->mNeedsToNotifyIMEOfTextChange &&
+      !observer->mNeedsToNotifyIMEOfSelectionChange &&
+      !observer->mNeedsToNotifyIMEOfPositionChange) {
+    if (observer->mNeedsToNotifyIMEOfCompositionEventHandled) {
+      observer->mNeedsToNotifyIMEOfCompositionEventHandled = false;
       SendCompositionEventHandled();
     }
   }
 
-  mIMEContentObserver->mQueuedSender = nullptr;
+  observer->mQueuedSender = nullptr;
 
   
-  if (mIMEContentObserver->NeedsToNotifyIMEOfSomething()) {
-    if (mIMEContentObserver->GetState() == eState_StoppedObserving) {
+  if (observer->NeedsToNotifyIMEOfSomething()) {
+    if (observer->GetState() == eState_StoppedObserving) {
       MOZ_LOG(sIMECOLog, LogLevel::Debug,
         ("0x%p IMEContentObserver::IMENotificationSender::Run(), "
          "waiting IMENotificationSender to be reinitialized", this));
@@ -1936,19 +1958,8 @@ IMEContentObserver::IMENotificationSender::Run()
       MOZ_LOG(sIMECOLog, LogLevel::Debug,
         ("0x%p IMEContentObserver::IMENotificationSender::Run(), "
          "posting IMENotificationSender to current thread", this));
-      mIMEContentObserver->mQueuedSender =
-        new IMENotificationSender(mIMEContentObserver);
-      nsIScriptGlobalObject* globalObject =
-        mIMEContentObserver->mDocShell ?
-        mIMEContentObserver->mDocShell->GetScriptGlobalObject() : nullptr;
-      if (globalObject) {
-        RefPtr<IMENotificationSender> queuedSender =
-          mIMEContentObserver->mQueuedSender;
-        globalObject->Dispatch(nullptr, TaskCategory::Other,
-                               queuedSender.forget());
-      } else {
-        NS_DispatchToCurrentThread(mIMEContentObserver->mQueuedSender);
-      }
+      observer->mQueuedSender = new IMENotificationSender(observer);
+      observer->mQueuedSender->Dispatch(observer->mDocShell);
     }
   }
   return NS_OK;
@@ -1957,6 +1968,11 @@ IMEContentObserver::IMENotificationSender::Run()
 void
 IMEContentObserver::IMENotificationSender::SendFocusSet()
 {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return;
+  }
+
   if (!CanNotifyIME(eChangeEventType_Focus)) {
     
     
@@ -1964,7 +1980,7 @@ IMEContentObserver::IMENotificationSender::SendFocusSet()
       ("0x%p IMEContentObserver::IMENotificationSender::"
        "SendFocusSet(), FAILED, due to impossible to notify IME of focus",
        this));
-    mIMEContentObserver->ClearPendingNotifications();
+    observer->ClearPendingNotifications();
     return;
   }
 
@@ -1972,30 +1988,30 @@ IMEContentObserver::IMENotificationSender::SendFocusSet()
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendFocusSet(), retrying to send NOTIFY_IME_OF_FOCUS...", this));
-    mIMEContentObserver->PostFocusSetNotification();
+    observer->PostFocusSetNotification();
     return;
   }
 
-  mIMEContentObserver->mIMEHasFocus = true;
+  observer->mIMEHasFocus = true;
   
-  mIMEContentObserver->UpdateSelectionCache();
+  observer->UpdateSelectionCache();
 
   MOZ_LOG(sIMECOLog, LogLevel::Info,
     ("0x%p IMEContentObserver::IMENotificationSender::"
      "SendFocusSet(), sending NOTIFY_IME_OF_FOCUS...", this));
 
-  MOZ_RELEASE_ASSERT(mIMEContentObserver->mSendingNotification ==
+  MOZ_RELEASE_ASSERT(observer->mSendingNotification ==
                        NOTIFY_IME_OF_NOTHING);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_FOCUS;
+  observer->mSendingNotification = NOTIFY_IME_OF_FOCUS;
   IMEStateManager::NotifyIME(IMENotification(NOTIFY_IME_OF_FOCUS),
-                             mIMEContentObserver->mWidget);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+                             observer->mWidget);
+  observer->mSendingNotification = NOTIFY_IME_OF_NOTHING;
 
   
   
   
   
-  mIMEContentObserver->OnIMEReceivedFocus();
+  observer->OnIMEReceivedFocus();
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2005,6 +2021,11 @@ IMEContentObserver::IMENotificationSender::SendFocusSet()
 void
 IMEContentObserver::IMENotificationSender::SendSelectionChange()
 {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return;
+  }
+
   if (!CanNotifyIME(eChangeEventType_Selection)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2018,12 +2039,12 @@ IMEContentObserver::IMENotificationSender::SendSelectionChange()
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendSelectionChange(), retrying to send "
        "NOTIFY_IME_OF_SELECTION_CHANGE...", this));
-    mIMEContentObserver->PostSelectionChangeNotification();
+    observer->PostSelectionChangeNotification();
     return;
   }
 
-  SelectionChangeData lastSelChangeData = mIMEContentObserver->mSelectionData;
-  if (NS_WARN_IF(!mIMEContentObserver->UpdateSelectionCache())) {
+  SelectionChangeData lastSelChangeData = observer->mSelectionData;
+  if (NS_WARN_IF(!observer->UpdateSelectionCache())) {
     MOZ_LOG(sIMECOLog, LogLevel::Error,
       ("0x%p IMEContentObserver::IMENotificationSender::"
        "SendSelectionChange(), FAILED, due to UpdateSelectionCache() failure",
@@ -2042,7 +2063,7 @@ IMEContentObserver::IMENotificationSender::SendSelectionChange()
 
   
   
-  SelectionChangeData& newSelChangeData = mIMEContentObserver->mSelectionData;
+  SelectionChangeData& newSelChangeData = observer->mSelectionData;
   if (lastSelChangeData.IsValid() &&
       lastSelChangeData.mOffset == newSelChangeData.mOffset &&
       lastSelChangeData.String() == newSelChangeData.String() &&
@@ -2062,13 +2083,13 @@ IMEContentObserver::IMENotificationSender::SendSelectionChange()
      this, SelectionChangeDataToString(newSelChangeData).get()));
 
   IMENotification notification(NOTIFY_IME_OF_SELECTION_CHANGE);
-  notification.SetData(mIMEContentObserver->mSelectionData);
+  notification.SetData(observer->mSelectionData);
 
-  MOZ_RELEASE_ASSERT(mIMEContentObserver->mSendingNotification ==
+  MOZ_RELEASE_ASSERT(observer->mSendingNotification ==
                        NOTIFY_IME_OF_NOTHING);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_SELECTION_CHANGE;
-  IMEStateManager::NotifyIME(notification, mIMEContentObserver->mWidget);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+  observer->mSendingNotification = NOTIFY_IME_OF_SELECTION_CHANGE;
+  IMEStateManager::NotifyIME(notification, observer->mWidget);
+  observer->mSendingNotification = NOTIFY_IME_OF_NOTHING;
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2078,6 +2099,11 @@ IMEContentObserver::IMENotificationSender::SendSelectionChange()
 void
 IMEContentObserver::IMENotificationSender::SendTextChange()
 {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return;
+  }
+
   if (!CanNotifyIME(eChangeEventType_Text)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2091,17 +2117,17 @@ IMEContentObserver::IMENotificationSender::SendTextChange()
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendTextChange(), retrying to send NOTIFY_IME_OF_TEXT_CHANGE...",
        this));
-    mIMEContentObserver->PostTextChangeNotification();
+    observer->PostTextChangeNotification();
     return;
   }
 
   
-  if (!mIMEContentObserver->NeedsTextChangeNotification()) {
+  if (!observer->NeedsTextChangeNotification()) {
     MOZ_LOG(sIMECOLog, LogLevel::Warning,
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendTextChange(), canceling sending NOTIFY_IME_OF_TEXT_CHANGE",
        this));
-    mIMEContentObserver->CancelNotifyingIMEOfTextChange();
+    observer->CancelNotifyingIMEOfTextChange();
     return;
   }
 
@@ -2109,17 +2135,17 @@ IMEContentObserver::IMENotificationSender::SendTextChange()
     ("0x%p IMEContentObserver::IMENotificationSender::"
      "SendTextChange(), sending NOTIFY_IME_OF_TEXT_CHANGE... "
      "mIMEContentObserver={ mTextChangeData=%s }",
-     this, TextChangeDataToString(mIMEContentObserver->mTextChangeData).get()));
+     this, TextChangeDataToString(observer->mTextChangeData).get()));
 
   IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
-  notification.SetData(mIMEContentObserver->mTextChangeData);
-  mIMEContentObserver->mTextChangeData.Clear();
+  notification.SetData(observer->mTextChangeData);
+  observer->mTextChangeData.Clear();
 
-  MOZ_RELEASE_ASSERT(mIMEContentObserver->mSendingNotification ==
+  MOZ_RELEASE_ASSERT(observer->mSendingNotification ==
                        NOTIFY_IME_OF_NOTHING);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_TEXT_CHANGE;
-  IMEStateManager::NotifyIME(notification, mIMEContentObserver->mWidget);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+  observer->mSendingNotification = NOTIFY_IME_OF_TEXT_CHANGE;
+  IMEStateManager::NotifyIME(notification, observer->mWidget);
+  observer->mSendingNotification = NOTIFY_IME_OF_NOTHING;
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2129,6 +2155,11 @@ IMEContentObserver::IMENotificationSender::SendTextChange()
 void
 IMEContentObserver::IMENotificationSender::SendPositionChange()
 {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return;
+  }
+
   if (!CanNotifyIME(eChangeEventType_Position)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2142,17 +2173,17 @@ IMEContentObserver::IMENotificationSender::SendPositionChange()
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendPositionChange(), retrying to send "
        "NOTIFY_IME_OF_POSITION_CHANGE...", this));
-    mIMEContentObserver->PostPositionChangeNotification();
+    observer->PostPositionChangeNotification();
     return;
   }
 
   
-  if (!mIMEContentObserver->NeedsPositionChangeNotification()) {
+  if (!observer->NeedsPositionChangeNotification()) {
     MOZ_LOG(sIMECOLog, LogLevel::Warning,
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendPositionChange(), canceling sending NOTIFY_IME_OF_POSITION_CHANGE",
        this));
-    mIMEContentObserver->CancelNotifyingIMEOfPositionChange();
+    observer->CancelNotifyingIMEOfPositionChange();
     return;
   }
 
@@ -2160,12 +2191,12 @@ IMEContentObserver::IMENotificationSender::SendPositionChange()
     ("0x%p IMEContentObserver::IMENotificationSender::"
      "SendPositionChange(), sending NOTIFY_IME_OF_POSITION_CHANGE...", this));
 
-  MOZ_RELEASE_ASSERT(mIMEContentObserver->mSendingNotification ==
+  MOZ_RELEASE_ASSERT(observer->mSendingNotification ==
                        NOTIFY_IME_OF_NOTHING);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_POSITION_CHANGE;
+  observer->mSendingNotification = NOTIFY_IME_OF_POSITION_CHANGE;
   IMEStateManager::NotifyIME(IMENotification(NOTIFY_IME_OF_POSITION_CHANGE),
-                             mIMEContentObserver->mWidget);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+                             observer->mWidget);
+  observer->mSendingNotification = NOTIFY_IME_OF_NOTHING;
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2175,6 +2206,11 @@ IMEContentObserver::IMENotificationSender::SendPositionChange()
 void
 IMEContentObserver::IMENotificationSender::SendCompositionEventHandled()
 {
+  RefPtr<IMEContentObserver> observer = GetObserver();
+  if (!observer) {
+    return;
+  }
+
   if (!CanNotifyIME(eChangeEventType_CompositionEventHandled)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("0x%p IMEContentObserver::IMENotificationSender::"
@@ -2188,7 +2224,7 @@ IMEContentObserver::IMENotificationSender::SendCompositionEventHandled()
       ("0x%p   IMEContentObserver::IMENotificationSender::"
        "SendCompositionEventHandled(), retrying to send "
        "NOTIFY_IME_OF_POSITION_CHANGE...", this));
-    mIMEContentObserver->PostCompositionEventHandledNotification();
+    observer->PostCompositionEventHandledNotification();
     return;
   }
 
@@ -2197,14 +2233,14 @@ IMEContentObserver::IMENotificationSender::SendCompositionEventHandled()
      "SendCompositionEventHandled(), sending "
      "NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED...", this));
 
-  MOZ_RELEASE_ASSERT(mIMEContentObserver->mSendingNotification ==
+  MOZ_RELEASE_ASSERT(observer->mSendingNotification ==
                        NOTIFY_IME_OF_NOTHING);
-  mIMEContentObserver->mSendingNotification =
+  observer->mSendingNotification =
                          NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED;
   IMEStateManager::NotifyIME(
                      IMENotification(NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED),
-                     mIMEContentObserver->mWidget);
-  mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+                     observer->mWidget);
+  observer->mSendingNotification = NOTIFY_IME_OF_NOTHING;
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("0x%p IMEContentObserver::IMENotificationSender::"

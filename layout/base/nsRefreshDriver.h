@@ -192,9 +192,14 @@ public:
     return mLayoutFlushObservers.Contains(aShell);
   }
 
-  void AddPendingSelectionScroll(nsIRunnable* aRunnable)
+  
+
+
+
+
+  void AddEarlyRunner(nsIRunnable* aRunnable)
   {
-    mPendingSelectionScrolls.AppendElement(aRunnable);
+    mEarlyRunners.AppendElement(aRunnable);
     EnsureTimerStarted();
   }
 
@@ -456,7 +461,7 @@ private:
   ObserverArray mObservers[3];
   RequestTable mRequests;
   ImageStartTable mStartTable;
-  AutoTArray<nsCOMPtr<nsIRunnable>, 16> mPendingSelectionScrolls;
+  AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;
 
   struct PendingEvent {
     nsCOMPtr<nsINode> mTarget;
