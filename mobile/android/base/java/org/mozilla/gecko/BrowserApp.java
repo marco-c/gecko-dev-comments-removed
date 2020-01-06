@@ -1712,7 +1712,11 @@ public class BrowserApp extends GeckoApp
         if (aShow) {
             mBrowserChrome.setVisibility(View.VISIBLE);
         } else {
-            mBrowserChrome.setVisibility(View.GONE);
+            
+            
+            
+            
+            mBrowserChrome.setVisibility(View.INVISIBLE);
         }
 
         super.toggleChrome(aShow);
