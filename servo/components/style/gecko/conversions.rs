@@ -230,13 +230,17 @@ impl nsStyleImage {
                     },
                     LineDirection::Vertical(y) => {
                         
-                        if y == Y::Top {
-                            unsafe {
-                                (*gecko_gradient).mBgPosX
-                                                 .set_value(CoordDataValue::Percent(0.5));
-                                (*gecko_gradient).mBgPosY
-                                                 .set_value(CoordDataValue::Percent(0.0));
-                            }
+                        
+                        
+                        let y = match y {
+                            Y::Top => 0.0,
+                            Y::Bottom => 1.0,
+                        };
+                        unsafe {
+                            (*gecko_gradient).mBgPosX
+                                                .set_value(CoordDataValue::Percent(0.5));
+                            (*gecko_gradient).mBgPosY
+                                                .set_value(CoordDataValue::Percent(y));
                         }
                     },
                     LineDirection::Corner(horiz, vert) => {
