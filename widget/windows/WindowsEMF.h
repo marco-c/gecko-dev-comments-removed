@@ -50,7 +50,13 @@ public:
 
 
 
-  HDC GetDC() { return mDC; }
+  HDC GetDC() const
+  {
+    MOZ_ASSERT(mDC, "GetDC can be used only after "
+                    "InitForDrawing/ InitFromFileContents and before"
+                    "Playback/ SaveToFile");
+    return mDC;
+  }
 
   
 
