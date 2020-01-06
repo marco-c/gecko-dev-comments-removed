@@ -1460,8 +1460,6 @@ pref("toolkit.telemetry.archive.enabled", true);
 
 pref("toolkit.telemetry.shutdownPingSender.enabled", true);
 
-pref("toolkit.telemetry.newProfilePing.enabled", true);
-
 
 pref("experiments.enabled", true);
 pref("experiments.manifest.fetchIntervalSeconds", 86400);
