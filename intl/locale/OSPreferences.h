@@ -99,13 +99,38 @@ public:
 
 
 
+
   bool GetSystemLocales(nsTArray<nsCString>& aRetVal);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal);
 
   static bool GetDateTimeConnectorPattern(const nsACString& aLocale,
                                           nsAString& aRetVal);
 
 protected:
   nsTArray<nsCString> mSystemLocales;
+  nsTArray<nsCString> mRegionalPrefsLocales;
 
 private:
   virtual ~OSPreferences() {};
@@ -142,6 +167,8 @@ private:
 
 
   bool ReadSystemLocales(nsTArray<nsCString>& aRetVal);
+
+  bool ReadRegionalPrefsLocales(nsTArray<nsCString>& aRetVal);
 
   
 

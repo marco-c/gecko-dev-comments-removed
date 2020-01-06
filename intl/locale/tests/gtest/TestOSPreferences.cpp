@@ -32,6 +32,21 @@ TEST(Intl_Locale_OSPreferences, GetSystemLocales) {
 
 
 
+TEST(Intl_Locale_OSPreferences, GetRegionalPrefsLocales) {
+  nsTArray<nsCString> rgLocales;
+  ASSERT_TRUE(OSPreferences::GetInstance()->GetRegionalPrefsLocales(rgLocales));
+
+  ASSERT_FALSE(rgLocales.IsEmpty());
+}
+
+
+
+
+
+
+
+
+
 TEST(Intl_Locale_OSPreferences, GetDateTimePattern) {
   nsAutoString pattern;
   OSPreferences* osprefs = OSPreferences::GetInstance();
