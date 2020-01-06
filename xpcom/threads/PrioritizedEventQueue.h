@@ -59,10 +59,12 @@ public:
   
   void SetMutexRef(Mutex& aMutex) { mMutex = &aMutex; }
 
+#ifndef RELEASE_OR_BETA
   
   
   
   void SetNextIdleDeadlineRef(TimeStamp& aDeadline) { mNextIdleDeadline = &aDeadline; }
+#endif
 
   void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
   void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
@@ -82,9 +84,11 @@ private:
   
   Mutex* mMutex = nullptr;
 
+#ifndef RELEASE_OR_BETA
   
   
   TimeStamp* mNextIdleDeadline = nullptr;
+#endif
 
   
   
