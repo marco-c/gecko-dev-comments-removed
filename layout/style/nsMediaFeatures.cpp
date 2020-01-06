@@ -801,13 +801,11 @@ nsMediaFeatures::features[] = {
   
   
   
-  
-  
   {
     &nsGkAtoms::_moz_is_glyph,
     nsMediaFeature::eMinMaxNotAllowed,
     nsMediaFeature::eBoolInteger,
-    nsMediaFeature::eNoRequirements,
+    nsMediaFeature::eUserAgentAndChromeOnly,
     { nullptr },
     GetIsGlyph
   },
