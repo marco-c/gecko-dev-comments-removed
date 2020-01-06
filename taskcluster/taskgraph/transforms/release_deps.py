@@ -15,7 +15,8 @@ transforms = TransformSequence()
 def _get_product(job_or_task):
     
     
-    product = job_or_task.get('product')
+    
+    product = job_or_task.get('shipping-product', job_or_task.get('product'))
     if 'payload' in job_or_task:
         product = product or job_or_task['payload'].get(
             'product',

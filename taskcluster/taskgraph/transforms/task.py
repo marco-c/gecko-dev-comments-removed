@@ -173,6 +173,24 @@ task_description_schema = Schema({
 
     
     
+    Required('shipping-phase', default=None): Any(
+        None,
+        'promote',
+        'publish',
+        'ship',
+    ),
+
+    
+    
+    Required('shipping-product', default=None): Any(
+        None,
+        'devedition',
+        'fennec',
+        'firefox',
+    ),
+
+    
+    
     
     
     Optional('coalesce'): {
@@ -1309,6 +1327,8 @@ def build_task(config, tasks):
         attributes = task.get('attributes', {})
         attributes['run_on_projects'] = task.get('run-on-projects', ['all'])
         attributes['always_target'] = task['always-target']
+        attributes['shipping_phase'] = task['shipping-phase']
+        attributes['shipping_product'] = task['shipping-product']
 
         
         if task['worker']['implementation'] in (
