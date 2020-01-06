@@ -40,7 +40,11 @@ add_task(async function bookmark() {
       }
       StarUI.panel.addEventListener("popupshown", resolve, { once: true });
     });
+    Assert.equal(BookmarkingUI.starBox.getAttribute("open"), "true",
+      "Star has open attribute");
     StarUI.panel.hidePopup();
+    Assert.ok(!BookmarkingUI.starBox.hasAttribute("open"),
+      "Star no longer has open attribute");
 
     
     await promisePageActionPanelOpen();
@@ -131,12 +135,16 @@ add_task(async function sendToDevice_nonSendable() {
     await promiseSyncReady();
     
     await promisePageActionPanelOpen();
+    Assert.equal(BrowserPageActions.mainButtonNode.getAttribute("open"),
+      "true", "Main button has 'open' attribute");
     let sendToDeviceButton =
       document.getElementById("pageAction-panel-sendToDevice");
     Assert.ok(sendToDeviceButton.disabled);
     let hiddenPromise = promisePageActionPanelHidden();
     BrowserPageActions.panelNode.hidePopup();
     await hiddenPromise;
+    Assert.ok(!BrowserPageActions.mainButtonNode.hasAttribute("open"),
+      "Main button no longer has 'open' attribute");
     
     BrowserPageActions.mainButtonNode.style.removeProperty("display");
   });
@@ -496,6 +504,8 @@ add_task(async function sendToDevice_inUrlbar() {
       promisePanelShown(BrowserPageActions._activatedActionPanelID);
     EventUtils.synthesizeMouseAtCenter(urlbarButton, {});
     await panelPromise;
+    Assert.equal(urlbarButton.getAttribute("open"), "true",
+      "Button has open attribute");
 
     
     let expectedItems = [
@@ -546,6 +556,8 @@ add_task(async function sendToDevice_inUrlbar() {
     EventUtils.synthesizeMouseAtCenter(deviceMenuItem, {});
     info("Waiting for Send to Device panel to close after clicking a device");
     await hiddenPromise;
+    Assert.ok(!urlbarButton.hasAttribute("open"),
+      "URL bar button no longer has open attribute");
 
     
     
