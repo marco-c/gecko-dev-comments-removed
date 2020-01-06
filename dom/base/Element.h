@@ -39,7 +39,6 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/UniquePtr.h"
 #include "Units.h"
 #include "DOMIntersectionObserver.h"
@@ -998,7 +997,7 @@ public:
   void SetPointerCapture(int32_t aPointerId, ErrorResult& aError)
   {
     bool activeState = false;
-    if (!PointerEventHandler::GetPointerInfo(aPointerId, activeState)) {
+    if (!nsIPresShell::GetPointerInfo(aPointerId, activeState)) {
       aError.Throw(NS_ERROR_DOM_INVALID_POINTER_ERR);
       return;
     }
@@ -1009,23 +1008,23 @@ public:
     if (!activeState) {
       return;
     }
-    PointerEventHandler::SetPointerCaptureById(aPointerId, this);
+    nsIPresShell::SetPointerCapturingContent(aPointerId, this);
   }
   void ReleasePointerCapture(int32_t aPointerId, ErrorResult& aError)
   {
     bool activeState = false;
-    if (!PointerEventHandler::GetPointerInfo(aPointerId, activeState)) {
+    if (!nsIPresShell::GetPointerInfo(aPointerId, activeState)) {
       aError.Throw(NS_ERROR_DOM_INVALID_POINTER_ERR);
       return;
     }
     if (HasPointerCapture(aPointerId)) {
-      PointerEventHandler::ReleasePointerCaptureById(aPointerId);
+      nsIPresShell::ReleasePointerCapturingContent(aPointerId);
     }
   }
   bool HasPointerCapture(long aPointerId)
   {
-    PointerCaptureInfo* pointerCaptureInfo =
-      PointerEventHandler::GetPointerCaptureInfo(aPointerId);
+    nsIPresShell::PointerCaptureInfo* pointerCaptureInfo =
+      nsIPresShell::GetPointerCaptureInfo(aPointerId);
     if (pointerCaptureInfo && pointerCaptureInfo->mPendingContent == this) {
       return true;
     }
@@ -1080,9 +1079,10 @@ public:
     return slots ? slots->mShadowRoot.get() : nullptr;
   }
 
-  void ScrollIntoView();
-  void ScrollIntoView(bool aTop);
+private:
   void ScrollIntoView(const ScrollIntoViewOptions &aOptions);
+public:
+  void ScrollIntoView(const BooleanOrScrollIntoViewOptions& aObject);
   void Scroll(double aXScroll, double aYScroll);
   void Scroll(const ScrollToOptions& aOptions);
   void ScrollTo(double aXScroll, double aYScroll);
