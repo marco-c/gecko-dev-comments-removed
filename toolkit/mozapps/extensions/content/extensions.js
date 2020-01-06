@@ -3607,11 +3607,13 @@ var gDetailView = {
 
         const browserContainer = await this.createOptionsBrowser(rows);
 
-        
-        
-        document.addEventListener("ViewChanged", function() {
-          browserContainer.remove();
-        }, {once: true});
+        if (browserContainer) {
+          
+          
+          document.addEventListener("ViewChanged", function() {
+            browserContainer.remove();
+          }, {once: true});
+        }
 
         finish(browserContainer);
       });
@@ -3637,8 +3639,17 @@ var gDetailView = {
   },
 
   async createOptionsBrowser(parentNode) {
-    let stack = document.createElement("stack");
-    stack.setAttribute("id", "addon-options-prompts-stack");
+    const containerId = "addon-options-prompts-stack";
+
+    let stack = document.getElementById(containerId);
+
+    if (stack) {
+      
+      stack.remove();
+    }
+
+    stack = document.createElement("stack");
+    stack.setAttribute("id", containerId);
 
     let browser = document.createElement("browser");
     browser.setAttribute("type", "content");
@@ -3656,7 +3667,7 @@ var gDetailView = {
       event.stopPropagation();
     });
 
-    let {optionsURL} = this._addon;
+    let {optionsURL, optionsBrowserStyle} = this._addon;
     let remote = !E10SUtils.canLoadURIInProcess(optionsURL, Services.appinfo.PROCESS_TYPE_DEFAULT);
 
     let readyPromise;
@@ -3675,6 +3686,15 @@ var gDetailView = {
     browser.clientTop;
 
     await readyPromise;
+
+    if (!browser.messageManager) {
+      
+      
+      
+      stack.remove();
+      return null;
+    }
+
     ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
 
     return new Promise(resolve => {
@@ -3688,6 +3708,16 @@ var gDetailView = {
       };
 
       let mm = browser.messageManager;
+
+      if (!mm) {
+        
+        
+        
+        stack.remove();
+        resolve(null);
+        return;
+      }
+
       mm.loadFrameScript("chrome://extensions/content/ext-browser-content.js",
                          false);
       mm.addMessageListener("Extension:BrowserContentLoaded", messageListener);
@@ -3698,7 +3728,7 @@ var gDetailView = {
         isInline: true,
       };
 
-      if (this._addon.optionsBrowserStyle) {
+      if (optionsBrowserStyle) {
         browserOptions.stylesheets = extensionStylesheets;
       }
 
