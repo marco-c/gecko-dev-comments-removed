@@ -205,6 +205,13 @@ public:
 
 
 
+
+  inline bool IsSingleLineTextOrNumberControl(bool aExcludePassword) const;
+
+  
+
+
+
   inline bool IsSubmittableControl() const;
 
   
@@ -263,6 +270,13 @@ bool
 nsIFormControl::IsSingleLineTextControl(bool aExcludePassword) const
 {
   return IsSingleLineTextControl(aExcludePassword, ControlType());
+}
+
+bool
+nsIFormControl::IsSingleLineTextOrNumberControl(bool aExcludePassword) const
+{
+  return IsSingleLineTextControl(aExcludePassword) ||
+         ControlType() == NS_FORM_INPUT_NUMBER;
 }
 
 

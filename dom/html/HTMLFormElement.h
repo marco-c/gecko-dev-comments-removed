@@ -224,6 +224,12 @@ public:
 
 
 
+  bool IsLastActiveElement(const nsIFormControl* aControl) const;
+
+  
+
+
+
 
 
 
