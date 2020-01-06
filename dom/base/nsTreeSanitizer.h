@@ -156,10 +156,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-
-
-    bool SanitizeStyleDeclaration(mozilla::DeclarationBlock* aDeclaration,
-                                  nsAutoString& aRuleText);
+    bool SanitizeStyleDeclaration(mozilla::DeclarationBlock* aDeclaration);
 
     
 
