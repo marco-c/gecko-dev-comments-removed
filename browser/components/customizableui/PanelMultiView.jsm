@@ -191,6 +191,15 @@ this.PanelMultiView = class {
     }
   }
 
+  
+
+
+
+
+  get _ephemeral() {
+    return this.node.hasAttribute("ephemeral");
+  }
+
   get panelViews() {
     
     
@@ -221,7 +230,6 @@ this.PanelMultiView = class {
 
 
 
-
   get current() {
     return this._viewShowing || this._currentSubView
   }
@@ -234,6 +242,13 @@ this.PanelMultiView = class {
     else
       this.__currentSubView = panel;
     return panel;
+  }
+  
+
+
+
+  get currentShowPromise() {
+    return this._currentShowPromise || Promise.resolve();
   }
   get _keyNavigationMap() {
     if (!this.__keyNavigationMap)
@@ -316,9 +331,11 @@ this.PanelMultiView = class {
         value: (...args) => this[method](...args)
       });
     });
-    Object.defineProperty(this.node, "current", {
-      enumerable: true,
-      get: () => this.current
+    ["current", "currentShowPromise"].forEach(property => {
+      Object.defineProperty(this.node, property, {
+        enumerable: true,
+        get: () => this[property]
+      });
     });
   }
 
@@ -327,8 +344,10 @@ this.PanelMultiView = class {
     if (!this.node)
       return;
 
-    if (this._mainView) {
-      let mainView = this._mainView;
+    if (this._ephemeral)
+      this.hideAllViewsExcept(null);
+    let mainView = this._mainView;
+    if (mainView) {
       if (this._panelViewCache)
         this._panelViewCache.appendChild(mainView);
       mainView.removeAttribute("mainview");
@@ -395,10 +414,13 @@ this.PanelMultiView = class {
 
 
   _canGoBack(view = this._currentSubView) {
-    return view != this._mainView;
+    return view.id != this._mainViewId;
   }
 
   setMainView(aNewMainView) {
+    if (!aNewMainView)
+      return;
+
     if (this._mainView) {
       if (!this.panelViews)
         this._subViews.appendChild(this._mainView);
@@ -418,38 +440,59 @@ this.PanelMultiView = class {
   }
 
   showMainView() {
+    if (!this._mainViewId)
+      return Promise.resolve();
+
+    if (this.panelViews)
+      return this.showSubView(this._mainView);
+
     if (this.showingSubView) {
       let viewNode = this._currentSubView;
       this._dispatchViewEvent(viewNode, "ViewHiding");
-      if (this.panelViews) {
+      this._transitionHeight(() => {
         viewNode.removeAttribute("current");
-        this.showSubView(this._mainViewId);
-      } else {
-        this._transitionHeight(() => {
-          viewNode.removeAttribute("current");
-          this._currentSubView = null;
-          this.node.setAttribute("viewtype", "main");
-        });
-      }
-    } else if (this.panelViews) {
-      
-      let mainView = this._mainView;
-      for (let panelview of this._panelViews) {
-        if (panelview == mainView)
-          panelview.setAttribute("current", true);
-        else
-          panelview.removeAttribute("current");
-      }
-      this.node.setAttribute("viewtype", "main");
+        this._currentSubView = null;
+        this.node.setAttribute("viewtype", "main");
+      });
     }
 
-    if (!this.panelViews) {
-      this._shiftMainView();
+    this._shiftMainView();
+    return Promise.resolve();
+  }
+
+  
+
+
+
+
+
+
+  hideAllViewsExcept(theOne = null) {
+    for (let panelview of this._panelViews) {
+      
+      if (panelview == theOne || !this.node || panelview.panelMultiView != this.node)
+        continue;
+      if (panelview.hasAttribute("current"))
+        this._dispatchViewEvent(panelview, "ViewHiding");
+      panelview.removeAttribute("current");
     }
+
+    this._viewShowing = null;
+
+    if (!this.node || !theOne)
+      return;
+
+    this._currentSubView = theOne;
+    if (!theOne.hasAttribute("current")) {
+      theOne.setAttribute("current", true);
+      this.descriptionHeightWorkaround(theOne);
+      this._dispatchViewEvent(theOne, "ViewShown");
+    }
+    this.node.setAttribute("viewtype", (theOne.id == this._mainViewId) ? "main" : "subview");
   }
 
   showSubView(aViewId, aAnchor, aPreviousView) {
-    return (async () => {
+    this._currentShowPromise = (async () => {
       
       let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
       if (!viewNode) {
@@ -465,8 +508,10 @@ this.PanelMultiView = class {
 
       let reverse = !!aPreviousView;
       let previousViewNode = aPreviousView || this._currentSubView;
-      let playTransition = (!!previousViewNode && previousViewNode != viewNode &&
-        this._panel.state == "open");
+      
+      
+      let showingSameView = viewNode == previousViewNode;
+      let playTransition = (!!previousViewNode && !showingSameView && this._panel.state == "open");
 
       let dwu, previousRect;
       if (playTransition || this.panelViews) {
@@ -492,6 +537,13 @@ this.PanelMultiView = class {
       }
 
       this._viewShowing = viewNode;
+      
+      
+      
+      if (viewNode.id == this._mainViewId)
+        viewNode.setAttribute("mainview", true);
+      else
+        viewNode.removeAttribute("mainview");
 
       
       if (this.panelViews && aAnchor) {
@@ -502,53 +554,45 @@ this.PanelMultiView = class {
       if (this.panelViews && this._mainViewWidth)
         viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
 
-      
-      
-      
-      let detail = {
-        blockers: new Set(),
-        addBlocker(promise) {
-          this.blockers.add(promise);
+      if (!showingSameView || !viewNode.hasAttribute("current")) {
+        
+        
+        
+        let detail = {
+          blockers: new Set(),
+          addBlocker(promise) {
+            this.blockers.add(promise);
+          }
+        };
+        let cancel = this._dispatchViewEvent(viewNode, "ViewShowing", aAnchor, detail);
+        if (detail.blockers.size) {
+          try {
+            let results = await Promise.all(detail.blockers);
+            cancel = cancel || results.some(val => val === false);
+          } catch (e) {
+            Cu.reportError(e);
+            cancel = true;
+          }
         }
-      };
-      let cancel = this._dispatchViewEvent(viewNode, "ViewShowing", aAnchor, detail);
-      if (detail.blockers.size) {
-        try {
-          let results = await Promise.all(detail.blockers);
-          cancel = cancel || results.some(val => val === false);
-        } catch (e) {
-          Cu.reportError(e);
-          cancel = true;
+
+        if (cancel) {
+          this._viewShowing = null;
+          return;
         }
       }
 
-      this._viewShowing = null;
-      if (cancel) {
-        return;
-      }
-
-      this._currentSubView = viewNode;
+      
       if (this.panelViews) {
-        if (viewNode.id == this._mainViewId) {
-          this.node.setAttribute("viewtype", "main");
-        } else {
-          this.node.setAttribute("viewtype", "subview");
-        }
         
         await this._cleanupTransitionPhase();
-        if (!playTransition) {
-          viewNode.setAttribute("current", true);
-          this.descriptionHeightWorkaround(viewNode);
+        if (playTransition) {
+          await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
+          this._updateKeyboardFocus(viewNode);
+        } else {
+          this.hideAllViewsExcept(viewNode);
         }
-      }
-
-      
-      if (this.panelViews && playTransition) {
-        await this._transitionViews(previousViewNode, viewNode, reverse, previousRect, aAnchor);
-
-        this._dispatchViewEvent(viewNode, "ViewShown");
-        this._updateKeyboardFocus(viewNode);
-      } else if (!this.panelViews) {
+      } else {
+        this._currentSubView = viewNode;
         this._transitionHeight(() => {
           viewNode.setAttribute("current", true);
           if (viewNode.id == this._mainViewId) {
@@ -564,6 +608,7 @@ this.PanelMultiView = class {
         this._shiftMainView(aAnchor);
       }
     })().catch(e => Cu.reportError(e));
+    return this._currentShowPromise;
   }
 
   
@@ -596,7 +641,7 @@ this.PanelMultiView = class {
     if (this._autoResizeWorkaroundTimer)
       window.clearTimeout(this._autoResizeWorkaroundTimer);
 
-    this._transitionDetails = {
+    let details = this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
       previousViewNode, viewNode, reverse, anchor
     };
@@ -604,6 +649,10 @@ this.PanelMultiView = class {
     if (anchor)
       anchor.setAttribute("open", "true");
 
+    
+    
+    
+    previousViewNode.setAttribute("in-transition", true);
     
     
     this._viewContainer.style.height = Math.max(previousRect.height, this._mainViewHeight) + "px";
@@ -616,7 +665,7 @@ this.PanelMultiView = class {
     let viewRect;
     if (viewNode.__lastKnownBoundingRect) {
       viewRect = viewNode.__lastKnownBoundingRect;
-      viewNode.setAttribute("current", true);
+      viewNode.setAttribute("in-transition", true);
     } else if (viewNode.customRectGetter) {
       
       
@@ -626,11 +675,11 @@ this.PanelMultiView = class {
       if (header) {
         viewRect.height += this._dwu.getBoundsWithoutFlushing(header).height;
       }
-      viewNode.setAttribute("current", true);
+      viewNode.setAttribute("in-transition", true);
     } else {
       let oldSibling = viewNode.nextSibling || null;
       this._offscreenViewStack.appendChild(viewNode);
-      viewNode.setAttribute("current", true);
+      viewNode.setAttribute("in-transition", true);
 
       viewRect = await BrowserUtils.promiseLayoutFlushed(this.document, "layout", () => {
         return this._dwu.getBoundsWithoutFlushing(viewNode);
@@ -644,7 +693,7 @@ this.PanelMultiView = class {
     }
 
     this._transitioning = true;
-    this._transitionDetails.phase = TRANSITION_PHASES.PREPARE;
+    details.phase = TRANSITION_PHASES.PREPARE;
 
     
     let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
@@ -679,26 +728,26 @@ this.PanelMultiView = class {
     await BrowserUtils.promiseLayoutFlushed(document, "layout", () => {});
 
     
-    this._transitionDetails.phase = TRANSITION_PHASES.TRANSITION;
+    details.phase = TRANSITION_PHASES.TRANSITION;
     this._viewStack.style.transform = "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
 
     await new Promise(resolve => {
-      this._transitionDetails.resolve = resolve;
-      this._viewContainer.addEventListener("transitionend", this._transitionDetails.listener = ev => {
+      details.resolve = resolve;
+      this._viewContainer.addEventListener("transitionend", details.listener = ev => {
         
         
         
         if (ev.target != this._viewStack || ev.propertyName != "transform")
           return;
-        this._viewContainer.removeEventListener("transitionend", this._transitionDetails.listener);
-        delete this._transitionDetails.listener;
+        this._viewContainer.removeEventListener("transitionend", details.listener);
+        delete details.listener;
         resolve();
       });
     });
 
-    this._transitionDetails.phase = TRANSITION_PHASES.END;
+    details.phase = TRANSITION_PHASES.END;
 
-    await this._cleanupTransitionPhase();
+    await this._cleanupTransitionPhase(details);
   }
 
   
@@ -706,8 +755,9 @@ this.PanelMultiView = class {
 
 
 
-  async _cleanupTransitionPhase() {
-    if (!this._transitionDetails)
+  async _cleanupTransitionPhase(details = this._transitionDetails) {
+    
+    if (!this._transitionDetails || details != this._transitionDetails)
       return;
 
     let {phase, previousViewNode, viewNode, reverse, resolve, listener, anchor} = this._transitionDetails;
@@ -715,11 +765,11 @@ this.PanelMultiView = class {
 
     
     
-    this._dispatchViewEvent(previousViewNode, "ViewHiding");
-    previousViewNode.removeAttribute("current");
+    this.hideAllViewsExcept(viewNode);
+    previousViewNode.removeAttribute("in-transition");
+    viewNode.removeAttribute("in-transition");
     if (reverse)
       this._resetKeyNavigation(previousViewNode);
-    this.descriptionHeightWorkaround(viewNode);
 
     if (anchor)
       anchor.removeAttribute("open");
@@ -915,7 +965,7 @@ this.PanelMultiView = class {
       case "mousemove":
         this._resetKeyNavigation();
         break;
-      case "popupshowing":
+      case "popupshowing": {
         this.node.setAttribute("panelopen", "true");
         
         
@@ -971,13 +1021,14 @@ this.PanelMultiView = class {
         
         
         
-        if (this._mainView.hasAttribute("blockinboxworkaround")) {
+        let mainView = this._mainView;
+        if (mainView && mainView.hasAttribute("blockinboxworkaround")) {
           let blockInBoxWorkaround = () => {
             let mainViewHeight =
-                this._dwu.getBoundsWithoutFlushing(this._mainView).height;
+                this._dwu.getBoundsWithoutFlushing(mainView).height;
             if (mainViewHeight > maxHeight) {
-              this._mainView.style.height = maxHeight + "px";
-              this._mainView.setAttribute("exceeding", "true");
+              mainView.style.height = maxHeight + "px";
+              mainView.setAttribute("exceeding", "true");
             }
           };
           
@@ -993,12 +1044,14 @@ this.PanelMultiView = class {
           }
         }
         break;
+      }
       case "popupshown":
         
         
-        this.descriptionHeightWorkaround();
+        if (!this.panelViews)
+          this.descriptionHeightWorkaround();
         break;
-      case "popuphidden":
+      case "popuphidden": {
         
         
         this._viewShowing = null;
@@ -1029,12 +1082,14 @@ this.PanelMultiView = class {
 
         
         
-        if (this._mainView.hasAttribute("blockinboxworkaround")) {
-          this._mainView.style.removeProperty("height");
-          this._mainView.removeAttribute("exceeding");
+        let mainView = this._mainView;
+        if (mainView && mainView.hasAttribute("blockinboxworkaround")) {
+          mainView.style.removeProperty("height");
+          mainView.removeAttribute("exceeding");
         }
         this._dispatchViewEvent(this.node, "PanelMultiViewHidden");
         break;
+      }
     }
   }
 
@@ -1257,7 +1312,7 @@ this.PanelMultiView = class {
 
 
   descriptionHeightWorkaround(viewNode = this._mainView) {
-    if (!viewNode.hasAttribute("descriptionheightworkaround")) {
+    if (!viewNode || !viewNode.hasAttribute("descriptionheightworkaround")) {
       
       return;
     }

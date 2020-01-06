@@ -419,31 +419,37 @@ const PanelUI = {
         tempPanel.setAttribute("animate", "false");
       }
       tempPanel.setAttribute("context", "");
+      tempPanel.setAttribute("photon", true);
       document.getElementById(CustomizableUI.AREA_NAVBAR).appendChild(tempPanel);
       
       tempPanel.classList.toggle("cui-widget-panelWithFooter",
                                  viewNode.querySelector(".panel-subview-footer"));
 
+      
+      
+      let oldMultiView = viewNode.panelMultiView;
+      if (oldMultiView && oldMultiView.current == viewNode) {
+        await oldMultiView.showMainView();
+      }
+
+      let viewShown = false;
+      let listener = () => viewShown = true;
+      viewNode.addEventListener("ViewShown", listener, {once: true});
+
       let multiView = document.createElement("photonpanelmultiview");
       multiView.setAttribute("id", "customizationui-widget-multiview");
-      multiView.setAttribute("nosubviews", "true");
       multiView.setAttribute("viewCacheId", "appMenu-viewCache");
-      tempPanel.setAttribute("photon", true);
       multiView.setAttribute("mainViewId", viewNode.id);
-      multiView.appendChild(viewNode);
+      multiView.setAttribute("ephemeral", true);
+      document.getElementById("appMenu-viewCache").appendChild(viewNode);
       tempPanel.appendChild(multiView);
       viewNode.classList.add("cui-widget-panelview");
 
-      let viewShown = false;
       let panelRemover = () => {
         viewNode.classList.remove("cui-widget-panelview");
         if (viewShown) {
           CustomizableUI.removePanelCloseListeners(tempPanel);
           tempPanel.removeEventListener("popuphidden", panelRemover);
-
-          let currentView = multiView.current || viewNode;
-          let evt = new CustomEvent("ViewHiding", {detail: currentView});
-          currentView.dispatchEvent(evt);
         }
         aAnchor.open = false;
 
@@ -454,34 +460,14 @@ const PanelUI = {
       };
 
       
-      
-      let detail = {
-        blockers: new Set(),
-        addBlocker(aPromise) {
-          this.blockers.add(aPromise);
-        },
-      };
+      await multiView.currentShowPromise;
 
-      let evt = new CustomEvent("ViewShowing", { bubbles: true, cancelable: true, detail });
-      viewNode.dispatchEvent(evt);
-
-      let cancel = evt.defaultPrevented;
-      if (detail.blockers.size) {
-        try {
-          let results = await Promise.all(detail.blockers);
-          cancel = cancel || results.some(val => val === false);
-        } catch (e) {
-          Components.utils.reportError(e);
-          cancel = true;
-        }
-      }
-
-      if (cancel) {
+      if (!viewShown) {
+        viewNode.removeEventListener("ViewShown", listener);
         panelRemover();
         return;
       }
 
-      viewShown = true;
       CustomizableUI.addPanelCloseListeners(tempPanel);
       tempPanel.addEventListener("popuphidden", panelRemover);
 
@@ -539,7 +525,8 @@ const PanelUI = {
       withFavicons: true
     });
     
-    if (!highlights.length || viewNode.panelMultiView.getAttribute("panelopen") != "true") {
+    let multiView = viewNode.panelMultiView;
+    if (!highlights.length || (multiView && multiView.getAttribute("panelopen") != "true")) {
       this._loadingRecentHighlights = false;
       return;
     }

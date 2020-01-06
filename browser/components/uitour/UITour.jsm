@@ -1085,8 +1085,9 @@ this.UITour = {
     }
 
     
-    if (!this.isElementVisible(aTarget.node)) {
-      return Promise.reject(`_ensureTarget: Reject the ${aTarget.name} target since it isn't visible.`);
+    
+    if (!aTarget.node.closest("panelview") && !this.isElementVisible(aTarget.node)) {
+      return Promise.reject(`_ensureTarget: Reject the ${aTarget.name || aTarget.targetName} target since it isn't visible.`);
     }
 
     let menuToOpen = null;
