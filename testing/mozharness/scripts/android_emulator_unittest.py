@@ -201,6 +201,15 @@ class AndroidEmulatorTest(BlobUploadMixin, TestingMixin, EmulatorMixin, VCSMixin
             f.write("pingOptIn=false\npingId=0\n")
 
         
+        AUTH_FILE = os.path.join(os.path.expanduser('~'), '.emulator_console_auth_token')
+        if os.path.exists(AUTH_FILE):
+            try:
+                os.remove(AUTH_FILE)
+                self.info("deleted %s" % AUTH_FILE)
+            except:
+                self.warning("failed to remove %s" % AUTH_FILE)
+
+        
         
         
         
