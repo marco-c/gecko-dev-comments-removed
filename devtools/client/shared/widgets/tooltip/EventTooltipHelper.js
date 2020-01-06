@@ -111,16 +111,20 @@ EventTooltip.prototype = {
         if (location) {
           sourceMapService.originalPositionFor(location.url, location.line)
             .then((originalLocation) => {
-              if (originalLocation) {
-                const { sourceUrl, line } = originalLocation;
-                let newURI = sourceUrl + ":" + line;
-                filename.textContent = newURI;
-                filename.setAttribute("title", newURI);
-                let eventEditor = this._eventEditors.get(content);
-                eventEditor.uri = newURI;
-              }
               
-              this._tooltip.emit("event-tooltip-source-map-ready");
+              
+              if (this._tooltip) {
+                if (originalLocation) {
+                  const { sourceUrl, line } = originalLocation;
+                  let newURI = sourceUrl + ":" + line;
+                  filename.textContent = newURI;
+                  filename.setAttribute("title", newURI);
+                  let eventEditor = this._eventEditors.get(content);
+                  eventEditor.uri = newURI;
+                }
+                
+                this._tooltip.emit("event-tooltip-source-map-ready");
+              }
             });
         }
       }
