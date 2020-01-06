@@ -4,8 +4,6 @@
 
 var pr;
 
-addIntlExtras(Intl);
-
 pr = new Intl.PluralRules("en-us");
 assertEq(pr.resolvedOptions().locale, "en-US");
 assertEq(pr.resolvedOptions().type, "cardinal");

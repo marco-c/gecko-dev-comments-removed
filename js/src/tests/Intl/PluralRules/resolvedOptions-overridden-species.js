@@ -2,8 +2,6 @@
 
 
 
-addIntlExtras(Intl);
-
 var pl = new Intl.PluralRules("de");
 
 Object.defineProperty(Array, Symbol.species, {

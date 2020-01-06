@@ -1,7 +1,5 @@
 
 
-addIntlExtras(Intl);
-
 
 class MyPluralRules extends Intl.PluralRules {}
 

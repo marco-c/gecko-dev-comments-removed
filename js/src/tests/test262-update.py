@@ -322,9 +322,6 @@ def process_test262(test262Dir, test262OutDir, strictTests):
     explicitIncludes[os.path.join("built-ins", "TypedArrays")] = ["detachArrayBuffer.js"]
 
     
-    localIncludesMap[os.path.join("intl402", "PluralRules")] = ["test262-intl-extras.js"]
-
-    
     for (dirPath, dirNames, fileNames) in os.walk(testDir):
         relPath = os.path.relpath(dirPath, testDir)
         if relPath == ".":

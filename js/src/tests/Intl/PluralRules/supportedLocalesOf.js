@@ -362,8 +362,6 @@ var locales = [
     "zh-Hant-TW",
 ];
 
-addIntlExtras(Intl);
-
 const result = Intl.PluralRules.supportedLocalesOf(locales);
 
 assertEqArray(locales, result);

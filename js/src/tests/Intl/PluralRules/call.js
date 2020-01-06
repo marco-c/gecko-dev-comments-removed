@@ -1,7 +1,5 @@
 
 
-addIntlExtras(Intl);
-
 function IsConstructor(o) {
   try {
     new (new Proxy(o, {construct: () => ({})}));

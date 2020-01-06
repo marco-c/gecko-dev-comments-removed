@@ -3065,12 +3065,6 @@ ToWindowIfWindowProxy(JSObject* obj);
 
 
 
-extern bool
-AddPluralRulesConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
-
-
-
-
 
 
 

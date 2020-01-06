@@ -1,7 +1,5 @@
 
 
-addIntlExtras(Intl);
-
 const optionsList = [
     {minimumFractionDigits: -0, maximumFractionDigits: -0},
     {minimumFractionDigits: -0, maximumFractionDigits: +0},
