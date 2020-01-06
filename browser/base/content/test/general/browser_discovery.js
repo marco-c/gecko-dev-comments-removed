@@ -1,4 +1,3 @@
-
 var browser;
 
 function doc() {
@@ -95,27 +94,22 @@ function runRichIconDiscoveryTest() {
   let head = doc().getElementById("linkparent");
 
   
-  (async function() {
-    let mm = window.messageManager;
-    let deferred = PromiseUtils.defer();
-    testCase.listener = function(msg) {
-      deferred.resolve(msg.data);
-    }
-    mm.addMessageListener("Link:SetIcon", testCase.listener);
-    try {
-      let data = await Promise.race([deferred.promise,
-                                     new Promise((resolve, reject) => setTimeout(reject, 1000))]);
-      is(data.canUseForTab, false, "Rich icons cannot be used for tabs");
-      ok(testCase.pass, testCase.text);
-    } catch (ex) {
-      ok(!testCase.pass, testCase.text);
-    } finally {
-      mm.removeMessageListener("Link:SetIcon", testCase.listener);
-    }
+  
+  
+  BrowserTestUtils.waitForCondition(() => {
+    return gBrowser.getIcon() != null;
+  }, "wait for icon load to finish", 100, 5)
+  .then(() => {
+    ok(testCase.pass, testCase.text);
+  })
+  .catch(() => {
+    ok(!testCase.pass, testCase.text);
+  })
+  .then(() => {
     head.removeChild(head.getElementsByTagName("link")[0]);
     richIconDiscoveryTests.shift();
     richIconDiscovery(); 
-  })();
+  });
 }
 
 function richIconDiscovery() {
