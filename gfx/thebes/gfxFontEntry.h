@@ -643,12 +643,14 @@ public:
     
     
     gfxFontEntry *FindFontForStyle(const gfxFontStyle& aFontStyle, 
-                                   bool& aNeedsSyntheticBold);
+                                   bool& aNeedsSyntheticBold,
+                                   bool aIgnoreSizeTolerance = false);
 
     virtual void
     FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
                          nsTArray<gfxFontEntry*>& aFontEntryList,
-                         bool& aNeedsSyntheticBold);
+                         bool& aNeedsSyntheticBold,
+                         bool aIgnoreSizeTolerance = false);
 
     
     

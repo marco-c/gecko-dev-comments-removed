@@ -1100,11 +1100,13 @@ SizeDistance(gfxFontconfigFontEntry* aEntry,
 void
 gfxFontconfigFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
                                               nsTArray<gfxFontEntry*>& aFontEntryList,
-                                              bool& aNeedsSyntheticBold)
+                                              bool& aNeedsSyntheticBold,
+                                              bool aIgnoreSizeTolerance)
 {
     gfxFontFamily::FindAllFontsForStyle(aFontStyle,
                                         aFontEntryList,
-                                        aNeedsSyntheticBold);
+                                        aNeedsSyntheticBold,
+                                        aIgnoreSizeTolerance);
 
     if (!mHasNonScalableFaces) {
         return;
@@ -1121,7 +1123,8 @@ gfxFontconfigFontFamily::FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
     for (size_t i = 0; i < aFontEntryList.Length(); i++) {
         gfxFontconfigFontEntry* entry =
             static_cast<gfxFontconfigFontEntry*>(aFontEntryList[i]);
-        double dist = SizeDistance(entry, aFontStyle, mForceScalable);
+        double dist = SizeDistance(entry, aFontStyle,
+                                   mForceScalable || aIgnoreSizeTolerance);
         
         
         if (dist < 0.0 ||
@@ -1766,7 +1769,7 @@ gfxFcPlatformFontList::GetFTLibrary()
         gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
         gfxFontFamily* family = pfl->GetDefaultFont(&style);
         NS_ASSERTION(family, "couldn't find a default font family");
-        gfxFontEntry* fe = family->FindFontForStyle(style, needsBold);
+        gfxFontEntry* fe = family->FindFontForStyle(style, needsBold, true);
         if (!fe) {
             return nullptr;
         }
