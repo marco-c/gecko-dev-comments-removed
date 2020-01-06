@@ -262,19 +262,6 @@ var SidebarUI = {
 
 
 
-  _setVisibility(visible) {
-    this._box.hidden = !visible;
-    this._splitter.hidden = !visible;
-    if (visible) {
-      this.setPosition();
-    }
-  },
-
-  
-
-
-
-
 
 
 
@@ -327,7 +314,8 @@ var SidebarUI = {
         }
       }
 
-      this._setVisibility(true);
+      this._box.hidden = this._splitter.hidden = false;
+      this.setPosition();
 
       this.hideSwitcherPanel();
 
@@ -401,7 +389,7 @@ var SidebarUI = {
     sidebarBroadcaster.removeAttribute("checked");
     this._box.setAttribute("sidebarcommand", "");
     this._title.value = "";
-    this._setVisibility(false);
+    this._box.hidden = this._splitter.hidden = true;
 
     let selBrowser = gBrowser.selectedBrowser;
     selBrowser.focus();
