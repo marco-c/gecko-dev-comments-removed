@@ -30,6 +30,7 @@ InternalRequest::GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult
   copy->mHeaders = new InternalHeaders(*mHeaders);
   copy->SetUnsafeRequest();
   copy->mBodyStream = mBodyStream;
+  copy->mBodyLength = mBodyLength;
   copy->mForceOriginHeader = true;
   
   
@@ -79,6 +80,7 @@ InternalRequest::InternalRequest(const nsACString& aURL,
                                  const nsACString& aFragment)
   : mMethod("GET")
   , mHeaders(new InternalHeaders(HeadersGuardEnum::None))
+  , mBodyLength(InternalResponse::UNKNOWN_BODY_SIZE)
   , mContentPolicyType(nsIContentPolicy::TYPE_FETCH)
   , mReferrer(NS_LITERAL_STRING(kFETCH_CLIENT_REFERRER_STR))
   , mReferrerPolicy(ReferrerPolicy::_empty)

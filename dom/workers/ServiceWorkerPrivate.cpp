@@ -1603,7 +1603,7 @@ private:
                                                               mReferrerPolicy,
                                                               mContentPolicyType,
                                                               mIntegrity);
-    internalReq->SetBody(mUploadStream);
+    internalReq->SetBody(mUploadStream, -1);
     
     internalReq->SetCreatedByFetchEvent();
 

@@ -462,20 +462,25 @@ public:
   }
 
   void
-  SetBody(nsIInputStream* aStream)
+  SetBody(nsIInputStream* aStream, int64_t aBodyLength)
   {
     
     MOZ_ASSERT_IF(aStream, !mBodyStream);
     mBodyStream = aStream;
+    mBodyLength = aBodyLength;
   }
 
   
   
   void
-  GetBody(nsIInputStream** aStream)
+  GetBody(nsIInputStream** aStream, int64_t* aBodyLength = nullptr)
   {
     nsCOMPtr<nsIInputStream> s = mBodyStream;
     s.forget(aStream);
+
+    if (aBodyLength) {
+      *aBodyLength = mBodyLength;
+    }
   }
 
   
@@ -554,6 +559,7 @@ private:
   nsTArray<nsCString> mURLList;
   RefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBodyStream;
+  int64_t mBodyLength;
 
   nsContentPolicyType mContentPolicyType;
 
