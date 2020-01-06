@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const {utils: Cu} = Components;
@@ -12,7 +13,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
   "resource://gre/modules/Preferences.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
+  "resource://gre/modules/Timer.jsm");
 
+const BROWSER_READY_NOTIFICATION = "final-ui-startup";
 const PREF_WHITELIST = [
   "browser.onboarding.enabled",
   "browser.onboarding.hidden",
@@ -28,6 +32,8 @@ const PREF_WHITELIST = [
   "onboarding-tour-default-browser",
   "onboarding-tour-sync",
 ].forEach(tourId => PREF_WHITELIST.push(`browser.onboarding.tour.${tourId}.completed`));
+
+let waitingForBrowserReady = true;
 
 
 
@@ -47,6 +53,9 @@ function setPrefs(prefs) {
   });
 }
 
+
+
+
 function initContentMessageListener() {
   Services.mm.addMessageListener("Onboarding:OnContentMessage", msg => {
     switch (msg.data.action) {
@@ -57,14 +66,46 @@ function initContentMessageListener() {
   });
 }
 
-function install(aData, aReason) {}
 
-function uninstall(aData, aReason) {}
 
-function startup(aData, reason) {
+
+function onBrowserReady() {
+  waitingForBrowserReady = false;
+
   OnboardingTourType.check();
   Services.mm.loadFrameScript("resource://onboarding/onboarding.js", true);
   initContentMessageListener();
 }
 
-function shutdown(aData, reason) {}
+
+
+
+function observe(subject, topic, data) {
+  switch (topic) {
+    case BROWSER_READY_NOTIFICATION:
+      Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
+      
+      setTimeout(() => onBrowserReady());
+      break;
+  }
+}
+
+function install(aData, aReason) {}
+
+function uninstall(aData, aReason) {}
+
+function startup(aData, aReason) {
+  
+  if (aReason === APP_STARTUP || aReason === ADDON_INSTALL) {
+    Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
+  } else {
+    onBrowserReady();
+  }
+}
+
+function shutdown(aData, aReason) {
+  
+  if (waitingForBrowserReady) {
+    Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
+  }
+}
