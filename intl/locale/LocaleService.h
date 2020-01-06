@@ -213,9 +213,9 @@ public:
 
 
 
-  void OnAvailableLocalesChanged();
-  void OnRequestedLocalesChanged();
-  void OnLocalesChanged();
+  void AvailableLocalesChanged();
+  void RequestedLocalesChanged();
+  void LocalesChanged();
 
   
 
