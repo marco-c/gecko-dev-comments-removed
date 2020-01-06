@@ -319,9 +319,6 @@ using UniqueProfilerBacktrace =
 
 PROFILER_FUNC(UniqueProfilerBacktrace profiler_get_backtrace(), nullptr)
 
-PROFILER_FUNC_VOID(profiler_get_backtrace_noalloc(char* aOutput,
-                                                  size_t aOutputSize))
-
 
 
 
