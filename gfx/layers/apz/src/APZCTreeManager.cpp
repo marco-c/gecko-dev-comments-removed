@@ -518,7 +518,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
         aLayer.GetClipRect() ? Some(ParentLayerIntRegion(*aLayer.GetClipRect())) : Nothing(),
         GetEventRegionsOverride(aParent, aLayer));
     node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
-                           aLayer.GetScrollbarDirection(),
+                           aLayer.GetScrollThumbData(),
                            aLayer.IsScrollbarContainer());
     node->SetFixedPosData(aLayer.GetFixedPositionScrollContainerId());
     return node;
@@ -707,7 +707,7 @@ APZCTreeManager::PrepareNodeForLayer(const ScrollNode& aLayer,
   
   
   node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
-                         aLayer.GetScrollbarDirection(),
+                         aLayer.GetScrollThumbData(),
                          aLayer.IsScrollbarContainer());
   node->SetFixedPosData(aLayer.GetFixedPositionScrollContainerId());
   return node;
