@@ -1013,9 +1013,8 @@ EffectCompositor::PreTraverseInSubtree(ServoTraversalFlags aFlags,
 
     
     
-    if (aRoot &&
-        !nsContentUtils::ContentIsFlattenedTreeDescendantOf(target.mElement,
-                                                            aRoot)) {
+    if (aRoot && !nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
+          target.mElement, aRoot)) {
       return returnTarget;
     }
 
