@@ -20,6 +20,7 @@
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/mozalloc.h"           
+#include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"          
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"                   
@@ -598,7 +599,7 @@ public:
   
   
   virtual void AddWRImage(wr::WebRenderAPI* aAPI,
-                          const wr::ImageKey& aImageKey,
+                          Range<const wr::ImageKey>& aImageKeys,
                           const wr::ExternalImageId& aExtID)
   {
     MOZ_ASSERT_UNREACHABLE("No AddWRImage() implementation for this TextureHost type.");
@@ -692,7 +693,7 @@ public:
   const BufferDescriptor& GetBufferDescriptor() const { return mDescriptor; }
 
   virtual void AddWRImage(wr::WebRenderAPI* aAPI,
-                          const wr::ImageKey& aImageKey,
+                          Range<const wr::ImageKey>& aImageKeys,
                           const wr::ExternalImageId& aExtID) override;
 
 protected:
