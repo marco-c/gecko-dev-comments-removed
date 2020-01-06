@@ -37,6 +37,12 @@ var ProcessHangMonitor = {
 
 
 
+  _shuttingDown: false,
+
+  
+
+
+
   _activeReports: new Set(),
 
   
@@ -52,6 +58,7 @@ var ProcessHangMonitor = {
   init() {
     Services.obs.addObserver(this, "process-hang-report");
     Services.obs.addObserver(this, "clear-hang-report");
+    Services.obs.addObserver(this, "quit-application-granted");
     Services.obs.addObserver(this, "xpcom-shutdown");
     Services.ww.registerNotification(this);
   },
@@ -140,6 +147,27 @@ var ProcessHangMonitor = {
 
 
 
+  stopHang(report) {
+    switch (report.hangType) {
+      case report.SLOW_SCRIPT: {
+        if (report.addonId) {
+          report.terminateGlobal();
+        } else {
+          report.terminateScript();
+        }
+        break;
+      }
+      case report.PLUGIN_HANG: {
+        report.terminatePlugin();
+        break;
+      }
+    }
+  },
+
+  
+
+
+
   waitLonger(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
@@ -192,22 +220,31 @@ var ProcessHangMonitor = {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case "xpcom-shutdown":
+      case "xpcom-shutdown": {
         Services.obs.removeObserver(this, "xpcom-shutdown");
         Services.obs.removeObserver(this, "process-hang-report");
         Services.obs.removeObserver(this, "clear-hang-report");
+        Services.obs.removeObserver(this, "quit-application-granted");
         Services.ww.unregisterNotification(this);
         break;
+      }
 
-      case "process-hang-report":
+      case "quit-application-granted": {
+        this.onQuitApplicationGranted();
+        break;
+      }
+
+      case "process-hang-report": {
         this.reportHang(subject.QueryInterface(Ci.nsIHangReport));
         break;
+      }
 
-      case "clear-hang-report":
+      case "clear-hang-report": {
         this.clearHang(subject.QueryInterface(Ci.nsIHangReport));
         break;
+      }
 
-      case "domwindowopened":
+      case "domwindowopened": {
         
         
         let win = subject.QueryInterface(Ci.nsIDOMWindow);
@@ -217,6 +254,32 @@ var ProcessHangMonitor = {
         };
         win.addEventListener("load", listener, true);
         break;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+  onQuitApplicationGranted() {
+    this._shuttingDown = true;
+    this.stopAllHangs();
+    this.updateWindows();
+  },
+
+  stopAllHangs() {
+    for (let report of this._activeReports) {
+      this.stopHang(report);
+    }
+
+    this._activeReports = new Set();
+
+    for (let [pausedReport, ] of this._pausedReports) {
+      this.stopHang(pausedReport);
+      this.removePausedReport(pausedReport);
     }
   },
 
@@ -275,6 +338,15 @@ var ProcessHangMonitor = {
 
   updateWindows() {
     let e = Services.wm.getEnumerator("navigator:browser");
+
+    
+    
+    
+    if (!e.hasMoreElements()) {
+      this.stopAllHangs();
+      return;
+    }
+
     while (e.hasMoreElements()) {
       let win = e.getNext();
 
@@ -419,6 +491,11 @@ var ProcessHangMonitor = {
 
 
   reportHang(report) {
+    if (this._shuttingDown) {
+      this.stopHang(report);
+      return;
+    }
+
     
     if (this._activeReports.has(report)) {
       
