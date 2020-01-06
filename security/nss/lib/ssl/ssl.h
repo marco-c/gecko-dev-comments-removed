@@ -107,8 +107,7 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 #define SSL_NO_LOCKS 17                 /* Don't use locks for protection */
 #define SSL_ENABLE_SESSION_TICKETS 18   /* Enable TLS SessionTicket       */
                                         
-#define SSL_ENABLE_DEFLATE 19           /* Enable TLS compression with    */
-                                        
+#define SSL_ENABLE_DEFLATE 19           /* (unsupported, deprecated, off) */
 #define SSL_ENABLE_RENEGOTIATION 20     /* Values below (default: never)  */
 #define SSL_REQUIRE_SAFE_NEGOTIATION 21 /* Peer must send Signaling       */
                                         
@@ -244,19 +243,33 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 
 
+
+
+
 #define SSL_ENABLE_0RTT_DATA 33
+
+
+
+
+
+#define SSL_ENABLE_TLS13_COMPAT_MODE 35
 
 #ifdef SSL_DEPRECATED_FUNCTION
 
-SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRBool on);
-SSL_IMPORT SECStatus SSL_EnableDefault(int option, PRBool on);
+SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);
+SSL_IMPORT SECStatus SSL_EnableDefault(int option, PRIntn on);
 #endif
 
 
-SSL_IMPORT SECStatus SSL_OptionSet(PRFileDesc *fd, PRInt32 option, PRBool on);
-SSL_IMPORT SECStatus SSL_OptionGet(PRFileDesc *fd, PRInt32 option, PRBool *on);
-SSL_IMPORT SECStatus SSL_OptionSetDefault(PRInt32 option, PRBool on);
-SSL_IMPORT SECStatus SSL_OptionGetDefault(PRInt32 option, PRBool *on);
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_OptionSet(PRFileDesc *fd, PRInt32 option, PRIntn val);
+SSL_IMPORT SECStatus SSL_OptionGet(PRFileDesc *fd, PRInt32 option, PRIntn *val);
+SSL_IMPORT SECStatus SSL_OptionSetDefault(PRInt32 option, PRIntn val);
+SSL_IMPORT SECStatus SSL_OptionGetDefault(PRInt32 option, PRIntn *val);
 SSL_IMPORT SECStatus SSL_CertDBHandleSet(PRFileDesc *fd, CERTCertDBHandle *dbHandle);
 
 

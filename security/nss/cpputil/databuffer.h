@@ -57,9 +57,6 @@ class DataBuffer {
 
   
   
-  bool Read(size_t index, size_t count, uint32_t* val) const;
-  
-  
   void Splice(const DataBuffer& buf, size_t index, size_t remove = 0) {
     Splice(buf.data(), buf.len(), index, remove);
   }
@@ -67,6 +64,9 @@ class DataBuffer {
   void Splice(const uint8_t* ins, size_t ins_len, size_t index,
               size_t remove = 0);
   void Append(const DataBuffer& buf) { Splice(buf, len_); }
+
+  bool Read(size_t index, size_t count, uint64_t* val) const;
+  bool Read(size_t index, size_t count, uint32_t* val) const;
 
   const uint8_t* data() const { return data_; }
   uint8_t* data() { return data_; }

@@ -17,6 +17,7 @@
 #include "nss.h"
 #include "ssl.h"
 #include "pk11func.h" 
+#include "sslimpl.h"
 
 
 
@@ -63,7 +64,7 @@ NSS_GetClientAuthData(void *arg,
                 if (!cert)
                     continue;
                 
-                if (CERT_CheckCertValidTimes(cert, PR_Now(), PR_TRUE) !=
+                if (CERT_CheckCertValidTimes(cert, ssl_TimeUsec(), PR_TRUE) !=
                     secCertTimeValid) {
                     CERT_DestroyCertificate(cert);
                     continue;

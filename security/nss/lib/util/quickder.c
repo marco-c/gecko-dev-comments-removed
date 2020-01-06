@@ -520,8 +520,7 @@ DecodeGroup(void* dest,
         if (SECSuccess == rv) {
             
             
-            entries = (void**)PORT_ArenaZAlloc(arena, sizeof(void*) *
-                                                              (totalEntries + 1) + 
+            entries = (void**)PORT_ArenaZAlloc(arena, sizeof(void*) * (totalEntries + 1) + 
                                                           subTemplate->size * totalEntries);
 
             if (entries) {

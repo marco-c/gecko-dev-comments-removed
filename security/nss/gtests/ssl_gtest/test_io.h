@@ -33,8 +33,17 @@ class PacketFilter {
     CHANGE,  
     DROP     
   };
-
+  PacketFilter(bool enabled = true) : enabled_(enabled) {}
   virtual ~PacketFilter() {}
+
+  virtual Action Process(const DataBuffer& input, DataBuffer* output) {
+    if (!enabled_) {
+      return KEEP;
+    }
+    return Filter(input, output);
+  }
+  void Enable() { enabled_ = true; }
+  void Disable() { enabled_ = false; }
 
   
   
@@ -43,6 +52,9 @@ class PacketFilter {
   
   
   virtual Action Filter(const DataBuffer& input, DataBuffer* output) = 0;
+
+ private:
+  bool enabled_;
 };
 
 class DummyPrSocket : public DummyIOLayerMethods {
@@ -53,7 +65,7 @@ class DummyPrSocket : public DummyIOLayerMethods {
         peer_(),
         input_(),
         filter_(nullptr),
-        writeable_(true) {}
+        write_error_(0) {}
   virtual ~DummyPrSocket() {}
 
   
@@ -71,7 +83,7 @@ class DummyPrSocket : public DummyIOLayerMethods {
   int32_t Recv(PRFileDesc* f, void* buf, int32_t buflen, int32_t flags,
                PRIntervalTime to) override;
   int32_t Write(PRFileDesc* f, const void* buf, int32_t length) override;
-  void CloseWrites() { writeable_ = false; }
+  void SetWriteError(PRErrorCode code) { write_error_ = code; }
 
   SSLProtocolVariant variant() const { return variant_; }
   bool readable() const { return !input_.empty(); }
@@ -98,7 +110,7 @@ class DummyPrSocket : public DummyIOLayerMethods {
   std::weak_ptr<DummyPrSocket> peer_;
   std::queue<Packet> input_;
   std::shared_ptr<PacketFilter> filter_;
-  bool writeable_;
+  PRErrorCode write_error_;
 };
 
 

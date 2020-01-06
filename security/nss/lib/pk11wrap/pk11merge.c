@@ -68,8 +68,11 @@ pk11_copyAttributes(PLArenaPool *arena,
                              copyTemplate, copyTemplateCount);
     
     if (crv == CKR_ATTRIBUTE_TYPE_INVALID) {
-        int i, j;
+        CK_ULONG i, j;
         newTemplate = PORT_NewArray(CK_ATTRIBUTE, copyTemplateCount);
+        if (!newTemplate) {
+            return SECFailure;
+        }
         
 
         for (i = 0, j = 0; i < copyTemplateCount; i++) {

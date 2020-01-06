@@ -99,7 +99,7 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
     if (gs->state == GS_INIT) {
         gs->state = GS_HEADER;
-        gs->remainder = ss->ssl3.hs.shortHeaders ? 2 : 5;
+        gs->remainder = 5;
         gs->offset = 0;
         gs->writeOffset = 0;
         gs->readOffset = 0;
@@ -157,19 +157,7 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
                     
 
 
-                    if (ss->ssl3.hs.shortHeaders) {
-                        PRUint16 len = (gs->hdr[0] << 8) | gs->hdr[1];
-                        if (!(len & 0x8000)) {
-                            SSL_DBG(("%d: SSL3[%d]: incorrectly formatted header"));
-                            SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
-                            gs->state = GS_INIT;
-                            PORT_SetError(SSL_ERROR_BAD_MAC_READ);
-                            return SECFailure;
-                        }
-                        gs->remainder = len & ~0x8000;
-                    } else {
-                        gs->remainder = (gs->hdr[3] << 8) | gs->hdr[4];
-                    }
+                    gs->remainder = (gs->hdr[3] << 8) | gs->hdr[4];
                 } else {
                     
 
@@ -362,6 +350,9 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
         }
     }
 
+    SSL_TRC(20, ("%d: SSL3[%d]: dtls gathered record type=%d len=%d",
+                 SSL_GETPID(), ss->fd, gs->hdr[0], gs->inbuf.len));
+
     memcpy(gs->inbuf.buf, gs->dtlsPacket.buf + gs->dtlsPacketOffset,
            gs->remainder);
     gs->inbuf.len = gs->remainder;
@@ -498,13 +489,8 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
 
 
-                if (ss->ssl3.hs.shortHeaders) {
-                    cText.type = content_application_data;
-                    cText.version = SSL_LIBRARY_VERSION_TLS_1_0;
-                } else {
-                    cText.type = (SSL3ContentType)ss->gs.hdr[0];
-                    cText.version = (ss->gs.hdr[1] << 8) | ss->gs.hdr[2];
-                }
+                cText.type = (SSL3ContentType)ss->gs.hdr[0];
+                cText.version = (ss->gs.hdr[1] << 8) | ss->gs.hdr[2];
 
                 if (IS_DTLS(ss)) {
                     sslSequenceNumber seq_num;
@@ -573,7 +559,8 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
     } while (keepGoing);
 
     
-    if (IS_DTLS(ss)) {
+
+    if (IS_DTLS(ss) && (ss->ssl3.hs.ws == idle_handshake)) {
         dtls_CheckTimer(ss);
     }
     ss->gs.readOffset = 0;

@@ -367,7 +367,24 @@ sec_pkcs5v2_key_length(SECAlgorithmID *algid, SECAlgorithmID *cipherAlgId)
         cipherAlg = SECOID_GetAlgorithmTag(cipherAlgId);
 
     if (sec_pkcs5_is_algorithm_v2_aes_algorithm(cipherAlg)) {
-        length = sec_pkcs5v2_aes_key_length(cipherAlg);
+        
+
+
+
+
+
+
+
+        if (p5_param.keyLength.data != NULL) {
+            length = DER_GetInteger(&p5_param.keyLength);
+        }
+        
+
+
+
+        if (length != 32) {
+            length = sec_pkcs5v2_aes_key_length(cipherAlg);
+        }
     } else if (p5_param.keyLength.data != NULL) {
         length = DER_GetInteger(&p5_param.keyLength);
     } else {

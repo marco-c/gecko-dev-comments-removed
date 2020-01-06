@@ -175,8 +175,8 @@ ssl3_SendECDHClientKeyExchange(sslSocket *ss, SECKEYPublicKey *svrPubKey)
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
 
-    isTLS = (PRBool)(ss->ssl3.pwSpec->version > SSL_LIBRARY_VERSION_3_0);
-    isTLS12 = (PRBool)(ss->ssl3.pwSpec->version >= SSL_LIBRARY_VERSION_TLS_1_2);
+    isTLS = (PRBool)(ss->version > SSL_LIBRARY_VERSION_3_0);
+    isTLS12 = (PRBool)(ss->version >= SSL_LIBRARY_VERSION_TLS_1_2);
 
     
     if (svrPubKey->keyType != ecKey) {
@@ -219,7 +219,7 @@ ssl3_SendECDHClientKeyExchange(sslSocket *ss, SECKEYPublicKey *svrPubKey)
         goto loser;
     }
 
-    rv = ssl3_AppendHandshakeHeader(ss, client_key_exchange,
+    rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_client_key_exchange,
                                     pubKey->u.ec.publicValue.len + 1);
     if (rv != SECSuccess) {
         goto loser; 
@@ -232,7 +232,7 @@ ssl3_SendECDHClientKeyExchange(sslSocket *ss, SECKEYPublicKey *svrPubKey)
         goto loser; 
     }
 
-    rv = ssl3_InitPendingCipherSpec(ss, pms);
+    rv = ssl3_InitPendingCipherSpecs(ss, pms, PR_TRUE);
     if (rv != SECSuccess) {
         ssl_MapLowLevelError(SSL_ERROR_CLIENT_KEY_EXCHANGE_FAILURE);
         goto loser;
@@ -248,19 +248,6 @@ loser:
     if (keyPair)
         ssl_FreeEphemeralKeyPair(keyPair);
     return SECFailure;
-}
-
-
-
-SECStatus
-tls13_EncodeECDHEKeyShareKEX(const sslSocket *ss, const SECKEYPublicKey *pubKey)
-{
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
-    PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
-    PORT_Assert(pubKey->keyType == ecKey);
-
-    return ssl3_ExtAppendHandshake(ss, pubKey->u.ec.publicValue.data,
-                                   pubKey->u.ec.publicValue.len);
 }
 
 
@@ -326,7 +313,7 @@ ssl3_HandleECDHClientKeyExchange(sslSocket *ss, PRUint8 *b,
         return SECFailure;
     }
 
-    rv = ssl3_InitPendingCipherSpec(ss, pms);
+    rv = ssl3_InitPendingCipherSpecs(ss, pms, PR_TRUE);
     PK11_FreeSymKey(pms);
     if (rv != SECSuccess) {
         
@@ -703,7 +690,7 @@ ssl3_SendECDHServerKeyExchange(sslSocket *ss)
     ec_params.data[2] = keyPair->group->name & 0xff;
 
     pubKey = keyPair->keys->pubKey;
-    if (ss->ssl3.pwSpec->version == SSL_LIBRARY_VERSION_TLS_1_2) {
+    if (ss->version == SSL_LIBRARY_VERSION_TLS_1_2) {
         hashAlg = ssl_SignatureSchemeToHashType(ss->ssl3.hs.signatureScheme);
     } else {
         
@@ -719,7 +706,7 @@ ssl3_SendECDHServerKeyExchange(sslSocket *ss)
         goto loser;
     }
 
-    isTLS12 = (PRBool)(ss->ssl3.pwSpec->version >= SSL_LIBRARY_VERSION_TLS_1_2);
+    isTLS12 = (PRBool)(ss->version >= SSL_LIBRARY_VERSION_TLS_1_2);
 
     rv = ssl3_SignHashes(ss, &hashes,
                          ss->sec.serverCert->serverKeyPair->privKey, &signed_hash);
@@ -731,7 +718,7 @@ ssl3_SendECDHServerKeyExchange(sslSocket *ss)
              1 + pubKey->u.ec.publicValue.len +
              (isTLS12 ? 2 : 0) + 2 + signed_hash.len;
 
-    rv = ssl3_AppendHandshakeHeader(ss, server_key_exchange, length);
+    rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_server_key_exchange, length);
     if (rv != SECSuccess) {
         goto loser; 
     }
@@ -870,20 +857,16 @@ ssl_IsDHEEnabled(const sslSocket *ss)
 }
 
 
-PRInt32
-ssl_SendSupportedGroupsXtn(const sslSocket *ss,
-                           TLSExtensionData *xtnData,
-                           PRBool append, PRUint32 maxBytes)
+SECStatus
+ssl_SendSupportedGroupsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
+                           sslBuffer *buf, PRBool *added)
 {
-    PRInt32 extension_length;
-    unsigned char enabledGroups[64];
-    unsigned int enabledGroupsLen = 0;
     unsigned int i;
     PRBool ec;
     PRBool ff = PR_FALSE;
-
-    if (!ss)
-        return 0;
+    PRBool found = PR_FALSE;
+    SECStatus rv;
+    unsigned int lengthOffset;
 
     
 
@@ -892,13 +875,19 @@ ssl_SendSupportedGroupsXtn(const sslSocket *ss,
         if (ss->opt.requireDHENamedGroups) {
             ff = ssl_IsDHEEnabled(ss);
         }
-        if (!ec && !ff)
-            return 0;
+        if (!ec && !ff) {
+            return SECSuccess;
+        }
     } else {
         ec = ff = PR_TRUE;
     }
 
-    PORT_Assert(sizeof(enabledGroups) > SSL_NAMED_GROUP_COUNT * 2);
+    
+    rv = sslBuffer_Skip(buf, 2, &lengthOffset);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
     for (i = 0; i < SSL_NAMED_GROUP_COUNT; ++i) {
         const sslNamedGroupDef *group = ss->namedGroupPreferences[i];
         if (!group) {
@@ -911,78 +900,53 @@ ssl_SendSupportedGroupsXtn(const sslSocket *ss,
             continue;
         }
 
-        if (append) {
-            (void)ssl_EncodeUintX(group->name, 2, &enabledGroups[enabledGroupsLen]);
-        }
-        enabledGroupsLen += 2;
-    }
-
-    if (enabledGroupsLen == 0) {
-        return 0;
-    }
-
-    extension_length =
-        2  +
-        2  +
-        2  +
-        enabledGroupsLen;
-
-    if (maxBytes < (PRUint32)extension_length) {
-        return 0;
-    }
-
-    if (append) {
-        SECStatus rv;
-        rv = ssl3_ExtAppendHandshakeNumber(ss, ssl_supported_groups_xtn, 2);
-        if (rv != SECSuccess)
-            return -1;
-        rv = ssl3_ExtAppendHandshakeNumber(ss, extension_length - 4, 2);
-        if (rv != SECSuccess)
-            return -1;
-        rv = ssl3_ExtAppendHandshakeVariable(ss, enabledGroups,
-                                             enabledGroupsLen, 2);
-        if (rv != SECSuccess)
-            return -1;
-        if (!ss->sec.isServer) {
-            xtnData->advertised[xtnData->numAdvertised++] =
-                ssl_supported_groups_xtn;
+        found = PR_TRUE;
+        rv = sslBuffer_AppendNumber(buf, group->name, 2);
+        if (rv != SECSuccess) {
+            return SECFailure;
         }
     }
-    return extension_length;
+
+    if (!found) {
+        
+        return SECSuccess;
+    }
+
+    rv = sslBuffer_InsertLength(buf, lengthOffset, 2);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    *added = PR_TRUE;
+    return SECSuccess;
 }
 
 
 
 
-PRInt32
-ssl3_SendSupportedPointFormatsXtn(
-    const sslSocket *ss,
-    TLSExtensionData *xtnData,
-    PRBool append,
-    PRUint32 maxBytes)
+SECStatus
+ssl3_SendSupportedPointFormatsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
+                                  sslBuffer *buf, PRBool *added)
 {
-    static const PRUint8 ecPtFmt[6] = {
-        0, 11, 
-        0, 2,  
-        1,     
-        0      
-    };
+    SECStatus rv;
 
     
 
 
     if (!ss || !ssl_IsECCEnabled(ss) ||
         ss->vrange.min >= SSL_LIBRARY_VERSION_TLS_1_3 ||
-        (ss->sec.isServer && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3))
-        return 0;
-    if (append && maxBytes >= (sizeof ecPtFmt)) {
-        SECStatus rv = ssl3_ExtAppendHandshake(ss, ecPtFmt, (sizeof ecPtFmt));
-        if (rv != SECSuccess)
-            return -1;
-        if (!ss->sec.isServer) {
-            xtnData->advertised[xtnData->numAdvertised++] =
-                ssl_ec_point_formats_xtn;
-        }
+        (ss->sec.isServer && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3)) {
+        return SECSuccess;
     }
-    return sizeof(ecPtFmt);
+    rv = sslBuffer_AppendNumber(buf, 1, 1); 
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+    rv = sslBuffer_AppendNumber(buf, 0, 1); 
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+
+    *added = PR_TRUE;
+    return SECSuccess;
 }

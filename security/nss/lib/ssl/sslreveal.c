@@ -92,18 +92,16 @@ SSL_HandshakeNegotiatedExtension(PRFileDesc *socket,
 
     
     if (sslsocket->opt.useSecurity) {
-        if (sslsocket->ssl3.initialized) { 
-            
+        
 
 
 
 
 
 
-            ssl_GetSSL3HandshakeLock(sslsocket);
-            *pYes = ssl3_ExtensionNegotiated(sslsocket, extId);
-            ssl_ReleaseSSL3HandshakeLock(sslsocket);
-        }
+        ssl_GetSSL3HandshakeLock(sslsocket);
+        *pYes = ssl3_ExtensionNegotiated(sslsocket, extId);
+        ssl_ReleaseSSL3HandshakeLock(sslsocket);
     }
 
     return SECSuccess;
