@@ -267,12 +267,121 @@ class DevToolsSelectionObserver extends EventEmitter {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+class ParentDevToolsInspectorSidebar {
+  constructor(context, sidebarOptions) {
+    const toolbox = context.devToolsToolbox;
+    if (!toolbox) {
+      
+      
+      throw Error("Missing mandatory toolbox");
+    }
+
+    this.extension = context.extension;
+    this.visible = false;
+    this.destroyed = false;
+
+    this.toolbox = toolbox;
+    this.context = context;
+    this.sidebarOptions = sidebarOptions;
+
+    this.context.callOnClose(this);
+
+    this.id = this.sidebarOptions.id;
+    this.onSidebarSelect = this.onSidebarSelect.bind(this);
+    this.onSidebarCreated = this.onSidebarCreated.bind(this);
+
+    this.toolbox.once(`extension-sidebar-created-${this.id}`, this.onSidebarCreated);
+    this.toolbox.on(`inspector-sidebar-select`, this.onSidebarSelect);
+
+    
+    this._initializeSidebar = null;
+
+    this.toolbox.registerInspectorExtensionSidebar(this.id, {
+      title: sidebarOptions.title,
+    });
+  }
+
+  close() {
+    if (this.destroyed) {
+      throw new Error("Unable to close a destroyed DevToolsSelectionObserver");
+    }
+
+    this.toolbox.off(`extension-sidebar-created-${this.id}`, this.onSidebarCreated);
+    this.toolbox.off(`inspector-sidebar-select`, this.onSidebarSelect);
+
+    this.toolbox.unregisterInspectorExtensionSidebar(this.id);
+    this.extensionSidebar = null;
+    this._initializeSidebar = null;
+
+    this.destroyed = true;
+  }
+
+  onSidebarCreated(evt, sidebar) {
+    this.extensionSidebar = sidebar;
+
+    if (typeof this._initializeSidebar === "function") {
+      this._initializeSidebar();
+      this._initializeSidebar = null;
+    }
+  }
+
+  onSidebarSelect(what, id) {
+    if (!this.extensionSidebar) {
+      return;
+    }
+
+    if (!this.visible && id === this.id) {
+      
+      this.visible = true;
+      this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsInspectorSidebarShown", {
+        inspectorSidebarId: this.id,
+      });
+    } else if (this.visible && id !== this.id) {
+      this.visible = false;
+      this.context.parentMessageManager.sendAsyncMessage("Extension:DevToolsInspectorSidebarHidden", {
+        inspectorSidebarId: this.id,
+      });
+    }
+  }
+
+  setObject(object, rootTitle) {
+    
+    if (rootTitle) {
+      object = {[rootTitle]: object};
+    }
+
+    if (this.extensionSidebar) {
+      this.extensionSidebar.setObject(object);
+    } else {
+      
+      this._initializeSidebar = () => this.extensionSidebar.setObject(object);
+    }
+  }
+}
+
+const sidebarsById = new Map();
+
 this.devtools_panels = class extends ExtensionAPI {
   getAPI(context) {
     
     let nextPanelId = 0;
 
     const toolboxSelectionObserver = new DevToolsSelectionObserver(context);
+
+    function newBasePanelId() {
+      return `${context.extension.id}-${context.contextId}-${nextPanelId++}`;
+    }
 
     return {
       devtools: {
@@ -288,6 +397,32 @@ this.devtools_panels = class extends ExtensionAPI {
                   toolboxSelectionObserver.off("selectionChanged", listener);
                 };
               }).api(),
+            createSidebarPane(title) {
+              const id = `devtools-inspector-sidebar-${makeWidgetId(newBasePanelId())}`;
+
+              const parentSidebar = new ParentDevToolsInspectorSidebar(context, {title, id});
+              sidebarsById.set(id, parentSidebar);
+
+              context.callOnClose({
+                close() {
+                  sidebarsById.delete(id);
+                },
+              });
+
+              
+              
+              
+              return Promise.resolve(id);
+            },
+            
+            
+            
+            Sidebar: {
+              setObject(sidebarId, jsonObject, rootTitle) {
+                const sidebar = sidebarsById.get(sidebarId);
+                return sidebar.setObject(jsonObject, rootTitle);
+              },
+            },
           },
           create(title, icon, url) {
             
@@ -300,8 +435,7 @@ this.devtools_panels = class extends ExtensionAPI {
             icon = context.extension.baseURI.resolve(icon);
             url = context.extension.baseURI.resolve(url);
 
-            const baseId = `${context.extension.id}-${context.contextId}-${nextPanelId++}`;
-            const id = `${makeWidgetId(baseId)}-devtools-panel`;
+            const id = `${makeWidgetId(newBasePanelId())}-devtools-panel`;
 
             new ParentDevToolsPanel(context, {title, icon, url, id});
 

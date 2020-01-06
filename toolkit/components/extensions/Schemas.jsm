@@ -2185,7 +2185,9 @@ FunctionEntry = class FunctionEntry extends CallEntry {
     if (optional && value == null) {
       return;
     }
-    if (type.reference === "ExtensionPanel" || type.reference === "Port") {
+    if (type.reference === "ExtensionPanel" ||
+        type.reference === "ExtensionSidebarPane" ||
+        type.reference === "Port") {
       
       
       return;
