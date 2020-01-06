@@ -1991,9 +1991,7 @@ var BrowserApp = {
           
           
           case "datareporting.crashreporter.submitEnabled":
-            let crashReporterBuilt = "nsICrashReporter" in Ci &&
-                Services.appinfo instanceof Ci.nsICrashReporter;
-            if (crashReporterBuilt) {
+            if (AppConstants.MOZ_CRASHREPORTER) {
               aSubject.setAsBool(Services.appinfo.submitReports);
             }
             break;
@@ -2046,9 +2044,7 @@ var BrowserApp = {
 
           
           case "datareporting.crashreporter.submitEnabled":
-            let crashReporterBuilt = "nsICrashReporter" in Ci &&
-                Services.appinfo instanceof Ci.nsICrashReporter;
-            if (crashReporterBuilt) {
+            if (AppConstants.MOZ_CRASHREPORTER) {
               Services.appinfo.submitReports = value;
               aSubject.setAsEmpty();
             }
@@ -4435,9 +4431,7 @@ Tab.prototype = {
 
     
     if (!ParentalControls.isAllowed(ParentalControls.BROWSE, fixedURI)) {
-      if (aRequest) {
-        aRequest.cancel(Cr.NS_BINDING_ABORTED);
-      }
+      aRequest.cancel(Cr.NS_BINDING_ABORTED);
 
       this.browser.docShell.displayLoadError(Cr.NS_ERROR_UNKNOWN_PROTOCOL, fixedURI, null);
     }
@@ -4502,7 +4496,7 @@ Tab.prototype = {
       ExternalApps.updatePageActionUri(fixedURI);
     }
 
-    if ((!aRequest || Components.isSuccessCode(aRequest.status)) &&
+    if (Components.isSuccessCode(aRequest.status) &&
         !fixedURI.displaySpec.startsWith("about:neterror") && !this.isSearch) {
       
       

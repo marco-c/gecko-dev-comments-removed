@@ -3,6 +3,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef nsExceptionHandler_h__
 #define nsExceptionHandler_h__
 
@@ -34,6 +40,19 @@ template<class KeyClass, class DataType> class nsDataHashtable;
 class nsCStringHashKey;
 
 namespace CrashReporter {
+
+
+
+
+static inline bool
+IsDummy() {
+#ifdef MOZ_CRASHREPORTER
+  return false;
+#else
+  return true;
+#endif
+}
+
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force=false);
 nsresult UnsetExceptionHandler();
 
