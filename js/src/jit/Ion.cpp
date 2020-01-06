@@ -1768,7 +1768,7 @@ OptimizeMIR(MIRGenerator* mir)
     }
 
     
-    if (mir->compilingWasm() && !JitOptions.wasmAlwaysCheckBounds) {
+    if (mir->compilingWasm()) {
         if (!EliminateBoundsChecks(mir, graph))
             return false;
         gs.spewPass("Redundant Bounds Check Elimination");
