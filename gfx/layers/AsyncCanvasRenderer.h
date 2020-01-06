@@ -14,7 +14,7 @@
 
 class nsICanvasRenderingContextInternal;
 class nsIInputStream;
-class nsIThread;
+class nsISerialEventTarget;
 
 namespace mozilla {
 
@@ -79,8 +79,8 @@ public:
   }
 
   
-  void SetActiveThread();
-  void ResetActiveThread();
+  void SetActiveEventTarget();
+  void ResetActiveEventTarget();
 
   
   
@@ -116,7 +116,7 @@ public:
     return mCanvasClient;
   }
 
-  already_AddRefed<nsIThread> GetActiveThread();
+  already_AddRefed<nsISerialEventTarget> GetActiveEventTarget();
 
   
   
@@ -159,7 +159,7 @@ private:
   Mutex mMutex;
 
   
-  nsCOMPtr<nsIThread> mActiveThread;
+  nsCOMPtr<nsISerialEventTarget> mActiveEventTarget;
 };
 
 } 
