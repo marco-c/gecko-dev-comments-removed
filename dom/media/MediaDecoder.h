@@ -148,10 +148,6 @@ public:
   
   
   MediaResourceCallback* GetResourceCallback() const;
-
-  
-  
-  virtual MediaDecoder* Clone(MediaDecoderInit& aInit) = 0;
   
   
   virtual MediaDecoderStateMachine* CreateStateMachine() = 0;

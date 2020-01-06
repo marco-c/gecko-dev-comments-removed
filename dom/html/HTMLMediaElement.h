@@ -42,6 +42,7 @@ typedef uint8_t AudibleState;
 
 namespace mozilla {
 class AbstractThread;
+class ChannelMediaDecoder;
 class DecoderDoctorDiagnostics;
 class DOMMediaStream;
 class ErrorResult;
@@ -939,7 +940,7 @@ protected:
 
 
 
-  nsresult InitializeDecoderAsClone(MediaDecoder* aOriginal);
+  nsresult InitializeDecoderAsClone(ChannelMediaDecoder* aOriginal);
 
   
 

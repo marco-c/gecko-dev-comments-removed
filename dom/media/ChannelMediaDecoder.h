@@ -15,6 +15,10 @@ class ChannelMediaDecoder : public MediaDecoder
 {
 public:
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
+
+  
+  
+  virtual ChannelMediaDecoder* Clone(MediaDecoderInit& aInit) = 0;
 };
 
 } 
