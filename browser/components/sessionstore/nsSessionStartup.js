@@ -336,6 +336,18 @@ SessionStartup.prototype = {
   
 
 
+
+
+
+  get willOverrideHomepagePromise() {
+    return new Promise(resolve => {
+      resolve(this.willOverrideHomepage);
+    });
+  },
+
+  
+
+
   get sessionType() {
     return this._sessionType;
   },
