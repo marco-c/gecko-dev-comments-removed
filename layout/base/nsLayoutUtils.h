@@ -1157,6 +1157,11 @@ public:
   
 
 
+  static void AddBoxesForFrame(nsIFrame* aFrame, BoxCallback* aCallback);
+
+  
+
+
 
   static nsIFrame* GetFirstNonAnonymousFrame(nsIFrame* aFrame);
 

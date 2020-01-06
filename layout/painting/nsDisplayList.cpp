@@ -8583,6 +8583,12 @@ bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
 
   
   
+  if (mFrame->StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Clone) {
+    return false;
+  }
+
+  
+  
   
   if (aItem->Frame()->GetContent() != mFrame->GetContent()) {
     return false;
