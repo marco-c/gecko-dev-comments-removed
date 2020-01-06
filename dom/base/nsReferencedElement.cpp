@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsReferencedElement.h"
 #include "nsContentUtils.h"
@@ -27,16 +27,17 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
 
   nsAutoCString refPart;
   aURI->GetRef(refPart);
-  
-  
+  // Unescape %-escapes in the reference. The result will be in the
+  // document charset, hopefully...
   NS_UnescapeURL(refPart);
 
-  nsAutoCString charset;
-  aURI->GetOriginCharset(charset);
-  auto encoding = Encoding::ForLabelNoReplacement(charset);
-  if (!encoding) {
-    encoding = UTF_8_ENCODING;
+  // Get the current document
+  nsIDocument *doc = aFromContent->OwnerDoc();
+  if (!doc) {
+    return;
   }
+
+  auto encoding = doc->GetDocumentCharacterSet();
   nsAutoString ref;
   nsresult rv = encoding->DecodeWithoutBOMHandling(refPart, ref);
   if (NS_FAILED(rv) || ref.IsEmpty()) {
@@ -44,24 +45,19 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
   }
   rv = NS_OK;
 
-  
-  nsIDocument *doc = aFromContent->OwnerDoc();
-  if (!doc)
-    return;
-
   nsIContent* bindingParent = aFromContent->GetBindingParent();
   if (bindingParent) {
     nsXBLBinding* binding = bindingParent->GetXBLBinding();
     if (!binding) {
-      
-      
-      
-      
+      // This happens, for example, if aFromContent is part of the content
+      // inserted by a call to nsIDocument::InsertAnonymousContent, which we
+      // also want to handle.  (It also happens for <use>'s anonymous
+      // content etc.)
       Element* anonRoot =
         doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
       if (anonRoot) {
         mElement = nsContentUtils::MatchElementId(anonRoot, ref);
-        
+        // We don't have watching working yet for anonymous content, so bail out here.
         return;
       }
     } else {
@@ -69,15 +65,15 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
       rv = aURI->EqualsExceptRef(binding->PrototypeBinding()->DocURI(),
                                  &isEqualExceptRef);
       if (NS_SUCCEEDED(rv) && isEqualExceptRef) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // XXX sXBL/XBL2 issue
+        // Our content is an anonymous XBL element from a binding inside the
+        // same document that the referenced URI points to. In order to avoid
+        // the risk of ID collisions we restrict ourselves to anonymous
+        // elements from this binding; specifically, URIs that are relative to
+        // the binding document should resolve to the copy of the target
+        // element that has been inserted into the bound document.
+        // If the URI points to a different document we don't need this
+        // restriction.
         nsINodeList* anonymousChildren =
           doc->BindingManager()->GetAnonymousNodesFor(bindingParent);
 
@@ -90,7 +86,7 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
           }
         }
 
-        
+        // We don't have watching working yet for XBL, so bail out here.
         return;
       }
     }
@@ -104,7 +100,7 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
                                        getter_AddRefs(load));
     if (!doc) {
       if (!load || !aWatch) {
-        
+        // Nothing will ever happen here
         return;
       }
 
@@ -114,7 +110,7 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
       if (observer) {
         load->AddObserver(observer);
       }
-      
+      // Keep going so we set up our watching stuff a bit
     }
   }
 
@@ -138,7 +134,7 @@ nsReferencedElement::ResetWithID(nsIContent* aFromContent, const nsString& aID,
   if (!doc)
     return;
 
-  
+  // XXX Need to take care of XBL/XBL2
 
   if (aWatch) {
     nsCOMPtr<nsIAtom> atom = NS_Atomize(aID);
@@ -241,8 +237,8 @@ nsReferencedElement::DocumentLoadNotification::Observe(nsISupports* aSubject,
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
     mTarget->mPendingNotification = nullptr;
     NS_ASSERTION(!mTarget->mElement, "Why do we have content here?");
-    
-    
+    // If we got here, that means we had Reset() called with aWatch ==
+    // true.  So keep watching if IsPersistent().
     mTarget->HaveNewDocument(doc, mTarget->IsPersistent(), mRef);
     mTarget->ElementChanged(nullptr, mTarget->mElement);
   }

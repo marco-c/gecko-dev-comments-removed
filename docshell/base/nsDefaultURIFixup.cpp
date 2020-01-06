@@ -87,14 +87,8 @@ nsDefaultURIFixup::CreateExposableURI(nsIURI* aURI, nsIURI** aReturn)
       return NS_ERROR_FAILURE;
     }
 
-    
-    
-    nsAutoCString charset;
-    aURI->GetOriginCharset(charset);
-
     rv = NS_NewURI(getter_AddRefs(uri),
-                   Substring(path, slashIndex + 1, pathLength - slashIndex - 1),
-                   charset.get());
+                   Substring(path, slashIndex + 1, pathLength - slashIndex - 1));
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     

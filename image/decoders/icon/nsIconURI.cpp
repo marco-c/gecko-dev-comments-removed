@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set sw=2 sts=2 ts=2 et tw=80:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIconURI.h"
 
@@ -30,8 +30,8 @@ using namespace mozilla::ipc;
 #define SANE_FILE_NAME_LEN 1024
 #endif
 
-
-
+// helper function for parsing out attributes like size, and contentType
+// from the icon url.
 static void extractAttributeValue(const char* aSearchString,
                                   const char* aAttributeName,
                                   nsCString& aResult);
@@ -52,7 +52,7 @@ static const char* kStateStrings[] =
   "disabled"
 };
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 nsMozIconURI::nsMozIconURI()
   : mSize(DEFAULT_IMAGE_SIZE),
@@ -68,8 +68,8 @@ NS_IMPL_ISUPPORTS(nsMozIconURI, nsIMozIconURI, nsIURI, nsIIPCSerializableURI)
 #define MOZICON_SCHEME "moz-icon:"
 #define MOZICON_SCHEME_LEN (sizeof(MOZICON_SCHEME) - 1)
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIURI methods:
 
 NS_IMETHODIMP
 nsMozIconURI::GetSpec(nsACString& aSpec)
@@ -142,27 +142,27 @@ nsMozIconURI::GetHasRef(bool* result)
   return NS_OK;
 }
 
-
-
-
-
+// takes a string like ?size=32&contentType=text/html and returns a new string
+// containing just the attribute value. i.e you could pass in this string with
+// an attribute name of 'size=', this will return 32
+// Assumption: attribute pairs in the string are separated by '&'.
 void
 extractAttributeValue(const char* aSearchString,
                            const char* aAttributeName,
                            nsCString& aResult)
 {
-  
+  //NS_ENSURE_ARG_POINTER(extractAttributeValue);
 
   aResult.Truncate();
 
   if (aSearchString && aAttributeName) {
-    
+    // search the string for attributeName
     uint32_t attributeNameSize = strlen(aAttributeName);
     const char* startOfAttribute = PL_strcasestr(aSearchString, aAttributeName);
     if (startOfAttribute &&
        ( *(startOfAttribute-1) == '?' || *(startOfAttribute-1) == '&') ) {
-      startOfAttribute += attributeNameSize; 
-      
+      startOfAttribute += attributeNameSize; // skip over the attributeName
+      // is there something after the attribute name
       if (*startOfAttribute) {
         const char* endofAttribute = strchr(startOfAttribute, '&');
         if (endofAttribute) {
@@ -170,15 +170,15 @@ extractAttributeValue(const char* aSearchString,
         } else {
           aResult.Assign(startOfAttribute);
         }
-      } 
-    } 
-  } 
+      } // if we have a attribute value
+    } // if we have a attribute name
+  } // if we got non-null search string and attribute name values
 }
 
 NS_IMETHODIMP
 nsMozIconURI::SetSpec(const nsACString& aSpec)
 {
-  
+  // Reset everything to default values.
   mIconURL = nullptr;
   mSize = DEFAULT_IMAGE_SIZE;
   mContentType.Truncate();
@@ -238,14 +238,14 @@ nsMozIconURI::SetSpec(const nsACString& aSpec)
 
   nsAutoCString iconPath(Substring(iconSpec, MOZICON_SCHEME_LEN, pathLength));
 
-  
-  
-  
-  
+  // Icon URI path can have three forms:
+  // (1) //stock/<icon-identifier>
+  // (2) //<some dummy file with an extension>
+  // (3) a valid URL
 
   if (!strncmp("//stock/", iconPath.get(), 8)) {
     mStockIcon.Assign(Substring(iconPath, 8));
-    
+    // An icon identifier must always be specified.
     if (mStockIcon.IsEmpty()) {
       return NS_ERROR_MALFORMED_URI;
     }
@@ -253,7 +253,7 @@ nsMozIconURI::SetSpec(const nsACString& aSpec)
   }
 
   if (StringBeginsWith(iconPath, NS_LITERAL_CSTRING("//"))) {
-    
+    // Sanity check this supposed dummy file name.
     if (iconPath.Length() > SANE_FILE_NAME_LEN) {
       return NS_ERROR_MALFORMED_URI;
     }
@@ -294,7 +294,7 @@ nsMozIconURI::GetScheme(nsACString& aScheme)
 NS_IMETHODIMP
 nsMozIconURI::SetScheme(const nsACString& aScheme)
 {
-  
+  // doesn't make sense to set the scheme of a moz-icon URL
   return NS_ERROR_FAILURE;
 }
 
@@ -416,6 +416,13 @@ nsMozIconURI::SetQuery(const nsACString& aQuery)
 }
 
 NS_IMETHODIMP
+nsMozIconURI::SetQueryWithEncoding(const nsACString& aQuery,
+                                   const Encoding* aEncoding)
+{
+  return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
 nsMozIconURI::GetRef(nsACString& aRef)
 {
   aRef.Truncate();
@@ -454,8 +461,8 @@ nsMozIconURI::Equals(nsIURI* other, bool* result)
 NS_IMETHODIMP
 nsMozIconURI::EqualsExceptRef(nsIURI* other, bool* result)
 {
-  
-  
+  // GetRef/SetRef not supported by nsMozIconURI, so
+  // EqualsExceptRef() is the same as Equals().
   return Equals(other, result);
 }
 
@@ -503,16 +510,16 @@ nsMozIconURI::Clone(nsIURI** result)
 NS_IMETHODIMP
 nsMozIconURI::CloneIgnoringRef(nsIURI** result)
 {
-  
-  
+  // GetRef/SetRef not supported by nsMozIconURI, so
+  // CloneIgnoringRef() is the same as Clone().
   return Clone(result);
 }
 
 NS_IMETHODIMP
 nsMozIconURI::CloneWithNewRef(const nsACString& newRef, nsIURI** result)
 {
-  
-  
+  // GetRef/SetRef not supported by nsMozIconURI, so
+  // CloneWithNewRef() is the same as Clone().
   return Clone(result);
 }
 
@@ -541,15 +548,8 @@ nsMozIconURI::GetAsciiHost(nsACString& aHostA)
   return GetHost(aHostA);
 }
 
-NS_IMETHODIMP
-nsMozIconURI::GetOriginCharset(nsACString& result)
-{
-  result.Truncate();
-  return NS_OK;
-}
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIIconUri methods:
 
 NS_IMETHODIMP
 nsMozIconURI::GetIconURL(nsIURL** aFileUrl)
@@ -562,13 +562,13 @@ nsMozIconURI::GetIconURL(nsIURL** aFileUrl)
 NS_IMETHODIMP
 nsMozIconURI::SetIconURL(nsIURL* aFileUrl)
 {
-  
+  // this isn't called anywhere, needs to go through SetSpec parsing
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 nsMozIconURI::GetImageSize(uint32_t* aImageSize)
-              
+              // measured by # of pixels in a row. defaults to 16.
 {
   *aImageSize = mSize;
   return NS_OK;
@@ -576,7 +576,7 @@ nsMozIconURI::GetImageSize(uint32_t* aImageSize)
 
 NS_IMETHODIMP
 nsMozIconURI::SetImageSize(uint32_t aImageSize)
-              
+              // measured by # of pixels in a row. defaults to 16.
 {
   mSize = aImageSize;
   return NS_OK;
@@ -599,13 +599,13 @@ nsMozIconURI::SetContentType(const nsACString& aContentType)
 NS_IMETHODIMP
 nsMozIconURI::GetFileExtension(nsACString& aFileExtension)
 {
-  
+  // First, try to get the extension from mIconURL if we have one
   if (mIconURL) {
     nsAutoCString fileExt;
     if (NS_SUCCEEDED(mIconURL->GetFileExtension(fileExt))) {
       if (!fileExt.IsEmpty()) {
-        
-        
+        // unfortunately, this code doesn't give us the required '.' in
+        // front of the extension so we have to do it ourselves.
         aFileExtension.Assign('.');
         aFileExtension.Append(fileExt);
       }
@@ -614,8 +614,8 @@ nsMozIconURI::GetFileExtension(nsACString& aFileExtension)
   }
 
   if (!mFileName.IsEmpty()) {
-    
-    const char* chFileName = mFileName.get(); 
+    // truncate the extension out of the file path...
+    const char* chFileName = mFileName.get(); // get the underlying buffer
     const char* fileExt = strrchr(chFileName, '.');
     if (!fileExt) {
       return NS_OK;
@@ -654,8 +654,8 @@ nsMozIconURI::GetIconState(nsACString& aState)
   }
   return NS_OK;
 }
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIIPCSerializableURI methods:
 
 void
 nsMozIconURI::Serialize(URIParams& aParams)
@@ -666,7 +666,7 @@ nsMozIconURI::Serialize(URIParams& aParams)
     URIParams iconURLParams;
     SerializeURI(mIconURL, iconURLParams);
     if (iconURLParams.type() == URIParams::T__None) {
-      
+      // Serialization failed, bail.
       return;
     }
 
@@ -712,8 +712,8 @@ nsMozIconURI::Deserialize(const URIParams& aParams)
   return true;
 }
 
-
-
+////////////////////////////////////////////////////////////
+// Nested version of nsIconURI
 
 nsNestedMozIconURI::nsNestedMozIconURI()
 { }

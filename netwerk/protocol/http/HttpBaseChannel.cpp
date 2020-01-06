@@ -1595,13 +1595,8 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
     if (slashIndex == kNotFound) return NS_ERROR_FAILURE;
 
     
-    nsAutoCString charset;
-    referrer->GetOriginCharset(charset);
-
-    
     rv = NS_NewURI(getter_AddRefs(referrerGrip),
-                   Substring(path, slashIndex + 1, pathLength - slashIndex - 1),
-                   charset.get());
+                   Substring(path, slashIndex + 1, pathLength - slashIndex - 1));
     if (NS_FAILED(rv)) return rv;
 
     referrer = referrerGrip.get();

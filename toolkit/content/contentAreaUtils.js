@@ -403,8 +403,6 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
     var charset = null;
     if (aDocument)
       charset = aDocument.characterSet;
-    else if (aReferrer)
-      charset = aReferrer.originCharset;
     var fileInfo = new FileInfo(aDefaultFileName);
     initFileInfo(fileInfo, aURL, charset, aDocument,
                  aContentType, aContentDisposition);
@@ -1034,7 +1032,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
       
       var textToSubURI = Components.classes["@mozilla.org/intl/texttosuburi;1"]
                                    .getService(Components.interfaces.nsITextToSubURI);
-      return validateFileName(textToSubURI.unEscapeURIForUI(url.originCharset || "UTF-8", url.fileName));
+      return validateFileName(textToSubURI.unEscapeURIForUI("UTF-8", url.fileName));
     }
   } catch (e) {
     

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaDocument.h"
 #include "nsGkAtoms.h"
@@ -15,7 +15,7 @@
 #include "nsIURL.h"
 #include "nsIContentViewer.h"
 #include "nsIDocShell.h"
-#include "nsCharsetSource.h" 
+#include "nsCharsetSource.h" // kCharsetFrom* macro definition
 #include "nsNodeInfoManager.h"
 #include "nsContentUtils.h"
 #include "nsDocElementCreatedNotificationRunner.h"
@@ -72,7 +72,7 @@ MediaDocumentStreamListener::OnStopRequest(nsIRequest* request,
     rv = mNextStream->OnStopRequest(request, ctxt, status);
   }
 
-  
+  // Don't release mDocument here if we're in the middle of a multipart response.
   bool lastPart = true;
   nsCOMPtr<nsIMultiPartChannel> mpchan(do_QueryInterface(request));
   if (mpchan) {
@@ -99,13 +99,13 @@ MediaDocumentStreamListener::OnDataAvailable(nsIRequest* request,
   return NS_OK;
 }
 
-
+// default format names for MediaDocument.
 const char* const MediaDocument::sFormatNames[4] =
 {
-  "MediaTitleWithNoInfo",    
-  "MediaTitleWithFile",      
-  "",                        
-  ""                         
+  "MediaTitleWithNoInfo",    // eWithNoInfo
+  "MediaTitleWithFile",      // eWithFile
+  "",                        // eWithDim
+  ""                         // eWithDimAndFile
 };
 
 MediaDocument::MediaDocument()
@@ -123,7 +123,7 @@ MediaDocument::Init()
   nsresult rv = nsHTMLDocument::Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Create a bundle for the localization
   nsCOMPtr<nsIStringBundleService> stringService =
     mozilla::services::GetStringBundleService();
   if (stringService) {
@@ -152,29 +152,29 @@ MediaDocument::StartDocumentLoad(const char*         aCommand,
     return rv;
   }
 
-  
-  
-  
-  
-  
-  
+  // We try to set the charset of the current document to that of the
+  // 'genuine' (as opposed to an intervening 'chrome') parent document
+  // that may be in a different window/tab. Even if we fail here,
+  // we just return NS_OK because another attempt is made in
+  // |UpdateTitleAndCharset| and the worst thing possible is a mangled
+  // filename in the titlebar and the file picker.
 
-  
-  
-  
-  
-  
-  
+  // Note that we
+  // exclude UTF-8 as 'invalid' because UTF-8 is likely to be the charset
+  // of a chrome document that has nothing to do with the actual content
+  // whose charset we want to know. Even if "the actual content" is indeed
+  // in UTF-8, we don't lose anything because the default empty value is
+  // considered synonymous with UTF-8.
 
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aContainer));
 
-  
+  // not being able to set the charset is not critical.
   NS_ENSURE_TRUE(docShell, NS_OK);
 
   const Encoding* encoding;
   int32_t source;
   nsCOMPtr<nsIPrincipal> principal;
-  
+  // opening in a new tab
   docShell->GetParentCharset(encoding, &source, getter_AddRefs(principal));
 
   if (encoding && encoding != UTF_8_ENCODING &&
@@ -189,9 +189,9 @@ MediaDocument::StartDocumentLoad(const char*         aCommand,
 void
 MediaDocument::BecomeInteractive()
 {
-  
-  
-  
+  // Even though our readyState code isn't really reliable, here we pretend
+  // that it is and conclude that we are restoring from the b/f cache if
+  // GetReadyStateEnum() == nsIDocument::READYSTATE_COMPLETE.
   if (GetReadyStateEnum() != nsIDocument::READYSTATE_COMPLETE) {
     MOZ_ASSERT(GetReadyStateEnum() == nsIDocument::READYSTATE_LOADING,
                "Bad readyState");
@@ -202,7 +202,7 @@ MediaDocument::BecomeInteractive()
 nsresult
 MediaDocument::CreateSyntheticDocument()
 {
-  
+  // Synthesize an empty html document
   nsresult rv;
 
   RefPtr<mozilla::dom::NodeInfo> nodeInfo;
@@ -221,7 +221,7 @@ MediaDocument::CreateSyntheticDocument()
                                            kNameSpaceID_XHTML,
                                            nsIDOMNode::ELEMENT_NODE);
 
-  
+  // Create a <head> so our title has somewhere to live
   RefPtr<nsGenericHTMLElement> head = NS_NewHTMLHeadElement(nodeInfo.forget());
   NS_ENSURE_TRUE(head, NS_ERROR_OUT_OF_MEMORY);
 
@@ -259,8 +259,8 @@ MediaDocument::StartLayout()
 {
   mMayStartLayout = true;
   nsCOMPtr<nsIPresShell> shell = GetShell();
-  
-  
+  // Don't mess with the presshell if someone has already handled
+  // its initial reflow.
   if (shell && !shell->DidInitialize()) {
     nsRect visibleArea = shell->GetPresContext()->GetVisibleArea();
     nsresult rv = shell->Initialize(visibleArea.width, visibleArea.height);
@@ -291,28 +291,23 @@ MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel)
     return;
 
   nsAutoCString docCharset;
-  
-  
-  
-  
-  
-  
+  // Now that the charset is set in |StartDocumentLoad| to the charset of
+  // the document viewer instead of a bogus value ("windows-1252" set in
+  // |nsDocument|'s ctor), the priority is given to the current charset.
+  // This is necessary to deal with a media document being opened in a new
+  // window or a new tab.
   if (mCharacterSetSource != kCharsetUninitialized) {
     mCharacterSet->Name(docCharset);
   } else {
-    
-    url->GetOriginCharset(docCharset);
-    auto encoding = Encoding::ForLabelNoReplacement(docCharset);
-    if (encoding) {
-      SetDocumentCharacterSet(WrapNotNull(encoding));
-    }
+    // resort to UTF-8
+    SetDocumentCharacterSet(UTF_8_ENCODING);
   }
 
   nsresult rv;
   nsCOMPtr<nsITextToSubURI> textToSubURI =
     do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv)) {
-    
+    // UnEscapeURIForUI always succeeds
     textToSubURI->UnEscapeURIForUI(docCharset, fileName, aResult);
   } else {
     CopyUTF8toUTF16(fileName, aResult);
@@ -373,13 +368,13 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
   nsXPIDLString title;
 
   if (mStringBundle) {
-    
+    // if we got a valid size (not all media have a size)
     if (aWidth != 0 && aHeight != 0) {
       nsAutoString widthStr;
       nsAutoString heightStr;
       widthStr.AppendInt(aWidth);
       heightStr.AppendInt(aHeight);
-      
+      // If we got a filename, display it
       if (!fileStr.IsEmpty()) {
         const char16_t *formatStrings[4]  = {fileStr.get(), typeStr.get(),
           widthStr.get(), heightStr.get()};
@@ -396,7 +391,7 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
       }
     }
     else {
-    
+    // If we got a filename, display it
       if (!fileStr.IsEmpty()) {
         const char16_t *formatStrings[2] = {fileStr.get(), typeStr.get()};
         mStringBundle->FormatStringFromName(aFormatNames[eWithFile],
@@ -412,7 +407,7 @@ MediaDocument::UpdateTitleAndCharset(const nsACString& aTypeStr,
     }
   }
 
-  
+  // set it on the document
   if (aStatus.IsEmpty()) {
     SetTitle(title);
   }
@@ -437,5 +432,5 @@ MediaDocument::SetScriptGlobalObject(nsIScriptGlobalObject* aGlobalObject)
     }
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

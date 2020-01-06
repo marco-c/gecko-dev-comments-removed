@@ -146,15 +146,11 @@ static nsresult UnescapeFragment(const nsACString& aFragment, nsIURI* aURI,
                                  nsAString& aResult)
 {
   
-  nsAutoCString originCharset;
-  nsresult rv = aURI->GetOriginCharset(originCharset);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
+  nsresult rv;
   nsCOMPtr<nsITextToSubURI> textToSubURI = do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return textToSubURI->UnEscapeURIForUI(originCharset, aFragment, aResult);
+  return textToSubURI->UnEscapeURIForUI(NS_LITERAL_CSTRING("UTF-8"), aFragment, aResult);
 }
 
 

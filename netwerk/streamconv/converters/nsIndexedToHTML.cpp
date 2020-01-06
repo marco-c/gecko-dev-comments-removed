@@ -494,15 +494,8 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
         if (NS_FAILED(rv)) return rv;
     }
 
-    nsXPIDLCString encoding;
-    rv = uri->GetOriginCharset(encoding);
-    if (NS_FAILED(rv)) return rv;
-    if (encoding.IsEmpty()) {
-      encoding.AssignLiteral("UTF-8");
-    }
-
     nsAutoString unEscapeSpec;
-    rv = mTextToSubURI->UnEscapeAndConvert(encoding, titleUri, unEscapeSpec);
+    rv = mTextToSubURI->UnEscapeAndConvert(NS_LITERAL_CSTRING("UTF-8"), titleUri, unEscapeSpec);
     
     
     
