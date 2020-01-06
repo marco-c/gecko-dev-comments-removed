@@ -228,8 +228,7 @@ void RunWriter(void* arg)
 
   
 
-  nsCString destinationPath;
-  destinationPath.Adopt(static_cast<char*>(arg));
+  nsCString destinationPath(static_cast<char*>(arg));
   nsAutoCString tmpFilePath;
   tmpFilePath.Append(destinationPath);
   tmpFilePath.AppendLiteral(".tmp");
@@ -362,7 +361,7 @@ nsTerminator::Start()
 {
   MOZ_ASSERT(!mInitialized);
   StartWatchdog();
-#if !defined(NS_FREE_PERMANENT_DATA)
+#if !defined(DEBUG)
   
   
   
