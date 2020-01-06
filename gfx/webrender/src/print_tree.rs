@@ -13,6 +13,15 @@ pub struct PrintTree {
     queued_item: Option<String>,
 }
 
+
+
+
+pub trait PrintTreePrinter {
+    fn new_level(&mut self, title: String);
+    fn end_level(&mut self);
+    fn add_item(&mut self, text: String);
+}
+
 impl PrintTree {
     pub fn new(title: &str) -> PrintTree {
         println!("\u{250c} {}", title);
@@ -20,28 +29,6 @@ impl PrintTree {
             level: 1,
             queued_item: None,
         }
-    }
-
-    
-    pub fn new_level(&mut self, title: String) {
-        self.flush_queued_item("\u{251C}\u{2500}");
-
-        self.print_level_prefix();
-        println!("\u{251C}\u{2500} {}", title);
-
-        self.level = self.level + 1;
-    }
-
-    
-    pub fn end_level(&mut self) {
-        self.flush_queued_item("\u{2514}\u{2500}");
-        self.level = self.level - 1;
-    }
-
-    
-    pub fn add_item(&mut self, text: String) {
-        self.flush_queued_item("\u{251C}\u{2500}");
-        self.queued_item = Some(text);
     }
 
     fn print_level_prefix(&self) {
@@ -56,6 +43,31 @@ impl PrintTree {
             println!("{} {}", prefix, queued_item);
         }
     }
+}
+
+
+impl PrintTreePrinter for PrintTree {
+    
+    fn new_level(&mut self, title: String) {
+        self.flush_queued_item("\u{251C}\u{2500}");
+
+        self.print_level_prefix();
+        println!("\u{251C}\u{2500} {}", title);
+
+        self.level = self.level + 1;
+    }
+
+    
+    fn end_level(&mut self) {
+        self.flush_queued_item("\u{2514}\u{2500}");
+        self.level = self.level - 1;
+    }
+
+    
+    fn add_item(&mut self, text: String) {
+        self.flush_queued_item("\u{251C}\u{2500}");
+        self.queued_item = Some(text);
+    }    
 }
 
 impl Drop for PrintTree {

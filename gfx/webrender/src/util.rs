@@ -269,19 +269,10 @@ pub fn pack_as_float(value: u32) -> f32 {
 pub trait ComplexClipRegionHelpers {
     
     
-    fn get_inner_rect_safe(&self) -> Option<LayoutRect>;
-    
-    
     fn get_inner_rect_full(&self) -> Option<LayoutRect>;
 }
 
 impl ComplexClipRegionHelpers for ComplexClipRegion {
-    fn get_inner_rect_safe(&self) -> Option<LayoutRect> {
-        
-        
-        extract_inner_rect_impl(&self.rect, &self.radii, 1.0)
-    }
-
     fn get_inner_rect_full(&self) -> Option<LayoutRect> {
         
         let k = 1.0 - 0.5 * FRAC_1_SQRT_2; 
@@ -308,6 +299,15 @@ fn extract_inner_rect_impl<U>(rect: &TypedRect<f32, U>,
     } else {
         None
     }
+}
+
+
+
+pub fn extract_inner_rect_safe<U>(rect: &TypedRect<f32, U>,
+                                  radii: &BorderRadius) -> Option<TypedRect<f32, U>> {
+    
+    
+    extract_inner_rect_impl(rect, radii, 1.0)
 }
 
 

@@ -18,7 +18,7 @@ use debug_colors;
 use debug_render::DebugRenderer;
 #[cfg(feature = "debugger")]
 use debug_server::{self, DebugServer};
-use device::{DepthFunction, Device, FrameId, Program, Texture, VertexDescriptor, GpuMarker, GpuProfiler, PBOId};
+use device::{DepthFunction, Device, FrameId, Program, Texture, VertexDescriptor, GpuMarker, GpuProfiler, PBO};
 use device::{GpuTimer, TextureFilter, VAO, VertexUsageHint, FileWatcherHandler, TextureTarget, ShaderError};
 use device::{ExternalTexture, get_gl_format_bgra, TextureSlot, VertexAttribute, VertexAttributeKind};
 use euclid::{Transform3D, rect};
@@ -499,7 +499,7 @@ impl CacheRow {
 
 struct CacheTexture {
     texture: Texture,
-    pbo_id: PBOId,
+    pbo: PBO,
     rows: Vec<CacheRow>,
     cpu_blocks: Vec<GpuBlockData>,
 }
@@ -507,17 +507,18 @@ struct CacheTexture {
 impl CacheTexture {
     fn new(device: &mut Device) -> CacheTexture {
         let texture = device.create_texture(TextureTarget::Default);
-        let pbo_id = device.create_pbo();
+        let pbo = device.create_pbo();
 
         CacheTexture {
             texture,
-            pbo_id,
+            pbo,
             rows: Vec::new(),
             cpu_blocks: Vec::new(),
         }
     }
 
     fn deinit(self, device: &mut Device) {
+        device.delete_pbo(self.pbo);
         device.delete_texture(self.texture);
     }
 
@@ -584,7 +585,7 @@ impl CacheTexture {
     fn flush(&mut self, device: &mut Device) {
         
         
-        device.bind_pbo(Some(self.pbo_id));
+        device.bind_pbo(Some(&self.pbo));
 
         for (row_index, row) in self.rows.iter_mut().enumerate() {
             if row.is_dirty {
@@ -621,7 +622,7 @@ impl CacheTexture {
 
 struct VertexDataTexture {
     texture: Texture,
-    pbo: PBOId,
+    pbo: PBO,
 }
 
 impl VertexDataTexture {
@@ -676,7 +677,7 @@ impl VertexDataTexture {
 
         
         
-        device.bind_pbo(Some(self.pbo));
+        device.bind_pbo(Some(&self.pbo));
         device.update_pbo_data(data);
         device.update_texture_from_pbo(&self.texture,
                                        0,
@@ -692,6 +693,7 @@ impl VertexDataTexture {
     }
 
     fn deinit(self, device: &mut Device) {
+        device.delete_pbo(self.pbo);
         device.delete_texture(self.texture);
     }
 }
@@ -1002,7 +1004,7 @@ pub struct Renderer {
     texture_resolver: SourceTextureResolver,
 
     
-    texture_cache_upload_pbo: PBOId,
+    texture_cache_upload_pbo: PBO,
 
     dither_matrix_texture: Option<Texture>,
 
@@ -1619,7 +1621,8 @@ impl Renderer {
                 }
                 ResultMsg::DebugOutput(output) => {
                     match output {
-                        DebugOutput::FetchDocuments(string) => {
+                        DebugOutput::FetchDocuments(string) |
+                        DebugOutput::FetchClipScrollTree(string) => {
                             self.debug_server.send(string);
                         }
                     }
@@ -1718,6 +1721,7 @@ impl Renderer {
                 }
             }
             DebugCommand::FetchDocuments => {}
+            DebugCommand::FetchClipScrollTree => {}
             DebugCommand::FetchPasses => {
                 let json = self.get_passes_for_debugger();
                 self.debug_server.send(json);
@@ -1891,7 +1895,7 @@ impl Renderer {
 
                         
                         
-                        self.device.bind_pbo(Some(self.texture_cache_upload_pbo));
+                        self.device.bind_pbo(Some(&self.texture_cache_upload_pbo));
 
                         match source {
                             TextureUpdateSource::Bytes { data }  => {
@@ -1904,6 +1908,16 @@ impl Renderer {
                                 match handler.lock(id, channel_index).source {
                                     ExternalImageSource::RawData(data) => {
                                         self.device.update_pbo_data(&data[offset as usize..]);
+                                    }
+                                    ExternalImageSource::Invalid => {
+                                        
+                                        let bpp = texture.get_bpp();
+                                        let width = stride.unwrap_or(rect.size.width * bpp);
+                                        let total_size = width * rect.size.height;
+                                        
+                                        
+                                        let dummy_data: Vec<u8> = vec![255; total_size as usize];
+                                        self.device.update_pbo_data(&dummy_data);
                                     }
                                     _ => panic!("No external buffer found"),
                                 };
@@ -2430,6 +2444,11 @@ impl Renderer {
 
                 let texture = match image.source {
                     ExternalImageSource::NativeTexture(texture_id) => ExternalTexture::new(texture_id, texture_target),
+                    ExternalImageSource::Invalid => {
+                        warn!("Invalid ext-image for ext_id:{:?}, channel:{}.", ext_image.id, ext_image.channel_index);
+                        
+                        ExternalTexture::new(0, texture_target)
+                    }
                     _ => panic!("No native texture found."),
                 };
 
@@ -2758,6 +2777,7 @@ impl Renderer {
         for texture in self.color_render_targets {
             self.device.delete_texture(texture);
         }
+        self.device.delete_pbo(self.texture_cache_upload_pbo);
         self.texture_resolver.deinit(&mut self.device);
         self.device.delete_vao(self.prim_vao);
         self.device.delete_vao(self.clip_vao);
@@ -2804,6 +2824,7 @@ impl Renderer {
 pub enum ExternalImageSource<'a> {
     RawData(&'a [u8]),      
     NativeTexture(u32),     
+    Invalid,
 }
 
 

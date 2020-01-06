@@ -186,6 +186,8 @@ pub enum DebugCommand {
     FetchDocuments,
     
     FetchPasses,
+    
+    FetchClipScrollTree,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
