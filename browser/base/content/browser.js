@@ -1426,11 +1426,7 @@ var gBrowserInit = {
         
         
         try {
-          gBrowser.loadTabs(specs, {
-            inBackground: false,
-            replace: true,
-            
-          });
+          gBrowser.loadTabs(specs, false, true);
         } catch (e) {}
       } else if (uriToLoad instanceof XULElement) {
         
@@ -2168,10 +2164,7 @@ function BrowserGoHome(aEvent) {
   case "tab":
     urls = homePage.split("|");
     var loadInBackground = getBoolPref("browser.tabs.loadBookmarksInBackground", false);
-    gBrowser.loadTabs(urls, {
-      inBackground: loadInBackground,
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
+    gBrowser.loadTabs(urls, loadInBackground);
     break;
   case "window":
     OpenBrowserWindow();
@@ -2189,11 +2182,7 @@ function loadOneOrMoreURIs(aURIString) {
   
   
   try {
-    gBrowser.loadTabs(aURIString.split("|"), {
-      inBackground: false,
-      replace: true,
-      
-    });
+    gBrowser.loadTabs(aURIString.split("|"), false, true);
   } catch (e) {
   }
 }
@@ -5842,13 +5831,12 @@ function stripUnsafeProtocolOnPaste(pasteData) {
 
 
 
-function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, triggeringPrincipal) {
+function handleDroppedLink(event, urlOrLinks, name) {
   let links;
   if (Array.isArray(urlOrLinks)) {
     links = urlOrLinks;
-    triggeringPrincipal = nameOrTriggeringPrincipal;
   } else {
-    links = [{ url: urlOrLinks, nameOrTriggeringPrincipal, type: "" }];
+    links = [{ url: urlOrLinks, name, type: "" }];
   }
 
   let lastLocationChange = gBrowser.selectedBrowser.lastLocationChange;
@@ -5879,7 +5867,6 @@ function handleDroppedLink(event, urlOrLinks, nameOrTriggeringPrincipal, trigger
         allowThirdPartyFixup: false,
         postDatas,
         userContextId,
-        triggeringPrincipal,
       });
     }
   })();
