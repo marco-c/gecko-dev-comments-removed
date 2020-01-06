@@ -13,15 +13,10 @@ use fnv;
 pub use hashglobe::hash_map::HashMap;
 #[cfg(feature = "gecko")]
 pub use hashglobe::hash_set::HashSet;
-#[cfg(feature = "gecko")]
-pub use hashglobe::protected::ProtectedHashMap;
+
 
 #[cfg(feature = "servo")]
 pub use hashglobe::fake::{HashMap, HashSet};
-
-
-#[cfg(feature = "servo")]
-pub type ProtectedHashMap<K, V, S> = HashMap<K, V, S>;
 
 
 pub mod map {
