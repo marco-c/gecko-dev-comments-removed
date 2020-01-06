@@ -7,6 +7,13 @@
 
 
 
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: this.window is null");
+
+
+
+
 add_task(function* () {
 
   info("Testing tab closure when projecteditor is in various states");

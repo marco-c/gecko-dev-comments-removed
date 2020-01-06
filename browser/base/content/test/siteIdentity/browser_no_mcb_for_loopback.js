@@ -8,14 +8,6 @@
 
 
 
-
-
-if (!gMultiProcessBrowser) {
-  Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
-  PromiseTestUtils.expectUncaughtRejection(/NetworkError/);
-  PromiseTestUtils.expectUncaughtRejection(/NetworkError/);
-}
-
 const TEST_URL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com") + "test_no_mcb_for_loopback.html";
 
 const LOOPBACK_PNG_URL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://127.0.0.1:8888") + "moz.png";

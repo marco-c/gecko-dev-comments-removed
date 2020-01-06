@@ -27,15 +27,6 @@
 
 
 
-
-
-
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/getMostRecentBrowserWindow/);
-
-
-
-
 const TEST_URLS = ["about:mozilla", "about:buildconfig"];
 
 

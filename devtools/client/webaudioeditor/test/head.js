@@ -4,22 +4,6 @@
 
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-
-
-
-
-
-const { PromiseTestUtils } = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
-PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
-PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
-PromiseTestUtils.whitelistRejectionsGlobally(/destroy/);
-PromiseTestUtils.whitelistRejectionsGlobally(/is no longer, usable/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\._urls is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.tabTarget is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.toolbox is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.webConsoleClient is null/);
-PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
-
 var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var { Task } = require("devtools/shared/task");
 var Services = require("Services");

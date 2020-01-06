@@ -8,6 +8,12 @@
 
 
 
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("false");
+
+
+
+
 const TEST_PAGE = URL_ROOT +
   "doc_inspector_highlighter-comments.html";
 

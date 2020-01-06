@@ -5,6 +5,12 @@
 
 
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
+  "TypeError: this.transport is null");
+
+
+
 
 
 const TAB_URL = EXAMPLE_URL + "doc_event-listeners-02.html";

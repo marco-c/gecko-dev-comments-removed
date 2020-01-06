@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-Cu.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/requestItem is undefined/);
-
 function test() {
   
   

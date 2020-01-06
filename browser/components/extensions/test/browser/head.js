@@ -21,16 +21,6 @@
 
 
 
-
-
-
-
-
-const {PromiseTestUtils} = Cu.import("resource://testing-common/PromiseTestUtils.jsm", {});
-PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
-PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
-PromiseTestUtils.whitelistRejectionsGlobally(/Receiving end does not exist/);
-
 const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
 const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {});
 

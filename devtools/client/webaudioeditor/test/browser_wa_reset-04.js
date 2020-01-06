@@ -5,6 +5,12 @@
 
 
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Error: Connection closed");
+
+
+
+
+
 add_task(function* () {
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
 
