@@ -219,8 +219,6 @@ private:
   nsString mScriptURL;
   
   nsString mWorkerName;
-  
-  nsCString mServiceWorkerScope;
   LocationInfo mLocationInfo;
   
   
@@ -523,14 +521,13 @@ public:
   uint64_t
   ServiceWorkerID() const
   {
-    return mLoadInfo.mServiceWorkerID;
+    return GetServiceWorkerDescriptor().Id();
   }
 
   const nsCString&
   ServiceWorkerScope() const
   {
-    MOZ_DIAGNOSTIC_ASSERT(IsServiceWorker());
-    return mServiceWorkerScope;
+    return GetServiceWorkerDescriptor().Scope();
   }
 
   nsIURI*
@@ -553,9 +550,25 @@ public:
   const nsString&
   ServiceWorkerCacheName() const
   {
-    MOZ_ASSERT(IsServiceWorker());
+    MOZ_DIAGNOSTIC_ASSERT(IsServiceWorker());
     AssertIsOnMainThread();
     return mLoadInfo.mServiceWorkerCacheName;
+  }
+
+  const ServiceWorkerDescriptor&
+  GetServiceWorkerDescriptor() const
+  {
+    MOZ_DIAGNOSTIC_ASSERT(IsServiceWorker());
+    MOZ_DIAGNOSTIC_ASSERT(mLoadInfo.mServiceWorkerDescriptor.isSome());
+    return mLoadInfo.mServiceWorkerDescriptor.ref();
+  }
+
+  void
+  UpdateServiceWorkerState(ServiceWorkerState aState)
+  {
+    MOZ_DIAGNOSTIC_ASSERT(IsServiceWorker());
+    MOZ_DIAGNOSTIC_ASSERT(mLoadInfo.mServiceWorkerDescriptor.isSome());
+    return mLoadInfo.mServiceWorkerDescriptor.ref().SetState(aState);
   }
 
   const ChannelInfo&

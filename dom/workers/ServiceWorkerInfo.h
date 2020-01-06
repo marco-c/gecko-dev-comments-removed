@@ -28,10 +28,9 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo
 {
 private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  const nsCString mScope;
+  ServiceWorkerDescriptor mDescriptor;
   const nsCString mScriptSpec;
   const nsString mCacheName;
-  ServiceWorkerState mState;
   OriginAttributes mOriginAttributes;
 
   
@@ -43,10 +42,6 @@ private:
   
   
   const nsLoadFlags mImportsLoadFlags;
-
-  
-  
-  uint64_t mServiceWorkerID;
 
   
   PRTime mCreationTime;
@@ -106,7 +101,7 @@ public:
   const nsCString&
   Scope() const
   {
-    return mScope;
+    return mDescriptor.Scope();
   }
 
   bool SkipWaitingFlag() const
@@ -130,7 +125,7 @@ public:
   ServiceWorkerState
   State() const
   {
-    return mState;
+    return mDescriptor.State();
   }
 
   const OriginAttributes&
@@ -154,7 +149,13 @@ public:
   uint64_t
   ID() const
   {
-    return mServiceWorkerID;
+    return mDescriptor.Id();
+  }
+
+  const ServiceWorkerDescriptor&
+  Descriptor() const
+  {
+    return mDescriptor;
   }
 
   void
@@ -165,7 +166,7 @@ public:
   SetActivateStateUncheckedWithoutEvent(ServiceWorkerState aState)
   {
     AssertIsOnMainThread();
-    mState = aState;
+    mDescriptor.SetState(aState);
   }
 
   void
