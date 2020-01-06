@@ -5856,6 +5856,18 @@ HTMLEditRules::GetNodesForOperation(
         GetInnerContent(*node, aOutArrayOfNodes, &j);
       }
     }
+    
+    for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
+      OwningNonNull<nsINode> node = aOutArrayOfNodes[i];
+      if (EditorBase::IsTextNode(node)) {
+        
+        bool isEmpty = false;
+        htmlEditor->IsVisTextNode(node->AsContent(), &isEmpty, false);
+        if (isEmpty) {
+          aOutArrayOfNodes.RemoveElementAt(i);
+        }
+      }
+    }
   }
   
   
