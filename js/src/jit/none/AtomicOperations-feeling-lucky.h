@@ -69,6 +69,16 @@
 #  define GNUC_COMPATIBLE
 #endif
 
+#ifdef __s390__
+#  define GNUC_COMPATIBLE
+#endif
+
+#ifdef __s390x__
+#  define HAS_64BIT_ATOMICS
+#  define HAS_64BIT_LOCKFREE
+#  define GNUC_COMPATIBLE
+#endif
+
 
 
 
