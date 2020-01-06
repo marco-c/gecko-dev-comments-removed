@@ -83,6 +83,9 @@ enum class ParsingMode : uint8_t {
   
   
   AllowUnitlessLength = 1 << 0,
+  
+  
+  AllowAllNumericValues = 1 << 1,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ParsingMode)
