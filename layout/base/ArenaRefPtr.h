@@ -21,17 +21,6 @@ namespace mozilla {
 
 
 
-template<class U>
-struct ArenaRefPtrTraits
-{
-  static bool UsesArena(U* aPtr) {
-    return true;
-  }
-};
-
-
-
-
 
 
 
@@ -154,12 +143,12 @@ private:
       return;
     }
     bool sameArena = mPtr && aPtr && mPtr->Arena() == aPtr->Arena();
-    if (mPtr && !sameArena && ArenaRefPtrTraits<T>::UsesArena(mPtr)) {
+    if (mPtr && !sameArena) {
       MOZ_ASSERT(mPtr->Arena());
       mPtr->Arena()->DeregisterArenaRefPtr(this);
     }
     mPtr = Move(aPtr);
-    if (mPtr && !sameArena && ArenaRefPtrTraits<T>::UsesArena(aPtr)) {
+    if (mPtr && !sameArena) {
       MOZ_ASSERT(mPtr->Arena());
       mPtr->Arena()->RegisterArenaRefPtr(this);
     }
