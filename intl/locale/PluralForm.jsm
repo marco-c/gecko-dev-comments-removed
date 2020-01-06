@@ -27,6 +27,10 @@ this.EXPORTED_SYMBOLS = [ "PluralForm" ];
 
 
 
+
+
+
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
@@ -43,7 +47,7 @@ var gFunctions = [
   
   [2, (n) => n>1?1:0],
   
-  [3, (n) => n%10==1&&n%100!=11?1:n!=0?2:0],
+  [3, (n) => n%10==1&&n%100!=11?1:n%10==0?0:2],
   
   [4, (n) => n==1||n==11?0:n==2||n==12?1:n>0&&n<20?2:3],
   
