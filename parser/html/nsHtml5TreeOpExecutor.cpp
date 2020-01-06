@@ -65,13 +65,12 @@ nsHtml5TreeOpExecutor::nsHtml5TreeOpExecutor()
   , mSuppressEOF(false)
   , mReadingFromStage(false)
   , mStreamParser(nullptr)
-  , mPreloadedURLs(23) 
+  , mPreloadedURLs(23)  
   , mSpeculationReferrerPolicy(mozilla::net::RP_Unset)
   , mStarted(false)
   , mRunFlushLoopOnStack(false)
   , mCallContinueInterruptedParsingIfEnabled(false)
   , mAlreadyComplainedAboutCharset(false)
-  , mAlreadyComplainedAboutDeepTree(false)
 {
 }
 
@@ -814,25 +813,6 @@ nsHtml5TreeOpExecutor::ComplainAboutBogusProtocolCharset(nsIDocument* aDoc)
                                   aDoc,
                                   nsContentUtils::eHTMLPARSER_PROPERTIES,
                                   "EncProtocolUnsupported");
-}
-
-void
-nsHtml5TreeOpExecutor::MaybeComplainAboutDeepTree(uint32_t aLineNumber)
-{
-  if (mAlreadyComplainedAboutDeepTree) {
-    return;
-  }
-  mAlreadyComplainedAboutDeepTree = true;
-  nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                  NS_LITERAL_CSTRING("HTML parser"),
-                                  mDocument,
-                                  nsContentUtils::eHTMLPARSER_PROPERTIES,
-                                  "errDeepTree",
-                                  nullptr,
-                                  0,
-                                  nullptr,
-                                  EmptyString(),
-                                  aLineNumber);
 }
 
 nsHtml5Parser*
