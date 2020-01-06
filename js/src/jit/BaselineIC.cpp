@@ -2047,7 +2047,7 @@ GetTemplateObjectForClassHook(JSContext* cx, JSNative hook, CallArgs& args,
 }
 
 static bool
-IsOptimizableCallStringSplit(const Value& callee, int argc, Value* args)
+IsOptimizableConstStringSplit(const Value& callee, int argc, Value* args)
 {
     if (argc != 2 || !args[0].isString() || !args[1].isString())
         return false;
@@ -2086,12 +2086,10 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
 
     
     
-    if (stub->numOptimizedStubs() == 0 && IsOptimizableCallStringSplit(callee, argc, vp + 2))
+    if (stub->numOptimizedStubs() == 0 && IsOptimizableConstStringSplit(callee, argc, vp + 2))
         return true;
 
-    MOZ_ASSERT_IF(stub->hasStub(ICStub::Call_StringSplit), stub->numOptimizedStubs() == 1);
-
-    stub->unlinkStubsWithKind(cx, ICStub::Call_StringSplit);
+    stub->unlinkStubsWithKind(cx, ICStub::Call_ConstStringSplit);
 
     if (!callee.isObject())
         return true;
@@ -2333,9 +2331,9 @@ CopyArray(JSContext* cx, HandleObject obj, MutableHandleValue result)
 }
 
 static bool
-TryAttachStringSplit(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
-                     uint32_t argc, HandleValue callee, Value* vp, jsbytecode* pc,
-                     HandleValue res, bool* attached)
+TryAttachConstStringSplit(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
+                          uint32_t argc, HandleValue callee, Value* vp, jsbytecode* pc,
+                          HandleValue res, bool* attached)
 {
     if (stub->numOptimizedStubs() != 0)
         return true;
@@ -2346,7 +2344,7 @@ TryAttachStringSplit(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
     if (JSOp(*pc) == JSOP_NEW)
         return true;
 
-    if (!IsOptimizableCallStringSplit(callee, argc, args))
+    if (!IsOptimizableConstStringSplit(callee, argc, args))
         return true;
 
     MOZ_ASSERT(callee.isObject());
@@ -2375,9 +2373,8 @@ TryAttachStringSplit(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
         }
     }
 
-    ICCall_StringSplit::Compiler compiler(cx, stub->fallbackMonitorStub()->firstMonitorStub(),
-                                          script->pcToOffset(pc), str, sep,
-                                          arr);
+    ICCall_ConstStringSplit::Compiler compiler(cx, stub->fallbackMonitorStub()->firstMonitorStub(),
+                                               script->pcToOffset(pc), str, sep, arr);
     ICStub* newStub = compiler.getStub(compiler.getStubSpace(script));
     if (!newStub)
         return false;
@@ -2417,14 +2414,22 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
             return false;
     }
 
-    bool createSingleton = ObjectGroup::useSingletonForNewObject(cx, script, pc);
+    CallIRGenerator gen(cx, script, pc, stub->state().mode(), argc,
+                        callee, callArgs.thisv(),
+                        HandleValueArray::fromMarkedLocation(argc, vp+2));
+    bool optimizeAfterCall = false;
+    CallIRGenerator::OptStrategy optStrategy = gen.getOptStrategy(&optimizeAfterCall);
 
     
+    
     bool handled = false;
-    if (!TryAttachCallStub(cx, stub, script, pc, op, argc, vp, constructing, false,
-                           createSingleton, &handled))
-    {
-        return false;
+    if (!optimizeAfterCall) {
+        bool createSingleton = ObjectGroup::useSingletonForNewObject(cx, script, pc);
+        if (!TryAttachCallStub(cx, stub, script, pc, op, argc, vp, constructing, false,
+                               createSingleton, &handled))
+        {
+            return false;
+        }
     }
 
     if (op == JSOP_NEW) {
@@ -2467,11 +2472,24 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
     if (!stub->addMonitorStubForValue(cx, frame, types, res))
         return false;
 
-    
-    
-    
-    if (!TryAttachStringSplit(cx, stub, script, argc, callee, vp, pc, res, &handled))
-        return false;
+    if (optimizeAfterCall && !handled && optStrategy != CallIRGenerator::OptStrategy::None) {
+        if (gen.tryAttachStub()) {
+            ICStub* newStub = AttachBaselineCacheIRStub(cx, gen.writerRef(), gen.cacheKind(),
+                                                        ICStubEngine::Baseline, script, stub,
+                                                        &handled);
+            if (newStub) {
+                JitSpew(JitSpew_BaselineIC, "  Attached CacheIR stub");
+            }
+        }
+    }
+
+    if (!handled) {
+        
+        
+        
+        if (!TryAttachConstStringSplit(cx, stub, script, argc, callee, vp, pc, res, &handled))
+            return false;
+    }
 
     if (!handled)
         stub->noteUnoptimizableCall();
@@ -3251,7 +3269,7 @@ typedef bool (*CopyArrayFn)(JSContext*, HandleObject, MutableHandleValue);
 static const VMFunction CopyArrayInfo = FunctionInfo<CopyArrayFn>(CopyArray, "CopyArray");
 
 bool
-ICCall_StringSplit::Compiler::generateStubCode(MacroAssembler& masm)
+ICCall_ConstStringSplit::Compiler::generateStubCode(MacroAssembler& masm)
 {
     MOZ_ASSERT(engine_ == Engine::Baseline);
 

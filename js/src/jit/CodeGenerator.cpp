@@ -286,6 +286,9 @@ CodeGenerator::visitOutOfLineICFallback(OutOfLineICFallback* ool)
         masm.jump(ool->rejoin());
         return;
       }
+      case CacheKind::Call:
+        
+        MOZ_CRASH();
     }
     MOZ_CRASH();
 }
