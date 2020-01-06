@@ -23,6 +23,7 @@ Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/legacyaction.js");
+Cu.import("chrome://marionette/content/logging.js");
 Cu.import("chrome://marionette/content/navigate.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/session.js");
@@ -33,6 +34,8 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.importGlobalProperties(["URL"]);
+
+var contentLog = new logging.ContentLogger();
 
 var marionetteTestName;
 var winUtil = content.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -485,6 +488,7 @@ var deleteAllCookiesFn = dispatch(deleteAllCookies);
 var executeFn = dispatch(execute);
 var executeInSandboxFn = dispatch(executeInSandbox);
 var sendKeysToElementFn = dispatch(sendKeysToElement);
+var reftestWaitFn = dispatch(reftestWait);
 
 
 
@@ -532,6 +536,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getCookies", getCookiesFn);
   addMessageListenerId("Marionette:deleteAllCookies", deleteAllCookiesFn);
   addMessageListenerId("Marionette:deleteCookie", deleteCookieFn);
+  addMessageListenerId("Marionette:reftestWait", reftestWaitFn);
 }
 
 
@@ -675,6 +680,13 @@ function sendError(err, uuid) {
 
 
 
+function sendLog(msg) {
+  sendToServer("Marionette:log", {message: msg});
+}
+
+
+
+
 function resetValues() {
   sandboxes.clear();
   curContainer = {frame: content, shadowRoot: null};
@@ -729,11 +741,18 @@ function* executeInSandbox(script, args, timeout, opts) {
   opts.timeout = timeout;
 
   let sb = sandboxes.get(opts.sandboxName, opts.newSandbox);
+  if (opts.sandboxName) {
+    sb = sandbox.augment(sb, new logging.Adapter(contentLog));
+  }
+
   let wargs = evaluate.fromJSON(
       args, seenEls, curContainer.frame, curContainer.shadowRoot);
   let evaluatePromise = evaluate.sandbox(sb, script, wargs, opts);
 
   let res = yield evaluatePromise;
+  sendSyncMessage(
+      "Marionette:shareData",
+      {log: evaluate.toJSON(contentLog.get(), seenEls)});
   return evaluate.toJSON(res, seenEls);
 }
 
@@ -765,6 +784,14 @@ function emitTouchEvent(type, touch) {
       }
     }
     
+    
+
+
+
+
+
+
+
     let domWindowUtils = curContainer.frame.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils);
     domWindowUtils.sendTouchEvent(type, [touch.identifier], [touch.clientX], [touch.clientY], [touch.radiusX], [touch.radiusY], [touch.rotationAngle], [touch.force], 1, 0);
   }
@@ -1055,14 +1082,15 @@ function waitForPageLoaded(msg) {
 
 
 function get(msg) {
-  let {command_id, pageTimeout, url} = msg.json;
-  let loadEventExpected = true;
+  let {command_id, pageTimeout, url, loadEventExpected=null} = msg.json;
 
   try {
     if (typeof url == "string") {
       try {
         let requestedURL = new URL(url).toString();
-        loadEventExpected = navigate.isLoadEventExpected(requestedURL);
+        if (loadEventExpected === null) {
+          loadEventExpected = navigate.isLoadEventExpected(requestedURL);
+        }
       } catch (e) {
         sendError(new InvalidArgumentError("Malformed URL: " + e.message), command_id);
         return;
@@ -1707,6 +1735,117 @@ function takeScreenshot(format, opts = {}) {
 
     default:
       throw new TypeError("Unknown screenshot format: " + format);
+  }
+}
+
+function flushRendering() {
+  let content = curContainer.frame;
+  let anyPendingPaintsGeneratedInDescendants = false;
+
+  let windowUtils = content.QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIDOMWindowUtils);
+
+  function flushWindow(win) {
+    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDOMWindowUtils);
+    let afterPaintWasPending = utils.isMozAfterPaintPending;
+
+    let root = win.document.documentElement;
+    if (root) {
+      try {
+        
+        root.getBoundingClientRect();
+      } catch (e) {
+        logger.warning(`flushWindow failed: ${e}`);
+      }
+    }
+
+    if (!afterPaintWasPending && utils.isMozAfterPaintPending) {
+      anyPendingPaintsGeneratedInDescendants = true;
+    }
+
+    for (let i = 0; i < win.frames.length; ++i) {
+      flushWindow(win.frames[i]);
+    }
+  }
+  flushWindow(content);
+
+  if (anyPendingPaintsGeneratedInDescendants &&
+      !windowUtils.isMozAfterPaintPending) {
+    logger.error("Internal error: descendant frame generated a MozAfterPaint event, but the root document doesn't have one!");
+  }
+
+  logger.debug(`flushRendering ${windowUtils.isMozAfterPaintPending}`);
+  return windowUtils.isMozAfterPaintPending;
+}
+
+function* reftestWait(url, remote) {
+  let win = curContainer.frame;
+  let document = curContainer.frame.document;
+
+  let windowUtils = content.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDOMWindowUtils);
+
+
+  let reftestWait = false;
+
+  if (document.location.href !== url || document.readyState != "complete") {
+    logger.debug(`Waiting for page load of ${url}`);
+    yield new Promise(resolve => {
+      let maybeResolve = (event) => {
+        if (event.target === curContainer.frame.document &&
+            event.target.location.href === url) {
+          win = curContainer.frame;
+          document = curContainer.frame.document;
+          reftestWait = document.documentElement.classList.contains("reftest-wait");
+          removeEventListener("load", maybeResolve, {once: true});
+          win.setTimeout(resolve, 0);
+        }
+      };
+      addEventListener("load", maybeResolve, true);
+    });
+  } else {
+    
+    
+    reftestWait = document.documentElement.classList.contains("reftest-wait");
+    yield new Promise(resolve => win.setTimeout(resolve, 0));
+  };
+
+  let root = document.documentElement;
+  if (reftestWait) {
+    
+    if (root.classList.contains("reftest-wait")) {
+      logger.debug("Waiting for reftest-wait removal");
+      yield new Promise(resolve => {
+        let observer = new win.MutationObserver(() => {
+          if (!root.classList.contains("reftest-wait")) {
+            observer.disconnect();
+            logger.debug("reftest-wait removed");
+            win.setTimeout(resolve, 0);
+          }
+        });
+        observer.observe(root, {attributes: true});
+      });
+    }
+
+    logger.debug("Waiting for rendering");
+
+    yield new Promise(resolve => {
+      let maybeResolve = () => {
+        if (flushRendering()) {
+          win.addEventListener("MozAfterPaint", maybeResolve, {once: true});
+        } else {
+          win.setTimeout(resolve, 0);
+        }
+      };
+      maybeResolve();
+    });
+  } else {
+    flushRendering();
+  }
+
+  if (remote) {
+    windowUtils.updateLayerTree();
   }
 }
 
