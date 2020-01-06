@@ -40,7 +40,11 @@ function searchEntries(terms, params, iter) {
                                       handleError(error) {
                                         do_throw("Error occurred searching form history: " + error);
                                       },
-                                      handleCompletion(reason) { if (!reason) iter.next(results); }
+                                      handleCompletion(reason) {
+                                        if (!reason) {
+                                          iter.next(results);
+                                        }
+                                      }
                                     });
 }
 
@@ -48,27 +52,35 @@ function searchEntries(terms, params, iter) {
 
 function countEntries(name, value, then) {
   var obj = {};
-  if (name !== null)
+  if (name !== null) {
     obj.fieldname = name;
-  if (value !== null)
+  }
+  if (value !== null) {
     obj.value = value;
+  }
 
   let count = 0;
   FormHistory.count(obj, { handleResult: result => count = result,
                            handleError(error) {
                              do_throw("Error occurred searching form history: " + error);
                            },
-                           handleCompletion(reason) { if (!reason) then(count); }
+                           handleCompletion(reason) {
+                             if (!reason) {
+                               then(count);
+                             }
+                           }
                          });
 }
 
 
 function updateEntry(op, name, value, then) {
   var obj = { op };
-  if (name !== null)
+  if (name !== null) {
     obj.fieldname = name;
-  if (value !== null)
+  }
+  if (value !== null) {
     obj.value = value;
+  }
   updateFormHistory(obj, then);
 }
 
@@ -84,7 +96,11 @@ function updateFormHistory(changes, then) {
   FormHistory.update(changes, { handleError(error) {
                                   do_throw("Error occurred updating form history: " + error);
                                 },
-                                handleCompletion(reason) { if (!reason) then(); },
+                                handleCompletion(reason) {
+                                  if (!reason) {
+                                    then();
+                                  }
+                                },
                               });
 }
 

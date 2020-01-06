@@ -22,8 +22,9 @@ function* next_test() {
   
   var destFile = profileDir.clone();
   destFile.append("formhistory.sqlite");
-  if (destFile.exists())
+  if (destFile.exists()) {
     destFile.remove(false);
+  }
 
   testfile.copyTo(profileDir, "formhistory.sqlite");
   do_check_eq(3, getDBVersion(testfile));
