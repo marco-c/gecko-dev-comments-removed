@@ -76,6 +76,7 @@ protected:
 
   
   
+  
   DataTransfer(nsISupports* aParent,
                EventMessage aEventMessage,
                const uint32_t aEffectAllowed,
@@ -298,6 +299,12 @@ public:
     return mDragImage;
   }
 
+  
+  
+  
+  
+  
+  
   nsresult Clone(nsISupports* aParent, EventMessage aEventMessage,
                  bool aUserCancelled, bool aIsCrossDomainSubFrameDrop,
                  DataTransfer** aResult);
