@@ -25,6 +25,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
 
 let gPanelViewInstances = new WeakMap();
 const kEvents = ["ViewShowing", "ViewHiding", "click", "command"];
+const kRefreshBatchSize = 10;
+const kMaxWaitForIdleMs = 200;
 XPCOMUtils.defineLazyGetter(this, "kButtonLabels", () => {
   return {
     show: DownloadsCommon.strings[AppConstants.platform == "macosx" ? "showMacLabel" : "showLabel"],
@@ -78,6 +80,7 @@ class DownloadsSubview extends DownloadsViewUI.BaseView {
     this.panelview.removeEventListener("ViewHiding", DownloadsSubview.onViewHiding);
     this._downloadsData.removeView(this);
     gPanelViewInstances.delete(this);
+    this.destroyed = true;
   }
 
   
@@ -104,8 +107,10 @@ class DownloadsSubview extends DownloadsViewUI.BaseView {
     }
     
     
-    this._batchTimeout = window.setTimeout(() =>
-      this.panelview.dispatchEvent(new window.CustomEvent("DownloadsLoaded")), waitForMs);
+    this._batchTimeout = window.setTimeout(() => {
+      this._updateStatsFromDisk();
+      this.panelview.dispatchEvent(new window.CustomEvent("DownloadsLoaded"));
+    }, waitForMs);
     this.batchFragment = null;
   }
 
@@ -148,6 +153,46 @@ class DownloadsSubview extends DownloadsViewUI.BaseView {
 
   onDownloadRemoved(download) {
     this._viewItemsForDownloads.get(download).element.remove();
+  }
+
+  
+
+
+
+
+  async _updateStatsFromDisk() {
+    if (this._updatingStats)
+      return;
+
+    this._updatingStats = true;
+
+    try {
+      let idleOptions = { timeout: kMaxWaitForIdleMs };
+      
+      await new Promise(resolve => this.window.requestIdleCallback(resolve), idleOptions);
+      
+      if (this.destroyed)
+        return;
+
+      let count = 0;
+      for (let button of this.container.childNodes) {
+        if (this.destroyed)
+          return;
+        if (!button._shell)
+          continue;
+
+        await button._shell.refresh();
+
+        
+        if (++count % kRefreshBatchSize === 0) {
+          await new Promise(resolve => this.window.requestIdleCallback(resolve, idleOptions));
+        }
+      }
+    } catch (ex) {
+      Cu.reportError(ex);
+    } finally {
+      this._updatingStats = false;
+    }
   }
 
   
@@ -344,6 +389,19 @@ DownloadsSubview.Button = class extends DownloadsViewUI.DownloadElementShell {
     return this.element.ownerGlobal;
   }
 
+  async refresh() {
+    if (this._targetFileChecked)
+      return;
+
+    try {
+      await this.download.refresh();
+    } catch (ex) {
+      Cu.reportError(ex);
+    } finally {
+      this._targetFileChecked = true;
+    }
+  }
+
   
 
 
@@ -358,7 +416,6 @@ DownloadsSubview.Button = class extends DownloadsViewUI.DownloadElementShell {
 
 
   onChanged() {
-    
     let newState = DownloadsCommon.stateOfDownload(this.download);
     if (this._downloadState !== newState) {
       this._downloadState = newState;
@@ -385,8 +442,15 @@ DownloadsSubview.Button = class extends DownloadsViewUI.DownloadElementShell {
     if (this.isCommandEnabled("downloadsCmd_show")) {
       this.element.setAttribute("openLabel", kButtonLabels.open);
       this.element.setAttribute("showLabel", kButtonLabels.show);
+      this.element.removeAttribute("retryLabel");
     } else if (this.isCommandEnabled("downloadsCmd_retry")) {
       this.element.setAttribute("retryLabel", kButtonLabels.retry);
+      this.element.removeAttribute("openLabel");
+      this.element.removeAttribute("showLabel");
+    } else {
+      this.element.removeAttribute("openLabel");
+      this.element.removeAttribute("retryLabel");
+      this.element.removeAttribute("showLabel");
     }
 
     this._updateVisibility();
