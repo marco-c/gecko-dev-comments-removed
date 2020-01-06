@@ -73,7 +73,7 @@ public:
   uint32_t mTimeoutId;
 
   
-  uint32_t mInterval;
+  TimeDuration mInterval;
 
   
   
