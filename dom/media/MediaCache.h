@@ -445,8 +445,6 @@ private:
   ChannelMediaResource*  mClient;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   
-  bool                   mInitialized;
-  
   
   bool                   mHasHadUpdate;
   
