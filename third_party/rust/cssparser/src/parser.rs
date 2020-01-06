@@ -6,7 +6,7 @@ use cow_rc_str::CowRcStr;
 use std::ops::Range;
 use std::ascii::AsciiExt;
 use std::ops::BitOr;
-use tokenizer::{self, Token, Tokenizer, SourceLocation};
+use tokenizer::{Token, Tokenizer, SourcePosition, SourceLocation};
 
 
 
@@ -14,11 +14,31 @@ use tokenizer::{self, Token, Tokenizer, SourceLocation};
 
 
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub struct SourcePosition {
-    position: tokenizer::SourcePosition,
-    at_start_of: Option<BlockType>,
+#[derive(Debug, Clone)]
+pub struct ParserState {
+    pub(crate) position: usize,
+    pub(crate) current_line_start_position: usize,
+    pub(crate) current_line_number: u32,
+    pub(crate) at_start_of: Option<BlockType>,
 }
+
+impl ParserState {
+    
+    #[inline]
+    pub fn position(&self) -> SourcePosition {
+        SourcePosition(self.position)
+    }
+
+    
+    #[inline]
+    pub fn source_location(&self) -> SourceLocation {
+        SourceLocation {
+            line: self.current_line_number,
+            column: (self.position - self.current_line_start_position) as u32,
+        }
+    }
+}
+
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,8 +88,8 @@ pub struct ParserInput<'i> {
 
 struct CachedToken<'i> {
     token: Token<'i>,
-    start_position: tokenizer::SourcePosition,
-    end_position: tokenizer::SourcePosition,
+    start_position: SourcePosition,
+    end_state: ParserState,
 }
 
 impl<'i> ParserInput<'i> {
@@ -100,7 +120,7 @@ pub struct Parser<'i: 't, 't> {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-enum BlockType {
+pub(crate) enum BlockType {
     Parenthesis,
     SquareBracket,
     CurlyBracket,
@@ -224,13 +244,13 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn expect_exhausted(&mut self) -> Result<(), BasicParseError<'i>> {
-        let start_position = self.position();
+        let start = self.state();
         let result = match self.next() {
             Err(BasicParseError::EndOfInput) => Ok(()),
             Err(e) => unreachable!("Unexpected error encountered: {:?}", e),
             Ok(t) => Err(BasicParseError::UnexpectedToken(t.clone())),
         };
-        self.reset(start_position);
+        self.reset(&start);
         result
     }
 
@@ -239,9 +259,23 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn position(&self) -> SourcePosition {
-        SourcePosition {
-            position: self.input.tokenizer.position(),
+        self.input.tokenizer.position()
+    }
+
+    
+    #[inline]
+    pub fn current_source_location(&self) -> SourceLocation {
+        self.input.tokenizer.current_source_location()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn state(&self) -> ParserState {
+        ParserState {
             at_start_of: self.at_start_of,
+            .. self.input.tokenizer.state()
         }
     }
 
@@ -250,9 +284,9 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn reset(&mut self, new_position: SourcePosition) {
-        self.input.tokenizer.reset(new_position.position);
-        self.at_start_of = new_position.at_start_of;
+    pub fn reset(&mut self, state: &ParserState) {
+        self.input.tokenizer.reset(state);
+        self.at_start_of = state.at_start_of;
     }
 
     
@@ -289,10 +323,10 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn try<F, T, E>(&mut self, thing: F) -> Result<T, E>
     where F: FnOnce(&mut Parser<'i, 't>) -> Result<T, E> {
-        let start_position = self.position();
+        let start = self.state();
         let result = thing(self);
         if result.is_err() {
-            self.reset(start_position)
+            self.reset(&start)
         }
         result
     }
@@ -300,25 +334,13 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
     pub fn slice(&self, range: Range<SourcePosition>) -> &'i str {
-        self.input.tokenizer.slice(range.start.position..range.end.position)
+        self.input.tokenizer.slice(range)
     }
 
     
     #[inline]
     pub fn slice_from(&self, start_position: SourcePosition) -> &'i str {
-        self.input.tokenizer.slice_from(start_position.position)
-    }
-
-    
-    #[inline]
-    pub fn current_source_location(&self) -> SourceLocation {
-        self.input.tokenizer.current_source_location()
-    }
-
-    
-    #[inline]
-    pub fn source_location(&self, target: SourcePosition) -> SourceLocation {
-        self.input.tokenizer.source_location(target.position)
+        self.input.tokenizer.slice_from(start_position)
     }
 
     
@@ -374,8 +396,9 @@ impl<'i: 't, 't> Parser<'i, 't> {
         let token_start_position = self.input.tokenizer.position();
         let token;
         match self.input.cached_token {
-            Some(ref cached_token) if cached_token.start_position == token_start_position => {
-                self.input.tokenizer.reset(cached_token.end_position);
+            Some(ref cached_token)
+            if cached_token.start_position == token_start_position => {
+                self.input.tokenizer.reset(&cached_token.end_state);
                 match cached_token.token {
                     Token::Dimension { ref unit, .. } => self.input.tokenizer.see_dimension(unit),
                     Token::Function(ref name) => self.input.tokenizer.see_function(name),
@@ -388,7 +411,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
                 self.input.cached_token = Some(CachedToken {
                     token: new_token,
                     start_position: token_start_position,
-                    end_position: self.input.tokenizer.position(),
+                    end_state: self.input.tokenizer.state(),
                 });
                 token = self.input.cached_token_ref()
             }
