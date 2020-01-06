@@ -10,6 +10,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 this.EXPORTED_SYMBOLS = ["modal"];
 
+const COMMON_DIALOG = "chrome://global/content/commonDialog.xul";
+
 const isFirefox = () => Services.appinfo.name == "Firefox";
 
 this.modal = {};
@@ -18,8 +20,8 @@ modal = {
   TABMODAL_DIALOG_LOADED: "tabmodal-dialog-loaded",
   handlers: {
     "common-dialog-loaded": new Set(),
-    "tabmodal-dialog-loaded": new Set()
-  }
+    "tabmodal-dialog-loaded": new Set(),
+  },
 };
 
 
@@ -37,7 +39,7 @@ modal = {
 
 
 
-modal.addHandler = function (handler) {
+modal.addHandler = function(handler) {
   if (!isFirefox()) {
     return;
   }
@@ -57,7 +59,9 @@ modal.addHandler = function (handler) {
 
 
 
-modal.findModalDialogs = function (context) {
+
+modal.findModalDialogs = function(context) {
+  
   
   let winEn = Services.wm.getEnumerator(null);
   while (winEn.hasMoreElements()) {
@@ -65,7 +69,8 @@ modal.findModalDialogs = function (context) {
 
     
     
-    if (win.document.documentURI === "chrome://global/content/commonDialog.xul" &&
+    
+    if (win.document.documentURI === COMMON_DIALOG &&
         win.opener && win.opener === context.window) {
       return new modal.Dialog(() => context, Cu.getWeakReference(win));
     }
@@ -76,7 +81,8 @@ modal.findModalDialogs = function (context) {
   
   if (context.tab && context.tabBrowser.getTabModalPromptBox) {
     let contentBrowser = context.contentBrowser;
-    let promptManager = context.tabBrowser.getTabModalPromptBox(contentBrowser);
+    let promptManager =
+        context.tabBrowser.getTabModalPromptBox(contentBrowser);
     let prompts = promptManager.listPrompts();
 
     if (prompts.length) {
@@ -96,7 +102,7 @@ modal.findModalDialogs = function (context) {
 
 
 
-modal.removeHandler = function (toRemove) {
+modal.removeHandler = function(toRemove) {
   if (!isFirefox()) {
     return;
   }

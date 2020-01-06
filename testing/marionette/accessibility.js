@@ -6,7 +6,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import('resource://gre/modules/Services.jsm');
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 
@@ -35,8 +35,9 @@ this.EXPORTED_SYMBOLS = ["accessibility"];
 this.accessibility = {
   get service() {
     return service;
-  }
+  },
 };
+
 
 
 
@@ -57,7 +58,7 @@ accessibility.State = {
   },
   get Selected() {
     return Ci.nsIAccessibleStates.STATE_SELECTED;
-  }
+  },
 };
 
 
@@ -92,7 +93,7 @@ accessibility.ActionableRoles = new Set([
 
 
 
-accessibility.get = function (strict = false) {
+accessibility.get = function(strict = false) {
   return new accessibility.Checks(!!strict);
 };
 
@@ -138,7 +139,8 @@ accessibility.Checks = class {
       }
 
       
-      let docAcc = accessibility.service.getAccessibleFor(element.ownerDocument);
+      let docAcc = accessibility.service
+          .getAccessibleFor(element.ownerDocument);
       let state = {};
       docAcc.getState(state, {});
       if ((state.value & Ci.nsIAccessibleStates.STATE_BUSY) == 0) {
@@ -158,11 +160,13 @@ accessibility.Checks = class {
             return;
           }
 
-          let event = subject.QueryInterface(Ci.nsIAccessibleEvent);
           
+          let event = subject.QueryInterface(Ci.nsIAccessibleEvent);
           if (event.eventType !== Ci.nsIAccessibleEvent.EVENT_STATE_CHANGE) {
             return;
           }
+
+          
           
           if (event.accessible !== docAcc) {
             return;
@@ -175,12 +179,12 @@ accessibility.Checks = class {
           } else {
             resolve(acc);
           }
-        }
+        },
       };
       Services.obs.addObserver(eventObserver, "accessible-event");
     }).catch(() => this.error(
         "Element does not have an accessible object", element));
-  };
+  }
 
   
 
@@ -409,7 +413,8 @@ accessibility.Checks = class {
       return;
     }
 
-    let selectedAccessibility = this.matchState(accessible, accessibility.State.Selected);
+    let selectedAccessibility =
+        this.matchState(accessible, accessibility.State.Selected);
 
     let message;
     if (selected && !selectedAccessibility) {

@@ -59,7 +59,7 @@ this.wait = {};
 
 
 
-wait.until = function (func, timeout = 2000, interval = 10) {
+wait.until = function(func, timeout = 2000, interval = 10) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
   return new Promise((resolve, reject) => {
@@ -72,6 +72,7 @@ wait.until = function (func, timeout = 2000, interval = 10) {
           throw rejected;
         }
 
+        
         
         if (start == end || new Date().getTime() >= end) {
           resolve(rejected);

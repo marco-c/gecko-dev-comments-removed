@@ -30,7 +30,7 @@ var ownPriorityGetterTrap = {
       return obj[prop];
     }
     return (...args) => obj.send(prop, args);
-  }
+  },
 };
 
 this.proxy = {};
@@ -52,8 +52,9 @@ this.proxy = {};
 
 
 
-proxy.toListener = function (mmFn, sendAsyncFn, browserFn) {
-  let sender = new proxy.AsyncMessageChannel(mmFn, sendAsyncFn, browserFn);
+proxy.toListener = function(mmFn, sendAsyncFn, browserFn) {
+  let sender = new proxy.AsyncMessageChannel(
+      mmFn, sendAsyncFn, browserFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
 
@@ -142,7 +143,7 @@ proxy.AsyncMessageChannel = class {
       
       
       this.closeHandler = event => {
-        logger.debug(`Received DOM event "${event.type}" for "${event.target}"`);
+        logger.debug(`Received DOM event ${event.type} for ${event.target}`);
 
         switch (event.type) {
           case "TabClose":
@@ -186,12 +187,12 @@ proxy.AsyncMessageChannel = class {
     
     
     if (this.browser) {
-      this.browser.window.addEventListener("unload", this.closeHandler, false);
+      this.browser.window.addEventListener("unload", this.closeHandler);
 
       if (this.browser.tab) {
         let node = this.browser.tab.addEventListener ?
             this.browser.tab : this.browser.contentBrowser;
-        node.addEventListener("TabClose", this.closeHandler, false);
+        node.addEventListener("TabClose", this.closeHandler);
       }
     }
   }
@@ -203,13 +204,12 @@ proxy.AsyncMessageChannel = class {
     modal.removeHandler(this.dialogueObserver_);
 
     if (this.browser) {
-      this.browser.window.removeEventListener("unload", this.closeHandler, false);
+      this.browser.window.removeEventListener("unload", this.closeHandler);
 
       if (this.browser.tab) {
         let node = this.browser.tab.addEventListener ?
             this.browser.tab : this.browser.contentBrowser;
-
-        node.removeEventListener("TabClose", this.closeHandler, false);
+        node.removeEventListener("TabClose", this.closeHandler);
       }
     }
   }
@@ -263,7 +263,7 @@ proxy.AsyncMessageChannel = class {
       payload = data;
     }
 
-    const msg = {type: type, data: payload};
+    const msg = {type, data: payload};
 
     
     
@@ -307,7 +307,7 @@ proxy.AsyncMessageChannel = class {
 
   removeAllListeners_() {
     let ok = true;
-    for (let [p, cb] of this.listeners_) {
+    for (let [p] of this.listeners_) {
       ok |= this.removeListener_(p);
     }
     return ok;
@@ -327,7 +327,7 @@ proxy.AsyncMessageChannel.ReplyType = {
 
 
 
-proxy.toChromeAsync = function (frameMessageManager) {
+proxy.toChromeAsync = function(frameMessageManager) {
   let sender = new AsyncChromeSender(frameMessageManager);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
@@ -342,7 +342,7 @@ proxy.toChromeAsync = function (frameMessageManager) {
 
 
 
-this.AsyncChromeSender = class {
+class AsyncChromeSender {
   constructor(frameMessageManager) {
     this.mm = frameMessageManager;
   }
@@ -389,7 +389,7 @@ this.AsyncChromeSender = class {
 
     return proxy;
   }
-};
+}
 
 
 
@@ -406,7 +406,7 @@ this.AsyncChromeSender = class {
 
 
 
-proxy.toChrome = function (sendSyncMessageFn) {
+proxy.toChrome = function(sendSyncMessageFn) {
   let sender = new proxy.SyncChromeSender(sendSyncMessageFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
@@ -432,7 +432,7 @@ proxy.SyncChromeSender = class {
   }
 };
 
-var marshal = function (args) {
+var marshal = function(args) {
   if (args.length == 1 && typeof args[0] == "object") {
     return args[0];
   }

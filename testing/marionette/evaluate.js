@@ -104,7 +104,7 @@ this.evaluate = {};
 
 
 
-evaluate.sandbox = function (sb, script, args = [], opts = {}) {
+evaluate.sandbox = function(sb, script, args = [], opts = {}) {
   let scriptTimeoutID, timeoutHandler, unloadHandler;
 
   let promise = new Promise((resolve, reject) => {
@@ -112,7 +112,7 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
     sb[COMPLETE] = resolve;
     timeoutHandler = () => reject(new ScriptTimeoutError("Timed out"));
     unloadHandler = sandbox.cloneInto(
-        () => reject(new JavaScriptError("Document was unloaded during execution")),
+        () => reject(new JavaScriptError("Document was unloaded")),
         sb);
 
     
@@ -151,12 +151,16 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
     }
 
     
-    scriptTimeoutID = setTimeout(timeoutHandler, opts.timeout || DEFAULT_TIMEOUT);
+    const timeout = opts.timeout || DEFAULT_TIMEOUT;
+    scriptTimeoutID = setTimeout(timeoutHandler, timeout);
     sb.window.onunload = unloadHandler;
+
+    const file = opts.filename || "dummy file";
+    const line = opts.line || 0;
 
     let res;
     try {
-      res = Cu.evalInSandbox(src, sb, "1.8", opts.filename || "dummy file", 0);
+      res = Cu.evalInSandbox(src, sb, "1.8", file, 0);
     } catch (e) {
       let err = new JavaScriptError(e, {
         fnName: "execute_script",
@@ -196,42 +200,42 @@ evaluate.sandbox = function (sb, script, args = [], opts = {}) {
 
 
 
-evaluate.fromJSON = function (obj, seenEls, win, shadowRoot = undefined) {
+evaluate.fromJSON = function(obj, seenEls, win, shadowRoot = undefined) {
   switch (typeof obj) {
     case "boolean":
     case "number":
     case "string":
+    default:
       return obj;
 
     case "object":
       if (obj === null) {
         return obj;
-      }
 
       
-      else if (Array.isArray(obj)) {
+      } else if (Array.isArray(obj)) {
         return obj.map(e => evaluate.fromJSON(e, seenEls, win, shadowRoot));
-      }
 
       
-      else if (Object.keys(obj).includes(element.Key) ||
+      } else if (Object.keys(obj).includes(element.Key) ||
           Object.keys(obj).includes(element.LegacyKey)) {
+        
         let uuid = obj[element.Key] || obj[element.LegacyKey];
         let el = seenEls.get(uuid, {frame: win, shadowRoot: shadowRoot});
+        
         if (!el) {
           throw new WebDriverError(`Unknown element: ${uuid}`);
         }
         return el;
+
       }
 
       
-      else {
-        let rv = {};
-        for (let prop in obj) {
-          rv[prop] = evaluate.fromJSON(obj[prop], seenEls, win, shadowRoot);
-        }
-        return rv;
+      let rv = {};
+      for (let prop in obj) {
+        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, win, shadowRoot);
       }
+      return rv;
   }
 };
 
@@ -251,32 +255,30 @@ evaluate.fromJSON = function (obj, seenEls, win, shadowRoot = undefined) {
 
 
 
-evaluate.toJSON = function (obj, seenEls) {
+evaluate.toJSON = function(obj, seenEls) {
   const t = Object.prototype.toString.call(obj);
 
   
   if (t == "[object Undefined]" || t == "[object Null]") {
     return null;
-  }
 
   
-  else if (t == "[object Boolean]" || t == "[object Number]" || t == "[object String]") {
+  } else if (t == "[object Boolean]" ||
+      t == "[object Number]" ||
+      t == "[object String]") {
     return obj;
-  }
 
   
-  else if (element.isCollection(obj)) {
+  } else if (element.isCollection(obj)) {
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
-  }
 
   
-  else if ("nodeType" in obj && obj.nodeType == obj.ELEMENT_NODE) {
+  } else if ("nodeType" in obj && obj.nodeType == obj.ELEMENT_NODE) {
     let uuid = seenEls.add(obj);
     return element.makeWebElement(uuid);
-  }
 
   
-  else if (typeof obj["toJSON"] == "function") {
+  } else if (typeof obj["toJSON"] == "function") {
     let unsafeJSON = obj.toJSON();
     return evaluate.toJSON(unsafeJSON, seenEls);
   }
@@ -293,8 +295,8 @@ evaluate.toJSON = function (obj, seenEls) {
         throw e;
       }
     }
-    return rv;
   }
+  return rv;
 };
 
 this.sandbox = {};
@@ -307,7 +309,7 @@ this.sandbox = {};
 
 
 
-sandbox.cloneInto = function (obj, sb) {
+sandbox.cloneInto = function(obj, sb) {
   return Cu.cloneInto(obj, sb, {cloneFunctions: true, wrapReflectors: true});
 };
 
@@ -325,11 +327,11 @@ sandbox.cloneInto = function (obj, sb) {
 
 
 
-sandbox.augment = function (sb, adapter) {
+sandbox.augment = function(sb, adapter) {
   function* entries(obj) {
-     for (let key of Object.keys(obj)) {
-       yield [key, obj[key]];
-     }
+    for (let key of Object.keys(obj)) {
+      yield [key, obj[key]];
+    }
   }
 
   let funcs = adapter.exports || entries(adapter);
@@ -352,7 +354,7 @@ sandbox.augment = function (sb, adapter) {
 
 
 
-sandbox.create = function (window, principal = null, opts = {}) {
+sandbox.create = function(window, principal = null, opts = {}) {
   let p = principal || window;
   opts = Object.assign({
     sameZoneAs: window,
@@ -373,7 +375,7 @@ sandbox.create = function (window, principal = null, opts = {}) {
 
 
 
-sandbox.createMutable = function (window) {
+sandbox.createMutable = function(window) {
   let opts = {
     wantComponents: false,
     wantXrays: false,
@@ -381,13 +383,13 @@ sandbox.createMutable = function (window) {
   return sandbox.create(window, null, opts);
 };
 
-sandbox.createSystemPrincipal = function (window) {
+sandbox.createSystemPrincipal = function(window) {
   let principal = Cc["@mozilla.org/systemprincipal;1"]
       .createInstance(Ci.nsIPrincipal);
   return sandbox.create(window, principal);
 };
 
-sandbox.createSimpleTest = function (window, harness) {
+sandbox.createSimpleTest = function(window, harness) {
   let sb = sandbox.create(window);
   sb = sandbox.augment(sb, harness);
   sb[FINISH] = () => sb[COMPLETE](harness.generate_results());

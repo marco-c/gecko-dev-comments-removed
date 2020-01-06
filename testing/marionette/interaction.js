@@ -145,7 +145,8 @@ this.interaction = {};
 
 
 
-interaction.clickElement = function* (el, strict = false, specCompat = false) {
+interaction.clickElement = function* (
+    el, strict = false, specCompat = false) {
   const a11y = accessibility.get(strict);
   if (element.isXULElement(el)) {
     yield chromeClick(el, a11y);
@@ -156,9 +157,8 @@ interaction.clickElement = function* (el, strict = false, specCompat = false) {
   }
 };
 
-function* webdriverClickElement (el, a11y) {
+function* webdriverClickElement(el, a11y) {
   const win = getWindow(el);
-  const doc = win.document;
 
   
   if (el.localName == "input" && el.type == "file") {
@@ -213,7 +213,7 @@ function* webdriverClickElement (el, a11y) {
   
 }
 
-function* chromeClick (el, a11y) {
+function* chromeClick(el, a11y) {
   if (!atom.isElementEnabled(el)) {
     throw new InvalidElementStateError("Element is not enabled");
   }
@@ -231,7 +231,7 @@ function* chromeClick (el, a11y) {
   }
 }
 
-function* seleniumClickElement (el, a11y) {
+function* seleniumClickElement(el, a11y) {
   let win = getWindow(el);
 
   let visibilityCheckEl  = el;
@@ -261,7 +261,7 @@ function* seleniumClickElement (el, a11y) {
     let opts = {};
     event.synthesizeMouseAtPoint(centre.x, centre.y, opts, win);
   }
-};
+}
 
 
 
@@ -280,7 +280,7 @@ function* seleniumClickElement (el, a11y) {
 
 
 
-interaction.selectOption = function (el) {
+interaction.selectOption = function(el) {
   if (element.isXULElement(el)) {
     throw new Error("XUL dropdowns not supported");
   }
@@ -288,7 +288,6 @@ interaction.selectOption = function (el) {
     throw new TypeError("Invalid elements");
   }
 
-  let win = getWindow(el);
   let containerEl = element.getContainer(el);
 
   event.mouseover(containerEl);
@@ -333,7 +332,7 @@ interaction.flushEventLoop = function* (win) {
       return;
     }
 
-    win.addEventListener("beforeunload", handleEvent, false);
+    win.addEventListener("beforeunload", handleEvent);
     win.requestAnimationFrame(handleEvent);
   });
 };
@@ -413,7 +412,8 @@ interaction.setFormControlValue = function* (el, value) {
 
 
 
-interaction.sendKeysToElement = function (el, value, ignoreVisibility, strict = false) {
+interaction.sendKeysToElement = function(
+    el, value, ignoreVisibility, strict = false) {
   let win = getWindow(el);
   let a11y = accessibility.get(strict);
   return a11y.getAccessible(el, true).then(acc => {
@@ -433,7 +433,7 @@ interaction.sendKeysToElement = function (el, value, ignoreVisibility, strict = 
 
 
 
-interaction.isElementDisplayed = function (el, strict = false) {
+interaction.isElementDisplayed = function(el, strict = false) {
   let win = getWindow(el);
   let displayed = atom.isElementDisplayed(el, win);
 
@@ -453,7 +453,7 @@ interaction.isElementDisplayed = function (el, strict = false) {
 
 
 
-interaction.isElementEnabled = function (el, strict = false) {
+interaction.isElementEnabled = function(el, strict = false) {
   let enabled = true;
   let win = getWindow(el);
 
@@ -490,7 +490,7 @@ interaction.isElementEnabled = function (el, strict = false) {
 
 
 
-interaction.isElementSelected = function (el, strict = false) {
+interaction.isElementSelected = function(el, strict = false) {
   let selected = true;
   let win = getWindow(el);
 

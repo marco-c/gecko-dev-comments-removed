@@ -22,7 +22,7 @@ var remoteFrames = [];
 
 
 
-frame.RemoteFrame = function (windowId, frameId) {
+frame.RemoteFrame = function(windowId, frameId) {
   
   this.windowId = windowId;
   
@@ -61,6 +61,7 @@ frame.Manager = class {
   
 
 
+  
   receiveMessage(message) {
     switch (message.name) {
       case "MarionetteFrame:getInterruptedState":
@@ -123,6 +124,7 @@ frame.Manager = class {
         }
     }
   }
+  
 
   getOopFrame(winId, frameId) {
     
@@ -247,7 +249,8 @@ frame.Manager = class {
     mm.removeWeakMessageListener("Marionette:shareData", this.driver);
     mm.removeWeakMessageListener("Marionette:switchedToFrame", this.driver);
     mm.removeWeakMessageListener("Marionette:getVisibleCookies", this.driver);
-    mm.removeWeakMessageListener("Marionette:getImportedScripts", this.driver.importedScripts);
+    mm.removeWeakMessageListener(
+        "Marionette:getImportedScripts", this.driver.importedScripts);
     mm.removeWeakMessageListener("Marionette:listenersAttached", this.driver);
     mm.removeWeakMessageListener("Marionette:register", this.driver);
     mm.removeWeakMessageListener("MarionetteFrame:handleModal", this);

@@ -25,18 +25,19 @@
 
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-const { StreamUtils } = Cu.import("chrome://marionette/content/stream-utils.js");
+const {StreamUtils} =
+    Cu.import("chrome://marionette/content/stream-utils.js", {});
 
 const unicodeConverter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                           .createInstance(Ci.nsIScriptableUnicodeConverter);
+    .createInstance(Ci.nsIScriptableUnicodeConverter);
 unicodeConverter.charset = "UTF-8";
 
-const defer = function () {
+const defer = function() {
   let deferred = {
     promise: new Promise((resolve, reject) => {
       deferred.resolve = resolve;
       deferred.reject = reject;
-    })
+    }),
   };
   return deferred;
 };
@@ -67,7 +68,9 @@ function Packet(transport) {
 
 
 
-Packet.fromHeader = function (header, transport) {
+
+
+Packet.fromHeader = function(header, transport) {
   return JSONPacket.fromHeader(header, transport) ||
          BulkPacket.fromHeader(header, transport);
 };
@@ -86,11 +89,11 @@ Packet.prototype = {
     this._length = length;
   },
 
-  destroy: function () {
+  destroy() {
     this._transport = null;
-  }
-
+  },
 };
+
 
 
 
@@ -117,7 +120,9 @@ function JSONPacket(transport) {
 
 
 
-JSONPacket.fromHeader = function (header, transport) {
+
+
+JSONPacket.fromHeader = function(header, transport) {
   let match = this.HEADER_PATTERN.exec(header);
 
   if (!match) {
@@ -137,22 +142,22 @@ Object.defineProperty(JSONPacket.prototype, "object", {
   
 
 
-  get: function () {
+  get() {
     return this._object;
   },
 
   
 
 
-  set: function (object) {
+  set(object) {
     this._object = object;
     let data = JSON.stringify(object);
     this._data = unicodeConverter.ConvertFromUnicode(data);
     this.length = this._data.length;
-  }
+  },
 });
 
-JSONPacket.prototype.read = function (stream, scriptableStream) {
+JSONPacket.prototype.read = function(stream, scriptableStream) {
 
   
   this._readData(stream, scriptableStream);
@@ -177,14 +182,15 @@ JSONPacket.prototype.read = function (stream, scriptableStream) {
   this._transport._onJSONObjectReady(this._object);
 };
 
-JSONPacket.prototype._readData = function (stream, scriptableStream) {
-  let bytesToRead = Math.min(this.length - this._data.length,
-                             stream.available());
+JSONPacket.prototype._readData = function(stream, scriptableStream) {
+  let bytesToRead = Math.min(
+      this.length - this._data.length,
+      stream.available());
   this._data += scriptableStream.readBytes(bytesToRead);
   this._done = this._data.length === this.length;
 };
 
-JSONPacket.prototype.write = function (stream) {
+JSONPacket.prototype.write = function(stream) {
 
   if (this._outgoing === undefined) {
     
@@ -197,14 +203,15 @@ JSONPacket.prototype.write = function (stream) {
 };
 
 Object.defineProperty(JSONPacket.prototype, "done", {
-  get: function () {
+  get() {
     return this._done;
-  }
+  },
 });
 
-JSONPacket.prototype.toString = function () {
+JSONPacket.prototype.toString = function() {
   return JSON.stringify(this._object, null, 2);
 };
+
 
 
 
@@ -237,7 +244,9 @@ function BulkPacket(transport) {
 
 
 
-BulkPacket.fromHeader = function (header, transport) {
+
+
+BulkPacket.fromHeader = function(header, transport) {
   let match = this.HEADER_PATTERN.exec(header);
 
   if (!match) {
@@ -248,7 +257,7 @@ BulkPacket.fromHeader = function (header, transport) {
   packet.header = {
     actor: match[1],
     type: match[2],
-    length: +match[3]
+    length: +match[3],
   };
   return packet;
 };
@@ -257,7 +266,7 @@ BulkPacket.HEADER_PATTERN = /^bulk ([^: ]+) ([^: ]+) (\d+):$/;
 
 BulkPacket.prototype = Object.create(Packet.prototype);
 
-BulkPacket.prototype.read = function (stream) {
+BulkPacket.prototype.read = function(stream) {
   
   this._transport.pauseIncoming();
 
@@ -272,8 +281,8 @@ BulkPacket.prototype.read = function (stream) {
       deferred.resolve(copying);
       return copying;
     },
-    stream: stream,
-    done: deferred
+    stream,
+    done: deferred,
   });
 
   
@@ -288,7 +297,7 @@ BulkPacket.prototype.read = function (stream) {
   };
 };
 
-BulkPacket.prototype.write = function (stream) {
+BulkPacket.prototype.write = function(stream) {
   if (this._outgoingHeader === undefined) {
     
     this._outgoingHeader = "bulk " + this.actor + " " + this.type + " " +
@@ -314,8 +323,8 @@ BulkPacket.prototype.write = function (stream) {
       deferred.resolve(copying);
       return copying;
     },
-    stream: stream,
-    done: deferred
+    stream,
+    done: deferred,
   });
 
   
@@ -331,21 +340,21 @@ BulkPacket.prototype.write = function (stream) {
 };
 
 Object.defineProperty(BulkPacket.prototype, "streamReadyForWriting", {
-  get: function () {
+  get() {
     return this._readyForWriting.promise;
-  }
+  },
 });
 
 Object.defineProperty(BulkPacket.prototype, "header", {
-  get: function () {
+  get() {
     return {
       actor: this.actor,
       type: this.type,
-      length: this.length
+      length: this.length,
     };
   },
 
-  set: function (header) {
+  set(header) {
     this.actor = header.actor;
     this.type = header.type;
     this.length = header.length;
@@ -353,12 +362,12 @@ Object.defineProperty(BulkPacket.prototype, "header", {
 });
 
 Object.defineProperty(BulkPacket.prototype, "done", {
-  get: function () {
+  get() {
     return this._done;
   },
 });
 
-BulkPacket.prototype.toString = function () {
+BulkPacket.prototype.toString = function() {
   return "Bulk: " + JSON.stringify(this.header, null, 2);
 };
 
@@ -379,19 +388,19 @@ function RawPacket(transport, data) {
 
 RawPacket.prototype = Object.create(Packet.prototype);
 
-RawPacket.prototype.read = function (stream) {
+RawPacket.prototype.read = function(stream) {
   
   throw Error("Not implmented.");
 };
 
-RawPacket.prototype.write = function (stream) {
+RawPacket.prototype.write = function(stream) {
   let written = stream.write(this._data, this._data.length);
   this._data = this._data.slice(written);
   this._done = !this._data.length;
 };
 
 Object.defineProperty(RawPacket.prototype, "done", {
-  get: function () {
+  get() {
     return this._done;
-  }
+  },
 });

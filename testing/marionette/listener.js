@@ -18,6 +18,7 @@ var loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -52,7 +53,7 @@ var marionetteTestName;
 var winUtil = content.QueryInterface(Ci.nsIInterfaceRequestor)
     .getInterface(Ci.nsIDOMWindowUtils);
 var listenerId = null; 
-var curContainer = { frame: content, shadowRoot: null };
+var curContainer = {frame: content, shadowRoot: null};
 var isRemoteBrowser = () => curContainer.frame.contentWindow !== null;
 var previousContainer = null;
 
@@ -102,7 +103,9 @@ if (logger.ownAppenders.length == 0) {
 
 var modalHandler = function() {
   
-  sendSyncMessage("Marionette:switchedToFrame", {frameValue: null, storePrevious: true});
+  
+  sendSyncMessage("Marionette:switchedToFrame",
+      {frameValue: null, storePrevious: true});
   let isLocal = sendSyncMessage("MarionetteFrame:handleModal", {})[0].value;
   if (isLocal) {
     previousContainer = curContainer;
@@ -140,14 +143,18 @@ var loadListener = {
 
 
 
-  start: function (command_id, timeout, startTime, waitForUnloaded = true) {
+
+
+
+  start(command_id, timeout, startTime, waitForUnloaded = true) {
     this.command_id = command_id;
     this.timeout = timeout;
 
     this.seenBeforeUnload = false;
     this.seenUnload = false;
 
-    this.timerPageLoad = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    this.timerPageLoad = Cc["@mozilla.org/timer;1"]
+        .createInstance(Ci.nsITimer);
     this.timerPageUnload = null;
 
     
@@ -164,22 +171,23 @@ var loadListener = {
 
       
       
-      curContainer.frame.addEventListener("beforeunload", this, false);
-      curContainer.frame.addEventListener("unload", this, false);
+      curContainer.frame.addEventListener("beforeunload", this);
+      curContainer.frame.addEventListener("unload", this);
 
       Services.obs.addObserver(this, "outer-window-destroyed");
     } else {
-      addEventListener("DOMContentLoaded", loadListener, false);
-      addEventListener("pageshow", loadListener, false);
+      addEventListener("DOMContentLoaded", loadListener);
+      addEventListener("pageshow", loadListener);
     }
 
-    this.timerPageLoad.initWithCallback(this, timeout, Ci.nsITimer.TYPE_ONE_SHOT);
+    this.timerPageLoad.initWithCallback(
+        this, timeout, Ci.nsITimer.TYPE_ONE_SHOT);
   },
 
   
 
 
-  stop: function () {
+  stop() {
     if (this.timerPageLoad) {
       this.timerPageLoad.cancel();
     }
@@ -214,7 +222,7 @@ var loadListener = {
   
 
 
-  handleEvent: function (event) {
+  handleEvent(event) {
     let location = event.target.baseURI || event.target.location.href;
     logger.debug(`Received DOM event "${event.type}" for "${location}"`);
 
@@ -260,7 +268,8 @@ var loadListener = {
         
         
         
-        } else if (capabilities.get("pageLoadStrategy") === session.PageLoadStrategy.Eager ||
+        } else if ((capabilities.get("pageLoadStrategy") ===
+            session.PageLoadStrategy.Eager) ||
             /about:blocked\?/.exec(event.target.baseURI)) {
           this.stop();
           sendOk(this.command_id);
@@ -279,7 +288,7 @@ var loadListener = {
   
 
 
-  notify: function (timer) {
+  notify(timer) {
     switch (timer) {
       case this.timerPageUnload:
         
@@ -289,9 +298,11 @@ var loadListener = {
         
         
         
+        
         if (this.seenBeforeUnload) {
           this.seenBeforeUnload = null;
-          this.timerPageUnload.initWithCallback(this, 5000, Ci.nsITimer.TYPE_ONE_SHOT)
+          this.timerPageUnload.initWithCallback(
+              this, 5000, Ci.nsITimer.TYPE_ONE_SHOT)
 
         
         
@@ -303,17 +314,19 @@ var loadListener = {
         }
         break;
 
-    case this.timerPageLoad:
-      this.stop();
-      sendError(new TimeoutError(`Timeout loading page after ${this.timeout}ms`),
-          this.command_id);
-      break;
+      case this.timerPageLoad:
+        this.stop();
+        sendError(
+            new TimeoutError(`Timeout loading page after ${this.timeout}ms`),
+            this.command_id);
+        break;
     }
   },
 
-  observe: function (subject, topic, data) {
-    const winID = subject.QueryInterface(Components.interfaces.nsISupportsPRUint64).data;
-    const curWinID = curContainer.frame.QueryInterface(Ci.nsIInterfaceRequestor)
+  observe(subject, topic, data) {
+    const win = curContainer.frame;
+    const winID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    const curWinID = win.QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
 
     logger.debug(`Received observer notification "${topic}" for "${winID}"`);
@@ -340,7 +353,10 @@ var loadListener = {
 
 
 
-  waitForLoadAfterRemotenessChange: function (command_id, timeout, startTime) {
+
+
+
+  waitForLoadAfterRemotenessChange(command_id, timeout, startTime) {
     this.start(command_id, timeout, startTime, false);
   },
 
@@ -360,12 +376,14 @@ var loadListener = {
 
 
 
-  navigate: function (trigger, command_id, timeout, loadEventExpected = true,
+
+  navigate(trigger, command_id, timeout, loadEventExpected = true,
       useUnloadTimer = false) {
 
     
     loadEventExpected = loadEventExpected &&
-        capabilities.get("pageLoadStrategy") !== session.PageLoadStrategy.None;
+        (capabilities.get("pageLoadStrategy") !==
+        session.PageLoadStrategy.None);
 
     if (loadEventExpected) {
       let startTime = new Date().getTime();
@@ -376,15 +394,17 @@ var loadListener = {
       yield trigger();
 
     }).then(val => {
-     if (!loadEventExpected) {
+      if (!loadEventExpected) {
         sendOk(command_id);
         return;
       }
 
       
       if (useUnloadTimer) {
-        this.timerPageUnload = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-        this.timerPageUnload.initWithCallback(this, 200, Ci.nsITimer.TYPE_ONE_SHOT);
+        this.timerPageUnload = Cc["@mozilla.org/timer;1"]
+            .createInstance(Ci.nsITimer);
+        this.timerPageUnload.initWithCallback(
+            this, 200, Ci.nsITimer.TYPE_ONE_SHOT);
       }
 
     }).catch(err => {
@@ -393,7 +413,7 @@ var loadListener = {
       }
 
       sendError(err, command_id);
-      return;
+
     });
   },
 }
@@ -407,6 +427,7 @@ function registerSelf() {
   let msg = {value: winUtil.outerWindowID};
   logger.debug(`Register listener.js for window ${msg.value}`);
 
+  
   
   let register = sendSyncMessage("Marionette:register", msg);
 
@@ -435,15 +456,14 @@ function dispatch(fn) {
     throw new TypeError("Provided dispatch handler is not a function");
   }
 
-  return function (msg) {
+  return function(msg) {
     let id = msg.json.command_id;
 
     let req = Task.spawn(function* () {
       if (typeof msg.json == "undefined" || msg.json instanceof Array) {
         return yield fn.apply(null, msg.json);
-      } else {
-        return yield fn(msg.json);
       }
+      return yield fn(msg.json);
     });
 
     let okOrValueResponse = rv => {
@@ -521,15 +541,19 @@ function startListeners() {
   addMessageListenerId("Marionette:goForward", goForward);
   addMessageListenerId("Marionette:refresh", refresh);
   addMessageListenerId("Marionette:findElementContent", findElementContentFn);
-  addMessageListenerId("Marionette:findElementsContent", findElementsContentFn);
+  addMessageListenerId(
+      "Marionette:findElementsContent", findElementsContentFn);
   addMessageListenerId("Marionette:getActiveElement", getActiveElementFn);
   addMessageListenerId("Marionette:clickElement", clickElement);
-  addMessageListenerId("Marionette:getElementAttribute", getElementAttributeFn);
+  addMessageListenerId(
+      "Marionette:getElementAttribute", getElementAttributeFn);
   addMessageListenerId("Marionette:getElementProperty", getElementPropertyFn);
   addMessageListenerId("Marionette:getElementText", getElementTextFn);
   addMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
   addMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
-  addMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
+  addMessageListenerId(
+      "Marionette:getElementValueOfCssProperty",
+      getElementValueOfCssPropertyFn);
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
   addMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
   addMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
@@ -591,24 +615,37 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:goBack", goBack);
   removeMessageListenerId("Marionette:goForward", goForward);
   removeMessageListenerId("Marionette:refresh", refresh);
-  removeMessageListenerId("Marionette:findElementContent", findElementContentFn);
-  removeMessageListenerId("Marionette:findElementsContent", findElementsContentFn);
+  removeMessageListenerId(
+      "Marionette:findElementContent", findElementContentFn);
+  removeMessageListenerId(
+      "Marionette:findElementsContent", findElementsContentFn);
   removeMessageListenerId("Marionette:getActiveElement", getActiveElementFn);
   removeMessageListenerId("Marionette:clickElement", clickElement);
-  removeMessageListenerId("Marionette:getElementAttribute", getElementAttributeFn);
-  removeMessageListenerId("Marionette:getElementProperty", getElementPropertyFn);
-  removeMessageListenerId("Marionette:getElementText", getElementTextFn);
-  removeMessageListenerId("Marionette:getElementTagName", getElementTagNameFn);
-  removeMessageListenerId("Marionette:isElementDisplayed", isElementDisplayedFn);
-  removeMessageListenerId("Marionette:getElementValueOfCssProperty", getElementValueOfCssPropertyFn);
+  removeMessageListenerId(
+      "Marionette:getElementAttribute", getElementAttributeFn);
+  removeMessageListenerId(
+      "Marionette:getElementProperty", getElementPropertyFn);
+  removeMessageListenerId(
+      "Marionette:getElementText", getElementTextFn);
+  removeMessageListenerId(
+      "Marionette:getElementTagName", getElementTagNameFn);
+  removeMessageListenerId(
+      "Marionette:isElementDisplayed", isElementDisplayedFn);
+  removeMessageListenerId(
+      "Marionette:getElementValueOfCssProperty",
+      getElementValueOfCssPropertyFn);
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
   removeMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
-  removeMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
-  removeMessageListenerId("Marionette:sendKeysToElement", sendKeysToElementFn);
+  removeMessageListenerId(
+      "Marionette:isElementSelected", isElementSelectedFn);
+  removeMessageListenerId(
+      "Marionette:sendKeysToElement", sendKeysToElementFn);
   removeMessageListenerId("Marionette:clearElement", clearElementFn);
   removeMessageListenerId("Marionette:switchToFrame", switchToFrame);
-  removeMessageListenerId("Marionette:switchToParentFrame", switchToParentFrame);
-  removeMessageListenerId("Marionette:switchToShadowRoot", switchToShadowRootFn);
+  removeMessageListenerId(
+      "Marionette:switchToParentFrame", switchToParentFrame);
+  removeMessageListenerId(
+      "Marionette:switchToShadowRoot", switchToShadowRootFn);
   removeMessageListenerId("Marionette:deleteSession", deleteSession);
   removeMessageListenerId("Marionette:sleepSession", sleepSession);
   removeMessageListenerId("Marionette:getAppCacheStatus", getAppCacheStatus);
@@ -616,7 +653,7 @@ function deleteSession(msg) {
 
   seenEls.clear();
   
-  curContainer = { frame: content, shadowRoot: null };
+  curContainer = {frame: content, shadowRoot: null};
   curContainer.frame.focus();
   legacyactions.touchIds = {};
   if (action.inputStateMap !== undefined) {
@@ -690,35 +727,32 @@ function resetValues() {
   action.inputsToCancel = [];
 }
 
-
-
-
 function wasInterrupted() {
   if (previousContainer) {
-    let element = content.document.elementFromPoint((content.innerWidth/2), (content.innerHeight/2));
+    let element = content.document.elementFromPoint(
+        (content.innerWidth / 2), (content.innerHeight / 2));
     if (element.id.indexOf("modal-dialog") == -1) {
       return true;
     }
-    else {
-      return false;
-    }
+    return false;
   }
   return sendSyncMessage("MarionetteFrame:getInterruptedState", {})[0].value;
 }
 
 function checkForInterrupted() {
-    if (wasInterrupted()) {
-      if (previousContainer) {
-        
-        curContainer = legacyactions.container = previousContainer;
-        previousContainer = null;
-      }
-      else {
-        
-        sendSyncMessage("Marionette:switchToModalOrigin");
-      }
-      sendSyncMessage("Marionette:switchedToFrame", { restorePrevious: true });
+  if (wasInterrupted()) {
+    
+    
+    if (previousContainer) {
+      curContainer = legacyactions.container = previousContainer;
+      previousContainer = null;
+    
+    
+    } else {
+      sendSyncMessage("Marionette:switchToModalOrigin");
     }
+    sendSyncMessage("Marionette:switchedToFrame", {restorePrevious: true});
+  }
 }
 
 function* execute(script, args, timeout, opts) {
@@ -744,36 +778,58 @@ function* executeInSandbox(script, args, timeout, opts) {
   return evaluate.toJSON(res, seenEls);
 }
 
-
-
-
 function emitTouchEvent(type, touch) {
   if (!wasInterrupted()) {
-    logger.info(`Emitting Touch event of type ${type} to element with id: ${touch.target.id} ` +
-                `and tag name: ${touch.target.tagName} at coordinates (${touch.clientX}, ` +
-                `${touch.clientY}) relative to the viewport`);
+    logger.info(`Emitting Touch event of type ${type} ` +
+        `to element with id: ${touch.target.id} ` +
+        `and tag name: ${touch.target.tagName} ` +
+        `at coordinates (${touch.clientX}), ` +
+        `${touch.clientY}) relative to the viewport`);
 
-    var docShell = curContainer.frame.document.defaultView.
-                   QueryInterface(Components.interfaces.nsIInterfaceRequestor).
-                   getInterface(Components.interfaces.nsIWebNavigation).
-                   QueryInterface(Components.interfaces.nsIDocShell);
+    const win = curContainer.frame;
+    let docShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIWebNavigation)
+        .QueryInterface(Ci.nsIDocShell);
     if (docShell.asyncPanZoomEnabled && legacyactions.scrolling) {
       
+      
       let index = sendSyncMessage("MarionetteFrame:getCurrentFrameId");
+
       
       if (index != null) {
-        sendSyncMessage("Marionette:emitTouchEvent",
-          { index: index, type: type, id: touch.identifier,
-            clientX: touch.clientX, clientY: touch.clientY,
-            screenX: touch.screenX, screenY: touch.screenY,
-            radiusX: touch.radiusX, radiusY: touch.radiusY,
-            rotation: touch.rotationAngle, force: touch.force });
+        let ev = {
+          index,
+          type,
+          id: touch.identifier,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          screenX: touch.screenX,
+          screenY: touch.screenY,
+          radiusX: touch.radiusX,
+          radiusY: touch.radiusY,
+          rotation: touch.rotationAngle,
+          force: touch.force,
+        };
+        sendSyncMessage("Marionette:emitTouchEvent", ev);
         return;
       }
     }
+
     
-    let domWindowUtils = curContainer.frame.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils);
-    domWindowUtils.sendTouchEvent(type, [touch.identifier], [touch.clientX], [touch.clientY], [touch.radiusX], [touch.radiusY], [touch.rotationAngle], [touch.force], 1, 0);
+    
+    let domWindowUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIDOMWindowUtils);
+    domWindowUtils.sendTouchEvent(
+        type,
+        [touch.identifier],
+        [touch.clientX],
+        [touch.clientY],
+        [touch.radiusX],
+        [touch.radiusY],
+        [touch.rotationAngle],
+        [touch.force],
+        1,
+        0);
   }
 }
 
@@ -785,7 +841,8 @@ function singleTap(id, corx, cory) {
   
   let visible = element.isVisible(el, corx, cory);
   if (!visible) {
-    throw new ElementNotInteractableError("Element is not currently visible and may not be manipulated");
+    throw new ElementNotInteractableError(
+        "Element is not currently visible and may not be manipulated");
   }
 
   let a11y = accessibility.get(capabilities.get("moz:accessibilityChecks"));
@@ -799,8 +856,8 @@ function singleTap(id, corx, cory) {
     if (!legacyactions.mouseEventsOnly) {
       let touchId = legacyactions.nextTouchId++;
       let touch = createATouch(el, c.x, c.y, touchId);
-      emitTouchEvent('touchstart', touch);
-      emitTouchEvent('touchend', touch);
+      emitTouchEvent("touchstart", touch);
+      emitTouchEvent("touchend", touch);
     }
     legacyactions.mouseTap(el.ownerDocument, c.x, c.y);
   });
@@ -814,8 +871,17 @@ function createATouch(el, corx, cory, touchId) {
   let doc = el.ownerDocument;
   let win = doc.defaultView;
   let [clientX, clientY, pageX, pageY, screenX, screenY] =
-   legacyactions.getCoordinateInfo(el, corx, cory);
-  let atouch = doc.createTouch(win, el, touchId, pageX, pageY, screenX, screenY, clientX, clientY);
+      legacyactions.getCoordinateInfo(el, corx, cory);
+  let atouch = doc.createTouch(
+      win,
+      el,
+      touchId,
+      pageX,
+      pageY,
+      screenX,
+      screenY,
+      clientX,
+      clientY);
   return atouch;
 }
 
@@ -838,7 +904,8 @@ function* performActions(msg) {
 
 
 function* releaseActions() {
-  yield action.dispatchTickActions(action.inputsToCancel.reverse(), 0, seenEls, curContainer);
+  yield action.dispatchTickActions(
+      action.inputsToCancel.reverse(), 0, seenEls, curContainer);
   action.inputsToCancel.length = 0;
   action.inputStateMap.clear();
 }
@@ -859,26 +926,23 @@ function actionChain(chain, touchId) {
       touchProvider);
 }
 
-
-
-
-
 function emitMultiEvents(type, touch, touches) {
   let target = touch.target;
   let doc = target.ownerDocument;
   let win = doc.defaultView;
   
-  let documentTouches = doc.createTouchList(touches.filter(function (t) {
-    return ((t.target.ownerDocument === doc) && (type != 'touchcancel'));
+  let documentTouches = doc.createTouchList(touches.filter(function(t) {
+    return ((t.target.ownerDocument === doc) && (type != "touchcancel"));
   }));
   
-  let targetTouches = doc.createTouchList(touches.filter(function (t) {
-    return ((t.target === target) && ((type != 'touchcancel') || (type != 'touchend')));
+  let targetTouches = doc.createTouchList(touches.filter(function(t) {
+    return ((t.target === target) &&
+        ((type != "touchcancel") || (type != "touchend")));
   }));
   
   let changedTouches = doc.createTouchList(touch);
   
-  let event = doc.createEvent('TouchEvent');
+  let event = doc.createEvent("TouchEvent");
   event.initTouchEvent(type,
                        true,
                        true,
@@ -891,11 +955,7 @@ function emitMultiEvents(type, touch, touches) {
   target.dispatchEvent(event);
 }
 
-
-
-
-
-function setDispatch(batches, touches, batchIndex=0) {
+function setDispatch(batches, touches, batchIndex = 0) {
   
   if (batchIndex >= batches.length) {
     multiLast = {};
@@ -912,8 +972,6 @@ function setDispatch(batches, touches, batchIndex=0) {
   let command;
   
   let el;
-  let corx;
-  let cory;
   let touch;
   let lastTouch;
   let touchIndex;
@@ -941,6 +999,7 @@ function setDispatch(batches, touches, batchIndex=0) {
       case "release":
         touch = multiLast[touchId];
         
+        
         touchIndex = touches.indexOf(touch);
         touches.splice(touchIndex, 1);
         emitMultiEvents("touchend", touch, touches);
@@ -963,13 +1022,23 @@ function setDispatch(batches, touches, batchIndex=0) {
         let doc = el.ownerDocument;
         let win = doc.defaultView;
         
-        let clientX = lastTouch.clientX + pack[2],
-            clientY = lastTouch.clientY + pack[3];
-        let pageX = clientX + win.pageXOffset,
-            pageY = clientY + win.pageYOffset;
-        let screenX = clientX + win.mozInnerScreenX,
-            screenY = clientY + win.mozInnerScreenY;
-        touch = doc.createTouch(win, el, touchId, pageX, pageY, screenX, screenY, clientX, clientY);
+        
+        let clientX = lastTouch.clientX + pack[2];
+        let clientY = lastTouch.clientY + pack[3];
+        let pageX = clientX + win.pageXOffset;
+        let pageY = clientY + win.pageYOffset;
+        let screenX = clientX + win.mozInnerScreenX;
+        let screenY = clientY + win.mozInnerScreenY;
+        touch = doc.createTouch(
+            win,
+            el,
+            touchId,
+            pageX,
+            pageY,
+            screenX,
+            screenY,
+            clientX,
+            clientY);
         touches[touchIndex] = touch;
         multiLast[touchId] = touch;
         emitMultiEvents("touchmove", touch, touches);
@@ -1013,6 +1082,7 @@ function multiAction(args, maxLen) {
     for (let j = 0; j < commandArray.length; j++) {
       if (typeof commandArray[j][i] != "undefined") {
         
+        
         temp = commandArray[j][i];
         temp.unshift(j);
         row.push(temp);
@@ -1021,6 +1091,8 @@ function multiAction(args, maxLen) {
     concurrentEvent.push(row);
   }
 
+  
+  
   
   
   
@@ -1049,10 +1121,14 @@ function cancelRequest() {
 
 
 
+
+
+
 function waitForPageLoaded(msg) {
   let {command_id, pageTimeout, startTime} = msg.json;
 
-  loadListener.waitForLoadAfterRemotenessChange(command_id, pageTimeout, startTime);
+  loadListener.waitForLoadAfterRemotenessChange(
+      command_id, pageTimeout, startTime);
 }
 
 
@@ -1062,7 +1138,7 @@ function waitForPageLoaded(msg) {
 
 
 function get(msg) {
-  let {command_id, pageTimeout, url, loadEventExpected=null} = msg.json;
+  let {command_id, pageTimeout, url, loadEventExpected = null} = msg.json;
 
   try {
     if (typeof url == "string") {
@@ -1072,7 +1148,8 @@ function get(msg) {
           loadEventExpected = navigate.isLoadEventExpected(requestedURL);
         }
       } catch (e) {
-        sendError(new InvalidArgumentError("Malformed URL: " + e.message), command_id);
+        let err = new InvalidArgumentError("Malformed URL: " + e.message);
+        sendError(err, command_id);
         return;
       }
     }
@@ -1089,6 +1166,8 @@ function get(msg) {
     sendError(e, command_id);
   }
 }
+
+
 
 
 
@@ -1121,6 +1200,8 @@ function goBack(msg) {
 
 
 
+
+
 function goForward(msg) {
   let {command_id, pageTimeout} = msg.json;
 
@@ -1133,6 +1214,9 @@ function goForward(msg) {
     sendError(e, command_id);
   }
 }
+
+
+
 
 
 
@@ -1229,6 +1313,8 @@ function getActiveElement() {
 
 
 
+
+
 function clickElement(msg) {
   let {command_id, id, pageTimeout} = msg.json;
 
@@ -1259,12 +1345,10 @@ function getElementAttribute(id, name) {
   if (element.isBooleanAttribute(el, name)) {
     if (el.hasAttribute(name)) {
       return "true";
-    } else {
-      return null;
     }
-  } else {
-    return el.getAttribute(name);
+    return null;
   }
+  return el.getAttribute(name);
 }
 
 function getElementProperty(id, name) {
@@ -1344,9 +1428,9 @@ function getElementRect(id) {
   let clientRect = el.getBoundingClientRect();
   return {
     x: clientRect.x + curContainer.frame.pageXOffset,
-    y: clientRect.y  + curContainer.frame.pageYOffset,
+    y: clientRect.y + curContainer.frame.pageYOffset,
     width: clientRect.width,
-    height: clientRect.height
+    height: clientRect.height,
   };
 }
 
@@ -1417,6 +1501,7 @@ function clearElement(id) {
 
 
 
+
 function switchToShadowRoot(id) {
   if (!id) {
     
@@ -1443,7 +1528,7 @@ function switchToShadowRoot(id) {
   let hostEl = seenEls.get(id, curContainer);
   foundShadowRoot = hostEl.shadowRoot;
   if (!foundShadowRoot) {
-    throw new NoSuchElementError('Unable to locate shadow root: ' + id);
+    throw new NoSuchElementError("Unable to locate shadow root: " + id);
   }
   curContainer.shadowRoot = foundShadowRoot;
 }
@@ -1452,16 +1537,15 @@ function switchToShadowRoot(id) {
 
 
 
- function switchToParentFrame(msg) {
-   let command_id = msg.json.command_id;
-   curContainer.frame = curContainer.frame.parent;
-   let parentElement = seenEls.add(curContainer.frame);
+function switchToParentFrame(msg) {
+  curContainer.frame = curContainer.frame.parent;
+  let parentElement = seenEls.add(curContainer.frame);
 
-   sendSyncMessage(
-       "Marionette:switchedToFrame", {frameValue: parentElement});
+  sendSyncMessage(
+      "Marionette:switchedToFrame", {frameValue: parentElement});
 
-   sendOk(msg.json.command_id);
- }
+  sendOk(msg.json.command_id);
+}
 
 
 
@@ -1478,9 +1562,11 @@ function switchToFrame(msg) {
     frames = curContainer.frame.frames;
     
     
+    
     parWindow = curContainer.frame.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+        .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
   } catch (e) {
+    
     
     
     
@@ -1488,12 +1574,13 @@ function switchToFrame(msg) {
     msg.json.element = null;
   }
 
-  if ((msg.json.id === null || msg.json.id === undefined) && (msg.json.element == null)) {
+  if ((msg.json.id === null || msg.json.id === undefined) &&
+      (msg.json.element == null)) {
     
-    sendSyncMessage("Marionette:switchedToFrame", { frameValue: null });
+    sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
 
     curContainer.frame = content;
-    if(msg.json.focus == true) {
+    if (msg.json.focus == true) {
       curContainer.frame.focus();
     }
 
@@ -1513,8 +1600,11 @@ function switchToFrame(msg) {
     if (frames.length > 0) {
       for (let i = 0; i < frames.length; i++) {
         
-        if (XPCNativeWrapper(frames[i].frameElement) == XPCNativeWrapper(wantedFrame)) {
-          curContainer.frame = frames[i].frameElement;
+        let frameEl = frames[i].frameElement;
+        let wrappedItem = new XPCNativeWrapper(frameEl);
+        let wrappedWanted = new XPCNativeWrapper(wantedFrame);
+        if (wrappedItem == wrappedWanted) {
+          curContainer.frame = frameEl;
           foundFrame = i;
         }
       }
@@ -1524,9 +1614,13 @@ function switchToFrame(msg) {
       
       
       
-      let iframes = curContainer.frame.document.getElementsByTagName("iframe");
+      const doc = curContainer.frame.document;
+      let iframes = doc.getElementsByTagName("iframe");
       for (var i = 0; i < iframes.length; i++) {
-        if (XPCNativeWrapper(iframes[i]) == XPCNativeWrapper(wantedFrame)) {
+        let frameEl = iframes[i];
+        let wrappedEl = new XPCNativeWrapper(frameEl);
+        let wrappedWanted = new XPCNativeWrapper(wantedFrame);
+        if (wrappedEl == wrappedWanted) {
           curContainer.frame = iframes[i];
           foundFrame = i;
         }
@@ -1535,20 +1629,19 @@ function switchToFrame(msg) {
   }
 
   if (foundFrame === null) {
-    if (typeof(msg.json.id) === 'number') {
+    if (typeof(msg.json.id) === "number") {
       try {
         foundFrame = frames[msg.json.id].frameElement;
         if (foundFrame !== null) {
           curContainer.frame = foundFrame;
           foundFrame = seenEls.add(curContainer.frame);
-        }
-        else {
+        } else {
           
           
-          sendSyncMessage("Marionette:switchedToFrame", { frameValue: null});
+          sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
           curContainer.frame = content;
 
-          if(msg.json.focus == true) {
+          if (msg.json.focus == true) {
             curContainer.frame.focus();
           }
 
@@ -1559,7 +1652,8 @@ function switchToFrame(msg) {
         
         
         
-        let iframes = curContainer.frame.document.getElementsByTagName("iframe");
+        let doc = curContainer.frame.document;
+        let iframes = doc.getElementsByTagName("iframe");
         if (msg.json.id >= 0 && msg.json.id < iframes.length) {
           curContainer.frame = iframes[msg.json.id];
           foundFrame = msg.json.id;
@@ -1569,15 +1663,17 @@ function switchToFrame(msg) {
   }
 
   if (foundFrame === null) {
-    sendError(new NoSuchFrameError("Unable to locate frame: " + (msg.json.id || msg.json.element)), command_id);
-    return true;
+    let failedFrame = msg.json.id || msg.json.element;
+    let err = new NoSuchFrameError(`Unable to locate frame: ${failedFrame}`);
+    sendError(err, command_id);
+    return;
   }
 
   
   
   let frameValue = evaluate.toJSON(
       curContainer.frame.wrappedJSObject, seenEls)[element.Key];
-  sendSyncMessage("Marionette:switchedToFrame", {frameValue: frameValue});
+  sendSyncMessage("Marionette:switchedToFrame", {"frameValue": frameValue});
 
   if (curContainer.frame.contentWindow === null) {
     
@@ -1740,7 +1836,7 @@ function* reftestWait(url, remote) {
     
     reftestWait = document.documentElement.classList.contains("reftest-wait");
     yield new Promise(resolve => win.setTimeout(resolve, 0));
-  };
+  }
 
   let root = document.documentElement;
   if (reftestWait) {

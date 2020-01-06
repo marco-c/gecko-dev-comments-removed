@@ -34,7 +34,7 @@ capture.Format = {
 
 
 
-capture.element = function (node, highlights = []) {
+capture.element = function(node, highlights = []) {
   let win = node.ownerGlobal;
   let rect = node.getBoundingClientRect();
 
@@ -61,7 +61,7 @@ capture.element = function (node, highlights = []) {
 
 
 
-capture.viewport = function (win, highlights = []) {
+capture.viewport = function(win, highlights = []) {
   let rootNode = win.document.documentElement;
 
   return capture.canvas(
@@ -100,9 +100,9 @@ capture.viewport = function (win, highlights = []) {
 
 
 
-capture.canvas = function (win, left, top, width, height,
+capture.canvas = function(win, left, top, width, height,
     {highlights = [], canvas = null, flags = null} = {}) {
-    let scale = win.devicePixelRatio;
+  const scale = win.devicePixelRatio;
 
   if (canvas === null) {
     canvas = win.document.createElementNS(XHTML_NS, "canvas");
@@ -118,7 +118,14 @@ capture.canvas = function (win, left, top, width, height,
     
     
     
-   }
+    
+
+
+    
+    
+
+
+  }
 
   ctx.scale(scale, scale);
   ctx.drawWindow(win, left, top, width, height, BG_COLOUR, flags);
@@ -129,9 +136,9 @@ capture.canvas = function (win, left, top, width, height,
   return canvas;
 };
 
-capture.highlight_ = function (context, highlights, top = 0, left = 0) {
+capture.highlight_ = function(context, highlights, top = 0, left = 0) {
   if (!highlights) {
-    return;
+    throw new TypeError("Missing highlights");
   }
 
   context.lineWidth = "2";
@@ -162,7 +169,7 @@ capture.highlight_ = function (context, highlights, top = 0, left = 0) {
 
 
 
-capture.toBase64 = function (canvas) {
+capture.toBase64 = function(canvas) {
   let u = canvas.toDataURL(PNG_MIME);
   return u.substring(u.indexOf(",") + 1);
 };
@@ -176,7 +183,7 @@ capture.toBase64 = function (canvas) {
 
 
 
-capture.toHash = function (canvas) {
+capture.toHash = function(canvas) {
   let u = capture.toBase64(canvas);
   let buffer = new TextEncoder("utf-8").encode(u);
   return crypto.subtle.digest("SHA-256", buffer).then(hash => hex(hash));
@@ -197,9 +204,9 @@ function hex(buffer) {
   for (let i = 0; i < view.byteLength; i += 4) {
     let value = view.getUint32(i);
     let stringValue = value.toString(16);
-    let padding = '00000000';
+    let padding = "00000000";
     let paddedValue = (padding + stringValue).slice(-padding.length);
     hexCodes.push(paddedValue);
   }
   return hexCodes.join("");
-};
+}

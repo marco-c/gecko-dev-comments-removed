@@ -25,7 +25,7 @@ this.navigate = {};
 
 
 
-navigate.isLoadEventExpected = function (url) {
+navigate.isLoadEventExpected = function(url) {
   
   if (typeof url == "undefined") {
     throw TypeError("Expected destination URL");

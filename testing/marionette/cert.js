@@ -53,7 +53,7 @@ this.cert = {
 
 
 
-cert.installOverride = function (service) {
+cert.installOverride = function(service) {
   if (this.currentOverride) {
     return;
   }
@@ -102,7 +102,7 @@ cert.InsecureSweepingOverride = function() {
   
   let service = function() {};
   service.prototype = {
-    hasMatchingOverride: function (
+    hasMatchingOverride(
         aHostName, aPort, aCert, aOverrideBits, aIsTemporary) {
       aIsTemporary.value = false;
       aOverrideBits.value =
@@ -116,7 +116,7 @@ cert.InsecureSweepingOverride = function() {
   let factory = XPCOMUtils.generateSingletonFactory(service);
 
   return {
-    register: function() {
+    register() {
       
       
       Preferences.set(HSTS_PRELOAD_LIST_PREF, false);
@@ -125,7 +125,7 @@ cert.InsecureSweepingOverride = function() {
       registrar.registerFactory(CID, DESC, CONTRACT_ID, factory);
     },
 
-    unregister: function() {
+    unregister() {
       registrar.unregisterFactory(CID, factory);
 
       Preferences.reset(HSTS_PRELOAD_LIST_PREF);

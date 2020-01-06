@@ -14,6 +14,7 @@
 
 
 
+
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
@@ -43,7 +44,7 @@ this.l10n = {};
 
 
 
-l10n.localizeEntity = function (urls, id) {
+l10n.localizeEntity = function(urls, id) {
   
   let locations = [];
   urls.forEach((url, index) => {
@@ -77,7 +78,9 @@ l10n.localizeEntity = function (urls, id) {
 
 
 
-l10n.localizeProperty = function (urls, id) {
+
+
+l10n.localizeProperty = function(urls, id) {
   let property = null;
 
   for (let url of urls) {
@@ -86,10 +89,11 @@ l10n.localizeProperty = function (urls, id) {
       property = bundle.GetStringFromName(id);
       break;
     } catch (e) {}
-  };
+  }
 
   if (property === null) {
-    throw new NoSuchElementError(`Property with id='${id}' hasn't been found`);
+    throw new NoSuchElementError(
+        `Property with ID '${id}' hasn't been found`);
   }
 
   return property;

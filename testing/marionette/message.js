@@ -21,7 +21,7 @@ this.EXPORTED_SYMBOLS = [
 
 const logger = Log.repository.getLogger("Marionette");
 
-this.MessageOrigin = {
+const MessageOrigin = {
   Client: 0,
   Server: 1,
 };
@@ -42,7 +42,7 @@ this.Message = {};
 
 
 
-Message.fromMsg = function (data) {
+Message.fromMsg = function(data) {
   switch (data[0]) {
     case Command.TYPE:
       return Command.fromMsg(data);
@@ -98,7 +98,7 @@ Message.fromMsg = function (data) {
 
 
 
-this.Command = class {
+class Command {
   constructor(msgID, name, params = {}) {
     this.id = assert.integer(msgID);
     this.name = assert.string(name);
@@ -148,10 +148,9 @@ this.Command = class {
 
     return new Command(msgID, name, params);
   }
-};
+}
 
 Command.TYPE = 0;
-
 
 const validator = {
   exclusionary: {
@@ -161,7 +160,7 @@ const validator = {
     "value": ["error", "sessionId", "capabilities"],
   },
 
-  set: function (obj, prop, val) {
+  set(obj, prop, val) {
     let tests = this.exclusionary[prop];
     if (tests) {
       for (let t of tests) {
@@ -174,7 +173,7 @@ const validator = {
     obj[prop] = val;
     return true;
   },
-};
+}
 
 
 
@@ -188,7 +187,7 @@ const validator = {
 
 
 
-this.ResponseBody = () => new Proxy({}, validator);
+const ResponseBody = () => new Proxy({}, validator);
 
 
 
@@ -209,7 +208,7 @@ this.ResponseBody = () => new Proxy({}, validator);
 
 
 
-this.Response = class {
+class Response {
   constructor(msgID, respHandler = () => {}) {
     this.id = assert.integer(msgID);
     this.respHandler_ = assert.callable(respHandler);
@@ -292,6 +291,6 @@ this.Response = class {
     resp.body = body;
     return resp;
   }
-};
+}
 
 Response.TYPE = 1;

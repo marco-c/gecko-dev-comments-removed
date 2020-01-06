@@ -23,6 +23,8 @@ Cu.import("chrome://marionette/content/interaction.js");
 
 this.EXPORTED_SYMBOLS = ["action"];
 
+const {pprint} = error;
+
 
 
 
@@ -360,7 +362,7 @@ action.PointerOrigin.get = function(obj) {
     origin = this.Viewport;
   } else if (typeof obj == "string") {
     let name = capitalize(obj);
-    assert.in(name, this, error.pprint`Unknown pointer-move origin: ${obj}`);
+    assert.in(name, this, pprint`Unknown pointer-move origin: ${obj}`);
     origin = this[name];
   } else if (!element.isWebElementReference(obj)) {
     throw new InvalidArgumentError("Expected 'origin' to be a string or a " +
@@ -389,11 +391,12 @@ action.PointerType = {
 
 
 
-action.PointerType.get = function (str) {
+action.PointerType.get = function(str) {
   let name = capitalize(str);
-  assert.in(name, this, error.pprint`Unknown pointerType: ${str}`);
+  assert.in(name, this, pprint`Unknown pointerType: ${str}`);
   return this[name];
 };
+
 
 
 
@@ -452,18 +455,18 @@ class InputState {
 
   static fromJson(obj) {
     let type = obj.type;
-    assert.in(type, ACTIONS, error.pprint`Unknown action type: ${type}`);
+    assert.in(type, ACTIONS, pprint`Unknown action type: ${type}`);
     let name = type == "none" ? "Null" : capitalize(type);
     if (name == "Pointer") {
-      if (!obj.pointerType && (!obj.parameters || !obj.parameters.pointerType)) {
+      if (!obj.pointerType &&
+          (!obj.parameters || !obj.parameters.pointerType)) {
         throw new InvalidArgumentError(
-            error.pprint`Expected obj to have pointerType, got: ${obj}`);
+            pprint`Expected obj to have pointerType, got: ${obj}`);
       }
       let pointerType = obj.pointerType || obj.parameters.pointerType;
       return new action.InputState[name](pointerType);
-    } else {
-      return new action.InputState[name]();
     }
+    return new action.InputState[name]();
   }
 }
 
@@ -566,7 +569,8 @@ action.InputState.Pointer = class Pointer extends InputState {
   constructor(subtype) {
     super();
     this.pressed = new Set();
-    assert.defined(subtype, error.pprint`Expected subtype to be defined, got: ${subtype}`);
+    assert.defined(subtype,
+        pprint`Expected subtype to be defined, got: ${subtype}`);
     this.subtype = action.PointerType.get(subtype);
     this.x = 0;
     this.y = 0;
@@ -628,18 +632,20 @@ action.InputState.Pointer = class Pointer extends InputState {
 
 
 
+
+
 action.Action = class {
   constructor(id, type, subtype) {
     if ([id, type, subtype].includes(undefined)) {
       throw new InvalidArgumentError("Missing id, type or subtype");
     }
     for (let attr of [id, type, subtype]) {
-      assert.string(attr, error.pprint`Expected string, got: ${attr}`);
+      assert.string(attr, pprint`Expected string, got: ${attr}`);
     }
     this.id = id;
     this.type = type;
     this.subtype = subtype;
-  };
+  }
 
   toString() {
     return `[action ${this.type}]`;
@@ -668,7 +674,8 @@ action.Action = class {
     }
     let subtype = actionItem.type;
     if (!subtypes.has(subtype)) {
-      throw new InvalidArgumentError(`Unknown subtype for ${type} action: ${subtype}`);
+      throw new InvalidArgumentError(
+          `Unknown subtype for ${type} action: ${subtype}`);
     }
 
     let item = new action.Action(id, type, subtype);
@@ -685,7 +692,7 @@ action.Action = class {
         
         
         assert.string(key,
-            error.pprint("Expected 'value' to be a string that represents single code point " +
+            pprint("Expected 'value' to be a string that represents single code point " +
                 `or grapheme cluster, got: ${key}`));
         item.value = key;
         break;
@@ -693,36 +700,38 @@ action.Action = class {
       case action.PointerDown:
       case action.PointerUp:
         assert.positiveInteger(actionItem.button,
-            error.pprint`Expected 'button' (${actionItem.button}) to be >= 0`);
+            pprint`Expected 'button' (${actionItem.button}) to be >= 0`);
         item.button = actionItem.button;
         break;
 
       case action.PointerMove:
         item.duration = actionItem.duration;
-        if (typeof item.duration != "undefined"){
+        if (typeof item.duration != "undefined") {
           assert.positiveInteger(item.duration,
-              error.pprint`Expected 'duration' (${item.duration}) to be >= 0`);
+              pprint`Expected 'duration' (${item.duration}) to be >= 0`);
         }
         item.origin = action.PointerOrigin.get(actionItem.origin);
         item.x = actionItem.x;
         if (typeof item.x != "undefined") {
-          assert.integer(item.x, error.pprint`Expected 'x' (${item.x}) to be an Integer`);
+          assert.integer(item.x,
+              pprint`Expected 'x' (${item.x}) to be an Integer`);
         }
         item.y = actionItem.y;
         if (typeof item.y != "undefined") {
-          assert.integer(item.y, error.pprint`Expected 'y' (${item.y}) to be an Integer`);
+          assert.integer(item.y,
+              pprint`Expected 'y' (${item.y}) to be an Integer`);
         }
         break;
 
       case action.PointerCancel:
         throw new UnsupportedOperationError();
-        break;
 
       case action.Pause:
         item.duration = actionItem.duration;
         if (typeof item.duration != "undefined") {
+          
           assert.positiveInteger(item.duration,
-              error.pprint`Expected 'duration' (${item.duration}) to be >= 0`);
+              pprint`Expected 'duration' (${item.duration}) to be >= 0`);
         }
         break;
     }
@@ -730,6 +739,7 @@ action.Action = class {
     return item;
   }
 };
+
 
 
 
@@ -752,8 +762,9 @@ action.Chain = class extends Array {
 
   static fromJson(actions) {
     assert.array(actions,
-        error.pprint`Expected 'actions' to be an Array, got: ${actions}`);
+        pprint`Expected 'actions' to be an Array, got: ${actions}`);
     let actionsByTick = new action.Chain();
+    
     
     for (let actionSequence of actions) {
       let inputSourceActions = action.Sequence.fromJson(actionSequence);
@@ -768,6 +779,7 @@ action.Chain = class extends Array {
     return actionsByTick;
   }
 };
+
 
 
 
@@ -794,10 +806,10 @@ action.Sequence = class extends Array {
     let inputSourceState = InputState.fromJson(actionSequence);
     let id = actionSequence.id;
     assert.defined(id, "Expected 'id' to be defined");
-    assert.string(id, error.pprint`Expected 'id' to be a string, got: ${id}`);
+    assert.string(id, pprint`Expected 'id' to be a string, got: ${id}`);
     let actionItems = actionSequence.actions;
     assert.array(actionItems,
-        error.pprint("Expected 'actionSequence.actions' to be an Array, " +
+        pprint("Expected 'actionSequence.actions' to be an Array, " +
             `got: ${actionSequence.actions}`));
     if (!action.inputStateMap.has(id)) {
       action.inputStateMap.set(id, inputSourceState);
@@ -813,6 +825,7 @@ action.Sequence = class extends Array {
     return actions;
   }
 };
+
 
 
 
@@ -839,9 +852,8 @@ action.PointerParameters = class {
   static fromJson(parametersData) {
     if (typeof parametersData == "undefined") {
       return new action.PointerParameters();
-    } else {
-      return new action.PointerParameters(parametersData.pointerType);
     }
+    return new action.PointerParameters(parametersData.pointerType);
   }
 };
 
@@ -860,14 +872,16 @@ action.PointerParameters = class {
 
 
 
-action.processPointerAction = function processPointerAction(id, pointerParams, act) {
-  if (action.inputStateMap.has(id) && action.inputStateMap.get(id).type !== act.type) {
+action.processPointerAction = function(id, pointerParams, act) {
+  if (action.inputStateMap.has(id) &&
+      action.inputStateMap.get(id).type !== act.type) {
     throw new InvalidArgumentError(
         `Expected 'id' ${id} to be mapped to InputState whose type is ` +
         `${action.inputStateMap.get(id).type}, got: ${act.type}`);
   }
   let pointerType = pointerParams.pointerType;
-  if (action.inputStateMap.has(id) && action.inputStateMap.get(id).subtype !== pointerType) {
+  if (action.inputStateMap.has(id) &&
+      action.inputStateMap.get(id).subtype !== pointerType) {
     throw new InvalidArgumentError(
         `Expected 'id' ${id} to be mapped to InputState whose subtype is ` +
         `${action.inputStateMap.get(id).subtype}, got: ${pointerType}`);
@@ -945,11 +959,15 @@ action.Mouse = class {
 
 
 
+
 action.dispatch = function(chain, seenEls, container) {
   let chainEvents = Task.spawn(function*() {
     for (let tickActions of chain) {
       yield action.dispatchTickActions(
-        tickActions, action.computeTickDuration(tickActions), seenEls, container);
+          tickActions,
+          action.computeTickDuration(tickActions),
+          seenEls,
+          container);
     }
   });
   return chainEvents;
@@ -977,8 +995,11 @@ action.dispatch = function(chain, seenEls, container) {
 
 
 
-action.dispatchTickActions = function(tickActions, tickDuration, seenEls, container) {
-  let pendingEvents = tickActions.map(toEvents(tickDuration, seenEls, container));
+
+action.dispatchTickActions = function(
+    tickActions, tickDuration, seenEls, container) {
+  let pendingEvents = tickActions.map(
+      toEvents(tickDuration, seenEls, container));
   return Promise.all(pendingEvents).then(
       () => interaction.flushEventLoop(container.frame));
 };
@@ -1018,7 +1039,8 @@ action.computeTickDuration = function(tickActions) {
 
 
 
-action.computePointerDestination = function(a, inputState, center = undefined) {
+action.computePointerDestination = function(
+    a, inputState, center = undefined) {
   let {x, y} = a;
   switch (a.origin) {
     case action.PointerOrigin.Viewport:
@@ -1053,7 +1075,7 @@ action.computePointerDestination = function(a, inputState, center = undefined) {
 
 
 function toEvents(tickDuration, seenEls, container) {
-  return function (a) {
+  return a => {
     let inputState = action.inputStateMap.get(a.id);
     switch (a.subtype) {
       case action.KeyUp:
@@ -1069,7 +1091,8 @@ function toEvents(tickDuration, seenEls, container) {
         return dispatchPointerUp(a, inputState, container.frame);
 
       case action.PointerMove:
-        return dispatchPointerMove(a, inputState, tickDuration, seenEls, container);
+        return dispatchPointerMove(
+            a, inputState, tickDuration, seenEls, container);
 
       case action.PointerCancel:
         throw new UnsupportedOperationError();
@@ -1077,8 +1100,10 @@ function toEvents(tickDuration, seenEls, container) {
       case action.Pause:
         return dispatchPause(a, tickDuration);
     }
+    return undefined;
   };
 }
+
 
 
 
@@ -1161,22 +1186,31 @@ function dispatchPointerDown(a, inputState, win) {
       resolve();
       return;
     }
+
     inputState.press(a.button);
     
-    action.inputsToCancel.push(Object.assign({}, a, {subtype: action.PointerUp}));
+    let copy = Object.assign({}, a, {subtype: action.PointerUp});
+    action.inputsToCancel.push(copy);
+
     switch (inputState.subtype) {
       case action.PointerType.Mouse:
         let mouseEvent = new action.Mouse("mousedown", a.button);
         mouseEvent.update(inputState);
-        event.synthesizeMouseAtPoint(inputState.x, inputState.y, mouseEvent, win);
+        event.synthesizeMouseAtPoint(
+            inputState.x,
+            inputState.y,
+            mouseEvent,
+            win);
         break;
+
       case action.PointerType.Pen:
       case action.PointerType.Touch:
         throw new UnsupportedOperationError("Only 'mouse' pointer type is supported");
-        break;
+
       default:
         throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
     }
+
     resolve();
   });
 }
@@ -1240,7 +1274,9 @@ function dispatchPointerUp(a, inputState, win) {
 
 
 
-function dispatchPointerMove(a, inputState, tickDuration, seenEls, container) {
+
+function dispatchPointerMove(
+    a, inputState, tickDuration, seenEls, container) {
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   
   const fps60 = 17;
@@ -1253,7 +1289,8 @@ function dispatchPointerMove(a, inputState, tickDuration, seenEls, container) {
     if (!inViewPort(targetX, targetY, container.frame)) {
       throw new MoveTargetOutOfBoundsError(
           `(${targetX}, ${targetY}) is out of bounds of viewport ` +
-          `width (${container.frame.innerWidth}) and height (${container.frame.innerHeight})`);
+          `width (${container.frame.innerWidth}) ` +
+          `and height (${container.frame.innerHeight})`);
     }
 
     const duration = typeof a.duration == "undefined" ? tickDuration : a.duration;
@@ -1298,6 +1335,7 @@ function performOnePointerMove(inputState, targetX, targetY, win) {
   if (targetX == inputState.x && targetY == inputState.y) {
     return;
   }
+
   switch (inputState.subtype) {
     case action.PointerType.Mouse:
       let mouseEvent = new action.Mouse("mousemove");
@@ -1305,12 +1343,15 @@ function performOnePointerMove(inputState, targetX, targetY, win) {
       
       event.synthesizeMouseAtPoint(targetX, targetY, mouseEvent, win);
       break;
+
     case action.PointerType.Pen:
     case action.PointerType.Touch:
       throw new UnsupportedOperationError("Only 'mouse' pointer type is supported");
+
     default:
-        throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
+      throw new TypeError(`Unknown pointer type: ${inputState.subtype}`);
   }
+
   inputState.x = targetX;
   inputState.y = targetY;
 }
@@ -1351,8 +1392,10 @@ function inViewPort(x, y, win) {
 
 function getElementCenter(elementReference, seenEls, container) {
   if (element.isWebElementReference(elementReference)) {
-    let uuid = elementReference[element.Key] || elementReference[element.LegacyKey];
+    let uuid = elementReference[element.Key] ||
+        elementReference[element.LegacyKey];
     let el = seenEls.get(uuid, container);
     return element.coordinates(el);
   }
+  return {};
 }

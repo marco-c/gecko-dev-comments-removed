@@ -128,7 +128,11 @@ add_test(function test_toJSON() {
   equal(e1s.message, e1.message);
   equal(e1s.stacktrace, e1.stack);
 
-  let e2 = new JavaScriptError("first", "second", "third", "fourth");
+  let e2 = new JavaScriptError("first", {
+    fnName: "second",
+    file: "third",
+    line: "fourth",
+  });
   let e2s = e2.toJSON();
   equal(e2.status, e2s.error);
   equal(e2.message, e2s.message);
@@ -313,7 +317,7 @@ add_test(function test_JavaScriptError() {
   
   
   equal("funcname @file, line line",
-      new JavaScriptError("message", "funcname", "file", "line").stack);
+      new JavaScriptError("message", {fnName: "funcname", file: "file", line: "line"}).stack);
 
   
 

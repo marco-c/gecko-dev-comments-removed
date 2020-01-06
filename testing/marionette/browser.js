@@ -29,18 +29,17 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-browser.getBrowserForTab = function (tab) {
+browser.getBrowserForTab = function(tab) {
+  
   if ("browser" in tab) {
-    
     return tab.browser;
 
+  
   } else if ("linkedBrowser" in tab) {
-    
     return tab.linkedBrowser;
-
-  } else {
-    return null;
   }
+
+  return null;
 };
 
 
@@ -52,18 +51,17 @@ browser.getBrowserForTab = function (tab) {
 
 
 
-browser.getTabBrowser = function (win) {
+browser.getTabBrowser = function(win) {
+  
   if ("BrowserApp" in win) {
-    
     return win.BrowserApp;
 
+  
   } else if ("gBrowser" in win) {
-    
     return win.gBrowser;
-
-  } else {
-    return null;
   }
+
+  return null;
 };
 
 
@@ -130,7 +128,8 @@ browser.Context = class {
   get contentBrowser() {
     if (this.tab) {
       return browser.getBrowserForTab(this.tab);
-    } else if (this.tabBrowser && this.driver.isReftestBrowser(this.tabBrowser)) {
+    } else if (this.tabBrowser &&
+        this.driver.isReftestBrowser(this.tabBrowser)) {
       return this.tabBrowser;
     }
 
@@ -144,7 +143,7 @@ browser.Context = class {
 
   get curFrameId() {
     let rv = null;
-     if (this.tab || this.driver.isReftestBrowser(this.contentBrowser) ) {
+    if (this.tab || this.driver.isReftestBrowser(this.contentBrowser)) {
       rv = this.getIdForBrowser(this.contentBrowser);
     }
     return rv;
@@ -164,10 +163,9 @@ browser.Context = class {
     
     if (this.contentBrowser) {
       return this.contentBrowser.currentURI;
-    } else {
-      throw new NoSuchWindowError(
-          "Current window does not have a content browser");
     }
+    throw new NoSuchWindowError(
+        "Current window does not have a content browser");
   }
 
   
@@ -234,7 +232,10 @@ browser.Context = class {
   closeTab() {
     
     
-    if (!this.tabBrowser || !this.tabBrowser.tabs || this.tabBrowser.tabs.length === 1 || !this.tab) {
+    if (!this.tabBrowser ||
+        !this.tabBrowser.tabs ||
+        this.tabBrowser.tabs.length === 1 ||
+        !this.tab) {
       return this.closeWindow();
     }
 

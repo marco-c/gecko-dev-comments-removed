@@ -13,7 +13,7 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("chrome://marionette/content/assert.js");
 Cu.import("chrome://marionette/content/capture.js");
 const {InvalidArgumentError} =
-    Cu.import("chrome//marionette/content/error.js", {});
+    Cu.import("chrome://marionette/content/error.js", {});
 
 this.EXPORTED_SYMBOLS = ["reftest"];
 
@@ -25,7 +25,7 @@ const logger = Log.repository.getLogger("Marionette");
 const SCREENSHOT_MODE = {
   unexpected: 0,
   fail: 1,
-  always: 2
+  always: 2,
 };
 
 const STATUS = {
@@ -46,7 +46,7 @@ reftest.Runner = class {
     this.driver = driver;
     this.canvasCache = new Map([[null, []]]);
     this.windowUtils = null;
-    this.lastUrl = null;
+    this.lastURL = null;
     this.remote = Preferences.get(PREF_E10S);
   }
 
@@ -73,7 +73,7 @@ reftest.Runner = class {
         .reduce((map, key) => map.set(key, urlCount[key]), new Map());
 
     yield this.ensureWindow();
-  };
+  }
 
   *ensureWindow() {
     if (this.reftestWin && !this.reftestWin.closed) {
@@ -189,7 +189,7 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
 
     let result = yield Promise.race([testRunner, timeoutPromise]);
     this.parentWindow.clearTimeout(timeoutHandle);
-    if(result.status === STATUS.TIMEOUT) {
+    if (result.status === STATUS.TIMEOUT) {
       this.abort();
     }
 
@@ -197,8 +197,12 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
   }
 
   *runTest(testUrl, references, expected, timeout) {
-
     let win = yield this.ensureWindow();
+
+    function toBase64(screenshot) {
+      let dataURL = screenshot.canvas.toDataURL();
+      return dataURL.split(",")[1];
+    }
 
     win.innerWidth = 600;
     win.innerHeight = 600;
@@ -208,7 +212,7 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
     let screenshotData = [];
 
     let stack = [];
-    for (let i = references.length-1; i >= 0; i--) {
+    for (let i = references.length - 1; i >= 0; i--) {
       let item = references[i];
       stack.push([testUrl, item[0], item[1], item[2]]);
     }
@@ -219,13 +223,15 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
       let [lhsUrl, rhsUrl, references, relation] = stack.pop();
       message += `Testing ${lhsUrl} ${relation} ${rhsUrl}\n`;
 
-      let comparison = yield this.compareUrls(win, lhsUrl, rhsUrl, relation, timeout);
+      let comparison = yield this.compareUrls(
+          win, lhsUrl, rhsUrl, relation, timeout);
 
       function recordScreenshot() {
-        let toBase64 =  screenshot => screenshot.canvas.toDataURL().split(",")[1];
-        screenshotData.push([{url: lhsUrl, screenshot: toBase64(comparison.lhs)},
-                             relation,
-                             {url:rhsUrl, screenshot: toBase64(comparison.rhs)}]);
+        let encodedLHS = toBase64(comparison.lhs);
+        let encodedRHS = toBase64(comparison.rhs);
+        screenshotData.push([{url: lhsUrl, screenshot: encodedLHS},
+          relation,
+          {url: rhsUrl, screenshot: encodedRHS}]);
       }
 
       if (this.screenshotMode === SCREENSHOT_MODE.always) {
@@ -241,7 +247,8 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
         } else {
           
           status = STATUS.PASS;
-          if (this.screenshotMode <= SCREENSHOT_MODE.fail && expected != status) {
+          if (this.screenshotMode <= SCREENSHOT_MODE.fail &&
+              expected != status) {
             recordScreenshot();
           }
           break;
@@ -249,8 +256,9 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
       } else if (!stack.length) {
         
         
-        if (this.screenshotMode === SCREENSHOT_MODE.fail ||
-            (this.screenshotMode === SCREENSHOT_MODE.unexpected && expected != status)) {
+        let isFail = this.screenshotMode === SCREENSHOT_MODE.fail;
+        let isUnexpected = this.screenshotMode === SCREENSHOT_MODE.unexpected;
+        if (isFail || (isUnexpected && expected != status)) {
           recordScreenshot();
         }
       }
@@ -269,11 +277,12 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
     if (screenshotData.length) {
       
       
-      result.extra.reftest_screenshots = screenshotData[screenshotData.length - 1];
+      let lastScreenshot = screenshotData[screenshotData.length - 1];
+      result.extra.reftest_screenshots = lastScreenshot;
     }
 
     return result;
-  };
+  }
 
   *compareUrls(win, lhsUrl, rhsUrl, relation, timeout) {
     logger.info(`Testing ${lhsUrl} ${relation} ${rhsUrl}`);
@@ -285,21 +294,25 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
 
     let maxDifferences = {};
 
-    let differences = this.windowUtils.compareCanvases(lhs.canvas, rhs.canvas, maxDifferences);
+    let differences = this.windowUtils.compareCanvases(
+        lhs.canvas, rhs.canvas, maxDifferences);
 
     let passed;
     switch (relation) {
-    case "==":
-      passed = differences === 0;
-      if (!passed) {
-        logger.info(`Found ${differences} pixels different, maximum difference per channel ${maxDifferences.value}`);
-      }
-      break;
-    case "!=":
-      passed = differences !== 0;
-      break;
-    default:
-      throw new InvalidArgumentError("Reftest operator should be '==' or '!='");
+      case "==":
+        passed = differences === 0;
+        if (!passed) {
+          logger.info(`Found ${differences} pixels different, ` +
+              `maximum difference per channel ${maxDifferences.value}`);
+        }
+        break;
+
+      case "!=":
+        passed = differences !== 0;
+        break;
+
+      default:
+        throw new InvalidArgumentError("Reftest operator should be '==' or '!='");
     }
 
     return {lhs, rhs, passed};
@@ -309,7 +322,8 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
     let canvas = null;
     let remainingCount = this.urlCount.get(url) || 1;
     let cache = remainingCount > 1;
-    logger.debug(`screenshot ${url} remainingCount: ${remainingCount} cache: ${cache}`);
+    logger.debug(`screenshot ${url} remainingCount: ` +
+        `${remainingCount} cache: ${cache}`);
     let reuseCanvas = false;
     if (this.canvasCache.has(url)) {
       logger.debug(`screenshot ${url} taken from cache`);
@@ -332,26 +346,34 @@ min-width: 600px; min-height: 600px; max-width: 600px; max-height: 600px`;
           ctxInterface.DRAWWINDOW_DRAW_VIEW;
 
       logger.debug(`Starting load of ${url}`);
-      if (this.lastUrl === url) {
+      let navigateOpts = {
+        commandId: this.driver.listener.activeMessageId,
+        pageTimeout: timeout,
+      };
+      if (this.lastURL === url) {
         logger.debug(`Refreshing page`);
-        yield this.driver.listener.refresh({commandId: this.driver.listener.activeMessageId,
-                                            pageTimeout: timeout});
+        yield this.driver.listener.refresh(navigateOpts);
       } else {
-        yield this.driver.listener.get({commandId: this.driver.listener.activeMessageId,
-                                        url: url,
-                                        pageTimeout: timeout,
-                                        loadEventExpected: false});
-        this.lastUrl = url;
+        navigateOpts.url = url;
+        navigateOpts.loadEventExpected = false;
+        yield this.driver.listener.get(navigateOpts);
+        this.lastURL = url;
       }
 
       this.driver.curBrowser.contentBrowser.focus();
       yield this.driver.listener.reftestWait(url, this.remote);
 
-      canvas = capture.canvas(win, 0, 0, win.innerWidth, win.innerHeight, {canvas, flags});
+      canvas = capture.canvas(
+          win,
+          0,  
+          0,  
+          win.innerWidth,
+          win.innerHeight,
+          {canvas, flags});
     }
     if (cache) {
       this.canvasCache.set(url, canvas);
-    };
+    }
     this.urlCount.set(url, remainingCount - 1);
     return {canvas, reuseCanvas};
   }

@@ -4,7 +4,8 @@
 
 "use strict";
 
-const {Constructor: CC, classes: Cc, interfaces: Ci, utils: Cu} = Components;
+const {Constructor: CC, classes: Cc, interfaces: Ci, utils: Cu, results: Cr} =
+    Components;
 
 Cu.import("resource://gre/modules/EventEmitter.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -51,6 +52,8 @@ const BUFFER_SIZE = 0x8000;
 
 
 
+
+
 function copyStream(input, output, length) {
   let copier = new StreamCopier(input, output, length);
   return copier.copy();
@@ -60,6 +63,7 @@ function StreamCopier(input, output, length) {
   EventEmitter.decorate(this);
   this._id = StreamCopier._nextId++;
   this.input = input;
+  
   
   this.baseAsyncOutput = output;
   if (IOUtil.outputStreamIsBuffered(output)) {
@@ -75,13 +79,14 @@ function StreamCopier(input, output, length) {
     promise: new Promise((resolve, reject) => {
       this._deferred.resolve = resolve;
       this._deferred.reject = reject;
-    })
+    }),
   };
 
   this._copy = this._copy.bind(this);
   this._flush = this._flush.bind(this);
   this._destroy = this._destroy.bind(this);
 
+  
   
   
   
@@ -97,7 +102,7 @@ StreamCopier._nextId = 0;
 
 StreamCopier.prototype = {
 
-  copy: function () {
+  copy() {
     
     
     Services.tm.currentThread.dispatch(() => {
@@ -110,7 +115,7 @@ StreamCopier.prototype = {
     return this;
   },
 
-  _copy: function () {
+  _copy() {
     let bytesAvailable = this.input.available();
     let amountToCopy = Math.min(bytesAvailable, this._amountLeft);
     this._debug("Trying to copy: " + amountToCopy);
@@ -143,14 +148,14 @@ StreamCopier.prototype = {
     this.input.asyncWait(this, 0, 0, Services.tm.currentThread);
   },
 
-  _emitProgress: function () {
+  _emitProgress() {
     this.emit("progress", {
       bytesSent: this._length - this._amountLeft,
-      totalBytes: this._length
+      totalBytes: this._length,
     });
   },
 
-  _flush: function () {
+  _flush() {
     try {
       this.output.flush();
     } catch (e) {
@@ -167,7 +172,7 @@ StreamCopier.prototype = {
     this._deferred.resolve();
   },
 
-  _destroy: function () {
+  _destroy() {
     this._destroy = null;
     this._copy = null;
     this._flush = null;
@@ -176,19 +181,22 @@ StreamCopier.prototype = {
   },
 
   
-  onInputStreamReady: function () {
+  onInputStreamReady() {
     this._streamReadyCallback();
   },
 
   
-  onOutputStreamReady: function () {
+  onOutputStreamReady() {
     this._streamReadyCallback();
   },
 
-  _debug: function (msg) {
-  }
+  _debug(msg) {
+  },
 
 };
+
+
+
 
 
 
@@ -235,8 +243,7 @@ function delimitedRead(stream, delimiter, count) {
   return data;
 }
 
-const StreamUtils = {
+this.StreamUtils = {
   copyStream,
-  delimitedRead
+  delimitedRead,
 };
-

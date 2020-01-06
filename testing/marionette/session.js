@@ -32,7 +32,7 @@ this.session = {};
 
 
 session.Timeouts = class {
-  constructor () {
+  constructor() {
     
     this.implicit = 0;
     
@@ -41,9 +41,9 @@ session.Timeouts = class {
     this.script = 30000;
   }
 
-  toString () { return "[object session.Timeouts]"; }
+  toString() { return "[object session.Timeouts]"; }
 
-  toJSON () {
+  toJSON() {
     return {
       implicit: this.implicit,
       pageLoad: this.pageLoad,
@@ -51,7 +51,7 @@ session.Timeouts = class {
     };
   }
 
-  static fromJSON (json) {
+  static fromJSON(json) {
     assert.object(json);
     let t = new session.Timeouts();
 
@@ -136,7 +136,8 @@ session.Proxy = class {
 
       case "pac":
         Preferences.set("network.proxy.type", 2);
-        Preferences.set("network.proxy.autoconfig_url", this.proxyAutoconfigUrl);
+        Preferences.set(
+            "network.proxy.autoconfig_url", this.proxyAutoconfigUrl);
         return true;
 
       case "autodetect":
@@ -156,13 +157,13 @@ session.Proxy = class {
     }
   }
 
-  toString () { return "[object session.Proxy]"; }
+  toString() { return "[object session.Proxy]"; }
 
-  toJSON () {
+  toJSON() {
     return marshal({
       proxyType: this.proxyType,
       httpProxy: this.httpProxy,
-      httpProxyPort: this.httpProxyPort ,
+      httpProxyPort: this.httpProxyPort,
       sslProxy: this.sslProxy,
       sslProxyPort: this.sslProxyPort,
       ftpProxy: this.ftpProxy,
@@ -174,7 +175,7 @@ session.Proxy = class {
     });
   }
 
-  static fromJSON (json) {
+  static fromJSON(json) {
     let p = new session.Proxy();
     if (typeof json == "undefined" || json === null) {
       return p;
@@ -218,7 +219,7 @@ session.Proxy = class {
 
 
 session.Capabilities = class extends Map {
-  constructor () {
+  constructor() {
     super([
       
       ["browserName", appinfo.name],
@@ -241,7 +242,7 @@ session.Capabilities = class extends Map {
     ]);
   }
 
-  set (key, value) {
+  set(key, value) {
     if (key === "timeouts" && !(value instanceof session.Timeouts)) {
       throw new TypeError();
     } else if (key === "proxy" && !(value instanceof session.Proxy)) {
@@ -272,7 +273,7 @@ session.Capabilities = class extends Map {
 
 
 
-  static fromJSON (json, {merge = false} = {}) {
+  static fromJSON(json, {merge = false} = {}) {
     if (typeof json == "undefined" || json === null) {
       json = {};
     }
@@ -285,12 +286,13 @@ session.Capabilities = class extends Map {
   }
 
   
-  static merge_ (json) {
+  static merge_(json) {
     for (let entry of [json.desiredCapabilities, json.requiredCapabilities]) {
       if (typeof entry == "undefined" || entry === null) {
         continue;
       }
-      assert.object(entry, error.pprint`Expected ${entry} to be a capabilities object`);
+      assert.object(entry,
+          error.pprint`Expected ${entry} to be a capabilities object`);
     }
 
     let desired = json.desiredCapabilities || {};
@@ -302,7 +304,7 @@ session.Capabilities = class extends Map {
   }
 
   
-  static match_ (caps = {}) {
+  static match_(caps = {}) {
     let matched = new session.Capabilities();
 
     const defined = v => typeof v != "undefined" && v !== null;
@@ -311,11 +313,11 @@ session.Capabilities = class extends Map {
     
     
     
-    function stringMatch (actual, expected) {
+    function stringMatch(actual, expected) {
       return !defined(actual) || (wildcard(actual) || actual === expected);
     }
 
-    for (let [k,v] of Object.entries(caps)) {
+    for (let [k, v] of Object.entries(caps)) {
       switch (k) {
         case "browserName":
           let bname = matched.get("browserName");
@@ -368,7 +370,8 @@ session.Capabilities = class extends Map {
             if (Object.values(session.PageLoadStrategy).includes(v)) {
               matched.set("pageLoadStrategy", v);
             } else {
-              throw new InvalidArgumentError("Unknown page load strategy: " + v);
+              throw new InvalidArgumentError(
+                  "Unknown page load strategy: " + v);
             }
           }
 
@@ -409,8 +412,8 @@ function marshal(obj) {
 
   function* iter(mapOrObject) {
     if (mapOrObject instanceof Map) {
-      for (const [k,v] of mapOrObject) {
-        yield [k,v];
+      for (const [k, v] of mapOrObject) {
+        yield [k, v];
       }
     } else {
       for (const k of Object.keys(mapOrObject)) {
@@ -419,7 +422,7 @@ function marshal(obj) {
     }
   }
 
-  for (let [k,v] of iter(obj)) {
+  for (let [k, v] of iter(obj)) {
     
     if (typeof v == "undefined" || v === null) {
       continue;
@@ -429,10 +432,9 @@ function marshal(obj) {
     
     if (typeof v.toJSON == "function") {
       v = marshal(v.toJSON());
-    }
 
     
-    else if (isObject(v)) {
+    } else if (isObject(v)) {
       v = marshal(v);
     }
 
