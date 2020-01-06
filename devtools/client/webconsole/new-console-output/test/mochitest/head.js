@@ -402,6 +402,23 @@ async function openConsole(tab) {
 
 
 
+async function closeConsole(tab = gBrowser.selectedTab) {
+  let target = TargetFactory.forTab(tab);
+  let toolbox = gDevTools.getToolbox(target);
+  if (toolbox) {
+    await toolbox.destroy();
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 function simulateLinkClick(element) {
   return new Promise((resolve) => {

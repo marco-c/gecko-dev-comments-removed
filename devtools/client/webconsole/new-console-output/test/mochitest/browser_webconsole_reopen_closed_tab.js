@@ -7,66 +7,47 @@
 
 
 
+
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-bug-597756-reopen-closed-tab.html";
+                 "new-console-output/test/mochitest/test-reopen-closed-tab.html";
 
-var HUD;
-
-add_task(function* () {
+add_task(async function () {
   
   
-  if (!Services.appinfo.browserTabsRemoteAutostart) {
-    expectUncaughtException();
-  }
+  pushPref("devtools.webconsole.persistlog", false);
 
-  let { browser } = yield loadTab(TEST_URI);
-  HUD = yield openConsole();
+  info("Open console and refresh tab.");
 
-  if (!Services.appinfo.browserTabsRemoteAutostart) {
-    expectUncaughtException();
-  }
+  expectUncaughtExceptionNoE10s();
+  let hud = await openNewTabAndConsole(TEST_URI);
+  hud.jsterm.clearOutput();
 
-  yield reload(browser);
-
-  yield testMessages();
-
-  yield closeConsole();
+  expectUncaughtExceptionNoE10s();
+  await refreshTab();
+  await waitForError(hud);
 
   
+  await closeConsole();
+
+  expectUncaughtExceptionNoE10s();
   gBrowser.removeCurrentTab();
+  hud = await openNewTabAndConsole(TEST_URI);
 
-  if (!Services.appinfo.browserTabsRemoteAutostart) {
-    expectUncaughtException();
-  }
-
-  let tab = yield loadTab(TEST_URI);
-  HUD = yield openConsole();
-
-  if (!Services.appinfo.browserTabsRemoteAutostart) {
-    expectUncaughtException();
-  }
-
-  yield reload(tab.browser);
-
-  yield testMessages();
-
-  HUD = null;
+  expectUncaughtExceptionNoE10s();
+  await refreshTab();
+  await waitForError(hud);
 });
 
-function reload(browser) {
-  let loaded = loadBrowser(browser);
-  browser.reload();
-  return loaded;
+async function waitForError(hud) {
+  info("Wait for error message");
+  await waitFor(() => findMessage(hud, "fooBug597756_error", ".message.error"));
+  ok(true, "error message displayed");
 }
 
-function testMessages() {
-  return waitForMessages({
-    webconsole: HUD,
-    messages: [{
-      name: "error message displayed",
-      text: "fooBug597756_error",
-      category: CATEGORY_JS,
-      severity: SEVERITY_ERROR,
-    }],
-  });
+function expectUncaughtExceptionNoE10s() {
+  
+  
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 }
