@@ -247,6 +247,9 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "nahimicmsiosd.dll", ALL_VERSIONS },
 
+  
+  { "klsihk64.dll", ALL_VERSIONS, DllBlockInfo::BLOCK_WIN8_ONLY },
+
   { nullptr, 0 }
 };
 
