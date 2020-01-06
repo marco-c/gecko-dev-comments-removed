@@ -15,6 +15,7 @@ loader.lazyRequireGetter(this, "SourceActor", "devtools/server/actors/source", t
 loader.lazyRequireGetter(this, "isEvalSource", "devtools/server/actors/source", true);
 loader.lazyRequireGetter(this, "SourceMapConsumer", "source-map", true);
 loader.lazyRequireGetter(this, "SourceMapGenerator", "source-map", true);
+loader.lazyRequireGetter(this, "WasmRemap", "devtools/shared/wasm-source-map", true);
 
 
 
@@ -408,6 +409,11 @@ TabSources.prototype = {
       sourceMapURL = joinURI(source.url, sourceMapURL);
     }
     let result = this._fetchSourceMap(sourceMapURL, source.url);
+
+    let isWasm = source.introductionType == "wasm";
+    if (isWasm) {
+      result = result.then((map) => new WasmRemap(map));
+    }
 
     
     
