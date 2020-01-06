@@ -116,7 +116,7 @@ class RegExpShared : public gc::TenuredCell
     };
 
     
-    HeapPtr<JSAtom*>   source;
+    GCPtr<JSAtom*>     source;
 
     RegExpFlag         flags;
     bool               canStringMatch;
