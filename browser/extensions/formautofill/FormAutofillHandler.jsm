@@ -559,6 +559,8 @@ FormAutofillHandler.prototype = {
       });
     });
 
+    this.normalizeAddress(data.address);
+
     if (data.address &&
         Object.values(data.address.record).filter(v => v).length <
         FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD) {
@@ -575,6 +577,36 @@ FormAutofillHandler.prototype = {
     }
 
     return data;
+  },
+
+  normalizeAddress(address) {
+    if (!address) {
+      return;
+    }
+
+    
+    FormAutofillUtils.compressTel(address.record);
+    if (address.record.tel) {
+      let allTelComponentsAreUntouched = Object.keys(address.record)
+        .filter(field => FormAutofillUtils.getCategoryFromFieldName(field) == "tel")
+        .every(field => address.untouchedFields.includes(field));
+      if (allTelComponentsAreUntouched) {
+        
+        if (!address.untouchedFields.includes("tel")) {
+          address.untouchedFields.push("tel");
+        }
+      } else {
+        let strippedNumber = address.record.tel.replace(/[\s\(\)-]/g, "");
+
+        
+        
+        
+        
+        if (!/^(\+?)[\da-zA-Z]{5,15}$/.test(strippedNumber)) {
+          address.record.tel = "";
+        }
+      }
+    }
   },
 
   async _decrypt(cipherText, reauth) {
