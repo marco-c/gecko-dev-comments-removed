@@ -2,9 +2,6 @@
 
 
 function run_test() {
-  removeMetadata();
-  removeCacheFile();
-
   do_load_manifest("data/chrome.manifest");
 
   configureToLoadJarEngines();

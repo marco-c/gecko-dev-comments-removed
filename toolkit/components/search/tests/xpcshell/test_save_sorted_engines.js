@@ -13,10 +13,6 @@
 
 
 
-
-
-
-
 function run_test() {
   useHttpServer();
 

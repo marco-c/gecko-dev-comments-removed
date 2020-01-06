@@ -11,7 +11,6 @@
 
 
 function run_test() {
-  removeCacheFile();
   do_load_manifest("data/chrome.manifest");
   useHttpServer();
 
@@ -53,6 +52,4 @@ add_task(async function test_nocache() {
     }
   }
   do_check_true(found);
-
-  removeCacheFile();
 });

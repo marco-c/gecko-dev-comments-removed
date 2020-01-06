@@ -9,8 +9,6 @@
 "use strict";
 
 function run_test() {
-  removeMetadata();
-
   
   
   let url = "resource://test/data/";

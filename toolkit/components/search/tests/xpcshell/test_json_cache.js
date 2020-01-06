@@ -7,32 +7,12 @@
 
 "use strict";
 
-
-
-
-
-
-function getDir(aKey, aIFace) {
-  if (!aKey) {
-    do_throw("getDir requires a directory key!");
-  }
-
-  return Services.dirsvc.get(aKey, aIFace || Ci.nsIFile);
-}
-
-function makeURI(uri) {
-  return Services.io.newURI(uri);
-}
-
 var cacheTemplate, appPluginsPath, profPlugins;
 
 
 
 
 function run_test() {
-  removeMetadata();
-  removeCacheFile();
-
   let cacheTemplateFile = do_get_file("data/search.json");
   cacheTemplate = readJSONFile(cacheTemplateFile);
   cacheTemplate.buildID = getAppInfo().platformBuildID;
@@ -89,7 +69,6 @@ add_test(function test_cached_engine_properties() {
     do_check_true(!!engineFromSS);
     isSubObjectOf(EXPECTED_ENGINE.engine, engineFromSS);
 
-    removeMetadata();
     removeCacheFile();
     run_next_test();
   });
