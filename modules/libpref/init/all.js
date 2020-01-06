@@ -2139,6 +2139,10 @@ pref("network.http.throttle.resume-for", 100);
 
 pref("network.http.throttle.resume-background-in", 1000);
 
+
+
+pref("network.http.on_click_priority", true);
+
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);
@@ -5181,6 +5185,22 @@ pref("dom.vr.controller_trigger_threshold", "0.1");
 pref("dom.vr.navigation.timeout", 5000);
 
 pref("dom.vr.oculus.enabled", true);
+
+
+
+
+
+
+
+
+pref("dom.vr.oculus.present.timeout", 10000);
+
+
+
+
+
+
+pref("dom.vr.oculus.quit.timeout", 30000);
 
 pref("dom.vr.osvr.enabled", false);
 
