@@ -6,16 +6,9 @@
 
 this.sitehelper = (function() {
 
-  let ContentXMLHttpRequest = XMLHttpRequest;
   
   
-  if (location.origin === "https://screenshots.firefox.com" ||
-      location.origin === "http://localhost:10080") {
-    
-    
-    
-    ContentXMLHttpRequest = window.wrappedJSObject.XMLHttpRequest;
-  }
+  let ContentXMLHttpRequest = content.XMLHttpRequest;
 
   catcher.registerHandler((errorObj) => {
     callBackground("reportError", errorObj);

@@ -6,9 +6,10 @@
 
 
 
+const startTime = Date.now();
 
 this.startBackground = (function() {
-  let exports = {};
+  let exports = {startTime};
 
   const backgroundScripts = [
     "log.js",
@@ -43,24 +44,6 @@ this.startBackground = (function() {
     }).catch((error) => {
       console.error("Error loading Screenshots:", error);
     });
-  });
-
-  
-  
-  let iconPath = null;
-  browser.storage.local.get(["hasSeenOnboarding"]).then((result) => {
-    let hasSeenOnboarding = !!result.hasSeenOnboarding;
-    if (!hasSeenOnboarding) {
-      iconPath = "icons/icon-starred-32-v2.svg";
-      if (photonPageActionPort) {
-        photonPageActionPort.postMessage({
-          type: "setProperties",
-          iconPath
-        });
-      }
-    }
-  }).catch((error) => {
-    console.error("Error loading Screenshots onboarding flag:", error);
   });
 
   browser.runtime.onMessage.addListener((req, sender, sendResponse) => {
@@ -149,8 +132,7 @@ this.startBackground = (function() {
     });
     photonPageActionPort.postMessage({
       type: "setProperties",
-      title: browser.i18n.getMessage("contextMenuLabel"),
-      iconPath
+      title: browser.i18n.getMessage("contextMenuLabel")
     });
 
     

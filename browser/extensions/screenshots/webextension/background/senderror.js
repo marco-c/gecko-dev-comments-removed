@@ -2,8 +2,6 @@
 
 "use strict";
 
-const startTime = Date.now();
-
 this.senderror = (function() {
   let exports = {};
 
@@ -79,7 +77,7 @@ this.senderror = (function() {
         message = error.message;
       }
     }
-    if (Date.now() - startTime > 5 * 1000) {
+    if (Date.now() - startBackground.startTime > 5 * 1000) {
       browser.notifications.create(id, {
         type: "basic",
         

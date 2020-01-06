@@ -65,12 +65,16 @@ this.selectorLoader = (function() {
   let loadingTabs = new Set();
 
   exports.loadModules = function(tabId, hasSeenOnboarding) {
-    let promise;
     loadingTabs.add(tabId);
+    let promise = downloadOnlyCheck(tabId);
     if (hasSeenOnboarding) {
-      promise = executeModules(tabId, standardScripts.concat(selectorScripts));
+      promise = promise.then(() => {
+        return executeModules(tabId, standardScripts.concat(selectorScripts));
+      });
     } else {
-      promise = executeModules(tabId, standardScripts.concat(onboardingScripts).concat(selectorScripts));
+      promise = promise.then(() => {
+        return executeModules(tabId, standardScripts.concat(onboardingScripts).concat(selectorScripts));
+      });
     }
     return promise.then((result) => {
       loadingTabs.delete(tabId);
@@ -80,6 +84,23 @@ this.selectorLoader = (function() {
       throw error;
     });
   };
+
+  
+  
+  function downloadOnlyCheck(tabId) {
+    return communication.sendToBootstrap("getHistoryPref").then((historyEnabled) => {
+      return browser.tabs.get(tabId).then(tab => {
+        let downloadOnly = !historyEnabled || tab.incognito;
+        return browser.tabs.executeScript(tabId, {
+          
+          
+          
+          code: `window.downloadOnly = ${downloadOnly}`,
+          runAt: "document_start"
+        });
+      });
+    });
+  }
 
   function executeModules(tabId, scripts) {
     let lastPromise = Promise.resolve(null);
