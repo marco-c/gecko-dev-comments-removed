@@ -1002,6 +1002,17 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot,
 
     
     
+    
+    
+    
+    
+    
+    if (!nsComputedDOMStyle::GetPresShellForContent(target.mElement)) {
+      return returnTarget;
+    }
+
+    
+    
     if (aRoot &&
         !nsContentUtils::ContentIsFlattenedTreeDescendantOf(target.mElement,
                                                             aRoot)) {
@@ -1080,7 +1091,16 @@ EffectCompositor::PreTraverseInSubtree(Element* aRoot,
       
       iter.Remove();
     }
+
+    
+    
+    
+    
+    if (!aRoot && flushThrottledRestyles) {
+      elementSet.Clear();
+    }
   }
+
   return foundElementsNeedingRestyle;
 }
 
