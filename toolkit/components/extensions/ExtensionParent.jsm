@@ -270,13 +270,13 @@ ProxyMessenger = {
 
 
   getMessageManagerForRecipient(recipient) {
+    let {tabId} = recipient;
     
-    if ("tabId" in recipient) {
+    if (tabId) {
       
       
-      let tab = apiManager.global.tabTracker.getTab(recipient.tabId, null);
-      if (!tab || tab.getAttribute("pending") === "true") {
-        
+      let tab = apiManager.global.tabTracker.getTab(tabId, null);
+      if (!tab) {
         return null;
       }
       let browser = tab.linkedBrowser || tab.browser;
