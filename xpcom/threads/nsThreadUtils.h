@@ -1778,8 +1778,12 @@ NS_SetMainThread();
 
 
 
+
+
+
+
 extern mozilla::TimeStamp
-NS_GetTimerDeadlineHintOnCurrentThread(mozilla::TimeStamp aDefault);
+NS_GetTimerDeadlineHintOnCurrentThread(mozilla::TimeStamp aDefault, uint32_t aSearchBound);
 
 namespace mozilla {
 
