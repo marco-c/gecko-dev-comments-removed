@@ -1104,7 +1104,8 @@ CacheFileMetadata::SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
   n += mKey.SizeOfExcludingThisIfUnshared(mallocSizeOf);
   n += mallocSizeOf(mHashArray);
   n += mallocSizeOf(mBuf);
-  n += mallocSizeOf(mWriteBuf);
+  
+  
   
 
   return n;

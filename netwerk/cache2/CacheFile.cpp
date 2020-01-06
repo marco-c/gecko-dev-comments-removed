@@ -2582,7 +2582,10 @@ CacheFile::SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
   for (auto iter = mCachedChunks.ConstIter(); !iter.Done(); iter.Next()) {
       n += iter.Data()->SizeOfIncludingThis(mallocSizeOf);
   }
-  if (mMetadata) {
+  
+  
+  
+  if (mMetadata && mReady) {
     n += mMetadata->SizeOfIncludingThis(mallocSizeOf);
   }
 
