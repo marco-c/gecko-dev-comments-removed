@@ -98,40 +98,78 @@ struct BlendVertexShaderConstants {
 
 struct SimpleTraits
 {
-  explicit SimpleTraits(const gfx::Rect& aRect)
-   : mRect(aRect)
+  explicit SimpleTraits(const ItemInfo& aItem, const gfx::Rect& aRect)
+   : mItem(aItem),
+     mRect(aRect)
   {}
 
-  bool AddInstanceTo(ShaderRenderPass* aPass, const ItemInfo& aItem) const;
-  bool AddVerticesTo(ShaderRenderPass* aPass,
-                     const ItemInfo& aItem,
-                     uint32_t aItemIndex,
-                     const gfx::Polygon* aGeometry = nullptr) const;
+  
+  
+  struct AnyTriangle { };
+  struct FirstTriangle : AnyTriangle { };
+  struct SecondTriangle : AnyTriangle { };
 
+  
+  struct TriangleVertices {
+    gfx::Point p1, p2, p3;
+    uint32_t layerIndex;
+    int depth;
+  };
+
+  
+  
+  
+  TriangleVertices MakeVertex(const FirstTriangle& aIgnore) const;
+  TriangleVertices MakeVertex(const SecondTriangle& aIgnore) const;
+  TriangleVertices MakeVertex(const gfx::Triangle& aTriangle) const;
+
+  
+  
+  
+  
+  
+  
+  nsTArray<gfx::Triangle> GenerateTriangles(const gfx::Polygon& aPolygon) const;
+
+  bool AddInstanceTo(ShaderRenderPass* aPass) const;
+
+  const ItemInfo& mItem;
   gfx::Rect mRect;
 };
 
 struct ColorTraits : public SimpleTraits
 {
-  ColorTraits(const gfx::Rect& aRect, const gfx::Color& aColor)
-   : SimpleTraits(aRect), mColor(aColor)
+  ColorTraits(const ItemInfo& aItem, const gfx::Rect& aRect, const gfx::Color& aColor)
+   : SimpleTraits(aItem, aRect), mColor(aColor)
   {}
 
   bool AddItemTo(ShaderRenderPass* aPass) const;
+
+  
+  template <typename VertexType>
+  uint32_t MakeVertexData(const VertexType& aIgnore, uint32_t aItemIndex) const {
+    return aItemIndex;
+  }
 
   gfx::Color mColor;
 };
 
 struct TexturedTraits : public SimpleTraits
 {
-  TexturedTraits(const gfx::Rect& aRect, const gfx::Rect& aTexCoords)
-   : SimpleTraits(aRect), mTexCoords(aTexCoords)
+  TexturedTraits(const ItemInfo& aItem, const gfx::Rect& aRect, const gfx::Rect& aTexCoords)
+   : SimpleTraits(aItem, aRect), mTexCoords(aTexCoords)
   {}
 
-  bool AddVerticesTo(ShaderRenderPass* aPass,
-                     const ItemInfo& aItem,
-                     uint32_t aItemIndex,
-                     const gfx::Polygon* aGeometry = nullptr) const;
+  
+  nsTArray<gfx::TexturedTriangle> GenerateTriangles(const gfx::Polygon& aPolygon) const;
+
+  struct VertexData {
+    gfx::Point p1, p2, p3;
+  };
+  VertexData MakeVertexData(const FirstTriangle& aIgnore, uint32_t aItemIndex) const;
+  VertexData MakeVertexData(const SecondTriangle& aIgnore, uint32_t aItemIndex) const;
+  VertexData MakeVertexData(const gfx::TexturedTriangle& aTriangle, uint32_t aItemIndex) const;
+
   bool AddItemTo(ShaderRenderPass* aPass) const;
 
   gfx::Rect mTexCoords;

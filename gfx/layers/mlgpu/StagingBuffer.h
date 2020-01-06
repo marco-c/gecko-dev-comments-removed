@@ -78,6 +78,20 @@ public:
   }
 
   
+  template <typename T1, typename T2>
+  bool PrependItem(const T1& aFirst, const T2& aSecond) {
+    struct Combined {
+      T1 first;
+      T2 second;
+    } value = { aFirst, aSecond };
+
+    
+    static_assert(sizeof(value) == sizeof(aFirst) + sizeof(aSecond),
+                  "Items must be packed within struct");
+    return PrependItem(value);
+  }
+
+  
   template <typename T>
   bool PrependItem(const T& aItem) {
     MOZ_ASSERT(mReversed);
