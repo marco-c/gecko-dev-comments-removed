@@ -1418,7 +1418,7 @@ public abstract class GeckoApp extends GeckoActivity
             "ToggleChrome:Show",
             null);
 
-        Tabs.getInstance().attachToContext(this, mLayerView, getAppEventDispatcher());
+        Tabs.getInstance().attachToContext(this, mLayerView);
         Tabs.registerOnTabsChangedListener(this);
 
         
@@ -1512,7 +1512,7 @@ public abstract class GeckoApp extends GeckoActivity
 
                 
                 if (!mIsRestoringActivity) {
-                    getAppEventDispatcher().dispatch("Session:Restore", restoreMessage);
+                    EventDispatcher.getInstance().dispatch("Session:Restore", restoreMessage);
                 }
 
                 
@@ -2489,7 +2489,6 @@ public abstract class GeckoApp extends GeckoActivity
         super.onDestroy();
 
         Tabs.unregisterOnTabsChangedListener(this);
-        Tabs.getInstance().detachFromContext();
 
         if (mShutdownOnDestroy) {
             GeckoApplication.shutdown(!mRestartOnShutdown ? null : new Intent(
