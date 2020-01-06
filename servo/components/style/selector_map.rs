@@ -9,18 +9,55 @@ use {Atom, LocalName};
 use applicable_declarations::ApplicableDeclarationBlock;
 use context::QuirksMode;
 use dom::TElement;
-use fnv::FnvHashMap;
 use pdqsort::sort_by;
+use precomputed_hash::PrecomputedHash;
 use rule_tree::CascadeLevel;
 use selector_parser::SelectorImpl;
 use selectors::matching::{matches_selector, MatchingContext, ElementSelectorFlags};
 use selectors::parser::{Component, Combinator, SelectorIter};
 use selectors::parser::LocalName as LocalNameSelector;
 use smallvec::{SmallVec, VecLike};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::collections::hash_map;
-use std::hash::Hash;
+use std::hash::{BuildHasherDefault, Hash, Hasher};
 use stylist::Rule;
+
+
+
+pub struct PrecomputedHasher {
+    hash: Option<u32>,
+}
+
+impl Default for PrecomputedHasher {
+    fn default() -> Self {
+        Self { hash: None }
+    }
+}
+
+
+pub type PrecomputedHashMap<K, V> = HashMap<K, V, BuildHasherDefault<PrecomputedHasher>>;
+
+
+pub type PrecomputedHashSet<K> = HashSet<K, BuildHasherDefault<PrecomputedHasher>>;
+
+impl Hasher for PrecomputedHasher {
+    #[inline]
+    fn write(&mut self, _: &[u8]) {
+        unreachable!("Called into PrecomputedHasher with something that isn't \
+                     a u32")
+    }
+
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        debug_assert!(self.hash.is_none());
+        self.hash = Some(i);
+    }
+
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.hash.expect("PrecomputedHasher wasn't fed?") as u64
+    }
+}
 
 
 pub trait SelectorMapEntry : Sized + Clone {
@@ -63,7 +100,7 @@ pub struct SelectorMap<T> {
     
     pub class_hash: MaybeCaseInsensitiveHashMap<Atom, SmallVec<[T; 1]>>,
     
-    pub local_name_hash: FnvHashMap<LocalName, SmallVec<[T; 1]>>,
+    pub local_name_hash: PrecomputedHashMap<LocalName, SmallVec<[T; 1]>>,
     
     pub other: Vec<T>,
     
@@ -434,7 +471,7 @@ pub fn get_local_name(iter: SelectorIter<SelectorImpl>)
 }
 
 #[inline]
-fn find_push<Str: Eq + Hash, V, VL>(map: &mut FnvHashMap<Str, VL>,
+fn find_push<Str: Eq + Hash, V, VL>(map: &mut PrecomputedHashMap<Str, VL>,
                                     key: Str,
                                     value: V)
     where VL: VecLike<V> + Default
@@ -445,12 +482,12 @@ fn find_push<Str: Eq + Hash, V, VL>(map: &mut FnvHashMap<Str, VL>,
 
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct MaybeCaseInsensitiveHashMap<K: Hash + Eq, V>(FnvHashMap<K, V>);
+pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V>(PrecomputedHashMap<K, V>);
 
 impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
     
     pub fn new() -> Self {
-        MaybeCaseInsensitiveHashMap(FnvHashMap::default())
+        MaybeCaseInsensitiveHashMap(PrecomputedHashMap::default())
     }
 
     
