@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.Locales;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.ProxySelector;
@@ -31,6 +32,14 @@ import java.util.concurrent.TimeUnit;
 
 
 
+
+
+
+
+
+
+
+
 public class PocketStoriesLoader extends AsyncTaskLoader<String> {
     public static String LOGTAG = "PocketStoriesLoader";
 
@@ -42,7 +51,7 @@ public class PocketStoriesLoader extends AsyncTaskLoader<String> {
     
     private static final String GLOBAL_ENDPOINT = "https://getpocket.com/v3/firefox/global-recs";
     private static final String PARAM_APIKEY = "consumer_key";
-    private static final String APIKEY = "KEY_PLACEHOLDER"; 
+    private static final String APIKEY = AppConstants.MOZ_POCKET_API_KEY;
     private static final String PARAM_COUNT = "count";
     private static final int DEFAULT_COUNT = 20;
     private static final String PARAM_LOCALE = "locale_lang";
@@ -82,6 +91,10 @@ public class PocketStoriesLoader extends AsyncTaskLoader<String> {
 
     @Override
     public String loadInBackground() {
+        if (APIKEY == null) {
+            Log.e(LOGTAG, "Missing Pocket API key! See class comment about how to set up a mozconfig.");
+            return null;
+        }
         return makeAPIRequestWithKey(APIKEY);
     }
 
