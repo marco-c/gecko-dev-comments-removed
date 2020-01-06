@@ -224,14 +224,6 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
 
   nsAutoString violatedDirective;
   for (uint32_t p = 0; p < mPolicies.Length(); p++) {
-
-    
-    
-    if (aDir == nsIContentSecurityPolicy::FRAME_ANCESTORS_DIRECTIVE &&
-        mPolicies[p]->getReportOnlyFlag()) {
-      continue;
-    }
-
     if (!mPolicies[p]->permits(aDir,
                                aContentLocation,
                                aNonce,
