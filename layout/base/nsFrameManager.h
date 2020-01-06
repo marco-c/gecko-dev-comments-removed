@@ -142,14 +142,16 @@ public:
 
 
 
-  UndisplayedNode* GetAllUndisplayedContentIn(nsIContent* aParentContent);
+  UndisplayedNode*
+  GetAllRegisteredDisplayNoneStylesIn(nsIContent* aParentContent);
 
   
 
 
 
 
-  UndisplayedNode* GetAllDisplayContentsIn(nsIContent* aParentContent);
+  UndisplayedNode*
+  GetAllRegisteredDisplayContentsStylesIn(nsIContent* aParentContent);
 
   
 
