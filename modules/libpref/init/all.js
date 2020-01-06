@@ -314,6 +314,10 @@ pref("media.cache_readahead_limit", 60);
 
 
 
+pref("media.cache.resource-index", 8192);
+
+
+
 
 
 
