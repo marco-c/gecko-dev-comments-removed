@@ -846,6 +846,13 @@ public:
 
   void UpdateValidityState();
 
+  
+
+
+
+  double GetStepAsDouble() { return GetStep().toDouble(); }
+  double GetStepBaseAsDouble() { return GetStepBase().toDouble(); }
+
   HTMLInputElement* GetOwnerNumberControl();
 
   void StartNumberControlSpinnerSpin();
