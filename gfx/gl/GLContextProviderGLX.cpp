@@ -606,35 +606,24 @@ GLContextGLX::Init()
 }
 
 bool
-GLContextGLX::MakeCurrentImpl(bool aForce) const
+GLContextGLX::MakeCurrentImpl() const
 {
-    bool succeeded = true;
-
-    
-    
-    
-    
-    
-    
-    if (aForce || mGLX->fGetCurrentContext() != mContext) {
-        if (mGLX->IsMesa()) {
-          
-          
-          Unused << XPending(mDisplay);
-        }
-
-        succeeded = mGLX->fMakeCurrent(mDisplay, mDrawable, mContext);
-        NS_ASSERTION(succeeded, "Failed to make GL context current!");
-
-        if (!IsOffscreen() && mGLX->SupportsSwapControl()) {
-            
-            
-            
-            const bool isASAP = (gfxPrefs::LayoutFrameRate() == 0);
-            mGLX->fSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
-        }
+    if (mGLX->IsMesa()) {
+        
+        
+        Unused << XPending(mDisplay);
     }
 
+    const bool succeeded = mGLX->fMakeCurrent(mDisplay, mDrawable, mContext);
+    NS_ASSERTION(succeeded, "Failed to make GL context current!");
+
+    if (!IsOffscreen() && mGLX->SupportsSwapControl()) {
+        
+        
+        
+        const bool isASAP = (gfxPrefs::LayoutFrameRate() == 0);
+        mGLX->fSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
+    }
     return succeeded;
 }
 
