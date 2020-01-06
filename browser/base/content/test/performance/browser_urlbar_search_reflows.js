@@ -67,7 +67,7 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 390, 
+    times: 330, 
   },
 
   {
@@ -119,7 +119,7 @@ const EXPECTED_REFLOWS_SECOND_OPEN = [
       "_invalidate@chrome://global/content/bindings/autocomplete.xml",
       "invalidate@chrome://global/content/bindings/autocomplete.xml"
     ],
-    times: 444, 
+    times: 384, 
   },
 
   

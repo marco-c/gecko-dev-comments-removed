@@ -1089,8 +1089,9 @@ Search.prototype = {
     
     
     
+    let count = this._counts[MATCHTYPE.GENERAL] + this._counts[MATCHTYPE.HEURISTIC];
     if (this._matchBehavior == MATCH_BOUNDARY_ANYWHERE &&
-        this._counts[MATCHTYPE.GENERAL] < Prefs.get("maxRichResults")) {
+        count < Prefs.get("maxRichResults")) {
       this._matchBehavior = MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
@@ -1746,7 +1747,8 @@ Search.prototype = {
     this._addMatch(match);
     
     
-    if (!this.pending || this._counts[MATCHTYPE.GENERAL] == Prefs.get("maxRichResults"))
+    let count = this._counts[MATCHTYPE.GENERAL] + this._counts[MATCHTYPE.HEURISTIC];
+    if (!this.pending || count >= Prefs.get("maxRichResults"))
       cancel();
   },
 
