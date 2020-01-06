@@ -7,7 +7,6 @@ package org.mozilla.gecko.gfx;
 
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
 
 import android.graphics.Color;
@@ -28,7 +27,6 @@ class GeckoLayerClient implements LayerView.Listener
     private IntSize mWindowSize;
 
     private boolean mForceRedraw;
-    private boolean mImeWasEnabledOnLastResize;
 
     
 
@@ -105,19 +103,6 @@ class GeckoLayerClient implements LayerView.Listener
             return false;
         }
         mViewportMetrics = mViewportMetrics.setViewportSize(width, height);
-
-        if (mView.isCompositorReady()) {
-            
-            
-            
-            final boolean imeIsEnabled = mView.isIMEEnabled();
-            if (imeIsEnabled && !mImeWasEnabledOnLastResize) {
-                
-                
-                EventDispatcher.getInstance().dispatch("ScrollTo:FocusedInput", null);
-            }
-            mImeWasEnabledOnLastResize = imeIsEnabled;
-        }
         return true;
     }
 

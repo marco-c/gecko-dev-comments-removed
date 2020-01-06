@@ -235,8 +235,11 @@ class GeckoInputConnection
                     v.requestFocus();
                 }
                 final GeckoView view = getView();
-                if (view != null && showToolbar) {
-                    view.getDynamicToolbarAnimator().showToolbar( true);
+                if (view != null) {
+                    if (showToolbar) {
+                        view.getDynamicToolbarAnimator().showToolbar( true);
+                    }
+                    view.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
                 }
                 mSoftInputReentrancyGuard = true;
                 imm.showSoftInput(v, 0);
