@@ -388,12 +388,6 @@ gfxWindowsPlatform::CanUseHardwareVideoDecoding()
 bool
 gfxWindowsPlatform::InitDWriteSupport()
 {
-  
-  
-  if (!Factory::SupportsD2D1()) {
-    return false;
-  }
-
   mozilla::ScopedGfxFeatureReporter reporter("DWrite");
   decltype(DWriteCreateFactory)* createDWriteFactory = (decltype(DWriteCreateFactory)*)
       GetProcAddress(LoadLibraryW(L"dwrite.dll"), "DWriteCreateFactory");
@@ -881,7 +875,7 @@ gfxWindowsPlatform::CreateFontGroup(const FontFamilyList& aFontFamilyList,
 }
 
 bool
-gfxWindowsPlatform::IsFontFormatSupported(uint32_t aFormatFlags)
+gfxWindowsPlatform::IsFontFormatSupported(nsIURI *aFontURI, uint32_t aFormatFlags)
 {
     
     NS_ASSERTION(!(aFormatFlags & gfxUserFontSet::FLAG_FORMAT_NOT_USED),
