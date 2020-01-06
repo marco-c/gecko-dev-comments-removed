@@ -20,8 +20,8 @@
   padding-inline-start: 14px;
 }
 
-photonpanelmultiview .toolbaritem-combined-buttons > label {
-  padding-inline-start: 42px; 
+photonpanelmultiview .toolbaritem-combined-buttons > spacer {
+  width: 42px; 
 }
 
 #appMenu-addon-banners > .addon-banner-item,
