@@ -86,6 +86,14 @@ class MacroAssemblerMIPSShared : public Assembler
     void ma_not(Register rd, Register rs);
 
     
+    void ma_ext(Register rt, Register rs, uint16_t pos, uint16_t size);
+    void ma_ins(Register rt, Register rs, uint16_t pos, uint16_t size);
+
+    
+    void ma_seb(Register rd, Register rt);
+    void ma_seh(Register rd, Register rt);
+
+    
     void ma_and(Register rd, Register rs);
     void ma_and(Register rd, Imm32 imm);
     void ma_and(Register rd, Register rs, Imm32 imm);
