@@ -1574,7 +1574,11 @@ add_task(async function test_defaultSearchEngine() {
   Assert.equal(data.settings.searchCohort, "testcohort");
 });
 
-add_task(async function test_delayed_defaultBrowser() {
+add_task({ skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
+         async function test_delayed_defaultBrowser() {
+  
+  
+
   
   await TelemetryEnvironment.testCleanRestart().onInitialized();
 
