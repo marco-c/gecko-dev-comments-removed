@@ -65,15 +65,6 @@ public:
     {}
 
     NS_IMETHOD Run() override {
-        
-        nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-        if (observerService) {
-          observerService->NotifyObservers(
-            nullptr, "screen-state-changed",
-            mIsOn ? u"on" : u"off"
-          );
-        }
-
         RefPtr<nsScreenGonk> screen = nsScreenManagerGonk::GetPrimaryScreen();
         const nsTArray<nsWindow*>& windows = screen->GetTopWindows();
 

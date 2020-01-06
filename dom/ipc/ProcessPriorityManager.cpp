@@ -157,17 +157,6 @@ public:
   
 
 
-  void Freeze();
-
-  
-
-
-
-  void Unfreeze();
-
-  
-
-
 
   void ShutDown();
 
@@ -177,7 +166,6 @@ private:
   static bool sTestMode;
   static bool sPrefListenersRegistered;
   static bool sInitialized;
-  static bool sFrozen;
   static StaticRefPtr<ProcessPriorityManagerImpl> sSingleton;
 
   static void PrefChangedCallback(const char* aPref, void* aClosure);
@@ -193,7 +181,6 @@ private:
 
   void ObserveContentParentCreated(nsISupports* aContentParent);
   void ObserveContentParentDestroyed(nsISupports* aSubject);
-  void ObserveScreenStateChanged(const char16_t* aData);
 
   nsDataHashtable<nsUint64HashKey, RefPtr<ParticularProcessPriorityManager> >
     mParticularManagers;
@@ -246,8 +233,7 @@ class ParticularProcessPriorityManager final
 {
   ~ParticularProcessPriorityManager();
 public:
-  explicit ParticularProcessPriorityManager(ContentParent* aContentParent,
-                                            bool aFrozen = false);
+  explicit ParticularProcessPriorityManager(ContentParent* aContentParent);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -291,8 +277,6 @@ public:
   void ResetPriority();
   void ResetPriorityNow();
   void SetPriorityNow(ProcessPriority aPriority);
-  void Freeze();
-  void Unfreeze();
 
   void ShutDown();
 
@@ -314,7 +298,6 @@ private:
   bool mHoldsCPUWakeLock;
   bool mHoldsHighPriorityWakeLock;
   bool mIsActivityOpener;
-  bool mFrozen;
 
   
 
@@ -329,7 +312,6 @@ private:
  bool ProcessPriorityManagerImpl::sRemoteTabsDisabled = true;
  bool ProcessPriorityManagerImpl::sTestMode = false;
  bool ProcessPriorityManagerImpl::sPrefListenersRegistered = false;
- bool ProcessPriorityManagerImpl::sFrozen = false;
  StaticRefPtr<ProcessPriorityManagerImpl>
   ProcessPriorityManagerImpl::sSingleton;
  uint32_t ParticularProcessPriorityManager::sBackgroundPerceivableGracePeriodMS = 0;
@@ -450,7 +432,6 @@ ProcessPriorityManagerImpl::Init()
   if (os) {
     os->AddObserver(this, "ipc:content-created",  true);
     os->AddObserver(this, "ipc:content-shutdown",  true);
-    os->AddObserver(this, "screen-state-changed",  true);
   }
 }
 
@@ -465,8 +446,6 @@ ProcessPriorityManagerImpl::Observe(
     ObserveContentParentCreated(aSubject);
   } else if (topic.EqualsLiteral("ipc:content-shutdown")) {
     ObserveContentParentDestroyed(aSubject);
-  } else if (topic.EqualsLiteral("screen-state-changed")) {
-    ObserveScreenStateChanged(aData);
   } else {
     MOZ_ASSERT(false);
   }
@@ -482,7 +461,7 @@ ProcessPriorityManagerImpl::GetParticularProcessPriorityManager(
   uint64_t cpId = aContentParent->ChildID();
   mParticularManagers.Get(cpId, &pppm);
   if (!pppm) {
-    pppm = new ParticularProcessPriorityManager(aContentParent, sFrozen);
+    pppm = new ParticularProcessPriorityManager(aContentParent);
     pppm->Init();
     mParticularManagers.Put(cpId, pppm);
 
@@ -537,22 +516,6 @@ ProcessPriorityManagerImpl::ObserveContentParentDestroyed(nsISupports* aSubject)
   }
 }
 
-void
-ProcessPriorityManagerImpl::ObserveScreenStateChanged(const char16_t* aData)
-{
-  if (NS_LITERAL_STRING("on").Equals(aData)) {
-    sFrozen = false;
-    for (auto iter = mParticularManagers.Iter(); !iter.Done(); iter.Next()) {
-      iter.UserData()->Unfreeze();
-    }
-  } else {
-    sFrozen = true;
-    for (auto iter = mParticularManagers.Iter(); !iter.Done(); iter.Next()) {
-      iter.UserData()->Freeze();
-    }
-  }
-}
-
 bool
 ProcessPriorityManagerImpl::ChildProcessHasHighPriority( void )
 {
@@ -599,14 +562,13 @@ NS_IMPL_ISUPPORTS(ParticularProcessPriorityManager,
                   nsISupportsWeakReference);
 
 ParticularProcessPriorityManager::ParticularProcessPriorityManager(
-  ContentParent* aContentParent, bool aFrozen)
+  ContentParent* aContentParent)
   : mContentParent(aContentParent)
   , mChildID(aContentParent->ChildID())
   , mPriority(PROCESS_PRIORITY_UNKNOWN)
   , mHoldsCPUWakeLock(false)
   , mHoldsHighPriorityWakeLock(false)
   , mIsActivityOpener(false)
-  , mFrozen(aFrozen)
 {
   MOZ_ASSERT(XRE_IsParentProcess());
   LOGP("Creating ParticularProcessPriorityManager.");
@@ -799,10 +761,6 @@ ParticularProcessPriorityManager::OnFrameloaderVisibleChanged(nsISupports* aSubj
   nsCOMPtr<nsIFrameLoader> fl = do_QueryInterface(aSubject);
   NS_ENSURE_TRUE_VOID(fl);
 
-  if (mFrozen) {
-    return; 
-  }
-
   TabParent* tp = TabParent::GetFrom(fl);
   if (!tp) {
     return;
@@ -974,7 +932,6 @@ ParticularProcessPriorityManager::SetPriorityNow(ProcessPriority aPriority)
 
   if (!ProcessPriorityManagerImpl::PrefsEnabled() ||
       !mContentParent ||
-      mFrozen ||
       mPriority == aPriority) {
     return;
   }
@@ -1002,18 +959,6 @@ ParticularProcessPriorityManager::SetPriorityNow(ProcessPriority aPriority)
 
   FireTestOnlyObserverNotification("process-priority-set",
     ProcessPriorityToString(mPriority));
-}
-
-void
-ParticularProcessPriorityManager::Freeze()
-{
-  mFrozen = true;
-}
-
-void
-ParticularProcessPriorityManager::Unfreeze()
-{
-  mFrozen = false;
 }
 
 void
