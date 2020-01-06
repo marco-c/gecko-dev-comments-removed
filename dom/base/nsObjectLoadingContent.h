@@ -182,7 +182,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     
     void GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& ,
-                             mozilla::ErrorResult& aRv);
+                             bool , mozilla::ErrorResult& aRv);
 
     
     nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);

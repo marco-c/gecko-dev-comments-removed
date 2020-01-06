@@ -1402,7 +1402,19 @@ nsOuterWindowProxy::getOwnEnumerablePropertyKeys(JSContext *cx, JS::Handle<JSObj
 {
   
   
-  return js::BaseProxyHandler::getOwnEnumerablePropertyKeys(cx, proxy, props);
+  
+  
+  
+  
+  if (!AppendIndexedPropertyNames(cx, proxy, props)) {
+    return false;
+  }
+
+  JS::AutoIdVector innerProps(cx);
+  if (!js::Wrapper::getOwnEnumerablePropertyKeys(cx, proxy, innerProps)) {
+    return false;
+  }
+  return js::AppendUnique(cx, props, innerProps);
 }
 
 bool
@@ -5139,8 +5151,22 @@ nsGlobalWindow::MayResolve(jsid aId)
 
 void
 nsGlobalWindow::GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& aNames,
-                                    ErrorResult& aRv)
+                                    bool aEnumerableOnly, ErrorResult& aRv)
 {
+  if (aEnumerableOnly) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   MOZ_ASSERT(IsInnerWindow());
   
   

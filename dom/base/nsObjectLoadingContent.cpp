@@ -3902,6 +3902,7 @@ nsObjectLoadingContent::MayResolve(jsid aId)
 void
 nsObjectLoadingContent::GetOwnPropertyNames(JSContext* aCx,
                                             JS::AutoIdVector& ,
+                                            bool ,
                                             ErrorResult& aRv)
 {
   
