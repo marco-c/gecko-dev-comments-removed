@@ -648,17 +648,5 @@ DOMLocalStorageManager::Ensure()
   return sSelf;
 }
 
-
-
-DOMSessionStorageManager::DOMSessionStorageManager()
-  : StorageManagerBase(eSessionStorage)
-{
-  if (!XRE_IsParentProcess()) {
-    
-    
-    StorageCache::StartDatabase();
-  }
-}
-
 } 
 } 
