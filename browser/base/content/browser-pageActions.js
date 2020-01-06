@@ -95,7 +95,7 @@ var BrowserPageActions = {
 
   placeActionInPanel(action) {
     let insertBeforeID = PageActions.nextActionIDInPanel(action);
-    let id = this._panelButtonNodeIDForActionID(action.id);
+    let id = this.panelButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
     if (!node) {
       let panelViewNode;
@@ -104,10 +104,11 @@ var BrowserPageActions = {
       let insertBeforeNode = null;
       if (insertBeforeID) {
         let insertBeforeNodeID =
-          this._panelButtonNodeIDForActionID(insertBeforeID);
+          this.panelButtonNodeIDForActionID(insertBeforeID);
         insertBeforeNode = document.getElementById(insertBeforeNodeID);
       }
       this.mainViewBodyNode.insertBefore(node, insertBeforeNode);
+      this.updateAction(action);
       action.onPlacedInPanel(node);
       if (panelViewNode) {
         action.subview.onPlaced(panelViewNode);
@@ -127,10 +128,6 @@ var BrowserPageActions = {
       "subviewbutton-iconic",
       "pageAction-panel-button"
     );
-    buttonNode.setAttribute("label", action.title);
-    if (action.iconURL) {
-      buttonNode.style.listStyleImage = `url('${action.iconURL}')`;
-    }
     if (action.nodeAttributes) {
       for (let name in action.nodeAttributes) {
         buttonNode.setAttribute(name, action.nodeAttributes[name]);
@@ -177,18 +174,49 @@ var BrowserPageActions = {
     return panelViewNode;
   },
 
-  _toggleActivatedActionPanelForAction(action) {
-    let panelNode = this.activatedActionPanelNode;
+  
+
+
+
+
+
+
+
+
+
+
+
+  togglePanelForAction(action, panelNode = null) {
+    let aaPanelNode = this.activatedActionPanelNode;
     if (panelNode) {
-      panelNode.hidePopup();
-      return null;
+      if (panelNode.state != "closed") {
+        panelNode.hidePopup();
+        return;
+      }
+      if (aaPanelNode) {
+        aaPanelNode.hidePopup();
+      }
+    } else if (aaPanelNode) {
+      aaPanelNode.hidePopup();
+      return;
+    } else {
+      panelNode = this._makeActivatedActionPanelForAction(action);
     }
 
     
-    
-    let anchorNode = this.panelAnchorNodeForAction(action);
+    this.panelNode.hidePopup();
 
-    panelNode = document.createElement("panel");
+    let anchorNode = this.panelAnchorNodeForAction(action);
+    anchorNode.setAttribute("open", "true");
+    panelNode.addEventListener("popuphiding", () => {
+      anchorNode.removeAttribute("open");
+    }, { once: true });
+
+    panelNode.openPopup(anchorNode, "bottomcenter topright");
+  },
+
+  _makeActivatedActionPanelForAction(action) {
+    let panelNode = document.createElement("panel");
     panelNode.id = this._activatedActionPanelID;
     panelNode.classList.add("cui-widget-panel");
     panelNode.setAttribute("actionID", action.id);
@@ -226,26 +254,18 @@ var BrowserPageActions = {
       panelNode.remove();
     }, { once: true });
 
-    panelNode.addEventListener("popuphiding", () => {
-      if (iframeNode) {
+    if (iframeNode) {
+      panelNode.addEventListener("popupshown", () => {
+        action.onIframeShown(iframeNode, panelNode);
+      }, { once: true });
+      panelNode.addEventListener("popuphiding", () => {
         action.onIframeHiding(iframeNode, panelNode);
-      }
-      anchorNode.removeAttribute("open");
-    }, { once: true });
+      }, { once: true });
+    }
 
     if (panelViewNode) {
       action.subview.onPlaced(panelViewNode);
       action.subview.onShowing(panelViewNode);
-    }
-
-    
-    
-    this.panelNode.hidePopup();
-    panelNode.openPopup(anchorNode, "bottomcenter topright");
-    anchorNode.setAttribute("open", "true");
-
-    if (iframeNode) {
-      action.onIframeShown(iframeNode, panelNode);
     }
 
     return panelNode;
@@ -274,14 +294,14 @@ var BrowserPageActions = {
 
 
   panelAnchorNodeForAction(action, event) {
-    
     if (event && event.target.closest("panel")) {
       return this.mainButtonNode;
     }
 
+    
     let potentialAnchorNodeIDs = [
       action && action.anchorIDOverride,
-      action && this._urlbarButtonNodeIDForActionID(action.id),
+      action && this.urlbarButtonNodeIDForActionID(action.id),
       this.mainButtonNode.id,
       "identity-icon",
     ];
@@ -318,7 +338,7 @@ var BrowserPageActions = {
 
   placeActionInUrlbar(action) {
     let insertBeforeID = PageActions.nextActionIDInUrlbar(action);
-    let id = this._urlbarButtonNodeIDForActionID(action.id);
+    let id = this.urlbarButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
 
     if (!action.shownInUrlbar) {
@@ -347,10 +367,11 @@ var BrowserPageActions = {
       let insertBeforeNode = null;
       if (insertBeforeID) {
         let insertBeforeNodeID =
-          this._urlbarButtonNodeIDForActionID(insertBeforeID);
+          this.urlbarButtonNodeIDForActionID(insertBeforeID);
         insertBeforeNode = document.getElementById(insertBeforeNodeID);
       }
       parentNode.insertBefore(node, insertBeforeNode);
+      this.updateAction(action);
       action.onPlacedInUrlbar(node);
 
       
@@ -358,7 +379,7 @@ var BrowserPageActions = {
       
       
       if (!node.hasAttribute("tooltiptext")) {
-        let panelNodeID = this._panelButtonNodeIDForActionID(action.id);
+        let panelNodeID = this.panelButtonNodeIDForActionID(action.id);
         let panelNode = document.getElementById(panelNodeID);
         if (panelNode) {
           node.setAttribute("tooltiptext", panelNode.getAttribute("label"));
@@ -371,12 +392,6 @@ var BrowserPageActions = {
     let buttonNode = document.createElement("image");
     buttonNode.classList.add("urlbar-icon", "urlbar-page-action");
     buttonNode.setAttribute("role", "button");
-    if (action.tooltip) {
-      buttonNode.setAttribute("tooltiptext", action.tooltip);
-    }
-    if (action.iconURL) {
-      buttonNode.style.listStyleImage = `url('${action.iconURL}')`;
-    }
     buttonNode.setAttribute("context", "pageActionPanelContextMenu");
     buttonNode.addEventListener("contextmenu", event => {
       BrowserPageActions.onContextMenu(event);
@@ -404,7 +419,7 @@ var BrowserPageActions = {
   },
 
   _removeActionFromPanel(action) {
-    let id = this._panelButtonNodeIDForActionID(action.id);
+    let id = this.panelButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
     if (node) {
       node.remove();
@@ -420,7 +435,7 @@ var BrowserPageActions = {
     
     if (!PageActions.nonBuiltInActions.length) {
       let separator = document.getElementById(
-        this._panelButtonNodeIDForActionID(
+        this.panelButtonNodeIDForActionID(
           PageActions.ACTION_ID_BUILT_IN_SEPARATOR
         )
       );
@@ -431,7 +446,7 @@ var BrowserPageActions = {
   },
 
   _removeActionFromUrlbar(action) {
-    let id = this._urlbarButtonNodeIDForActionID(action.id);
+    let id = this.urlbarButtonNodeIDForActionID(action.id);
     let node = document.getElementById(id);
     if (node) {
       node.remove();
@@ -444,35 +459,92 @@ var BrowserPageActions = {
 
 
 
-  updateActionIconURL(action) {
-    let url = action.iconURL ? `url('${action.iconURL}')` : null;
+
+
+
+
+  updateAction(action, nameToUpdate = null) {
+    let names = nameToUpdate ? [nameToUpdate] : [
+      "disabled",
+      "iconURL",
+      "title",
+      "tooltip",
+    ];
+    for (let name of names) {
+      let upper = name[0].toUpperCase() + name.substr(1);
+      this[`_updateAction${upper}`](action);
+    }
+  },
+
+  _updateActionDisabled(action) {
     let nodeIDs = [
-      this._panelButtonNodeIDForActionID(action.id),
-      this._urlbarButtonNodeIDForActionID(action.id),
+      this.panelButtonNodeIDForActionID(action.id),
+      this.urlbarButtonNodeIDForActionID(action.id),
     ];
     for (let nodeID of nodeIDs) {
       let node = document.getElementById(nodeID);
       if (node) {
-        if (url) {
-          node.style.listStyleImage = url;
+        if (action.getDisabled(window)) {
+          node.setAttribute("disabled", "true");
         } else {
-          node.style.removeProperty("list-style-image");
+          node.removeAttribute("disabled");
         }
       }
     }
   },
 
-  
+  _updateActionIconURL(action) {
+    let nodeIDs = [
+      this.panelButtonNodeIDForActionID(action.id),
+      this.urlbarButtonNodeIDForActionID(action.id),
+    ];
+    for (let nodeID of nodeIDs) {
+      let node = document.getElementById(nodeID);
+      if (node) {
+        for (let size of [16, 32]) {
+          let url = action.iconURLForSize(size, window);
+          let prop = `--pageAction-image-${size}px`;
+          if (url) {
+            node.style.setProperty(prop, `url("${url}")`);
+          } else {
+            node.style.removeProperty(prop);
+          }
+        }
+      }
+    }
+  },
 
+  _updateActionTitle(action) {
+    let title = action.getTitle(window);
+    if (!title) {
+      
+      
+      
+      
+      return;
+    }
+    let attrNamesByNodeIDFnName = {
+      panelButtonNodeIDForActionID: "label",
+      urlbarButtonNodeIDForActionID: "aria-label",
+    };
+    for (let [fnName, attrName] of Object.entries(attrNamesByNodeIDFnName)) {
+      let nodeID = this[fnName](action.id);
+      let node = document.getElementById(nodeID);
+      if (node) {
+        node.setAttribute(attrName, title);
+      }
+    }
+    
+    this._updateActionTooltip(action);
+  },
 
-
-
-
-  updateActionTitle(action) {
-    let id = this._panelButtonNodeIDForActionID(action.id);
-    let node = document.getElementById(id);
+  _updateActionTooltip(action) {
+    let node = document.getElementById(
+      this.urlbarButtonNodeIDForActionID(action.id)
+    );
     if (node) {
-      node.setAttribute("label", action.title);
+      let tooltip = action.getTooltip(window) || action.getTitle(window);
+      node.setAttribute("tooltiptext", tooltip);
     }
   },
 
@@ -496,7 +568,7 @@ var BrowserPageActions = {
 
     
     if (action.subview || action.wantsIframe) {
-      this._toggleActivatedActionPanelForAction(action);
+      this.togglePanelForAction(action);
       return;
     }
 
@@ -536,12 +608,24 @@ var BrowserPageActions = {
   },
 
   
-  _panelButtonNodeIDForActionID(actionID) {
+
+
+
+
+
+
+  panelButtonNodeIDForActionID(actionID) {
     return `pageAction-panel-${actionID}`;
   },
 
   
-  _urlbarButtonNodeIDForActionID(actionID) {
+
+
+
+
+
+
+  urlbarButtonNodeIDForActionID(actionID) {
     let action = PageActions.actionForID(actionID);
     if (action && action.urlbarIDOverride) {
       return action.urlbarIDOverride;
@@ -618,7 +702,7 @@ var BrowserPageActions = {
 
   showPanel(event = null) {
     for (let action of PageActions.actions) {
-      let buttonNodeID = this._panelButtonNodeIDForActionID(action.id);
+      let buttonNodeID = this.panelButtonNodeIDForActionID(action.id);
       let buttonNode = document.getElementById(buttonNodeID);
       action.onShowingInPanel(buttonNode);
     }
@@ -707,6 +791,23 @@ var BrowserPageActions = {
 
 
 
+  takeActionTitleFromPanel(action) {
+    let titleOrAttrNameOnPanel = action.getTitle();
+    let attrValueOnPanel = this.panelNode.getAttribute(titleOrAttrNameOnPanel);
+    if (attrValueOnPanel) {
+      this.panelNode.removeAttribute(titleOrAttrNameOnPanel);
+      action.setTitle(attrValueOnPanel);
+    }
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -733,6 +834,7 @@ var BrowserPageActions = {
     }
   },
 };
+
 
 var BrowserPageActionFeedback = {
   
@@ -781,6 +883,7 @@ var BrowserPageActionFeedback = {
 
 
 
+
 BrowserPageActions.bookmark = {
   onShowingInPanel(buttonNode) {
     
@@ -796,7 +899,8 @@ BrowserPageActions.bookmark = {
 
 BrowserPageActions.copyURL = {
   onPlacedInPanel(buttonNode) {
-    BrowserPageActions.takeNodeAttributeFromPanel(buttonNode, "title");
+    let action = PageActions.actionForID("copyURL");
+    BrowserPageActions.takeActionTitleFromPanel(action);
   },
 
   onCommand(event, buttonNode) {
@@ -812,7 +916,8 @@ BrowserPageActions.copyURL = {
 
 BrowserPageActions.emailLink = {
   onPlacedInPanel(buttonNode) {
-    BrowserPageActions.takeNodeAttributeFromPanel(buttonNode, "title");
+    let action = PageActions.actionForID("emailLink");
+    BrowserPageActions.takeActionTitleFromPanel(action);
   },
 
   onCommand(event, buttonNode) {
@@ -824,7 +929,8 @@ BrowserPageActions.emailLink = {
 
 BrowserPageActions.sendToDevice = {
   onPlacedInPanel(buttonNode) {
-    BrowserPageActions.takeNodeAttributeFromPanel(buttonNode, "title");
+    let action = PageActions.actionForID("sendToDevice");
+    BrowserPageActions.takeActionTitleFromPanel(action);
   },
 
   onSubviewPlaced(panelViewNode) {

@@ -1436,6 +1436,27 @@ toolbarpaletteitem[place="palette"][hidden] {
 }
 
 
+.pageAction-panel-button > .toolbarbutton-icon {
+  list-style-image: var(--pageAction-image-16px, inherit);
+}
+.urlbar-page-action {
+  list-style-image: var(--pageAction-image-16px, inherit);
+}
+@media (min-resolution: 1.1dppx) {
+  .pageAction-panel-button > .toolbarbutton-icon {
+    list-style-image: var(--pageAction-image-32px, inherit);
+  }
+  .urlbar-page-action {
+    list-style-image: var(--pageAction-image-32px, inherit);
+  }
+}
+
+.urlbar-page-action[disabled] {
+  pointer-events: none;
+  -moz-user-focus: ignore;
+}
+
+
 #sidebar-box[sidebarcommand$="-sidebar-action"] > #sidebar-header > #sidebar-switcher-target > #sidebar-icon {
   list-style-image: var(--webextension-menuitem-image, inherit);
   -moz-context-properties: fill;

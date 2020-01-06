@@ -210,7 +210,7 @@ this.PageActions = {
       
       
       let index = BinarySearch.insertionIndexOf((a1, a2) => {
-        return a1.title.localeCompare(a2.title);
+        return a1.getTitle().localeCompare(a2.getTitle());
       }, this._nonBuiltInActions, action);
       this._nonBuiltInActions.splice(index, 0, action);
     }
@@ -347,38 +347,6 @@ this.PageActions = {
 
     for (let bpa of allBrowserPageActions()) {
       bpa.removeAction(action);
-    }
-  },
-
-  
-
-
-
-
-
-  onActionSetIconURL(action) {
-    if (!this.actionForID(action.id)) {
-      
-      return;
-    }
-    for (let bpa of allBrowserPageActions()) {
-      bpa.updateActionIconURL(action);
-    }
-  },
-
-  
-
-
-
-
-
-  onActionSetTitle(action) {
-    if (!this.actionForID(action.id)) {
-      
-      return;
-    }
-    for (let bpa of allBrowserPageActions()) {
-      bpa.updateActionTitle(action);
     }
   },
 
@@ -559,11 +527,22 @@ this.PageActions = {
 
 
 
+
+
+
+
+
+
+
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
     title: !options._isSeparator,
     anchorIDOverride: false,
+    disabled: false,
     iconURL: false,
     labelForHistogram: false,
     nodeAttributes: false,
@@ -611,18 +590,6 @@ Action.prototype = {
   
 
 
-  get iconURL() {
-    return this._iconURL;
-  },
-  set iconURL(url) {
-    this._iconURL = url;
-    PageActions.onActionSetIconURL(this);
-    return this._iconURL;
-  },
-
-  
-
-
   get id() {
     return this._id;
   },
@@ -652,23 +619,110 @@ Action.prototype = {
   
 
 
-  get title() {
-    return this._title;
+  getDisabled(browserWindow = null) {
+    return !!this._getProperty("disabled", browserWindow);
   },
-  set title(title) {
-    this._title = title || "";
-    PageActions.onActionSetTitle(this);
-    return this._title;
+  setDisabled(value, browserWindow = null) {
+    return this._setProperty("disabled", !!value, browserWindow);
   },
 
   
 
 
-  get tooltip() {
-    return this._tooltip;
+
+  getIconURL(browserWindow = null) {
+    return this._getProperty("iconURL", browserWindow);
+  },
+  setIconURL(value, browserWindow = null) {
+    return this._setProperty("iconURL", value, browserWindow);
   },
 
   
+
+
+  getTitle(browserWindow = null) {
+    return this._getProperty("title", browserWindow);
+  },
+  setTitle(value, browserWindow = null) {
+    return this._setProperty("title", value, browserWindow);
+  },
+
+  
+
+
+  getTooltip(browserWindow = null) {
+    return this._getProperty("tooltip", browserWindow);
+  },
+  setTooltip(value, browserWindow = null) {
+    return this._setProperty("tooltip", value, browserWindow);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _setProperty(name, value, browserWindow) {
+    if (!browserWindow) {
+      
+      this[`_${name}`] = value;
+    } else {
+      
+      let props = this._propertiesByBrowserWindow.get(browserWindow);
+      if (!props) {
+        props = {};
+        this._propertiesByBrowserWindow.set(browserWindow, props);
+      }
+      props[name] = value;
+    }
+    
+    if (PageActions.actionForID(this.id)) {
+      for (let bpa of allBrowserPageActions(browserWindow)) {
+        bpa.updateAction(this, name);
+      }
+    }
+    return value;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _getProperty(name, browserWindow) {
+    if (browserWindow) {
+      
+      let props = this._propertiesByBrowserWindow.get(browserWindow);
+      if (props && name in props) {
+        return props[name];
+      }
+    }
+    
+    return this[`_${name}`];
+  },
+
+  
+  get _propertiesByBrowserWindow() {
+    if (!this.__propertiesByBrowserWindow) {
+      this.__propertiesByBrowserWindow = new WeakMap();
+    }
+    return this.__propertiesByBrowserWindow;
+  },
+
+  
+
 
 
   get anchorIDOverride() {
@@ -698,6 +752,43 @@ Action.prototype = {
 
   get labelForHistogram() {
     return this._labelForHistogram || this._id;
+  },
+
+  
+
+
+
+
+
+
+
+
+  iconURLForSize(preferredSize, browserWindow) {
+    let iconURL = this.getIconURL(browserWindow);
+    if (!iconURL) {
+      return null;
+    }
+    if (typeof(iconURL) == "string") {
+      return iconURL;
+    }
+    if (typeof(iconURL) == "object") {
+      
+      
+      
+      let bestSize = null;
+      if (iconURL[preferredSize]) {
+        bestSize = preferredSize;
+      } else if (iconURL[2 * preferredSize]) {
+        bestSize = 2 * preferredSize;
+      } else {
+        let sizes = Object.keys(iconURL)
+                          .map(key => parseInt(key, 10))
+                          .sort((a, b) => a - b);
+        bestSize = sizes.find(candidate => candidate > preferredSize) || sizes.pop();
+      }
+      return iconURL[bestSize];
+    }
+    return null;
   },
 
   
@@ -863,9 +954,6 @@ this.PageActions.Action = Action;
 
 
 
-
-
-
 function Subview(options) {
   setProperties(this, options, {
     buttons: false,
@@ -911,8 +999,6 @@ Subview.prototype = {
 };
 
 this.PageActions.Subview = Subview;
-
-
 
 
 
@@ -1014,6 +1100,8 @@ var gBuiltInActions = [
     id: ACTION_ID_BOOKMARK,
     urlbarIDOverride: "star-button-box",
     _urlbarNodeInMarkup: true,
+    
+    
     title: "",
     shownInUrlbar: true,
     nodeAttributes: {
@@ -1106,15 +1194,32 @@ function browserPageActions(obj) {
 
 
 
-function* allBrowserWindows() {
+
+
+
+
+
+
+function* allBrowserWindows(browserWindow = null) {
+  if (browserWindow) {
+    yield browserWindow;
+    return;
+  }
   let windows = Services.wm.getEnumerator("navigator:browser");
   while (windows.hasMoreElements()) {
     yield windows.getNext();
   }
 }
 
-function* allBrowserPageActions() {
-  for (let win of allBrowserWindows()) {
+
+
+
+
+
+
+
+function* allBrowserPageActions(browserWindow = null) {
+  for (let win of allBrowserWindows(browserWindow)) {
     yield browserPageActions(win);
   }
 }
