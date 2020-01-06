@@ -292,7 +292,7 @@ class GridInspector {
     
     let gridFronts;
     try {
-      gridFronts = await this.layoutInspector.getAllGrids(this.walker.rootNode);
+      gridFronts = await this.layoutInspector.getGrids(this.walker.rootNode);
     } catch (e) {
       
       
@@ -408,7 +408,7 @@ class GridInspector {
     
     let newGridFronts;
     try {
-      newGridFronts = await this.layoutInspector.getAllGrids(this.walker.rootNode);
+      newGridFronts = await this.layoutInspector.getGrids(this.walker.rootNode);
     } catch (e) {
       
       

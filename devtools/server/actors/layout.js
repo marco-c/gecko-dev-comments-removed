@@ -211,6 +211,11 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     
+    if (node.rawNode) {
+      node = node.rawNode;
+    }
+
+    
     if (node.nodeType === nodeConstants.DOCUMENT_NODE) {
       node = node.documentElement;
     }
@@ -224,23 +229,6 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     return gridActors;
-  },
-
-  
-
-
-
-
-
-
-  getAllGrids(rootNode) {
-    let grids = [];
-
-    if (!rootNode) {
-      return grids;
-    }
-
-    return this.getGrids(rootNode.rawNode);
   },
 });
 
