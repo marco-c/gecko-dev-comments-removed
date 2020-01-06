@@ -15,6 +15,7 @@ use util::{lerp, pack_as_float};
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum BorderCornerInstance {
+    None,
     Single, 
     Double, 
 }
@@ -129,7 +130,7 @@ impl NormalBorderHelpers for NormalBorder {
         border_rect: &LayerRect,
     ) -> BorderCornerKind {
         
-        if width0 == 0.0 || width1 == 0.0 {
+        if width0 == 0.0 && width1 == 0.0 {
             return BorderCornerKind::None;
         }
 
@@ -140,8 +141,12 @@ impl NormalBorderHelpers for NormalBorder {
 
         match (edge0.style, edge1.style) {
             
-            (BorderStyle::None, _) | (_, BorderStyle::None) => BorderCornerKind::None,
-            (BorderStyle::Hidden, _) | (_, BorderStyle::Hidden) => BorderCornerKind::None,
+            (BorderStyle::None, BorderStyle::None) |
+            (BorderStyle::None, BorderStyle::Hidden) |
+            (BorderStyle::Hidden, BorderStyle::None) |
+            (BorderStyle::Hidden, BorderStyle::Hidden) => {
+                BorderCornerKind::None
+            }
 
             
             
@@ -429,16 +434,19 @@ impl FrameBuilder {
             let mut corner_instances = [BorderCornerInstance::Single; 4];
 
             for (i, corner) in corners.iter().enumerate() {
-                match corner {
-                    &BorderCornerKind::Mask(corner_data, corner_radius, widths, kind) => {
+                match *corner {
+                    BorderCornerKind::Mask(corner_data, corner_radius, widths, kind) => {
                         let clip_source =
                             BorderCornerClipSource::new(corner_data, corner_radius, widths, kind);
                         extra_clips.push(ClipSource::BorderCorner(clip_source));
                     }
-                    &BorderCornerKind::Clip(instance_kind) => {
+                    BorderCornerKind::Clip(instance_kind) => {
                         corner_instances[i] = instance_kind;
                     }
-                    _ => {}
+                    BorderCornerKind::Solid => {}
+                    BorderCornerKind::None => {
+                        corner_instances[i] = BorderCornerInstance::None;
+                    }
                 }
             }
 

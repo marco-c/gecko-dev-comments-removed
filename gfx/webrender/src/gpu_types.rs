@@ -2,6 +2,7 @@
 
 
 
+use api::LayerRect;
 use gpu_cache::GpuCacheAddress;
 use render_task::RenderTaskAddress;
 use tiling::PackedLayerIndex;
@@ -18,7 +19,7 @@ impl From<PackedLayerIndex> for PackedLayerAddress {
 }
 
 #[repr(i32)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum BlurDirection {
     Horizontal = 0,
     Vertical,
@@ -30,6 +31,7 @@ pub struct BlurInstance {
     pub task_address: RenderTaskAddress,
     pub src_task_address: RenderTaskAddress,
     pub blur_direction: BlurDirection,
+    pub region: LayerRect,
 }
 
 

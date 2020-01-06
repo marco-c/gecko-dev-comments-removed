@@ -17,8 +17,8 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use webrender::api::{self, DisplayListBuilder, DocumentId, LayoutSize, PipelineId, RenderApi,
-                     ResourceUpdates};
+use webrender::api::{self, DeviceUintRect, DisplayListBuilder, DocumentId, LayoutSize, PipelineId,
+                     RenderApi, ResourceUpdates};
 
 
 
@@ -145,7 +145,7 @@ impl api::BlobImageRenderer for CheckerboardRenderer {
             .insert(key, Arc::new(deserialize_blob(&cmds[..]).unwrap()));
     }
 
-    fn update(&mut self, key: api::ImageKey, cmds: api::BlobImageData) {
+    fn update(&mut self, key: api::ImageKey, cmds: api::BlobImageData, _dirty_rect: Option<DeviceUintRect>) {
         
         
         self.image_cmds

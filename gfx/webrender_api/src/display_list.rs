@@ -12,7 +12,7 @@ use {LineDisplayItem, LineOrientation, LineStyle, LocalClip, MixBlendMode, Pipel
 use {PropertyBinding, PushStackingContextDisplayItem, RadialGradient, RadialGradientDisplayItem};
 use {RectangleDisplayItem, ScrollFrameDisplayItem, ScrollPolicy, ScrollSensitivity};
 use {SpecificDisplayItem, StackingContext, StickyFrameDisplayItem, StickyFrameInfo};
-use {TextDisplayItem, Shadow, TransformStyle, YuvColorSpace, YuvData};
+use {BorderRadius, TextDisplayItem, Shadow, TransformStyle, YuvColorSpace, YuvData};
 use YuvImageDisplayItem;
 use bincode;
 use serde::{Deserialize, Serialize, Serializer};
@@ -153,23 +153,25 @@ fn skip_slice<T: for<'de> Deserialize<'de>>(
     data: &mut &[u8],
 ) -> (ItemRange<T>, usize) {
     let base = list.data.as_ptr() as usize;
+
+    let byte_size: usize = bincode::deserialize_from(data, bincode::Infinite)
+                                    .expect("MEH: malicious input?");
     let start = data.as_ptr() as usize;
+    let item_count: usize = bincode::deserialize_from(data, bincode::Infinite)
+                                    .expect("MEH: malicious input?");
 
     
-    let mut iter = AuxIter::<T>::new(*data);
-    let count = iter.len();
-    for _ in &mut iter {}
-    let end = iter.data.as_ptr() as usize;
+    let item_count_size = data.as_ptr() as usize - start;
 
     let range = ItemRange {
-        start: start - base,
-        length: end - start,
+        start: start - base,                      
+        length: byte_size + item_count_size,      
         _boo: PhantomData,
     };
 
     
-    *data = &data[range.length ..];
-    (range, count)
+    *data = &data[byte_size ..];
+    (range, item_count)
 }
 
 
@@ -737,11 +739,28 @@ impl DisplayListBuilder {
         let len = iter.len();
         let mut count = 0;
 
+        
+        
+
+        
+        let byte_size_offset = self.data.len();
+        serialize_fast(&mut self.data, &0usize);
         serialize_fast(&mut self.data, &len);
+        let payload_offset = self.data.len();
+
         for elem in iter {
             count += 1;
             serialize_fast(&mut self.data, &elem);
         }
+
+        
+        let final_offset = self.data.len();
+        let byte_size = final_offset - payload_offset;
+
+        
+        bincode::serialize_into(&mut &mut self.data[byte_size_offset..],
+                                &byte_size,
+                                bincode::Infinite).unwrap();
 
         debug_assert_eq!(len, count);
     }
@@ -1024,7 +1043,7 @@ impl DisplayListBuilder {
         color: ColorF,
         blur_radius: f32,
         spread_radius: f32,
-        border_radius: f32,
+        border_radius: BorderRadius,
         clip_mode: BoxShadowClipMode,
     ) {
         let item = SpecificDisplayItem::BoxShadow(BoxShadowDisplayItem {
