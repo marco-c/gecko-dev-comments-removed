@@ -348,7 +348,6 @@ this.TranslationTelemetry = {
 
 
   recordAutoRejectedTranslationOffer() {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.AUTO_REJECTED().add();
   },
 
@@ -362,7 +361,6 @@ this.TranslationTelemetry = {
 
 
   recordTranslation(langFrom, langTo, numCharacters) {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.PAGES().add();
     this.HISTOGRAMS.PAGES_BY_LANG().add(langFrom + " -> " + langTo);
     this.HISTOGRAMS.CHARACTERS().add(numCharacters);
@@ -381,7 +379,6 @@ this.TranslationTelemetry = {
 
 
   recordDetectedLanguageChange(beforeFirstTranslation) {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.DETECTION_CHANGES().add(beforeFirstTranslation);
   },
 
@@ -391,7 +388,6 @@ this.TranslationTelemetry = {
 
 
   recordTargetLanguageChange() {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.TARGET_CHANGES().add();
   },
 
@@ -399,7 +395,6 @@ this.TranslationTelemetry = {
 
 
   recordDeniedTranslationOffer() {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.DENIED().add();
   },
 
@@ -407,7 +402,6 @@ this.TranslationTelemetry = {
 
 
   recordShowOriginalContent() {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.SHOW_ORIGINAL().add();
   },
 
@@ -415,7 +409,6 @@ this.TranslationTelemetry = {
 
 
   recordPreferences() {
-    if (!this._canRecord) return;
     if (Services.prefs.getBoolPref(TRANSLATION_PREF_SHOWUI)) {
       this.HISTOGRAMS.SHOW_UI().add(1);
     }
@@ -425,18 +418,9 @@ this.TranslationTelemetry = {
   },
 
   _recordOpportunity(language, success) {
-    if (!this._canRecord) return;
     this.HISTOGRAMS.OPPORTUNITIES().add(success);
     this.HISTOGRAMS.OPPORTUNITIES_BY_LANG().add(language, success);
   },
-
-  
-
-
-
-  _canRecord() {
-    return Services.prefs.getBoolPref("toolkit.telemetry.enabled");
-  }
 };
 
 this.TranslationTelemetry.init();
