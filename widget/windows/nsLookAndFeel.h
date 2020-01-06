@@ -60,15 +60,6 @@ private:
   nsresult GetAccentColor(nscolor& aColor);
 
   
-
-
-
-
-
-
-  nsresult GetAccentColorText(nscolor& aColor);
-
-  
   
   int32_t mUseAccessibilityTheme;
   int32_t mUseDefaultTheme; 
