@@ -7,6 +7,7 @@
 
 #include "IMMHandler.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsWindowDefs.h"
 #include "WinTextEventDispatcherListener.h"
 
@@ -47,6 +48,7 @@ bool IMEHandler::sPluginHasFocus = false;
 #ifdef NS_ENABLE_TSF
 bool IMEHandler::sIsInTSFMode = false;
 bool IMEHandler::sIsIMMEnabled = true;
+bool IMEHandler::sAssociateIMCOnlyWhenIMM_IMEActive = false;
 decltype(SetInputScopes)* IMEHandler::sSetInputScopes = nullptr;
 #endif 
 
@@ -62,6 +64,10 @@ IMEHandler::Initialize()
   sIsInTSFMode = TSFTextStore::IsInTSFMode();
   sIsIMMEnabled =
     !sIsInTSFMode || Preferences::GetBool("intl.tsf.support_imm", true);
+  sAssociateIMCOnlyWhenIMM_IMEActive =
+    sIsIMMEnabled &&
+    Preferences::GetBool("intl.tsf.associate_imc_only_when_imm_ime_is_active",
+                         false);
   if (!sIsInTSFMode) {
     
     
@@ -173,7 +179,7 @@ IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
     }
     
     
-    if (!TSFTextStore::IsIMM_IME()) {
+    if (!TSFTextStore::IsIMM_IMEActive()) {
       return false;
     }
   }
@@ -188,8 +194,9 @@ IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
 bool
 IMEHandler::IsIMMActive()
 {
-  return TSFTextStore::IsIMM_IME();
+  return TSFTextStore::IsIMM_IMEActive();
 }
+
 #endif 
 
 
@@ -408,6 +415,27 @@ IMEHandler::OnDestroyWindow(nsWindow* aWindow)
   AssociateIMEContext(aWindow, true);
 }
 
+#ifdef NS_ENABLE_TSF
+
+bool
+IMEHandler::NeedsToAssociateIMC()
+{
+  if (sAssociateIMCOnlyWhenIMM_IMEActive) {
+    return TSFTextStore::IsIMM_IMEActive();
+  }
+
+  
+  
+  
+  static const bool sDoNotAssociateIMCWhenMSJapaneseIMEActiveOnWin10 =
+    IsWin10OrLater() &&
+    Preferences::GetBool(
+      "intl.tsf.hack.ms_japanese_ime.do_not_associate_imc_on_win10", true);
+  return !sDoNotAssociateIMCWhenMSJapaneseIMEActiveOnWin10 ||
+         !TSFTextStore::IsMSJapaneseIMEActive();
+}
+#endif 
+
 
 void
 IMEHandler::SetInputContext(nsWindow* aWindow,
@@ -440,7 +468,7 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
     if (IsTSFAvailable()) {
       if (sIsIMMEnabled) {
         
-        AssociateIMEContext(aWindow, enable);
+        AssociateIMEContext(aWindow, enable && NeedsToAssociateIMC());
       } else if (oldInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
         
         
@@ -468,15 +496,15 @@ IMEHandler::SetInputContext(nsWindow* aWindow,
 
 
 void
-IMEHandler::AssociateIMEContext(nsWindow* aWindow, bool aEnable)
+IMEHandler::AssociateIMEContext(nsWindowBase* aWindowBase, bool aEnable)
 {
-  IMEContext context(aWindow);
+  IMEContext context(aWindowBase);
   if (aEnable) {
     context.AssociateDefaultContext();
     return;
   }
   
-  if (aWindow->Destroyed()) {
+  if (aWindowBase->Destroyed()) {
     return;
   }
   context.Disassociate();
@@ -523,6 +551,33 @@ IMEHandler::CurrentKeyboardLayoutHasIME()
   return IMMHandler::IsIMEAvailable();
 }
 #endif 
+
+
+void
+IMEHandler::OnKeyboardLayoutChanged()
+{
+  if (!sIsIMMEnabled || !IsTSFAvailable()) {
+    return;
+  }
+
+  
+  
+  nsWindowBase* windowBase = TSFTextStore::GetEnabledWindowBase();
+  if (!windowBase) {
+    return;
+  }
+
+  
+  InputContext inputContext = windowBase->GetInputContext();
+  if (!WinUtils::IsIMEEnabled(inputContext)) {
+    return;
+  }
+
+  
+  
+  
+  AssociateIMEContext(windowBase, NeedsToAssociateIMC());
+}
 
 
 void

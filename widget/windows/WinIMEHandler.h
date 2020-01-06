@@ -7,7 +7,7 @@
 #define WinIMEHandler_h_
 
 #include "nscore.h"
-#include "nsIWidget.h"
+#include "nsWindowBase.h"
 #include "npapi.h"
 #include <windows.h>
 #include <inputscope.h>
@@ -102,7 +102,7 @@ public:
   
 
 
-  static void AssociateIMEContext(nsWindow* aWindow, bool aEnable);
+  static void AssociateIMEContext(nsWindowBase* aWindowBase, bool aEnable);
 
   
 
@@ -119,6 +119,13 @@ public:
 
   static void DefaultProcOfPluginEvent(nsWindow* aWindow,
                                        const NPEvent* aPluginEvent);
+
+#ifdef NS_ENABLE_TSF
+  
+
+
+  static void OnKeyboardLayoutChanged();
+#endif 
 
 #ifdef DEBUG
   
@@ -142,6 +149,7 @@ private:
   
   
   static bool sIsIMMEnabled;
+  static bool sAssociateIMCOnlyWhenIMM_IMEActive;
 
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }
   static bool IsIMMActive();
@@ -154,6 +162,7 @@ private:
   static bool IsKeyboardPresentOnSlate();
   static bool IsInTabletMode();
   static bool AutoInvokeOnScreenKeyboardInDesktopMode();
+  static bool NeedsToAssociateIMC();
 
   
 
