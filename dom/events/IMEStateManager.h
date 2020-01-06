@@ -133,6 +133,17 @@ public:
   static nsresult OnChangeFocus(nsPresContext* aPresContext,
                                 nsIContent* aContent,
                                 InputContextAction::Cause aCause);
+
+  
+
+
+
+
+
+
+
+
+
   static void OnInstalledMenuKeyboardListener(bool aInstalling);
 
   
@@ -293,6 +304,19 @@ protected:
   static bool CanHandleWith(nsPresContext* aPresContext);
 
   
+
+
+
+
+  static void ResetActiveChildInputContext();
+
+  
+
+
+
+  static bool HasActiveChildSetInputContext();
+
+  
   
   
   static StaticRefPtr<nsIContent> sContent;
@@ -324,10 +348,20 @@ protected:
   
   static InputContext::Origin sOrigin;
 
-  static bool           sInstalledMenuKeyboardListener;
-  static bool           sIsGettingNewIMEState;
-  static bool           sCheckForIMEUnawareWebApps;
-  static bool           sInputModeSupported;
+  
+  
+  
+  
+  
+  static InputContext sActiveChildInputContext;
+
+  
+  
+  static bool sInstalledMenuKeyboardListener;
+
+  static bool sIsGettingNewIMEState;
+  static bool sCheckForIMEUnawareWebApps;
+  static bool sInputModeSupported;
 
   class MOZ_STACK_CLASS GettingNewIMEStateBlocker final
   {
