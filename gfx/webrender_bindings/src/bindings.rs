@@ -1354,14 +1354,24 @@ pub extern "C" fn wr_dp_pop_stacking_context(state: &mut WrState) {
 
 #[no_mangle]
 pub extern "C" fn wr_dp_push_clip(state: &mut WrState,
-                                  clip_rect: WrRect,
+                                  rect: WrRect,
                                   mask: *const WrImageMask)
                                   -> u64 {
     assert!(unsafe { is_in_main_thread() });
-    let clip_rect = clip_rect.into();
-    let mask = unsafe { mask.as_ref() }.map(|x| x.into());
+    let content_rect: LayoutRect = rect.into();
+
+    
+    
+    
+    
+    let clip_rect = LayoutRect::new(LayoutPoint::zero(), content_rect.size);
+    let mut mask : Option<ImageMask> = unsafe { mask.as_ref() }.map(|x| x.into());
+    if let Some(ref mut m) = mask {
+        m.rect.origin = m.rect.origin - content_rect.origin;
+    }
+
     let clip_region = state.frame_builder.dl_builder.push_clip_region(&clip_rect, vec![], mask);
-    let clip_id = state.frame_builder.dl_builder.define_clip(clip_rect, clip_region, None);
+    let clip_id = state.frame_builder.dl_builder.define_clip(content_rect, clip_region, None);
     state.frame_builder.dl_builder.push_clip_id(clip_id);
     
     match clip_id {
@@ -1389,8 +1399,14 @@ pub extern "C" fn wr_dp_push_scroll_layer(state: &mut WrState,
     
     
     if !state.frame_builder.scroll_clips_defined.contains(&clip_id) {
-        let content_rect = content_rect.into();
-        let clip_rect = clip_rect.into();
+        let content_rect: LayoutRect = content_rect.into();
+
+        
+        
+        
+        let mut clip_rect: LayoutRect = clip_rect.into();
+        clip_rect.origin = clip_rect.origin - content_rect.origin;
+
         let clip_region = state.frame_builder.dl_builder.push_clip_region(&clip_rect, vec![], None);
         state.frame_builder.dl_builder.define_clip(content_rect, clip_region, Some(clip_id));
         state.frame_builder.scroll_clips_defined.insert(clip_id);
