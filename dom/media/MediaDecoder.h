@@ -490,6 +490,12 @@ private:
   
   virtual MediaResource* GetResource() const = 0;
 
+  
+  virtual void PinForSeek() = 0;
+
+  
+  virtual void UnpinForSeek() = 0;
+
   nsCString GetDebugInfo();
 
   
@@ -539,12 +545,6 @@ protected:
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
 
-  
-  void PinForSeek();
-
-  
-  void UnpinForSeek();
-
   const char* PlayStateStr();
 
   void OnMetadataUpdate(TimedMetadata&& aMetadata);
@@ -561,10 +561,6 @@ protected:
   const RefPtr<FrameStatistics> mFrameStats;
 
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
-
-  
-  
-  bool mPinnedForSeek;
 
   
   
