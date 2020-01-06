@@ -168,7 +168,7 @@ public:
   void PopScrollLayer();
 
   void PushClipAndScrollInfo(const layers::FrameMetrics::ViewID& aScrollId,
-                             const WrClipId* aClipId);
+                             const uint64_t* aClipId);
   void PopClipAndScrollInfo();
 
   void PushRect(const WrRect& aBounds,
@@ -292,7 +292,7 @@ public:
   
   
   
-  Maybe<WrClipId> TopmostClipId();
+  Maybe<uint64_t> TopmostClipId();
   
   
   
@@ -308,7 +308,7 @@ protected:
   
   
   
-  std::vector<WrClipId> mClipIdStack;
+  std::vector<uint64_t> mClipIdStack;
   std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
 
   friend class WebRenderAPI;
