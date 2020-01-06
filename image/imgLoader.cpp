@@ -976,11 +976,37 @@ void
 imgCacheQueue::Remove(imgCacheEntry* entry)
 {
   auto it = find(mQueue.begin(), mQueue.end(), entry);
-  if (it != mQueue.end()) {
-    mSize -= (*it)->GetDataSize();
-    mQueue.erase(it);
-    MarkDirty();
+  if (it == mQueue.end()) {
+    return;
   }
+
+  mSize -= (*it)->GetDataSize();
+
+  
+  
+  
+  if (!IsDirty() && it == mQueue.begin()) {
+    std::pop_heap(mQueue.begin(), mQueue.end(),
+                  imgLoader::CompareCacheEntries);
+    mQueue.pop_back();
+    return;
+  }
+
+  
+  
+  mQueue.erase(it);
+
+  
+  
+  
+  if (mQueue.size() <= 1) {
+    Refresh();
+    return;
+  }
+
+  
+  
+  MarkDirty();
 }
 
 void
@@ -1620,7 +1646,12 @@ void
 imgLoader::CacheEntriesChanged(bool aForChrome, int32_t aSizeDiff )
 {
   imgCacheQueue& queue = GetCacheQueue(aForChrome);
-  queue.MarkDirty();
+  
+  
+  
+  if (queue.GetNumElements() > 1) {
+    queue.MarkDirty();
+  }
   queue.UpdateSize(aSizeDiff);
 }
 
