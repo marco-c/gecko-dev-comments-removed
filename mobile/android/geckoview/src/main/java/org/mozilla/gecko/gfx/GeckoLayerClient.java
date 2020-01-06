@@ -50,9 +50,9 @@ class GeckoLayerClient implements LayerView.Listener
 
     private volatile boolean mGeckoIsReady;
 
-     final PanZoomController mPanZoomController;
+    private final PanZoomController mPanZoomController;
     private final DynamicToolbarAnimator mToolbarAnimator;
-     final LayerView mView;
+    private final LayerView mView;
 
     
 
@@ -111,8 +111,7 @@ class GeckoLayerClient implements LayerView.Listener
         mView.post(new Runnable() {
             @Override
             public void run() {
-                mPanZoomController.attach();
-                mView.updateCompositor();
+                getView().updateCompositor();
             }
         });
     }
@@ -408,7 +407,7 @@ class GeckoLayerClient implements LayerView.Listener
         mView.post(new Runnable() {
             @Override
             public void run() {
-                mView.dispatchTouchEvent(event);
+                getView().dispatchTouchEvent(event);
             }
         });
 

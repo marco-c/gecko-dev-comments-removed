@@ -302,7 +302,6 @@ public class GeckoView extends LayerView {
 
     private GeckoViewSettings mSettings;
 
-    protected boolean mOnAttachedToWindowCalled;
     protected String mChromeUri;
     protected int mScreenId = 0; 
 
@@ -509,10 +508,6 @@ public class GeckoView extends LayerView {
         }
         mStateSaved = false;
 
-        if (mOnAttachedToWindowCalled) {
-            reattachWindow();
-        }
-
         
         
         super.onRestoreInstanceState(stateBinder.superState);
@@ -587,8 +582,6 @@ public class GeckoView extends LayerView {
         }
 
         super.onAttachedToWindow();
-
-        mOnAttachedToWindowCalled = true;
     }
 
     @Override
@@ -610,8 +603,6 @@ public class GeckoView extends LayerView {
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
                     mWindow, "disposeNative");
         }
-
-        mOnAttachedToWindowCalled = false;
     }
 
     @WrapForJNI public static final int LOAD_DEFAULT = 0;
