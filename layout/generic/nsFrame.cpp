@@ -2628,8 +2628,7 @@ ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame,
     gfxRect result = nsSVGUtils::GetBBox(aMaskedFrame,
         nsSVGUtils::eBBoxIncludeClipped |
         nsSVGUtils::eBBoxIncludeFill |
-        nsSVGUtils::eBBoxIncludeMarkers |
-        nsSVGUtils::eBBoxIncludeStroke);
+        nsSVGUtils::eBBoxIncludeMarkers);
     combinedClip = Some(cssToDevMatrix.TransformBounds(result));
   } else {
     
@@ -2748,7 +2747,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     autoPreserves3DContext.emplace(aBuilder);
     
     
-    aBuilder->SavePreserves3DRects();
+    aBuilder->SavePreserves3DRect();
   }
 
   
@@ -2790,7 +2789,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       
       
       if (Combines3DTransformWithAncestors(disp)) {
-        dirtyRect = aBuilder->GetPreserves3DRects(&visibleRect);
+        visibleRect = dirtyRect = aBuilder->GetPreserves3DRect();
       }
 
       nsRect untransformedDirtyRect;
