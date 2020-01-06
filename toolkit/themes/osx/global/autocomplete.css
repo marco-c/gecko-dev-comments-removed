@@ -25,17 +25,6 @@ textbox:not(.padded) .textbox-input-box {
 
 
 
-.autocomplete-history-dropmarker {
-  -moz-appearance: none !important;
-  border: none !important;
-  background-color: transparent !important;
-  padding: 0px;
-  list-style-image: url("chrome://global/skin/icons/autocomplete-dropmarker.png");
-  margin: 0px;
-}
-
-
-
 panel[type="autocomplete"],
 panel[type="autocomplete-richlistbox"],
 .autocomplete-history-popup {
