@@ -31,16 +31,6 @@ namespace {
 
 
 
-struct EmptyStrings {
-  EmptyStrings() {}
-  const std::string s;
-  const std::wstring ws;
-  const string16 s16;
-};
-
-
-
-
 template<typename T>
 struct ToUnsigned {
   typedef T Unsigned;
