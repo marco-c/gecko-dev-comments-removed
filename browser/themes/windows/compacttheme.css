@@ -27,8 +27,7 @@
 @media (-moz-os-version: windows-win7) {
   @media (-moz-windows-default-theme) {
     
-    #TabsToolbar,
-    #TabsToolbar toolbarbutton[disabled="true"] {
+    #TabsToolbar {
       color: hsl(240,9%,98%);
     }
 
