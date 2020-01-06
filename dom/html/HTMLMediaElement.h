@@ -1683,7 +1683,7 @@ protected:
   EncryptionInfo mPendingEncryptedInitData;
 
   
-  Watchable<bool> mDownloadSuspendedByCache;
+  bool mDownloadSuspendedByCache = false;
 
   
   
