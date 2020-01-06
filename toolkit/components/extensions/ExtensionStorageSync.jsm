@@ -1065,7 +1065,10 @@ class ExtensionStorageSync {
       return result;
     } catch (e) {
       if (KeyRingEncryptionRemoteTransformer.isOutdatedKB(e) ||
-          e instanceof ServerKeyringDeleted) {
+          e instanceof ServerKeyringDeleted ||
+          
+          
+          e.message == "Server has been flushed.") {
         
         
         const isSessionValid = await this._fxaService.sessionStatus();
