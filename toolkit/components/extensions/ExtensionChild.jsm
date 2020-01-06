@@ -40,11 +40,9 @@ const {
   DefaultMap,
   EventEmitter,
   LimitedSet,
-  SpreadArgs,
   defineLazyGetter,
   getMessageManager,
   getUniqueId,
-  injectAPI,
 } = ExtensionUtils;
 
 const {
@@ -52,9 +50,30 @@ const {
   LocaleData,
   SchemaAPIInterface,
   SingletonEventManager,
+  SpreadArgs,
 } = ExtensionCommon;
 
 const isContentProcess = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
+
+
+function injectAPI(source, dest) {
+  for (let prop in source) {
+    
+    if (prop[0] == "_") {
+      continue;
+    }
+
+    let desc = Object.getOwnPropertyDescriptor(source, prop);
+    if (typeof(desc.value) == "function") {
+      Cu.exportFunction(desc.value, dest, {defineAs: prop});
+    } else if (typeof(desc.value) == "object") {
+      let obj = Cu.createObjectIn(dest, {defineAs: prop});
+      injectAPI(desc.value, obj);
+    } else {
+      Object.defineProperty(dest, prop, desc);
+    }
+  }
+}
 
 
 

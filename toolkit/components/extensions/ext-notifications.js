@@ -5,7 +5,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
 
 var {
   ignoreEvent,
-} = ExtensionUtils;
+} = ExtensionCommon;
 
 
 let notificationsMap = new WeakMap();

@@ -97,13 +97,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "useRemoteWebExtensions",
 var {
   GlobalManager,
   ParentAPIManager,
+  StartupCache,
   apiManager: Management,
 } = ExtensionParent;
 
 const {
-  classifyPermission,
   EventEmitter,
-  StartupCache,
   getUniqueId,
 } = ExtensionUtils;
 
@@ -143,6 +142,29 @@ function validateThemeManifest(manifestProperties) {
     }
   }
   return invalidProps;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function classifyPermission(perm) {
+  let match = /^(\w+)(?:\.(\w+)(?:\.\w+)*)?$/.exec(perm);
+  if (!match) {
+    return {origin: perm};
+  } else if (match[1] == "experiments" && match[2]) {
+    return {api: match[2]};
+  }
+  return {permission: perm};
 }
 
 const LOGGER_ID_BASE = "addons.webextension.";

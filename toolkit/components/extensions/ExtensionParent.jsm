@@ -24,6 +24,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
                                   "resource:///modules/E10SUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "IndexedDB",
+                                  "resource://gre/modules/IndexedDB.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
                                   "resource://gre/modules/MessageChannel.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NativeApp",
@@ -46,12 +48,13 @@ var {
   BaseContext,
   CanOfAPIs,
   SchemaAPIManager,
+  SpreadArgs,
 } = ExtensionCommon;
 
 var {
   DefaultWeakMap,
+  ExtensionError,
   MessageManagerProxy,
-  SpreadArgs,
   defineLazyGetter,
   promiseDocumentLoaded,
   promiseEvent,
@@ -68,7 +71,9 @@ const XUL_URL = "data:application/vnd.mozilla.xul+xml;charset=utf-8," + encodeUR
 
 let schemaURLs = new Set();
 
-schemaURLs.add("chrome://extensions/content/schemas/experiments.json");
+if (!AppConstants.RELEASE_OR_BETA) {
+  schemaURLs.add("chrome://extensions/content/schemas/experiments.json");
+}
 
 let GlobalManager;
 let ParentAPIManager;
@@ -1070,11 +1075,305 @@ function extensionNameFromURI(uri) {
   return GlobalManager.getExtension(id).name;
 }
 
-const ExtensionParent = {
+const INTEGER = /^[1-9]\d*$/;
+
+
+
+let IconDetails = {
+  
+  iconCache: new DefaultWeakMap(() => new Map()),
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  normalize(details, extension, context = null) {
+    if (!details.imageData && typeof details.path === "string") {
+      let icons = this.iconCache.get(extension);
+
+      let baseURI = context ? context.uri : extension.baseURI;
+      let url = baseURI.resolve(details.path);
+
+      let icon = icons.get(url);
+      if (!icon) {
+        icon = this._normalize(details, extension, context);
+        icons.set(url, icon);
+      }
+      return icon;
+    }
+
+    return this._normalize(details, extension, context);
+  },
+
+  _normalize(details, extension, context = null) {
+    let result = {};
+
+    try {
+      if (details.imageData) {
+        let imageData = details.imageData;
+
+        if (typeof imageData == "string") {
+          imageData = {"19": imageData};
+        }
+
+        for (let size of Object.keys(imageData)) {
+          if (!INTEGER.test(size)) {
+            throw new ExtensionError(`Invalid icon size ${size}, must be an integer`);
+          }
+          result[size] = imageData[size];
+        }
+      }
+
+      if (details.path) {
+        let path = details.path;
+        if (typeof path != "object") {
+          path = {"19": path};
+        }
+
+        let baseURI = context ? context.uri : extension.baseURI;
+
+        for (let size of Object.keys(path)) {
+          if (!INTEGER.test(size)) {
+            throw new ExtensionError(`Invalid icon size ${size}, must be an integer`);
+          }
+
+          let url = baseURI.resolve(path[size]);
+
+          
+          
+          
+          
+          try {
+            Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+              extension.principal, url,
+              Services.scriptSecurityManager.DISALLOW_SCRIPT);
+          } catch (e) {
+            throw new ExtensionError(`Illegal URL ${url}`);
+          }
+
+          result[size] = url;
+        }
+      }
+    } catch (e) {
+      
+      if (context) {
+        throw e;
+      }
+      
+      
+      
+      extension.manifestError(`Invalid icon data: ${e}`);
+    }
+
+    return result;
+  },
+
+  
+  
+  getPreferredIcon(icons, extension = null, size = 16) {
+    const DEFAULT = "chrome://browser/content/extension.svg";
+
+    let bestSize = null;
+    if (icons[size]) {
+      bestSize = size;
+    } else if (icons[2 * size]) {
+      bestSize = 2 * size;
+    } else {
+      let sizes = Object.keys(icons)
+                        .map(key => parseInt(key, 10))
+                        .sort((a, b) => a - b);
+
+      bestSize = sizes.find(candidate => candidate > size) || sizes.pop();
+    }
+
+    if (bestSize) {
+      return {size: bestSize, icon: icons[bestSize]};
+    }
+
+    return {size, icon: DEFAULT};
+  },
+
+  convertImageURLToDataURL(imageURL, contentWindow, browserWindow, size = 18) {
+    return new Promise((resolve, reject) => {
+      let image = new contentWindow.Image();
+      image.onload = function() {
+        let canvas = contentWindow.document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        let dSize = size * browserWindow.devicePixelRatio;
+
+        
+        
+        
+        let dWidth, dHeight, dx, dy;
+        if (this.width > this.height) {
+          dWidth = dSize;
+          dHeight = image.height * (dSize / image.width);
+          dx = 0;
+          dy = (dSize - dHeight) / 2;
+        } else {
+          dWidth = image.width * (dSize / image.height);
+          dHeight = dSize;
+          dx = (dSize - dWidth) / 2;
+          dy = 0;
+        }
+
+        canvas.width = dSize;
+        canvas.height = dSize;
+        ctx.drawImage(this, 0, 0, this.width, this.height, dx, dy, dWidth, dHeight);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      image.onerror = reject;
+      image.src = imageURL;
+    });
+  },
+
+  
+  
+  
+  escapeUrl(url) {
+    return url.replace(/[\\\s"]/g, encodeURIComponent);
+  },
+};
+
+let StartupCache = {
+  DB_NAME: "ExtensionStartupCache",
+
+  SCHEMA_VERSION: 2,
+
+  STORE_NAMES: Object.freeze(["locales", "manifests", "schemas"]),
+
+  dbPromise: null,
+
+  initDB(db) {
+    for (let name of StartupCache.STORE_NAMES) {
+      try {
+        db.deleteObjectStore(name);
+      } catch (e) {
+        
+      }
+      db.createObjectStore(name, {keyPath: "key"});
+    }
+  },
+
+  clearAddonData(id) {
+    let range = IDBKeyRange.bound([id], [id, "\uFFFF"]);
+
+    return Promise.all([
+      this.locales.delete(range),
+      this.manifests.delete(range),
+    ]).catch(e => {
+      
+      
+      this.dbPromise = this.reallyOpen(true).catch(e => {});
+    });
+  },
+
+  async reallyOpen(invalidate = false) {
+    if (this.dbPromise) {
+      let db = await this.dbPromise;
+      db.close();
+    }
+
+    if (invalidate) {
+      IndexedDB.deleteDatabase(this.DB_NAME, {storage: "persistent"});
+    }
+
+    return IndexedDB.open(this.DB_NAME,
+                          {storage: "persistent", version: this.SCHEMA_VERSION},
+                          db => this.initDB(db));
+  },
+
+  async open() {
+    if (!this.dbPromise) {
+      this.dbPromise = this.reallyOpen();
+    }
+
+    return this.dbPromise;
+  },
+
+  observe(subject, topic, data) {
+    if (topic === "startupcache-invalidate") {
+      this.dbPromise = this.reallyOpen(true).catch(e => {});
+    }
+  },
+};
+
+Services.obs.addObserver(StartupCache, "startupcache-invalidate");
+
+class CacheStore {
+  constructor(storeName) {
+    this.storeName = storeName;
+  }
+
+  async get(key, createFunc) {
+    let db;
+    let result;
+    try {
+      db = await StartupCache.open();
+
+      result = await db.objectStore(this.storeName)
+                      .get(key);
+    } catch (e) {
+      Cu.reportError(e);
+
+      return createFunc(key);
+    }
+
+    if (result === undefined) {
+      let value = await createFunc(key);
+      result = {key, value};
+
+      try {
+        db.objectStore(this.storeName, "readwrite")
+          .put(result);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+
+    return result && result.value;
+  }
+
+  async getAll() {
+    let result = new Map();
+    try {
+      let db = await StartupCache.open();
+
+      let results = await db.objectStore(this.storeName)
+                            .getAll();
+      for (let {key, value} of results) {
+        result.set(key, value);
+      }
+    } catch (e) {
+      Cu.reportError(e);
+    }
+
+    return result;
+  }
+
+  async delete(key) {
+    let db = await StartupCache.open();
+
+    return db.objectStore(this.storeName, "readwrite").delete(key);
+  }
+}
+
+for (let name of StartupCache.STORE_NAMES) {
+  StartupCache[name] = new CacheStore(name);
+}
+
+var ExtensionParent = {
   extensionNameFromURI,
   GlobalManager,
   HiddenExtensionPage,
+  IconDetails,
   ParentAPIManager,
+  StartupCache,
   WebExtensionPolicy,
   apiManager,
   get baseManifestProperties() {
@@ -1095,3 +1394,39 @@ const ExtensionParent = {
   watchExtensionProxyContextLoad,
   DebugUtils,
 };
+
+XPCOMUtils.defineLazyGetter(ExtensionParent, "PlatformInfo", () => {
+  return Object.freeze({
+    os: (function() {
+      let os = AppConstants.platform;
+      if (os == "macosx") {
+        os = "mac";
+      }
+      return os;
+    })(),
+    arch: (function() {
+      let abi = Services.appinfo.XPCOMABI;
+      let [arch] = abi.split("-");
+      if (arch == "x86") {
+        arch = "x86-32";
+      } else if (arch == "x86_64") {
+        arch = "x86-64";
+      }
+      return arch;
+    })(),
+  });
+});
+
+
+
+
+
+XPCOMUtils.defineLazyGetter(ExtensionParent, "extensionStylesheets", () => {
+  let stylesheets = ["chrome://browser/content/extension.css"];
+
+  if (AppConstants.platform === "macosx") {
+    stylesheets.push("chrome://browser/content/extension-mac.css");
+  }
+
+  return stylesheets;
+});

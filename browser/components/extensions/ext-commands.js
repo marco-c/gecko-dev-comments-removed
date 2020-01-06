@@ -2,9 +2,8 @@
 
 "use strict";
 
-var {
-  PlatformInfo,
-} = ExtensionUtils;
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
+                                  "resource://gre/modules/ExtensionParent.jsm");
 
 var XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -71,6 +70,7 @@ this.commands = class extends ExtensionAPI {
     let commands = new Map();
     
     
+    let {PlatformInfo} = ExtensionParent;
     let os = PlatformInfo.os == "win" ? "windows" : PlatformInfo.os;
     for (let [name, command] of Object.entries(manifest.commands)) {
       let suggested_key = command.suggested_key || {};
