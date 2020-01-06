@@ -18,6 +18,10 @@ const {
 const {appendText} = require("devtools/client/inspector/shared/utils");
 const Services = require("Services");
 
+const STYLE_INSPECTOR_PROPERTIES = "devtools/shared/locales/styleinspector.properties";
+const {LocalizationHelper} = require("devtools/shared/l10n");
+const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
+
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CSS_GRID_ENABLED_PREF = "layout.css.grid.enabled";
 const CSS_SHAPES_ENABLED_PREF = "devtools.inspector.shapesHighlighter.enabled";
@@ -110,10 +114,23 @@ OutputParser.prototype = {
 
 
 
-  _collectFunctionText: function (initialToken, text, tokenStream) {
-    let result = text.substring(initialToken.startOffset,
-                                initialToken.endOffset);
+
+
+
+
+
+
+
+
+
+
+
+  _parseMatchingParens: function (text, tokenStream, options, stopAtComma) {
     let depth = 1;
+    let functionData = [];
+    let tokens = [];
+    let sawVariable = false;
+
     while (depth > 0) {
       let token = tokenStream.nextToken();
       if (!token) {
@@ -122,18 +139,38 @@ OutputParser.prototype = {
       if (token.tokenType === "comment") {
         continue;
       }
-      result += text.substring(token.startOffset, token.endOffset);
+
       if (token.tokenType === "symbol") {
-        if (token.text === "(") {
+        if (stopAtComma && depth === 1 && token.text === ",") {
+          return { tokens, functionData, sawComma: true, sawVariable };
+        } else if (token.text === "(") {
           ++depth;
         } else if (token.text === ")") {
           --depth;
+          if (depth === 0) {
+            break;
+          }
         }
+      } else if (token.tokenType === "function" && token.text === "var" &&
+                 options.isVariableInUse) {
+        sawVariable = true;
+        let variableNode = this._parseVariable(token, text, tokenStream, options);
+        functionData.push(variableNode);
       } else if (token.tokenType === "function") {
         ++depth;
       }
+
+      if (token.tokenType !== "function" || token.text !== "var" ||
+          !options.isVariableInUse) {
+        functionData.push(text.substring(token.startOffset, token.endOffset));
+      }
+
+      if (token.tokenType !== "whitespace") {
+        tokens.push(token);
+      }
     }
-    return result;
+
+    return { tokens, functionData, sawComma: false, sawVariable };
   },
 
   
@@ -147,12 +184,97 @@ OutputParser.prototype = {
 
 
 
-  _parse: function (text, options = {}) {
-    text = text.trim();
-    this.parsed.length = 0;
 
-    let tokenStream = getCSSLexer(text);
-    let parenDepth = 0;
+
+
+
+
+
+
+
+  _parseVariable: function (initialToken, text, tokenStream, options) {
+    
+    let varText = text.substring(initialToken.startOffset,
+                                 initialToken.endOffset);
+    let variableNode = this._createNode("span", {}, varText);
+
+    
+    let {tokens, functionData, sawComma, sawVariable} =
+        this._parseMatchingParens(text, tokenStream, options, true);
+
+    let result = sawVariable ? "" : functionData.join("");
+
+    
+    let firstOpts = {};
+    let secondOpts = {};
+
+    let varValue;
+
+    
+    if (tokens && tokens.length === 1) {
+      varValue = options.isVariableInUse(tokens[0].text);
+    }
+
+    
+    let varName = text.substring(tokens[0].startOffset, tokens[0].endOffset);
+
+    if (typeof varValue === "string") {
+      
+      
+      firstOpts.title =
+        STYLE_INSPECTOR_L10N.getFormatStr("rule.variableValue", varName, varValue);
+      secondOpts.class = options.unmatchedVariableClass;
+    } else {
+      
+      firstOpts.class = options.unmatchedVariableClass;
+      firstOpts.title = STYLE_INSPECTOR_L10N.getFormatStr("rule.variableUnset",
+                                                          varName);
+    }
+
+    variableNode.appendChild(this._createNode("span", firstOpts, result));
+
+    
+    
+    if (sawComma) {
+      variableNode.appendChild(this.doc.createTextNode(","));
+
+      
+      
+      let subOptions = Object.assign({}, options);
+      subOptions.expectFilter = false;
+      let saveParsed = this.parsed;
+      this.parsed = [];
+      let rest = this._doParse(text, subOptions, tokenStream, true);
+      this.parsed = saveParsed;
+
+      let span = this._createNode("span", secondOpts);
+      span.appendChild(rest);
+      variableNode.appendChild(span);
+    }
+    variableNode.appendChild(this.doc.createTextNode(")"));
+
+    return variableNode;
+  },
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _doParse: function (text, options, tokenStream, stopAtCloseParen) {
+    let parenDepth = stopAtCloseParen ? 1 : 0;
     let outerMostFunctionTakesColor = false;
 
     let colorOK = function () {
@@ -166,12 +288,17 @@ OutputParser.prototype = {
     };
 
     let spaceNeeded = false;
-    let token = tokenStream.nextToken();
-    while (token) {
+    let done = false;
+
+    while (!done) {
+      let token = tokenStream.nextToken();
+      if (!token) {
+        break;
+      }
+
       if (token.tokenType === "comment") {
         
         
-        token = tokenStream.nextToken();
         continue;
       }
 
@@ -190,21 +317,44 @@ OutputParser.prototype = {
                 token.text);
             }
             ++parenDepth;
+          } else if (token.text === "var" && options.isVariableInUse) {
+            let variableNode = this._parseVariable(token, text, tokenStream, options);
+            this.parsed.push(variableNode);
           } else {
-            let functionText = this._collectFunctionText(token, text,
-                                                         tokenStream);
+            let {functionData, sawVariable} = this._parseMatchingParens(text, tokenStream,
+              options);
 
-            if (options.expectCubicBezier && token.text === "cubic-bezier") {
-              this._appendCubicBezier(functionText, options);
-            } else if (colorOK() &&
-                       colorUtils.isValidCSSColor(functionText, this.cssColor4)) {
-              this._appendColor(functionText, options);
-            } else if (options.expectShape &&
-                       Services.prefs.getBoolPref(CSS_SHAPES_ENABLED_PREF) &&
-                       BASIC_SHAPE_FUNCTIONS.includes(token.text)) {
-              this._appendShape(functionText, options);
+            let functionName = text.substring(token.startOffset, token.endOffset);
+
+            if (sawVariable) {
+              
+              
+              this._appendTextNode(functionName);
+              for (let data of functionData) {
+                if (typeof data === "string") {
+                  this._appendTextNode(data);
+                } else if (data) {
+                  this.parsed.push(data);
+                }
+              }
+              this._appendTextNode(")");
             } else {
-              this._appendTextNode(functionText);
+              
+              
+              let functionText = functionName + functionData.join("") + ")";
+
+              if (options.expectCubicBezier && token.text === "cubic-bezier") {
+                this._appendCubicBezier(functionText, options);
+              } else if (colorOK() &&
+                         colorUtils.isValidCSSColor(functionText, this.cssColor4)) {
+                this._appendColor(functionText, options);
+              } else if (options.expectShape &&
+                         Services.prefs.getBoolPref(CSS_SHAPES_ENABLED_PREF) &&
+                         BASIC_SHAPE_FUNCTIONS.includes(token.text)) {
+                this._appendShape(functionText, options);
+              } else {
+                this._appendTextNode(functionText);
+              }
             }
           }
           break;
@@ -262,6 +412,12 @@ OutputParser.prototype = {
             ++parenDepth;
           } else if (token.text === ")") {
             --parenDepth;
+
+            if (stopAtCloseParen && parenDepth === 0) {
+              done = true;
+              break;
+            }
+
             if (parenDepth === 0) {
               outerMostFunctionTakesColor = false;
             }
@@ -279,8 +435,6 @@ OutputParser.prototype = {
                      token.tokenType === "id" || token.tokenType === "hash" ||
                      token.tokenType === "number" || token.tokenType === "dimension" ||
                      token.tokenType === "percentage" || token.tokenType === "dimension");
-
-      token = tokenStream.nextToken();
     }
 
     let result = this._toDOM();
@@ -290,6 +444,26 @@ OutputParser.prototype = {
     }
 
     return result;
+  },
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+  _parse: function (text, options = {}) {
+    text = text.trim();
+    this.parsed.length = 0;
+
+    let tokenStream = getCSSLexer(text);
+    return this._doParse(text, options, tokenStream, false);
   },
 
   
@@ -1245,6 +1419,14 @@ OutputParser.prototype = {
 
 
 
+
+
+
+
+
+
+
+
   _mergeOptions: function (overrides) {
     let defaults = {
       defaultColorType: true,
@@ -1260,6 +1442,8 @@ OutputParser.prototype = {
       supportsColor: false,
       urlClass: "",
       baseURI: undefined,
+      isVariableInUse: null,
+      unmatchedVariableClass: null,
     };
 
     for (let item in overrides) {
