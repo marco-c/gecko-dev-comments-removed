@@ -210,9 +210,7 @@ firefox-ui-functional-local:
             by-test-platform:
                 windows.*:
                     - firefox_ui_tests/taskcluster_windows.py
-                macosx.*:
-                    - firefox_ui_tests/taskcluster.py
-                linux.*:
+                default:
                     - firefox_ui_tests/taskcluster.py
                     - remove_executables.py
         extra-options:
@@ -232,9 +230,7 @@ firefox-ui-functional-remote:
             by-test-platform:
                 windows.*:
                     - firefox_ui_tests/taskcluster_windows.py
-                macosx.*:
-                    - firefox_ui_tests/taskcluster.py
-                linux.*:
+                default:
                     - firefox_ui_tests/taskcluster.py
                     - remove_executables.py
         extra-options:
@@ -503,6 +499,7 @@ mochitest:
             android.*: 20
             macosx.*: 5
             windows.*: 5
+            linux32/debug: 16
             linux.*: 10
     e10s:
         by-test-platform:
