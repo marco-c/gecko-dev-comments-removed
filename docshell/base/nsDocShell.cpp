@@ -4083,7 +4083,7 @@ nsDocShell::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner)
 }
 
 NS_IMETHODIMP
-nsDocShell::SetChildOffset(uint32_t aChildOffset)
+nsDocShell::SetChildOffset(int32_t aChildOffset)
 {
   mChildOffset = aChildOffset;
   return NS_OK;
@@ -5275,7 +5275,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       bool isFileURI = false;
       rv = aURI->SchemeIs("file", &isFileURI);
       if (NS_SUCCEEDED(rv) && isFileURI) {
-        aURI->GetPathQueryRef(spec);
+        aURI->GetPath(spec);
       } else {
         aURI->GetSpec(spec);
       }
@@ -12368,7 +12368,7 @@ nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI)
   }
 
   if (buf.EqualsLiteral("about")) {
-    rv = aURI->GetPathQueryRef(buf);
+    rv = aURI->GetPath(buf);
     if (NS_FAILED(rv)) {
       return false;
     }
