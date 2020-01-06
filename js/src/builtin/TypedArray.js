@@ -1187,6 +1187,10 @@ function TypedArraySort(comparefn) {
         len = callFunction(CallTypedArrayMethodIfWrapped, obj, obj, "TypedArrayLength");
     }
 
+    
+    if (len <= 1)
+        return obj;
+
     if (comparefn === undefined) {
         
         if (IsUint8TypedArray(obj)) {
@@ -1209,39 +1213,33 @@ function TypedArraySort(comparefn) {
 
     
     
-    var wrappedCompareFn = comparefn;
-    comparefn = function(x, y) {
+    var wrappedCompareFn = function(x, y) {
         
-        var v = wrappedCompareFn(x, y);
+        var v = comparefn(x, y);
+
         
-        if (buffer === null) {
-            
-            
-            if (isTypedArray) {
-                buffer = GetAttachedArrayBuffer(obj);
-            } else {
-                buffer = callFunction(CallTypedArrayMethodIfWrapped, obj, obj,
-                                      "GetAttachedArrayBuffer");
-            }
-        }
-        var bufferDetached;
+        var length;
         if (isTypedArray) {
-            bufferDetached = IsDetachedBuffer(buffer);
+            length = TypedArrayLength(obj);
         } else {
-            
-            
-            bufferDetached = callFunction(CallTypedArrayMethodIfWrapped, obj,
-                                          buffer, "IsDetachedBuffer");
+            length = callFunction(CallTypedArrayMethodIfWrapped, obj, obj, "TypedArrayLength");
         }
-        if (bufferDetached)
+
+        
+        
+        if (length === 0) {
+            assert(PossiblyWrappedTypedArrayHasDetachedBuffer(obj),
+                   "Length can only change from non-zero to zero when the buffer was detached");
             ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+        }
+
         
         
         
         return v;
     }
 
-    return QuickSort(obj, len, comparefn);
+    return QuickSort(obj, len, wrappedCompareFn);
 }
 
 

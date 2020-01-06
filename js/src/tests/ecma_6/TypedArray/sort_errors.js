@@ -43,7 +43,7 @@ if (typeof newGlobal === "function" && typeof detachArrayBuffer === "function") 
             detachArrayBuffer(ta.buffer);
             return a - b;
         });
-    }, TypeError);
+    }, otherGlobal.TypeError);
 }
 
 
