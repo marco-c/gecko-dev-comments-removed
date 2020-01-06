@@ -48,13 +48,11 @@ var gSearchResultsPane = {
 
 
 
-  stringMatchesFilters(str, filter) {
-    if (!filter || !str) {
+  queryMatchesContent(content, query) {
+    if (!content || !query) {
       return false;
     }
-    let searchStr = str.toLowerCase();
-    let filterStrings = filter.toLowerCase().split(/\s+/);
-    return !filterStrings.some(f => searchStr.indexOf(f) == -1);
+    return content.toLowerCase().includes(query.toLowerCase());
   },
 
   categoriesInitialized: false,
@@ -350,7 +348,6 @@ var gSearchResultsPane = {
         nodeObject.tagName == "description" ||
         nodeObject.tagName == "menulist") {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
-
       for (let node of simpleTextNodes) {
         let result = this.highlightMatches([node], [node.length], node.textContent.toLowerCase(), searchPhrase);
         matchesFound = matchesFound || result;
@@ -376,15 +373,15 @@ var gSearchResultsPane = {
       let complexTextNodesResult = this.highlightMatches(accessKeyTextNodes, nodeSizes, allNodeText.toLowerCase(), searchPhrase);
 
       
-      let labelResult = this.stringMatchesFilters(nodeObject.getAttribute("label"), searchPhrase);
+      let labelResult = this.queryMatchesContent(nodeObject.getAttribute("label"), searchPhrase);
 
       
       
       let valueResult = nodeObject.tagName !== "menuitem" ?
-       this.stringMatchesFilters(nodeObject.getAttribute("value"), searchPhrase) : false;
+        this.queryMatchesContent(nodeObject.getAttribute("value"), searchPhrase) : false;
 
       
-      let keywordsResult = this.stringMatchesFilters(nodeObject.getAttribute("searchkeywords"), searchPhrase);
+      let keywordsResult = this.queryMatchesContent(nodeObject.getAttribute("searchkeywords"), searchPhrase);
 
       
       if (keywordsResult && (nodeObject.tagName === "button" || nodeObject.tagName == "menulist")) {
