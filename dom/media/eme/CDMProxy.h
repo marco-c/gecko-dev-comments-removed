@@ -225,6 +225,12 @@ public:
   virtual void GetSessionIdsForKeyId(const nsTArray<uint8_t>& aKeyId,
                                      nsTArray<nsCString>& aSessionIds) = 0;
 
+  
+  
+  
+  virtual void GetStatusForPolicy(PromiseId aPromiseId,
+                                  const nsAString& aMinHdcpVersion) = 0;
+
 #ifdef DEBUG
   virtual bool IsOnOwnerThread() = 0;
 #endif
