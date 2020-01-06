@@ -6455,18 +6455,31 @@ IonBuilder::jsop_initprop(PropertyName* name)
         useSlowPath = true;
     }
 
-    if (useSlowPath) {
-        current->pop();
-        MInitProp* init = MInitProp::New(alloc(), obj, name, value);
-        current->add(init);
-        return resumeAfter(init);
-    }
-
     MInstruction* last = *current->rbegin();
 
-    
-    
-    MOZ_TRY(jsop_setprop(name));
+    if (!useSlowPath && !forceInlineCaches()) {
+        
+        
+        MOZ_TRY(jsop_setprop(name));
+    } else {
+        if (*pc != JSOP_INITPROP) {
+            current->pop();
+            MInitProp* init = MInitProp::New(alloc(), obj, name, value);
+            current->add(init);
+            return resumeAfter(init);
+        }
+
+        MDefinition* value = current->pop();
+        MDefinition* obj = current->pop();
+
+        TemporaryTypeSet* objTypes = obj->resultTypeSet();
+        bool barrier = PropertyWriteNeedsTypeBarrier(alloc(), constraints(), current, &obj, name, &value,
+                                                  true);
+
+        bool emitted = false;
+        MOZ_TRY(setPropTryCache(&emitted, obj, name, value, barrier, objTypes));
+        MOZ_ASSERT(emitted == true);
+    }
 
     
     
