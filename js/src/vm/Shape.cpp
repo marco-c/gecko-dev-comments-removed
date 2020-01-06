@@ -669,26 +669,20 @@ js::ReshapeForAllocKind(JSContext* cx, Shape* shape, TaggedProto proto,
 
 
 
-
-static inline bool
-CheckCanChangeAttrs(JSContext* cx, JSObject* obj, Shape* shape, unsigned* attrsp)
+static void
+AssertCanChangeAttrs(Shape* shape, unsigned attrs)
 {
+#ifdef DEBUG
     if (shape->configurable())
-        return true;
+        return;
 
     
-    *attrsp |= JSPROP_PERMANENT;
+    MOZ_ASSERT(attrs & JSPROP_PERMANENT);
 
     
-    if (shape->isDataDescriptor() && shape->hasSlot() &&
-        (*attrsp & (JSPROP_GETTER | JSPROP_SETTER | JSPROP_SHARED)))
-    {
-        if (!cx->helperThread())
-            JSObject::reportNotConfigurable(cx, shape->propid());
-        return false;
-    }
-
-    return true;
+    MOZ_ASSERT_IF(shape->isDataDescriptor() && shape->hasSlot(),
+                  !(attrs & (JSPROP_GETTER | JSPROP_SETTER | JSPROP_SHARED)));
+#endif
 }
 
  Shape*
@@ -742,8 +736,7 @@ NativeObject::putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     
     MOZ_ASSERT_IF(entry, !entry->isRemoved());
 
-    if (!CheckCanChangeAttrs(cx, obj, shape, &attrs))
-        return nullptr;
+    AssertCanChangeAttrs(shape, attrs);
 
     
 
@@ -889,8 +882,7 @@ NativeObject::changeProperty(JSContext* cx, HandleNativeObject obj, HandleShape 
 
     MarkTypePropertyNonData(cx, obj, shape->propid());
 
-    if (!CheckCanChangeAttrs(cx, obj, shape, &attrs))
-        return nullptr;
+    AssertCanChangeAttrs(shape, attrs);
 
     if (shape->attrs == attrs && shape->getter() == getter && shape->setter() == setter)
         return shape;
