@@ -50,6 +50,7 @@
 #include "GeckoProfiler.h"
 #include "LayersLogging.h"
 #include "gfxPrefs.h"
+#include "nsSVGEffects.h"
 
 #include <algorithm>
 #include <functional>
@@ -1618,27 +1619,43 @@ struct CSSMaskLayerUserData : public LayerUserData
     : mMaskStyle(nsStyleImageLayers::LayerType::Mask)
   { }
 
-  CSSMaskLayerUserData(nsIFrame* aFrame, const nsIntSize& aMaskSize)
-    : mMaskSize(aMaskSize),
+  CSSMaskLayerUserData(nsIFrame* aFrame, const nsIntRect& aMaskBounds)
+    : mMaskBounds(aMaskBounds),
       mMaskStyle(aFrame->StyleSVGReset()->mMask)
   {
   }
 
   void operator=(CSSMaskLayerUserData&& aOther)
   {
-    mMaskSize = aOther.mMaskSize;
+    mMaskBounds = aOther.mMaskBounds;
     mMaskStyle = Move(aOther.mMaskStyle);
   }
 
   bool
-  operator==(const CSSMaskLayerUserData& aOther) const
+  IsEqual(const CSSMaskLayerUserData& aOther, nsIFrame* aMaskedFrame) const
   {
     
     
     
     
     
-    if (mMaskSize != aOther.mMaskSize) {
+    if (mMaskBounds.Size() != aOther.mMaskBounds.Size()) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mMaskBounds.TopLeft() != aOther.mMaskBounds.TopLeft() &&
+        nsSVGEffects::HasUserSpaceOnUseUnitsMaskOrClipPath(aMaskedFrame)) {
       return false;
     }
 
@@ -1646,7 +1663,7 @@ struct CSSMaskLayerUserData : public LayerUserData
   }
 
 private:
-  nsIntSize mMaskSize;
+  nsIntRect mMaskBounds;
   nsStyleImageLayers mMaskStyle;
 };
 
@@ -3886,9 +3903,10 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
   maskLayer->SetBaseTransform(matrix);
 
-  CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect.Size());
+  CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect);
   nsRect dirtyRect;
-  if (!aMaskItem->IsInvalid(dirtyRect) && *oldUserData == newUserData) {
+  if (!aMaskItem->IsInvalid(dirtyRect) &&
+      oldUserData->IsEqual(newUserData, aMaskItem->Frame())) {
     aLayer->SetMaskLayer(maskLayer);
     return;
   }
