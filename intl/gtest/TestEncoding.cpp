@@ -4,10 +4,14 @@
 #include "gtest/gtest.h"
 
 #include "mozilla/Encoding.h"
+#include <type_traits>
 
 #define ENCODING_TEST(name) TEST(EncodingTest, name)
 
 using namespace mozilla;
+
+static_assert(std::is_standard_layout<NotNull<const Encoding*>>::value,
+              "NotNull<const Encoding*> must be a standard layout type.");
 
 
 

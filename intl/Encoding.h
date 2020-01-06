@@ -27,6 +27,7 @@ class Encoder;
 }; 
 
 #define ENCODING_RS_ENCODING mozilla::Encoding
+#define ENCODING_RS_NOT_NULL_CONST_ENCODING_PTR mozilla::NotNull<const mozilla::Encoding*>
 #define ENCODING_RS_ENCODER mozilla::Encoder
 #define ENCODING_RS_DECODER mozilla::Decoder
 
