@@ -497,6 +497,7 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
     
     
     
+    bool saveSanitizedSizePrefs = false;
     if (success) {
       success = (sizeUnit != nsIPrintSettings::kPaperSizeInches)
              || (width < 100.0)
@@ -506,13 +507,16 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
       
       
       if (sizeUnit == nsIPrintSettings::kPaperSizeMillimeters &&
-          height == 11L && width == 8.5L) {
+          height >= 0L && height < 25L &&
+          width >= 0L && width < 25L) {
 
         
         
         
-        if (GETINTPREF(kPrintResolution, &iVal) &&
-            (iVal <= 0 || iVal > 1000000)) {
+        const char* paperSizeTypePref =
+          GetPrefName("print_paper_size_type", aPrinterName);
+        if (Preferences::HasUserValue(paperSizeTypePref)) {
+          saveSanitizedSizePrefs = true;
           height = -1L;
           width = -1L;
         }
@@ -529,6 +533,12 @@ nsPrintOptions::ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
       DUMP_DBL(kReadStr, kPrintPaperHeight, height);
       aPS->SetPaperName(str.get());
       DUMP_STR(kReadStr, kPrintPaperName, str.get());
+#if defined(XP_WIN)
+      if (saveSanitizedSizePrefs) {
+        SavePrintSettingsToPrefs(aPS, !aPrinterName.IsEmpty(),
+                                 nsIPrintSettings::kInitSavePaperSize);
+      }
+#endif
     }
   }
 
@@ -770,6 +780,20 @@ nsPrintOptions::WritePrefs(nsIPrintSettings *aPS, const nsAString& aPrinterName,
       WritePrefDouble(GetPrefName(kPrintPaperHeight, aPrinterName), height);
       DUMP_STR(kWriteStr, kPrintPaperName, name);
       Preferences::SetString(GetPrefName(kPrintPaperName, aPrinterName), name);
+#if defined(XP_WIN)
+      
+      
+      
+      
+      
+      if (height == -1L && width == -1L) {
+        const char* paperSizeTypePref =
+          GetPrefName("print_paper_size_type", aPrinterName);
+        if (Preferences::HasUserValue(paperSizeTypePref)) {
+          Preferences::ClearUser(paperSizeTypePref);
+        }
+      }
+#endif
     }
   }
 
