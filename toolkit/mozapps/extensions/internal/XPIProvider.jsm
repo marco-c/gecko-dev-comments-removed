@@ -2069,46 +2069,6 @@ function recursiveRemove(aFile) {
 
 
 
-
-function recursiveLastModifiedTime(aFile) {
-  try {
-    let modTime = aFile.lastModifiedTime;
-    let fileName = aFile.leafName;
-    if (aFile.isFile())
-      return [fileName, modTime, 1];
-
-    if (aFile.isDirectory()) {
-      let entries = aFile.directoryEntries.QueryInterface(Ci.nsIDirectoryEnumerator);
-      let entry;
-      let totalItems = 1;
-      while ((entry = entries.nextFile)) {
-        let [subName, subTime, items] = recursiveLastModifiedTime(entry);
-        totalItems += items;
-        if (subTime > modTime) {
-          modTime = subTime;
-          fileName = subName;
-        }
-      }
-      entries.close();
-      return [fileName, modTime, totalItems];
-    }
-  } catch (e) {
-    logger.warn("Problem getting last modified time for " + aFile.path, e);
-  }
-
-  
-  return ["", 0, 0];
-}
-
-
-
-
-
-
-
-
-
-
 function getDirectoryEntries(aDir, aSortEntries) {
   let dirEnum;
   try {
@@ -2196,28 +2156,15 @@ XPIState.prototype = {
     let changed = false;
     let scanStarted = Cu.now();
     
-    if (!("scanTime" in this) || this.enabled) {
-      logger.debug("getModTime: Recursive scan of " + aId);
-      let [modFile, modTime, items] = recursiveLastModifiedTime(aFile);
-      XPIProvider._mostRecentlyModifiedFile[aId] = modFile;
-      XPIProvider.setTelemetry(aId, "scan_items", items);
-      if (modTime != this.scanTime) {
-        this.scanTime = modTime;
-        changed = true;
-      }
-    }
-    
     
     
     try {
       
       let maniFile = getManifestFileForDir(aFile);
-      if (!(aId in XPIProvider._mostRecentlyModifiedFile)) {
-        XPIProvider._mostRecentlyModifiedFile[aId] = maniFile.leafName;
-      }
       let maniTime = maniFile.lastModifiedTime;
       if (maniTime != this.manifestTime) {
         this.manifestTime = maniTime;
+        this.scanTime = maniTime;
         changed = true;
       }
     } catch (e) {
@@ -2541,9 +2488,6 @@ this.XPIProvider = {
   enabledAddons: null,
   
   runPhase: XPI_STARTING,
-  
-  
-  _mostRecentlyModifiedFile: {},
   
   _telemetryDetails: {},
   
