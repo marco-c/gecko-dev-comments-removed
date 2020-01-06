@@ -18,10 +18,12 @@ from functools import partial
 from itertools import chain, imap
 
 
-UNSUPPORTED_FEATURES = set(["tail-call-optimization",
+UNSUPPORTED_FEATURES = set([
+                            "tail-call-optimization",
                             "BigInt",
                             "class-fields",
                             "Promise.prototype.finally",
+                            "optional-catch-binding",
                             "regexp-dotall",
                             "regexp-lookbehind",
                             "regexp-named-groups",
