@@ -111,11 +111,6 @@ nsDOMDataChannel::Init(nsPIDOMWindowInner* aDOMWindow)
   return rv;
 }
 
-NS_IMPL_EVENT_HANDLER(nsDOMDataChannel, open)
-NS_IMPL_EVENT_HANDLER(nsDOMDataChannel, error)
-NS_IMPL_EVENT_HANDLER(nsDOMDataChannel, close)
-NS_IMPL_EVENT_HANDLER(nsDOMDataChannel, message)
-
 
 
 NS_IMETHODIMP
