@@ -669,7 +669,7 @@ pub extern "C" fn Servo_StyleSet_GetBaseComputedValuesForElement(raw_data: RawSe
                                                                  pseudo_type: CSSPseudoElementType)
                                                                  -> ServoStyleContextStrong
 {
-    use style::style_resolver::StyleResolverForElement;
+    use style::style_resolver::{PseudoElementResolution, StyleResolverForElement};
 
     debug_assert!(!snapshots.is_null());
     let computed_values = unsafe { ArcBorrow::from_ref(computed_values) };
@@ -725,7 +725,8 @@ pub extern "C" fn Servo_StyleSet_GetBaseComputedValuesForElement(raw_data: RawSe
             visited_rules: None,
         };
 
-    StyleResolverForElement::new(element, &mut context, RuleInclusion::All)
+    
+    StyleResolverForElement::new(element, &mut context, RuleInclusion::All, PseudoElementResolution::IfApplicable)
         .cascade_style_and_visited_with_default_parents(inputs)
         .into()
 }
@@ -2932,8 +2933,9 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
     let doc_data = PerDocumentStyleData::from_ffi(raw_data);
     let data = doc_data.borrow();
     let rule_inclusion = RuleInclusion::from(rule_inclusion);
-    let finish = |styles: &ElementStyles| -> Arc<ComputedValues> {
-        match PseudoElement::from_pseudo_type(pseudo_type) {
+    let pseudo = PseudoElement::from_pseudo_type(pseudo_type);
+    let finish = |styles: &ElementStyles, is_probe: bool| -> Option<Arc<ComputedValues>> {
+        match pseudo {
             Some(ref pseudo) => {
                 get_pseudo_style(
                     &guard,
@@ -2943,14 +2945,19 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
                     styles,
                      None,
                     &*data,
-                     false,
-                ).expect("We're not probing, so we should always get a style \
-                         back")
+                    is_probe,
+                )
             }
-            None => styles.primary().clone(),
+            None => Some(styles.primary().clone()),
         }
     };
 
+    let is_before_or_after = pseudo.as_ref().map_or(false, |p| p.is_before_or_after());
+
+    
+    
+    
+    
     
     
     
@@ -2958,7 +2965,7 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
     if rule_inclusion == RuleInclusion::All && !ignore_existing_styles {
         let styles = element.mutate_data().and_then(|d| {
             if d.has_styles() {
-                Some(finish(&d.styles))
+                finish(&d.styles, is_before_or_after)
             } else {
                 None
             }
@@ -2980,8 +2987,17 @@ pub extern "C" fn Servo_ResolveStyleLazily(element: RawGeckoElementBorrowed,
         thread_local: &mut tlc,
     };
 
-    let styles = resolve_style(&mut context, element, rule_inclusion, ignore_existing_styles);
-    finish(&styles).into()
+    let styles = resolve_style(
+        &mut context,
+        element,
+        rule_inclusion,
+        ignore_existing_styles,
+        pseudo.as_ref()
+    );
+
+    finish(&styles,  false)
+        .expect("We're not probing, so we should always get a style back")
+        .into()
 }
 
 #[no_mangle]
