@@ -88,6 +88,9 @@ this.TestRunner = {
     Services.prefs.setCharPref("extensions.ui.lastCategory", "addons://list/extension");
     
     Services.prefs.setIntPref("ui.caretBlinkTime", -1);
+    
+    
+    Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
@@ -151,6 +154,7 @@ this.TestRunner = {
     gBrowser.unpinTab(gBrowser.selectedTab);
     gBrowser.selectedBrowser.loadURI("data:text/html;charset=utf-8,<h1>Done!");
     browserWindow.restore();
+    Services.prefs.clearUserPref("toolkit.cosmeticAnimations.enabled");
   },
 
   
