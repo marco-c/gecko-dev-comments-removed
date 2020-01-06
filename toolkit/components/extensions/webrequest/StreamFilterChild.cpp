@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#include "StreamFilterChild.h"
+
+namespace mozilla {
+namespace extensions {
+
+void
+StreamFilterChild::ActorDestroy(ActorDestroyReason aWhy)
+{
+}
+
+} 
+} 
