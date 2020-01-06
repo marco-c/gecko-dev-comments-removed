@@ -297,6 +297,9 @@ protected:
   
   virtual void TraverseInner(nsCycleCollectionTraversalCallback &);
 
+  
+  static bool RuleHasPendingChildSheet(css::Rule* aRule);
+
   StyleSheet*           mParent;    
 
   nsString              mTitle;
