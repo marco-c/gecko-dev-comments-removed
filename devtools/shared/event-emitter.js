@@ -150,39 +150,50 @@ class EventEmitter {
   static emit(target, type, ...rest) {
     logEvent(type, rest);
 
-    if (!(eventListeners in target) || !target[eventListeners].has(type)) {
+    if (!(eventListeners in target)) {
       return;
+    }
+
+    if (target[eventListeners].has(type)) {
+      
+      
+      let listenersForType = new Set(target[eventListeners].get(type));
+
+      for (let listener of listenersForType) {
+        
+        if (!(eventListeners in target)) {
+          break;
+        }
+
+        let events = target[eventListeners];
+        let listeners = events.get(type);
+
+        
+        
+        if (listeners && listeners.has(listener)) {
+          try {
+            if (isEventHandler(listener)) {
+              listener[handler](type, ...rest);
+            } else {
+              listener.call(target, ...rest);
+            }
+          } catch (ex) {
+            
+            let msg = ex + ": " + ex.stack;
+            console.error(msg);
+            dump(msg + "\n");
+          }
+        }
+      }
     }
 
     
     
-    let listenersForType = new Set(target[eventListeners].get(type));
-
-    for (let listener of listenersForType) {
-      
-      if (!(eventListeners in target)) {
-        break;
-      }
-
-      let events = target[eventListeners];
-      let listeners = events.get(type);
-
-      
-      
-      if (listeners && listeners.has(listener)) {
-        try {
-          if (isEventHandler(listener)) {
-            listener[handler](type, ...rest);
-          } else {
-            listener.call(target, ...rest);
-          }
-        } catch (ex) {
-          
-          let msg = ex + ": " + ex.stack;
-          console.error(msg);
-          dump(msg + "\n");
-        }
-      }
+    
+    
+    let hasWildcardListeners = target[eventListeners].has("*");
+    if (type !== "*" && hasWildcardListeners) {
+      EventEmitter.emit(target, "*", type, ...rest);
     }
   }
 
