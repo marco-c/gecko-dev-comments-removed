@@ -21,6 +21,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
 VRDisplayHost::VRDisplayHost(VRDeviceType aType)
+ : mFrameStarted(false)
 {
   MOZ_COUNT_CTOR(VRDisplayHost);
   mDisplayInfo.mType = aType;
@@ -84,6 +85,7 @@ VRDisplayHost::StartFrame()
   mLastFrameStart = TimeStamp::Now();
   ++mDisplayInfo.mFrameId;
   mDisplayInfo.mLastSensorState[mDisplayInfo.mFrameId % kVRMaxLatencyFrames] = GetSensorState();
+  mFrameStarted = true;
 }
 
 void
@@ -161,6 +163,12 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, PTextureParent* aTexture,
     
     return;
   }
+
+  
+  if (!mFrameStarted) {
+    return;
+  }
+  mFrameStarted = false;
 
   TextureHost* th = TextureHost::AsTextureHost(aTexture);
   
