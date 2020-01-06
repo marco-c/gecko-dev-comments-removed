@@ -1539,27 +1539,28 @@ impl Document {
         self.animation_frame_list.borrow_mut().push((ident, Some(callback)));
 
         
+
         
         
-        
-        
-        
-        
-        if !self.running_animation_callbacks.get() {
-            if !self.is_faking_animation_frames() {
-                let global_scope = self.window.upcast::<GlobalScope>();
-                let event = ConstellationMsg::ChangeRunningAnimationsState(
-                    global_scope.pipeline_id(),
-                    AnimationState::AnimationCallbacksPresent);
-                global_scope.constellation_chan().send(event).unwrap();
-            } else {
-                let callback = FakeRequestAnimationFrameCallback {
-                    document: Trusted::new(self),
-                };
-                self.global()
-                    .schedule_callback(OneshotTimerCallback::FakeRequestAnimationFrame(callback),
-                                       MsDuration::new(FAKE_REQUEST_ANIMATION_FRAME_DELAY));
-            }
+        if self.is_faking_animation_frames() {
+            let callback = FakeRequestAnimationFrameCallback {
+                document: Trusted::new(self),
+            };
+            self.global()
+                .schedule_callback(OneshotTimerCallback::FakeRequestAnimationFrame(callback),
+                                   MsDuration::new(FAKE_REQUEST_ANIMATION_FRAME_DELAY));
+        } else if !self.running_animation_callbacks.get() {
+            
+            
+            
+            
+            
+
+            let global_scope = self.window.upcast::<GlobalScope>();
+            let event = ConstellationMsg::ChangeRunningAnimationsState(
+                global_scope.pipeline_id(),
+                AnimationState::AnimationCallbacksPresent);
+            global_scope.constellation_chan().send(event).unwrap();
         }
 
         ident
@@ -1595,6 +1596,22 @@ impl Document {
         let spurious = !self.window.reflow(ReflowGoal::ForDisplay,
                                            ReflowQueryType::NoQuery,
                                            ReflowReason::RequestAnimationFrame);
+
+        if spurious && !was_faking_animation_frames {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.window.force_reflow(ReflowGoal::ForDisplay,
+                                     ReflowQueryType::NoQuery,
+                                     ReflowReason::RequestAnimationFrame);
+        }
 
         
         

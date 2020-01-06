@@ -101,8 +101,6 @@ pub enum Msg {
     
     AllowNavigation(ServoUrl, IpcSender<bool>),
     
-    DelayedCompositionTimeout(u64),
-    
     Recomposite(CompositingReason),
     
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
@@ -160,7 +158,6 @@ impl Debug for Msg {
             Msg::AllowNavigation(..) => write!(f, "AllowNavigation"),
             Msg::LoadStart => write!(f, "LoadStart"),
             Msg::HistoryChanged(..) => write!(f, "HistoryChanged"),
-            Msg::DelayedCompositionTimeout(..) => write!(f, "DelayedCompositionTimeout"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
             Msg::TouchEventProcessed(..) => write!(f, "TouchEventProcessed"),

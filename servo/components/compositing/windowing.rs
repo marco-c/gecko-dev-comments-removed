@@ -102,6 +102,12 @@ impl Debug for WindowEvent {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum AnimationState {
+    Idle,
+    Animating,
+}
+
 pub trait WindowMethods {
     
     fn framebuffer_size(&self) -> TypedSize2D<u32, DevicePixel>;
@@ -163,4 +169,10 @@ pub trait WindowMethods {
 
     
     fn gl(&self) -> Rc<gl::Gl>;
+
+    
+    
+    
+    
+    fn set_animation_state(&self, _state: AnimationState) {}
 }
