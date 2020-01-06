@@ -157,18 +157,6 @@ public:
 
 
 
-  UndisplayedNode* GetDisplayContentsNodeFor(const nsIContent* aContent)
-  {
-    if (!mDisplayContentsMap) {
-      return nullptr;
-    }
-    return GetUndisplayedNodeInMapFor(mDisplayContentsMap, aContent);
-  }
-
-  
-
-
-
 
   void UnregisterDisplayNoneStyleFor(nsIContent* aContent,
                                      nsIContent* aParentContent);
