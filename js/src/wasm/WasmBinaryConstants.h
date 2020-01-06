@@ -480,15 +480,6 @@ enum class NameType
 
 
 
-
-enum class Telemetry
-{
-    ASMJS = 0,
-    WASM = 1
-};
-
-
-
 static const unsigned MaxTypes               =  1000000;
 static const unsigned MaxFuncs               =  1000000;
 static const unsigned MaxImports             =   100000;
