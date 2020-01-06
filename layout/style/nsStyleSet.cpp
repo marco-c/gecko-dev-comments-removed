@@ -2409,7 +2409,7 @@ nsStyleSet::InvalidateStyleForCSSRuleChanges()
   mStylesHaveChanged = false;
 
   nsPresContext* presContext = PresContext();
-  RestyleManager* restyleManager = presContext->RestyleManager();
+  RestyleManager* restyleManager = presContext->RestyleManager()->AsGecko();
   Element* root = presContext->Document()->GetRootElement();
   if (!root) {
     
@@ -2420,14 +2420,14 @@ nsStyleSet::InvalidateStyleForCSSRuleChanges()
     
     
     
-    restyleManager->PostRestyleEventForCSSRuleChanges(root,
-                                                      eRestyle_Subtree,
-                                                      nsChangeHint(0));
+    restyleManager->PostRestyleEvent(root,
+                                     eRestyle_Subtree,
+                                     nsChangeHint(0));
   } else {
     for (Element* scopeRoot : scopeRoots) {
-      restyleManager->PostRestyleEventForCSSRuleChanges(scopeRoot,
-                                                        eRestyle_Subtree,
-                                                        nsChangeHint(0));
+      restyleManager->PostRestyleEvent(scopeRoot,
+                                       eRestyle_Subtree,
+                                       nsChangeHint(0));
     }
   }
 }
