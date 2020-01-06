@@ -2,9 +2,7 @@
 
 
 
-extern crate atomic_refcell;
 extern crate layout;
-extern crate script_layout_interface;
 #[macro_use] extern crate size_of_test;
 
 #[cfg(all(test, target_pointer_width = "64"))] mod size_of;
