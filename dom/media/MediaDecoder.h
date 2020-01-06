@@ -464,12 +464,12 @@ protected:
   
   WatchManager<MediaDecoder> mWatchManager;
 
-  double ExplicitDuration() { return mExplicitDuration.Ref().ref(); }
+  double ExplicitDuration() { return mExplicitDuration.ref(); }
 
   void SetExplicitDuration(double aValue)
   {
     MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-    mExplicitDuration.Set(Some(aValue));
+    mExplicitDuration = Some(aValue);
 
     
     
@@ -714,7 +714,7 @@ protected:
 
   
   
-  Canonical<Maybe<double>> mExplicitDuration;
+  Maybe<double> mExplicitDuration;
 
   
   
@@ -767,10 +767,6 @@ public:
   AbstractCanonical<bool>* CanonicalLooping()
   {
     return &mLooping;
-  }
-  AbstractCanonical<Maybe<double>>* CanonicalExplicitDuration()
-  {
-    return &mExplicitDuration;
   }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
   AbstractCanonical<bool>* CanonicalLogicallySeeking()
