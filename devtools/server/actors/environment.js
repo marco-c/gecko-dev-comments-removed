@@ -30,6 +30,15 @@ let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
   
 
 
+
+
+  destroy: function () {
+    this.obj.actor = null;
+  },
+
+  
+
+
   form: function () {
     let form = { actor: this.actorID };
 
