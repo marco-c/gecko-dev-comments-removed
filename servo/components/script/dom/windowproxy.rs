@@ -38,7 +38,7 @@ use std::ptr;
 
 
 
-pub struct BrowsingContext {
+pub struct WindowProxy {
     
     
     
@@ -64,17 +64,17 @@ pub struct BrowsingContext {
     frame_element: Option<JS<Element>>,
 
     
-    parent: Option<JS<BrowsingContext>>,
+    parent: Option<JS<WindowProxy>>,
 }
 
-impl BrowsingContext {
+impl WindowProxy {
     pub fn new_inherited(frame_id: FrameId,
                          currently_active: Option<PipelineId>,
                          frame_element: Option<&Element>,
-                         parent: Option<&BrowsingContext>)
-                         -> BrowsingContext
+                         parent: Option<&WindowProxy>)
+                         -> WindowProxy
     {
-        BrowsingContext {
+        WindowProxy {
             reflector: Reflector::new(),
             frame_id: frame_id,
             currently_active: Cell::new(currently_active),
@@ -88,8 +88,8 @@ impl BrowsingContext {
     pub fn new(window: &Window,
                frame_id: FrameId,
                frame_element: Option<&Element>,
-               parent: Option<&BrowsingContext>)
-               -> Root<BrowsingContext>
+               parent: Option<&WindowProxy>)
+               -> Root<WindowProxy>
     {
         unsafe {
             let WindowProxyHandler(handler) = window.windowproxy_handler();
@@ -102,32 +102,32 @@ impl BrowsingContext {
             let _ac = JSAutoCompartment::new(cx, window_jsobject.get());
 
             
-            rooted!(in(cx) let window_proxy = NewWindowProxy(cx, window_jsobject, handler));
-            assert!(!window_proxy.is_null());
+            rooted!(in(cx) let js_proxy = NewWindowProxy(cx, window_jsobject, handler));
+            assert!(!js_proxy.is_null());
 
             
             let current = Some(window.global().pipeline_id());
-            let mut browsing_context = box BrowsingContext::new_inherited(frame_id, current, frame_element, parent);
+            let mut window_proxy = box WindowProxy::new_inherited(frame_id, current, frame_element, parent);
 
             
             
-            SetProxyExtra(window_proxy.get(), 0, &PrivateValue((&*browsing_context).as_void_ptr()));
+            SetProxyExtra(js_proxy.get(), 0, &PrivateValue((&*window_proxy).as_void_ptr()));
 
             
-            SetWindowProxy(cx, window_jsobject, window_proxy.handle());
+            SetWindowProxy(cx, window_jsobject, js_proxy.handle());
 
             
-            debug!("Initializing reflector of {:p} to {:p}.", browsing_context, window_proxy.get());
-            browsing_context.reflector.set_jsobject(window_proxy.get());
-            Root::from_ref(&*Box::into_raw(browsing_context))
+            debug!("Initializing reflector of {:p} to {:p}.", window_proxy, js_proxy.get());
+            window_proxy.reflector.set_jsobject(js_proxy.get());
+            Root::from_ref(&*Box::into_raw(window_proxy))
         }
     }
 
     #[allow(unsafe_code)]
     pub fn new_dissimilar_origin(global_to_clone_from: &GlobalScope,
                                  frame_id: FrameId,
-                                 parent: Option<&BrowsingContext>)
-                                 -> Root<BrowsingContext>
+                                 parent: Option<&WindowProxy>)
+                                 -> Root<WindowProxy>
     {
         unsafe {
             let handler = CreateWrapperProxyHandler(&XORIGIN_PROXY_HANDLER);
@@ -136,38 +136,38 @@ impl BrowsingContext {
             let cx = global_to_clone_from.get_cx();
 
             
-            let mut browsing_context = box BrowsingContext::new_inherited(frame_id, None, None, parent);
+            let mut window_proxy = box WindowProxy::new_inherited(frame_id, None, None, parent);
 
             
-            let window = DissimilarOriginWindow::new(global_to_clone_from, &*browsing_context);
+            let window = DissimilarOriginWindow::new(global_to_clone_from, &*window_proxy);
             let window_jsobject = window.reflector().get_jsobject();
             assert!(!window_jsobject.get().is_null());
             assert!(((*get_object_class(window_jsobject.get())).flags & JSCLASS_IS_GLOBAL) != 0);
             let _ac = JSAutoCompartment::new(cx, window_jsobject.get());
 
             
-            rooted!(in(cx) let window_proxy = NewWindowProxy(cx, window_jsobject, handler));
-            assert!(!window_proxy.is_null());
+            rooted!(in(cx) let js_proxy = NewWindowProxy(cx, window_jsobject, handler));
+            assert!(!js_proxy.is_null());
 
             
             
-            SetProxyExtra(window_proxy.get(), 0, &PrivateValue((&*browsing_context).as_void_ptr()));
+            SetProxyExtra(js_proxy.get(), 0, &PrivateValue((&*window_proxy).as_void_ptr()));
 
             
-            SetWindowProxy(cx, window_jsobject, window_proxy.handle());
+            SetWindowProxy(cx, window_jsobject, js_proxy.handle());
 
             
-            debug!("Initializing reflector of {:p} to {:p}.", browsing_context, window_proxy.get());
-            browsing_context.reflector.set_jsobject(window_proxy.get());
-            Root::from_ref(&*Box::into_raw(browsing_context))
+            debug!("Initializing reflector of {:p} to {:p}.", window_proxy, js_proxy.get());
+            window_proxy.reflector.set_jsobject(js_proxy.get());
+            Root::from_ref(&*Box::into_raw(window_proxy))
         }
     }
 
-    pub fn discard(&self) {
+    pub fn discard_browsing_context(&self) {
         self.discarded.set(true);
     }
 
-    pub fn is_discarded(&self) -> bool {
+    pub fn is_browsing_context_discarded(&self) -> bool {
         self.discarded.get()
     }
 
@@ -179,11 +179,11 @@ impl BrowsingContext {
         self.frame_element.r()
     }
 
-    pub fn parent(&self) -> Option<&BrowsingContext> {
+    pub fn parent(&self) -> Option<&WindowProxy> {
         self.parent.r()
     }
 
-    pub fn top(&self) -> &BrowsingContext {
+    pub fn top(&self) -> &WindowProxy {
         let mut result = self;
         while let Some(parent) = result.parent() {
             result = parent;
@@ -195,21 +195,21 @@ impl BrowsingContext {
     
     
     
-    fn set_window_proxy(&self, window: &GlobalScope, traps: &ProxyTraps) {
+    fn set_window(&self, window: &GlobalScope, traps: &ProxyTraps) {
         unsafe {
-            debug!("Setting window proxy of {:p}.", self);
+            debug!("Setting window of {:p}.", self);
             let handler = CreateWrapperProxyHandler(traps);
             assert!(!handler.is_null());
 
             let cx = window.get_cx();
             let window_jsobject = window.reflector().get_jsobject();
-            let old_window_proxy = self.reflector.get_jsobject();
+            let old_js_proxy = self.reflector.get_jsobject();
             assert!(!window_jsobject.get().is_null());
             assert!(((*get_object_class(window_jsobject.get())).flags & JSCLASS_IS_GLOBAL) != 0);
             let _ac = JSAutoCompartment::new(cx, window_jsobject.get());
 
             
-            SetProxyExtra(old_window_proxy.get(), 0, &PrivateValue(ptr::null_mut()));
+            SetProxyExtra(old_js_proxy.get(), 0, &PrivateValue(ptr::null_mut()));
 
             
             
@@ -218,44 +218,38 @@ impl BrowsingContext {
             
             
             
-            rooted!(in(cx) let new_window_proxy = NewWindowProxy(cx, window_jsobject, handler));
-            debug!("Transplanting window proxy from {:p} to {:p}.", old_window_proxy.get(), new_window_proxy.get());
-            rooted!(in(cx) let new_window_proxy = JS_TransplantObject(cx, old_window_proxy, new_window_proxy.handle()));
-            debug!("Transplanted window proxy is {:p}.", new_window_proxy.get());
+            rooted!(in(cx) let new_js_proxy = NewWindowProxy(cx, window_jsobject, handler));
+            debug!("Transplanting proxy from {:p} to {:p}.", old_js_proxy.get(), new_js_proxy.get());
+            rooted!(in(cx) let new_js_proxy = JS_TransplantObject(cx, old_js_proxy, new_js_proxy.handle()));
+            debug!("Transplanted proxy is {:p}.", new_js_proxy.get());
 
             
-            SetProxyExtra(new_window_proxy.get(), 0, &PrivateValue(self.as_void_ptr()));
+            SetProxyExtra(new_js_proxy.get(), 0, &PrivateValue(self.as_void_ptr()));
 
             
-            SetWindowProxy(cx, window_jsobject, new_window_proxy.handle());
+            SetWindowProxy(cx, window_jsobject, new_js_proxy.handle());
 
             
-            debug!("Setting reflector of {:p} to {:p}.", self, new_window_proxy.get());
-            self.reflector.rootable().set(new_window_proxy.get());
+            debug!("Setting reflector of {:p} to {:p}.", self, new_js_proxy.get());
+            self.reflector.rootable().set(new_js_proxy.get());
         }
     }
 
     pub fn set_currently_active(&self, window: &Window) {
         let globalscope = window.upcast();
-        self.set_window_proxy(&*globalscope, &PROXY_HANDLER);
+        self.set_window(&*globalscope, &PROXY_HANDLER);
         self.currently_active.set(Some(globalscope.pipeline_id()));
     }
 
     pub fn unset_currently_active(&self) {
         let globalscope = self.global();
         let window = DissimilarOriginWindow::new(&*globalscope, self);
-        self.set_window_proxy(&*window.upcast(), &XORIGIN_PROXY_HANDLER);
+        self.set_window(&*window.upcast(), &XORIGIN_PROXY_HANDLER);
         self.currently_active.set(None);
     }
 
     pub fn currently_active(&self) -> Option<PipelineId> {
         self.currently_active.get()
-    }
-
-    pub fn window_proxy(&self) -> *mut JSObject {
-        let window_proxy = self.reflector.get_jsobject();
-        assert!(!window_proxy.get().is_null());
-        window_proxy.get()
     }
 }
 
@@ -581,19 +575,19 @@ static XORIGIN_PROXY_HANDLER: ProxyTraps = ProxyTraps {
 
 #[allow(unsafe_code)]
 unsafe extern fn finalize(_fop: *mut JSFreeOp, obj: *mut JSObject) {
-    let this = GetProxyExtra(obj, 0).to_private() as *mut BrowsingContext;
+    let this = GetProxyExtra(obj, 0).to_private() as *mut WindowProxy;
     if this.is_null() {
         
         return;
     }
     let jsobject = (*this).reflector.get_jsobject().get();
-    debug!("BrowsingContext finalize: {:p}, with reflector {:p} from {:p}.", this, jsobject, obj);
+    debug!("WindowProxy finalize: {:p}, with reflector {:p} from {:p}.", this, jsobject, obj);
     let _ = Box::from_raw(this);
 }
 
 #[allow(unsafe_code)]
 unsafe extern fn trace(trc: *mut JSTracer, obj: *mut JSObject) {
-    let this = GetProxyExtra(obj, 0).to_private() as *const BrowsingContext;
+    let this = GetProxyExtra(obj, 0).to_private() as *const WindowProxy;
     if this.is_null() {
         
         return;
