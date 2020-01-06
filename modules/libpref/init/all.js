@@ -2807,6 +2807,14 @@ pref("general.smoothScroll.durationToIntervalRatio", 200);
 pref("general.smoothScroll.currentVelocityWeighting", "0.25");
 pref("general.smoothScroll.stopDecelerationWeighting", "0.4");
 
+pref("general.smoothScroll.msdPhysics.enabled", false);
+pref("general.smoothScroll.msdPhysics.continuousMotionMaxDeltaMS", 120);
+pref("general.smoothScroll.msdPhysics.motionBeginSpringConstant", 1250);
+pref("general.smoothScroll.msdPhysics.slowdownMinDeltaMS", 12);
+pref("general.smoothScroll.msdPhysics.slowdownMinDeltaRatio", "1.3");
+pref("general.smoothScroll.msdPhysics.slowdownSpringConstant", 2000);
+pref("general.smoothScroll.msdPhysics.regularSpringConstant", 1000);
+
 pref("profile.confirm_automigration",true);
 
 
@@ -5906,5 +5914,9 @@ pref("toolkit.crashreporter.include_context_heap", true);
 
 pref("dom.noopener.newprocess.enabled", true);
 
+#ifdef XP_WIN
+pref("layers.omtp.enabled", true);
+#else
 pref("layers.omtp.enabled", false);
+#endif
 pref("layers.omtp.force-sync", false);
