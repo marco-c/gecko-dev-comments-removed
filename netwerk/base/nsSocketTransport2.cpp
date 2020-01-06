@@ -486,7 +486,8 @@ nsSocketInputStream::AsyncWait(nsIInputStreamCallback *callback,
             
             
             
-            mCallback = NS_NewInputStreamReadyEvent(callback, target);
+            mCallback = NS_NewInputStreamReadyEvent("nsSocketInputStream::AsyncWait",
+                                                    callback, target);
         }
         else
             mCallback = callback;
