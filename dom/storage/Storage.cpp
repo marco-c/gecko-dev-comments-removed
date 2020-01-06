@@ -5,6 +5,7 @@
 
 
 #include "Storage.h"
+#include "StorageNotifierService.h"
 
 #include "mozilla/dom/StorageBinding.h"
 #include "nsIPrincipal.h"
@@ -121,13 +122,21 @@ Storage::NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
 
   event->SetPrincipal(aPrincipal);
 
+  
+  StorageNotifierService::Broadcast(event, aStorageType, aIsPrivate,
+                                    aImmediateDispatch);
+
+  
+  
+
   RefPtr<StorageNotifierRunnable> r =
     new StorageNotifierRunnable(event, aStorageType, aIsPrivate);
 
   if (aImmediateDispatch) {
     Unused << r->Run();
   } else {
-    NS_DispatchToMainThread(r, NS_DISPATCH_NORMAL);
+    SystemGroup::Dispatch("Storage::NotifyChange", TaskCategory::Other,
+                          r.forget());
   }
 }
 
