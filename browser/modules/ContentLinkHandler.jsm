@@ -25,215 +25,17 @@ const SIZES_TELEMETRY_ENUM = {
   INVALID: 3,
 };
 
-const FAVICON_PARSING_TIMEOUT = 100;
-const FAVICON_RICH_ICON_MIN_WIDTH = 96;
-
-
-
-
-
-
-
-
-function setTimeout(aCallback, aDelay) {
-  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  timer.initWithCallback(aCallback, aDelay, Ci.nsITimer.TYPE_ONE_SHOT);
-  return timer;
-}
-
-
-
-
-
-
-
-
-function extractIconSize(aSizes) {
-  let width = -1;
-  let sizesType;
-  const re = /^([1-9][0-9]*)x[1-9][0-9]*$/i;
-
-  if (aSizes.length) {
-    for (let size of aSizes) {
-      if (size.toLowerCase() == "any") {
-        sizesType = SIZES_TELEMETRY_ENUM.ANY;
-        break;
-      } else {
-        let values = re.exec(size);
-        if (values && values.length > 1) {
-          sizesType = SIZES_TELEMETRY_ENUM.DIMENSION;
-          width = parseInt(values[1]);
-          break;
-        } else {
-          sizesType = SIZES_TELEMETRY_ENUM.INVALID;
-          break;
-        }
-      }
-    }
-  } else {
-    sizesType = SIZES_TELEMETRY_ENUM.NO_SIZES;
-  }
-
-  
-  
-  Services.telemetry.getHistogramById("LINK_ICON_SIZES_ATTR_USAGE").add(sizesType);
-  if (width > 0)
-    Services.telemetry.getHistogramById("LINK_ICON_SIZES_ATTR_DIMENSION").add(width);
-
-  return width;
-}
-
-
-
-
-
-
-
-function getLinkIconURI(aLink) {
-  let targetDoc = aLink.ownerDocument;
-  let uri = Services.io.newURI(aLink.href, targetDoc.characterSet);
-  try {
-    uri.userPass = "";
-  } catch (e) {
-    
-  }
-  return uri;
-}
-
-
-
-
-
-
-
-
-
-
-function setIconForLink(aIconInfo, aChromeGlobal) {
-  aChromeGlobal.sendAsyncMessage(
-    "Link:SetIcon",
-    { url: aIconInfo.iconUri.spec, loadingPrincipal: aIconInfo.loadingPrincipal });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function faviconTimeoutCallback(aFaviconLoads, aPageUrl, aChromeGlobal) {
-  let load = aFaviconLoads.get(aPageUrl);
-  if (!load)
-    return;
-
-  
-  let preferredIcon;
-  
-  let defaultIcon;
-  
-  
-  let largestRichIcon;
-
-  for (let icon of load.iconInfos) {
-    if (icon.type === "image/svg+xml" ||
-      icon.type === "image/x-icon" ||
-      icon.type === "image/vnd.microsoft.icon") {
-      preferredIcon = icon;
-      continue;
-    }
-
-    if (icon.isRichIcon) {
-      if (!largestRichIcon || largestRichIcon.width < icon.width) {
-        largestRichIcon = icon;
-      }
-    } else if (!defaultIcon) {
-      defaultIcon = icon;
-    }
-  }
-
-  
-  
-  
-  if (preferredIcon) {
-    setIconForLink(preferredIcon, aChromeGlobal);
-  } else if (defaultIcon) {
-    setIconForLink(defaultIcon, aChromeGlobal);
-  }
-
-  if (largestRichIcon) {
-    setIconForLink(largestRichIcon, aChromeGlobal);
-  }
-  load.timer = null;
-  aFaviconLoads.delete(aPageUrl);
-}
-
-
-
-
-
-
-
-
-
-
-function handleFaviconLink(aLink, aIsRichIcon, aChromeGlobal, aFaviconLoads) {
-  let pageUrl = aLink.ownerDocument.documentURI;
-  let iconUri = getLinkIconURI(aLink);
-  if (!iconUri)
-    return false;
-
-  
-  
-  let width = extractIconSize(aLink.sizes);
-  if (width >= FAVICON_RICH_ICON_MIN_WIDTH)
-    aIsRichIcon = true;
-
-  let iconInfo = {
-    iconUri,
-    width,
-    isRichIcon: aIsRichIcon,
-    type: aLink.type,
-    loadingPrincipal: aLink.ownerDocument.nodePrincipal
-  };
-
-  if (aFaviconLoads.has(pageUrl)) {
-    let load = aFaviconLoads.get(pageUrl);
-    load.iconInfos.push(iconInfo)
-    
-    load.timer.delay = FAVICON_PARSING_TIMEOUT;
-  } else {
-    let timer = setTimeout(() => faviconTimeoutCallback(aFaviconLoads, pageUrl, aChromeGlobal),
-                                                        FAVICON_PARSING_TIMEOUT);
-    let load = { timer, iconInfos: [iconInfo] };
-    aFaviconLoads.set(pageUrl, load);
-  }
-  return true;
-}
-
 this.ContentLinkHandler = {
   init(chromeGlobal) {
-    const faviconLoads = new Map();
-    chromeGlobal.addEventListener("DOMLinkAdded", event => {
-      this.onLinkEvent(event, chromeGlobal, faviconLoads);
+    chromeGlobal.addEventListener("DOMLinkAdded", (event) => {
+      this.onLinkEvent(event, chromeGlobal);
     });
-    chromeGlobal.addEventListener("DOMLinkChanged", event => {
-      this.onLinkEvent(event, chromeGlobal, faviconLoads);
-    });
-    chromeGlobal.addEventListener("unload", event => {
-      for (const [pageUrl, load] of faviconLoads) {
-        load.timer.cancel();
-        load.timer = null;
-        faviconLoads.delete(pageUrl);
-      }
+    chromeGlobal.addEventListener("DOMLinkChanged", (event) => {
+      this.onLinkEvent(event, chromeGlobal);
     });
   },
 
-  onLinkEvent(event, chromeGlobal, faviconLoads) {
+  onLinkEvent(event, chromeGlobal) {
     var link = event.originalTarget;
     var rel = link.rel && link.rel.toLowerCase();
     if (!link || !link.ownerDocument || !rel || !link.href)
@@ -244,8 +46,6 @@ this.ContentLinkHandler = {
     if (window != window.top)
       return;
 
-    
-    
     var feedAdded = false;
     var iconAdded = false;
     var searchAdded = false;
@@ -254,8 +54,6 @@ this.ContentLinkHandler = {
       rels[relString] = true;
 
     for (let relVal in rels) {
-      let isRichIcon = true;
-
       switch (relVal) {
         case "feed":
         case "alternate":
@@ -273,15 +71,46 @@ this.ContentLinkHandler = {
           }
           break;
         case "icon":
-          isRichIcon = false;
-          
-        case "apple-touch-icon":
-        case "apple-touch-icon-precomposed":
-        case "fluid-icon":
           if (iconAdded || !Services.prefs.getBoolPref("browser.chrome.site_icons"))
             break;
 
-          iconAdded = handleFaviconLink(link, isRichIcon, chromeGlobal, faviconLoads);
+          var uri = this.getLinkIconURI(link);
+          if (!uri)
+            break;
+
+          
+          
+          let sizeHistogramTypes = Services.telemetry.
+                                   getHistogramById("LINK_ICON_SIZES_ATTR_USAGE");
+          let sizeHistogramDimension = Services.telemetry.
+                                       getHistogramById("LINK_ICON_SIZES_ATTR_DIMENSION");
+          let sizesType;
+          if (link.sizes.length) {
+            for (let size of link.sizes) {
+              if (size.toLowerCase() == "any") {
+                sizesType = SIZES_TELEMETRY_ENUM.ANY;
+                break;
+              } else {
+                let re = /^([1-9][0-9]*)x[1-9][0-9]*$/i;
+                let values = re.exec(size);
+                if (values && values.length > 1) {
+                  sizesType = SIZES_TELEMETRY_ENUM.DIMENSION;
+                  sizeHistogramDimension.add(parseInt(values[1]));
+                } else {
+                  sizesType = SIZES_TELEMETRY_ENUM.INVALID;
+                  break;
+                }
+              }
+            }
+          } else {
+            sizesType = SIZES_TELEMETRY_ENUM.NO_SIZES;
+          }
+          sizeHistogramTypes.add(sizesType);
+
+          chromeGlobal.sendAsyncMessage(
+            "Link:SetIcon",
+            {url: uri.spec, loadingPrincipal: link.ownerDocument.nodePrincipal});
+          iconAdded = true;
           break;
         case "search":
           if (!searchAdded && event.type == "DOMLinkAdded") {
@@ -301,5 +130,16 @@ this.ContentLinkHandler = {
           break;
       }
     }
+  },
+
+  getLinkIconURI(aLink) {
+    let targetDoc = aLink.ownerDocument;
+    var uri = Services.io.newURI(aLink.href, targetDoc.characterSet);
+    try {
+      uri.userPass = "";
+    } catch (e) {
+      
+    }
+    return uri;
   },
 };

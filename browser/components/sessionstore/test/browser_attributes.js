@@ -24,13 +24,6 @@ add_task(async function test() {
   await promiseBrowserLoaded(tab.linkedBrowser);
 
   
-  
-  
-  await BrowserTestUtils.waitForCondition(() => {
-    return gBrowser.getIcon(tab) != null;
-  }, "wait for favicon load to finish", 100, 5);
-
-  
   ok(tab.hasAttribute("image"), "tab.image exists");
   ok(tab.hasAttribute("iconLoadingPrincipal"), "tab.iconLoadingPrincipal exists");
 

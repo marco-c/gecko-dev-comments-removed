@@ -22,12 +22,6 @@ add_task(async function test_tabicon_after_bg_tab_crash() {
     gBrowser,
     url: PAGE_URL,
   }, async function(browser) {
-    
-    
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return gBrowser.getIcon() != null;
-    }, "wait for favicon load to finish", 100, 5);
     Assert.equal(browser.mIconURL, FAVICON, "Favicon is correctly set.");
     await BrowserTestUtils.switchTab(gBrowser, originalTab);
     await BrowserTestUtils.crashBrowser(browser,
