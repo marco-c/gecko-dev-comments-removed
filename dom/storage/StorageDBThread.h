@@ -34,6 +34,15 @@ typedef mozilla::storage::StatementCache<mozIStorageStatement> StatementCache;
 
 
 
+
+
+
+
+
+
+#if 0
+
+
 class StorageDBBridge
 {
 public:
@@ -100,17 +109,15 @@ public:
   
   
   virtual bool ShouldPreloadOrigin(const nsACString& aOriginNoSuffix) = 0;
-
-  
-  virtual void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins) = 0;
 };
+#endif
 
 
 
 
 
 
-class StorageDBThread final : public StorageDBBridge
+class StorageDBThread final
 {
 public:
   class PendingOperations;
@@ -287,11 +294,43 @@ public:
     Monitor mMonitor;
   };
 
+  class InitHelper;
+
+  class NoteBackgroundThreadRunnable;
+
+  class ShutdownRunnable : public Runnable
+  {
+    
+    bool& mDone;
+
+  public:
+    explicit ShutdownRunnable(bool& aDone)
+      : Runnable("dom::StorageDBThread::ShutdownRunnable")
+      , mDone(aDone)
+    {
+      MOZ_ASSERT(NS_IsMainThread());
+    }
+
+  private:
+    ~ShutdownRunnable()
+    { }
+
+    NS_DECL_NSIRUNNABLE
+  };
+
 public:
   StorageDBThread();
   virtual ~StorageDBThread() {}
 
+  static StorageDBThread*
+  Get();
+
+  static StorageDBThread*
+  GetOrCreate();
+
   virtual nsresult Init();
+
+  
   virtual nsresult Shutdown();
 
   virtual void AsyncPreload(LocalStorageCacheBridge* aCache,
@@ -358,7 +397,9 @@ public:
   virtual void AsyncFlush();
 
   virtual bool ShouldPreloadOrigin(const nsACString& aOrigin);
-  virtual void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins);
+
+  
+  void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins);
 
 private:
   nsCOMPtr<nsIFile> mDatabaseFile;

@@ -132,13 +132,6 @@ public:
   void GetKeys(const LocalStorage* aStorage, nsTArray<nsString>& aKeys);
 
   
-  static StorageDBBridge* StartDatabase();
-  static StorageDBBridge* GetDatabase();
-
-  
-  static nsresult StopDatabase();
-
-  
 
   virtual const nsCString Origin() const;
   virtual const nsCString& OriginNoSuffix() const { return mOriginNoSuffix; }
@@ -260,13 +253,6 @@ private:
   
   
   bool mPreloadTelemetryRecorded : 1;
-
-  
-  
-  static StorageDBBridge* sDatabase;
-
-  
-  static bool sDatabaseDown;
 };
 
 
@@ -274,7 +260,7 @@ private:
 class StorageUsageBridge
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(StorageUsageBridge)
+  NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(StorageUsageBridge)
 
   virtual const nsCString& OriginScope() = 0;
   virtual void LoadUsage(const int64_t aUsage) = 0;

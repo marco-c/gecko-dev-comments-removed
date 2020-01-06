@@ -76,7 +76,7 @@ LocalStorageManager::LocalStorageManager()
     
     
     
-    LocalStorageCache::StartDatabase();
+    StorageDBChild::GetOrCreate();
   }
 }
 
@@ -168,9 +168,9 @@ LocalStorageManager::GetOriginUsage(const nsACString& aOriginNoSuffix)
 
   usage = new StorageUsage(aOriginNoSuffix);
 
-  StorageDBBridge* db = LocalStorageCache::StartDatabase();
-  if (db) {
-    db->AsyncGetUsage(usage);
+  StorageDBChild* storageChild = StorageDBChild::GetOrCreate();
+  if (storageChild) {
+    storageChild->AsyncGetUsage(usage);
   }
 
   mUsages.Put(aOriginNoSuffix, usage);
@@ -234,7 +234,7 @@ LocalStorageManager::GetStorageInternal(CreateMode aCreateMode,
     if (aCreateMode == CreateMode::CreateIfShouldPreload) {
       
       
-      StorageDBBridge* db = LocalStorageCache::GetDatabase();
+      StorageDBChild* db = StorageDBChild::Get();
       if (db) {
         if (!db->ShouldPreloadOrigin(LocalStorageManager::CreateOrigin(originAttrSuffix, originKey))) {
           return NS_OK;
