@@ -93,7 +93,7 @@ WebRenderImageData::ClearCachedResources()
 Maybe<wr::ImageKey>
 WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
                                    wr::IpcResourceUpdateQueue& aResources,
-                                   bool aForceUpdate)
+                                   bool aFallback)
 {
   MOZ_ASSERT(aContainer);
 
@@ -102,21 +102,22 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
   }
 
   wr::WrImageKey key;
-  nsresult rv = SharedSurfacesChild::Share(aContainer, mWRManager, aResources,
-                                           aForceUpdate, key);
-  if (NS_SUCCEEDED(rv)) {
-    
-    
-    
-    ClearImageKey();
-    mKey = Some(key);
-    return mKey;
-  }
+  if (!aFallback) {
+    nsresult rv = SharedSurfacesChild::Share(aContainer, mWRManager, aResources, key);
+    if (NS_SUCCEEDED(rv)) {
+      
+      
+      
+      ClearImageKey();
+      mKey = Some(key);
+      return mKey;
+    }
 
-  if (rv != NS_ERROR_NOT_IMPLEMENTED) {
-    
-    ClearImageKey();
-    return Nothing();
+    if (rv != NS_ERROR_NOT_IMPLEMENTED) {
+      
+      ClearImageKey();
+      return Nothing();
+    }
   }
 
   CreateImageClientIfNeeded();
@@ -139,7 +140,7 @@ WebRenderImageData::UpdateImageKey(ImageContainer* aContainer,
   }
 
   
-  if (!aForceUpdate && oldCounter == imageClient->GetLastUpdateGenerationCounter() && mKey) {
+  if (!aFallback && oldCounter == imageClient->GetLastUpdateGenerationCounter() && mKey) {
     return mKey;
   }
 
