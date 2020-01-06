@@ -2643,6 +2643,10 @@ this.Schemas = {
 
   
   
+  contentSchemaJSON: new Map(),
+
+  
+  
   rootNamespace: new Namespace("", []),
 
   getNamespace(name) {
@@ -2697,7 +2701,9 @@ this.Schemas = {
   receiveMessage(msg) {
     switch (msg.name) {
       case "Schema:Add":
-        this.schemaJSON.set(msg.data.url, msg.data.schema);
+        for (let [url, schema] of msg.data) {
+          this.schemaJSON.set(url, schema);
+        }
         this.flushSchemas();
         break;
 
@@ -2767,18 +2773,24 @@ this.Schemas = {
     return this._loadCachedSchemasPromise;
   },
 
-  addSchema(url, schema) {
+  addSchema(url, schema, content = false) {
     this.schemaJSON.set(url, schema);
 
-    let data = Services.ppmm.initialProcessData;
-    data["Extension:Schemas"] = this.schemaJSON;
+    if (content) {
+      this.contentSchemaJSON.set(url, schema);
 
-    Services.ppmm.broadcastAsyncMessage("Schema:Add", {url, schema});
+      let data = Services.ppmm.initialProcessData;
+      data["Extension:Schemas"] = this.contentSchemaJSON;
+
+      Services.ppmm.broadcastAsyncMessage("Schema:Add", [[url, schema]]);
+    } else if (this.schemaHook) {
+      this.schemaHook([[url, schema]]);
+    }
 
     this.flushSchemas();
   },
 
-  async load(url) {
+  async load(url, content = false) {
     if (!isParentProcess) {
       return;
     }
@@ -2789,7 +2801,7 @@ this.Schemas = {
                 await StartupCache.schemas.get(url, readJSONAndBlobbify));
 
     if (!this.schemaJSON.has(url)) {
-      this.addSchema(url, blob);
+      this.addSchema(url, blob, content);
     }
   },
 
