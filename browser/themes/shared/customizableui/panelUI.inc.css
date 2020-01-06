@@ -198,19 +198,13 @@ panelmultiview[nosubviews=true] > .panel-viewcontainer > .panel-viewstack > .pan
   display: none;
 }
 
-panelview {
-  -moz-box-orient: vertical;
+.panel-viewstack:not([viewtype="main"]) > .panel-mainview > #PanelUI-mainView {
   -moz-box-flex: 1;
 }
 
 .panel-subview-body {
   overflow-y: auto;
   overflow-x: hidden;
-  -moz-box-flex: 1;
-}
-
-.panel-view-body-unscrollable {
-  overflow: hidden;
   -moz-box-flex: 1;
 }
 
@@ -231,8 +225,6 @@ panelview {
   border-bottom: 1px solid var(--panel-separator-color);
   color: GrayText;
   font-variant: small-caps;
-  
-  height: 41px;
 }
 
 .cui-widget-panelview .panel-subview-header,
@@ -755,6 +747,10 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 
 #appMenu-fxa-icon[syncstatus="active"] {
   list-style-image: url(chrome://browser/skin/syncProgress-horizontalbar.png);
+}
+
+#appMenu-fxa-status {
+  -moz-box-align: center;
 }
 
 #appMenu-fxa-avatar {
