@@ -54,21 +54,6 @@ add_task(async function test_clean_up_uitour_after_closing_overlay() {
   is(highlight.getAttribute("targetName"), "library", "UITour should highlight library");
 
   
-  
-  highlightClosePromise = promisePopupChange(highlight, "closed");
-  BrowserTestUtils.synthesizeMouseAtPoint(2, 2, {}, tab.linkedBrowser);
-  await promiseOnboardingOverlayClosed(tab.linkedBrowser);
-  await highlightClosePromise;
-  is(highlight.state, "closed", "Should close UITour highlight after closing the overlay by clicking the overlay");
-
-  
-  highlightOpenPromise = promisePopupChange(highlight, "open");
-  await triggerUITourHighlight("library", tab);
-  await highlightOpenPromise;
-  is(highlight.state, "open", "Should show UITour highlight");
-  is(highlight.getAttribute("targetName"), "library", "UITour should highlight library");
-
-  
   highlightClosePromise = promisePopupChange(highlight, "closed");
   BrowserTestUtils.synthesizeMouseAtCenter("#onboarding-skip-tour-btn", {}, tab.linkedBrowser);
   await promiseOnboardingOverlayClosed(tab.linkedBrowser);
