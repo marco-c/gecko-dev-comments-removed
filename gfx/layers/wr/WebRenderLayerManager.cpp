@@ -105,6 +105,8 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
     WrBridge()->Destroy(aIsSync);
   }
 
+  mLastCanvasDatas.Clear();
+
   if (mTransactionIdAllocator) {
     
     
