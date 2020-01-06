@@ -187,7 +187,7 @@ ServoRestyleManager::PostRestyleEventForCSSRuleChanges()
   mPresContext->PresShell()->EnsureStyleFlush();
 }
 
- void
+void
 ServoRestyleManager::PostRestyleEventForAnimations(
   Element* aElement,
   CSSPseudoElementType aPseudoType,
@@ -203,6 +203,8 @@ ServoRestyleManager::PostRestyleEventForAnimations(
     return;
   }
 
+  AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(),
+                                   true );
   Servo_NoteExplicitHints(elementToRestyle, aRestyleHint, nsChangeHint(0));
 }
 

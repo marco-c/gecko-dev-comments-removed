@@ -185,9 +185,9 @@ public:
 
 
 
-  static void PostRestyleEventForAnimations(dom::Element* aElement,
-                                            CSSPseudoElementType aPseudoType,
-                                            nsRestyleHint aRestyleHint);
+  void PostRestyleEventForAnimations(dom::Element* aElement,
+                                     CSSPseudoElementType aPseudoType,
+                                     nsRestyleHint aRestyleHint);
 protected:
   ~ServoRestyleManager() override
   {

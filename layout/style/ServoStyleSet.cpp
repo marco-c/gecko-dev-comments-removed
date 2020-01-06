@@ -333,9 +333,12 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   ServoTraversalFlags aFlags)
 {
   MOZ_ASSERT(MayTraverseFrom(const_cast<Element*>(aRoot)));
-  bool forThrottledAnimationFlush = !!(aFlags & ServoTraversalFlags::AnimationOnly);
 
-  AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), forThrottledAnimationFlush);
+  
+  
+  
+  AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(),
+                                   false );
 
   MOZ_ASSERT(!StylistNeedsUpdate());
   AutoSetInServoTraversal guard(this);
@@ -353,7 +356,7 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   
   
   
-  if (forThrottledAnimationFlush) {
+  if (aFlags & ServoTraversalFlags::AnimationOnly) {
     return postTraversalRequired;
   }
 
