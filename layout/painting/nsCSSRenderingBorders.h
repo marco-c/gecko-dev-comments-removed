@@ -148,6 +148,8 @@ private:
 
   
   nscolor mBorderColors[4];
+
+  
   nsBorderColors* mCompositeColors[4];
 
   
