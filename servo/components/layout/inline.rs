@@ -1486,7 +1486,7 @@ impl Flow for InlineFlow {
             indentation = Au(0)
         }
 
-        if self.contains_positioned_fragments() {
+        if self.is_absolute_containing_block() {
             
             
             

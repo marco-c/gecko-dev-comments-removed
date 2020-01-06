@@ -404,7 +404,7 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
 
     
     fn is_absolute_containing_block(&self) -> bool {
-        false
+        self.contains_positioned_fragments()
     }
 
     
