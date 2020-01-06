@@ -64,7 +64,7 @@ public:
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPREFSERVICE
-  NS_FORWARD_NSIPREFBRANCH(sRootBranch->)
+  NS_FORWARD_NSIPREFBRANCH(mRootBranch->)
   NS_DECL_NSIOBSERVER
 
   Preferences();
@@ -94,14 +94,14 @@ public:
   static nsIPrefBranch* GetRootBranch()
   {
     NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
-    return sRootBranch;
+    return sPreferences->mRootBranch;
   }
 
   
   static nsIPrefBranch* GetDefaultRootBranch()
   {
     NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
-    return sDefaultRootBranch;
+    return sPreferences->mDefaultRootBranch;
   }
 
   
@@ -403,9 +403,10 @@ private:
   
   bool mSavePending = false;
 
+  nsCOMPtr<nsIPrefBranch> mRootBranch;
+  nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
+
   static Preferences* sPreferences;
-  static nsIPrefBranch* sRootBranch;
-  static nsIPrefBranch* sDefaultRootBranch;
   static bool sShutdown;
 
   
