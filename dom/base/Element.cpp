@@ -4176,10 +4176,9 @@ Element::SetCustomElementData(CustomElementData* aData)
 MOZ_DEFINE_MALLOC_SIZE_OF(ServoElementMallocSizeOf)
 
 void
-Element::AddSizeOfExcludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
-                                size_t* aNodeSize) const
+Element::AddSizeOfExcludingThis(nsWindowSizes& aSizes, size_t* aNodeSize) const
 {
-  FragmentOrElement::AddSizeOfExcludingThis(aState, aSizes, aNodeSize);
+  FragmentOrElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
 
   if (HasServoData()) {
     
@@ -4188,23 +4187,24 @@ Element::AddSizeOfExcludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
     
     *aNodeSize +=
       Servo_Element_SizeOfExcludingThisAndCVs(ServoElementMallocSizeOf,
-                                              &aState.mSeenPtrs, this);
+                                              &aSizes.mState.mSeenPtrs, this);
 
     
     
     RefPtr<ServoStyleContext> sc;
     if (Servo_Element_HasPrimaryComputedValues(this)) {
       sc = Servo_Element_GetPrimaryComputedValues(this).Consume();
-      if (!aState.HaveSeenPtr(sc.get())) {
-        sc->AddSizeOfIncludingThis(aState, aSizes, &aSizes.mComputedValuesDom);
+      if (!aSizes.mState.HaveSeenPtr(sc.get())) {
+        sc->AddSizeOfIncludingThis(aSizes,
+                                   &aSizes.mStyleSizes.mComputedValuesDom);
       }
 
       for (size_t i = 0; i < nsCSSPseudoElements::kEagerPseudoCount; i++) {
         if (Servo_Element_HasPseudoComputedValues(this, i)) {
           sc = Servo_Element_GetPseudoComputedValues(this, i).Consume();
-          if (!aState.HaveSeenPtr(sc.get())) {
-            sc->AddSizeOfIncludingThis(aState, aSizes,
-                                       &aSizes.mComputedValuesDom);
+          if (!aSizes.mState.HaveSeenPtr(sc.get())) {
+            sc->AddSizeOfIncludingThis(aSizes,
+                                       &aSizes.mStyleSizes.mComputedValuesDom);
           }
         }
       }

@@ -268,8 +268,7 @@ private:
 
 
 #define NS_DECL_ADDSIZEOFEXCLUDINGTHIS \
-  virtual void AddSizeOfExcludingThis(mozilla::SizeOfState& aState, \
-                                      nsStyleSizes& aSizes, \
+  virtual void AddSizeOfExcludingThis(nsWindowSizes& aSizes, \
                                       size_t* aNodeSize) const override;
 
 
@@ -332,8 +331,7 @@ public:
   
   
   
-  virtual void AddSizeOfExcludingThis(mozilla::SizeOfState& aState,
-                                      nsStyleSizes& aSizes,
+  virtual void AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                       size_t* aNodeSize) const;
 
   
@@ -341,11 +339,10 @@ public:
   
   
   
-  virtual void AddSizeOfIncludingThis(mozilla::SizeOfState& aState,
-                                      nsStyleSizes& aSizes,
+  virtual void AddSizeOfIncludingThis(nsWindowSizes& aSizes,
                                       size_t* aNodeSize) const {
-    *aNodeSize += aState.mMallocSizeOf(this);
-    AddSizeOfExcludingThis(aState, aSizes, aNodeSize);
+    *aNodeSize += aSizes.mState.mMallocSizeOf(this);
+    AddSizeOfExcludingThis(aSizes, aNodeSize);
   }
 
   friend class nsNodeUtils;

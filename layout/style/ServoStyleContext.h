@@ -103,8 +103,7 @@ public:
   
   
   
-  void AddSizeOfIncludingThis(SizeOfState& aState, nsStyleSizes& aSizes,
-                              size_t* aCVsSize) const
+  void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const
   {
     
     
@@ -119,7 +118,7 @@ public:
     
     
     *aCVsSize += ServoComputedValuesMallocSizeOf(p);
-    mSource.AddSizeOfExcludingThis(aState, aSizes);
+    mSource.AddSizeOfExcludingThis(aSizes);
   }
 
 private:

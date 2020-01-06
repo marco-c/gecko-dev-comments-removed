@@ -1561,9 +1561,6 @@ nsDocument::nsDocument(const char* aContentType)
 #ifdef DEBUG
   , mWillReparent(false)
 #endif
-  , mDOMLoadingSet(false)
-  , mDOMInteractiveSet(false)
-  , mDOMCompleteSet(false)
 {
   SetContentTypeInternal(nsDependentCString(aContentType));
 
@@ -9647,8 +9644,6 @@ nsDocument::SetReadyStateInternal(ReadyState rs)
     mLoadingTimeStamp = mozilla::TimeStamp::Now();
   }
 
-  RecordNavigationTiming(rs);
-
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
     new AsyncEventDispatcher(this, NS_LITERAL_STRING("readystatechange"),
                              false, false);
@@ -12574,8 +12569,7 @@ nsDocument::GetVisibilityState(nsAString& aState)
  void
 nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
 {
-  nsINode::AddSizeOfExcludingThis(aSizes.mState, aSizes.mStyleSizes,
-                                  &aSizes.mDOMOtherSize);
+  nsINode::AddSizeOfExcludingThis(aSizes, &aSizes.mDOMOtherSize);
 
   if (mPresShell) {
     mPresShell->AddSizeOfIncludingThis(aSizes);
@@ -12622,8 +12616,7 @@ SizeOfOwnedSheetArrayExcludingThis(const nsTArray<RefPtr<StyleSheet>>& aSheets,
 }
 
 void
-nsDocument::AddSizeOfExcludingThis(SizeOfState& aState,
-                                   nsStyleSizes& aSizes,
+nsDocument::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                    size_t* aNodeSize) const
 {
   
@@ -12637,8 +12630,7 @@ static void
 AddSizeOfNodeTree(nsIContent* aNode, nsWindowSizes& aWindowSizes)
 {
   size_t nodeSize = 0;
-  aNode->AddSizeOfIncludingThis(aWindowSizes.mState, aWindowSizes.mStyleSizes,
-                                &nodeSize);
+  aNode->AddSizeOfIncludingThis(aWindowSizes, &nodeSize);
 
   
   
@@ -13829,54 +13821,4 @@ nsIDocument::GetSelection(ErrorResult& aRv)
   }
 
   return nsGlobalWindow::Cast(window)->GetSelection(aRv);
-}
-
-void
-nsDocument::RecordNavigationTiming(ReadyState aReadyState)
-{
-  if (!XRE_IsContentProcess()) {
-    return;
-  }
-  if (!IsTopLevelContentDocument()) {
-    return;
-  }
-  
-  
-  RefPtr<nsDOMNavigationTiming> timing = mTiming;
-  if (!timing) {
-    if (!mDocumentContainer) {
-      return;
-    }
-    timing = mDocumentContainer->GetNavigationTiming();
-    if (!timing) {
-      return;
-    }
-  }
-  TimeStamp startTime = timing->GetNavigationStartTimeStamp();
-  switch (aReadyState) {
-    case READYSTATE_LOADING:
-      if (!mDOMLoadingSet) {
-        Telemetry::AccumulateTimeDelta(Telemetry::TIME_TO_DOM_LOADING_MS,
-                                       startTime);
-        mDOMLoadingSet = true;
-      }
-      break;
-    case READYSTATE_INTERACTIVE:
-      if (!mDOMInteractiveSet) {
-        Telemetry::AccumulateTimeDelta(Telemetry::TIME_TO_DOM_INTERACTIVE_MS,
-                                       startTime);
-        mDOMInteractiveSet = true;
-      }
-      break;
-    case READYSTATE_COMPLETE:
-      if (!mDOMCompleteSet) {
-        Telemetry::AccumulateTimeDelta(Telemetry::TIME_TO_DOM_COMPLETE_MS,
-                                       startTime);
-        mDOMCompleteSet = true;
-      }
-      break;
-    default:
-      NS_WARNING("Unexpected ReadyState value");
-      break;
-  }
 }
