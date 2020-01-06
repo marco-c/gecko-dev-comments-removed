@@ -135,6 +135,10 @@ VectorSurfaceKey(const gfx::IntSize& aSize,
 
 
 
+
+
+
+
 class AvailabilityState
 {
 public:
@@ -143,15 +147,22 @@ public:
 
   bool IsAvailable() const { return mIsAvailable; }
   bool IsPlaceholder() const { return !mIsAvailable; }
+  bool CannotSubstitute() const { return mCannotSubstitute; }
+
+  void SetCannotSubstitute() { mCannotSubstitute = true; }
 
 private:
   friend class SurfaceCacheImpl;
 
-  explicit AvailabilityState(bool aIsAvailable) : mIsAvailable(aIsAvailable) { }
+  explicit AvailabilityState(bool aIsAvailable)
+    : mIsAvailable(aIsAvailable)
+    , mCannotSubstitute(false)
+  { }
 
   void SetAvailable() { mIsAvailable = true; }
 
-  bool mIsAvailable;
+  bool mIsAvailable : 1;
+  bool mCannotSubstitute : 1;
 };
 
 enum class InsertOutcome : uint8_t {

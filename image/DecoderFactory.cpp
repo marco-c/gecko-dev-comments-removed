@@ -145,6 +145,9 @@ DecoderFactory::CreateDecoder(DecoderType aType,
     WrapNotNull(new DecodedSurfaceProvider(aImage,
                                            surfaceKey,
                                            WrapNotNull(decoder)));
+  if (aDecoderFlags & DecoderFlags::CANNOT_SUBSTITUTE) {
+    provider->Availability().SetCannotSubstitute();
+  }
 
   
   

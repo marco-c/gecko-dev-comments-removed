@@ -1286,6 +1286,12 @@ RasterImage::Decode(const IntSize& aSize,
   if (mHasBeenDecoded) {
     decoderFlags |= DecoderFlags::IS_REDECODE;
   }
+  if ((aFlags & FLAG_SYNC_DECODE) || !(aFlags & FLAG_HIGH_QUALITY_SCALING)) {
+    
+    
+    
+    decoderFlags |= DecoderFlags::CANNOT_SUBSTITUTE;
+  }
 
   SurfaceFlags surfaceFlags = ToSurfaceFlags(aFlags);
   if (IsOpaque()) {
