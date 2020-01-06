@@ -62,6 +62,9 @@ pref("devtools.inspector.colorWidget.enabled", false);
 pref("devtools.inspector.shapesHighlighter.enabled", true);
 
 
+pref("devtools.flexboxinspector.enabled", false);
+
+
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
 pref("devtools.gridinspector.showGridAreas", false);
@@ -73,6 +76,8 @@ pref("devtools.gridinspector.showNegativeLineNumbers", false);
 pref("devtools.computed.boxmodel.opened", true);
 
 pref("devtools.layout.boxmodel.opened", true);
+
+pref("devtools.layout.flexbox.opened", true);
 
 pref("devtools.layout.grid.opened", true);
 
