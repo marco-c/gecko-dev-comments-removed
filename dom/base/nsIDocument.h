@@ -904,6 +904,15 @@ public:
 
 
 
+  void DisableEncodingMenu()
+  {
+    mEncodingMenuDisabled = true;
+  }
+
+  
+
+
+
   virtual void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const = 0;
   virtual void SetHeaderData(nsAtom* aheaderField, const nsAString& aData) = 0;
 
@@ -3591,6 +3600,9 @@ protected:
 
   
   bool mAllowPaymentRequest : 1;
+
+  
+  bool mEncodingMenuDisabled : 1;
 
   
   enum { eScopedStyle_Unknown, eScopedStyle_Disabled, eScopedStyle_Enabled };

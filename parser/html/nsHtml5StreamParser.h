@@ -554,6 +554,8 @@ public:
 
     bool                          mInitialEncodingWasFromParentFrame;
 
+    bool                          mHasHadErrors;
+
     
 
 
@@ -594,6 +596,7 @@ public:
 
 
     static int32_t                sTimerSubsequentDelay;
+
 };
 
 #endif 
