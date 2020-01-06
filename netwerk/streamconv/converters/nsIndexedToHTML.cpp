@@ -16,12 +16,12 @@
 #include "nsEscape.h"
 #include "nsIDirIndex.h"
 #include "nsURLHelper.h"
-#include "nsIPlatformCharset.h"
 #include "nsIPrefService.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefLocalizedString.h"
 #include "nsIStringBundle.h"
 #include "nsITextToSubURI.h"
+#include "nsNativeCharsetUtils.h"
 #include "nsString.h"
 #include <algorithm>
 #include "nsIChannel.h"
@@ -500,13 +500,10 @@ nsIndexedToHTML::DoOnStartRequest(nsIRequest* request, nsISupports *aContext,
     
     
     
-    if (NS_FAILED(rv) && isSchemeFile) {
-        nsCOMPtr<nsIPlatformCharset> platformCharset(do_GetService(NS_PLATFORMCHARSET_CONTRACTID, &rv));
-        NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv) && isSchemeFile && !NS_IsNativeUTF8()) {
+        auto encoding = mozilla::dom::FallbackEncoding::FromLocale();
         nsAutoCString charset;
-        rv = platformCharset->GetCharset(kPlatformCharsetSel_FileName, charset);
-        NS_ENSURE_SUCCESS(rv, rv);
-
+        encoding->Name(charset);
         rv = mTextToSubURI->UnEscapeAndConvert(charset, titleUri, unEscapeSpec);
     }
     if (NS_FAILED(rv)) return rv;
