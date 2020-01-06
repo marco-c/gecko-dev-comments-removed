@@ -37,7 +37,7 @@ public:
   
   void CloseDocument();
 
-  int GetPageCount() { return mPDFiumEngine->GetPageCount(mPDFDoc); }
+  int GetPageCount() const { return mPDFiumEngine->GetPageCount(mPDFDoc); }
 
   
   bool DrawPage(HDC aPrinterDC, unsigned int aPageIndex,
