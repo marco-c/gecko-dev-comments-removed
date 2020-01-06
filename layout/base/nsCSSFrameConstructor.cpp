@@ -12745,10 +12745,6 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
                                            nsIFrame* aPrevSibling,
                                            InsertionKind aInsertionKind)
 {
-  
-  
-  aInsertionKind = InsertionKind::Async;
-
   if (aItems.IsEmpty()) {
     return false;
   }
