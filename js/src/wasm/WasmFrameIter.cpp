@@ -394,7 +394,7 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
     
     
     if (!reason.isNone() && !(reason.isFixed() && reason.fixed() == ExitReason::Fixed::ImportJit))
-        SetExitFP(masm, NativeABIPrologueClobberable);
+        SetExitFP(masm, ABINonArgReturnVolatileReg);
 
     if (framePushed)
         masm.subFromStackPtr(Imm32(framePushed));
@@ -407,31 +407,8 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
     if (framePushed)
         masm.addToStackPtr(Imm32(framePushed));
 
-    if (!reason.isNone()) {
-        Register act = ABINonArgReturnReg0;
-
-        
-        if (reason.isNative() && !act.volatile_())
-            masm.Push(act);
-
-        ClearExitFP(masm, act);
-
-#ifdef DEBUG
-        
-        
-        
-        Register scratch = act;
-        size_t exitReasonSlot = 1 + (reason.isNative() && !scratch.volatile_() ? 1 : 0);
-        masm.load32(Address(masm.getStackPointer(), exitReasonSlot * sizeof(void*)), scratch);
-        Label ok;
-        masm.branch32(Assembler::Condition::Equal, scratch, Imm32(reason.encode()), &ok);
-        masm.breakpoint();
-        masm.bind(&ok);
-#endif
-
-        if (reason.isNative() && !act.volatile_())
-            masm.Pop(act);
-    }
+    if (!reason.isNone())
+        ClearExitFP(masm, ABINonArgReturnVolatileReg);
 
     
 #if defined(JS_CODEGEN_ARM)

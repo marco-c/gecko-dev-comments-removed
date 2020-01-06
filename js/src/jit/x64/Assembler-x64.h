@@ -203,7 +203,8 @@ static constexpr Register ABINonVolatileReg = r13;
 
 
 
-static constexpr Register NativeABIPrologueClobberable = rax;
+
+static constexpr Register ABINonArgReturnVolatileReg = r10;
 
 
 

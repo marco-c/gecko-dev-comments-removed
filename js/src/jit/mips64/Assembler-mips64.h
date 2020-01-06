@@ -51,7 +51,8 @@ static constexpr Register ABINonArgReturnReg1 = t1;
 
 
 
-static constexpr Register NativeABIPrologueClobberable = t0;
+
+static constexpr Register ABINonArgReturnVolatileReg = t0;
 
 
 
