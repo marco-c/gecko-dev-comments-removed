@@ -5189,9 +5189,13 @@ QuotaManager::EnsureOriginIsInitializedInternal(
       return rv;
     }
 
-    rv = InitializeOrigin(aPersistenceType, aGroup, aOrigin, timestamp,
-                           false, directory);
-    NS_ENSURE_SUCCESS(rv, rv);
+    
+    InitQuotaForOrigin(aPersistenceType,
+                       aGroup,
+                       aOrigin,
+                        0,
+                       timestamp,
+                        false);
   }
 
   directory.forget(aDirectory);
