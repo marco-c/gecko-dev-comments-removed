@@ -1064,6 +1064,11 @@ void PR_HPUX10xInit(shl_t handle, int loading)
 
 void _PR_Fini(void)
 {
+    
+
+
+
+#ifndef DARWIN
     void *thred;
     int rv;
 
@@ -1095,6 +1100,7 @@ void _PR_Fini(void)
     pt_book.keyCreated = PR_FALSE;
     
     
+#endif
 }  
 
 PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
