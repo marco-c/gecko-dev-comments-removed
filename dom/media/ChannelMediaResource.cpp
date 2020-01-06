@@ -744,9 +744,10 @@ ChannelMediaResource::Resume()
       if (totalLength < 0 || GetOffset() < totalLength) {
         
         
-        Seek(mPendingSeekOffset != -1 ? mPendingSeekOffset : GetOffset(),
-             false);
+        int64_t offset =
+          mPendingSeekOffset != -1 ? mPendingSeekOffset : GetOffset();
         mPendingSeekOffset = -1;
+        Seek(offset, false);
         element->DownloadResumed();
       } else {
         
