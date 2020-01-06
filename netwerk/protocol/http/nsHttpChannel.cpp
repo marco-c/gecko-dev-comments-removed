@@ -9166,6 +9166,16 @@ nsHttpChannel::MaybeRaceCacheWithNetwork()
         return NS_OK;
     }
 
+    
+    if (NS_FAILED(mStatus)) {
+        return NS_OK;
+    }
+
+    
+    if (mRequireCORSPreflight && !mIsCorsPreflightDone) {
+        return NS_OK;
+    }
+
     uint32_t threshold = mCacheOpenWithPriority ? sRCWNQueueSizePriority
                                                 : sRCWNQueueSizeNormal;
     
