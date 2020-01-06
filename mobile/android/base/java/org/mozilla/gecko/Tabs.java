@@ -910,7 +910,7 @@ public class Tabs implements BundleEventListener {
 
     @RobocopTarget
     public Tab loadUrl(String url, int flags) {
-        return loadUrl(url, null, INVALID_TAB_ID, null, flags);
+        return loadUrl(url, null, null, INVALID_TAB_ID, null, flags);
     }
 
     public Tab loadUrlWithIntentExtras(final String url, final SafeIntent intent, final int flags) {
@@ -923,11 +923,11 @@ public class Tabs implements BundleEventListener {
 
         
         
-        return loadUrl(url, null, INVALID_TAB_ID, intent, flags);
+        return loadUrl(url, null, null, INVALID_TAB_ID, intent, flags);
     }
 
     public Tab loadUrl(final String url, final String searchEngine, final int parentId, final int flags) {
-        return loadUrl(url, searchEngine, parentId, null, flags);
+        return loadUrl(url, searchEngine, null, parentId, null, flags);
     }
 
     
@@ -942,8 +942,9 @@ public class Tabs implements BundleEventListener {
 
 
 
-    public Tab loadUrl(final String url, final String searchEngine, final int parentId,
-                   final SafeIntent intent, final int flags) {
+
+    public Tab loadUrl(final String url, final String searchEngine, @Nullable final String referrerUri,
+            final int parentId, @Nullable final SafeIntent intent, final int flags) {
         final GeckoBundle data = new GeckoBundle();
         Tab tabToSelect = null;
         boolean delayLoad = (flags & LOADURL_DELAY_LOAD) != 0;
@@ -964,6 +965,7 @@ public class Tabs implements BundleEventListener {
         data.putBoolean("isPrivate", isPrivate);
         data.putBoolean("pinned", (flags & LOADURL_PINNED) != 0);
         data.putBoolean("desktopMode", desktopMode);
+        data.putString("referrerURI", referrerUri);
 
         final boolean needsNewTab;
         final String applicationId = (intent == null) ? null :
