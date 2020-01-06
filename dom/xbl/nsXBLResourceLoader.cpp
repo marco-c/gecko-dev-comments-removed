@@ -268,6 +268,13 @@ nsXBLResourceLoader::NotifyBoundElements()
             }
 
             if (!sc) {
+              if (shell->StyleSet()->IsServo()) {
+                
+                
+                
+                shell->StyleSet()->GetAsServo()->StyleNewlyBoundElement(
+                  content->AsElement());
+              }
               shell->PostRecreateFramesFor(content->AsElement());
             }
           }
