@@ -604,6 +604,14 @@ static inline WrFilterOp ToWrFilterOp(const layers::CSSFilter& filter) {
   };
 }
 
+
+
+
+
+struct WrClipId {
+  uint64_t id;
+};
+
 } 
 } 
 
