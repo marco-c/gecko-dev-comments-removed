@@ -41,12 +41,6 @@
 
 namespace google_breakpad {
 
-
-typedef struct {
-  AppMemoryList::const_iterator iter;
-  AppMemoryList::const_iterator end;
-} MinidumpCallbackContext;
-
 vector<ExceptionHandler*>* ExceptionHandler::handler_stack_ = NULL;
 LONG ExceptionHandler::handler_stack_index_ = 0;
 CRITICAL_SECTION ExceptionHandler::handler_stack_critical_section_;
@@ -863,44 +857,6 @@ bool ExceptionHandler::WriteMinidumpWithException(
   return success;
 }
 
-
-BOOL CALLBACK ExceptionHandler::MinidumpWriteDumpCallback(
-    PVOID context,
-    const PMINIDUMP_CALLBACK_INPUT callback_input,
-    PMINIDUMP_CALLBACK_OUTPUT callback_output) {
-  switch (callback_input->CallbackType) {
-  case MemoryCallback: {
-    MinidumpCallbackContext* callback_context =
-        reinterpret_cast<MinidumpCallbackContext*>(context);
-    if (callback_context->iter == callback_context->end)
-      return FALSE;
-
-    
-    callback_output->MemoryBase = callback_context->iter->ptr;
-    callback_output->MemorySize = callback_context->iter->length;
-    callback_context->iter++;
-    return TRUE;
-  }
-
-    
-  case IncludeModuleCallback:
-  case ModuleCallback:
-    return TRUE;
-
-    
-  case IncludeThreadCallback:
-  case ThreadCallback:
-    return TRUE;
-
-    
-  case CancelCallback:
-    callback_output->CheckCancel = FALSE;
-    callback_output->Cancel = FALSE;
-    return TRUE;
-  }
-  
-  return FALSE;
-}
 
 bool ExceptionHandler::WriteMinidumpWithExceptionForProcess(
     DWORD requesting_thread_id,

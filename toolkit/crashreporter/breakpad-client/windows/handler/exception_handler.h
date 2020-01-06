@@ -69,6 +69,7 @@
 #include <string>
 #include <vector>
 
+#include "windows/common/minidump_callback.h"
 #include "windows/common/ipc_protocol.h"
 #include "windows/crash_generation/crash_generation_client.h"
 #include "common/scoped_ptr.h"
@@ -78,22 +79,6 @@ namespace google_breakpad {
 
 using std::vector;
 using std::wstring;
-
-
-
-struct AppMemory {
-  ULONG64 ptr;
-  ULONG length;
-
-  bool operator==(const struct AppMemory& other) const {
-    return ptr == other.ptr;
-  }
-
-  bool operator==(const void* other) const {
-    return ptr == reinterpret_cast<ULONG64>(other);
-  }
-};
-typedef std::list<AppMemory> AppMemoryList;
 
 class ExceptionHandler {
  public:
@@ -356,13 +341,6 @@ class ExceptionHandler {
   bool WriteMinidumpWithException(DWORD requesting_thread_id,
                                   EXCEPTION_POINTERS* exinfo,
                                   MDRawAssertionInfo* assertion);
-
-  
-  
-  static BOOL CALLBACK MinidumpWriteDumpCallback(
-      PVOID context,
-      const PMINIDUMP_CALLBACK_INPUT callback_input,
-      PMINIDUMP_CALLBACK_OUTPUT callback_output);
 
   
   
