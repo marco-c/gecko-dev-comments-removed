@@ -259,6 +259,64 @@ Damp.prototype = {
     yield this.testTeardown();
   }),
 
+  _consoleObjectExpansionTest: Task.async(function* () {
+    let tab = yield this.testSetup(SIMPLE_URL);
+    let messageManager = tab.linkedBrowser.messageManager;
+    let {toolbox} = yield this.openToolbox("webconsole");
+    let webconsole = toolbox.getPanel("webconsole");
+
+    
+    let onMessageReceived = new Promise(resolve => {
+      function receiveMessages(e, messages) {
+        for (let m of messages) {
+          resolve(m);
+        }
+      }
+      webconsole.hud.ui.once("new-messages", receiveMessages);
+    });
+
+    
+    
+    messageManager.loadFrameScript("data:,(" + encodeURIComponent(
+      `function () {
+        addMessageListener("do-dir", function () {
+          content.console.dir(Array.from({length:1000}).reduce((res, _, i)=> {
+            res["item_" + i] = i;
+            return res;
+          }, {}));
+        });
+      }`
+    ) + ")()", true);
+
+    
+    messageManager.sendAsyncMessage("do-dir");
+
+    let start = performance.now();
+    yield onMessageReceived;
+    const tree = webconsole.hud.ui.outputNode.querySelector(".dir.message .tree");
+    
+    if (tree.querySelectorAll(".node").length === 1) {
+      
+      yield new Promise(resolve => {
+        const observer = new MutationObserver(mutations => {
+          resolve(mutations);
+          observer.disconnect();
+        });
+        observer.observe(tree, {
+          childList: true
+        });
+      });
+    }
+
+    this._results.push({
+      name: "console.objectexpand",
+      value: performance.now() - start,
+    });
+
+    yield this.closeToolboxAndLog("console.objectexpanded");
+    yield this.testTeardown();
+  }),
+
   takeCensus(label) {
     let start = performance.now();
 
@@ -628,6 +686,9 @@ Damp.prototype = {
     }
     if (config.subtests.indexOf("consoleStreamLogging") > -1) {
       tests = tests.concat(this._consoleStreamLoggingTest);
+    }
+    if (config.subtests.indexOf("consoleObjectExpansion") > -1) {
+      tests = tests.concat(this._consoleObjectExpansionTest);
     }
 
     this._doSequence(tests, this._doneInternal);
