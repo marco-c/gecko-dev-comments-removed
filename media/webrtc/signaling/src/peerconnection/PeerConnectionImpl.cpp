@@ -2913,6 +2913,12 @@ PeerConnectionImpl::RecordEndOfCallTelemetry() const
   }
 
   
+  
+  if (mLocalRequestedSDP.empty() && mRemoteRequestedSDP.empty()) {
+    return;
+  }
+
+  
   static const uint32_t kAudioTypeMask = 1;
   static const uint32_t kVideoTypeMask = 2;
   static const uint32_t kDataChannelTypeMask = 4;
