@@ -19,7 +19,6 @@ from voluptuous import Any, Required, Optional
 
 
 
-
 _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "balrog_props.json",
     "target.common.tests.zip",
@@ -42,16 +41,32 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "host/bin/mar",
     "host/bin/mbsdiff",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_EN_US = [
     "update/target.complete.mar",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N = [
     "target.langpack.xpi",
     "balrog_props.json",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_L10N = [
     "target.complete.mar",
 ]
+
+
+
+
 _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "en-US/target.common.tests.zip",
     "en-US/target.cppunittest.tests.zip",
@@ -72,6 +87,10 @@ _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "en-US/robocop.apk",
     "en-US/target.jsshell.zip",
 ]
+
+
+
+
 _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_MULTI = [
     "balrog_props.json",
     "target.common.tests.zip",
@@ -92,12 +111,24 @@ _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_MULTI = [
     "robocop.apk",
     "target.jsshell.zip",
 ]
+
+
+
+
 _MOBILE_UPSTREAM_ARTIFACTS_SIGNED_EN_US = [
     "en-US/target.apk",
 ]
+
+
+
+
 _MOBILE_UPSTREAM_ARTIFACTS_SIGNED_MULTI = [
     "target.apk",
 ]
+
+
+
+
 
 
 UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
@@ -122,6 +153,10 @@ UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
     'android-api-15-old-id-nightly-multi': _MOBILE_UPSTREAM_ARTIFACTS_UNSIGNED_MULTI,
     'macosx64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
 }
+
+
+
+
 UPSTREAM_ARTIFACT_SIGNED_PATHS = {
     'linux64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_EN_US + [
         "target.tar.bz2",

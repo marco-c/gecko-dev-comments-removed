@@ -92,6 +92,10 @@ def make_beetmover_checksums_description(config, jobs):
 
 
 def generate_upstream_artifacts(refs, platform, locale=None):
+    
+    
+    
+    
     common_paths = [
         "public/target.checksums",
         "public/target.checksums.asc",

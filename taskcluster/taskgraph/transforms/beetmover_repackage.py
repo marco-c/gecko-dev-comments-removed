@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
 _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "balrog_props.json",
     "target.common.tests.zip",
@@ -44,25 +43,49 @@ _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US = [
     "host/bin/mar",
     "host/bin/mbsdiff",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_EN_US = [
     "update/target.complete.mar",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N = [
     "target.langpack.xpi",
     "balrog_props.json",
 ]
+
+
+
+
 _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_L10N = [
     "target.complete.mar",
 ]
+
+
+
+
 
 UPSTREAM_ARTIFACT_UNSIGNED_PATHS = {
     'macosx64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_EN_US,
     'macosx64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_UNSIGNED_L10N,
 }
+
+
+
+
 UPSTREAM_ARTIFACT_SIGNED_PATHS = {
     'macosx64-nightly': _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_EN_US,
     'macosx64-nightly-l10n': _DESKTOP_UPSTREAM_ARTIFACTS_SIGNED_L10N,
 }
+
+
+
+
 UPSTREAM_ARTIFACT_REPACKAGE_PATHS = {
     'macosx64-nightly': ["target.dmg"],
     'macosx64-nightly-l10n': ["target.dmg"],
