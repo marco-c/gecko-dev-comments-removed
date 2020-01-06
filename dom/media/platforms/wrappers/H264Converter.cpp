@@ -385,11 +385,12 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
     
     
     
-    if (mp4_demuxer::AnnexB::HasSPS(aSample->mExtraData) &&
-        !mp4_demuxer::AnnexB::CompareExtraData(aSample->mExtraData,
-                                               mOriginalExtraData)) {
-      extra_data = mOriginalExtraData = aSample->mExtraData;
+    if (!mp4_demuxer::AnnexB::HasSPS(aSample->mExtraData) ||
+        mp4_demuxer::AnnexB::CompareExtraData(aSample->mExtraData,
+                                              mOriginalExtraData)) {
+      return NS_OK;
     }
+    extra_data = mOriginalExtraData = aSample->mExtraData;
   }
   if (mp4_demuxer::AnnexB::CompareExtraData(extra_data,
                                             mCurrentConfig.mExtraData)) {
