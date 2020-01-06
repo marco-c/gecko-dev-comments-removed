@@ -5,42 +5,7 @@
 
 
 
-#![allow(dead_code)]
+#![allow(unused_variables)]
 
-use util::{io_err, OnceCallback};
-
-pub struct PlatformManager {}
-
-impl PlatformManager {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn register(
-        &mut self,
-        timeout: u64,
-        challenge: Vec<u8>,
-        application: Vec<u8>,
-        key_handles: Vec<Vec<u8>>,
-        callback: OnceCallback<Vec<u8>>,
-    ) {
-        
-        callback.call(Err(io_err("not implemented")));
-    }
-
-    pub fn sign(
-        &mut self,
-        timeout: u64,
-        challenge: Vec<u8>,
-        application: Vec<u8>,
-        key_handles: Vec<Vec<u8>>,
-        callback: OnceCallback<(Vec<u8>, Vec<u8>)>,
-    ) {
-        
-        callback.call(Err(io_err("not implemented")));
-    }
-
-    pub fn cancel(&mut self) {
-        
-    }
-}
+pub mod device;
+pub mod transaction;
