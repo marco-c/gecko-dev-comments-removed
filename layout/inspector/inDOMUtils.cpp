@@ -274,13 +274,41 @@ inDOMUtils::GetCSSStyleRules(nsIDOMElement *aElement,
     nsTArray<const RawServoStyleRule*> rawRuleList;
     Servo_ComputedValues_GetStyleRuleList(servo, &rawRuleList);
 
-    ServoStyleSet* styleSet = shell->StyleSet()->AsServo();
-    ServoStyleRuleMap* map = styleSet->StyleRuleMap();
-    map->EnsureTable();
+    AutoTArray<ServoStyleRuleMap*, 1> maps;
+    {
+      ServoStyleSet* styleSet = shell->StyleSet()->AsServo();
+      ServoStyleRuleMap* map = styleSet->StyleRuleMap();
+      map->EnsureTable();
+      maps.AppendElement(map);
+    }
+
+    
+    for (nsIContent* bindingContent = element; bindingContent;
+         bindingContent = bindingContent->GetBindingParent()) {
+      if (nsXBLBinding* binding = bindingContent->GetXBLBinding()) {
+        if (ServoStyleSet* styleSet = binding->GetServoStyleSet()) {
+          ServoStyleRuleMap* map = styleSet->StyleRuleMap();
+          map->EnsureTable();
+          maps.AppendElement(map);
+        }
+      }
+      
+      
+      
+      
+      
+    }
 
     
     for (const RawServoStyleRule* rawRule : Reversed(rawRuleList)) {
-      if (ServoStyleRule* rule = map->Lookup(rawRule)) {
+      ServoStyleRule* rule = nullptr;
+      for (ServoStyleRuleMap* map : maps) {
+        rule = map->Lookup(rawRule);
+        if (rule) {
+          break;
+        }
+      }
+      if (rule) {
         rules->AppendElement(static_cast<css::Rule*>(rule), false);
       } else {
         MOZ_ASSERT_UNREACHABLE("We should be able to map a raw rule to a rule");
