@@ -451,6 +451,12 @@ protected:
   virtual void OnPlaybackEvent(MediaEventType aEvent);
 
   
+  
+  virtual void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
+                              UniquePtr<MetadataTags> aTags,
+                              MediaDecoderEventVisibility aEventVisibility);
+
+  
 
 
 
@@ -489,12 +495,6 @@ protected:
 
 private:
   nsCString GetDebugInfo();
-
-  
-  
-  void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
-                      UniquePtr<MetadataTags> aTags,
-                      MediaDecoderEventVisibility aEventVisibility);
 
   
   void NotifyCompositor();

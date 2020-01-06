@@ -813,19 +813,12 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
   Invalidate();
 
   
-  GetResource()->EnsureCacheUpToDate();
-
-  
   
   
   
   if (mPlayState == PLAY_STATE_LOADING) {
     ChangeState(mNextState);
   }
-
-  
-  
-  NotifySuspendedStatusChanged();
 
   
   

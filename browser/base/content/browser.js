@@ -22,54 +22,53 @@ XPCOMUtils.defineLazyGetter(this, "extensionNameFromURI", () => {
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutHome: "resource:///modules/AboutHome.jsm",
-  BrowserUITelemetry: "resource:///modules/BrowserUITelemetry.jsm",
-  BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
-  CastingApps: "resource:///modules/CastingApps.jsm",
-  CharsetMenu: "resource://gre/modules/CharsetMenu.jsm",
-  Color: "resource://gre/modules/Color.jsm",
-  ContentSearch: "resource:///modules/ContentSearch.jsm",
-  ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
-  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
-  Deprecated: "resource://gre/modules/Deprecated.jsm",
-  DownloadsCommon: "resource:///modules/DownloadsCommon.jsm",
-  E10SUtils: "resource:///modules/E10SUtils.jsm",
-  ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
-  FormValidationHandler: "resource:///modules/FormValidationHandler.jsm",
-  GMPInstallManager: "resource://gre/modules/GMPInstallManager.jsm",
-  LightweightThemeManager: "resource://gre/modules/LightweightThemeManager.jsm",
-  Log: "resource://gre/modules/Log.jsm",
-  LoginManagerParent: "resource://gre/modules/LoginManagerParent.jsm",
-  NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
-  PageActions: "resource:///modules/PageActions.jsm",
-  PageThumbs: "resource://gre/modules/PageThumbs.jsm",
-  PluralForm: "resource://gre/modules/PluralForm.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
-  ReaderMode: "resource://gre/modules/ReaderMode.jsm",
-  ReaderParent: "resource:///modules/ReaderParent.jsm",
-  RecentWindow: "resource:///modules/RecentWindow.jsm",
-  SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
-  ShortcutUtils: "resource://gre/modules/ShortcutUtils.jsm",
-  SimpleServiceDiscovery: "resource://gre/modules/SimpleServiceDiscovery.jsm",
-  SitePermissions: "resource:///modules/SitePermissions.jsm",
-  Social: "resource:///modules/Social.jsm",
-  TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
-  TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
-  Translation: "resource:///modules/translation/Translation.jsm",
-  UITour: "resource:///modules/UITour.jsm",
-  UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
-  Utils: "resource://gre/modules/sessionstore/Utils.jsm",
-  Weave: "resource://services-sync/main.js",
-  WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
-  fxAccounts: "resource://gre/modules/FxAccounts.jsm",
-  gDevTools: "resource://devtools/client/framework/gDevTools.jsm",
-  gDevToolsBrowser: "resource://devtools/client/framework/gDevTools.jsm",
-  webrtcUI: "resource:///modules/webrtcUI.jsm",
-  ZoomUI: "resource:///modules/ZoomUI.jsm",
+  ["AboutHome", "resource:///modules/AboutHome.jsm"],
+  ["BrowserUITelemetry", "resource:///modules/BrowserUITelemetry.jsm"],
+  ["BrowserUsageTelemetry", "resource:///modules/BrowserUsageTelemetry.jsm"],
+  ["BrowserUtils", "resource://gre/modules/BrowserUtils.jsm"],
+  ["CastingApps", "resource:///modules/CastingApps.jsm"],
+  ["CharsetMenu", "resource://gre/modules/CharsetMenu.jsm"],
+  ["Color", "resource://gre/modules/Color.jsm"],
+  ["ContentSearch", "resource:///modules/ContentSearch.jsm"],
+  ["ContextualIdentityService", "resource://gre/modules/ContextualIdentityService.jsm"],
+  ["CustomizableUI", "resource:///modules/CustomizableUI.jsm"],
+  ["Deprecated", "resource://gre/modules/Deprecated.jsm"],
+  ["DownloadsCommon", "resource:///modules/DownloadsCommon.jsm"],
+  ["E10SUtils", "resource:///modules/E10SUtils.jsm"],
+  ["ExtensionsUI", "resource:///modules/ExtensionsUI.jsm"],
+  ["FormValidationHandler", "resource:///modules/FormValidationHandler.jsm"],
+  ["LightweightThemeManager", "resource://gre/modules/LightweightThemeManager.jsm"],
+  ["Log", "resource://gre/modules/Log.jsm"],
+  ["LoginManagerParent", "resource://gre/modules/LoginManagerParent.jsm"],
+  ["NewTabUtils", "resource://gre/modules/NewTabUtils.jsm"],
+  ["PageActions", "resource:///modules/PageActions.jsm"],
+  ["PageThumbs", "resource://gre/modules/PageThumbs.jsm"],
+  ["PluralForm", "resource://gre/modules/PluralForm.jsm"],
+  ["PrivateBrowsingUtils", "resource://gre/modules/PrivateBrowsingUtils.jsm"],
+  ["ProcessHangMonitor", "resource:///modules/ProcessHangMonitor.jsm"],
+  ["PromiseUtils", "resource://gre/modules/PromiseUtils.jsm"],
+  ["ReaderMode", "resource://gre/modules/ReaderMode.jsm"],
+  ["ReaderParent", "resource:///modules/ReaderParent.jsm"],
+  ["RecentWindow", "resource:///modules/RecentWindow.jsm"],
+  ["SafeBrowsing", "resource://gre/modules/SafeBrowsing.jsm"],
+  ["SessionStore", "resource:///modules/sessionstore/SessionStore.jsm"],
+  ["ShortcutUtils", "resource://gre/modules/ShortcutUtils.jsm"],
+  ["SimpleServiceDiscovery", "resource://gre/modules/SimpleServiceDiscovery.jsm"],
+  ["SitePermissions", "resource:///modules/SitePermissions.jsm"],
+  ["Social", "resource:///modules/Social.jsm"],
+  ["TabCrashHandler", "resource:///modules/ContentCrashHandlers.jsm"],
+  ["TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm"],
+  ["Translation", "resource:///modules/translation/Translation.jsm"],
+  ["UITour", "resource:///modules/UITour.jsm"],
+  ["UpdateUtils", "resource://gre/modules/UpdateUtils.jsm"],
+  ["Utils", "resource://gre/modules/sessionstore/Utils.jsm"],
+  ["Weave", "resource://services-sync/main.js"],
+  ["WebNavigationFrames", "resource://gre/modules/WebNavigationFrames.jsm"],
+  ["fxAccounts", "resource://gre/modules/FxAccounts.jsm"],
+  ["gDevTools", "resource://devtools/client/framework/gDevTools.jsm"],
+  ["gDevToolsBrowser", "resource://devtools/client/framework/gDevTools.jsm"],
+  ["webrtcUI", "resource:///modules/webrtcUI.jsm"],
+  ["ZoomUI", "resource:///modules/ZoomUI.jsm"],
 });
 
 if (AppConstants.MOZ_CRASHREPORTER) {
@@ -1612,33 +1611,6 @@ var gBrowserInit = {
     
     
     
-    
-    
-    setTimeout(function() {
-      try {
-        DownloadsCommon.initializeAllDataLinks();
-        Cu.import("resource:///modules/DownloadsTaskbar.jsm", {})
-          .DownloadsTaskbar.registerIndicator(window);
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    }, 10000);
-
-    
-    
-    
-    
-    setTimeout(function() {
-      try {
-        Services.logins;
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    }, 3000);
-
-    
-    
-    
     DownloadsButton.initializeIndicator();
 
     if (AppConstants.platform != "macosx") {
@@ -1660,26 +1632,11 @@ var gBrowserInit = {
       MenuTouchModeObserver.init();
     }
 
-    
-    requestIdleCallback(() => {
-      gSync.init();
-    }, {timeout: 1000 * 5});
-
     if (AppConstants.MOZ_DATA_REPORTING)
       gDataNotificationInfoBar.init();
 
     if (!AppConstants.MOZILLA_OFFICIAL)
       DevelopmentHelpers.init();
-
-    requestIdleCallback(() => {
-      
-      gGestureSupport.init(true);
-
-      
-      gHistorySwipeAnimation.init();
-    });
-
-    requestIdleCallback(() => { gBrowserThumbnails.init(); });
 
     gExtensionsNotifications.init();
 
@@ -1698,23 +1655,6 @@ var gBrowserInit = {
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
     gNavToolbox.addEventListener("customizationending", CustomizationHandler);
 
-    
-    
-    try {
-      const startupCrashEndDelay = 30 * 1000;
-      setTimeout(Services.startup.trackStartupCrashEnd, startupCrashEndDelay);
-    } catch (ex) {
-      Cu.reportError("Could not end startup crash tracking: " + ex);
-    }
-
-    
-    requestIdleCallback(() => {
-      this.gmpInstallManager = new GMPInstallManager();
-      
-      
-      this.gmpInstallManager.simpleCheckAndInstall().catch(() => {});
-    }, {timeout: 1000 * 60});
-
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
@@ -1726,21 +1666,6 @@ var gBrowserInit = {
 
       SidebarUI.startDelayedLoad();
       SocialUI.init();
-
-      
-      
-      setTimeout(() => {
-        if (window.closed) {
-          return;
-        }
-        let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                        .getService(Ci.nsIPK11TokenDB);
-        let token = tokenDB.getInternalKeyToken();
-        let mpEnabled = token.hasPassword;
-        if (mpEnabled) {
-          Services.telemetry.getHistogramById("MASTER_PASSWORD_ENABLED").add(mpEnabled);
-        }
-      }, 5000);
 
       PanicButtonNotifier.init();
     });
@@ -1756,8 +1681,74 @@ var gBrowserInit = {
     this.delayedStartupFinished = true;
 
     _resolveDelayedStartup();
+
+    SessionStore.promiseAllWindowsRestored.then(() => {
+      this._schedulePerWindowIdleTasks();
+    });
+
     Services.obs.notifyObservers(window, "browser-delayed-startup-finished");
     TelemetryTimestamps.add("delayedStartupFinished");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _schedulePerWindowIdleTasks() {
+    
+    if (window.closed) {
+      return;
+    }
+
+    function scheduleIdleTask(func, options) {
+      requestIdleCallback(function idleTaskRunner() {
+        if (!window.closed) {
+          func();
+        }
+      }, options);
+    }
+
+    scheduleIdleTask(() => {
+      
+      gSync.init();
+    });
+
+    scheduleIdleTask(() => {
+      CombinedStopReload.startAnimationPrefMonitoring();
+    });
+
+    scheduleIdleTask(() => {
+      
+      gGestureSupport.init(true);
+
+      
+      gHistorySwipeAnimation.init();
+    });
+
+    scheduleIdleTask(() => {
+      gBrowserThumbnails.init();
+    });
+
+    scheduleIdleTask(() => {
+      
+      
+      
+      
+      
+      try {
+        DownloadsCommon.initializeAllDataLinks();
+        Cu.import("resource:///modules/DownloadsTaskbar.jsm", {})
+          .DownloadsTaskbar.registerIndicator(window);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }, {timeout: 10000});
   },
 
   
@@ -1873,10 +1864,6 @@ var gBrowserInit = {
         gPrefService.removeObserver(gHomeButton.prefDomain, gHomeButton);
       } catch (ex) {
         Cu.reportError(ex);
-      }
-
-      if (this.gmpInstallManager) {
-        this.gmpInstallManager.uninit();
       }
 
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
@@ -4966,14 +4953,6 @@ var CombinedStopReload = {
 
     
     this.animate = false;
-    let startupInfo = Cc["@mozilla.org/toolkit/app-startup;1"]
-                        .getService(Ci.nsIAppStartup)
-                        .getStartupInfo();
-    if (startupInfo.sessionRestored) {
-      this.startAnimationPrefMonitoring();
-    } else {
-      Services.obs.addObserver(this, "sessionstore-windows-restored");
-    }
   },
 
   uninit() {
@@ -5010,24 +4989,19 @@ var CombinedStopReload = {
   },
 
   observe(subject, topic, data) {
-    if (topic == "sessionstore-windows-restored") {
-      Services.obs.removeObserver(this, "sessionstore-windows-restored");
-      this.startAnimationPrefMonitoring();
-    } else if (topic == "nsPref:changed") {
+    if (topic == "nsPref:changed") {
       this.animate = Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled");
     }
   },
 
   startAnimationPrefMonitoring() {
-    requestIdleCallback(() => {
-      
-      if (!this._initialized)
-        return;
-      this.animate = Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled") &&
-                     Services.prefs.getBoolPref("browser.stopReloadAnimation.enabled");
-      Services.prefs.addObserver("toolkit.cosmeticAnimations.enabled", this);
-      this.stopReloadContainer.addEventListener("animationend", this);
-    });
+    
+    if (!this._initialized)
+      return;
+    this.animate = Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled") &&
+                   Services.prefs.getBoolPref("browser.stopReloadAnimation.enabled");
+    Services.prefs.addObserver("toolkit.cosmeticAnimations.enabled", this);
+    this.stopReloadContainer.addEventListener("animationend", this);
   },
 
   onTabSwitch() {

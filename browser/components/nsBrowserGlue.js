@@ -213,7 +213,9 @@ const BOOKMARKS_BACKUP_MIN_INTERVAL_DAYS = 1;
 
 const BOOKMARKS_BACKUP_MAX_INTERVAL_DAYS = 3;
 
-const MEDIA_TELEMETRY_IDLE_TIME_SEC = 20;
+const LATE_TASKS_IDLE_TIME_SEC = 20;
+
+const STARTUP_CRASHES_END_DELAY_MS = 30 * 1000;
 
 
 const BrowserGlueServiceFactory = {
@@ -554,9 +556,13 @@ BrowserGlue.prototype = {
       this._idleService.removeIdleObserver(this, this._bookmarksBackupIdleTime);
       delete this._bookmarksBackupIdleTime;
     }
-    if (this._mediaTelemetryIdleObserver) {
-      this._idleService.removeIdleObserver(this._mediaTelemetryIdleObserver, MEDIA_TELEMETRY_IDLE_TIME_SEC);
-      delete this._mediaTelemetryIdleObserver;
+    if (this._lateTasksIdleObserver) {
+      this._idleService.removeIdleObserver(this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
+      delete this._lateTasksIdleObserver;
+    }
+    if (this._gmpInstallManager) {
+      this._gmpInstallManager.uninit();
+      delete this._gmpInstallManager;
     }
     try {
       os.removeObserver(this, "places-init-complete");
@@ -868,17 +874,6 @@ BrowserGlue.prototype = {
       Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap-enabled.js", true);
     }
 
-    if (AppConstants.platform == "win") {
-      
-      const WINTASKBAR_CONTRACTID = "@mozilla.org/windows-taskbar;1";
-      if (WINTASKBAR_CONTRACTID in Cc &&
-          Cc[WINTASKBAR_CONTRACTID].getService(Ci.nsIWinTaskbar).available) {
-        let temp = {};
-        Cu.import("resource:///modules/WindowsJumpLists.jsm", temp);
-        temp.WinTaskbarJumpList.startup();
-      }
-    }
-
     TabCrashHandler.init();
     if (AppConstants.MOZ_CRASHREPORTER) {
       PluginCrashReporter.init();
@@ -951,27 +946,12 @@ BrowserGlue.prototype = {
 
     this._firstWindowTelemetry(aWindow);
     this._firstWindowLoaded();
-
-    this._mediaTelemetryIdleObserver = {
-      browserGlue: this,
-      observe(aSubject, aTopic, aData) {
-        if (aTopic != "idle") {
-          return;
-        }
-        this.browserGlue._sendMediaTelemetry();
-      }
-    };
-    this._idleService.addIdleObserver(this._mediaTelemetryIdleObserver,
-                                      MEDIA_TELEMETRY_IDLE_TIME_SEC);
   },
 
   _sendMediaTelemetry() {
     let win = RecentWindow.getMostRecentBrowserWindow();
     let v = win.document.createElementNS("http://www.w3.org/1999/xhtml", "video");
     v.reportCanPlayTelemetry();
-    this._idleService.removeIdleObserver(this._mediaTelemetryIdleObserver,
-                                         MEDIA_TELEMETRY_IDLE_TIME_SEC);
-    delete this._mediaTelemetryIdleObserver;
   },
 
   
@@ -1038,10 +1018,6 @@ BrowserGlue.prototype = {
     BrowserUsageTelemetry.init();
     BrowserUITelemetry.init();
 
-    if (AppConstants.MOZ_DEV_EDITION) {
-      this._createExtraDefaultProfile();
-    }
-
     this._initServiceDiscovery();
 
     
@@ -1076,99 +1052,143 @@ BrowserGlue.prototype = {
       this._notifyDisabledNonMpc();
     }
 
-    
-    if (ShellService) {
-      let shouldCheck = AppConstants.DEBUG ? false :
-                                             ShellService.shouldCheckDefaultBrowser;
-
-      const skipDefaultBrowserCheck =
-        Services.prefs.getBoolPref("browser.shell.skipDefaultBrowserCheckOnFirstRun") &&
-        !Services.prefs.getBoolPref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun");
-
-      const usePromptLimit = !AppConstants.RELEASE_OR_BETA;
-      let promptCount =
-        usePromptLimit ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount") : 0;
-
-      let willRecoverSession = false;
-      try {
-        let ss = Cc["@mozilla.org/browser/sessionstartup;1"].
-                 getService(Ci.nsISessionStartup);
-        willRecoverSession =
-          (ss.sessionType == Ci.nsISessionStartup.RECOVER_SESSION);
-      } catch (ex) {  }
-
-      
-      let isDefault = false;
-      let isDefaultError = false;
-      try {
-        isDefault = ShellService.isDefaultBrowser(true, false);
-      } catch (ex) {
-        isDefaultError = true;
-      }
-
-      if (isDefault) {
-        let now = (Math.floor(Date.now() / 1000)).toString();
-        Services.prefs.setCharPref("browser.shell.mostRecentDateSetAsDefault", now);
-      }
-
-      let willPrompt = shouldCheck && !isDefault && !willRecoverSession;
-
-      
-      
-      if (willPrompt) {
-        if (skipDefaultBrowserCheck) {
-          Services.prefs.setBoolPref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", true);
-          willPrompt = false;
-        } else {
-          promptCount++;
-        }
-        if (usePromptLimit && promptCount > 3) {
-          willPrompt = false;
-        }
-      }
-
-      if (usePromptLimit && willPrompt) {
-        Services.prefs.setIntPref("browser.shell.defaultBrowserCheckCount", promptCount);
-      }
-
-      try {
-        
-        
-        Services.telemetry.getHistogramById("BROWSER_IS_USER_DEFAULT")
-                          .add(isDefault);
-        Services.telemetry.getHistogramById("BROWSER_IS_USER_DEFAULT_ERROR")
-                          .add(isDefaultError);
-        Services.telemetry.getHistogramById("BROWSER_SET_DEFAULT_ALWAYS_CHECK")
-                          .add(shouldCheck);
-        Services.telemetry.getHistogramById("BROWSER_SET_DEFAULT_DIALOG_PROMPT_RAWCOUNT")
-                          .add(promptCount);
-      } catch (ex) {  }
-
-      if (willPrompt) {
-        Services.tm.dispatchToMainThread(function() {
-          DefaultBrowserCheck.prompt(RecentWindow.getMostRecentBrowserWindow());
-        });
-      }
-    }
-
     if (AppConstants.MOZ_CRASHREPORTER) {
       UnsubmittedCrashHandler.init();
-      Services.tm.idleDispatchToMainThread(function() {
-        UnsubmittedCrashHandler.checkForUnsubmittedCrashReports();
-      });
     }
 
-    
+    this._sanitizer.onStartup();
+    E10SAccessibilityCheck.onWindowsRestored();
+
+    this._scheduleStartupIdleTasks();
+
+    this._lateTasksIdleObserver = (idleService, topic, data) => {
+      if (topic == "idle") {
+        idleService.removeIdleObserver(this._lateTasksIdleObserver,
+                                       LATE_TASKS_IDLE_TIME_SEC);
+        delete this._lateTasksIdleObserver;
+        this._scheduleArbitrarilyLateIdleTasks();
+      }
+    };
+    this._idleService.addIdleObserver(
+      this._lateTasksIdleObserver, LATE_TASKS_IDLE_TIME_SEC);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _scheduleStartupIdleTasks() {
     Services.tm.idleDispatchToMainThread(() => {
       ContextualIdentityService.load();
     });
 
+    
+    
+    
+    
+    Services.tm.idleDispatchToMainThread(() => {
+      try {
+        Services.logins;
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }, 3000);
+
+    
+    
     Services.tm.idleDispatchToMainThread(() => {
       SafeBrowsing.init();
     }, 5000);
 
-    this._sanitizer.onStartup();
-    E10SAccessibilityCheck.onWindowsRestored();
+    if (AppConstants.MOZ_CRASHREPORTER) {
+      Services.tm.idleDispatchToMainThread(() => {
+        UnsubmittedCrashHandler.checkForUnsubmittedCrashReports();
+      });
+    }
+
+    if (AppConstants.platform == "win") {
+      Services.tm.idleDispatchToMainThread(() => {
+        
+        const WINTASKBAR_CONTRACTID = "@mozilla.org/windows-taskbar;1";
+        if (WINTASKBAR_CONTRACTID in Cc &&
+            Cc[WINTASKBAR_CONTRACTID].getService(Ci.nsIWinTaskbar).available) {
+          let temp = {};
+          Cu.import("resource:///modules/WindowsJumpLists.jsm", temp);
+          temp.WinTaskbarJumpList.startup();
+        }
+      });
+    }
+
+    if (AppConstants.MOZ_DEV_EDITION) {
+      Services.tm.idleDispatchToMainThread(() => {
+        this._createExtraDefaultProfile();
+      });
+    }
+
+    Services.tm.idleDispatchToMainThread(() => {
+      this._checkForDefaultBrowser();
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      let {setTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
+      setTimeout(function() {
+        Services.tm.idleDispatchToMainThread(Services.startup.trackStartupCrashEnd);
+      }, STARTUP_CRASHES_END_DELAY_MS);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _scheduleArbitrarilyLateIdleTasks() {
+    Services.tm.idleDispatchToMainThread(() => {
+      this._sendMediaTelemetry();
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      
+      
+      let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
+                .getService(Ci.nsIPK11TokenDB);
+      let token = tokenDB.getInternalKeyToken();
+      let mpEnabled = token.hasPassword;
+      if (mpEnabled) {
+        Services.telemetry.getHistogramById("MASTER_PASSWORD_ENABLED").add(mpEnabled);
+      }
+    });
+
+    Services.tm.idleDispatchToMainThread(() => {
+      let obj = {};
+      Cu.import("resource://gre/modules/GMPInstallManager.jsm", obj);
+      this._gmpInstallManager = new obj.GMPInstallManager();
+      
+      
+      this._gmpInstallManager.simpleCheckAndInstall().catch(() => {});
+    });
   },
 
   _createExtraDefaultProfile() {
@@ -2082,6 +2102,83 @@ BrowserGlue.prototype = {
 
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
+  },
+
+  _checkForDefaultBrowser() {
+    
+    if (!ShellService) {
+      return;
+    }
+
+    let shouldCheck = AppConstants.DEBUG ? false :
+                                           ShellService.shouldCheckDefaultBrowser;
+
+    const skipDefaultBrowserCheck =
+      Services.prefs.getBoolPref("browser.shell.skipDefaultBrowserCheckOnFirstRun") &&
+      !Services.prefs.getBoolPref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun");
+
+    const usePromptLimit = !AppConstants.RELEASE_OR_BETA;
+    let promptCount =
+      usePromptLimit ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount") : 0;
+
+    let willRecoverSession = false;
+    try {
+      let ss = Cc["@mozilla.org/browser/sessionstartup;1"].
+               getService(Ci.nsISessionStartup);
+      willRecoverSession =
+        (ss.sessionType == Ci.nsISessionStartup.RECOVER_SESSION);
+    } catch (ex) {  }
+
+    
+    let isDefault = false;
+    let isDefaultError = false;
+    try {
+      isDefault = ShellService.isDefaultBrowser(true, false);
+    } catch (ex) {
+      isDefaultError = true;
+    }
+
+    if (isDefault) {
+      let now = (Math.floor(Date.now() / 1000)).toString();
+      Services.prefs.setCharPref("browser.shell.mostRecentDateSetAsDefault", now);
+    }
+
+    let willPrompt = shouldCheck && !isDefault && !willRecoverSession;
+
+    
+    
+    if (willPrompt) {
+      if (skipDefaultBrowserCheck) {
+        Services.prefs.setBoolPref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", true);
+        willPrompt = false;
+      } else {
+        promptCount++;
+      }
+      if (usePromptLimit && promptCount > 3) {
+        willPrompt = false;
+      }
+    }
+
+    if (usePromptLimit && willPrompt) {
+      Services.prefs.setIntPref("browser.shell.defaultBrowserCheckCount", promptCount);
+    }
+
+    try {
+      
+      
+      Services.telemetry.getHistogramById("BROWSER_IS_USER_DEFAULT")
+                        .add(isDefault);
+      Services.telemetry.getHistogramById("BROWSER_IS_USER_DEFAULT_ERROR")
+                        .add(isDefaultError);
+      Services.telemetry.getHistogramById("BROWSER_SET_DEFAULT_ALWAYS_CHECK")
+                        .add(shouldCheck);
+      Services.telemetry.getHistogramById("BROWSER_SET_DEFAULT_DIALOG_PROMPT_RAWCOUNT")
+                        .add(promptCount);
+    } catch (ex) {  }
+
+    if (willPrompt) {
+      DefaultBrowserCheck.prompt(RecentWindow.getMostRecentBrowserWindow());
+    }
   },
 
   
