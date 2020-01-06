@@ -330,6 +330,8 @@ class Nursery
 
     unsigned chunkCountLimit_;
 
+    mozilla::TimeDuration timeInChunkAlloc_;
+
     
     float previousPromotionRate_;
 
