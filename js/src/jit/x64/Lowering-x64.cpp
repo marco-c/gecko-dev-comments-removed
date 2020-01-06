@@ -338,14 +338,20 @@ LIRGeneratorX64::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     MOZ_ASSERT(base->type() == MIRType::Int32);
 
     
+
+    bool canTakeConstant = ins->access().type() != Scalar::Int64;
+
+    
     
     
     
 
     if (!ins->hasUses()) {
+        LAllocation value = canTakeConstant
+                            ? useRegisterOrConstant(ins->value())
+                            : useRegister(ins->value());
         LAsmJSAtomicBinopHeapForEffect* lir =
-            new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(base),
-                                                        useRegisterOrConstant(ins->value()));
+            new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(base), value);
         add(lir, ins);
         return;
     }
@@ -378,16 +384,15 @@ LIRGeneratorX64::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     LAllocation value;
 
     if (bitOp || ins->value()->isConstant()) {
-        value = useRegisterOrConstant(ins->value());
+        value = canTakeConstant ? useRegisterOrConstant(ins->value()) : useRegister(ins->value());
     } else {
         reuseInput = true;
         value = useRegisterAtStart(ins->value());
     }
 
-    LAsmJSAtomicBinopHeap* lir =
-        new(alloc()) LAsmJSAtomicBinopHeap(useRegister(base),
-                                           value,
-                                           bitOp ? temp() : LDefinition::BogusTemp());
+    auto* lir = new(alloc()) LAsmJSAtomicBinopHeap(useRegister(base),
+                                                   value,
+                                                   bitOp ? temp() : LDefinition::BogusTemp());
 
     if (reuseInput)
         defineReuseInput(lir, ins, LAsmJSAtomicBinopHeap::valueOp);
