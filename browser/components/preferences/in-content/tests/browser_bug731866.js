@@ -5,7 +5,6 @@ Components.utils.import("resource://gre/modules/PlacesUtils.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 const storageManagerDisabled = !SpecialPowers.getBoolPref("browser.storageManager.enabled");
-const offlineGroupDisabled = !SpecialPowers.getBoolPref("browser.preferences.offlineGroup.enabled");
 const browserContainersGroupDisabled = !SpecialPowers.getBoolPref("privacy.userContext.ui.enabled");
 
 function test() {
@@ -30,13 +29,6 @@ function checkElements(expectedPane) {
     
     if (element.id == "siteDataGroup" && storageManagerDisabled) {
       is_element_hidden(element, "Disabled siteDataGroup should be hidden");
-      continue;
-    }
-    
-    
-    
-    if (element.id == "offlineGroup" && offlineGroupDisabled) {
-      is_element_hidden(element, "Disabled offlineGroup should be hidden");
       continue;
     }
     
