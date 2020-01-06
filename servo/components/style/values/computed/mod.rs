@@ -15,14 +15,11 @@ use properties::{ComputedValues, StyleBuilder};
 #[cfg(feature = "servo")]
 use servo_url::ServoUrl;
 use std::f32;
-use std::f64;
-use std::f64::consts::PI;
 use std::fmt;
 #[cfg(feature = "servo")]
 use std::sync::Arc;
 use style_traits::ToCss;
 use super::{CSSFloat, CSSInteger};
-use super::distance::{ComputeSquaredDistance, SquaredDistance};
 use super::generics::{GreaterThanOrEqualToOne, NonNegative};
 use super::generics::grid::{TrackBreadth as GenericTrackBreadth, TrackSize as GenericTrackSize};
 use super::generics::grid::GridTemplateComponent as GenericGridTemplateComponent;
@@ -33,6 +30,7 @@ pub use app_units::Au;
 pub use properties::animated_properties::TransitionProperty;
 #[cfg(feature = "gecko")]
 pub use self::align::{AlignItems, AlignJustifyContent, AlignJustifySelf, JustifyItems};
+pub use self::angle::Angle;
 pub use self::background::BackgroundSize;
 pub use self::border::{BorderImageSlice, BorderImageWidth, BorderImageSideWidth};
 pub use self::border::{BorderRadius, BorderCornerRadius};
@@ -53,10 +51,12 @@ pub use self::percentage::Percentage;
 pub use self::position::Position;
 pub use self::svg::{SVGLength, SVGOpacity, SVGPaint, SVGPaintKind, SVGStrokeDashArray, SVGWidth};
 pub use self::text::{InitialLetter, LetterSpacing, LineHeight, WordSpacing};
+pub use self::time::Time;
 pub use self::transform::{TimingFunction, TransformOrigin};
 
 #[cfg(feature = "gecko")]
 pub mod align;
+pub mod angle;
 pub mod background;
 pub mod basic_shape;
 pub mod border;
@@ -72,6 +72,7 @@ pub mod position;
 pub mod rect;
 pub mod svg;
 pub mod text;
+pub mod time;
 pub mod transform;
 
 
@@ -326,115 +327,6 @@ impl<T> ToComputedValue for T
 
 impl ComputedValueAsSpecified for Atom {}
 impl ComputedValueAsSpecified for bool {}
-
-
-#[derive(Clone, Copy, Debug, HasViewportPercentage, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
-pub enum Angle {
-    
-    Degree(CSSFloat),
-    
-    Gradian(CSSFloat),
-    
-    Radian(CSSFloat),
-    
-    Turn(CSSFloat),
-}
-
-impl ComputeSquaredDistance for Angle {
-    #[inline]
-    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
-        
-        
-        self.radians64().compute_squared_distance(&other.radians64())
-    }
-}
-
-impl Angle {
-    
-    pub fn from_radians(radians: CSSFloat) -> Self {
-        Angle::Radian(radians)
-    }
-
-    
-    #[inline]
-    pub fn radians(&self) -> CSSFloat {
-        self.radians64().min(f32::MAX as f64).max(f32::MIN as f64) as f32
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn radians64(&self) -> f64 {
-        const RAD_PER_DEG: f64 = PI / 180.0;
-        const RAD_PER_GRAD: f64 = PI / 200.0;
-        const RAD_PER_TURN: f64 = PI * 2.0;
-
-        let radians = match *self {
-            Angle::Degree(val) => val as f64 * RAD_PER_DEG,
-            Angle::Gradian(val) => val as f64 * RAD_PER_GRAD,
-            Angle::Turn(val) => val as f64 * RAD_PER_TURN,
-            Angle::Radian(val) => val as f64,
-        };
-        radians.min(f64::MAX).max(f64::MIN)
-    }
-
-    
-    pub fn zero() -> Self {
-        Angle::Radian(0.0)
-    }
-}
-
-impl ToCss for Angle {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
-        match *self {
-            Angle::Degree(val) => write!(dest, "{}deg", val),
-            Angle::Gradian(val) => write!(dest, "{}grad", val),
-            Angle::Radian(val) => write!(dest, "{}rad", val),
-            Angle::Turn(val) => write!(dest, "{}turn", val),
-        }
-    }
-}
-
-
-#[derive(Clone, PartialEq, PartialOrd, Copy, Debug)]
-#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
-pub struct Time {
-    seconds: CSSFloat,
-}
-
-impl Time {
-    
-    pub fn from_seconds(seconds: CSSFloat) -> Self {
-        Time {
-            seconds: seconds,
-        }
-    }
-
-    
-    pub fn zero() -> Self {
-        Self::from_seconds(0.0)
-    }
-
-    
-    #[inline]
-    pub fn seconds(&self) -> CSSFloat {
-        self.seconds
-    }
-}
-
-impl ToCss for Time {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write,
-    {
-        write!(dest, "{}s", self.seconds())
-    }
-}
 
 impl ComputedValueAsSpecified for specified::BorderStyle {}
 
