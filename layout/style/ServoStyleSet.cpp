@@ -385,10 +385,9 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   const SnapshotTable& snapshots = Snapshots();
 
   bool isInitial = !aRoot->HasServoData();
-  bool forReconstruct = !!(aFlags & ServoTraversalFlags::AggressivelyForgetful);
   bool postTraversalRequired =
     Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
-  MOZ_ASSERT(!(isInitial || forReconstruct) || !postTraversalRequired);
+  MOZ_ASSERT(!isInitial || !postTraversalRequired);
 
   
   
@@ -399,8 +398,6 @@ ServoStyleSet::PrepareAndTraverseSubtree(
     return postTraversalRequired;
   }
 
-  auto root = const_cast<Element*>(aRoot);
-
   
   
   
@@ -409,10 +406,8 @@ ServoStyleSet::PrepareAndTraverseSubtree(
   
   
   EffectCompositor* compositor = mPresContext->EffectCompositor();
-  EffectCompositor::AnimationRestyleType restyleType =
-    EffectCompositor::AnimationRestyleType::Throttled;
-  if (forReconstruct ? compositor->PreTraverseInSubtree(root, restyleType)
-                     : compositor->PreTraverse(restyleType)) {
+  auto restyleType = EffectCompositor::AnimationRestyleType::Throttled;
+  if (compositor->PreTraverse(restyleType)) {
     if (isInitial) {
       
       
@@ -426,7 +421,7 @@ ServoStyleSet::PrepareAndTraverseSubtree(
 
     postTraversalRequired =
       Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, aFlags);
-    MOZ_ASSERT_IF(isInitial || forReconstruct, !postTraversalRequired);
+    MOZ_ASSERT_IF(isInitial, !postTraversalRequired);
   }
 
   return postTraversalRequired;
@@ -978,14 +973,28 @@ void
 ServoStyleSet::StyleSubtreeForReconstruct(Element* aRoot)
 {
   PreTraverse(aRoot);
+  MOZ_ASSERT(MayTraverseFrom(aRoot));
+  MOZ_ASSERT(aRoot->HasServoData());
+
+  AutoPrepareTraversal guard(this);
+
+  const SnapshotTable& snapshots = Snapshots();
 
   auto flags = ServoTraversalFlags::Forgetful |
                ServoTraversalFlags::AggressivelyForgetful |
                ServoTraversalFlags::ClearDirtyDescendants |
                ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
+
   DebugOnly<bool> postTraversalRequired =
-    PrepareAndTraverseSubtree(aRoot, flags);
+    Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, flags);
   MOZ_ASSERT(!postTraversalRequired);
+
+  auto type = EffectCompositor::AnimationRestyleType::Throttled;
+  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot, type)) {
+    postTraversalRequired =
+      Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, flags);
+    MOZ_ASSERT(!postTraversalRequired);
+  }
 }
 
 void
