@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import
-
 from abc import ABCMeta, abstractmethod, abstractproperty
 from argparse import ArgumentParser, SUPPRESS
 from distutils.util import strtobool

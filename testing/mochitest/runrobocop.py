@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import json
 import os
 import sys
@@ -532,9 +530,9 @@ class RobocopTestRunner(MochitestDesktop):
                 "No tests run. Did you pass an invalid TEST_PATH?")
             worstTestResult = 1
         else:
-            print("INFO | runtests.py | Test summary: start.")
+            print "INFO | runtests.py | Test summary: start."
             logResult = self.logTestSummary()
-            print("INFO | runtests.py | Test summary: end.")
+            print "INFO | runtests.py | Test summary: end."
             if worstTestResult == 0:
                 worstTestResult = logResult
         return worstTestResult
