@@ -45,7 +45,7 @@ function test() {
 
   setFindString(texts[0]);
   
-  gFindBar.toggleHighlight(true);
+  gFindBar.getElement("highlight").checked = true;
 
   
   gBrowser.selectedTab = tabs[1];
@@ -79,12 +79,13 @@ function continueTests1() {
 
 function continueTests2() {
   gBrowser.removeEventListener("DOMContentLoaded", continueTests2, true);
-  ok(gFindBar.getElement("highlight").checked, "Highlight never reset!");
-  continueTests3();
+  waitForCondition(() => !gFindBar.getElement("highlight").checked,
+                   continueTests3,
+                   "Highlight never reset!");
 }
 
 function continueTests3() {
-  ok(gFindBar.getElement("highlight").checked, "Highlight button reset!");
+  ok(!gFindBar.getElement("highlight").checked, "Highlight button reset!");
   gFindBar.close();
   ok(gFindBar.hidden, "First tab doesn't show find bar!");
   gBrowser.selectedTab = tabs[1];
@@ -128,7 +129,7 @@ function checkNewWindow() {
     is(newWindow.gFindBar._findField.value, texts[1],
        "New window find bar has correct find value!");
     ok(!newWindow.gFindBar.getElement("find-next").disabled,
-       "New window findbar has disabled buttons!");
+       "New window findbar has enabled buttons!");
   }
   newWindow.close();
   finish();
