@@ -107,7 +107,7 @@ GetJSValFromKeyPathString(JSContext* aCx,
       
       
       if (currentVal.isString() && !tokenizer.hasMoreTokens() &&
-          token.EqualsLiteral("length") && aOptions == DoNotCreateProperties) {
+          token.EqualsLiteral("length")) {
         aKeyJSVal->setNumber(double(JS_GetStringLength(currentVal.toString())));
         break;
       }
