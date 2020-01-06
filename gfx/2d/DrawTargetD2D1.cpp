@@ -57,6 +57,7 @@ DrawTargetD2D1::~DrawTargetD2D1()
   PopAllClips();
 
   if (mSnapshot) {
+    MutexAutoLock lock(*mSnapshotLock);
     
     
     
@@ -90,6 +91,9 @@ DrawTargetD2D1::~DrawTargetD2D1()
 already_AddRefed<SourceSurface>
 DrawTargetD2D1::Snapshot()
 {
+  if (!mSnapshotLock) {
+    mSnapshotLock = make_shared<Mutex>("DrawTargetD2D1::mSnapshotLock");
+  }
   if (mSnapshot) {
     RefPtr<SourceSurface> snapshot(mSnapshot);
     return snapshot.forget();
@@ -1274,6 +1278,7 @@ void
 DrawTargetD2D1::MarkChanged()
 {
   if (mSnapshot) {
+    MutexAutoLock lock(*mSnapshotLock);
     if (mSnapshot->hasOneRef()) {
       
       mSnapshot = nullptr;
