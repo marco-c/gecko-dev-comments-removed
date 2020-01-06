@@ -549,22 +549,6 @@ nsTextFormatter::dosprintf(SprintfStateStr* aState, const char16_t* aFmt,
       }
     }
 
-    if (thisArg == nullptr) {
-      
-      
-      if (sawNumberedArg) {
-        return -1;
-      }
-
-      if (nextNaturalArg >= aValues.Length()) {
-        
-        MOZ_ASSERT(false);
-        thisArg = &emptyString;
-      } else {
-        thisArg = &aValues[nextNaturalArg++];
-      }
-    }
-
     if (!sawWidth) {
       
 
@@ -642,6 +626,24 @@ nsTextFormatter::dosprintf(SprintfStateStr* aState, const char16_t* aFmt,
           prec = (prec * 10) + (c - '0');
           c = *aFmt++;
         }
+      }
+    }
+
+    
+    
+    if (thisArg == nullptr) {
+      
+      
+      if (sawNumberedArg) {
+        return -1;
+      }
+
+      if (nextNaturalArg >= aValues.Length()) {
+        
+        MOZ_ASSERT(false);
+        thisArg = &emptyString;
+      } else {
+        thisArg = &aValues[nextNaturalArg++];
       }
     }
 
