@@ -46,6 +46,8 @@ const FORBIDDEN_HEADERS = ["ACCEPT-CHARSET", "ACCEPT-ENCODING",
 
 const FORBIDDEN_PREFIXES = /^PROXY-|^SEC-/i;
 
+const PROMPTLESS_DOWNLOAD_PREF = "browser.download.useDownloadDir";
+
 class DownloadItem {
   constructor(id, download, extension) {
     this.id = id;
@@ -481,6 +483,17 @@ this.downloads = class extends ExtensionAPI {
 
             let target = OS.Path.join(downloadsDir, filename || "download");
 
+            let saveAs;
+            if (options.saveAs !== null) {
+              saveAs = options.saveAs;
+            } else {
+              
+              
+              
+              
+              saveAs = !Services.prefs.getBoolPref(PROMPTLESS_DOWNLOAD_PREF, true);
+            }
+
             
             const dir = OS.Path.dirname(target);
             await OS.File.makeDir(dir, {from: downloadsDir});
@@ -494,7 +507,7 @@ this.downloads = class extends ExtensionAPI {
                 case "uniquify":
                 default:
                   target = DownloadPaths.createNiceUniqueFile(new FileUtils.File(target)).path;
-                  if (options.saveAs) {
+                  if (saveAs) {
                     
                     
                     await OS.File.remove(target);
@@ -506,7 +519,7 @@ this.downloads = class extends ExtensionAPI {
               }
             }
 
-            if (!options.saveAs) {
+            if (!saveAs) {
               return target;
             }
 
