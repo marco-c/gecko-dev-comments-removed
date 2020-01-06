@@ -45,6 +45,7 @@ use gfx_traits::Epoch;
 use heapsize::HeapSizeOf;
 use hyper::header::Headers;
 use hyper::method::Method;
+use ipc_channel::{Error as IpcError};
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, Key, KeyModifiers, KeyState};
@@ -500,7 +501,7 @@ pub struct InitialScriptState {
     
     pub control_port: IpcReceiver<ConstellationControlMsg>,
     
-    pub constellation_chan: IpcSender<ScriptMsg>,
+    pub script_to_constellation_chan: ScriptToConstellationChan,
     
     pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
     
@@ -741,13 +742,11 @@ pub enum ConstellationMsg {
     
     GetFocusTopLevelBrowsingContext(IpcSender<Option<TopLevelBrowsingContextId>>),
     
-    InitLoadUrl(ServoUrl),
-    
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
-    LoadUrl(PipelineId, LoadData),
+    LoadUrl(TopLevelBrowsingContextId, ServoUrl),
     
     TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
     
@@ -764,6 +763,10 @@ pub enum ConstellationMsg {
     SetWebVRThread(IpcSender<WebVRMsg>),
     
     WebVREvents(Vec<PipelineId>, Vec<WebVREvent>),
+    
+    NewBrowser(ServoUrl, IpcSender<TopLevelBrowsingContextId>),
+    
+    SelectBrowser(TopLevelBrowsingContextId),
 }
 
 
@@ -780,7 +783,7 @@ pub struct WorkerGlobalScopeInit {
     
     pub from_devtools_sender: Option<IpcSender<DevtoolScriptControlMsg>>,
     
-    pub constellation_chan: IpcSender<ScriptMsg>,
+    pub script_to_constellation_chan: ScriptToConstellationChan,
     
     pub scheduler_chan: IpcSender<TimerSchedulerMsg>,
     
@@ -842,4 +845,20 @@ pub struct DrawAPaintImageResult {
     pub image_key: Option<ImageKey>,
     
     pub missing_image_urls: Vec<ServoUrl>,
+}
+
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ScriptToConstellationChan {
+    
+    pub sender: IpcSender<(PipelineId, ScriptMsg)>,
+    
+    pub pipeline_id: PipelineId,
+}
+
+impl ScriptToConstellationChan {
+    
+    pub fn send(&self, msg: ScriptMsg) -> Result<(), IpcError> {
+        self.sender.send((self.pipeline_id, msg))
+    }
 }

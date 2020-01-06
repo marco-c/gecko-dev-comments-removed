@@ -16,7 +16,7 @@ use canvas_traits::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::{Point2D, Size2D, TypedSize2D};
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{BrowsingContextId, TopLevelBrowsingContextId, FrameType, PipelineId, TraversalDirection};
+use msg::constellation_msg::{BrowsingContextId, FrameType, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::CoreResourceMsg;
 use net_traits::request::RequestInit;
@@ -69,12 +69,12 @@ pub enum LogEntry {
 pub enum ScriptMsg {
     
     
-    InitiateNavigateRequest(RequestInit, PipelineId),
+    InitiateNavigateRequest(RequestInit),
     
     
-    BroadcastStorageEvent(PipelineId, StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),
+    BroadcastStorageEvent(StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),
     
-    ChangeRunningAnimationsState(PipelineId, AnimationState),
+    ChangeRunningAnimationsState(AnimationState),
     
     
     CreateCanvasPaintThread(Size2D<i32>, IpcSender<IpcSender<CanvasMsg>>),
@@ -84,7 +84,7 @@ pub enum ScriptMsg {
                            GLContextAttributes,
                            IpcSender<Result<(IpcSender<CanvasMsg>, GLLimits), String>>),
     
-    Focus(PipelineId),
+    Focus,
     
     ForwardEvent(PipelineId, CompositorEvent),
     
@@ -97,18 +97,18 @@ pub enum ScriptMsg {
     HeadParsed,
     
     
-    LoadComplete(PipelineId),
+    LoadComplete,
     
     
-    LoadUrl(PipelineId, LoadData, bool),
+    LoadUrl(LoadData, bool),
     
     PostMessage(BrowsingContextId, Option<ImmutableOrigin>, Vec<u8>),
     
-    MozBrowserEvent(PipelineId, TopLevelBrowsingContextId, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, MozBrowserEvent),
     
-    TraverseHistory(TopLevelBrowsingContextId, TraversalDirection),
+    TraverseHistory(TraversalDirection),
     
-    JointSessionHistoryLength(TopLevelBrowsingContextId, IpcSender<u32>),
+    JointSessionHistoryLength(IpcSender<u32>),
     
     NewFavicon(ServoUrl),
     
@@ -117,9 +117,9 @@ pub enum ScriptMsg {
     
     RemoveIFrame(BrowsingContextId, IpcSender<Vec<PipelineId>>),
     
-    SetVisible(PipelineId, bool),
+    SetVisible(bool),
     
-    VisibilityChangeComplete(PipelineId, bool),
+    VisibilityChangeComplete(bool),
     
     ScriptLoadedURLInIFrame(IFrameLoadInfoWithData),
     
@@ -127,18 +127,18 @@ pub enum ScriptMsg {
     
     SetClipboardContents(String),
     
-    ActivateDocument(PipelineId),
+    ActivateDocument,
     
-    SetDocumentState(PipelineId, DocumentState),
+    SetDocumentState(DocumentState),
     
-    SetFinalUrl(PipelineId, ServoUrl),
+    SetFinalUrl(ServoUrl),
     
-    Alert(PipelineId, String, IpcSender<bool>),
+    Alert(String, IpcSender<bool>),
     
     ScrollFragmentPoint(ClipId, Point2D<f32>, bool),
     
     
-    SetTitle(PipelineId, Option<String>),
+    SetTitle(Option<String>),
     
     SendKeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
@@ -150,9 +150,9 @@ pub enum ScriptMsg {
     
     TouchEventProcessed(EventResult),
     
-    LogEntry(Option<TopLevelBrowsingContextId>, Option<String>, LogEntry),
+    LogEntry(Option<String>, LogEntry),
     
-    PipelineExited(PipelineId),
+    PipelineExited,
     
     
     ForwardDOMMessage(DOMMessage, ServoUrl),

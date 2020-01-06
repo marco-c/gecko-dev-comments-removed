@@ -8,7 +8,7 @@ use SendableFrameTree;
 use compositor::CompositingReason;
 use euclid::{Point2D, Size2D};
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
+use msg::constellation_msg::{Key, KeyModifiers, KeyState, PipelineId, TopLevelBrowsingContextId};
 use net_traits::image::base::Image;
 use profile_traits::mem;
 use profile_traits::time;
@@ -87,23 +87,23 @@ pub enum Msg {
     
     ScrollFragmentPoint(webrender_api::ClipId, Point2D<f32>, bool),
     
-    ChangePageTitle(PipelineId, Option<String>),
+    ChangePageTitle(TopLevelBrowsingContextId, Option<String>),
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     SetFrameTree(SendableFrameTree),
     
-    LoadStart,
+    LoadStart(TopLevelBrowsingContextId),
     
-    LoadComplete,
+    LoadComplete(TopLevelBrowsingContextId),
     
-    HistoryChanged(Vec<LoadData>, usize),
+    HistoryChanged(TopLevelBrowsingContextId, Vec<LoadData>, usize),
     
-    AllowNavigation(ServoUrl, IpcSender<bool>),
+    AllowNavigation(TopLevelBrowsingContextId, ServoUrl, IpcSender<bool>),
     
     Recomposite(CompositingReason),
     
-    KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
+    KeyEvent(Option<TopLevelBrowsingContextId>, Option<char>, Key, KeyState, KeyModifiers),
     
     TouchEventProcessed(EventResult),
     
@@ -115,17 +115,17 @@ pub enum Msg {
     
     IsReadyToSaveImageReply(bool),
     
-    NewFavicon(ServoUrl),
+    NewFavicon(TopLevelBrowsingContextId, ServoUrl),
     
-    HeadParsed,
+    HeadParsed(TopLevelBrowsingContextId),
     
-    Status(Option<String>),
+    Status(TopLevelBrowsingContextId, Option<String>),
     
-    GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    GetClientWindow(TopLevelBrowsingContextId, IpcSender<(Size2D<u32>, Point2D<i32>)>),
     
-    MoveTo(Point2D<i32>),
+    MoveTo(TopLevelBrowsingContextId, Point2D<i32>),
     
-    ResizeTo(Size2D<u32>),
+    ResizeTo(TopLevelBrowsingContextId, Size2D<u32>),
     
     PipelineVisibilityChanged(PipelineId, bool),
     
@@ -142,7 +142,7 @@ pub enum Msg {
     
     Dispatch(Box<Fn() + Send>),
     
-    SetFullscreenState(bool),
+    SetFullscreenState(TopLevelBrowsingContextId, bool),
 }
 
 impl Debug for Msg {
@@ -154,9 +154,9 @@ impl Debug for Msg {
             Msg::ChangeRunningAnimationsState(..) => write!(f, "ChangeRunningAnimationsState"),
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
-            Msg::LoadComplete => write!(f, "LoadComplete"),
+            Msg::LoadComplete(..) => write!(f, "LoadComplete"),
             Msg::AllowNavigation(..) => write!(f, "AllowNavigation"),
-            Msg::LoadStart => write!(f, "LoadStart"),
+            Msg::LoadStart(..) => write!(f, "LoadStart"),
             Msg::HistoryChanged(..) => write!(f, "HistoryChanged"),
             Msg::Recomposite(..) => write!(f, "Recomposite"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
@@ -166,7 +166,7 @@ impl Debug for Msg {
             Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
             Msg::NewFavicon(..) => write!(f, "NewFavicon"),
-            Msg::HeadParsed => write!(f, "HeadParsed"),
+            Msg::HeadParsed(..) => write!(f, "HeadParsed"),
             Msg::Status(..) => write!(f, "Status"),
             Msg::GetClientWindow(..) => write!(f, "GetClientWindow"),
             Msg::MoveTo(..) => write!(f, "MoveTo"),

@@ -31,6 +31,7 @@ use script_thread::MainThreadScriptMsg;
 use script_thread::Runnable;
 use script_thread::ScriptThread;
 use script_traits::ScriptMsg;
+use script_traits::ScriptToConstellationChan;
 use script_traits::TimerSchedulerMsg;
 use servo_url::ImmutableOrigin;
 use servo_url::MutableOrigin;
@@ -49,7 +50,7 @@ pub struct WorkletGlobalScope {
     microtask_queue: MicrotaskQueue,
     
     #[ignore_heap_size_of = "channels are hard"]
-    script_sender: Sender<MainThreadScriptMsg>,
+    to_script_thread_sender: Sender<MainThreadScriptMsg>,
     
     executor: WorkletExecutor,
 }
@@ -63,19 +64,23 @@ impl WorkletGlobalScope {
                          -> WorkletGlobalScope {
         
         let (timer_event_chan, _) = ipc::channel().unwrap();
+        let script_to_constellation_chan = ScriptToConstellationChan {
+            sender: init.to_constellation_sender.clone(),
+            pipeline_id: pipeline_id,
+        };
         WorkletGlobalScope {
             globalscope: GlobalScope::new_inherited(pipeline_id,
                                                     init.devtools_chan.clone(),
                                                     init.mem_profiler_chan.clone(),
                                                     init.time_profiler_chan.clone(),
-                                                    init.constellation_chan.clone(),
+                                                    script_to_constellation_chan,
                                                     init.scheduler_chan.clone(),
                                                     init.resource_threads.clone(),
                                                     timer_event_chan,
                                                     MutableOrigin::new(ImmutableOrigin::new_opaque())),
             base_url: base_url,
             microtask_queue: MicrotaskQueue::default(),
-            script_sender: init.script_sender.clone(),
+            to_script_thread_sender: init.to_script_thread_sender.clone(),
             executor: executor,
         }
     }
@@ -98,7 +103,7 @@ impl WorkletGlobalScope {
     {
         let msg = CommonScriptMsg::RunnableMsg(ScriptThreadEventCategory::WorkletEvent, box runnable);
         let msg = MainThreadScriptMsg::Common(msg);
-        self.script_sender.send(msg).expect("Worklet thread outlived script thread.");
+        self.to_script_thread_sender.send(msg).expect("Worklet thread outlived script thread.");
     }
 
     /// Send a message to layout.
@@ -156,7 +161,7 @@ impl WorkletGlobalScope {
 #[derive(Clone)]
 pub struct WorkletGlobalScopeInit {
     
-    pub script_sender: Sender<MainThreadScriptMsg>,
+    pub to_script_thread_sender: Sender<MainThreadScriptMsg>,
     
     pub resource_threads: ResourceThreads,
     
@@ -166,7 +171,7 @@ pub struct WorkletGlobalScopeInit {
     
     pub devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
     
-    pub constellation_chan: IpcSender<ScriptMsg>,
+    pub to_constellation_sender: IpcSender<(PipelineId, ScriptMsg)>,
     
     pub scheduler_chan: IpcSender<TimerSchedulerMsg>,
     

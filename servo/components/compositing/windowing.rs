@@ -9,7 +9,7 @@ use euclid::{Point2D, Size2D};
 use euclid::{ScaleFactor, TypedPoint2D, TypedSize2D};
 use gleam::gl;
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{Key, KeyModifiers, KeyState, TraversalDirection};
+use msg::constellation_msg::{Key, KeyModifiers, KeyState, TopLevelBrowsingContextId, TraversalDirection};
 use net_traits::net_error_list::NetError;
 use script_traits::{LoadData, MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
 use servo_geometry::DeviceIndependentPixel;
@@ -45,7 +45,7 @@ pub enum WindowEvent {
     
     TouchpadPressure(TypedPoint2D<f32, DevicePixel>, f32, TouchpadPressurePhase),
     
-    LoadUrl(String),
+    LoadUrl(TopLevelBrowsingContextId, ServoUrl),
     
     MouseWindowEventClass(MouseWindowEvent),
     
@@ -62,15 +62,20 @@ pub enum WindowEvent {
     
     ResetZoom,
     
-    Navigation(TraversalDirection),
+    Navigation(TopLevelBrowsingContextId, TraversalDirection),
     
     Quit,
     
     KeyEvent(Option<char>, Key, KeyState, KeyModifiers),
     
-    Reload,
     
     ToggleWebRenderProfiler,
+    Reload(TopLevelBrowsingContextId),
+    
+    NewBrowser(ServoUrl, IpcSender<TopLevelBrowsingContextId>),
+    
+    
+    SelectBrowser(TopLevelBrowsingContextId),
 }
 
 impl Debug for WindowEvent {
@@ -91,8 +96,10 @@ impl Debug for WindowEvent {
             WindowEvent::ResetZoom => write!(f, "ResetZoom"),
             WindowEvent::Navigation(..) => write!(f, "Navigation"),
             WindowEvent::Quit => write!(f, "Quit"),
-            WindowEvent::Reload => write!(f, "Reload"),
             WindowEvent::ToggleWebRenderProfiler => write!(f, "ToggleWebRenderProfiler"),
+            WindowEvent::Reload(..) => write!(f, "Reload"),
+            WindowEvent::NewBrowser(..) => write!(f, "NewBrowser"),
+            WindowEvent::SelectBrowser(..) => write!(f, "SelectBrowser"),
         }
     }
 }
@@ -114,30 +121,30 @@ pub trait WindowMethods {
     fn present(&self);
 
     
-    fn client_window(&self) -> (Size2D<u32>, Point2D<i32>);
+    fn client_window(&self, ctx: TopLevelBrowsingContextId) -> (Size2D<u32>, Point2D<i32>);
     
-    fn set_inner_size(&self, size: Size2D<u32>);
+    fn set_inner_size(&self, ctx: TopLevelBrowsingContextId, size: Size2D<u32>);
     
-    fn set_position(&self, point: Point2D<i32>);
+    fn set_position(&self, ctx: TopLevelBrowsingContextId, point: Point2D<i32>);
     
-    fn set_fullscreen_state(&self, state: bool);
+    fn set_fullscreen_state(&self, ctx: TopLevelBrowsingContextId, state: bool);
 
     
-    fn set_page_title(&self, title: Option<String>);
+    fn set_page_title(&self, ctx: TopLevelBrowsingContextId, title: Option<String>);
     
-    fn status(&self, Option<String>);
+    fn status(&self, ctx: TopLevelBrowsingContextId, Option<String>);
     
-    fn load_start(&self);
+    fn load_start(&self, ctx: TopLevelBrowsingContextId);
     
-    fn load_end(&self);
+    fn load_end(&self, ctx: TopLevelBrowsingContextId);
     
-    fn load_error(&self, code: NetError, url: String);
+    fn load_error(&self, ctx: TopLevelBrowsingContextId, code: NetError, url: String);
     
-    fn allow_navigation(&self, url: ServoUrl, IpcSender<bool>);
+    fn allow_navigation(&self, ctx: TopLevelBrowsingContextId, url: ServoUrl, IpcSender<bool>);
     
-    fn head_parsed(&self);
+    fn head_parsed(&self, ctx: TopLevelBrowsingContextId);
     
-    fn history_changed(&self, Vec<LoadData>, usize);
+    fn history_changed(&self, ctx: TopLevelBrowsingContextId, Vec<LoadData>, usize);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<f32, DeviceIndependentPixel, DevicePixel>;
@@ -154,13 +161,13 @@ pub trait WindowMethods {
     fn set_cursor(&self, cursor: Cursor);
 
     
-    fn handle_key(&self, ch: Option<char>, key: Key, mods: KeyModifiers);
+    fn handle_key(&self, ctx: Option<TopLevelBrowsingContextId>, ch: Option<char>, key: Key, mods: KeyModifiers);
 
     
     fn supports_clipboard(&self) -> bool;
 
     
-    fn set_favicon(&self, url: ServoUrl);
+    fn set_favicon(&self, ctx: TopLevelBrowsingContextId, url: ServoUrl);
 
     
     fn gl(&self) -> Rc<gl::Gl>;
