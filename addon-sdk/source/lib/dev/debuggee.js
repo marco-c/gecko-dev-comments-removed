@@ -11,7 +11,8 @@ module.metadata = {
 const { Cu } = require("chrome");
 const { Class } = require("../sdk/core/heritage");
 const { MessagePort, MessageChannel } = require("../sdk/messaging");
-const { DevToolsShim } = Cu.import("chrome://devtools-shim/content/DevToolsShim.jsm", {});
+const { require: devtoolsRequire } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { DebuggerServer } = devtoolsRequire("devtools/server/main");
 
 const outputs = new WeakMap();
 const inputs = new WeakMap();
@@ -48,8 +49,12 @@ const Debuggee = Class({
     if (target.isLocalTab) {
       
       
-      let transport = DevToolsShim.connectDebuggerServer();
-      transports.set(this, transport);
+      if (!DebuggerServer.initialized) {
+        DebuggerServer.init();
+        DebuggerServer.addBrowserActors();
+      }
+
+      transports.set(this, DebuggerServer.connectPipe());
     }
     
     else {
