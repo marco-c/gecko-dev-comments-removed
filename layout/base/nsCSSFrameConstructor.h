@@ -312,13 +312,13 @@ public:
     Async,
   };
 
-  
-  
-  
-  
   enum RemoveFlags {
-    REMOVE_CONTENT, REMOVE_FOR_RECONSTRUCTION, REMOVE_DESTROY_FRAMES };
+    REMOVE_CONTENT,
+    REMOVE_FOR_RECONSTRUCTION,
+  };
+
   
+
 
 
 
