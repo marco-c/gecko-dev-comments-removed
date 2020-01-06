@@ -495,7 +495,6 @@ pref("media.peerconnection.video.min_bitrate_estimate", 0);
 pref("media.peerconnection.video.denoising", false);
 pref("media.navigator.audio.fake_frequency", 1000);
 pref("media.navigator.permission.disabled", false);
-pref("media.navigator.streams.fake", false);
 pref("media.peerconnection.simulcast", true);
 pref("media.peerconnection.default_iceservers", "[]");
 pref("media.peerconnection.ice.loopback", false); 
@@ -1052,10 +1051,13 @@ sticky_pref("devtools.debugger.prompt-connection", true);
 sticky_pref("devtools.chrome.enabled", false);
 
 sticky_pref("devtools.debugger.remote-enabled", false);
+
+sticky_pref("browser.dom.window.dump.enabled", false);
 #else
 
 sticky_pref("devtools.chrome.enabled", true);
 sticky_pref("devtools.debugger.remote-enabled", true);
+sticky_pref("browser.dom.window.dump.enabled", true);
 #endif
 
 
@@ -5177,9 +5179,6 @@ pref("layout.css.touch_action.enabled", true);
 
 
 pref("layout.css.expensive-style-struct-assertions.enabled", false);
-
-
-pref("browser.dom.window.dump.enabled", false);
 
 #if defined(MOZ_WIDGET_ANDROID)
 
