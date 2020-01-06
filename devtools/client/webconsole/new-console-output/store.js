@@ -177,6 +177,13 @@ function enableNetProvider(hud) {
           actions,
           webConsoleClient: proxy.webConsoleClient
         });
+
+        
+        
+        
+        
+        
+        proxy.networkDataProvider = dataProvider;
       }
 
       let type = action.type;

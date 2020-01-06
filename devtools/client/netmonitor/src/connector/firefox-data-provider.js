@@ -31,6 +31,10 @@ class FirefoxDataProvider {
     this.rdpRequestMap = new Map();
 
     
+    
+    this.lazyRequestData = new Map();
+
+    
     this.getLongString = this.getLongString.bind(this);
 
     
@@ -117,6 +121,8 @@ class FirefoxDataProvider {
     );
 
     this.pushRequestToQueue(id, payload);
+
+    return payload;
   }
 
   async fetchResponseContent(mimeType, responseContent) {
@@ -243,10 +249,24 @@ class FirefoxDataProvider {
       return false;
     }
 
+    let { payload } = this.getRequestFromQueue(id);
+
     
     
-    let props = Object.getOwnPropertyNames(record);
-    return props.every(prop => record[prop] === true);
+    
+    
+    
+    
+    
+    return record.requestHeaders &&
+      record.requestCookies &&
+      record.eventTimings &&
+      (record.securityInfo || record.fromServiceWorker) &&
+      (
+       (record.responseHeaders && record.responseCookies) ||
+       payload.securityState == "broken" ||
+       (payload.responseContentAvailable && !payload.status)
+      );
   }
 
   
@@ -319,8 +339,14 @@ class FirefoxDataProvider {
     this.rdpRequestMap.set(actor, {
       requestHeaders: false,
       requestCookies: false,
+      responseHeaders: false,
+      responseCookies: false,
+      securityInfo: false,
       eventTimings: false,
-      responseContent: false,
+
+      
+      
+      fromServiceWorker,
     });
 
     this.addRequest(actor, {
@@ -348,51 +374,25 @@ class FirefoxDataProvider {
     let { actor } = networkInfo;
     let { updateType } = packet;
 
+    
+    
+    if (!this.rdpRequestMap.has(actor)) {
+      return;
+    }
+
     switch (updateType) {
       case "requestHeaders":
-        this.requestData(actor, updateType).then(response => {
-          this.onRequestHeaders(response)
-            .then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_REQUEST_HEADERS, actor);
-        });
-        break;
       case "requestCookies":
-        this.requestData(actor, updateType).then(response => {
-          this.onRequestCookies(response)
-            .then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_REQUEST_COOKIES, actor);
-        });
-        break;
       case "requestPostData":
-        this.requestData(actor, updateType).then(response => {
-          this.onRequestPostData(response)
-            .then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_REQUEST_POST_DATA, actor);
-        });
+      case "responseHeaders":
+      case "responseCookies":
+        this.requestPayloadData(actor, updateType);
         break;
       case "securityInfo":
         this.updateRequest(actor, {
           securityState: networkInfo.securityInfo,
         }).then(() => {
-          this.requestData(actor, updateType).then(response => {
-            this.onSecurityInfo(response)
-              .then(() => this.onDataReceived(actor, updateType));
-            emit(EVENTS.UPDATING_SECURITY_INFO, actor);
-          });
-        });
-        break;
-      case "responseHeaders":
-        this.requestData(actor, updateType).then(response => {
-          this.onResponseHeaders(response)
-            .then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_RESPONSE_HEADERS, actor);
-        });
-        break;
-      case "responseCookies":
-        this.requestData(actor, updateType).then(response => {
-          this.onResponseCookies(response)
-            .then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_RESPONSE_COOKIES, actor);
+          this.requestPayloadData(actor, updateType);
         });
         break;
       case "responseStart":
@@ -408,23 +408,20 @@ class FirefoxDataProvider {
         });
         break;
       case "responseContent":
-        this.requestData(actor, updateType).then(response => {
-          this.onResponseContent({
-            contentSize: networkInfo.response.bodySize,
-            transferredSize: networkInfo.response.transferredSize,
-            mimeType: networkInfo.response.content.mimeType
-          }, response).then(() => this.onDataReceived(actor, updateType));
-          emit(EVENTS.UPDATING_RESPONSE_CONTENT, actor);
+        this.updateRequest(actor, {
+          contentSize: networkInfo.response.bodySize,
+          transferredSize: networkInfo.response.transferredSize,
+          mimeType: networkInfo.response.content.mimeType,
+
+          
+          
+          responseContentAvailable: true,
         });
         break;
       case "eventTimings":
         this.updateRequest(actor, { totalTime: networkInfo.totalTime })
           .then(() => {
-            this.requestData(actor, updateType).then(response => {
-              this.onEventTimings(response)
-                .then(() => this.onDataReceived(actor, updateType));
-              emit(EVENTS.UPDATING_EVENT_TIMINGS, actor);
-            });
+            this.requestPayloadData(actor, updateType);
           });
         break;
     }
@@ -446,52 +443,30 @@ class FirefoxDataProvider {
 
 
 
-  requestData(actor, method) {
+
+  requestPayloadData(actor, method) {
     let record = this.rdpRequestMap.get(actor);
 
     
-    
-    if (!record) {
-      record = {};
+    if (record[method]) {
+      return;
     }
 
-    
-    if (record.method) {
-      return record.method;
-    }
-
-    
-    let realMethodName = "get" + method.charAt(0).toUpperCase() +
-      method.slice(1);
-
-    
-    let promise = new Promise((resolve, reject) => {
-      if (typeof this.webConsoleClient[realMethodName] == "function") {
-        this.webConsoleClient[realMethodName](actor, response => {
-          
-          resolve(response);
-        });
-      } else {
-        reject(new Error("Error: No such client method!"));
-      }
+    let promise = this._requestData(actor, method);
+    promise.then(() => {
+      
+      
+      record[method] = true;
+      this.onPayloadDataReceived(actor, method, !record);
     });
-
-    
-    
-    record[method] = promise;
-
-    return promise;
   }
 
   
 
 
-  async onDataReceived(actor, type) {
-    let record = this.rdpRequestMap.get(actor);
-    if (record) {
-      record[type] = true;
-    }
-
+  async onPayloadDataReceived(actor, type) {
+    
+    
     if (this.isRequestPayloadReady(actor)) {
       let payloadFromQueue = this.getRequestFromQueue(actor).payload;
 
@@ -504,8 +479,86 @@ class FirefoxDataProvider {
         await updateRequest(actor, payloadFromQueue, true);
       }
 
+      
+      
       emit(EVENTS.PAYLOAD_READY, actor);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  requestData(actor, method) {
+    
+    
+    let key = actor + "-" + method;
+    let promise = this.lazyRequestData.get(key);
+    
+    if (promise) {
+      return promise;
+    }
+    
+    promise = this._requestData(actor, method);
+    this.lazyRequestData.set(key, promise);
+    promise.then(async () => {
+      
+      
+      this.lazyRequestData.delete(key, promise);
+
+      let payloadFromQueue = this.getRequestFromQueue(actor).payload;
+      let { updateRequest } = this.actions;
+      if (updateRequest) {
+        await updateRequest(actor, payloadFromQueue, true);
+      }
+    });
+    return promise;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async _requestData(actor, method) {
+    
+    let clientMethodName = "get" + method.charAt(0).toUpperCase() +
+      method.slice(1);
+    
+    let callbackMethodName = "on" + method.charAt(0).toUpperCase() +
+      method.slice(1);
+    
+    let updatingEventName = "UPDATING_" + method.replace(/([A-Z])/g, "_$1").toUpperCase();
+
+    if (typeof this.webConsoleClient[clientMethodName] == "function") {
+      
+      emit(EVENTS[updatingEventName], actor);
+
+      
+      let response = await this.webConsoleClient[clientMethodName](actor);
+
+      
+      response = await this[callbackMethodName](response);
+      return response;
+    }
+    throw new Error("Error: No such client method '" + clientMethodName + "'!");
   }
 
   
@@ -591,12 +644,16 @@ class FirefoxDataProvider {
 
 
 
-
-  onResponseContent(data, response) {
-    let payload = Object.assign({ responseContent: response }, data);
-    return this.updateRequest(response.from, payload).then(() => {
-      emit(EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
+  async onResponseContent(response) {
+    let payload = await this.updateRequest(response.from, {
+      
+      
+      
+      mimeType: response.content.mimeType,
+      responseContent: response,
     });
+    emit(EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
+    return payload.responseContent;
   }
 
   
