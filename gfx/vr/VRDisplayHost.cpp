@@ -162,6 +162,7 @@ VRDisplayHost::NotifyVSync()
 
 void
 VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, PTextureParent* aTexture,
+                           uint64_t aFrameId,
                            const gfx::Rect& aLeftEyeRect,
                            const gfx::Rect& aRightEyeRect)
 {
@@ -173,7 +174,7 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, PTextureParent* aTexture,
   }
 
   
-  if (!mFrameStarted) {
+  if (!mFrameStarted || aFrameId != mDisplayInfo.mFrameId) {
     return;
   }
   mFrameStarted = false;
