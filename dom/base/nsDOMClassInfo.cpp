@@ -1611,6 +1611,11 @@ nsWindowSH::NameStructEnabled(JSContext* aCx, nsGlobalWindow *aWin,
                               const nsAString& aName,
                               const nsGlobalNameStruct& aNameStruct)
 {
+  
+  
+  if (aName.EqualsLiteral("DOMConstructor")) {
+    return false;
+  }
   const nsGlobalNameStruct* nameStruct = &aNameStruct;
   return (nameStruct->mType != nsGlobalNameStruct::eTypeProperty &&
           nameStruct->mType != nsGlobalNameStruct::eTypeClassConstructor) ||

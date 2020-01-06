@@ -5149,13 +5149,28 @@ nsGlobalWindow::GetOwnPropertyNames(JSContext* aCx, nsTArray<nsString>& aNames,
   if (nameSpaceManager) {
     JS::Rooted<JSObject*> wrapper(aCx, GetWrapper());
 
-    WebIDLGlobalNameHash::GetNames(aCx, wrapper, WebIDLGlobalNameHash::AllNames,
-                                   aNames);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    WebIDLGlobalNameHash::NameType nameType =
+      js::IsObjectInContextCompartment(wrapper, aCx) ?
+        WebIDLGlobalNameHash::UnresolvedNamesOnly :
+        WebIDLGlobalNameHash::AllNames;
+    WebIDLGlobalNameHash::GetNames(aCx, wrapper, nameType, aNames);
 
     for (auto i = nameSpaceManager->GlobalNameIter(); !i.Done(); i.Next()) {
       const GlobalNameMapEntry* entry = i.Get();
       if (nsWindowSH::NameStructEnabled(aCx, this, entry->mKey,
                                         entry->mGlobalName)) {
+        
+        
         aNames.AppendElement(entry->mKey);
       }
     }
