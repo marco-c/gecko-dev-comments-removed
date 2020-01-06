@@ -1599,7 +1599,7 @@ Search.prototype = {
     
     
     
-    let hostExpected = new Set(["http", "https", "ftp", "chrome", "resource"]);
+    let hostExpected = new Set(["http", "https", "ftp", "chrome"]);
     if (hostExpected.has(uri.scheme) && !uri.host)
       return false;
 
