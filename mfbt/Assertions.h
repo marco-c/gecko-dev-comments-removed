@@ -279,6 +279,10 @@ static MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void MOZ_NoReturn(int aLine)
 
 
 
+
+
+
+
 #ifndef DEBUG
 MFBT_API MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void
 MOZ_CrashOOL(int aLine, const char* aReason);
@@ -303,6 +307,10 @@ MOZ_CrashPrintf(const char* aFilename, int aLine, const char* aFormat, ...);
 #  define MOZ_CALL_CRASH_PRINTF(format, ...) \
      MOZ_CrashPrintf(__FILE__, __LINE__, format, __VA_ARGS__)
 #endif
+
+
+
+
 
 
 
