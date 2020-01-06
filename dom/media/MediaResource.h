@@ -211,10 +211,6 @@ public:
   virtual nsresult ReadFromCache(char* aBuffer,
                                  int64_t aOffset,
                                  uint32_t aCount) = 0;
-  
-  
-  
-  virtual bool IsTransportSeekable() = 0;
 
   
 
@@ -288,6 +284,11 @@ public:
 
   
   virtual void SetReadMode(MediaCacheStream::ReadMode aMode) = 0;
+
+  
+  
+  
+  virtual bool IsTransportSeekable() = 0;
 
   
 
