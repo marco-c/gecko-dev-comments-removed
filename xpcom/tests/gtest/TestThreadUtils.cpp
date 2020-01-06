@@ -2,6 +2,7 @@
 
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/UniquePtr.h"

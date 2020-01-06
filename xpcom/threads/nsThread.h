@@ -11,11 +11,11 @@
 #include "nsIIdlePeriod.h"
 #include "nsIThreadInternal.h"
 #include "nsISupportsPriority.h"
-#include "nsEventQueue.h"
 #include "nsThreadUtils.h"
 #include "nsString.h"
 #include "nsTObserverArray.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SynchronizedEventQueue.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/TimeStamp.h"
 #include "nsAutoPtr.h"
@@ -25,6 +25,7 @@
 
 namespace mozilla {
 class CycleCollectedJSContext;
+class ThreadEventTarget;
 }
 
 using mozilla::NotNull;
@@ -47,7 +48,9 @@ public:
     NOT_MAIN_THREAD
   };
 
-  nsThread(MainThreadFlag aMainThread, uint32_t aStackSize);
+  nsThread(NotNull<mozilla::SynchronizedEventQueue*> aQueue,
+           MainThreadFlag aMainThread,
+           uint32_t aStackSize);
 
   
   nsresult Init(const nsACString& aName = NS_LITERAL_CSTRING(""));
@@ -97,40 +100,27 @@ public:
   static const uint32_t kRunnableNameBufSize = 1000;
   static mozilla::Array<char, kRunnableNameBufSize> sMainThreadRunnableName;
 
-  
-  
-  
-  bool HasPendingInputEvents()
+  void EnableInputEventPrioritization()
   {
-    MOZ_ASSERT(NS_IsMainThread());
-    mozilla::MutexAutoLock lock(mLock);
-    return mEventsRoot.HasPendingEventsInInputQueue(lock);
+    EventQueue()->EnableInputEventPrioritization();
   }
 
-private:
-  void DoMainThreadSpecificProcessing(bool aReallyWait);
+  mozilla::TimeStamp& NextIdleDeadlineRef() { return mNextIdleDeadline; }
 
-  
-  mozilla::TimeStamp GetIdleDeadline();
-  void GetIdleEvent(nsIRunnable** aEvent, mozilla::MutexAutoLock& aProofOfLock);
-  void GetEvent(bool aWait, nsIRunnable** aEvent,
-                unsigned short* aPriority,
-                mozilla::MutexAutoLock& aProofOfLock);
-
-protected:
-  class nsChainedEventQueue;
-
-  class nsNestedEventTarget;
-  friend class nsNestedEventTarget;
-
-  friend class nsThreadShutdownEvent;
-
-  virtual ~nsThread();
+  mozilla::SynchronizedEventQueue* EventQueue() { return mEvents.get(); }
 
   bool ShuttingDown()
   {
     return mShutdownContext != nullptr;
   }
+
+private:
+  void DoMainThreadSpecificProcessing(bool aReallyWait);
+
+protected:
+  friend class nsThreadShutdownEvent;
+
+  virtual ~nsThread();
 
   static void ThreadFunc(void* aArg);
 
@@ -142,191 +132,15 @@ protected:
     return already_AddRefed<nsIThreadObserver>(obs);
   }
 
-  
-  nsresult PutEvent(nsIRunnable* aEvent, nsNestedEventTarget* aTarget);
-  nsresult PutEvent(already_AddRefed<nsIRunnable> aEvent,
-                    nsNestedEventTarget* aTarget);
-
-  nsresult DispatchInternal(already_AddRefed<nsIRunnable> aEvent,
-                            uint32_t aFlags, nsNestedEventTarget* aTarget);
-
   struct nsThreadShutdownContext* ShutdownInternal(bool aSync);
 
-  
-  class nsChainedEventQueue
-  {
-  public:
-    explicit nsChainedEventQueue(mozilla::Mutex& aLock)
-      : mNext(nullptr)
-      , mEventsAvailable(aLock, "[nsChainedEventQueue.mEventsAvailable]")
-      , mIsInputPrioritizationEnabled(false)
-      , mIsReadyToPrioritizeEvents(false)
-      , mProcessHighPriorityQueueRunnable(false)
-    {
-      mNormalQueue =
-        mozilla::MakeUnique<nsEventQueue>(mEventsAvailable,
-                                          nsEventQueue::eSharedCondVarQueue);
-      
-      mInputQueue =
-        mozilla::MakeUnique<nsEventQueue>(mEventsAvailable,
-                                          nsEventQueue::eSharedCondVarQueue);
-      mHighQueue =
-        mozilla::MakeUnique<nsEventQueue>(mEventsAvailable,
-                                          nsEventQueue::eSharedCondVarQueue);
-    }
+  RefPtr<mozilla::SynchronizedEventQueue> mEvents;
+  RefPtr<mozilla::ThreadEventTarget> mEventTarget;
 
-    void EnablePrioritization(mozilla::MutexAutoLock& aProofOfLock);
-
-    bool IsPrioritizationEnabled()
-    {
-      return mIsInputPrioritizationEnabled;
-    }
-
-    bool GetEvent(bool aMayWait, nsIRunnable** aEvent,
-                  unsigned short* aPriority,
-                  mozilla::MutexAutoLock& aProofOfLock) {
-      return mIsReadyToPrioritizeEvents
-        ? GetNormalOrInputOrHighPriorityEvent(aMayWait, aEvent, aPriority, aProofOfLock)
-        : GetNormalOrHighPriorityEvent(aMayWait, aEvent, aPriority, aProofOfLock);
-    }
-
-    void PutEvent(nsIRunnable* aEvent, mozilla::MutexAutoLock& aProofOfLock)
-    {
-      RefPtr<nsIRunnable> event(aEvent);
-      PutEvent(event.forget(), aProofOfLock);
-    }
-
-    void PutEvent(already_AddRefed<nsIRunnable> aEvent,
-                  mozilla::MutexAutoLock& aProofOfLock);
-
-    bool HasPendingEvent(mozilla::MutexAutoLock& aProofOfLock)
-    {
-      return mNormalQueue->HasPendingEvent(aProofOfLock) ||
-             mInputQueue->HasPendingEvent(aProofOfLock) ||
-             mHighQueue->HasPendingEvent(aProofOfLock);
-    }
-
-    bool HasPendingEventsInInputQueue(mozilla::MutexAutoLock& aProofOfLock)
-    {
-      MOZ_ASSERT(mIsInputPrioritizationEnabled);
-      return mInputQueue->HasPendingEvent(aProofOfLock);
-    }
-
-    nsChainedEventQueue* mNext;
-    RefPtr<nsNestedEventTarget> mEventTarget;
-
-  private:
-    bool GetNormalOrInputOrHighPriorityEvent(bool aMayWait,
-                                             nsIRunnable** aEvent,
-                                             unsigned short* aPriority,
-                                             mozilla::MutexAutoLock& aProofOfLock);
-
-    bool GetNormalOrHighPriorityEvent(bool aMayWait, nsIRunnable** aEvent,
-                                      unsigned short* aPriority,
-                                      mozilla::MutexAutoLock& aProofOfLock);
-
-    
-    
-    class EnablePrioritizationRunnable final : public nsIRunnable
-    {
-      nsChainedEventQueue* mEventQueue;
-
-    public:
-      NS_DECL_ISUPPORTS
-
-      explicit EnablePrioritizationRunnable(nsChainedEventQueue* aQueue)
-        : mEventQueue(aQueue)
-      {
-      }
-
-      NS_IMETHOD Run() override
-      {
-        mEventQueue->mIsReadyToPrioritizeEvents = true;
-        return NS_OK;
-      }
-    private:
-      ~EnablePrioritizationRunnable()
-      {
-      }
-    };
-
-    static void SetPriorityIfNotNull(unsigned short* aPriority, short aValue)
-    {
-      if (aPriority) {
-        *aPriority = aValue;
-      }
-    }
-    mozilla::CondVar mEventsAvailable;
-    mozilla::TimeStamp mInputHandlingStartTime;
-    mozilla::UniquePtr<nsEventQueue> mNormalQueue;
-    mozilla::UniquePtr<nsEventQueue> mInputQueue;
-    mozilla::UniquePtr<nsEventQueue> mHighQueue;
-    bool mIsInputPrioritizationEnabled;
-
-    
-    
-    
-    
-    bool mIsReadyToPrioritizeEvents;
-    
-    
-    
-    
-    bool mProcessHighPriorityQueueRunnable;
-  };
-
-  class nsNestedEventTarget final : public nsIEventTarget
-  {
-  public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIEVENTTARGET_FULL
-
-    nsNestedEventTarget(NotNull<nsThread*> aThread,
-                        NotNull<nsChainedEventQueue*> aQueue)
-      : mThread(aThread)
-      , mQueue(aQueue)
-
-
-
-    {
-    }
-
-    NotNull<RefPtr<nsThread>> mThread;
-
-    
-    nsChainedEventQueue* mQueue;
-
-  private:
-    ~nsNestedEventTarget()
-    {
-    }
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  mozilla::Mutex mLock;
-
-  nsCOMPtr<nsIThreadObserver> mObserver;
   mozilla::CycleCollectedJSContext* mScriptObserver;
 
   
   nsAutoTObserverArray<NotNull<nsCOMPtr<nsIThreadObserver>>, 2> mEventObservers;
-
-  NotNull<nsChainedEventQueue*> mEvents;  
-  nsChainedEventQueue mEventsRoot;
-
-  
-  
-  
-  
-  nsCOMPtr<nsIIdlePeriod> mIdlePeriod;
-  mozilla::CondVar mIdleEventsAvailable;
-  nsEventQueue mIdleEvents;
 
   int32_t   mPriority;
   PRThread* mThread;
@@ -338,9 +152,7 @@ protected:
   
   nsTArray<nsAutoPtr<struct nsThreadShutdownContext>> mRequestedShutdownContexts;
 
-  bool mShutdownRequired;
-  
-  bool mEventsAreDoomed;
+  mozilla::Atomic<bool> mShutdownRequired;
   MainThreadFlag mIsMainThread;
 
   
@@ -349,10 +161,6 @@ protected:
 
   
   bool mCanInvokeJS;
-  
-  
-  
-  bool mHasPendingEventsPromisedIdleEvent;
 
 #ifndef RELEASE_OR_BETA
   mozilla::TimeStamp mNextIdleDeadline;

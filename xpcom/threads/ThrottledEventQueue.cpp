@@ -8,9 +8,12 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/EventQueue.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Services.h"
 #include "mozilla/Unused.h"
-#include "nsEventQueue.h"
+#include "nsIObserverService.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -86,10 +89,8 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   mutable Mutex mMutex;
   mutable CondVar mIdleCondVar;
 
-  mozilla::CondVar mEventsAvailable;
-
   
-  nsEventQueue mEventQueue;
+  EventQueue mEventQueue;
 
   
   nsCOMPtr<nsISerialEventTarget> mBaseTarget;
@@ -103,8 +104,6 @@ class ThrottledEventQueue::Inner final : public nsIObserver
   explicit Inner(nsISerialEventTarget* aBaseTarget)
     : mMutex("ThrottledEventQueue")
     , mIdleCondVar(mMutex, "ThrottledEventQueue:Idle")
-    , mEventsAvailable(mMutex, "[ThrottledEventQueue::Inner.mEventsAvailable]")
-    , mEventQueue(mEventsAvailable, nsEventQueue::eNormalQueue)
     , mBaseTarget(aBaseTarget)
     , mShutdownStarted(false)
   {
@@ -132,7 +131,8 @@ class ThrottledEventQueue::Inner final : public nsIObserver
 
       
       
-      MOZ_ALWAYS_TRUE(mEventQueue.PeekEvent(getter_AddRefs(event), lock));
+      event = mEventQueue.PeekEvent(lock);
+      MOZ_ALWAYS_TRUE(event);
     }
 
     if (nsCOMPtr<nsINamed> named = do_QueryInterface(event)) {
@@ -162,7 +162,8 @@ class ThrottledEventQueue::Inner final : public nsIObserver
 
       
       
-      MOZ_ALWAYS_TRUE(mEventQueue.GetPendingEvent(getter_AddRefs(event), lock));
+      event = mEventQueue.GetEvent(nullptr, lock);
+      MOZ_ASSERT(event);
 
       
       
@@ -352,7 +353,7 @@ public:
 
     
     
-    mEventQueue.PutEvent(Move(aEvent), lock);
+    mEventQueue.PutEvent(Move(aEvent), EventPriority::Normal, lock);
     return NS_OK;
   }
 

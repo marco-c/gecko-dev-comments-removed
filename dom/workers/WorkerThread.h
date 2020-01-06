@@ -78,14 +78,6 @@ public:
   uint32_t
   RecursionDepth(const WorkerThreadFriendKey& aKey) const;
 
-  
-  
-  NS_IMETHOD
-  RegisterIdlePeriod(already_AddRefed<nsIIdlePeriod> aIdlePeriod) override
-  {
-    return nsThread::RegisterIdlePeriod(already_AddRefed<nsIIdlePeriod>(aIdlePeriod.take()));
-  }
-
   NS_DECL_ISUPPORTS_INHERITED
 
 private:

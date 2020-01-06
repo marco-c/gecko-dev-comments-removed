@@ -298,8 +298,17 @@ ContentListener::HandleEvent(nsIDOMEvent* aEvent)
 
 class TabChild::DelayedDeleteRunnable final
   : public Runnable
+  , public nsIRunnablePriority
 {
     RefPtr<TabChild> mTabChild;
+
+    
+    
+    
+    
+    
+    
+    bool mReadyToDelete = false;
 
 public:
     explicit DelayedDeleteRunnable(TabChild* aTabChild)
@@ -310,6 +319,8 @@ public:
         MOZ_ASSERT(aTabChild);
     }
 
+    NS_DECL_ISUPPORTS_INHERITED
+
 private:
     ~DelayedDeleteRunnable()
     {
@@ -317,33 +328,40 @@ private:
         MOZ_ASSERT(!mTabChild);
     }
 
+    NS_IMETHOD GetPriority(uint32_t* aPriority) override
+    {
+      *aPriority = mReadyToDelete
+                 ? nsIRunnablePriority::PRIORITY_INPUT
+                 : nsIRunnablePriority::PRIORITY_NORMAL;
+      return NS_OK;
+    }
+
     NS_IMETHOD
     Run() override
     {
         MOZ_ASSERT(NS_IsMainThread());
         MOZ_ASSERT(mTabChild);
-        
-        
-        
-        
-        
-        nsThread* thread = nsThreadManager::get().GetCurrentThread();
-        MOZ_ASSERT(thread);
-        bool eventPrioritizationEnabled = false;
-        thread->IsEventPrioritizationEnabled(&eventPrioritizationEnabled);
-        if (eventPrioritizationEnabled && thread->HasPendingInputEvents()) {
+
+        if (!mReadyToDelete) {
+          
+          mReadyToDelete = true;
           MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(this));
           return NS_OK;
         }
+
         
         if (mTabChild->IPCOpen()) {
-            Unused << PBrowserChild::Send__delete__(mTabChild);
+          Unused << PBrowserChild::Send__delete__(mTabChild);
         }
 
         mTabChild = nullptr;
         return NS_OK;
     }
 };
+
+NS_IMPL_ISUPPORTS_INHERITED(TabChild::DelayedDeleteRunnable,
+                            Runnable,
+                            nsIRunnablePriority)
 
 namespace {
 std::map<TabId, RefPtr<TabChild>>&
