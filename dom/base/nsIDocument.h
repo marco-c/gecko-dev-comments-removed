@@ -468,6 +468,15 @@ public:
   
 
 
+
+  const nsTArray<uint64_t>& AncestorOuterWindowIDs() const
+  {
+    return mAncestorOuterWindowIDs;
+  }
+
+  
+
+
   already_AddRefed<nsILoadGroup> GetDocumentLoadGroup() const
   {
     nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
@@ -3696,6 +3705,8 @@ protected:
   
   
   nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
+  
+  nsTArray<uint64_t> mAncestorOuterWindowIDs;
 
   
   
