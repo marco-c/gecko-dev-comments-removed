@@ -10,6 +10,7 @@
 #include "nsICachingChannel.h"
 #include "nsIClassOfService.h"
 #include "nsIInputStream.h"
+#include "nsIThreadRetargetableRequest.h"
 #include "nsNetUtil.h"
 
 static const uint32_t HTTP_PARTIAL_RESPONSE_CODE = 206;
@@ -298,6 +299,16 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
 
   
   owner->DownloadProgressed();
+
+  
+  nsCOMPtr<nsIThreadRetargetableRequest> retarget;
+  if (Preferences::GetBool("media.omt_data_delivery.enabled", false) &&
+      (retarget = do_QueryInterface(aRequest)) && mCacheStream.OwnerThread()) {
+    
+    
+    
+    retarget->RetargetDeliveryTo(mCacheStream.OwnerThread());
+  }
 
   return NS_OK;
 }

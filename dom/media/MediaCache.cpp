@@ -151,6 +151,8 @@ public:
   
   static RefPtr<MediaCache> GetMediaCache(int64_t aContentLength);
 
+  nsIEventTarget* OwnerThread() const { return mThread; }
+
   
   void Flush();
 
@@ -277,6 +279,10 @@ protected:
     NS_ASSERTION(NS_IsMainThread(), "Only construct MediaCache on main thread");
     MOZ_COUNT_CTOR(MediaCache);
     MediaCacheFlusher::RegisterMediaCache(this);
+    nsresult rv = NS_NewNamedThread("MediaCache", getter_AddRefs(mThread));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to create a thread for MediaCache.");
+    }
   }
 
   ~MediaCache()
@@ -307,6 +313,11 @@ protected:
     NS_ASSERTION(mStreams.IsEmpty(), "Stream(s) still open!");
     Truncate();
     NS_ASSERTION(mIndex.Length() == 0, "Blocks leaked?");
+
+    nsCOMPtr<nsIThread> thread = mThread.forget();
+    if (thread) {
+      thread->Shutdown();
+    }
 
     MOZ_COUNT_DTOR(MediaCache);
   }
@@ -436,6 +447,9 @@ protected:
 #endif
   
   nsTArray<int64_t> mSuspendedStatusToNotify;
+  
+  
+  nsCOMPtr<nsIThread> mThread;
 };
 
 
@@ -1939,11 +1953,6 @@ MediaCacheStream::NotifyDataReceived(uint32_t aLoadID,
       aSize,
       aLoadID);
 
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(mLoadID == aLoadID);
-
   if (mLoadID != aLoadID) {
     
     
@@ -2660,6 +2669,12 @@ MediaCacheStream::InitAsClone(MediaCacheStream* aOriginal)
     
     mMediaCache->AddBlockOwnerAsReadahead(cacheBlockIndex, this, i);
   }
+}
+
+nsIEventTarget*
+MediaCacheStream::OwnerThread() const
+{
+  return mMediaCache->OwnerThread();
 }
 
 nsresult MediaCacheStream::GetCachedRanges(MediaByteRangeSet& aRanges)

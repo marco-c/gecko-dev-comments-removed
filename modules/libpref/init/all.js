@@ -312,6 +312,10 @@ pref("mathml.scale_stretchy_operators.enabled", true);
 pref("media.dormant-on-pause-timeout-ms", 5000);
 
 
+
+pref("media.omt_data_delivery.enabled", false);
+
+
 pref("media.cache_size", 512000);
 
 
@@ -2975,7 +2979,7 @@ pref("layout.css.float-logical-values.enabled", true);
 pref("layout.css.image-orientation.enabled", true);
 
 
-pref("layout.css.font-display.enabled", true);
+pref("layout.css.font-display.enabled", false);
 
 
 pref("layout.css.font-variations.enabled", false);

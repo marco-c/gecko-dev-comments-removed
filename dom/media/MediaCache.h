@@ -14,6 +14,7 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 
+class nsIEventTarget;
 class nsIPrincipal;
 
 namespace mozilla {
@@ -209,6 +210,8 @@ public:
   
   
   void InitAsClone(MediaCacheStream* aOriginal);
+
+  nsIEventTarget* OwnerThread() const;
 
   
   
