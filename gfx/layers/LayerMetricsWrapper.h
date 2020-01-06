@@ -178,13 +178,7 @@ public:
   {
     MOZ_ASSERT(IsValid());
 
-    
-    
-    
-    
-    return Metrics().IsScrollable()
-        && mLayer->AsContainerLayer()
-        && !mLayer->GetFirstChild();
+    return Metrics().IsScrollInfoLayer();
   }
 
   LayerMetricsWrapper GetParent() const
