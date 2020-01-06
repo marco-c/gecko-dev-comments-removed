@@ -3,6 +3,9 @@
 
 load(libdir + "wasm.js");
 
+if (!wasmDebuggingIsSupported())
+    quit();
+
 var results;
 wasmRunWithDebugger(
     '(module (memory 1) ' +

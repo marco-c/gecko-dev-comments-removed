@@ -1,7 +1,7 @@
 
 
 
-if (!wasmIsSupported())
+if (!wasmDebuggingIsSupported())
     quit(3);
 
 var dbg;

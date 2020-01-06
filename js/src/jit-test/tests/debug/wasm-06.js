@@ -3,8 +3,8 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmIsSupported())
-     throw "TestComplete";
+if (!wasmDebuggingIsSupported())
+    throw "TestComplete";
 
 function runWasmWithDebugger(wast, lib, init, done) {
     let g = newGlobal('');

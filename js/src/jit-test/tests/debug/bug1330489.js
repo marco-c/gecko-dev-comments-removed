@@ -2,7 +2,7 @@
 
 load(libdir + "asserts.js");
 
-if (!wasmIsSupported())
+if (!wasmDebuggingIsSupported())
     throw "TestComplete";
 
 var g = newGlobal();

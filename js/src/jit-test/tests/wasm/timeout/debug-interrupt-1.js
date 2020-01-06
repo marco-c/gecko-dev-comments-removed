@@ -2,7 +2,7 @@
 
 
 
-if (!wasmIsSupported())
+if (!wasmDebuggingIsSupported())
     quit(6);
 
 var g = newGlobal();

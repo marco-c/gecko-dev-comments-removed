@@ -5,6 +5,9 @@
 
 load(libdir + "wasm.js");
 
+if (!wasmDebuggingIsSupported())
+    quit();
+
 var offsets;
 wasmRunWithDebugger(
     '(module (func (nop) (nop)) (export "test" 0))',

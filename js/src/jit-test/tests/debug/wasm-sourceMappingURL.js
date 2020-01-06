@@ -1,7 +1,7 @@
 
 
 
-if (!wasmIsSupported())
+if (!wasmDebuggingIsSupported())
   quit();
 
 load(libdir + "asserts.js");

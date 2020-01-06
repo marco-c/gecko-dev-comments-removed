@@ -3,6 +3,9 @@
 
 load(libdir + "wasm.js");
 
+if (!wasmDebuggingIsSupported())
+    quit();
+
 
 var onEnterFrameCalled, onLeaveFrameCalled, onStepCalled;
 wasmRunWithDebugger(
@@ -62,4 +65,3 @@ wasmRunWithDebugger(
         assertEq(onStepCalled.length, 0);
     }
 );
-

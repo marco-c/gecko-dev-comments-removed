@@ -4,6 +4,9 @@
 load(libdir + "wasm.js");
 load(libdir + 'eqArrayHelper.js');
 
+if (!wasmDebuggingIsSupported())
+  quit();
+
 function monitorFrameOnPopReturns(wast, expected) {
     var values = [];
     wasmRunWithDebugger(
