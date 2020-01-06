@@ -548,7 +548,9 @@ Connection::Connection(Service *aService,
 
 Connection::~Connection()
 {
-  Unused << Close();
+  
+  
+  
   MOZ_ASSERT(!mAsyncExecutionThread,
              "The async thread has not been shutdown properly!");
 }
@@ -573,7 +575,54 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
     
     
     
-    mStorageService->unregisterConnection(this);
+    
+    
+    
+    
+    
+    
+    
+    
+    ++mRefCnt;
+    
+    Unused << Close();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mRefCnt == 3) {
+      
+      mStorageService->unregisterConnection(this);
+      
+      
+      --mRefCnt;
+    } else if (mRefCnt == 2) {
+      
+      --mRefCnt;
+      
+      
+      mStorageService->unregisterConnection(this);
+    } else {
+      MOZ_ASSERT(false, "Connection refcount invariant violated.");
+    }
   } else if (0 == count) {
     mRefCnt = 1; 
 #if 0 
