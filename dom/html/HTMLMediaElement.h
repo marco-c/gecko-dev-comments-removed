@@ -243,8 +243,9 @@ public:
 
   
   
-  void PrincipalHandleChangedForVideoFrameContainer(VideoFrameContainer* aContainer,
-                                                    const PrincipalHandle& aNewPrincipalHandle);
+  void PrincipalHandleChangedForVideoFrameContainer(
+    VideoFrameContainer* aContainer,
+    const PrincipalHandle& aNewPrincipalHandle) override;
 
   
   virtual void DispatchAsyncEvent(const nsAString& aName) final override;
@@ -329,6 +330,10 @@ public:
   
   
   void UpdateInitialMediaSize(const nsIntSize& aSize);
+
+  void Invalidate(bool aImageSizeChanged,
+                  Maybe<nsIntSize>& aNewIntrinsicSize,
+                  bool aForceInvalidate) override;
 
   
   

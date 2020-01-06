@@ -18,9 +18,7 @@
 
 namespace mozilla {
 
-namespace dom {
-class HTMLMediaElement;
-} 
+class MediaDecoderOwner;
 
 
 
@@ -38,7 +36,7 @@ public:
   typedef layers::ImageContainer ImageContainer;
   typedef layers::Image Image;
 
-  VideoFrameContainer(dom::HTMLMediaElement* aElement,
+  VideoFrameContainer(MediaDecoderOwner* aOwner,
                       already_AddRefed<ImageContainer> aContainer);
 
   
@@ -92,7 +90,7 @@ public:
   void Invalidate() override { InvalidateWithFlags(INVALIDATE_DEFAULT); }
   void InvalidateWithFlags(uint32_t aFlags);
   ImageContainer* GetImageContainer();
-  void ForgetElement() { mElement = nullptr; }
+  void ForgetElement() { mOwner = nullptr; }
 
   uint32_t GetDroppedImageCount() { return mImageContainer->GetDroppedImageCount(); }
 
@@ -102,7 +100,7 @@ protected:
 
   
   
-  dom::HTMLMediaElement* mElement;
+  MediaDecoderOwner* mOwner;
   RefPtr<ImageContainer> mImageContainer;
 
   struct

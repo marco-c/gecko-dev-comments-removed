@@ -8,6 +8,10 @@
 
 #include "mozilla/UniquePtr.h"
 #include "MediaInfo.h"
+#include "MediaSegment.h"
+#include "nsSize.h"
+
+class nsIDocument;
 
 namespace mozilla {
 
@@ -173,6 +177,19 @@ public:
   {
     return nullptr;
   }
+
+  
+  
+  
+  virtual void Invalidate(bool aImageSizeChanged,
+                          Maybe<nsIntSize>& aNewIntrinsicSize,
+                          bool aForceInvalidate) {}
+
+  
+  
+  virtual void PrincipalHandleChangedForVideoFrameContainer(
+    VideoFrameContainer* aContainer,
+    const PrincipalHandle& aNewPrincipalHandle) {}
 
   
 
