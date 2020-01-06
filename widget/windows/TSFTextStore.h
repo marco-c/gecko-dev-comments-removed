@@ -253,6 +253,14 @@ public:
   
 
 
+
+
+
+  static bool IsGoogleJapaneseInputActive();
+
+  
+
+
   static bool DoNotReturnErrorFromGetSelection();
 
 #ifdef DEBUG
@@ -314,8 +322,8 @@ protected:
                                         ITfRange* aRange,
                                         bool aPreserveSelection);
   HRESULT  RecordCompositionStartAction(ITfCompositionView* aComposition,
-                                        ULONG aStart,
-                                        ULONG aLength,
+                                        LONG aStart,
+                                        LONG aLength,
                                         bool aPreserveSelection);
   HRESULT  RecordCompositionUpdateAction();
   HRESULT  RecordCompositionEndAction();
@@ -692,7 +700,7 @@ protected:
 
 
 
-  bool WasTextInsertedWithoutCompositionAt(ULONG aStart, ULONG aLength) const
+  bool WasTextInsertedWithoutCompositionAt(LONG aStart, LONG aLength) const
   {
     if (mPendingActions.Length() < 2) {
       return false;

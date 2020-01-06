@@ -9,10 +9,9 @@
 
 #include <olectl.h>
 #include <algorithm>
-
 #include "nscore.h"
-#include "nsWindow.h"
-#include "nsPrintfCString.h"
+
+#include "IMMHandler.h"
 #include "WinIMEHandler.h"
 #include "WinUtils.h"
 #include "mozilla/AutoRestore.h"
@@ -22,6 +21,8 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsIXULRuntime.h"
+#include "nsWindow.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 namespace widget {
@@ -1087,6 +1088,7 @@ public:
 
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSJapaneseIMEActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsMSOfficeJapaneseIME2010Active)
+  DECL_AND_IMPL_IS_TIP_ACTIVE(IsGoogleJapaneseInputActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOKActive)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2011Active)
   DECL_AND_IMPL_IS_TIP_ACTIVE(IsATOK2012Active)
@@ -1148,6 +1150,16 @@ private:
     static const GUID kGUID = {
       0x54EDCC94, 0x1524, 0x4BB1,
         { 0x9F, 0xB7, 0x7B, 0xAB, 0xE4, 0xF4, 0xCA, 0x64 }
+    };
+    return mActiveTIPGUID == kGUID;
+  }
+
+  bool IsGoogleJapaneseInputActiveInternal() const
+  {
+    
+    static const GUID kGUID = {
+      0x773EB24E, 0xCA1D, 0x4B1B,
+        { 0xB4, 0x20, 0xFA, 0x98, 0x5B, 0xB0, 0xB8, 0x0D }
     };
     return mActiveTIPGUID == kGUID;
   }
@@ -1219,8 +1231,6 @@ private:
     return mActiveTIPGUID == kGUID;
   }
 
-  
-  
   
   
 
@@ -3617,6 +3627,29 @@ TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
     if (aHTMLInputInputMode.EqualsLiteral("url")) {
       mInputScopes.AppendElement(IS_URL);
+    } else if (aHTMLInputInputMode.EqualsLiteral("mozAwesomebar")) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (TSFStaticSink::IsMSJapaneseIMEActive() ||
+          TSFStaticSink::IsGoogleJapaneseInputActive() ||
+          IMMHandler::IsGoogleJapaneseInputActive()) {
+        return;
+      }
+      
+      mInputScopes.AppendElement(IS_URL);
     } else if (aHTMLInputInputMode.EqualsLiteral("email")) {
       mInputScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
     } else if (aHTMLInputType.EqualsLiteral("tel")) {
@@ -4735,8 +4768,8 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
 
 HRESULT
 TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
-                                           ULONG aStart,
-                                           ULONG aLength,
+                                           LONG aStart,
+                                           LONG aLength,
                                            bool aPreserveSelection)
 {
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
@@ -6557,6 +6590,13 @@ bool
 TSFTextStore::IsMSJapaneseIMEActive()
 {
   return TSFStaticSink::IsMSJapaneseIMEActive();
+}
+
+
+bool
+TSFTextStore::IsGoogleJapaneseInputActive()
+{
+  return TSFStaticSink::IsGoogleJapaneseInputActive();
 }
 
 

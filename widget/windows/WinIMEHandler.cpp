@@ -613,6 +613,32 @@ IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
       static const InputScope inputScopes[] = { IS_URL };
       scopes = &inputScopes[0];
       arraySize = ArrayLength(inputScopes);
+    } else if (aHTMLInputInputmode.EqualsLiteral("mozAwesomebar")) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (IMMHandler::IsGoogleJapaneseInputActive()) {
+        static const InputScope inputScopes[] = { IS_DEFAULT };
+        scopes = &inputScopes[0];
+        arraySize = ArrayLength(inputScopes);
+      } else {
+        static const InputScope inputScopes[] = { IS_URL };
+        scopes = &inputScopes[0];
+        arraySize = ArrayLength(inputScopes);
+      }
     } else if (aHTMLInputInputmode.EqualsLiteral("email")) {
       static const InputScope inputScopes[] = { IS_EMAIL_SMTPEMAILADDRESS };
       scopes = &inputScopes[0];
