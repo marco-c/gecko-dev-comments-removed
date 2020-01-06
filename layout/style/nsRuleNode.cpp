@@ -2673,23 +2673,6 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
   if (!highestNode)
     highestNode = rootNode;
 
-  if (detail == eRuleNone && isReset) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NS_ASSERTION(ruleData.mConditions.CacheableWithoutDependencies() ||
-                 pseudoRestriction,
-                 "we should already be cacheable without dependencies if we "
-                 "didn't have a pseudo restriction");
-    ruleData.mConditions.Clear();
-  }
-
   MOZ_ASSERT(!(aSID == eStyleStruct_Variables && startStruct),
              "if we start caching Variables structs in the rule tree, then "
              "not forcing detail to eRulePartialMixed just below is no "
