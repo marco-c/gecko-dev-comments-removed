@@ -142,7 +142,16 @@ function StorageUI(front, target, panelWin, toolbox) {
 
   this.front.listStores().then(storageTypes => {
     this.populateStorageTree(storageTypes);
-  }).then(null, console.error);
+  }).catch(e => {
+    if (!this._toolbox || this._toolbox._destroyer) {
+      
+      
+      return;
+    }
+
+    
+    console.error(e);
+  });
 
   this.onUpdate = this.onUpdate.bind(this);
   this.front.on("stores-update", this.onUpdate);
