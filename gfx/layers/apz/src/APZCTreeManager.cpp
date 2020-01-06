@@ -781,7 +781,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       MouseInput& mouseInput = aEvent.AsMouseInput();
       mouseInput.mHandledByAPZ = true;
 
-      if (DragTracker::StartsDrag(mouseInput)) {
+      bool startsDrag = DragTracker::StartsDrag(mouseInput);
+      if (startsDrag) {
         
         
         
@@ -805,7 +806,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
       if (apzc) {
         bool targetConfirmed = (hitResult != HitNothing && hitResult != HitDispatchToContentRegion);
-        if (gfxPrefs::APZDragEnabled() && hitScrollbar) {
+        bool apzDragEnabled = gfxPrefs::APZDragEnabled();
+        if (apzDragEnabled && hitScrollbar) {
           
           
           
@@ -814,6 +816,34 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         result = mInputQueue->ReceiveInputEvent(
           apzc, targetConfirmed,
           mouseInput, aOutInputBlockId);
+
+        
+        
+        if (apzDragEnabled && startsDrag && hitScrollbarNode &&
+            hitScrollbarNode->IsScrollThumbNode() &&
+            hitScrollbarNode->GetScrollThumbData().mIsAsyncDraggable &&
+            
+            hitScrollbarNode->GetScrollTargetId() == apzc->GetGuid().mScrollId &&
+            !apzc->IsScrollInfoLayer() && mInputQueue->GetCurrentDragBlock()) {
+          uint64_t dragBlockId = mInputQueue->GetCurrentDragBlock()->GetBlockId();
+          const ScrollThumbData& thumbData = hitScrollbarNode->GetScrollThumbData();
+          
+          
+          
+          mouseInput.TransformToLocal(apzc->GetTransformToThis());
+          CSSCoord dragStart = apzc->ConvertScrollbarPoint(
+              mouseInput.mLocalOrigin, thumbData);
+          
+          
+          dragStart -= thumbData.mThumbStart;
+          mInputQueue->ConfirmDragBlock(
+              dragBlockId, apzc,
+              AsyncDragMetrics(apzc->GetGuid().mScrollId,
+                               apzc->GetGuid().mPresShellId,
+                               dragBlockId,
+                               dragStart,
+                               thumbData.mDirection));
+        }
 
         if (result == nsEventStatus_eConsumeDoDefault) {
           
