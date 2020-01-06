@@ -50,40 +50,31 @@ enum class LazyComputeBehavior {
 };
 
 
-
-
-enum class TraversalRootBehavior {
-  Normal,
-  UnstyledChildrenOnly,
+enum class ServoTraversalFlags : uint32_t {
+  Empty = 0,
+  
+  AnimationOnly = 1 << 0,
+  
+  ForCSSRuleChanges = 1 << 1,
+  
+  UnstyledChildrenOnly = 1 << 2,
+  
+  
+  
+  ForReconstruct = 1 << 3,
+  
+  
+  
+  ForNewlyBoundElement = 1 << 4,
+  
+  
+  
+  
+  
+  ForThrottledAnimationFlush = 1 << 5,
 };
 
-
-
-
-
-
-
-
-enum class TraversalRestyleBehavior {
-  
-  Normal,
-  
-  
-  
-  ForNewlyBoundElement,
-  
-  
-  
-  ForReconstruct,
-  
-  
-  
-  
-  
-  ForThrottledAnimationFlush,
-  
-  ForCSSRuleChanges,
-};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoTraversalFlags)
 
 
 

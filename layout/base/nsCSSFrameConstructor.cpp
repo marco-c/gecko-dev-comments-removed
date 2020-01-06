@@ -2522,7 +2522,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
     
     
     
-    set->StyleDocument(TraversalRestyleBehavior::Normal);
+    set->StyleDocument(ServoTraversalFlags::Empty);
   }
 
   

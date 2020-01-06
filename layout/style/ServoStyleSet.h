@@ -271,7 +271,7 @@ public:
 
 
 
-  bool StyleDocument(TraversalRestyleBehavior aRestyleBehavior);
+  bool StyleDocument(ServoTraversalFlags aFlags);
 
   
 
@@ -364,8 +364,7 @@ public:
 
 
   already_AddRefed<ServoStyleContext>
-  ResolveServoStyle(dom::Element* aElement,
-                    TraversalRestyleBehavior aRestyleBehavior);
+  ResolveServoStyle(dom::Element* aElement, ServoTraversalFlags aFlags);
 
   bool GetKeyframesForName(const nsString& aName,
                            const nsTimingFunction& aTimingFunction,
@@ -507,8 +506,7 @@ private:
 
 
   bool PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
-                                 TraversalRootBehavior aRootBehavior,
-                                 TraversalRestyleBehavior aRestyleBehavior);
+                                 ServoTraversalFlags aFlags);
 
   
 
