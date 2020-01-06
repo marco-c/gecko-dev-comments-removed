@@ -177,7 +177,7 @@ var gMenuBuilder = {
     let label = item.title;
     if (label) {
       if (contextData.isTextSelected && label.indexOf("%s") > -1) {
-        let selection = contextData.selectionText;
+        let selection = contextData.selectionText.trim();
         
         
         
