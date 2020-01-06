@@ -24,6 +24,7 @@ Services.prefs.setBoolPref("devtools.new-animationinspector.enabled", true);
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.new-animationinspector.enabled");
+  Services.prefs.clearUserPref("devtools.toolsidebar-width.inspector");
 });
 
 
@@ -102,5 +103,20 @@ const selectNodeAndWaitForAnimations = async function (data, inspector, reason =
   
   const onUpdated = inspector.once("inspector-updated");
   await selectNode(data, inspector, reason);
+  await onUpdated;
+};
+
+
+
+
+
+
+
+
+
+
+const setSidebarWidth = async function (width, inspector) {
+  const onUpdated = inspector.toolbox.once("inspector-sidebar-resized");
+  inspector._splitter.setState({ width });
   await onUpdated;
 };

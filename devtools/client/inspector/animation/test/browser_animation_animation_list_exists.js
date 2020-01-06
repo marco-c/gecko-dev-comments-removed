@@ -3,8 +3,6 @@
 
 "use strict";
 
-requestLongerTimeout(2);
-
 
 
 add_task(async function () {
@@ -34,7 +32,6 @@ add_task(async function () {
   is(panel.querySelectorAll(".animation-list .animation-item").length, 1,
      "The number of animations displayed should be 1 for .animated element");
 
-  
   
   
   
