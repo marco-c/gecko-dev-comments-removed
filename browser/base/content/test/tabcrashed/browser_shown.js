@@ -1,36 +1,11 @@
 "use strict";
 
-const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 const COMMENTS = "Here's my test comment!";
 const EMAIL = "foo@privacy.com";
 
-
-
-
-
 add_task(async function setup() {
-  
-  
-  
-  
-  
-  let env = Cc["@mozilla.org/process/environment;1"]
-              .getService(Components.interfaces.nsIEnvironment);
-  let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
-  let serverUrl = env.get("MOZ_CRASHREPORTER_URL");
-  env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
-  env.set("MOZ_CRASHREPORTER_URL", SERVER_URL);
-
-  
-  
-  
-  requestLongerTimeout(2);
-
-  registerCleanupFunction(function() {
-    env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
-    env.set("MOZ_CRASHREPORTER_URL", serverUrl);
-  });
+  await setupLocalCrashReportServer();
 });
 
 
