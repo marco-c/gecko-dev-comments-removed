@@ -1188,6 +1188,7 @@ protected:
   friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
   void SysColorChangedInternal();
+  void RefreshSystemMetrics();
 
   
   void UIResolutionChangedInternal();

@@ -1849,16 +1849,7 @@ nsPresContext::ThemeChangedInternal()
     image::SurfaceCacheUtils::DiscardAll();
   }
 
-  
-  nsCSSRuleProcessor::FreeSystemMetrics();
-
-  
-  
-  
-  
-  
-  
-  MediaFeatureValuesChanged(eRestyle_Subtree, NS_STYLE_HINT_REFLOW);
+  RefreshSystemMetrics();
 
   
   
@@ -1895,7 +1886,7 @@ nsPresContext::SysColorChangedInternal()
   }
 
   
-  nsCSSRuleProcessor::FreeSystemMetrics();
+  RefreshSystemMetrics();
 
   
   
@@ -1904,6 +1895,21 @@ nsPresContext::SysColorChangedInternal()
   
   
   RebuildAllStyleData(nsChangeHint(0), nsRestyleHint(0));
+}
+
+void
+nsPresContext::RefreshSystemMetrics()
+{
+  
+  nsCSSRuleProcessor::FreeSystemMetrics();
+
+  
+  
+  
+  
+  
+  
+  MediaFeatureValuesChanged(eRestyle_Subtree, NS_STYLE_HINT_REFLOW);
 }
 
 void
