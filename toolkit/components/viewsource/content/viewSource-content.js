@@ -380,21 +380,9 @@ var ViewSourceContent = {
     if (/^about:blocked/.test(errorDoc.documentURI)) {
       
 
-      if (target == errorDoc.getElementById("getMeOutButton")) {
+      if (target == errorDoc.getElementById("goBackButton")) {
         
         sendAsyncMessage("ViewSource:Close");
-      } else if (target == errorDoc.getElementById("reportButton")) {
-        
-        
-        let URL = Services.urlFormatter.formatURLPref("app.support.baseURL");
-        sendAsyncMessage("ViewSource:OpenURL", { URL })
-      } else if (target == errorDoc.getElementById("ignoreWarningButton")) {
-        
-        docShell.QueryInterface(Ci.nsIWebNavigation)
-                .loadURIWithOptions(content.location.href,
-                                    Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
-                                    null, Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
-                                    null, null, null);
       }
     }
   },

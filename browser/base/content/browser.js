@@ -3162,38 +3162,26 @@ var BrowserOnClick = {
     let secHistogram = Services.telemetry.getHistogramById("URLCLASSIFIER_UI_EVENTS");
     let nsISecTel = Ci.IUrlClassifierUITelemetry;
     bucketName += isTopFrame ? "TOP_" : "FRAME_";
+
     switch (elementId) {
-      case "getMeOutButton":
+      case "goBackButton":
         if (sendTelemetry) {
           secHistogram.add(nsISecTel[bucketName + "GET_ME_OUT_OF_HERE"]);
         }
         getMeOutOfHere();
         break;
-
-      case "reportButton":
-        
-        
-
-        
-        
-        if (sendTelemetry) {
-          secHistogram.add(nsISecTel[bucketName + "WHY_BLOCKED"]);
-        }
-        openHelpLink("phishing-malware", false, "current");
-        break;
-
-      case "ignoreWarningButton":
+      case "ignore_warning_link":
         if (gPrefService.getBoolPref("browser.safebrowsing.allowOverride")) {
           if (sendTelemetry) {
             secHistogram.add(nsISecTel[bucketName + "IGNORE_WARNING"]);
           }
-          this.ignoreWarningButton(reason, blockedInfo);
+          this.ignoreWarningLink(reason, blockedInfo);
         }
         break;
     }
   },
 
-  ignoreWarningButton(reason, blockedInfo) {
+  ignoreWarningLink(reason, blockedInfo) {
     
     
     
