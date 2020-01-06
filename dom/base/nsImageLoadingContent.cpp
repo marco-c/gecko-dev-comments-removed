@@ -26,6 +26,7 @@
 #include "nsThreadUtils.h"
 #include "nsNetUtil.h"
 #include "nsImageFrame.h"
+#include "nsSVGImageFrame.h"
 
 #include "nsIPresShell.h"
 
@@ -1180,8 +1181,9 @@ nsImageLoadingContent::CancelPendingEvent()
 RefPtr<imgRequestProxy>&
 nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
 {
-  nsImageFrame* frame = do_QueryFrame(GetOurPrimaryFrame());
-  if (frame) {
+  nsImageFrame* imageFrame = do_QueryFrame(GetOurPrimaryFrame());
+  nsSVGImageFrame* svgImageFrame = do_QueryFrame(GetOurPrimaryFrame());
+  if (imageFrame || svgImageFrame) {
     
     
     TimeStamp now = TimeStamp::Now();
@@ -1191,7 +1193,12 @@ nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
 
     
     
-    frame->SetForceSyncDecoding(now - mMostRecentRequestChange < threshold);
+    bool forceSync = (now - mMostRecentRequestChange < threshold);
+    if (imageFrame) {
+      imageFrame->SetForceSyncDecoding(forceSync);
+    } else {
+      svgImageFrame->SetForceSyncDecoding(forceSync);
+    }
 
     mMostRecentRequestChange = now;
   }
