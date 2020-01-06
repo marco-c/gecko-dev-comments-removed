@@ -3858,8 +3858,6 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
     uint32_t cacheEntryOpenFlags;
     bool offline = gIOService->IsOffline();
 
-    bool maybeRCWN = false;
-
     nsAutoCString cacheControlRequestHeader;
     Unused << mRequestHead.GetHeader(nsHttp::Cache_Control, cacheControlRequestHeader);
     CacheControlParser cacheControlRequest(cacheControlRequestHeader);
@@ -3908,13 +3906,9 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
             getter_AddRefs(cacheStorage));
     }
     else {
-        bool lookupAppCache = !mPostID && (mChooseApplicationCache ||
-                              (mLoadFlags & LOAD_CHECK_OFFLINE_CACHE));
-        
-        
-        maybeRCWN = !lookupAppCache;
-        rv = cacheStorageService->DiskCacheStorage(
-            info, lookupAppCache, getter_AddRefs(cacheStorage));
+        rv = cacheStorageService->DiskCacheStorage(info,
+            !mPostID && (mChooseApplicationCache || (mLoadFlags & LOAD_CHECK_OFFLINE_CACHE)),
+            getter_AddRefs(cacheStorage));
     }
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3965,27 +3959,24 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         mCacheOpenWithPriority = cacheEntryOpenFlags & nsICacheStorage::OPEN_PRIORITY;
         mCacheQueueSizeWhenOpen = CacheStorageService::CacheQueueSize(mCacheOpenWithPriority);
 
-        if (sRCWNEnabled && maybeRCWN && !mApplicationCacheForWrite &&
-            mInterceptCache != INTERCEPTED) {
-            bool hasAltData = false;
-            uint32_t sizeInKb = 0;
-            rv = cacheStorage->GetCacheIndexEntryAttrs(openURI, extension,
-                                                       &hasAltData, &sizeInKb);
+        bool hasAltData = false;
+        uint32_t sizeInKb = 0;
+        rv = cacheStorage->GetCacheIndexEntryAttrs(openURI, extension,
+                                                   &hasAltData, &sizeInKb);
 
-            
-            
-            
-            if (NS_SUCCEEDED(rv) && !hasAltData &&
-                sizeInKb < sRCWNSmallResourceSizeKB) {
-                MaybeRaceCacheWithNetwork();
-            }
+        
+        
+        
+        if (sRCWNEnabled && mInterceptCache != INTERCEPTED &&
+            NS_SUCCEEDED(rv) && !hasAltData && sizeInKb < sRCWNSmallResourceSizeKB) {
+            MaybeRaceCacheWithNetwork();
         }
 
         if (!mCacheOpenDelay) {
             MOZ_ASSERT(NS_IsMainThread(), "Should be called on the main thread");
             mCacheAsyncOpenCalled = true;
             if (mNetworkTriggered) {
-                mRaceCacheWithNetwork = true;
+                mRaceCacheWithNetwork = sRCWNEnabled;
             }
             rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, this);
         } else {
@@ -9396,7 +9387,7 @@ nsHttpChannel::TriggerNetwork()
     }
 
     if (mCacheAsyncOpenCalled && !mOnCacheAvailableCalled) {
-        mRaceCacheWithNetwork = true;
+        mRaceCacheWithNetwork = sRCWNEnabled;
     }
 
     LOG(("  triggering network\n"));
