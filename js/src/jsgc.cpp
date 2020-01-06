@@ -2632,7 +2632,7 @@ GCRuntime::updateRuntimePointersToRelocatedCells(AutoLockForExclusiveAccess& loc
     WatchpointMap::sweepAll(rt);
     Debugger::sweepAll(rt->defaultFreeOp());
     jit::JitRuntime::SweepJitcodeGlobalTable(rt);
-    for (JS::WeakCache<void*>* cache : rt->weakCaches())
+    for (JS::detail::WeakCacheBase* cache : rt->weakCaches())
         cache->sweep();
 
     
@@ -4993,12 +4993,12 @@ GCRuntime::endMarkingSweepGroup()
 
 class SweepWeakCacheTask : public GCParallelTask
 {
-    JS::WeakCache<void*>& cache;
+    JS::detail::WeakCacheBase& cache;
 
     SweepWeakCacheTask(const SweepWeakCacheTask&) = delete;
 
   public:
-    SweepWeakCacheTask(JSRuntime* rt, JS::WeakCache<void*>& wc)
+    SweepWeakCacheTask(JSRuntime* rt, JS::detail::WeakCacheBase& wc)
       : GCParallelTask(rt), cache(wc)
     {}
 
@@ -5213,13 +5213,13 @@ static inline bool
 IterateWeakCaches(JSRuntime* rt, Functor f)
 {
     for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-        for (JS::WeakCache<void*>* cache : zone->weakCaches()) {
+        for (JS::detail::WeakCacheBase* cache : zone->weakCaches()) {
             if (!f(cache))
                 return false;
         }
     }
 
-    for (JS::WeakCache<void*>* cache : rt->weakCaches()) {
+    for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
         if (!f(cache))
             return false;
     }
@@ -5232,14 +5232,14 @@ PrepareWeakCacheTasks(JSRuntime* rt)
 {
     
     WeakCacheTaskVector tasks;
-    bool ok = IterateWeakCaches(rt, [&] (JS::WeakCache<void*>* cache) {
+    bool ok = IterateWeakCaches(rt, [&] (JS::detail::WeakCacheBase* cache) {
         return tasks.emplaceBack(rt, *cache);
     });
 
     
     
     if (!ok) {
-        IterateWeakCaches(rt, [&] (JS::WeakCache<void*>* cache) {
+        IterateWeakCaches(rt, [&] (JS::detail::WeakCacheBase* cache) {
             SweepWeakCacheTask(rt, *cache).runFromActiveCooperatingThread(rt);
             return true;
         });

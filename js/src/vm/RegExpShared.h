@@ -255,8 +255,8 @@ class RegExpCompartment
 
 
 
-    using Set = JS::GCHashSet<ReadBarriered<RegExpShared*>, Key, RuntimeAllocPolicy>;
-    JS::WeakCache<Set> set_;
+    using Set = JS::WeakCache<JS::GCHashSet<ReadBarriered<RegExpShared*>, Key, RuntimeAllocPolicy>>;
+    Set set_;
 
     
 
