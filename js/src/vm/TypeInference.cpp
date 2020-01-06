@@ -1481,10 +1481,8 @@ js::FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList
         
         
         if (entry.script != script) {
-            if (!entry.script->types()->addInlinedCompilation(*precompileInfo)) {
-                ReportOutOfMemory(cx);
-                return false;
-            }
+            if (!entry.script->types()->addInlinedCompilation(*precompileInfo))
+                succeeded = false;
         }
 
         
