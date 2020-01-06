@@ -1050,7 +1050,6 @@
       </toolbarbutton>
 
       <toolbaritem id="PanelUI-button"
-                   class="chromeclass-toolbar-additional"
                    removable="false">
         <toolbarbutton id="PanelUI-menu-button"
                        class="toolbarbutton-1 badged-button"
@@ -1116,7 +1115,7 @@
                        flex="1"/>
             <toolbarbutton type="menu"
                            id="PlacesChevron"
-                           class="toolbarbutton-1"
+                           class="chevron"
                            mousethrough="never"
                            collapsed="true"
                            tooltiptext="&bookmarksToolbarChevron.tooltip;"
@@ -1130,6 +1129,13 @@
           </hbox>
         </hbox>
       </toolbaritem>
+    </toolbar>
+
+    <!-- This is a shim which will go away ASAP. See bug 749804 for details -->
+    <toolbar id="addon-bar" toolbar-delegate="nav-bar" mode="icons" iconsize="small"
+             customizable="true">
+      <hbox id="addonbar-closebutton"/>
+      <statusbar id="status-bar"/>
     </toolbar>
 
     <toolbarpalette id="BrowserToolbarPalette">
