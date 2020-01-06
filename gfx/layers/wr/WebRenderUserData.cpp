@@ -220,6 +220,18 @@ WebRenderAnimationData::WebRenderAnimationData(WebRenderLayerManager* aWRManager
 {
 }
 
+WebRenderAnimationData::~WebRenderAnimationData()
+{
+  
+  
+  
+  uint64_t animationId = mAnimationInfo.GetCompositorAnimationsId();
+  
+  if (animationId) {
+    mWRManager->AddCompositorAnimationsIdForDiscard(animationId);
+  }
+}
+
 WebRenderCanvasData::WebRenderCanvasData(WebRenderLayerManager* aWRManager, nsDisplayItem* aItem,
                                          WebRenderUserDataRefTable* aTable)
   : WebRenderUserData(aWRManager, aItem, aTable)

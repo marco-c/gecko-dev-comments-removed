@@ -109,6 +109,12 @@ WebRenderLayerManager::DoDestroy(bool aIsSync)
     WrBridge()->Destroy(aIsSync);
   }
 
+  
+  
+  
+  
+  mActiveCompositorAnimationIds.clear();
+
   mLastCanvasDatas.Clear();
   RemoveUnusedAndResetWebRenderUserData();
 
@@ -991,15 +997,30 @@ WebRenderLayerManager::DiscardImages()
 }
 
 void
-WebRenderLayerManager::AddCompositorAnimationsIdForDiscard(uint64_t aId)
+WebRenderLayerManager::AddActiveCompositorAnimationId(uint64_t aId)
 {
-  mDiscardedCompositorAnimationsIds.AppendElement(aId);
+  
+  
+  
+  
+  MOZ_ASSERT(IsLayersFreeTransaction());
+  mActiveCompositorAnimationIds.insert(aId);
 }
 
 void
-WebRenderLayerManager::KeepCompositorAnimationsIdAlive(uint64_t aId)
+WebRenderLayerManager::AddCompositorAnimationsIdForDiscard(uint64_t aId)
 {
-  mDiscardedCompositorAnimationsIds.RemoveElement(aId);
+  if (!IsLayersFreeTransaction()) {
+    
+    
+    
+    mDiscardedCompositorAnimationsIds.AppendElement(aId);
+  } else if (mActiveCompositorAnimationIds.erase(aId)) {
+    
+    
+    
+    mDiscardedCompositorAnimationsIds.AppendElement(aId);
+  }
 }
 
 void

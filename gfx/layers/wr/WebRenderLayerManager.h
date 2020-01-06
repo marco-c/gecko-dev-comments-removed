@@ -6,6 +6,7 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
+#include <unordered_set>
 #include <vector>
 
 #include "gfxPrefs.h"
@@ -173,10 +174,9 @@ public:
 
   
   
+  
+  void AddActiveCompositorAnimationId(uint64_t aId);
   void AddCompositorAnimationsIdForDiscard(uint64_t aId);
-  
-  
-  void KeepCompositorAnimationsIdAlive(uint64_t aId);
   void DiscardCompositorAnimations();
 
   WebRenderBridgeChild* WrBridge() const { return mWrChild; }
@@ -298,6 +298,12 @@ private:
   
   
   nsTArray<wr::ImageKey> mImageKeysToDeleteLater;
+
+  
+  
+  std::unordered_set<uint64_t> mActiveCompositorAnimationIds;
+  
+  
   nsTArray<uint64_t> mDiscardedCompositorAnimationsIds;
 
   
