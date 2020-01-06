@@ -360,11 +360,8 @@ moz_gtk_widget_paint(WidgetNodeType widget, cairo_t *cr,
 
 
 
-
-
 gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
-                               gint* right, gint* bottom, GtkTextDirection direction,
-                               gboolean inhtml);
+                               gint* right, gint* bottom, GtkTextDirection direction);
 
 
 
