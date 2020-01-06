@@ -86,7 +86,7 @@ pub struct Stylist {
     
     
     
-    pub device: Arc<Device>,
+    device: Arc<Device>,
 
     
     viewport_constraints: Option<ViewportConstraints>,
@@ -106,9 +106,7 @@ pub struct Stylist {
     element_map: PerPseudoElementSelectorMap,
 
     
-    
-    
-    pub rule_tree: RuleTree,
+    rule_tree: RuleTree,
 
     
     
@@ -1063,6 +1061,21 @@ impl Stylist {
                                      &metrics,
                                      CascadeFlags::empty(),
                                      self.quirks_mode))
+    }
+
+    
+    pub fn device(&self) -> &Device {
+        &self.device
+    }
+
+    
+    pub fn device_mut(&mut self) -> &mut Arc<Device> {
+        &mut self.device
+    }
+
+    
+    pub fn rule_tree(&self) -> &RuleTree {
+        &self.rule_tree
     }
 }
 

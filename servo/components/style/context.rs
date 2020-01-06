@@ -150,7 +150,7 @@ pub struct SharedStyleContext<'a> {
 impl<'a> SharedStyleContext<'a> {
     
     pub fn viewport_size(&self) -> Size2D<Au> {
-        self.stylist.device.au_viewport_size()
+        self.stylist.device().au_viewport_size()
     }
 }
 
