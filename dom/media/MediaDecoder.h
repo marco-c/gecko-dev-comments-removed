@@ -203,6 +203,7 @@ public:
   
   bool OwnerHasError() const;
 
+public:
   
   
   bool IsMediaSeekable();
