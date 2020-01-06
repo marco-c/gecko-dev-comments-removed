@@ -7,6 +7,7 @@
 
 
 
+
 "use strict";
 
 
@@ -74,7 +75,7 @@ async function openNewTabAndConsole(url, clearJstermHistory = true) {
 function waitForMessages({ hud, messages }) {
   return new Promise(resolve => {
     const matchedMessages = [];
-    let receivedLog = hud.ui.on("new-messages",
+    hud.ui.on("new-messages",
       function messagesReceived(e, newMessages) {
         for (let message of messages) {
           if (message.matched) {
@@ -284,4 +285,67 @@ async function checkClickOnNode(hud, toolbox, frameLinkNode) {
 function hasFocus(node) {
   return node.ownerDocument.activeElement == node
     && node.ownerDocument.hasFocus();
+}
+
+
+
+
+
+
+
+
+
+
+
+function jstermSetValueAndComplete(jsterm, value, caretIndexOffset = 0) {
+  const {inputNode} = jsterm;
+  inputNode.value = value;
+  let index = value.length + caretIndexOffset;
+  inputNode.setSelectionRange(index, index);
+
+  const updated = jsterm.once("autocomplete-updated");
+  jsterm.complete(jsterm.COMPLETE_HINT_ONLY);
+  return updated;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function openDebugger(options = {}) {
+  if (!options.tab) {
+    options.tab = gBrowser.selectedTab;
+  }
+
+  let target = TargetFactory.forTab(options.tab);
+  let toolbox = gDevTools.getToolbox(target);
+  let dbgPanelAlreadyOpen = toolbox && toolbox.getPanel("jsdebugger");
+  if (dbgPanelAlreadyOpen) {
+    await toolbox.selectTool("jsdebugger");
+
+    return {
+      target,
+      toolbox,
+      panel: toolbox.getCurrentPanel()
+    };
+  }
+
+  toolbox = await gDevTools.showToolbox(target, "jsdebugger");
+  let panel = toolbox.getCurrentPanel();
+
+  
+  panel._view.Variables.lazyEmpty = false;
+
+  await panel.panelWin.DebuggerController.waitForSourcesLoaded();
+  return {target, toolbox, panel};
 }
