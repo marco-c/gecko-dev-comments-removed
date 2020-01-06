@@ -1169,22 +1169,31 @@ File.exists = function exists(path) {
 
 
 File.writeAtomic = function writeAtomic(path, buffer, options = {}) {
+  const useNativeImplementation = nativeWheneverAvailable &&
+                                  !options.compression &&
+                                  !(isTypedArray(buffer) && "byteOffset" in buffer && buffer.byteOffset > 0);
   
   
   options = clone(options, ["outExecutionDuration", "outSerializationDuration"]);
   
-  if ("tmpPath" in options) {
+  
+  if ("tmpPath" in options && !useNativeImplementation) {
     options.tmpPath = Type.path.toMsg(options.tmpPath);
   }
   if (isTypedArray(buffer) && (!("bytes" in options))) {
     options.bytes = buffer.byteLength;
   }
   let refObj = {};
+  let promise;
   TelemetryStopwatch.start("OSFILE_WRITEATOMIC_JANK_MS", refObj);
-  let promise = Scheduler.post("writeAtomic",
+  if (useNativeImplementation) {
+    promise = Scheduler.push(() => Native.writeAtomic(path, buffer, options));
+  } else {
+  promise = Scheduler.post("writeAtomic",
     [Type.path.toMsg(path),
      Type.void_t.in_ptr.toMsg(buffer),
      options], [options, buffer, path]);
+  }
   TelemetryStopwatch.finish("OSFILE_WRITEATOMIC_JANK_MS", refObj);
   return promise;
 };
