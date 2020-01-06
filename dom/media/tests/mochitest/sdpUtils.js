@@ -22,6 +22,23 @@ findCodecId: function(sdp, format, offset = 0) {
   return match[1];
 },
 
+
+
+
+findExtmapIds: function(sdp) {
+        var sdpExtmapIds = [];
+        extmapRegEx = /^a=extmap:([0-9+])/gm;
+        
+        while ((searchResults = extmapRegEx.exec(sdp))
+               !== null) {
+          
+          
+          
+          sdpExtmapIds.push(searchResults[1]);
+        }
+  return sdpExtmapIds;
+},
+
 checkSdpAfterEndOfTrickle: function(sdp, testOptions, label) {
   info("EOC-SDP: " + JSON.stringify(sdp));
 
