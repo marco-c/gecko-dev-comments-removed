@@ -150,6 +150,8 @@ class WidgetEventTime;
 class NativeEventData;
 
 
+enum class AccessKeyType;
+
 struct AlternativeCharCode;
 struct ShortcutKeyCandidate;
 

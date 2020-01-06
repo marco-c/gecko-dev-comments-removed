@@ -186,13 +186,10 @@ public:
 
   bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
                        nsPresContext* aPresContext,
-                       nsTArray<uint32_t>& aAccessCharCodes,
-                       int32_t aModifierMask,
-                       bool aMatchesContentAccessKey)
+                       nsTArray<uint32_t>& aAccessCharCodes)
   {
     return HandleAccessKey(aEvent, aPresContext, aAccessCharCodes,
-                           aMatchesContentAccessKey, nullptr,
-                           eAccessKeyProcessingNormal, aModifierMask);
+                           nullptr, eAccessKeyProcessingNormal);
   }
 
   nsresult SetCursor(int32_t aCursor, imgIContainer* aContainer,
@@ -316,8 +313,6 @@ protected:
   public:
     static bool KeyCausesActivation() { return sKeyCausesActivation; }
     static bool ClickHoldContextMenu() { return sClickHoldContextMenu; }
-    static int32_t ChromeAccessModifierMask();
-    static int32_t ContentAccessModifierMask();
 
     static void Init();
     static void OnChange(const char* aPrefName, void*);
@@ -326,18 +321,9 @@ protected:
   private:
     static bool sKeyCausesActivation;
     static bool sClickHoldContextMenu;
-    static int32_t sGenericAccessModifierKey;
-    static int32_t sChromeAccessModifierMask;
-    static int32_t sContentAccessModifierMask;
 
     static int32_t GetAccessModifierMask(int32_t aItemType);
   };
-
-  
-
-
-
-  static int32_t GetAccessModifierMaskFor(nsISupports* aDocShell);
 
   
 
@@ -457,15 +443,11 @@ protected:
 
 
 
-
-
   bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
                        nsPresContext* aPresContext,
                        nsTArray<uint32_t>& aAccessCharCodes,
-                       bool aMatchesContentAccessKey,
                        nsIDocShellTreeItem* aBubbledFrom,
-                       ProcessingAccessKeyState aAccessKeyState,
-                       int32_t aModifierMask);
+                       ProcessingAccessKeyState aAccessKeyState);
 
   bool ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
                         bool aIsTrustedEvent);

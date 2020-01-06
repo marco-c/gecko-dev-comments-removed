@@ -59,6 +59,16 @@ namespace plugins {
   class PPluginInstanceChild;
 } 
 
+enum class AccessKeyType
+{
+  
+  eChrome,
+  
+  eContent,
+  
+  eNone
+};
+
 
 
 
@@ -431,6 +441,24 @@ public:
 
   void GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates) const;
 
+  
+
+
+
+  bool ModifiersMatchWithAccessKey(AccessKeyType aType) const;
+
+  
+
+
+
+
+  Modifiers ModifiersForAccessKeyMatching() const;
+
+  
+
+
+  static Modifiers AccessKeyModifiers(AccessKeyType aType);
+
   static void Shutdown();
 
   
@@ -565,6 +593,10 @@ private:
           "Invalid native key binding type");
     }
   }
+
+  static int32_t GenericAccessModifierKeyPref();
+  static int32_t ChromeAccessModifierMaskPref();
+  static int32_t ContentAccessModifierMaskPref();
 };
 
 

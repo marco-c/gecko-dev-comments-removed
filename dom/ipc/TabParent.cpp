@@ -817,15 +817,14 @@ TabParent::ThemeChanged()
 
 void
 TabParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
-                           nsTArray<uint32_t>& aCharCodes,
-                           const int32_t& aModifierMask)
+                           nsTArray<uint32_t>& aCharCodes)
 {
   if (!mIsDestroyed) {
     
     
     
     WidgetKeyboardEvent localEvent(aEvent);
-    Unused << SendHandleAccessKey(localEvent, aCharCodes, aModifierMask);
+    Unused << SendHandleAccessKey(localEvent, aCharCodes);
   }
 }
 
