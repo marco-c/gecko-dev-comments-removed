@@ -660,7 +660,7 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
     
     
     
-    bool nextTokenContinuesLetDeclaration(TokenKind next, YieldHandling yieldHandling);
+    bool nextTokenContinuesLetDeclaration(TokenKind next);
 
     Node lexicalDeclaration(YieldHandling yieldHandling, DeclarationKind kind);
 

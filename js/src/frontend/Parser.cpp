@@ -6167,7 +6167,7 @@ Parser<ParseHandler, CharT>::forHeadStart(YieldHandling yieldHandling,
         if (!tokenStream.peekToken(&next))
             return false;
 
-        parsingLexicalDeclaration = nextTokenContinuesLetDeclaration(next, yieldHandling);
+        parsingLexicalDeclaration = nextTokenContinuesLetDeclaration(next);
         if (!parsingLexicalDeclaration) {
             tokenStream.ungetToken();
             letIsIdentifier = true;
@@ -7467,8 +7467,7 @@ Parser<ParseHandler, CharT>::classDefinition(YieldHandling yieldHandling,
 
 template <class ParseHandler, typename CharT>
 bool
-Parser<ParseHandler, CharT>::nextTokenContinuesLetDeclaration(TokenKind next,
-                                                              YieldHandling yieldHandling)
+Parser<ParseHandler, CharT>::nextTokenContinuesLetDeclaration(TokenKind next)
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LET));
 
@@ -7489,31 +7488,12 @@ Parser<ParseHandler, CharT>::nextTokenContinuesLetDeclaration(TokenKind next,
     
     
     
-    if (next == TOK_YIELD)
-        return yieldHandling == YieldIsName;
+    
+    
+    
 
     
-    
-    if (next == TOK_AWAIT)
-        return !awaitIsKeyword();
-
-    
-    if (TokenKindIsPossibleIdentifier(next)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return true;
-    }
-
-    
-    return false;
+    return TokenKindIsPossibleIdentifier(next);
 }
 
 template <class ParseHandler, typename CharT>
@@ -7816,7 +7796,7 @@ Parser<ParseHandler, CharT>::statementListItem(YieldHandling yieldHandling,
         if (!tokenStream.peekToken(&next))
             return null();
 
-        if (tt == TOK_LET && nextTokenContinuesLetDeclaration(next, yieldHandling))
+        if (tt == TOK_LET && nextTokenContinuesLetDeclaration(next))
             return lexicalDeclaration(yieldHandling, DeclarationKind::Let);
 
         if (tt == TOK_ASYNC) {
