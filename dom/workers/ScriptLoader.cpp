@@ -680,7 +680,12 @@ private:
     ScriptLoadInfo& loadInfo = mLoadInfos[aIndex];
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-    MOZ_ASSERT(channel == loadInfo.mChannel);
+
+    
+    
+    
+    MOZ_ASSERT_IF(mIsMainScript, channel == loadInfo.mChannel);
+    loadInfo.mChannel = channel;
 
     
     RefPtr<mozilla::dom::InternalResponse> ir =
