@@ -11,20 +11,22 @@ namespace mozilla {
 class MediaRawData;
 class MediaByteBuffer;
 }
+
 namespace mp4_demuxer
 {
-class ByteReader;
+class BufferReader;
 
 class AnnexB
 {
 public:
   
   
-  static bool ConvertSampleToAnnexB(mozilla::MediaRawData* aSample, bool aAddSPS = true);
+  static mozilla::Result<mozilla::Ok, nsresult>
+    ConvertSampleToAnnexB(mozilla::MediaRawData* aSample, bool aAddSPS = true);
   
   
   static bool ConvertSampleToAVCC(mozilla::MediaRawData* aSample);
-  static bool ConvertSampleTo4BytesAVCC(mozilla::MediaRawData* aSample);
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleTo4BytesAVCC(mozilla::MediaRawData* aSample);
 
   
   static already_AddRefed<mozilla::MediaByteBuffer> ConvertExtraDataToAnnexB(
@@ -36,8 +38,8 @@ public:
 
 private:
   
-  static void ConvertSPSOrPPS(ByteReader& aReader, uint8_t aCount,
-                              mozilla::MediaByteBuffer* aAnnexB);
+  static mozilla::Result<mozilla::Ok, nsresult>
+    ConvertSPSOrPPS(BufferReader& aReader, uint8_t aCount, mozilla::MediaByteBuffer* aAnnexB);
 };
 
 } 
