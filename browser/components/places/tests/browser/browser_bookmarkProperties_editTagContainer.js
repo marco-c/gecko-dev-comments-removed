@@ -64,6 +64,9 @@ add_task(async function() {
       let tags = PlacesUtils.tagging.getTagsForURI(uri);
       Assert.equal(tags.length, 1, "Found the right number of tags");
       Assert.ok(tags.includes("tag2"), "Found the expected tag");
+
+      
+      await PlacesTestUtils.promiseAsyncUpdates();
     }
   );
 
