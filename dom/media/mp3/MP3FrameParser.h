@@ -11,7 +11,6 @@
 #include "mp4_demuxer/ByteReader.h"
 
 namespace mozilla {
-namespace mp3 {
 
 
 
@@ -338,7 +337,6 @@ private:
   Frame mPrevFrame;
 };
 
-} 
 } 
 
 #endif
