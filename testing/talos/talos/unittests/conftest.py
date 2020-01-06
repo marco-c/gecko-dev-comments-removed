@@ -15,3 +15,32 @@ def remove_develop_files(starting_dir=__TESTS_DIR):
             os.remove(file_path)
         elif os.path.isdir(file_path):
             remove_develop_files(file_path)
+
+
+def patched_build_manifest(config, manifestName):
+    
+    
+    if not os.path.exists(manifestName):
+        try:
+            if not os.path.exists(os.path.dirname(manifestName)):
+                os.makedirs(os.path.dirname(manifestName))
+            f = open(manifestName, "w")
+            f.close()
+        except Exception as e:
+            raise(e)
+
+    
+    with open(manifestName, 'r') as fHandle:
+        manifestLines = fHandle.readlines()
+
+    
+    with open(manifestName + '.develop', 'w') as newHandle:
+        for line in manifestLines:
+            newline = line.replace('localhost', config['webserver'])
+            newline = newline.replace('page_load_test', 'tests')
+            newHandle.write(newline)
+
+    newManifestName = manifestName + '.develop'
+
+    
+    return newManifestName
