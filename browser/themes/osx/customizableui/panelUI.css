@@ -25,7 +25,8 @@
 
 
 photonpanelmultiview .subviewbutton > .toolbarbutton-text,
-photonpanelmultiview .subviewbutton:-moz-any([image],[targetURI],.cui-withicon, .bookmark-item) > .toolbarbutton-text {
+photonpanelmultiview .subviewbutton:-moz-any([image],[targetURI],.cui-withicon, .bookmark-item) > .toolbarbutton-text,
+photonpanelmultiview .panel-banner-item > .toolbarbutton-multiline-text {
   margin: 0 !important;  
 }
 

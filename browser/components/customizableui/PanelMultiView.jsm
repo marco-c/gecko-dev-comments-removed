@@ -217,6 +217,11 @@ this.PanelMultiView = class {
       this.__keyNavigationMap = new Map();
     return this.__keyNavigationMap;
   }
+  get _multiLineElementsMap() {
+    if (!this.__multiLineElementsMap)
+      this.__multiLineElementsMap = new WeakMap();
+    return this.__multiLineElementsMap;
+  }
 
   constructor(xulNode, testMode = false) {
     this.node = xulNode;
@@ -244,6 +249,7 @@ this.PanelMultiView = class {
 
     this._panel.addEventListener("popupshowing", this);
     this._panel.addEventListener("popuphidden", this);
+    this._panel.addEventListener("popupshown", this);
     if (this.panelViews) {
       let cs = window.getComputedStyle(document.documentElement);
       
@@ -252,7 +258,6 @@ this.PanelMultiView = class {
       this.setMainView(this.panelViews.currentView);
       this.showMainView();
     } else {
-      this._panel.addEventListener("popupshown", this);
       this._clickCapturer.addEventListener("click", this);
 
       this._mainViewContainer.setAttribute("panelid", this._panel.id);
@@ -317,6 +322,13 @@ this.PanelMultiView = class {
   }
 
   setMainView(aNewMainView) {
+    if (this._mainView) {
+      if (!this.panelViews)
+        this._subViews.appendChild(this._mainView);
+      this._mainView.removeAttribute("mainview");
+    }
+    this._mainViewId = aNewMainView.id;
+    aNewMainView.setAttribute("mainview", "true");
     if (this.panelViews) {
       
       
@@ -324,12 +336,6 @@ this.PanelMultiView = class {
         this._viewStack.insertBefore(aNewMainView, this._viewStack.firstChild);
       }
     } else {
-      if (this._mainView) {
-        this._subViews.appendChild(this._mainView);
-        this._mainView.removeAttribute("mainview");
-      }
-      this._mainViewId = aNewMainView.id;
-      aNewMainView.setAttribute("mainview", "true");
       this._mainViewContainer.appendChild(aNewMainView);
     }
   }
@@ -421,7 +427,7 @@ this.PanelMultiView = class {
         }
       }
       viewNode.setAttribute("current", true);
-      if (playTransition && this.panelViews)
+      if (this.panelViews && this._mainViewWidth)
         viewNode.style.maxWidth = viewNode.style.minWidth = this._mainViewWidth + "px";
 
       let evt = new window.CustomEvent("ViewShowing", { bubbles: true, cancelable: true, detail });
@@ -443,6 +449,11 @@ this.PanelMultiView = class {
       }
 
       this._currentSubView = viewNode;
+      if (this.panelViews) {
+        this.node.setAttribute("viewtype", "subview");
+        if (!playTransition)
+          this.descriptionHeightWorkaround(viewNode);
+      }
 
       
       
@@ -456,8 +467,6 @@ this.PanelMultiView = class {
       
       
       if (this.panelViews && playTransition) {
-        this.node.setAttribute("viewtype", "subview");
-
         
         
         
@@ -465,6 +474,7 @@ this.PanelMultiView = class {
           evt = new window.CustomEvent("ViewHiding", { bubbles: true, cancelable: true });
           previousViewNode.dispatchEvent(evt);
           previousViewNode.removeAttribute("current");
+          this.descriptionHeightWorkaround(viewNode);
         };
 
         
@@ -555,7 +565,7 @@ this.PanelMultiView = class {
             window.setTimeout(() => {
               
               
-              if (viewRect.height > this._mainViewHeight)
+              if (viewNode == this._mainView || viewRect.height > this._mainViewHeight)
                 this._viewContainer.style.removeProperty("height");
               this._viewContainer.style.removeProperty("width");
             }, 500);
@@ -735,32 +745,35 @@ this.PanelMultiView = class {
         
         
         this.descriptionHeightWorkaround();
-        
-        
-        
-        
-        let maxHeight;
-        if (this._panel.alignmentPosition.startsWith("before_")) {
-          maxHeight = this._panel.getOuterScreenRect().bottom -
-                      this.window.screen.availTop;
-        } else {
-          maxHeight = this.window.screen.availTop +
-                      this.window.screen.availHeight -
-                      this._panel.getOuterScreenRect().top;
+
+        if (!this.panelViews) {
+          
+          
+          
+          
+          let maxHeight;
+          if (this._panel.alignmentPosition.startsWith("before_")) {
+            maxHeight = this._panel.getOuterScreenRect().bottom -
+                        this.window.screen.availTop;
+          } else {
+            maxHeight = this.window.screen.availTop +
+                        this.window.screen.availHeight -
+                        this._panel.getOuterScreenRect().top;
+          }
+          
+          
+          
+          let arrowBox = this.document.getAnonymousElementByAttribute(
+                                          this._panel, "anonid", "arrowbox");
+          maxHeight -= this._dwu.getBoundsWithoutFlushing(arrowBox).height;
+          
+          
+          
+          
+          
+          const EXTRA_MARGIN_PX = 8;
+          this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
         }
-        
-        
-        
-        let arrowBox = this.document.getAnonymousElementByAttribute(
-                                        this._panel, "anonid", "arrowbox");
-        maxHeight -= this._dwu.getBoundsWithoutFlushing(arrowBox).height;
-        
-        
-        
-        
-        
-        const EXTRA_MARGIN_PX = 8;
-        this._viewStack.style.maxHeight = (maxHeight - EXTRA_MARGIN_PX) + "px";
         break;
       case "popuphidden":
         this.node.removeAttribute("panelopen");
@@ -937,23 +950,35 @@ this.PanelMultiView = class {
     
     
     let items = [];
-    for (let element of viewNode.getElementsByTagName("description")) {
+    for (let element of viewNode.querySelectorAll(
+         "description:not([hidden]):not([value]),toolbarbutton[wrap]:not([hidden])")) {
+      
+      element = element.labelElement || element;
+
+      let bounds = this._dwu.getBoundsWithoutFlushing(element);
+      let previous = this._multiLineElementsMap.get(element);
+      
+      
+      if (!bounds.width || !bounds.height ||
+          (previous && element.textContent == previous.textContent &&
+                       bounds.width == previous.bounds.width)) {
+        continue;
+      }
+
       element.style.removeProperty("height");
       items.push({ element });
     }
-    
-    
-    
+
     
     
     for (let item of items) {
-      item.height = item.element.getBoundingClientRect().height;
+      item.bounds = item.element.getBoundingClientRect();
     }
+
     
-    for (let item of items) {
-      if (item.height) {
-        item.element.style.height = item.height + "px";
-      }
+    for (let { element, bounds } of items) {
+      this._multiLineElementsMap.set(element, { bounds, textContent: element.textContent });
+      element.style.height = bounds.height + "px";
     }
   }
 }
