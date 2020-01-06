@@ -87,6 +87,36 @@ global.getTargetTabIdForToolbox = (toolbox) => {
 
 
 
+global.getInspectedWindowFront = async function(context) {
+  
+  
+  
+  
+  const clonedTarget = await getDevToolsTargetForContext(context);
+  return DevToolsShim.createWebExtensionInspectedWindowFront(clonedTarget);
+};
+
+
+
+global.getToolboxEvalOptions = function(context) {
+  const options = {};
+  const toolbox = context.devToolsToolbox;
+  const selectedNode = toolbox.selection;
+
+  if (selectedNode && selectedNode.nodeFront) {
+    
+    
+    options.toolboxSelectedNodeActorID = selectedNode.nodeFront.actorID;
+  }
+
+  
+  options.toolboxConsoleActorID = toolbox.target.form.consoleActor;
+
+  return options;
+};
+
+
+
 
 
 

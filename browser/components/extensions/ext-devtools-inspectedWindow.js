@@ -4,6 +4,8 @@
 
 
 
+
+
 XPCOMUtils.defineLazyModuleGetter(this, "DevToolsShim",
                                   "chrome://devtools-shim/content/DevToolsShim.jsm");
 
@@ -15,31 +17,6 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
   getAPI(context) {
     
     let waitForInspectedWindowFront;
-    async function getInspectedWindowFront() {
-      
-      
-      
-      
-      const clonedTarget = await getDevToolsTargetForContext(context);
-      return DevToolsShim.createWebExtensionInspectedWindowFront(clonedTarget);
-    }
-
-    function getToolboxOptions() {
-      const options = {};
-      const toolbox = context.devToolsToolbox;
-      const selectedNode = toolbox.selection;
-
-      if (selectedNode && selectedNode.nodeFront) {
-        
-        
-        options.toolboxSelectedNodeActorID = selectedNode.nodeFront.actorID;
-      }
-
-      
-      options.toolboxConsoleActorID = toolbox.target.form.consoleActor;
-
-      return options;
-    }
 
     
     
@@ -53,12 +30,12 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
         inspectedWindow: {
           async eval(expression, options) {
             if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront();
+              waitForInspectedWindowFront = getInspectedWindowFront(context);
             }
 
             const front = await waitForInspectedWindowFront;
 
-            const evalOptions = Object.assign({}, options, getToolboxOptions());
+            const evalOptions = Object.assign({}, options, getToolboxEvalOptions(context));
 
             const evalResult = await front.eval(callerInfo, expression, evalOptions);
 
@@ -70,7 +47,7 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
             const {ignoreCache, userAgent, injectedScript} = options || {};
 
             if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront();
+              waitForInspectedWindowFront = getInspectedWindowFront(context);
             }
 
             const front = await waitForInspectedWindowFront;
