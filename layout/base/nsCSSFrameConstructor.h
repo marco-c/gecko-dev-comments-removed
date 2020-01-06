@@ -127,8 +127,7 @@ private:
   void IssueSingleInsertNofications(nsIContent* aContainer,
                                     nsIContent* aStartChild,
                                     nsIContent* aEndChild,
-                                    InsertionKind,
-                                    bool aForReconstruction);
+                                    InsertionKind);
 
   
 
@@ -171,8 +170,7 @@ private:
   InsertionPoint GetRangeInsertionPoint(nsIContent* aContainer,
                                         nsIContent* aStartChild,
                                         nsIContent* aEndChild,
-                                        InsertionKind,
-                                        bool aForReconstruction);
+                                        InsertionKind);
 
   
   bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,
@@ -255,11 +253,7 @@ public:
   void ContentAppended(nsIContent* aContainer,
                        nsIContent* aFirstNewContent,
                        InsertionKind aInsertionKind,
-                       TreeMatchContext* aProvidedTreeMatchContext = nullptr)
-  {
-    ContentAppended(aContainer, aFirstNewContent, aInsertionKind, false,
-                    aProvidedTreeMatchContext);
-  }
+                       TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
   
   
@@ -284,36 +278,8 @@ public:
                             nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
                             InsertionKind aInsertionKind,
-                            TreeMatchContext* aProvidedTreeMatchContext = nullptr)
-  {
-    ContentRangeInserted(aContainer, aStartChild, aEndChild, aFrameState,
-                         aInsertionKind, false,
-                         aProvidedTreeMatchContext);
-  }
+                            TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
-private:
-  
-  
-  
-  
-  
-  
-  
-  
-  void ContentAppended(nsIContent* aContainer,
-                       nsIContent* aFirstNewContent,
-                       InsertionKind aInsertionKind,
-                       bool aForReconstruction,
-                       TreeMatchContext* aProvidedTreeMatchContext);
-  void ContentRangeInserted(nsIContent* aContainer,
-                            nsIContent* aStartChild,
-                            nsIContent* aEndChild,
-                            nsILayoutHistoryState* aFrameState,
-                            InsertionKind aInsertionKind,
-                            bool aForReconstruction,
-                            TreeMatchContext* aProvidedTreeMatchContext);
-
-public:
   enum RemoveFlags {
     REMOVE_CONTENT,
     REMOVE_FOR_RECONSTRUCTION,
