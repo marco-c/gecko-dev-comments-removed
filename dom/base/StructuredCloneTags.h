@@ -62,6 +62,8 @@ enum StructuredCloneTags {
 
   SCTAG_DOM_INPUTSTREAM,
 
+  SCTAG_DOM_STRUCTURED_CLONE_HOLDER,
+
   
   
   
