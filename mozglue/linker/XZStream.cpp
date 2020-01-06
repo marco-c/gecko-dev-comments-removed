@@ -1,8 +1,8 @@
 #include "XZStream.h"
 
 #include <algorithm>
-#include <cstring>
 #include "mozilla/Assertions.h"
+#include "mozilla/CheckedInt.h"
 #include "Logging.h"
 
 
@@ -72,6 +72,9 @@ XZStream::Init()
   }
 
   mUncompSize = ParseUncompressedSize();
+  if (!mUncompSize) {
+    return false;
+  }
 
   return true;
 }
@@ -164,13 +167,21 @@ XZStream::ParseIndexSize() const
              footer + kFooterSize - sizeof(kFooterMagic),
              sizeof(kFooterMagic))) {
     
+    ERROR("XZ parsing: Invalid footer at end of stream");
     return 0;
   }
   
   
   
-  const uint32_t backwardSize = *(footer + 4);
-  return (backwardSize + 1) * 4;
+  const uint32_t backwardSizeRaw = *(footer + 4);
+  
+  mozilla::CheckedInt<size_t> backwardSizeBytes(backwardSizeRaw);
+  backwardSizeBytes = (backwardSizeBytes + 1) * 4;
+  if (!backwardSizeBytes.isValid()) {
+    ERROR("XZ parsing: Cannot parse index size");
+    return 0;
+  }
+  return backwardSizeBytes.value();
 }
 
 size_t
@@ -190,25 +201,37 @@ XZStream::ParseUncompressedSize() const
   
   
   
+  
+  
+  
+
   if (memcmp(reinterpret_cast<const void*>(kIndexIndicator),
              index, sizeof(kIndexIndicator))) {
-    
+    ERROR("XZ parsing: Invalid stream index");
     return 0;
   }
 
   index += sizeof(kIndexIndicator);
   uint64_t numRecords = 0;
   index += ParseVarLenInt(index, end - index, &numRecords);
-  if (!numRecords) {
+  
+  if (numRecords != 1) {
+    ERROR("XZ parsing: Multiple records not supported");
     return 0;
   }
   uint64_t unpaddedSize = 0;
   index += ParseVarLenInt(index, end - index, &unpaddedSize);
   if (!unpaddedSize) {
+    ERROR("XZ parsing: Unpadded size is 0");
     return 0;
   }
   uint64_t uncompressedSize = 0;
   index += ParseVarLenInt(index, end - index, &uncompressedSize);
+  mozilla::CheckedInt<size_t> checkedSize(uncompressedSize);
+  if (!checkedSize.isValid()) {
+    ERROR("XZ parsing: Uncompressed stream size is too large");
+    return 0;
+  }
 
-  return uncompressedSize;
+  return checkedSize.value();
 }
