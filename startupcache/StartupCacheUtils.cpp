@@ -149,6 +149,47 @@ canonicalizeBase(nsAutoCString &spec,
 
 
 
+nsresult
+ResolveURI(nsIURI *in, nsIURI **out)
+{
+    bool equals;
+    nsresult rv;
+
+    
+    
+    if (NS_SUCCEEDED(in->SchemeIs("resource", &equals)) && equals) {
+        nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        nsCOMPtr<nsIProtocolHandler> ph;
+        rv = ioService->GetProtocolHandler("resource", getter_AddRefs(ph));
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        nsCOMPtr<nsIResProtocolHandler> irph(do_QueryInterface(ph, &rv));
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        nsAutoCString spec;
+        rv = irph->ResolveURI(in, spec);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        return ioService->NewURI(spec, nullptr, nullptr, out);
+    } else if (NS_SUCCEEDED(in->SchemeIs("chrome", &equals)) && equals) {
+        nsCOMPtr<nsIChromeRegistry> chromeReg =
+            mozilla::services::GetChromeRegistryService();
+        if (!chromeReg)
+            return NS_ERROR_UNEXPECTED;
+
+        return chromeReg->ConvertChromeURL(in, out);
+    }
+
+    *out = do_AddRef(in).take();
+    return NS_OK;
+}
+
+
+
+
+
 
 
 
@@ -175,41 +216,14 @@ PathifyURI(nsIURI *in, nsACString &out)
 {
     bool equals;
     nsresult rv;
-    nsCOMPtr<nsIURI> uri = in;
+
+    nsCOMPtr<nsIURI> uri;
+    rv = ResolveURI(in, getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+
     nsAutoCString spec;
-
-    
-    
-    if (NS_SUCCEEDED(in->SchemeIs("resource", &equals)) && equals) {
-        nsCOMPtr<nsIIOService> ioService = do_GetIOService(&rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        nsCOMPtr<nsIProtocolHandler> ph;
-        rv = ioService->GetProtocolHandler("resource", getter_AddRefs(ph));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        nsCOMPtr<nsIResProtocolHandler> irph(do_QueryInterface(ph, &rv));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        rv = irph->ResolveURI(in, spec);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        rv = ioService->NewURI(spec, nullptr, nullptr, getter_AddRefs(uri));
-        NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-        if (NS_SUCCEEDED(in->SchemeIs("chrome", &equals)) && equals) {
-            nsCOMPtr<nsIChromeRegistry> chromeReg =
-                mozilla::services::GetChromeRegistryService();
-            if (!chromeReg)
-                return NS_ERROR_UNEXPECTED;
-
-            rv = chromeReg->ConvertChromeURL(in, getter_AddRefs(uri));
-            NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        rv = uri->GetSpec(spec);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
+    rv = uri->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     if (!canonicalizeBase(spec, out)) {
         if (NS_SUCCEEDED(uri->SchemeIs("file", &equals)) && equals) {
