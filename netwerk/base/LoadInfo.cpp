@@ -7,6 +7,8 @@
 #include "mozilla/LoadInfo.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozIThirdPartyUtil.h"
@@ -303,6 +305,11 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
   , mPrincipalToInherit(rhs.mPrincipalToInherit)
   , mSandboxedLoadingPrincipal(rhs.mSandboxedLoadingPrincipal)
   , mResultPrincipalURI(rhs.mResultPrincipalURI)
+  , mClientInfo(rhs.mClientInfo)
+  
+  
+  
+  
   , mLoadingContext(rhs.mLoadingContext)
   , mContextForTopLevelLoad(rhs.mContextForTopLevelLoad)
   , mSecurityFlags(rhs.mSecurityFlags)
@@ -1153,6 +1160,76 @@ LoadInfo::SetResultPrincipalURI(nsIURI *aURI)
 {
   mResultPrincipalURI = aURI;
   return NS_OK;
+}
+
+void
+LoadInfo::SetClientInfo(const ClientInfo& aClientInfo)
+{
+  mClientInfo.emplace(aClientInfo);
+}
+
+const Maybe<ClientInfo>&
+LoadInfo::GetClientInfo()
+{
+  return mClientInfo;
+}
+
+void
+LoadInfo::GiveReservedClientSource(UniquePtr<ClientSource>&& aClientSource)
+{
+  MOZ_DIAGNOSTIC_ASSERT(aClientSource);
+  mReservedClientSource = Move(aClientSource);
+  SetReservedClientInfo(mReservedClientSource->Info());
+}
+
+UniquePtr<ClientSource>
+LoadInfo::TakeReservedClientSource()
+{
+  if (mReservedClientSource) {
+    
+    
+    mReservedClientInfo.reset();
+  }
+  return Move(mReservedClientSource);
+}
+
+void
+LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo)
+{
+  MOZ_DIAGNOSTIC_ASSERT(mInitialClientInfo.isNothing());
+  mReservedClientInfo.emplace(aClientInfo);
+}
+
+const Maybe<ClientInfo>&
+LoadInfo::GetReservedClientInfo()
+{
+  return mReservedClientInfo;
+}
+
+void
+LoadInfo::SetInitialClientInfo(const ClientInfo& aClientInfo)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mReservedClientSource);
+  MOZ_DIAGNOSTIC_ASSERT(mReservedClientInfo.isNothing());
+  mInitialClientInfo.emplace(aClientInfo);
+}
+
+const Maybe<ClientInfo>&
+LoadInfo::GetInitialClientInfo()
+{
+  return mInitialClientInfo;
+}
+
+void
+LoadInfo::SetController(const ServiceWorkerDescriptor& aServiceWorker)
+{
+  mController.emplace(aServiceWorker);
+}
+
+const Maybe<ServiceWorkerDescriptor>&
+LoadInfo::GetController()
+{
+  return mController;
 }
 
 } 
