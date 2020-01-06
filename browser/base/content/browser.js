@@ -7987,36 +7987,21 @@ var gPageActionButton = {
       return item;
     });
 
-    if (!gSync.isSignedIn) {
-      
-      body.setAttribute("state", "notsignedin");
-      return;
-    }
-
+    body.removeAttribute("state");
     
     
-    if (!gSync.syncReady) {
+    if (gSync.syncConfiguredAndLoading) {
       body.setAttribute("state", "notready");
       
       Services.tm.dispatchToMainThread(() => {
         Weave.Service.sync([]);  
-        if (!window.closed && gSync.syncReady) {
+        
+        
+        if (!window.closed && !gSync.syncConfiguredAndLoading) {
           this.setupSendToDeviceView();
         }
       });
-      return;
     }
-    if (!gSync.remoteClients.length) {
-      body.setAttribute("state", "nodevice");
-      return;
-    }
-
-    body.setAttribute("state", "signedin");
-  },
-
-  fxaButtonClicked() {
-    this.panel.hidePopup();
-    gSync.openPrefs();
   },
 };
 

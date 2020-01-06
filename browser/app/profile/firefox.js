@@ -1002,6 +1002,8 @@ pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/%APP%/
 #endif
 
 
+pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
+
 
 pref("security.alternate_certificate_error_page", "certerror");
 
