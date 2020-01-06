@@ -106,61 +106,63 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
   friend class nsHtml5DataAvailable;
   friend class nsHtml5StreamParserContinuation;
   friend class nsHtml5TimerKungFu;
+  friend class nsHtml5StreamParserPtr;
 
-  public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
-                                             nsICharsetDetectionObserver)
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5StreamParser,
+                                           nsICharsetDetectionObserver)
 
-    static void InitializeStatics();
+  static void InitializeStatics();
 
-    nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
-                        nsHtml5Parser* aOwner,
-                        eParserMode aMode);
+  nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
+                      nsHtml5Parser* aOwner,
+                      eParserMode aMode);
 
-    
-    nsresult CheckListenerChain();
+  
+  nsresult CheckListenerChain();
 
-    nsresult OnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
+  nsresult OnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
 
-    nsresult OnDataAvailable(nsIRequest* aRequest,
-                             nsISupports* aContext,
-                             nsIInputStream* aInStream,
-                             uint64_t aSourceOffset,
-                             uint32_t aLength);
-
-    nsresult OnStopRequest(nsIRequest* aRequest,
+  nsresult OnDataAvailable(nsIRequest* aRequest,
                            nsISupports* aContext,
-                           nsresult status);
+                           nsIInputStream* aInStream,
+                           uint64_t aSourceOffset,
+                           uint32_t aLength);
 
-    
-    
+  nsresult OnStopRequest(nsIRequest* aRequest,
+                         nsISupports* aContext,
+                         nsresult status);
 
-
-    NS_IMETHOD Notify(const char* aCharset, nsDetectionConfident aConf) override;
-
-    
-    
-    
-
-
-    bool internalEncodingDeclaration(nsHtml5String aEncoding);
-
-    
-
-    
+  
+  
 
 
+  NS_IMETHOD Notify(const char* aCharset, nsDetectionConfident aConf) override;
+
+  
+  
+  
+
+
+  bool internalEncodingDeclaration(nsHtml5String aEncoding);
+
+  
+
+  
 
 
 
 
-    inline void SetDocumentCharset(const nsACString& aCharset, int32_t aSource) {
-      NS_PRECONDITION(mStreamState == STREAM_NOT_STARTED,
-                      "SetDocumentCharset called too late.");
-      NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
-      mCharset = aCharset;
-      mCharsetSource = aSource;
+
+
+  inline void SetDocumentCharset(const nsACString& aCharset, int32_t aSource)
+  {
+    NS_PRECONDITION(mStreamState == STREAM_NOT_STARTED,
+                    "SetDocumentCharset called too late.");
+    NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+    mCharset = aCharset;
+    mCharsetSource = aSource;
     }
     
     inline void SetObserver(nsIRequestObserver* aObserver) {
@@ -381,6 +383,13 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
     {
         return mSpeculationFailureCount < 100;
     }
+
+    
+
+
+
+    nsresult DispatchToMain(const char* aName,
+                            already_AddRefed<nsIRunnable>&& aRunnable);
 
     nsCOMPtr<nsIRequest>          mRequest;
     nsCOMPtr<nsIRequestObserver>  mObserver;
