@@ -3,6 +3,9 @@
 
 
 
+const PREF_MATCH_OS_LOCALE = "intl.locale.matchOS";
+const PREF_SELECTED_LOCALE = "general.useragent.locale";
+
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
@@ -157,7 +160,8 @@ function run_test() {
   server.registerPathHandler("/3", requestHandler);
   server.start(4444);
 
-  Services.locale.setRequestedLocales(["en-US"]);
+  Services.prefs.setBoolPref(PREF_MATCH_OS_LOCALE, false);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "en-US");
 
   startupManager();
   installAllFiles(ADDONS.map(a => do_get_addon(a.addon)), function() {

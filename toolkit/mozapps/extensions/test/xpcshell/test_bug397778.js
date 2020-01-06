@@ -3,6 +3,9 @@
 
 
 
+const PREF_MATCH_OS_LOCALE = "intl.locale.matchOS";
+const PREF_SELECTED_LOCALE = "general.useragent.locale";
+
 const ADDON = "test_bug397778";
 const ID = "bug397778@tests.mozilla.org";
 
@@ -10,7 +13,8 @@ function run_test() {
   
   do_test_pending();
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1");
-  Services.locale.setRequestedLocales(["fr-FR"]);
+  Services.prefs.setBoolPref(PREF_MATCH_OS_LOCALE, false);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "fr-FR");
 
   
   startupManager();
@@ -42,7 +46,7 @@ function run_test_1() {
 
 function run_test_2() {
   
-  Services.locale.setRequestedLocales(["de"]);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "de");
   restartManager();
 
   AddonManager.getAddonByID(ID, function(addon) {
@@ -56,7 +60,7 @@ function run_test_2() {
 
 function run_test_3() {
   
-  Services.locale.setRequestedLocales(["DE-de"]);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "DE-de");
   restartManager();
 
   AddonManager.getAddonByID(ID, function(addon) {
@@ -70,7 +74,7 @@ function run_test_3() {
 
 function run_test_4() {
   
-  Services.locale.setRequestedLocales(["es-AR"]);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "es-AR");
   restartManager();
 
   AddonManager.getAddonByID(ID, function(addon) {
@@ -84,7 +88,7 @@ function run_test_4() {
 
 function run_test_5() {
   
-  Services.locale.setRequestedLocales(["zh"]);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "zh");
   restartManager();
 
   AddonManager.getAddonByID(ID, function(addon) {
@@ -99,7 +103,7 @@ function run_test_5() {
 function run_test_6() {
   
   
-  Services.locale.setRequestedLocales(["nl-NL"]);
+  Services.prefs.setCharPref(PREF_SELECTED_LOCALE, "nl-NL");
   restartManager();
 
   AddonManager.getAddonByID(ID, function(addon) {
