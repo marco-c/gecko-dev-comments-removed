@@ -100,54 +100,27 @@ public:
 
   
   
-  
-  template<size_t N>
-  static void LogValue(const char* aSubjectTypeName,
-                       const void* aSubjectPointer,
-                       DDLogCategory aCategory,
-                       const char* aLabel,
-                       const char (&aLiteral)[N])
-  {
-    EagerLogValue(aSubjectTypeName,
-                  aSubjectPointer,
-                  aCategory,
-                  aLabel,
-                  static_cast<const char*>(aLiteral));
-  }
-
-  template<typename Subject, size_t N>
-  static void LogValue(const Subject* aSubject,
-                       DDLogCategory aCategory,
-                       const char* aLabel,
-                       const char (&aLiteral)[N])
-  {
-    EagerLogValue(
-      aSubject, aCategory, aLabel, static_cast<const char*>(aLiteral));
-  }
-
-  
-  template<size_t N>
   static void EagerLogValue(const char* aSubjectTypeName,
                             const void* aSubjectPointer,
                             DDLogCategory aCategory,
                             const char* aLabel,
-                            const char (&aLiteral)[N])
+                            const char* aValue)
   {
-    EagerLogValue(aSubjectTypeName,
-                  aSubjectPointer,
-                  aCategory,
-                  aLabel,
-                  static_cast<const char*>(aLiteral));
+    Log(aSubjectTypeName,
+        aSubjectPointer,
+        aCategory,
+        aLabel,
+        DDLogValue{ aValue });
   }
 
-  template<typename Subject, size_t N>
+  template<typename Subject>
   static void EagerLogValue(const Subject* aSubject,
                             DDLogCategory aCategory,
                             const char* aLabel,
-                            const char (&aLiteral)[N])
+                            const char* aValue)
   {
     EagerLogValue(
-      aSubject, aCategory, aLabel, static_cast<const char*>(aLiteral));
+      DDLoggedTypeTraits<Subject>::Name(), aSubject, aCategory, aLabel, aValue);
   }
 
   template<typename... Args>
