@@ -796,17 +796,6 @@ public class GeckoAppShell
         
     }
 
-    
-    
-    @WrapForJNI(calledFrom = "gecko")
-    public static void createShortcut(final String aTitle, final String aURI) {
-        final GeckoInterface geckoInterface = getGeckoInterface();
-        if (geckoInterface == null) {
-            return;
-        }
-        geckoInterface.createShortcut(aTitle, aURI);
-    }
-
     @JNITarget
     static public int getPreferredIconSize() {
         ActivityManager am = (ActivityManager)
@@ -1676,16 +1665,6 @@ public class GeckoAppShell
         public void disableOrientationListener();
         public void addAppStateListener(AppStateListener listener);
         public void removeAppStateListener(AppStateListener listener);
-
-        
-
-
-
-
-
-
-
-        public void createShortcut(String title, String URI);
 
         
 
