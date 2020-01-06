@@ -113,6 +113,11 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
+  bool IsExpectingMoreData() override
+  {
+    return false;
+  }
+
   
   void AppendData(MediaByteBuffer* aData);
   void Ended();
