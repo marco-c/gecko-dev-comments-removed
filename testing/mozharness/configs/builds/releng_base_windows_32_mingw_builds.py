@@ -15,7 +15,6 @@ config = {
         'checkout-sources',
         'build',
         'upload-files',
-        'check-test',
         'update',  
     ],
     "buildbot_json_path": "buildprops.json",
