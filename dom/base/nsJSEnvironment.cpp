@@ -60,6 +60,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsAXPCNativeCallContext.h"
@@ -125,12 +126,12 @@ const size_t gStackSize = 8192;
 static const int64_t kForgetSkippableSliceDuration = 2;
 
 
-static const int64_t kICCIntersliceDelay = 32; 
+static const int64_t kICCIntersliceDelay = 64; 
 
 
-static const int64_t kICCSliceBudget = 5; 
+static const int64_t kICCSliceBudget = 3; 
 
-static const int64_t kIdleICCSliceBudget = 3; 
+static const int64_t kIdleICCSliceBudget = 2; 
 
 
 static const uint32_t kMaxICCDuration = 2000; 
@@ -1741,7 +1742,10 @@ nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline)
     }
   }
 
-  nsCycleCollector_collectSlice(budget);
+  nsCycleCollector_collectSlice(budget,
+                                aDeadline.IsNull() ||
+                                (aDeadline - TimeStamp::Now()).ToMilliseconds() <
+                                  kICCSliceBudget);
 
   gCCStats.FinishCycleCollectionSlice();
 }
@@ -2103,6 +2107,11 @@ CCRunnerFired(TimeStamp aDeadline, void* aData)
       if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
         
         
+
+        
+        Element::ClearContentUnbinder();
+        
+        nsCycleCollector_doDeferredDeletion();
         return didDoWork;
       }
     } else {
