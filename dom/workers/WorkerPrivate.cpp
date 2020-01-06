@@ -5296,7 +5296,7 @@ WorkerPrivate::InitializeGCTimers()
   
   
   
-  mGCTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+  mGCTimer = NS_NewTimer();
   MOZ_ASSERT(mGCTimer);
 
   mPeriodicGCTimerRunning = false;
@@ -6482,12 +6482,10 @@ WorkerPrivate::SetTimeout(JSContext* aCx,
   
   
   if (insertedInfo == mTimeouts.Elements() && !mRunningExpiredTimeouts) {
-    nsresult rv;
-
     if (!mTimer) {
-      mTimer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
-      if (NS_FAILED(rv)) {
-        aRv.Throw(rv);
+      mTimer = NS_NewTimer();
+      if (!mTimer) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
         return 0;
       }
 

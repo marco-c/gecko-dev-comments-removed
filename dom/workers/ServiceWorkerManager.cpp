@@ -4340,23 +4340,18 @@ ServiceWorkerManager::ScheduleUpdateTimer(nsIPrincipal* aPrincipal,
     return;
   }
 
-  timer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    data->mUpdateTimers.Remove(aScope); 
-    return;
-  }
-
-  
-  
-  timer->SetTarget(SystemGroup::EventTargetFor(TaskCategory::Other));
-
   nsCOMPtr<nsITimerCallback> callback = new UpdateTimerCallback(aPrincipal,
                                                                 aScope);
 
   const uint32_t UPDATE_DELAY_MS = 1000;
 
-  rv = timer->InitWithCallback(callback, UPDATE_DELAY_MS,
-                               nsITimer::TYPE_ONE_SHOT);
+  
+  
+  rv = NS_NewTimerWithCallback(getter_AddRefs(timer),
+                               callback, UPDATE_DELAY_MS,
+                               nsITimer::TYPE_ONE_SHOT,
+                               SystemGroup::EventTargetFor(TaskCategory::Other));
+
   if (NS_WARN_IF(NS_FAILED(rv))) {
     data->mUpdateTimers.Remove(aScope); 
     return;

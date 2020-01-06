@@ -3619,7 +3619,7 @@ QuotaManager::Init(const nsAString& aBasePath)
 
   
   
-  mShutdownTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+  mShutdownTimer = NS_NewTimer();
   if (NS_WARN_IF(!mShutdownTimer)) {
     return NS_ERROR_FAILURE;
   }

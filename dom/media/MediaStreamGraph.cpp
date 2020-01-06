@@ -1502,13 +1502,10 @@ MediaStreamGraphImpl::ForceShutDown(media::ShutdownTicket* aShutdownTicket)
     
     
     
-    mShutdownTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-    if (!mShutdownTimer) {
-      return;
-    }
-    mShutdownTimer->InitWithCallback(this,
-                                     MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
-                                     nsITimer::TYPE_ONE_SHOT);
+    NS_NewTimerWithCallback(getter_AddRefs(mShutdownTimer),
+                            this,
+                            MediaStreamGraph::AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT,
+                            nsITimer::TYPE_ONE_SHOT);
   }
   mForceShutDown = true;
   mForceShutdownTicket = aShutdownTicket;
