@@ -82,6 +82,7 @@ this.ClientEngine = function ClientEngine(service) {
   
   this.resetLastSync();
   this.fxAccounts = fxAccounts;
+  this.addClientCommandQueue = Promise.resolve();
 }
 ClientEngine.prototype = {
   __proto__: SyncEngine.prototype,
@@ -275,20 +276,29 @@ ClientEngine.prototype = {
   },
 
   async _addClientCommand(clientId, command) {
-    const localCommands = await this._readCommands();
-    const localClientCommands = localCommands[clientId] || [];
-    const remoteClient = this._store._remoteClients[clientId];
-    let remoteClientCommands = []
-    if (remoteClient && remoteClient.commands) {
-      remoteClientCommands = remoteClient.commands;
-    }
-    const clientCommands = localClientCommands.concat(remoteClientCommands);
-    if (hasDupeCommand(clientCommands, command)) {
-      return false;
-    }
-    localCommands[clientId] = localClientCommands.concat(command);
-    await this._saveCommands(localCommands);
-    return true;
+    return this.addClientCommandQueue = (async () => {
+      await this.addClientCommandQueue;
+      try {
+        const localCommands = await this._readCommands();
+        const localClientCommands = localCommands[clientId] || [];
+        const remoteClient = this._store._remoteClients[clientId];
+        let remoteClientCommands = []
+        if (remoteClient && remoteClient.commands) {
+          remoteClientCommands = remoteClient.commands;
+        }
+        const clientCommands = localClientCommands.concat(remoteClientCommands);
+        if (hasDupeCommand(clientCommands, command)) {
+          return false;
+        }
+        localCommands[clientId] = localClientCommands.concat(command);
+        await this._saveCommands(localCommands);
+        return true;
+      } catch (e) {
+        
+        this._log.error(e);
+        return false;
+      }
+    })();
   },
 
   async _removeClientCommands(clientId) {

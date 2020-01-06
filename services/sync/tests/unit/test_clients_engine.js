@@ -436,6 +436,21 @@ add_task(async function test_send_command() {
   await cleanup();
 });
 
+
+
+add_task(async function test_add_client_command_race() {
+  let promises = [];
+  for (let i = 0; i < 100; i++) {
+    promises.push(engine._addClientCommand(`client-${i}`, { command: "cmd", args: []}));
+  }
+  await Promise.all(promises);
+
+  let localCommands = await engine._readCommands();
+  for (let i = 0; i < 100; i++) {
+    equal(localCommands[`client-${i}`].length, 1);
+  }
+});
+
 add_task(async function test_command_validation() {
   _("Verifies that command validation works properly.");
 
