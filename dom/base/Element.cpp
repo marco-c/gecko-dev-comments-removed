@@ -2005,6 +2005,9 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   UnsetFlags(kAllServoDescendantBits);
+  if (document && document->GetServoRestyleRoot() == this) {
+    document->ClearServoRestyleRoot();
+  }
 }
 
 nsICSSDeclaration*
