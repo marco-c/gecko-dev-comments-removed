@@ -34,10 +34,13 @@ registerCleanupFunction(() => {
 
 
 
-function enableWebAnimationsAPI() {
+
+
+function enableAnimationFeatures() {
   return new Promise(resolve => {
     SpecialPowers.pushPrefEnv({"set": [
-      ["dom.animations-api.core.enabled", true]
+      ["dom.animations-api.core.enabled", true],
+      ["layout.css.frames-timing.enabled", true],
     ]}, resolve);
   });
 }
@@ -49,7 +52,7 @@ function enableWebAnimationsAPI() {
 
 var _addTab = addTab;
 addTab = function (url) {
-  return enableWebAnimationsAPI().then(() => _addTab(url)).then(tab => {
+  return enableAnimationFeatures().then(() => _addTab(url)).then(tab => {
     let browser = tab.linkedBrowser;
     info("Loading the helper frame script " + FRAME_SCRIPT_URL);
     browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);

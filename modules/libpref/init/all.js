@@ -2861,6 +2861,13 @@ pref("layout.css.font-display.enabled", false);
 pref("layout.css.font-variations.enabled", false);
 
 
+#ifdef RELEASE_OR_BETA
+pref("layout.css.frames-timing.enabled", false);
+#else
+pref("layout.css.frames-timing.enabled", true);
+#endif
+
+
 pref("layout.css.prefixes.border-image", true);
 pref("layout.css.prefixes.transforms", true);
 pref("layout.css.prefixes.transitions", true);
