@@ -269,8 +269,12 @@ private:
                 return size;
             }
 
-            size += (mURL.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
+            
+            
+            
+            size += (mURL.SizeOfExcludingThisIfUnshared(mallocSizeOf) +
                      mCachePath.SizeOfExcludingThisEvenIfShared(mallocSizeOf));
+
             return size;
         }
 
