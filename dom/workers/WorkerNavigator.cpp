@@ -13,6 +13,7 @@
 #include "mozilla/dom/network/Connection.h"
 
 #include "nsProxyRelease.h"
+#include "nsRFPService.h"
 #include "RuntimeService.h"
 
 #include "nsIDocument.h"
@@ -79,9 +80,13 @@ WorkerNavigator::GetAppName(nsString& aAppName, CallerType aCallerType) const
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  if (!mProperties.mAppNameOverridden.IsEmpty() &&
+  if ((!mProperties.mAppNameOverridden.IsEmpty() ||
+       workerPrivate->ResistFingerprintingEnabled()) &&
       !workerPrivate->UsesSystemPrincipal()) {
-    aAppName = mProperties.mAppNameOverridden;
+    
+    
+    aAppName = workerPrivate->ResistFingerprintingEnabled() ?
+      NS_LITERAL_STRING(SPOOFED_APPNAME) : mProperties.mAppNameOverridden;
   } else {
     aAppName = mProperties.mAppName;
   }
@@ -94,9 +99,13 @@ WorkerNavigator::GetAppVersion(nsString& aAppVersion, CallerType aCallerType,
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  if (!mProperties.mAppVersionOverridden.IsEmpty() &&
+  if ((!mProperties.mAppVersionOverridden.IsEmpty() ||
+       workerPrivate->ResistFingerprintingEnabled()) &&
       !workerPrivate->UsesSystemPrincipal()) {
-    aAppVersion = mProperties.mAppVersionOverridden;
+    
+    
+    aAppVersion = workerPrivate->ResistFingerprintingEnabled() ?
+      NS_LITERAL_STRING(SPOOFED_APPVERSION) : mProperties.mAppVersionOverridden;
   } else {
     aAppVersion = mProperties.mAppVersion;
   }
@@ -109,9 +118,13 @@ WorkerNavigator::GetPlatform(nsString& aPlatform, CallerType aCallerType,
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  if (!mProperties.mPlatformOverridden.IsEmpty() &&
+  if ((!mProperties.mPlatformOverridden.IsEmpty() ||
+       workerPrivate->ResistFingerprintingEnabled()) &&
       !workerPrivate->UsesSystemPrincipal()) {
-    aPlatform = mProperties.mPlatformOverridden;
+    
+    
+    aPlatform = workerPrivate->ResistFingerprintingEnabled() ?
+      NS_LITERAL_STRING(SPOOFED_PLATFORM) : mProperties.mPlatformOverridden;
   } else {
     aPlatform = mProperties.mPlatform;
   }
