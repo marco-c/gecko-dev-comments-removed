@@ -1353,6 +1353,7 @@ class StringType extends Type {
 }
 
 let FunctionEntry;
+let Event;
 let SubModuleType;
 
 class ObjectType extends Type {
@@ -1616,12 +1617,20 @@ SubModuleType = class SubModuleType extends Type {
     let functions = schema.functions.filter(fun => !fun.unsupported)
                           .map(fun => FunctionEntry.parseSchema(fun, path));
 
-    return new this(functions);
+    let events = [];
+
+    if (schema.events) {
+      events = schema.events.filter(event => !event.unsupported)
+                     .map(event => Event.parseSchema(event, path));
+    }
+
+    return new this(functions, events);
   }
 
-  constructor(functions) {
+  constructor(functions, events) {
     super();
     this.functions = functions;
+    this.events = events;
   }
 };
 
@@ -1944,6 +1953,11 @@ class SubModuleProperty extends Entry {
       context.injectInto(fun, obj, fun.name, subpath, ns);
     }
 
+    let events = type.events;
+    for (let event of events) {
+      context.injectInto(event, obj, event.name, subpath, ns);
+    }
+
     
 
     return {
@@ -2121,7 +2135,10 @@ FunctionEntry = class FunctionEntry extends CallEntry {
 };
 
 
-class Event extends CallEntry {
+
+
+
+Event = class Event extends CallEntry { 
   static parseSchema(event, path) {
     let extraParameters = Array.from(event.extraParameters || [], param => ({
       type: Schemas.parseSchema(param, path, ["name", "optional", "default"]),
@@ -2194,7 +2211,7 @@ class Event extends CallEntry {
       },
     };
   }
-}
+};
 
 const TYPES = Object.freeze(Object.assign(Object.create(null), {
   any: AnyType,
