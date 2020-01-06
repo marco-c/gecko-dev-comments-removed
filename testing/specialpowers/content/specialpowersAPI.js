@@ -483,14 +483,14 @@ SpecialPowersAPI.prototype = {
     return mc.port2;
   },
 
-  loadChromeScript(urlOrFunction) {
+  loadChromeScript(urlOrFunction, sandboxOptions) {
     
     let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"]
                           .getService(Ci.nsIUUIDGenerator);
     let id = uuidGenerator.generateUUID().toString();
 
     
-    let scriptArgs = { id };
+    let scriptArgs = { id, sandboxOptions };
     if (typeof(urlOrFunction) == "function") {
       scriptArgs.function = {
         body: "(" + urlOrFunction.toString() + ")();",

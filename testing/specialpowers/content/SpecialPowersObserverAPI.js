@@ -432,7 +432,7 @@ SpecialPowersObserverAPI.prototype = {
           default:
             throw new SpecialPowersError("Invalid operation for SPObserverervice");
         }
-        return undefined;	
+        return undefined;       
       }
 
       case "SPLoadChromeScript": {
@@ -455,7 +455,11 @@ SpecialPowersObserverAPI.prototype = {
         
         
         let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-        let sb = Components.utils.Sandbox(systemPrincipal);
+        let sandboxOptions = aMessage.json.sandboxOptions;
+        if (!sandboxOptions) {
+          sandboxOptions = {}
+        }
+        let sb = Components.utils.Sandbox(systemPrincipal, sandboxOptions);
         let mm = aMessage.target
                          .QueryInterface(Ci.nsIFrameLoaderOwner)
                          .frameLoader
