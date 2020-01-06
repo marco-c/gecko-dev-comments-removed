@@ -94,7 +94,8 @@ static const char* CSPStrDirectives[] = {
   "child-src",                 
   "block-all-mixed-content",   
   "require-sri-for",           
-  "sandbox"                    
+  "sandbox",                   
+  "worker-src"                 
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir)
@@ -470,12 +471,10 @@ class nsCSPDirective {
 
     bool visitSrcs(nsCSPSrcVisitor* aVisitor) const;
 
-  private:
+  protected:
     CSPDirective            mDirective;
     nsTArray<nsCSPBaseSrc*> mSrcs;
 };
-
-
 
 
 
@@ -490,14 +489,42 @@ class nsCSPChildSrcDirective : public nsCSPDirective {
     explicit nsCSPChildSrcDirective(CSPDirective aDirective);
     virtual ~nsCSPChildSrcDirective();
 
-    void setHandleFrameSrc();
+    void setRestrictFrames()
+      { mRestrictFrames = true; }
+
+    void setRestrictWorkers()
+      { mRestrictWorkers = true; }
 
     virtual bool restrictsContentType(nsContentPolicyType aContentType) const;
 
     virtual bool equals(CSPDirective aDirective) const;
 
   private:
-    bool mHandleFrameSrc;
+    bool mRestrictFrames;
+    bool mRestrictWorkers;
+};
+
+
+
+
+
+
+
+
+class nsCSPScriptSrcDirective : public nsCSPDirective {
+  public:
+    explicit nsCSPScriptSrcDirective(CSPDirective aDirective);
+    virtual ~nsCSPScriptSrcDirective();
+
+    void setRestrictWorkers()
+      { mRestrictWorkers = true; }
+
+    virtual bool restrictsContentType(nsContentPolicyType aContentType) const;
+
+    virtual bool equals(CSPDirective aDirective) const;
+
+  private:
+    bool mRestrictWorkers;
 };
 
 

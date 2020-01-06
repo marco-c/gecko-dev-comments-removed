@@ -134,6 +134,8 @@ nsCSPParser::nsCSPParser(cspTokens& aTokens,
  , mUnsafeInlineKeywordSrc(nullptr)
  , mChildSrc(nullptr)
  , mFrameSrc(nullptr)
+ , mWorkerSrc(nullptr)
+ , mScriptSrc(nullptr)
  , mParsingFrameAncestorsDir(false)
  , mTokens(aTokens)
  , mSelfURI(aSelfURI)
@@ -1111,18 +1113,34 @@ nsCSPParser::directiveName()
   }
 
   
+  
+  
   if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::CHILD_SRC_DIRECTIVE)) {
+    const char16_t* params[] = { mCurToken.get() };
+    logWarningErrorToConsole(nsIScriptError::warningFlag,
+                             "deprecatedChildSrcDirective",
+                             params, ArrayLength(params));
     mChildSrc = new nsCSPChildSrcDirective(CSP_StringToCSPDirective(mCurToken));
     return mChildSrc;
   }
 
   
   if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::FRAME_SRC_DIRECTIVE)) {
-    const char16_t* params[] = { mCurToken.get(), u"child-src" };
-    logWarningErrorToConsole(nsIScriptError::warningFlag, "deprecatedDirective",
-                             params, ArrayLength(params));
     mFrameSrc = new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));
     return mFrameSrc;
+  }
+
+  
+  if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::WORKER_SRC_DIRECTIVE)) {
+    mWorkerSrc = new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));
+    return mWorkerSrc;
+  }
+
+  
+  
+  if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
+    mScriptSrc = new nsCSPScriptSrcDirective(CSP_StringToCSPDirective(mCurToken));
+    return mScriptSrc;
   }
 
   if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::REQUIRE_SRI_FOR)) {
@@ -1301,9 +1319,22 @@ nsCSPParser::policy()
     directive();
   }
 
-  if (mChildSrc && !mFrameSrc) {
-    
-    mChildSrc->setHandleFrameSrc();
+  if (mChildSrc) {
+    if (!mFrameSrc) {
+      
+      
+      mChildSrc->setRestrictFrames();
+    }
+    if (!mWorkerSrc) {
+      
+      
+      mChildSrc->setRestrictWorkers();
+    }
+  }
+  
+  
+  if (mScriptSrc && !mWorkerSrc && !mChildSrc) {
+    mScriptSrc->setRestrictWorkers();
   }
 
   return mPolicy;
