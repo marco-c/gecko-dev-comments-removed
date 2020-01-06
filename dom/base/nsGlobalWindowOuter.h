@@ -495,8 +495,6 @@ public:
   static void ShutDown();
   static bool IsCallerChrome();
 
-  void CleanupCachedXBLHandlers();
-
   friend class WindowStateHolder;
 
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsGlobalWindowOuter,
@@ -1102,19 +1100,6 @@ private:
 
   void SetIsBackgroundInternal(bool aIsBackground);
 
-  
-  void DisconnectAndClearGroupMessageManagers()
-  {
-    MOZ_RELEASE_ASSERT(IsChromeWindow());
-    for (auto iter = mChromeFields.mGroupMessageManagers.Iter(); !iter.Done(); iter.Next()) {
-      nsIMessageBroadcaster* mm = iter.UserData();
-      if (mm) {
-        static_cast<nsFrameMessageManager*>(mm)->Disconnect();
-      }
-    }
-    mChromeFields.mGroupMessageManagers.Clear();
-  }
-
   nsresult GetInterfaceInternal(const nsIID& aIID, void** aSink);
 
 public:
@@ -1128,13 +1113,9 @@ public:
   virtual mozilla::AbstractThread*
   AbstractMainThreadFor(mozilla::TaskCategory aCategory) override;
 
-  uint32_t LastIdleRequestHandle() const { return mIdleRequestCallbackCounter - 1; }
-
   typedef mozilla::LinkedList<mozilla::dom::IdleRequest> IdleRequests;
 
 protected:
-  
-  
   bool                          mFullScreen : 1;
   bool                          mFullscreenMode : 1;
   bool                          mIsClosed : 1;
@@ -1145,7 +1126,6 @@ protected:
   bool                          mHavePendingClose : 1;
   bool                          mHadOriginalOpener : 1;
   bool                          mOriginalOpenerWasSecureContext : 1;
-  bool                          mIsSecureContextIfOpenerIgnored : 1;
   bool                          mIsPopupSpam : 1;
 
   
@@ -1156,55 +1136,11 @@ protected:
 
   
   
-  
-  bool                          mHasHadSlowScript : 1;
-
-  
-  bool                          mNotifyIdleObserversIdleOnThaw : 1;
-  bool                          mNotifyIdleObserversActiveOnThaw : 1;
-
-  
-  
   bool                          mCreatingInnerWindow : 1;
 
   
   bool                          mIsChrome : 1;
 
-  
-  
-  
-  bool                          mCleanMessageManager : 1;
-
-  
-  
-  bool                   mNeedsFocus : 1;
-  bool                   mHasFocus : 1;
-
-  
-  
-  bool                   mShowFocusRingForContent : 1;
-
-  
-  
-  bool                   mFocusByKeyOccurred : 1;
-
-  
-  
-  bool                   mHasGamepad : 1;
-
-  
-  
-  bool                   mHasVREvents : 1;
-
-  
-  
-  bool                   mHasVRDisplayActivateEvents : 1;
-  nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
-  nsRefPtrHashtable<nsUint32HashKey, mozilla::dom::Gamepad> mGamepads;
-  bool mHasSeenGamepadInput;
-
-  
-  bool                   mNotifiedIDDestroyed : 1;
   
   
   bool                   mAllowScriptsToClose : 1;
@@ -1218,63 +1154,19 @@ protected:
   
   nsCOMPtr<nsIArray>            mArguments;
 
-  
   RefPtr<DialogValueHolder> mReturnValue;
 
-  RefPtr<mozilla::dom::Navigator> mNavigator;
-  RefPtr<nsScreen>            mScreen;
   RefPtr<nsDOMWindowList>     mFrames;
-  
-  RefPtr<mozilla::dom::BarProp> mMenubar;
-  RefPtr<mozilla::dom::BarProp> mToolbar;
-  RefPtr<mozilla::dom::BarProp> mLocationbar;
-  RefPtr<mozilla::dom::BarProp> mPersonalbar;
-  RefPtr<mozilla::dom::BarProp> mStatusbar;
-  RefPtr<mozilla::dom::BarProp> mScrollbars;
   RefPtr<nsDOMWindowUtils>      mWindowUtils;
   nsString                      mStatus;
-  nsString                      mDefaultStatus;
-  RefPtr<nsGlobalWindowObserver> mObserver; 
-  RefPtr<mozilla::dom::Crypto>  mCrypto;
-  RefPtr<mozilla::dom::U2F> mU2F;
-  RefPtr<mozilla::dom::cache::CacheStorage> mCacheStorage;
-  RefPtr<mozilla::dom::Console> mConsole;
-  RefPtr<mozilla::dom::Worklet> mAudioWorklet;
-  RefPtr<mozilla::dom::Worklet> mPaintWorklet;
-  
-  
-  
-  
-  nsCOMPtr<nsISupports>         mExternal;
-
-  RefPtr<mozilla::dom::MozSelfSupport> mMozSelfSupport;
 
   RefPtr<mozilla::dom::Storage> mLocalStorage;
-  RefPtr<mozilla::dom::Storage> mSessionStorage;
 
-  
-  RefPtr<mozilla::EventListenerManager> mListenerManager;
-  RefPtr<mozilla::dom::Location> mLocation;
-  RefPtr<nsHistory>           mHistory;
-  RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
-
-  
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   
   nsCOMPtr<nsITabChild>  mTabChild;
 
-  uint32_t mSuspendDepth;
-  uint32_t mFreezeDepth;
-
-  
-  uint32_t mFocusMethod;
-
   uint32_t mSerial;
-
-  
-  uint32_t mIdleRequestCallbackCounter;
-  IdleRequests mIdleRequestCallbacks;
-  RefPtr<IdleRequestExecutor> mIdleRequestExecutor;
 
 #ifdef DEBUG
   bool mSetOpenerWindowCalled;
@@ -1283,49 +1175,12 @@ protected:
 
   bool mCleanedUp;
 
-  nsCOMPtr<nsIDOMOfflineResourceList> mApplicationCache;
-
-  using XBLPrototypeHandlerTable = nsJSThingHashtable<nsPtrHashKey<nsXBLPrototypeHandler>, JSObject*>;
-  mozilla::UniquePtr<XBLPrototypeHandlerTable> mCachedXBLPrototypeHandlers;
-
-  
   
   
   
   
   
   nsCOMPtr<nsIDocument> mSuspendedDoc;
-
-  RefPtr<mozilla::dom::IDBFactory> mIndexedDB;
-
-  
-  
-  
-  
-  uint32_t                      mDialogAbuseCount;
-
-  
-  
-  
-  
-  TimeStamp                     mLastDialogQuitTime;
-
-  
-  
-  bool                          mAreDialogsEnabled;
-
-  nsTHashtable<nsPtrHashKey<mozilla::DOMEventTargetHelper> > mEventTargetObjects;
-
-  nsTArray<uint32_t> mEnabledSensors;
-
-#if defined(MOZ_WIDGET_ANDROID)
-  mozilla::UniquePtr<mozilla::dom::WindowOrientationObserver> mOrientationChangeObserver;
-#endif
-
-#ifdef MOZ_WEBSPEECH
-  
-  RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
-#endif
 
 #ifdef DEBUG
   
@@ -1337,30 +1192,16 @@ protected:
   uint32_t mCanSkipCCGeneration;
 
   
-  nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
-
-  RefPtr<mozilla::dom::VREventObserver> mVREventObserver;
-
   
   
-  
-  uint32_t mAutoActivateVRDisplayID; 
-  int64_t mBeforeUnloadListenerCount; 
-
-  RefPtr<mozilla::dom::IntlUtils> mIntlUtils;
+  uint32_t mAutoActivateVRDisplayID;
 
   static OuterWindowByIdTable* sOuterWindowsById;
 
   
   
   struct ChromeFields {
-    ChromeFields()
-      : mGroupMessageManagers(1)
-    {}
-
     nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
-    nsCOMPtr<nsIMessageBroadcaster> mMessageManager;
-    nsInterfaceHashtable<nsStringHashKey, nsIMessageBroadcaster> mGroupMessageManagers;
     
     
     
