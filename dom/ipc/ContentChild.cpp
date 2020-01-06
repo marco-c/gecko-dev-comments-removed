@@ -1029,7 +1029,7 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   }
 
   
-  if (NS_WARN_IF(!newChild->IPCOpen())) {
+  if (NS_WARN_IF(!newChild->IPCOpen() || newChild->IsDestroyed())) {
     return NS_ERROR_ABORT;
   }
 
