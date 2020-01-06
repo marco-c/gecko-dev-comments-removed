@@ -1,6 +1,7 @@
 
 
 
+import mozunit
 import pytest
 
 from marionette_harness.runtests import MarionetteArguments
@@ -28,6 +29,4 @@ def test_parse_arg_socket_timeout(socket_timeout):
 
 
 if __name__ == '__main__':
-    import sys
-    sys.exit(pytest.main(
-        ['--log-tbpl=-', __file__]))
+    mozunit.main('--log-tbpl=-')

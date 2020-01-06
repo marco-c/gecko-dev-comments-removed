@@ -3,8 +3,8 @@
 
 
 import os
-import sys
 
+import mozunit
 import pytest
 
 from mozlint.parser import Parser
@@ -58,4 +58,4 @@ def test_parse_non_existent_linter(parse):
 
 
 if __name__ == '__main__':
-    sys.exit(pytest.main(['--verbose', __file__]))
+    mozunit.main()

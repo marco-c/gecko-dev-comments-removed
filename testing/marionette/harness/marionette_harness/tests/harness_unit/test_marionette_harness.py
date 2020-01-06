@@ -2,6 +2,7 @@
 
 
 
+import mozunit
 import pytest
 
 from mock import Mock, patch, sentinel
@@ -104,6 +105,4 @@ def test_harness_sets_up_default_test_handlers(mach_parsed_kwargs):
 
 
 if __name__ == '__main__':
-    import sys
-    sys.exit(pytest.main(
-        ['--log-tbpl=-', __file__]))
+    mozunit.main('--log-tbpl=-')

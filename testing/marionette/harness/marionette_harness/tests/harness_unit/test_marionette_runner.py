@@ -3,6 +3,7 @@
 
 
 import manifestparser
+import mozunit
 import pytest
 
 from mock import Mock, patch, mock_open, sentinel, DEFAULT
@@ -507,6 +508,4 @@ def test_option_run_until_failure(mach_parsed_kwargs, repeat, run_until_failure)
 
 
 if __name__ == '__main__':
-    import sys
-    sys.exit(pytest.main(
-        ['--log-tbpl=-', __file__]))
+    mozunit.main('--log-tbpl=-')

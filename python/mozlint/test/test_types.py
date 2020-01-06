@@ -3,8 +3,8 @@
 
 
 import os
-import sys
 
+import mozunit
 import pytest
 
 from mozlint.result import ResultContainer
@@ -51,4 +51,4 @@ def test_no_filter(lint, lintdir, files):
 
 
 if __name__ == '__main__':
-    sys.exit(pytest.main(['--verbose', __file__]))
+    mozunit.main()
