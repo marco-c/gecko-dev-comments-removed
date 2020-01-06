@@ -238,6 +238,26 @@ private:
   
 
 
+  class ScriptedImageObserver final {
+  public:
+    NS_INLINE_DECL_REFCOUNTING(ScriptedImageObserver)
+
+    ScriptedImageObserver(imgINotificationObserver* aObserver,
+                          RefPtr<imgRequestProxy>&& aCurrentRequest,
+                          RefPtr<imgRequestProxy>&& aPendingRequest);
+    bool CancelRequests();
+
+    nsCOMPtr<imgINotificationObserver> mObserver;
+    RefPtr<imgRequestProxy> mCurrentRequest;
+    RefPtr<imgRequestProxy> mPendingRequest;
+
+  private:
+    ~ScriptedImageObserver();
+  };
+
+  
+
+
   struct AutoStateChanger {
     AutoStateChanger(nsImageLoadingContent* aImageContent,
                      bool aNotify) :
@@ -405,12 +425,37 @@ private:
   
 
 
+  void CloneScriptedRequests(imgRequestProxy* aRequest);
+
+  
+
+
+
+  void ClearScriptedRequests(int32_t aRequestType, nsresult aReason);
+
+  
+
+
+
+
+  void MakePendingScriptedRequestsCurrent();
+
+  
+
+
 
 
 
 
 
   ImageObserver mObserverList;
+
+  
+
+
+
+
+  nsTArray<RefPtr<ScriptedImageObserver>> mScriptedObservers;
 
   
 
