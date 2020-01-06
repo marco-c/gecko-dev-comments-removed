@@ -791,9 +791,21 @@ public:
         .Else(InvalidSyscall());
     }
 
+      
+      
+      
+      
     case __NR_umask:
-    case __NR_kill:
       return Allow();
+
+    case __NR_kill: {
+      Arg<int> sig(1);
+      
+      
+      
+      return If(sig == 0, Error(EPERM))
+        .Else(InvalidSyscall());
+    }
 
     case __NR_wait4:
 #ifdef __NR_waitpid
