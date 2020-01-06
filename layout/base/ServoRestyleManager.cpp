@@ -133,6 +133,13 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
   
   
   
+  if (aRestyleHint) {
+    IncrementUndisplayedRestyleGeneration();
+  }
+
+  
+  
+  
   if (mReentrantChanges && !aRestyleHint) {
     mReentrantChanges->AppendElement(ReentrantChange { aElement, aMinChangeHint });
     return;
@@ -941,6 +948,10 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
   if (restyleHint || changeHint) {
     Servo_NoteExplicitHints(aElement, restyleHint, changeHint);
   }
+
+  
+  
+  IncrementUndisplayedRestyleGeneration();
 }
 
 static inline bool
@@ -1035,6 +1046,12 @@ ServoRestyleManager::TakeSnapshotForAttributeChange(Element* aElement,
     return;
   }
 
+  
+  
+  
+  
+  IncrementUndisplayedRestyleGeneration();
+
   ServoElementSnapshot& snapshot = SnapshotFor(aElement);
   snapshot.AddAttrs(aElement, aNameSpaceID, aAttribute);
 
@@ -1088,6 +1105,12 @@ ServoRestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 
   if (restyleHint || changeHint) {
     Servo_NoteExplicitHints(aElement, restyleHint, changeHint);
+  }
+
+  if (restyleHint) {
+    
+    
+    IncrementUndisplayedRestyleGeneration();
   }
 }
 

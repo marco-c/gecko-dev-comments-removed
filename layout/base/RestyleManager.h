@@ -39,6 +39,13 @@ public:
   
   
   uint32_t GetRestyleGeneration() const { return mRestyleGeneration; }
+  
+  
+  
+  
+  uint32_t GetUndisplayedRestyleGeneration() const {
+    return mUndisplayedRestyleGeneration;
+  }
 
   
   
@@ -235,6 +242,15 @@ protected:
       
       ++mRestyleGeneration;
     }
+    IncrementUndisplayedRestyleGeneration();
+  }
+
+  void IncrementUndisplayedRestyleGeneration() {
+    if (++mUndisplayedRestyleGeneration == 0) {
+      
+      
+      ++mUndisplayedRestyleGeneration;
+    }
   }
 
   nsPresContext* PresContext() const {
@@ -249,6 +265,7 @@ protected:
 private:
   nsPresContext* mPresContext; 
   uint32_t mRestyleGeneration;
+  uint32_t mUndisplayedRestyleGeneration;
   uint32_t mHoverGeneration;
 
   

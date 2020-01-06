@@ -1037,6 +1037,7 @@ public:
 
 
   uint64_t GetRestyleGeneration() const;
+  uint64_t GetUndisplayedRestyleGeneration() const;
 
   
 
