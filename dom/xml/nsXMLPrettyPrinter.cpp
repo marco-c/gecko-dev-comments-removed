@@ -48,7 +48,7 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
     *aDidPrettyPrint = false;
 
     
-    nsIPresShell* shell = aDocument->GetShell();
+    nsCOMPtr<nsIPresShell> shell = aDocument->GetShell();
     if (!shell) {
         return NS_OK;
     }
@@ -153,7 +153,8 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
         GetSystemPrincipal(getter_AddRefs(sysPrincipal));
 
     
-    if (rootCont->IsElement()) {
+    
+    if (!shell->IsDestroying() && rootCont->IsElement()) {
         shell->DestroyFramesForAndRestyle(rootCont->AsElement());
     }
 
