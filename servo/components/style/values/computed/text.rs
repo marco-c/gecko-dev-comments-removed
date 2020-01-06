@@ -4,6 +4,8 @@
 
 
 
+use std::fmt;
+use style_traits::ToCss;
 use values::{CSSInteger, CSSFloat};
 use values::animated::ToAnimatedZero;
 use values::computed::{NonNegativeLength, NonNegativeNumber};
@@ -11,6 +13,7 @@ use values::computed::length::{Length, LengthOrPercentage};
 use values::generics::text::InitialLetter as GenericInitialLetter;
 use values::generics::text::LineHeight as GenericLineHeight;
 use values::generics::text::Spacing;
+use values::specified::text::TextOverflowSide;
 
 
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
@@ -27,4 +30,47 @@ pub type LineHeight = GenericLineHeight<NonNegativeNumber, NonNegativeLength>;
 impl ToAnimatedZero for LineHeight {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> { Err(()) }
+}
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+
+
+
+
+
+
+
+
+pub struct TextOverflow {
+    
+    pub first: TextOverflowSide,
+    
+    pub second: TextOverflowSide,
+    
+    pub sides_are_logical: bool,
+}
+
+impl TextOverflow {
+    
+    pub fn get_initial_value() -> TextOverflow {
+        TextOverflow {
+            first: TextOverflowSide::Clip,
+            second: TextOverflowSide::Clip,
+            sides_are_logical: true,
+        }
+    }
+}
+
+impl ToCss for TextOverflow {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        if self.sides_are_logical {
+            debug_assert!(self.first == TextOverflowSide::Clip);
+            self.second.to_css(dest)?;
+        } else {
+            self.first.to_css(dest)?;
+            dest.write_str(" ")?;
+            self.second.to_css(dest)?;
+        }
+        Ok(())
+    }
 }
