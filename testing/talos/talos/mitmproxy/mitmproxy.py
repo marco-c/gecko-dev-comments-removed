@@ -132,13 +132,10 @@ def start_mitmproxy_playback(mitmdump_path,
         sys.path.insert(1, mitmdump_path)
         
         env["PATH"] = os.path.dirname(browser_path) + ";" + env["PATH"]
-    elif mozinfo.os == 'mac':
-        param2 = param + ' ' + ' '.join(mitmproxy_recordings)
-        env["PATH"] = os.path.dirname(browser_path)
     else:
         
-        LOG.error('Aborting: talos mitmproxy is currently only supported on Windows and Mac')
-        sys.exit()
+        param2 = param + ' ' + ' '.join(mitmproxy_recordings)
+        env["PATH"] = os.path.dirname(browser_path)
 
     command = [mitmdump_path, '-k', '-s', param2]
 
@@ -160,10 +157,10 @@ def start_mitmproxy_playback(mitmdump_path,
 def stop_mitmproxy_playback(mitmproxy_proc):
     """Stop the mitproxy server playback"""
     LOG.info("Stopping mitmproxy playback, klling process %d" % mitmproxy_proc.pid)
-    if mozinfo.os == 'mac':
-        mitmproxy_proc.terminate()
-    else:
+    if mozinfo.os == 'win':
         mitmproxy_proc.kill()
+    else:
+        mitmproxy_proc.terminate()
     time.sleep(10)
     if mitmproxy_proc.pid in psutil.pids():
         
