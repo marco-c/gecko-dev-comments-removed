@@ -641,6 +641,8 @@ var interfaceNamesInGlobalScope =
 
     "MediaRecorder",
 
+    "MediaRecorderErrorEvent",
+
     "MediaSource",
 
     "MediaStream",
@@ -786,8 +788,6 @@ var interfaceNamesInGlobalScope =
     "RadioNodeList",
 
     "Range",
-
-    "RecordErrorEvent",
 
     "Rect",
 
