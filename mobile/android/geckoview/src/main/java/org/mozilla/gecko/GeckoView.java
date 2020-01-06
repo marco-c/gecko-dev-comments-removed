@@ -683,6 +683,18 @@ public class GeckoView extends LayerView {
         mEventDispatcher.dispatch("GeckoView:GoForward", null);
     }
 
+    
+
+
+
+
+
+    public void setActive(boolean active) {
+        final GeckoBundle msg = new GeckoBundle();
+        msg.putBoolean("active", active);
+        mEventDispatcher.dispatch("GeckoView:SetActive", msg);
+    }
+
     public GeckoViewSettings getSettings() {
         return mSettings;
     }
