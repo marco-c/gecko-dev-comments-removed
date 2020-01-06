@@ -137,8 +137,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
     
     for (const {loaded, portID} of this.channel.messagePorts) {
+      const simulatedMsg = {target: {portID}};
+      this.onNewTabInit(simulatedMsg);
       if (loaded) {
-        this.onNewTabLoad({target: {portID}});
+        this.onNewTabLoad(simulatedMsg);
       }
     }
   }

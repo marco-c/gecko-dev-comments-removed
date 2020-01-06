@@ -1,0 +1,53 @@
+const {utils: Cu} = Components;
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyServiceGetter(this, "IDNService", "@mozilla.org/network/idn-service;1", "nsIIDNService");
+
+Cu.importGlobalProperties(["URL"]);
+
+
+
+
+
+
+function handleIDNHost(hostname) {
+  try {
+    return IDNService.convertToDisplayIDN(hostname, {});
+  } catch (e) {
+    
+    
+    return hostname;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.shortURL = function shortURL(link) {
+  if (!link.url && !link.hostname) {
+    return "";
+  }
+  const {eTLD} = link;
+  const asciiHost = (link.hostname || new URL(link.url).hostname).replace(/^www\./i, "");
+  const hostname = handleIDNHost(asciiHost);
+
+  
+  const eTLDLength = (eTLD || "").length || (hostname.match(/\.com$/) && 3);
+  const eTLDExtra = eTLDLength > 0 ? -(eTLDLength + 1) : Infinity;
+  
+  return hostname.slice(0, eTLDExtra).toLowerCase() || hostname || link.title || link.url;
+};
+
+this.EXPORTED_SYMBOLS = ["shortURL"];

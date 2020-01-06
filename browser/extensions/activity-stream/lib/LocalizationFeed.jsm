@@ -31,20 +31,17 @@ this.LocalizationFeed = class LocalizationFeed {
 
   updateLocale() {
     
-    
-    let locale = Services.locale.negotiateLanguages(
+    const locales = Services.locale.negotiateLanguages(
       Services.locale.getAppLocalesAsLangTags(), 
       Object.keys(this.allStrings), 
       DEFAULT_LOCALE 
-    )[0];
-
-    let strings = this.allStrings[locale];
+    ).reverse();
 
     
-    if (locale !== DEFAULT_LOCALE) {
-      strings = Object.assign({}, this.allStrings[DEFAULT_LOCALE], strings || {});
-    }
+    const strings = Object.assign({}, ...locales.map(l => this.allStrings[l]));
 
+    
+    const locale = locales.pop();
     this.store.dispatch(ac.BroadcastToContent({
       type: at.LOCALE_UPDATED,
       data: {

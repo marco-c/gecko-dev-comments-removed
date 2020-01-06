@@ -10,7 +10,7 @@ const {actionCreators: ac, actionTypes: at} = Cu.import("resource://activity-str
 const {TippyTopProvider} = Cu.import("resource://activity-stream/lib/TippyTopProvider.jsm", {});
 const {insertPinned, TOP_SITES_SHOWMORE_LENGTH} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
 const {Dedupe} = Cu.import("resource://activity-stream/common/Dedupe.jsm", {});
-const {shortURL} = Cu.import("resource://activity-stream/common/ShortURL.jsm", {});
+const {shortURL} = Cu.import("resource://activity-stream/lib/ShortURL.jsm", {});
 
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabUtils",
   "resource://gre/modules/NewTabUtils.jsm");
@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Screenshots",
 const UPDATE_TIME = 15 * 60 * 1000; 
 const DEFAULT_SITES_PREF = "default.sites";
 const DEFAULT_TOP_SITES = [];
+const FRECENCY_THRESHOLD = 100; 
 
 this.TopSitesFeed = class TopSitesFeed {
   constructor() {
@@ -62,7 +63,9 @@ this.TopSitesFeed = class TopSitesFeed {
     if (!frecent) {
       frecent = [];
     } else {
-      frecent = frecent.filter(link => link && link.type !== "affiliate");
+      
+      frecent = frecent.filter(link => link && link.type !== "affiliate" &&
+        link.frecency > FRECENCY_THRESHOLD);
     }
 
     
@@ -152,6 +155,9 @@ this.TopSitesFeed = class TopSitesFeed {
         }
         break;
       case at.PLACES_HISTORY_CLEARED:
+        this.refresh();
+        break;
+      case at.BLOCK_URL: 
         this.refresh();
         break;
       case at.PREF_CHANGED:
