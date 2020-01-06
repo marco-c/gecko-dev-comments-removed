@@ -2071,6 +2071,10 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
                                                  JS::MutableHandle<PropertyDescriptor> desc)
                                                  const
 {
+    
+    
+    
+
     assertEnteredPolicy(cx, wrapper, id, BaseProxyHandler::GET | BaseProxyHandler::SET |
                                          BaseProxyHandler::GET_PROPERTY_DESCRIPTOR);
     RootedObject target(cx, XrayTraits::getTargetObject(wrapper));
@@ -2114,6 +2118,8 @@ XrayWrapper<Base, Traits>::getPropertyDescriptor(JSContext* cx, HandleObject wra
     if (!Traits::singleton.resolveNativeProperty(cx, wrapper, holder, id, desc))
         return false;
 
+    
+    
     
     
     
@@ -2428,6 +2434,7 @@ template <typename Base, typename Traits>
 JSObject*
 XrayWrapper<Base, Traits>::enumerate(JSContext* cx, HandleObject wrapper) const
 {
+    MOZ_ASSERT(!Traits::HasPrototype, "Why did we get called?");
     
     return js::BaseProxyHandler::enumerate(cx, wrapper);
 }
