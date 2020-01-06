@@ -19,15 +19,6 @@ add_task(async function autoMigrationUndoNotificationShows() {
   let undoCalled;
   scope.AutoMigrate.undo = () => { undoCalled = true };
 
-  
-  
-  await SpecialPowers.pushPrefEnv({set: [
-    ["browser.newtabpage.activity-stream.enabled", false],
-    ["browser.newtab.preload", false]
-  ]});
-  
-  await BrowserTestUtils.removeTab(await BrowserTestUtils.openNewForegroundTab(gBrowser));
-
   for (let url of ["about:newtab", "about:home"]) {
     undoCalled = false;
     
