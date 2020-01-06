@@ -6,29 +6,14 @@
 #if !defined(MediaResource_h_)
 #define MediaResource_h_
 
-#include "mozilla/Mutex.h"
-#include "nsIChannel.h"
-#include "nsIURI.h"
-#include "nsISeekableStream.h"
-#include "nsIStreamListener.h"
-#include "nsIChannelEventSink.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIThreadRetargetableStreamListener.h"
 #include "Intervals.h"
-#include "MediaCache.h"
-#include "MediaContainerType.h"
 #include "MediaData.h"
 #include "MediaPrefs.h"
-#include "MediaResourceCallback.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/TimeStamp.h"
+#include "mozilla/GuardObjects.h"
 #include "mozilla/UniquePtr.h"
+#include "nsISeekableStream.h"
 #include "nsThreadUtils.h"
-#include <algorithm>
-
-class nsIHttpChannel;
-class nsIPrincipal;
 
 namespace mozilla {
 
@@ -135,143 +120,6 @@ private:
   void Destroy();
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
-};
-
-class BaseMediaResource : public MediaResource {
-public:
-  
-
-
-
-  static already_AddRefed<BaseMediaResource> Create(
-    MediaResourceCallback* aCallback,
-    nsIChannel* aChannel,
-    bool aIsPrivateBrowsing);
-
-  
-  
-  
-  virtual nsresult Close() = 0;
-
-  
-  
-  
-  virtual void ThrottleReadahead(bool bThrottle) {}
-
-  
-  
-  
-  virtual void SetPlaybackRate(uint32_t aBytesPerSecond) = 0;
-
-  
-  
-  
-  virtual double GetDownloadRate(bool* aIsReliable) = 0;
-
-  
-  
-  
-  void SetLoadInBackground(bool aLoadInBackground);
-
-  
-  
-  
-  
-  
-  virtual void Suspend(bool aCloseImmediately) = 0;
-
-  
-  virtual void Resume() = 0;
-
-  
-  virtual void SetReadMode(MediaCacheStream::ReadMode aMode) = 0;
-
-  
-  
-  
-  virtual bool IsTransportSeekable() = 0;
-
-  
-  virtual already_AddRefed<nsIPrincipal> GetCurrentPrincipal() = 0;
-
-  
-
-
-
-  virtual nsresult Open(nsIStreamListener** aStreamListener) = 0;
-
-  
-  
-  
-  
-  
-  virtual bool CanClone() { return false; }
-
-  
-  
-  
-  virtual already_AddRefed<BaseMediaResource> CloneData(
-    MediaResourceCallback* aCallback)
-  {
-    return nullptr;
-  }
-
-  
-  bool IsLiveStream() { return GetLength() == -1; }
-
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
-    
-    
-    
-    
-    
-    return 0;
-  }
-
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
-    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
-  }
-
-protected:
-  BaseMediaResource(MediaResourceCallback* aCallback,
-                    nsIChannel* aChannel,
-                    nsIURI* aURI)
-    : mCallback(aCallback)
-    , mChannel(aChannel)
-    , mURI(aURI)
-    , mLoadInBackground(false)
-  {
-  }
-  virtual ~BaseMediaResource()
-  {
-  }
-
-  
-  
-  
-  void ModifyLoadFlags(nsLoadFlags aFlags);
-
-  
-  
-  void DispatchBytesConsumed(int64_t aNumBytes, int64_t aOffset);
-
-  RefPtr<MediaResourceCallback> mCallback;
-
-  
-  
-  nsCOMPtr<nsIChannel> mChannel;
-
-  
-  
-  nsCOMPtr<nsIURI> mURI;
-
-  
-  
-  
-  
-  bool mLoadInBackground;
 };
 
 
