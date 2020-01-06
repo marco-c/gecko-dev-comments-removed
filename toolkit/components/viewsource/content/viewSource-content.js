@@ -380,9 +380,21 @@ var ViewSourceContent = {
     if (/^about:blocked/.test(errorDoc.documentURI)) {
       
 
-      if (target == errorDoc.getElementById("goBackButton")) {
+      if (target == errorDoc.getElementById("getMeOutButton")) {
         
         sendAsyncMessage("ViewSource:Close");
+      } else if (target == errorDoc.getElementById("reportButton")) {
+        
+        
+        let URL = Services.urlFormatter.formatURLPref("app.support.baseURL");
+        sendAsyncMessage("ViewSource:OpenURL", { URL })
+      } else if (target == errorDoc.getElementById("ignoreWarningButton")) {
+        
+        docShell.QueryInterface(Ci.nsIWebNavigation)
+                .loadURIWithOptions(content.location.href,
+                                    Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
+                                    null, Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
+                                    null, null, null);
       }
     }
   },
@@ -437,15 +449,6 @@ var ViewSourceContent = {
   },
 
   onContextMenu(event) {
-    let addonInfo = {};
-    let subject = {
-      event,
-      addonInfo,
-    };
-
-    subject.wrappedJSObject = subject;
-    Services.obs.notifyObservers(subject, "content-contextmenu");
-
     let node = event.target;
 
     let result = {
