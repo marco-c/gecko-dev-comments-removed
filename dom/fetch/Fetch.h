@@ -155,6 +155,10 @@ public:
     return ConsumeBody(CONSUME_TEXT, aRv);
   }
 
+  void
+  GetBody(JSContext* aCx,
+          JS::MutableHandle<JSObject*> aMessage);
+
   
 
   void
