@@ -51,8 +51,6 @@ const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
 
 const TIMEOUT_DISABLED_PREF = "browser.sessionstore.debug.no_auto_updates";
 
-const PREF_INTERVAL = "browser.sessionstore.interval";
-
 const kNoIndex = Number.MAX_SAFE_INTEGER;
 const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 
@@ -737,17 +735,6 @@ var MessageQueue = {
   
 
 
-  NEEDED_IDLE_PERIOD_MS: 5,
-
-  
-
-
-
-  _timeoutWaitIdlePeriodMs: null,
-
-  
-
-
 
   _timeout: null,
 
@@ -784,11 +771,8 @@ var MessageQueue = {
   init() {
     this.timeoutDisabled =
       Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
-    this._timeoutWaitIdlePeriodMs =
-      Services.prefs.getIntPref(PREF_INTERVAL);
 
     Services.prefs.addObserver(TIMEOUT_DISABLED_PREF, this);
-    Services.prefs.addObserver(PREF_INTERVAL, this);
   },
 
   uninit() {
@@ -796,20 +780,9 @@ var MessageQueue = {
   },
 
   observe(subject, topic, data) {
-    if (topic == "nsPref:changed") {
-      switch (data) {
-        case TIMEOUT_DISABLED_PREF:
-          this.timeoutDisabled =
-            Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
-          break;
-        case PREF_INTERVAL:
-          this._timeoutWaitIdlePeriodMs =
-            Services.prefs.getIntPref(PREF_INTERVAL);
-          break;
-        default:
-          debug("received unknown message '" + data + "'");
-          break;
-      }
+    if (topic == "nsPref:changed" && data == TIMEOUT_DISABLED_PREF) {
+      this.timeoutDisabled =
+        Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
     }
   },
 
@@ -830,27 +803,9 @@ var MessageQueue = {
     if (!this._timeout && !this._timeoutDisabled) {
       
       this._timeout = setTimeoutWithTarget(
-        () => this.sendWhenIdle(), this.BATCH_DELAY_MS, tabEventTarget);
+        () => this.send(), this.BATCH_DELAY_MS, tabEventTarget);
     }
   },
-
-  
-
-
-
-
-
-
-
-  sendWhenIdle(deadline) {
-    if (deadline) {
-      if (deadline.didTimeout || deadline.timeRemaining() > MessageQueue.NEEDED_IDLE_PERIOD_MS) {
-        MessageQueue.send();
-        return;
-      }
-    }
-    content.requestIdleCallback(MessageQueue.sendWhenIdle, {timeout: MessageQueue._timeoutWaitIdlePeriodMs});
-   },
 
   
 
