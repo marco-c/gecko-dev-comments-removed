@@ -158,18 +158,13 @@ this.TelemetryHealthPing = {
     this._clearData();
     this._lastSendTime = Utils.monotonicNow();
 
-    let options = {
-      addClientId: true,
-      usePingSender: reason === this.Reason.SHUT_DOWN
-    };
-
     return new Promise(r =>
       
       
       
       Services.tm.dispatchToMainThread(() => r(
         TelemetryController
-          .submitExternalPing(this.HEALTH_PING_TYPE, payload, options))));
+          .submitExternalPing(this.HEALTH_PING_TYPE, payload, {addClientId: true}))));
   },
 
   
