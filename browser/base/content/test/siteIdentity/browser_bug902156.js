@@ -44,10 +44,10 @@ function cleanUpAfterTests() {
 
 
 
-function test1A() {
+async function test1A() {
   BrowserTestUtils.browserLoaded(gTestBrowser).then(test1B);
 
-  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
   
   let {gIdentityHandler} = gTestBrowser.ownerGlobal;
@@ -73,10 +73,10 @@ function test1C() {
   gTestBrowser.loadURI(url);
 }
 
-function test1D() {
+async function test1D() {
   
   
-  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
+  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
 
   var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1D");
@@ -93,10 +93,10 @@ function test2() {
   gTestBrowser.loadURI(url);
 }
 
-function test2A() {
+async function test2A() {
   BrowserTestUtils.browserLoaded(gTestBrowser).then(test2B);
 
-  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
   
   let {gIdentityHandler} = gTestBrowser.ownerGlobal;
@@ -123,10 +123,10 @@ function test2C() {
   mctestlink.click();
 }
 
-function test2D() {
+async function test2D() {
   
   
-  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
+  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
 
   var actual = content.document.getElementById("mctestdiv").innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2D");
@@ -143,8 +143,8 @@ function test3() {
   gTestBrowser.loadURI(url);
 }
 
-function test3A() {
-  assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
+async function test3A() {
+  await assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
   
   cleanUpAfterTests();

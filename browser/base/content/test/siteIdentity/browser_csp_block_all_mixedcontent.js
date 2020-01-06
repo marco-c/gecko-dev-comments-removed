@@ -17,9 +17,9 @@ function cleanUpAfterTests() {
 }
 
 
-function verifyUInotDegraded() {
+async function verifyUInotDegraded() {
   
-  assertMixedContentBlockingState(
+  await assertMixedContentBlockingState(
     gTestBrowser,
     { activeLoaded: false,
       activeBlocked: false,

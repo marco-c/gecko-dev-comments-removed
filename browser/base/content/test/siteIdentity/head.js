@@ -130,7 +130,7 @@ function isSecurityState(browser, expectedState) {
 
 
 
-function assertMixedContentBlockingState(tabbrowser, states = {}) {
+async function assertMixedContentBlockingState(tabbrowser, states = {}) {
   if (!tabbrowser || !("activeLoaded" in states) ||
       !("activeBlocked" in states) || !("passiveLoaded" in states)) {
     throw new Error("assertMixedContentBlockingState requires a browser and a states object");
@@ -259,19 +259,20 @@ function assertMixedContentBlockingState(tabbrowser, states = {}) {
   }
 
   if (activeLoaded || activeBlocked || passiveLoaded) {
+    let promiseViewShown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "ViewShown");
     doc.getElementById("identity-popup-security-expander").click();
+    await promiseViewShown;
     is(Array.filter(doc.querySelectorAll("[observes=identity-popup-mcb-learn-more]"),
                     element => !is_hidden(element)).length, 1,
        "The 'Learn more' link should be visible once.");
   }
 
-  gIdentityHandler._identityPopup.hidden = true;
-
-  
-  
-  
-  
-  return new Promise(resolve => executeSoon(resolve));
+  if (gIdentityHandler._identityPopup.state != "closed") {
+    let hideEvent = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popuphidden");
+    info("Hiding identity popup");
+    gIdentityHandler._identityPopup.hidePopup();
+    await hideEvent;
+  }
 }
 
 async function loadBadCertPage(url) {

@@ -30,7 +30,7 @@ add_task(async function() {
     
     
     isSecurityState(browser, "secure");
-    assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: false, passiveLoaded: false});
+    await assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: false, passiveLoaded: false});
     
     
     url = HTTP_TEST_ROOT_2 + "file_mixedContentFromOnunload.html";
@@ -40,6 +40,6 @@ add_task(async function() {
     await BrowserTestUtils.loadURI(browser, url);
     await BrowserTestUtils.browserLoaded(browser);
     isSecurityState(browser, "broken");
-    assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: false, passiveLoaded: true});
+    await assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: false, passiveLoaded: true});
   });
 });
