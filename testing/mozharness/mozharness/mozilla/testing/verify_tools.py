@@ -146,6 +146,7 @@ class VerifyToolsMixin(object):
             args = []
             
             files = self.verify_suites.get(suite)
+            references = re.compile(r"(-ref|-noref|-noref.)\.")
             for file in files:
                 if suite in ['reftest', 'crashtest']:
                     file = os.path.join(self.reftest_test_dir, file)
@@ -153,7 +154,7 @@ class VerifyToolsMixin(object):
                     
                     
                     
-                    nonref = file.replace('-ref.', '.')
+                    nonref = references.sub('.', file)
                     if nonref != file:
                         file = None
                         if nonref not in files and os.path.exists(nonref):
