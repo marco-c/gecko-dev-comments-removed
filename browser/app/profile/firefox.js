@@ -1724,12 +1724,4 @@ pref("browser.onboarding.newtour", "private,addons,customize,search,default,sync
 pref("browser.onboarding.updatetour", "");
 
 
-
-
-#ifdef NIGHTLY_BUILD
-pref("extensions.screenshots.system-disabled", false);
-#else
-pref("extensions.screenshots.system-disabled", true);
-#endif
-
 pref("extensions.screenshots.disabled", false);
