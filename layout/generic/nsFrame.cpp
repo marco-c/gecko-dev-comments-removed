@@ -240,6 +240,13 @@ nsReflowStatus::UpdateTruncated(const ReflowInput& aReflowInput,
   }
 }
 
+void
+nsIFrame::DestroyAnonymousContent(already_AddRefed<nsIContent> aContent)
+{
+  PresContext()->PresShell()->FrameConstructor()
+               ->DestroyAnonymousContent(mozilla::Move(aContent));
+}
+
 
 
 #ifdef DEBUG

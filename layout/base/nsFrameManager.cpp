@@ -681,6 +681,21 @@ nsFrameManager::RestoreFrameState(nsIFrame* aFrame,
   }
 }
 
+void
+nsFrameManager::DestroyAnonymousContent(already_AddRefed<nsIContent> aContent)
+{
+  nsCOMPtr<nsIContent> content = aContent;
+  if (content) {
+    
+    
+    
+    
+    ClearAllMapsFor(content);
+
+    content->UnbindFromTree();
+  }
+}
+
 
 
 nsFrameManagerBase::UndisplayedMap::UndisplayedMap()

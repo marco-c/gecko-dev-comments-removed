@@ -1418,8 +1418,8 @@ nsComboboxControlFrame::DestroyFrom(nsIFrame* aDestructRoot)
 
   
   mPopupFrames.DestroyFramesFrom(aDestructRoot);
-  nsContentUtils::DestroyAnonymousContent(&mDisplayContent);
-  nsContentUtils::DestroyAnonymousContent(&mButtonContent);
+  DestroyAnonymousContent(mDisplayContent.forget());
+  DestroyAnonymousContent(mButtonContent.forget());
   nsBlockFrame::DestroyFrom(aDestructRoot);
 }
 

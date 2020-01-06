@@ -2264,9 +2264,9 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   
   
-  nsContentUtils::DestroyAnonymousContent(&rootNode);
-  nsContentUtils::DestroyAnonymousContent(&mPlaceholderDiv);
-  nsContentUtils::DestroyAnonymousContent(&mPreviewDiv);
+  aFrame->DestroyAnonymousContent(rootNode.forget());
+  aFrame->DestroyAnonymousContent(mPlaceholderDiv.forget());
+  aFrame->DestroyAnonymousContent(mPreviewDiv.forget());
 }
 
 nsresult

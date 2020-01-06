@@ -1675,12 +1675,6 @@ public:
   
 
 
-  static void DestroyAnonymousContent(nsCOMPtr<nsIContent>* aContent);
-  static void DestroyAnonymousContent(nsCOMPtr<Element>* aElement);
-
-  
-
-
 
 
   static void NotifyInstalledMenuKeyboardListener(bool aInstalling);
