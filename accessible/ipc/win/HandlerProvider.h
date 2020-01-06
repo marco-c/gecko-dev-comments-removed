@@ -64,7 +64,7 @@ private:
 
   Atomic<uint32_t>                  mRefCnt;
   Mutex                             mMutex; 
-  REFIID                            mTargetUnkIid;
+  const IID                         mTargetUnkIid;
   mscom::InterceptorTargetPtr<IUnknown> mTargetUnk; 
   UniquePtr<mscom::StructToStream>  mSerializer;
 };
