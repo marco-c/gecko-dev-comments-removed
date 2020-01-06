@@ -7160,7 +7160,8 @@ class AutoScheduleZonesForGC
                 zone->scheduleGC();
 
             
-            if (rt->gc.isIncrementalGCInProgress() && zone->needsIncrementalBarrier())
+            
+            if (rt->gc.isIncrementalGCInProgress() && zone->wasGCStarted())
                 zone->scheduleGC();
 
             
