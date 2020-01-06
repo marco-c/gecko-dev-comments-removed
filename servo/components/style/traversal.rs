@@ -290,13 +290,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         
-        
-        
-        
-        
-        if (cfg!(feature = "servo") ||
-            traversal_flags.contains(traversal_flags::AggressivelyForgetful)) &&
-           !data.restyle.damage.is_empty() {
+        if cfg!(feature = "servo") && !data.restyle.damage.is_empty() {
             return true;
         }
 
