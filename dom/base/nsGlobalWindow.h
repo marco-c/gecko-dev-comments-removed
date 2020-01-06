@@ -474,9 +474,6 @@ public:
 
   static bool IsPrivilegedChromeWindow(JSContext* , JSObject* aObj);
 
-  static bool IsShowModalDialogEnabled(JSContext*  = nullptr,
-                                       JSObject*  = nullptr);
-
   static bool IsRequestIdleCallbackEnabled(JSContext* aCx, JSObject* );
 
   bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
@@ -600,9 +597,6 @@ public:
   {
     return mIsChrome;
   }
-
-  using nsPIDOMWindow::IsModalContentWindow;
-  static bool IsModalContentWindow(JSContext* aCx, JSObject* aGlobal);
 
   
   
@@ -1011,12 +1005,6 @@ public:
                                                 mozilla::ErrorResult& aRv);
   void PrintOuter(mozilla::ErrorResult& aError);
   void Print(mozilla::ErrorResult& aError);
-  void ShowModalDialog(JSContext* aCx, const nsAString& aUrl,
-                       JS::Handle<JS::Value> aArgument,
-                       const nsAString& aOptions,
-                       JS::MutableHandle<JS::Value> aRetval,
-                       nsIPrincipal& aSubjectPrincipal,
-                       mozilla::ErrorResult& aError);
   void PostMessageMoz(JSContext* aCx, JS::Handle<JS::Value> aMessage,
                       const nsAString& aTargetOrigin,
                       const mozilla::dom::Sequence<JSObject*>& aTransfer,
@@ -1777,18 +1765,6 @@ protected:
                       nsIPrincipal& aSubjectPrincipal,
                       mozilla::ErrorResult& aError);
 
-  already_AddRefed<nsIVariant>
-    ShowModalDialogOuter(const nsAString& aUrl, nsIVariant* aArgument,
-                         const nsAString& aOptions,
-                         nsIPrincipal& aSubjectPrincipal,
-                         mozilla::ErrorResult& aError);
-
-  already_AddRefed<nsIVariant>
-    ShowModalDialog(const nsAString& aUrl, nsIVariant* aArgument,
-                    const nsAString& aOptions,
-                    nsIPrincipal& aSubjectPrincipal,
-                    mozilla::ErrorResult& aError);
-
   
   
   
@@ -1937,9 +1913,6 @@ protected:
 
   
   nsCOMPtr<nsIArray>            mArguments;
-
-  
-  RefPtr<DialogValueHolder> mDialogArguments;
 
   
   RefPtr<DialogValueHolder> mReturnValue;
@@ -2180,39 +2153,13 @@ public:
 };
 
 
-
-
-
-
-class nsGlobalModalWindow : public nsGlobalWindow,
-                            public nsIDOMModalContentWindow
-{
-public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIDOMMODALCONTENTWINDOW
-
-  static already_AddRefed<nsGlobalModalWindow> Create(nsGlobalWindow *aOuterWindow);
-
-protected:
-  explicit nsGlobalModalWindow(nsGlobalWindow *aOuterWindow)
-    : nsGlobalWindow(aOuterWindow)
-  {
-    mIsModalContentWindow = true;
-  }
-
-  ~nsGlobalModalWindow() {}
-};
-
-
 inline already_AddRefed<nsGlobalWindow>
-NS_NewScriptGlobalObject(bool aIsChrome, bool aIsModalContentWindow)
+NS_NewScriptGlobalObject(bool aIsChrome)
 {
   RefPtr<nsGlobalWindow> global;
 
   if (aIsChrome) {
     global = nsGlobalChromeWindow::Create(nullptr);
-  } else if (aIsModalContentWindow) {
-    global = nsGlobalModalWindow::Create(nullptr);
   } else {
     global = nsGlobalWindow::Create(nullptr);
   }
