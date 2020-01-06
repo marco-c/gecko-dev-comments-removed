@@ -25,7 +25,11 @@ add_task(async function test_privacy() {
     "network.networkPredictionEnabled": {
       "network.predictor.enabled": true,
       "network.prefetch-next": true,
-      "network.http.speculative-parallel-limit": 10,
+      
+      
+      "network.http.speculative-parallel-limit":
+        ExtensionPreferencesManager.getDefaultValue(
+          "network.http.speculative-parallel-limit"),
       "network.dns.disablePrefetch": false,
     },
     "websites.hyperlinkAuditingEnabled": {

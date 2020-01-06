@@ -89,20 +89,52 @@ function initialValueCallback() {
 
 
 
-
-
-
-
-async function processItem(name, item) {
-  if (item) {
-    let prefs = item.initialValue || await settingsMap.get(name).setCallback(item.value);
-    for (let pref in prefs) {
-      if (prefs[pref] === undefined) {
-        Preferences.reset(pref);
-      } else {
-        Preferences.set(pref, prefs[pref]);
-      }
+function setPrefs(setting, item) {
+  let prefs = item.initialValue || setting.setCallback(item.value);
+  for (let pref in prefs) {
+    if (prefs[pref] === undefined) {
+      Preferences.reset(pref);
+    } else {
+      Preferences.set(pref, prefs[pref]);
     }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function processSetting(extension, name, action) {
+  let expectedItem = await ExtensionSettingsStore.getSetting(STORE_TYPE, name);
+  let item = await ExtensionSettingsStore[action](extension, STORE_TYPE, name);
+  if (item) {
+    let setting = settingsMap.get(name);
+    let expectedPrefs = expectedItem.initialValue
+      || setting.setCallback(expectedItem.value);
+    if (Object.keys(expectedPrefs).some(
+        pref => expectedPrefs[pref] && Preferences.get(pref) != expectedPrefs[pref])) {
+      return false;
+    }
+    setPrefs(setting, item);
     return true;
   }
   return false;
@@ -155,7 +187,11 @@ this.ExtensionPreferencesManager = {
     let setting = settingsMap.get(name);
     let item = await ExtensionSettingsStore.addSetting(
       extension, STORE_TYPE, name, value, initialValueCallback.bind(setting));
-    return await processItem(name, item);
+    if (item) {
+      setPrefs(setting, item);
+      return true;
+    }
+    return false;
   },
 
   
@@ -171,10 +207,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async disableSetting(extension, name) {
-    let item = await ExtensionSettingsStore.disable(
-      extension, STORE_TYPE, name);
-    return await processItem(name, item);
+  disableSetting(extension, name) {
+    return processSetting(extension, name, "disable");
   },
 
   
@@ -189,9 +223,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async enableSetting(extension, name) {
-    let item = await ExtensionSettingsStore.enable(extension, STORE_TYPE, name);
-    return await processItem(name, item);
+  enableSetting(extension, name) {
+    return processSetting(extension, name, "enable");
   },
 
   
@@ -206,10 +239,8 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async removeSetting(extension, name) {
-    let item = await ExtensionSettingsStore.removeSetting(
-      extension, STORE_TYPE, name);
-    return await processItem(name, item);
+  removeSetting(extension, name) {
+    return processSetting(extension, name, "removeSetting");
   },
 
   
