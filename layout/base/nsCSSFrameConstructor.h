@@ -321,7 +321,8 @@ public:
   
   
   
-  nsIFrame* EnsureFrameForTextNode(nsGenericDOMDataNode* aContent);
+  
+  bool EnsureFrameForTextNodeIsCreatedAfterFlush(nsGenericDOMDataNode* aContent);
 
   
   void GenerateChildFrames(nsContainerFrame* aFrame);
