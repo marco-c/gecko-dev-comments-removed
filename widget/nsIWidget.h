@@ -1111,6 +1111,14 @@ class nsIWidget : public nsISupports
 
 
 
+    virtual void SetWindowOpacity(float aOpacity) {}
+
+    
+
+
+
+
+
     virtual void SetShowsToolbarButton(bool aShow) = 0;
 
     
