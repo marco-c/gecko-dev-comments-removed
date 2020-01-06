@@ -40,20 +40,32 @@ class RuleNodeCacheConditions
 {
 public:
   RuleNodeCacheConditions()
-    : mFontSize(0), mBits(0) {}
+    : mFontSize(0)
+    , mBits(0)
+    , mWritingMode(0)
+  {}
+
   RuleNodeCacheConditions(const RuleNodeCacheConditions& aOther)
-    : mFontSize(aOther.mFontSize), mBits(aOther.mBits) {}
+    : mFontSize(aOther.mFontSize)
+    , mBits(aOther.mBits)
+    , mWritingMode(aOther.mWritingMode)
+  {}
+
   RuleNodeCacheConditions& operator=(const RuleNodeCacheConditions& aOther)
   {
     mFontSize = aOther.mFontSize;
     mBits = aOther.mBits;
+    mWritingMode = aOther.mWritingMode;
     return *this;
   }
+
   bool operator==(const RuleNodeCacheConditions& aOther) const
   {
     return mFontSize == aOther.mFontSize &&
-           mBits == aOther.mBits;
+           mBits == aOther.mBits &&
+           mWritingMode == aOther.mWritingMode;
   }
+
   bool operator!=(const RuleNodeCacheConditions& aOther) const
   {
     return !(*this == aOther);
@@ -85,9 +97,9 @@ public:
 
   void SetWritingModeDependency(uint8_t aWritingMode)
   {
-    MOZ_ASSERT(!(mBits & eHaveWritingMode) || GetWritingMode() == aWritingMode);
-    mBits |= (static_cast<uint64_t>(aWritingMode) << eWritingModeShift) |
-             eHaveWritingMode;
+    MOZ_ASSERT(!(mBits & eHaveWritingMode) || mWritingMode == aWritingMode);
+    mWritingMode = aWritingMode;
+    mBits |= eHaveWritingMode;
   }
 
   void SetUncacheable()
@@ -107,15 +119,14 @@ public:
 
   bool CacheableWithDependencies() const
   {
-    return !(mBits & eUncacheable) &&
-           (mBits & eHaveBitsMask) != 0;
+    return Cacheable() && mBits;
   }
 
   bool CacheableWithoutDependencies() const
   {
     
     
-    return (mBits & eHaveBitsMask) == 0;
+    return mBits == 0;
   }
 
 #ifdef DEBUG
@@ -124,19 +135,10 @@ public:
 
 private:
   enum {
-    eUncacheable      = 0x0001,
-    eHaveFontSize     = 0x0002,
-    eHaveWritingMode  = 0x0004,
-    eHaveBitsMask     = 0x00ff,
-    eWritingModeMask  = 0xff00,
-    eWritingModeShift = 8,
+    eUncacheable      = 1 << 0,
+    eHaveFontSize     = 1 << 1,
+    eHaveWritingMode  = 1 << 2,
   };
-
-  uint8_t GetWritingMode() const
-  {
-    return static_cast<uint8_t>(
-        (mBits & eWritingModeMask) >> eWritingModeShift);
-  }
 
   
   nscoord mFontSize;
@@ -145,10 +147,8 @@ private:
   
   
   
-  
-  
-  
-  uint32_t mBits;
+  uint8_t mBits;
+  uint8_t mWritingMode;
 };
 
 } 
