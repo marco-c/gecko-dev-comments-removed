@@ -802,7 +802,7 @@ public:
 
 
 
-  void SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
+  bool SetPendingScrollUpdateForNextTransaction(FrameMetrics::ViewID aScrollId,
                                                 const ScrollUpdateInfo& aUpdateInfo);
   Maybe<ScrollUpdateInfo> GetPendingScrollInfoUpdate(FrameMetrics::ViewID aScrollId);
   void ClearPendingScrollInfoUpdate();
@@ -1402,6 +1402,8 @@ public:
   const ScrollThumbData& GetScrollThumbData() const { return mSimpleAttrs.ThumbData(); }
   bool IsScrollbarContainer() { return mSimpleAttrs.IsScrollbarContainer(); }
   Layer* GetMaskLayer() const { return mMaskLayer; }
+  bool HasPendingTransform() const { return mPendingTransform; }
+
   void CheckCanary() const { mCanary.Check(); }
 
   
