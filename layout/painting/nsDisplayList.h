@@ -2401,7 +2401,10 @@ public:
 
   template<typename Item, typename Comparator>
   void Sort(const Comparator& aComparator) {
-    nsTArray<Item> items;
+    
+    
+    
+    AutoTArray<Item, 20> items;
 
     while (nsDisplayItem* item = RemoveBottom()) {
       items.AppendElement(Item(item));
