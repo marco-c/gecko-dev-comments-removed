@@ -123,8 +123,6 @@ function isKeyIn(key, ...keys) {
 
 
 
-
-
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -227,7 +225,6 @@ function InplaceEditor(options, event) {
   this.change = options.change;
   this.done = options.done;
   this.contextMenu = options.contextMenu;
-  this.defaultIncrement = options.defaultIncrement || 1;
   this.destroy = options.destroy;
   this.initial = options.initial ? options.initial : this.elt.textContent;
   this.multiline = options.multiline || false;
@@ -1212,9 +1209,9 @@ InplaceEditor.prototype = {
     let key = event.keyCode;
 
     if (isKeyIn(key, "UP", "PAGE_UP")) {
-      increment = 1 * this.defaultIncrement;
+      increment = 1;
     } else if (isKeyIn(key, "DOWN", "PAGE_DOWN")) {
-      increment = -1 * this.defaultIncrement;
+      increment = -1;
     }
 
     if (event.shiftKey && !event.altKey) {
