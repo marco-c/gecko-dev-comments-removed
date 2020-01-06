@@ -87,6 +87,12 @@ impl<T: Copy, U> TypedVector2D<T, U> {
 
     
     #[inline]
+    pub fn yx(&self) -> Self {
+        vec2(self.y, self.x)
+    }
+
+    
+    #[inline]
     pub fn to_size(&self) -> TypedSize2D<T, U> {
         size2(self.x, self.y)
     }
@@ -440,6 +446,24 @@ impl<T: Copy, U> TypedVector3D<T, U> {
 
     
     #[inline]
+    pub fn xy(&self) -> TypedVector2D<T, U> {
+        vec2(self.x, self.y)
+    }
+
+    
+    #[inline]
+    pub fn xz(&self) -> TypedVector2D<T, U> {
+        vec2(self.x, self.z)
+    }
+
+    
+    #[inline]
+    pub fn yz(&self) -> TypedVector2D<T, U> {
+        vec2(self.y, self.z)
+    }
+
+    
+    #[inline]
     pub fn x_typed(&self) -> Length<T, U> { Length::new(self.x) }
 
     
@@ -468,7 +492,7 @@ impl<T: Copy, U> TypedVector3D<T, U> {
     
     #[inline]
     pub fn to_2d(&self) -> TypedVector2D<T, U> {
-        vec2(self.x, self.y)
+        self.xy()
     }
 }
 
@@ -804,7 +828,7 @@ mod vector2d {
 
 #[cfg(test)]
 mod typedvector2d {
-    use super::{TypedVector2D, vec2};
+    use super::{TypedVector2D, Vector2D, vec2};
     use scale_factor::ScaleFactor;
 
     pub enum Mm {}
@@ -840,11 +864,17 @@ mod typedvector2d {
 
         assert_eq!(result, vec2(0.1, 0.2));
     }
+
+    #[test]
+    pub fn test_swizzling() {
+        let p: Vector2D<i32> = vec2(1, 2);
+        assert_eq!(p.yx(), vec2(2, 1));
+    }
 }
 
 #[cfg(test)]
 mod vector3d {
-    use super::{Vector3D, vec3};
+    use super::{Vector3D, vec2, vec3};
     type Vec3 = Vector3D<f32>;
 
     #[test]
@@ -890,5 +920,13 @@ mod vector3d {
         let result = p1.max(p2);
 
         assert_eq!(result, vec3(2.0, 3.0, 5.0));
+    }
+
+    #[test]
+    pub fn test_swizzling() {
+        let p: Vector3D<i32> = vec3(1, 2, 3);
+        assert_eq!(p.xy(), vec2(1, 2));
+        assert_eq!(p.xz(), vec2(1, 3));
+        assert_eq!(p.yz(), vec2(2, 3));
     }
 }
