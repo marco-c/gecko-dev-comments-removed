@@ -103,26 +103,21 @@ ChannelMediaDecoder::ResourceCallback::NotifyDataArrived()
 void
 ChannelMediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus)
 {
-  RefPtr<ResourceCallback> self = this;
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-    "ChannelMediaDecoder::ResourceCallback::NotifyDataEnded",
-    [=]() {
-    if (!self->mDecoder) {
-      return;
-    }
-    self->mDecoder->NotifyDownloadEnded(aStatus);
-    if (NS_SUCCEEDED(aStatus)) {
-      MediaDecoderOwner* owner = self->GetMediaOwner();
-      MOZ_ASSERT(owner);
-      owner->DownloadSuspended();
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mDecoder) {
+    return;
+  }
+  mDecoder->NotifyDownloadEnded(aStatus);
+  if (NS_SUCCEEDED(aStatus)) {
+    MediaDecoderOwner* owner = GetMediaOwner();
+    MOZ_ASSERT(owner);
+    owner->DownloadSuspended();
 
-      
-      
-      
-      owner->NotifySuspendedByCache(true);
-    }
-  });
-  mAbstractMainThread->Dispatch(r.forget());
+    
+    
+    
+    owner->NotifySuspendedByCache(true);
+  }
 }
 
 void
