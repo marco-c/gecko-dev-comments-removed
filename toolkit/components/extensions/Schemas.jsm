@@ -285,6 +285,15 @@ const CONTEXT_FOR_INJECTION = [
 
 
 
+function forceString(msg) {
+  if (typeof msg === "function") {
+    return msg();
+  }
+  return msg;
+}
+
+
+
 
 
 class Context {
@@ -405,6 +414,8 @@ class Context {
 
 
 
+
+
   error(errorMessage, choicesMessage = undefined) {
     if (choicesMessage !== null) {
       let {choicePath} = this;
@@ -416,7 +427,8 @@ class Context {
     }
 
     if (this.currentTarget) {
-      return {error: `Error processing ${this.currentTarget}: ${errorMessage}`};
+      let {currentTarget} = this;
+      return {error: () => `Error processing ${currentTarget}: ${forceString(errorMessage)}`};
     }
     return {error: errorMessage};
   }
@@ -433,7 +445,7 @@ class Context {
 
 
   makeError(message) {
-    let {error} = this.error(message);
+    let error = forceString(this.error(message).error);
     if (this.cloneScope) {
       return new this.cloneScope.Error(error);
     }
@@ -1177,7 +1189,7 @@ class Type extends Entry {
       choice = `be a ${type} value`;
     }
 
-    return context.error(`Expected ${type} instead of ${JSON.stringify(value)}`,
+    return context.error(() => `Expected ${type} instead of ${JSON.stringify(value)}`,
                          choice);
   }
 }
@@ -1245,9 +1257,9 @@ class ChoiceType extends Type {
 
     let message;
     if (typeof value === "object") {
-      message = `Value must either: ${choices.join(", ")}`;
+      message = () => `Value must either: ${choices.join(", ")}`;
     } else {
-      message = `Value ${JSON.stringify(value)} must either: ${choices.join(", ")}`;
+      message = () => `Value ${JSON.stringify(value)} must either: ${choices.join(", ")}`;
     }
 
     return context.error(message, null);
@@ -1373,21 +1385,21 @@ class StringType extends Type {
 
       let choices = this.enumeration.map(JSON.stringify).join(", ");
 
-      return context.error(`Invalid enumeration value ${JSON.stringify(value)}`,
+      return context.error(() => `Invalid enumeration value ${JSON.stringify(value)}`,
                            `be one of [${choices}]`);
     }
 
     if (value.length < this.minLength) {
-      return context.error(`String ${JSON.stringify(value)} is too short (must be ${this.minLength})`,
+      return context.error(() => `String ${JSON.stringify(value)} is too short (must be ${this.minLength})`,
                            `be longer than ${this.minLength}`);
     }
     if (value.length > this.maxLength) {
-      return context.error(`String ${JSON.stringify(value)} is too long (must be ${this.maxLength})`,
+      return context.error(() => `String ${JSON.stringify(value)} is too long (must be ${this.maxLength})`,
                            `be shorter than ${this.maxLength}`);
     }
 
     if (this.pattern && !this.pattern.test(value)) {
-      return context.error(`String ${JSON.stringify(value)} must match ${this.pattern}`,
+      return context.error(() => `String ${JSON.stringify(value)} must match ${this.pattern}`,
                            `match the pattern ${this.pattern.toSource()}`);
     }
 
@@ -1588,7 +1600,7 @@ class ObjectType extends Type {
 
     if (error) {
       if (onError == "warn") {
-        context.logError(error.error);
+        context.logError(forceString(error.error));
       } else if (onError != "ignore") {
         throw error;
       }
@@ -1813,7 +1825,7 @@ class ArrayType extends Type {
       element = context.withPath(String(i), () => this.itemType.normalize(element, context));
       if (element.error) {
         if (this.onError == "warn") {
-          context.logError(element.error);
+          context.logError(forceString(element.error));
         } else if (this.onError != "ignore") {
           return element;
         }
@@ -1967,7 +1979,7 @@ class TypeProperty extends Entry {
       let setStub = (value) => {
         let normalized = this.type.normalize(value, context);
         if (normalized.error) {
-          this.throwError(context, normalized.error);
+          this.throwError(context, forceString(normalized.error));
         }
 
         apiImpl.setProperty(normalized.value);
@@ -2135,7 +2147,7 @@ class CallEntry extends Entry {
       let parameter = this.parameters[parameterIndex];
       let r = parameter.type.normalize(arg, context);
       if (r.error) {
-        this.throwError(context, `Type error for parameter ${parameter.name} (${r.error})`);
+        this.throwError(context, `Type error for parameter ${parameter.name} (${forceString(r.error)})`);
       }
       return r.value;
     });
@@ -2190,7 +2202,7 @@ FunctionEntry = class FunctionEntry extends CallEntry {
     }
     const {error} = type.normalize(value, context);
     if (error) {
-      this.throwError(context, `Type error for ${name} value (${error})`);
+      this.throwError(context, `Type error for ${name} value (${forceString(error)})`);
     }
   }
 
@@ -2886,6 +2898,10 @@ this.Schemas = {
     let ns = this.getNamespace(namespaceName);
     let type = ns.get(prop);
 
-    return type.normalize(obj, new Context(context));
+    let result = type.normalize(obj, new Context(context));
+    if (result.error) {
+      return {error: forceString(result.error)};
+    }
+    return result;
   },
 };
