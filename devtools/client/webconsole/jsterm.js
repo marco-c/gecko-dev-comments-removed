@@ -26,6 +26,8 @@ loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-cl
 loader.lazyImporter(this, "VariablesView", "resource://devtools/client/shared/widgets/VariablesView.jsm");
 loader.lazyImporter(this, "VariablesViewController", "resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
+loader.lazyRequireGetter(this, "NotificationBox", "devtools/client/shared/components/NotificationBox", true);
+loader.lazyRequireGetter(this, "PriorityLevels", "devtools/client/shared/components/NotificationBox", true);
 
 const l10n = require("devtools/client/webconsole/webconsole-l10n");
 
@@ -269,9 +271,8 @@ JSTerm.prototype = {
     } else {
       let okstring = l10n.getStr("selfxss.okstring");
       let msg = l10n.getFormatStr("selfxss.msg", [okstring]);
-      this._onPaste = WebConsoleUtils.pasteHandlerGen(
-        this.inputNode, doc.getElementById("webconsole-notificationbox"),
-        msg, okstring);
+      this._onPaste = WebConsoleUtils.pasteHandlerGen(this.inputNode,
+          this.getNotificationBox(), msg, okstring);
       this.inputNode.addEventListener("keypress", this._keyPress);
       this.inputNode.addEventListener("paste", this._onPaste);
       this.inputNode.addEventListener("drop", this._onPaste);
@@ -1746,6 +1747,30 @@ JSTerm.prototype = {
     
     this._chevronWidth = +doc.defaultView.getComputedStyle(this.inputNode)
                              .paddingLeft.replace(/[^0-9.]/g, "") - 4;
+  },
+
+  
+
+
+  getNotificationBox: function () {
+    if (this._notificationBox) {
+      return this._notificationBox;
+    }
+
+    let box = this.hud.document.getElementById("webconsole-notificationbox");
+    if (box.tagName === "notificationbox") {
+      
+      
+      return box;
+    }
+
+    let toolbox = gDevTools.getToolbox(this.hud.owner.target);
+
+    
+    this._notificationBox = Object.assign(
+      toolbox.ReactDOM.render(toolbox.React.createElement(NotificationBox), box),
+      PriorityLevels);
+    return this._notificationBox;
   },
 
   
