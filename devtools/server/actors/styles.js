@@ -1111,8 +1111,14 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       let declarations = parseNamedDeclarations(isCssPropertyKnown,
                                                 form.authoredText || form.cssText,
                                                 true);
+
+      
+      
+      let CSS = this.pageStyle.inspector.tabActor.window.CSS;
       form.declarations = declarations.map(decl => {
-        decl.isValid = DOMUtils.cssPropertyIsValid(decl.name, decl.value);
+        
+        
+        decl.isValid = CSS.supports(`${decl.name}:${decl.value}`);
         return decl;
       });
     }
