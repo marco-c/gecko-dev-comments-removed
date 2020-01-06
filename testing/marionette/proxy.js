@@ -153,7 +153,7 @@ proxy.AsyncMessageChannel = class {
             resolve();
             break;
         }
-      }
+      };
 
       
       

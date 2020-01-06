@@ -309,7 +309,7 @@ BulkPacket.prototype.write = function(stream) {
   
   if (this._outgoingHeader.length) {
     let written = stream.write(this._outgoingHeader,
-                               this._outgoingHeader.length);
+        this._outgoingHeader.length);
     this._outgoingHeader = this._outgoingHeader.slice(written);
     return;
   }

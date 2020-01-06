@@ -189,7 +189,7 @@ const validator = {
     obj[prop] = val;
     return true;
   },
-}
+};
 
 
 
