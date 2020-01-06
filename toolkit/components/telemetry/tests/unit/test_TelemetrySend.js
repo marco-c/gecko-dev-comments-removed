@@ -326,10 +326,6 @@ add_task(async function test_discardBigPings() {
   const OVERSIZED_PAYLOAD = {"data": generateRandomString(2 * 1024 * 1024)};
 
   
-  Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_SEND").clear();
-  Telemetry.getHistogramById("TELEMETRY_DISCARDED_SEND_PINGS_SIZE_MB").clear();
-
-  
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, { test: "test" });
   await TelemetrySend.testWaitOnOutgoingPings();
 
