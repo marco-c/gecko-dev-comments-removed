@@ -60,6 +60,8 @@ H264Converter::Init()
 RefPtr<MediaDataDecoder::DecodePromise>
 H264Converter::Decode(MediaRawData* aSample)
 {
+  MOZ_RELEASE_ASSERT(mFlushPromise.IsEmpty(), "Flush operatin didn't complete");
+
   MOZ_RELEASE_ASSERT(!mDecodePromiseRequest.Exists()
                      && !mInitPromiseRequest.Exists(),
                      "Can't request a new decode until previous one completed");
@@ -132,10 +134,37 @@ RefPtr<MediaDataDecoder::FlushPromise>
 H264Converter::Flush()
 {
   mDecodePromiseRequest.DisconnectIfExists();
-  mFlushRequest.DisconnectIfExists();
-  mShutdownRequest.DisconnectIfExists();
   mDecodePromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mNeedKeyframe = true;
+
+  MOZ_RELEASE_ASSERT(mFlushPromise.IsEmpty(), "Previous flush didn't complete");
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if (mFlushRequest.Exists() || mShutdownRequest.Exists() ||
+      mInitPromiseRequest.Exists()) {
+    
+    return mFlushPromise.Ensure(__func__);
+  }
   if (mDecoder) {
     return mDecoder->Flush();
   }
@@ -159,7 +188,10 @@ H264Converter::Shutdown()
   mDecodePromiseRequest.DisconnectIfExists();
   mFlushRequest.DisconnectIfExists();
   mShutdownRequest.DisconnectIfExists();
+  mFlushPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mPendingSample = nullptr;
+  mNeedAVCC.reset();
+
   if (mShutdownPromise) {
     
     
@@ -278,6 +310,12 @@ H264Converter::OnDecoderInitDone(const TrackType aTrackType)
     Some(mDecoder->NeedsConversion() == ConversionRequired::kNeedAVCC);
   mCanRecycleDecoder = Some(CanRecycleDecoder());
 
+  if (!mFlushPromise.IsEmpty()) {
+    
+    mFlushPromise.Resolve(true, __func__);
+    return;
+  }
+
   DecodeFirstSample(sample);
 }
 
@@ -285,6 +323,13 @@ void
 H264Converter::OnDecoderInitFailed(const MediaResult& aError)
 {
   mInitPromiseRequest.Complete();
+
+  if (!mFlushPromise.IsEmpty()) {
+    
+    mFlushPromise.Reject(aError, __func__);
+    return;
+  }
+
   mDecodePromise.Reject(
     MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                 RESULT_DETAIL("Unable to initialize H264 decoder")),
@@ -381,6 +426,13 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
            __func__,
            [self, sample, this]() {
              mFlushRequest.Complete();
+
+             if (!mFlushPromise.IsEmpty()) {
+               
+               mFlushPromise.Resolve(true, __func__);
+               return;
+             }
+
              mShutdownPromise = Shutdown();
              mShutdownPromise
                ->Then(AbstractThread::GetCurrent()->AsTaskQueue(),
@@ -388,7 +440,13 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
                       [self, sample, this]() {
                         mShutdownRequest.Complete();
                         mShutdownPromise = nullptr;
-                        mNeedAVCC.reset();
+
+                        if (!mFlushPromise.IsEmpty()) {
+                          
+                          mFlushPromise.Resolve(true, __func__);
+                          return;
+                        }
+
                         nsresult rv = CreateDecoderAndInit(sample);
                         if (rv == NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER) {
                           
@@ -403,7 +461,12 @@ H264Converter::CheckForSPSChange(MediaRawData* aSample)
            },
            [self, this](const MediaResult& aError) {
              mFlushRequest.Complete();
-             mDecodePromise.Reject(aError, __func__);
+               if (!mFlushPromise.IsEmpty()) {
+                 
+                 mFlushPromise.Reject(aError, __func__);
+                 return;
+               }
+               mDecodePromise.Reject(aError, __func__);
            })
     ->Track(mFlushRequest);
   return NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER;
