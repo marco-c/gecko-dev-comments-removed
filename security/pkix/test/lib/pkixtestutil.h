@@ -364,7 +364,7 @@ ByteString CreateEncodedSerialNumber(long value);
 enum class Critical { No = 0, Yes = 1 };
 
 ByteString CreateEncodedBasicConstraints(bool isCA,
-                                          long* pathLenConstraint,
+                                          const long* pathLenConstraint,
                                          Critical critical);
 
 
