@@ -6,6 +6,10 @@ const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 
+let EventUtils = {};
+Services.scriptloader.loadSubScript(
+  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
+
 const FIRST_PARTY_ONE = "example.com";
 const FIRST_PARTY_TWO = "example.org";
 const THIRD_PARTY = "mochi.test:8888";
@@ -52,9 +56,10 @@ function clearAllPlacesFavicons() {
   });
 }
 
-function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI) {
+function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI, aOnlyXUL) {
   let faviconReqXUL = false;
-  let faviconReqPlaces = false;
+  
+  let faviconReqPlaces = aOnlyXUL === true;
   let expectedPrincipal = Services.scriptSecurityManager
                                   .createCodebasePrincipal(aPageURI, { firstPartyDomain: aFirstPartyDomain });
 
@@ -244,6 +249,85 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   await BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
+async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdParty) {
+  let firstPageURI = makeURI(TEST_SITE_ONE + aTestPage);
+  let secondPageURI = makeURI(TEST_SITE_TWO + aTestPage);
+  let faviconURI = aIsThirdParty ? THIRD_PARTY_SITE + FAVICON_URI :
+                                   TEST_SITE_ONE + FAVICON_URI;
+
+  
+  let tabBrowser = document.getElementById("tabbrowser-tabs");
+  let allTabsBtn = document.getElementById("alltabs-button");
+  tabBrowser.setAttribute("overflow", true);
+
+  
+  let promiseFaviconLoaded = waitOnFaviconLoaded(faviconURI);
+
+  
+  let tabInfo = await openTab(TEST_SITE_ONE + aTestPage);
+
+  
+  await promiseFaviconLoaded;
+
+  
+  
+  clearAllImageCaches();
+
+  
+  let promiseObserveFavicon = observeFavicon(FIRST_PARTY_ONE, aExpectedCookies[0],
+                                             firstPageURI, true);
+
+  
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  await promiseObserveFavicon;
+  await allTabsPopupShownPromise;
+
+  
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
+  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  await allTabsPopupHiddenPromise;
+
+  
+  await BrowserTestUtils.removeTab(tabInfo.tab);
+
+  faviconURI = aIsThirdParty ? THIRD_PARTY_SITE + FAVICON_URI :
+                               TEST_SITE_TWO + FAVICON_URI;
+
+  
+  promiseFaviconLoaded = waitOnFaviconLoaded(faviconURI);
+
+  
+  tabInfo = await openTab(TEST_SITE_TWO + aTestPage);
+
+  
+  await promiseFaviconLoaded;
+
+  
+  clearAllImageCaches();
+
+  
+  promiseObserveFavicon = observeFavicon(FIRST_PARTY_TWO, aExpectedCookies[1],
+                                         secondPageURI, true);
+
+  
+  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  await promiseObserveFavicon;
+  await allTabsPopupShownPromise;
+
+  
+  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsBtn, "popuphidden");
+  EventUtils.synthesizeMouseAtCenter(allTabsBtn, {});
+  await allTabsPopupHiddenPromise;
+
+  
+  await BrowserTestUtils.removeTab(tabInfo.tab);
+
+  
+  tabBrowser.removeAttribute("overflow");
+}
+
 add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({"set": [
@@ -278,6 +362,28 @@ add_task(async function test_favicon_firstParty() {
       await doTest(TEST_THIRD_PARTY_PAGE, cookies, THIRD_PARTY_SITE + FAVICON_URI);
     } else {
       await doTest(TEST_PAGE, cookies, TEST_SITE_ONE + FAVICON_URI);
+    }
+  }
+});
+
+add_task(async function test_allTabs_favicon_firstParty() {
+  for (let testThirdParty of [false, true]) {
+    
+    clearAllImageCaches();
+
+    let networkCache = Cc["@mozilla.org/netwerk/cache-storage-service;1"]
+                        .getService(Ci.nsICacheStorageService);
+    networkCache.clear();
+
+    
+    await clearAllPlacesFavicons();
+
+    let cookies = await generateCookies(testThirdParty);
+
+    if (testThirdParty) {
+      await doTestForAllTabsFavicon(TEST_THIRD_PARTY_PAGE, cookies, testThirdParty);
+    } else {
+      await doTestForAllTabsFavicon(TEST_PAGE, cookies, testThirdParty);
     }
   }
 });
