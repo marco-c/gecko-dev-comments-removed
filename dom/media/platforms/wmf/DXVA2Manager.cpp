@@ -954,7 +954,10 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
       hr = mTransform->Output(&sample);
     }
   }
-  if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+
+  if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice() && mSyncObject) {
+    
+    
     client->SyncWithObject(mSyncObject);
     mSyncObject->FinalizeFrame();
   }
