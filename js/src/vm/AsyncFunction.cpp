@@ -95,6 +95,9 @@ WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
+    if (!cx->isExceptionPending())
+        return false;
+
     
     RootedValue exc(cx);
     if (!GetAndClearException(cx, &exc))
