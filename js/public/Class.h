@@ -436,7 +436,7 @@ typedef bool
 
 
 typedef JSString*
-(* JSFunToStringOp)(JSContext* cx, JS::HandleObject obj, unsigned indent);
+(* JSFunToStringOp)(JSContext* cx, JS::HandleObject obj, bool isToSource);
 
 
 

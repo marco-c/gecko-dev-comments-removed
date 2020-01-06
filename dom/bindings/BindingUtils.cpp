@@ -685,7 +685,7 @@ DefineUnforgeableAttributes(JSContext* cx, JS::Handle<JSObject*> obj,
 
 JSString*
 InterfaceObjectToString(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                        unsigned )
+                        bool )
 {
   const js::Class* clasp = js::GetObjectClass(aObject);
   MOZ_ASSERT(IsDOMIfaceAndProtoClass(clasp));
