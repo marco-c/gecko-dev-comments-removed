@@ -11861,10 +11861,11 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
 
   
   
-  nsStyleContext* parentStyleContext =
+  nsIFrame* parentFrame =
     nsFrame::CorrectStyleParentFrame(aParentFrame,
-                                     nsCSSPseudoElements::firstLetter)->
-      StyleContext();
+                                     nsCSSPseudoElements::firstLetter);
+
+  nsStyleContext* parentStyleContext = parentFrame->StyleContext();
 
   
   
@@ -11873,7 +11874,20 @@ nsCSSFrameConstructor::CreateLetterFrame(nsContainerFrame* aBlockFrame,
   
   RefPtr<nsStyleContext> sc =
     GetFirstLetterStyle(blockContent, parentStyleContext);
+
   if (sc) {
+    if (sc->IsServo() && parentFrame->IsLineFrame()) {
+      ServoStyleContext* parentStyleIgnoringFirstLine =
+        aBlockFrame->StyleContext()->AsServo();
+      sc =
+        mPresShell->StyleSet()->AsServo()->ReparentStyleContext(
+          sc->AsServo(),
+          parentStyleContext->AsServo(),
+          parentStyleIgnoringFirstLine,
+          parentStyleIgnoringFirstLine,
+          blockContent->AsElement());
+    }
+
     RefPtr<nsStyleContext> textSC = mPresShell->StyleSet()->
       ResolveStyleForText(aTextContent, sc);
 
