@@ -24,15 +24,12 @@
 
 
 
+#include "hb-private.hh"
+#include "hb-debug.hh"
 #include "hb-shape-plan-private.hh"
 #include "hb-shaper-private.hh"
 #include "hb-font-private.hh"
 #include "hb-buffer-private.hh"
-
-
-#ifndef HB_DEBUG_SHAPE_PLAN
-#define HB_DEBUG_SHAPE_PLAN (HB_DEBUG+0)
-#endif
 
 
 static void

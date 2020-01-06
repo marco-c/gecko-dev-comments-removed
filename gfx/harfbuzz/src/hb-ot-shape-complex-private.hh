@@ -65,8 +65,6 @@ enum hb_ot_shape_zero_width_marks_type_t {
 
 struct hb_ot_complex_shaper_t
 {
-  char name[8];
-
   
 
 

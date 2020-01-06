@@ -35,8 +35,12 @@
 #include "hb-ot-layout-gsub-table.hh"
 #include "hb-ot-layout-gpos-table.hh"
 #include "hb-ot-layout-jstf-table.hh" 
+#include "hb-ot-name-table.hh" 
 
 #include "hb-ot-map-private.hh"
+
+
+const void * const OT::_hb_NullPool[HB_NULL_POOL_SIZE / sizeof (void *)] = {};
 
 
 hb_ot_layout_t *

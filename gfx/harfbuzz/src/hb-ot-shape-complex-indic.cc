@@ -217,7 +217,7 @@ set_indic_properties (hb_glyph_info_t &info)
 
   
 
-  else if (unlikely (u == 0x11303u)) cat = OT_SM;
+  else if (unlikely (u == 0x11301u || u == 0x11303u)) cat = OT_SM;
   else if (unlikely (u == 0x1133cu)) cat = OT_N;
 
   else if (unlikely (u == 0x0AFBu)) cat = OT_N; 
@@ -508,7 +508,7 @@ struct indic_shape_plan_t
 
       
 
-      (const_cast<indic_shape_plan_t *> (this))->virama_glyph = glyph;
+      virama_glyph = glyph;
     }
 
     *pglyph = glyph;
@@ -518,7 +518,7 @@ struct indic_shape_plan_t
   const indic_config_t *config;
 
   bool is_old_spec;
-  hb_codepoint_t virama_glyph;
+  mutable hb_codepoint_t virama_glyph;
 
   would_substitute_feature_t rphf;
   would_substitute_feature_t pref;
@@ -1686,11 +1686,15 @@ final_reordering_syllable (const hb_ot_shape_plan_t *plan,
 
 
   
-  if (info[start].indic_position () == POS_PRE_M &&
-      (!start ||
-       !(FLAG_UNSAFE (_hb_glyph_info_get_general_category (&info[start - 1])) &
-	 FLAG_RANGE (HB_UNICODE_GENERAL_CATEGORY_FORMAT, HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK))))
-    info[start].mask |= indic_plan->mask_array[INIT];
+  if (info[start].indic_position () == POS_PRE_M)
+  {
+    if (!start ||
+	!(FLAG_UNSAFE (_hb_glyph_info_get_general_category (&info[start - 1])) &
+	 FLAG_RANGE (HB_UNICODE_GENERAL_CATEGORY_FORMAT, HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK)))
+      info[start].mask |= indic_plan->mask_array[INIT];
+    else
+      buffer->unsafe_to_break (start - 1, start + 1);
+  }
 
 
   
@@ -1843,7 +1847,6 @@ compose_indic (const hb_ot_shape_normalize_context_t *c,
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_indic =
 {
-  "indic",
   collect_features_indic,
   override_features_indic,
   data_create_indic,

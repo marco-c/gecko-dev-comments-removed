@@ -29,7 +29,6 @@
 
 const hb_ot_complex_shaper_t _hb_ot_complex_shaper_default =
 {
-  "default",
   nullptr, 
   nullptr, 
   nullptr, 
