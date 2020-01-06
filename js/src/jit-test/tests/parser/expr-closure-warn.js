@@ -7,6 +7,9 @@ function testWarn(code) {
     
     testPass(code);
     return;
+  } else {
+    
+    return;
   }
 
   enableLastWarning();

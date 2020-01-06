@@ -1,6 +1,6 @@
 
 var t = {};
-function r(y) t.y = y;
+function r(y) { return t.y = y; }
 function g() {
     for (let [x = r(x)] of x) {}
 }
