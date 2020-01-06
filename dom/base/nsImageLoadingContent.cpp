@@ -45,6 +45,7 @@
 
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/dom/Element.h"
@@ -97,7 +98,8 @@ nsImageLoadingContent::nsImageLoadingContent()
     mUseUrgentStartForChannel(false),
     mStateChangerDepth(0),
     mCurrentRequestRegistered(false),
-    mPendingRequestRegistered(false)
+    mPendingRequestRegistered(false),
+    mIsStartingImageLoad(false)
 {
   if (!nsContentUtils::GetImgLoaderForChannel(nullptr, nullptr)) {
     mLoadingEnabled = false;
@@ -780,6 +782,11 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                  nsIDocument* aDocument,
                                  nsLoadFlags aLoadFlags)
 {
+  MOZ_ASSERT(!mIsStartingImageLoad, "some evil code is reentering LoadImage.");
+  if (mIsStartingImageLoad) {
+    return NS_OK;
+  }
+
   
   
   
@@ -809,9 +816,13 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
     }
   }
 
+  AutoRestore<bool> guard(mIsStartingImageLoad);
+  mIsStartingImageLoad = true;
+
   
   if (aDocument->IsLoadedAsData()) {
     SetBlockedRequest(nsIContentPolicy::REJECT_REQUEST);
+
     FireEvent(NS_LITERAL_STRING("error"));
     FireEvent(NS_LITERAL_STRING("loadend"));
     return NS_OK;
@@ -923,7 +934,6 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
 
     FireEvent(NS_LITERAL_STRING("error"));
     FireEvent(NS_LITERAL_STRING("loadend"));
-    return NS_OK;
   }
 
   return NS_OK;
@@ -1209,6 +1219,12 @@ nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
 nsresult
 nsImageLoadingContent::SetBlockedRequest(int16_t aContentDecision)
 {
+  
+  
+  if (!mIsStartingImageLoad) {
+    return NS_OK;
+  }
+
   
   MOZ_ASSERT(!NS_CP_ACCEPTED(aContentDecision), "Blocked but not?");
 

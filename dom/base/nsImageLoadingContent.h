@@ -463,6 +463,17 @@ private:
   
   bool mCurrentRequestRegistered;
   bool mPendingRequestRegistered;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mIsStartingImageLoad;
 };
 
 #endif 
