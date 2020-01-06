@@ -28,6 +28,9 @@ LazyLogModule gRequestContextLog("RequestContext");
 #define LOG(args) MOZ_LOG(gRequestContextLog, LogLevel::Info, args)
 
 
+static bool sShutdown = false;
+
+
 class RequestContext final : public nsIRequestContext
                            , public nsITimerCallback
 {
@@ -335,6 +338,10 @@ RequestContext::IsContextTailBlocked(nsIRequestTailUnblockCallback * aRequest,
 
   *aBlocked = false;
 
+  if (sShutdown) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+
   if (mUntailAt.IsNull()) {
     LOG(("  untail time passed"));
     return NS_OK;
@@ -459,7 +466,13 @@ void
 RequestContextService::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  for (auto iter = mTable.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data()->CancelTailPendingRequests(NS_ERROR_ABORT);
+  }
   mTable.Clear();
+  sShutdown = true;
 }
 
  nsresult
@@ -483,6 +496,10 @@ RequestContextService::GetRequestContext(const uint64_t rcID, nsIRequestContext 
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG_POINTER(rc);
   *rc = nullptr;
+
+  if (sShutdown) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
 
   if (!mTable.Get(rcID, rc)) {
     nsCOMPtr<nsIRequestContext> newSC = new RequestContext(rcID);
@@ -513,6 +530,10 @@ RequestContextService::NewRequestContext(nsIRequestContext **rc)
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG_POINTER(rc);
   *rc = nullptr;
+
+  if (sShutdown) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
 
   uint64_t rcID = ((static_cast<uint64_t>(mRCIDNamespace) << 32) & 0xFFFFFFFF00000000LL) | mNextRCID++;
 
