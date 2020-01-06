@@ -10,35 +10,8 @@ const Ci = Components.interfaces;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
-                                   "@mozilla.org/childprocessmessagemanager;1",
-                                   "nsIMessageSender");
-
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
                                   "resource://gre/modules/TelemetryController.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
-                                  "resource:///modules/E10SUtils.jsm");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const MSG_MGR_CONSOLE_MAX_SIZE = 1024 * 1024; 
-const MSG_MGR_CONSOLE_VAR_SIZE = 8;
-const MSG_MGR_CONSOLE_INFO_MAX = 1024;
 
 function ContentProcessSingleton() {}
 ContentProcessSingleton.prototype = {
@@ -49,74 +22,11 @@ ContentProcessSingleton.prototype = {
   observe(subject, topic, data) {
     switch (topic) {
     case "app-startup": {
-      Services.obs.addObserver(this, "console-api-log-event");
       Services.obs.addObserver(this, "xpcom-shutdown");
       TelemetryController.observe(null, topic, null);
       break;
     }
-    case "console-api-log-event": {
-      let consoleMsg = subject.wrappedJSObject;
-
-      let msgData = {
-        level: consoleMsg.level,
-        filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-        lineNumber: consoleMsg.lineNumber,
-        functionName: consoleMsg.functionName &&
-          consoleMsg.functionName.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
-        timeStamp: consoleMsg.timeStamp,
-        addonId: consoleMsg.addonId,
-        arguments: [],
-      };
-
-      
-      
-      let unavailString = "<unavailable>";
-      let unavailStringLength = unavailString.length * 2; 
-
-      
-      
-      let totalArgLength = 0;
-
-      
-      for (let arg of consoleMsg.arguments) {
-        if ((typeof arg == "object" || typeof arg == "function") &&
-            arg !== null) {
-          if (Services.appinfo.remoteType === E10SUtils.EXTENSION_REMOTE_TYPE) {
-            
-            
-            
-            try {
-              
-              
-              arg = Cu.cloneInto(arg, {});
-            } catch (e) {
-              arg = unavailString;
-            }
-          } else {
-            arg = unavailString;
-          }
-          totalArgLength += unavailStringLength;
-        } else if (typeof arg == "string") {
-          totalArgLength += arg.length * 2; 
-        } else {
-          totalArgLength += MSG_MGR_CONSOLE_VAR_SIZE;
-        }
-
-        if (totalArgLength <= MSG_MGR_CONSOLE_MAX_SIZE) {
-          msgData.arguments.push(arg);
-        } else {
-          
-          msgData.arguments = ["<truncated>"];
-          break;
-        }
-      }
-
-      cpmm.sendAsyncMessage("Console:Log", msgData);
-      break;
-    }
-
     case "xpcom-shutdown":
-      Services.obs.removeObserver(this, "console-api-log-event");
       Services.obs.removeObserver(this, "xpcom-shutdown");
       break;
     }

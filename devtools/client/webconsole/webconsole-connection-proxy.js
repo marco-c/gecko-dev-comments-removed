@@ -178,6 +178,11 @@ WebConsoleConnectionProxy.prototype = {
   _attachConsole: function () {
     let listeners = ["PageError", "ConsoleAPI", "NetworkActivity",
                      "FileActivity"];
+    
+    
+    if (this.target.chrome && !this.target.isAddon) {
+      listeners.push("ContentProcessMessages");
+    }
     this.client.attachConsole(this._consoleActor, listeners,
                               this._onAttachConsole);
   },
