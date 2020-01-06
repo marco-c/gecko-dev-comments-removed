@@ -7,7 +7,6 @@
 #![deny(missing_docs)]
 
 use cssparser::{Parser as CssParser, ParserInput};
-use selectors::Element;
 use selectors::parser::SelectorList;
 use std::fmt::{self, Debug};
 use style_traits::ParseError;
@@ -101,14 +100,6 @@ pub enum PseudoElementCascadeType {
     
     
     Precomputed,
-}
-
-
-pub trait ElementExt: Element<Impl=SelectorImpl> + Debug {
-    
-    
-    
-    fn matches_user_and_author_rules(&self) -> bool;
 }
 
 

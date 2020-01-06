@@ -20,8 +20,8 @@ use properties::{AnimationRules, ComputedValues, PropertyDeclarationBlock};
 #[cfg(feature = "gecko")] use properties::LonghandId;
 #[cfg(feature = "gecko")] use properties::animated_properties::AnimationValue;
 use rule_tree::CascadeLevel;
-use selector_parser::{AttrValue, ElementExt};
-use selector_parser::{PseudoClassStringArg, PseudoElement};
+use selector_parser::{AttrValue, PseudoClassStringArg, PseudoElement, SelectorImpl};
+use selectors::Element as SelectorsElement;
 use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
 use selectors::sink::Push;
 use servo_arc::{Arc, ArcBorrow};
@@ -242,8 +242,17 @@ pub trait PresentationalHintsSynthesizer {
 }
 
 
-pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
-                     ElementExt + PresentationalHintsSynthesizer {
+pub trait TElement
+    : Eq
+    + PartialEq
+    + Debug
+    + Hash
+    + Sized
+    + Copy
+    + Clone
+    + SelectorsElement<Impl = SelectorImpl>
+    + PresentationalHintsSynthesizer
+{
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
 
@@ -262,6 +271,11 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     
     
     fn owner_doc_matches_for_testing(&self, _: &Device) -> bool { true }
+
+    
+    
+    
+    fn matches_user_and_author_rules(&self) -> bool { true }
 
     
     fn depth(&self) -> usize {
