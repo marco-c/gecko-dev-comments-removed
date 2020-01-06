@@ -66,10 +66,16 @@ FileBlockCache::Init()
   mIsOpen = true;
 
   if (XRE_IsParentProcess()) {
-    rv = NS_OpenAnonymousTemporaryFile(&mFD);
-    if (NS_SUCCEEDED(rv)) {
-      mInitialized = true;
-    }
+    RefPtr<FileBlockCache> self = this;
+    rv = mThread->Dispatch(NS_NewRunnableFunction([self] {
+      PRFileDesc* fd = nullptr;
+      nsresult rv = NS_OpenAnonymousTemporaryFile(&fd);
+      if (NS_SUCCEEDED(rv)) {
+        self->SetCacheFile(fd);
+      } else {
+        self->Close();
+      }
+    }), NS_DISPATCH_NORMAL);
   } else {
     
     RefPtr<FileBlockCache> self = this;
