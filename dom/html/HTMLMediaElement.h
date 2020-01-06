@@ -644,11 +644,6 @@ public:
   void SetSrcObject(DOMMediaStream& aValue);
   void SetSrcObject(DOMMediaStream* aValue);
 
-  
-  already_AddRefed<DOMMediaStream> GetMozSrcObject() const;
-  void SetMozSrcObject(DOMMediaStream& aValue);
-  void SetMozSrcObject(DOMMediaStream* aValue);
-
   bool MozPreservesPitch() const
   {
     return mPreservesPitch;
