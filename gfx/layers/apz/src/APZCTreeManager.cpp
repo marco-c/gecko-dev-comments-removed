@@ -1305,10 +1305,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       RefPtr<AsyncPanZoomController> targetApzc = GetTargetAPZC(targetGuid->mLayersId,
                                                                 targetGuid->mScrollId);
 
-      
-      
-      
-      if (!targetApzc || targetApzc->HasScrollSnapping()) {
+      if (!targetApzc) {
         return result;
       }
 

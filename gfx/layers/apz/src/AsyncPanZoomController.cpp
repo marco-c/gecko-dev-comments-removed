@@ -1704,12 +1704,22 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
   ReportKeyboardScrollAction(aEvent.mAction);
 
   
-  nsPoint destination = CSSPoint::ToAppUnits(GetKeyboardDestination(aEvent.mAction));
+  CSSPoint destination = GetKeyboardDestination(aEvent.mAction);
+  nsIScrollableFrame::ScrollUnit scrollUnit = KeyboardScrollAction::GetScrollUnit(aEvent.mAction.mType);
 
   
   
   
   ReentrantMonitorAutoEnter lock(mMonitor);
+
+  if (Maybe<CSSPoint> snapPoint = FindSnapPointNear(destination, scrollUnit)) {
+    
+    
+    
+    APZC_LOG("%p keyboard scrolling to snap point %s\n", this, Stringify(*snapPoint).c_str());
+    SmoothScrollTo(*snapPoint);
+    return nsEventStatus_eConsumeNoDefault;
+  }
 
   
   if (mState != KEYBOARD_SCROLL) {
@@ -1729,7 +1739,9 @@ AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent)
   KeyboardScrollAnimation* animation = mAnimation->AsKeyboardScrollAnimation();
   MOZ_ASSERT(animation);
 
-  animation->UpdateDestination(aEvent.mTimeStamp, destination, nsSize(velocity.x, velocity.y));
+  animation->UpdateDestination(aEvent.mTimeStamp,
+                               CSSPixel::ToAppUnits(destination),
+                               nsSize(velocity.x, velocity.y));
 
   return nsEventStatus_eConsumeNoDefault;
 }
