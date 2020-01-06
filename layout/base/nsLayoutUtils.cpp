@@ -3793,7 +3793,9 @@ nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
     std::stringstream lsStream;
     nsFrame::PrintDisplayList(&builder, list, lsStream);
-    layerManager->GetRoot()->SetDisplayListLog(lsStream.str().c_str());
+    if (layerManager->GetRoot()) {
+      layerManager->GetRoot()->SetDisplayListLog(lsStream.str().c_str());
+    }
   }
 
 #ifdef MOZ_DUMP_PAINTING
@@ -9294,9 +9296,8 @@ static void UpdateDisplayPortMarginsForPendingMetrics(FrameMetrics& aMetrics) {
  void
 nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages()
 {
-  if (XRE_IsContentProcess() &&
-      mozilla::layers::CompositorBridgeChild::Get() &&
-      mozilla::layers::CompositorBridgeChild::Get()->GetIPCChannel()) {
+  if (mozilla::dom::ContentChild::GetSingleton() &&
+      mozilla::dom::ContentChild::GetSingleton()->GetIPCChannel()) {
     CompositorBridgeChild::Get()->GetIPCChannel()->PeekMessages(
       [](const IPC::Message& aMsg) -> bool {
         if (aMsg.type() == mozilla::layers::PAPZ::Msg_RequestContentRepaint__ID) {
