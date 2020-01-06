@@ -5,12 +5,12 @@
 
 
 #include "PaymentRequestManager.h"
+#include "PaymentRequestUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/PaymentRequestChild.h"
 #include "nsContentUtils.h"
-#include "nsIJSON.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -20,16 +20,6 @@ namespace {
 
 
 
-
-nsresult
-SerializeFromJSObject(JSContext* aCx, JS::HandleObject aObject, nsAString& aSerializedObject){
-  nsCOMPtr<nsIJSON> serializer = do_CreateInstance("@mozilla.org/dom/json;1");
-  if (NS_WARN_IF(!serializer)) {
-    return NS_ERROR_FAILURE;
-  }
-  JS::RootedValue value(aCx, JS::ObjectValue(*aObject));
-  return serializer->EncodeFromJSVal(value.address(), aCx, aSerializedObject);
-}
 
 nsresult
 ConvertMethodData(const PaymentMethodData& aMethodData,
@@ -183,6 +173,41 @@ ConvertDetailsInit(const PaymentDetailsInit& aDetails,
                                   shippingOptions,
                                   modifiers,
                                   EmptyString(), 
+                                  aDetails.mDisplayItems.WasPassed(),
+                                  aDetails.mShippingOptions.WasPassed(),
+                                  aDetails.mModifiers.WasPassed());
+  return NS_OK;
+}
+
+nsresult
+ConvertDetailsUpdate(const PaymentDetailsUpdate& aDetails,
+                     IPCPaymentDetails& aIPCDetails)
+{
+  
+  nsTArray<IPCPaymentItem> displayItems;
+  nsTArray<IPCPaymentShippingOption> shippingOptions;
+  nsTArray<IPCPaymentDetailsModifier> modifiers;
+  nsresult rv = ConvertDetailsBase(aDetails, displayItems, shippingOptions, modifiers);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  IPCPaymentItem total;
+  ConvertItem(aDetails.mTotal, total);
+
+  
+  nsString error(EmptyString());
+  if (aDetails.mError.WasPassed()) {
+    error = aDetails.mError.Value();
+  }
+
+  aIPCDetails = IPCPaymentDetails(EmptyString(), 
+                                  total,
+                                  displayItems,
+                                  shippingOptions,
+                                  modifiers,
+                                  error,
                                   aDetails.mDisplayItems.WasPassed(),
                                   aDetails.mShippingOptions.WasPassed(),
                                   aDetails.mModifiers.WasPassed());
@@ -468,11 +493,31 @@ PaymentRequestManager::CompletePayment(const nsAString& aRequestId,
 }
 
 nsresult
+PaymentRequestManager::UpdatePayment(const nsAString& aRequestId,
+                                     const PaymentDetailsUpdate& aDetails)
+{
+  RefPtr<PaymentRequest> request = GetPaymentRequestById(aRequestId);
+  if (!request) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  IPCPaymentDetails details;
+  nsresult rv = ConvertDetailsUpdate(aDetails, details);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsAutoString requestId(aRequestId);
+  IPCPaymentUpdateActionRequest action(requestId, details);
+  return SendRequestPayment(request, action);
+}
+
+nsresult
 PaymentRequestManager::RespondPayment(const IPCPaymentActionResponse& aResponse)
 {
   switch (aResponse.type()) {
     case IPCPaymentActionResponse::TIPCPaymentCanMakeActionResponse: {
-      IPCPaymentCanMakeActionResponse response = aResponse;
+      const IPCPaymentCanMakeActionResponse& response = aResponse;
       RefPtr<PaymentRequest> request = GetPaymentRequestById(response.requestId());
       if (NS_WARN_IF(!request)) {
         return NS_ERROR_FAILURE;
@@ -485,7 +530,7 @@ PaymentRequestManager::RespondPayment(const IPCPaymentActionResponse& aResponse)
       break;
     }
     case IPCPaymentActionResponse::TIPCPaymentShowActionResponse: {
-      IPCPaymentShowActionResponse response = aResponse;
+      const IPCPaymentShowActionResponse& response = aResponse;
       RefPtr<PaymentRequest> request = GetPaymentRequestById(response.requestId());
       if (NS_WARN_IF(!request)) {
         return NS_ERROR_FAILURE;
@@ -496,10 +541,17 @@ PaymentRequestManager::RespondPayment(const IPCPaymentActionResponse& aResponse)
                                   response.payerName(),
                                   response.payerEmail(),
                                   response.payerPhone());
+      if (!response.isAccepted()) {
+        mRequestQueue.RemoveElement(request);
+        nsresult rv = ReleasePaymentChild(request);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+      }
       break;
     }
     case IPCPaymentActionResponse::TIPCPaymentAbortActionResponse: {
-      IPCPaymentAbortActionResponse response = aResponse;
+      const IPCPaymentAbortActionResponse& response = aResponse;
       RefPtr<PaymentRequest> request = GetPaymentRequestById(response.requestId());
       if (NS_WARN_IF(!request)) {
         return NS_ERROR_FAILURE;
@@ -515,7 +567,7 @@ PaymentRequestManager::RespondPayment(const IPCPaymentActionResponse& aResponse)
       break;
     }
     case IPCPaymentActionResponse::TIPCPaymentCompleteActionResponse: {
-      IPCPaymentCompleteActionResponse response = aResponse;
+      const IPCPaymentCompleteActionResponse& response = aResponse;
       RefPtr<PaymentRequest> request = GetPaymentRequestById(response.requestId());
       if (NS_WARN_IF(!request)) {
         return NS_ERROR_FAILURE;
@@ -533,6 +585,38 @@ PaymentRequestManager::RespondPayment(const IPCPaymentActionResponse& aResponse)
     }
   }
   return NS_OK;
+}
+
+nsresult
+PaymentRequestManager::ChangeShippingAddress(const nsAString& aRequestId,
+                                             const IPCPaymentAddress& aAddress)
+{
+  RefPtr<PaymentRequest> request = GetPaymentRequestById(aRequestId);
+  if (NS_WARN_IF(!request)) {
+    return NS_ERROR_FAILURE;
+  }
+  return request->UpdateShippingAddress(aAddress.country(),
+                                        aAddress.addressLine(),
+                                        aAddress.region(),
+                                        aAddress.city(),
+                                        aAddress.dependentLocality(),
+                                        aAddress.postalCode(),
+                                        aAddress.sortingCode(),
+                                        aAddress.languageCode(),
+                                        aAddress.organization(),
+                                        aAddress.recipient(),
+                                        aAddress.phone());
+}
+
+nsresult
+PaymentRequestManager::ChangeShippingOption(const nsAString& aRequestId,
+                                            const nsAString& aOption)
+{
+  RefPtr<PaymentRequest> request = GetPaymentRequestById(aRequestId);
+  if (NS_WARN_IF(!request)) {
+    return NS_ERROR_FAILURE;
+  }
+  return request->UpdateShippingOption(aOption);
 }
 
 } 

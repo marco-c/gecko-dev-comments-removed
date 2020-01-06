@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PaymentResponse.h"
+#include "PaymentRequestUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -35,6 +36,7 @@ PaymentResponse::PaymentResponse(nsPIDOMWindowInner* aWindow,
   , mInternalId(aInternalId)
   , mRequestId(aRequestId)
   , mMethodName(aMethodName)
+  , mDetails(aDetails)
   , mShippingOption(aShippingOption)
   , mPayerName(aPayerName)
   , mPayerEmail(aPayerEmail)
@@ -44,9 +46,6 @@ PaymentResponse::PaymentResponse(nsPIDOMWindowInner* aWindow,
 
   
   
-
-  
-
 }
 
 PaymentResponse::~PaymentResponse()
@@ -72,9 +71,9 @@ PaymentResponse::GetMethodName(nsString& aRetVal) const
 }
 
 void
-PaymentResponse::GetDetails(JSContext* cx, JS::MutableHandle<JSObject*> aRetVal) const
+PaymentResponse::GetDetails(JSContext* aCx, JS::MutableHandle<JSObject*> aRetVal) const
 {
-  
+  DeserializeToJSObject(mDetails, aCx, aRetVal);
 }
 
 void
