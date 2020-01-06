@@ -339,9 +339,13 @@ private:
     int32_t mFlags;
   };
 
-  void setAnchorFocusRange(int32_t aIndex); 
-                                            
-                                            
+  
+
+
+
+
+
+  void SetAnchorFocusRange(int32_t aIndex);
   void SelectFramesForContent(nsIContent* aContent, bool aSelected);
   nsresult SelectAllFramesForContent(nsIContentIterator* aInnerIter,
                                      nsIContent *aContent,
