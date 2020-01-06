@@ -283,10 +283,6 @@ add_task(async function test_options_ui() {
 
 
 add_task(async function test_experiments_dependencies() {
-  if (AppConstants.RELEASE_OR_BETA)
-    
-    return;
-
   let addonFile = createTempWebExtensionFile({
     manifest: {
       applications: {gecko: {id: "meh@experiment"}},
@@ -308,10 +304,6 @@ add_task(async function test_experiments_dependencies() {
 
 
 add_task(async function test_experiments_api() {
-  if (AppConstants.RELEASE_OR_BETA)
-    
-    return;
-
   const extensionId = "meh@experiments.addons.mozilla.org";
 
   let addonFile = createTempXPIFile({

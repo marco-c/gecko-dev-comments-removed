@@ -245,20 +245,6 @@ const BOOTSTRAP_REASONS = {
 
 
 
-
-const TYPES = {
-  extension: 2,
-  theme: 4,
-  locale: 8,
-  dictionary: 64,
-  experiment: 128,
-};
-
-if (!AppConstants.RELEASE_OR_BETA)
-  TYPES.apiextension = 256;
-
-
-
 const TYPE_ALIASES = {
   "apiextension": "extension",
   "webextension": "extension",
