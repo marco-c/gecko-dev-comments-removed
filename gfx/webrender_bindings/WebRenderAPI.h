@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/layers/SyncObject.h"
@@ -20,6 +21,8 @@
 #include "Units.h"
 
 namespace mozilla {
+
+struct DisplayItemClipChain;
 
 namespace widget {
 class CompositorWidget;
@@ -229,22 +232,28 @@ public:
                            bool aIsBackfaceVisible);
   void PopStackingContext();
 
-  wr::WrClipId DefineClip(const wr::LayoutRect& aClipRect,
+  wr::WrClipId DefineClip(const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
+                          const Maybe<wr::WrClipId>& aAncestorClipId,
+                          const wr::LayoutRect& aClipRect,
                           const nsTArray<wr::ComplexClipRegion>* aComplex = nullptr,
                           const wr::WrImageMask* aMask = nullptr);
-  void PushClip(const wr::WrClipId& aClipId, bool aExtra = false);
-  void PopClip(bool aExtra = false);
+  void PushClip(const wr::WrClipId& aClipId, const DisplayItemClipChain* aParent = nullptr);
+  void PopClip(const DisplayItemClipChain* aParent = nullptr);
+  Maybe<wr::WrClipId> GetCacheOverride(const DisplayItemClipChain* aParent);
 
   wr::WrStickyId DefineStickyFrame(const wr::LayoutRect& aContentRect,
                                    const wr::StickySideConstraint* aTop,
                                    const wr::StickySideConstraint* aRight,
                                    const wr::StickySideConstraint* aBottom,
                                    const wr::StickySideConstraint* aLeft);
-  void PushStickyFrame(const wr::WrStickyId& aStickyId);
-  void PopStickyFrame();
+  void PushStickyFrame(const wr::WrStickyId& aStickyId,
+                       const DisplayItemClipChain* aParent);
+  void PopStickyFrame(const DisplayItemClipChain* aParent);
 
   bool IsScrollLayerDefined(layers::FrameMetrics::ViewID aScrollId) const;
   void DefineScrollLayer(const layers::FrameMetrics::ViewID& aScrollId,
+                         const Maybe<layers::FrameMetrics::ViewID>& aAncestorScrollId,
+                         const Maybe<wr::WrClipId>& aAncestorClipId,
                          const wr::LayoutRect& aContentRect, 
                          const wr::LayoutRect& aClipRect);
   void PushScrollLayer(const layers::FrameMetrics::ViewID& aScrollId);
@@ -389,7 +398,7 @@ public:
                      const wr::ColorF& aColor,
                      const float& aBlurRadius,
                      const float& aSpreadRadius,
-                     const float& aBorderRadius,
+                     const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
   
@@ -399,15 +408,13 @@ public:
   
   layers::FrameMetrics::ViewID TopmostScrollId();
   
-  
-  
-  Maybe<layers::FrameMetrics::ViewID> ParentScrollIdFor(layers::FrameMetrics::ViewID aScrollId);
+  bool TopmostIsClip();
 
   
   wr::WrState* Raw() { return mWrState; }
 
   
-  bool HasExtraClip() { return mExtraClipCount > 0; }
+  bool HasExtraClip() { return !mCacheOverride.empty(); }
 
 protected:
   wr::WrState* mWrState;
@@ -415,17 +422,27 @@ protected:
   
   
   
-  
-  std::vector<wr::WrClipId> mClipIdStack;
-  std::vector<layers::FrameMetrics::ViewID> mScrollIdStack;
+  std::vector<wr::ScrollOrClipId> mClipStack;
 
   
   
   
-  std::unordered_map<layers::FrameMetrics::ViewID, Maybe<layers::FrameMetrics::ViewID>> mScrollParents;
+  std::unordered_set<layers::FrameMetrics::ViewID> mScrollIdsDefined;
 
   
-  uint32_t mExtraClipCount;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unordered_map<const DisplayItemClipChain*, std::vector<wr::WrClipId>> mCacheOverride;
 
   friend class WebRenderAPI;
 };
