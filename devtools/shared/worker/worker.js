@@ -140,9 +140,8 @@
                  "This creates an object URL on the browser window, and should not be " +
                  "used in production.");
     
-    
-    let { getMostRecentBrowserWindow } = require("sdk/window/utils");
-    let { URL, Blob } = getMostRecentBrowserWindow();
+    const Services = require("Services");
+    let { URL, Blob } = Services.wm.getMostRecentWindow("navigator:browser");
     let stringifiedFn = createWorkerString(fn);
     let blob = new Blob([stringifiedFn]);
     let url = URL.createObjectURL(blob);
