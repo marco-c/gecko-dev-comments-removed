@@ -92,5 +92,20 @@ AuthenticatorAssertionResponse::SetSignature(CryptoBuffer& aBuffer)
   return NS_OK;
 }
 
+void
+AuthenticatorAssertionResponse::GetUserId(DOMString& aRetVal)
+{
+  
+  aRetVal.SetOwnedString(mUserId);
+}
+
+nsresult
+AuthenticatorAssertionResponse::SetUserId(const nsAString& aUserId)
+{
+  MOZ_ASSERT(mUserId.IsEmpty(), "We already have a UserID?");
+  mUserId.Assign(aUserId);
+  return NS_OK;
+}
+
 } 
 } 

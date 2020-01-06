@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PublicKeyCredential.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "nsCycleCollectionParticipant.h"
@@ -81,6 +82,30 @@ PublicKeyCredential::SetResponse(RefPtr<AuthenticatorResponse> aResponse)
 {
   mResponse = aResponse;
 }
+
+ already_AddRefed<Promise>
+PublicKeyCredential::IsPlatformAuthenticatorAvailable(GlobalObject& aGlobal)
+{
+  nsIGlobalObject* globalObject =
+    xpc::NativeGlobal(JS::CurrentGlobalOrNull(aGlobal.Context()));
+  if (NS_WARN_IF(!globalObject)) {
+    return nullptr;
+  }
+
+  ErrorResult rv;
+  RefPtr<Promise> promise = Promise::Create(globalObject, rv);
+  if(rv.Failed()) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  promise->MaybeResolve(true);
+  return promise.forget();
+}
+
 
 } 
 } 
