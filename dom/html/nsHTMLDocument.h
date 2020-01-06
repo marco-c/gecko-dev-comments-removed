@@ -250,7 +250,6 @@ public:
   {
     
   }
-  mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
   
   
   
