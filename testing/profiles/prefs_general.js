@@ -256,6 +256,9 @@ user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy/");
 user_pref("toolkit.telemetry.newProfilePing.enabled", false);
 
 
+user_pref("toolkit.telemetry.bhrPing.enabled", false);
+
+
 
 
 
