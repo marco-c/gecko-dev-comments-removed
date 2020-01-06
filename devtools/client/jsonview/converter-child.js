@@ -208,7 +208,7 @@ function initialHTML(doc) {
 
   
   
-  let baseURI = "resource://devtools/client/jsonview/";
+  let baseURI = "resource://devtools-client-jsonview/";
 
   let style = doc.createElement("link");
   style.rel = "stylesheet";
