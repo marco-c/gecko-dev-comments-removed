@@ -170,6 +170,8 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
 
   nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(aRequest);
   bool seekable = false;
+  int64_t startOffset = aRequestOffset;
+
   if (hc) {
     uint32_t responseStatus = 0;
     Unused << hc->GetResponseStatus(&responseStatus);
@@ -225,6 +227,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
       bool gotRangeHeader = NS_SUCCEEDED(rv);
 
       if (gotRangeHeader) {
+        startOffset = rangeStart;
         
         
         
@@ -232,17 +235,17 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
         if (rangeTotal != -1) {
           contentLength = std::max(contentLength, rangeTotal);
         }
-        mCacheStream.NotifyDataStarted(rangeStart);
       }
       acceptsRanges = gotRangeHeader;
-    } else if (aRequestOffset > 0 && responseStatus == HTTP_OK_CODE) {
+    } else if (responseStatus == HTTP_OK_CODE) {
       
-      
-      
-      mCacheStream.NotifyDataStarted(0);
+      startOffset = 0;
 
-      
-      acceptsRanges = false;
+      if (aRequestOffset > 0) {
+        
+        
+        acceptsRanges = false;
+      }
     }
     if (aRequestOffset == 0 && contentLength >= 0 &&
         (responseStatus == HTTP_OK_CODE ||
@@ -256,7 +259,12 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
     
     
     seekable = !isCompressed && acceptsRanges;
+  } else {
+    
+    startOffset = 0;
   }
+
+  mCacheStream.NotifyDataStarted(startOffset);
   mCacheStream.SetTransportSeekable(seekable);
   mChannelStatistics.Start();
   mReopenOnError = false;
