@@ -8,7 +8,6 @@
 
 
 
-
 #include "cert.h"
 #include "ssl.h"
 #include "cryptohi.h" 
@@ -234,15 +233,11 @@ static const unsigned int ssl_compression_method_count =
 static PRBool
 ssl_CompressionEnabled(sslSocket *ss, SSLCompressionMethod compression)
 {
+    SSL3ProtocolVersion version;
+
     if (compression == ssl_compression_null) {
         return PR_TRUE; 
     }
-
-
-
-#if 0
-    SSL3ProtocolVersion version;
-
     if (ss->sec.isServer) {
         
 
@@ -261,7 +256,6 @@ ssl_CompressionEnabled(sslSocket *ss, SSLCompressionMethod compression)
         }
         return ss->opt.enableDeflate;
     }
-#endif
 #endif
     return PR_FALSE;
 }
