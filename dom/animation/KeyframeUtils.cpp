@@ -1392,11 +1392,6 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     return;
   }
 
-  Maybe<dom::CompositeOperation> composite;
-  if (keyframeDict.mComposite.WasPassed()) {
-    composite.emplace(keyframeDict.mComposite.Value());
-  }
-
   
   JS::Rooted<JSObject*> object(aCx, &aValue.toObject());
   nsTArray<PropertyValuesPair> propertyValuesPairs;
@@ -1404,15 +1399,6 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
                               aDocument->GetStyleBackendType(),
                               propertyValuesPairs)) {
     aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
-  
-  
-  
-  Maybe<ComputedTimingFunction> easing =
-    TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, aRv);
-  if (aRv.Failed()) {
     return;
   }
 
@@ -1444,8 +1430,6 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
       double offset = n ? i++ / double(n) : 1;
       Keyframe* keyframe = processedKeyframes.LookupOrAdd(offset);
       if (keyframe->mPropertyValues.IsEmpty()) {
-        keyframe->mTimingFunction = easing;
-        keyframe->mComposite = composite;
         keyframe->mComputedOffset = offset;
       }
 
@@ -1464,6 +1448,124 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
   }
 
   aResult.Sort(ComputedOffsetComparator());
+
+  
+  
+  
+  
+  const FallibleTArray<Nullable<double>>* offsets = nullptr;
+  AutoTArray<Nullable<double>, 1> singleOffset;
+  auto& offset = keyframeDict.mOffset;
+  if (offset.IsDouble()) {
+    singleOffset.AppendElement(offset.GetAsDouble());
+    
+    
+    
+    const FallibleTArray<Nullable<double>>& asFallibleArray = singleOffset;
+    offsets = &asFallibleArray;
+  } else if (offset.IsDoubleOrNullSequence()) {
+    offsets = &offset.GetAsDoubleOrNullSequence();
+  }
+  
+  
+  
+
+  size_t offsetsToFill =
+    offsets ? std::min(offsets->Length(), aResult.Length()) : 0;
+  for (size_t i = 0; i < offsetsToFill; i++) {
+    if (!offsets->ElementAt(i).IsNull()) {
+      aResult[i].mOffset.emplace(offsets->ElementAt(i).Value());
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!HasValidOffsets(aResult)) {
+    aRv.ThrowTypeError<dom::MSG_INVALID_KEYFRAME_OFFSETS>();
+    aResult.Clear();
+    return;
+  }
+
+  
+  
+  
+  
+  FallibleTArray<Maybe<ComputedTimingFunction>> easings;
+  auto parseAndAppendEasing = [&](const nsString& easingString,
+                                  ErrorResult& aRv) {
+    auto easing = TimingParams::ParseEasing(easingString, aDocument, aRv);
+    if (!aRv.Failed() && !easings.AppendElement(Move(easing), fallible)) {
+      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    }
+  };
+
+  auto& easing = keyframeDict.mEasing;
+  if (easing.IsString()) {
+    parseAndAppendEasing(easing.GetAsString(), aRv);
+    if (aRv.Failed()) {
+      aResult.Clear();
+      return;
+    }
+  } else {
+    for (const nsString& easingString : easing.GetAsStringSequence()) {
+      parseAndAppendEasing(easingString, aRv);
+      if (aRv.Failed()) {
+        aResult.Clear();
+        return;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!easings.IsEmpty()) {
+    for (size_t i = 0; i < aResult.Length(); i++) {
+      aResult[i].mTimingFunction = easings[i % easings.Length()];
+    }
+  }
+
+  
+  
+  
+  
+  const FallibleTArray<dom::CompositeOperation>* compositeOps;
+  AutoTArray<dom::CompositeOperation, 1> singleCompositeOp;
+  auto& composite = keyframeDict.mComposite;
+  if (composite.IsCompositeOperation()) {
+    singleCompositeOp.AppendElement(composite.GetAsCompositeOperation());
+    const FallibleTArray<dom::CompositeOperation>& asFallibleArray =
+      singleCompositeOp;
+    compositeOps = &asFallibleArray;
+  } else {
+    compositeOps = &composite.GetAsCompositeOperationSequence();
+  }
+
+  
+  if (!compositeOps->IsEmpty()) {
+    for (size_t i = 0; i < aResult.Length(); i++) {
+      aResult[i].mComposite.emplace(
+        compositeOps->ElementAt(i % compositeOps->Length()));
+    }
+  }
 }
 
 
