@@ -103,9 +103,9 @@ public:
   
   void CacheClientSeek(int64_t aOffset, bool aResume);
   
-  nsresult CacheClientSuspend();
+  void CacheClientSuspend();
   
-  nsresult CacheClientResume();
+  void CacheClientResume();
 
   bool IsSuspended();
 
