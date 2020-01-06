@@ -928,6 +928,7 @@ protected:
 
   
   
+  
   int32_t mPreviousTransIndex;
   int32_t mLoadedTransIndex;
 

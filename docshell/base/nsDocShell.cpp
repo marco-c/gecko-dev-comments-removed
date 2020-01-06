@@ -9930,6 +9930,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   
   
+  
   if (!targetDocShell) {
     nsCOMPtr<Element> requestingElement;
     nsISupports* requestingContext = nullptr;
@@ -10741,16 +10742,17 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   if (mLoadType != LOAD_ERROR_PAGE) {
     SetHistoryEntry(&mLSHE, aSHEntry);
+    if (aSHEntry) {
+      
+      
+      mHistoryID = aSHEntry->DocshellID();
+    }
   }
 
   mSavingOldViewer = savePresentation;
 
   
   if (aSHEntry && (mLoadType & LOAD_CMD_HISTORY)) {
-    
-    
-    mHistoryID = aSHEntry->DocshellID();
-
     
     
     
