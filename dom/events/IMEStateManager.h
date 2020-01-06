@@ -159,14 +159,14 @@ public:
   
   static void OnFocusInEditor(nsPresContext* aPresContext,
                               nsIContent* aContent,
-                              nsIEditor* aEditor);
+                              EditorBase& aEditorBase);
 
   
-  static void OnEditorInitialized(nsIEditor* aEditor);
+  static void OnEditorInitialized(EditorBase& aEditorBase);
 
   
   
-  static void OnEditorDestroying(nsIEditor* aEditor);
+  static void OnEditorDestroying(EditorBase& aEditorBase);
 
   
 
@@ -256,7 +256,7 @@ protected:
                                  nsIContent* aContent);
 
   static void EnsureTextCompositionArray();
-  static void CreateIMEContentObserver(nsIEditor* aEditor);
+  static void CreateIMEContentObserver(EditorBase* aEditorBase);
   static void DestroyIMEContentObserver();
 
   static bool IsEditable(nsINode* node);

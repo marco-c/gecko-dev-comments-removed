@@ -8,10 +8,10 @@
 #define mozilla_IMEContentObserver_h_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EditorBase.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocShell.h" 
-#include "nsIEditor.h"
 #include "nsIEditorObserver.h"
 #include "nsIReflowObserver.h"
 #include "nsISelectionListener.h"
@@ -93,7 +93,7 @@ public:
 
 
   void Init(nsIWidget* aWidget, nsPresContext* aPresContext,
-            nsIContent* aContent, nsIEditor* aEditor);
+            nsIContent* aContent, EditorBase* aEditorBase);
 
   
 
@@ -129,11 +129,15 @@ public:
   bool MaybeReinitialize(nsIWidget* aWidget,
                          nsPresContext* aPresContext,
                          nsIContent* aContent,
-                         nsIEditor* aEditor);
+                         EditorBase* aEditorBase);
 
   bool IsManaging(nsPresContext* aPresContext, nsIContent* aContent) const;
   bool IsManaging(const TextComposition* aTextComposition) const;
   bool WasInitializedWithPlugin() const;
+  bool WasInitializedWith(const EditorBase& aEditorBase) const
+  {
+    return mEditorBase == &aEditorBase;
+  }
   bool IsEditorHandlingEventForComposition() const;
   bool KeepAliveDuringDeactive() const
   {
@@ -141,7 +145,6 @@ public:
            mIMENotificationRequests->WantDuringDeactive();
   }
   nsIWidget* GetWidget() const { return mWidget; }
-  nsIEditor* GetEditor() const { return mEditor; }
   void SuppressNotifyingIME();
   void UnsuppressNotifyingIME();
   nsPresContext* GetPresContext() const;
@@ -171,9 +174,9 @@ private:
   };
   State GetState() const;
   bool InitWithEditor(nsPresContext* aPresContext, nsIContent* aContent,
-                      nsIEditor* aEditor);
+                      EditorBase* aEditorBase);
   bool InitWithPlugin(nsPresContext* aPresContext, nsIContent* aContent);
-  bool IsInitializedWithPlugin() const { return !mEditor; }
+  bool IsInitializedWithPlugin() const { return !mEditorBase; }
   void OnIMEReceivedFocus();
   void Clear();
   bool IsObservingContent(nsPresContext* aPresContext,
@@ -307,7 +310,7 @@ private:
   nsCOMPtr<nsIContent> mRootContent;
   nsCOMPtr<nsINode> mEditableNode;
   nsCOMPtr<nsIDocShell> mDocShell;
-  nsCOMPtr<nsIEditor> mEditor;
+  RefPtr<EditorBase> mEditorBase;
 
   
 

@@ -332,7 +332,7 @@ EditorBase::PostCreate()
   }
 
   
-  IMEStateManager::OnEditorInitialized(this);
+  IMEStateManager::OnEditorInitialized(*this);
 
   return NS_OK;
 }
@@ -442,7 +442,7 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   if (mDidPreDestroy)
     return NS_OK;
 
-  IMEStateManager::OnEditorDestroying(this);
+  IMEStateManager::OnEditorDestroying(*this);
 
   
   

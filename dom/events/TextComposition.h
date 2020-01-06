@@ -19,10 +19,9 @@
 #include "mozilla/TextRange.h"
 #include "mozilla/dom/TabParent.h"
 
-class nsIEditor;
-
 namespace mozilla {
 
+class EditorBase;
 class EventDispatchingCallback;
 class IMEStateManager;
 
@@ -137,8 +136,8 @@ public:
 
 
 
-  void StartHandlingComposition(nsIEditor* aEditor);
-  void EndHandlingComposition(nsIEditor* aEditor);
+  void StartHandlingComposition(EditorBase* aEditorBase);
+  void EndHandlingComposition(EditorBase* aEditorBase);
 
   
 
@@ -204,7 +203,8 @@ private:
   widget::NativeIMEContext mNativeContext;
 
   
-  nsWeakPtr mEditorWeak;
+  
+  nsWeakPtr mEditorBaseWeak;
 
   
   
@@ -285,7 +285,7 @@ private:
   
 
 
-  already_AddRefed<nsIEditor> GetEditor() const;
+  already_AddRefed<EditorBase> GetEditorBase() const;
 
   
 
