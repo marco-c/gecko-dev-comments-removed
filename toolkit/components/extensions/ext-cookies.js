@@ -172,15 +172,15 @@ const query = function* (detailsIn, props, context) {
 
   
   let enumerator;
-  let uri;
+  let url;
   let originAttributes = {
     userContextId,
     privateBrowsingId: isPrivate ? 1 : 0,
   };
   if ("url" in details) {
     try {
-      uri = Services.io.newURI(details.url).QueryInterface(Ci.nsIURL);
-      enumerator = Services.cookies.getCookiesFromHost(uri.host, originAttributes);
+      url = new URL(details.url);
+      enumerator = Services.cookies.getCookiesFromHost(url.host, originAttributes);
     } catch (ex) {
       
       return;
@@ -211,21 +211,20 @@ const query = function* (detailsIn, props, context) {
 
       
       
-      let pathDelimiters = ["/", "?", "#", ";"];
-      return pathDelimiters.includes(path[cookiePath.length]);
+      return path[cookiePath.length] === "/";
     }
 
     
-    if (uri) {
-      if (!domainMatches(uri.host)) {
+    if (url) {
+      if (!domainMatches(url.host)) {
         return false;
       }
 
-      if (cookie.isSecure && uri.scheme != "https") {
+      if (cookie.isSecure && url.protocol != "https:") {
         return false;
       }
 
-      if (!pathMatches(uri.pathQueryRef)) {
+      if (!pathMatches(url.path)) {
         return false;
       }
     }
@@ -290,7 +289,7 @@ this.cookies = class extends ExtensionAPI {
         },
 
         set: function(details) {
-          let uri = Services.io.newURI(details.url).QueryInterface(Ci.nsIURL);
+          let uri = Services.io.newURI(details.url);
 
           let path;
           if (details.path !== null) {
@@ -300,7 +299,7 @@ this.cookies = class extends ExtensionAPI {
             
             
             
-            path = uri.directory;
+            path = uri.QueryInterface(Ci.nsIURL).directory;
           }
 
           let name = details.name !== null ? details.name : "";
