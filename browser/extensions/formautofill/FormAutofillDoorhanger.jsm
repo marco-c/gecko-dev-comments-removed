@@ -130,8 +130,12 @@ const CONTENT = {
         get label() {
           
           
+          
+          
+          
           return Services.prefs.prefHasUserValue("services.sync.username") &&
-            !Services.prefs.getBoolPref("services.sync.engine.creditcards") ?
+            !Services.prefs.getBoolPref("services.sync.engine.creditcards") &&
+            Services.prefs.getBoolPref("services.sync.engine.creditcards.available") ?
             GetStringFromName("creditCardsSyncCheckbox") : null;
         },
         callback(event) {

@@ -27,6 +27,7 @@ const ENABLED_AUTOFILL_CREDITCARDS_PREF = "extensions.formautofill.creditCards.e
 const SYNC_USERNAME_PREF = "services.sync.username";
 const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
 const SYNC_CREDITCARDS_PREF = "services.sync.engine.creditcards";
+const SYNC_CREDITCARDS_AVAILABLE_PREF = "services.sync.engine.creditcards.available";
 
 const TEST_ADDRESS_1 = {
   "given-name": "John",
