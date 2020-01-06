@@ -106,11 +106,6 @@ ServiceWorkerJob::Start(Callback* aFinalCallback)
     
     return;
   }
-  if (!swm->HasBackgroundActor()) {
-    
-    swm->AppendPendingOperation(runnable);
-    return;
-  }
 
   
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
