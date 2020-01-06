@@ -2617,20 +2617,26 @@ function getControllingExtensionEl(settingName) {
 
 async function handleControllingExtension(type, settingName) {
   let controllingExtensionId = await getControllingExtensionId(type, settingName);
+  let addon = controllingExtensionId
+    && await AddonManager.getAddonByID(controllingExtensionId);
 
-  if (controllingExtensionId) {
-    showControllingExtension(settingName, controllingExtensionId);
+  
+  
+  
+  
+  
+  if (addon) {
+    showControllingExtension(settingName, addon);
   } else {
     hideControllingExtension(settingName);
   }
 
-  return !!controllingExtensionId;
+  return !!addon;
 }
 
-async function showControllingExtension(settingName, extensionId) {
-  let extensionControlledContent = getControllingExtensionEl(settingName);
+async function showControllingExtension(settingName, addon) {
   
-  let addon = await AddonManager.getAddonByID(extensionId);
+  let extensionControlledContent = getControllingExtensionEl(settingName);
   const defaultIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
   let stringParts = document
     .getElementById("bundlePreferences")
