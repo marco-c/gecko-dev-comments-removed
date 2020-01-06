@@ -903,19 +903,6 @@ public:
 
 
 
-  bool IsSurvivingInUpdate() const { return mStateFlags & eSurvivingInUpdate; }
-  void SetSurvivingInUpdate(bool aIsSurviving)
-  {
-    if (aIsSurviving)
-      mStateFlags |= eSurvivingInUpdate;
-    else
-      mStateFlags &= ~eSurvivingInUpdate;
-  }
-
-  
-
-
-
   bool IsRelocated() const { return mStateFlags & eRelocated; }
   void SetRelocated(bool aRelocated)
   {
@@ -1039,11 +1026,10 @@ protected:
     eGroupInfoDirty = 1 << 5, 
     eKidsMutating = 1 << 6, 
     eIgnoreDOMUIEvent = 1 << 7, 
-    eSurvivingInUpdate = 1 << 8, 
-    eRelocated = 1 << 9, 
-    eNoXBLKids = 1 << 10, 
-    eNoKidsFromDOM = 1 << 11, 
-    eHasTextKids = 1 << 12, 
+    eRelocated = 1 << 8, 
+    eNoXBLKids = 1 << 9, 
+    eNoKidsFromDOM = 1 << 10, 
+    eHasTextKids = 1 << 11, 
 
     eLastStateFlag = eNoKidsFromDOM
   };
@@ -1144,7 +1130,7 @@ protected:
   nsTArray<Accessible*> mChildren;
   int32_t mIndexInParent;
 
-  static const uint8_t kStateFlagsBits = 13;
+  static const uint8_t kStateFlagsBits = 12;
   static const uint8_t kContextFlagsBits = 3;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 16;
