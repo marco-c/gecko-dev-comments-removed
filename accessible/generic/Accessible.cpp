@@ -1450,14 +1450,14 @@ Accessible::ARIATransformRole(role aRole)
   } else if (aRole == roles::LISTBOX) {
     
     
-    if (mParent && mParent->IsCombobox()) {
+    if (mParent && mParent->Role() == roles::COMBOBOX) {
       return roles::COMBOBOX_LIST;
     } else {
       
       Relation rel = RelationByType(RelationType::NODE_CHILD_OF);
       Accessible* targetAcc = nullptr;
       while ((targetAcc = rel.Next()))
-        if (targetAcc->IsCombobox())
+        if (targetAcc->Role() == roles::COMBOBOX)
           return roles::COMBOBOX_LIST;
     }
 
