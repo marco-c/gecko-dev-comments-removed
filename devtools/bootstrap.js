@@ -304,7 +304,7 @@ function reload(event) {
   
   
   if (reopenBrowserConsole) {
-    let HUDService = devtools.require("devtools/client/webconsole/hudservice");
+    let {HUDService} = devtools.require("devtools/client/webconsole/hudservice");
     HUDService.toggleBrowserConsole();
   }
 

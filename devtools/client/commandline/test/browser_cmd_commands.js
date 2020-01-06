@@ -4,7 +4,7 @@
 
 
 const TEST_URI = "data:text/html;charset=utf-8,gcli-commands";
-const HUDService = require("devtools/client/webconsole/hudservice");
+const {HUDService} = require("devtools/client/webconsole/hudservice");
 
 
 Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);

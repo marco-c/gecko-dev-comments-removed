@@ -2,7 +2,7 @@
 
 
 
-const HUDService = require("devtools/client/webconsole/hudservice");
+const {HUDService} = require("devtools/client/webconsole/hudservice");
 
 function test()
 {
