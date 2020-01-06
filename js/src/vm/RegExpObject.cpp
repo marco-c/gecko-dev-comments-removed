@@ -178,11 +178,6 @@ IsMarkingTrace(JSTracer* trc)
 void
 RegExpObject::trace(JSTracer* trc)
 {
-    
-    
-    if (IsMarkingTrace(trc) && !zone()->isPreservingCode())
-        sharedRef() = nullptr;
-
     TraceNullableEdge(trc, &sharedRef(), "RegExpObject shared");
 }
 
