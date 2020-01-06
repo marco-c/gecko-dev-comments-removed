@@ -2850,18 +2850,6 @@ ContentParent::DeallocPBlobParent(PBlobParent* aActor)
   return nsIContentParent::DeallocPBlobParent(aActor);
 }
 
-PMemoryStreamParent*
-ContentParent::AllocPMemoryStreamParent(const uint64_t& aSize)
-{
-  return nsIContentParent::AllocPMemoryStreamParent(aSize);
-}
-
-bool
-ContentParent::DeallocPMemoryStreamParent(PMemoryStreamParent* aActor)
-{
-  return nsIContentParent::DeallocPMemoryStreamParent(aActor);
-}
-
 PIPCBlobInputStreamParent*
 ContentParent::AllocPIPCBlobInputStreamParent(const nsID& aID,
                                               const uint64_t& aSize)
@@ -4260,6 +4248,23 @@ ContentParent::RecvNotifyTabDestroying(const TabId& aTabId,
                                        const ContentParentId& aCpId)
 {
   NotifyTabDestroying(aTabId, aCpId);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentParent::RecvTabChildNotReady(const TabId& aTabId)
+{
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  RefPtr<TabParent> tp =
+    cpm->GetTopLevelTabParentByProcessAndTabId(this->ChildID(), aTabId);
+
+  if (!tp) {
+    NS_WARNING("Couldn't find TabParent for TabChildNotReady message.");
+    return IPC_OK();
+  }
+
+  tp->DispatchTabChildNotReadyEvent();
+
   return IPC_OK();
 }
 

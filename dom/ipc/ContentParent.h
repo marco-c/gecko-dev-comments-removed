@@ -493,6 +493,8 @@ public:
   virtual mozilla::ipc::IPCResult RecvNotifyTabDestroying(const TabId& aTabId,
                                                           const ContentParentId& aCpId) override;
 
+  virtual mozilla::ipc::IPCResult RecvTabChildNotReady(const TabId& aTabId) override;
+
   nsTArray<TabContext> GetManagedTabContext();
 
   virtual POfflineCacheUpdateParent*
@@ -846,11 +848,6 @@ private:
   AllocPBlobParent(const BlobConstructorParams& aParams) override;
 
   virtual bool DeallocPBlobParent(PBlobParent* aActor) override;
-
-  virtual PMemoryStreamParent*
-  AllocPMemoryStreamParent(const uint64_t& aSize) override;
-
-  virtual bool DeallocPMemoryStreamParent(PMemoryStreamParent* aActor) override;
 
   virtual PIPCBlobInputStreamParent*
   SendPIPCBlobInputStreamConstructor(PIPCBlobInputStreamParent* aActor,
