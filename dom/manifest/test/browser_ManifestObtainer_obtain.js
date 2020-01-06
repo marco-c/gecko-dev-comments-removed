@@ -152,18 +152,21 @@ add_task(async function() {
     `http://www.example.com:80${defaultPath}`,
   ];
   
-  let browsers = [
-    for (url of tabURLs) BrowserTestUtils.addTab(gBrowser, url).linkedBrowser
-  ];
+  let browsers = tabURLs.map(url => BrowserTestUtils.addTab(gBrowser, url).linkedBrowser);
+
   
-  await Promise.all((
-    for (browser of browsers) BrowserTestUtils.browserLoaded(browser)
-  ));
+  await Promise.all((function*() {
+    for (let browser of browsers) {
+      yield BrowserTestUtils.browserLoaded(browser);
+    }
+  })());
   
   
-  const results = await Promise.all((
-    for (browser of randBrowsers(browsers, 50)) ManifestObtainer.browserObtainManifest(browser)
-  ));
+  const results = await Promise.all((function*() {
+    for (let browser of randBrowsers(browsers, 50)) {
+      yield ManifestObtainer.browserObtainManifest(browser);
+    }
+  })());
   const pass = results.every(manifest => manifest.name === 'pass');
   ok(pass, 'Expect every manifest to have name equal to `pass`.');
   

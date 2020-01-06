@@ -35,7 +35,7 @@ var gGrid = {
   
 
 
-  get sites() { return [for (cell of this.cells) cell.site]; },
+  get sites() { return this.cells.map(cell => cell.site); },
 
   
   get ready() { return !!this._ready; },

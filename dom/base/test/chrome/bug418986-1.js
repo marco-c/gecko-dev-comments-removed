@@ -34,7 +34,7 @@ var test = function (isContent) {
   };
 
   
-  let prefVals = (for (prefVal of [false, true]) prefVal);
+  let prefVals = (function*() { yield false; yield true; })();
 
   
   let nextTest = function () {
