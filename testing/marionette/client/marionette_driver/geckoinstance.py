@@ -308,8 +308,6 @@ class FennecInstance(GeckoInstance):
         "browser.sessionstore.resume_from_crash": False,
 
         
-        "browser.tabs.remote.autostart.1": False,
-        "browser.tabs.remote.autostart.2": False,
         "browser.tabs.remote.autostart": False,
 
         
@@ -453,8 +451,6 @@ class DesktopInstance(GeckoInstance):
         "browser.shell.checkDefaultBrowser": False,
 
         
-        "browser.tabs.remote.autostart.1": False,
-        "browser.tabs.remote.autostart.2": False,
         "browser.tabs.remote.autostart": False,
 
         
