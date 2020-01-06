@@ -273,12 +273,17 @@ license file's hash.
             ('mozjs_sys', 'js/src'),
             ('geckodriver', 'testing/geckodriver'),
         )
+
+        lockfiles = []
         for (lib, crate_root) in crates_and_roots:
             path = mozpath.join(self.topsrcdir, crate_root)
             
             
             subprocess.check_call([cargo, 'update', '--manifest-path', mozpath.join(path, 'Cargo.toml'), '-p', lib], cwd=self.topsrcdir)
-            subprocess.check_call([cargo, 'vendor', '--quiet', '--no-delete', '--sync', mozpath.join(path, 'Cargo.lock'), vendor_dir], cwd=self.topsrcdir)
+            lockfiles.append('--sync')
+            lockfiles.append(mozpath.join(path, 'Cargo.lock'))
+
+        subprocess.check_call([cargo, 'vendor', '--quiet', '--no-delete'] + lockfiles + [vendor_dir], cwd=self.topsrcdir)
 
         if not self._check_licenses(vendor_dir):
             self.log(logging.ERROR, 'license_check_failed', {},
