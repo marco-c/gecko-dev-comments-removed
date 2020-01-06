@@ -220,7 +220,8 @@ def _repack(app_finder, l10n_finder, copier, formatter, non_chrome=set()):
     
     
     for p, f in l10n_finder.find('**/localization'):
-        formatter.add(p, f)
+        if not formatter.contains(p):
+            formatter.add(p, f)
 
     
     for path, log in app_finder.jarlogs.iteritems():
