@@ -1323,6 +1323,10 @@ var gBrowserInit = {
 
     
     
+    DownloadsButton.init();
+
+    
+    
     
     
     Services.obs.notifyObservers(window, "browser-window-before-show");
@@ -1846,6 +1850,8 @@ var gBrowserInit = {
     CaptivePortalWatcher.uninit();
 
     SidebarUI.uninit();
+
+    DownloadsButton.uninit();
 
     
     

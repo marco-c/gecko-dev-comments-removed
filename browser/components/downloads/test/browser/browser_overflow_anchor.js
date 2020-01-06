@@ -15,30 +15,21 @@ registerCleanupFunction(async function() {
 
 
 add_task(async function test_overflow_anchor() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.download.autohideButton", false]]});
   
   await task_resetState();
-
-  
-  
-  let oldWidth = window.outerWidth;
 
   
   let button = CustomizableUI.getWidget("downloads-button")
                              .forWindow(window);
   ok(!button.overflowed, "Downloads button should not be overflowed.");
+  is(button.node.getAttribute("cui-areatype"), "toolbar", "Button should know it's in the toolbar");
 
-  
-  
-  
-  const kFlexyItems = ["urlbar-container"];
-  registerCleanupFunction(() => unlockWidth(kFlexyItems));
-  lockWidth(kFlexyItems);
-
-  window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
-  await waitForOverflowed(button, true);
+  gCustomizeMode.addToPanel(button.node);
 
   let promise = promisePanelOpened();
   EventUtils.sendMouseEvent({ type: "mousedown", button: 0 }, button.node);
+  info("waiting for panel to open");
   await promise;
 
   let panel = DownloadsPanel.panel;
@@ -47,14 +38,7 @@ add_task(async function test_overflow_anchor() {
 
   DownloadsPanel.hidePanel();
 
-  
-  unlockWidth(kFlexyItems);
-
-  
-  window.resizeTo(oldWidth, window.outerHeight);
-
-  
-  await waitForOverflowed(button, false);
+  gCustomizeMode.addToToolbar(button.node);
 
   
   promise = promisePanelOpened();
@@ -66,50 +50,3 @@ add_task(async function test_overflow_anchor() {
   DownloadsPanel.hidePanel();
 });
 
-
-
-
-
-
-
-function lockWidth(aItemIDs) {
-  for (let itemID of aItemIDs) {
-    let item = document.getElementById(itemID);
-    let curWidth = item.getBoundingClientRect().width + "px";
-    item.style.minWidth = curWidth;
-  }
-}
-
-
-
-
-
-
-function unlockWidth(aItemIDs) {
-  for (let itemID of aItemIDs) {
-    let item = document.getElementById(itemID);
-    item.style.minWidth = "";
-  }
-}
-
-
-
-
-
-
-
-function waitForOverflowed(aItem, aIsOverflowed) {
-  if (aItem.overflowed == aIsOverflowed) {
-    return Promise.resolve();
-  }
-
-  return new Promise(resolve => {
-    let observer = new MutationObserver(function(aMutations) {
-      if (aItem.overflowed == aIsOverflowed) {
-        observer.disconnect();
-        resolve();
-      }
-    });
-    observer.observe(aItem.node, {attributes: true});
-  });
-}

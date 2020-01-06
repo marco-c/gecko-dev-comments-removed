@@ -10,6 +10,8 @@
 
 
 add_task(async function test_first_download_panel() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.download.autohideButton", false]]});
+  await promiseButtonShown("downloads-button");
   
   
   let oldPrefValue = Services.prefs.getBoolPref("browser.download.panel.shown");
@@ -32,6 +34,7 @@ add_task(async function test_first_download_panel() {
   
   DownloadsCommon.getData(window).panelHasShownBefore = false;
 
+  info("waiting for panel open");
   let promise = promisePanelOpened();
   DownloadsCommon.getData(window)._notifyDownloadEvent("start");
   await promise;

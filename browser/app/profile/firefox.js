@@ -368,6 +368,10 @@ pref("browser.download.animateNotifications", true);
 
 pref("browser.download.panel.shown", false);
 
+
+
+pref("browser.download.autohideButton", true);
+
 #ifndef XP_MACOSX
 pref("browser.helperApps.deleteTempFileOnExit", true);
 #endif

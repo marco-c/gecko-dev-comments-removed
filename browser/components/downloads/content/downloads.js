@@ -223,6 +223,9 @@ var DownloadsPanel = {
       return;
     }
 
+    
+    DownloadsButton.unhide();
+
     this.initialize(() => {
       
       

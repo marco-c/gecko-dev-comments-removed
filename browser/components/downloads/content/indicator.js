@@ -57,16 +57,6 @@ const DownloadsButton = {
   
 
 
-
-
-
-  initializeIndicator() {
-    DownloadsIndicatorView.ensureInitialized();
-  },
-
-  
-
-
   _customizing: false,
 
   
@@ -75,21 +65,8 @@ const DownloadsButton = {
 
 
 
-
-
-  customizeStart() {
-    
-    
-    this._customizing = true;
-    this._anchorRequested = false;
-  },
-
-  
-
-
-  customizeDone() {
-    this._customizing = false;
-    DownloadsIndicatorView.afterCustomize();
+  initializeIndicator() {
+    DownloadsIndicatorView.ensureInitialized();
   },
 
   
@@ -108,33 +85,14 @@ const DownloadsButton = {
 
     indicator.open = this._anchorRequested;
 
-    let widget = CustomizableUI.getWidget("downloads-button")
-                               .forWindow(window);
+    let widget = CustomizableUI.getWidget("downloads-button");
      
-     if (!isElementVisible(indicator.parentNode) && !widget.overflowed) {
+     if (!isElementVisible(indicator.parentNode) &&
+         widget.areaType == CustomizableUI.TYPE_TOOLBAR) {
        return null;
      }
 
     return DownloadsIndicatorView.indicatorAnchor;
-  },
-
-  
-
-
-
-
-
-
-
-  checkIsVisible(aCallback) {
-    DownloadsOverlayLoader.ensureOverlayLoaded(this.kIndicatorOverlay, () => {
-      if (!this._placeholder) {
-        aCallback(false);
-      } else {
-        let element = DownloadsIndicatorView.indicator || this._placeholder;
-        aCallback(isElementVisible(element.parentNode));
-      }
-    });
   },
 
   
@@ -170,6 +128,91 @@ const DownloadsButton = {
   releaseAnchor() {
     this._anchorRequested = false;
     this._getAnchorInternal();
+  },
+
+  unhide() {
+    let button = this._placeholder;
+    if (button && button.hasAttribute("hidden")) {
+      button.removeAttribute("hidden");
+      if (this._navBar.contains(button)) {
+        this._navBar.setAttribute("downloadsbuttonshown", "true");
+      }
+    }
+  },
+
+  hide() {
+    let button = this._placeholder;
+    if (this.autoHideDownloadsButton && button && button.closest("toolbar")) {
+      DownloadsPanel.hidePanel();
+      button.setAttribute("hidden", "true");
+      this._navBar.removeAttribute("downloadsbuttonshown");
+    }
+  },
+
+  startAutoHide() {
+    if (DownloadsIndicatorView.hasDownloads) {
+      this.unhide();
+    } else {
+      this.hide();
+    }
+  },
+
+  checkForAutoHide() {
+    let button = this._placeholder;
+    if (!this._customizing && this.autoHideDownloadsButton &&
+        button && button.closest("toolbar")) {
+      this.startAutoHide();
+    } else {
+      this.unhide();
+    }
+  },
+
+  
+  
+  
+  onWidgetAfterDOMChange(node) {
+    if (node == this._placeholder) {
+      this.checkForAutoHide();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  onCustomizeStart(win) {
+    if (win == window) {
+      
+      
+      this._customizing = true;
+      this._anchorRequested = false;
+      this.unhide();
+    }
+  },
+
+  onCustomizeEnd(win) {
+    if (win == window) {
+      this._customizing = false;
+      this.checkForAutoHide();
+      DownloadsIndicatorView.afterCustomize();
+    }
+  },
+
+  init() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this, "autoHideDownloadsButton", "browser.download.autohideButton",
+      true, this.checkForAutoHide.bind(this));
+
+    CustomizableUI.addListener(this);
+    this.checkForAutoHide();
+  },
+
+  uninit() {
+    CustomizableUI.removeListener(this);
   },
 
   get _tabsToolbar() {
@@ -342,7 +385,7 @@ const DownloadsIndicatorView = {
     let anchor = DownloadsButton._placeholder;
     let widgetGroup = CustomizableUI.getWidget("downloads-button");
     let widget = widgetGroup.forWindow(window);
-    if (widget.overflowed || widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
       if (anchor && this._isAncestorPanelOpen(anchor)) {
         
         
@@ -423,8 +466,12 @@ const DownloadsIndicatorView = {
       this._hasDownloads = aValue;
 
       
+      
       if (aValue) {
+        DownloadsButton.unhide();
         this._ensureOperational();
+      } else {
+        DownloadsButton.checkForAutoHide();
       }
     }
     return aValue;
@@ -508,14 +555,7 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    
-    let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
-      DownloadsPanel.showDownloadsHistory();
-    } else {
-      DownloadsPanel.showPanel();
-    }
-
+    DownloadsPanel.showPanel();
     aEvent.stopPropagation();
   },
 
@@ -567,10 +607,9 @@ const DownloadsIndicatorView = {
   },
 
   get indicatorAnchor() {
-    let widget = CustomizableUI.getWidget("downloads-button")
-                               .forWindow(window);
-    if (widget.overflowed) {
-      return widget.anchor;
+    let widgetGroup = CustomizableUI.getWidget("downloads-button");
+    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
+      return widgetGroup.forWindow(window).anchor;
     }
     return document.getElementById("downloads-indicator-anchor");
   },
