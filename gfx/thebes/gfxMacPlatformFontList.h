@@ -103,7 +103,7 @@ protected:
     bool mCheckedForTracking;
     nsTHashtable<nsUint32HashKey> mAvailableTables;
 
-    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
+    mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont;
 
     
     

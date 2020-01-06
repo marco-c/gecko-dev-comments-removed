@@ -212,8 +212,8 @@ protected:
     int8_t mIsCJK;
     bool mForceGDIClassic;
 
-    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
-    mozilla::WeakPtr<mozilla::gfx::UnscaledFont> mUnscaledFontBold;
+    mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFont;
+    mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFontBold;
 };
 
 
