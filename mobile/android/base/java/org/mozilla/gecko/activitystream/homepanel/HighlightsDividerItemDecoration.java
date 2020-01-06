@@ -61,7 +61,9 @@ import android.view.View;
 
             final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child
                     .getLayoutParams();
-            final int topOfDivider = child.getTop() + params.topMargin;
+            final int dividerHeight = divider.getIntrinsicHeight();
+            
+            final int topOfDivider = child.getTop() - params.topMargin - dividerHeight / 2;
             final int bottomOfDivider = topOfDivider + divider.getIntrinsicHeight();
             divider.setBounds(left, topOfDivider, right, bottomOfDivider);
             divider.draw(c);
