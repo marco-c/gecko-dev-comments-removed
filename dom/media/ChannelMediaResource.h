@@ -24,9 +24,8 @@ namespace mozilla {
 class ChannelSuspendAgent
 {
 public:
-  ChannelSuspendAgent(nsIChannel* aChannel, MediaCacheStream& aCacheStream)
-    : mChannel(aChannel)
-    , mCacheStream(aCacheStream)
+  explicit ChannelSuspendAgent(MediaCacheStream& aCacheStream)
+    : mCacheStream(aCacheStream)
   {
   }
 
@@ -41,20 +40,15 @@ public:
   bool Resume();
 
   
+  void Delegate(nsIChannel* aChannel);
   
-  void NotifyChannelOpened(nsIChannel* aChannel);
-
-  
-  void NotifyChannelClosing();
-
-  
-  void UpdateSuspendedStatusIfNeeded();
+  void Revoke();
 
 private:
   
   void SuspendInternal();
 
-  nsIChannel* mChannel;
+  nsIChannel* mChannel = nullptr;
   MediaCacheStream& mCacheStream;
   uint32_t mSuspendCount = 0;
   bool mIsChannelSuspended = false;

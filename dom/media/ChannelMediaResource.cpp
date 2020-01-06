@@ -30,7 +30,7 @@ ChannelMediaResource::ChannelMediaResource(MediaResourceCallback* aCallback,
                                            bool aIsPrivateBrowsing)
   : BaseMediaResource(aCallback, aChannel, aURI)
   , mCacheStream(this, aIsPrivateBrowsing)
-  , mSuspendAgent(mChannel, mCacheStream)
+  , mSuspendAgent(mCacheStream)
 {
 }
 
@@ -42,7 +42,7 @@ ChannelMediaResource::ChannelMediaResource(
   : BaseMediaResource(aCallback, aChannel, aURI)
   , mCacheStream(this,  false)
   , mChannelStatistics(aStatistics)
-  , mSuspendAgent(mChannel, mCacheStream)
+  , mSuspendAgent(mCacheStream)
 {
 }
 
@@ -295,7 +295,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   mIsTransportSeekable = seekable;
   mChannelStatistics.Start();
 
-  mSuspendAgent.UpdateSuspendedStatusIfNeeded();
+  mSuspendAgent.Delegate(mChannel);
 
   
   owner->DownloadProgressed();
@@ -424,8 +424,9 @@ ChannelMediaResource::OnChannelRedirect(nsIChannel* aOld,
                                         uint32_t aFlags,
                                         int64_t aOffset)
 {
+  
+  
   mChannel = aNew;
-  mSuspendAgent.NotifyChannelOpened(mChannel);
   return SetupChannelHeaders(aOffset);
 }
 
@@ -625,7 +626,7 @@ void ChannelMediaResource::CloseChannel()
   mChannelStatistics.Stop();
 
   if (mChannel) {
-    mSuspendAgent.NotifyChannelClosing();
+    mSuspendAgent.Revoke();
     
     
     
@@ -816,8 +817,6 @@ ChannelMediaResource::RecreateChannel()
     
     cos->AddClassFlags(nsIClassOfService::DontThrottle);
   }
-
-  mSuspendAgent.NotifyChannelOpened(mChannel);
 
   
   mCacheStream.NotifyChannelRecreated();
@@ -1066,27 +1065,30 @@ ChannelSuspendAgent::Resume()
 }
 
 void
-ChannelSuspendAgent::UpdateSuspendedStatusIfNeeded()
+ChannelSuspendAgent::Delegate(nsIChannel* aChannel)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mIsChannelSuspended && IsSuspended()) {
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(!mChannel, "The previous channel not closed.");
+  MOZ_ASSERT(!mIsChannelSuspended);
+
+  mChannel = aChannel;
+  
+  if (IsSuspended()) {
     SuspendInternal();
   }
 }
 
 void
-ChannelSuspendAgent::NotifyChannelOpened(nsIChannel* aChannel)
+ChannelSuspendAgent::Revoke()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aChannel);
-  mChannel = aChannel;
-}
 
-void
-ChannelSuspendAgent::NotifyChannelClosing()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mChannel);
+  if (!mChannel) {
+    
+    return;
+  }
+
   
   
   if (mIsChannelSuspended) {
@@ -1102,6 +1104,5 @@ ChannelSuspendAgent::IsSuspended()
   MOZ_ASSERT(NS_IsMainThread());
   return (mSuspendCount > 0);
 }
-
 
 } 
