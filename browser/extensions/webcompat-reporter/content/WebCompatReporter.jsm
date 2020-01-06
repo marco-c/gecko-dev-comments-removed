@@ -121,7 +121,7 @@ let WebCompatReporter = {
 
     let tab = gBrowser.loadOneTab(
       `${WebCompatReporter.endpoint}?url=${encodeURIComponent(tabData.url)}&src=desktop-reporter`,
-      {inBackground: false});
+      {inBackground: false, triggeringPrincipal: Services.securityManager.getSystemPrincipal()});
 
     
     
