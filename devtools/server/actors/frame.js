@@ -49,6 +49,19 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
     this._frameLifetimePool = null;
   },
 
+  getEnvironment: function () {
+    if (!this.frame.environment) {
+      return {};
+    }
+
+    let envActor = this.threadActor.createEnvironmentActor(
+      this.frame.environment,
+      this.frameLifetimePool
+    );
+
+    return envActor.form();
+  },
+
   
 
 
@@ -61,17 +74,20 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
         threadActor.objectGrip);
     }
 
-    if (this.frame.environment) {
-      let envActor = threadActor.createEnvironmentActor(
-        this.frame.environment,
-        this.frameLifetimePool
-      );
-      form.environment = envActor.form();
+    
+    
+    if (
+      !this.threadActor._options.ignoreFrameEnvironment &&
+      this.frame.environment
+    ) {
+      form.environment = this.getEnvironment();
     }
+
     if (this.frame.type != "wasmcall") {
       form.this = createValueGrip(this.frame.this, threadActor._pausePool,
         threadActor.objectGrip);
     }
+
     form.arguments = this._args();
     if (this.frame.script) {
       let generatedLocation = this.threadActor.sources.getFrameLocation(this.frame);
