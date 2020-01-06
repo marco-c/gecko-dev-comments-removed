@@ -634,11 +634,12 @@
 
 
 
-  if (typeof options === 'function')
+  
+  
+  if (!runningInBrowser)
     optionsClear();
 })(this);
 
 var gDelayTestDriverEnd = false;
-var gFailureExpected = false;
 
 var DESCRIPTION;

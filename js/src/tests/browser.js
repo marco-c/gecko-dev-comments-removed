@@ -320,8 +320,6 @@ window.onerror = function (msg, page, line, column, error) {
   new TestCase(DESCRIPTION, expected, actual, reason);
 
   reportFailure(msg);
-
-  optionsClear();
 };
 
 function gc()
@@ -374,28 +372,24 @@ function options(aOptionName) {
 
 jstestsOptions = options;
 
-function optionsInit() {
-  
-  options.currvalues = {
-    __proto__: null,
-    strict: true,
-    werror: true,
-    strict_mode: true,
-  };
-
-  for (var optionName in options.currvalues) {
-    var propName = optionName;
-    if (!(propName in SpecialPowers.Cu))
-      throw "options.currvalues is out of sync with Components.utils";
-    if (!SpecialPowers.Cu[propName])
-      delete options.currvalues[optionName];
-  }
-}
-
 function jsTestDriverBrowserInit()
 {
-  optionsInit();
-  optionsClear();
+  
+  
+  for (var optionName of ["strict", "werror", "strict_mode"]) {
+    if (!(optionName in SpecialPowers.Cu))
+      throw "options is out of sync with Components.utils";
+
+    
+    
+    
+    if (SpecialPowers.Cu[optionName])
+      SpecialPowers.Cu[optionName] = false;
+  }
+
+  
+  
+  options.currvalues = Object.create(null);
 
   if (document.location.search.indexOf('?') != 0)
   {
