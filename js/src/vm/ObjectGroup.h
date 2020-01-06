@@ -623,6 +623,14 @@ class ObjectGroupCompartment
     
     AllocationSiteTable* allocationSiteTable;
 
+    
+    
+    
+    
+    
+    
+    ReadBarrieredObjectGroup stringSplitStringGroup;
+
   public:
     struct NewEntry;
 
@@ -639,6 +647,8 @@ class ObjectGroupCompartment
     static ObjectGroup* makeGroup(JSContext* cx, const Class* clasp,
                                   Handle<TaggedProto> proto,
                                   ObjectGroupFlags initialFlags = 0);
+
+    static ObjectGroup* getStringSplitStringGroup(JSContext* cx);
 
     void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                 size_t* allocationSiteTables,
