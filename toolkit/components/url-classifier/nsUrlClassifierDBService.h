@@ -270,9 +270,6 @@ private:
 
   bool IsSameAsLastResults(CacheResultArray& aResult);
 
-  
-  nsCOMPtr<nsICryptoHash> mCryptoHash;
-
   nsAutoPtr<mozilla::safebrowsing::Classifier> mClassifier;
   
   nsAutoPtr<ProtocolParser> mProtocolParser;

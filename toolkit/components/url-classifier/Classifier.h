@@ -13,7 +13,6 @@
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsIFile.h"
-#include "nsICryptoHash.h"
 #include "nsDataHashtable.h"
 
 class nsIThread;
@@ -207,7 +206,6 @@ private:
   nsCOMPtr<nsIFile> mBackupDirectory;
   nsCOMPtr<nsIFile> mUpdatingDirectory; 
   nsCOMPtr<nsIFile> mToDeleteDirectory;
-  nsCOMPtr<nsICryptoHash> mCryptoHash;
   nsTArray<LookupCache*> mLookupCaches; 
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
