@@ -392,10 +392,6 @@ private:
   
   bool mEditorHasBeenInitialized;
   bool mIsProcessing;
-  
-  bool mUsePlaceholder;
-  
-  bool mUsePreview;
 
 #ifdef DEBUG
   bool mInEditorInitialization;
