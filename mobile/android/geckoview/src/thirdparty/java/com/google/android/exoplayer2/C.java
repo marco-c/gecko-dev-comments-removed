@@ -112,7 +112,7 @@ public final class C {
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int CRYPTO_MODE_AES_CBC = MediaCodec.CRYPTO_MODE_AES_CBC;
+  public static final int CRYPTO_MODE_AES_CBC = 0x2;
 
   
 
@@ -565,17 +565,17 @@ public final class C {
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT709 = MediaFormat.COLOR_STANDARD_BT709;
+  public static final int COLOR_SPACE_BT709 = 0x01;
   
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT601 = MediaFormat.COLOR_STANDARD_BT601_PAL;
+  public static final int COLOR_SPACE_BT601 = 0x02;
   
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT2020 = MediaFormat.COLOR_STANDARD_BT2020;
+  public static final int COLOR_SPACE_BT2020 = 0x06;
 
   
 
@@ -587,17 +587,17 @@ public final class C {
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_SDR = MediaFormat.COLOR_TRANSFER_SDR_VIDEO;
+  public static final int COLOR_TRANSFER_SDR = 0x03;
   
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_ST2084 = MediaFormat.COLOR_TRANSFER_ST2084;
+  public static final int COLOR_TRANSFER_ST2084 = 0x06;
   
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_HLG = MediaFormat.COLOR_TRANSFER_HLG;
+  public static final int COLOR_TRANSFER_HLG = 0x07;
 
   
 
@@ -609,12 +609,12 @@ public final class C {
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_RANGE_LIMITED = MediaFormat.COLOR_RANGE_LIMITED;
+  public static final int COLOR_RANGE_LIMITED = 0x02;
   
 
 
   @SuppressWarnings("InlinedApi")
-  public static final int COLOR_RANGE_FULL = MediaFormat.COLOR_RANGE_FULL;
+  public static final int COLOR_RANGE_FULL = 0x01;
 
   
 
