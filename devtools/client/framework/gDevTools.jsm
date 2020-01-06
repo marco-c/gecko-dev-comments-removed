@@ -73,6 +73,9 @@ let gDevToolsMethods = [
   "getThemeDefinitionArray",
 
   
+  "getTheme",
+
+  
   "getThemeDefinition",
   "emit",
 

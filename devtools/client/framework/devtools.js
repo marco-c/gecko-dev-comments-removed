@@ -21,6 +21,8 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const {JsonView} = require("devtools/client/jsonview/main");
 const AboutDevTools = require("devtools/client/framework/about-devtools-toolbox");
 const {Task} = require("devtools/shared/task");
+const {getTheme, setTheme, addThemeObserver, removeThemeObserver} =
+  require("devtools/client/shared/theme");
 
 const FORBIDDEN_IDS = new Set(["toolbox", ""]);
 const MAX_ORDINAL = 99;
@@ -42,6 +44,10 @@ function DevTools() {
   AboutDevTools.register();
 
   EventEmitter.decorate(this);
+
+  
+  this._onThemeChanged = this._onThemeChanged.bind(this);
+  addThemeObserver(this._onThemeChanged);
 
   
   
@@ -249,6 +255,23 @@ DevTools.prototype = {
 
 
 
+  getTheme() {
+    return getTheme();
+  },
+
+  
+
+
+  _onThemeChanged() {
+    this.emit("theme-changed", getTheme());
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -297,7 +320,7 @@ DevTools.prototype = {
       themeId = theme.id;
     }
 
-    let currTheme = Services.prefs.getCharPref("devtools.theme");
+    let currTheme = getTheme();
 
     
     
@@ -310,7 +333,7 @@ DevTools.prototype = {
     if (!Services.startup.shuttingDown &&
         !isCoreTheme &&
         theme.id == currTheme) {
-      Services.prefs.setCharPref("devtools.theme", "light");
+      setTheme("light");
 
       this.emit("theme-unregistered", theme);
     }
@@ -514,6 +537,8 @@ DevTools.prototype = {
     JsonView.destroy();
 
     gDevTools.unregisterDefaults();
+
+    removeThemeObserver(this._onThemeChanged);
 
     
     

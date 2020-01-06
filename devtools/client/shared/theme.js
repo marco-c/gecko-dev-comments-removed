@@ -18,6 +18,7 @@ const THEME_SELECTOR_STRINGS = {
   dark: ":root.theme-dark {",
   firebug: ":root.theme-firebug {"
 };
+const THEME_PREF = "devtools.theme";
 
 
 
@@ -46,7 +47,7 @@ function getThemeFile(name) {
 
 
 const getTheme = exports.getTheme = () => {
-  return Services.prefs.getCharPref("devtools.theme");
+  return Services.prefs.getCharPref(THEME_PREF);
 };
 
 
@@ -69,6 +70,20 @@ const getColor = exports.getColor = (type, theme) => {
 
 
 const setTheme = exports.setTheme = (newTheme) => {
-  Services.prefs.setCharPref("devtools.theme", newTheme);
+  Services.prefs.setCharPref(THEME_PREF, newTheme);
+};
+
+
+
+
+const addThemeObserver = exports.addThemeObserver = observer => {
+  Services.prefs.addObserver(THEME_PREF, observer);
+};
+
+
+
+
+const removeThemeObserver = exports.removeThemeObserver = observer => {
+  Services.prefs.removeObserver(THEME_PREF, observer);
 };
 
