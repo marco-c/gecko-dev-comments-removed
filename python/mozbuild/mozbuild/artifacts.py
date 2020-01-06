@@ -658,7 +658,7 @@ class TaskCache(CacheManager):
                  'Searching Taskcluster index with namespace: {namespace}')
         try:
             taskId = find_task_id(namespace)
-        except Exception:
+        except KeyError:
             
             
             raise ValueError('Task for {namespace} does not exist (yet)!'.format(namespace=namespace))
