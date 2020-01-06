@@ -328,11 +328,10 @@ public:
 
 
 
-  void ContentRemoved(nsIContent* aContainer,
+  bool ContentRemoved(nsIContent* aContainer,
                       nsIContent* aChild,
                       nsIContent* aOldNextSibling,
-                      RemoveFlags aFlags,
-                      bool*       aDidReconstruct);
+                      RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
                             CharacterDataChangeInfo* aInfo);
@@ -367,7 +366,8 @@ public:
 
 
 
-  void DestroyFramesFor(nsIContent* aContent, bool* aDidReconstruct);
+
+  bool DestroyFramesFor(mozilla::dom::Element* aElement);
 
   
   nsIFrame* CreateContinuingFrame(nsPresContext*    aPresContext,
