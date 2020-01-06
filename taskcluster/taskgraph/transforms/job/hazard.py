@@ -62,11 +62,11 @@ def docker_worker_hazard(config, job, taskdesc):
 
     
     
-    env['GECKO_DIR'] = '/home/worker/checkouts/gecko'
+    env['GECKO_DIR'] = '/builds/worker/checkouts/gecko'
 
     worker['command'] = [
-        '/home/worker/bin/run-task',
-        '--vcs-checkout', '/home/worker/checkouts/gecko',
+        '/builds/worker/bin/run-task',
+        '--vcs-checkout', '/builds/worker/checkouts/gecko',
         '--',
         '/bin/bash', '-c', run['command']
     ]
