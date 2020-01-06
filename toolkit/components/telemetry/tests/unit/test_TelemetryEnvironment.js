@@ -427,7 +427,9 @@ function checkSettingsSection(data) {
   
   if (gIsAndroid) {
     Assert.ok(!("isDefaultBrowser" in data.settings), "Must not be available on Android.");
-  } else {
+  } else if ("isDefaultBrowser" in data.settings) {
+    
+    
     Assert.ok(checkNullOrBool(data.settings.isDefaultBrowser));
   }
 
@@ -1564,6 +1566,47 @@ add_task(async function test_defaultSearchEngine() {
   Services.obs.notifyObservers(null, "browser-search-service", "init-complete");
   data = TelemetryEnvironment.currentEnvironment;
   Assert.equal(data.settings.searchCohort, "testcohort");
+});
+
+add_task(async function test_delayed_defaultBrowser() {
+  
+  await TelemetryEnvironment.testCleanRestart().onInitialized();
+
+  let environmentData = TelemetryEnvironment.currentEnvironment;
+  checkEnvironmentData(environmentData);
+  Assert.equal(environmentData.settings.isDefaultBrowser, null,
+               "isDefaultBrowser must be null before the session is restored.");
+
+  Services.obs.notifyObservers(null, "sessionstore-windows-restored");
+
+  environmentData = TelemetryEnvironment.currentEnvironment;
+  checkEnvironmentData(environmentData);
+  Assert.ok("isDefaultBrowser" in environmentData.settings,
+            "isDefaultBrowser must be available after the session is restored.");
+  Assert.equal(typeof(environmentData.settings.isDefaultBrowser), "boolean",
+               "isDefaultBrowser must be of the right type.");
+
+  
+  const PREF_TEST = "toolkit.telemetry.test.pref1";
+  const PREFS_TO_WATCH = new Map([
+    [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_STATE}],
+  ]);
+  Preferences.reset(PREF_TEST);
+
+  
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  let deferred = PromiseUtils.defer();
+  TelemetryEnvironment.registerChangeListener("testDefaultBrowser_pref", deferred.resolve);
+  
+  Preferences.set(PREF_TEST, 1);
+  await deferred.promise;
+  TelemetryEnvironment.unregisterChangeListener("testDefaultBrowser_pref");
+
+  
+  environmentData = TelemetryEnvironment.currentEnvironment;
+  checkEnvironmentData(environmentData);
+  Assert.ok("isDefaultBrowser" in environmentData.settings,
+            "isDefaultBrowser must still be available after a pref is flipped.");
 });
 
 add_task(async function test_osstrings() {

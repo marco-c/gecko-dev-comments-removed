@@ -782,6 +782,9 @@ function EnvironmentCache() {
   
   
   this._canQuerySearch = false;
+  
+  
+  this._sessionWasRestored = false;
 
   
   this._changeListeners = new Map();
@@ -1069,9 +1072,13 @@ EnvironmentCache.prototype = {
         Services.obs.removeObserver(this, aTopic);
         break;
       case SESSIONSTORE_WINDOWS_RESTORED_TOPIC:
+        this._sessionWasRestored = true;
         
         
         Services.search.init();
+        
+        
+        this._updateDefaultBrowser();
         break;
     }
   },
@@ -1244,6 +1251,16 @@ EnvironmentCache.prototype = {
     }
   },
 
+  _updateDefaultBrowser() {
+    if (AppConstants.platform === "android") {
+      return;
+    }
+    
+    this._currentEnvironment.settings = this._currentEnvironment.settings || {};
+    this._currentEnvironment.settings.isDefaultBrowser =
+      this._sessionWasRestored ? this._isDefaultBrowser() : null;
+  },
+
   
 
 
@@ -1272,11 +1289,7 @@ EnvironmentCache.prototype = {
     this._currentEnvironment.settings.addonCompatibilityCheckEnabled =
       AddonManager.checkCompatibility;
 
-    if (AppConstants.platform !== "android") {
-      this._currentEnvironment.settings.isDefaultBrowser =
-        this._isDefaultBrowser();
-    }
-
+    this._updateDefaultBrowser();
     this._updateSearchEngine();
   },
 
