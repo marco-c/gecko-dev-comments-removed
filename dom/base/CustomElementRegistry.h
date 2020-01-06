@@ -214,40 +214,32 @@ private:
 class CustomElementReaction
 {
 public:
-  explicit CustomElementReaction(CustomElementDefinition* aDefinition)
-    : mDefinition(aDefinition)
-  {
-  }
-
   virtual ~CustomElementReaction() = default;
   virtual void Invoke(Element* aElement, ErrorResult& aRv) = 0;
   virtual void Traverse(nsCycleCollectionTraversalCallback& aCb) const
   {
   }
-
-protected:
-  CustomElementDefinition* mDefinition;
 };
 
 class CustomElementUpgradeReaction final : public CustomElementReaction
 {
 public:
   explicit CustomElementUpgradeReaction(CustomElementDefinition* aDefinition)
-    : CustomElementReaction(aDefinition)
+    : mDefinition(aDefinition)
   {
   }
 
 private:
    virtual void Invoke(Element* aElement, ErrorResult& aRv) override;
+
+   CustomElementDefinition* mDefinition;
 };
 
 class CustomElementCallbackReaction final : public CustomElementReaction
 {
   public:
-    CustomElementCallbackReaction(CustomElementDefinition* aDefinition,
-                                  UniquePtr<CustomElementCallback> aCustomElementCallback)
-      : CustomElementReaction(aDefinition)
-      , mCustomElementCallback(Move(aCustomElementCallback))
+    explicit CustomElementCallbackReaction(UniquePtr<CustomElementCallback> aCustomElementCallback)
+      : mCustomElementCallback(Move(aCustomElementCallback))
     {
     }
 
@@ -291,7 +283,6 @@ public:
 
 
   void EnqueueCallbackReaction(Element* aElement,
-                               CustomElementDefinition* aDefinition,
                                UniquePtr<CustomElementCallback> aCustomElementCallback);
 
   
