@@ -48,6 +48,9 @@ class nsIDOMWindowUtils;
 class nsIHttpChannel;
 class nsISerialEventTarget;
 
+template<typename T> class nsTHashtable;
+template<typename T> class nsPtrHashKey;
+
 namespace mozilla {
 class AbstractThread;
 namespace layout {
@@ -762,7 +765,7 @@ public:
   
   
   
-  static const nsTArray<TabChild*>& GetActiveTabs()
+  static const nsTHashtable<nsPtrHashKey<TabChild>>& GetActiveTabs()
   {
     MOZ_ASSERT(HasActiveTabs());
     return *sActiveTabs;
@@ -964,7 +967,7 @@ private:
   
   
   
-  static nsTArray<TabChild*>* sActiveTabs;
+  static nsTHashtable<nsPtrHashKey<TabChild>>* sActiveTabs;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };

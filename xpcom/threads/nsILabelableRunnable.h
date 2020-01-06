@@ -7,9 +7,11 @@
 #ifndef nsILabelableRunnable_h
 #define nsILabelableRunnable_h
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
+#include "nsHashKeys.h"
 #include "nsISupports.h"
-#include "nsTArray.h"
+#include "nsTHashtable.h"
 
 namespace mozilla {
 class SchedulerGroup;
@@ -37,11 +39,33 @@ class nsILabelableRunnable : public nsISupports
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ILABELABLERUNNABLE_IID);
 
+  class SchedulerGroupSet
+  {
+    friend class nsILabelableRunnable;
+
+    using MultipleSchedulerGroups =
+      nsTHashtable<nsRefPtrHashKey<mozilla::SchedulerGroup>>;
+
+    RefPtr<mozilla::SchedulerGroup> mSingle;
+    mozilla::Maybe<MultipleSchedulerGroups> mMulti;
+
+  public:
+    void Put(mozilla::SchedulerGroup* aGroup);
+
+    void Clear();
+
+    void SetIsRunning(bool aIsRunning);
+  };
+
   
   
   
   
-  virtual bool GetAffectedSchedulerGroups(nsTArray<RefPtr<mozilla::SchedulerGroup>>& aGroups) = 0;
+  virtual bool GetAffectedSchedulerGroups(SchedulerGroupSet& aGroups) = 0;
+
+  
+  
+  bool IsReadyToRun();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsILabelableRunnable, NS_ILABELABLERUNNABLE_IID);

@@ -69,18 +69,7 @@ IsReadyToRun(nsIRunnable* aEvent, SchedulerGroup* aEventGroup)
     return false;
   }
 
-  AutoTArray<RefPtr<SchedulerGroup>, 1> groups;
-  bool labeled = labelable->GetAffectedSchedulerGroups(groups);
-  if (!labeled) {
-    return false;
-  }
-
-  for (SchedulerGroup* group : groups) {
-    if (group->IsRunning()) {
-      return false;
-    }
-  }
-  return true;
+  return labelable->IsReadyToRun();
 }
 
 void
@@ -181,8 +170,9 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   
   
   if (TabChild::HasActiveTabs() && mAvoidActiveTabCount <= 0) {
-    for (TabChild* tabChild : TabChild::GetActiveTabs()) {
-      SchedulerGroup* group = tabChild->TabGroup();
+    for (auto iter = TabChild::GetActiveTabs().ConstIter();
+         !iter.Done(); iter.Next()) {
+      SchedulerGroup* group = iter.Get()->GetKey()->TabGroup();
       if (!group->isInList() || group == sCurrentSchedulerGroup) {
         continue;
       }
