@@ -291,6 +291,7 @@ pref("devtools.webconsole.inputHistoryCount", 50);
 
 
 pref("devtools.webconsole.persistlog", false);
+pref("devtools.netmonitor.persistlog", false);
 
 
 
