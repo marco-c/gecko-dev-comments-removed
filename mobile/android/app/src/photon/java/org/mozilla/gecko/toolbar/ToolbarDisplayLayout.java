@@ -20,7 +20,6 @@ import org.mozilla.gecko.Tabs;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.skin.SkinConfig;
-import org.mozilla.gecko.toolbar.BrowserToolbarTabletBase.ForwardButtonAnimation;
 import org.mozilla.gecko.Experiments;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.StringUtils;
@@ -31,14 +30,12 @@ import org.mozilla.gecko.widget.themed.ThemedTextView;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.v4.view.ViewCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -454,41 +451,6 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
 
     void updateSiteIdentityAnchor(View view) {
         mSiteIdentityPopup.setAnchor(view);
-    }
-
-    private boolean isLayoutRtl() {
-        return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL;
-    }
-
-    void prepareForwardAnimation(PropertyAnimator anim, ForwardButtonAnimation animation, int width) {
-        if (animation == ForwardButtonAnimation.HIDE) {
-            
-            
-            anim.attach(mTitle,
-                        PropertyAnimator.Property.TRANSLATION_X,
-                        isLayoutRtl() ? width : 0);
-            anim.attach(mSiteSecurity,
-                        PropertyAnimator.Property.TRANSLATION_X,
-                        isLayoutRtl() ? width : 0);
-
-            
-            
-            
-            ViewHelper.setTranslationX(mTitle, width);
-            ViewHelper.setTranslationX(mSiteSecurity, width);
-        } else {
-            anim.attach(mTitle,
-                        PropertyAnimator.Property.TRANSLATION_X,
-                        isLayoutRtl() ? 0 : width);
-            anim.attach(mSiteSecurity,
-                        PropertyAnimator.Property.TRANSLATION_X,
-                        isLayoutRtl() ? 0 : width);
-        }
-    }
-
-    void finishForwardAnimation() {
-        ViewHelper.setTranslationX(mTitle, 0);
-        ViewHelper.setTranslationX(mSiteSecurity, 0);
     }
 
     void prepareStartEditingAnimation() {
