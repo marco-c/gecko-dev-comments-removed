@@ -41,6 +41,13 @@ public class ReferrerReceiver extends BroadcastReceiver {
     
 
 
+
+
+    private static final String MOZILLA_ADJUST_SOURCE = "xodfft";
+
+    
+
+
     private static final String DISTRIBUTION_UTM_CAMPAIGN = "distribution";
 
     @Override
@@ -54,7 +61,8 @@ public class ReferrerReceiver extends BroadcastReceiver {
         
         ReferrerDescriptor referrer = new ReferrerDescriptor(intent.getStringExtra("referrer"));
 
-        if (!TextUtils.equals(referrer.source, MOZILLA_UTM_SOURCE)) {
+        if (!TextUtils.equals(referrer.source, MOZILLA_UTM_SOURCE) &&
+            !TextUtils.equals(referrer.source, MOZILLA_ADJUST_SOURCE)) {
             
             try {
                 AdjustConstants.getAdjustHelper().onReceive(context, intent);
