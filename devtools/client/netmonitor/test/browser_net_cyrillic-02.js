@@ -47,7 +47,10 @@ add_task(function* () {
   EventUtils.sendMouseEvent({ type: "click" },
     document.querySelector("#response-tab"));
   yield wait;
-  let text = document.querySelector(".CodeMirror-lines").textContent;
+
+  
+  
+  let text = document.querySelector(".CodeMirror").CodeMirror.getValue();
 
   ok(text.includes("\u0411\u0440\u0430\u0442\u0430\u043d"),
     "The text shown in the source editor is correct.");
