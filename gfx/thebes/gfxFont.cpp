@@ -26,9 +26,9 @@
 #include "gfxGraphiteShaper.h"
 #include "gfxHarfBuzzShaper.h"
 #include "gfxUserFontSet.h"
-#include "nsIUGenCategory.h"
 #include "nsSpecialCasingData.h"
 #include "nsTextRunTransformations.h"
+#include "nsUGenCategory.h"
 #include "nsUnicodeProperties.h"
 #include "nsStyleConsts.h"
 #include "mozilla/AppUnits.h"
@@ -699,7 +699,7 @@ gfxShapedText::FilterIfIgnorable(uint32_t aIndex, uint32_t aCh)
         
         
         
-        if (GetGenCategory(aCh) == nsIUGenCategory::kLetter &&
+        if (GetGenCategory(aCh) == nsUGenCategory::kLetter &&
             aIndex + 1 < GetLength() &&
             !GetCharacterGlyphs()[aIndex + 1].IsClusterStart()) {
             return false;
