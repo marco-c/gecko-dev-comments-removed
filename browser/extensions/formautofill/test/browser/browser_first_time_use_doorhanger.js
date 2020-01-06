@@ -27,9 +27,8 @@ add_task(async function test_first_time_save() {
         form.querySelector("#tel").value = "1-345-345-3456";
 
         
-        setTimeout(() => {
-          form.querySelector("input[type=submit]").click();
-        }, 500);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        form.querySelector("input[type=submit]").click();
       });
 
       await promiseShown;
@@ -65,12 +64,11 @@ add_task(async function test_non_first_time_save() {
         form.querySelector("#tel").value = "1-650-903-0800";
 
         
-        setTimeout(() => {
-          form.querySelector("input[type=submit]").click();
-        }, 500);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        form.querySelector("input[type=submit]").click();
       });
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sleep(1000);
       is(PopupNotifications.panel.state, "closed", "Doorhanger is hidden");
     }
   );
