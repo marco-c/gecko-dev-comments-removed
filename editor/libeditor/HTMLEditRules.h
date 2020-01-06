@@ -308,11 +308,8 @@ protected:
 
 
 
-
   EditActionResult ReturnInParagraph(Selection& aSelection,
-                                     nsINode& aParentDivOrP,
-                                     nsINode* aTextNode, int32_t aOffset,
-                                     nsIContent* aChildAtOffset);
+                                     nsINode& aParentDivOrP);
 
   
 
