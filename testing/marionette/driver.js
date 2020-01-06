@@ -241,6 +241,12 @@ Object.defineProperty(GeckoDriver.prototype, "windows", {
   },
 });
 
+Object.defineProperty(GeckoDriver.prototype, "windowType", {
+  get() {
+    return this.curBrowser.window.document.documentElement.getAttribute("windowtype");
+  },
+});
+
 Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
   get() {
     let hs = [];
@@ -1165,9 +1171,9 @@ GeckoDriver.prototype.getTitle = function() {
 
 
 GeckoDriver.prototype.getWindowType = function(cmd, resp) {
-  let win = assert.window(this.getCurrentWindow());
+  assert.window(this.getCurrentWindow());
 
-  resp.body.value = win.document.documentElement.getAttribute("windowtype");
+  resp.body.value = this.windowType;
 };
 
 
@@ -2800,7 +2806,7 @@ GeckoDriver.prototype.deleteCookie = function(cmd) {
 
 
 GeckoDriver.prototype.close = async function() {
-  assert.contentBrowser(this.curBrowser);
+  assert.window(this.getCurrentWindow(Context.Content));
   this._assertAndDismissModal();
 
   let nwins = 0;
