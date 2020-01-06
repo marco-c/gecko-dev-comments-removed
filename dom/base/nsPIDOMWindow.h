@@ -895,6 +895,16 @@ public:
 
   bool IsRunningTimeout();
 
+  
+  
+  void UpdateActiveIndexedDBTransactionCount(int32_t aDelta);
+  void UpdateActiveIndexedDBDatabaseCount(int32_t aDelta);
+
+  
+  
+  bool HasActiveIndexedDBTransactions();
+  bool HasActiveIndexedDBDatabases();
+
 protected:
   void CreatePerformanceObjectIfNeeded();
 };
