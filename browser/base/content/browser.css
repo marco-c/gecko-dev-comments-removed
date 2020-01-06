@@ -476,10 +476,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-
-
-#reload-button[disabled]:not(:-moz-window-inactive) > .toolbarbutton-icon {
-  opacity: 1 !important;
+#reload-button[temporarily-disabled] {
+  pointer-events: none;
 }
 
 #PanelUI-feeds > .feed-toolbarbutton:-moz-locale-dir(rtl) {
