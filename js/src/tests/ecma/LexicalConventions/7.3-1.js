@@ -21,23 +21,24 @@ var TITLE   = "Comments";
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
-var testcase;
+var actual = "pass";
 
-testcase = new TestCase( SECTION,
+
+
+new TestCase( SECTION,
 			 "a comment with a line terminator string, and text following",
 			 "pass",
-			 "pass");
+			 actual);
 
 
+actual = "";
 
+var x = "// test \n actual = 'pass'";
+actual = eval(x);
 
-testcase = new TestCase( SECTION,
-			 "// test \\n testcase.actual = \"pass\"",
+new TestCase( SECTION,
+			 "// test \\n actual = \"pass\"",
 			 "pass",
-			 "" );
-
-var x = "// test \n testcase.actual = 'pass'";
-
-testcase.actual = eval(x);
+			 actual );
 
 test();

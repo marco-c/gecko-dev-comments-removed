@@ -52,42 +52,51 @@ var TITLE   = "Source Text";
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
-var testcase = new TestCase( SECTION,
-			     "// the following character should not be interpreted as a line terminator in a comment: \u000A",
-			     'PASSED',
-			     "PASSED" );
+var actual;
+
+actual = "PASSED";
 
 
-
-testcase =
-  new TestCase( SECTION,
-		"// the following character should not be interpreted as a line terminator in a comment: \\n 'FAILED'",
-		'PASSED',
-		'PASSED' );
+new TestCase( SECTION,
+	      "// the following character should not be interpreted as a line terminator in a comment: \u000A",
+	      'PASSED',
+	      actual );
 
 
-
-testcase =
-  new TestCase( SECTION,
-		"// the following character should not be interpreted as a line terminator in a comment: \\u000A 'FAILED'",
-		'PASSED',
-		'PASSED' );
+actual = 'PASSED';
 
 
-
-testcase =
-  new TestCase( SECTION,
-		"// the following character should not be interpreted as a line terminator in a comment: \n 'PASSED'",
-		'PASSED',
-		'PASSED' );
+new TestCase( SECTION,
+	      "// the following character should not be interpreted as a line terminator in a comment: \\n 'FAILED'",
+	      'PASSED',
+	      actual );
 
 
-testcase =
-  new TestCase(   SECTION,
-		  "// the following character should not be interpreted as a line terminator in a comment: u000D",
-		  'PASSED',
-		  'PASSED' );
+actual = 'PASSED';
 
+
+new TestCase( SECTION,
+	      "// the following character should not be interpreted as a line terminator in a comment: \\u000A 'FAILED'",
+	      'PASSED',
+	      actual );
+
+
+actual = 'PASSED';
+
+
+new TestCase( SECTION,
+	      "// the following character should not be interpreted as a line terminator in a comment: \n 'PASSED'",
+	      'PASSED',
+	      actual );
+
+
+actual = 'PASSED';
+
+
+new TestCase( SECTION,
+	      "// the following character should not be interpreted as a line terminator in a comment: u000D",
+	      'PASSED',
+	      actual );
 
 
 test();

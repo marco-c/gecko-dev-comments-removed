@@ -21,11 +21,13 @@ var TITLE   = "Comments";
 
 writeHeaderToLog( SECTION + " "+ TITLE);
 
-var testcase = new TestCase( SECTION,
+var actual = "pass";
+
+
+
+new TestCase( SECTION,
 			     "a comment with a carriage return, and text following",
 			     "pass",
-			     "pass");
-
-
+			     actual);
 
 test();
