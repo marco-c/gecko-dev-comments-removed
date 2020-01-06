@@ -69,6 +69,16 @@ public:
     
     bool HasTrackingTable();
 
+    bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag) override
+    {
+        
+        
+        if (RequiresAATLayout()) {
+            return false;
+        }
+        return gfxFontEntry::SupportsOpenTypeFeature(aScript, aFeatureTag);
+    }
+
     
     
     float TrackingForCSSPx(float aPointSize) const;

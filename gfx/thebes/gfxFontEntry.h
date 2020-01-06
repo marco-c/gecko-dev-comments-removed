@@ -145,7 +145,7 @@ public:
 
     
     
-    bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
+    virtual bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
     bool SupportsGraphiteFeature(uint32_t aFeatureTag);
 
     
