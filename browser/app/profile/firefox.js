@@ -1679,3 +1679,14 @@ pref("browser.suppress_first_window_animation", true);
 
 
 pref("browser.onboarding.enabled", true);
+
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("extensions.screenshots.system-disabled", false);
+#else
+pref("extensions.screenshots.system-disabled", true);
+#endif
+
+pref("extensions.screenshots.disabled", false);
