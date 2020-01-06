@@ -62,7 +62,6 @@
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/CaptivePortalService.h"
-#include "mozilla/Omnijar.h"
 #include "mozilla/plugins/PluginInstanceParent.h"
 #include "mozilla/plugins/PluginModuleParent.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -1437,18 +1436,6 @@ GetAppPaths(nsCString &aAppPath, nsCString &aAppBinaryPath, nsCString &aAppDir)
 }
 
 
-
-
-
-static bool
-IsDevelopmentBuild()
-{
-  nsCOMPtr<nsIFile> path = mozilla::Omnijar::GetPath(mozilla::Omnijar::GRE);
-  
-  return path == nullptr;
-}
-
-
 #ifdef DEBUG
 
 static nsAutoCString
@@ -1517,7 +1504,7 @@ StartMacOSContentSandbox()
 
   bool isFileProcess = cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE);
   char *developer_repo_dir = nullptr;
-  if (IsDevelopmentBuild()) {
+  if (mozilla::IsDevelopmentBuild()) {
     
     
     
