@@ -18,6 +18,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManagerPrivate",
                                   "resource://gre/modules/AddonManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillParent",
                                   "resource://formautofill/FormAutofillParent.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillUtils",
+                                  "resource://formautofill/FormAutofillUtils.jsm");
 
 function insertStyleSheet(domWindow, url) {
   let doc = domWindow.document;
@@ -68,6 +70,7 @@ function startup(data) {
     
     
     Services.prefs.clearUserPref("services.sync.engine.addresses.available");
+    Services.prefs.clearUserPref("services.sync.engine.creditcards.available");
     Services.telemetry.scalarSet("formautofill.availability", false);
     return;
   }
@@ -96,6 +99,11 @@ function startup(data) {
   
   
   Services.prefs.setBoolPref("services.sync.engine.addresses.available", true);
+  if (FormAutofillUtils.isAutofillCreditCardsAvailable) {
+    Services.prefs.setBoolPref("services.sync.engine.creditcards.available", true);
+  } else {
+    Services.prefs.clearUserPref("services.sync.engine.creditcards.available");
+  }
 
   
   Services.mm.addMessageListener("FormAutoComplete:MaybeOpenPopup", onMaybeOpenPopup);
