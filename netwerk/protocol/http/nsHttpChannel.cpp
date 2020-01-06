@@ -6830,7 +6830,15 @@ nsHttpChannel::SetProxyCredentials(const nsACString &value)
 NS_IMETHODIMP
 nsHttpChannel::SetWWWCredentials(const nsACString &value)
 {
-    return mRequestHead.SetHeader(nsHttp::Authorization, value);
+    
+    
+    
+    
+    
+    
+    Unused << mRequestHead.ClearHeader(nsHttp::Authorization);
+    return mRequestHead.SetHeader(nsHttp::Authorization, value, false,
+                                  nsHttpHeaderArray::eVarietyRequestDefault);
 }
 
 
