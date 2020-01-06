@@ -99,9 +99,6 @@ public:
     PLAY_STATE_SHUTDOWN
   };
 
-  
-  static void InitStatics();
-
   explicit MediaDecoder(MediaDecoderInit& aInit);
 
   
