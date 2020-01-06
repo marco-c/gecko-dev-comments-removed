@@ -298,15 +298,6 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
 #endif
 #endif
 
-#ifdef MOZ_DEBUG
-   
-#ifdef inline
-#undef inline
-#endif
-
-#  define inline
-#endif
-
 
 #define	STRERROR_BUF		64
 
