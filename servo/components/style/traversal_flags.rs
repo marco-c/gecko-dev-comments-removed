@@ -77,6 +77,7 @@ pub fn assert_traversal_flags_match() {
 
 impl TraversalFlags {
     
+    #[inline]
     pub fn for_animation_only(&self) -> bool {
         self.contains(AnimationOnly)
     }

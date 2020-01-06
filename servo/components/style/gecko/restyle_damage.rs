@@ -18,21 +18,25 @@ pub struct GeckoRestyleDamage(nsChangeHint);
 
 impl GeckoRestyleDamage {
     
+    #[inline]
     pub fn new(raw: nsChangeHint) -> Self {
         GeckoRestyleDamage(raw)
     }
 
     
+    #[inline]
     pub fn as_change_hint(&self) -> nsChangeHint {
         self.0
     }
 
     
+    #[inline]
     pub fn empty() -> Self {
         GeckoRestyleDamage(nsChangeHint(0))
     }
 
     
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.0 == nsChangeHint(0)
     }

@@ -72,6 +72,7 @@ impl RestyleData {
     
     
     
+    #[inline]
     fn clear_restyle_state(&mut self) {
         self.clear_restyle_flags_and_damage();
         self.hint = RestyleHint::empty();
@@ -83,6 +84,7 @@ impl RestyleData {
     
     
     
+    #[inline]
     fn clear_restyle_flags_and_damage(&mut self) {
         self.damage = RestyleDamage::empty();
         self.flags = self.flags & TRAVERSED_WITHOUT_STYLING;
@@ -124,6 +126,7 @@ impl RestyleData {
     }
 
     
+    #[inline]
     pub fn is_restyle(&self) -> bool {
         self.flags.contains(WAS_RESTYLED)
     }
@@ -140,6 +143,7 @@ impl RestyleData {
     }
 
     
+    #[inline]
     pub fn contains_restyle_data(&self) -> bool {
         self.is_restyle() || !self.hint.is_empty() || !self.damage.is_empty()
     }
@@ -353,6 +357,7 @@ impl ElementData {
     }
 
     
+    #[inline]
     pub fn has_styles(&self) -> bool {
         self.styles.primary.is_some()
     }
@@ -429,11 +434,13 @@ impl ElementData {
     }
 
     
+    #[inline]
     pub fn clear_restyle_state(&mut self) {
         self.restyle.clear_restyle_state();
     }
 
     
+    #[inline]
     pub fn clear_restyle_flags_and_damage(&mut self) {
         self.restyle.clear_restyle_flags_and_damage();
     }
