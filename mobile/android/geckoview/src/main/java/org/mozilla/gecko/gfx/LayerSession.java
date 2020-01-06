@@ -31,8 +31,6 @@ public class LayerSession {
     protected class Compositor extends JNIObject {
         public LayerView layerView;
 
-        private volatile boolean mContentDocumentIsDisplayed;
-
         public boolean isReady() {
             return LayerSession.this.isCompositorReady();
         }
@@ -129,23 +127,12 @@ public class LayerSession {
         public native void sendToolbarPixelsToCompositor(final int width, final int height,
                                                          final int[] pixels);
 
-        @WrapForJNI(calledFrom = "gecko")
-        private void contentDocumentChanged() {
-            mContentDocumentIsDisplayed = false;
-        }
-
-        @WrapForJNI(calledFrom = "gecko")
-        private boolean isContentDocumentDisplayed() {
-            return mContentDocumentIsDisplayed;
-        }
-
         
         
         
         
         @WrapForJNI(calledFrom = "ui")
         public void updateRootFrameMetrics(float scrollX, float scrollY, float zoom) {
-            mContentDocumentIsDisplayed = true;
             if (layerView != null) {
                 layerView.onMetricsChanged(scrollX, scrollY, zoom);
             }

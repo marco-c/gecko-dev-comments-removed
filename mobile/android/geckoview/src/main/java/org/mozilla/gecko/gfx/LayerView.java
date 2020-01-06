@@ -319,10 +319,6 @@ public class LayerView extends FrameLayout {
         mCompositor = session.mCompositor;
         mCompositor.layerView = this;
 
-        
-        mCompositor.updateRootFrameMetrics( 0,  0,
-                                            1.0f);
-
         mToolbarAnimator.notifyCompositorCreated(mCompositor);
 
         final NativePanZoomController npzc = (NativePanZoomController) mPanZoomController;
