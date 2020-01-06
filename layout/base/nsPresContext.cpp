@@ -1081,7 +1081,12 @@ nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet)
 {
   UpdateCharSet(aCharSet);
   mDeviceContext->FlushFontCache();
-  RebuildAllStyleData(NS_STYLE_HINT_REFLOW, nsRestyleHint(0));
+  
+  
+  
+  RebuildAllStyleData(NS_STYLE_HINT_REFLOW,
+                      mDocument->IsStyledByServo()
+                      ? eRestyle_ForceDescendants : nsRestyleHint(0));
 }
 
 void
