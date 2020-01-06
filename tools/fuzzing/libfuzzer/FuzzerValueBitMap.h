@@ -18,25 +18,31 @@ namespace fuzzer {
 
 
 struct ValueBitMap {
-  static const size_t kMapSizeInBits = 65371;        
-  static const size_t kMapSizeInBitsAligned = 65536; 
+  static const size_t kMapSizeInBits = 1 << 16;
+  static const size_t kMapPrimeMod = 65371;  
   static const size_t kBitsInWord = (sizeof(uintptr_t) * 8);
-  static const size_t kMapSizeInWords = kMapSizeInBitsAligned / kBitsInWord;
+  static const size_t kMapSizeInWords = kMapSizeInBits / kBitsInWord;
  public:
-  static const size_t kNumberOfItems = kMapSizeInBits;
+
   
   void Reset() { memset(Map, 0, sizeof(Map)); }
 
   
   
+  ATTRIBUTE_NO_SANITIZE_ALL
   inline bool AddValue(uintptr_t Value) {
-    uintptr_t Idx = Value < kMapSizeInBits ? Value : Value % kMapSizeInBits;
+    uintptr_t Idx = Value % kMapSizeInBits;
     uintptr_t WordIdx = Idx / kBitsInWord;
     uintptr_t BitIdx = Idx % kBitsInWord;
     uintptr_t Old = Map[WordIdx];
     uintptr_t New = Old | (1UL << BitIdx);
     Map[WordIdx] = New;
     return New != Old;
+  }
+
+  ATTRIBUTE_NO_SANITIZE_ALL
+  inline bool AddValueModPrime(uintptr_t Value) {
+    return AddValue(Value % kMapPrimeMod);
   }
 
   inline bool Get(uintptr_t Idx) {
@@ -62,14 +68,15 @@ struct ValueBitMap {
         Other.Map[i] = 0;
       }
       if (M)
-        Res += __builtin_popcountl(M);
+        Res += __builtin_popcountll(M);
     }
     NumBits = Res;
     return OldNumBits < NumBits;
   }
 
   template <class Callback>
-  void ForEach(Callback CB) {
+  ATTRIBUTE_NO_SANITIZE_ALL
+  void ForEach(Callback CB) const {
     for (size_t i = 0; i < kMapSizeInWords; i++)
       if (uintptr_t M = Map[i])
         for (size_t j = 0; j < sizeof(M) * 8; j++)

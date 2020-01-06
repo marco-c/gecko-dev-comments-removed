@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef LLVM_FUZZER_EXT_FUNCTIONS_H
 #define LLVM_FUZZER_EXT_FUNCTIONS_H
 
@@ -30,4 +31,5 @@ struct ExternalFunctions {
 #undef EXT_FUNC
 };
 } 
+
 #endif

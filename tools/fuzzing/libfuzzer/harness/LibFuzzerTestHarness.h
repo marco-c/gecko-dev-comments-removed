@@ -58,24 +58,6 @@ MOZ_FORMAT_PRINTF(1, 2) void fail(const char* msg, ...)
 
 
 
-
-
-
-MOZ_FORMAT_PRINTF(1, 2) void passed(const char* msg, ...)
-{
-  va_list ap;
-
-  printf("TEST-PASS | ");
-
-  va_start(ap, msg);
-  vprintf(msg, ap);
-  va_end(ap);
-
-  putchar('\n');
-}
-
-
-
 class ScopedXPCOM : public nsIDirectoryServiceProvider2
 {
   public:

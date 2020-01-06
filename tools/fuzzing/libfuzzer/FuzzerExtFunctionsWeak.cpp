@@ -16,6 +16,7 @@
 #if LIBFUZZER_LINUX
 
 #include "FuzzerExtFunctions.h"
+#include "FuzzerIO.h"
 
 extern "C" {
 
@@ -46,5 +47,7 @@ ExternalFunctions::ExternalFunctions() {
 
 #undef EXT_FUNC
 }
+
 } 
+
 #endif 
