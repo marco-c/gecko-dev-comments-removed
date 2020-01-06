@@ -3122,7 +3122,7 @@ pref("idle_queue.long_period", 50);
 
 
 #ifdef NIGHTLY_BUILD
-pref("prioritized_input_events.enabled", false);
+pref("prioritized_input_events.enabled", true);
 #else
 pref("prioritized_input_events.enabled", false);
 #endif
