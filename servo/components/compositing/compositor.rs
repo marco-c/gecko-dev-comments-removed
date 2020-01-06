@@ -1285,7 +1285,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             debug!("compositor: compositing");
 
             
-            self.webrender.render(self.frame_size);
+            
+            self.webrender.render(self.frame_size).ok();
         });
 
         
