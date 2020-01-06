@@ -1129,6 +1129,57 @@ var CapturedStacks = {
   }
 };
 
+var ThreadHangStats = {
+
+  
+
+
+  render(aPayload) {
+    let div = document.getElementById("thread-hang-stats");
+    removeAllChildNodes(div);
+
+    let stats = aPayload.threadHangStats;
+    setHasData("thread-hang-stats-section", stats && (stats.length > 0));
+    if (!stats) {
+      return;
+    }
+
+    stats.forEach((thread) => {
+      div.appendChild(this.renderThread(thread));
+    });
+  },
+
+  
+
+
+  renderThread(aThread) {
+    let div = document.createElement("div");
+
+    let title = document.createElement("h2");
+    title.textContent = aThread.name;
+    div.appendChild(title);
+
+    
+    
+    Histogram.render(div, aThread.name + "-Activity",
+                     aThread.activity, {exponential: true}, true);
+    aThread.hangs.forEach((hang, index) => {
+      let hangName = aThread.name + "-Hang-" + (index + 1);
+      let hangDiv = Histogram.render(
+        div, hangName, hang.histogram, {exponential: true}, true);
+      let stackDiv = document.createElement("div");
+      hang.stack.forEach((frame) => {
+        stackDiv.appendChild(document.createTextNode(frame));
+        
+        stackDiv.appendChild(document.createElement("br"));
+      });
+      
+      hangDiv.insertBefore(stackDiv, hangDiv.childNodes[1]);
+    });
+    return div;
+  },
+};
+
 var Histogram = {
 
   hgramSamplesCaption: bundle.GetStringFromName("histogramSamples"),
@@ -1148,9 +1199,10 @@ var Histogram = {
 
 
 
-  render: function Histogram_render(aParent, aName, aHgram, aOptions) {
+
+  render: function Histogram_render(aParent, aName, aHgram, aOptions, aIsBHR) {
     let options = aOptions || {};
-    let hgram = this.processHistogram(aHgram, aName);
+    let hgram = this.processHistogram(aHgram, aName, aIsBHR);
 
     let outerDiv = document.createElement("div");
     outerDiv.className = "histogram";
@@ -1191,7 +1243,7 @@ var Histogram = {
     return outerDiv;
   },
 
-  processHistogram(aHgram, aName) {
+  processHistogram(aHgram, aName, aIsBHR) {
     const values = Object.keys(aHgram.values).map(k => aHgram.values[k]);
     if (!values.length) {
       
@@ -1209,8 +1261,30 @@ var Histogram = {
     const average = Math.round(aHgram.sum * 10 / sample_count) / 10;
     const max_value = Math.max(...values);
 
+    function labelFunc(k) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!aIsBHR) {
+        return k;
+      }
+      return k == 1 ? 0 : (k + 1) / 2;
+    }
+
     const labelledValues = Object.keys(aHgram.values)
-                           .map(k => [Number(k), aHgram.values[k]]);
+                           .filter(label => !aIsBHR || Number(label) != 0) 
+                           .map(k => [labelFunc(Number(k)), aHgram.values[k]]);
 
     let result = {
       values: labelledValues,
@@ -2308,6 +2382,9 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   TelLog.render(payload);
+
+  
+  ThreadHangStats.render(payload);
 
   
   SimpleMeasurements.render(payload);
