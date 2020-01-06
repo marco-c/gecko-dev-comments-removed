@@ -4,7 +4,9 @@
 
 var Ci = Components.interfaces;
 var Cc = Components.classes;
+var Cu = Components.utils;
 
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -145,7 +147,8 @@ var imgFile = do_get_file(imgName);
 var istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 8415);
 
-var container = imgTools.decodeImage(istream, inMimeType);
+var buffer = NetUtil.readInputStreamToString(istream, istream.available());
+var container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -203,7 +206,8 @@ imgFile = do_get_file(imgName);
 istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 3494);
 
-container = imgTools.decodeImage(istream, inMimeType);
+buffer = NetUtil.readInputStreamToString(istream, istream.available());
+container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -265,7 +269,8 @@ imgFile = do_get_file(imgName);
 istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 1406);
 
-container = imgTools.decodeImage(istream, inMimeType);
+buffer = NetUtil.readInputStreamToString(istream, istream.available());
+container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -323,7 +328,8 @@ imgFile = do_get_file(imgName);
 istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 1809);
 
-container = imgTools.decodeImage(istream, inMimeType);
+buffer = NetUtil.readInputStreamToString(istream, istream.available());
+container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -431,7 +437,8 @@ imgFile = do_get_file(imgName);
 istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 3494);
 
-container = imgTools.decodeImage(istream, inMimeType);
+buffer = NetUtil.readInputStreamToString(istream, istream.available());
+container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 
 
@@ -649,7 +656,9 @@ for(var i=0; i<testData.length; ++i) {
     imgFile = do_get_file(dict["preImage"]);
     istream = getFileInputStream(imgFile);
 
-    var container = imgTools.decodeImage(istream, dict["preImageMimeType"]);
+    var buffer = NetUtil.readInputStreamToString(istream, istream.available());
+    var container = imgTools.decodeImageBuffer(buffer, buffer.length,
+                                               dict["preImageMimeType"]);
 
     istream = imgTools.encodeImage(container, dict["refImageMimeType"]);
 
@@ -685,8 +694,10 @@ do_check_eq(istream.available(), 17759);
 var errsrc = "none";
 
 try {
-  container = imgTools.decodeImage(istream, inMimeType);
+  buffer = NetUtil.readInputStreamToString(istream, istream.available());
+  container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
+  
   
   
   
@@ -717,7 +728,8 @@ imgFile = do_get_file(imgName);
 istream = getFileInputStream(imgFile);
 do_check_eq(istream.available(), 4286);
 
-container = imgTools.decodeImage(istream, inMimeType);
+buffer = NetUtil.readInputStreamToString(istream, istream.available());
+container = imgTools.decodeImageBuffer(buffer, buffer.length, inMimeType);
 
 var props = container.QueryInterface(Ci.nsIProperties);
 
