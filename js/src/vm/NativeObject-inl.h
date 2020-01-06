@@ -152,8 +152,7 @@ NativeObject::copyDenseElements(uint32_t dstStart, const Value* src, uint32_t co
                                         src[i]);
         }
     } else {
-        memcpy(reinterpret_cast<Value*>(&elements_[dstStart]), src,
-               count * sizeof(Value));
+        memcpy(&elements_[dstStart], src, count * sizeof(HeapSlot));
         elementsRangeWriteBarrierPost(dstStart, count);
     }
 }
@@ -182,7 +181,7 @@ NativeObject::initDenseElements(const Value* src, uint32_t count)
         checkStoredValue(src[i]);
 #endif
 
-    memcpy(reinterpret_cast<Value*>(elements_), src, count * sizeof(Value));
+    memcpy(elements_, src, count * sizeof(HeapSlot));
     elementsRangeWriteBarrierPost(0, count);
 }
 
@@ -257,8 +256,7 @@ NativeObject::moveDenseElements(uint32_t dstStart, uint32_t srcStart, uint32_t c
                 dst->set(this, HeapSlot::Element, dst - elements_ + numShifted, *src);
         }
     } else {
-        memmove(reinterpret_cast<Value*>(elements_ + dstStart), elements_ + srcStart,
-                count * sizeof(Value));
+        memmove(elements_ + dstStart, elements_ + srcStart, count * sizeof(HeapSlot));
         elementsRangeWriteBarrierPost(dstStart, count);
     }
 }
@@ -273,8 +271,7 @@ NativeObject::moveDenseElementsNoPreBarrier(uint32_t dstStart, uint32_t srcStart
     MOZ_ASSERT(!denseElementsAreCopyOnWrite());
     MOZ_ASSERT(!denseElementsAreFrozen());
 
-    memmove(reinterpret_cast<Value*>(elements_ + dstStart), elements_ + srcStart,
-            count * sizeof(Value));
+    memmove(elements_ + dstStart, elements_ + srcStart, count * sizeof(Value));
     elementsRangeWriteBarrierPost(dstStart, count);
 }
 
@@ -646,6 +643,27 @@ NativeObject::setLastProperty(JSContext* cx, Shape* shape)
 
     shape_ = shape;
     return true;
+}
+
+inline js::gc::AllocKind
+NativeObject::allocKindForTenure() const
+{
+    using namespace js::gc;
+    AllocKind kind = GetGCObjectFixedSlotsKind(numFixedSlots());
+    MOZ_ASSERT(!IsBackgroundFinalized(kind));
+    if (!CanBeFinalizedInBackground(kind, getClass()))
+        return kind;
+    return GetBackgroundAllocKind(kind);
+}
+
+inline js::gc::AllocKind
+PlainObject::allocKindForTenure() const
+{
+    using namespace js::gc;
+    AllocKind kind = GetGCObjectFixedSlotsKind(numFixedSlots());
+    MOZ_ASSERT(!IsBackgroundFinalized(kind));
+    MOZ_ASSERT(CanBeFinalizedInBackground(kind, getClass()));
+    return GetBackgroundAllocKind(kind);
 }
 
 

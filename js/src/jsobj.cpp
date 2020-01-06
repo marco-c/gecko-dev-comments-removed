@@ -3871,6 +3871,8 @@ js::DumpBacktrace(JSContext* cx)
 js::gc::AllocKind
 JSObject::allocKindForTenure(const js::Nursery& nursery) const
 {
+    MOZ_ASSERT(IsInsideNursery(this));
+
     if (is<ArrayObject>()) {
         const ArrayObject& aobj = as<ArrayObject>();
         MOZ_ASSERT(aobj.numFixedSlots() == 0);
@@ -3881,6 +3883,12 @@ JSObject::allocKindForTenure(const js::Nursery& nursery) const
 
         size_t nelements = aobj.getDenseCapacity();
         return GetBackgroundAllocKind(GetGCArrayKind(nelements));
+    }
+
+    
+    if (is<UnboxedPlainObject>()) {
+        size_t nbytes = as<UnboxedPlainObject>().layoutDontCheckGeneration().size();
+        return GetGCObjectKindForBytes(UnboxedPlainObject::offsetOfData() + nbytes);
     }
 
     if (is<JSFunction>())
@@ -3902,12 +3910,6 @@ JSObject::allocKindForTenure(const js::Nursery& nursery) const
         return as<ProxyObject>().allocKindForTenure();
 
     
-    if (is<UnboxedPlainObject>()) {
-        size_t nbytes = as<UnboxedPlainObject>().layoutDontCheckGeneration().size();
-        return GetGCObjectKindForBytes(UnboxedPlainObject::offsetOfData() + nbytes);
-    }
-
-    
     
     if (is<InlineTypedObject>()) {
         
@@ -3923,13 +3925,7 @@ JSObject::allocKindForTenure(const js::Nursery& nursery) const
         return AllocKind::OBJECT0;
 
     
-    MOZ_ASSERT(isNative());
-
-    AllocKind kind = GetGCObjectFixedSlotsKind(as<NativeObject>().numFixedSlots());
-    MOZ_ASSERT(!IsBackgroundFinalized(kind));
-    if (!CanBeFinalizedInBackground(kind, getClass()))
-        return kind;
-    return GetBackgroundAllocKind(kind);
+    return as<NativeObject>().allocKindForTenure();
 }
 
 void

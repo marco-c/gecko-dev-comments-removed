@@ -1400,6 +1400,9 @@ class NativeObject : public ShapedObject
     copy(JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
          HandleNativeObject templateObject);
 
+    
+    inline js::gc::AllocKind allocKindForTenure() const;
+
     void updateShapeAfterMovingGC();
     void sweepDictionaryListPointer();
     void updateDictionaryListPointerAfterMinorGC(NativeObject* old);
@@ -1423,6 +1426,9 @@ class PlainObject : public NativeObject
 {
   public:
     static const js::Class class_;
+
+    
+    inline js::gc::AllocKind allocKindForTenure() const;
 };
 
 inline void

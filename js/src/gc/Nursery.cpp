@@ -392,7 +392,7 @@ js::Nursery::freeBuffer(void* buffer)
 }
 
 void
-Nursery::setForwardingPointer(void* oldData, void* newData, bool direct)
+Nursery::setIndirectForwardingPointer(void* oldData, void* newData)
 {
     MOZ_ASSERT(isInside(oldData));
 
@@ -401,37 +401,15 @@ Nursery::setForwardingPointer(void* oldData, void* newData, bool direct)
     
     MOZ_ASSERT(!isInside(newData) || (uintptr_t(newData) & ChunkMask) == 0);
 
-    if (direct) {
-        *reinterpret_cast<void**>(oldData) = newData;
-    } else {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!forwardedBuffers.initialized() && !forwardedBuffers.init())
-            oomUnsafe.crash("Nursery::setForwardingPointer");
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!forwardedBuffers.initialized() && !forwardedBuffers.init())
+        oomUnsafe.crash("Nursery::setForwardingPointer");
 #ifdef DEBUG
-        if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(oldData))
-            MOZ_ASSERT(p->value() == newData);
+    if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(oldData))
+        MOZ_ASSERT(p->value() == newData);
 #endif
-        if (!forwardedBuffers.put(oldData, newData))
-            oomUnsafe.crash("Nursery::setForwardingPointer");
-    }
-}
-
-void
-Nursery::setSlotsForwardingPointer(HeapSlot* oldSlots, HeapSlot* newSlots, uint32_t nslots)
-{
-    
-    
-    MOZ_ASSERT(nslots > 0);
-    setForwardingPointer(oldSlots, newSlots,  true);
-}
-
-void
-Nursery::setElementsForwardingPointer(ObjectElements* oldHeader, ObjectElements* newHeader,
-                                      uint32_t capacity)
-{
-    
-    setForwardingPointer(oldHeader->elements(), newHeader->elements(),
-                         capacity > 0);
+    if (!forwardedBuffers.put(oldData, newData))
+        oomUnsafe.crash("Nursery::setForwardingPointer");
 }
 
 #ifdef DEBUG
