@@ -511,6 +511,21 @@ var BrowserPageActions = {
       return;
     }
 
+    if (this.panelNode.state == "open") {
+      this.panelNode.hidePopup();
+    } else if (this.panelNode.state == "closed") {
+      this.showPanel(event);
+    }
+  },
+
+  
+
+
+
+
+
+
+  showPanel(event = null) {
     for (let action of PageActions.actions) {
       let buttonNodeID = this._panelButtonNodeIDForActionID(action.id);
       let buttonNode = document.getElementById(buttonNodeID);
