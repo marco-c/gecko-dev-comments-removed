@@ -679,7 +679,7 @@ pref("plugins.click_to_play", true);
 pref("plugins.testmode", false);
 
 
-pref("plugins.show_infobar", false);
+pref("plugins.show_infobar", true);
 
 
 pref("plugins.remember_infobar_dismissal", true);
