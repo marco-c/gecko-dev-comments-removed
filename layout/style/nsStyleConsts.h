@@ -933,14 +933,12 @@ enum class StyleGridTrackBreadth : uint8_t {
 #define NS_STYLE_TABSIZE_INITIAL                8
 
 
-enum class StyleWhiteSpace : uint8_t {
-  Normal = 0,
-  Pre,
-  Nowrap,
-  PreWrap,
-  PreLine,
-  PreSpace,
-};
+#define NS_STYLE_WHITESPACE_NORMAL               0
+#define NS_STYLE_WHITESPACE_PRE                  1
+#define NS_STYLE_WHITESPACE_NOWRAP               2
+#define NS_STYLE_WHITESPACE_PRE_WRAP             3
+#define NS_STYLE_WHITESPACE_PRE_LINE             4
+#define NS_STYLE_WHITESPACE_PRE_SPACE            5
 
 
 #define NS_STYLE_WORDBREAK_NORMAL               0
@@ -1062,6 +1060,8 @@ enum class StyleWhiteSpace : uint8_t {
 
 #define NS_STYLE_CONTEXT_PROPERTY_FILL          (1 << 0)
 #define NS_STYLE_CONTEXT_PROPERTY_STROKE        (1 << 1)
+#define NS_STYLE_CONTEXT_PROPERTY_FILL_OPACITY   (1 << 2)
+#define NS_STYLE_CONTEXT_PROPERTY_STROKE_OPACITY (1 << 3)
 
 
 
