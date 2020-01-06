@@ -158,7 +158,6 @@ nsAboutRedirector::NewChannel(nsIURI* aURI,
                               nsIChannel** aResult)
 {
   NS_ENSURE_ARG_POINTER(aURI);
-  NS_ENSURE_ARG_POINTER(aLoadInfo);
   NS_ASSERTION(aResult, "must not be null");
 
   nsAutoCString path;
@@ -175,11 +174,6 @@ nsAboutRedirector::NewChannel(nsIURI* aURI,
       rv = NS_NewURI(getter_AddRefs(tempURI), kRedirMap[i].url);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
-                                 tempURI,
-                                 aLoadInfo);
-      NS_ENSURE_SUCCESS(rv, rv);
-
       
       
       
@@ -191,9 +185,17 @@ nsAboutRedirector::NewChannel(nsIURI* aURI,
 
       bool isAboutBlank = NS_IsAboutBlank(tempURI);
 
-      if (!isUIResource && !isAboutBlank) {
-        aLoadInfo->SetResultPrincipalURI(tempURI);
-      }
+      nsLoadFlags loadFlags = isUIResource || isAboutBlank
+                    ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
+                    : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
+
+      rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
+                                 tempURI,
+                                 aLoadInfo,
+                                 nullptr, 
+                                 nullptr, 
+                                 loadFlags);
+      NS_ENSURE_SUCCESS(rv, rv);
 
       tempChannel->SetOriginalURI(aURI);
 
