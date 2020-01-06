@@ -20,7 +20,9 @@ import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.activitystream.homepanel.model.WebpageModel;
 import org.mozilla.gecko.activitystream.homepanel.topstories.PocketStoriesLoader;
 import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
+import org.mozilla.gecko.db.SuggestedSites;
 import org.mozilla.gecko.home.HomePager;
 import org.mozilla.gecko.reader.SavedReaderViewHelper;
 import org.mozilla.gecko.util.Clipboard;
@@ -92,9 +94,8 @@ public abstract class ActivityStreamContextMenu
 
         
         
-        
-        if (mode == MenuMode.TOPSITE || mode == MenuMode.TOPSTORY) {
-            final MenuItem dismissItem = getItemByID(R.id.dismiss);
+        final MenuItem dismissItem = getItemByID(R.id.dismiss);
+        if (mode == MenuMode.TOPSTORY || mode == MenuMode.TOPSITE) {
             dismissItem.setVisible(false);
         }
 
@@ -143,8 +144,8 @@ public abstract class ActivityStreamContextMenu
             }).execute();
         }
 
-        
         final MenuItem deleteHistoryItem = getItemByID(R.id.delete);
+        
         deleteHistoryItem.setVisible(false);
 
         (new UIAsyncTask.WithoutParams<Boolean>(ThreadUtils.getBackgroundHandler()) {
@@ -168,6 +169,12 @@ public abstract class ActivityStreamContextMenu
             @Override
             protected void onPostExecute(Boolean hasHistory) {
                 deleteHistoryItem.setVisible(hasHistory);
+
+                if (!hasHistory && mode == MenuMode.TOPSITE) {
+                    
+                    
+                    dismissItem.setVisible(true);
+                }
             }
         }).execute();
     }
@@ -284,8 +291,12 @@ public abstract class ActivityStreamContextMenu
                 ThreadUtils.postToBackgroundThread(new Runnable() {
                     @Override
                     public void run() {
-                        BrowserDB.from(context)
-                                .blockActivityStreamSite(context.getContentResolver(), item.getUrl());
+                        BrowserDB db = BrowserDB.from(context);
+                        if (db.hideSuggestedSite(item.getUrl())) {
+                            context.getContentResolver().notifyChange(BrowserContract.SuggestedSites.CONTENT_URI, null);
+                        } else {
+                            db.blockActivityStreamSite(context.getContentResolver(), item.getUrl());
+                        }
                     }
                 });
                 break;
