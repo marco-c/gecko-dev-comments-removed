@@ -699,7 +699,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     create(JSContext* cx, const CallArgs& args)
     {
         MOZ_ASSERT(args.isConstructing());
-        RootedObject newTarget(cx, &args.newTarget().toObject());
 
         
         
@@ -1299,7 +1298,7 @@ TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, Handl
     
     if (optimized) {
         
-        RootedArrayObject array(cx, &other->as<ArrayObject>());
+        HandleArrayObject array = other.as<ArrayObject>();
 
         
         uint32_t len = array->getDenseInitializedLength();
