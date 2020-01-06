@@ -456,6 +456,7 @@ async function execute_test(test, mimetype) {
 
 
 
+
 function test_telemetry(expected) {
   for (let key in expected['histograms']) {
     let hs = undefined;
@@ -473,8 +474,24 @@ function test_telemetry(expected) {
       continue;
     }
 
-    
-    ok(hs.counts.reduce(sum) >= expected['histograms'][key], "Histogram counts match expected, got " + hs.counts.reduce(sum) + ", expected at least " + expected['histograms'][key]);
+    if (Array.isArray(expected['histograms'][key])) {
+      var is_ok = true;
+      if (expected['histograms'][key].length != hs.counts.length) {
+        ok(false, "Histogram lengths match");
+        continue;
+      }
+
+      for (let idx in expected['histograms'][key]) {
+        is_ok = (hs.counts[idx] >= expected['histograms'][key][idx]);
+        if (!is_ok) {
+          break;
+        }
+      }
+      ok(is_ok, "Histogram counts match for " + key + " - Got " + hs.counts + ", expected " + expected['histograms'][key]);
+    } else {
+      
+      ok(hs.counts.reduce(sum) >= expected['histograms'][key], "Histogram counts match expected, got " + hs.counts.reduce(sum) + ", expected at least " + expected['histograms'][key]);
+    }
   }
 
   for (let key in expected['keyed-histograms']) {

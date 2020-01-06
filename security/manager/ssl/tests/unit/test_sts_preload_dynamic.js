@@ -60,7 +60,8 @@ function run_test() {
   
   
   SSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                          "max-age=0", sslStatus, 0);
+                          "max-age=0", sslStatus, 0,
+                          Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
 
   
   ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));

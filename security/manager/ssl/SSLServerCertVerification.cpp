@@ -500,6 +500,7 @@ CertErrorRunnable::OverrideAllowedForHost( bool& overrideAllowed)
                         mProviderFlags,
                         mInfoObject->GetOriginAttributes(),
                         nullptr,
+                        nullptr,
                         &strictTransportSecurityEnabled);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -510,6 +511,7 @@ CertErrorRunnable::OverrideAllowedForHost( bool& overrideAllowed)
                         uri,
                         mProviderFlags,
                         mInfoObject->GetOriginAttributes(),
+                        nullptr,
                         nullptr,
                         &hasPinningInformation);
   if (NS_FAILED(rv)) {
