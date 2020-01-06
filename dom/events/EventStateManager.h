@@ -915,6 +915,12 @@ protected:
 
 
 
+  void MaybeFirePointerCancel(WidgetInputEvent* aEvent);
+
+  
+
+
+
 
 
 

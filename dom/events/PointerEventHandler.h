@@ -143,6 +143,15 @@ public:
                                               nsEventStatus* aStatus,
                                               nsIContent** aTargetContent);
 
+  static void InitPointerEventFromMouse(WidgetPointerEvent* aPointerEvent,
+                                        WidgetMouseEvent* aMouseEvent,
+                                        EventMessage aMessage);
+
+  static void InitPointerEventFromTouch(WidgetPointerEvent* aPointerEvent,
+                                        WidgetTouchEvent* aTouchEvent,
+                                        mozilla::dom::Touch* aTouch,
+                                        bool aIsPrimary);
+
 private:
   
   

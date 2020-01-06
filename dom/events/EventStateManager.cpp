@@ -1742,6 +1742,53 @@ EventStateManager::FillInEventFromGestureDown(WidgetMouseEvent* aEvent)
   aEvent->buttons = mGestureDownButtons;
 }
 
+void
+EventStateManager::MaybeFirePointerCancel(WidgetInputEvent* aEvent)
+{
+  nsCOMPtr<nsIPresShell> shell = mPresContext->GetPresShell();
+  AutoWeakFrame targetFrame = mCurrentTarget;
+
+  if (!PointerEventHandler::IsPointerEventEnabled() || !shell ||
+      !targetFrame) {
+    return;
+  }
+
+  nsCOMPtr<nsIContent> content;
+  targetFrame->GetContentForEvent(aEvent, getter_AddRefs(content));
+  if (!content) {
+    return;
+  }
+
+  nsEventStatus status = nsEventStatus_eIgnore;
+
+  if (WidgetMouseEvent* aMouseEvent = aEvent->AsMouseEvent()) {
+    WidgetPointerEvent event(*aMouseEvent);
+    PointerEventHandler::InitPointerEventFromMouse(&event,
+                                                   aMouseEvent,
+                                                   ePointerCancel);
+
+    event.convertToPointer = false;
+    shell->HandleEventWithTarget(&event, targetFrame, content, &status);
+  } else if (WidgetTouchEvent* aTouchEvent = aEvent->AsTouchEvent()) {
+    WidgetPointerEvent event(aTouchEvent->IsTrusted(), ePointerCancel,
+                             aTouchEvent->mWidget);
+
+    PointerEventHandler::InitPointerEventFromTouch(&event,
+                                                   aTouchEvent,
+                                                   aTouchEvent->mTouches[0],
+                                                   true);
+
+    event.convertToPointer = false;
+    shell->HandleEventWithTarget(&event, targetFrame, content, &status);
+  } else {
+    MOZ_ASSERT(false);
+  }
+
+  
+  
+  mCurrentTarget = targetFrame;
+}
+
 
 
 
@@ -1893,6 +1940,7 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                               targetContent, selection);
         if (dragStarted) {
           sActiveESM = nullptr;
+          MaybeFirePointerCancel(aEvent);
           aEvent->StopPropagation();
         }
       }
@@ -3259,7 +3307,9 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     
     PointerEventHandler::ImplicitlyReleasePointerCapture(pointerEvent);
 
-    if (pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
+    if (pointerEvent->mMessage == ePointerCancel ||
+        pointerEvent->inputSource == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
+      
       
       
       
