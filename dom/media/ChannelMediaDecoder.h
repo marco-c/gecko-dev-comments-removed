@@ -10,6 +10,8 @@
 #include "MediaDecoder.h"
 #include "MediaResourceCallback.h"
 
+class nsIChannel;
+
 namespace mozilla {
 
 class ChannelMediaDecoder : public MediaDecoder
@@ -66,6 +68,9 @@ public:
   
   
   virtual ChannelMediaDecoder* Clone(MediaDecoderInit& aInit) = 0;
+
+  nsresult CreateResource(nsIChannel* aChannel, bool aIsPrivateBrowsing);
+  nsresult CreateResource(MediaResource* aOriginal);
 };
 
 } 
