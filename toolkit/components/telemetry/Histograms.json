@@ -6049,21 +6049,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Firefox: If the spinner interstitial displays during tab switching, records the time in ms the graphic is visible. This probe is similar to FX_TAB_SWITCH_SPINNER_VISIBLE_MS, but is for truly degenerate cases."
   },
-  "FX_TAB_SWITCH_REQUEST_TAB_WARMING_STATE": {
-    "record_in_processes": ["main"],
-    "expires_in_version": "63",
-    "alert_emails": ["mconley@mozilla.com"],
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "labels": [
-      "disqualified",
-      "notWarmed",
-      "stillLoading",
-      "loaded"
-    ],
-    "bug_numbers": [1385453],
-    "description": "Firefox: When a tab is selected, records whether or not the tab was speculatively 'warmed up' to improve tab switch time."
-  },
   "FX_TAB_CLICK_MS": {
     "record_in_processes": ["main", "content"],
     "expires_in_version": "default",
@@ -7434,6 +7419,20 @@
     "expires_in_version": "never",
     "kind": "count",
     "keyed": true,
+    "description": "a testing histogram; not meant to be touched"
+  },
+  "TELEMETRY_TEST_KEYED_KEYS": {
+    "alert_emails": ["telemetry-client-dev@mozilla.com"],
+    "record_in_processes": ["main", "content"],
+    "bug_numbers": [1343855],
+    "expires_in_version": "never",
+    "kind": "boolean",
+    "keyed": true,
+    "keys": [
+      "testkey",
+      "CommonKey",
+      "thirdKey"
+    ],
     "description": "a testing histogram; not meant to be touched"
   },
   "TELEMETRY_TEST_KEYED_BOOLEAN": {
@@ -13119,7 +13118,7 @@
     "description": "Time in ms used to execute callbacks from setTimeout/setInterval, when the script belongs to a tab in the background and the script is on the tracking list. Multiple events are aggregated over a 1s interval."
   },
   "TIME_TO_DOM_LOADING_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13129,7 +13128,7 @@
     "description": "Time in milliseconds from navigationStart to domLoading."
   },
   "TIME_TO_DOM_INTERACTIVE_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13139,7 +13138,7 @@
     "description": "Time in milliseconds from navigationStart to domInteractive."
   },
   "TIME_TO_DOM_CONTENT_LOADED_START_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13149,7 +13148,7 @@
     "description": "Time in milliseconds from navigationStart to domContentLoadedEventStart."
   },
   "TIME_TO_DOM_CONTENT_LOADED_END_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13159,7 +13158,7 @@
     "description": "Time in milliseconds from navigationStart to domContentLoadedEventEnd."
   },
   "TIME_TO_DOM_COMPLETE_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13169,7 +13168,7 @@
     "description": "Time in milliseconds from navigationStart to domComplete."
   },
   "TIME_TO_LOAD_EVENT_START_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
@@ -13179,7 +13178,7 @@
     "description": "Time in milliseconds from navigationStart to loadEventStart."
   },
   "TIME_TO_LOAD_EVENT_END_MS": {
-    "record_in_processes": ["content"],
+    "record_in_processes": ["main", "content"],
     "alert_emails": ["wpan@mozilla.com"],
     "expires_in_version": "60",
     "kind": "exponential",
