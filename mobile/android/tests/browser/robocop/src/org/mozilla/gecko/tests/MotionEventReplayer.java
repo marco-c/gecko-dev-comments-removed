@@ -17,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.app.Instrumentation;
-import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -144,31 +143,14 @@ class MotionEventReplayer {
                 int pointerCount = parseInt(eventProperties.get("pointerCount"));
                 int[] pointerIds = new int[pointerCount];
                 Object pointerData;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                    MotionEvent.PointerCoords[] pointerCoords = new MotionEvent.PointerCoords[pointerCount];
-                    for (int i = 0; i < pointerCount; i++) {
-                        pointerIds[i] = Integer.parseInt(eventProperties.get("id[" + i + "]"));
-                        pointerCoords[i] = new MotionEvent.PointerCoords();
-                        pointerCoords[i].x = mSurfaceOffsetX + scaleX(Float.parseFloat(eventProperties.get("x[" + i + "]")));
-                        pointerCoords[i].y = mSurfaceOffsetY + scaleY(Float.parseFloat(eventProperties.get("y[" + i + "]")));
-                    }
-                    pointerData = pointerCoords;
-                } else {
-                    
-                    
-                    final int NUM_SAMPLE_DATA = 4; 
-                    final int SAMPLE_X = 0; 
-                    final int SAMPLE_Y = 1; 
-                    float[] sampleData = new float[pointerCount * NUM_SAMPLE_DATA];
-                    for (int i = 0; i < pointerCount; i++) {
-                        pointerIds[i] = Integer.parseInt(eventProperties.get("id[" + i + "]"));
-                        sampleData[(i * NUM_SAMPLE_DATA) + SAMPLE_X] =
-                                mSurfaceOffsetX + scaleX(Float.parseFloat(eventProperties.get("x[" + i + "]")));
-                        sampleData[(i * NUM_SAMPLE_DATA) + SAMPLE_Y] =
-                                mSurfaceOffsetY + scaleY(Float.parseFloat(eventProperties.get("y[" + i + "]")));
-                    }
-                    pointerData = sampleData;
+                MotionEvent.PointerCoords[] pointerCoords = new MotionEvent.PointerCoords[pointerCount];
+                for (int i = 0; i < pointerCount; i++) {
+                    pointerIds[i] = Integer.parseInt(eventProperties.get("id[" + i + "]"));
+                    pointerCoords[i] = new MotionEvent.PointerCoords();
+                    pointerCoords[i].x = mSurfaceOffsetX + scaleX(Float.parseFloat(eventProperties.get("x[" + i + "]")));
+                    pointerCoords[i].y = mSurfaceOffsetY + scaleY(Float.parseFloat(eventProperties.get("y[" + i + "]")));
                 }
+                pointerData = pointerCoords;
 
                 
                 
@@ -191,22 +173,9 @@ class MotionEventReplayer {
 
                 
                 MotionEvent event;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-                    event = MotionEvent.obtain(downTime, eventTime, action, pointerCount,
-                            pointerIds, (MotionEvent.PointerCoords[])pointerData, metaState,
-                            xPrecision, yPrecision, deviceId, edgeFlags, source, flags);
-                } else {
-                    
-                    if (mObtainNanoMethod == null) {
-                        mObtainNanoMethod = MotionEvent.class.getMethod("obtainNano", long.class,
-                            long.class, long.class, int.class, int.class, pointerIds.getClass(),
-                            pointerData.getClass(), int.class, float.class, float.class,
-                            int.class, int.class);
-                    }
-                    event = (MotionEvent)mObtainNanoMethod.invoke(null, downTime, eventTime,
-                            eventTime * 1000000, action, pointerCount, pointerIds, (float[])pointerData,
-                            metaState, xPrecision, yPrecision, deviceId, edgeFlags);
-                }
+                event = MotionEvent.obtain(downTime, eventTime, action, pointerCount,
+                        pointerIds, (MotionEvent.PointerCoords[])pointerData, metaState,
+                        xPrecision, yPrecision, deviceId, edgeFlags, source, flags);
                 try {
                     Log.v(LOGTAG, "Injecting " + event.toString());
                     mInstrumentation.sendPointerSync(event);

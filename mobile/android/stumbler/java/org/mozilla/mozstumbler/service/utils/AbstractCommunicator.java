@@ -86,7 +86,7 @@ public abstract class AbstractCommunicator {
 
         
         
-        if (Build.VERSION.SDK_INT > 13 && Build.VERSION.SDK_INT < 19) {
+        if (Build.VERSION.SDK_INT < 19) {
             mHttpURLConnection.setRequestProperty("Connection", "Close");
         }
         String nickname = getNickname();

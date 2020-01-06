@@ -12,7 +12,6 @@ import android.view.View;
 import com.robotium.solo.Condition;
 
 import android.hardware.Camera;
-import android.os.Build;
 
 public class testGetUserMedia extends BaseTest {
     private static final String LOGTAG = testGetUserMedia.class.getSimpleName();
@@ -89,13 +88,6 @@ public class testGetUserMedia extends BaseTest {
         waitForTextDismissed(GUM_SELECT_TAB);
         mAsserter.is(mSolo.searchText(GUM_SELECT_TAB), false, "Tab selection dialog hidden");
         verifyUrlBarTitle(GUM_TAB_HTTPS_URL);
-
-        
-        
-        
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            return;
-        }
 
         loadUrlAndWait(GUM_TAB_HTTPS_URL);
         waitForText(GUM_MESSAGE);

@@ -2187,23 +2187,12 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
 
         
         
-        if (Build.VERSION.SDK_INT >= 11) {
-            
-            if (Build.VERSION.SDK_INT < 16) {
-                db.enableWriteAheadLogging();
+        
+        if (Build.VERSION.SDK_INT < 16) {
+            db.enableWriteAheadLogging();
 
-                
-                db.setLockingEnabled(false);
-            }
-        } else {
             
-            cursor = null;
-            try {
-                cursor = db.rawQuery("PRAGMA journal_mode=PERSIST", null);
-            } finally {
-                if (cursor != null)
-                    cursor.close();
-            }
+            db.setLockingEnabled(false);
         }
     }
 

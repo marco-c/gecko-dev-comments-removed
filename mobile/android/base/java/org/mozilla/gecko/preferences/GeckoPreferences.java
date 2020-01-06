@@ -382,13 +382,6 @@ public class GeckoPreferences
             
             updateActionBarTitle(R.string.settings_title);
 
-            if (Build.VERSION.SDK_INT < 13) {
-                
-                
-                
-                localeSwitchingIsEnabled = false;
-                throw new IllegalStateException("foobar");
-            }
         }
 
         
