@@ -13,6 +13,9 @@ loadHelperScript("helper_disable_cache.js");
 
 add_task(function* () {
   
+  yield pushPref("network.http.rcwn.enabled", false);
+
+  
   registerCleanupFunction(() => {
     info("Resetting devtools.cache.disabled to false.");
     Services.prefs.setBoolPref("devtools.cache.disabled", false);
