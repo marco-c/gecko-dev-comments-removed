@@ -287,10 +287,8 @@ CompositorManagerChild::SetReplyTimeout()
 {
 #ifndef DEBUG
   
-  
   if (XRE_IsParentProcess() &&
-      GPUProcessManager::Get()->GetGPUChild() &&
-      !gfx::gfxVars::UseWebRender()) {
+      GPUProcessManager::Get()->GetGPUChild()) {
     int32_t timeout = gfxPrefs::GPUProcessIPCReplyTimeoutMs();
     SetReplyTimeoutMs(timeout);
   }
