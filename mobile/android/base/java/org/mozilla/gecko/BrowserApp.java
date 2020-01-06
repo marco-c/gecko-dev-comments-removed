@@ -165,7 +165,6 @@ import android.widget.ListView;
 import android.widget.ViewFlipper;
 import org.mozilla.gecko.switchboard.AsyncConfigLoader;
 import org.mozilla.gecko.switchboard.SwitchBoard;
-import org.mozilla.gecko.widget.SplashScreen;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -243,9 +242,6 @@ public class BrowserApp extends GeckoApp
     private FirstrunAnimationContainer mFirstrunAnimationContainer;
     private HomeScreen mHomeScreen;
     private TabsPanel mTabsPanel;
-
-    private boolean showSplashScreen = false;
-    private SplashScreen splashScreen;
     
 
 
@@ -617,7 +613,6 @@ public class BrowserApp extends GeckoApp
     public void onCreate(Bundle savedInstanceState) {
         final Context appContext = getApplicationContext();
 
-        showSplashScreen = true;
         GeckoLoader.loadMozGlue(appContext);
         if (!HardwareUtils.isSupportedSystem() || !GeckoLoader.neonCompatible()) {
             
@@ -2777,23 +2772,7 @@ public class BrowserApp extends GeckoApp
             if (mDynamicToolbar.isEnabled()) {
                 mDynamicToolbar.setVisible(true, VisibilityTransition.ANIMATE);
             }
-            showSplashScreen = false;
         } else {
-            
-            
-            
-            
-            if (showSplashScreen && !GeckoThread.isRunning()) {
-
-                final ViewGroup main = (ViewGroup) findViewById(R.id.main_layout);
-                final View splashLayout = LayoutInflater.from(this).inflate(R.layout.splash_screen, main);
-                splashScreen = (SplashScreen) splashLayout.findViewById(R.id.splash_root);
-
-                showSplashScreen = false;
-            } else if (splashScreen != null) {
-                
-                splashScreen.hide();
-            }
             hideHomePager();
         }
     }
