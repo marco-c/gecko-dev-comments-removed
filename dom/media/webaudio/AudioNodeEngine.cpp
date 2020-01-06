@@ -370,7 +370,7 @@ AudioBufferSumOfSquares(const float* aInput, uint32_t aLength)
 
     
     
-    aInput = alignedInput + 1;
+    aInput = alignedInput + vLength;
     aLength -= vLength;
   }
 #endif
