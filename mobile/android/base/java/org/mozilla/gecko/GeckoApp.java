@@ -2150,10 +2150,13 @@ public abstract class GeckoApp extends GeckoActivity
         super.onNewIntent(externalIntent);
 
         final SafeIntent intent = new SafeIntent(externalIntent);
+        final String action = intent.getAction();
 
         final boolean isFirstTab = !mWasFirstTabShownAfterActivityUnhidden;
         mWasFirstTabShownAfterActivityUnhidden = true; 
-        mIgnoreLastSelectedTab = true;
+        if (!Intent.ACTION_MAIN.equals(action)) {
+            mIgnoreLastSelectedTab = true;
+        }
 
         
         
@@ -2161,8 +2164,6 @@ public abstract class GeckoApp extends GeckoActivity
             setIntent(externalIntent);
             return;
         }
-
-        final String action = intent.getAction();
 
         final String uri = getURIFromIntent(intent);
         final String passedUri;
