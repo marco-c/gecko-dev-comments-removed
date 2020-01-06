@@ -560,22 +560,6 @@ protected:
   nsDataHashtable<nsStringCaseInsensitiveHashKey,uint32_t> mRequiredRadioButtonCounts;
   
   nsDataHashtable<nsStringCaseInsensitiveHashKey,bool> mValueMissingRadioGroups;
-  
-  bool mGeneratingSubmit;
-  
-  bool mGeneratingReset;
-  
-  bool mIsSubmitting;
-  
-  bool mDeferSubmission;
-  
-  bool mNotifiedObservers;
-  
-  bool mNotifiedObserversResult;
-  
-  PopupControlState mSubmitPopupState;
-  
-  bool mSubmitInitiatedFromUserInput;
 
   
   nsAutoPtr<HTMLFormSubmission> mPendingSubmission;
@@ -613,12 +597,29 @@ protected:
   nsInterfaceHashtable<nsStringHashKey,nsISupports> mPastNameLookupTable;
 
   
+  PopupControlState mSubmitPopupState;
+
+  
 
 
 
 
   int32_t mInvalidElementsCount;
 
+  
+  bool mGeneratingSubmit;
+  
+  bool mGeneratingReset;
+  
+  bool mIsSubmitting;
+  
+  bool mDeferSubmission;
+  
+  bool mNotifiedObservers;
+  
+  bool mNotifiedObserversResult;
+  
+  bool mSubmitInitiatedFromUserInput;
   
 
 
