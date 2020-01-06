@@ -6,7 +6,6 @@
 
 #include "jit/JitFrames-inl.h"
 
-
 #include "jsfun.h"
 #include "jsobj.h"
 #include "jsscript.h"
@@ -33,6 +32,7 @@
 #include "vm/Interpreter.h"
 #include "vm/TraceLogging.h"
 #include "vm/TypeInference.h"
+#include "wasm/WasmBuiltins.h"
 
 #include "jsscriptinlines.h"
 #include "gc/Nursery-inl.h"
@@ -574,6 +574,7 @@ struct AutoResetLastProfilerFrameOnReturnFromException
     void* getLastProfilingFrame() {
         switch (rfe->kind) {
           case ResumeFromException::RESUME_ENTRY_FRAME:
+          case ResumeFromException::RESUME_WASM:
             return nullptr;
 
           
@@ -592,6 +593,19 @@ struct AutoResetLastProfilerFrameOnReturnFromException
         return nullptr;
     }
 };
+
+void
+HandleExceptionWasm(JSContext* cx, wasm::WasmFrameIter* iter, ResumeFromException* rfe)
+{
+    
+    JitActivation* act = cx->activation()->asJit();
+    act->setWasmExitFP((const wasm::Frame*) act->jsExitFP());
+
+    rfe->kind = ResumeFromException::RESUME_WASM;
+    rfe->framePointer = (uint8_t*) wasm::FailFP;
+    rfe->stackPointer = (uint8_t*) wasm::HandleThrow(cx, *iter);
+    MOZ_ASSERT(iter->done());
+}
 
 void
 HandleException(ResumeFromException* rfe)
@@ -626,9 +640,14 @@ HandleException(ResumeFromException* rfe)
     
     
     DebugModeOSRVolatileJitFrameIter iter(cx);
-    while (!iter.isJSJit() || !iter.asJSJit().isEntry()) {
-        while (!iter.isJSJit())
-            ++iter;
+    while (!iter.done()) {
+        if (iter.isWasm()) {
+            HandleExceptionWasm(cx, &iter.asWasm(), rfe);
+            if (!iter.done())
+                ++iter;
+            continue;
+        }
+
         const JSJitFrameIter& frame = iter.asJSJit();
 
         bool overrecursed = false;
@@ -742,7 +761,9 @@ HandleException(ResumeFromException* rfe)
         }
     }
 
-    rfe->stackPointer = iter.asJSJit().fp();
+    
+    if (iter.isJSJit())
+        rfe->stackPointer = iter.asJSJit().fp();
 }
 
 
@@ -1275,51 +1296,50 @@ TraceJitActivation(JSTracer* trc, JitActivation* activation)
     activation->traceRematerializedFrames(trc);
     activation->traceIonRecovery(trc);
 
-    for (JSJitFrameIter frames(activation); !frames.done(); ++frames) {
-        switch (frames.type()) {
-          case JitFrame_Exit:
-            TraceJitExitFrame(trc, frames);
-            break;
-          case JitFrame_BaselineJS:
-            frames.baselineFrame()->trace(trc, frames);
-            break;
-          case JitFrame_IonJS:
-            TraceIonJSFrame(trc, frames);
-            break;
-          case JitFrame_BaselineStub:
-            TraceBaselineStubFrame(trc, frames);
-            break;
-          case JitFrame_Bailout:
-            TraceBailoutFrame(trc, frames);
-            break;
-          case JitFrame_Rectifier:
-            TraceRectifierFrame(trc, frames);
-            break;
-          case JitFrame_IonICCall:
-            TraceIonICCallFrame(trc, frames);
-            break;
-          default:
-            MOZ_CRASH("unexpected frame type");
+    for (JitFrameIter frames(activation); !frames.done(); ++frames) {
+        if (frames.isJSJit()) {
+            const JSJitFrameIter& jitFrame = frames.asJSJit();
+            switch (jitFrame.type()) {
+              case JitFrame_Exit:
+                TraceJitExitFrame(trc, jitFrame);
+                break;
+              case JitFrame_BaselineJS:
+                jitFrame.baselineFrame()->trace(trc, jitFrame);
+                break;
+              case JitFrame_IonJS:
+                TraceIonJSFrame(trc, jitFrame);
+                break;
+              case JitFrame_BaselineStub:
+                TraceBaselineStubFrame(trc, jitFrame);
+                break;
+              case JitFrame_Bailout:
+                TraceBailoutFrame(trc, jitFrame);
+                break;
+              case JitFrame_Rectifier:
+                TraceRectifierFrame(trc, jitFrame);
+                break;
+              case JitFrame_IonICCall:
+                TraceIonICCallFrame(trc, jitFrame);
+                break;
+              case JitFrame_WasmToJSJit:
+                
+                
+                break;
+              default:
+                MOZ_CRASH("unexpected frame type");
+            }
+        } else {
+            MOZ_ASSERT(frames.isWasm());
+            frames.asWasm().instance()->trace(trc);
         }
     }
-}
-
-static void
-TraceWasmActivation(JSTracer* trc, WasmActivation* act)
-{
-    for (wasm::WasmFrameIter iter(act); !iter.done(); ++iter)
-        iter.instance()->trace(trc);
 }
 
 void
 TraceJitActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc)
 {
-    for (ActivationIterator activations(cx, target); !activations.done(); ++activations) {
-        if (activations->isJit())
-            TraceJitActivation(trc, activations->asJit());
-        if (activations->isWasm())
-            TraceWasmActivation(trc, activations->asWasm());
-    }
+    for (JitActivationIterator activations(cx, target); !activations.done(); ++activations)
+        TraceJitActivation(trc, activations->asJit());
 }
 
 void
@@ -2395,7 +2415,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
     
     
     if (!cx->profilingActivation()) {
-        type_ = JitFrame_Entry;
+        type_ = JitFrame_CppToJSJit;
         fp_ = nullptr;
         returnAddressToFp_ = nullptr;
         return;
@@ -2409,7 +2429,7 @@ JitProfilingFrameIterator::JitProfilingFrameIterator(
     
     
     if (!act->lastProfilingFrame()) {
-        type_ = JitFrame_Entry;
+        type_ = JitFrame_CppToJSJit;
         fp_ = nullptr;
         returnAddressToFp_ = nullptr;
         return;
@@ -2504,7 +2524,7 @@ JitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table, void* pc,
 
     
     if (entry->isDummy()) {
-        type_ = JitFrame_Entry;
+        type_ = JitFrame_CppToJSJit;
         fp_ = nullptr;
         returnAddressToFp_ = nullptr;
         return true;
@@ -2609,6 +2629,8 @@ JitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
 
 
 
+
+
     FrameType prevType = frame->prevType();
 
     if (prevType == JitFrame_IonJS) {
@@ -2673,12 +2695,21 @@ JitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame)
         return;
     }
 
-    if (prevType == JitFrame_Entry) {
+    if (prevType == JitFrame_WasmToJSJit) {
+        
+        
+        returnAddressToFp_ = nullptr;
+        fp_ = GetPreviousRawFrame<uint8_t*>(frame);
+        type_ = JitFrame_WasmToJSJit;
+        return;
+    }
+
+    if (prevType == JitFrame_CppToJSJit) {
         
         
         returnAddressToFp_ = nullptr;
         fp_ = nullptr;
-        type_ = JitFrame_Entry;
+        type_ = JitFrame_CppToJSJit;
         return;
     }
 
@@ -2710,71 +2741,78 @@ void
 AssertJitStackInvariants(JSContext* cx)
 {
     for (JitActivationIterator activations(cx); !activations.done(); ++activations) {
-        JitFrameIter iter(activations.activation());
-        size_t prevFrameSize = 0;
-        size_t frameSize = 0;
-        bool isScriptedCallee = false;
-        for (; !iter.done(); ++iter) {
-            const JSJitFrameIter& frames = iter.asJSJit();
-            size_t calleeFp = reinterpret_cast<size_t>(frames.fp());
-            size_t callerFp = reinterpret_cast<size_t>(frames.prevFp());
-            MOZ_ASSERT(callerFp >= calleeFp);
-            prevFrameSize = frameSize;
-            frameSize = callerFp - calleeFp;
+        JitFrameIter iter(activations->asJit());
+        if (iter.isJSJit()) {
+            JSJitFrameIter& frames = iter.asJSJit();
+            size_t prevFrameSize = 0;
+            size_t frameSize = 0;
+            bool isScriptedCallee = false;
+            for (; !frames.done(); ++frames) {
+                size_t calleeFp = reinterpret_cast<size_t>(frames.fp());
+                size_t callerFp = reinterpret_cast<size_t>(frames.prevFp());
+                MOZ_ASSERT(callerFp >= calleeFp);
+                prevFrameSize = frameSize;
+                frameSize = callerFp - calleeFp;
 
-            if (frames.prevType() == JitFrame_Rectifier) {
-                MOZ_RELEASE_ASSERT(frameSize % JitStackAlignment == 0,
-                  "The rectifier frame should keep the alignment");
+                if (frames.prevType() == JitFrame_Rectifier) {
+                    MOZ_RELEASE_ASSERT(frameSize % JitStackAlignment == 0,
+                      "The rectifier frame should keep the alignment");
 
-                size_t expectedFrameSize = 0
+                    size_t expectedFrameSize = 0
 #if defined(JS_CODEGEN_X86)
-                    + sizeof(void*) 
+                        + sizeof(void*) 
 #endif
-                    + sizeof(Value) * (frames.callee()->nargs() +
-                                       1  +
-                                       frames.isConstructing() )
-                    + sizeof(JitFrameLayout);
-                MOZ_RELEASE_ASSERT(frameSize >= expectedFrameSize,
-                  "The frame is large enough to hold all arguments");
-                MOZ_RELEASE_ASSERT(expectedFrameSize + JitStackAlignment > frameSize,
-                  "The frame size is optimal");
-            }
-
-            if (frames.isExitFrame()) {
-                
-                
-                frameSize -= ExitFrameLayout::Size();
-            }
-
-            if (frames.isIonJS()) {
-                
-                
-                
-                
-                
-                MOZ_RELEASE_ASSERT(frames.ionScript()->frameSize() % JitStackAlignment == 0,
-                  "Ensure that if the Ion frame is aligned, then the spill base is also aligned");
-
-                if (isScriptedCallee) {
-                    MOZ_RELEASE_ASSERT(prevFrameSize % JitStackAlignment == 0,
-                      "The ion frame should keep the alignment");
+                        + sizeof(Value) * (frames.callee()->nargs() +
+                                           1  +
+                                           frames.isConstructing() )
+                        + sizeof(JitFrameLayout);
+                    MOZ_RELEASE_ASSERT(frameSize >= expectedFrameSize,
+                      "The frame is large enough to hold all arguments");
+                    MOZ_RELEASE_ASSERT(expectedFrameSize + JitStackAlignment > frameSize,
+                      "The frame size is optimal");
                 }
+
+                if (frames.isExitFrame()) {
+                    
+                    
+                    frameSize -= ExitFrameLayout::Size();
+                }
+
+                if (frames.isIonJS()) {
+                    
+                    
+                    
+                    
+                    
+                    MOZ_RELEASE_ASSERT(frames.ionScript()->frameSize() % JitStackAlignment == 0,
+                      "Ensure that if the Ion frame is aligned, then the spill base is also aligned");
+
+                    if (isScriptedCallee) {
+                        MOZ_RELEASE_ASSERT(prevFrameSize % JitStackAlignment == 0,
+                          "The ion frame should keep the alignment");
+                    }
+                }
+
+                
+                
+                if (frames.prevType() == JitFrame_BaselineStub && isScriptedCallee) {
+                    MOZ_RELEASE_ASSERT(calleeFp % JitStackAlignment == 0,
+                        "The baseline stub restores the stack alignment");
+                }
+
+                isScriptedCallee = frames.isScripted() || frames.type() == JitFrame_Rectifier;
             }
 
-            
-            
-            if (frames.prevType() == JitFrame_BaselineStub && isScriptedCallee) {
-                MOZ_RELEASE_ASSERT(calleeFp % JitStackAlignment == 0,
-                    "The baseline stub restores the stack alignment");
-            }
-
-            isScriptedCallee = frames.isScripted() || frames.type() == JitFrame_Rectifier;
+            MOZ_RELEASE_ASSERT(JSJitFrameIter::isEntry(frames.type()),
+              "The first frame of a Jit activation should be an entry frame");
+            MOZ_RELEASE_ASSERT(reinterpret_cast<size_t>(frames.fp()) % JitStackAlignment == 0,
+              "The entry frame should be properly aligned");
+        } else {
+            MOZ_ASSERT(iter.isWasm());
+            wasm::WasmFrameIter& frames = iter.asWasm();
+            while (!frames.done())
+                ++frames;
         }
-
-        MOZ_RELEASE_ASSERT(iter.asJSJit().type() == JitFrame_Entry,
-          "The first frame of a Jit activation should be an entry frame");
-        MOZ_RELEASE_ASSERT(reinterpret_cast<size_t>(iter.asJSJit().fp()) % JitStackAlignment == 0,
-          "The entry frame should be properly aligned");
     }
 }
 

@@ -1241,7 +1241,6 @@ static_assert(sizeof(LiveSavedFrameCache) == sizeof(uintptr_t),
 
 
 class InterpreterActivation;
-class WasmActivation;
 
 namespace jit {
     class JitActivation;
@@ -1305,7 +1304,7 @@ class Activation
     
     bool asyncCallIsExplicit_;
 
-    enum Kind { Interpreter, Jit, Wasm };
+    enum Kind { Interpreter, Jit };
     Kind kind_;
 
     inline Activation(JSContext* cx, Kind kind);
@@ -1330,9 +1329,7 @@ class Activation
     bool isJit() const {
         return kind_ == Jit;
     }
-    bool isWasm() const {
-        return kind_ == Wasm;
-    }
+    inline bool hasWasmExitFP() const;
 
     inline bool isProfiling() const;
     void registerProfiling();
@@ -1345,10 +1342,6 @@ class Activation
     jit::JitActivation* asJit() const {
         MOZ_ASSERT(isJit());
         return (jit::JitActivation*)this;
-    }
-    WasmActivation* asWasm() const {
-        MOZ_ASSERT(isWasm());
-        return (WasmActivation*)this;
     }
 
     void hideScriptedCaller() {
@@ -1491,6 +1484,11 @@ class BailoutFrameInfo;
 
 class JitActivation : public Activation
 {
+  public:
+    static const uintptr_t ExitFpWasmBit = 0x1;
+
+  private:
+    
     
     
     uint8_t* packedExitFP_;
@@ -1563,14 +1561,18 @@ class JitActivation : public Activation
         return offsetof(JitActivation, prevJitActivation_);
     }
 
-    uint8_t* packedExitFP() const {
-        return packedExitFP_;
+    bool hasExitFP() const {
+        return !!packedExitFP_;
     }
     static size_t offsetOfPackedExitFP() {
         return offsetof(JitActivation, packedExitFP_);
     }
 
+    bool hasJSExitFP() const {
+        return !(uintptr_t(packedExitFP_) & ExitFpWasmBit);
+    }
     uint8_t* jsExitFP() const {
+        MOZ_ASSERT(hasJSExitFP());
         return packedExitFP_;
     }
     void setJSExitFP(uint8_t* fp) {
@@ -1661,6 +1663,33 @@ class JitActivation : public Activation
     void setLastProfilingCallSite(void* ptr) {
         lastProfilingCallSite_ = ptr;
     }
+
+    
+    bool hasWasmExitFP() const {
+        return uintptr_t(packedExitFP_) & ExitFpWasmBit;
+    }
+    wasm::Frame* wasmExitFP() const {
+        MOZ_ASSERT(hasWasmExitFP());
+        return (wasm::Frame*)(uintptr_t(packedExitFP_) & ~ExitFpWasmBit);
+    }
+    void setWasmExitFP(const wasm::Frame* fp) {
+        if (fp) {
+            MOZ_ASSERT(!(uintptr_t(fp) & ExitFpWasmBit));
+            packedExitFP_ = (uint8_t*)(uintptr_t(fp) | ExitFpWasmBit);
+            MOZ_ASSERT(hasWasmExitFP());
+        } else {
+            packedExitFP_ = nullptr;
+        }
+    }
+
+    
+    
+    
+    void startWasmInterrupt(const JS::ProfilingFrameIterator::RegisterState& state);
+    void finishWasmInterrupt();
+    bool isWasmInterrupted() const;
+    void* wasmUnwindPC() const;
+    void* wasmResumePC() const;
 };
 
 
@@ -1692,6 +1721,12 @@ class JitActivationIterator : public ActivationIterator
 };
 
 } 
+
+inline bool
+Activation::hasWasmExitFP() const
+{
+    return isJit() && asJit()->hasWasmExitFP();
+}
 
 
 class InterpreterFrameIterator
@@ -1739,42 +1774,6 @@ class InterpreterFrameIterator
 
 
 
-class WasmActivation : public Activation
-{
-    wasm::Frame* exitFP_;
-
-  public:
-    explicit WasmActivation(JSContext* cx);
-    ~WasmActivation();
-
-    bool isProfiling() const {
-        return true;
-    }
-
-    
-    
-    wasm::Frame* exitFP() const { return exitFP_; }
-
-    
-    static unsigned offsetOfExitFP() { return offsetof(WasmActivation, exitFP_); }
-
-    
-    
-    
-    void startInterrupt(const JS::ProfilingFrameIterator::RegisterState& state);
-    void finishInterrupt();
-    bool interrupted() const;
-    void* unwindPC() const;
-    void* resumePC() const;
-
-    
-    void unwindExitFP(wasm::Frame* exitFP);
-};
-
-
-
-
-
 
 
 
@@ -1798,11 +1797,14 @@ class WasmActivation : public Activation
 class JitFrameIter
 {
   protected:
+    jit::JitActivation* act_;
     mozilla::MaybeOneOf<jit::JSJitFrameIter, wasm::WasmFrameIter> iter_;
 
+    void settle();
+
   public:
-    JitFrameIter() : iter_() {}
-    explicit JitFrameIter(Activation* activation);
+    JitFrameIter() : act_(nullptr), iter_() {}
+    explicit JitFrameIter(jit::JitActivation* activation);
 
     explicit JitFrameIter(const JitFrameIter& another);
     JitFrameIter& operator=(const JitFrameIter& another);
@@ -1819,6 +1821,7 @@ class JitFrameIter
     const wasm::WasmFrameIter& asWasm() const { return iter_.ref<wasm::WasmFrameIter>(); }
 
     
+    const jit::JitActivation* activation() const { return act_; }
     bool done() const;
     void operator++();
 
@@ -1837,7 +1840,7 @@ class OnlyJSJitFrameIter : public JitFrameIter
     }
 
   public:
-    explicit OnlyJSJitFrameIter(Activation* act);
+    explicit OnlyJSJitFrameIter(jit::JitActivation* act);
     explicit OnlyJSJitFrameIter(JSContext* cx);
     explicit OnlyJSJitFrameIter(const ActivationIterator& cx);
 

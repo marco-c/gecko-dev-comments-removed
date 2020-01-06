@@ -249,7 +249,6 @@ static const unsigned NonVolatileRegsPushSize = NonVolatileRegs.gprs().size() * 
                                                 NonVolatileRegs.fpus().getPushSizeInBytes();
 #endif
 static const unsigned FramePushedBeforeAlign = NonVolatileRegsPushSize + sizeof(void*);
-static const unsigned FailFP = 0xbad;
 
 
 
@@ -699,7 +698,7 @@ GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
 
 static bool
 GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel,
-                      CallableOffsets* offsets)
+                      JitExitOffsets* offsets)
 {
     masm.setFramePushed(0);
 
@@ -711,17 +710,19 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
-    unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + fi.sig().args().length()) * sizeof(Value);
-    unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes;
+    unsigned sizeOfPreFrame = WasmFrameLayout::Size() - sizeOfRetAddr;
+    unsigned sizeOfThisAndArgs = (1 + fi.sig().args().length()) * sizeof(Value);
+    unsigned totalJitFrameBytes = sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
+    unsigned sizeOfThisAndArgsAndPadding = jitFramePushed - sizeOfPreFrame;
 
-    GenerateExitPrologue(masm, jitFramePushed, ExitReason::Fixed::ImportJit, offsets);
+    GenerateJitExitPrologue(masm, jitFramePushed, offsets);
 
     
     size_t argOffset = 0;
-    uint32_t descriptor = MakeFrameDescriptor(jitFramePushed, JitFrame_Entry,
-                                              JitFrameLayout::Size());
+    uint32_t descriptor = MakeFrameDescriptor(sizeOfThisAndArgsAndPadding, JitFrame_WasmToJSJit,
+                                              WasmFrameLayout::Size());
     masm.storePtr(ImmWord(uintptr_t(descriptor)), Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
 
@@ -744,6 +745,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     unsigned argc = fi.sig().args().length();
     masm.storePtr(ImmWord(uintptr_t(argc)), Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
+    MOZ_ASSERT(argOffset == sizeOfPreFrame);
 
     
     masm.storeValue(UndefinedValue(), Address(masm.getStackPointer(), argOffset));
@@ -753,70 +755,21 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     unsigned offsetToCallerStackArgs = jitFramePushed + sizeof(Frame);
     FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
     argOffset += fi.sig().args().length() * sizeof(Value);
-    MOZ_ASSERT(argOffset == jitFrameBytes);
-
-    {
-        
-        
-        
-        
-        MOZ_ASSERT(callee == WasmIonExitRegCallee);
-        Register cx = WasmIonExitRegE0;
-        Register act = WasmIonExitRegE1;
-
-        
-        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, addressOfContext)), cx);
-        masm.loadPtr(Address(cx, 0), cx);
-        masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
-
-        
-        masm.store8(Imm32(1), Address(act, JitActivation::offsetOfActiveUint8()));
-
-        
-        masm.storePtr(act, Address(cx, offsetof(JSContext, jitActivation)));
-
-        
-        masm.storePtr(act, Address(cx, JSContext::offsetOfProfilingActivation()));
-    }
+    MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame);
 
     AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
     masm.callJitNoProfiler(callee);
-    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
 
     
     
+    
+    offsets->untrustedFPStart = masm.currentOffset();
+    AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
+
     masm.loadWasmTlsRegFromFrame();
     masm.moveStackPtrTo(FramePointer);
     masm.addPtr(Imm32(masm.framePushed()), FramePointer);
-
-    {
-        
-        
-        
-        
-        MOZ_ASSERT(JSReturnReg_Data == WasmIonExitRegReturnData);
-        MOZ_ASSERT(JSReturnReg_Type == WasmIonExitRegReturnType);
-        MOZ_ASSERT(WasmTlsReg == WasmIonExitTlsReg);
-        Register cx = WasmIonExitRegD0;
-        Register act = WasmIonExitRegD1;
-        Register tmp = WasmIonExitRegD2;
-
-        
-        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, addressOfContext)), cx);
-        masm.loadPtr(Address(cx, 0), cx);
-        masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
-
-        
-        masm.loadPtr(Address(act, JitActivation::offsetOfPrevJitActivation()), tmp);
-        masm.storePtr(tmp, Address(cx, offsetof(JSContext, jitActivation)));
-
-        
-        masm.loadPtr(Address(act, Activation::offsetOfPrevProfiling()), tmp);
-        masm.storePtr(tmp, Address(cx, JSContext::offsetOfProfilingActivation()));
-
-        
-        masm.store8(Imm32(0), Address(act, JitActivation::offsetOfActiveUint8()));
-    }
+    offsets->untrustedFPEnd = masm.currentOffset();
 
     
     
@@ -863,7 +816,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     Label done;
     masm.bind(&done);
 
-    GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::Fixed::ImportJit, offsets);
+    GenerateJitExitEpilogue(masm, masm.framePushed(), offsets);
 
     if (oolConvert.used()) {
         masm.bind(&oolConvert);
@@ -881,6 +834,14 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
         masm.storeValue(JSReturnOperand, Address(masm.getStackPointer(), offsetToCoerceArgv));
 
         
+        
+
+        
+        
+        
+        SetExitFP(masm, scratch);
+
+        
         ABIArgMIRTypeIter i(coerceArgTypes);
         Address argv(masm.getStackPointer(), offsetToCoerceArgv);
         if (i->kind() == ABIArg::GPR) {
@@ -892,6 +853,7 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
         i++;
         MOZ_ASSERT(i.done());
 
+        
         
         AssertStackAlignment(masm, ABIStackAlignment);
         switch (fi.sig().ret()) {
@@ -914,6 +876,10 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
           default:
             MOZ_CRASH("Unsupported convert type");
         }
+
+        
+        
+        ClearExitFP(masm, scratch);
 
         masm.jump(&done);
         masm.setFramePushed(0);
@@ -1357,16 +1323,16 @@ wasm::GenerateStubs(const ModuleEnvironment& env, const FuncImportVector& import
     for (uint32_t funcIndex = 0; funcIndex < imports.length(); funcIndex++) {
         const FuncImport& fi = imports[funcIndex];
 
-        CallableOffsets offsets;
+        CallableOffsets interpOffsets;
+        if (!GenerateImportInterpExit(masm, fi, funcIndex, &throwLabel, &interpOffsets))
+            return false;
+        if (!code->codeRanges.emplaceBack(CodeRange::ImportInterpExit, funcIndex, interpOffsets))
+            return false;
 
-        if (!GenerateImportInterpExit(masm, fi, funcIndex, &throwLabel, &offsets))
+        JitExitOffsets jitOffsets;
+        if (!GenerateImportJitExit(masm, fi, &throwLabel, &jitOffsets))
             return false;
-        if (!code->codeRanges.emplaceBack(CodeRange::ImportInterpExit, funcIndex, offsets))
-            return false;
-
-        if (!GenerateImportJitExit(masm, fi, &throwLabel, &offsets))
-            return false;
-        if (!code->codeRanges.emplaceBack(CodeRange::ImportJitExit, funcIndex, offsets))
+        if (!code->codeRanges.emplaceBack(funcIndex, jitOffsets))
             return false;
     }
 

@@ -41,11 +41,9 @@
 #include "wasm/WasmCode.h"
 
 namespace js {
-
-class WasmActivation;
-
 namespace jit {
 
+class JitActivation;
 class Simulator;
 class Redirection;
 class CachePage;
@@ -293,7 +291,7 @@ class Simulator
 
     
     void handleWasmInterrupt();
-    void startInterrupt(WasmActivation* act);
+    void startWasmInterrupt(JitActivation* act);
 
     
     bool handleWasmFault(int32_t addr, unsigned numBytes);

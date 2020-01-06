@@ -3120,8 +3120,9 @@ MacroAssembler::wasmAssertNonExitInvariants(Register activation)
 #ifdef DEBUG
     
     Label ok;
-    Address exitFP(activation, WasmActivation::offsetOfExitFP());
-    branchPtr(Assembler::Equal, exitFP, ImmWord(0), &ok);
+    Address packedExitFP(activation, JitActivation::offsetOfPackedExitFP());
+    branchTestPtr(Assembler::Zero, packedExitFP, Imm32(uintptr_t(JitActivation::ExitFpWasmBit)),
+                  &ok);
     breakpoint();
     bind(&ok);
 #endif

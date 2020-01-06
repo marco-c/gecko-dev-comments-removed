@@ -24,6 +24,8 @@
 namespace js {
 namespace wasm {
 
+class WasmFrameIter;
+
 
 
 
@@ -46,6 +48,9 @@ LookupBuiltinThunk(void* pc, const CodeRange** codeRange, uint8_t** codeBase);
 
 bool
 EnsureBuiltinThunksInitialized();
+
+void*
+HandleThrow(JSContext* cx, WasmFrameIter& iter);
 
 void*
 SymbolicAddressTarget(SymbolicAddress sym);

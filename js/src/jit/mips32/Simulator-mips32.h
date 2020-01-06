@@ -40,9 +40,9 @@
 
 namespace js {
 
-class WasmActivation;
-
 namespace jit {
+
+class JitActivation;
 
 class Simulator;
 class Redirection;
@@ -296,7 +296,7 @@ class Simulator {
 
     
     void handleWasmInterrupt();
-    void startInterrupt(WasmActivation* act);
+    void startInterrupt(JitActivation* act);
 
     
     bool handleWasmFault(int32_t addr, unsigned numBytes);

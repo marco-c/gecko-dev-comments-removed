@@ -36,7 +36,7 @@ enum FrameType
 
     
     
-    JitFrame_Entry,
+    JitFrame_CppToJSJit,
 
     
     
@@ -55,6 +55,11 @@ enum FrameType
     
     
     JitFrame_Bailout,
+
+    
+    
+    
+    JitFrame_WasmToJSJit,
 };
 
 enum ReadFrameArgsBehavior {
@@ -173,9 +178,13 @@ class JSJitFrameIter
     bool isBareExit() const;
     template <typename T> bool isExitFrameLayout() const;
 
-    bool isEntry() const {
-        return type_ == JitFrame_Entry;
+    static bool isEntry(FrameType type) {
+        return type == JitFrame_CppToJSJit || type == JitFrame_WasmToJSJit;
     }
+    bool isEntry() const {
+        return isEntry(type_);
+    }
+
     bool isFunctionFrame() const;
 
     bool isConstructing() const;
@@ -209,7 +218,7 @@ class JSJitFrameIter
     
     
     bool done() const {
-        return type_ == JitFrame_Entry;
+        return isEntry();
     }
     void operator++();
 

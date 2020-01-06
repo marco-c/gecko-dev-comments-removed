@@ -506,6 +506,11 @@ static const unsigned MaxMemoryMaximumPages  = 65536;
 static const unsigned MaxModuleBytes         = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes       =         128 * 1024;
 
+
+
+
+static const unsigned FailFP = 0xbad;
+
 } 
 } 
 

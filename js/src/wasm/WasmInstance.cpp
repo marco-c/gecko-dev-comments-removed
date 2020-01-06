@@ -674,13 +674,7 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
     }
 
     {
-        
-        
-        
-        
-        
-        WasmActivation activation(cx);
-        JitActivation jitActivation(cx,  false);
+        JitActivation activation(cx);
 
         
         auto funcPtr = JS_DATA_TO_FUNC_PTR(ExportFuncPtr, codeBase(tier) + func.entryOffset());

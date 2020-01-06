@@ -40,7 +40,8 @@ SizeOfFramePrefix = {
     'JitFrame_BaselineJS': 'JitFrameLayout',
     'JitFrame_BaselineStub': 'BaselineStubFrameLayout',
     'JitFrame_IonStub': 'JitStubFrameLayout',
-    'JitFrame_Entry': 'JitFrameLayout',
+    'JitFrame_CppToJSJit': 'JitFrameLayout',
+    'JitFrame_WasmToJSJit': 'JitFrameLayout',
     'JitFrame_Rectifier': 'RectifierFrameLayout',
     'JitFrame_IonAccessorIC': 'IonAccessorICFrameLayout',
     'JitFrame_IonICCall': 'IonICCallFrameLayout',
@@ -367,7 +368,7 @@ class UnwinderState(object):
                        self.typecache.FRAME_HEADER_SIZE_MASK)
         header_size = header_size * self.typecache.void_starstar.sizeof
         frame_type = long(value & self.typecache.FRAMETYPE_MASK)
-        if frame_type == self.typecache.JitFrame_Entry:
+        if frame_type == self.typecache.JitFrame_CppToJSJit:
             
             
             
@@ -451,7 +452,7 @@ class UnwinderState(object):
     def unwind_entry_frame(self, pc, pending_frame):
         sp = self.next_sp
         
-        self.add_frame(sp, name = 'JitFrame_Entry')
+        self.add_frame(sp, name = 'JitFrame_CppToJSJit')
         
         frame_id = SpiderMonkeyFrameId(sp, pc)
         unwind_info = pending_frame.create_unwind_info(frame_id)
@@ -472,7 +473,7 @@ class UnwinderState(object):
             return None
 
         if self.next_sp is not None:
-            if self.next_type == self.typecache.JitFrame_Entry:
+            if self.next_type == self.typecache.JitFrame_CppToJSJit:
                 return self.unwind_entry_frame(pc, pending_frame)
             return self.unwind_ordinary(pc, pending_frame)
         

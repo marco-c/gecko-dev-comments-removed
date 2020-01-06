@@ -62,21 +62,20 @@ __aeabi_uidivmod(int, int);
 
 
 
-
-
-static WasmActivation*
+static JitActivation*
 CallingActivation()
 {
     Activation* act = TlsContext.get()->activation();
-    MOZ_ASSERT(!act->asJit()->isActive(), "WasmCall pushes an inactive JitActivation");
-    return act->prev()->asWasm();
+    MOZ_ASSERT(act->asJit()->hasWasmExitFP());
+    MOZ_ASSERT(act->asJit()->isActive(), "WasmCall pushes an active JitActivation");
+    return act->asJit();
 }
 
 static void*
 WasmHandleExecutionInterrupt()
 {
-    WasmActivation* activation = CallingActivation();
-    MOZ_ASSERT(activation->interrupted());
+    JitActivation* activation = CallingActivation();
+    MOZ_ASSERT(activation->isWasmInterrupted());
 
     if (!CheckForInterrupt(activation->cx())) {
         
@@ -89,15 +88,15 @@ WasmHandleExecutionInterrupt()
 
     
     
-    void* resumePC = activation->resumePC();
-    activation->finishInterrupt();
+    void* resumePC = activation->wasmResumePC();
+    activation->finishWasmInterrupt();
     return resumePC;
 }
 
 static bool
 WasmHandleDebugTrap()
 {
-    WasmActivation* activation = CallingActivation();
+    JitActivation* activation = CallingActivation();
     MOZ_ASSERT(activation);
     JSContext* cx = activation->cx();
 
@@ -162,12 +161,10 @@ WasmHandleDebugTrap()
 
 
 
-static void*
-WasmHandleThrow()
+
+void*
+wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter)
 {
-    WasmActivation* activation = CallingActivation();
-    JSContext* cx = activation->cx();
-
     
     
     
@@ -180,8 +177,9 @@ WasmHandleThrow()
     
     
 
-    WasmFrameIter iter(activation, WasmFrameIter::Unwind::True);
+    MOZ_ASSERT(CallingActivation() == iter.activation());
     MOZ_ASSERT(!iter.done());
+    iter.setUnwind(WasmFrameIter::Unwind::True);
 
     
     
@@ -220,10 +218,20 @@ WasmHandleThrow()
             JS_ReportErrorASCII(cx, "Unexpected success from onLeaveFrame");
         }
         frame->leave(cx);
-     }
+    }
 
-    MOZ_ASSERT(!activation->interrupted(), "unwinding clears the interrupt");
+    MOZ_ASSERT(!cx->activation()->asJit()->isWasmInterrupted(), "unwinding clears the interrupt");
+
     return iter.unwoundAddressOfReturnAddress();
+}
+
+static void*
+WasmHandleThrow()
+{
+    JitActivation* activation = CallingActivation();
+    JSContext* cx = activation->cx();
+    WasmFrameIter iter(activation);
+    return HandleThrow(cx, iter);
 }
 
 static void

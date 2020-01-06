@@ -781,7 +781,7 @@ ComputeAccessAddress(EMULATOR_CONTEXT* context, const Disassembler::ComplexAddre
 
 MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const Instance& instance, WasmActivation* activation, uint8_t** ppc)
+                   const Instance& instance, JitActivation* activation, uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
 
@@ -792,7 +792,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
         
         
         
-        activation->startInterrupt(ToRegisterState(context));
+        activation->startWasmInterrupt(ToRegisterState(context));
         if (!instance.code().containsCodePC(pc, &segment))
             MOZ_CRASH("Cannot map PC to trap handler");
         *ppc = segment->outOfBoundsCode();
@@ -930,7 +930,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
 
 MOZ_COLD static void
 HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                   const Instance& instance, WasmActivation* activation, uint8_t** ppc)
+                   const Instance& instance, JitActivation* activation, uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.code().containsCodePC(pc));
 
@@ -938,7 +938,7 @@ HandleMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddr
     const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc, &segment);
     if (!memoryAccess) {
         
-        activation->startInterrupt(ToRegisterState(context));
+        activation->startWasmInterrupt(ToRegisterState(context));
         if (!instance.code().containsCodePC(pc, &segment))
             MOZ_CRASH("Cannot map PC to trap handler");
         *ppc = segment->outOfBoundsCode();
@@ -990,9 +990,9 @@ HandleFault(PEXCEPTION_POINTERS exception)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = ActivationIfInnermost(cx);
-    if (!activation)
+    if (!cx->activation() || !cx->activation()->isJit())
         return false;
+    JitActivation* activation = cx->activation()->asJit();
 
     const CodeSegment* codeSegment;
     const Code* code = activation->compartment()->wasm.lookupCode(pc, &codeSegment);
@@ -1013,8 +1013,8 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
         for (auto t : code->tiers()) {
             if (pc == code->segment(t).interruptCode() &&
-                activation->interrupted() &&
-                code->segment(t).containsCodePC(activation->resumePC()))
+                activation->isWasmInterrupted() &&
+                code->segment(t).containsCodePC(activation->wasmResumePC()))
             {
                 return true;
             }
@@ -1036,9 +1036,9 @@ HandleFault(PEXCEPTION_POINTERS exception)
     
     
     
-    if (activation->interrupted()) {
-        MOZ_ASSERT(activation->resumePC() == pc);
-        activation->finishInterrupt();
+    if (activation->isWasmInterrupted()) {
+        MOZ_ASSERT(activation->wasmResumePC() == pc);
+        activation->finishWasmInterrupt();
     }
 
     HandleMemoryAccess(context, pc, faultingAddress, *instance, activation, ppc);
@@ -1133,9 +1133,9 @@ HandleMachException(JSContext* cx, const ExceptionRequest& request)
     
     AutoNoteSingleThreadedRegion anstr;
 
-    WasmActivation* activation = ActivationIfInnermost(cx);
-    if (!activation)
+    if (!cx->activation() || !cx->activation()->isJit())
         return false;
+    JitActivation* activation = cx->activation()->asJit();
 
     const Code* code = activation->compartment()->wasm.lookupCode(pc);
     if (!code)
@@ -1344,9 +1344,9 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
     AutoSetHandlingSegFault handling(cx);
 
-    WasmActivation* activation = ActivationIfInnermost(cx);
-    if (!activation)
+    if (!cx->activation() || !cx->activation()->isJit())
         return false;
+    JitActivation* activation = cx->activation()->asJit();
 
     const CodeSegment* segment;
     const Code* code = activation->compartment()->wasm.lookupCode(pc, &segment);
@@ -1384,7 +1384,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         
         
         
-        activation->startInterrupt(ToRegisterState(context));
+        activation->startWasmInterrupt(ToRegisterState(context));
         *ppc = segment->unalignedAccessCode();
         return true;
     }
@@ -1491,17 +1491,15 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     if (!InInterruptibleCode(cx, pc, &codeSegment))
         return false;
 
-    
-    
-    
-    WasmActivation* activation = ActivationIfInnermost(cx);
-    MOZ_ASSERT(activation);
-
 #ifdef JS_SIMULATOR
     
     
     cx->simulator()->trigger_wasm_interrupt();
 #else
+    
+    
+    JitActivation* activation = cx->activation()->asJit();
+
     
     uint8_t* fp = ContextToFP(context);
     if (!fp)
@@ -1510,10 +1508,10 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
     
     
     
-    if (activation->interrupted())
+    if (activation->isWasmInterrupted())
         return false;
 
-    activation->startInterrupt(ToRegisterState(context));
+    activation->startWasmInterrupt(ToRegisterState(context));
     *ContextToPC(context) = codeSegment->interruptCode();
 #endif
 

@@ -200,7 +200,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.storePtr(s2, Address(StackPointer, 0)); 
 
     masm.subPtr(StackPointer, s4);
-    masm.makeFrameDescriptor(s4, JitFrame_Entry, JitFrameLayout::Size());
+    masm.makeFrameDescriptor(s4, JitFrame_CppToJSJit, JitFrameLayout::Size());
     masm.push(s4); 
 
     CodeLabel returnLabel;
@@ -1181,7 +1181,10 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
     masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_BaselineStub), &handle_BaselineStub);
     masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_Rectifier), &handle_Rectifier);
     masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_IonICCall), &handle_IonICCall);
-    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_Entry), &handle_Entry);
+    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_CppToJSJit), &handle_Entry);
+
+    
+    masm.branch32(Assembler::Equal, scratch2, Imm32(JitFrame_WasmToJSJit), &handle_Entry);
 
     masm.assumeUnreachable("Invalid caller frame type when exiting from Ion frame.");
 
@@ -1399,6 +1402,8 @@ JitRuntime::generateProfilerExitFrameTailStub(JSContext* cx)
         masm.ret();
     }
 
+    
+    
     
     
     
