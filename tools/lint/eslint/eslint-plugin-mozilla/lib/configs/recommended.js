@@ -1,35 +1,63 @@
 "use strict";
 
 module.exports = {
-  
-  "plugins": [
-    "mozilla"
-  ],
   "env": {
     "browser": true,
     "es6": true
   },
+
+  "globals": {
+    "BroadcastChannel": false,
+    "CSSPrimitiveValue": false,
+    "CSSValueList": false,
+    
+    "ChromeUtils": false,
+    "ChromeWindow": false,
+    "ChromeWorker": false,
+    "Components": false,
+    "ImageDocument": false,
+    "InstallTrigger": false,
+    
+    
+    
+    "InternalError": true,
+    "KeyEvent": false,
+    "MenuBoxObject": false,
+    
+    "MozSelfSupport": false,
+    "SharedArrayBuffer": false,
+    "SimpleGestureEvent": false,
+    
+    
+    "StopIteration": false,
+    
+    "XULElement": false,
+    "dump": true,
+    "openDialog": false,
+    "sizeToContent": false,
+    
+    
+    
+    "uneval": false
+  },
+
   "parserOptions": {
     "ecmaVersion": 8
   },
+
+  
+  "plugins": [
+    "mozilla"
+  ],
+
   
   
   "rules": {
-    "mozilla/avoid-removeChild": "error",
-    "mozilla/avoid-nsISupportsString-preferences": "error",
-    "mozilla/import-browser-window-globals": "error",
-    "mozilla/import-globals": "error",
-    "mozilla/no-import-into-var-and-global": "error",
-    "mozilla/no-useless-parameters": "error",
-    "mozilla/no-useless-removeEventListener": "error",
-    "mozilla/use-default-preference-values": "error",
-    "mozilla/use-ownerGlobal": "error",
-
-    
-    
-
     
     "arrow-spacing": "error",
+
+    
+    
 
     
     "block-spacing": "error",
@@ -38,7 +66,7 @@ module.exports = {
     "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
 
     
-    "comma-spacing": ["error", {"before": false, "after": true}],
+    "comma-spacing": ["error", {"after": true, "before": false}],
 
     
     
@@ -72,8 +100,8 @@ module.exports = {
 
     
     "key-spacing": ["error", {
-      "beforeColon": false,
       "afterColon": true,
+      "beforeColon": false,
       "mode": "minimum"
     }],
 
@@ -89,6 +117,16 @@ module.exports = {
 
     
     "max-nested-callbacks": ["error", 10],
+
+    "mozilla/avoid-nsISupportsString-preferences": "error",
+    "mozilla/avoid-removeChild": "error",
+    "mozilla/import-browser-window-globals": "error",
+    "mozilla/import-globals": "error",
+    "mozilla/no-import-into-var-and-global": "error",
+    "mozilla/no-useless-parameters": "error",
+    "mozilla/no-useless-removeEventListener": "error",
+    "mozilla/use-default-preference-values": "error",
+    "mozilla/use-ownerGlobal": "error",
 
     
     
@@ -115,19 +153,6 @@ module.exports = {
     "no-duplicate-case": "error",
 
     
-    "no-extra-bind": "error",
-
-    
-    "no-implied-eval": "error",
-    "no-eval": "error",
-
-    
-    "no-labels": "error",
-
-    
-    "no-lone-blocks": "error",
-
-    
     "no-else-return": "error",
 
     
@@ -140,7 +165,13 @@ module.exports = {
     "no-empty-pattern": "error",
 
     
+    "no-eval": "error",
+
+    
     "no-ex-assign": "error",
+
+    
+    "no-extra-bind": "error",
 
     
     "no-extra-boolean-cast": "error",
@@ -152,6 +183,9 @@ module.exports = {
     "no-func-assign": "error",
 
     
+    "no-implied-eval": "error",
+
+    
     "no-invalid-regexp": "error",
 
     
@@ -159,6 +193,12 @@ module.exports = {
 
     
     "no-iterator": "error",
+
+     
+    "no-labels": "error",
+
+    
+    "no-lone-blocks": "error",
 
     
     "no-lonely-if": "error",
@@ -168,10 +208,10 @@ module.exports = {
 
     
     "no-multi-spaces": ["error", { exceptions: {
-      "AssignmentExpression": true,
-      "VariableDeclarator": true,
       "ArrayExpression": true,
-      "ObjectExpression": true
+      "AssignmentExpression": true,
+      "ObjectExpression": true,
+      "VariableDeclarator": true
     } }],
 
     
@@ -230,9 +270,9 @@ module.exports = {
 
     
     "no-unused-vars": ["error", {
+      "args": "none",
       "vars": "local",
-      "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS",
-      "args": "none"
+      "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS"
     }],
 
     
@@ -240,6 +280,10 @@ module.exports = {
 
     
     "no-useless-call": "error",
+
+    
+    
+    "no-useless-concat": "error",
 
     
     "no-useless-return": "error",
@@ -253,8 +297,8 @@ module.exports = {
     
     
     "quotes": ["error", "double", {
-      "avoidEscape": true,
-      "allowTemplateLiterals": true
+      "allowTemplateLiterals": true,
+      "avoidEscape": true
     }],
 
     
@@ -277,11 +321,11 @@ module.exports = {
 
     
     "space-unary-ops": ["error", {
-      "words": true,
       "nonwords": false,
       "overrides": {
         "typeof": false 
-      }
+      },
+      "words": true
     }],
 
     
@@ -291,44 +335,6 @@ module.exports = {
     "use-isnan": "error",
 
     
-    "valid-typeof": "error",
-
-    
-    
-    "no-useless-concat": "error"
-  },
-  "globals": {
-    "BroadcastChannel": false,
-    
-    "ChromeWindow": false,
-    "ChromeWorker": false,
-    "ChromeUtils": false,
-    "Components": false,
-    "CSSPrimitiveValue": false,
-    "CSSValueList": false,
-    "dump": true,
-    "ImageDocument": false,
-    
-    "InstallTrigger": false,
-    
-    
-    
-    "InternalError": true,
-    "KeyEvent": false,
-    "openDialog": false,
-    "MenuBoxObject": false,
-    
-    "MozSelfSupport": false,
-    "SimpleGestureEvent": false,
-    "sizeToContent": false,
-    "SharedArrayBuffer": false,
-    
-    
-    "StopIteration": false,
-    
-    
-    
-    "uneval": false,
-    "XULElement": false
+    "valid-typeof": "error"
   }
 };

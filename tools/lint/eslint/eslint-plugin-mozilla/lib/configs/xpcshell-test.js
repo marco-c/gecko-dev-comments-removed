@@ -2,18 +2,13 @@
 "use strict";
 
 module.exports = {
-  rules: {
-    "mozilla/import-headjs-globals": "warn",
-    "mozilla/mark-test-function-used": "warn",
-    "no-shadow": "error"
-  },
-
   
   "globals": {
+    "Assert": false,
+    "PromiseDebugging": false,
     "_TEST_FILE": false,
     "add_task": false,
     "add_test": false,
-    "Assert": false,
     "deepEqual": false,
     "do_await_remote_message": false,
     "do_check_eq": false,
@@ -54,11 +49,10 @@ module.exports = {
     "notEqual": false,
     "notStrictEqual": false,
     "ok": false,
-    "PromiseDebugging": false,
-    "runningInParent": false,
     "run_next_test": false,
     "run_test": false,
     "run_test_in_child": false,
+    "runningInParent": false,
     
     "sendCommand": false,
     "strictEqual": false,
@@ -70,5 +64,11 @@ module.exports = {
     
     
     "uneval": false
+  },
+
+  rules: {
+    "mozilla/import-headjs-globals": "warn",
+    "mozilla/mark-test-function-used": "warn",
+    "no-shadow": "error"
   }
 };
