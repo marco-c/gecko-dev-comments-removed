@@ -301,7 +301,7 @@ var gSearchResultsPane = {
       let keywordsResult = this.stringMatchesFilters(nodeObject.getAttribute("searchkeywords"), searchPhrase);
 
       
-      if (keywordsResult && nodeObject.tagName === "button") {
+      if (keywordsResult && (nodeObject.tagName === "button" || nodeObject.tagName == "menulist")) {
         this.listSearchTooltips.push(nodeObject);
       }
 
@@ -315,18 +315,44 @@ var gSearchResultsPane = {
       matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult || keywordsResult;
     }
 
-    for (let i = 0; i < nodeObject.childNodes.length; i++) {
-      
-      if (!nodeObject.childNodes[i].hidden && nodeObject.getAttribute("data-hidden-from-search") !== "true") {
-        let result = this.searchWithinNode(nodeObject.childNodes[i], searchPhrase);
-        
-        if (result && nodeObject.tagName === "menulist") {
-          this.listSearchTooltips.push(nodeObject);
-        }
+    
+    
+    if (nodeObject.tagName == "deck" && nodeObject.id != "historyPane") {
+      let index = nodeObject.selectedIndex;
+      if (index != -1) {
+        let result = this.searchChildNodeIfVisible(nodeObject, index, searchPhrase);
+        matchesFound = matchesFound || result;
+      }
+    } else {
+      for (let i = 0; i < nodeObject.childNodes.length; i++) {
+        let result = this.searchChildNodeIfVisible(nodeObject, i, searchPhrase);
         matchesFound = matchesFound || result;
       }
     }
     return matchesFound;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  searchChildNodeIfVisible(nodeObject, index, searchPhrase) {
+    let result = false;
+    if (!nodeObject.childNodes[index].hidden && nodeObject.getAttribute("data-hidden-from-search") !== "true") {
+      result = this.searchWithinNode(nodeObject.childNodes[index], searchPhrase);
+      
+      if (result && nodeObject.tagName === "menulist") {
+        this.listSearchTooltips.push(nodeObject);
+      }
+    }
+    return result;
   },
 
   
