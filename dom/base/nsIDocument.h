@@ -2073,6 +2073,34 @@ public:
     return mMarkedCCGeneration;
   }
 
+  
+
+
+
+  bool IsCookieAverse() const
+  {
+    
+    if (!GetInnerWindow()) {
+      return true;
+    }
+
+    
+    
+    nsCOMPtr<nsIURI> codebaseURI;
+    NodePrincipal()->GetURI(getter_AddRefs(codebaseURI));
+
+    if (!codebaseURI) {
+      return true;
+    }
+
+    nsAutoCString scheme;
+    codebaseURI->GetScheme(scheme);
+    return !scheme.EqualsLiteral("http") &&
+           !scheme.EqualsLiteral("https") &&
+           !scheme.EqualsLiteral("ftp") &&
+           !scheme.EqualsLiteral("file");
+  }
+
   bool IsLoadedAsData()
   {
     return mLoadedAsData;
