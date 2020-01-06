@@ -4,6 +4,7 @@
 
 
 #include "ParseFTPList.h"
+#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -466,46 +467,17 @@ int ParseFTPList(const char *line, struct list_state *state,
             while (pos < toklen[1] && (tokens[1][pos]) != '/')
               pos++;
 
+            
 
 
 
 
 
 
-#if 0
-            if (pos < toklen[1] && ( (pos<<1) > (toklen[1]-1) ||
-                 (strtoul(tokens[1], (char **)0, 10) >
-                  strtoul(tokens[1]+pos+1, (char **)0, 10))        ))
-            {                                   
-              if (pos > (sizeof(result->fe_size)-1))
-                pos = sizeof(result->fe_size)-1;
-              memcpy( result->fe_size, tokens[1], pos );
-              result->fe_size[pos] = '\0';
-            }
-            else 
-#endif
-            {
-              
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-              uint64_t fsz = uint64_t(strtoul(tokens[1], (char **)0, 10) * 512);
-              SprintfLiteral(result->fe_size, "%" PRId64, fsz);
-            }
-
+            uint64_t numBlocks = strtoul(tokens[1], nullptr, 10);
+            numBlocks = std::min(numBlocks, (uint64_t)UINT32_MAX);
+            uint64_t fileSize = numBlocks * 512;
+            SprintfLiteral(result->fe_size, "%" PRIu64, fileSize);
           } 
 
           p = tokens[2] + 2;
