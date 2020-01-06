@@ -986,19 +986,12 @@ class IonBuilder
     
     CompilerConstraintList* constraints_;
 
-    
-    BytecodeAnalysis analysis_;
-    BytecodeAnalysis& analysis() {
-        return analysis_;
-    }
-
     TemporaryTypeSet* thisTypes;
     TemporaryTypeSet* argTypes;
     TemporaryTypeSet* typeArray;
     uint32_t typeArrayHint;
     uint32_t* bytecodeTypeMap;
 
-    GSNCache gsn;
     EnvironmentCoordinateNameCache envCoordinateNameCache;
 
     jsbytecode* pc;

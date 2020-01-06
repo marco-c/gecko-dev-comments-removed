@@ -130,7 +130,6 @@ IonBuilder::IonBuilder(JSContext* analysisContext, CompileCompartment* comp,
     analysisContext(analysisContext),
     baselineFrame_(baselineFrame),
     constraints_(constraints),
-    analysis_(*temp, info->script()),
     thisTypes(nullptr),
     argTypes(nullptr),
     typeArray(nullptr),
@@ -186,7 +185,6 @@ IonBuilder::clearForBackEnd()
     
     
     
-    gsn.purge();
     envCoordinateNameCache.purge();
 }
 
@@ -705,9 +703,6 @@ IonBuilder::init()
         thisTypes = inlineCallInfo_->thisArg()->resultTypeSet();
         argTypes = nullptr;
     }
-
-    if (!analysis().init(alloc(), gsn))
-        return abort(AbortReason::Alloc);
 
     
     
@@ -1379,9 +1374,6 @@ GetOrCreateControlFlowGraph(TempAllocator& tempAlloc, JSScript* script,
     }
 
     ControlFlowGenerator cfgenerator(tempAlloc, script);
-    if (!cfgenerator.init())
-        return CFGState::Alloc;
-
     if (!cfgenerator.traverseBytecode()) {
         if (cfgenerator.aborted())
             return CFGState::Abort;
