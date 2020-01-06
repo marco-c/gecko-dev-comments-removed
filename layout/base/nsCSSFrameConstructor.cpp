@@ -21,6 +21,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ServoBindings.h"
 #include "nsAbsoluteContainingBlock.h"
 #include "nsCSSPseudoElements.h"
 #include "nsIAtom.h"
@@ -1922,6 +1923,21 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   
   
   
+  
+  
+  bool isServo = pseudoStyleContext->IsServo();
+  bool hasServoAnimations = false;
+  if (isServo) {
+    ServoComputedValues* servoStyle = pseudoStyleContext->ComputedValues();
+    hasServoAnimations = Servo_ComputedValues_SpecifiesAnimationsOrTransitions(servoStyle);
+    if (!hasServoAnimations) {
+      Servo_SetExplicitStyle(container, servoStyle);
+    }
+  }
+
+  
+  
+  
   if (mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
     GeckoRestyleManager::ReframingStyleContexts* rsc =
       geckoRM->GetReframingStyleContexts();
@@ -1941,17 +1957,30 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   }
 
   uint32_t contentCount = pseudoStyleContext->StyleContent()->ContentCount();
+  bool createdChildElement = false;
   for (uint32_t contentIndex = 0; contentIndex < contentCount; contentIndex++) {
     nsCOMPtr<nsIContent> content =
       CreateGeneratedContent(aState, aParentContent, pseudoStyleContext,
                              contentIndex);
     if (content) {
       container->AppendChildTo(content, false);
+      if (content->IsElement()) {
+        createdChildElement = true;
+      }
     }
   }
 
-  if (aParentContent->IsStyledByServo()) {
-    mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
+  
+  if (isServo) {
+    if (hasServoAnimations) {
+      
+      
+      mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
+    } else if (createdChildElement) {
+      
+      
+      mPresShell->StyleSet()->AsServo()->StyleNewChildren(container);
+    }
   }
 
   AddFrameConstructionItemsInternal(aState, container, aParentFrame, elemName,
