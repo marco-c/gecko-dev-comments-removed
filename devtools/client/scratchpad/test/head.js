@@ -18,7 +18,7 @@ const promise = require("promise");
 var gScratchpadWindow; 
 
 flags.testing = true;
-SimpleTest.registerCleanupFunction(() => {
+registerCleanupFunction(() => {
   flags.testing = false;
 });
 
