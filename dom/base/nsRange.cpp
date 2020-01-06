@@ -430,11 +430,22 @@ nsRange::UnregisterCommonAncestor(nsINode* aNode)
   MOZ_ASSERT(ranges);
   NS_ASSERTION(ranges->GetEntry(this), "unknown range");
 
+  bool isNativeAnon = aNode->IsInNativeAnonymousSubtree();
+  bool removed = false;
+
   if (ranges->Count() == 1) {
     aNode->ClearCommonAncestorForRangeInSelection();
-    aNode->GetCommonAncestorRangesPtr().reset();
+    if (!isNativeAnon) {
+      
+      
+      
+      
+      aNode->GetCommonAncestorRangesPtr().reset();
+      removed = true;
+    }
     UnmarkDescendants(aNode);
-  } else {
+  }
+  if (!removed) {
     ranges->RemoveEntry(this);
   }
 }
@@ -3082,7 +3093,7 @@ static void ExtractRectFromOffset(nsIFrame* aFrame,
   aFrame->GetPointFromOffset(aOffset, &point);
 
   if (!aClampToEdge && !aR->Contains(point)) {
-    aR->SetWidth(0);
+    aR->width = 0;
     aR->x = point.x;
     return;
   }
@@ -3092,9 +3103,9 @@ static void ExtractRectFromOffset(nsIFrame* aFrame,
   }
 
   if (aKeepLeft) {
-    aR->SetWidth(point.x - aR->x);
+    aR->width = point.x - aR->x;
   } else {
-    aR->SetWidth(aR->XMost() - point.x);
+    aR->width = aR->XMost() - point.x;
     aR->x = point.x;
   }
 }
@@ -3224,7 +3235,7 @@ nsRange::CollectClientRectsAndText(nsLayoutUtils::RectCallback* aCollector,
            nsRect r = outFrame->GetRectRelativeToSelf();
            ExtractRectFromOffset(outFrame, static_cast<int32_t>(aStartOffset),
                                  &r, false, aClampToEdge);
-           r.SetWidth(0);
+           r.width = 0;
            r = nsLayoutUtils::TransformFrameRectToAncestor(outFrame, r, relativeTo);
            aCollector->AddRect(r);
         }
