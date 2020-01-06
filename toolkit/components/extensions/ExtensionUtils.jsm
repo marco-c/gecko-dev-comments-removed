@@ -279,10 +279,14 @@ class LimitedSet extends Set {
 
   truncate(limit) {
     for (let item of this) {
-      if (this.size <= limit) {
-        break;
+      
+      
+      
+      
+      
+      if (this.size > limit) {
+        this.delete(item);
       }
-      this.delete(item);
     }
   }
 
