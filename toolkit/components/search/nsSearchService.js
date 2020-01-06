@@ -2270,7 +2270,7 @@ Engine.prototype = {
     
     
     
-    if (Services.locale.defaultLocale !== Services.locale.getRequestedLocale() &&
+    if (Services.locale.defaultLocale == Services.locale.getRequestedLocale() &&
         !gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR"))
       return false;
 
