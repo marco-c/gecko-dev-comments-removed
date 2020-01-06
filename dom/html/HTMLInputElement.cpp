@@ -1149,6 +1149,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   , mPickerRunning(false)
   , mSelectionCached(true)
   , mIsPreviewEnabled(false)
+  , mHasPatternAttribute(false)
 {
   
   
@@ -1457,8 +1458,15 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       UpdateTooLongValidityState();
     } else if (aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
-    } else if (aName == nsGkAtoms::pattern && mDoneCreating) {
-      UpdatePatternMismatchValidityState();
+    } else if (aName == nsGkAtoms::pattern) {
+      
+      
+      
+      mHasPatternAttribute = !!aValue;
+
+      if (mDoneCreating) {
+        UpdatePatternMismatchValidityState();
+      }
     } else if (aName == nsGkAtoms::multiple) {
       UpdateTypeMismatchValidityState();
     } else if (aName == nsGkAtoms::max) {
