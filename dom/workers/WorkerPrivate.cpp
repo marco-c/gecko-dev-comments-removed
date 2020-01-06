@@ -2067,7 +2067,7 @@ public:
     {
       MutexAutoLock lock(mMutex);
 
-      MOZ_ASSERT(mWorkerPrivate);
+      
       mWorkerPrivate = nullptr;
       mNestedEventTarget.swap(nestedEventTarget);
     }
@@ -2981,22 +2981,34 @@ WorkerPrivateParent<Derived>::GetEventTarget()
 
   nsCOMPtr<nsISerialEventTarget> target;
 
+  bool needAutoDisable = false;
+
   {
     MutexAutoLock lock(mMutex);
 
-    if (!mEventTarget &&
-        ParentStatus() <= Running &&
-        self->mStatus <= Running) {
+    if (!mEventTarget) {
       mEventTarget = new EventTarget(self);
+
+      
+      
+      
+      
+      if (self->mStatus > Running) {
+        needAutoDisable = true;
+      }
     }
 
     target = mEventTarget;
   }
 
-  NS_WARNING_ASSERTION(
-    target,
-    "Requested event target for a worker that is already shutting down!");
+  
+  
+  if (needAutoDisable) {
+    mEventTarget->Disable();
+  }
 
+
+  MOZ_DIAGNOSTIC_ASSERT(target);
   return target.forget();
 }
 
@@ -6134,7 +6146,6 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     MutexAutoLock lock(mMutex);
 
     if (mStatus >= aStatus) {
-      MOZ_ASSERT(!mEventTarget);
       return true;
     }
 
@@ -6147,10 +6158,9 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
       Close();
     }
 
-    mEventTarget.swap(eventTarget);
+    eventTarget = mEventTarget;
   }
 
-  
   
   if (eventTarget) {
     
@@ -6158,7 +6168,6 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     
     
     eventTarget->Disable();
-    eventTarget = nullptr;
   }
 
   if (mCrossThreadDispatcher) {
