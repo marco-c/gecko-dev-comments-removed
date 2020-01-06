@@ -45,10 +45,12 @@ IRGenerator::IRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc, Cac
 GetPropIRGenerator::GetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                                        CacheKind cacheKind, ICState::Mode mode,
                                        bool* isTemporarilyUnoptimizable, HandleValue val,
-                                       HandleValue idVal, CanAttachGetter canAttachGetter)
+                                       HandleValue idVal, HandleValue receiver,
+                                       CanAttachGetter canAttachGetter)
   : IRGenerator(cx, script, pc, cacheKind, mode),
     val_(val),
     idVal_(idVal),
+    receiver_(receiver),
     isTemporarilyUnoptimizable_(isTemporarilyUnoptimizable),
     canAttachGetter_(canAttachGetter),
     preliminaryObjectAction_(PreliminaryObjectAction::None)
@@ -131,9 +133,16 @@ GetPropIRGenerator::tryAttachStub()
 
     AutoAssertNoPendingException aanpe(cx_);
 
+    
+    
+    
+    if (isSuper() && !receiver_.isObject())
+        return false;
+
     ValOperandId valId(writer.setInputOperandId(0));
-    if (cacheKind_ == CacheKind::GetElem) {
-        MOZ_ASSERT(getElemKeyValueId().id() == 1);
+    if (cacheKind_ != CacheKind::GetProp) {
+        MOZ_ASSERT_IF(cacheKind_ == CacheKind::GetPropSuper, getSuperReceiverValueId().id() == 1);
+        MOZ_ASSERT_IF(cacheKind_ != CacheKind::GetPropSuper, getElemKeyValueId().id() == 1);
         writer.setInputOperandId(1);
     }
 
@@ -488,12 +497,12 @@ EmitReadSlotReturn(CacheIRWriter& writer, JSObject*, JSObject* holder, Shape* sh
 
 static void
 EmitCallGetterResultNoGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
-                             Shape* shape, ObjOperandId objId)
+                             Shape* shape, ObjOperandId receiverId)
 {
     if (IsCacheableGetPropCallNative(obj, holder, shape)) {
         JSFunction* target = &shape->getterValue().toObject().as<JSFunction>();
         MOZ_ASSERT(target->isNative());
-        writer.callNativeGetterResult(objId, target);
+        writer.callNativeGetterResult(receiverId, target);
         writer.typeMonitorResult();
         return;
     }
@@ -502,13 +511,13 @@ EmitCallGetterResultNoGuards(CacheIRWriter& writer, JSObject* obj, JSObject* hol
 
     JSFunction* target = &shape->getterValue().toObject().as<JSFunction>();
     MOZ_ASSERT(target->hasJITCode());
-    writer.callScriptedGetterResult(objId, target);
+    writer.callScriptedGetterResult(receiverId, target);
     writer.typeMonitorResult();
 }
 
 static void
-EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
-                     Shape* shape, ObjOperandId objId, ICState::Mode mode)
+EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder, Shape* shape,
+                     ObjOperandId objId, ObjOperandId receiverId, ICState::Mode mode)
 {
     
     
@@ -528,7 +537,14 @@ EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
         writer.guardHasGetterSetter(objId, shape);
     }
 
-    EmitCallGetterResultNoGuards(writer, obj, holder, shape, objId);
+    EmitCallGetterResultNoGuards(writer, obj, holder, shape, receiverId);
+}
+
+static void
+EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
+                     Shape* shape, ObjOperandId objId, ICState::Mode mode)
+{
+    EmitCallGetterResult(writer, obj, holder, shape, objId, objId, mode);
 }
 
 void
@@ -539,7 +555,7 @@ GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId, jsid id, boo
     
     
 
-    if (cacheKind_ == CacheKind::GetProp) {
+    if (cacheKind_ == CacheKind::GetProp || cacheKind_ == CacheKind::GetPropSuper) {
         writer.megamorphicLoadSlotResult(objId, JSID_TO_ATOM(id)->asPropertyName(),
                                          handleMissing);
     } else {
@@ -587,12 +603,16 @@ GetPropIRGenerator::tryAttachNative(HandleObject obj, ObjOperandId objId, Handle
 
         trackAttached("NativeSlot");
         return true;
-      case CanAttachCallGetter:
+      case CanAttachCallGetter: {
+        
+        ObjOperandId receiverId = isSuper() ? writer.guardIsObject(getSuperReceiverValueId())
+                                            : objId;
         maybeEmitIdGuard(id);
-        EmitCallGetterResult(writer, obj, holder, shape, objId, mode_);
+        EmitCallGetterResult(writer, obj, holder, shape, objId, receiverId, mode_);
 
         trackAttached("NativeGetter");
         return true;
+      }
     }
 
     MOZ_CRASH("Bad NativeGetPropCacheability");
@@ -650,6 +670,10 @@ GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, H
         JSFunction* callee = &shape->getterObject()->as<JSFunction>();
         MOZ_ASSERT(callee->isNative());
         if (!callee->jitInfo() || callee->jitInfo()->needsOuterizedThisObject())
+            return false;
+
+        
+        if (isSuper())
             return false;
 
         
@@ -763,12 +787,14 @@ GetPropIRGenerator::tryAttachGenericProxy(HandleObject obj, ObjOperandId objId, 
     }
 
     if (cacheKind_ == CacheKind::GetProp || mode_ == ICState::Mode::Specialized) {
+        MOZ_ASSERT(!isSuper());
         maybeEmitIdGuard(id);
         writer.callProxyGetResult(objId, id);
     } else {
         
         MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
         MOZ_ASSERT(mode_ == ICState::Mode::Megamorphic);
+        MOZ_ASSERT(!isSuper());
         writer.callProxyGetByValueResult(objId, getElemKeyValueId());
     }
 
@@ -859,6 +885,7 @@ GetPropIRGenerator::tryAttachDOMProxyShadowed(HandleObject obj, ObjOperandId obj
     
     
     
+    MOZ_ASSERT(!isSuper());
     writer.callProxyGetResult(objId, id);
     writer.typeMonitorResult();
 
@@ -942,11 +969,13 @@ GetPropIRGenerator::tryAttachDOMProxyUnshadowed(HandleObject obj, ObjOperandId o
             
             
             MOZ_ASSERT(canCache == CanAttachCallGetter);
+            MOZ_ASSERT(!isSuper());
             EmitCallGetterResultNoGuards(writer, checkObj, holder, shape, objId);
         }
     } else {
         
         
+        MOZ_ASSERT(!isSuper());
         writer.callProxyGetResult(objId, id);
         writer.typeMonitorResult();
     }
@@ -960,6 +989,10 @@ GetPropIRGenerator::tryAttachProxy(HandleObject obj, ObjOperandId objId, HandleI
 {
     ProxyStubType type = GetProxyStubType(cx_, obj, id);
     if (type == ProxyStubType::None)
+        return false;
+
+    
+    if (isSuper())
         return false;
 
     if (mode_ == ICState::Mode::Megamorphic)
@@ -1545,6 +1578,7 @@ GetPropIRGenerator::tryAttachProxyElement(HandleObject obj, ObjOperandId objId)
     
     
     MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
+    MOZ_ASSERT(!isSuper());
     writer.callProxyGetByValueResult(objId, getElemKeyValueId());
     writer.typeMonitorResult();
 
@@ -1599,7 +1633,7 @@ IRGenerator::emitIdGuard(ValOperandId valId, jsid id)
 void
 GetPropIRGenerator::maybeEmitIdGuard(jsid id)
 {
-    if (cacheKind_ == CacheKind::GetProp) {
+    if (cacheKind_ == CacheKind::GetProp || cacheKind_ == CacheKind::GetPropSuper) {
         
         MOZ_ASSERT(&idVal_.toString()->asAtom() == JSID_TO_ATOM(id));
         return;

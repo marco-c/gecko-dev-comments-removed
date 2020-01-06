@@ -2055,7 +2055,7 @@ DoGetPropFallback(JSContext* cx, BaselineFrame* frame, ICGetProp_Fallback* stub_
     if (stub->state().canAttachStub()) {
         RootedValue idVal(cx, StringValue(name));
         GetPropIRGenerator gen(cx, script, pc, CacheKind::GetProp, stub->state().mode(),
-                               &isTemporarilyUnoptimizable, val, idVal, CanAttachGetter::Yes);
+                               &isTemporarilyUnoptimizable, val, idVal, val, CanAttachGetter::Yes);
         if (gen.tryAttachStub()) {
             ICStub* newStub = AttachBaselineCacheIRStub(cx, gen.writerRef(), gen.cacheKind(),
                                                         ICStubEngine::Baseline, script,
@@ -2096,11 +2096,89 @@ DoGetPropFallback(JSContext* cx, BaselineFrame* frame, ICGetProp_Fallback* stub_
     return true;
 }
 
+static bool
+DoGetPropSuperFallback(JSContext* cx, BaselineFrame* frame, ICGetProp_Fallback* stub_,
+                       HandleValue receiver, MutableHandleValue val, MutableHandleValue res)
+{
+    
+    DebugModeOSRVolatileStub<ICGetProp_Fallback*> stub(frame, stub_);
+
+    RootedScript script(cx, frame->script());
+    jsbytecode* pc = stub_->icEntry()->pc(script);
+    FallbackICSpew(cx, stub, "GetPropSuper(%s)", CodeName[JSOp(*pc)]);
+
+    MOZ_ASSERT(JSOp(*pc) == JSOP_GETPROP_SUPER);
+
+    RootedPropertyName name(cx, script->getName(pc));
+
+    
+    
+    
+    
+    bool isTemporarilyUnoptimizable = false;
+
+    if (stub->state().maybeTransition())
+        stub->discardStubs(cx);
+
+    bool attached = false;
+    if (stub->state().canAttachStub()) {
+        RootedValue idVal(cx, StringValue(name));
+        GetPropIRGenerator gen(cx, script, pc, CacheKind::GetPropSuper, stub->state().mode(),
+                               &isTemporarilyUnoptimizable, val, idVal, receiver,
+                               CanAttachGetter::Yes);
+        if (gen.tryAttachStub()) {
+            ICStub* newStub = AttachBaselineCacheIRStub(cx, gen.writerRef(), gen.cacheKind(),
+                                                        ICStubEngine::Baseline, script,
+                                                        stub, &attached);
+            if (newStub) {
+                JitSpew(JitSpew_BaselineIC, "  Attached CacheIR stub");
+                if (gen.shouldNotePreliminaryObjectStub())
+                    newStub->toCacheIR_Monitored()->notePreliminaryObject();
+                else if (gen.shouldUnlinkPreliminaryObjectStubs())
+                    StripPreliminaryObjectStubs(cx, stub);
+            }
+        }
+        if (!attached && !isTemporarilyUnoptimizable)
+            stub->state().trackNotAttached();
+    }
+
+    
+    RootedObject valObj(cx, &val.toObject());
+    if (!GetProperty(cx, valObj, receiver, name, res))
+        return false;
+
+    StackTypeSet* types = TypeScript::BytecodeTypes(script, pc);
+    TypeScript::Monitor(cx, script, pc, types, res);
+
+    
+    if (stub.invalid())
+        return true;
+
+    
+    if (!stub->addMonitorStubForValue(cx, frame, types, res))
+        return false;
+
+    if (attached)
+        return true;
+
+    MOZ_ASSERT(!attached);
+    if (!isTemporarilyUnoptimizable)
+        stub->noteUnoptimizableAccess();
+
+    return true;
+}
+
 typedef bool (*DoGetPropFallbackFn)(JSContext*, BaselineFrame*, ICGetProp_Fallback*,
                                     MutableHandleValue, MutableHandleValue);
 static const VMFunction DoGetPropFallbackInfo =
     FunctionInfo<DoGetPropFallbackFn>(DoGetPropFallback, "DoGetPropFallback", TailCall,
                                       PopValues(1));
+
+typedef bool (*DoGetPropSuperFallbackFn)(JSContext*, BaselineFrame*, ICGetProp_Fallback*,
+                                         HandleValue, MutableHandleValue, MutableHandleValue);
+static const VMFunction DoGetPropSuperFallbackInfo =
+    FunctionInfo<DoGetPropSuperFallbackFn>(DoGetPropSuperFallback, "DoGetPropSuperFallback",
+                                           TailCall);
 
 bool
 ICGetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
@@ -2110,15 +2188,27 @@ ICGetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     EmitRestoreTailCallReg(masm);
 
     
-    masm.pushValue(R0);
+    if (hasReceiver_) {
+        
+        masm.pushValue(R0);
+        masm.pushValue(R1);
+        masm.push(ICStubReg);
+        masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
 
-    
-    masm.pushValue(R0);
-    masm.push(ICStubReg);
-    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+        if (!tailCallVM(DoGetPropSuperFallbackInfo, masm))
+            return false;
+    } else {
+        
+        masm.pushValue(R0);
 
-    if (!tailCallVM(DoGetPropFallbackInfo, masm))
-        return false;
+        
+        masm.pushValue(R0);
+        masm.push(ICStubReg);
+        masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+
+        if (!tailCallVM(DoGetPropFallbackInfo, masm))
+            return false;
+    }
 
     
     
@@ -2142,7 +2232,8 @@ void
 ICGetProp_Fallback::Compiler::postGenerateStubCode(MacroAssembler& masm, Handle<JitCode*> code)
 {
     if (engine_ == Engine::Baseline) {
-        BailoutReturnStub kind = BailoutReturnStub::GetProp;
+        BailoutReturnStub kind = hasReceiver_ ? BailoutReturnStub::GetPropSuper
+                                              : BailoutReturnStub::GetProp;
         void* address = code->raw() + bailoutReturnOffset_.offset();
         cx->compartment()->jitCompartment()->initBailoutReturnAddr(address, getKey(), kind);
     }
