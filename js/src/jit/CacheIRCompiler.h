@@ -60,7 +60,7 @@ namespace jit {
     _(CallPrintString)                    \
     _(Breakpoint)                         \
     _(MegamorphicLoadSlotByValueResult)   \
-    _(MegamorphicHasOwnResult)            \
+    _(MegamorphicHasPropResult)           \
     _(WrapResult)
 
 
