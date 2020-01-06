@@ -4124,7 +4124,6 @@ Tab.prototype = {
           metadata: this.metatags,
         });
 
-        
         this.metatags = null;
 
         if (docURI.startsWith("about:certerror") || docURI.startsWith("about:blocked")) {
@@ -4318,21 +4317,12 @@ Tab.prototype = {
         if (aEvent.originalTarget.defaultView != this.browser.contentWindow)
           return;
 
-        let target = aEvent.originalTarget;
-        let docURI = target.documentURI;
-        if (!docURI.startsWith("about:neterror") && !this.isSearch) {
-          
-          this.userRequested = "";
-        }
-
         GlobalEventDispatcher.sendRequest({
           type: "Content:PageShow",
           tabID: this.id,
           userRequested: this.userRequested,
           fromCache: Tabs.useCache
         });
-
-        this.isSearch = false;
 
         if (!aEvent.persisted && Services.prefs.getBoolPref("browser.ui.linkify.phone")) {
           if (!this._linkifier)
@@ -4502,6 +4492,13 @@ Tab.prototype = {
       ExternalApps.updatePageActionUri(fixedURI);
     }
 
+    if (Components.isSuccessCode(aRequest.status) &&
+        !fixedURI.displaySpec.startsWith("about:neterror") && !this.isSearch) {
+      
+      
+      this.userRequested = "";
+    }
+
     let message = {
       type: "Content:LocationChange",
       tabID: this.id,
@@ -4518,6 +4515,9 @@ Tab.prototype = {
     GlobalEventDispatcher.sendRequest(message);
 
     notifyManifestStatus(this);
+
+    
+    this.isSearch = false;
 
     if (!sameDocument) {
       
