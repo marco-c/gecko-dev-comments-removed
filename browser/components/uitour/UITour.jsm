@@ -99,7 +99,7 @@ this.UITour = {
     ["accountStatus", {
       query: (aDocument) => {
         
-        let fxAFooter = aDocument.getElementById("PanelUI-footer-fxa");
+        let fxAFooter = aDocument.getElementById("PanelUI-fxa-container");
         if (fxAFooter.getAttribute("fxastatus")) {
           return aDocument.getElementById("PanelUI-fxa-avatar");
         }
