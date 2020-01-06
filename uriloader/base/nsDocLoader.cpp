@@ -168,10 +168,11 @@ nsDocLoader::~nsDocLoader()
 
 
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDocLoader)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDocLoader)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDocLoader)
+NS_IMPL_ADDREF(nsDocLoader)
+NS_IMPL_RELEASE(nsDocLoader)
+
+NS_INTERFACE_MAP_BEGIN(nsDocLoader)
    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIRequestObserver)
    NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
    NS_INTERFACE_MAP_ENTRY(nsIDocumentLoader)
@@ -186,8 +187,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDocLoader)
      foundInterface = static_cast<nsIDocumentLoader *>(this);
    else
 NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTION(nsDocLoader, mChildrenInOnload)
 
 
 
