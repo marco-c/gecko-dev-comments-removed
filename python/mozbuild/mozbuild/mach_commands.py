@@ -1957,14 +1957,14 @@ class PackageFrontend(MachCommandBase):
                         requests.exceptions.ChunkedEncodingError,
                         requests.exceptions.ConnectionError) as e:
 
-                    if isinstance(e, requests.exceptions.ConnectionError):
-                        should_retry = True
-                    else:
+                    if isinstance(e, requests.exceptions.HTTPError):
                         
                         
                         
                         status = e.response.status_code
                         should_retry = status >= 500 or status == 400
+                    else:
+                        should_retry = True
 
                     if should_retry or attempt < retry:
                         level = logging.WARN
