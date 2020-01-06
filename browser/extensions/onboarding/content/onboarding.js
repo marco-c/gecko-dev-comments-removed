@@ -35,10 +35,22 @@ const BRAND_SHORT_NAME = Services.strings
 
 
 
+
+
+
+
+
 var onboardingTours = [
   {
     id: "onboarding-tour-private-browsing",
     tourNameId: "onboarding.tour-private-browsing",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-private-browsing.title"),
+        message: bundle.GetStringFromName("onboarding.notification.onboarding-tour-private-browsing.message"),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
     getPage(win) {
       let div = win.document.createElement("div");
       div.innerHTML = `
@@ -59,6 +71,13 @@ var onboardingTours = [
   {
     id: "onboarding-tour-addons",
     tourNameId: "onboarding.tour-addons",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-addons.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-addons.message", [BRAND_SHORT_NAME], 1),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
     getPage(win) {
       let div = win.document.createElement("div");
       div.innerHTML = `
@@ -79,6 +98,13 @@ var onboardingTours = [
   {
     id: "onboarding-tour-customize",
     tourNameId: "onboarding.tour-customize",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-customize.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-customize.message", [BRAND_SHORT_NAME], 1),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
     getPage(win) {
       let div = win.document.createElement("div");
       div.innerHTML = `
@@ -99,6 +125,13 @@ var onboardingTours = [
   {
     id: "onboarding-tour-search",
     tourNameId: "onboarding.tour-search",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-search.title"),
+        message: bundle.GetStringFromName("onboarding.notification.onboarding-tour-search.message"),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
     getPage(win) {
       let div = win.document.createElement("div");
       div.innerHTML = `
@@ -119,6 +152,13 @@ var onboardingTours = [
   {
     id: "onboarding-tour-default-browser",
     tourNameId: "onboarding.tour-default-browser",
+    getNotificationStrings(bundle) {
+      return {
+        title: bundle.formatStringFromName("onboarding.notification.onboarding-tour-default-browser.title", [BRAND_SHORT_NAME], 1),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-default-browser.message", [BRAND_SHORT_NAME], 1),
+        button: bundle.GetStringFromName("onboarding.button.learnMore"),
+      };
+    },
     getPage(win) {
       let div = win.document.createElement("div");
       let defaultBrowserButtonId = win.matchMedia("(-moz-os-version: windows-win7)").matches ?
@@ -147,7 +187,6 @@ var onboardingTours = [
 class Onboarding {
   constructor(contentWindow) {
     this.init(contentWindow);
-    this._bundle = Services.strings.createBundle(BUNDLE_URI);
   }
 
   async init(contentWindow) {
@@ -157,6 +196,8 @@ class Onboarding {
     
     
     await this._loadCSS();
+    this._bundle = Services.strings.createBundle(BUNDLE_URI);
+
     this._overlayIcon = this._renderOverlayIcon();
     this._overlay = this._renderOverlay();
     this._window.document.body.appendChild(this._overlayIcon);
@@ -172,6 +213,25 @@ class Onboarding {
     this._window.addEventListener("unload", () => this.destroy());
 
     this._initPrefObserver();
+    this._initNotification();
+  }
+
+  _initNotification() {
+    let doc = this._window.document;
+    if (doc.hidden) {
+      
+      
+      
+      let onVisible = () => {
+        if (!doc.hidden) {
+          doc.removeEventListener("visibilitychange", onVisible);
+          this.showNotification();
+        }
+      };
+      doc.addEventListener("visibilitychange", onVisible);
+    } else {
+      this.showNotification();
+    }
   }
 
   _initPrefObserver() {
@@ -219,6 +279,16 @@ class Onboarding {
       case "onboarding-overlay":
         this.toggleOverlay();
         break;
+
+      case "onboarding-notification-close-btn":
+        this.hideNotification();
+        break;
+
+      case "onboarding-notification-action-btn":
+        let tourId = this._notificationBar.dataset.targetTourId;
+        this.toggleOverlay();
+        this.gotoPage(tourId);
+        break;
     }
     if (evt.target.classList.contains("onboarding-tour-item")) {
       this.gotoPage(evt.target.id);
@@ -229,6 +299,9 @@ class Onboarding {
     this._clearPrefObserver();
     this._overlayIcon.remove();
     this._overlay.remove();
+    if (this._notificationBar) {
+      this._notificationBar.remove();
+    }
   }
 
   toggleOverlay() {
@@ -237,14 +310,13 @@ class Onboarding {
       this._loadTours(onboardingTours);
     }
 
-    this._overlay.classList.toggle("opened");
+    this.hideNotification();
+    this._overlay.classList.toggle("onboarding-opened");
+
     let hiddenCheckbox = this._window.document.getElementById("onboarding-tour-hidden-checkbox");
     if (hiddenCheckbox.checked) {
       this.hide();
-      return;
     }
-
-    this._overlay.classList.toggle("onboarding-opened");
   }
 
   gotoPage(tourId) {
@@ -259,6 +331,108 @@ class Onboarding {
         li.classList.remove("onboarding-active");
       }
     }
+  }
+
+  isTourCompleted(tourId) {
+    return Preferences.get(`browser.onboarding.tour.${tourId}.completed`, false);
+  }
+
+  showNotification() {
+    if (Preferences.get("browser.onboarding.notification.finished", false)) {
+      return;
+    }
+
+    
+    let targetTour = null;
+
+    
+    
+    let lastPromptedId = onboardingTours[onboardingTours.length - 1].id;
+    lastPromptedId = Preferences.get("browser.onboarding.notification.lastPrompted", lastPromptedId);
+
+    let lastTourIndex = onboardingTours.findIndex(tour => tour.id == lastPromptedId);
+    if (lastTourIndex < 0) {
+      
+      
+      
+      
+      lastTourIndex = onboardingTours.length - 1;
+    }
+
+    
+    
+    
+    
+    
+    let toursToNotify = [ ...onboardingTours.slice(lastTourIndex + 1), ...onboardingTours.slice(0, lastTourIndex + 1) ];
+    targetTour = toursToNotify.find(tour => !this.isTourCompleted(tour.id));
+
+
+    if (!targetTour) {
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.notification.finished",
+        value: true
+      }]);
+      return;
+    }
+
+    
+    this._notificationBar = this._renderNotificationBar();
+    this._notificationBar.addEventListener("click", this);
+    this._window.document.body.appendChild(this._notificationBar);
+
+    this._notificationBar.dataset.targetTourId = targetTour.id;
+    let notificationStrings = targetTour.getNotificationStrings(this._bundle);
+    let actionBtn = this._notificationBar.querySelector("#onboarding-notification-action-btn");
+    actionBtn.textContent = notificationStrings.button;
+    let tourTitle = this._notificationBar.querySelector("#onboarding-notification-tour-title");
+    tourTitle.textContent = notificationStrings.title;
+    let tourMessage = this._notificationBar.querySelector("#onboarding-notification-tour-message");
+    tourMessage.textContent = notificationStrings.message;
+
+    this._notificationBar.addEventListener("transitionend", () => {
+      this._notificationBar.dataset.cssTransition = "end";
+    }, { once: true });
+    this._window.requestAnimationFrame(() => {
+      
+      
+      
+      this._window.requestAnimationFrame(() => this._notificationBar.classList.add("onboarding-opened"));
+    });
+
+    this.sendMessageToChrome("set-prefs", [{
+      name: "browser.onboarding.notification.lastPrompted",
+      value: targetTour.id
+    }]);
+  }
+
+  hideNotification() {
+    if (this._notificationBar) {
+      this._notificationBar.classList.remove("onboarding-opened");
+      delete this._notificationBar.dataset.cssTransition;
+    }
+  }
+
+  _renderNotificationBar() {
+    let div = this._window.document.createElement("div");
+    div.id = "onboarding-notification-bar";
+    
+    
+    div.innerHTML = `
+      <div id="onboarding-notification-icon"></div>
+      <section id="onboarding-notification-message-section">
+        <div id="onboarding-notification-tour-icon"></div>
+        <div id="onboarding-notification-body">
+          <h6 id="onboarding-notification-tour-title"></h6>
+          <span id="onboarding-notification-tour-message"></span>
+        </div>
+        <button id="onboarding-notification-action-btn"></button>
+      </section>
+      <button id="onboarding-notification-close-btn"></button>
+    `;
+    let toolTip = this._bundle.formatStringFromName("onboarding.notification-icon-tool-tip", [BRAND_SHORT_NAME], 1);
+    div.querySelector("#onboarding-notification-icon").setAttribute("data-tooltip", toolTip);
+    return div;
   }
 
   hide() {
@@ -277,7 +451,6 @@ class Onboarding {
   _renderOverlay() {
     let div = this._window.document.createElement("div");
     div.id = "onboarding-overlay";
-    
     
     
     div.innerHTML = `
