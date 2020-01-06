@@ -39,6 +39,10 @@ function init(event) {
 }
 
 function updateIndicatorState() {
+  
+  if (!gStringBundle)
+    return;
+
   updateWindowAttr("sharingvideo", webrtcUI.showCameraIndicator);
   updateWindowAttr("sharingaudio", webrtcUI.showMicrophoneIndicator);
   updateWindowAttr("sharingscreen", webrtcUI.showScreenSharingIndicator);
