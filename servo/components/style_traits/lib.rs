@@ -132,6 +132,14 @@ pub enum StyleParseError<'i> {
 pub enum ValueParseError<'i> {
     
     InvalidColor(Token<'i>),
+    
+    InvalidFilter(Token<'i>),
+}
+
+impl<'a> From<ValueParseError<'a>> for ParseError<'a> {
+    fn from(this: ValueParseError<'a>) -> Self {
+        StyleParseError::ValueError(this).into()
+    }
 }
 
 impl<'i> ValueParseError<'i> {
