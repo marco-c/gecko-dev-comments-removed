@@ -10388,6 +10388,13 @@ IonBuilder::jsop_getprop(PropertyName* name)
             return Ok();
 
         
+        
+        trackOptimizationAttempt(TrackedStrategy::GetProp_InlineProtoAccess);
+        MOZ_TRY(getPropTryInlineProtoAccess(&emitted, obj, name, types));
+        if (emitted)
+            return Ok();
+
+        
         trackOptimizationAttempt(TrackedStrategy::GetProp_ModuleNamespace);
         MOZ_TRY(getPropTryModuleNamespace(&emitted, obj, name, barrier, types));
         if (emitted)
@@ -11293,6 +11300,52 @@ IonBuilder::getPropTryInlineAccess(bool* emitted, MDefinition* obj, PropertyName
     MOZ_TRY(pushTypeBarrier(load, types, barrier));
 
     trackOptimizationOutcome(TrackedOutcome::Polymorphic);
+    *emitted = true;
+    return Ok();
+}
+
+AbortReasonOr<Ok>
+IonBuilder::getPropTryInlineProtoAccess(bool* emitted, MDefinition* obj, PropertyName* name,
+                                        TemporaryTypeSet* types)
+{
+    MOZ_ASSERT(*emitted == false);
+
+    BaselineInspector::ReceiverVector receivers(alloc());
+    BaselineInspector::ObjectGroupVector convertUnboxedGroups(alloc());
+    JSObject* holder = nullptr;
+    if (!inspector->maybeInfoForProtoReadSlot(pc, receivers, convertUnboxedGroups, &holder))
+        return abort(AbortReason::Alloc);
+
+    if (!canInlinePropertyOpShapes(receivers))
+        return Ok();
+
+    MOZ_ASSERT(holder);
+    holder = checkNurseryObject(holder);
+
+    BarrierKind barrier;
+    MOZ_TRY_VAR(barrier, PropertyReadOnPrototypeNeedsTypeBarrier(this, obj, name, types));
+
+    MIRType rvalType = types->getKnownMIRType();
+    if (barrier != BarrierKind::NoBarrier || IsNullOrUndefined(rvalType))
+        rvalType = MIRType::Value;
+
+    
+    obj = convertUnboxedObjects(obj, convertUnboxedGroups);
+    obj = addGuardReceiverPolymorphic(obj, receivers);
+    if (!obj)
+        return abort(AbortReason::Alloc);
+
+    
+    MInstruction* holderDef = constant(ObjectValue(*holder));
+    Shape* holderShape = holder->as<NativeObject>().shape();
+    holderDef = addShapeGuard(holderDef, holderShape, Bailout_ShapeGuard);
+
+    Shape* propShape = holderShape->searchLinear(NameToId(name));
+    MOZ_ASSERT(propShape);
+
+    MOZ_TRY(loadSlot(holderDef, propShape, rvalType, barrier, types));
+
+    trackOptimizationSuccess();
     *emitted = true;
     return Ok();
 }
