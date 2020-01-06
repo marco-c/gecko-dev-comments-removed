@@ -4097,10 +4097,8 @@ function FillHistoryMenu(aParent) {
       item.setAttribute("historyindex", j - index);
 
       if (j != index) {
-        
-        
-        item.style.listStyleImage =
-          "url(" + PlacesUtils.urlWithSizeRef(window, "page-icon:" + uri, 16) + ")";
+        item.setAttribute("image",
+                          PlacesUtils.urlWithSizeRef(window, "page-icon:" + uri, 16));
       }
 
       if (j < index) {
@@ -4499,7 +4497,7 @@ var XULBrowserWindow = {
     LinkTargetDisplay.update();
   },
 
-  showTooltip(x, y, tooltip, direction) {
+  showTooltip(x, y, tooltip, direction, browser) {
     if (Cc["@mozilla.org/widget/dragservice;1"].getService(Ci.nsIDragService).
         getCurrentSession()) {
       return;
@@ -4511,8 +4509,7 @@ var XULBrowserWindow = {
     elt.label = tooltip;
     elt.style.direction = direction;
 
-    let anchor = gBrowser.selectedBrowser;
-    elt.openPopupAtScreen(anchor.boxObject.screenX + x, anchor.boxObject.screenY + y, false, null);
+    elt.openPopupAtScreen(browser.boxObject.screenX + x, browser.boxObject.screenY + y, false, null);
   },
 
   hideTooltip() {
@@ -6577,7 +6574,7 @@ var IndexedDBPromptHelper = {
     }
 
     
-    var host = browser.currentURI.asciiHost || browser.currentURI.pathQueryRef;
+    var host = browser.currentURI.asciiHost || browser.currentURI.path;
 
     var message;
     var responseTopic;
@@ -7698,7 +7695,7 @@ var gIdentityHandler = {
     }
 
     let whitelist = /^(?:accounts|addons|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|searchreset|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
-    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.pathQueryRef);
+    this._isSecureInternalUI = uri.schemeIs("about") && whitelist.test(uri.path);
 
     this._isExtensionPage = uri.schemeIs("moz-extension");
 
@@ -7712,7 +7709,7 @@ var gIdentityHandler = {
       if (resolvedURI.schemeIs("jar")) {
         
         
-        resolvedURI = NetUtil.newURI(resolvedURI.pathQueryRef);
+        resolvedURI = NetUtil.newURI(resolvedURI.path);
       }
       
       this._isURILoadedFromFile = resolvedURI.schemeIs("file");
