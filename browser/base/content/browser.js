@@ -4933,9 +4933,6 @@ var CombinedStopReload = {
     this.stop = stop;
     this.stopReloadContainer = this.reload.parentNode;
     this.timeWhenSwitchedToStop = 0;
-
-    
-    this.animate = false;
   },
 
   uninit() {
@@ -5235,20 +5232,7 @@ nsBrowserAccess.prototype = {
     return browser;
   },
 
-  createContentWindow(aURI, aOpener, aWhere, aFlags) {
-    return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags);
-  },
-
   openURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
-    if (!aURI) {
-      Cu.reportError("openURI should only be called with a valid URI");
-      throw Cr.NS_ERROR_FAILURE;
-    }
-    return this.getContentWindowOrOpenURI(aURI, aOpener, aWhere, aFlags,
-                                          aTriggeringPrincipal);
-  },
-
-  getContentWindowOrOpenURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     
     
     if (aOpener && Cu.isCrossProcessWrapper(aOpener)) {
