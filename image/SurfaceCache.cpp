@@ -279,18 +279,7 @@ public:
 
     RefPtr<CachedSurface> surface;
     mSurfaces.Remove(aSurface->GetSurfaceKey(), getter_AddRefs(surface));
-
-    if (IsEmpty() && mFactor2Mode) {
-      
-      
-      
-      
-      
-      
-      
-      mFactor2Mode = mFactor2Pruned = false;
-    }
-
+    AfterMaybeRemove();
     return surface.forget();
   }
 
@@ -537,6 +526,11 @@ public:
     if (!hasNotFactorSize) {
       mFactor2Pruned = true;
     }
+
+    
+    
+    
+    AfterMaybeRemove();
   }
 
   IntSize SuggestedSize(const IntSize& aSize) const
@@ -548,7 +542,10 @@ public:
 
     
     
-    MOZ_ASSERT(!IsEmpty());
+    if (MOZ_UNLIKELY(IsEmpty())) {
+      MOZ_ASSERT_UNREACHABLE("Should not be empty and in factor of 2 mode!");
+      return aSize;
+    }
 
     
     auto iter = ConstIter();
@@ -644,6 +641,8 @@ public:
       }
       report.Add(surface, factor2Size);
     }
+
+    AfterMaybeRemove();
   }
 
   SurfaceTable::Iterator ConstIter() const
@@ -655,6 +654,20 @@ public:
   bool IsLocked() const { return mLocked; }
 
 private:
+  void AfterMaybeRemove()
+  {
+    if (IsEmpty() && mFactor2Mode) {
+      
+      
+      
+      
+      
+      
+      
+      mFactor2Mode = mFactor2Pruned = false;
+    }
+  }
+
   SurfaceTable      mSurfaces;
 
   bool              mLocked;
@@ -816,13 +829,7 @@ public:
     
     mCachedSurfacesDiscard.AppendElement(cache->Remove(aSurface));
 
-    
-    
-    
-    
-    if (cache->IsEmpty() && !cache->IsLocked()) {
-      mImageCaches.Remove(imageKey);
-    }
+    MaybeRemoveEmptyCache(imageKey, cache);
   }
 
   bool StartTracking(NotNull<CachedSurface*> aSurface,
@@ -1093,6 +1100,8 @@ public:
       
       mCachedSurfacesDiscard.AppendElement(aSurface);
     });
+
+    MaybeRemoveEmptyCache(aImageKey, cache);
   }
 
   void DiscardAll(const StaticMutexAutoLock& aAutoLock)
@@ -1199,6 +1208,8 @@ public:
       
       mCachedSurfacesDiscard.AppendElement(aSurface);
     });
+
+    MaybeRemoveEmptyCache(aImageKey, cache);
   }
 
 private:
@@ -1207,6 +1218,18 @@ private:
     RefPtr<ImageSurfaceCache> imageCache;
     mImageCaches.Get(aImageKey, getter_AddRefs(imageCache));
     return imageCache.forget();
+  }
+
+  void MaybeRemoveEmptyCache(const ImageKey aImageKey,
+                             ImageSurfaceCache* aCache)
+  {
+    
+    
+    
+    
+    if (aCache->IsEmpty() && !aCache->IsLocked()) {
+      mImageCaches.Remove(aImageKey);
+    }
   }
 
   
