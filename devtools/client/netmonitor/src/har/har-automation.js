@@ -7,7 +7,6 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const { Class } = require("sdk/core/heritage");
 const Services = require("Services");
 
 loader.lazyRequireGetter(this, "HarCollector", "devtools/client/netmonitor/har/har-collector", true);
@@ -36,7 +35,11 @@ const trace = {
 
 
 
-var HarAutomation = Class({
+function HarAutomation(toolbox) {
+  this.initialize(toolbox);
+}
+
+HarAutomation.prototype = {
   
 
   initialize: function (toolbox) {
@@ -201,7 +204,7 @@ var HarAutomation = Class({
   getString: function (stringGrip) {
     return this.webConsoleClient.getString(stringGrip);
   },
-});
+};
 
 
 
