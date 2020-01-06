@@ -121,10 +121,17 @@ FileBlockCache::Flush()
   LOG("Flush()");
   MutexAutoLock mon(mDataMutex);
   MOZ_ASSERT(mThread);
+
   
   
-  mChangeIndexList.clear();
-  mBlockChanges.Clear();
+  RefPtr<FileBlockCache> self = this;
+  mThread->Dispatch(NS_NewRunnableFunction("FileBlockCache::Flush", [self]() {
+    MutexAutoLock mon(self->mDataMutex);
+    
+    
+    self->mChangeIndexList.clear();
+    self->mBlockChanges.Clear();
+  }));
 }
 
 int32_t
@@ -355,7 +362,7 @@ nsresult FileBlockCache::MoveBlockInFile(int32_t aSourceBlockIndex,
 void
 FileBlockCache::PerformBlockIOs()
 {
-  NS_ASSERTION(!NS_IsMainThread(), "Don't call on main thread");
+  MOZ_ASSERT(mThread->IsOnCurrentThread());
   MutexAutoLock mon(mDataMutex);
   NS_ASSERTION(mIsWriteScheduled, "Should report write running or scheduled.");
 
