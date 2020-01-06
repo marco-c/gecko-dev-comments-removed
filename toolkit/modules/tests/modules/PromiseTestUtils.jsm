@@ -57,6 +57,13 @@ this.PromiseTestUtils = {
 
 
 
+  _globalRejectionIgnoreFns: [],
+
+  
+
+
+
+
 
   init() {
     if (this._initialized) {
@@ -152,11 +159,19 @@ this.PromiseTestUtils = {
 
     
     
+    
+    let stack = "(Unable to convert rejection stack to string.)";
+    try {
+      stack = "" + PromiseDebugging.getRejectionStack(promise);
+    } catch (ex) {}
+
+    
+    
     this._rejections.push({
       id: PromiseDebugging.getPromiseID(promise),
       message,
       date: new Date(),
-      stack: PromiseDebugging.getRejectionStack(promise),
+      stack,
     });
   },
 
@@ -202,6 +217,19 @@ this.PromiseTestUtils = {
 
 
 
+  whitelistRejectionsGlobally(regExp) {
+    this._globalRejectionIgnoreFns.push(
+      rejection => regExp.test(rejection.message));
+  },
+
+  
+
+
+
+
+
+
+
 
   assertNoUncaughtRejections() {
     
@@ -216,6 +244,11 @@ this.PromiseTestUtils = {
       let index = this._rejectionIgnoreFns.findIndex(f => f(rejection));
       if (index != -1) {
         this._rejectionIgnoreFns.splice(index, 1);
+        continue;
+      }
+
+      
+      if (this._globalRejectionIgnoreFns.some(fn => fn(rejection))) {
         continue;
       }
 
@@ -240,5 +273,7 @@ this.PromiseTestUtils = {
       Assert.equal(this._rejectionIgnoreFns.length, 0,
              "Unable to find a rejection expected by expectUncaughtRejection.");
     }
+    
+    this._rejectionIgnoreFns = [];
   },
 };
