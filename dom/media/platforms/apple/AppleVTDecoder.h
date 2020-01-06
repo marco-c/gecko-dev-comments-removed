@@ -92,7 +92,7 @@ private:
   const uint32_t mDisplayHeight;
 
   
-  nsresult InitializeSession();
+  MediaResult InitializeSession();
   nsresult WaitForAsynchronousFrames();
   CFDictionaryRef CreateDecoderSpecification();
   CFDictionaryRef CreateDecoderExtensions();
