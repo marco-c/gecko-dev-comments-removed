@@ -790,7 +790,9 @@ class ArtifactCache(object):
             
             
             hash = hashlib.sha256(url).hexdigest()[:16]
-            fname = hash + '-' + os.path.basename(url)
+            
+            basename = os.path.basename(urlparse.urlparse(url).path)
+            fname = hash + '-' + basename
 
         path = os.path.abspath(mozpath.join(self._cache_dir, fname))
         if self._skip_cache and os.path.exists(path):
