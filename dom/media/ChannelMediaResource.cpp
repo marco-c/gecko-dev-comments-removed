@@ -68,8 +68,9 @@ nsresult
 ChannelMediaResource::Listener::OnStartRequest(nsIRequest* aRequest,
                                                nsISupports* aContext)
 {
-  if (!mResource)
+  if (aRequest != mResource->mChannel) {
     return NS_OK;
+  }
   return mResource->OnStartRequest(aRequest, mOffset);
 }
 
@@ -78,8 +79,9 @@ ChannelMediaResource::Listener::OnStopRequest(nsIRequest* aRequest,
                                               nsISupports* aContext,
                                               nsresult aStatus)
 {
-  if (!mResource)
+  if (aRequest != mResource->mChannel) {
     return NS_OK;
+  }
   return mResource->OnStopRequest(aRequest, aStatus);
 }
 
@@ -91,7 +93,9 @@ ChannelMediaResource::Listener::OnDataAvailable(nsIRequest* aRequest,
                                                 uint32_t aCount)
 {
   
-  MOZ_DIAGNOSTIC_ASSERT(mResource);
+  
+  
+  
   return mResource->OnDataAvailable(mLoadID, aStream, aCount);
 }
 
@@ -103,7 +107,7 @@ ChannelMediaResource::Listener::AsyncOnChannelRedirect(
   nsIAsyncVerifyRedirectCallback* cb)
 {
   nsresult rv = NS_OK;
-  if (mResource) {
+  if (aOld == mResource->mChannel) {
     rv = mResource->OnChannelRedirect(aOld, aNew, aFlags, mOffset);
   }
 
@@ -415,8 +419,6 @@ ChannelMediaResource::OnDataAvailable(uint32_t aLoadID,
                                       uint32_t aCount)
 {
   
-  
-  
 
   RefPtr<ChannelMediaResource> self = this;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
@@ -587,7 +589,6 @@ void ChannelMediaResource::CloseChannel()
   }
 
   if (mListener) {
-    mListener->Revoke();
     mListener = nullptr;
   }
 }
