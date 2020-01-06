@@ -54,20 +54,6 @@ CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
 }
 
  void
-CompositorManagerChild::OnGPUProcessShutdown()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!sInstance) {
-    return;
-  }
-
-  
-  
-  
-  sInstance = nullptr;
-}
-
- void
 CompositorManagerChild::Shutdown()
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -201,9 +187,6 @@ void
 CompositorManagerChild::ActorDestroy(ActorDestroyReason aReason)
 {
   mCanSend = false;
-  if (sInstance == this) {
-    sInstance = nullptr;
-  }
 }
 
 PCompositorBridgeChild*
