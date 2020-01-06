@@ -94,17 +94,19 @@ ProfileAutoCompleteResult.prototype = {
 
   _getSecondaryLabel(focusedFieldName, allFieldNames, profile) {
     
-
-
-    const possibleNameFields = [
-      "name",
-      "given-name",
-      "additional-name",
-      "family-name",
-    ];
-
-    focusedFieldName = possibleNameFields.includes(focusedFieldName) ?
-                       "name" : focusedFieldName;
+    
+    const GROUP_FIELDS = {
+      "name": [
+        "name",
+        "given-name",
+        "additional-name",
+        "family-name",
+      ],
+      "country-name": [
+        "country",
+        "country-name",
+      ],
+    };
 
     const secondaryLabelOrder = [
       "street-address",  
@@ -112,24 +114,27 @@ ProfileAutoCompleteResult.prototype = {
       "address-level2",  
       "organization",    
       "address-level1",  
-      "country",         
+      "country-name",    
       "postal-code",     
       "tel",             
       "email",           
     ];
 
+    for (let field in GROUP_FIELDS) {
+      if (GROUP_FIELDS[field].includes(focusedFieldName)) {
+        focusedFieldName = field;
+        break;
+      }
+    }
+
     for (const currentFieldName of secondaryLabelOrder) {
-      if (focusedFieldName == currentFieldName ||
-          !profile[currentFieldName]) {
+      if (focusedFieldName == currentFieldName || !profile[currentFieldName]) {
         continue;
       }
 
-      let matching;
-      if (currentFieldName == "name") {
-        matching = allFieldNames.some(fieldName => possibleNameFields.includes(fieldName));
-      } else {
-        matching = allFieldNames.includes(currentFieldName);
-      }
+      let matching = GROUP_FIELDS[currentFieldName] ?
+        allFieldNames.some(fieldName => GROUP_FIELDS[currentFieldName].includes(fieldName)) :
+        allFieldNames.includes(currentFieldName);
 
       if (matching) {
         return profile[currentFieldName];

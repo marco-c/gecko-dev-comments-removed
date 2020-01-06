@@ -145,7 +145,7 @@ ManageProfileDialog.prototype = {
       "address-level2",  
       "organization",    
       "address-level1",  
-      "country",         
+      "country-name",    
       "postal-code",     
       "tel",             
       "email",           
