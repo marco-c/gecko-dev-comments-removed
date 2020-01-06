@@ -202,7 +202,17 @@ public:
   bool HasPctOverBSize();
   void SetHasPctOverBSize(bool aValue);
 
-  nsTableCellFrame* GetNextCell() const;
+  nsTableCellFrame* GetNextCell() const
+  {
+    nsIFrame* sibling = GetNextSibling();
+#ifdef DEBUG
+    if (sibling) {
+      nsTableCellFrame* cellFrame = do_QueryFrame(sibling);
+      MOZ_ASSERT(cellFrame, "How do we have a non-cell sibling?");
+    }
+#endif 
+    return static_cast<nsTableCellFrame*>(sibling);
+  }
 
   virtual LogicalMargin GetBorderWidth(WritingMode aWM) const;
 
@@ -338,5 +348,18 @@ private:
   BCPixelSize mBEndBorder;
   BCPixelSize mIStartBorder;
 };
+
+
+inline nsTableCellFrame* nsTableRowFrame::GetFirstCell() const
+{
+  nsIFrame* firstChild = mFrames.FirstChild();
+#ifdef DEBUG
+    if (firstChild) {
+      nsTableCellFrame* cellFrame = do_QueryFrame(firstChild);
+      MOZ_ASSERT(cellFrame, "How do we have a non-cell sibling?");
+    }
+#endif 
+  return static_cast<nsTableCellFrame*>(firstChild);
+}
 
 #endif

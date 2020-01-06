@@ -80,7 +80,9 @@ public:
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  nsTableCellFrame* GetFirstCell() ;
+  
+  
+  inline nsTableCellFrame* GetFirstCell() const;
 
   
 

@@ -329,18 +329,6 @@ GetBSizeOfRowsSpannedBelowFirst(nsTableCellFrame& aTableCellFrame,
   return bsize;
 }
 
-nsTableCellFrame*
-nsTableRowFrame::GetFirstCell()
-{
-  for (nsIFrame* childFrame : mFrames) {
-    nsTableCellFrame *cellFrame = do_QueryFrame(childFrame);
-    if (cellFrame) {
-      return cellFrame;
-    }
-  }
-  return nullptr;
-}
-
 
 
 
