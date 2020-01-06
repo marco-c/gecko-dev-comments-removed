@@ -238,7 +238,6 @@ impl<'ln> GeckoNode<'ln> {
     
     #[inline]
     fn is_in_anonymous_subtree(&self) -> bool {
-        use gecko_bindings::structs::NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE;
         use gecko_bindings::structs::NODE_IS_IN_SHADOW_TREE;
         self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) != 0 ||
         ((self.flags() & (NODE_IS_IN_SHADOW_TREE as u32) == 0) &&
@@ -1144,7 +1143,7 @@ impl<'le> TElement for GeckoElement<'le> {
         
         
         
-        self.flags() & (NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE as u32) != 0
+        self.is_native_anonymous()
     }
 
     unsafe fn set_selector_flags(&self, flags: ElementSelectorFlags) {
