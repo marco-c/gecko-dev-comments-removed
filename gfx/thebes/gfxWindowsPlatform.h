@@ -1,16 +1,16 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef GFX_WINDOWS_PLATFORM_H
 #define GFX_WINDOWS_PLATFORM_H
 
 
-
-
-
-
+/**
+ * XXX to get CAIRO_HAS_D2D_SURFACE, CAIRO_HAS_DWRITE_FONT
+ * and cairo_win32_scaled_font_select_font
+ */
 #include "cairo-win32.h"
 
 #include "gfxCrashReporterUtils.h"
@@ -34,10 +34,10 @@
 
 #include <dxgi.h>
 
-
+// This header is available in the June 2010 SDK and in the Win8 SDK
 #include <d3dcommon.h>
-
-#if !defined(D3D_FEATURE_LEVEL_11_1) 
+// Win 8.0 SDK types we'll need when building using older sdks.
+#if !defined(D3D_FEATURE_LEVEL_11_1) // defined in the 8.0 SDK only
 #define D3D_FEATURE_LEVEL_11_1 static_cast<D3D_FEATURE_LEVEL>(0xb100)
 #define D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION 2048
 #define D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION 4096
@@ -57,11 +57,11 @@ struct IDirect3DDevice9;
 struct ID3D11Device;
 struct IDXGIAdapter1;
 
-
-
-
-
-
+/**
+ * Utility to get a Windows HDC from a Moz2D DrawTarget.  If the DrawTarget is
+ * not backed by a HDC this will get the HDC for the screen device context
+ * instead.
+ */
 class MOZ_STACK_CLASS DCFromDrawTarget final
 {
 public:
@@ -84,13 +84,13 @@ private:
     bool mNeedsRelease;
 };
 
-
+// ClearType parameters set by running ClearType tuner
 struct ClearTypeParameterInfo {
     ClearTypeParameterInfo() :
         gamma(-1), pixelStructure(-1), clearTypeLevel(-1), enhancedContrast(-1)
     { }
 
-    nsString    displayName;  
+    nsString    displayName;  // typically just 'DISPLAY1'
     int32_t     gamma;
     int32_t     pixelStructure;
     int32_t     clearTypeLevel;
@@ -125,37 +125,37 @@ public:
       GetScaledFontForFont(mozilla::gfx::DrawTarget* aTarget, gfxFont *aFont) override;
 
     enum RenderMode {
-        
+        /* Use GDI and windows surfaces */
         RENDER_GDI = 0,
 
-        
+        /* Use 32bpp image surfaces and call StretchDIBits */
         RENDER_IMAGE_STRETCH32,
 
-        
+        /* Use 32bpp image surfaces, and do 32->24 conversion before calling StretchDIBits */
         RENDER_IMAGE_STRETCH24,
 
-        
+        /* Use Direct2D rendering */
         RENDER_DIRECT2D,
 
-        
+        /* max */
         RENDER_MODE_MAX
     };
 
     bool IsDirect2DBackend();
 
-    
-
-
-
+    /**
+     * Updates render mode with relation to the current preferences and
+     * available devices.
+     */
     void UpdateRenderMode();
 
-    
-
-
-
-
-
-
+    /**
+     * Verifies a D2D device is present and working, will attempt to create one
+     * it is non-functional or non-existant.
+     *
+     * \param aAttemptForce Attempt to force D2D cairo device creation by using
+     * cairo device creation routines.
+     */
     void VerifyD2DDevice(bool aAttemptForce);
 
     virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
@@ -171,21 +171,22 @@ public:
 
     virtual bool CanUseHardwareVideoDecoding() override;
 
-    
-
-
+    /**
+     * Check whether format is supported on a platform or not (if unclear, returns true)
+     */
     virtual bool IsFontFormatSupported(uint32_t aFormatFlags) override;
 
     virtual void CompositorUpdated() override;
 
     bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr) override;
     void SchedulePaintIfDeviceReset() override;
+    void CheckForContentOnlyDeviceReset();
 
     mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) override;
 
     static void GetDLLVersion(char16ptr_t aDLLPath, nsAString& aVersion);
 
-    
+    // returns ClearType tuning information for each display
     static void GetCleartypeParams(nsTArray<ClearTypeParameterInfo>& aParams);
 
     virtual void FontsPrefsChanged(const char *aPref) override;
@@ -209,8 +210,8 @@ public:
       return true;
     }
 
-    
-    
+    // Recreate devices as needed for a device reset. Returns true if a device
+    // reset occurred.
     bool HandleDeviceReset();
     void UpdateBackendPrefs();
 
@@ -267,4 +268,4 @@ private:
     nsTArray<D3D_FEATURE_LEVEL> mFeatureLevels;
 };
 
-#endif 
+#endif /* GFX_WINDOWS_PLATFORM_H */
