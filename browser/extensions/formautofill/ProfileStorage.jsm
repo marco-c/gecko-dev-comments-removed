@@ -1625,6 +1625,33 @@ class CreditCards extends AutofillRecords {
 
     delete creditCard["cc-exp"];
   }
+
+  
+
+
+
+
+
+
+  getDuplicateGuid(targetCreditCard) {
+    let clonedTargetCreditCard = this._clone(targetCreditCard);
+    this._normalizeRecord(clonedTargetCreditCard);
+    for (let creditCard of this.data) {
+      let isDuplicate = this.VALID_FIELDS.every(field => {
+        if (!clonedTargetCreditCard[field]) {
+          return !creditCard[field];
+        }
+        if (field == "cc-number") {
+          return this._getMaskedCCNumber(clonedTargetCreditCard[field]) == creditCard[field];
+        }
+        return clonedTargetCreditCard[field] == creditCard[field];
+      });
+      if (isDuplicate) {
+        return creditCard.guid;
+      }
+    }
+    return null;
+  }
 }
 
 function ProfileStorage(path) {
