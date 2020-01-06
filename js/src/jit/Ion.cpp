@@ -2522,14 +2522,6 @@ jit::CanEnter(JSContext* cx, RunState& state)
             ForbidCompilation(cx, script);
             return Method_CantCompile;
         }
-
-        if (!state.maybeCreateThisForConstructor(cx)) {
-            if (cx->isThrowingOutOfMemory()) {
-                cx->recoverFromOutOfMemory();
-                return Method_Skipped;
-            }
-            return Method_Error;
-        }
     }
 
     
@@ -2540,11 +2532,8 @@ jit::CanEnter(JSContext* cx, RunState& state)
             return status;
     }
 
-    
-    
-    
-    if (script->isIonCompilingOffThread() || !script->canIonCompile())
-        return Method_Skipped;
+    MOZ_ASSERT(!script->isIonCompilingOffThread());
+    MOZ_ASSERT(script->canIonCompile());
 
     
     MethodStatus status = Compile(cx, script, nullptr, nullptr);
