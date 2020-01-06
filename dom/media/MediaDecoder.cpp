@@ -824,10 +824,6 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
 
   
   
-  NotifySuspendedStatusChanged();
-
-  
-  
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     GetOwner()->FirstFrameLoaded();
   }
