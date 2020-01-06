@@ -42,9 +42,17 @@ function doPrompt(msg) {
 
 
 function AddCertChain(node, chain) {
+  if (!chain || chain.length < 1) {
+    return;
+  }
   let child = document.getElementById(node);
+  
+  let preexistingChildren = child.querySelectorAll("treechildren");
+  for (let preexistingChild of preexistingChildren) {
+    child.removeChild(preexistingChild);
+  }
   for (let i = chain.length - 1; i >= 0; i--) {
-    let currCert = chain.queryElementAt(i, nsIX509Cert);
+    let currCert = chain[i];
     let displayValue = currCert.displayName;
     let addTwistie = i != 0;
     child = addChildrenToTree(child, displayValue, currCert.dbKey, addTwistie);
@@ -79,7 +87,8 @@ function setWindowName() {
   
 
   
-  AddCertChain("treesetDump", cert.getChain());
+  
+  AddCertChain("treesetDump", [cert]);
   DisplayGeneralDataFromCert(cert);
   BuildPrettyPrint(cert);
 
@@ -142,12 +151,71 @@ function asyncDetermineUsages(cert) {
       let usage = certificateUsages[usageString];
       certdb.asyncVerifyCertAtTime(cert, usage, 0, null, now,
         (aPRErrorCode, aVerifiedChain, aHasEVPolicy) => {
-          resolve({ usageString, errorCode: aPRErrorCode });
+          resolve({ usageString,
+                    errorCode: aPRErrorCode,
+                    chain: aVerifiedChain });
         });
     }));
   });
   Promise.all(promises).then(displayUsages);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getChainForUsage(results, usage) {
+  for (let result of results) {
+    if (certificateUsages[result.usageString] == usage &&
+        result.errorCode == PRErrorCodeSuccess) {
+      let array = [];
+      let enumerator = result.chain.getEnumerator();
+      while (enumerator.hasMoreElements()) {
+        let cert = enumerator.getNext().QueryInterface(Ci.nsIX509Cert);
+        array.push(cert);
+      }
+      return array;
+    }
+  }
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getBestChain(results) {
+  let usages = [ certificateUsageSSLServer, certificateUsageSSLClient,
+                 certificateUsageEmailSigner, certificateUsageEmailRecipient,
+                 certificateUsageSSLCA ];
+  for (let usage of usages) {
+    let chain = getChainForUsage(results, usage);
+    if (chain) {
+      return chain;
+    }
+  }
+  return null;
+}
+
+
 
 
 
@@ -177,6 +245,7 @@ function displayUsages(results) {
       let usage = pipnssBundle.GetStringFromName(bundleName);
       AddUsage(usage);
     });
+    AddCertChain("treesetDump", getBestChain(results));
   } else {
     const errorRankings = [
       { error: SEC_ERROR_REVOKED_CERTIFICATE,
