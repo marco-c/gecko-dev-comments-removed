@@ -616,6 +616,7 @@ public:
     , mPrevSibling(nullptr)
     , mState(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)
     , mClass(aID)
+    , mMayHaveRoundedCorners(false)
   {
     mozilla::PodZero(&mOverflow);
   }
@@ -3920,6 +3921,9 @@ protected:
 
   
   ClassID mClass; 
+
+  bool mMayHaveRoundedCorners : 1;
+  
 
   
   
