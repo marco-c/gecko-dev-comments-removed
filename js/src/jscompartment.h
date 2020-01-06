@@ -943,6 +943,7 @@ struct JSCompartment
     bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
 
     void sweepAfterMinorGC(JSTracer* trc);
+    void sweepMapAndSetIteratorsAfterMinorGC();
 
     void sweepCrossCompartmentWrappers();
     void sweepSavedStacks();
@@ -1219,6 +1220,15 @@ struct JSCompartment
     
     
     js::coverage::LCovCompartment lcovOutput;
+
+    bool addMapOrSetWithNurseryIterator(JS::HandleObject obj);
+
+  private:
+    
+
+
+
+    js::Vector<JSObject*, 0, js::SystemAllocPolicy> mapsAndSetsWithNurseryIterators;
 };
 
 namespace js {

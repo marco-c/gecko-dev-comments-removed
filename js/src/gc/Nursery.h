@@ -187,6 +187,13 @@ class Nursery
     void* allocateBuffer(JSObject* obj, size_t nbytes);
 
     
+
+
+
+
+    void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
+
+    
     void* reallocateBuffer(JSObject* obj, void* oldBuffer,
                            size_t oldBytes, size_t newBytes);
 
