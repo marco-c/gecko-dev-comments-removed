@@ -76,7 +76,6 @@ var CompactTheme = {
 
 
 
-if (AppConstants.INSTALL_COMPACT_THEMES &&
-    this != Services.appShell.hiddenDOMWindow && CompactTheme.isThemeCurrentlyApplied) {
+if (this != Services.appShell.hiddenDOMWindow && CompactTheme.isThemeCurrentlyApplied) {
   CompactTheme.createStyleSheet();
 }
