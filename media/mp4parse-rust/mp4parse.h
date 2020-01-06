@@ -1,160 +1,193 @@
 
-#ifndef cheddar_generated_mp4parse_h
-#define cheddar_generated_mp4parse_h
+
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef MP4PARSE_CAPI_H
+#define MP4PARSE_CAPI_H
+
+
+
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
+typedef enum {
+  MP4PARSE_CODEC_UNKNOWN = 0,
+  MP4PARSE_CODEC_AAC = 1,
+  MP4PARSE_CODEC_FLAC = 2,
+  MP4PARSE_CODEC_OPUS = 3,
+  MP4PARSE_CODEC_AVC = 4,
+  MP4PARSE_CODEC_VP9 = 5,
+  MP4PARSE_CODEC_MP3 = 6,
+  MP4PARSE_CODEC_MP4V = 7,
+  MP4PARSE_CODEC_JPEG = 8,
+  MP4PARSE_CODEC_AC3 = 9,
+  MP4PARSE_CODEC_EC3 = 10,
+} Mp4parseCodec;
+
+typedef enum {
+  MP4PARSE_STATUS_OK = 0,
+  MP4PARSE_STATUS_BAD_ARG = 1,
+  MP4PARSE_STATUS_INVALID = 2,
+  MP4PARSE_STATUS_UNSUPPORTED = 3,
+  MP4PARSE_STATUS_EOF = 4,
+  MP4PARSE_STATUS_IO = 5,
+  MP4PARSE_STATUS_OOM = 6,
+} Mp4parseStatus;
+
+typedef enum {
+  MP4PARSE_TRACK_TYPE_VIDEO = 0,
+  MP4PARSE_TRACK_TYPE_AUDIO = 1,
+} Mp4parseTrackType;
+
+struct Mp4parseParser;
+typedef struct Mp4parseParser Mp4parseParser;
+
+typedef struct {
+  uint64_t fragment_duration;
+} Mp4parseFragmentInfo;
+
+typedef struct {
+  uint64_t start_offset;
+  uint64_t end_offset;
+  int64_t start_composition;
+  int64_t end_composition;
+  int64_t start_decode;
+  bool sync;
+} Mp4parseIndice;
+
+typedef struct {
+  uint32_t length;
+  const uint8_t *data;
+  const Mp4parseIndice *indices;
+} Mp4parseByteData;
+
+typedef struct {
+  Mp4parseByteData data;
+} Mp4parsePsshInfo;
+
+typedef struct {
+  uint32_t is_encrypted;
+  uint8_t iv_size;
+  Mp4parseByteData kid;
+} Mp4parseSinfInfo;
+
+typedef struct {
+  uint16_t channels;
+  uint16_t bit_depth;
+  uint32_t sample_rate;
+  uint16_t profile;
+  Mp4parseByteData codec_specific_config;
+  Mp4parseByteData extra_data;
+  Mp4parseSinfInfo protected_data;
+} Mp4parseTrackAudioInfo;
+
+typedef struct {
+  Mp4parseTrackType track_type;
+  Mp4parseCodec codec;
+  uint32_t track_id;
+  uint64_t duration;
+  int64_t media_time;
+} Mp4parseTrackInfo;
+
+typedef struct {
+  uint32_t display_width;
+  uint32_t display_height;
+  uint16_t image_width;
+  uint16_t image_height;
+  uint16_t rotation;
+  Mp4parseByteData extra_data;
+  Mp4parseSinfInfo protected_data;
+} Mp4parseTrackVideoInfo;
+
+typedef struct {
+  intptr_t (*read)(uint8_t*, size_t, void*);
+  void *userdata;
+} Mp4parseIo;
 
 
 
 
 
 
-typedef enum mp4parse_status {
-	mp4parse_status_OK = 0,
-	mp4parse_status_BAD_ARG = 1,
-	mp4parse_status_INVALID = 2,
-	mp4parse_status_UNSUPPORTED = 3,
-	mp4parse_status_EOF = 4,
-	mp4parse_status_IO = 5,
-	mp4parse_status_OOM = 6,
-} mp4parse_status;
-
-typedef enum mp4parse_track_type {
-	mp4parse_track_type_VIDEO = 0,
-	mp4parse_track_type_AUDIO = 1,
-} mp4parse_track_type;
-
-typedef enum mp4parse_codec {
-	mp4parse_codec_UNKNOWN,
-	mp4parse_codec_AAC,
-	mp4parse_codec_FLAC,
-	mp4parse_codec_OPUS,
-	mp4parse_codec_AVC,
-	mp4parse_codec_VP9,
-	mp4parse_codec_MP3,
-	mp4parse_codec_MP4V,
-	mp4parse_codec_JPEG,
-	mp4parse_codec_AC3,
-	mp4parse_codec_EC3,
-} mp4parse_codec;
-
-typedef struct mp4parse_track_info {
-	mp4parse_track_type track_type;
-	mp4parse_codec codec;
-	uint32_t track_id;
-	uint64_t duration;
-	int64_t media_time;
-} mp4parse_track_info;
-
-typedef struct mp4parse_indice {
-	uint64_t start_offset;
-	uint64_t end_offset;
-	int64_t start_composition;
-	int64_t end_composition;
-	int64_t start_decode;
-	bool sync;
-} mp4parse_indice;
-
-typedef struct mp4parse_byte_data {
-	uint32_t length;
-	uint8_t const* data;
-	mp4parse_indice const* indices;
-} mp4parse_byte_data;
-
-typedef struct mp4parse_pssh_info {
-	mp4parse_byte_data data;
-} mp4parse_pssh_info;
-
-typedef struct mp4parse_sinf_info {
-	uint32_t is_encrypted;
-	uint8_t iv_size;
-	mp4parse_byte_data kid;
-} mp4parse_sinf_info;
-
-typedef struct mp4parse_track_audio_info {
-	uint16_t channels;
-	uint16_t bit_depth;
-	uint32_t sample_rate;
-	uint16_t profile;
-	mp4parse_byte_data codec_specific_config;
-	mp4parse_byte_data extra_data;
-	mp4parse_sinf_info protected_data;
-} mp4parse_track_audio_info;
-
-typedef struct mp4parse_track_video_info {
-	uint32_t display_width;
-	uint32_t display_height;
-	uint16_t image_width;
-	uint16_t image_height;
-	uint16_t rotation;
-	mp4parse_byte_data extra_data;
-	mp4parse_sinf_info protected_data;
-} mp4parse_track_video_info;
-
-typedef struct mp4parse_fragment_info {
-	uint64_t fragment_duration;
-} mp4parse_fragment_info;
-
-typedef struct mp4parse_parser mp4parse_parser;
-
-typedef struct mp4parse_io {
-	intptr_t (*read)(uint8_t* buffer, uintptr_t size, void* userdata);
-	void* userdata;
-} mp4parse_io;
+void mp4parse_free(Mp4parseParser *parser);
 
 
-mp4parse_parser* mp4parse_new(mp4parse_io const* io);
 
 
-void mp4parse_free(mp4parse_parser* parser);
+Mp4parseStatus mp4parse_get_fragment_info(Mp4parseParser *parser, Mp4parseFragmentInfo *info);
+
+Mp4parseStatus mp4parse_get_indice_table(Mp4parseParser *parser,
+                                         uint32_t track_id,
+                                         Mp4parseByteData *indices);
+
+
+
+
+
+
+
+
+
+
+Mp4parseStatus mp4parse_get_pssh_info(Mp4parseParser *parser, Mp4parsePsshInfo *info);
+
+
+
+
+Mp4parseStatus mp4parse_get_track_audio_info(Mp4parseParser *parser,
+                                             uint32_t track_index,
+                                             Mp4parseTrackAudioInfo *info);
+
+
+
+
+Mp4parseStatus mp4parse_get_track_count(const Mp4parseParser *parser, uint32_t *count);
+
+
+
+
+Mp4parseStatus mp4parse_get_track_info(Mp4parseParser *parser,
+                                       uint32_t track_index,
+                                       Mp4parseTrackInfo *info);
+
+
+
+
+Mp4parseStatus mp4parse_get_track_video_info(Mp4parseParser *parser,
+                                             uint32_t track_index,
+                                             Mp4parseTrackVideoInfo *info);
+
+
+
+
+Mp4parseStatus mp4parse_is_fragmented(Mp4parseParser *parser,
+                                      uint32_t track_id,
+                                      uint8_t *fragmented);
+
+
 
 
 void mp4parse_log(bool enable);
 
 
-mp4parse_status mp4parse_read(mp4parse_parser* parser);
 
 
-mp4parse_status mp4parse_get_track_count(mp4parse_parser const* parser, uint32_t* count);
-
-
-mp4parse_status mp4parse_get_track_info(mp4parse_parser* parser, uint32_t track_index, mp4parse_track_info* info);
-
-
-mp4parse_status mp4parse_get_track_audio_info(mp4parse_parser* parser, uint32_t track_index, mp4parse_track_audio_info* info);
-
-
-mp4parse_status mp4parse_get_track_video_info(mp4parse_parser* parser, uint32_t track_index, mp4parse_track_video_info* info);
-
-mp4parse_status mp4parse_get_indice_table(mp4parse_parser* parser, uint32_t track_id, mp4parse_byte_data* indices);
-
-
-mp4parse_status mp4parse_get_fragment_info(mp4parse_parser* parser, mp4parse_fragment_info* info);
-
-
-mp4parse_status mp4parse_is_fragmented(mp4parse_parser* parser, uint32_t track_id, uint8_t* fragmented);
+Mp4parseParser *mp4parse_new(const Mp4parseIo *io);
 
 
 
 
+Mp4parseStatus mp4parse_read(Mp4parseParser *parser);
 
 
 
-
-mp4parse_status mp4parse_get_pssh_info(mp4parse_parser* parser, mp4parse_pssh_info* info);
-
-
+#endif 
 
 #ifdef __cplusplus
-}
-#endif
-
-
+} 
 #endif
