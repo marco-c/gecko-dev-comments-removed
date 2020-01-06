@@ -94,187 +94,237 @@
 
 
 
+#[cfg(feature = "std")]
+use std::error;
+#[cfg(not(feature = "std"))]
+use error;
+
+#[cfg(all(not(feature = "std"), feature = "collections"))]
+use collections::{String, Vec};
+
+use core::fmt::{self, Display};
+use core::marker::PhantomData;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use lib::*;
-
-
-
+#[doc(hidden)]
+pub mod impls;
 pub mod value;
-
 mod from_primitive;
-mod ignored_any;
-mod impls;
-mod utf8;
-
-pub use self::ignored_any::IgnoredAny;
 
 
+#[doc(hidden)]
+pub mod private;
+#[cfg(any(feature = "std", feature = "collections"))]
+mod content;
 
-macro_rules! declare_error_trait {
-    (Error: Sized $(+ $($supertrait:ident)::+)*) => {
-        /// The `Error` trait allows `Deserialize` implementations to create descriptive
-        /// error messages belonging to the `Deserializer` against which they are
-        /// currently running.
-        ///
-        /// Every `Deserializer` declares an `Error` type that encompasses both
-        /// general-purpose deserialization errors as well as errors specific to the
-        /// particular deserialization format. For example the `Error` type of
-        /// `serde_json` can represent errors like an invalid JSON escape sequence or an
-        /// unterminated string literal, in addition to the error cases that are part of
-        /// this trait.
-        ///
-        /// Most deserializers should only need to provide the `Error::custom` method
-        /// and inherit the default behavior for the other methods.
-        pub trait Error: Sized $(+ $($supertrait)::+)* {
-            /// Raised when there is general error when deserializing a type.
-            ///
-            /// The message should not be capitalized and should not end with a period.
-            ///
-            /// ```rust
-            /// # use std::str::FromStr;
-            /// #
-            /// # struct IpAddr;
-            /// #
-            /// # impl FromStr for IpAddr {
-            /// #     type Err = String;
-            /// #
-            /// #     fn from_str(_: &str) -> Result<Self, String> {
-            /// #         unimplemented!()
-            /// #     }
-            /// # }
-            /// #
-            /// use serde::de::{self, Deserialize, Deserializer};
-            ///
-            /// impl<'de> Deserialize<'de> for IpAddr {
-            ///     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            ///         where D: Deserializer<'de>
-            ///     {
-            ///         let s = try!(String::deserialize(deserializer));
-            ///         s.parse().map_err(de::Error::custom)
-            ///     }
-            /// }
-            /// ```
-            fn custom<T>(msg: T) -> Self
-            where
-                T: Display;
 
-            /// Raised when a `Deserialize` receives a type different from what it was
-            /// expecting.
-            ///
-            /// The `unexp` argument provides information about what type was received.
-            /// This is the type that was present in the input file or other source data
-            /// of the Deserializer.
-            ///
-            /// The `exp` argument provides information about what type was being
-            /// expected. This is the type that is written in the program.
-            ///
-            /// For example if we try to deserialize a String out of a JSON file
-            /// containing an integer, the unexpected type is the integer and the
-            /// expected type is the string.
-            fn invalid_type(unexp: Unexpected, exp: &Expected) -> Self {
-                Error::custom(format_args!("invalid type: {}, expected {}", unexp, exp))
-            }
 
-            /// Raised when a `Deserialize` receives a value of the right type but that
-            /// is wrong for some other reason.
-            ///
-            /// The `unexp` argument provides information about what value was received.
-            /// This is the value that was present in the input file or other source
-            /// data of the Deserializer.
-            ///
-            /// The `exp` argument provides information about what value was being
-            /// expected. This is the type that is written in the program.
-            ///
-            /// For example if we try to deserialize a String out of some binary data
-            /// that is not valid UTF-8, the unexpected value is the bytes and the
-            /// expected value is a string.
-            fn invalid_value(unexp: Unexpected, exp: &Expected) -> Self {
-                Error::custom(format_args!("invalid value: {}, expected {}", unexp, exp))
-            }
 
-            /// Raised when deserializing a sequence or map and the input data contains
-            /// too many or too few elements.
-            ///
-            /// The `len` argument is the number of elements encountered. The sequence
-            /// or map may have expected more arguments or fewer arguments.
-            ///
-            /// The `exp` argument provides information about what data was being
-            /// expected. For example `exp` might say that a tuple of size 6 was
-            /// expected.
-            fn invalid_length(len: usize, exp: &Expected) -> Self {
-                Error::custom(format_args!("invalid length {}, expected {}", len, exp))
-            }
 
-            /// Raised when a `Deserialize` enum type received a variant with an
-            /// unrecognized name.
-            fn unknown_variant(variant: &str, expected: &'static [&'static str]) -> Self {
-                if expected.is_empty() {
-                    Error::custom(format_args!("unknown variant `{}`, there are no variants",
-                                               variant))
-                } else {
-                    Error::custom(format_args!("unknown variant `{}`, expected {}",
-                                               variant,
-                                               OneOf { names: expected }))
-                }
-            }
 
-            /// Raised when a `Deserialize` struct type received a field with an
-            /// unrecognized name.
-            fn unknown_field(field: &str, expected: &'static [&'static str]) -> Self {
-                if expected.is_empty() {
-                    Error::custom(format_args!("unknown field `{}`, there are no fields",
-                                               field))
-                } else {
-                    Error::custom(format_args!("unknown field `{}`, expected {}",
-                                               field,
-                                               OneOf { names: expected }))
-                }
-            }
 
-            /// Raised when a `Deserialize` struct type expected to receive a required
-            /// field with a particular name but that field was not present in the
-            /// input.
-            fn missing_field(field: &'static str) -> Self {
-                Error::custom(format_args!("missing field `{}`", field))
-            }
 
-            /// Raised when a `Deserialize` struct type received more than one of the
-            /// same field.
-            fn duplicate_field(field: &'static str) -> Self {
-                Error::custom(format_args!("duplicate field `{}`", field))
+
+
+
+
+
+
+
+
+pub trait Error: Sized + error::Error {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn custom<T: Display>(msg: T) -> Self;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalid_type(unexp: Unexpected, exp: &Expected) -> Self {
+        struct InvalidType<'a> {
+            unexp: Unexpected<'a>,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidType<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid type: {}, expected {}", self.unexp, self.exp)
             }
         }
+        Error::custom(InvalidType {
+            unexp: unexp,
+            exp: exp,
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalid_value(unexp: Unexpected, exp: &Expected) -> Self {
+        struct InvalidValue<'a> {
+            unexp: Unexpected<'a>,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidValue<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid value: {}, expected {}", self.unexp, self.exp)
+            }
+        }
+        Error::custom(InvalidValue {
+            unexp: unexp,
+            exp: exp,
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalid_length(len: usize, exp: &Expected) -> Self {
+        struct InvalidLength<'a> {
+            len: usize,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidLength<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid length {}, expected {}", self.len, self.exp)
+            }
+        }
+        Error::custom(InvalidLength {
+            len: len,
+            exp: exp,
+        })
+    }
+
+    
+    
+    fn unknown_variant(variant: &str, expected: &'static [&'static str]) -> Self {
+        struct UnknownVariant<'a> {
+            variant: &'a str,
+            expected: &'static [&'static str],
+        }
+        impl<'a> Display for UnknownVariant<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                if self.expected.is_empty() {
+                    write!(formatter,
+                           "unknown variant `{}`, there are no variants",
+                           self.variant)
+                } else {
+                    write!(formatter,
+                           "unknown variant `{}`, expected {}",
+                           self.variant,
+                           OneOf { names: self.expected })
+                }
+            }
+        }
+        Error::custom(UnknownVariant {
+            variant: variant,
+            expected: expected,
+        })
+    }
+
+    
+    
+    fn unknown_field(field: &str, expected: &'static [&'static str]) -> Self {
+        struct UnknownField<'a> {
+            field: &'a str,
+            expected: &'static [&'static str],
+        }
+        impl<'a> Display for UnknownField<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                if self.expected.is_empty() {
+                    write!(formatter,
+                           "unknown field `{}`, there are no fields",
+                           self.field)
+                } else {
+                    write!(formatter,
+                           "unknown field `{}`, expected {}",
+                           self.field,
+                           OneOf { names: self.expected })
+                }
+            }
+        }
+        Error::custom(UnknownField {
+            field: field,
+            expected: expected,
+        })
+    }
+
+    
+    
+    
+    fn missing_field(field: &'static str) -> Self {
+        struct MissingField {
+            field: &'static str,
+        }
+        impl Display for MissingField {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "missing field `{}`", self.field)
+            }
+        }
+        Error::custom(MissingField { field: field })
+    }
+
+    
+    
+    fn duplicate_field(field: &'static str) -> Self {
+        struct DuplicateField {
+            field: &'static str,
+        }
+        impl Display for DuplicateField {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "duplicate field `{}`", self.field)
+            }
+        }
+        Error::custom(DuplicateField { field: field })
     }
 }
 
-#[cfg(feature = "std")]
-declare_error_trait!(Error: Sized + error::Error);
-
-#[cfg(not(feature = "std"))]
-declare_error_trait!(Error: Sized + Debug + Display);
 
 
 
@@ -298,12 +348,7 @@ declare_error_trait!(Error: Sized + Debug + Display);
 
 
 
-
-
-
-
-
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Unexpected<'a> {
     
     Bool(bool),
@@ -434,21 +479,14 @@ impl<'a> fmt::Display for Unexpected<'a> {
 
 
 
-
-
-
-
-
-
 pub trait Expected {
     
     
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result;
 }
 
-impl<'de, T> Expected for T
-where
-    T: Visitor<'de>,
+impl<T> Expected for T
+    where T: Visitor
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         self.expecting(formatter)
@@ -493,44 +531,14 @@ impl<'a> Display for Expected + 'a {
 
 
 
-pub trait Deserialize<'de>: Sized {
+pub trait Deserialize: Sized {
     
     
     
     
     
     
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
-impl<T> DeserializeOwned for T
-where
-    T: for<'de> Deserialize<'de>,
-{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer;
 }
 
 
@@ -672,31 +680,23 @@ where
 
 
 
-
-
-
-
-pub trait DeserializeSeed<'de>: Sized {
+pub trait DeserializeSeed: Sized {
     
     type Value;
 
     
     
-    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>;
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error> where D: Deserializer;
 }
 
-impl<'de, T> DeserializeSeed<'de> for PhantomData<T>
-where
-    T: Deserialize<'de>,
+impl<T> DeserializeSeed for PhantomData<T>
+    where T: Deserialize
 {
     type Value = T;
 
     #[inline]
     fn deserialize<D>(self, deserializer: D) -> Result<T, D::Error>
-    where
-        D: Deserializer<'de>,
+        where D: Deserializer
     {
         T::deserialize(deserializer)
     }
@@ -785,14 +785,7 @@ where
 
 
 
-
-
-
-
-
-
-
-pub trait Deserializer<'de>: Sized {
+pub trait Deserializer: Sized {
     
     
     type Error: Error;
@@ -806,69 +799,43 @@ pub trait Deserializer<'de>: Sized {
     
     
     
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
@@ -877,9 +844,7 @@ pub trait Deserializer<'de>: Sized {
     
     
     
-    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
@@ -888,9 +853,7 @@ pub trait Deserializer<'de>: Sized {
     
     
     
-    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
@@ -899,9 +862,7 @@ pub trait Deserializer<'de>: Sized {
     
     
     
-    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
@@ -910,106 +871,91 @@ pub trait Deserializer<'de>: Sized {
     
     
     
-    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
     
     
     
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
-    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
-    fn deserialize_unit_struct<V>(
-        self,
-        name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_unit_struct<V>(self,
+                                  name: &'static str,
+                                  visitor: V)
+                                  -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
-    fn deserialize_newtype_struct<V>(
-        self,
-        name: &'static str,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_newtype_struct<V>(self,
+                                     name: &'static str,
+                                     visitor: V)
+                                     -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
+
+    
+    
+    fn deserialize_seq_fixed_size<V>(self,
+                                     len: usize,
+                                     visitor: V)
+                                     -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
     fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+        where V: Visitor;
 
     
     
-    fn deserialize_tuple_struct<V>(
-        self,
-        name: &'static str,
-        len: usize,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_tuple_struct<V>(self,
+                                   name: &'static str,
+                                   len: usize,
+                                   visitor: V)
+                                   -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error> where V: Visitor;
 
     
     
-    fn deserialize_struct<V>(
-        self,
-        name: &'static str,
-        fields: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_struct<V>(self,
+                             name: &'static str,
+                             fields: &'static [&'static str],
+                             visitor: V)
+                             -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
-    fn deserialize_enum<V>(
-        self,
-        name: &'static str,
-        variants: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_struct_field<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn deserialize_enum<V>(self,
+                           name: &'static str,
+                           variants: &'static [&'static str],
+                           visitor: V)
+                           -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
     
     
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+        where V: Visitor;
 }
 
 
@@ -1044,8 +990,7 @@ pub trait Deserializer<'de>: Sized {
 
 
 
-
-pub trait Visitor<'de>: Sized {
+pub trait Visitor: Sized {
     
     type Value;
 
@@ -1067,151 +1012,93 @@ pub trait Visitor<'de>: Sized {
     
     
     
-    
-    
-    
-    
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result;
 
     
-    
-    
     fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         Err(Error::invalid_type(Unexpected::Bool(v), &self))
     }
 
     
-    
-    
-    
-    
     fn visit_i8<E>(self, v: i8) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_i64(v as i64)
     }
 
-    
-    
-    
-    
     
     fn visit_i16<E>(self, v: i16) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_i64(v as i64)
     }
 
-    
-    
-    
-    
     
     fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_i64(v as i64)
     }
 
     
-    
-    
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         Err(Error::invalid_type(Unexpected::Signed(v), &self))
     }
 
     
-    
-    
-    
-    
     fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_u64(v as u64)
     }
 
-    
-    
-    
-    
     
     fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_u64(v as u64)
     }
 
-    
-    
-    
-    
     
     fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_u64(v as u64)
     }
 
     
-    
-    
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         Err(Error::invalid_type(Unexpected::Unsigned(v), &self))
     }
 
     
-    
-    
-    
-    
     fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_f64(v as f64)
     }
 
     
-    
-    
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         Err(Error::invalid_type(Unexpected::Float(v), &self))
     }
 
     
-    
-    
-    
-    
-    
     #[inline]
     fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
-        self.visit_str(utf8::encode(v).as_str())
+        self.visit_str(::utils::encode_utf8(v).as_str())
     }
 
-    
     
     
     
@@ -1223,30 +1110,11 @@ pub trait Visitor<'de>: Sized {
     
     
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         Err(Error::invalid_type(Unexpected::Str(v), &self))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
-    where
-        E: Error,
-    {
-        self.visit_str(v)
-    }
-
-    
     
     
     
@@ -1264,13 +1132,65 @@ pub trait Visitor<'de>: Sized {
     #[inline]
     #[cfg(any(feature = "std", feature = "collections"))]
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_str(&v)
     }
 
     
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
+        where E: Error
+    {
+        Err(Error::invalid_type(Unexpected::Unit, &self))
+    }
+
+    
+    fn visit_none<E>(self) -> Result<Self::Value, E>
+        where E: Error
+    {
+        Err(Error::invalid_type(Unexpected::Option, &self))
+    }
+
+    
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+        where D: Deserializer
+    {
+        let _ = deserializer;
+        Err(Error::invalid_type(Unexpected::Option, &self))
+    }
+
+    
+    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+        where D: Deserializer
+    {
+        let _ = deserializer;
+        Err(Error::invalid_type(Unexpected::NewtypeStruct, &self))
+    }
+
+    
+    fn visit_seq<V>(self, visitor: V) -> Result<Self::Value, V::Error>
+        where V: SeqVisitor
+    {
+        let _ = visitor;
+        Err(Error::invalid_type(Unexpected::Seq, &self))
+    }
+
+    
+    fn visit_map<V>(self, visitor: V) -> Result<Self::Value, V::Error>
+        where V: MapVisitor
+    {
+        let _ = visitor;
+        Err(Error::invalid_type(Unexpected::Map, &self))
+    }
+
+    
+    fn visit_enum<V>(self, visitor: V) -> Result<Self::Value, V::Error>
+        where V: EnumVisitor
+    {
+        let _ = visitor;
+        Err(Error::invalid_type(Unexpected::Enum, &self))
+    }
+
     
     
     
@@ -1282,30 +1202,12 @@ pub trait Visitor<'de>: Sized {
     
     
     fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         let _ = v;
         Err(Error::invalid_type(Unexpected::Bytes(v), &self))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
-    where
-        E: Error,
-    {
-        self.visit_bytes(v)
-    }
-
-    
     
     
     
@@ -1323,88 +1225,9 @@ pub trait Visitor<'de>: Sized {
     
     #[cfg(any(feature = "std", feature = "collections"))]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
-    where
-        E: Error,
+        where E: Error
     {
         self.visit_bytes(&v)
-    }
-
-    
-    
-    
-    fn visit_none<E>(self) -> Result<Self::Value, E>
-    where
-        E: Error,
-    {
-        Err(Error::invalid_type(Unexpected::Option, &self))
-    }
-
-    
-    
-    
-    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let _ = deserializer;
-        Err(Error::invalid_type(Unexpected::Option, &self))
-    }
-
-    
-    
-    
-    fn visit_unit<E>(self) -> Result<Self::Value, E>
-    where
-        E: Error,
-    {
-        Err(Error::invalid_type(Unexpected::Unit, &self))
-    }
-
-    
-    
-    
-    
-    
-    
-    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let _ = deserializer;
-        Err(Error::invalid_type(Unexpected::NewtypeStruct, &self))
-    }
-
-    
-    
-    
-    fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let _ = seq;
-        Err(Error::invalid_type(Unexpected::Seq, &self))
-    }
-
-    
-    
-    
-    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let _ = map;
-        Err(Error::invalid_type(Unexpected::Map, &self))
-    }
-
-    
-    
-    
-    fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
-    where
-        A: EnumAccess<'de>,
-    {
-        let _ = data;
-        Err(Error::invalid_type(Unexpected::Enum, &self))
     }
 }
 
@@ -1414,7 +1237,7 @@ pub trait Visitor<'de>: Sized {
 
 
 
-pub trait SeqAccess<'de> {
+pub trait SeqVisitor {
     
     
     type Error: Error;
@@ -1424,9 +1247,8 @@ pub trait SeqAccess<'de> {
     
     
     
-    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-    where
-        T: DeserializeSeed<'de>;
+    fn visit_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+        where T: DeserializeSeed;
 
     
     
@@ -1434,44 +1256,40 @@ pub trait SeqAccess<'de> {
     
     
     #[inline]
-    fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
-    where
-        T: Deserialize<'de>,
+    fn visit<T>(&mut self) -> Result<Option<T>, Self::Error>
+        where T: Deserialize
     {
-        self.next_element_seed(PhantomData)
+        self.visit_seed(PhantomData)
     }
 
     
     #[inline]
-    fn size_hint(&self) -> Option<usize> {
-        None
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
     }
 }
 
-impl<'de, 'a, A> SeqAccess<'de> for &'a mut A
-where
-    A: SeqAccess<'de>,
+impl<'a, V> SeqVisitor for &'a mut V
+    where V: SeqVisitor
 {
-    type Error = A::Error;
+    type Error = V::Error;
 
     #[inline]
-    fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-    where
-        T: DeserializeSeed<'de>,
+    fn visit_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, V::Error>
+        where T: DeserializeSeed
     {
-        (**self).next_element_seed(seed)
+        (**self).visit_seed(seed)
     }
 
     #[inline]
-    fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
-    where
-        T: Deserialize<'de>,
+    fn visit<T>(&mut self) -> Result<Option<T>, V::Error>
+        where T: Deserialize
     {
-        (**self).next_element()
+        (**self).visit()
     }
 
     #[inline]
-    fn size_hint(&self) -> Option<usize> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
         (**self).size_hint()
     }
 }
@@ -1481,7 +1299,7 @@ where
 
 
 
-pub trait MapAccess<'de> {
+pub trait MapVisitor {
     
     
     type Error: Error;
@@ -1491,22 +1309,15 @@ pub trait MapAccess<'de> {
     
     
     
-    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-    where
-        K: DeserializeSeed<'de>;
+    fn visit_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+        where K: DeserializeSeed;
 
     
     
     
     
-    
-    
-    
-    
-    
-    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-    where
-        V: DeserializeSeed<'de>;
+    fn visit_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+        where V: DeserializeSeed;
 
     
     
@@ -1517,18 +1328,16 @@ pub trait MapAccess<'de> {
     
     
     #[inline]
-    fn next_entry_seed<K, V>(
-        &mut self,
-        kseed: K,
-        vseed: V,
-    ) -> Result<Option<(K::Value, V::Value)>, Self::Error>
-    where
-        K: DeserializeSeed<'de>,
-        V: DeserializeSeed<'de>,
+    fn visit_seed<K, V>(&mut self,
+                        kseed: K,
+                        vseed: V)
+                        -> Result<Option<(K::Value, V::Value)>, Self::Error>
+        where K: DeserializeSeed,
+              V: DeserializeSeed
     {
-        match try!(self.next_key_seed(kseed)) {
+        match try!(self.visit_key_seed(kseed)) {
             Some(key) => {
-                let value = try!(self.next_value_seed(vseed));
+                let value = try!(self.visit_value_seed(vseed));
                 Ok(Some((key, value)))
             }
             None => Ok(None),
@@ -1541,28 +1350,21 @@ pub trait MapAccess<'de> {
     
     
     #[inline]
-    fn next_key<K>(&mut self) -> Result<Option<K>, Self::Error>
-    where
-        K: Deserialize<'de>,
+    fn visit_key<K>(&mut self) -> Result<Option<K>, Self::Error>
+        where K: Deserialize
     {
-        self.next_key_seed(PhantomData)
+        self.visit_key_seed(PhantomData)
     }
 
     
     
     
     
-    
-    
-    
-    
-    
     #[inline]
-    fn next_value<V>(&mut self) -> Result<V, Self::Error>
-    where
-        V: Deserialize<'de>,
+    fn visit_value<V>(&mut self) -> Result<V, Self::Error>
+        where V: Deserialize
     {
-        self.next_value_seed(PhantomData)
+        self.visit_value_seed(PhantomData)
     }
 
     
@@ -1571,83 +1373,74 @@ pub trait MapAccess<'de> {
     
     
     #[inline]
-    fn next_entry<K, V>(&mut self) -> Result<Option<(K, V)>, Self::Error>
-    where
-        K: Deserialize<'de>,
-        V: Deserialize<'de>,
+    fn visit<K, V>(&mut self) -> Result<Option<(K, V)>, Self::Error>
+        where K: Deserialize,
+              V: Deserialize
     {
-        self.next_entry_seed(PhantomData, PhantomData)
+        self.visit_seed(PhantomData, PhantomData)
     }
 
     
     #[inline]
-    fn size_hint(&self) -> Option<usize> {
-        None
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
     }
 }
 
-impl<'de, 'a, A> MapAccess<'de> for &'a mut A
-where
-    A: MapAccess<'de>,
+impl<'a, V_> MapVisitor for &'a mut V_
+    where V_: MapVisitor
 {
-    type Error = A::Error;
+    type Error = V_::Error;
 
     #[inline]
-    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-    where
-        K: DeserializeSeed<'de>,
+    fn visit_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+        where K: DeserializeSeed
     {
-        (**self).next_key_seed(seed)
+        (**self).visit_key_seed(seed)
     }
 
     #[inline]
-    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-    where
-        V: DeserializeSeed<'de>,
+    fn visit_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+        where V: DeserializeSeed
     {
-        (**self).next_value_seed(seed)
+        (**self).visit_value_seed(seed)
     }
 
     #[inline]
-    fn next_entry_seed<K, V>(
-        &mut self,
-        kseed: K,
-        vseed: V,
-    ) -> Result<Option<(K::Value, V::Value)>, Self::Error>
-    where
-        K: DeserializeSeed<'de>,
-        V: DeserializeSeed<'de>,
+    fn visit_seed<K, V>(&mut self,
+                        kseed: K,
+                        vseed: V)
+                        -> Result<Option<(K::Value, V::Value)>, Self::Error>
+        where K: DeserializeSeed,
+              V: DeserializeSeed
     {
-        (**self).next_entry_seed(kseed, vseed)
+        (**self).visit_seed(kseed, vseed)
     }
 
     #[inline]
-    fn next_entry<K, V>(&mut self) -> Result<Option<(K, V)>, Self::Error>
-    where
-        K: Deserialize<'de>,
-        V: Deserialize<'de>,
+    fn visit<K, V>(&mut self) -> Result<Option<(K, V)>, V_::Error>
+        where K: Deserialize,
+              V: Deserialize
     {
-        (**self).next_entry()
+        (**self).visit()
     }
 
     #[inline]
-    fn next_key<K>(&mut self) -> Result<Option<K>, Self::Error>
-    where
-        K: Deserialize<'de>,
+    fn visit_key<K>(&mut self) -> Result<Option<K>, V_::Error>
+        where K: Deserialize
     {
-        (**self).next_key()
+        (**self).visit_key()
     }
 
     #[inline]
-    fn next_value<V>(&mut self) -> Result<V, Self::Error>
-    where
-        V: Deserialize<'de>,
+    fn visit_value<V>(&mut self) -> Result<V, V_::Error>
+        where V: Deserialize
     {
-        (**self).next_value()
+        (**self).visit_value()
     }
 
     #[inline]
-    fn size_hint(&self) -> Option<usize> {
+    fn size_hint(&self) -> (usize, Option<usize>) {
         (**self).size_hint()
     }
 }
@@ -1657,40 +1450,37 @@ where
 
 
 
-
-pub trait EnumAccess<'de>: Sized {
+pub trait EnumVisitor: Sized {
     
     
     type Error: Error;
     
     
-    type Variant: VariantAccess<'de, Error = Self::Error>;
+    type Variant: VariantVisitor<Error = Self::Error>;
 
     
     
     
     
-    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
-    where
-        V: DeserializeSeed<'de>;
+    fn visit_variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+        where V: DeserializeSeed;
 
     
     
     
     
     #[inline]
-    fn variant<V>(self) -> Result<(V, Self::Variant), Self::Error>
-    where
-        V: Deserialize<'de>,
+    fn visit_variant<V>(self) -> Result<(V, Self::Variant), Self::Error>
+        where V: Deserialize
     {
-        self.variant_seed(PhantomData)
+        self.visit_variant_seed(PhantomData)
     }
 }
 
 
 
 
-pub trait VariantAccess<'de>: Sized {
+pub trait VariantVisitor: Sized {
     
     
     type Error: Error;
@@ -1707,27 +1497,7 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn unit_variant(self) -> Result<(), Self::Error>;
+    fn visit_unit(self) -> Result<(), Self::Error>;
 
     
     
@@ -1746,29 +1516,8 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
-    where
-        T: DeserializeSeed<'de>;
+    fn visit_newtype_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+        where T: DeserializeSeed;
 
     
     
@@ -1776,11 +1525,10 @@ pub trait VariantAccess<'de>: Sized {
     
     
     #[inline]
-    fn newtype_variant<T>(self) -> Result<T, Self::Error>
-    where
-        T: Deserialize<'de>,
+    fn visit_newtype<T>(self) -> Result<T, Self::Error>
+        where T: Deserialize
     {
-        self.newtype_variant_seed(PhantomData)
+        self.visit_newtype_seed(PhantomData)
     }
 
     
@@ -1801,29 +1549,8 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
+    fn visit_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
 
     
     
@@ -1843,71 +1570,11 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn struct_variant<V>(
-        self,
-        fields: &'static [&'static str],
-        visitor: V,
-    ) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait IntoDeserializer<'de, E: Error = value::Error> {
-    
-    type Deserializer: Deserializer<'de, Error = E>;
-
-    
-    fn into_deserializer(self) -> Self::Deserializer;
+    fn visit_struct<V>(self,
+                       fields: &'static [&'static str],
+                       visitor: V)
+                       -> Result<V::Value, Self::Error>
+        where V: Visitor;
 }
 
 

@@ -1,242 +1,222 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[cfg(feature = "std")]
+#[doc(hidden)]
 #[macro_export]
-macro_rules! forward_to_deserialize_any {
-    (<$visitor:ident: Visitor<$lifetime:tt>> $($func:ident)*) => {
-        $(forward_to_deserialize_any_helper!{$func<$lifetime, $visitor>})*
-    };
-    
-    ($($func:ident)*) => {
-        $(forward_to_deserialize_any_helper!{$func<'de, V>})*
+macro_rules! forward_to_deserialize_method {
+    ($func:ident($($arg:ty),*)) => {
+        #[inline]
+        fn $func<__V>(self, $(_: $arg,)* visitor: __V) -> ::std::result::Result<__V::Value, Self::Error>
+            where __V: $crate::de::Visitor
+        {
+            self.deserialize(visitor)
+        }
     };
 }
 
+#[cfg(not(feature = "std"))]
 #[doc(hidden)]
 #[macro_export]
-macro_rules! forward_to_deserialize_any_method {
-    ($func:ident<$l:tt, $v:ident>($($arg:ident : $ty:ty),*)) => {
+macro_rules! forward_to_deserialize_method {
+    ($func:ident($($arg:ty),*)) => {
         #[inline]
-        fn $func<$v>(self, $($arg: $ty,)* visitor: $v) -> $crate::export::Result<$v::Value, Self::Error>
-        where
-            $v: $crate::de::Visitor<$l>,
+        fn $func<__V>(self, $(_: $arg,)* visitor: __V) -> ::core::result::Result<__V::Value, Self::Error>
+            where __V: $crate::de::Visitor
         {
-            $(
-                let _ = $arg;
-            )*
-            self.deserialize_any(visitor)
+            self.deserialize(visitor)
         }
     };
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! forward_to_deserialize_any_helper {
-    (bool<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_bool<$l, $v>()}
+macro_rules! forward_to_deserialize_helper {
+    (bool) => {
+        forward_to_deserialize_method!{deserialize_bool()}
     };
-    (i8<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_i8<$l, $v>()}
+    (u8) => {
+        forward_to_deserialize_method!{deserialize_u8()}
     };
-    (i16<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_i16<$l, $v>()}
+    (u16) => {
+        forward_to_deserialize_method!{deserialize_u16()}
     };
-    (i32<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_i32<$l, $v>()}
+    (u32) => {
+        forward_to_deserialize_method!{deserialize_u32()}
     };
-    (i64<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_i64<$l, $v>()}
+    (u64) => {
+        forward_to_deserialize_method!{deserialize_u64()}
     };
-    (u8<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_u8<$l, $v>()}
+    (i8) => {
+        forward_to_deserialize_method!{deserialize_i8()}
     };
-    (u16<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_u16<$l, $v>()}
+    (i16) => {
+        forward_to_deserialize_method!{deserialize_i16()}
     };
-    (u32<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_u32<$l, $v>()}
+    (i32) => {
+        forward_to_deserialize_method!{deserialize_i32()}
     };
-    (u64<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_u64<$l, $v>()}
+    (i64) => {
+        forward_to_deserialize_method!{deserialize_i64()}
     };
-    (f32<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_f32<$l, $v>()}
+    (f32) => {
+        forward_to_deserialize_method!{deserialize_f32()}
     };
-    (f64<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_f64<$l, $v>()}
+    (f64) => {
+        forward_to_deserialize_method!{deserialize_f64()}
     };
-    (char<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_char<$l, $v>()}
+    (char) => {
+        forward_to_deserialize_method!{deserialize_char()}
     };
-    (str<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_str<$l, $v>()}
+    (str) => {
+        forward_to_deserialize_method!{deserialize_str()}
     };
-    (string<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_string<$l, $v>()}
+    (string) => {
+        forward_to_deserialize_method!{deserialize_string()}
     };
-    (bytes<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_bytes<$l, $v>()}
+    (unit) => {
+        forward_to_deserialize_method!{deserialize_unit()}
     };
-    (byte_buf<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_byte_buf<$l, $v>()}
+    (option) => {
+        forward_to_deserialize_method!{deserialize_option()}
     };
-    (option<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_option<$l, $v>()}
+    (seq) => {
+        forward_to_deserialize_method!{deserialize_seq()}
     };
-    (unit<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_unit<$l, $v>()}
+    (seq_fixed_size) => {
+        forward_to_deserialize_method!{deserialize_seq_fixed_size(usize)}
     };
-    (unit_struct<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_unit_struct<$l, $v>(name: &'static str)}
+    (bytes) => {
+        forward_to_deserialize_method!{deserialize_bytes()}
     };
-    (newtype_struct<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_newtype_struct<$l, $v>(name: &'static str)}
+    (byte_buf) => {
+        forward_to_deserialize_method!{deserialize_byte_buf()}
     };
-    (seq<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_seq<$l, $v>()}
+    (map) => {
+        forward_to_deserialize_method!{deserialize_map()}
     };
-    (tuple<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_tuple<$l, $v>(len: usize)}
+    (unit_struct) => {
+        forward_to_deserialize_method!{deserialize_unit_struct(&'static str)}
     };
-    (tuple_struct<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_tuple_struct<$l, $v>(name: &'static str, len: usize)}
+    (newtype_struct) => {
+        forward_to_deserialize_method!{deserialize_newtype_struct(&'static str)}
     };
-    (map<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_map<$l, $v>()}
+    (tuple_struct) => {
+        forward_to_deserialize_method!{deserialize_tuple_struct(&'static str, usize)}
     };
-    (struct<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_struct<$l, $v>(name: &'static str, fields: &'static [&'static str])}
+    (struct) => {
+        forward_to_deserialize_method!{deserialize_struct(&'static str, &'static [&'static str])}
     };
-    (enum<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_enum<$l, $v>(name: &'static str, variants: &'static [&'static str])}
+    (struct_field) => {
+        forward_to_deserialize_method!{deserialize_struct_field()}
     };
-    (identifier<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_identifier<$l, $v>()}
+    (tuple) => {
+        forward_to_deserialize_method!{deserialize_tuple(usize)}
     };
-    (ignored_any<$l:tt, $v:ident>) => {
-        forward_to_deserialize_any_method!{deserialize_ignored_any<$l, $v>()}
+    (enum) => {
+        forward_to_deserialize_method!{deserialize_enum(&'static str, &'static [&'static str])}
     };
+    (ignored_any) => {
+        forward_to_deserialize_method!{deserialize_ignored_any()}
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! forward_to_deserialize {
+    ($($func:ident)*) => {
+        $(forward_to_deserialize_helper!{$func})*
+    };
+}
+
+
+
+
+
+
+#[cfg(feature = "std")]
+
+macro_rules! serialize_display_bounded_length {
+    ($value: expr, $MAX_LEN: expr, $serializer: expr) => {
+        {
+            use std::io::Write;
+            let mut buffer: [u8; $MAX_LEN] = unsafe { ::std::mem::uninitialized() };
+            let remaining_len;
+            {
+                let mut remaining = &mut buffer[..];
+                write!(remaining, "{}", $value).unwrap();
+                remaining_len = remaining.len()
+            }
+            let written_len = buffer.len() - remaining_len;
+            let written = &buffer[..written_len];
+
+            // write! only provides std::fmt::Formatter to Display implementations,
+            // which has methods write_str and write_char but no method to write arbitrary bytes.
+            // Therefore, `written` is well-formed in UTF-8.
+            let written_str = unsafe {
+                ::std::str::from_utf8_unchecked(written)
+            };
+            $serializer.serialize_str(written_str)
+        }
+    }
 }
