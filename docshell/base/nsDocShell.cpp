@@ -13503,24 +13503,9 @@ nsDocShell::EnsureScriptEnvironment()
   uint32_t chromeFlags;
   browserChrome->GetChromeFlags(&chromeFlags);
 
-  bool isModalContentWindow =
-    (mItemType == typeContent) &&
-    (chromeFlags & nsIWebBrowserChrome::CHROME_MODAL_CONTENT_WINDOW);
   
   
-  
-  if (isModalContentWindow) {
-    nsCOMPtr<nsIDocShellTreeItem> primaryItem;
-    nsresult rv =
-      mTreeOwner->GetPrimaryContentShell(getter_AddRefs(primaryItem));
-    NS_ENSURE_SUCCESS(rv, rv);
-    isModalContentWindow = (primaryItem == this);
-  }
-
-  
-  
-  mScriptGlobal =
-    NS_NewScriptGlobalObject(mItemType == typeChrome, isModalContentWindow);
+  mScriptGlobal = NS_NewScriptGlobalObject(mItemType == typeChrome);
   MOZ_ASSERT(mScriptGlobal);
 
   mScriptGlobal->SetDocShell(this);
