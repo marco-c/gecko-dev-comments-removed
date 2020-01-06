@@ -16,6 +16,14 @@ add_task(async function test_activeStatus_init() {
   do_check_eq(Services.ppmm.initialProcessData.autofillEnabled, undefined);
 
   await formAutofillParent.init();
+  
+  
+  do_check_eq(formAutofillParent._updateStatus.called, false);
+  do_check_eq(Services.ppmm.initialProcessData.autofillEnabled, undefined);
+
+  
+  await formAutofillParent.profileStorage.initialize();
+  
   do_check_eq(formAutofillParent._updateStatus.called, true);
   do_check_eq(Services.ppmm.initialProcessData.autofillEnabled, false);
 
