@@ -190,8 +190,13 @@ HUD_SERVICE.prototype =
 
       if (!DebuggerServer.initialized) {
         DebuggerServer.init();
-        DebuggerServer.addBrowserActors();
       }
+
+      
+      
+      
+      DebuggerServer.registerActors({ root: true, browser: false, tab: true });
+
       DebuggerServer.allowChromeProcess = true;
 
       let client = new DebuggerClient(DebuggerServer.connectPipe());
