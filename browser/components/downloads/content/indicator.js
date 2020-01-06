@@ -27,6 +27,8 @@
 
 "use strict";
 
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
+
 
 
 
@@ -341,8 +343,12 @@ const DownloadsIndicatorView = {
     
     
     
+    
     let notifier = this.notifier;
-    if (notifier.style.transform == "") {
+
+    if (aType == "start" || !AppConstants.MOZ_PHOTON_ANIMATIONS) {
+      
+      
       let anchorRect = anchor.getBoundingClientRect();
       let notifierRect = notifier.getBoundingClientRect();
       let topDiff = anchorRect.top - notifierRect.top;
@@ -352,15 +358,23 @@ const DownloadsIndicatorView = {
       let translateX = (leftDiff + .5 * widthDiff) + "px";
       let translateY = (topDiff + .5 * heightDiff) + "px";
       notifier.style.transform = "translate(" + translateX + ", " + translateY + ")";
+      notifier.setAttribute("notification", aType);
     }
-    notifier.setAttribute("notification", aType);
     anchor.setAttribute("notification", aType);
+
+    let animationDuration;
+    
+    if (AppConstants.MOZ_PHOTON_ANIMATIONS) {
+      animationDuration = aType == "start" ? 760 : 570;
+    } else {
+      animationDuration = 2000;
+    }
+
     this._notificationTimeout = setTimeout(() => {
       anchor.removeAttribute("notification");
       notifier.removeAttribute("notification");
       notifier.style.transform = "";
-      
-    }, 2000);
+    }, animationDuration);
   },
 
   
