@@ -52,6 +52,7 @@ FormHistoryStartup.prototype = {
 
     
     Services.obs.addObserver(this, "profile-before-change", true);
+    Services.obs.addObserver(this, "idle-daily", true);
     Services.obs.addObserver(this, "formhistory-expire-now", true);
 
     Services.ppmm.loadProcessScript("chrome://satchel/content/formSubmitListener.js", true);
