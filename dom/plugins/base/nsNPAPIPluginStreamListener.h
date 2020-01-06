@@ -40,25 +40,6 @@ protected:
   nsNPAPIPluginStreamListener*          mStreamListener; 
 };
 
-
-
-
-class nsPluginStreamToFile : public nsIOutputStream
-{
-public:
-  nsPluginStreamToFile(const char* target, nsIPluginInstanceOwner* owner);
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOUTPUTSTREAM
-protected:
-  virtual ~nsPluginStreamToFile();
-  char* mTarget;
-  nsCString mFileURL;
-  nsCOMPtr<nsIFile> mTempFile;
-  nsCOMPtr<nsIOutputStream> mOutputStream;
-  nsIPluginInstanceOwner* mOwner;
-};
-
 class nsNPAPIPluginStreamListener : public nsITimerCallback,
                                     public nsIHTTPHeaderListener
 {
