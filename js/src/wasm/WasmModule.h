@@ -113,6 +113,21 @@ class LinkData
 
 
 
+struct Tiering
+{
+    typedef Vector<RefPtr<JS::WasmModuleListener>, 0, SystemAllocPolicy> ListenerVector;
+
+    Tiering() : active(false) {}
+    ~Tiering() { MOZ_ASSERT(listeners.empty()); MOZ_ASSERT(!active); }
+
+    ListenerVector listeners;
+    bool active;
+};
+
+
+
+
+
 
 
 
@@ -133,6 +148,7 @@ class Module : public JS::WasmModule
     const DataSegmentVector dataSegments_;
     const ElemSegmentVector elemSegments_;
     const SharedBytes       bytecode_;
+    ExclusiveData<Tiering>  tiering_;
 
     
     
@@ -140,20 +156,6 @@ class Module : public JS::WasmModule
     
 
     mutable Atomic<bool>    codeIsBusy_;
-
-    
-    
-    
-    
-
-    mutable Mutex                 tier2Lock_;
-    mutable ConditionVariable     tier2Cond_;
-
-    
-    
-    
-
-    mutable CompileMode           mode_;
 
     bool instantiateFunctions(JSContext* cx, Handle<FunctionVector> funcImports) const;
     bool instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) const;
@@ -167,6 +169,7 @@ class Module : public JS::WasmModule
                       const ValVector& globalImports) const;
 
     class Tier2GeneratorTaskImpl;
+    void notifyCompilationListeners();
 
   public:
     Module(Assumptions&& assumptions,
@@ -187,9 +190,8 @@ class Module : public JS::WasmModule
         dataSegments_(Move(dataSegments)),
         elemSegments_(Move(elemSegments)),
         bytecode_(&bytecode),
-        codeIsBusy_(false),
-        tier2Lock_(js::mutexid::WasmTier2GeneratorComplete),
-        mode_(CompileMode::Once)
+        tiering_(mutexid::WasmModuleTieringLock),
+        codeIsBusy_(false)
     {
         MOZ_ASSERT_IF(metadata().debugEnabled, unlinkedCodeForDebugging_);
     }
