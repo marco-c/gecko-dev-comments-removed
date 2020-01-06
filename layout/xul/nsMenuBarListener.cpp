@@ -61,6 +61,9 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
   mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keyup"), this, false);
   mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("mozaccesskeynotfound"),
                                        this, false);
+  
+  
+  mEventTarget->AddEventListener(NS_LITERAL_STRING("keydown"), this, true);
 
   
   mEventTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), this, true);
@@ -97,6 +100,8 @@ nsMenuBarListener::OnDestroyMenuBarFrame()
                                           this, false);
   mEventTarget->RemoveSystemEventListener(
                   NS_LITERAL_STRING("mozaccesskeynotfound"), this, false);
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("keydown"),
+                                    this, true);
 
   mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), this, true);
   mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"),
@@ -277,56 +282,17 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
     }
 
     nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
-    uint32_t keyCode, charCode;
+    uint32_t keyCode;
     keyEvent->GetKeyCode(&keyCode);
-    keyEvent->GetCharCode(&charCode);
-
-    bool hasAccessKeyCandidates = charCode != 0;
-    if (!hasAccessKeyCandidates) {
-      if (nativeKeyEvent) {
-        AutoTArray<uint32_t, 10> keys;
-        nativeKeyEvent->GetAccessKeyCandidates(keys);
-        hasAccessKeyCandidates = !keys.IsEmpty();
-      }
-    }
 
     
     if (keyCode != (uint32_t)mAccessKey) {
       mAccessKeyDownCanceled = true;
     }
 
-    if (IsAccessKeyPressed(keyEvent) && hasAccessKeyCandidates) {
-      
-      
-      
-      nsMenuFrame* result = mMenuBarFrame->FindMenuWithShortcut(keyEvent);
-      if (result) {
-        
-        
-        
-        
-        
-        
-        if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
-          nativeKeyEvent->StopImmediatePropagation();
-          nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
-          return NS_OK;
-        }
-        mMenuBarFrame->SetActiveByKeyboard();
-        mMenuBarFrame->SetActive(true);
-        result->OpenMenu(true);
-
-        
-        
-        mAccessKeyDown = mAccessKeyDownCanceled = false;
-
-        aKeyEvent->StopPropagation();
-        aKeyEvent->PreventDefault();
-      }
-    }
 #ifndef XP_MACOSX
     
-    else if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
+    if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
       if ((GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
         
         
@@ -353,8 +319,38 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
           aKeyEvent->PreventDefault();
         }
       }
+
+      return NS_OK;
     }
 #endif 
+
+    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent);
+    if (!menuFrameForKey) {
+      return NS_OK;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
+      nativeKeyEvent->StopImmediatePropagation();
+      nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
+      return NS_OK;
+    }
+
+    mMenuBarFrame->SetActiveByKeyboard();
+    mMenuBarFrame->SetActive(true);
+    menuFrameForKey->OpenMenu(true);
+
+    
+    
+    mAccessKeyDown = mAccessKeyDownCanceled = false;
+
+    aKeyEvent->StopPropagation();
+    aKeyEvent->PreventDefault();
   }
 
   return NS_OK;
@@ -385,6 +381,45 @@ nsMenuBarListener::GetModifiersForAccessKey(nsIDOMKeyEvent* aKeyEvent)
   return (inputEvent->mModifiers & kPossibleModifiersForAccessKey);
 }
 
+nsMenuFrame*
+nsMenuBarListener::GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent)
+{
+  if (!IsAccessKeyPressed(aKeyEvent)) {
+    return nullptr;
+  }
+
+  uint32_t charCode;
+  aKeyEvent->GetCharCode(&charCode);
+  bool hasAccessKeyCandidates = charCode != 0;
+  if (!hasAccessKeyCandidates) {
+    WidgetKeyboardEvent* nativeKeyEvent =
+      aKeyEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
+
+    AutoTArray<uint32_t, 10> keys;
+    nativeKeyEvent->GetAccessKeyCandidates(keys);
+    hasAccessKeyCandidates = !keys.IsEmpty();
+  }
+
+  if (hasAccessKeyCandidates) {
+    
+    
+    
+    return mMenuBarFrame->FindMenuWithShortcut(aKeyEvent);
+  }
+
+  return nullptr;
+}
+
+void
+nsMenuBarListener::ReserveKeyIfNeeded(nsIDOMEvent* aKeyEvent)
+{
+  WidgetKeyboardEvent* nativeKeyEvent =
+    aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+  if (nsContentUtils::ShouldBlockReservedKeys(nativeKeyEvent)) {
+    nativeKeyEvent->MarkAsReservedByChrome();
+  }
+}
+
 
 nsresult
 nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
@@ -397,17 +432,33 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
     aKeyEvent->GetIsTrusted(&trustedEvent);
   }
 
-  if (!trustedEvent)
+  if (!trustedEvent) {
     return NS_OK;
+  }
+
+  nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
+  if (!keyEvent) {
+    return NS_OK;
+  }
+
+  uint32_t theChar;
+  keyEvent->GetKeyCode(&theChar);
+
+  uint16_t eventPhase;
+  aKeyEvent->GetEventPhase(&eventPhase);
+  bool capturing = (eventPhase == nsIDOMEvent::CAPTURING_PHASE);
+
+#ifndef XP_MACOSX
+  if (capturing && !mAccessKeyDown && theChar == NS_VK_F10 &&
+      (GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
+    ReserveKeyIfNeeded(aKeyEvent);
+  }
+#endif
 
   if (mAccessKey && mAccessKeyFocuses)
   {
     bool defaultPrevented = false;
     aKeyEvent->GetDefaultPrevented(&defaultPrevented);
-
-    nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
-    uint32_t theChar;
-    keyEvent->GetKeyCode(&theChar);
 
     
     
@@ -416,7 +467,7 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
       ((theChar == (uint32_t)mAccessKey) &&
        (GetModifiersForAccessKey(keyEvent) & ~mAccessKeyMask) == 0);
 
-    if (!mAccessKeyDown) {
+    if (!capturing && !mAccessKeyDown) {
       
       
       if (!isAccessKeyDownEvent) {
@@ -439,6 +490,13 @@ nsMenuBarListener::KeyDown(nsIDOMEvent* aKeyEvent)
     
     
     mAccessKeyDownCanceled = !isAccessKeyDownEvent;
+  }
+
+  if (capturing && mAccessKey) {
+    nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent);
+    if (menuFrameForKey) {
+      ReserveKeyIfNeeded(aKeyEvent);
+    }
   }
 
   return NS_OK; 

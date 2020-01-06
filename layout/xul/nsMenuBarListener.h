@@ -15,6 +15,7 @@
 #undef KeyPress
 #endif
 
+class nsMenuFrame;
 class nsMenuBarFrame;
 class nsIDOMKeyEvent;
 
@@ -73,6 +74,18 @@ protected:
   static void InitAccessKey();
 
   static mozilla::Modifiers GetModifiersForAccessKey(nsIDOMKeyEvent* event);
+
+  
+
+
+
+  nsMenuFrame* GetMenuForKeyEvent(nsIDOMKeyEvent* aKeyEvent);
+
+  
+
+
+
+  void ReserveKeyIfNeeded(nsIDOMEvent* aKeyEvent);
 
   
   
