@@ -736,9 +736,7 @@ protected:
   Canonical<PlayState> mPlayState;
 
   
-  
-  
-  Canonical<PlayState> mNextState;
+  PlayState mNextState = PLAY_STATE_PAUSED;
 
   
   Canonical<bool> mLogicallySeeking;
@@ -788,7 +786,6 @@ public:
     return &mExplicitDuration;
   }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
-  AbstractCanonical<PlayState>* CanonicalNextPlayState() { return &mNextState; }
   AbstractCanonical<bool>* CanonicalLogicallySeeking()
   {
     return &mLogicallySeeking;
