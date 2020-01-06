@@ -442,8 +442,12 @@ public:
 
   
   bool IsPresContextChanged(nsPresContext* aPresContext) const {
-    return aPresContext != mPresContextInitXBLStyleSet;
+    return aPresContext != mLastPresContextUsesXBLStyleSet;
   }
+
+  
+  
+  bool SetPresContext(nsPresContext* aPresContext);
 
   
 
@@ -589,7 +593,7 @@ private:
   
   
   
-  void* MOZ_NON_OWNING_REF mPresContextInitXBLStyleSet = nullptr;
+  void* MOZ_NON_OWNING_REF mLastPresContextUsesXBLStyleSet = nullptr;
 
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
