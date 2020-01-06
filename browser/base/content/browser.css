@@ -547,6 +547,19 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 
 
+html|input.urlbar-input:-moz-locale-dir(rtl) {
+  direction: ltr !important;
+  text-align: right !important;
+}
+
+
+
+
+html|input.urlbar-input[dir=ltr]:-moz-locale-dir(rtl) {
+  text-align: left !important;
+}
+
+
 
 
 
