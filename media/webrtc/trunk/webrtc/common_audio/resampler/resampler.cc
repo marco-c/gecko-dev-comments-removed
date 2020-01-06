@@ -23,7 +23,7 @@
 
 
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_GONK)
+#if defined(WEBRTC_ANDROID)
 #define RESAMPLER_QUALITY 2
 #else
 #define RESAMPLER_QUALITY 3
