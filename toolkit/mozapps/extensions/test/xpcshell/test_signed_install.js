@@ -3,7 +3,7 @@ gUseRealCertChecks = true;
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-const {REQUIRE_SIGNING} = AM_Cu.import("resource://gre/modules/addons/AddonConstants.jsm", {});
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
 const PREF_XPI_SIGNATURES_DEV_ROOT = "xpinstall.signatures.dev-root";
 
 const DATA = "data/signing_checks/";
@@ -226,7 +226,7 @@ add_task(async function() {
 
 add_task(async function() {
   
-  if (REQUIRE_SIGNING) {
+  if (AppConstants.MOZ_REQUIRE_SIGNING) {
     return;
   }
   Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_DEV_ROOT, true);
