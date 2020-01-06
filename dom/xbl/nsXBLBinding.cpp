@@ -405,7 +405,7 @@ nsXBLBinding::GenerateAnonymousContent()
     int32_t namespaceID = attrInfo.mName->NamespaceID();
     
     
-    nsCOMPtr<nsIAtom> name = attrInfo.mName->LocalName();
+    RefPtr<nsIAtom> name = attrInfo.mName->LocalName();
 
     if (name != nsGkAtoms::includes) {
       if (!nsContentUtils::HasNonEmptyAttr(mBoundElement, namespaceID, name)) {
@@ -505,7 +505,7 @@ nsXBLBinding::InstallEventHandlers()
       nsXBLPrototypeHandler* curr;
       for (curr = handlerChain; curr; curr = curr->GetNextHandler()) {
         
-        nsCOMPtr<nsIAtom> eventAtom = curr->GetEventName();
+        RefPtr<nsIAtom> eventAtom = curr->GetEventName();
         if (!eventAtom ||
             eventAtom == nsGkAtoms::keyup ||
             eventAtom == nsGkAtoms::keydown ||
@@ -657,7 +657,7 @@ nsXBLBinding::UnhookEventHandlers()
         continue;
       }
 
-      nsCOMPtr<nsIAtom> eventAtom = curr->GetEventName();
+      RefPtr<nsIAtom> eventAtom = curr->GetEventName();
       if (!eventAtom ||
           eventAtom == nsGkAtoms::keyup ||
           eventAtom == nsGkAtoms::keydown ||

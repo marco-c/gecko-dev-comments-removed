@@ -763,7 +763,7 @@ protected:
       
       
       nsString                mAttr;
-      nsCOMPtr<nsIAtom>       mAttrName;
+      RefPtr<nsIAtom>       mAttrName;
       bool                    mSetAttr;
       bool                    mNeedsAttrChange;
 

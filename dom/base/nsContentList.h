@@ -472,8 +472,8 @@ protected:
 
   nsINode* mRootNode; 
   int32_t mMatchNameSpaceId;
-  nsCOMPtr<nsIAtom> mHTMLMatchAtom;
-  nsCOMPtr<nsIAtom> mXMLMatchAtom;
+  RefPtr<nsIAtom> mHTMLMatchAtom;
+  RefPtr<nsIAtom> mXMLMatchAtom;
 
   
 

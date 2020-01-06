@@ -905,7 +905,7 @@ Gecko_GetXMLLangValue(RawGeckoElementBorrowed aElement)
 
   MOZ_ASSERT(attr->Type() == nsAttrValue::eAtom);
 
-  nsCOMPtr<nsIAtom> atom = attr->GetAtomValue();
+  RefPtr<nsIAtom> atom = attr->GetAtomValue();
   return atom.forget().take();
 }
 
@@ -939,7 +939,7 @@ LangValue(Implementor* aElement)
   }
 
   MOZ_ASSERT(attr->Type() == nsAttrValue::eAtom);
-  nsCOMPtr<nsIAtom> atom = attr->GetAtomValue();
+  RefPtr<nsIAtom> atom = attr->GetAtomValue();
   return atom.forget().take();
 }
 
@@ -1112,7 +1112,7 @@ ClassOrClassList(Implementor* aElement, nsIAtom** aClass, nsIAtom*** aClassList)
   
   
   MOZ_ASSERT(attr->Type() == nsAttrValue::eAtomArray);
-  nsTArray<nsCOMPtr<nsIAtom>>* atomArray = attr->GetAtomArrayValue();
+  nsTArray<RefPtr<nsIAtom>>* atomArray = attr->GetAtomArrayValue();
   uint32_t length = atomArray->Length();
 
   
@@ -1131,10 +1131,10 @@ ClassOrClassList(Implementor* aElement, nsIAtom** aClass, nsIAtom*** aClassList)
   
   
   
-  static_assert(sizeof(nsCOMPtr<nsIAtom>) == sizeof(nsIAtom*), "Bad simplification");
-  static_assert(alignof(nsCOMPtr<nsIAtom>) == alignof(nsIAtom*), "Bad simplification");
+  static_assert(sizeof(RefPtr<nsIAtom>) == sizeof(nsIAtom*), "Bad simplification");
+  static_assert(alignof(RefPtr<nsIAtom>) == alignof(nsIAtom*), "Bad simplification");
 
-  nsCOMPtr<nsIAtom>* elements = atomArray->Elements();
+  RefPtr<nsIAtom>* elements = atomArray->Elements();
   nsIAtom** rawElements = reinterpret_cast<nsIAtom**>(elements);
   *aClassList = rawElements;
   return atomArray->Length();
@@ -1399,7 +1399,7 @@ Gecko_SetCounterStyleToName(CounterStylePtr* aPtr, nsIAtom* aName,
   
   
   CounterStyleManager* manager = aPresContext->CounterStyleManager();
-  nsCOMPtr<nsIAtom> name = already_AddRefed<nsIAtom>(aName);
+  RefPtr<nsIAtom> name = already_AddRefed<nsIAtom>(aName);
   if (CounterStyle* style = manager->GetCounterStyle(name)) {
     *aPtr = style;
   } else {
@@ -2379,7 +2379,7 @@ FontSizePrefs
 Gecko_GetBaseSize(nsIAtom* aLanguage)
 {
   LangGroupFontPrefs prefs;
-  nsCOMPtr<nsIAtom> langGroupAtom = StaticPresData::Get()->GetUncachedLangGroup(aLanguage);
+  RefPtr<nsIAtom> langGroupAtom = StaticPresData::Get()->GetUncachedLangGroup(aLanguage);
 
   prefs.Initialize(langGroupAtom);
   FontSizePrefs sizes;

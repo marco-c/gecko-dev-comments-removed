@@ -574,7 +574,7 @@ public:
   
   
   
-  nsCOMPtr<nsIAtom> mSpecifiedEventType;
+  RefPtr<nsIAtom> mSpecifiedEventType;
 
   
   

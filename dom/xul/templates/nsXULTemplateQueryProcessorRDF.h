@@ -292,7 +292,7 @@ protected:
     TestNode* mSimpleRuleMemberTest;
 
     
-    nsCOMPtr<nsIAtom> mRefVariable;
+    RefPtr<nsIAtom> mRefVariable;
 
     
     nsCOMPtr<nsIXULTemplateResult> mLastRef;

@@ -1961,7 +1961,7 @@ HTMLEditor::SwitchTableCellHeaderType(nsIDOMElement* aSourceCell,
   AutoSelectionRestorer selectionRestorer(selection, this);
 
   
-  nsCOMPtr<nsIAtom> atom = EditorBase::GetTag(aSourceCell);
+  RefPtr<nsIAtom> atom = EditorBase::GetTag(aSourceCell);
   nsIAtom* newCellType = atom == nsGkAtoms::td ? nsGkAtoms::th : nsGkAtoms::td;
 
   

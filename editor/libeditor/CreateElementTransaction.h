@@ -60,7 +60,7 @@ protected:
   RefPtr<EditorBase> mEditorBase;
 
   
-  nsCOMPtr<nsIAtom> mTag;
+  RefPtr<nsIAtom> mTag;
 
   
   nsCOMPtr<nsINode> mParent;

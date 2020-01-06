@@ -44,6 +44,11 @@ public:
   
 
 
+  already_AddRefed<PtrType> Get(KeyType aKey) const;
+
+  
+
+
 
 
 
@@ -116,6 +121,19 @@ nsRefPtrHashtable<KeyClass, PtrType>::Get(KeyType aKey,
   }
 
   return false;
+}
+
+template<class KeyClass, class PtrType>
+already_AddRefed<PtrType>
+nsRefPtrHashtable<KeyClass, PtrType>::Get(KeyType aKey) const
+{
+  typename base_type::EntryType* ent = this->GetEntry(aKey);
+  if (!ent) {
+    return nullptr;
+  }
+
+  RefPtr<PtrType> copy = ent->mData;
+  return copy.forget();
 }
 
 template<class KeyClass, class PtrType>

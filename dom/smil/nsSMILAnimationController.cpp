@@ -676,7 +676,7 @@ nsSMILAnimationController::GetTargetIdentifierForAnimation(
   
   
   
-  nsCOMPtr<nsIAtom> attributeName;
+  RefPtr<nsIAtom> attributeName;
   int32_t attributeNamespaceID;
   if (!aAnimElem->GetTargetAttributeName(&attributeNamespaceID,
                                          getter_AddRefs(attributeName)))

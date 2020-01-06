@@ -76,10 +76,10 @@ public:
                       const nsAString& aRightString);
 protected:
 
-    nsCOMPtr<nsIAtom>   mSourceVariable;
+    RefPtr<nsIAtom>   mSourceVariable;
     nsString            mSource;
     ConditionRelation   mRelation;
-    nsCOMPtr<nsIAtom>   mTargetVariable;
+    RefPtr<nsIAtom>   mTargetVariable;
     nsTArray<nsString>  mTargetList;
     bool                mIgnoreCase;
     bool                mNegate;
@@ -204,8 +204,8 @@ public:
 protected:
 
     struct Binding {
-        nsCOMPtr<nsIAtom>        mSourceVariable;
-        nsCOMPtr<nsIAtom>        mTargetVariable;
+        RefPtr<nsIAtom>        mSourceVariable;
+        RefPtr<nsIAtom>        mTargetVariable;
         nsString                 mExpr;
         Binding*                 mNext;
         Binding*                 mParent;
@@ -226,13 +226,13 @@ protected:
 
     
     
-    nsCOMPtr<nsIAtom> mTag;
+    RefPtr<nsIAtom> mTag;
 
     
     Binding* mBindings;
 
-    nsCOMPtr<nsIAtom> mRefVariable;
-    nsCOMPtr<nsIAtom> mMemberVariable;
+    RefPtr<nsIAtom> mRefVariable;
+    RefPtr<nsIAtom> mMemberVariable;
 
     nsTemplateCondition* mConditions; 
 };
@@ -267,7 +267,7 @@ public:
 
     
     
-    nsCOMPtr<nsIAtom> mTag;
+    RefPtr<nsIAtom> mTag;
 
     explicit nsTemplateQuerySet(int32_t aPriority)
         : mPriority(aPriority)

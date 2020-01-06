@@ -183,7 +183,7 @@ public:
     virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
   #endif
 
-    nsCOMPtr<nsIAtom> mLang;
+    RefPtr<nsIAtom> mLang;
   };
 
 private:

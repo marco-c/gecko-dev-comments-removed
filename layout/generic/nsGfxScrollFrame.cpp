@@ -1831,7 +1831,7 @@ public:
   }
 
   
-  nsCOMPtr<nsIAtom> mOrigin;
+  RefPtr<nsIAtom> mOrigin;
 
   
   nsRect mRange;

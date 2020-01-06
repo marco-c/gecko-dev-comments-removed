@@ -99,7 +99,7 @@ private:
   nsCOMPtr<dom::Element> mElement;
 
   
-  nsCOMPtr<nsIAtom> mProperty;
+  RefPtr<nsIAtom> mProperty;
 
   
   nsString mValue;

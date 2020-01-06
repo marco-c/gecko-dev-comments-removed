@@ -339,7 +339,7 @@ protected:
 
   
   
-  nsCOMPtr<nsIAtom> mPseudoTag;
+  RefPtr<nsIAtom> mPseudoTag;
 
   
   

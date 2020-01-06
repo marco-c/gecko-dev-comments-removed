@@ -59,7 +59,7 @@ HTMLEditor::SetInlineProperty(const nsAString& aProperty,
                               const nsAString& aAttribute,
                               const nsAString& aValue)
 {
-  nsCOMPtr<nsIAtom> property = NS_Atomize(aProperty);
+  RefPtr<nsIAtom> property = NS_Atomize(aProperty);
   return SetInlineProperty(property, aAttribute, aValue);
 }
 
@@ -215,7 +215,7 @@ HTMLEditor::IsSimpleModifiableNode(nsIContent* aContent,
 
   
   if (aAttribute && !aAttribute->IsEmpty()) {
-    nsCOMPtr<nsIAtom> atom = NS_Atomize(*aAttribute);
+    RefPtr<nsIAtom> atom = NS_Atomize(*aAttribute);
     MOZ_ASSERT(atom);
 
     nsString attrValue;
@@ -324,7 +324,7 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
                                         const nsAString* aAttribute,
                                         const nsAString& aValue)
 {
-  nsCOMPtr<nsIAtom> attrAtom = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
+  RefPtr<nsIAtom> attrAtom = aAttribute ? NS_Atomize(*aAttribute) : nullptr;
 
   
   
@@ -706,7 +706,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
       NS_ENSURE_SUCCESS(rv, rv);
     } else {
       
-      nsCOMPtr<nsIAtom> attribute = NS_Atomize(*aAttribute);
+      RefPtr<nsIAtom> attribute = NS_Atomize(*aAttribute);
       if (aNode.HasAttr(kNameSpaceID_None, attribute)) {
         
         
@@ -733,7 +733,7 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
     
     
     if (aNode.IsElement()) {
-      nsCOMPtr<nsIAtom> attribute =
+      RefPtr<nsIAtom> attribute =
         aAttribute ? NS_Atomize(*aAttribute) : nullptr;
       bool hasAttribute =
         mCSSEditUtils->HaveCSSEquivalentStyles(
@@ -1079,7 +1079,7 @@ HTMLEditor::GetInlineProperty(const nsAString& aProperty,
                               bool* aAny,
                               bool* aAll)
 {
-  nsCOMPtr<nsIAtom> property = NS_Atomize(aProperty);
+  RefPtr<nsIAtom> property = NS_Atomize(aProperty);
   return GetInlineProperty(property, aAttribute, aValue, aFirst, aAny, aAll);
 }
 
@@ -1110,7 +1110,7 @@ HTMLEditor::GetInlinePropertyWithAttrValue(const nsAString& aProperty,
                                            bool* aAll,
                                            nsAString& outValue)
 {
-  nsCOMPtr<nsIAtom> property = NS_Atomize(aProperty);
+  RefPtr<nsIAtom> property = NS_Atomize(aProperty);
   return GetInlinePropertyWithAttrValue(property, aAttribute, aValue, aFirst,
                                         aAny, aAll, outValue);
 }
@@ -1150,7 +1150,7 @@ NS_IMETHODIMP
 HTMLEditor::RemoveInlineProperty(const nsAString& aProperty,
                                  const nsAString& aAttribute)
 {
-  nsCOMPtr<nsIAtom> property = NS_Atomize(aProperty);
+  RefPtr<nsIAtom> property = NS_Atomize(aProperty);
   return RemoveInlineProperty(property, aAttribute);
 }
 

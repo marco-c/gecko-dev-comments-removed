@@ -48,7 +48,7 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-  nsCOMPtr<nsIAtom>  mName;           
+  RefPtr<nsIAtom>  mName;           
   PLDHashTable       mObjectValueMap; 
   NSPropertyDtorFunc mDtorFunc;       
   void*              mDtorData;       

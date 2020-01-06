@@ -268,7 +268,7 @@ public:
   bool ChromeOnlyContent() { return mChromeOnlyContent; }
   bool BindToUntrustedContent() { return mBindToUntrustedContent; }
 
-  typedef nsClassHashtable<nsISupportsHashKey, nsXBLAttributeEntry> InnerAttributeTable;
+  typedef nsClassHashtable<nsRefPtrHashKey<nsIAtom>, nsXBLAttributeEntry> InnerAttributeTable;
 
 protected:
   
@@ -355,7 +355,7 @@ protected:
   nsInterfaceHashtable<IIDHashKey, nsIContent> mInterfaceTable; 
 
   int32_t mBaseNameSpaceID;    
-  nsCOMPtr<nsIAtom> mBaseTag;  
+  RefPtr<nsIAtom> mBaseTag;  
 
   nsCOMArray<nsXBLKeyEventHandler> mKeyHandlers;
 };

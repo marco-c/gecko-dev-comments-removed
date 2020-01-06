@@ -52,7 +52,7 @@ private:
   nsCOMPtr<dom::Element> mElement;
 
   
-  nsCOMPtr<nsIAtom> mAttribute;
+  RefPtr<nsIAtom> mAttribute;
 
   
   nsString mValue;

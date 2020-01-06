@@ -290,7 +290,7 @@ protected:
     
 
 
-    nsCOMPtr<nsIAtom> mSortVariable;
+    RefPtr<nsIAtom> mSortVariable;
 
     enum Direction {
         eDirection_Descending = -1,

@@ -18,11 +18,11 @@
 #include "nsGkAtoms.h"                  
 #include "nsHTMLTags.h"
 #include "nsIAtom.h"                    
+#include "nsIDOMHTMLAnchorElement.h"    
 #include "nsIDOMNode.h"                 
 #include "nsNameSpaceManager.h"        
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
-#include "mozilla/dom/HTMLAnchorElement.h"
 
 namespace mozilla {
 
@@ -88,7 +88,7 @@ bool
 HTMLEditUtils::IsNodeThatCanOutdent(nsIDOMNode* aNode)
 {
   MOZ_ASSERT(aNode);
-  nsCOMPtr<nsIAtom> nodeAtom = EditorBase::GetTag(aNode);
+  RefPtr<nsIAtom> nodeAtom = EditorBase::GetTag(aNode);
   return (nodeAtom == nsGkAtoms::ul)
       || (nodeAtom == nsGkAtoms::ol)
       || (nodeAtom == nsGkAtoms::dl)
@@ -336,18 +336,14 @@ HTMLEditUtils::IsLink(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
 
-  if (!aNode->IsContent()) {
-    return false;
+  nsCOMPtr<nsIDOMHTMLAnchorElement> anchor = do_QueryInterface(aNode);
+  if (anchor) {
+    nsAutoString tmpText;
+    if (NS_SUCCEEDED(anchor->GetHref(tmpText)) && !tmpText.IsEmpty()) {
+      return true;
+    }
   }
-
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromContentOrNull(aNode->AsContent());
-  if (!anchor) {
-    return false;
-  }
-
-  nsAutoString tmpText;
-  anchor->GetHref(tmpText);
-  return !tmpText.IsEmpty();
+  return false;
 }
 
 bool

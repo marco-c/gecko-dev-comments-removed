@@ -27,6 +27,7 @@
 #include "nsIDocumentInlines.h"
 #include "nsIDOMEventTarget.h"
 #include "nsIDOMMouseEvent.h"
+#include "nsIDOMHTMLAnchorElement.h"
 #include "nsISelectionController.h"
 #include "nsIDOMHTMLDocument.h"
 #include "nsILinkHandler.h"
@@ -1955,7 +1956,7 @@ HTMLEditor::MakeOrChangeList(const nsAString& aListType,
       nsCOMPtr<nsIContent> parent = node;
       nsCOMPtr<nsIContent> topChild = node;
 
-      nsCOMPtr<nsIAtom> listAtom = NS_Atomize(aListType);
+      RefPtr<nsIAtom> listAtom = NS_Atomize(aListType);
       while (!CanContainTag(*parent, *listAtom)) {
         topChild = parent;
         parent = parent->GetParent();
@@ -2092,7 +2093,7 @@ HTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
       nsCOMPtr<nsIContent> parent = node;
       nsCOMPtr<nsIContent> topChild = node;
 
-      nsCOMPtr<nsIAtom> blockAtom = NS_Atomize(aBlockType);
+      RefPtr<nsIAtom> blockAtom = NS_Atomize(aBlockType);
       while (!CanContainTag(*parent, *blockAtom)) {
         NS_ENSURE_TRUE(parent->GetParent(), NS_ERROR_FAILURE);
         topChild = parent;
@@ -2523,7 +2524,7 @@ HTMLEditor::CreateElementWithDefaults(const nsAString& aTagName)
   
 
   
-  nsCOMPtr<nsIAtom> realTagAtom = NS_Atomize(realTagName);
+  RefPtr<nsIAtom> realTagAtom = NS_Atomize(realTagName);
   RefPtr<Element> newElement = CreateHTMLContent(realTagAtom);
   if (!newElement) {
     return nullptr;
@@ -2593,21 +2594,19 @@ HTMLEditor::InsertLinkAroundSelection(nsIDOMElement* aAnchorElement)
     return NS_OK;
   }
 
-
   
-  nsCOMPtr<nsIContent> content = do_QueryInterface(aAnchorElement);
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromContentOrNull(content);
+  nsCOMPtr<nsIDOMHTMLAnchorElement> anchor = do_QueryInterface(aAnchorElement);
   if (!anchor) {
     return NS_OK;
   }
 
   nsAutoString href;
-  anchor->GetHref(href);
+  nsresult rv = anchor->GetHref(href);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (href.IsEmpty()) {
     return NS_OK;
   }
 
-  nsresult rv;
   AutoPlaceholderBatch beginBatching(this);
 
   

@@ -1138,7 +1138,7 @@ private:
   CounterStyle* GetExtends();
   CounterStyle* GetExtendsRoot();
 
-  nsCOMPtr<nsIAtom> mName;
+  RefPtr<nsIAtom> mName;
 
   
   

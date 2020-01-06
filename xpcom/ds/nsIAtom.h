@@ -7,28 +7,18 @@
 #ifndef nsIAtom_h
 #define nsIAtom_h
 
-#include "nsISupports.h"
+#include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsStringBuffer.h"
 
-#define NS_IATOM_IID_STR "8b8c11d4-3ed5-4079-8974-73c7576cdb34"
 
-#define NS_IATOM_IID \
-  {0x8b8c11d4, 0x3ed5, 0x4079, \
-    { 0x89, 0x74, 0x73, 0xc7, 0x57, 0x6c, 0xdb, 0x34 }}
 
-class nsIAtom : public nsISupports
+
+class nsIAtom
 {
 public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IATOM_IID)
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  NS_IMETHOD_(void) ToUTF8String(nsACString& aString) = 0;
-
-  NS_IMETHOD_(size_t)
-  SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) = 0;
-
-  
-  
   enum class AtomKind : uint8_t {
     DynamicAtom = 0,
     StaticAtom = 1,
@@ -68,14 +58,13 @@ public:
     nsStringBuffer::FromData(mString)->ToString(mLength, aBuf);
   }
 
+  void ToUTF8String(nsACString& aString) const;
+
   nsStringBuffer* GetStringBuffer() const
   {
     
     return nsStringBuffer::FromData(mString);
   }
-
-  NS_IMETHOD_(MozExternalRefCountType) AddRef() final;
-  NS_IMETHOD_(MozExternalRefCountType) Release() final;
 
   
   
@@ -85,7 +74,25 @@ public:
     return mHash;
   }
 
+  
+  
+  MozExternalRefCountType AddRef();
+  MozExternalRefCountType Release();
+
+  typedef mozilla::TrueType HasThreadSafeRefCnt;
+
+private:
+  friend class nsAtomFriend;
+  friend class nsHtml5AtomEntry;
+
+  
+  nsIAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
+  nsIAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
 protected:
+  ~nsIAtom();
+
+private:
+  mozilla::ThreadSafeAutoRefCnt mRefCnt;
   uint32_t mLength: 30;
   uint32_t mKind: 2; 
   uint32_t mHash;
@@ -95,35 +102,9 @@ protected:
   char16_t* mString;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIAtom, NS_IATOM_IID)
 
-#define NS_DECL_NSIATOM \
-  NS_IMETHOD_(void) ToUTF8String(nsACString& _retval) override; \
-  NS_IMETHOD_(size_t) SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) override;
 
-class nsAtom final : public nsIAtom
-{
-public:
-  NS_DECL_NSIATOM
-  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) final;
-  typedef mozilla::TrueType HasThreadSafeRefCnt;
-
-private:
-  friend class nsIAtom;
-  friend class nsAtomFriend;
-  friend class nsHtml5AtomEntry;
-
-  
-  nsAtom(AtomKind aKind, const nsAString& aString, uint32_t aHash);
-  nsAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash);
-  ~nsAtom();
-
-  MozExternalRefCountType DynamicAddRef();
-  MozExternalRefCountType DynamicRelease();
-
-  mozilla::ThreadSafeAutoRefCnt mRefCnt;
-  NS_DECL_OWNINGTHREAD
-};
+typedef nsIAtom nsAtom;
 
 
 
@@ -133,27 +114,27 @@ private:
 
 
 
-already_AddRefed<nsIAtom> NS_Atomize(const char* aUTF8String);
+already_AddRefed<nsAtom> NS_Atomize(const char* aUTF8String);
 
 
-already_AddRefed<nsIAtom> NS_Atomize(const nsACString& aUTF8String);
+already_AddRefed<nsAtom> NS_Atomize(const nsACString& aUTF8String);
 
 
 
-already_AddRefed<nsIAtom> NS_Atomize(const char16_t* aUTF16String);
+already_AddRefed<nsAtom> NS_Atomize(const char16_t* aUTF16String);
 
 
-already_AddRefed<nsIAtom> NS_Atomize(const nsAString& aUTF16String);
+already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String);
 
 
-already_AddRefed<nsIAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
+already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
 
 
 nsrefcnt NS_GetNumberOfAtoms();
 
 
 
-nsIAtom* NS_GetStaticAtom(const nsAString& aUTF16String);
+nsAtom* NS_GetStaticAtom(const nsAString& aUTF16String);
 
 
 void NS_SealStaticAtomTable();
@@ -161,19 +142,19 @@ void NS_SealStaticAtomTable();
 class nsAtomString : public nsString
 {
 public:
-  explicit nsAtomString(const nsIAtom* aAtom) { aAtom->ToString(*this); }
+  explicit nsAtomString(const nsAtom* aAtom) { aAtom->ToString(*this); }
 };
 
 class nsAtomCString : public nsCString
 {
 public:
-  explicit nsAtomCString(nsIAtom* aAtom) { aAtom->ToUTF8String(*this); }
+  explicit nsAtomCString(nsAtom* aAtom) { aAtom->ToUTF8String(*this); }
 };
 
 class nsDependentAtomString : public nsDependentString
 {
 public:
-  explicit nsDependentAtomString(const nsIAtom* aAtom)
+  explicit nsDependentAtomString(const nsAtom* aAtom)
     : nsDependentString(aAtom->GetUTF16String(), aAtom->GetLength())
   {}
 };

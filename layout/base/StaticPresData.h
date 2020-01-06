@@ -63,7 +63,7 @@ struct LangGroupFontPrefs {
   
   void Initialize(nsIAtom* aLangGroupAtom);
 
-  nsCOMPtr<nsIAtom> mLangGroup;
+  RefPtr<nsIAtom> mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
   nsFont mDefaultFixedFont;

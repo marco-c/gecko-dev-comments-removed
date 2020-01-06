@@ -745,7 +745,7 @@ private:
 
 
   mozilla::ArenaRefPtr<nsStyleContext> mStyleContext;
-  nsCOMPtr<nsIAtom> mPseudo;
+  RefPtr<nsIAtom> mPseudo;
 
   
 

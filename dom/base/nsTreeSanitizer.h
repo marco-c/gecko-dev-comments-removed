@@ -130,7 +130,7 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
     void SanitizeAttributes(mozilla::dom::Element* aElement,
-                            nsTHashtable<nsISupportsHashKey>* aAllowed,
+                            nsTHashtable<nsRefPtrHashKey<nsIAtom>>* aAllowed,
                             nsIAtom*** aURLs,
                             bool aAllowXLink,
                             bool aAllowStyle,
@@ -186,37 +186,37 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sElementsHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsHTML;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sAttributesHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sPresAttributesHTML;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sPresAttributesHTML;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sElementsSVG;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsSVG;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sAttributesSVG;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesSVG;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sElementsMathML;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sElementsMathML;
 
     
 
 
-    static nsTHashtable<nsISupportsHashKey>* sAttributesMathML;
+    static nsTHashtable<nsRefPtrHashKey<nsIAtom>>* sAttributesMathML;
 
     
 

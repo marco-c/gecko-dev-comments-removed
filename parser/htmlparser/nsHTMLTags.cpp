@@ -204,7 +204,7 @@ nsHTMLTags::TestTagTable()
 {
      const char16_t *tag;
      nsHTMLTag id;
-     nsCOMPtr<nsIAtom> atom;
+     RefPtr<nsIAtom> atom;
 
      nsHTMLTags::AddRefTable();
      

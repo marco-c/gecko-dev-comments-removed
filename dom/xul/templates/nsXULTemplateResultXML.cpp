@@ -24,7 +24,7 @@ nsXULTemplateResultXML::nsXULTemplateResultXML(nsXMLQuery* aQuery,
 {
     
     
-    nsCOMPtr<nsIAtom> id = mNode->GetID();
+    RefPtr<nsIAtom> id = mNode->GetID();
     if (id) {
       nsCOMPtr<nsIURI> uri = mNode->GetBaseURI();
       nsAutoCString spec;

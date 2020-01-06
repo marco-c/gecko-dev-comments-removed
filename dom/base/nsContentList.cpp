@@ -289,8 +289,8 @@ NS_GetContentList(nsINode* aRootNode,
   if (!list) {
     
     
-    nsCOMPtr<nsIAtom> xmlAtom = NS_Atomize(aTagname);
-    nsCOMPtr<nsIAtom> htmlAtom;
+    RefPtr<nsIAtom> xmlAtom = NS_Atomize(aTagname);
+    RefPtr<nsIAtom> htmlAtom;
     if (aMatchNameSpaceId == kNameSpaceID_Unknown) {
       nsAutoString lowercaseName;
       nsContentUtils::ASCIIToLower(aTagname, lowercaseName);
@@ -562,7 +562,7 @@ nsContentList::NamedItem(const nsAString& aName, bool aDoFlush)
   uint32_t i, count = mElements.Length();
 
   
-  nsCOMPtr<nsIAtom> name = NS_Atomize(aName);
+  RefPtr<nsIAtom> name = NS_Atomize(aName);
   NS_ENSURE_TRUE(name, nullptr);
 
   for (i = 0; i < count; i++) {

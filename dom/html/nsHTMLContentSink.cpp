@@ -301,8 +301,8 @@ NS_NewHTMLElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& 
       
       
       
-      nsCOMPtr<nsIAtom> tagAtom = nodeInfo->NameAtom();
-      nsCOMPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : tagAtom;
+      RefPtr<nsIAtom> tagAtom = nodeInfo->NameAtom();
+      RefPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : tagAtom;
       
       *aResult = CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
       (*aResult)->SetCustomElementData(new CustomElementData(typeAtom));

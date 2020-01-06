@@ -423,8 +423,8 @@ protected:
     
 
 
-    nsCOMPtr<nsIAtom> mRefVariable;
-    nsCOMPtr<nsIAtom> mMemberVariable;
+    RefPtr<nsIAtom> mRefVariable;
+    RefPtr<nsIAtom> mMemberVariable;
 
     
 

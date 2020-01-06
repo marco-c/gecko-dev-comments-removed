@@ -244,7 +244,7 @@ protected:
 
   
   nsXBLPrototypeHandler* mNextHandler;
-  nsCOMPtr<nsIAtom> mEventName; 
+  RefPtr<nsIAtom> mEventName; 
   RefPtr<nsXBLEventHandler> mHandler;
   nsXBLPrototypeBinding* mPrototypeBinding; 
 };

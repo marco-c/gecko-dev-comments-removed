@@ -102,7 +102,7 @@ struct CustomElementData
   CustomElementData(nsIAtom* aType, State aState);
   
   
-  nsCOMPtr<nsIAtom> mType;
+  RefPtr<nsIAtom> mType;
   
   bool mElementIsBeingCreated;
   
@@ -150,22 +150,22 @@ struct CustomElementDefinition
   CustomElementDefinition(nsIAtom* aType,
                           nsIAtom* aLocalName,
                           Function* aConstructor,
-                          nsCOMArray<nsIAtom>&& aObservedAttributes,
+                          nsTArray<RefPtr<nsIAtom>>&& aObservedAttributes,
                           JSObject* aPrototype,
                           mozilla::dom::LifecycleCallbacks* aCallbacks,
                           uint32_t aDocOrder);
 
   
-  nsCOMPtr<nsIAtom> mType;
+  RefPtr<nsIAtom> mType;
 
   
-  nsCOMPtr<nsIAtom> mLocalName;
+  RefPtr<nsIAtom> mLocalName;
 
   
   RefPtr<CustomElementConstructor> mConstructor;
 
   
-  nsCOMArray<nsIAtom> mObservedAttributes;
+  nsTArray<RefPtr<nsIAtom>> mObservedAttributes;
 
   
   JS::Heap<JSObject *> mPrototype;
@@ -411,12 +411,12 @@ private:
                          CustomElementDefinition* aDefinition,
                          ErrorResult& aRv);
 
-  typedef nsRefPtrHashtable<nsISupportsHashKey, CustomElementDefinition>
+  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, CustomElementDefinition>
     DefinitionMap;
-  typedef nsClassHashtable<nsISupportsHashKey, nsTArray<nsWeakPtr>>
+  typedef nsClassHashtable<nsRefPtrHashKey<nsIAtom>, nsTArray<nsWeakPtr>>
     CandidateMap;
   typedef JS::GCHashMap<JS::Heap<JSObject*>,
-                        nsCOMPtr<nsIAtom>,
+                        RefPtr<nsIAtom>,
                         js::MovableCellHasher<JS::Heap<JSObject*>>,
                         js::SystemAllocPolicy> ConstructorMap;
 
@@ -430,7 +430,7 @@ private:
   
   ConstructorMap mConstructors;
 
-  typedef nsRefPtrHashtable<nsISupportsHashKey, Promise>
+  typedef nsRefPtrHashtable<nsRefPtrHashKey<nsIAtom>, Promise>
     WhenDefinedPromiseMap;
   WhenDefinedPromiseMap mWhenDefinedPromiseMap;
 

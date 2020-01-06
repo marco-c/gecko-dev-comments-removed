@@ -294,7 +294,7 @@ nsXBLPrototypeHandler::ExecuteHandler(EventTarget* aTarget,
 
   
   
-  nsCOMPtr<nsIAtom> onEventAtom = NS_Atomize(NS_LITERAL_STRING("onxbl") +
+  RefPtr<nsIAtom> onEventAtom = NS_Atomize(NS_LITERAL_STRING("onxbl") +
                                              nsDependentAtomString(mEventName));
 
   
@@ -661,7 +661,7 @@ nsXBLPrototypeHandler::GetModifiersMask() const
 already_AddRefed<nsIAtom>
 nsXBLPrototypeHandler::GetEventName()
 {
-  nsCOMPtr<nsIAtom> eventName = mEventName;
+  RefPtr<nsIAtom> eventName = mEventName;
   return eventName.forget();
 }
 

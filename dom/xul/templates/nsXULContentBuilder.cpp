@@ -732,7 +732,7 @@ nsXULContentBuilder::CopyAttributesToElement(nsIContent* aTemplateNode,
         int32_t attribNameSpaceID = name->NamespaceID();
         
         
-        nsCOMPtr<nsIAtom> attribName = name->LocalName();
+        RefPtr<nsIAtom> attribName = name->LocalName();
 
         
         if (attribName != nsGkAtoms::id && attribName != nsGkAtoms::uri) {
@@ -801,7 +801,7 @@ nsXULContentBuilder::AddPersistentAttributes(Element* aTemplateNode,
         if (attribute.IsEmpty())
             break;
 
-        nsCOMPtr<nsIAtom> tag;
+        RefPtr<nsIAtom> tag;
         int32_t nameSpaceID;
 
         RefPtr<mozilla::dom::NodeInfo> ni =
@@ -1774,7 +1774,7 @@ nsXULContentBuilder::CompareResultToNode(nsIXULTemplateResult* aResult,
     else {
         
         
-        int32_t length = mSortState.sortKeys.Count();
+        int32_t length = mSortState.sortKeys.Length();
         for (int32_t t = 0; t < length; t++) {
             nsresult rv = mQueryProcessor->CompareResults(aResult, match->mResult,
                                                           mSortState.sortKeys[t],

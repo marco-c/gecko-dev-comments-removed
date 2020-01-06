@@ -145,7 +145,7 @@ protected:
 
 private:
   nsTArray<nsIContent*> mInsertedChildren; 
-  nsTArray<nsCOMPtr<nsIAtom> > mIncludes;
+  nsTArray<RefPtr<nsIAtom> > mIncludes;
 };
 
 } 

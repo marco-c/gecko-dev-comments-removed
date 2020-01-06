@@ -124,29 +124,29 @@ nsStreamConverterService::AddAdjacency(const char *aContractID) {
     
     
 
-    nsCOMArray<nsIAtom> *fromEdges = mAdjacencyList.Get(fromStr);
+    nsTArray<RefPtr<nsIAtom>>* fromEdges = mAdjacencyList.Get(fromStr);
     if (!fromEdges) {
         
-        fromEdges = new nsCOMArray<nsIAtom>();
+        fromEdges = new nsTArray<RefPtr<nsIAtom>>();
         mAdjacencyList.Put(fromStr, fromEdges);
     }
 
     if (!mAdjacencyList.Get(toStr)) {
         
-        mAdjacencyList.Put(toStr, new nsCOMArray<nsIAtom>());
+        mAdjacencyList.Put(toStr, new nsTArray<RefPtr<nsIAtom>>());
     }
 
     
     
 
-    nsCOMPtr<nsIAtom> vertex = NS_Atomize(toStr);
+    RefPtr<nsIAtom> vertex = NS_Atomize(toStr);
     if (!vertex) return NS_ERROR_OUT_OF_MEMORY;
 
     NS_ASSERTION(fromEdges, "something wrong in adjacency list construction");
     if (!fromEdges)
         return NS_ERROR_FAILURE;
 
-    return fromEdges->AppendObject(vertex) ? NS_OK : NS_ERROR_FAILURE;
+    return fromEdges->AppendElement(vertex) ? NS_OK : NS_ERROR_FAILURE;
 }
 
 nsresult
@@ -231,7 +231,7 @@ nsStreamConverterService::FindConverter(const char *aContractID, nsTArray<nsCStr
     grayQ.Push(new nsCString(fromC));
     while (0 < grayQ.GetSize()) {
         nsCString *currentHead = (nsCString*)grayQ.PeekFront();
-        nsCOMArray<nsIAtom> *data2 = mAdjacencyList.Get(*currentHead);
+        nsTArray<RefPtr<nsIAtom>>* data2 = mAdjacencyList.Get(*currentHead);
         if (!data2) return NS_ERROR_FAILURE;
 
         
@@ -239,10 +239,10 @@ nsStreamConverterService::FindConverter(const char *aContractID, nsTArray<nsCStr
         BFSTableData *headVertexState = lBFSTable.Get(*currentHead);
         if (!headVertexState) return NS_ERROR_FAILURE;
 
-        int32_t edgeCount = data2->Count();
+        int32_t edgeCount = data2->Length();
 
         for (int32_t i = 0; i < edgeCount; i++) {
-            nsIAtom* curVertexAtom = data2->ObjectAt(i);
+            nsIAtom* curVertexAtom = data2->ElementAt(i);
             auto *curVertex = new nsCString();
             curVertexAtom->ToUTF8String(*curVertex);
 

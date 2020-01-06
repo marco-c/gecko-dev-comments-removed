@@ -1289,7 +1289,7 @@ protected:
   RefPtr<mozilla::RestyleManager> mRestyleManager;
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   nsIAtom* MOZ_UNSAFE_REF("always a static atom") mMedium; 
-  nsCOMPtr<nsIAtom> mMediaEmulated;
+  RefPtr<nsIAtom> mMediaEmulated;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 
   
@@ -1301,7 +1301,7 @@ protected:
   
   
   
-  nsCOMPtr<nsIAtom>     mLanguage;
+  RefPtr<nsIAtom>     mLanguage;
 
 public:
   

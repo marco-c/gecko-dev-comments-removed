@@ -127,7 +127,7 @@ public:
     return result;
   }
 
-  nsCOMPtr<nsIAtom> mCommand;
+  RefPtr<nsIAtom> mCommand;
 
   
   void AssignCommandEventData(const WidgetCommandEvent& aEvent,

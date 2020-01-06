@@ -230,7 +230,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
   nscoord mScriptUnconstrainedSize;
   nscoord mScriptMinSize;        
   float   mScriptSizeMultiplier; 
-  nsCOMPtr<nsIAtom> mLanguage;   
+  RefPtr<nsIAtom> mLanguage;   
 };
 
 struct nsStyleGradientStop
@@ -2293,7 +2293,7 @@ private:
   float mDuration;
   float mDelay;
   nsCSSPropertyID mProperty;
-  nsCOMPtr<nsIAtom> mUnknownProperty; 
+  RefPtr<nsIAtom> mUnknownProperty; 
                                       
                                       
 };
@@ -2674,7 +2674,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                 
                                 
                                 
-  nsCOMArray<nsIAtom> mWillChange;
+  nsTArray<RefPtr<nsIAtom>> mWillChange;
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
@@ -3468,7 +3468,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   RefPtr<mozilla::css::URLValue> mMarkerMid;   
   RefPtr<mozilla::css::URLValue> mMarkerStart; 
   nsTArray<nsStyleCoord> mStrokeDasharray;  
-  nsTArray<nsCOMPtr<nsIAtom>> mContextProps;
+  nsTArray<RefPtr<nsIAtom>> mContextProps;
 
   nsStyleCoord     mStrokeDashoffset; 
   nsStyleCoord     mStrokeWidth;      

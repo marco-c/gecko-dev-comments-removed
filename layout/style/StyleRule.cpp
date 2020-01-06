@@ -1489,7 +1489,7 @@ StyleRule::SelectorMatchesElement(Element* aElement,
   if (!aPseudo.IsEmpty()) {
     
     
-    nsCOMPtr<nsIAtom> pseudoElt = NS_Atomize(aPseudo);
+    RefPtr<nsIAtom> pseudoElt = NS_Atomize(aPseudo);
     if (sel->mSelectors->PseudoType() != nsCSSPseudoElements::
           GetPseudoType(pseudoElt, CSSEnabledState::eIgnoreEnabledState)) {
       *aMatches = false;
