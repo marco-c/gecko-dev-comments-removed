@@ -149,7 +149,7 @@ this.PreferenceExperiments = {
       }
 
       
-      if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType) !== experiment.preferenceValue) {
+      if (getPref(UserPreferences, experiment.preferenceName, experiment.preferenceType, undefined) !== experiment.preferenceValue) {
         
         log.info(`Stopping experiment "${experiment.name}" because its value changed`);
         await this.stop(experiment.name, false);
@@ -242,7 +242,7 @@ this.PreferenceExperiments = {
       preferenceName,
       preferenceValue,
       preferenceType,
-      previousPreferenceValue: getPref(preferences, preferenceName, preferenceType),
+      previousPreferenceValue: getPref(preferences, preferenceName, preferenceType, undefined),
       preferenceBranchType,
     };
 
@@ -289,7 +289,7 @@ this.PreferenceExperiments = {
     const observerInfo = {
       preferenceName,
       observer() {
-        let newValue = getPref(UserPreferences, preferenceName, preferenceType);
+        let newValue = getPref(UserPreferences, preferenceName, preferenceType, undefined);
         if (newValue !== preferenceValue) {
           PreferenceExperiments.stop(experimentName, false)
                                .catch(Cu.reportError);
