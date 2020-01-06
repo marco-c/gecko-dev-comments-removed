@@ -679,18 +679,11 @@ UpdateFramePseudoElementStyles(nsIFrame* aFrame,
 }
 
 static inline bool
-NeedsToTraverseElementChildren(const Element& aParent,
-                               ServoTraversalFlags aFlags)
+NeedsToTraverseElementChildren(const Element& aParent)
 {
-  if (aParent.HasAnimationOnlyDirtyDescendantsForServo()) {
-    return true;
-  }
-
-  if (!(aFlags & ServoTraversalFlags::AnimationOnly)) {
-    return aParent.HasDirtyDescendantsForServo() ||
-           aParent.HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
-  }
-  return false;
+  return aParent.HasAnimationOnlyDirtyDescendantsForServo() ||
+         aParent.HasDirtyDescendantsForServo() ||
+         aParent.HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
 }
 
 bool
@@ -710,9 +703,6 @@ ServoRestyleManager::ProcessPostTraversal(
     primaryFrame &&
     primaryFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
 
-  
-  
-  
   
   bool wasRestyled;
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement,
@@ -864,13 +854,10 @@ ServoRestyleManager::ProcessPostTraversal(
   }
 
   const bool traverseElementChildren =
-    NeedsToTraverseElementChildren(*aElement, aFlags);
+    NeedsToTraverseElementChildren(*aElement);
   const bool descendantsNeedFrames =
     aElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
-  const bool forThrottledAnimationFlush =
-    !!(aFlags & ServoTraversalFlags::AnimationOnly);
-  const bool traverseTextChildren =
-    wasRestyled || (!forThrottledAnimationFlush && descendantsNeedFrames);
+  const bool traverseTextChildren = wasRestyled || descendantsNeedFrames;
   bool recreatedAnyContext = wasRestyled;
   if (traverseElementChildren || traverseTextChildren) {
     ServoStyleContext* upToDateContext =
@@ -928,10 +915,8 @@ ServoRestyleManager::ProcessPostTraversal(
     }
   }
 
-  if (!forThrottledAnimationFlush) {
-    aElement->UnsetHasDirtyDescendantsForServo();
-    aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
-  }
+  aElement->UnsetHasDirtyDescendantsForServo();
+  aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
   aElement->UnsetHasAnimationOnlyDirtyDescendantsForServo();
 
   return recreatedAnyContext;
@@ -1075,7 +1060,6 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
 
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
-  bool forThrottledAnimationFlush = !!(aFlags & ServoTraversalFlags::AnimationOnly);
 
   
   
@@ -1086,7 +1070,7 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
   
   
   mInStyleRefresh = true;
-  if (mHaveNonAnimationRestyles && !forThrottledAnimationFlush) {
+  if (mHaveNonAnimationRestyles) {
     ++mAnimationGeneration;
   }
 
@@ -1095,9 +1079,7 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
   }
 
   while (styleSet->StyleDocument(aFlags)) {
-    if (!forThrottledAnimationFlush) {
-      ClearSnapshots();
-    }
+    ClearSnapshots();
 
     nsStyleChangeList currentChanges(StyleBackendType::Servo);
     bool anyStyleChanged = false;
@@ -1105,7 +1087,7 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
     
     
     {
-      AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), forThrottledAnimationFlush);
+      AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc);
       while (Element* root = iter.GetNextStyleRoot()) {
         nsTArray<nsIFrame*> wrappersToRestyle;
@@ -1161,11 +1143,9 @@ ServoRestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags)
 
   FlushOverflowChangedTracker();
 
-  if (!forThrottledAnimationFlush) {
-    ClearSnapshots();
-    styleSet->AssertTreeIsClean();
-    mHaveNonAnimationRestyles = false;
-  }
+  ClearSnapshots();
+  styleSet->AssertTreeIsClean();
+  mHaveNonAnimationRestyles = false;
   mRestyleForCSSRuleChanges = false;
   mInStyleRefresh = false;
 
@@ -1194,7 +1174,7 @@ ServoRestyleManager::UpdateOnlyAnimationStyles()
     return;
   }
 
-  DoProcessPendingRestyles(ServoTraversalFlags::AnimationOnly);
+  DoProcessPendingRestyles(ServoTraversalFlags::FlushThrottledAnimations);
 }
 
 void

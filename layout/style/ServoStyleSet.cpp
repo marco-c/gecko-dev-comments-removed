@@ -352,8 +352,7 @@ ServoStyleSet::PreTraverseSync()
 }
 
 void
-ServoStyleSet::PreTraverse(Element* aRoot,
-                           EffectCompositor::AnimationRestyleType aRestyleType)
+ServoStyleSet::PreTraverse(ServoTraversalFlags aFlags, Element* aRoot)
 {
   PreTraverseSync();
 
@@ -363,12 +362,12 @@ ServoStyleSet::PreTraverse(Element* aRoot,
     mPresContext->Document()->GetAnimationController();
   if (aRoot) {
     mPresContext->EffectCompositor()
-                ->PreTraverseInSubtree(aRoot, aRestyleType);
+                ->PreTraverseInSubtree(aFlags, aRoot);
     if (smilController) {
       smilController->PreTraverseInSubtree(aRoot);
     }
   } else {
-    mPresContext->EffectCompositor()->PreTraverse(aRestyleType);
+    mPresContext->EffectCompositor()->PreTraverse(aFlags);
     if (smilController) {
       smilController->PreTraverse();
     }
@@ -861,11 +860,7 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
 bool
 ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
 {
-  if (!!(aBaseFlags & ServoTraversalFlags::AnimationOnly)) {
-    PreTraverse(nullptr, EffectCompositor::AnimationRestyleType::Full);
-  } else {
-    PreTraverse();
-  }
+  PreTraverse(aBaseFlags);
 
   
   
@@ -895,20 +890,9 @@ ServoStyleSet::StyleDocument(ServoTraversalFlags aBaseFlags)
     
     
     
-    if (aBaseFlags & ServoTraversalFlags::AnimationOnly) {
-      continue;
-    }
-
     
     
-    
-    
-    
-    
-    
-    EffectCompositor* compositor = mPresContext->EffectCompositor();
-    auto restyleType = EffectCompositor::AnimationRestyleType::Throttled;
-    if (compositor->PreTraverse(restyleType)) {
+    if (mPresContext->EffectCompositor()->PreTraverse(flags)) {
       if (isInitial) {
         
         
@@ -938,17 +922,16 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
 
   
   const SnapshotTable& snapshots = Snapshots();
+  auto flags = ServoTraversalFlags::Empty;
   DebugOnly<bool> postTraversalRequired =
-    Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots,
-                          ServoTraversalFlags::Empty);
+    Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, flags);
   MOZ_ASSERT(!postTraversalRequired);
 
   
   
   
   
-  auto type = EffectCompositor::AnimationRestyleType::Throttled;
-  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot, type)) {
+  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(flags, aRoot)) {
     postTraversalRequired =
       Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots,
                             ServoTraversalFlags::AnimationOnly |
@@ -1028,25 +1011,23 @@ ServoStyleSet::StyleNewlyBoundElement(Element* aElement)
 void
 ServoStyleSet::StyleSubtreeForReconstruct(Element* aRoot)
 {
-  PreTraverse(aRoot);
   MOZ_ASSERT(MayTraverseFrom(aRoot));
   MOZ_ASSERT(aRoot->HasServoData());
+  auto flags = ServoTraversalFlags::Forgetful |
+               ServoTraversalFlags::AggressivelyForgetful |
+               ServoTraversalFlags::ClearDirtyDescendants |
+               ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
+  PreTraverse(flags);
 
   AutoPrepareTraversal guard(this);
 
   const SnapshotTable& snapshots = Snapshots();
 
-  auto flags = ServoTraversalFlags::Forgetful |
-               ServoTraversalFlags::AggressivelyForgetful |
-               ServoTraversalFlags::ClearDirtyDescendants |
-               ServoTraversalFlags::ClearAnimationOnlyDirtyDescendants;
-
   DebugOnly<bool> postTraversalRequired =
     Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, flags);
   MOZ_ASSERT(!postTraversalRequired);
 
-  auto type = EffectCompositor::AnimationRestyleType::Throttled;
-  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(aRoot, type)) {
+  if (mPresContext->EffectCompositor()->PreTraverseInSubtree(flags, aRoot)) {
     postTraversalRequired =
       Servo_TraverseSubtree(aRoot, mRawSet.get(), &snapshots, flags);
     MOZ_ASSERT(!postTraversalRequired);

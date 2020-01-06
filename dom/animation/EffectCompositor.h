@@ -12,6 +12,7 @@
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/PseudoElementHashEntry.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoTypes.h"
 #include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDataHashtable.h"
@@ -228,26 +229,18 @@ public:
     const AnimationPerformanceWarning& aWarning);
 
   
-  enum class AnimationRestyleType {
-    Throttled, 
-    Full       
-               
-  };
-
   
   
   
   
-  
-  bool PreTraverse(AnimationRestyleType aRestyleType);
+  bool PreTraverse(ServoTraversalFlags aFlags);
 
   
   bool PreTraverse(dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
   
   
-  bool PreTraverseInSubtree(dom::Element* aElement,
-                            AnimationRestyleType aRestyleType);
+  bool PreTraverseInSubtree(ServoTraversalFlags aFlags, dom::Element* aElement);
 
   
   
