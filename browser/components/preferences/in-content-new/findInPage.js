@@ -23,19 +23,6 @@ var gSearchResultsPane = {
         this.searchInput.focus();
         this.initializeCategories();
       });
-
-      
-      let callbackId;
-      window.addEventListener("resize", () => {
-        if (!callbackId) {
-          callbackId = window.requestAnimationFrame(() => {
-            this.listSearchTooltips.forEach((anchorNode) => {
-              this.calculateTooltipPosition(anchorNode);
-            });
-            callbackId = null;
-          });
-        }
-      });
     }
     let strings = this.strings;
     this.searchInput.placeholder = AppConstants.platform == "win" ?
@@ -438,18 +425,8 @@ var gSearchResultsPane = {
     
     
     
-    let anchorRect = anchorNode.getBoundingClientRect();
     let tooltipRect = searchTooltip.getBoundingClientRect();
-    let parentRect = anchorNode.parentElement.getBoundingClientRect();
-
-    let offSetLeft = (anchorRect.width / 2) - (tooltipRect.width / 2);
-    let relativeOffset = anchorRect.left - parentRect.left;
-    offSetLeft += relativeOffset > 0 ? relativeOffset : 0;
-    
-    let offSetTop = anchorRect.top - parentRect.top - 20.5;
-
-    searchTooltip.style.setProperty("left", `${offSetLeft}px`);
-    searchTooltip.style.setProperty("top", `${offSetTop}px`);
+    searchTooltip.style.setProperty("left", `calc(50% - ${(tooltipRect.width / 2)}px)`);
   },
 
   
