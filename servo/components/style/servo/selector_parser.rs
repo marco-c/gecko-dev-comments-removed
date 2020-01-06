@@ -12,7 +12,7 @@ use cssparser::{Parser as CssParser, ToCss, serialize_identifier};
 use dom::{OpaqueNode, TElement, TNode};
 use element_state::ElementState;
 use fnv::FnvHashMap;
-use restyle_hints::ElementSnapshot;
+use invalidation::element::element_wrapper::ElementSnapshot;
 use selector_parser::{AttrValue as SelectorAttrValue, ElementExt, PseudoElementCascadeType, SelectorParser};
 use selectors::Element;
 use selectors::attr::{AttrSelectorOperation, NamespaceConstraint, CaseSensitivity};
@@ -545,6 +545,12 @@ pub struct ServoElementSnapshot {
     pub attrs: Option<Vec<(AttrIdentifier, AttrValue)>>,
     
     pub is_html_element_in_html_document: bool,
+    
+    pub class_changed: bool,
+    
+    pub id_changed: bool,
+    
+    pub other_attributes_changed: bool,
 }
 
 impl ServoElementSnapshot {
@@ -554,7 +560,25 @@ impl ServoElementSnapshot {
             state: None,
             attrs: None,
             is_html_element_in_html_document: is_html_element_in_html_document,
+            class_changed: false,
+            id_changed: false,
+            other_attributes_changed: false,
         }
+    }
+
+    
+    pub fn id_changed(&self) -> bool {
+        self.id_changed
+    }
+
+    
+    pub fn class_changed(&self) -> bool {
+        self.class_changed
+    }
+
+    
+    pub fn other_attr_changed(&self) -> bool {
+        self.other_attributes_changed
     }
 
     fn get_attr(&self, namespace: &Namespace, name: &LocalName) -> Option<&AttrValue> {

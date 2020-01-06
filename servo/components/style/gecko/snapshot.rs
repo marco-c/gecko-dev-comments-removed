@@ -13,7 +13,7 @@ use gecko_bindings::bindings;
 use gecko_bindings::structs::ServoElementSnapshot;
 use gecko_bindings::structs::ServoElementSnapshotFlags as Flags;
 use gecko_bindings::structs::ServoElementSnapshotTable;
-use restyle_hints::ElementSnapshot;
+use invalidation::element::element_wrapper::ElementSnapshot;
 use selectors::attr::{AttrSelectorOperation, AttrSelectorOperator, CaseSensitivity, NamespaceConstraint};
 use string_cache::{Atom, Namespace};
 
@@ -60,6 +60,25 @@ impl GeckoElementSnapshot {
     #[inline]
     pub fn has_other_pseudo_class_state(&self) -> bool {
         self.has_any(Flags::OtherPseudoClassState)
+    }
+
+    
+    #[inline]
+    pub fn id_changed(&self) -> bool {
+        self.mIdAttributeChanged()
+    }
+
+    
+    #[inline]
+    pub fn class_changed(&self) -> bool {
+        self.mClassAttributeChanged()
+    }
+
+    
+    
+    #[inline]
+    pub fn other_attr_changed(&self) -> bool {
+        self.mOtherAttributeChanged()
     }
 
     

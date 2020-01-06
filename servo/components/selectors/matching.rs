@@ -253,6 +253,10 @@ impl RelevantLinkStatus {
             return false
         }
 
+        if context.visited_handling == VisitedHandlingMode::AllLinksVisitedAndUnvisited {
+            return true;
+        }
+
         
         if *self != RelevantLinkStatus::Found {
             return false
@@ -272,6 +276,10 @@ impl RelevantLinkStatus {
     {
         if !element.is_link() {
             return false
+        }
+
+        if context.visited_handling == VisitedHandlingMode::AllLinksVisitedAndUnvisited {
+            return true;
         }
 
         
@@ -360,12 +368,74 @@ pub fn matches_selector<E, F>(selector: &Selector<E::Impl>,
     }
 
     let mut local_context = LocalMatchingContext::new(context, selector);
-    matches_complex_selector(&selector, offset, element, &mut local_context, flags_setter)
+    let iter = if offset == 0 {
+        selector.iter()
+    } else {
+        selector.iter_from(offset)
+    };
+    matches_complex_selector(iter, element, &mut local_context, flags_setter)
 }
 
 
-pub fn matches_complex_selector<E, F>(complex_selector: &Selector<E::Impl>,
-                                      offset: usize,
+
+pub enum CompoundSelectorMatchingResult {
+    
+    
+    
+    
+    
+    Matched { next_combinator_offset: usize, },
+    
+    NotMatched,
+}
+
+
+
+
+
+
+
+
+pub fn matches_compound_selector<E>(
+    selector: &Selector<E::Impl>,
+    mut from_offset: usize,
+    context: &mut MatchingContext,
+    element: &E,
+) -> CompoundSelectorMatchingResult
+where
+    E: Element
+{
+    if cfg!(debug_assertions) {
+        selector.combinator_at(from_offset); 
+    }
+
+    let mut local_context = LocalMatchingContext::new(context, selector);
+    for component in selector.iter_raw_rev_from(from_offset - 1) {
+        if matches!(*component, Component::Combinator(..)) {
+            return CompoundSelectorMatchingResult::Matched {
+                next_combinator_offset: from_offset - 1,
+            }
+        }
+
+        if !matches_simple_selector(
+            component,
+            element,
+            &mut local_context,
+            &RelevantLinkStatus::NotLooking,
+            &mut |_, _| {}) {
+            return CompoundSelectorMatchingResult::NotMatched;
+        }
+
+        from_offset -= 1;
+    }
+
+    return CompoundSelectorMatchingResult::Matched {
+        next_combinator_offset: 0,
+    }
+}
+
+
+pub fn matches_complex_selector<E, F>(mut iter: SelectorIter<E::Impl>,
                                       element: &E,
                                       mut context: &mut LocalMatchingContext<E::Impl>,
                                       flags_setter: &mut F)
@@ -373,12 +443,6 @@ pub fn matches_complex_selector<E, F>(complex_selector: &Selector<E::Impl>,
     where E: Element,
           F: FnMut(&E, ElementSelectorFlags),
 {
-    let mut iter = if offset == 0 {
-        complex_selector.iter()
-    } else {
-        complex_selector.iter_from(offset)
-    };
-
     if cfg!(debug_assertions) {
         if context.shared.matching_mode == MatchingMode::ForStatelessPseudoElement {
             assert!(iter.clone().any(|c| {

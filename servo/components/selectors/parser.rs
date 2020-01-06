@@ -451,6 +451,18 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     
+    pub fn combinator_at(&self, index: usize) -> Combinator {
+        match self.0.slice[self.0.slice.len() - index] {
+            Component::Combinator(c) => c,
+            ref other => {
+                panic!("Not a combinator: {:?}, {:?}, index: {}",
+                       other, self, index)
+            }
+        }
+    }
+
+    
+    
     pub fn iter_raw(&self) -> Rev<slice::Iter<Component<Impl>>> {
         self.iter_raw_rev().rev()
     }
@@ -459,6 +471,12 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     pub fn iter_raw_rev(&self) -> slice::Iter<Component<Impl>> {
         self.0.slice.iter()
+    }
+
+    
+    
+    pub fn iter_raw_rev_from(&self, offset: usize) -> slice::Iter<Component<Impl>> {
+        self.0.slice[(self.0.slice.len() - offset)..].iter()
     }
 
     

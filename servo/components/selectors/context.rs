@@ -51,6 +51,12 @@ pub enum VisitedHandlingMode {
     
     
     
+    
+    
+    AllLinksVisitedAndUnvisited,
+    
+    
+    
     RelevantLinkVisited,
 }
 
