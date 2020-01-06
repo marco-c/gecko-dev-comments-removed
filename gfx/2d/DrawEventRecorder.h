@@ -163,22 +163,13 @@ public:
 
 
 
-
-
-  bool CopyRecording(char* aBuffer, size_t aBufferLen);
-
-  
-
-
-
-
   void WipeRecording();
 
+  MemStream mOutputStream;
 private:
   ~DrawEventRecorderMemory() {};
 
   void Flush() override;
-  MemStream mOutputStream;
 };
 
 } 
