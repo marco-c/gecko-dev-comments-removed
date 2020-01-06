@@ -1036,8 +1036,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   updateCanvasElement() {
-    let ratio = parseFloat((this.win.devicePixelRatio || 1).toFixed(2));
-    let size = CANVAS_SIZE / ratio;
+    let size = CANVAS_SIZE / this.win.devicePixelRatio;
     let { x, y } = this._canvasPosition;
 
     
