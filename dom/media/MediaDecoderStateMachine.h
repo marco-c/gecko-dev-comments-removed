@@ -631,8 +631,6 @@ private:
   
   Maybe<MediaInfo> mInfo;
 
-  nsAutoPtr<MetadataTags> mMetadataTags;
-
   mozilla::MediaMetadataManager mMetadataManager;
 
   
