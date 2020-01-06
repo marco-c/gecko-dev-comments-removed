@@ -1404,10 +1404,28 @@ StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 static void
 StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   aWriter.IntProperty("version", 6);
+
+  
+  
+  
+  mozilla::TimeDuration delta =
+    mozilla::TimeStamp::Now() - CorePS::ProcessStartTime(aLock);
+  aWriter.DoubleProperty(
+    "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
+
+  if (!NS_IsMainThread()) {
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
   aWriter.DoubleProperty("interval", ActivePS::Interval(aLock));
   aWriter.IntProperty("stackwalk", ActivePS::FeatureStackWalk(aLock));
 
@@ -1421,14 +1439,6 @@ StreamMetaJSCustomObject(PSLockRef aLock, SpliceableJSONWriter& aWriter)
 
   bool asyncStacks = Preferences::GetBool("javascript.options.asyncstack");
   aWriter.IntProperty("asyncstack", asyncStacks);
-
-  
-  
-  
-  mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - CorePS::ProcessStartTime(aLock);
-  aWriter.DoubleProperty(
-    "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
 
   aWriter.IntProperty("processType", XRE_GetProcessType());
 
