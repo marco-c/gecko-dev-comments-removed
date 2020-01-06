@@ -44,18 +44,20 @@
 
 
 
-
-
 #ifndef UT_SIM_H
 #define UT_SIM_H
 
-#include "integers.h"  
+#include "integers.h" 
 
-#define UT_BUF 160      /* maximum amount of packet reorder */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define UT_BUF 160 /* maximum amount of packet reorder */
 
 typedef struct {
-  uint32_t index;
-  uint32_t buffer[UT_BUF];
+    uint32_t index;
+    uint32_t buffer[UT_BUF];
 } ut_connection;
 
 
@@ -65,16 +67,17 @@ typedef struct {
 
 
 
-void
-ut_init(ut_connection *utc);
+void ut_init(ut_connection *utc);
 
 
 
 
 
 
-uint32_t
-ut_next_index(ut_connection *utc);
+uint32_t ut_next_index(ut_connection *utc);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif 

@@ -44,83 +44,94 @@
 
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-#include "null_auth.h" 
+#include "null_auth.h"
+#include "err.h" 
 #include "alloc.h"
+#include "cipher_types.h"
 
+static srtp_err_status_t srtp_null_auth_alloc(srtp_auth_t **a,
+                                              int key_len,
+                                              int out_len)
+{
+    extern const srtp_auth_type_t srtp_null_auth;
+    uint8_t *pointer;
 
+    debug_print(srtp_mod_auth, "allocating auth func with key length %d",
+                key_len);
+    debug_print(srtp_mod_auth, "                          tag length %d",
+                out_len);
 
-extern debug_module_t mod_auth;
+    
+    pointer = (uint8_t *)srtp_crypto_alloc(sizeof(srtp_null_auth_ctx_t) +
+                                           sizeof(srtp_auth_t));
+    if (pointer == NULL) {
+        return srtp_err_status_alloc_fail;
+    }
 
-err_status_t
-null_auth_alloc(auth_t **a, int key_len, int out_len) {
-  extern auth_type_t null_auth;
-  uint8_t *pointer;
+    
+    *a = (srtp_auth_t *)pointer;
+    (*a)->type = &srtp_null_auth;
+    (*a)->state = pointer + sizeof(srtp_auth_t);
+    (*a)->out_len = out_len;
+    (*a)->prefix_len = out_len;
+    (*a)->key_len = key_len;
 
-  debug_print(mod_auth, "allocating auth func with key length %d", key_len);
-  debug_print(mod_auth, "                          tag length %d", out_len);
-
-  
-  pointer = (uint8_t*)crypto_alloc(sizeof(null_auth_ctx_t) + sizeof(auth_t));
-  if (pointer == NULL)
-    return err_status_alloc_fail;
-
-  
-  *a = (auth_t *)pointer;
-  (*a)->type = &null_auth;
-  (*a)->state = pointer + sizeof (auth_t);  
-  (*a)->out_len = out_len;
-  (*a)->prefix_len = out_len;
-  (*a)->key_len = key_len;
-
-  
-  null_auth.ref_count++;
-
-  return err_status_ok;
+    return srtp_err_status_ok;
 }
 
-err_status_t
-null_auth_dealloc(auth_t *a) {
-  extern auth_type_t null_auth;
-  
-  
-  octet_string_set_to_zero((uint8_t *)a, 
-			   sizeof(null_auth_ctx_t) + sizeof(auth_t));
+static srtp_err_status_t srtp_null_auth_dealloc(srtp_auth_t *a)
+{
+    extern const srtp_auth_type_t srtp_null_auth;
 
-  
-  crypto_free(a);
-  
-  
-  null_auth.ref_count--;
+    
+    octet_string_set_to_zero(a, sizeof(srtp_null_auth_ctx_t) +
+                                    sizeof(srtp_auth_t));
 
-  return err_status_ok;
+    
+    srtp_crypto_free(a);
+
+    return srtp_err_status_ok;
 }
 
-err_status_t
-null_auth_init(null_auth_ctx_t *state, const uint8_t *key, int key_len) {
+static srtp_err_status_t srtp_null_auth_init(void *statev,
+                                             const uint8_t *key,
+                                             int key_len)
+{
+    
+    
 
-  
-  
-  return err_status_ok;
+    return srtp_err_status_ok;
 }
 
-err_status_t
-null_auth_compute(null_auth_ctx_t *state, uint8_t *message,
-		   int msg_octets, int tag_len, uint8_t *result) {
+static srtp_err_status_t srtp_null_auth_compute(void *statev,
+                                                const uint8_t *message,
+                                                int msg_octets,
+                                                int tag_len,
+                                                uint8_t *result)
+{
+    
 
-  return err_status_ok;
+    return srtp_err_status_ok;
 }
 
-err_status_t
-null_auth_update(null_auth_ctx_t *state, uint8_t *message,
-		   int msg_octets) {
+static srtp_err_status_t srtp_null_auth_update(void *statev,
+                                               const uint8_t *message,
+                                               int msg_octets)
+{
+    
 
-  return err_status_ok;
+    return srtp_err_status_ok;
 }
 
-err_status_t
-null_auth_start(null_auth_ctx_t *state) {
-  return err_status_ok;
+static srtp_err_status_t srtp_null_auth_start(void *statev)
+{
+    
+
+    return srtp_err_status_ok;
 }
 
 
@@ -130,33 +141,28 @@ null_auth_start(null_auth_ctx_t *state) {
 
 
 
-auth_test_case_t
-null_auth_test_case_0 = {
-  0,                                       
-  NULL,                                    
-  0,                                        
-  NULL,                                    
-  0,                                       
-  NULL,                                    
-  NULL                                     
+static const srtp_auth_test_case_t srtp_null_auth_test_case_0 = {
+    0,    
+    NULL, 
+    0,    
+    NULL, 
+    0,    
+    NULL, 
+    NULL  
 };
 
 
 
-char null_auth_description[] = "null authentication function";
+static const char srtp_null_auth_description[] = "null authentication function";
 
-auth_type_t
-null_auth  = {
-  (auth_alloc_func)      null_auth_alloc,
-  (auth_dealloc_func)    null_auth_dealloc,
-  (auth_init_func)       null_auth_init,
-  (auth_compute_func)    null_auth_compute,
-  (auth_update_func)     null_auth_update,
-  (auth_start_func)      null_auth_start,
-  (char *)               null_auth_description,
-  (int)                  0,  
-  (auth_test_case_t *)   &null_auth_test_case_0,
-  (debug_module_t *)     NULL,
-  (auth_type_id_t)       NULL_AUTH
+const srtp_auth_type_t srtp_null_auth = {
+    srtp_null_auth_alloc,        
+    srtp_null_auth_dealloc,      
+    srtp_null_auth_init,         
+    srtp_null_auth_compute,      
+    srtp_null_auth_update,       
+    srtp_null_auth_start,        
+    srtp_null_auth_description,  
+    &srtp_null_auth_test_case_0, 
+    SRTP_NULL_AUTH               
 };
-

@@ -47,22 +47,27 @@
 
 #include "auth.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
-	char foo;
-} null_auth_ctx_t;
+    char foo;
+} srtp_null_auth_ctx_t;
 
-err_status_t
-null_auth_alloc(auth_t **a, int key_len, int out_len);
+#if 0
+srtp_err_status_t srtp_null_auth_alloc(srtp_auth_t **a, int key_len, int out_len);
 
-err_status_t
-null_auth_dealloc(auth_t *a);
+srtp_err_status_t srtp_null_auth_dealloc(srtp_auth_t *a);
 
-err_status_t
-null_auth_init(null_auth_ctx_t *state, const uint8_t *key, int key_len);
+srtp_err_status_t srtp_null_auth_init(srtp_null_auth_ctx_t *state, const uint8_t *key, int key_len);
 
-err_status_t
-null_auth_compute (null_auth_ctx_t *state, uint8_t *message,
-		   int msg_octets, int tag_len, uint8_t *result);
+srtp_err_status_t srtp_null_auth_compute(srtp_null_auth_ctx_t *state, uint8_t *message, int msg_octets, int tag_len, uint8_t *result);
 
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif 

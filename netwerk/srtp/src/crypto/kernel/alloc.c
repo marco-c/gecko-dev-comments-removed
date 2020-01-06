@@ -42,14 +42,18 @@
 
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "alloc.h"
 #include "crypto_kernel.h"
 
 
 
-debug_module_t mod_alloc = {
-  0,                  
-  "alloc"             
+srtp_debug_module_t mod_alloc = {
+    0,      
+    "alloc" 
 };
 
 
@@ -61,61 +65,33 @@ debug_module_t mod_alloc = {
 
 
 
-#ifdef SRTP_KERNEL_LINUX
+#if defined(HAVE_STDLIB_H)
 
-#include <linux/interrupt.h>
+void *srtp_crypto_alloc(size_t size)
+{
+    void *ptr;
 
-void *
-crypto_alloc(size_t size) {
-  void *ptr;
+    ptr = calloc(1, size);
 
-  ptr = kmalloc(size, in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+    if (ptr) {
+        debug_print(mod_alloc, "(location: %p) allocated", ptr);
+    } else {
+        debug_print(mod_alloc, "allocation failed (asked for %d bytes)\n",
+                    size);
+    }
 
-  if (ptr) {
-    debug_print(mod_alloc, "(location: %p) allocated", ptr);
-  } else {
-    debug_print(mod_alloc, "allocation failed (asked for %d bytes)\n", size);
-  }
-
-  return ptr;
+    return ptr;
 }
 
-void 
-crypto_free(void *ptr) {
+void srtp_crypto_free(void *ptr)
+{
+    debug_print(mod_alloc, "(location: %p) freed", ptr);
 
-  debug_print(mod_alloc, "(location: %p) freed", ptr);
-
-  kfree(ptr);
+    free(ptr);
 }
 
+#else 
 
-#elif defined(HAVE_STDLIB_H)
-
-void *
-crypto_alloc(size_t size) {
-  void *ptr;
-
-  ptr = malloc(size);
-    
-  if (ptr) {
-    debug_print(mod_alloc, "(location: %p) allocated", ptr);
-  } else {
-    debug_print(mod_alloc, "allocation failed (asked for %d bytes)\n", size);
-  }
-    
-  return ptr;
-}
-
-void 
-crypto_free(void *ptr) {
-
-  debug_print(mod_alloc, "(location: %p) freed", ptr);
-
-  free(ptr);
-}
-
-#else  
-
-#error no memory allocation defined yet 
+#error no memory allocation defined yet
 
 #endif

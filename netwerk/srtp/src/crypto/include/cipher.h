@@ -42,155 +42,15 @@
 
 
 
+#ifndef SRTP_CIPHER_H
+#define SRTP_CIPHER_H
 
-#ifndef CIPHER_H
-#define CIPHER_H
+#include "srtp.h"
+#include "crypto_types.h" 
 
-#include "datatypes.h"          
-#include "rdbx.h"               
-#include "err.h"                
-#include "crypto.h"		
-#include "crypto_types.h"	
-
-
-
-
-
-
-
-
-
-
-typedef enum { 
-  direction_encrypt, 
-  direction_decrypt, 
-  direction_any      
-} cipher_direction_t;
-
-
-
-
-
-
-typedef struct cipher_type_t *cipher_type_pointer_t;
-typedef struct cipher_t      *cipher_pointer_t;
-
-
-
-
-
-typedef err_status_t (*cipher_alloc_func_t)
-     (cipher_pointer_t *cp, int key_len);
-
-
-
-
-
-
-typedef err_status_t (*cipher_init_func_t)
-(void *state, const uint8_t *key, int key_len, cipher_direction_t dir);
-
-
-
-typedef err_status_t (*cipher_dealloc_func_t)(cipher_pointer_t cp);
-
-
-
-typedef err_status_t (*cipher_set_segment_func_t)
-     (void *state, xtd_seq_num_t idx);
-
-
-
-typedef err_status_t (*cipher_encrypt_func_t)
-     (void *state, uint8_t *buffer, unsigned int *octets_to_encrypt);
-
-
-
-typedef err_status_t (*cipher_decrypt_func_t)
-     (void *state, uint8_t *buffer, unsigned int *octets_to_decrypt);
-
-
-
-
-
-typedef err_status_t (*cipher_set_iv_func_t)
-     (cipher_pointer_t cp, void *iv);
-
-
-
-
-
-
-
-
-
-typedef struct cipher_test_case_t {
-  int key_length_octets;                      
-  uint8_t *key;                               
-  uint8_t *idx;                               
-  int plaintext_length_octets;                 
-  uint8_t *plaintext;                         
-  int ciphertext_length_octets;                
-  uint8_t *ciphertext;                        
-  struct cipher_test_case_t *next_test_case;  
-} cipher_test_case_t;
-
-
-
-typedef struct cipher_type_t {
-  cipher_alloc_func_t         alloc;
-  cipher_dealloc_func_t       dealloc;
-  cipher_init_func_t          init;
-  cipher_encrypt_func_t       encrypt;
-  cipher_encrypt_func_t       decrypt;
-  cipher_set_iv_func_t        set_iv;
-  char                       *description;
-  int                         ref_count;
-  cipher_test_case_t         *test_data;
-  debug_module_t             *debug;
-  cipher_type_id_t            id;
-} cipher_type_t;
-
-
-
-
-
-
-typedef struct cipher_t {
-  cipher_type_t *type;
-  void          *state;
-  int            key_len;
-#ifdef FORCE_64BIT_ALIGN
-  int            pad;
+#ifdef __cplusplus
+extern "C" {
 #endif
-} cipher_t;
-
-
-
-#define cipher_type_alloc(ct, c, klen) ((ct)->alloc((c), (klen)))
-
-#define cipher_dealloc(c) (((c)->type)->dealloc(c))
-
-#define cipher_init(c, k, dir) (((c)->type)->init(((c)->state), (k), ((c)->key_len), (dir)))
-
-#define cipher_encrypt(c, buf, len) \
-        (((c)->type)->encrypt(((c)->state), (buf), (len)))
-
-#define cipher_decrypt(c, buf, len) \
-        (((c)->type)->decrypt(((c)->state), (buf), (len)))
-
-#define cipher_set_iv(c, n)                           \
-  ((c) ? (((c)->type)->set_iv(((cipher_pointer_t)(c)->state), (n))) :   \
-                                err_status_no_such_op)  
-
-err_status_t
-cipher_output(cipher_t *c, uint8_t *buffer, int num_octets_to_output);
-
-
-
-
-int
-cipher_get_key_length(const cipher_t *c);
 
 
 
@@ -199,8 +59,70 @@ cipher_get_key_length(const cipher_t *c);
 
 
 
-err_status_t
-cipher_type_self_test(const cipher_type_t *ct);
+typedef enum {
+    srtp_direction_encrypt, 
+    srtp_direction_decrypt, 
+    srtp_direction_any      
+} srtp_cipher_direction_t;
+
+
+
+
+
+typedef struct srtp_cipher_t *srtp_cipher_pointer_t;
+
+
+
+
+
+typedef srtp_err_status_t (*srtp_cipher_alloc_func_t)(srtp_cipher_pointer_t *cp,
+                                                      int key_len,
+                                                      int tag_len);
+
+
+
+
+typedef srtp_err_status_t (*srtp_cipher_init_func_t)(void *state,
+                                                     const uint8_t *key);
+
+
+typedef srtp_err_status_t (*srtp_cipher_dealloc_func_t)(
+    srtp_cipher_pointer_t cp);
+
+
+
+
+typedef srtp_err_status_t (*srtp_cipher_set_aad_func_t)(void *state,
+                                                        const uint8_t *aad,
+                                                        uint32_t aad_len);
+
+
+typedef srtp_err_status_t (*srtp_cipher_encrypt_func_t)(
+    void *state,
+    uint8_t *buffer,
+    unsigned int *octets_to_encrypt);
+
+
+typedef srtp_err_status_t (*srtp_cipher_decrypt_func_t)(
+    void *state,
+    uint8_t *buffer,
+    unsigned int *octets_to_decrypt);
+
+
+
+
+typedef srtp_err_status_t (*srtp_cipher_set_iv_func_t)(
+    void *state,
+    uint8_t *iv,
+    srtp_cipher_direction_t direction);
+
+
+
+
+
+typedef srtp_err_status_t (*srtp_cipher_get_tag_func_t)(void *state,
+                                                        uint8_t *tag,
+                                                        uint32_t *len);
 
 
 
@@ -209,8 +131,66 @@ cipher_type_self_test(const cipher_type_t *ct);
 
 
 
-err_status_t
-cipher_type_test(const cipher_type_t *ct, const cipher_test_case_t *test_data);
+typedef struct srtp_cipher_test_case_t {
+    int key_length_octets;                 
+    const uint8_t *key;                    
+    uint8_t *idx;                          
+    unsigned int plaintext_length_octets;  
+    const uint8_t *plaintext;              
+    unsigned int ciphertext_length_octets; 
+    const uint8_t *ciphertext;             
+    int aad_length_octets;                 
+    const uint8_t *aad;                    
+    int tag_length_octets;                 
+    const struct srtp_cipher_test_case_t
+        *next_test_case; 
+} srtp_cipher_test_case_t;
+
+
+typedef struct srtp_cipher_type_t {
+    srtp_cipher_alloc_func_t alloc;
+    srtp_cipher_dealloc_func_t dealloc;
+    srtp_cipher_init_func_t init;
+    srtp_cipher_set_aad_func_t set_aad;
+    srtp_cipher_encrypt_func_t encrypt;
+    srtp_cipher_encrypt_func_t decrypt;
+    srtp_cipher_set_iv_func_t set_iv;
+    srtp_cipher_get_tag_func_t get_tag;
+    const char *description;
+    const srtp_cipher_test_case_t *test_data;
+    srtp_cipher_type_id_t id;
+} srtp_cipher_type_t;
+
+
+
+
+
+typedef struct srtp_cipher_t {
+    const srtp_cipher_type_t *type;
+    void *state;
+    int key_len;
+    int algorithm;
+} srtp_cipher_t;
+
+
+int srtp_cipher_get_key_length(const srtp_cipher_t *c);
+
+
+
+
+
+
+srtp_err_status_t srtp_cipher_type_self_test(const srtp_cipher_type_t *ct);
+
+
+
+
+
+
+
+srtp_err_status_t srtp_cipher_type_test(
+    const srtp_cipher_type_t *ct,
+    const srtp_cipher_test_case_t *test_data);
 
 
 
@@ -222,9 +202,47 @@ cipher_type_test(const cipher_type_t *ct, const cipher_test_case_t *test_data);
 
 
 
+uint64_t srtp_cipher_bits_per_second(srtp_cipher_t *c,
+                                     int octets_in_buffer,
+                                     int num_trials);
+
+srtp_err_status_t srtp_cipher_type_alloc(const srtp_cipher_type_t *ct,
+                                         srtp_cipher_t **c,
+                                         int key_len,
+                                         int tlen);
+srtp_err_status_t srtp_cipher_dealloc(srtp_cipher_t *c);
+srtp_err_status_t srtp_cipher_init(srtp_cipher_t *c, const uint8_t *key);
+srtp_err_status_t srtp_cipher_set_iv(srtp_cipher_t *c,
+                                     uint8_t *iv,
+                                     int direction);
+srtp_err_status_t srtp_cipher_output(srtp_cipher_t *c,
+                                     uint8_t *buffer,
+                                     uint32_t *num_octets_to_output);
+srtp_err_status_t srtp_cipher_encrypt(srtp_cipher_t *c,
+                                      uint8_t *buffer,
+                                      uint32_t *num_octets_to_output);
+srtp_err_status_t srtp_cipher_decrypt(srtp_cipher_t *c,
+                                      uint8_t *buffer,
+                                      uint32_t *num_octets_to_output);
+srtp_err_status_t srtp_cipher_get_tag(srtp_cipher_t *c,
+                                      uint8_t *buffer,
+                                      uint32_t *tag_len);
+srtp_err_status_t srtp_cipher_set_aad(srtp_cipher_t *c,
+                                      const uint8_t *aad,
+                                      uint32_t aad_len);
 
 
-uint64_t
-cipher_bits_per_second(cipher_t *c, int octets_in_buffer, int num_trials);
+
+
+
+
+
+
+srtp_err_status_t srtp_replace_cipher_type(const srtp_cipher_type_t *ct,
+                                           srtp_cipher_type_id_t id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif 

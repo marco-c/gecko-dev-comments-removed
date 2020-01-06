@@ -43,104 +43,64 @@
 
 
 
-#ifndef AUTH_H
-#define AUTH_H
+#ifndef SRTP_AUTH_H
+#define SRTP_AUTH_H
 
-#include "datatypes.h"          
-#include "err.h"                
-#include "crypto.h"		
-#include "crypto_types.h"	
+#include "srtp.h"
+#include "crypto_types.h" 
 
-typedef struct auth_type_t *auth_type_pointer;
-typedef struct auth_t      *auth_pointer_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef err_status_t (*auth_alloc_func)
-     (auth_pointer_t *ap, int key_len, int out_len);
+typedef const struct srtp_auth_type_t *srtp_auth_type_pointer;
+typedef struct srtp_auth_t *srtp_auth_pointer_t;
 
-typedef err_status_t (*auth_init_func)
-     (void *state, const uint8_t *key, int key_len);
+typedef srtp_err_status_t (*srtp_auth_alloc_func)(srtp_auth_pointer_t *ap,
+                                                  int key_len,
+                                                  int out_len);
 
-typedef err_status_t (*auth_dealloc_func)(auth_pointer_t ap);
+typedef srtp_err_status_t (*srtp_auth_init_func)(void *state,
+                                                 const uint8_t *key,
+                                                 int key_len);
 
-typedef err_status_t (*auth_compute_func)
-     (void *state, uint8_t *buffer, int octets_to_auth, 
-      int tag_len, uint8_t *tag);
+typedef srtp_err_status_t (*srtp_auth_dealloc_func)(srtp_auth_pointer_t ap);
 
-typedef err_status_t (*auth_update_func)
-     (void *state, uint8_t *buffer, int octets_to_auth);
+typedef srtp_err_status_t (*srtp_auth_compute_func)(void *state,
+                                                    const uint8_t *buffer,
+                                                    int octets_to_auth,
+                                                    int tag_len,
+                                                    uint8_t *tag);
 
-typedef err_status_t (*auth_start_func)(void *state);
-     
+typedef srtp_err_status_t (*srtp_auth_update_func)(void *state,
+                                                   const uint8_t *buffer,
+                                                   int octets_to_auth);
 
-
-#define auth_type_alloc(at, a, klen, outlen)                        \
-                 ((at)->alloc((a), (klen), (outlen)))
-
-#define auth_init(a, key)                                           \
-                 (((a)->type)->init((a)->state, (key), ((a)->key_len)))
-
-#define auth_compute(a, buf, len, res)                              \
-       (((a)->type)->compute((a)->state, (buf), (len), (a)->out_len, (res)))
-
-#define auth_update(a, buf, len)                                    \
-       (((a)->type)->update((a)->state, (buf), (len)))
-
-#define auth_start(a)(((a)->type)->start((a)->state))
-
-#define auth_dealloc(c) (((c)->type)->dealloc(c))
+typedef srtp_err_status_t (*srtp_auth_start_func)(void *state);
 
 
+#define srtp_auth_type_alloc(at, a, klen, outlen)                              \
+    ((at)->alloc((a), (klen), (outlen)))
 
-int
-auth_get_key_length(const struct auth_t *a);
+#define srtp_auth_init(a, key)                                                 \
+    (((a)->type)->init((a)->state, (key), ((a)->key_len)))
 
-int
-auth_get_tag_length(const struct auth_t *a);
+#define srtp_auth_compute(a, buf, len, res)                                    \
+    (((a)->type)->compute((a)->state, (buf), (len), (a)->out_len, (res)))
 
-int
-auth_get_prefix_length(const struct auth_t *a);
+#define srtp_auth_update(a, buf, len)                                          \
+    (((a)->type)->update((a)->state, (buf), (len)))
 
+#define srtp_auth_start(a) (((a)->type)->start((a)->state))
 
-
-
-
-
-
-
-
-typedef struct auth_test_case_t {
-  int key_length_octets;                    
-  uint8_t *key;                             
-  int data_length_octets;                    
-  uint8_t *data;                            
-  int tag_length_octets;                    
-  uint8_t *tag;                             
-  struct auth_test_case_t *next_test_case;  
-} auth_test_case_t;
+#define srtp_auth_dealloc(c) (((c)->type)->dealloc(c))
 
 
+int srtp_auth_get_key_length(const struct srtp_auth_t *a);
 
-typedef struct auth_type_t {
-  auth_alloc_func      alloc;
-  auth_dealloc_func    dealloc;
-  auth_init_func       init;
-  auth_compute_func    compute;
-  auth_update_func     update;
-  auth_start_func      start;
-  char                *description;
-  int                  ref_count;
-  auth_test_case_t    *test_data;
-  debug_module_t      *debug;
-  auth_type_id_t       id;
-} auth_type_t;
+int srtp_auth_get_tag_length(const struct srtp_auth_t *a);
 
-typedef struct auth_t {
-  auth_type_t *type;
-  void        *state;                   
-  int          out_len;           
-  int          key_len;           
-  int          prefix_len;        
-} auth_t;
+int srtp_auth_get_prefix_length(const struct srtp_auth_t *a);
 
 
 
@@ -148,8 +108,53 @@ typedef struct auth_t {
 
 
 
-err_status_t
-auth_type_self_test(const auth_type_t *at);
+
+typedef struct srtp_auth_test_case_t {
+    int key_length_octets;  
+    const uint8_t *key;     
+    int data_length_octets; 
+    const uint8_t *data;    
+    int tag_length_octets;  
+    const uint8_t *tag;     
+    const struct srtp_auth_test_case_t
+        *next_test_case; 
+} srtp_auth_test_case_t;
+
+
+typedef struct srtp_auth_type_t {
+    srtp_auth_alloc_func alloc;
+    srtp_auth_dealloc_func dealloc;
+    srtp_auth_init_func init;
+    srtp_auth_compute_func compute;
+    srtp_auth_update_func update;
+    srtp_auth_start_func start;
+    const char *description;
+    const srtp_auth_test_case_t *test_data;
+    srtp_auth_type_id_t id;
+} srtp_auth_type_t;
+
+typedef struct srtp_auth_t {
+    const srtp_auth_type_t *type;
+    void *state;
+    int out_len;    
+    int key_len;    
+    int prefix_len; 
+} srtp_auth_t;
+
+
+
+
+
+
+srtp_err_status_t srtp_auth_type_self_test(const srtp_auth_type_t *at);
+
+
+
+
+
+
+srtp_err_status_t srtp_auth_type_test(const srtp_auth_type_t *at,
+                                      const srtp_auth_test_case_t *test_data);
 
 
 
@@ -157,15 +162,12 @@ auth_type_self_test(const auth_type_t *at);
 
 
 
-err_status_t
-auth_type_test(const auth_type_t *at, const auth_test_case_t *test_data);
 
+srtp_err_status_t srtp_replace_auth_type(const srtp_auth_type_t *ct,
+                                         srtp_auth_type_id_t id);
 
-
-
-
-
-int
-auth_type_get_ref_count(const auth_type_t *at);
+#ifdef __cplusplus
+}
+#endif
 
 #endif 

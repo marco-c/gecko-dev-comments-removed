@@ -42,108 +42,67 @@
 
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "err.h"
-
-#ifdef ERR_REPORTING_SYSLOG
-# ifdef HAVE_SYSLOG_H
-#  include <syslog.h>
-# endif
-#endif
+#include "datatypes.h"
+#include <string.h>
 
 
 
+static FILE *srtp_err_file = NULL;
 
-err_reporting_level_t err_level = err_level_none;
-
-#ifdef SRTP_KERNEL_LINUX
-err_status_t
-err_reporting_init(char *ident) {
-
-  return err_status_ok;
-}
-
-#else 	
-
-
-
-static FILE *err_file = NULL;
-
-err_status_t
-err_reporting_init(char *ident) {
-#ifdef ERR_REPORTING_SYSLOG
-  openlog(ident, LOG_PID, LOG_AUTHPRIV);
-#endif
-  
-  
-
-
-
-
+srtp_err_status_t srtp_err_reporting_init()
+{
 #ifdef ERR_REPORTING_STDOUT
-  err_file = stdout;
-#elif defined(USE_ERR_REPORTING_FILE)
-  
-  err_file = fopen(ERR_REPORTING_FILE, "w");
-  if (err_file == NULL)
-    return err_status_init_fail;
-#endif
-
-  return err_status_ok;
-}
-
-void
-err_report(int priority, char *format, ...) {
-  va_list args;
-
-  if ((err_reporting_level_t)priority <= err_level) {
-
-    va_start(args, format);
-    if (err_file != NULL) {
-      vfprintf(err_file, format, args);
-	  
-    }
-#ifdef ERR_REPORTING_SYSLOG
-    if (1) { 
-      int syslogpri;
-
-      switch (priority) {
-      case err_level_emergency:
-	syslogpri = LOG_EMERG;
-	break;
-      case err_level_alert:
-	syslogpri = LOG_ALERT;
-	break;
-      case err_level_critical:
-	syslogpri = LOG_CRIT;
-	break;
-      case err_level_error:
-	syslogpri = LOG_ERR;
-	break;
-      case err_level_warning:
-	syslogpri = LOG_WARNING;
-	break;
-      case err_level_notice:
-	syslogpri = LOG_NOTICE;
-	break;
-      case err_level_info:
-	syslogpri = LOG_INFO;
-	break;
-      case err_level_debug:
-      case err_level_none:
-      default:
-	syslogpri = LOG_DEBUG;
-	break;
-      }
-
-      vsyslog(syslogpri, format, args);
+    srtp_err_file = stdout;
+#elif defined(ERR_REPORTING_FILE)
+    
+    srtp_err_file = fopen(ERR_REPORTING_FILE, "w");
+    if (srtp_err_file == NULL) {
+        return srtp_err_status_init_fail;
     }
 #endif
-    va_end(args);
-  }
-}
-#endif 	
 
-void
-err_reporting_set_level(err_reporting_level_t lvl) { 
-  err_level = lvl;
+    return srtp_err_status_ok;
+}
+
+static srtp_err_report_handler_func_t *srtp_err_report_handler = NULL;
+
+srtp_err_status_t srtp_install_err_report_handler(
+    srtp_err_report_handler_func_t func)
+{
+    srtp_err_report_handler = func;
+    return srtp_err_status_ok;
+}
+
+void srtp_err_report(srtp_err_reporting_level_t level, const char *format, ...)
+{
+    va_list args;
+    if (srtp_err_file != NULL) {
+        va_start(args, format);
+        vfprintf(srtp_err_file, format, args);
+        va_end(args);
+    }
+    if (srtp_err_report_handler != NULL) {
+        va_start(args, format);
+        char msg[512];
+        if (vsnprintf(msg, sizeof(msg), format, args) > 0) {
+            
+            size_t l = strlen(msg);
+            if (l && msg[l - 1] == '\n') {
+                msg[l - 1] = '\0';
+            }
+            srtp_err_report_handler(level, msg);
+            
+
+
+
+
+            octet_string_set_to_zero(msg, sizeof(msg));
+        }
+        va_end(args);
+    }
 }

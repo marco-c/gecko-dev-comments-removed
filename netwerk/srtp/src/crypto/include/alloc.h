@@ -42,16 +42,35 @@
 
 
 
-
 #ifndef CRYPTO_ALLOC_H
 #define CRYPTO_ALLOC_H
 
 #include "datatypes.h"
 
-void *
-crypto_alloc(size_t size);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void
-crypto_free(void *ptr);
+
+
+
+
+
+
+
+
+void *srtp_crypto_alloc(size_t size);
+
+
+
+
+
+
+
+void srtp_crypto_free(void *ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif 

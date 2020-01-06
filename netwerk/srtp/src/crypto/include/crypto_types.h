@@ -42,8 +42,8 @@
 
 
 
-#ifndef CRYPTO_TYPES_H
-#define CRYPTO_TYPES_H
+#ifndef SRTP_CRYPTO_TYPES_H
+#define SRTP_CRYPTO_TYPES_H
 
 
 
@@ -52,6 +52,7 @@
 
 
 
+#define SRTP_NULL_CIPHER 0
 
 
 
@@ -60,6 +61,7 @@
 
 
 
+#define SRTP_AES_ICM_128 1
 
 
 
@@ -68,6 +70,7 @@
 
 
 
+#define SRTP_AES_ICM_192 4
 
 
 
@@ -76,6 +79,7 @@
 
 
 
+#define SRTP_AES_ICM_256 5
 
 
 
@@ -83,6 +87,7 @@
 
 
 
+#define SRTP_AES_GCM_128 6
 
 
 
@@ -90,131 +95,22 @@
 
 
 
+#define SRTP_AES_GCM_256 7
 
 
 
 
-#define NULL_CIPHER        0            
 
 
 
+#define SRTP_NULL_AUTH 0
 
 
 
 
 
-#define AES_ICM            1            
 
 
+#define SRTP_HMAC_SHA1 3
 
-
-
-#define AES_128_ICM        AES_ICM
-
-
-
-
-
-
-
-#define SEAL               2            
-
-
-
-
-
-
-
-#define AES_CBC            3            
-
-
-
-
-
-
-#define AES_128_CBC        AES_CBC            
-
-
-
-
-
-
-#define STRONGHOLD_CIPHER  AES_ICM  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-#define NULL_AUTH          0           
-
-
-
-
-
-
-
-
-
-#define UST_TMMHv2         1           
-
-
-
-
-
-
-
-#define UST_AES_128_XMAC   2           
-
-
-
-
-
-
-
-#define HMAC_SHA1          3          
-
-
-
-
-
-
-
-#define STRONGHOLD_AUTH    HMAC_SHA1   
-
-
-
-
-
-
-
-
-#endif  
+#endif 

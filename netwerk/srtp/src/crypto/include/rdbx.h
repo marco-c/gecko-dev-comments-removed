@@ -43,46 +43,48 @@
 
 
 
+
 #ifndef RDBX_H
 #define RDBX_H
 
 #include "datatypes.h"
 #include "err.h"
 
-  
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 #ifndef ROC_TEST
 
-typedef uint16_t sequence_number_t;   
-typedef uint32_t rollover_counter_t;   
+typedef uint16_t srtp_sequence_number_t;  
+typedef uint32_t srtp_rollover_counter_t; 
 
-#else  
+#else 
 
-typedef unsigned char sequence_number_t;         
-typedef uint16_t rollover_counter_t;   
+typedef unsigned char srtp_sequence_number_t; 
+typedef uint16_t srtp_rollover_counter_t;     
 
 #endif
 
-#define seq_num_median (1 << (8*sizeof(sequence_number_t) - 1))
-#define seq_num_max    (1 << (8*sizeof(sequence_number_t)))
+#define seq_num_median (1 << (8 * sizeof(srtp_sequence_number_t) - 1))
+#define seq_num_max (1 << (8 * sizeof(srtp_sequence_number_t)))
 
 
 
 
 
-
-typedef uint64_t xtd_seq_num_t;
-
-
+typedef uint64_t srtp_xtd_seq_num_t;
 
 
 
 
 
 typedef struct {
-  xtd_seq_num_t index;
-  bitvector_t bitmask;
-} rdbx_t;
+    srtp_xtd_seq_num_t index;
+    bitvector_t bitmask;
+} srtp_rdbx_t;
 
 
 
@@ -90,37 +92,35 @@ typedef struct {
 
 
 
+srtp_err_status_t srtp_rdbx_init(srtp_rdbx_t *rdbx, unsigned long ws);
 
 
-err_status_t
-rdbx_init(rdbx_t *rdbx, unsigned long ws);
 
 
 
 
+srtp_err_status_t srtp_rdbx_dealloc(srtp_rdbx_t *rdbx);
 
 
 
 
-err_status_t
-rdbx_dealloc(rdbx_t *rdbx);
 
 
 
 
 
+int32_t srtp_rdbx_estimate_index(const srtp_rdbx_t *rdbx,
+                                 srtp_xtd_seq_num_t *guess,
+                                 srtp_sequence_number_t s);
 
 
 
 
 
 
-int
-rdbx_estimate_index(const rdbx_t *rdbx,
-		    xtd_seq_num_t *guess,
-		    sequence_number_t s);
 
 
+srtp_err_status_t srtp_rdbx_check(const srtp_rdbx_t *rdbx, int difference);
 
 
 
@@ -128,12 +128,11 @@ rdbx_estimate_index(const rdbx_t *rdbx,
 
 
 
-err_status_t
-rdbx_check(const rdbx_t *rdbx, int difference);
 
 
 
 
+srtp_err_status_t srtp_rdbx_add_index(srtp_rdbx_t *rdbx, int delta);
 
 
 
@@ -142,8 +141,7 @@ rdbx_check(const rdbx_t *rdbx, int difference);
 
 
 
-err_status_t
-rdbx_add_index(rdbx_t *rdbx, int delta);
+srtp_err_status_t srtp_rdbx_set_roc(srtp_rdbx_t *rdbx, uint32_t roc);
 
 
 
@@ -151,11 +149,10 @@ rdbx_add_index(rdbx_t *rdbx, int delta);
 
 
 
+srtp_xtd_seq_num_t srtp_rdbx_get_packet_index(const srtp_rdbx_t *rdbx);
 
 
 
-err_status_t
-rdbx_set_roc(rdbx_t *rdbx, uint32_t roc);
 
 
 
@@ -163,14 +160,15 @@ rdbx_set_roc(rdbx_t *rdbx, uint32_t roc);
 
 
 
-xtd_seq_num_t
-rdbx_get_packet_index(const rdbx_t *rdbx);
 
 
+unsigned long srtp_rdbx_get_window_size(const srtp_rdbx_t *rdbx);
 
 
+void srtp_index_init(srtp_xtd_seq_num_t *pi);
 
 
+void srtp_index_advance(srtp_xtd_seq_num_t *pi, srtp_sequence_number_t s);
 
 
 
@@ -178,22 +176,20 @@ rdbx_get_packet_index(const rdbx_t *rdbx);
 
 
 
-unsigned long
-rdbx_get_window_size(const rdbx_t *rdbx);
 
 
 
+int32_t srtp_index_guess(const srtp_xtd_seq_num_t *local,
+                         srtp_xtd_seq_num_t *guess,
+                         srtp_sequence_number_t s);
 
-void
-index_init(xtd_seq_num_t *pi);
 
 
 
-void
-index_advance(xtd_seq_num_t *pi, sequence_number_t s);
 
 
 
+uint32_t srtp_rdbx_get_roc(const srtp_rdbx_t *rdbx);
 
 
 
@@ -202,20 +198,12 @@ index_advance(xtd_seq_num_t *pi, sequence_number_t s);
 
 
 
+srtp_err_status_t srtp_rdbx_set_roc_seq(srtp_rdbx_t *rdbx,
+                                        uint32_t roc,
+                                        uint16_t seq);
 
-int
-index_guess(const xtd_seq_num_t *local,
-		   xtd_seq_num_t *guess,
-		   sequence_number_t s);
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif 
-
-
-
-
-
-
-
-
-
