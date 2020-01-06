@@ -95,6 +95,9 @@ pub enum mp4parse_codec {
     VP9,
     MP3,
     MP4V,
+    JPEG,   
+    AC3,
+    EC3,
 }
 
 impl Default for mp4parse_codec {
@@ -428,6 +431,10 @@ pub unsafe extern fn mp4parse_get_track_info(parser: *mut mp4parse_parser, track
                 mp4parse_codec::UNKNOWN,
             AudioCodecSpecific::MP3 =>
                 mp4parse_codec::MP3,
+            AudioCodecSpecific::AC3SpecificBox =>
+                mp4parse_codec::AC3,
+            AudioCodecSpecific::EC3SpecificBox =>
+                mp4parse_codec::EC3,
         },
         Some(SampleEntry::Video(ref video)) => match video.codec_specific {
             VideoCodecSpecific::VPxConfig(_) =>
@@ -436,6 +443,8 @@ pub unsafe extern fn mp4parse_get_track_info(parser: *mut mp4parse_parser, track
                 mp4parse_codec::AVC,
             VideoCodecSpecific::ESDSConfig(_) =>
                 mp4parse_codec::MP4V,
+            VideoCodecSpecific::JPEG =>
+                mp4parse_codec::JPEG,
         },
         _ => mp4parse_codec::UNKNOWN,
     };
@@ -564,6 +573,8 @@ pub unsafe extern fn mp4parse_get_track_audio_info(parser: *mut mp4parse_parser,
                 }
             }
         }
+        AudioCodecSpecific::AC3SpecificBox => (),
+        AudioCodecSpecific::EC3SpecificBox => (),
         AudioCodecSpecific::MP3 => (),
     }
 
@@ -944,19 +955,9 @@ fn create_sample_table(track: &Track, track_offset_time: i64) -> Option<Vec<mp4p
         
         let ctts_offset = ctts_offset_iter.next_offset_time();
 
-        
-        
-        let start_composition = track_time_to_us(decode_time + ctts_offset, timescale).and_then(|t| {
-            if t < 0 { return None; }
-            Some(t)
-        });
+        let start_composition = track_time_to_us(decode_time + ctts_offset, timescale);
 
-        
-        
-        let end_composition = track_time_to_us(sum_delta + ctts_offset, timescale).and_then(|t| {
-            if t < 0 { return None; }
-            Some(t)
-        });
+        let end_composition = track_time_to_us(sum_delta + ctts_offset, timescale);
 
         let start_decode = track_time_to_us(decode_time, timescale);
 
