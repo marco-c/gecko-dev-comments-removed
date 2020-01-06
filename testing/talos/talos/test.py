@@ -282,6 +282,30 @@ class tpaint(PageloaderTest):
 
 
 @register_test()
+class cpstartup(PageloaderTest):
+    """
+    Tests the amount of time it takes to start up a new content process and
+    initialize it to the point where it can start processing incoming URLs
+    to load.
+    """
+    extensions = '${talos}/tests/cpstartup'
+    tpmanifest = '${talos}/tests/cpstartup/cpstartup.manifest'
+    tppagecycles = 20
+    gecko_profile_entries = 1000000
+    tploadnocache = True
+    unit = 'ms'
+    preferences = {
+        
+        
+        
+        
+        
+        'browser.link.open_newwindow': 3,
+        'browser.link.open_newwindow.restriction': 2,
+    }
+
+
+@register_test()
 class tabpaint(PageloaderTest):
     """
     Tests the amount of time it takes to open new tabs, triggered from
