@@ -193,6 +193,13 @@ task_description_schema = Schema({
 
     
     
+    
+    
+    
+    Required('always-target', default=False): bool,
+
+    
+    
     Required('optimization', default=None): Any(
         
         None,
@@ -1322,6 +1329,7 @@ def build_task(config, tasks):
 
         attributes = task.get('attributes', {})
         attributes['run_on_projects'] = task.get('run-on-projects', ['all'])
+        attributes['always_target'] = task['always-target']
 
         
         if task['worker']['implementation'] in (
