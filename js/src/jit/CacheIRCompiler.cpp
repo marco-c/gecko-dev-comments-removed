@@ -2106,7 +2106,7 @@ CacheIRCompiler::emitArrayJoinResult()
 
     
     Address elementAddr(scratch, 0);
-    masm.branchTestString(Assembler::NonZero, elementAddr, failure->label());
+    masm.branchTestString(Assembler::NotEqual, elementAddr, failure->label());
 
     
     masm.loadValue(elementAddr, output.valueReg());
