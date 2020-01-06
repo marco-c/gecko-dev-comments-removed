@@ -861,8 +861,12 @@ impl InlineFragments {
     }
 }
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for InlineFlow {}
+
 
 #[derive(Serialize)]
+#[repr(C)]
 pub struct InlineFlow {
     
     pub base: BaseFlow,

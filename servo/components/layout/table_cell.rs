@@ -28,8 +28,12 @@ use style::values::generics::box_::VerticalAlign;
 use table::InternalTable;
 use table_row::{CollapsedBorder, CollapsedBorderProvenance};
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for TableCellFlow {}
+
 
 #[derive(Serialize)]
+#[repr(C)]
 pub struct TableCellFlow {
     
     pub block_flow: BlockFlow,

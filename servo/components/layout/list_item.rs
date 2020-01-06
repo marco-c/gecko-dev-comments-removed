@@ -24,8 +24,12 @@ use style::logical_geometry::LogicalSize;
 use style::properties::ComputedValues;
 use style::servo::restyle_damage::RESOLVE_GENERATED_CONTENT;
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for ListItemFlow {}
+
 
 #[derive(Debug)]
+#[repr(C)]
 pub struct ListItemFlow {
     
     pub block_flow: BlockFlow,

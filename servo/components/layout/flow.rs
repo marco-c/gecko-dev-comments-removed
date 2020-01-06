@@ -44,7 +44,7 @@ use multicol::MulticolFlow;
 use parallel::FlowParallelInfo;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use servo_geometry::{au_rect_to_f32_rect, f32_rect_to_au_rect, max_rect};
-use std::{fmt, mem};
+use std::fmt;
 use std::iter::Zip;
 use std::slice::IterMut;
 use std::sync::Arc;
@@ -69,7 +69,15 @@ use webrender_api::ClipAndScrollInfo;
 
 
 
-pub trait Flow: fmt::Debug + Sync + Send + 'static {
+
+#[allow(unsafe_code)]
+pub unsafe trait HasBaseFlow {}
+
+
+
+
+
+pub trait Flow: HasBaseFlow + fmt::Debug + Sync + Send + 'static {
     
     
     
@@ -451,11 +459,10 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
 
 #[inline(always)]
 #[allow(unsafe_code)]
-pub fn base<T: ?Sized + Flow>(this: &T) -> &BaseFlow {
-    unsafe {
-        let obj = mem::transmute::<&&T, &::TraitObject>(&this);
-        mem::transmute::<*mut (), &BaseFlow>(obj.data)
-    }
+pub fn base<T: ?Sized + HasBaseFlow>(this: &T) -> &BaseFlow {
+    let ptr: *const T = this;
+    let ptr = ptr as *const BaseFlow;
+    unsafe { &*ptr }
 }
 
 
@@ -465,11 +472,10 @@ pub fn child_iter<'a>(flow: &'a Flow) -> FlowListIterator {
 
 #[inline(always)]
 #[allow(unsafe_code)]
-pub fn mut_base<T: ?Sized + Flow>(this: &mut T) -> &mut BaseFlow {
-    unsafe {
-        let obj = mem::transmute::<&&mut T, &::TraitObject>(&this);
-        mem::transmute::<*mut (), &mut BaseFlow>(obj.data)
-    }
+pub fn mut_base<T: ?Sized + HasBaseFlow>(this: &mut T) -> &mut BaseFlow {
+    let ptr: *mut T = this;
+    let ptr = ptr as *mut BaseFlow;
+    unsafe { &mut *ptr }
 }
 
 
@@ -1419,11 +1425,9 @@ impl ContainingBlockLink {
 pub struct OpaqueFlow(pub usize);
 
 impl OpaqueFlow {
-    #[allow(unsafe_code)]
     pub fn from_flow(flow: &Flow) -> OpaqueFlow {
-        unsafe {
-            let object = mem::transmute::<&Flow, ::TraitObject>(flow);
-            OpaqueFlow(object.data as usize)
-        }
+        let object_ptr: *const Flow = flow;
+        let data_ptr = object_ptr as *const ();
+        OpaqueFlow(data_ptr as usize)
     }
 }

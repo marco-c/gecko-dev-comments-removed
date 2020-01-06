@@ -34,10 +34,14 @@ use table_row::{self, CellIntrinsicInlineSize, CollapsedBorder, CollapsedBorderP
 use table_row::TableRowFlow;
 use table_wrapper::TableLayout;
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for TableFlow {}
+
 
 
 
 #[derive(Serialize)]
+#[repr(C)]
 pub struct TableFlow {
     pub block_flow: BlockFlow,
 

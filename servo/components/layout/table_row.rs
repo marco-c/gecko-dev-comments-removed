@@ -31,7 +31,11 @@ use style::values::computed::{Color, LengthOrPercentageOrAuto};
 use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, InternalTable, VecExt};
 use table_cell::{CollapsedBordersForCell, TableCellFlow};
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for TableRowFlow {}
 
+
+#[repr(C)]
 pub struct TableRowFlow {
     
     pub block_flow: BlockFlow,

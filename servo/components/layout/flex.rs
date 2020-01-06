@@ -328,8 +328,12 @@ impl FlexLine {
     }
 }
 
+#[allow(unsafe_code)]
+unsafe impl ::flow::HasBaseFlow for FlexFlow {}
+
 
 #[derive(Debug, Serialize)]
+#[repr(C)]
 pub struct FlexFlow {
     
     block_flow: BlockFlow,

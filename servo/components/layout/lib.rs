@@ -90,12 +90,3 @@ pub use self::data::LayoutData;
 
 
 use servo_arc::Arc as ServoArc;
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct TraitObject {
-    pub data: *mut (),
-    pub vtable: *mut (),
-}
