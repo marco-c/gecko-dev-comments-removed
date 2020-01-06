@@ -886,6 +886,8 @@ element.isObscured = function(el) {
 
 
 
+
+
 element.getInViewCentrePoint = function(rect, win) {
   const {max, min} = Math;
 
