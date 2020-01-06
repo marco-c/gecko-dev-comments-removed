@@ -59,6 +59,9 @@ public:
   void SetProfilerEnabled(bool aEnabled);
 
   
+  void SetFrameStartTime(const TimeStamp& aTime);
+
+  
   ~RendererOGL();
 
   
@@ -91,6 +94,7 @@ protected:
   wr::Renderer* mRenderer;
   layers::CompositorBridgeParentBase* mBridge;
   wr::WindowId mWindowId;
+  TimeStamp mFrameStartTime;
 };
 
 } 
