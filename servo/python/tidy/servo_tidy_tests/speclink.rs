@@ -3,7 +3,30 @@
 
 
 impl SpecLinkMethods for SpecLink {
+    amacro!("Macros inside impls should trigger spec checks.")
+
+    
     fn Test(&self) -> f32 {
+        amacro!("Macros inside function declarations should not trigger spec checks.");
+        if unsafe { false } {
+        }
+        amacro!("Even if there's weird brace counts.");
         0
     }
+
+    
+    
+    fn Foo() {}
+
+    
+    
+    fn Foo() {}
+
+    
+    
+    
+    
+    #[allow(attributes_too)]
+    fn Foo() {}
 }
+

@@ -829,7 +829,7 @@ def check_spec(file_name, lines):
     link_patt = re.compile("^\s*///? https://.+$")
 
     
-    comment_patt = re.compile("^\s*///?.+$")
+    comment_patt = re.compile("^\s*(///?.+|#\[.+\])$")
 
     brace_count = 0
     in_impl = False
@@ -851,12 +851,11 @@ def check_spec(file_name, lines):
                         
                         yield (idx + 1, "method declared in webidl is missing a comment with a specification link")
                         break
-            if '{' in line and in_impl:
-                brace_count += 1
-            if '}' in line and in_impl:
-                if brace_count == 1:
+            if in_impl:
+                brace_count += line.count('{')
+                brace_count -= line.count('}')
+                if brace_count < 1:
                     break
-                brace_count -= 1
 
 
 def check_config_file(config_file, print_text=True):
