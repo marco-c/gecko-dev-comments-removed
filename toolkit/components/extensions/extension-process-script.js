@@ -33,6 +33,7 @@ const {
 
 
 
+
 const appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
 const isContentProcess = appinfo.processType == appinfo.PROCESS_TYPE_CONTENT;
 

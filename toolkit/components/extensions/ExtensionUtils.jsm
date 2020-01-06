@@ -25,6 +25,10 @@ function getConsole() {
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 
+
+
+
+
 const appinfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
 
 let nextId = 0;
