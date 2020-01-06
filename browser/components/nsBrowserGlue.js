@@ -92,7 +92,6 @@ let initializedModules = {};
   ["WebChannel", "resource://gre/modules/WebChannel.jsm"],
   ["WindowsRegistry", "resource://gre/modules/WindowsRegistry.jsm"],
   ["webrtcUI", "resource:///modules/webrtcUI.jsm", "init"],
-  ["UserAgentOverrides", "resource://gre/modules/UserAgentOverrides.jsm"],
 ].forEach(([name, resource, init]) => {
   if (init) {
     XPCOMUtils.defineLazyGetter(this, name, () => {
@@ -516,8 +515,6 @@ BrowserGlue.prototype = {
       
       E10SAccessibilityCheck.init();
     }
-
-    UserAgentOverrides.init();
   },
 
   
@@ -561,8 +558,6 @@ BrowserGlue.prototype = {
     os.removeObserver(this, "browser-search-engine-modified");
     os.removeObserver(this, "flash-plugin-hang");
     os.removeObserver(this, "xpi-signature-changed");
-
-    UserAgentOverrides.uninit();
   },
 
   _onAppDefaults: function BG__onAppDefaults() {
