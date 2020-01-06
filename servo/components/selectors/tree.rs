@@ -85,4 +85,11 @@ pub trait Element: Sized + Debug {
     
     
     fn is_root(&self) -> bool;
+
+    
+    
+    
+    fn blocks_ancestor_combinators(&self) -> bool {
+        false
+    }
 }
