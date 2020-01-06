@@ -309,7 +309,7 @@ impl<'a> Tokenizer<'a> {
             location.column = 1;
         }
         debug_assert!(position <= target);
-        location.column += target - position;
+        location.column += (target - position) as u32;
         self.last_known_source_location.set((SourcePosition(target), location));
         location
     }
@@ -383,10 +383,10 @@ pub struct SourcePosition(usize);
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct SourceLocation {
     
-    pub line: usize,
+    pub line: u32,
 
     
-    pub column: usize,
+    pub column: u32,
 }
 
 

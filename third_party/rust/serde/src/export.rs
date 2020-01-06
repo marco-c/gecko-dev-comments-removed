@@ -1,21 +1,3 @@
-#[cfg(all(feature = "collections", not(feature = "std")))]
-use collections::String;
-
-#[cfg(feature = "std")]
-use std::borrow::Cow;
-#[cfg(all(feature = "collections", not(feature = "std")))]
-use collections::borrow::Cow;
-
-pub use core::default::Default;
-pub use core::fmt;
-pub use core::marker::PhantomData;
-pub use core::option::Option::{self, None, Some};
-pub use core::result::Result::{self, Ok, Err};
-
-#[cfg(any(feature = "collections", feature = "std"))]
-pub fn from_utf8_lossy(bytes: &[u8]) -> Cow<str> {
-    String::from_utf8_lossy(bytes)
-}
 
 
 
@@ -24,11 +6,36 @@ pub fn from_utf8_lossy(bytes: &[u8]) -> Cow<str> {
 
 
 
-#[cfg(not(any(feature = "collections", feature = "std")))]
-pub fn from_utf8_lossy(bytes: &[u8]) -> &str {
-    use core::str;
+pub use lib::clone::Clone;
+pub use lib::convert::{From, Into};
+pub use lib::default::Default;
+pub use lib::fmt::{self, Formatter};
+pub use lib::marker::PhantomData;
+pub use lib::option::Option::{self, None, Some};
+pub use lib::result::Result::{self, Ok, Err};
+
+pub use self::string::from_utf8_lossy;
+
+mod string {
+    use lib::*;
+
+    #[cfg(any(feature = "std", feature = "collections"))]
+    pub fn from_utf8_lossy(bytes: &[u8]) -> Cow<str> {
+        String::from_utf8_lossy(bytes)
+    }
+
     
     
     
-    str::from_utf8(bytes).unwrap_or("\u{fffd}\u{fffd}\u{fffd}")
+    
+    
+    
+    
+    #[cfg(not(any(feature = "std", feature = "collections")))]
+    pub fn from_utf8_lossy(bytes: &[u8]) -> &str {
+        
+        
+        
+        str::from_utf8(bytes).unwrap_or("\u{fffd}\u{fffd}\u{fffd}")
+    }
 }
