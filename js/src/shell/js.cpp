@@ -3925,6 +3925,13 @@ KillWorkerThreads(JSContext* cx)
 {
     MOZ_ASSERT_IF(!CanUseExtraThreads(), workerThreads.empty());
 
+    
+    while (cooperationState->numThreads) {
+        CooperativeBeginWait(cx);
+        CooperativeYield();
+        CooperativeEndWait(cx);
+    }
+
     if (!workerThreadsLock) {
         MOZ_ASSERT(workerThreads.empty());
         return;
@@ -3946,13 +3953,6 @@ KillWorkerThreads(JSContext* cx)
 
     js_delete(workerThreadsLock);
     workerThreadsLock = nullptr;
-
-    
-    while (cooperationState->numThreads) {
-        CooperativeBeginWait(cx);
-        CooperativeYield();
-        CooperativeEndWait(cx);
-    }
 
     js_delete(cooperationState);
     cooperationState = nullptr;
