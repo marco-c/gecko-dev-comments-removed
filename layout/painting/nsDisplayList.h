@@ -1599,14 +1599,12 @@ public:
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
-  bool MarkFrameModifiedDuringBuilding(nsIFrame* aFrame)
+  void MarkFrameModifiedDuringBuilding(nsIFrame* aFrame)
   {
     if (!aFrame->IsFrameModified()) {
       mModifiedFramesDuringBuilding.AppendElement(aFrame);
       aFrame->SetFrameIsModified(true);
-      return true;
     }
-    return false;
   }
 
   
@@ -5098,6 +5096,16 @@ public:
 
   virtual bool ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuilder) const override;
 
+  virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override
+  {
+    return mShouldFlatten;
+  }
+
+  void SetShouldFlattenAway(bool aShouldFlatten)
+  {
+    mShouldFlatten = aShouldFlatten;
+  }
+
   virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                    bool* aSnap) const override;
 
@@ -5109,6 +5117,7 @@ public:
 protected:
   ViewID mScrollParentId;
   bool mForceDispatchToContentRegion;
+  bool mShouldFlatten;
   nsSubDocumentFrame* mSubDocFrame;
 };
 
