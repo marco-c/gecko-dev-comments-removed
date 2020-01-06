@@ -882,10 +882,9 @@ nsTStringRepr_CharT::FindChar(char_type aChar, index_type aOffset) const
 } 
 
 void
-nsTSubstring_CharT::StripChar(char_type aChar, int32_t aOffset)
+nsTSubstring_CharT::StripChar(char_type aChar)
 {
-  
-  if (aOffset >= int32_t(mLength)) {
+  if (mLength == 0) {
     return;
   }
 
@@ -895,8 +894,8 @@ nsTSubstring_CharT::StripChar(char_type aChar, int32_t aOffset)
 
   
 
-  char_type* to   = mData + aOffset;
-  char_type* from = mData + aOffset;
+  char_type* to   = mData;
+  char_type* from = mData;
   char_type* end  = mData + mLength;
 
   while (from < end) {
@@ -910,10 +909,9 @@ nsTSubstring_CharT::StripChar(char_type aChar, int32_t aOffset)
 }
 
 void
-nsTSubstring_CharT::StripChars(const char_type* aChars, uint32_t aOffset)
+nsTSubstring_CharT::StripChars(const char_type* aChars)
 {
-  
-  if (aOffset >= uint32_t(mLength)) {
+  if (mLength == 0) {
     return;
   }
 
@@ -923,8 +921,8 @@ nsTSubstring_CharT::StripChars(const char_type* aChars, uint32_t aOffset)
 
   
 
-  char_type* to   = mData + aOffset;
-  char_type* from = mData + aOffset;
+  char_type* to   = mData;
+  char_type* from = mData;
   char_type* end  = mData + mLength;
 
   while (from < end) {
@@ -943,11 +941,9 @@ nsTSubstring_CharT::StripChars(const char_type* aChars, uint32_t aOffset)
 }
 
 void
-nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip,
-                                     uint32_t aOffset)
+nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip)
 {
-  
-  if (aOffset >= uint32_t(mLength)) {
+  if (mLength == 0) {
     return;
   }
 
@@ -955,8 +951,8 @@ nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip,
     AllocFailed(mLength);
   }
 
-  char_type* to   = mData + aOffset;
-  char_type* from = mData + aOffset;
+  char_type* to   = mData;
+  char_type* from = mData;
   char_type* end  = mData + mLength;
 
   while (from < end) {
@@ -973,12 +969,12 @@ nsTSubstring_CharT::StripTaggedASCII(const ASCIIMaskArray& aToStrip,
 }
 
 void
-nsTSubstring_CharT::StripCRLF(uint32_t aOffset)
+nsTSubstring_CharT::StripCRLF()
 {
   
   
   
-  StripTaggedASCII(mozilla::ASCIIMask::MaskCRLF(), aOffset);
+  StripTaggedASCII(mozilla::ASCIIMask::MaskCRLF());
 }
 
 struct MOZ_STACK_CLASS PrintfAppend_CharT : public mozilla::PrintfTarget

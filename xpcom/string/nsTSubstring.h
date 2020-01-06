@@ -1001,8 +1001,16 @@ public:
 
 
 
+  void StripChar(char_type aChar);
 
-  void StripChar(char_type aChar, int32_t aOffset = 0);
+  
+
+
+
+
+
+
+  void StripChars(const char_type* aChars);
 
   
 
@@ -1012,32 +1020,21 @@ public:
 
 
 
-  void StripChars(const char_type* aChars, uint32_t aOffset = 0);
+
+
+
+
+
+
+
+
+
+  void StripTaggedASCII(const std::array<bool, 128>& aToStrip);
 
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void StripTaggedASCII(const std::array<bool, 128>& aToStrip, uint32_t aOffset = 0);
-
-  
-
-
-  void StripCRLF(uint32_t aOffset = 0);
+  void StripCRLF();
 
   
 
