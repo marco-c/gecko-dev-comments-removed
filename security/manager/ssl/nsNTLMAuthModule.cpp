@@ -622,7 +622,7 @@ GenerateType3Msg(const nsString &domain,
   
   
   rv = mozilla::Preferences::GetCString("network.generic-ntlm-auth.workstation",
-                                        &hostBuf);
+                                        hostBuf);
   if (NS_FAILED(rv)) {
     return rv;
   }
