@@ -49,8 +49,6 @@ extern crate euclid;
 extern crate hashglobe;
 #[cfg(feature = "servo")]
 extern crate js;
-#[cfg(target_os = "windows")]
-extern crate kernel32;
 extern crate servo_arc;
 extern crate smallbitvec;
 extern crate smallvec;
@@ -63,8 +61,6 @@ extern crate webrender_api;
 #[cfg(feature = "servo")]
 extern crate xml5ever;
 
-#[cfg(target_os = "windows")]
-use kernel32::{GetProcessHeap, HeapSize, HeapValidate};
 use std::hash::{BuildHasher, Hash};
 use std::mem::size_of;
 use std::ops::Range;
@@ -144,33 +140,6 @@ impl MallocSizeOfOps {
         let have_seen_ptr_op = self.have_seen_ptr_op.as_mut().expect("missing have_seen_ptr_op");
         have_seen_ptr_op(ptr as *const c_void)
     }
-}
-
-
-#[cfg(not(target_os = "windows"))]
-pub unsafe extern "C" fn malloc_size_of(ptr: *const c_void) -> usize {
-    
-    
-    
-    
-    extern "C" {
-        #[cfg_attr(any(prefixed_jemalloc, target_os = "macos", target_os = "ios", target_os = "android"),
-                   link_name = "je_malloc_usable_size")]
-        fn malloc_usable_size(ptr: *const c_void) -> usize;
-    }
-    malloc_usable_size(ptr)
-}
-
-
-#[cfg(target_os = "windows")]
-pub unsafe extern "C" fn malloc_size_of(mut ptr: *const c_void) -> usize {
-    let heap = GetProcessHeap();
-
-    if HeapValidate(heap, 0, ptr) == 0 {
-        ptr = *(ptr as *const *const c_void).offset(-1);
-    }
-
-    HeapSize(heap, 0, ptr) as usize
 }
 
 
