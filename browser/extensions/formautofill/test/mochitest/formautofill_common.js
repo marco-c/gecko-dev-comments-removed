@@ -17,10 +17,7 @@ function setInput(selector, value) {
   
   
   
-  SimpleTest.requestFlakyTimeout("Guarantee asynchronous identifyAutofillFields is invoked");
-  return new Promise(resolve => setTimeout(() => {
-    resolve(input);
-  }, 500));
+  return new Promise(resolve => setTimeout(resolve));
 }
 
 function checkMenuEntries(expectedValues) {
