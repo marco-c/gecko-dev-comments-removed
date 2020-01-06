@@ -765,7 +765,7 @@ StackTrace::Get(Thread* aT)
     
     CONTEXT context;
     RtlCaptureContext(&context);
-    void* fp = reinterpret_cast<void*>(context.Ebp);
+    void** fp = reinterpret_cast<void**>(context.Ebp);
 
     
     
@@ -785,8 +785,7 @@ StackTrace::Get(Thread* aT)
 #endif
     void* stackEnd = static_cast<void*>(pTib->StackBase);
     bool ok = FramePointerStackWalk(StackWalkCallback,  0,
-                                    MaxFrames, &tmp,
-                                    reinterpret_cast<void**>(fp), stackEnd);
+                                    MaxFrames, &tmp, fp, stackEnd);
 #elif defined(XP_MACOSX)
     
     
@@ -794,7 +793,7 @@ StackTrace::Get(Thread* aT)
     
     
     
-    void* fp;
+    void** fp;
     asm (
         
         "movq (%%rbp), %0\n\t"
@@ -803,8 +802,7 @@ StackTrace::Get(Thread* aT)
     );
     void* stackEnd = pthread_get_stackaddr_np(pthread_self());
     bool ok = FramePointerStackWalk(StackWalkCallback,  0,
-                                    MaxFrames, &tmp,
-                                    reinterpret_cast<void**>(fp), stackEnd);
+                                    MaxFrames, &tmp, fp, stackEnd);
 #else
 #if defined(XP_WIN) && defined(_M_X64)
     int skipFrames = 1;
