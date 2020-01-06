@@ -43,43 +43,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
 #pragma pack(1)
 
-#if !ENABLE_INTL_API
-
-struct nsCharProps1 {
-  unsigned char mMirrorOffsetIndex:5;
-  unsigned char mHangulType:3;
-  unsigned char mCombiningClass:8;
-};
-
-#endif
-
-#if ENABLE_INTL_API
 
 struct nsCharProps2 {
   
@@ -88,31 +56,6 @@ struct nsCharProps2 {
   unsigned char mVertOrient:2;
   unsigned char mIdType:2;
 };
-
-#endif
-
-#if !ENABLE_INTL_API
-
-
-
-struct nsCharProps2 {
-  unsigned char mScriptCode:8;
-  
-  unsigned char mPairedBracketType:2;
-  unsigned char mEastAsianWidthFWH:1;
-  unsigned char mCategory:5;
-  
-  unsigned char mIdType:2;
-  unsigned char mDefaultIgnorable:1;
-  unsigned char mBidiCategory:5;
-  
-  unsigned char mVertOrient:2;
-  unsigned char mLineBreak:6;
-  
-  signed char   mNumericValue; 
-};
-
-#endif
 
 #pragma pack()
 
