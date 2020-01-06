@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/MediaRecorderBinding.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/MozPromise.h"
 #include "nsIDocumentActivity.h"
 
 
