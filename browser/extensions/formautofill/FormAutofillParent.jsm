@@ -50,7 +50,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
 this.log = null;
 FormAutofillUtils.defineLazyLogGetter(this, this.EXPORTED_SYMBOLS[0]);
 
-const {ENABLED_AUTOFILL_ADDRESSES_PREF, ENABLED_AUTOFILL_CREDITCARDS_PREF} = FormAutofillUtils;
+const {
+  ENABLED_AUTOFILL_ADDRESSES_PREF,
+  ENABLED_AUTOFILL_CREDITCARDS_PREF,
+  CREDITCARDS_COLLECTION_NAME,
+} = FormAutofillUtils;
 
 function FormAutofillParent() {
   
@@ -256,6 +260,7 @@ FormAutofillParent.prototype = {
 
 
 
+
   async _getRecords({collectionName, searchString, info}, target) {
     let collection = this.profileStorage[collectionName];
     if (!collection) {
@@ -263,35 +268,43 @@ FormAutofillParent.prototype = {
       return;
     }
 
+    let recordsInCollection = collection.getAll();
+    if (!info || !info.fieldName || !recordsInCollection.length) {
+      target.sendAsyncMessage("FormAutofill:Records", recordsInCollection);
+      return;
+    }
+
+    let isCCAndMPEnabled = collectionName == CREDITCARDS_COLLECTION_NAME && MasterPassword.isEnabled;
+    
+    if (isCCAndMPEnabled && info.fieldName == "cc-number") {
+      recordsInCollection = recordsInCollection.filter(record => !!record["cc-number"]);
+      target.sendAsyncMessage("FormAutofill:Records", recordsInCollection);
+      return;
+    }
+
     let records = [];
-    if (info && info.fieldName &&
-      !(MasterPassword.isEnabled && info.fieldName == "cc-number")) {
-      if (info.fieldName == "cc-number") {
-        for (let record of collection.getAll()) {
-          let number = await MasterPassword.decrypt(record["cc-number-encrypted"]);
-          if (number.startsWith(searchString)) {
-            records.push(record);
-          }
-        }
-      } else {
-        let lcSearchString = searchString.toLowerCase();
-        let result = collection.getAll().filter(record => {
-          
-          
-          
-          let name = record[info.fieldName];
+    let lcSearchString = searchString.toLowerCase();
 
-          if (!searchString) {
-            return !!name;
-          }
-
-          return name && name.toLowerCase().startsWith(lcSearchString);
-        });
-
-        records = result;
+    for (let record of recordsInCollection) {
+      let fieldValue = record[info.fieldName];
+      if (!fieldValue) {
+        continue;
       }
-    } else {
-      records = collection.getAll();
+
+      
+      
+      if (!isCCAndMPEnabled && record["cc-number-encrypted"]) {
+        record["cc-number-decrypted"] = await MasterPassword.decrypt(record["cc-number-encrypted"]);
+      }
+
+      
+      if (info.fieldName == "cc-number") {
+        fieldValue = record["cc-number-decrypted"];
+      }
+
+      if (!lcSearchString || String(fieldValue).toLowerCase().startsWith(lcSearchString)) {
+        records.push(record);
+      }
     }
 
     target.sendAsyncMessage("FormAutofill:Records", records);

@@ -392,13 +392,13 @@ FormAutofillHandler.prototype = {
 
 
 
-  async previewFormFields(profile, focusedInput) {
+  previewFormFields(profile, focusedInput) {
     log.debug("preview profile in autofillFormFields:", profile);
 
     
     
-    if (profile["cc-number-encrypted"] && !MasterPassword.isEnabled) {
-      profile["cc-number"] = await MasterPassword.decrypt(profile["cc-number-encrypted"], true);
+    if (profile["cc-number-decrypted"]) {
+      profile["cc-number"] = profile["cc-number-decrypted"];
     }
 
     let fieldDetails = this.getFieldDetailsByElement(focusedInput);
