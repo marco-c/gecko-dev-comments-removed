@@ -317,6 +317,26 @@ Damp.prototype = {
     yield this.testTeardown();
   }),
 
+async _consoleOpenWithCachedMessagesTest() {
+  let TOTAL_MESSAGES = 100;
+  let tab = await this.testSetup(SIMPLE_URL);
+
+  
+  
+  tab.linkedBrowser.messageManager.loadFrameScript("data:,(" + encodeURIComponent(`
+    function () {
+      for (var i = 0; i < ${TOTAL_MESSAGES}; i++) {
+        content.console.log('damp', i+1, content);
+      }
+    }`
+  ) + ")()", true);
+
+  await this.openToolboxAndLog("console.openwithcache", "webconsole");
+
+  await this.closeToolbox(null);
+  await this.testTeardown();
+},
+
   
 
 
@@ -731,6 +751,7 @@ Damp.prototype = {
     tests["console.bulklog"] = this._consoleBulkLoggingTest;
     tests["console.streamlog"] = this._consoleStreamLoggingTest;
     tests["console.objectexpand"] = this._consoleObjectExpansionTest;
+    tests["console.openwithcache"] = this._consoleOpenWithCachedMessagesTest;
     tests["inspector.mutations"] = this._inspectorMutationsTest;
 
     
