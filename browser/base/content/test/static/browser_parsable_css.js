@@ -21,10 +21,6 @@ let whitelist = [
    errorMessage: /Unknown pseudo-class.*(fullscreen|selection)/i,
    isFromDevTools: false},
   
-  {sourceName: /web\/viewer\.css$/i,
-   errorMessage: /Unknown property.*appearance/i,
-   isFromDevTools: false},
-  
   {sourceName: /aboutaccounts\/(main|normalize)\.css$/i,
    isFromDevTools: false},
   

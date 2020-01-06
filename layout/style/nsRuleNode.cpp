@@ -6069,11 +6069,18 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   display->mOriginalDisplay = display->mDisplay;
 
   
+  SetValue(*aRuleData->ValueForMozAppearance(),
+           display->mMozAppearance, conditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+           parentDisplay->mMozAppearance,
+           NS_THEME_NONE);
+
+  
   SetValue(*aRuleData->ValueForAppearance(),
            display->mAppearance, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mAppearance,
-           NS_THEME_NONE);
+           NS_THEME_AUTO);
 
   
   const nsCSSValue* bindingValue = aRuleData->ValueForBinding();

@@ -812,11 +812,11 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
   
   
   const nsStyleDisplay* displayData = aStyleContext->StyleDisplay();
-  if (displayData->mAppearance) {
+  if (displayData->UsedAppearance()) {
     nsITheme *theme = aPresContext->GetTheme();
     if (theme &&
         theme->ThemeSupportsWidget(aPresContext, aForFrame,
-                                   displayData->mAppearance)) {
+                                   displayData->UsedAppearance())) {
       return DrawResult::SUCCESS; 
     }
   }
@@ -900,11 +900,11 @@ nsCSSRendering::CreateBorderRendererWithStyleBorder(nsPresContext* aPresContext,
                                                     Sides aSkipSides)
 {
   const nsStyleDisplay* displayData = aStyleContext->StyleDisplay();
-  if (displayData->mAppearance) {
+  if (displayData->UsedAppearance()) {
     nsITheme *theme = aPresContext->GetTheme();
     if (theme &&
         theme->ThemeSupportsWidget(aPresContext, aForFrame,
-                                   displayData->mAppearance)) {
+                                   displayData->UsedAppearance())) {
       return Nothing();
     }
   }
@@ -1584,7 +1584,7 @@ nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       nativeRect.IntersectRect(frameRect, nativeRect);
       nsRenderingContext wrapperCtx(shadowContext);
       aPresContext->GetTheme()->DrawWidgetBackground(&wrapperCtx, aForFrame,
-          styleDisplay->mAppearance, aFrameArea, nativeRect);
+          styleDisplay->UsedAppearance(), aFrameArea, nativeRect);
 
       blurringArea.DoPaint();
       renderContext->Restore();
@@ -1928,7 +1928,7 @@ nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
     
     
     
-    if (!aParams.frame->StyleDisplay()->mAppearance) {
+    if (!aParams.frame->StyleDisplay()->UsedAppearance()) {
       return DrawResult::SUCCESS;
     }
 
@@ -1960,11 +1960,11 @@ nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(LayerManager* aM
 
   
   const nsStyleDisplay* displayData = aFrame->StyleDisplay();
-  if (displayData->mAppearance) {
+  if (displayData->UsedAppearance()) {
     nsITheme *theme = aPresCtx.GetTheme();
     if (theme && theme->ThemeSupportsWidget(&aPresCtx,
                                             aFrame,
-                                            displayData->mAppearance)) {
+                                            displayData->UsedAppearance())) {
       return false;
     }
   }
@@ -2005,7 +2005,7 @@ nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(const PaintBGParams
     
     
     
-    if (!aParams.frame->StyleDisplay()->mAppearance) {
+    if (!aParams.frame->StyleDisplay()->UsedAppearance()) {
       return DrawResult::SUCCESS;
     }
 
@@ -2513,18 +2513,18 @@ nsCSSRendering::PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
   
   
   const nsStyleDisplay* displayData = aParams.frame->StyleDisplay();
-  if (displayData->mAppearance) {
+  if (displayData->UsedAppearance()) {
     nsITheme *theme = aParams.presCtx.GetTheme();
     if (theme && theme->ThemeSupportsWidget(&aParams.presCtx,
                                             aParams.frame,
-                                            displayData->mAppearance)) {
+                                            displayData->UsedAppearance())) {
       nsRect drawing(aParams.borderArea);
       theme->GetWidgetOverflow(aParams.presCtx.DeviceContext(),
-                               aParams.frame, displayData->mAppearance,
+                               aParams.frame, displayData->UsedAppearance(),
                                &drawing);
       drawing.IntersectRect(drawing, aParams.dirtyRect);
       theme->DrawWidgetBackground(&aRenderingCtx, aParams.frame,
-                                  displayData->mAppearance, aParams.borderArea,
+                                  displayData->UsedAppearance(), aParams.borderArea,
                                   drawing);
       return DrawResult::SUCCESS;
     }

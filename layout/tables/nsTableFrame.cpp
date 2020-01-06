@@ -1513,7 +1513,7 @@ static inline bool FrameHasBorderOrBackground(nsTableFrame* tableFrame, nsIFrame
     return true;
   }
   if (!f->StyleBackground()->IsTransparent(f) ||
-      f->StyleDisplay()->mAppearance) {
+      f->StyleDisplay()->UsedAppearance()) {
 
     nsTableCellFrame *cellFrame = do_QueryFrame(f);
     

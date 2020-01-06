@@ -27,6 +27,7 @@
 #include "nsStyleAutoArray.h"
 #include "nsStyleCoord.h"
 #include "nsStyleConsts.h"
+#include "nsThemeConstants.h"
 #include "nsChangeHint.h"
 #include "nsPresContext.h"
 #include "nsCOMPtr.h"
@@ -2683,7 +2684,20 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                            
                                            
   uint8_t mContain;             
+private:
+  friend class nsComputedDOMStyle;
+  friend class nsRuleNode;
+  uint8_t mMozAppearance;       
   uint8_t mAppearance;          
+public:
+  MOZ_MUST_USE uint8_t UsedAppearance() const {
+    if (mAppearance == NS_THEME_NONE) {
+      return NS_THEME_NONE;
+    }
+    MOZ_ASSERT(mAppearance == NS_THEME_AUTO);
+    return mMozAppearance; 
+  }
+
   uint8_t mPosition;            
 
   
