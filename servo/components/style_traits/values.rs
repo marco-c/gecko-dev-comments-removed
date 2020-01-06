@@ -56,16 +56,58 @@ impl ToCss for String {
 }
 
 
-pub trait OneOrMoreCommaSeparated {}
 
-impl OneOrMoreCommaSeparated for UnicodeRange {}
 
-impl<T> ToCss for Vec<T> where T: ToCss + OneOrMoreCommaSeparated {
+pub struct CommaSeparator;
+
+
+
+
+pub struct SpaceSeparator;
+
+
+pub trait Separator {
+    
+    fn separator() -> &'static str;
+}
+
+impl Separator for CommaSeparator {
+    fn separator() -> &'static str {
+        ", "
+    }
+}
+
+impl Separator for SpaceSeparator {
+    fn separator() -> &'static str {
+        " "
+    }
+}
+
+
+
+
+
+pub trait IsCommaSeparator {}
+
+impl IsCommaSeparator for CommaSeparator {}
+
+
+
+pub trait OneOrMoreSeparated {
+    
+    type S: Separator;
+}
+
+impl OneOrMoreSeparated for UnicodeRange {
+    type S = CommaSeparator;
+}
+
+impl<T> ToCss for Vec<T> where T: ToCss + OneOrMoreSeparated {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         let mut iter = self.iter();
         iter.next().unwrap().to_css(dest)?;
         for item in iter {
-            dest.write_str(", ")?;
+            dest.write_str(<T as OneOrMoreSeparated>::S::separator())?;
             item.to_css(dest)?;
         }
         Ok(())
