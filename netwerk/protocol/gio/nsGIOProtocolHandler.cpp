@@ -924,7 +924,7 @@ nsGIOProtocolHandler::InitSupportedProtocolsPref(nsIPrefBranch *prefs)
   
   
   nsresult rv = prefs->GetCharPref(MOZ_GIO_SUPPORTED_PROTOCOLS,
-                                   mSupportedProtocols);
+                                   getter_Copies(mSupportedProtocols));
   if (NS_SUCCEEDED(rv)) {
     mSupportedProtocols.StripWhitespace();
     ToLowerCase(mSupportedProtocols);
