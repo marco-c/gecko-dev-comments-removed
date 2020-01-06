@@ -236,18 +236,18 @@ WebAuthnManager::~WebAuthnManager()
   }
 }
 
-void
-WebAuthnManager::GetOrCreateBackgroundActor()
+bool
+WebAuthnManager::MaybeCreateBackgroundActor()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mChild) {
-    return;
+    return true;
   }
 
   PBackgroundChild* actor = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actor)) {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
+    return false;
   }
 
   RefPtr<WebAuthnTransactionChild> mgr(new WebAuthnTransactionChild());
@@ -255,12 +255,13 @@ WebAuthnManager::GetOrCreateBackgroundActor()
     actor->SendPWebAuthnTransactionConstructor(mgr);
 
   if (NS_WARN_IF(!constructedMgr)) {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
-    return;
+    return false;
   }
 
   MOZ_ASSERT(constructedMgr == mgr);
   mChild = mgr.forget();
+
+  return true;
 }
 
 
@@ -458,6 +459,11 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
     excludeList.AppendElement(c);
   }
 
+  if (!MaybeCreateBackgroundActor()) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return promise.forget();
+  }
+
   
   nsTArray<WebAuthnExtension> extensions;
 
@@ -475,10 +481,7 @@ WebAuthnManager::MakeCredential(nsPIDOMWindowInner* aParent,
                                           Move(info),
                                           Move(clientDataJSON)));
 
-  GetOrCreateBackgroundActor();
-  if (mChild) {
-    mChild->SendRequestRegister(mTransaction.ref().mInfo);
-  }
+  mChild->SendRequestRegister(mTransaction.ref().mInfo);
 
   return promise.forget();
 }
@@ -601,6 +604,11 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
     allowList.AppendElement(c);
   }
 
+  if (!MaybeCreateBackgroundActor()) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_ALLOWED_ERR);
+    return promise.forget();
+  }
+
   
   
   
@@ -623,10 +631,7 @@ WebAuthnManager::GetAssertion(nsPIDOMWindowInner* aParent,
                                           Move(info),
                                           Move(clientDataJSON)));
 
-  GetOrCreateBackgroundActor();
-  if (mChild) {
-    mChild->SendRequestSign(mTransaction.ref().mInfo);
-  }
+  mChild->SendRequestSign(mTransaction.ref().mInfo);
 
   return promise.forget();
 }
