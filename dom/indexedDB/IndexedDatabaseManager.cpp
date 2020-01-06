@@ -836,7 +836,8 @@ IndexedDatabaseManager::ClearBackgroundActor()
 void
 IndexedDatabaseManager::NoteLiveQuotaManager(QuotaManager* aQuotaManager)
 {
-  MOZ_ASSERT(IsMainProcess());
+  
+  MOZ_ASSERT(sIsMainProcess);
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aQuotaManager);
 
