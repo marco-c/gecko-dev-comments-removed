@@ -95,6 +95,12 @@ pub struct Context<'a> {
 
     
     pub quirks_mode: QuirksMode,
+
+    
+    
+    
+    
+    pub for_smil_animation: bool,
 }
 
 impl<'a> Context<'a> {
