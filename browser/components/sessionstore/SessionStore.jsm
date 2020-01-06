@@ -356,6 +356,10 @@ this.SessionStore = {
     SessionStoreInternal.restoreLastSession();
   },
 
+  speculativeConnectOnTabHover(tab) {
+    SessionStoreInternal.speculativeConnectOnTabHover(tab);
+  },
+
   getCurrentState(aUpdateAll) {
     return SessionStoreInternal.getCurrentState(aUpdateAll);
   },
@@ -720,6 +724,8 @@ var SessionStoreInternal = {
     this._max_windows_undo = this._prefBranch.getIntPref("sessionstore.max_windows_undo");
     this._prefBranch.addObserver("sessionstore.max_windows_undo", this, true);
 
+    this._restore_on_demand = this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
+    this._prefBranch.addObserver("sessionstore.restore_on_demand", this, true);
 
     gResistFingerprintingEnabled = Services.prefs.getBoolPref("privacy.resistFingerprinting");
     Services.prefs.addObserver("privacy.resistFingerprinting", this);
@@ -1832,6 +1838,9 @@ var SessionStoreInternal = {
         break;
       case "privacy.resistFingerprinting":
         gResistFingerprintingEnabled = Services.prefs.getBoolPref("privacy.resistFingerprinting");
+        break;
+      case "sessionstore.restore_on_demand":
+        this._restore_on_demand = this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
         break;
     }
   },
@@ -3279,8 +3288,7 @@ var SessionStoreInternal = {
       }
     }
 
-    let restoreOnDemand = this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
-    let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") && restoreOnDemand;
+    let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") && this._restore_on_demand;
 
     for (var t = 0; t < newTabCount; t++) {
       let tabData = winData.tabs[t];
@@ -3332,13 +3340,6 @@ var SessionStoreInternal = {
           let leftoverTab = tabbrowser.selectedTab;
           tabbrowser.selectedTab = tab;
           tabbrowser.removeTab(leftoverTab);
-        }
-
-        
-        
-        
-        if (!tabData.pinned && restoreOnDemand) {
-          this.speculativeConnectOnTabHover(tab, url);
         }
       }
 
@@ -3449,15 +3450,19 @@ var SessionStoreInternal = {
 
 
 
-  speculativeConnectOnTabHover(tab, url) {
-    tab.addEventListener("mouseover", () => {
+  speculativeConnectOnTabHover(tab) {
+    if (this._restore_on_demand && !tab.__SS_connectionPrepared && tab.hasAttribute("pending")) {
+      let url = this.getLazyTabValue(tab, "url");
       let prepared = this.prepareConnectionToHost(url);
       
       if (gDebuggingEnabled) {
         tab.__test_connection_prepared = prepared;
         tab.__test_connection_url = url;
       }
-    }, {once: true});
+      
+      
+      tab.__SS_connectionPrepared = true;
+    }
   },
 
   

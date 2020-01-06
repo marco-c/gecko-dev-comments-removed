@@ -43,14 +43,17 @@ add_task(async function speculative_connect_restore_on_demand() {
   tabs[1].dispatchEvent(e);
   is(tabs[1].__test_connection_prepared, false, "Second tab doesn't have a connection prepared");
   is(tabs[1].__test_connection_url, TEST_URLS[0], "Second tab has correct url");
+  is(tabs[1].__SS_connectionPrepared, true, "Second tab should have __SS_connectionPrepared flag after hovered");
 
   
   tabs[2].dispatchEvent(e);
   is(tabs[2].__test_connection_prepared, true, "Third tab has a connection prepared");
   is(tabs[2].__test_connection_url, TEST_URLS[1], "Third tab has correct url");
+  is(tabs[2].__SS_connectionPrepared, true, "Third tab should have __SS_connectionPrepared flag after hovered");
 
   
   tabs[3].dispatchEvent(e);
+  is(tabs[3].__SS_connectionPrepared, undefined, "Previous selected tab shouldn't have __SS_connectionPrepared flag");
   is(tabs[3].__test_connection_prepared, undefined, "Previous selected tab should not have a connection prepared");
   is(tabs[3].__test_connection_url, undefined, "Previous selected tab should not have a connection prepared");
 
