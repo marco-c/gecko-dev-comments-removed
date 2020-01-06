@@ -756,7 +756,7 @@ var snapshotFormatters = {
     for (let key in data) {
       
       if (key === "hasPrivilegedUserNamespaces" &&
-          data[key] === data.hasUserNamespaces) {
+          data[key] === data["hasUserNamespaces"]) {
         continue;
       }
       if (key === "syscallLog") {

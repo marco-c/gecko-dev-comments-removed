@@ -174,12 +174,12 @@ var pktApi = (function() {
         var pocketCookies = getCookiesFromPocket();
 
         
-        if (typeof pocketCookies.ftv1 === "undefined") {
+        if (typeof pocketCookies["ftv1"] === "undefined") {
             return undefined;
         }
 
         
-        var sessionId = pocketCookies.fsv1;
+        var sessionId = pocketCookies["fsv1"];
         var lastSessionId = getSetting("fsv1");
         if (sessionId !== lastSessionId) {
             clearUserData();
@@ -187,7 +187,7 @@ var pktApi = (function() {
         }
 
         
-        return pocketCookies.ftv1;
+        return pocketCookies["ftv1"];
     }
 
     
@@ -199,7 +199,7 @@ var pktApi = (function() {
         if (typeof premiumStatus === "undefined") {
             
             var pocketCookies = getCookiesFromPocket();
-            premiumStatus = pocketCookies.ps;
+            premiumStatus = pocketCookies["ps"];
         }
         return premiumStatus;
     }

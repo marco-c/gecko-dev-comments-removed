@@ -132,7 +132,7 @@ function checkLoginItems(logins, items) {
 
 
 function getExpectedLogins(hostname) {
-  return Services.logins.getAllLogins().filter(entry => entry.hostname === hostname);
+  return Services.logins.getAllLogins().filter(entry => entry["hostname"] === hostname);
 }
 
 function loginList() {

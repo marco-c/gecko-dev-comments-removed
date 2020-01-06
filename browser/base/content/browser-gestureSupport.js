@@ -142,12 +142,12 @@ var gGestureSupport = {
       offset += updateEvent.delta;
 
       
-      if (Math.abs(offset) > aPref.threshold) {
+      if (Math.abs(offset) > aPref["threshold"]) {
         
         
         
         let sameDir = (latchDir ^ offset) >= 0;
-        if (!aPref.latched || (isLatched ^ sameDir)) {
+        if (!aPref["latched"] || (isLatched ^ sameDir)) {
           this._doAction(updateEvent, [aGesture, offset > 0 ? aInc : aDec]);
 
           
