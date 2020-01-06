@@ -292,7 +292,6 @@ Classifier::Reset()
 
     CreateStoreDirectory();
 
-    mTableFreshness.Clear();
     RegenActiveTables();
   };
 
@@ -311,8 +310,6 @@ Classifier::ResetTables(ClearType aType, const nsTArray<nsCString>& aTables)
 {
   for (uint32_t i = 0; i < aTables.Length(); i++) {
     LOG(("Resetting table: %s", aTables[i].get()));
-    
-    mTableFreshness.Remove(aTables[i]);
     LookupCache *cache = GetLookupCache(aTables[i]);
     if (cache) {
       
@@ -619,8 +616,6 @@ Classifier::RemoveUpdateIntermediaries()
   }
   mNewLookupCaches.Clear();
 
-  mNewTableFreshness.Clear();
-
   
   if (NS_FAILED(mUpdatingDirectory->Remove(true))) {
     
@@ -684,11 +679,6 @@ Classifier::SwapInNewTablesAndCleanup()
   
   
   MergeNewLookupCaches();
-
-  
-  for (auto itr = mNewTableFreshness.ConstIter(); !itr.Done(); itr.Next()) {
-    mTableFreshness.Put(itr.Key(), itr.Data());
-  }
 
   
   rv = RegenActiveTables();
@@ -893,23 +883,6 @@ Classifier::ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates)
   }
 
   return NS_OK;
-}
-
-int64_t
-Classifier::GetLastUpdateTime(const nsACString& aTableName)
-{
-  int64_t age;
-  bool found = mTableFreshness.Get(aTableName, &age);
-  return found ? (age * PR_MSEC_PER_SEC) : 0;
-}
-
-void
-Classifier::SetLastUpdateTime(const nsACString &aTable,
-                              uint64_t updateTime)
-{
-  LOG(("Marking table %s as last updated on %" PRIu64,
-       PromiseFlatCString(aTable).get(), updateTime));
-  mTableFreshness.Put(aTable, updateTime / PR_MSEC_PER_SEC);
 }
 
 void
@@ -1302,9 +1275,7 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
   rv = lookupCache->WriteFile();
   NS_ENSURE_SUCCESS(rv, NS_ERROR_UC_UPDATE_FAIL_TO_WRITE_DISK);
 
-  int64_t now = (PR_Now() / PR_USEC_PER_SEC);
   LOG(("Successfully updated %s", store.TableName().get()));
-  mNewTableFreshness.Put(store.TableName(), now);
 
   return NS_OK;
 }
@@ -1403,10 +1374,7 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
     NS_ENSURE_SUCCESS(rv, NS_ERROR_UC_UPDATE_FAIL_TO_WRITE_DISK);
   }
 
-
-  int64_t now = (PR_Now() / PR_USEC_PER_SEC);
   LOG(("Successfully updated %s\n", PromiseFlatCString(aTable).get()));
-  mNewTableFreshness.Put(aTable, now);
 
   return NS_OK;
 }

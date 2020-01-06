@@ -85,8 +85,6 @@ public:
 
   nsresult ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates);
 
-  void SetLastUpdateTime(const nsACString& aTableName, uint64_t updateTime);
-  int64_t GetLastUpdateTime(const nsACString& aTableName);
   nsresult CacheCompletions(const CacheResultArray& aResults);
   uint32_t GetHashKey(void) { return mHashKey; }
   
@@ -208,9 +206,6 @@ private:
   nsTArray<LookupCache*> mLookupCaches; 
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
-  
-  TableFreshnessMap mTableFreshness;
-  TableFreshnessMap mNewTableFreshness;
 
   
   
