@@ -30,9 +30,9 @@ var SidebarUI = {
   POSITION_START_PREF: "sidebar.position_start",
   DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
 
-  
-  
-  lastOpenedId: null,
+  get lastOpenedId() {
+    return this._box.getAttribute("sidebarcommand");
+  },
 
   _box: null,
   
@@ -64,10 +64,20 @@ var SidebarUI = {
   },
 
   uninit() {
-    let enumerator = Services.wm.getEnumerator(null);
+    
+    
+    let enumerator = Services.wm.getEnumerator("navigator:browser");
     enumerator.getNext();
     if (!enumerator.hasMoreElements()) {
       document.persist("sidebar-box", "sidebarcommand");
+
+      let xulStore = Cc["@mozilla.org/xul/xulstore;1"].getService(Ci.nsIXULStore);
+      if (this._box.hasAttribute("checked")) {
+        document.persist("sidebar-box", "checked");
+      } else {
+        xulStore.removeValue(document.documentURI, "sidebar-box", "checked");
+      }
+
       document.persist("sidebar-box", "width");
       document.persist("sidebar-title", "value");
     }
@@ -171,12 +181,18 @@ var SidebarUI = {
       
       return false;
     }
+
+    
+    
+    let commandID = sourceUI._box.getAttribute("sidebarcommand");
+    if (commandID) {
+      this._box.setAttribute("sidebarcommand", commandID);
+    }
+
     if (sourceUI._box.hidden) {
       
       return true;
     }
-
-    let commandID = sourceUI._box.getAttribute("sidebarcommand");
 
     
     
@@ -215,7 +231,8 @@ var SidebarUI = {
 
     
     let commandID = this._box.getAttribute("sidebarcommand");
-    if (!commandID) {
+    let wasOpen = this._box.getAttribute("checked");
+    if (!commandID || !wasOpen) {
       return;
     }
 
@@ -262,9 +279,8 @@ var SidebarUI = {
   
 
 
-
   get currentID() {
-    return this._box.getAttribute("sidebarcommand");
+    return this.isOpen ? this.lastOpenedId : "";
   },
 
   get title() {
@@ -361,7 +377,6 @@ var SidebarUI = {
 
       this._box.setAttribute("checked", "true");
       this._box.setAttribute("sidebarcommand", sidebarBroadcaster.id);
-      this.lastOpenedId = sidebarBroadcaster.id;
 
       let title = sidebarBroadcaster.getAttribute("sidebartitle") ||
                   sidebarBroadcaster.getAttribute("label");
@@ -437,7 +452,6 @@ var SidebarUI = {
     this.browser.docShell.createAboutBlankContentViewer(null);
 
     sidebarBroadcaster.removeAttribute("checked");
-    this._box.setAttribute("sidebarcommand", "");
     this._box.removeAttribute("checked");
     this._box.hidden = this._splitter.hidden = true;
 
