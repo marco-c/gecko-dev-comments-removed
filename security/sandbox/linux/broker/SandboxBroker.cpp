@@ -21,6 +21,7 @@
 #include <sys/prctl.h>
 #endif
 
+#include "base/string_util.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Move.h"
@@ -200,14 +201,20 @@ SandboxBroker::Policy::AddDir(int aPerms, const char* aPath)
     return;
   }
 
+  
   nsDependentCString path(aPath);
   MOZ_ASSERT(path.Length() <= kMaxPathLen - 1);
   
-  if (path[path.Length() - 1] != '/') {
+  if (path.Last() != '/') {
     path.Append('/');
   }
-
   Policy::AddPrefixInternal(aPerms, path);
+
+  
+  
+  
+  path.Truncate(path.Length() - 1);
+  Policy::AddPath(aPerms, path.get(), AddAlways);
 }
 
 void
@@ -423,8 +430,7 @@ SandboxBroker::ConvertToRealPath(char* aPath, size_t aBufSize, size_t aPathLen)
   if (strstr(aPath, "..") != nullptr) {
     char* result = realpath(aPath, nullptr);
     if (result != nullptr) {
-      strncpy(aPath, result, aBufSize);
-      aPath[aBufSize - 1] = '\0';
+      base::strlcpy(aPath, result, aBufSize);
       free(result);
       
       aPathLen = strlen(aPath);
@@ -432,6 +438,64 @@ SandboxBroker::ConvertToRealPath(char* aPath, size_t aBufSize, size_t aPathLen)
     
   }
   return aPathLen;
+}
+
+nsCString
+SandboxBroker::ReverseSymlinks(const nsACString& aPath)
+{
+  
+  int32_t cutLength = aPath.Length();
+  nsCString cutPath(Substring(aPath, 0, cutLength));
+
+  for (;;) {
+    nsCString orig;
+    bool found = mSymlinkMap.Get(cutPath, &orig);
+    if (found) {
+      orig.Append(Substring(aPath, cutLength, aPath.Length() - cutLength));
+      return orig;
+    }
+    
+    int32_t pos = cutPath.RFindChar('/');
+    if (pos == kNotFound || pos <= 0) {
+      
+      return orig;
+    } else {
+      
+      cutLength = pos;
+      cutPath.Assign(Substring(cutPath, 0, cutLength));
+    }
+  }
+}
+
+int
+SandboxBroker::SymlinkPermissions(const char* aPath, const size_t aPathLen)
+{
+  
+  
+  
+  char pathBufSymlink[kMaxPathLen + 1];
+  strcpy(pathBufSymlink, aPath);
+
+  nsCString orig = ReverseSymlinks(nsDependentCString(pathBufSymlink, aPathLen));
+  if (!orig.IsEmpty()) {
+    if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+      SANDBOX_LOG_ERROR("Reversing %s -> %s", aPath, orig.get());
+    }
+    base::strlcpy(pathBufSymlink, orig.get(), sizeof(pathBufSymlink));
+  }
+
+  int perms = 0;
+  
+  
+  char* result = SandboxBroker::SymlinkPath(mPolicy.get(), pathBufSymlink, NULL, &perms);
+  if (result != NULL) {
+    free(result);
+    
+    return perms;
+  } else {
+    
+    return 0;
+  }
 }
 
 void
@@ -452,8 +516,8 @@ SandboxBroker::ThreadMain(void)
     char recvBuf[2 * (kMaxPathLen + 1)];
     char pathBuf[kMaxPathLen + 1];
     char pathBuf2[kMaxPathLen + 1];
-    size_t pathLen;
-    size_t pathLen2;
+    size_t pathLen = 0;
+    size_t pathLen2 = 0;
     char respBuf[kMaxPathLen + 1]; 
     Request req;
     Response resp;
@@ -537,6 +601,18 @@ SandboxBroker::ThreadMain(void)
       
       pathLen = ConvertToRealPath(pathBuf, sizeof(pathBuf), pathLen);
       perms = mPolicy->Lookup(nsDependentCString(pathBuf, pathLen));
+
+      
+      
+      
+      if (!(perms & MAY_READ)) {
+          
+          
+          int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
+          if (symlinkPerms > 0) {
+            perms = symlinkPerms;
+          }
+      }
 
       
       pathLen2 = strnlen(pathBuf2, kMaxPathLen);
@@ -698,6 +774,34 @@ SandboxBroker::ThreadMain(void)
         if (permissive || AllowOperation(R_OK, perms)) {
           ssize_t respSize = readlink(pathBuf, (char*)&respBuf, sizeof(respBuf));
           if (respSize >= 0) {
+              if (respSize > 0) {
+              
+              
+              nsDependentCString orig(pathBuf, pathLen);
+              nsDependentCString xlat(respBuf, respSize);
+              if (!orig.Equals(xlat) && xlat[0] == '/') {
+                if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+                  SANDBOX_LOG_ERROR("Recording mapping %s -> %s",
+                                    xlat.get(), orig.get());
+                }
+                mSymlinkMap.Put(xlat, orig);
+              }
+              
+              
+              
+              char *resolvedBuf = realpath(pathBuf, nullptr);
+              if (resolvedBuf) {
+                nsDependentCString resolvedXlat(resolvedBuf);
+                if (!orig.Equals(resolvedXlat) && !xlat.Equals(resolvedXlat)) {
+                  if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
+                    SANDBOX_LOG_ERROR("Recording mapping %s -> %s",
+                                      resolvedXlat.get(), orig.get());
+                  }
+                  mSymlinkMap.Put(resolvedXlat, orig);
+                }
+                free(resolvedBuf);
+              }
+            }
             resp.mError = respSize;
             ios[1].iov_base = &respBuf;
             ios[1].iov_len = respSize;
@@ -747,9 +851,9 @@ void
 SandboxBroker::AuditDenial(int aOp, int aFlags, int aPerms, const char* aPath)
 {
   if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-    SANDBOX_LOG_ERROR("SandboxBroker: denied op=%d rflags=%o perms=%d path=%s for pid=%d" \
-                      " error=\"%s\"", aOp, aFlags, aPerms, aPath, mChildPid,
-                      strerror(errno));
+    SANDBOX_LOG_ERROR("SandboxBroker: denied op=%s rflags=%o perms=%d path=%s for pid=%d",
+                      OperationDescription[aOp], aFlags,
+                      aPerms, aPath, mChildPid);
   }
 }
 

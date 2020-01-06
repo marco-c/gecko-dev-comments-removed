@@ -38,6 +38,8 @@ public:
     SANDBOX_FILE_UNLINK,
     SANDBOX_FILE_READLINK,
   };
+  
+  static const char* OperationDescription[];
 
   struct Request {
     Operation mOp;

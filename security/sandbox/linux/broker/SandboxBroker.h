@@ -56,10 +56,10 @@ class SandboxBroker final
   };
   
   
-  typedef nsDataHashtable<nsCStringHashKey, int> PathMap;
+  typedef nsDataHashtable<nsCStringHashKey, int> PathPermissionMap;
 
   class Policy {
-    PathMap mMap;
+    PathPermissionMap mMap;
   public:
     Policy();
     Policy(const Policy& aOther);
@@ -120,6 +120,9 @@ class SandboxBroker final
   const int mChildPid;
   const UniquePtr<const Policy> mPolicy;
 
+  typedef nsDataHashtable<nsCStringHashKey, nsCString> PathMap;
+  PathMap mSymlinkMap;
+
   SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
                 int& aClientFd);
   void ThreadMain(void) override;
@@ -127,6 +130,12 @@ class SandboxBroker final
   void AuditDenial(int aOp, int aFlags, int aPerms, const char* aPath);
   
   size_t ConvertToRealPath(char* aPath, size_t aBufSize, size_t aPathLen);
+  nsCString ReverseSymlinks(const nsACString& aPath);
+  
+  int SymlinkPermissions(const char* aPath, const size_t aPathLen);
+  
+  char* SymlinkPath(const Policy* aPolicy, const char* __restrict aPath,
+                    char* __restrict aResolved, int* aPermission);
 
   
   SandboxBroker(const SandboxBroker&) = delete;
