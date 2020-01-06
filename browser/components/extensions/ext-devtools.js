@@ -138,6 +138,7 @@ class DevToolsPage extends HiddenExtensionPage {
     extensions.emit("extension-browser-inserted", this.browser, {
       devtoolsToolboxInfo: {
         inspectedWindowTabId: getTargetTabIdForToolbox(this.toolbox),
+        themeName: gDevTools.getTheme(),
       },
     });
 
@@ -200,6 +201,10 @@ class DevToolsPageDefinition {
     this.devtoolsPageForTarget = new Map();
   }
 
+  onThemeChanged(evt, themeName) {
+    Services.ppmm.broadcastAsyncMessage("Extension:DevToolsThemeChanged", {themeName});
+  }
+
   buildForToolbox(toolbox) {
     if (this.devtoolsPageForTarget.has(toolbox.target)) {
       return Promise.reject(new Error("DevtoolsPage has been already created for this toolbox"));
@@ -208,6 +213,11 @@ class DevToolsPageDefinition {
     const devtoolsPage = new DevToolsPage(this.extension, {
       toolbox, url: this.url, devToolsPageDefinition: this,
     });
+
+    
+    if (this.devtoolsPageForTarget.size === 0) {
+      gDevTools.on("theme-changed", this.onThemeChanged);
+    }
     this.devtoolsPageForTarget.set(toolbox.target, devtoolsPage);
 
     return devtoolsPage.build();
@@ -222,6 +232,11 @@ class DevToolsPageDefinition {
       
       if (this.devtoolsPageForTarget.has(target)) {
         throw new Error(`Leaked DevToolsPage instance for target "${target.toString()}"`);
+      }
+
+      
+      if (this.devtoolsPageForTarget.size === 0) {
+        gDevTools.off("theme-changed", this.onThemeChanged);
       }
     }
   }
