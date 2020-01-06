@@ -1948,13 +1948,20 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   
   
   
-  bool hasServoAnimations = false;
   auto* servoStyle = pseudoStyleContext->GetAsServo();
   if (servoStyle) {
-    hasServoAnimations =
+    bool hasServoAnimations =
       Servo_ComputedValues_SpecifiesAnimationsOrTransitions(servoStyle);
     if (!hasServoAnimations) {
       Servo_SetExplicitStyle(container, servoStyle);
+    } else {
+      
+      
+      
+      mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
+      pseudoStyleContext =
+        styleSet->AsServo()->ResolveServoStyle(container,
+                                               ServoTraversalFlags::Empty);
     }
   } else {
     mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->AsGecko();
@@ -1994,15 +2001,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
 
   
   if (servoStyle) {
-    if (hasServoAnimations) {
-      
-      
-      
-      mPresShell->StyleSet()->AsServo()->StyleNewSubtree(container);
-      pseudoStyleContext =
-        styleSet->AsServo()->ResolveServoStyle(container,
-                                               ServoTraversalFlags::Empty);
-    } else if (createdChildElement) {
+    if (createdChildElement) {
       
       
       mPresShell->StyleSet()->AsServo()->StyleNewChildren(container);
