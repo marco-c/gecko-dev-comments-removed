@@ -47,6 +47,11 @@
 
 @media (-moz-windows-glass) {
   
+  #TabsToolbar {
+    --toolbarbutton-icon-fill-opacity: 1;
+  }
+
+  
   #toolbar-menubar {
     text-shadow: 0 0 .5em white, 0 0 .5em white, 0 1px 0 rgba(255,255,255,.4);
   }
