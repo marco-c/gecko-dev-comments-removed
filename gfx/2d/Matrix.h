@@ -1582,6 +1582,20 @@ public:
   
 
 
+
+  bool IsRectilinear() const {
+    MOZ_ASSERT(Is2D());
+    if (gfx::FuzzyEqual(_12, 0) && gfx::FuzzyEqual(_21, 0)) {
+      return true;
+    } else if (gfx::FuzzyEqual(_22, 0) && gfx::FuzzyEqual(_11, 0)) {
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
   Matrix4x4 ToUnknownMatrix() const {
     return Matrix4x4{_11, _12, _13, _14,
                      _21, _22, _23, _24,
