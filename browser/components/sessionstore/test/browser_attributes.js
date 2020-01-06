@@ -25,21 +25,15 @@ add_task(async function test() {
   
   ok(tab.hasAttribute("muted"), "tab.muted exists");
 
-  tab.setMediaBlock(true );
-  
-  ok(tab.hasAttribute("media-blocked"), "tab.media-blocked exists");
-
   
   ss.persistTabAttribute("image");
   ss.persistTabAttribute("muted");
   ss.persistTabAttribute("iconLoadingPrincipal");
-  ss.persistTabAttribute("mediaBlocked");
   let {attributes} = JSON.parse(ss.getTabState(tab));
   ok(!("image" in attributes), "'image' attribute not saved");
   ok(!("iconLoadingPrincipal" in attributes), "'iconLoadingPrincipal' attribute not saved");
   ok(!("muted" in attributes), "'muted' attribute not saved");
   ok(!("custom" in attributes), "'custom' attribute not saved");
-  ok(!("mediaBlocked" in attributes), "'mediaBlocked' attribute not saved");
 
   
   tab.setAttribute("custom", "foobar");
