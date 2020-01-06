@@ -1,8 +1,7 @@
 
 
 
-function testName(aAccOrElmOrID, aName, aMsg, aTodo)
-{
+function testName(aAccOrElmOrID, aName, aMsg, aTodo) {
   var msg = aMsg ? aMsg : "";
 
   var acc = getAccessible(aAccOrElmOrID);
@@ -22,8 +21,7 @@ function testName(aAccOrElmOrID, aName, aMsg, aTodo)
 
 
 
-function testDescr(aAccOrElmOrID, aDescr)
-{
+function testDescr(aAccOrElmOrID, aDescr) {
   var acc = getAccessible(aAccOrElmOrID);
   if (!acc)
    return;

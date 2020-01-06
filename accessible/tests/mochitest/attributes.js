@@ -10,8 +10,7 @@
 
 
 
-function testAttrs(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs)
-{
+function testAttrs(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs) {
   testAttrsInternal(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs);
 }
 
@@ -22,16 +21,14 @@ function testAttrs(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs)
 
 
 
-function testAbsentAttrs(aAccOrElmOrID, aAbsentAttrs)
-{
+function testAbsentAttrs(aAccOrElmOrID, aAbsentAttrs) {
   testAttrsInternal(aAccOrElmOrID, {}, true, aAbsentAttrs);
 }
 
 
 
 
-function testCSSAttrs(aID)
-{
+function testCSSAttrs(aID) {
   var node = document.getElementById(aID);
   var computedStyle = document.defaultView.getComputedStyle(node);
 
@@ -50,8 +47,7 @@ function testCSSAttrs(aID)
 
 
 
-function testAbsentCSSAttrs(aID)
-{
+function testAbsentCSSAttrs(aID) {
   var attrs = {
     "display": "",
     "text-align": "",
@@ -73,8 +69,7 @@ function testAbsentCSSAttrs(aID)
 
 
 
-function testGroupAttrs(aAccOrElmOrID, aPosInSet, aSetSize, aLevel)
-{
+function testGroupAttrs(aAccOrElmOrID, aPosInSet, aSetSize, aLevel) {
   var acc = getAccessible(aAccOrElmOrID);
   var levelObj = {}, posInSetObj = {}, setSizeObj = {};
   acc.groupPosition(levelObj, setSizeObj, posInSetObj);
@@ -124,8 +119,7 @@ function testGroupAttrs(aAccOrElmOrID, aPosInSet, aSetSize, aLevel)
 
 
 function testTextAttrs(aID, aOffset, aAttrs, aDefAttrs,
-                       aStartOffset, aEndOffset, aSkipUnexpectedAttrs)
-{
+                       aStartOffset, aEndOffset, aSkipUnexpectedAttrs) {
   var accessible = getAccessible(aID, [nsIAccessibleText]);
   if (!accessible)
     return;
@@ -176,8 +170,7 @@ function testTextAttrs(aID, aOffset, aAttrs, aDefAttrs,
 
 
 
-function testDefaultTextAttrs(aID, aDefAttrs, aSkipUnexpectedAttrs)
-{
+function testDefaultTextAttrs(aID, aDefAttrs, aSkipUnexpectedAttrs) {
   var accessible = getAccessible(aID, [nsIAccessibleText]);
   if (!accessible)
     return;
@@ -200,8 +193,7 @@ function testDefaultTextAttrs(aID, aDefAttrs, aSkipUnexpectedAttrs)
 
 
 
-function testTextAttrsWrongOffset(aID, aOffset)
-{
+function testTextAttrsWrongOffset(aID, aOffset) {
   var res = false;
   try {
   var s = {}, e = {};
@@ -242,8 +234,7 @@ const kCursiveFontFamily = LINUX ? "DejaVu Serif" : "Comic Sans MS";
 
 
 
-function fontFamily(aComputedStyle)
-{
+function fontFamily(aComputedStyle) {
   var name = aComputedStyle.fontFamily;
   switch (name) {
     case "monospace":
@@ -265,8 +256,7 @@ function fontFamily(aComputedStyle)
 
 
 
-function buildDefaultTextAttrs(aID, aFontSize, aFontWeight, aFontFamily)
-{
+function buildDefaultTextAttrs(aID, aFontSize, aFontWeight, aFontFamily) {
   var elm = getNode(aID);
   var computedStyle = document.defaultView.getComputedStyle(elm);
   var bgColor = computedStyle.backgroundColor == "rgba(0, 0, 0, 0)" ?
@@ -289,8 +279,7 @@ function buildDefaultTextAttrs(aID, aFontSize, aFontWeight, aFontFamily)
 
 
 function getTextAttributes(aID, aAccessible, aIncludeDefAttrs, aOffset,
-                           aStartOffset, aEndOffset)
-{
+                           aStartOffset, aEndOffset) {
   
   
   var attrs = null;
@@ -308,8 +297,7 @@ function getTextAttributes(aID, aAccessible, aIncludeDefAttrs, aOffset,
 }
 
 function testAttrsInternal(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs,
-                   aAbsentAttrs)
-{
+                   aAbsentAttrs) {
   var accessible = getAccessible(aAccOrElmOrID);
   if (!accessible)
     return;
@@ -329,8 +317,7 @@ function testAttrsInternal(aAccOrElmOrID, aAttrs, aSkipUnexpectedAttrs,
 }
 
 function compareAttrs(aErrorMsg, aAttrs, aExpectedAttrs, aSkipUnexpectedAttrs,
-                      aAbsentAttrs)
-{
+                      aAbsentAttrs) {
   
   var enumerate = aAttrs.enumerate();
   while (enumerate.hasMoreElements()) {

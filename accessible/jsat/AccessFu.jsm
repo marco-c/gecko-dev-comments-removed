@@ -773,9 +773,9 @@ var Input = {
             
             
             return;
-          } else {
-            target.blur();
           }
+          target.blur();
+
         }
         this.moveCursor(aEvent.shiftKey ?
           "moveLast" : "moveNext", "Simple", "keyboard");
@@ -786,9 +786,9 @@ var Input = {
             
             
             return;
-          } else {
-            target.blur();
           }
+          target.blur();
+
         }
         this.moveCursor(aEvent.shiftKey ?
           "moveFirst" : "movePrevious", "Simple", "keyboard");
@@ -798,9 +798,9 @@ var Input = {
           if (!this.editState.atStart) {
             
             return;
-          } else {
-            target.blur();
           }
+          target.blur();
+
         }
 
         if (Utils.MozBuildApp == "mobile/android") {

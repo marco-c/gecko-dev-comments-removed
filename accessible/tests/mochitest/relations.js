@@ -38,8 +38,7 @@ const RELATION_ERRORMSG_FOR = nsIAccessibleRelation.RELATION_ERRORMSG_FOR;
 
 
 
-function testRelation(aIdentifier, aRelType, aRelatedIdentifiers)
-{
+function testRelation(aIdentifier, aRelType, aRelatedIdentifiers) {
   var relation = getRelationByType(aIdentifier, aRelType);
 
   var relDescr = getRelationErrorMsg(aIdentifier, aRelType);
@@ -110,8 +109,7 @@ function testRelation(aIdentifier, aRelType, aRelatedIdentifiers)
 
 
 
-function testAbsentRelation(aIdentifier, aRelType, aUnrelatedIdentifiers)
-{
+function testAbsentRelation(aIdentifier, aRelType, aUnrelatedIdentifiers) {
   var relation = getRelationByType(aIdentifier, aRelType);
 
   var relDescr = getRelationErrorMsg(aIdentifier, aRelType);
@@ -161,8 +159,7 @@ function testAbsentRelation(aIdentifier, aRelType, aUnrelatedIdentifiers)
 
 
 
-function getRelationByType(aIdentifier, aRelType)
-{
+function getRelationByType(aIdentifier, aRelType) {
   var acc = getAccessible(aIdentifier);
   if (!acc)
     return;
@@ -180,8 +177,7 @@ function getRelationByType(aIdentifier, aRelType)
 
 
 
-function getRelationErrorMsg(aIdentifier, aRelType, aIsStartSentence)
-{
+function getRelationErrorMsg(aIdentifier, aRelType, aIsStartSentence) {
   var relStr = relationTypeToString(aRelType);
   var msg = aIsStartSentence ? "Relation of '" : " relation of '";
   msg += relStr + "' type for '" + prettyName(aIdentifier) + "'";

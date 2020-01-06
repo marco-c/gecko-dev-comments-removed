@@ -8,10 +8,8 @@ module.exports = {
     
     
     
-    "brace-style": "off",
     "consistent-return": "off",
     "object-shorthand": "off",
-    "no-else-return": "off",
     "no-unexpected-multiline": "off",
     "no-unsafe-finally": "off",
     "no-useless-call": "off",

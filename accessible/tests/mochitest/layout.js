@@ -8,8 +8,7 @@
 
 
 
-function testChildAtPoint(aID, aX, aY, aChildID, aGrandChildID)
-{
+function testChildAtPoint(aID, aX, aY, aChildID, aGrandChildID) {
   var child = getChildAtPoint(aID, aX, aY, false);
   var expectedChild = getAccessible(aChildID);
 
@@ -29,8 +28,7 @@ function testChildAtPoint(aID, aX, aY, aChildID, aGrandChildID)
 
 
 
-function hitTest(aContainerID, aChildID, aGrandChildID)
-{
+function hitTest(aContainerID, aChildID, aGrandChildID) {
   var container = getAccessible(aContainerID);
   var child = getAccessible(aChildID);
   var grandChild = getAccessible(aGrandChildID);
@@ -49,8 +47,7 @@ function hitTest(aContainerID, aChildID, aGrandChildID)
 
 
 
-function testOffsetAtPoint(aHyperTextID, aX, aY, aCoordType, aExpectedOffset)
-{
+function testOffsetAtPoint(aHyperTextID, aX, aY, aCoordType, aExpectedOffset) {
   var hyperText = getAccessible(aHyperTextID, [nsIAccessibleText]);
   var offset = hyperText.getOffsetAtPoint(aX, aY, aCoordType);
   is(offset, aExpectedOffset,
@@ -61,8 +58,7 @@ function testOffsetAtPoint(aHyperTextID, aX, aY, aCoordType, aExpectedOffset)
 
 
 
-function zoomDocument(aDocument, aZoom)
-{
+function zoomDocument(aDocument, aZoom) {
   var docShell = aDocument.defaultView.
     QueryInterface(Components.interfaces.nsIInterfaceRequestor).
     getInterface(Components.interfaces.nsIWebNavigation).
@@ -82,8 +78,7 @@ function zoomDocument(aDocument, aZoom)
 
 
 
-function getChildAtPoint(aIdentifier, aX, aY, aFindDeepestChild)
-{
+function getChildAtPoint(aIdentifier, aX, aY, aFindDeepestChild) {
   var acc = getAccessible(aIdentifier);
   if (!acc)
     return;
@@ -105,8 +100,7 @@ function getChildAtPoint(aIdentifier, aX, aY, aFindDeepestChild)
 
 
 
-function testPos(aID, aPoint)
-{
+function testPos(aID, aPoint) {
   var [expectedX, expectedY] =
     (aPoint != undefined) ? aPoint : getBoundsForDOMElm(aID);
 
@@ -118,8 +112,7 @@ function testPos(aID, aPoint)
 
 
 
-function testBounds(aID, aRect)
-{
+function testBounds(aID, aRect) {
   var [expectedX, expectedY, expectedWidth, expectedHeight] =
     (aRect != undefined) ? aRect : getBoundsForDOMElm(aID);
 
@@ -133,8 +126,7 @@ function testBounds(aID, aRect)
 
 
 
-function testTextPos(aID, aOffset, aPoint, aCoordOrigin)
-{
+function testTextPos(aID, aOffset, aPoint, aCoordOrigin) {
   var [expectedX, expectedY] = aPoint;
 
   var xObj = {}, yObj = {};
@@ -151,8 +143,7 @@ function testTextPos(aID, aOffset, aPoint, aCoordOrigin)
 
 
 
-function testTextBounds(aID, aStartOffset, aEndOffset, aRect, aCoordOrigin)
-{
+function testTextBounds(aID, aStartOffset, aEndOffset, aRect, aCoordOrigin) {
   var [expectedX, expectedY, expectedWidth, expectedHeight] = aRect;
 
   var xObj = {}, yObj = {}, widthObj = {}, heightObj = {};
@@ -181,8 +172,7 @@ function testTextBounds(aID, aStartOffset, aEndOffset, aRect, aCoordOrigin)
 
 
 
-function getPos(aID)
-{
+function getPos(aID) {
   var accessible = getAccessible(aID);
   var x = {}, y = {};
   accessible.getBounds(x, y, {}, {});
@@ -193,8 +183,7 @@ function getPos(aID)
 
 
 
-function getBounds(aID)
-{
+function getBounds(aID) {
   var accessible = getAccessible(aID);
   var x = {}, y = {}, width = {}, height = {};
   accessible.getBounds(x, y, width, height);
@@ -205,8 +194,7 @@ function getBounds(aID)
 
 
 
-function getBoundsForDOMElm(aID)
-{
+function getBoundsForDOMElm(aID) {
   var x = 0, y = 0, width = 0, height = 0;
 
   var elm = getNode(aID);
@@ -226,8 +214,7 @@ function getBoundsForDOMElm(aID)
     y = rect.top + areaY;
     width = areaWidth;
     height = areaHeight;
-  }
-  else {
+  } else {
     var rect = elm.getBoundingClientRect();
     x = rect.left;
     y = rect.top;
@@ -243,8 +230,7 @@ function getBoundsForDOMElm(aID)
                            height);
 }
 
-function CSSToDevicePixels(aWindow, aX, aY, aWidth, aHeight)
-{
+function CSSToDevicePixels(aWindow, aX, aY, aWidth, aHeight) {
   var winUtil = aWindow.
     QueryInterface(Components.interfaces.nsIInterfaceRequestor).
     getInterface(Components.interfaces.nsIDOMWindowUtils);

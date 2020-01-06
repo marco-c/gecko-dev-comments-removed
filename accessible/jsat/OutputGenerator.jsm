@@ -671,8 +671,7 @@ this.UtteranceGenerator = {
       if (itemno.value == 1) {
         
         utterance.push({string: "listStart"});
-      }
-      else if (itemno.value == itemof.value) {
+      } else if (itemno.value == itemof.value) {
         
         utterance.push({string: "listEnd"});
       }

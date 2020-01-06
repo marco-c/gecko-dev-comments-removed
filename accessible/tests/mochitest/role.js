@@ -134,8 +134,7 @@ const ROLE_WHITESPACE = nsIAccessibleRole.ROLE_WHITESPACE;
 
 
 
-function testRole(aAccOrElmOrID, aRole)
-{
+function testRole(aAccOrElmOrID, aRole) {
   var role = getRole(aAccOrElmOrID);
   is(role, aRole, "Wrong role for " + prettyName(aAccOrElmOrID) + "!");
 }
@@ -147,8 +146,7 @@ function testRole(aAccOrElmOrID, aRole)
 
 
 
-function getRole(aAccOrElmOrID)
-{
+function getRole(aAccOrElmOrID) {
   var acc = getAccessible(aAccOrElmOrID);
   if (!acc)
     return -1;
@@ -166,8 +164,7 @@ function getRole(aAccOrElmOrID)
 
 
 
-function isRole(aIdentifier, aRole, aMsg)
-{
+function isRole(aIdentifier, aRole, aMsg) {
   var role = getRole(aIdentifier);
   if (role == - 1)
     return;

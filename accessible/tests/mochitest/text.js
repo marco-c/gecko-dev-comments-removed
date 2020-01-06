@@ -23,8 +23,7 @@ const kOk = 2;
 
 
 
-function testCharacterCount(aIDs, aCount, aTodoFlag)
-{
+function testCharacterCount(aIDs, aCount, aTodoFlag) {
   var ids = (aIDs instanceof Array) ? aIDs : [ aIDs ];
   var isFunc = (aTodoFlag == kTodo) ? todo_is : is;
   for (var i = 0; i < ids.length; i++) {
@@ -43,8 +42,7 @@ function testCharacterCount(aIDs, aCount, aTodoFlag)
 
 
 
-function testText(aIDs, aStartOffset, aEndOffset, aText, aTodoFlag)
-{
+function testText(aIDs, aStartOffset, aEndOffset, aText, aTodoFlag) {
   var ids = (aIDs instanceof Array) ? aIDs : [ aIDs ];
   var isFunc = (aTodoFlag == kTodo) ? todo_is : is;
   for (var i = 0; i < ids.length; i++) {
@@ -73,10 +71,8 @@ function testText(aIDs, aStartOffset, aEndOffset, aText, aTodoFlag)
 
 
 
-function testPasswordText(aIDs, aStartOffset, aEndOffset, aText)
-{
-  for (var i = 0; i < aIDs.length; i++)
-  {
+function testPasswordText(aIDs, aStartOffset, aEndOffset, aText) {
+  for (var i = 0; i < aIDs.length; i++) {
     var acc = getAccessible(aIDs[i], nsIAccessibleText);
     try {
       isnot(acc.getText(aStartOffset, aEndOffset), aText,
@@ -100,8 +96,7 @@ function testPasswordText(aIDs, aStartOffset, aEndOffset, aText)
 
 
 
-function testCharAtOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
-{
+function testCharAtOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset) {
   var IDs = (aIDs instanceof Array) ? aIDs : [ aIDs ];
   for (var i = 0; i < IDs.length; i++) {
     var acc = getAccessible(IDs[i], nsIAccessibleText);
@@ -136,8 +131,7 @@ function testCharAtOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
 
 
 
-function testTextAtOffset()
-{
+function testTextAtOffset() {
   testTextSuperHelper("getTextAtOffset", arguments);
 }
 
@@ -151,8 +145,7 @@ function testTextAtOffset()
 
 
 
-function testCharAfterOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
-{
+function testCharAfterOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset) {
   var IDs = (aIDs instanceof Array) ? aIDs : [ aIDs ];
   for (var i = 0; i < IDs.length; i++) {
     var acc = getAccessible(IDs[i], nsIAccessibleText);
@@ -188,8 +181,7 @@ function testCharAfterOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
 
 
 function testTextAfterOffset(aOffset, aBoundaryType,
-                             aText, aStartOffset, aEndOffset)
-{
+                             aText, aStartOffset, aEndOffset) {
   testTextSuperHelper("getTextAfterOffset", arguments);
 }
 
@@ -203,8 +195,7 @@ function testTextAfterOffset(aOffset, aBoundaryType,
 
 
 
-function testCharBeforeOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
-{
+function testCharBeforeOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset) {
   var IDs = (aIDs instanceof Array) ? aIDs : [ aIDs ];
   for (var i = 0; i < IDs.length; i++) {
     var acc = getAccessible(IDs[i], nsIAccessibleText);
@@ -240,8 +231,7 @@ function testCharBeforeOffset(aIDs, aOffset, aChar, aStartOffset, aEndOffset)
 
 
 function testTextBeforeOffset(aOffset, aBoundaryType,
-                              aText, aStartOffset, aEndOffset)
-{
+                              aText, aStartOffset, aEndOffset) {
   testTextSuperHelper("getTextBeforeOffset", arguments);
 }
 
@@ -252,8 +242,7 @@ function testTextBeforeOffset(aOffset, aBoundaryType,
 
 
 
-function testWordCount(aElement, aCount, aToDoFlag)
-{
+function testWordCount(aElement, aCount, aToDoFlag) {
   var isFunc = (aToDoFlag == kTodo) ? todo_is : is;
   var acc = getAccessible(aElement, nsIAccessibleText);
   var startOffsetObj = {}, endOffsetObj = {};
@@ -282,8 +271,7 @@ function testWordCount(aElement, aCount, aToDoFlag)
 
 
 
-function testWordAt(aElement, aWordIndex, aText, aToDoFlag)
-{
+function testWordAt(aElement, aWordIndex, aText, aToDoFlag) {
   var isFunc = (aToDoFlag == kTodo) ? todo_is : is;
   var acc = getAccessible(aElement, nsIAccessibleText);
 
@@ -336,8 +324,7 @@ function testWordAt(aElement, aWordIndex, aText, aToDoFlag)
 
 
 
-function testWords(aElement, aWords, aToDoFlag)
-{
+function testWords(aElement, aWords, aToDoFlag) {
   if (aToDoFlag == null)
     aToDoFlag = kOk;
 
@@ -353,8 +340,7 @@ function testWords(aElement, aWords, aToDoFlag)
 
 
 
-function cleanTextSelections(aID)
-{
+function cleanTextSelections(aID) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
 
   while (acc.selectionCount > 0)
@@ -369,8 +355,7 @@ function cleanTextSelections(aID)
 
 
 
-function testTextAddSelection(aID, aStartOffset, aEndOffset, aSelectionsCount)
-{
+function testTextAddSelection(aID, aStartOffset, aEndOffset, aSelectionsCount) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
   var text = acc.getText(0, -1);
 
@@ -389,8 +374,7 @@ function testTextAddSelection(aID, aStartOffset, aEndOffset, aSelectionsCount)
 
 
 
-function testTextRemoveSelection(aID, aSelectionIndex, aSelectionsCount)
-{
+function testTextRemoveSelection(aID, aSelectionIndex, aSelectionsCount) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
   var text = acc.getText(0, -1);
 
@@ -412,8 +396,7 @@ function testTextRemoveSelection(aID, aSelectionIndex, aSelectionsCount)
 
 
 function testTextSetSelection(aID, aStartOffset, aEndOffset,
-                              aSelectionIndex, aSelectionsCount)
-{
+                              aSelectionIndex, aSelectionsCount) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
   var text = acc.getText(0, -1);
 
@@ -430,8 +413,7 @@ function testTextSetSelection(aID, aStartOffset, aEndOffset,
 
 
 
-function testTextSelectionCount(aID, aCount)
-{
+function testTextSelectionCount(aID, aCount) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
   var text = acc.getText(0, -1);
 
@@ -446,8 +428,7 @@ function testTextSelectionCount(aID, aCount)
 
 
 
-function testTextGetSelection(aID, aStartOffset, aEndOffset, aSelectionIndex)
-{
+function testTextGetSelection(aID, aStartOffset, aEndOffset, aSelectionIndex) {
   var acc = getAccessible(aID, [nsIAccessibleText]);
   var text = acc.getText(0, -1);
 
@@ -462,8 +443,7 @@ function testTextGetSelection(aID, aStartOffset, aEndOffset, aSelectionIndex)
 
 function testTextRange(aRange, aRangeDescr, aStartContainer, aStartOffset,
                        aEndContainer, aEndOffset, aText,
-                       aCommonContainer, aChildren)
-{
+                       aCommonContainer, aChildren) {
   isObject(aRange.startContainer, getAccessible(aStartContainer),
            "Wrong start container of " + aRangeDescr);
   is(aRange.startOffset, aStartOffset,
@@ -499,8 +479,7 @@ function testTextRange(aRange, aRangeDescr, aStartContainer, aStartOffset,
 
 
 
-function testTextSuperHelper(aFuncName, aArgs)
-{
+function testTextSuperHelper(aFuncName, aArgs) {
   
   if (aArgs[2] instanceof Array) {
     var ids = (aArgs[0] instanceof Array) ? aArgs[0] : [ aArgs[0] ];
@@ -574,8 +553,7 @@ function testTextSuperHelper(aFuncName, aArgs)
 function testTextHelper(aID, aOffset, aBoundaryType,
                         aText, aStartOffset, aEndOffset,
                         aToDoFlag1, aToDoFlag2, aToDoFlag3,
-                        aTextFunc, aTextFuncName)
-{
+                        aTextFunc, aTextFuncName) {
   var exceptionFlag = aToDoFlag1 == undefined ||
                       aToDoFlag2 == undefined ||
                       aToDoFlag3 == undefined;
@@ -617,8 +595,7 @@ function testTextHelper(aID, aOffset, aBoundaryType,
   }
 }
 
-function boundaryToString(aBoundaryType)
-{
+function boundaryToString(aBoundaryType) {
   switch (aBoundaryType) {
     case BOUNDARY_CHAR:
       return "char";

@@ -48,8 +48,7 @@ const kMathTable = 2;
 
 
 function testTableStruct(aIdentifier, aCellsArray, aColHeaderType,
-                         aCaption, aSummary, aTableType, aRowRoles)
-{
+                         aCaption, aSummary, aTableType, aRowRoles) {
   var tableNode = getNode(aIdentifier);
   var isGrid = tableNode.getAttribute("role") == "grid" ||
     tableNode.getAttribute("role") == "treegrid" ||
@@ -215,8 +214,7 @@ function testTableStruct(aIdentifier, aCellsArray, aColHeaderType,
 
 
 
-function testTableIndexes(aIdentifier, aIdxes)
-{
+function testTableIndexes(aIdentifier, aIdxes) {
   var tableAcc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!tableAcc)
     return;
@@ -363,8 +361,7 @@ function testTableIndexes(aIdentifier, aIdxes)
 
 
 
-function testTableSelection(aIdentifier, aCellsArray, aMsg)
-{
+function testTableSelection(aIdentifier, aCellsArray, aMsg) {
   var msg = aMsg ? aMsg : "";
   var acc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!acc)
@@ -530,8 +527,7 @@ function testTableSelection(aIdentifier, aCellsArray, aMsg)
 
 
 
-function testUnselectTableColumn(aIdentifier, aColIdx, aCellsArray)
-{
+function testUnselectTableColumn(aIdentifier, aColIdx, aCellsArray) {
   var acc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!acc)
     return;
@@ -552,8 +548,7 @@ function testUnselectTableColumn(aIdentifier, aColIdx, aCellsArray)
 
 
 
-function testSelectTableColumn(aIdentifier, aColIdx, aCellsArray)
-{
+function testSelectTableColumn(aIdentifier, aColIdx, aCellsArray) {
   var acc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!acc)
     return;
@@ -610,8 +605,7 @@ function testSelectTableColumn(aIdentifier, aColIdx, aCellsArray)
 
 
 
-function testUnselectTableRow(aIdentifier, aRowIdx, aCellsArray)
-{
+function testUnselectTableRow(aIdentifier, aRowIdx, aCellsArray) {
   var acc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!acc)
     return;
@@ -632,8 +626,7 @@ function testUnselectTableRow(aIdentifier, aRowIdx, aCellsArray)
 
 
 
-function testSelectTableRow(aIdentifier, aRowIdx, aCellsArray)
-{
+function testSelectTableRow(aIdentifier, aRowIdx, aCellsArray) {
   var acc = getAccessible(aIdentifier, [nsIAccessibleTable]);
   if (!acc)
     return;
@@ -691,8 +684,7 @@ function testSelectTableRow(aIdentifier, aRowIdx, aCellsArray)
 
 
 
-function testHeaderCells(aHeaderInfoMap)
-{
+function testHeaderCells(aHeaderInfoMap) {
   for (var testIdx = 0; testIdx < aHeaderInfoMap.length; testIdx++) {
     var dataCellIdentifier = aHeaderInfoMap[testIdx].cell;
     var dataCell = getAccessible(dataCellIdentifier, [nsIAccessibleTableCell]);
@@ -747,8 +739,7 @@ function testHeaderCells(aHeaderInfoMap)
 
 
 
-function getOrigRowAndColumn(aCellsArray, aRowIdx, aColIdx)
-{
+function getOrigRowAndColumn(aCellsArray, aRowIdx, aColIdx) {
   var cellState = aCellsArray[aRowIdx][aColIdx];
 
   var origRowIdx = aRowIdx, origColIdx = aColIdx;

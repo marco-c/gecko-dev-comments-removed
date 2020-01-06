@@ -1,8 +1,7 @@
 
 
 
-function openBrowserWindow(aFunc, aURL, aRect)
-{
+function openBrowserWindow(aFunc, aURL, aRect) {
   gBrowserContext.testFunc = aFunc;
   gBrowserContext.startURL = aURL;
   gBrowserContext.browserRect = aRect;
@@ -13,88 +12,77 @@ function openBrowserWindow(aFunc, aURL, aRect)
 
 
 
-function closeBrowserWindow()
-{
+function closeBrowserWindow() {
   gBrowserContext.browserWnd.close();
 }
 
 
 
 
-function browserWindow()
-{
+function browserWindow() {
   return gBrowserContext.browserWnd;
 }
 
 
 
 
-function browserDocument()
-{
+function browserDocument() {
   return browserWindow().document;
 }
 
 
 
 
-function tabBrowser()
-{
+function tabBrowser() {
   return browserWindow().gBrowser;
 }
 
 
 
 
-function currentBrowser()
-{
+function currentBrowser() {
   return tabBrowser().selectedBrowser;
 }
 
 
 
 
-function currentTabDocument()
-{
+function currentTabDocument() {
   return currentBrowser().contentDocument;
 }
 
 
 
 
-function currentTabWindow()
-{
+function currentTabWindow() {
   return currentTabDocument().defaultView;
 }
 
 
 
 
-function browserAt(aIndex)
-{
+function browserAt(aIndex) {
   return tabBrowser().getBrowserAtIndex(aIndex);
 }
 
 
 
 
-function tabDocumentAt(aIndex)
-{
+function tabDocumentAt(aIndex) {
   return browserAt(aIndex).contentDocument;
 }
 
 
 
 
-function urlbarInput()
-{
+function urlbarInput() {
   return browserWindow().document.getElementById("urlbar").inputField;
 }
 
 
 
 
-function reloadButton()
-{
+function reloadButton() {
   return browserWindow().document.getElementById("urlbar-reload-button");
 }
 
@@ -110,8 +98,7 @@ var gBrowserContext =
   startURL: ""
 };
 
-function openBrowserWindowIntl()
-{
+function openBrowserWindowIntl() {
   var params = "chrome,all,dialog=no";
   var rect = gBrowserContext.browserRect;
   if (rect) {
@@ -135,8 +122,7 @@ function openBrowserWindowIntl()
   });
 }
 
-function startBrowserTests()
-{
+function startBrowserTests() {
   if (gBrowserContext.startURL) 
     addA11yLoadEvent(gBrowserContext.testFunc, currentBrowser().contentWindow);
   else

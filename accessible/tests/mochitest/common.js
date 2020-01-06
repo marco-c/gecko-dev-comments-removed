@@ -102,26 +102,21 @@ var gAccService = Components.classes["@mozilla.org/accessibilityService;1"].
 
 
 
-function enableLogging(aModules)
-{
+function enableLogging(aModules) {
   gAccService.setLogging(aModules);
 }
-function disableLogging()
-{
+function disableLogging() {
   gAccService.setLogging("");
 }
-function isLogged(aModule)
-{
+function isLogged(aModule) {
   return gAccService.isLogged(aModule);
 }
 
 
 
 
-function dumpTree(aId, aMsg)
-{
-  function dumpTreeIntl(acc, indent)
-  {
+function dumpTree(aId, aMsg) {
+  function dumpTreeIntl(acc, indent) {
     dump(indent + prettyName(acc) + "\n");
 
     var children = acc.children;
@@ -131,8 +126,7 @@ function dumpTree(aId, aMsg)
     }
   }
 
-  function dumpDOMTreeIntl(node, indent)
-  {
+  function dumpDOMTreeIntl(node, indent) {
     dump(indent + prettyName(node) + "\n");
 
     var children = node.childNodes;
@@ -157,13 +151,10 @@ function dumpTree(aId, aMsg)
 
 
 
-function addA11yLoadEvent(aFunc, aWindow)
-{
-  function waitForDocLoad()
-  {
+function addA11yLoadEvent(aFunc, aWindow) {
+  function waitForDocLoad() {
     window.setTimeout(
-      function()
-      {
+      function() {
         var targetDocument = aWindow ? aWindow.document : document;
         var accDoc = getAccessible(targetDocument);
         var state = {};
@@ -183,8 +174,7 @@ function addA11yLoadEvent(aFunc, aWindow)
 
 
 
-function isObject(aObj, aExpectedObj, aMsg)
-{
+function isObject(aObj, aExpectedObj, aMsg) {
   if (aObj == aExpectedObj) {
     ok(true, aMsg);
     return;
@@ -201,8 +191,7 @@ function isObject(aObj, aExpectedObj, aMsg)
 
 
 
-function getNode(aAccOrNodeOrID, aDocument)
-{
+function getNode(aAccOrNodeOrID, aDocument) {
   if (!aAccOrNodeOrID)
     return null;
 
@@ -245,8 +234,7 @@ const DONOTFAIL_IF_NO_INTERFACE = 2;
 
 
 
-function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIf)
-{
+function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIf) {
   if (!aAccOrElmOrID)
     return null;
 
@@ -311,8 +299,7 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIf)
 
 
 
-function isAccessible(aAccOrElmOrID, aInterfaces)
-{
+function isAccessible(aAccOrElmOrID, aInterfaces) {
   return !!getAccessible(aAccOrElmOrID, aInterfaces, null,
                          DONOTFAIL_IF_NO_ACC | DONOTFAIL_IF_NO_INTERFACE);
 }
@@ -320,8 +307,7 @@ function isAccessible(aAccOrElmOrID, aInterfaces)
 
 
 
-function getContainerAccessible(aAccOrElmOrID)
-{
+function getContainerAccessible(aAccOrElmOrID) {
   var node = getNode(aAccOrElmOrID);
   if (!node)
     return null;
@@ -333,8 +319,7 @@ function getContainerAccessible(aAccOrElmOrID)
 
 
 
-function getRootAccessible(aAccOrElmOrID)
-{
+function getRootAccessible(aAccOrElmOrID) {
   var acc = getAccessible(aAccOrElmOrID ? aAccOrElmOrID : document);
   return acc ? acc.rootDocument.QueryInterface(nsIAccessible) : null;
 }
@@ -342,8 +327,7 @@ function getRootAccessible(aAccOrElmOrID)
 
 
 
-function getTabDocAccessible(aAccOrElmOrID)
-{
+function getTabDocAccessible(aAccOrElmOrID) {
   var acc = getAccessible(aAccOrElmOrID ? aAccOrElmOrID : document);
 
   var docAcc = acc.document.QueryInterface(nsIAccessible);
@@ -360,8 +344,7 @@ function getTabDocAccessible(aAccOrElmOrID)
 
 
 
-function getApplicationAccessible()
-{
+function getApplicationAccessible() {
   return gAccService.getApplicationAccessible().
     QueryInterface(nsIAccessibleApplication);
 }
@@ -369,8 +352,7 @@ function getApplicationAccessible()
 
 
 
-function testElm(aID, aTreeObj)
-{
+function testElm(aID, aTreeObj) {
   testAccessibleTree(aID, aTreeObj, kSkipTreeFullCheck);
 }
 
@@ -392,8 +374,7 @@ const kSkipTreeFullCheck = 1;
 
 
 
-function testAccessibleTree(aAccOrElmOrID, aAccTree, aFlags)
-{
+function testAccessibleTree(aAccOrElmOrID, aAccTree, aFlags) {
   var acc = getAccessible(aAccOrElmOrID);
   if (!acc)
     return;
@@ -580,8 +561,7 @@ function testAccessibleTree(aAccOrElmOrID, aAccTree, aFlags)
 
 
 
-function isAccessibleInCache(aNodeOrId)
-{
+function isAccessibleInCache(aNodeOrId) {
   var node = getNode(aNodeOrId);
   return !!gAccService.getAccessibleFromCache(node);
 }
@@ -592,8 +572,7 @@ function isAccessibleInCache(aNodeOrId)
 
 
 
-function testDefunctAccessible(aAcc, aNodeOrId)
-{
+function testDefunctAccessible(aAcc, aNodeOrId) {
   if (aNodeOrId)
     ok(!isAccessible(aNodeOrId),
        "Accessible for " + aNodeOrId + " wasn't properly shut down!");
@@ -668,16 +647,14 @@ function testDefunctAccessible(aAcc, aNodeOrId)
 
 
 
-function roleToString(aRole)
-{
+function roleToString(aRole) {
   return gAccService.getStringRole(aRole);
 }
 
 
 
 
-function statesToString(aStates, aExtraStates)
-{
+function statesToString(aStates, aExtraStates) {
   var list = gAccService.getStringStates(aStates, aExtraStates);
 
   var str = "";
@@ -693,16 +670,14 @@ function statesToString(aStates, aExtraStates)
 
 
 
-function eventTypeToString(aEventType)
-{
+function eventTypeToString(aEventType) {
   return gAccService.getStringEventType(aEventType);
 }
 
 
 
 
-function relationTypeToString(aRelationType)
-{
+function relationTypeToString(aRelationType) {
   return gAccService.getStringRelationType(aRelationType);
 }
 
@@ -716,8 +691,7 @@ function getLoadContext() {
 
 
 
-function getTextFromClipboard()
-{
+function getTextFromClipboard() {
   var clip = Components.classes["@mozilla.org/widget/clipboard;1"].
     getService(Components.interfaces.nsIClipboard);
   if (!clip)
@@ -772,8 +746,7 @@ function getAccessibleDOMNodeID(accessible) {
 
 
 
-function prettyName(aIdentifier)
-{
+function prettyName(aIdentifier) {
   if (aIdentifier instanceof Array) {
     var msg = "";
     for (var idx = 0; idx < aIdentifier.length; idx++) {
@@ -843,8 +816,7 @@ function prettyName(aIdentifier)
 
 
 
-function shortenString(aString, aMaxLength)
-{
+function shortenString(aString, aMaxLength) {
   if (aString.length <= MAX_TRIM_LENGTH)
     return aString;
 
@@ -860,8 +832,7 @@ function shortenString(aString, aMaxLength)
 
 
 
-function getMainChromeWindow(aWindow)
-{
+function getMainChromeWindow(aWindow) {
   return aWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
                 .getInterface(Components.interfaces.nsIWebNavigation)
                 .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
@@ -876,8 +847,7 @@ function getMainChromeWindow(aWindow)
 
 
 
-function setTestPluginEnabledState(aNewEnabledState, aPluginName)
-{
+function setTestPluginEnabledState(aNewEnabledState, aPluginName) {
   var plugin = getTestPluginTag(aPluginName);
   var oldEnabledState = plugin.enabledState;
   plugin.enabledState = aNewEnabledState;
@@ -893,8 +863,7 @@ function setTestPluginEnabledState(aNewEnabledState, aPluginName)
 
 
 
-function getNodePrettyName(aNode)
-{
+function getNodePrettyName(aNode) {
   try {
     var tag = "";
     if (aNode.nodeType == nsIDOMNode.DOCUMENT_NODE) {
@@ -911,8 +880,7 @@ function getNodePrettyName(aNode)
   }
 }
 
-function getObjAddress(aObj)
-{
+function getObjAddress(aObj) {
   var exp = /native\s*@\s*(0x[a-f0-9]+)/g;
   var match = exp.exec(aObj.toString());
   if (match)
@@ -921,8 +889,7 @@ function getObjAddress(aObj)
   return aObj.toString();
 }
 
-function getTestPluginTag(aPluginName)
-{
+function getTestPluginTag(aPluginName) {
   var ph = SpecialPowers.Cc["@mozilla.org/plugin/host;1"]
                         .getService(SpecialPowers.Ci.nsIPluginHost);
   var tags = ph.getPluginTags();
@@ -937,8 +904,7 @@ function getTestPluginTag(aPluginName)
   return null;
 }
 
-function normalizeAccTreeObj(aObj)
-{
+function normalizeAccTreeObj(aObj) {
   var key = Object.keys(aObj)[0];
   var roleName = "ROLE_" + key;
   if (roleName in nsIAccessibleRole) {
