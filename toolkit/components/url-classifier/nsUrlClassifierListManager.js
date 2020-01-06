@@ -212,9 +212,8 @@ PROT_ListManager.prototype.requireTableUpdates = function() {
 
 
 
-PROT_ListManager.prototype.setUpdateCheckTimer = function (updateUrl,
-                                                           delay)
-{
+PROT_ListManager.prototype.setUpdateCheckTimer = function(updateUrl,
+                                                          delay) {
   this.updateCheckers_[updateUrl] = Cc["@mozilla.org/timer;1"]
                                     .createInstance(Ci.nsITimer);
   this.updateCheckers_[updateUrl].initWithCallback(() => {
@@ -225,8 +224,7 @@ PROT_ListManager.prototype.setUpdateCheckTimer = function (updateUrl,
 
 
 
-PROT_ListManager.prototype.kickoffUpdate_ = function (onDiskTableData)
-{
+PROT_ListManager.prototype.kickoffUpdate_ = function(onDiskTableData) {
   this.startingUpdate_ = false;
   var initialUpdateDelay = 3000;
   
@@ -371,13 +369,13 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
     
     
     
-    let isCurTableProto = tableName.endsWith('-proto');
+    let isCurTableProto = tableName.endsWith("-proto");
     if (!onceThru) {
       useProtobuf = isCurTableProto;
       onceThru = true;
     } else if (useProtobuf !== isCurTableProto) {
       log('ERROR: Cannot mix "proto" tables with other types ' +
-          'within the same provider.');
+          "within the same provider.");
     }
 
     if (this.needsUpdate_[this.tablesData[tableName].updateUrl][tableName]) {
@@ -648,13 +646,12 @@ function Init() {
   modScope.Init = function() {};
 }
 
-function RegistrationData()
-{
+function RegistrationData() {
 }
 RegistrationData.prototype = {
     classID: Components.ID("{ca168834-cc00-48f9-b83c-fd018e58cae3}"),
     _xpcom_factory: {
-        createInstance: function(outer, iid) {
+        createInstance(outer, iid) {
             if (outer != null)
                 throw Components.results.NS_ERROR_NO_AGGREGATION;
             Init();

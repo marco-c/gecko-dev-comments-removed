@@ -68,8 +68,8 @@ let gHttpServV4 = null;
 let gUpdatedCntForTableData = 0; 
 let gIsV4Updated = false;   
 
-const NEW_CLIENT_STATE = 'sta\0te';
-const CHECKSUM = '\x30\x67\xc7\x2c\x5e\x50\x1c\x31\xe3\xfe\xca\x73\xf0\x47\xdc\x34\x1a\x95\x63\x99\xec\x70\x5e\x0a\xee\x9e\xfb\x17\xa1\x55\x35\x78';
+const NEW_CLIENT_STATE = "sta\0te";
+const CHECKSUM = "\x30\x67\xc7\x2c\x5e\x50\x1c\x31\xe3\xfe\xca\x73\xf0\x47\xdc\x34\x1a\x95\x63\x99\xec\x70\x5e\x0a\xee\x9e\xfb\x17\xa1\x55\x35\x78";
 
 prefBranch.setBoolPref("browser.safebrowsing.debug", true);
 
@@ -184,7 +184,7 @@ add_test(function test_partialUpdateV4() {
 
 
 add_test(function test_getGethashUrl() {
-  TEST_TABLE_DATA_LIST.forEach(function (t) {
+  TEST_TABLE_DATA_LIST.forEach(function(t) {
     equal(gListManager.getGethashUrl(t.tableName), t.gethashUrl);
   });
   equal(gListManager.getGethashUrl(TEST_TABLE_DATA_V4.tableName),
@@ -245,8 +245,8 @@ function run_test() {
 
     
     equal(request.queryString, gExpectedQueryV4);
-    equal(request.queryString.indexOf('+'), -1);
-    equal(request.queryString.indexOf('/'), -1);
+    equal(request.queryString.indexOf("+"), -1);
+    equal(request.queryString.indexOf("/"), -1);
 
     
     
