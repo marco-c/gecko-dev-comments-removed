@@ -185,52 +185,6 @@ replace_jemalloc_stats(jemalloc_stats_t* aStats)
 void
 replace_init(malloc_table_t* aTable, ReplaceMallocBridge** aBridge)
 {
-  static LogAllocBridge bridge;
-  sFuncs = *aTable;
-#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
-#define MALLOC_DECL(name, ...) aTable->name = replace_ ## name;
-#include "malloc_decls.h"
-  aTable->jemalloc_stats = replace_jemalloc_stats;
-#ifndef LOGALLOC_MINIMAL
-  aTable->posix_memalign = replace_posix_memalign;
-  aTable->aligned_alloc = replace_aligned_alloc;
-  aTable->valloc = replace_valloc;
-#endif
-  *aBridge = &bridge;
-
-#ifndef _WIN32
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  sFuncs.malloc(-1);
-  pthread_atfork(prefork, postfork, postfork);
-#endif
-
   
 
 
@@ -277,4 +231,55 @@ replace_init(malloc_table_t* aTable, ReplaceMallocBridge** aBridge)
     }
 #endif
   }
+
+  
+  if (sFd == 0) {
+    return;
+  }
+
+  static LogAllocBridge bridge;
+  sFuncs = *aTable;
+#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC_BASE
+#define MALLOC_DECL(name, ...) aTable->name = replace_ ## name;
+#include "malloc_decls.h"
+  aTable->jemalloc_stats = replace_jemalloc_stats;
+#ifndef LOGALLOC_MINIMAL
+  aTable->posix_memalign = replace_posix_memalign;
+  aTable->aligned_alloc = replace_aligned_alloc;
+  aTable->valloc = replace_valloc;
+#endif
+  *aBridge = &bridge;
+
+#ifndef _WIN32
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sFuncs.malloc(-1);
+  pthread_atfork(prefork, postfork, postfork);
+#endif
 }
