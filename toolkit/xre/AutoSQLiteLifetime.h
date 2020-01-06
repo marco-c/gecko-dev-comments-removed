@@ -1,0 +1,24 @@
+
+
+
+
+
+#ifndef mozilla_AutoSQLiteLifetime_h
+#define mozilla_AutoSQLiteLifetime_h
+
+namespace mozilla {
+
+class AutoSQLiteLifetime final
+{
+private:
+    static int sSingletonEnforcer;
+    static int sResult;
+public:
+    AutoSQLiteLifetime();
+    ~AutoSQLiteLifetime();
+    static int getInitResult() { return AutoSQLiteLifetime::sResult; }
+};
+
+} 
+
+#endif

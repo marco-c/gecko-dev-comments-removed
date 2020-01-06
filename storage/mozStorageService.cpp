@@ -24,6 +24,7 @@
 #include "mozIStoragePendingStatement.h"
 
 #include "sqlite3.h"
+#include "mozilla/AutoSQLiteLifetime.h"
 
 #ifdef SQLITE_OS_WIN
 
@@ -31,13 +32,6 @@
 #endif
 
 #include "nsIPromptService.h"
-
-#ifdef MOZ_STORAGE_MEMORY
-#  include "mozmemory.h"
-#  ifdef MOZ_DMD
-#    include "DMD.h"
-#  endif
-#endif
 
 
 
@@ -282,12 +276,6 @@ Service::~Service()
   if (rc != SQLITE_OK)
     NS_WARNING("Failed to unregister sqlite vfs wrapper.");
 
-  
-  
-  rc = ::sqlite3_shutdown();
-  if (rc != SQLITE_OK)
-    NS_WARNING("sqlite3 did not shutdown cleanly.");
-
   shutdown(); 
 
   gService = nullptr;
@@ -400,121 +388,7 @@ Service::shutdown()
 }
 
 sqlite3_vfs *ConstructTelemetryVFS();
-
-#ifdef MOZ_STORAGE_MEMORY
-
-namespace {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef MOZ_DMD
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(SqliteMallocSizeOfOnAlloc)
-MOZ_DEFINE_MALLOC_SIZE_OF_ON_FREE(SqliteMallocSizeOfOnFree)
-
-#endif
-
-static void *sqliteMemMalloc(int n)
-{
-  void* p = ::malloc(n);
-#ifdef MOZ_DMD
-  gSqliteMemoryUsed += SqliteMallocSizeOfOnAlloc(p);
-#endif
-  return p;
-}
-
-static void sqliteMemFree(void *p)
-{
-#ifdef MOZ_DMD
-  gSqliteMemoryUsed -= SqliteMallocSizeOfOnFree(p);
-#endif
-  ::free(p);
-}
-
-static void *sqliteMemRealloc(void *p, int n)
-{
-#ifdef MOZ_DMD
-  gSqliteMemoryUsed -= SqliteMallocSizeOfOnFree(p);
-  void *pnew = ::realloc(p, n);
-  if (pnew) {
-    gSqliteMemoryUsed += SqliteMallocSizeOfOnAlloc(pnew);
-  } else {
-    
-    gSqliteMemoryUsed += SqliteMallocSizeOfOnAlloc(p);
-  }
-  return pnew;
-#else
-  return ::realloc(p, n);
-#endif
-}
-
-static int sqliteMemSize(void *p)
-{
-  return ::moz_malloc_usable_size(p);
-}
-
-static int sqliteMemRoundup(int n)
-{
-  n = malloc_good_size(n);
-
-  
-  
-  
-  return n <= 8 ? 8 : n;
-}
-
-static int sqliteMemInit(void *p)
-{
-  return 0;
-}
-
-static void sqliteMemShutdown(void *p)
-{
-}
-
-const sqlite3_mem_methods memMethods = {
-  &sqliteMemMalloc,
-  &sqliteMemFree,
-  &sqliteMemRealloc,
-  &sqliteMemSize,
-  &sqliteMemRoundup,
-  &sqliteMemInit,
-  &sqliteMemShutdown,
-  nullptr
-};
-
-} 
-
-#endif  
+const char *GetVFSName();
 
 static const char* sObserverTopics[] = {
   "memory-pressure",
@@ -527,28 +401,13 @@ Service::initialize()
 {
   MOZ_ASSERT(NS_IsMainThread(), "Must be initialized on the main thread");
 
-  int rc;
-
-#ifdef MOZ_STORAGE_MEMORY
-  rc = ::sqlite3_config(SQLITE_CONFIG_MALLOC, &memMethods);
-  if (rc != SQLITE_OK)
-    return convertResultCode(rc);
-#endif
-
-  
-  
-  sqlite3_config(SQLITE_CONFIG_PAGECACHE, NULL, 0, 0);
-
-  
-  
-  
-  rc = ::sqlite3_initialize();
+  int rc = AutoSQLiteLifetime::getInitResult();
   if (rc != SQLITE_OK)
     return convertResultCode(rc);
 
   mSqliteVFS = ConstructTelemetryVFS();
   if (mSqliteVFS) {
-    rc = sqlite3_vfs_register(mSqliteVFS, 1);
+    rc = sqlite3_vfs_register(mSqliteVFS, 0);
     if (rc != SQLITE_OK)
       return convertResultCode(rc);
   } else {
