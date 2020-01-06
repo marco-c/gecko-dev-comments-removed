@@ -160,7 +160,10 @@ public:
 
 
 
-  static bool IsAnimatableProperty(nsCSSPropertyID aProperty);
+
+
+  static bool IsAnimatableProperty(nsCSSPropertyID aProperty,
+                                   StyleBackendType aBackend);
 
   
 

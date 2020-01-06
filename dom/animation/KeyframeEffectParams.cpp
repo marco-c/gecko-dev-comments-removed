@@ -152,7 +152,11 @@ KeyframeEffectParams::ParseSpacing(const nsAString& aSpacing,
     nsCSSProps::LookupProperty(identToken, CSSEnabledState::eForAllContent);
   if (aPacedProperty == eCSSProperty_UNKNOWN ||
       aPacedProperty == eCSSPropertyExtra_variable ||
-      !KeyframeUtils::IsAnimatableProperty(aPacedProperty)) {
+      
+      
+      
+      !KeyframeUtils::IsAnimatableProperty(aPacedProperty,
+                                           StyleBackendType::Gecko)) {
     aPacedProperty = eCSSProperty_UNKNOWN;
     aInvalidPacedProperty = identToken;
   }
