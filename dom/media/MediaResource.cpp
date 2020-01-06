@@ -80,7 +80,6 @@ ChannelMediaResource::ChannelMediaResource(MediaResourceCallback* aCallback,
                                            nsIURI* aURI,
                                            bool aIsPrivateBrowsing)
   : BaseMediaResource(aCallback, aChannel, aURI)
-  , mOffset(0)
   , mReopenOnError(false)
   , mCacheStream(this, aIsPrivateBrowsing)
   , mSuspendAgent(mChannel)
@@ -93,7 +92,6 @@ ChannelMediaResource::ChannelMediaResource(
   nsIURI* aURI,
   const MediaChannelStatistics& aStatistics)
   : BaseMediaResource(aCallback, aChannel, aURI)
-  , mOffset(0)
   , mReopenOnError(false)
   , mCacheStream(this,  false)
   , mChannelStatistics(aStatistics)
@@ -284,26 +282,19 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
         if (rangeTotal != -1) {
           contentLength = std::max(contentLength, rangeTotal);
         }
-        
-        
-        NS_WARNING_ASSERTION(
-          mOffset == rangeStart,
-          "response range start does not match current offset");
-        mOffset = rangeStart;
         mCacheStream.NotifyDataStarted(rangeStart);
       }
       acceptsRanges = gotRangeHeader;
-    } else if (mOffset > 0 && responseStatus == HTTP_OK_CODE) {
+    } else if (GetOffset() > 0 && responseStatus == HTTP_OK_CODE) {
       
       
       
       mCacheStream.NotifyDataStarted(0);
-      mOffset = 0;
 
       
       acceptsRanges = false;
     }
-    if (mOffset == 0 && contentLength >= 0 &&
+    if (GetOffset() == 0 && contentLength >= 0 &&
         (responseStatus == HTTP_OK_CODE ||
          responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
       mCacheStream.NotifyDataLength(contentLength);
@@ -398,14 +389,14 @@ ChannelMediaResource::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
   
   if (mReopenOnError && aStatus != NS_ERROR_PARSED_DATA_CACHED &&
       aStatus != NS_BINDING_ABORTED &&
-      (mOffset == 0 || (GetLength() > 0 && mOffset != GetLength() &&
-                        mCacheStream.IsTransportSeekable()))) {
+      (GetOffset() == 0 || (GetLength() > 0 && GetOffset() != GetLength() &&
+                            mCacheStream.IsTransportSeekable()))) {
     
     
     
     
     
-    nsresult rv = CacheClientSeek(mOffset, false);
+    nsresult rv = CacheClientSeek(GetOffset(), false);
     if (NS_SUCCEEDED(rv)) {
       return rv;
     }
@@ -435,7 +426,7 @@ ChannelMediaResource::OnChannelRedirect(nsIChannel* aOld, nsIChannel* aNew,
 {
   mChannel = aNew;
   mSuspendAgent.NotifyChannelOpened(mChannel);
-  return SetupChannelHeaders();
+  return SetupChannelHeaders(GetOffset());
 }
 
 nsresult
@@ -444,11 +435,6 @@ ChannelMediaResource::CopySegmentToCache(nsIPrincipal* aPrincipal,
                                          uint32_t aCount,
                                          uint32_t* aWriteCount)
 {
-  
-  LOG("CopySegmentToCache at mOffset [%" PRId64 "] add "
-      "[%d] bytes for decoder[%p]",
-      mOffset, aCount, mCallback.get());
-  mOffset += aCount;
   mCacheStream.NotifyDataReceived(aCount, aFromSegment, aPrincipal);
   *aWriteCount = aCount;
   return NS_OK;
@@ -528,7 +514,7 @@ ChannelMediaResource::Open(nsIStreamListener** aStreamListener)
     return rv;
   }
 
-  MOZ_ASSERT(mOffset == 0, "Who set mOffset already?");
+  MOZ_ASSERT(GetOffset() == 0, "Who set offset already?");
   mListener = new Listener(this);
   *aStreamListener = mListener;
   NS_ADDREF(*aStreamListener);
@@ -536,7 +522,7 @@ ChannelMediaResource::Open(nsIStreamListener** aStreamListener)
 }
 
 nsresult
-ChannelMediaResource::OpenChannel()
+ChannelMediaResource::OpenChannel(int64_t aOffset)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mChannel);
@@ -546,7 +532,7 @@ ChannelMediaResource::OpenChannel()
   nsresult rv = mChannel->SetNotificationCallbacks(mListener.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = SetupChannelHeaders();
+  rv = SetupChannelHeaders(aOffset);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = mChannel->AsyncOpen2(mListener);
@@ -561,7 +547,8 @@ ChannelMediaResource::OpenChannel()
   return NS_OK;
 }
 
-nsresult ChannelMediaResource::SetupChannelHeaders()
+nsresult
+ChannelMediaResource::SetupChannelHeaders(int64_t aOffset)
 {
   
   
@@ -571,7 +558,7 @@ nsresult ChannelMediaResource::SetupChannelHeaders()
   if (hc) {
     
     nsAutoCString rangeString("bytes=");
-    rangeString.AppendInt(mOffset);
+    rangeString.AppendInt(aOffset);
     rangeString.Append('-');
     nsresult rv = hc->SetRequestHeader(NS_LITERAL_CSTRING("Range"), rangeString, false);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -584,7 +571,7 @@ nsresult ChannelMediaResource::SetupChannelHeaders()
     NS_ENSURE_TRUE(element, NS_ERROR_FAILURE);
     element->SetRequestHeaders(hc);
   } else {
-    NS_ASSERTION(mOffset == 0, "Don't know how to seek on this channel type");
+    NS_ASSERTION(aOffset == 0, "Don't know how to seek on this channel type");
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -754,10 +741,10 @@ void ChannelMediaResource::Resume()
       
       
       
-      if (totalLength < 0 || mOffset < totalLength) {
+      if (totalLength < 0 || GetOffset() < totalLength) {
         
         
-        CacheClientSeek(mOffset, false);
+        CacheClientSeek(GetOffset(), false);
         element->DownloadResumed();
       } else {
         
@@ -863,8 +850,6 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
 
   CloseChannel();
 
-  mOffset = aOffset;
-
   if (aResume) {
     mSuspendAgent.Resume();
   }
@@ -878,7 +863,7 @@ ChannelMediaResource::CacheClientSeek(int64_t aOffset, bool aResume)
   nsresult rv = RecreateChannel();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return OpenChannel();
+  return OpenChannel(aOffset);
 }
 
 nsresult
@@ -960,6 +945,12 @@ int64_t
 ChannelMediaResource::GetLength()
 {
   return mCacheStream.GetLength();
+}
+
+int64_t
+ChannelMediaResource::GetOffset() const
+{
+  return mCacheStream.GetOffset();
 }
 
 

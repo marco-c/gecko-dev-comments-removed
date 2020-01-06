@@ -540,12 +540,14 @@ protected:
 
   
   
-  nsresult OpenChannel();
+  nsresult OpenChannel(int64_t aOffset);
   nsresult RecreateChannel();
   
-  nsresult SetupChannelHeaders();
+  nsresult SetupChannelHeaders(int64_t aOffset);
   
   void CloseChannel();
+
+  int64_t GetOffset() const;
 
   
   
@@ -568,7 +570,6 @@ protected:
                               uint32_t* aWriteCount);
 
   
-  int64_t            mOffset;
   RefPtr<Listener> mListener;
   
   
