@@ -473,20 +473,6 @@ impl ElementData {
     
     
     
-    #[cfg(feature = "gecko")]
-    pub fn skip_applying_damage(&self) -> bool { self.reconstructed_self_or_ancestor() }
-
-    
-    #[cfg(feature = "servo")]
-    pub fn skip_applying_damage(&self) -> bool { false }
-
-    
-    
-    
-    
-    
-    
-    
     
     
     
