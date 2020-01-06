@@ -72,6 +72,9 @@ public class Experiments {
     public static final String FULL_BOOKMARK_MANAGEMENT = "full-bookmark-management";
 
     
+    public static final String LEANPLUM = "leanplum-start";
+
+    
 
 
 

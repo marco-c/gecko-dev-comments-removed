@@ -1,0 +1,22 @@
+
+
+
+
+
+
+package org.mozilla.gecko.mma;
+
+import android.app.Application;
+import android.content.Context;
+
+
+public interface MmaInterface {
+    void init(Application application);
+
+    void start(Context context);
+
+    void track(String leanplumEvent);
+
+    void track(String leanplumEvent, double value);
+
+}

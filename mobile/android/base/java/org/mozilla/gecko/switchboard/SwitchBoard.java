@@ -96,7 +96,7 @@ public class SwitchBoard {
 
 
 
-    static void loadConfig(Context c, @NonNull String serverUrl) {
+    public static void loadConfig(Context c, @NonNull String serverUrl) {
         final URL url;
         try {
             url = new URL(serverUrl);
