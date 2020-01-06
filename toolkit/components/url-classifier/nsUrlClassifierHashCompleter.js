@@ -470,9 +470,11 @@ HashCompleterRequest.prototype = {
     });
 
     
+    
+    
     let prefixSet = new Set();
     this._requests.forEach(r => prefixSet.add(btoa(r.partialHash)));
-    let prefixArray = Array.from(prefixSet);
+    let prefixArray = Array.from(prefixSet).sort();
 
     log("Build v4 gethash request with " + JSON.stringify(tableNameArray) + ', '
                                          + JSON.stringify(stateArray) + ', '
@@ -500,14 +502,7 @@ HashCompleterRequest.prototype = {
     }
 
     
-    
-    let i = prefixes.length;
-    while (i--) {
-      let j = Math.floor(Math.random() * (i + 1));
-      let temp = prefixes[i];
-      prefixes[i] = prefixes[j];
-      prefixes[j] = temp;
-    }
+    prefixes.sort();
 
     let body;
     body = PARTIAL_LENGTH + ":" + (PARTIAL_LENGTH * prefixes.length) +
