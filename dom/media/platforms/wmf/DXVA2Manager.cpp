@@ -1244,7 +1244,7 @@ DXVA2Manager::IsUnsupportedResolution(const uint32_t& aWidth,
   
   
   
-  return mIsAMDPreUVD4 &&
+  return !gfxPrefs::PDMWMFAMDHighResEnabled() && mIsAMDPreUVD4 &&
          (aWidth >= 1920 || aHeight >= 1088) &&
          aFramerate > 45;
 }
