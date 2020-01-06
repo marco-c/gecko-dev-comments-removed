@@ -44,13 +44,6 @@ public:
 
 
 
-
-  virtual void stats(const char *when) const;
-
-  
-
-
-
   virtual BaseElf *AsBaseElf() { return this; }
 
 private:

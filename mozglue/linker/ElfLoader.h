@@ -205,13 +205,6 @@ public:
   virtual const void *FindExidx(int *pcount) const = 0;
 #endif
 
-  
-
-
-
-
-  virtual void stats(const char *when) const { };
-
 protected:
   
 
@@ -491,12 +484,6 @@ private:
 protected:
   friend class CustomElf;
   friend class LoadedElf;
-  
-
-
-
-
-  static void stats(const char *when);
 
   
   typedef void (*Destructor)(void *object);

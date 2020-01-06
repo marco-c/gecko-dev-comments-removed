@@ -282,12 +282,6 @@ LibHandle::MappableMMap(void *addr, size_t length, off_t offset) const
   if (!mappable)
     return MAP_FAILED;
   void* mapped = mappable->mmap(addr, length, PROT_READ, MAP_PRIVATE, offset);
-  if (mapped != MAP_FAILED) {
-    
-    for (size_t off = 0; off < length; off += PageSize()) {
-      mappable->ensure(reinterpret_cast<char *>(mapped) + off);
-    }
-  }
   return mapped;
 }
 
@@ -495,8 +489,6 @@ ElfLoader::GetMappableFromPath(const char *path)
       if (!mappable) {
         if (s.GetType() == Zip::Stream::DEFLATE) {
           mappable = MappableDeflate::Create(name, zip, &s);
-        } else if (s.GetType() == Zip::Stream::STORE) {
-          mappable = MappableSeekableZStream::Create(name, zip, &s);
         }
       }
     }
@@ -622,18 +614,6 @@ ElfLoader::~ElfLoader()
     }
   }
   pthread_mutex_destroy(&handlesMutex);
-}
-
-void
-ElfLoader::stats(const char *when)
-{
-  if (MOZ_LIKELY(!Logging::isVerbose()))
-    return;
-
-  AutoLock lock(&Singleton.handlesMutex);
-  for (LibHandleList::iterator it = Singleton.handles.begin();
-       it < Singleton.handles.end(); ++it)
-    (*it)->stats(when);
 }
 
 #ifdef __ARM_EABI__
@@ -1275,20 +1255,6 @@ void SEGVHandler::handler(int signum, siginfo_t *info, void *context)
 {
   
   DEBUG_LOG("Caught segmentation fault @%p", info->si_addr);
-
-  
-
-  if (info->si_code == SEGV_ACCERR) {
-    RefPtr<LibHandle> handle =
-      ElfLoader::Singleton.GetHandleByPtr(info->si_addr);
-    BaseElf *elf;
-    if (handle && (elf = handle->AsBaseElf())) {
-      DEBUG_LOG("Within the address space of %s", handle->GetPath());
-      if (elf->mappable && elf->mappable->ensure(info->si_addr)) {
-        return;
-      }
-    }
-  }
 
   
   SEGVHandler &that = ElfLoader::Singleton;

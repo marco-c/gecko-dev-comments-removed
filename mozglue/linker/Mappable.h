@@ -6,7 +6,6 @@
 #define Mappable_h
 
 #include "Zip.h"
-#include "SeekableZStream.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "zlib.h"
@@ -48,24 +47,7 @@ public:
   
 
 
-
-
-  virtual bool ensure(const void *addr) { return true; }
-
-  
-
-
   virtual void finalize() = 0;
-
-  
-
-
-
-
-
-
-
-  virtual void stats(const char *when, const char *name) const { }
 
   
 
@@ -176,92 +158,6 @@ private:
 
   
   zxx_stream zStream;
-};
-
-
-
-
-
-class MappableSeekableZStream: public Mappable
-{
-public:
-  ~MappableSeekableZStream();
-
-  
-
-
-
-
-
-  static Mappable *Create(const char *name, Zip *zip,
-                                         Zip::Stream *stream);
-
-  
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags, off_t offset);
-  virtual void munmap(void *addr, size_t length);
-  virtual void finalize();
-  virtual bool ensure(const void *addr);
-  virtual void stats(const char *when, const char *name) const;
-  virtual size_t GetLength() const;
-
-  virtual Kind GetKind() const { return MAPPABLE_SEEKABLE_ZSTREAM; };
-private:
-  MappableSeekableZStream(Zip *zip);
-
-  
-  RefPtr<Zip> zip;
-
-  
-  mozilla::UniquePtr<_MappableBuffer> buffer;
-
-  
-  SeekableZStream zStream;
-
-  
-
-
-  struct LazyMap
-  {
-    const void *addr;
-    size_t length;
-    int prot;
-    off_t offset;
-
-    
-    const void *end() const {
-      return reinterpret_cast<const void *>
-             (reinterpret_cast<const unsigned char *>(addr) + length);
-    }
-
-    
-    off_t endOffset() const {
-      return offset + length;
-    }
-
-    
-    off_t offsetOf(const void *ptr) const {
-      return reinterpret_cast<uintptr_t>(ptr)
-             - reinterpret_cast<uintptr_t>(addr) + offset;
-    }
-
-    
-    bool Contains(const void *ptr) const {
-      return (ptr >= addr) && (ptr < end());
-    }
-  };
-
-  
-  std::vector<LazyMap> lazyMaps;
-
-  
-
-  mozilla::UniquePtr<unsigned char[]> chunkAvail;
-
-  
-  mozilla::Atomic<size_t> chunkAvailNum;
-
-  
-  pthread_mutex_t mutex;
 };
 
 #endif 

@@ -35,18 +35,6 @@ mozilla_StartupTimeline_Event(PROFILE_BEFORE_CHANGE, "profileBeforeChange")
 #include "GeckoProfiler.h"
 #endif
 
-#ifdef MOZ_LINKER
-extern "C" {
-
-
-
-extern void __moz_linker_stats(const char *str)
-NS_VISIBILITY_DEFAULT __attribute__((weak));
-} 
-#else
-
-#endif
-
 namespace mozilla {
 
 void RecordShutdownEndTimeStamp();
@@ -77,10 +65,6 @@ public:
 
   static void Record(Event ev, TimeStamp when) {
     sStartupTimeline[ev] = when;
-#ifdef MOZ_LINKER
-    if (__moz_linker_stats)
-      __moz_linker_stats(Describe(ev));
-#endif
   }
 
   static void RecordOnce(Event ev) {

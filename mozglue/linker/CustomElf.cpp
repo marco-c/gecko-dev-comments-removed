@@ -91,8 +91,6 @@ public:
       mappable->mmap(nullptr, PageSize(), PROT_READ, MAP_PRIVATE, 0))
   , mappable(mappable)
   {
-    
-    mappable->ensure(*this);
   }
 
 private:
@@ -262,9 +260,6 @@ CustomElf::Load(Mappable *mappable, const char *path, int flags)
                             arm_exidx_phdr->p_memsz);
 #endif
 
-  if (MOZ_UNLIKELY(Logging::isVerbose())) {
-    elf->stats("oneLibLoaded");
-  }
   DEBUG_LOG("CustomElf::Load(\"%s\", 0x%x) = %p", path, flags,
             static_cast<void *>(elf));
   return elf.forget();
@@ -313,8 +308,6 @@ CustomElf::GetSymbolPtrInDeps(const char *symbol) const
       return FunctionPtr(&ElfLoader::__wrap_cxa_finalize);
     if (strcmp(symbol + 2, "dso_handle") == 0)
       return const_cast<CustomElf *>(this);
-    if (strcmp(symbol + 2, "moz_linker_stats") == 0)
-      return FunctionPtr(&ElfLoader::stats);
 #ifdef __ARM_EABI__
     if (strcmp(symbol + 2, "gnu_Unwind_Find_exidx") == 0)
       return FunctionPtr(__wrap___gnu_Unwind_Find_exidx);
@@ -361,12 +354,6 @@ CustomElf::GetSymbolPtrInDeps(const char *symbol) const
       return sym;
   }
   return nullptr;
-}
-
-void
-CustomElf::stats(const char *when) const
-{
-  mappable->stats(when, GetPath());
 }
 
 bool
@@ -418,17 +405,6 @@ CustomElf::LoadSegment(const Phdr *pt_load) const
   
 
 
-  const char *ondemand = getenv("MOZ_LINKER_ONDEMAND");
-  if (!ElfLoader::Singleton.hasRegisteredHandler() ||
-      (ondemand && !strncmp(ondemand, "0", 2 ))) {
-    for (Addr off = 0; off < pt_load->p_filesz + align_offset;
-         off += PageSize()) {
-      mappable->ensure(reinterpret_cast<char *>(mapped) + off);
-    }
-  }
-  
-
-
 
 
 
@@ -437,10 +413,7 @@ CustomElf::LoadSegment(const Phdr *pt_load) const
     Addr mem_end = pt_load->p_vaddr + pt_load->p_memsz;
     Addr next_page = PageAlignedEndPtr(file_end);
     if (next_page > file_end) {
-      
-
       void *ptr = GetPtr(file_end);
-      mappable->ensure(ptr);
       memset(ptr, 0, next_page - file_end);
     }
     if (mem_end > next_page) {
