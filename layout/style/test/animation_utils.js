@@ -412,11 +412,7 @@ const ExpectComparisonTo = {
 
 
 
-let isServo = false;
-try {
-  isServo = SpecialPowers.getBoolPref('layout.css.servo.enabled');
-} catch (e) {
-}
+const isServo = SpecialPowers.getBoolPref("layout.css.servo.enabled", false);
 const toleranceForServoBackend = isServo ? 0.5 / 60.0 : 0.0;
 
 (function() {
