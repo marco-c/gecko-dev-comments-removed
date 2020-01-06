@@ -134,11 +134,25 @@ var gMainPane = {
 
   
 
-  
-  _brandShortName: null,
-  _prefsBundle: null,
-  _list: null,
-  _filter: null,
+  get _brandShortName() {
+    delete this._brandShortName;
+    return this._brandShortName = document.getElementById("bundleBrand").getString("brandShortName");
+  },
+
+  get _prefsBundle() {
+    delete this._prefsBundle;
+    return this._prefsBundle = document.getElementById("bundlePreferences");
+  },
+
+  get _list() {
+    delete this._list;
+    return this._list = document.getElementById("handlersView")
+  },
+
+  get _filter() {
+    delete this._filter;
+    return this._filter = document.getElementById("filter")
+  },
 
   _prefSvc: Cc["@mozilla.org/preferences-service;1"].
     getService(Ci.nsIPrefBranch),
@@ -405,12 +419,6 @@ var gMainPane = {
     }
 
     
-    
-    this._brandShortName =
-      document.getElementById("bundleBrand").getString("brandShortName");
-    this._prefsBundle = document.getElementById("bundlePreferences");
-    this._list = document.getElementById("handlersView");
-    this._filter = document.getElementById("filter");
 
     
     
@@ -457,23 +465,6 @@ var gMainPane = {
       this._sortColumn = document.getElementById("typeColumn");
     }
 
-    
-    
-    
-    promiseLoadHandlersList = new Promise((resolve, reject) => {
-      window.addEventListener("pageshow", async () => {
-        try {
-          this._loadData();
-          await this._rebuildVisibleTypes();
-          this._sortVisibleTypes();
-          this._rebuildView();
-          resolve();
-        } catch (ex) {
-          reject(ex);
-        }
-      }, {once: true});
-    });
-
     let browserBundle = document.getElementById("browserBundle");
     appendSearchKeywords("browserContainersSettings", [
       browserBundle.getString("userContextPersonal.label"),
@@ -486,6 +477,25 @@ var gMainPane = {
     Components.classes["@mozilla.org/observer-service;1"]
       .getService(Components.interfaces.nsIObserverService)
       .notifyObservers(window, "main-pane-loaded");
+  },
+
+  preInit() {
+    promiseLoadHandlersList = new Promise((resolve, reject) => {
+      
+      
+      
+      window.addEventListener("pageshow", async () => {
+        try {
+          this._loadData();
+          await this._rebuildVisibleTypes();
+          this._sortVisibleTypes();
+          this._rebuildView();
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
+      }, { once: true });
+    });
   },
 
   
