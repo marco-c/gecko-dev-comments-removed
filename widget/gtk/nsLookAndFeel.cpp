@@ -1084,6 +1084,12 @@ nsLookAndFeel::EnsureInit()
                                           false);
     }
 
+    
+    
+    sCSDCloseButton = false;
+    sCSDMaximizeButton = false;
+    sCSDMinimizeButton = false;
+
     if (sCSDAvailable) {
         static auto sGtkHeaderBarGetDecorationLayoutPtr =
           (const gchar* (*)(GtkWidget*))
