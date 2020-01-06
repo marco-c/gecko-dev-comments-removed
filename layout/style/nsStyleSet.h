@@ -491,6 +491,10 @@ class nsStyleSet final
   
   static bool IsCSSSheetType(mozilla::SheetType aSheetType);
 
+  void SetUsesViewportUnits(bool aValue) {
+    mUsesViewportUnits = aValue;
+  }
+
 private:
   nsStyleSet(const nsStyleSet& aCopy) = delete;
   nsStyleSet& operator=(const nsStyleSet& aCopy) = delete;
@@ -633,6 +637,8 @@ private:
   unsigned mInReconstruct : 1;
   unsigned mInitFontFeatureValuesLookup : 1;
   unsigned mNeedsRestyleAfterEnsureUniqueInner : 1;
+  
+  unsigned mUsesViewportUnits : 1;
   unsigned mDirty : int(mozilla::SheetType::Count);  
 
   uint32_t mRootStyleContextCount;

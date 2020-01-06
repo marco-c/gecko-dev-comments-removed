@@ -474,7 +474,11 @@ static nsSize CalcViewportUnitsScale(nsPresContext* aPresContext)
   
   
   
-  aPresContext->SetUsesViewportUnits(true);
+  
+  
+  if (nsStyleSet* styleSet = aPresContext->StyleSet()->GetAsGecko()) {
+    styleSet->SetUsesViewportUnits(true);
+  }
 
   
   
