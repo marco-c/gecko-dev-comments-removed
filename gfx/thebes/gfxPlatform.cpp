@@ -696,6 +696,7 @@ gfxPlatform::Init()
     gPlatform->InitAcceleration();
     gPlatform->InitWebRenderConfig();
     gPlatform->InitOMTPConfig();
+    gPlatform->InitComponentAlphaPrefs();
 
     if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       GPUProcessManager* gpu = GPUProcessManager::Get();
@@ -2447,6 +2448,34 @@ gfxPlatform::InitOMTPConfig()
   if (gfxConfig::IsEnabled(Feature::OMTP)) {
     gfxVars::SetUseOMTP(true);
     reporter.SetSuccessful();
+  }
+}
+
+void
+gfxPlatform::InitComponentAlphaPrefs()
+{
+  FeatureState& componentAlpha = gfxConfig::GetFeature(Feature::COMPONENT_ALPHA);
+
+  
+#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+  
+  
+  componentAlpha.DisableByDefault(
+    FeatureStatus::Unavailable,
+    "Component alpha not available on mobile",
+    NS_LITERAL_CSTRING("FEATURE_FAILURE_MOBILE"));
+#else
+  componentAlpha.SetDefaultFromPref(
+    gfxPrefs::GetComponentAlphaEnabledDoNotUseDirectlyPrefName(),
+    true,
+    gfxPrefs::GetComponentAlphaEnabledDoNotUseDirectlyPrefDefault());
+#endif
+
+  
+  nsCString message;
+  nsCString failureId;
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_COMPONENT_ALPHA, &message, failureId)) {
+    componentAlpha.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
   }
 }
 
