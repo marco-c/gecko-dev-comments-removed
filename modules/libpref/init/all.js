@@ -1224,6 +1224,7 @@ pref("dom.disable_window_open_feature.menubar",     false);
 pref("dom.disable_window_open_feature.resizable",   true);
 pref("dom.disable_window_open_feature.minimizable", false);
 pref("dom.disable_window_open_feature.status",      true);
+pref("dom.disable_window_showModalDialog",          true);
 
 pref("dom.allow_scripts_to_close_windows",          false);
 
@@ -5641,7 +5642,7 @@ pref("layout.css.servo.enabled", false);
 
 
 
-#ifdef RELEASE_OR_BETA
+#ifdef RELEASE
 
 
 pref("security.mixed_content.send_hsts_priming", false);
@@ -5656,7 +5657,7 @@ pref("security.mixed_content.use_hsts", true);
 pref("security.mixed_content.hsts_priming_cache_timeout", 604800);
 
 
-pref("security.mixed_content.hsts_priming_request_timeout", 3000);
+pref("security.mixed_content.hsts_priming_request_timeout", 2000);
 
 
 
