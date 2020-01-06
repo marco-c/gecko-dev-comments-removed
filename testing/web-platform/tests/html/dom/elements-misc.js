@@ -41,21 +41,7 @@ var miscElements = {
   summary: {},
   menu: {
     
-    
-    type: {type: "enum", keywords:["context", "toolbar"], defaultVal: "toolbar"},
-    label: "string",
-
-    
     compact: "boolean",
-  },
-  menuitem: {
-    type: {type: "enum", keywords: ["command", "checkbox", "radio"], defaultVal: "command"},
-    label: "string",
-    icon: "url",
-    disabled: "boolean",
-    checked: "boolean",
-    radiogroup: "string",
-    "default": "boolean",
   },
   dialog: {
     open: "boolean",

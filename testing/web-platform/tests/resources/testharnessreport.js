@@ -1,7 +1,3 @@
-
-
-
-
 var props = {output:%(output)d,
              explicit_timeout: true,
              message_events: ["completion"]};

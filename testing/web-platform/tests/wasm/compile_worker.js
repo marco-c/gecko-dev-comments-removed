@@ -1,0 +1,11 @@
+
+
+
+
+this.importScripts("resources/load_wasm.js");
+
+onmessage = function(msg) {
+    createWasmModule()
+        .then(postMessage)
+
+}
