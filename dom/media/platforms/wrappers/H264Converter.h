@@ -65,10 +65,10 @@ private:
   
   
   
-  MediaResult CreateDecoder(const VideoInfo& aConfig,
+  nsresult CreateDecoder(const VideoInfo& aConfig,
                          DecoderDoctorDiagnostics* aDiagnostics);
-  MediaResult CreateDecoderAndInit(MediaRawData* aSample);
-  MediaResult CheckForSPSChange(MediaRawData* aSample);
+  nsresult CreateDecoderAndInit(MediaRawData* aSample);
+  nsresult CheckForSPSChange(MediaRawData* aSample);
   void UpdateConfigFromExtraData(MediaByteBuffer* aExtraData);
 
   bool CanRecycleDecoder() const;
