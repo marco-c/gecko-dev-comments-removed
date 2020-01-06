@@ -1279,7 +1279,15 @@ ServoStyleSet::EnsureUniqueInnerOnCSSSheets()
     StyleSheet* sheet = queue[idx];
     queue.RemoveElementAt(idx);
 
-    sheet->EnsureUniqueInner();
+    
+    
+    
+    
+    
+    
+    if (sheet->IsComplete()) {
+      sheet->EnsureUniqueInner();
+    }
 
     
     sheet->AppendAllChildSheets(queue);
