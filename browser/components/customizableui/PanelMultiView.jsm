@@ -1048,8 +1048,7 @@ this.PanelMultiView = class {
       case "popupshown":
         
         
-        if (!this.panelViews)
-          this.descriptionHeightWorkaround();
+        this.descriptionHeightWorkaround();
         break;
       case "popuphidden": {
         
