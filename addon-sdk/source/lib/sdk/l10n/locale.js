@@ -12,7 +12,15 @@ const { Cu, Cc, Ci } = require("chrome");
 const { Services } = Cu.import("resource://gre/modules/Services.jsm");
 
 function getPreferedLocales(caseSensitve) {
-  return Services.locale.getRequestedLocales();
+  const locales = Services.locale.getRequestedLocales();
+
+  
+  
+  
+  if (!locales.includes('en-US')) {
+    locales.push('en-US');
+  }
+  return locales;
 }
 exports.getPreferedLocales = getPreferedLocales;
 
