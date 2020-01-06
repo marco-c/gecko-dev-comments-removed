@@ -1268,7 +1268,7 @@ nsTypeAheadFind::IsRangeVisible(nsIPresShell *aPresShell,
                                     nsRect(nsPoint(0,0), frame->GetSize()),
                                     minDistance);
 
-    if (rectVisibility != nsRectVisibility_kAboveViewport) {
+    if (rectVisibility == nsRectVisibility_kVisible) {
       
       
       return IsRangeRendered(aPresShell, aPresContext, aRange);
