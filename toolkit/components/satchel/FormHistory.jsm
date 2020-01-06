@@ -358,7 +358,7 @@ function generateGUID() {
   let uuid = uuidService.generateUUID().toString();
   let raw = ""; 
   let bytes = 0;
-  for (let i = 1; bytes < 12 ; i += 2) {
+  for (let i = 1; bytes < 12; i += 2) {
     
     if (uuid[i] == "-") {
       i++;
