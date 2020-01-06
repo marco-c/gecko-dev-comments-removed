@@ -361,6 +361,32 @@ PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent, nsEventStatus& aStatus)
     mNativeIMEContext = compositionEvent->mNativeIMEContext;
   }
 
+  
+  
+  
+  
+  
+  
+  if (aEvent->mClass == eCompositionEventClass ||
+      aEvent->mClass == eKeyboardEventClass) {
+    TextEventDispatcher* dispatcher = GetTextEventDispatcher();
+    
+    
+    
+    
+    
+    
+    if (!dispatcher->IsDispatchingEvent() &&
+        !(mNativeTextEventDispatcherListener &&
+          !aEvent->mFlags.mIsSynthesizedForTests)) {
+      DebugOnly<nsresult> rv =
+        dispatcher->BeginInputTransactionFor(aEvent, this);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "The text event dispatcher should always succeed to start input "
+        "transaction for the event");
+    }
+  }
+
   aStatus = nsEventStatus_eIgnore;
 
   if (GetCurrentWidgetListener()) {

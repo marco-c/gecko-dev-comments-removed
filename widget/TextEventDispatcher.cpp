@@ -12,6 +12,7 @@
 #include "nsIWidget.h"
 #include "nsPIDOMWindow.h"
 #include "nsView.h"
+#include "PuppetWidget.h"
 
 namespace mozilla {
 namespace widget {
@@ -106,6 +107,80 @@ TextEventDispatcher::BeginInputTransactionInternal(
   return NS_OK;
 }
 
+nsresult
+TextEventDispatcher::BeginInputTransactionFor(const WidgetGUIEvent* aEvent,
+                                              PuppetWidget* aPuppetWidget)
+{
+  MOZ_ASSERT(XRE_IsContentProcess());
+  MOZ_ASSERT(!IsDispatchingEvent());
+
+  switch (aEvent->mMessage) {
+    case eKeyDown:
+    case eKeyPress:
+    case eKeyUp:
+      MOZ_ASSERT(aEvent->mClass == eKeyboardEventClass);
+      break;
+    case eCompositionStart:
+    case eCompositionChange:
+    case eCompositionCommit:
+    case eCompositionCommitAsIs:
+      MOZ_ASSERT(aEvent->mClass == eCompositionEventClass);
+      break;
+    default:
+      return NS_ERROR_INVALID_ARG;
+  }
+
+  if (aEvent->mFlags.mIsSynthesizedForTests) {
+    
+    
+    
+    if (mInputTransactionType == eAsyncTestInputTransaction) {
+      return NS_OK;
+    }
+    
+    
+    
+    nsresult rv =
+      BeginInputTransactionInternal(
+        static_cast<TextEventDispatcherListener*>(aPuppetWidget),
+        eSameProcessSyncTestInputTransaction);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    nsresult rv = BeginNativeInputTransaction();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  
+  
+  
+  
+  switch (aEvent->mMessage) {
+    case eKeyDown:
+    case eKeyPress:
+    case eKeyUp:
+      return NS_OK;
+    case eCompositionStart:
+      MOZ_ASSERT(!mIsComposing);
+      mIsComposing = true;
+      return NS_OK;
+    case eCompositionChange:
+      MOZ_ASSERT(mIsComposing);
+      mIsComposing = true;
+      return NS_OK;
+    case eCompositionCommit:
+    case eCompositionCommitAsIs:
+      MOZ_ASSERT(mIsComposing);
+      mIsComposing = false;
+      return NS_OK;
+    default:
+      MOZ_ASSERT_UNREACHABLE("You forgot to handle the event");
+      return NS_ERROR_UNEXPECTED;
+  }
+}
 void
 TextEventDispatcher::EndInputTransaction(TextEventDispatcherListener* aListener)
 {
@@ -235,6 +310,8 @@ TextEventDispatcher::StartComposition(nsEventStatus& aStatus,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
   mIsComposing = true;
   WidgetCompositionEvent compositionStartEvent(true, eCompositionStart,
                                                mWidget);
@@ -314,6 +391,9 @@ TextEventDispatcher::CommitComposition(nsEventStatus& aStatus,
   if (aStatus == nsEventStatus_eConsumeNoDefault) {
     return NS_OK;
   }
+
+  
+  
 
   
   mIsComposing = false;

@@ -19,6 +19,8 @@ class nsIWidget;
 namespace mozilla {
 namespace widget {
 
+class PuppetWidget;
+
 
 
 
@@ -58,6 +60,13 @@ public:
   nsresult BeginTestInputTransaction(TextEventDispatcherListener* aListener,
                                      bool aIsAPZAware);
   nsresult BeginNativeInputTransaction();
+
+  
+
+
+
+  nsresult BeginInputTransactionFor(const WidgetGUIEvent* aEvent,
+                                    PuppetWidget* aPuppetWidget);
 
   
 
@@ -368,10 +377,18 @@ private:
     eNoInputTransaction,
     
     
+    
+    
+    
+    
     eNativeInputTransaction,
     
     
     eAsyncTestInputTransaction,
+    
+    
+    
+    
     
     
     
