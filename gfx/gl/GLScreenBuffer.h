@@ -166,15 +166,8 @@ protected:
     GLenum mUserDrawBufferMode;
 
     
-    GLuint mUserDrawFB;
-    GLuint mUserReadFB;
-    GLuint mInternalDrawFB;
-    GLuint mInternalReadFB;
-
-#ifdef DEBUG
-    bool mInInternalMode_DrawFB;
-    bool mInInternalMode_ReadFB;
-#endif
+    GLuint mBoundDrawFB;
+    GLuint mBoundReadFB;
 
     GLScreenBuffer(GLContext* gl,
                    const SurfaceCaps& caps,
@@ -228,7 +221,10 @@ public:
         return mRead->Size();
     }
 
-    void BindAsFramebuffer(GLContext* const gl, GLenum target) const;
+    void BindAsFramebuffer(GLenum target = LOCAL_GL_FRAMEBUFFER) const;
+
+    void OnBindFramebuffer(GLenum target, GLuint fb);
+    void OnDeleteFramebuffer(GLuint fb);
 
     void RequireBlit();
     void AssureBlitted();
@@ -273,24 +269,6 @@ protected:
     UniquePtr<ReadBuffer> CreateRead(SharedSurface* surf);
 
 public:
-    
-
-
-
-
-    void BindFB(GLuint fb);
-    void BindDrawFB(GLuint fb);
-    void BindReadFB(GLuint fb);
-    GLuint GetFB() const;
-    GLuint GetDrawFB() const;
-    GLuint GetReadFB() const;
-
-    
-    
-    void BindFB_Internal(GLuint fb);
-    void BindDrawFB_Internal(GLuint fb);
-    void BindReadFB_Internal(GLuint fb);
-
     bool IsDrawFramebufferDefault() const;
     bool IsReadFramebufferDefault() const;
 };
