@@ -152,12 +152,6 @@ public:
   virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
-  bool IsRootOuterWindow()
-  {
-    MOZ_ASSERT(IsOuterWindow());
-    return mIsRootOuterWindow;
-  }
-
   
 
 
@@ -991,6 +985,12 @@ public:
     
     GetDoc();
     return GetCurrentInnerWindow();
+  }
+
+  bool IsRootOuterWindow()
+  {
+    MOZ_ASSERT(IsOuterWindow());
+    return mIsRootOuterWindow;
   }
 
   
