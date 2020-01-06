@@ -11,6 +11,7 @@
 
 #include "gfxPoint.h"                   
 #include "mozilla/Assertions.h"         
+#include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/TouchCounter.h"
@@ -484,7 +485,7 @@ public:
 
   RefPtr<HitTestingTreeNode> GetRootNode() const;
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint,
-                                                         HitTestResult* aOutHitResult,
+                                                         gfx::CompositorHitTestInfo* aOutHitResult,
                                                          RefPtr<HitTestingTreeNode>* aOutScrollbarNode = nullptr);
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const uint64_t& aLayersId,
                                                          const FrameMetrics::ViewID& aScrollId);
@@ -522,10 +523,10 @@ private:
   AsyncPanZoomController* GetTargetApzcForNode(HitTestingTreeNode* aNode);
   AsyncPanZoomController* GetAPZCAtPoint(HitTestingTreeNode* aNode,
                                          const ScreenPoint& aHitTestPoint,
-                                         HitTestResult* aOutHitResult,
+                                         gfx::CompositorHitTestInfo* aOutHitResult,
                                          HitTestingTreeNode** aOutScrollbarNode);
   already_AddRefed<AsyncPanZoomController> GetAPZCAtPointWR(const ScreenPoint& aHitTestPoint,
-                                                            HitTestResult* aOutHitResult,
+                                                            gfx::CompositorHitTestInfo* aOutHitResult,
                                                             HitTestingTreeNode** aOutScrollbarNode);
   AsyncPanZoomController* FindRootApzcForLayersId(uint64_t aLayersId) const;
   AsyncPanZoomController* FindRootContentApzcForLayersId(uint64_t aLayersId) const;
@@ -552,7 +553,7 @@ private:
 
   already_AddRefed<AsyncPanZoomController> GetTouchInputBlockAPZC(const MultiTouchInput& aEvent,
                                                                   nsTArray<TouchBehaviorFlags>* aOutTouchBehaviors,
-                                                                  HitTestResult* aOutHitResult,
+                                                                  gfx::CompositorHitTestInfo* aOutHitResult,
                                                                   RefPtr<HitTestingTreeNode>* aOutHitScrollbarNode);
   nsEventStatus ProcessTouchInput(MultiTouchInput& aInput,
                                   ScrollableLayerGuid* aOutTargetGuid,
@@ -658,7 +659,7 @@ private:
   
 
 
-  HitTestResult mHitResultForInputBlock;
+  gfx::CompositorHitTestInfo mHitResultForInputBlock;
   
 
 

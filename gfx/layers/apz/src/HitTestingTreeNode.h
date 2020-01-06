@@ -7,9 +7,9 @@
 #ifndef mozilla_layers_HitTestingTreeNode_h
 #define mozilla_layers_HitTestingTreeNode_h
 
-#include "APZUtils.h"                       
 #include "FrameMetrics.h"                   
 #include "Layers.h"
+#include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/Maybe.h"                  
@@ -119,7 +119,7 @@ public:
                                 const LayerToParentLayerMatrix4x4& aTransform) const;
   
 
-  HitTestResult HitTest(const LayerPoint& aPoint) const;
+  gfx::CompositorHitTestInfo HitTest(const LayerPoint& aPoint) const;
   
   EventRegionsOverride GetEventRegionsOverride() const;
   const CSSTransformMatrix& GetTransform() const;

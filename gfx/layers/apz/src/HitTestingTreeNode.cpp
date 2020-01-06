@@ -20,6 +20,8 @@
 namespace mozilla {
 namespace layers {
 
+using gfx::CompositorHitTestInfo;
+
 HitTestingTreeNode::HitTestingTreeNode(AsyncPanZoomController* aApzc,
                                        bool aIsPrimaryHolder,
                                        uint64_t aLayersId)
@@ -288,39 +290,62 @@ HitTestingTreeNode::Untransform(const ParentLayerPoint& aPoint,
   return Nothing();
 }
 
-HitTestResult
+CompositorHitTestInfo
 HitTestingTreeNode::HitTest(const LayerPoint& aPoint) const
 {
+  CompositorHitTestInfo result = CompositorHitTestInfo::eInvisibleToHitTest;
+
   if (mOverride & EventRegionsOverride::ForceEmptyHitRegion) {
-    return HitTestResult::HitNothing;
+    return result;
   }
 
   auto point = LayerIntPoint::Round(aPoint);
 
   
   if (!mEventRegions.mHitRegion.Contains(point.x, point.y)) {
-    return HitTestResult::HitNothing;
+    return result;
   }
+
+  result |= CompositorHitTestInfo::eVisibleToHitTest;
+
   if ((mOverride & EventRegionsOverride::ForceDispatchToContent) ||
       mEventRegions.mDispatchToContentHitRegion.Contains(point.x, point.y))
   {
-    return HitTestResult::HitDispatchToContentRegion;
-  }
-  if (gfxPrefs::TouchActionEnabled()) {
+    result |= CompositorHitTestInfo::eDispatchToContent;
+  } else if (gfxPrefs::TouchActionEnabled()) {
     if (mEventRegions.mNoActionRegion.Contains(point.x, point.y)) {
-      return HitTestResult::HitLayerTouchActionNone;
-    }
-    bool panX = mEventRegions.mHorizontalPanRegion.Contains(point.x, point.y);
-    bool panY = mEventRegions.mVerticalPanRegion.Contains(point.x, point.y);
-    if (panX && panY) {
-      return HitTestResult::HitLayerTouchActionPanXY;
-    } else if (panX) {
-      return HitTestResult::HitLayerTouchActionPanX;
-    } else if (panY) {
-      return HitTestResult::HitLayerTouchActionPanY;
+      
+      result |= CompositorHitTestInfo::eTouchActionMask;
+    } else {
+      bool panX = mEventRegions.mHorizontalPanRegion.Contains(point.x, point.y);
+      bool panY = mEventRegions.mVerticalPanRegion.Contains(point.x, point.y);
+      if (panX && panY) {
+        
+        result |= CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled
+                | CompositorHitTestInfo::eTouchActionPinchZoomDisabled;
+      } else if (panX) {
+        
+        result |= CompositorHitTestInfo::eTouchActionPanYDisabled
+                | CompositorHitTestInfo::eTouchActionPinchZoomDisabled
+                | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+      } else if (panY) {
+        
+        result |= CompositorHitTestInfo::eTouchActionPanXDisabled
+                | CompositorHitTestInfo::eTouchActionPinchZoomDisabled
+                | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+      } 
+        
+        
+        
     }
   }
-  return HitTestResult::HitLayer;
+
+  
+  
+  
+  
+
+  return result;
 }
 
 EventRegionsOverride
