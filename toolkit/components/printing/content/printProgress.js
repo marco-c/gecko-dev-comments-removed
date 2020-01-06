@@ -4,6 +4,10 @@
 
 
 
+const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
+
+Cu.import("resource://gre/modules/Services.jsm");
+
 
 var dialog;
 
@@ -57,9 +61,7 @@ var progressListener = {
         percentPrint = replaceInsert( percentPrint, 1, 100 );
         dialog.progressText.setAttribute("value", percentPrint);
 
-        var fm = Components.classes["@mozilla.org/focus-manager;1"]
-                     .getService(Components.interfaces.nsIFocusManager);
-        if (fm && fm.activeWindow == window) {
+        if (Services.focus.activeWindow == window) {
           
           
           
