@@ -54,7 +54,7 @@ use style::context::SharedStyleContext;
 use style::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use style::properties::ComputedValues;
 use style::selector_parser::RestyleDamage;
-use style::servo::restyle_damage::{RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, REPOSITION};
+use style::servo::restyle_damage::{RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT};
 use style::values::computed::LengthOrPercentageOrAuto;
 use table::TableFlow;
 use table_caption::TableCaptionFlow;
@@ -340,9 +340,9 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     }
 
     
-    fn compute_absolute_position(&mut self, _: &LayoutContext) {
+    
+    fn compute_stacking_relative_position(&mut self, _: &LayoutContext) {
         
-        mut_base(self).restyle_damage.remove(REPOSITION)
     }
 
     
@@ -535,31 +535,6 @@ pub trait ImmutableFlowUtils {
 
 pub trait MutableFlowUtils {
     
-
-    
-    fn traverse_preorder<T: PreorderFlowTraversal>(self, traversal: &T);
-
-    
-    fn traverse_postorder<T: PostorderFlowTraversal>(self, traversal: &T);
-
-    
-    
-    
-    
-    
-    
-    fn traverse_preorder_absolute_flows<T>(&mut self, traversal: &mut T)
-                                           where T: PreorderFlowTraversal;
-
-    
-    
-    
-    fn traverse_postorder_absolute_flows<T>(&mut self, traversal: &mut T)
-                                            where T: PostorderFlowTraversal;
-
-    
-
-    
     
     fn repair_style_and_bubble_inline_sizes(self, style: &::ServoArc<ComputedValues>);
 }
@@ -608,42 +583,6 @@ impl FlowClass {
             _ => false,
         }
     }
-}
-
-
-pub trait PreorderFlowTraversal {
-    
-    fn process(&self, flow: &mut Flow);
-
-    
-    
-    
-    fn should_process(&self, _flow: &mut Flow) -> bool {
-        true
-    }
-}
-
-
-pub trait PostorderFlowTraversal {
-    
-    fn process(&self, flow: &mut Flow);
-
-    
-    
-    
-    fn should_process(&self, _flow: &mut Flow) -> bool {
-        true
-    }
-}
-
-
-pub trait InorderFlowTraversal {
-    
-    fn process(&mut self, flow: &mut Flow, level: u32);
-
-    
-    
-    fn should_process(&mut self, flow: &mut Flow) -> bool;
 }
 
 bitflags! {
@@ -1357,62 +1296,11 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
 
 impl<'a> MutableFlowUtils for &'a mut Flow {
     
-    fn traverse_preorder<T: PreorderFlowTraversal>(self, traversal: &T) {
-        if traversal.should_process(self) {
-            traversal.process(self);
-        }
-
-        for kid in child_iter_mut(self) {
-            kid.traverse_preorder(traversal);
-        }
-    }
-
-    
-    fn traverse_postorder<T: PostorderFlowTraversal>(self, traversal: &T) {
-        for kid in child_iter_mut(self) {
-            kid.traverse_postorder(traversal);
-        }
-
-        if traversal.should_process(self) {
-            traversal.process(self)
-        }
-    }
-
-
-    
     
     fn repair_style_and_bubble_inline_sizes(self, style: &::ServoArc<ComputedValues>) {
         self.repair_style(style);
         mut_base(self).update_flags_if_needed(style);
         self.bubble_inline_sizes();
-    }
-
-    
-    
-    
-    
-    
-    
-    fn traverse_preorder_absolute_flows<T>(&mut self, traversal: &mut T)
-                                           where T: PreorderFlowTraversal {
-        traversal.process(*self);
-
-        let descendant_offset_iter = mut_base(*self).abs_descendants.iter();
-        for ref mut descendant_link in descendant_offset_iter {
-            descendant_link.traverse_preorder_absolute_flows(traversal)
-        }
-    }
-
-    
-    
-    
-    fn traverse_postorder_absolute_flows<T>(&mut self, traversal: &mut T)
-                                            where T: PostorderFlowTraversal {
-        for mut descendant_link in mut_base(*self).abs_descendants.iter() {
-            descendant_link.traverse_postorder_absolute_flows(traversal);
-        }
-
-        traversal.process(*self)
     }
 }
 
