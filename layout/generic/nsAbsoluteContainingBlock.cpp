@@ -149,7 +149,9 @@ nsAbsoluteContainingBlock::Reflow(nsContainerFrame*        aDelegatingFrame,
         nscoord kidBEnd = kidFrame->GetLogicalRect(cb.Size()).BEnd(kidWM);
         nscoord kidOverflowBEnd =
           LogicalRect(containerWM,
-                      kidFrame->GetScrollableOverflowRectRelativeToParent(),
+                      
+                      kidFrame->GetScrollableOverflowRectRelativeToSelf() +
+                        kidFrame->GetPosition(),
                       aContainingBlock.Size()).BEnd(containerWM);
         MOZ_ASSERT(kidOverflowBEnd >= kidBEnd);
         if (kidOverflowBEnd > availBSize ||
