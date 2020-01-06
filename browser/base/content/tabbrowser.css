@@ -91,16 +91,6 @@ tabpanels {
   transition: width .15s ease-out;
 }
 
-
-
-
-
-
-
-browser[pending] {
-  display: none;
-}
-
 browser[blank],
 browser[pendingpaint] {
   opacity: 0;

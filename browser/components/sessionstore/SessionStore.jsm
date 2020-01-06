@@ -3614,7 +3614,6 @@ var SessionStoreInternal = {
     
     tabData.index = activeIndex + 1;
 
-    browser.setAttribute("pending", "true");
     tab.setAttribute("pending", "true");
 
     
@@ -3728,10 +3727,6 @@ var SessionStoreInternal = {
       }
     }
 
-    
-    
-    
-    
     this.markTabAsRestoring(aTab);
 
     
@@ -3803,7 +3798,6 @@ var SessionStoreInternal = {
 
     
     browser.__SS_restoreState = TAB_STATE_RESTORING;
-    browser.removeAttribute("pending");
     aTab.removeAttribute("pending");
   },
 
@@ -4556,7 +4550,6 @@ var SessionStoreInternal = {
     delete browser.__SS_restoreState;
 
     aTab.removeAttribute("pending");
-    browser.removeAttribute("pending");
 
     if (previousState == TAB_STATE_RESTORING) {
       if (this._tabsRestoringCount)
